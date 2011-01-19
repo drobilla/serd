@@ -136,38 +136,43 @@ readahead(SerdReader parser, uint8_t* pre, int n)
 	return true;
 }
 
-static inline uchar
-read_utf8_char(SerdReader parser)
+static inline unsigned
+utf8_char_len(const uint8_t b0)
 {
-	if (parser->read_head == READ_BUF_LEN) {
-		return error(parser, "page fault\n");
+	if ((b0 & 0x80) == 0) {  // Starts with `0'
+		return 1;
+	} else if ((b0 & 0xE0) == 0xC0) {  // Starts with `110'
+		return 2;
+	} else if ((b0 & 0xF0) == 0xE0) {  // Starts with `1110'
+		return 3;
+	} else if ((b0 & 0xF8) == 0xF0) {  // Starts with `11110'
+		return 4;
+	} else {
+		return 0;
 	}
-	const uchar c = parser->read_buf[parser->read_head++];
-	switch (c) {
-	case '\n': ++parser->cur.line; parser->cur.col = 0; break;
-	default:   ++parser->cur.col;
-	}
-	/*while ((byte & 0xC0) == 0x80) {
-	// Starts with `10', continuation byte
-	character += (byte & 0x7F);
-	byte = getc(parser->fd);
-	}*/
-	return c;
+}
+
+static inline uchar
+peek_utf8_char(SerdReader parser, unsigned* n_bytes)
+{
+	const uint8_t b0 = parser->read_buf[parser->read_head];
+	*n_bytes = 1;
+	return b0;
 }
 
 static inline uchar
 peek_char(SerdReader parser)
 {
-	if (parser->eof) {
-		return EOF;
-	}
-	return parser->read_buf[parser->read_head];
+	unsigned n_bytes;
+	return peek_utf8_char(parser, &n_bytes);
 }
 
 static inline uchar
 eat_char(SerdReader parser, const uchar character)
 {
-	const uchar c = parser->read_buf[parser->read_head++];
+	unsigned    n_bytes;
+	const uchar c = peek_utf8_char(parser, &n_bytes);
+	parser->read_head += n_bytes;
 	switch (c) {
 	case '\0': return error(parser, "unexpected end of file\n");
 	case '\n': ++parser->cur.line; parser->cur.col = 0; break;
@@ -265,11 +270,11 @@ push_char(SerdReader parser, Ref ref, const uchar c)
 	stack_push(parser, 1);
 	SerdString* const str = deref(parser, ref);
 	++str->n_bytes;
-	if ((c & 0xC0) == 0x80) {
-		fprintf(stderr, "PUSH WIDE CHAR %X\n", c);
-	} else {
+	if ((c & 0xC0) != 0x80) {
+		// Does not start with `10', start of a new character
 		++str->n_chars;
 	}
+	assert(str->n_bytes > str->n_chars);
 	str->buf[str->n_bytes - 2] = c;
 	str->buf[str->n_bytes - 1] = '\0';
 }
@@ -307,7 +312,7 @@ read_hex(SerdReader parser)
 {
 	const uchar c = peek_char(parser);
 	if (in_range(c, 0x30, 0x39) || in_range(c, 0x41, 0x46)) {
-		return c;
+		return eat_char(parser, c);
 	} else {
 		return error(parser, "illegal hexadecimal digit `%c'\n", c);
 	}
@@ -316,12 +321,31 @@ read_hex(SerdReader parser)
 static inline uchar
 read_hex_escape(SerdReader parser, unsigned length)
 {
-	uchar    ret  = 0;
-	unsigned mult = 1;
+	uchar   ret      = 0;
+	uint8_t chars[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	uint8_t code[4]  = { 0, 0, 0, 0 };
 	for (unsigned i = 0; i < length; ++i) {
-		const uchar c = read_hex(parser);
-		ret += (c * mult);
-		mult *= 8;
+		chars[i] = read_hex(parser);
+	}
+
+	sscanf((const char*)chars, "%X", (uint32_t*)code);
+	const uint32_t code_num = *(uint32_t*)code;
+	if (code_num < 0x80) {
+		fprintf(stderr, "1 byte UTF-8 escape\n");
+		return code[0];
+	} else if (code_num < 0x800) {
+		fprintf(stderr, "2 byte UTF-8 escape\n");
+		fprintf(stderr, "B0 %X\n", code[0]);
+		fprintf(stderr, "B1 %X\n", code[1]);
+		fprintf(stderr, "B2 %X\n", code[2]);
+		fprintf(stderr, "B3 %X\n", code[3]);
+		ret = ((0xC0 + ((code[3] & 0x1F) << 2) + ((code[4] & 0xC0) >> 6)) << 8)
+			+ (code[4] & 0x3F);
+		fprintf(stderr, "RET %X\n", ret);
+	} else if (code_num < 0x10000) {
+		fprintf(stderr, "3 byte UTF-8 escape\n");
+	} else {
+		fprintf(stderr, "4 byte UTF-8 escape\n");
 	}
 	return ret;
 }
