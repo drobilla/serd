@@ -40,30 +40,22 @@
 	#define SERD_API
 #endif
 
+/* @file
+ * Public Serd API.
+ */
+
+/** @defgroup serd Serd
+ * @brief A lightweight RDF Serialisation Library.
+ * @{
+ */
+
+/** RDF syntax */
 typedef enum {
 	SERD_TURTLE   = 1,
 	SERD_NTRIPLES = 2
 } SerdSyntax;
 
-
-/** @defgroup string Measured UTF-8 string
- * @{
- */
-
-typedef struct {
-	size_t  n_bytes;
-	size_t  n_chars;
-	uint8_t buf[];
-} SerdString;
-
-SERD_API
-SerdString*
-serd_string_new(const uint8_t* utf8);
-
-SERD_API
-SerdString*
-serd_string_copy(const SerdString* s);
-
+/** Type of RDF node. */
 typedef enum {
 	BLANK   = 1,
 	URI     = 2,
@@ -71,18 +63,42 @@ typedef enum {
 	LITERAL = 4
 } SerdNodeType;
 
-/** @} */
 
-    
-/** @defgroup uri Parsed URI
+/** @name String
  * @{
  */
 
+/** Measured UTF-8 string. */
+typedef struct {
+	size_t  n_bytes;
+	size_t  n_chars;
+	uint8_t buf[];
+} SerdString;
+
+/** Create a new UTF-8 string from @a utf8. */
+SERD_API
+SerdString*
+serd_string_new(const uint8_t* utf8);
+
+/** Copy @a string. */
+SERD_API
+SerdString*
+serd_string_copy(const SerdString* string);
+
+/** @} */
+
+
+/** @name URIs
+ * @{
+ */
+
+/** Range of memory. */
 typedef struct {
 	const uint8_t* buf;
 	size_t         len;
 } SerdRange;
 
+/** Parsed URI. */
 typedef struct {
 	SerdRange scheme;
 	SerdRange authority;
@@ -93,22 +109,27 @@ typedef struct {
 	bool      base_uri_has_authority;
 } SerdURI;
 
+/** Return true iff @a utf8 is a relative URI string. */
 SERD_API
 bool
 serd_uri_string_is_relative(const uint8_t* utf8);
 
+/** Parse @a utf8, writing result to @a out. */
 SERD_API
 bool
 serd_uri_parse(const uint8_t* utf8, SerdURI* out);
 
+/** Resolve @a uri relative to @a base, writing result to @a out. */
 SERD_API
 bool
 serd_uri_resolve(const SerdURI* uri, const SerdURI* base, SerdURI* out);
 
+/** Write @a uri to @a file. */
 SERD_API
 bool
 serd_uri_write(const SerdURI* uri, FILE* file);
 
+/** Serialise @a uri to a string. */
 SERD_API
 SerdString*
 serd_uri_serialise(const SerdURI* uri,
@@ -117,19 +138,23 @@ serd_uri_serialise(const SerdURI* uri,
 /** @} */
 
 
-/** @defgroup reader Reader for RDF syntax
+/** @name Reader
  * @{
  */
 
+/** Reader. */
 typedef struct SerdReaderImpl* SerdReader;
 
+/** Handler for base URI changes. */
 typedef bool (*SerdBaseHandler)(void*             handle,
                                 const SerdString* uri);
 
+/** Handler for namespace definitions. */
 typedef bool (*SerdPrefixHandler)(void*             handle,
                                   const SerdString* name,
                                   const SerdString* uri);
 
+/** Handler for statements. */
 typedef bool (*SerdStatementHandler)(void*             handle,
                                      const SerdString* graph,
                                      const SerdString* subject,
@@ -141,6 +166,7 @@ typedef bool (*SerdStatementHandler)(void*             handle,
                                      const SerdString* object_lang,
                                      const SerdString* object_datatype);
 
+/** Create a new RDF reader. */
 SERD_API
 SerdReader
 serd_reader_new(SerdSyntax           syntax,
@@ -149,12 +175,14 @@ serd_reader_new(SerdSyntax           syntax,
                 SerdPrefixHandler    prefix_handler,
                 SerdStatementHandler statement_handler);
 
+/** Read @a file. */
 SERD_API
 bool
 serd_reader_read_file(SerdReader     reader,
                       FILE*          file,
                       const uint8_t* name);
 
+/** Free @a reader. */
 SERD_API
 void
 serd_reader_free(SerdReader reader);
@@ -162,32 +190,38 @@ serd_reader_free(SerdReader reader);
 /** @} */
 
 
-/** @defgroup namespaces Namespaces (prefixes for CURIEs)
+/** @name Namespaces
  * @{
  */
 
 typedef struct SerdNamespacesImpl* SerdNamespaces;
 
+/** Create a new namespaces dictionary. */
 SERD_API
 SerdNamespaces
 serd_namespaces_new();
 
+/** Free @a ns. */
 SERD_API
 void
 serd_namespaces_free(SerdNamespaces ns);
 
+/** Add namespace @a uri to @a ns using prefix @a name. */
 SERD_API
 void
 serd_namespaces_add(SerdNamespaces    ns,
                     const SerdString* name,
                     const SerdString* uri);
 
+/** Expand @a qname. */
 SERD_API
 bool
 serd_namespaces_expand(SerdNamespaces     ns,
                        const SerdString*  qname,
                        SerdRange*         uri_prefix,
                        SerdRange*         uri_suffix);
+
+/** @} */
 
 /** @} */
 
