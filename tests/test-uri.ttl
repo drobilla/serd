@@ -1,0 +1,30 @@
+# http://tools.ietf.org/html/rfc3986#section-5.4
+
+@base <http://a/b/c/d;p?q> .
+
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+
+# 5.4.1. Normal Examples
+<g:h>     owl:sameAs <g:h> .
+<g>       owl:sameAs <http://a/b/c/g> .
+<./g>     owl:sameAs <http://a/b/c/g> .
+<g/>      owl:sameAs <http://a/b/c/g/> .
+</g>      owl:sameAs <http://a/g> .
+<//g>     owl:sameAs <http://g> .
+<?y>      owl:sameAs <http://a/b/c/d;p?y> .
+<g?y>     owl:sameAs <http://a/b/c/g?y> .
+<#s>      owl:sameAs <http://a/b/c/d;p?q#s> .
+<g#s>     owl:sameAs <http://a/b/c/g#s> .
+<g?y#s>   owl:sameAs <http://a/b/c/g?y#s> .
+<;x>      owl:sameAs <http://a/b/c/;x> .
+<g;x>     owl:sameAs <http://a/b/c/g;x> .
+<g;x?y#s> owl:sameAs <http://a/b/c/g;x?y#s> .
+<>        owl:sameAs <http://a/b/c/d;p?q> .
+<.>       owl:sameAs <http://a/b/c/> .
+<./>      owl:sameAs <http://a/b/c/> .
+<..>      owl:sameAs <http://a/b/> .
+<../>     owl:sameAs <http://a/b/> .
+<../g>    owl:sameAs <http://a/b/g> .
+<../..>   owl:sameAs <http://a/> .
+<../../>  owl:sameAs <http://a/> .
+<../../g> owl:sameAs <http://a/g> .

@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libserd
+Version: @SERD_VERSION@
+Description: Lightweight RDF serialisation library
+Libs: -L${libdir} -lserd
+Cflags: -I${includedir}
