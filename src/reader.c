@@ -214,7 +214,6 @@ pad_size(intptr_t size)
 static Ref
 push_string(SerdReader parser, const char* c_str, size_t n_bytes)
 {
-	//fprintf(stderr, " * PUSH `%s'\n", c_str);
 	// Align strings to 64-bits (assuming malloc/realloc are aligned to 64-bits)
 	const size_t      stack_size = pad_size((intptr_t)parser->stack.size);
 	const size_t      pad        = stack_size - parser->stack.size;
