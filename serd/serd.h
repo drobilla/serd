@@ -49,6 +49,10 @@
  * @{
  */
 
+typedef struct SerdNamespacesImpl* SerdNamespaces;
+typedef struct SerdReaderImpl*     SerdReader;
+
+
 /** RDF syntax */
 typedef enum {
 	SERD_TURTLE   = 1,
@@ -57,56 +61,31 @@ typedef enum {
 
 /** Type of RDF node. */
 typedef enum {
-	BLANK   = 1,
-	URI     = 2,
-	QNAME   = 3,
-	LITERAL = 4
+	BLANK   = 1,  ///< Blank node (resource with no URI)
+	URI     = 2,  ///< URI (universal identifier)
+	QNAME   = 3,  ///< CURIE/QName (URI shortened with a namespace)
+	LITERAL = 4   ///< Literal string (with optional lang or datatype)
 } SerdNodeType;
-
-
-/** @name String
- * @{
- */
-
-/** Measured UTF-8 string. */
-typedef struct {
-	size_t  n_bytes;
-	size_t  n_chars;
-	uint8_t buf[];
-} SerdString;
-
-/** Create a new UTF-8 string from @a utf8. */
-SERD_API
-SerdString*
-serd_string_new(const uint8_t* utf8);
-
-/** Copy @a string. */
-SERD_API
-SerdString*
-serd_string_copy(const SerdString* string);
-
-/** @} */
-
 
 /** @name URIs
  * @{
  */
 
-/** Range of memory. */
+/* Range of memory. */
 typedef struct {
 	const uint8_t* buf;
 	size_t         len;
 } SerdRange;
 
-/** Parsed URI. */
+/* Parsed URI. */
 typedef struct {
-	SerdRange scheme;
-	SerdRange authority;
-	SerdRange path_base;
-	SerdRange path;
-	SerdRange query;
-	SerdRange fragment;
-	bool      base_uri_has_authority;
+	SerdRange scheme; ///< Scheme
+	SerdRange authority; ///< Authority
+	SerdRange path_base; ///< Path prefix if relative
+	SerdRange path; ///< Path suffix
+	SerdRange query; ///< Query
+	SerdRange fragment; ///< Fragment
+	bool      base_uri_has_authority; ///< True iff base URI has authority
 } SerdURI;
 
 /** Return true iff @a utf8 is a relative URI string. */
@@ -129,11 +108,52 @@ SERD_API
 bool
 serd_uri_write(const SerdURI* uri, FILE* file);
 
+/** Sink function for raw string output. */
+typedef size_t (*SerdSink)(const uint8_t* buf, size_t len, void* stream);
+
+/** Serialise @a uri with a series of calls to @a sink. */
+SERD_API
+size_t
+serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream);
+
+/** @} */
+
+/** @name String
+ * @{
+ */
+
+/** Measured UTF-8 string. */
+typedef struct {
+	size_t  n_bytes;  ///< Size in bytes including trailing null byte
+	size_t  n_chars;  ///< Length in characters
+	uint8_t buf[];    ///< Buffer
+} SerdString;
+
+/** Create a new UTF-8 string from @a utf8. */
+SERD_API
+SerdString*
+serd_string_new(const uint8_t* utf8);
+
+/** Copy @a string. */
+SERD_API
+SerdString*
+serd_string_copy(const SerdString* string);
+
 /** Serialise @a uri to a string. */
 SERD_API
 SerdString*
-serd_uri_serialise(const SerdURI* uri,
-                   SerdURI*       out);
+serd_string_new_from_uri(const SerdURI* uri,
+                         SerdURI*       out);
+
+SERD_API
+bool
+serd_write_node(FILE*             file,
+                const SerdURI*    base_uri,
+                SerdNamespaces    ns,
+                SerdNodeType      type,
+                const SerdString* str,
+                const SerdString* datatype,
+                const SerdString* lang);
 
 /** @} */
 
@@ -141,9 +161,6 @@ serd_uri_serialise(const SerdURI* uri,
 /** @name Reader
  * @{
  */
-
-/** Reader. */
-typedef struct SerdReaderImpl* SerdReader;
 
 /** Handler for base URI changes. */
 typedef bool (*SerdBaseHandler)(void*             handle,
@@ -193,8 +210,6 @@ serd_reader_free(SerdReader reader);
 /** @name Namespaces
  * @{
  */
-
-typedef struct SerdNamespacesImpl* SerdNamespaces;
 
 /** Create a new namespaces dictionary. */
 SERD_API

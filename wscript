@@ -54,7 +54,13 @@ def build(bld):
 	# Pkgconfig file
 	autowaf.build_pc(bld, 'SERD', SERD_VERSION, ['REDLAND'])
 
-	lib_source = 'src/reader.c src/namespaces.c src/uri.c'
+	lib_source = '''
+		src/namespaces.c
+		src/reader.c
+		src/string.c
+		src/uri.c
+		src/write.c
+	'''
 
 	# Library
 	obj = bld(features = 'c cshlib')

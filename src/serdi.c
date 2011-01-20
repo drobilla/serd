@@ -49,7 +49,7 @@ event_base(void*             handle,
 			assert(false);
 			return false;
 		}
-		base_uri_str = serd_uri_serialise(&abs_base_uri, &base_uri);
+		base_uri_str = serd_string_new_from_uri(&abs_base_uri, &base_uri);
 		// FIXME: double parse
 		serd_uri_parse(base_uri_str->buf, &base_uri);
 	} else {
@@ -83,81 +83,10 @@ event_prefix(void*             handle,
 			return false;
 		}
 		SerdURI     new_abs_uri;
-		SerdString* abs_uri_string = serd_uri_serialise(&abs_uri, &new_abs_uri);
+		SerdString* abs_uri_string = serd_string_new_from_uri(&abs_uri, &new_abs_uri);
 		serd_namespaces_add(state->ns, name, abs_uri_string);
 	} else {
 		serd_namespaces_add(state->ns, name, uri_string);
-	}
-	return true;
-}
-
-static inline bool
-write_node(State*            state,
-           const SerdString* str,
-           SerdNodeType      type,
-           const SerdString* datatype,
-           const SerdString* lang)
-{
-	SerdRange uri_prefix;
-	SerdRange uri_suffix;
-	switch (type) {
-	case BLANK:
-		fwrite("_:", 1, 2, state->out_fd);
-		fwrite(str->buf, 1, str->n_bytes - 1, state->out_fd);
-		break;
-	case QNAME:
-		if (!serd_namespaces_expand(state->ns, str, &uri_prefix, &uri_suffix)) {
-			fprintf(stderr, "error: undefined namespace prefix `%s'\n", str->buf);
-			return false;
-		}
-		fwrite("<", 1, 1, state->out_fd);
-		fwrite(uri_prefix.buf, 1, uri_prefix.len - 1, state->out_fd);
-		fwrite(uri_suffix.buf, 1, uri_suffix.len - 1, state->out_fd);
-		fwrite(">", 1, 1, state->out_fd);
-		break;
-	case URI:
-		if (serd_uri_string_is_relative(str->buf)) {
-			SerdURI uri;
-			if (serd_uri_parse(str->buf, &uri)) {
-				SerdURI abs_uri;
-				if (serd_uri_resolve(&uri, &state->base_uri, &abs_uri)) {
-					fwrite("<", 1, 1, state->out_fd);
-					serd_uri_write(&abs_uri, state->out_fd);
-					fwrite(">", 1, 1, state->out_fd);
-					return true;
-				}
-			}
-		} else {
-			fwrite("<", 1, 1, state->out_fd);
-			fwrite(str->buf, 1, str->n_bytes - 1, state->out_fd);
-			fwrite(">", 1, 1, state->out_fd);
-			return true;
-		}
-		return false;
-	case LITERAL:
-		fwrite("\"", 1, 1, state->out_fd);
-		for (size_t i = 0; i < str->n_bytes - 1; ++i) {
-			const char c = str->buf[i];
-			switch (c) {
-			case '\\': fwrite("\\\\", 1, 2, state->out_fd); break;
-			case '\n': fwrite("\\n",  1, 2, state->out_fd); break;
-			case '\r': fwrite("\\r",  1, 2, state->out_fd); break;
-			case '\t': fwrite("\\t",  1, 2, state->out_fd); break;
-			case '"':  fwrite("\\\"", 1, 2, state->out_fd); break;
-			default:
-				fwrite(&c, 1, 1, state->out_fd);
-			}
-		}
-		fwrite("\"", 1, 1, state->out_fd);
-		if (lang) {
-			fwrite("@\"", 1, 2, state->out_fd);
-			fwrite(lang->buf, 1, lang->n_bytes - 1, state->out_fd);
-			fwrite("\"", 1, 1, state->out_fd);
-		} else if (datatype) {
-			fwrite("^^", 1, 2, state->out_fd);
-			write_node(state, datatype, URI, NULL, NULL);
-		}
-		break;
 	}
 	return true;
 }
@@ -176,11 +105,14 @@ event_statement(void*             handle,
 {
 	State* const state = (State*)handle;
 	FILE* const  fd    = state->out_fd;
-	write_node(state, subject, subject_type, NULL, NULL);
+	serd_write_node(fd, &state->base_uri, state->ns,
+	                subject_type, subject, NULL, NULL);
 	fwrite(" ", 1, 1, fd);
-	write_node(state, predicate, predicate_type, NULL, NULL);
+	serd_write_node(fd, &state->base_uri, state->ns,
+	                predicate_type, predicate, NULL, NULL);
 	fwrite(" ", 1, 1, fd);
-	write_node(state, object, object_type, object_datatype, object_lang);
+	serd_write_node(fd, &state->base_uri, state->ns,
+	                object_type, object, object_datatype, object_lang);
 	fwrite(" .\n", 1, 3, fd);
 	return true;
 }

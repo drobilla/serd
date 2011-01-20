@@ -140,22 +140,6 @@ readahead(SerdReader parser, uint8_t* pre, int n)
 	return true;
 }
 
-static inline unsigned
-utf8_char_len(const uint8_t b0)
-{
-	if ((b0 & 0x80) == 0) {  // Starts with `0'
-		return 1;
-	} else if ((b0 & 0xE0) == 0xC0) {  // Starts with `110'
-		return 2;
-	} else if ((b0 & 0xF0) == 0xE0) {  // Starts with `1110'
-		return 3;
-	} else if ((b0 & 0xF8) == 0xF0) {  // Starts with `11110'
-		return 4;
-	} else {
-		return 0;
-	}
-}
-
 static inline uchar
 peek_utf8_char(SerdReader parser, unsigned* n_bytes)
 {
@@ -334,52 +318,82 @@ read_hex(SerdReader parser)
 	}
 }
 
-static inline uchar
-read_hex_escape(SerdReader parser, unsigned length)
+static inline bool
+read_hex_escape(SerdReader parser, unsigned length, Ref dest)
 {
-	uchar   ret      = 0;
-	uint8_t chars[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-	uint8_t code[4]  = { 0, 0, 0, 0 };
+	uint8_t buf[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	for (unsigned i = 0; i < length; ++i) {
-		chars[i] = read_hex(parser);
+		buf[i] = read_hex(parser);
 	}
 
-	sscanf((const char*)chars, "%X", (uint32_t*)code);
-	const uint32_t code_num = *(uint32_t*)code;
-	if (code_num < 0x80) {
-		fprintf(stderr, "1 byte UTF-8 escape\n");
-		return code[0];
-	} else if (code_num < 0x800) {
-		fprintf(stderr, "2 byte UTF-8 escape\n");
-		fprintf(stderr, "B0 %X\n", code[0]);
-		fprintf(stderr, "B1 %X\n", code[1]);
-		fprintf(stderr, "B2 %X\n", code[2]);
-		fprintf(stderr, "B3 %X\n", code[3]);
-		ret = ((0xC0 + ((code[3] & 0x1F) << 2) + ((code[4] & 0xC0) >> 6)) << 8)
-			+ (code[4] & 0x3F);
-		fprintf(stderr, "RET %X\n", ret);
-	} else if (code_num < 0x10000) {
-		fprintf(stderr, "3 byte UTF-8 escape\n");
+	uint32_t c;
+	sscanf((const char*)buf, "%X", &c);
+
+	unsigned size = 0;
+	if (c < 0x00000080) {
+		size = 1;
+	} else if (c < 0x00000800) {
+		size = 2;
+	} else if (c < 0x00010000) {
+		size = 3;
+	} else if (c < 0x00200000) {
+		size = 4;
+	} else if (c < 0x04000000) {
+		size = 5;
+	} else if (c < 0x80000000) {
+		size = 6;
 	} else {
-		fprintf(stderr, "4 byte UTF-8 escape\n");
+		return false;
 	}
-	return ret;
+
+	// Build output in buf
+	// (Note # of bytes = # of leading 1 bits in first byte)
+	switch (size) {
+	case 6:
+		buf[5] = 0x80 | (uint8_t)(c & 0x3F);
+		c >>= 6;
+		c |= (4 << 24);  // set bit 2
+	case 5:
+		buf[4] = 0x80 | (uint8_t)(c & 0x3F);
+		c >>= 6;
+		c |= (8 << 18);  // set bit 3
+	case 4:
+		buf[3] = 0x80 | (uint8_t)(c & 0x3F);
+		c >>= 6;
+		c |= (16 << 12);  // set bit 4
+	case 3:
+		buf[2] = 0x80 | (uint8_t)(c & 0x3F);
+		c >>= 6;
+		c |= (32 << 6);  // set bit 5
+	case 2:
+		buf[1] = 0x80 | (uint8_t)(c & 0x3F);
+		c >>= 6;
+		c |= 0xC0;  // set bits 6 and 7
+	case 1:
+		buf[0] = (uint8_t)c;
+	}
+
+	for (unsigned i = 0; i < size; ++i) {
+		push_char(parser, dest, buf[i]);
+	}
+	return true;
 }
 
-static inline uchar
-character_escape(SerdReader parser, const uchar esc)
+static inline bool
+read_character_escape(SerdReader parser, Ref dest)
 {
-	switch (esc) {
+	switch (peek_char(parser)) {
 	case '\\':
-		return eat_char(parser, '\\');
+		push_char(parser, dest, eat_char(parser, '\\'));
+		return true;
 	case 'u':
-		eat_char(parser, esc);
-		return read_hex_escape(parser, 4);
+		eat_char(parser, 'u');
+		return read_hex_escape(parser, 4, dest);
 	case 'U':
-		eat_char(parser, esc);
-		return read_hex_escape(parser, 8);
+		eat_char(parser, 'U');
+		return read_hex_escape(parser, 8, dest);
 	default:
-		return 0;
+		return false;
 	}
 }
 
@@ -387,117 +401,124 @@ character_escape(SerdReader parser, const uchar esc)
 //                  | '\U' hex hex hex hex hex hex hex hex
 //                  | '\\'
 //                  | [#x20-#x5B] | [#x5D-#x10FFFF]
-static inline uchar
-read_character(SerdReader parser)
+static inline bool
+read_character(SerdReader parser, Ref dest)
 {
 	const uchar c = peek_char(parser);
-	uchar       esc;
 	switch (c) {
 	case '\\':
 		eat_char(parser, '\\');
-		esc = character_escape(parser, peek_char(parser));
-		if (esc) {
-			return esc;
+		if (read_character_escape(parser, dest)) {
+			return true;
 		} else {
-			return error(parser, "illegal escape `\\%c'\n", esc);
+			return error(parser, "invalid escape `\\%c'\n", peek_char(parser));
 		}
 	default:
 		if (in_range(c, 0x20, 0x5B) || in_range(c, 0x5D, 0x10FFF)) {
-			return eat_char(parser, c);
+			push_char(parser, dest, eat_char(parser, c));
+			return true;
 		} else {
-			return error(parser, "illegal character `%c'\n", c);
+			return error(parser, "invalid character `%c'\n", c);
 		}
 	}
 }
 
-static inline uchar
-echaracter_escape(SerdReader parser, const uchar esc)
+static inline bool
+read_echaracter_escape(SerdReader parser, Ref dest)
 {
-	const uchar ret = character_escape(parser, esc);
-	if (ret) {
-		return ret;
+	if (read_character_escape(parser, dest)) {
+		return true;
 	}
-	switch (esc) {
+	switch (peek_char(parser)) {
 	case 't':
 		eat_char(parser, 't');
-		return '\t';
+		push_char(parser, dest, '\t');
+		return true;
 	case 'n':
 		eat_char(parser, 'n');
-		return '\n';
+		push_char(parser, dest, '\n');
+		return true;
 	case 'r':
 		eat_char(parser, 'r');
-		return '\r';
+		push_char(parser, dest, '\r');
+		return true;
 	default:
-		return 0;
+		return false;
 	}
 }
 
 // [39] echaracter ::= character | '\t' | '\n' | '\r'
-static inline uchar
-read_echaracter(SerdReader parser)
+static inline bool
+read_echaracter(SerdReader parser, Ref dest)
 {
 	uchar c = peek_char(parser);
-	uchar esc;
 	switch (c) {
 	case '\\':
 		eat_char(parser, '\\');
-		esc = echaracter_escape(parser, peek_char(parser));
-		if (esc) {
-			return esc;
+		if (read_echaracter_escape(parser, peek_char(parser))) {
+			return true;
 		} else {
-			return error(parser, "illegal escape `\\%c'\n", esc);
+			return error(parser, "illegal escape `\\%c'\n", peek_char(parser));
 		}
 	default:
-		return read_character(parser);
+		return read_character(parser, dest);
 	}
 }
 
-static inline uchar
-scharacter_escape(SerdReader parser, const uchar esc)
+static inline bool
+read_scharacter_escape(SerdReader parser, Ref dest)
 {
-	const uchar ret = echaracter_escape(parser, esc);
-	if (ret) {
-		return ret;
-	} else if (esc == '"') {
-		return eat_char(parser, '"');
+	if (read_echaracter_escape(parser, dest)) {
+		return true;
+	} else if (peek_char(parser) == '"') {
+		push_char(parser, dest, eat_char(parser, '"'));
+		return true;
 	}
-	return 0;
+	return false;
 }
 
-static inline uchar
-ucharacter_escape(SerdReader parser, const uchar esc)
+static inline bool
+read_ucharacter_escape(SerdReader parser, Ref dest)
 {
-	const uchar ret = echaracter_escape(parser, esc);
-	if (ret) {
-		return ret;
-	} else if (esc == '>') {
-		return eat_char(parser, '>');
+	if (read_echaracter_escape(parser, dest)) {
+		return true;
+	} else if (peek_char(parser) == '>') {
+		push_char(parser, dest, eat_char(parser, '>'));
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 // [43] lcharacter ::= echaracter | '\"' | #x9 | #xA | #xD
-static inline uchar
-read_lcharacter(SerdReader parser, bool* is_escape)
+static inline bool
+read_lcharacter(SerdReader parser, Ref dest)
 {
-	*is_escape = false;
-	const uchar c = peek_char(parser);
-	uchar       esc;
+	uchar   c = peek_char(parser);
+	uint8_t pre[3];
 	switch (c) {
+	case '"':
+		readahead(parser, pre, 3);
+		if (pre[1] == '\"' && pre[2] == '\"') {
+			eat_char(parser, '\"');
+			eat_char(parser, '\"');
+			eat_char(parser, '\"');
+			return false;
+		} else {
+			push_char(parser, dest, eat_char(parser, '"'));
+			return true;
+		}
 	case '\\':
 		eat_char(parser, '\\');
-		esc = scharacter_escape(parser, peek_char(parser));
-		if (esc) {
-			*is_escape = true;
-			return esc;
+		if (read_scharacter_escape(parser, dest)) {
+			return true;
 		} else {
-			return error(parser, "illegal escape `\\%c'\n", esc);
+			return error(parser, "illegal escape `\\%c'\n", peek_char(parser));
 		}
 	case 0x9: case 0xA: case 0xD:
-		eat_char(parser, c);
+		push_char(parser, dest, eat_char(parser, c));
 		return c;
 	default:
-		return read_echaracter(parser);
+		return read_echaracter(parser, dest);
 	}
 }
 
@@ -506,48 +527,39 @@ static inline bool
 read_scharacter(SerdReader parser, Ref dest)
 {
 	uchar c = peek_char(parser);
-	uchar esc;
 	switch (c) {
 	case '\\':
 		eat_char(parser, '\\');
-		esc = scharacter_escape(parser, peek_char(parser));
-		if (esc) {
-			push_char(parser, dest, esc);
+		if (read_scharacter_escape(parser, dest)) {
 			return true;
 		} else {
-			return error(parser, "illegal escape `\\%c'\n", esc);
+			return error(parser, "illegal escape `\\%c'\n", peek_char(parser));
 		}
 	case '\"':
 		return false;
 	default:
-		c = read_character(parser);
-		if (c) {
-			push_char(parser, dest, c);
-		}
-		return c;
+		return read_character(parser, dest);
 	}
 }
 
 // Spec:   [41] ucharacter ::= ( character - #x3E ) | '\>'
 // Actual: [41] ucharacter ::= ( echaracter - #x3E ) | '\>'
-static inline uchar
-read_ucharacter(SerdReader parser)
+static inline bool
+read_ucharacter(SerdReader parser, Ref dest)
 {
-	const uchar c = peek_char(parser);
-	uchar       esc;
+	uchar c = peek_char(parser);
 	switch (c) {
 	case '\\':
 		eat_char(parser, '\\');
-		esc = ucharacter_escape(parser, peek_char(parser));
-		if (esc) {
-			return esc;
+		if (read_ucharacter_escape(parser, dest)) {
+			return true;
 		} else {
-			return error(parser, "illegal escape `\\%c'\n", esc);
+			return error(parser, "illegal escape `\\%c'\n", peek_char(parser));
 		}
 	case '>':
-		return 0;
+		return false;
 	default:
-		return read_character(parser);
+		return read_character(parser, dest);
 	}
 }
 
@@ -607,21 +619,7 @@ read_longString(SerdReader parser)
 {
 	eat_string(parser, "\"\"\"", 3);
 	Ref   str = push_string(parser, "", 1);
-	uchar c;
-	bool  is_escape = false;
-	while ((c = read_lcharacter(parser, &is_escape)) != 0) {
-		if (c == '\"' && !is_escape) {
-			uint8_t pre[2];
-			readahead(parser, pre, 2);
-			if (pre[0] == '\"' && pre[1] == '\"') {
-				eat_char(parser, '\"');
-				eat_char(parser, '\"');
-				return str;
-			}
-		}
-		push_char(parser, str, c);
-	}
-	eat_string(parser, "\"\"\"", 3);
+	while (read_lcharacter(parser, str)) {}
 	return str;
 }
 
@@ -658,11 +656,8 @@ read_quotedString(SerdReader parser)
 static inline Ref
 read_relativeURI(SerdReader parser)
 {
-	uchar c;
-	Ref   str = push_string(parser, "", 1);
-	while ((c = read_ucharacter(parser)) != 0) {
-		push_char(parser, str, c);
-	}
+	Ref str = push_string(parser, "", 1);
+	while (read_ucharacter(parser, str)) {}
 	return str;
 }
 

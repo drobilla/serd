@@ -32,48 +32,6 @@ struct SerdNamespacesImpl {
 	size_t         n_namespaces;
 };
 
-static inline size_t
-utf8_strlen(const uint8_t* utf8, size_t* out_n_bytes)
-{
-	size_t n_chars = 0;
-	size_t i       = 0;
-	for (; utf8[i]; ++i) {
-		if ((utf8[i] & 0xC0) != 0x80) {
-			// Does not start with `10', start of a new character
-			++n_chars;
-		}
-	}
-	if (out_n_bytes) {
-		*out_n_bytes = i + 1;
-	}
-	return n_chars;
-}
-
-SERD_API
-SerdString*
-serd_string_new(const uint8_t* utf8)
-{
-	size_t n_bytes;
-	size_t n_chars = utf8_strlen(utf8, &n_bytes);
-	SerdString* const str = malloc(sizeof(SerdString) + n_bytes);
-	str->n_bytes = n_bytes;
-	str->n_chars = n_chars;
-	memcpy(str->buf, utf8, str->n_bytes);
-	return str;
-}
-
-SERD_API
-SerdString*
-serd_string_copy(const SerdString* s)
-{
-	if (s) {
-		SerdString* const copy = malloc(sizeof(SerdString) + s->n_bytes);
-		memcpy(copy, s, sizeof(SerdString) + s->n_bytes);
-		return copy;
-	}
-	return NULL;
-}
-
 SERD_API
 SerdNamespaces
 serd_namespaces_new()
@@ -148,9 +106,9 @@ serd_namespaces_expand(SerdNamespaces    ns,
 	SerdNamespace* const record = serd_namespaces_find(ns, qname->buf, colon - qname->buf);
 	if (record) {
 		uri_prefix->buf = record->uri->buf;
-		uri_prefix->len = record->uri->n_bytes;
+		uri_prefix->len = record->uri->n_bytes - 1;
 		uri_suffix->buf = colon + 1;
-		uri_suffix->len = qname->n_bytes - (colon - qname->buf) - 1;
+		uri_suffix->len = qname->n_bytes - (colon - qname->buf) - 2;
 		return true;
 	}
 	return false;

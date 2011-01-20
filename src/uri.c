@@ -260,10 +260,9 @@ serd_uri_resolve(const SerdURI* r, const SerdURI* base, SerdURI* t)
 	return true;
 }
 
-typedef size_t (*Sink)(const void* data, size_t size, size_t nmemb, void* stream);
-
-static size_t
-serd_uri_serialise_internal(const SerdURI* uri, Sink sink, void* stream)
+SERD_API
+size_t
+serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream)
 {
 	/* See http://tools.ietf.org/html/rfc3986#section-5.3 */
 
@@ -271,16 +270,16 @@ serd_uri_serialise_internal(const SerdURI* uri, Sink sink, void* stream)
 #define WRITE(buf, len) \
 	write_size += len; \
 	if (len) { \
-		sink(buf, 1, len, stream); \
+		sink((const uint8_t*)buf, len, stream); \
 	}
 #define WRITE_CHAR(c) WRITE(&(c), 1)
 #define WRITE_COMPONENT(prefix, field, suffix) \
 	if ((field).len) { \
-		for (const char* c = prefix; *c != '\0'; ++c) { \
+		for (const uint8_t* c = (const uint8_t*)prefix; *c != '\0'; ++c) { \
 			WRITE(c, 1); \
 		} \
 		WRITE((field).buf, (field).len); \
-		for (const char* c = suffix; *c != '\0'; ++c) { \
+		for (const uint8_t* c = (const uint8_t*)suffix; *c != '\0'; ++c) { \
 			WRITE(c, 1); \
 		} \
 	}
@@ -354,26 +353,9 @@ serd_uri_serialise_internal(const SerdURI* uri, Sink sink, void* stream)
 		// Note uri->fragment.buf includes the leading `#'
 		WRITE_COMPONENT("", uri->fragment, "");
 	}
-	WRITE("\0", 1);
 	return write_size;
 }
 
-SERD_API
-bool
-serd_uri_write(const SerdURI* uri, FILE* file)
-{
-	//#if 0
-	SerdURI           flat_uri;
-	SerdString* const flat_uri_str = serd_uri_serialise(uri, &flat_uri);
-	if (flat_uri_str) {
-		fwrite(flat_uri_str->buf, 1, flat_uri_str->n_bytes - 1, file);
-		free(flat_uri_str);
-		return true;
-	}
-	return false;
-	//#endif
-	//return (serd_uri_serialise_internal(uri, (Sink)fwrite, file) > 0);
-}
 
 static size_t
 serd_uri_string_length(const SerdURI* uri)
@@ -393,18 +375,17 @@ serd_uri_string_length(const SerdURI* uri)
 }
 
 static size_t
-string_write(const void* data, size_t size, size_t nmemb, void* stream)
+string_sink(const uint8_t* buf, size_t len, void* stream)
 {
-	uint8_t**    ptr        = (uint8_t**)stream;
-	const size_t write_size = (size * nmemb);
-	memcpy(*ptr, data, write_size);
-	*ptr += write_size;
-	return nmemb;
+	uint8_t** ptr = (uint8_t**)stream;
+	memcpy(*ptr, buf, len);
+	*ptr += len;
+	return len;
 }
 
 SERD_API
 SerdString*
-serd_uri_serialise(const SerdURI* uri, SerdURI* out)
+serd_string_new_from_uri(const SerdURI* uri, SerdURI* out)
 {
 	const size_t len = serd_uri_string_length(uri);
 	SerdString*  str = malloc(sizeof(SerdString) + len + 1);
@@ -412,10 +393,10 @@ serd_uri_serialise(const SerdURI* uri, SerdURI* out)
 	str->n_chars = len;  // FIXME: UTF-8
 
 	uint8_t* ptr = str->buf;
-	const size_t actual_len = serd_uri_serialise_internal(uri, string_write, &ptr);
+	const size_t actual_len = serd_uri_serialise(uri, string_sink, &ptr);
 	
-	str->buf[actual_len] = '\0';
-	str->n_bytes = actual_len;
+	str->buf[actual_len + 1] = '\0';
+	str->n_bytes = actual_len + 1;
 	str->n_chars = str->n_bytes - 1;
 
 	#ifdef URI_DEBUG
