@@ -381,7 +381,6 @@ SerdString*
 serd_string_new_from_uri(const SerdURI* uri, SerdURI* out)
 {
 	const size_t len = serd_uri_string_length(uri);
-	//SerdString*  str = calloc(sizeof(SerdString) + len + 1, 1);
 	SerdString*  str = malloc(sizeof(SerdString) + len + 1);
 	str->n_bytes = len + 1;
 	str->n_chars = len;  // FIXME: UTF-8
@@ -389,9 +388,9 @@ serd_string_new_from_uri(const SerdURI* uri, SerdURI* out)
 	uint8_t* ptr = str->buf;
 	const size_t actual_len = serd_uri_serialise(uri, string_sink, &ptr);
 
-	str->buf[actual_len + 1] = '\0';
+	str->buf[actual_len] = '\0';
 	str->n_bytes = actual_len + 1;
-	str->n_chars = str->n_bytes - 1;
+	str->n_chars = str->n_bytes - 1;  // FIXME: UTF-8
 
 	#ifdef URI_DEBUG
 	fwrite("URI: `'", 1, 6, stderr);
