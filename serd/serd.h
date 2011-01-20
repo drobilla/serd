@@ -53,9 +53,8 @@ extern "C" {
  * @{
  */
 
-typedef struct SerdNamespacesImpl* SerdNamespaces;
-typedef struct SerdReaderImpl*     SerdReader;
-
+typedef struct SerdNamespacesImpl* SerdNamespaces;  ///< Set of namespaces
+typedef struct SerdReaderImpl*     SerdReader;      ///< RDF reader
 
 /** RDF syntax */
 typedef enum {
@@ -75,21 +74,24 @@ typedef enum {
  * @{
  */
 
-/* Range of memory. */
+/** A chunk of memory (non-terminated string). */
 typedef struct {
-	const uint8_t* buf;
-	size_t         len;
-} SerdRange;
+	const uint8_t* buf;  ///< Start of chunk
+	size_t         len;  ///< Length of chunk in bytes
+} SerdChunk;
 
-/* Parsed URI. */
+/** A parsed URI.
+ * This struct directly refers to chunks in other strings, it does not own
+ * any memory itself.  Thus, URIs can be parsed and/or resolved against a
+ * base URI in-place without allocating memory.
+ */
 typedef struct {
-	SerdRange scheme;     ///< Scheme
-	SerdRange authority;  ///< Authority
-	SerdRange path_base;  ///< Path prefix if relative
-	SerdRange path;       ///< Path suffix
-	SerdRange query;      ///< Query
-	SerdRange fragment;   ///< Fragment
-	bool      base_uri_has_authority;  ///< True iff base URI has authority
+	SerdChunk scheme;     ///< Scheme
+	SerdChunk authority;  ///< Authority
+	SerdChunk path_base;  ///< Path prefix if relative
+	SerdChunk path;       ///< Path suffix
+	SerdChunk query;      ///< Query
+	SerdChunk fragment;   ///< Fragment
 } SerdURI;
 
 /** Return true iff @a utf8 is a relative URI string. */
@@ -149,6 +151,7 @@ SerdString*
 serd_string_new_from_uri(const SerdURI* uri,
                          SerdURI*       out);
 
+/** Write a node to @a file. */
 SERD_API
 bool
 serd_write_node(FILE*             file,
@@ -237,8 +240,8 @@ SERD_API
 bool
 serd_namespaces_expand(SerdNamespaces     ns,
                        const SerdString*  qname,
-                       SerdRange*         uri_prefix,
-                       SerdRange*         uri_suffix);
+                       SerdChunk*         uri_prefix,
+                       SerdChunk*         uri_suffix);
 
 /** @} */
 

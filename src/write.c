@@ -115,8 +115,8 @@ serd_write_node(FILE*             fd,
                 const SerdString* datatype,
                 const SerdString* lang)
 {
-	SerdRange uri_prefix;
-	SerdRange uri_suffix;
+	SerdChunk uri_prefix;
+	SerdChunk uri_suffix;
 	switch (type) {
 	case BLANK:
 		fwrite("_:", 1, 2, fd);

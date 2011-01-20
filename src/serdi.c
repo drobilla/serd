@@ -39,7 +39,7 @@ event_base(void*             handle,
 		return false;
 	}
 
-	SerdURI     base_uri = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},false};
+	SerdURI     base_uri = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
 	SerdString* base_uri_str;
 	if (!uri.scheme.len) {
 		// URI has no scheme (relative by definition), resolve

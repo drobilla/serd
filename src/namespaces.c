@@ -95,8 +95,8 @@ SERD_API
 bool
 serd_namespaces_expand(SerdNamespaces    ns,
                        const SerdString* qname,
-                       SerdRange*        uri_prefix,
-                       SerdRange*        uri_suffix)
+                       SerdChunk*        uri_prefix,
+                       SerdChunk*        uri_suffix)
 {
 	const uint8_t* colon = memchr((const char*)qname->buf, ':', qname->n_bytes);
 	if (!colon) {

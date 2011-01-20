@@ -93,7 +93,7 @@ SERD_API
 bool
 serd_uri_parse(const uint8_t* utf8, SerdURI* uri)
 {
-	static const SerdURI null_uri = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},false};
+	static const SerdURI null_uri = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
 	*uri = null_uri;
 	assert(uri->path_base.buf == NULL);
 	assert(uri->path_base.len == 0);
