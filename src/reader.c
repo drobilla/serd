@@ -288,6 +288,11 @@ static void
 pop_string(SerdReader parser, Ref ref)
 {
 	if (ref) {
+		if (ref == parser->rdf_nil.value
+		    || ref == parser->rdf_first.value
+		    || ref == parser->rdf_rest.value) {
+			return;
+		}
 		#ifdef STACK_DEBUG
 		if (!stack_is_top_string(parser, ref)) {
 			fprintf(stderr, "attempt to pop non-top string %s\n", deref(parser, ref)->buf);
