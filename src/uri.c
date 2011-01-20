@@ -44,29 +44,28 @@ is_digit(const uint8_t c)
 	return in_range(c, '0', '9');
 }
 
-/** Return true if @a uri is relative (i.e. does not start with a scheme) */
 SERD_API
 bool
-serd_uri_string_is_relative(const uint8_t* utf8)
+serd_uri_string_has_scheme(const uint8_t* utf8)
 {
 	// RFC3986: scheme ::= ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
 	if (!is_alpha(utf8[0])) {
-		return true;  // Invalid scheme initial character, URI is relative
+		return false;  // Invalid scheme initial character, URI is relative
 	}
 	for (uint8_t c = *++utf8; (c = *utf8) != '\0'; ++utf8) {
 		switch (c) {
 		case ':':
-			return false;  // End of scheme, URI is absolute
+			return true;  // End of scheme
 		case '+': case '-': case '.':
 			break;  // Valid scheme character, continue
 		default:
 			if (!is_alpha(c) && !is_digit(c)) {
-				return true;  // Invalid scheme character, URI is relative
+				return false;  // Invalid scheme character
 			}
 		}
 	}
 
-	return true;
+	return false;
 }
 
 #ifdef URI_DEBUG
@@ -93,8 +92,7 @@ SERD_API
 bool
 serd_uri_parse(const uint8_t* utf8, SerdURI* uri)
 {
-	static const SerdURI null_uri = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
-	*uri = null_uri;
+	*uri = SERD_URI_NULL;
 	assert(uri->path_base.buf == NULL);
 	assert(uri->path_base.len == 0);
 	assert(uri->authority.len == 0);

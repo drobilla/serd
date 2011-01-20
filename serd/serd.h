@@ -96,10 +96,12 @@ typedef struct {
 	SerdChunk fragment;   ///< Fragment
 } SerdURI;
 
-/** Return true iff @a utf8 is a relative URI string. */
+static const SerdURI SERD_URI_NULL = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
+
+/** Return true iff @a utf8 starts with a valid URI scheme. */
 SERD_API
 bool
-serd_uri_string_is_relative(const uint8_t* utf8);
+serd_uri_string_has_scheme(const uint8_t* utf8);
 
 /** Parse @a utf8, writing result to @a out. */
 SERD_API

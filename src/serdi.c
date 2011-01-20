@@ -39,7 +39,7 @@ event_base(void*             handle,
 		return false;
 	}
 
-	SerdURI     base_uri = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
+	SerdURI     base_uri = SERD_URI_NULL;
 	SerdString* base_uri_str;
 	if (!uri.scheme.len) {
 		// URI has no scheme (relative by definition), resolve
@@ -74,7 +74,7 @@ event_prefix(void*             handle,
              const SerdString* uri_string)
 {
 	State* const state = (State*)handle;
-	if (serd_uri_string_is_relative(uri_string->buf)) {
+	if (!serd_uri_string_has_scheme(uri_string->buf)) {
 		SerdURI uri;
 		if (!serd_uri_parse(uri_string->buf, &uri)) {
 			return false;
@@ -115,24 +115,49 @@ event_statement(void*             handle,
 }
 
 int
+print_usage(const char* name, bool error)
+{
+	FILE* const os = error ? stderr : stdout;
+	fprintf(os, "Usage: %s INPUT [BASE_URI]\n", name);
+	fprintf(os, "Read and write RDF syntax.\n");
+	return error ? 1 : 0;
+}
+
+int
 main(int argc, char** argv)
 {
-	if (/*argc != 2 && */argc != 3) {
-		fprintf(stderr, "Bad parameters\n");
-		return 1;
+	if (argc != 2 && argc != 3) {
+		return print_usage(argv[0], true);
 	}
 
-	const uint8_t* const in_filename  = (uint8_t*)argv[1];
-	const uint8_t*       base_uri_str = in_filename;
+	const uint8_t* in_filename = (const uint8_t*)argv[1];
 
-	SerdURI base_uri;
-	if (argc > 2) {
-		base_uri_str = (const uint8_t*)argv[2];
-		if (!serd_uri_parse(base_uri_str, &base_uri)) {
-			fprintf(stderr, "invalid base uri: %s\n", base_uri_str);
+	if (serd_uri_string_has_scheme(in_filename)) {
+		// Input is an absolute URI, ensure it's a file: URI and chop scheme
+		if (strncmp((const char*)in_filename, "file:", 5)) {
+			fprintf(stderr, "unsupported URI scheme `%s'\n", in_filename);
 			return 1;
+		} else if (!strncmp((const char*)in_filename, "file:///", 7)) {
+			in_filename += 7;
+		} else {
+			in_filename += 5;
 		}
 	}
+
+	SerdString* base_uri_str = NULL;
+	SerdURI     base_uri;
+	if (argc > 2) {  // Base URI given on command line
+		const uint8_t* const in_base_uri = (const uint8_t*)argv[2];
+		if (!serd_uri_parse((const uint8_t*)in_base_uri, &base_uri)) {
+			fprintf(stderr, "invalid base URI `%s'\n", argv[2]);
+			return 1;
+		}
+		base_uri_str = serd_string_new(in_base_uri);
+	} else {  // Use input file URI
+		base_uri_str = serd_string_new(in_filename);
+	}
+
+	serd_uri_parse(base_uri_str->buf, &base_uri);
 
 	FILE* const in_fd  = fopen((const char*)in_filename,  "r");
 	FILE*       out_fd = stdout;
@@ -145,7 +170,7 @@ main(int argc, char** argv)
 	SerdNamespaces ns = serd_namespaces_new();
 	State state = { serd_writer_new(SERD_NTRIPLES, ns, out_fd, &base_uri),
 	                ns,
-	                serd_string_new(base_uri_str),
+	                base_uri_str,
 	                base_uri };
 
 	SerdReader reader = serd_reader_new(

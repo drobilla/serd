@@ -142,7 +142,7 @@ serd_write_node(SerdWriter        writer,
 		fwrite(">", 1, 1, fd);
 		break;
 	case URI:
-		if (serd_uri_string_is_relative(str->buf)) {
+		if (!serd_uri_string_has_scheme(str->buf)) {
 			SerdURI uri;
 			if (serd_uri_parse(str->buf, &uri)) {
 				SerdURI abs_uri;
