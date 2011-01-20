@@ -1,6 +1,6 @@
 /* Serd, an RDF serialisation library.
  * Copyright 2011 David Robillard <d@drobilla.net>
- * 
+ *
  * Serd is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -202,7 +202,7 @@ end:
 	serd_uri_dump(uri, stderr);
 	fprintf(stderr, "\n");
 	#endif
-	
+
 	return true;
 }
 
@@ -212,11 +212,10 @@ serd_uri_resolve(const SerdURI* r, const SerdURI* base, SerdURI* t)
 {
 	assert(!r->scheme.len);  // r is relative
 
-	/** See http://tools.ietf.org/html/rfc3986#section-5.2.2 */
+	// See http://tools.ietf.org/html/rfc3986#section-5.2.2
 
-	t->path_base.buf          = NULL;
-	t->path_base.len          = 0;
-	t->base_uri_has_authority = base->authority.len;
+	t->path_base.buf = NULL;
+	t->path_base.len = 0;
 	if (r->scheme.len) {
 		t->scheme    = r->scheme;
 		t->authority = r->authority;
@@ -264,7 +263,7 @@ SERD_API
 size_t
 serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream)
 {
-	/* See http://tools.ietf.org/html/rfc3986#section-5.3 */
+	// See http://tools.ietf.org/html/rfc3986#section-5.3
 
 	size_t write_size = 0;
 #define WRITE(buf, len) \
@@ -293,39 +292,33 @@ serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream)
 			/* Merge paths, removing dot components.
 			   See http://tools.ietf.org/html/rfc3986#section-5.2.3
 			*/
-			if (uri->base_uri_has_authority && !uri->path_base.len) {
-				WRITE("/", 1);
-				WRITE_COMPONENT("", uri->path, "");
-			} else {
-				const uint8_t* uri_first = uri->path.buf;
-				const uint8_t* uri_end   = uri_first;
-				size_t         up        = 1;
-				if (uri_first) {
-					// Count and skip leading dot components
-					uri_end = uri->path.buf + uri->path.len;
-					while (uri_first < uri_end) {
-						if (!memcmp((const char*)uri_first, "./", 2)) {
-							uri_first += 2;
-						} else if (!memcmp((const char*)uri_first, "../", 3)) {
-							++up;
-							uri_first += 3;
-						} else if (!memcmp((const char*)uri_first, "..", 2)) {
-							++up;
-							uri_first += 2;
-						} else if (!memcmp((const char*)uri_first, ".", 1)) {
-							++uri_first;
-						} else if (!memcmp((const char*)uri_first, "//", 1)) {
-							++uri_first;
-						} else {
-							break;
-						}
+			const uint8_t* uri_first = uri->path.buf;
+			const uint8_t* uri_end   = uri_first;
+			size_t         up        = 1;
+			if (uri_first) {
+				// Count and skip leading dot components
+				uri_end = uri->path.buf + uri->path.len;
+				while (uri_first < uri_end) {
+					if (!memcmp((const char*)uri_first, "./", 2)) {
+						uri_first += 2;
+					} else if (!memcmp((const char*)uri_first, "../", 3)) {
+						++up;
+						uri_first += 3;
+					} else if (!memcmp((const char*)uri_first, "..", 2)) {
+						++up;
+						uri_first += 2;
+					} else if (!memcmp((const char*)uri_first, ".", 1)) {
+						++uri_first;
+					} else if (!memcmp((const char*)uri_first, "//", 1)) {
+						++uri_first;
+					} else {
+						break;
 					}
 				}
 
 				if (uri->path.buf && uri->path_base.buf) {
 					// Find the up'th last slash
 					const uint8_t* base_last = uri->path_base.buf + uri->path_base.len - 1;
-					//for (; base_last > uri->path_base.buf; --base_last) {
 					do {
 						if (*base_last == '/') {
 							--up;
@@ -338,7 +331,7 @@ serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream)
 
 				} else {
 					// Relative path is just query or fragment, append it to full base URI
-					WRITE_COMPONENT("",  uri->path_base, "");
+					WRITE_COMPONENT("", uri->path_base, "");
 				}
 
 				// Write URI suffix
@@ -364,7 +357,7 @@ serd_uri_string_length(const SerdURI* uri)
 
 #define ADD_LEN(field, n_delims) \
 	if ((field).len) { len += (field).len + (n_delims); }
-	
+
 	ADD_LEN(uri->path,      1);  // + possible leading `/'
 	ADD_LEN(uri->scheme,    1);  // + trailing `:'
 	ADD_LEN(uri->authority, 2);  // + leading `//'
@@ -388,13 +381,14 @@ SerdString*
 serd_string_new_from_uri(const SerdURI* uri, SerdURI* out)
 {
 	const size_t len = serd_uri_string_length(uri);
+	//SerdString*  str = calloc(sizeof(SerdString) + len + 1, 1);
 	SerdString*  str = malloc(sizeof(SerdString) + len + 1);
 	str->n_bytes = len + 1;
 	str->n_chars = len;  // FIXME: UTF-8
 
 	uint8_t* ptr = str->buf;
 	const size_t actual_len = serd_uri_serialise(uri, string_sink, &ptr);
-	
+
 	str->buf[actual_len + 1] = '\0';
 	str->n_bytes = actual_len + 1;
 	str->n_chars = str->n_bytes - 1;

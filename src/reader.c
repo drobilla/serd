@@ -1,6 +1,6 @@
 /* Serd, an RDF serialisation library.
  * Copyright 2011 David Robillard <d@drobilla.net>
- * 
+ *
  * Serd is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -76,7 +76,7 @@ struct SerdReaderImpl {
 	unsigned             next_id;
 	int                  err;
 	uint8_t*             read_buf;
-	int32_t              read_head; ///< Offset into read_buf
+	int32_t              read_head;  ///< Offset into read_buf
 	bool                 eof;
 #ifdef STACK_DEBUG
 	Ref*                 alloc_stack;  ///< Stack of push offsets
@@ -124,7 +124,6 @@ readahead(SerdReader parser, uint8_t* pre, int n)
 	uint8_t* ptr = parser->read_buf + parser->read_head;
 	for (int i = 0; i < n; ++i) {
 		if (parser->read_head + i >= READ_BUF_LEN) {
-			//fprintf(stderr, "PAGE FAULT DURING READAHEAD\n");
 			if (!page(parser)) {
 				return false;
 			}
@@ -276,7 +275,6 @@ pop_string(SerdReader parser, Ref ref)
 		assert(stack_is_top_string(parser, ref));
 		--parser->n_allocs;
 		#endif
-		//fprintf(stderr, " * POP  `%s'\n", deref(parser, ref)->buf);
 		parser->stack.size -= deref(parser, ref)->n_bytes;
 	}
 }
@@ -648,7 +646,11 @@ read_relativeURI(SerdReader parser)
 {
 	Ref str = push_string(parser, "", 1);
 	while (read_ucharacter(parser, str)) {}
-	return str;
+	if (!parser->err) {
+		return str;
+	}
+	pop_string(parser, str);
+	return 0;
 }
 
 // [30] nameStartChar ::= [A-Z] | "_" | [a-z]
@@ -754,8 +756,11 @@ read_uriref(SerdReader parser)
 {
 	eat_byte(parser, '<');
 	Ref const str = read_relativeURI(parser);
-	eat_byte(parser, '>');
-	return str;
+	if (str) {
+		eat_byte(parser, '>');
+		return str;
+	}
+	return 0;
 }
 
 // [27] qname ::= prefixName? ':' name?
@@ -768,8 +773,10 @@ read_qname(SerdReader parser)
 	}
 	push_byte(parser, prefix, eat_byte(parser, ':'));
 	Ref str = read_name(parser, prefix, false);
-	if (parser->err)
+	if (parser->err) {
+		pop_string(parser, prefix);
 		return 0;
+	}
 	return str ? str : prefix;
 }
 
@@ -937,7 +944,7 @@ static Ref
 blank_id(SerdReader parser)
 {
 	char str[32];
-	const int len = snprintf(str, 32, "genid%u", parser->next_id++);
+	const int len = snprintf(str, sizeof(str), "genid%u", parser->next_id++);
 	return push_string(parser, str, len + 1);
 }
 
@@ -1097,7 +1104,6 @@ read_predicateObjectList(SerdReader parser, const Node* subject)
 			read_ws_star(parser);
 		}
 	}
-	//pop_string(parser, predicate.value);
 	return true;
 except:
 	pop_string(parser, predicate.value);
@@ -1139,13 +1145,13 @@ read_collection(SerdReader parser, Node* dest)
 		*dest = parser->rdf_nil;
 		return true;
 	}
-	
+
 	*dest = make_node(BLANK, blank_id(parser), 0, 0);
 	if (!read_object(parser, dest, &parser->rdf_first)) {
 		pop_string(parser, dest->value);
 		return error(parser, "unexpected end of collection\n");
 	}
-	
+
 	return read_collection_rec(parser, dest);
 }
 
@@ -1262,7 +1268,7 @@ read_turtleDoc(SerdReader parser)
 	while (!parser->err && !parser->eof) {
 		TRY_RET(read_statement(parser));
 	}
-	return true;//!parser->err;
+	return !parser->err;
 }
 
 SERD_API
@@ -1286,7 +1292,7 @@ serd_reader_new(SerdSyntax           syntax,
 	reader->cur               = cur;
 	reader->next_id           = 1;
 	reader->err               = 0;
-	reader->read_buf          = (uint8_t*)malloc(READ_BUF_LEN) + MAX_READAHEAD;
+	reader->read_buf          = (uint8_t*)malloc(READ_BUF_LEN * 2);
 	reader->read_head         = 0;
 	reader->eof               = false;
 #ifdef STACK_DEBUG
@@ -1294,7 +1300,27 @@ serd_reader_new(SerdSyntax           syntax,
 	reader->n_allocs          = 0;
 #endif
 
+	memset(reader->read_buf, '\0', READ_BUF_LEN * 2);
+
+	/* Read into the second page of the buffer.  Occasionally readahead
+	   will move the read_head to before this point when readahead causes
+	   a page fault.
+	*/
+	reader->read_buf += READ_BUF_LEN;  // Read 1 page in
 	return reader;
+}
+
+SERD_API
+void
+serd_reader_free(SerdReader reader)
+{
+	SerdReader const me = (SerdReader)reader;
+#ifdef STACK_DEBUG
+	free(me->alloc_stack);
+#endif
+	free(me->stack.buf);
+	free(me->read_buf - READ_BUF_LEN);
+	free(me);
 }
 
 SERD_API
@@ -1319,17 +1345,4 @@ serd_reader_read_file(SerdReader reader, FILE* file, const uint8_t* name)
 	me->fd  = 0;
 	me->cur = cur;
 	return ret;
-}
-
-SERD_API
-void
-serd_reader_free(SerdReader reader)
-{
-	SerdReader const me = (SerdReader)reader;
-#ifdef STACK_DEBUG
-	free(me->alloc_stack);
-#endif
-	free(me->stack.buf);
-	free(me->read_buf - MAX_READAHEAD);
-	free(me);
 }

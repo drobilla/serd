@@ -1,6 +1,6 @@
 /* Serd, an RDF serialisation library.
  * Copyright 2011 David Robillard <d@drobilla.net>
- * 
+ *
  * Serd is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -102,7 +102,7 @@ serd_namespaces_expand(SerdNamespaces    ns,
 	if (!colon) {
 		return false;  // Illegal qname
 	}
-	
+
 	SerdNamespace* const record = serd_namespaces_find(ns, qname->buf, colon - qname->buf);
 	if (record) {
 		uri_prefix->buf = record->uri->buf;

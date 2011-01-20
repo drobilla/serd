@@ -138,11 +138,11 @@ def test(ctx):
 			Logs.pprint('GREEN', 'PASS: %s output is correct' % test)
 	print
 	
-#	commands = []
-#	bad_tests = glob.glob('tests/bad-*.ttl')
-#	bad_tests.sort()
-#	for test in bad_tests:
-#	    commands = commands + [ './serdi_static ../%s \'http://www.w3.org/2001/sw/DataAccess/df1/%s\' > %s.out' % (test, test, test) ]
-#
-#	autowaf.run_tests(ctx, APPNAME, commands, 1)
-#
+	commands = []
+	bad_tests = glob.glob('tests/bad-*.ttl')
+	bad_tests.sort()
+	for test in bad_tests:
+	    commands = commands + [ './serdi_static ../%s \'http://www.w3.org/2001/sw/DataAccess/df1/%s\' > %s.out' % (test, test, test) ]
+
+	autowaf.run_tests(ctx, APPNAME, commands, 1)
+

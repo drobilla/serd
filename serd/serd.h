@@ -1,6 +1,6 @@
 /* Serd, an RDF serialisation library.
  * Copyright 2011 David Robillard <d@drobilla.net>
- * 
+ *
  * Serd is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -13,6 +13,10 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/* @file
+ * Public Serd API.
  */
 
 #ifndef SERD_SERD_H
@@ -40,9 +44,9 @@
 	#define SERD_API
 #endif
 
-/* @file
- * Public Serd API.
- */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** @defgroup serd Serd
  * @brief A lightweight RDF Serialisation Library.
@@ -79,13 +83,13 @@ typedef struct {
 
 /* Parsed URI. */
 typedef struct {
-	SerdRange scheme; ///< Scheme
-	SerdRange authority; ///< Authority
-	SerdRange path_base; ///< Path prefix if relative
-	SerdRange path; ///< Path suffix
-	SerdRange query; ///< Query
-	SerdRange fragment; ///< Fragment
-	bool      base_uri_has_authority; ///< True iff base URI has authority
+	SerdRange scheme;     ///< Scheme
+	SerdRange authority;  ///< Authority
+	SerdRange path_base;  ///< Path prefix if relative
+	SerdRange path;       ///< Path suffix
+	SerdRange query;      ///< Query
+	SerdRange fragment;   ///< Fragment
+	bool      base_uri_has_authority;  ///< True iff base URI has authority
 } SerdURI;
 
 /** Return true iff @a utf8 is a relative URI string. */
@@ -137,7 +141,7 @@ serd_string_new(const uint8_t* utf8);
 /** Copy @a string. */
 SERD_API
 SerdString*
-serd_string_copy(const SerdString* string);
+serd_string_copy(const SerdString* str);
 
 /** Serialise @a uri to a string. */
 SERD_API
@@ -239,5 +243,9 @@ serd_namespaces_expand(SerdNamespaces     ns,
 /** @} */
 
 /** @} */
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* SERD_SERD_H */

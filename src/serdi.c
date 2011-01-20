@@ -85,6 +85,7 @@ event_prefix(void*             handle,
 		SerdURI     new_abs_uri;
 		SerdString* abs_uri_string = serd_string_new_from_uri(&abs_uri, &new_abs_uri);
 		serd_namespaces_add(state->ns, name, abs_uri_string);
+		free(abs_uri_string);
 	} else {
 		serd_namespaces_add(state->ns, name, uri_string);
 	}
@@ -135,7 +136,6 @@ main(int argc, char** argv)
 			fprintf(stderr, "invalid base uri: %s\n", base_uri_str);
 			return 1;
 		}
-
 	}
 
 	FILE* const in_fd  = fopen((const char*)in_filename,  "r");
@@ -146,7 +146,6 @@ main(int argc, char** argv)
 		return 1;
 	}
 
-	//SerdURI null_uri = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
 	State state = { out_fd, serd_namespaces_new(), serd_string_new(base_uri_str), base_uri };
 
 	SerdReader reader = serd_reader_new(
