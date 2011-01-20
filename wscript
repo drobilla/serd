@@ -116,6 +116,8 @@ def test(ctx):
 	for i in glob.glob('build/tests/*.*'):
 		os.remove(i)
 
+	autowaf.pre_test(ctx, APPNAME)
+
 	commands = []
 	good_tests = glob.glob('tests/test-*.ttl')
 	good_tests.sort()
@@ -123,9 +125,9 @@ def test(ctx):
 		base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test
 		commands = commands + [ './serdi_static ../%s \'%s\' > %s.out' % (test, base_uri, test) ]
 
-	autowaf.run_tests(ctx, APPNAME, commands, 0)
+	autowaf.run_tests(ctx, APPNAME, commands, 0, name='good')
 
-	Logs.pprint('BOLD', '\nVerifying output')
+	Logs.pprint('BOLD', '\nVerifying serd.good test output')
 	for test in good_tests:
 		out_filename = 'build/' + test + '.out'
 		if not os.access(out_filename, os.F_OK):
@@ -144,5 +146,6 @@ def test(ctx):
 	for test in bad_tests:
 	    commands = commands + [ './serdi_static ../%s \'http://www.w3.org/2001/sw/DataAccess/df1/%s\' > %s.out' % (test, test, test) ]
 
-	autowaf.run_tests(ctx, APPNAME, commands, 1)
+	autowaf.run_tests(ctx, APPNAME, commands, 1, name='bad')
 
+	autowaf.post_test(ctx, APPNAME)
