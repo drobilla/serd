@@ -53,11 +53,22 @@ typedef size_t Ref;
 static const int32_t READ_BUF_LEN  = 4096;
 static const int32_t MAX_READAHEAD = 8;
 
+typedef struct {
+	SerdNodeType type;
+	Ref          value;
+	Ref          datatype;
+	Ref          lang;
+} Node;
+
 struct SerdReaderImpl {
 	void*                handle;
 	SerdBaseHandler      base_handler;
 	SerdPrefixHandler    prefix_handler;
 	SerdStatementHandler statement_handler;
+	Node                 rdf_type;
+	Node                 rdf_first;
+	Node                 rdf_rest;
+	Node                 rdf_nil;
 	FILE*                fd;
 	Stack                stack;
 	Cursor               cur;
@@ -72,13 +83,6 @@ struct SerdReaderImpl {
 	size_t               n_allocs;     ///< Number of stack pushes
 #endif
 };
-
-typedef struct {
-	SerdNodeType type;
-	Ref          value;
-	Ref          datatype;
-	Ref          lang;
-} Node;
 
 static inline uchar
 error(SerdReader parser, const char* fmt, ...)
@@ -237,6 +241,7 @@ pad_size(intptr_t size)
 static Ref
 push_string(SerdReader parser, const char* c_str, size_t n_bytes)
 {
+	//fprintf(stderr, " * PUSH `%s'\n", c_str);
 	// Align strings to 64-bits (assuming malloc/realloc are aligned to 64-bits)
 	const size_t      stack_size = pad_size((intptr_t)parser->stack.size);
 	const size_t      pad        = stack_size - parser->stack.size;
@@ -284,9 +289,15 @@ pop_string(SerdReader parser, Ref ref)
 {
 	if (ref) {
 		#ifdef STACK_DEBUG
+		if (!stack_is_top_string(parser, ref)) {
+			fprintf(stderr, "attempt to pop non-top string %s\n", deref(parser, ref)->buf);
+			fprintf(stderr, "top: %s\n",
+			        deref(parser, parser->alloc_stack[parser->n_allocs - 1])->buf);
+		}
 		assert(stack_is_top_string(parser, ref));
 		--parser->n_allocs;
 		#endif
+		//fprintf(stderr, " * POP  `%s'\n", deref(parser, ref)->buf);
 		parser->stack.size -= deref(parser, ref)->n_bytes;
 	}
 }
@@ -303,7 +314,7 @@ emit_statement(SerdReader parser,
 	                          deref(parser, o->datatype), deref(parser, o->lang));
 }
 
-
+static bool read_collection(SerdReader parser, Node* dest);
 static bool read_predicateObjectList(SerdReader parser, const Node* subject);
 
 // [40]	hex	::=	[#x30-#x39] | [#x41-#x46]
@@ -486,24 +497,29 @@ read_lcharacter(SerdReader parser, bool* is_escape)
 }
 
 // [42] scharacter ::= ( echaracter - #x22 ) | '\"'
-static inline uchar
-read_scharacter(SerdReader parser)
+static inline bool
+read_scharacter(SerdReader parser, Ref dest)
 {
-	const uchar c = peek_char(parser);
-	uchar       esc;
+	uchar c = peek_char(parser);
+	uchar esc;
 	switch (c) {
 	case '\\':
 		eat_char(parser, '\\');
 		esc = scharacter_escape(parser, peek_char(parser));
 		if (esc) {
-			return esc;
+			push_char(parser, dest, esc);
+			return true;
 		} else {
 			return error(parser, "illegal escape `\\%c'\n", esc);
 		}
 	case '\"':
-		return 0;
+		return false;
 	default:
-		return read_character(parser);
+		c = read_character(parser);
+		if (c) {
+			push_char(parser, dest, c);
+		}
+		return c;
 	}
 }
 
@@ -609,11 +625,8 @@ static Ref
 read_string(SerdReader parser)
 {
 	eat_char(parser, '\"');
-	Ref   str = push_string(parser, "", 1);
-	uchar c;
-	while ((c = read_scharacter(parser)) != 0) {
-		push_char(parser, str, c);
-	}
+	Ref str = push_string(parser, "", 1);
+	while (read_scharacter(parser, str)) {}
 	eat_char(parser, '\"');
 	return str;
 }
@@ -961,6 +974,8 @@ read_blank(SerdReader parser, Node* dest)
 			eat_char(parser, ']');
 			return true;
 		}
+	case '(':
+		return read_collection(parser, dest);
 	default:
 		error(parser, "illegal blank node\n");
 	}
@@ -992,6 +1007,8 @@ read_object(SerdReader parser, const Node* subject, const Node* predicate)
 	Node        o   = { 0, 0, 0, 0 };
 	const uchar c   = peek_char(parser);
 	switch (c) {
+	case ')':
+		return false;
 	case '[': case '(': case '_':
 		TRY_THROW(ret = read_blank(parser, &o));
 		break;
@@ -1095,6 +1112,51 @@ read_predicateObjectList(SerdReader parser, const Node* subject)
 except:
 	pop_string(parser, predicate.value);
 	return false;
+}
+
+/** Recursive helper for read_collection. */
+static bool
+read_collection_rec(SerdReader parser, const Node* head)
+{
+	read_ws_star(parser);
+	if (peek_char(parser) == ')') {
+		eat_char(parser, ')');
+		emit_statement(parser, NULL, head, &parser->rdf_rest, &parser->rdf_nil);
+		return false;
+	} else {
+		const Node rest = make_node(BLANK, blank_id(parser), 0, 0);
+		emit_statement(parser, NULL, head, &parser->rdf_rest, &rest);
+		if (read_object(parser, &rest, &parser->rdf_first)) {
+			read_collection_rec(parser, &rest);
+			pop_string(parser, rest.value);
+			return true;
+		} else {
+			pop_string(parser, rest.value);
+			return error(parser, "expected object\n");
+		}
+	}
+}
+
+// [22] itemList   ::= object+
+// [23] collection ::= '(' itemList? ')'
+static bool
+read_collection(SerdReader parser, Node* dest)
+{
+	TRY_RET(eat_char(parser, '('));
+	read_ws_star(parser);
+	if (peek_char(parser) == ')') {  // Empty collection
+		eat_char(parser, ')');
+		*dest = parser->rdf_nil;
+		return true;
+	}
+	
+	*dest = make_node(BLANK, blank_id(parser), 0, 0);
+	if (!read_object(parser, dest, &parser->rdf_first)) {
+		pop_string(parser, dest->value);
+		return error(parser, "unexpected end of collection\n");
+	}
+	
+	return read_collection_rec(parser, dest);
 }
 
 // [11] subject ::= resource | blank
@@ -1241,6 +1303,7 @@ serd_reader_new(SerdSyntax           syntax,
 	reader->alloc_stack       = 0;
 	reader->n_allocs          = 0;
 #endif
+
 	return reader;
 }
 
@@ -1248,12 +1311,21 @@ SERD_API
 bool
 serd_reader_read_file(SerdReader reader, FILE* file, const uint8_t* name)
 {
+	#define RDF_FIRST "http://www.w3.org/1999/02/22-rdf-syntax-ns#first"
+	#define RDF_REST  "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"
+	#define RDF_NIL   "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"
 	SerdReader const me = (SerdReader)reader;
 	const Cursor cur = { name, 1, 1 };
 	me->fd  = file;
 	me->cur = cur;
+	me->rdf_first = make_node(URI, push_string(me, RDF_FIRST, 49), 0, 0);
+	me->rdf_rest  = make_node(URI, push_string(me, RDF_REST, 48), 0, 0);
+	me->rdf_nil   = make_node(URI, push_string(me, RDF_NIL, 47), 0, 0);
 	fread(me->read_buf, 1, READ_BUF_LEN, file);
 	const bool ret = read_turtleDoc(me);
+	pop_string(me, me->rdf_nil.value);
+	pop_string(me, me->rdf_rest.value);
+	pop_string(me, me->rdf_first.value);
 	me->fd  = 0;
 	me->cur = cur;
 	return ret;
