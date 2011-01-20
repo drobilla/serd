@@ -70,7 +70,8 @@ typedef enum {
 	LITERAL = 4   ///< Literal string (with optional lang or datatype)
 } SerdNodeType;
 
-/** @name URIs
+/** @name URI
+ * Support for parsing and resolving URIs.
  * @{
  */
 
@@ -123,8 +124,8 @@ size_t
 serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream);
 
 /** @} */
-
 /** @name String
+ * @brief A measured UTF-8 string.
  * @{
  */
 
@@ -145,27 +146,50 @@ SERD_API
 SerdString*
 serd_string_copy(const SerdString* str);
 
+/** Free @a str. */
+SERD_API
+void
+serd_string_free(SerdString* str);
+
 /** Serialise @a uri to a string. */
 SERD_API
 SerdString*
 serd_string_new_from_uri(const SerdURI* uri,
                          SerdURI*       out);
+/** @} */
+/** @name Namespaces
+ * @brief A dictionary of namespaces (names associated with URI strings)
+ * @{
+ */
 
-/** Write a node to @a file. */
+/** Create a new namespaces dictionary. */
+SERD_API
+SerdNamespaces
+serd_namespaces_new();
+
+/** Free @a ns. */
+SERD_API
+void
+serd_namespaces_free(SerdNamespaces ns);
+
+/** Add namespace @a uri to @a ns using prefix @a name. */
+SERD_API
+void
+serd_namespaces_add(SerdNamespaces    ns,
+                    const SerdString* name,
+                    const SerdString* uri);
+
+/** Expand @a qname. */
 SERD_API
 bool
-serd_write_node(FILE*             file,
-                const SerdURI*    base_uri,
-                SerdNamespaces    ns,
-                SerdNodeType      type,
-                const SerdString* str,
-                const SerdString* datatype,
-                const SerdString* lang);
+serd_namespaces_expand(SerdNamespaces     ns,
+                       const SerdString*  qname,
+                       SerdChunk*         uri_prefix,
+                       SerdChunk*         uri_suffix);
 
 /** @} */
-
-
 /** @name Reader
+ * @brief Reader for RDF syntax.
  * @{
  */
 
@@ -212,36 +236,21 @@ void
 serd_reader_free(SerdReader reader);
 
 /** @} */
-
-
-/** @name Namespaces
+/** @name Writer
+ * @brief Writer of RDF syntax.
  * @{
  */
 
-/** Create a new namespaces dictionary. */
-SERD_API
-SerdNamespaces
-serd_namespaces_new();
-
-/** Free @a ns. */
-SERD_API
-void
-serd_namespaces_free(SerdNamespaces ns);
-
-/** Add namespace @a uri to @a ns using prefix @a name. */
-SERD_API
-void
-serd_namespaces_add(SerdNamespaces    ns,
-                    const SerdString* name,
-                    const SerdString* uri);
-
-/** Expand @a qname. */
+/** Write a node to @a file. */
 SERD_API
 bool
-serd_namespaces_expand(SerdNamespaces     ns,
-                       const SerdString*  qname,
-                       SerdChunk*         uri_prefix,
-                       SerdChunk*         uri_suffix);
+serd_write_node(FILE*             file,
+                const SerdURI*    base_uri,
+                SerdNamespaces    ns,
+                SerdNodeType      type,
+                const SerdString* str,
+                const SerdString* datatype,
+                const SerdString* lang);
 
 /** @} */
 

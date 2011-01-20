@@ -63,3 +63,10 @@ serd_string_copy(const SerdString* s)
 	}
 	return NULL;
 }
+
+SERD_API
+void
+serd_string_free(SerdString* str)
+{
+	free(str);
+}

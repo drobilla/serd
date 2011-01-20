@@ -60,7 +60,7 @@ event_base(void*             handle,
 	}
 
 	// Replace the old base URI
-	free(state->base_uri_str);
+	serd_string_free(state->base_uri_str);
 	state->base_uri_str = base_uri_str;
 	state->base_uri     = base_uri;
 
@@ -85,7 +85,7 @@ event_prefix(void*             handle,
 		SerdURI     new_abs_uri;
 		SerdString* abs_uri_string = serd_string_new_from_uri(&abs_uri, &new_abs_uri);
 		serd_namespaces_add(state->ns, name, abs_uri_string);
-		free(abs_uri_string);
+		serd_string_free(abs_uri_string);
 	} else {
 		serd_namespaces_add(state->ns, name, uri_string);
 	}
@@ -155,7 +155,7 @@ main(int argc, char** argv)
 	serd_reader_free(reader);
 	fclose(in_fd);
 	serd_namespaces_free(state.ns);
-	free(state.base_uri_str);
+	serd_string_free(state.base_uri_str);
 
 	if (success) {
 		return 0;

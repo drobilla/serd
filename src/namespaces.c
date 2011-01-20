@@ -47,8 +47,8 @@ void
 serd_namespaces_free(SerdNamespaces ns)
 {
 	for (size_t i = 0; i < ns->n_namespaces; ++i) {
-		free(ns->namespaces[i].name);
-		free(ns->namespaces[i].uri);
+		serd_string_free(ns->namespaces[i].name);
+		serd_string_free(ns->namespaces[i].uri);
 	}
 	free(ns->namespaces);
 	free(ns);
@@ -80,7 +80,7 @@ serd_namespaces_add(SerdNamespaces    ns,
 	assert(uri);
 	SerdNamespace* const record = serd_namespaces_find(ns, name->buf, name->n_chars);
 	if (record) {
-		free(record->uri);
+		serd_string_free(record->uri);
 		record->uri = serd_string_copy(uri);
 	} else {
 		++ns->n_namespaces;
