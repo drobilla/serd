@@ -22,7 +22,7 @@
 #include "serd/serd.h"
 
 typedef struct {
-	FILE*          out_fd;
+	SerdWriter     writer;
 	SerdNamespaces ns;
 	SerdString*    base_uri_str;
 	SerdURI        base_uri;
@@ -61,8 +61,9 @@ event_base(void*             handle,
 
 	// Replace the old base URI
 	serd_string_free(state->base_uri_str);
-	state->base_uri_str = base_uri_str;
-	state->base_uri     = base_uri;
+	state->base_uri_str     = base_uri_str;
+	state->base_uri         = base_uri;
+	serd_writer_set_base_uri(state->writer, &base_uri);
 
 	return true;
 }
@@ -105,17 +106,12 @@ event_statement(void*             handle,
                 const SerdString* object_lang)
 {
 	State* const state = (State*)handle;
-	FILE* const  fd    = state->out_fd;
-	serd_write_node(fd, &state->base_uri, state->ns,
-	                subject_type, subject, NULL, NULL);
-	fwrite(" ", 1, 1, fd);
-	serd_write_node(fd, &state->base_uri, state->ns,
-	                predicate_type, predicate, NULL, NULL);
-	fwrite(" ", 1, 1, fd);
-	serd_write_node(fd, &state->base_uri, state->ns,
-	                object_type, object, object_datatype, object_lang);
-	fwrite(" .\n", 1, 3, fd);
-	return true;
+	return serd_writer_write_statement(
+		state->writer,
+		graph,
+		subject,   subject_type,
+		predicate, predicate_type,
+		object,    object_type,    object_datatype, object_lang);
 }
 
 int
@@ -146,7 +142,11 @@ main(int argc, char** argv)
 		return 1;
 	}
 
-	State state = { out_fd, serd_namespaces_new(), serd_string_new(base_uri_str), base_uri };
+	SerdNamespaces ns = serd_namespaces_new();
+	State state = { serd_writer_new(SERD_NTRIPLES, ns, out_fd, &base_uri),
+	                ns,
+	                serd_string_new(base_uri_str),
+	                base_uri };
 
 	SerdReader reader = serd_reader_new(
 		SERD_TURTLE, &state, event_base, event_prefix, event_statement);
@@ -155,6 +155,7 @@ main(int argc, char** argv)
 	serd_reader_free(reader);
 	fclose(in_fd);
 	serd_namespaces_free(state.ns);
+	serd_writer_free(state.writer);
 	serd_string_free(state.base_uri_str);
 
 	if (success) {

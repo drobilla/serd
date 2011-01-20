@@ -93,10 +93,10 @@ serd_namespaces_add(SerdNamespaces    ns,
 
 SERD_API
 bool
-serd_namespaces_expand(SerdNamespaces    ns,
-                       const SerdString* qname,
-                       SerdChunk*        uri_prefix,
-                       SerdChunk*        uri_suffix)
+serd_namespaces_expand(const SerdNamespaces ns,
+                       const SerdString*    qname,
+                       SerdChunk*           uri_prefix,
+                       SerdChunk*           uri_suffix)
 {
 	const uint8_t* colon = memchr((const char*)qname->buf, ':', qname->n_bytes);
 	if (!colon) {

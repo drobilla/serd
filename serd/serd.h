@@ -55,6 +55,7 @@ extern "C" {
 
 typedef struct SerdNamespacesImpl* SerdNamespaces;  ///< Set of namespaces
 typedef struct SerdReaderImpl*     SerdReader;      ///< RDF reader
+typedef struct SerdWriterImpl*     SerdWriter;      ///< RDF writer
 
 /** RDF syntax */
 typedef enum {
@@ -182,10 +183,10 @@ serd_namespaces_add(SerdNamespaces    ns,
 /** Expand @a qname. */
 SERD_API
 bool
-serd_namespaces_expand(SerdNamespaces     ns,
-                       const SerdString*  qname,
-                       SerdChunk*         uri_prefix,
-                       SerdChunk*         uri_suffix);
+serd_namespaces_expand(const SerdNamespaces ns,
+                       const SerdString*    qname,
+                       SerdChunk*           uri_prefix,
+                       SerdChunk*           uri_suffix);
 
 /** @} */
 /** @name Reader
@@ -241,16 +242,38 @@ serd_reader_free(SerdReader reader);
  * @{
  */
 
-/** Write a node to @a file. */
+/** Create a new RDF writer. */
+SERD_API
+SerdWriter
+serd_writer_new(SerdSyntax     syntax,
+                SerdNamespaces ns,
+                FILE*          file,
+                const SerdURI* base_uri);
+
+/** Free @a writer. */
+SERD_API
+void
+serd_writer_free(SerdWriter writer);
+
+/** Set the base URI of writer. */
+SERD_API
+void
+serd_writer_set_base_uri(SerdWriter     writer,
+                         const SerdURI* uri);
+
+/** Write a statement. */
 SERD_API
 bool
-serd_write_node(FILE*             file,
-                const SerdURI*    base_uri,
-                SerdNamespaces    ns,
-                SerdNodeType      type,
-                const SerdString* str,
-                const SerdString* datatype,
-                const SerdString* lang);
+serd_writer_write_statement(SerdWriter        writer,
+                            const SerdString* graph,
+                            const SerdString* subject,
+                            SerdNodeType      subject_type,
+                            const SerdString* predicate,
+                            SerdNodeType      predicate_type,
+                            const SerdString* object,
+                            SerdNodeType      object_type,
+                            const SerdString* object_datatype,
+                            const SerdString* object_lang);
 
 /** @} */
 

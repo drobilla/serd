@@ -20,6 +20,13 @@
 
 #include "serd/serd.h"
 
+struct SerdWriterImpl {
+	SerdSyntax     syntax;
+	SerdNamespaces ns;
+	FILE*          fd;
+	SerdURI        base_uri;
+};
+
 static size_t
 file_sink(const uint8_t* buf, size_t len, void* stream)
 {
@@ -107,14 +114,16 @@ serd_write_ascii(const uint8_t* utf8, size_t n_bytes, FILE* out_fd, const uint8_
 
 SERD_API
 bool
-serd_write_node(FILE*             fd,
-                const SerdURI*    base_uri,
-                SerdNamespaces    ns,
+serd_write_node(SerdWriter        writer,
                 SerdNodeType      type,
                 const SerdString* str,
                 const SerdString* datatype,
                 const SerdString* lang)
 {
+	FILE* const    fd       = writer->fd;
+	const SerdURI* base_uri = &writer->base_uri;
+	SerdNamespaces ns       = writer->ns;
+
 	SerdChunk uri_prefix;
 	SerdChunk uri_suffix;
 	switch (type) {
@@ -161,10 +170,63 @@ serd_write_node(FILE*             fd,
 			fwrite("\"", 1, 1, fd);
 		} else if (datatype) {
 			fwrite("^^", 1, 2, fd);
-			serd_write_node(fd, base_uri, ns, URI, datatype, NULL, NULL);
+			serd_write_node(writer, URI, datatype, NULL, NULL);
 		}
 		break;
 	}
 	return true;
 }
 
+SERD_API
+bool
+serd_writer_write_statement(SerdWriter        writer,
+                            const SerdString* graph,
+                            const SerdString* subject,
+                            SerdNodeType      subject_type,
+                            const SerdString* predicate,
+                            SerdNodeType      predicate_type,
+                            const SerdString* object,
+                            SerdNodeType      object_type,
+                            const SerdString* object_datatype,
+                            const SerdString* object_lang)
+{
+	FILE* const fd = writer->fd;
+	serd_write_node(writer, subject_type, subject, NULL, NULL);
+	fwrite(" ", 1, 1, fd);
+	serd_write_node(writer, predicate_type, predicate, NULL, NULL);
+	fwrite(" ", 1, 1, fd);
+	serd_write_node(writer, object_type, object, object_datatype, object_lang);
+	fwrite(" .\n", 1, 3, fd);
+	return true;
+}
+
+SERD_API
+SerdWriter
+serd_writer_new(SerdSyntax     syntax,
+                SerdNamespaces ns,
+                FILE*          file,
+                const SerdURI* base_uri)
+{
+	SerdWriter writer = malloc(sizeof(struct SerdWriterImpl));
+	writer->syntax   = syntax;
+	writer->ns       = ns;
+	writer->fd       = file;
+	writer->base_uri = *base_uri;
+	return writer;
+}
+
+SERD_API
+void
+serd_writer_set_base_uri(SerdWriter     writer,
+                         const SerdURI* uri)
+{
+	writer->base_uri = *uri;
+}
+
+SERD_API
+void
+serd_writer_free(SerdWriter writer)
+{
+	SerdWriter const me = (SerdWriter)writer;
+	free(me);
+}
