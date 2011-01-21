@@ -1349,19 +1349,23 @@ serd_reader_read_file(SerdReader reader, FILE* file, const uint8_t* name)
 	#define RDF_FIRST "http://www.w3.org/1999/02/22-rdf-syntax-ns#first"
 	#define RDF_REST  "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"
 	#define RDF_NIL   "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"
-	SerdReader const me = (SerdReader)reader;
-	const Cursor cur = { name, 1, 1 };
-	me->fd  = file;
-	me->cur = cur;
+	SerdReader const me  = (SerdReader)reader;
+	const Cursor     cur = { name, 1, 1 };
+
+	me->fd        = file;
+	me->cur       = cur;
 	me->rdf_first = make_node(URI, push_string(me, RDF_FIRST, 49), 0, 0);
 	me->rdf_rest  = make_node(URI, push_string(me, RDF_REST, 48), 0, 0);
 	me->rdf_nil   = make_node(URI, push_string(me, RDF_NIL, 47), 0, 0);
+
 	fread(me->read_buf, 1, READ_BUF_LEN, file);
 	const bool ret = read_turtleDoc(me);
+
 	pop_string(me, me->rdf_nil.value);
 	pop_string(me, me->rdf_rest.value);
 	pop_string(me, me->rdf_first.value);
-	me->fd  = 0;
 	me->cur = cur;
+	me->fd  = 0;
+
 	return ret;
 }
