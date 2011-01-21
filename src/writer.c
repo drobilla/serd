@@ -50,7 +50,6 @@ struct SerdWriterImpl {
 	const SerdString* prev_g;
 	const SerdString* prev_s;
 	const SerdString* prev_p;
-	const SerdString* prev_o;
 	unsigned          indent;
 };
 
@@ -298,7 +297,6 @@ serd_writer_write_statement_abbrev(SerdWriter        writer,
 	writer->prev_g = graph;
 	writer->prev_s = subject;
 	writer->prev_p = predicate;
-	writer->prev_o = object;
 	return true;
 }
 
@@ -353,7 +351,6 @@ serd_writer_new(SerdSyntax     syntax,
 	writer->prev_g   = 0;
 	writer->prev_s   = 0;
 	writer->prev_p   = 0;
-	writer->prev_o   = 0;
 	writer->indent   = 0;
 	writer->write_node = write_node;
 	if ((style & SERD_STYLE_ABBREVIATED)) {
@@ -373,8 +370,7 @@ serd_writer_set_base_uri(SerdWriter     writer,
 	if (writer->syntax != SERD_NTRIPLES) {
 		if (writer->prev_g || writer->prev_s) {
 			writer->sink(" .\n\n", 4, writer->stream);
-			writer->prev_g = writer->prev_s =
-				writer->prev_p = writer->prev_o = 0;
+			writer->prev_g = writer->prev_s = writer->prev_p = 0;
 		}
 		writer->sink("@base ", 6, writer->stream);
 		writer->sink(" <", 2, writer->stream);
@@ -395,7 +391,6 @@ serd_writer_set_prefix(SerdWriter        writer,
 			writer->prev_g = 0;
 			writer->prev_s = 0;
 			writer->prev_p = 0;
-			writer->prev_o = 0;
 		}
 		writer->sink("@prefix ", 8, writer->stream);
 		writer->sink(name->buf, name->n_bytes - 1, writer->stream);
