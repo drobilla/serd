@@ -392,6 +392,51 @@ read_character_escape(SerdReader parser, Ref dest)
 	}
 }
 
+static inline bool
+read_echaracter_escape(SerdReader parser, Ref dest)
+{
+	switch (peek_byte(parser)) {
+	case 't':
+		eat_byte(parser, 't');
+		push_byte(parser, dest, '\t');
+		return true;
+	case 'n':
+		eat_byte(parser, 'n');
+		push_byte(parser, dest, '\n');
+		return true;
+	case 'r':
+		eat_byte(parser, 'r');
+		push_byte(parser, dest, '\r');
+		return true;
+	default:
+		return read_character_escape(parser, dest);
+	}
+}
+
+static inline bool
+read_scharacter_escape(SerdReader parser, Ref dest)
+{
+	switch (peek_byte(parser)) {
+	case '"':
+		push_byte(parser, dest, eat_byte(parser, '"'));
+		return true;
+	default:
+		return read_echaracter_escape(parser, dest);
+	}
+}
+
+static inline bool
+read_ucharacter_escape(SerdReader parser, Ref dest)
+{
+	switch (peek_byte(parser)) {
+	case '>':
+		push_byte(parser, dest, eat_byte(parser, '>'));
+		return true;
+	default:
+		return read_echaracter_escape(parser, dest);
+	}
+}
+
 // [38] character ::= '\u' hex hex hex hex
 //                  | '\U' hex hex hex hex hex hex hex hex
 //                  | '\\'
@@ -422,30 +467,6 @@ read_character(SerdReader parser, Ref dest)
 	}
 }
 
-static inline bool
-read_echaracter_escape(SerdReader parser, Ref dest)
-{
-	if (read_character_escape(parser, dest)) {
-		return true;
-	}
-	switch (peek_byte(parser)) {
-	case 't':
-		eat_byte(parser, 't');
-		push_byte(parser, dest, '\t');
-		return true;
-	case 'n':
-		eat_byte(parser, 'n');
-		push_byte(parser, dest, '\n');
-		return true;
-	case 'r':
-		eat_byte(parser, 'r');
-		push_byte(parser, dest, '\r');
-		return true;
-	default:
-		return false;
-	}
-}
-
 // [39] echaracter ::= character | '\t' | '\n' | '\r'
 static inline SerdStatus
 read_echaracter(SerdReader parser, Ref dest)
@@ -463,30 +484,6 @@ read_echaracter(SerdReader parser, Ref dest)
 	default:
 		return read_character(parser, dest);
 	}
-}
-
-static inline bool
-read_scharacter_escape(SerdReader parser, Ref dest)
-{
-	if (read_echaracter_escape(parser, dest)) {
-		return true;
-	} else if (peek_byte(parser) == '"') {
-		push_byte(parser, dest, eat_byte(parser, '"'));
-		return true;
-	}
-	return false;
-}
-
-static inline bool
-read_ucharacter_escape(SerdReader parser, Ref dest)
-{
-	if (read_echaracter_escape(parser, dest)) {
-		return true;
-	} else if (peek_byte(parser) == '>') {
-		push_byte(parser, dest, eat_byte(parser, '>'));
-		return true;
-	}
-	return false;
 }
 
 // [43] lcharacter ::= echaracter | '\"' | #x9 | #xA | #xD
