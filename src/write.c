@@ -165,9 +165,8 @@ serd_write_node(SerdWriter        writer,
 		serd_write_ascii(str->buf, str->n_bytes - 1, fd, '"');
 		fwrite("\"", 1, 1, fd);
 		if (lang) {
-			fwrite("@\"", 1, 2, fd);
+			fwrite("@", 1, 1, fd);
 			fwrite(lang->buf, 1, lang->n_bytes - 1, fd);
-			fwrite("\"", 1, 1, fd);
 		} else if (datatype) {
 			fwrite("^^", 1, 2, fd);
 			serd_write_node(writer, URI, datatype, NULL, NULL);

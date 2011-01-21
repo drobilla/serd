@@ -735,7 +735,7 @@ read_language(SerdReader parser)
 		return 0;
 	}
 	Ref str = push_string(parser, "", 1);
-	push_byte(parser, str, start);
+	push_byte(parser, str, eat_byte(parser, start));
 	uint8_t c;
 	while ((c = peek_byte(parser)) && in_range(c, 'a', 'z')) {
 		push_byte(parser, str, eat_byte(parser, c));

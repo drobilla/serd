@@ -163,7 +163,7 @@ main(int argc, char** argv)
 	FILE*       out_fd = stdout;
 
 	if (!in_fd) {
-		fprintf(stderr, "failed to open file\n");
+		fprintf(stderr, "failed to open file %s\n", in_filename);
 		return 1;
 	}
 
