@@ -124,10 +124,20 @@ def test(ctx):
 		
 	autowaf.pre_test(ctx, APPNAME)
 
+	autowaf.run_tests(ctx, APPNAME,
+					  ['./serdi_static > /dev/null',
+					  './serdi_static ftp://example.org/unsupported.ttl > /dev/null'],
+					  1, name='serdi-fail')
+
+	autowaf.run_tests(ctx, APPNAME,
+					  ['./serdi_static file:../tests/manifest.ttl > /dev/null',
+					   './serdi_static ../tests/UTF-8.ttl > /dev/null'],
+					  0, name='serdi-succeed')
+
 	commands = []
 	for test in good_tests:
 		base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test
-		commands = commands + [ './serdi_static ../%s \'%s\' > %s.out' % (test, base_uri, test) ]
+		commands += [ './serdi_static ../%s \'%s\' > %s.out' % (test, base_uri, test) ]
 
 	autowaf.run_tests(ctx, APPNAME, commands, 0, name='good')
 
@@ -145,24 +155,16 @@ def test(ctx):
 	
 	commands = []
 	for test in bad_tests:
-	    commands = commands + [ './serdi_static ../%s \'http://www.w3.org/2001/sw/DataAccess/df1/%s\' > %s.out' % (test, test, test) ]
+	    commands += [ './serdi_static ../%s \'http://www.w3.org/2001/sw/DataAccess/df1/%s\' > %s.out' % (test, test, test) ]
 
 	autowaf.run_tests(ctx, APPNAME, commands, 1, name='bad')
 
-	autowaf.run_tests(ctx, APPNAME,
-					  ['./serdi_static > /dev/null'],
-					  1, name='serdi-no-args')
-
-	autowaf.run_tests(ctx, APPNAME,
-					  ['./serdi_static file:../tests/manifest.ttl > /dev/null'],
-					  0, name='serdi-file-uri')
-
-	autowaf.run_tests(ctx, APPNAME,
-					  ['./serdi_static ftp://example.org/unsupported.ttl > /dev/null'],
-					  1, name='serdi-bad-uri')
-
-	autowaf.run_tests(ctx, APPNAME,
-					  ['./serdi_static ../tests/UTF-8.ttl > /dev/null'],
-					  0, name='utf8')
+#	commands = []
+#	for test in good_tests:
+#		out_filename = test + '.thru'
+#		commands += [ './serdi_static -o turtle ../%s \'%s\' | ./serdi_static - \'%s\' > %s.out' % (test, base_uri, base_uri, test) ]
+#		
+#	autowaf.run_tests(ctx, APPNAME, commands, 0, name='turtle-write')
+#
 
 	autowaf.post_test(ctx, APPNAME)

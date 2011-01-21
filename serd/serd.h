@@ -244,10 +244,17 @@ serd_reader_free(SerdReader reader);
  * @{
  */
 
+typedef enum {
+	SERD_STYLE_ABBREVIATED = 1,
+	SERD_STYLE_ASCII       = 1 << 1,
+	SERD_STYLE_ESCAPE_
+} SerdStyle;
+
 /** Create a new RDF writer. */
 SERD_API
 SerdWriter
 serd_writer_new(SerdSyntax     syntax,
+                SerdStyle      style,
                 SerdNamespaces ns,
                 const SerdURI* base_uri,
                 SerdSink       sink,
@@ -258,11 +265,18 @@ SERD_API
 void
 serd_writer_free(SerdWriter writer);
 
-/** Set the base URI of writer. */
+/** Set the current output base URI. */
 SERD_API
 void
 serd_writer_set_base_uri(SerdWriter     writer,
                          const SerdURI* uri);
+
+/** Set the current output base URI. */
+SERD_API
+void
+serd_writer_set_prefix(SerdWriter        writer,
+                       const SerdString* name,
+                       const SerdString* uri);
 
 /** Write a statement. */
 SERD_API
@@ -277,6 +291,11 @@ serd_writer_write_statement(SerdWriter        writer,
                             SerdNodeType      object_type,
                             const SerdString* object_datatype,
                             const SerdString* object_lang);
+
+/** Finish a write. */
+SERD_API
+void
+serd_writer_finish(SerdWriter writer);
 
 /** @} */
 

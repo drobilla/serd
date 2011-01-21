@@ -90,6 +90,8 @@ event_prefix(void*             handle,
 	} else {
 		serd_namespaces_add(state->ns, name, uri_string);
 	}
+	serd_writer_set_prefix(state->writer, name, uri_string);
+
 	return true;
 }
 
@@ -133,13 +135,39 @@ file_sink(const void* buf, size_t len, void* stream)
 int
 main(int argc, char** argv)
 {
-	if (argc != 2 && argc != 3) {
+	if (argc < 2) {
 		return print_usage(argv[0], true);
 	}
 
-	const uint8_t* in_filename = (const uint8_t*)argv[1];
+	FILE*      in_fd         = NULL;
+	SerdSyntax output_syntax = SERD_NTRIPLES;
 
-	if (serd_uri_string_has_scheme(in_filename)) {
+	int a = 1;
+	for (; a < argc && argv[a][0] == '-'; ++a) {
+		if (argv[a][1] == '\0') {
+			in_fd = stdin;
+			break;
+		} else if (argv[a][1] == 'o') {
+			if (++a == argc) {
+				fprintf(stderr, "missing value for -i\n");
+				return 1;
+			}
+			if (!strcmp(argv[a], "turtle")) {
+				output_syntax = SERD_TURTLE;
+			} else if (!strcmp(argv[a], "ntriples")) {
+				output_syntax = SERD_NTRIPLES;
+			} else {
+				fprintf(stderr, "unknown output format `%s'\n",  argv[a]);
+			}
+		} else {
+			fprintf(stderr, "unknown option `%s'\n", argv[a]);
+			return print_usage(argv[0], true);
+		}
+	}
+	
+	const uint8_t* in_filename = (const uint8_t*)argv[a];
+
+	if (!in_fd && serd_uri_string_has_scheme(in_filename)) {
 		// Input is an absolute URI, ensure it's a file: URI and chop scheme
 		if (strncmp((const char*)in_filename, "file:", 5)) {
 			fprintf(stderr, "unsupported URI scheme `%s'\n", in_filename);
@@ -166,8 +194,11 @@ main(int argc, char** argv)
 
 	serd_uri_parse(base_uri_str->buf, &base_uri);
 
-	FILE* const in_fd  = fopen((const char*)in_filename,  "r");
-	FILE*       out_fd = stdout;
+	if (!in_fd) {
+		in_fd  = fopen((const char*)in_filename,  "r");
+	}
+	
+	FILE* out_fd = stdout;
 
 	if (!in_fd) {
 		fprintf(stderr, "failed to open file %s\n", in_filename);
@@ -175,8 +206,14 @@ main(int argc, char** argv)
 	}
 
 	SerdNamespaces ns = serd_namespaces_new();
+
+	SerdStyle output_style = (output_syntax == SERD_NTRIPLES)
+		? SERD_STYLE_ASCII
+		: SERD_STYLE_ABBREVIATED;
+
 	State state = {
-		serd_writer_new(SERD_NTRIPLES, ns, &base_uri, file_sink, out_fd),
+		serd_writer_new(output_syntax, output_style,
+		                ns, &base_uri, file_sink, out_fd),
 		ns, base_uri_str, base_uri
 	};
 
@@ -186,8 +223,11 @@ main(int argc, char** argv)
 	const bool success = serd_reader_read_file(reader, in_fd, in_filename);
 	serd_reader_free(reader);
 	fclose(in_fd);
-	serd_namespaces_free(state.ns);
+
+	serd_writer_finish(state.writer);
 	serd_writer_free(state.writer);
+
+	serd_namespaces_free(state.ns);
 	serd_string_free(state.base_uri_str);
 
 	if (success) {
