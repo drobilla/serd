@@ -158,6 +158,7 @@ main(int argc, char** argv)
 				output_syntax = SERD_NTRIPLES;
 			} else {
 				fprintf(stderr, "unknown output format `%s'\n",  argv[a]);
+				return 1;
 			}
 		} else {
 			fprintf(stderr, "unknown option `%s'\n", argv[a]);
@@ -165,7 +166,7 @@ main(int argc, char** argv)
 		}
 	}
 
-	const uint8_t* in_filename = (const uint8_t*)argv[a];
+	const uint8_t* in_filename = (const uint8_t*)argv[a++];
 
 	if (!in_fd && serd_uri_string_has_scheme(in_filename)) {
 		// Input is an absolute URI, ensure it's a file: URI and chop scheme
@@ -181,8 +182,8 @@ main(int argc, char** argv)
 
 	SerdString* base_uri_str = NULL;
 	SerdURI     base_uri;
-	if (argc > 2) {  // Base URI given on command line
-		const uint8_t* const in_base_uri = (const uint8_t*)argv[2];
+	if (a < argc) {  // Base URI given on command line
+		const uint8_t* const in_base_uri = (const uint8_t*)argv[a++];
 		if (!serd_uri_parse((const uint8_t*)in_base_uri, &base_uri)) {
 			fprintf(stderr, "invalid base URI `%s'\n", argv[2]);
 			return 1;
