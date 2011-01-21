@@ -59,7 +59,7 @@ def build(bld):
 		src/reader.c
 		src/string.c
 		src/uri.c
-		src/write.c
+		src/writer.c
 	'''
 
 	# Library
