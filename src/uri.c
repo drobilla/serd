@@ -366,7 +366,7 @@ serd_uri_string_length(const SerdURI* uri)
 }
 
 static size_t
-string_sink(const uint8_t* buf, size_t len, void* stream)
+string_sink(const void* buf, size_t len, void* stream)
 {
 	uint8_t** ptr = (uint8_t**)stream;
 	memcpy(*ptr, buf, len);

@@ -119,7 +119,7 @@ bool
 serd_uri_write(const SerdURI* uri, FILE* file);
 
 /** Sink function for raw string output. */
-typedef size_t (*SerdSink)(const uint8_t* buf, size_t len, void* stream);
+typedef size_t (*SerdSink)(const void* buf, size_t len, void* stream);
 
 /** Serialise @a uri with a series of calls to @a sink. */
 SERD_API
@@ -249,8 +249,9 @@ SERD_API
 SerdWriter
 serd_writer_new(SerdSyntax     syntax,
                 SerdNamespaces ns,
-                FILE*          file,
-                const SerdURI* base_uri);
+                const SerdURI* base_uri,
+                SerdSink       sink,
+                void*          stream);
 
 /** Free @a writer. */
 SERD_API
