@@ -116,36 +116,53 @@ def test(ctx):
 	for i in glob.glob('build/tests/*.*'):
 		os.remove(i)
 
+	good_tests = glob.glob('tests/test-*.ttl')
+	good_tests.sort()
+
+	bad_tests = glob.glob('tests/bad-*.ttl')
+	bad_tests.sort()
+		
 	autowaf.pre_test(ctx, APPNAME)
 
 	commands = []
-	good_tests = glob.glob('tests/test-*.ttl')
-	good_tests.sort()
 	for test in good_tests:
 		base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test
 		commands = commands + [ './serdi_static ../%s \'%s\' > %s.out' % (test, base_uri, test) ]
 
 	autowaf.run_tests(ctx, APPNAME, commands, 0, name='good')
 
-	Logs.pprint('BOLD', '\nVerifying serd.good test output')
+	Logs.pprint('BOLD', '\nVerifying output')
 	for test in good_tests:
-		out_filename = 'build/' + test + '.out'
+		out_filename = test + '.out'
 		if not os.access(out_filename, os.F_OK):
 			Logs.pprint('RED', 'FAIL: %s output is missing' % test)
-		elif filecmp.cmp(test.replace('.ttl', '.out'),
-						 'build/' + test + '.out',
+		elif filecmp.cmp('../' + test.replace('.ttl', '.out'),
+						 test + '.out',
 						 False) != 1:
 			Logs.pprint('RED', 'FAIL: %s output is incorrect' % test)
 		else:
-			Logs.pprint('GREEN', 'PASS: %s output is correct' % test)
-	print
+			Logs.pprint('GREEN', 'Pass: %s' % test)
 	
 	commands = []
-	bad_tests = glob.glob('tests/bad-*.ttl')
-	bad_tests.sort()
 	for test in bad_tests:
 	    commands = commands + [ './serdi_static ../%s \'http://www.w3.org/2001/sw/DataAccess/df1/%s\' > %s.out' % (test, test, test) ]
 
 	autowaf.run_tests(ctx, APPNAME, commands, 1, name='bad')
+
+	autowaf.run_tests(ctx, APPNAME,
+					  ['./serdi_static > /dev/null'],
+					  1, name='serdi-no-args')
+
+	autowaf.run_tests(ctx, APPNAME,
+					  ['./serdi_static file:../tests/manifest.ttl > /dev/null'],
+					  0, name='serdi-file-uri')
+
+	autowaf.run_tests(ctx, APPNAME,
+					  ['./serdi_static ftp://example.org/unsupported.ttl > /dev/null'],
+					  1, name='serdi-bad-uri')
+
+	autowaf.run_tests(ctx, APPNAME,
+					  ['./serdi_static ../tests/UTF-8.ttl > /dev/null'],
+					  0, name='utf8')
 
 	autowaf.post_test(ctx, APPNAME)
