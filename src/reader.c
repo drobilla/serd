@@ -449,7 +449,7 @@ read_character(SerdReader parser, Ref dest)
 	case '\0':
 		error(parser, "unexpected end of file\n", peek_byte(parser));
 		return SERD_ERROR;
-	case '\\':
+	case '\\':  // 0x5C
 		eat_byte(parser, '\\');
 		if (read_character_escape(parser, dest)) {
 			return SERD_SUCCESS;
@@ -458,11 +458,32 @@ read_character(SerdReader parser, Ref dest)
 			return SERD_ERROR;
 		}
 	default:
-		if (in_range(c, 0x20, 0x5B) || in_range(c, 0x5D, 0x10FFF)) {
+		if (c < 0x20) {  // ASCII control character
+			error(parser, "unexpected control character\n");
+			return SERD_ERROR;
+		} else if (c <= 0x7E) {  // Printable ASCII
 			push_byte(parser, dest, eat_byte(parser, c));
 			return SERD_SUCCESS;
-		} else {
-			return SERD_FAILURE;
+		} else {  // Wide UTF-8 character
+			unsigned size = 1;
+			if ((c & 0xE0) == 0xC0) {  // Starts with `110'
+				size = 2;
+			} else if ((c & 0xF0) == 0xE0) {  // Starts with `1110'
+				size = 3;
+			} else if ((c & 0xF8) == 0xF0) {  // Starts with `11110'
+				size = 4;
+			} else if ((c & 0xFC) == 0xF8) {  // Starts with `111110'
+				size = 5;
+			} else if ((c & 0xFE) == 0xFC) {  // Starts with `1111110'
+				size = 6;
+			} else {
+				error(parser, "invalid character\n");
+				return SERD_ERROR;
+			}
+			for (unsigned i = 0; i < size; ++i) {
+				push_byte(parser, dest, eat_byte(parser, peek_byte(parser)));
+			}
+			return SERD_SUCCESS;
 		}
 	}
 }
@@ -663,7 +684,8 @@ read_relativeURI(SerdReader parser)
 	if (st != SERD_ERROR) {
 		return str;
 	}
-	return st;
+	pop_string(parser, str);
+	return 0;
 }
 
 // [30] nameStartChar ::= [A-Z] | "_" | [a-z]
@@ -769,11 +791,9 @@ read_uriref(SerdReader parser)
 {
 	TRY_RET(eat_byte(parser, '<'));
 	Ref const str = read_relativeURI(parser);
-	if (str) {
-		TRY_THROW(eat_byte(parser, '>'));
+	if (str && eat_byte(parser, '>')) {
 		return str;
 	}
-except:
 	pop_string(parser, str);
 	return 0;
 }

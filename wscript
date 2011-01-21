@@ -125,14 +125,18 @@ def test(ctx):
 	autowaf.pre_test(ctx, APPNAME)
 
 	autowaf.run_tests(ctx, APPNAME,
-					  ['./serdi_static > /dev/null',
-					  './serdi_static ftp://example.org/unsupported.ttl > /dev/null'],
-					  1, name='serdi-fail')
+					  ['./serdi_static file:../tests/manifest.ttl > /dev/null',
+					   './serdi_static file://../tests/manifest.ttl > /dev/null',
+					   './serdi_static ../tests/UTF-8.ttl > /dev/null'],
+					  0, name='serdi-cmd-good')
 
 	autowaf.run_tests(ctx, APPNAME,
-					  ['./serdi_static file:../tests/manifest.ttl > /dev/null',
-					   './serdi_static ../tests/UTF-8.ttl > /dev/null'],
-					  0, name='serdi-succeed')
+					  ['./serdi_static > /dev/null',
+					   './serdi_static ftp://example.org/unsupported.ttl > /dev/null',
+					   './serdi_static -o > /dev/null',
+					   './serdi_static -z > /dev/null',
+					   './serdi_static -o illegal > /dev/null'],
+					  1, name='serdi-cmd-bad')
 
 	commands = []
 	for test in good_tests:
@@ -141,7 +145,7 @@ def test(ctx):
 
 	autowaf.run_tests(ctx, APPNAME, commands, 0, name='good')
 
-	Logs.pprint('BOLD', '\nVerifying output')
+	Logs.pprint('BOLD', '\nVerifying turtle => ntriples')
 	for test in good_tests:
 		out_filename = test + '.out'
 		if not os.access(out_filename, os.F_OK):
@@ -149,7 +153,7 @@ def test(ctx):
 		elif filecmp.cmp('../' + test.replace('.ttl', '.out'),
 						 test + '.out',
 						 False) != 1:
-			Logs.pprint('RED', 'FAIL: %s output is incorrect' % test)
+			Logs.pprint('RED', 'FAIL: %s is incorrect' % out_filename)
 		else:
 			Logs.pprint('GREEN', 'Pass: %s' % test)
 	
@@ -159,12 +163,26 @@ def test(ctx):
 
 	autowaf.run_tests(ctx, APPNAME, commands, 1, name='bad')
 
-#	commands = []
-#	for test in good_tests:
-#		out_filename = test + '.thru'
-#		commands += [ './serdi_static -o turtle ../%s \'%s\' | ./serdi_static - \'%s\' > %s.out' % (test, base_uri, base_uri, test) ]
-#		
-#	autowaf.run_tests(ctx, APPNAME, commands, 0, name='turtle-write')
-#
+	commands = []
+	for test in good_tests:
+		base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test
+		out_filename = test + '.thru'
+		commands += [
+			'%s -o turtle ../%s \'%s\' | %s - \'%s\' > %s.thru' % (
+				'./serdi_static', test, base_uri,
+				'./serdi_static', base_uri, test) ]
+		
+	autowaf.run_tests(ctx, APPNAME, commands, 0, name='turtle-round-trip')
+	Logs.pprint('BOLD', '\nVerifying ntriples => turtle => ntriples')
+	for test in good_tests:
+		out_filename = test + '.thru'
+		if not os.access(out_filename, os.F_OK):
+			Logs.pprint('RED', 'FAIL: %s output is missing' % test)
+		elif filecmp.cmp('../' + test.replace('.ttl', '.out'),
+						 test + '.thru',
+						 False) != 1:
+			Logs.pprint('RED', 'FAIL: %s is incorrect' % out_filename)
+		else:
+			Logs.pprint('GREEN', 'Pass: %s' % test)
 
 	autowaf.post_test(ctx, APPNAME)

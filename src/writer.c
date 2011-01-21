@@ -115,10 +115,10 @@ write_text(SerdWriter writer, WriteContext ctx,
 			return false;
 		}
 
-		if (!(writer->style & SERD_STYLE_ASCII)) {
-			// Write UTF-8 input directly to UTF-8 output
-			writer->sink(utf8, n_bytes, writer->stream);
-			i += n_bytes - 1;
+		if (ctx == WRITE_STRING && !(writer->style & SERD_STYLE_ASCII)) {
+			// Write UTF-8 character directly to UTF-8 output
+			writer->sink(utf8 + i - 1, size, writer->stream);
+			i += size - 1;
 			continue;
 		}
 
@@ -370,6 +370,17 @@ serd_writer_set_base_uri(SerdWriter     writer,
                          const SerdURI* uri)
 {
 	writer->base_uri = *uri;
+	if (writer->syntax != SERD_NTRIPLES) {
+		if (writer->prev_g || writer->prev_s) {
+			writer->sink(" .\n\n", 4, writer->stream);
+			writer->prev_g = writer->prev_s =
+				writer->prev_p = writer->prev_o = 0;
+		}
+		writer->sink("@base ", 6, writer->stream);
+		writer->sink(" <", 2, writer->stream);
+		serd_uri_serialise(uri, writer->sink, writer->stream);
+		writer->sink("> .\n", 4, writer->stream);
+	}
 }
 
 SERD_API
@@ -379,6 +390,13 @@ serd_writer_set_prefix(SerdWriter        writer,
                        const SerdString* uri)
 {
 	if (writer->syntax != SERD_NTRIPLES) {
+		if (writer->prev_g || writer->prev_s) {
+			writer->sink(" .\n\n", 4, writer->stream);
+			writer->prev_g = 0;
+			writer->prev_s = 0;
+			writer->prev_p = 0;
+			writer->prev_o = 0;
+		}
 		writer->sink("@prefix ", 8, writer->stream);
 		writer->sink(name->buf, name->n_bytes - 1, writer->stream);
 		writer->sink(": <", 3, writer->stream);

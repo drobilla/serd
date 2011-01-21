@@ -46,7 +46,6 @@ event_base(void*             handle,
 		SerdURI abs_base_uri;
 		if (!serd_uri_resolve(&uri, &state->base_uri, &abs_base_uri)) {
 			fprintf(stderr, "error: failed to resolve new base URI\n");
-			assert(false);
 			return false;
 		}
 		base_uri_str = serd_string_new_from_uri(&abs_base_uri, &base_uri);
@@ -173,7 +172,7 @@ main(int argc, char** argv)
 		if (strncmp((const char*)in_filename, "file:", 5)) {
 			fprintf(stderr, "unsupported URI scheme `%s'\n", in_filename);
 			return 1;
-		} else if (!strncmp((const char*)in_filename, "file:///", 7)) {
+		} else if (!strncmp((const char*)in_filename, "file://", 7)) {
 			in_filename += 7;
 		} else {
 			in_filename += 5;
