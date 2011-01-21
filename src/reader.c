@@ -60,6 +60,8 @@ typedef struct {
 	Ref          lang;
 } Node;
 
+static const Node SERD_NODE_NULL = {0,0,0,0};
+
 struct SerdReaderImpl {
 	void*                handle;
 	SerdBaseHandler      base_handler;
@@ -83,6 +85,12 @@ struct SerdReaderImpl {
 	size_t               n_allocs;     ///< Number of stack pushes
 #endif
 };
+
+typedef enum {
+	SERD_SUCCESS = 0,  ///< Completed successfully
+	SERD_FAILURE = 1,  ///< Non-fatal failure
+	SERD_ERROR   = 2,  ///< Fatal error
+} SerdStatus;
 
 static inline int
 error(SerdReader parser, const char* fmt, ...)
@@ -388,24 +396,28 @@ read_character_escape(SerdReader parser, Ref dest)
 //                  | '\U' hex hex hex hex hex hex hex hex
 //                  | '\\'
 //                  | [#x20-#x5B] | [#x5D-#x10FFFF]
-static inline bool
+static inline SerdStatus
 read_character(SerdReader parser, Ref dest)
 {
 	const uint8_t c = peek_byte(parser);
 	switch (c) {
+	case '\0':
+		error(parser, "unexpected end of file\n", peek_byte(parser));
+		return SERD_ERROR;
 	case '\\':
 		eat_byte(parser, '\\');
 		if (read_character_escape(parser, dest)) {
-			return true;
+			return SERD_SUCCESS;
 		} else {
-			return error(parser, "invalid escape `\\%c'\n", peek_byte(parser));
+			error(parser, "invalid escape `\\%c'\n", peek_byte(parser));
+			return SERD_ERROR;
 		}
 	default:
 		if (in_range(c, 0x20, 0x5B) || in_range(c, 0x5D, 0x10FFF)) {
 			push_byte(parser, dest, eat_byte(parser, c));
-			return true;
+			return SERD_SUCCESS;
 		} else {
-			return error(parser, "invalid character `%c'\n", c);
+			return SERD_FAILURE;
 		}
 	}
 }
@@ -435,7 +447,7 @@ read_echaracter_escape(SerdReader parser, Ref dest)
 }
 
 // [39] echaracter ::= character | '\t' | '\n' | '\r'
-static inline bool
+static inline SerdStatus
 read_echaracter(SerdReader parser, Ref dest)
 {
 	uint8_t c = peek_byte(parser);
@@ -443,9 +455,10 @@ read_echaracter(SerdReader parser, Ref dest)
 	case '\\':
 		eat_byte(parser, '\\');
 		if (read_echaracter_escape(parser, peek_byte(parser))) {
-			return true;
+			return SERD_SUCCESS;
 		} else {
-			return error(parser, "illegal escape `\\%c'\n", peek_byte(parser));
+			error(parser, "illegal escape `\\%c'\n", peek_byte(parser));
+			return SERD_ERROR;
 		}
 	default:
 		return read_character(parser, dest);
@@ -477,11 +490,11 @@ read_ucharacter_escape(SerdReader parser, Ref dest)
 }
 
 // [43] lcharacter ::= echaracter | '\"' | #x9 | #xA | #xD
-static inline bool
+static inline SerdStatus
 read_lcharacter(SerdReader parser, Ref dest)
 {
-	uint8_t c = peek_byte(parser);
-	uint8_t pre[3];
+	const uint8_t c = peek_byte(parser);
+	uint8_t       pre[3];
 	switch (c) {
 	case '"':
 		readahead(parser, pre, 3);
@@ -489,28 +502,29 @@ read_lcharacter(SerdReader parser, Ref dest)
 			eat_byte(parser, '\"');
 			eat_byte(parser, '\"');
 			eat_byte(parser, '\"');
-			return false;
+			return SERD_FAILURE;
 		} else {
 			push_byte(parser, dest, eat_byte(parser, '"'));
-			return true;
+			return SERD_SUCCESS;
 		}
 	case '\\':
 		eat_byte(parser, '\\');
 		if (read_scharacter_escape(parser, dest)) {
-			return true;
+			return SERD_SUCCESS;
 		} else {
-			return error(parser, "illegal escape `\\%c'\n", peek_byte(parser));
+			error(parser, "illegal escape `\\%c'\n", peek_byte(parser));
+			return SERD_ERROR;
 		}
 	case 0x9: case 0xA: case 0xD:
 		push_byte(parser, dest, eat_byte(parser, c));
-		return c;
+		return SERD_SUCCESS;
 	default:
 		return read_echaracter(parser, dest);
 	}
 }
 
 // [42] scharacter ::= ( echaracter - #x22 ) | '\"'
-static inline bool
+static inline SerdStatus
 read_scharacter(SerdReader parser, Ref dest)
 {
 	uint8_t c = peek_byte(parser);
@@ -518,12 +532,13 @@ read_scharacter(SerdReader parser, Ref dest)
 	case '\\':
 		eat_byte(parser, '\\');
 		if (read_scharacter_escape(parser, dest)) {
-			return true;
+			return SERD_SUCCESS;
 		} else {
-			return error(parser, "illegal escape `\\%c'\n", peek_byte(parser));
+			error(parser, "illegal escape `\\%c'\n", peek_byte(parser));
+			return SERD_ERROR;
 		}
 	case '\"':
-		return false;
+		return SERD_FAILURE;
 	default:
 		return read_character(parser, dest);
 	}
@@ -531,20 +546,20 @@ read_scharacter(SerdReader parser, Ref dest)
 
 // Spec:   [41] ucharacter ::= ( character - #x3E ) | '\>'
 // Actual: [41] ucharacter ::= ( echaracter - #x3E ) | '\>'
-static inline bool
+static inline SerdStatus
 read_ucharacter(SerdReader parser, Ref dest)
 {
-	uint8_t c = peek_byte(parser);
+	const uint8_t c = peek_byte(parser);
 	switch (c) {
 	case '\\':
 		eat_byte(parser, '\\');
 		if (read_ucharacter_escape(parser, dest)) {
-			return true;
+			return SERD_SUCCESS;
 		} else {
 			return error(parser, "illegal escape `\\%c'\n", peek_byte(parser));
 		}
 	case '>':
-		return false;
+		return SERD_FAILURE;
 	default:
 		return read_character(parser, dest);
 	}
@@ -605,9 +620,14 @@ static Ref
 read_longString(SerdReader parser)
 {
 	eat_string(parser, "\"\"\"", 3);
-	Ref   str = push_string(parser, "", 1);
-	while (read_lcharacter(parser, str)) {}
-	return str;
+	Ref        str = push_string(parser, "", 1);
+	SerdStatus st;
+	while (!(st = read_lcharacter(parser, str))) {}
+	if (st != SERD_ERROR) {
+		return str;
+	}
+	pop_string(parser, str);
+	return 0;
 }
 
 // [36] string ::= #x22 scharacter* #x22
@@ -615,10 +635,15 @@ static Ref
 read_string(SerdReader parser)
 {
 	eat_byte(parser, '\"');
-	Ref str = push_string(parser, "", 1);
-	while (read_scharacter(parser, str)) {}
-	eat_byte(parser, '\"');
-	return str;
+	Ref        str = push_string(parser, "", 1);
+	SerdStatus st;
+	while (!(st = read_scharacter(parser, str))) {}
+	if (st != SERD_ERROR) {
+		eat_byte(parser, '\"');
+		return str;
+	}
+	pop_string(parser, str);
+	return 0;
 }
 
 // [35] quotedString ::= string | longSerdString
@@ -644,12 +669,12 @@ static inline Ref
 read_relativeURI(SerdReader parser)
 {
 	Ref str = push_string(parser, "", 1);
-	while (read_ucharacter(parser, str)) {}
-	if (!parser->err) {
+	SerdStatus st;
+	while (!(st = read_ucharacter(parser, str))) {}
+	if (st != SERD_ERROR) {
 		return str;
 	}
-	pop_string(parser, str);
-	return 0;
+	return st;
 }
 
 // [30] nameStartChar ::= [A-Z] | "_" | [a-z]
@@ -753,12 +778,14 @@ read_language(SerdReader parser)
 static Ref
 read_uriref(SerdReader parser)
 {
-	eat_byte(parser, '<');
+	TRY_RET(eat_byte(parser, '<'));
 	Ref const str = read_relativeURI(parser);
 	if (str) {
-		eat_byte(parser, '>');
+		TRY_THROW(eat_byte(parser, '>'));
 		return str;
 	}
+except:
+	pop_string(parser, str);
 	return 0;
 }
 
@@ -770,13 +797,17 @@ read_qname(SerdReader parser)
 	if (!prefix) {
 		prefix = push_string(parser, "", 1);
 	}
-	push_byte(parser, prefix, eat_byte(parser, ':'));
+	TRY_THROW(eat_byte(parser, ':'));
+	push_byte(parser, prefix, ':');
 	Ref str = read_name(parser, prefix, false);
 	if (parser->err) {
 		pop_string(parser, prefix);
 		return 0;
 	}
 	return str ? str : prefix;
+except:
+	pop_string(parser, prefix);
+	return 0;
 }
 
 
@@ -869,7 +900,7 @@ static bool
 read_literal(SerdReader parser, Node* dest)
 {
 	Ref           str      = 0;
-	Node          datatype = { 0, 0, 0, 0 };
+	Node          datatype = SERD_NODE_NULL;
 	const uint8_t c        = peek_byte(parser);
 	if (in_range(c, '0', '9') || c == '-' || c == '+') {
 		return read_number(parser, dest);
@@ -901,17 +932,15 @@ except:
 }
 
 // [12] predicate ::= resource
-static Node
-read_predicate(SerdReader parser)
+static bool
+read_predicate(SerdReader parser, Node* dest)
 {
-	Node node = { 0, 0, 0, 0 };
-	read_resource(parser, &node);
-	return node;
+	return read_resource(parser, dest);
 }
 
 // [9] verb ::= predicate | 'a'
-static Node
-read_verb(SerdReader parser)
+static bool
+read_verb(SerdReader parser, Node* dest)
 {
 	#define RDF_TYPE "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
 	uint8_t pre[2];
@@ -920,12 +949,13 @@ read_verb(SerdReader parser)
 	case 'a':
 		switch (pre[1]) {
 		case 0x9: case 0xA: case 0xD: case 0x20:
-			eat_byte(parser, pre[0]);
-			return make_node(URI, push_string(parser, RDF_TYPE, 48), 0, 0);
+			eat_byte(parser, 'a');
+			*dest = make_node(URI, push_string(parser, RDF_TYPE, 48), 0, 0);
+			return true;
 		default: break;  // fall through
 		}
 	default:
-		return read_predicate(parser);
+		return read_predicate(parser, dest);
 	}
 }
 
@@ -1000,7 +1030,7 @@ read_object(SerdReader parser, const Node* subject, const Node* predicate)
 	static const size_t      XSD_BOOLEAN_LEN = 40;
 
 	bool          ret = false;
-	Node          o   = { 0, 0, 0, 0 };
+	Node          o   = SERD_NODE_NULL;
 	const uint8_t c   = peek_byte(parser);
 	switch (c) {
 	case ')':
@@ -1082,7 +1112,8 @@ read_predicateObjectList(SerdReader parser, const Node* subject)
 	if (parser->eof) {
 		return false;
 	}
-	Node predicate = read_verb(parser);
+	Node predicate = SERD_NODE_NULL;
+	TRY_RET(read_verb(parser, &predicate));
 	read_ws_plus(parser);
 	TRY_THROW(read_objectList(parser, subject, &predicate));
 	pop_string(parser, predicate.value);
@@ -1095,7 +1126,7 @@ read_predicateObjectList(SerdReader parser, const Node* subject)
 		case '.': case ']':
 			return true;
 		default:
-			TRY_THROW((predicate = read_verb(parser)).value != 0);
+			TRY_THROW(read_verb(parser, &predicate));
 			read_ws_plus(parser);
 			TRY_THROW(read_objectList(parser, subject, &predicate));
 			pop_string(parser, predicate.value);
@@ -1127,7 +1158,7 @@ read_collection_rec(SerdReader parser, const Node* head)
 			return true;
 		} else {
 			pop_string(parser, rest.value);
-			return error(parser, "expected object\n");
+			return false;
 		}
 	}
 }
@@ -1158,7 +1189,7 @@ read_collection(SerdReader parser, Node* dest)
 static Node
 read_subject(SerdReader parser)
 {
-	Node subject = { 0, 0, 0, 0 };
+	Node subject = SERD_NODE_NULL;
 	switch (peek_byte(parser)) {
 	case '[': case '(': case '_':
 		read_blank(parser, &subject);
@@ -1176,7 +1207,7 @@ read_triples(SerdReader parser)
 {
 	const Node subject = read_subject(parser);
 	if (subject.value != 0) {
-		read_ws_plus(parser);
+		TRY_RET(read_ws_plus(parser));
 		const bool ret = read_predicateObjectList(parser, &subject);
 		pop_string(parser, subject.value);
 		return ret;
@@ -1190,7 +1221,7 @@ read_base(SerdReader parser)
 {
 	// `@' is already eaten in read_directive
 	eat_string(parser, "base", 4);
-	read_ws_plus(parser);
+	TRY_RET(read_ws_plus(parser));
 	Ref uri;
 	TRY_RET(uri = read_uriref(parser));
 	parser->base_handler(parser->handle, deref(parser, uri));

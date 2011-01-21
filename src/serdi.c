@@ -164,7 +164,7 @@ main(int argc, char** argv)
 			return print_usage(argv[0], true);
 		}
 	}
-	
+
 	const uint8_t* in_filename = (const uint8_t*)argv[a];
 
 	if (!in_fd && serd_uri_string_has_scheme(in_filename)) {
@@ -197,7 +197,7 @@ main(int argc, char** argv)
 	if (!in_fd) {
 		in_fd  = fopen((const char*)in_filename,  "r");
 	}
-	
+
 	FILE* out_fd = stdout;
 
 	if (!in_fd) {

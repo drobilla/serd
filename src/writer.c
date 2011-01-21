@@ -1,6 +1,6 @@
 /* Serd, an RDF serialisation library.
  * Copyright 2011 David Robillard <d@drobilla.net>
- * 
+ *
  * Serd is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -59,7 +59,7 @@ typedef enum {
 	WRITE_URI,
 	WRITE_STRING
 } WriteContext;
-	
+
 static bool
 write_text(SerdWriter writer, WriteContext ctx,
            const uint8_t* utf8, size_t n_bytes, uint8_t terminator)
@@ -76,12 +76,12 @@ write_text(SerdWriter writer, WriteContext ctx,
 			if (terminator == '"') {
 				writer->sink("\\\"", 2, writer->stream);
 				continue;
-			} // else fall-through
+			}  // else fall-through
 		default: break;
 		}
 
 		if (in == terminator) {
-			sprintf(escape, "\\u%04X", terminator);
+			snprintf(escape, 7, "\\u%04X", terminator);
 			writer->sink(escape, 6, writer->stream);
 			continue;
 		}
@@ -138,10 +138,10 @@ write_text(SerdWriter writer, WriteContext ctx,
 		}
 
 		if (c < 0xFFFF) {
-			sprintf(escape, "\\u%04X", c);
+			snprintf(escape, 7, "\\u%04X", c);
 			writer->sink(escape, 6, writer->stream);
 		} else {
-			sprintf(escape, "\\U%08X", c);
+			snprintf(escape, 11, "\\U%08X", c);
 			writer->sink(escape, 10, writer->stream);
 		}
 	}
@@ -379,11 +379,11 @@ serd_writer_set_prefix(SerdWriter        writer,
                        const SerdString* uri)
 {
 	if (writer->syntax != SERD_NTRIPLES) {
-		writer->sink("@prefix ", 8, writer->stream); 
+		writer->sink("@prefix ", 8, writer->stream);
 		writer->sink(name->buf, name->n_bytes - 1, writer->stream);
 		writer->sink(": <", 3, writer->stream);
 		write_text(writer, WRITE_URI, uri->buf, uri->n_bytes - 1, '>');
-		writer->sink("> .\n", 4, writer->stream); 
+		writer->sink("> .\n", 4, writer->stream);
 	}
 }
 
