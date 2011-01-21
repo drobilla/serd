@@ -578,13 +578,10 @@ read_comment(SerdReader parser)
 
 // [24] ws ::= #x9 | #xA | #xD | #x20 | comment
 static inline bool
-read_ws(SerdReader parser, bool required)
+read_ws(SerdReader parser)
 {
 	const uint8_t c = peek_byte(parser);
 	switch (c) {
-	case '\0':
-		assert(parser->eof);
-		return false;
 	case 0x9: case 0xA: case 0xD: case 0x20:
 		eat_byte(parser, c);
 		return true;
@@ -592,27 +589,22 @@ read_ws(SerdReader parser, bool required)
 		read_comment(parser);
 		return true;
 	default:
-		if (required) {
-			error(parser, "expected whitespace\n");
-		}
 		return false;
 	}
-}
-
-static inline bool
-read_ws_plus(SerdReader parser)
-{
-	if (read_ws(parser, true)) {
-		while (read_ws(parser, false)) {}
-		return true;
-	}
-	return false;
 }
 
 static inline void
 read_ws_star(SerdReader parser)
 {
-	while (read_ws(parser, false)) {}
+	while (read_ws(parser)) {}
+}
+
+static inline bool
+read_ws_plus(SerdReader parser)
+{
+	TRY_RET(read_ws(parser));
+	read_ws_star(parser);
+	return true;
 }
 
 // [37] longSerdString ::= #x22 #x22 #x22 lcharacter* #x22 #x22 #x22
@@ -1114,7 +1106,7 @@ read_predicateObjectList(SerdReader parser, const Node* subject)
 	}
 	Node predicate = SERD_NODE_NULL;
 	TRY_RET(read_verb(parser, &predicate));
-	read_ws_plus(parser);
+	TRY_THROW(read_ws_plus(parser));
 	TRY_THROW(read_objectList(parser, subject, &predicate));
 	pop_string(parser, predicate.value);
 	predicate.value = 0;
@@ -1127,7 +1119,7 @@ read_predicateObjectList(SerdReader parser, const Node* subject)
 			return true;
 		default:
 			TRY_THROW(read_verb(parser, &predicate));
-			read_ws_plus(parser);
+			TRY_THROW(read_ws_plus(parser));
 			TRY_THROW(read_objectList(parser, subject, &predicate));
 			pop_string(parser, predicate.value);
 			predicate.value = 0;
@@ -1236,7 +1228,7 @@ read_prefixID(SerdReader parser)
 {
 	// `@' is already eaten in read_directive
 	eat_string(parser, "prefix", 6);
-	read_ws_plus(parser);
+	TRY_RET(read_ws_plus(parser));
 	bool ret = false;
 	Ref name = read_prefixName(parser);
 	if (!name) {
