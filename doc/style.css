@@ -8,11 +8,16 @@ body {
 
 /* @group Heading Levels */
 h2 {
-	margin-top: 1.5em;
+	margin-top: 1em;
+	margin-bottom: 0.25em;
 }
 
 p {
-	margin: .5ex 0;
+	margin: 0 0 1ex 0;
+}
+
+br {
+	display: none;
 }
 
 dt {
@@ -291,9 +296,8 @@ table.memberdecls {
 
 .mdescLeft,.mdescRight,.memItemLeft,.memItemRight,.memTemplItemLeft,.memTemplItemRight,.memTemplParams {
 	background-color: #F9F9F9;
-	border: none;
-	margin: 2px;
-	padding: .5ex 0 .5ex 1ex;
+	margin: 0;
+	padding: 0.25ex;
 }
 
 .mdescLeft,.mdescRight {
@@ -301,11 +305,12 @@ table.memberdecls {
 }
 
 .memItemLeft,.memItemRight,.memTemplParams {
-	border-top: 1px solid #C4C4C4;
+	border-top: 1px solid #DDD;
 }
 
 .memItemLeft,.memTemplItemLeft {
 	white-space: nowrap;
+	padding-left: 2em;
 }
 
 .memTemplParams {
