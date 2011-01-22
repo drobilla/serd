@@ -1003,17 +1003,28 @@ read_blank(SerdReader reader, Context ctx, Node* dest)
 		if (peek_byte(reader) == ']') {
 			eat_byte(reader, ']');
 			*dest = make_node(BLANK, blank_id(reader), 0, 0);
-			return true;
+			if (ctx.subject) {
+				emit_statement(reader, ctx.graph, ctx.subject, ctx.predicate, dest);
+			}
 		} else {
 			*dest = make_node(BLANK, blank_id(reader), 0, 0);
+			if (ctx.subject) {
+				emit_statement(reader, ctx.graph, ctx.subject, ctx.predicate, dest);
+			}
 			ctx.subject = dest;
 			read_predicateObjectList(reader, ctx);
 			read_ws_star(reader);
 			eat_byte(reader, ']');
+		}
+		return true;
+	case '(':
+		if (read_collection(reader, ctx, dest)) {
+			if (ctx.subject) {
+				emit_statement(reader, ctx.graph, ctx.subject, ctx.predicate, dest);
+			}
 			return true;
 		}
-	case '(':
-		return read_collection(reader, ctx, dest);
+		return false;
 	default:
 		return error(reader, "illegal blank node\n");
 	}
@@ -1041,13 +1052,17 @@ read_object(SerdReader reader, Context ctx)
 	static const size_t      XSD_BOOLEAN_LEN = 40;
 
 	uint8_t       pre[6];
-	bool          ret = false;
-	Node          o   = SERD_NODE_NULL;
-	const uint8_t c   = peek_byte(reader);
+	bool          ret  = false;
+	bool          emit = true;
+	Node          o    = SERD_NODE_NULL;
+	const uint8_t c    = peek_byte(reader);
 	switch (c) {
 	case ')':
 		return false;
-	case '[': case '(': case '_':
+	case '[': case '(':
+		emit = false;
+		// fall through
+	case '_':
 		TRY_THROW(ret = read_blank(reader, ctx, &o));
 		break;
 	case '<': case ':':
@@ -1083,7 +1098,7 @@ read_object(SerdReader reader, Context ctx)
 		ret = o.value;
 	}
 
-	if (ret) {
+	if (ret && emit) {
 		assert(o.value);
 		emit_statement(reader, ctx.graph, ctx.subject, ctx.predicate, &o);
 	}
