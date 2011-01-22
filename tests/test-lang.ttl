@@ -1,0 +1,4 @@
+@prefix : <http://example.org/test-lang#> .
+
+:thing :greeting "Hello"@en ;
+       :greeting "Bonjour"@fr .
