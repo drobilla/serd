@@ -159,7 +159,6 @@ eat_byte(SerdReader parser, const uint8_t byte)
 	const uint8_t c = peek_byte(parser);
 	++parser->read_head;
 	switch (c) {
-	case '\0': return error(parser, "unexpected end of file\n");
 	case '\n': ++parser->cur.line; parser->cur.col = 0; break;
 	default:   ++parser->cur.col;
 	}
