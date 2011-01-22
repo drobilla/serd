@@ -50,13 +50,18 @@ typedef uint32_t uchar;
 
 typedef size_t Ref;
 
-
 typedef struct {
 	SerdNodeType type;
 	Ref          value;
 	Ref          datatype;
 	Ref          lang;
 } Node;
+
+typedef struct {
+	const Node* graph;
+	const Node* subject;
+	const Node* predicate;
+} Context;
 
 static const Node SERD_NODE_NULL = {0,0,0,0};
 
@@ -295,8 +300,8 @@ emit_statement(SerdReader reader,
 	                       deref(reader, o->datatype), deref(reader, o->lang));
 }
 
-static bool read_collection(SerdReader reader, Node* dest);
-static bool read_predicateObjectList(SerdReader reader, const Node* subject);
+static bool read_collection(SerdReader reader, Context ctx, Node* dest);
+static bool read_predicateObjectList(SerdReader reader, Context ctx);
 
 // [40]	hex	::=	[#x30-#x39] | [#x41-#x46]
 static inline uint8_t
@@ -986,7 +991,7 @@ blank_id(SerdReader reader)
 // Spec:   [21] blank ::= nodeID | '[]' | '[' predicateObjectList ']' | collection
 // Actual: [21] blank ::= nodeID | '[ ws* ]' | '[' ws* predicateObjectList ws* ']' | collection
 static bool
-read_blank(SerdReader reader, Node* dest)
+read_blank(SerdReader reader, Context ctx, Node* dest)
 {
 	switch (peek_byte(reader)) {
 	case '_':
@@ -1001,18 +1006,17 @@ read_blank(SerdReader reader, Node* dest)
 			return true;
 		} else {
 			*dest = make_node(BLANK, blank_id(reader), 0, 0);
-			read_predicateObjectList(reader, dest);
+			ctx.subject = dest;
+			read_predicateObjectList(reader, ctx);
 			read_ws_star(reader);
 			eat_byte(reader, ']');
 			return true;
 		}
 	case '(':
-		return read_collection(reader, dest);
+		return read_collection(reader, ctx, dest);
 	default:
-		error(reader, "illegal blank node\n");
+		return error(reader, "illegal blank node\n");
 	}
-	// TODO: collections
-	return false;
 }
 
 inline static bool
@@ -1029,12 +1033,14 @@ is_object_end(const uint8_t c)
 
 // [13] object ::= resource | blank | literal
 // Recurses, calling statement_sink for every statement encountered.
+// Leaves stack in original calling state (i.e. pops everything it pushes).
 static bool
-read_object(SerdReader reader, const Node* subject, const Node* predicate)
+read_object(SerdReader reader, Context ctx)
 {
 	static const char* const XSD_BOOLEAN     = "http://www.w3.org/2001/XMLSchema#boolean";
 	static const size_t      XSD_BOOLEAN_LEN = 40;
 
+	uint8_t       pre[6];
 	bool          ret = false;
 	Node          o   = SERD_NODE_NULL;
 	const uint8_t c   = peek_byte(reader);
@@ -1042,7 +1048,7 @@ read_object(SerdReader reader, const Node* subject, const Node* predicate)
 	case ')':
 		return false;
 	case '[': case '(': case '_':
-		TRY_THROW(ret = read_blank(reader, &o));
+		TRY_THROW(ret = read_blank(reader, ctx, &o));
 		break;
 	case '<': case ':':
 		TRY_THROW(ret = read_resource(reader, &o));
@@ -1054,23 +1060,19 @@ read_object(SerdReader reader, const Node* subject, const Node* predicate)
 		break;
 	case '.':
 		TRY_THROW(ret = read_literal(reader, &o));
-	default: break;
-	}
-
-	if (!ret) {
-		assert(o.value == 0);
+		break;
+	default:
 		/* Either a boolean literal, or a qname.
-		   Unfortunately there is no way to distinbuish these without a lot of readahead,
-		   since `true' or `false' could be the start of a qname.
+		   Unfortunately there is no way to distinguish these without
+		   readahead, since `true' or `false' could be the start of a qname.
 		*/
-		uint8_t pre[6];
 		readahead(reader, pre, 6);
-		if (!strncmp((char*)pre, "true", 4) && is_object_end(pre[4])) {
+		if (!memcmp(pre, "true", 4) && is_object_end(pre[4])) {
 			eat_string(reader, "true", 4);
 			const Ref value     = push_string(reader, "true", 5);
 			const Ref datatype  = push_string(reader, XSD_BOOLEAN, XSD_BOOLEAN_LEN + 1);
 			o = make_node(LITERAL, value, datatype, 0);
-		} else if (!strncmp((char*)pre, "false", 5) && is_object_end(pre[5])) {
+		} else if (!memcmp(pre, "false", 5) && is_object_end(pre[5])) {
 			eat_string(reader, "false", 5);
 			const Ref value     = push_string(reader, "false", 6);
 			const Ref datatype  = push_string(reader, XSD_BOOLEAN, XSD_BOOLEAN_LEN + 1);
@@ -1078,33 +1080,32 @@ read_object(SerdReader reader, const Node* subject, const Node* predicate)
 		} else if (!is_object_end(c)) {
 			o = make_node(QNAME, read_qname(reader), 0, 0);
 		}
+		ret = o.value;
 	}
 
-	if (o.value != 0) {
-		emit_statement(reader, NULL, subject, predicate, &o);
-		pop_string(reader, o.lang);
-		pop_string(reader, o.datatype);
-		pop_string(reader, o.value);
-		return true;
+	if (ret) {
+		assert(o.value);
+		emit_statement(reader, ctx.graph, ctx.subject, ctx.predicate, &o);
 	}
+
 except:
 	pop_string(reader, o.lang);
 	pop_string(reader, o.datatype);
 	pop_string(reader, o.value);
-	return false;
+	return ret;
 }
 
 // Spec:   [8] objectList ::= object ( ',' object )*
 // Actual: [8] objectList ::= object ( ws* ',' ws* object )*
 static bool
-read_objectList(SerdReader reader, const Node* subject, const Node* predicate)
+read_objectList(SerdReader reader, Context ctx)
 {
-	TRY_RET(read_object(reader, subject, predicate));
+	TRY_RET(read_object(reader, ctx));
 	read_ws_star(reader);
 	while (peek_byte(reader) == ',') {
 		eat_byte(reader, ',');
 		read_ws_star(reader);
-		TRY_RET(read_object(reader, subject, predicate));
+		TRY_RET(read_object(reader, ctx));
 		read_ws_star(reader);
 	}
 	return true;
@@ -1113,7 +1114,7 @@ read_objectList(SerdReader reader, const Node* subject, const Node* predicate)
 // Spec:   [7] predicateObjectList ::= verb objectList ( ';' verb objectList )* ( ';' )?
 // Actual: [7] predicateObjectList ::= verb ws+ objectList ( ws* ';' ws* verb ws+ objectList )* ( ';' )?
 static bool
-read_predicateObjectList(SerdReader reader, const Node* subject)
+read_predicateObjectList(SerdReader reader, Context ctx)
 {
 	if (reader->eof) {
 		return false;
@@ -1121,7 +1122,8 @@ read_predicateObjectList(SerdReader reader, const Node* subject)
 	Node predicate = SERD_NODE_NULL;
 	TRY_RET(read_verb(reader, &predicate));
 	TRY_THROW(read_ws_plus(reader));
-	TRY_THROW(read_objectList(reader, subject, &predicate));
+	ctx.predicate = &predicate;
+	TRY_THROW(read_objectList(reader, ctx));
 	pop_string(reader, predicate.value);
 	predicate.value = 0;
 	read_ws_star(reader);
@@ -1133,8 +1135,9 @@ read_predicateObjectList(SerdReader reader, const Node* subject)
 			return true;
 		default:
 			TRY_THROW(read_verb(reader, &predicate));
+			ctx.predicate = &predicate;
 			TRY_THROW(read_ws_plus(reader));
-			TRY_THROW(read_objectList(reader, subject, &predicate));
+			TRY_THROW(read_objectList(reader, ctx));
 			pop_string(reader, predicate.value);
 			predicate.value = 0;
 			read_ws_star(reader);
@@ -1148,18 +1151,20 @@ except:
 
 /** Recursive helper for read_collection. */
 static bool
-read_collection_rec(SerdReader reader, const Node* head)
+read_collection_rec(SerdReader reader, Context ctx)
 {
 	read_ws_star(reader);
 	if (peek_byte(reader) == ')') {
 		eat_byte(reader, ')');
-		emit_statement(reader, NULL, head, &reader->rdf_rest, &reader->rdf_nil);
+		emit_statement(reader, NULL, ctx.subject, &reader->rdf_rest, &reader->rdf_nil);
 		return false;
 	} else {
 		const Node rest = make_node(BLANK, blank_id(reader), 0, 0);
-		emit_statement(reader, NULL, head, &reader->rdf_rest, &rest);
-		if (read_object(reader, &rest, &reader->rdf_first)) {
-			read_collection_rec(reader, &rest);
+		emit_statement(reader, ctx.graph, ctx.subject, &reader->rdf_rest, &rest);
+		ctx.subject = &rest;
+		ctx.predicate = &reader->rdf_first;
+		if (read_object(reader, ctx)) {
+			read_collection_rec(reader, ctx);
 			pop_string(reader, rest.value);
 			return true;
 		} else {
@@ -1172,7 +1177,7 @@ read_collection_rec(SerdReader reader, const Node* head)
 // [22] itemList   ::= object+
 // [23] collection ::= '(' itemList? ')'
 static bool
-read_collection(SerdReader reader, Node* dest)
+read_collection(SerdReader reader, Context ctx, Node* dest)
 {
 	TRY_RET(eat_byte(reader, '('));
 	read_ws_star(reader);
@@ -1183,22 +1188,25 @@ read_collection(SerdReader reader, Node* dest)
 	}
 
 	*dest = make_node(BLANK, blank_id(reader), 0, 0);
-	if (!read_object(reader, dest, &reader->rdf_first)) {
+	ctx.subject   = dest;
+	ctx.predicate = &reader->rdf_first;
+	if (!read_object(reader, ctx)) {
 		pop_string(reader, dest->value);
 		return error(reader, "unexpected end of collection\n");
 	}
 
-	return read_collection_rec(reader, dest);
+	ctx.subject = dest;
+	return read_collection_rec(reader, ctx);
 }
 
 // [11] subject ::= resource | blank
 static Node
-read_subject(SerdReader reader)
+read_subject(SerdReader reader, Context ctx)
 {
-	Node subject = SERD_NODE_NULL;
+	Node    subject = SERD_NODE_NULL;
 	switch (peek_byte(reader)) {
 	case '[': case '(': case '_':
-		read_blank(reader, &subject);
+		read_blank(reader, ctx, &subject);
 		break;
 	default:
 		read_resource(reader, &subject);
@@ -1209,12 +1217,13 @@ read_subject(SerdReader reader)
 // Spec:   [6] triples ::= subject predicateObjectList
 // Actual: [6] triples ::= subject ws+ predicateObjectList
 static bool
-read_triples(SerdReader reader)
+read_triples(SerdReader reader, Context ctx)
 {
-	const Node subject = read_subject(reader);
+	const Node subject = read_subject(reader, ctx);
 	if (subject.value != 0) {
+		ctx.subject = &subject;
 		TRY_RET(read_ws_plus(reader));
-		const bool ret = read_predicateObjectList(reader, &subject);
+		const bool ret = read_predicateObjectList(reader, ctx);
 		pop_string(reader, subject.value);
 		return ret;
 	}
@@ -1281,6 +1290,7 @@ read_directive(SerdReader reader)
 static bool
 read_statement(SerdReader reader)
 {
+	Context ctx = { 0, 0, 0 };
 	read_ws_star(reader);
 	if (reader->eof) {
 		return true;
@@ -1290,7 +1300,7 @@ read_statement(SerdReader reader)
 		TRY_RET(read_directive(reader));
 		break;
 	default:
-		TRY_RET(read_triples(reader));
+		TRY_RET(read_triples(reader, ctx));
 		break;
 	}
 	read_ws_star(reader);
