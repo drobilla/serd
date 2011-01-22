@@ -41,7 +41,7 @@ typedef bool (*NodeWriter)(SerdWriter        writer,
 struct SerdWriterImpl {
 	SerdSyntax        syntax;
 	SerdStyle         style;
-	SerdNamespaces    ns;
+	SerdEnv           env;
 	SerdURI           base_uri;
 	SerdSink          sink;
 	void*             stream;
@@ -154,9 +154,6 @@ write_node(SerdWriter        writer,
            const SerdString* datatype,
            const SerdString* lang)
 {
-	const SerdURI* base_uri = &writer->base_uri;
-	SerdNamespaces ns       = writer->ns;
-
 	SerdChunk uri_prefix;
 	SerdChunk uri_suffix;
 	switch (type) {
@@ -167,7 +164,7 @@ write_node(SerdWriter        writer,
 	case QNAME:
 		switch (writer->syntax) {
 		case SERD_NTRIPLES:
-			if (!serd_namespaces_expand(ns, str, &uri_prefix, &uri_suffix)) {
+			if (!serd_env_expand(writer->env, str, &uri_prefix, &uri_suffix)) {
 				fprintf(stderr, "error: undefined namespace prefix `%s'\n", str->buf);
 				return false;
 			}
@@ -185,7 +182,7 @@ write_node(SerdWriter        writer,
 			SerdURI uri;
 			if (serd_uri_parse(str->buf, &uri)) {
 				SerdURI abs_uri;
-				if (serd_uri_resolve(&uri, base_uri, &abs_uri)) {
+				if (serd_uri_resolve(&uri, &writer->base_uri, &abs_uri)) {
 					writer->sink("<", 1, writer->stream);
 					serd_uri_serialise(&abs_uri, writer->sink, writer->stream);
 					writer->sink(">", 1, writer->stream);
@@ -336,7 +333,7 @@ SERD_API
 SerdWriter
 serd_writer_new(SerdSyntax     syntax,
                 SerdStyle      style,
-                SerdNamespaces ns,
+                SerdEnv        env,
                 const SerdURI* base_uri,
                 SerdSink       sink,
                 void*          stream)
@@ -344,7 +341,7 @@ serd_writer_new(SerdSyntax     syntax,
 	SerdWriter writer = malloc(sizeof(struct SerdWriterImpl));
 	writer->syntax   = syntax;
 	writer->style    = style;
-	writer->ns       = ns;
+	writer->env      = env;
 	writer->base_uri = *base_uri;
 	writer->sink     = sink;
 	writer->stream   = stream;

@@ -22,10 +22,10 @@
 #include "serd/serd.h"
 
 typedef struct {
-	SerdWriter     writer;
-	SerdNamespaces ns;
-	SerdString*    base_uri_str;
-	SerdURI        base_uri;
+	SerdWriter  writer;
+	SerdEnv     env;
+	SerdString* base_uri_str;
+	SerdURI     base_uri;
 } State;
 
 static bool
@@ -84,10 +84,10 @@ event_prefix(void*             handle,
 		}
 		SerdURI     new_abs_uri;
 		SerdString* abs_uri_string = serd_string_new_from_uri(&abs_uri, &new_abs_uri);
-		serd_namespaces_add(state->ns, name, abs_uri_string);
+		serd_env_add(state->env, name, abs_uri_string);
 		serd_string_free(abs_uri_string);
 	} else {
-		serd_namespaces_add(state->ns, name, uri_string);
+		serd_env_add(state->env, name, uri_string);
 	}
 	serd_writer_set_prefix(state->writer, name, uri_string);
 
@@ -205,7 +205,7 @@ main(int argc, char** argv)
 		return 1;
 	}
 
-	SerdNamespaces ns = serd_namespaces_new();
+	SerdEnv env = serd_env_new();
 
 	SerdStyle output_style = (output_syntax == SERD_NTRIPLES)
 		? SERD_STYLE_ASCII
@@ -213,8 +213,8 @@ main(int argc, char** argv)
 
 	State state = {
 		serd_writer_new(output_syntax, output_style,
-		                ns, &base_uri, file_sink, out_fd),
-		ns, base_uri_str, base_uri
+		                env, &base_uri, file_sink, out_fd),
+		env, base_uri_str, base_uri
 	};
 
 	SerdReader reader = serd_reader_new(
@@ -227,7 +227,7 @@ main(int argc, char** argv)
 	serd_writer_finish(state.writer);
 	serd_writer_free(state.writer);
 
-	serd_namespaces_free(state.ns);
+	serd_env_free(state.env);
 	serd_string_free(state.base_uri_str);
 
 	if (success) {

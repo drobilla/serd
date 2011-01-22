@@ -55,7 +55,7 @@ def build(bld):
 	autowaf.build_pc(bld, 'SERD', SERD_VERSION, ['REDLAND'])
 
 	lib_source = '''
-		src/namespaces.c
+		src/env.c
 		src/reader.c
 		src/string.c
 		src/uri.c

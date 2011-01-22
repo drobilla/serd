@@ -49,13 +49,13 @@ extern "C" {
 #endif
 
 /** @defgroup serd Serd
- * @brief A lightweight RDF Serialisation Library.
+ * A lightweight RDF serialisation library.
  * @{
  */
 
-typedef struct SerdNamespacesImpl* SerdNamespaces;  ///< Set of namespaces
-typedef struct SerdReaderImpl*     SerdReader;      ///< RDF reader
-typedef struct SerdWriterImpl*     SerdWriter;      ///< RDF writer
+typedef struct SerdEnvImpl*    SerdEnv;    /**< Namespace prefixes. */
+typedef struct SerdReaderImpl* SerdReader; /**< RDF reader. */
+typedef struct SerdWriterImpl* SerdWriter; /**< RDF writer. */
 
 /** RDF syntax */
 typedef enum {
@@ -71,12 +71,12 @@ typedef enum {
 	LITERAL = 4   ///< Literal string (with optional lang or datatype)
 } SerdNodeType;
 
-/** @name URI
- * Support for parsing and resolving URIs.
+/** @name SerdURI
+ * A parsed URI.
  * @{
  */
 
-/** A chunk of memory (non-terminated string). */
+/** A chunk of memory (unterminated string). */
 typedef struct {
 	const uint8_t* buf;  ///< Start of chunk
 	size_t         len;  ///< Length of chunk in bytes
@@ -127,7 +127,7 @@ size_t
 serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream);
 
 /** @} */
-/** @name String
+/** @name SerdString
  * @brief A measured UTF-8 string.
  * @{
  */
@@ -159,40 +159,41 @@ SERD_API
 SerdString*
 serd_string_new_from_uri(const SerdURI* uri,
                          SerdURI*       out);
+
 /** @} */
-/** @name Namespaces
- * @brief A dictionary of namespaces (names associated with URI strings)
+/** @name SerdEnv
+ * @brief An environment (a prefix => URI dictionary).
  * @{
  */
 
-/** Create a new namespaces dictionary. */
+/** Create a new environment. */
 SERD_API
-SerdNamespaces
-serd_namespaces_new();
+SerdEnv
+serd_env_new();
 
 /** Free @a ns. */
 SERD_API
 void
-serd_namespaces_free(SerdNamespaces ns);
+serd_env_free(SerdEnv env);
 
 /** Add namespace @a uri to @a ns using prefix @a name. */
 SERD_API
 void
-serd_namespaces_add(SerdNamespaces    ns,
-                    const SerdString* name,
-                    const SerdString* uri);
+serd_env_add(SerdEnv           env,
+             const SerdString* name,
+             const SerdString* uri);
 
 /** Expand @a qname. */
 SERD_API
 bool
-serd_namespaces_expand(const SerdNamespaces ns,
-                       const SerdString*    qname,
-                       SerdChunk*           uri_prefix,
-                       SerdChunk*           uri_suffix);
+serd_env_expand(const SerdEnv     env,
+                const SerdString* qname,
+                SerdChunk*        uri_prefix,
+                SerdChunk*        uri_suffix);
 
 /** @} */
-/** @name Reader
- * @brief Reader for RDF syntax.
+/** @name SerdReader
+ * @brief Reader of RDF syntax.
  * @{
  */
 
@@ -239,7 +240,7 @@ void
 serd_reader_free(SerdReader reader);
 
 /** @} */
-/** @name Writer
+/** @name SerdWriter
  * @brief Writer of RDF syntax.
  * @{
  */
@@ -255,7 +256,7 @@ SERD_API
 SerdWriter
 serd_writer_new(SerdSyntax     syntax,
                 SerdStyle      style,
-                SerdNamespaces ns,
+                SerdEnv        env,
                 const SerdURI* base_uri,
                 SerdSink       sink,
                 void*          stream);
