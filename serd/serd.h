@@ -196,35 +196,35 @@ serd_namespaces_expand(const SerdNamespaces ns,
  * @{
  */
 
-/** Handler for base URI changes. */
-typedef bool (*SerdBaseHandler)(void*             handle,
-                                const SerdString* uri);
+/** Sink for base URI changes. */
+typedef bool (*SerdBaseSink)(void*             handle,
+                             const SerdString* uri);
 
-/** Handler for namespace definitions. */
-typedef bool (*SerdPrefixHandler)(void*             handle,
-                                  const SerdString* name,
-                                  const SerdString* uri);
+/** Sink for namespace definitions. */
+typedef bool (*SerdPrefixSink)(void*             handle,
+                               const SerdString* name,
+                               const SerdString* uri);
 
-/** Handler for statements. */
-typedef bool (*SerdStatementHandler)(void*             handle,
-                                     const SerdString* graph,
-                                     const SerdString* subject,
-                                     SerdNodeType      subject_type,
-                                     const SerdString* predicate,
-                                     SerdNodeType      predicate_type,
-                                     const SerdString* object,
-                                     SerdNodeType      object_type,
-                                     const SerdString* object_lang,
-                                     const SerdString* object_datatype);
+/** Sink for statements. */
+typedef bool (*SerdStatementSink)(void*             handle,
+                                  const SerdString* graph,
+                                  const SerdString* subject,
+                                  SerdNodeType      subject_type,
+                                  const SerdString* predicate,
+                                  SerdNodeType      predicate_type,
+                                  const SerdString* object,
+                                  SerdNodeType      object_type,
+                                  const SerdString* object_lang,
+                                  const SerdString* object_datatype);
 
 /** Create a new RDF reader. */
 SERD_API
 SerdReader
-serd_reader_new(SerdSyntax           syntax,
-                void*                handle,
-                SerdBaseHandler      base_handler,
-                SerdPrefixHandler    prefix_handler,
-                SerdStatementHandler statement_handler);
+serd_reader_new(SerdSyntax        syntax,
+                void*             handle,
+                SerdBaseSink      base_sink,
+                SerdPrefixSink    prefix_sink,
+                SerdStatementSink statement_sink);
 
 /** Read @a file. */
 SERD_API
