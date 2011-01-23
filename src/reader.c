@@ -269,17 +269,18 @@ pop_string(SerdReader reader, Ref ref)
 	}
 }
 
-static inline void
+static inline bool
 emit_statement(SerdReader reader,
                const Node* g, const Node* s, const Node* p, const Node* o)
 {
 	assert(s->value && p->value && o->value);
-	reader->statement_sink(reader->handle,
-	                       g ? deref(reader, g->value) : NULL, g ? g->type : 0,
-	                       deref(reader, s->value), s->type,
-	                       deref(reader, p->value), p->type,
-	                       deref(reader, o->value), o->type,
-	                       deref(reader, o->datatype), deref(reader, o->lang));
+	return reader->statement_sink(
+		reader->handle,
+		g ? deref(reader, g->value) : NULL, g ? g->type : 0,
+		deref(reader, s->value), s->type,
+		deref(reader, p->value), p->type,
+		deref(reader, o->value), o->type,
+		deref(reader, o->datatype), deref(reader, o->lang));
 }
 
 static bool read_collection(SerdReader reader, ReadContext ctx, Node* dest);
@@ -985,13 +986,13 @@ read_blank(SerdReader reader, ReadContext ctx, Node* dest)
 			eat_byte(reader, ']');
 			*dest = make_node(SERD_BLANK_ID, blank_id(reader), 0, 0);
 			if (ctx.subject) {
-				emit_statement(reader, ctx.graph, ctx.subject, ctx.predicate, dest);
+				TRY_RET(emit_statement(reader, ctx.graph, ctx.subject, ctx.predicate, dest));
 			}
 			return true;
 		}
 		*dest = make_node(SERD_ANON_BEGIN, blank_id(reader), 0, 0);
 		if (ctx.subject) {
-			emit_statement(reader, ctx.graph, ctx.subject, ctx.predicate, dest);
+			TRY_RET(emit_statement(reader, ctx.graph, ctx.subject, ctx.predicate, dest));
 			dest->type = SERD_ANON;
 		}
 		ctx.subject = dest;
@@ -1005,7 +1006,7 @@ read_blank(SerdReader reader, ReadContext ctx, Node* dest)
 	case '(':
 		if (read_collection(reader, ctx, dest)) {
 			if (ctx.subject) {
-				emit_statement(reader, ctx.graph, ctx.subject, ctx.predicate, dest);
+				TRY_RET(emit_statement(reader, ctx.graph, ctx.subject, ctx.predicate, dest));
 			}
 			return true;
 		}
@@ -1085,7 +1086,7 @@ read_object(SerdReader reader, ReadContext ctx)
 
 	if (ret && emit) {
 		assert(o.value);
-		emit_statement(reader, ctx.graph, ctx.subject, ctx.predicate, &o);
+		ret = emit_statement(reader, ctx.graph, ctx.subject, ctx.predicate, &o);
 	}
 
 except:
@@ -1158,12 +1159,12 @@ read_collection_rec(SerdReader reader, ReadContext ctx)
 	read_ws_star(reader);
 	if (peek_byte(reader) == ')') {
 		eat_byte(reader, ')');
-		emit_statement(reader, NULL, ctx.subject,
-		               &reader->rdf_rest, &reader->rdf_nil);
+		TRY_RET(emit_statement(reader, NULL, ctx.subject,
+		                       &reader->rdf_rest, &reader->rdf_nil));
 		return false;
 	} else {
 		const Node rest = make_node(SERD_BLANK_ID, blank_id(reader), 0, 0);
-		emit_statement(reader, ctx.graph, ctx.subject, &reader->rdf_rest, &rest);
+		TRY_RET(emit_statement(reader, ctx.graph, ctx.subject, &reader->rdf_rest, &rest));
 		ctx.subject = &rest;
 		ctx.predicate = &reader->rdf_first;
 		if (read_object(reader, ctx)) {

@@ -213,3 +213,8 @@ Box drawing alignment tests:                                          █
   ╚══╩══╝  └──┴──┘  ╰──┴──╯  ╰──┴──╯  ┗━━┻━━┛  ▗▄▖▛▀▜   └╌╌┘ ╎ ┗╍╍┛ ┋  ▁▂▃▄▅▆▇█
                                                ▝▀▘▙▄▟
 """ .
+<> rdfs:comment """
+  5 byte character: \U3FFFFFF
+  6 byte character: \U7FFFFFFF
+""" .
+

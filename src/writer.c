@@ -258,7 +258,9 @@ serd_writer_write_statement(
 		writer->sink(" ", 1, writer->stream);
 		write_node(writer, predicate_type, predicate, NULL, NULL);
 		writer->sink(" ", 1, writer->stream);
-		write_node(writer, object_type, object, object_datatype, object_lang);
+		if (!write_node(writer, object_type, object, object_datatype, object_lang)) {
+			return false;
+		}
 		writer->sink(" .\n", 3, writer->stream);
 		return true;
 	case SERD_TURTLE:
