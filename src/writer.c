@@ -64,9 +64,9 @@ write_text(SerdWriter writer, TextContext ctx,
 		uint8_t in = utf8[i++];
 		switch (in) {
 		case '\\': writer->sink("\\\\", 2, writer->stream); continue;
-		case '\n': writer->sink("\\n", 2, writer->stream); continue;
-		case '\r': writer->sink("\\r", 2, writer->stream); continue;
-		case '\t': writer->sink("\\t", 2, writer->stream); continue;
+		case '\n': writer->sink("\\n", 2, writer->stream);  continue;
+		case '\r': writer->sink("\\r", 2, writer->stream);  continue;
+		case '\t': writer->sink("\\t", 2, writer->stream);  continue;
 		case '"':
 			if (terminator == '"') {
 				writer->sink("\\\"", 2, writer->stream);
@@ -86,7 +86,7 @@ write_text(SerdWriter writer, TextContext ctx,
 		if ((in & 0x80) == 0) {  // Starts with `0'
 			size = 1;
 			c = in & 0x7F;
-			if ((in >= 0x20) && (in <= 0x7E)) {  // Printable ASCII
+			if (in_range((in >= 0x20) && (in <= 0x7E)) {  // Printable ASCII
 				writer->sink(&in, 1, writer->stream);
 				continue;
 			}
@@ -112,6 +112,7 @@ write_text(SerdWriter writer, TextContext ctx,
 
 		if (ctx == WRITE_STRING && !(writer->style & SERD_STYLE_ASCII)) {
 			// Write UTF-8 character directly to UTF-8 output
+			// TODO: Scan to next escape and write entire range at once
 			writer->sink(utf8 + i - 1, size, writer->stream);
 			i += size - 1;
 			continue;

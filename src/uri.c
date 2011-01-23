@@ -269,27 +269,40 @@ serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream)
 			/* Merge paths, removing dot components.
 			   See http://tools.ietf.org/html/rfc3986#section-5.2.3
 			*/
-			const uint8_t* uri_first = uri->path.buf;
-			const uint8_t* uri_end   = uri_first;
+			const uint8_t* begin = uri->path.buf;
+			const uint8_t* end   = begin;
 			size_t         up        = 1;
-			if (uri_first) {
+			if (begin) {
 				// Count and skip leading dot components
-				uri_end = uri->path.buf + uri->path.len;
-				while (uri_first < uri_end) {
-					if (!memcmp((const char*)uri_first, "./", 2)) {
-						uri_first += 2;
-					} else if (!memcmp((const char*)uri_first, "../", 3)) {
-						++up;
-						uri_first += 3;
-					} else if (!memcmp((const char*)uri_first, "..", 2)) {
-						++up;
-						uri_first += 2;
-					} else if (!memcmp((const char*)uri_first, ".", 1)) {
-						++uri_first;
-					} else if (!memcmp((const char*)uri_first, "//", 1)) {
-						++uri_first;
-					} else {
+				end = uri->path.buf + uri->path.len;
+				for (bool done = false; !done && (begin < end);) {
+					switch (begin[0]) {
+					case '.':
+						switch (begin[1]) {
+						case '/':
+							begin += 2;  // Chop leading "./"
+							break;
+						case '.':
+							++up;
+							switch (begin[2]) {
+							case '/':
+								begin += 3;  // Chop lading "../"
+								break;
+							default:
+								begin += 2;  // Chop leading ".."
+							}
+							break;
+						default:
+							++begin;  // Chop leading "."
+						}
 						break;
+					case '/':
+						if (begin[1] == '/') {
+							++begin;  // Replace leading "//" with "/"
+							break;
+						}  // else fall through
+					default:
+						done = true;  // Finished chopping dot components
 					}
 				}
 
@@ -312,7 +325,7 @@ serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream)
 				}
 
 				// Write URI suffix
-				WRITE(uri_first, uri_end - uri_first);
+				WRITE(begin, end - begin);
 			}
 		}
 	} else {
