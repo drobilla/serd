@@ -19,6 +19,7 @@
 #define SERD_INTERNAL_H
 
 #include <assert.h>
+#include <stdlib.h>
 
 #include "serd/serd.h"
 
