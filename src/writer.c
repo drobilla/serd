@@ -86,7 +86,7 @@ write_text(SerdWriter writer, TextContext ctx,
 		if ((in & 0x80) == 0) {  // Starts with `0'
 			size = 1;
 			c = in & 0x7F;
-			if (in_range((in >= 0x20) && (in <= 0x7E)) {  // Printable ASCII
+			if (in_range(in, 0x20, 0x7E)) {  // Printable ASCII
 				writer->sink(&in, 1, writer->stream);
 				continue;
 			}
