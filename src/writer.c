@@ -345,10 +345,8 @@ serd_writer_end_anon(SerdWriter        writer,
 	writer->sink("]", 1, writer->stream);
 	writer->context = *anon_stack_top(writer);
 	serd_stack_pop(&writer->anon_stack, sizeof(WriteContext));
-	if (serd_stack_is_empty(&writer->anon_stack)) {
-		// End of anonymous subject, reset context
-		writer->context.subject   = subject;
-		writer->context.predicate = 0;
+	if (!writer->context.subject) {  // End of anonymous subject
+		writer->context.subject = subject;
 	}
 	return true;
 }
