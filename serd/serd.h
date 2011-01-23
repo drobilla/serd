@@ -68,7 +68,7 @@ typedef enum {
  * node is either a resource, literal, or blank. In syntax there are two
  * ways to refer to a resource (URI or CURIE), and two ways to refer to a
  * blank node (with a blank ID, or anonymously). Serd represents nodes as
- * an unquoted UTF-8 string "value" associated with a @ref SerdNodeType,
+ * an unquoted UTF-8 string "value" associated with a @ref SerdType,
  * which preserves syntactic information allowing for lossless abbreviation.
  * A non-abbreviating sink may simply consider @ref SERD_ANON_BEGIN and
  * @ref SERD_ANON equivalent to SERD_BLANK_ID.
@@ -107,7 +107,7 @@ typedef enum {
 	 */
 	SERD_ANON = 6
 	
-} SerdNodeType;
+} SerdType;
 
 /** @name SerdURI
  * A parsed URI.
@@ -248,11 +248,11 @@ typedef bool (*SerdPrefixSink)(void*             handle,
 typedef bool (*SerdStatementSink)(void*             handle,
                                   const SerdString* graph,
                                   const SerdString* subject,
-                                  SerdNodeType      subject_type,
+                                  SerdType      subject_type,
                                   const SerdString* predicate,
-                                  SerdNodeType      predicate_type,
+                                  SerdType      predicate_type,
                                   const SerdString* object,
-                                  SerdNodeType      object_type,
+                                  SerdType      object_type,
                                   const SerdString* object_lang,
                                   const SerdString* object_datatype);
 
@@ -331,11 +331,11 @@ bool
 serd_writer_write_statement(SerdWriter        writer,
                             const SerdString* graph,
                             const SerdString* subject,
-                            SerdNodeType      subject_type,
+                            SerdType          subject_type,
                             const SerdString* predicate,
-                            SerdNodeType      predicate_type,
+                            SerdType          predicate_type,
                             const SerdString* object,
-                            SerdNodeType      object_type,
+                            SerdType          object_type,
                             const SerdString* object_datatype,
                             const SerdString* object_lang);
 

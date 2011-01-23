@@ -98,11 +98,11 @@ static bool
 event_statement(void*             handle,
                 const SerdString* graph,
                 const SerdString* subject,
-                SerdNodeType      subject_type,
+                SerdType          subject_type,
                 const SerdString* predicate,
-                SerdNodeType      predicate_type,
+                SerdType          predicate_type,
                 const SerdString* object,
-                SerdNodeType      object_type,
+                SerdType          object_type,
                 const SerdString* object_datatype,
                 const SerdString* object_lang)
 {

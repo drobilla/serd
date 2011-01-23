@@ -33,16 +33,16 @@ static const WriteContext WRITE_CONTEXT_NULL = { 0, 0, 0 };
 typedef bool (*StatementWriter)(SerdWriter        writer,
                                 const SerdString* graph,
                                 const SerdString* subject,
-                                SerdNodeType      subject_type,
+                                SerdType          subject_type,
                                 const SerdString* predicate,
-                                SerdNodeType      predicate_type,
+                                SerdType          predicate_type,
                                 const SerdString* object,
-                                SerdNodeType      object_type,
+                                SerdType          object_type,
                                 const SerdString* object_datatype,
                                 const SerdString* object_lang);
 
 typedef bool (*NodeWriter)(SerdWriter        writer,
-                           SerdNodeType      type,
+                           SerdType          type,
                            const SerdString* str,
                            const SerdString* datatype,
                            const SerdString* lang);
@@ -183,7 +183,7 @@ serd_writer_write_delim(SerdWriter writer, const uint8_t delim)
 
 static bool
 write_node(SerdWriter        writer,
-           SerdNodeType      type,
+           SerdType          type,
            const SerdString* str,
            const SerdString* datatype,
            const SerdString* lang)
@@ -266,11 +266,11 @@ bool
 serd_writer_write_statement(SerdWriter        writer,
                             const SerdString* graph,
                             const SerdString* subject,
-                            SerdNodeType      subject_type,
+                            SerdType          subject_type,
                             const SerdString* predicate,
-                            SerdNodeType      predicate_type,
+                            SerdType          predicate_type,
                             const SerdString* object,
-                            SerdNodeType      object_type,
+                            SerdType          object_type,
                             const SerdString* object_datatype,
                             const SerdString* object_lang)
 {
@@ -285,11 +285,11 @@ static bool
 serd_writer_write_statement_abbrev(SerdWriter        writer,
                                    const SerdString* graph,
                                    const SerdString* subject,
-                                   SerdNodeType      subject_type,
+                                   SerdType          subject_type,
                                    const SerdString* predicate,
-                                   SerdNodeType      predicate_type,
+                                   SerdType          predicate_type,
                                    const SerdString* object,
-                                   SerdNodeType      object_type,
+                                   SerdType          object_type,
                                    const SerdString* object_datatype,
                                    const SerdString* object_lang)
 {
@@ -359,11 +359,11 @@ bool
 serd_writer_write_statement_flat(SerdWriter        writer,
                                  const SerdString* graph,
                                  const SerdString* subject,
-                                 SerdNodeType      subject_type,
+                                 SerdType          subject_type,
                                  const SerdString* predicate,
-                                 SerdNodeType      predicate_type,
+                                 SerdType          predicate_type,
                                  const SerdString* object,
-                                 SerdNodeType      object_type,
+                                 SerdType          object_type,
                                  const SerdString* object_datatype,
                                  const SerdString* object_lang)
 {

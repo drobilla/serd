@@ -46,10 +46,10 @@ typedef uint32_t uchar;
 typedef size_t Ref;
 
 typedef struct {
-	SerdNodeType type;
-	Ref          value;
-	Ref          datatype;
-	Ref          lang;
+	SerdType type;
+	Ref      value;
+	Ref      datatype;
+	Ref      lang;
 } Node;
 
 typedef struct {
@@ -103,7 +103,7 @@ error(SerdReader reader, const char* fmt, ...)
 }
 
 static Node
-make_node(SerdNodeType type, Ref value, Ref datatype, Ref lang)
+make_node(SerdType type, Ref value, Ref datatype, Ref lang)
 {
 	const Node ret = { type, value, datatype, lang };
 	return ret;
