@@ -15,21 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SERD_STACK_H
-#define SERD_STACK_H
+#ifndef SERD_INTERNAL_H
+#define SERD_INTERNAL_H
 
 #include <assert.h>
 
 #include "serd/serd.h"
 
-/** An offset to start the stack at.  Note 0 is reserved for NULL. */
-#define SERD_STACK_BOTTOM sizeof(void*)
-
+/** A dynamic stack in memory. */
 typedef struct {
 	uint8_t* buf;       ///< Stack memory
 	size_t   buf_size;  ///< Allocated size of buf (>= size)
 	size_t   size;      ///< Conceptual size of stack in buf
 } SerdStack;
+
+/** An offset to start the stack at.  Note 0 is reserved for NULL. */
+#define SERD_STACK_BOTTOM sizeof(void*)
 
 static inline SerdStack
 serd_stack_new(size_t size)
@@ -76,4 +77,25 @@ serd_stack_pop(SerdStack* stack, size_t n_bytes)
 	stack->size -= n_bytes;
 }
 
-#endif  // SERD_STACK_H
+/** Return true if @a c lies within [min...max] (inclusive) */
+static inline bool
+in_range(const uint8_t c, const uint8_t min, const uint8_t max)
+{
+	return (c >= min && c <= max);
+}
+
+/** RFC2234: ALPHA := %x41-5A / %x61-7A  ; A-Z / a-z */
+static inline bool
+is_alpha(const uint8_t c)
+{
+	return in_range(c, 'A', 'Z') || in_range(c, 'a', 'z');
+}
+
+/** RFC2234: DIGIT ::= %x30-39  ; 0-9 */
+static inline bool
+is_digit(const uint8_t c)
+{
+	return in_range(c, '0', '9');
+}
+
+#endif // SERD_INTERNAL_H

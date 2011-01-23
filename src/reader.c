@@ -23,8 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "serd/serd.h"
-#include "serd_stack.h"
+#include "serd_internal.h"
 
 #define NS_XSD "http://www.w3.org/2001/XMLSchema#"
 #define NS_RDF "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -183,12 +182,6 @@ eat_string(SerdReader reader, const char* str, unsigned n)
 	for (unsigned i = 0; i < n; ++i) {
 		eat_byte(reader, ((const uint8_t*)str)[i]);
 	}
-}
-
-static inline bool
-in_range(const uchar c, const uchar min, const uchar max)
-{
-	return (c >= min && c <= max);
 }
 
 #ifdef STACK_DEBUG
@@ -687,7 +680,7 @@ static inline uchar
 read_nameStartChar(SerdReader reader, bool required)
 {
 	const uint8_t c = peek_byte(reader);
-	if (in_range(c, 'A', 'Z') || (c == '_') || in_range(c, 'a', 'z')) {
+	if (c == '_' || is_alpha(c)) {
 		return eat_byte(reader, c);
 	} else {
 		if (required) {
@@ -711,9 +704,8 @@ read_nameChar(SerdReader reader)
 	case '5': case '6': case '7': case '8': case '9':
 		return eat_byte(reader, c);
 	default:
-		if (in_range(c, 0x300, 0x036F) || in_range(c, 0x203F, 0x2040)) {
-			return eat_byte(reader, c);
-		}
+		// TODO: 0x300-0x036F | 0x203F-0x2040
+		return 0;
 	}
 	return 0;
 }
@@ -814,10 +806,10 @@ read_0_9(SerdReader reader, Ref str, bool at_least_one)
 {
 	uint8_t c;
 	if (at_least_one) {
-		TRY_RET(in_range(c = peek_byte(reader), '0', '9'));
+		TRY_RET(is_digit((c = peek_byte(reader))));
 		push_byte(reader, str, eat_byte(reader, c));
 	}
-	while (in_range((c = peek_byte(reader)), '0', '9')) {
+	while (is_digit((c = peek_byte(reader)))) {
 		push_byte(reader, str, eat_byte(reader, c));
 	}
 	return str;
@@ -900,7 +892,7 @@ read_literal(SerdReader reader, Node* dest)
 	Ref           str      = 0;
 	Node          datatype = SERD_NODE_NULL;
 	const uint8_t c        = peek_byte(reader);
-	if (in_range(c, '0', '9') || c == '-' || c == '+') {
+	if (c == '-' || c == '+' || is_digit(c)) {
 		return read_number(reader, dest);
 	} else if (c == '\"') {
 		str = read_quotedString(reader);

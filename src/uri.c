@@ -19,30 +19,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "serd/serd.h"
+#include "serd_internal.h"
 
 // #define URI_DEBUG 1
-
-/** Return true if @a c lies within [min...max] (inclusive) */
-static inline bool
-in_range(const char c, const char min, const char max)
-{
-	return (c >= min && c <= max);
-}
-
-/** RFC2234: ALPHA := %x41-5A / %x61-7A  ; A-Z / a-z */
-static inline bool
-is_alpha(const uint8_t c)
-{
-	return in_range(c, 'A', 'Z') || in_range(c, 'a', 'z');
-}
-
-/** RFC2234: DIGIT ::= %x30-39  ; 0-9 */
-static inline bool
-is_digit(const uint8_t c)
-{
-	return in_range(c, '0', '9');
-}
 
 SERD_API
 bool

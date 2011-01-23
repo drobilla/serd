@@ -19,8 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "serd/serd.h"
-#include "serd_stack.h"
+#include "serd_internal.h"
 
 typedef struct {
 	const SerdString* graph;
