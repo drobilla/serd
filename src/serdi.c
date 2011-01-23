@@ -115,6 +115,14 @@ event_statement(void*             handle,
 		object,    object_type,    object_datatype, object_lang);
 }
 
+static bool
+event_end(void*             handle,
+          const SerdString* subject)
+{
+	State* const state = (State*)handle;
+	return serd_writer_end_anon(state->writer, subject);
+}
+
 int
 print_usage(const char* name, bool error)
 {
@@ -218,7 +226,7 @@ main(int argc, char** argv)
 	};
 
 	SerdReader reader = serd_reader_new(
-		SERD_TURTLE, &state, event_base, event_prefix, event_statement);
+		SERD_TURTLE, &state, event_base, event_prefix, event_statement, event_end);
 
 	const bool success = serd_reader_read_file(reader, in_fd, in_filename);
 	serd_reader_free(reader);

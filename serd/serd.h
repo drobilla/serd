@@ -8,11 +8,11 @@
  *
  * Serd is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
  * License for details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 /* @file
@@ -59,16 +59,54 @@ typedef struct SerdWriterImpl* SerdWriter; /**< RDF writer. */
 
 /** RDF syntax */
 typedef enum {
-	SERD_TURTLE   = 1,
-	SERD_NTRIPLES = 2
+	SERD_TURTLE   = 1, /**< <http://www.w3.org/TeamSubmission/turtle/> */
+	SERD_NTRIPLES = 2  /**< <http://www.w3.org/TR/rdf-testcases/#ntriples> */
 } SerdSyntax;
 
-/** Type of RDF node. */
+/** Type of a syntactic RDF node.
+ * This is more precise than the type of an abstract RDF node. An abstract
+ * node is either a resource, literal, or blank. In syntax there are two
+ * ways to refer to a resource (URI or CURIE), and two ways to refer to a
+ * blank node (with a blank ID, or anonymously). Serd represents nodes as
+ * an unquoted UTF-8 string "value" associated with a @ref SerdNodeType,
+ * which preserves syntactic information allowing for lossless abbreviation.
+ * A non-abbreviating sink may simply consider @ref SERD_ANON_BEGIN and
+ * @ref SERD_ANON equivalent to SERD_BLANK_ID.
+ */
 typedef enum {
-	BLANK   = 1,  ///< Blank node (resource with no URI)
-	URI     = 2,  ///< URI (universal identifier)
-	QNAME   = 3,  ///< CURIE/QName (URI shortened with a namespace)
-	LITERAL = 4   ///< Literal string (with optional lang or datatype)
+
+	/** Literal value. A literal optionally has either an associated language,
+	 * or an associated datatype (not both).
+	 */
+	SERD_LITERAL = 1,
+
+	/** URI. Value is a valid URI string (either absolute or relative), which
+	 * is valid universally. See <http://tools.ietf.org/html/rfc3986>.
+	 */
+	SERD_URI = 2,
+
+	/** CURIE, a shortened URI. Value is an unquoted UTF-8 CURIE string
+	 * relative to the current environment, e.g. "rdf:type", which is valid
+	 * only within this serialisation. See <http://www.w3.org/TR/curie>.
+	 */
+	SERD_CURIE = 3,
+
+	/** A blank node ID. Value is a blank node identifier (e.g. "blank3"),
+	 * which is valid only within this serialisation.
+	 * See <http://www.w3.org/TeamSubmission/turtle#nodeID>.
+	 */
+	SERD_BLANK_ID = 4,
+
+	/** The first reference to an anonymous (inlined) blank node.
+	 * Value is identical to a @ref SERD_BLANK_ID value.
+	 */
+	SERD_ANON_BEGIN = 5,
+
+	/** An anonymous blank node.
+	 * Value is identical to a @ref SERD_BLANK_ID value.
+	 */
+	SERD_ANON = 6
+	
 } SerdNodeType;
 
 /** @name SerdURI
@@ -84,7 +122,7 @@ typedef struct {
 
 /** A parsed URI.
  * This struct directly refers to chunks in other strings, it does not own
- * any memory itself.  Thus, URIs can be parsed and/or resolved against a
+ * any memory itself. Thus, URIs can be parsed and/or resolved against a
  * base URI in-place without allocating memory.
  */
 typedef struct {
@@ -218,6 +256,14 @@ typedef bool (*SerdStatementSink)(void*             handle,
                                   const SerdString* object_lang,
                                   const SerdString* object_datatype);
 
+/** Sink for anonymous node end markers.
+ * This is called to indicate that the anonymous node with the given
+ * @a value will no longer be referred to by any future statements
+ * (i.e. the anonymous serialisation of the node is finished).
+ */
+typedef bool (*SerdEndSink)(void*             handle,
+                            const SerdString* value);
+
 /** Create a new RDF reader. */
 SERD_API
 SerdReader
@@ -225,7 +271,8 @@ serd_reader_new(SerdSyntax        syntax,
                 void*             handle,
                 SerdBaseSink      base_sink,
                 SerdPrefixSink    prefix_sink,
-                SerdStatementSink statement_sink);
+                SerdStatementSink statement_sink,
+                SerdEndSink       end_sink);
 
 /** Read @a file. */
 SERD_API
@@ -247,8 +294,7 @@ serd_reader_free(SerdReader reader);
 
 typedef enum {
 	SERD_STYLE_ABBREVIATED = 1,
-	SERD_STYLE_ASCII       = 1 << 1,
-	SERD_STYLE_ESCAPE_
+	SERD_STYLE_ASCII       = 1 << 1
 } SerdStyle;
 
 /** Create a new RDF writer. */
@@ -292,6 +338,12 @@ serd_writer_write_statement(SerdWriter        writer,
                             SerdNodeType      object_type,
                             const SerdString* object_datatype,
                             const SerdString* object_lang);
+
+/** Mark the end of an anonymous node's description. */
+SERD_API
+bool
+serd_writer_end_anon(SerdWriter        writer,
+                     const SerdString* subject);
 
 /** Finish a write. */
 SERD_API

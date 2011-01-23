@@ -20,6 +20,15 @@
 #include <stdlib.h>
 
 #include "serd/serd.h"
+#include "serd_stack.h"
+
+typedef struct {
+	const SerdString* graph;
+	const SerdString* subject;
+	const SerdString* predicate;
+} WriteContext;
+
+static const WriteContext WRITE_CONTEXT_NULL = { 0, 0, 0 };
 
 typedef bool (*StatementWriter)(SerdWriter        writer,
                                 const SerdString* graph,
@@ -43,13 +52,12 @@ struct SerdWriterImpl {
 	SerdStyle         style;
 	SerdEnv           env;
 	SerdURI           base_uri;
+	SerdStack         anon_stack;
 	SerdSink          sink;
 	void*             stream;
 	StatementWriter   write_statement;
 	NodeWriter        write_node;
-	const SerdString* prev_g;
-	const SerdString* prev_s;
-	const SerdString* prev_p;
+	WriteContext      context;
 	unsigned          indent;
 };
 
@@ -57,10 +65,18 @@ typedef enum {
 	WRITE_NORMAL,
 	WRITE_URI,
 	WRITE_STRING
-} WriteContext;
+} TextContext;
+
+static inline WriteContext*
+anon_stack_top(SerdWriter writer)
+{
+	assert(!serd_stack_is_empty(&writer->anon_stack));
+	return (WriteContext*)(writer->anon_stack.buf
+	                       + writer->anon_stack.size - sizeof(WriteContext));
+}
 
 static bool
-write_text(SerdWriter writer, WriteContext ctx,
+write_text(SerdWriter writer, TextContext ctx,
            const uint8_t* utf8, size_t n_bytes, uint8_t terminator)
 {
 	char escape[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -147,6 +163,24 @@ write_text(SerdWriter writer, WriteContext ctx,
 	return true;
 }
 
+static void
+serd_writer_write_delim(SerdWriter writer, const uint8_t delim)
+{
+	switch (delim) {
+	case 0:
+	case '\n':
+		break;
+	default:
+		writer->sink(" ", 1, writer->stream);
+	case '[':
+		writer->sink(&delim, 1, writer->stream);
+	}
+	writer->sink("\n", 1, writer->stream);
+	for (unsigned i = 0; i < writer->indent; ++i) {
+		writer->sink("\t", 1, writer->stream);
+	}
+}
+
 static bool
 write_node(SerdWriter        writer,
            SerdNodeType      type,
@@ -157,11 +191,26 @@ write_node(SerdWriter        writer,
 	SerdChunk uri_prefix;
 	SerdChunk uri_suffix;
 	switch (type) {
-	case BLANK:
+	case SERD_ANON_BEGIN:
+		if (writer->syntax != SERD_NTRIPLES) {
+			++writer->indent;
+			serd_writer_write_delim(writer, '[');
+			WriteContext* ctx = (WriteContext*)serd_stack_push(
+				&writer->anon_stack, sizeof(WriteContext));
+			*ctx = writer->context;
+			writer->context.subject   = str;
+			writer->context.predicate = 0;
+			break;
+		}
+	case SERD_ANON:
+		if (writer->syntax != SERD_NTRIPLES) {
+			break;
+		} // else fall through
+	case SERD_BLANK_ID:
 		writer->sink("_:", 2, writer->stream);
 		writer->sink(str->buf, str->n_bytes - 1, writer->stream);
 		break;
-	case QNAME:
+	case SERD_CURIE:
 		switch (writer->syntax) {
 		case SERD_NTRIPLES:
 			if (!serd_env_expand(writer->env, str, &uri_prefix, &uri_suffix)) {
@@ -177,7 +226,19 @@ write_node(SerdWriter        writer,
 			writer->sink(str->buf, str->n_bytes - 1, writer->stream);
 		}
 		break;
-	case URI:
+	case SERD_LITERAL:
+		writer->sink("\"", 1, writer->stream);
+		write_text(writer, WRITE_STRING, str->buf, str->n_bytes - 1, '"');
+		writer->sink("\"", 1, writer->stream);
+		if (lang) {
+			writer->sink("@", 1, writer->stream);
+			writer->sink(lang->buf, lang->n_bytes - 1, writer->stream);
+		} else if (datatype) {
+			writer->sink("^^", 2, writer->stream);
+			write_node(writer, SERD_URI, datatype, NULL, NULL);
+		}
+		break;
+	case SERD_URI:
 		if (!serd_uri_string_has_scheme(str->buf)) {
 			SerdURI uri;
 			if (serd_uri_parse(str->buf, &uri)) {
@@ -196,37 +257,8 @@ write_node(SerdWriter        writer,
 			return true;
 		}
 		return false;
-	case LITERAL:
-		writer->sink("\"", 1, writer->stream);
-		write_text(writer, WRITE_STRING, str->buf, str->n_bytes - 1, '"');
-		writer->sink("\"", 1, writer->stream);
-		if (lang) {
-			writer->sink("@", 1, writer->stream);
-			writer->sink(lang->buf, lang->n_bytes - 1, writer->stream);
-		} else if (datatype) {
-			writer->sink("^^", 2, writer->stream);
-			write_node(writer, URI, datatype, NULL, NULL);
-		}
-		break;
 	}
 	return true;
-}
-
-static void
-serd_writer_write_delim(SerdWriter writer, const uint8_t delim)
-{
-	switch (delim) {
-	case 0:
-	case '\n':
-		break;
-	default:
-		writer->sink(" ", 1, writer->stream);
-		writer->sink(&delim, 1, writer->stream);
-	}
-	writer->sink("\n", 1, writer->stream);
-	for (unsigned i = 0; i < writer->indent; ++i) {
-		writer->sink("\t", 1, writer->stream);
-	}
 }
 
 SERD_API
@@ -262,38 +294,63 @@ serd_writer_write_statement_abbrev(SerdWriter        writer,
                                    const SerdString* object_lang)
 {
 	assert(subject && predicate && object);
-	if (subject == writer->prev_s) {
-		if (predicate == writer->prev_p) {
+	if (subject == writer->context.subject) {
+		if (predicate == writer->context.predicate) {
 			++writer->indent;
 			serd_writer_write_delim(writer, ',');
 			write_node(writer, object_type, object, object_datatype, object_lang);
 			--writer->indent;
 		} else {
-			serd_writer_write_delim(writer, ';');
+			if (writer->context.predicate) {
+				serd_writer_write_delim(writer, ';');
+			} else {
+				++writer->indent;
+				serd_writer_write_delim(writer, '\n');
+			}
 			write_node(writer, predicate_type, predicate, NULL, NULL);
+			writer->context.predicate = predicate;
 			writer->sink(" ", 1, writer->stream);
 			write_node(writer, object_type, object, object_datatype, object_lang);
 		}
 	} else {
-		if (writer->prev_s) {
-			--writer->indent;
-			serd_writer_write_delim(writer, '.');
-			serd_writer_write_delim(writer, '\n');
+		if (writer->context.subject) {
+			if (writer->indent > 0) {
+				--writer->indent;
+			}
+			if (serd_stack_is_empty(&writer->anon_stack)) {
+				serd_writer_write_delim(writer, '.');
+				serd_writer_write_delim(writer, '\n');
+			}
 		}
-		write_node(writer, subject_type, subject, NULL, NULL);
-		++writer->indent;
-		serd_writer_write_delim(writer, 0);
 
-		writer->sink(" ", 1, writer->stream);
+		if (subject_type == SERD_ANON_BEGIN) {
+			writer->sink("[ ", 2, writer->stream);
+			++writer->indent;
+			WriteContext* ctx = (WriteContext*)serd_stack_push(
+				&writer->anon_stack, sizeof(WriteContext));
+			*ctx = writer->context;
+			writer->context.subject   = subject;
+			writer->context.predicate = 0;
+		} else {
+			write_node(writer, subject_type, subject, NULL, NULL);
+			++writer->indent;
+			if (subject_type != SERD_ANON_BEGIN && subject_type != SERD_ANON) {
+				serd_writer_write_delim(writer, '\n');
+			}
+		}
+
+		writer->context.subject   = subject;
+		writer->context.predicate = 0;
+
 		write_node(writer, predicate_type, predicate, NULL, NULL);
+		writer->context.predicate = predicate;
 		writer->sink(" ", 1, writer->stream);
 
 		write_node(writer, object_type, object, object_datatype, object_lang);
 	}
 
-	writer->prev_g = graph;
-	writer->prev_s = subject;
-	writer->prev_p = predicate;
+	const WriteContext new_context = { graph, subject, predicate };
+	writer->context = new_context;
 	return true;
 }
 
@@ -321,10 +378,36 @@ serd_writer_write_statement_flat(SerdWriter        writer,
 }
 
 SERD_API
+bool
+serd_writer_end_anon(SerdWriter        writer,
+                     const SerdString* subject)
+{
+	if (writer->syntax == SERD_NTRIPLES) {
+		return true;
+	}
+	if (serd_stack_is_empty(&writer->anon_stack)) {
+		fprintf(stderr, "unexpected SERD_END received\n");
+		return false;
+	}
+	assert(writer->indent > 0);
+	--writer->indent;
+	serd_writer_write_delim(writer, '\n');
+	writer->sink("]", 1, writer->stream);
+	writer->context = *anon_stack_top(writer);
+	serd_stack_pop(&writer->anon_stack, sizeof(WriteContext));
+	if (serd_stack_is_empty(&writer->anon_stack)) {
+		// End of anonymous subject, reset context
+		writer->context.subject   = subject;
+		writer->context.predicate = 0;
+	}
+	return true;
+}
+
+SERD_API
 void
 serd_writer_finish(SerdWriter writer)
 {
-	if (writer->prev_s) {
+	if (writer->context.subject) {
 		writer->sink(" .\n", 3, writer->stream);
 	}
 }
@@ -338,17 +421,17 @@ serd_writer_new(SerdSyntax     syntax,
                 SerdSink       sink,
                 void*          stream)
 {
-	SerdWriter writer = malloc(sizeof(struct SerdWriterImpl));
-	writer->syntax   = syntax;
-	writer->style    = style;
-	writer->env      = env;
-	writer->base_uri = *base_uri;
-	writer->sink     = sink;
-	writer->stream   = stream;
-	writer->prev_g   = 0;
-	writer->prev_s   = 0;
-	writer->prev_p   = 0;
-	writer->indent   = 0;
+	const WriteContext context = WRITE_CONTEXT_NULL;
+	SerdWriter         writer  = malloc(sizeof(struct SerdWriterImpl));
+	writer->syntax     = syntax;
+	writer->style      = style;
+	writer->env        = env;
+	writer->base_uri   = *base_uri;
+	writer->anon_stack = serd_stack_new(sizeof(WriteContext));
+	writer->sink       = sink;
+	writer->stream     = stream;
+	writer->context    = context; 
+	writer->indent     = 0;
 	writer->write_node = write_node;
 	if ((style & SERD_STYLE_ABBREVIATED)) {
 		writer->write_statement = serd_writer_write_statement_abbrev;
@@ -365,9 +448,9 @@ serd_writer_set_base_uri(SerdWriter     writer,
 {
 	writer->base_uri = *uri;
 	if (writer->syntax != SERD_NTRIPLES) {
-		if (writer->prev_g || writer->prev_s) {
+		if (writer->context.graph || writer->context.subject) {
 			writer->sink(" .\n\n", 4, writer->stream);
-			writer->prev_g = writer->prev_s = writer->prev_p = 0;
+			writer->context = WRITE_CONTEXT_NULL;
 		}
 		writer->sink("@base ", 6, writer->stream);
 		writer->sink(" <", 2, writer->stream);
@@ -383,11 +466,9 @@ serd_writer_set_prefix(SerdWriter        writer,
                        const SerdString* uri)
 {
 	if (writer->syntax != SERD_NTRIPLES) {
-		if (writer->prev_g || writer->prev_s) {
+		if (writer->context.graph || writer->context.subject) {
 			writer->sink(" .\n\n", 4, writer->stream);
-			writer->prev_g = 0;
-			writer->prev_s = 0;
-			writer->prev_p = 0;
+			writer->context = WRITE_CONTEXT_NULL;
 		}
 		writer->sink("@prefix ", 8, writer->stream);
 		writer->sink(name->buf, name->n_bytes - 1, writer->stream);
@@ -402,5 +483,6 @@ void
 serd_writer_free(SerdWriter writer)
 {
 	SerdWriter const me = (SerdWriter)writer;
+	serd_stack_free(&writer->anon_stack);
 	free(me);
 }

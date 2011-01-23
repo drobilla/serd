@@ -24,12 +24,13 @@
 #include <string.h>
 
 #include "serd/serd.h"
+#include "serd_stack.h"
 
 #define TRY_THROW(exp) if (!(exp)) goto except;
 #define TRY_RET(exp)   if (!(exp)) return 0;
 
-#define READ_BUF_LEN     4096
-#define STACK_CHUNK_SIZE 4096
+#define STACK_PAGE_SIZE 4096
+#define READ_BUF_LEN    4096
 #ifndef NDEBUG
 #define STACK_DEBUG       1
 #endif
@@ -39,12 +40,6 @@ typedef struct {
 	unsigned       line;
 	unsigned       col;
 } Cursor;
-
-typedef struct {
-	uint8_t* buf;       ///< Stack memory
-	size_t   buf_size;  ///< Allocated size of buf (>= size)
-	size_t   size;      ///< Conceptual size of stack in buf
-} Stack;
 
 typedef uint32_t uchar;
 
@@ -61,7 +56,7 @@ typedef struct {
 	const Node* graph;
 	const Node* subject;
 	const Node* predicate;
-} Context;
+} ReadContext;
 
 static const Node SERD_NODE_NULL = {0,0,0,0};
 
@@ -70,12 +65,13 @@ struct SerdReaderImpl {
 	SerdBaseSink      base_sink;
 	SerdPrefixSink    prefix_sink;
 	SerdStatementSink statement_sink;
+	SerdEndSink       end_sink;
 	Node              rdf_type;
 	Node              rdf_first;
 	Node              rdf_rest;
 	Node              rdf_nil;
 	FILE*             fd;
-	Stack             stack;
+	SerdStack         stack;
 	Cursor            cur;
 	uint8_t*          buf;
 	unsigned          next_id;
@@ -201,19 +197,6 @@ stack_is_top_string(SerdReader reader, Ref ref)
 }
 #endif
 
-static inline uint8_t*
-stack_push(SerdReader reader, size_t n_bytes)
-{
-	const size_t new_size = reader->stack.size + n_bytes;
-	if (reader->stack.buf_size < new_size) {
-		reader->stack.buf_size = ((new_size / STACK_CHUNK_SIZE) + 1) * STACK_CHUNK_SIZE;
-		reader->stack.buf      = realloc(reader->stack.buf, reader->stack.buf_size);
-	}
-	uint8_t* const ret = (reader->stack.buf + reader->stack.size);
-	reader->stack.size = new_size;
-	return ret;
-}
-
 static inline intptr_t
 pad_size(intptr_t size)
 {
@@ -228,7 +211,7 @@ push_string(SerdReader reader, const char* c_str, size_t n_bytes)
 	const size_t      stack_size = pad_size((intptr_t)reader->stack.size);
 	const size_t      pad        = stack_size - reader->stack.size;
 	SerdString* const str = (SerdString*)(
-		stack_push(reader, pad + sizeof(SerdString) + n_bytes) + pad);
+		serd_stack_push(&reader->stack, pad + sizeof(SerdString) + n_bytes) + pad);
 	str->n_bytes = n_bytes;
 	str->n_chars = n_bytes - 1;
 	memcpy(str->buf, c_str, n_bytes);
@@ -254,7 +237,7 @@ push_byte(SerdReader reader, Ref ref, const uint8_t c)
 	#ifdef STACK_DEBUG
 	assert(stack_is_top_string(reader, ref));
 	#endif
-	stack_push(reader, 1);
+	serd_stack_push(&reader->stack, 1);
 	SerdString* const str = deref(reader, ref);
 	++str->n_bytes;
 	if ((c & 0xC0) != 0x80) {
@@ -284,7 +267,7 @@ pop_string(SerdReader reader, Ref ref)
 		assert(stack_is_top_string(reader, ref));
 		--reader->n_allocs;
 		#endif
-		reader->stack.size -= deref(reader, ref)->n_bytes;
+		serd_stack_pop(&reader->stack, deref(reader, ref)->n_bytes);
 	}
 }
 
@@ -292,6 +275,7 @@ static inline void
 emit_statement(SerdReader reader,
                const Node* g, const Node* s, const Node* p, const Node* o)
 {
+	assert(s->value && p->value && o->value);
 	reader->statement_sink(reader->handle,
 	                       g ? deref(reader, g->value) : NULL,
 	                       deref(reader, s->value), s->type,
@@ -300,8 +284,8 @@ emit_statement(SerdReader reader,
 	                       deref(reader, o->datatype), deref(reader, o->lang));
 }
 
-static bool read_collection(SerdReader reader, Context ctx, Node* dest);
-static bool read_predicateObjectList(SerdReader reader, Context ctx);
+static bool read_collection(SerdReader reader, ReadContext ctx, Node* dest);
+static bool read_predicateObjectList(SerdReader reader, ReadContext ctx);
 
 // [40]	hex	::=	[#x30-#x39] | [#x41-#x46]
 static inline uint8_t
@@ -882,7 +866,7 @@ read_number(SerdReader reader, Node* dest)
 	} else {
 		datatype = push_string(reader, XSD_INTEGER, strlen(XSD_INTEGER) + 1);
 	}
-	*dest = make_node(LITERAL, str, datatype, 0);
+	*dest = make_node(SERD_LITERAL, str, datatype, 0);
 	assert(dest->value);
 	return true;
 except:
@@ -897,10 +881,10 @@ read_resource(SerdReader reader, Node* dest)
 {
 	switch (peek_byte(reader)) {
 	case '<':
-		*dest = make_node(URI, read_uriref(reader), 0, 0);
+		*dest = make_node(SERD_URI, read_uriref(reader), 0, 0);
 		break;
 	default:
-		*dest = make_node(QNAME, read_qname(reader), 0, 0);
+		*dest = make_node(SERD_CURIE, read_qname(reader), 0, 0);
 	}
 	return (dest->value != 0);
 }
@@ -932,9 +916,9 @@ read_literal(SerdReader reader, Node* dest)
 			eat_byte(reader, '@');
 			TRY_THROW(lang = read_language(reader));
 		}
-		*dest = make_node(LITERAL, str, datatype.value, lang);
+		*dest = make_node(SERD_LITERAL, str, datatype.value, lang);
 	} else {
-		*dest = make_node(QNAME, read_qname(reader), 0, 0);
+		*dest = make_node(SERD_CURIE, read_qname(reader), 0, 0);
 	}
 	return true;
 except:
@@ -961,7 +945,7 @@ read_verb(SerdReader reader, Node* dest)
 		switch (pre[1]) {
 		case 0x9: case 0xA: case 0xD: case 0x20:
 			eat_byte(reader, 'a');
-			*dest = make_node(URI, push_string(reader, RDF_TYPE, 48), 0, 0);
+			*dest = make_node(SERD_URI, push_string(reader, RDF_TYPE, 48), 0, 0);
 			return true;
 		default: break;  // fall through
 		}
@@ -991,30 +975,34 @@ blank_id(SerdReader reader)
 // Spec:   [21] blank ::= nodeID | '[]' | '[' predicateObjectList ']' | collection
 // Actual: [21] blank ::= nodeID | '[ ws* ]' | '[' ws* predicateObjectList ws* ']' | collection
 static bool
-read_blank(SerdReader reader, Context ctx, Node* dest)
+read_blank(SerdReader reader, ReadContext ctx, Node* dest)
 {
 	switch (peek_byte(reader)) {
 	case '_':
-		*dest = make_node(BLANK, read_nodeID(reader), 0, 0);
+		*dest = make_node(SERD_BLANK_ID, read_nodeID(reader), 0, 0);
 		return true;
 	case '[':
 		eat_byte(reader, '[');
 		read_ws_star(reader);
 		if (peek_byte(reader) == ']') {
 			eat_byte(reader, ']');
-			*dest = make_node(BLANK, blank_id(reader), 0, 0);
+			*dest = make_node(SERD_BLANK_ID, blank_id(reader), 0, 0);
 			if (ctx.subject) {
 				emit_statement(reader, ctx.graph, ctx.subject, ctx.predicate, dest);
 			}
-		} else {
-			*dest = make_node(BLANK, blank_id(reader), 0, 0);
-			if (ctx.subject) {
-				emit_statement(reader, ctx.graph, ctx.subject, ctx.predicate, dest);
-			}
-			ctx.subject = dest;
-			read_predicateObjectList(reader, ctx);
-			read_ws_star(reader);
-			eat_byte(reader, ']');
+			return true;
+		}
+		*dest = make_node(SERD_ANON_BEGIN, blank_id(reader), 0, 0);
+		if (ctx.subject) {
+			emit_statement(reader, ctx.graph, ctx.subject, ctx.predicate, dest);
+			dest->type = SERD_ANON;
+		}
+		ctx.subject = dest;
+		read_predicateObjectList(reader, ctx);
+		read_ws_star(reader);
+		eat_byte(reader, ']');
+		if (reader->end_sink) {
+			reader->end_sink(reader->handle, deref(reader, dest->value));
 		}
 		return true;
 	case '(':
@@ -1046,14 +1034,14 @@ is_object_end(const uint8_t c)
 // Recurses, calling statement_sink for every statement encountered.
 // Leaves stack in original calling state (i.e. pops everything it pushes).
 static bool
-read_object(SerdReader reader, Context ctx)
+read_object(SerdReader reader, ReadContext ctx)
 {
 	static const char* const XSD_BOOLEAN     = "http://www.w3.org/2001/XMLSchema#boolean";
 	static const size_t      XSD_BOOLEAN_LEN = 40;
 
 	uint8_t       pre[6];
 	bool          ret  = false;
-	bool          emit = true;
+	bool          emit = (ctx.subject != 0);
 	Node          o    = SERD_NODE_NULL;
 	const uint8_t c    = peek_byte(reader);
 	switch (c) {
@@ -1086,14 +1074,14 @@ read_object(SerdReader reader, Context ctx)
 			eat_string(reader, "true", 4);
 			const Ref value     = push_string(reader, "true", 5);
 			const Ref datatype  = push_string(reader, XSD_BOOLEAN, XSD_BOOLEAN_LEN + 1);
-			o = make_node(LITERAL, value, datatype, 0);
+			o = make_node(SERD_LITERAL, value, datatype, 0);
 		} else if (!memcmp(pre, "false", 5) && is_object_end(pre[5])) {
 			eat_string(reader, "false", 5);
 			const Ref value     = push_string(reader, "false", 6);
 			const Ref datatype  = push_string(reader, XSD_BOOLEAN, XSD_BOOLEAN_LEN + 1);
-			o = make_node(LITERAL, value, datatype, 0);
+			o = make_node(SERD_LITERAL, value, datatype, 0);
 		} else if (!is_object_end(c)) {
-			o = make_node(QNAME, read_qname(reader), 0, 0);
+			o = make_node(SERD_CURIE, read_qname(reader), 0, 0);
 		}
 		ret = o.value;
 	}
@@ -1113,7 +1101,7 @@ except:
 // Spec:   [8] objectList ::= object ( ',' object )*
 // Actual: [8] objectList ::= object ( ws* ',' ws* object )*
 static bool
-read_objectList(SerdReader reader, Context ctx)
+read_objectList(SerdReader reader, ReadContext ctx)
 {
 	TRY_RET(read_object(reader, ctx));
 	read_ws_star(reader);
@@ -1129,7 +1117,7 @@ read_objectList(SerdReader reader, Context ctx)
 // Spec:   [7] predicateObjectList ::= verb objectList ( ';' verb objectList )* ( ';' )?
 // Actual: [7] predicateObjectList ::= verb ws+ objectList ( ws* ';' ws* verb ws+ objectList )* ( ';' )?
 static bool
-read_predicateObjectList(SerdReader reader, Context ctx)
+read_predicateObjectList(SerdReader reader, ReadContext ctx)
 {
 	if (reader->eof) {
 		return false;
@@ -1166,7 +1154,7 @@ except:
 
 /** Recursive helper for read_collection. */
 static bool
-read_collection_rec(SerdReader reader, Context ctx)
+read_collection_rec(SerdReader reader, ReadContext ctx)
 {
 	read_ws_star(reader);
 	if (peek_byte(reader) == ')') {
@@ -1174,7 +1162,7 @@ read_collection_rec(SerdReader reader, Context ctx)
 		emit_statement(reader, NULL, ctx.subject, &reader->rdf_rest, &reader->rdf_nil);
 		return false;
 	} else {
-		const Node rest = make_node(BLANK, blank_id(reader), 0, 0);
+		const Node rest = make_node(SERD_BLANK_ID, blank_id(reader), 0, 0);
 		emit_statement(reader, ctx.graph, ctx.subject, &reader->rdf_rest, &rest);
 		ctx.subject = &rest;
 		ctx.predicate = &reader->rdf_first;
@@ -1192,7 +1180,7 @@ read_collection_rec(SerdReader reader, Context ctx)
 // [22] itemList   ::= object+
 // [23] collection ::= '(' itemList? ')'
 static bool
-read_collection(SerdReader reader, Context ctx, Node* dest)
+read_collection(SerdReader reader, ReadContext ctx, Node* dest)
 {
 	TRY_RET(eat_byte(reader, '('));
 	read_ws_star(reader);
@@ -1202,7 +1190,7 @@ read_collection(SerdReader reader, Context ctx, Node* dest)
 		return true;
 	}
 
-	*dest = make_node(BLANK, blank_id(reader), 0, 0);
+	*dest = make_node(SERD_BLANK_ID, blank_id(reader), 0, 0);
 	ctx.subject   = dest;
 	ctx.predicate = &reader->rdf_first;
 	if (!read_object(reader, ctx)) {
@@ -1216,7 +1204,7 @@ read_collection(SerdReader reader, Context ctx, Node* dest)
 
 // [11] subject ::= resource | blank
 static Node
-read_subject(SerdReader reader, Context ctx)
+read_subject(SerdReader reader, ReadContext ctx)
 {
 	Node    subject = SERD_NODE_NULL;
 	switch (peek_byte(reader)) {
@@ -1232,17 +1220,18 @@ read_subject(SerdReader reader, Context ctx)
 // Spec:   [6] triples ::= subject predicateObjectList
 // Actual: [6] triples ::= subject ws+ predicateObjectList
 static bool
-read_triples(SerdReader reader, Context ctx)
+read_triples(SerdReader reader, ReadContext ctx)
 {
 	const Node subject = read_subject(reader, ctx);
+	bool       ret     = false;
 	if (subject.value != 0) {
 		ctx.subject = &subject;
 		TRY_RET(read_ws_plus(reader));
-		const bool ret = read_predicateObjectList(reader, ctx);
+		ret = read_predicateObjectList(reader, ctx);
 		pop_string(reader, subject.value);
-		return ret;
 	}
-	return false;
+	ctx.subject = ctx.predicate = 0;
+	return ret;
 }
 
 // [5] base ::= '@base' ws+ uriref
@@ -1305,7 +1294,7 @@ read_directive(SerdReader reader)
 static bool
 read_statement(SerdReader reader)
 {
-	Context ctx = { 0, 0, 0 };
+	ReadContext ctx = { 0, 0, 0 };
 	read_ws_star(reader);
 	if (reader->eof) {
 		return true;
@@ -1338,7 +1327,8 @@ serd_reader_new(SerdSyntax        syntax,
                 void*             handle,
                 SerdBaseSink      base_sink,
                 SerdPrefixSink    prefix_sink,
-                SerdStatementSink statement_sink)
+                SerdStatementSink statement_sink,
+                SerdEndSink       end_sink)
 {
 	const Cursor cur    = { NULL, 0, 0 };
 	SerdReader   reader = malloc(sizeof(struct SerdReaderImpl));
@@ -1346,10 +1336,9 @@ serd_reader_new(SerdSyntax        syntax,
 	reader->base_sink      = base_sink;
 	reader->prefix_sink    = prefix_sink;
 	reader->statement_sink = statement_sink;
+	reader->end_sink       = end_sink;
 	reader->fd             = 0;
-	reader->stack.buf      = malloc(STACK_CHUNK_SIZE);
-	reader->stack.buf_size = STACK_CHUNK_SIZE;
-	reader->stack.size     = 8;
+	reader->stack          = serd_stack_new(STACK_PAGE_SIZE);
 	reader->cur            = cur;
 	reader->next_id        = 1;
 	reader->err            = 0;
@@ -1396,9 +1385,9 @@ serd_reader_read_file(SerdReader reader, FILE* file, const uint8_t* name)
 
 	me->fd        = file;
 	me->cur       = cur;
-	me->rdf_first = make_node(URI, push_string(me, RDF_FIRST, 49), 0, 0);
-	me->rdf_rest  = make_node(URI, push_string(me, RDF_REST, 48), 0, 0);
-	me->rdf_nil   = make_node(URI, push_string(me, RDF_NIL, 47), 0, 0);
+	me->rdf_first = make_node(SERD_URI, push_string(me, RDF_FIRST, 49), 0, 0);
+	me->rdf_rest  = make_node(SERD_URI, push_string(me, RDF_REST, 48), 0, 0);
+	me->rdf_nil   = make_node(SERD_URI, push_string(me, RDF_NIL, 47), 0, 0);
 
 	fread(me->read_buf, 1, READ_BUF_LEN, file);
 	const bool ret = read_turtleDoc(me);
