@@ -99,7 +99,6 @@ error(SerdReader reader, const char* fmt, ...)
 	fprintf(stderr, "error: %s:%u:%u: ",
 	        reader->cur.filename, reader->cur.line, reader->cur.col);
 	vfprintf(stderr, fmt, args);
-	reader->err = 1;
 	return 0;
 }
 
@@ -795,10 +794,6 @@ read_qname(SerdReader reader)
 	TRY_THROW(eat_byte(reader, ':'));
 	push_byte(reader, prefix, ':');
 	Ref str = read_name(reader, prefix, false);
-	if (reader->err) {
-		pop_string(reader, prefix);
-		return 0;
-	}
 	return str ? str : prefix;
 except:
 	pop_string(reader, prefix);
@@ -1315,10 +1310,10 @@ read_statement(SerdReader reader)
 static bool
 read_turtleDoc(SerdReader reader)
 {
-	while (!reader->err && !reader->eof) {
+	while (!reader->eof) {
 		TRY_RET(read_statement(reader));
 	}
-	return !reader->err;
+	return true;
 }
 
 SERD_API
@@ -1341,7 +1336,6 @@ serd_reader_new(SerdSyntax        syntax,
 	reader->stack          = serd_stack_new(STACK_PAGE_SIZE);
 	reader->cur            = cur;
 	reader->next_id        = 1;
-	reader->err            = 0;
 	reader->read_buf       = (uint8_t*)malloc(READ_BUF_LEN * 2);
 	reader->read_head      = 0;
 	reader->eof            = false;

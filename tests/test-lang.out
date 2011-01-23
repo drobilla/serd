@@ -1,2 +1,3 @@
 <http://example.org/test-lang#thing> <http://example.org/test-lang#greeting> "Hello"@en .
+<http://example.org/test-lang#thing> <http://example.org/test-lang#greeting> "Howdy"@en-us .
 <http://example.org/test-lang#thing> <http://example.org/test-lang#greeting> "Bonjour"@fr .
