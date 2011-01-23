@@ -243,16 +243,14 @@ typedef bool (*SerdPrefixSink)(void*             handle,
                                const SerdString* uri);
 
 /** Sink for statements. */
-typedef bool (*SerdStatementSink)(void*             handle,
-                                  const SerdString* graph,
-                                  const SerdString* subject,
-                                  SerdType      subject_type,
-                                  const SerdString* predicate,
-                                  SerdType      predicate_type,
-                                  const SerdString* object,
-                                  SerdType      object_type,
-                                  const SerdString* object_lang,
-                                  const SerdString* object_datatype);
+typedef bool (*SerdStatementSink)(
+	void*             handle,
+	const SerdString* graph,     SerdType graph_type,
+	const SerdString* subject,   SerdType subject_type,
+	const SerdString* predicate, SerdType predicate_type,
+	const SerdString* object,    SerdType object_type,
+	const SerdString* object_lang,
+	const SerdString* object_datatype);
 
 /** Sink for anonymous node end markers.
  * This is called to indicate that the anonymous node with the given
@@ -326,16 +324,14 @@ serd_writer_set_prefix(SerdWriter        writer,
 /** Write a statement. */
 SERD_API
 bool
-serd_writer_write_statement(SerdWriter        writer,
-                            const SerdString* graph,
-                            const SerdString* subject,
-                            SerdType          subject_type,
-                            const SerdString* predicate,
-                            SerdType          predicate_type,
-                            const SerdString* object,
-                            SerdType          object_type,
-                            const SerdString* object_datatype,
-                            const SerdString* object_lang);
+serd_writer_write_statement(
+	SerdWriter        writer,
+	const SerdString* graph,     SerdType graph_type,
+	const SerdString* subject,   SerdType subject_type,
+	const SerdString* predicate, SerdType predicate_type,
+	const SerdString* object,    SerdType object_type,
+	const SerdString* object_datatype,
+	const SerdString* object_lang);
 
 /** Mark the end of an anonymous node's description. */
 SERD_API

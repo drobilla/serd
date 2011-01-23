@@ -96,23 +96,20 @@ event_prefix(void*             handle,
 
 static bool
 event_statement(void*             handle,
-                const SerdString* graph,
-                const SerdString* subject,
-                SerdType          subject_type,
-                const SerdString* predicate,
-                SerdType          predicate_type,
-                const SerdString* object,
-                SerdType          object_type,
+                const SerdString* graph,     SerdType graph_type,
+                const SerdString* subject,   SerdType subject_type,
+                const SerdString* predicate, SerdType predicate_type,
+                const SerdString* object,    SerdType object_type,
                 const SerdString* object_datatype,
                 const SerdString* object_lang)
 {
 	State* const state = (State*)handle;
-	return serd_writer_write_statement(
-		state->writer,
-		graph,
-		subject,   subject_type,
-		predicate, predicate_type,
-		object,    object_type,    object_datatype, object_lang);
+	return serd_writer_write_statement(state->writer,
+	                                   graph,     graph_type,
+	                                   subject,   subject_type,
+	                                   predicate, predicate_type,
+	                                   object,    object_type,
+	                                   object_datatype, object_lang);
 }
 
 static bool

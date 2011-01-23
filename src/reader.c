@@ -275,7 +275,7 @@ emit_statement(SerdReader reader,
 {
 	assert(s->value && p->value && o->value);
 	reader->statement_sink(reader->handle,
-	                       g ? deref(reader, g->value) : NULL,
+	                       g ? deref(reader, g->value) : NULL, g ? g->type : 0,
 	                       deref(reader, s->value), s->type,
 	                       deref(reader, p->value), p->type,
 	                       deref(reader, o->value), o->type,
