@@ -205,7 +205,7 @@ write_node(SerdWriter        writer,
 	case SERD_ANON:
 		if (writer->syntax != SERD_NTRIPLES) {
 			break;
-		} // else fall through
+		}  // else fall through
 	case SERD_BLANK_ID:
 		writer->sink("_:", 2, writer->stream);
 		writer->sink(str->buf, str->n_bytes - 1, writer->stream);
@@ -430,7 +430,7 @@ serd_writer_new(SerdSyntax     syntax,
 	writer->anon_stack = serd_stack_new(sizeof(WriteContext));
 	writer->sink       = sink;
 	writer->stream     = stream;
-	writer->context    = context; 
+	writer->context    = context;
 	writer->indent     = 0;
 	writer->write_node = write_node;
 	if ((style & SERD_STYLE_ABBREVIATED)) {

@@ -21,7 +21,7 @@
 
 #include "serd/serd.h"
 
-//#define URI_DEBUG 1
+// #define URI_DEBUG 1
 
 /** Return true if @a c lies within [min...max] (inclusive) */
 static inline bool

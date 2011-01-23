@@ -59,8 +59,8 @@ typedef struct SerdWriterImpl* SerdWriter; /**< RDF writer. */
 
 /** RDF syntax */
 typedef enum {
-	SERD_TURTLE   = 1, /**< <http://www.w3.org/TeamSubmission/turtle/> */
-	SERD_NTRIPLES = 2  /**< <http://www.w3.org/TR/rdf-testcases/#ntriples> */
+	SERD_TURTLE   = 1,  ///< <http://www.w3.org/TeamSubmission/turtle/>
+	SERD_NTRIPLES = 2   ///< <http://www.w3.org/TR/rdf-testcases/#ntriples>
 } SerdSyntax;
 
 /** Type of a syntactic RDF node.
@@ -74,7 +74,6 @@ typedef enum {
  * @ref SERD_ANON equivalent to SERD_BLANK_ID.
  */
 typedef enum {
-
 	/** Literal value. A literal optionally has either an associated language,
 	 * or an associated datatype (not both).
 	 */
@@ -106,7 +105,6 @@ typedef enum {
 	 * Value is identical to a @ref SERD_BLANK_ID value.
 	 */
 	SERD_ANON = 6
-	
 } SerdType;
 
 /** @name SerdURI

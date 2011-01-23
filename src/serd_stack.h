@@ -76,4 +76,4 @@ serd_stack_pop(SerdStack* stack, size_t n_bytes)
 	stack->size -= n_bytes;
 }
 
-#endif // SERD_STACK_H
+#endif  // SERD_STACK_H

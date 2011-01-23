@@ -26,6 +26,9 @@
 #include "serd/serd.h"
 #include "serd_stack.h"
 
+#define NS_XSD "http://www.w3.org/2001/XMLSchema#"
+#define NS_RDF "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+
 #define TRY_THROW(exp) if (!(exp)) goto except;
 #define TRY_RET(exp)   if (!(exp)) return 0;
 
@@ -58,7 +61,7 @@ typedef struct {
 	const Node* predicate;
 } ReadContext;
 
-static const Node SERD_NODE_NULL = {0,0,0,0};
+static const Node SERD_NODE_NULL = { 0, 0, 0, 0 };
 
 struct SerdReaderImpl {
 	void*             handle;
@@ -77,11 +80,11 @@ struct SerdReaderImpl {
 	unsigned          next_id;
 	int               err;
 	uint8_t*          read_buf;
-	int32_t           read_head; ///< Offset into read_buf
+	int32_t           read_head;    ///< Offset into read_buf
 	bool              eof;
 #ifdef STACK_DEBUG
-	Ref*              alloc_stack; ///< Stack of push offsets
-	size_t            n_allocs; ///< Number of stack pushes
+	Ref*              alloc_stack;  ///< Stack of push offsets
+	size_t            n_allocs;     ///< Number of stack pushes
 #endif
 };
 
@@ -207,16 +210,18 @@ static Ref
 push_string(SerdReader reader, const char* c_str, size_t n_bytes)
 {
 	// Align strings to 64-bits (assuming malloc/realloc are aligned to 64-bits)
-	const size_t      stack_size = pad_size((intptr_t)reader->stack.size);
-	const size_t      pad        = stack_size - reader->stack.size;
-	SerdString* const str = (SerdString*)(
-		serd_stack_push(&reader->stack, pad + sizeof(SerdString) + n_bytes) + pad);
+	const size_t stack_size = pad_size((intptr_t)reader->stack.size);
+	const size_t pad        = stack_size - reader->stack.size;
+	uint8_t*     mem        = serd_stack_push(
+		&reader->stack, pad + sizeof(SerdString) + n_bytes) + pad;
+	SerdString* const str = (SerdString*)mem;
 	str->n_bytes = n_bytes;
 	str->n_chars = n_bytes - 1;
 	memcpy(str->buf, c_str, n_bytes);
 #ifdef STACK_DEBUG
-	reader->alloc_stack = realloc(reader->alloc_stack, sizeof(uint8_t*) * (++reader->n_allocs));
-	reader->alloc_stack[reader->n_allocs - 1] = ((uint8_t*)str - reader->stack.buf);
+	reader->alloc_stack = realloc(reader->alloc_stack,
+	                              sizeof(uint8_t*) * (++reader->n_allocs));
+	reader->alloc_stack[reader->n_allocs - 1] = (mem - reader->stack.buf);
 #endif
 	return (uint8_t*)str - reader->stack.buf;
 }
@@ -259,7 +264,8 @@ pop_string(SerdReader reader, Ref ref)
 		}
 		#ifdef STACK_DEBUG
 		if (!stack_is_top_string(reader, ref)) {
-			fprintf(stderr, "attempt to pop non-top string %s\n", deref(reader, ref)->buf);
+			fprintf(stderr, "attempt to pop non-top string %s\n",
+			        deref(reader, ref)->buf);
 			fprintf(stderr, "top: %s\n",
 			        deref(reader, reader->alloc_stack[reader->n_allocs - 1])->buf);
 		}
@@ -423,9 +429,9 @@ read_ucharacter_escape(SerdReader reader, Ref dest)
 }
 
 // [38] character ::= '\u' hex hex hex hex
-//                  | '\U' hex hex hex hex hex hex hex hex
-//                  | '\\'
-//                  | [#x20-#x5B] | [#x5D-#x10FFFF]
+//    | '\U' hex hex hex hex hex hex hex hex
+//    | '\\'
+//    | [#x20-#x5B] | [#x5D-#x10FFFF]
 static inline SerdStatus
 read_character(SerdReader reader, Ref dest)
 {
@@ -547,8 +553,8 @@ read_scharacter(SerdReader reader, Ref dest)
 	}
 }
 
-// Spec:   [41] ucharacter ::= ( character - #x3E ) | '\>'
-// Actual: [41] ucharacter ::= ( echaracter - #x3E ) | '\>'
+// Spec: [41] ucharacter ::= ( character - #x3E ) | '\>'
+// Impl: [41] ucharacter ::= ( echaracter - #x3E ) | '\>'
 static inline SerdStatus
 read_ucharacter(SerdReader reader, Ref dest)
 {
@@ -674,9 +680,9 @@ read_relativeURI(SerdReader reader)
 }
 
 // [30] nameStartChar ::= [A-Z] | "_" | [a-z]
-//      | [#x00C0-#x00D6] | [#x00D8-#x00F6] | [#x00F8-#x02FF] | [#x0370-#x037D]
-//      | [#x037F-#x1FFF] | [#x200C-#x200D] | [#x2070-#x218F] | [#x2C00-#x2FEF]
-//      | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
+//    | [#x00C0-#x00D6] | [#x00D8-#x00F6] | [#x00F8-#x02FF] | [#x0370-#x037D]
+//    | [#x037F-#x1FFF] | [#x200C-#x200D] | [#x2070-#x218F] | [#x2C00-#x2FEF]
+//    | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
 static inline uchar
 read_nameStartChar(SerdReader reader, bool required)
 {
@@ -691,7 +697,8 @@ read_nameStartChar(SerdReader reader, bool required)
 	}
 }
 
-// [31] nameChar ::= nameStartChar | '-' | [0-9] | #x00B7 | [#x0300-#x036F] | [#x203F-#x2040]
+// [31] nameChar ::= nameStartChar | '-' | [0-9]
+//    | #x00B7 | [#x0300-#x036F] | [#x203F-#x2040]
 static inline uchar
 read_nameChar(SerdReader reader)
 {
@@ -763,7 +770,8 @@ read_language(SerdReader reader)
 	}
 	if (peek_byte(reader) == '-') {
 		push_byte(reader, str, eat_byte(reader, '-'));
-		while ((c = peek_byte(reader)) && (in_range(c, 'a', 'z') || in_range(c, '0', '9'))) {
+		while ((c = peek_byte(reader)) && (
+			       in_range(c, 'a', 'z') || in_range(c, '0', '9'))) {
 			push_byte(reader, str, eat_byte(reader, c));
 		}
 	}
@@ -826,9 +834,9 @@ read_0_9(SerdReader reader, Ref str, bool at_least_one)
 static bool
 read_number(SerdReader reader, Node* dest)
 {
-	#define XSD_DECIMAL "http://www.w3.org/2001/XMLSchema#decimal"
-	#define XSD_DOUBLE  "http://www.w3.org/2001/XMLSchema#double"
-	#define XSD_INTEGER "http://www.w3.org/2001/XMLSchema#integer"
+	#define XSD_DECIMAL NS_XSD "decimal"
+	#define XSD_DOUBLE  NS_XSD "double"
+	#define XSD_INTEGER NS_XSD "integer"
 	Ref     str         = push_string(reader, "", 1);
 	uint8_t c           = peek_byte(reader);
 	bool    has_decimal = false;
@@ -885,7 +893,7 @@ read_resource(SerdReader reader, Node* dest)
 }
 
 // [14] literal ::= quotedString ( '@' language )? | datatypeSerdString
-//                | integer | double | decimal | boolean
+//    | integer | double | decimal | boolean
 static bool
 read_literal(SerdReader reader, Node* dest)
 {
@@ -932,7 +940,6 @@ read_predicate(SerdReader reader, Node* dest)
 static bool
 read_verb(SerdReader reader, Node* dest)
 {
-	#define RDF_TYPE "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
 	uint8_t pre[2];
 	readahead(reader, pre, 2);
 	switch (pre[0]) {
@@ -940,7 +947,8 @@ read_verb(SerdReader reader, Node* dest)
 		switch (pre[1]) {
 		case 0x9: case 0xA: case 0xD: case 0x20:
 			eat_byte(reader, 'a');
-			*dest = make_node(SERD_URI, push_string(reader, RDF_TYPE, 48), 0, 0);
+			*dest = make_node(SERD_URI,
+			                  push_string(reader, NS_RDF "type", 48), 0, 0);
 			return true;
 		default: break;  // fall through
 		}
@@ -967,8 +975,10 @@ blank_id(SerdReader reader)
 	return push_string(reader, str, len + 1);
 }
 
-// Spec:   [21] blank ::= nodeID | '[]' | '[' predicateObjectList ']' | collection
-// Actual: [21] blank ::= nodeID | '[ ws* ]' | '[' ws* predicateObjectList ws* ']' | collection
+// Spec: [21] blank ::= nodeID | '[]'
+//          | '[' predicateObjectList ']' | collection
+// Impl: [21] blank ::= nodeID | '[ ws* ]'
+//          | '[' ws* predicateObjectList ws* ']' | collection
 static bool
 read_blank(SerdReader reader, ReadContext ctx, Node* dest)
 {
@@ -1031,7 +1041,7 @@ is_object_end(const uint8_t c)
 static bool
 read_object(SerdReader reader, ReadContext ctx)
 {
-	static const char* const XSD_BOOLEAN     = "http://www.w3.org/2001/XMLSchema#boolean";
+	static const char* const XSD_BOOLEAN     = NS_XSD "boolean";
 	static const size_t      XSD_BOOLEAN_LEN = 40;
 
 	uint8_t       pre[6];
@@ -1093,8 +1103,8 @@ except:
 	return ret;
 }
 
-// Spec:   [8] objectList ::= object ( ',' object )*
-// Actual: [8] objectList ::= object ( ws* ',' ws* object )*
+// Spec: [8] objectList ::= object ( ',' object )*
+// Impl: [8] objectList ::= object ( ws* ',' ws* object )*
 static bool
 read_objectList(SerdReader reader, ReadContext ctx)
 {
@@ -1109,8 +1119,10 @@ read_objectList(SerdReader reader, ReadContext ctx)
 	return true;
 }
 
-// Spec:   [7] predicateObjectList ::= verb objectList ( ';' verb objectList )* ( ';' )?
-// Actual: [7] predicateObjectList ::= verb ws+ objectList ( ws* ';' ws* verb ws+ objectList )* ( ';' )?
+// Spec: [7] predicateObjectList ::= verb objectList
+//                                   (';' verb objectList)* (';')?
+// Impl: [7] predicateObjectList ::= verb ws+ objectList
+//                                   (ws* ';' ws* verb ws+ objectList)* (';')?
 static bool
 read_predicateObjectList(SerdReader reader, ReadContext ctx)
 {
@@ -1154,7 +1166,8 @@ read_collection_rec(SerdReader reader, ReadContext ctx)
 	read_ws_star(reader);
 	if (peek_byte(reader) == ')') {
 		eat_byte(reader, ')');
-		emit_statement(reader, NULL, ctx.subject, &reader->rdf_rest, &reader->rdf_nil);
+		emit_statement(reader, NULL, ctx.subject,
+		               &reader->rdf_rest, &reader->rdf_nil);
 		return false;
 	} else {
 		const Node rest = make_node(SERD_BLANK_ID, blank_id(reader), 0, 0);
@@ -1212,8 +1225,8 @@ read_subject(SerdReader reader, ReadContext ctx)
 	return subject;
 }
 
-// Spec:   [6] triples ::= subject predicateObjectList
-// Actual: [6] triples ::= subject ws+ predicateObjectList
+// Spec: [6] triples ::= subject predicateObjectList
+// Impl: [6] triples ::= subject ws+ predicateObjectList
 static bool
 read_triples(SerdReader reader, ReadContext ctx)
 {
@@ -1243,8 +1256,8 @@ read_base(SerdReader reader)
 	return true;
 }
 
-// Spec:   [4] prefixID ::= '@prefix' ws+ prefixName? ':' uriref
-// Actual: [4] prefixID ::= '@prefix' ws+ prefixName? ':' ws* uriref
+// Spec: [4] prefixID ::= '@prefix' ws+ prefixName? ':' uriref
+// Impl: [4] prefixID ::= '@prefix' ws+ prefixName? ':' ws* uriref
 static bool
 read_prefixID(SerdReader reader)
 {
@@ -1284,8 +1297,8 @@ read_directive(SerdReader reader)
 	}
 }
 
-// Spec:   [1] statement ::= directive '.' | triples '.' | ws+
-// Actual: [1] statement ::= directive ws* '.' | triples ws* '.' | ws+
+// Spec: [1] statement ::= directive '.' | triples '.' | ws+
+// Impl: [1] statement ::= directive ws* '.' | triples ws* '.' | ws+
 static bool
 read_statement(SerdReader reader)
 {
@@ -1371,9 +1384,9 @@ SERD_API
 bool
 serd_reader_read_file(SerdReader reader, FILE* file, const uint8_t* name)
 {
-	#define RDF_FIRST "http://www.w3.org/1999/02/22-rdf-syntax-ns#first"
-	#define RDF_REST  "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"
-	#define RDF_NIL   "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"
+	#define RDF_FIRST NS_RDF "first"
+	#define RDF_REST  NS_RDF "rest"
+	#define RDF_NIL   NS_RDF "nil"
 	SerdReader const me  = (SerdReader)reader;
 	const Cursor     cur = { name, 1, 1 };
 
