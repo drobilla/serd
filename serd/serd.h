@@ -293,8 +293,8 @@ serd_reader_free(SerdReader reader);
  */
 
 typedef enum {
-	SERD_STYLE_ABBREVIATED = 1,
-	SERD_STYLE_ASCII       = 1 << 1
+	SERD_STYLE_ABBREVIATED = 1,      /**< Abbreviate triples when possible. */
+	SERD_STYLE_ASCII       = 1 << 1  /**< Escape all non-ASCII characters. */
 } SerdStyle;
 
 /** Create a new RDF writer. */
