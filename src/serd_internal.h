@@ -8,11 +8,11 @@
  *
  * Serd is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
  * License for details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef SERD_INTERNAL_H
@@ -30,7 +30,7 @@ typedef struct {
 	size_t   size;      ///< Conceptual size of stack in buf
 } SerdStack;
 
-/** An offset to start the stack at.  Note 0 is reserved for NULL. */
+/** An offset to start the stack at. Note 0 is reserved for NULL. */
 #define SERD_STACK_BOTTOM sizeof(void*)
 
 static inline SerdStack
@@ -98,5 +98,28 @@ is_digit(const uint8_t c)
 {
 	return in_range(c, '0', '9');
 }
+
+/** Measured UTF-8 string. */
+typedef struct {
+	size_t  n_bytes;  ///< Size in bytes including trailing null byte
+	size_t  n_chars;  ///< Length in characters
+	uint8_t buf[];    ///< Buffer
+} SerdString;
+
+#if 0
+/** Create a new UTF-8 string from @a utf8. */
+SerdString*
+serd_string_new(const uint8_t* utf8);
+
+/** Copy @a string. */
+SerdString*
+serd_string_copy(const SerdString* str);
+#endif
+
+void
+serd_string_free(SerdString* str);
+
+SerdString*
+serd_string_new_from_node(const SerdNode* node);
 
 #endif // SERD_INTERNAL_H

@@ -8,11 +8,11 @@
  *
  * Serd is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
  * License for details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <assert.h>
@@ -337,56 +337,4 @@ serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream)
 		WRITE_COMPONENT("", uri->fragment, "");
 	}
 	return write_size;
-}
-
-
-static size_t
-serd_uri_string_length(const SerdURI* uri)
-{
-	size_t len = uri->path_base.len;
-
-#define ADD_LEN(field, n_delims) \
-	if ((field).len) { len += (field).len + (n_delims); }
-
-	ADD_LEN(uri->path,      1);  // + possible leading `/'
-	ADD_LEN(uri->scheme,    1);  // + trailing `:'
-	ADD_LEN(uri->authority, 2);  // + leading `//'
-	ADD_LEN(uri->query,     1);  // + leading `?'
-	ADD_LEN(uri->fragment,  1);  // + leading `#'
-
-	return len;
-}
-
-static size_t
-string_sink(const void* buf, size_t len, void* stream)
-{
-	uint8_t** ptr = (uint8_t**)stream;
-	memcpy(*ptr, buf, len);
-	*ptr += len;
-	return len;
-}
-
-SERD_API
-SerdString*
-serd_string_new_from_uri(const SerdURI* uri, SerdURI* out)
-{
-	const size_t len = serd_uri_string_length(uri);
-	SerdString*  str = malloc(sizeof(SerdString) + len + 1);
-	str->n_bytes = len + 1;
-	str->n_chars = len;  // FIXME: UTF-8
-
-	uint8_t* ptr = str->buf;
-	const size_t actual_len = serd_uri_serialise(uri, string_sink, &ptr);
-
-	str->buf[actual_len] = '\0';
-	str->n_bytes = actual_len + 1;
-	str->n_chars = str->n_bytes - 1;  // FIXME: UTF-8
-
-	#ifdef URI_DEBUG
-	fwrite("URI: `'", 1, 6, stderr);
-	fwrite(str->buf, 1, str->n_bytes - 1, stderr);
-	fwrite("'\n", 1, 2, stderr);
-	#endif
-
-	return str;
 }

@@ -8,11 +8,11 @@
  *
  * Serd is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
  * License for details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <assert.h>
@@ -34,7 +34,7 @@
 #define STACK_PAGE_SIZE 4096
 #define READ_BUF_LEN    4096
 #ifndef NDEBUG
-#define STACK_DEBUG       1
+#define STACK_DEBUG     1
 #endif
 
 typedef struct {
@@ -60,7 +60,7 @@ typedef struct {
 	const Node* predicate;
 } ReadContext;
 
-static const Node SERD_NODE_NULL = { 0, 0, 0, 0 };
+static const Node INTERNAL_NODE_NULL = { 0, 0, 0, 0 };
 
 struct SerdReaderImpl {
 	void*             handle;
@@ -269,18 +269,42 @@ pop_string(SerdReader reader, Ref ref)
 	}
 }
 
+static inline SerdNode
+public_node_from_ref(SerdReader reader, SerdType type, Ref ref)
+{
+	if (!ref) {
+		return SERD_NODE_NULL;
+	}
+	const SerdString* str    = deref(reader, ref);
+	const SerdNode    public = { type, str->n_bytes, str->n_chars, str->buf };
+	return public;
+}
+
+static inline SerdNode
+public_node(SerdReader reader, const Node* private)
+{
+	return public_node_from_ref(reader, private->type, private->value);
+}
+
+	
 static inline bool
 emit_statement(SerdReader reader,
                const Node* g, const Node* s, const Node* p, const Node* o)
 {
 	assert(s->value && p->value && o->value);
-	return reader->statement_sink(
-		reader->handle,
-		g ? deref(reader, g->value) : NULL, g ? g->type : 0,
-		deref(reader, s->value), s->type,
-		deref(reader, p->value), p->type,
-		deref(reader, o->value), o->type,
-		deref(reader, o->datatype), deref(reader, o->lang));
+	const SerdNode graph           = g ? public_node(reader, g) : SERD_NODE_NULL;
+	const SerdNode subject         = public_node(reader, s);
+	const SerdNode predicate       = public_node(reader, p);
+	const SerdNode object          = public_node(reader, o);
+	const SerdNode object_datatype = public_node_from_ref(reader, SERD_URI, o->datatype);
+	const SerdNode object_lang     = public_node_from_ref(reader, SERD_LITERAL, o->lang);
+	return reader->statement_sink(reader->handle,
+	                              &graph,
+	                              &subject,
+	                              &predicate,
+	                              &object,
+	                              &object_datatype,
+	                              &object_lang);
 }
 
 static bool read_collection(SerdReader reader, ReadContext ctx, Node* dest);
@@ -891,7 +915,7 @@ static bool
 read_literal(SerdReader reader, Node* dest)
 {
 	Ref           str      = 0;
-	Node          datatype = SERD_NODE_NULL;
+	Node          datatype = INTERNAL_NODE_NULL;
 	const uint8_t c        = peek_byte(reader);
 	if (c == '-' || c == '+' || is_digit(c)) {
 		return read_number(reader, dest);
@@ -1000,7 +1024,8 @@ read_blank(SerdReader reader, ReadContext ctx, Node* dest)
 		read_ws_star(reader);
 		eat_byte(reader, ']');
 		if (reader->end_sink) {
-			reader->end_sink(reader->handle, deref(reader, dest->value));
+			const SerdNode end = public_node(reader, dest);
+			reader->end_sink(reader->handle, &end);
 		}
 		return true;
 	case '(':
@@ -1040,7 +1065,7 @@ read_object(SerdReader reader, ReadContext ctx)
 	uint8_t       pre[6];
 	bool          ret  = false;
 	bool          emit = (ctx.subject != 0);
-	Node          o    = SERD_NODE_NULL;
+	Node          o    = INTERNAL_NODE_NULL;
 	const uint8_t c    = peek_byte(reader);
 	switch (c) {
 	case ')':
@@ -1122,7 +1147,7 @@ read_predicateObjectList(SerdReader reader, ReadContext ctx)
 	if (reader->eof) {
 		return false;
 	}
-	Node predicate = SERD_NODE_NULL;
+	Node predicate = INTERNAL_NODE_NULL;
 	TRY_RET(read_verb(reader, &predicate));
 	TRY_THROW(read_ws_plus(reader));
 	ctx.predicate = &predicate;
@@ -1207,7 +1232,7 @@ read_collection(SerdReader reader, ReadContext ctx, Node* dest)
 static Node
 read_subject(SerdReader reader, ReadContext ctx)
 {
-	Node    subject = SERD_NODE_NULL;
+	Node    subject = INTERNAL_NODE_NULL;
 	switch (peek_byte(reader)) {
 	case '[': case '(': case '_':
 		read_blank(reader, ctx, &subject);
@@ -1244,7 +1269,8 @@ read_base(SerdReader reader)
 	TRY_RET(read_ws_plus(reader));
 	Ref uri;
 	TRY_RET(uri = read_uriref(reader));
-	reader->base_sink(reader->handle, deref(reader, uri));
+	const SerdNode uri_node = public_node_from_ref(reader, SERD_URI, uri);
+	reader->base_sink(reader->handle, &uri_node);
 	pop_string(reader, uri);
 	return true;
 }
@@ -1266,9 +1292,9 @@ read_prefixID(SerdReader reader)
 	read_ws_star(reader);
 	Ref uri = 0;
 	TRY_THROW(uri = read_uriref(reader));
-	ret = reader->prefix_sink(reader->handle,
-	                          deref(reader, name),
-	                          deref(reader, uri));
+	const SerdNode name_node = public_node_from_ref(reader, SERD_LITERAL, name);
+	const SerdNode uri_node  = public_node_from_ref(reader, SERD_URI, uri);
+	ret = reader->prefix_sink(reader->handle, &name_node, &uri_node);
 	pop_string(reader, uri);
 except:
 	pop_string(reader, name);
@@ -1352,7 +1378,7 @@ serd_reader_new(SerdSyntax        syntax,
 
 	memset(reader->read_buf, '\0', READ_BUF_LEN * 2);
 
-	/* Read into the second page of the buffer.  Occasionally readahead
+	/* Read into the second page of the buffer. Occasionally readahead
 	   will move the read_head to before this point when readahead causes
 	   a page fault.
 	*/

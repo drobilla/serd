@@ -15,7 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* @file
+/** @file
  * Public Serd API.
  */
 
@@ -112,7 +112,7 @@ typedef enum {
  * @{
  */
 
-/** A chunk of memory (unterminated string). */
+/** An unterminated string fragment. */
 typedef struct {
 	const uint8_t* buf;  ///< Start of chunk
 	size_t         len;  ///< Length of chunk in bytes
@@ -163,38 +163,21 @@ size_t
 serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream);
 
 /** @} */
-/** @name SerdString
- * @brief A measured UTF-8 string.
+/** @name SerdNode
+ * @brief An RDF node.
  * @{
  */
 
-/** Measured UTF-8 string. */
+/** A syntactic RDF node. */
 typedef struct {
-	size_t  n_bytes;  ///< Size in bytes including trailing null byte
-	size_t  n_chars;  ///< Length in characters
-	uint8_t buf[];    ///< Buffer
-} SerdString;
+	SerdType       type;
+	size_t         n_bytes;  ///< Size in bytes including trailing null byte
+	size_t         n_chars;  ///< Length in characters
+	const uint8_t* buf;      ///< Buffer
+} SerdNode;
 
-/** Create a new UTF-8 string from @a utf8. */
-SERD_API
-SerdString*
-serd_string_new(const uint8_t* utf8);
+static const SerdNode SERD_NODE_NULL = { 0, 0, 0, 0 };
 
-/** Copy @a string. */
-SERD_API
-SerdString*
-serd_string_copy(const SerdString* str);
-
-/** Free @a str. */
-SERD_API
-void
-serd_string_free(SerdString* str);
-
-/** Serialise @a uri to a string. */
-SERD_API
-SerdString*
-serd_string_new_from_uri(const SerdURI* uri,
-                         SerdURI*       out);
 
 /** @} */
 /** @name SerdEnv
@@ -215,17 +198,17 @@ serd_env_free(SerdEnv env);
 /** Add namespace @a uri to @a ns using prefix @a name. */
 SERD_API
 void
-serd_env_add(SerdEnv           env,
-             const SerdString* name,
-             const SerdString* uri);
+serd_env_add(SerdEnv         env,
+             const SerdNode* name,
+             const SerdNode* uri);
 
 /** Expand @a qname. */
 SERD_API
 bool
-serd_env_expand(const SerdEnv     env,
-                const SerdString* qname,
-                SerdChunk*        uri_prefix,
-                SerdChunk*        uri_suffix);
+serd_env_expand(const SerdEnv   env,
+                const SerdNode* qname,
+                SerdChunk*      uri_prefix,
+                SerdChunk*      uri_suffix);
 
 /** @} */
 /** @name SerdReader
@@ -234,31 +217,30 @@ serd_env_expand(const SerdEnv     env,
  */
 
 /** Sink for base URI changes. */
-typedef bool (*SerdBaseSink)(void*             handle,
-                             const SerdString* uri);
+typedef bool (*SerdBaseSink)(void*           handle,
+                             const SerdNode* uri);
 
 /** Sink for namespace definitions. */
-typedef bool (*SerdPrefixSink)(void*             handle,
-                               const SerdString* name,
-                               const SerdString* uri);
+typedef bool (*SerdPrefixSink)(void*           handle,
+                               const SerdNode* name,
+                               const SerdNode* uri);
 
 /** Sink for statements. */
-typedef bool (*SerdStatementSink)(
-	void*             handle,
-	const SerdString* graph,     SerdType graph_type,
-	const SerdString* subject,   SerdType subject_type,
-	const SerdString* predicate, SerdType predicate_type,
-	const SerdString* object,    SerdType object_type,
-	const SerdString* object_lang,
-	const SerdString* object_datatype);
+typedef bool (*SerdStatementSink)(void*           handle,
+                                  const SerdNode* graph,
+                                  const SerdNode* subject,
+                                  const SerdNode* predicate,
+                                  const SerdNode* object,
+                                  const SerdNode* object_datatype,
+                                  const SerdNode* object_lang);
 
 /** Sink for anonymous node end markers.
  * This is called to indicate that the anonymous node with the given
  * @a value will no longer be referred to by any future statements
  * (i.e. the anonymous serialisation of the node is finished).
  */
-typedef bool (*SerdEndSink)(void*             handle,
-                            const SerdString* value);
+typedef bool (*SerdEndSink)(void*           handle,
+                            const SerdNode* node);
 
 /** Create a new RDF reader. */
 SERD_API
@@ -317,27 +299,26 @@ serd_writer_set_base_uri(SerdWriter     writer,
 /** Set the current output base URI. */
 SERD_API
 void
-serd_writer_set_prefix(SerdWriter        writer,
-                       const SerdString* name,
-                       const SerdString* uri);
+serd_writer_set_prefix(SerdWriter      writer,
+                       const SerdNode* name,
+                       const SerdNode* uri);
 
 /** Write a statement. */
 SERD_API
 bool
-serd_writer_write_statement(
-	SerdWriter        writer,
-	const SerdString* graph,     SerdType graph_type,
-	const SerdString* subject,   SerdType subject_type,
-	const SerdString* predicate, SerdType predicate_type,
-	const SerdString* object,    SerdType object_type,
-	const SerdString* object_datatype,
-	const SerdString* object_lang);
+serd_writer_write_statement(SerdWriter      writer,
+                            const SerdNode* graph,
+                            const SerdNode* subject,
+                            const SerdNode* predicate,
+                            const SerdNode* object,
+                            const SerdNode* object_datatype,
+                            const SerdNode* object_lang);
 
 /** Mark the end of an anonymous node's description. */
 SERD_API
 bool
-serd_writer_end_anon(SerdWriter        writer,
-                     const SerdString* subject);
+serd_writer_end_anon(SerdWriter      writer,
+                     const SerdNode* node);
 
 /** Finish a write. */
 SERD_API

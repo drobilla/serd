@@ -8,11 +8,11 @@
  *
  * Serd is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
  * License for details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <assert.h>
@@ -22,12 +22,14 @@
 #include "serd_internal.h"
 
 typedef struct {
-	const SerdString* graph;
-	const SerdString* subject;
-	const SerdString* predicate;
+	SerdNode graph;
+	SerdNode subject;
+	SerdNode predicate;
 } WriteContext;
 
-static const WriteContext WRITE_CONTEXT_NULL = { 0, 0, 0 };
+static const WriteContext WRITE_CONTEXT_NULL = {
+	{ 0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}
+};
 
 struct SerdWriterImpl {
 	SerdSyntax   syntax;
@@ -162,15 +164,14 @@ serd_writer_write_delim(SerdWriter writer, const uint8_t delim)
 }
 
 static bool
-write_node(SerdWriter        writer,
-           SerdType          type,
-           const SerdString* str,
-           const SerdString* datatype,
-           const SerdString* lang)
+write_node(SerdWriter      writer,
+           const SerdNode* node,
+           const SerdNode* datatype,
+           const SerdNode* lang)
 {
 	SerdChunk uri_prefix;
 	SerdChunk uri_suffix;
-	switch (type) {
+	switch (node->type) {
 	case SERD_ANON_BEGIN:
 		if (writer->syntax != SERD_NTRIPLES) {
 			++writer->indent;
@@ -178,8 +179,8 @@ write_node(SerdWriter        writer,
 			WriteContext* ctx = (WriteContext*)serd_stack_push(
 				&writer->anon_stack, sizeof(WriteContext));
 			*ctx = writer->context;
-			writer->context.subject   = str;
-			writer->context.predicate = 0;
+			writer->context.subject   = *node;
+			writer->context.predicate = SERD_NODE_NULL;
 			break;
 		}
 	case SERD_ANON:
@@ -188,13 +189,13 @@ write_node(SerdWriter        writer,
 		}  // else fall through
 	case SERD_BLANK_ID:
 		writer->sink("_:", 2, writer->stream);
-		writer->sink(str->buf, str->n_bytes - 1, writer->stream);
+		writer->sink(node->buf, node->n_bytes - 1, writer->stream);
 		break;
 	case SERD_CURIE:
 		switch (writer->syntax) {
 		case SERD_NTRIPLES:
-			if (!serd_env_expand(writer->env, str, &uri_prefix, &uri_suffix)) {
-				fprintf(stderr, "error: undefined namespace prefix `%s'\n", str->buf);
+			if (!serd_env_expand(writer->env, node, &uri_prefix, &uri_suffix)) {
+				fprintf(stderr, "error: undefined namespace prefix `%s'\n", node->buf);
 				return false;
 			}
 			writer->sink("<", 1, writer->stream);
@@ -203,25 +204,25 @@ write_node(SerdWriter        writer,
 			writer->sink(">", 1, writer->stream);
 			break;
 		case SERD_TURTLE:
-			writer->sink(str->buf, str->n_bytes - 1, writer->stream);
+			writer->sink(node->buf, node->n_bytes - 1, writer->stream);
 		}
 		break;
 	case SERD_LITERAL:
 		writer->sink("\"", 1, writer->stream);
-		write_text(writer, WRITE_STRING, str->buf, str->n_bytes - 1, '"');
+		write_text(writer, WRITE_STRING, node->buf, node->n_bytes - 1, '"');
 		writer->sink("\"", 1, writer->stream);
-		if (lang) {
+		if (lang->buf) {
 			writer->sink("@", 1, writer->stream);
 			writer->sink(lang->buf, lang->n_bytes - 1, writer->stream);
-		} else if (datatype) {
+		} else if (datatype->buf) {
 			writer->sink("^^", 2, writer->stream);
-			write_node(writer, SERD_URI, datatype, NULL, NULL);
+			write_node(writer, datatype, NULL, NULL);
 		}
 		break;
 	case SERD_URI:
-		if (!serd_uri_string_has_scheme(str->buf)) {
+		if (!serd_uri_string_has_scheme(node->buf)) {
 			SerdURI uri;
-			if (serd_uri_parse(str->buf, &uri)) {
+			if (serd_uri_parse(node->buf, &uri)) {
 				SerdURI abs_uri;
 				if (serd_uri_resolve(&uri, &writer->base_uri, &abs_uri)) {
 					writer->sink("<", 1, writer->stream);
@@ -232,7 +233,7 @@ write_node(SerdWriter        writer,
 			}
 		} else {
 			writer->sink("<", 1, writer->stream);
-			write_text(writer, WRITE_URI, str->buf, str->n_bytes - 1, '>');
+			write_text(writer, WRITE_URI, node->buf, node->n_bytes - 1, '>');
 			writer->sink(">", 1, writer->stream);
 			return true;
 		}
@@ -243,23 +244,22 @@ write_node(SerdWriter        writer,
 
 SERD_API
 bool
-serd_writer_write_statement(
-	SerdWriter        writer,
-	const SerdString* graph,     SerdType graph_type,
-	const SerdString* subject,   SerdType subject_type,
-	const SerdString* predicate, SerdType predicate_type,
-	const SerdString* object,    SerdType object_type,
-	const SerdString* object_datatype,
-	const SerdString* object_lang)
+serd_writer_write_statement(SerdWriter      writer,
+                            const SerdNode* graph,
+                            const SerdNode* subject,
+                            const SerdNode* predicate,
+                            const SerdNode* object,
+                            const SerdNode* object_datatype,
+                            const SerdNode* object_lang)
 {
 	assert(subject && predicate && object);
 	switch (writer->syntax) {
 	case SERD_NTRIPLES:
-		write_node(writer, subject_type, subject, NULL, NULL);
+		write_node(writer, subject, NULL, NULL);
 		writer->sink(" ", 1, writer->stream);
-		write_node(writer, predicate_type, predicate, NULL, NULL);
+		write_node(writer, predicate, NULL, NULL);
 		writer->sink(" ", 1, writer->stream);
-		if (!write_node(writer, object_type, object, object_datatype, object_lang)) {
+		if (!write_node(writer, object, object_datatype, object_lang)) {
 			return false;
 		}
 		writer->sink(" .\n", 3, writer->stream);
@@ -267,27 +267,26 @@ serd_writer_write_statement(
 	case SERD_TURTLE:
 		break;
 	}
-	
-	if (subject == writer->context.subject) {
-		if (predicate == writer->context.predicate) {  // Abbreviate S P
+	if (subject->buf == writer->context.subject.buf) {
+		if (predicate->buf == writer->context.predicate.buf) {  // Abbreviate S P
 			++writer->indent;
 			serd_writer_write_delim(writer, ',');
-			write_node(writer, object_type, object, object_datatype, object_lang);
+			write_node(writer, object, object_datatype, object_lang);
 			--writer->indent;
 		} else {  // Abbreviate S
-			if (writer->context.predicate) {
+			if (writer->context.predicate.buf) {
 				serd_writer_write_delim(writer, ';');
 			} else {
 				++writer->indent;
 				serd_writer_write_delim(writer, '\n');
 			}
-			write_node(writer, predicate_type, predicate, NULL, NULL);
-			writer->context.predicate = predicate;
+			write_node(writer, predicate, NULL, NULL);
+			writer->context.predicate = *predicate;
 			writer->sink(" ", 1, writer->stream);
-			write_node(writer, object_type, object, object_datatype, object_lang);
+			write_node(writer, object, object_datatype, object_lang);
 		}
 	} else {
-		if (writer->context.subject) {
+		if (writer->context.subject.buf) {
 			if (writer->indent > 0) {
 				--writer->indent;
 			}
@@ -297,41 +296,39 @@ serd_writer_write_statement(
 			}
 		}
 
-		if (subject_type == SERD_ANON_BEGIN) {
+		if (subject->type == SERD_ANON_BEGIN) {
 			writer->sink("[ ", 2, writer->stream);
 			++writer->indent;
 			WriteContext* ctx = (WriteContext*)serd_stack_push(
 				&writer->anon_stack, sizeof(WriteContext));
 			*ctx = writer->context;
-			writer->context.subject   = subject;
-			writer->context.predicate = 0;
 		} else {
-			write_node(writer, subject_type, subject, NULL, NULL);
+			write_node(writer, subject, NULL, NULL);
 			++writer->indent;
-			if (subject_type != SERD_ANON_BEGIN && subject_type != SERD_ANON) {
+			if (subject->type != SERD_ANON_BEGIN && subject->type != SERD_ANON) {
 				serd_writer_write_delim(writer, '\n');
 			}
 		}
 
-		writer->context.subject   = subject;
-		writer->context.predicate = 0;
+		writer->context.subject   = *subject;
+		writer->context.predicate = SERD_NODE_NULL;
 
-		write_node(writer, predicate_type, predicate, NULL, NULL);
-		writer->context.predicate = predicate;
+		write_node(writer, predicate, NULL, NULL);
+		writer->context.predicate = *predicate;
 		writer->sink(" ", 1, writer->stream);
 
-		write_node(writer, object_type, object, object_datatype, object_lang);
+		write_node(writer, object, object_datatype, object_lang);
 	}
 
-	const WriteContext new_context = { graph, subject, predicate };
+	const WriteContext new_context = { *graph, *subject, *predicate };
 	writer->context = new_context;
 	return true;
 }
 
 SERD_API
 bool
-serd_writer_end_anon(SerdWriter        writer,
-                     const SerdString* subject)
+serd_writer_end_anon(SerdWriter      writer,
+                     const SerdNode* node)
 {
 	if (writer->syntax == SERD_NTRIPLES) {
 		return true;
@@ -346,8 +343,8 @@ serd_writer_end_anon(SerdWriter        writer,
 	writer->sink("]", 1, writer->stream);
 	writer->context = *anon_stack_top(writer);
 	serd_stack_pop(&writer->anon_stack, sizeof(WriteContext));
-	if (!writer->context.subject) {  // End of anonymous subject
-		writer->context.subject = subject;
+	if (!writer->context.subject.buf) {  // End of anonymous subject
+		writer->context.subject = *node;
 	}
 	return true;
 }
@@ -356,7 +353,7 @@ SERD_API
 void
 serd_writer_finish(SerdWriter writer)
 {
-	if (writer->context.subject) {
+	if (writer->context.subject.buf) {
 		writer->sink(" .\n", 3, writer->stream);
 	}
 }
@@ -391,7 +388,7 @@ serd_writer_set_base_uri(SerdWriter     writer,
 {
 	writer->base_uri = *uri;
 	if (writer->syntax != SERD_NTRIPLES) {
-		if (writer->context.graph || writer->context.subject) {
+		if (writer->context.graph.buf || writer->context.subject.buf) {
 			writer->sink(" .\n\n", 4, writer->stream);
 			writer->context = WRITE_CONTEXT_NULL;
 		}
@@ -404,12 +401,12 @@ serd_writer_set_base_uri(SerdWriter     writer,
 
 SERD_API
 void
-serd_writer_set_prefix(SerdWriter        writer,
-                       const SerdString* name,
-                       const SerdString* uri)
+serd_writer_set_prefix(SerdWriter      writer,
+                       const SerdNode* name,
+                       const SerdNode* uri)
 {
 	if (writer->syntax != SERD_NTRIPLES) {
-		if (writer->context.graph || writer->context.subject) {
+		if (writer->context.graph.buf || writer->context.subject.buf) {
 			writer->sink(" .\n\n", 4, writer->stream);
 			writer->context = WRITE_CONTEXT_NULL;
 		}

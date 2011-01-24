@@ -8,11 +8,11 @@
  *
  * Serd is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
  * License for details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <assert.h>
@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "serd/serd.h"
+#include "serd_internal.h"
 
 typedef struct {
 	SerdString* name;
@@ -72,29 +72,29 @@ serd_env_find(SerdEnv        env,
 
 SERD_API
 void
-serd_env_add(SerdEnv           env,
-             const SerdString* name,
-             const SerdString* uri)
+serd_env_add(SerdEnv         env,
+             const SerdNode* name,
+             const SerdNode* uri)
 {
 	assert(name && uri);
 	SerdPrefix* const prefix = serd_env_find(env, name->buf, name->n_chars);
 	if (prefix) {
 		serd_string_free(prefix->uri);
-		prefix->uri = serd_string_copy(uri);
+		prefix->uri = serd_string_new_from_node(uri);
 	} else {
 		env->prefixes = realloc(env->prefixes,
 		                        (++env->n_prefixes) * sizeof(SerdPrefix));
-		env->prefixes[env->n_prefixes - 1].name   = serd_string_copy(name);
-		env->prefixes[env->n_prefixes - 1].uri = serd_string_copy(uri);
+		env->prefixes[env->n_prefixes - 1].name = serd_string_new_from_node(name);
+		env->prefixes[env->n_prefixes - 1].uri  = serd_string_new_from_node(uri);
 	}
 }
 
 SERD_API
 bool
-serd_env_expand(const SerdEnv     env,
-                const SerdString* qname,
-                SerdChunk*        uri_prefix,
-                SerdChunk*        uri_suffix)
+serd_env_expand(const SerdEnv   env,
+                const SerdNode* qname,
+                SerdChunk*      uri_prefix,
+                SerdChunk*      uri_suffix)
 {
 	const uint8_t* const colon = memchr(qname->buf, ':', qname->n_bytes);
 	if (!colon) {
@@ -102,7 +102,7 @@ serd_env_expand(const SerdEnv     env,
 	}
 
 	const size_t            name_len = colon - qname->buf;
-	const SerdPrefix* const prefix = serd_env_find(env, qname->buf, name_len);
+	const SerdPrefix* const prefix   = serd_env_find(env, qname->buf, name_len);
 	if (prefix) {
 		uri_prefix->buf = prefix->uri->buf;
 		uri_prefix->len = prefix->uri->n_bytes - 1;

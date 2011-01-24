@@ -8,11 +8,11 @@
  *
  * Serd is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
  * License for details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <assert.h>
@@ -20,8 +20,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "serd/serd.h"
+#include "serd_internal.h"
 
+#if 0
 static inline size_t
 utf8_strlen(const uint8_t* utf8, size_t* out_n_bytes)
 {
@@ -38,20 +39,37 @@ utf8_strlen(const uint8_t* utf8, size_t* out_n_bytes)
 	}
 	return n_chars;
 }
+#endif
 
+static SerdString*
+serd_string_new_measured(const uint8_t* utf8, size_t n_bytes, size_t n_chars)
+{
+	SerdString* const str = malloc(sizeof(SerdString) + n_bytes);
+	str->n_bytes = n_bytes;
+	str->n_chars = n_chars;
+	memcpy(str->buf, utf8, n_bytes);
+	return str;
+}
+
+#if 0
 SERD_API
 SerdString*
 serd_string_new(const uint8_t* utf8)
 {
 	size_t n_bytes;
 	size_t n_chars = utf8_strlen(utf8, &n_bytes);
-	SerdString* const str = malloc(sizeof(SerdString) + n_bytes);
-	str->n_bytes = n_bytes;
-	str->n_chars = n_chars;
-	memcpy(str->buf, utf8, str->n_bytes);
-	return str;
+	return serd_string_new_measured(utf8, n_bytes, n_chars);
+}
+#endif
+
+SERD_API
+SerdString*
+serd_string_new_from_node(const SerdNode* node)
+{
+	return serd_string_new_measured(node->buf, node->n_bytes, node->n_chars);
 }
 
+#if 0
 SERD_API
 SerdString*
 serd_string_copy(const SerdString* s)
@@ -63,6 +81,7 @@ serd_string_copy(const SerdString* s)
 	}
 	return NULL;
 }
+#endif
 
 SERD_API
 void

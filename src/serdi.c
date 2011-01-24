@@ -8,11 +8,11 @@
  *
  * Serd is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
  * License for details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <assert.h>
@@ -21,103 +21,174 @@
 
 #include "serd/serd.h"
 
+// #define URI_DEBUG 1
+
 typedef struct {
-	SerdWriter  writer;
-	SerdEnv     env;
-	SerdString* base_uri_str;
-	SerdURI     base_uri;
+	SerdWriter writer;
+	SerdEnv    env;
+	SerdNode   base_uri_node;
+	SerdURI    base_uri;
 } State;
 
-static bool
-event_base(void*             handle,
-           const SerdString* uri_str)
+static size_t
+serd_uri_string_length(const SerdURI* uri)
 {
-	State* const state = (State*)handle;
+	size_t len = uri->path_base.len;
 
-	SerdURI uri;
-	if (!serd_uri_parse(uri_str->buf, &uri)) {
+#define ADD_LEN(field, n_delims) \
+	if ((field).len) { len += (field).len + (n_delims); }
+
+	ADD_LEN(uri->path,      1);  // + possible leading `/'
+	ADD_LEN(uri->scheme,    1);  // + trailing `:'
+	ADD_LEN(uri->authority, 2);  // + leading `//'
+	ADD_LEN(uri->query,     1);  // + leading `?'
+	ADD_LEN(uri->fragment,  1);  // + leading `#'
+
+	return len;
+}
+
+static size_t
+string_sink(const void* buf, size_t len, void* stream)
+{
+	uint8_t** ptr = (uint8_t**)stream;
+	memcpy(*ptr, buf, len);
+	*ptr += len;
+	return len;
+}
+
+static SerdNode
+serd_node_new_uri(const SerdURI* uri, SerdURI* out)
+{
+	const size_t len = serd_uri_string_length(uri);
+	uint8_t*     buf = malloc(len + 1);
+
+	SerdNode node = { SERD_URI, len + 1, len, buf };  // FIXME: UTF-8
+
+	uint8_t*     ptr        = buf;
+	const size_t actual_len = serd_uri_serialise(uri, string_sink, &ptr);
+
+	buf[actual_len] = '\0';
+	node.n_bytes    = actual_len + 1;
+	node.n_chars    = actual_len;
+
+	// FIXME: double parse
+	if (!serd_uri_parse(buf, out)) {
+		fprintf(stderr, "error parsing URI\n");
+		return SERD_NODE_NULL;
+	}
+
+	#ifdef URI_DEBUG
+	fwrite("URI: `'", 1, 6, stderr);
+	fwrite(node.buf, 1, node.n_bytes - 1, stderr);
+	fwrite("'\n", 1, 2, stderr);
+	#endif
+
+	return node;
+}
+
+static uint8_t*
+copy_string(const uint8_t* str, size_t* n_bytes)
+{
+	const size_t   len = strlen((const char*)str);
+	uint8_t* const ret = malloc(len + 1);
+	memcpy(ret, str, len + 1);
+	*n_bytes = len + 1;
+	return ret;
+}
+
+#if 0
+static SerdNode
+serd_node_copy(const SerdNode* node)
+{
+	SerdNode copy = *node;
+	uint8_t* buf  = malloc(copy.n_bytes);
+	memcpy(buf, node->buf, copy.n_bytes);
+	copy.buf = buf;
+	return copy;
+}
+
+static void
+serd_node_free(SerdNode* node)
+{
+	free((uint8_t*)node->buf);  // FIXME: const cast
+}
+#endif
+
+static bool
+event_base(void*           handle,
+           const SerdNode* uri_node)
+{
+	State* const state         = (State*)handle;
+	SerdNode     base_uri_node = *uri_node;
+	SerdURI      base_uri;
+	if (!serd_uri_parse(uri_node->buf, &base_uri)) {
 		return false;
 	}
 
-	SerdURI     base_uri = SERD_URI_NULL;
-	SerdString* base_uri_str;
-	if (!uri.scheme.len) {
-		// URI has no scheme (relative by definition), resolve
+	if (!base_uri.scheme.len) {  // URI has no scheme, resolve relative URI
 		SerdURI abs_base_uri;
-		if (!serd_uri_resolve(&uri, &state->base_uri, &abs_base_uri)) {
+		if (!serd_uri_resolve(&base_uri, &state->base_uri, &abs_base_uri)) {
 			fprintf(stderr, "error: failed to resolve new base URI\n");
 			return false;
 		}
-		base_uri_str = serd_string_new_from_uri(&abs_base_uri, &base_uri);
-		// FIXME: double parse
-		serd_uri_parse(base_uri_str->buf, &base_uri);
+		base_uri_node = serd_node_new_uri(&abs_base_uri, &base_uri);
 	} else {
-		// Absolute URI, use literally as new base URI
-		base_uri_str = serd_string_copy(uri_str);
-		// FIXME: double parse
-		serd_uri_parse(base_uri_str->buf, &base_uri);
+		SerdURI new_base_uri;
+		base_uri_node = serd_node_new_uri(&base_uri, &new_base_uri);
+		base_uri      = new_base_uri;
 	}
 
-	// Replace the old base URI
-	serd_string_free(state->base_uri_str);
-	state->base_uri_str     = base_uri_str;
-	state->base_uri         = base_uri;
+	state->base_uri_node = base_uri_node;
+	state->base_uri      = base_uri;
 	serd_writer_set_base_uri(state->writer, &base_uri);
-
 	return true;
 }
 
 static bool
-event_prefix(void*             handle,
-             const SerdString* name,
-             const SerdString* uri_string)
+event_prefix(void*           handle,
+             const SerdNode* name,
+             const SerdNode* uri_node)
 {
 	State* const state = (State*)handle;
-	if (!serd_uri_string_has_scheme(uri_string->buf)) {
+	if (!serd_uri_string_has_scheme(uri_node->buf)) {
 		SerdURI uri;
-		if (!serd_uri_parse(uri_string->buf, &uri)) {
+		if (!serd_uri_parse(uri_node->buf, &uri)) {
 			return false;
 		}
 		SerdURI abs_uri;
 		if (!serd_uri_resolve(&uri, &state->base_uri, &abs_uri)) {
 			return false;
 		}
-		SerdURI     new_abs_uri;
-		SerdString* abs_uri_string = serd_string_new_from_uri(&abs_uri, &new_abs_uri);
-		serd_env_add(state->env, name, abs_uri_string);
-		serd_string_free(abs_uri_string);
+		SerdURI  base_uri;
+		SerdNode base_uri_node = serd_node_new_uri(&abs_uri, &base_uri);
+		serd_env_add(state->env, name, &base_uri_node);
 	} else {
-		serd_env_add(state->env, name, uri_string);
+		serd_env_add(state->env, name, uri_node);
 	}
-	serd_writer_set_prefix(state->writer, name, uri_string);
-
+	serd_writer_set_prefix(state->writer, name, uri_node);
 	return true;
 }
 
 static bool
-event_statement(void*             handle,
-                const SerdString* graph,     SerdType graph_type,
-                const SerdString* subject,   SerdType subject_type,
-                const SerdString* predicate, SerdType predicate_type,
-                const SerdString* object,    SerdType object_type,
-                const SerdString* object_datatype,
-                const SerdString* object_lang)
+event_statement(void*           handle,
+                const SerdNode* graph,
+                const SerdNode* subject,
+                const SerdNode* predicate,
+                const SerdNode* object,
+                const SerdNode* object_datatype,
+                const SerdNode* object_lang)
 {
-	State* const state = (State*)handle;
-	return serd_writer_write_statement(state->writer,
-	                                   graph,     graph_type,
-	                                   subject,   subject_type,
-	                                   predicate, predicate_type,
-	                                   object,    object_type,
-	                                   object_datatype, object_lang);
+	return serd_writer_write_statement(
+		((State*)handle)->writer,
+		graph, subject, predicate, object, object_datatype, object_lang);
 }
 
 static bool
-event_end(void*             handle,
-          const SerdString* subject)
+event_end(void*           handle,
+          const SerdNode* node)
 {
 	State* const state = (State*)handle;
-	return serd_writer_end_anon(state->writer, subject);
+	return serd_writer_end_anon(state->writer, node);
 }
 
 int
@@ -184,20 +255,23 @@ main(int argc, char** argv)
 		}
 	}
 
-	SerdString* base_uri_str = NULL;
-	SerdURI     base_uri;
+	uint8_t* base_uri_str     = NULL;
+	size_t   base_uri_n_bytes = 0;
+	SerdURI  base_uri;
 	if (a < argc) {  // Base URI given on command line
 		const uint8_t* const in_base_uri = (const uint8_t*)argv[a++];
 		if (!serd_uri_parse((const uint8_t*)in_base_uri, &base_uri)) {
 			fprintf(stderr, "invalid base URI `%s'\n", argv[2]);
 			return 1;
 		}
-		base_uri_str = serd_string_new(in_base_uri);
+		base_uri_str = copy_string(in_base_uri, &base_uri_n_bytes);
 	} else {  // Use input file URI
-		base_uri_str = serd_string_new(in_filename);
+		base_uri_str = copy_string(in_filename, &base_uri_n_bytes);
 	}
 
-	serd_uri_parse(base_uri_str->buf, &base_uri);
+	if (!serd_uri_parse(base_uri_str, &base_uri)) {
+		fprintf(stderr, "invalid base URI `%s'\n", base_uri_str);
+	}
 
 	if (!in_fd) {
 		in_fd  = fopen((const char*)in_filename,  "r");
@@ -216,10 +290,15 @@ main(int argc, char** argv)
 		? SERD_STYLE_ASCII
 		: SERD_STYLE_ABBREVIATED;
 
+	const SerdNode base_uri_node = { SERD_URI,
+	                                 base_uri_n_bytes,
+	                                 base_uri_n_bytes - 1,
+	                                 base_uri_str };
+
 	State state = {
 		serd_writer_new(output_syntax, output_style,
 		                env, &base_uri, file_sink, out_fd),
-		env, base_uri_str, base_uri
+		env, base_uri_node, base_uri
 	};
 
 	SerdReader reader = serd_reader_new(
@@ -233,7 +312,7 @@ main(int argc, char** argv)
 	serd_writer_free(state.writer);
 
 	serd_env_free(state.env);
-	serd_string_free(state.base_uri_str);
+	free(base_uri_str);
 
 	if (success) {
 		return 0;
