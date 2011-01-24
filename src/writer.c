@@ -101,12 +101,6 @@ write_text(SerdWriter writer, TextContext ctx,
 		} else if ((in & 0xF8) == 0xF0) {  // Starts with `11110'
 			size = 4;
 			c = in & 0x07;
-		} else if ((in & 0xFC) == 0xF8) {  // Starts with `111110'
-			size = 5;
-			c = in & 0x03;
-		} else if ((in & 0xFE) == 0xFC) {  // Starts with `1111110'
-			size = 6;
-			c = in & 0x01;
 		} else {
 			fprintf(stderr, "invalid UTF-8 at offset %zu: %X\n", i, in);
 			return false;
@@ -128,8 +122,6 @@ write_text(SerdWriter writer, TextContext ctx,
 		} while (0)
 
 		switch (size) {
-		case 6: READ_BYTE();
-		case 5: READ_BYTE();
 		case 4: READ_BYTE();
 		case 3: READ_BYTE();
 		case 2: READ_BYTE();

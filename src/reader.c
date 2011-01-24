@@ -349,10 +349,6 @@ read_hex_escape(SerdReader reader, unsigned length, Ref dest)
 		size = 3;
 	} else if (c < 0x00200000) {
 		size = 4;
-	} else if (c < 0x04000000) {
-		size = 5;
-	} else if (c < 0x80000000) {
-		size = 6;
 	} else {
 		return false;
 	}
@@ -360,14 +356,6 @@ read_hex_escape(SerdReader reader, unsigned length, Ref dest)
 	// Build output in buf
 	// (Note # of bytes = # of leading 1 bits in first byte)
 	switch (size) {
-	case 6:
-		buf[5] = 0x80 | (uint8_t)(c & 0x3F);
-		c >>= 6;
-		c |= (4 << 24);  // set bit 2
-	case 5:
-		buf[4] = 0x80 | (uint8_t)(c & 0x3F);
-		c >>= 6;
-		c |= (8 << 18);  // set bit 3
 	case 4:
 		buf[3] = 0x80 | (uint8_t)(c & 0x3F);
 		c >>= 6;
@@ -488,10 +476,6 @@ read_character(SerdReader reader, Ref dest)
 				size = 3;
 			} else if ((c & 0xF8) == 0xF0) {  // Starts with `11110'
 				size = 4;
-			} else if ((c & 0xFC) == 0xF8) {  // Starts with `111110'
-				size = 5;
-			} else if ((c & 0xFE) == 0xFC) {  // Starts with `1111110'
-				size = 6;
 			} else {
 				error(reader, "invalid character\n");
 				return SERD_ERROR;
