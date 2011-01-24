@@ -60,6 +60,13 @@ typedef struct {
 	const Node* predicate;
 } ReadContext;
 
+/** Measured UTF-8 string. */
+typedef struct {
+	size_t  n_bytes;  ///< Size in bytes including trailing null byte
+	size_t  n_chars;  ///< Length in characters
+	uint8_t buf[];    ///< Buffer
+} SerdString;
+
 static const Node INTERNAL_NODE_NULL = { 0, 0, 0, 0 };
 
 struct SerdReaderImpl {

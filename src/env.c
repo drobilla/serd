@@ -23,14 +23,30 @@
 #include "serd_internal.h"
 
 typedef struct {
-	SerdString* name;
-	SerdString* uri;
+	SerdNode name;
+	SerdNode uri;
 } SerdPrefix;
 
 struct SerdEnvImpl {
 	SerdPrefix* prefixes;
 	size_t      n_prefixes;
 };
+
+static SerdNode
+serd_node_copy(const SerdNode* node)
+{
+	SerdNode copy = *node;
+	uint8_t* buf  = malloc(copy.n_bytes);
+	memcpy(buf, node->buf, copy.n_bytes);
+	copy.buf = buf;
+	return copy;
+}
+
+static void
+serd_node_free(SerdNode* node)
+{
+	free((uint8_t*)node->buf);  // FIXME: const cast
+}
 
 SERD_API
 SerdEnv
@@ -47,8 +63,8 @@ void
 serd_env_free(SerdEnv env)
 {
 	for (size_t i = 0; i < env->n_prefixes; ++i) {
-		serd_string_free(env->prefixes[i].name);
-		serd_string_free(env->prefixes[i].uri);
+		serd_node_free(&env->prefixes[i].name);
+		serd_node_free(&env->prefixes[i].uri);
 	}
 	free(env->prefixes);
 	free(env);
@@ -60,7 +76,7 @@ serd_env_find(SerdEnv        env,
               size_t         name_len)
 {
 	for (size_t i = 0; i < env->n_prefixes; ++i) {
-		const SerdString* prefix_name = env->prefixes[i].name;
+		const SerdNode* const prefix_name = &env->prefixes[i].name;
 		if (prefix_name->n_bytes == name_len + 1) {
 			if (!memcmp(prefix_name->buf, name, name_len)) {
 				return &env->prefixes[i];
@@ -79,13 +95,13 @@ serd_env_add(SerdEnv         env,
 	assert(name && uri);
 	SerdPrefix* const prefix = serd_env_find(env, name->buf, name->n_chars);
 	if (prefix) {
-		serd_string_free(prefix->uri);
-		prefix->uri = serd_string_new_from_node(uri);
+		serd_node_free(&prefix->uri);
+		prefix->uri = serd_node_copy(uri);
 	} else {
 		env->prefixes = realloc(env->prefixes,
 		                        (++env->n_prefixes) * sizeof(SerdPrefix));
-		env->prefixes[env->n_prefixes - 1].name = serd_string_new_from_node(name);
-		env->prefixes[env->n_prefixes - 1].uri  = serd_string_new_from_node(uri);
+		env->prefixes[env->n_prefixes - 1].name = serd_node_copy(name);
+		env->prefixes[env->n_prefixes - 1].uri  = serd_node_copy(uri);
 	}
 }
 
@@ -104,8 +120,8 @@ serd_env_expand(const SerdEnv   env,
 	const size_t            name_len = colon - qname->buf;
 	const SerdPrefix* const prefix   = serd_env_find(env, qname->buf, name_len);
 	if (prefix) {
-		uri_prefix->buf = prefix->uri->buf;
-		uri_prefix->len = prefix->uri->n_bytes - 1;
+		uri_prefix->buf = prefix->uri.buf;
+		uri_prefix->len = prefix->uri.n_bytes - 1;
 		uri_suffix->buf = colon + 1;
 		uri_suffix->len = qname->n_bytes - (colon - qname->buf) - 2;
 		return true;

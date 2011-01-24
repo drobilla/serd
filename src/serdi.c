@@ -96,24 +96,6 @@ copy_string(const uint8_t* str, size_t* n_bytes)
 	return ret;
 }
 
-#if 0
-static SerdNode
-serd_node_copy(const SerdNode* node)
-{
-	SerdNode copy = *node;
-	uint8_t* buf  = malloc(copy.n_bytes);
-	memcpy(buf, node->buf, copy.n_bytes);
-	copy.buf = buf;
-	return copy;
-}
-
-static void
-serd_node_free(SerdNode* node)
-{
-	free((uint8_t*)node->buf);  // FIXME: const cast
-}
-#endif
-
 static bool
 event_base(void*           handle,
            const SerdNode* uri_node)

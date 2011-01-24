@@ -99,27 +99,26 @@ is_digit(const uint8_t c)
 	return in_range(c, '0', '9');
 }
 
-/** Measured UTF-8 string. */
-typedef struct {
-	size_t  n_bytes;  ///< Size in bytes including trailing null byte
-	size_t  n_chars;  ///< Length in characters
-	uint8_t buf[];    ///< Buffer
-} SerdString;
-
-#if 0
-/** Create a new UTF-8 string from @a utf8. */
-SerdString*
-serd_string_new(const uint8_t* utf8);
-
-/** Copy @a string. */
-SerdString*
-serd_string_copy(const SerdString* str);
-#endif
-
-void
-serd_string_free(SerdString* str);
-
-SerdString*
-serd_string_new_from_node(const SerdNode* node);
+/** UTF-8 strlen.
+ * @return Lengh of @a utf8 in characters.
+ * @param utf8 A null-terminated UTF-8 string.
+ * @param out_n_bytes (Output) Set to the size of @a utf8 in bytes.
+ */
+static inline size_t
+serd_strlen(const uint8_t* utf8, size_t* out_n_bytes)
+{
+	size_t n_chars = 0;
+	size_t i       = 0;
+	for (; utf8[i]; ++i) {
+		if ((utf8[i] & 0xC0) != 0x80) {
+			// Does not start with `10', start of a new character
+			++n_chars;
+		}
+	}
+	if (out_n_bytes) {
+		*out_n_bytes = i + 1;
+	}
+	return n_chars;
+}
 
 #endif // SERD_INTERNAL_H
