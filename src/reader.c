@@ -134,7 +134,7 @@ page(SerdReader reader)
 }
 
 static inline bool
-readahead(SerdReader reader, uint8_t* pre, int n)
+peek_string(SerdReader reader, uint8_t* pre, int n)
 {
 	uint8_t* ptr = reader->read_buf + reader->read_head;
 	for (int i = 0; i < n; ++i) {
@@ -508,7 +508,7 @@ read_lcharacter(SerdReader reader, Ref dest)
 	uint8_t       pre[3];
 	switch (c) {
 	case '"':
-		readahead(reader, pre, 3);
+		peek_string(reader, pre, 3);
 		if (pre[1] == '\"' && pre[2] == '\"') {
 			eat_byte(reader, '\"');
 			eat_byte(reader, '\"');
@@ -654,7 +654,7 @@ static Ref
 read_quotedString(SerdReader reader)
 {
 	uint8_t pre[3];
-	readahead(reader, pre, 3);
+	peek_string(reader, pre, 3);
 	assert(pre[0] == '\"');
 	switch (pre[1]) {
 	case '\"':
@@ -943,7 +943,7 @@ static bool
 read_verb(SerdReader reader, Node* dest)
 {
 	uint8_t pre[2];
-	readahead(reader, pre, 2);
+	peek_string(reader, pre, 2);
 	switch (pre[0]) {
 	case 'a':
 		switch (pre[1]) {
@@ -1077,7 +1077,7 @@ read_object(SerdReader reader, ReadContext ctx)
 		   Unfortunately there is no way to distinguish these without
 		   readahead, since `true' or `false' could be the start of a qname.
 		*/
-		readahead(reader, pre, 6);
+		peek_string(reader, pre, 6);
 		if (!memcmp(pre, "true", 4) && is_object_end(pre[4])) {
 			eat_string(reader, "true", 4);
 			const Ref value     = push_string(reader, "true", 5);
@@ -1363,7 +1363,7 @@ serd_reader_new(SerdSyntax        syntax,
 
 	memset(reader->read_buf, '\0', READ_BUF_LEN * 2);
 
-	/* Read into the second page of the buffer. Occasionally readahead
+	/* Read into the second page of the buffer. Occasionally peek_string
 	   will move the read_head to before this point when readahead causes
 	   a page fault.
 	*/
