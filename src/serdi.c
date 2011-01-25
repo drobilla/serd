@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include "serd/serd.h"
+#include "serd-config.h"
 
 // #define URI_DEBUG 1
 
@@ -178,11 +179,26 @@ event_end(void*           handle,
 }
 
 int
+print_version()
+{
+	printf("serdi " SERD_VERSION "\n");
+	printf("Copyright (C) 2011 David Robillard <http://drobilla.net>.\n"
+	       "\nLicense: GNU LGPL version 3 or later "
+	       "<http://gnu.org/licenses/lgpl.html>.\n"
+	       "This is free software; you are free to change and redistribute it."
+	       "\nThere is NO WARRANTY, to the extent permitted by law.\n");
+	return 0;
+}
+
+int
 print_usage(const char* name, bool error)
 {
 	FILE* const os = error ? stderr : stdout;
-	fprintf(os, "Usage: %s INPUT [BASE_URI]\n", name);
-	fprintf(os, "Read and write RDF syntax.\n");
+	fprintf(os, "Usage: %s [OPTION]... INPUT [BASE_URI]\n", name);
+	fprintf(os, "Read and write RDF syntax.\n\n");
+	fprintf(os, "  -h           Display this help and exit\n");
+	fprintf(os, "  -o SYNTAX    Output syntax (`turtle' or `ntriples')\n");
+	fprintf(os, "  -v           Display version information and exit\n");
 	return error ? 1 : 0;
 }
 
@@ -208,6 +224,10 @@ main(int argc, char** argv)
 		if (argv[a][1] == '\0') {
 			in_fd = stdin;
 			break;
+		} else if (argv[a][1] == 'h') {
+			return print_usage(argv[0], false);
+		} else if (argv[a][1] == 'v') {
+			return print_version();
 		} else if (argv[a][1] == 'o') {
 			if (++a == argc) {
 				fprintf(stderr, "missing value for -i\n");
