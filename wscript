@@ -15,9 +15,8 @@ SERD_VERSION = '0.1.0'
 # major increment <=> incompatible changes
 # minor increment <=> compatible changes (additions)
 # micro increment <=> no interface changes
-# Version history:
-#   0.0.1 = 1,0,0
-SERD_LIB_VERSION = '1.0.0'
+# Serd uses the same version number for both library and package
+SERD_LIB_VERSION = SERD_VERSION
 
 # Variables for 'waf dist'
 APPNAME = 'serd'
