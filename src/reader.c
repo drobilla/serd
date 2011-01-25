@@ -87,6 +87,7 @@ struct SerdReaderImpl {
 	int               err;
 	uint8_t*          read_buf;
 	int32_t           read_head;    ///< Offset into read_buf
+	bool              from_file;    ///< True iff reading from @ref fd
 	bool              eof;
 #ifdef STACK_DEBUG
 	Ref*              alloc_stack;  ///< Stack of push offsets
@@ -121,6 +122,7 @@ make_node(SerdType type, Ref value, Ref datatype, Ref lang)
 static inline bool
 page(SerdReader reader)
 {
+	assert(reader->from_file);
 	reader->read_head = 0;
 	const size_t n_read = fread(reader->read_buf, 1, READ_BUF_LEN, reader->fd);
 	if (n_read == 0) {
@@ -138,7 +140,7 @@ peek_string(SerdReader reader, uint8_t* pre, int n)
 {
 	uint8_t* ptr = reader->read_buf + reader->read_head;
 	for (int i = 0; i < n; ++i) {
-		if (reader->read_head + i >= READ_BUF_LEN) {
+		if (reader->from_file && (reader->read_head + i >= READ_BUF_LEN)) {
 			if (!page(reader)) {
 				return false;
 			}
@@ -173,10 +175,10 @@ eat_byte(SerdReader reader, const uint8_t byte)
 	if (c != byte) {
 		return error(reader, "expected `%c', not `%c'\n", byte, c);
 	}
-	if (reader->read_head == READ_BUF_LEN) {
+	if (reader->from_file && (reader->read_head == READ_BUF_LEN)) {
 		TRY_RET(page(reader));
+		assert(reader->read_head < READ_BUF_LEN);
 	}
-	assert(reader->read_head < READ_BUF_LEN);
 	if (reader->read_buf[reader->read_head] == '\0') {
 		reader->eof = true;
 	}
@@ -1353,21 +1355,13 @@ serd_reader_new(SerdSyntax        syntax,
 	me->stack          = serd_stack_new(STACK_PAGE_SIZE);
 	me->cur            = cur;
 	me->next_id        = 1;
-	me->read_buf       = (uint8_t*)malloc(READ_BUF_LEN * 2);
+	me->read_buf       = 0;
 	me->read_head      = 0;
 	me->eof            = false;
 #ifdef STACK_DEBUG
 	me->alloc_stack    = 0;
 	me->n_allocs       = 0;
 #endif
-
-	memset(me->read_buf, '\0', READ_BUF_LEN * 2);
-
-	/* Read into the second page of the buffer. Occasionally peek_string
-	   will move the read_head to before this point when readahead causes
-	   a page fault.
-	*/
-	me->read_buf += READ_BUF_LEN;  // Read 1 page in
 
 #define RDF_FIRST NS_RDF "first"
 #define RDF_REST  NS_RDF "rest"
@@ -1392,7 +1386,6 @@ serd_reader_free(SerdReader reader)
 	free(me->alloc_stack);
 #endif
 	free(me->stack.buf);
-	free(me->read_buf - READ_BUF_LEN);
 	free(me);
 }
 
@@ -1401,14 +1394,41 @@ bool
 serd_reader_read_file(SerdReader me, FILE* file, const uint8_t* name)
 {
 	const Cursor cur = { name, 1, 1 };
+	me->fd        = file;
+	me->read_buf  = (uint8_t*)malloc(READ_BUF_LEN * 2);
+	me->read_head = 0;
+	me->cur       = cur;
+	me->from_file = true;
 
-	me->fd  = file;
-	me->cur = cur;
+	/* Read into the second page of the buffer. Occasionally peek_string
+	   will move the read_head to before this point when readahead causes
+	   a page fault.
+	*/
+	memset(me->read_buf, '\0', READ_BUF_LEN * 2);
+	me->read_buf += READ_BUF_LEN;
 
 	page(me);
 	const bool ret = read_turtleDoc(me);
 
-	me->fd = 0;
+	free(me->read_buf - READ_BUF_LEN);
+	me->fd       = 0;
+	me->read_buf = NULL;
+	return ret;
+}
 
+SERD_API
+bool
+serd_reader_read_string(SerdReader me, const uint8_t* utf8)
+{
+	const Cursor cur = { (const uint8_t*)"(string)", 1, 1 };
+
+	me->read_buf  = (uint8_t*)utf8;
+	me->read_head = 0;
+	me->cur       = cur;
+	me->from_file = false;
+
+	const bool ret = read_turtleDoc(me);
+
+	me->read_buf = NULL;
 	return ret;
 }

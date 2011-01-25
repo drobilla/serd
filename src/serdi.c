@@ -181,7 +181,7 @@ event_end(void*           handle,
 int
 print_version()
 {
-	printf("serdi " SERD_VERSION "\n");
+	printf("serdi " SERD_VERSION " <http://drobilla.net/software/serd>\n");
 	printf("Copyright (C) 2011 David Robillard <http://drobilla.net>.\n"
 	       "\nLicense: GNU LGPL version 3 or later "
 	       "<http://gnu.org/licenses/lgpl.html>.\n"
@@ -198,6 +198,7 @@ print_usage(const char* name, bool error)
 	fprintf(os, "Read and write RDF syntax.\n\n");
 	fprintf(os, "  -h           Display this help and exit\n");
 	fprintf(os, "  -o SYNTAX    Output syntax (`turtle' or `ntriples')\n");
+	fprintf(os, "  -s INPUT     Parse INPUT as string (terminates options)\n");
 	fprintf(os, "  -v           Display version information and exit\n");
 	return error ? 1 : 0;
 }
@@ -216,21 +217,28 @@ main(int argc, char** argv)
 		return print_usage(argv[0], true);
 	}
 
-	FILE*      in_fd         = NULL;
-	SerdSyntax output_syntax = SERD_NTRIPLES;
-
+	FILE*       in_fd         = NULL;
+	SerdSyntax  output_syntax = SERD_NTRIPLES;
+	bool        from_file     = true;
+	const char* in_name       = NULL;
 	int a = 1;
 	for (; a < argc && argv[a][0] == '-'; ++a) {
 		if (argv[a][1] == '\0') {
-			in_fd = stdin;
+			in_name = "(stdin)";
+			in_fd   = stdin;
 			break;
 		} else if (argv[a][1] == 'h') {
 			return print_usage(argv[0], false);
 		} else if (argv[a][1] == 'v') {
 			return print_version();
+		} else if (argv[a][1] == 's') {
+			in_name = "(string)";
+			from_file = false;
+			++a;
+			break;
 		} else if (argv[a][1] == 'o') {
 			if (++a == argc) {
-				fprintf(stderr, "missing value for -i\n");
+				fprintf(stderr, "missing value for -o\n");
 				return 1;
 			}
 			if (!strcmp(argv[a], "turtle")) {
@@ -247,17 +255,26 @@ main(int argc, char** argv)
 		}
 	}
 
-	const uint8_t* in_filename = (const uint8_t*)argv[a++];
-
-	if (!in_fd && serd_uri_string_has_scheme(in_filename)) {
-		// Input is an absolute URI, ensure it's a file: URI and chop scheme
-		if (strncmp((const char*)in_filename, "file:", 5)) {
-			fprintf(stderr, "unsupported URI scheme `%s'\n", in_filename);
-			return 1;
-		} else if (!strncmp((const char*)in_filename, "file://", 7)) {
-			in_filename += 7;
-		} else {
-			in_filename += 5;
+	const uint8_t* input = (const uint8_t*)argv[a++];
+	if (from_file) {
+		in_name = in_name ? in_name : (const char*)input;
+		if (!in_fd) {
+			if (serd_uri_string_has_scheme(input)) {
+				// INPUT is an absolute URI, ensure it a file and chop scheme
+				if (strncmp((const char*)input, "file:", 5)) {
+					fprintf(stderr, "unsupported URI scheme `%s'\n", input);
+					return 1;
+				} else if (!strncmp((const char*)input, "file://", 7)) {
+					input += 7;
+				} else {
+					input += 5;
+				}
+			}
+			in_fd  = fopen((const char*)input,  "r");
+			if (!in_fd) {
+				fprintf(stderr, "failed to open file %s\n", input);
+				return 1;
+			}
 		}
 	}
 
@@ -271,26 +288,18 @@ main(int argc, char** argv)
 			return 1;
 		}
 		base_uri_str = copy_string(in_base_uri, &base_uri_n_bytes);
-	} else {  // Use input file URI
-		base_uri_str = copy_string(in_filename, &base_uri_n_bytes);
+	} else if (from_file) {  // Use input file URI
+		base_uri_str = copy_string(input, &base_uri_n_bytes);
+	} else {
+		base_uri_str = copy_string((const uint8_t*)"", &base_uri_n_bytes);
 	}
 
 	if (!serd_uri_parse(base_uri_str, &base_uri)) {
 		fprintf(stderr, "invalid base URI `%s'\n", base_uri_str);
 	}
 
-	if (!in_fd) {
-		in_fd  = fopen((const char*)in_filename,  "r");
-	}
-
-	FILE* out_fd = stdout;
-
-	if (!in_fd) {
-		fprintf(stderr, "failed to open file %s\n", in_filename);
-		return 1;
-	}
-
-	SerdEnv env = serd_env_new();
+	FILE*   out_fd = stdout;
+	SerdEnv env    = serd_env_new();
 
 	SerdStyle output_style = (output_syntax == SERD_NTRIPLES)
 		? SERD_STYLE_ASCII
@@ -310,9 +319,15 @@ main(int argc, char** argv)
 	SerdReader reader = serd_reader_new(
 		SERD_TURTLE, &state, event_base, event_prefix, event_statement, event_end);
 
-	const bool success = serd_reader_read_file(reader, in_fd, in_filename);
+	const bool success = (from_file)
+		? serd_reader_read_file(reader, in_fd, input)
+		: serd_reader_read_string(reader, input);
+
 	serd_reader_free(reader);
-	fclose(in_fd);
+
+	if (from_file) {
+		fclose(in_fd);
+	}
 
 	serd_writer_finish(state.writer);
 	serd_writer_free(state.writer);

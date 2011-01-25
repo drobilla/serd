@@ -259,6 +259,11 @@ serd_reader_read_file(SerdReader     reader,
                       FILE*          file,
                       const uint8_t* name);
 
+/** Read @a utf8. */
+SERD_API
+bool
+serd_reader_read_string(SerdReader me, const uint8_t* utf8);
+
 /** Free @a reader. */
 SERD_API
 void
