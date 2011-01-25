@@ -908,7 +908,7 @@ read_literal(SerdReader reader, Node* dest)
 	Ref           str      = 0;
 	Node          datatype = INTERNAL_NODE_NULL;
 	const uint8_t c        = peek_byte(reader);
-	if (c == '-' || c == '+' || is_digit(c)) {
+	if (c == '-' || c == '+' || c == '.' || is_digit(c)) {
 		return read_number(reader, dest);
 	} else if (c == '\"') {
 		str = read_quotedString(reader);
