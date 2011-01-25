@@ -56,6 +56,7 @@ string_sink(const void* buf, size_t len, void* stream)
 	return len;
 }
 
+// FIXME: doesn't belong here
 static SerdNode
 serd_node_new_uri(const SerdURI* uri, SerdURI* out)
 {
@@ -86,6 +87,13 @@ serd_node_new_uri(const SerdURI* uri, SerdURI* out)
 	return node;
 }
 
+// FIXME: doesn't belong here
+static void
+serd_node_free(SerdNode* node)
+{
+	free((uint8_t*)node->buf);  // FIXME: ick, const cast
+}
+
 static uint8_t*
 copy_string(const uint8_t* str, size_t* n_bytes)
 {
@@ -113,7 +121,8 @@ event_base(void*           handle,
 		return false;
 	}
 	base_uri_node = serd_node_new_uri(&abs_base_uri, &base_uri);
-	
+
+	serd_node_free(&state->base_uri_node);
 	state->base_uri_node = base_uri_node;
 	state->base_uri      = base_uri;
 	serd_writer_set_base_uri(state->writer, &base_uri);
@@ -138,6 +147,7 @@ event_prefix(void*           handle,
 		SerdURI  base_uri;
 		SerdNode base_uri_node = serd_node_new_uri(&abs_uri, &base_uri);
 		serd_env_add(state->env, name, &base_uri_node);
+		serd_node_free(&base_uri_node);
 	} else {
 		serd_env_add(state->env, name, uri_node);
 	}
@@ -288,7 +298,8 @@ main(int argc, char** argv)
 	serd_writer_free(state.writer);
 
 	serd_env_free(state.env);
-	free(base_uri_str);
+
+	serd_node_free(&state.base_uri_node);
 
 	if (success) {
 		return 0;

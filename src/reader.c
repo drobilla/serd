@@ -1342,33 +1342,41 @@ serd_reader_new(SerdSyntax        syntax,
                 SerdStatementSink statement_sink,
                 SerdEndSink       end_sink)
 {
-	const Cursor cur    = { NULL, 0, 0 };
-	SerdReader   reader = malloc(sizeof(struct SerdReaderImpl));
-	reader->handle         = handle;
-	reader->base_sink      = base_sink;
-	reader->prefix_sink    = prefix_sink;
-	reader->statement_sink = statement_sink;
-	reader->end_sink       = end_sink;
-	reader->fd             = 0;
-	reader->stack          = serd_stack_new(STACK_PAGE_SIZE);
-	reader->cur            = cur;
-	reader->next_id        = 1;
-	reader->read_buf       = (uint8_t*)malloc(READ_BUF_LEN * 2);
-	reader->read_head      = 0;
-	reader->eof            = false;
+	const Cursor cur = { NULL, 0, 0 };
+	SerdReader   me  = malloc(sizeof(struct SerdReaderImpl));
+	me->handle         = handle;
+	me->base_sink      = base_sink;
+	me->prefix_sink    = prefix_sink;
+	me->statement_sink = statement_sink;
+	me->end_sink       = end_sink;
+	me->fd             = 0;
+	me->stack          = serd_stack_new(STACK_PAGE_SIZE);
+	me->cur            = cur;
+	me->next_id        = 1;
+	me->read_buf       = (uint8_t*)malloc(READ_BUF_LEN * 2);
+	me->read_head      = 0;
+	me->eof            = false;
 #ifdef STACK_DEBUG
-	reader->alloc_stack    = 0;
-	reader->n_allocs       = 0;
+	me->alloc_stack    = 0;
+	me->n_allocs       = 0;
 #endif
 
-	memset(reader->read_buf, '\0', READ_BUF_LEN * 2);
+	memset(me->read_buf, '\0', READ_BUF_LEN * 2);
 
 	/* Read into the second page of the buffer. Occasionally peek_string
 	   will move the read_head to before this point when readahead causes
 	   a page fault.
 	*/
-	reader->read_buf += READ_BUF_LEN;  // Read 1 page in
-	return reader;
+	me->read_buf += READ_BUF_LEN;  // Read 1 page in
+
+#define RDF_FIRST NS_RDF "first"
+#define RDF_REST  NS_RDF "rest"
+#define RDF_NIL   NS_RDF "nil"
+	me->rdf_first = make_node(SERD_URI, push_string(me, RDF_FIRST, 49), 0, 0);
+	me->rdf_rest  = make_node(SERD_URI, push_string(me, RDF_REST, 48), 0, 0);
+	me->rdf_nil   = make_node(SERD_URI, push_string(me, RDF_NIL, 47), 0, 0);
+
+	return me;
 }
 
 SERD_API
@@ -1376,6 +1384,10 @@ void
 serd_reader_free(SerdReader reader)
 {
 	SerdReader const me = (SerdReader)reader;
+	pop_string(me, me->rdf_nil.value);
+	pop_string(me, me->rdf_rest.value);
+	pop_string(me, me->rdf_first.value);
+
 #ifdef STACK_DEBUG
 	free(me->alloc_stack);
 #endif
@@ -1386,28 +1398,17 @@ serd_reader_free(SerdReader reader)
 
 SERD_API
 bool
-serd_reader_read_file(SerdReader reader, FILE* file, const uint8_t* name)
+serd_reader_read_file(SerdReader me, FILE* file, const uint8_t* name)
 {
-	#define RDF_FIRST NS_RDF "first"
-	#define RDF_REST  NS_RDF "rest"
-	#define RDF_NIL   NS_RDF "nil"
-	SerdReader const me  = (SerdReader)reader;
-	const Cursor     cur = { name, 1, 1 };
+	const Cursor cur = { name, 1, 1 };
 
-	me->fd        = file;
-	me->cur       = cur;
-	me->rdf_first = make_node(SERD_URI, push_string(me, RDF_FIRST, 49), 0, 0);
-	me->rdf_rest  = make_node(SERD_URI, push_string(me, RDF_REST, 48), 0, 0);
-	me->rdf_nil   = make_node(SERD_URI, push_string(me, RDF_NIL, 47), 0, 0);
+	me->fd  = file;
+	me->cur = cur;
 
 	page(me);
 	const bool ret = read_turtleDoc(me);
 
-	pop_string(me, me->rdf_nil.value);
-	pop_string(me, me->rdf_rest.value);
-	pop_string(me, me->rdf_first.value);
-	me->cur = cur;
-	me->fd  = 0;
+	me->fd = 0;
 
 	return ret;
 }

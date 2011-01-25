@@ -121,4 +121,10 @@ serd_strlen(const uint8_t* utf8, size_t* out_n_bytes)
 	return n_chars;
 }
 
+static inline void
+serd_node_free(SerdNode* node)
+{
+	free((uint8_t*)node->buf);  // FIXME: ick, const cast
+}
+
 #endif // SERD_INTERNAL_H

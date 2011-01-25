@@ -42,12 +42,6 @@ serd_node_copy(const SerdNode* node)
 	return copy;
 }
 
-static void
-serd_node_free(SerdNode* node)
-{
-	free((uint8_t*)node->buf);  // FIXME: const cast
-}
-
 SERD_API
 SerdEnv
 serd_env_new()
