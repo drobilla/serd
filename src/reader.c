@@ -923,7 +923,7 @@ read_literal(SerdReader reader, Node* dest)
 		}
 		*dest = make_node(SERD_LITERAL, str, datatype.value, lang);
 	} else {
-		*dest = make_node(SERD_CURIE, read_qname(reader), 0, 0);
+		return error(reader, "Unknown literal type\n");
 	}
 	return true;
 except:
