@@ -178,6 +178,30 @@ typedef struct {
 
 static const SerdNode SERD_NODE_NULL = { 0, 0, 0, 0 };
 
+/** Make a deep copy of @a node.
+ * @return a node that the caller must free with @ref serd_node_free.
+ */
+SERD_API
+SerdNode
+serd_node_copy(const SerdNode* node);
+
+/** Create a new node by serialising @a uri into a new string.
+ * @param uri The URI to parse and serialise.
+ * @param out (Output) set to the parsing of the new URI (i.e. points only to
+ *        memory owned by the new returned node).
+ */
+SERD_API
+SerdNode
+serd_node_new_uri(const SerdURI* uri, SerdURI* out);
+
+/** Free any data owned by @a node.
+ * Note that if @a node is itself dynamically allocated (which is not the case
+ * for nodes created internally by serd), it will not be freed.
+ */
+SERD_API
+void
+serd_node_free(SerdNode* node);
+
 
 /** @} */
 /** @name SerdEnv

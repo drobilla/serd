@@ -32,16 +32,6 @@ struct SerdEnvImpl {
 	size_t      n_prefixes;
 };
 
-static SerdNode
-serd_node_copy(const SerdNode* node)
-{
-	SerdNode copy = *node;
-	uint8_t* buf  = malloc(copy.n_bytes);
-	memcpy(buf, node->buf, copy.n_bytes);
-	copy.buf = buf;
-	return copy;
-}
-
 SERD_API
 SerdEnv
 serd_env_new()

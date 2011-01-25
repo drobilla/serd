@@ -56,6 +56,7 @@ def build(bld):
 
 	lib_source = '''
 		src/env.c
+		src/node.c
 		src/reader.c
 		src/uri.c
 		src/writer.c
