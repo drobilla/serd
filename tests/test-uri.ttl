@@ -28,3 +28,10 @@
 <../..>   owl:sameAs <http://a/> .
 <../../>  owl:sameAs <http://a/> .
 <../../g> owl:sameAs <http://a/g> .
+
+# Additional tests for Serd
+<http://A?aquery>    owl:sameAs <http://A?aquery> .
+<http://A#afragment> owl:sameAs <http://A#afragment> .
+<?aquery>            owl:sameAs <http://a/b/c/d;p?aquery> .
+<#afragment>         owl:sameAs <http://a/b/c/d;p?q#afragment> .
+
