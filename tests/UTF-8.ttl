@@ -214,6 +214,6 @@ Box drawing alignment tests:                                          █
                                                ▝▀▘▙▄▟
 """ .
 <> rdfs:comment """
-  Two byte Unicode escape: \U00E0
+  Two byte Unicode escape: \u00E0
   Largest Unicode escape in Turtle: \U0010FFFF
 """ .
