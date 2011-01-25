@@ -122,7 +122,7 @@ static inline bool
 page(SerdReader reader)
 {
 	reader->read_head = 0;
-	const int32_t n_read = fread(reader->read_buf, 1, READ_BUF_LEN, reader->fd);
+	const size_t n_read = fread(reader->read_buf, 1, READ_BUF_LEN, reader->fd);
 	if (n_read == 0) {
 		reader->read_buf[0] = '\0';
 		reader->eof = true;
