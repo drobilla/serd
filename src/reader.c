@@ -1030,7 +1030,7 @@ inline static bool
 is_object_end(const uint8_t c)
 {
 	switch (c) {
-	case 0x9: case 0xA: case 0xD: case 0x20:
+	case 0x9: case 0xA: case 0xD: case 0x20: case '\0':
 	case '#': case '.': case ';':
 		return true;
 	default:
@@ -1053,6 +1053,7 @@ read_object(SerdReader reader, ReadContext ctx)
 	Node          o    = INTERNAL_NODE_NULL;
 	const uint8_t c    = peek_byte(reader);
 	switch (c) {
+	case '\0':
 	case ')':
 		return false;
 	case '[': case '(':
@@ -1205,7 +1206,6 @@ read_collection(SerdReader reader, ReadContext ctx, Node* dest)
 	ctx.subject   = dest;
 	ctx.predicate = &reader->rdf_first;
 	if (!read_object(reader, ctx)) {
-		pop_string(reader, dest->value);
 		return error(reader, "unexpected end of collection\n");
 	}
 
