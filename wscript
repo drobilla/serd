@@ -106,6 +106,9 @@ def build(bld):
 
 	bld.add_post_fun(autowaf.run_ldconfig)
 
+def lint(ctx):
+	subprocess.call('cpplint.py --filter=-whitespace,+whitespace/comments,-build/header_guard,-readability/casting,-readability/todo src/* serd/*', shell=True)
+
 def test(ctx):
 	try:
 		os.makedirs('build/tests')
