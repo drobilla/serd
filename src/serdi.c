@@ -1,4 +1,4 @@
-/* Serd, an RDF serialisation library.
+/* Serd, a lightweight RDF syntax library.
  * Copyright 2011 David Robillard <d@drobilla.net>
  * 
  * Serd is free software: you can redistribute it and/or modify it under
