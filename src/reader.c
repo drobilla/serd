@@ -809,19 +809,20 @@ except:
 	return 0;
 }
 
-
-static Ref
+static bool
 read_0_9(SerdReader reader, Ref str, bool at_least_one)
 {
 	uint8_t c;
 	if (at_least_one) {
-		TRY_RET(is_digit((c = peek_byte(reader))));
+		if (!is_digit((c = peek_byte(reader)))) {
+			return error(reader, "expected digit\n");
+		}
 		push_byte(reader, str, eat_byte(reader, c));
 	}
 	while (is_digit((c = peek_byte(reader)))) {
 		push_byte(reader, str, eat_byte(reader, c));
 	}
-	return str;
+	return true;
 }
 
 // [19] exponent ::= [eE] ('-' | '+')? [0-9]+
@@ -849,21 +850,21 @@ read_number(SerdReader reader, Node* dest)
 		has_decimal = true;
 		// decimal case 2 (e.g. '.0' or `-.0' or `+.0')
 		push_byte(reader, str, eat_byte(reader, c));
-		TRY_THROW(str = read_0_9(reader, str, true));
+		TRY_THROW(read_0_9(reader, str, true));
 	} else {
 		// all other cases ::= ( '-' | '+' ) [0-9]+ ( . )? ( [0-9]+ )? ...
-		TRY_THROW(str = read_0_9(reader, str, true));
+		TRY_THROW(read_0_9(reader, str, true));
 		if ((c = peek_byte(reader)) == '.') {
 			has_decimal = true;
 			push_byte(reader, str, eat_byte(reader, c));
-			TRY_THROW(str = read_0_9(reader, str, false));
+			TRY_THROW(read_0_9(reader, str, false));
 		}
 	}
 	c = peek_byte(reader);
 	if (c == 'e' || c == 'E') {
 		// double
 		push_byte(reader, str, eat_byte(reader, c));
-		str = read_0_9(reader, str, true);
+		read_0_9(reader, str, true);
 		datatype = push_string(reader, XSD_DOUBLE, strlen(XSD_DOUBLE) + 1);
 	} else if (has_decimal) {
 		datatype = push_string(reader, XSD_DECIMAL, strlen(XSD_DECIMAL) + 1);
