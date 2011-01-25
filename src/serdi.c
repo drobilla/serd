@@ -107,19 +107,13 @@ event_base(void*           handle,
 		return false;
 	}
 
-	if (!base_uri.scheme.len) {  // URI has no scheme, resolve relative URI
-		SerdURI abs_base_uri;
-		if (!serd_uri_resolve(&base_uri, &state->base_uri, &abs_base_uri)) {
-			fprintf(stderr, "error: failed to resolve new base URI\n");
-			return false;
-		}
-		base_uri_node = serd_node_new_uri(&abs_base_uri, &base_uri);
-	} else {
-		SerdURI new_base_uri;
-		base_uri_node = serd_node_new_uri(&base_uri, &new_base_uri);
-		base_uri      = new_base_uri;
+	SerdURI abs_base_uri;
+	if (!serd_uri_resolve(&base_uri, &state->base_uri, &abs_base_uri)) {
+		fprintf(stderr, "error: failed to resolve new base URI\n");
+		return false;
 	}
-
+	base_uri_node = serd_node_new_uri(&abs_base_uri, &base_uri);
+	
 	state->base_uri_node = base_uri_node;
 	state->base_uri      = base_uri;
 	serd_writer_set_base_uri(state->writer, &base_uri);

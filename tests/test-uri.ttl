@@ -34,3 +34,11 @@
 <http://A#afragment> owl:sameAs <http://A#afragment> .
 <?aquery>            owl:sameAs <http://a/b/c/d;p?aquery> .
 <#afragment>         owl:sameAs <http://a/b/c/d;p?q#afragment> .
+
+@base <http://B?bquery> .
+
+</foo> owl:sameAs <http://B/foo> .
+
+@base <http://C#cfragment> .
+
+</bar>       owl:sameAs <http://C/bar> .

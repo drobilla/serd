@@ -187,17 +187,12 @@ SERD_API
 bool
 serd_uri_resolve(const SerdURI* r, const SerdURI* base, SerdURI* t)
 {
-	assert(!r->scheme.len);  // r is relative
-
 	// See http://tools.ietf.org/html/rfc3986#section-5.2.2
 
 	t->path_base.buf = NULL;
 	t->path_base.len = 0;
 	if (r->scheme.len) {
-		t->scheme    = r->scheme;
-		t->authority = r->authority;
-		t->path      = r->path;
-		t->query     = r->query;
+		*t = *r;
 	} else {
 		if (r->authority.len) {
 			t->authority = r->authority;
