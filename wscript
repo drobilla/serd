@@ -105,6 +105,9 @@ def build(bld):
 	# Documentation
 	autowaf.build_dox(bld, 'SERD', SERD_VERSION, top, out)
 
+	# Man page
+	bld.install_files('${MANDIR}/man1', 'doc/serdi.1')
+
 	bld.add_post_fun(autowaf.run_ldconfig)
 
 def lint(ctx):

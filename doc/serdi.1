@@ -1,0 +1,46 @@
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH SERDI 1 "25 Jan 2011"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+.B serdi \- Read and write RDF syntax
+
+.SH SYNOPSIS
+serdi [OPTIONS]... INPUT BASE_URI
+
+.SH OPTIONS
+.TP
+\fB\-h\fT, \fB\-\-help\fR
+Print the command line options.
+
+.TP
+\fB\-o SYNTAX\fR
+Write output in SYNTAX (`turtle' or `ntriples').
+
+.TP
+\fB\-s INPUT\fR
+Parse INPUT as a string (terminates options).
+
+.SH AUTHOR
+Serdi was written by David Robillard <d@drobilla.net>
+
+.SH COPYRIGHT
+Copyright \(co 2011 David Robillard.
+License: GNU LGPL version 3 or later <http://gnu.org/licenses/lgpl.html>.
+This is free software; you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+.SH "SEE ALSO"
+<http://drobilla.net/software/serd>
