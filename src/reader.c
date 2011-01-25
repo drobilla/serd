@@ -1400,7 +1400,7 @@ serd_reader_read_file(SerdReader reader, FILE* file, const uint8_t* name)
 	me->rdf_rest  = make_node(SERD_URI, push_string(me, RDF_REST, 48), 0, 0);
 	me->rdf_nil   = make_node(SERD_URI, push_string(me, RDF_NIL, 47), 0, 0);
 
-	fread(me->read_buf, 1, READ_BUF_LEN, file);
+	page(me);
 	const bool ret = read_turtleDoc(me);
 
 	pop_string(me, me->rdf_nil.value);
