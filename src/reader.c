@@ -1407,8 +1407,7 @@ serd_reader_read_file(SerdReader me, FILE* file, const uint8_t* name)
 	memset(me->read_buf, '\0', READ_BUF_LEN * 2);
 	me->read_buf += READ_BUF_LEN;
 
-	page(me);
-	const bool ret = read_turtleDoc(me);
+	const bool ret = !page(me) || read_turtleDoc(me);
 
 	free(me->read_buf - READ_BUF_LEN);
 	me->fd       = 0;
