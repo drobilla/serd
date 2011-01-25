@@ -5,6 +5,7 @@ import autowaf
 import filecmp
 import glob
 import os
+import shutil
 import subprocess
 
 # Version of this package (even if built as a child)
@@ -112,6 +113,29 @@ def build(bld):
 
 def lint(ctx):
 	subprocess.call('cpplint.py --filter=-whitespace,+whitespace/comments,-build/header_guard,-readability/casting,-readability/todo src/* serd/*', shell=True)
+
+def amalgamate(ctx):
+	shutil.copy('serd/serd.h', 'build/serd-%s.h' % SERD_VERSION)
+	amalgamation = open('build/serd-%s.c' % SERD_VERSION, 'w')
+
+	serd_internal_h = open('src/serd_internal.h')
+	for l in serd_internal_h:
+		amalgamation.write(l)
+	serd_internal_h.close()
+
+	for f in 'env.c node.c reader.c uri.c writer.c'.split():
+		fd = open('src/' + f)
+		header = True
+		for l in fd:
+			if header:
+				if l == ' */\n':
+					header = False
+			else:
+				if l != '#include "serd_internal.h"\n':
+					amalgamation.write(l)
+		fd.close()
+	
+	amalgamation.close()
 
 def test(ctx):
 	try:
