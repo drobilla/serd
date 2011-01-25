@@ -127,4 +127,4 @@ serd_node_free(SerdNode* node)
 	free((uint8_t*)node->buf);  // FIXME: ick, const cast
 }
 
-#endif // SERD_INTERNAL_H
+#endif  // SERD_INTERNAL_H
