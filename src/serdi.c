@@ -22,8 +22,6 @@
 #include "serd/serd.h"
 #include "serd-config.h"
 
-// #define URI_DEBUG 1
-
 typedef struct {
 	SerdWriter writer;
 	SerdEnv    env;
@@ -78,12 +76,6 @@ serd_node_new_uri(const SerdURI* uri, SerdURI* out)
 		fprintf(stderr, "error parsing URI\n");
 		return SERD_NODE_NULL;
 	}
-
-	#ifdef URI_DEBUG
-	fwrite("URI: `'", 1, 6, stderr);
-	fwrite(node.buf, 1, node.n_bytes - 1, stderr);
-	fwrite("'\n", 1, 2, stderr);
-	#endif
 
 	return node;
 }
