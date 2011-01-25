@@ -34,4 +34,3 @@
 <http://A#afragment> owl:sameAs <http://A#afragment> .
 <?aquery>            owl:sameAs <http://a/b/c/d;p?aquery> .
 <#afragment>         owl:sameAs <http://a/b/c/d;p?q#afragment> .
-

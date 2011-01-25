@@ -449,18 +449,11 @@ static inline SerdStatus
 read_character(SerdReader reader, Ref dest)
 {
 	const uint8_t c = peek_byte(reader);
+	assert(c != '\\');  // Only called from methods that handle escapes first
 	switch (c) {
 	case '\0':
 		error(reader, "unexpected end of file\n", peek_byte(reader));
 		return SERD_ERROR;
-	case '\\':  // 0x5C
-		eat_byte(reader, '\\');
-		if (read_character_escape(reader, dest)) {
-			return SERD_SUCCESS;
-		} else {
-			error(reader, "invalid escape `\\%c'\n", peek_byte(reader));
-			return SERD_ERROR;
-		}
 	default:
 		if (c < 0x20) {  // ASCII control character
 			error(reader, "unexpected control character\n");
