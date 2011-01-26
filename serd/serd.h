@@ -49,7 +49,7 @@ extern "C" {
 #endif
 
 /** @defgroup serd Serd
- * A lightweight RDF serialisation library.
+ * A lightweight RDF syntax library.
  * @{
  */
 
