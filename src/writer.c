@@ -166,6 +166,8 @@ write_node(SerdWriter      writer,
 	SerdChunk uri_prefix;
 	SerdChunk uri_suffix;
 	switch (node->type) {
+	case SERD_NOTHING:
+		return false;
 	case SERD_ANON_BEGIN:
 		if (writer->syntax != SERD_NTRIPLES) {
 			++writer->indent;

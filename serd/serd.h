@@ -74,6 +74,9 @@ typedef enum {
  * @ref SERD_ANON equivalent to SERD_BLANK_ID.
  */
 typedef enum {
+	/** The type of a NULL node. */
+	SERD_NOTHING = 0,
+
 	/** Literal value. A literal optionally has either an associated language,
 	 * or an associated datatype (not both).
 	 */
@@ -171,7 +174,7 @@ typedef struct {
 	const uint8_t* buf;      ///< Buffer
 } SerdNode;
 
-static const SerdNode SERD_NODE_NULL = { 0, 0, 0, 0 };
+static const SerdNode SERD_NODE_NULL = { SERD_NOTHING, 0, 0, 0 };
 
 /** Make a deep copy of @a node.
  * @return a node that the caller must free with @ref serd_node_free.
