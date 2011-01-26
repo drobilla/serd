@@ -45,6 +45,9 @@ def configure(conf):
 	conf.env['BUILD_TESTS'] = Options.options.build_tests
 	conf.env['BUILD_UTILS'] = not Options.options.no_utils
 	conf.write_config_header('serd-config.h', remove=False)
+
+	autowaf.display_msg(conf, "Utilities", str(conf.env['BUILD_UTILS'] == 1))
+	autowaf.display_msg(conf, "Unit tests", str(conf.env['BUILD_TESTS']))
 	print
 
 def build(bld):
