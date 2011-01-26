@@ -149,11 +149,6 @@ SERD_API
 bool
 serd_uri_resolve(const SerdURI* uri, const SerdURI* base, SerdURI* out);
 
-/** Write @a uri to @a file. */
-SERD_API
-bool
-serd_uri_write(const SerdURI* uri, FILE* file);
-
 /** Sink function for raw string output. */
 typedef size_t (*SerdSink)(const void* buf, size_t len, void* stream);
 
