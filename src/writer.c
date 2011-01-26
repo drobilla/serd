@@ -368,7 +368,7 @@ serd_writer_new(SerdSyntax     syntax,
 	writer->syntax     = syntax;
 	writer->style      = style;
 	writer->env        = env;
-	writer->base_uri   = *base_uri;
+	writer->base_uri   = base_uri ? *base_uri : SERD_URI_NULL;
 	writer->anon_stack = serd_stack_new(sizeof(WriteContext));
 	writer->sink       = sink;
 	writer->stream     = stream;

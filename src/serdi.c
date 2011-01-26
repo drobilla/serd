@@ -251,7 +251,8 @@ main(int argc, char** argv)
 	};
 
 	SerdReader reader = serd_reader_new(
-		SERD_TURTLE, &state, event_base, event_prefix, event_statement, event_end);
+		SERD_TURTLE, &state,
+		event_base, event_prefix, event_statement, event_end);
 
 	const bool success = (from_file)
 		? serd_reader_read_file(reader, in_fd, input)
