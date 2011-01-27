@@ -41,9 +41,10 @@ def configure(conf):
 	conf.check_tool('compiler_cc')
 	conf.env.append_value('CFLAGS', '-std=c99')
 
-	autowaf.define(conf, 'SERD_VERSION', SERD_VERSION)
 	conf.env['BUILD_TESTS'] = Options.options.build_tests
 	conf.env['BUILD_UTILS'] = not Options.options.no_utils
+
+	autowaf.define(conf, 'SERD_VERSION', SERD_VERSION)
 	conf.write_config_header('serd-config.h', remove=False)
 
 	autowaf.display_msg(conf, "Utilities", str(conf.env['BUILD_UTILS'] == 1))
@@ -55,7 +56,7 @@ def build(bld):
 	bld.install_files('${INCLUDEDIR}/serd', bld.path.ant_glob('serd/*.h'))
 
 	# Pkgconfig file
-	autowaf.build_pc(bld, 'SERD', SERD_VERSION, ['REDLAND'])
+	autowaf.build_pc(bld, 'SERD', SERD_VERSION, [])
 
 	lib_source = '''
 		src/env.c
