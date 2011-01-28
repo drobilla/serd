@@ -204,7 +204,7 @@ main(int argc, char** argv)
 					input += 5;
 				}
 			}
-			in_fd  = fopen((const char*)input,  "r");
+			in_fd = fopen((const char*)input, "r");
 			if (!in_fd) {
 				fprintf(stderr, "failed to open file %s\n", input);
 				return 1;

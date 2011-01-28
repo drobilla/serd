@@ -207,10 +207,10 @@ write_node(SerdWriter      writer,
 		writer->sink("\"", 1, writer->stream);
 		write_text(writer, WRITE_STRING, node->buf, node->n_bytes - 1, '"');
 		writer->sink("\"", 1, writer->stream);
-		if (lang->buf) {
+		if (lang && lang->buf) {
 			writer->sink("@", 1, writer->stream);
 			writer->sink(lang->buf, lang->n_bytes - 1, writer->stream);
-		} else if (datatype->buf) {
+		} else if (datatype && datatype->buf) {
 			writer->sink("^^", 2, writer->stream);
 			write_node(writer, datatype, NULL, NULL);
 		}
@@ -316,7 +316,9 @@ serd_writer_write_statement(SerdWriter      writer,
 		write_node(writer, object, object_datatype, object_lang);
 	}
 
-	const WriteContext new_context = { *graph, *subject, *predicate };
+	const WriteContext new_context = { graph ? *graph : SERD_NODE_NULL,
+	                                   *subject,
+	                                   *predicate };
 	writer->context = new_context;
 	return true;
 }

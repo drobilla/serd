@@ -47,7 +47,7 @@ def configure(conf):
 	autowaf.define(conf, 'SERD_VERSION', SERD_VERSION)
 	conf.write_config_header('serd-config.h', remove=False)
 
-	autowaf.display_msg(conf, "Utilities", str(conf.env['BUILD_UTILS'] == 1))
+	autowaf.display_msg(conf, "Utilities", str(conf.env['BUILD_UTILS']))
 	autowaf.display_msg(conf, "Unit tests", str(conf.env['BUILD_TESTS']))
 	print
 
