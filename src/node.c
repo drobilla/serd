@@ -57,7 +57,8 @@ serd_uri_string_length(const SerdURI* uri)
 	ADD_LEN(uri->query,     1);  // + leading `?'
 	ADD_LEN(uri->fragment,  1);  // + leading `#'
 
-	return len;
+	// Add 2 for authority // prefix (added even though authority.len = 0)
+	return len + 2; // + 2 for authority //
 }
 
 static size_t
