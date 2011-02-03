@@ -85,6 +85,7 @@ struct SerdReaderImpl {
 	SerdStack         stack;
 	Cursor            cur;
 	uint8_t*          buf;
+	const uint8_t*    blank_prefix;
 	unsigned          next_id;
 	int               err;
 	uint8_t*          read_buf;
@@ -976,8 +977,12 @@ read_nodeID(SerdReader reader)
 static Ref
 blank_id(SerdReader reader)
 {
-	char str[32];
-	const int len = snprintf(str, sizeof(str), "genid%u", reader->next_id++);
+	const char* prefix = reader->blank_prefix
+		? (const char*)reader->blank_prefix
+		: "genid";
+	char str[32];  // FIXME: ensure length of reader->blank_prefix is OK
+	const int len = snprintf(str, sizeof(str), "%s%u",
+	                         prefix, reader->next_id++);
 	return push_string(reader, str, len + 1);
 }
 
@@ -1356,6 +1361,7 @@ serd_reader_new(SerdSyntax        syntax,
 	me->fd             = 0;
 	me->stack          = serd_stack_new(STACK_PAGE_SIZE);
 	me->cur            = cur;
+	me->blank_prefix   = NULL;
 	me->next_id        = 1;
 	me->read_buf       = 0;
 	me->read_head      = 0;
@@ -1389,6 +1395,14 @@ serd_reader_free(SerdReader reader)
 #endif
 	free(me->stack.buf);
 	free(me);
+}
+
+SERD_API
+void
+serd_reader_set_blank_prefix(SerdReader     reader,
+                             const uint8_t* prefix)
+{
+	reader->blank_prefix = prefix;
 }
 
 SERD_API
