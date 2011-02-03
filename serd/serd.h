@@ -176,6 +176,13 @@ typedef struct {
 
 static const SerdNode SERD_NODE_NULL = { SERD_NOTHING, 0, 0, 0 };
 
+/** Make a (shallow) node from @a str.
+ * This measures, but does not copy, @a str.  No memory is allocated.
+ */
+SERD_API
+SerdNode
+serd_node_from_string(SerdType type, const uint8_t* str);
+
 /** Make a deep copy of @a node.
  * @return a node that the caller must free with @ref serd_node_free.
  */

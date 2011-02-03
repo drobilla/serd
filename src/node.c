@@ -24,6 +24,16 @@
 
 SERD_API
 SerdNode
+serd_node_from_string(SerdType type, const uint8_t* buf)
+{
+	size_t buf_n_bytes;
+	const size_t buf_n_chars = serd_strlen(buf, &buf_n_bytes);
+	SerdNode ret = { type, buf_n_bytes, buf_n_chars, buf };
+	return ret;
+}
+
+SERD_API
+SerdNode
 serd_node_copy(const SerdNode* node)
 {
 	SerdNode copy = *node;
