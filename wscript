@@ -141,26 +141,41 @@ def amalgamate(ctx):
 	amalgamation.close()
 
 def test(ctx):
+	blddir = ""
+	top_level = (len(ctx.stack_path) > 1)
+	if top_level:
+		blddir = 'build/serd/tests'
+	else:
+		blddir = 'build/tests'
+
+	print "BLDDIR:", blddir
 	try:
-		os.makedirs('build/tests')
+		os.makedirs(blddir)
 	except:
 		pass
 
 	for i in glob.glob('build/tests/*.*'):
 		os.remove(i)
+		
+	srcdir   = ctx.path.abspath()
+	orig_dir = os.path.abspath(os.curdir)
 
+	os.chdir(srcdir)
+	
 	good_tests = glob.glob('tests/test-*.ttl')
 	good_tests.sort()
 
 	bad_tests = glob.glob('tests/bad-*.ttl')
 	bad_tests.sort()
+
+	os.chdir(orig_dir)
 		
 	autowaf.pre_test(ctx, APPNAME)
 
 	autowaf.run_tests(ctx, APPNAME,
-					  ['./serdi_static file:../tests/manifest.ttl > /dev/null',
-					   './serdi_static file://../tests/manifest.ttl > /dev/null',
-					   './serdi_static ../tests/UTF-8.ttl > /dev/null',
+					  ['./serdi_static file:%s/tests/manifest.ttl > /dev/null' % srcdir,
+					   './serdi_static file://%s/tests/manifest.ttl > /dev/null' % srcdir,
+					   './serdi_static %s/tests/UTF-8.ttl > /dev/null' % srcdir,
 					   './serdi_static -v > /dev/null',
 					   './serdi_static -s "<foo> a <#Thingie> ." > /dev/null',
 					   './serdi_static /dev/null > /dev/null'],
@@ -178,7 +193,7 @@ def test(ctx):
 	commands = []
 	for test in good_tests:
 		base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test
-		commands += [ './serdi_static ../%s \'%s\' > %s.out' % (test, base_uri, test) ]
+		commands += [ './serdi_static %s/%s \'%s\' > %s.out' % (srcdir, test, base_uri, test) ]
 
 	autowaf.run_tests(ctx, APPNAME, commands, 0, name='good')
 
@@ -187,7 +202,7 @@ def test(ctx):
 		out_filename = test + '.out'
 		if not os.access(out_filename, os.F_OK):
 			Logs.pprint('RED', 'FAIL: %s output is missing' % test)
-		elif filecmp.cmp('../' + test.replace('.ttl', '.out'),
+		elif filecmp.cmp(srcdir + '/' + test.replace('.ttl', '.out'),
 						 test + '.out',
 						 False) != 1:
 			Logs.pprint('RED', 'FAIL: %s is incorrect' % out_filename)
@@ -196,7 +211,7 @@ def test(ctx):
 	
 	commands = []
 	for test in bad_tests:
-	    commands += [ './serdi_static ../%s \'http://www.w3.org/2001/sw/DataAccess/df1/%s\' > %s.out' % (test, test, test) ]
+	    commands += [ './serdi_static %s/%s \'http://www.w3.org/2001/sw/DataAccess/df1/%s\' > %s.out' % (srcdir, test, test, test) ]
 
 	autowaf.run_tests(ctx, APPNAME, commands, 1, name='bad')
 
@@ -205,8 +220,8 @@ def test(ctx):
 		base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test
 		out_filename = test + '.thru'
 		commands += [
-			'%s -o turtle ../%s \'%s\' | %s - \'%s\' > %s.thru' % (
-				'./serdi_static', test, base_uri,
+			'%s -o turtle %s/%s \'%s\' | %s - \'%s\' > %s.thru' % (
+				'./serdi_static', srcdir, test, base_uri,
 				'./serdi_static', base_uri, test) ]
 		
 	autowaf.run_tests(ctx, APPNAME, commands, 0, name='turtle-round-trip')
@@ -215,7 +230,7 @@ def test(ctx):
 		out_filename = test + '.thru'
 		if not os.access(out_filename, os.F_OK):
 			Logs.pprint('RED', 'FAIL: %s output is missing' % test)
-		elif filecmp.cmp('../' + test.replace('.ttl', '.out'),
+		elif filecmp.cmp(srcdir + '/' + test.replace('.ttl', '.out'),
 						 test + '.thru',
 						 False) != 1:
 			Logs.pprint('RED', 'FAIL: %s is incorrect' % out_filename)
