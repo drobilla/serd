@@ -258,7 +258,10 @@ serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream)
 	}
 
 	WRITE_COMPONENT("",   uri->scheme,    ":");
-	WRITE_COMPONENT("//", uri->authority, "");
+	if (uri->authority.buf) {
+		WRITE("//", 2);
+		WRITE(uri->authority.buf, uri->authority.len);
+	}
 	if (uri->path_base.len) {
 		if (!uri->path.buf && (uri->fragment.buf || uri->query.buf)) {
 			WRITE_COMPONENT("", uri->path_base, "");
