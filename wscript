@@ -148,7 +148,6 @@ def test(ctx):
 	else:
 		blddir = 'build/tests'
 
-	print "BLDDIR:", blddir
 	try:
 		os.makedirs(blddir)
 	except:
