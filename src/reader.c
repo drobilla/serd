@@ -869,6 +869,11 @@ read_number(SerdReader reader, Node* dest)
 	if (c == 'e' || c == 'E') {
 		// double
 		push_byte(reader, str, eat_byte(reader, c));
+		switch ((c = peek_byte(reader))) {
+		case '+': case '-':
+			push_byte(reader, str, eat_byte(reader, c));
+		default: break;
+		}
 		read_0_9(reader, str, true);
 		datatype = push_string(reader, XSD_DOUBLE, strlen(XSD_DOUBLE) + 1);
 	} else if (has_decimal) {
