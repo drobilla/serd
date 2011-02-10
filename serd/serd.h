@@ -147,9 +147,9 @@ SERD_API
 bool
 serd_uri_parse(const uint8_t* utf8, SerdURI* out);
 
-/** Resolve @a uri relative to @a base, writing result to @a out. */
+/** Set @a out to @a uri resolved against @a base. */
 SERD_API
-bool
+void
 serd_uri_resolve(const SerdURI* uri, const SerdURI* base, SerdURI* out);
 
 /** Sink function for raw string output. */

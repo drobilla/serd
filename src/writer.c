@@ -220,12 +220,11 @@ write_node(SerdWriter      writer,
 			SerdURI uri;
 			if (serd_uri_parse(node->buf, &uri)) {
 				SerdURI abs_uri;
-				if (serd_uri_resolve(&uri, &writer->base_uri, &abs_uri)) {
-					writer->sink("<", 1, writer->stream);
-					serd_uri_serialise(&abs_uri, writer->sink, writer->stream);
-					writer->sink(">", 1, writer->stream);
-					return true;
-				}
+				serd_uri_resolve(&uri, &writer->base_uri, &abs_uri);
+				writer->sink("<", 1, writer->stream);
+				serd_uri_serialise(&abs_uri, writer->sink, writer->stream);
+				writer->sink(">", 1, writer->stream);
+				return true;
 			}
 		} else {
 			writer->sink("<", 1, writer->stream);

@@ -51,10 +51,7 @@ event_base(void*           handle,
 	}
 
 	SerdURI abs_base_uri;
-	if (!serd_uri_resolve(&base_uri, &state->base_uri, &abs_base_uri)) {
-		fprintf(stderr, "error: failed to resolve new base URI\n");
-		return false;
-	}
+	serd_uri_resolve(&base_uri, &state->base_uri, &abs_base_uri);
 	base_uri_node = serd_node_new_uri(&abs_base_uri, &base_uri);
 
 	serd_node_free(&state->base_uri_node);
@@ -76,9 +73,7 @@ event_prefix(void*           handle,
 			return false;
 		}
 		SerdURI abs_uri;
-		if (!serd_uri_resolve(&uri, &state->base_uri, &abs_uri)) {
-			return false;
-		}
+		serd_uri_resolve(&uri, &state->base_uri, &abs_uri);
 		SerdURI  base_uri;
 		SerdNode base_uri_node = serd_node_new_uri(&abs_uri, &base_uri);
 		serd_env_add(state->env, name, &base_uri_node);

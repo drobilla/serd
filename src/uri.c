@@ -186,7 +186,7 @@ end:
 }
 
 SERD_API
-bool
+void
 serd_uri_resolve(const SerdURI* r, const SerdURI* base, SerdURI* t)
 {
 	// See http://tools.ietf.org/html/rfc3986#section-5.2.2
@@ -217,9 +217,9 @@ serd_uri_resolve(const SerdURI* r, const SerdURI* base, SerdURI* t)
 			}
 			t->authority = base->authority;
 		}
-		t->scheme = base->scheme;
+		t->scheme   = base->scheme;
+		t->fragment = r->fragment;
 	}
-	t->fragment = r->fragment;
 
 	#ifdef URI_DEBUG
 	fprintf(stderr, "RESOLVE URI\nBASE:\n");
@@ -230,7 +230,6 @@ serd_uri_resolve(const SerdURI* r, const SerdURI* base, SerdURI* t)
 	serd_uri_dump(t, stderr);
 	fprintf(stderr, "\n");
 	#endif
-	return true;
 }
 
 SERD_API
