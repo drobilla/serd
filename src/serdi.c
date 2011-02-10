@@ -43,22 +43,22 @@ static bool
 event_base(void*           handle,
            const SerdNode* uri_node)
 {
-	State* const state         = (State*)handle;
-	SerdNode     base_uri_node = *uri_node;
-	SerdURI      base_uri;
-	if (!serd_uri_parse(uri_node->buf, &base_uri)) {
-		return false;
+	State* const state = (State*)handle;
+
+	// Resolve base URI and create a new node and URI for it
+	SerdURI  base_uri;
+	SerdNode base_uri_node = serd_node_new_uri_from_node(
+		uri_node, &state->base_uri, &base_uri);
+
+	if (base_uri_node.buf) {
+		// Replace the current base URI
+		serd_node_free(&state->base_uri_node);
+		state->base_uri_node = base_uri_node;
+		state->base_uri      = base_uri;
+		serd_writer_set_base_uri(state->writer, &base_uri);
+		return true;
 	}
-
-	SerdURI abs_base_uri;
-	serd_uri_resolve(&base_uri, &state->base_uri, &abs_base_uri);
-	base_uri_node = serd_node_new_uri(&abs_base_uri, &base_uri);
-
-	serd_node_free(&state->base_uri_node);
-	state->base_uri_node = base_uri_node;
-	state->base_uri      = base_uri;
-	serd_writer_set_base_uri(state->writer, &base_uri);
-	return true;
+	return false;
 }
 
 static bool
@@ -67,19 +67,22 @@ event_prefix(void*           handle,
              const SerdNode* uri_node)
 {
 	State* const state = (State*)handle;
-	if (!serd_uri_string_has_scheme(uri_node->buf)) {
-		SerdURI uri;
-		if (!serd_uri_parse(uri_node->buf, &uri)) {
+	if (serd_uri_string_has_scheme(uri_node->buf)) {
+		// Set prefix to absolute URI
+		serd_env_add(state->env, name, uri_node);
+	} else {
+		// Resolve relative URI and create a new node and URI for it
+		SerdURI  abs_uri;
+		SerdNode abs_uri_node = serd_node_new_uri_from_node(
+			uri_node, &state->base_uri, &abs_uri);
+
+		if (!abs_uri_node.buf) {
 			return false;
 		}
-		SerdURI abs_uri;
-		serd_uri_resolve(&uri, &state->base_uri, &abs_uri);
-		SerdURI  base_uri;
-		SerdNode base_uri_node = serd_node_new_uri(&abs_uri, &base_uri);
-		serd_env_add(state->env, name, &base_uri_node);
-		serd_node_free(&base_uri_node);
-	} else {
-		serd_env_add(state->env, name, uri_node);
+
+		// Set prefix to resolved (absolute) URI
+		serd_env_add(state->env, name, &abs_uri_node);
+		serd_node_free(&abs_uri_node);
 	}
 	serd_writer_set_prefix(state->writer, name, uri_node);
 	return true;

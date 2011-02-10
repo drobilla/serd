@@ -190,14 +190,28 @@ SERD_API
 SerdNode
 serd_node_copy(const SerdNode* node);
 
-/** Create a new node by serialising @a uri into a new string.
- * @param uri The URI to parse and serialise.
+/** Create a new node by resolving @a uri_node into a new node and parsed URI.
+ * This is a basic wrapper of serd_node_new_uri which first parses @a uri_node.
+ * @param uri_node The URI node to parse, resolve, and serialise.
+ * @param base Base URI to resolve @a uri_node against (or NULL).
  * @param out (Output) set to the parsing of the new URI (i.e. points only to
  *        memory owned by the new returned node).
  */
 SERD_API
 SerdNode
-serd_node_new_uri(const SerdURI* uri, SerdURI* out);
+serd_node_new_uri_from_node(const SerdNode* uri_node,
+                            const SerdURI*  base,
+                            SerdURI*        out);
+
+/** Create a new node by serialising @a uri into a new string.
+ * @param uri The URI to parse and serialise.
+ * @param base Base URI to resolve @a uri against (or NULL for no resolution).
+ * @param out (Output) set to the parsing of the new URI (i.e. points only to
+ *        memory owned by the new returned node).
+ */
+SERD_API
+SerdNode
+serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out);
 
 /** Free any data owned by @a node.
  * Note that if @a node is itself dynamically allocated (which is not the case

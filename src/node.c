@@ -72,15 +72,34 @@ string_sink(const void* buf, size_t len, void* stream)
 
 SERD_API
 SerdNode
-serd_node_new_uri(const SerdURI* uri, SerdURI* out)
+serd_node_new_uri_from_node(const SerdNode* uri_node,
+                            const SerdURI*  base,
+                            SerdURI*        out)
 {
-	const size_t len = serd_uri_string_length(uri);
+	// Parse (possibly relative) URI
+	SerdURI uri;
+	if (serd_uri_parse(uri_node->buf, &uri)) {
+		return serd_node_new_uri(&uri, base, out);
+	}
+	return SERD_NODE_NULL;
+}
+
+SERD_API
+SerdNode
+serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)
+{
+	SerdURI abs_uri = *uri;
+	if (base) {
+		serd_uri_resolve(uri, base, &abs_uri);
+	}
+		
+	const size_t len = serd_uri_string_length(&abs_uri);
 	uint8_t*     buf = malloc(len + 1);
 
 	SerdNode node = { SERD_URI, len + 1, len, buf };  // FIXME: UTF-8
 
 	uint8_t*     ptr        = buf;
-	const size_t actual_len = serd_uri_serialise(uri, string_sink, &ptr);
+	const size_t actual_len = serd_uri_serialise(&abs_uri, string_sink, &ptr);
 
 	buf[actual_len] = '\0';
 	node.n_bytes    = actual_len + 1;
