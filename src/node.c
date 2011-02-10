@@ -76,9 +76,18 @@ serd_node_new_uri_from_node(const SerdNode* uri_node,
                             const SerdURI*  base,
                             SerdURI*        out)
 {
+	return serd_node_new_uri_from_string(uri_node->buf, base, out);
+}
+
+SERD_API
+SerdNode
+serd_node_new_uri_from_string(const uint8_t* str,
+                              const SerdURI* base,
+                              SerdURI*       out)
+{
 	// Parse (possibly relative) URI
 	SerdURI uri;
-	if (serd_uri_parse(uri_node->buf, &uri)) {
+	if (serd_uri_parse(str, &uri)) {
 		return serd_node_new_uri(&uri, base, out);
 	}
 	return SERD_NODE_NULL;
