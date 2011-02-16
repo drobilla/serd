@@ -93,6 +93,29 @@ serd_env_add(SerdEnv         env,
 
 SERD_API
 bool
+serd_env_qualify(const SerdEnv   env,
+                 const SerdNode* uri,
+                 SerdNode*       prefix_name,
+                 SerdChunk*      suffix)
+{
+	for (size_t i = 0; i < env->n_prefixes; ++i) {
+		const SerdNode* const prefix_uri = &env->prefixes[i].uri;
+		if (uri->n_bytes >= prefix_uri->n_bytes) {
+			if (!strncmp((const char*)uri->buf,
+			             (const char*)prefix_uri->buf,
+			             prefix_uri->n_bytes)) {
+				*prefix_name = env->prefixes[i].name;
+				suffix->buf = uri->buf + prefix_uri->n_bytes;
+				suffix->len = uri->n_bytes - prefix_uri->n_bytes;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+SERD_API
+bool
 serd_env_expand(const SerdEnv   env,
                 const SerdNode* qname,
                 SerdChunk*      uri_prefix,
@@ -113,4 +136,17 @@ serd_env_expand(const SerdEnv   env,
 		return true;
 	}
 	return false;
+}
+
+SERD_API
+void
+serd_env_foreach(const SerdEnv  env,
+                 SerdPrefixSink func,
+                 void*          handle)
+{
+	for (size_t i = 0; i < env->n_prefixes; ++i) {
+		func(handle,
+		     &env->prefixes[i].name,
+		     &env->prefixes[i].uri);
+	}
 }

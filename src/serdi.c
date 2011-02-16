@@ -237,6 +237,8 @@ main(int argc, char** argv)
 		? SERD_STYLE_ASCII
 		: SERD_STYLE_ABBREVIATED;
 
+	output_style |= SERD_STYLE_RESOLVED;
+
 	const SerdNode base_uri_node = { SERD_URI,
 	                                 base_uri_n_bytes,
 	                                 base_uri_n_bytes - 1,

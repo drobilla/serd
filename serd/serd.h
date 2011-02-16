@@ -222,6 +222,29 @@ SERD_API
 void
 serd_node_free(SerdNode* node);
 
+/** @} */
+/** @name SerdHandlers
+ * @brief Event handlers (user-provided worker functions).
+ * @{
+ */
+
+/** Sink for base URI changes. */
+typedef bool (*SerdBaseSink)(void*           handle,
+                             const SerdNode* uri);
+
+/** Sink for namespace definitions. */
+typedef bool (*SerdPrefixSink)(void*           handle,
+                               const SerdNode* name,
+                               const SerdNode* uri);
+
+/** Sink for statements. */
+typedef bool (*SerdStatementSink)(void*           handle,
+                                  const SerdNode* graph,
+                                  const SerdNode* subject,
+                                  const SerdNode* predicate,
+                                  const SerdNode* object,
+                                  const SerdNode* object_datatype,
+                                  const SerdNode* object_lang);
 
 /** @} */
 /** @name SerdEnv
@@ -246,37 +269,34 @@ serd_env_add(SerdEnv         env,
              const SerdNode* name,
              const SerdNode* uri);
 
-/** Expand @a qname. */
+/** Qualify @a into a CURIE if possible. */
+SERD_API
+bool
+serd_env_qualify(const SerdEnv   env,
+                 const SerdNode* uri,
+                 SerdNode*       prefix,
+                 SerdChunk*      suffix);
+
+/** Expand @a curie. */
 SERD_API
 bool
 serd_env_expand(const SerdEnv   env,
-                const SerdNode* qname,
+                const SerdNode* curie,
                 SerdChunk*      uri_prefix,
                 SerdChunk*      uri_suffix);
+
+/** Call @a func for each prefix defined in @a env. */
+SERD_API
+void
+serd_env_foreach(const SerdEnv  env,
+                 SerdPrefixSink func,
+                 void*          handle);
 
 /** @} */
 /** @name SerdReader
  * @brief Reader of RDF syntax.
  * @{
  */
-
-/** Sink for base URI changes. */
-typedef bool (*SerdBaseSink)(void*           handle,
-                             const SerdNode* uri);
-
-/** Sink for namespace definitions. */
-typedef bool (*SerdPrefixSink)(void*           handle,
-                               const SerdNode* name,
-                               const SerdNode* uri);
-
-/** Sink for statements. */
-typedef bool (*SerdStatementSink)(void*           handle,
-                                  const SerdNode* graph,
-                                  const SerdNode* subject,
-                                  const SerdNode* predicate,
-                                  const SerdNode* object,
-                                  const SerdNode* object_datatype,
-                                  const SerdNode* object_lang);
 
 /** Sink for anonymous node end markers.
  * This is called to indicate that the anonymous node with the given
@@ -333,7 +353,8 @@ serd_reader_free(SerdReader reader);
 
 typedef enum {
 	SERD_STYLE_ABBREVIATED = 1,      /**< Abbreviate triples when possible. */
-	SERD_STYLE_ASCII       = 1 << 1  /**< Escape all non-ASCII characters. */
+	SERD_STYLE_ASCII       = 1 << 1, /**< Escape all non-ASCII characters. */
+	SERD_STYLE_RESOLVED    = 1 << 2  /**< Resolve relative URIs against base. */
 } SerdStyle;
 
 /** Create a new RDF writer. */
@@ -351,13 +372,13 @@ SERD_API
 void
 serd_writer_free(SerdWriter writer);
 
-/** Set the current output base URI. */
+/** Set the current output base URI (and emit directive if applicable). */
 SERD_API
 void
 serd_writer_set_base_uri(SerdWriter     writer,
                          const SerdURI* uri);
 
-/** Set the current output base URI. */
+/** Set a namespace prefix (and emit directive if applicable). */
 SERD_API
 void
 serd_writer_set_prefix(SerdWriter      writer,
