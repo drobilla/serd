@@ -85,10 +85,13 @@ serd_node_new_uri_from_string(const uint8_t* str,
                               const SerdURI* base,
                               SerdURI*       out)
 {
-	// Parse (possibly relative) URI
-	SerdURI uri;
-	if (serd_uri_parse(str, &uri)) {
-		return serd_node_new_uri(&uri, base, out);
+	if (str[0] == '\0') {
+		return serd_node_new_uri(base, NULL, out);  // Empty URI => Base URI
+	} else {
+		SerdURI uri;
+		if (serd_uri_parse(str, &uri)) {
+			return serd_node_new_uri(&uri, base, out);  // Resolve/Serialise
+		}
 	}
 	return SERD_NODE_NULL;
 }
@@ -127,5 +130,5 @@ SERD_API
 void
 serd_node_free(SerdNode* node)
 {
-	free((uint8_t*)node->buf);  // FIXME: ick, const cast
+	free((uint8_t*)node->buf);
 }
