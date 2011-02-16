@@ -354,7 +354,8 @@ serd_reader_free(SerdReader reader);
 typedef enum {
 	SERD_STYLE_ABBREVIATED = 1,      /**< Abbreviate triples when possible. */
 	SERD_STYLE_ASCII       = 1 << 1, /**< Escape all non-ASCII characters. */
-	SERD_STYLE_RESOLVED    = 1 << 2  /**< Resolve relative URIs against base. */
+	SERD_STYLE_RESOLVED    = 1 << 2, /**< Resolve relative URIs against base. */
+	SERD_STYLE_CURIED      = 1 << 3  /**< Shorted URIs into CURIEs. */
 } SerdStyle;
 
 /** Create a new RDF writer. */
@@ -380,7 +381,7 @@ serd_writer_set_base_uri(SerdWriter     writer,
 
 /** Set a namespace prefix (and emit directive if applicable). */
 SERD_API
-void
+bool
 serd_writer_set_prefix(SerdWriter      writer,
                        const SerdNode* name,
                        const SerdNode* uri);

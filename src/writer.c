@@ -231,10 +231,20 @@ write_node(SerdWriter      writer,
 	case SERD_URI:
 		if ((writer->syntax == SERD_TURTLE)
 		    && !strcmp((const char*)node->buf, NS_RDF "type")) {
-				writer->sink("a", 1, writer->stream);
+			writer->sink("a", 1, writer->stream);
+			return true;
+		} else if ((writer->style & SERD_STYLE_CURIED)
+		           && serd_uri_string_has_scheme(node->buf)) {
+			SerdNode  prefix;
+			SerdChunk suffix;
+			if (serd_env_qualify(writer->env, node, &prefix, &suffix)) {
+				write_text(writer, WRITE_URI, prefix.buf, prefix.n_bytes - 1, '>');
+				writer->sink(":", 1, writer->stream);
+				write_text(writer, WRITE_URI, suffix.buf, suffix.len, '>');
 				return true;
+			}
 		} else if ((writer->style & SERD_STYLE_RESOLVED)
-		    && !serd_uri_string_has_scheme(node->buf)) {
+		           && !serd_uri_string_has_scheme(node->buf)) {
 			SerdURI uri;
 			if (serd_uri_parse(node->buf, &uri)) {
 				SerdURI abs_uri;
@@ -244,13 +254,11 @@ write_node(SerdWriter      writer,
 				writer->sink(">", 1, writer->stream);
 				return true;
 			}
-		} else {
-			writer->sink("<", 1, writer->stream);
-			write_text(writer, WRITE_URI, node->buf, node->n_bytes - 1, '>');
-			writer->sink(">", 1, writer->stream);
-			return true;
 		}
-		return false;
+		writer->sink("<", 1, writer->stream);
+		write_text(writer, WRITE_URI, node->buf, node->n_bytes - 1, '>');
+		writer->sink(">", 1, writer->stream);
+		return true;
 	}
 	return true;
 }
@@ -416,7 +424,7 @@ serd_writer_set_base_uri(SerdWriter     writer,
 }
 
 SERD_API
-void
+bool
 serd_writer_set_prefix(SerdWriter      writer,
                        const SerdNode* name,
                        const SerdNode* uri)
@@ -433,6 +441,7 @@ serd_writer_set_prefix(SerdWriter      writer,
 		writer->sink("> .\n", 4, writer->stream);
 	}
 	writer->context = WRITE_CONTEXT_NULL;
+	return true;
 }
 
 SERD_API
