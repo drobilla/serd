@@ -20,8 +20,12 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "serd_internal.h"
+
+#define NS_RDF "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+#define NS_XSD "http://www.w3.org/2001/XMLSchema#"
 
 typedef struct {
 	SerdNode graph;
@@ -204,6 +208,15 @@ write_node(SerdWriter      writer,
 		}
 		break;
 	case SERD_LITERAL:
+		if (writer->syntax == SERD_TURTLE && datatype && datatype->buf) {
+			// TODO: compare against NS_XSD prefix once
+			if (!strcmp((const char*)datatype->buf,    NS_XSD "boolean")
+			    || !strcmp((const char*)datatype->buf, NS_XSD "decimal")
+			    || !strcmp((const char*)datatype->buf, NS_XSD "integer")) {
+				writer->sink(node->buf, node->n_bytes - 1, writer->stream);
+				break;
+			}
+		}
 		writer->sink("\"", 1, writer->stream);
 		write_text(writer, WRITE_STRING, node->buf, node->n_bytes - 1, '"');
 		writer->sink("\"", 1, writer->stream);
@@ -216,7 +229,12 @@ write_node(SerdWriter      writer,
 		}
 		break;
 	case SERD_URI:
-		if (!serd_uri_string_has_scheme(node->buf)) {
+		if ((writer->syntax == SERD_TURTLE)
+		    && !strcmp((const char*)node->buf, NS_RDF "type")) {
+				writer->sink("a", 1, writer->stream);
+				return true;
+		} else if ((writer->style & SERD_STYLE_RESOLVED)
+		    && !serd_uri_string_has_scheme(node->buf)) {
 			SerdURI uri;
 			if (serd_uri_parse(node->buf, &uri)) {
 				SerdURI abs_uri;
@@ -352,6 +370,7 @@ serd_writer_finish(SerdWriter writer)
 {
 	if (writer->context.subject.buf) {
 		writer->sink(" .\n", 3, writer->stream);
+		writer->context.subject.buf = NULL;
 	}
 }
 
@@ -421,6 +440,7 @@ void
 serd_writer_free(SerdWriter writer)
 {
 	SerdWriter const me = (SerdWriter)writer;
+	serd_writer_finish(me);
 	serd_stack_free(&writer->anon_stack);
 	free(me);
 }
