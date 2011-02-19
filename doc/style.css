@@ -1,4 +1,5 @@
 body {
+	font-size: 100%;
 	font-family: sans-serif;
 }
 
@@ -6,10 +7,21 @@ body {
 	display: none;
 }
 
-/* @group Heading Levels */
+h1 {
+	font-size: 160%;
+	font-weight: bold;
+}
+
 h2 {
-	margin-top: 1em;
-	margin-bottom: 0.25em;
+	font-size: 130%;
+}
+
+h3 {
+	font-size: 110%;
+}
+
+h4 h5 h6 {
+	font-size: 100%;
 }
 
 p {
@@ -43,7 +55,6 @@ p.endtd {
 	margin-bottom: 2px;
 }
 
-/* @end */
 caption {
 	font-weight: 700;
 }
