@@ -63,7 +63,7 @@ extern "C" {
 */
 
 /**
-   Namespace prefixes.
+   Environment (namespace prefixes).
 
    A SerdEnv represents a set of namespace prefixes, and is used to resolve
    CURIEs to full URIs.
@@ -77,6 +77,16 @@ typedef struct SerdEnvImpl* SerdEnv;
    sink functions as input is read (much like an XML SAX parser).
 */
 typedef struct SerdReaderImpl* SerdReader;
+
+/**
+   Read state.
+
+   This represents state (context) necessary for fully resolving URIs during a
+   read (i.e. the base URI and namespace prefixes). It is implemented
+   separately from SerdReader so the reader can avoid the overhead in cases
+   where this information is unnecessary (e.g. streaming reserialisation).
+*/
+typedef struct SerdReadStateImpl* SerdReadState;
 
 /**
    RDF writer.
@@ -330,7 +340,7 @@ serd_node_free(SerdNode* node);
 */
 
 /**
-   Sink for base URI changes.
+   Sink (callback) for base URI changes.
 
    Called whenever the base URI of the serialisation changes.
 */
@@ -338,7 +348,7 @@ typedef bool (*SerdBaseSink)(void*           handle,
                              const SerdNode* uri);
 
 /**
-   Sink for namespace definitions.
+   Sink (callback) for namespace definitions.
 
    Called whenever a prefix is defined in the serialisation.
 */
@@ -347,7 +357,7 @@ typedef bool (*SerdPrefixSink)(void*           handle,
                                const SerdNode* uri);
 
 /**
-   Sink for statements.
+   Sink (callback) for statements.
 
    Called for every RDF statement in the serialisation.
 */
@@ -360,7 +370,7 @@ typedef bool (*SerdStatementSink)(void*           handle,
                                   const SerdNode* object_lang);
 
 /**
-   Sink for anonymous node end markers.
+   Sink (callback) for anonymous node end markers.
 
    This is called to indicate that the anonymous node with the given
    @a value will no longer be referred to by any future statements
@@ -481,6 +491,49 @@ serd_reader_read_string(SerdReader me, const uint8_t* utf8);
 SERD_API
 void
 serd_reader_free(SerdReader reader);
+
+/**
+   Create a new read state with the given initial base URI and environment.
+
+   A reference to @a env will be kept, and @a env will be modified as the
+   state is modified.
+*/
+SERD_API
+SerdReadState
+serd_read_state_new(SerdEnv        env,
+                    const uint8_t* base_uri_str);
+
+/**
+   Free @a state.
+*/
+SERD_API
+void
+serd_read_state_free(SerdReadState state);
+
+/**
+   Get the current base URI.
+*/
+SERD_API
+SerdNode
+serd_read_state_get_base_uri(SerdReadState state,
+                             SerdURI*      out);
+
+/**
+   Set the current base URI.
+*/
+SERD_API
+bool
+serd_read_state_set_base_uri(SerdReadState   state,
+                             const SerdNode* uri_node);
+
+/**
+   Set a namespace prefix.
+*/
+SERD_API
+bool
+serd_read_state_set_prefix(SerdReadState   state,
+                           const SerdNode* name,
+                           const SerdNode* uri_node);
 
 /**
    @}

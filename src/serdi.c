@@ -31,21 +31,10 @@
 #include "serd-config.h"
 
 typedef struct {
-	SerdWriter writer;
-	SerdEnv    env;
-	SerdNode   base_uri_node;
-	SerdURI    base_uri;
+	SerdEnv       env;
+	SerdReadState read_state;
+	SerdWriter    writer;
 } State;
-
-static uint8_t*
-copy_string(const uint8_t* str, size_t* n_bytes)
-{
-	const size_t   len = strlen((const char*)str);
-	uint8_t* const ret = malloc(len + 1);
-	memcpy(ret, str, len + 1);
-	*n_bytes = len + 1;
-	return ret;
-}
 
 static bool
 event_base(void*           handle,
@@ -53,16 +42,9 @@ event_base(void*           handle,
 {
 	State* const state = (State*)handle;
 
-	// Resolve base URI and create a new node and URI for it
-	SerdURI  base_uri;
-	SerdNode base_uri_node = serd_node_new_uri_from_node(
-		uri_node, &state->base_uri, &base_uri);
-
-	if (base_uri_node.buf) {
-		// Replace the current base URI
-		serd_node_free(&state->base_uri_node);
-		state->base_uri_node = base_uri_node;
-		state->base_uri      = base_uri;
+	if (serd_read_state_set_base_uri(state->read_state, uri_node)) {
+		SerdURI base_uri;
+		serd_read_state_get_base_uri(state->read_state, &base_uri);
 		serd_writer_set_base_uri(state->writer, &base_uri);
 		return true;
 	}
@@ -75,23 +57,8 @@ event_prefix(void*           handle,
              const SerdNode* uri_node)
 {
 	State* const state = (State*)handle;
-	if (serd_uri_string_has_scheme(uri_node->buf)) {
-		// Set prefix to absolute URI
-		serd_env_add(state->env, name, uri_node);
-	} else {
-		// Resolve relative URI and create a new node and URI for it
-		SerdURI  abs_uri;
-		SerdNode abs_uri_node = serd_node_new_uri_from_node(
-			uri_node, &state->base_uri, &abs_uri);
-
-		if (!abs_uri_node.buf) {
-			return false;
-		}
-
-		// Set prefix to resolved (absolute) URI
-		serd_env_add(state->env, name, &abs_uri_node);
-		serd_node_free(&abs_uri_node);
-	}
+	
+	serd_read_state_set_prefix(state->read_state, name, uri_node);
 	serd_writer_set_prefix(state->writer, name, uri_node);
 	return true;
 }
@@ -218,20 +185,19 @@ main(int argc, char** argv)
 		}
 	}
 
-	uint8_t* base_uri_str     = NULL;
-	size_t   base_uri_n_bytes = 0;
-	SerdURI  base_uri;
+	const uint8_t* base_uri_str = NULL;
+	SerdURI        base_uri;
 	if (a < argc) {  // Base URI given on command line
 		const uint8_t* const in_base_uri = (const uint8_t*)argv[a++];
 		if (!serd_uri_parse((const uint8_t*)in_base_uri, &base_uri)) {
 			fprintf(stderr, "invalid base URI `%s'\n", argv[2]);
 			return 1;
 		}
-		base_uri_str = copy_string(in_base_uri, &base_uri_n_bytes);
+		base_uri_str = in_base_uri;
 	} else if (from_file) {  // Use input file URI
-		base_uri_str = copy_string(input, &base_uri_n_bytes);
+		base_uri_str = input;
 	} else {
-		base_uri_str = copy_string((const uint8_t*)"", &base_uri_n_bytes);
+		base_uri_str = (const uint8_t*)"";
 	}
 
 	if (!serd_uri_parse(base_uri_str, &base_uri)) {
@@ -241,22 +207,21 @@ main(int argc, char** argv)
 	FILE*   out_fd = stdout;
 	SerdEnv env    = serd_env_new();
 
-	SerdStyle output_style = (output_syntax == SERD_NTRIPLES)
-		? SERD_STYLE_ASCII
-		: SERD_STYLE_ABBREVIATED;
+	SerdStyle output_style = SERD_STYLE_RESOLVED;
+	if (output_syntax == SERD_NTRIPLES) {
+		output_style |= SERD_STYLE_ASCII;
+	} else {
+		output_style |= SERD_STYLE_ABBREVIATED;
+	}
 
-	output_style |= SERD_STYLE_RESOLVED;
+	SerdReadState read_state = serd_read_state_new(env, base_uri_str);
 
-	const SerdNode base_uri_node = { SERD_URI,
-	                                 base_uri_n_bytes,
-	                                 base_uri_n_bytes - 1,
-	                                 base_uri_str };
+	serd_read_state_get_base_uri(read_state, &base_uri);
 
-	State state = {
-		serd_writer_new(output_syntax, output_style,
-		                env, &base_uri, file_sink, out_fd),
-		env, base_uri_node, base_uri
-	};
+	SerdWriter writer = serd_writer_new(
+		output_syntax, output_style, env, &base_uri, file_sink, out_fd);
+
+	State state = { env, read_state, writer };
 
 	SerdReader reader = serd_reader_new(
 		SERD_TURTLE, &state,
@@ -274,10 +239,8 @@ main(int argc, char** argv)
 
 	serd_writer_finish(state.writer);
 	serd_writer_free(state.writer);
-
+	serd_read_state_free(state.read_state);
 	serd_env_free(state.env);
-
-	serd_node_free(&state.base_uri_node);
 
 	if (success) {
 		return 0;

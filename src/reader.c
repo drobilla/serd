@@ -41,9 +41,6 @@
 
 #define STACK_PAGE_SIZE 4096
 #define READ_BUF_LEN    4096
-#ifndef NDEBUG
-#define STACK_DEBUG     1
-#endif
 
 typedef struct {
 	const uint8_t* filename;
@@ -98,10 +95,16 @@ struct SerdReaderImpl {
 	int32_t           read_head;    ///< Offset into read_buf
 	bool              from_file;    ///< True iff reading from @ref fd
 	bool              eof;
-#ifdef STACK_DEBUG
+#ifdef SUIL_STACK_CHECK
 	Ref*              alloc_stack;  ///< Stack of push offsets
 	size_t            n_allocs;     ///< Number of stack pushes
 #endif
+};
+
+struct SerdReadStateImpl {
+	SerdEnv  env;
+	SerdNode base_uri_node;
+	SerdURI  base_uri;
 };
 
 typedef enum {
@@ -202,7 +205,7 @@ eat_string(SerdReader reader, const char* str, unsigned n)
 	}
 }
 
-#ifdef STACK_DEBUG
+#ifdef SUIL_STACK_CHECK
 static inline bool
 stack_is_top_string(SerdReader reader, Ref ref)
 {
@@ -229,7 +232,7 @@ push_string(SerdReader reader, const char* c_str, size_t n_bytes)
 	str->n_bytes = n_bytes;
 	str->n_chars = n_bytes - 1;
 	memcpy(str->buf, c_str, n_bytes);
-#ifdef STACK_DEBUG
+#ifdef SUIL_STACK_CHECK
 	reader->alloc_stack = realloc(reader->alloc_stack,
 	                              sizeof(uint8_t*) * (++reader->n_allocs));
 	reader->alloc_stack[reader->n_allocs - 1] = (mem - reader->stack.buf);
@@ -249,7 +252,7 @@ deref(SerdReader reader, const Ref ref)
 static inline void
 push_byte(SerdReader reader, Ref ref, const uint8_t c)
 {
-	#ifdef STACK_DEBUG
+	#ifdef SUIL_STACK_CHECK
 	assert(stack_is_top_string(reader, ref));
 	#endif
 	serd_stack_push(&reader->stack, 1);
@@ -273,7 +276,7 @@ pop_string(SerdReader reader, Ref ref)
 		    || ref == reader->rdf_rest.value) {
 			return;
 		}
-		#ifdef STACK_DEBUG
+		#ifdef SUIL_STACK_CHECK
 		if (!stack_is_top_string(reader, ref)) {
 			fprintf(stderr, "attempt to pop non-top string %s\n",
 			        deref(reader, ref)->buf);
@@ -1377,7 +1380,7 @@ serd_reader_new(SerdSyntax        syntax,
 	me->read_buf       = 0;
 	me->read_head      = 0;
 	me->eof            = false;
-#ifdef STACK_DEBUG
+#ifdef SERD_STACK_CHECK
 	me->alloc_stack    = 0;
 	me->n_allocs       = 0;
 #endif
@@ -1401,7 +1404,7 @@ serd_reader_free(SerdReader reader)
 	pop_string(me, me->rdf_rest.value);
 	pop_string(me, me->rdf_first.value);
 
-#ifdef STACK_DEBUG
+#ifdef SERD_STACK_CHECK
 	free(me->alloc_stack);
 #endif
 	free(me->stack.buf);
@@ -1458,3 +1461,82 @@ serd_reader_read_string(SerdReader me, const uint8_t* utf8)
 	me->read_buf = NULL;
 	return ret;
 }
+
+SERD_API
+SerdReadState
+serd_read_state_new(SerdEnv        env,
+                    const uint8_t* base_uri_str)
+{
+	SerdReadState state         = malloc(sizeof(struct SerdReadStateImpl));
+	SerdURI       base_base_uri = SERD_URI_NULL;
+	state->env           = env;
+	state->base_uri_node = serd_node_new_uri_from_string(
+		base_uri_str, &base_base_uri, &state->base_uri);
+	return state;
+}
+
+SERD_API
+void
+serd_read_state_free(SerdReadState state)
+{
+	serd_node_free(&state->base_uri_node);
+	free(state);
+}
+
+SERD_API
+SerdNode
+serd_read_state_get_base_uri(SerdReadState state,
+                             SerdURI*      out)
+{
+	*out = state->base_uri;
+	return state->base_uri_node;
+}
+
+SERD_API
+bool
+serd_read_state_set_base_uri(SerdReadState   state,
+                             const SerdNode* uri_node)
+{
+	// Resolve base URI and create a new node and URI for it
+	SerdURI  base_uri;
+	SerdNode base_uri_node = serd_node_new_uri_from_node(
+		uri_node, &state->base_uri, &base_uri);
+
+	if (base_uri_node.buf) {
+		// Replace the current base URI
+		serd_node_free(&state->base_uri_node);
+		state->base_uri_node = base_uri_node;
+		state->base_uri      = base_uri;
+		return true;
+	}
+	return false;
+}
+
+SERD_API
+bool
+serd_read_state_set_prefix(SerdReadState   state,
+                           const SerdNode* name,
+                           const SerdNode* uri_node)
+{
+	if (serd_uri_string_has_scheme(uri_node->buf)) {
+		// Set prefix to absolute URI
+		serd_env_add(state->env, name, uri_node);
+		return true;
+	} else {
+		// Resolve relative URI and create a new node and URI for it
+		SerdURI  abs_uri;
+		SerdNode abs_uri_node = serd_node_new_uri_from_node(
+			uri_node, &state->base_uri, &abs_uri);
+
+		if (!abs_uri_node.buf) {
+			return false;
+		}
+
+		// Set prefix to resolved (absolute) URI
+		serd_env_add(state->env, name, &abs_uri_node);
+		serd_node_free(&abs_uri_node);
+		return true;
+	}
+	return false;
+}
+

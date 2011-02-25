@@ -32,6 +32,8 @@ def options(opt):
 			help="Do not build command line utilities")
 	opt.add_option('--test', action='store_true', default=False, dest='build_tests',
 			help="Build unit tests")
+	opt.add_option('--stack-check', action='store_true', default=False, dest='stack_check',
+			help="Include runtime stack sanity checks")
 
 def configure(conf):
 	conf.line_just = max(conf.line_just, 59)
@@ -43,6 +45,11 @@ def configure(conf):
 
 	conf.env['BUILD_TESTS'] = Options.options.build_tests
 	conf.env['BUILD_UTILS'] = not Options.options.no_utils
+
+	if Options.options.stack_check:
+		autowaf.define(conf, 'SERD_STACK_CHECK', SERD_VERSION)
+
+	conf.env['BUILD_TESTS'] = Options.options.build_tests
 
 	autowaf.define(conf, 'SERD_VERSION', SERD_VERSION)
 	conf.write_config_header('serd-config.h', remove=False)
