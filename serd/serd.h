@@ -166,7 +166,7 @@ typedef enum {
 
 	/**
 	   The first reference to an anonymous (inlined) blank node.
-	   
+
 	   Value is identical to a @ref SERD_BLANK_ID value (i.e. this type may be
 	   safely considered equivalent to @ref SERD_BLANK_ID).
 	*/
@@ -196,7 +196,7 @@ typedef struct {
 
 /**
    A parsed URI.
-   
+
    This struct directly refers to chunks in other strings, it does not own any
    memory itself. Thus, URIs can be parsed and/or resolved against a base URI
    in-place without allocating memory.
@@ -265,7 +265,7 @@ static const SerdNode SERD_NODE_NULL = { SERD_NOTHING, 0, 0, 0 };
 
 /**
    Make a (shallow) node from @a str.
-   
+
    This measures, but does not copy, @a str.  No memory is allocated.
 */
 SERD_API
@@ -274,7 +274,7 @@ serd_node_from_string(SerdType type, const uint8_t* str);
 
 /**
    Make a deep copy of @a node.
-   
+
    @return a node that the caller must free with @ref serd_node_free.
 */
 SERD_API
@@ -301,10 +301,12 @@ serd_node_new_uri_from_string(const uint8_t* str,
 
 /**
    Create a new node by serialising @a uri into a new string.
-   
+
    @param uri The URI to parse and serialise.
+
    @param base Base URI to resolve @a uri against (or NULL for no resolution).
-   @param out (Output) set to the parsing of the new URI (i.e. points only to
+
+   @param out Set to the parsing of the new URI (i.e. points only to
    memory owned by the new returned node).
 */
 SERD_API
@@ -313,7 +315,7 @@ serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out);
 
 /**
    Free any data owned by @a node.
-   
+
    Note that if @a node is itself dynamically allocated (which is not the case
    for nodes created internally by serd), it will not be freed.
 */
@@ -359,7 +361,7 @@ typedef bool (*SerdStatementSink)(void*           handle,
 
 /**
    Sink for anonymous node end markers.
-   
+
    This is called to indicate that the anonymous node with the given
    @a value will no longer be referred to by any future statements
    (i.e. the anonymous serialisation of the node is finished).
@@ -445,7 +447,7 @@ serd_reader_new(SerdSyntax        syntax,
 
 /**
    Set a prefix to be added to all blank node identifiers.
-   
+
    This is useful when multiple files are to be parsed into the same output
    (e.g. a store, or other files).  Since Serd preserves blank node IDs, this
    could cause conflicts where two non-equivalent blank nodes are merged,
@@ -563,7 +565,7 @@ serd_writer_finish(SerdWriter writer);
 */
 
 #ifdef __cplusplus
-} /* extern "C" */
+}  /* extern "C" */
 #endif
 
-#endif /* SERD_SERD_H */
+#endif  /* SERD_SERD_H */
