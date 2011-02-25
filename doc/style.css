@@ -13,14 +13,18 @@ h1 {
 }
 
 h2 {
-	font-size: 130%;
+	font-size: 120%;
 }
 
 h3 {
 	font-size: 110%;
 }
 
-h4 h5 h6 {
+h4 {
+	font-size: 105%;
+}
+
+h5 h6 {
 	font-size: 100%;
 }
 
@@ -306,7 +310,7 @@ table.memberdecls {
 }
 
 .mdescLeft,.mdescRight,.memItemLeft,.memItemRight,.memTemplItemLeft,.memTemplItemRight,.memTemplParams {
-	background-color: #F9F9F9;
+	background-color: #FBFBFB;
 	margin: 0;
 	padding: 0.25ex;
 }
@@ -366,7 +370,7 @@ table.memberdecls {
 	padding: 6px 0;
 	color: #253555;
 	font-weight: 700;
-	background-color: #EEE;
+	background-color: #F3F3F3;
 }
 
 .memdoc {
@@ -374,7 +378,7 @@ table.memberdecls {
 	border-left: 1px solid #A8A8A8;
 	border-right: 1px solid #A8A8A8;
 	padding: 2px 5px;
-	background-color: #F9F9F9;
+	background-color: #FBFBFB;
 	border-top-width: 0;
 }
 
