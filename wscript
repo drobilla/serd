@@ -138,7 +138,7 @@ def amalgamate(ctx):
 		header = True
 		for l in fd:
 			if header:
-				if l == ' */\n':
+				if l == '*/\n':
 					header = False
 			else:
 				if l != '#include "serd_internal.h"\n':
