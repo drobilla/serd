@@ -135,6 +135,7 @@ def amalgamate(ctx):
 
 	for f in 'env.c node.c reader.c uri.c writer.c'.split():
 		fd = open('src/' + f)
+		amalgamation.write('\n/**\n * @file %s\n */\n' % f)
 		header = True
 		for l in fd:
 			if header:
