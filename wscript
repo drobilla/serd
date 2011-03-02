@@ -130,7 +130,10 @@ def amalgamate(ctx):
 
 	serd_internal_h = open('src/serd_internal.h')
 	for l in serd_internal_h:
-		amalgamation.write(l)
+		if l == '#include "serd/serd.h"\n':
+			amalgamation.write('#include "serd-%s.h"\n' % SERD_VERSION)
+		else:
+			amalgamation.write(l)
 	serd_internal_h.close()
 
 	for f in 'env.c node.c reader.c uri.c writer.c'.split():
