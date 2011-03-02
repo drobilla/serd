@@ -1429,6 +1429,7 @@ serd_reader_read_file(SerdReader me, FILE* file, const uint8_t* name)
 	me->read_head = 0;
 	me->cur       = cur;
 	me->from_file = true;
+	me->eof       = false;
 
 	/* Read into the second page of the buffer. Occasionally peek_string
 	   will move the read_head to before this point when readahead causes
@@ -1455,6 +1456,7 @@ serd_reader_read_string(SerdReader me, const uint8_t* utf8)
 	me->read_head = 0;
 	me->cur       = cur;
 	me->from_file = false;
+	me->eof       = false;
 
 	const bool ret = read_turtleDoc(me);
 
@@ -1481,6 +1483,30 @@ serd_read_state_free(SerdReadState state)
 {
 	serd_node_free(&state->base_uri_node);
 	free(state);
+}
+
+SERD_API
+SerdNode
+serd_read_state_expand(SerdReadState   state,
+                       const SerdNode* node)
+{
+	if (node->type == SERD_CURIE) {
+		SerdChunk prefix;
+		SerdChunk suffix;
+		serd_env_expand(state->env, node, &prefix, &suffix);
+		SerdNode ret = { SERD_URI,
+		                 prefix.len + suffix.len + 1,
+		                 prefix.len + suffix.len, // FIXME: UTF-8
+		                 NULL };
+		ret.buf = malloc(ret.n_bytes);
+		snprintf((char*)ret.buf, ret.n_bytes, "%s%s", prefix.buf, suffix.buf);
+		return ret;
+	} else if (node->type == SERD_URI) {
+		SerdURI ignored;
+		return serd_node_new_uri_from_node(node, &state->base_uri, &ignored);
+	} else {
+		return SERD_NODE_NULL;
+	}
 }
 
 SERD_API

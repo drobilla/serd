@@ -511,6 +511,16 @@ void
 serd_read_state_free(SerdReadState state);
 
 /**
+   Expand @a node to a full URI.
+
+   @param node A CURIE or URI node to expand and/or resolve.
+*/
+SERD_API
+SerdNode
+serd_read_state_expand(SerdReadState   state,
+                       const SerdNode* node);
+
+/**
    Get the current base URI.
 */
 SERD_API
