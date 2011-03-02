@@ -41,7 +41,6 @@ event_base(void*           handle,
            const SerdNode* uri_node)
 {
 	State* const state = (State*)handle;
-
 	if (serd_read_state_set_base_uri(state->read_state, uri_node)) {
 		SerdURI base_uri;
 		serd_read_state_get_base_uri(state->read_state, &base_uri);
@@ -57,7 +56,6 @@ event_prefix(void*           handle,
              const SerdNode* uri_node)
 {
 	State* const state = (State*)handle;
-	
 	serd_read_state_set_prefix(state->read_state, name, uri_node);
 	serd_writer_set_prefix(state->writer, name, uri_node);
 	return true;
