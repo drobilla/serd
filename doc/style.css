@@ -8,8 +8,8 @@ body {
 }
 
 h1 {
-	font-size: 160%;
-	font-weight: 750;
+	font-size: 180%;
+	font-weight: 900;
 }
 
 h2 {
@@ -307,7 +307,7 @@ hr {
 	height: 0;
 	border: none;
 	border-top: 1px solid #DDD;
-	margin: 3em 0 1em;
+	margin: 2em 0 1em;
 }
 
 hr.footer {
@@ -551,9 +551,9 @@ div.summary a {
 }
 
 div.header {
-	background-color: #EEE;
+	background-color: #F3F3F3;
 	margin: 0;
-	border-bottom: 1px solid #CCC;
+	border-bottom: 1px solid #DDD;
 }
 
 div.headertitle {
