@@ -511,9 +511,7 @@ void
 serd_read_state_free(SerdReadState state);
 
 /**
-   Expand @a node to a full URI.
-
-   @param node A CURIE or URI node to expand and/or resolve.
+   Expand @a node, which must be a CURIE or URI, to a full URI.
 */
 SERD_API
 SerdNode
