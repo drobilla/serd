@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-import Logs
-import Options
-import autowaf
 import filecmp
 import glob
 import os
 import shutil
 import subprocess
+
+import waflib.Logs as Logs, waflib.Options as Options
+from waflib.extras import autowaf as autowaf
 
 # Version of this package (even if built as a child)
 SERD_VERSION = '0.1.0'
@@ -40,7 +40,7 @@ def configure(conf):
 	autowaf.configure(conf)
 	autowaf.display_header('Serd Configuration')
 
-	conf.check_tool('compiler_cc')
+	conf.load('compiler_cc')
 	conf.env.append_value('CFLAGS', '-std=c99')
 
 	conf.env['BUILD_TESTS'] = Options.options.build_tests
