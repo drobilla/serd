@@ -151,6 +151,17 @@ def amalgamate(ctx):
 	
 	amalgamation.close()
 
+def fixdocs(ctx):
+    try:
+        os.chdir('build/doc/html')
+        os.system("sed -i 's/SERD_API //' group__serd.html")
+        os.system("sed -i 's/SERD_DEPRECATED //' group__serd.html")
+        os.remove('index.html')
+        os.symlink('group__serd.html',
+                   'index.html')
+    except Exception as e:
+        Logs.error("Failed to fix up Doxygen documentation\n")
+
 def test(ctx):
 	blddir = ""
 	top_level = (len(ctx.stack_path) > 1)
