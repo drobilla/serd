@@ -3,39 +3,36 @@ body {
 	font-family: sans-serif;
 }
 
-.navigation {
+#top {
 	display: none;
 }
 
+h1 h2 h3 h4 h5 h6 {
+	font-weight: bold;
+}
+
 h1 {
-	font-size: 180%;
-	font-weight: 900;
+	font-size: 164%;
 }
 
 h2 {
-	font-size: 140%;
-	font-weight: 650;
+	font-size: 132%;
 }
 
 h3 {
-	font-size: 130%;
-	font-weight: 600;
-
+	font-size: 124%;
 }
 
 h4 {
-	font-size: 120%;
-	font-weight: 550;
+	font-size: 116%;
 }
 
 h5 {
-	font-size: 110%;
-	font-weight: 500;
+	font-size: 108%;
 }
 
 h6 {
 	font-size: 100%;
-	font-weight: 450;
 }
 
 p {
@@ -103,7 +100,6 @@ div.navtab {
 /* @group Link Styling */
 a {
 	color: #3D578C;
-	font-weight: 400;
 	text-decoration: none;
 }
 
@@ -116,18 +112,15 @@ a:hover {
 }
 
 a.qindex {
-	font-weight: 700;
 }
 
 a.qindexHL {
-	font-weight: 700;
 	background-color: #9CAFD4;
 	color: #FFF;
 	border: 1px double #869DCA;
 }
 
 a.el {
-	font-weight: 700;
 }
 
 a.elRef {
@@ -317,6 +310,7 @@ hr.footer {
 /* @group Member Descriptions */
 table.memberdecls {
 	border-spacing: 0;
+	font-size: 94%;
 }
 
 .mdescLeft,.mdescRight,.memItemLeft,.memItemRight,.memTemplItemLeft,.memTemplItemRight,.memTemplParams {
@@ -349,7 +343,7 @@ table.memberdecls {
 .memtemplate {
 	font-size: 80%;
 	color: #4665A2;
-	font-weight: 400;
+	font-weight: bold;
 }
 
 .memnav {
@@ -368,14 +362,14 @@ table.memberdecls {
 
 .memname {
 	white-space: nowrap;
-	font-weight: 700;
+	font-weight: bold;
 }
 
 .memproto {
 	border-top: 1px solid #DDD;
 	padding: 0.5ex;
 	color: #253555;
-	font-weight: 700;
+	font-weight: bold;
 	background-color: #F3F3F3;
 }
 
@@ -413,7 +407,7 @@ table.memberdecls {
 /* these are for tree view when used as main index */
 .directory {
 	font-size: 9pt;
-	font-weight: 700;
+	font-weight: bold;
 	margin: 5px;
 }
 
@@ -444,7 +438,7 @@ table.memberdecls {
 /* these are for tree view when not used as main index */
 .directory-alt {
 	font-size: 100%;
-	font-weight: 700;
+	font-weight: bold;
 }
 
 .directory-alt h3 {

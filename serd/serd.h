@@ -192,9 +192,14 @@ typedef enum {
 } SerdType;
 
 /**
-   @name SerdURI
-   @{
+   A syntactic RDF node.
 */
+typedef struct {
+	SerdType       type;
+	size_t         n_bytes;  /**< Size in bytes (including null) */
+	size_t         n_chars;  /**< Length in characters */
+	const uint8_t* buf;      /**< Buffer */
+} SerdNode;
 
 /**
    An unterminated string fragment.
@@ -219,6 +224,26 @@ typedef struct {
 	SerdChunk query;      /**< Query */
 	SerdChunk fragment;   /**< Fragment */
 } SerdURI;
+
+/**
+   Syntax style options.
+
+   The style of the writer output can be controlled by ORing together
+   values from this enumeration. Note that some options are only supported
+   for some syntaxes (e.g. NTriples does not support any options except
+   @ref SERD_STYLE_ASCII, which is required).
+*/
+typedef enum {
+	SERD_STYLE_ABBREVIATED = 1,       /**< Abbreviate triples when possible. */
+	SERD_STYLE_ASCII       = 1 << 1,  /**< Escape all non-ASCII characters. */
+	SERD_STYLE_RESOLVED    = 1 << 2,  /**< Resolve relative URIs against base. */
+	SERD_STYLE_CURIED      = 1 << 3   /**< Shorten URIs into CURIEs. */
+} SerdStyle;
+
+/**
+   @name URI
+   @{
+*/
 
 static const SerdURI SERD_URI_NULL = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
 
@@ -257,19 +282,9 @@ serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream);
 
 /**
    @}
-   @name SerdNode
+   @name Node
    @{
 */
-
-/**
-   A syntactic RDF node.
-*/
-typedef struct {
-	SerdType       type;
-	size_t         n_bytes;  /**< Size in bytes (including null) */
-	size_t         n_chars;  /**< Length in characters */
-	const uint8_t* buf;      /**< Buffer */
-} SerdNode;
 
 static const SerdNode SERD_NODE_NULL = { SERD_NOTHING, 0, 0, 0 };
 
@@ -335,7 +350,7 @@ serd_node_free(SerdNode* node);
 
 /**
    @}
-   @name Handlers
+   @name Event Handlers
    @{
 */
 
@@ -381,7 +396,7 @@ typedef bool (*SerdEndSink)(void*           handle,
 
 /**
    @}
-   @name SerdEnv
+   @name Environment
    @{
 */
 
@@ -439,7 +454,7 @@ serd_env_foreach(const SerdEnv  env,
 
 /**
    @}
-   @name SerdReader
+   @name Reader
    @{
 */
 
@@ -545,16 +560,9 @@ serd_read_state_set_prefix(SerdReadState   state,
 
 /**
    @}
-   @name SerdWriter
+   @name Writer
    @{
 */
-
-typedef enum {
-	SERD_STYLE_ABBREVIATED = 1,      /**< Abbreviate triples when possible. */
-	SERD_STYLE_ASCII       = 1 << 1, /**< Escape all non-ASCII characters. */
-	SERD_STYLE_RESOLVED    = 1 << 2, /**< Resolve relative URIs against base. */
-	SERD_STYLE_CURIED      = 1 << 3  /**< Shorten URIs into CURIEs. */
-} SerdStyle;
 
 /**
    Create a new RDF writer.
