@@ -477,20 +477,21 @@ address {
 
 table.doxtable {
 	border-collapse: collapse;
+	margin: 0.5ex;
 }
 
 table.doxtable td,table.doxtable th {
-	border: 1px solid #2D4068;
+	border: 1px solid #DDD;
 	padding: 3px 7px 2px;
 }
 
 table.doxtable th {
-	background-color: #374F7F;
-	color: #FFF;
-	font-size: 110%;
+	background-color: #F3F3F3;
+	color: #000;
 	padding-bottom: 4px;
 	padding-top: 5px;
 	text-align: left;
+	font-weight: bold;
 }
 
 .tabsearch {
