@@ -9,7 +9,7 @@ from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
-SERD_VERSION = '0.1.0'
+SERD_VERSION = '0.1.1'
 
 # Library version (UNIX style major, minor, micro)
 # major increment <=> incompatible changes
