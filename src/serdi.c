@@ -168,8 +168,13 @@ main(int argc, char** argv)
 				if (strncmp((const char*)input, "file:", 5)) {
 					fprintf(stderr, "unsupported URI scheme `%s'\n", input);
 					return 1;
+#ifdef __WIN32__
+				} else if (!strncmp((const char*)input, "file:///", 8)) {
+					input += 8;
+#else
 				} else if (!strncmp((const char*)input, "file://", 7)) {
 					input += 7;
+#endif
 				} else {
 					input += 5;
 				}
