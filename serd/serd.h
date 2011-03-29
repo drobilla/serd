@@ -36,20 +36,20 @@
 #include <stdio.h>
 
 #ifdef SERD_SHARED
-	#if defined _WIN32 || defined __CYGWIN__
-		#define SERD_LIB_IMPORT __declspec(dllimport)
-		#define SERD_LIB_EXPORT __declspec(dllexport)
-	#else
-		#define SERD_LIB_IMPORT __attribute__ ((visibility("default")))
-		#define SERD_LIB_EXPORT __attribute__ ((visibility("default")))
-	#endif
-	#ifdef SERD_INTERNAL
-		#define SERD_API SERD_LIB_EXPORT
-	#else
-		#define SERD_API SERD_LIB_IMPORT
-	#endif
+#    ifdef __WIN32__
+#        define SERD_LIB_IMPORT __declspec(dllimport)
+#        define SERD_LIB_EXPORT __declspec(dllexport)
+#    else
+#        define SERD_LIB_IMPORT __attribute__((visibility("default")))
+#        define SERD_LIB_EXPORT __attribute__((visibility("default")))
+#    endif
+#    ifdef SERD_INTERNAL
+#        define SERD_API SERD_LIB_EXPORT
+#    else
+#        define SERD_API SERD_LIB_IMPORT
+#    endif
 #else
-	#define SERD_API
+#    define SERD_API
 #endif
 
 #ifdef __cplusplus
