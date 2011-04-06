@@ -49,8 +49,6 @@ def configure(conf):
 	if Options.options.stack_check:
 		autowaf.define(conf, 'SERD_STACK_CHECK', SERD_VERSION)
 
-	conf.env['BUILD_TESTS'] = Options.options.build_tests
-
 	autowaf.define(conf, 'SERD_VERSION', SERD_VERSION)
 	conf.write_config_header('serd-config.h', remove=False)
 
