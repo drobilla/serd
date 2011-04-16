@@ -307,7 +307,6 @@ public_node(SerdReader reader, const Node* private)
 	return public_node_from_ref(reader, private->type, private->value);
 }
 
-	
 static inline bool
 emit_statement(SerdReader reader,
                const Node* g, const Node* s, const Node* p, const Node* o)

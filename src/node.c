@@ -110,7 +110,7 @@ serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)
 	if (base) {
 		serd_uri_resolve(uri, base, &abs_uri);
 	}
-		
+
 	const size_t len = serd_uri_string_length(&abs_uri);
 	uint8_t*     buf = malloc(len + 1);
 
