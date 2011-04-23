@@ -773,7 +773,7 @@ read_language(SerdReader reader)
 	while ((c = peek_byte(reader)) && in_range(c, 'a', 'z')) {
 		push_byte(reader, str, eat_byte(reader, c));
 	}
-	if (peek_byte(reader) == '-') {
+	while (peek_byte(reader) == '-') {
 		push_byte(reader, str, eat_byte(reader, '-'));
 		while ((c = peek_byte(reader)) && (
 			       in_range(c, 'a', 'z') || in_range(c, '0', '9'))) {

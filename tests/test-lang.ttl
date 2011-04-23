@@ -2,4 +2,5 @@
 
 :thing :greeting "Hello"@en ;
        :greeting "Howdy"@en-us ;
-       :greeting "Bonjour"@fr .
+       :greeting "Bonjour"@fr ;
+       :greeting "Guten Tag"@de-latn-de .
