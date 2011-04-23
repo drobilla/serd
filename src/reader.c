@@ -288,7 +288,7 @@ public_node_from_ref(SerdReader reader, SerdType type, Ref ref)
 		return SERD_NODE_NULL;
 	}
 	const SerdString* str    = deref(reader, ref);
-	const SerdNode    public = { type, str->n_bytes, str->n_chars, str->buf };
+	const SerdNode    public = { str->buf, str->n_bytes, str->n_chars, type };
 	return public;
 }
 
@@ -1484,10 +1484,10 @@ serd_read_state_expand(SerdReadState   state,
 		SerdChunk prefix;
 		SerdChunk suffix;
 		serd_env_expand(state->env, node, &prefix, &suffix);
-		SerdNode ret = { SERD_URI,
+		SerdNode ret = { NULL,
 		                 prefix.len + suffix.len + 1,
 		                 prefix.len + suffix.len, // FIXME: UTF-8
-		                 NULL };
+		                 SERD_URI };
 		ret.buf = malloc(ret.n_bytes);
 		snprintf((char*)ret.buf, ret.n_bytes, "%s%s", prefix.buf, suffix.buf);
 		return ret;

@@ -186,10 +186,10 @@ typedef enum {
    A syntactic RDF node.
 */
 typedef struct {
-	SerdType       type;
+	const uint8_t* buf;      /**< Buffer */
 	size_t         n_bytes;  /**< Size in bytes (including null) */
 	size_t         n_chars;  /**< Length in characters */
-	const uint8_t* buf;      /**< Buffer */
+	SerdType       type;     /**< Node type */
 } SerdNode;
 
 /**
@@ -277,7 +277,7 @@ serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream);
    @{
 */
 
-static const SerdNode SERD_NODE_NULL = { SERD_NOTHING, 0, 0, 0 };
+static const SerdNode SERD_NODE_NULL = { 0, 0, 0, SERD_NOTHING };
 
 /**
    Make a (shallow) node from @a str.
