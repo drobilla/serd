@@ -104,7 +104,7 @@ typedef enum {
 	SERD_ERROR   = 2,  ///< Fatal error
 } SerdStatus;
 
-static inline int
+static int
 error(SerdReader reader, const char* fmt, ...)
 {
 	va_list args;
@@ -277,7 +277,8 @@ pop_string(SerdReader reader, Ref ref)
 		assert(stack_is_top_string(reader, ref));
 		--reader->n_allocs;
 		#endif
-		serd_stack_pop(&reader->stack, deref(reader, ref)->n_bytes);
+		SerdString* str = deref(reader, ref);
+		serd_stack_pop(&reader->stack, pad_size(sizeof(SerdString) + str->n_bytes));
 	}
 }
 
@@ -1170,6 +1171,7 @@ read_predicateObjectList(SerdReader reader, ReadContext ctx)
 			read_ws_star(reader);
 		}
 	}
+	pop_string(reader, predicate.value);
 	return true;
 except:
 	pop_string(reader, predicate.value);
@@ -1230,7 +1232,7 @@ read_collection(SerdReader reader, ReadContext ctx, Node* dest)
 static Node
 read_subject(SerdReader reader, ReadContext ctx)
 {
-	Node    subject = INTERNAL_NODE_NULL;
+	Node subject = INTERNAL_NODE_NULL;
 	switch (peek_byte(reader)) {
 	case '[': case '(': case '_':
 		read_blank(reader, ctx, &subject);
