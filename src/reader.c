@@ -87,7 +87,7 @@ struct SerdReaderImpl {
 	int32_t           read_head;    ///< Offset into read_buf
 	bool              from_file;    ///< True iff reading from @ref fd
 	bool              eof;
-#ifdef SUIL_STACK_CHECK
+#ifdef SERD_STACK_CHECK
 	Ref*              alloc_stack;  ///< Stack of push offsets
 	size_t            n_allocs;     ///< Number of stack pushes
 #endif
@@ -197,7 +197,7 @@ eat_string(SerdReader reader, const char* str, unsigned n)
 	}
 }
 
-#ifdef SUIL_STACK_CHECK
+#ifdef SERD_STACK_CHECK
 static inline bool
 stack_is_top_string(SerdReader reader, Ref ref)
 {
@@ -224,7 +224,7 @@ push_string(SerdReader reader, const char* c_str, size_t n_bytes)
 	str->n_bytes = n_bytes;
 	str->n_chars = n_bytes - 1;
 	memcpy(str->buf, c_str, n_bytes);
-#ifdef SUIL_STACK_CHECK
+#ifdef SERD_STACK_CHECK
 	reader->alloc_stack = realloc(reader->alloc_stack,
 	                              sizeof(uint8_t*) * (++reader->n_allocs));
 	reader->alloc_stack[reader->n_allocs - 1] = (mem - reader->stack.buf);
@@ -244,7 +244,7 @@ deref(SerdReader reader, const Ref ref)
 static inline void
 push_byte(SerdReader reader, Ref ref, const uint8_t c)
 {
-	#ifdef SUIL_STACK_CHECK
+	#ifdef SERD_STACK_CHECK
 	assert(stack_is_top_string(reader, ref));
 	#endif
 	serd_stack_push(&reader->stack, 1);
@@ -268,7 +268,7 @@ pop_string(SerdReader reader, Ref ref)
 		    || ref == reader->rdf_rest.value) {
 			return;
 		}
-		#ifdef SUIL_STACK_CHECK
+		#ifdef SERD_STACK_CHECK
 		if (!stack_is_top_string(reader, ref)) {
 			fprintf(stderr, "attempt to pop non-top string %s\n",
 			        deref(reader, ref)->buf);
