@@ -34,10 +34,24 @@ SerdNode
 serd_node_copy(const SerdNode* node)
 {
 	SerdNode copy = *node;
-	uint8_t* buf  = malloc(copy.n_bytes);
-	memcpy(buf, node->buf, copy.n_bytes);
-	copy.buf = buf;
+	if (node->buf) {
+		uint8_t* buf  = malloc(copy.n_bytes);
+		memcpy(buf, node->buf, copy.n_bytes);
+		copy.buf = buf;
+	}
 	return copy;
+}
+
+SERD_API
+bool
+serd_node_equals(const SerdNode* a, const SerdNode* b)
+{
+	return (a == b)
+		|| (a->type == b->type
+		    && a->n_bytes == b->n_bytes
+		    && a->n_chars == b->n_chars
+		    && ((a->buf == b->buf) || !strcmp((const char*)a->buf,
+		                                      (const char*)b->buf)));
 }
 
 static size_t

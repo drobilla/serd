@@ -298,6 +298,13 @@ SerdNode
 serd_node_copy(const SerdNode* node);
 
 /**
+   Return true iff @a a is equal to @a b.
+*/
+SERD_API
+bool
+serd_node_equals(const SerdNode* a, const SerdNode* b);
+
+/**
    Simple wrapper for serd_node_new_uri to resolve a URI node.
 */
 SERD_API

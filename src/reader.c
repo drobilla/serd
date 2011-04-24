@@ -204,21 +204,12 @@ stack_is_top_string(SerdReader reader, Ref ref)
 }
 #endif
 
-static inline intptr_t
-pad_size(intptr_t size)
-{
-	return (size + 7) & (~7);
-}
-
 // Make a new string from a non-UTF-8 C string (internal use only)
 static Ref
 push_string(SerdReader reader, const char* c_str, size_t n_bytes)
 {
-	// Align strings to 64-bits (assuming malloc/realloc are aligned to 64-bits)
-	const size_t stack_size = pad_size((intptr_t)reader->stack.size);
-	const size_t pad        = stack_size - reader->stack.size;
-	uint8_t*     mem        = serd_stack_push(
-		&reader->stack, pad + sizeof(SerdString) + n_bytes) + pad;
+	uint8_t* mem = serd_stack_push(&reader->stack,
+	                               sizeof(SerdString) + n_bytes);
 	SerdString* const str = (SerdString*)mem;
 	str->n_bytes = n_bytes;
 	str->n_chars = n_bytes - 1;
@@ -278,7 +269,7 @@ pop_string(SerdReader reader, Ref ref)
 		--reader->n_allocs;
 		#endif
 		SerdString* str = deref(reader, ref);
-		serd_stack_pop(&reader->stack, pad_size(sizeof(SerdString) + str->n_bytes));
+		serd_stack_pop(&reader->stack, sizeof(SerdString) + str->n_bytes);
 	}
 }
 
@@ -1061,6 +1052,10 @@ read_object(SerdReader reader, ReadContext ctx)
 	static const char* const XSD_BOOLEAN     = NS_XSD "boolean";
 	static const size_t      XSD_BOOLEAN_LEN = 40;
 
+#ifndef NDEBUG
+	const size_t orig_stack_size = reader->stack.size;
+#endif
+
 	uint8_t       pre[6];
 	bool          ret  = false;
 	bool          emit = (ctx.subject != 0);
@@ -1118,6 +1113,9 @@ except:
 	pop_string(reader, o.lang);
 	pop_string(reader, o.datatype);
 	pop_string(reader, o.value);
+#ifndef NDEBUG
+	assert(reader->stack.size == orig_stack_size);
+#endif
 	return ret;
 }
 
