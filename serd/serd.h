@@ -59,7 +59,7 @@ extern "C" {
    A SerdEnv represents a set of namespace prefixes, and is used to resolve
    CURIEs to full URIs.
 */
-typedef struct SerdEnvImpl* SerdEnv;
+typedef struct SerdEnvImpl SerdEnv;
 
 /**
    RDF reader.
@@ -67,7 +67,7 @@ typedef struct SerdEnvImpl* SerdEnv;
    A SerdReader parses RDF by reading some syntax and calling user-provided
    sink functions as input is read (much like an XML SAX parser).
 */
-typedef struct SerdReaderImpl* SerdReader;
+typedef struct SerdReaderImpl SerdReader;
 
 /**
    Read state.
@@ -77,7 +77,7 @@ typedef struct SerdReaderImpl* SerdReader;
    separately from SerdReader so the reader can avoid the overhead in cases
    where this information is unnecessary (e.g. streaming reserialisation).
 */
-typedef struct SerdReadStateImpl* SerdReadState;
+typedef struct SerdReadStateImpl SerdReadState;
 
 /**
    RDF writer.
@@ -87,7 +87,7 @@ typedef struct SerdReadStateImpl* SerdReadState;
    functions used by SerdReader, so a reader can be directly connected to a
    writer to re-serialise a document.
 */
-typedef struct SerdWriterImpl* SerdWriter;
+typedef struct SerdWriterImpl SerdWriter;
 
 /**
    RDF syntax type.
@@ -402,7 +402,7 @@ typedef bool (*SerdEndSink)(void*           handle,
    Create a new environment.
 */
 SERD_API
-SerdEnv
+SerdEnv*
 serd_env_new();
 
 /**
@@ -410,14 +410,14 @@ serd_env_new();
 */
 SERD_API
 void
-serd_env_free(SerdEnv env);
+serd_env_free(SerdEnv* env);
 
 /**
    Add namespace @a uri to @a ns using prefix @a name.
 */
 SERD_API
 void
-serd_env_add(SerdEnv         env,
+serd_env_add(SerdEnv*        env,
              const SerdNode* name,
              const SerdNode* uri);
 
@@ -426,7 +426,7 @@ serd_env_add(SerdEnv         env,
 */
 SERD_API
 bool
-serd_env_qualify(const SerdEnv   env,
+serd_env_qualify(const SerdEnv*  env,
                  const SerdNode* uri,
                  SerdNode*       prefix,
                  SerdChunk*      suffix);
@@ -436,7 +436,7 @@ serd_env_qualify(const SerdEnv   env,
 */
 SERD_API
 bool
-serd_env_expand(const SerdEnv   env,
+serd_env_expand(const SerdEnv*  env,
                 const SerdNode* curie,
                 SerdChunk*      uri_prefix,
                 SerdChunk*      uri_suffix);
@@ -446,7 +446,7 @@ serd_env_expand(const SerdEnv   env,
 */
 SERD_API
 void
-serd_env_foreach(const SerdEnv  env,
+serd_env_foreach(const SerdEnv* env,
                  SerdPrefixSink func,
                  void*          handle);
 
@@ -460,7 +460,7 @@ serd_env_foreach(const SerdEnv  env,
    Create a new RDF reader.
 */
 SERD_API
-SerdReader
+SerdReader*
 serd_reader_new(SerdSyntax        syntax,
                 void*             handle,
                 SerdBaseSink      base_sink,
@@ -479,7 +479,7 @@ serd_reader_new(SerdSyntax        syntax,
 */
 SERD_API
 void
-serd_reader_set_blank_prefix(SerdReader     reader,
+serd_reader_set_blank_prefix(SerdReader*    reader,
                              const uint8_t* prefix);
 
 /**
@@ -487,7 +487,7 @@ serd_reader_set_blank_prefix(SerdReader     reader,
 */
 SERD_API
 bool
-serd_reader_read_file(SerdReader     reader,
+serd_reader_read_file(SerdReader*    reader,
                       FILE*          file,
                       const uint8_t* name);
 
@@ -496,14 +496,14 @@ serd_reader_read_file(SerdReader     reader,
 */
 SERD_API
 bool
-serd_reader_read_string(SerdReader me, const uint8_t* utf8);
+serd_reader_read_string(SerdReader* me, const uint8_t* utf8);
 
 /**
    Free @a reader.
 */
 SERD_API
 void
-serd_reader_free(SerdReader reader);
+serd_reader_free(SerdReader* reader);
 
 /**
    Create a new read state with the given initial base URI and environment.
@@ -512,8 +512,8 @@ serd_reader_free(SerdReader reader);
    state is modified.
 */
 SERD_API
-SerdReadState
-serd_read_state_new(SerdEnv        env,
+SerdReadState*
+serd_read_state_new(SerdEnv*       env,
                     const uint8_t* base_uri_str);
 
 /**
@@ -521,14 +521,14 @@ serd_read_state_new(SerdEnv        env,
 */
 SERD_API
 void
-serd_read_state_free(SerdReadState state);
+serd_read_state_free(SerdReadState* state);
 
 /**
    Expand @a node, which must be a CURIE or URI, to a full URI.
 */
 SERD_API
 SerdNode
-serd_read_state_expand(SerdReadState   state,
+serd_read_state_expand(SerdReadState*  state,
                        const SerdNode* node);
 
 /**
@@ -536,15 +536,15 @@ serd_read_state_expand(SerdReadState   state,
 */
 SERD_API
 SerdNode
-serd_read_state_get_base_uri(SerdReadState state,
-                             SerdURI*      out);
+serd_read_state_get_base_uri(SerdReadState* state,
+                             SerdURI*       out);
 
 /**
    Set the current base URI.
 */
 SERD_API
 bool
-serd_read_state_set_base_uri(SerdReadState   state,
+serd_read_state_set_base_uri(SerdReadState*  state,
                              const SerdNode* uri_node);
 
 /**
@@ -552,7 +552,7 @@ serd_read_state_set_base_uri(SerdReadState   state,
 */
 SERD_API
 bool
-serd_read_state_set_prefix(SerdReadState   state,
+serd_read_state_set_prefix(SerdReadState*  state,
                            const SerdNode* name,
                            const SerdNode* uri_node);
 
@@ -566,10 +566,10 @@ serd_read_state_set_prefix(SerdReadState   state,
    Create a new RDF writer.
 */
 SERD_API
-SerdWriter
+SerdWriter*
 serd_writer_new(SerdSyntax     syntax,
                 SerdStyle      style,
-                SerdEnv        env,
+                SerdEnv*       env,
                 const SerdURI* base_uri,
                 SerdSink       sink,
                 void*          stream);
@@ -579,14 +579,14 @@ serd_writer_new(SerdSyntax     syntax,
 */
 SERD_API
 void
-serd_writer_free(SerdWriter writer);
+serd_writer_free(SerdWriter* writer);
 
 /**
    Set the current output base URI (and emit directive if applicable).
 */
 SERD_API
 void
-serd_writer_set_base_uri(SerdWriter     writer,
+serd_writer_set_base_uri(SerdWriter*    writer,
                          const SerdURI* uri);
 
 /**
@@ -594,7 +594,7 @@ serd_writer_set_base_uri(SerdWriter     writer,
 */
 SERD_API
 bool
-serd_writer_set_prefix(SerdWriter      writer,
+serd_writer_set_prefix(SerdWriter*     writer,
                        const SerdNode* name,
                        const SerdNode* uri);
 
@@ -603,7 +603,7 @@ serd_writer_set_prefix(SerdWriter      writer,
 */
 SERD_API
 bool
-serd_writer_write_statement(SerdWriter      writer,
+serd_writer_write_statement(SerdWriter*     writer,
                             const SerdNode* graph,
                             const SerdNode* subject,
                             const SerdNode* predicate,
@@ -616,7 +616,7 @@ serd_writer_write_statement(SerdWriter      writer,
 */
 SERD_API
 bool
-serd_writer_end_anon(SerdWriter      writer,
+serd_writer_end_anon(SerdWriter*     writer,
                      const SerdNode* node);
 
 /**
@@ -624,7 +624,7 @@ serd_writer_end_anon(SerdWriter      writer,
 */
 SERD_API
 void
-serd_writer_finish(SerdWriter writer);
+serd_writer_finish(SerdWriter* writer);
 
 /**
    @}

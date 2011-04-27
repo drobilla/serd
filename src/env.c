@@ -32,10 +32,10 @@ struct SerdEnvImpl {
 };
 
 SERD_API
-SerdEnv
+SerdEnv*
 serd_env_new()
 {
-	SerdEnv env = malloc(sizeof(struct SerdEnvImpl));
+	SerdEnv* env = malloc(sizeof(struct SerdEnvImpl));
 	env->prefixes   = NULL;
 	env->n_prefixes = 0;
 	return env;
@@ -43,7 +43,7 @@ serd_env_new()
 
 SERD_API
 void
-serd_env_free(SerdEnv env)
+serd_env_free(SerdEnv* env)
 {
 	for (size_t i = 0; i < env->n_prefixes; ++i) {
 		serd_node_free(&env->prefixes[i].name);
@@ -54,7 +54,7 @@ serd_env_free(SerdEnv env)
 }
 
 static inline SerdPrefix*
-serd_env_find(SerdEnv        env,
+serd_env_find(const SerdEnv* env,
               const uint8_t* name,
               size_t         name_len)
 {
@@ -71,7 +71,7 @@ serd_env_find(SerdEnv        env,
 
 SERD_API
 void
-serd_env_add(SerdEnv         env,
+serd_env_add(SerdEnv*        env,
              const SerdNode* name,
              const SerdNode* uri)
 {
@@ -90,7 +90,7 @@ serd_env_add(SerdEnv         env,
 
 SERD_API
 bool
-serd_env_qualify(const SerdEnv   env,
+serd_env_qualify(const SerdEnv*  env,
                  const SerdNode* uri,
                  SerdNode*       prefix_name,
                  SerdChunk*      suffix)
@@ -113,7 +113,7 @@ serd_env_qualify(const SerdEnv   env,
 
 SERD_API
 bool
-serd_env_expand(const SerdEnv   env,
+serd_env_expand(const SerdEnv*  env,
                 const SerdNode* qname,
                 SerdChunk*      uri_prefix,
                 SerdChunk*      uri_suffix)
@@ -137,7 +137,7 @@ serd_env_expand(const SerdEnv   env,
 
 SERD_API
 void
-serd_env_foreach(const SerdEnv  env,
+serd_env_foreach(const SerdEnv* env,
                  SerdPrefixSink func,
                  void*          handle)
 {

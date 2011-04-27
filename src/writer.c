@@ -37,7 +37,7 @@ static const WriteContext WRITE_CONTEXT_NULL = {
 struct SerdWriterImpl {
 	SerdSyntax   syntax;
 	SerdStyle    style;
-	SerdEnv      env;
+	SerdEnv*     env;
 	SerdURI      base_uri;
 	SerdStack    anon_stack;
 	SerdSink     sink;
@@ -53,7 +53,7 @@ typedef enum {
 } TextContext;
 
 static inline WriteContext*
-anon_stack_top(SerdWriter writer)
+anon_stack_top(SerdWriter* writer)
 {
 	assert(!serd_stack_is_empty(&writer->anon_stack));
 	return (WriteContext*)(writer->anon_stack.buf
@@ -61,7 +61,7 @@ anon_stack_top(SerdWriter writer)
 }
 
 static bool
-write_text(SerdWriter writer, TextContext ctx,
+write_text(SerdWriter* writer, TextContext ctx,
            const uint8_t* utf8, size_t n_bytes, uint8_t terminator)
 {
 	char escape[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -142,7 +142,7 @@ write_text(SerdWriter writer, TextContext ctx,
 }
 
 static void
-serd_writer_write_delim(SerdWriter writer, const uint8_t delim)
+serd_writer_write_delim(SerdWriter* writer, const uint8_t delim)
 {
 	switch (delim) {
 	case '\n':
@@ -159,7 +159,7 @@ serd_writer_write_delim(SerdWriter writer, const uint8_t delim)
 }
 
 static void
-reset_context(SerdWriter writer)
+reset_context(SerdWriter* writer)
 {
 	if (writer->context.graph.buf)
 		serd_node_free(&writer->context.graph);
@@ -171,7 +171,7 @@ reset_context(SerdWriter writer)
 }
 	
 static bool
-write_node(SerdWriter      writer,
+write_node(SerdWriter*     writer,
            const SerdNode* node,
            const SerdNode* datatype,
            const SerdNode* lang)
@@ -276,7 +276,7 @@ write_node(SerdWriter      writer,
 
 SERD_API
 bool
-serd_writer_write_statement(SerdWriter      writer,
+serd_writer_write_statement(SerdWriter*     writer,
                             const SerdNode* graph,
                             const SerdNode* subject,
                             const SerdNode* predicate,
@@ -367,7 +367,7 @@ serd_writer_write_statement(SerdWriter      writer,
 
 SERD_API
 bool
-serd_writer_end_anon(SerdWriter      writer,
+serd_writer_end_anon(SerdWriter*     writer,
                      const SerdNode* node)
 {
 	if (writer->syntax == SERD_NTRIPLES) {
@@ -392,7 +392,7 @@ serd_writer_end_anon(SerdWriter      writer,
 
 SERD_API
 void
-serd_writer_finish(SerdWriter writer)
+serd_writer_finish(SerdWriter* writer)
 {
 	if (writer->context.subject.buf) {
 		writer->sink(" .\n", 3, writer->stream);
@@ -401,16 +401,16 @@ serd_writer_finish(SerdWriter writer)
 }
 
 SERD_API
-SerdWriter
+SerdWriter*
 serd_writer_new(SerdSyntax     syntax,
                 SerdStyle      style,
-                SerdEnv        env,
+                SerdEnv*       env,
                 const SerdURI* base_uri,
                 SerdSink       sink,
                 void*          stream)
 {
 	const WriteContext context = WRITE_CONTEXT_NULL;
-	SerdWriter         writer  = malloc(sizeof(struct SerdWriterImpl));
+	SerdWriter*        writer  = malloc(sizeof(struct SerdWriterImpl));
 	writer->syntax     = syntax;
 	writer->style      = style;
 	writer->env        = env;
@@ -425,7 +425,7 @@ serd_writer_new(SerdSyntax     syntax,
 
 SERD_API
 void
-serd_writer_set_base_uri(SerdWriter     writer,
+serd_writer_set_base_uri(SerdWriter*    writer,
                          const SerdURI* uri)
 {
 	writer->base_uri = *uri;
@@ -443,7 +443,7 @@ serd_writer_set_base_uri(SerdWriter     writer,
 
 SERD_API
 bool
-serd_writer_set_prefix(SerdWriter      writer,
+serd_writer_set_prefix(SerdWriter*     writer,
                        const SerdNode* name,
                        const SerdNode* uri)
 {
@@ -464,9 +464,9 @@ serd_writer_set_prefix(SerdWriter      writer,
 
 SERD_API
 void
-serd_writer_free(SerdWriter writer)
+serd_writer_free(SerdWriter* writer)
 {
-	SerdWriter const me = (SerdWriter)writer;
+	SerdWriter* const me = (SerdWriter*)writer;
 	serd_writer_finish(me);
 	serd_stack_free(&writer->anon_stack);
 	free(me);

@@ -22,9 +22,9 @@
 #include "serd-config.h"
 
 typedef struct {
-	SerdEnv       env;
-	SerdReadState read_state;
-	SerdWriter    writer;
+	SerdEnv*       env;
+	SerdReadState* read_state;
+	SerdWriter*    writer;
 } State;
 
 static bool
@@ -197,8 +197,8 @@ main(int argc, char** argv)
 		fprintf(stderr, "invalid base URI `%s'\n", base_uri_str);
 	}
 
-	FILE*   out_fd = stdout;
-	SerdEnv env    = serd_env_new();
+	FILE*    out_fd = stdout;
+	SerdEnv* env    = serd_env_new();
 
 	SerdStyle output_style = SERD_STYLE_RESOLVED;
 	if (output_syntax == SERD_NTRIPLES) {
@@ -207,16 +207,16 @@ main(int argc, char** argv)
 		output_style |= SERD_STYLE_ABBREVIATED;
 	}
 
-	SerdReadState read_state = serd_read_state_new(env, base_uri_str);
+	SerdReadState* read_state = serd_read_state_new(env, base_uri_str);
 
 	serd_read_state_get_base_uri(read_state, &base_uri);
 
-	SerdWriter writer = serd_writer_new(
+	SerdWriter* writer = serd_writer_new(
 		output_syntax, output_style, env, &base_uri, file_sink, out_fd);
 
 	State state = { env, read_state, writer };
 
-	SerdReader reader = serd_reader_new(
+	SerdReader* reader = serd_reader_new(
 		SERD_TURTLE, &state,
 		event_base, event_prefix, event_statement, event_end);
 
