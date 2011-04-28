@@ -9,7 +9,8 @@ from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
-SERD_VERSION = '0.1.1'
+SERD_VERSION       = '0.2.0'
+SERD_MAJOR_VERSION = '0'
 
 # Library version (UNIX style major, minor, micro)
 # major increment <=> incompatible changes
@@ -58,10 +59,12 @@ def configure(conf):
 
 def build(bld):
     # C Headers
-    bld.install_files('${INCLUDEDIR}/serd', bld.path.ant_glob('serd/*.h'))
+    includedir = '${INCLUDEDIR}/serd-%s/serd' % SERD_MAJOR_VERSION
+    bld.install_files(includedir, bld.path.ant_glob('serd/*.h'))
 
     # Pkgconfig file
-    autowaf.build_pc(bld, 'SERD', SERD_VERSION, [])
+    autowaf.build_pc(bld, 'SERD', SERD_VERSION, SERD_MAJOR_VERSION, [],
+                     {'SERD_MAJOR_VERSION' : SERD_MAJOR_VERSION})
 
     lib_source = '''
             src/env.c
@@ -77,7 +80,7 @@ def build(bld):
     obj.source          = lib_source
     obj.includes        = ['.', './src']
     obj.name            = 'libserd'
-    obj.target          = 'serd'
+    obj.target          = 'serd-%s' % SERD_MAJOR_VERSION
     obj.vnum            = SERD_LIB_VERSION
     obj.install_path    = '${LIBDIR}'
     obj.cflags          = [ '-fvisibility=hidden', '-DSERD_SHARED', '-DSERD_INTERNAL' ]

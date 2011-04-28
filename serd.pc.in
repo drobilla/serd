@@ -3,8 +3,8 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: libserd
+Name: Serd
 Version: @SERD_VERSION@
 Description: Lightweight RDF syntax library
-Libs: -L${libdir} -lserd
-Cflags: -I${includedir}
+Libs: -L${libdir} -lserd-@SERD_MAJOR_VERSION@
+Cflags: -I${includedir}/serd-@SERD_MAJOR_VERSION@
