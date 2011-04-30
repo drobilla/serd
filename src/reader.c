@@ -260,9 +260,9 @@ pop_string(SerdReader* reader, Ref ref)
 		}
 		#ifdef SERD_STACK_CHECK
 		if (!stack_is_top_string(reader, ref)) {
-			fprintf(stderr, "attempt to pop non-top string %s\n",
+			fprintf(stderr, "Attempt to pop non-top string %s\n",
 			        deref(reader, ref)->buf);
-			fprintf(stderr, "top: %s\n",
+			fprintf(stderr, "... top: %s\n",
 			        deref(reader, reader->alloc_stack[reader->n_allocs - 1])->buf);
 		}
 		assert(stack_is_top_string(reader, ref));
@@ -924,7 +924,7 @@ read_literal(SerdReader* reader, Node* dest)
 		}
 		*dest = make_node(SERD_LITERAL, str, datatype.value, lang);
 	} else {
-		return error(reader, "Unknown literal type\n");
+		return error(reader, "unknown literal type\n");
 	}
 	return true;
 except:

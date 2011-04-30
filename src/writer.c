@@ -105,7 +105,7 @@ write_text(SerdWriter* writer, TextContext ctx,
 			size = 4;
 			c = in & 0x07;
 		} else {
-			fprintf(stderr, "invalid UTF-8 at offset %zu: %X\n", i, in);
+			fprintf(stderr, "Invalid UTF-8 at offset %zu: %X\n", i, in);
 			return false;
 		}
 
@@ -206,7 +206,7 @@ write_node(SerdWriter*     writer,
 		switch (writer->syntax) {
 		case SERD_NTRIPLES:
 			if (!serd_env_expand(writer->env, node, &uri_prefix, &uri_suffix)) {
-				fprintf(stderr, "error: undefined namespace prefix `%s'\n", node->buf);
+				fprintf(stderr, "Undefined namespace prefix `%s'\n", node->buf);
 				return false;
 			}
 			writer->sink("<", 1, writer->stream);
@@ -374,7 +374,7 @@ serd_writer_end_anon(SerdWriter*     writer,
 		return true;
 	}
 	if (serd_stack_is_empty(&writer->anon_stack)) {
-		fprintf(stderr, "unexpected end of anonymous node\n");
+		fprintf(stderr, "Unexpected end of anonymous node\n");
 		return false;
 	}
 	assert(writer->indent > 0);

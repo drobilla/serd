@@ -133,7 +133,7 @@ main(int argc, char** argv)
 			break;
 		} else if (argv[a][1] == 'o') {
 			if (++a == argc) {
-				fprintf(stderr, "missing value for -o\n");
+				fprintf(stderr, "Missing value for -o\n");
 				return 1;
 			}
 			if (!strcmp(argv[a], "turtle")) {
@@ -141,11 +141,11 @@ main(int argc, char** argv)
 			} else if (!strcmp(argv[a], "ntriples")) {
 				output_syntax = SERD_NTRIPLES;
 			} else {
-				fprintf(stderr, "unknown output format `%s'\n",  argv[a]);
+				fprintf(stderr, "Unknown output format `%s'\n",  argv[a]);
 				return 1;
 			}
 		} else {
-			fprintf(stderr, "unknown option `%s'\n", argv[a]);
+			fprintf(stderr, "Unknown option `%s'\n", argv[a]);
 			return print_usage(argv[0], true);
 		}
 	}
@@ -157,7 +157,7 @@ main(int argc, char** argv)
 			if (serd_uri_string_has_scheme(input)) {
 				// INPUT is an absolute URI, ensure it a file and chop scheme
 				if (strncmp((const char*)input, "file:", 5)) {
-					fprintf(stderr, "unsupported URI scheme `%s'\n", input);
+					fprintf(stderr, "Unsupported URI scheme `%s'\n", input);
 					return 1;
 #ifdef __WIN32__
 				} else if (!strncmp((const char*)input, "file:///", 8)) {
@@ -172,7 +172,7 @@ main(int argc, char** argv)
 			}
 			in_fd = fopen((const char*)input, "r");
 			if (!in_fd) {
-				fprintf(stderr, "failed to open file %s\n", input);
+				fprintf(stderr, "Failed to open file %s\n", input);
 				return 1;
 			}
 		}
@@ -183,7 +183,7 @@ main(int argc, char** argv)
 	if (a < argc) {  // Base URI given on command line
 		const uint8_t* const in_base_uri = (const uint8_t*)argv[a++];
 		if (!serd_uri_parse((const uint8_t*)in_base_uri, &base_uri)) {
-			fprintf(stderr, "invalid base URI `%s'\n", argv[2]);
+			fprintf(stderr, "Invalid base URI <%s>\n", argv[2]);
 			return 1;
 		}
 		base_uri_str = in_base_uri;
@@ -194,7 +194,7 @@ main(int argc, char** argv)
 	}
 
 	if (!serd_uri_parse(base_uri_str, &base_uri)) {
-		fprintf(stderr, "invalid base URI `%s'\n", base_uri_str);
+		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
 	}
 
 	FILE*    out_fd = stdout;

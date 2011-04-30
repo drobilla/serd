@@ -130,7 +130,7 @@ serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)
 
 	// FIXME: double parse
 	if (!serd_uri_parse(buf, out)) {
-		fprintf(stderr, "error parsing URI\n");
+		fprintf(stderr, "Failed to parse URI <%s>\n", buf);
 		return SERD_NODE_NULL;
 	}
 
