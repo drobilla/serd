@@ -197,23 +197,23 @@ def test(ctx):
 
     autowaf.pre_test(ctx, APPNAME)
 
-    autowaf.run_tests(ctx, APPNAME,
-                                      ['./serdi_static file:%s/tests/manifest.ttl > /dev/null' % srcdir,
-                                       './serdi_static file://%s/tests/manifest.ttl > /dev/null' % srcdir,
-                                       './serdi_static %s/tests/UTF-8.ttl > /dev/null' % srcdir,
-                                       './serdi_static -v > /dev/null',
-                                       './serdi_static -s "<foo> a <#Thingie> ." > /dev/null',
-                                       './serdi_static /dev/null > /dev/null'],
-                                      0, name='serdi-cmd-good')
+    autowaf.run_tests(ctx, APPNAME, [
+            './serdi_static file:%s/tests/manifest.ttl > /dev/null' % srcdir,
+            './serdi_static file://%s/tests/manifest.ttl > /dev/null' % srcdir,
+            './serdi_static %s/tests/UTF-8.ttl > /dev/null' % srcdir,
+            './serdi_static -v > /dev/null',
+            './serdi_static -s "<foo> a <#Thingie> ." > /dev/null',
+            './serdi_static /dev/null > /dev/null'],
+                      0, name='serdi-cmd-good')
 
-    autowaf.run_tests(ctx, APPNAME,
-                                      ['./serdi_static > /dev/null',
-                                       './serdi_static ftp://example.org/unsupported.ttl > /dev/null',
-                                       './serdi_static -o > /dev/null',
-                                       './serdi_static -z > /dev/null',
-                                       './serdi_static -o illegal > /dev/null',
-                                       './serdi_static /no/such/file > /dev/null'],
-                                      1, name='serdi-cmd-bad')
+    autowaf.run_tests(ctx, APPNAME, [
+            './serdi_static > /dev/null',
+            './serdi_static ftp://example.org/unsupported.ttl > /dev/null',
+            './serdi_static -o > /dev/null',
+            './serdi_static -z > /dev/null',
+            './serdi_static -o illegal > /dev/null',
+            './serdi_static /no/such/file > /dev/null'],
+                      1, name='serdi-cmd-bad')
 
     commands = []
     for test in good_tests:
