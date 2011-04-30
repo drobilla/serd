@@ -27,21 +27,21 @@ typedef struct {
 	SerdWriter*    writer;
 } State;
 
-static bool
+static SerdStatus
 event_base(void*           handle,
            const SerdNode* uri_node)
 {
 	State* const state = (State*)handle;
-	if (serd_read_state_set_base_uri(state->read_state, uri_node)) {
+	if (!serd_read_state_set_base_uri(state->read_state, uri_node)) {
 		SerdURI base_uri;
 		serd_read_state_get_base_uri(state->read_state, &base_uri);
 		serd_writer_set_base_uri(state->writer, &base_uri);
-		return true;
+		return SERD_SUCCESS;
 	}
-	return false;
+	return SERD_ERR_UNKNOWN;
 }
 
-static bool
+static SerdStatus
 event_prefix(void*           handle,
              const SerdNode* name,
              const SerdNode* uri_node)
@@ -49,10 +49,10 @@ event_prefix(void*           handle,
 	State* const state = (State*)handle;
 	serd_read_state_set_prefix(state->read_state, name, uri_node);
 	serd_writer_set_prefix(state->writer, name, uri_node);
-	return true;
+	return SERD_SUCCESS;
 }
 
-static bool
+static SerdStatus
 event_statement(void*           handle,
                 const SerdNode* graph,
                 const SerdNode* subject,
@@ -66,7 +66,7 @@ event_statement(void*           handle,
 		graph, subject, predicate, object, object_datatype, object_lang);
 }
 
-static bool
+static SerdStatus
 event_end(void*           handle,
           const SerdNode* node)
 {
@@ -182,7 +182,7 @@ main(int argc, char** argv)
 	SerdURI        base_uri;
 	if (a < argc) {  // Base URI given on command line
 		const uint8_t* const in_base_uri = (const uint8_t*)argv[a++];
-		if (!serd_uri_parse((const uint8_t*)in_base_uri, &base_uri)) {
+		if (serd_uri_parse((const uint8_t*)in_base_uri, &base_uri)) {
 			fprintf(stderr, "Invalid base URI <%s>\n", argv[2]);
 			return 1;
 		}
@@ -193,7 +193,7 @@ main(int argc, char** argv)
 		base_uri_str = (const uint8_t*)"";
 	}
 
-	if (!serd_uri_parse(base_uri_str, &base_uri)) {
+	if (serd_uri_parse(base_uri_str, &base_uri)) {
 		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
 	}
 
@@ -220,7 +220,7 @@ main(int argc, char** argv)
 		SERD_TURTLE, &state,
 		event_base, event_prefix, event_statement, event_end);
 
-	const bool success = (from_file)
+	const SerdStatus status = (from_file)
 		? serd_reader_read_file(reader, in_fd, input)
 		: serd_reader_read_string(reader, input);
 
@@ -235,9 +235,5 @@ main(int argc, char** argv)
 	serd_read_state_free(state.read_state);
 	serd_env_free(state.env);
 
-	if (success) {
-		return 0;
-	}
-
-	return 1;
+	return (status == SERD_SUCCESS) ? 0 : 1;
 }

@@ -90,6 +90,18 @@ typedef struct SerdReadStateImpl SerdReadState;
 typedef struct SerdWriterImpl SerdWriter;
 
 /**
+   Return status code.
+*/
+typedef enum {
+	SERD_SUCCESS        = 0,  /**< No error */
+	SERD_FAILURE        = 1,  /**< Non-fatal failure */
+	SERD_ERR_UNKNOWN    = 2,  /**< Unknown error */
+	SERD_ERR_BAD_SYNTAX = 3,  /**< Invalid syntax */
+	SERD_ERR_BAD_ARG    = 3,  /**< Invalid argument */
+	SERD_ERR_NOT_FOUND  = 4   /**< Not found */
+} SerdStatus;
+
+/**
    RDF syntax type.
 */
 typedef enum {
@@ -249,7 +261,7 @@ serd_uri_string_has_scheme(const uint8_t* utf8);
    Parse @a utf8, writing result to @a out.
 */
 SERD_API
-bool
+SerdStatus
 serd_uri_parse(const uint8_t* utf8, SerdURI* out);
 
 /**
@@ -357,30 +369,30 @@ serd_node_free(SerdNode* node);
 
    Called whenever the base URI of the serialisation changes.
 */
-typedef bool (*SerdBaseSink)(void*           handle,
-                             const SerdNode* uri);
+typedef SerdStatus (*SerdBaseSink)(void*           handle,
+                                   const SerdNode* uri);
 
 /**
    Sink (callback) for namespace definitions.
 
    Called whenever a prefix is defined in the serialisation.
 */
-typedef bool (*SerdPrefixSink)(void*           handle,
-                               const SerdNode* name,
-                               const SerdNode* uri);
+typedef SerdStatus (*SerdPrefixSink)(void*           handle,
+                                     const SerdNode* name,
+                                     const SerdNode* uri);
 
 /**
    Sink (callback) for statements.
 
    Called for every RDF statement in the serialisation.
 */
-typedef bool (*SerdStatementSink)(void*           handle,
-                                  const SerdNode* graph,
-                                  const SerdNode* subject,
-                                  const SerdNode* predicate,
-                                  const SerdNode* object,
-                                  const SerdNode* object_datatype,
-                                  const SerdNode* object_lang);
+typedef SerdStatus (*SerdStatementSink)(void*           handle,
+                                        const SerdNode* graph,
+                                        const SerdNode* subject,
+                                        const SerdNode* predicate,
+                                        const SerdNode* object,
+                                        const SerdNode* object_datatype,
+                                        const SerdNode* object_lang);
 
 /**
    Sink (callback) for anonymous node end markers.
@@ -389,8 +401,8 @@ typedef bool (*SerdStatementSink)(void*           handle,
    @a value will no longer be referred to by any future statements
    (i.e. the anonymous serialisation of the node is finished).
 */
-typedef bool (*SerdEndSink)(void*           handle,
-                            const SerdNode* node);
+typedef SerdStatus (*SerdEndSink)(void*           handle,
+                                  const SerdNode* node);
 
 /**
    @}
@@ -435,7 +447,7 @@ serd_env_qualify(const SerdEnv*  env,
    Expand @a curie.
 */
 SERD_API
-bool
+SerdStatus
 serd_env_expand(const SerdEnv*  env,
                 const SerdNode* curie,
                 SerdChunk*      uri_prefix,
@@ -486,7 +498,7 @@ serd_reader_set_blank_prefix(SerdReader*    reader,
    Read @a file.
 */
 SERD_API
-bool
+SerdStatus
 serd_reader_read_file(SerdReader*    reader,
                       FILE*          file,
                       const uint8_t* name);
@@ -495,7 +507,7 @@ serd_reader_read_file(SerdReader*    reader,
    Read @a utf8.
 */
 SERD_API
-bool
+SerdStatus
 serd_reader_read_string(SerdReader* me, const uint8_t* utf8);
 
 /**
@@ -543,7 +555,7 @@ serd_read_state_get_base_uri(SerdReadState* state,
    Set the current base URI.
 */
 SERD_API
-bool
+SerdStatus
 serd_read_state_set_base_uri(SerdReadState*  state,
                              const SerdNode* uri_node);
 
@@ -551,7 +563,7 @@ serd_read_state_set_base_uri(SerdReadState*  state,
    Set a namespace prefix.
 */
 SERD_API
-bool
+SerdStatus
 serd_read_state_set_prefix(SerdReadState*  state,
                            const SerdNode* name,
                            const SerdNode* uri_node);
@@ -585,7 +597,7 @@ serd_writer_free(SerdWriter* writer);
    Set the current output base URI (and emit directive if applicable).
 */
 SERD_API
-void
+SerdStatus
 serd_writer_set_base_uri(SerdWriter*    writer,
                          const SerdURI* uri);
 
@@ -593,7 +605,7 @@ serd_writer_set_base_uri(SerdWriter*    writer,
    Set a namespace prefix (and emit directive if applicable).
 */
 SERD_API
-bool
+SerdStatus
 serd_writer_set_prefix(SerdWriter*     writer,
                        const SerdNode* name,
                        const SerdNode* uri);
@@ -602,7 +614,7 @@ serd_writer_set_prefix(SerdWriter*     writer,
    Write a statement.
 */
 SERD_API
-bool
+SerdStatus
 serd_writer_write_statement(SerdWriter*     writer,
                             const SerdNode* graph,
                             const SerdNode* subject,
@@ -615,7 +627,7 @@ serd_writer_write_statement(SerdWriter*     writer,
    Mark the end of an anonymous node's description.
 */
 SERD_API
-bool
+SerdStatus
 serd_writer_end_anon(SerdWriter*     writer,
                      const SerdNode* node);
 
@@ -623,7 +635,7 @@ serd_writer_end_anon(SerdWriter*     writer,
    Finish a write.
 */
 SERD_API
-void
+SerdStatus
 serd_writer_finish(SerdWriter* writer);
 
 /**

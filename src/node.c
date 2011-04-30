@@ -100,7 +100,7 @@ serd_node_new_uri_from_string(const uint8_t* str,
 		return serd_node_new_uri(base, NULL, out);  // Empty URI => Base URI
 	} else {
 		SerdURI uri;
-		if (serd_uri_parse(str, &uri)) {
+		if (!serd_uri_parse(str, &uri)) {
 			return serd_node_new_uri(&uri, base, out);  // Resolve/Serialise
 		}
 	}
@@ -129,7 +129,7 @@ serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)
 	node.n_chars    = actual_len;
 
 	// FIXME: double parse
-	if (!serd_uri_parse(buf, out)) {
+	if (serd_uri_parse(buf, out)) {
 		fprintf(stderr, "Failed to parse URI <%s>\n", buf);
 		return SERD_NODE_NULL;
 	}

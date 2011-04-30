@@ -205,7 +205,7 @@ write_node(SerdWriter*     writer,
 	case SERD_CURIE:
 		switch (writer->syntax) {
 		case SERD_NTRIPLES:
-			if (!serd_env_expand(writer->env, node, &uri_prefix, &uri_suffix)) {
+			if (serd_env_expand(writer->env, node, &uri_prefix, &uri_suffix)) {
 				fprintf(stderr, "Undefined namespace prefix `%s'\n", node->buf);
 				return false;
 			}
@@ -257,7 +257,7 @@ write_node(SerdWriter*     writer,
 		} else if ((writer->style & SERD_STYLE_RESOLVED)
 		           && !serd_uri_string_has_scheme(node->buf)) {
 			SerdURI uri;
-			if (serd_uri_parse(node->buf, &uri)) {
+			if (!serd_uri_parse(node->buf, &uri)) {
 				SerdURI abs_uri;
 				serd_uri_resolve(&uri, &writer->base_uri, &abs_uri);
 				writer->sink("<", 1, writer->stream);
@@ -275,7 +275,7 @@ write_node(SerdWriter*     writer,
 }
 
 SERD_API
-bool
+SerdStatus
 serd_writer_write_statement(SerdWriter*     writer,
                             const SerdNode* graph,
                             const SerdNode* subject,
@@ -292,10 +292,10 @@ serd_writer_write_statement(SerdWriter*     writer,
 		write_node(writer, predicate, NULL, NULL);
 		writer->sink(" ", 1, writer->stream);
 		if (!write_node(writer, object, object_datatype, object_lang)) {
-			return false;
+			return SERD_ERR_UNKNOWN;
 		}
 		writer->sink(" .\n", 3, writer->stream);
-		return true;
+		return SERD_SUCCESS;
 	case SERD_TURTLE:
 		break;
 	}
@@ -362,20 +362,20 @@ serd_writer_write_statement(SerdWriter*     writer,
 	                                   serd_node_copy(predicate) };
 	reset_context(writer);
 	writer->context = new_context;
-	return true;
+	return SERD_SUCCESS;
 }
 
 SERD_API
-bool
+SerdStatus
 serd_writer_end_anon(SerdWriter*     writer,
                      const SerdNode* node)
 {
 	if (writer->syntax == SERD_NTRIPLES) {
-		return true;
+		return SERD_SUCCESS;
 	}
 	if (serd_stack_is_empty(&writer->anon_stack)) {
 		fprintf(stderr, "Unexpected end of anonymous node\n");
-		return false;
+		return SERD_ERR_UNKNOWN;
 	}
 	assert(writer->indent > 0);
 	--writer->indent;
@@ -387,17 +387,18 @@ serd_writer_end_anon(SerdWriter*     writer,
 	if (!writer->context.subject.buf) {  // End of anonymous subject
 		writer->context.subject = serd_node_copy(node);
 	}
-	return true;
+	return SERD_SUCCESS;
 }
 
 SERD_API
-void
+SerdStatus
 serd_writer_finish(SerdWriter* writer)
 {
 	if (writer->context.subject.buf) {
 		writer->sink(" .\n", 3, writer->stream);
 	}
 	reset_context(writer);
+	return SERD_SUCCESS;
 }
 
 SERD_API
@@ -424,7 +425,7 @@ serd_writer_new(SerdSyntax     syntax,
 }
 
 SERD_API
-void
+SerdStatus
 serd_writer_set_base_uri(SerdWriter*    writer,
                          const SerdURI* uri)
 {
@@ -439,10 +440,11 @@ serd_writer_set_base_uri(SerdWriter*    writer,
 		writer->sink("> .\n", 4, writer->stream);
 	}
 	reset_context(writer);
+	return SERD_SUCCESS;
 }
 
 SERD_API
-bool
+SerdStatus
 serd_writer_set_prefix(SerdWriter*     writer,
                        const SerdNode* name,
                        const SerdNode* uri)
@@ -459,7 +461,7 @@ serd_writer_set_prefix(SerdWriter*     writer,
 		writer->sink("> .\n", 4, writer->stream);
 	}
 	reset_context(writer);
-	return true;
+	return SERD_SUCCESS;
 }
 
 SERD_API

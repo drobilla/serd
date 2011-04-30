@@ -112,7 +112,7 @@ serd_env_qualify(const SerdEnv*  env,
 }
 
 SERD_API
-bool
+SerdStatus
 serd_env_expand(const SerdEnv*  env,
                 const SerdNode* qname,
                 SerdChunk*      uri_prefix,
@@ -120,7 +120,7 @@ serd_env_expand(const SerdEnv*  env,
 {
 	const uint8_t* const colon = memchr(qname->buf, ':', qname->n_bytes);
 	if (!colon) {
-		return false;  // Illegal qname
+		return SERD_ERR_BAD_ARG;  // Illegal qname
 	}
 
 	const size_t            name_len = colon - qname->buf;
@@ -130,9 +130,9 @@ serd_env_expand(const SerdEnv*  env,
 		uri_prefix->len = prefix->uri.n_bytes - 1;
 		uri_suffix->buf = colon + 1;
 		uri_suffix->len = qname->n_bytes - (colon - qname->buf) - 2;
-		return true;
+		return SERD_SUCCESS;
 	}
-	return false;
+	return SERD_ERR_NOT_FOUND;
 }
 
 SERD_API

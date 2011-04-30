@@ -69,7 +69,7 @@ serd_uri_dump(const SerdURI* uri, FILE* file)
 #endif
 
 SERD_API
-bool
+SerdStatus
 serd_uri_parse(const uint8_t* utf8, SerdURI* uri)
 {
 	*uri = SERD_URI_NULL;
@@ -181,7 +181,7 @@ end:
 	fprintf(stderr, "\n");
 	#endif
 
-	return true;
+	return SERD_SUCCESS;
 }
 
 SERD_API

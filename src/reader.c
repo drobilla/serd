@@ -98,12 +98,6 @@ struct SerdReadStateImpl {
 	SerdURI  base_uri;
 };
 
-typedef enum {
-	SERD_SUCCESS = 0,  ///< Completed successfully
-	SERD_FAILURE = 1,  ///< Non-fatal failure
-	SERD_ERROR   = 2,  ///< Fatal error
-} SerdStatus;
-
 static int
 error(SerdReader* reader, const char* fmt, ...)
 {
@@ -301,13 +295,13 @@ emit_statement(SerdReader* reader,
 	const SerdNode object          = public_node(reader, o);
 	const SerdNode object_datatype = public_node_from_ref(reader, SERD_URI, o->datatype);
 	const SerdNode object_lang     = public_node_from_ref(reader, SERD_LITERAL, o->lang);
-	return reader->statement_sink(reader->handle,
-	                              &graph,
-	                              &subject,
-	                              &predicate,
-	                              &object,
-	                              &object_datatype,
-	                              &object_lang);
+	return !reader->statement_sink(reader->handle,
+	                               &graph,
+	                               &subject,
+	                               &predicate,
+	                               &object,
+	                               &object_datatype,
+	                               &object_lang);
 }
 
 static bool read_collection(SerdReader* reader, ReadContext ctx, Node* dest);
@@ -449,11 +443,11 @@ read_character(SerdReader* reader, Ref dest)
 	switch (c) {
 	case '\0':
 		error(reader, "unexpected end of file\n", peek_byte(reader));
-		return SERD_ERROR;
+		return SERD_ERR_BAD_SYNTAX;
 	default:
 		if (c < 0x20) {  // ASCII control character
 			error(reader, "unexpected control character\n");
-			return SERD_ERROR;
+			return SERD_ERR_BAD_SYNTAX;
 		} else if (c <= 0x7E) {  // Printable ASCII
 			push_byte(reader, dest, eat_byte(reader, c));
 			return SERD_SUCCESS;
@@ -467,7 +461,7 @@ read_character(SerdReader* reader, Ref dest)
 				size = 4;
 			} else {
 				error(reader, "invalid character\n");
-				return SERD_ERROR;
+				return SERD_ERR_BAD_SYNTAX;
 			}
 			for (unsigned i = 0; i < size; ++i) {
 				push_byte(reader, dest, eat_byte(reader, peek_byte(reader)));
@@ -489,7 +483,7 @@ read_echaracter(SerdReader* reader, Ref dest)
 			return SERD_SUCCESS;
 		} else {
 			error(reader, "illegal escape `\\%c'\n", peek_byte(reader));
-			return SERD_ERROR;
+			return SERD_ERR_BAD_SYNTAX;
 		}
 	default:
 		return read_character(reader, dest);
@@ -520,7 +514,7 @@ read_lcharacter(SerdReader* reader, Ref dest)
 			return SERD_SUCCESS;
 		} else {
 			error(reader, "illegal escape `\\%c'\n", peek_byte(reader));
-			return SERD_ERROR;
+			return SERD_ERR_BAD_SYNTAX;
 		}
 	case 0x9: case 0xA: case 0xD:
 		push_byte(reader, dest, eat_byte(reader, c));
@@ -542,7 +536,7 @@ read_scharacter(SerdReader* reader, Ref dest)
 			return SERD_SUCCESS;
 		} else {
 			error(reader, "illegal escape `\\%c'\n", peek_byte(reader));
-			return SERD_ERROR;
+			return SERD_ERR_BAD_SYNTAX;
 		}
 	case '\"':
 		return SERD_FAILURE;
@@ -622,7 +616,7 @@ read_longString(SerdReader* reader)
 	Ref        str = push_string(reader, "", 1);
 	SerdStatus st;
 	while (!(st = read_lcharacter(reader, str))) {}
-	if (st != SERD_ERROR) {
+	if (st < SERD_ERR_UNKNOWN) {
 		return str;
 	}
 	pop_string(reader, str);
@@ -637,7 +631,7 @@ read_string(SerdReader* reader)
 	Ref        str = push_string(reader, "", 1);
 	SerdStatus st;
 	while (!(st = read_scharacter(reader, str))) {}
-	if (st != SERD_ERROR) {
+	if (st < SERD_ERR_UNKNOWN) {
 		eat_byte(reader, '\"');
 		return str;
 	}
@@ -670,7 +664,7 @@ read_relativeURI(SerdReader* reader)
 	Ref str = push_string(reader, "", 1);
 	SerdStatus st;
 	while (!(st = read_ucharacter(reader, str))) {}
-	if (st != SERD_ERROR) {
+	if (st < SERD_ERR_UNKNOWN) {
 		return str;
 	}
 	pop_string(reader, str);
@@ -1292,7 +1286,7 @@ read_prefixID(SerdReader* reader)
 	TRY_THROW(uri = read_uriref(reader));
 	const SerdNode name_node = public_node_from_ref(reader, SERD_LITERAL, name);
 	const SerdNode uri_node  = public_node_from_ref(reader, SERD_URI, uri);
-	ret = reader->prefix_sink(reader->handle, &name_node, &uri_node);
+	ret = !reader->prefix_sink(reader->handle, &name_node, &uri_node);
 	pop_string(reader, uri);
 except:
 	pop_string(reader, name);
@@ -1409,7 +1403,7 @@ serd_reader_set_blank_prefix(SerdReader*    reader,
 }
 
 SERD_API
-bool
+SerdStatus
 serd_reader_read_file(SerdReader* me, FILE* file, const uint8_t* name)
 {
 	const Cursor cur = { name, 1, 1 };
@@ -1432,11 +1426,11 @@ serd_reader_read_file(SerdReader* me, FILE* file, const uint8_t* name)
 	free(me->read_buf - READ_BUF_LEN);
 	me->fd       = 0;
 	me->read_buf = NULL;
-	return ret;
+	return ret ? SERD_SUCCESS : SERD_ERR_UNKNOWN;
 }
 
 SERD_API
-bool
+SerdStatus
 serd_reader_read_string(SerdReader* me, const uint8_t* utf8)
 {
 	const Cursor cur = { (const uint8_t*)"(string)", 1, 1 };
@@ -1450,7 +1444,7 @@ serd_reader_read_string(SerdReader* me, const uint8_t* utf8)
 	const bool ret = read_turtleDoc(me);
 
 	me->read_buf = NULL;
-	return ret;
+	return ret ? SERD_SUCCESS : SERD_ERR_UNKNOWN;
 }
 
 SERD_API
@@ -1508,7 +1502,7 @@ serd_read_state_get_base_uri(SerdReadState* state,
 }
 
 SERD_API
-bool
+SerdStatus
 serd_read_state_set_base_uri(SerdReadState*  state,
                              const SerdNode* uri_node)
 {
@@ -1522,13 +1516,13 @@ serd_read_state_set_base_uri(SerdReadState*  state,
 		serd_node_free(&state->base_uri_node);
 		state->base_uri_node = base_uri_node;
 		state->base_uri      = base_uri;
-		return true;
+		return SERD_SUCCESS;
 	}
-	return false;
+	return SERD_ERR_BAD_ARG;
 }
 
 SERD_API
-bool
+SerdStatus
 serd_read_state_set_prefix(SerdReadState*  state,
                            const SerdNode* name,
                            const SerdNode* uri_node)
@@ -1536,7 +1530,6 @@ serd_read_state_set_prefix(SerdReadState*  state,
 	if (serd_uri_string_has_scheme(uri_node->buf)) {
 		// Set prefix to absolute URI
 		serd_env_add(state->env, name, uri_node);
-		return true;
 	} else {
 		// Resolve relative URI and create a new node and URI for it
 		SerdURI  abs_uri;
@@ -1544,14 +1537,12 @@ serd_read_state_set_prefix(SerdReadState*  state,
 			uri_node, &state->base_uri, &abs_uri);
 
 		if (!abs_uri_node.buf) {
-			return false;
+			return SERD_ERR_BAD_ARG;
 		}
 
 		// Set prefix to resolved (absolute) URI
 		serd_env_add(state->env, name, &abs_uri_node);
 		serd_node_free(&abs_uri_node);
-		return true;
 	}
-	return false;
+	return SERD_SUCCESS;
 }
-
