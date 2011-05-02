@@ -53,6 +53,11 @@ def configure(conf):
     autowaf.define(conf, 'SERD_VERSION', SERD_VERSION)
     conf.write_config_header('serd-config.h', remove=False)
 
+    conf.env['SERD_CFLAGS'] = '-I%s/serd-%s' % (
+        conf.env['INCLUDEDIR'], SERD_MAJOR_VERSION);
+    conf.env['SERD_LIBS'] = '-L%s -lserd-%s' % (
+        conf.env['LIBDIR'], SERD_MAJOR_VERSION);
+
     autowaf.display_msg(conf, "Utilities", str(conf.env['BUILD_UTILS']))
     autowaf.display_msg(conf, "Unit tests", str(conf.env['BUILD_TESTS']))
     print('')
@@ -64,7 +69,9 @@ def build(bld):
 
     # Pkgconfig file
     autowaf.build_pc(bld, 'SERD', SERD_VERSION, SERD_MAJOR_VERSION, [],
-                     {'SERD_MAJOR_VERSION' : SERD_MAJOR_VERSION})
+                     {'SERD_CFLAGS'        : bld.env['SERD_CFLAGS'],
+                      'SERD_LIBS'          : bld.env['SERD_LIBS'],
+                      'SERD_MAJOR_VERSION' : SERD_MAJOR_VERSION})
 
     lib_source = '''
             src/env.c
