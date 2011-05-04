@@ -64,7 +64,7 @@ static bool
 write_text(SerdWriter* writer, TextContext ctx,
            const uint8_t* utf8, size_t n_bytes, uint8_t terminator)
 {
-	char escape[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	char escape[11] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	for (size_t i = 0; i < n_bytes;) {
 		uint8_t in = utf8[i++];
 		switch (in) {
