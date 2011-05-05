@@ -239,7 +239,7 @@ typedef struct {
 typedef enum {
 	SERD_STYLE_ABBREVIATED = 1,       /**< Abbreviate triples when possible. */
 	SERD_STYLE_ASCII       = 1 << 1,  /**< Escape all non-ASCII characters. */
-	SERD_STYLE_RESOLVED    = 1 << 2,  /**< Resolve relative URIs against base. */
+	SERD_STYLE_RESOLVED    = 1 << 2,  /**< Resolve URIs against base URI. */
 	SERD_STYLE_CURIED      = 1 << 3   /**< Shorten URIs into CURIEs. */
 } SerdStyle;
 

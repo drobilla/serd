@@ -169,7 +169,7 @@ reset_context(SerdWriter* writer)
 		serd_node_free(&writer->context.predicate);
 	writer->context = WRITE_CONTEXT_NULL;
 }
-	
+
 static bool
 write_node(SerdWriter*     writer,
            const SerdNode* node,
@@ -357,7 +357,7 @@ serd_writer_write_statement(SerdWriter*     writer,
 		write_node(writer, object, object_datatype, object_lang);
 	}
 
-	const WriteContext new_context = { graph ? serd_node_copy(graph) : SERD_NODE_NULL,
+	const WriteContext new_context = { serd_node_copy(graph),
 	                                   serd_node_copy(subject),
 	                                   serd_node_copy(predicate) };
 	reset_context(writer);

@@ -207,11 +207,17 @@ push_string(SerdReader* reader, const char* c_str, size_t n_bytes)
 	str->n_chars = n_bytes - 1;
 	memcpy(str->buf, c_str, n_bytes);
 #ifdef SERD_STACK_CHECK
-	reader->alloc_stack = realloc(reader->alloc_stack,
-	                              sizeof(uint8_t*) * (++reader->n_allocs));
+	reader->alloc_stack = realloc(
+		reader->alloc_stack, sizeof(uint8_t*) * (++reader->n_allocs));
 	reader->alloc_stack[reader->n_allocs - 1] = (mem - reader->stack.buf);
 #endif
 	return (uint8_t*)str - reader->stack.buf;
+}
+
+static Node
+push_uri(SerdReader* reader, const char* str, size_t len)
+{
+	return make_node(SERD_URI, push_string(reader, str, len));
 }
 
 static inline SerdString*
@@ -254,8 +260,6 @@ pop_string(SerdReader* reader, Ref ref)
 		if (!stack_is_top_string(reader, ref)) {
 			fprintf(stderr, "Attempt to pop non-top string %s\n",
 			        deref(reader, ref)->buf);
-			fprintf(stderr, "... top: %s\n",
-			        deref(reader, reader->alloc_stack[reader->n_allocs - 1])->buf);
 		}
 		assert(stack_is_top_string(reader, ref));
 		--reader->n_allocs;
@@ -284,28 +288,28 @@ public_node(SerdReader* reader, const Node* private)
 	} else {
 		return SERD_NODE_NULL;
 	}
-		
 }
 
 static inline bool
 emit_statement(SerdReader* reader,
                const Node* g, const Node* s, const Node* p, const Node* o,
-               const Node* datatype, Ref lang)
+               const Node* d, Ref l)
 {
+	assert(s && p && o);
 	assert(s->value && p->value && o->value);
-	const SerdNode graph           = g ? public_node(reader, g) : SERD_NODE_NULL;
-	const SerdNode subject         = public_node(reader, s);
-	const SerdNode predicate       = public_node(reader, p);
-	const SerdNode object          = public_node(reader, o);
-	const SerdNode object_datatype = public_node(reader, datatype);
-	const SerdNode object_lang     = public_node_from_ref(reader, SERD_LITERAL, lang);
+	const SerdNode graph     = public_node(reader, g);
+	const SerdNode subject   = public_node(reader, s);
+	const SerdNode predicate = public_node(reader, p);
+	const SerdNode object    = public_node(reader, o);
+	const SerdNode datatype  = public_node(reader, d);
+	const SerdNode lang      = public_node_from_ref(reader, SERD_LITERAL, l);
 	return !reader->statement_sink(reader->handle,
 	                               &graph,
 	                               &subject,
 	                               &predicate,
 	                               &object,
-	                               &object_datatype,
-	                               &object_lang);
+	                               &datatype,
+	                               &lang);
 }
 
 static bool read_collection(SerdReader* reader, ReadContext ctx, Node* dest);
@@ -863,11 +867,11 @@ read_number(SerdReader* reader, Node* dest, Node* datatype)
 		default: break;
 		}
 		read_0_9(reader, str, true);
-		*datatype = make_node(SERD_URI, push_string(reader, XSD_DOUBLE, sizeof(XSD_DOUBLE)));
+		*datatype = push_uri(reader, XSD_DOUBLE, sizeof(XSD_DOUBLE));
 	} else if (has_decimal) {
-		*datatype = make_node(SERD_URI, push_string(reader, XSD_DECIMAL, sizeof(XSD_DECIMAL)));
+		*datatype = push_uri(reader, XSD_DECIMAL, sizeof(XSD_DECIMAL));
 	} else {
-		*datatype = make_node(SERD_URI, push_string(reader, XSD_INTEGER, sizeof(XSD_INTEGER)));
+		*datatype = push_uri(reader, XSD_INTEGER, sizeof(XSD_INTEGER));
 	}
 	*dest = make_node(SERD_LITERAL, str);
 	assert(dest->value);
@@ -945,8 +949,7 @@ read_verb(SerdReader* reader, Node* dest)
 		switch (pre[1]) {
 		case 0x9: case 0xA: case 0xD: case 0x20:
 			eat_byte(reader, 'a');
-			*dest = make_node(SERD_URI,
-			                  push_string(reader, NS_RDF "type", 48));
+			*dest = push_uri(reader, NS_RDF "type", 48);
 			return true;
 		default: break;  // fall through
 		}
@@ -1094,14 +1097,12 @@ read_object(SerdReader* reader, ReadContext ctx)
 		if (!memcmp(pre, "true", 4) && is_object_end(pre[4])) {
 			eat_string(reader, "true", 4);
 			const Ref value = push_string(reader, "true", 5);
-			datatype = make_node(SERD_URI, push_string(
-				                     reader, XSD_BOOLEAN, XSD_BOOLEAN_LEN + 1));
+			datatype = push_uri(reader, XSD_BOOLEAN, XSD_BOOLEAN_LEN + 1);
 			o = make_node(SERD_LITERAL, value);
 		} else if (!memcmp(pre, "false", 5) && is_object_end(pre[5])) {
 			eat_string(reader, "false", 5);
 			const Ref value = push_string(reader, "false", 6);
-			datatype = make_node(SERD_URI, push_string(
-				                     reader, XSD_BOOLEAN, XSD_BOOLEAN_LEN + 1));
+			datatype = push_uri(reader, XSD_BOOLEAN, XSD_BOOLEAN_LEN + 1);
 			o = make_node(SERD_LITERAL, value);
 		} else if (!is_object_end(c)) {
 			o = make_node(SERD_CURIE, read_qname(reader));
@@ -1497,7 +1498,7 @@ serd_read_state_expand(SerdReadState*  state,
 		serd_env_expand(state->env, node, &prefix, &suffix);
 		SerdNode ret = { NULL,
 		                 prefix.len + suffix.len + 1,
-		                 prefix.len + suffix.len, // FIXME: UTF-8
+		                 prefix.len + suffix.len,  // FIXME: UTF-8
 		                 SERD_URI };
 		ret.buf = malloc(ret.n_bytes);
 		snprintf((char*)ret.buf, ret.n_bytes, "%s%s", prefix.buf, suffix.buf);

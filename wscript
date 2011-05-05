@@ -130,7 +130,7 @@ def build(bld):
     bld.add_post_fun(autowaf.run_ldconfig)
 
 def lint(ctx):
-    subprocess.call('cpplint.py --filter=-whitespace,+whitespace/comments,-build/header_guard,-readability/casting,-readability/todo src/* serd/*', shell=True)
+    subprocess.call('cpplint.py --filter=+whitespace/comments,-whitespace/tab,-whitespace/braces,-whitespace/labels,-build/header_guard,-readability/casting,-readability/todo,-build/include src/* serd/*', shell=True)
 
 def amalgamate(ctx):
     shutil.copy('serd/serd.h', 'build/serd-%s.h' % SERD_VERSION)
