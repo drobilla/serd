@@ -860,11 +860,11 @@ read_number(SerdReader* reader, Node* dest)
 		default: break;
 		}
 		read_0_9(reader, str, true);
-		datatype = push_string(reader, XSD_DOUBLE, strlen(XSD_DOUBLE) + 1);
+		datatype = push_string(reader, XSD_DOUBLE, sizeof(XSD_DOUBLE));
 	} else if (has_decimal) {
-		datatype = push_string(reader, XSD_DECIMAL, strlen(XSD_DECIMAL) + 1);
+		datatype = push_string(reader, XSD_DECIMAL, sizeof(XSD_DECIMAL));
 	} else {
-		datatype = push_string(reader, XSD_INTEGER, strlen(XSD_INTEGER) + 1);
+		datatype = push_string(reader, XSD_INTEGER, sizeof(XSD_INTEGER));
 	}
 	*dest = make_node(SERD_LITERAL, str, datatype, 0);
 	assert(dest->value);
