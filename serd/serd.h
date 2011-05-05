@@ -547,7 +547,7 @@ serd_read_state_expand(SerdReadState*  state,
    Get the current base URI.
 */
 SERD_API
-SerdNode
+const SerdNode*
 serd_read_state_get_base_uri(SerdReadState* state,
                              SerdURI*       out);
 

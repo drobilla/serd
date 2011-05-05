@@ -98,26 +98,28 @@ is_digit(const uint8_t c)
 	return in_range(c, '0', '9');
 }
 
-/** UTF-8 strlen.
- * @return Lengh of @a utf8 in characters.
- * @param utf8 A null-terminated UTF-8 string.
- * @param out_n_bytes (Output) Set to the size of @a utf8 in bytes.
- */
+/**
+   UTF-8 strlen.
+   @return Length of @c str in characters.
+   @param str A null-terminated UTF-8 string.
+   @param n_bytes (Output) Set to the size of @a str in bytes (incl. NULL).
+*/
 static inline size_t
-serd_strlen(const uint8_t* utf8, size_t* out_n_bytes)
+serd_strlen(const uint8_t* str, size_t* n_bytes)
 {
 	size_t n_chars = 0;
 	size_t i       = 0;
-	for (; utf8[i]; ++i) {
-		if ((utf8[i] & 0xC0) != 0x80) {
+	for (; str[i]; ++i) {
+		if ((str[i] & 0xC0) != 0x80) {
 			// Does not start with `10', start of a new character
 			++n_chars;
 		}
 	}
-	if (out_n_bytes) {
-		*out_n_bytes = i + 1;
+	if (n_bytes) {
+		*n_bytes = i + 1;
 	}
 	return n_chars;
 }
+
 
 #endif  // SERD_INTERNAL_H

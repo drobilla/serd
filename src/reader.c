@@ -1493,12 +1493,12 @@ serd_read_state_expand(SerdReadState*  state,
 }
 
 SERD_API
-SerdNode
+const SerdNode*
 serd_read_state_get_base_uri(SerdReadState* state,
                              SerdURI*       out)
 {
 	*out = state->base_uri;
-	return state->base_uri_node;
+	return &state->base_uri_node;
 }
 
 SERD_API
