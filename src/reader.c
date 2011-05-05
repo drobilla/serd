@@ -608,7 +608,7 @@ read_ws_plus(SerdReader* reader)
 	return true;
 }
 
-// [37] longSerdString ::= #x22 #x22 #x22 lcharacter* #x22 #x22 #x22
+// [37] longString ::= #x22 #x22 #x22 lcharacter* #x22 #x22 #x22
 static Ref
 read_longString(SerdReader* reader)
 {
@@ -639,7 +639,7 @@ read_string(SerdReader* reader)
 	return 0;
 }
 
-// [35] quotedString ::= string | longSerdString
+// [35] quotedString ::= string | longString
 static Ref
 read_quotedString(SerdReader* reader)
 {
@@ -889,7 +889,7 @@ read_resource(SerdReader* reader, Node* dest)
 	return (dest->value != 0);
 }
 
-// [14] literal ::= quotedString ( '@' language )? | datatypeSerdString
+// [14] literal ::= quotedString ( '@' language )? | datatypeString
 //    | integer | double | decimal | boolean
 static bool
 read_literal(SerdReader* reader, Node* dest)
