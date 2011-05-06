@@ -559,14 +559,18 @@ serd_writer_free(SerdWriter* writer);
 
 /**
    Set the current output base URI (and emit directive if applicable).
+
+   Note this function can be safely casted to SerdBaseSink.
 */
 SERD_API
 SerdStatus
-serd_writer_set_base_uri(SerdWriter*    writer,
-                         const SerdURI* uri);
+serd_writer_set_base_uri(SerdWriter*     writer,
+                         const SerdNode* uri);
 
 /**
    Set a namespace prefix (and emit directive if applicable).
+
+   Note this function can be safely casted to SerdPrefixSink.
 */
 SERD_API
 SerdStatus
@@ -576,6 +580,8 @@ serd_writer_set_prefix(SerdWriter*     writer,
 
 /**
    Write a statement.
+
+   Note this function can be safely casted to SerdStatementSink.
 */
 SERD_API
 SerdStatus
@@ -589,6 +595,8 @@ serd_writer_write_statement(SerdWriter*     writer,
 
 /**
    Mark the end of an anonymous node's description.
+
+   Note this function can be safely casted to SerdEndSink.
 */
 SERD_API
 SerdStatus

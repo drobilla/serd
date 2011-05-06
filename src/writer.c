@@ -426,21 +426,25 @@ serd_writer_new(SerdSyntax     syntax,
 
 SERD_API
 SerdStatus
-serd_writer_set_base_uri(SerdWriter*    writer,
-                         const SerdURI* uri)
+serd_writer_set_base_uri(SerdWriter*     writer,
+                         const SerdNode* uri)
 {
-	writer->base_uri = *uri;
-	if (writer->syntax != SERD_NTRIPLES) {
-		if (writer->context.graph.buf || writer->context.subject.buf) {
-			writer->sink(" .\n\n", 4, writer->stream);
-			reset_context(writer);
+	if (!serd_env_set_base_uri(writer->env, uri)) {
+		serd_env_get_base_uri(writer->env, &writer->base_uri);
+
+		if (writer->syntax != SERD_NTRIPLES) {
+			if (writer->context.graph.buf || writer->context.subject.buf) {
+				writer->sink(" .\n\n", 4, writer->stream);
+				reset_context(writer);
+			}
+			writer->sink("@base <", 7, writer->stream);
+			writer->sink(uri->buf, uri->n_bytes - 1, writer->stream);
+			writer->sink("> .\n", 4, writer->stream);
 		}
-		writer->sink("@base <", 7, writer->stream);
-		serd_uri_serialise(uri, writer->sink, writer->stream);
-		writer->sink("> .\n", 4, writer->stream);
+		reset_context(writer);
+		return SERD_SUCCESS;
 	}
-	reset_context(writer);
-	return SERD_SUCCESS;
+	return SERD_ERR_UNKNOWN;
 }
 
 SERD_API
@@ -449,19 +453,22 @@ serd_writer_set_prefix(SerdWriter*     writer,
                        const SerdNode* name,
                        const SerdNode* uri)
 {
-	if (writer->syntax != SERD_NTRIPLES) {
-		if (writer->context.graph.buf || writer->context.subject.buf) {
-			writer->sink(" .\n\n", 4, writer->stream);
-			reset_context(writer);
+	if (!serd_env_set_prefix(writer->env, name, uri)) {
+		if (writer->syntax != SERD_NTRIPLES) {
+			if (writer->context.graph.buf || writer->context.subject.buf) {
+				writer->sink(" .\n\n", 4, writer->stream);
+				reset_context(writer);
+			}
+			writer->sink("@prefix ", 8, writer->stream);
+			writer->sink(name->buf, name->n_bytes - 1, writer->stream);
+			writer->sink(": <", 3, writer->stream);
+			write_text(writer, WRITE_URI, uri->buf, uri->n_bytes - 1, '>');
+			writer->sink("> .\n", 4, writer->stream);
 		}
-		writer->sink("@prefix ", 8, writer->stream);
-		writer->sink(name->buf, name->n_bytes - 1, writer->stream);
-		writer->sink(": <", 3, writer->stream);
-		write_text(writer, WRITE_URI, uri->buf, uri->n_bytes - 1, '>');
-		writer->sink("> .\n", 4, writer->stream);
+		reset_context(writer);
+		return SERD_SUCCESS;
 	}
-	reset_context(writer);
-	return SERD_SUCCESS;
+	return SERD_ERR_UNKNOWN;
 }
 
 SERD_API

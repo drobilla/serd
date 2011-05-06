@@ -26,53 +26,6 @@ typedef struct {
 	SerdWriter* writer;
 } State;
 
-static SerdStatus
-event_base(void*           handle,
-           const SerdNode* uri_node)
-{
-	State* const state = (State*)handle;
-	if (!serd_env_set_base_uri(state->env, uri_node)) {
-		SerdURI base_uri;
-		serd_env_get_base_uri(state->env, &base_uri);
-		serd_writer_set_base_uri(state->writer, &base_uri);
-		return SERD_SUCCESS;
-	}
-	return SERD_ERR_UNKNOWN;
-}
-
-static SerdStatus
-event_prefix(void*           handle,
-             const SerdNode* name,
-             const SerdNode* uri_node)
-{
-	State* const state = (State*)handle;
-	serd_env_set_prefix(state->env, name, uri_node);
-	serd_writer_set_prefix(state->writer, name, uri_node);
-	return SERD_SUCCESS;
-}
-
-static SerdStatus
-event_statement(void*           handle,
-                const SerdNode* graph,
-                const SerdNode* subject,
-                const SerdNode* predicate,
-                const SerdNode* object,
-                const SerdNode* object_datatype,
-                const SerdNode* object_lang)
-{
-	return serd_writer_write_statement(
-		((State*)handle)->writer,
-		graph, subject, predicate, object, object_datatype, object_lang);
-}
-
-static SerdStatus
-event_end(void*           handle,
-          const SerdNode* node)
-{
-	State* const state = (State*)handle;
-	return serd_writer_end_anon(state->writer, node);
-}
-
 int
 print_version()
 {
@@ -216,8 +169,11 @@ main(int argc, char** argv)
 	State state = { env, writer };
 
 	SerdReader* reader = serd_reader_new(
-		SERD_TURTLE, &state,
-		event_base, event_prefix, event_statement, event_end);
+		SERD_TURTLE, state.writer,
+		(SerdBaseSink)serd_writer_set_base_uri,
+		(SerdPrefixSink)serd_writer_set_prefix,
+		(SerdStatementSink)serd_writer_write_statement,
+		(SerdEndSink)serd_writer_end_anon);
 
 	const SerdStatus status = (from_file)
 		? serd_reader_read_file(reader, in_fd, input)
