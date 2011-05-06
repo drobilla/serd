@@ -90,12 +90,6 @@ struct SerdReaderImpl {
 #endif
 };
 
-struct SerdReadStateImpl {
-	SerdEnv* env;
-	SerdNode base_uri_node;
-	SerdURI  base_uri;
-};
-
 static int
 error(SerdReader* reader, const char* fmt, ...)
 {
@@ -1464,104 +1458,4 @@ serd_reader_read_string(SerdReader* me, const uint8_t* utf8)
 
 	me->read_buf = NULL;
 	return ret ? SERD_SUCCESS : SERD_ERR_UNKNOWN;
-}
-
-SERD_API
-SerdReadState*
-serd_read_state_new(SerdEnv*       env,
-                    const uint8_t* base_uri_str)
-{
-	SerdReadState* state         = malloc(sizeof(struct SerdReadStateImpl));
-	SerdURI        base_base_uri = SERD_URI_NULL;
-	state->env           = env;
-	state->base_uri_node = serd_node_new_uri_from_string(
-		base_uri_str, &base_base_uri, &state->base_uri);
-	return state;
-}
-
-SERD_API
-void
-serd_read_state_free(SerdReadState* state)
-{
-	serd_node_free(&state->base_uri_node);
-	free(state);
-}
-
-SERD_API
-SerdNode
-serd_read_state_expand(SerdReadState*  state,
-                       const SerdNode* node)
-{
-	if (node->type == SERD_CURIE) {
-		SerdChunk prefix;
-		SerdChunk suffix;
-		serd_env_expand(state->env, node, &prefix, &suffix);
-		SerdNode ret = { NULL,
-		                 prefix.len + suffix.len + 1,
-		                 prefix.len + suffix.len,  // FIXME: UTF-8
-		                 SERD_URI };
-		ret.buf = malloc(ret.n_bytes);
-		snprintf((char*)ret.buf, ret.n_bytes, "%s%s", prefix.buf, suffix.buf);
-		return ret;
-	} else if (node->type == SERD_URI) {
-		SerdURI ignored;
-		return serd_node_new_uri_from_node(node, &state->base_uri, &ignored);
-	} else {
-		return SERD_NODE_NULL;
-	}
-}
-
-SERD_API
-const SerdNode*
-serd_read_state_get_base_uri(SerdReadState* state,
-                             SerdURI*       out)
-{
-	*out = state->base_uri;
-	return &state->base_uri_node;
-}
-
-SERD_API
-SerdStatus
-serd_read_state_set_base_uri(SerdReadState*  state,
-                             const SerdNode* uri_node)
-{
-	// Resolve base URI and create a new node and URI for it
-	SerdURI  base_uri;
-	SerdNode base_uri_node = serd_node_new_uri_from_node(
-		uri_node, &state->base_uri, &base_uri);
-
-	if (base_uri_node.buf) {
-		// Replace the current base URI
-		serd_node_free(&state->base_uri_node);
-		state->base_uri_node = base_uri_node;
-		state->base_uri      = base_uri;
-		return SERD_SUCCESS;
-	}
-	return SERD_ERR_BAD_ARG;
-}
-
-SERD_API
-SerdStatus
-serd_read_state_set_prefix(SerdReadState*  state,
-                           const SerdNode* name,
-                           const SerdNode* uri_node)
-{
-	if (serd_uri_string_has_scheme(uri_node->buf)) {
-		// Set prefix to absolute URI
-		serd_env_add(state->env, name, uri_node);
-	} else {
-		// Resolve relative URI and create a new node and URI for it
-		SerdURI  abs_uri;
-		SerdNode abs_uri_node = serd_node_new_uri_from_node(
-			uri_node, &state->base_uri, &abs_uri);
-
-		if (!abs_uri_node.buf) {
-			return SERD_ERR_BAD_ARG;
-		}
-
-		// Set prefix to resolved (absolute) URI
-		serd_env_add(state->env, name, &abs_uri_node);
-		serd_node_free(&abs_uri_node);
-	}
-	return SERD_SUCCESS;
 }

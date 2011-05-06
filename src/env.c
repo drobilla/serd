@@ -29,6 +29,8 @@ typedef struct {
 struct SerdEnvImpl {
 	SerdPrefix* prefixes;
 	size_t      n_prefixes;
+	SerdNode    base_uri_node;
+	SerdURI     base_uri;
 };
 
 SERD_API
@@ -36,8 +38,10 @@ SerdEnv*
 serd_env_new()
 {
 	SerdEnv* env = malloc(sizeof(struct SerdEnvImpl));
-	env->prefixes   = NULL;
-	env->n_prefixes = 0;
+	env->prefixes      = NULL;
+	env->n_prefixes    = 0;
+	env->base_uri_node = SERD_NODE_NULL;
+	env->base_uri      = SERD_URI_NULL;
 	return env;
 }
 
@@ -50,7 +54,37 @@ serd_env_free(SerdEnv* env)
 		serd_node_free(&env->prefixes[i].uri);
 	}
 	free(env->prefixes);
+	serd_node_free(&env->base_uri_node);
 	free(env);
+}
+
+SERD_API
+const SerdNode*
+serd_env_get_base_uri(SerdEnv* env,
+                      SerdURI* out)
+{
+	*out = env->base_uri;
+	return &env->base_uri_node;
+}
+
+SERD_API
+SerdStatus
+serd_env_set_base_uri(SerdEnv*        env,
+                      const SerdNode* uri_node)
+{
+	// Resolve base URI and create a new node and URI for it
+	SerdURI  base_uri;
+	SerdNode base_uri_node = serd_node_new_uri_from_node(
+		uri_node, &env->base_uri, &base_uri);
+
+	if (base_uri_node.buf) {
+		// Replace the current base URI
+		serd_node_free(&env->base_uri_node);
+		env->base_uri_node = base_uri_node;
+		env->base_uri      = base_uri;
+		return SERD_SUCCESS;
+	}
+	return SERD_ERR_BAD_ARG;
 }
 
 static inline SerdPrefix*
@@ -69,8 +103,7 @@ serd_env_find(const SerdEnv* env,
 	return NULL;
 }
 
-SERD_API
-void
+static void
 serd_env_add(SerdEnv*        env,
              const SerdNode* name,
              const SerdNode* uri)
@@ -86,6 +119,32 @@ serd_env_add(SerdEnv*        env,
 		env->prefixes[env->n_prefixes - 1].name = serd_node_copy(name);
 		env->prefixes[env->n_prefixes - 1].uri  = serd_node_copy(uri);
 	}
+}
+
+SERD_API
+SerdStatus
+serd_env_set_prefix(SerdEnv*        env,
+                    const SerdNode* name,
+                    const SerdNode* uri_node)
+{
+	if (serd_uri_string_has_scheme(uri_node->buf)) {
+		// Set prefix to absolute URI
+		serd_env_add(env, name, uri_node);
+	} else {
+		// Resolve relative URI and create a new node and URI for it
+		SerdURI  abs_uri;
+		SerdNode abs_uri_node = serd_node_new_uri_from_node(
+			uri_node, &env->base_uri, &abs_uri);
+
+		if (!abs_uri_node.buf) {
+			return SERD_ERR_BAD_ARG;
+		}
+
+		// Set prefix to resolved (absolute) URI
+		serd_env_add(env, name, &abs_uri_node);
+		serd_node_free(&abs_uri_node);
+	}
+	return SERD_SUCCESS;
 }
 
 SERD_API
@@ -133,6 +192,30 @@ serd_env_expand(const SerdEnv*  env,
 		return SERD_SUCCESS;
 	}
 	return SERD_ERR_NOT_FOUND;
+}
+
+SERD_API
+SerdNode
+serd_env_expand_node(SerdEnv*        env,
+                     const SerdNode* node)
+{
+	if (node->type == SERD_CURIE) {
+		SerdChunk prefix;
+		SerdChunk suffix;
+		serd_env_expand(env, node, &prefix, &suffix);
+		SerdNode ret = { NULL,
+		                 prefix.len + suffix.len + 1,
+		                 prefix.len + suffix.len,  // FIXME: UTF-8
+		                 SERD_URI };
+		ret.buf = malloc(ret.n_bytes);
+		snprintf((char*)ret.buf, ret.n_bytes, "%s%s", prefix.buf, suffix.buf);
+		return ret;
+	} else if (node->type == SERD_URI) {
+		SerdURI ignored;
+		return serd_node_new_uri_from_node(node, &env->base_uri, &ignored);
+	} else {
+		return SERD_NODE_NULL;
+	}
 }
 
 SERD_API

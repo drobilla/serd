@@ -22,9 +22,8 @@
 #include "serd-config.h"
 
 typedef struct {
-	SerdEnv*       env;
-	SerdReadState* read_state;
-	SerdWriter*    writer;
+	SerdEnv*    env;
+	SerdWriter* writer;
 } State;
 
 static SerdStatus
@@ -32,9 +31,9 @@ event_base(void*           handle,
            const SerdNode* uri_node)
 {
 	State* const state = (State*)handle;
-	if (!serd_read_state_set_base_uri(state->read_state, uri_node)) {
+	if (!serd_env_set_base_uri(state->env, uri_node)) {
 		SerdURI base_uri;
-		serd_read_state_get_base_uri(state->read_state, &base_uri);
+		serd_env_get_base_uri(state->env, &base_uri);
 		serd_writer_set_base_uri(state->writer, &base_uri);
 		return SERD_SUCCESS;
 	}
@@ -47,7 +46,7 @@ event_prefix(void*           handle,
              const SerdNode* uri_node)
 {
 	State* const state = (State*)handle;
-	serd_read_state_set_prefix(state->read_state, name, uri_node);
+	serd_env_set_prefix(state->env, name, uri_node);
 	serd_writer_set_prefix(state->writer, name, uri_node);
 	return SERD_SUCCESS;
 }
@@ -207,14 +206,14 @@ main(int argc, char** argv)
 		output_style |= SERD_STYLE_ABBREVIATED;
 	}
 
-	SerdReadState* read_state = serd_read_state_new(env, base_uri_str);
-
-	serd_read_state_get_base_uri(read_state, &base_uri);
+	SerdNode base_uri_node = serd_node_from_string(SERD_URI, base_uri_str);
+	serd_env_set_base_uri(env, &base_uri_node);
+	serd_env_get_base_uri(env, &base_uri);
 
 	SerdWriter* writer = serd_writer_new(
 		output_syntax, output_style, env, &base_uri, file_sink, out_fd);
 
-	State state = { env, read_state, writer };
+	State state = { env, writer };
 
 	SerdReader* reader = serd_reader_new(
 		SERD_TURTLE, &state,
@@ -232,7 +231,6 @@ main(int argc, char** argv)
 
 	serd_writer_finish(state.writer);
 	serd_writer_free(state.writer);
-	serd_read_state_free(state.read_state);
 	serd_env_free(state.env);
 
 	return (status == SERD_SUCCESS) ? 0 : 1;

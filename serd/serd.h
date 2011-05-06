@@ -71,16 +71,6 @@ typedef struct SerdEnvImpl SerdEnv;
 typedef struct SerdReaderImpl SerdReader;
 
 /**
-   Read state.
-
-   This maintains the state necessary to fully resolve URIs during a read
-   (e.g. the base URI and prefixes).  It is implemented separately from
-   SerdReader to avoid overhead in situations where this is unnecessary
-   (e.g. streaming re-serialisation).
-*/
-typedef struct SerdReadStateImpl SerdReadState;
-
-/**
    RDF writer.
 
    Provides a number of functions to allow writing RDF syntax out to some
@@ -426,16 +416,32 @@ void
 serd_env_free(SerdEnv* env);
 
 /**
-   Add namespace @a uri to @a ns using prefix @a name.
+   Get the current base URI.
 */
 SERD_API
-void
-serd_env_add(SerdEnv*        env,
-             const SerdNode* name,
-             const SerdNode* uri);
+const SerdNode*
+serd_env_get_base_uri(SerdEnv* state,
+                      SerdURI* out);
 
 /**
-   Qualify @a into a CURIE if possible.
+   Set the current base URI.
+*/
+SERD_API
+SerdStatus
+serd_env_set_base_uri(SerdEnv*        state,
+                      const SerdNode* uri_node);
+
+/**
+   Set a namespace prefix.
+*/
+SERD_API
+SerdStatus
+serd_env_set_prefix(SerdEnv*        env,
+                    const SerdNode* name,
+                    const SerdNode* uri);
+
+/**
+   Qualify @a uri into a CURIE if possible.
 */
 SERD_API
 bool
@@ -453,6 +459,14 @@ serd_env_expand(const SerdEnv*  env,
                 const SerdNode* curie,
                 SerdChunk*      uri_prefix,
                 SerdChunk*      uri_suffix);
+
+/**
+   Expand @a node, which must be a CURIE or URI, to a full URI.
+*/
+SERD_API
+SerdNode
+serd_env_expand_node(SerdEnv*        env,
+                     const SerdNode* node);
 
 /**
    Call @a func for each prefix defined in @a env.
@@ -517,57 +531,6 @@ serd_reader_read_string(SerdReader* me, const uint8_t* utf8);
 SERD_API
 void
 serd_reader_free(SerdReader* reader);
-
-/**
-   Create a new read state with the given initial base URI and environment.
-
-   A reference to @a env will be kept, and @a env will be modified as the
-   state is modified.
-*/
-SERD_API
-SerdReadState*
-serd_read_state_new(SerdEnv*       env,
-                    const uint8_t* base_uri_str);
-
-/**
-   Free @a state.
-*/
-SERD_API
-void
-serd_read_state_free(SerdReadState* state);
-
-/**
-   Expand @a node, which must be a CURIE or URI, to a full URI.
-*/
-SERD_API
-SerdNode
-serd_read_state_expand(SerdReadState*  state,
-                       const SerdNode* node);
-
-/**
-   Get the current base URI.
-*/
-SERD_API
-const SerdNode*
-serd_read_state_get_base_uri(SerdReadState* state,
-                             SerdURI*       out);
-
-/**
-   Set the current base URI.
-*/
-SERD_API
-SerdStatus
-serd_read_state_set_base_uri(SerdReadState*  state,
-                             const SerdNode* uri_node);
-
-/**
-   Set a namespace prefix.
-*/
-SERD_API
-SerdStatus
-serd_read_state_set_prefix(SerdReadState*  state,
-                           const SerdNode* name,
-                           const SerdNode* uri_node);
 
 /**
    @}
