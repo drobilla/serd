@@ -54,38 +54,39 @@ extern "C" {
 */
 
 /**
-   Environment (namespace prefixes).
+   Environment.
 
-   A SerdEnv represents a set of namespace prefixes, and is used to resolve
-   CURIEs to full URIs.
+   Represents the state required to resolve a CURIE or relative URI, e.g. the
+   base URI and set of namespace prefixes at a particular point in a
+   serialisation.
 */
 typedef struct SerdEnvImpl SerdEnv;
 
 /**
    RDF reader.
 
-   A SerdReader parses RDF by reading some syntax and calling user-provided
-   sink functions as input is read (much like an XML SAX parser).
+   parses RDF by calling user-provided sink functions as input is consumed
+   (much like an XML SAX parser).
 */
 typedef struct SerdReaderImpl SerdReader;
 
 /**
    Read state.
 
-   This represents state (context) necessary for fully resolving URIs during a
-   read (i.e. the base URI and namespace prefixes). It is implemented
-   separately from SerdReader so the reader can avoid the overhead in cases
-   where this information is unnecessary (e.g. streaming reserialisation).
+   This maintains the state necessary to fully resolve URIs during a read
+   (e.g. the base URI and prefixes).  It is implemented separately from
+   SerdReader to avoid overhead in situations where this is unnecessary
+   (e.g. streaming re-serialisation).
 */
 typedef struct SerdReadStateImpl SerdReadState;
 
 /**
    RDF writer.
 
-   A SerdWriter provides a number of functions to allow writing RDF syntax out
-   to some stream. These functions are deliberately compatible with the sink
-   functions used by SerdReader, so a reader can be directly connected to a
-   writer to re-serialise a document.
+   Provides a number of functions to allow writing RDF syntax out to some
+   stream.  These functions are deliberately compatible with the sink functions
+   used by SerdReader, so a reader can be directly connected to a writer to
+   re-serialise a document.
 */
 typedef struct SerdWriterImpl SerdWriter;
 
@@ -121,15 +122,15 @@ typedef enum {
 /**
    Type of a syntactic RDF node.
 
-   This is more precise than the type of an abstract RDF node. An abstract node
-   is either a resource, literal, or blank. In syntax there are two ways to
-   refer to both a resource (by URI or CURIE) and a blank (by ID or
+   This is more precise than the type of an abstract RDF node.  An abstract
+   node is either a resource, literal, or blank.  In syntax there are two ways
+   to refer to both a resource (by URI or CURIE) and a blank (by ID or
    anonymously).
 
    Serd represents all nodes as an unquoted UTF-8 string "value" associated
    with a @ref SerdType, which is precise enough to preserve the syntactic
-   information required for streaming abbreviation. A non-abbreviating sink may
-   simply consider @ref SERD_ANON_BEGIN and @ref SERD_ANON equivalent to
+   information required for streaming abbreviation.  A non-abbreviating sink
+   may simply consider @ref SERD_ANON_BEGIN and @ref SERD_ANON equivalent to
    @ref SERD_BLANK_ID.
 */
 typedef enum {
@@ -152,8 +153,8 @@ typedef enum {
 	   URI (absolute or relative).
 
 	   Value is an unquoted URI string, which is either a relative reference
-	   with respect to the current base URI, or an absolute URI. A URI is an ID
-	   with universal scope.
+	   with respect to the current base URI, or an absolute URI.  A URI is an
+	   ID with universal scope.
 	   @see <a href="http://tools.ietf.org/html/rfc3986">RFC3986</a>.
 	*/
 	SERD_URI = 2,
@@ -170,7 +171,7 @@ typedef enum {
 	/**
 	   A blank node ID.
 
-	   Value is a blank node ID, e.g. "id3", which is valid only in this
+	   Value is a blank node ID, e.g. "id3", which is valid only within this
 	   serialisation.
 	   @see <a href="http://www.w3.org/TeamSubmission/turtle#nodeID">Turtle
 	   <tt>nodeID</tt></a>
@@ -216,7 +217,7 @@ typedef struct {
    A parsed URI.
 
    This struct directly refers to chunks in other strings, it does not own any
-   memory itself. Thus, URIs can be parsed and/or resolved against a base URI
+   memory itself.  Thus, URIs can be parsed and/or resolved against a base URI
    in-place without allocating memory.
 */
 typedef struct {
@@ -232,7 +233,7 @@ typedef struct {
    Syntax style options.
 
    The style of the writer output can be controlled by ORing together
-   values from this enumeration. Note that some options are only supported
+   values from this enumeration.  Note that some options are only supported
    for some syntaxes (e.g. NTriples does not support any options except
    @ref SERD_STYLE_ASCII, which is required).
 */
