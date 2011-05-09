@@ -60,8 +60,8 @@ serd_env_free(SerdEnv* env)
 
 SERD_API
 const SerdNode*
-serd_env_get_base_uri(SerdEnv* env,
-                      SerdURI* out)
+serd_env_get_base_uri(const SerdEnv* env,
+                      SerdURI*       out)
 {
 	*out = env->base_uri;
 	return &env->base_uri_node;
@@ -196,7 +196,7 @@ serd_env_expand(const SerdEnv*  env,
 
 SERD_API
 SerdNode
-serd_env_expand_node(SerdEnv*        env,
+serd_env_expand_node(const SerdEnv*  env,
                      const SerdNode* node)
 {
 	if (node->type == SERD_CURIE) {

@@ -57,15 +57,14 @@ extern "C" {
    Environment.
 
    Represents the state required to resolve a CURIE or relative URI, e.g. the
-   base URI and set of namespace prefixes at a particular point in a
-   serialisation.
+   base URI and set of namespace prefixes at a particular point.
 */
 typedef struct SerdEnvImpl SerdEnv;
 
 /**
    RDF reader.
 
-   parses RDF by calling user-provided sink functions as input is consumed
+   Parses RDF by calling user-provided sink functions as input is consumed
    (much like an XML SAX parser).
 */
 typedef struct SerdReaderImpl SerdReader;
@@ -76,7 +75,7 @@ typedef struct SerdReaderImpl SerdReader;
    Provides a number of functions to allow writing RDF syntax out to some
    stream.  These functions are deliberately compatible with the sink functions
    used by SerdReader, so a reader can be directly connected to a writer to
-   re-serialise a document.
+   re-serialise a document with minimal overhead.
 */
 typedef struct SerdWriterImpl SerdWriter;
 
@@ -420,16 +419,16 @@ serd_env_free(SerdEnv* env);
 */
 SERD_API
 const SerdNode*
-serd_env_get_base_uri(SerdEnv* state,
-                      SerdURI* out);
+serd_env_get_base_uri(const SerdEnv* env,
+                      SerdURI*       out);
 
 /**
    Set the current base URI.
 */
 SERD_API
 SerdStatus
-serd_env_set_base_uri(SerdEnv*        state,
-                      const SerdNode* uri_node);
+serd_env_set_base_uri(SerdEnv*        env,
+                      const SerdNode* uri);
 
 /**
    Set a namespace prefix.
@@ -465,7 +464,7 @@ serd_env_expand(const SerdEnv*  env,
 */
 SERD_API
 SerdNode
-serd_env_expand_node(SerdEnv*        env,
+serd_env_expand_node(const SerdEnv*  env,
                      const SerdNode* node);
 
 /**
