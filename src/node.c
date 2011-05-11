@@ -23,9 +23,10 @@ SERD_API
 SerdNode
 serd_node_from_string(SerdType type, const uint8_t* buf)
 {
-	size_t buf_n_bytes;
-	const size_t buf_n_chars = serd_strlen(buf, &buf_n_bytes);
-	SerdNode ret = { buf, buf_n_bytes, buf_n_chars, type };
+	uint32_t flags;
+	size_t   buf_n_bytes;
+	const size_t buf_n_chars = serd_strlen(buf, &buf_n_bytes, &flags);
+	SerdNode ret = { buf, buf_n_bytes, buf_n_chars, flags, type };
 	return ret;
 }
 
@@ -118,7 +119,7 @@ serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)
 	const size_t len = serd_uri_string_length(&abs_uri);
 	uint8_t*     buf = malloc(len + 1);
 
-	SerdNode node = { buf, len + 1, len, SERD_URI };  // FIXME: UTF-8
+	SerdNode node = { buf, len + 1, len, 0, SERD_URI };  // FIXME: UTF-8
 
 	uint8_t*     ptr        = buf;
 	const size_t actual_len = serd_uri_serialise(&abs_uri, string_sink, &ptr);

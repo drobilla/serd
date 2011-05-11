@@ -105,7 +105,7 @@ is_digit(const uint8_t c)
    @param n_bytes (Output) Set to the size of @a str in bytes (incl. NULL).
 */
 static inline size_t
-serd_strlen(const uint8_t* str, size_t* n_bytes)
+serd_strlen(const uint8_t* str, size_t* n_bytes, uint32_t* flags)
 {
 	size_t n_chars = 0;
 	size_t i       = 0;
@@ -113,6 +113,14 @@ serd_strlen(const uint8_t* str, size_t* n_bytes)
 		if ((str[i] & 0xC0) != 0x80) {
 			// Does not start with `10', start of a new character
 			++n_chars;
+			switch (str[i]) {
+			case '\r':
+			case '\n':
+				*flags |= SERD_HAS_NEWLINE;
+				break;
+			case '"':
+				*flags |= SERD_HAS_QUOTE;
+			}
 		}
 	}
 	if (n_bytes) {

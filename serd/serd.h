@@ -113,28 +113,26 @@ typedef enum {
 
    This is more precise than the type of an abstract RDF node.  An abstract
    node is either a resource, literal, or blank.  In syntax there are two ways
-   to refer to both a resource (by URI or CURIE) and a blank (by ID or
-   anonymously).
+   to refer to a resource (by URI or CURIE) and two ways to refer to a blank
+   (by ID or anonymously).
 
-   Serd represents all nodes as an unquoted UTF-8 string "value" associated
-   with a @ref SerdType, which is precise enough to preserve the syntactic
-   information required for streaming abbreviation.  A non-abbreviating sink
-   may simply consider @ref SERD_ANON_BEGIN and @ref SERD_ANON equivalent to
-   @ref SERD_BLANK_ID.
+   Serd represents a node as a string "value" associated with a @ref SerdType,
+   which is precise enough to support streaming abbreviation.  If abbreviation
+   is not applicable, @ref SERD_ANON_BEGIN and @ref SERD_ANON may simply be
+   considered equivalent to @ref SERD_BLANK_ID.
 */
 typedef enum {
 	/**
 	   The type of a nonexistent node.
 
-	   This type is occasionally useful, but is never emitted by the reader.
+	   This type is useful as a sentinel, but is never emitted by the reader.
 	*/
 	SERD_NOTHING = 0,
 
 	/**
 	   Literal value.
 
-	   A literal optionally has either an associated language, or an associated
-	   datatype (not both).
+	   A literal optionally has either a language, or a datatype (not both).
 	*/
 	SERD_LITERAL = 1,
 
@@ -142,8 +140,8 @@ typedef enum {
 	   URI (absolute or relative).
 
 	   Value is an unquoted URI string, which is either a relative reference
-	   with respect to the current base URI, or an absolute URI.  A URI is an
-	   ID with universal scope.
+	   with respect to the current base URI (e.g. "foo/bar"), or an absolute
+	   URI (e.g. "http://example.org/foo").
 	   @see <a href="http://tools.ietf.org/html/rfc3986">RFC3986</a>.
 	*/
 	SERD_URI = 2,
@@ -160,8 +158,8 @@ typedef enum {
 	/**
 	   A blank node ID.
 
-	   Value is a blank node ID, e.g. "id3", which is valid only within this
-	   serialisation.
+	   Value is a blank node ID, e.g. "id3", which is meaningful only within
+	   this serialisation.
 	   @see <a href="http://www.w3.org/TeamSubmission/turtle#nodeID">Turtle
 	   <tt>nodeID</tt></a>
 	*/
@@ -185,12 +183,21 @@ typedef enum {
 } SerdType;
 
 /**
+   Flags indicating certain string properties relevant to serialisation.
+*/
+typedef enum {
+	SERD_HAS_NEWLINE = 1,      /**< Contains line breaks ('\\n' or '\\r') */
+	SERD_HAS_QUOTE   = 1 << 1  /**< Contains quotes ('"') */
+} SerdNodeFlag;
+
+/**
    A syntactic RDF node.
 */
 typedef struct {
-	const uint8_t* buf;      /**< Buffer */
+	const uint8_t* buf;      /**< Value string */
 	size_t         n_bytes;  /**< Size in bytes (including null) */
 	size_t         n_chars;  /**< Length in characters */
+	uint32_t       flags;    /**< Bitwise OR of SerdNodeFlag values */
 	SerdType       type;     /**< Node type */
 } SerdNode;
 
@@ -223,8 +230,8 @@ typedef struct {
 
    The style of the writer output can be controlled by ORing together
    values from this enumeration.  Note that some options are only supported
-   for some syntaxes (e.g. NTriples does not support any options except
-   @ref SERD_STYLE_ASCII, which is required).
+   for some syntaxes (e.g. NTriples does not support abbreviation and is
+   always ASCII).
 */
 typedef enum {
 	SERD_STYLE_ABBREVIATED = 1,       /**< Abbreviate triples when possible. */
@@ -279,7 +286,7 @@ serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream);
    @{
 */
 
-static const SerdNode SERD_NODE_NULL = { 0, 0, 0, SERD_NOTHING };
+static const SerdNode SERD_NODE_NULL = { 0, 0, 0, 0, SERD_NOTHING };
 
 /**
    Make a (shallow) node from @a str.

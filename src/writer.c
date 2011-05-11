@@ -31,7 +31,7 @@ typedef struct {
 } WriteContext;
 
 static const WriteContext WRITE_CONTEXT_NULL = {
-	{ 0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}
+	{ 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}
 };
 
 struct SerdWriterImpl {
@@ -47,9 +47,9 @@ struct SerdWriterImpl {
 };
 
 typedef enum {
-	WRITE_NORMAL,
 	WRITE_URI,
-	WRITE_STRING
+	WRITE_STRING,
+	WRITE_LONG_STRING
 } TextContext;
 
 static inline WriteContext*
@@ -67,23 +67,29 @@ write_text(SerdWriter* writer, TextContext ctx,
 	char escape[11] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	for (size_t i = 0; i < n_bytes;) {
 		uint8_t in = utf8[i++];
-		switch (in) {
-		case '\\': writer->sink("\\\\", 2, writer->stream); continue;
-		case '\n': writer->sink("\\n", 2, writer->stream);  continue;
-		case '\r': writer->sink("\\r", 2, writer->stream);  continue;
-		case '\t': writer->sink("\\t", 2, writer->stream);  continue;
-		case '"':
-			if (terminator == '"') {
-				writer->sink("\\\"", 2, writer->stream);
-				continue;
-			}  // else fall-through
-		default: break;
-		}
+		if (ctx == WRITE_LONG_STRING) {
+			if (in == '\\') {
+				writer->sink("\\\\", 2, writer->stream); continue;
+			}
+		} else {
+			switch (in) {
+			case '\\': writer->sink("\\\\", 2, writer->stream); continue;
+			case '\n': writer->sink("\\n", 2, writer->stream);  continue;
+			case '\r': writer->sink("\\r", 2, writer->stream);  continue;
+			case '\t': writer->sink("\\t", 2, writer->stream);  continue;
+			case '"':
+				if (terminator == '"') {
+					writer->sink("\\\"", 2, writer->stream);
+					continue;
+				}  // else fall-through
+			default: break;
+			}
 
-		if (in == terminator) {
-			snprintf(escape, 7, "\\u%04X", terminator);
-			writer->sink(escape, 6, writer->stream);
-			continue;
+			if (in == terminator) {
+				snprintf(escape, 7, "\\u%04X", terminator);
+				writer->sink(escape, 6, writer->stream);
+				continue;
+			}
 		}
 
 		uint32_t c    = 0;
@@ -109,7 +115,8 @@ write_text(SerdWriter* writer, TextContext ctx,
 			return false;
 		}
 
-		if (ctx == WRITE_STRING && !(writer->style & SERD_STYLE_ASCII)) {
+		if ((ctx == WRITE_STRING || ctx == WRITE_LONG_STRING)
+		    && !(writer->style & SERD_STYLE_ASCII)) {
 			// Write UTF-8 character directly to UTF-8 output
 			// TODO: Scan to next escape and write entire range at once
 			writer->sink(utf8 + i - 1, size, writer->stream);
@@ -228,9 +235,17 @@ write_node(SerdWriter*     writer,
 				break;
 			}
 		}
-		writer->sink("\"", 1, writer->stream);
-		write_text(writer, WRITE_STRING, node->buf, node->n_bytes - 1, '"');
-		writer->sink("\"", 1, writer->stream);
+		if (writer->syntax != SERD_NTRIPLES
+		    && ((node->flags & SERD_HAS_NEWLINE)
+		        || (node->flags & SERD_HAS_QUOTE))) {
+			writer->sink("\"\"\"", 3, writer->stream);
+			write_text(writer, WRITE_LONG_STRING, node->buf, node->n_bytes - 1, '\0');
+			writer->sink("\"\"\"", 3, writer->stream);
+		} else {
+			writer->sink("\"", 1, writer->stream);
+			write_text(writer, WRITE_STRING, node->buf, node->n_bytes - 1, '"');
+			writer->sink("\"", 1, writer->stream);
+		}
 		if (lang && lang->buf) {
 			writer->sink("@", 1, writer->stream);
 			writer->sink(lang->buf, lang->n_bytes - 1, writer->stream);
