@@ -111,8 +111,9 @@ serd_env_add(SerdEnv*        env,
 	assert(name && uri);
 	SerdPrefix* const prefix = serd_env_find(env, name->buf, name->n_chars);
 	if (prefix) {
-		serd_node_free(&prefix->uri);
+		SerdNode old_prefix_uri = prefix->uri;
 		prefix->uri = serd_node_copy(uri);
+		serd_node_free(&old_prefix_uri);
 	} else {
 		env->prefixes = realloc(env->prefixes,
 		                        (++env->n_prefixes) * sizeof(SerdPrefix));
