@@ -191,13 +191,18 @@ typedef enum {
 } SerdNodeFlag;
 
 /**
+   Bitwise OR of SerdNodeFlag values.
+*/
+typedef uint32_t SerdNodeFlags;
+
+/**
    A syntactic RDF node.
 */
 typedef struct {
 	const uint8_t* buf;      /**< Value string */
 	size_t         n_bytes;  /**< Size in bytes (including null) */
 	size_t         n_chars;  /**< Length in characters */
-	uint32_t       flags;    /**< Bitwise OR of SerdNodeFlag values */
+	SerdNodeFlags  flags;    /**< String properties */
 	SerdType       type;     /**< Node type */
 } SerdNode;
 
@@ -239,6 +244,17 @@ typedef enum {
 	SERD_STYLE_RESOLVED    = 1 << 2,  /**< Resolve URIs against base URI. */
 	SERD_STYLE_CURIED      = 1 << 3   /**< Shorten URIs into CURIEs. */
 } SerdStyle;
+
+/**
+   UTF-8 strlen.
+   @return Length of @c str in characters.
+   @param str A null-terminated UTF-8 string.
+   @param n_bytes (Output) Set to the size of @a str in bytes (incl. NULL).
+   @param flags (Output) Set to the applicable flags.
+*/
+SERD_API
+size_t
+serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags);
 
 /**
    @name URI

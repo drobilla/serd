@@ -20,6 +20,32 @@
 #include "serd_internal.h"
 
 SERD_API
+size_t
+serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags)
+{
+	size_t n_chars = 0;
+	size_t i       = 0;
+	for (; str[i]; ++i) {
+		if ((str[i] & 0xC0) != 0x80) {
+			// Does not start with `10', start of a new character
+			++n_chars;
+			switch (str[i]) {
+			case '\r':
+			case '\n':
+				*flags |= SERD_HAS_NEWLINE;
+				break;
+			case '"':
+				*flags |= SERD_HAS_QUOTE;
+			}
+		}
+	}
+	if (n_bytes) {
+		*n_bytes = i + 1;
+	}
+	return n_chars;
+}
+
+SERD_API
 SerdNode
 serd_node_from_string(SerdType type, const uint8_t* buf)
 {
@@ -34,12 +60,14 @@ SERD_API
 SerdNode
 serd_node_copy(const SerdNode* node)
 {
-	SerdNode copy = *node;
-	if (node->buf) {
-		uint8_t* buf  = malloc(copy.n_bytes);
-		memcpy(buf, node->buf, copy.n_bytes);
-		copy.buf = buf;
+	if (!node || !node->buf) {
+		return SERD_NODE_NULL;
 	}
+
+	SerdNode copy = *node;
+	uint8_t* buf  = malloc(copy.n_bytes);
+	memcpy(buf, node->buf, copy.n_bytes);
+	copy.buf = buf;
 	return copy;
 }
 

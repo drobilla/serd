@@ -390,7 +390,7 @@ read_character_escape(SerdReader* reader, Ref dest)
 }
 
 static inline bool
-read_echaracter_escape(SerdReader* reader, Ref dest, uint32_t* flags)
+read_echaracter_escape(SerdReader* reader, Ref dest, SerdNodeFlags* flags)
 {
 	switch (peek_byte(reader)) {
 	case 't':
@@ -413,7 +413,7 @@ read_echaracter_escape(SerdReader* reader, Ref dest, uint32_t* flags)
 }
 
 static inline bool
-read_scharacter_escape(SerdReader* reader, Ref dest, uint32_t* flags)
+read_scharacter_escape(SerdReader* reader, Ref dest, SerdNodeFlags* flags)
 {
 	switch (peek_byte(reader)) {
 	case '"':
@@ -428,7 +428,7 @@ read_scharacter_escape(SerdReader* reader, Ref dest, uint32_t* flags)
 static inline bool
 read_ucharacter_escape(SerdReader* reader, Ref dest)
 {
-	uint32_t flags = 0;
+	SerdNodeFlags flags = 0;
 	switch (peek_byte(reader)) {
 	case '>':
 		push_byte(reader, dest, eat_byte(reader, '>'));
@@ -482,8 +482,8 @@ read_character(SerdReader* reader, Ref dest)
 static inline SerdStatus
 read_echaracter(SerdReader* reader, Ref dest)
 {
-	uint32_t flags = 0;
-	uint8_t  c     = peek_byte(reader);
+	SerdNodeFlags flags = 0;
+	uint8_t       c     = peek_byte(reader);
 	switch (c) {
 	case '\\':
 		eat_byte(reader, '\\');
@@ -500,7 +500,7 @@ read_echaracter(SerdReader* reader, Ref dest)
 
 // [43] lcharacter ::= echaracter | '\"' | #x9 | #xA | #xD
 static inline SerdStatus
-read_lcharacter(SerdReader* reader, Ref dest, uint32_t* flags)
+read_lcharacter(SerdReader* reader, Ref dest, SerdNodeFlags* flags)
 {
 	const uint8_t c = peek_byte(reader);
 	uint8_t       pre[3];
@@ -537,7 +537,7 @@ read_lcharacter(SerdReader* reader, Ref dest, uint32_t* flags)
 
 // [42] scharacter ::= ( echaracter - #x22 ) | '\"'
 static inline SerdStatus
-read_scharacter(SerdReader* reader, Ref dest, uint32_t* flags)
+read_scharacter(SerdReader* reader, Ref dest, SerdNodeFlags* flags)
 {
 	uint8_t c = peek_byte(reader);
 	switch (c) {
@@ -621,7 +621,7 @@ read_ws_plus(SerdReader* reader)
 
 // [37] longString ::= #x22 #x22 #x22 lcharacter* #x22 #x22 #x22
 static Ref
-read_longString(SerdReader* reader, uint32_t* flags)
+read_longString(SerdReader* reader, SerdNodeFlags* flags)
 {
 	eat_string(reader, "\"\"\"", 3);
 	Ref        str = push_string(reader, "", 1);
@@ -636,7 +636,7 @@ read_longString(SerdReader* reader, uint32_t* flags)
 
 // [36] string ::= #x22 scharacter* #x22
 static Ref
-read_string(SerdReader* reader, uint32_t* flags)
+read_string(SerdReader* reader, SerdNodeFlags* flags)
 {
 	eat_byte(reader, '\"');
 	Ref        str = push_string(reader, "", 1);
@@ -652,7 +652,7 @@ read_string(SerdReader* reader, uint32_t* flags)
 
 // [35] quotedString ::= string | longString
 static Ref
-read_quotedString(SerdReader* reader, uint32_t* flags)
+read_quotedString(SerdReader* reader, SerdNodeFlags* flags)
 {
 	uint8_t pre[3];
 	peek_string(reader, pre, 3);
@@ -903,7 +903,7 @@ read_resource(SerdReader* reader, Node* dest)
 //    | integer | double | decimal | boolean
 static bool
 read_literal(SerdReader* reader, Node* dest,
-             Node* datatype, Ref* lang, uint32_t* flags)
+             Node* datatype, Ref* lang, SerdNodeFlags* flags)
 {
 	Ref           str = 0;
 	const uint8_t c   = peek_byte(reader);
