@@ -28,10 +28,11 @@ typedef struct {
 	SerdNode graph;
 	SerdNode subject;
 	SerdNode predicate;
+	SerdNode object;
 } WriteContext;
 
 static const WriteContext WRITE_CONTEXT_NULL = {
-	{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}
+	{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}
 };
 
 struct SerdWriterImpl {
@@ -174,6 +175,8 @@ reset_context(SerdWriter* writer)
 		serd_node_free(&writer->context.subject);
 	if (writer->context.predicate.buf)
 		serd_node_free(&writer->context.predicate);
+	if (writer->context.object.buf)
+		serd_node_free(&writer->context.object);
 	writer->context = WRITE_CONTEXT_NULL;
 }
 
@@ -197,6 +200,7 @@ write_node(SerdWriter*     writer,
 			ctx->graph     = serd_node_copy(&writer->context.graph);
 			ctx->subject   = serd_node_copy(&writer->context.subject);
 			ctx->predicate = serd_node_copy(&writer->context.predicate);
+			ctx->object    = serd_node_copy(&writer->context.object);
 			reset_context(writer);
 			writer->context.subject = serd_node_copy(node);
 			break;
@@ -317,10 +321,15 @@ serd_writer_write_statement(SerdWriter*     writer,
 	if (serd_node_equals(subject, &writer->context.subject)) {
 		if (serd_node_equals(predicate, &writer->context.predicate)) {
 			// Abbreviate S P
-			++writer->indent;
-			serd_writer_write_delim(writer, ',');
-			write_node(writer, object, object_datatype, object_lang);
-			--writer->indent;
+			if (writer->context.object.type == SERD_ANON_BEGIN) {
+				writer->sink(" , ", 3, writer->stream);
+				write_node(writer, object, object_datatype, object_lang);
+			} else {
+				++writer->indent;
+				serd_writer_write_delim(writer, ',');
+				write_node(writer, object, object_datatype, object_lang);
+				--writer->indent;
+			}
 		} else {
 			// Abbreviate S
 			if (writer->context.predicate.buf) {
@@ -333,6 +342,9 @@ serd_writer_write_statement(SerdWriter*     writer,
 			if (writer->context.predicate.buf)
 				serd_node_free(&writer->context.predicate);
 			writer->context.predicate = serd_node_copy(predicate);
+			if (writer->context.object.buf)
+				serd_node_free(&writer->context.object);
+			writer->context.object = serd_node_copy(object);
 			writer->sink(" ", 1, writer->stream);
 			write_node(writer, object, object_datatype, object_lang);
 		}
@@ -374,7 +386,8 @@ serd_writer_write_statement(SerdWriter*     writer,
 
 	const WriteContext new_context = { serd_node_copy(graph),
 	                                   serd_node_copy(subject),
-	                                   serd_node_copy(predicate) };
+	                                   serd_node_copy(predicate),
+	                                   serd_node_copy(object) };
 	reset_context(writer);
 	writer->context = new_context;
 	return SERD_SUCCESS;
