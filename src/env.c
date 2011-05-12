@@ -163,7 +163,7 @@ serd_env_qualify(const SerdEnv*  env,
 			             prefix_uri->n_bytes)) {
 				*prefix_name = env->prefixes[i].name;
 				suffix->buf = uri->buf + prefix_uri->n_bytes;
-				suffix->len = uri->n_bytes - prefix_uri->n_bytes - 1;
+				suffix->len = uri->n_bytes - prefix_uri->n_bytes;
 				return true;
 			}
 		}
