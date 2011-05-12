@@ -45,6 +45,7 @@ struct SerdWriterImpl {
 	void*        stream;
 	WriteContext context;
 	unsigned     indent;
+	bool         empty;
 };
 
 typedef enum {
@@ -178,6 +179,7 @@ reset_context(SerdWriter* writer)
 	if (writer->context.object.buf)
 		serd_node_free(&writer->context.object);
 	writer->context = WRITE_CONTEXT_NULL;
+	writer->empty   = false;
 }
 
 static bool
@@ -357,6 +359,8 @@ serd_writer_write_statement(SerdWriter*     writer,
 				serd_writer_write_delim(writer, '.');
 				serd_writer_write_delim(writer, '\n');
 			}
+		} else if (!writer->empty) {
+			serd_writer_write_delim(writer, '\n');
 		}
 
 		if (subject->type == SERD_ANON_BEGIN) {
@@ -449,6 +453,7 @@ serd_writer_new(SerdSyntax     syntax,
 	writer->stream     = stream;
 	writer->context    = context;
 	writer->indent     = 0;
+	writer->empty      = true;
 	return writer;
 }
 
