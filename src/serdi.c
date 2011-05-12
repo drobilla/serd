@@ -147,6 +147,7 @@ main(int argc, char** argv)
 
 	if (serd_uri_parse(base_uri_str, &base_uri)) {
 		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
+		return 1;
 	}
 
 	FILE*    out_fd = stdout;
