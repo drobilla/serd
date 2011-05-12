@@ -200,8 +200,8 @@ typedef uint32_t SerdNodeFlags;
 */
 typedef struct {
 	const uint8_t* buf;      /**< Value string */
-	size_t         n_bytes;  /**< Size in bytes (including null) */
-	size_t         n_chars;  /**< Length in characters */
+	size_t         n_bytes;  /**< Size in bytes (not including null) */
+	size_t         n_chars;  /**< Length in characters (not including null)*/
 	SerdNodeFlags  flags;    /**< String properties */
 	SerdType       type;     /**< Node type */
 } SerdNode;
@@ -247,9 +247,9 @@ typedef enum {
 
 /**
    UTF-8 strlen.
-   @return Length of @c str in characters.
+   @return Length of @c str in characters (except NULL).
    @param str A null-terminated UTF-8 string.
-   @param n_bytes (Output) Set to the size of @a str in bytes (incl. NULL).
+   @param n_bytes (Output) Set to the size of @a str in bytes (except NULL).
    @param flags (Output) Set to the applicable flags.
 */
 SERD_API

@@ -40,7 +40,7 @@ serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags)
 		}
 	}
 	if (n_bytes) {
-		*n_bytes = i + 1;
+		*n_bytes = i;
 	}
 	return n_chars;
 }
@@ -65,8 +65,8 @@ serd_node_copy(const SerdNode* node)
 	}
 
 	SerdNode copy = *node;
-	uint8_t* buf  = malloc(copy.n_bytes);
-	memcpy(buf, node->buf, copy.n_bytes);
+	uint8_t* buf  = malloc(copy.n_bytes + 1);
+	memcpy(buf, node->buf, copy.n_bytes + 1);
 	copy.buf = buf;
 	return copy;
 }
@@ -147,13 +147,13 @@ serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)
 	const size_t len = serd_uri_string_length(&abs_uri);
 	uint8_t*     buf = malloc(len + 1);
 
-	SerdNode node = { buf, len + 1, len, 0, SERD_URI };  // FIXME: UTF-8
+	SerdNode node = { buf, len, len, 0, SERD_URI };  // FIXME: UTF-8
 
 	uint8_t*     ptr        = buf;
 	const size_t actual_len = serd_uri_serialise(&abs_uri, string_sink, &ptr);
 
 	buf[actual_len] = '\0';
-	node.n_bytes    = actual_len + 1;
+	node.n_bytes    = actual_len;
 	node.n_chars    = actual_len;
 
 	// FIXME: double parse

@@ -94,7 +94,7 @@ serd_env_find(const SerdEnv* env,
 {
 	for (size_t i = 0; i < env->n_prefixes; ++i) {
 		const SerdNode* const prefix_name = &env->prefixes[i].name;
-		if (prefix_name->n_bytes == name_len + 1) {
+		if (prefix_name->n_bytes == name_len) {
 			if (!memcmp(prefix_name->buf, name, name_len)) {
 				return &env->prefixes[i];
 			}
@@ -109,7 +109,7 @@ serd_env_add(SerdEnv*        env,
              const SerdNode* uri)
 {
 	assert(name && uri);
-	SerdPrefix* const prefix = serd_env_find(env, name->buf, name->n_chars);
+	SerdPrefix* const prefix = serd_env_find(env, name->buf, name->n_bytes);
 	if (prefix) {
 		SerdNode old_prefix_uri = prefix->uri;
 		prefix->uri = serd_node_copy(uri);
@@ -160,10 +160,10 @@ serd_env_qualify(const SerdEnv*  env,
 		if (uri->n_bytes >= prefix_uri->n_bytes) {
 			if (!strncmp((const char*)uri->buf,
 			             (const char*)prefix_uri->buf,
-			             prefix_uri->n_bytes - 1)) {
+			             prefix_uri->n_bytes)) {
 				*prefix_name = env->prefixes[i].name;
-				suffix->buf = uri->buf + prefix_uri->n_bytes - 1;
-				suffix->len = uri->n_bytes - prefix_uri->n_bytes;
+				suffix->buf = uri->buf + prefix_uri->n_bytes;
+				suffix->len = uri->n_bytes - prefix_uri->n_bytes - 1;
 				return true;
 			}
 		}
@@ -178,7 +178,7 @@ serd_env_expand(const SerdEnv*  env,
                 SerdChunk*      uri_prefix,
                 SerdChunk*      uri_suffix)
 {
-	const uint8_t* const colon = memchr(qname->buf, ':', qname->n_bytes);
+	const uint8_t* const colon = memchr(qname->buf, ':', qname->n_bytes + 1);
 	if (!colon) {
 		return SERD_ERR_BAD_ARG;  // Illegal qname
 	}
@@ -187,9 +187,9 @@ serd_env_expand(const SerdEnv*  env,
 	const SerdPrefix* const prefix   = serd_env_find(env, qname->buf, name_len);
 	if (prefix) {
 		uri_prefix->buf = prefix->uri.buf;
-		uri_prefix->len = prefix->uri.n_bytes - 1;
+		uri_prefix->len = prefix->uri.n_bytes;
 		uri_suffix->buf = colon + 1;
-		uri_suffix->len = qname->n_bytes - (colon - qname->buf) - 2;
+		uri_suffix->len = qname->n_bytes - (colon - qname->buf) - 1;
 		return SERD_SUCCESS;
 	}
 	return SERD_ERR_NOT_FOUND;
@@ -209,8 +209,8 @@ serd_env_expand_node(const SerdEnv*  env,
 		                 prefix.len + suffix.len,  // FIXME: UTF-8
 		                 0,
 		                 SERD_URI };
-		ret.buf = malloc(ret.n_bytes);
-		snprintf((char*)ret.buf, ret.n_bytes, "%s%s", prefix.buf, suffix.buf);
+		ret.buf = malloc(ret.n_bytes + 1);
+		snprintf((char*)ret.buf, ret.n_bytes + 1, "%s%s", prefix.buf, suffix.buf);
 		return ret;
 	} else if (node->type == SERD_URI) {
 		SerdURI ignored;

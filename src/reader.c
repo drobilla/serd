@@ -56,7 +56,7 @@ typedef struct {
 
 /** Measured UTF-8 string. */
 typedef struct {
-	size_t  n_bytes;  ///< Size in bytes including trailing null byte
+	size_t  n_bytes;  ///< Size in bytes
 	size_t  n_chars;  ///< Length in characters
 	uint8_t buf[];    ///< Buffer
 } SerdString;
@@ -195,11 +195,11 @@ static Ref
 push_string(SerdReader* reader, const char* c_str, size_t n_bytes)
 {
 	uint8_t* mem = serd_stack_push(&reader->stack,
-	                               sizeof(SerdString) + n_bytes);
+	                               sizeof(SerdString) + n_bytes + 1);
 	SerdString* const str = (SerdString*)mem;
 	str->n_bytes = n_bytes;
-	str->n_chars = n_bytes - 1;
-	memcpy(str->buf, c_str, n_bytes);
+	str->n_chars = n_bytes;
+	memcpy(str->buf, c_str, n_bytes + 1);
 #ifdef SERD_STACK_CHECK
 	reader->alloc_stack = realloc(
 		reader->alloc_stack, sizeof(uint8_t*) * (++reader->n_allocs));
@@ -236,9 +236,9 @@ push_byte(SerdReader* reader, Ref ref, const uint8_t c)
 		// Does not start with `10', start of a new character
 		++str->n_chars;
 	}
-	assert(str->n_bytes > str->n_chars);
-	str->buf[str->n_bytes - 2] = c;
-	str->buf[str->n_bytes - 1] = '\0';
+	assert(str->n_bytes >= str->n_chars);
+	str->buf[str->n_bytes - 1] = c;
+	str->buf[str->n_bytes]     = '\0';
 }
 
 static void
@@ -259,7 +259,7 @@ pop_string(SerdReader* reader, Ref ref)
 		--reader->n_allocs;
 		#endif
 		SerdString* str = deref(reader, ref);
-		serd_stack_pop(&reader->stack, sizeof(SerdString) + str->n_bytes);
+		serd_stack_pop(&reader->stack, sizeof(SerdString) + str->n_bytes + 1);
 	}
 }
 
@@ -624,7 +624,7 @@ static Ref
 read_longString(SerdReader* reader, SerdNodeFlags* flags)
 {
 	eat_string(reader, "\"\"\"", 3);
-	Ref        str = push_string(reader, "", 1);
+	Ref        str = push_string(reader, "", 0);
 	SerdStatus st;
 	while (!(st = read_lcharacter(reader, str, flags))) {}
 	if (st < SERD_ERR_UNKNOWN) {
@@ -639,7 +639,7 @@ static Ref
 read_string(SerdReader* reader, SerdNodeFlags* flags)
 {
 	eat_byte(reader, '\"');
-	Ref        str = push_string(reader, "", 1);
+	Ref        str = push_string(reader, "", 0);
 	SerdStatus st;
 	while (!(st = read_scharacter(reader, str, flags))) {}
 	if (st < SERD_ERR_UNKNOWN) {
@@ -672,7 +672,7 @@ read_quotedString(SerdReader* reader, SerdNodeFlags* flags)
 static inline Ref
 read_relativeURI(SerdReader* reader)
 {
-	Ref str = push_string(reader, "", 1);
+	Ref str = push_string(reader, "", 0);
 	SerdStatus st;
 	while (!(st = read_ucharacter(reader, str))) {}
 	if (st < SERD_ERR_UNKNOWN) {
@@ -730,7 +730,7 @@ read_prefixName(SerdReader* reader)
 		return 0;
 	}
 	TRY_RET(c = read_nameStartChar(reader, false));
-	Ref str = push_string(reader, "", 1);
+	Ref str = push_string(reader, "", 0);
 	push_byte(reader, str, c);
 	while ((c = read_nameChar(reader)) != 0) {
 		push_byte(reader, str, c);
@@ -764,7 +764,7 @@ read_language(SerdReader* reader)
 		error(reader, "unexpected `%c'\n", start);
 		return 0;
 	}
-	Ref str = push_string(reader, "", 1);
+	Ref str = push_string(reader, "", 0);
 	push_byte(reader, str, eat_byte(reader, start));
 	uint8_t c;
 	while ((c = peek_byte(reader)) && in_range(c, 'a', 'z')) {
@@ -799,7 +799,7 @@ read_qname(SerdReader* reader)
 {
 	Ref prefix = read_prefixName(reader);
 	if (!prefix) {
-		prefix = push_string(reader, "", 1);
+		prefix = push_string(reader, "", 0);
 	}
 	TRY_THROW(eat_byte(reader, ':'));
 	push_byte(reader, prefix, ':');
@@ -840,7 +840,7 @@ read_number(SerdReader* reader, Node* dest, Node* datatype)
 	#define XSD_DECIMAL NS_XSD "decimal"
 	#define XSD_DOUBLE  NS_XSD "double"
 	#define XSD_INTEGER NS_XSD "integer"
-	Ref     str         = push_string(reader, "", 1);
+	Ref     str         = push_string(reader, "", 0);
 	uint8_t c           = peek_byte(reader);
 	bool    has_decimal = false;
 	if (c == '-' || c == '+') {
@@ -870,11 +870,11 @@ read_number(SerdReader* reader, Node* dest, Node* datatype)
 		default: break;
 		}
 		read_0_9(reader, str, true);
-		*datatype = push_uri(reader, XSD_DOUBLE, sizeof(XSD_DOUBLE));
+		*datatype = push_uri(reader, XSD_DOUBLE, sizeof(XSD_DOUBLE) - 1);
 	} else if (has_decimal) {
-		*datatype = push_uri(reader, XSD_DECIMAL, sizeof(XSD_DECIMAL));
+		*datatype = push_uri(reader, XSD_DECIMAL, sizeof(XSD_DECIMAL) - 1);
 	} else {
-		*datatype = push_uri(reader, XSD_INTEGER, sizeof(XSD_INTEGER));
+		*datatype = push_uri(reader, XSD_INTEGER, sizeof(XSD_INTEGER) - 1);
 	}
 	*dest = make_node(SERD_LITERAL, str);
 	assert(dest->value);
@@ -953,7 +953,7 @@ read_verb(SerdReader* reader, Node* dest)
 		switch (pre[1]) {
 		case 0x9: case 0xA: case 0xD: case 0x20:
 			eat_byte(reader, 'a');
-			*dest = push_uri(reader, NS_RDF "type", 48);
+			*dest = push_uri(reader, NS_RDF "type", 47);
 			return true;
 		default: break;  // fall through
 		}
@@ -968,7 +968,7 @@ read_nodeID(SerdReader* reader)
 {
 	eat_byte(reader, '_');
 	eat_byte(reader, ':');
-	Ref str = push_string(reader, "", 1);
+	Ref str = push_string(reader, "", 0);
 	return read_name(reader, str, true);
 }
 
@@ -981,7 +981,7 @@ blank_id(SerdReader* reader)
 	char str[32];  // FIXME: ensure length of reader->blank_prefix is OK
 	const int len = snprintf(str, sizeof(str), "%s%u",
 	                         prefix, reader->next_id++);
-	return push_string(reader, str, len + 1);
+	return push_string(reader, str, len);
 }
 
 // Spec: [21] blank ::= nodeID | '[]'
@@ -1101,13 +1101,13 @@ read_object(SerdReader* reader, ReadContext ctx)
 		peek_string(reader, pre, 6);
 		if (!memcmp(pre, "true", 4) && is_object_end(pre[4])) {
 			eat_string(reader, "true", 4);
-			const Ref value = push_string(reader, "true", 5);
-			datatype = push_uri(reader, XSD_BOOLEAN, XSD_BOOLEAN_LEN + 1);
+			const Ref value = push_string(reader, "true", 4);
+			datatype = push_uri(reader, XSD_BOOLEAN, XSD_BOOLEAN_LEN);
 			o = make_node(SERD_LITERAL, value);
 		} else if (!memcmp(pre, "false", 5) && is_object_end(pre[5])) {
 			eat_string(reader, "false", 5);
-			const Ref value = push_string(reader, "false", 6);
-			datatype = push_uri(reader, XSD_BOOLEAN, XSD_BOOLEAN_LEN + 1);
+			const Ref value = push_string(reader, "false", 5);
+			datatype = push_uri(reader, XSD_BOOLEAN, XSD_BOOLEAN_LEN);
 			o = make_node(SERD_LITERAL, value);
 		} else if (!is_object_end(c)) {
 			o = make_node(SERD_CURIE, read_qname(reader));
@@ -1302,7 +1302,7 @@ read_prefixID(SerdReader* reader)
 	bool ret = false;
 	Ref name = read_prefixName(reader);
 	if (!name) {
-		name = push_string(reader, "", 1);
+		name = push_string(reader, "", 0);
 	}
 	TRY_THROW(eat_byte(reader, ':') == ':');
 	read_ws_star(reader);
@@ -1396,9 +1396,9 @@ serd_reader_new(SerdSyntax        syntax,
 #define RDF_FIRST NS_RDF "first"
 #define RDF_REST  NS_RDF "rest"
 #define RDF_NIL   NS_RDF "nil"
-	me->rdf_first = make_node(SERD_URI, push_string(me, RDF_FIRST, 49));
-	me->rdf_rest  = make_node(SERD_URI, push_string(me, RDF_REST, 48));
-	me->rdf_nil   = make_node(SERD_URI, push_string(me, RDF_NIL, 47));
+	me->rdf_first = make_node(SERD_URI, push_string(me, RDF_FIRST, 48));
+	me->rdf_rest  = make_node(SERD_URI, push_string(me, RDF_REST, 47));
+	me->rdf_nil   = make_node(SERD_URI, push_string(me, RDF_NIL, 46));
 
 	return me;
 }
