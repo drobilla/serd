@@ -503,7 +503,7 @@ static inline SerdStatus
 read_lcharacter(SerdReader* reader, Ref dest, SerdNodeFlags* flags)
 {
 	const uint8_t c = peek_byte(reader);
-	uint8_t       pre[3];
+	uint8_t       pre[4];
 	switch (c) {
 	case '"':
 		peek_string(reader, pre, 4);
