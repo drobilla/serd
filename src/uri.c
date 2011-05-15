@@ -32,7 +32,7 @@ serd_uri_string_has_scheme(const uint8_t* utf8)
 	if (!is_alpha(utf8[0])) {
 		return false;  // Invalid scheme initial character, URI is relative
 	}
-	for (uint8_t c = *++utf8; (c = *utf8) != '\0'; ++utf8) {
+	for (uint8_t c; (c = *++utf8) != '\0';) {
 		switch (c) {
 		case ':':
 			return true;  // End of scheme
@@ -113,7 +113,7 @@ maybe_authority:
 		ptr += 2;
 		uri->authority.buf = ptr;
 		assert(uri->authority.len == 0);
-		for (uint8_t c = *ptr; (c = *ptr) != '\0'; ++ptr) {
+		for (uint8_t c; (c = *ptr) != '\0'; ++ptr) {
 			switch (c) {
 			case '/': goto path;
 			case '?': goto query;
@@ -136,7 +136,7 @@ path:
 	}
 	uri->path.buf = ptr;
 	uri->path.len = 0;
-	for (uint8_t c = *ptr; (c = *ptr) != '\0'; ++ptr) {
+	for (uint8_t c; (c = *ptr) != '\0'; ++ptr) {
 		switch (c) {
 		case '?': goto query;
 		case '#': goto fragment;
@@ -152,7 +152,7 @@ path:
 query:
 	if (*ptr == '?') {
 		uri->query.buf = ++ptr;
-		for (uint8_t c = *ptr; (c = *ptr) != '\0'; ++ptr) {
+		for (uint8_t c; (c = *ptr) != '\0'; ++ptr) {
 			switch (c) {
 			case '#':
 				goto fragment;
@@ -268,11 +268,11 @@ serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream)
 			   See http://tools.ietf.org/html/rfc3986#section-5.2.3
 			*/
 			const uint8_t* begin = uri->path.buf;
-			const uint8_t* end   = begin;
-			size_t         up        = 1;
+			size_t         up    = 1;
+
 			if (begin) {
 				// Count and skip leading dot components
-				end = uri->path.buf + uri->path.len;
+				const uint8_t* end = uri->path.buf + uri->path.len;
 				for (bool done = false; !done && (begin < end);) {
 					switch (begin[0]) {
 					case '.':

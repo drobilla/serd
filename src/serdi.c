@@ -133,7 +133,7 @@ main(int argc, char** argv)
 	const uint8_t* base_uri_str = NULL;
 	SerdURI        base_uri;
 	if (a < argc) {  // Base URI given on command line
-		const uint8_t* const in_base_uri = (const uint8_t*)argv[a++];
+		const uint8_t* const in_base_uri = (const uint8_t*)argv[a];
 		if (serd_uri_parse((const uint8_t*)in_base_uri, &base_uri)) {
 			fprintf(stderr, "Invalid base URI <%s>\n", argv[2]);
 			return 1;
