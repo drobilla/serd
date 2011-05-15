@@ -177,7 +177,7 @@ main(int argc, char** argv)
 		(SerdEndSink)serd_writer_end_anon);
 
 	const SerdStatus status = (from_file)
-		? serd_reader_read_file(reader, in_fd, input)
+		? serd_reader_read_file(reader, in_fd, (const uint8_t*)in_name)
 		: serd_reader_read_string(reader, input);
 
 	serd_reader_free(reader);
