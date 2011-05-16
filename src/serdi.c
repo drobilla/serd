@@ -42,7 +42,8 @@ print_usage(const char* name, bool error)
 {
 	FILE* const os = error ? stderr : stdout;
 	fprintf(os, "Usage: %s [OPTION]... INPUT [BASE_URI]\n", name);
-	fprintf(os, "Read and write RDF syntax.\n\n");
+	fprintf(os, "Read and write RDF syntax.\n");
+	fprintf(os, "Use - for INPUT to read from standard input.\n\n");
 	fprintf(os, "  -h           Display this help and exit\n");
 	fprintf(os, "  -o SYNTAX    Output syntax (`turtle' or `ntriples')\n");
 	fprintf(os, "  -s INPUT     Parse INPUT as string (terminates options)\n");
