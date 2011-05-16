@@ -37,8 +37,8 @@ def options(opt):
                     help="Include runtime stack sanity checks")
 
 def configure(conf):
-    conf.line_just = max(conf.line_just, 59)
     autowaf.configure(conf)
+    conf.line_just = 13
     autowaf.display_header('Serd Configuration')
 
     conf.load('compiler_cc')
