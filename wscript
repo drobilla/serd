@@ -9,7 +9,7 @@ from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
-SERD_VERSION       = '0.2.0'
+SERD_VERSION       = '0.3.0'
 SERD_MAJOR_VERSION = '0'
 
 # Library version (UNIX style major, minor, micro)
@@ -245,18 +245,21 @@ def test(ctx):
 
     autowaf.run_tests(ctx, APPNAME, commands, 1, name='bad')
 
+    thru_tests = good_tests
+    thru_tests.remove('tests/test-id.ttl') # IDs are mapped so files won't be identical
+
     commands = []
-    for test in good_tests:
+    for test in thru_tests:
         base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test
         out_filename = test + '.thru'
         commands += [
-                '%s -o turtle %s/%s \'%s\' | %s - \'%s\' > %s.thru' % (
-                        './serdi_static', srcdir, test, base_uri,
-                        './serdi_static', base_uri, test) ]
-
+            '%s -o turtle %s/%s \'%s\' | %s -i turtle - \'%s\' | sed \'s/_:docid/_:genid/g\' > %s.thru' % (
+                './serdi_static', srcdir, test, base_uri,
+                './serdi_static', base_uri, test) ]
+        
     autowaf.run_tests(ctx, APPNAME, commands, 0, name='turtle-round-trip')
     Logs.pprint('BOLD', '\nVerifying ntriples => turtle => ntriples')
-    for test in good_tests:
+    for test in thru_tests:
         out_filename = test + '.thru'
         if not os.access(out_filename, os.F_OK):
             Logs.pprint('RED', 'FAIL: %s output is missing' % test)

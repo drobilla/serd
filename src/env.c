@@ -35,13 +35,16 @@ struct SerdEnvImpl {
 
 SERD_API
 SerdEnv*
-serd_env_new()
+serd_env_new(const SerdNode* base_uri)
 {
 	SerdEnv* env = malloc(sizeof(struct SerdEnvImpl));
 	env->prefixes      = NULL;
 	env->n_prefixes    = 0;
 	env->base_uri_node = SERD_NODE_NULL;
 	env->base_uri      = SERD_URI_NULL;
+	if (base_uri) {
+		serd_env_set_base_uri(env, base_uri);
+	}
 	return env;
 }
 

@@ -65,6 +65,7 @@ static const Node INTERNAL_NODE_NULL = { 0, 0 };
 
 struct SerdReaderImpl {
 	void*             handle;
+	void              (*free_handle)(void*);
 	SerdBaseSink      base_sink;
 	SerdPrefixSink    prefix_sink;
 	SerdStatementSink statement_sink;
@@ -75,9 +76,11 @@ struct SerdReaderImpl {
 	Node              rdf_nil;
 	FILE*             fd;
 	SerdStack         stack;
+	SerdSyntax        syntax;
 	Cursor            cur;
 	uint8_t*          buf;
-	const uint8_t*    blank_prefix;
+	uint8_t*          bprefix;
+	size_t            bprefix_len;
 	unsigned          next_id;
 	int               err;
 	uint8_t*          read_buf;
@@ -239,6 +242,23 @@ push_byte(SerdReader* reader, Ref ref, const uint8_t c)
 	assert(str->n_bytes >= str->n_chars);
 	str->buf[str->n_bytes - 1] = c;
 	str->buf[str->n_bytes]     = '\0';
+}
+
+static inline void
+append_string(SerdReader* reader, Ref ref, const uint8_t* suffix)
+{
+	#ifdef SERD_STACK_CHECK
+	assert(stack_is_top_string(reader, ref));
+	#endif
+	size_t   n_bytes;
+	uint32_t flags   = 0;
+	size_t   n_chars = serd_strlen(suffix, &n_bytes, &flags);
+	serd_stack_push(&reader->stack, n_bytes);
+	SerdString* const str = deref(reader, ref);
+	assert(str->n_bytes >= str->n_chars);
+	memcpy(str->buf + str->n_bytes, suffix, n_bytes + 1);
+	str->n_bytes += n_bytes;
+	str->n_chars += n_chars;
 }
 
 static void
@@ -968,20 +988,33 @@ read_nodeID(SerdReader* reader)
 {
 	eat_byte(reader, '_');
 	eat_byte(reader, ':');
-	Ref str = push_string(reader, "", 0);
-	return read_name(reader, str, true);
+	Ref ref = push_string(reader, "", 0);
+	read_name(reader, ref, true);
+	SerdString* const str = deref(reader, ref);
+	if (reader->syntax == SERD_TURTLE
+	    && !strncmp((const char*)str->buf, "genid", 5)) {
+		// Replace "genid" nodes with "docid" to prevent clashing
+		memcpy(str->buf, "docid", 5);
+	}
+	return ref;
 }
 
 static Ref
 blank_id(SerdReader* reader)
 {
-	const char* prefix = reader->blank_prefix
-		? (const char*)reader->blank_prefix
-		: "genid";
-	char str[32];  // FIXME: ensure length of reader->blank_prefix is OK
-	const int len = snprintf(str, sizeof(str), "%s%u",
-	                         prefix, reader->next_id++);
-	return push_string(reader, str, len);
+	Ref str;
+	if (reader->bprefix) {
+		str = push_string(reader,
+		                  (const char*)reader->bprefix,
+		                  reader->bprefix_len);
+	} else {
+		str = push_string(reader, "", 0);
+	}
+	char num[32];
+	snprintf(num, sizeof(num), "%u", reader->next_id++);
+	append_string(reader, str, (const uint8_t*)"genid");
+	append_string(reader, str, (const uint8_t*)num);
+	return str;
 }
 
 // Spec: [21] blank ::= nodeID | '[]'
@@ -1368,29 +1401,33 @@ SERD_API
 SerdReader*
 serd_reader_new(SerdSyntax        syntax,
                 void*             handle,
+                void              (*free_handle)(void*),
                 SerdBaseSink      base_sink,
                 SerdPrefixSink    prefix_sink,
                 SerdStatementSink statement_sink,
                 SerdEndSink       end_sink)
 {
 	const Cursor cur = { NULL, 0, 0 };
-	SerdReader*   me = malloc(sizeof(struct SerdReaderImpl));
-	me->handle         = handle;
-	me->base_sink      = base_sink;
-	me->prefix_sink    = prefix_sink;
-	me->statement_sink = statement_sink;
-	me->end_sink       = end_sink;
-	me->fd             = 0;
-	me->stack          = serd_stack_new(STACK_PAGE_SIZE);
-	me->cur            = cur;
-	me->blank_prefix   = NULL;
-	me->next_id        = 1;
-	me->read_buf       = 0;
-	me->read_head      = 0;
-	me->eof            = false;
+	SerdReader*  me  = malloc(sizeof(struct SerdReaderImpl));
+	me->handle           = handle;
+	me->free_handle      = free_handle;
+	me->base_sink        = base_sink;
+	me->prefix_sink      = prefix_sink;
+	me->statement_sink   = statement_sink;
+	me->end_sink         = end_sink;
+	me->fd               = 0;
+	me->stack            = serd_stack_new(STACK_PAGE_SIZE);
+	me->syntax           = syntax;
+	me->cur              = cur;
+	me->bprefix          = NULL;
+	me->bprefix_len      = 0;
+	me->next_id          = 1;
+	me->read_buf         = 0;
+	me->read_head        = 0;
+	me->eof              = false;
 #ifdef SERD_STACK_CHECK
-	me->alloc_stack    = 0;
-	me->n_allocs       = 0;
+	me->alloc_stack      = 0;
+	me->n_allocs         = 0;
 #endif
 
 #define RDF_FIRST NS_RDF "first"
@@ -1415,20 +1452,84 @@ serd_reader_free(SerdReader* reader)
 	free(reader->alloc_stack);
 #endif
 	free(reader->stack.buf);
+	free(reader->bprefix);
+	if (reader->free_handle) {
+		reader->free_handle(reader->handle);
+	}
 	free(reader);
 }
 
 SERD_API
+void*
+serd_reader_get_handle(const SerdReader* reader)
+{
+	return reader->handle;
+}
+
+SERD_API
 void
-serd_reader_set_blank_prefix(SerdReader*    reader,
+serd_reader_add_blank_prefix(SerdReader*    reader,
                              const uint8_t* prefix)
 {
-	reader->blank_prefix = prefix;
+	if (reader->bprefix) {
+		free(reader->bprefix);
+		reader->bprefix_len = 0;
+		reader->bprefix     = NULL;
+	}
+	if (prefix) {
+		reader->bprefix_len = strlen((const char*)prefix);
+		reader->bprefix     = malloc(reader->bprefix_len + 1);
+		memcpy(reader->bprefix, prefix, reader->bprefix_len + 1);
+	}
+}
+
+static const uint8_t*
+file_uri_to_path(const uint8_t* uri)
+{
+	const uint8_t* filename = NULL;
+	if (serd_uri_string_has_scheme(uri)) {
+		// Absolute URI, ensure it a file and chop scheme
+		if (strncmp((const char*)uri, "file:", 5)) {
+			fprintf(stderr, "Unsupported URI scheme `%s'\n", uri);
+			return NULL;
+#ifdef __WIN32__
+		} else if (!strncmp((const char*)uri, "file:///", 8)) {
+			filename = uri + 8;
+#else
+		} else if (!strncmp((const char*)uri, "file://", 7)) {
+			filename = uri + 7;
+#endif
+		} else {
+			filename = uri + 5;
+		}
+	} else {
+		filename = uri;
+	}
+	return filename;
 }
 
 SERD_API
 SerdStatus
-serd_reader_read_file(SerdReader* me, FILE* file, const uint8_t* name)
+serd_reader_read_file(SerdReader*    reader,
+                      const uint8_t* uri)
+{
+	const uint8_t* path = file_uri_to_path(uri);
+	if (!path) {
+		return SERD_ERR_BAD_ARG;
+	}
+
+	FILE* fd = fopen((const char*)path, "r");
+	if (!fd) {
+		return SERD_ERR_UNKNOWN;
+	}
+	SerdStatus ret = serd_reader_read_file_handle(reader, fd, path);
+	fclose(fd);
+	return ret;
+}
+
+SERD_API
+SerdStatus
+serd_reader_read_file_handle(SerdReader* me, FILE* file, const uint8_t* name)
 {
 	const Cursor cur = { name, 1, 1 };
 	me->fd        = file;

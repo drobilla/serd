@@ -428,7 +428,7 @@ typedef SerdStatus (*SerdEndSink)(void*           handle,
 */
 SERD_API
 SerdEnv*
-serd_env_new();
+serd_env_new(const SerdNode* base_uri);
 
 /**
    Free @a ns.
@@ -512,11 +512,19 @@ SERD_API
 SerdReader*
 serd_reader_new(SerdSyntax        syntax,
                 void*             handle,
+                void              (*free_handle)(void*),
                 SerdBaseSink      base_sink,
                 SerdPrefixSink    prefix_sink,
                 SerdStatementSink statement_sink,
                 SerdEndSink       end_sink);
 
+/**
+   Return the @c handle passed to @ref serd_reader_new.
+*/
+SERD_API
+void*
+serd_reader_get_handle(const SerdReader* reader);
+		
 /**
    Set a prefix to be added to all blank node identifiers.
 
@@ -528,17 +536,26 @@ serd_reader_new(SerdSyntax        syntax,
 */
 SERD_API
 void
-serd_reader_set_blank_prefix(SerdReader*    reader,
+serd_reader_add_blank_prefix(SerdReader*    reader,
                              const uint8_t* prefix);
+
+/**
+   Read @a file.
+   @param Path or file: URI of file to read.
+*/
+SERD_API
+SerdStatus
+serd_reader_read_file(SerdReader*    reader,
+                      const uint8_t* uri);
 
 /**
    Read @a file.
 */
 SERD_API
 SerdStatus
-serd_reader_read_file(SerdReader*    reader,
-                      FILE*          file,
-                      const uint8_t* name);
+serd_reader_read_file_handle(SerdReader*    reader,
+                             FILE*          file,
+                             const uint8_t* name);
 
 /**
    Read @a utf8.
@@ -578,6 +595,14 @@ serd_writer_new(SerdSyntax     syntax,
 SERD_API
 void
 serd_writer_free(SerdWriter* writer);
+
+/**
+   Set a prefix to be removed from matching blank node identifiers.
+*/
+SERD_API
+void
+serd_writer_chop_blank_prefix(SerdWriter*    writer,
+                              const uint8_t* prefix);
 
 /**
    Set the current output base URI (and emit directive if applicable).

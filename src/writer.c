@@ -44,6 +44,8 @@ struct SerdWriterImpl {
 	SerdSink     sink;
 	void*        stream;
 	WriteContext context;
+	uint8_t*     bprefix;
+	size_t       bprefix_len;
 	unsigned     indent;
 	bool         empty;
 };
@@ -214,7 +216,15 @@ write_node(SerdWriter*     writer,
 		}  // else fall through
 	case SERD_BLANK_ID:
 		writer->sink("_:", 2, writer->stream);
-		writer->sink(node->buf, node->n_bytes, writer->stream);
+		if (writer->bprefix
+		    && !strncmp((const char*)node->buf, (const char*)writer->bprefix,
+		                writer->bprefix_len)) {
+			writer->sink(node->buf + writer->bprefix_len,
+			             node->n_bytes - writer->bprefix_len,
+			             writer->stream);
+		} else {
+			writer->sink(node->buf, node->n_bytes, writer->stream);
+		}
 		break;
 	case SERD_CURIE:
 		switch (writer->syntax) {
@@ -445,17 +455,36 @@ serd_writer_new(SerdSyntax     syntax,
 {
 	const WriteContext context = WRITE_CONTEXT_NULL;
 	SerdWriter*        writer  = malloc(sizeof(struct SerdWriterImpl));
-	writer->syntax     = syntax;
-	writer->style      = style;
-	writer->env        = env;
-	writer->base_uri   = base_uri ? *base_uri : SERD_URI_NULL;
-	writer->anon_stack = serd_stack_new(sizeof(WriteContext));
-	writer->sink       = sink;
-	writer->stream     = stream;
-	writer->context    = context;
-	writer->indent     = 0;
-	writer->empty      = true;
+	writer->syntax      = syntax;
+	writer->style       = style;
+	writer->env         = env;
+	writer->base_uri    = base_uri ? *base_uri : SERD_URI_NULL;
+	writer->anon_stack  = serd_stack_new(sizeof(WriteContext));
+	writer->sink        = sink;
+	writer->stream      = stream;
+	writer->context     = context;
+	writer->bprefix     = NULL;
+	writer->bprefix_len = 0;
+	writer->indent      = 0;
+	writer->empty       = true;
 	return writer;
+}
+
+SERD_API
+void
+serd_writer_chop_blank_prefix(SerdWriter*    writer,
+                              const uint8_t* prefix)
+{
+	if (writer->bprefix) {
+		free(writer->bprefix);
+		writer->bprefix_len = 0;
+		writer->bprefix     = NULL;
+	}
+	if (prefix) {
+		writer->bprefix_len = strlen((const char*)prefix);
+		writer->bprefix     = malloc(writer->bprefix_len + 1);
+		memcpy(writer->bprefix, prefix, writer->bprefix_len + 1);
+	}
 }
 
 SERD_API
@@ -512,5 +541,6 @@ serd_writer_free(SerdWriter* writer)
 	SerdWriter* const me = (SerdWriter*)writer;
 	serd_writer_finish(me);
 	serd_stack_free(&writer->anon_stack);
+	free(writer->bprefix);
 	free(me);
 }
