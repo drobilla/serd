@@ -109,17 +109,30 @@ typedef enum {
 } SerdSyntax;
 
 /**
+   Flags indication inline abbreviation information for a statement.
+*/
+typedef enum {
+	SERD_EMPTY_S      = 1 << 1,  /**< Empty blank node subject */
+	SERD_EMPTY_O      = 1 << 2,  /**< Empty blank node object */
+	SERD_ANON_S_BEGIN = 1 << 3,  /**< Start of anonymous subject */
+	SERD_ANON_O_BEGIN = 1 << 4,  /**< Start of anonymous object */
+	SERD_ANON_CONT    = 1 << 5,  /**< Continuation of anonymous node */
+	SERD_ANON_END     = 1 << 6,  /**< End of anonymous subject */
+} SerdStatementFlag;
+
+/**
+   Bitwise OR of SerdNodeFlag values.
+*/
+typedef uint32_t SerdStatementFlags;
+
+/**
    Type of a syntactic RDF node.
 
    This is more precise than the type of an abstract RDF node.  An abstract
    node is either a resource, literal, or blank.  In syntax there are two ways
    to refer to a resource (by URI or CURIE) and two ways to refer to a blank
-   (by ID or anonymously).
-
-   Serd represents a node as a string "value" associated with a @ref SerdType,
-   which is precise enough to support streaming abbreviation.  If abbreviation
-   is not applicable, @ref SERD_ANON_BEGIN and @ref SERD_ANON may simply be
-   considered equivalent to @ref SERD_BLANK_ID.
+   (by ID or anonymously).  Anonymous (inline) blank nodes are expressed using
+   SerdStatementFlags rather than this type.
 */
 typedef enum {
 	/**
@@ -156,30 +169,15 @@ typedef enum {
 	SERD_CURIE = 3,
 
 	/**
-	   A blank node ID.
+	   A blank node.
 
 	   Value is a blank node ID, e.g. "id3", which is meaningful only within
 	   this serialisation.
 	   @see <a href="http://www.w3.org/TeamSubmission/turtle#nodeID">Turtle
 	   <tt>nodeID</tt></a>
 	*/
-	SERD_BLANK_ID = 4,
+	SERD_BLANK = 4,
 
-	/**
-	   The first reference to an anonymous (inlined) blank node.
-
-	   Value is identical to a @ref SERD_BLANK_ID value (i.e. this type may be
-	   safely considered equivalent to @ref SERD_BLANK_ID).
-	*/
-	SERD_ANON_BEGIN = 5,
-
-	/**
-	   An anonymous blank node.
-
-	   Value is identical to a @ref SERD_BLANK_ID value (i.e. this type may be
-	   safely considered equivalent to @ref SERD_BLANK_ID).
-	*/
-	SERD_ANON = 6
 } SerdType;
 
 /**
@@ -399,13 +397,14 @@ typedef SerdStatus (*SerdPrefixSink)(void*           handle,
 
    Called for every RDF statement in the serialisation.
 */
-typedef SerdStatus (*SerdStatementSink)(void*           handle,
-                                        const SerdNode* graph,
-                                        const SerdNode* subject,
-                                        const SerdNode* predicate,
-                                        const SerdNode* object,
-                                        const SerdNode* object_datatype,
-                                        const SerdNode* object_lang);
+typedef SerdStatus (*SerdStatementSink)(void*              handle,
+                                        SerdStatementFlags flags,
+                                        const SerdNode*    graph,
+                                        const SerdNode*    subject,
+                                        const SerdNode*    predicate,
+                                        const SerdNode*    object,
+                                        const SerdNode*    object_datatype,
+                                        const SerdNode*    object_lang);
 
 /**
    Sink (callback) for anonymous node end markers.
@@ -632,13 +631,14 @@ serd_writer_set_prefix(SerdWriter*     writer,
 */
 SERD_API
 SerdStatus
-serd_writer_write_statement(SerdWriter*     writer,
-                            const SerdNode* graph,
-                            const SerdNode* subject,
-                            const SerdNode* predicate,
-                            const SerdNode* object,
-                            const SerdNode* object_datatype,
-                            const SerdNode* object_lang);
+serd_writer_write_statement(SerdWriter*        writer,
+                            SerdStatementFlags flags,
+                            const SerdNode*    graph,
+                            const SerdNode*    subject,
+                            const SerdNode*    predicate,
+                            const SerdNode*    object,
+                            const SerdNode*    object_datatype,
+                            const SerdNode*    object_lang);
 
 /**
    Mark the end of an anonymous node's description.
