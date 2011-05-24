@@ -222,6 +222,7 @@ def test(ctx):
             './serdi_static -c > /dev/null',
             './serdi_static -i illegal > /dev/null',
             './serdi_static -o illegal > /dev/null',
+            './serdi_static -i turtle > /dev/null',
             './serdi_static /no/such/file > /dev/null'],
                       1, name='serdi-cmd-bad')
 

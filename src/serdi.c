@@ -138,6 +138,11 @@ main(int argc, char** argv)
 		}
 	}
 
+	if (a == argc) {
+		fprintf(stderr, "Missing input\n");
+		return 1;
+	}
+	
 	const uint8_t* input = (const uint8_t*)argv[a++];
 	if (from_file) {
 		in_name = in_name ? in_name : input;
@@ -191,7 +196,7 @@ main(int argc, char** argv)
 	if (output_syntax == SERD_NTRIPLES) {
 		output_style |= SERD_STYLE_ASCII;
 	} else {
-		output_style |= SERD_STYLE_ABBREVIATED;
+		output_style |= SERD_STYLE_ABBREVIATED|SERD_STYLE_CURIED;
 	}
 
 	SerdWriter* writer = serd_writer_new(
