@@ -207,6 +207,7 @@ def test(ctx):
             './serdi_static file://%s/tests/manifest.ttl > /dev/null' % srcdir,
             './serdi_static %s/tests/UTF-8.ttl > /dev/null' % srcdir,
             './serdi_static -v > /dev/null',
+            './serdi_static -h > /dev/null',
             './serdi_static -s "<foo> a <#Thingie> ." > /dev/null',
             './serdi_static /dev/null > /dev/null'],
                       0, name='serdi-cmd-good')
@@ -214,8 +215,12 @@ def test(ctx):
     autowaf.run_tests(ctx, APPNAME, [
             './serdi_static > /dev/null',
             './serdi_static ftp://example.org/unsupported.ttl > /dev/null',
+            './serdi_static -i > /dev/null',
             './serdi_static -o > /dev/null',
             './serdi_static -z > /dev/null',
+            './serdi_static -p > /dev/null',
+            './serdi_static -c > /dev/null',
+            './serdi_static -i illegal > /dev/null',
             './serdi_static -o illegal > /dev/null',
             './serdi_static /no/such/file > /dev/null'],
                       1, name='serdi-cmd-bad')
@@ -253,7 +258,7 @@ def test(ctx):
         base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test
         out_filename = test + '.thru'
         commands += [
-            '%s -o turtle %s/%s \'%s\' | %s -i turtle - \'%s\' | sed \'s/_:docid/_:genid/g\' > %s.thru' % (
+            '%s -o turtle -p foo %s/%s \'%s\' | %s -i turtle -c foo - \'%s\' | sed \'s/_:docid/_:genid/g\' > %s.thru' % (
                 './serdi_static', srcdir, test, base_uri,
                 './serdi_static', base_uri, test) ]
         
