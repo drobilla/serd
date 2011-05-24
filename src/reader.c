@@ -246,20 +246,17 @@ push_byte(SerdReader* reader, Ref ref, const uint8_t c)
 }
 
 static inline void
-append_string(SerdReader* reader, Ref ref, const uint8_t* suffix)
+append_string(SerdReader* reader, Ref ref, const uint8_t* suffix, size_t len)
 {
 	#ifdef SERD_STACK_CHECK
 	assert(stack_is_top_string(reader, ref));
 	#endif
-	size_t   n_bytes;
-	uint32_t flags   = 0;
-	size_t   n_chars = serd_strlen(suffix, &n_bytes, &flags);
-	serd_stack_push(&reader->stack, n_bytes);
+	serd_stack_push(&reader->stack, len);
 	SerdString* const str = deref(reader, ref);
 	assert(str->n_bytes >= str->n_chars);
-	memcpy(str->buf + str->n_bytes, suffix, n_bytes + 1);
-	str->n_bytes += n_bytes;
-	str->n_chars += n_chars;
+	memcpy(str->buf + str->n_bytes, suffix, len + 1);
+	str->n_bytes += len;
+	str->n_chars += len;
 }
 
 static void
@@ -1016,8 +1013,8 @@ blank_id(SerdReader* reader)
 	}
 	char num[32];
 	snprintf(num, sizeof(num), "%u", reader->next_id++);
-	append_string(reader, str, (const uint8_t*)"genid");
-	append_string(reader, str, (const uint8_t*)num);
+	append_string(reader, str, (const uint8_t*)"genid", 5);
+	append_string(reader, str, (const uint8_t*)num, strlen(num));
 	return str;
 }
 
