@@ -126,6 +126,8 @@ def build(bld):
     bld.install_files('${MANDIR}/man1', 'doc/serdi.1')
 
     bld.add_post_fun(autowaf.run_ldconfig)
+    if bld.env['DOCS']:
+        bld.add_post_fun(fix_docs)
 
 def lint(ctx):
     subprocess.call('cpplint.py --filter=+whitespace/comments,-whitespace/tab,-whitespace/braces,-whitespace/labels,-build/header_guard,-readability/casting,-readability/todo,-build/include src/* serd/*', shell=True)
@@ -159,12 +161,16 @@ def amalgamate(ctx):
 
 def fix_docs(ctx):
     try:
+        top = os.getcwd()
         os.chdir('build/doc/html')
         os.system("sed -i 's/SERD_API //' group__serd.html")
         os.system("sed -i 's/SERD_DEPRECATED //' group__serd.html")
         os.remove('index.html')
         os.symlink('group__serd.html',
                    'index.html')
+        os.chdir(top)
+        os.chdir('build/doc/man/man3')
+        os.system("sed -i 's/SERD_API //' serd.3")
     except Exception, e:
         Logs.error("Failed to fix up Doxygen documentation (%s)\n" % e)
 
