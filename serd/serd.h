@@ -246,7 +246,7 @@ typedef enum {
    UTF-8 strlen.
    @return Length of @c str in characters (except NULL).
    @param str A null-terminated UTF-8 string.
-   @param n_bytes (Output) Set to the size of @a str in bytes (except NULL).
+   @param n_bytes (Output) Set to the size of @c str in bytes (except NULL).
    @param flags (Output) Set to the applicable flags.
 */
 SERD_API
@@ -261,28 +261,28 @@ serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags);
 static const SerdURI SERD_URI_NULL = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
 
 /**
-   Return the local path for @a uri, or NULL if @a uri is not a file URI.
+   Return the local path for @c uri, or NULL if @c uri is not a file URI.
 */
 SERD_API
 const uint8_t*
 serd_uri_to_path(const uint8_t* uri);
 
 /**
-   Return true iff @a utf8 starts with a valid URI scheme.
+   Return true iff @c utf8 starts with a valid URI scheme.
 */
 SERD_API
 bool
 serd_uri_string_has_scheme(const uint8_t* utf8);
 
 /**
-   Parse @a utf8, writing result to @a out.
+   Parse @c utf8, writing result to @c out.
 */
 SERD_API
 SerdStatus
 serd_uri_parse(const uint8_t* utf8, SerdURI* out);
 
 /**
-   Set @a out to @a uri resolved against @a base.
+   Set @c out to @c uri resolved against @c base.
 */
 SERD_API
 void
@@ -294,7 +294,7 @@ serd_uri_resolve(const SerdURI* uri, const SerdURI* base, SerdURI* out);
 typedef size_t (*SerdSink)(const void* buf, size_t len, void* stream);
 
 /**
-   Serialise @a uri with a series of calls to @a sink.
+   Serialise @c uri with a series of calls to @c sink.
 */
 SERD_API
 size_t
@@ -309,16 +309,16 @@ serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream);
 static const SerdNode SERD_NODE_NULL = { 0, 0, 0, 0, SERD_NOTHING };
 
 /**
-   Make a (shallow) node from @a str.
+   Make a (shallow) node from @c str.
 
-   This measures, but does not copy, @a str.  No memory is allocated.
+   This measures, but does not copy, @c str.  No memory is allocated.
 */
 SERD_API
 SerdNode
 serd_node_from_string(SerdType type, const uint8_t* str);
 
 /**
-   Make a deep copy of @a node.
+   Make a deep copy of @c node.
 
    @return a node that the caller must free with @ref serd_node_free.
 */
@@ -327,7 +327,7 @@ SerdNode
 serd_node_copy(const SerdNode* node);
 
 /**
-   Return true iff @a a is equal to @a b.
+   Return true iff @c a is equal to @c b.
 */
 SERD_API
 bool
@@ -352,11 +352,11 @@ serd_node_new_uri_from_string(const uint8_t* str,
                               SerdURI*       out);
 
 /**
-   Create a new node by serialising @a uri into a new string.
+   Create a new node by serialising @c uri into a new string.
 
    @param uri The URI to parse and serialise.
 
-   @param base Base URI to resolve @a uri against (or NULL for no resolution).
+   @param base Base URI to resolve @c uri against (or NULL for no resolution).
 
    @param out Set to the parsing of the new URI (i.e. points only to
    memory owned by the new returned node).
@@ -366,9 +366,9 @@ SerdNode
 serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out);
 
 /**
-   Free any data owned by @a node.
+   Free any data owned by @c node.
 
-   Note that if @a node is itself dynamically allocated (which is not the case
+   Note that if @c node is itself dynamically allocated (which is not the case
    for nodes created internally by serd), it will not be freed.
 */
 SERD_API
@@ -416,7 +416,7 @@ typedef SerdStatus (*SerdStatementSink)(void*              handle,
    Sink (callback) for anonymous node end markers.
 
    This is called to indicate that the anonymous node with the given
-   @a value will no longer be referred to by any future statements
+   @c value will no longer be referred to by any future statements
    (i.e. the anonymous serialisation of the node is finished).
 */
 typedef SerdStatus (*SerdEndSink)(void*           handle,
@@ -436,7 +436,7 @@ SerdEnv*
 serd_env_new(const SerdNode* base_uri);
 
 /**
-   Free @a ns.
+   Free @c ns.
 */
 SERD_API
 void
@@ -468,7 +468,7 @@ serd_env_set_prefix(SerdEnv*        env,
                     const SerdNode* uri);
 
 /**
-   Qualify @a uri into a CURIE if possible.
+   Qualify @c uri into a CURIE if possible.
 */
 SERD_API
 bool
@@ -478,7 +478,7 @@ serd_env_qualify(const SerdEnv*  env,
                  SerdChunk*      suffix);
 
 /**
-   Expand @a curie.
+   Expand @c curie.
 */
 SERD_API
 SerdStatus
@@ -488,7 +488,7 @@ serd_env_expand(const SerdEnv*  env,
                 SerdChunk*      uri_suffix);
 
 /**
-   Expand @a node, which must be a CURIE or URI, to a full URI.
+   Expand @c node, which must be a CURIE or URI, to a full URI.
 */
 SERD_API
 SerdNode
@@ -496,7 +496,7 @@ serd_env_expand_node(const SerdEnv*  env,
                      const SerdNode* node);
 
 /**
-   Call @a func for each prefix defined in @a env.
+   Call @c func for each prefix defined in @c env.
 */
 SERD_API
 void
@@ -545,8 +545,7 @@ serd_reader_add_blank_prefix(SerdReader*    reader,
                              const uint8_t* prefix);
 
 /**
-   Read @a file.
-   @param Path or file: URI of file to read.
+   Read a file at a given @c uri.
 */
 SERD_API
 SerdStatus
@@ -554,7 +553,7 @@ serd_reader_read_file(SerdReader*    reader,
                       const uint8_t* uri);
 
 /**
-   Read @a file.
+   Read @c file.
 */
 SERD_API
 SerdStatus
@@ -563,14 +562,14 @@ serd_reader_read_file_handle(SerdReader*    reader,
                              const uint8_t* name);
 
 /**
-   Read @a utf8.
+   Read @c utf8.
 */
 SERD_API
 SerdStatus
 serd_reader_read_string(SerdReader* me, const uint8_t* utf8);
 
 /**
-   Free @a reader.
+   Free @c reader.
 */
 SERD_API
 void
@@ -595,7 +594,7 @@ serd_writer_new(SerdSyntax     syntax,
                 void*          stream);
 
 /**
-   Free @a writer.
+   Free @c writer.
 */
 SERD_API
 void
