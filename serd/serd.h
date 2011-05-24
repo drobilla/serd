@@ -116,8 +116,7 @@ typedef enum {
 	SERD_EMPTY_O      = 1 << 2,  /**< Empty blank node object */
 	SERD_ANON_S_BEGIN = 1 << 3,  /**< Start of anonymous subject */
 	SERD_ANON_O_BEGIN = 1 << 4,  /**< Start of anonymous object */
-	SERD_ANON_CONT    = 1 << 5,  /**< Continuation of anonymous node */
-	SERD_ANON_END     = 1 << 6,  /**< End of anonymous node */
+	SERD_ANON_CONT    = 1 << 5   /**< Continuation of anonymous node */
 } SerdStatementFlag;
 
 /**
@@ -260,6 +259,13 @@ serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags);
 */
 
 static const SerdURI SERD_URI_NULL = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
+
+/**
+   Return the local path for @a uri, or NULL if @a uri is not a file URI.
+*/
+SERD_API
+const uint8_t*
+serd_uri_to_path(const uint8_t* uri);
 
 /**
    Return true iff @a utf8 starts with a valid URI scheme.

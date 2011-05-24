@@ -1492,37 +1492,12 @@ serd_reader_add_blank_prefix(SerdReader*    reader,
 	}
 }
 
-static const uint8_t*
-file_uri_to_path(const uint8_t* uri)
-{
-	const uint8_t* filename = NULL;
-	if (serd_uri_string_has_scheme(uri)) {
-		// Absolute URI, ensure it a file and chop scheme
-		if (strncmp((const char*)uri, "file:", 5)) {
-			fprintf(stderr, "Unsupported URI scheme `%s'\n", uri);
-			return NULL;
-#ifdef __WIN32__
-		} else if (!strncmp((const char*)uri, "file:///", 8)) {
-			filename = uri + 8;
-#else
-		} else if (!strncmp((const char*)uri, "file://", 7)) {
-			filename = uri + 7;
-#endif
-		} else {
-			filename = uri + 5;
-		}
-	} else {
-		filename = uri;
-	}
-	return filename;
-}
-
 SERD_API
 SerdStatus
 serd_reader_read_file(SerdReader*    reader,
                       const uint8_t* uri)
 {
-	const uint8_t* path = file_uri_to_path(uri);
+	const uint8_t* path = serd_uri_to_path(uri);
 	if (!path) {
 		return SERD_ERR_BAD_ARG;
 	}

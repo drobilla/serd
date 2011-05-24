@@ -25,6 +25,32 @@
 // #define URI_DEBUG 1
 
 SERD_API
+const uint8_t*
+serd_uri_to_path(const uint8_t* uri)
+{
+	const uint8_t* filename = NULL;
+	if (serd_uri_string_has_scheme(uri)) {
+		// Absolute URI, ensure it a file and chop scheme
+		if (strncmp((const char*)uri, "file:", 5)) {
+			fprintf(stderr, "Unsupported URI scheme `%s'\n", uri);
+			return NULL;
+#ifdef __WIN32__
+		} else if (!strncmp((const char*)uri, "file:///", 8)) {
+			filename = uri + 8;
+#else
+		} else if (!strncmp((const char*)uri, "file://", 7)) {
+			filename = uri + 7;
+#endif
+		} else {
+			filename = uri + 5;
+		}
+	} else {
+		filename = uri;
+	}
+	return filename;
+}
+
+SERD_API
 bool
 serd_uri_string_has_scheme(const uint8_t* utf8)
 {
