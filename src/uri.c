@@ -32,7 +32,10 @@ serd_uri_to_path(const uint8_t* uri)
 	if (serd_uri_string_has_scheme(uri)) {
 		// Absolute URI, ensure it a file and chop scheme
 		if (strncmp((const char*)uri, "file:", 5)) {
-			fprintf(stderr, "Unsupported URI scheme `%s'\n", uri);
+			fprintf(stderr, "Non-file URI `%s'\n", uri);
+			return NULL;
+		} else if (strncmp((const char*)uri + 5, "//", 2)) {
+			fprintf(stderr, "Illegal file URI `%s'\n", uri);
 			return NULL;
 #ifdef __WIN32__
 		} else if (!strncmp((const char*)uri, "file:///", 8)) {
