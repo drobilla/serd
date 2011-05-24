@@ -112,6 +112,7 @@ serd_env_add(SerdEnv*        env,
              const SerdNode* uri)
 {
 	assert(name && uri);
+	assert(name->n_bytes == strlen((const char*)name->buf));
 	SerdPrefix* const prefix = serd_env_find(env, name->buf, name->n_bytes);
 	if (prefix) {
 		SerdNode old_prefix_uri = prefix->uri;
