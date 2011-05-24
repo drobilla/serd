@@ -28,11 +28,10 @@ typedef struct {
 	SerdNode graph;
 	SerdNode subject;
 	SerdNode predicate;
-	SerdNode object;
 } WriteContext;
 
 static const WriteContext WRITE_CONTEXT_NULL = {
-	{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}
+	{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}
 };
 
 struct SerdWriterImpl {
@@ -178,8 +177,6 @@ reset_context(SerdWriter* writer)
 		serd_node_free(&writer->context.subject);
 	if (writer->context.predicate.buf)
 		serd_node_free(&writer->context.predicate);
-	if (writer->context.object.buf)
-		serd_node_free(&writer->context.object);
 	writer->context = WRITE_CONTEXT_NULL;
 	writer->empty   = false;
 }
@@ -353,9 +350,6 @@ serd_writer_write_statement(SerdWriter*        writer,
 			if (writer->context.predicate.buf)
 				serd_node_free(&writer->context.predicate);
 			writer->context.predicate = serd_node_copy(predicate);
-			if (writer->context.object.buf)
-				serd_node_free(&writer->context.object);
-			writer->context.object = serd_node_copy(object);
 			writer->sink(" ", 1, writer->stream);
 			write_node(writer, object, object_datatype, object_lang,
 			           FIELD_OBJECT, flags);
@@ -404,8 +398,7 @@ serd_writer_write_statement(SerdWriter*        writer,
 
 	const WriteContext new_context = { serd_node_copy(graph),
 	                                   serd_node_copy(subject),
-	                                   serd_node_copy(predicate),
-	                                   serd_node_copy(object) };
+	                                   serd_node_copy(predicate) };
 	reset_context(writer);
 	writer->context = new_context;
 	return SERD_SUCCESS;
