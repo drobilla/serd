@@ -117,7 +117,7 @@ typedef enum {
 	SERD_ANON_S_BEGIN = 1 << 3,  /**< Start of anonymous subject */
 	SERD_ANON_O_BEGIN = 1 << 4,  /**< Start of anonymous object */
 	SERD_ANON_CONT    = 1 << 5,  /**< Continuation of anonymous node */
-	SERD_ANON_END     = 1 << 6,  /**< End of anonymous subject */
+	SERD_ANON_END     = 1 << 6,  /**< End of anonymous node */
 } SerdStatementFlag;
 
 /**
@@ -200,7 +200,7 @@ typedef struct {
 	const uint8_t* buf;      /**< Value string */
 	size_t         n_bytes;  /**< Size in bytes (not including null) */
 	size_t         n_chars;  /**< Length in characters (not including null)*/
-	SerdNodeFlags  flags;    /**< String properties */
+	SerdNodeFlags  flags;    /**< Node flags (e.g. string properties) */
 	SerdType       type;     /**< Node type */
 } SerdNode;
 
