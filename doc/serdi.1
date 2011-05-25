@@ -1,7 +1,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH SERDI 1 "09 May 2011"
+.TH SERDI 1 "24 May 2011"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -26,12 +26,24 @@ serdi [OPTIONS]... INPUT BASE_URI
 Print the command line options.
 
 .TP
+\fB\-i SYNTAX\fR
+Read input in SYNTAX (`turtle' or `ntriples').
+
+.TP
 \fB\-o SYNTAX\fR
 Write output in SYNTAX (`turtle' or `ntriples').
 
 .TP
 \fB\-s INPUT\fR
 Parse INPUT as a string (terminates options).
+
+.TP
+\fB\-p PREFIX\fR
+Add PREFIX to blank node IDs.
+
+.TP
+\fB\-c PREFIX\fR
+Chop PREFIX from matching blank node IDs.
 
 .TP
 \fB\-v\fR
