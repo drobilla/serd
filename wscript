@@ -159,38 +159,39 @@ def amalgamate(ctx):
 
     amalgamation.close()
 
+def build_dir(ctx, subdir):
+    if autowaf.is_child():
+        return os.path.join('build', APPNAME, subdir)
+    else:
+        return os.path.join('build', subdir)
+    
 def fix_docs(ctx):
     try:
         top = os.getcwd()
-        os.chdir('build/doc/html')
+        os.chdir(build_dir(ctx, 'doc/html'))
         os.system("sed -i 's/SERD_API //' group__serd.html")
         os.system("sed -i 's/SERD_DEPRECATED //' group__serd.html")
         os.remove('index.html')
         os.symlink('group__serd.html',
                    'index.html')
         os.chdir(top)
-        os.chdir('build/doc/man/man3')
+        os.chdir(build_dir(ctx, 'doc/man/man3'))
         os.system("sed -i 's/SERD_API //' serd.3")
+        os.chdir(top)
     except:
-        Logs.error("Failed to fix up documentation")
+        Logs.error("Failed to fix up %s documentation" % APPNAME)
 
 def upload_docs(ctx):
     os.system("rsync -ravz --delete -e ssh build/doc/html/ drobilla@drobilla.net:~/drobilla.net/docs/serd/")
 
 def test(ctx):
-    blddir = ""
-    top_level = (len(ctx.stack_path) > 1)
-    if top_level:
-        blddir = 'build/serd/tests'
-    else:
-        blddir = 'build/tests'
-
+    blddir = build_dir(ctx, 'tests')
     try:
         os.makedirs(blddir)
     except:
         pass
 
-    for i in glob.glob('build/tests/*.*'):
+    for i in glob.glob(blddir + '/*.*'):
         os.remove(i)
 
     srcdir   = ctx.path.abspath()
