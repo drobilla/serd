@@ -6,5 +6,5 @@ includedir=@includedir@
 Name: Serd
 Version: @SERD_VERSION@
 Description: Lightweight RDF syntax library
-Libs: -L@LIBPATH_SERD@ -l@LIB_SERD@
-Cflags: -I@INCLUDES_SERD@
+Libs: -L${libdir} -l@LIB_SERD@
+Cflags: -I${includedir}/serd-@SERD_MAJOR_VERSION@

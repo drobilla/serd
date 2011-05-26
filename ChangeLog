@@ -1,3 +1,10 @@
+serd (0.4.2) unstable; urgency=low
+
+  * Fix compilation issues on some systems
+  * Fix build system Python 3 compatibility
+
+ -- David Robillard <d@drobilla.net>  Wed, 25 May 2011 19:00:00 -0400
+
 serd (0.4.0) unstable; urgency=low
 
   * Initial release

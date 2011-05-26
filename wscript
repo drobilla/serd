@@ -9,7 +9,7 @@ from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
-SERD_VERSION       = '0.4.0'
+SERD_VERSION       = '0.4.2'
 SERD_MAJOR_VERSION = '0'
 
 # Library version (UNIX style major, minor, micro)
@@ -53,8 +53,8 @@ def configure(conf):
     autowaf.define(conf, 'SERD_VERSION', SERD_VERSION)
     conf.write_config_header('serd-config.h', remove=False)
 
-    conf.env['INCLUDES_SERD'] = ['%s/serd-%s' % (
-        conf.env['INCLUDEDIR'], SERD_MAJOR_VERSION)]
+    conf.env['INCLUDES_SERD'] = ['%s/serd-%s' % (conf.env['INCLUDEDIR'],
+                                                 SERD_MAJOR_VERSION)]
     conf.env['LIBPATH_SERD'] = [conf.env['LIBDIR']]
     conf.env['LIB_SERD'] = ['serd-%s' % SERD_MAJOR_VERSION];
 
