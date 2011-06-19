@@ -394,12 +394,13 @@ serd_writer_write_statement(SerdWriter*        writer,
 		WriteContext* ctx = (WriteContext*)serd_stack_push(
 			&writer->anon_stack, sizeof(WriteContext));
 		*ctx = writer->context;
+		writer->context = WRITE_CONTEXT_NULL;  // Prevent deletion...
 	}
 
 	const WriteContext new_context = { serd_node_copy(graph),
 	                                   serd_node_copy(subject),
 	                                   serd_node_copy(predicate) };
-	reset_context(writer);
+	reset_context(writer);  // ... here
 	writer->context = new_context;
 	return SERD_SUCCESS;
 }
@@ -420,11 +421,12 @@ serd_writer_end_anon(SerdWriter*     writer,
 	--writer->indent;
 	serd_writer_write_delim(writer, '\n');
 	writer->sink("]", 1, writer->stream);
-	const bool is_subject = serd_node_equals(node, &writer->context.subject);
 	reset_context(writer);
 	writer->context = *anon_stack_top(writer);
 	serd_stack_pop(&writer->anon_stack, sizeof(WriteContext));
+	const bool is_subject = serd_node_equals(node, &writer->context.subject);
 	if (is_subject) {
+		serd_node_free(&writer->context.predicate);
 		writer->context.subject   = serd_node_copy(node);
 		writer->context.predicate = SERD_NODE_NULL;
 	}
