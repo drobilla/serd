@@ -1025,7 +1025,7 @@ blank_id(SerdReader* reader)
 static bool
 read_blank(SerdReader* reader, ReadContext ctx, bool subject, Node* dest)
 {
-	const bool was_anon_subject = (*ctx.flags | SERD_ANON_CONT);
+	const bool was_anon_subject = subject && (*ctx.flags | SERD_ANON_CONT);
 	switch (peek_byte(reader)) {
 	case '_':
 		*dest = make_node(SERD_BLANK, read_nodeID(reader));
@@ -1062,7 +1062,7 @@ read_blank(SerdReader* reader, ReadContext ctx, bool subject, Node* dest)
 			const SerdNode end = public_node(reader, dest);
 			reader->end_sink(reader->handle, &end);
 		}
-		if (subject && !was_anon_subject) {
+		if (!was_anon_subject) {
 			*ctx.flags &= ~SERD_ANON_CONT;
 		}
 		return true;
