@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 import filecmp
 import glob
@@ -29,6 +30,7 @@ out = 'build'
 
 def options(opt):
     autowaf.set_options(opt)
+    opt.load('compiler_c')
     opt.add_option('--no-utils', action='store_true', default=False, dest='no_utils',
                     help="Do not build command line utilities")
     opt.add_option('--test', action='store_true', default=False, dest='build_tests',
@@ -41,7 +43,7 @@ def configure(conf):
     conf.line_just = 13
     autowaf.display_header('Serd Configuration')
 
-    conf.load('compiler_cc')
+    conf.load('compiler_c')
     conf.env.append_value('CFLAGS', '-std=c99')
 
     conf.env['BUILD_TESTS'] = Options.options.build_tests
