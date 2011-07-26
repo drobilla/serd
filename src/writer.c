@@ -334,11 +334,17 @@ serd_writer_write_statement(SerdWriter*        writer,
 	if (serd_node_equals(subject, &writer->context.subject)) {
 		if (serd_node_equals(predicate, &writer->context.predicate)) {
 			// Abbreviate S P
-			++writer->indent;
-			serd_writer_write_delim(writer, ',');
+			if ((flags & SERD_ANON_O_BEGIN)) {
+				writer->sink(" , ", 3, writer->stream);  // ] , [
+			} else {
+				++writer->indent;
+				serd_writer_write_delim(writer, ',');
+			}
 			write_node(writer, object, object_datatype, object_lang,
 			           FIELD_OBJECT, flags);
-			--writer->indent;
+			if (!(flags & SERD_ANON_O_BEGIN)) {
+				--writer->indent;
+			}
 		} else {
 			// Abbreviate S
 			if (writer->context.predicate.buf) {

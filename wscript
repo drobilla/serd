@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 import filecmp
 import glob
@@ -10,7 +9,7 @@ from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
-SERD_VERSION       = '0.4.2'
+SERD_VERSION       = '0.4.3'
 SERD_MAJOR_VERSION = '0'
 
 # Library version (UNIX style major, minor, micro)

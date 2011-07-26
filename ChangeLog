@@ -1,3 +1,9 @@
+serd (UNRELEASED) unstable; urgency=low
+
+  * Fix pretty printing of successive blank descriptions, i.e. "] , ["
+
+ -- David Robillard <d@drobilla.net>  UNRELEASED
+
 serd (0.4.2) unstable; urgency=low
 
   * Fix compilation issues on some systems
