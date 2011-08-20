@@ -711,7 +711,7 @@ static inline uchar
 read_nameStartChar(SerdReader* reader, bool required)
 {
 	const uint8_t c = peek_byte(reader);
-	if (c == '_' || is_alpha(c)) {
+	if (c == '_' || is_alpha(c)) {  // TODO: not strictly correct
 		return eat_byte(reader, c);
 	} else {
 		if (required) {
@@ -734,8 +734,7 @@ read_nameChar(SerdReader* reader)
 	case '-': case 0xB7: case '0': case '1': case '2': case '3': case '4':
 	case '5': case '6': case '7': case '8': case '9':
 		return eat_byte(reader, c);
-	default:
-		// TODO: 0x300-0x036F | 0x203F-0x2040
+	default:  // TODO: 0x300-0x036F | 0x203F-0x2040
 		return 0;
 	}
 	return 0;

@@ -1,6 +1,7 @@
 serd (UNRELEASED) unstable; urgency=low
 
   * Fix pretty printing of successive blank descriptions, i.e. "] , ["
+  * Avoid writing illegal Turtle names as a result of URI qualifying
 
  -- David Robillard <d@drobilla.net>  UNRELEASED
 

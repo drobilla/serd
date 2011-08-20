@@ -152,6 +152,41 @@ serd_env_set_prefix(SerdEnv*        env,
 	return SERD_SUCCESS;
 }
 
+static inline bool
+is_nameStartChar(const uint8_t c)
+{
+	// TODO: not strictly correct (see reader.c read_nameStartChar)
+	return (c >= 'A' && c <= 'Z') || c == '_' || (c >= 'a' && c <= 'z');
+}
+
+static inline bool
+is_nameChar(const uint8_t c)
+{
+	// TODO: 0x300-0x036F | 0x203F-0x2040 (see reader.c read_nameChar)
+	return is_nameStartChar(c) || c == '-'
+		|| (c >= '0' && c <= '9') || c == 0xB7;
+}
+
+/**
+   Return true iff @c buf is a valid Turtle name.
+*/
+static inline bool
+is_name(const uint8_t* buf,
+        size_t         len)
+{
+	if (!is_nameStartChar(buf[0])) {
+		return false;
+	}
+
+	for (size_t i = 1; i < len; ++i) {
+		if (!is_nameChar(buf[i])) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 SERD_API
 bool
 serd_env_qualify(const SerdEnv*  env,
@@ -168,6 +203,9 @@ serd_env_qualify(const SerdEnv*  env,
 				*prefix_name = env->prefixes[i].name;
 				suffix->buf = uri->buf + prefix_uri->n_bytes;
 				suffix->len = uri->n_bytes - prefix_uri->n_bytes;
+				if (!is_name(suffix->buf, suffix->len)) {
+					continue;
+				}
 				return true;
 			}
 		}
