@@ -83,13 +83,17 @@ typedef struct SerdWriterImpl SerdWriter;
    Return status code.
 */
 typedef enum {
-	SERD_SUCCESS        = 0,  /**< No error */
-	SERD_FAILURE        = 1,  /**< Non-fatal failure */
-	SERD_ERR_UNKNOWN    = 2,  /**< Unknown error */
-	SERD_ERR_BAD_SYNTAX = 3,  /**< Invalid syntax */
-	SERD_ERR_BAD_ARG    = 3,  /**< Invalid argument */
-	SERD_ERR_NOT_FOUND  = 4   /**< Not found */
+	SERD_SUCCESS,         /**< No error */
+	SERD_FAILURE,         /**< Non-fatal failure */
+	SERD_ERR_UNKNOWN,     /**< Unknown error */
+	SERD_ERR_BAD_SYNTAX,  /**< Invalid syntax */
+	SERD_ERR_BAD_ARG,     /**< Invalid argument */
+	SERD_ERR_NOT_FOUND    /**< Not found */
 } SerdStatus;
+
+SERD_API
+const uint8_t*
+serd_strerror(SerdStatus status);
 
 /**
    RDF syntax type.

@@ -15,6 +15,7 @@
 */
 
 #include <assert.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -316,14 +317,15 @@ emit_statement(SerdReader* reader, SerdStatementFlags* flags,
 	const SerdNode datatype  = public_node(reader, d);
 	const SerdNode lang      = public_node_from_ref(reader, SERD_LITERAL, l);
 	object.flags = f;
-	bool ret = !reader->statement_sink(reader->handle,
-	                                   *flags,
-	                                   &graph,
-	                                   &subject,
-	                                   &predicate,
-	                                   &object,
-	                                   &datatype,
-	                                   &lang);
+	bool ret = !reader->statement_sink
+		|| !reader->statement_sink(reader->handle,
+		                           *flags,
+		                           &graph,
+		                           &subject,
+		                           &predicate,
+		                           &object,
+		                           &datatype,
+		                           &lang);
 	*flags = (*flags & SERD_ANON_CONT) ? SERD_ANON_CONT : 0;
 	return ret;
 }
@@ -1326,7 +1328,9 @@ read_base(SerdReader* reader)
 	Ref uri;
 	TRY_RET(uri = read_uriref(reader));
 	const SerdNode uri_node = public_node_from_ref(reader, SERD_URI, uri);
-	reader->base_sink(reader->handle, &uri_node);
+	if (reader->base_sink) {
+		reader->base_sink(reader->handle, &uri_node);
+	}
 	pop_string(reader, uri);
 	return true;
 }
@@ -1339,7 +1343,7 @@ read_prefixID(SerdReader* reader)
 	// `@' is already eaten in read_directive
 	eat_string(reader, "prefix", 6);
 	TRY_RET(read_ws_plus(reader));
-	bool ret = false;
+	bool ret = true;
 	Ref name = read_prefixName(reader);
 	if (!name) {
 		name = push_string(reader, "", 0);
@@ -1350,7 +1354,9 @@ read_prefixID(SerdReader* reader)
 	TRY_THROW(uri = read_uriref(reader));
 	const SerdNode name_node = public_node_from_ref(reader, SERD_LITERAL, name);
 	const SerdNode uri_node  = public_node_from_ref(reader, SERD_URI, uri);
-	ret = !reader->prefix_sink(reader->handle, &name_node, &uri_node);
+	if (reader->prefix_sink) {
+		ret = !reader->prefix_sink(reader->handle, &name_node, &uri_node);
+	}
 	pop_string(reader, uri);
 except:
 	pop_string(reader, name);
@@ -1503,6 +1509,7 @@ serd_reader_read_file(SerdReader*    reader,
 
 	FILE* fd = fopen((const char*)path, "r");
 	if (!fd) {
+		fprintf(stderr, "Error opening file %s (%s)\n", path, strerror(errno));
 		return SERD_ERR_UNKNOWN;
 	}
 	SerdStatus ret = serd_reader_read_file_handle(reader, fd, path);

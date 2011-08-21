@@ -2,8 +2,11 @@ serd (UNRELEASED) unstable; urgency=low
 
   * Fix pretty printing of successive blank descriptions, i.e. "] , ["
   * Avoid writing illegal Turtle names as a result of URI qualifying
+  * Gracefully handle NULL reader sinks
+  * Add serd_strerror
+  * Fix erroneously equal SERD_ERR_BAD_SYNTAX and SERD_ERR_BAD_ARG.
 
- -- David Robillard <d@drobilla.net>  UNRELEASED
+ -- David Robillard <d@drobilla.net>  (UNRELEASED)
 
 serd (0.4.2) unstable; urgency=low
 
