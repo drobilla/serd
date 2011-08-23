@@ -211,28 +211,29 @@ def test(ctx):
 
     autowaf.pre_test(ctx, APPNAME)
 
+    nul = os.devnull
     autowaf.run_tests(ctx, APPNAME, [
-            './serdi_static file:%s/tests/manifest.ttl > /dev/null' % srcdir,
-            './serdi_static file://%s/tests/manifest.ttl > /dev/null' % srcdir,
-            './serdi_static %s/tests/UTF-8.ttl > /dev/null' % srcdir,
-            './serdi_static -v > /dev/null',
-            './serdi_static -h > /dev/null',
-            './serdi_static -s "<foo> a <#Thingie> ." > /dev/null',
-            './serdi_static /dev/null > /dev/null'],
+            './serdi_static file:%s/tests/manifest.ttl > %s' % (srcdir, nul),
+            './serdi_static file://%s/tests/manifest.ttl > %s' % (srcdir, nul),
+            './serdi_static %s/tests/UTF-8.ttl > %s' % (srcdir, nul),
+            './serdi_static -v > %s' % nul,
+            './serdi_static -h > %s' % nul,
+            './serdi_static -s "<foo> a <#Thingie> ." > %s' % nul,
+            './serdi_static %s > %s' % (nul, nul)],
                       0, name='serdi-cmd-good')
 
     autowaf.run_tests(ctx, APPNAME, [
-            './serdi_static > /dev/null',
-            './serdi_static ftp://example.org/unsupported.ttl > /dev/null',
-            './serdi_static -i > /dev/null',
-            './serdi_static -o > /dev/null',
-            './serdi_static -z > /dev/null',
-            './serdi_static -p > /dev/null',
-            './serdi_static -c > /dev/null',
-            './serdi_static -i illegal > /dev/null',
-            './serdi_static -o illegal > /dev/null',
-            './serdi_static -i turtle > /dev/null',
-            './serdi_static /no/such/file > /dev/null'],
+            './serdi_static > %s' % nul,
+            './serdi_static ftp://example.org/unsupported.ttl > %s' % nul,
+            './serdi_static -i > %s' % nul,
+            './serdi_static -o > %s' % nul,
+            './serdi_static -z > %s' % nul,
+            './serdi_static -p > %s' % nul,
+            './serdi_static -c > %s' % nul,
+            './serdi_static -i illegal > %s' % nul,
+            './serdi_static -o illegal > %s' % nul,
+            './serdi_static -i turtle > %s' % nul,
+            './serdi_static /no/such/file > %s' % nul],
                       1, name='serdi-cmd-bad')
 
     commands = []
