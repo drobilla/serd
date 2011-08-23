@@ -211,35 +211,36 @@ def test(ctx):
 
     autowaf.pre_test(ctx, APPNAME)
 
+    os.environ['PATH'] = '.' + os.pathsep + os.getenv('PATH')
     nul = os.devnull
     autowaf.run_tests(ctx, APPNAME, [
-            './serdi_static file:%s/tests/manifest.ttl > %s' % (srcdir, nul),
-            './serdi_static file://%s/tests/manifest.ttl > %s' % (srcdir, nul),
-            './serdi_static %s/tests/UTF-8.ttl > %s' % (srcdir, nul),
-            './serdi_static -v > %s' % nul,
-            './serdi_static -h > %s' % nul,
-            './serdi_static -s "<foo> a <#Thingie> ." > %s' % nul,
-            './serdi_static %s > %s' % (nul, nul)],
+            'serdi_static file:%s/tests/manifest.ttl > %s' % (srcdir, nul),
+            'serdi_static file://%s/tests/manifest.ttl > %s' % (srcdir, nul),
+            'serdi_static %s/tests/UTF-8.ttl > %s' % (srcdir, nul),
+            'serdi_static -v > %s' % nul,
+            'serdi_static -h > %s' % nul,
+            'serdi_static -s "<foo> a <#Thingie> ." > %s' % nul,
+            'serdi_static %s > %s' % (nul, nul)],
                       0, name='serdi-cmd-good')
 
     autowaf.run_tests(ctx, APPNAME, [
-            './serdi_static > %s' % nul,
-            './serdi_static ftp://example.org/unsupported.ttl > %s' % nul,
-            './serdi_static -i > %s' % nul,
-            './serdi_static -o > %s' % nul,
-            './serdi_static -z > %s' % nul,
-            './serdi_static -p > %s' % nul,
-            './serdi_static -c > %s' % nul,
-            './serdi_static -i illegal > %s' % nul,
-            './serdi_static -o illegal > %s' % nul,
-            './serdi_static -i turtle > %s' % nul,
-            './serdi_static /no/such/file > %s' % nul],
+            'serdi_static > %s' % nul,
+            'serdi_static ftp://example.org/unsupported.ttl > %s' % nul,
+            'serdi_static -i > %s' % nul,
+            'serdi_static -o > %s' % nul,
+            'serdi_static -z > %s' % nul,
+            'serdi_static -p > %s' % nul,
+            'serdi_static -c > %s' % nul,
+            'serdi_static -i illegal > %s' % nul,
+            'serdi_static -o illegal > %s' % nul,
+            'serdi_static -i turtle > %s' % nul,
+            'serdi_static /no/such/file > %s' % nul],
                       1, name='serdi-cmd-bad')
 
     commands = []
     for test in good_tests:
         base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test
-        commands += [ './serdi_static %s/%s \'%s\' > %s.out' % (srcdir, test, base_uri, test) ]
+        commands += [ 'serdi_static %s/%s \'%s\' > %s.out' % (srcdir, test, base_uri, test) ]
 
     autowaf.run_tests(ctx, APPNAME, commands, 0, name='good')
 
@@ -257,7 +258,7 @@ def test(ctx):
 
     commands = []
     for test in bad_tests:
-        commands += [ './serdi_static %s/%s \'http://www.w3.org/2001/sw/DataAccess/df1/%s\' > %s.out' % (srcdir, test, test, test) ]
+        commands += [ 'serdi_static %s/%s \'http://www.w3.org/2001/sw/DataAccess/df1/%s\' > %s.out' % (srcdir, test, test, test) ]
 
     autowaf.run_tests(ctx, APPNAME, commands, 1, name='bad')
 
@@ -270,8 +271,8 @@ def test(ctx):
         out_filename = test + '.thru'
         commands += [
             '%s -o turtle -p foo %s/%s \'%s\' | %s -i turtle -c foo - \'%s\' | sed \'s/_:docid/_:genid/g\' > %s.thru' % (
-                './serdi_static', srcdir, test, base_uri,
-                './serdi_static', base_uri, test) ]
+                'serdi_static', srcdir, test, base_uri,
+                'serdi_static', base_uri, test) ]
         
     autowaf.run_tests(ctx, APPNAME, commands, 0, name='turtle-round-trip')
     Logs.pprint('BOLD', '\nVerifying ntriples => turtle => ntriples')
