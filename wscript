@@ -31,11 +31,13 @@ def options(opt):
     autowaf.set_options(opt)
     opt.load('compiler_c')
     opt.add_option('--no-utils', action='store_true', default=False, dest='no_utils',
-                    help="Do not build command line utilities")
+                   help="Do not build command line utilities")
     opt.add_option('--test', action='store_true', default=False, dest='build_tests',
-                    help="Build unit tests")
+                   help="Build unit tests")
     opt.add_option('--stack-check', action='store_true', default=False, dest='stack_check',
-                    help="Include runtime stack sanity checks")
+                   help="Include runtime stack sanity checks")
+    opt.add_option('--static', action='store_true', default=False, dest='static',
+                   help="Build static library")
 
 def configure(conf):
     autowaf.configure(conf)
@@ -47,6 +49,7 @@ def configure(conf):
 
     conf.env['BUILD_TESTS'] = Options.options.build_tests
     conf.env['BUILD_UTILS'] = not Options.options.no_utils
+    conf.env['BUILD_STATIC'] = Options.options.static
 
     if Options.options.stack_check:
         autowaf.define(conf, 'SERD_STACK_CHECK', SERD_VERSION)
@@ -81,7 +84,7 @@ def build(bld):
             src/writer.c
     '''
 
-    # Library
+    # Shared Library
     obj = bld(features = 'c cshlib')
     obj.export_includes = ['.']
     obj.source          = lib_source
@@ -92,21 +95,33 @@ def build(bld):
     obj.install_path    = '${LIBDIR}'
     obj.cflags          = [ '-fvisibility=hidden', '-DSERD_SHARED', '-DSERD_INTERNAL' ]
 
+    # Static library
+    if bld.env['BUILD_STATIC']:
+        obj = bld(features = 'c cstlib')
+        obj.export_includes = ['.']
+        obj.source          = lib_source
+        obj.includes        = ['.', './src']
+        obj.name            = 'libserd_static'
+        obj.target          = 'serd-%s' % SERD_MAJOR_VERSION
+        obj.vnum            = SERD_LIB_VERSION
+        obj.install_path    = '${LIBDIR}'
+        obj.cflags          = [ '-DSERD_INTERNAL' ]
+
     if bld.env['BUILD_TESTS']:
         # Static library (for unit test code coverage)
         obj = bld(features = 'c cstlib')
         obj.source       = lib_source
         obj.includes     = ['.', './src']
-        obj.name         = 'libserd_static'
-        obj.target       = 'serd_static'
+        obj.name         = 'libserd_profiled'
+        obj.target       = 'serd_profiled'
         obj.install_path = ''
-        obj.cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ]
+        obj.cflags       = [ '-fprofile-arcs', '-ftest-coverage', '-DSERD_INTERNAL' ]
 
         # Unit test program
         obj = bld(features = 'c cprogram')
         obj.source       = 'src/serdi.c'
         obj.includes     = ['.', './src']
-        obj.use          = 'libserd_static'
+        obj.use          = 'libserd_profiled'
         obj.linkflags    = '-lgcov'
         obj.target       = 'serdi_static'
         obj.install_path = ''
@@ -166,7 +181,7 @@ def build_dir(ctx, subdir):
         return os.path.join('build', APPNAME, subdir)
     else:
         return os.path.join('build', subdir)
-    
+
 def fix_docs(ctx):
     try:
         top = os.getcwd()
@@ -273,7 +288,7 @@ def test(ctx):
             '%s -o turtle -p foo %s/%s \'%s\' | %s -i turtle -c foo - \'%s\' | sed \'s/_:docid/_:genid/g\' > %s.thru' % (
                 'serdi_static', srcdir, test, base_uri,
                 'serdi_static', base_uri, test) ]
-        
+
     autowaf.run_tests(ctx, APPNAME, commands, 0, name='turtle-round-trip')
     Logs.pprint('BOLD', '\nVerifying ntriples => turtle => ntriples')
     for test in thru_tests:
