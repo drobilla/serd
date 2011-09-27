@@ -472,6 +472,15 @@ serd_env_set_prefix(SerdEnv*        env,
                     const SerdNode* uri);
 
 /**
+   Set a namespace prefix.
+*/
+SERD_API
+SerdStatus
+serd_env_set_prefix_from_strings(SerdEnv*       env,
+                                 const uint8_t* name,
+                                 const uint8_t* uri);
+
+/**
    Qualify @c uri into a CURIE if possible.
 */
 SERD_API

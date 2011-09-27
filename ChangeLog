@@ -4,6 +4,7 @@ serd (UNRELEASED) unstable; urgency=low
   * Avoid writing illegal Turtle names as a result of URI qualifying
   * Gracefully handle NULL reader sinks
   * Add serd_strerror
+  * Add serd_env_set_prefix_from_strings for convenience
   * Fix erroneously equal SERD_ERR_BAD_SYNTAX and SERD_ERR_BAD_ARG
   * Add ability to build static library
 

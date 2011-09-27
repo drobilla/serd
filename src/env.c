@@ -152,6 +152,20 @@ serd_env_set_prefix(SerdEnv*        env,
 	return SERD_SUCCESS;
 }
 
+SERD_API
+SerdStatus
+serd_env_set_prefix_from_strings(SerdEnv*       env,
+                                 const uint8_t* name,
+                                 const uint8_t* uri)
+{
+	const SerdNode name_node = serd_node_from_string(SERD_LITERAL, name);
+	const SerdNode uri_node  = serd_node_from_string(SERD_URI, uri);
+
+	SerdStatus ret = serd_env_set_prefix(env, &name_node, &uri_node);
+
+	return ret;
+}
+
 static inline bool
 is_nameStartChar(const uint8_t c)
 {

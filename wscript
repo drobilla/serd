@@ -9,7 +9,7 @@ from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
-SERD_VERSION       = '0.4.5'
+SERD_VERSION       = '0.5.0'
 SERD_MAJOR_VERSION = '0'
 
 # Library version (UNIX style major, minor, micro)
@@ -40,12 +40,12 @@ def options(opt):
                    help="Build static library")
 
 def configure(conf):
+    conf.load('compiler_c')
+
     autowaf.configure(conf)
-    conf.line_just = 13
     autowaf.display_header('Serd Configuration')
 
-    conf.load('compiler_c')
-    conf.env.append_value('CFLAGS', '-std=c99')
+    conf.env.append_unique('CFLAGS', '-std=c99')
 
     conf.env['BUILD_TESTS'] = Options.options.build_tests
     conf.env['BUILD_UTILS'] = not Options.options.no_utils
