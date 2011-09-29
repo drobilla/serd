@@ -4,6 +4,7 @@ import glob
 import os
 import shutil
 import subprocess
+import sys
 
 from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
@@ -28,8 +29,8 @@ top = '.'
 out = 'build'
 
 def options(opt):
-    autowaf.set_options(opt)
     opt.load('compiler_c')
+    autowaf.set_options(opt)
     opt.add_option('--no-utils', action='store_true', default=False, dest='no_utils',
                    help="Do not build command line utilities")
     opt.add_option('--test', action='store_true', default=False, dest='build_tests',
@@ -41,7 +42,6 @@ def options(opt):
 
 def configure(conf):
     conf.load('compiler_c')
-
     autowaf.configure(conf)
     autowaf.display_header('Serd Configuration')
 
@@ -84,6 +84,10 @@ def build(bld):
             src/writer.c
     '''
 
+    libflags = [ '-fvisibility=hidden' ]
+    if sys.platform == 'win32':
+        libflags = []
+
     # Shared Library
     obj = bld(features        = 'c cshlib',
               export_includes = ['.'],
@@ -93,8 +97,8 @@ def build(bld):
               target          = 'serd-%s' % SERD_MAJOR_VERSION,
               vnum            = SERD_LIB_VERSION,
               install_path    = '${LIBDIR}',
-              cflags          = [ '-fvisibility=hidden',
-                                  '-DSERD_SHARED', '-DSERD_INTERNAL' ])
+              cflags          = libflags + [ '-DSORD_SHARED',
+                                             '-DSORD_INTERNAL' ])
 
     # Static library
     if bld.env['BUILD_STATIC']:
