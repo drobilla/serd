@@ -4,7 +4,21 @@ body {
 }
 
 #top {
-	display: none;
+	background-color: #F3F3F3;
+	margin: 0;
+    padding: 0;
+	border-bottom: 1px solid #DDD;
+    margin-bottom: 1ex;
+    font-size: 180%;
+    font-weight: bold;
+}
+
+div.header {
+    display: none;
+}
+
+.tabs {
+    display: none;
 }
 
 h1 h2 h3 h4 h5 h6 {
@@ -553,4 +567,6 @@ div.header {
 
 div.headertitle {
 	padding: 5px 5px 5px 10px;
+    font-size: 180%;
+    font-weight: bold;
 }
