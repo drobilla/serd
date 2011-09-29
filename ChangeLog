@@ -1,4 +1,4 @@
-serd (UNRELEASED) unstable; urgency=low
+serd (0.5.0) unstable; urgency=low
 
   * Fix pretty printing of successive blank descriptions, i.e. "] , ["
   * Avoid writing illegal Turtle names as a result of URI qualifying
@@ -8,7 +8,7 @@ serd (UNRELEASED) unstable; urgency=low
   * Fix erroneously equal SERD_ERR_BAD_SYNTAX and SERD_ERR_BAD_ARG
   * Add ability to build static library
 
- -- David Robillard <d@drobilla.net>  (UNRELEASED)
+ -- David Robillard <d@drobilla.net>  Thu, 29 Sep 2011 00:00:00 -0400
 
 serd (0.4.2) unstable; urgency=low
 
