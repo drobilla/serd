@@ -97,8 +97,8 @@ def build(bld):
               target          = 'serd-%s' % SERD_MAJOR_VERSION,
               vnum            = SERD_LIB_VERSION,
               install_path    = '${LIBDIR}',
-              cflags          = libflags + [ '-DSORD_SHARED',
-                                             '-DSORD_INTERNAL' ])
+              cflags          = libflags + [ '-DSERD_SHARED',
+                                             '-DSERD_INTERNAL' ])
 
     # Static library
     if bld.env['BUILD_STATIC']:
