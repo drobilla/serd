@@ -74,7 +74,7 @@ set_syntax(SerdSyntax* syntax, const char* name)
 	}
 	return true;
 }
-	
+
 int
 main(int argc, char** argv)
 {
@@ -142,7 +142,7 @@ main(int argc, char** argv)
 		fprintf(stderr, "Missing input\n");
 		return 1;
 	}
-	
+
 	const uint8_t* input = (const uint8_t*)argv[a++];
 	if (from_file) {
 		in_name = in_name ? in_name : input;
@@ -183,7 +183,7 @@ main(int argc, char** argv)
 	SerdURI  base_uri = SERD_URI_NULL;
 	SerdNode base_uri_node = serd_node_new_uri_from_string(
 		base_uri_str, &base_uri, &base_uri);
-	
+
 	if (!base_uri_node.buf) {
 		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
 		return 1;

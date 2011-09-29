@@ -85,56 +85,58 @@ def build(bld):
     '''
 
     # Shared Library
-    obj = bld(features = 'c cshlib')
-    obj.export_includes = ['.']
-    obj.source          = lib_source
-    obj.includes        = ['.', './src']
-    obj.name            = 'libserd'
-    obj.target          = 'serd-%s' % SERD_MAJOR_VERSION
-    obj.vnum            = SERD_LIB_VERSION
-    obj.install_path    = '${LIBDIR}'
-    obj.cflags          = [ '-fvisibility=hidden', '-DSERD_SHARED', '-DSERD_INTERNAL' ]
+    obj = bld(features        = 'c cshlib',
+              export_includes = ['.'],
+              source          = lib_source,
+              includes        = ['.', './src'],
+              name            = 'libserd',
+              target          = 'serd-%s' % SERD_MAJOR_VERSION,
+              vnum            = SERD_LIB_VERSION,
+              install_path    = '${LIBDIR}',
+              cflags          = [ '-fvisibility=hidden',
+                                  '-DSERD_SHARED', '-DSERD_INTERNAL' ])
 
     # Static library
     if bld.env['BUILD_STATIC']:
-        obj = bld(features = 'c cstlib')
-        obj.export_includes = ['.']
-        obj.source          = lib_source
-        obj.includes        = ['.', './src']
-        obj.name            = 'libserd_static'
-        obj.target          = 'serd-%s' % SERD_MAJOR_VERSION
-        obj.vnum            = SERD_LIB_VERSION
-        obj.install_path    = '${LIBDIR}'
-        obj.cflags          = [ '-DSERD_INTERNAL' ]
+        obj = bld(features        = 'c cstlib',
+                  export_includes = ['.'],
+                  source          = lib_source,
+                  includes        = ['.', './src'],
+                  name            = 'libserd_static',
+                  target          = 'serd-%s' % SERD_MAJOR_VERSION,
+                  vnum            = SERD_LIB_VERSION,
+                  install_path    = ',{LIBDIR}',
+                  cflags          = [ '-DSERD_INTERNAL' ])
 
     if bld.env['BUILD_TESTS']:
         # Static library (for unit test code coverage)
-        obj = bld(features = 'c cstlib')
-        obj.source       = lib_source
-        obj.includes     = ['.', './src']
-        obj.name         = 'libserd_profiled'
-        obj.target       = 'serd_profiled'
-        obj.install_path = ''
-        obj.cflags       = [ '-fprofile-arcs', '-ftest-coverage', '-DSERD_INTERNAL' ]
+        obj = bld(features     = 'c cstlib',
+                  source       = lib_source,
+                  includes     = ['.', './src'],
+                  name         = 'libserd_profiled',
+                  target       = 'serd_profiled',
+                  install_path = '',
+                  cflags       = [ '-fprofile-arcs', '-ftest-coverage',
+                                   '-DSERD_INTERNAL' ])
 
         # Unit test program
-        obj = bld(features = 'c cprogram')
-        obj.source       = 'src/serdi.c'
-        obj.includes     = ['.', './src']
-        obj.use          = 'libserd_profiled'
-        obj.linkflags    = '-lgcov'
-        obj.target       = 'serdi_static'
-        obj.install_path = ''
-        obj.cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ]
+        obj = bld(features     = 'c cprogram',
+                  source       = 'src/serdi.c',
+                  includes     = ['.', './src'],
+                  use          = 'libserd_profiled',
+                  linkflags    = '-lgcov',
+                  target       = 'serdi_static',
+                  install_path = '',
+                  cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ])
 
     # Utilities
     if bld.env['BUILD_UTILS']:
-        obj = bld(features = 'c cprogram')
-        obj.source       = 'src/serdi.c'
-        obj.includes     = ['.', './src']
-        obj.use          = 'libserd'
-        obj.target       = 'serdi'
-        obj.install_path = '${BINDIR}'
+        obj = bld(features     = 'c cprogram',
+                  source       = 'src/serdi.c',
+                  includes     = ['.', './src'],
+                  use          = 'libserd',
+                  target       = 'serdi',
+                  install_path = '${BINDIR}')
 
     # Documentation
     autowaf.build_dox(bld, 'SERD', SERD_VERSION, top, out)

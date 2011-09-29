@@ -266,7 +266,8 @@ serd_env_expand_node(const SerdEnv*  env,
 		                 0,
 		                 SERD_URI };
 		ret.buf = malloc(ret.n_bytes + 1);
-		snprintf((char*)ret.buf, ret.n_bytes + 1, "%s%s", prefix.buf, suffix.buf);
+		snprintf((char*)ret.buf, ret.n_bytes + 1,
+		         "%s%s", prefix.buf, suffix.buf);
 		return ret;
 	} else if (node->type == SERD_URI) {
 		SerdURI ignored;

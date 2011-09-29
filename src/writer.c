@@ -213,9 +213,9 @@ write_node(SerdWriter*        writer,
 			writer->sink("[]", 2, writer->stream);
 		} else {
 			writer->sink("_:", 2, writer->stream);
-			if (writer->bprefix
-			    && !strncmp((const char*)node->buf, (const char*)writer->bprefix,
-			                writer->bprefix_len)) {
+			if (writer->bprefix && !strncmp((const char*)node->buf,
+			                                (const char*)writer->bprefix,
+			                                writer->bprefix_len)) {
 				writer->sink(node->buf + writer->bprefix_len,
 				             node->n_bytes - writer->bprefix_len,
 				             writer->stream);
@@ -254,7 +254,8 @@ write_node(SerdWriter*        writer,
 		    && ((node->flags & SERD_HAS_NEWLINE)
 		        || (node->flags & SERD_HAS_QUOTE))) {
 			writer->sink("\"\"\"", 3, writer->stream);
-			write_text(writer, WRITE_LONG_STRING, node->buf, node->n_bytes, '\0');
+			write_text(writer, WRITE_LONG_STRING,
+			           node->buf, node->n_bytes, '\0');
 			writer->sink("\"\"\"", 3, writer->stream);
 		} else {
 			writer->sink("\"", 1, writer->stream);

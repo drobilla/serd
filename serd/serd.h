@@ -542,7 +542,7 @@ serd_reader_new(SerdSyntax        syntax,
 SERD_API
 void*
 serd_reader_get_handle(const SerdReader* reader);
-		
+
 /**
    Set a prefix to be added to all blank node identifiers.
 

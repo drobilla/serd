@@ -67,7 +67,7 @@ static const Node INTERNAL_NODE_NULL = { 0, 0 };
 
 struct SerdReaderImpl {
 	void*             handle;
-	void              (*free_handle)(void*);
+	void              (*free_handle)(void* ptr);
 	SerdBaseSink      base_sink;
 	SerdPrefixSink    prefix_sink;
 	SerdStatementSink statement_sink;
@@ -330,8 +330,11 @@ emit_statement(SerdReader* reader, SerdStatementFlags* flags,
 	return ret;
 }
 
-static bool read_collection(SerdReader* reader, ReadContext ctx, Node* dest);
-static bool read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool blank);
+static bool
+read_collection(SerdReader* reader, ReadContext ctx, Node* dest);
+
+static bool
+read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool blank);
 
 // [40]	hex	::=	[#x30-#x39] | [#x41-#x46]
 static inline uint8_t

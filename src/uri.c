@@ -292,68 +292,67 @@ serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream)
 	if (uri->path_base.len) {
 		if (!uri->path.buf && (uri->fragment.buf || uri->query.buf)) {
 			WRITE_COMPONENT("", uri->path_base, "");
-		} else {
+		} else if (uri->path.buf) {
 			/* Merge paths, removing dot components.
 			   See http://tools.ietf.org/html/rfc3986#section-5.2.3
 			*/
 			const uint8_t* begin = uri->path.buf;
 			size_t         up    = 1;
 
-			if (begin) {
-				// Count and skip leading dot components
-				const uint8_t* end = uri->path.buf + uri->path.len;
-				for (bool done = false; !done && (begin < end);) {
-					switch (begin[0]) {
+			// Count and skip leading dot components
+			const uint8_t* end = uri->path.buf + uri->path.len;
+			for (bool done = false; !done && (begin < end);) {
+				switch (begin[0]) {
+				case '.':
+					switch (begin[1]) {
+					case '/':
+						begin += 2;  // Chop leading "./"
+						break;
 					case '.':
-						switch (begin[1]) {
+						++up;
+						switch (begin[2]) {
 						case '/':
-							begin += 2;  // Chop leading "./"
-							break;
-						case '.':
-							++up;
-							switch (begin[2]) {
-							case '/':
-								begin += 3;  // Chop lading "../"
-								break;
-							default:
-								begin += 2;  // Chop leading ".."
-							}
+							begin += 3;  // Chop lading "../"
 							break;
 						default:
-							++begin;  // Chop leading "."
+							begin += 2;  // Chop leading ".."
 						}
 						break;
-					case '/':
-						if (begin[1] == '/') {
-							++begin;  // Replace leading "//" with "/"
-							break;
-						}  // else fall through
 					default:
-						done = true;  // Finished chopping dot components
+						++begin;  // Chop leading "."
 					}
+					break;
+				case '/':
+					if (begin[1] == '/') {
+						++begin;  // Replace leading "//" with "/"
+						break;
+					}  // else fall through
+				default:
+					done = true;  // Finished chopping dot components
 				}
-
-				if (uri->path.buf && uri->path_base.buf) {
-					// Find the up'th last slash
-					const uint8_t* base_last = uri->path_base.buf + uri->path_base.len - 1;
-					do {
-						if (*base_last == '/') {
-							--up;
-						}
-					} while (up > 0 && (--base_last > uri->path_base.buf));
-
-					// Write base URI prefix
-					const size_t base_len = base_last - uri->path_base.buf + 1;
-					WRITE(uri->path_base.buf, base_len);
-
-				} else {
-					// Relative path is just query or fragment, append it to full base URI
-					WRITE_COMPONENT("", uri->path_base, "");
-				}
-
-				// Write URI suffix
-				WRITE(begin, end - begin);
 			}
+
+			if (uri->path.buf && uri->path_base.buf) {
+				// Find the up'th last slash
+				const uint8_t* base_last = (uri->path_base.buf
+				                            + uri->path_base.len - 1);
+				do {
+					if (*base_last == '/') {
+						--up;
+					}
+				} while (up > 0 && (--base_last > uri->path_base.buf));
+
+				// Write base URI prefix
+				const size_t base_len = base_last - uri->path_base.buf + 1;
+				WRITE(uri->path_base.buf, base_len);
+
+			} else {
+				// Relative path is just query or fragment, append to base URI
+				WRITE_COMPONENT("", uri->path_base, "");
+			}
+
+			// Write URI suffix
+			WRITE(begin, end - begin);
 		}
 	} else {
 		WRITE_COMPONENT("", uri->path, "");
