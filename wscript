@@ -105,7 +105,7 @@ def build(bld):
                   name            = 'libserd_static',
                   target          = 'serd-%s' % SERD_MAJOR_VERSION,
                   vnum            = SERD_LIB_VERSION,
-                  install_path    = ',{LIBDIR}',
+                  install_path    = '${LIBDIR}',
                   cflags          = [ '-DSERD_INTERNAL' ])
 
     if bld.env['BUILD_TESTS']:
