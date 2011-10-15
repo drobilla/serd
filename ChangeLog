@@ -1,3 +1,9 @@
+serd (UNRELEASED) unstable; urgency=low
+
+  * Use path variables in pkgconfig files
+
+ -- David Robillard <d@drobilla.net>  (UNRELEASED)
+
 serd (0.5.0) unstable; urgency=low
 
   * Fix pretty printing of successive blank descriptions, i.e. "] , ["
