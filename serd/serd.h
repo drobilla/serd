@@ -91,10 +91,6 @@ typedef enum {
 	SERD_ERR_NOT_FOUND    /**< Not found */
 } SerdStatus;
 
-SERD_API
-const uint8_t*
-serd_strerror(SerdStatus status);
-
 /**
    RDF syntax type.
 */
@@ -247,7 +243,19 @@ typedef enum {
 } SerdStyle;
 
 /**
-   UTF-8 strlen.
+   @name String Utilities
+   @{
+*/
+
+/**
+   Return a string describing a status code.
+*/
+SERD_API
+const uint8_t*
+serd_strerror(SerdStatus status);
+
+/**
+   Measure a UTF-8 string.
    @return Length of @c str in characters (except NULL).
    @param str A null-terminated UTF-8 string.
    @param n_bytes (Output) Set to the size of @c str in bytes (except NULL).
@@ -258,6 +266,7 @@ size_t
 serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags);
 
 /**
+   @}
    @name URI
    @{
 */

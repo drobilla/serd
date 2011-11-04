@@ -20,32 +20,6 @@
 #include "serd_internal.h"
 
 SERD_API
-size_t
-serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags)
-{
-	size_t n_chars = 0;
-	size_t i       = 0;
-	for (; str[i]; ++i) {
-		if ((str[i] & 0xC0) != 0x80) {
-			// Does not start with `10', start of a new character
-			++n_chars;
-			switch (str[i]) {
-			case '\r':
-			case '\n':
-				*flags |= SERD_HAS_NEWLINE;
-				break;
-			case '"':
-				*flags |= SERD_HAS_QUOTE;
-			}
-		}
-	}
-	if (n_bytes) {
-		*n_bytes = i;
-	}
-	return n_chars;
-}
-
-SERD_API
 SerdNode
 serd_node_from_string(SerdType type, const uint8_t* buf)
 {
