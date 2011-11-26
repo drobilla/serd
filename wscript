@@ -128,7 +128,7 @@ def build(bld):
                   source       = 'src/serdi.c',
                   includes     = ['.', './src'],
                   use          = 'libserd_profiled',
-                  linkflags    = '-lgcov',
+                  lib          = ['gcov'],
                   target       = 'serdi_static',
                   install_path = '',
                   cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ])
