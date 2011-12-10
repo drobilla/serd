@@ -96,13 +96,31 @@ struct SerdReaderImpl {
 };
 
 static int
+msg(SerdReader* reader, const char* prefix, const char* fmt, va_list args)
+{
+	fprintf(stderr, "%s: %s:%u:%u: ",
+	        prefix, reader->cur.filename, reader->cur.line, reader->cur.col);
+	vfprintf(stderr, fmt, args);
+	return 0;
+}
+
+static int
 error(SerdReader* reader, const char* fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
-	fprintf(stderr, "error: %s:%u:%u: ",
-	        reader->cur.filename, reader->cur.line, reader->cur.col);
-	vfprintf(stderr, fmt, args);
+	msg(reader, "error", fmt, args);
+	va_end(args);
+	return 0;
+}
+
+static int
+warn(SerdReader* reader, const char* fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	msg(reader, "warning", fmt, args);
+	va_end(args);
 	return 0;
 }
 
@@ -493,8 +511,13 @@ read_character(SerdReader* reader, Ref dest)
 			} else if ((c & 0xF8) == 0xF0) {  // Starts with `11110'
 				size = 4;
 			} else {
-				error(reader, "invalid character\n");
-				return SERD_ERR_BAD_SYNTAX;
+				warn(reader, "invalid character\n");
+				// Push replacement character
+				push_byte(reader, dest, 0xEF);
+				push_byte(reader, dest, 0xBF);
+				push_byte(reader, dest, 0xBD);
+				eat_byte(reader, c);
+				return SERD_SUCCESS;
 			}
 			for (unsigned i = 0; i < size; ++i) {
 				push_byte(reader, dest, eat_byte(reader, peek_byte(reader)));
