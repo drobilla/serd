@@ -14,21 +14,12 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#define _POSIX_C_SOURCE 201112L /* for posix_memalign */
+#include "serd_internal.h"
 
 #include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-
-#if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
-#   include <fcntl.h>
-#endif
-
-#include "serd/serd.h"
-
-#include "serd-config.h"
-#include "serd_internal.h"
 
 typedef struct {
 	SerdEnv*    env;
@@ -176,15 +167,9 @@ main(int argc, char** argv)
 					input += 5;
 				}
 			}
-			in_fd = fopen((const char*)input, "r");
-			if (!in_fd) {
-				fprintf(stderr, "Error opening file %s (%s)\n",
-				        input, strerror(errno));
+			if (!(in_fd = serd_fopen((const char*)input, "r"))) {
 				return 1;
 			}
-#if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
-			posix_fadvise(fileno(in_fd), 0, 0, POSIX_FADV_SEQUENTIAL);
-#endif
 		}
 	}
 

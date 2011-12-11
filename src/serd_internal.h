@@ -17,12 +17,48 @@
 #ifndef SERD_INTERNAL_H
 #define SERD_INTERNAL_H
 
+#define _POSIX_C_SOURCE 201112L /* for posix_memalign and posix_fadvise */
+
 #include <assert.h>
+#include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "serd/serd.h"
+#include "serd-config.h"
+
+#if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
+#   include <fcntl.h>
+#endif
 
 #define SERD_PAGE_SIZE 4096
+
+static inline FILE*
+serd_fopen(const char* path, const char* mode)
+{
+	FILE* fd = fopen((const char*)path, mode);
+	if (!fd) {
+		fprintf(stderr, "Error opening file %s (%s)\n", path, strerror(errno));
+		return NULL;
+	}
+#if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
+	posix_fadvise(fileno(fd), 0, 0, POSIX_FADV_SEQUENTIAL);
+#endif
+	return fd;
+}
+
+static inline void*
+serd_bufalloc(size_t size)
+{
+#ifdef HAVE_POSIX_MEMALIGN
+	void* ptr;
+	posix_memalign(&ptr, SERD_PAGE_SIZE, size);
+	return ptr;
+#else
+	return malloc(size);
+#endif
+}
 
 /** A dynamic stack in memory. */
 typedef struct {

@@ -14,13 +14,10 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#define _POSIX_C_SOURCE 201112L /* for posix_memalign */
+#include "serd_internal.h"
 
 #include <stdlib.h>
 #include <string.h>
-
-#include "serd_internal.h"
-#include "serd-config.h"
 
 #ifndef MIN
 #    define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -43,11 +40,7 @@ serd_bulk_sink_new(SerdSink sink, void* stream, size_t block_size)
 	bsink->stream     = stream;
 	bsink->size       = 0;
 	bsink->block_size = block_size;
-#ifdef HAVE_POSIX_MEMALIGN
-	posix_memalign((void**)&bsink->buf, block_size, block_size);
-#else
-	bsink->buf = (uint8_t*)malloc(block_size);
-#endif
+	bsink->buf        = serd_bufalloc(block_size);
 	return bsink;
 }
 

@@ -14,13 +14,11 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-/** @file uri.c */
+#include "serd_internal.h"
 
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "serd_internal.h"
 
 // #define URI_DEBUG 1
 

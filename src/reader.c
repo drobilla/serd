@@ -14,7 +14,7 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#define _POSIX_C_SOURCE 201112L /* for posix_memalign */
+#include "serd_internal.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -24,13 +24,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
-#   include <fcntl.h>
-#endif
-
-#include "serd_internal.h"
-#include "serd-config.h"
 
 #define NS_XSD "http://www.w3.org/2001/XMLSchema#"
 #define NS_RDF "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -1516,14 +1509,10 @@ serd_reader_read_file(SerdReader*    reader,
 		return SERD_ERR_BAD_ARG;
 	}
 
-	FILE* fd = fopen((const char*)path, "r");
+	FILE* fd = serd_fopen((const char*)path, "r");
 	if (!fd) {
-		fprintf(stderr, "Error opening file %s (%s)\n", path, strerror(errno));
 		return SERD_ERR_UNKNOWN;
 	}
-#if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
-	posix_fadvise(fileno(fd), 0, 0, POSIX_FADV_SEQUENTIAL);
-#endif
 
 	SerdStatus ret = serd_reader_read_file_handle(reader, fd, path);
 	fclose(fd);
@@ -1540,11 +1529,7 @@ serd_reader_read_file_handle(SerdReader* me, FILE* file, const uint8_t* name)
 	me->cur       = cur;
 	me->from_file = true;
 	me->eof       = false;
-#ifdef HAVE_POSIX_MEMALIGN
-	posix_memalign((void**)&me->read_buf, 4096, SERD_PAGE_SIZE * 2);
-#else
-	me->read_buf = (uint8_t*)malloc(SERD_PAGE_SIZE * 2);
-#endif
+	me->read_buf  = serd_bufalloc(SERD_PAGE_SIZE * 2);
 
 	/* Read into the second page of the buffer. Occasionally peek_string
 	   will move the read_head to before this point when readahead causes
