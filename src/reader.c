@@ -482,6 +482,25 @@ read_ucharacter_escape(SerdReader* reader, Ref dest)
 	}
 }
 
+static inline SerdStatus
+bad_char(SerdReader* reader, Ref dest, const char* fmt, uint8_t c)
+{
+	warn(reader, fmt, c);
+
+	// Emit replacement character
+	push_byte(reader, dest, 0xEF);
+	push_byte(reader, dest, 0xBF);
+	push_byte(reader, dest, 0xBD);
+
+	// Skip bytes until the next start byte
+	for (uint8_t c = peek_byte(reader); (c & 0x80);) {
+		eat_byte(reader, c);
+		c = peek_byte(reader);
+	}
+
+	return SERD_SUCCESS;
+}
+
 // [38] character ::= '\u' hex hex hex hex
 //    | '\U' hex hex hex hex hex hex hex hex
 //    | '\\'
@@ -497,8 +516,9 @@ read_character(SerdReader* reader, Ref dest)
 		return SERD_ERR_BAD_SYNTAX;
 	default:
 		if (c < 0x20) {  // ASCII control character
-			error(reader, "unexpected control character\n");
-			return SERD_ERR_BAD_SYNTAX;
+			return bad_char(reader, dest,
+			                "unexpected control character 0x%X\n",
+			                eat_byte(reader, c));
 		} else if (c <= 0x7E) {  // Printable ASCII
 			push_byte(reader, dest, eat_byte(reader, c));
 			return SERD_SUCCESS;
@@ -511,16 +531,26 @@ read_character(SerdReader* reader, Ref dest)
 			} else if ((c & 0xF8) == 0xF0) {  // Starts with `11110'
 				size = 4;
 			} else {
-				warn(reader, "invalid character\n");
-				// Push replacement character
-				push_byte(reader, dest, 0xEF);
-				push_byte(reader, dest, 0xBF);
-				push_byte(reader, dest, 0xBD);
-				eat_byte(reader, c);
-				return SERD_SUCCESS;
+				return bad_char(reader, dest, "invalid UTF-8 start 0x%X\n",
+				                eat_byte(reader, c));
 			}
+
+			char bytes[size];
+			bytes[0] = eat_byte(reader, c);
+
+			// Check character validity
+			for (unsigned i = 1; i < size; ++i) {
+				if (((bytes[i] = peek_byte(reader)) & 0x80) == 0) {
+					return bad_char(reader, dest,
+					                "invalid UTF-8 continuation 0x%X\n",
+					                bytes[i]);
+				}
+				eat_byte(reader, bytes[i]);
+			}
+
+			// Emit character
 			for (unsigned i = 0; i < size; ++i) {
-				push_byte(reader, dest, eat_byte(reader, peek_byte(reader)));
+				push_byte(reader, dest, bytes[i]);
 			}
 			return SERD_SUCCESS;
 		}
