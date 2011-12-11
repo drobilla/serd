@@ -5,6 +5,7 @@ serd (UNRELEASED) unstable; urgency=low
   * Tolerate invalid characters in string literals by replacing with the
     Unicode replacement character
   * Report reason for failure to open file in serdi
+  * Improve write performance by doing bulk writes for unescaped substrings
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 

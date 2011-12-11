@@ -69,6 +69,22 @@ write_text(SerdWriter* writer, TextContext ctx,
 {
 	char escape[11] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	for (size_t i = 0; i < n_bytes;) {
+		// Fast bulk write for long strings of printable ASCII
+		size_t j = i;
+		for (; j < n_bytes; ++j) {
+			if (utf8[j] == terminator || utf8[j] == '\\'
+			    || (((writer->style & SERD_STYLE_ASCII) || ctx == WRITE_URI)
+			        && !in_range(utf8[j], 0x20, 0x7E))) {
+				break;
+			}
+		}
+
+		if (j > i) {
+			writer->sink(&utf8[i], j - i, writer->stream);
+			i = j;
+			continue;
+		}
+
 		uint8_t in = utf8[i++];
 		if (ctx == WRITE_LONG_STRING) {
 			if (in == '\\') {
