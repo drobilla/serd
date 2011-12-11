@@ -10,7 +10,7 @@ from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
-SERD_VERSION       = '0.5.0'
+SERD_VERSION       = '0.6.0'
 SERD_MAJOR_VERSION = '0'
 
 # Library version (UNIX style major, minor, micro)
@@ -91,6 +91,7 @@ def build(bld):
             src/env.c
             src/node.c
             src/reader.c
+            src/sink.c
             src/string.c
             src/uri.c
             src/writer.c

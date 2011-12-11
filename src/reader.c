@@ -34,9 +34,6 @@
 #define TRY_THROW(exp) if (!(exp)) goto except;
 #define TRY_RET(exp)   if (!(exp)) return 0;
 
-#define STACK_PAGE_SIZE 4096
-#define READ_BUF_LEN    4096
-
 typedef struct {
 	const uint8_t* filename;
 	unsigned       line;
@@ -120,7 +117,7 @@ page(SerdReader* reader)
 {
 	assert(reader->from_file);
 	reader->read_head = 0;
-	const size_t n_read = fread(reader->read_buf, 1, READ_BUF_LEN, reader->fd);
+	const size_t n_read = fread(reader->read_buf, 1, SERD_PAGE_SIZE, reader->fd);
 	reader->read_buf[n_read] = '\0';
 	if (n_read == 0) {
 		reader->eof = true;
@@ -133,7 +130,7 @@ peek_string(SerdReader* reader, uint8_t* pre, int n)
 {
 	uint8_t* ptr = reader->read_buf + reader->read_head;
 	for (int i = 0; i < n; ++i) {
-		if (reader->from_file && (reader->read_head + i >= READ_BUF_LEN)) {
+		if (reader->from_file && (reader->read_head + i >= SERD_PAGE_SIZE)) {
 			if (!page(reader)) {
 				return false;
 			}
@@ -168,9 +165,9 @@ eat_byte(SerdReader* reader, const uint8_t byte)
 	if (c != byte) {
 		return error(reader, "expected `%c', not `%c'\n", byte, c);
 	}
-	if (reader->from_file && (reader->read_head == READ_BUF_LEN)) {
+	if (reader->from_file && (reader->read_head == SERD_PAGE_SIZE)) {
 		TRY_RET(page(reader));
-		assert(reader->read_head < READ_BUF_LEN);
+		assert(reader->read_head < SERD_PAGE_SIZE);
 	}
 	if (reader->read_buf[reader->read_head] == '\0') {
 		reader->eof = true;
@@ -1439,7 +1436,7 @@ serd_reader_new(SerdSyntax        syntax,
 	me->statement_sink   = statement_sink;
 	me->end_sink         = end_sink;
 	me->fd               = 0;
-	me->stack            = serd_stack_new(STACK_PAGE_SIZE);
+	me->stack            = serd_stack_new(SERD_PAGE_SIZE);
 	me->syntax           = syntax;
 	me->cur              = cur;
 	me->bprefix          = NULL;
@@ -1537,21 +1534,21 @@ serd_reader_read_file_handle(SerdReader* me, FILE* file, const uint8_t* name)
 	me->from_file = true;
 	me->eof       = false;
 #ifdef HAVE_POSIX_MEMALIGN
-	posix_memalign((void**)&me->read_buf, 4096, READ_BUF_LEN * 2);
+	posix_memalign((void**)&me->read_buf, 4096, SERD_PAGE_SIZE * 2);
 #else
-	me->read_buf = (uint8_t*)malloc(READ_BUF_LEN * 2);
+	me->read_buf = (uint8_t*)malloc(SERD_PAGE_SIZE * 2);
 #endif
 
 	/* Read into the second page of the buffer. Occasionally peek_string
 	   will move the read_head to before this point when readahead causes
 	   a page fault.
 	*/
-	memset(me->read_buf, '\0', READ_BUF_LEN * 2);
-	me->read_buf += READ_BUF_LEN;
+	memset(me->read_buf, '\0', SERD_PAGE_SIZE * 2);
+	me->read_buf += SERD_PAGE_SIZE;
 
 	const bool ret = !page(me) || read_turtleDoc(me);
 
-	free(me->read_buf - READ_BUF_LEN);
+	free(me->read_buf - SERD_PAGE_SIZE);
 	me->fd       = 0;
 	me->read_buf = NULL;
 	return ret ? SERD_SUCCESS : SERD_ERR_UNKNOWN;

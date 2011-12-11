@@ -22,6 +22,8 @@
 
 #include "serd/serd.h"
 
+#define SERD_PAGE_SIZE 4096
+
 /** A dynamic stack in memory. */
 typedef struct {
 	uint8_t* buf;       ///< Stack memory

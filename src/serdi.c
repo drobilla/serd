@@ -20,7 +20,9 @@
 #include <string.h>
 
 #include "serd/serd.h"
+
 #include "serd-config.h"
+#include "serd_internal.h"
 
 typedef struct {
 	SerdEnv*    env;
@@ -45,6 +47,7 @@ print_usage(const char* name, bool error)
 	fprintf(os, "Usage: %s [OPTION]... INPUT [BASE_URI]\n", name);
 	fprintf(os, "Read and write RDF syntax.\n");
 	fprintf(os, "Use - for INPUT to read from standard input.\n\n");
+	fprintf(os, "  -B           Fast bulk output for large serialisations.\n");
 	fprintf(os, "  -h           Display this help and exit\n");
 	fprintf(os, "  -i SYNTAX    Input syntax (`turtle' or `ntriples')\n");
 	fprintf(os, "  -o SYNTAX    Output syntax (`turtle' or `ntriples')\n");
@@ -87,6 +90,7 @@ main(int argc, char** argv)
 	SerdSyntax     input_syntax  = SERD_TURTLE;
 	SerdSyntax     output_syntax = SERD_NTRIPLES;
 	bool           from_file     = true;
+	bool           bulk_write    = false;
 	const uint8_t* in_name       = NULL;
 	const uint8_t* add_prefix    = NULL;
 	const uint8_t* chop_prefix   = NULL;
@@ -96,6 +100,8 @@ main(int argc, char** argv)
 			in_name = (const uint8_t*)"(stdin)";
 			in_fd   = stdin;
 			break;
+		} else if (argv[a][1] == 'B') {
+			bulk_write = true;
 		} else if (argv[a][1] == 'h') {
 			return print_usage(argv[0], false);
 		} else if (argv[a][1] == 'v') {
@@ -201,8 +207,17 @@ main(int argc, char** argv)
 		output_style |= SERD_STYLE_ABBREVIATED|SERD_STYLE_CURIED;
 	}
 
+	SerdSink      sink      = file_sink;
+	void*         stream    = out_fd;
+	SerdBulkSink* bulk_sink = NULL;
+	if (bulk_write) {
+		bulk_sink = serd_bulk_sink_new(sink, stream, SERD_PAGE_SIZE);
+		sink      = (SerdSink)serd_bulk_sink_write;
+		stream    = bulk_sink;
+	}
+		
 	SerdWriter* writer = serd_writer_new(
-		output_syntax, output_style, env, &base_uri, file_sink, out_fd);
+		output_syntax, output_style, env, &base_uri, sink, stream);
 
 	if (chop_prefix) {
 		serd_writer_chop_blank_prefix(writer, chop_prefix);
@@ -233,6 +248,7 @@ main(int argc, char** argv)
 
 	serd_writer_finish(state.writer);
 	serd_writer_free(state.writer);
+	serd_bulk_sink_free(bulk_sink);
 	serd_env_free(state.env);
 	serd_node_free(&base_uri_node);
 
