@@ -649,7 +649,9 @@ read_longString(SerdReader* reader, SerdNodeFlags* flags)
 {
 	eat_string(reader, "\"\"\"", 3);
 	Ref        ref = push_node(reader, SERD_LITERAL, "", 0);
+#ifdef SERD_STACK_CHECK
 	assert(stack_is_top_node(reader, ref));
+#endif
 	SerdStatus st;
 	while (!(st = read_lcharacter(reader, ref, flags))) {}
 	if (st < SERD_ERR_UNKNOWN) {
