@@ -14,6 +14,8 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#define _POSIX_C_SOURCE 201112L /* for posix_memalign */
+
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -24,6 +26,7 @@
 #include <string.h>
 
 #include "serd_internal.h"
+#include "serd-config.h"
 
 #define NS_XSD "http://www.w3.org/2001/XMLSchema#"
 #define NS_RDF "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -1530,11 +1533,15 @@ serd_reader_read_file_handle(SerdReader* me, FILE* file, const uint8_t* name)
 {
 	const Cursor cur = { name, 1, 1 };
 	me->fd        = file;
-	me->read_buf  = (uint8_t*)malloc(READ_BUF_LEN * 2);
 	me->read_head = 0;
 	me->cur       = cur;
 	me->from_file = true;
 	me->eof       = false;
+#ifdef HAVE_POSIX_MEMALIGN
+	posix_memalign((void**)&me->read_buf, 4096, READ_BUF_LEN * 2);
+#else
+	me->read_buf = (uint8_t*)malloc(READ_BUF_LEN * 2);
+#endif
 
 	/* Read into the second page of the buffer. Occasionally peek_string
 	   will move the read_head to before this point when readahead causes

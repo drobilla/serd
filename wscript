@@ -59,6 +59,13 @@ def configure(conf):
     if Options.options.largefile:
         conf.env.append_unique('CFLAGS', '-D_FILE_OFFSET_BITS=64')
 
+    # Check for posix_memalign
+    conf.check(function_name='posix_memalign',
+               header_name='stdlib.h',
+               define_name='HAVE_POSIX_MEMALIGN',
+               cflags='-D_POSIX_C_SOURCE=201112L',
+               mandatory=False)
+
     autowaf.define(conf, 'SERD_VERSION', SERD_VERSION)
     conf.write_config_header('serd-config.h', remove=False)
 
