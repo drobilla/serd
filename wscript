@@ -39,6 +39,8 @@ def options(opt):
                    help="Include runtime stack sanity checks")
     opt.add_option('--static', action='store_true', default=False, dest='static',
                    help="Build static library")
+    opt.add_option('--largefile', action='store_true', default=False, dest='largefile',
+                   help="Build with large file support on 32-bit systems")
 
 def configure(conf):
     conf.load('compiler_c')
@@ -53,6 +55,9 @@ def configure(conf):
 
     if Options.options.stack_check:
         autowaf.define(conf, 'SERD_STACK_CHECK', SERD_VERSION)
+
+    if Options.options.largefile:
+        conf.env.append_unique('CFLAGS', '-D_FILE_OFFSET_BITS=64')
 
     autowaf.define(conf, 'SERD_VERSION', SERD_VERSION)
     conf.write_config_header('serd-config.h', remove=False)
