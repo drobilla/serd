@@ -236,8 +236,7 @@ push_byte(SerdReader* reader, Ref ref, const uint8_t c)
 	serd_stack_push(&reader->stack, 1);
 	SerdNode* const node = deref(reader, ref);
 	++node->n_bytes;
-	if ((c & 0xC0) != 0x80) {
-		// Does not start with `10', start of a new character
+	if (!(c & 0x80)) {  // Starts with 0 bit, start of new character
 		++node->n_chars;
 	}
 	assert(node->n_bytes >= node->n_chars);
@@ -464,7 +463,7 @@ read_character(SerdReader* reader, Ref dest)
 	assert(c != '\\');  // Only called from methods that handle escapes first
 	switch (c) {
 	case '\0':
-		error(reader, "unexpected end of file\n", peek_byte(reader));
+		error(reader, "unexpected end of file\n", c);
 		return SERD_ERR_BAD_SYNTAX;
 	default:
 		if (c < 0x20) {  // ASCII control character
