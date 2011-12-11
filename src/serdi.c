@@ -15,6 +15,7 @@
 */
 
 #include <assert.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -165,7 +166,8 @@ main(int argc, char** argv)
 			}
 			in_fd = fopen((const char*)input, "r");
 			if (!in_fd) {
-				fprintf(stderr, "Failed to open file %s\n", input);
+				fprintf(stderr, "Error opening file %s (%s)\n",
+				        input, strerror(errno));
 				return 1;
 			}
 		}

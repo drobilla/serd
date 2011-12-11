@@ -4,6 +4,7 @@ serd (UNRELEASED) unstable; urgency=low
   * Install man page to DATADIR (e.g. PREFIX/share/man, not PREFIX/man)
   * Tolerate invalid characters in string literals by replacing with the
     Unicode replacement character
+  * Report reason for failure to open file in serdi
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 
