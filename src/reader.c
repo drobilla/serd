@@ -118,14 +118,11 @@ page(SerdReader* reader)
 	assert(reader->from_file);
 	reader->read_head = 0;
 	const size_t n_read = fread(reader->read_buf, 1, READ_BUF_LEN, reader->fd);
+	reader->read_buf[n_read] = '\0';
 	if (n_read == 0) {
-		reader->read_buf[0] = '\0';
 		reader->eof = true;
-		return false;
-	} else if (n_read < READ_BUF_LEN) {
-		reader->read_buf[n_read] = '\0';
 	}
-	return true;
+	return !reader->eof;
 }
 
 static inline bool
