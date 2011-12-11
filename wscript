@@ -66,6 +66,20 @@ def configure(conf):
                cflags='-D_POSIX_C_SOURCE=201112L',
                mandatory=False)
 
+    # Check for posix_fadvise
+    conf.check(function_name='posix_fadvise',
+               header_name='fcntl.h',
+               define_name='HAVE_POSIX_FADVISE',
+               cflags='-D_POSIX_C_SOURCE=201112L',
+               mandatory=False)
+
+    # Check for fileno
+    conf.check(function_name='fileno',
+               header_name='stdio.h',
+               define_name='HAVE_FILENO',
+               cflags='-D_POSIX_C_SOURCE=201112L',
+               mandatory=False)
+
     autowaf.define(conf, 'SERD_VERSION', SERD_VERSION)
     conf.write_config_header('serd-config.h', remove=False)
 

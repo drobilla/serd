@@ -25,6 +25,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
+#   include <fcntl.h>
+#endif
+
 #include "serd_internal.h"
 #include "serd-config.h"
 
@@ -1485,7 +1489,6 @@ serd_reader_get_handle(const SerdReader* reader)
 {
 	return reader->handle;
 }
-
 SERD_API
 void
 serd_reader_add_blank_prefix(SerdReader*    reader,
@@ -1518,6 +1521,10 @@ serd_reader_read_file(SerdReader*    reader,
 		fprintf(stderr, "Error opening file %s (%s)\n", path, strerror(errno));
 		return SERD_ERR_UNKNOWN;
 	}
+#if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
+	posix_fadvise(fileno(fd), 0, 0, POSIX_FADV_SEQUENTIAL);
+#endif
+
 	SerdStatus ret = serd_reader_read_file_handle(reader, fd, path);
 	fclose(fd);
 	return ret;

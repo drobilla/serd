@@ -14,10 +14,16 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#define _POSIX_C_SOURCE 201112L /* for posix_memalign */
+
 #include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+
+#if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
+#   include <fcntl.h>
+#endif
 
 #include "serd/serd.h"
 
@@ -176,6 +182,9 @@ main(int argc, char** argv)
 				        input, strerror(errno));
 				return 1;
 			}
+#if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
+			posix_fadvise(fileno(in_fd), 0, 0, POSIX_FADV_SEQUENTIAL);
+#endif
 		}
 	}
 
