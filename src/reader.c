@@ -235,16 +235,15 @@ push_byte(SerdReader* reader, Ref ref, const uint8_t c)
 	#ifdef SERD_STACK_CHECK
 	assert(stack_is_top_node(reader, ref));
 	#endif
-	serd_stack_push(&reader->stack, 1);
-	SerdNode* const node = deref(reader, ref);
+	uint8_t* const  s    = serd_stack_push(&reader->stack, 1);
+	SerdNode* const node = (SerdNode*)(reader->stack.buf + ref);
 	++node->n_bytes;
 	if (!(c & 0x80)) {  // Starts with 0 bit, start of new character
 		++node->n_chars;
 	}
 	assert(node->n_bytes >= node->n_chars);
-	uint8_t* const buf = (uint8_t*)node + sizeof(SerdNode);
-	buf[node->n_bytes - 1] = c;
-	buf[node->n_bytes]     = '\0';
+	*(s - 1) = c;
+	*s       = '\0';
 }
 
 static inline void
@@ -454,6 +453,40 @@ bad_char(SerdReader* reader, Ref dest, const char* fmt, uint8_t c)
 	return SERD_SUCCESS;
 }
 
+static SerdStatus
+read_utf8_character(SerdReader* reader, Ref dest, const uint8_t c)
+{
+	unsigned size = 1;
+	if ((c & 0xE0) == 0xC0) {  // Starts with `110'
+		size = 2;
+	} else if ((c & 0xF0) == 0xE0) {  // Starts with `1110'
+		size = 3;
+	} else if ((c & 0xF8) == 0xF0) {  // Starts with `11110'
+		size = 4;
+	} else {
+		return bad_char(reader, dest, "invalid UTF-8 start 0x%X\n",
+		                eat_byte_safe(reader, c));
+	}
+
+	char bytes[size];
+	bytes[0] = eat_byte_safe(reader, c);
+
+	// Check character validity
+	for (unsigned i = 1; i < size; ++i) {
+		if (((bytes[i] = peek_byte(reader)) & 0x80) == 0) {
+			return bad_char(reader, dest, "invalid UTF-8 continuation 0x%X\n",
+			                bytes[i]);
+		}
+		eat_byte_safe(reader, bytes[i]);
+	}
+
+	// Emit character
+	for (unsigned i = 0; i < size; ++i) {
+		push_byte(reader, dest, bytes[i]);
+	}
+	return SERD_SUCCESS;
+}
+
 // [38] character ::= '\u' hex hex hex hex
 //    | '\U' hex hex hex hex hex hex hex hex
 //    | '\\'
@@ -463,50 +496,18 @@ read_character(SerdReader* reader, Ref dest)
 {
 	const uint8_t c = peek_byte(reader);
 	assert(c != '\\');  // Only called from methods that handle escapes first
-	switch (c) {
-	case '\0':
+	if (c == '\0') {
 		error(reader, "unexpected end of file\n", c);
 		return SERD_ERR_BAD_SYNTAX;
-	default:
-		if (c < 0x20) {  // ASCII control character
-			return bad_char(reader, dest,
-			                "unexpected control character 0x%X\n",
-			                eat_byte_safe(reader, c));
-		} else if (c <= 0x7E) {  // Printable ASCII
-			push_byte(reader, dest, eat_byte_safe(reader, c));
-			return SERD_SUCCESS;
-		} else {  // Wide UTF-8 character
-			unsigned size = 1;
-			if ((c & 0xE0) == 0xC0) {  // Starts with `110'
-				size = 2;
-			} else if ((c & 0xF0) == 0xE0) {  // Starts with `1110'
-				size = 3;
-			} else if ((c & 0xF8) == 0xF0) {  // Starts with `11110'
-				size = 4;
-			} else {
-				return bad_char(reader, dest, "invalid UTF-8 start 0x%X\n",
-				                eat_byte_safe(reader, c));
-			}
-
-			char bytes[size];
-			bytes[0] = eat_byte_safe(reader, c);
-
-			// Check character validity
-			for (unsigned i = 1; i < size; ++i) {
-				if (((bytes[i] = peek_byte(reader)) & 0x80) == 0) {
-					return bad_char(reader, dest,
-					                "invalid UTF-8 continuation 0x%X\n",
-					                bytes[i]);
-				}
-				eat_byte_safe(reader, bytes[i]);
-			}
-
-			// Emit character
-			for (unsigned i = 0; i < size; ++i) {
-				push_byte(reader, dest, bytes[i]);
-			}
-			return SERD_SUCCESS;
-		}
+	} else if (c < 0x20) {// || c == 0x7F) {
+		return bad_char(reader, dest,
+		                "unexpected control character 0x%X\n",
+		                eat_byte_safe(reader, c));
+	} else if (reader->syntax == SERD_NTRIPLES || !(c & 0x80)) {
+		push_byte(reader, dest, eat_byte_safe(reader, c));
+		return SERD_SUCCESS;
+	} else {
+		return read_utf8_character(reader, dest, c);
 	}
 }
 
