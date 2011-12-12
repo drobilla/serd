@@ -197,17 +197,12 @@ main(int argc, char** argv)
 		output_style |= SERD_STYLE_RESOLVED;
 	}
 
-	SerdSink      sink      = file_sink;
-	void*         stream    = out_fd;
-	SerdBulkSink* bulk_sink = NULL;
 	if (bulk_write) {
-		bulk_sink = serd_bulk_sink_new(sink, stream, SERD_PAGE_SIZE);
-		sink      = (SerdSink)serd_bulk_sink_write;
-		stream    = bulk_sink;
+		output_style |= SERD_STYLE_BULK;
 	}
 		
 	SerdWriter* writer = serd_writer_new(
-		output_syntax, output_style, env, &base_uri, sink, stream);
+		output_syntax, output_style, env, &base_uri, file_sink, out_fd);
 
 	if (chop_prefix) {
 		serd_writer_chop_blank_prefix(writer, chop_prefix);
@@ -238,7 +233,6 @@ main(int argc, char** argv)
 
 	serd_writer_finish(state.writer);
 	serd_writer_free(state.writer);
-	serd_bulk_sink_free(bulk_sink);
 	serd_env_free(state.env);
 	serd_node_free(&base_uri_node);
 

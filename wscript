@@ -105,7 +105,6 @@ def build(bld):
             src/env.c
             src/node.c
             src/reader.c
-            src/sink.c
             src/string.c
             src/uri.c
             src/writer.c

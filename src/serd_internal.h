@@ -34,6 +34,12 @@
 
 #define SERD_PAGE_SIZE 4096
 
+#ifndef MIN
+#    define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+
+/* File and Buffer Utilities */
+
 static inline FILE*
 serd_fopen(const char* path, const char* mode)
 {
@@ -59,6 +65,8 @@ serd_bufalloc(size_t size)
 	return malloc(size);
 #endif
 }
+
+/* Stack */
 
 /** A dynamic stack in memory. */
 typedef struct {
@@ -114,6 +122,71 @@ serd_stack_pop(SerdStack* stack, size_t n_bytes)
 	assert(stack->size >= n_bytes);
 	stack->size -= n_bytes;
 }
+
+/* Bulk Sink */
+
+typedef struct SerdBulkSinkImpl {
+	SerdSink sink;
+	void*    stream;
+	uint8_t* buf;
+	size_t   size;
+	size_t   block_size;
+} SerdBulkSink;
+
+static inline SerdBulkSink
+serd_bulk_sink_new(SerdSink sink, void* stream, size_t block_size)
+{
+	SerdBulkSink bsink;
+	bsink.sink       = sink;
+	bsink.stream     = stream;
+	bsink.size       = 0;
+	bsink.block_size = block_size;
+	bsink.buf        = serd_bufalloc(block_size);
+	return bsink;
+}
+
+static inline void
+serd_bulk_sink_flush(SerdBulkSink* bsink)
+{
+	if (bsink->size > 0) {
+		bsink->sink(bsink->buf, bsink->size, bsink->stream);
+	}
+	bsink->size = 0;
+}
+
+static inline void
+serd_bulk_sink_free(SerdBulkSink* bsink)
+{
+	if (bsink) {
+		serd_bulk_sink_flush(bsink);
+		free(bsink->buf);
+	}
+}
+
+static inline size_t
+serd_bulk_sink_write(const void* buf, size_t len, SerdBulkSink* bsink)
+{
+	const size_t orig_len = len;
+	while (len) {
+		const size_t space = bsink->block_size - bsink->size;
+		const size_t n     = MIN(space, len);
+
+		// Write as much as possible into the remaining buffer space
+		memcpy(bsink->buf + bsink->size, buf, n);
+		bsink->size += n;
+		buf           = (uint8_t*)buf + n;
+		len          -= n;
+
+		// Flush page if buffer is full
+		if (bsink->size == bsink->block_size) {
+			bsink->sink(bsink->buf, bsink->block_size, bsink->stream);
+			bsink->size = 0;
+		}
+	}
+	return orig_len;
+}
+
+/* Character utilities */
 
 /** Return true if @a c lies within [min...max] (inclusive) */
 static inline bool

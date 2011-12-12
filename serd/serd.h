@@ -239,7 +239,8 @@ typedef enum {
 	SERD_STYLE_ABBREVIATED = 1,       /**< Abbreviate triples when possible. */
 	SERD_STYLE_ASCII       = 1 << 1,  /**< Escape all non-ASCII characters. */
 	SERD_STYLE_RESOLVED    = 1 << 2,  /**< Resolve URIs against base URI. */
-	SERD_STYLE_CURIED      = 1 << 3   /**< Shorten URIs into CURIEs. */
+	SERD_STYLE_CURIED      = 1 << 3,  /**< Shorten URIs into CURIEs. */
+	SERD_STYLE_BULK        = 1 << 4,  /**< Write output in pages. */
 } SerdStyle;
 
 /**
@@ -267,55 +268,10 @@ serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags);
 
 /**
    @}
-   @name Sink
-   @{
-*/
-
-/**
-   Sink function for raw string output.
-*/
-typedef size_t (*SerdSink)(const void* buf, size_t len, void* stream);
-
-/**
-   Sink adapter that writes blocks to the target sink.
-
-   This is itself a SerdSink which can be used with any SerdSink as a target to
-   transparently write chunked I/O to the output sink.  This can significantly
-   improve write performance when the target is a file or similar resource.
-*/
-typedef struct SerdBulkSinkImpl SerdBulkSink;
-
-/**
-   Create a new bulk sink adapter.
-   @param sink Target sink where completed blocks will be written.
-   @param stream Stream parameter for target sink.
-   @param block_size Size of blocks to write, and internal buffer size.
-*/
-SERD_API
-SerdBulkSink*
-serd_bulk_sink_new(SerdSink sink, void* stream, size_t block_size);
-
-/**
-   Free a bulk sink adapter.
-*/
-SERD_API
-void
-serd_bulk_sink_free(SerdBulkSink* bsink);
-
-/**
-   Write data to a bulk sink adapter.
-
-   This function may safely be cast to SerdSink.
-*/
-SERD_API
-size_t
-serd_bulk_sink_write(const void* buf, size_t len, SerdBulkSink* bsink);
-
-/**
-   @}
    @name URI
    @{
 */
+
 static const SerdURI SERD_URI_NULL = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
 
 /**
@@ -345,6 +301,11 @@ serd_uri_parse(const uint8_t* utf8, SerdURI* out);
 SERD_API
 void
 serd_uri_resolve(const SerdURI* uri, const SerdURI* base, SerdURI* out);
+
+/**
+   Sink function for raw string output.
+*/
+typedef size_t (*SerdSink)(const void* buf, size_t len, void* stream);
 
 /**
    Serialise @c uri with a series of calls to @c sink.
