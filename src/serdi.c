@@ -155,22 +155,7 @@ main(int argc, char** argv)
 	if (from_file) {
 		in_name = in_name ? in_name : input;
 		if (!in_fd) {
-			if (serd_uri_string_has_scheme(input)) {
-				// INPUT is an absolute URI, ensure it a file and chop scheme
-				if (strncmp((const char*)input, "file:", 5)) {
-					fprintf(stderr, "Unsupported URI scheme `%s'\n", input);
-					return 1;
-#ifdef __WIN32__
-				} else if (!strncmp((const char*)input, "file:///", 8)) {
-					input += 8;
-#else
-				} else if (!strncmp((const char*)input, "file://", 7)) {
-					input += 7;
-#endif
-				} else {
-					input += 5;
-				}
-			}
+			input = serd_uri_to_path(input);
 			if (!(in_fd = serd_fopen((const char*)input, "r"))) {
 				return 1;
 			}
