@@ -53,8 +53,9 @@ serd_node_equals(const SerdNode* a, const SerdNode* b)
 		|| (a->type == b->type
 		    && a->n_bytes == b->n_bytes
 		    && a->n_chars == b->n_chars
-		    && ((a->buf == b->buf) || !strcmp((const char*)a->buf,
-		                                      (const char*)b->buf)));
+		    && ((a->buf == b->buf) || !memcmp((const char*)a->buf,
+		                                      (const char*)b->buf,
+		                                      a->n_bytes + 1)));
 }
 
 static size_t
