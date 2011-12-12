@@ -143,5 +143,8 @@ SERD_API
 void
 serd_node_free(SerdNode* node)
 {
-	free((uint8_t*)node->buf);
+	if (node->buf) {
+		free((uint8_t*)node->buf);
+		node->buf = NULL;
+	}
 }
