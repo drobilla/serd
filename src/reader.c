@@ -158,6 +158,7 @@ eat_byte(SerdReader* reader, const uint8_t byte)
 	const uint8_t c = peek_byte(reader);
 	++reader->read_head;
 	switch (c) {
+	case '\0': reader->eof = true; break;
 	case '\n': ++reader->cur.line; reader->cur.col = 0; break;
 	default:   ++reader->cur.col;
 	}
@@ -168,9 +169,6 @@ eat_byte(SerdReader* reader, const uint8_t byte)
 	if (reader->from_file && (reader->read_head == SERD_PAGE_SIZE)) {
 		TRY_RET(page(reader));
 		assert(reader->read_head < SERD_PAGE_SIZE);
-	}
-	if (reader->read_buf[reader->read_head] == '\0') {
-		reader->eof = true;
 	}
 	return c;
 }
@@ -1204,9 +1202,6 @@ read_objectList(SerdReader* reader, ReadContext ctx, bool blank)
 static bool
 read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool blank)
 {
-	if (reader->eof) {
-		return false;
-	}
 	Ref predicate = 0;
 	TRY_RET(read_verb(reader, &predicate));
 	TRY_THROW(read_ws_plus(reader));
@@ -1394,10 +1389,10 @@ read_statement(SerdReader* reader)
 	SerdStatementFlags flags = 0;
 	ReadContext ctx = { 0, 0, 0, &flags };
 	read_ws_star(reader);
-	if (reader->eof) {
-		return true;
-	}
 	switch (peek_byte(reader)) {
+	case '\0':
+		reader->eof = true;
+		return true;
 	case '@':
 		TRY_RET(read_directive(reader));
 		break;

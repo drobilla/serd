@@ -155,7 +155,7 @@ main(int argc, char** argv)
 	if (from_file) {
 		in_name = in_name ? in_name : input;
 		if (!in_fd) {
-			input = serd_uri_to_path(input);
+			input = serd_uri_to_path(in_name);
 			if (!(in_fd = serd_fopen((const char*)input, "r"))) {
 				return 1;
 			}

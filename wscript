@@ -262,7 +262,6 @@ def test(ctx):
     os.environ['PATH'] = '.' + os.pathsep + os.getenv('PATH')
     nul = os.devnull
     autowaf.run_tests(ctx, APPNAME, [
-            'serdi_static file:%s/tests/manifest.ttl > %s' % (srcdir, nul),
             'serdi_static file://%s/tests/manifest.ttl > %s' % (srcdir, nul),
             'serdi_static %s/tests/UTF-8.ttl > %s' % (srcdir, nul),
             'serdi_static -v > %s' % nul,
