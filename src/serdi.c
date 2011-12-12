@@ -44,7 +44,8 @@ print_usage(const char* name, bool error)
 	fprintf(os, "Usage: %s [OPTION]... INPUT [BASE_URI]\n", name);
 	fprintf(os, "Read and write RDF syntax.\n");
 	fprintf(os, "Use - for INPUT to read from standard input.\n\n");
-	fprintf(os, "  -B           Fast bulk output for large serialisations.\n");
+	fprintf(os, "  -b           Fast bulk output for large serialisations.\n");
+	fprintf(os, "  -f           Keep full URIs in input (don't qualify).\n");
 	fprintf(os, "  -h           Display this help and exit\n");
 	fprintf(os, "  -i SYNTAX    Input syntax (`turtle' or `ntriples')\n");
 	fprintf(os, "  -o SYNTAX    Output syntax (`turtle' or `ntriples')\n");
@@ -88,6 +89,7 @@ main(int argc, char** argv)
 	SerdSyntax     output_syntax = SERD_NTRIPLES;
 	bool           from_file     = true;
 	bool           bulk_write    = false;
+	bool           full_uris     = false;
 	const uint8_t* in_name       = NULL;
 	const uint8_t* add_prefix    = NULL;
 	const uint8_t* chop_prefix   = NULL;
@@ -97,8 +99,10 @@ main(int argc, char** argv)
 			in_name = (const uint8_t*)"(stdin)";
 			in_fd   = stdin;
 			break;
-		} else if (argv[a][1] == 'B') {
+		} else if (argv[a][1] == 'b') {
 			bulk_write = true;
+		} else if (argv[a][1] == 'f') {
+			full_uris = true;
 		} else if (argv[a][1] == 'h') {
 			return print_usage(argv[0], false);
 		} else if (argv[a][1] == 'v') {
@@ -194,11 +198,18 @@ main(int argc, char** argv)
 	FILE*    out_fd = stdout;
 	SerdEnv* env    = serd_env_new(&base_uri_node);
 
-	SerdStyle output_style = SERD_STYLE_RESOLVED;
+	SerdStyle output_style = 0;
 	if (output_syntax == SERD_NTRIPLES) {
 		output_style |= SERD_STYLE_ASCII;
 	} else {
-		output_style |= SERD_STYLE_ABBREVIATED|SERD_STYLE_CURIED;
+		output_style |= SERD_STYLE_ABBREVIATED;
+		if (!full_uris) {
+			output_style |= SERD_STYLE_CURIED;
+		}
+	}
+
+	if (input_syntax != SERD_NTRIPLES) {  // Base URI may change (@base)
+		output_style |= SERD_STYLE_RESOLVED;
 	}
 
 	SerdSink      sink      = file_sink;
