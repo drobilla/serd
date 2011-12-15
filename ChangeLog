@@ -8,6 +8,8 @@ serd (UNRELEASED) unstable; urgency=low
   * Improve write performance by doing bulk writes for unescaped substrings
   * Add SerdBulkSink for writing bulk output and corresponding serdi -B option
   * Add serdi -f option to prevent URI qualification
+  * Remove use of multi-byte peek (readahead) and use exactly 1 page for
+    read buffer (instead of 2)
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 
