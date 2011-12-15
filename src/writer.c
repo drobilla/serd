@@ -100,7 +100,7 @@ write_text(SerdWriter* writer, TextContext ctx,
 		// Fast bulk write for long strings of printable ASCII
 		size_t j = i;
 		for (; j < n_bytes; ++j) {
-			if (utf8[j] == terminator || utf8[j] == '\\'
+			if (utf8[j] == terminator || utf8[j] == '\\' || utf8[j] == '"'
 			    || (((writer->style & SERD_STYLE_ASCII) || ctx == WRITE_URI)
 			        && !in_range(utf8[j], 0x20, 0x7E))) {
 				break;
@@ -117,6 +117,8 @@ write_text(SerdWriter* writer, TextContext ctx,
 		if (ctx == WRITE_LONG_STRING) {
 			if (in == '\\') {
 				sink("\\\\", 2, writer); continue;
+			} else if (in == '\"' && i == n_bytes) {
+				sink("\\\"", 2, writer); continue;  // '"' at end of string
 			}
 		} else {
 			switch (in) {
