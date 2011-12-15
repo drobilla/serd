@@ -10,6 +10,9 @@ serd (UNRELEASED) unstable; urgency=low
   * Add serdi -f option to prevent URI qualification
   * Remove use of multi-byte peek (readahead) and use exactly 1 page for
     read buffer (instead of 2)
+  * Handle a quote as the last character of a long string literal in the
+    writer (by escaping it) rather than the reader, to avoid writing Turtle
+    other tools fail to parse.
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 
