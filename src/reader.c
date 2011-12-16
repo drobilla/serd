@@ -521,7 +521,6 @@ read_lcharacter(SerdReader* reader, Ref dest, SerdNodeFlags* flags)
 		eat_byte_safe(reader, '\"');
 		buf[0] = eat_byte_safe(reader, peek_byte(reader));
 		buf[1] = eat_byte_safe(reader, peek_byte(reader));
-		fprintf(stderr, "%c %c %c\n", c, buf[0], buf[1]);
 		if (buf[0] == '\"' && buf[1] == '\"') {
 			return SERD_FAILURE;
 		} else {
