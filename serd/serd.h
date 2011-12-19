@@ -267,6 +267,17 @@ size_t
 serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags);
 
 /**
+   Parse a string to a double.
+
+   The API of this function is identical to the standard C strtod function,
+   except this function is locale-independent and always matches the lexical
+   format used in the Turtle grammar (the decimal point is always ".").
+*/
+SERD_API
+double
+serd_strtod(const char* str, char** endptr);
+
+/**
    @}
    @name URI
    @{
@@ -378,6 +389,31 @@ serd_node_new_uri_from_string(const uint8_t* str,
 SERD_API
 SerdNode
 serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out);
+
+/**
+   Create a new node by serialising @c d into an xsd:decimal string.
+
+   The resulting node will always contain a `.', start with a digit, and end
+   with a digit (i.e. will have a leading and/or trailing `0' if necessary).
+   It will never be in scientific notation.  A maximum of @c frac_digits digits
+   will be written after the decimal point, but trailing zeros will
+   automatically be omitted (except one if @c d is a round integer).
+
+   Note that about 16 and 8 fractional digits are required to precisely
+   represent a double and float, respectively.
+
+   @param frac_digits The maximum number of digits after the decimal place.
+*/
+SERD_API
+SerdNode
+serd_node_new_decimal(double d, unsigned frac_digits);
+
+/**
+   Create a new node by serialising @c d into an xsd:integer string.
+*/
+SERD_API
+SerdNode
+serd_node_new_integer(long i);
 
 /**
    Free any data owned by @c node.

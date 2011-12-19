@@ -10,7 +10,7 @@ from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
-SERD_VERSION       = '0.6.0'
+SERD_VERSION       = '0.7.0'
 SERD_MAJOR_VERSION = '0'
 
 # Library version (UNIX style major, minor, micro)
@@ -119,6 +119,7 @@ def build(bld):
               export_includes = ['.'],
               source          = lib_source,
               includes        = ['.', './src'],
+              lib             = ['m'],
               name            = 'libserd',
               target          = 'serd-%s' % SERD_MAJOR_VERSION,
               vnum            = SERD_LIB_VERSION,
@@ -132,6 +133,7 @@ def build(bld):
                   export_includes = ['.'],
                   source          = lib_source,
                   includes        = ['.', './src'],
+                  lib             = ['m'],
                   name            = 'libserd_static',
                   target          = 'serd-%s' % SERD_MAJOR_VERSION,
                   vnum            = SERD_LIB_VERSION,
@@ -143,19 +145,30 @@ def build(bld):
         obj = bld(features     = 'c cstlib',
                   source       = lib_source,
                   includes     = ['.', './src'],
+                  lib          = ['m'],
                   name         = 'libserd_profiled',
                   target       = 'serd_profiled',
                   install_path = '',
                   cflags       = [ '-fprofile-arcs', '-ftest-coverage',
                                    '-DSERD_INTERNAL' ])
 
-        # Unit test program
+        # Unit test serdi
         obj = bld(features     = 'c cprogram',
                   source       = 'src/serdi.c',
                   includes     = ['.', './src'],
                   use          = 'libserd_profiled',
-                  lib          = ['gcov'],
+                  lib          = ['m', 'gcov'],
                   target       = 'serdi_static',
+                  install_path = '',
+                  cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ])
+
+        # Unit test program
+        obj = bld(features     = 'c cprogram',
+                  source       = 'src/serd_test.c',
+                  includes     = ['.', './src'],
+                  use          = 'libserd_profiled',
+                  lib          = ['m', 'gcov'],
+                  target       = 'serd_test',
                   install_path = '',
                   cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ])
 
@@ -257,6 +270,8 @@ def test(ctx):
     os.chdir(orig_dir)
 
     autowaf.pre_test(ctx, APPNAME)
+
+    autowaf.run_tests(ctx, APPNAME, ['./serd_test'], dirs=['.'])
 
     os.environ['PATH'] = '.' + os.pathsep + os.getenv('PATH')
     nul = os.devnull

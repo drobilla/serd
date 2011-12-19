@@ -13,6 +13,8 @@ serd (UNRELEASED) unstable; urgency=low
   * Handle a quote as the last character of a long string literal in the
     writer (by escaping it) rather than the reader, to avoid writing Turtle
     other tools fail to parse.
+  * Add serd_strtod(), serd_node_new_decimal(), and serd_node_new_integer()
+    for locale-independent numeric node parsing/serialising.
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 

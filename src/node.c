@@ -19,6 +19,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <math.h>
+#include <float.h>
+
 SERD_API
 SerdNode
 serd_node_from_string(SerdType type, const uint8_t* buf)
@@ -136,6 +139,84 @@ serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)
 		fprintf(stderr, "Failed to parse URI <%s>\n", buf);
 		return SERD_NODE_NULL;
 	}
+
+	return node;
+}
+
+SERD_API
+SerdNode
+serd_node_new_decimal(double d, unsigned frac_digits)
+{
+	const double abs_d      = fabs(d);
+	const long   int_digits = (long)fmax(1.0, ceil(log10(abs_d)));
+	char*        buf        = calloc(int_digits + frac_digits + 3, 1);
+	SerdNode     node       = { (const uint8_t*)buf, 0, 0, 0, SERD_LITERAL };
+
+	const double int_part  = floor(abs_d);
+
+	// Point s to decimal point location
+	char* s = buf + int_digits;
+	if (d < 0.0) {
+		*buf = '-';
+		++s;
+	}
+
+	// Write integer part (right to left)
+	char* t   = s - 1;
+	long  dec = (long)int_part;
+	do {
+		*t-- = '0' + (dec % 10);
+	} while ((dec /= 10) > 0);
+
+	*s++ = '.';
+
+	// Write fractional part (right to left)
+	double frac_part = fabs(d - int_part);
+	if (frac_part < DBL_EPSILON) {
+		*s++ = '0';
+		node.n_bytes = node.n_chars = (s - buf);
+	} else {
+		long frac = lrint(frac_part * pow(10, frac_digits));
+		s += frac_digits - 1;
+		unsigned i = 0;
+
+		// Skip trailing zeros
+		for (; i < frac_digits && (frac % 10 == 0); ++i, --s, frac /= 10) {}
+
+		node.n_bytes = node.n_chars = (s - buf) + 1;
+
+		// Write digits from last trailing zero to decimal point			
+		for (; i < frac_digits; ++i) {
+			*s-- = '0' + (frac % 10);
+			frac /= 10;
+		}
+	}
+
+	return node;
+}
+
+SERD_API
+SerdNode
+serd_node_new_integer(long i)
+{
+	long       abs_i  = labs(i);
+	const long digits = (long)fmax(1.0, ceil(log10((double)abs_i + 1)));
+	char*      buf    = calloc(digits + 1, 1);
+	SerdNode   node   = { (const uint8_t*)buf, 0, 0, 0, SERD_LITERAL };
+
+	// Point s to the end
+	char* s = buf + digits - 1;
+	if (i < 0) {
+		*buf = '-';
+		++s;
+	}
+
+	node.n_bytes = node.n_chars = (s - buf) + 1;
+
+	// Write integer part (right to left)
+	do {
+		*s-- = '0' + (abs_i % 10);
+	} while ((abs_i /= 10) > 0);
 
 	return node;
 }

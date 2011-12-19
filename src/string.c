@@ -16,6 +16,8 @@
 
 #include "serd_internal.h"
 
+#include <math.h>
+
 SERD_API
 const uint8_t*
 serd_strerror(SerdStatus st)
@@ -55,4 +57,57 @@ serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags)
 		*n_bytes = i;
 	}
 	return n_chars;
+}
+
+static inline double
+read_sign(const char** sptr)
+{
+	double sign = 1.0;
+	switch (**sptr) {
+	case '-': sign = -1.0;
+	case '+': ++(*sptr);
+	default:  return sign;
+	}
+}
+
+SERD_API
+double
+serd_strtod(const char* str, char** endptr)
+{
+	double result = 0.0;
+
+	// Point s at the first non-whitespace character
+	const char* s = str;
+	while (is_space(*s)) { ++s; }
+
+	// Read leading sign if necessary
+	const double sign = read_sign(&s);
+
+	// Parse integer part
+	for (; is_digit(*s); ++s) {
+		result = (result * 10.0) + (*s - '0');
+	}
+
+	// Parse fractional part
+	if (*s == '.') {
+		double denom = 10.0;
+		for (++s; is_digit(*s); ++s) {
+			result += (*s - '0') / denom;
+			denom *= 10.0;
+		}
+	}
+
+	// Parse exponent
+	if (*s == 'e' || *s == 'E') {
+		++s;
+		double expt      = 0.0;
+		double expt_sign = read_sign(&s);
+		for (; is_digit(*s); ++s) {
+			expt = (expt * 10.0) + (*s - '0');
+		}
+		result *= pow(10, expt * expt_sign);
+	}
+
+	*endptr = (char*)s;
+	return result * sign;
 }

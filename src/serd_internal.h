@@ -209,4 +209,15 @@ is_digit(const uint8_t c)
 	return in_range(c, '0', '9');
 }
 
+static inline bool
+is_space(const char c)
+{
+	switch (c) {
+	case ' ': case '\f': case '\n': case '\r': case '\t': case '\v':
+		return true;
+	default:
+		return false;
+	}
+}
+
 #endif  // SERD_INTERNAL_H
