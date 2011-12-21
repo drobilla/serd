@@ -185,7 +185,7 @@ serd_node_new_decimal(double d, unsigned frac_digits)
 
 		node.n_bytes = node.n_chars = (s - buf) + 1;
 
-		// Write digits from last trailing zero to decimal point			
+		// Write digits from last trailing zero to decimal point
 		for (; i < frac_digits; ++i) {
 			*s-- = '0' + (frac % 10);
 			frac /= 10;

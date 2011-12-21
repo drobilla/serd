@@ -200,7 +200,7 @@ main(int argc, char** argv)
 	if (bulk_write) {
 		output_style |= SERD_STYLE_BULK;
 	}
-		
+
 	SerdWriter* writer = serd_writer_new(
 		output_syntax, output_style, env, &base_uri, file_sink, out_fd);
 
