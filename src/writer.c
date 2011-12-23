@@ -101,8 +101,7 @@ write_text(SerdWriter* writer, TextContext ctx,
 		size_t j = i;
 		for (; j < n_bytes; ++j) {
 			if (utf8[j] == terminator || utf8[j] == '\\' || utf8[j] == '"'
-			    || (((writer->style & SERD_STYLE_ASCII) || ctx == WRITE_URI)
-			        && !in_range(utf8[j], 0x20, 0x7E))) {
+			    || (!in_range(utf8[j], 0x20, 0x7E))) {
 				break;
 			}
 		}
@@ -146,10 +145,13 @@ write_text(SerdWriter* writer, TextContext ctx,
 		if ((in & 0x80) == 0) {  // Starts with `0'
 			size = 1;
 			c = in & 0x7F;
-			if (in_range(in, 0x20, 0x7E)) {  // Printable ASCII
-				sink(&in, 1, writer);
-				continue;
+			if (in_range(c, 0x20, 0x7E) || (ctx != WRITE_URI && is_space(c))) {
+				sink(&in, 1, writer);  // Print ASCII character
+			} else {
+				snprintf(escape, 7, "\\u%04X", c);
+				sink(escape, 6, writer);  // Escape ASCII control character
 			}
+			continue;
 		} else if ((in & 0xE0) == 0xC0) {  // Starts with `110'
 			size = 2;
 			c = in & 0x1F;
@@ -164,10 +166,9 @@ write_text(SerdWriter* writer, TextContext ctx,
 			return false;
 		}
 
-		if ((ctx == WRITE_STRING || ctx == WRITE_LONG_STRING)
-		    && !(writer->style & SERD_STYLE_ASCII)) {
+		if (ctx != WRITE_URI && !(writer->style & SERD_STYLE_ASCII)) {
 			// Write UTF-8 character directly to UTF-8 output
-			// TODO: Scan to next escape and write entire range at once
+			// TODO: Always parse and validate character?
 			sink(utf8 + i - 1, size, writer);
 			i += size - 1;
 			continue;
