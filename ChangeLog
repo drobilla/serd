@@ -15,6 +15,7 @@ serd (UNRELEASED) unstable; urgency=low
     other tools fail to parse.
   * Add serd_strtod(), serd_node_new_decimal(), and serd_node_new_integer()
     for locale-independent numeric node parsing/serialising.
+  * Add serd_file_sink for the common case of writing to a FILE* stream.
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 

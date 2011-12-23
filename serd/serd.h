@@ -660,6 +660,16 @@ void
 serd_writer_free(SerdWriter* writer);
 
 /**
+   A convenience sink function for writing to a FILE*.
+
+   This function can be used as a SerdSink when writing to a FILE*.  The
+   associated @c stream parameter must be a FILE* opened for writing.
+*/
+SERD_API
+size_t
+serd_file_sink(const void* buf, size_t len, void* stream);
+
+/**
    Set a prefix to be removed from matching blank node identifiers.
 */
 SERD_API

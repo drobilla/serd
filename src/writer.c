@@ -606,3 +606,12 @@ serd_writer_free(SerdWriter* writer)
 	}
 	free(writer);
 }
+
+SERD_API
+size_t
+serd_file_sink(const void* buf, size_t len, void* stream)
+{
+	FILE* file = (FILE*)stream;
+	return fwrite(buf, 1, len, file);
+}
+
