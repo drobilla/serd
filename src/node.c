@@ -102,7 +102,7 @@ serd_node_new_uri_from_string(const uint8_t* str,
                               const SerdURI* base,
                               SerdURI*       out)
 {
-	if (str[0] == '\0') {
+	if (!str || str[0] == '\0') {
 		return serd_node_new_uri(base, NULL, out);  // Empty URI => Base URI
 	} else {
 		SerdURI uri;

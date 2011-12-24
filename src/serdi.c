@@ -168,11 +168,6 @@ main(int argc, char** argv)
 	SerdNode base_uri_node = serd_node_new_uri_from_string(
 		base_uri_str, &base_uri, &base_uri);
 
-	if (!base_uri_node.buf) {
-		fprintf(stderr, "Invalid base URI <%s>\n", base_uri_str);
-		return 1;
-	}
-
 	FILE*    out_fd = stdout;
 	SerdEnv* env    = serd_env_new(&base_uri_node);
 
