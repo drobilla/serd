@@ -155,6 +155,7 @@ main()
 	}
 
 	// Test serd_uri_to_path
+
 	const uint8_t* uri = (const uint8_t*)"file:///home/user/foo.ttl";
 	if (strcmp((const char*)serd_uri_to_path(uri), "/home/user/foo.ttl")) {
 		fprintf(stderr, "Bad path %s for %s\n", serd_uri_to_path(uri), uri);
@@ -176,6 +177,16 @@ main()
 		return 1;
 	}
 
+	// Test serd_node_from_string
+
+	SerdNode node = serd_node_from_string(SERD_LITERAL, (const uint8_t*)"hello\"");
+	if (node.n_bytes != 6 || node.n_chars != 6 || node.flags != SERD_HAS_QUOTE
+	    || strcmp((const char*)node.buf, "hello\"")) {
+		fprintf(stderr, "Bad node %s %zu %zu %d %d\n",
+		        node.buf, node.n_bytes, node.n_chars, node.flags, node.type);
+		return 1;
+	}
+	
 	printf("Success\n");
 	return 0;
 }
