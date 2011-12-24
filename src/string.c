@@ -39,6 +39,7 @@ serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags)
 {
 	size_t n_chars = 0;
 	size_t i       = 0;
+	*flags         = 0;
 	for (; str[i]; ++i) {
 		if ((str[i] & 0xC0) != 0x80) {
 			// Does not start with `10', start of a new character

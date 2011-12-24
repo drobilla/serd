@@ -125,6 +125,33 @@ main()
 		serd_node_free(&node);
 	}
 
+	// Test serd_strlen
+	const uint8_t str[] = { '"', '5', 0xE2, 0x82, 0xAC, '"', '\n', 0 };
+
+	size_t        n_bytes;
+	SerdNodeFlags flags;
+	const size_t  len = serd_strlen(str, &n_bytes, &flags);
+	if (len != 5 || n_bytes != 7
+	    || flags != (SERD_HAS_QUOTE|SERD_HAS_NEWLINE)) {
+		fprintf(stderr, "Bad serd_strlen(%s) len=%zu n_bytes=%zu flags=%u\n",
+		        str, len, n_bytes, flags);
+		return 1;
+	}
+
+	// Test serd_strerror
+	const uint8_t* msg = NULL;
+	if (strcmp((const char*)(msg = serd_strerror(SERD_SUCCESS)), "Success")) {
+		fprintf(stderr, "Bad message `%s' for SERD_SUCCESS\n", msg);
+		return 1;
+	}
+	for (int i = SERD_FAILURE; i <= SERD_ERR_NOT_FOUND; ++i) {
+		msg = serd_strerror((SerdStatus)i);
+		if (!strcmp((const char*)msg, "Success")) {
+			fprintf(stderr, "Bad message `%s' for (SerdStatus)%d\n", msg, i);
+			return 1;
+		}
+	}
+	
 	printf("Success\n");
 	return 0;
 }
