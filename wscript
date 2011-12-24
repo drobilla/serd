@@ -164,7 +164,7 @@ def build(bld):
 
         # Unit test program
         obj = bld(features     = 'c cprogram',
-                  source       = 'src/serd_test.c',
+                  source       = 'tests/serd_test.c',
                   includes     = ['.', './src'],
                   use          = 'libserd_profiled',
                   lib          = ['m', 'gcov'],
