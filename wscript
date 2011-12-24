@@ -301,7 +301,7 @@ def test(ctx):
     commands = []
     for test in good_tests:
         base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test
-        commands += [ 'serdi_static %s/%s \'%s\' > %s.out' % (srcdir, test, base_uri, test) ]
+        commands += [ 'serdi_static -f %s/%s \'%s\' > %s.out' % (srcdir, test, base_uri, test) ]
 
     autowaf.run_tests(ctx, APPNAME, commands, 0, name='good')
 
@@ -332,7 +332,7 @@ def test(ctx):
         base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test
         out_filename = test + '.thru'
         commands += [
-            '%s %s -o turtle -p foo %s/%s \'%s\' | %s -i turtle -c foo - \'%s\' | sed \'s/_:docid/_:genid/g\' > %s.thru' % (
+            '%s %s -o turtle -p foo %s/%s \'%s\' | %s -i turtle -o ntriples -c foo - \'%s\' | sed \'s/_:docid/_:genid/g\' > %s.thru' % (
                 'serdi_static', '-b' if bulk else '  ', srcdir, test, base_uri,
                 'serdi_static', base_uri, test) ]
         bulk = not bulk
