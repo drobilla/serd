@@ -327,13 +327,15 @@ def test(ctx):
     thru_tests.remove('tests/test-id.ttl') # IDs are mapped so files won't be identical
 
     commands = []
+    bulk = False
     for test in thru_tests:
         base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test
         out_filename = test + '.thru'
         commands += [
-            '%s -o turtle -p foo %s/%s \'%s\' | %s -i turtle -c foo - \'%s\' | sed \'s/_:docid/_:genid/g\' > %s.thru' % (
-                'serdi_static', srcdir, test, base_uri,
+            '%s %s -o turtle -p foo %s/%s \'%s\' | %s -i turtle -c foo - \'%s\' | sed \'s/_:docid/_:genid/g\' > %s.thru' % (
+                'serdi_static', '-b' if bulk else '  ', srcdir, test, base_uri,
                 'serdi_static', base_uri, test) ]
+        bulk = not bulk
 
     autowaf.run_tests(ctx, APPNAME, commands, 0, name='turtle-round-trip')
     Logs.pprint('BOLD', '\nVerifying ntriples => turtle => ntriples')
