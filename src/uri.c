@@ -211,6 +211,72 @@ end:
 	return SERD_SUCCESS;
 }
 
+/**
+   Remove leading dot components from @c path.
+   See http://tools.ietf.org/html/rfc3986#section-5.2.3
+   @param up Set to the number of up-references (e.g. "../") trimmed
+   @return A pointer to the new start of @path
+*/
+static const uint8_t*
+remove_dot_segments(const uint8_t* path, size_t len, size_t* up)
+{
+	const uint8_t*       begin = path;
+	const uint8_t* const end   = path + len;
+
+	*up = 0;
+	while (begin < end) {
+		switch (begin[0]) {
+		case '.':
+			switch (begin[1]) {
+			case '/':
+				begin += 2;  // Chop leading "./"
+				break;
+			case '.':
+				switch (begin[2]) {
+				case '\0':
+					++*up;
+					begin += 2;  // Chop input ".."
+					break;
+				case '/':
+					++*up;
+					begin += 3;  // Chop leading "../"
+					break;
+				default:
+					return begin;
+				}
+				break;
+			case '\0':
+				++begin;  // Chop input "." (and fall-through)
+			default:
+				return begin;
+			}
+			break;
+		case '/':
+			switch (begin[1]) {
+			case '.':
+				switch (begin[2]) {
+				case '/':
+					begin += 2;  // Leading "/./" => "/"
+					break;
+				case '.':
+					switch (begin[3]) {
+					case '/':
+						++*up;
+						begin += 3;  // Leading "/../" => "/"
+					}
+					break;
+				default:
+					return begin;
+				}
+			} // else fall through
+		default:
+			return begin;  // Finished chopping dot components
+		}
+	}
+
+	return begin;
+}
+
 SERD_API
 void
 serd_uri_resolve(const SerdURI* r, const SerdURI* base, SerdURI* t)
@@ -291,69 +357,14 @@ serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream)
 		if (!uri->path.buf && (uri->fragment.buf || uri->query.buf)) {
 			WRITE_COMPONENT("", uri->path_base, "");
 		} else if (uri->path.buf) {
-			/* Merge paths, removing dot components.
-			   See http://tools.ietf.org/html/rfc3986#section-5.2.3
-			*/
-			const uint8_t* begin = uri->path.buf;
-			size_t         up    = 1;
+			const uint8_t*       begin = uri->path.buf;
+			const uint8_t* const end   = uri->path.buf + uri->path.len;
 
-			// Count and skip leading dot components
-			const uint8_t* end = uri->path.buf + uri->path.len;
-			for (bool done = false; !done && (begin < end);) {
-				switch (begin[0]) {
-				case '.':
-					switch (begin[1]) {
-					case '/':
-						begin += 2;  // Chop leading "./"
-						break;
-					case '.':
-						switch (begin[2]) {
-						case '\0':
-							++up;
-							begin += 2;  // Chop input ".."
-							done = true;
-							break;
-						case '/':
-							++up;
-							begin += 3;  // Chop leading "../"
-							break;
-						default:
-							done = true;
-							break;
-						}
-						break;
-					case '\0':
-						++begin;  // Chop input "." (and fall-through)
-					default:
-						done = true;
-						break;
-					}
-					break;
-				case '/':
-					switch (begin[1]) {
-					case '.':
-						switch (begin[2]) {
-						case '/':
-							begin += 2;  // Leading "/./" => "/"
-							break;
-						case '.':
-							switch (begin[3]) {
-							case '/':
-								++up;
-								begin += 3;  // Leading "/../" => "/"
-							}
-							break;
-						default:
-							done = true;
-							break;
-						}
-					} // else fall through
-				default:
-					done = true;  // Finished chopping dot components
-				}
-			}
+			size_t up;
+			begin = remove_dot_segments(uri->path.buf, uri->path.len, &up);
+			++up;
 
-			if (uri->path.buf && uri->path_base.buf) {
+			if (uri->path_base.buf) {
 				// Find the up'th last slash
 				const uint8_t* base_last = (uri->path_base.buf
 				                            + uri->path_base.len - 1);
