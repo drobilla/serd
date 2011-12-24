@@ -126,6 +126,7 @@ main()
 	}
 
 	// Test serd_strlen
+
 	const uint8_t str[] = { '"', '5', 0xE2, 0x82, 0xAC, '"', '\n', 0 };
 
 	size_t        n_bytes;
@@ -139,6 +140,7 @@ main()
 	}
 
 	// Test serd_strerror
+
 	const uint8_t* msg = NULL;
 	if (strcmp((const char*)(msg = serd_strerror(SERD_SUCCESS)), "Success")) {
 		fprintf(stderr, "Bad message `%s' for SERD_SUCCESS\n", msg);
@@ -151,7 +153,29 @@ main()
 			return 1;
 		}
 	}
-	
+
+	// Test serd_uri_to_path
+	const uint8_t* uri = (const uint8_t*)"file:///home/user/foo.ttl";
+	if (strcmp((const char*)serd_uri_to_path(uri), "/home/user/foo.ttl")) {
+		fprintf(stderr, "Bad path %s for %s\n", serd_uri_to_path(uri), uri);
+		return 1;
+	}
+	uri = (const uint8_t*)"file://localhost/home/user/foo.ttl";
+	if (strcmp((const char*)serd_uri_to_path(uri), "/home/user/foo.ttl")) {
+		fprintf(stderr, "Bad path %s for %s\n", serd_uri_to_path(uri), uri);
+		return 1;
+	}
+	uri = (const uint8_t*)"file:illegal/file/uri";
+	if (serd_uri_to_path(uri)) {
+		fprintf(stderr, "Converted invalid URI `%s' to path `%s'\n",
+		        uri, serd_uri_to_path(uri));
+	}
+	uri = (const uint8_t*)"file:///c:/awful/system";
+	if (strcmp((const char*)serd_uri_to_path(uri), "c:/awful/system")) {
+		fprintf(stderr, "Bad path %s for %s\n", serd_uri_to_path(uri), uri);
+		return 1;
+	}
+
 	printf("Success\n");
 	return 0;
 }

@@ -26,29 +26,27 @@ SERD_API
 const uint8_t*
 serd_uri_to_path(const uint8_t* uri)
 {
-	const uint8_t* filename = NULL;
+	const uint8_t* path = NULL;
 	if (serd_uri_string_has_scheme(uri)) {
-		// Absolute URI, ensure it a file and chop scheme
 		if (strncmp((const char*)uri, "file:", 5)) {
 			fprintf(stderr, "Non-file URI `%s'\n", uri);
 			return NULL;
-		} else if (strncmp((const char*)uri + 5, "//", 2)) {
-			fprintf(stderr, "Illegal file URI `%s'\n", uri);
-			return NULL;
-#ifdef __WIN32__
-		} else if (!strncmp((const char*)uri, "file:///", 8)) {
-			filename = uri + 8;
-#else
+		} else if (!strncmp((const char*)uri, "file://localhost/", 17)) {
+			path = uri + 16;
 		} else if (!strncmp((const char*)uri, "file://", 7)) {
-			filename = uri + 7;
-#endif
+			path = uri + 7;
 		} else {
-			filename = uri + 5;
+			fprintf(stderr, "Invalid file URI `%s'\n", uri);
+			return NULL;
+		}
+		// Special case for awful Windows file URIs
+		if (is_alpha(path[1]) && path[2] == ':' && path[3] == '/') {
+			++path;  // Special case for terrible Windows file URIs
 		}
 	} else {
-		filename = uri;
+		path = uri;
 	}
-	return filename;
+	return path;
 }
 
 SERD_API
