@@ -18,6 +18,7 @@ serd (UNRELEASED) unstable; urgency=low
   * Add serd_file_sink for the common case of writing to a FILE* stream.
   * Escape ASCII control characters in output (e.g. fix problems with string
     literals that start with a backspace)
+  * Improve URI resolution to cover most of the abnormal cases from RFC3986
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 

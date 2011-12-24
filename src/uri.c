@@ -287,7 +287,7 @@ serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream)
 		WRITE("//", 2);
 		WRITE(uri->authority.buf, uri->authority.len);
 	}
-	if (uri->path_base.len) {
+	if (uri->path_base.len || uri->path.len) {
 		if (!uri->path.buf && (uri->fragment.buf || uri->query.buf)) {
 			WRITE_COMPONENT("", uri->path_base, "");
 		} else if (uri->path.buf) {
@@ -307,24 +307,47 @@ serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream)
 						begin += 2;  // Chop leading "./"
 						break;
 					case '.':
-						++up;
 						switch (begin[2]) {
+						case '\0':
+							++up;
+							begin += 2;  // Chop input ".."
+							done = true;
+							break;
 						case '/':
-							begin += 3;  // Chop lading "../"
+							++up;
+							begin += 3;  // Chop leading "../"
 							break;
 						default:
-							begin += 2;  // Chop leading ".."
+							done = true;
+							break;
 						}
 						break;
+					case '\0':
+						++begin;  // Chop input "." (and fall-through)
 					default:
-						++begin;  // Chop leading "."
+						done = true;
+						break;
 					}
 					break;
 				case '/':
-					if (begin[1] == '/') {
-						++begin;  // Replace leading "//" with "/"
-						break;
-					}  // else fall through
+					switch (begin[1]) {
+					case '.':
+						switch (begin[2]) {
+						case '/':
+							begin += 2;  // Leading "/./" => "/"
+							break;
+						case '.':
+							switch (begin[3]) {
+							case '/':
+								++up;
+								begin += 3;  // Leading "/../" => "/"
+							}
+							break;
+						default:
+							done = true;
+							break;
+						}
+					} // else fall through
 				default:
 					done = true;  // Finished chopping dot components
 				}
