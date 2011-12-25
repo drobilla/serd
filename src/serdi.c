@@ -149,7 +149,7 @@ main(int argc, char** argv)
 		in_name = in_name ? in_name : input;
 		if (!in_fd) {
 			input = serd_uri_to_path(in_name);
-			if (!(in_fd = serd_fopen((const char*)input, "r"))) {
+			if (!input || !(in_fd = serd_fopen((const char*)input, "r"))) {
 				return 1;
 			}
 		}

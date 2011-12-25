@@ -134,11 +134,7 @@ serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)
 	node.n_bytes    = actual_len;
 	node.n_chars    = actual_len;
 
-	// FIXME: double parse
-	if (serd_uri_parse(buf, out)) {
-		fprintf(stderr, "Failed to parse URI <%s>\n", buf);
-		return SERD_NODE_NULL;
-	}
+	serd_uri_parse(buf, out);  // TODO: cleverly avoid double parse
 
 	return node;
 }
@@ -201,7 +197,7 @@ serd_node_new_integer(long i)
 {
 	long       abs_i  = labs(i);
 	const long digits = (long)fmax(1.0, ceil(log10((double)abs_i + 1)));
-	char*      buf    = calloc(digits + 1, 1);
+	char*      buf    = calloc(digits + 2, 1);
 	SerdNode   node   = { (const uint8_t*)buf, 0, 0, 0, SERD_LITERAL };
 
 	// Point s to the end

@@ -163,6 +163,8 @@ write_text(SerdWriter* writer, TextContext ctx,
 			c = in & 0x07;
 		} else {
 			fprintf(stderr, "Invalid UTF-8 at offset %zu: %X\n", i, in);
+			const uint8_t replacement_char[] = { 0xEF, 0xBF, 0xBD };
+			sink(replacement_char, sizeof(replacement_char), writer);
 			return false;
 		}
 
@@ -249,8 +251,6 @@ write_node(SerdWriter*        writer,
 	SerdChunk uri_prefix;
 	SerdChunk uri_suffix;
 	switch (node->type) {
-	case SERD_NOTHING:
-		return false;
 	case SERD_BLANK:
 		if (writer->syntax != SERD_NTRIPLES
 		    && ((field == FIELD_SUBJECT && (flags & SERD_ANON_S_BEGIN))
@@ -350,9 +350,21 @@ write_node(SerdWriter*        writer,
 		sink("<", 1, writer);
 		write_text(writer, WRITE_URI, node->buf, node->n_bytes, '>');
 		sink(">", 1, writer);
-		return true;
+	default:
+		break;
 	}
 	return true;
+}
+
+static inline bool
+is_resource(const SerdNode* node)
+{
+	switch (node->type) {
+	case SERD_URI: case SERD_CURIE: case SERD_BLANK:
+		return true;
+	default:
+		return false;
+	}
 }
 
 SERD_API
@@ -366,7 +378,12 @@ serd_writer_write_statement(SerdWriter*        writer,
                             const SerdNode*    object_datatype,
                             const SerdNode*    object_lang)
 {
-	assert(subject && predicate && object);
+	if (!subject || !predicate || !object
+	    || !subject->buf || !predicate->buf || !object->buf
+	    || !is_resource(subject) || !is_resource(predicate)) {
+		return SERD_ERR_BAD_ARG;
+	}
+
 	switch (writer->syntax) {
 	case SERD_NTRIPLES:
 		write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags);
@@ -536,11 +553,9 @@ void
 serd_writer_chop_blank_prefix(SerdWriter*    writer,
                               const uint8_t* prefix)
 {
-	if (writer->bprefix) {
-		free(writer->bprefix);
-		writer->bprefix_len = 0;
-		writer->bprefix     = NULL;
-	}
+	free(writer->bprefix);
+	writer->bprefix_len = 0;
+	writer->bprefix     = NULL;
 	if (prefix) {
 		writer->bprefix_len = strlen((const char*)prefix);
 		writer->bprefix     = malloc(writer->bprefix_len + 1);

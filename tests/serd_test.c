@@ -16,10 +16,13 @@
 
 #include <float.h>
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "serd/serd.h"
+
+#define USTR(s) ((const uint8_t*)(s))
 
 static bool
 test_strtod(double dbl, double max_delta)
@@ -37,6 +40,27 @@ test_strtod(double dbl, double max_delta)
 		return false;
 	}
 	return true;
+}
+
+static SerdStatus
+count_prefixes(void* handle, const SerdNode* name, const SerdNode* uri)
+{
+	++*(int*)handle;
+	return SERD_SUCCESS;
+}
+
+static SerdStatus
+count_statements(void*              handle,
+                 SerdStatementFlags flags,
+                 const SerdNode*    graph,
+                 const SerdNode*    subject,
+                 const SerdNode*    predicate,
+                 const SerdNode*    object,
+                 const SerdNode*    object_datatype,
+                 const SerdNode*    object_lang)
+{
+	++*(int*)handle;
+	return SERD_SUCCESS;
 }
 
 int
@@ -186,7 +210,154 @@ main()
 		        node.buf, node.n_bytes, node.n_chars, node.flags, node.type);
 		return 1;
 	}
-	
+
+	// Test SerdEnv
+
+	SerdNode u   = serd_node_from_string(SERD_URI, USTR("http://example.org/foo"));
+	SerdNode b   = serd_node_from_string(SERD_CURIE, USTR("invalid"));
+	SerdNode c   = serd_node_from_string(SERD_CURIE, USTR("eg:b"));
+	SerdEnv* env = serd_env_new(NULL);
+	serd_env_set_prefix_from_strings(env, USTR("eg"), USTR("http://example.org/"));
+
+	SerdChunk prefix, suffix;
+	if (!serd_env_expand(env, &b, &prefix, &suffix)) {
+		fprintf(stderr, "Expanded invalid curie %s\n", b.buf);
+		return 1;
+	}
+
+	SerdNode xu = serd_env_expand_node(env, &u);
+	if (strcmp((const char*)xu.buf, "http://example.org/foo")) {
+		fprintf(stderr, "Expanded %s to %s\n", c.buf, xu.buf);
+		return 1;
+	}
+	serd_node_free(&xu);
+
+	SerdNode xc = serd_env_expand_node(env, &c);
+	if (strcmp((const char*)xc.buf, "http://example.org/b")) {
+		fprintf(stderr, "Expanded %s to %s\n", c.buf, xc.buf);
+		return 1;
+	}
+	serd_node_free(&xc);
+
+	if (!serd_env_set_prefix(env, &SERD_NODE_NULL, &SERD_NODE_NULL)) {
+		fprintf(stderr, "Set NULL prefix\n");
+		return 1;
+	}
+
+	const SerdNode lit = serd_node_from_string(SERD_LITERAL, USTR("hello"));
+	if (!serd_env_set_prefix(env, &b, &lit)) {
+		fprintf(stderr, "Set prefix to literal\n");
+		return 1;
+	}
+
+	int n_prefixes = 0;
+	serd_env_set_prefix_from_strings(env, USTR("eg"), USTR("http://example.org/"));
+	serd_env_foreach(env, count_prefixes, &n_prefixes);
+	if (n_prefixes != 1) {
+		fprintf(stderr, "Bad prefix count %d\n", n_prefixes);
+		return 1;
+	}
+
+	// Test SerdReader and SerdWriter
+
+	const char* path = tmpnam(NULL);
+	FILE* fd = fopen(path, "w");
+	if (!fd) {
+		fprintf(stderr, "Failed to open file %s\n", path);
+		return 1;
+	}
+
+	int* n_statements = malloc(sizeof(int));
+	*n_statements = 0;
+
+	SerdWriter* writer = serd_writer_new(
+		SERD_TURTLE, 0, env, NULL, serd_file_sink, fd);
+	if (!writer) {
+		fprintf(stderr, "Failed to create writer\n");
+		return 1;
+	}
+
+	if (!serd_writer_end_anon(writer, NULL)) {
+		fprintf(stderr, "Ended non-existent anonymous node\n");
+		return 1;
+	}
+
+	uint8_t buf[] = { 0x80, 0, 0, 0, 0 };
+	SerdNode s = serd_node_from_string(SERD_URI, USTR(""));
+	SerdNode p = serd_node_from_string(SERD_URI, USTR("http://example.org/pred"));
+	SerdNode o = serd_node_from_string(SERD_LITERAL, buf);
+
+	// Write 3 invalid statements (should write nothing)
+	if (!serd_writer_write_statement(writer, 0, NULL,
+	                                 &s, &p, NULL, NULL, NULL)) {
+		fprintf(stderr, "Successfully wrote junk statement 1\n");
+		return 1;
+	}
+	if (!serd_writer_write_statement(writer, 0, NULL,
+	                                 &s, &p, &SERD_NODE_NULL, NULL, NULL)) {
+		fprintf(stderr, "Successfully wrote junk statement 1\n");
+		return 1;
+	}
+	if (!serd_writer_write_statement(writer, 0, NULL,
+	                                 &s, &o, &o, NULL, NULL)) {
+		fprintf(stderr, "Successfully wrote junk statement 3\n");
+		return 1;
+	}
+
+	// Write 1 statement with bad UTF-8 (should be replaced)
+	if (serd_writer_write_statement(writer, 0, NULL,
+	                                &s, &p, &o, NULL, NULL)) {
+		fprintf(stderr, "Failed to write junk UTF-8\n");
+		return 1;
+	}
+
+	// Write 1 valid statement
+	o = serd_node_from_string(SERD_LITERAL, USTR("hello"));
+	if (serd_writer_write_statement(writer, 0, NULL,
+	                                &s, &p, &o, NULL, NULL)) {
+		fprintf(stderr, "Failed to write valid statement\n");
+		return 1;
+	}
+
+	serd_writer_free(writer);
+	fseek(fd, 0, SEEK_SET);
+
+	SerdReader* reader = serd_reader_new(
+		SERD_TURTLE, n_statements, free,
+		NULL, NULL, count_statements, NULL);
+	if (!reader) {
+		fprintf(stderr, "Failed to create reader\n");
+		return 1;
+	}
+	if (serd_reader_get_handle(reader) != n_statements) {
+		fprintf(stderr, "Corrupt reader handle\n");
+		return 1;
+	}
+
+	if (!serd_reader_read_file(reader, USTR("http://notafile"))) {
+		fprintf(stderr, "Apparently read an http URI\n");
+		return 1;
+	}
+	if (!serd_reader_read_file(reader, USTR("file:///better/not/exist"))) {
+		fprintf(stderr, "Apprently read a non-existent file\n");
+		return 1;
+	}
+	SerdStatus st = serd_reader_read_file(reader, USTR(path));
+	if (st) {
+		fprintf(stderr, "Error reading file (%s)\n", serd_strerror(st));
+		return 1;
+	}
+
+	if (*n_statements != 2) {
+		fprintf(stderr, "Bad statement count %d\n", *n_statements);
+		return 1;
+	}
+
+	serd_reader_free(reader);
+	fclose(fd);
+
+	serd_env_free(env);
+
 	printf("Success\n");
 	return 0;
 }

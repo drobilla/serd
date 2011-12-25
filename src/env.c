@@ -132,7 +132,9 @@ serd_env_set_prefix(SerdEnv*        env,
                     const SerdNode* name,
                     const SerdNode* uri_node)
 {
-	if (serd_uri_string_has_scheme(uri_node->buf)) {
+	if (!name->buf || !uri_node->buf || uri_node->type != SERD_URI) {
+		return SERD_ERR_BAD_ARG;
+	} else if (serd_uri_string_has_scheme(uri_node->buf)) {
 		// Set prefix to absolute URI
 		serd_env_add(env, name, uri_node);
 	} else {
@@ -140,10 +142,6 @@ serd_env_set_prefix(SerdEnv*        env,
 		SerdURI  abs_uri;
 		SerdNode abs_uri_node = serd_node_new_uri_from_node(
 			uri_node, &env->base_uri, &abs_uri);
-
-		if (!abs_uri_node.buf) {
-			return SERD_ERR_BAD_ARG;
-		}
 
 		// Set prefix to resolved (absolute) URI
 		serd_env_add(env, name, &abs_uri_node);
