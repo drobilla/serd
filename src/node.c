@@ -37,7 +37,7 @@ SERD_API
 SerdNode
 serd_node_copy(const SerdNode* node)
 {
-	if (!node || !node->buf) {
+	if (!node) {
 		return SERD_NODE_NULL;
 	}
 
@@ -93,7 +93,9 @@ serd_node_new_uri_from_node(const SerdNode* uri_node,
                             const SerdURI*  base,
                             SerdURI*        out)
 {
-	return serd_node_new_uri_from_string(uri_node->buf, base, out);
+	return (uri_node->type == SERD_URI)
+		? serd_node_new_uri_from_string(uri_node->buf, base, out)
+		: SERD_NODE_NULL;
 }
 
 SERD_API
@@ -104,13 +106,10 @@ serd_node_new_uri_from_string(const uint8_t* str,
 {
 	if (!str || str[0] == '\0') {
 		return serd_node_new_uri(base, NULL, out);  // Empty URI => Base URI
-	} else {
-		SerdURI uri;
-		if (!serd_uri_parse(str, &uri)) {
-			return serd_node_new_uri(&uri, base, out);  // Resolve/Serialise
-		}
 	}
-	return SERD_NODE_NULL;
+	SerdURI uri;
+	serd_uri_parse(str, &uri);
+	return serd_node_new_uri(&uri, base, out);  // Resolve/Serialise
 }
 
 SERD_API
@@ -134,7 +133,9 @@ serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)
 	node.n_bytes    = actual_len;
 	node.n_chars    = actual_len;
 
-	serd_uri_parse(buf, out);  // TODO: cleverly avoid double parse
+	if (out) {
+		serd_uri_parse(buf, out);  // TODO: cleverly avoid double parse
+	}
 
 	return node;
 }
@@ -177,7 +178,7 @@ serd_node_new_decimal(double d, unsigned frac_digits)
 		unsigned i = 0;
 
 		// Skip trailing zeros
-		for (; i < frac_digits && (frac % 10 == 0); ++i, --s, frac /= 10) {}
+		for (; i < frac_digits - 1 && !(frac % 10); ++i, --s, frac /= 10) {}
 
 		node.n_bytes = node.n_chars = (s - buf) + 1;
 

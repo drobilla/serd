@@ -98,9 +98,6 @@ SerdStatus
 serd_uri_parse(const uint8_t* utf8, SerdURI* uri)
 {
 	*uri = SERD_URI_NULL;
-	assert(uri->path_base.buf == NULL);
-	assert(uri->path_base.len == 0);
-	assert(uri->authority.len == 0);
 
 	const uint8_t* ptr = utf8;
 
@@ -137,7 +134,6 @@ maybe_authority:
 	if (*ptr == '/' && *(ptr + 1) == '/') {
 		ptr += 2;
 		uri->authority.buf = ptr;
-		assert(uri->authority.len == 0);
 		for (uint8_t c; (c = *ptr) != '\0'; ++ptr) {
 			switch (c) {
 			case '/': goto path;
@@ -331,28 +327,18 @@ serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream)
 	size_t write_size = 0;
 #define WRITE(buf, len) \
 	write_size += len; \
-	if (len) { \
-		sink((const uint8_t*)buf, len, stream); \
-	}
-#define WRITE_CHAR(c) WRITE(&(c), 1)
-#define WRITE_COMPONENT(prefix, field, suffix) \
-	if ((field).len) { \
-		for (const uint8_t* c = (const uint8_t*)prefix; *c != '\0'; ++c) { \
-			WRITE(c, 1); \
-		} \
-		WRITE((field).buf, (field).len); \
-		for (const uint8_t* c = (const uint8_t*)suffix; *c != '\0'; ++c) { \
-			WRITE(c, 1); \
-		} \
-	}
+	sink((const uint8_t*)buf, len, stream);
 
-	WRITE_COMPONENT("",   uri->scheme,    ":");
+	if (uri->scheme.buf) {
+		WRITE(uri->scheme.buf, uri->scheme.len);
+		WRITE(":", 1);
+	}
 	if (uri->authority.buf) {
 		WRITE("//", 2);
 		WRITE(uri->authority.buf, uri->authority.len);
 	}
 	if (!uri->path.buf) {
-		WRITE_COMPONENT("", uri->path_base, "");
+		WRITE(uri->path_base.buf, uri->path_base.len);
 	} else {
 		const uint8_t*       begin = uri->path.buf;
 		const uint8_t* const end   = uri->path.buf + uri->path.len;
@@ -377,16 +363,19 @@ serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream)
 
 		} else {
 			// Relative path is just query or fragment, append to base URI
-			WRITE_COMPONENT("", uri->path_base, "");
+			WRITE(uri->path_base.buf, uri->path_base.len);
 		}
 
 		// Write URI suffix
 		WRITE(begin, end - begin);
 	}
-	WRITE_COMPONENT("?", uri->query, "");
+	if (uri->query.buf) {
+		WRITE("?", 1);
+		WRITE(uri->query.buf, uri->query.len);
+	}
 	if (uri->fragment.buf) {
 		// Note uri->fragment.buf includes the leading `#'
-		WRITE_COMPONENT("", uri->fragment, "");
+		WRITE(uri->fragment.buf, uri->fragment.len);
 	}
 	return write_size;
 }

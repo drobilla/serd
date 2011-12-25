@@ -112,7 +112,6 @@ warn(SerdReader* reader, const char* fmt, ...)
 static inline bool
 page(SerdReader* reader)
 {
-	assert(reader->from_file);
 	reader->read_head = 0;
 	const size_t n_read = fread(reader->read_buf, 1, SERD_PAGE_SIZE, reader->fd);
 	if (n_read == 0) {
@@ -143,8 +142,7 @@ eat_byte_safe(SerdReader* reader, const uint8_t byte)
 	}
 
 	if (reader->from_file && (reader->read_head == SERD_PAGE_SIZE)) {
-		TRY_RET(page(reader));
-		assert(reader->read_head < SERD_PAGE_SIZE);
+		page(reader);
 	}
 	return byte;
 }
@@ -220,7 +218,6 @@ push_byte(SerdReader* reader, Ref ref, const uint8_t c)
 	if (!(c & 0x80)) {  // Starts with 0 bit, start of new character
 		++node->n_chars;
 	}
-	assert(node->n_bytes >= node->n_chars);
 	*(s - 1) = c;
 	*s       = '\0';
 }
@@ -233,8 +230,7 @@ append_string(SerdReader* reader, Ref ref, const uint8_t* suffix, size_t len)
 	#endif
 	serd_stack_push(&reader->stack, len);
 	SerdNode* const node = deref(reader, ref);
-	assert(node->n_bytes >= node->n_chars);
-	uint8_t* const buf = (uint8_t*)node + sizeof(SerdNode);
+	uint8_t* const  buf  = (uint8_t*)node + sizeof(SerdNode);
 	memcpy(buf + node->n_bytes, suffix, len + 1);
 	node->n_bytes += len;
 	node->n_chars += len;
@@ -266,7 +262,6 @@ emit_statement(SerdReader* reader, SerdStatementFlags* flags,
                Ref g, Ref s, Ref p, Ref o,
                Ref d, Ref l)
 {
-	assert(s && p && o);
 	bool ret = !reader->statement_sink
 		|| !reader->statement_sink(reader->handle, *flags,
 		                           deref(reader, g),
@@ -302,7 +297,9 @@ read_hex_escape(SerdReader* reader, unsigned length, Ref dest)
 {
 	uint8_t buf[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	for (unsigned i = 0; i < length; ++i) {
-		buf[i] = read_hex(reader);
+		if (!(buf[i] = read_hex(reader))) {
+			return false;
+		}
 	}
 
 	uint32_t c;
@@ -478,11 +475,11 @@ read_character(SerdReader* reader, Ref dest)
 	if (c == '\0') {
 		error(reader, "unexpected end of file\n", c);
 		return SERD_ERR_BAD_SYNTAX;
-	} else if (c < 0x20) {// || c == 0x7F) {
+	} else if (c < 0x20) {
 		return bad_char(reader, dest,
 		                "unexpected control character 0x%X\n",
 		                eat_byte_safe(reader, c));
-	} else if (reader->syntax == SERD_NTRIPLES || !(c & 0x80)) {
+	} else if (!(c & 0x80)) {
 		push_byte(reader, dest, eat_byte_safe(reader, c));
 		return SERD_SUCCESS;
 	} else {
@@ -850,11 +847,12 @@ read_number(SerdReader* reader, Ref* dest, Ref* datatype)
 		TRY_THROW(read_0_9(reader, ref, true));
 	} else {
 		// all other cases ::= ( '-' | '+' ) [0-9]+ ( . )? ( [0-9]+ )? ...
-		TRY_THROW(read_0_9(reader, ref, true));
+		assert(is_digit(c));
+		read_0_9(reader, ref, true);
 		if ((c = peek_byte(reader)) == '.') {
 			has_decimal = true;
 			push_byte(reader, ref, eat_byte_safe(reader, c));
-			TRY_THROW(read_0_9(reader, ref, false));
+			read_0_9(reader, ref, false);
 		}
 	}
 	c = peek_byte(reader);
@@ -925,11 +923,11 @@ except:
 }
 
 inline static bool
-is_object_end(const uint8_t c)
+is_token_end(const uint8_t c)
 {
 	switch (c) {
 	case 0x9: case 0xA: case 0xD: case 0x20: case '\0':
-	case '#': case '.': case ';':
+	case '#': case '.': case ';': case '<':
 		return true;
 	default:
 		return false;
@@ -950,8 +948,8 @@ read_verb(SerdReader* reader, Ref* dest)
 		*/
 		*dest = read_prefixName(reader, 0);
 		node  = deref(reader, *dest);
-		if (node && is_object_end(peek_byte(reader)) &&
-		    ((node->n_bytes == 1 && node->buf[0] == 'a'))) {
+		if (node && node->n_bytes == 1 && node->buf[0] == 'a'
+		    && is_token_end(peek_byte(reader))) {
 			pop_node(reader, *dest);
 			return (*dest = push_node(reader, SERD_URI, NS_RDF "type", 47));
 		} else {
@@ -1106,7 +1104,7 @@ read_object(SerdReader* reader, ReadContext ctx)
 		*/
 		o    = read_prefixName(reader, 0);
 		node = deref(reader, o);
-		if (node && is_object_end(peek_byte(reader)) &&
+		if (node && is_token_end(peek_byte(reader)) &&
 		    ((node->n_bytes == 4 && !memcmp(node->buf, "true", 4))
 		     || (node->n_bytes == 5 && !memcmp(node->buf, "false", 5)))) {
 			node->type = SERD_LITERAL;
@@ -1154,14 +1152,14 @@ read_objectList(SerdReader* reader, ReadContext ctx, bool blank)
 
 // Spec: [7] predicateObjectList ::= verb objectList
 //                                   (';' verb objectList)* (';')?
-// Impl: [7] predicateObjectList ::= verb ws+ objectList
+// Impl: [7] predicateObjectList ::= verb ws* objectList
 //                                   (ws* ';' ws* verb ws+ objectList)* (';')?
 static bool
 read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool blank)
 {
 	Ref predicate = 0;
 	TRY_RET(read_verb(reader, &predicate));
-	TRY_THROW(read_ws_plus(reader));
+	read_ws_star(reader);
 	ctx.predicate = predicate;
 	TRY_THROW(read_objectList(reader, ctx, blank));
 	pop_node(reader, predicate);
@@ -1176,7 +1174,7 @@ read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool blank)
 		default:
 			TRY_THROW(read_verb(reader, &predicate));
 			ctx.predicate = predicate;
-			TRY_THROW(read_ws_plus(reader));
+			read_ws_star(reader);
 			TRY_THROW(read_objectList(reader, ctx, blank));
 			pop_node(reader, predicate);
 			predicate = 0;

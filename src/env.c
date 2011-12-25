@@ -111,8 +111,6 @@ serd_env_add(SerdEnv*        env,
              const SerdNode* name,
              const SerdNode* uri)
 {
-	assert(name && uri);
-	assert(name->n_bytes == strlen((const char*)name->buf));
 	SerdPrefix* const prefix = serd_env_find(env, name->buf, name->n_bytes);
 	if (prefix) {
 		SerdNode old_prefix_uri = prefix->uri;
@@ -132,7 +130,7 @@ serd_env_set_prefix(SerdEnv*        env,
                     const SerdNode* name,
                     const SerdNode* uri_node)
 {
-	if (!name->buf || !uri_node->buf || uri_node->type != SERD_URI) {
+	if (!name->buf || uri_node->type != SERD_URI) {
 		return SERD_ERR_BAD_ARG;
 	} else if (serd_uri_string_has_scheme(uri_node->buf)) {
 		// Set prefix to absolute URI
@@ -165,15 +163,9 @@ serd_env_set_prefix_from_strings(SerdEnv*       env,
 }
 
 static inline bool
-is_nameStartChar(const uint8_t c)
-{
-	return is_alpha(c) || is_digit(c) || c == '_';
-}
-
-static inline bool
 is_nameChar(const uint8_t c)
 {
-	return is_nameStartChar(c) || c == '.' || c == 0xB7;
+	return is_alpha(c) || is_digit(c) || c == '_';
 }
 
 /**
@@ -183,15 +175,12 @@ is_nameChar(const uint8_t c)
 static inline bool
 is_name(const uint8_t* buf, size_t len)
 {
-	if (is_nameStartChar(buf[0])) {
-		for (size_t i = 1; i < len; ++i) {
-			if (!is_nameChar(buf[i])) {
-				return false;
-			}
+	for (size_t i = 0; i < len; ++i) {
+		if (!is_nameChar(buf[i])) {
+			return false;
 		}
-		return true;
 	}
-	return false;
+	return true;
 }
 
 SERD_API
@@ -248,23 +237,25 @@ SerdNode
 serd_env_expand_node(const SerdEnv*  env,
                      const SerdNode* node)
 {
-	if (node->type == SERD_CURIE) {
+	switch (node->type) {
+	case SERD_CURIE: {
 		SerdChunk prefix;
 		SerdChunk suffix;
-		serd_env_expand(env, node, &prefix, &suffix);
-		SerdNode ret = { NULL,
-		                 prefix.len + suffix.len + 1,
-		                 prefix.len + suffix.len,  // FIXME: UTF-8
-		                 0,
-		                 SERD_URI };
+		if (serd_env_expand(env, node, &prefix, &suffix)) {
+			return SERD_NODE_NULL;
+		}
+		const size_t len = prefix.len + suffix.len; // FIXME: UTF-8?
+		SerdNode     ret = { NULL, len, len, 0, SERD_URI };
 		ret.buf = malloc(ret.n_bytes + 1);
 		snprintf((char*)ret.buf, ret.n_bytes + 1,
 		         "%s%s", prefix.buf, suffix.buf);
 		return ret;
-	} else if (node->type == SERD_URI) {
+	}
+	case SERD_URI: {
 		SerdURI ignored;
 		return serd_node_new_uri_from_node(node, &env->base_uri, &ignored);
-	} else {
+	}
+	default:
 		return SERD_NODE_NULL;
 	}
 }

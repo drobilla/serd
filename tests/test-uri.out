@@ -35,6 +35,7 @@
 <http://a/b/c/g#s/./x> <http://www.w3.org/2002/07/owl#sameAs> <http://a/b/c/g#s/./x> .
 <http://a/b/c/g#s/../x> <http://www.w3.org/2002/07/owl#sameAs> <http://a/b/c/g#s/../x> .
 <http://a/.g> <http://www.w3.org/2002/07/owl#sameAs> <http://a/.g> .
+<http://a/..g> <http://www.w3.org/2002/07/owl#sameAs> <http://a/..g> .
 <http://A?aquery> <http://www.w3.org/2002/07/owl#sameAs> <http://A?aquery> .
 <http://A#afragment> <http://www.w3.org/2002/07/owl#sameAs> <http://A#afragment> .
 <http://a/b/c/d;p?aquery> <http://www.w3.org/2002/07/owl#sameAs> <http://a/b/c/d;p?aquery> .

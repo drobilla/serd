@@ -157,10 +157,9 @@ serd_bulk_sink_flush(SerdBulkSink* bsink)
 static inline void
 serd_bulk_sink_free(SerdBulkSink* bsink)
 {
-	if (bsink) {
-		serd_bulk_sink_flush(bsink);
-		free(bsink->buf);
-	}
+	serd_bulk_sink_flush(bsink);
+	free(bsink->buf);
+	bsink->buf = NULL;
 }
 
 static inline size_t

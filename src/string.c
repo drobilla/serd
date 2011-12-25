@@ -30,7 +30,7 @@ serd_strerror(SerdStatus st)
 	case SERD_ERR_BAD_ARG:    return (const uint8_t*)"Invalid argument";
 	case SERD_ERR_NOT_FOUND:  return (const uint8_t*)"Not found";
 	}
-	return (const uint8_t*)"Success";  // never reached
+	return (const uint8_t*)"Unknown error code";  // never reached
 }
 
 SERD_API

@@ -176,12 +176,10 @@ write_text(SerdWriter* writer, TextContext ctx,
 			continue;
 		}
 
-#define READ_BYTE() do { \
-			assert(i < n_bytes); \
-			in = utf8[i++] & 0x3f; \
-			c <<= 6; \
-			c |= in; \
-		} while (0)
+#define READ_BYTE() \
+		in = utf8[i++] & 0x3f; \
+		c <<= 6; \
+		c |= in;
 
 		switch (size) {
 		case 4: READ_BYTE();
@@ -338,14 +336,13 @@ write_node(SerdWriter*        writer,
 		} else if ((writer->style & SERD_STYLE_RESOLVED)
 		           && !serd_uri_string_has_scheme(node->buf)) {
 			SerdURI uri;
-			if (!serd_uri_parse(node->buf, &uri)) {
-				SerdURI abs_uri;
-				serd_uri_resolve(&uri, &writer->base_uri, &abs_uri);
-				sink("<", 1, writer);
-				serd_uri_serialise(&abs_uri, (SerdSink)sink, writer);
-				sink(">", 1, writer);
-				return true;
-			}
+			serd_uri_parse(node->buf, &uri);
+			SerdURI abs_uri;
+			serd_uri_resolve(&uri, &writer->base_uri, &abs_uri);
+			sink("<", 1, writer);
+			serd_uri_serialise(&abs_uri, (SerdSink)sink, writer);
+			sink(">", 1, writer);
+			return true;
 		}
 		sink("<", 1, writer);
 		write_text(writer, WRITE_URI, node->buf, node->n_bytes, '>');
@@ -396,7 +393,7 @@ serd_writer_write_statement(SerdWriter*        writer,
 		}
 		sink(" .\n", 3, writer);
 		return SERD_SUCCESS;
-	case SERD_TURTLE:
+	default:
 		break;
 	}
 	if (serd_node_equals(subject, &writer->context.subject)) {
@@ -428,9 +425,8 @@ serd_writer_write_statement(SerdWriter*        writer,
 		}
 	} else {
 		if (writer->context.subject.type) {
-			if (writer->indent > 0) {
-				--writer->indent;
-			}
+			assert(writer->indent > 0);
+			--writer->indent;
 			if (serd_stack_is_empty(&writer->anon_stack)) {
 				serd_writer_write_delim(writer, '.');
 				serd_writer_write_delim(writer, '\n');
@@ -460,8 +456,7 @@ serd_writer_write_statement(SerdWriter*        writer,
 		           FIELD_OBJECT, flags);
 	}
 
-	if (writer->syntax != SERD_NTRIPLES
-	    && ((flags & SERD_ANON_S_BEGIN) || (flags & SERD_ANON_O_BEGIN))) {
+	if ((flags & SERD_ANON_S_BEGIN) || (flags & SERD_ANON_O_BEGIN)) {
 		WriteContext* ctx = (WriteContext*)serd_stack_push(
 			&writer->anon_stack, sizeof(WriteContext));
 		*ctx = writer->context;
