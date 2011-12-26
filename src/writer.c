@@ -145,7 +145,8 @@ write_text(SerdWriter* writer, TextContext ctx,
 		if ((in & 0x80) == 0) {  // Starts with `0'
 			size = 1;
 			c = in & 0x7F;
-			if (in_range(c, 0x20, 0x7E) || (ctx != WRITE_URI && is_space(c))) {
+			if (in_range(c, 0x20, 0x7E)
+			    || (is_space(c) &&  ctx == WRITE_LONG_STRING)) {
 				sink(&in, 1, writer);  // Print ASCII character
 			} else {
 				snprintf(escape, 7, "\\u%04X", c);
