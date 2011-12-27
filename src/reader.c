@@ -223,6 +223,14 @@ push_byte(SerdReader* reader, Ref ref, const uint8_t c)
 }
 
 static inline void
+push_replacement(SerdReader* reader, Ref dest)
+{
+	push_byte(reader, dest, 0xEF);
+	push_byte(reader, dest, 0xBF);
+	push_byte(reader, dest, 0xBD);
+}
+
+static inline void
 append_string(SerdReader* reader, Ref ref, const uint8_t* suffix, size_t len)
 {
 	#ifdef SERD_STACK_CHECK
@@ -312,10 +320,12 @@ read_hex_escape(SerdReader* reader, unsigned length, Ref dest)
 		size = 2;
 	} else if (c < 0x00010000) {
 		size = 3;
-	} else if (c < 0x00200000) {
+	} else if (c < 0x00110000) {
 		size = 4;
 	} else {
-		return false;
+		error(reader, "unicode character 0x%X out of range\n", c);
+		push_replacement(reader, dest);
+		return true;
 	}
 
 	// Build output in buf
@@ -414,11 +424,7 @@ static inline SerdStatus
 bad_char(SerdReader* reader, Ref dest, const char* fmt, uint8_t c)
 {
 	warn(reader, fmt, c);
-
-	// Emit replacement character
-	push_byte(reader, dest, 0xEF);
-	push_byte(reader, dest, 0xBF);
-	push_byte(reader, dest, 0xBD);
+	push_replacement(reader, dest);
 
 	// Skip bytes until the next start byte
 	for (uint8_t c = peek_byte(reader); (c & 0x80);) {
