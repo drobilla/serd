@@ -278,6 +278,20 @@ double
 serd_strtod(const char* str, char** endptr);
 
 /**
+   Decode a base64 string.
+   This function can be used to deserialise a blob node created with
+   serd_node_new_blob().
+
+   @param str Base64 string to decode.
+   @param len The length of @c str.
+   @param size Set to the size of the returned blob in bytes.
+   @return A newly allocated blob which must be freed with free().
+*/
+SERD_API
+void*
+serd_base64_decode(const uint8_t* str, size_t len, size_t* size);
+
+/**
    @}
    @name URI
    @{
@@ -414,6 +428,18 @@ serd_node_new_decimal(double d, unsigned frac_digits);
 SERD_API
 SerdNode
 serd_node_new_integer(long i);
+
+/**
+   Create a node by serialising @c buf into an xsd:base64Binary string.
+   This function can be used to make a serialisable node out of arbitrary
+   binary data, which can be decoded using serd_base64_decode().
+
+   @param wrap_lines If true lines are wrapped at 76 characters to conform
+   to RFC 2045.
+*/
+SERD_API
+SerdNode
+serd_node_new_blob(const void* buf, size_t size, bool wrap_lines);
 
 /**
    Free any data owned by @c node.

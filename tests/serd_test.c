@@ -133,7 +133,6 @@ main()
 	};
 
 	for (unsigned i = 0; i < sizeof(int_test_nums) / sizeof(double); ++i) {
-		fprintf(stderr, "\n*** TEST %ld\n", int_test_nums[i]);
 		SerdNode node = serd_node_new_integer(int_test_nums[i]);
 		if (strcmp((const char*)node.buf, (const char*)int_test_strs[i])) {
 			fprintf(stderr, "error: Serialised `%s' != %s\n",
@@ -147,6 +146,40 @@ main()
 			return 1;
 		}
 		serd_node_free(&node);
+	}
+
+	// Test serd_node_new_blob
+	for (size_t size = 0; size < 256; ++size) {
+		uint8_t* data = malloc(size);
+		for (size_t i = 0; i < size; ++i) {
+			data[i] = (uint8_t)(rand() % 256);
+		}
+
+		SerdNode blob = serd_node_new_blob(data, size, size % 5);
+
+		if (blob.n_bytes != blob.n_chars) {
+			fprintf(stderr, "error: Blob %zu bytes != %zu chars\n",
+			        blob.n_bytes, blob.n_chars);
+			return 1;
+		}
+
+		size_t   out_size;
+		uint8_t* out = serd_base64_decode(blob.buf, blob.n_bytes, &out_size);
+		if (out_size != size) {
+			fprintf(stderr, "error: Blob size %zu != %zu\n", out_size, size);
+			return 1;
+		}
+
+		for (size_t i = 0; i < size; ++i) {
+			if (out[i] != data[i]) {
+				fprintf(stderr, "error: Corrupt blob at byte %zu\n", i);
+				return 1;
+			}
+		}
+
+		serd_node_free(&blob);
+		free(out);
+		free(data);
 	}
 
 	// Test serd_strlen

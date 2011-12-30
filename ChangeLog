@@ -21,6 +21,8 @@ serd (UNRELEASED) unstable; urgency=low
   * Improve URI resolution to cover most of the abnormal cases from RFC3986
   * Support file://localhost/foo URIs in serd_uri_to_path()
   * Support Windows file://c:/foo URIs in serd_uri_to_path() on all platforms
+  * Add serd_node_new_blob and serd_base64_decode for handling arbitrary
+    binary data via base64 encoding.
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 

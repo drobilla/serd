@@ -218,6 +218,48 @@ serd_node_new_integer(long i)
 	return node;
 }
 
+/**
+   Base64 encoding table.
+   @see <a href="http://tools.ietf.org/html/rfc3548#section-3">RFC3986 S3</a>.
+*/
+static const uint8_t b64_map[64] =
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+/**
+   Encode 3 raw bytes to 4 base64 characters.
+*/
+static inline void
+encode_chunk(uint8_t out[4], const uint8_t in[3], size_t n_in)
+{
+	out[0] = b64_map[in[0] >> 2];
+	out[1] = b64_map[((in[0] & 0x03) << 4) | ((in[1] & 0xF0) >> 4)];
+	out[2] = ((n_in > 1)
+	          ? (b64_map[((in[1] & 0x0F) << 2) | ((in[2] & 0xC0) >> 6)])
+	          : (uint8_t)'=');
+	out[3] = ((n_in > 2) ? b64_map[in[2] & 0x3F] : (uint8_t)'=');
+}
+
+SERD_API
+SerdNode
+serd_node_new_blob(const void* buf, size_t size, bool wrap_lines)
+{
+	const size_t len  = ((size + 2) / 3) * 4 + (wrap_lines ? (size / 57) : 0);
+	SerdNode     node = { calloc(1, len + 2), len, len, 0, SERD_LITERAL };
+	for (size_t i = 0, j = 0; i < size; i += 3, j += 4) {
+		uint8_t in[4] = { 0, 0, 0, 0 };
+		size_t  n_in  = MIN(3, size - i);
+		memcpy(in, (const uint8_t*)buf + i, n_in);
+
+		if (wrap_lines && i > 0 && (i % 57) == 0) {
+			((uint8_t*)node.buf)[j++] = '\n';
+			node.flags |= SERD_HAS_NEWLINE;
+		}
+
+		encode_chunk((uint8_t*)node.buf + j, in, n_in);
+	}
+	return node;
+}
+
 SERD_API
 void
 serd_node_free(SerdNode* node)

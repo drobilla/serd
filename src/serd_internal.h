@@ -219,4 +219,10 @@ is_space(const char c)
 	}
 }
 
+static inline bool
+is_base64(const uint8_t c)
+{
+	return is_alpha(c) || is_digit(c) || c == '+' || c == '/' || c == '=';
+}
+
 #endif  // SERD_INTERNAL_H
