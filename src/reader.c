@@ -286,7 +286,7 @@ static bool
 read_collection(SerdReader* reader, ReadContext ctx, Ref* dest);
 
 static bool
-read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool blank);
+read_predicateObjectList(SerdReader* reader, ReadContext ctx);
 
 // [40]	hex	::=	[#x30-#x39] | [#x41-#x46]
 static inline uint8_t
@@ -1038,7 +1038,7 @@ read_blank(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest)
 		if (!subject) {
 			*ctx.flags |= SERD_ANON_CONT;
 		}
-		read_predicateObjectList(reader, ctx, true);
+		read_predicateObjectList(reader, ctx);
 		read_ws_star(reader);
 		eat_byte_check(reader, ']');
 		if (reader->end_sink) {
@@ -1143,7 +1143,7 @@ except:
 // Spec: [8] objectList ::= object ( ',' object )*
 // Impl: [8] objectList ::= object ( ws* ',' ws* object )*
 static bool
-read_objectList(SerdReader* reader, ReadContext ctx, bool blank)
+read_objectList(SerdReader* reader, ReadContext ctx)
 {
 	TRY_RET(read_object(reader, ctx));
 	read_ws_star(reader);
@@ -1161,13 +1161,13 @@ read_objectList(SerdReader* reader, ReadContext ctx, bool blank)
 // Impl: [7] predicateObjectList ::= verb ws* objectList
 //                                   (ws* ';' ws* verb ws+ objectList)* (';')?
 static bool
-read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool blank)
+read_predicateObjectList(SerdReader* reader, ReadContext ctx)
 {
 	Ref predicate = 0;
 	TRY_RET(read_verb(reader, &predicate));
 	read_ws_star(reader);
 	ctx.predicate = predicate;
-	TRY_THROW(read_objectList(reader, ctx, blank));
+	TRY_THROW(read_objectList(reader, ctx));
 	pop_node(reader, predicate);
 	predicate = 0;
 	read_ws_star(reader);
@@ -1181,7 +1181,7 @@ read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool blank)
 			TRY_THROW(read_verb(reader, &predicate));
 			ctx.predicate = predicate;
 			read_ws_star(reader);
-			TRY_THROW(read_objectList(reader, ctx, blank));
+			TRY_THROW(read_objectList(reader, ctx));
 			pop_node(reader, predicate);
 			predicate = 0;
 			read_ws_star(reader);
@@ -1276,7 +1276,7 @@ read_triples(SerdReader* reader, ReadContext ctx)
 	if (subject) {
 		ctx.subject = subject;
 		TRY_RET(read_ws_plus(reader));
-		ret = read_predicateObjectList(reader, ctx, false);
+		ret = read_predicateObjectList(reader, ctx);
 		pop_node(reader, subject);
 	}
 	ctx.subject = ctx.predicate = 0;
