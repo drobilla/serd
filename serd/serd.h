@@ -416,6 +416,7 @@ serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out);
    Note that about 16 and 8 fractional digits are required to precisely
    represent a double and float, respectively.
 
+   @param d The value for the new node.
    @param frac_digits The maximum number of digits after the decimal place.
 */
 SERD_API
@@ -434,8 +435,10 @@ serd_node_new_integer(long i);
    This function can be used to make a serialisable node out of arbitrary
    binary data, which can be decoded using serd_base64_decode().
 
-   @param wrap_lines If true lines are wrapped at 76 characters to conform
-   to RFC 2045.
+
+   @param buf Raw binary input data.
+   @param size Size of @c buf.
+   @param wrap_lines Wrap lines at 76 characters to conform to RFC 2045.
 */
 SERD_API
 SerdNode

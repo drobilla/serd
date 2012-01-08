@@ -30,8 +30,8 @@ int
 print_version()
 {
 	printf("serdi " SERD_VERSION " <http://drobilla.net/software/serd>\n");
-	printf("Copyright 2011 David Robillard <http://drobilla.net>.\n"
-	       "License: <http://www.opensource.org/licenses/isc-license>\n"
+	printf("Copyright 2012 David Robillard <http://drobilla.net>.\n"
+	       "License: <http://www.opensource.org/licenses/isc>\n"
 	       "This is free software; you are free to change and redistribute it."
 	       "\nThere is NO WARRANTY, to the extent permitted by law.\n");
 	return 0;
@@ -45,13 +45,13 @@ print_usage(const char* name, bool error)
 	fprintf(os, "Read and write RDF syntax.\n");
 	fprintf(os, "Use - for INPUT to read from standard input.\n\n");
 	fprintf(os, "  -b           Fast bulk output for large serialisations.\n");
+	fprintf(os, "  -c PREFIX    Chop PREFIX from matching blank node IDs\n");
 	fprintf(os, "  -f           Keep full URIs in input (don't qualify).\n");
 	fprintf(os, "  -h           Display this help and exit\n");
 	fprintf(os, "  -i SYNTAX    Input syntax (`turtle' or `ntriples')\n");
 	fprintf(os, "  -o SYNTAX    Output syntax (`turtle' or `ntriples')\n");
-	fprintf(os, "  -s INPUT     Parse INPUT as string (terminates options)\n");
 	fprintf(os, "  -p PREFIX    Add PREFIX to blank node IDs\n");
-	fprintf(os, "  -c PREFIX    Chop PREFIX from matching blank node IDs\n");
+	fprintf(os, "  -s INPUT     Parse INPUT as string (terminates options)\n");
 	fprintf(os, "  -v           Display version information and exit\n");
 	return error ? 1 : 0;
 }

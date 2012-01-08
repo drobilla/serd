@@ -1,7 +1,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH SERDI 1 "24 May 2011"
+.TH SERDI 1 "8 Jan 2012"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -21,8 +21,21 @@
 serdi [OPTIONS]... INPUT BASE_URI
 
 .SH OPTIONS
+
 .TP
-\fB\-h\fT, \fB\-\-help\fR
+\fB\-b\fT
+Fast bulk output for large serialisations.
+
+.TP
+\fB\-c PREFIX\fR
+Chop PREFIX from matching blank node IDs.
+
+.TP
+\fB\-f\fT
+Keep full URIs in input (don't qualify).
+
+.TP
+\fB\-h\fT
 Print the command line options.
 
 .TP
@@ -34,16 +47,12 @@ Read input in SYNTAX (`turtle' or `ntriples').
 Write output in SYNTAX (`turtle' or `ntriples').
 
 .TP
-\fB\-s INPUT\fR
-Parse INPUT as a string (terminates options).
-
-.TP
 \fB\-p PREFIX\fR
 Add PREFIX to blank node IDs.
 
 .TP
-\fB\-c PREFIX\fR
-Chop PREFIX from matching blank node IDs.
+\fB\-s INPUT\fR
+Parse INPUT as a string (terminates options).
 
 .TP
 \fB\-v\fR
@@ -53,9 +62,9 @@ Display version information and exit.
 Serdi was written by David Robillard <d@drobilla.net>
 
 .SH COPYRIGHT
-Copyright \(co 2011 David Robillard.
+Copyright \(co 2012 David Robillard.
 .br
-License: <http://www.opensource.org/licenses/isc-license>
+License: <http://www.opensource.org/licenses/isc>
 .br
 This is free software; you are free to change and redistribute it.
 .br
