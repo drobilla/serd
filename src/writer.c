@@ -134,7 +134,7 @@ write_text(SerdWriter* writer, TextContext ctx,
 			}
 
 			if (in == terminator) {
-				snprintf(escape, 7, "\\u%04X", terminator);
+				snprintf(escape, sizeof(escape), "\\u%04X", terminator);
 				sink(escape, 6, writer);
 				continue;
 			}
@@ -149,7 +149,7 @@ write_text(SerdWriter* writer, TextContext ctx,
 			    || (is_space(c) &&  ctx == WRITE_LONG_STRING)) {
 				sink(&in, 1, writer);  // Print ASCII character
 			} else {
-				snprintf(escape, 7, "\\u%04X", c);
+				snprintf(escape, sizeof(escape), "\\u%04X", c);
 				sink(escape, 6, writer);  // Escape ASCII control character
 			}
 			continue;
@@ -189,10 +189,10 @@ write_text(SerdWriter* writer, TextContext ctx,
 		}
 
 		if (c < 0xFFFF) {
-			snprintf(escape, 7, "\\u%04X", c);
+			snprintf(escape, sizeof(escape), "\\u%04X", c);
 			sink(escape, 6, writer);
 		} else {
-			snprintf(escape, 11, "\\U%08X", c);
+			snprintf(escape, sizeof(escape), "\\U%08X", c);
 			sink(escape, 10, writer);
 		}
 	}

@@ -424,7 +424,7 @@ SerdNode
 serd_node_new_decimal(double d, unsigned frac_digits);
 
 /**
-   Create a new node by serialising @c d into an xsd:integer string.
+   Create a new node by serialising @c i into an xsd:integer string.
 */
 SERD_API
 SerdNode

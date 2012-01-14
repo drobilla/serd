@@ -71,8 +71,8 @@ struct SerdReaderImpl {
 	unsigned          next_id;
 	int               err;
 	uint8_t*          read_buf;
-	int32_t           read_head; ///< Offset into read_buf
-	bool              from_file; ///< True iff reading from @ref fd
+	int32_t           read_head;  ///< Offset into read_buf
+	bool              from_file;  ///< True iff reading from @ref fd
 	bool              eof;
 #ifdef SERD_STACK_CHECK
 	Ref*              alloc_stack;  ///< Stack of push offsets
@@ -113,7 +113,7 @@ static inline bool
 page(SerdReader* reader)
 {
 	reader->read_head = 0;
-	const size_t n_read = fread(reader->read_buf, 1, SERD_PAGE_SIZE, reader->fd);
+	size_t n_read = fread(reader->read_buf, 1, SERD_PAGE_SIZE, reader->fd);
 	if (n_read == 0) {
 		reader->read_buf[0] = '\0';
 		reader->eof = true;
@@ -1101,7 +1101,7 @@ read_object(SerdReader* reader, ReadContext ctx)
 	case '4': case '5': case '6': case '7': case '8': case '9':
 		TRY_THROW(ret = read_number(reader, &o, &datatype));
 		break;
-	case '\"': 
+	case '\"':
 		TRY_THROW(ret = read_literal(reader, &o, &datatype, &lang, &flags));
 		break;
 	default:

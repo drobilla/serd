@@ -262,7 +262,7 @@ remove_dot_segments(const uint8_t* path, size_t len, size_t* up)
 				default:
 					return begin;
 				}
-			} // else fall through
+			}  // else fall through
 		default:
 			return begin;  // Finished chopping dot components
 		}

@@ -244,7 +244,7 @@ serd_env_expand_node(const SerdEnv*  env,
 		if (serd_env_expand(env, node, &prefix, &suffix)) {
 			return SERD_NODE_NULL;
 		}
-		const size_t len = prefix.len + suffix.len; // FIXME: UTF-8?
+		const size_t len = prefix.len + suffix.len;  // FIXME: UTF-8?
 		SerdNode     ret = { NULL, len, len, 0, SERD_URI };
 		ret.buf = malloc(ret.n_bytes + 1);
 		snprintf((char*)ret.buf, ret.n_bytes + 1,
