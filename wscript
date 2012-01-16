@@ -67,6 +67,13 @@ def configure(conf):
                       define_name='HAVE_GCOV',
                       mandatory=False)
 
+    # Check for fmax
+    conf.check(function_name='fmax',
+               header_name='math.h',
+               define_name='HAVE_FMAX',
+               lib=['m'],
+               mandatory=False)
+
     # Check for posix_memalign
     conf.check(function_name='posix_memalign',
                header_name='stdlib.h',
@@ -120,7 +127,7 @@ def build(bld):
 
     libflags = [ '-fvisibility=hidden' ]
     libs     = [ 'm' ]
-    defines  = [ '' ]
+    defines  = []
     if sys.platform == 'win32':
         libflags = []
     if bld.env['MSVC_COMPILER']:

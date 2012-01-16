@@ -31,7 +31,9 @@ typedef struct {
 } WriteContext;
 
 static const WriteContext WRITE_CONTEXT_NULL = {
-	SERD_NODE_NULL, SERD_NODE_NULL, SERD_NODE_NULL
+	{ 0, 0, 0, 0, SERD_NOTHING },
+	{ 0, 0, 0, 0, SERD_NOTHING },
+	{ 0, 0, 0, 0, SERD_NOTHING }
 };
 
 struct SerdWriterImpl {
