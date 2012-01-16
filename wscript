@@ -47,7 +47,7 @@ def configure(conf):
     autowaf.display_header('Serd Configuration')
 
     if conf.env['MSVC_COMPILER']:
-        conf.env.append_unique('CFLAGS', '-TP')
+        conf.env.append_unique('CFLAGS', ['-TP', '-MD'])
     else:
         conf.env.append_unique('CFLAGS', '-std=c99')
 
@@ -128,11 +128,10 @@ def build(bld):
     libflags = [ '-fvisibility=hidden' ]
     libs     = [ 'm' ]
     defines  = []
-    if sys.platform == 'win32':
-        libflags = []
     if bld.env['MSVC_COMPILER']:
-        libs    = []
-        defines = ['snprintf=_snprintf']
+        libflags = []
+        libs     = []
+        defines  = ['snprintf=_snprintf']
 
     # Shared Library
     obj = bld(features        = 'c cshlib',
@@ -160,7 +159,7 @@ def build(bld):
                   vnum            = SERD_LIB_VERSION,
                   install_path    = '${LIBDIR}',
                   defines         = defines,
-                  cflags          = [ '-DSERD_INTERNAL' ])
+                  cflags          = ['-DSERD_INTERNAL'])
 
     if bld.env['BUILD_TESTS']:
         test_libs   = libs
