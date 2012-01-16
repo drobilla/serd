@@ -165,7 +165,7 @@ write_text(SerdWriter* writer, TextContext ctx,
 			size = 4;
 			c = in & 0x07;
 		} else {
-			fprintf(stderr, "Invalid UTF-8 at offset %zu: %X\n", i, in);
+			fprintf(stderr, "Invalid UTF-8: %X\n", in);
 			const uint8_t replacement_char[] = { 0xEF, 0xBF, 0xBD };
 			sink(replacement_char, sizeof(replacement_char), writer);
 			return false;
