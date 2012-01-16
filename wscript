@@ -59,6 +59,11 @@ def configure(conf):
     if Options.options.largefile:
         conf.env.append_unique('CFLAGS', '-D_FILE_OFFSET_BITS=64')
 
+    # Check for gcov library (for test coverage)
+    if conf.env['BUILD_TESTS']:
+        conf.check_cc(lib='gcov',
+                      define_name='HAVE_GCOV')
+
     # Check for posix_memalign
     conf.check(function_name='posix_memalign',
                header_name='stdlib.h',
@@ -152,12 +157,16 @@ def build(bld):
                   cflags       = [ '-fprofile-arcs', '-ftest-coverage',
                                    '-DSERD_INTERNAL' ])
 
+        test_libs = ['m']
+        if bld.is_defined('HAVE_GCOV'):
+            test_libs += ['gcov']
+
         # Unit test serdi
         obj = bld(features     = 'c cprogram',
                   source       = 'src/serdi.c',
                   includes     = ['.', './src'],
                   use          = 'libserd_profiled',
-                  lib          = ['m', 'gcov'],
+                  lib          = test_libs,
                   target       = 'serdi_static',
                   install_path = '',
                   cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ])
@@ -167,7 +176,7 @@ def build(bld):
                   source       = 'tests/serd_test.c',
                   includes     = ['.', './src'],
                   use          = 'libserd_profiled',
-                  lib          = ['m', 'gcov'],
+                  lib          = test_libs,
                   target       = 'serd_test',
                   install_path = '',
                   cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ])
