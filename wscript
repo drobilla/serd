@@ -62,7 +62,8 @@ def configure(conf):
     # Check for gcov library (for test coverage)
     if conf.env['BUILD_TESTS']:
         conf.check_cc(lib='gcov',
-                      define_name='HAVE_GCOV')
+                      define_name='HAVE_GCOV',
+                      mandatory=False)
 
     # Check for posix_memalign
     conf.check(function_name='posix_memalign',
