@@ -332,11 +332,16 @@ def test(ctx):
         num += 1
         bulk = (num % 2 == 0)
         full = (num % 5 == 0)
+        flags = ''
+        if (num % 2 == 0):
+            flags += '-b'
+        if (num % 5 == 0):
+            flags += ' -f'
         base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test
         out_filename = test + '.thru'
         commands += [
-            '%s %s %s -i ntriples -o turtle -p foo %s/%s \'%s\' | %s -i turtle -o ntriples -c foo - \'%s\' | sed \'s/_:docid/_:genid/g\' > %s.thru' % (
-                'serdi_static', '-b' if bulk else '  ', '-f' if full else '  ',
+            '%s %s -i ntriples -o turtle -p foo %s/%s \'%s\' | %s -i turtle -o ntriples -c foo - \'%s\' | sed \'s/_:docid/_:genid/g\' > %s.thru' % (
+                'serdi_static', flags.ljust(5),
                 srcdir, test, base_uri,
                 'serdi_static', base_uri, test) ]
 
