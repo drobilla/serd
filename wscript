@@ -147,20 +147,21 @@ def build(bld):
                   cflags          = [ '-DSERD_INTERNAL' ])
 
     if bld.env['BUILD_TESTS']:
+        test_libs   = ['m']
+        test_cflags = ['']
+        if bld.is_defined('HAVE_GCOV'):
+            test_libs   += ['gcov']
+            test_cflags += ['-fprofile-arcs', '-ftest-coverage']
+
         # Static library (for unit test code coverage)
         obj = bld(features     = 'c cstlib',
                   source       = lib_source,
                   includes     = ['.', './src'],
-                  lib          = ['m'],
+                  lib          = test_libs,
                   name         = 'libserd_profiled',
                   target       = 'serd_profiled',
                   install_path = '',
-                  cflags       = [ '-fprofile-arcs', '-ftest-coverage',
-                                   '-DSERD_INTERNAL' ])
-
-        test_libs = ['m']
-        if bld.is_defined('HAVE_GCOV'):
-            test_libs += ['gcov']
+                  cflags       = test_cflags + ['-DSERD_INTERNAL'])
 
         # Unit test serdi
         obj = bld(features     = 'c cprogram',
@@ -170,7 +171,7 @@ def build(bld):
                   lib          = test_libs,
                   target       = 'serdi_static',
                   install_path = '',
-                  cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ])
+                  cflags       = test_cflags)
 
         # Unit test program
         obj = bld(features     = 'c cprogram',
@@ -180,7 +181,7 @@ def build(bld):
                   lib          = test_libs,
                   target       = 'serd_test',
                   install_path = '',
-                  cflags       = [ '-fprofile-arcs',  '-ftest-coverage' ])
+                  cflags       = test_cflags)
 
     # Utilities
     if bld.env['BUILD_UTILS']:
