@@ -38,6 +38,14 @@
 #    define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
+#ifndef fmax
+static inline float
+fmax(float a, float b)
+{
+	return (a < b) ? b : a;
+}
+#endif
+
 /* File and Buffer Utilities */
 
 static inline FILE*
@@ -82,7 +90,7 @@ static inline SerdStack
 serd_stack_new(size_t size)
 {
 	SerdStack stack;
-	stack.buf       = malloc(size);
+	stack.buf       = (uint8_t*)malloc(size);
 	stack.buf_size  = size;
 	stack.size      = SERD_STACK_BOTTOM;
 	return stack;
@@ -109,7 +117,7 @@ serd_stack_push(SerdStack* stack, size_t n_bytes)
 	const size_t new_size = stack->size + n_bytes;
 	if (stack->buf_size < new_size) {
 		stack->buf_size *= 2;
-		stack->buf = realloc(stack->buf, stack->buf_size);
+		stack->buf = (uint8_t*)realloc(stack->buf, stack->buf_size);
 	}
 	uint8_t* const ret = (stack->buf + stack->size);
 	stack->size = new_size;
@@ -141,7 +149,7 @@ serd_bulk_sink_new(SerdSink sink, void* stream, size_t block_size)
 	bsink.stream     = stream;
 	bsink.size       = 0;
 	bsink.block_size = block_size;
-	bsink.buf        = serd_bufalloc(block_size);
+	bsink.buf        = (uint8_t*)serd_bufalloc(block_size);
 	return bsink;
 }
 

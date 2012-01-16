@@ -22,12 +22,21 @@
 
 // #define URI_DEBUG 1
 
+static inline bool
+is_windows_path(const uint8_t* path)
+{
+	return is_alpha(path[0]) && (path[1] == ':' || path[1] == '|')
+		&& (path[2] == '/' || path[2] == '\\');
+}
+	
 SERD_API
 const uint8_t*
 serd_uri_to_path(const uint8_t* uri)
 {
-	const uint8_t* path = NULL;
-	if (serd_uri_string_has_scheme(uri)) {
+	const uint8_t* path = uri;
+	if (uri[0] == '/' || is_windows_path(uri)) {
+		return uri;
+	} else if (serd_uri_string_has_scheme(uri)) {
 		if (strncmp((const char*)uri, "file:", 5)) {
 			fprintf(stderr, "Non-file URI `%s'\n", uri);
 			return NULL;
@@ -39,12 +48,9 @@ serd_uri_to_path(const uint8_t* uri)
 			fprintf(stderr, "Invalid file URI `%s'\n", uri);
 			return NULL;
 		}
-		// Special case for awful Windows file URIs
-		if (is_alpha(path[1]) && path[2] == ':' && path[3] == '/') {
+		if (is_windows_path(path + 1)) {
 			++path;  // Special case for terrible Windows file URIs
 		}
-	} else {
-		path = uri;
 	}
 	return path;
 }

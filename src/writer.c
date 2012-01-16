@@ -31,7 +31,7 @@ typedef struct {
 } WriteContext;
 
 static const WriteContext WRITE_CONTEXT_NULL = {
-	{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}
+	SERD_NODE_NULL, SERD_NODE_NULL, SERD_NODE_NULL
 };
 
 struct SerdWriterImpl {
@@ -72,7 +72,7 @@ copy_node(SerdNode* dst, const SerdNode* src)
 		return;
 	}
 	if (!dst->buf || dst->n_bytes < src->n_bytes) {
-		dst->buf = realloc((char*)dst->buf, src->n_bytes + 1);
+		dst->buf = (uint8_t*)realloc((char*)dst->buf, src->n_bytes + 1);
 	}
 	dst->n_bytes = src->n_bytes;
 	dst->n_chars = src->n_chars;
@@ -217,9 +217,9 @@ serd_writer_write_delim(SerdWriter* writer, const uint8_t delim)
 }
 
 static void
-reset_context(SerdWriter* writer, bool delete)
+reset_context(SerdWriter* writer, bool del)
 {
-	if (delete) {
+	if (del) {
 		serd_node_free(&writer->context.graph);
 		serd_node_free(&writer->context.subject);
 		serd_node_free(&writer->context.predicate);
@@ -525,7 +525,7 @@ serd_writer_new(SerdSyntax     syntax,
                 void*          stream)
 {
 	const WriteContext context = WRITE_CONTEXT_NULL;
-	SerdWriter*        writer  = malloc(sizeof(struct SerdWriterImpl));
+	SerdWriter*        writer  = (SerdWriter*)malloc(sizeof(SerdWriter));
 	writer->syntax      = syntax;
 	writer->style       = style;
 	writer->env         = env;
@@ -554,7 +554,7 @@ serd_writer_chop_blank_prefix(SerdWriter*    writer,
 	writer->bprefix     = NULL;
 	if (prefix) {
 		writer->bprefix_len = strlen((const char*)prefix);
-		writer->bprefix     = malloc(writer->bprefix_len + 1);
+		writer->bprefix     = (uint8_t*)malloc(writer->bprefix_len + 1);
 		memcpy(writer->bprefix, prefix, writer->bprefix_len + 1);
 	}
 }

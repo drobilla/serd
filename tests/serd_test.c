@@ -150,7 +150,7 @@ main()
 
 	// Test serd_node_new_blob
 	for (size_t size = 0; size < 256; ++size) {
-		uint8_t* data = malloc(size);
+		uint8_t* data = (uint8_t*)malloc(size);
 		for (size_t i = 0; i < size; ++i) {
 			data[i] = (uint8_t)(rand() % 256);
 		}
@@ -164,7 +164,8 @@ main()
 		}
 
 		size_t   out_size;
-		uint8_t* out = serd_base64_decode(blob.buf, blob.n_bytes, &out_size);
+		uint8_t* out = (uint8_t*)serd_base64_decode(
+			blob.buf, blob.n_bytes, &out_size);
 		if (out_size != size) {
 			fprintf(stderr, "error: Blob size %zu != %zu\n", out_size, size);
 			return 1;
@@ -369,18 +370,18 @@ main()
 
 	// Test SerdReader and SerdWriter
 
-	const char* path = tmpnam(NULL);
+	const char* path = "serd_test.ttl";
 	FILE* fd = fopen(path, "w");
 	if (!fd) {
 		fprintf(stderr, "Failed to open file %s\n", path);
 		return 1;
 	}
 
-	int* n_statements = malloc(sizeof(int));
+	int* n_statements = (int*)malloc(sizeof(int));
 	*n_statements = 0;
 
 	SerdWriter* writer = serd_writer_new(
-		SERD_TURTLE, 0, env, NULL, serd_file_sink, fd);
+		SERD_TURTLE, (SerdStyle)0, env, NULL, serd_file_sink, fd);
 	if (!writer) {
 		fprintf(stderr, "Failed to create writer\n");
 		return 1;

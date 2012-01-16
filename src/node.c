@@ -42,7 +42,7 @@ serd_node_copy(const SerdNode* node)
 	}
 
 	SerdNode copy = *node;
-	uint8_t* buf  = malloc(copy.n_bytes + 1);
+	uint8_t* buf  = (uint8_t*)malloc(copy.n_bytes + 1);
 	memcpy(buf, node->buf, copy.n_bytes + 1);
 	copy.buf = buf;
 	return copy;
@@ -122,7 +122,7 @@ serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)
 	}
 
 	const size_t len = serd_uri_string_length(&abs_uri);
-	uint8_t*     buf = malloc(len + 1);
+	uint8_t*     buf = (uint8_t*)malloc(len + 1);
 
 	SerdNode node = { buf, len, len, 0, SERD_URI };  // FIXME: UTF-8
 
@@ -144,12 +144,11 @@ SERD_API
 SerdNode
 serd_node_new_decimal(double d, unsigned frac_digits)
 {
-	const double abs_d      = fabs(d);
-	const long   int_digits = (long)fmax(1.0, ceil(log10(abs_d)));
-	char*        buf        = calloc(int_digits + frac_digits + 3, 1);
-	SerdNode     node       = { (const uint8_t*)buf, 0, 0, 0, SERD_LITERAL };
-
-	const double int_part  = floor(abs_d);
+	const double   abs_d      = fabs(d);
+	const unsigned int_digits = (unsigned)fmax(1.0, ceil(log10(abs_d)));
+	char*          buf        = (char*)calloc(int_digits + frac_digits + 3, 1);
+	SerdNode       node       = { (const uint8_t*)buf, 0, 0, 0, SERD_LITERAL };
+	const double   int_part   = floor(abs_d);
 
 	// Point s to decimal point location
 	char* s = buf + int_digits;
@@ -159,8 +158,8 @@ serd_node_new_decimal(double d, unsigned frac_digits)
 	}
 
 	// Write integer part (right to left)
-	char* t   = s - 1;
-	long  dec = (long)int_part;
+	char*    t   = s - 1;
+	uint64_t dec = (uint64_t)int_part;
 	do {
 		*t-- = '0' + (dec % 10);
 	} while ((dec /= 10) > 0);
@@ -173,7 +172,7 @@ serd_node_new_decimal(double d, unsigned frac_digits)
 		*s++ = '0';
 		node.n_bytes = node.n_chars = (s - buf);
 	} else {
-		long frac = lrint(frac_part * pow(10, frac_digits));
+		uint64_t frac = frac_part * pow(10.0, (int)frac_digits) + 0.5;
 		s += frac_digits - 1;
 		unsigned i = 0;
 
@@ -198,7 +197,7 @@ serd_node_new_integer(long i)
 {
 	long       abs_i  = labs(i);
 	const long digits = (long)fmax(1.0, ceil(log10((double)abs_i + 1)));
-	char*      buf    = calloc(digits + 2, 1);
+	char*      buf    = (char*)calloc(digits + 2, 1);
 	SerdNode   node   = { (const uint8_t*)buf, 0, 0, 0, SERD_LITERAL };
 
 	// Point s to the end
@@ -222,7 +221,7 @@ serd_node_new_integer(long i)
    Base64 encoding table.
    @see <a href="http://tools.ietf.org/html/rfc3548#section-3">RFC3986 S3</a>.
 */
-static const uint8_t b64_map[64] =
+static const uint8_t b64_map[] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /**
@@ -244,7 +243,8 @@ SerdNode
 serd_node_new_blob(const void* buf, size_t size, bool wrap_lines)
 {
 	const size_t len  = ((size + 2) / 3) * 4 + (wrap_lines ? (size / 57) : 0);
-	SerdNode     node = { calloc(1, len + 2), len, len, 0, SERD_LITERAL };
+	SerdNode     node = { (uint8_t*)calloc(1, len + 2),
+	                      len, len, 0, SERD_LITERAL };
 	for (size_t i = 0, j = 0; i < size; i += 3, j += 4) {
 		uint8_t in[4] = { 0, 0, 0, 0 };
 		size_t  n_in  = MIN(3, size - i);

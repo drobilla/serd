@@ -21,13 +21,12 @@
 #ifndef SERD_SERD_H
 #define SERD_SERD_H
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 
 #ifdef SERD_SHARED
-#    ifdef __WIN32__
+#    ifdef _WIN32
 #        define SERD_LIB_IMPORT __declspec(dllimport)
 #        define SERD_LIB_EXPORT __declspec(dllexport)
 #    else
@@ -45,6 +44,8 @@
 
 #ifdef __cplusplus
 extern "C" {
+#else
+#    include <stdbool.h>
 #endif
 
 /**

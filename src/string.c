@@ -119,7 +119,7 @@ serd_strtod(const char* str, char** endptr)
    for decoding, shifted up by 47 to be in the range of printable ASCII.
    A '$' is a placeholder for characters not in the base64 alphabet.
 */
-static const char b64_unmap[255] =
+static const char b64_unmap[] =
 	"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$m$$$ncdefghijkl$$$$$$"
 	"$/0123456789:;<=>?@ABCDEFGH$$$$$$IJKLMNOPQRSTUVWXYZ[\\]^_`ab$$$$"
 	"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
@@ -146,8 +146,8 @@ serd_base64_decode(const uint8_t* str, size_t len, size_t* size)
 	void* buf = malloc((len * 3) / 4 + 2);
 	*size = 0;
 	for (size_t i = 0, j = 0; i < len; j += 3) {
-		uint8_t in[4] = "====";
-		size_t  n_in  = 0;
+		uint8_t in[] = "====";
+		size_t  n_in = 0;
 		for (; i < len && n_in < 4; ++n_in) {
 			for (; i < len && !is_base64(str[i]); ++i) {}  // Skip junk
 			in[n_in] = str[i++];

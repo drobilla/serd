@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import filecmp
 import glob
 import os
 import shutil
@@ -47,7 +46,10 @@ def configure(conf):
     autowaf.configure(conf)
     autowaf.display_header('Serd Configuration')
 
-    conf.env.append_unique('CFLAGS', '-std=c99')
+    if conf.env['MSVC_COMPILER']:
+        conf.env.append_unique('CFLAGS', '-TP')
+    else:
+        conf.env.append_unique('CFLAGS', '-std=c99')
 
     conf.env['BUILD_TESTS'] = Options.options.build_tests
     conf.env['BUILD_UTILS'] = not Options.options.no_utils
@@ -117,19 +119,25 @@ def build(bld):
     '''
 
     libflags = [ '-fvisibility=hidden' ]
+    libs     = [ 'm' ]
+    defines  = [ '' ]
     if sys.platform == 'win32':
         libflags = []
+    if bld.env['MSVC_COMPILER']:
+        libs    = []
+        defines = ['snprintf=_snprintf']
 
     # Shared Library
     obj = bld(features        = 'c cshlib',
               export_includes = ['.'],
               source          = lib_source,
               includes        = ['.', './src'],
-              lib             = ['m'],
+              lib             = libs,
               name            = 'libserd',
               target          = 'serd-%s' % SERD_MAJOR_VERSION,
               vnum            = SERD_LIB_VERSION,
               install_path    = '${LIBDIR}',
+              defines         = defines,
               cflags          = libflags + [ '-DSERD_SHARED',
                                              '-DSERD_INTERNAL' ])
 
@@ -139,15 +147,16 @@ def build(bld):
                   export_includes = ['.'],
                   source          = lib_source,
                   includes        = ['.', './src'],
-                  lib             = ['m'],
+                  lib             = libs,
                   name            = 'libserd_static',
                   target          = 'serd-%s' % SERD_MAJOR_VERSION,
                   vnum            = SERD_LIB_VERSION,
                   install_path    = '${LIBDIR}',
+                  defines         = defines,
                   cflags          = [ '-DSERD_INTERNAL' ])
 
     if bld.env['BUILD_TESTS']:
-        test_libs   = ['m']
+        test_libs   = libs
         test_cflags = ['']
         if bld.is_defined('HAVE_GCOV'):
             test_libs   += ['gcov']
@@ -161,6 +170,7 @@ def build(bld):
                   name         = 'libserd_profiled',
                   target       = 'serd_profiled',
                   install_path = '',
+                  defines      = defines,
                   cflags       = test_cflags + ['-DSERD_INTERNAL'])
 
         # Unit test serdi
@@ -171,6 +181,7 @@ def build(bld):
                   lib          = test_libs,
                   target       = 'serdi_static',
                   install_path = '',
+                  defines      = defines,
                   cflags       = test_cflags)
 
         # Unit test program
@@ -181,6 +192,7 @@ def build(bld):
                   lib          = test_libs,
                   target       = 'serd_test',
                   install_path = '',
+                  defines      = defines,
                   cflags       = test_cflags)
 
     # Utilities
@@ -257,6 +269,16 @@ def fix_docs(ctx):
 def upload_docs(ctx):
     os.system("rsync -ravz --delete -e ssh build/doc/html/ drobilla@drobilla.net:~/drobilla.net/docs/serd/")
 
+def file_equals(patha, pathb, subst_from='', subst_to=''):
+    fa = open(patha, 'rU')
+    fb = open(pathb, 'rU')
+    for line in fa:
+        if line.replace(subst_from, subst_to) != fb.readline().replace(subst_from, subst_to):
+            return False
+    fa.close()
+    fb.close()
+    return True
+
 def test(ctx):
     blddir = build_dir(ctx, 'tests')
     try:
@@ -282,7 +304,7 @@ def test(ctx):
 
     autowaf.pre_test(ctx, APPNAME)
 
-    autowaf.run_tests(ctx, APPNAME, ['./serd_test'], dirs=['.'])
+    autowaf.run_tests(ctx, APPNAME, ['serd_test'], dirs=['.'])
 
     os.environ['PATH'] = '.' + os.pathsep + os.getenv('PATH')
     nul = os.devnull
@@ -311,8 +333,9 @@ def test(ctx):
 
     commands = []
     for test in good_tests:
-        base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test
-        commands += [ 'serdi_static -f %s/%s \'%s\' > %s.out' % (srcdir, test, base_uri, test) ]
+        base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test.replace('\\', '/')
+        commands += [ 'serdi_static -f "%s" "%s" > %s.out' % (
+                os.path.join(srcdir, test), base_uri, test) ]
 
     autowaf.run_tests(ctx, APPNAME, commands, 0, name='good')
 
@@ -321,21 +344,20 @@ def test(ctx):
         out_filename = test + '.out'
         if not os.access(out_filename, os.F_OK):
             Logs.pprint('RED', 'FAIL: %s output is missing' % test)
-        elif filecmp.cmp(srcdir + '/' + test.replace('.ttl', '.out'),
-                                         test + '.out',
-                                         False) != 1:
+        elif not file_equals(srcdir + '/' + test.replace('.ttl', '.out'),
+                             test + '.out'):
             Logs.pprint('RED', 'FAIL: %s is incorrect' % out_filename)
         else:
             Logs.pprint('GREEN', 'Pass: %s' % test)
 
     commands = []
     for test in bad_tests:
-        commands += [ 'serdi_static %s/%s \'http://www.w3.org/2001/sw/DataAccess/df1/%s\' > %s.out' % (srcdir, test, test, test) ]
+        commands += [ 'serdi_static "%s" "http://www.w3.org/2001/sw/DataAccess/df1/%s" > %s.out' % (os.path.join(srcdir, test), test.replace('\\', '/'), test) ]
 
     autowaf.run_tests(ctx, APPNAME, commands, 1, name='bad')
 
     thru_tests = good_tests
-    thru_tests.remove('tests/test-id.ttl') # IDs are mapped so files won't be identical
+    thru_tests.remove(os.path.join('tests', 'test-id.ttl')) # IDs are mapped so files won't be identical
 
     commands = []
     num = 0
@@ -348,12 +370,12 @@ def test(ctx):
             flags += '-b'
         if (num % 5 == 0):
             flags += ' -f'
-        base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test
+        base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test.replace('\\', '/')
         out_filename = test + '.thru'
         commands += [
-            '%s %s -i ntriples -o turtle -p foo %s/%s \'%s\' | %s -i turtle -o ntriples -c foo - \'%s\' | sed \'s/_:docid/_:genid/g\' > %s.thru' % (
+            '%s %s -i ntriples -o turtle -p foo "%s" "%s" | %s -i turtle -o ntriples -c foo - "%s" > %s.thru' % (
                 'serdi_static', flags.ljust(5),
-                srcdir, test, base_uri,
+                os.path.join(srcdir, test), base_uri,
                 'serdi_static', base_uri, test) ]
 
     autowaf.run_tests(ctx, APPNAME, commands, 0, name='turtle-round-trip')
@@ -362,9 +384,9 @@ def test(ctx):
         out_filename = test + '.thru'
         if not os.access(out_filename, os.F_OK):
             Logs.pprint('RED', 'FAIL: %s output is missing' % test)
-        elif filecmp.cmp(srcdir + '/' + test.replace('.ttl', '.out'),
-                                         test + '.thru',
-                                         False) != 1:
+        elif not file_equals(srcdir + '/' + test.replace('.ttl', '.out'),
+                             test + '.thru',
+                             '_:docid', '_:genid'):
             Logs.pprint('RED', 'FAIL: %s is incorrect' % out_filename)
         else:
             Logs.pprint('GREEN', 'Pass: %s' % test)

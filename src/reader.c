@@ -19,7 +19,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -450,7 +449,7 @@ read_utf8_character(SerdReader* reader, Ref dest, const uint8_t c)
 		                eat_byte_safe(reader, c));
 	}
 
-	char bytes[size];
+	char bytes[4];
 	bytes[0] = eat_byte_safe(reader, c);
 
 	// Check character validity
@@ -1386,7 +1385,7 @@ serd_reader_new(SerdSyntax        syntax,
                 SerdEndSink       end_sink)
 {
 	const Cursor cur = { NULL, 0, 0 };
-	SerdReader*  me  = malloc(sizeof(struct SerdReaderImpl));
+	SerdReader*  me  = (SerdReader*)malloc(sizeof(struct SerdReaderImpl));
 	me->handle           = handle;
 	me->free_handle      = free_handle;
 	me->base_sink        = base_sink;
@@ -1454,7 +1453,7 @@ serd_reader_add_blank_prefix(SerdReader*    reader,
 	reader->bprefix     = NULL;
 	if (prefix) {
 		reader->bprefix_len = strlen((const char*)prefix);
-		reader->bprefix     = malloc(reader->bprefix_len + 1);
+		reader->bprefix     = (uint8_t*)malloc(reader->bprefix_len + 1);
 		memcpy(reader->bprefix, prefix, reader->bprefix_len + 1);
 	}
 }
@@ -1489,7 +1488,7 @@ serd_reader_read_file_handle(SerdReader* me, FILE* file, const uint8_t* name)
 	me->cur       = cur;
 	me->from_file = true;
 	me->eof       = false;
-	me->read_buf  = serd_bufalloc(SERD_PAGE_SIZE);
+	me->read_buf  = (uint8_t*)serd_bufalloc(SERD_PAGE_SIZE);
 
 	memset(me->read_buf, '\0', SERD_PAGE_SIZE);
 

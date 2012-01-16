@@ -17,7 +17,6 @@
 #include "serd_internal.h"
 
 #include <assert.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -37,7 +36,7 @@ SERD_API
 SerdEnv*
 serd_env_new(const SerdNode* base_uri)
 {
-	SerdEnv* env = malloc(sizeof(struct SerdEnvImpl));
+	SerdEnv* env = (SerdEnv*)malloc(sizeof(struct SerdEnvImpl));
 	env->prefixes      = NULL;
 	env->n_prefixes    = 0;
 	env->base_uri_node = SERD_NODE_NULL;
@@ -117,8 +116,8 @@ serd_env_add(SerdEnv*        env,
 		prefix->uri = serd_node_copy(uri);
 		serd_node_free(&old_prefix_uri);
 	} else {
-		env->prefixes = realloc(env->prefixes,
-		                        (++env->n_prefixes) * sizeof(SerdPrefix));
+		env->prefixes = (SerdPrefix*)realloc(
+			env->prefixes, (++env->n_prefixes) * sizeof(SerdPrefix));
 		env->prefixes[env->n_prefixes - 1].name = serd_node_copy(name);
 		env->prefixes[env->n_prefixes - 1].uri  = serd_node_copy(uri);
 	}
@@ -215,7 +214,8 @@ serd_env_expand(const SerdEnv*  env,
                 SerdChunk*      uri_prefix,
                 SerdChunk*      uri_suffix)
 {
-	const uint8_t* const colon = memchr(qname->buf, ':', qname->n_bytes + 1);
+	const uint8_t* const colon = (const uint8_t*)memchr(
+		qname->buf, ':', qname->n_bytes + 1);
 	if (!colon) {
 		return SERD_ERR_BAD_ARG;  // Illegal qname
 	}
@@ -246,8 +246,8 @@ serd_env_expand_node(const SerdEnv*  env,
 		}
 		const size_t len = prefix.len + suffix.len;  // FIXME: UTF-8?
 		SerdNode     ret = { NULL, len, len, 0, SERD_URI };
-		ret.buf = malloc(ret.n_bytes + 1);
-		snprintf((char*)ret.buf, ret.n_bytes + 1,
+		ret.buf = (uint8_t*)malloc(ret.n_bytes + 1);
+		_snprintf((char*)ret.buf, ret.n_bytes + 1,
 		         "%s%s", prefix.buf, suffix.buf);
 		return ret;
 	}

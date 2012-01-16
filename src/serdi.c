@@ -171,7 +171,7 @@ main(int argc, char** argv)
 	FILE*    out_fd = stdout;
 	SerdEnv* env    = serd_env_new(&base_uri_node);
 
-	SerdStyle output_style = 0;
+	int output_style = 0;
 	if (output_syntax == SERD_NTRIPLES) {
 		output_style |= SERD_STYLE_ASCII;
 	} else {
@@ -190,7 +190,8 @@ main(int argc, char** argv)
 	}
 
 	SerdWriter* writer = serd_writer_new(
-		output_syntax, output_style, env, &base_uri, serd_file_sink, out_fd);
+		output_syntax, (SerdStyle)output_style,
+		env, &base_uri, serd_file_sink, out_fd);
 
 	if (chop_prefix) {
 		serd_writer_chop_blank_prefix(writer, chop_prefix);
