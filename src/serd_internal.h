@@ -26,7 +26,7 @@
 #include <string.h>
 
 #include "serd/serd.h"
-#include "serd-config.h"
+#include "serd_config.h"
 
 #if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
 #   include <fcntl.h>

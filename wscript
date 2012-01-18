@@ -96,7 +96,7 @@ def configure(conf):
                mandatory=False)
 
     autowaf.define(conf, 'SERD_VERSION', SERD_VERSION)
-    conf.write_config_header('serd-config.h', remove=False)
+    conf.write_config_header('serd_config.h', remove=False)
 
     conf.env['INCLUDES_SERD'] = ['%s/serd-%s' % (conf.env['INCLUDEDIR'],
                                                  SERD_MAJOR_VERSION)]
@@ -107,6 +107,15 @@ def configure(conf):
     autowaf.display_msg(conf, "Unit tests", str(conf.env['BUILD_TESTS']))
     print('')
 
+lib_source = [
+    'src/env.c',
+    'src/node.c',
+    'src/reader.c',
+    'src/string.c',
+    'src/uri.c',
+    'src/writer.c',
+]
+
 def build(bld):
     # C Headers
     includedir = '${INCLUDEDIR}/serd-%s/serd' % SERD_MAJOR_VERSION
@@ -115,15 +124,6 @@ def build(bld):
     # Pkgconfig file
     autowaf.build_pc(bld, 'SERD', SERD_VERSION, SERD_MAJOR_VERSION, [],
                      {'SERD_MAJOR_VERSION' : SERD_MAJOR_VERSION})
-
-    lib_source = '''
-            src/env.c
-            src/node.c
-            src/reader.c
-            src/string.c
-            src/uri.c
-            src/writer.c
-    '''
 
     libflags = [ '-fvisibility=hidden' ]
     libs     = [ 'm' ]
@@ -224,20 +224,20 @@ def lint(ctx):
     subprocess.call('cpplint.py --filter=+whitespace/comments,-whitespace/tab,-whitespace/braces,-whitespace/labels,-build/header_guard,-readability/casting,-readability/todo,-build/include src/* serd/*', shell=True)
 
 def amalgamate(ctx):
-    shutil.copy('serd/serd.h', 'build/serd-%s.h' % SERD_VERSION)
-    amalgamation = open('build/serd-%s.c' % SERD_VERSION, 'w')
+    shutil.copy('serd/serd.h', 'build/serd.h')
+    amalgamation = open('build/serd.c', 'w')
 
     serd_internal_h = open('src/serd_internal.h')
     for l in serd_internal_h:
         if l == '#include "serd/serd.h"\n':
-            amalgamation.write('#include "serd-%s.h"\n' % SERD_VERSION)
+            amalgamation.write('#include "serd.h"\n')
         else:
             amalgamation.write(l)
     serd_internal_h.close()
 
-    for f in 'env.c node.c reader.c uri.c writer.c'.split():
-        fd = open('src/' + f)
-        amalgamation.write('\n/**\n * @file %s\n */\n' % f)
+    for f in lib_source:
+        fd = open(f)
+        amalgamation.write('\n/**\n   @file %s\n*/' % f)
         header = True
         for l in fd:
             if header:
@@ -247,8 +247,10 @@ def amalgamate(ctx):
                 if l != '#include "serd_internal.h"\n':
                     amalgamation.write(l)
         fd.close()
-
     amalgamation.close()
+
+    for i in ['c', 'h']:
+        Logs.info("Wrote build/serd.%s" % i)
 
 def build_dir(ctx, subdir):
     if autowaf.is_child():
