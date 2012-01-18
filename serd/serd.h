@@ -429,7 +429,7 @@ serd_node_new_decimal(double d, unsigned frac_digits);
 */
 SERD_API
 SerdNode
-serd_node_new_integer(long i);
+serd_node_new_integer(int64_t i);
 
 /**
    Create a node by serialising @c buf into an xsd:base64Binary string.

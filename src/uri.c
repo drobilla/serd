@@ -28,7 +28,7 @@ is_windows_path(const uint8_t* path)
 	return is_alpha(path[0]) && (path[1] == ':' || path[1] == '|')
 		&& (path[2] == '/' || path[2] == '\\');
 }
-	
+
 SERD_API
 const uint8_t*
 serd_uri_to_path(const uint8_t* uri)

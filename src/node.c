@@ -193,12 +193,12 @@ serd_node_new_decimal(double d, unsigned frac_digits)
 
 SERD_API
 SerdNode
-serd_node_new_integer(long i)
+serd_node_new_integer(int64_t i)
 {
-	long       abs_i  = labs(i);
-	const long digits = (long)fmax(1.0, ceil(log10((double)abs_i + 1)));
-	char*      buf    = (char*)calloc(digits + 2, 1);
-	SerdNode   node   = { (const uint8_t*)buf, 0, 0, 0, SERD_LITERAL };
+	int64_t        abs_i  = (i < 0) ? -i : i;
+	const unsigned digits = fmax(1.0, ceil(log10((double)abs_i + 1)));
+	char*          buf    = (char*)calloc(digits + 2, 1);
+	SerdNode       node   = { (const uint8_t*)buf, 0, 0, 0, SERD_LITERAL };
 
 	// Point s to the end
 	char* s = buf + digits - 1;
