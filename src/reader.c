@@ -794,6 +794,7 @@ read_uriref(SerdReader* reader)
 static Ref
 read_qname(SerdReader* reader, Ref dest, bool read_prefix)
 {
+	Ref str = 0;
 	if (!dest) {
 		dest = push_node(reader, SERD_CURIE, "", 0);
 	}
@@ -802,7 +803,7 @@ read_qname(SerdReader* reader, Ref dest, bool read_prefix)
 	}
 	TRY_THROW(eat_byte_check(reader, ':'));
 	push_byte(reader, dest, ':');
-	Ref str = read_name(reader, dest, false);
+	str = read_name(reader, dest, false);
 	return str ? str : dest;
 except:
 	pop_node(reader, dest);
@@ -1303,17 +1304,18 @@ read_base(SerdReader* reader)
 static bool
 read_prefixID(SerdReader* reader)
 {
+	bool ret  = true;
+	Ref  name = 0;
+	Ref  uri  = 0;
 	// `@' is already eaten in read_directive
 	eat_string(reader, "prefix", 6);
 	TRY_RET(read_ws_plus(reader));
-	bool ret = true;
-	Ref name = read_prefixName(reader, 0);
+	name = read_prefixName(reader, 0);
 	if (!name) {
 		name = push_node(reader, SERD_LITERAL, "", 0);
 	}
 	TRY_THROW(eat_byte_check(reader, ':') == ':');
 	read_ws_star(reader);
-	Ref uri = 0;
 	TRY_THROW(uri = read_uriref(reader));
 	if (reader->prefix_sink) {
 		ret = !reader->prefix_sink(reader->handle,
