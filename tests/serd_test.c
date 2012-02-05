@@ -244,6 +244,14 @@ main()
 	if (strcmp((const char*)serd_uri_to_path(uri), "/0/1")) {
 		return failure("Bad path %s for %s\n", serd_uri_to_path(uri), uri);
 	}
+	uri = (const uint8_t*)"C:\\Windows\\Sucks";
+	if (strcmp((const char*)serd_uri_to_path(uri), "C:\\Windows\\Sucks")) {
+		return failure("Bad path %s for %s\n", serd_uri_to_path(uri), uri);
+	}
+	uri = (const uint8_t*)"C|/Windows/Sucks";
+	if (strcmp((const char*)serd_uri_to_path(uri), "C|/Windows/Sucks")) {
+		return failure("Bad path %s for %s\n", serd_uri_to_path(uri), uri);
+	}
 
 	// Test serd_node_equals
 
