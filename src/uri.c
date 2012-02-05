@@ -364,8 +364,10 @@ serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream)
 			} while (up > 0 && (--base_last > uri->path_base.buf));
 
 			// Write base URI prefix
-			const size_t base_len = base_last - uri->path_base.buf + 1;
-			WRITE(uri->path_base.buf, base_len);
+			if (*base_last == '/') {
+				const size_t base_len = base_last - uri->path_base.buf + 1;
+				WRITE(uri->path_base.buf, base_len);
+			}
 
 		} else {
 			// Relative path is just query or fragment, append to base URI

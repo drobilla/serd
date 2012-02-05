@@ -316,6 +316,13 @@ def test(ctx):
 
     autowaf.run_tests(ctx, APPNAME, ['serd_test'], dirs=['.'])
 
+    autowaf.run_tests(ctx, APPNAME, [
+            'serdi_static -o turtle %s/tests/base.ttl "base.ttl" > tests/base.ttl.out' % srcdir],
+                      0, name='base')
+
+    if not file_equals('%s/tests/base.ttl' % srcdir, 'tests/base.ttl.out'):
+        Logs.pprint('RED', 'FAIL: build/tests/base.ttl.out is incorrect')
+
     nul = os.devnull
     autowaf.run_tests(ctx, APPNAME, [
             'serdi_static file://%s/tests/manifest.ttl > %s' % (srcdir, nul),
