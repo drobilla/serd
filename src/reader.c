@@ -233,16 +233,14 @@ pop_node(SerdReader* reader, Ref ref)
 }
 
 static inline bool
-emit_statement(SerdReader* reader, SerdStatementFlags* flags,
-               Ref g, Ref s, Ref p, Ref o,
-               Ref d, Ref l)
+emit_statement(SerdReader* reader, ReadContext ctx, Ref o, Ref d, Ref l)
 {
 	bool ret = !reader->statement_sink ||
 		!reader->statement_sink(
-			reader->handle, *flags,
-			deref(reader, g), deref(reader, s), deref(reader, p),
+			reader->handle, *ctx.flags, deref(reader, ctx.graph),
+			deref(reader, ctx.subject), deref(reader, ctx.predicate),
 			deref(reader, o), deref(reader, d), deref(reader, l));
-	*flags &= SERD_ANON_CONT|SERD_LIST_CONT;  // Preserve only cont flags
+	*ctx.flags &= SERD_ANON_CONT|SERD_LIST_CONT;  // Preserve only cont flags
 	return ret;
 }
 
@@ -1002,9 +1000,7 @@ read_blank(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest)
 
 		*dest = blank_id(reader);
 		if (ctx.subject) {
-			TRY_RET(emit_statement(reader, ctx.flags,
-			                       ctx.graph, ctx.subject, ctx.predicate,
-			                       *dest, 0, 0));
+			TRY_RET(emit_statement(reader, ctx, *dest, 0, 0));
 		}
 
 		ctx.subject = *dest;
@@ -1091,9 +1087,7 @@ read_object(SerdReader* reader, ReadContext ctx)
 
 	if (ret && emit) {
 		deref(reader, o)->flags = flags;
-		ret = emit_statement(reader, ctx.flags,
-		                     ctx.graph, ctx.subject, ctx.predicate,
-		                     o, datatype, lang);
+		ret = emit_statement(reader, ctx, o, datatype, lang);
 	}
 
 except:
@@ -1165,8 +1159,7 @@ read_collection(SerdReader* reader, ReadContext ctx, Ref* dest)
 	if (ctx.subject) {
 		// subject predicate _:head
 		*ctx.flags |= (end ? 0 : SERD_LIST_O_BEGIN);
-		TRY_RET(emit_statement(reader, ctx.flags, ctx.graph,
-		                       ctx.subject, ctx.predicate, *dest, 0, 0));
+		TRY_RET(emit_statement(reader, ctx, *dest, 0, 0));
 		*ctx.flags |= SERD_LIST_CONT;
 	} else {
 		*ctx.flags |= (end ? 0 : SERD_LIST_S_BEGIN);
@@ -1204,8 +1197,8 @@ read_collection(SerdReader* reader, ReadContext ctx, Ref* dest)
 
 		// _:node rdf:rest _:rest
 		*ctx.flags |= SERD_LIST_CONT;
-		TRY_RET(emit_statement(reader, ctx.flags, ctx.graph,
-		                       ctx.subject, reader->rdf_rest,
+		ctx.predicate = reader->rdf_rest;
+		TRY_RET(emit_statement(reader, ctx,
 		                       (end ? reader->rdf_nil : rest), 0, 0));
 
 		ctx.subject = rest;         // _:node = _:rest
