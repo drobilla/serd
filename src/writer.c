@@ -507,8 +507,18 @@ serd_writer_write_statement(SerdWriter*        writer,
 		break;
 	}
 
-	bool was_list_end = false;
-	if (serd_node_equals(subject, &writer->context.subject)) {
+	if ((flags & SERD_LIST_CONT)) {
+		if (serd_writer_write_object(writer, flags, predicate, object,
+		                             object_datatype, object_lang)) {
+			// Reached end of list
+			if (--writer->list_depth == 0 && writer->list_subj.type) {
+				reset_context(writer, false);
+				writer->context.subject = writer->list_subj;
+				writer->list_subj       = SERD_NODE_NULL;
+			}
+			return SERD_SUCCESS;
+		}
+	} else if (serd_node_equals(subject, &writer->context.subject)) {
 		if (serd_node_equals(predicate, &writer->context.predicate)) {
 			// Abbreviate S P
 			if (!(flags & SERD_ANON_O_BEGIN)) {
@@ -522,15 +532,12 @@ serd_writer_write_statement(SerdWriter*        writer,
 			}
 		} else {
 			// Abbreviate S
-			if (!(flags & SERD_LIST_CONT)) {
-				write_sep(writer,
-				          (writer->context.predicate.type
-				           ? SEP_END_P : SEP_S_P));
-			}
+			write_sep(writer, (writer->context.predicate.type
+			                   ? SEP_END_P : SEP_S_P));
 
 			serd_writer_write_predicate(writer, flags, predicate);
 
-			was_list_end = serd_writer_write_object(
+			serd_writer_write_object(
 				writer, flags, predicate, object, object_datatype, object_lang);
 		}
 	} else {
@@ -538,15 +545,14 @@ serd_writer_write_statement(SerdWriter*        writer,
 		if (writer->context.subject.type) {
 			assert(writer->indent > 0);
 			--writer->indent;
-			if (serd_stack_is_empty(&writer->anon_stack)
-			    && !(flags & SERD_LIST_CONT)) {
+			if (serd_stack_is_empty(&writer->anon_stack)) {
 				write_sep(writer, SEP_END_S);
 			}
 		} else if (!writer->empty) {
 			write_sep(writer, SEP_S_P);
 		}
 
-		if (!(flags & (SERD_ANON_CONT|SERD_LIST_CONT))) {
+		if (!(flags & SERD_ANON_CONT)) {
 			write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags);
 			++writer->indent;
 			write_sep(writer, SEP_S_P);
@@ -559,23 +565,19 @@ serd_writer_write_statement(SerdWriter*        writer,
 
 		serd_writer_write_predicate(writer, flags, predicate);
 
-		was_list_end = serd_writer_write_object(
+		serd_writer_write_object(
 			writer, flags, predicate, object, object_datatype, object_lang);
 	}
 
-	if (was_list_end) {
-		if (--writer->list_depth == 0 && writer->list_subj.type) {
-			reset_context(writer, false);
-			writer->context.subject = writer->list_subj;
-			writer->list_subj = SERD_NODE_NULL;
-		}
-	} else if (flags & (SERD_ANON_S_BEGIN|SERD_ANON_O_BEGIN)) {
+	if (flags & (SERD_ANON_S_BEGIN|SERD_ANON_O_BEGIN)) {
 		WriteContext* ctx = (WriteContext*)serd_stack_push(
 			&writer->anon_stack, sizeof(WriteContext));
 		*ctx = writer->context;
-		const WriteContext new_context = { serd_node_copy(graph),
-		                                   serd_node_copy(subject),
-		                                   serd_node_copy(predicate) };
+		WriteContext new_context = {
+			serd_node_copy(graph), serd_node_copy(subject), SERD_NODE_NULL };
+		if ((flags & SERD_ANON_S_BEGIN)) {
+			new_context.predicate = serd_node_copy(predicate);
+		}
 		writer->context = new_context;
 	} else {
 		copy_node(&writer->context.graph, graph);
