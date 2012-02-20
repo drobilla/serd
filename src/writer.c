@@ -36,6 +36,43 @@ static const WriteContext WRITE_CONTEXT_NULL = {
 	{ 0, 0, 0, 0, SERD_NOTHING }
 };
 
+typedef enum {
+	SEP_NONE,
+	SEP_END_S,       ///< End of a subject ('.')
+	SEP_END_P,       ///< End of a predicate (';')
+	SEP_END_O,       ///< End of an object (',')
+	SEP_S_P,         ///< Between a subject and predicate (whitespace)
+	SEP_P_O,         ///< Between a predicate and object (whitespace)
+	SEP_ANON_BEGIN,  ///< Start of anonymous node ('[')
+	SEP_ANON_END,    ///< End of anonymous node (']')
+	SEP_LIST_BEGIN,  ///< Start of list ('(')
+	SEP_LIST_SEP,    ///< List separator (whitespace)
+	SEP_LIST_END     ///< End of list (')')
+} Sep;
+
+typedef struct {
+	const char* str;               ///< Sep string
+	uint8_t     len;               ///< Length of sep string
+	uint8_t     space_before;      ///< Newline before sep
+	uint8_t     space_after_node;  ///< Newline after sep if after node
+	uint8_t     space_after_sep;   ///< Newline after sep if after sep
+} SepRule;
+
+static const SepRule rules[] = {
+	{ NULL,     0, 0, 0, 0 },
+	{ " .\n\n", 4, 0, 0, 0 },
+	{ " ;",     2, 0, 1, 1 },
+	{ " ,",     2, 0, 1, 0 },
+	{ NULL,     0, 0, 1, 0 },
+	{ " ",      1, 0, 0, 0 },
+	{ "[",      1, 0, 1, 1 },
+	{ "]",      1, 0, 0, 0 },
+	{ "(",      1, 0, 0, 0 },
+	{ NULL,     1, 0, 1, 0 },
+	{ ")",      1, 1, 0, 0 },
+	{ "\n",     1, 0, 1, 0 }
+};
+
 struct SerdWriterImpl {
 	SerdSyntax   syntax;
 	SerdStyle    style;
@@ -46,9 +83,12 @@ struct SerdWriterImpl {
 	SerdSink     sink;
 	void*        stream;
 	WriteContext context;
+	SerdNode     list_subj;
+	unsigned     list_depth;
 	uint8_t*     bprefix;
 	size_t       bprefix_len;
 	unsigned     indent;
+	Sep          last_sep;
 	bool         empty;
 };
 
@@ -202,20 +242,31 @@ write_text(SerdWriter* writer, TextContext ctx,
 }
 
 static void
-serd_writer_write_delim(SerdWriter* writer, const uint8_t delim)
+write_newline(SerdWriter* writer)
 {
-	switch (delim) {
-	case '\n':
-		break;
-	default:
-		sink(" ", 1, writer);
-	case '[':
-		sink(&delim, 1, writer);
-	}
 	sink("\n", 1, writer);
 	for (unsigned i = 0; i < writer->indent; ++i) {
 		sink("\t", 1, writer);
 	}
+}
+
+static void
+write_sep(SerdWriter* writer, const Sep sep)
+{
+	const SepRule* rule = &rules[sep];
+	if (rule->space_before) {
+		write_newline(writer);
+	}
+	if (rule->str) {
+		sink(rule->str, rule->len, writer);
+	}
+	if (    (writer->last_sep && rule->space_after_sep)
+	    || (!writer->last_sep && rule->space_after_node)) {
+		write_newline(writer);
+	} else if (writer->last_sep && rule->space_after_node) {
+		sink(" ", 1, writer);
+	}
+	writer->last_sep = sep;
 }
 
 static void
@@ -257,10 +308,22 @@ write_node(SerdWriter*        writer,
 		    && ((field == FIELD_SUBJECT && (flags & SERD_ANON_S_BEGIN))
 		        || (field == FIELD_OBJECT && (flags & SERD_ANON_O_BEGIN)))) {
 			++writer->indent;
-			serd_writer_write_delim(writer, '[');
+			write_sep(writer, SEP_ANON_BEGIN);
 		} else if (writer->syntax != SERD_NTRIPLES
-		    && ((field == FIELD_SUBJECT && (flags & SERD_EMPTY_S))
-		        || (field == FIELD_OBJECT && (flags & SERD_EMPTY_O)))) {
+		           && (field == FIELD_SUBJECT && (flags & SERD_LIST_S_BEGIN))) {
+			assert(writer->list_depth == 0);
+			copy_node(&writer->list_subj, node);
+			++writer->list_depth;
+			++writer->indent;
+			write_sep(writer, SEP_LIST_BEGIN);
+		} else if (writer->syntax != SERD_NTRIPLES
+		           && (field == FIELD_OBJECT && (flags & SERD_LIST_O_BEGIN))) {
+			++writer->indent;
+			++writer->list_depth;
+			write_sep(writer, SEP_LIST_BEGIN);
+		} else if (writer->syntax != SERD_NTRIPLES
+		           && ((field == FIELD_SUBJECT && (flags & SERD_EMPTY_S))
+		               || (field == FIELD_OBJECT && (flags & SERD_EMPTY_O)))) {
 			sink("[]", 2, writer);
 		} else {
 			sink("_:", 2, writer);
@@ -325,7 +388,11 @@ write_node(SerdWriter*        writer,
 		if ((writer->syntax == SERD_TURTLE)
 		    && !strcmp((const char*)node->buf, NS_RDF "type")) {
 			sink("a", 1, writer);
-			return true;
+			break;
+		} else if ((writer->syntax == SERD_TURTLE)
+		           && !strcmp((const char*)node->buf, NS_RDF "nil")) {
+			sink("()", 2, writer);
+			break;
 		} else if ((writer->style & SERD_STYLE_CURIED)
 		           && serd_uri_string_has_scheme(node->buf)) {
 			SerdNode  prefix;
@@ -334,7 +401,7 @@ write_node(SerdWriter*        writer,
 				write_text(writer, WRITE_URI, prefix.buf, prefix.n_bytes, '>');
 				sink(":", 1, writer);
 				write_text(writer, WRITE_URI, suffix.buf, suffix.len, '>');
-				return true;
+				break;
 			}
 		} else if ((writer->style & SERD_STYLE_RESOLVED)
 		           && !serd_uri_string_has_scheme(node->buf)) {
@@ -345,7 +412,7 @@ write_node(SerdWriter*        writer,
 			sink("<", 1, writer);
 			serd_uri_serialise(&abs_uri, (SerdSink)sink, writer);
 			sink(">", 1, writer);
-			return true;
+			break;
 		}
 		sink("<", 1, writer);
 		write_text(writer, WRITE_URI, node->buf, node->n_bytes, '>');
@@ -353,6 +420,7 @@ write_node(SerdWriter*        writer,
 	default:
 		break;
 	}
+	writer->last_sep = SEP_NONE;
 	return true;
 }
 
@@ -365,6 +433,45 @@ is_resource(const SerdNode* node)
 	default:
 		return false;
 	}
+}
+
+static void
+serd_writer_write_predicate(SerdWriter*        writer,
+                            SerdStatementFlags flags,
+                            const SerdNode*    predicate)
+{
+	if (!(flags & (SERD_LIST_CONT|SERD_LIST_S_BEGIN))) {
+		write_node(writer, predicate, NULL, NULL, FIELD_PREDICATE, flags);
+		write_sep(writer, SEP_P_O);
+	}
+	copy_node(&writer->context.predicate, predicate);
+}
+
+static bool
+serd_writer_write_object(SerdWriter*        writer,
+                         SerdStatementFlags flags,
+                         const SerdNode*    predicate,
+                         const SerdNode*    object,
+                         const SerdNode*    object_datatype,
+                         const SerdNode*    object_lang)
+{
+	if (!strcmp((const char*)object->buf, NS_RDF "nil")) {
+		if (flags & SERD_LIST_CONT) {
+			--writer->indent;
+			write_sep(writer, SEP_LIST_END);
+			return true;
+		} else {
+			sink("()", 2, writer);
+		}
+	} else if (strcmp((const char*)predicate->buf, NS_RDF "rest")) {
+		if (!strcmp((const char*)predicate->buf, NS_RDF "first")) {
+			write_sep(writer, SEP_LIST_SEP);
+		}
+
+		write_node(writer, object, object_datatype, object_lang,
+		           FIELD_OBJECT, flags);
+	}
+	return false;
 }
 
 SERD_API
@@ -399,15 +506,15 @@ serd_writer_write_statement(SerdWriter*        writer,
 	default:
 		break;
 	}
+
+	bool was_list_end = false;
 	if (serd_node_equals(subject, &writer->context.subject)) {
 		if (serd_node_equals(predicate, &writer->context.predicate)) {
 			// Abbreviate S P
-			if ((flags & SERD_ANON_O_BEGIN)) {
-				sink(" , ", 3, writer);  // ] , [
-			} else {
+			if (!(flags & SERD_ANON_O_BEGIN)) {
 				++writer->indent;
-				serd_writer_write_delim(writer, ',');
 			}
+			write_sep(writer, SEP_END_O);
 			write_node(writer, object, object_datatype, object_lang,
 			           FIELD_OBJECT, flags);
 			if (!(flags & SERD_ANON_O_BEGIN)) {
@@ -415,35 +522,34 @@ serd_writer_write_statement(SerdWriter*        writer,
 			}
 		} else {
 			// Abbreviate S
-			if (writer->context.predicate.type) {
-				serd_writer_write_delim(writer, ';');
-			} else {
-				serd_writer_write_delim(writer, '\n');
+			if (!(flags & SERD_LIST_CONT)) {
+				write_sep(writer,
+				          (writer->context.predicate.type
+				           ? SEP_END_P : SEP_S_P));
 			}
-			write_node(writer, predicate, NULL, NULL, FIELD_PREDICATE, flags);
-			copy_node(&writer->context.predicate, predicate);
-			sink(" ", 1, writer);
-			write_node(writer, object, object_datatype, object_lang,
-			           FIELD_OBJECT, flags);
+
+			serd_writer_write_predicate(writer, flags, predicate);
+
+			was_list_end = serd_writer_write_object(
+				writer, flags, predicate, object, object_datatype, object_lang);
 		}
 	} else {
+		// No abbreviation
 		if (writer->context.subject.type) {
 			assert(writer->indent > 0);
 			--writer->indent;
-			if (serd_stack_is_empty(&writer->anon_stack)) {
-				serd_writer_write_delim(writer, '.');
-				serd_writer_write_delim(writer, '\n');
+			if (serd_stack_is_empty(&writer->anon_stack)
+			    && !(flags & SERD_LIST_CONT)) {
+				write_sep(writer, SEP_END_S);
 			}
 		} else if (!writer->empty) {
-			serd_writer_write_delim(writer, '\n');
+			write_sep(writer, SEP_S_P);
 		}
 
-		if (!(flags & SERD_ANON_CONT)) {
+		if (!(flags & (SERD_ANON_CONT|SERD_LIST_CONT))) {
 			write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags);
 			++writer->indent;
-			if (!(flags & SERD_ANON_S_BEGIN)) {
-				serd_writer_write_delim(writer, '\n');
-			}
+			write_sep(writer, SEP_S_P);
 		} else {
 			++writer->indent;
 		}
@@ -451,15 +557,19 @@ serd_writer_write_statement(SerdWriter*        writer,
 		reset_context(writer, false);
 		copy_node(&writer->context.subject, subject);
 
-		write_node(writer, predicate, NULL, NULL, FIELD_PREDICATE, flags);
-		copy_node(&writer->context.predicate, predicate);
-		sink(" ", 1, writer);
+		serd_writer_write_predicate(writer, flags, predicate);
 
-		write_node(writer, object, object_datatype, object_lang,
-		           FIELD_OBJECT, flags);
+		was_list_end = serd_writer_write_object(
+			writer, flags, predicate, object, object_datatype, object_lang);
 	}
 
-	if ((flags & SERD_ANON_S_BEGIN) || (flags & SERD_ANON_O_BEGIN)) {
+	if (was_list_end) {
+		if (--writer->list_depth == 0 && writer->list_subj.type) {
+			reset_context(writer, false);
+			writer->context.subject = writer->list_subj;
+			writer->list_subj = SERD_NODE_NULL;
+		}
+	} else if (flags & (SERD_ANON_S_BEGIN|SERD_ANON_O_BEGIN)) {
 		WriteContext* ctx = (WriteContext*)serd_stack_push(
 			&writer->anon_stack, sizeof(WriteContext));
 		*ctx = writer->context;
@@ -490,8 +600,8 @@ serd_writer_end_anon(SerdWriter*     writer,
 	}
 	assert(writer->indent > 0);
 	--writer->indent;
-	serd_writer_write_delim(writer, '\n');
-	sink("]", 1, writer);
+	write_sep(writer, SEP_END_P);
+	write_sep(writer, SEP_ANON_END);
 	reset_context(writer, true);
 	writer->context = *anon_stack_top(writer);
 	serd_stack_pop(&writer->anon_stack, sizeof(WriteContext));
@@ -536,9 +646,12 @@ serd_writer_new(SerdSyntax     syntax,
 	writer->sink        = sink;
 	writer->stream      = stream;
 	writer->context     = context;
+	writer->list_subj   = SERD_NODE_NULL;
+	writer->list_depth  = 0;
 	writer->bprefix     = NULL;
 	writer->bprefix_len = 0;
 	writer->indent      = 0;
+	writer->last_sep    = SEP_NONE;
 	writer->empty       = true;
 	if (style & SERD_STYLE_BULK) {
 		writer->bulk_sink = serd_bulk_sink_new(sink, stream, SERD_PAGE_SIZE);

@@ -24,6 +24,7 @@ serd (UNRELEASED) unstable; urgency=low
   * Add serd_node_new_blob and serd_base64_decode for handling arbitrary
     binary data via base64 encoding.
   * Support compilation as C++ under MSVC++.
+  * Impement pretty-printing for collections.
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 

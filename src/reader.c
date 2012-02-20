@@ -277,7 +277,7 @@ emit_statement(SerdReader* reader, SerdStatementFlags* flags,
 		                           deref(reader, o),
 		                           deref(reader, d),
 		                           deref(reader, l));
-	*flags = (*flags & SERD_ANON_CONT) ? SERD_ANON_CONT : 0;
+	*flags &= SERD_ANON_CONT|SERD_LIST_CONT;  // Preserve only cont flags
 	return ret;
 }
 
@@ -1008,7 +1008,7 @@ blank_id(SerdReader* reader)
 static bool
 read_blank(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest)
 {
-	const bool was_anon_subject = subject && (*ctx.flags | SERD_ANON_CONT);
+	const SerdStatementFlags old_flags = *ctx.flags;
 	switch (peek_byte(reader)) {
 	case '_':
 		*dest = read_nodeID(reader);
@@ -1016,25 +1016,29 @@ read_blank(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest)
 	case '[':
 		eat_byte_safe(reader, '[');
 		read_ws_star(reader);
-		*dest = blank_id(reader);
-		if (peek_byte(reader) == ']') {
-			eat_byte_safe(reader, ']');
+
+		const bool empty = (peek_byte(reader) == ']');
+		if (empty) {
 			*ctx.flags |= (subject) ? SERD_EMPTY_S : SERD_EMPTY_O;
-			if (ctx.subject) {
-				TRY_RET(emit_statement(reader, ctx.flags,
-				                       ctx.graph, ctx.subject, ctx.predicate,
-				                       *dest, 0, 0));
-			}
-			return true;
+		} else {
+			*ctx.flags |= (subject) ? SERD_ANON_S_BEGIN : SERD_ANON_O_BEGIN;
 		}
 
-		*ctx.flags |= (subject) ? SERD_ANON_S_BEGIN : SERD_ANON_O_BEGIN;
+		*dest = blank_id(reader);
 		if (ctx.subject) {
 			TRY_RET(emit_statement(reader, ctx.flags,
 			                       ctx.graph, ctx.subject, ctx.predicate,
 			                       *dest, 0, 0));
 		}
+
 		ctx.subject = *dest;
+		*ctx.flags &= ~(SERD_LIST_CONT);
+
+		if (empty) {
+			eat_byte_safe(reader, ']');
+			return true;
+		}
+
 		if (!subject) {
 			*ctx.flags |= SERD_ANON_CONT;
 		}
@@ -1044,20 +1048,10 @@ read_blank(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest)
 		if (reader->end_sink) {
 			reader->end_sink(reader->handle, deref(reader, *dest));
 		}
-		if (!was_anon_subject) {
-			*ctx.flags &= ~SERD_ANON_CONT;
-		}
+		*ctx.flags = old_flags;
 		return true;
 	case '(':
-		if (read_collection(reader, ctx, dest)) {
-			if (ctx.subject) {
-				TRY_RET(emit_statement(reader, ctx.flags,
-				                       ctx.graph, ctx.subject, ctx.predicate,
-				                       *dest, 0, 0));
-			}
-			return true;
-		}
-		return false;
+		return read_collection(reader, ctx, dest);
 	default:
 		return error(reader, "illegal blank node\n");
 	}
@@ -1199,32 +1193,23 @@ static bool
 read_collection_rec(SerdReader* reader, ReadContext ctx)
 {
 	read_ws_star(reader);
-	if (peek_byte(reader) == ')') {
+	const bool end  = (peek_byte(reader) == ')');
+	const Ref  rest = (end ? reader->rdf_nil : blank_id(reader));
+	*ctx.flags |= SERD_LIST_CONT;
+	TRY_RET(emit_statement(reader, ctx.flags, ctx.graph,
+	                       ctx.subject, reader->rdf_rest, rest, 0, 0));
+
+	if (end) {
 		eat_byte_safe(reader, ')');
-		TRY_RET(emit_statement(reader, ctx.flags,
-		                       0,
-		                       ctx.subject,
-		                       reader->rdf_rest,
-		                       reader->rdf_nil, 0, 0));
-		return false;
 	} else {
-		const Ref rest = blank_id(reader);
-		TRY_RET(emit_statement(reader, ctx.flags,
-		                       ctx.graph,
-		                       ctx.subject,
-		                       reader->rdf_rest,
-		                       rest, 0, 0));
-		ctx.subject   = rest;
-		ctx.predicate = reader->rdf_first;
+		ctx.subject    = rest;
+		ctx.predicate  = reader->rdf_first;
 		if (read_object(reader, ctx)) {
-			read_collection_rec(reader, ctx);
-			pop_node(reader, rest);
-			return true;
-		} else {
-			pop_node(reader, rest);
-			return false;
+			TRY_RET(read_collection_rec(reader, ctx));
 		}
 	}
+	*ctx.flags &= ~SERD_LIST_CONT;
+	return true;
 }
 
 // [22] itemList   ::= object+
@@ -1232,22 +1217,33 @@ read_collection_rec(SerdReader* reader, ReadContext ctx)
 static bool
 read_collection(SerdReader* reader, ReadContext ctx, Ref* dest)
 {
-	TRY_RET(eat_byte_safe(reader, '('));
+	eat_byte_safe(reader, '(');
 	read_ws_star(reader);
-	if (peek_byte(reader) == ')') {  // Empty collection
-		eat_byte_safe(reader, ')');
+
+	if (peek_byte(reader) == ')') {
 		*dest = reader->rdf_nil;
+		if (ctx.subject) {
+			TRY_RET(emit_statement(reader, ctx.flags, ctx.graph,
+			                       ctx.subject, ctx.predicate, *dest, 0, 0));
+		}
+		eat_byte_safe(reader, ')');
 		return true;
 	}
 
-	*dest = blank_id(reader);
+	*dest       = blank_id(reader);
+	*ctx.flags |= (!ctx.subject) ? SERD_LIST_S_BEGIN : SERD_LIST_O_BEGIN;
+
+	if (ctx.subject) {
+		TRY_RET(emit_statement(reader, ctx.flags, ctx.graph,
+		                       ctx.subject, ctx.predicate, *dest, 0, 0));
+		*ctx.flags = SERD_LIST_CONT;
+	}
 	ctx.subject   = *dest;
 	ctx.predicate = reader->rdf_first;
 	if (!read_object(reader, ctx)) {
 		return error(reader, "unexpected end of collection\n");
 	}
 
-	ctx.subject = *dest;
 	return read_collection_rec(reader, ctx);
 }
 
