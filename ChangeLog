@@ -25,7 +25,7 @@ serd (UNRELEASED) unstable; urgency=low
     binary data via base64 encoding.
   * Support compilation as C++ under MSVC++.
   * Implement pretty-printing for collections.
-  * Use iterative algorithm for collection parsing.
+  * Parse collections iteratively in O(1) space.
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 
