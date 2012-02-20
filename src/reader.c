@@ -601,18 +601,35 @@ read_ws(SerdReader* reader)
 	}
 }
 
-static inline void
+static inline bool
 read_ws_star(SerdReader* reader)
 {
 	while (read_ws(reader)) {}
+	return true;
 }
 
 static inline bool
 read_ws_plus(SerdReader* reader)
 {
 	TRY_RET(read_ws(reader));
+	return read_ws_star(reader);
+}
+
+static inline bool
+peek_delim(SerdReader* reader, const char delim)
+{
 	read_ws_star(reader);
-	return true;
+	return peek_byte(reader) == delim;
+}
+
+static inline bool
+eat_delim(SerdReader* reader, const char delim)
+{
+	if (peek_delim(reader, delim)) {
+		eat_byte_safe(reader, delim);
+		return read_ws_star(reader);
+	}
+	return false;
 }
 
 // [37] longString ::= #x22 #x22 #x22 lcharacter* #x22 #x22 #x22
@@ -1015,9 +1032,7 @@ read_blank(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest)
 		return true;
 	case '[':
 		eat_byte_safe(reader, '[');
-		read_ws_star(reader);
-
-		const bool empty = (peek_byte(reader) == ']');
+		const bool empty = peek_delim(reader, ']');
 		if (empty) {
 			*ctx.flags |= (subject) ? SERD_EMPTY_S : SERD_EMPTY_O;
 		} else {
@@ -1140,12 +1155,8 @@ static bool
 read_objectList(SerdReader* reader, ReadContext ctx)
 {
 	TRY_RET(read_object(reader, ctx));
-	read_ws_star(reader);
-	while (peek_byte(reader) == ',') {
-		eat_byte_safe(reader, ',');
-		read_ws_star(reader);
+	while (eat_delim(reader, ',')) {
 		TRY_RET(read_object(reader, ctx));
-		read_ws_star(reader);
 	}
 	return true;
 }
@@ -1164,10 +1175,7 @@ read_predicateObjectList(SerdReader* reader, ReadContext ctx)
 	TRY_THROW(read_objectList(reader, ctx));
 	pop_node(reader, predicate);
 	predicate = 0;
-	read_ws_star(reader);
-	while (peek_byte(reader) == ';') {
-		eat_byte_safe(reader, ';');
-		read_ws_star(reader);
+	while (eat_delim(reader, ';')) {
 		switch (peek_byte(reader)) {
 		case '.': case ']':
 			return true;
@@ -1178,7 +1186,6 @@ read_predicateObjectList(SerdReader* reader, ReadContext ctx)
 			TRY_THROW(read_objectList(reader, ctx));
 			pop_node(reader, predicate);
 			predicate = 0;
-			read_ws_star(reader);
 		}
 	}
 	pop_node(reader, predicate);
@@ -1188,63 +1195,49 @@ except:
 	return false;
 }
 
-/** Recursive helper for read_collection. */
-static bool
-read_collection_rec(SerdReader* reader, ReadContext ctx)
-{
-	read_ws_star(reader);
-	const bool end  = (peek_byte(reader) == ')');
-	const Ref  rest = (end ? reader->rdf_nil : blank_id(reader));
-	*ctx.flags |= SERD_LIST_CONT;
-	TRY_RET(emit_statement(reader, ctx.flags, ctx.graph,
-	                       ctx.subject, reader->rdf_rest, rest, 0, 0));
-
-	if (end) {
-		eat_byte_safe(reader, ')');
-	} else {
-		ctx.subject    = rest;
-		ctx.predicate  = reader->rdf_first;
-		if (read_object(reader, ctx)) {
-			TRY_RET(read_collection_rec(reader, ctx));
-		}
-	}
-	*ctx.flags &= ~SERD_LIST_CONT;
-	return true;
-}
-
 // [22] itemList   ::= object+
 // [23] collection ::= '(' itemList? ')'
 static bool
 read_collection(SerdReader* reader, ReadContext ctx, Ref* dest)
 {
 	eat_byte_safe(reader, '(');
-	read_ws_star(reader);
-
-	if (peek_byte(reader) == ')') {
-		*dest = reader->rdf_nil;
-		if (ctx.subject) {
-			TRY_RET(emit_statement(reader, ctx.flags, ctx.graph,
-			                       ctx.subject, ctx.predicate, *dest, 0, 0));
-		}
-		eat_byte_safe(reader, ')');
-		return true;
-	}
-
-	*dest       = blank_id(reader);
-	*ctx.flags |= (!ctx.subject) ? SERD_LIST_S_BEGIN : SERD_LIST_O_BEGIN;
-
+	bool end = peek_delim(reader, ')');
+	*dest = end ? reader->rdf_nil : blank_id(reader);
 	if (ctx.subject) {
+		// subject predicate _:head
+		*ctx.flags |= (end ? 0 : SERD_LIST_O_BEGIN);
 		TRY_RET(emit_statement(reader, ctx.flags, ctx.graph,
 		                       ctx.subject, ctx.predicate, *dest, 0, 0));
-		*ctx.flags = SERD_LIST_CONT;
-	}
-	ctx.subject   = *dest;
-	ctx.predicate = reader->rdf_first;
-	if (!read_object(reader, ctx)) {
-		return error(reader, "unexpected end of collection\n");
+		*ctx.flags |= SERD_LIST_CONT;
+	} else {
+		*ctx.flags |= (end ? 0 : SERD_LIST_S_BEGIN);
 	}
 
-	return read_collection_rec(reader, ctx);
+	ctx.subject = *dest;
+	while (!end) {
+		// _:node rdf:first object
+		ctx.predicate = reader->rdf_first;
+		if (!read_object(reader, ctx)) {
+			return error(reader, "unexpected end of collection\n");
+		}
+
+		end = peek_delim(reader, ')');
+
+		// _:node rdf:rest _:rest
+		const Ref rest = end ? reader->rdf_nil : blank_id(reader);
+		*ctx.flags |= SERD_LIST_CONT;
+		TRY_RET(emit_statement(reader, ctx.flags, ctx.graph,
+		                       ctx.subject, reader->rdf_rest, rest, 0, 0));
+
+		ctx.subject  = rest;
+		*ctx.flags  |= SERD_LIST_CONT;
+		end          = peek_delim(reader, ')');
+	}
+
+	eat_byte_safe(reader, ')');
+
+	*ctx.flags &= ~SERD_LIST_CONT;
+	return true;
 }
 
 // [11] subject ::= resource | blank
