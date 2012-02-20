@@ -599,8 +599,7 @@ eat_delim(SerdReader* reader, const char delim)
 static Ref
 read_longString(SerdReader* reader, SerdNodeFlags* flags)
 {
-	Ref ref = push_node(reader, SERD_LITERAL, "", 0);
-	SERD_STACK_ASSERT_TOP(reader, ref);
+	Ref        ref = push_node(reader, SERD_LITERAL, "", 0);
 	SerdStatus st;
 	while (!(st = read_lcharacter(reader, ref, flags))) {}
 	if (st < SERD_ERR_UNKNOWN) {
