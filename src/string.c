@@ -45,8 +45,7 @@ serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags)
 			// Does not start with `10', start of a new character
 			++n_chars;
 			switch (str[i]) {
-			case '\r':
-			case '\n':
+			case '\r': case '\n':
 				*flags |= SERD_HAS_NEWLINE;
 				break;
 			case '"':
