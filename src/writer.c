@@ -512,7 +512,7 @@ serd_writer_write_statement(SerdWriter*        writer,
 		                             object_datatype, object_lang)) {
 			// Reached end of list
 			if (--writer->list_depth == 0 && writer->list_subj.type) {
-				reset_context(writer, false);
+				reset_context(writer, true);
 				writer->context.subject = writer->list_subj;
 				writer->list_subj       = SERD_NODE_NULL;
 			}
@@ -560,7 +560,7 @@ serd_writer_write_statement(SerdWriter*        writer,
 			++writer->indent;
 		}
 
-		reset_context(writer, false);
+		reset_context(writer, true);
 		copy_node(&writer->context.subject, subject);
 
 		serd_writer_write_predicate(writer, flags, predicate);
