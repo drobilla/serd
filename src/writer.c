@@ -435,24 +435,20 @@ is_resource(const SerdNode* node)
 }
 
 static void
-serd_writer_write_predicate(SerdWriter*        writer,
-                            SerdStatementFlags flags,
-                            const SerdNode*    predicate)
+write_pred(SerdWriter* writer, SerdStatementFlags flags, const SerdNode* pred)
 {
-	if (!(flags & (SERD_LIST_CONT|SERD_LIST_S_BEGIN))) {
-		write_node(writer, predicate, NULL, NULL, FIELD_PREDICATE, flags);
-		write_sep(writer, SEP_P_O);
-	}
-	copy_node(&writer->context.predicate, predicate);
+	write_node(writer, pred, NULL, NULL, FIELD_PREDICATE, flags);
+	write_sep(writer, SEP_P_O);
+	copy_node(&writer->context.predicate, pred);
 }
 
 static bool
-serd_writer_write_object(SerdWriter*        writer,
-                         SerdStatementFlags flags,
-                         const SerdNode*    predicate,
-                         const SerdNode*    object,
-                         const SerdNode*    object_datatype,
-                         const SerdNode*    object_lang)
+write_list_obj(SerdWriter*        writer,
+               SerdStatementFlags flags,
+               const SerdNode*    predicate,
+               const SerdNode*    object,
+               const SerdNode*    datatype,
+               const SerdNode*    lang)
 {
 	if (!strcmp((const char*)object->buf, NS_RDF "nil")) {
 		if (flags & SERD_LIST_CONT) {
@@ -467,8 +463,7 @@ serd_writer_write_object(SerdWriter*        writer,
 			write_sep(writer, SEP_LIST_SEP);
 		}
 
-		write_node(writer, object, object_datatype, object_lang,
-		           FIELD_OBJECT, flags);
+		write_node(writer, object, datatype, lang, FIELD_OBJECT, flags);
 	}
 	return false;
 }
@@ -481,8 +476,8 @@ serd_writer_write_statement(SerdWriter*        writer,
                             const SerdNode*    subject,
                             const SerdNode*    predicate,
                             const SerdNode*    object,
-                            const SerdNode*    object_datatype,
-                            const SerdNode*    object_lang)
+                            const SerdNode*    datatype,
+                            const SerdNode*    lang)
 {
 	if (!subject || !predicate || !object
 	    || !subject->buf || !predicate->buf || !object->buf
@@ -496,8 +491,7 @@ serd_writer_write_statement(SerdWriter*        writer,
 		sink(" ", 1, writer);
 		write_node(writer, predicate, NULL, NULL, FIELD_PREDICATE, flags);
 		sink(" ", 1, writer);
-		if (!write_node(writer, object, object_datatype, object_lang,
-		                FIELD_OBJECT, flags)) {
+		if (!write_node(writer, object, datatype, lang, FIELD_OBJECT, flags)) {
 			return SERD_ERR_UNKNOWN;
 		}
 		sink(" .\n", 3, writer);
@@ -507,8 +501,7 @@ serd_writer_write_statement(SerdWriter*        writer,
 	}
 
 	if ((flags & SERD_LIST_CONT)) {
-		if (serd_writer_write_object(writer, flags, predicate, object,
-		                             object_datatype, object_lang)) {
+		if (write_list_obj(writer, flags, predicate, object, datatype, lang)) {
 			// Reached end of list
 			if (--writer->list_depth == 0 && writer->list_subj.type) {
 				reset_context(writer, true);
@@ -524,20 +517,16 @@ serd_writer_write_statement(SerdWriter*        writer,
 				++writer->indent;
 			}
 			write_sep(writer, SEP_END_O);
-			write_node(writer, object, object_datatype, object_lang,
-			           FIELD_OBJECT, flags);
+			write_node(writer, object, datatype, lang, FIELD_OBJECT, flags);
 			if (!(flags & SERD_ANON_O_BEGIN)) {
 				--writer->indent;
 			}
 		} else {
 			// Abbreviate S
-			write_sep(writer, (writer->context.predicate.type
-			                   ? SEP_END_P : SEP_S_P));
-
-			serd_writer_write_predicate(writer, flags, predicate);
-
-			serd_writer_write_object(
-				writer, flags, predicate, object, object_datatype, object_lang);
+			Sep sep = writer->context.predicate.type ? SEP_END_P : SEP_S_P;
+			write_sep(writer, sep);
+			write_pred(writer, flags, predicate);
+			write_node(writer, object, datatype, lang, FIELD_OBJECT, flags);
 		}
 	} else {
 		// No abbreviation
@@ -562,10 +551,11 @@ serd_writer_write_statement(SerdWriter*        writer,
 		reset_context(writer, true);
 		copy_node(&writer->context.subject, subject);
 
-		serd_writer_write_predicate(writer, flags, predicate);
+		if (!(flags & SERD_LIST_S_BEGIN)) {
+			write_pred(writer, flags, predicate);
+		}
 
-		serd_writer_write_object(
-			writer, flags, predicate, object, object_datatype, object_lang);
+		write_node(writer, object, datatype, lang, FIELD_OBJECT, flags);
 	}
 
 	if (flags & (SERD_ANON_S_BEGIN|SERD_ANON_O_BEGIN)) {
