@@ -81,6 +81,7 @@ struct SerdReaderImpl {
 	int32_t           read_head;  ///< Offset into read_buf
 	bool              from_file;  ///< True iff reading from @ref fd
 	bool              eof;
+	bool              seen_genid;
 #ifdef SERD_STACK_CHECK
 	Ref*              allocs;     ///< Stack of push offsets
 	size_t            n_allocs;   ///< Number of stack pushes
@@ -948,11 +949,16 @@ read_nodeID(SerdReader* reader)
 	if (!read_name(reader, ref)) {
 		return error(reader, "illegal character at start of name\n");
 	}
-	SerdNode* const node = deref(reader, ref);
-	if (reader->syntax == SERD_TURTLE
-	    && !strncmp((const char*)node->buf, "genid", 5)) {
-		// Replace "genid" nodes with "docid" to prevent clashing
-		memcpy((uint8_t*)node + sizeof(SerdNode), "docid", 5);
+	if (reader->syntax == SERD_TURTLE) {
+		const char* const buf = (const char*)deref(reader, ref)->buf;
+		if (!strncmp(buf, "genid", 5)) {
+			memcpy((char*)buf, "docid", 5);  // Prevent clash
+			reader->seen_genid = true;
+		} else if (reader->seen_genid && !strncmp(buf, "docid", 5)) {
+			error(reader, "found both `genid' and `docid' blank IDs\n");
+			error(reader, "resolve this with a blank ID prefix\n");
+			return pop_node(reader, ref);
+		}
 	}
 	return ref;
 }
@@ -983,8 +989,7 @@ read_blank(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest)
 	const SerdStatementFlags old_flags = *ctx.flags;
 	switch (peek_byte(reader)) {
 	case '_':
-		*dest = read_nodeID(reader);
-		return true;
+		return (*dest = read_nodeID(reader));
 	case '[':
 		eat_byte_safe(reader, '[');
 		const bool empty = peek_delim(reader, ']');
@@ -1354,6 +1359,7 @@ serd_reader_new(SerdSyntax        syntax,
 	me->read_buf         = 0;
 	me->read_head        = 0;
 	me->eof              = false;
+	me->seen_genid       = false;
 #ifdef SERD_STACK_CHECK
 	me->allocs           = 0;
 	me->n_allocs         = 0;
