@@ -109,18 +109,16 @@ anon_stack_top(SerdWriter* writer)
 static void
 copy_node(SerdNode* dst, const SerdNode* src)
 {
-	if (!src) {
-		dst->type = SERD_NOTHING;
-		return;
-	}
-	if (!dst->buf || dst->n_bytes < src->n_bytes) {
+	if (src) {
 		dst->buf = (uint8_t*)realloc((char*)dst->buf, src->n_bytes + 1);
+		dst->n_bytes = src->n_bytes;
+		dst->n_chars = src->n_chars;
+		dst->flags   = src->flags;
+		dst->type    = src->type;
+		memcpy((char*)dst->buf, src->buf, src->n_bytes + 1);
+	} else {
+		dst->type = SERD_NOTHING;
 	}
-	dst->n_bytes = src->n_bytes;
-	dst->n_chars = src->n_chars;
-	dst->flags   = src->flags;
-	dst->type    = src->type;
-	memcpy((char*)dst->buf, src->buf, src->n_bytes + 1);
 }
 
 static inline size_t
@@ -426,12 +424,7 @@ write_node(SerdWriter*        writer,
 static inline bool
 is_resource(const SerdNode* node)
 {
-	switch (node->type) {
-	case SERD_URI: case SERD_CURIE: case SERD_BLANK:
-		return true;
-	default:
-		return false;
-	}
+	return node->type > SERD_LITERAL;
 }
 
 static void
