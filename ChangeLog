@@ -26,6 +26,8 @@ serd (UNRELEASED) unstable; urgency=low
   * Support compilation as C++ under MSVC++.
   * Implement pretty-printing for collections.
   * Parse collections iteratively in O(1) space.
+  * Report read error if both "genid" and "docid" IDs are found in the same
+    document, to prevent silent merging of distinct blank nodes.
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 
