@@ -156,9 +156,7 @@ serd_env_set_prefix_from_strings(SerdEnv*       env,
 	const SerdNode name_node = serd_node_from_string(SERD_LITERAL, name);
 	const SerdNode uri_node  = serd_node_from_string(SERD_URI, uri);
 
-	SerdStatus ret = serd_env_set_prefix(env, &name_node, &uri_node);
-
-	return ret;
+	return serd_env_set_prefix(env, &name_node, &uri_node);
 }
 
 static inline bool
@@ -267,8 +265,6 @@ serd_env_foreach(const SerdEnv* env,
                  void*          handle)
 {
 	for (size_t i = 0; i < env->n_prefixes; ++i) {
-		func(handle,
-		     &env->prefixes[i].name,
-		     &env->prefixes[i].uri);
+		func(handle, &env->prefixes[i].name, &env->prefixes[i].uri);
 	}
 }

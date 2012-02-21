@@ -26,7 +26,7 @@ typedef struct {
 	SerdWriter* writer;
 } State;
 
-int
+static int
 print_version()
 {
 	printf("serdi " SERD_VERSION " <http://drobilla.net/software/serd>\n");
@@ -37,7 +37,7 @@ print_version()
 	return 0;
 }
 
-int
+static int
 print_usage(const char* name, bool error)
 {
 	FILE* const os = error ? stderr : stdout;
@@ -56,7 +56,7 @@ print_usage(const char* name, bool error)
 	return error ? 1 : 0;
 }
 
-bool
+static bool
 set_syntax(SerdSyntax* syntax, const char* name)
 {
 	if (!strcmp(name, "turtle")) {
@@ -68,6 +68,13 @@ set_syntax(SerdSyntax* syntax, const char* name)
 		return false;
 	}
 	return true;
+}
+
+static int
+bad_arg(const char* name, char opt)
+{
+	fprintf(stderr, "%s: Bad or missing value for -%c\n", name, opt);
+	return 1;
 }
 
 int
@@ -86,7 +93,7 @@ main(int argc, char** argv)
 	const uint8_t* in_name       = NULL;
 	const uint8_t* add_prefix    = NULL;
 	const uint8_t* chop_prefix   = NULL;
-	int a = 1;
+	int            a             = 1;
 	for (; a < argc && argv[a][0] == '-'; ++a) {
 		if (argv[a][1] == '\0') {
 			in_name = (const uint8_t*)"(stdin)";
@@ -106,41 +113,31 @@ main(int argc, char** argv)
 			++a;
 			break;
 		} else if (argv[a][1] == 'i') {
-			if (++a == argc) {
-				fprintf(stderr, "Missing value for -i\n");
-				return 1;
-			}
-			if (!set_syntax(&input_syntax, argv[a])) {
-				return 1;
+			if (++a == argc || !set_syntax(&input_syntax, argv[a])) {
+				return bad_arg(argv[0], 'i');
 			}
 		} else if (argv[a][1] == 'o') {
-			if (++a == argc) {
-				fprintf(stderr, "Missing value for -o\n");
-				return 1;
-			}
-			if (!set_syntax(&output_syntax, argv[a])) {
-				return 1;
+			if (++a == argc || !set_syntax(&output_syntax, argv[a])) {
+				return bad_arg(argv[0], 'o');
 			}
 		} else if (argv[a][1] == 'p') {
 			if (++a == argc) {
-				fprintf(stderr, "Missing value for -p\n");
-				return 1;
+				return bad_arg(argv[0], 'p');
 			}
 			add_prefix = (const uint8_t*)argv[a];
 		} else if (argv[a][1] == 'c') {
 			if (++a == argc) {
-				fprintf(stderr, "Missing value for -c\n");
-				return 1;
+				return bad_arg(argv[0], 'c');
 			}
 			chop_prefix = (const uint8_t*)argv[a];
 		} else {
-			fprintf(stderr, "Unknown option `%s'\n", argv[a]);
+			fprintf(stderr, "%s: Unknown option `%s'\n", argv[0], argv[a]);
 			return print_usage(argv[0], true);
 		}
 	}
 
 	if (a == argc) {
-		fprintf(stderr, "Missing input\n");
+		fprintf(stderr, "%s: Missing input\n", argv[0]);
 		return 1;
 	}
 
@@ -193,22 +190,15 @@ main(int argc, char** argv)
 		output_syntax, (SerdStyle)output_style,
 		env, &base_uri, serd_file_sink, out_fd);
 
-	if (chop_prefix) {
-		serd_writer_chop_blank_prefix(writer, chop_prefix);
-	}
-
-	State state = { env, writer };
-
 	SerdReader* reader = serd_reader_new(
-		input_syntax, state.writer, NULL,
+		input_syntax, writer, NULL,
 		(SerdBaseSink)serd_writer_set_base_uri,
 		(SerdPrefixSink)serd_writer_set_prefix,
 		(SerdStatementSink)serd_writer_write_statement,
 		(SerdEndSink)serd_writer_end_anon);
 
-	if (add_prefix) {
-		serd_reader_add_blank_prefix(reader, add_prefix);
-	}
+	serd_writer_chop_blank_prefix(writer, chop_prefix);
+	serd_reader_add_blank_prefix(reader, add_prefix);
 
 	const SerdStatus status = (from_file)
 		? serd_reader_read_file_handle(reader, in_fd, in_name)
@@ -220,9 +210,9 @@ main(int argc, char** argv)
 		fclose(in_fd);
 	}
 
-	serd_writer_finish(state.writer);
-	serd_writer_free(state.writer);
-	serd_env_free(state.env);
+	serd_writer_finish(writer);
+	serd_writer_free(writer);
+	serd_env_free(env);
 	serd_node_free(&base_uri_node);
 
 	return (status == SERD_SUCCESS) ? 0 : 1;

@@ -269,7 +269,7 @@ write_sep(SerdWriter* writer, const Sep sep)
 	writer->last_sep = sep;
 }
 
-static void
+static SerdStatus
 reset_context(SerdWriter* writer, bool del)
 {
 	if (del) {
@@ -283,6 +283,7 @@ reset_context(SerdWriter* writer, bool del)
 		writer->context.predicate.type = SERD_NOTHING;
 	}
 	writer->empty = false;
+	return SERD_SUCCESS;
 }
 
 typedef enum {
@@ -625,8 +626,7 @@ serd_writer_finish(SerdWriter* writer)
 	if (writer->style & SERD_STYLE_BULK) {
 		serd_bulk_sink_flush(&writer->bulk_sink);
 	}
-	reset_context(writer, true);
-	return SERD_SUCCESS;
+	return reset_context(writer, true);
 }
 
 SERD_API
@@ -693,8 +693,7 @@ serd_writer_set_base_uri(SerdWriter*     writer,
 			sink(uri->buf, uri->n_bytes, writer);
 			sink("> .\n", 4, writer);
 		}
-		reset_context(writer, false);
-		return SERD_SUCCESS;
+		return reset_context(writer, false);
 	}
 	return SERD_ERR_UNKNOWN;
 }
@@ -717,8 +716,7 @@ serd_writer_set_prefix(SerdWriter*     writer,
 			write_text(writer, WRITE_URI, uri->buf, uri->n_bytes, '>');
 			sink("> .\n", 4, writer);
 		}
-		reset_context(writer, false);
-		return SERD_SUCCESS;
+		return reset_context(writer, false);
 	}
 	return SERD_ERR_UNKNOWN;
 }
@@ -740,7 +738,5 @@ SERD_API
 size_t
 serd_file_sink(const void* buf, size_t len, void* stream)
 {
-	FILE* file = (FILE*)stream;
-	return fwrite(buf, 1, len, file);
+	return fwrite(buf, 1, len, (FILE*)stream);
 }
-
