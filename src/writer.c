@@ -447,10 +447,8 @@ write_list_obj(SerdWriter*        writer,
 		--writer->indent;
 		write_sep(writer, SEP_LIST_END);
 		return true;
-	} else if (strcmp((const char*)predicate->buf, NS_RDF "rest")) {
-		if (!strcmp((const char*)predicate->buf, NS_RDF "first")) {
-			write_sep(writer, SEP_LIST_SEP);
-		}
+	} else if (!strcmp((const char*)predicate->buf, NS_RDF "first")) {
+		write_sep(writer, SEP_LIST_SEP);
 		write_node(writer, object, datatype, lang, FIELD_OBJECT, flags);
 	}
 	return false;
