@@ -355,17 +355,17 @@ write_node(SerdWriter*        writer,
 		break;
 	case SERD_LITERAL:
 		if (writer->syntax == SERD_TURTLE && datatype && datatype->buf) {
-			// TODO: compare against NS_XSD prefix once
-			if (!strcmp((const char*)datatype->buf,    NS_XSD "boolean")
-			    || !strcmp((const char*)datatype->buf, NS_XSD "decimal")
-			    || !strcmp((const char*)datatype->buf, NS_XSD "integer")) {
+			const char* type_uri = (const char*)datatype->buf;
+			if (!strncmp(type_uri, NS_XSD, sizeof(NS_XSD) - 1) && (
+				    !strcmp(type_uri + sizeof(NS_XSD) - 1, "boolean") ||
+				    !strcmp(type_uri + sizeof(NS_XSD) - 1, "decimal") ||
+				    !strcmp(type_uri + sizeof(NS_XSD) - 1, "integer"))) {
 				sink(node->buf, node->n_bytes, writer);
 				break;
 			}
 		}
 		if (writer->syntax != SERD_NTRIPLES
-		    && ((node->flags & SERD_HAS_NEWLINE)
-		        || (node->flags & SERD_HAS_QUOTE))) {
+		    && (node->flags & (SERD_HAS_NEWLINE|SERD_HAS_QUOTE))) {
 			sink("\"\"\"", 3, writer);
 			write_text(writer, WRITE_LONG_STRING,
 			           node->buf, node->n_bytes, '\0');
