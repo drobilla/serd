@@ -30,6 +30,8 @@
 #define TRY_THROW(exp) if (!(exp)) goto except;
 #define TRY_RET(exp)   if (!(exp)) return 0;
 
+#define MAX_ID_SIZE (5 + 10 + 1) /* "genid" + UINT32_MAX + \0 */
+
 #ifdef SERD_STACK_CHECK
 #    define SERD_STACK_ASSERT_TOP(reader, ref) \
             assert(ref == reader->allocs[reader->n_allocs - 1]);
@@ -940,7 +942,9 @@ read_nodeID(SerdReader* reader)
 {
 	eat_byte_safe(reader, '_');
 	eat_byte_check(reader, ':');
-	Ref ref = push_node(reader, SERD_BLANK, "", 0);
+	Ref ref = push_node(reader, SERD_BLANK,
+	                    reader->bprefix ? (char*)reader->bprefix : "",
+	                    reader->bprefix_len);
 	if (!read_name(reader, ref)) {
 		return error(reader, "illegal character at start of name\n");
 	}
@@ -953,26 +957,19 @@ read_nodeID(SerdReader* reader)
 	return ref;
 }
 
-static size_t
-max_id_size(SerdReader* reader)
-{
-	return reader->bprefix_len + 5 + 10 + 1;  // "genid" UINT32_MAX \0
-}
-
 static void
 set_blank_id(SerdReader* reader, Ref ref, size_t buf_size)
 {
 	SerdNode* node = deref(reader, ref);
 	node->n_bytes = node->n_chars = snprintf(
-		(char*)node->buf, buf_size, "%sgenid%u",
-		reader->bprefix ? (char*)reader->bprefix : "", reader->next_id++);
+		(char*)node->buf, buf_size, "genid%u", reader->next_id++);
 }
 
 static Ref
 blank_id(SerdReader* reader)
 {
-	Ref ref = push_node_padded(reader, max_id_size(reader), SERD_BLANK, "", 0);
-	set_blank_id(reader, ref, max_id_size(reader));
+	Ref ref = push_node_padded(reader, MAX_ID_SIZE, SERD_BLANK, "", 0);
+	set_blank_id(reader, ref, MAX_ID_SIZE);
 	return ref;
 }
 
@@ -1170,11 +1167,10 @@ read_collection(SerdReader* reader, ReadContext ctx, Ref* dest)
 
 	/* The order of node allocation here is necessarily not in stack order,
 	   so we create two nodes and recycle them throughout. */
-	size_t id_size = max_id_size(reader);
-	Ref    n1      = push_node_padded(reader, id_size, SERD_BLANK, "", 0);
-	Ref    n2      = 0;
-	Ref    node    = n1;
-	Ref    rest    = 0;
+	Ref n1   = push_node_padded(reader, MAX_ID_SIZE, SERD_BLANK, "", 0);
+	Ref n2   = 0;
+	Ref node = n1;
+	Ref rest = 0;
 
 	ctx.subject = *dest;
 	while (!(end = peek_delim(reader, ')'))) {
@@ -1190,7 +1186,7 @@ read_collection(SerdReader* reader, ReadContext ctx, Ref* dest)
 			if (!rest) {
 				rest = n2 = blank_id(reader);  // First pass, push a new node
 			} else {
-				set_blank_id(reader, rest, id_size);
+				set_blank_id(reader, rest, MAX_ID_SIZE);
 			}
 		}
 
