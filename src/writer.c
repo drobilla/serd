@@ -185,10 +185,9 @@ write_text(SerdWriter* writer, TextContext ctx,
 		uint32_t c    = 0;
 		size_t   size = 0;
 		if ((in & 0x80) == 0) {  // Starts with `0'
-			size = 1;
 			c = in & 0x7F;
 			if (in_range(c, 0x20, 0x7E)
-			    || (is_space(c) &&  ctx == WRITE_LONG_STRING)) {
+			    || (is_space(c) && ctx == WRITE_LONG_STRING)) {
 				sink(&in, 1, writer);  // Print ASCII character
 			} else {
 				snprintf(escape, sizeof(escape), "\\u%04X", c);
@@ -197,13 +196,13 @@ write_text(SerdWriter* writer, TextContext ctx,
 			continue;
 		} else if ((in & 0xE0) == 0xC0) {  // Starts with `110'
 			size = 2;
-			c = in & 0x1F;
+			c    = in & 0x1F;
 		} else if ((in & 0xF0) == 0xE0) {  // Starts with `1110'
 			size = 3;
-			c = in & 0x0F;
+			c    = in & 0x0F;
 		} else if ((in & 0xF8) == 0xF0) {  // Starts with `11110'
 			size = 4;
-			c = in & 0x07;
+			c    = in & 0x07;
 		} else {
 			fprintf(stderr, "Invalid UTF-8: %X\n", in);
 			const uint8_t replacement_char[] = { 0xEF, 0xBF, 0xBD };
@@ -221,8 +220,7 @@ write_text(SerdWriter* writer, TextContext ctx,
 
 #define READ_BYTE() \
 		in = utf8[i++] & 0x3f; \
-		c <<= 6; \
-		c |= in;
+		c  = (c << 6) | in;
 
 		switch (size) {
 		case 4: READ_BYTE();
