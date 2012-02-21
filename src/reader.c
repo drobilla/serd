@@ -30,8 +30,6 @@
 #define TRY_THROW(exp) if (!(exp)) goto except;
 #define TRY_RET(exp)   if (!(exp)) return 0;
 
-#define MAX_ID_SIZE (5 + 10 + 1) /* "genid" + UINT32_MAX + \0 */
-
 #ifdef SERD_STACK_CHECK
 #    define SERD_STACK_ASSERT_TOP(reader, ref) \
             assert(ref == reader->allocs[reader->n_allocs - 1]);
@@ -966,16 +964,23 @@ read_nodeID(SerdReader* reader)
 static void
 set_blank_id(SerdReader* reader, Ref ref, size_t buf_size)
 {
-	SerdNode* node = deref(reader, ref);
+	SerdNode*   node   = deref(reader, ref);
+	const char* prefix = reader->bprefix ? (const char*)reader->bprefix : "";
 	node->n_bytes = node->n_chars = snprintf(
-		(char*)node->buf, buf_size, "genid%u", reader->next_id++);
+		(char*)node->buf, buf_size, "%sgenid%u", prefix, reader->next_id++);
+}
+
+static size_t
+genid_size(SerdReader* reader)
+{
+	return reader->bprefix_len + 5 + 10 + 1;  // + "genid" + UINT32_MAX + \0
 }
 
 static Ref
 blank_id(SerdReader* reader)
 {
-	Ref ref = push_node_padded(reader, MAX_ID_SIZE, SERD_BLANK, "", 0);
-	set_blank_id(reader, ref, MAX_ID_SIZE);
+	Ref ref = push_node_padded(reader, genid_size(reader), SERD_BLANK, "", 0);
+	set_blank_id(reader, ref, genid_size(reader));
 	return ref;
 }
 
@@ -1172,7 +1177,7 @@ read_collection(SerdReader* reader, ReadContext ctx, Ref* dest)
 
 	/* The order of node allocation here is necessarily not in stack order,
 	   so we create two nodes and recycle them throughout. */
-	Ref n1   = push_node_padded(reader, MAX_ID_SIZE, SERD_BLANK, "", 0);
+	Ref n1   = push_node_padded(reader, genid_size(reader), SERD_BLANK, "", 0);
 	Ref n2   = 0;
 	Ref node = n1;
 	Ref rest = 0;
@@ -1191,7 +1196,7 @@ read_collection(SerdReader* reader, ReadContext ctx, Ref* dest)
 			if (!rest) {
 				rest = n2 = blank_id(reader);  // First pass, push a new node
 			} else {
-				set_blank_id(reader, rest, MAX_ID_SIZE);
+				set_blank_id(reader, rest, genid_size(reader));
 			}
 		}
 
