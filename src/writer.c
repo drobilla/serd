@@ -444,18 +444,13 @@ write_list_obj(SerdWriter*        writer,
                const SerdNode*    lang)
 {
 	if (!strcmp((const char*)object->buf, NS_RDF "nil")) {
-		if (flags & SERD_LIST_CONT) {
-			--writer->indent;
-			write_sep(writer, SEP_LIST_END);
-			return true;
-		} else {
-			sink("()", 2, writer);
-		}
+		--writer->indent;
+		write_sep(writer, SEP_LIST_END);
+		return true;
 	} else if (strcmp((const char*)predicate->buf, NS_RDF "rest")) {
 		if (!strcmp((const char*)predicate->buf, NS_RDF "first")) {
 			write_sep(writer, SEP_LIST_SEP);
 		}
-
 		write_node(writer, object, datatype, lang, FIELD_OBJECT, flags);
 	}
 	return false;
