@@ -145,7 +145,7 @@ SerdNode
 serd_node_new_decimal(double d, unsigned frac_digits)
 {
 	const double   abs_d      = fabs(d);
-	const unsigned int_digits = (unsigned)fmax(1.0, ceil(log10(abs_d)));
+	const unsigned int_digits = (unsigned)fmax(1.0, ceil(log10(abs_d + 1)));
 	char*          buf        = (char*)calloc(int_digits + frac_digits + 3, 1);
 	SerdNode       node       = { (const uint8_t*)buf, 0, 0, 0, SERD_LITERAL };
 	const double   int_part   = floor(abs_d);
