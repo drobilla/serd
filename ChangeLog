@@ -28,6 +28,7 @@ serd (UNRELEASED) unstable; urgency=low
   * Parse collections iteratively in O(1) space.
   * Report read error if both "genid" and "docid" IDs are found in the same
     document, to prevent silent merging of distinct blank nodes.
+  * Handle files and strings that start with a UTF-8 Byte Order Mark.
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 

@@ -1438,6 +1438,15 @@ serd_reader_read_file(SerdReader*    reader,
 	return ret;
 }
 
+static void
+skip_bom(SerdReader* me)
+{
+	const uint8_t* const b = me->read_buf;
+	if (b[0] == 0xEF && b[1] == 0xBB && b[2] == 0xBF) {
+		me->read_head += 3;
+	}
+}
+
 SERD_API
 SerdStatus
 serd_reader_read_file_handle(SerdReader* me, FILE* file, const uint8_t* name)
@@ -1452,7 +1461,11 @@ serd_reader_read_file_handle(SerdReader* me, FILE* file, const uint8_t* name)
 
 	memset(me->read_buf, '\0', SERD_PAGE_SIZE);
 
-	const bool ret = !page(me) || read_turtleDoc(me);
+	bool ret = page(me);
+	if (ret) {
+		skip_bom(me);
+		ret = read_turtleDoc(me);
+	}
 
 	free(me->read_buf);
 	me->fd       = 0;
@@ -1472,6 +1485,7 @@ serd_reader_read_string(SerdReader* me, const uint8_t* utf8)
 	me->from_file = false;
 	me->eof       = false;
 
+	skip_bom(me);
 	const bool ret = read_turtleDoc(me);
 
 	me->read_buf = NULL;
