@@ -108,7 +108,10 @@ serd_strtod(const char* str, char** endptr)
 		result *= pow(10, expt * expt_sign);
 	}
 
-	*endptr = (char*)s;
+	if (endptr) {
+		*endptr = (char*)s;
+	}
+
 	return result * sign;
 }
 
