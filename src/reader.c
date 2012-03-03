@@ -98,7 +98,7 @@ error(SerdReader* reader, const char* fmt, ...)
 	return 0;
 }
 
-static inline bool
+static inline SerdStatus
 page(SerdReader* reader)
 {
 	reader->read_head = 0;
@@ -106,11 +106,11 @@ page(SerdReader* reader)
 	if (n_read == 0) {
 		reader->read_buf[0] = '\0';
 		reader->eof = true;
-		return false;
+		return ferror(reader->fd) ? SERD_ERR_UNKNOWN : SERD_FAILURE;
 	} else if (n_read < SERD_PAGE_SIZE) {
 		reader->read_buf[n_read] = '\0';
 	}
-	return true;
+	return SERD_SUCCESS;
 }
 
 static inline uint8_t
@@ -1461,16 +1461,16 @@ serd_reader_read_file_handle(SerdReader* me, FILE* file, const uint8_t* name)
 
 	memset(me->read_buf, '\0', SERD_PAGE_SIZE);
 
-	bool ret = page(me);
-	if (ret) {
+	SerdStatus st = page(me);
+	if (!st) {
 		skip_bom(me);
-		ret = read_turtleDoc(me);
+		st = read_turtleDoc(me) ? SERD_SUCCESS : SERD_ERR_UNKNOWN;
 	}
 
 	free(me->read_buf);
 	me->fd       = 0;
 	me->read_buf = NULL;
-	return ret ? SERD_SUCCESS : SERD_ERR_UNKNOWN;
+	return st;
 }
 
 SERD_API

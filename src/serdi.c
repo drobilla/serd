@@ -215,5 +215,5 @@ main(int argc, char** argv)
 	serd_env_free(env);
 	serd_node_free(&base_uri_node);
 
-	return (status == SERD_SUCCESS) ? 0 : 1;
+	return (status > SERD_FAILURE) ? 1 : 0;
 }
