@@ -15,7 +15,8 @@ serd (UNRELEASED) unstable; urgency=low
     other tools fail to parse.
   * Add serd_strtod(), serd_node_new_decimal(), and serd_node_new_integer()
     for locale-independent numeric node parsing/serialising.
-  * Add serd_file_sink for the common case of writing to a FILE* stream.
+  * Add serd_file_sink for easy writing to a FILE* stream.
+  * Add serd_chunk_sink for easy writing to a string.
   * Escape ASCII control characters in output (e.g. fix problems with string
     literals that start with a backspace)
   * Improve URI resolution to cover most of the abnormal cases from RFC3986

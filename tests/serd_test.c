@@ -443,6 +443,27 @@ main()
 	}
 
 	serd_writer_free(writer);
+
+	// Test chunk sink
+	SerdChunk chunk = { NULL, 0 };
+	writer = serd_writer_new(
+		SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
+
+	o = serd_node_from_string(SERD_URI, USTR("http://example.org/base"));
+	if (serd_writer_set_base_uri(writer, &o)) {
+		return failure("Failed to write to chunk sink\n");
+	}
+
+	serd_writer_free(writer);
+	uint8_t* out = serd_chunk_sink_finish(&chunk);
+
+	if (strcmp((const char*)out, "@base <http://example.org/base> .\n")) {
+		return failure("Incorrect chunk output:\n%s\n", chunk.buf);
+	}
+
+	free(out);
+
+	// Rewind and test reader
 	fseek(fd, 0, SEEK_SET);
 
 	SerdReader* reader = serd_reader_new(

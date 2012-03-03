@@ -696,11 +696,33 @@ serd_writer_free(SerdWriter* writer);
    A convenience sink function for writing to a FILE*.
 
    This function can be used as a SerdSink when writing to a FILE*.  The
-   associated @c stream parameter must be a FILE* opened for writing.
+   @c stream parameter must be a FILE* opened for writing.
 */
 SERD_API
 size_t
 serd_file_sink(const void* buf, size_t len, void* stream);
+
+/**
+   A convenience sink function for writing to a string.
+
+   This function can be used as a SerdSink to write to a SerdChunk which is
+   resized as necessary with realloc().  The @c stream parameter must point to
+   an initialized SerdChunk.  When the write is finished, the string should be
+   retrieved with serd_chunk_sink_finish().
+*/
+SERD_API
+size_t
+serd_chunk_sink(const void* buf, size_t len, void* stream);
+
+/**
+   Finish a serialisation to a chunk with serd_chunk_sink().
+
+   The returned string is the result of the serialisation, which is NULL
+   terminated (by this function) and owned by the caller.
+*/
+SERD_API
+uint8_t*
+serd_chunk_sink_finish(SerdChunk* stream);
 
 /**
    Set a prefix to be removed from matching blank node identifiers.
