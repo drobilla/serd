@@ -372,6 +372,11 @@ main()
 		        node.buf, node.n_bytes, node.n_chars, node.flags, node.type);
 	}
 
+	node = serd_node_from_string(SERD_URI, NULL);
+	if (!serd_node_equals(&node, &SERD_NODE_NULL)) {
+		return failure("Creating node from NULL string failed\n");
+	}
+
 	// Test serd_node_new_uri_from_string
 
 	SerdURI base_uri;
