@@ -139,7 +139,8 @@ SERD_API
 SerdNode
 serd_node_new_file_uri(const uint8_t* path,
                        const uint8_t* hostname,
-                       SerdURI*       out)
+                       SerdURI*       out,
+                       bool           escape)
 {
 	const size_t path_len     = strlen((const char*)path);
 	const size_t hostname_len = hostname ? strlen((const char*)hostname) : 0;
@@ -161,7 +162,7 @@ serd_node_new_file_uri(const uint8_t* path,
 			serd_chunk_sink("/", 1, &chunk);
 		} else if (path[i] == '%') {
 			serd_chunk_sink("%%", 2, &chunk);
-		} else if (is_uri_path_char(path[i])) {
+		} else if (!escape || is_uri_path_char(path[i])) {
 			serd_chunk_sink(path + i, 1, &chunk);
 		} else {
 			char escape[4] = { '%', 0, 0, 0 };

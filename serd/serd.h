@@ -423,6 +423,11 @@ serd_node_new_uri_from_string(const uint8_t* str,
 
 /**
    Create a new file URI node from a file system path and optional hostname.
+
+   Backslashes in Windows paths will be converted and '%' will always be
+   percent encoded.  If @c escape is true, all other invalid characters will be
+   percent encoded as well.
+
    If @c path is relative, @c hostname is ignored.
    If @c out is not NULL, it will be set to the parsed URI.
 */
@@ -430,7 +435,8 @@ SERD_API
 SerdNode
 serd_node_new_file_uri(const uint8_t* path,
                        const uint8_t* hostname,
-                       SerdURI*       out);
+                       SerdURI*       out,
+                       bool           escape);
 
 /**
    Create a new node by serialising @c uri into a new string.
