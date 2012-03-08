@@ -243,7 +243,8 @@ write_text(SerdWriter* writer, TextContext ctx,
 static size_t
 uri_sink(const void* buf, size_t len, void* stream)
 {
-	return write_text((SerdWriter*)stream, WRITE_URI, buf, len);
+	return write_text((SerdWriter*)stream, WRITE_URI,
+	                  (const uint8_t*)buf, len);
 }
 
 static void
@@ -746,7 +747,7 @@ size_t
 serd_chunk_sink(const void* buf, size_t len, void* stream)
 {
 	SerdChunk* chunk = (SerdChunk*)stream;
-	chunk->buf = realloc((uint8_t*)chunk->buf, chunk->len + len);
+	chunk->buf = (uint8_t*)realloc((uint8_t*)chunk->buf, chunk->len + len);
 	memcpy((uint8_t*)chunk->buf + chunk->len, buf, len);
 	chunk->len += len;
 	return len;

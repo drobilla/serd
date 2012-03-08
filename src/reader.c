@@ -992,13 +992,13 @@ static bool
 read_blank(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest)
 {
 	const SerdStatementFlags old_flags = *ctx.flags;
+	bool empty;
 	switch (peek_byte(reader)) {
 	case '_':
 		return (*dest = read_nodeID(reader));
 	case '[':
 		eat_byte_safe(reader, '[');
-		const bool empty = peek_delim(reader, ']');
-		if (empty) {
+		if ((empty = peek_delim(reader, ']'))) {
 			*ctx.flags |= (subject) ? SERD_EMPTY_S : SERD_EMPTY_O;
 		} else {
 			*ctx.flags |= (subject) ? SERD_ANON_S_BEGIN : SERD_ANON_O_BEGIN;
