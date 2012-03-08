@@ -422,15 +422,15 @@ serd_node_new_uri_from_string(const uint8_t* str,
                               SerdURI*       out);
 
 /**
-   Create a new file URI node from a file system path.
+   Create a new file URI node from a file system path and optional hostname.
    If @c path is relative, @c hostname is ignored.
    If @c out is not NULL, it will be set to the parsed URI.
 */
 SERD_API
 SerdNode
-serd_node_new_uri_from_path(const uint8_t* path,
-                            const uint8_t* hostname,
-                            SerdURI*       out);
+serd_node_new_file_uri(const uint8_t* path,
+                       const uint8_t* hostname,
+                       SerdURI*       out);
 
 /**
    Create a new node by serialising @c uri into a new string.

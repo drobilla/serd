@@ -31,7 +31,7 @@ serd (UNRELEASED) unstable; urgency=low
     document, to prevent silent merging of distinct blank nodes.
   * Handle files and strings that start with a UTF-8 Byte Order Mark.
   * Add serd_writer_get_env().
-  * Add serd_node_new_uri_from_path() and serd_file_uri_parse() and implement
+  * Add serd_node_new_file_uri() and serd_file_uri_parse() and implement
     proper URI to/from path hex escaping, etc.
   * Add serd_uri_serialise_relative() for making URIs relative to a base
     where possible (by chopping a common prefix and adding dot segments).

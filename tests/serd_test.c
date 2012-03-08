@@ -252,10 +252,10 @@ main()
 		return failure("Bad path %s for %s\n", serd_uri_to_path(uri), uri);
 	}
 
-	// Test serd_node_new_uri_from_path and serd_file_uri_parse
+	// Test serd_node_new_file_uri and serd_file_uri_parse
 	SerdURI        furi;
 	const uint8_t* path_str  = USTR("C:/My 100%");
-	SerdNode       file_node = serd_node_new_uri_from_path(path_str, 0, &furi);
+	SerdNode       file_node = serd_node_new_file_uri(path_str, 0, &furi);
 	uint8_t*       hostname  = NULL;
 	uint8_t*       out_path  = serd_file_uri_parse(file_node.buf, &hostname);
 	if (strcmp((const char*)file_node.buf, "file:///C:/My%20100%%")) {
@@ -270,7 +270,7 @@ main()
 	serd_node_free(&file_node);
 
 	path_str  = USTR("C:\\Pointless Space");
-	file_node = serd_node_new_uri_from_path(path_str, USTR("pwned"), 0);
+	file_node = serd_node_new_file_uri(path_str, USTR("pwned"), 0);
 	hostname  = NULL;
 	out_path  = serd_file_uri_parse(file_node.buf, &hostname);
 	if (strcmp((const char*)file_node.buf, "file://pwned/C:/Pointless%20Space")) {
@@ -286,7 +286,7 @@ main()
 	serd_node_free(&file_node);
 
 	path_str  = USTR("/foo/bar");
-	file_node = serd_node_new_uri_from_path(path_str, 0, 0);
+	file_node = serd_node_new_file_uri(path_str, 0, 0);
 	hostname  = NULL;
 	out_path  = serd_file_uri_parse(file_node.buf, &hostname);
 	if (strcmp((const char*)file_node.buf, "file:///foo/bar")) {
@@ -301,7 +301,7 @@ main()
 	serd_node_free(&file_node);
 
 	path_str  = USTR("/foo/bar");
-	file_node = serd_node_new_uri_from_path(path_str, USTR("localhost"), 0);
+	file_node = serd_node_new_file_uri(path_str, USTR("localhost"), 0);
 	out_path  = serd_file_uri_parse(file_node.buf, &hostname);
 	if (strcmp((const char*)file_node.buf, "file://localhost/foo/bar")) {
 		return failure("Bad URI %s\n", file_node.buf);
@@ -316,7 +316,7 @@ main()
 	serd_node_free(&file_node);
 
 	path_str  = USTR("a/relative path");
-	file_node = serd_node_new_uri_from_path(path_str, 0, 0);
+	file_node = serd_node_new_file_uri(path_str, 0, 0);
 	out_path  = serd_file_uri_parse(file_node.buf, &hostname);
 	if (strcmp((const char*)file_node.buf, "a/relative%20path")) {
 		return failure("Bad URI %s\n", file_node.buf);

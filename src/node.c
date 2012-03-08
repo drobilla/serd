@@ -133,9 +133,9 @@ is_uri_path_char(const uint8_t c)
 
 SERD_API
 SerdNode
-serd_node_new_uri_from_path(const uint8_t* path,
-                            const uint8_t* hostname,
-                            SerdURI*       out)
+serd_node_new_file_uri(const uint8_t* path,
+                       const uint8_t* hostname,
+                       SerdURI*       out)
 {
 	const size_t path_len     = strlen((const char*)path);
 	const size_t hostname_len = hostname ? strlen((const char*)hostname) : 0;
