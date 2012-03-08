@@ -244,7 +244,7 @@ typedef enum {
 	SERD_STYLE_ASCII       = 1 << 1,  /**< Escape all non-ASCII characters. */
 	SERD_STYLE_RESOLVED    = 1 << 2,  /**< Resolve URIs against base URI. */
 	SERD_STYLE_CURIED      = 1 << 3,  /**< Shorten URIs into CURIEs. */
-	SERD_STYLE_BULK        = 1 << 4,  /**< Write output in pages. */
+	SERD_STYLE_BULK        = 1 << 4   /**< Write output in pages. */
 } SerdStyle;
 
 /**
@@ -305,10 +305,27 @@ static const SerdURI SERD_URI_NULL = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
 
 /**
    Return the local path for @c uri, or NULL if @c uri is not a file URI.
+   Note this (inappropriately named) function only removes the file scheme if
+   necessary, and returns @c uri unmodified if it is an absolute path.  Percent
+   encoding and other issues are not handled, to properly convert a file URI to
+   a path, use serd_file_uri_parse().
 */
 SERD_API
 const uint8_t*
 serd_uri_to_path(const uint8_t* uri);
+
+/**
+   Get the unescaped path and hostname from a file URI.
+   @param uri A file URI.
+   @param hostname If non-NULL, set to the hostname, if present.
+   @return The path component of the URI.
+
+   Both the returned path and @c hostname (if applicable) are owned by the
+   caller and must be freed with free().
+*/
+SERD_API
+uint8_t*
+serd_file_uri_parse(const uint8_t* uri, uint8_t** hostname);
 
 /**
    Return true iff @c utf8 starts with a valid URI scheme.
@@ -342,6 +359,16 @@ typedef size_t (*SerdSink)(const void* buf, size_t len, void* stream);
 SERD_API
 size_t
 serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream);
+
+/**
+   Serialise @c uri relative to @c base with a series of calls to @c sink.
+*/
+SERD_API
+size_t
+serd_uri_serialise_relative(const SerdURI* uri,
+                            const SerdURI* base,
+                            SerdSink       sink,
+                            void*          stream);
 
 /**
    @}
@@ -395,6 +422,17 @@ serd_node_new_uri_from_string(const uint8_t* str,
                               SerdURI*       out);
 
 /**
+   Create a new file URI node from a file system path.
+   If @c path is relative, @c hostname is ignored.
+   If @c out is not NULL, it will be set to the parsed URI.
+*/
+SERD_API
+SerdNode
+serd_node_new_uri_from_path(const uint8_t* path,
+                            const uint8_t* hostname,
+                            SerdURI*       out);
+
+/**
    Create a new node by serialising @c uri into a new string.
 
    @param uri The URI to parse and serialise.
@@ -438,7 +476,6 @@ serd_node_new_integer(int64_t i);
    Create a node by serialising @c buf into an xsd:base64Binary string.
    This function can be used to make a serialisable node out of arbitrary
    binary data, which can be decoded using serd_base64_decode().
-
 
    @param buf Raw binary input data.
    @param size Size of @c buf.
@@ -691,6 +728,13 @@ serd_writer_new(SerdSyntax     syntax,
 SERD_API
 void
 serd_writer_free(SerdWriter* writer);
+
+/**
+   Return the env used by @c writer.
+*/
+SERD_API
+SerdEnv*
+serd_writer_get_env(SerdWriter* writer);
 
 /**
    A convenience sink function for writing to a FILE*.

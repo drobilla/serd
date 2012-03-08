@@ -30,6 +30,12 @@ serd (UNRELEASED) unstable; urgency=low
   * Report read error if both "genid" and "docid" IDs are found in the same
     document, to prevent silent merging of distinct blank nodes.
   * Handle files and strings that start with a UTF-8 Byte Order Mark.
+  * Add serd_writer_get_env().
+  * Add serd_node_new_uri_from_path() and serd_file_uri_parse() and implement
+    proper URI to/from path hex escaping, etc.
+  * Add serd_uri_serialise_relative() for making URIs relative to a base
+    where possible (by chopping a common prefix and adding dot segments).
+  * Make URIs serialised by the writer properly escape characters.
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 

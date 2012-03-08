@@ -178,7 +178,8 @@ main(int argc, char** argv)
 		}
 	}
 
-	if (input_syntax != SERD_NTRIPLES) {  // Base URI may change (@base)
+	if (input_syntax != SERD_NTRIPLES  // Base URI may change (@base)
+	    || (output_syntax == SERD_TURTLE)) {
 		output_style |= SERD_STYLE_RESOLVED;
 	}
 

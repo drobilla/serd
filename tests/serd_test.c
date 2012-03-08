@@ -96,8 +96,7 @@ main()
 	};
 
 	for (unsigned i = 0; i < sizeof(expt_test_nums) / sizeof(double); ++i) {
-		char* endptr;
-		const double num   = serd_strtod(expt_test_strs[i], &endptr);
+		const double num   = serd_strtod(expt_test_strs[i], NULL);
 		const double delta = fabs(num - expt_test_nums[i]);
 		if (delta > DBL_EPSILON) {
 			return failure("Parsed `%s' %lf != %lf (delta %lf)\n",
@@ -253,6 +252,99 @@ main()
 		return failure("Bad path %s for %s\n", serd_uri_to_path(uri), uri);
 	}
 
+	// Test serd_node_new_uri_from_path and serd_file_uri_parse
+	SerdURI        furi;
+	const uint8_t* path_str  = USTR("C:/My 100%");
+	SerdNode       file_node = serd_node_new_uri_from_path(path_str, 0, &furi);
+	uint8_t*       hostname  = NULL;
+	uint8_t*       out_path  = serd_file_uri_parse(file_node.buf, &hostname);
+	if (strcmp((const char*)file_node.buf, "file:///C:/My%20100%%")) {
+		return failure("Bad URI %s\n", file_node.buf);
+	} else if (hostname) {
+		return failure("hostname `%s' shouldn't exist\n", hostname);
+	} else if (strcmp((const char*)path_str, (const char*)out_path)) {
+		return failure("path=>URI=>path failure %s => %s => %s\n",
+		               path_str, file_node.buf, out_path);
+	}
+	free(out_path);
+	serd_node_free(&file_node);
+
+	path_str  = USTR("C:\\Pointless Space");
+	file_node = serd_node_new_uri_from_path(path_str, USTR("pwned"), 0);
+	hostname  = NULL;
+	out_path  = serd_file_uri_parse(file_node.buf, &hostname);
+	if (strcmp((const char*)file_node.buf, "file://pwned/C:/Pointless%20Space")) {
+		return failure("Bad URI %s\n", file_node.buf);
+	} else if (!hostname || strcmp((const char*)hostname, "pwned")) {
+		return failure("Bad hostname `%s'\n", hostname);
+	} else if (strcmp((const char*)out_path, "C:/Pointless Space")) {
+		return failure("path=>URI=>path failure %s => %s => %s\n",
+		               path_str, file_node.buf, out_path);
+	}
+	free(hostname);
+	free(out_path);
+	serd_node_free(&file_node);
+
+	path_str  = USTR("/foo/bar");
+	file_node = serd_node_new_uri_from_path(path_str, 0, 0);
+	hostname  = NULL;
+	out_path  = serd_file_uri_parse(file_node.buf, &hostname);
+	if (strcmp((const char*)file_node.buf, "file:///foo/bar")) {
+		return failure("Bad URI %s\n", file_node.buf);
+	} else if (hostname) {
+		return failure("hostname `%s' shouldn't exist\n", hostname);
+	} else if (strcmp((const char*)path_str, (const char*)out_path)) {
+		return failure("path=>URI=>path failure %s => %s => %s\n",
+		               path_str, file_node.buf, out_path);
+	}
+	free(out_path);
+	serd_node_free(&file_node);
+
+	path_str  = USTR("/foo/bar");
+	file_node = serd_node_new_uri_from_path(path_str, USTR("localhost"), 0);
+	out_path  = serd_file_uri_parse(file_node.buf, &hostname);
+	if (strcmp((const char*)file_node.buf, "file://localhost/foo/bar")) {
+		return failure("Bad URI %s\n", file_node.buf);
+	} else if (strcmp((const char*)hostname, "localhost")) {
+		return failure("incorrect hostname `%s'\n", hostname);
+	} else if (strcmp((const char*)path_str, (const char*)out_path)) {
+		return failure("path=>URI=>path failure %s => %s => %s\n",
+		               path_str, file_node.buf, out_path);
+	}
+	free(hostname);
+	free(out_path);
+	serd_node_free(&file_node);
+
+	path_str  = USTR("a/relative path");
+	file_node = serd_node_new_uri_from_path(path_str, 0, 0);
+	out_path  = serd_file_uri_parse(file_node.buf, &hostname);
+	if (strcmp((const char*)file_node.buf, "a/relative%20path")) {
+		return failure("Bad URI %s\n", file_node.buf);
+	} else if (hostname) {
+		return failure("hostname `%s' shouldn't exist\n", hostname);
+	} else if (strcmp((const char*)path_str, (const char*)out_path)) {
+		return failure("path=>URI=>path failure %s => %s => %s\n",
+		               path_str, file_node.buf, out_path);
+	}
+	free(hostname);
+	free(out_path);
+	serd_node_free(&file_node);
+
+	if (serd_file_uri_parse(USTR("file://invalid"), NULL)) {
+		return failure("successfully parsed bogus URI <file://invalid>\n");
+	}
+
+	out_path = serd_file_uri_parse(USTR("file://host/foo/%XYbar"), NULL);
+	if (strcmp((const char*)out_path, "/foo/bar")) {
+		return failure("bad tolerance of junk escape: `%s'\n", out_path);
+	}
+	free(out_path);
+	out_path = serd_file_uri_parse(USTR("file://host/foo/%0Abar"), NULL);
+	if (strcmp((const char*)out_path, "/foo/bar")) {
+		return failure("bad tolerance of junk escape: `%s'\n", out_path);
+	}
+	free(out_path);
+
 	// Test serd_node_equals
 
 	const uint8_t replacement_char_str[] = { 0xEF, 0xBF, 0xBD, 0 };
@@ -384,6 +476,10 @@ main()
 
 	if (!serd_writer_end_anon(writer, NULL)) {
 		return failure("Ended non-existent anonymous node\n");
+	}
+
+	if (serd_writer_get_env(writer) != env) {
+		return failure("Writer has incorrect env\n");
 	}
 
 	uint8_t buf[] = { 0x80, 0, 0, 0, 0 };

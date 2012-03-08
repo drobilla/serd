@@ -112,6 +112,68 @@ serd_node_new_uri_from_string(const uint8_t* str,
 	return serd_node_new_uri(&uri, base, out);  // Resolve/Serialise
 }
 
+static inline bool
+is_uri_path_char(const uint8_t c)
+{
+	if (is_alpha(c) || is_digit(c)) {
+		return true;
+	}
+	switch (c) {
+	case '-': case '.': case '_': case '~':	 // unreserved
+	case ':': case '@':	 // pchar
+	case '/':  // separator
+	// sub-delims
+	case '!': case '$': case '&': case '\'': case '(': case ')':
+	case '*': case '+': case ',': case ';': case '=':
+		return true;
+	default:
+		return false;
+	}
+}
+
+SERD_API
+SerdNode
+serd_node_new_uri_from_path(const uint8_t* path,
+                            const uint8_t* hostname,
+                            SerdURI*       out)
+{
+	const size_t path_len     = strlen((const char*)path);
+	const size_t hostname_len = hostname ? strlen((const char*)hostname) : 0;
+	const bool   evil         = is_windows_path(path);
+	size_t       uri_len      = 0;
+	uint8_t*     uri          = NULL;
+
+	if (path[0] == '/' || is_windows_path(path)) {
+		uri_len = strlen("file://") + hostname_len + evil;
+		uri = (uint8_t*)malloc(uri_len + 1);
+		snprintf((char*)uri, uri_len + 1, "file://%s%s",
+		         hostname ? (const char*)hostname : "",
+		         evil ? "/" : "");
+	}
+
+	SerdChunk chunk = { uri, uri_len };
+	for (size_t i = 0; i < path_len; ++i) {
+		if (evil && path[i] == '\\') {
+			serd_chunk_sink("/", 1, &chunk);
+		} else if (path[i] == '%') {
+			serd_chunk_sink("%%", 2, &chunk);
+		} else if (is_uri_path_char(path[i])) {
+			serd_chunk_sink(path + i, 1, &chunk);
+		} else {
+			char escape[4] = { '%', 0, 0, 0 };
+			snprintf(escape + 1, sizeof(escape) - 1, "%X", path[i]);
+			serd_chunk_sink(escape, 3, &chunk);
+		}
+	}
+	serd_chunk_sink_finish(&chunk);
+
+	if (out) {
+		serd_uri_parse(chunk.buf, out);
+	}
+
+	return serd_node_from_string(SERD_URI, chunk.buf);
+}
+
 SERD_API
 SerdNode
 serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)

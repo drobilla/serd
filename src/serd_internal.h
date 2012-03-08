@@ -233,4 +233,11 @@ is_base64(const uint8_t c)
 	return is_alpha(c) || is_digit(c) || c == '+' || c == '/' || c == '=';
 }
 
+static inline bool
+is_windows_path(const uint8_t* path)
+{
+	return is_alpha(path[0]) && (path[1] == ':' || path[1] == '|')
+		&& (path[2] == '/' || path[2] == '\\');
+}
+
 #endif  // SERD_INTERNAL_H

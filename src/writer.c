@@ -131,23 +131,24 @@ sink(const void* buf, size_t len, SerdWriter* writer)
 	}
 }
 
-static bool
+static size_t
 write_text(SerdWriter* writer, TextContext ctx,
-           const uint8_t* utf8, size_t n_bytes, uint8_t terminator)
+           const uint8_t* utf8, size_t n_bytes)
 {
-	char escape[11] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	size_t len        = 0;
+	char   escape[11] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	for (size_t i = 0; i < n_bytes;) {
 		// Fast bulk write for long strings of printable ASCII
 		size_t j = i;
 		for (; j < n_bytes; ++j) {
-			if (utf8[j] == terminator || utf8[j] == '\\' || utf8[j] == '"'
+			if (utf8[j] == '>' || utf8[j] == '\\' || utf8[j] == '"'
 			    || (!in_range(utf8[j], 0x20, 0x7E))) {
 				break;
 			}
 		}
 
 		if (j > i) {
-			sink(&utf8[i], j - i, writer);
+			len += sink(&utf8[i], j - i, writer);
 			i = j;
 			continue;
 		}
@@ -155,27 +156,29 @@ write_text(SerdWriter* writer, TextContext ctx,
 		uint8_t in = utf8[i++];
 		if (ctx == WRITE_LONG_STRING) {
 			if (in == '\\') {
-				sink("\\\\", 2, writer); continue;
+				len += sink("\\\\", 2, writer); continue;
 			} else if (in == '\"' && i == n_bytes) {
-				sink("\\\"", 2, writer); continue;  // '"' at end of string
+				len += sink("\\\"", 2, writer); continue;  // '"' at string end
 			}
 		} else {
 			switch (in) {
-			case '\\': sink("\\\\", 2, writer); continue;
-			case '\n': sink("\\n", 2, writer);  continue;
-			case '\r': sink("\\r", 2, writer);  continue;
-			case '\t': sink("\\t", 2, writer);  continue;
+			case '\\': len += sink("\\\\", 2, writer); continue;
+			case '\n': len += sink("\\n", 2, writer);  continue;
+			case '\r': len += sink("\\r", 2, writer);  continue;
+			case '\t': len += sink("\\t", 2, writer);  continue;
 			case '"':
-				if (terminator == '"') {
-					sink("\\\"", 2, writer);
+				if (ctx == WRITE_STRING) {
+					len += sink("\\\"", 2, writer);
 					continue;
 				}  // else fall-through
 			default: break;
 			}
 
-			if (in == terminator) {
-				snprintf(escape, sizeof(escape), "\\u%04X", terminator);
-				sink(escape, 6, writer);
+			if ((ctx == WRITE_STRING && in == '"') ||
+			    (ctx == WRITE_URI    && in == '>')) {
+				snprintf(escape, sizeof(escape), "\\u%04X",
+				         ctx == WRITE_STRING ? '"' : '>');
+				len += sink(escape, 6, writer);
 				continue;
 			}
 		}
@@ -186,10 +189,10 @@ write_text(SerdWriter* writer, TextContext ctx,
 			c = in & 0x7F;
 			if (in_range(c, 0x20, 0x7E)
 			    || (is_space(c) && ctx == WRITE_LONG_STRING)) {
-				sink(&in, 1, writer);  // Print ASCII character
+				len += sink(&in, 1, writer);  // Print ASCII character
 			} else {
 				snprintf(escape, sizeof(escape), "\\u%04X", c);
-				sink(escape, 6, writer);  // Escape ASCII control character
+				len += sink(escape, 6, writer);  // ASCII control character
 			}
 			continue;
 		} else if ((in & 0xE0) == 0xC0) {  // Starts with `110'
@@ -204,14 +207,14 @@ write_text(SerdWriter* writer, TextContext ctx,
 		} else {
 			fprintf(stderr, "Invalid UTF-8: %X\n", in);
 			const uint8_t replacement_char[] = { 0xEF, 0xBF, 0xBD };
-			sink(replacement_char, sizeof(replacement_char), writer);
-			return false;
+			len += sink(replacement_char, sizeof(replacement_char), writer);
+			return 0;
 		}
 
 		if (ctx != WRITE_URI && !(writer->style & SERD_STYLE_ASCII)) {
 			// Write UTF-8 character directly to UTF-8 output
 			// TODO: Always parse and validate character?
-			sink(utf8 + i - 1, size, writer);
+			len += sink(utf8 + i - 1, size, writer);
 			i += size - 1;
 			continue;
 		}
@@ -228,13 +231,19 @@ write_text(SerdWriter* writer, TextContext ctx,
 
 		if (c < 0xFFFF) {
 			snprintf(escape, sizeof(escape), "\\u%04X", c);
-			sink(escape, 6, writer);
+			len += sink(escape, 6, writer);
 		} else {
 			snprintf(escape, sizeof(escape), "\\U%08X", c);
-			sink(escape, 10, writer);
+			len += sink(escape, 10, writer);
 		}
 	}
-	return true;
+	return len;
+}
+
+static size_t
+uri_sink(const void* buf, size_t len, void* stream)
+{
+	return write_text((SerdWriter*)stream, WRITE_URI, buf, len);
 }
 
 static void
@@ -299,6 +308,7 @@ write_node(SerdWriter*        writer,
 {
 	SerdChunk uri_prefix;
 	SerdChunk uri_suffix;
+	bool      has_scheme;
 	switch (node->type) {
 	case SERD_BLANK:
 		if (writer->syntax != SERD_NTRIPLES
@@ -343,8 +353,8 @@ write_node(SerdWriter*        writer,
 				return false;
 			}
 			sink("<", 1, writer);
-			write_text(writer, WRITE_URI, uri_prefix.buf, uri_prefix.len, '>');
-			write_text(writer, WRITE_URI, uri_suffix.buf, uri_suffix.len, '>');
+			write_text(writer, WRITE_URI, uri_prefix.buf, uri_prefix.len);
+			write_text(writer, WRITE_URI, uri_suffix.buf, uri_suffix.len);
 			sink(">", 1, writer);
 			break;
 		case SERD_TURTLE:
@@ -365,12 +375,11 @@ write_node(SerdWriter*        writer,
 		if (writer->syntax != SERD_NTRIPLES
 		    && (node->flags & (SERD_HAS_NEWLINE|SERD_HAS_QUOTE))) {
 			sink("\"\"\"", 3, writer);
-			write_text(writer, WRITE_LONG_STRING,
-			           node->buf, node->n_bytes, '\0');
+			write_text(writer, WRITE_LONG_STRING, node->buf, node->n_bytes);
 			sink("\"\"\"", 3, writer);
 		} else {
 			sink("\"", 1, writer);
-			write_text(writer, WRITE_STRING, node->buf, node->n_bytes, '"');
+			write_text(writer, WRITE_STRING, node->buf, node->n_bytes);
 			sink("\"", 1, writer);
 		}
 		if (lang && lang->buf) {
@@ -382,6 +391,7 @@ write_node(SerdWriter*        writer,
 		}
 		break;
 	case SERD_URI:
+		has_scheme = serd_uri_string_has_scheme(node->buf);
 		if ((writer->syntax == SERD_TURTLE)
 		    && !strcmp((const char*)node->buf, NS_RDF "type")) {
 			sink("a", 1, writer);
@@ -390,29 +400,38 @@ write_node(SerdWriter*        writer,
 		           && !strcmp((const char*)node->buf, NS_RDF "nil")) {
 			sink("()", 2, writer);
 			break;
-		} else if ((writer->style & SERD_STYLE_CURIED)
-		           && serd_uri_string_has_scheme(node->buf)) {
+		} else if (has_scheme && (writer->style & SERD_STYLE_CURIED)) {
 			SerdNode  prefix;
 			SerdChunk suffix;
 			if (serd_env_qualify(writer->env, node, &prefix, &suffix)) {
-				write_text(writer, WRITE_URI, prefix.buf, prefix.n_bytes, '>');
+				write_text(writer, WRITE_URI, prefix.buf, prefix.n_bytes);
 				sink(":", 1, writer);
-				write_text(writer, WRITE_URI, suffix.buf, suffix.len, '>');
+				write_text(writer, WRITE_URI, suffix.buf, suffix.len);
 				break;
 			}
-		} else if ((writer->style & SERD_STYLE_RESOLVED)
-		           && !serd_uri_string_has_scheme(node->buf)) {
+		}
+		if (!has_scheme && (writer->style & SERD_STYLE_RESOLVED)) {
 			SerdURI uri;
 			serd_uri_parse(node->buf, &uri);
 			SerdURI abs_uri;
 			serd_uri_resolve(&uri, &writer->base_uri, &abs_uri);
 			sink("<", 1, writer);
-			serd_uri_serialise(&abs_uri, (SerdSink)sink, writer);
+			serd_uri_serialise(&abs_uri, uri_sink, writer);
+			sink(">", 1, writer);
+			break;
+		} else if (has_scheme && (writer->syntax == SERD_TURTLE)
+		           && (writer->style & SERD_STYLE_RESOLVED)) {
+			SerdURI uri;
+			serd_uri_parse(node->buf, &uri);
+			sink("<", 1, writer);
+			serd_uri_serialise_relative(
+				&uri, &writer->base_uri, uri_sink, writer);
 			sink(">", 1, writer);
 			break;
 		}
+
 		sink("<", 1, writer);
-		write_text(writer, WRITE_URI, node->buf, node->n_bytes, '>');
+		write_text(writer, WRITE_URI, node->buf, node->n_bytes);
 		sink(">", 1, writer);
 	default:
 		break;
@@ -687,7 +706,7 @@ serd_writer_set_prefix(SerdWriter*     writer,
 			sink("@prefix ", 8, writer);
 			sink(name->buf, name->n_bytes, writer);
 			sink(": <", 3, writer);
-			write_text(writer, WRITE_URI, uri->buf, uri->n_bytes, '>');
+			write_text(writer, WRITE_URI, uri->buf, uri->n_bytes);
 			sink("> .\n", 4, writer);
 		}
 		return reset_context(writer, false);
@@ -706,6 +725,13 @@ serd_writer_free(SerdWriter* writer)
 		serd_bulk_sink_free(&writer->bulk_sink);
 	}
 	free(writer);
+}
+
+SERD_API
+SerdEnv*
+serd_writer_get_env(SerdWriter* writer)
+{
+	return writer->env;
 }
 
 SERD_API
