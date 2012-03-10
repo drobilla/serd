@@ -36,6 +36,9 @@ serd (UNRELEASED) unstable; urgency=low
   * Add serd_uri_serialise_relative() for making URIs relative to a base
     where possible (by chopping a common prefix and adding dot segments).
   * Make URIs serialised by the writer properly escape characters.
+  * Add serd_writer_set_root_uri() and corresponding -r option to serdi to
+    enable writing URIs with up references (../).
+  * Resolve dot segments in serd_uri_resolve() instead of at write time.
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 

@@ -41,7 +41,7 @@ SERD_API
 SerdNode
 serd_node_copy(const SerdNode* node)
 {
-	if (!node) {
+	if (!node || !node->buf) {
 		return SERD_NODE_NULL;
 	}
 

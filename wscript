@@ -9,7 +9,7 @@ from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
-SERD_VERSION       = '0.12.0'
+SERD_VERSION       = '0.13.0'
 SERD_MAJOR_VERSION = '0'
 
 # Library version (UNIX style major, minor, micro)
@@ -341,6 +341,7 @@ def test(ctx):
             'serdi_static -z > %s' % nul,
             'serdi_static -p > %s' % nul,
             'serdi_static -c > %s' % nul,
+            'serdi_static -r > %s' % nul,
             'serdi_static -i illegal > %s' % nul,
             'serdi_static -o illegal > %s' % nul,
             'serdi_static -i turtle > %s' % nul,
@@ -386,6 +387,8 @@ def test(ctx):
             flags += '-b'
         if (num % 5 == 0):
             flags += ' -f'
+        if (num % 3 == 0):
+            flags += ' -r http://www.w3.org/'
         base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test.replace('\\', '/')
         out_filename = test + '.thru'
         commands += [

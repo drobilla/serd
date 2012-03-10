@@ -240,4 +240,55 @@ is_windows_path(const uint8_t* path)
 		&& (path[2] == '/' || path[2] == '\\');
 }
 
+/* URI utilities */
+
+static inline bool
+chunk_equals(const SerdChunk* a, const SerdChunk* b)
+{
+	return a->len == b->len
+		&& !strncmp((const char*)a->buf, (const char*)b->buf, a->len);
+}
+
+static inline size_t
+uri_path_len(const SerdURI* uri)
+{
+	return uri->path_base.len + uri->path.len;
+}
+
+static inline uint8_t
+uri_path_at(const SerdURI* uri, size_t i)
+{
+	if (i < uri->path_base.len) {
+		return uri->path_base.buf[i];
+	} else {
+		return uri->path.buf[i - uri->path_base.len];
+	}
+}
+
+/** Return true iff @p uri is within the base of @p root */
+static inline bool
+uri_is_under(const SerdURI* uri, const SerdURI* root)
+{
+	if (!root || !uri || !root->scheme.len ||
+	    !chunk_equals(&root->scheme, &uri->scheme) ||
+	    !chunk_equals(&root->authority, &uri->authority)) {
+		return false;
+	}
+
+	bool         differ   = false;
+	const size_t path_len = uri_path_len(uri);
+	const size_t root_len = uri_path_len(root);
+	for (size_t i = 0; i < path_len && i < root_len; ++i) {
+		if (uri_path_at(uri, i) != uri_path_at(root, i)) {
+			differ = true;
+		}
+		if (differ && uri_path_at(root, i) == '/') {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+
 #endif  // SERD_INTERNAL_H

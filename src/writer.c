@@ -77,6 +77,8 @@ struct SerdWriterImpl {
 	SerdSyntax   syntax;
 	SerdStyle    style;
 	SerdEnv*     env;
+	SerdNode     root_node;
+	SerdURI      root_uri;
 	SerdURI      base_uri;
 	SerdStack    anon_stack;
 	SerdBulkSink bulk_sink;
@@ -411,28 +413,24 @@ write_node(SerdWriter*        writer,
 				break;
 			}
 		}
-		if (!has_scheme && (writer->style & SERD_STYLE_RESOLVED)) {
-			SerdURI uri;
-			serd_uri_parse(node->buf, &uri);
-			SerdURI abs_uri;
-			serd_uri_resolve(&uri, &writer->base_uri, &abs_uri);
-			sink("<", 1, writer);
-			serd_uri_serialise(&abs_uri, uri_sink, writer);
-			sink(">", 1, writer);
-			break;
-		} else if (has_scheme && (writer->syntax == SERD_TURTLE)
-		           && (writer->style & SERD_STYLE_RESOLVED)) {
-			SerdURI uri;
-			serd_uri_parse(node->buf, &uri);
-			sink("<", 1, writer);
-			serd_uri_serialise_relative(
-				&uri, &writer->base_uri, uri_sink, writer);
-			sink(">", 1, writer);
-			break;
-		}
-
 		sink("<", 1, writer);
-		write_text(writer, WRITE_URI, node->buf, node->n_bytes);
+		if (writer->style & SERD_STYLE_RESOLVED) {
+			SerdURI in_base_uri, uri, abs_uri;
+			serd_env_get_base_uri(writer->env, &in_base_uri);
+			serd_uri_parse(node->buf, &uri);
+			serd_uri_resolve(&uri, &in_base_uri, &abs_uri);
+			bool rooted = uri_is_under(&writer->base_uri, &writer->root_uri);
+			SerdURI* root = rooted ? &writer->root_uri : & writer->base_uri;
+			if (!uri_is_under(&abs_uri, root) ||
+			    writer->syntax == SERD_NTRIPLES) {
+				serd_uri_serialise(&abs_uri, uri_sink, writer);
+			} else {
+				serd_uri_serialise_relative(
+					&uri, &writer->base_uri, root, uri_sink, writer);
+			}
+		} else {
+			write_text(writer, WRITE_URI, node->buf, node->n_bytes);
+		}
 		sink(">", 1, writer);
 	default:
 		break;
@@ -637,6 +635,8 @@ serd_writer_new(SerdSyntax     syntax,
 	writer->syntax      = syntax;
 	writer->style       = style;
 	writer->env         = env;
+	writer->root_node   = SERD_NODE_NULL;
+	writer->root_uri    = SERD_URI_NULL;
 	writer->base_uri    = base_uri ? *base_uri : SERD_URI_NULL;
 	writer->anon_stack  = serd_stack_new(sizeof(WriteContext));
 	writer->sink        = sink;
@@ -687,9 +687,26 @@ serd_writer_set_base_uri(SerdWriter*     writer,
 			sink(uri->buf, uri->n_bytes, writer);
 			sink("> .\n", 4, writer);
 		}
+		writer->indent = 0;
 		return reset_context(writer, false);
 	}
 	return SERD_ERR_UNKNOWN;
+}
+
+SERD_API
+SerdStatus
+serd_writer_set_root_uri(SerdWriter*     writer,
+                         const SerdNode* uri)
+{
+	serd_node_free(&writer->root_node);
+	if (uri && uri->buf) {
+		writer->root_node = serd_node_copy(uri);
+		serd_uri_parse(uri->buf, &writer->root_uri);
+	} else {
+		writer->root_node = SERD_NODE_NULL;
+		writer->root_uri  = SERD_URI_NULL;
+	}
+	return SERD_SUCCESS;
 }
 
 SERD_API
@@ -710,6 +727,7 @@ serd_writer_set_prefix(SerdWriter*     writer,
 			write_text(writer, WRITE_URI, uri->buf, uri->n_bytes);
 			sink("> .\n", 4, writer);
 		}
+		writer->indent = 0;
 		return reset_context(writer, false);
 	}
 	return SERD_ERR_UNKNOWN;
@@ -725,6 +743,7 @@ serd_writer_free(SerdWriter* writer)
 	if (writer->style & SERD_STYLE_BULK) {
 		serd_bulk_sink_free(&writer->bulk_sink);
 	}
+	serd_node_free(&writer->root_node);
 	free(writer);
 }
 

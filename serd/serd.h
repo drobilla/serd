@@ -362,11 +362,16 @@ serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream);
 
 /**
    Serialise @c uri relative to @c base with a series of calls to @c sink.
+
+   The @c uri is written as a relative URI iff if it a child of @c base and @c
+   root.  The optional @c root parameter must be a prefix of @c base and can be
+   used keep up-references ("../") within a certain namespace.
 */
 SERD_API
 size_t
 serd_uri_serialise_relative(const SerdURI* uri,
                             const SerdURI* base,
+                            const SerdURI* root,
                             SerdSink       sink,
                             void*          stream);
 
@@ -790,6 +795,21 @@ serd_writer_chop_blank_prefix(SerdWriter*    writer,
 SERD_API
 SerdStatus
 serd_writer_set_base_uri(SerdWriter*     writer,
+                         const SerdNode* uri);
+
+/**
+   Set the current root URI.
+
+   The root URI should be a prefix of the base URI.  The path of the root URI
+   is the highest path any relative up-reference can refer to.  For example,
+   with root <file:///foo/root> and base <file:///foo/root/base>,
+   <file:///foo/root> will be written as <../>, but <file:///foo> will be
+   written non-relatively as <file:///foo>.  If the root is not explicitly set,
+   it defaults to the base URI, so no up-references will be created at all.
+*/
+SERD_API
+SerdStatus
+serd_writer_set_root_uri(SerdWriter*     writer,
                          const SerdNode* uri);
 
 /**

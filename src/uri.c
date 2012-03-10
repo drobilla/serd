@@ -130,12 +130,12 @@ serd_uri_dump(const SerdURI* uri, FILE* file)
 		fprintf(stderr, "\n"); \
 	}
 
-	PRINT_PART(uri->scheme,    "scheme");
+	PRINT_PART(uri->scheme,    "scheme   ");
 	PRINT_PART(uri->authority, "authority");
 	PRINT_PART(uri->path_base, "path_base");
-	PRINT_PART(uri->path,      "path");
-	PRINT_PART(uri->query,     "query");
-	PRINT_PART(uri->fragment,  "fragment");
+	PRINT_PART(uri->path,      "path     ");
+	PRINT_PART(uri->query,     "query    ");
+	PRINT_PART(uri->fragment,  "fragment ");
 }
 #endif
 
@@ -317,6 +317,39 @@ remove_dot_segments(const uint8_t* path, size_t len, size_t* up)
 	return begin;
 }
 
+/// Merge @p base and @p path in-place
+static void
+merge(SerdChunk* base, SerdChunk* path)
+{
+	size_t         up;
+	const uint8_t* begin = remove_dot_segments(path->buf, path->len, &up);
+	const uint8_t* end   = path->buf + path->len;
+
+	if (base->buf) {
+		assert(base->len > 0);
+		// Find the up'th last slash
+		const uint8_t* base_last = (base->buf + base->len - 1);
+		++up;
+		do {
+			if (*base_last == '/') {
+				--up;
+			}
+		} while (up > 0 && (--base_last > base->buf));
+
+		// Set path prefix
+		if (*base_last == '/') {
+			base->len = base_last - base->buf + 1;
+		} else {
+			base->len = 0;
+			base->buf = NULL;
+		}
+	}
+
+	// Set path suffix
+	path->buf = begin;
+	path->len = end - begin;
+}
+
 /// See http://tools.ietf.org/html/rfc3986#section-5.2.2
 SERD_API
 void
@@ -344,6 +377,7 @@ serd_uri_resolve(const SerdURI* r, const SerdURI* base, SerdURI* t)
 				if (r->path.buf[0] != '/') {
 					t->path_base = base->path;
 				}
+				merge(&t->path_base, &t->path);
 				t->query = r->query;
 			}
 			t->authority = base->authority;
@@ -353,110 +387,77 @@ serd_uri_resolve(const SerdURI* r, const SerdURI* base, SerdURI* t)
 	}
 
 	#ifdef URI_DEBUG
-	fprintf(stderr, "RESOLVE URI\nBASE:\n");
+	fprintf(stderr, "## RESOLVE URI\n# BASE\n");
 	serd_uri_dump(base, stderr);
-	fprintf(stderr, "URI:\n");
+	fprintf(stderr, "# URI\n");
 	serd_uri_dump(r, stderr);
-	fprintf(stderr, "RESULT:\n");
+	fprintf(stderr, "# RESULT\n");
 	serd_uri_dump(t, stderr);
 	fprintf(stderr, "\n");
 	#endif
 }
 
-/** Write a relative path relative to a base path. */
+/** Write the path of @p uri starting at index @p i */
 static size_t
-write_rel_path(SerdSink         sink,
-               void*            stream,
-               const SerdChunk* base,
-               const SerdChunk* path)
+write_path_tail(SerdSink sink, void* stream, const SerdURI* uri, size_t i)
 {
-	size_t         up;
-	size_t         len   = 0;
-	const uint8_t* begin = remove_dot_segments(path->buf, path->len, &up);
-	const uint8_t* end   = path->buf + path->len;
-
-	if (base && base->buf) {
-		// Find the up'th last slash
-		const uint8_t* base_last = (base->buf + base->len - 1);
-		++up;
-		do {
-			if (*base_last == '/') {
-				--up;
-			}
-		} while (up > 0 && (--base_last > base->buf));
-
-		// Write base URI prefix
-		if (*base_last == '/') {
-			const size_t base_len = base_last - base->buf + 1;
-			len += sink(base->buf, base_len, stream);
+	size_t len = 0;
+	if (i < uri->path_base.len) {
+		len += sink(uri->path_base.buf + i, uri->path_base.len - i, stream);
+	}
+	if (uri->path.buf) {
+		if (i < uri->path_base.len) {
+			len += sink(uri->path.buf, uri->path.len, stream);
+		} else {
+			const size_t j = (i - uri->path_base.len);
+			len += sink(uri->path.buf + j, uri->path.len - j, stream);
 		}
 	}
-
-	// Write URI suffix
-	len += sink(begin, end - begin, stream);
-
 	return len;
 }
 
-/** Write an absolute path relative to a base path. */
+/** Write the path of @p uri relative to the path of @p base. */
 static size_t
-write_abs_path(SerdSink         sink,
-               void*            stream,
-               const SerdChunk* base,
-               const SerdChunk* path)
+write_rel_path(SerdSink       sink,
+               void*          stream,
+               const SerdURI* uri,
+               const SerdURI* base)
 {
-	size_t       len     = 0;
-	const size_t min_len = (path->len < base->len) ? path->len : base->len;
+	const size_t path_len = uri_path_len(uri);
+	const size_t base_len = uri_path_len(base);
+	const size_t min_len  = (path_len < base_len) ? path_len : base_len;
 
 	// Find the last separator common to both paths
 	size_t last_shared_sep = 0;
 	size_t i               = 0;
-	for (; i < min_len && path->buf[i] == base->buf[i]; ++i) {
-		if (path->buf[i] == '/') {
+	for (; i < min_len && uri_path_at(uri, i) == uri_path_at(base, i); ++i) {
+		if (uri_path_at(uri, i) == '/') {
 			last_shared_sep = i;
 		}
 	}
 
-	if (i == path->len && i == base->len) {  // Paths are identical
+	if (i == path_len && i == base_len) {  // Paths are identical
 		return 0;
 	} else if (last_shared_sep == 0) {  // No common components
-		return sink(path->buf, path->len, stream);
+		return write_path_tail(sink, stream, uri, 0);
 	}
 
 	// Find the number of up references ("..") required
 	size_t up = 0;
-	for (size_t i = last_shared_sep + 1; i < base->len; ++i) {
-		if (base->buf[i] == '/') {
+	for (size_t i = last_shared_sep + 1; i < base_len; ++i) {
+		if (uri_path_at(base, i) == '/') {
 			++up;
 		}
 	}
 
 	// Write up references
+	size_t len = 0;
 	for (size_t i = 0; i < up; ++i) {
 		len += sink("../", 3, stream);
 	}
 
 	// Write suffix
-	const size_t suffix_len = path->len - last_shared_sep - 1;
-	len += sink(path->buf + last_shared_sep + 1, suffix_len, stream);
-
-	return len;
-}
-
-static inline bool
-chunk_equals(const SerdChunk* a, const SerdChunk* b)
-{
-	return a->len == b->len
-		&& !strncmp((const char*)a->buf, (const char*)b->buf, a->len);
-}
-
-/** Return true iff both are absolute URIs on the same host. */
-static inline bool
-same_host(const SerdURI* base, const SerdURI* uri)
-{
-	return base && uri && base->scheme.len
-		&& chunk_equals(&base->scheme, &uri->scheme)
-		&& chunk_equals(&base->authority, &uri->authority);
+	return len += write_path_tail(sink, stream, uri, last_shared_sep + 1);
 }
 
 /// See http://tools.ietf.org/html/rfc3986#section-5.3
@@ -464,13 +465,14 @@ SERD_API
 size_t
 serd_uri_serialise_relative(const SerdURI* uri,
                             const SerdURI* base,
+                            const SerdURI* root,
                             SerdSink       sink,
                             void*          stream)
 {
 	size_t     len      = 0;
-	const bool relative = same_host(base, uri);
+	const bool relative = uri_is_under(uri, root ? root : base);
 	if (relative) {
-		len = write_abs_path(sink, stream, base ? &base->path : 0, &uri->path);
+		len = write_rel_path(sink, stream, uri, base);
 	}
 	if (!relative || (!len && base->query.buf)) {
 		if (uri->scheme.buf) {
@@ -481,11 +483,7 @@ serd_uri_serialise_relative(const SerdURI* uri,
 			len += sink("//", 2, stream);
 			len += sink(uri->authority.buf, uri->authority.len, stream);
 		}
-		if (uri->path.buf) {
-			len += write_rel_path(sink, stream, &uri->path_base, &uri->path);
-		} else {
-			len += sink(uri->path_base.buf, uri->path_base.len, stream);
-		}
+		len += write_path_tail(sink, stream, uri, 0);
 	}
 	if (uri->query.buf) {
 		len += sink("?", 1, stream);
@@ -503,5 +501,5 @@ SERD_API
 size_t
 serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream)
 {
-	return serd_uri_serialise_relative(uri, NULL, sink, stream);
+	return serd_uri_serialise_relative(uri, NULL, NULL, sink, stream);
 }

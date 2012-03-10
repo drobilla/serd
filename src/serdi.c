@@ -45,14 +45,15 @@ print_usage(const char* name, bool error)
 	fprintf(os, "Read and write RDF syntax.\n");
 	fprintf(os, "Use - for INPUT to read from standard input.\n\n");
 	fprintf(os, "  -b           Fast bulk output for large serialisations.\n");
-	fprintf(os, "  -c PREFIX    Chop PREFIX from matching blank node IDs\n");
+	fprintf(os, "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n");
 	fprintf(os, "  -f           Keep full URIs in input (don't qualify).\n");
-	fprintf(os, "  -h           Display this help and exit\n");
-	fprintf(os, "  -i SYNTAX    Input syntax (`turtle' or `ntriples')\n");
-	fprintf(os, "  -o SYNTAX    Output syntax (`turtle' or `ntriples')\n");
-	fprintf(os, "  -p PREFIX    Add PREFIX to blank node IDs\n");
-	fprintf(os, "  -s INPUT     Parse INPUT as string (terminates options)\n");
-	fprintf(os, "  -v           Display version information and exit\n");
+	fprintf(os, "  -h           Display this help and exit.\n");
+	fprintf(os, "  -i SYNTAX    Input syntax (`turtle' or `ntriples').\n");
+	fprintf(os, "  -o SYNTAX    Output syntax (`turtle' or `ntriples').\n");
+	fprintf(os, "  -p PREFIX    Add PREFIX to blank node IDs.\n");
+	fprintf(os, "  -r ROOT_URI  Keep relative URIs within ROOT_URI.\n");
+	fprintf(os, "  -s INPUT     Parse INPUT as string (terminates options).\n");
+	fprintf(os, "  -v           Display version information and exit.\n");
 	return error ? 1 : 0;
 }
 
@@ -93,6 +94,7 @@ main(int argc, char** argv)
 	const uint8_t* in_name       = NULL;
 	const uint8_t* add_prefix    = NULL;
 	const uint8_t* chop_prefix   = NULL;
+	const uint8_t* root_uri      = NULL;
 	int            a             = 1;
 	for (; a < argc && argv[a][0] == '-'; ++a) {
 		if (argv[a][1] == '\0') {
@@ -130,6 +132,11 @@ main(int argc, char** argv)
 				return bad_arg(argv[0], 'c');
 			}
 			chop_prefix = (const uint8_t*)argv[a];
+		} else if (argv[a][1] == 'r') {
+			if (++a == argc) {
+				return bad_arg(argv[0], 'r');
+			}
+			root_uri = (const uint8_t*)argv[a];
 		} else {
 			fprintf(stderr, "%s: Unknown option `%s'\n", argv[0], argv[a]);
 			return print_usage(argv[0], true);
@@ -152,21 +159,17 @@ main(int argc, char** argv)
 		}
 	}
 
-	const uint8_t* base_uri_str = NULL;
+	SerdURI  base_uri = SERD_URI_NULL;
+	SerdNode base     = SERD_NODE_NULL;
 	if (a < argc) {  // Base URI given on command line
-		base_uri_str = (const uint8_t*)argv[a];
+		base = serd_node_new_uri_from_string(
+			(const uint8_t*)argv[a], NULL, &base_uri);
 	} else if (from_file) {  // Use input file URI
-		base_uri_str = input;
-	} else {
-		base_uri_str = (const uint8_t*)"";
+		base = serd_node_new_file_uri(input, NULL, &base_uri, false);
 	}
 
-	SerdURI  base_uri = SERD_URI_NULL;
-	SerdNode base_uri_node = serd_node_new_uri_from_string(
-		base_uri_str, &base_uri, &base_uri);
-
 	FILE*    out_fd = stdout;
-	SerdEnv* env    = serd_env_new(&base_uri_node);
+	SerdEnv* env    = serd_env_new(&base);
 
 	int output_style = 0;
 	if (output_syntax == SERD_NTRIPLES) {
@@ -198,6 +201,8 @@ main(int argc, char** argv)
 		(SerdStatementSink)serd_writer_write_statement,
 		(SerdEndSink)serd_writer_end_anon);
 
+	SerdNode root = serd_node_from_string(SERD_URI, root_uri);
+	serd_writer_set_root_uri(writer, &root);
 	serd_writer_chop_blank_prefix(writer, chop_prefix);
 	serd_reader_add_blank_prefix(reader, add_prefix);
 
@@ -214,7 +219,7 @@ main(int argc, char** argv)
 	serd_writer_finish(writer);
 	serd_writer_free(writer);
 	serd_env_free(env);
-	serd_node_free(&base_uri_node);
+	serd_node_free(&base);
 
 	return (status > SERD_FAILURE) ? 1 : 0;
 }
