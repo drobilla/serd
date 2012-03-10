@@ -481,10 +481,8 @@ serd_uri_serialise_relative(const SerdURI* uri,
 			len += sink("//", 2, stream);
 			len += sink(uri->authority.buf, uri->authority.len, stream);
 		}
-		if (uri->path.buf && uri->path_base.buf) {
+		if (uri->path.buf) {
 			len += write_rel_path(sink, stream, &uri->path_base, &uri->path);
-		} else if (uri->path.buf) {
-			len += write_rel_path(sink, stream, NULL, &uri->path);
 		} else {
 			len += sink(uri->path_base.buf, uri->path_base.len, stream);
 		}
