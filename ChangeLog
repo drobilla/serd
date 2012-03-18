@@ -39,6 +39,7 @@ serd (UNRELEASED) unstable; urgency=low
   * Add serd_writer_set_root_uri() and corresponding -r option to serdi to
     enable writing URIs with up references (../).
   * Resolve dot segments in serd_uri_resolve() instead of at write time.
+  * Add serd_reader_set_default_graph() for reading a file as a named graph.
 
  -- David Robillard <d@drobilla.net>  (UNRELEASED)
 

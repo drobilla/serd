@@ -685,6 +685,18 @@ serd_reader_add_blank_prefix(SerdReader*    reader,
                              const uint8_t* prefix);
 
 /**
+   Set the URI of the default graph.
+
+   If this is set, the reader will emit quads with the graph set to the given
+   node for any statements that are not in a named graph (which is currently
+   all of them since Serd currently does not support any graph syntaxes).
+*/
+SERD_API
+void
+serd_reader_set_default_graph(SerdReader*     reader,
+                              const SerdNode* graph);
+
+/**
    Read a file at a given @c uri.
 */
 SERD_API

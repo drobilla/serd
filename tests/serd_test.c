@@ -59,17 +59,24 @@ count_prefixes(void* handle, const SerdNode* name, const SerdNode* uri)
 	return SERD_SUCCESS;
 }
 
+typedef struct {
+	int             n_statements;
+	const SerdNode* graph;
+} ReaderTest;
+
 static SerdStatus
-count_statements(void*              handle,
-                 SerdStatementFlags flags,
-                 const SerdNode*    graph,
-                 const SerdNode*    subject,
-                 const SerdNode*    predicate,
-                 const SerdNode*    object,
-                 const SerdNode*    object_datatype,
-                 const SerdNode*    object_lang)
+test_sink(void*              handle,
+          SerdStatementFlags flags,
+          const SerdNode*    graph,
+          const SerdNode*    subject,
+          const SerdNode*    predicate,
+          const SerdNode*    object,
+          const SerdNode*    object_datatype,
+          const SerdNode*    object_lang)
 {
-	++*(int*)handle;
+	ReaderTest* rt = (ReaderTest*)handle;
+	++rt->n_statements;
+	rt->graph = graph;
 	return SERD_SUCCESS;
 }
 
@@ -459,9 +466,6 @@ main()
 		return failure("Failed to open file %s\n", path);
 	}
 
-	int* n_statements = (int*)malloc(sizeof(int));
-	*n_statements = 0;
-
 	SerdWriter* writer = serd_writer_new(
 		SERD_TURTLE, (SerdStyle)0, env, NULL, serd_file_sink, fd);
 	if (!writer) {
@@ -567,16 +571,22 @@ main()
 	// Rewind and test reader
 	fseek(fd, 0, SEEK_SET);
 
+	ReaderTest* rt   = (ReaderTest*)malloc(sizeof(ReaderTest));
+	rt->n_statements = 0;
+	rt->graph        = NULL;
+
 	SerdReader* reader = serd_reader_new(
-		SERD_TURTLE, n_statements, free,
-		NULL, NULL, count_statements, NULL);
+		SERD_TURTLE, rt, free,
+		NULL, NULL, test_sink, NULL);
 	if (!reader) {
 		return failure("Failed to create reader\n");
 	}
-	if (serd_reader_get_handle(reader) != n_statements) {
+	if (serd_reader_get_handle(reader) != rt) {
 		return failure("Corrupt reader handle\n");
 	}
 
+	SerdNode g = serd_node_from_string(SERD_URI, USTR("http://example.org/"));
+	serd_reader_set_default_graph(reader, &g);
 	serd_reader_add_blank_prefix(reader, USTR("tmp"));
 	serd_reader_add_blank_prefix(reader, NULL);
 
@@ -591,8 +601,11 @@ main()
 		return failure("Error reading file (%s)\n", serd_strerror(st));
 	}
 
-	if (*n_statements != 12) {
-		return failure("Bad statement count %d\n", *n_statements);
+	if (rt->n_statements != 12) {
+		return failure("Bad statement count %d\n", rt->n_statements);
+	} else if (!rt->graph || !rt->graph->buf ||
+	           strcmp((const char*)rt->graph->buf, "http://example.org/")) {
+		return failure("Bad graph %p\n", rt->graph);
 	}
 
 	if (!serd_reader_read_string(reader, USTR("This isn't Turtle at all."))) {
