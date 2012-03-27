@@ -395,7 +395,7 @@ main()
 	}
 	serd_node_free(&base);
 	serd_node_free(&nil);
-	
+
 	// Test SerdEnv
 
 	SerdNode u   = serd_node_from_string(SERD_URI, USTR("http://example.org/foo"));

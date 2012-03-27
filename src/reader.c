@@ -1424,7 +1424,7 @@ serd_reader_add_blank_prefix(SerdReader*    reader,
 		memcpy(reader->bprefix, prefix, reader->bprefix_len + 1);
 	}
 }
-   
+
 SERD_API
 void
 serd_reader_set_default_graph(SerdReader*     reader,
