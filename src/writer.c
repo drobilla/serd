@@ -66,7 +66,7 @@ static const SepRule rules[] = {
 	{ NULL,     0, 0, 1, 0 },
 	{ " ",      1, 0, 0, 0 },
 	{ "[",      1, 0, 1, 1 },
-	{ "]",      1, 0, 0, 0 },
+	{ "]",      1, 1, 0, 0 },
 	{ "(",      1, 0, 0, 0 },
 	{ NULL,     1, 0, 1, 0 },
 	{ ")",      1, 1, 0, 0 },
@@ -595,7 +595,6 @@ serd_writer_end_anon(SerdWriter*     writer,
 	}
 	assert(writer->indent > 0);
 	--writer->indent;
-	write_sep(writer, SEP_END_P);
 	write_sep(writer, SEP_ANON_END);
 	reset_context(writer, true);
 	writer->context = *anon_stack_top(writer);
