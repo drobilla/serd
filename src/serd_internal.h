@@ -290,5 +290,4 @@ uri_is_under(const SerdURI* uri, const SerdURI* root)
 	return true;
 }
 
-
 #endif  // SERD_INTERNAL_H
