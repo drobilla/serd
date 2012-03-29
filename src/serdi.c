@@ -164,7 +164,7 @@ main(int argc, char** argv)
 	if (a < argc) {  // Base URI given on command line
 		base = serd_node_new_uri_from_string(
 			(const uint8_t*)argv[a], NULL, &base_uri);
-	} else if (from_file) {  // Use input file URI
+	} else if (from_file && in_fd != stdin) {  // Use input file URI
 		base = serd_node_new_file_uri(input, NULL, &base_uri, false);
 	}
 

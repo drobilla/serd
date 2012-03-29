@@ -40,5 +40,6 @@
 <http://A#afragment> <http://www.w3.org/2002/07/owl#sameAs> <http://A#afragment> .
 <http://a/b/c/d;p?aquery> <http://www.w3.org/2002/07/owl#sameAs> <http://a/b/c/d;p?aquery> .
 <http://a/b/c/d;p?q#afragment> <http://www.w3.org/2002/07/owl#sameAs> <http://a/b/c/d;p?q#afragment> .
+<http://a/> <http://www.w3.org/2002/07/owl#sameAs> <http://a/> .
 <http://B/foo> <http://www.w3.org/2002/07/owl#sameAs> <http://B/foo> .
 <http://C/bar> <http://www.w3.org/2002/07/owl#sameAs> <http://C/bar> .

@@ -327,6 +327,8 @@ merge(SerdChunk* base, SerdChunk* path)
 
 	if (base->buf) {
 		assert(base->len > 0);
+		assert(base->buf[0] == '/');
+
 		// Find the up'th last slash
 		const uint8_t* base_last = (base->buf + base->len - 1);
 		++up;
@@ -337,12 +339,7 @@ merge(SerdChunk* base, SerdChunk* path)
 		} while (up > 0 && (--base_last > base->buf));
 
 		// Set path prefix
-		if (*base_last == '/') {
-			base->len = base_last - base->buf + 1;
-		} else {
-			base->len = 0;
-			base->buf = NULL;
-		}
+		base->len = base_last - base->buf + 1;
 	}
 
 	// Set path suffix
@@ -355,6 +352,11 @@ SERD_API
 void
 serd_uri_resolve(const SerdURI* r, const SerdURI* base, SerdURI* t)
 {
+	if (!base->scheme.len) {
+		*t = *r;  // Don't resolve against non-absolute URIs
+		return;
+	}
+
 	t->path_base.buf = NULL;
 	t->path_base.len = 0;
 	if (r->scheme.len) {
