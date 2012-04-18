@@ -1,4 +1,4 @@
-serd (UNRELEASED) unstable; urgency=low
+serd (0.14.0) stable;
 
   * Use path variables in pkgconfig files
   * Install man page to DATADIR (e.g. PREFIX/share/man, not PREFIX/man)
@@ -41,9 +41,9 @@ serd (UNRELEASED) unstable; urgency=low
   * Resolve dot segments in serd_uri_resolve() instead of at write time.
   * Add serd_reader_set_default_graph() for reading a file as a named graph.
 
- -- David Robillard <d@drobilla.net>  (UNRELEASED)
+ -- David Robillard <d@drobilla.net>  Tue, 17 Apr 2012 18:23:53 -0400
 
-serd (0.5.0) unstable; urgency=low
+serd (0.5.0) stable;
 
   * Fix pretty printing of successive blank descriptions, i.e. "] , ["
   * Avoid writing illegal Turtle names as a result of URI qualifying
@@ -55,14 +55,14 @@ serd (0.5.0) unstable; urgency=low
 
  -- David Robillard <d@drobilla.net>  Thu, 29 Sep 2011 00:00:00 -0400
 
-serd (0.4.2) unstable; urgency=low
+serd (0.4.2) stable;
 
   * Fix compilation issues on some systems
   * Fix build system Python 3 compatibility
 
  -- David Robillard <d@drobilla.net>  Wed, 25 May 2011 19:00:00 -0400
 
-serd (0.4.0) unstable; urgency=low
+serd (0.4.0) stable;
 
   * Initial release
 
