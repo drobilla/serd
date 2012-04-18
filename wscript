@@ -264,9 +264,9 @@ def fix_docs(ctx):
         os.chdir(build_dir(ctx, 'doc/html'))
         os.system("sed -i 's/SERD_API //' group__serd.html")
         os.system("sed -i 's/SERD_DEPRECATED //' group__serd.html")
+        os.system("sed -i 's/href=\"doc\/style.css\"/href=\"style.css\"/' group__serd.html")
         os.remove('index.html')
-        os.symlink('group__serd.html',
-                   'index.html')
+        os.symlink('group__serd.html', 'index.html')
         os.chdir(top)
         os.chdir(build_dir(ctx, 'doc/man/man3'))
         os.system("sed -i 's/SERD_API //' serd.3")
