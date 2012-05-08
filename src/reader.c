@@ -78,7 +78,9 @@ struct SerdReaderImpl {
 	unsigned          next_id;
 	uint8_t*          read_buf;
 	int32_t           read_head;  ///< Offset into read_buf
+	uint8_t           read_byte;  ///< 1-byte 'buffer' used when not paging
 	bool              from_file;  ///< True iff reading from @ref fd
+	bool              paging;  ///< True iff reading a page at a time
 	bool              eof;
 	bool              seen_genid;
 #ifdef SERD_STACK_CHECK
@@ -124,14 +126,19 @@ static inline uint8_t
 eat_byte_safe(SerdReader* reader, const uint8_t byte)
 {
 	assert(peek_byte(reader) == byte);
-	++reader->read_head;
 	switch (byte) {
 	case '\0': reader->eof = true; break;
 	case '\n': ++reader->cur.line; reader->cur.col = 0; break;
 	default:   ++reader->cur.col;
 	}
 
-	if (reader->from_file && (reader->read_head == SERD_PAGE_SIZE)) {
+	if (reader->from_file && !reader->paging) {
+		const int c = fgetc(reader->fd);
+		reader->read_byte = (c == EOF) ? 0 : (uint8_t)c;
+		if (c == EOF) {
+			reader->eof = true;
+		}
+	} else if (++reader->read_head == SERD_PAGE_SIZE && reader->paging) {
 		page(reader);
 	}
 	return byte;
@@ -548,7 +555,7 @@ read_comment(SerdReader* reader)
 {
 	eat_byte_safe(reader, '#');
 	uint8_t c;
-	while (((c = peek_byte(reader)) != 0xA) && (c != 0xD)) {
+	while (((c = peek_byte(reader)) != 0xA) && (c != 0xD) && c) {
 		eat_byte_safe(reader, c);
 	}
 }
@@ -1458,14 +1465,17 @@ static void
 skip_bom(SerdReader* me)
 {
 	const uint8_t* const b = me->read_buf;
-	if (b[0] == 0xEF && b[1] == 0xBB && b[2] == 0xBF) {
+	if (me->paging && b[0] == 0xEF && b[1] == 0xBB && b[2] == 0xBF) {
 		me->read_head += 3;
 	}
 }
 
 SERD_API
 SerdStatus
-serd_reader_read_file_handle(SerdReader* me, FILE* file, const uint8_t* name)
+serd_reader_start_stream(SerdReader*    me,
+                         FILE*          file,
+                         const uint8_t* name,
+                         bool           bulk)
 {
 	const Cursor cur = { name, 1, 1 };
 	me->fd        = file;
@@ -1473,19 +1483,62 @@ serd_reader_read_file_handle(SerdReader* me, FILE* file, const uint8_t* name)
 	me->cur       = cur;
 	me->from_file = true;
 	me->eof       = false;
-	me->read_buf  = (uint8_t*)serd_bufalloc(SERD_PAGE_SIZE);
+	me->paging    = bulk;
 
-	memset(me->read_buf, '\0', SERD_PAGE_SIZE);
-
-	SerdStatus st = page(me);
-	if (!st) {
+	if (bulk) {
+		me->read_buf = (uint8_t*)serd_bufalloc(SERD_PAGE_SIZE);
+		memset(me->read_buf, '\0', SERD_PAGE_SIZE);
+		SerdStatus st = page(me);
+		if (st) {
+			serd_reader_end_stream(me);
+			return st;
+		}
 		skip_bom(me);
-		st = read_turtleDoc(me) ? SERD_SUCCESS : SERD_ERR_UNKNOWN;
+	} else {
+		me->read_buf  = &me->read_byte;
+		me->read_byte = 0;  // Don't read to avoid potentially blocking
 	}
 
-	free(me->read_buf);
+	return SERD_SUCCESS;
+}
+
+SERD_API
+SerdStatus
+serd_reader_read_chunk(SerdReader* me)
+{
+	if (!me->read_byte) {
+		// Read initial byte
+		const int c = fgetc(me->fd);
+		me->read_byte = (c == EOF) ? 0 : (uint8_t)c;
+		if (c == EOF) {
+			me->eof = true;
+			return SERD_FAILURE;
+		}
+	}
+	return read_statement(me) ? SERD_SUCCESS : SERD_FAILURE;
+}
+
+SERD_API
+SerdStatus
+serd_reader_end_stream(SerdReader* me)
+{
+	if (me->paging) {
+		free(me->read_buf);
+	}
 	me->fd       = 0;
 	me->read_buf = NULL;
+	return SERD_SUCCESS;
+}
+
+SERD_API
+SerdStatus
+serd_reader_read_file_handle(SerdReader* me, FILE* file, const uint8_t* name)
+{
+	SerdStatus st = serd_reader_start_stream(me, file, name, true);
+	if (!st) {
+		st = read_turtleDoc(me) ? SERD_SUCCESS : SERD_ERR_UNKNOWN;
+		serd_reader_end_stream(me);
+	}
 	return st;
 }
 
@@ -1499,6 +1552,7 @@ serd_reader_read_string(SerdReader* me, const uint8_t* utf8)
 	me->read_head = 0;
 	me->cur       = cur;
 	me->from_file = false;
+	me->paging    = false;
 	me->eof       = false;
 
 	skip_bom(me);

@@ -9,7 +9,7 @@ from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
 
 # Version of this package (even if built as a child)
-SERD_VERSION       = '0.14.0'
+SERD_VERSION       = '0.15.0'
 SERD_MAJOR_VERSION = '0'
 
 # Library version (UNIX style major, minor, micro)
@@ -389,6 +389,8 @@ def test(ctx):
             flags += ' -f'
         if (num % 3 == 0):
             flags += ' -r http://www.w3.org/'
+        if (num % 7 == 0):
+            flags += ' -e'
         base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test.replace('\\', '/')
         out_filename = test + '.thru'
         commands += [

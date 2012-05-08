@@ -46,6 +46,7 @@ print_usage(const char* name, bool error)
 	fprintf(os, "Use - for INPUT to read from standard input.\n\n");
 	fprintf(os, "  -b           Fast bulk output for large serialisations.\n");
 	fprintf(os, "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n");
+	fprintf(os, "  -e           Eat input one character at a time.\n");
 	fprintf(os, "  -f           Keep full URIs in input (don't qualify).\n");
 	fprintf(os, "  -h           Display this help and exit.\n");
 	fprintf(os, "  -i SYNTAX    Input syntax (`turtle' or `ntriples').\n");
@@ -89,6 +90,7 @@ main(int argc, char** argv)
 	SerdSyntax     input_syntax  = SERD_TURTLE;
 	SerdSyntax     output_syntax = SERD_NTRIPLES;
 	bool           from_file     = true;
+	bool           bulk_read     = true;
 	bool           bulk_write    = false;
 	bool           full_uris     = false;
 	const uint8_t* in_name       = NULL;
@@ -103,6 +105,8 @@ main(int argc, char** argv)
 			break;
 		} else if (argv[a][1] == 'b') {
 			bulk_write = true;
+		} else if (argv[a][1] == 'e') {
+			bulk_read = false;
 		} else if (argv[a][1] == 'f') {
 			full_uris = true;
 		} else if (argv[a][1] == 'h') {
@@ -206,9 +210,18 @@ main(int argc, char** argv)
 	serd_writer_chop_blank_prefix(writer, chop_prefix);
 	serd_reader_add_blank_prefix(reader, add_prefix);
 
-	const SerdStatus status = (from_file)
-		? serd_reader_read_file_handle(reader, in_fd, in_name)
-		: serd_reader_read_string(reader, input);
+	SerdStatus status = SERD_SUCCESS;
+	if (!from_file) {
+		status = serd_reader_read_string(reader, input);
+	} else if (bulk_read) {
+		status = serd_reader_read_file_handle(reader, in_fd, in_name);
+	} else {
+		status = serd_reader_start_stream(reader, in_fd, in_name, false);
+		while (!status) {
+			status = serd_reader_read_chunk(reader);
+		}
+		serd_reader_end_stream(reader);
+	}
 
 	serd_reader_free(reader);
 

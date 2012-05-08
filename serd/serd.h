@@ -705,6 +705,40 @@ serd_reader_read_file(SerdReader*    reader,
                       const uint8_t* uri);
 
 /**
+   Start an incremental read from a file handle.
+
+   Iff @p bulk is true, @p file will be read a page at a time.  This is more
+   efficient, but uses a page of memory and means that an entire page of input
+   must be ready before any callbacks will fire.  To react as soon as input
+   arrives, set @p bulk to false.
+*/
+SERD_API
+SerdStatus
+serd_reader_start_stream(SerdReader*    me,
+                         FILE*          file,
+                         const uint8_t* name,
+                         bool           bulk);
+
+/**
+   Read a single "chunk" of data during an incremental read.
+
+   This function will read a single top level description, and return.  This
+   may be a directive, statement, or several statements; essentially it reads
+   until a '.' is encountered.  This is particularly useful for reading
+   directly from a pipe or socket.
+*/
+SERD_API
+SerdStatus
+serd_reader_read_chunk(SerdReader* me);
+
+/**
+   Finish an incremental read from a file handle.
+*/
+SERD_API
+SerdStatus
+serd_reader_end_stream(SerdReader* me);
+
+/**
    Read @c file.
 */
 SERD_API

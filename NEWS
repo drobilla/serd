@@ -1,3 +1,10 @@
+serd (9999) unstable;
+
+  * Add incremental read interface suitable for reading from infinite streams.
+  * Add -e option to serdi to use incremental reading.
+
+ -- David Robillard <d@drobilla.net>
+
 serd (0.14.0) stable;
 
   * Use path variables in pkgconfig files

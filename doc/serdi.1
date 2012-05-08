@@ -1,4 +1,4 @@
-.TH SERDI 1 "17 Jan 2012"
+.TH SERDI 1 "08 May 2012"
 
 .SH NAME
 .B serdi \- Read and write RDF syntax
@@ -15,6 +15,14 @@ Fast bulk output for large serialisations.
 .TP
 \fB\-c PREFIX\fR
 Chop PREFIX from matching blank node IDs.
+
+.TP
+\fB\-e\fR
+Eat input one character at a time, rather than a page at a time which is the
+default.  This is useful when reading from a pipe since output will be
+generated immediately as input arrives, rather than waiting until an entire
+page of input has arrived.  With this option serdi uses one page less memory,
+but will likely be significantly slower.
 
 .TP
 \fB\-f\fR
