@@ -617,6 +617,7 @@ serd_writer_finish(SerdWriter* writer)
 	if (writer->style & SERD_STYLE_BULK) {
 		serd_bulk_sink_flush(&writer->bulk_sink);
 	}
+	writer->indent = 0;
 	return reset_context(writer, true);
 }
 

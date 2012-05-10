@@ -2,6 +2,7 @@ serd (9999) unstable;
 
   * Add incremental read interface suitable for reading from infinite streams.
   * Add -e option to serdi to use incremental reading.
+  * Reset indent when finishing a write.
 
  -- David Robillard <d@drobilla.net>
 
