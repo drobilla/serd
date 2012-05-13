@@ -210,7 +210,7 @@ write_text(SerdWriter* writer, TextContext ctx,
 			fprintf(stderr, "Invalid UTF-8: %X\n", in);
 			const uint8_t replacement_char[] = { 0xEF, 0xBF, 0xBD };
 			len += sink(replacement_char, sizeof(replacement_char), writer);
-			return 0;
+			return len;
 		}
 
 		if (ctx != WRITE_URI && !(writer->style & SERD_STYLE_ASCII)) {
