@@ -5,6 +5,8 @@ serd (9999) unstable;
   * Reset indent when finishing a write
   * Report write size correctly when invalid UTF-8 is encountered and a
     replacement character is written
+  * Add error callback to reader and writer for custom error reporting
+  * Add -q option to serdi to suppress all non-data output, e.g. errors
 
  -- David Robillard <d@drobilla.net>
 

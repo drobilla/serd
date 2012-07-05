@@ -290,4 +290,17 @@ uri_is_under(const SerdURI* uri, const SerdURI* root)
 	return true;
 }
 
+/* Error reporting */
+
+static inline void
+serd_error(SerdErrorSink error_sink, void* handle, const SerdError* e)
+{
+	if (error_sink) {
+		error_sink(handle, e);
+	} else {
+		fprintf(stderr, "error: %s:%u:%u: ", e->filename, e->line, e->col);
+		vfprintf(stderr, e->fmt, *e->args);
+	}
+}
+
 #endif  // SERD_INTERNAL_H

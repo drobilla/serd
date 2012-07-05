@@ -21,6 +21,7 @@
 #ifndef SERD_SERD_H
 #define SERD_SERD_H
 
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -89,7 +90,10 @@ typedef enum {
 	SERD_ERR_UNKNOWN,     /**< Unknown error */
 	SERD_ERR_BAD_SYNTAX,  /**< Invalid syntax */
 	SERD_ERR_BAD_ARG,     /**< Invalid argument */
-	SERD_ERR_NOT_FOUND    /**< Not found */
+	SERD_ERR_NOT_FOUND,   /**< Not found */
+	SERD_ERR_ID_CLASH,    /**< Encountered clashing blank node IDs */
+	SERD_ERR_BAD_CURIE,   /**< Invalid CURIE (e.g. prefix does not exist) */
+	SERD_ERR_INTERNAL     /**< Unexpected internal error (should not happen) */
 } SerdStatus;
 
 /**
@@ -214,6 +218,18 @@ typedef struct {
 	const uint8_t* buf;  /**< Start of chunk */
 	size_t         len;  /**< Length of chunk in bytes */
 } SerdChunk;
+
+/**
+   An error description.
+*/
+typedef struct {
+	SerdStatus     status;    /**< Error code */
+	const uint8_t* filename;  /**< File where error was encountered, or NULL */
+	unsigned       line;      /**< Line where error was encountered, or 0 */
+	unsigned       col;       /**< Column where error was encountered */
+	const char*    fmt;       /**< Message format string (printf style) */
+	va_list*       args;      /**< Arguments for fmt */
+} SerdError;
 
 /**
    A parsed URI.
@@ -513,6 +529,15 @@ serd_node_free(SerdNode* node);
 */
 
 /**
+   Sink (callback) for errors.
+
+   @param handle Handle for user data.
+   @param error Error description.
+*/
+typedef SerdStatus (*SerdErrorSink)(void*            handle,
+                                    const SerdError* error);
+
+/**
    Sink (callback) for base URI changes.
 
    Called whenever the base URI of the serialisation changes.
@@ -662,6 +687,18 @@ serd_reader_new(SerdSyntax        syntax,
                 SerdPrefixSink    prefix_sink,
                 SerdStatementSink statement_sink,
                 SerdEndSink       end_sink);
+
+/**
+   Set a function to be called when errors occur during reading.
+
+   The @p error_sink will be called with @p handle as its first argument.  If
+   no error function is set, errors are printed to stderr in GCC style.
+*/
+SERD_API
+void
+serd_reader_set_error_sink(SerdReader*   reader,
+                           SerdErrorSink error_sink,
+                           void*         handle);
 
 /**
    Return the @c handle passed to @ref serd_reader_new.
@@ -824,6 +861,18 @@ serd_chunk_sink(const void* buf, size_t len, void* stream);
 SERD_API
 uint8_t*
 serd_chunk_sink_finish(SerdChunk* stream);
+
+/**
+   Set a function to be called when errors occur during writing.
+
+   The @p error_sink will be called with @p handle as its first argument.  If
+   no error function is set, errors are printed to stderr.
+*/
+SERD_API
+void
+serd_writer_set_error_sink(SerdWriter*   writer,
+                           SerdErrorSink error_sink,
+                           void*         handle);
 
 /**
    Set a prefix to be removed from matching blank node identifiers.

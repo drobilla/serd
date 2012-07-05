@@ -29,8 +29,11 @@ serd_strerror(SerdStatus st)
 	case SERD_ERR_BAD_SYNTAX: return (const uint8_t*)"Invalid syntax";
 	case SERD_ERR_BAD_ARG:    return (const uint8_t*)"Invalid argument";
 	case SERD_ERR_NOT_FOUND:  return (const uint8_t*)"Not found";
+	case SERD_ERR_ID_CLASH:   return (const uint8_t*)"Blank node ID clash";
+	case SERD_ERR_BAD_CURIE:  return (const uint8_t*)"Invalid CURIE";
+	case SERD_ERR_INTERNAL:   return (const uint8_t*)"Internal error";
 	}
-	return (const uint8_t*)"Unknown error code";  // never reached
+	return (const uint8_t*)"Unknown error";  // never reached
 }
 
 SERD_API

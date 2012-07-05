@@ -217,7 +217,7 @@ serd_env_expand(const SerdEnv*  env,
 	const uint8_t* const colon = (const uint8_t*)memchr(
 		qname->buf, ':', qname->n_bytes + 1);
 	if (!colon) {
-		return SERD_ERR_BAD_ARG;  // Illegal qname
+		return SERD_ERR_BAD_ARG;  // Invalid qname
 	}
 
 	const size_t            name_len = colon - qname->buf;

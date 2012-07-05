@@ -52,6 +52,7 @@ print_usage(const char* name, bool error)
 	fprintf(os, "  -i SYNTAX    Input syntax (`turtle' or `ntriples').\n");
 	fprintf(os, "  -o SYNTAX    Output syntax (`turtle' or `ntriples').\n");
 	fprintf(os, "  -p PREFIX    Add PREFIX to blank node IDs.\n");
+	fprintf(os, "  -q           Suppress all output except data.\n");
 	fprintf(os, "  -r ROOT_URI  Keep relative URIs within ROOT_URI.\n");
 	fprintf(os, "  -s INPUT     Parse INPUT as string (terminates options).\n");
 	fprintf(os, "  -v           Display version information and exit.\n");
@@ -79,6 +80,12 @@ bad_arg(const char* name, char opt)
 	return 1;
 }
 
+static SerdStatus
+quiet_error_sink(void* handle, const SerdError* e)
+{
+	return SERD_SUCCESS;
+}
+
 int
 main(int argc, char** argv)
 {
@@ -93,6 +100,7 @@ main(int argc, char** argv)
 	bool           bulk_read     = true;
 	bool           bulk_write    = false;
 	bool           full_uris     = false;
+	bool           quiet         = false;
 	const uint8_t* in_name       = NULL;
 	const uint8_t* add_prefix    = NULL;
 	const uint8_t* chop_prefix   = NULL;
@@ -111,6 +119,8 @@ main(int argc, char** argv)
 			full_uris = true;
 		} else if (argv[a][1] == 'h') {
 			return print_usage(argv[0], false);
+		} else if (argv[a][1] == 'q') {
+			quiet = true;
 		} else if (argv[a][1] == 'v') {
 			return print_version();
 		} else if (argv[a][1] == 's') {
@@ -204,6 +214,11 @@ main(int argc, char** argv)
 		(SerdPrefixSink)serd_writer_set_prefix,
 		(SerdStatementSink)serd_writer_write_statement,
 		(SerdEndSink)serd_writer_end_anon);
+
+	if (quiet) {
+		serd_reader_set_error_sink(reader, quiet_error_sink, NULL);
+		serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
+	}
 
 	SerdNode root = serd_node_from_string(SERD_URI, root_uri);
 	serd_writer_set_root_uri(writer, &root);

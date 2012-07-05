@@ -215,7 +215,7 @@ main()
 	if (strcmp((const char*)(msg = serd_strerror(SERD_SUCCESS)), "Success")) {
 		return failure("Bad message `%s' for SERD_SUCCESS\n", msg);
 	}
-	for (int i = SERD_FAILURE; i <= SERD_ERR_NOT_FOUND; ++i) {
+	for (int i = SERD_FAILURE; i <= SERD_ERR_INTERNAL; ++i) {
 		msg = serd_strerror((SerdStatus)i);
 		if (!strcmp((const char*)msg, "Success")) {
 			return failure("Bad message `%s' for (SerdStatus)%d\n", msg, i);

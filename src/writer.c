@@ -74,24 +74,26 @@ static const SepRule rules[] = {
 };
 
 struct SerdWriterImpl {
-	SerdSyntax   syntax;
-	SerdStyle    style;
-	SerdEnv*     env;
-	SerdNode     root_node;
-	SerdURI      root_uri;
-	SerdURI      base_uri;
-	SerdStack    anon_stack;
-	SerdBulkSink bulk_sink;
-	SerdSink     sink;
-	void*        stream;
-	WriteContext context;
-	SerdNode     list_subj;
-	unsigned     list_depth;
-	uint8_t*     bprefix;
-	size_t       bprefix_len;
-	unsigned     indent;
-	Sep          last_sep;
-	bool         empty;
+	SerdSyntax    syntax;
+	SerdStyle     style;
+	SerdEnv*      env;
+	SerdNode      root_node;
+	SerdURI       root_uri;
+	SerdURI       base_uri;
+	SerdStack     anon_stack;
+	SerdBulkSink  bulk_sink;
+	SerdSink      sink;
+	void*         stream;
+	SerdErrorSink error_sink;
+	void*         error_handle;
+	WriteContext  context;
+	SerdNode      list_subj;
+	unsigned      list_depth;
+	uint8_t*      bprefix;
+	size_t        bprefix_len;
+	unsigned      indent;
+	Sep           last_sep;
+	bool          empty;
 };
 
 typedef enum {
@@ -99,6 +101,16 @@ typedef enum {
 	WRITE_STRING,
 	WRITE_LONG_STRING
 } TextContext;
+
+static void
+error(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	const SerdError e = { st, NULL, 0, 0, fmt, &args };
+	serd_error(writer->error_sink, writer->error_handle, &e);
+	va_end(args);
+}
 
 static inline WriteContext*
 anon_stack_top(SerdWriter* writer)
@@ -207,7 +219,7 @@ write_text(SerdWriter* writer, TextContext ctx,
 			size = 4;
 			c    = in & 0x07;
 		} else {
-			fprintf(stderr, "Invalid UTF-8: %X\n", in);
+			error(writer, SERD_ERR_BAD_ARG, "invalid UTF-8: %X\n", in);
 			const uint8_t replacement_char[] = { 0xEF, 0xBF, 0xBD };
 			len += sink(replacement_char, sizeof(replacement_char), writer);
 			return len;
@@ -352,7 +364,8 @@ write_node(SerdWriter*        writer,
 		switch (writer->syntax) {
 		case SERD_NTRIPLES:
 			if (serd_env_expand(writer->env, node, &uri_prefix, &uri_suffix)) {
-				fprintf(stderr, "Undefined namespace prefix `%s'\n", node->buf);
+				error(writer, SERD_ERR_BAD_CURIE,
+				      "undefined namespace prefix `%s'\n", node->buf);
 				return false;
 			}
 			sink("<", 1, writer);
@@ -590,7 +603,8 @@ serd_writer_end_anon(SerdWriter*     writer,
 		return SERD_SUCCESS;
 	}
 	if (serd_stack_is_empty(&writer->anon_stack)) {
-		fprintf(stderr, "Unexpected end of anonymous node\n");
+		error(writer, SERD_ERR_UNKNOWN,
+		      "unexpected end of anonymous node\n");
 		return SERD_ERR_UNKNOWN;
 	}
 	assert(writer->indent > 0);
@@ -632,27 +646,39 @@ serd_writer_new(SerdSyntax     syntax,
 {
 	const WriteContext context = WRITE_CONTEXT_NULL;
 	SerdWriter*        writer  = (SerdWriter*)malloc(sizeof(SerdWriter));
-	writer->syntax      = syntax;
-	writer->style       = style;
-	writer->env         = env;
-	writer->root_node   = SERD_NODE_NULL;
-	writer->root_uri    = SERD_URI_NULL;
-	writer->base_uri    = base_uri ? *base_uri : SERD_URI_NULL;
-	writer->anon_stack  = serd_stack_new(sizeof(WriteContext));
-	writer->sink        = sink;
-	writer->stream      = stream;
-	writer->context     = context;
-	writer->list_subj   = SERD_NODE_NULL;
-	writer->list_depth  = 0;
-	writer->bprefix     = NULL;
-	writer->bprefix_len = 0;
-	writer->indent      = 0;
-	writer->last_sep    = SEP_NONE;
-	writer->empty       = true;
+	writer->syntax       = syntax;
+	writer->style        = style;
+	writer->env          = env;
+	writer->root_node    = SERD_NODE_NULL;
+	writer->root_uri     = SERD_URI_NULL;
+	writer->base_uri     = base_uri ? *base_uri : SERD_URI_NULL;
+	writer->anon_stack   = serd_stack_new(sizeof(WriteContext));
+	writer->sink         = sink;
+	writer->stream       = stream;
+	writer->error_sink   = NULL;
+	writer->error_handle = NULL;
+	writer->context      = context;
+	writer->list_subj    = SERD_NODE_NULL;
+	writer->list_depth   = 0;
+	writer->bprefix      = NULL;
+	writer->bprefix_len  = 0;
+	writer->indent       = 0;
+	writer->last_sep     = SEP_NONE;
+	writer->empty        = true;
 	if (style & SERD_STYLE_BULK) {
 		writer->bulk_sink = serd_bulk_sink_new(sink, stream, SERD_PAGE_SIZE);
 	}
 	return writer;
+}
+
+SERD_API
+void
+serd_writer_set_error_sink(SerdWriter*   writer,
+                           SerdErrorSink error_sink,
+                           void*         error_handle)
+{
+	writer->error_sink   = error_sink;
+	writer->error_handle = error_handle;
 }
 
 SERD_API

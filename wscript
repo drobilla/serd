@@ -334,6 +334,7 @@ def test(ctx):
                       0, name='serdi-cmd-good')
 
     autowaf.run_tests(ctx, APPNAME, [
+            'serdi_static -q file://%s/tests/bad-id-clash.ttl > %s' % (srcdir, nul),
             'serdi_static > %s' % nul,
             'serdi_static ftp://example.org/unsupported.ttl > %s' % nul,
             'serdi_static -i > %s' % nul,

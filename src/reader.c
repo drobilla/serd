@@ -64,6 +64,8 @@ struct SerdReaderImpl {
 	SerdPrefixSink    prefix_sink;
 	SerdStatementSink statement_sink;
 	SerdEndSink       end_sink;
+	SerdErrorSink     error_sink;
+	void*             error_handle;
 	Ref               rdf_first;
 	Ref               rdf_rest;
 	Ref               rdf_nil;
@@ -90,13 +92,14 @@ struct SerdReaderImpl {
 };
 
 static int
-error(SerdReader* reader, const char* fmt, ...)
+error(SerdReader* reader, SerdStatus st, const char* fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
-	fprintf(stderr, "error: %s:%u:%u: ",
-	        reader->cur.filename, reader->cur.line, reader->cur.col);
-	vfprintf(stderr, fmt, args);
+	const SerdError e = {
+		st, reader->cur.filename, reader->cur.line, reader->cur.col, fmt, &args
+	};
+	serd_error(reader->error_sink, reader->error_handle, &e);
 	va_end(args);
 	return 0;
 }
@@ -149,7 +152,8 @@ eat_byte_check(SerdReader* reader, const uint8_t byte)
 {
 	const uint8_t c = peek_byte(reader);
 	if (c != byte) {
-		return error(reader, "expected `%c', not `%c'\n", byte, c);
+		return error(reader, SERD_ERR_BAD_SYNTAX,
+		             "expected `%c', not `%c'\n", byte, c);
 	}
 	return eat_byte_safe(reader, byte);
 }
@@ -271,7 +275,8 @@ read_hex(SerdReader* reader)
 	if (in_range(c, 0x30, 0x39) || in_range(c, 0x41, 0x46)) {
 		return eat_byte_safe(reader, c);
 	} else {
-		return error(reader, "illegal hexadecimal digit `%c'\n", c);
+		return error(reader, SERD_ERR_BAD_SYNTAX,
+		             "invalid hexadecimal digit `%c'\n", c);
 	}
 }
 
@@ -298,7 +303,8 @@ read_hex_escape(SerdReader* reader, unsigned length, Ref dest)
 	} else if (c < 0x00110000) {
 		size = 4;
 	} else {
-		error(reader, "unicode character 0x%X out of range\n", c);
+		error(reader, SERD_ERR_BAD_SYNTAX,
+		      "unicode character 0x%X out of range\n", c);
 		push_replacement(reader, dest);
 		return true;
 	}
@@ -398,7 +404,7 @@ read_ucharacter_escape(SerdReader* reader, Ref dest)
 static inline SerdStatus
 bad_char(SerdReader* reader, Ref dest, const char* fmt, uint8_t c)
 {
-	error(reader, fmt, c);
+	error(reader, SERD_ERR_BAD_SYNTAX, fmt, c);
 	push_replacement(reader, dest);
 
 	// Skip bytes until the next start byte
@@ -454,7 +460,7 @@ read_character(SerdReader* reader, Ref dest)
 	const uint8_t c = peek_byte(reader);
 	assert(c != '\\');  // Only called from methods that handle escapes first
 	if (c == '\0') {
-		error(reader, "unexpected end of file\n", c);
+		error(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of input\n", c);
 		return SERD_ERR_BAD_SYNTAX;
 	} else if (c < 0x20) {
 		return bad_char(reader, dest,
@@ -493,7 +499,8 @@ read_lcharacter(SerdReader* reader, Ref dest, SerdNodeFlags* flags)
 		if (read_scharacter_escape(reader, dest, flags)) {
 			return SERD_SUCCESS;
 		} else {
-			error(reader, "illegal escape `\\%c'\n", peek_byte(reader));
+			error(reader, SERD_ERR_BAD_SYNTAX,
+			      "invalid escape `\\%c'\n", peek_byte(reader));
 			return SERD_ERR_BAD_SYNTAX;
 		}
 	case 0xA: case 0xD:
@@ -517,7 +524,8 @@ read_scharacter(SerdReader* reader, Ref dest, SerdNodeFlags* flags)
 		if (read_scharacter_escape(reader, dest, flags)) {
 			return SERD_SUCCESS;
 		} else {
-			error(reader, "illegal escape `\\%c'\n", peek_byte(reader));
+			error(reader, SERD_ERR_BAD_SYNTAX,
+			      "invalid escape `\\%c'\n", peek_byte(reader));
 			return SERD_ERR_BAD_SYNTAX;
 		}
 	case '\"':
@@ -539,7 +547,8 @@ read_ucharacter(SerdReader* reader, Ref dest)
 		if (read_ucharacter_escape(reader, dest)) {
 			return SERD_SUCCESS;
 		} else {
-			error(reader, "illegal escape `\\%c'\n", peek_byte(reader));
+			error(reader, SERD_ERR_BAD_SYNTAX,
+			      "invalid escape `\\%c'\n", peek_byte(reader));
 			return SERD_FAILURE;
 		}
 	case '>':
@@ -707,7 +716,7 @@ read_prefixName(SerdReader* reader, Ref dest)
 {
 	uint8_t c = peek_byte(reader);
 	if (c == '_') {
-		error(reader, "unexpected `_'\n");
+		error(reader, SERD_ERR_BAD_SYNTAX, "unexpected `_'\n");
 		return pop_node(reader, dest);
 	}
 	TRY_RET(c = read_nameStartChar(reader));
@@ -741,7 +750,7 @@ read_language(SerdReader* reader)
 {
 	uint8_t c = peek_byte(reader);
 	if (!in_range(c, 'a', 'z')) {
-		return error(reader, "unexpected `%c'\n", c);
+		return error(reader, SERD_ERR_BAD_SYNTAX, "unexpected `%c'\n", c);
 	}
 	Ref ref = push_node(reader, SERD_LITERAL, "", 0);
 	push_byte(reader, ref, eat_byte_safe(reader, c));
@@ -795,7 +804,7 @@ read_0_9(SerdReader* reader, Ref str, bool at_least_one)
 	uint8_t c;
 	if (at_least_one) {
 		if (!is_digit((c = peek_byte(reader)))) {
-			return error(reader, "expected digit\n");
+			return error(reader, SERD_ERR_BAD_SYNTAX, "expected digit\n");
 		}
 		push_byte(reader, str, eat_byte_safe(reader, c));
 	}
@@ -957,7 +966,8 @@ read_nodeID(SerdReader* reader)
 	                    reader->bprefix ? (char*)reader->bprefix : "",
 	                    reader->bprefix_len);
 	if (!read_name(reader, ref)) {
-		return error(reader, "illegal character at start of name\n");
+		return error(reader, SERD_ERR_BAD_SYNTAX,
+		             "invalid character at start of name\n");
 	}
 	if (reader->syntax == SERD_TURTLE) {
 		const char* const buf = (const char*)deref(reader, ref)->buf;
@@ -965,8 +975,8 @@ read_nodeID(SerdReader* reader)
 			memcpy((char*)buf, "docid", 5);  // Prevent clash
 			reader->seen_genid = true;
 		} else if (reader->seen_genid && !strncmp(buf, "docid", 5)) {
-			error(reader, "found both `genid' and `docid' blank IDs\n");
-			error(reader, "resolve this with a blank ID prefix\n");
+			error(reader, SERD_ERR_ID_CLASH,
+			      "found both `genid' and `docid' IDs, prefix required\n");
 			return pop_node(reader, ref);
 		}
 	}
@@ -1039,7 +1049,7 @@ read_blank(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest)
 	case '(':
 		return read_collection(reader, ctx, dest);
 	default:
-		return error(reader, "illegal blank node\n");
+		return error(reader, SERD_ERR_BAD_SYNTAX, "invalid blank node\n");
 	}
 }
 
@@ -1311,7 +1321,7 @@ read_directive(SerdReader* reader)
 	switch (peek_byte(reader)) {
 	case 'b': return read_base(reader);
 	case 'p': return read_prefixID(reader);
-	default:  return error(reader, "illegal directive\n");
+	default:  return error(reader, SERD_ERR_BAD_SYNTAX, "invalid directive\n");
 	}
 }
 
@@ -1366,6 +1376,8 @@ serd_reader_new(SerdSyntax        syntax,
 	me->prefix_sink      = prefix_sink;
 	me->statement_sink   = statement_sink;
 	me->end_sink         = end_sink;
+	me->error_sink       = NULL;
+	me->error_handle     = NULL;
 	me->default_graph    = SERD_NODE_NULL;
 	me->fd               = 0;
 	me->stack            = serd_stack_new(SERD_PAGE_SIZE);
@@ -1388,6 +1400,16 @@ serd_reader_new(SerdSyntax        syntax,
 	me->rdf_nil   = push_node(me, SERD_URI, NS_RDF "nil", 46);
 
 	return me;
+}
+
+SERD_API
+void
+serd_reader_set_error_sink(SerdReader*   reader,
+                           SerdErrorSink error_sink,
+                           void*         error_handle)
+{
+	reader->error_sink   = error_sink;
+	reader->error_handle = error_handle;
 }
 
 SERD_API
