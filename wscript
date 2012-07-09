@@ -252,27 +252,9 @@ def amalgamate(ctx):
     for i in ['c', 'h']:
         Logs.info("Wrote build/serd.%s" % i)
 
-def build_dir(ctx, subdir):
-    if autowaf.is_child():
-        return os.path.join('build', APPNAME, subdir)
-    else:
-        return os.path.join('build', subdir)
-
 def fix_docs(ctx):
-    try:
-        top = os.getcwd()
-        os.chdir(build_dir(ctx, 'doc/html'))
-        os.system("sed -i 's/SERD_API //' group__serd.html")
-        os.system("sed -i 's/SERD_DEPRECATED //' group__serd.html")
-        os.system("sed -i 's/href=\"doc\/style.css\"/href=\"style.css\"/' group__serd.html")
-        os.remove('index.html')
-        os.symlink('group__serd.html', 'index.html')
-        os.chdir(top)
-        os.chdir(build_dir(ctx, 'doc/man/man3'))
-        os.system("sed -i 's/SERD_API //' serd.3")
-        os.chdir(top)
-    except:
-        Logs.error("Failed to fix up %s documentation" % APPNAME)
+    if ctx.cmd == 'build':
+        autowaf.make_simple_dox(APPNAME)
 
 def upload_docs(ctx):
     os.system("rsync -ravz --delete -e ssh build/doc/html/ drobilla@drobilla.net:~/drobilla.net/docs/serd/")
@@ -288,7 +270,7 @@ def file_equals(patha, pathb, subst_from='', subst_to=''):
     return True
 
 def test(ctx):
-    blddir = build_dir(ctx, 'tests')
+    blddir = autowaf.build_dir(APPNAME, 'tests')
     try:
         os.makedirs(blddir)
     except:

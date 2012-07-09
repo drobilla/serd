@@ -1,5 +1,5 @@
 body {
-	font-size: 100%;
+	font-size: medium;
 	font-family: sans-serif;
 }
 
@@ -9,7 +9,7 @@ body {
 	padding: 0;
 	border-bottom: 1px solid #DDD;
 	margin-bottom: 1ex;
-	font-size: 180%;
+	font-size: xx-large;
 	font-weight: bold;
 }
 
@@ -113,31 +113,22 @@ div.navtab {
 
 /* @group Link Styling */
 a {
-	color: #3D578C;
+	color: #3D8C57;
 	text-decoration: none;
 }
 
 .contents a:visited {
-	color: #4665A2;
+	color: #50755E;
 }
 
 a:hover {
 	text-decoration: underline;
 }
 
-a.qindex {
-}
-
 a.qindexHL {
 	background-color: #9CAFD4;
 	color: #FFF;
 	border: 1px double #869DCA;
-}
-
-a.el {
-}
-
-a.elRef {
 }
 
 a.code {
@@ -324,7 +315,7 @@ hr.footer {
 /* @group Member Descriptions */
 table.memberdecls {
 	border-spacing: 0;
-	font-size: 94%;
+	font-size: small;
 }
 
 .mdescLeft,.mdescRight,.memItemLeft,.memItemRight,.memTemplItemLeft,.memTemplItemRight,.memTemplParams {
@@ -338,7 +329,7 @@ table.memberdecls {
 }
 
 .memItemLeft,.memItemRight,.memTemplParams {
-	border-top: 1px solid #EEE;
+	border-top: 1px solid #DDD;
 }
 
 .memItemLeft,.memTemplItemLeft {
@@ -372,6 +363,7 @@ table.memberdecls {
 .memitem {
 	padding: 0;
 	margin: 1ex 0 2ex 0;
+	border: 1px solid #CCC;
 }
 
 .memname {
@@ -380,9 +372,8 @@ table.memberdecls {
 }
 
 .memproto {
-	border-top: 1px solid #DDD;
+	border-bottom: 1px solid #DDD;
 	padding: 0.5ex;
-	color: #253555;
 	font-weight: bold;
 	background-color: #F3F3F3;
 }
