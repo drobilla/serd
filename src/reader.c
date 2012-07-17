@@ -685,7 +685,7 @@ static inline uchar
 read_nameStartChar(SerdReader* reader)
 {
 	const uint8_t c = peek_byte(reader);
-	if (c == '_' || is_alpha(c)) {  // TODO: not strictly correct
+	if (c == '_' || is_alpha(c) || is_digit(c)) {  // TODO: Not correct
 		return eat_byte_safe(reader, c);
 	}
 	return 0;

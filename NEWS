@@ -1,5 +1,6 @@
 serd (9999) unstable;
 
+  * Support digits at start of local names as per new grammar
   * Add incremental read interface suitable for reading from infinite streams
   * Add -e option to serdi to use incremental reading
   * Reset indent when finishing a write
