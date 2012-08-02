@@ -3,7 +3,6 @@ import glob
 import os
 import shutil
 import subprocess
-import sys
 
 from waflib.extras import autowaf as autowaf
 import waflib.Logs as Logs, waflib.Options as Options
@@ -203,12 +202,12 @@ def build(bld):
 
     # Utilities
     if bld.env['BUILD_UTILS']:
-        obj = bld(features     = 'c cprogram',
-                  source       = 'src/serdi.c',
-                  includes     = ['.', './src'],
-                  use          = 'libserd',
-                  target       = 'serdi',
-                  install_path = '${BINDIR}')
+        bld(features     = 'c cprogram',
+            source       = 'src/serdi.c',
+            includes     = ['.', './src'],
+            use          = 'libserd',
+            target       = 'serdi',
+            install_path = '${BINDIR}')
 
     # Documentation
     autowaf.build_dox(bld, 'SERD', SERD_VERSION, top, out)
@@ -363,8 +362,6 @@ def test(ctx):
     num = 0
     for test in thru_tests:
         num += 1
-        bulk = (num % 2 == 0)
-        full = (num % 5 == 0)
         flags = ''
         if (num % 2 == 0):
             flags += '-b'
