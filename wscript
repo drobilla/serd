@@ -58,7 +58,7 @@ def configure(conf):
         autowaf.define(conf, 'SERD_STACK_CHECK', SERD_VERSION)
 
     if Options.options.largefile:
-        conf.env.append_unique('CFLAGS', '-D_FILE_OFFSET_BITS=64')
+        conf.env.append_unique('DEFINES', ['_FILE_OFFSET_BITS=64'])
 
     # Check for gcov library (for test coverage)
     if conf.env['BUILD_TESTS']:
@@ -77,21 +77,21 @@ def configure(conf):
     conf.check(function_name='posix_memalign',
                header_name='stdlib.h',
                define_name='HAVE_POSIX_MEMALIGN',
-               cflags='-D_POSIX_C_SOURCE=201112L',
+               defines=['_POSIX_C_SOURCE=201112L'],
                mandatory=False)
 
     # Check for posix_fadvise
     conf.check(function_name='posix_fadvise',
                header_name='fcntl.h',
                define_name='HAVE_POSIX_FADVISE',
-               cflags='-D_POSIX_C_SOURCE=201112L',
+               defines=['_POSIX_C_SOURCE=201112L'],
                mandatory=False)
 
     # Check for fileno
     conf.check(function_name='fileno',
                header_name='stdio.h',
                define_name='HAVE_FILENO',
-               cflags='-D_POSIX_C_SOURCE=201112L',
+               defines=['_POSIX_C_SOURCE=201112L'],
                mandatory=False)
 
     autowaf.define(conf, 'SERD_VERSION', SERD_VERSION)
@@ -142,9 +142,8 @@ def build(bld):
               target          = 'serd-%s' % SERD_MAJOR_VERSION,
               vnum            = SERD_LIB_VERSION,
               install_path    = '${LIBDIR}',
-              defines         = defines,
-              cflags          = libflags + [ '-DSERD_SHARED',
-                                             '-DSERD_INTERNAL' ])
+              defines         = defines + ['SERD_SHARED', 'SERD_INTERNAL'],
+              cflags          = libflags)
 
     # Static library
     if bld.env['BUILD_STATIC']:
@@ -157,8 +156,7 @@ def build(bld):
                   target          = 'serd-%s' % SERD_MAJOR_VERSION,
                   vnum            = SERD_LIB_VERSION,
                   install_path    = '${LIBDIR}',
-                  defines         = defines,
-                  cflags          = ['-DSERD_INTERNAL'])
+                  defines         = defines + ['SERD_INTERNAL'])
 
     if bld.env['BUILD_TESTS']:
         test_libs   = libs
@@ -175,8 +173,8 @@ def build(bld):
                   name         = 'libserd_profiled',
                   target       = 'serd_profiled',
                   install_path = '',
-                  defines      = defines,
-                  cflags       = test_cflags + ['-DSERD_INTERNAL'])
+                  defines      = defines + ['SERD_INTERNAL'],
+                  cflags       = test_cflags)
 
         # Unit test serdi
         obj = bld(features     = 'c cprogram',
