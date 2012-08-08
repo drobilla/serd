@@ -216,7 +216,7 @@ def build(bld):
                    target       = 'serdi',
                    includes     = ['.', './src'],
                    use          = 'libserd',
-                   lib          = ['m'],
+                   lib          = libs,
                    install_path = '${BINDIR}')
         if not bld.env['BUILD_SHARED'] or bld.env['STATIC_PROGS']:
             prog.use = 'libserd_static'
