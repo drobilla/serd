@@ -47,12 +47,8 @@ def options(opt):
 def configure(conf):
     conf.load('compiler_c')
     autowaf.configure(conf)
+    autowaf.set_c99_mode(conf)
     autowaf.display_header('Serd Configuration')
-
-    if conf.env.MSVC_COMPILER:
-        conf.env.append_unique('CFLAGS', ['-TP', '-MD'])
-    else:
-        conf.env.append_unique('CFLAGS', '-std=c99')
 
     conf.env.BUILD_TESTS  = Options.options.build_tests
     conf.env.BUILD_UTILS  = not Options.options.no_utils
