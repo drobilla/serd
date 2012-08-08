@@ -27,7 +27,7 @@ typedef struct {
 } State;
 
 static int
-print_version()
+print_version(void)
 {
 	printf("serdi " SERD_VERSION " <http://drobilla.net/software/serd>\n");
 	printf("Copyright 2011-2012 David Robillard <http://drobilla.net>.\n"
