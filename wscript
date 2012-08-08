@@ -187,7 +187,7 @@ def build(bld):
             defines      = defines + ['SERD_INTERNAL'],
             cflags       = test_cflags)
 
-        # Unit test serdi
+        # Static profiled serdi for tests
         bld(features     = 'c cprogram',
             source       = 'src/serdi.c',
             includes     = ['.', './src'],
@@ -211,18 +211,18 @@ def build(bld):
 
     # Utilities
     if bld.env.BUILD_UTILS:
-        prog = bld(features     = 'c cprogram',
-                   source       = 'src/serdi.c',
-                   target       = 'serdi',
-                   includes     = ['.', './src'],
-                   use          = 'libserd',
-                   lib          = libs,
-                   install_path = '${BINDIR}')
+        obj = bld(features     = 'c cprogram',
+                  source       = 'src/serdi.c',
+                  target       = 'serdi',
+                  includes     = ['.', './src'],
+                  use          = 'libserd',
+                  lib          = libs,
+                  install_path = '${BINDIR}')
         if not bld.env.BUILD_SHARED or bld.env.STATIC_PROGS:
-            prog.use = 'libserd_static'
+            obj.use = 'libserd_static'
         if bld.env.STATIC_PROGS:
-            prog.env.SHLIB_MARKER = prog.env.STLIB_MARKER
-            prog.linkflags        = ['-static']
+            obj.env.SHLIB_MARKER = obj.env.STLIB_MARKER
+            obj.linkflags        = ['-static']
 
     # Documentation
     autowaf.build_dox(bld, 'SERD', SERD_VERSION, top, out)
