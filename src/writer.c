@@ -641,7 +641,7 @@ serd_writer_new(SerdSyntax     syntax,
                 SerdStyle      style,
                 SerdEnv*       env,
                 const SerdURI* base_uri,
-                SerdSink       sink,
+                SerdSink       ssink,
                 void*          stream)
 {
 	const WriteContext context = WRITE_CONTEXT_NULL;
@@ -653,7 +653,7 @@ serd_writer_new(SerdSyntax     syntax,
 	writer->root_uri     = SERD_URI_NULL;
 	writer->base_uri     = base_uri ? *base_uri : SERD_URI_NULL;
 	writer->anon_stack   = serd_stack_new(sizeof(WriteContext));
-	writer->sink         = sink;
+	writer->sink         = ssink;
 	writer->stream       = stream;
 	writer->error_sink   = NULL;
 	writer->error_handle = NULL;
@@ -666,7 +666,7 @@ serd_writer_new(SerdSyntax     syntax,
 	writer->last_sep     = SEP_NONE;
 	writer->empty        = true;
 	if (style & SERD_STYLE_BULK) {
-		writer->bulk_sink = serd_bulk_sink_new(sink, stream, SERD_PAGE_SIZE);
+		writer->bulk_sink = serd_bulk_sink_new(ssink, stream, SERD_PAGE_SIZE);
 	}
 	return writer;
 }

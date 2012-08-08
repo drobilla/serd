@@ -165,9 +165,9 @@ serd_node_new_file_uri(const uint8_t* path,
 		} else if (!escape || is_uri_path_char(path[i])) {
 			serd_chunk_sink(path + i, 1, &chunk);
 		} else {
-			char escape[4] = { '%', 0, 0, 0 };
-			snprintf(escape + 1, sizeof(escape) - 1, "%X", path[i]);
-			serd_chunk_sink(escape, 3, &chunk);
+			char escape_str[4] = { '%', 0, 0, 0 };
+			snprintf(escape_str + 1, sizeof(escape_str) - 1, "%X", path[i]);
+			serd_chunk_sink(escape_str, 3, &chunk);
 		}
 	}
 	serd_chunk_sink_finish(&chunk);
@@ -310,19 +310,19 @@ SerdNode
 serd_node_new_blob(const void* buf, size_t size, bool wrap_lines)
 {
 	const size_t len  = ((size + 2) / 3) * 4 + (wrap_lines ? (size / 57) : 0);
-	SerdNode     node = { (uint8_t*)calloc(1, len + 2),
-	                      len, len, 0, SERD_LITERAL };
+	uint8_t*     str  = (uint8_t*)calloc(1, len + 2);
+	SerdNode     node = { str, len, len, 0, SERD_LITERAL };
 	for (size_t i = 0, j = 0; i < size; i += 3, j += 4) {
 		uint8_t in[4] = { 0, 0, 0, 0 };
 		size_t  n_in  = MIN(3, size - i);
 		memcpy(in, (const uint8_t*)buf + i, n_in);
 
 		if (wrap_lines && i > 0 && (i % 57) == 0) {
-			((uint8_t*)node.buf)[j++] = '\n';
+			str[j++] = '\n';
 			node.flags |= SERD_HAS_NEWLINE;
 		}
 
-		encode_chunk((uint8_t*)node.buf + j, in, n_in);
+		encode_chunk(str + j, in, n_in);
 	}
 	return node;
 }

@@ -408,16 +408,16 @@ bad_char(SerdReader* reader, Ref dest, const char* fmt, uint8_t c)
 	push_replacement(reader, dest);
 
 	// Skip bytes until the next start byte
-	for (uint8_t c = peek_byte(reader); (c & 0x80);) {
-		eat_byte_safe(reader, c);
-		c = peek_byte(reader);
+	for (uint8_t b = peek_byte(reader); (b & 0x80);) {
+		eat_byte_safe(reader, b);
+		b = peek_byte(reader);
 	}
 
 	return SERD_SUCCESS;
 }
 
 static SerdStatus
-read_utf8_character(SerdReader* reader, Ref dest, const uint8_t c)
+read_utf8_character(SerdReader* reader, Ref dest, uint8_t c)
 {
 	unsigned size = 1;
 	if ((c & 0xE0) == 0xC0) {  // Starts with `110'
@@ -917,7 +917,7 @@ except:
 }
 
 inline static bool
-is_token_end(const uint8_t c)
+is_token_end(uint8_t c)
 {
 	switch (c) {
 	case 0x9: case 0xA: case 0xD: case 0x20: case '\0':

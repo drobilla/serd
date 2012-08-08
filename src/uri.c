@@ -446,15 +446,15 @@ write_rel_path(SerdSink       sink,
 
 	// Find the number of up references ("..") required
 	size_t up = 0;
-	for (size_t i = last_shared_sep + 1; i < base_len; ++i) {
-		if (uri_path_at(base, i) == '/') {
+	for (size_t s = last_shared_sep + 1; s < base_len; ++s) {
+		if (uri_path_at(base, s) == '/') {
 			++up;
 		}
 	}
 
 	// Write up references
 	size_t len = 0;
-	for (size_t i = 0; i < up; ++i) {
+	for (size_t u = 0; u < up; ++u) {
 		len += sink("../", 3, stream);
 	}
 

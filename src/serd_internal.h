@@ -181,7 +181,7 @@ serd_bulk_sink_write(const void* buf, size_t len, SerdBulkSink* bsink)
 		// Write as much as possible into the remaining buffer space
 		memcpy(bsink->buf + bsink->size, buf, n);
 		bsink->size += n;
-		buf          = (uint8_t*)buf + n;
+		buf          = (const uint8_t*)buf + n;
 		len         -= n;
 
 		// Flush page if buffer is full
