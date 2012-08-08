@@ -30,19 +30,19 @@ def options(opt):
     opt.load('compiler_c')
     autowaf.set_options(opt)
     opt.add_option('--no-utils', action='store_true', dest='no_utils',
-                   help="Do not build command line utilities")
+                   help='Do not build command line utilities')
     opt.add_option('--test', action='store_true', dest='build_tests',
-                   help="Build unit tests")
+                   help='Build unit tests')
     opt.add_option('--stack-check', action='store_true', dest='stack_check',
-                   help="Include runtime stack sanity checks")
+                   help='Include runtime stack sanity checks')
     opt.add_option('--static', action='store_true', dest='static',
-                   help="Build static library")
+                   help='Build static library')
     opt.add_option('--no-shared', action='store_true', dest='no_shared',
-                   help="Do not build shared library")
+                   help='Do not build shared library')
     opt.add_option('--static-progs', action='store_true', dest='static_progs',
-                   help="Build programs as static binaries")
+                   help='Build programs as static binaries')
     opt.add_option('--largefile', action='store_true', dest='largefile',
-                   help="Build with large file support on 32-bit systems")
+                   help='Build with large file support on 32-bit systems')
 
 def configure(conf):
     conf.load('compiler_c')
@@ -112,8 +112,8 @@ def configure(conf):
     conf.env.LIBPATH_SERD = [conf.env.LIBDIR]
     conf.env.LIB_SERD = ['serd-%s' % SERD_MAJOR_VERSION];
 
-    autowaf.display_msg(conf, "Utilities", str(conf.env.BUILD_UTILS))
-    autowaf.display_msg(conf, "Unit tests", str(conf.env.BUILD_TESTS))
+    autowaf.display_msg(conf, 'Utilities', str(conf.env.BUILD_UTILS))
+    autowaf.display_msg(conf, 'Unit tests', str(conf.env.BUILD_TESTS))
     print('')
 
 lib_source = [
@@ -264,14 +264,14 @@ def amalgamate(ctx):
     amalgamation.close()
 
     for i in ['c', 'h']:
-        Logs.info("Wrote build/serd.%s" % i)
+        Logs.info('Wrote build/serd.%s' % i)
 
 def fix_docs(ctx):
     if ctx.cmd == 'build':
         autowaf.make_simple_dox(APPNAME)
 
 def upload_docs(ctx):
-    os.system("rsync -ravz --delete -e ssh build/doc/html/ drobilla@drobilla.net:~/drobilla.net/docs/serd/")
+    os.system('rsync -ravz --delete -e ssh build/doc/html/ drobilla@drobilla.net:~/drobilla.net/docs/serd/')
 
 def file_equals(patha, pathb, subst_from='', subst_to=''):
     fa = open(patha, 'rU')
