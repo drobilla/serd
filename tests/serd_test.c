@@ -81,7 +81,7 @@ test_sink(void*              handle,
 }
 
 int
-main()
+main(void)
 {
 #define MAX       1000000
 #define NUM_TESTS 1000
