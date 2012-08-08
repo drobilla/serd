@@ -37,6 +37,10 @@ def options(opt):
                    help="Include runtime stack sanity checks")
     opt.add_option('--static', action='store_true', default=False, dest='static',
                    help="Build static library")
+    opt.add_option('--no-shared', action='store_true', default=False, dest='no_shared',
+                   help="Do not build shared library")
+    opt.add_option('--static-progs', action='store_true', default=False, dest='static_progs',
+                   help="Build programs as static binaries")
     opt.add_option('--largefile', action='store_true', default=False, dest='largefile',
                    help="Build with large file support on 32-bit systems")
 
@@ -50,9 +54,15 @@ def configure(conf):
     else:
         conf.env.append_unique('CFLAGS', '-std=c99')
 
-    conf.env['BUILD_TESTS'] = Options.options.build_tests
-    conf.env['BUILD_UTILS'] = not Options.options.no_utils
-    conf.env['BUILD_STATIC'] = Options.options.static
+    conf.env['BUILD_TESTS']  = Options.options.build_tests
+    conf.env['BUILD_UTILS']  = not Options.options.no_utils
+    conf.env['BUILD_SHARED'] = not Options.options.no_shared
+    conf.env['STATIC_PROGS'] = Options.options.static_progs
+    conf.env['BUILD_STATIC'] = (Options.options.static or
+                                Options.options.static_progs)
+
+    if not conf.env.BUILD_SHARED and not conf.env.BUILD_STATIC:
+        conf.fatal('Neither a shared nor a static build requested')
 
     if Options.options.stack_check:
         autowaf.define(conf, 'SERD_STACK_CHECK', SERD_VERSION)
@@ -124,8 +134,8 @@ def build(bld):
     autowaf.build_pc(bld, 'SERD', SERD_VERSION, SERD_MAJOR_VERSION, [],
                      {'SERD_MAJOR_VERSION' : SERD_MAJOR_VERSION})
 
-    libflags = [ '-fvisibility=hidden' ]
-    libs     = [ 'm' ]
+    libflags = ['-fvisibility=hidden']
+    libs     = ['m']
     defines  = []
     if bld.env['MSVC_COMPILER']:
         libflags = []
@@ -133,17 +143,18 @@ def build(bld):
         defines  = ['snprintf=_snprintf']
 
     # Shared Library
-    obj = bld(features        = 'c cshlib',
-              export_includes = ['.'],
-              source          = lib_source,
-              includes        = ['.', './src'],
-              lib             = libs,
-              name            = 'libserd',
-              target          = 'serd-%s' % SERD_MAJOR_VERSION,
-              vnum            = SERD_LIB_VERSION,
-              install_path    = '${LIBDIR}',
-              defines         = defines + ['SERD_SHARED', 'SERD_INTERNAL'],
-              cflags          = libflags)
+    if bld.env['BUILD_SHARED']:
+        obj = bld(features        = 'c cshlib',
+                  export_includes = ['.'],
+                  source          = lib_source,
+                  includes        = ['.', './src'],
+                  lib             = libs,
+                  name            = 'libserd',
+                  target          = 'serd-%s' % SERD_MAJOR_VERSION,
+                  vnum            = SERD_LIB_VERSION,
+                  install_path    = '${LIBDIR}',
+                  defines         = defines + ['SERD_SHARED', 'SERD_INTERNAL'],
+                  cflags          = libflags)
 
     # Static library
     if bld.env['BUILD_STATIC']:
@@ -165,7 +176,7 @@ def build(bld):
             test_libs   += ['gcov']
             test_cflags += ['-fprofile-arcs', '-ftest-coverage']
 
-        # Static library (for unit test code coverage)
+        # Profiled static library for test coverage
         obj = bld(features     = 'c cstlib',
                   source       = lib_source,
                   includes     = ['.', './src'],
@@ -200,12 +211,18 @@ def build(bld):
 
     # Utilities
     if bld.env['BUILD_UTILS']:
-        bld(features     = 'c cprogram',
-            source       = 'src/serdi.c',
-            includes     = ['.', './src'],
-            use          = 'libserd',
-            target       = 'serdi',
-            install_path = '${BINDIR}')
+        prog = bld(features     = 'c cprogram',
+                   source       = 'src/serdi.c',
+                   target       = 'serdi',
+                   includes     = ['.', './src'],
+                   use          = 'libserd',
+                   lib          = ['m'],
+                   install_path = '${BINDIR}')
+        if not bld.env['BUILD_SHARED'] or bld.env['STATIC_PROGS']:
+            prog.use = 'libserd_static'
+        if bld.env['STATIC_PROGS']:
+            prog.env.SHLIB_MARKER = prog.env.STLIB_MARKER
+            prog.linkflags        = ['-static']
 
     # Documentation
     autowaf.build_dox(bld, 'SERD', SERD_VERSION, top, out)
