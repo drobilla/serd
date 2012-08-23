@@ -1,4 +1,4 @@
-serd (9999) unstable;
+serd (0.18.0) stable;
 
   * Support digits at start of local names as per new Turtle grammar
   * Add incremental read interface suitable for reading from infinite streams
@@ -14,7 +14,7 @@ serd (9999) unstable;
   * Add option to build utilities as static binaries
   * Upgrade to waf 1.7.2
 
- -- David Robillard <d@drobilla.net>
+ -- David Robillard <d@drobilla.net>  Thu, 23 Aug 2012 00:18:34 -0400
 
 serd (0.14.0) stable;
 
