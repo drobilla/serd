@@ -1,13 +1,18 @@
 serd (9999) unstable;
 
-  * Support digits at start of local names as per new grammar
+  * Support digits at start of local names as per new Turtle grammar
   * Add incremental read interface suitable for reading from infinite streams
   * Add -e option to serdi to use incremental reading
+  * Add error callback to reader and writer for custom error reporting
+  * Add -q option to serdi to suppress all non-data output, e.g. errors
   * Reset indent when finishing a write
   * Report write size correctly when invalid UTF-8 is encountered and a
     replacement character is written
-  * Add error callback to reader and writer for custom error reporting
-  * Add -q option to serdi to suppress all non-data output, e.g. errors
+  * Strip down API documentation to a single clean page
+  * Fix various hyper-strict warnings
+  * Do not require a C++ compiler to build
+  * Add option to build utilities as static binaries
+  * Upgrade to waf 1.7.2
 
  -- David Robillard <d@drobilla.net>
 
