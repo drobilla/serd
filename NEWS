@@ -2,7 +2,7 @@ serd (0.18.1) unstable;
 
   * Disable timestamps in HTML documentation for reproducible build
 
--- David Robillard <d@drobilla.net>  Sun, 09 Sep 2012 03:19:01 -0400
+ -- David Robillard <d@drobilla.net>  Sun, 09 Sep 2012 03:19:01 -0400
 
 serd (0.18.0) stable;
 
