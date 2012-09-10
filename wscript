@@ -113,7 +113,7 @@ lib_source = [
 import sys
 from waflib.TaskGen import feature, before
 @feature('c')
-@before('process_source', 'apply_link')
+@before('apply_link')
 def version_lib(self):
     if sys.platform == 'win32':
         self.vnum = None
