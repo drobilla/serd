@@ -122,10 +122,13 @@ def build(bld):
     libflags = ['-fvisibility=hidden']
     libs     = ['m']
     defines  = []
+    lib_suff = ''
     if bld.env.MSVC_COMPILER:
         libflags = []
         libs     = []
         defines  = ['snprintf=_snprintf']
+        if bld.env.DEBUG:
+            lib_suff = 'D'
 
     # Shared Library
     if bld.env.BUILD_SHARED:
@@ -135,7 +138,7 @@ def build(bld):
             includes        = ['.', './src'],
             lib             = libs,
             name            = 'libserd',
-            target          = 'serd-%s' % SERD_MAJOR_VERSION,
+            target          = 'serd-%s%s' % (SERD_MAJOR_VERSION, lib_suff),
             vnum            = SERD_VERSION,
             install_path    = '${LIBDIR}',
             defines         = defines + ['SERD_SHARED', 'SERD_INTERNAL'],
@@ -149,7 +152,7 @@ def build(bld):
             includes        = ['.', './src'],
             lib             = libs,
             name            = 'libserd_static',
-            target          = 'serd-%s' % SERD_MAJOR_VERSION,
+            target          = 'serd-%s%s' % (SERD_MAJOR_VERSION, lib_suff),
             vnum            = SERD_VERSION,
             install_path    = '${LIBDIR}',
             defines         = defines + ['SERD_INTERNAL'])
