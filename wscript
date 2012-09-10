@@ -90,12 +90,8 @@ def configure(conf):
                mandatory     = False)
 
     autowaf.define(conf, 'SERD_VERSION', SERD_VERSION)
+    autowaf.set_lib_env(conf, 'serd', SERD_VERSION)
     conf.write_config_header('serd_config.h', remove=False)
-
-    # Set up env for building against local serd in case we are a child 
-    conf.env.INCLUDES_SERD = ['${INCLUDEDIR}/serd-%s' % SERD_MAJOR_VERSION]
-    conf.env.LIBPATH_SERD  = [conf.env.LIBDIR]
-    conf.env.LIB_SERD      = ['serd-%s' % SERD_MAJOR_VERSION];
 
     autowaf.display_msg(conf, 'Utilities', str(conf.env.BUILD_UTILS))
     autowaf.display_msg(conf, 'Unit tests', str(conf.env.BUILD_TESTS))
@@ -109,18 +105,6 @@ lib_source = [
     'src/uri.c',
     'src/writer.c',
 ]
-
-import sys
-from waflib.TaskGen import feature, before
-@feature('c')
-@before('apply_link')
-def version_lib(self):
-    if sys.platform == 'win32':
-        self.vnum = None
-        if self.env['DEBUG']:
-            applicable = ['cshlib', 'cxxshlib', 'cstlib', 'cxxstlib']
-            if [x for x in applicable if x in self.features]:
-                self.target = self.target + 'D'
 
 def build(bld):
     # C Headers
