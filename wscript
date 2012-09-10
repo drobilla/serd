@@ -110,6 +110,18 @@ lib_source = [
     'src/writer.c',
 ]
 
+import sys
+from waflib.TaskGen import feature, before
+@feature('c')
+@before('process_source', 'apply_link')
+def version_lib(self):
+    if sys.platform == 'win32':
+        self.vnum = None
+        if self.env['DEBUG']:
+            applicable = ['cshlib', 'cxxshlib', 'cstlib', 'cxxstlib']
+            if [x for x in applicable if x in self.features]:
+                self.target = self.target + 'D'
+
 def build(bld):
     # C Headers
     includedir = '${INCLUDEDIR}/serd-%s/serd' % SERD_MAJOR_VERSION
@@ -122,13 +134,10 @@ def build(bld):
     libflags = ['-fvisibility=hidden']
     libs     = ['m']
     defines  = []
-    lib_suff = ''
     if bld.env.MSVC_COMPILER:
         libflags = []
         libs     = []
         defines  = ['snprintf=_snprintf']
-        if bld.env.DEBUG:
-            lib_suff = 'D'
 
     # Shared Library
     if bld.env.BUILD_SHARED:
@@ -138,7 +147,7 @@ def build(bld):
             includes        = ['.', './src'],
             lib             = libs,
             name            = 'libserd',
-            target          = 'serd-%s%s' % (SERD_MAJOR_VERSION, lib_suff),
+            target          = 'serd-%s' % SERD_MAJOR_VERSION,
             vnum            = SERD_VERSION,
             install_path    = '${LIBDIR}',
             defines         = defines + ['SERD_SHARED', 'SERD_INTERNAL'],
@@ -152,7 +161,7 @@ def build(bld):
             includes        = ['.', './src'],
             lib             = libs,
             name            = 'libserd_static',
-            target          = 'serd-%s%s' % (SERD_MAJOR_VERSION, lib_suff),
+            target          = 'serd-%s' % SERD_MAJOR_VERSION,
             vnum            = SERD_VERSION,
             install_path    = '${LIBDIR}',
             defines         = defines + ['SERD_INTERNAL'])
