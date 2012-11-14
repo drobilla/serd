@@ -408,7 +408,7 @@ write_node(SerdWriter*        writer,
 		break;
 	case SERD_URI:
 		has_scheme = serd_uri_string_has_scheme(node->buf);
-		if ((writer->syntax == SERD_TURTLE)
+		if (field == FIELD_PREDICATE && (writer->syntax == SERD_TURTLE)
 		    && !strcmp((const char*)node->buf, NS_RDF "type")) {
 			sink("a", 1, writer);
 			break;

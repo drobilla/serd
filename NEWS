@@ -1,9 +1,10 @@
 serd (0.18.1) unstable;
 
+  * Fix bug that caused "a" abbreviation in non-predicate position
   * Disable timestamps in HTML documentation for reproducible build
   * Fix clashing symbol "error" in amalgamation build
 
- -- David Robillard <d@drobilla.net>  Sun, 09 Sep 2012 03:38:08 -0400
+ -- David Robillard <d@drobilla.net>  Wed, 14 Nov 2012 10:48:57 -0500
 
 serd (0.18.0) stable;
 
