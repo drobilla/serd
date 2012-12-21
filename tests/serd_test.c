@@ -114,15 +114,18 @@ main(void)
 	// Test serd_node_new_decimal
 
 	const double dbl_test_nums[] = {
-		0.0, 9.0, 10.0, .01, 2.05, -16.00001, 5.000000005, 0.0000000001
+		0.0, 9.0, 10.0, .01, 2.05, -16.00001, 5.000000005, 0.0000000001, NAN, INFINITY
 	};
 
 	const char* dbl_test_strs[] = {
-		"0.0", "9.0", "10.0", "0.01", "2.05", "-16.00001", "5.00000001", "0.0"
+		"0.0", "9.0", "10.0", "0.01", "2.05", "-16.00001", "5.00000001", "0.0", NULL, NULL
 	};
 
 	for (unsigned i = 0; i < sizeof(dbl_test_nums) / sizeof(double); ++i) {
 		SerdNode node = serd_node_new_decimal(dbl_test_nums[i], 8);
+		if (node.buf == dbl_test_strs[i]) {
+			continue;
+		}
 		if (strcmp((const char*)node.buf, (const char*)dbl_test_strs[i])) {
 			return failure("Serialised `%s' != %s\n",
 			               node.buf, dbl_test_strs[i]);
