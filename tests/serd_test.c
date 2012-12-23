@@ -122,15 +122,15 @@ main(void)
 	};
 
 	for (unsigned i = 0; i < sizeof(dbl_test_nums) / sizeof(double); ++i) {
-		SerdNode node = serd_node_new_decimal(dbl_test_nums[i], 8);
-		if (node.buf == dbl_test_strs[i]) {
-			continue;
-		}
-		if (strcmp((const char*)node.buf, (const char*)dbl_test_strs[i])) {
+		SerdNode   node = serd_node_new_decimal(dbl_test_nums[i], 8);
+		const bool pass = (node.buf && dbl_test_strs[i])
+			? !strcmp((const char*)node.buf, (const char*)dbl_test_strs[i])
+			: ((const char*)node.buf == dbl_test_strs[i]);
+		if (!pass) {
 			return failure("Serialised `%s' != %s\n",
 			               node.buf, dbl_test_strs[i]);
 		}
-		const size_t len = strlen((const char*)node.buf);
+		const size_t len = node.buf ? strlen((const char*)node.buf) : 0;
 		if (node.n_bytes != len || node.n_chars != len) {
 			return failure("Length %zu,%zu != %zu\n",
 			               node.n_bytes, node.n_chars, len);
