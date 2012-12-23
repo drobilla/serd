@@ -1,4 +1,4 @@
-serd (0.18.1) unstable;
+serd (0.18.2) stable;
 
   * Fix crash when serd_node_new_decimal is called with infinity or NaN
   * Fix crash when resolving against non-standard base URIs
@@ -7,7 +7,7 @@ serd (0.18.1) unstable;
   * Fix clashing symbol "error" in amalgamation build
   * Update to waf 1.7.8 and autowaf r90 (install docs to versioned directory)
 
- -- David Robillard <d@drobilla.net>  Sat, 22 Dec 2012 20:19:18 -0500
+ -- David Robillard <d@drobilla.net>  Sat, 22 Dec 2012 21:32:15 -0500
 
 serd (0.18.0) stable;
 
