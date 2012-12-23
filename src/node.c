@@ -22,6 +22,11 @@
 #include <math.h>
 #include <float.h>
 
+#ifdef _WIN32
+#    define isnan(x) _isnan(x)
+#    define isinf(x) (!_finite(x))
+#endif
+
 SERD_API
 SerdNode
 serd_node_from_string(SerdType type, const uint8_t* buf)

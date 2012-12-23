@@ -25,6 +25,11 @@
 
 #define USTR(s) ((const uint8_t*)(s))
 
+#ifdef _WIN32
+#    define INFINITY (DBL_MAX + DBL_MAX)
+#    define NAN      (INFINITY - INFINITY)
+#endif
+
 static int
 failure(const char* fmt, ...)
 {
