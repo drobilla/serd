@@ -602,12 +602,11 @@ serd_writer_end_anon(SerdWriter*     writer,
 	if (writer->syntax == SERD_NTRIPLES) {
 		return SERD_SUCCESS;
 	}
-	if (serd_stack_is_empty(&writer->anon_stack)) {
+	if (serd_stack_is_empty(&writer->anon_stack) || writer->indent == 0) {
 		w_err(writer, SERD_ERR_UNKNOWN,
 		      "unexpected end of anonymous node\n");
 		return SERD_ERR_UNKNOWN;
 	}
-	assert(writer->indent > 0);
 	--writer->indent;
 	write_sep(writer, SEP_ANON_END);
 	reset_context(writer, true);
