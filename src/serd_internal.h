@@ -67,8 +67,8 @@ serd_bufalloc(size_t size)
 {
 #ifdef HAVE_POSIX_MEMALIGN
 	void* ptr;
-	posix_memalign(&ptr, SERD_PAGE_SIZE, size);
-	return ptr;
+	const int ret = posix_memalign(&ptr, SERD_PAGE_SIZE, size);
+	return ret ? NULL : ptr;
 #else
 	return malloc(size);
 #endif
