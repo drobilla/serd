@@ -266,10 +266,11 @@ def file_equals(patha, pathb, subst_from='', subst_to=''):
 
 def test(ctx):
     blddir = autowaf.build_dir(APPNAME, 'tests')
-    try:
-        os.makedirs(os.path.join(blddir, 'bad'))
-    except:
-        pass
+    for i in ['', 'bad', 'good']:
+        try:
+            os.makedirs(os.path.join(blddir, i))
+        except:
+            pass
 
     for i in glob.glob(blddir + '/*.*'):
         os.remove(i)
@@ -277,15 +278,16 @@ def test(ctx):
     srcdir   = ctx.path.abspath()
     orig_dir = os.path.abspath(os.curdir)
 
+    os.chdir(os.path.join(srcdir, 'tests', 'good'))
+    old_good_tests = glob.glob('*.ttl')
+    old_good_tests.sort()
+    old_good_tests.remove('manifest.ttl')
+    good_tests = { 'good': old_good_tests }
+    os.chdir(orig_dir)
+
     os.chdir(srcdir)
-
-    good_tests = glob.glob('tests/*.ttl')
-    good_tests.sort()
-    good_tests.remove('tests/manifest.ttl')
-
     bad_tests = glob.glob('tests/bad/*.ttl')
     bad_tests.sort()
-
     os.chdir(orig_dir)
 
     autowaf.pre_test(ctx, APPNAME)
@@ -295,16 +297,16 @@ def test(ctx):
     autowaf.run_tests(ctx, APPNAME, ['serd_test'], dirs=['.'])
 
     autowaf.run_tests(ctx, APPNAME, [
-            'serdi_static -o turtle %s/tests/base.ttl "base.ttl" > tests/base.ttl.out' % srcdir],
+            'serdi_static -o turtle %s/tests/good/base.ttl "base.ttl" > tests/good/base.ttl.out' % srcdir],
                       0, name='base')
 
-    if not file_equals('%s/tests/base.ttl' % srcdir, 'tests/base.ttl.out'):
+    if not file_equals('%s/tests/good/base.ttl' % srcdir, 'tests/good/base.ttl.out'):
         Logs.pprint('RED', 'FAIL: build/tests/base.ttl.out is incorrect')
 
     nul = os.devnull
     autowaf.run_tests(ctx, APPNAME, [
-            'serdi_static file://%s/tests/manifest.ttl > %s' % (srcdir, nul),
-            'serdi_static %s/tests/UTF-8.ttl > %s' % (srcdir, nul),
+            'serdi_static file://%s/tests/good/manifest.ttl > %s' % (srcdir, nul),
+            'serdi_static %s/tests/good/UTF-8.ttl > %s' % (srcdir, nul),
             'serdi_static -v > %s' % nul,
             'serdi_static -h > %s' % nul,
             'serdi_static -s "<foo> a <#Thingie> ." > %s' % nul,
@@ -327,66 +329,79 @@ def test(ctx):
             'serdi_static /no/such/file > %s' % nul],
                       1, name='serdi-cmd-bad')
 
-    commands = []
-    for test in good_tests:
-        base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test.replace('\\', '/')
-        commands += [ 'serdi_static -f "%s" "%s" > %s.out' % (
-                os.path.join(srcdir, test), base_uri, test) ]
+    def test_base(test):
+        return ('http://www.w3.org/2001/sw/DataAccess/df1/tests/'
+                + test.replace('\\', '/'))
 
-    autowaf.run_tests(ctx, APPNAME, commands, 0, name='good')
-
-    Logs.pprint('BOLD', '\nVerifying turtle => ntriples')
-    for test in good_tests:
-        out_filename = test + '.out'
-        if not os.access(out_filename, os.F_OK):
-            Logs.pprint('RED', 'FAIL: %s output is missing' % test)
-        elif not file_equals(srcdir + '/' + test.replace('.ttl', '.nt'),
-                             test + '.out'):
-            Logs.pprint('RED', 'FAIL: %s is incorrect' % out_filename)
-        else:
-            Logs.pprint('GREEN', 'Pass: %s' % test)
-
+    # Good tests
+    for tdir, tests in good_tests.items():
+        commands = []
+     
+        for test in tests:
+            path = os.path.join('tests', tdir, test)
+            commands += [ 'serdi_static -f "%s" "%s" > %s.out' % (
+                    os.path.join(srcdir, path), test_base(test), path) ]
+    
+        autowaf.run_tests(ctx, APPNAME, commands, 0, name=tdir)
+    
+        Logs.pprint('BOLD', '\nVerifying turtle => ntriples')
+        for test in tests:
+            check_filename = os.path.join(
+                srcdir, 'tests', tdir, test.replace('.ttl', '.nt'))
+            out_filename = os.path.join('tests', tdir, test + '.out')
+            if not os.access(out_filename, os.F_OK):
+                Logs.pprint('RED', 'FAIL: %s output is missing' % test)
+            elif not file_equals(check_filename, out_filename):
+                Logs.pprint('RED', 'FAIL: %s is incorrect' % out_filename)
+            else:
+                Logs.pprint('GREEN', 'Pass: %s' % test)
+    
+    # Bad tests
     commands = []
     for test in bad_tests:
-        commands += [ 'serdi_static "%s" "http://www.w3.org/2001/sw/DataAccess/df1/%s" > %s.out' % (os.path.join(srcdir, test), test.replace('\\', '/'), test) ]
+        commands += [ 'serdi_static "%s" "%s" > %s.out' % (
+                os.path.join(srcdir, test), test_base(test), test) ]
 
     autowaf.run_tests(ctx, APPNAME, commands, 1, name='bad')
 
-    thru_tests = good_tests
-    thru_tests.remove(os.path.join('tests', 'test-id.ttl')) # IDs are mapped so files won't be identical
-
-    commands = []
-    num = 0
-    for test in thru_tests:
-        num += 1
-        flags = ''
-        if (num % 2 == 0):
-            flags += '-b'
-        if (num % 5 == 0):
-            flags += ' -f'
-        if (num % 3 == 0):
-            flags += ' -r http://www.w3.org/'
-        if (num % 7 == 0):
-            flags += ' -e'
-        base_uri = 'http://www.w3.org/2001/sw/DataAccess/df1/' + test.replace('\\', '/')
-        out_filename = test + '.thru'
-        commands += [
-            '%s %s -i ntriples -o turtle -p foo "%s" "%s" | %s -i turtle -o ntriples -c foo - "%s" > %s.thru' % (
-                'serdi_static', flags.ljust(5),
-                os.path.join(srcdir, test), base_uri,
-                'serdi_static', base_uri, test) ]
-
-    autowaf.run_tests(ctx, APPNAME, commands, 0, name='turtle-round-trip')
-    Logs.pprint('BOLD', '\nVerifying ntriples => turtle => ntriples')
-    for test in thru_tests:
-        out_filename = test + '.thru'
-        if not os.access(out_filename, os.F_OK):
-            Logs.pprint('RED', 'FAIL: %s output is missing' % test)
-        elif not file_equals(srcdir + '/' + test.replace('.ttl', '.nt'),
-                             test + '.thru',
-                             '_:docid', '_:genid'):
-            Logs.pprint('RED', 'FAIL: %s is incorrect' % out_filename)
-        else:
-            Logs.pprint('GREEN', 'Pass: %s' % test)
-
+    # Round-trip good tests
+    for tdir, tests in good_tests.items():
+        thru_tests = tests;
+        thru_tests.remove('test-id.ttl') # IDs are mapped so files won't match
+    
+        commands = []
+        num = 0
+        for test in thru_tests:
+            num += 1
+            flags = ''
+            if (num % 2 == 0):
+                flags += '-b'
+            if (num % 5 == 0):
+                flags += ' -f'
+            if (num % 3 == 0):
+                flags += ' -r http://www.w3.org/'
+            if (num % 7 == 0):
+                flags += ' -e'
+            out_filename = os.path.join('tests', tdir, test + '.thru')
+            commands += [
+                ('%s %s -i ntriples -o turtle -p foo "%s" "%s"'
+                '| %s -i turtle -o ntriples -c foo - "%s" > %s') % (
+                    'serdi_static', flags.ljust(5),
+                    os.path.join(srcdir, 'tests', tdir, test), test_base(test),
+                    'serdi_static', test_base(test), out_filename) ]
+    
+        autowaf.run_tests(ctx, APPNAME, commands, 0, name='turtle-round-trip')
+        Logs.pprint('BOLD', '\nVerifying ntriples => turtle => ntriples')
+        for test in thru_tests:
+            path         = os.path.join('tests', tdir, test)
+            out_filename = path + '.thru'
+            if not os.access(out_filename, os.F_OK):
+                Logs.pprint('RED', 'FAIL: %s output is missing' % test)
+            elif not file_equals(os.path.join(srcdir, path).replace('.ttl', '.nt'),
+                                 path + '.thru',
+                                 '_:docid', '_:genid'):
+                Logs.pprint('RED', 'FAIL: %s is incorrect' % out_filename)
+            else:
+                Logs.pprint('GREEN', 'Pass: %s' % test)
+    
     autowaf.post_test(ctx, APPNAME)
