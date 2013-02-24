@@ -267,7 +267,7 @@ def file_equals(patha, pathb, subst_from='', subst_to=''):
 def test(ctx):
     blddir = autowaf.build_dir(APPNAME, 'tests')
     try:
-        os.makedirs(blddir)
+        os.makedirs(os.path.join(blddir, 'bad'))
     except:
         pass
 
@@ -279,10 +279,11 @@ def test(ctx):
 
     os.chdir(srcdir)
 
-    good_tests = glob.glob('tests/test-*.ttl')
+    good_tests = glob.glob('tests/*.ttl')
     good_tests.sort()
+    good_tests.remove('tests/manifest.ttl')
 
-    bad_tests = glob.glob('tests/bad-*.ttl')
+    bad_tests = glob.glob('tests/bad/*.ttl')
     bad_tests.sort()
 
     os.chdir(orig_dir)
@@ -339,7 +340,7 @@ def test(ctx):
         out_filename = test + '.out'
         if not os.access(out_filename, os.F_OK):
             Logs.pprint('RED', 'FAIL: %s output is missing' % test)
-        elif not file_equals(srcdir + '/' + test.replace('.ttl', '.out'),
+        elif not file_equals(srcdir + '/' + test.replace('.ttl', '.nt'),
                              test + '.out'):
             Logs.pprint('RED', 'FAIL: %s is incorrect' % out_filename)
         else:
@@ -381,7 +382,7 @@ def test(ctx):
         out_filename = test + '.thru'
         if not os.access(out_filename, os.F_OK):
             Logs.pprint('RED', 'FAIL: %s output is missing' % test)
-        elif not file_equals(srcdir + '/' + test.replace('.ttl', '.out'),
+        elif not file_equals(srcdir + '/' + test.replace('.ttl', '.nt'),
                              test + '.thru',
                              '_:docid', '_:genid'):
             Logs.pprint('RED', 'FAIL: %s is incorrect' % out_filename)
