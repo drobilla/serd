@@ -1,7 +1,8 @@
 serd (0.18.3) unstable;
 
+  * Support most of the latest Turtle Editor's Draft
   * Fix possible crash in serd_writer_end_anon() when writing invalid lists
-  * Generate blank names like _:b1 _:B2 _:el3, not _:genid1 _:docid2 _:genid3
+  * Generate blank names like _:b1 and _:B2 not _:genid1 _:docid2
   * Correctly handle posix_memalign failure
 
  -- David Robillard <d@drobilla.net>  Sun, 24 Feb 2013 02:05:30 -0500

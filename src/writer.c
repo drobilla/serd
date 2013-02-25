@@ -145,17 +145,133 @@ sink(const void* buf, size_t len, SerdWriter* writer)
 	}
 }
 
+// Parse a UTF-8 character, set *size to the length, and return the code point
+static inline uint32_t
+parse_utf8_char(SerdWriter* writer, const uint8_t* utf8, size_t* size)
+{
+	uint32_t c = 0;
+	if ((utf8[0] & 0x80) == 0) {  // Starts with `0'
+		*size = 1;
+		c     = utf8[0];
+	} else if ((utf8[0] & 0xE0) == 0xC0) {  // Starts with `110'
+		*size = 2;
+		c     = utf8[0] & 0x1F;
+	} else if ((utf8[0] & 0xF0) == 0xE0) {  // Starts with `1110'
+		*size = 3;
+		c     = utf8[0] & 0x0F;
+	} else if ((utf8[0] & 0xF8) == 0xF0) {  // Starts with `11110'
+		*size = 4;
+		c     = utf8[0] & 0x07;
+	} else {
+		w_err(writer, SERD_ERR_BAD_ARG, "invalid UTF-8: %X\n", utf8[0]);
+		*size = 0;
+		return 0;
+	}
+
+	size_t  i  = 0;
+	uint8_t in = utf8[i++];
+	
+#define READ_BYTE() \
+	in = utf8[i++] & 0x3f; \
+	c  = (c << 6) | in;
+
+	switch (*size) {
+	case 4: READ_BYTE();
+	case 3: READ_BYTE();
+	case 2: READ_BYTE();
+	}
+
+	return c;
+}
+
+// Write a single character, as an escape for single byte characters
+// (Caller prints any single byte characters that don't need escaping)
+static size_t
+write_character(SerdWriter* writer, const uint8_t* utf8, size_t* size)
+{
+	const uint8_t replacement_char[] = { 0xEF, 0xBF, 0xBD };
+	char          escape[11]         = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	const uint8_t in                 = utf8[0];
+
+	uint32_t c = parse_utf8_char(writer, utf8, size);
+	switch (*size) {
+	case 0:
+		w_err(writer, SERD_ERR_BAD_ARG, "invalid UTF-8: %X\n", in);
+		return sink(replacement_char, sizeof(replacement_char), writer);
+	case 1:
+		snprintf(escape, sizeof(escape), "\\u%04X", in);
+		return sink(escape, 6, writer);
+	default:
+		break;
+	}
+
+	if (!(writer->style & SERD_STYLE_ASCII)) {
+		// Write UTF-8 character directly to UTF-8 output
+		return sink(utf8, *size, writer);
+	}
+
+	if (c < 0xFFFF) {
+		snprintf(escape, sizeof(escape), "\\u%04X", c);
+		return sink(escape, 6, writer);
+	} else {
+		snprintf(escape, sizeof(escape), "\\U%08X", c);
+		return sink(escape, 10, writer);
+	}
+}
+
+static inline bool
+uri_must_escape(const uint8_t c)
+{
+	switch (c) {
+	case ' ': case '"': case '<': case '>': case '\\':
+	case '^': case '`': case '{': case '|': case '}':
+		return true;
+	default:
+		return !in_range(c, 0x20, 0x7E);
+	}
+}
+	
+static size_t
+write_uri(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
+{
+	size_t len = 0;
+	for (size_t i = 0; i < n_bytes;) {
+		size_t j = i;  // Index of next character that must be escaped
+		for (; j < n_bytes; ++j) {
+			if (uri_must_escape(utf8[j])) {
+				break;
+			}
+		}
+
+		if (j > i) {
+			// Bulk write all characters up to this special one
+			len += sink(&utf8[i], j - i, writer);
+			i = j;
+			continue;
+		}
+
+		// Write UTF-8 character
+		size_t size = 0;
+		len += write_character(writer, utf8 + i, &size);
+		i   += size;
+
+		if (size == 0) {
+			return len;
+		}
+	}
+	return len;
+}
+
 static size_t
 write_text(SerdWriter* writer, TextContext ctx,
            const uint8_t* utf8, size_t n_bytes)
 {
-	size_t len        = 0;
-	char   escape[11] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	size_t len = 0;
 	for (size_t i = 0; i < n_bytes;) {
 		// Fast bulk write for long strings of printable ASCII
 		size_t j = i;
 		for (; j < n_bytes; ++j) {
-			if (utf8[j] == '>' || utf8[j] == '\\' || utf8[j] == '"'
+			if (utf8[j] == '\\' || utf8[j] == '"'
 			    || (!in_range(utf8[j], 0x20, 0x7E))) {
 				break;
 			}
@@ -174,82 +290,27 @@ write_text(SerdWriter* writer, TextContext ctx,
 			} else if (in == '\"' && i == n_bytes) {
 				len += sink("\\\"", 2, writer); continue;  // '"' at string end
 			}
-		} else {
+		} else if (ctx == WRITE_STRING) {
 			switch (in) {
 			case '\\': len += sink("\\\\", 2, writer); continue;
 			case '\n': len += sink("\\n", 2, writer);  continue;
 			case '\r': len += sink("\\r", 2, writer);  continue;
 			case '\t': len += sink("\\t", 2, writer);  continue;
-			case '"':
-				if (ctx == WRITE_STRING) {
-					len += sink("\\\"", 2, writer);
-					continue;
-				}  // else fall-through
+			case '\b': len += sink("\\b", 2, writer);  continue;
+			case '\f': len += sink("\\f", 2, writer);  continue;
+			case '"':  len += sink("\\\"", 2, writer); continue;
 			default: break;
-			}
-
-			if ((ctx == WRITE_STRING && in == '"') ||
-			    (ctx == WRITE_URI    && in == '>')) {
-				snprintf(escape, sizeof(escape), "\\u%04X",
-				         ctx == WRITE_STRING ? '"' : '>');
-				len += sink(escape, 6, writer);
-				continue;
 			}
 		}
 
-		uint32_t c    = 0;
-		size_t   size = 0;
-		if ((in & 0x80) == 0) {  // Starts with `0'
-			c = in & 0x7F;
-			if (in_range(c, 0x20, 0x7E)
-			    || (is_space(c) && ctx == WRITE_LONG_STRING)) {
-				len += sink(&in, 1, writer);  // Print ASCII character
-			} else {
-				snprintf(escape, sizeof(escape), "\\u%04X", c);
-				len += sink(escape, 6, writer);  // ASCII control character
-			}
-			continue;
-		} else if ((in & 0xE0) == 0xC0) {  // Starts with `110'
-			size = 2;
-			c    = in & 0x1F;
-		} else if ((in & 0xF0) == 0xE0) {  // Starts with `1110'
-			size = 3;
-			c    = in & 0x0F;
-		} else if ((in & 0xF8) == 0xF0) {  // Starts with `11110'
-			size = 4;
-			c    = in & 0x07;
-		} else {
-			w_err(writer, SERD_ERR_BAD_ARG, "invalid UTF-8: %X\n", in);
-			const uint8_t replacement_char[] = { 0xEF, 0xBF, 0xBD };
-			len += sink(replacement_char, sizeof(replacement_char), writer);
+		size_t size = 0;
+		len += write_character(writer, utf8 + i - 1, &size);
+
+		if (size == 0) {
 			return len;
 		}
 
-		if (ctx != WRITE_URI && !(writer->style & SERD_STYLE_ASCII)) {
-			// Write UTF-8 character directly to UTF-8 output
-			// TODO: Always parse and validate character?
-			len += sink(utf8 + i - 1, size, writer);
-			i += size - 1;
-			continue;
-		}
-
-#define READ_BYTE() \
-		in = utf8[i++] & 0x3f; \
-		c  = (c << 6) | in;
-
-		switch (size) {
-		case 4: READ_BYTE();
-		case 3: READ_BYTE();
-		case 2: READ_BYTE();
-		}
-
-		if (c < 0xFFFF) {
-			snprintf(escape, sizeof(escape), "\\u%04X", c);
-			len += sink(escape, 6, writer);
-		} else {
-			snprintf(escape, sizeof(escape), "\\U%08X", c);
-			len += sink(escape, 10, writer);
-		}
+		i += size - 1;
 	}
 	return len;
 }
@@ -257,8 +318,7 @@ write_text(SerdWriter* writer, TextContext ctx,
 static size_t
 uri_sink(const void* buf, size_t len, void* stream)
 {
-	return write_text((SerdWriter*)stream, WRITE_URI,
-	                  (const uint8_t*)buf, len);
+	return write_uri((SerdWriter*)stream, (const uint8_t*)buf, len);
 }
 
 static void
@@ -369,8 +429,8 @@ write_node(SerdWriter*        writer,
 				return false;
 			}
 			sink("<", 1, writer);
-			write_text(writer, WRITE_URI, uri_prefix.buf, uri_prefix.len);
-			write_text(writer, WRITE_URI, uri_suffix.buf, uri_suffix.len);
+			write_uri(writer, uri_prefix.buf, uri_prefix.len);
+			write_uri(writer, uri_suffix.buf, uri_suffix.len);
 			sink(">", 1, writer);
 			break;
 		case SERD_TURTLE:
@@ -420,9 +480,9 @@ write_node(SerdWriter*        writer,
 			SerdNode  prefix;
 			SerdChunk suffix;
 			if (serd_env_qualify(writer->env, node, &prefix, &suffix)) {
-				write_text(writer, WRITE_URI, prefix.buf, prefix.n_bytes);
+				write_uri(writer, prefix.buf, prefix.n_bytes);
 				sink(":", 1, writer);
-				write_text(writer, WRITE_URI, suffix.buf, suffix.len);
+				write_uri(writer, suffix.buf, suffix.len);
 				break;
 			}
 		}
@@ -442,7 +502,7 @@ write_node(SerdWriter*        writer,
 					&uri, &writer->base_uri, root, uri_sink, writer);
 			}
 		} else {
-			write_text(writer, WRITE_URI, node->buf, node->n_bytes);
+			write_uri(writer, node->buf, node->n_bytes);
 		}
 		sink(">", 1, writer);
 	default:
@@ -749,7 +809,7 @@ serd_writer_set_prefix(SerdWriter*     writer,
 			sink("@prefix ", 8, writer);
 			sink(name->buf, name->n_bytes, writer);
 			sink(": <", 3, writer);
-			write_text(writer, WRITE_URI, uri->buf, uri->n_bytes);
+			write_uri(writer, uri->buf, uri->n_bytes);
 			sink("> .\n", 4, writer);
 		}
 		writer->indent = 0;

@@ -264,9 +264,101 @@ def file_equals(patha, pathb, subst_from='', subst_to=''):
     fb.close()
     return True
 
+def earl_assertion(test, passed, asserter):
+    import datetime
+
+    return '''
+[]
+	a earl:Assertion ;%s
+	earl:subject <http://drobilla.net/sw/serd> ;
+	earl:test <%s> ;
+	earl:result [
+		a earl:TestResult ;
+		earl:outcome %s ;
+		dc:date "%s"^^xsd:dateTime
+	] .
+''' % (('\n\tearl:assertedBy <%s> ;' % asserter) if asserter else '',
+       test,
+       "earl:passed" if passed else "earl:failed",
+       datetime.datetime.now().replace(microsecond=0).isoformat())
+
+def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base=None):
+    import rdflib
+    import urlparse
+
+    if not parse_base:
+        parse_base = test_base
+
+    rdf  = rdflib.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
+    rdfs = rdflib.Namespace('http://www.w3.org/2000/01/rdf-schema#')
+    mf   = rdflib.Namespace('http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#')
+    rdft = rdflib.Namespace('http://www.w3.org/ns/rdftest#')
+    earl = rdflib.Namespace('http://www.w3.org/ns/earl#')
+
+    model = rdflib.ConjunctiveGraph()
+    model.parse(os.path.join(srcdir, 'tests', testdir, 'manifest.ttl'),
+                rdflib.URIRef(test_base + 'manifest.ttl'),
+                format='n3')
+
+    is_drobilla = (os.getenv('USER') == 'drobilla')
+    asserter    = 'http://drobilla.net/drobilla#me' if is_drobilla else ''
+
+    for i in sorted(model.triples([None, rdf.type, rdft.TestTurtlePositiveSyntax])):
+        test        = i[0]
+        name        = model.value(test, mf.name, None)
+        action_node = model.value(test, mf.action, None)[len(test_base):]
+
+        output = os.path.join('tests', testdir, action_node + '.out')
+        action = os.path.join(srcdir, 'tests', testdir, action_node)
+
+        rel     = os.path.relpath(action, os.path.join(srcdir, 'tests', testdir))
+        command = 'serdi_static -f "%s" "%s" > %s' % (action, parse_base + rel, output)
+        passed  = autowaf.run_test(ctx, APPNAME, command, 0, name=name)
+
+        report.write(earl_assertion(test, passed, asserter))
+
+    for i in sorted(model.triples([None, rdf.type, rdft.TestTurtleNegativeSyntax])):
+        test        = i[0]
+        name        = model.value(test, mf.name, None)
+        action_node = model.value(test, mf.action, None)[len(test_base):]
+
+        output = os.path.join('tests', testdir, action_node + '.out')
+        action = os.path.join(srcdir, 'tests', testdir, action_node)
+
+        rel     = os.path.relpath(action, os.path.join(srcdir, 'tests', testdir))
+        command = 'serdi_static -f "%s" "%s" > %s' % (action, parse_base + rel, output)
+        passed  = autowaf.run_test(ctx, APPNAME, command, 1, name=name)
+
+        report.write(earl_assertion(test, passed, asserter))
+
+    for i in sorted(model.triples([None, rdf.type, rdft.TestTurtleEval])):
+        test        = i[0]
+        name        = model.value(test, mf.name, None)
+        action_node = model.value(test, mf.action, None)[len(test_base):]
+        result_node = model.value(test, mf.result, None)[len(test_base):]
+
+        output = os.path.join('tests', testdir, action_node + '.out')
+        action = os.path.join(srcdir, 'tests', testdir, action_node)
+        result = os.path.join(srcdir, 'tests', testdir, result_node)
+
+        rel     = os.path.relpath(action, os.path.join(srcdir, 'tests', testdir))
+        command = 'serdi_static -f "%s" "%s" > %s' % (action, test_base + rel, output)
+        passed  = autowaf.run_test(ctx, APPNAME, command, 0, name=name)
+        if passed:
+            if not os.access(output, os.F_OK):
+                passed = False
+                Logs.pprint('RED', 'FAIL: %s output %s is missing' % (name, output))
+            elif not file_equals(result, output):
+                passed = False
+                Logs.pprint('RED', 'FAIL: %s\n   != %s' % (os.path.abspath(output), result))
+            else:
+                Logs.pprint('GREEN', '** Pass %s' % output)
+
+        report.write(earl_assertion(test, passed, asserter))
+
 def test(ctx):
     blddir = autowaf.build_dir(APPNAME, 'tests')
-    for i in ['', 'bad', 'good']:
+    for i in ['', 'bad', 'good', 'new', 'tests-ttl']:
         try:
             os.makedirs(os.path.join(blddir, i))
         except:
@@ -340,7 +432,7 @@ def test(ctx):
         for test in tests:
             path = os.path.join('tests', tdir, test)
             commands += [ 'serdi_static -f "%s" "%s" > %s.out' % (
-                    os.path.join(srcdir, path), test_base(test), path) ]
+                    os.path.join('..', path), test_base(test), path) ]
     
         autowaf.run_tests(ctx, APPNAME, commands, 0, name=tdir)
     
@@ -364,10 +456,12 @@ def test(ctx):
 
     autowaf.run_tests(ctx, APPNAME, commands, 1, name='bad')
 
+    # Don't do a round-trip test for test-id.ttl, IDs have changed
+    good_tests['good'].remove('test-id.ttl')
+
     # Round-trip good tests
     for tdir, tests in good_tests.items():
         thru_tests = tests;
-        thru_tests.remove('test-id.ttl') # IDs are mapped so files won't match
     
         commands = []
         num = 0
@@ -403,5 +497,26 @@ def test(ctx):
                 Logs.pprint('RED', 'FAIL: %s is incorrect' % out_filename)
             else:
                 Logs.pprint('GREEN', 'Pass: %s' % test)
+
+    try:
+        report = open('earl.ttl', 'w')
+        report.write('''@prefix earl: <http://www.w3.org/ns/earl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n''')
+
+        serd_ttl = open(os.path.join(srcdir, 'serd.ttl'))
+        for line in serd_ttl:
+            report.write(line)
+        serd_ttl.close()
+        rdf_turtle = 'https://dvcs.w3.org/hg/rdf/raw-file/default/rdf-turtle/'
+        test_manifest(ctx, srcdir, 'new', report,
+                      rdf_turtle + 'coverage/tests/')
+        test_manifest(ctx, srcdir, 'tests-ttl', report,
+                      rdf_turtle + 'coverage/tests/', 'http://example/base/')
+
+        report.close()
+
+    except Exception as e:
+        print "error:", e
+        pass
     
     autowaf.post_test(ctx, APPNAME)
