@@ -516,7 +516,6 @@ def test(ctx):
         report.close()
 
     except Exception as e:
-        print "error:", e
         pass
     
     autowaf.post_test(ctx, APPNAME)
