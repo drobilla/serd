@@ -511,7 +511,7 @@ def test(ctx):
         test_manifest(ctx, srcdir, 'new', report,
                       rdf_turtle + 'coverage/tests/')
         test_manifest(ctx, srcdir, 'tests-ttl', report,
-                      rdf_turtle + 'coverage/tests/', 'http://example/base/')
+                      rdf_turtle + 'tests-ttl/', 'http://example/base/')
 
         report.close()
 
