@@ -282,12 +282,9 @@ def earl_assertion(test, passed, asserter):
        "earl:passed" if passed else "earl:failed",
        datetime.datetime.now().replace(microsecond=0).isoformat())
 
-def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base=None):
+def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base):
     import rdflib
     import urlparse
-
-    if not parse_base:
-        parse_base = test_base
 
     rdf  = rdflib.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
     rdfs = rdflib.Namespace('http://www.w3.org/2000/01/rdf-schema#')
@@ -342,7 +339,7 @@ def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base=None):
         result = os.path.join(srcdir, 'tests', testdir, result_node)
 
         rel     = os.path.relpath(action, os.path.join(srcdir, 'tests', testdir))
-        command = 'serdi_static -f "%s" "%s" > %s' % (action, test_base + rel, output)
+        command = 'serdi_static -f "%s" "%s" > %s' % (action, parse_base + rel, output)
         passed  = autowaf.run_test(ctx, APPNAME, command, 0, name=name)
         if passed:
             if not os.access(output, os.F_OK):
