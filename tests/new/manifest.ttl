@@ -236,7 +236,7 @@
    mf:name    "anonymous_blank_node_subject" ;
    rdfs:comment "anonymous blank node subject" ;
    mf:action    <anonymous_blank_node_subject.ttl> ;
-   mf:result    <labeled_blank_node_subject.nt> ;
+   mf:result    <anonymous_blank_node_subject.nt> ;
    .
 
 <#anonymous_blank_node_object> rdf:type rdft:TestTurtleEval ;
