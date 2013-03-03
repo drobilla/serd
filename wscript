@@ -282,19 +282,18 @@ def earl_assertion(test, passed, asserter):
        "earl:passed" if passed else "earl:failed",
        datetime.datetime.now().replace(microsecond=0).isoformat())
 
-def test_thru(ctx, base, path, flags):
-    in_filename    = os.path.join(ctx.path.abspath(), path)
-    out_filename   = path + '.thru'
-    check_filename = in_filename.replace('.ttl', '.nt')
+def test_thru(ctx, base, in_filename, check_filename, flags):
+    out_filename = in_filename + '.thru'
 
-    command = ('%s %s -i ntriples -o turtle -p foo "%s" "%s"'
-               '| %s -i turtle -o ntriples -c foo - "%s" > %s') % (
+    command = ('%s %s -i ntriples -o turtle -p foo "%s" "%s" | '
+               '%s -i turtle -o ntriples -c foo - "%s" > %s') % (
         'serdi_static', flags.ljust(5),
         in_filename, base,
         'serdi_static', base, out_filename)
 
     passed = autowaf.run_test(ctx, APPNAME, command, 0, name=out_filename)
     if not passed:
+        Logs.pprint('RED', '** Failed command: %s' % command)
         return False
 
     if not os.access(out_filename, os.F_OK):
@@ -302,7 +301,7 @@ def test_thru(ctx, base, path, flags):
     elif not file_equals(check_filename, out_filename, '_:docid', '_:genid'):
         Logs.pprint('RED', 'FAIL: %s != %s' % (out_filename, check_filename))
     else:
-        Logs.pprint('GREEN', '** Pass %s == %s' % (out_filename, check_filename))
+        #Logs.pprint('GREEN', '** Pass %s == %s' % (out_filename, check_filename))
         return True
 
     return False
@@ -358,16 +357,20 @@ def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base):
         passed = run_test(action_node, 0)
 
         if passed:
+            action = os.path.join(srcdir, 'tests', testdir, action_node)
             output = os.path.join('tests', testdir, action_node + '.out')
             result = os.path.join(srcdir, 'tests', testdir, result_node)
+            rel    = os.path.relpath(action, os.path.join(srcdir, 'tests', testdir))
             if not os.access(output, os.F_OK):
                 passed = False
                 Logs.pprint('RED', 'FAIL: %s output %s is missing' % (name, output))
             elif not file_equals(result, output):
                 passed = False
-                Logs.pprint('RED', 'FAIL: %s\n   != %s' % (os.path.abspath(output), result))
+                Logs.pprint('RED', 'FAIL: %s != %s' % (os.path.abspath(output), result))
             else:
                 Logs.pprint('GREEN', '** Pass %s' % output)
+
+            test_thru(ctx, parse_base + rel, action, result, "")
 
         report.write(earl_assertion(test, passed, asserter))
 
@@ -492,8 +495,11 @@ def test(ctx):
             if (num % 7 == 0):
                 flags += ' -e'
 
-            path = os.path.join('tests', tdir, test)
-            test_thru(ctx, test_base(test), path, flags)
+            path           = os.path.join('tests', tdir, test)
+            in_filename    = os.path.join(ctx.path.abspath(), path)
+            check_filename = in_filename.replace('.ttl', '.nt')
+
+            test_thru(ctx, test_base(test), in_filename, check_filename, flags)
 
     try:
         report = open('earl.ttl', 'w')

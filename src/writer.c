@@ -442,8 +442,16 @@ write_node(SerdWriter*        writer,
 			const char* type_uri = (const char*)datatype->buf;
 			if (!strncmp(type_uri, NS_XSD, sizeof(NS_XSD) - 1) && (
 				    !strcmp(type_uri + sizeof(NS_XSD) - 1, "boolean") ||
-				    !strcmp(type_uri + sizeof(NS_XSD) - 1, "decimal") ||
 				    !strcmp(type_uri + sizeof(NS_XSD) - 1, "integer"))) {
+				sink(node->buf, node->n_bytes, writer);
+				break;
+			} else if (!strcmp(type_uri + sizeof(NS_XSD) - 1, "decimal") &&
+			           strchr((const char*)node->buf, '.') &&
+			           node->buf[node->n_bytes - 1] != '.') {
+				/* xsd:decimal literals without trailing digits, e.g. "5.", can
+				   not be written bare in Turtle.  We could add a 0 which is
+				   prettier, but changes the text and breaks round tripping.
+				*/
 				sink(node->buf, node->n_bytes, writer);
 				break;
 			}
