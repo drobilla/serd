@@ -325,18 +325,20 @@ def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base):
     is_drobilla = (os.getenv('USER') == 'drobilla')
     asserter    = 'http://drobilla.net/drobilla#me' if is_drobilla else ''
 
+    def run_test(action_node, expected_return):
+        output  = os.path.join('tests', testdir, action_node + '.out')
+        action  = os.path.join(srcdir, 'tests', testdir, action_node)
+        rel     = os.path.relpath(action, os.path.join(srcdir, 'tests', testdir))
+        command = 'serdi_static -f "%s" "%s" > %s' % (action, parse_base + rel, output)
+
+        return autowaf.run_test(ctx, APPNAME, command, expected_return, name=name)
+
     for i in sorted(model.triples([None, rdf.type, rdft.TestTurtlePositiveSyntax])):
         test        = i[0]
         name        = model.value(test, mf.name, None)
         action_node = model.value(test, mf.action, None)[len(test_base):]
 
-        output = os.path.join('tests', testdir, action_node + '.out')
-        action = os.path.join(srcdir, 'tests', testdir, action_node)
-
-        rel     = os.path.relpath(action, os.path.join(srcdir, 'tests', testdir))
-        command = 'serdi_static -f "%s" "%s" > %s' % (action, parse_base + rel, output)
-        passed  = autowaf.run_test(ctx, APPNAME, command, 0, name=name)
-
+        passed = run_test(action_node, 0)
         report.write(earl_assertion(test, passed, asserter))
 
     for i in sorted(model.triples([None, rdf.type, rdft.TestTurtleNegativeSyntax])):
@@ -344,13 +346,7 @@ def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base):
         name        = model.value(test, mf.name, None)
         action_node = model.value(test, mf.action, None)[len(test_base):]
 
-        output = os.path.join('tests', testdir, action_node + '.out')
-        action = os.path.join(srcdir, 'tests', testdir, action_node)
-
-        rel     = os.path.relpath(action, os.path.join(srcdir, 'tests', testdir))
-        command = 'serdi_static -f "%s" "%s" > %s' % (action, parse_base + rel, output)
-        passed  = autowaf.run_test(ctx, APPNAME, command, 1, name=name)
-
+        passed = run_test(action_node, 1)
         report.write(earl_assertion(test, passed, asserter))
 
     for i in sorted(model.triples([None, rdf.type, rdft.TestTurtleEval])):
@@ -359,14 +355,11 @@ def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base):
         action_node = model.value(test, mf.action, None)[len(test_base):]
         result_node = model.value(test, mf.result, None)[len(test_base):]
 
-        output = os.path.join('tests', testdir, action_node + '.out')
-        action = os.path.join(srcdir, 'tests', testdir, action_node)
-        result = os.path.join(srcdir, 'tests', testdir, result_node)
+        passed = run_test(action_node, 0)
 
-        rel     = os.path.relpath(action, os.path.join(srcdir, 'tests', testdir))
-        command = 'serdi_static -f "%s" "%s" > %s' % (action, parse_base + rel, output)
-        passed  = autowaf.run_test(ctx, APPNAME, command, 0, name=name)
         if passed:
+            output = os.path.join('tests', testdir, action_node + '.out')
+            result = os.path.join(srcdir, 'tests', testdir, result_node)
             if not os.access(output, os.F_OK):
                 passed = False
                 Logs.pprint('RED', 'FAIL: %s output %s is missing' % (name, output))
