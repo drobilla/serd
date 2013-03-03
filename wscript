@@ -282,6 +282,31 @@ def earl_assertion(test, passed, asserter):
        "earl:passed" if passed else "earl:failed",
        datetime.datetime.now().replace(microsecond=0).isoformat())
 
+def test_thru(ctx, base, path, flags):
+    in_filename    = os.path.join(ctx.path.abspath(), path)
+    out_filename   = path + '.thru'
+    check_filename = in_filename.replace('.ttl', '.nt')
+
+    command = ('%s %s -i ntriples -o turtle -p foo "%s" "%s"'
+               '| %s -i turtle -o ntriples -c foo - "%s" > %s') % (
+        'serdi_static', flags.ljust(5),
+        in_filename, base,
+        'serdi_static', base, out_filename)
+
+    passed = autowaf.run_test(ctx, APPNAME, command, 0, name=out_filename)
+    if not passed:
+        return False
+
+    if not os.access(out_filename, os.F_OK):
+        Logs.pprint('RED', 'FAIL: %s is missing' % out_filename)
+    elif not file_equals(check_filename, out_filename, '_:docid', '_:genid'):
+        Logs.pprint('RED', 'FAIL: %s != %s' % (out_filename, check_filename))
+    else:
+        Logs.pprint('GREEN', '** Pass %s == %s' % (out_filename, check_filename))
+        return True
+
+    return False
+
 def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base):
     import rdflib
     import urlparse
@@ -473,27 +498,9 @@ def test(ctx):
                 flags += ' -r http://www.w3.org/'
             if (num % 7 == 0):
                 flags += ' -e'
-            out_filename = os.path.join('tests', tdir, test + '.thru')
-            commands += [
-                ('%s %s -i ntriples -o turtle -p foo "%s" "%s"'
-                '| %s -i turtle -o ntriples -c foo - "%s" > %s') % (
-                    'serdi_static', flags.ljust(5),
-                    os.path.join(srcdir, 'tests', tdir, test), test_base(test),
-                    'serdi_static', test_base(test), out_filename) ]
-    
-        autowaf.run_tests(ctx, APPNAME, commands, 0, name='turtle-round-trip')
-        Logs.pprint('BOLD', '\nVerifying ntriples => turtle => ntriples')
-        for test in thru_tests:
-            path         = os.path.join('tests', tdir, test)
-            out_filename = path + '.thru'
-            if not os.access(out_filename, os.F_OK):
-                Logs.pprint('RED', 'FAIL: %s output is missing' % test)
-            elif not file_equals(os.path.join(srcdir, path).replace('.ttl', '.nt'),
-                                 path + '.thru',
-                                 '_:docid', '_:genid'):
-                Logs.pprint('RED', 'FAIL: %s is incorrect' % out_filename)
-            else:
-                Logs.pprint('GREEN', 'Pass: %s' % test)
+
+            path = os.path.join('tests', tdir, test)
+            test_thru(ctx, test_base(test), path, flags)
 
     try:
         report = open('earl.ttl', 'w')
