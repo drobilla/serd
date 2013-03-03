@@ -579,9 +579,6 @@ static Ref
 read_String(SerdReader* reader, SerdNodeFlags* flags)
 {
 	const uint8_t q1 = peek_byte(reader);
-	if (q1 != '\"' && q1 != '\'') {
-		return 0;
-	}
 	eat_byte_safe(reader, q1);
 
 	const uint8_t q2 = peek_byte(reader);
@@ -893,14 +890,15 @@ read_literal(SerdReader* reader, Ref* dest,
 	}
 
 	switch (peek_byte(reader)) {
+	case '@':
+		eat_byte_safe(reader, '@');
+		TRY_THROW(*lang = read_language(reader));
+		break;
 	case '^':
 		eat_byte_safe(reader, '^');
 		eat_byte_check(reader, '^');
 		TRY_THROW(read_iri(reader, datatype));
 		break;
-	case '@':
-		eat_byte_safe(reader, '@');
-		TRY_THROW(*lang = read_language(reader));
 	}
 	*dest = str;
 	return true;
@@ -941,8 +939,6 @@ read_verb(SerdReader* reader, Ref* dest)
 			return (*dest = push_node(reader, SERD_URI, NS_RDF "type", 47));
 		} else if (st > SERD_FAILURE || !read_PrefixedName(reader, *dest, false)) {
 			return (*dest = pop_node(reader, *dest));
-		} else if (!strncmp((char*)deref(reader, *dest)->buf, "_:", 2)) {
-			return (*dest = pop_node(reader, *dest)); // FIXME: necessary?
 		} else {
 			return true;
 		}
