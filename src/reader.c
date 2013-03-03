@@ -803,14 +803,6 @@ read_0_9(SerdReader* reader, Ref str, bool at_least_one)
 	return count;
 }
 
-// [19] exponent ::= [eE] ('-' | '+')? [0-9]+
-// [18] decimal ::= ( '-' | '+' )? ( [0-9]+ '.' [0-9]*
-//                                  | '.' ([0-9])+
-//                                  | ([0-9])+ )
-// [17] double  ::= ( '-' | '+' )? ( [0-9]+ '.' [0-9]* exponent
-//                                  | '.' ([0-9])+ exponent
-//                                  | ([0-9])+ exponent )
-// [16] integer ::= ( '-' | '+' ) ? [0-9]+
 static bool
 read_number(SerdReader* reader, Ref* dest, Ref* datatype, bool* ate_dot)
 {
@@ -931,7 +923,6 @@ is_token_end(uint8_t c)
 	}
 }
 
-// [9] verb ::= predicate | 'a'
 static bool
 read_verb(SerdReader* reader, Ref* dest)
 {
@@ -959,7 +950,6 @@ read_verb(SerdReader* reader, Ref* dest)
 	return false;
 }
 
-// [26] nodeID ::= '_:' name
 static Ref
 read_BLANK_NODE_LABEL(SerdReader* reader)
 {
@@ -1029,10 +1019,6 @@ blank_id(SerdReader* reader)
 	return ref;
 }
 
-// Spec: [21] blank ::= nodeID | '[]'
-//          | '[' predicateObjectList ']' | collection
-// Impl: [21] blank ::= nodeID | '[' ws* ']'
-//          | '[' ws* predicateObjectList ws* ']' | collection
 static bool
 read_blank(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest)
 {
@@ -1080,7 +1066,6 @@ read_blank(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest)
 	}
 }
 
-// [13] object ::= resource | blank | literal
 // Recurses, calling statement_sink for every statement encountered.
 // Leaves stack in original calling state (i.e. pops everything it pushes).
 static bool
@@ -1155,8 +1140,6 @@ except:
 	return ret;
 }
 
-// Spec: [8] objectList ::= object ( ',' object )*
-// Impl: [8] objectList ::= object ( ws* ',' ws* object )*
 static bool
 read_objectList(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 {
@@ -1167,10 +1150,6 @@ read_objectList(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 	return true;
 }
 
-// Spec: [7] predicateObjectList ::= verb objectList
-//                                   (';' verb objectList)* (';')?
-// Impl: [7] predicateObjectList ::= verb ws* objectList
-//                                   (ws* ';' ws* verb ws+ objectList)* (';')?
 static bool
 read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 {
@@ -1213,8 +1192,6 @@ end_collection(SerdReader* reader, ReadContext ctx, Ref n1, Ref n2, bool ret)
 	return ret && (eat_byte_safe(reader, ')') == ')');
 }
 
-// [22] itemList   ::= object+
-// [23] collection ::= '(' itemList? ')'
 static bool
 read_collection(SerdReader* reader, ReadContext ctx, Ref* dest)
 {
@@ -1274,7 +1251,6 @@ read_collection(SerdReader* reader, ReadContext ctx, Ref* dest)
 	return end_collection(reader, ctx, n1, n2, true);
 }
 
-// [11] subject ::= resource | blank
 static Ref
 read_subject(SerdReader* reader, ReadContext ctx, bool* nested)
 {
@@ -1292,8 +1268,6 @@ read_subject(SerdReader* reader, ReadContext ctx, bool* nested)
 	return subject;
 }
 
-// Spec: [6] triples ::= subject predicateObjectList
-// Impl: [6] triples ::= subject ws+ predicateObjectList
 static bool
 read_triples(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 {
@@ -1318,7 +1292,6 @@ read_triples(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 	return ret;
 }
 
-// [5] base ::= '@base' ws+ uriref
 static bool
 read_base(SerdReader* reader)
 {
@@ -1334,8 +1307,6 @@ read_base(SerdReader* reader)
 	return true;
 }
 
-// Spec: [4] prefixID ::= '@prefix' ws+ prefixName? ':' uriref
-// Impl: [4] prefixID ::= '@prefix' ws+ prefixName? ':' ws* uriref
 static bool
 read_prefixID(SerdReader* reader)
 {
@@ -1371,7 +1342,6 @@ read_prefixID(SerdReader* reader)
 	return ret;
 }
 
-// [3] directive ::= prefixID | base
 static bool
 read_directive(SerdReader* reader)
 {
@@ -1383,8 +1353,6 @@ read_directive(SerdReader* reader)
 	}
 }
 
-// Spec: [1] statement ::= directive '.' | triples '.' | ws+
-// Impl: [1] statement ::= directive ws* '.' | triples ws* '.' | ws+
 static bool
 read_statement(SerdReader* reader)
 {
@@ -1414,7 +1382,6 @@ read_statement(SerdReader* reader)
 	return true;
 }
 
-// [1] turtleDoc ::= (statement)*
 static bool
 read_turtleDoc(SerdReader* reader)
 {
