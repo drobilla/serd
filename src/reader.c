@@ -679,16 +679,16 @@ read_PN_LOCAL(SerdReader* reader, Ref dest)
 	while ((c = peek_byte(reader))) {  // Middle: (PN_CHARS | '.' | ';')*
 		if (/*c == '.' || */c == ':') {
 			push_byte(reader, dest, eat_byte_safe(reader, c));
-		} else if (!read_PN_CHARS(reader, dest)){
+		} else if (!read_PN_CHARS(reader, dest)) {
 			if ((st = read_PLX(reader, dest)) > SERD_FAILURE) {
 				return st;
-			} else if (st != SERD_SUCCESS && !read_PN_CHARS(reader, dest)) {
-				return SERD_FAILURE;
+			} else if (st != SERD_SUCCESS) {
+				break;
 			}
 		}
 	}
 
-	return dest;
+	return SERD_SUCCESS;
 }
 
 static SerdStatus
