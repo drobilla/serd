@@ -282,8 +282,9 @@ def earl_assertion(test, passed, asserter):
        "earl:passed" if passed else "earl:failed",
        datetime.datetime.now().replace(microsecond=0).isoformat())
 
-def test_thru(ctx, base, in_filename, check_filename, flags):
-    out_filename = in_filename + '.thru'
+def test_thru(ctx, base, path, check_filename, flags):
+    in_filename = os.path.join(ctx.path.abspath(), path);
+    out_filename = path + '.thru'
 
     command = ('%s %s -i ntriples -o turtle -p foo "%s" "%s" | '
                '%s -i turtle -o ntriples -c foo - "%s" > %s') % (
@@ -365,10 +366,10 @@ def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base):
         passed = run_test(action_node, 0)
 
         if passed:
-            action = os.path.join(srcdir, 'tests', testdir, action_node)
-            output = os.path.join('tests', testdir, action_node + '.out')
+            action = os.path.join('tests', testdir, action_node)
+            output = action + '.out'
             result = os.path.join(srcdir, 'tests', testdir, result_node)
-            rel    = os.path.relpath(action, os.path.join(srcdir, 'tests', testdir))
+
             if not os.access(output, os.F_OK):
                 passed = False
                 Logs.pprint('RED', 'FAIL: %s output %s is missing' % (name, output))
@@ -378,7 +379,7 @@ def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base):
             else:
                 Logs.pprint('GREEN', '** Pass %s' % output)
 
-            test_thru(ctx, parse_base + rel, action, result, "")
+            test_thru(ctx, parse_base + action_node, action, result, "")
 
         report.write(earl_assertion(test, passed, asserter))
 
@@ -503,11 +504,9 @@ def test(ctx):
             if (num % 7 == 0):
                 flags += ' -e'
 
-            path           = os.path.join('tests', tdir, test)
-            in_filename    = os.path.join(ctx.path.abspath(), path)
-            check_filename = in_filename.replace('.ttl', '.nt')
-
-            test_thru(ctx, test_base(test), in_filename, check_filename, flags)
+            path  = os.path.join('tests', tdir, test)
+            check = os.path.join(srcdir, path.replace('.ttl', '.nt'))
+            test_thru(ctx, test_base(test), path, check, flags)
 
     try:
         report = open('earl.ttl', 'w')
