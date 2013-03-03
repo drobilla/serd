@@ -348,6 +348,14 @@ def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base):
         passed = run_test(action_node, 1)
         report.write(earl_assertion(test, passed, asserter))
 
+    for i in sorted(model.triples([None, rdf.type, rdft.TestTurtleNegativeEval])):
+        test        = i[0]
+        name        = model.value(test, mf.name, None)
+        action_node = model.value(test, mf.action, None)[len(test_base):]
+
+        passed = run_test(action_node, 1)
+        report.write(earl_assertion(test, passed, asserter))
+
     for i in sorted(model.triples([None, rdf.type, rdft.TestTurtleEval])):
         test        = i[0]
         name        = model.value(test, mf.name, None)

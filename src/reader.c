@@ -280,7 +280,7 @@ read_HEX(SerdReader* reader)
 }
 
 // Read UCHAR escape, initial \ is already eaten by caller
-static inline bool
+static inline uint32_t
 read_UCHAR(SerdReader* reader, Ref dest)
 {
 	const uint8_t b      = peek_byte(reader);
@@ -293,38 +293,39 @@ read_UCHAR(SerdReader* reader, Ref dest)
 		length = 4;
 		break;
 	default:
-		return false;
+		return 0;
 	}
 	eat_byte_safe(reader, b);
 
 	uint8_t buf[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	for (unsigned i = 0; i < length; ++i) {
 		if (!(buf[i] = read_HEX(reader))) {
-			return false;
+			return 0;
 		}
 	}
 
-	uint32_t c;
-	sscanf((const char*)buf, "%X", &c);
+	uint32_t code;
+	sscanf((const char*)buf, "%X", &code);
 
 	unsigned size = 0;
-	if (c < 0x00000080) {
+	if (code < 0x00000080) {
 		size = 1;
-	} else if (c < 0x00000800) {
+	} else if (code < 0x00000800) {
 		size = 2;
-	} else if (c < 0x00010000) {
+	} else if (code < 0x00010000) {
 		size = 3;
-	} else if (c < 0x00110000) {
+	} else if (code < 0x00110000) {
 		size = 4;
 	} else {
 		r_err(reader, SERD_ERR_BAD_SYNTAX,
-		      "unicode character 0x%X out of range\n", c);
+		      "unicode character 0x%X out of range\n", code);
 		push_replacement(reader, dest);
-		return true;
+		return 0xFFFD;
 	}
 
 	// Build output in buf
 	// (Note # of bytes = # of leading 1 bits in first byte)
+	uint32_t c = code;
 	switch (size) {
 	case 4:
 		buf[3] = 0x80 | (uint8_t)(c & 0x3F);
@@ -345,7 +346,7 @@ read_UCHAR(SerdReader* reader, Ref dest)
 	for (unsigned i = 0; i < size; ++i) {
 		push_byte(reader, dest, buf[i]);
 	}
-	return true;
+	return code;
 }
 
 // Read ECHAR escape, initial \ is already eaten by caller
@@ -741,7 +742,8 @@ static Ref
 read_IRIREF(SerdReader* reader)
 {
 	TRY_RET(eat_byte_check(reader, '<'));
-	Ref ref = push_node(reader, SERD_URI, "", 0);
+	Ref      ref = push_node(reader, SERD_URI, "", 0);
+	uint32_t code;
 	while (true) {
 		const uint8_t c = peek_byte(reader);
 		switch (c) {
@@ -754,9 +756,10 @@ read_IRIREF(SerdReader* reader)
 			return ref;
 		case '\\':
 			eat_byte_safe(reader, c);
-			if (!read_UCHAR(reader, ref)) {
+			switch (code = read_UCHAR(reader, ref)) {
+			case 0: case ' ': case '<': case '>':
 				r_err(reader, SERD_ERR_BAD_SYNTAX,
-				      "invalid IRI character `%c'\n", c);
+				      "invalid escaped IRI character %X %c\n", code, code);
 				return pop_node(reader, ref);
 			}
 			break;
