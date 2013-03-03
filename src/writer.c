@@ -562,15 +562,18 @@ serd_writer_write_statement(SerdWriter*        writer,
 		return SERD_ERR_BAD_ARG;
 	}
 
+#define TRY(write_result) \
+	if (!write_result) { \
+		return SERD_ERR_UNKNOWN; \
+	}
+
 	switch (writer->syntax) {
 	case SERD_NTRIPLES:
-		write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags);
+		TRY(write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags));
 		sink(" ", 1, writer);
-		write_node(writer, predicate, NULL, NULL, FIELD_PREDICATE, flags);
+		TRY(write_node(writer, predicate, NULL, NULL, FIELD_PREDICATE, flags));
 		sink(" ", 1, writer);
-		if (!write_node(writer, object, datatype, lang, FIELD_OBJECT, flags)) {
-			return SERD_ERR_UNKNOWN;
-		}
+		TRY(write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
 		sink(" .\n", 3, writer);
 		return SERD_SUCCESS;
 	default:
