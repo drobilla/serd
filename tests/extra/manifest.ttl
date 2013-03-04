@@ -10,12 +10,16 @@
 	mf:entries (
 		<#turtle-syntax-bad-blank-label-dot-end>
 		<#turtle-syntax-bad-ln-dash-start>
+		<#turtle-syntax-bad-ln-escape-start>
 		<#turtle-syntax-bad-ln-escape>
+		<#turtle-syntax-bad-missing-ns-dot-end>
+		<#turtle-syntax-bad-missing-ns-dot-start>
 		<#turtle-syntax-bad-ns-dot-end>
 		<#turtle-syntax-bad-ns-dot-start>
-		<#turtle-syntax-bad-ns-missing-dot-end>
-		<#turtle-syntax-bad-ns-missing-dot-start>
+		<#turtle-syntax-bad-number-dot-in-anon>
 		<#turtle-syntax-blank-label>
+		<#turtle-syntax-ln-colons>
+		<#turtle-syntax-ln-dots>
 		<#turtle-syntax-ns-dots>
 	) .
 
@@ -61,17 +65,29 @@
 	mf:name "turtle-syntax-bad-ns-dot-start" ;
 	mf:action <turtle-syntax-bad-ns-dot-start.ttl> .
 
-<#turtle-syntax-bad-ns-missing-dot-end>
+<#turtle-syntax-bad-missing-ns-dot-end>
 	rdf:type rdft:TestTurtleNegativeSyntax ;
 	rdfs:comment "Prefix must not end in dot (error in triple, not prefix directive like turtle-syntax-bad-ns-dot-end)" ;
 	mf:name "turtle-syntax-bad-missing-ns-dot-end" ;
 	mf:action <turtle-syntax-bad-missing-ns-dot-end.ttl> .
 
-<#turtle-syntax-bad-ns-missing-dot-start>
+<#turtle-syntax-bad-missing-ns-dot-start>
 	rdf:type rdft:TestTurtleNegativeSyntax ;
 	rdfs:comment "Prefix must not start with dot (error in triple, not prefix directive like turtle-syntax-bad-ns-dot-end)" ;
 	mf:name "turtle-syntax-bad-missing-ns-dot-start" ;
 	mf:action <turtle-syntax-bad-missing-ns-dot-start.ttl> .
+
+<#turtle-syntax-ln-dots>
+	rdf:type rdft:TestTurtlePositiveSyntax ;
+	rdfs:comment "Dots in pname local names" ;
+	mf:name "turtle-syntax-ln-dots" ;
+	mf:action <turtle-syntax-ln-dots.ttl> .
+
+<#turtle-syntax-ln-colons>
+	rdf:type rdft:TestTurtlePositiveSyntax ;
+	rdfs:comment "Colons in pname local names" ;
+	mf:name "turtle-syntax-ln-colons" ;
+	mf:action <turtle-syntax-ln-colons.ttl> .
 
 <#turtle-syntax-ns-dots>
 	rdf:type rdft:TestTurtlePositiveSyntax ;
