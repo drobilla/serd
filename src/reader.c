@@ -1047,7 +1047,7 @@ read_blank(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest)
 			bool ate_dot = false;
 			read_predicateObjectList(reader, ctx, &ate_dot);
 			if (ate_dot) {
-				return r_err(reader, SERD_ERR_BAD_SYNTAX, "`.' inside blank");
+				return r_err(reader, SERD_ERR_BAD_SYNTAX, "`.' inside blank\n");
 			}
 			read_ws_star(reader);
 			if (reader->end_sink) {
