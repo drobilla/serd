@@ -385,7 +385,7 @@ def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base):
 
 def test(ctx):
     blddir = autowaf.build_dir(APPNAME, 'tests')
-    for i in ['', 'bad', 'good', 'new', 'tests-ttl']:
+    for i in ['', 'bad', 'good', 'new', 'tests-ttl', 'extra']:
         try:
             os.makedirs(os.path.join(blddir, i))
         except:
@@ -522,6 +522,8 @@ def test(ctx):
                       rdf_turtle + 'coverage/tests/', 'http://example/base/')
         test_manifest(ctx, srcdir, 'tests-ttl', report,
                       rdf_turtle + 'tests-ttl/', 'http://example/base/')
+        test_manifest(ctx, srcdir, 'extra', report,
+                      rdf_turtle + 'extra/', 'http://example/base/')
 
         report.close()
 

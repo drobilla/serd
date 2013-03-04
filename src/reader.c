@@ -671,7 +671,7 @@ read_PN_LOCAL(SerdReader* reader, Ref dest)
 	default:
 		if ((st = read_PLX(reader, dest)) > SERD_FAILURE) {
 			return st;
-		} else if (st != SERD_SUCCESS && !read_PN_CHARS(reader, dest)) {
+		} else if (st != SERD_SUCCESS && !read_PN_CHARS_BASE(reader, dest)) {
 			return SERD_FAILURE;
 		}
 	}
@@ -679,12 +679,10 @@ read_PN_LOCAL(SerdReader* reader, Ref dest)
 	while ((c = peek_byte(reader))) {  // Middle: (PN_CHARS | '.' | ';')*
 		if (/*c == '.' || */c == ':') {
 			push_byte(reader, dest, eat_byte_safe(reader, c));
-		} else if (!read_PN_CHARS(reader, dest)) {
-			if ((st = read_PLX(reader, dest)) > SERD_FAILURE) {
-				return st;
-			} else if (st != SERD_SUCCESS) {
-				break;
-			}
+		} else if ((st = read_PLX(reader, dest)) > SERD_FAILURE) {
+			return st;
+		} else if (st != SERD_SUCCESS && !read_PN_CHARS(reader, dest)) {
+			break;
 		}
 	}
 
@@ -707,8 +705,9 @@ read_PN_PREFIX(SerdReader* reader, Ref dest)
 		}
 	}
 
-	if (c == '.' && !read_PN_CHARS(reader, dest)) {  // Last: PN_CHARS
-		r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid prefix character\n");
+	const SerdNode* const n = deref(reader, dest);
+	if (n->buf[n->n_bytes - 1] == '.' && !read_PN_CHARS(reader, dest)) {
+		r_err(reader, SERD_ERR_BAD_SYNTAX, "prefix ends with `.'\n");
 		return SERD_ERR_BAD_SYNTAX;
 	}
 
@@ -960,7 +959,7 @@ read_BLANK_NODE_LABEL(SerdReader* reader)
 
 	uint8_t c = peek_byte(reader);  // First: (PN_CHARS | '_' | [0-9])
 	if (is_digit(c) || c == '_') {
-		push_byte(reader, ref, c);
+		push_byte(reader, ref, eat_byte_safe(reader, c));
 	} else if (!read_PN_CHARS(reader, ref)) {
 		r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid name start character\n");
 		return pop_node(reader, ref);
@@ -974,18 +973,18 @@ read_BLANK_NODE_LABEL(SerdReader* reader)
 		}
 	}
 
-	if (c == '.' && !read_PN_CHARS(reader, ref)) {  // Last: PN_CHARS
-		r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid name character\n");
+	const SerdNode* n = deref(reader, ref);
+	if (n->buf[n->n_bytes - 1] == '.' && !read_PN_CHARS(reader, ref)) {
+		r_err(reader, SERD_ERR_BAD_SYNTAX, "name ends with `.'\n");
 		return pop_node(reader, ref);
 	}
 
 	if (reader->syntax == SERD_TURTLE) {
-		const char* const buf = (const char*)deref(reader, ref)->buf;
-		if (is_digit(buf[1])) {
-			if (buf[0] == 'b') {
-				((char*)buf)[0] = 'B';  // Prevent clash
+		if (is_digit(n->buf[1])) {
+			if (n->buf[0] == 'b') {
+				((char*)n->buf)[0] = 'B';  // Prevent clash
 				reader->seen_genid = true;
-			} else if (reader->seen_genid && buf[0] == 'B') {
+			} else if (reader->seen_genid && n->buf[0] == 'B') {
 				r_err(reader, SERD_ERR_ID_CLASH,
 				      "found both `b' and `B' blank IDs, prefix required\n");
 				return pop_node(reader, ref);
@@ -1152,29 +1151,30 @@ read_objectList(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 static bool
 read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 {
-	TRY_RET(read_verb(reader, &ctx.predicate));
-	read_ws_star(reader);
-	TRY_THROW(read_objectList(reader, ctx, ate_dot));
-	ctx.predicate = pop_node(reader, ctx.predicate);
-	if (*ate_dot) {
-		return true;
-	}
-	while (eat_delim(reader, ';')) {
-		switch (peek_byte(reader)) {
-		case ';':
-			continue;
-		case '.': case ']':
+	uint8_t c;
+	while (true) {
+		TRY_THROW(read_verb(reader, &ctx.predicate));
+		read_ws_star(reader);
+
+		TRY_THROW(read_objectList(reader, ctx, ate_dot));
+		ctx.predicate = pop_node(reader, ctx.predicate);
+		if (*ate_dot) {
 			return true;
-		default:
-			TRY_THROW(read_verb(reader, &ctx.predicate));
-			read_ws_star(reader);
-			TRY_THROW(read_objectList(reader, ctx, ate_dot));
-			ctx.predicate = pop_node(reader, ctx.predicate);
-			if (*ate_dot) {
-				return true;
-			}
 		}
+
+		do {
+			read_ws_star(reader);
+			switch (c = peek_byte(reader)) {
+			case 0:
+				return false;
+			case '.': case ']':
+				return true;
+			case ';':
+				eat_byte_safe(reader, c);
+			}
+		} while (c == ';');
 	}
+
 	pop_node(reader, ctx.predicate);
 	return true;
 except:
