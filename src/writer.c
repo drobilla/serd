@@ -97,7 +97,6 @@ struct SerdWriterImpl {
 };
 
 typedef enum {
-	WRITE_URI,
 	WRITE_STRING,
 	WRITE_LONG_STRING
 } TextContext;
