@@ -436,9 +436,17 @@ read_utf8_character(SerdReader* reader, Ref dest, uint8_t c)
 // Read one character (possibly multi-byte)
 // The first byte, c, has already been eaten by caller
 static inline SerdStatus
-read_character(SerdReader* reader, Ref dest, uint8_t c)
+read_character(SerdReader* reader, Ref dest, SerdNodeFlags* flags, uint8_t c)
 {
 	if (!(c & 0x80)) {
+		switch (c) {
+		case 0xA: case 0xD:
+			*flags |= SERD_HAS_NEWLINE;
+			break;
+		case '"': case '\'':
+			*flags |= SERD_HAS_QUOTE;
+			break;
+		}
 		push_byte(reader, dest, c);
 		return SERD_SUCCESS;
 	} else {
@@ -533,10 +541,10 @@ read_STRING_LITERAL_LONG(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 				} else {
 					*flags |= SERD_HAS_QUOTE;
 					push_byte(reader, ref, c);
-					read_character(reader, ref, q2);
+					read_character(reader, ref, flags, q2);
 				}
 			} else {
-				read_character(reader, ref, eat_byte_safe(reader, c));
+				read_character(reader, ref, flags, eat_byte_safe(reader, c));
 			}
 		}
 	}
@@ -568,7 +576,7 @@ read_STRING_LITERAL(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 				eat_byte_check(reader, q);
 				return ref;
 			} else {
-				read_character(reader, ref, eat_byte_safe(reader, c));
+				read_character(reader, ref, flags, eat_byte_safe(reader, c));
 			}
 		}
 	}

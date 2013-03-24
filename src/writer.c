@@ -284,10 +284,20 @@ write_text(SerdWriter* writer, TextContext ctx,
 
 		uint8_t in = utf8[i++];
 		if (ctx == WRITE_LONG_STRING) {
-			if (in == '\\') {
-				len += sink("\\\\", 2, writer); continue;
-			} else if (in == '\"' && i == n_bytes) {
-				len += sink("\\\"", 2, writer); continue;  // '"' at string end
+			switch (in) {
+			case '\\': len += sink("\\\\", 2, writer); continue;
+			case '\b': len += sink("\\b", 2, writer);  continue;
+			case '\n': case '\r': case '\t': case '\f':
+				len += sink(&in, 1, writer);  // Write character as-is
+				continue;
+			case '\"':
+				if (i == n_bytes) {  // '"' at string end
+					len += sink("\\\"", 2, writer);
+				} else {
+					len += sink(&in, 1, writer);
+				}
+				continue;
+			default: break;
 			}
 		} else if (ctx == WRITE_STRING) {
 			switch (in) {

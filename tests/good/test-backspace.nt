@@ -1,2 +1,3 @@
 <http://example.org/thing> <http://example.org/label> "\b" .
 <http://example.org/thing> <http://example.org/label> "\b" .
+<http://example.org/thing> <http://example.org/label> "\n\b\n" .
