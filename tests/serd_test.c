@@ -378,6 +378,11 @@ main(void)
 		return failure("%s != %s\n", lhs.buf, lhs.buf);
 	}
 
+	SerdNode null_copy = serd_node_copy(&SERD_NODE_NULL);
+	if (!serd_node_equals(&SERD_NODE_NULL, &null_copy)) {
+		return failure("copy of null node != null node\n");
+	}
+
 	// Test serd_node_from_string
 
 	SerdNode node = serd_node_from_string(SERD_LITERAL, (const uint8_t*)"hello\"");
