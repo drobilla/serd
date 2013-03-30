@@ -518,12 +518,8 @@ def test(ctx):
             report.write(line)
         serd_ttl.close()
         rdf_turtle = 'https://dvcs.w3.org/hg/rdf/raw-file/default/rdf-turtle/'
-        test_manifest(ctx, srcdir, 'new', report,
-                      rdf_turtle + 'coverage/tests/', 'http://example/base/')
         test_manifest(ctx, srcdir, 'tests-ttl', report,
                       rdf_turtle + 'tests-ttl/', 'http://example/base/')
-        test_manifest(ctx, srcdir, 'extra', report,
-                      rdf_turtle + 'extra/', 'http://example/base/')
 
         report.close()
 
