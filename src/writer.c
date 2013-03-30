@@ -305,10 +305,14 @@ write_text(SerdWriter* writer, TextContext ctx,
 			case '\n': len += sink("\\n", 2, writer);  continue;
 			case '\r': len += sink("\\r", 2, writer);  continue;
 			case '\t': len += sink("\\t", 2, writer);  continue;
-			case '\b': len += sink("\\b", 2, writer);  continue;
-			case '\f': len += sink("\\f", 2, writer);  continue;
 			case '"':  len += sink("\\\"", 2, writer); continue;
 			default: break;
+			}
+			if (writer->syntax != SERD_NTRIPLES) {
+				switch (in) {
+				case '\b': len += sink("\\b", 2, writer); continue;
+				case '\f': len += sink("\\f", 2, writer); continue;
+				}
 			}
 		}
 
