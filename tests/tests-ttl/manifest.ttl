@@ -286,6 +286,7 @@
     <#LITERAL_LONG2_with_REVERSE_SOLIDUS>
     <#turtle-syntax-bad-LITERAL2_with_langtag_and_datatype>
     <#two_LITERAL_LONG2s>
+    <#langtagged_LONG_with_subtag>
 
     # tests from David Robillard
     # http://www.w3.org/2011/rdf-wg/wiki/Turtle_Candidate_Recommendation_Comments#c21
@@ -1900,6 +1901,13 @@
    rdfs:comment "two LITERAL_LONG2s testing quote delimiter overrun" ;
    mf:action    <two_LITERAL_LONG2s.ttl> ;
    mf:result    <two_LITERAL_LONG2s.nt> ;
+   .
+
+<#langtagged_LONG_with_subtag> rdf:type rdft:TestTurtleEval ;
+   mf:name      "langtagged_LONG_with_subtag" ;
+   rdfs:comment "langtagged LONG with subtag \"\"\"Cheers\"\"\"@en-UK" ;
+   mf:action    <langtagged_LONG_with_subtag.ttl> ;
+   mf:result    <langtagged_LONG_with_subtag.nt> ;
    .
 
 # tests from David Robillard

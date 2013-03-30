@@ -736,12 +736,11 @@ read_PN_PREFIX(SerdReader* reader, Ref dest)
 	return SERD_FAILURE;
 }
 
-// [29] language ::= [a-z]+ ('-' [a-z0-9]+ )*
 static Ref
-read_language(SerdReader* reader)
+read_LANGTAG(SerdReader* reader)
 {
 	uint8_t c = peek_byte(reader);
-	if (!in_range(c, 'a', 'z')) {
+	if (!is_alpha(c)) {
 		return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected `%c'\n", c);
 	}
 	Ref ref = push_node(reader, SERD_LITERAL, "", 0);
@@ -751,8 +750,7 @@ read_language(SerdReader* reader)
 	}
 	while (peek_byte(reader) == '-') {
 		push_byte(reader, ref, eat_byte_safe(reader, '-'));
-		while ((c = peek_byte(reader)) && (
-			       in_range(c, 'a', 'z') || in_range(c, '0', '9'))) {
+		while ((c = peek_byte(reader)) && (is_alpha(c) || is_digit(c))) {
 			push_byte(reader, ref, eat_byte_safe(reader, c));
 		}
 	}
@@ -916,7 +914,7 @@ read_literal(SerdReader* reader, Ref* dest,
 	switch (peek_byte(reader)) {
 	case '@':
 		eat_byte_safe(reader, '@');
-		TRY_THROW(*lang = read_language(reader));
+		TRY_THROW(*lang = read_LANGTAG(reader));
 		break;
 	case '^':
 		eat_byte_safe(reader, '^');
