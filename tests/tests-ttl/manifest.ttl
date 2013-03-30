@@ -58,8 +58,12 @@
     <#blankNodePropertyList_as_object>
     <#blankNodePropertyList_with_multiple_triples>
     <#nested_blankNodePropertyLists>
+    <#blankNodePropertyList_containing_collection>
+    <#collection_subject>
+    <#collection_object>
     <#empty_collection>
     <#nested_collection>
+    <#first>
     <#last>
     <#LITERAL1>
     <#LITERAL_LONG1>
@@ -504,6 +508,27 @@
    mf:result    <nested_blankNodePropertyLists.nt> ;
    .
 
+<#blankNodePropertyList_containing_collection> rdf:type rdft:TestTurtleEval ;
+   mf:name      "blankNodePropertyList_containing_collection" ;
+   rdfs:comment "blankNodePropertyList containing collection [ <p1> ( … ) ]" ;
+   mf:action    <blankNodePropertyList_containing_collection.ttl> ;
+   mf:result    <blankNodePropertyList_containing_collection.nt> ;
+   .
+
+<#collection_subject> rdf:type rdft:TestTurtleEval ;
+   mf:name      "collection_subject" ;
+   rdfs:comment "collection subject" ;
+   mf:action    <collection_subject.ttl> ;
+   mf:result    <collection_subject.nt> ;
+   .
+
+<#collection_object> rdf:type rdft:TestTurtleEval ;
+   mf:name      "collection_object" ;
+   rdfs:comment "collection object" ;
+   mf:action    <collection_object.ttl> ;
+   mf:result    <collection_object.nt> ;
+   .
+
 <#empty_collection> rdf:type rdft:TestTurtleEval ;
    mf:name      "empty_collection" ;
    rdfs:comment "empty collection ()" ;
@@ -516,6 +541,13 @@
    rdfs:comment "nested collection (())" ;
    mf:action    <nested_collection.ttl> ;
    mf:result    <nested_collection.nt> ;
+   .
+
+<#first> rdf:type rdft:TestTurtleEval ;
+   mf:name      "first" ;
+   rdfs:comment "first, not last, non-empty nested collection" ;
+   mf:action    <first.ttl> ;
+   mf:result    <first.nt> ;
    .
 
 <#last> rdf:type rdft:TestTurtleEval ;
