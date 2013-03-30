@@ -195,9 +195,9 @@ main(int argc, char** argv)
 		}
 	}
 
-	if (input_syntax != SERD_NTRIPLES  // Base URI may change (@base)
-	    || (output_syntax == SERD_TURTLE)) {
-		output_style |= SERD_STYLE_RESOLVED;
+	if (input_syntax != SERD_NTRIPLES || (output_style & SERD_STYLE_CURIED)) {
+		// Base URI may change and/or we're abbreviating URIs, so must resolve
+		output_style |= SERD_STYLE_RESOLVED;  // Base may chan
 	}
 
 	if (bulk_write) {

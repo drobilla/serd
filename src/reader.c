@@ -280,8 +280,8 @@ read_HEX(SerdReader* reader)
 }
 
 // Read UCHAR escape, initial \ is already eaten by caller
-static inline uint32_t
-read_UCHAR(SerdReader* reader, Ref dest)
+static inline bool
+read_UCHAR(SerdReader* reader, Ref dest, uint32_t* char_code)
 {
 	const uint8_t b      = peek_byte(reader);
 	unsigned      length = 0;
@@ -293,14 +293,14 @@ read_UCHAR(SerdReader* reader, Ref dest)
 		length = 4;
 		break;
 	default:
-		return 0;
+		return false;
 	}
 	eat_byte_safe(reader, b);
 
 	uint8_t buf[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	for (unsigned i = 0; i < length; ++i) {
 		if (!(buf[i] = read_HEX(reader))) {
-			return 0;
+			return false;
 		}
 	}
 
@@ -320,7 +320,8 @@ read_UCHAR(SerdReader* reader, Ref dest)
 		r_err(reader, SERD_ERR_BAD_SYNTAX,
 		      "unicode character 0x%X out of range\n", code);
 		push_replacement(reader, dest);
-		return 0xFFFD;
+		*char_code = 0xFFFD;
+		return true;
 	}
 
 	// Build output in buf
@@ -346,7 +347,8 @@ read_UCHAR(SerdReader* reader, Ref dest)
 	for (unsigned i = 0; i < size; ++i) {
 		push_byte(reader, dest, buf[i]);
 	}
-	return code;
+	*char_code = code;
+	return true;
 }
 
 // Read ECHAR escape, initial \ is already eaten by caller
@@ -521,10 +523,12 @@ read_STRING_LITERAL_LONG(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 	Ref ref = push_node(reader, SERD_LITERAL, "", 0);
 	while (true) {
 		const uint8_t c = peek_byte(reader);
+		uint32_t      code;
 		switch (c) {
 		case '\\':
 			eat_byte_safe(reader, c);
-			if (!read_ECHAR(reader, ref, flags) && !read_UCHAR(reader, ref)) {
+			if (!read_ECHAR(reader, ref, flags) &&
+			    !read_UCHAR(reader, ref, &code)) {
 				r_err(reader, SERD_ERR_BAD_SYNTAX,
 				      "invalid escape `\\%c'\n", peek_byte(reader));
 				return pop_node(reader, ref);
@@ -559,13 +563,15 @@ read_STRING_LITERAL(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 	Ref ref = push_node(reader, SERD_LITERAL, "", 0);
 	while (true) {
 		const uint8_t c = peek_byte(reader);
+		uint32_t      code;
 		switch (c) {
 		case '\n': case '\r':
 			r_err(reader, SERD_ERR_BAD_SYNTAX, "line end in short string\n");
 			return pop_node(reader, ref);
 		case '\\':
 			eat_byte_safe(reader, c);
-			if (!read_ECHAR(reader, ref, flags) && !read_UCHAR(reader, ref)) {
+			if (!read_ECHAR(reader, ref, flags) &&
+			    !read_UCHAR(reader, ref, &code)) {
 				r_err(reader, SERD_ERR_BAD_SYNTAX,
 				      "invalid escape `\\%c'\n", peek_byte(reader));
 				return pop_node(reader, ref);
@@ -775,7 +781,11 @@ read_IRIREF(SerdReader* reader)
 			return ref;
 		case '\\':
 			eat_byte_safe(reader, c);
-			switch (code = read_UCHAR(reader, ref)) {
+			if (!read_UCHAR(reader, ref, &code)) {
+				r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid IRI escape\n");
+				return pop_node(reader, ref);
+			}
+			switch (code) {
 			case 0: case ' ': case '<': case '>':
 				r_err(reader, SERD_ERR_BAD_SYNTAX,
 				      "invalid escaped IRI character %X %c\n", code, code);

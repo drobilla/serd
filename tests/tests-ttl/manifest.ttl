@@ -66,6 +66,8 @@
     <#first>
     <#last>
     <#LITERAL1>
+    <#LITERAL1_all_controls>
+    <#LITERAL1_all_punctuation>
     <#LITERAL_LONG1>
     <#LITERAL_LONG1_with_1_squote>
     <#LITERAL_LONG1_with_2_squotes>
@@ -563,6 +565,20 @@
    rdfs:comment "LITERAL1 'x'" ;
    mf:action    <LITERAL1.ttl> ;
    mf:result    <LITERAL1.nt> ;
+   .
+
+<#LITERAL1_all_controls> rdf:type rdft:TestTurtleEval ;
+   mf:name      "LITERAL1_all_controls" ;
+   rdfs:comment "LITERAL1_all_controls '\\x00\\x01\\x02\\x03\\x04...'" ;
+   mf:action    <LITERAL1_all_controls.ttl> ;
+   mf:result    <LITERAL1_all_controls.nt> ;
+   .
+
+<#LITERAL1_all_punctuation> rdf:type rdft:TestTurtleEval ;
+   mf:name      "LITERAL1_all_punctuation" ;
+   rdfs:comment "LITERAL1_all_punctuation '!\"#$%&()...'" ;
+   mf:action    <LITERAL1_all_punctuation.ttl> ;
+   mf:result    <LITERAL1_all_punctuation.nt> ;
    .
 
 <#LITERAL_LONG1> rdf:type rdft:TestTurtleEval ;

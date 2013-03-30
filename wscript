@@ -286,7 +286,7 @@ def test_thru(ctx, base, path, check_filename, flags):
     in_filename = os.path.join(ctx.path.abspath(), path);
     out_filename = path + '.thru'
 
-    command = ('%s %s -i ntriples -o turtle -p foo "%s" "%s" | '
+    command = ('%s %s -i turtle -o turtle -p foo "%s" "%s" | '
                '%s -i turtle -o ntriples -c foo - "%s" > %s') % (
         'serdi_static', flags.ljust(5),
         in_filename, base,
