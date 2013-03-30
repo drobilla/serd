@@ -398,7 +398,9 @@ main(void)
 	SerdNode base = serd_node_new_uri_from_string(USTR("http://example.org/"),
 	                                              NULL, &base_uri);
 	SerdNode nil = serd_node_new_uri_from_string(NULL, &base_uri, NULL);
-	if (nil.type != SERD_URI || strcmp((const char*)nil.buf, (const char*)base.buf)) {
+	SerdNode nil2 = serd_node_new_uri_from_string(USTR(""), &base_uri, NULL);
+	if (nil.type != SERD_URI || strcmp((const char*)nil.buf, (const char*)base.buf) ||
+	    nil2.type != SERD_URI || strcmp((const char*)nil2.buf, (const char*)base.buf)) {
 		return failure("URI %s != base %s\n", nil.buf, base.buf);
 	}
 	serd_node_free(&base);
@@ -414,6 +416,10 @@ main(void)
 
 	if (!serd_env_set_base_uri(env, &node)) {
 		return failure("Set base URI to %s\n", node.buf);
+	}
+
+	if (!serd_node_equals(serd_env_get_base_uri(env, NULL), &node)) {
+		return failure("Base URI mismatch\n");
 	}
 
 	SerdChunk prefix, suffix;
