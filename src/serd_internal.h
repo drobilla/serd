@@ -269,7 +269,7 @@ uri_path_at(const SerdURI* uri, size_t i)
 static inline bool
 uri_is_under(const SerdURI* uri, const SerdURI* root)
 {
-	if (!root || !uri || !root->scheme.len ||
+	if (!root || !root->scheme.len ||
 	    !chunk_equals(&root->scheme, &uri->scheme) ||
 	    !chunk_equals(&root->authority, &uri->authority)) {
 		return false;
