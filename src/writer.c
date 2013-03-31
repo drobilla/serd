@@ -209,7 +209,7 @@ write_character(SerdWriter* writer, const uint8_t* utf8, size_t* size)
 		return sink(utf8, *size, writer);
 	}
 
-	if (c < 0xFFFF) {
+	if (c <= 0xFFFF) {
 		snprintf(escape, sizeof(escape), "\\u%04X", c);
 		return sink(escape, 6, writer);
 	} else {
