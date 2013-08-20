@@ -6,8 +6,9 @@ serd (0.18.3) unstable;
   * Fix possible crash in serd_writer_end_anon() when writing invalid lists
   * Generate blank names like _:b1 and _:B2 not _:genid1 _:docid2
   * Correctly handle posix_memalign failure
+  * Update to waf 1.7.11
 
- -- David Robillard <d@drobilla.net>  Sun, 24 Feb 2013 02:05:30 -0500
+ -- David Robillard <d@drobilla.net>  Tue, 20 Aug 2013 11:33:48 -0400
 
 serd (0.18.2) stable;
 
