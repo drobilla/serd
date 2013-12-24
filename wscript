@@ -307,7 +307,7 @@ def test_thru(ctx, base, path, check_filename, flags):
 
     return False
 
-def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base):
+def test_manifest(ctx, srcdir, testdir, report, base_uri):
     import rdflib
     import urlparse
 
@@ -319,7 +319,7 @@ def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base):
 
     model = rdflib.ConjunctiveGraph()
     model.parse(os.path.join(srcdir, 'tests', testdir, 'manifest.ttl'),
-                rdflib.URIRef(test_base + 'manifest.ttl'),
+                rdflib.URIRef(base_uri + 'manifest.ttl'),
                 format='n3')
 
     is_drobilla = (os.getenv('USER') == 'drobilla')
@@ -329,14 +329,14 @@ def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base):
         output  = os.path.join('tests', testdir, action_node + '.out')
         action  = os.path.join(srcdir, 'tests', testdir, action_node)
         rel     = os.path.relpath(action, os.path.join(srcdir, 'tests', testdir))
-        command = 'serdi_static -f "%s" "%s" > %s' % (action, parse_base + rel, output)
+        command = 'serdi_static -f "%s" "%s" > %s' % (action, base_uri + rel, output)
 
         return autowaf.run_test(ctx, APPNAME, command, expected_return, name=name)
 
     for i in sorted(model.triples([None, rdf.type, rdft.TestTurtlePositiveSyntax])):
         test        = i[0]
         name        = model.value(test, mf.name, None)
-        action_node = model.value(test, mf.action, None)[len(test_base):]
+        action_node = model.value(test, mf.action, None)[len(base_uri):]
 
         passed = run_test(action_node, 0)
         report.write(earl_assertion(test, passed, asserter))
@@ -344,7 +344,7 @@ def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base):
     for i in sorted(model.triples([None, rdf.type, rdft.TestTurtleNegativeSyntax])):
         test        = i[0]
         name        = model.value(test, mf.name, None)
-        action_node = model.value(test, mf.action, None)[len(test_base):]
+        action_node = model.value(test, mf.action, None)[len(base_uri):]
 
         passed = run_test(action_node, 1)
         report.write(earl_assertion(test, passed, asserter))
@@ -352,7 +352,7 @@ def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base):
     for i in sorted(model.triples([None, rdf.type, rdft.TestTurtleNegativeEval])):
         test        = i[0]
         name        = model.value(test, mf.name, None)
-        action_node = model.value(test, mf.action, None)[len(test_base):]
+        action_node = model.value(test, mf.action, None)[len(base_uri):]
 
         passed = run_test(action_node, 1)
         report.write(earl_assertion(test, passed, asserter))
@@ -360,8 +360,8 @@ def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base):
     for i in sorted(model.triples([None, rdf.type, rdft.TestTurtleEval])):
         test        = i[0]
         name        = model.value(test, mf.name, None)
-        action_node = model.value(test, mf.action, None)[len(test_base):]
-        result_node = model.value(test, mf.result, None)[len(test_base):]
+        action_node = model.value(test, mf.action, None)[len(base_uri):]
+        result_node = model.value(test, mf.result, None)[len(base_uri):]
 
         passed = run_test(action_node, 0)
 
@@ -379,13 +379,13 @@ def test_manifest(ctx, srcdir, testdir, report, test_base, parse_base):
             else:
                 Logs.pprint('GREEN', '** Pass %s' % output)
 
-            test_thru(ctx, parse_base + action_node, action, result, "")
+            test_thru(ctx, base_uri + action_node, action, result, "")
 
         report.write(earl_assertion(test, passed, asserter))
 
 def test(ctx):
     blddir = autowaf.build_dir(APPNAME, 'tests')
-    for i in ['', 'bad', 'good', 'new', 'tests-ttl', 'extra']:
+    for i in ['', 'bad', 'good', 'new', 'TurtleTests', 'extra']:
         try:
             os.makedirs(os.path.join(blddir, i))
         except:
@@ -508,6 +508,8 @@ def test(ctx):
             check = os.path.join(srcdir, path.replace('.ttl', '.nt'))
             test_thru(ctx, test_base(test), path, check, flags)
 
+
+    # New manifest-driven tests
     try:
         report = open('earl.ttl', 'w')
         report.write('''@prefix earl: <http://www.w3.org/ns/earl#> .
@@ -517,10 +519,8 @@ def test(ctx):
         for line in serd_ttl:
             report.write(line)
         serd_ttl.close()
-        rdf_turtle = 'https://dvcs.w3.org/hg/rdf/raw-file/default/rdf-turtle/'
-        test_manifest(ctx, srcdir, 'tests-ttl', report,
-                      rdf_turtle + 'tests-ttl/', 'http://example/base/')
-
+        turtle_tests = 'http://www.w3.org/2013/TurtleTests/'
+        test_manifest(ctx, srcdir, 'TurtleTests', report, turtle_tests)
         report.close()
 
     except:

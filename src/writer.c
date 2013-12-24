@@ -137,7 +137,9 @@ copy_node(SerdNode* dst, const SerdNode* src)
 static inline size_t
 sink(const void* buf, size_t len, SerdWriter* writer)
 {
-	if (writer->style & SERD_STYLE_BULK) {
+	if (len == 0) {
+		return 0;
+	} else if (writer->style & SERD_STYLE_BULK) {
 		return serd_bulk_sink_write(buf, len, &writer->bulk_sink);
 	} else {
 		return writer->sink(buf, len, writer->stream);
@@ -171,7 +173,7 @@ parse_utf8_char(SerdWriter* writer, const uint8_t* utf8, size_t* size)
 	uint8_t in = utf8[i++];
 	
 #define READ_BYTE() \
-	in = utf8[i++] & 0x3f; \
+	in = utf8[i++] & 0x3F; \
 	c  = (c << 6) | in;
 
 	switch (*size) {
@@ -242,21 +244,62 @@ write_uri(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
 			}
 		}
 
-		if (j > i) {
-			// Bulk write all characters up to this special one
-			len += sink(&utf8[i], j - i, writer);
-			i = j;
-			continue;
+		// Bulk write all characters up to this special one
+		len += sink(&utf8[i], j - i, writer);
+ 		if ((i = j) == n_bytes) {
+			break;  // Reached end
 		}
 
 		// Write UTF-8 character
 		size_t size = 0;
 		len += write_character(writer, utf8 + i, &size);
 		i   += size;
+	}
+	return len;
+}
 
-		if (size == 0) {
-			return len;
+static bool
+lname_must_escape(const uint8_t c)
+{
+	/* This arbitrary list of characters, most of which have nothing to do with
+	   Turtle, must be handled as special cases here because the RDF and SPARQL
+	   WGs are apparently intent on making the once elegant Turtle a baroque
+	   and inconsistent mess, throwing elegance and extensibility completely
+	   out the window for no good reason.
+
+	   Note '-', '.', and '_' are also in PN_LOCAL_ESC, but are valid unescaped
+	   in local names, so they are not escaped here. */
+
+	switch (c) {
+	case '\'': case '!': case '#': case '$': case '%': case '&':
+	case '(': case ')': case '*': case '+': case ',': case '/':
+	case ';': case '=': case '?': case '@': case '~':
+		return true;
+	}
+	return false;
+}
+
+static size_t
+write_lname(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
+{
+	size_t len = 0;
+	for (size_t i = 0; i < n_bytes; ++i) {
+		size_t j = i;  // Index of next character that must be escaped
+		for (; j < n_bytes; ++j) {
+			if (lname_must_escape(utf8[j])) {
+				break;
+			}
 		}
+
+		// Bulk write all characters up to this special one
+		len += sink(&utf8[i], j - i, writer);
+ 		if ((i = j) == n_bytes) {
+			break;  // Reached end
+		}
+
+		// Write escape
+		len += sink("\\", 1, writer);
+		len += sink(&utf8[i], 1, writer);
 	}
 	return len;
 }
@@ -276,10 +319,9 @@ write_text(SerdWriter* writer, TextContext ctx,
 			}
 		}
 
-		if (j > i) {
-			len += sink(&utf8[i], j - i, writer);
-			i = j;
-			continue;
+		len += sink(&utf8[i], j - i, writer);
+		if ((i = j) == n_bytes) {
+			break;  // Reached end
 		}
 
 		uint8_t in = utf8[i++];
@@ -447,7 +489,7 @@ write_node(SerdWriter*        writer,
 			sink(">", 1, writer);
 			break;
 		case SERD_TURTLE:
-			sink(node->buf, node->n_bytes, writer);
+			write_lname(writer, node->buf, node->n_bytes);
 		}
 		break;
 	case SERD_LITERAL:

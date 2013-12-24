@@ -615,7 +615,10 @@ static bool
 read_PN_CHARS_BASE(SerdReader* reader, Ref dest)
 {
 	const uint8_t c = peek_byte(reader);
-	if (is_alpha(c)) {	// TODO: UTF-8
+	if ((c & 0x80)) {  // Multi-byte character
+		return !read_utf8_character(reader, dest, eat_byte_safe(reader, c));
+	}
+	if (is_alpha(c)) {
 		push_byte(reader, dest, eat_byte_safe(reader, c));
 		return true;
 	}
@@ -626,7 +629,11 @@ static bool
 read_PN_CHARS(SerdReader* reader, Ref dest)
 {
 	const uint8_t c = peek_byte(reader);
-	if (is_alpha(c) || is_digit(c) || c == '_' || c == '-') {  // TODO: UTF-8
+	if ((c & 0x80)) {  // Multi-byte character
+		return !read_utf8_character(reader, dest, eat_byte_safe(reader, c));
+	}
+	
+	if (is_alpha(c) || is_digit(c) || c == '_' || c == '-') {
 		push_byte(reader, dest, eat_byte_safe(reader, c));
 		return true;
 	}
