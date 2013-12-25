@@ -455,14 +455,14 @@ def test(ctx):
     # Good tests
     for tdir, tests in good_tests.items():
         commands = []
-     
+
         for test in tests:
             path = os.path.join('tests', tdir, test)
             commands += [ 'serdi_static -f "%s" "%s" > %s.out' % (
-                    os.path.join('..', path), test_base(test), path) ]
-    
+                    os.path.join(srcdir, path), test_base(test), path) ]
+
         autowaf.run_tests(ctx, APPNAME, commands, 0, name=tdir)
-    
+
         Logs.pprint('BOLD', '\nVerifying turtle => ntriples')
         for test in tests:
             check_filename = os.path.join(
@@ -474,7 +474,7 @@ def test(ctx):
                 Logs.pprint('RED', 'FAIL: %s is incorrect' % out_filename)
             else:
                 Logs.pprint('GREEN', 'Pass: %s' % test)
-    
+
     # Bad tests
     commands = []
     for test in bad_tests:
@@ -489,7 +489,7 @@ def test(ctx):
     # Round-trip good tests
     for tdir, tests in good_tests.items():
         thru_tests = tests;
-    
+
         commands = []
         num = 0
         for test in thru_tests:
@@ -508,7 +508,6 @@ def test(ctx):
             check = os.path.join(srcdir, path.replace('.ttl', '.nt'))
             test_thru(ctx, test_base(test), path, check, flags)
 
-
     # New manifest-driven tests
     try:
         report = open('earl.ttl', 'w')
@@ -525,5 +524,5 @@ def test(ctx):
 
     except:
         pass
-    
+
     autowaf.post_test(ctx, APPNAME)
