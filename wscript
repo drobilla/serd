@@ -39,10 +39,10 @@ def options(opt):
                    help='Build with large file support on 32-bit systems')
 
 def configure(conf):
-    conf.load('compiler_c')
     autowaf.configure(conf)
-    autowaf.set_c99_mode(conf)
     autowaf.display_header('Serd Configuration')
+    conf.load('compiler_c')
+    autowaf.set_c99_mode(conf)
 
     conf.env.BUILD_TESTS  = Options.options.build_tests
     conf.env.BUILD_UTILS  = not Options.options.no_utils
