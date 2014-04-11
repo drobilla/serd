@@ -100,7 +100,7 @@ bool
 serd_uri_string_has_scheme(const uint8_t* utf8)
 {
 	// RFC3986: scheme ::= ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
-	if (!is_alpha(utf8[0])) {
+	if (!utf8 || !is_alpha(utf8[0])) {
 		return false;  // Invalid scheme initial character, URI is relative
 	}
 	for (uint8_t c; (c = *++utf8) != '\0';) {
