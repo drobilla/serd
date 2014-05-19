@@ -104,6 +104,12 @@ typedef enum {
 static void
 w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
 {
+	/* TODO: This results in errors with no file information, which is not
+	   helpful when re-serializing a file (particularly for "undefined
+	   namespace prefix" errors.  The statement sink API needs to be changed to
+	   add a Cursor parameter so the source can notify the writer of the
+	   statement origin for better error reporting. */
+
 	va_list args;
 	va_start(args, fmt);
 	const SerdError e = { st, NULL, 0, 0, fmt, &args };
