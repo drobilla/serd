@@ -37,6 +37,8 @@ def options(opt):
                    help='Build programs as static binaries')
     opt.add_option('--largefile', action='store_true', dest='largefile',
                    help='Build with large file support on 32-bit systems')
+    opt.add_option('--no-posix', action='store_true', dest='no_posix',
+                   help='Do not use posix_memalign, posix_fadvise, and fileno, even if present')
 
 def configure(conf):
     conf.load('compiler_c')
@@ -71,23 +73,24 @@ def configure(conf):
                lib           = ['m'],
                mandatory     = False)
 
-    conf.check(function_name = 'posix_memalign',
-               header_name   = 'stdlib.h',
-               define_name   = 'HAVE_POSIX_MEMALIGN',
-               defines       = ['_POSIX_C_SOURCE=201112L'],
-               mandatory     = False)
+    if not Options.options.no_posix:
+        conf.check(function_name = 'posix_memalign',
+                   header_name   = 'stdlib.h',
+                   define_name   = 'HAVE_POSIX_MEMALIGN',
+                   defines       = ['_POSIX_C_SOURCE=201112L'],
+                   mandatory     = False)
 
-    conf.check(function_name = 'posix_fadvise',
-               header_name   = 'fcntl.h',
-               define_name   = 'HAVE_POSIX_FADVISE',
-               defines       = ['_POSIX_C_SOURCE=201112L'],
-               mandatory     = False)
+        conf.check(function_name = 'posix_fadvise',
+                   header_name   = 'fcntl.h',
+                   define_name   = 'HAVE_POSIX_FADVISE',
+                   defines       = ['_POSIX_C_SOURCE=201112L'],
+                   mandatory     = False)
 
-    conf.check(function_name = 'fileno',
-               header_name   = 'stdio.h',
-               define_name   = 'HAVE_FILENO',
-               defines       = ['_POSIX_C_SOURCE=201112L'],
-               mandatory     = False)
+        conf.check(function_name = 'fileno',
+                   header_name   = 'stdio.h',
+                   define_name   = 'HAVE_FILENO',
+                   defines       = ['_POSIX_C_SOURCE=201112L'],
+                   mandatory     = False)
 
     autowaf.define(conf, 'SERD_VERSION', SERD_VERSION)
     autowaf.set_lib_env(conf, 'serd', SERD_VERSION)
