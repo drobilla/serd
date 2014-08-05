@@ -410,6 +410,7 @@ main(void)
 	}
 	serd_node_free(&base);
 	serd_node_free(&nil);
+	serd_node_free(&nil2);
 
 	// Test SerdEnv
 
