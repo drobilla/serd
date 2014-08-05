@@ -78,7 +78,8 @@ struct SerdReaderImpl {
 	uint8_t*          bprefix;
 	size_t            bprefix_len;
 	unsigned          next_id;
-	uint8_t*          read_buf;
+	const uint8_t*    read_buf;
+	uint8_t*          file_buf;
 	int32_t           read_head;  ///< Offset into read_buf
 	uint8_t           read_byte;  ///< 1-byte 'buffer' used when not paging
 	bool              from_file;  ///< True iff reading from @ref fd
@@ -108,13 +109,13 @@ static inline SerdStatus
 page(SerdReader* reader)
 {
 	reader->read_head = 0;
-	size_t n_read = fread(reader->read_buf, 1, SERD_PAGE_SIZE, reader->fd);
+	size_t n_read = fread(reader->file_buf, 1, SERD_PAGE_SIZE, reader->fd);
 	if (n_read == 0) {
-		reader->read_buf[0] = '\0';
-		reader->eof = true;
+		reader->file_buf[0] = '\0';
+		reader->eof         = true;
 		return ferror(reader->fd) ? SERD_ERR_UNKNOWN : SERD_FAILURE;
 	} else if (n_read < SERD_PAGE_SIZE) {
-		reader->read_buf[n_read] = '\0';
+		reader->file_buf[n_read] = '\0';
 	}
 	return SERD_SUCCESS;
 }
@@ -1463,6 +1464,7 @@ serd_reader_new(SerdSyntax        syntax,
 	me->bprefix_len      = 0;
 	me->next_id          = 1;
 	me->read_buf         = 0;
+	me->file_buf         = 0;
 	me->read_head        = 0;
 	me->eof              = false;
 	me->seen_genid       = false;
@@ -1584,8 +1586,9 @@ serd_reader_start_stream(SerdReader*    me,
 	me->paging    = bulk;
 
 	if (bulk) {
-		me->read_buf = (uint8_t*)serd_bufalloc(SERD_PAGE_SIZE);
-		memset(me->read_buf, '\0', SERD_PAGE_SIZE);
+		me->file_buf = (uint8_t*)serd_bufalloc(SERD_PAGE_SIZE);
+		me->read_buf = me->file_buf;
+		memset(me->file_buf, '\0', SERD_PAGE_SIZE);
 		SerdStatus st = page(me);
 		if (st) {
 			serd_reader_end_stream(me);
@@ -1621,10 +1624,10 @@ SerdStatus
 serd_reader_end_stream(SerdReader* me)
 {
 	if (me->paging) {
-		free(me->read_buf);
+		free(me->file_buf);
 	}
-	me->fd       = 0;
-	me->read_buf = NULL;
+	me->fd       = NULL;
+	me->read_buf = me->file_buf = NULL;
 	return SERD_SUCCESS;
 }
 
@@ -1646,7 +1649,7 @@ serd_reader_read_string(SerdReader* me, const uint8_t* utf8)
 {
 	const Cursor cur = { (const uint8_t*)"(string)", 1, 1 };
 
-	me->read_buf  = (uint8_t*)utf8;
+	me->read_buf  = utf8;
 	me->read_head = 0;
 	me->cur       = cur;
 	me->from_file = false;
