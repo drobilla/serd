@@ -270,6 +270,14 @@ def file_equals(patha, pathb, subst_from='', subst_to=''):
 def earl_assertion(test, passed, asserter):
     import datetime
 
+    asserter_str = ''
+    if asserter is not None:
+        asserter_str = '\n\tearl:assertedBy <%s> ;' % asserter
+
+    passed_str = 'earl:failed'
+    if passed:
+        passed_str = 'earl:passed'
+
     return '''
 []
 	a earl:Assertion ;%s
@@ -280,9 +288,9 @@ def earl_assertion(test, passed, asserter):
 		earl:outcome %s ;
 		dc:date "%s"^^xsd:dateTime
 	] .
-''' % (('\n\tearl:assertedBy <%s> ;' % asserter) if asserter else '',
+''' % (asserter_str,
        test,
-       "earl:passed" if passed else "earl:failed",
+       passed_str,
        datetime.datetime.now().replace(microsecond=0).isoformat())
 
 def test_thru(ctx, base, path, check_filename, flags):
@@ -325,8 +333,9 @@ def test_manifest(ctx, srcdir, testdir, report, base_uri):
                 rdflib.URIRef(base_uri + 'manifest.ttl'),
                 format='n3')
 
-    is_drobilla = (os.getenv('USER') == 'drobilla')
-    asserter    = 'http://drobilla.net/drobilla#me' if is_drobilla else ''
+    asserter = ''
+    if os.getenv('USER') == 'drobilla':
+        asserter = 'http://drobilla.net/drobilla#me'
 
     def run_test(action_node, expected_return):
         output  = os.path.join('tests', testdir, action_node + '.out')
