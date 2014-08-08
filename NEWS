@@ -1,6 +1,6 @@
-serd (0.18.3) unstable;
+serd (0.20.0) stable;
 
-  * Support the latest Turtle Draft
+  * Support new RDF 1.1 Turtle
   * Don't write xsd:decimal literals to Turtle bare if they would not be read
     back with the same type
   * Fix possible crash in serd_writer_end_anon() when writing invalid lists
@@ -10,7 +10,7 @@ serd (0.18.3) unstable;
   * Add -lm to pkg-config libs
   * Update to waf 1.7.14
 
- -- David Robillard <d@drobilla.net>  Tue, 05 Aug 2014 17:59:30 -0400
+ -- David Robillard <d@drobilla.net>  Fri, 08 Aug 2014 18:02:54 -0400
 
 serd (0.18.2) stable;
 
