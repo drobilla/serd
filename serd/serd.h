@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2012 David Robillard <http://drobilla.net>
+  Copyright 2011-2014 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -691,7 +691,7 @@ serd_reader_new(SerdSyntax        syntax,
 /**
    Set a function to be called when errors occur during reading.
 
-   The @p error_sink will be called with @p handle as its first argument.  If
+   The `error_sink` will be called with `handle` as its first argument.  If
    no error function is set, errors are printed to stderr in GCC style.
 */
 SERD_API
@@ -744,10 +744,10 @@ serd_reader_read_file(SerdReader*    reader,
 /**
    Start an incremental read from a file handle.
 
-   Iff @p bulk is true, @p file will be read a page at a time.  This is more
+   Iff `bulk` is true, `file` will be read a page at a time.  This is more
    efficient, but uses a page of memory and means that an entire page of input
    must be ready before any callbacks will fire.  To react as soon as input
-   arrives, set @p bulk to false.
+   arrives, set `bulk` to false.
 */
 SERD_API
 SerdStatus
@@ -865,7 +865,7 @@ serd_chunk_sink_finish(SerdChunk* stream);
 /**
    Set a function to be called when errors occur during writing.
 
-   The @p error_sink will be called with @p handle as its first argument.  If
+   The `error_sink` will be called with `handle` as its first argument.  If
    no error function is set, errors are printed to stderr.
 */
 SERD_API

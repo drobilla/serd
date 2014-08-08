@@ -265,7 +265,7 @@ uri_path_at(const SerdURI* uri, size_t i)
 	}
 }
 
-/** Return true iff @p uri is within the base of @p root */
+/** Return true iff `uri` is within the base of `root` */
 static inline bool
 uri_is_under(const SerdURI* uri, const SerdURI* root)
 {

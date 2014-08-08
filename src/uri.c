@@ -317,7 +317,7 @@ remove_dot_segments(const uint8_t* path, size_t len, size_t* up)
 	return begin;
 }
 
-/// Merge @p base and @p path in-place
+/// Merge `base` and `path` in-place
 static void
 merge(SerdChunk* base, SerdChunk* path)
 {
@@ -396,7 +396,7 @@ serd_uri_resolve(const SerdURI* r, const SerdURI* base, SerdURI* t)
 	#endif
 }
 
-/** Write the path of @p uri starting at index @p i */
+/** Write the path of `uri` starting at index `i` */
 static size_t
 write_path_tail(SerdSink sink, void* stream, const SerdURI* uri, size_t i)
 {
@@ -415,7 +415,7 @@ write_path_tail(SerdSink sink, void* stream, const SerdURI* uri, size_t i)
 	return len;
 }
 
-/** Write the path of @p uri relative to the path of @p base. */
+/** Write the path of `uri` relative to the path of `base`. */
 static size_t
 write_rel_path(SerdSink       sink,
                void*          stream,
