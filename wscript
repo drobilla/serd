@@ -256,6 +256,9 @@ def fix_docs(ctx):
 
 def upload_docs(ctx):
     os.system('rsync -ravz --delete -e ssh build/doc/html/ drobilla@drobilla.net:~/drobilla.net/docs/serd/')
+    for page in glob.glob('doc/*.[1-8]'):
+        os.system('soelim %s | pre-grohtml troff -man -wall -Thtml | post-grohtml > build/%s.html' % (page, page))
+        os.system('rsync -avz --delete -e ssh build/%s.html drobilla@drobilla.net:~/drobilla.net/man/' % page)
 
 def file_equals(patha, pathb, subst_from='', subst_to=''):
     fa = open(patha, 'rU')
