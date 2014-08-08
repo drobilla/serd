@@ -167,7 +167,7 @@ is_nameChar(const uint8_t c)
 }
 
 /**
-   Return true iff @c buf is a valid prefixed name suffix.
+   Return true iff `buf` is a valid prefixed name suffix.
    TODO: This is more strict than it should be.
 */
 static inline bool

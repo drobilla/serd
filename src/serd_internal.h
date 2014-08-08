@@ -195,7 +195,7 @@ serd_bulk_sink_write(const void* buf, size_t len, SerdBulkSink* bsink)
 
 /* Character utilities */
 
-/** Return true if @a c lies within [min...max] (inclusive) */
+/** Return true if `c` lies within [`min`...`max`] (inclusive) */
 static inline bool
 in_range(const uint8_t c, const uint8_t min, const uint8_t max)
 {

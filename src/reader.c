@@ -82,8 +82,8 @@ struct SerdReaderImpl {
 	uint8_t*          file_buf;
 	int32_t           read_head;  ///< Offset into read_buf
 	uint8_t           read_byte;  ///< 1-byte 'buffer' used when not paging
-	bool              from_file;  ///< True iff reading from @ref fd
-	bool              paging;  ///< True iff reading a page at a time
+	bool              from_file;  ///< True iff reading from `fd`
+	bool              paging;     ///< True iff reading a page at a time
 	bool              eof;
 	bool              seen_genid;
 #ifdef SERD_STACK_CHECK

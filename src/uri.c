@@ -252,7 +252,7 @@ end:
 }
 
 /**
-   Remove leading dot components from @c path.
+   Remove leading dot components from `path`.
    See http://tools.ietf.org/html/rfc3986#section-5.2.3
    @param up Set to the number of up-references (e.g. "../") trimmed
    @return A pointer to the new start of @path
