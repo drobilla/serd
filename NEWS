@@ -1,3 +1,9 @@
+serd (0.21.0) unstable;
+
+  * Remove dependence on fmax() to avoid portability issues
+
+ -- David Robillard <d@drobilla.net>  Fri, 03 Oct 2014 13:08:29 -0400
+
 serd (0.20.0) stable;
 
   * Support new RDF 1.1 Turtle

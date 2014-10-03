@@ -11,7 +11,7 @@ import waflib.extras.autowaf as autowaf
 # major increment <=> incompatible changes
 # minor increment <=> compatible changes (additions)
 # micro increment <=> no interface changes
-SERD_VERSION       = '0.20.0'
+SERD_VERSION       = '0.21.0'
 SERD_MAJOR_VERSION = '0'
 
 # Mandatory waf variables
@@ -66,12 +66,6 @@ def configure(conf):
         conf.check(lib         = 'gcov',
                    define_name = 'HAVE_GCOV',
                    mandatory   = False)
-
-    conf.check(function_name = 'fmax',
-               header_name   = 'math.h',
-               define_name   = 'HAVE_FMAX',
-               lib           = ['m'],
-               mandatory     = False)
 
     if not Options.options.no_posix:
         conf.check(function_name = 'posix_memalign',
