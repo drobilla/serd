@@ -1,8 +1,9 @@
 serd (0.21.0) unstable;
 
   * Remove dependence on fmax() to avoid portability issues
+  * Fix warnings when building with ISO C++ compilers
 
- -- David Robillard <d@drobilla.net>  Fri, 03 Oct 2014 13:08:29 -0400
+ -- David Robillard <d@drobilla.net>  Fri, 21 Nov 2014 20:40:06 -0500
 
 serd (0.20.0) stable;
 
