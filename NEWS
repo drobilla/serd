@@ -1,9 +1,10 @@
 serd (0.21.0) unstable;
 
   * Remove dependence on fmax() to avoid portability issues
+  * Report errors for invalid IRI characters and missing terminators
   * Fix warnings when building with ISO C++ compilers
 
- -- David Robillard <d@drobilla.net>  Fri, 21 Nov 2014 20:40:06 -0500
+ -- David Robillard <d@drobilla.net>  Tue, 09 Dec 2014 16:24:15 -0500
 
 serd (0.20.0) stable;
 

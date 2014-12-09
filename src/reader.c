@@ -17,6 +17,7 @@
 #include "serd_internal.h"
 
 #include <assert.h>
+#include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -802,6 +803,13 @@ read_IRIREF(SerdReader* reader)
 			break;
 		default:
 			if (c <= 0x20) {
+				if (isprint(c)) {
+					r_err(reader, SERD_ERR_BAD_SYNTAX,
+					      "invalid IRI character `%c' (escape %%%02X)\n", c, c);
+				} else {
+					r_err(reader, SERD_ERR_BAD_SYNTAX,
+					      "invalid IRI character (escape %%%02X)\n", c, c);
+				}
 				return pop_node(reader, ref);
 			} else {
 				push_byte(reader, ref, eat_byte_safe(reader, c));
@@ -1096,12 +1104,10 @@ read_blank(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest)
 			}
 			*ctx.flags = old_flags;
 		}
-		eat_byte_check(reader, ']');
-		return true;
+		return (eat_byte_check(reader, ']') == ']');
 	case '(':
 		return read_collection(reader, ctx, dest);
-	default:
-		return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid blank node\n");
+	default: return false;  // never reached
 	}
 }
 
@@ -1320,10 +1326,10 @@ read_triples(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 		ctx.subject = subject;
 		if (nested) {
 			read_ws_star(reader);
-			if (peek_byte(reader) != '.') {
-				read_predicateObjectList(reader, ctx, ate_dot);
-			}
 			ret = true;
+			if (peek_byte(reader) != '.') {
+				ret = read_predicateObjectList(reader, ctx, ate_dot);
+			}
 		} else {
 			TRY_RET(read_ws_plus(reader));
 			ret = read_predicateObjectList(reader, ctx, ate_dot);
@@ -1411,14 +1417,15 @@ read_statement(SerdReader* reader)
 	case '@':
 		TRY_RET(read_directive(reader));
 		read_ws_star(reader);
-		return eat_byte_safe(reader, '.');
+		return (eat_byte_check(reader, '.') == '.');
 	default:
-		TRY_RET(read_triples(reader, ctx, &ate_dot));
-		if (ate_dot) {
+		if (!read_triples(reader, ctx, &ate_dot)) {
+			return false;
+		} else if (ate_dot) {
 			return true;
 		} else {
 			read_ws_star(reader);
-			return eat_byte_check(reader, '.');
+			return (eat_byte_check(reader, '.') == '.');
 		}
 		break;
 	}
