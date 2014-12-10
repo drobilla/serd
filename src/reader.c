@@ -1553,18 +1553,20 @@ SerdStatus
 serd_reader_read_file(SerdReader*    reader,
                       const uint8_t* uri)
 {
-	const uint8_t* path = serd_uri_to_path(uri);
+	uint8_t* const path = serd_file_uri_parse(uri, NULL);
 	if (!path) {
 		return SERD_ERR_BAD_ARG;
 	}
 
 	FILE* fd = serd_fopen((const char*)path, "r");
 	if (!fd) {
+		free(path);
 		return SERD_ERR_UNKNOWN;
 	}
 
 	SerdStatus ret = serd_reader_read_file_handle(reader, fd, path);
 	fclose(fd);
+	free(path);
 	return ret;
 }
 
