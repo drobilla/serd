@@ -689,6 +689,17 @@ serd_reader_new(SerdSyntax        syntax,
                 SerdEndSink       end_sink);
 
 /**
+   Enable or disable strict parsing.
+
+   The reader is non-strict (lax) by default, which will tolerate URIs with
+   invalid characters.  Setting strict will fail when parsing such files.  An
+   error is printed for invalid input in either case.
+*/
+SERD_API
+void
+serd_reader_set_strict(SerdReader* reader, bool strict);
+
+/**
    Set a function to be called when errors occur during reading.
 
    The `error_sink` will be called with `handle` as its first argument.  If

@@ -85,6 +85,7 @@ struct SerdReaderImpl {
 	uint8_t           read_byte;  ///< 1-byte 'buffer' used when not paging
 	bool              from_file;  ///< True iff reading from `fd`
 	bool              paging;     ///< True iff reading a page at a time
+	bool              strict;     ///< True iff strict parsing
 	bool              eof;
 	bool              seen_genid;
 #ifdef SERD_STACK_CHECK
@@ -810,7 +811,10 @@ read_IRIREF(SerdReader* reader)
 					r_err(reader, SERD_ERR_BAD_SYNTAX,
 					      "invalid IRI character (escape %%%02X)\n", c, c);
 				}
-				return pop_node(reader, ref);
+				if (reader->strict) {
+					return pop_node(reader, ref);
+				}
+				push_byte(reader, ref, eat_byte_safe(reader, c));
 			} else {
 				push_byte(reader, ref, eat_byte_safe(reader, c));
 			}
@@ -1473,6 +1477,7 @@ serd_reader_new(SerdSyntax        syntax,
 	me->read_buf         = 0;
 	me->file_buf         = 0;
 	me->read_head        = 0;
+	me->strict           = false;
 	me->eof              = false;
 	me->seen_genid       = false;
 #ifdef SERD_STACK_CHECK
@@ -1485,6 +1490,13 @@ serd_reader_new(SerdSyntax        syntax,
 	me->rdf_nil   = push_node(me, SERD_URI, NS_RDF "nil", 46);
 
 	return me;
+}
+
+SERD_API
+void
+serd_reader_set_strict(SerdReader* reader, bool strict)
+{
+	reader->strict = strict;
 }
 
 SERD_API

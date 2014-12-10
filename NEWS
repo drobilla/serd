@@ -1,11 +1,13 @@
-serd (0.21.0) unstable;
+serd (0.21.1) unstable;
 
   * Remove dependence on fmax() to avoid portability issues
   * Fix serd_reader_read_file() for URIs with escaped characters (spaces)
+  * Add serd_reader_set_strict() and -l (lax) option to serdi to tolerate
+    parsing URIs with escaped characters
   * Report errors for invalid IRI characters and missing terminators
   * Fix warnings when building with ISO C++ compilers
 
- -- David Robillard <d@drobilla.net>  Wed, 10 Dec 2014 14:29:19 -0500
+ -- David Robillard <d@drobilla.net>  Wed, 10 Dec 2014 15:49:04 -0500
 
 serd (0.20.0) stable;
 
