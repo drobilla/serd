@@ -1002,7 +1002,7 @@ read_verb(SerdReader* reader, Ref* dest)
 }
 
 static Ref
-read_BLANK_NODE_LABEL(SerdReader* reader)
+read_BLANK_NODE_LABEL(SerdReader* reader, bool* ate_dot)
 {
 	eat_byte_safe(reader, '_');
 	eat_byte_check(reader, ':');
@@ -1026,10 +1026,12 @@ read_BLANK_NODE_LABEL(SerdReader* reader)
 		}
 	}
 
-	const SerdNode* n = deref(reader, ref);
+	SerdNode* n = deref(reader, ref);
 	if (n->buf[n->n_bytes - 1] == '.' && !read_PN_CHARS(reader, ref)) {
-		r_err(reader, SERD_ERR_BAD_SYNTAX, "name ends with `.'\n");
-		return pop_node(reader, ref);
+		// Ate trailing dot, pop it from stack/node and inform caller
+		--n->n_bytes;
+		serd_stack_pop(&reader->stack, 1);
+		*ate_dot = true;
 	}
 
 	if (reader->syntax == SERD_TURTLE) {
@@ -1071,13 +1073,13 @@ blank_id(SerdReader* reader)
 }
 
 static bool
-read_blank(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest)
+read_blank(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest, bool* ate_dot)
 {
 	const SerdStatementFlags old_flags = *ctx.flags;
 	bool empty;
 	switch (peek_byte(reader)) {
 	case '_':
-		return (*dest = read_BLANK_NODE_LABEL(reader));
+		return (*dest = read_BLANK_NODE_LABEL(reader, ate_dot));
 	case '[':
 		eat_byte_safe(reader, '[');
 		if ((empty = peek_delim(reader, ']'))) {
@@ -1097,9 +1099,9 @@ read_blank(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest)
 			if (!subject) {
 				*ctx.flags |= SERD_ANON_CONT;
 			}
-			bool ate_dot = false;
-			read_predicateObjectList(reader, ctx, &ate_dot);
-			if (ate_dot) {
+			bool ate_dot_in_list = false;
+			read_predicateObjectList(reader, ctx, &ate_dot_in_list);
+			if (ate_dot_in_list) {
 				return r_err(reader, SERD_ERR_BAD_SYNTAX, "`.' inside blank\n");
 			}
 			read_ws_star(reader);
@@ -1143,7 +1145,7 @@ read_object(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 		emit = false;
 		// fall through
 	case '_':
-		TRY_THROW(ret = read_blank(reader, ctx, false, &o));
+		TRY_THROW(ret = read_blank(reader, ctx, false, &o, ate_dot));
 		break;
 	case '<': case ':':
 		TRY_THROW(ret = read_iri(reader, &o, ate_dot));
@@ -1312,7 +1314,7 @@ read_subject(SerdReader* reader, ReadContext ctx, bool* nested)
 		*nested = true;
 		// nobreak
 	case '_':
-		read_blank(reader, ctx, true, &subject);
+		read_blank(reader, ctx, true, &subject, &ate_dot);
 		break;
 	default:
 		read_iri(reader, &subject, &ate_dot);

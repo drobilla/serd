@@ -4,10 +4,11 @@ serd (0.21.1) unstable;
   * Fix serd_reader_read_file() for URIs with escaped characters (spaces)
   * Add serd_reader_set_strict() and -l (lax) option to serdi to tolerate
     parsing URIs with escaped characters
+  * Fix reading statements ending with a blank then dot with no space
   * Report errors for invalid IRI characters and missing terminators
   * Fix warnings when building with ISO C++ compilers
 
- -- David Robillard <d@drobilla.net>  Wed, 10 Dec 2014 15:49:04 -0500
+ -- David Robillard <d@drobilla.net>  Tue, 16 Dec 2014 12:17:44 -0500
 
 serd (0.20.0) stable;
 
