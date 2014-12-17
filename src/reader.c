@@ -1072,6 +1072,21 @@ blank_id(SerdReader* reader)
 	return ref;
 }
 
+static Ref
+read_blankName(SerdReader* reader)
+{
+	eat_byte_safe(reader, '=');
+	if (eat_byte_check(reader, '=') != '=') {
+		return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected `='\n");
+	}
+
+	Ref  subject = 0;
+	bool ate_dot = false;
+	read_ws_star(reader);
+	read_iri(reader, &subject, &ate_dot);
+	return subject;
+}
+
 static bool
 read_blank(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest, bool* ate_dot)
 {
@@ -1086,9 +1101,17 @@ read_blank(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest, bool* a
 			*ctx.flags |= (subject) ? SERD_EMPTY_S : SERD_EMPTY_O;
 		} else {
 			*ctx.flags |= (subject) ? SERD_ANON_S_BEGIN : SERD_ANON_O_BEGIN;
+			if (peek_delim(reader, '=')) {
+				if (!(*dest = read_blankName(reader)) ||
+				    !eat_delim(reader, ';')) {
+					return false;
+				}
+			}
 		}
 
-		*dest = blank_id(reader);
+		if (!*dest) {
+			*dest = blank_id(reader);
+		}
 		if (ctx.subject) {
 			TRY_RET(emit_statement(reader, ctx, *dest, 0, 0));
 		}
