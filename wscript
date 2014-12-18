@@ -90,8 +90,8 @@ def configure(conf):
     autowaf.set_lib_env(conf, 'serd', SERD_VERSION)
     conf.write_config_header('serd_config.h', remove=False)
 
-    autowaf.display_msg(conf, 'Utilities', str(conf.env.BUILD_UTILS))
-    autowaf.display_msg(conf, 'Unit tests', str(conf.env.BUILD_TESTS))
+    autowaf.display_msg(conf, 'Utilities', bool(conf.env.BUILD_UTILS))
+    autowaf.display_msg(conf, 'Unit tests', bool(conf.env.BUILD_TESTS))
     print('')
 
 lib_source = [
