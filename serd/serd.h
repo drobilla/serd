@@ -336,8 +336,7 @@ serd_uri_to_path(const uint8_t* uri);
    @param hostname If non-NULL, set to the hostname, if present.
    @return The path component of the URI.
 
-   Both the returned path and `hostname` (if applicable) are owned by the
-   caller and must be freed with free().
+   The returned path and `*hostname` must be freed with free().
 */
 SERD_API
 uint8_t*
