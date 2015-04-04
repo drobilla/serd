@@ -219,7 +219,7 @@ serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)
 static inline unsigned
 serd_digits(double abs)
 {
-	const double lg = ceil(log10(abs + 1.0));
+	const double lg = ceil(log10(floor(abs) + 1.0));
 	return lg < 1.0 ? 1U : (unsigned)lg;
 }
 
