@@ -1035,11 +1035,12 @@ read_BLANK_NODE_LABEL(SerdReader* reader, bool* ate_dot)
 	}
 
 	if (reader->syntax == SERD_TURTLE) {
-		if (is_digit(n->buf[1])) {
-			if (n->buf[0] == 'b') {
-				((char*)n->buf)[0] = 'B';  // Prevent clash
+		if (is_digit(n->buf[reader->bprefix_len + 1])) {
+			if ((n->buf[reader->bprefix_len]) == 'b') {
+				((char*)n->buf)[reader->bprefix_len] = 'B';  // Prevent clash
 				reader->seen_genid = true;
-			} else if (reader->seen_genid && n->buf[0] == 'B') {
+			} else if (reader->seen_genid &&
+			           n->buf[reader->bprefix_len] == 'B') {
 				r_err(reader, SERD_ERR_ID_CLASH,
 				      "found both `b' and `B' blank IDs, prefix required\n");
 				return pop_node(reader, ref);
