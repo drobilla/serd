@@ -466,9 +466,10 @@ def test(ctx):
         commands = []
 
         for test in tests:
-            path = os.path.join('tests', tdir, test)
-            commands += [ 'serdi_static -f "%s" "%s" > %s.out' % (
-                    os.path.join(srcdir, path), test_base(test), path) ]
+            for lax in ['', '-l']:
+                path = os.path.join('tests', tdir, test)
+                commands += [ 'serdi_static %s -f "%s" "%s" > %s.out' % (
+                    lax, os.path.join(srcdir, path), test_base(test), path) ]
 
         autowaf.run_tests(ctx, APPNAME, commands, 0, name=tdir)
 
@@ -487,8 +488,9 @@ def test(ctx):
     # Bad tests
     commands = []
     for test in bad_tests:
-        commands += [ 'serdi_static -q "%s" "%s" > %s.out' % (
-                os.path.join(srcdir, test), test_base(test), test) ]
+        for lax in ['', '-l']:
+            commands += [ 'serdi_static %s -q "%s" "%s" > %s.out' % (
+                lax, os.path.join(srcdir, test), test_base(test), test) ]
 
     autowaf.run_tests(ctx, APPNAME, commands, 1, name='bad')
 
