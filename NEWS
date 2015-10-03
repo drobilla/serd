@@ -9,9 +9,11 @@ serd (0.21.1) unstable;
   * Fix serializing fractional decimals that would round up
   * Add support for Turtle named inline nodes extension
   * Report errors for invalid IRI characters and missing terminators
+  * Show serdi errors in standard format
   * Fix warnings when building with ISO C++ compilers
+  * Upgrade to waf 1.8.14
 
- -- David Robillard <d@drobilla.net>  Fri, 04 Sep 2015 16:27:23 -0400
+ -- David Robillard <d@drobilla.net>  Sat, 03 Oct 2015 11:28:07 -0400
 
 serd (0.20.0) stable;
 
