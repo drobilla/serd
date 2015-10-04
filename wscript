@@ -27,6 +27,8 @@ def options(opt):
                    help='Do not build command line utilities')
     opt.add_option('--test', action='store_true', dest='build_tests',
                    help='Build unit tests')
+    opt.add_option('--no-coverage', action='store_true', dest='no_coverage',
+                   help='Do not use gcov for code coverage')
     opt.add_option('--stack-check', action='store_true', dest='stack_check',
                    help='Include runtime stack sanity checks')
     opt.add_option('--static', action='store_true', dest='static',
@@ -62,10 +64,8 @@ def configure(conf):
     if Options.options.largefile:
         conf.env.append_unique('DEFINES', ['_FILE_OFFSET_BITS=64'])
 
-    if conf.env.BUILD_TESTS:
-        conf.check(lib         = 'gcov',
-                   define_name = 'HAVE_GCOV',
-                   mandatory   = False)
+    if conf.env.BUILD_TESTS and not Options.options.no_coverage:
+        conf.check_cc(lib='gcov', define_name='HAVE_GCOV', mandatory=False)
 
     if not Options.options.no_posix:
         conf.check(function_name = 'posix_memalign',
