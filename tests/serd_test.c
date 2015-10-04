@@ -100,11 +100,11 @@ main(void)
 	}
 
 	const double expt_test_nums[] = {
-		2.0E18, -5e19, +8e20, 2e+34, -5e-5, 8e0, 9e-0, 2e+0
+		2.0E18, -5e19, +8e20, 2e+24, -5e-5, 8e0, 9e-0, 2e+0
 	};
 
 	const char* expt_test_strs[] = {
-		"02e18", "-5e019", "+8e20", "2E+34", "-5E-5", "8E0", "9e-0", " 2e+0"
+		"02e18", "-5e019", "+8e20", "2E+24", "-5E-5", "8E0", "9e-0", " 2e+0"
 	};
 
 	for (unsigned i = 0; i < sizeof(expt_test_nums) / sizeof(double); ++i) {
