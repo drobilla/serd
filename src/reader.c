@@ -635,7 +635,7 @@ read_PN_CHARS(SerdReader* reader, Ref dest)
 	if ((c & 0x80)) {  // Multi-byte character
 		return !read_utf8_character(reader, dest, eat_byte_safe(reader, c));
 	}
-	
+
 	if (is_alpha(c) || is_digit(c) || c == '_' || c == '-') {
 		push_byte(reader, dest, eat_byte_safe(reader, c));
 		return true;
@@ -656,7 +656,7 @@ read_PERCENT(SerdReader* reader, Ref dest)
 	}
 	return false;
 }
-	
+
 static SerdStatus
 read_PLX(SerdReader* reader, Ref dest)
 {
@@ -884,7 +884,7 @@ read_number(SerdReader* reader, Ref* dest, Ref* datatype, bool* ate_dot)
 				*ate_dot = true;  // Force caller to deal with stupid grammar
 				return true;  // Next byte is not a number character, done
 			}
-			
+
 			push_byte(reader, ref, '.');
 			read_0_9(reader, ref, false);
 		}
