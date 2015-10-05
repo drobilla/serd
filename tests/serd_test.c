@@ -25,9 +25,11 @@
 
 #define USTR(s) ((const uint8_t*)(s))
 
-#ifdef _WIN32
+#ifndef INFINITY
 #    define INFINITY (DBL_MAX + DBL_MAX)
-#    define NAN      (INFINITY - INFINITY)
+#endif
+#ifndef NAN
+#    define NAN (INFINITY - INFINITY)
 #endif
 
 static int
