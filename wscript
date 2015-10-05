@@ -425,7 +425,7 @@ def test(ctx):
     autowaf.run_tests(ctx, APPNAME, ['serd_test'], dirs=['.'])
 
     autowaf.run_tests(ctx, APPNAME, [
-            'serdi_static -q -o turtle %s/tests/good/base.ttl "base.ttl" > tests/good/base.ttl.out' % srcdir],
+            'serdi_static -q -o turtle "%s/tests/good/base.ttl" "base.ttl" > tests/good/base.ttl.out' % srcdir],
                       0, name='base')
 
     if not file_equals('%s/tests/good/base.ttl' % srcdir, 'tests/good/base.ttl.out'):
@@ -433,7 +433,7 @@ def test(ctx):
 
     nul = os.devnull
     autowaf.run_tests(ctx, APPNAME, [
-            'serdi_static file://%s/tests/good/manifest.ttl > %s' % (srcdir, nul),
+            'serdi_static "file://%s/tests/good/manifest.ttl" > %s' % (srcdir, nul),
 #            'serdi_static %s/tests/good/UTF-8.ttl > %s' % (srcdir, nul),
             'serdi_static -v > %s' % nul,
             'serdi_static -h > %s' % nul,
@@ -442,7 +442,7 @@ def test(ctx):
                       0, name='serdi-cmd-good')
 
     autowaf.run_tests(ctx, APPNAME, [
-            'serdi_static -q file://%s/tests/bad-id-clash.ttl > %s' % (srcdir, nul),
+            'serdi_static -q "file://%s/tests/bad-id-clash.ttl" > %s' % (srcdir, nul),
             'serdi_static > %s' % nul,
             'serdi_static ftp://example.org/unsupported.ttl > %s' % nul,
             'serdi_static -i > %s' % nul,
