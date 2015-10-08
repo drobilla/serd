@@ -1,4 +1,4 @@
-serd (0.21.1) unstable;
+serd (0.22.0) stable;
 
   * Remove dependence on fmax() to avoid portability issues
   * Fix serd_reader_read_file() for URIs with escaped characters (spaces)
@@ -13,7 +13,7 @@ serd (0.21.1) unstable;
   * Fix warnings when building with ISO C++ compilers
   * Upgrade to waf 1.8.14
 
- -- David Robillard <d@drobilla.net>  Sat, 03 Oct 2015 11:28:07 -0400
+ -- David Robillard <d@drobilla.net>  Thu, 08 Oct 2015 15:34:18 -0400
 
 serd (0.20.0) stable;
 
