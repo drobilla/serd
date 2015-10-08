@@ -1,8 +1,9 @@
 serd (0.22.1) unstable;
 
   * Fix documentation generation
+  * Update serdi man page
 
- -- David Robillard <d@drobilla.net>  Thu, 08 Oct 2015 17:45:09 -0400
+ -- David Robillard <d@drobilla.net>  Thu, 08 Oct 2015 17:47:07 -0400
 
 serd (0.22.0) stable;
 
