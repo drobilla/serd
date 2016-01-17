@@ -761,7 +761,7 @@ read_LANGTAG(SerdReader* reader)
 	}
 	Ref ref = push_node(reader, SERD_LITERAL, "", 0);
 	push_byte(reader, ref, eat_byte_safe(reader, c));
-	while ((c = peek_byte(reader)) && in_range(c, 'a', 'z')) {
+	while ((c = peek_byte(reader)) && is_alpha(c)) {
 		push_byte(reader, ref, eat_byte_safe(reader, c));
 	}
 	while (peek_byte(reader) == '-') {
