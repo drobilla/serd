@@ -1,9 +1,10 @@
-serd (0.22.1) unstable;
+serd (0.22.3) unstable;
 
+  * Fix potential out of bounds read
   * Fix documentation generation
   * Update serdi man page
 
- -- David Robillard <d@drobilla.net>  Thu, 08 Oct 2015 17:47:07 -0400
+ -- David Robillard <d@drobilla.net>  Tue, 15 Mar 2016 17:46:00 -0400
 
 serd (0.22.0) stable;
 

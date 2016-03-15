@@ -522,7 +522,8 @@ write_node(SerdWriter*        writer,
 				    !strcmp(type_uri + sizeof(NS_XSD) - 1, "integer"))) {
 				sink(node->buf, node->n_bytes, writer);
 				break;
-			} else if (!strcmp(type_uri + sizeof(NS_XSD) - 1, "decimal") &&
+			} else if (!strncmp(type_uri, NS_XSD, sizeof(NS_XSD) - 1) &&
+			           !strcmp(type_uri + sizeof(NS_XSD) - 1, "decimal") &&
 			           strchr((const char*)node->buf, '.') &&
 			           node->buf[node->n_bytes - 1] != '.') {
 				/* xsd:decimal literals without trailing digits, e.g. "5.", can
