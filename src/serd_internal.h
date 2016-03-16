@@ -82,9 +82,9 @@ serd_bufalloc(size_t size)
 /* Byte source */
 
 typedef struct {
-	const uint8_t* filename;
-	unsigned       line;
-	unsigned       col;
+	const char* filename;
+	unsigned    line;
+	unsigned    col;
 } Cursor;
 
 typedef struct {
@@ -109,14 +109,14 @@ serd_byte_source_open_file(SerdByteSource* source,
                            bool            bulk);
 
 SerdStatus
-serd_byte_source_open_string(SerdByteSource* source, const uint8_t* utf8);
+serd_byte_source_open_string(SerdByteSource* source, const char* utf8);
 
 SerdStatus
 serd_byte_source_open_source(SerdByteSource*     source,
                              SerdSource          read_func,
                              SerdStreamErrorFunc error_func,
                              void*               stream,
-                             const uint8_t*      name,
+                             const char*         name,
                              size_t              page_size);
 
 SerdStatus
@@ -175,7 +175,7 @@ serd_byte_source_advance(SerdByteSource* source)
 
 /** A dynamic stack in memory. */
 typedef struct {
-	uint8_t* buf;       ///< Stack memory
+	char*    buf;       ///< Stack memory
 	size_t   buf_size;  ///< Allocated size of buf (>= size)
 	size_t   size;      ///< Conceptual size of stack in buf
 } SerdStack;
@@ -187,7 +187,7 @@ static inline SerdStack
 serd_stack_new(size_t size)
 {
 	SerdStack stack;
-	stack.buf       = (uint8_t*)calloc(size, 1);
+	stack.buf       = (char*)calloc(size, 1);
 	stack.buf_size  = size;
 	stack.size      = SERD_STACK_BOTTOM;
 	return stack;
@@ -208,15 +208,15 @@ serd_stack_free(SerdStack* stack)
 	stack->size     = 0;
 }
 
-static inline uint8_t*
+static inline char*
 serd_stack_push(SerdStack* stack, size_t n_bytes)
 {
 	const size_t new_size = stack->size + n_bytes;
 	if (stack->buf_size < new_size) {
 		stack->buf_size += (stack->buf_size >> 1); // *= 1.5
-		stack->buf = (uint8_t*)realloc(stack->buf, stack->buf_size);
+		stack->buf = (char*)realloc(stack->buf, stack->buf_size);
 	}
-	uint8_t* const ret = (stack->buf + stack->size);
+	char* const ret = (stack->buf + stack->size);
 	stack->size = new_size;
 	return ret;
 }
@@ -241,8 +241,7 @@ serd_stack_push_aligned(SerdStack* stack, size_t n_bytes, size_t align)
 	}
 
 	// Set top of stack to pad count so we can properly pop later
-	assert(pad < UINT8_MAX);
-	stack->buf[stack->size - 1] = (uint8_t)pad;
+	stack->buf[stack->size - 1] = (char)pad;
 
 	// Push requested space at aligned location
 	return serd_stack_push(stack, n_bytes);
@@ -255,7 +254,7 @@ serd_stack_pop_aligned(SerdStack* stack, size_t n_bytes)
 	serd_stack_pop(stack, n_bytes);
 
 	// Get amount of padding from top of stack
-	const uint8_t pad = stack->buf[stack->size - 1];
+	const uint8_t pad = (uint8_t)stack->buf[stack->size - 1];
 
 	// Pop padding and pad count
 	serd_stack_pop(stack, pad + 1u);
@@ -266,7 +265,7 @@ serd_stack_pop_aligned(SerdStack* stack, size_t n_bytes)
 typedef struct SerdByteSinkImpl {
 	SerdSink sink;
 	void*    stream;
-	uint8_t* buf;
+	char*    buf;
 	size_t   size;
 	size_t   block_size;
 } SerdByteSink;
@@ -280,7 +279,7 @@ serd_byte_sink_new(SerdSink sink, void* stream, size_t block_size)
 	bsink.size       = 0;
 	bsink.block_size = block_size;
 	bsink.buf        = ((block_size > 1)
-	                    ? (uint8_t*)serd_bufalloc(block_size)
+	                    ? (char*)serd_bufalloc(block_size)
 	                    : NULL);
 	return bsink;
 }
@@ -319,7 +318,7 @@ serd_byte_sink_write(const void* buf, size_t len, SerdByteSink* bsink)
 		// Write as much as possible into the remaining buffer space
 		memcpy(bsink->buf + bsink->size, buf, n);
 		bsink->size += n;
-		buf          = (const uint8_t*)buf + n;
+		buf          = (const char*)buf + n;
 		len         -= n;
 
 		// Flush page if buffer is full
@@ -380,13 +379,13 @@ is_space(const char c)
 }
 
 static inline bool
-is_base64(const uint8_t c)
+is_base64(const char c)
 {
 	return is_alpha(c) || is_digit(c) || c == '+' || c == '/' || c == '=';
 }
 
 static inline bool
-is_windows_path(const uint8_t* path)
+is_windows_path(const char* path)
 {
 	return is_alpha(path[0]) && (path[1] == ':' || path[1] == '|')
 		&& (path[2] == '/' || path[2] == '\\');
@@ -395,7 +394,7 @@ is_windows_path(const uint8_t* path)
 /* String utilities */
 
 size_t
-serd_substrlen(const uint8_t* str, size_t len, SerdNodeFlags* flags);
+serd_substrlen(const char* str, size_t len, SerdNodeFlags* flags);
 
 static inline int
 serd_strncasecmp(const char* s1, const char* s2, size_t n)
@@ -463,7 +462,7 @@ uri_path_len(const SerdURI* uri)
 	return uri->path_base.len + uri->path.len;
 }
 
-static inline uint8_t
+static inline char
 uri_path_at(const SerdURI* uri, size_t i)
 {
 	if (i < uri->path_base.len) {
@@ -491,8 +490,8 @@ uri_rooted_index(const SerdURI* uri, const SerdURI* root)
 	const size_t root_len        = uri_path_len(root);
 	size_t       last_root_slash = 0;
 	for (size_t i = 0; i < path_len && i < root_len; ++i) {
-		const uint8_t u = uri_path_at(uri, i);
-		const uint8_t r = uri_path_at(root, i);
+		const char u = uri_path_at(uri, i);
+		const char r = uri_path_at(root, i);
 
 		differ = differ || u != r;
 		if (r == '/') {
@@ -592,7 +591,7 @@ struct SerdReaderImpl {
 	unsigned          next_id;
 	SerdStatus        status;
 	uint8_t*          buf;
-	uint8_t*          bprefix;
+	char*             bprefix;
 	size_t            bprefix_len;
 	bool              strict;     ///< True iff strict parsing
 	bool              seen_genid;

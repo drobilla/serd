@@ -859,7 +859,7 @@ read_BLANK_NODE_LABEL(SerdReader* reader, bool* ate_dot)
 	eat_byte_safe(reader, '_');
 	eat_byte_check(reader, ':');
 	Ref ref = push_node(reader, SERD_BLANK,
-	                    reader->bprefix ? (char*)reader->bprefix : "",
+	                    reader->bprefix ? reader->bprefix : "",
 	                    reader->bprefix_len);
 
 	int c = peek_byte(reader);  // First: (PN_CHARS | '_' | [0-9])

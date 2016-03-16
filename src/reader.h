@@ -75,7 +75,7 @@ push_byte(SerdReader* reader, Ref ref, const int c)
 	assert(c != EOF);
 	SERD_STACK_ASSERT_TOP(reader, ref);
 
-	uint8_t* const  s    = serd_stack_push(&reader->stack, 1);
+	char* const     s    = serd_stack_push(&reader->stack, 1);
 	SerdNode* const node = (SerdNode*)(reader->stack.buf + ref);
 	++node->n_bytes;
 	*(s - 1) = (uint8_t)c;

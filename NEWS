@@ -2,6 +2,7 @@ serd (1.0.1) unstable;
 
   * Add SerdBuffer for mutable buffers to keep SerdChunk const-correct
   * Remove useless character counting from API
+  * Use char* for strings in public API
 
  -- David Robillard <d@drobilla.net>  Sat, 19 Jan 2019 12:31:12 +0000
 

@@ -80,7 +80,7 @@ Ref
 push_node_padded(SerdReader* reader, size_t maxlen,
                  SerdType type, const char* str, size_t n_bytes)
 {
-	void* mem = serd_stack_push_aligned(
+	char* mem = (char*)serd_stack_push_aligned(
 		&reader->stack, sizeof(SerdNode) + maxlen + 1, sizeof(SerdNode));
 
 	SerdNode* const node = (SerdNode*)mem;
@@ -89,15 +89,15 @@ push_node_padded(SerdReader* reader, size_t maxlen,
 	node->type    = type;
 	node->buf     = NULL;
 
-	uint8_t* buf = (uint8_t*)(node + 1);
+	char* buf = (char*)(node + 1);
 	memcpy(buf, str, n_bytes + 1);
 
 #ifdef SERD_STACK_CHECK
 	reader->allocs = realloc(
 		reader->allocs, sizeof(reader->allocs) * (++reader->n_allocs));
-	reader->allocs[reader->n_allocs - 1] = ((uint8_t*)mem - reader->stack.buf);
+	reader->allocs[reader->n_allocs - 1] = (mem - reader->stack.buf);
 #endif
-	return (Ref)((uint8_t*)node - reader->stack.buf);
+	return (Ref)((char*)node - reader->stack.buf);
 }
 
 Ref
@@ -111,7 +111,7 @@ deref(SerdReader* reader, const Ref ref)
 {
 	if (ref) {
 		SerdNode* node = (SerdNode*)(reader->stack.buf + ref);
-		node->buf = (uint8_t*)node + sizeof(SerdNode);
+		node->buf = (char*)node + sizeof(SerdNode);
 		return node;
 	}
 	return NULL;
@@ -127,8 +127,8 @@ pop_node(SerdReader* reader, Ref ref)
 		--reader->n_allocs;
 #endif
 		SerdNode* const node = deref(reader, ref);
-		uint8_t* const  top  = reader->stack.buf + reader->stack.size;
-		serd_stack_pop_aligned(&reader->stack, (size_t)(top - (uint8_t*)node));
+		char* const     top  = reader->stack.buf + reader->stack.size;
+		serd_stack_pop_aligned(&reader->stack, (size_t)(top - (char*)node));
 	}
 	return 0;
 }
@@ -234,15 +234,15 @@ serd_reader_get_handle(const SerdReader* reader)
 }
 
 void
-serd_reader_add_blank_prefix(SerdReader*    reader,
-                             const uint8_t* prefix)
+serd_reader_add_blank_prefix(SerdReader* reader,
+                             const char* prefix)
 {
 	free(reader->bprefix);
 	reader->bprefix_len = 0;
 	reader->bprefix     = NULL;
 	if (prefix) {
-		reader->bprefix_len = strlen((const char*)prefix);
-		reader->bprefix     = (uint8_t*)malloc(reader->bprefix_len + 1);
+		reader->bprefix_len = strlen(prefix);
+		reader->bprefix     = (char*)malloc(reader->bprefix_len + 1);
 		memcpy(reader->bprefix, prefix, reader->bprefix_len + 1);
 	}
 }
@@ -256,15 +256,15 @@ serd_reader_set_default_graph(SerdReader*     reader,
 }
 
 SerdStatus
-serd_reader_read_file(SerdReader*    reader,
-                      const uint8_t* uri)
+serd_reader_read_file(SerdReader* reader,
+                      const char* uri)
 {
-	uint8_t* const path = serd_file_uri_parse(uri, NULL);
+	char* const path = serd_file_uri_parse(uri, NULL);
 	if (!path) {
 		return SERD_ERR_BAD_ARG;
 	}
 
-	FILE* fd = serd_fopen((const char*)path, "rb");
+	FILE* fd = serd_fopen(path, "rb");
 	if (!fd) {
 		serd_free(path);
 		return SERD_ERR_UNKNOWN;
@@ -294,10 +294,10 @@ skip_bom(SerdReader* me)
 }
 
 SerdStatus
-serd_reader_start_stream(SerdReader*    reader,
-                         FILE*          file,
-                         const uint8_t* name,
-                         bool           bulk)
+serd_reader_start_stream(SerdReader* reader,
+                         FILE*       file,
+                         const char* name,
+                         bool        bulk)
 {
 	return serd_reader_start_source_stream(
 		reader,
@@ -313,7 +313,7 @@ serd_reader_start_source_stream(SerdReader*         reader,
                                 SerdSource          read_func,
                                 SerdStreamErrorFunc error_func,
                                 void*               stream,
-                                const uint8_t*      name,
+                                const char*         name,
                                 size_t              page_size)
 {
 	return serd_byte_source_open_source(
@@ -359,9 +359,9 @@ serd_reader_end_stream(SerdReader* reader)
 }
 
 SerdStatus
-serd_reader_read_file_handle(SerdReader*    reader,
-                             FILE*          file,
-                             const uint8_t* name)
+serd_reader_read_file_handle(SerdReader* reader,
+                             FILE*       file,
+                             const char* name)
 {
 	return serd_reader_read_source(
 		reader, (SerdSource)fread, (SerdStreamErrorFunc)ferror,
@@ -373,7 +373,7 @@ serd_reader_read_source(SerdReader*         reader,
                         SerdSource          source,
                         SerdStreamErrorFunc error,
                         void*               stream,
-                        const uint8_t*      name,
+                        const char*         name,
                         size_t              page_size)
 {
 	SerdStatus st = serd_reader_start_source_stream(
@@ -391,7 +391,7 @@ serd_reader_read_source(SerdReader*         reader,
 }
 
 SerdStatus
-serd_reader_read_string(SerdReader* reader, const uint8_t* utf8)
+serd_reader_read_string(SerdReader* reader, const char* utf8)
 {
 	serd_byte_source_open_string(&reader->source, utf8);
 

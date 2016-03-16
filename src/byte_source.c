@@ -39,7 +39,7 @@ serd_byte_source_open_source(SerdByteSource*     source,
                              SerdSource          read_func,
                              SerdStreamErrorFunc error_func,
                              void*               stream,
-                             const uint8_t*      name,
+                             const char*         name,
                              size_t              page_size)
 {
 	const Cursor cur = { name, 1, 1 };
@@ -79,13 +79,13 @@ serd_byte_source_prepare(SerdByteSource* source)
 }
 
 SerdStatus
-serd_byte_source_open_string(SerdByteSource* source, const uint8_t* utf8)
+serd_byte_source_open_string(SerdByteSource* source, const char* utf8)
 {
-	const Cursor cur = { (const uint8_t*)"(string)", 1, 1 };
+	const Cursor cur = { "(string)", 1, 1 };
 
 	memset(source, '\0', sizeof(*source));
 	source->cur      = cur;
-	source->read_buf = utf8;
+	source->read_buf = (const uint8_t*)utf8;
 	return SERD_SUCCESS;
 }
 

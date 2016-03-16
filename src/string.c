@@ -24,25 +24,25 @@ serd_free(void* ptr)
 	free(ptr);
 }
 
-const uint8_t*
+const char*
 serd_strerror(SerdStatus status)
 {
 	switch (status) {
-	case SERD_SUCCESS:        return (const uint8_t*)"Success";
-	case SERD_FAILURE:        return (const uint8_t*)"Non-fatal failure";
-	case SERD_ERR_UNKNOWN:    return (const uint8_t*)"Unknown error";
-	case SERD_ERR_BAD_SYNTAX: return (const uint8_t*)"Invalid syntax";
-	case SERD_ERR_BAD_ARG:    return (const uint8_t*)"Invalid argument";
-	case SERD_ERR_NOT_FOUND:  return (const uint8_t*)"Not found";
-	case SERD_ERR_ID_CLASH:   return (const uint8_t*)"Blank node ID clash";
-	case SERD_ERR_BAD_CURIE:  return (const uint8_t*)"Invalid CURIE";
-	case SERD_ERR_INTERNAL:   return (const uint8_t*)"Internal error";
+	case SERD_SUCCESS:        return "Success";
+	case SERD_FAILURE:        return "Non-fatal failure";
+	case SERD_ERR_UNKNOWN:    return "Unknown error";
+	case SERD_ERR_BAD_SYNTAX: return "Invalid syntax";
+	case SERD_ERR_BAD_ARG:    return "Invalid argument";
+	case SERD_ERR_NOT_FOUND:  return "Not found";
+	case SERD_ERR_ID_CLASH:   return "Blank node ID clash";
+	case SERD_ERR_BAD_CURIE:  return "Invalid CURIE";
+	case SERD_ERR_INTERNAL:   return "Internal error";
 	}
-	return (const uint8_t*)"Unknown error";  // never reached
+	return "Unknown error";  // never reached
 }
 
 static inline void
-serd_update_flags(const uint8_t c, SerdNodeFlags* const flags)
+serd_update_flags(const char c, SerdNodeFlags* const flags)
 {
 	switch (c) {
 	case '\r': case '\n':
@@ -54,7 +54,7 @@ serd_update_flags(const uint8_t c, SerdNodeFlags* const flags)
 }
 
 size_t
-serd_substrlen(const uint8_t* const str,
+serd_substrlen(const char* const    str,
                const size_t         len,
                SerdNodeFlags* const flags)
 {
@@ -70,7 +70,7 @@ serd_substrlen(const uint8_t* const str,
 }
 
 size_t
-serd_strlen(const uint8_t* str, SerdNodeFlags* flags)
+serd_strlen(const char* str, SerdNodeFlags* flags)
 {
 	if (flags) {
 		size_t i = 0;
@@ -81,7 +81,7 @@ serd_strlen(const uint8_t* str, SerdNodeFlags* flags)
 		return i;
 	}
 
-	return strlen((const char*)str);
+	return strlen(str);
 }
 
 static inline double
@@ -175,16 +175,18 @@ decode_chunk(const uint8_t in[4], uint8_t out[3])
 }
 
 void*
-serd_base64_decode(const uint8_t* str, size_t len, size_t* size)
+serd_base64_decode(const char* str, size_t len, size_t* size)
 {
+	const uint8_t* ustr = (const uint8_t*)str;
+
 	void* buf = malloc((len * 3) / 4 + 2);
 	*size = 0;
 	for (size_t i = 0, j = 0; i < len; j += 3) {
 		uint8_t in[] = "====";
 		size_t  n_in = 0;
 		for (; i < len && n_in < 4; ++n_in) {
-			for (; i < len && !is_base64(str[i]); ++i) {}  // Skip junk
-			in[n_in] = str[i++];
+			for (; i < len && !is_base64(ustr[i]); ++i) {}  // Skip junk
+			in[n_in] = ustr[i++];
 		}
 		if (n_in > 1) {
 			*size += decode_chunk(in, (uint8_t*)buf + j);
