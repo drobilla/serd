@@ -78,11 +78,16 @@ typedef enum {
 /// Bitwise OR of SerdNodeFlag values
 typedef uint32_t SerdNodeFlags;
 
-/// An unterminated string fragment
+/**
+   An immutable slice of a string.
+
+   This type is used for many string parameters, to allow referring to slices
+   of strings in-place and to avoid redundant string measurement.
+*/
 typedef struct {
-  const char* SERD_NULLABLE buf; ///< Start of chunk
-  size_t                    len; ///< Length of chunk in bytes
-} SerdChunk;
+  const char* SERD_NULLABLE buf; ///< Start of string
+  size_t                    len; ///< Length of string in bytes
+} SerdStringView;
 
 /// A mutable buffer in memory
 typedef struct {
@@ -219,12 +224,12 @@ typedef size_t (*SerdSink)(const void* SERD_NONNULL buf,
    in-place without allocating memory.
 */
 typedef struct {
-  SerdChunk scheme;    ///< Scheme
-  SerdChunk authority; ///< Authority
-  SerdChunk path_base; ///< Path prefix if relative
-  SerdChunk path;      ///< Path suffix
-  SerdChunk query;     ///< Query
-  SerdChunk fragment;  ///< Fragment
+  SerdStringView scheme;    ///< Scheme
+  SerdStringView authority; ///< Authority
+  SerdStringView path_base; ///< Path prefix if relative
+  SerdStringView path;      ///< Path suffix
+  SerdStringView query;     ///< Query
+  SerdStringView fragment;  ///< Fragment
 } SerdURI;
 
 static const SerdURI SERD_URI_NULL =
@@ -622,7 +627,7 @@ SERD_API bool
 serd_env_qualify(const SerdEnv* SERD_NULLABLE env,
                  const SerdNode* SERD_NONNULL uri,
                  SerdNode* SERD_NONNULL       prefix,
-                 SerdChunk* SERD_NONNULL      suffix);
+                 SerdStringView* SERD_NONNULL suffix);
 
 /**
    Expand `curie`.
@@ -633,8 +638,8 @@ serd_env_qualify(const SerdEnv* SERD_NULLABLE env,
 SERD_API SerdStatus
 serd_env_expand(const SerdEnv* SERD_NULLABLE env,
                 const SerdNode* SERD_NONNULL curie,
-                SerdChunk* SERD_NONNULL      uri_prefix,
-                SerdChunk* SERD_NONNULL      uri_suffix);
+                SerdStringView* SERD_NONNULL uri_prefix,
+                SerdStringView* SERD_NONNULL uri_suffix);
 
 /**
    Expand `node`, which must be a CURIE or URI, to a full URI.
@@ -872,7 +877,7 @@ serd_buffer_sink(const void* SERD_NONNULL buf,
                  void* SERD_UNSPECIFIED   stream);
 
 /**
-   Finish a serialisation to a chunk with serd_buffer_sink().
+   Finish writing to a buffer with serd_buffer_sink().
 
    The returned string is the result of the serialisation, which is null
    terminated (by this function) and owned by the caller.
