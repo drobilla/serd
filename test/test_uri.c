@@ -7,31 +7,28 @@
 
 #include <assert.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-
-#define USTR(s) ((const uint8_t*)(s))
 
 static void
 test_uri_string_has_scheme(void)
 {
-  assert(!serd_uri_string_has_scheme(USTR("relative")));
-  assert(!serd_uri_string_has_scheme(USTR("http")));
-  assert(!serd_uri_string_has_scheme(USTR("5nostartdigit")));
-  assert(!serd_uri_string_has_scheme(USTR("+nostartplus")));
-  assert(!serd_uri_string_has_scheme(USTR("-nostartminus")));
-  assert(!serd_uri_string_has_scheme(USTR(".nostartdot")));
-  assert(!serd_uri_string_has_scheme(USTR(":missing")));
-  assert(!serd_uri_string_has_scheme(USTR("a/slash/is/not/a/scheme/char")));
+  assert(!serd_uri_string_has_scheme("relative"));
+  assert(!serd_uri_string_has_scheme("http"));
+  assert(!serd_uri_string_has_scheme("5nostartdigit"));
+  assert(!serd_uri_string_has_scheme("+nostartplus"));
+  assert(!serd_uri_string_has_scheme("-nostartminus"));
+  assert(!serd_uri_string_has_scheme(".nostartdot"));
+  assert(!serd_uri_string_has_scheme(":missing"));
+  assert(!serd_uri_string_has_scheme("a/slash/is/not/a/scheme/char"));
 
-  assert(serd_uri_string_has_scheme(USTR("http://example.org/")));
-  assert(serd_uri_string_has_scheme(USTR("https://example.org/")));
-  assert(serd_uri_string_has_scheme(USTR("allapha:path")));
-  assert(serd_uri_string_has_scheme(USTR("w1thd1g1t5:path")));
-  assert(serd_uri_string_has_scheme(USTR("with.dot:path")));
-  assert(serd_uri_string_has_scheme(USTR("with+plus:path")));
-  assert(serd_uri_string_has_scheme(USTR("with-minus:path")));
+  assert(serd_uri_string_has_scheme("http://example.org/"));
+  assert(serd_uri_string_has_scheme("https://example.org/"));
+  assert(serd_uri_string_has_scheme("allapha:path"));
+  assert(serd_uri_string_has_scheme("w1thd1g1t5:path"));
+  assert(serd_uri_string_has_scheme("with.dot:path"));
+  assert(serd_uri_string_has_scheme("with+plus:path"));
+  assert(serd_uri_string_has_scheme("with-minus:path"));
 }
 
 static void
@@ -44,16 +41,13 @@ test_file_uri(const char* const hostname,
     expected_path = path;
   }
 
-  SerdNode node = serd_node_new_file_uri(USTR(path), USTR(hostname), 0);
-
-  uint8_t* out_hostname = NULL;
-  uint8_t* out_path =
-    serd_file_uri_parse((const uint8_t*)node.buf, &out_hostname);
-
-  assert(!strcmp((const char*)node.buf, expected_uri));
+  SerdNode node         = serd_node_new_file_uri(path, hostname, 0);
+  char*    out_hostname = NULL;
+  char*    out_path = serd_file_uri_parse((const char*)node.buf, &out_hostname);
+  assert(!strcmp(node.buf, expected_uri));
   assert((hostname && out_hostname) || (!hostname && !out_hostname));
-  assert(!hostname || !strcmp(hostname, (const char*)out_hostname));
-  assert(!strcmp((const char*)out_path, (const char*)expected_path));
+  assert(!hostname || !strcmp(hostname, out_hostname));
+  assert(!strcmp(out_path, expected_path));
 
   serd_free(out_path);
   serd_free(out_hostname);
@@ -109,8 +103,8 @@ test_uri_parsing(void)
 
   // Test tolerance of parsing junk URI escapes
 
-  uint8_t* out_path = serd_file_uri_parse(USTR("file:///foo/%0Xbar"), NULL);
-  assert(!strcmp((const char*)out_path, "/foo/bar"));
+  char* out_path = serd_file_uri_parse("file:///foo/%0Xbar", NULL);
+  assert(!strcmp(out_path, "/foo/bar"));
   serd_free(out_path);
 }
 
@@ -122,13 +116,13 @@ test_uri_from_string(void)
 
   SerdURI  base_uri;
   SerdNode base =
-    serd_node_new_uri_from_string(USTR("http://example.org/"), NULL, &base_uri);
+    serd_node_new_uri_from_string("http://example.org/", NULL, &base_uri);
   SerdNode nil  = serd_node_new_uri_from_string(NULL, &base_uri, NULL);
-  SerdNode nil2 = serd_node_new_uri_from_string(USTR(""), &base_uri, NULL);
+  SerdNode nil2 = serd_node_new_uri_from_string("", &base_uri, NULL);
   assert(nil.type == SERD_URI);
-  assert(!strcmp((const char*)nil.buf, (const char*)base.buf));
+  assert(!strcmp(nil.buf, base.buf));
   assert(nil2.type == SERD_URI);
-  assert(!strcmp((const char*)nil2.buf, (const char*)base.buf));
+  assert(!strcmp(nil2.buf, base.buf));
   serd_node_free(&nil);
   serd_node_free(&nil2);
 
@@ -157,17 +151,14 @@ check_relative_uri(const char* const uri_string,
   SerdURI base   = SERD_URI_NULL;
   SerdURI result = SERD_URI_NULL;
 
-  SerdNode uri_node =
-    serd_node_new_uri_from_string(USTR(uri_string), NULL, &uri);
-
-  SerdNode base_node =
-    serd_node_new_uri_from_string(USTR(base_string), NULL, &base);
+  SerdNode uri_node  = serd_node_new_uri_from_string(uri_string, NULL, &uri);
+  SerdNode base_node = serd_node_new_uri_from_string(base_string, NULL, &base);
 
   SerdNode result_node = SERD_NODE_NULL;
   if (root_string) {
     SerdURI  root = SERD_URI_NULL;
     SerdNode root_node =
-      serd_node_new_uri_from_string(USTR(root_string), NULL, &root);
+      serd_node_new_uri_from_string(root_string, NULL, &root);
 
     result_node = serd_node_new_relative_uri(&uri, &base, &root, &result);
     serd_node_free(&root_node);
@@ -178,7 +169,7 @@ check_relative_uri(const char* const uri_string,
   assert(!strcmp((const char*)result_node.buf, expected_string));
 
   SerdURI expected = SERD_URI_NULL;
-  assert(!serd_uri_parse(USTR(expected_string), &expected));
+  assert(!serd_uri_parse(expected_string, &expected));
   assert(chunk_equals(&result.scheme, &expected.scheme));
   assert(chunk_equals(&result.authority, &expected.authority));
   assert(chunk_equals(&result.path_base, &expected.path_base));
