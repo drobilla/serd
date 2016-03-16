@@ -30,9 +30,9 @@ doxygen_xml = custom_target(
     'group__serd__writer.xml',
     'serd_8h.xml',
     'structSerdBuffer.xml',
-    'structSerdChunk.xml',
     'structSerdError.xml',
     'structSerdNode.xml',
+    'structSerdStringView.xml',
     'structSerdURI.xml',
   ],
 )

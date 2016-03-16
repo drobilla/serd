@@ -182,7 +182,7 @@ bool
 serd_env_qualify(const SerdEnv* const  env,
                  const SerdNode* const uri,
                  SerdNode* const       prefix,
-                 SerdChunk* const      suffix)
+                 SerdStringView* const suffix)
 {
   assert(uri);
   assert(prefix);
@@ -209,8 +209,8 @@ serd_env_qualify(const SerdEnv* const  env,
 SerdStatus
 serd_env_expand(const SerdEnv* const  env,
                 const SerdNode* const curie,
-                SerdChunk* const      uri_prefix,
-                SerdChunk* const      uri_suffix)
+                SerdStringView* const uri_prefix,
+                SerdStringView* const uri_suffix)
 {
   assert(curie);
   assert(uri_prefix);
@@ -253,8 +253,8 @@ serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
   }
 
   if (node->type == SERD_CURIE) {
-    SerdChunk prefix;
-    SerdChunk suffix;
+    SerdStringView prefix;
+    SerdStringView suffix;
     if (serd_env_expand(env, node, &prefix, &suffix)) {
       return SERD_NODE_NULL;
     }
