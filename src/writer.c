@@ -124,7 +124,7 @@ struct SerdWriterImpl {
   SerdErrorSink error_sink;
   void*         error_handle;
   WriteContext  context;
-  uint8_t*      bprefix;
+  char*         bprefix;
   size_t        bprefix_len;
   Sep           last_sep;
   int           indent;
@@ -177,7 +177,7 @@ w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
 
   va_list args; // NOLINT(cppcoreguidelines-init-variables)
   va_start(args, fmt);
-  const SerdError e = {st, (const uint8_t*)"", 0, 0, fmt, &args};
+  const SerdError e = {st, "", 0, 0, fmt, &args};
   serd_error(writer->error_sink, writer->error_handle, &e);
   va_end(args);
   return st;
@@ -186,14 +186,14 @@ w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
 static void
 copy_node(SerdNode* dst, const SerdNode* src)
 {
-  const size_t   new_size = src->n_bytes + 1U;
-  uint8_t* const new_buf  = (uint8_t*)realloc((char*)dst->buf, new_size);
+  const size_t new_size = src->n_bytes + 1U;
+  char* const  new_buf  = (char*)realloc((char*)dst->buf, new_size);
   if (new_buf) {
     dst->buf     = new_buf;
     dst->n_bytes = src->n_bytes;
     dst->flags   = src->flags;
     dst->type    = src->type;
-    memcpy((char*)dst->buf, src->buf, new_size);
+    memcpy(new_buf, src->buf, new_size);
   }
 }
 
@@ -271,7 +271,7 @@ write_character(SerdWriter* writer, const uint8_t* utf8, size_t* size)
 }
 
 static bool
-uri_must_escape(const uint8_t c)
+uri_must_escape(const int c)
 {
   switch (c) {
   case ' ':
@@ -291,7 +291,7 @@ uri_must_escape(const uint8_t c)
 }
 
 static size_t
-write_uri(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
+write_uri(SerdWriter* writer, const char* utf8, size_t n_bytes)
 {
   size_t len = 0;
   for (size_t i = 0; i < n_bytes;) {
@@ -310,13 +310,13 @@ write_uri(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
 
     // Write UTF-8 character
     size_t size = 0;
-    len += write_character(writer, utf8 + i, &size);
+    len += write_character(writer, (const uint8_t*)utf8 + i, &size);
     i += size;
     if (size == 0) {
       // Corrupt input, write percent-encoded bytes and scan to next start
       char escape[4] = {0, 0, 0, 0};
       for (; i < n_bytes && (utf8[i] & 0x80); ++i) {
-        snprintf(escape, sizeof(escape), "%%%02X", utf8[i]);
+        snprintf(escape, sizeof(escape), "%%%02X", (uint8_t)utf8[i]);
         len += sink(escape, 3, writer);
       }
     }
@@ -326,7 +326,7 @@ write_uri(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
 }
 
 static bool
-lname_must_escape(const uint8_t c)
+lname_must_escape(const char c)
 {
   /* This arbitrary list of characters, most of which have nothing to do with
      Turtle, must be handled as special cases here because the RDF and SPARQL
@@ -363,7 +363,7 @@ lname_must_escape(const uint8_t c)
 }
 
 static size_t
-write_lname(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
+write_lname(SerdWriter* writer, const char* utf8, size_t n_bytes)
 {
   size_t len = 0;
   for (size_t i = 0; i < n_bytes; ++i) {
@@ -389,10 +389,10 @@ write_lname(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
 }
 
 static size_t
-write_text(SerdWriter*    writer,
-           TextContext    ctx,
-           const uint8_t* utf8,
-           size_t         n_bytes)
+write_text(SerdWriter* writer,
+           TextContext ctx,
+           const char* utf8,
+           size_t      n_bytes)
 {
   size_t len                  = 0;
   size_t n_consecutive_quotes = 0;
@@ -415,7 +415,7 @@ write_text(SerdWriter*    writer,
       break; // Reached end
     }
 
-    const uint8_t in = utf8[i++];
+    const char in = utf8[i++];
     if (ctx == WRITE_LONG_STRING) {
       n_consecutive_quotes = (in == '\"') ? (n_consecutive_quotes + 1) : 0;
 
@@ -479,7 +479,8 @@ write_text(SerdWriter*    writer,
 
     // Write UTF-8 character
     size_t size = 0;
-    len += write_character(writer, utf8 + i - 1, &size);
+    len += write_character(writer, (const uint8_t*)utf8 + i - 1, &size);
+
     if (size == 0) {
       // Corrupt input, write replacement character and scan to the next start
       len += sink(replacement_char, sizeof(replacement_char), writer);
@@ -496,7 +497,7 @@ write_text(SerdWriter*    writer,
 static size_t
 uri_sink(const void* buf, size_t len, void* stream)
 {
-  return write_uri((SerdWriter*)stream, (const uint8_t*)buf, len);
+  return write_uri((SerdWriter*)stream, (const char*)buf, len);
 }
 
 SERD_NODISCARD static SerdStatus
@@ -613,7 +614,7 @@ write_literal(SerdWriter*        writer,
   SerdStatus st = SERD_SUCCESS;
 
   if (supports_abbrev(writer) && datatype && datatype->buf) {
-    const char* type_uri = (const char*)datatype->buf;
+    const char* type_uri = datatype->buf;
     if (!strncmp(type_uri, NS_XSD, sizeof(NS_XSD) - 1) &&
         (!strcmp(type_uri + sizeof(NS_XSD) - 1, "boolean") ||
          !strcmp(type_uri + sizeof(NS_XSD) - 1, "integer"))) {
@@ -622,8 +623,7 @@ write_literal(SerdWriter*        writer,
 
     if (!strncmp(type_uri, NS_XSD, sizeof(NS_XSD) - 1) &&
         !strcmp(type_uri + sizeof(NS_XSD) - 1, "decimal") &&
-        strchr((const char*)node->buf, '.') &&
-        node->buf[node->n_bytes - 1] != '.') {
+        strchr(node->buf, '.') && node->buf[node->n_bytes - 1] != '.') {
       /* xsd:decimal literals without trailing digits, e.g. "5.", can
          not be written bare in Turtle.  We could add a 0 which is
          prettier, but changes the text and breaks round tripping.
@@ -654,7 +654,7 @@ write_literal(SerdWriter*        writer,
 
 // Return true iff `buf` is a valid prefixed name prefix or suffix
 static bool
-is_name(const uint8_t* buf, const size_t len)
+is_name(const char* buf, const size_t len)
 {
   // TODO: This is more strict than it should be
   for (size_t i = 0; i < len; ++i) {
@@ -677,12 +677,11 @@ write_uri_node(SerdWriter* const writer,
 
   const bool has_scheme = serd_uri_string_has_scheme(node->buf);
   if (supports_abbrev(writer)) {
-    if (field == FIELD_PREDICATE &&
-        !strcmp((const char*)node->buf, NS_RDF "type")) {
+    if (field == FIELD_PREDICATE && !strcmp(node->buf, NS_RDF "type")) {
       return esink("a", 1, writer);
     }
 
-    if (!strcmp((const char*)node->buf, NS_RDF "nil")) {
+    if (!strcmp(node->buf, NS_RDF "nil")) {
       return esink("()", 2, writer);
     }
 
@@ -784,9 +783,8 @@ write_blank(SerdWriter* const        writer,
   }
 
   TRY(st, esink("_:", 2, writer));
-  if (writer->bprefix && !strncmp((const char*)node->buf,
-                                  (const char*)writer->bprefix,
-                                  writer->bprefix_len)) {
+  if (writer->bprefix &&
+      !strncmp(node->buf, writer->bprefix, writer->bprefix_len)) {
     TRY(st,
         esink(node->buf + writer->bprefix_len,
               node->n_bytes - writer->bprefix_len,
@@ -861,12 +859,12 @@ write_list_next(SerdWriter*        writer,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  if (!strcmp((const char*)object->buf, NS_RDF "nil")) {
+  if (!strcmp(object->buf, NS_RDF "nil")) {
     TRY(st, write_sep(writer, SEP_LIST_END));
     return SERD_FAILURE;
   }
 
-  if (!strcmp((const char*)predicate->buf, NS_RDF "first")) {
+  if (!strcmp(predicate->buf, NS_RDF "first")) {
     TRY(st, write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
   } else {
     TRY(st, write_sep(writer, SEP_LIST_SEP));
@@ -1106,16 +1104,16 @@ serd_writer_set_error_sink(SerdWriter*   writer,
 }
 
 void
-serd_writer_chop_blank_prefix(SerdWriter* writer, const uint8_t* prefix)
+serd_writer_chop_blank_prefix(SerdWriter* writer, const char* prefix)
 {
   free(writer->bprefix);
   writer->bprefix_len = 0;
   writer->bprefix     = NULL;
 
-  const size_t prefix_len = prefix ? strlen((const char*)prefix) : 0;
+  const size_t prefix_len = prefix ? strlen(prefix) : 0;
   if (prefix_len) {
     writer->bprefix_len = prefix_len;
-    writer->bprefix     = (uint8_t*)malloc(writer->bprefix_len + 1);
+    writer->bprefix     = (char*)malloc(writer->bprefix_len + 1);
     memcpy(writer->bprefix, prefix, writer->bprefix_len + 1);
   }
 }
@@ -1220,9 +1218,9 @@ serd_buffer_sink(const void* const buf, const size_t len, void* const stream)
   return len;
 }
 
-uint8_t*
+char*
 serd_buffer_sink_finish(SerdBuffer* const stream)
 {
   serd_buffer_sink("", 1, stream);
-  return (uint8_t*)stream->buf;
+  return (char*)stream->buf;
 }
