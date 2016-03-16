@@ -6,10 +6,7 @@
 #include "serd/serd.h"
 
 #include <assert.h>
-#include <stdint.h>
 #include <string.h>
-
-#define USTR(s) ((const uint8_t*)(s))
 
 static void
 test_write_long_literal(void)
@@ -21,17 +18,16 @@ test_write_long_literal(void)
 
   assert(writer);
 
-  SerdNode s = serd_node_from_string(SERD_URI, USTR("http://example.org/s"));
-  SerdNode p = serd_node_from_string(SERD_URI, USTR("http://example.org/p"));
-  SerdNode o =
-    serd_node_from_string(SERD_LITERAL, USTR("hello \"\"\"world\"\"\"!"));
+  SerdNode s = serd_node_from_string(SERD_URI, "http://example.org/s");
+  SerdNode p = serd_node_from_string(SERD_URI, "http://example.org/p");
+  SerdNode o = serd_node_from_string(SERD_LITERAL, "hello \"\"\"world\"\"\"!");
 
   assert(!serd_writer_write_statement(writer, 0, NULL, &s, &p, &o, NULL, NULL));
 
   serd_writer_free(writer);
   serd_env_free(env);
 
-  uint8_t* out = serd_buffer_sink_finish(&buffer);
+  char* out = serd_buffer_sink_finish(&buffer);
 
   static const char* const expected =
     "<http://example.org/s>\n"
