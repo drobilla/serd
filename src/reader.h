@@ -55,7 +55,7 @@ struct SerdReaderImpl {
   SerdSyntax        syntax;
   unsigned          next_id;
   uint8_t*          buf;
-  uint8_t*          bprefix;
+  char*             bprefix;
   size_t            bprefix_len;
   bool              strict; ///< True iff strict parsing
   bool              seen_genid;
@@ -153,7 +153,7 @@ static inline SerdStatus
 eat_string(SerdReader* reader, const char* str, unsigned n)
 {
   for (unsigned i = 0; i < n; ++i) {
-    if (!eat_byte_check(reader, ((const uint8_t*)str)[i])) {
+    if (!eat_byte_check(reader, str[i])) {
       return SERD_ERR_BAD_SYNTAX;
     }
   }
@@ -166,11 +166,13 @@ push_byte(SerdReader* reader, Ref ref, const int c)
   assert(c != EOF);
   SERD_STACK_ASSERT_TOP(reader, ref);
 
-  uint8_t* const  s    = (uint8_t*)serd_stack_push(&reader->stack, 1);
+  char* const     s    = (char*)serd_stack_push(&reader->stack, 1);
   SerdNode* const node = (SerdNode*)(reader->stack.buf + ref);
-  ++node->n_bytes;
-  *(s - 1) = (uint8_t)c;
+
+  *(s - 1) = (char)c;
   *s       = '\0';
+
+  ++node->n_bytes;
   return SERD_SUCCESS;
 }
 

@@ -67,14 +67,14 @@ is_base64(const int c)
 }
 
 static inline bool
-is_windows_path(const uint8_t* path)
+is_windows_path(const char* path)
 {
   return is_alpha(path[0]) && (path[1] == ':' || path[1] == '|') &&
          (path[2] == '/' || path[2] == '\\');
 }
 
 size_t
-serd_substrlen(const uint8_t* str, size_t len, SerdNodeFlags* flags);
+serd_substrlen(const char* str, size_t len, SerdNodeFlags* flags);
 
 static inline uint8_t
 hex_digit_value(const uint8_t c)
