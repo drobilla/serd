@@ -38,31 +38,25 @@ serd_strerror(SerdStatus st)
 
 SERD_API
 size_t
-serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags)
+serd_strlen(const uint8_t* str, SerdNodeFlags* flags)
 {
-	size_t        n_chars = 0;
-	size_t        i       = 0;
-	SerdNodeFlags f       = 0;
-	for (; str[i]; ++i) {
-		if ((str[i] & 0xC0) != 0x80) {
-			// Does not start with `10', start of a new character
-			++n_chars;
+	if (flags) {
+		*flags = 0;
+
+		size_t i = 0;
+		for (; str[i]; ++i) {
 			switch (str[i]) {
 			case '\r': case '\n':
-				f |= SERD_HAS_NEWLINE;
+				*flags |= SERD_HAS_NEWLINE;
 				break;
 			case '"':
-				f |= SERD_HAS_QUOTE;
+				*flags |= SERD_HAS_QUOTE;
 			}
 		}
+		return i;
+	} else {
+		return strlen((const char*)str);
 	}
-	if (n_bytes) {
-		*n_bytes = i;
-	}
-	if (flags) {
-		*flags = f;
-	}
-	return n_chars;
 }
 
 static inline double

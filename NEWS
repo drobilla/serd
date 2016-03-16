@@ -3,6 +3,7 @@ serd (1.0.0) unstable;
   * Use SerdBuffer for mutable buffers instead of abusing SerdChunk
   * Add serd_node_new_relative_uri()
   * Fix construction and comparison of URIs with UTF-8 characters
+  * Remove useless character counting
   * Report I/O errors with message and return appropriate status code
   * Fix potential out of bounds read
   * Fix unaligned memory access, undefined behaviour which breaks on ARM

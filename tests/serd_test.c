@@ -138,9 +138,8 @@ main(void)
 			               node.buf, dbl_test_strs[i]);
 		}
 		const size_t len = node.buf ? strlen((const char*)node.buf) : 0;
-		if (node.n_bytes != len || node.n_chars != len) {
-			return failure("Length %zu,%zu != %zu\n",
-			               node.n_bytes, node.n_chars, len);
+		if (node.n_bytes != len) {
+			return failure("Length %zu != %zu\n", node.n_bytes, len);
 		}
 		serd_node_free(&node);
 	}
@@ -162,9 +161,8 @@ main(void)
 			               node.buf, int_test_strs[i]);
 		}
 		const size_t len = strlen((const char*)node.buf);
-		if (node.n_bytes != len || node.n_chars != len) {
-			return failure("Length %zu,%zu != %zu\n",
-			               node.n_bytes, node.n_chars, len);
+		if (node.n_bytes != len) {
+			return failure("Length %zu != %zu\n", node.n_bytes, len);
 		}
 		serd_node_free(&node);
 	}
@@ -177,11 +175,6 @@ main(void)
 		}
 
 		SerdNode blob = serd_node_new_blob(data, size, size % 5);
-
-		if (blob.n_bytes != blob.n_chars) {
-			return failure("Blob %zu bytes != %zu chars\n",
-			               blob.n_bytes, blob.n_chars);
-		}
 
 		size_t   out_size;
 		uint8_t* out = (uint8_t*)serd_base64_decode(
@@ -205,18 +198,11 @@ main(void)
 
 	const uint8_t str[] = { '"', '5', 0xE2, 0x82, 0xAC, '"', '\n', 0 };
 
-	size_t        n_bytes;
 	SerdNodeFlags flags;
-	size_t        len = serd_strlen(str, &n_bytes, &flags);
-	if (len != 5 || n_bytes != 7
-	    || flags != (SERD_HAS_QUOTE|SERD_HAS_NEWLINE)) {
-		return failure("Bad serd_strlen(%s) len=%zu n_bytes=%zu flags=%u\n",
-		        str, len, n_bytes, flags);
-	}
-	len = serd_strlen(str, NULL, &flags);
-	if (len != 5) {
-		return failure("Bad serd_strlen(%s) len=%zu flags=%u\n",
-		        str, len, flags);
+	size_t        n_bytes = serd_strlen(str, &flags);
+	if (n_bytes != 7 || flags != (SERD_HAS_QUOTE|SERD_HAS_NEWLINE)) {
+		return failure("Bad serd_strlen(%s) n_bytes=%zu flags=%u\n",
+		        str, n_bytes, flags);
 	}
 
 	// Test serd_strerror
@@ -388,10 +374,10 @@ main(void)
 	// Test serd_node_from_string
 
 	SerdNode node = serd_node_from_string(SERD_LITERAL, (const uint8_t*)"hello\"");
-	if (node.n_bytes != 6 || node.n_chars != 6 || node.flags != SERD_HAS_QUOTE
+	if (node.n_bytes != 6 || node.flags != SERD_HAS_QUOTE
 	    || strcmp((const char*)node.buf, "hello\"")) {
-		return failure("Bad node %s %zu %zu %d %d\n",
-		        node.buf, node.n_bytes, node.n_chars, node.flags, node.type);
+		return failure("Bad node %s %zu %d %d\n",
+		        node.buf, node.n_bytes, node.flags, node.type);
 	}
 
 	node = serd_node_from_string(SERD_URI, NULL);
