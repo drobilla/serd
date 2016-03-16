@@ -97,10 +97,7 @@ is_windows_path(const uint8_t* path)
 }
 
 size_t
-serd_substrlen(const uint8_t* str,
-               size_t         len,
-               size_t*        n_bytes,
-               SerdNodeFlags* flags);
+serd_substrlen(const uint8_t* str, size_t len, SerdNodeFlags* flags);
 
 static inline char
 serd_to_upper(const char c)
