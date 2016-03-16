@@ -956,11 +956,10 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
     return SERD_ERR_BAD_SYNTAX;
   }
 
-  const Ref ref = *dest =
-    push_node(reader,
-              SERD_BLANK,
-              reader->bprefix ? (char*)reader->bprefix : "",
-              reader->bprefix_len);
+  const Ref ref = *dest = push_node(reader,
+                                    SERD_BLANK,
+                                    reader->bprefix ? reader->bprefix : "",
+                                    reader->bprefix_len);
 
   int c = peek_byte(reader); // First: (PN_CHARS | '_' | [0-9])
   if (is_digit(c) || c == '_') {
@@ -999,7 +998,6 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
       }
     }
   }
-
   return SERD_SUCCESS;
 }
 
@@ -1525,6 +1523,7 @@ token_equals(SerdReader* const reader,
     return false;
   }
 
+  assert(node->buf);
   const char* const node_string = (const char*)node->buf;
   for (size_t i = 0U; i < n; ++i) {
     if (serd_to_upper(node_string[i]) != serd_to_upper(tok[i])) {

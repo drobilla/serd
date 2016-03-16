@@ -48,14 +48,14 @@ serd_uri_string_length(const SerdURI* const uri)
 static size_t
 string_sink(const void* const buf, const size_t len, void* const stream)
 {
-  uint8_t** ptr = (uint8_t**)stream;
+  char** ptr = (char**)stream;
   memcpy(*ptr, buf, len);
   *ptr += len;
   return len;
 }
 
 SerdNode
-serd_node_from_string(const SerdType type, const uint8_t* const str)
+serd_node_from_string(SerdType type, const char* const str)
 {
   if (!str) {
     return SERD_NODE_NULL;
@@ -68,9 +68,9 @@ serd_node_from_string(const SerdType type, const uint8_t* const str)
 }
 
 SerdNode
-serd_node_from_substring(const SerdType       type,
-                         const uint8_t* const str,
-                         const size_t         len)
+serd_node_from_substring(const SerdType    type,
+                         const char* const str,
+                         const size_t      len)
 {
   if (!str) {
     return SERD_NODE_NULL;
@@ -90,7 +90,7 @@ serd_node_copy(const SerdNode* const node)
   }
 
   SerdNode copy = *node;
-  uint8_t* buf  = (uint8_t*)malloc(copy.n_bytes + 1);
+  char*    buf  = (char*)malloc(copy.n_bytes + 1);
   memcpy(buf, node->buf, copy.n_bytes + 1);
   copy.buf = buf;
   return copy;
@@ -104,8 +104,7 @@ serd_node_equals(const SerdNode* const a, const SerdNode* const b)
 
   return (a == b) ||
          (a->type == b->type && a->n_bytes == b->n_bytes &&
-          ((a->buf == b->buf) ||
-           !memcmp((const char*)a->buf, (const char*)b->buf, a->n_bytes + 1)));
+          ((a->buf == b->buf) || !memcmp(a->buf, b->buf, a->n_bytes + 1)));
 }
 
 SerdNode
@@ -121,7 +120,7 @@ serd_node_new_uri_from_node(const SerdNode* const uri_node,
 }
 
 SerdNode
-serd_node_new_uri_from_string(const uint8_t* const str,
+serd_node_new_uri_from_string(const char* const    str,
                               const SerdURI* const base,
                               SerdURI* const       out)
 {
@@ -136,7 +135,7 @@ serd_node_new_uri_from_string(const uint8_t* const str,
 }
 
 static bool
-is_uri_path_char(const uint8_t c)
+is_uri_path_char(const char c)
 {
   return is_alpha(c) || is_digit(c) || strchr("!$&\'()*+,-./:;=@_~", c);
 }
@@ -152,31 +151,31 @@ is_dir_sep(const char c)
 }
 
 SerdNode
-serd_node_new_file_uri(const uint8_t* const path,
-                       const uint8_t* const hostname,
-                       SerdURI* const       out,
-                       const bool           escape)
+serd_node_new_file_uri(const char* const path,
+                       const char* const hostname,
+                       SerdURI* const    out,
+                       const bool        escape)
 {
   assert(path);
 
-  const size_t path_len     = strlen((const char*)path);
-  const size_t hostname_len = hostname ? strlen((const char*)hostname) : 0;
+  const size_t path_len     = strlen(path);
+  const size_t hostname_len = hostname ? strlen(hostname) : 0;
   const bool   is_windows   = is_windows_path(path);
   size_t       uri_len      = 0;
-  uint8_t*     uri          = NULL;
+  char*        uri          = NULL;
 
-  if (is_dir_sep((char)path[0]) || is_windows) {
+  if (is_dir_sep(path[0]) || is_windows) {
     uri_len = strlen("file://") + hostname_len + is_windows;
-    uri     = (uint8_t*)calloc(uri_len + 1, 1);
+    uri     = (char*)calloc(uri_len + 1, 1);
 
     memcpy(uri, "file://", 7);
 
     if (hostname) {
-      memcpy(uri + 7, hostname, hostname_len);
+      memcpy(uri + 7, hostname, hostname_len + 1);
     }
 
     if (is_windows) {
-      ((char*)uri)[7 + hostname_len] = '/';
+      uri[7 + hostname_len] = '/';
     }
   }
 
@@ -191,14 +190,13 @@ serd_node_new_file_uri(const uint8_t* const path,
       serd_chunk_sink("/", 1, &chunk);
 #endif
     } else {
-      char escape_str[4] = {'%', 0, 0, 0};
+      char escape_str[10] = {'%', 0, 0, 0, 0, 0, 0, 0, 0, 0};
       snprintf(escape_str + 1, sizeof(escape_str) - 1, "%X", (unsigned)path[i]);
       serd_chunk_sink(escape_str, 3, &chunk);
     }
   }
 
-  const uint8_t* const string = serd_chunk_sink_finish(&chunk);
-
+  const char* const string = serd_chunk_sink_finish(&chunk);
   if (string && out) {
     serd_uri_parse(string, out);
   }
@@ -219,9 +217,9 @@ serd_node_new_uri(const SerdURI* const uri,
   }
 
   const size_t len        = serd_uri_string_length(&abs_uri);
-  uint8_t*     buf        = (uint8_t*)malloc(len + 1);
+  char*        buf        = (char*)malloc(len + 1);
   SerdNode     node       = {buf, len, 0, SERD_URI};
-  uint8_t*     ptr        = buf;
+  char*        ptr        = buf;
   const size_t actual_len = serd_uri_serialise(&abs_uri, string_sink, &ptr);
 
   buf[actual_len] = '\0';
@@ -244,9 +242,9 @@ serd_node_new_relative_uri(const SerdURI* const uri,
 
   const size_t uri_len  = serd_uri_string_length(uri);
   const size_t base_len = serd_uri_string_length(base);
-  uint8_t*     buf      = (uint8_t*)malloc(uri_len + base_len + 1);
+  char*        buf      = (char*)malloc(uri_len + base_len + 1);
   SerdNode     node     = {buf, 0, 0, SERD_URI};
-  uint8_t*     ptr      = buf;
+  char*        ptr      = buf;
   const size_t actual_len =
     serd_uri_serialise_relative(uri, base, root, string_sink, &ptr);
 
@@ -277,7 +275,7 @@ serd_node_new_decimal(const double d, const unsigned frac_digits)
   const double   abs_d      = fabs(d);
   const unsigned int_digits = serd_digits(abs_d);
   char*          buf        = (char*)calloc(int_digits + frac_digits + 3, 1);
-  SerdNode       node       = {(const uint8_t*)buf, 0, 0, SERD_LITERAL};
+  SerdNode       node       = {buf, 0, 0, SERD_LITERAL};
   const double   int_part   = floor(abs_d);
 
   // Point s to decimal point location
@@ -328,7 +326,7 @@ serd_node_new_integer(const int64_t i)
   uint64_t       abs_i  = (uint64_t)((i < 0) ? -i : i);
   const unsigned digits = serd_digits((double)abs_i);
   char*          buf    = (char*)calloc(digits + 2, 1);
-  SerdNode       node   = {(const uint8_t*)buf, 0, 0, SERD_LITERAL};
+  SerdNode       node   = {(const char*)buf, 0, 0, SERD_LITERAL};
 
   // Point s to the end
   char* s = buf + digits - 1;
@@ -355,12 +353,13 @@ serd_node_new_blob(const void* const buf,
   assert(buf);
 
   const size_t len  = serd_base64_get_length(size, wrap_lines);
-  uint8_t*     str  = (uint8_t*)calloc(len + 2, 1);
+  char* const  str  = (char*)calloc(len + 2, 1);
   SerdNode     node = {str, len, 0, SERD_LITERAL};
 
-  if (serd_base64_encode(str, buf, size, wrap_lines)) {
+  if (serd_base64_encode((uint8_t*)str, buf, size, wrap_lines)) {
     node.flags |= SERD_HAS_NEWLINE;
   }
+
   return node;
 }
 
@@ -368,7 +367,7 @@ void
 serd_node_free(SerdNode* const node)
 {
   if (node && node->buf) {
-    free((uint8_t*)node->buf);
+    free((char*)node->buf);
     node->buf = NULL;
   }
 }

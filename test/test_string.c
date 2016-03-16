@@ -16,7 +16,7 @@ check_strlen(const char* const   str,
              const SerdNodeFlags expected_flags)
 {
   SerdNodeFlags flags   = 0U;
-  const size_t  n_bytes = serd_strlen((const uint8_t*)str, &flags);
+  const size_t  n_bytes = serd_strlen(str, &flags);
 
   assert(n_bytes == expected_n_bytes);
   assert(flags == expected_flags);
@@ -32,21 +32,21 @@ test_strlen(void)
   check_strlen("\rreturn", 7U, SERD_HAS_NEWLINE);
   check_strlen((const char*)utf8, 7U, SERD_HAS_QUOTE | SERD_HAS_NEWLINE);
 
-  assert(serd_strlen((const uint8_t*)"nulls", NULL) == 5U);
+  assert(serd_strlen("nulls", NULL) == 5U);
 }
 
 static void
 test_strerror(void)
 {
-  const uint8_t* msg = serd_strerror(SERD_SUCCESS);
-  assert(!strcmp((const char*)msg, "Success"));
+  const char* msg = serd_strerror(SERD_SUCCESS);
+  assert(!strcmp(msg, "Success"));
   for (int i = SERD_FAILURE; i <= SERD_ERR_BAD_TEXT; ++i) {
     msg = serd_strerror((SerdStatus)i);
-    assert(strcmp((const char*)msg, "Success"));
+    assert(strcmp(msg, "Success"));
   }
 
   msg = serd_strerror((SerdStatus)-1);
-  assert(!strcmp((const char*)msg, "Unknown error"));
+  assert(!strcmp(msg, "Unknown error"));
 }
 
 int

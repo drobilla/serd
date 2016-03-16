@@ -7,7 +7,6 @@
 
 #include <assert.h>
 #include <math.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -17,38 +16,39 @@ serd_free(void* const ptr)
   free(ptr);
 }
 
-const uint8_t*
+const char*
 serd_strerror(const SerdStatus status)
 {
   switch (status) {
   case SERD_SUCCESS:
-    return (const uint8_t*)"Success";
+    return "Success";
   case SERD_FAILURE:
-    return (const uint8_t*)"Non-fatal failure";
+    return "Non-fatal failure";
   case SERD_ERR_UNKNOWN:
-    return (const uint8_t*)"Unknown error";
+    break;
   case SERD_ERR_BAD_SYNTAX:
-    return (const uint8_t*)"Invalid syntax";
+    return "Invalid syntax";
   case SERD_ERR_BAD_ARG:
-    return (const uint8_t*)"Invalid argument";
+    return "Invalid argument";
   case SERD_ERR_NOT_FOUND:
-    return (const uint8_t*)"Not found";
+    return "Not found";
   case SERD_ERR_ID_CLASH:
-    return (const uint8_t*)"Blank node ID clash";
+    return "Blank node ID clash";
   case SERD_ERR_BAD_CURIE:
-    return (const uint8_t*)"Invalid CURIE";
+    return "Invalid CURIE";
   case SERD_ERR_INTERNAL:
-    return (const uint8_t*)"Internal error";
+    return "Internal error";
   case SERD_ERR_BAD_WRITE:
-    return (const uint8_t*)"Error writing to file/stream";
+    return "Error writing to file/stream";
   case SERD_ERR_BAD_TEXT:
-    return (const uint8_t*)"Invalid text encoding";
+    return "Invalid text encoding";
   }
-  return (const uint8_t*)"Unknown error"; // never reached
+
+  return "Unknown error";
 }
 
 static void
-serd_update_flags(const uint8_t c, SerdNodeFlags* const flags)
+serd_update_flags(const char c, SerdNodeFlags* const flags)
 {
   if (c == '\r' || c == '\n') {
     *flags |= SERD_HAS_NEWLINE;
@@ -58,10 +58,11 @@ serd_update_flags(const uint8_t c, SerdNodeFlags* const flags)
 }
 
 size_t
-serd_substrlen(const uint8_t* const str,
+serd_substrlen(const char* const    str,
                const size_t         len,
                SerdNodeFlags* const flags)
 {
+  assert(str);
   assert(flags);
 
   size_t i = 0;
@@ -74,7 +75,7 @@ serd_substrlen(const uint8_t* const str,
 }
 
 size_t
-serd_strlen(const uint8_t* const str, SerdNodeFlags* const flags)
+serd_strlen(const char* const str, SerdNodeFlags* const flags)
 {
   if (flags) {
     size_t i = 0;
@@ -85,7 +86,7 @@ serd_strlen(const uint8_t* const str, SerdNodeFlags* const flags)
     return i;
   }
 
-  return strlen((const char*)str);
+  return strlen(str);
 }
 
 static double
