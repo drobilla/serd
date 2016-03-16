@@ -33,8 +33,8 @@ test_env(void)
   assert(serd_env_set_base_uri(env, &SERD_NODE_NULL));
   assert(serd_node_equals(serd_env_get_base_uri(env, NULL), &SERD_NODE_NULL));
 
-  SerdChunk prefix;
-  SerdChunk suffix;
+  SerdStringView prefix;
+  SerdStringView suffix;
   assert(!serd_env_qualify(NULL, &u, &u, &suffix));
   assert(serd_env_expand(NULL, &c, &prefix, &suffix));
   assert(serd_env_expand(env, &b, &prefix, &suffix) == SERD_ERR_BAD_ARG);
