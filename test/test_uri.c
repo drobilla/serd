@@ -19,11 +19,8 @@
 #include "serd/serd.h"
 
 #include <assert.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-
-#define USTR(s) ((const uint8_t*)(s))
 
 static void
 test_file_uri(const char* hostname,
@@ -35,13 +32,12 @@ test_file_uri(const char* hostname,
     expected_path = path;
   }
 
-  SerdNode node = serd_node_new_file_uri(USTR(path), USTR(hostname), 0);
-
-  uint8_t* out_hostname = NULL;
-  uint8_t* out_path     = serd_file_uri_parse(node.buf, &out_hostname);
-  assert(!strcmp((const char*)node.buf, expected_uri));
+  SerdNode node         = serd_node_new_file_uri(path, hostname, 0);
+  char*    out_hostname = NULL;
+  char*    out_path     = serd_file_uri_parse(node.buf, &out_hostname);
+  assert(!strcmp(node.buf, expected_uri));
   assert((hostname && out_hostname) || (!hostname && !out_hostname));
-  assert(!strcmp((const char*)out_path, (const char*)expected_path));
+  assert(!strcmp(out_path, expected_path));
 
   serd_free(out_path);
   serd_free(out_hostname);
@@ -62,8 +58,8 @@ test_uri_parsing(void)
 
   // Test tolerance of parsing junk URI escapes
 
-  uint8_t* out_path = serd_file_uri_parse(USTR("file:///foo/%0Xbar"), NULL);
-  assert(!strcmp((const char*)out_path, "/foo/bar"));
+  char* out_path = serd_file_uri_parse("file:///foo/%0Xbar", NULL);
+  assert(!strcmp(out_path, "/foo/bar"));
   serd_free(out_path);
 }
 
@@ -75,13 +71,13 @@ test_uri_from_string(void)
 
   SerdURI  base_uri;
   SerdNode base =
-    serd_node_new_uri_from_string(USTR("http://example.org/"), NULL, &base_uri);
+    serd_node_new_uri_from_string("http://example.org/", NULL, &base_uri);
   SerdNode nil  = serd_node_new_uri_from_string(NULL, &base_uri, NULL);
-  SerdNode nil2 = serd_node_new_uri_from_string(USTR(""), &base_uri, NULL);
+  SerdNode nil2 = serd_node_new_uri_from_string("", &base_uri, NULL);
   assert(nil.type == SERD_URI);
-  assert(!strcmp((const char*)nil.buf, (const char*)base.buf));
+  assert(!strcmp(nil.buf, base.buf));
   assert(nil2.type == SERD_URI);
-  assert(!strcmp((const char*)nil2.buf, (const char*)base.buf));
+  assert(!strcmp(nil2.buf, base.buf));
   serd_node_free(&nil);
   serd_node_free(&nil2);
 
@@ -93,32 +89,30 @@ test_relative_uri(void)
 {
   SerdURI  base_uri;
   SerdNode base =
-    serd_node_new_uri_from_string(USTR("http://example.org/"), NULL, &base_uri);
+    serd_node_new_uri_from_string("http://example.org/", NULL, &base_uri);
 
-  SerdNode abs =
-    serd_node_from_string(SERD_URI, USTR("http://example.org/foo/bar"));
-  SerdURI abs_uri;
+  SerdNode abs = serd_node_from_string(SERD_URI, "http://example.org/foo/bar");
+  SerdURI  abs_uri;
   serd_uri_parse(abs.buf, &abs_uri);
 
   SerdURI  rel_uri;
   SerdNode rel =
     serd_node_new_relative_uri(&abs_uri, &base_uri, NULL, &rel_uri);
-  assert(!strcmp((const char*)rel.buf, "/foo/bar"));
+  assert(!strcmp(rel.buf, "/foo/bar"));
 
   SerdNode up = serd_node_new_relative_uri(&base_uri, &abs_uri, NULL, NULL);
-  assert(!strcmp((const char*)up.buf, "../"));
+  assert(!strcmp(up.buf, "../"));
 
   SerdNode noup =
     serd_node_new_relative_uri(&base_uri, &abs_uri, &abs_uri, NULL);
-  assert(!strcmp((const char*)noup.buf, "http://example.org/"));
+  assert(!strcmp(noup.buf, "http://example.org/"));
 
-  SerdNode x =
-    serd_node_from_string(SERD_URI, USTR("http://example.org/foo/x"));
-  SerdURI x_uri;
+  SerdNode x = serd_node_from_string(SERD_URI, "http://example.org/foo/x");
+  SerdURI  x_uri;
   serd_uri_parse(x.buf, &x_uri);
 
   SerdNode x_rel = serd_node_new_relative_uri(&x_uri, &abs_uri, &abs_uri, NULL);
-  assert(!strcmp((const char*)x_rel.buf, "x"));
+  assert(!strcmp(x_rel.buf, "x"));
 
   serd_node_free(&x_rel);
   serd_node_free(&noup);

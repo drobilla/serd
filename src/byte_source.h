@@ -26,9 +26,9 @@
 #include <stdio.h>
 
 typedef struct {
-  const uint8_t* filename;
-  unsigned       line;
-  unsigned       col;
+  const char* filename;
+  unsigned    line;
+  unsigned    col;
 } Cursor;
 
 typedef struct {
@@ -51,14 +51,14 @@ SerdStatus
 serd_byte_source_open_file(SerdByteSource* source, FILE* file, bool bulk);
 
 SerdStatus
-serd_byte_source_open_string(SerdByteSource* source, const uint8_t* utf8);
+serd_byte_source_open_string(SerdByteSource* source, const char* utf8);
 
 SerdStatus
 serd_byte_source_open_source(SerdByteSource*     source,
                              SerdSource          read_func,
                              SerdStreamErrorFunc error_func,
                              void*               stream,
-                             const uint8_t*      name,
+                             const char*         name,
                              size_t              page_size);
 
 SerdStatus

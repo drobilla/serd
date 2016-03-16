@@ -25,8 +25,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define USTR(s) ((const uint8_t*)(s))
-
 typedef struct {
   int             n_statements;
   const SerdNode* graph;
@@ -152,10 +150,10 @@ test_read_string(void)
   assert(serd_reader_get_handle(reader) == rt);
 
   // Test reading a string that ends exactly at the end of input (no newline)
-  const SerdStatus st = serd_reader_read_string(
-    reader,
-    USTR("<http://example.org/s> <http://example.org/p> "
-         "<http://example.org/o> ."));
+  const SerdStatus st =
+    serd_reader_read_string(reader,
+                            "<http://example.org/s> <http://example.org/p> "
+                            "<http://example.org/o> .");
 
   assert(!st);
   assert(rt->n_statements == 1);
@@ -174,20 +172,20 @@ test_writer(const char* const path)
     serd_writer_new(SERD_TURTLE, (SerdStyle)0, env, NULL, serd_file_sink, fd);
   assert(writer);
 
-  serd_writer_chop_blank_prefix(writer, USTR("tmp"));
+  serd_writer_chop_blank_prefix(writer, "tmp");
   serd_writer_chop_blank_prefix(writer, NULL);
 
-  const SerdNode lit = serd_node_from_string(SERD_LITERAL, USTR("hello"));
+  const SerdNode lit = serd_node_from_string(SERD_LITERAL, "hello");
 
   assert(serd_writer_set_base_uri(writer, &lit));
   assert(serd_writer_set_prefix(writer, &lit, &lit));
   assert(serd_writer_end_anon(writer, NULL));
   assert(serd_writer_get_env(writer) == env);
 
-  uint8_t  buf[] = {0x80, 0, 0, 0, 0};
-  SerdNode s     = serd_node_from_string(SERD_URI, USTR(""));
-  SerdNode p = serd_node_from_string(SERD_URI, USTR("http://example.org/pred"));
-  SerdNode o = serd_node_from_string(SERD_LITERAL, buf);
+  uint8_t  buf[] = {0xEF, 0xBF, 0xBD, 0};
+  SerdNode s     = serd_node_from_string(SERD_URI, "");
+  SerdNode p     = serd_node_from_string(SERD_URI, "http://example.org/pred");
+  SerdNode o     = serd_node_from_string(SERD_LITERAL, (char*)buf);
 
   // Write 3 invalid statements (should write nothing)
   const SerdNode* junk[][5] = {{&s, &p, &SERD_NODE_NULL, NULL, NULL},
@@ -207,8 +205,8 @@ test_writer(const char* const path)
                                        junk[i][4]));
   }
 
-  const SerdNode  t         = serd_node_from_string(SERD_URI, USTR("urn:Type"));
-  const SerdNode  l         = serd_node_from_string(SERD_LITERAL, USTR("en"));
+  const SerdNode  t         = serd_node_from_string(SERD_URI, "urn:Type");
+  const SerdNode  l         = serd_node_from_string(SERD_LITERAL, "en");
   const SerdNode* good[][5] = {{&s, &p, &o, NULL, NULL},
                                {&s, &p, &o, &SERD_NODE_NULL, &SERD_NODE_NULL},
                                {&s, &p, &o, &t, NULL},
@@ -232,15 +230,15 @@ test_writer(const char* const path)
 
   // Write statements with bad UTF-8 (should be replaced)
   const uint8_t bad_str[] = {0xFF, 0x90, 'h', 'i', 0};
-  SerdNode      bad_lit   = serd_node_from_string(SERD_LITERAL, bad_str);
-  SerdNode      bad_uri   = serd_node_from_string(SERD_URI, bad_str);
+  SerdNode bad_lit = serd_node_from_string(SERD_LITERAL, (const char*)bad_str);
+  SerdNode bad_uri = serd_node_from_string(SERD_URI, (const char*)bad_str);
   assert(!serd_writer_write_statement(
     writer, 0, NULL, &s, &p, &bad_lit, NULL, NULL));
   assert(!serd_writer_write_statement(
     writer, 0, NULL, &s, &p, &bad_uri, NULL, NULL));
 
   // Write 1 valid statement
-  o = serd_node_from_string(SERD_LITERAL, USTR("hello"));
+  o = serd_node_from_string(SERD_LITERAL, "hello");
   assert(!serd_writer_write_statement(writer, 0, NULL, &s, &p, &o, NULL, NULL));
 
   serd_writer_free(writer);
@@ -250,17 +248,17 @@ test_writer(const char* const path)
   writer            = serd_writer_new(
     SERD_TURTLE, (SerdStyle)0, env, NULL, serd_buffer_sink, &buffer);
 
-  o = serd_node_from_string(SERD_URI, USTR("http://example.org/base"));
+  o = serd_node_from_string(SERD_URI, "http://example.org/base");
   assert(!serd_writer_set_base_uri(writer, &o));
 
   serd_writer_free(writer);
-  uint8_t* out = serd_buffer_sink_finish(&buffer);
+  char* out = serd_buffer_sink_finish(&buffer);
 
-  assert(!strcmp((const char*)out, "@base <http://example.org/base> .\n"));
+  assert(!strcmp(out, "@base <http://example.org/base> .\n"));
   serd_free(out);
 
   // Test writing empty node
-  SerdNode    nothing = serd_node_from_string(SERD_NOTHING, USTR(""));
+  SerdNode    nothing = serd_node_from_string(SERD_NOTHING, "");
   FILE* const empty   = tmpfile();
 
   writer = serd_writer_new(
@@ -287,9 +285,9 @@ test_reader(const char* path)
   assert(reader);
   assert(serd_reader_get_handle(reader) == rt);
 
-  SerdNode g = serd_node_from_string(SERD_URI, USTR("http://example.org/"));
+  SerdNode g = serd_node_from_string(SERD_URI, "http://example.org/");
   serd_reader_set_default_graph(reader, &g);
-  serd_reader_add_blank_prefix(reader, USTR("tmp"));
+  serd_reader_add_blank_prefix(reader, "tmp");
 
 #if defined(__GNUC__)
 #  pragma GCC diagnostic push
@@ -300,17 +298,17 @@ test_reader(const char* path)
 #  pragma GCC diagnostic pop
 #endif
 
-  assert(serd_reader_read_file(reader, USTR("http://notafile")));
-  assert(serd_reader_read_file(reader, USTR("file:///better/not/exist")));
-  assert(serd_reader_read_file(reader, USTR("file://")));
+  assert(serd_reader_read_file(reader, "http://notafile"));
+  assert(serd_reader_read_file(reader, "file:///better/not/exist"));
+  assert(serd_reader_read_file(reader, "file://"));
 
-  const SerdStatus st = serd_reader_read_file(reader, USTR(path));
+  const SerdStatus st = serd_reader_read_file(reader, path);
   assert(!st);
   assert(rt->n_statements == 13);
   assert(rt->graph && rt->graph->buf &&
-         !strcmp((const char*)rt->graph->buf, "http://example.org/"));
+         !strcmp(rt->graph->buf, "http://example.org/"));
 
-  assert(serd_reader_read_string(reader, USTR("This isn't Turtle at all.")));
+  assert(serd_reader_read_string(reader, "This isn't Turtle at all."));
 
   // A read of a big page hits EOF then fails to read chunks immediately
   {

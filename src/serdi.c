@@ -35,7 +35,6 @@
 
 #include <errno.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -188,24 +187,24 @@ main(int argc, char** argv)
     return print_usage(prog, true);
   }
 
-  FILE*          in_fd         = NULL;
-  SerdSyntax     input_syntax  = (SerdSyntax)0;
-  SerdSyntax     output_syntax = (SerdSyntax)0;
-  bool           from_file     = true;
-  bool           ascii         = false;
-  bool           bulk_read     = true;
-  bool           bulk_write    = false;
-  bool           full_uris     = false;
-  bool           lax           = false;
-  bool           quiet         = false;
-  const uint8_t* in_name       = NULL;
-  const uint8_t* add_prefix    = NULL;
-  const uint8_t* chop_prefix   = NULL;
-  const uint8_t* root_uri      = NULL;
-  int            a             = 1;
+  FILE*       in_fd         = NULL;
+  SerdSyntax  input_syntax  = (SerdSyntax)0;
+  SerdSyntax  output_syntax = (SerdSyntax)0;
+  bool        from_file     = true;
+  bool        ascii         = false;
+  bool        bulk_read     = true;
+  bool        bulk_write    = false;
+  bool        full_uris     = false;
+  bool        lax           = false;
+  bool        quiet         = false;
+  const char* in_name       = NULL;
+  const char* add_prefix    = NULL;
+  const char* chop_prefix   = NULL;
+  const char* root_uri      = NULL;
+  int         a             = 1;
   for (; a < argc && from_file && argv[a][0] == '-'; ++a) {
     if (argv[a][1] == '\0') {
-      in_name = (const uint8_t*)"(stdin)";
+      in_name = (const char*)"(stdin)";
       in_fd   = stdin;
       break;
     }
@@ -230,7 +229,7 @@ main(int argc, char** argv)
       } else if (opt == 'v') {
         return print_version();
       } else if (opt == 's') {
-        in_name   = (const uint8_t*)"(string)";
+        in_name   = "(string)";
         from_file = false;
         break;
       } else if (opt == 'c') {
@@ -238,7 +237,7 @@ main(int argc, char** argv)
           return missing_arg(prog, 'c');
         }
 
-        chop_prefix = (const uint8_t*)argv[a];
+        chop_prefix = argv[a];
         break;
       } else if (opt == 'i') {
         if (argv[a][o + 1] || ++a == argc) {
@@ -263,14 +262,14 @@ main(int argc, char** argv)
           return missing_arg(prog, 'p');
         }
 
-        add_prefix = (const uint8_t*)argv[a];
+        add_prefix = argv[a];
         break;
       } else if (opt == 'r') {
         if (argv[a][o + 1] || ++a == argc) {
           return missing_arg(prog, 'r');
         }
 
-        root_uri = (const uint8_t*)argv[a];
+        root_uri = argv[a];
         break;
       } else {
         SERDI_ERRORF("invalid option -- '%s'\n", argv[a] + 1);
@@ -289,22 +288,22 @@ main(int argc, char** argv)
   _setmode(_fileno(stdout), _O_BINARY);
 #endif
 
-  uint8_t*       input_path = NULL;
-  const uint8_t* input      = (const uint8_t*)argv[a++];
+  char*       input_path = NULL;
+  const char* input      = (const char*)argv[a++];
   if (from_file) {
     in_name = in_name ? in_name : input;
     if (!in_fd) {
-      if (!strncmp((const char*)input, "file:", 5)) {
+      if (!strncmp(input, "file:", 5)) {
         input_path = serd_file_uri_parse(input, NULL);
         input      = input_path;
       }
-      if (!input || !(in_fd = serd_fopen((const char*)input, "rb"))) {
+      if (!input || !(in_fd = serd_fopen(input, "rb"))) {
         return 1;
       }
     }
   }
 
-  if (!input_syntax && !(input_syntax = guess_syntax((const char*)in_name))) {
+  if (!input_syntax && !(input_syntax = guess_syntax(in_name))) {
     input_syntax = SERD_TRIG;
   }
 
@@ -321,8 +320,7 @@ main(int argc, char** argv)
   SerdURI  base_uri = SERD_URI_NULL;
   SerdNode base     = SERD_NODE_NULL;
   if (a < argc) { // Base URI given on command line
-    base =
-      serd_node_new_uri_from_string((const uint8_t*)argv[a], NULL, &base_uri);
+    base = serd_node_new_uri_from_string((const char*)argv[a], NULL, &base_uri);
   } else if (from_file && in_fd != stdin) { // Use input file URI
     base = serd_node_new_file_uri(input, NULL, &base_uri);
   }
