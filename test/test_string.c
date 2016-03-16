@@ -28,15 +28,10 @@ test_strlen(void)
 {
   const uint8_t str[] = {'"', '5', 0xE2, 0x82, 0xAC, '"', '\n', 0};
 
-  size_t        n_bytes = 0;
   SerdNodeFlags flags   = 0;
-  size_t        len     = serd_strlen(str, &n_bytes, &flags);
-  assert(len == 5 && n_bytes == 7 &&
-         flags == (SERD_HAS_QUOTE | SERD_HAS_NEWLINE));
-  len = serd_strlen(str, NULL, &flags);
-  assert(len == 5);
-
-  assert(serd_strlen(str, &n_bytes, NULL) == 5);
+  size_t        n_bytes = serd_strlen(str, &flags);
+  assert(n_bytes == 7 && flags == (SERD_HAS_QUOTE | SERD_HAS_NEWLINE));
+  assert(serd_strlen(str, NULL) == 7);
 }
 
 static void
