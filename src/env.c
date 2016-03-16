@@ -226,12 +226,10 @@ serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
   case SERD_NOTHING:
   case SERD_LITERAL:
     break;
-
   case SERD_URI: {
     SerdURI ignored;
     return serd_node_new_uri_from_node(node, &env->base_uri, &ignored);
   }
-
   case SERD_CURIE: {
     SerdChunk prefix;
     SerdChunk suffix;
@@ -240,16 +238,13 @@ serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
     }
     const size_t len = prefix.len + suffix.len;
     uint8_t*     buf = (uint8_t*)malloc(len + 1);
-    SerdNode     ret = {buf, len, 0, 0, SERD_URI};
-    snprintf((char*)buf, len + 1, "%s%s", prefix.buf, suffix.buf);
-    ret.n_chars = serd_strlen(buf, NULL, NULL);
+    SerdNode     ret = {buf, len, 0, SERD_URI};
+    snprintf((char*)buf, ret.n_bytes + 1, "%s%s", prefix.buf, suffix.buf);
     return ret;
   }
-
   case SERD_BLANK:
     break;
   }
-
   return SERD_NODE_NULL;
 }
 
