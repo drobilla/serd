@@ -73,7 +73,6 @@ serd_base64_encode(uint8_t* const    str,
                    const bool        wrap_lines)
 {
   bool has_newline = false;
-
   for (size_t i = 0, j = 0; i < size; i += 3, j += 4) {
     uint8_t in[4] = {0, 0, 0, 0};
     size_t  n_in  = MIN(3, size - i);
@@ -107,28 +106,23 @@ decode_chunk(const uint8_t in[4], uint8_t out[3])
 }
 
 void*
-serd_base64_decode(const uint8_t* const str,
-                   const size_t         len,
-                   size_t* const        size)
+serd_base64_decode(const char* const str, const size_t len, size_t* const size)
 {
-  void* buf = malloc((len * 3) / 4 + 2);
+  const uint8_t* const ustr = (const uint8_t*)str;
 
-  *size = 0;
+  void* buf = malloc((len * 3) / 4 + 2);
+  *size     = 0;
   for (size_t i = 0, j = 0; i < len; j += 3) {
     uint8_t in[] = "====";
     size_t  n_in = 0;
     for (; i < len && n_in < 4; ++n_in) {
-      for (; i < len && !is_base64(str[i]); ++i) {
-        // Skip junk
-      }
-
-      in[n_in] = str[i++];
+      for (; i < len && !is_base64(ustr[i]); ++i) {
+      } // Skip junk
+      in[n_in] = ustr[i++];
     }
-
     if (n_in > 1) {
       *size += decode_chunk(in, (uint8_t*)buf + j);
     }
   }
-
   return buf;
 }
