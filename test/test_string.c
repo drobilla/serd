@@ -13,15 +13,12 @@
 static void
 check_strlen(const char* const   str,
              const size_t        expected_n_bytes,
-             const size_t        expected_n_chars,
              const SerdNodeFlags expected_flags)
 {
-  size_t        n_bytes = 0U;
   SerdNodeFlags flags   = 0U;
-  const size_t  n_chars = serd_strlen((const uint8_t*)str, &n_bytes, &flags);
+  const size_t  n_bytes = serd_strlen((const uint8_t*)str, &flags);
 
   assert(n_bytes == expected_n_bytes);
-  assert(n_chars == expected_n_chars);
   assert(flags == expected_flags);
 }
 
@@ -30,12 +27,12 @@ test_strlen(void)
 {
   static const uint8_t utf8[] = {'"', '5', 0xE2, 0x82, 0xAC, '"', '\n', 0};
 
-  check_strlen("\"quotes\"", 8U, 8U, SERD_HAS_QUOTE);
-  check_strlen("newline\n", 8U, 8U, SERD_HAS_NEWLINE);
-  check_strlen("\rreturn", 7U, 7U, SERD_HAS_NEWLINE);
-  check_strlen((const char*)utf8, 7U, 5U, SERD_HAS_QUOTE | SERD_HAS_NEWLINE);
+  check_strlen("\"quotes\"", 8U, SERD_HAS_QUOTE);
+  check_strlen("newline\n", 8U, SERD_HAS_NEWLINE);
+  check_strlen("\rreturn", 7U, SERD_HAS_NEWLINE);
+  check_strlen((const char*)utf8, 7U, SERD_HAS_QUOTE | SERD_HAS_NEWLINE);
 
-  assert(serd_strlen((const uint8_t*)"nulls", NULL, NULL) == 5U);
+  assert(serd_strlen((const uint8_t*)"nulls", NULL) == 5U);
 }
 
 static void

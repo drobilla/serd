@@ -45,9 +45,9 @@ typedef struct {
 } WriteContext;
 
 static const WriteContext WRITE_CONTEXT_NULL = {CTX_NAMED,
-                                                {0, 0, 0, 0, SERD_NOTHING},
-                                                {0, 0, 0, 0, SERD_NOTHING},
-                                                {0, 0, 0, 0, SERD_NOTHING},
+                                                {0, 0, 0, SERD_NOTHING},
+                                                {0, 0, 0, SERD_NOTHING},
+                                                {0, 0, 0, SERD_NOTHING},
                                                 0U,
                                                 0U};
 
@@ -186,7 +186,6 @@ copy_node(SerdNode* dst, const SerdNode* src)
   if (new_buf) {
     dst->buf     = new_buf;
     dst->n_bytes = src->n_bytes;
-    dst->n_chars = src->n_chars;
     dst->flags   = src->flags;
     dst->type    = src->type;
     memcpy((char*)dst->buf, src->buf, new_size);
