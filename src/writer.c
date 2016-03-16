@@ -480,8 +480,8 @@ write_uri_node(SerdWriter* const        writer,
                const Field              field,
                const SerdStatementFlags flags)
 {
-	SerdNode  prefix;
-	SerdChunk suffix;
+	SerdNode       prefix;
+	SerdStringView suffix;
 
 	if (is_inline_start(writer, field, flags)) {
 		++writer->indent;
@@ -538,9 +538,9 @@ write_curie(SerdWriter* const        writer,
             const Field              field,
             const SerdStatementFlags flags)
 {
-	SerdChunk  prefix;
-	SerdChunk  suffix;
-	SerdStatus st;
+	SerdStringView prefix;
+	SerdStringView suffix;
+	SerdStatus     st;
 	switch (writer->syntax) {
 	case SERD_NTRIPLES:
 	case SERD_NQUADS:

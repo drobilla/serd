@@ -450,7 +450,7 @@ parse_utf8_char(const uint8_t* utf8, size_t* size)
 /* URI utilities */
 
 static inline bool
-chunk_equals(const SerdChunk* a, const SerdChunk* b)
+slice_equals(const SerdStringView* a, const SerdStringView* b)
 {
 	return a->len == b->len
 		&& !strncmp((const char*)a->buf, (const char*)b->buf, a->len);
@@ -480,8 +480,8 @@ static inline size_t
 uri_rooted_index(const SerdURI* uri, const SerdURI* root)
 {
 	if (!root || !root->scheme.len ||
-	    !chunk_equals(&root->scheme, &uri->scheme) ||
-	    !chunk_equals(&root->authority, &uri->authority)) {
+	    !slice_equals(&root->scheme, &uri->scheme) ||
+	    !slice_equals(&root->authority, &uri->authority)) {
 		return 0;
 	}
 

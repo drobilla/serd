@@ -221,12 +221,12 @@ typedef struct {
 } SerdNode;
 
 /**
-   An unterminated string fragment.
+   An unterminated immutable slice of a string.
 */
 typedef struct {
 	const char* buf;  /**< Start of chunk */
 	size_t      len;  /**< Length of chunk in bytes */
-} SerdChunk;
+} SerdStringView;
 
 /**
    A mutable buffer in memory.
@@ -251,17 +251,17 @@ typedef struct {
 /**
    A parsed URI.
 
-   This struct directly refers to chunks in other strings, it does not own any
+   This struct directly refers to slices in other strings, it does not own any
    memory itself.  Thus, URIs can be parsed and/or resolved against a base URI
    in-place without allocating memory.
 */
 typedef struct {
-	SerdChunk scheme;     /**< Scheme */
-	SerdChunk authority;  /**< Authority */
-	SerdChunk path_base;  /**< Path prefix if relative */
-	SerdChunk path;       /**< Path suffix */
-	SerdChunk query;      /**< Query */
-	SerdChunk fragment;   /**< Fragment */
+	SerdStringView scheme;     /**< Scheme */
+	SerdStringView authority;  /**< Authority */
+	SerdStringView path_base;  /**< Path prefix if relative */
+	SerdStringView path;       /**< Path suffix */
+	SerdStringView query;      /**< Query */
+	SerdStringView fragment;   /**< Fragment */
 } SerdURI;
 
 /**
@@ -731,7 +731,7 @@ bool
 serd_env_qualify(const SerdEnv*  env,
                  const SerdNode* uri,
                  SerdNode*       prefix,
-                 SerdChunk*      suffix);
+                 SerdStringView* suffix);
 
 /**
    Expand `curie`.
@@ -743,8 +743,8 @@ SERD_API
 SerdStatus
 serd_env_expand(const SerdEnv*  env,
                 const SerdNode* curie,
-                SerdChunk*      uri_prefix,
-                SerdChunk*      uri_suffix);
+                SerdStringView* uri_prefix,
+                SerdStringView* uri_suffix);
 
 /**
    Expand `node`, which must be a CURIE or URI, to a full URI.
@@ -987,7 +987,7 @@ size_t
 serd_buffer_sink(const void* buf, size_t len, void* stream);
 
 /**
-   Finish a serialisation to a chunk with serd_buffer_sink().
+   Finish a serialisation to a buffer with serd_buffer_sink().
 
    The returned string is the result of the serialisation, which is NULL
    terminated (by this function) and owned by the caller.
