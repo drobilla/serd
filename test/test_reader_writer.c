@@ -16,8 +16,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define USTR(s) ((const uint8_t*)(s))
-
 typedef struct {
   size_t n_written;
   size_t error_offset;
@@ -128,7 +126,7 @@ check_write_error_offset(const SerdSyntax syntax,
   serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
   serd_reader_set_error_sink(reader, quiet_error_sink, NULL);
 
-  const SerdStatus rst = serd_reader_read_string(reader, USTR(doc_string));
+  const SerdStatus rst = serd_reader_read_string(reader, doc_string);
   const SerdStatus wst = serd_writer_finish(writer);
 
   serd_reader_free(reader);
@@ -171,24 +169,23 @@ test_writer(const char* const path)
     serd_writer_new(SERD_TURTLE, (SerdStyle)0, env, NULL, serd_file_sink, fd);
   assert(writer);
 
-  serd_writer_chop_blank_prefix(writer, USTR("tmp"));
+  serd_writer_chop_blank_prefix(writer, "tmp");
   serd_writer_chop_blank_prefix(writer, NULL);
 
-  const SerdNode lit = serd_node_from_string(SERD_LITERAL, USTR("hello"));
+  const SerdNode lit = serd_node_from_string(SERD_LITERAL, "hello");
 
   assert(serd_writer_set_base_uri(writer, &lit));
   assert(serd_writer_set_prefix(writer, &lit, &lit));
   assert(serd_writer_end_anon(writer, NULL));
   assert(serd_writer_get_env(writer) == env);
 
-  const uint8_t buf[] = {0x80, 0, 0, 0, 0};
+  const uint8_t buf[] = {0xEF, 0xBF, 0xBD, 0};
 
-  const SerdNode s = serd_node_from_string(SERD_URI, USTR(""));
-  const SerdNode p =
-    serd_node_from_string(SERD_URI, USTR("http://example.org/pred"));
-  const SerdNode o = serd_node_from_string(SERD_LITERAL, buf);
-  const SerdNode t = serd_node_from_string(SERD_URI, USTR("urn:Type"));
-  const SerdNode l = serd_node_from_string(SERD_LITERAL, USTR("en"));
+  const SerdNode s = serd_node_from_string(SERD_URI, "");
+  const SerdNode p = serd_node_from_string(SERD_URI, "http://example.org/pred");
+  const SerdNode o = serd_node_from_string(SERD_LITERAL, (const char*)buf);
+  const SerdNode t = serd_node_from_string(SERD_URI, "urn:Type");
+  const SerdNode l = serd_node_from_string(SERD_LITERAL, "en");
 
   // Attempt to write invalid statements (should write nothing)
   const SerdNode* junk[][5] = {{&s, &p, &SERD_NODE_NULL, NULL, NULL},
@@ -236,9 +233,11 @@ test_writer(const char* const path)
   static const uint8_t bad_long_buf[]  = {'e', '\n', 'r', 0xFF, 0x90, 0};
 
   // Write statements with bad UTF-8 (should be replaced)
-  SerdNode bad_uri       = serd_node_from_string(SERD_URI, bad_uri_buf);
-  SerdNode bad_short_lit = serd_node_from_string(SERD_LITERAL, bad_short_buf);
-  SerdNode bad_long_lit  = serd_node_from_string(SERD_LITERAL, bad_long_buf);
+  SerdNode bad_uri = serd_node_from_string(SERD_URI, (const char*)bad_uri_buf);
+  SerdNode bad_short_lit =
+    serd_node_from_string(SERD_LITERAL, (const char*)bad_short_buf);
+  SerdNode bad_long_lit =
+    serd_node_from_string(SERD_LITERAL, (const char*)bad_long_buf);
   assert(!serd_writer_write_statement(
     writer, 0, NULL, &s, &p, &bad_uri, NULL, NULL));
   assert(!serd_writer_write_statement(
@@ -265,7 +264,7 @@ test_reader(const char* const path)
 
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
 
-  serd_reader_add_blank_prefix(reader, USTR("tmp"));
+  serd_reader_add_blank_prefix(reader, "tmp");
 
 #ifdef __GNUC__
 #  pragma GCC diagnostic push
@@ -276,15 +275,15 @@ test_reader(const char* const path)
 #  pragma GCC diagnostic pop
 #endif
 
-  assert(serd_reader_read_file(reader, USTR("http://notafile")));
-  assert(serd_reader_read_file(reader, USTR("file:///better/not/exist")));
-  assert(serd_reader_read_file(reader, USTR("file://")));
+  assert(serd_reader_read_file(reader, "http://notafile"));
+  assert(serd_reader_read_file(reader, "file:///better/not/exist"));
+  assert(serd_reader_read_file(reader, "file://"));
 
-  const SerdStatus st = serd_reader_read_file(reader, USTR(path));
+  const SerdStatus st = serd_reader_read_file(reader, path);
   assert(!st);
   assert(rt->n_statement == 13);
 
-  assert(serd_reader_read_string(reader, USTR("This isn't Turtle at all.")));
+  assert(serd_reader_read_string(reader, "This isn't Turtle at all."));
 
   serd_reader_free(reader);
 }

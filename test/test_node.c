@@ -16,8 +16,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define USTR(s) ((const uint8_t*)(s))
-
 #ifndef INFINITY
 #  define INFINITY (DBL_MAX + DBL_MAX)
 #endif
@@ -90,10 +88,10 @@ test_double_to_node(void)
   for (size_t i = 0; i < sizeof(dbl_test_nums) / sizeof(double); ++i) {
     SerdNode   node = serd_node_new_decimal(dbl_test_nums[i], 8);
     const bool pass = (node.buf && dbl_test_strs[i])
-                        ? expect_string((const char*)node.buf, dbl_test_strs[i])
-                        : ((const char*)node.buf == dbl_test_strs[i]);
+                        ? expect_string(node.buf, dbl_test_strs[i])
+                        : (node.buf == dbl_test_strs[i]);
     assert(pass);
-    const size_t len = node.buf ? strlen((const char*)node.buf) : 0;
+    const size_t len = node.buf ? strlen(node.buf) : 0;
     assert(node.n_bytes == len);
     serd_node_free(&node);
   }
@@ -111,8 +109,8 @@ test_integer_to_node(void)
 
   for (size_t i = 0; i < N_TEST_NUMS; ++i) {
     SerdNode node = serd_node_new_integer(int_test_nums[i]);
-    assert(expect_string((const char*)node.buf, (const char*)int_test_strs[i]));
-    const size_t len = strlen((const char*)node.buf);
+    assert(expect_string(node.buf, int_test_strs[i]));
+    const size_t len = strlen(node.buf);
     assert(node.n_bytes == len);
     serd_node_free(&node);
   }
@@ -130,11 +128,11 @@ test_blob_to_node(void)
       data[i] = (uint8_t)((size + i) % 256);
     }
 
-    SerdNode             blob     = serd_node_new_blob(data, size, size % 5);
-    const uint8_t* const blob_str = blob.buf;
+    SerdNode          blob     = serd_node_new_blob(data, size, size % 5);
+    const char* const blob_str = blob.buf;
 
     assert(blob_str);
-    assert(blob.n_bytes == strlen((const char*)blob_str));
+    assert(blob.n_bytes == strlen(blob_str));
 
     size_t   out_size = 0;
     uint8_t* out =
@@ -163,8 +161,7 @@ test_base64_decode(void)
     static const size_t      encoded_len = 8U;
 
     size_t      size = 0U;
-    void* const data =
-      serd_base64_decode((const uint8_t*)encoded, encoded_len, &size);
+    void* const data = serd_base64_decode(encoded, encoded_len, &size);
 
     assert(data);
     assert(size == decoded_len);
@@ -178,8 +175,7 @@ test_base64_decode(void)
     static const size_t      encoded_len = 13U;
 
     size_t      size = 0U;
-    void* const data =
-      serd_base64_decode((const uint8_t*)encoded, encoded_len, &size);
+    void* const data = serd_base64_decode(encoded, encoded_len, &size);
 
     assert(data);
     assert(size == decoded_len);
@@ -193,8 +189,7 @@ test_base64_decode(void)
     static const size_t      encoded_len = 4U;
 
     size_t      size = 0U;
-    void* const data =
-      serd_base64_decode((const uint8_t*)encoded, encoded_len, &size);
+    void* const data = serd_base64_decode(encoded, encoded_len, &size);
 
     assert(data);
     assert(!size);
@@ -207,11 +202,12 @@ static void
 test_node_equals(void)
 {
   const uint8_t replacement_char_str[] = {0xEF, 0xBF, 0xBD, 0};
-  SerdNode      lhs = serd_node_from_string(SERD_LITERAL, replacement_char_str);
-  SerdNode      rhs = serd_node_from_string(SERD_LITERAL, USTR("123"));
+  SerdNode      lhs =
+    serd_node_from_string(SERD_LITERAL, (const char*)replacement_char_str);
+  SerdNode rhs = serd_node_from_string(SERD_LITERAL, "123");
   assert(!serd_node_equals(&lhs, &rhs));
 
-  SerdNode qnode = serd_node_from_string(SERD_CURIE, USTR("foo:bar"));
+  SerdNode qnode = serd_node_from_string(SERD_CURIE, "foo:bar");
   assert(!serd_node_equals(&lhs, &qnode));
   assert(serd_node_equals(&lhs, &lhs));
 
@@ -222,11 +218,12 @@ test_node_equals(void)
 static void
 test_node_from_string(void)
 {
-  SerdNode node =
-    serd_node_from_string(SERD_LITERAL, (const uint8_t*)"hello\"");
+  SerdNode node = serd_node_from_string(SERD_LITERAL, "hello\"");
+  assert(node.n_bytes == 6 && node.flags == SERD_HAS_QUOTE &&
+         !strcmp(node.buf, "hello\""));
 
   assert(node.n_bytes == 6 && node.flags == SERD_HAS_QUOTE &&
-         expect_string((const char*)node.buf, "hello\""));
+         expect_string(node.buf, "hello\""));
 
   node = serd_node_from_string(SERD_URI, NULL);
   assert(serd_node_equals(&node, &SERD_NODE_NULL));
@@ -240,23 +237,24 @@ test_node_from_substring(void)
   SerdNode empty = serd_node_from_substring(SERD_LITERAL, NULL, 32);
   assert(!empty.buf && !empty.n_bytes && !empty.flags && !empty.type);
 
-  SerdNode a_b = serd_node_from_substring(SERD_LITERAL, USTR("a\"bc"), 3);
+  SerdNode a_b = serd_node_from_substring(SERD_LITERAL, "a\"bc", 3);
   assert(a_b.n_bytes == 3 && a_b.flags == SERD_HAS_QUOTE &&
-         !strncmp((const char*)a_b.buf, "a\"b", 3));
+         !strncmp(a_b.buf, "a\"b", 3));
 
-  a_b = serd_node_from_substring(SERD_LITERAL, USTR("a\"bc"), 10);
+  a_b = serd_node_from_substring(SERD_LITERAL, "a\"bc", 10);
   assert(a_b.n_bytes == 4 && a_b.flags == SERD_HAS_QUOTE &&
-         !strncmp((const char*)a_b.buf, "a\"bc", 4));
+         !strncmp(a_b.buf, "a\"bc", 4));
 
-  SerdNode utf8 = serd_node_from_substring(SERD_LITERAL, utf8_str, 5);
+  SerdNode utf8 =
+    serd_node_from_substring(SERD_LITERAL, (const char*)utf8_str, 5);
   assert(utf8.n_bytes == 5 && !utf8.flags &&
-         !strncmp((const char*)utf8.buf, (const char*)utf8_str, 6));
+         !strncmp(utf8.buf, (const char*)utf8_str, 6));
 }
 
 static void
 test_uri_node_from_node(void)
 {
-  const SerdNode string      = serd_node_from_string(SERD_LITERAL, USTR("s"));
+  const SerdNode string      = serd_node_from_string(SERD_LITERAL, "s");
   SerdNode       string_node = serd_node_new_uri_from_node(&string, NULL, NULL);
   assert(!string_node.n_bytes);
   serd_node_free(&string_node);
@@ -266,9 +264,8 @@ test_uri_node_from_node(void)
   assert(!nouri_node.n_bytes);
   serd_node_free(&nouri_node);
 
-  const SerdNode uri =
-    serd_node_from_string(SERD_URI, USTR("http://example.org/p"));
-  SerdNode uri_node = serd_node_new_uri_from_node(&uri, NULL, NULL);
+  const SerdNode uri = serd_node_from_string(SERD_URI, "http://example.org/p");
+  SerdNode       uri_node = serd_node_new_uri_from_node(&uri, NULL, NULL);
   assert(uri_node.n_bytes == 20U);
   serd_node_free(&uri_node);
 }

@@ -15,8 +15,6 @@
 
 #define NS_EG "http://example.org/"
 
-#define USTR(s) ((const uint8_t*)(s))
-
 static void
 test_write_long_literal(void)
 {
@@ -26,10 +24,9 @@ test_write_long_literal(void)
     SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
   assert(writer);
 
-  SerdNode s = serd_node_from_string(SERD_URI, USTR(NS_EG "s"));
-  SerdNode p = serd_node_from_string(SERD_URI, USTR(NS_EG "p"));
-  SerdNode o =
-    serd_node_from_string(SERD_LITERAL, USTR("hello \"\"\"world\"\"\"!"));
+  SerdNode s = serd_node_from_string(SERD_URI, NS_EG "s");
+  SerdNode p = serd_node_from_string(SERD_URI, NS_EG "p");
+  SerdNode o = serd_node_from_string(SERD_LITERAL, "hello \"\"\"world\"\"\"!");
 
   assert(!serd_writer_write_statement(writer, 0, NULL, &s, &p, &o, NULL, NULL));
   assert(!serd_writer_finish(writer));
@@ -38,8 +35,8 @@ test_write_long_literal(void)
     "<http://example.org/s>\n"
     "\t<http://example.org/p> \"\"\"hello \"\"\\\"world\"\"\\\"!\"\"\" .\n";
 
-  uint8_t* const out = serd_chunk_sink_finish(&chunk);
-  assert(expect_string((char*)out, expected));
+  char* const out = serd_chunk_sink_finish(&chunk);
+  assert(expect_string(out, expected));
   serd_free(out);
 
   serd_writer_free(writer);
@@ -55,18 +52,18 @@ test_write_nested_anon(void)
     SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
   assert(writer);
 
-  SerdNode s0  = serd_node_from_string(SERD_URI, USTR(NS_EG "s0"));
-  SerdNode p0  = serd_node_from_string(SERD_URI, USTR(NS_EG "p0"));
-  SerdNode b0  = serd_node_from_string(SERD_BLANK, USTR("b0"));
-  SerdNode p1  = serd_node_from_string(SERD_URI, USTR(NS_EG "p1"));
-  SerdNode b1  = serd_node_from_string(SERD_BLANK, USTR("b1"));
-  SerdNode p2  = serd_node_from_string(SERD_URI, USTR(NS_EG "p2"));
-  SerdNode o2  = serd_node_from_string(SERD_URI, USTR(NS_EG "o2"));
-  SerdNode p3  = serd_node_from_string(SERD_URI, USTR(NS_EG "p3"));
-  SerdNode p4  = serd_node_from_string(SERD_URI, USTR(NS_EG "p4"));
-  SerdNode o4  = serd_node_from_string(SERD_URI, USTR(NS_EG "o4"));
+  SerdNode s0  = serd_node_from_string(SERD_URI, NS_EG "s0");
+  SerdNode p0  = serd_node_from_string(SERD_URI, NS_EG "p0");
+  SerdNode b0  = serd_node_from_string(SERD_BLANK, "b0");
+  SerdNode p1  = serd_node_from_string(SERD_URI, NS_EG "p1");
+  SerdNode b1  = serd_node_from_string(SERD_BLANK, "b1");
+  SerdNode p2  = serd_node_from_string(SERD_URI, NS_EG "p2");
+  SerdNode o2  = serd_node_from_string(SERD_URI, NS_EG "o2");
+  SerdNode p3  = serd_node_from_string(SERD_URI, NS_EG "p3");
+  SerdNode p4  = serd_node_from_string(SERD_URI, NS_EG "p4");
+  SerdNode o4  = serd_node_from_string(SERD_URI, NS_EG "o4");
   SerdNode nil = serd_node_from_string(
-    SERD_URI, USTR("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"));
+    SERD_URI, "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil");
 
   assert(!serd_writer_write_statement(
     writer, SERD_ANON_O_BEGIN, NULL, &s0, &p0, &b0, NULL, NULL));
@@ -109,8 +106,8 @@ test_write_nested_anon(void)
     "\t\t<http://example.org/p4> <http://example.org/o4>\n"
     "\t] .\n";
 
-  uint8_t* const out = serd_chunk_sink_finish(&chunk);
-  assert(expect_string((char*)out, expected));
+  char* const out = serd_chunk_sink_finish(&chunk);
+  assert(expect_string(out, expected));
   serd_free(out);
 
   serd_writer_free(writer);
@@ -135,11 +132,11 @@ test_writer_cleanup(void)
     serd_writer_new(SERD_TURTLE, (SerdStyle)0U, env, NULL, null_sink, NULL);
   assert(writer);
 
-  SerdNode s = serd_node_from_string(SERD_URI, USTR(NS_EG "s"));
-  SerdNode p = serd_node_from_string(SERD_URI, USTR(NS_EG "p"));
+  SerdNode s = serd_node_from_string(SERD_URI, NS_EG "s");
+  SerdNode p = serd_node_from_string(SERD_URI, NS_EG "p");
 
   char     o_buf[12] = {'b', '0', '\0'};
-  SerdNode o         = serd_node_from_string(SERD_BLANK, USTR(o_buf));
+  SerdNode o         = serd_node_from_string(SERD_BLANK, o_buf);
 
   st = serd_writer_write_statement(
     writer, SERD_ANON_O_BEGIN, NULL, &s, &p, &o, NULL, NULL);
@@ -151,7 +148,7 @@ test_writer_cleanup(void)
     char next_o_buf[12] = {'\0'};
     snprintf(next_o_buf, sizeof(next_o_buf), "b%u", i);
 
-    SerdNode next_o = serd_node_from_string(SERD_BLANK, USTR(next_o_buf));
+    SerdNode next_o = serd_node_from_string(SERD_BLANK, next_o_buf);
 
     st = serd_writer_write_statement(writer,
                                      SERD_ANON_O_BEGIN | SERD_ANON_CONT,
@@ -189,11 +186,11 @@ test_write_bad_anon_stack(void)
     serd_writer_new(SERD_TURTLE, (SerdStyle)0U, env, NULL, null_sink, NULL);
   assert(writer);
 
-  SerdNode s  = serd_node_from_string(SERD_URI, USTR(NS_EG "s"));
-  SerdNode p  = serd_node_from_string(SERD_URI, USTR(NS_EG "p"));
-  SerdNode b0 = serd_node_from_string(SERD_BLANK, USTR("b0"));
-  SerdNode b1 = serd_node_from_string(SERD_BLANK, USTR("b1"));
-  SerdNode b2 = serd_node_from_string(SERD_BLANK, USTR("b2"));
+  SerdNode s  = serd_node_from_string(SERD_URI, NS_EG "s");
+  SerdNode p  = serd_node_from_string(SERD_URI, NS_EG "p");
+  SerdNode b0 = serd_node_from_string(SERD_BLANK, "b0");
+  SerdNode b1 = serd_node_from_string(SERD_BLANK, "b1");
+  SerdNode b2 = serd_node_from_string(SERD_BLANK, "b2");
 
   st = serd_writer_write_statement(
     writer, SERD_ANON_O_BEGIN, NULL, &s, &p, &b0, NULL, NULL);
@@ -229,11 +226,13 @@ test_strict_write(void)
   static const uint8_t bad_short_buf[] = {0xFF, 0x90, 'h', 'i', 0};
   static const uint8_t bad_long_buf[]  = {'e', '\n', 'r', 0xFF, 0x90, 0};
 
-  SerdNode s             = serd_node_from_string(SERD_URI, USTR(NS_EG "s"));
-  SerdNode p             = serd_node_from_string(SERD_URI, USTR(NS_EG "p"));
-  SerdNode bad_uri       = serd_node_from_string(SERD_URI, bad_uri_buf);
-  SerdNode bad_short_lit = serd_node_from_string(SERD_LITERAL, bad_short_buf);
-  SerdNode bad_long_lit  = serd_node_from_string(SERD_LITERAL, bad_long_buf);
+  SerdNode s       = serd_node_from_string(SERD_URI, NS_EG "s");
+  SerdNode p       = serd_node_from_string(SERD_URI, NS_EG "p");
+  SerdNode bad_uri = serd_node_from_string(SERD_URI, (const char*)bad_uri_buf);
+  SerdNode bad_short_lit =
+    serd_node_from_string(SERD_LITERAL, (const char*)bad_short_buf);
+  SerdNode bad_long_lit =
+    serd_node_from_string(SERD_LITERAL, (const char*)bad_long_buf);
 
   assert(serd_writer_write_statement(
            writer, 0, NULL, &s, &p, &bad_uri, NULL, NULL) == SERD_ERR_BAD_TEXT);
@@ -269,7 +268,7 @@ test_write_error(void)
     serd_writer_new(SERD_TURTLE, (SerdStyle)0, env, NULL, error_sink, NULL);
   assert(writer);
 
-  SerdNode u = serd_node_from_string(SERD_URI, USTR("http://example.com/u"));
+  SerdNode u = serd_node_from_string(SERD_URI, NS_EG "u");
 
   const SerdStatus st =
     serd_writer_write_statement(writer, 0U, NULL, &u, &u, &u, NULL, NULL);
@@ -291,13 +290,12 @@ test_chunk_sink(void)
   assert(writer);
 
   const SerdNode base =
-    serd_node_from_string(SERD_URI, USTR("http://example.org/base"));
+    serd_node_from_string(SERD_URI, "http://example.org/base");
   assert(!serd_writer_set_base_uri(writer, &base));
   assert(!serd_writer_finish(writer));
 
-  uint8_t* const out = serd_chunk_sink_finish(&chunk);
-  assert(
-    expect_string((const char*)out, "@base <http://example.org/base> .\n"));
+  char* const out = serd_chunk_sink_finish(&chunk);
+  assert(expect_string(out, "@base <http://example.org/base> .\n"));
   serd_free(out);
 
   serd_writer_free(writer);
@@ -315,9 +313,9 @@ test_write_nothing_node(void)
     SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
   assert(writer);
 
-  SerdNode s = serd_node_from_string(SERD_URI, USTR(""));
-  SerdNode p = serd_node_from_string(SERD_URI, USTR("http://example.org/pred"));
-  SerdNode o = serd_node_from_string(SERD_NOTHING, USTR(""));
+  SerdNode s = serd_node_from_string(SERD_URI, "");
+  SerdNode p = serd_node_from_string(SERD_URI, "http://example.org/pred");
+  SerdNode o = serd_node_from_string(SERD_NOTHING, "");
   assert(serd_writer_write_statement(writer, 0, NULL, &s, &p, &o, NULL, NULL) ==
          SERD_ERR_BAD_ARG);
 
@@ -337,10 +335,10 @@ test_write_bad_statement(void)
     SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
   assert(writer);
 
-  SerdNode s = serd_node_from_string(SERD_URI, USTR("http://example.org/s"));
-  SerdNode p = serd_node_from_string(SERD_URI, USTR("http://example.org/p"));
-  SerdNode o = serd_node_from_string(SERD_URI, USTR("http://example.org/o"));
-  SerdNode l = serd_node_from_string(SERD_LITERAL, USTR("lang"));
+  SerdNode s = serd_node_from_string(SERD_URI, "http://example.org/s");
+  SerdNode p = serd_node_from_string(SERD_URI, "http://example.org/p");
+  SerdNode o = serd_node_from_string(SERD_URI, "http://example.org/o");
+  SerdNode l = serd_node_from_string(SERD_LITERAL, "lang");
 
   assert(serd_writer_write_statement(
            writer,
@@ -406,26 +404,26 @@ check_pname_escape(const char* const lname, const char* const expected)
   static const char* const prefix     = NS_EG;
   const size_t             prefix_len = strlen(prefix);
 
-  serd_env_set_prefix_from_strings(env, USTR("eg"), USTR(NS_EG));
+  serd_env_set_prefix_from_strings(env, "eg", NS_EG);
 
-  SerdNode s = serd_node_from_string(SERD_URI, USTR(NS_EG "s"));
-  SerdNode p = serd_node_from_string(SERD_URI, USTR(NS_EG "p"));
+  SerdNode s = serd_node_from_string(SERD_URI, NS_EG "s");
+  SerdNode p = serd_node_from_string(SERD_URI, NS_EG "p");
 
   char* const uri = (char*)calloc(1, prefix_len + strlen(lname) + 1);
   assert(uri);
   memcpy(uri, prefix, prefix_len + 1);
   memcpy(uri + prefix_len, lname, strlen(lname) + 1);
 
-  SerdNode o = serd_node_from_string(SERD_URI, USTR(uri));
+  SerdNode o = serd_node_from_string(SERD_URI, uri);
 
   assert(
     !serd_writer_write_statement(writer, 0U, NULL, &s, &p, &o, NULL, NULL));
   assert(!serd_writer_finish(writer));
   free(uri);
 
-  uint8_t* const out = serd_chunk_sink_finish(&chunk);
+  char* const out = serd_chunk_sink_finish(&chunk);
   assert(out);
-  assert(!strcmp((const char*)out, expected));
+  assert(!strcmp(out, expected));
   serd_free(out);
 
   serd_writer_free(writer);
