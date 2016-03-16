@@ -128,14 +128,12 @@ serd_strerror(SerdStatus status);
 /**
    Measure a UTF-8 string.
 
-   @return Length of `str` in characters (except NULL).
+   @return Length of `str` in bytes.
    @param str A null-terminated UTF-8 string.
-   @param n_bytes (Output) Set to the size of `str` in bytes (except NULL).
    @param flags (Output) Set to the applicable flags.
 */
 SERD_API size_t
 serd_strlen(const uint8_t* SERD_NONNULL  str,
-            size_t* SERD_NULLABLE        n_bytes,
             SerdNodeFlags* SERD_NULLABLE flags);
 
 /**
@@ -343,12 +341,11 @@ typedef enum {
 typedef struct {
   const uint8_t* SERD_NULLABLE buf;     ///< Value string
   size_t                       n_bytes; ///< Size in bytes (excluding null)
-  size_t                       n_chars; ///< String length (excluding null)
   SerdNodeFlags                flags;   ///< Node flags (string properties)
   SerdType                     type;    ///< Node type
 } SerdNode;
 
-static const SerdNode SERD_NODE_NULL = {NULL, 0, 0, 0, SERD_NOTHING};
+static const SerdNode SERD_NODE_NULL = {NULL, 0, 0, SERD_NOTHING};
 
 /**
    Make a (shallow) node from `str`.
