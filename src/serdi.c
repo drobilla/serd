@@ -98,23 +98,23 @@ main(int argc, char** argv)
 		return print_usage(argv[0], true);
 	}
 
-	FILE*          in_fd         = NULL;
-	SerdSyntax     input_syntax  = SERD_TURTLE;
-	SerdSyntax     output_syntax = SERD_NTRIPLES;
-	bool           from_file     = true;
-	bool           bulk_read     = true;
-	bool           bulk_write    = false;
-	bool           full_uris     = false;
-	bool           lax           = false;
-	bool           quiet         = false;
-	const uint8_t* in_name       = NULL;
-	const uint8_t* add_prefix    = NULL;
-	const uint8_t* chop_prefix   = NULL;
-	const uint8_t* root_uri      = NULL;
-	int            a             = 1;
+	FILE*       in_fd         = NULL;
+	SerdSyntax  input_syntax  = SERD_TURTLE;
+	SerdSyntax  output_syntax = SERD_NTRIPLES;
+	bool        from_file     = true;
+	bool        bulk_read     = true;
+	bool        bulk_write    = false;
+	bool        full_uris     = false;
+	bool        lax           = false;
+	bool        quiet         = false;
+	const char* in_name       = NULL;
+	const char* add_prefix    = NULL;
+	const char* chop_prefix   = NULL;
+	const char* root_uri      = NULL;
+	int         a             = 1;
 	for (; a < argc && argv[a][0] == '-'; ++a) {
 		if (argv[a][1] == '\0') {
-			in_name = (const uint8_t*)"(stdin)";
+			in_name = (const char*)"(stdin)";
 			in_fd   = stdin;
 			break;
 		} else if (argv[a][1] == 'b') {
@@ -132,7 +132,7 @@ main(int argc, char** argv)
 		} else if (argv[a][1] == 'v') {
 			return print_version();
 		} else if (argv[a][1] == 's') {
-			in_name = (const uint8_t*)"(string)";
+			in_name = (const char*)"(string)";
 			from_file = false;
 			++a;
 			break;
@@ -152,17 +152,17 @@ main(int argc, char** argv)
 			if (++a == argc) {
 				return missing_arg(argv[0], 'p');
 			}
-			add_prefix = (const uint8_t*)argv[a];
+			add_prefix = (const char*)argv[a];
 		} else if (argv[a][1] == 'c') {
 			if (++a == argc) {
 				return missing_arg(argv[0], 'c');
 			}
-			chop_prefix = (const uint8_t*)argv[a];
+			chop_prefix = (const char*)argv[a];
 		} else if (argv[a][1] == 'r') {
 			if (++a == argc) {
 				return missing_arg(argv[0], 'r');
 			}
-			root_uri = (const uint8_t*)argv[a];
+			root_uri = (const char*)argv[a];
 		} else {
 			SERDI_ERRORF("invalid option -- '%s'\n", argv[a] + 1);
 			return print_usage(argv[0], true);
@@ -174,7 +174,7 @@ main(int argc, char** argv)
 		return 1;
 	}
 
-	const uint8_t* input = (const uint8_t*)argv[a++];
+	const char* input = (const char*)argv[a++];
 	if (from_file) {
 		in_name = in_name ? in_name : input;
 		if (!in_fd) {
@@ -189,7 +189,7 @@ main(int argc, char** argv)
 	SerdNode base     = SERD_NODE_NULL;
 	if (a < argc) {  // Base URI given on command line
 		base = serd_node_new_uri_from_string(
-			(const uint8_t*)argv[a], NULL, &base_uri);
+			(const char*)argv[a], NULL, &base_uri);
 	} else if (from_file && in_fd != stdin) {  // Use input file URI
 		base = serd_node_new_file_uri(input, NULL, &base_uri, false);
 	}

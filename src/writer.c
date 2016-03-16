@@ -129,7 +129,7 @@ static void
 copy_node(SerdNode* dst, const SerdNode* src)
 {
 	if (src) {
-		dst->buf = (uint8_t*)realloc((char*)dst->buf, src->n_bytes + 1);
+		dst->buf = (char*)realloc((char*)dst->buf, src->n_bytes + 1);
 		dst->n_bytes = src->n_bytes;
 		dst->flags   = src->flags;
 		dst->type    = src->type;
@@ -238,7 +238,7 @@ uri_must_escape(const uint8_t c)
 }
 
 static size_t
-write_uri(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
+write_uri(SerdWriter* writer, const char* utf8, size_t n_bytes)
 {
 	size_t len = 0;
 	for (size_t i = 0; i < n_bytes;) {
@@ -257,14 +257,14 @@ write_uri(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
 
 		// Write UTF-8 character
 		size_t size = 0;
-		len += write_character(writer, utf8 + i, &size);
+		len += write_character(writer, (const uint8_t*)utf8 + i, &size);
 		i   += size;
 	}
 	return len;
 }
 
 static bool
-lname_must_escape(const uint8_t c)
+lname_must_escape(const char c)
 {
 	/* This arbitrary list of characters, most of which have nothing to do with
 	   Turtle, must be handled as special cases here because the RDF and SPARQL
@@ -285,7 +285,7 @@ lname_must_escape(const uint8_t c)
 }
 
 static size_t
-write_lname(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
+write_lname(SerdWriter* writer, const char* utf8, size_t n_bytes)
 {
 	size_t len = 0;
 	for (size_t i = 0; i < n_bytes; ++i) {
@@ -311,7 +311,7 @@ write_lname(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
 
 static size_t
 write_text(SerdWriter* writer, TextContext ctx,
-           const uint8_t* utf8, size_t n_bytes)
+           const char* utf8, size_t n_bytes)
 {
 	size_t len = 0;
 	for (size_t i = 0; i < n_bytes;) {
@@ -364,7 +364,7 @@ write_text(SerdWriter* writer, TextContext ctx,
 		}
 
 		size_t size = 0;
-		len += write_character(writer, utf8 + i - 1, &size);
+		len += write_character(writer, (const uint8_t*)utf8 + i - 1, &size);
 
 		if (size == 0) {
 			return len;
@@ -378,7 +378,7 @@ write_text(SerdWriter* writer, TextContext ctx,
 static size_t
 uri_sink(const void* buf, size_t len, void* stream)
 {
-	return write_uri((SerdWriter*)stream, (const uint8_t*)buf, len);
+	return write_uri((SerdWriter*)stream, (const char*)buf, len);
 }
 
 static void
@@ -829,8 +829,8 @@ serd_writer_set_error_sink(SerdWriter*   writer,
 
 SERD_API
 void
-serd_writer_chop_blank_prefix(SerdWriter*    writer,
-                              const uint8_t* prefix)
+serd_writer_chop_blank_prefix(SerdWriter* writer,
+                              const char* prefix)
 {
 	free(writer->bprefix);
 	writer->bprefix_len = 0;
@@ -945,9 +945,9 @@ serd_buffer_sink(const void* buf, size_t len, void* stream)
 }
 
 SERD_API
-uint8_t*
+char*
 serd_buffer_sink_finish(SerdBuffer* stream)
 {
 	serd_buffer_sink("", 1, stream);
-	return (uint8_t*)stream->buf;
+	return (char*)stream->buf;
 }

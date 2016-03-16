@@ -204,7 +204,7 @@ typedef uint32_t SerdNodeFlags;
    A syntactic RDF node.
 */
 typedef struct {
-	const uint8_t* buf;      /**< Value string */
+	const char*    buf;      /**< Value string */
 	size_t         n_bytes;  /**< Size in bytes (not including null) */
 	SerdNodeFlags  flags;    /**< Node flags (e.g. string properties) */
 	SerdType       type;     /**< Node type */
@@ -214,8 +214,8 @@ typedef struct {
    An unterminated string fragment.
 */
 typedef struct {
-	const uint8_t* buf;  /**< Start of chunk */
-	size_t         len;  /**< Length of chunk in bytes */
+	const char* buf;  /**< Start of chunk */
+	size_t      len;  /**< Length of chunk in bytes */
 } SerdChunk;
 
 /**
@@ -230,12 +230,12 @@ typedef struct {
    An error description.
 */
 typedef struct {
-	SerdStatus     status;    /**< Error code */
-	const uint8_t* filename;  /**< File where error was encountered, or NULL */
-	unsigned       line;      /**< Line where error was encountered, or 0 */
-	unsigned       col;       /**< Column where error was encountered */
-	const char*    fmt;       /**< Message format string (printf style) */
-	va_list*       args;      /**< Arguments for fmt */
+	SerdStatus  status;    /**< Error code */
+	const char* filename;  /**< File where error was encountered, or NULL */
+	unsigned    line;      /**< Line where error was encountered, or 0 */
+	unsigned    col;       /**< Column where error was encountered */
+	const char* fmt;       /**< Message format string (printf style) */
+	va_list*    args;      /**< Arguments for fmt */
 } SerdError;
 
 /**
@@ -279,7 +279,7 @@ typedef enum {
    Return a string describing a status code.
 */
 SERD_API
-const uint8_t*
+const char*
 serd_strerror(SerdStatus status);
 
 /**
@@ -290,7 +290,7 @@ serd_strerror(SerdStatus status);
 */
 SERD_API
 size_t
-serd_strlen(const uint8_t* str, SerdNodeFlags* flags);
+serd_strlen(const char* str, SerdNodeFlags* flags);
 
 /**
    Parse a string to a double.
@@ -315,7 +315,7 @@ serd_strtod(const char* str, char** endptr);
 */
 SERD_API
 void*
-serd_base64_decode(const uint8_t* str, size_t len, size_t* size);
+serd_base64_decode(const char* str, size_t len, size_t* size);
 
 /**
    @}
@@ -335,8 +335,8 @@ static const SerdURI SERD_URI_NULL = {
    a path, use serd_file_uri_parse().
 */
 SERD_API
-const uint8_t*
-serd_uri_to_path(const uint8_t* uri);
+const char*
+serd_uri_to_path(const char* uri);
 
 /**
    Get the unescaped path and hostname from a file URI.
@@ -347,22 +347,22 @@ serd_uri_to_path(const uint8_t* uri);
    The returned path and `*hostname` must be freed with free().
 */
 SERD_API
-uint8_t*
-serd_file_uri_parse(const uint8_t* uri, uint8_t** hostname);
+char*
+serd_file_uri_parse(const char* uri, char** hostname);
 
 /**
    Return true iff `utf8` starts with a valid URI scheme.
 */
 SERD_API
 bool
-serd_uri_string_has_scheme(const uint8_t* utf8);
+serd_uri_string_has_scheme(const char* utf8);
 
 /**
    Parse `utf8`, writing result to `out`.
 */
 SERD_API
 SerdStatus
-serd_uri_parse(const uint8_t* utf8, SerdURI* out);
+serd_uri_parse(const char* utf8, SerdURI* out);
 
 /**
    Set `out` to `uri` resolved against `base`.
@@ -413,7 +413,7 @@ static const SerdNode SERD_NODE_NULL = { NULL, 0, 0, SERD_NOTHING };
 */
 SERD_API
 SerdNode
-serd_node_from_string(SerdType type, const uint8_t* str);
+serd_node_from_string(SerdType type, const char* str);
 
 /**
    Make a deep copy of `node`.
@@ -445,7 +445,7 @@ serd_node_new_uri_from_node(const SerdNode* uri_node,
 */
 SERD_API
 SerdNode
-serd_node_new_uri_from_string(const uint8_t* str,
+serd_node_new_uri_from_string(const char*    str,
                               const SerdURI* base,
                               SerdURI*       out);
 
@@ -461,10 +461,10 @@ serd_node_new_uri_from_string(const uint8_t* str,
 */
 SERD_API
 SerdNode
-serd_node_new_file_uri(const uint8_t* path,
-                       const uint8_t* hostname,
-                       SerdURI*       out,
-                       bool           escape);
+serd_node_new_file_uri(const char* path,
+                       const char* hostname,
+                       SerdURI*    out,
+                       bool        escape);
 
 /**
    Create a new node by serialising `uri` into a new string.
@@ -654,9 +654,9 @@ serd_env_set_prefix(SerdEnv*        env,
 */
 SERD_API
 SerdStatus
-serd_env_set_prefix_from_strings(SerdEnv*       env,
-                                 const uint8_t* name,
-                                 const uint8_t* uri);
+serd_env_set_prefix_from_strings(SerdEnv*    env,
+                                 const char* name,
+                                 const char* uri);
 
 /**
    Qualify `uri` into a CURIE if possible.
@@ -755,8 +755,8 @@ serd_reader_get_handle(const SerdReader* reader);
 */
 SERD_API
 void
-serd_reader_add_blank_prefix(SerdReader*    reader,
-                             const uint8_t* prefix);
+serd_reader_add_blank_prefix(SerdReader* reader,
+                             const char* prefix);
 
 /**
    Set the URI of the default graph.
@@ -775,8 +775,8 @@ serd_reader_set_default_graph(SerdReader*     reader,
 */
 SERD_API
 SerdStatus
-serd_reader_read_file(SerdReader*    reader,
-                      const uint8_t* uri);
+serd_reader_read_file(SerdReader* reader,
+                      const char* uri);
 
 /**
    Start an incremental read from a file handle.
@@ -788,10 +788,10 @@ serd_reader_read_file(SerdReader*    reader,
 */
 SERD_API
 SerdStatus
-serd_reader_start_stream(SerdReader*    me,
-                         FILE*          file,
-                         const uint8_t* name,
-                         bool           bulk);
+serd_reader_start_stream(SerdReader* me,
+                         FILE*       file,
+                         const char* name,
+                         bool        bulk);
 
 /**
    Read a single "chunk" of data during an incremental read.
@@ -817,16 +817,16 @@ serd_reader_end_stream(SerdReader* me);
 */
 SERD_API
 SerdStatus
-serd_reader_read_file_handle(SerdReader*    reader,
-                             FILE*          file,
-                             const uint8_t* name);
+serd_reader_read_file_handle(SerdReader* reader,
+                             FILE*       file,
+                             const char* name);
 
 /**
    Read `utf8`.
 */
 SERD_API
 SerdStatus
-serd_reader_read_string(SerdReader* me, const uint8_t* utf8);
+serd_reader_read_string(SerdReader* me, const char* utf8);
 
 /**
    Free `reader`.
@@ -896,7 +896,7 @@ serd_buffer_sink(const void* buf, size_t len, void* stream);
    terminated (by this function) and owned by the caller.
 */
 SERD_API
-uint8_t*
+char*
 serd_buffer_sink_finish(SerdBuffer* stream);
 
 /**
@@ -916,8 +916,8 @@ serd_writer_set_error_sink(SerdWriter*   writer,
 */
 SERD_API
 void
-serd_writer_chop_blank_prefix(SerdWriter*    writer,
-                              const uint8_t* prefix);
+serd_writer_chop_blank_prefix(SerdWriter* writer,
+                              const char* prefix);
 
 /**
    Set the current output base URI (and emit directive if applicable).

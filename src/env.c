@@ -92,7 +92,7 @@ serd_env_set_base_uri(SerdEnv*        env,
 
 static inline SerdPrefix*
 serd_env_find(const SerdEnv* env,
-              const uint8_t* name,
+              const char*    name,
               size_t         name_len)
 {
 	for (size_t i = 0; i < env->n_prefixes; ++i) {
@@ -150,9 +150,9 @@ serd_env_set_prefix(SerdEnv*        env,
 
 SERD_API
 SerdStatus
-serd_env_set_prefix_from_strings(SerdEnv*       env,
-                                 const uint8_t* name,
-                                 const uint8_t* uri)
+serd_env_set_prefix_from_strings(SerdEnv*    env,
+                                 const char* name,
+                                 const char* uri)
 {
 	const SerdNode name_node = serd_node_from_string(SERD_LITERAL, name);
 	const SerdNode uri_node  = serd_node_from_string(SERD_URI, uri);
@@ -161,7 +161,7 @@ serd_env_set_prefix_from_strings(SerdEnv*       env,
 }
 
 static inline bool
-is_nameChar(const uint8_t c)
+is_nameChar(const char c)
 {
 	return is_alpha(c) || is_digit(c) || c == '_';
 }
@@ -171,7 +171,7 @@ is_nameChar(const uint8_t c)
    TODO: This is more strict than it should be.
 */
 static inline bool
-is_name(const uint8_t* buf, size_t len)
+is_name(const char* buf, size_t len)
 {
 	for (size_t i = 0; i < len; ++i) {
 		if (!is_nameChar(buf[i])) {
@@ -213,7 +213,7 @@ serd_env_expand(const SerdEnv*  env,
                 SerdChunk*      uri_prefix,
                 SerdChunk*      uri_suffix)
 {
-	const uint8_t* const colon = (const uint8_t*)memchr(
+	const char* const colon = (const char*)memchr(
 		qname->buf, ':', qname->n_bytes + 1);
 	if (!colon) {
 		return SERD_ERR_BAD_ARG;  // Invalid qname
@@ -244,7 +244,7 @@ serd_env_expand_node(const SerdEnv*  env,
 			return SERD_NODE_NULL;
 		}
 		const size_t len = prefix.len + suffix.len;
-		uint8_t*     buf = (uint8_t*)malloc(len + 1);
+		char*        buf = (char*)malloc(len + 1);
 		SerdNode     ret = { buf, len, 0, SERD_URI };
 		snprintf((char*)buf, ret.n_bytes + 1, "%s%s", prefix.buf, suffix.buf);
 		return ret;

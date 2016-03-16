@@ -70,7 +70,7 @@ serd_bufalloc(size_t size)
 
 /** A dynamic stack in memory. */
 typedef struct {
-	uint8_t* buf;       ///< Stack memory
+	char*    buf;       ///< Stack memory
 	size_t   buf_size;  ///< Allocated size of buf (>= size)
 	size_t   size;      ///< Conceptual size of stack in buf
 } SerdStack;
@@ -82,7 +82,7 @@ static inline SerdStack
 serd_stack_new(size_t size)
 {
 	SerdStack stack;
-	stack.buf       = (uint8_t*)malloc(size);
+	stack.buf       = (char*)malloc(size);
 	stack.buf_size  = size;
 	stack.size      = SERD_STACK_BOTTOM;
 	return stack;
@@ -103,15 +103,15 @@ serd_stack_free(SerdStack* stack)
 	stack->size     = 0;
 }
 
-static inline uint8_t*
+static inline char*
 serd_stack_push(SerdStack* stack, size_t n_bytes)
 {
 	const size_t new_size = stack->size + n_bytes;
 	if (stack->buf_size < new_size) {
 		stack->buf_size *= 2;
-		stack->buf = (uint8_t*)realloc(stack->buf, stack->buf_size);
+		stack->buf = (char*)realloc(stack->buf, stack->buf_size);
 	}
-	uint8_t* const ret = (stack->buf + stack->size);
+	char* const ret = (stack->buf + stack->size);
 	stack->size = new_size;
 	return ret;
 }
@@ -160,7 +160,7 @@ serd_stack_pop_aligned(SerdStack* stack, size_t n_bytes)
 typedef struct SerdBulkSinkImpl {
 	SerdSink sink;
 	void*    stream;
-	uint8_t* buf;
+	char*    buf;
 	size_t   size;
 	size_t   block_size;
 } SerdBulkSink;
@@ -173,7 +173,7 @@ serd_bulk_sink_new(SerdSink sink, void* stream, size_t block_size)
 	bsink.stream     = stream;
 	bsink.size       = 0;
 	bsink.block_size = block_size;
-	bsink.buf        = (uint8_t*)serd_bufalloc(block_size);
+	bsink.buf        = (char*)serd_bufalloc(block_size);
 	return bsink;
 }
 
@@ -205,7 +205,7 @@ serd_bulk_sink_write(const void* buf, size_t len, SerdBulkSink* bsink)
 		// Write as much as possible into the remaining buffer space
 		memcpy(bsink->buf + bsink->size, buf, n);
 		bsink->size += n;
-		buf          = (const uint8_t*)buf + n;
+		buf          = (const char*)buf + n;
 		len         -= n;
 
 		// Flush page if buffer is full
@@ -221,21 +221,21 @@ serd_bulk_sink_write(const void* buf, size_t len, SerdBulkSink* bsink)
 
 /** Return true if `c` lies within [`min`...`max`] (inclusive) */
 static inline bool
-in_range(const uint8_t c, const uint8_t min, const uint8_t max)
+in_range(const char c, const char min, const char max)
 {
 	return (c >= min && c <= max);
 }
 
 /** RFC2234: ALPHA := %x41-5A / %x61-7A  ; A-Z / a-z */
 static inline bool
-is_alpha(const uint8_t c)
+is_alpha(const char c)
 {
 	return in_range(c, 'A', 'Z') || in_range(c, 'a', 'z');
 }
 
 /** RFC2234: DIGIT ::= %x30-39  ; 0-9 */
 static inline bool
-is_digit(const uint8_t c)
+is_digit(const char c)
 {
 	return in_range(c, '0', '9');
 }
@@ -252,13 +252,13 @@ is_space(const char c)
 }
 
 static inline bool
-is_base64(const uint8_t c)
+is_base64(const char c)
 {
 	return is_alpha(c) || is_digit(c) || c == '+' || c == '/' || c == '=';
 }
 
 static inline bool
-is_windows_path(const uint8_t* path)
+is_windows_path(const char* path)
 {
 	return is_alpha(path[0]) && (path[1] == ':' || path[1] == '|')
 		&& (path[2] == '/' || path[2] == '\\');
@@ -279,7 +279,7 @@ uri_path_len(const SerdURI* uri)
 	return uri->path_base.len + uri->path.len;
 }
 
-static inline uint8_t
+static inline char
 uri_path_at(const SerdURI* uri, size_t i)
 {
 	if (i < uri->path_base.len) {

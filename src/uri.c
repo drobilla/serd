@@ -22,10 +22,10 @@
 // #define URI_DEBUG 1
 
 SERD_API
-const uint8_t*
-serd_uri_to_path(const uint8_t* uri)
+const char*
+serd_uri_to_path(const char* uri)
 {
-	const uint8_t* path = uri;
+	const char* path = uri;
 	if (!is_windows_path(uri) && serd_uri_string_has_scheme(uri)) {
 		if (strncmp((const char*)uri, "file:", 5)) {
 			fprintf(stderr, "Non-file URI `%s'\n", uri);
@@ -46,23 +46,23 @@ serd_uri_to_path(const uint8_t* uri)
 }
 
 SERD_API
-uint8_t*
-serd_file_uri_parse(const uint8_t* uri, uint8_t** hostname)
+char*
+serd_file_uri_parse(const char* uri, char** hostname)
 {
-	const uint8_t* path = uri;
+	const char* path = uri;
 	if (hostname) {
 		*hostname = NULL;
 	}
 	if (!strncmp((const char*)uri, "file://", 7)) {
-		const uint8_t* auth = uri + 7;
+		const char* auth = uri + 7;
 		if (*auth == '/') {  // No hostname
 			path = auth;
 		} else {  // Has hostname
-			if (!(path = (const uint8_t*)strchr((const char*)auth, '/'))) {
+			if (!(path = (const char*)strchr((const char*)auth, '/'))) {
 				return NULL;
 			}
 			if (hostname) {
-				*hostname = (uint8_t*)calloc(1, path - auth + 1);
+				*hostname = (char*)calloc(1, path - auth + 1);
 				memcpy(*hostname, auth, path - auth);
 			}
 		}
@@ -73,16 +73,16 @@ serd_file_uri_parse(const uint8_t* uri, uint8_t** hostname)
 	}
 
 	SerdBuffer buffer = { NULL, 0 };
-	for (const uint8_t* s = path; *s; ++s) {
+	for (const char* s = path; *s; ++s) {
 		if (*s == '%') {
 			if (*(s + 1) == '%') {
 				serd_buffer_sink("%", 1, &buffer);
 				++s;
 			} else if (is_digit(*(s + 1)) && is_digit(*(s + 2))) {
-				const uint8_t code[3] = { *(s + 1), *(s + 2), 0 };
+				const char code[3] = { *(s + 1), *(s + 2), 0 };
 				uint32_t num;
 				sscanf((const char*)code, "%X", &num);
-				const uint8_t c = num;
+				const char c = num;
 				serd_buffer_sink(&c, 1, &buffer);
 				s += 2;
 			} else {
@@ -97,13 +97,13 @@ serd_file_uri_parse(const uint8_t* uri, uint8_t** hostname)
 
 SERD_API
 bool
-serd_uri_string_has_scheme(const uint8_t* utf8)
+serd_uri_string_has_scheme(const char* utf8)
 {
 	// RFC3986: scheme ::= ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
 	if (!utf8 || !is_alpha(utf8[0])) {
 		return false;  // Invalid scheme initial character, URI is relative
 	}
-	for (uint8_t c; (c = *++utf8) != '\0';) {
+	for (char c; (c = *++utf8) != '\0';) {
 		switch (c) {
 		case ':':
 			return true;  // End of scheme
@@ -141,11 +141,11 @@ serd_uri_dump(const SerdURI* uri, FILE* file)
 
 SERD_API
 SerdStatus
-serd_uri_parse(const uint8_t* utf8, SerdURI* uri)
+serd_uri_parse(const char* utf8, SerdURI* uri)
 {
 	*uri = SERD_URI_NULL;
 
-	const uint8_t* ptr = utf8;
+	const char* ptr = utf8;
 
 	/* See http://tools.ietf.org/html/rfc3986#section-3
 	   URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
@@ -153,7 +153,7 @@ serd_uri_parse(const uint8_t* utf8, SerdURI* uri)
 
 	/* S3.1: scheme ::= ALPHA *( ALPHA / DIGIT / "+" / "-" / "." ) */
 	if (is_alpha(*ptr)) {
-		for (uint8_t c = *++ptr; true; c = *++ptr) {
+		for (char c = *++ptr; true; c = *++ptr) {
 			switch (c) {
 			case '\0': case '/': case '?': case '#':
 				ptr = utf8;
@@ -180,7 +180,7 @@ maybe_authority:
 	if (*ptr == '/' && *(ptr + 1) == '/') {
 		ptr += 2;
 		uri->authority.buf = ptr;
-		for (uint8_t c; (c = *ptr) != '\0'; ++ptr) {
+		for (char c; (c = *ptr) != '\0'; ++ptr) {
 			switch (c) {
 			case '/': goto path;
 			case '?': goto query;
@@ -203,7 +203,7 @@ path:
 	}
 	uri->path.buf = ptr;
 	uri->path.len = 0;
-	for (uint8_t c; (c = *ptr) != '\0'; ++ptr) {
+	for (char c; (c = *ptr) != '\0'; ++ptr) {
 		switch (c) {
 		case '?': goto query;
 		case '#': goto fragment;
@@ -219,7 +219,7 @@ path:
 query:
 	if (*ptr == '?') {
 		uri->query.buf = ++ptr;
-		for (uint8_t c; (c = *ptr) != '\0'; ++ptr) {
+		for (char c; (c = *ptr) != '\0'; ++ptr) {
 			switch (c) {
 			case '#':
 				goto fragment;
@@ -257,11 +257,11 @@ end:
    @param up Set to the number of up-references (e.g. "../") trimmed
    @return A pointer to the new start of @path
 */
-static const uint8_t*
-remove_dot_segments(const uint8_t* path, size_t len, size_t* up)
+static const char*
+remove_dot_segments(const char* path, size_t len, size_t* up)
 {
-	const uint8_t*       begin = path;
-	const uint8_t* const end   = path + len;
+	const char*       begin = path;
+	const char* const end   = path + len;
 
 	*up = 0;
 	while (begin < end) {
@@ -321,13 +321,13 @@ remove_dot_segments(const uint8_t* path, size_t len, size_t* up)
 static void
 merge(SerdChunk* base, SerdChunk* path)
 {
-	size_t         up;
-	const uint8_t* begin = remove_dot_segments(path->buf, path->len, &up);
-	const uint8_t* end   = path->buf + path->len;
+	size_t      up;
+	const char* begin = remove_dot_segments(path->buf, path->len, &up);
+	const char* end   = path->buf + path->len;
 
 	if (base->len) {
 		// Find the up'th last slash
-		const uint8_t* base_last = (base->buf + base->len - 1);
+		const char* base_last = (base->buf + base->len - 1);
 		++up;
 		do {
 			if (*base_last == '/') {
