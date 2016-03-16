@@ -1009,11 +1009,10 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
     return SERD_ERR_BAD_SYNTAX;
   }
 
-  const Ref ref = *dest =
-    push_node(reader,
-              SERD_BLANK,
-              reader->bprefix ? (char*)reader->bprefix : "",
-              reader->bprefix_len);
+  const Ref ref = *dest = push_node(reader,
+                                    SERD_BLANK,
+                                    reader->bprefix ? reader->bprefix : "",
+                                    reader->bprefix_len);
 
   int c = peek_byte(reader); // First: (PN_CHARS | '_' | [0-9])
   if (is_digit(c) || c == '_') {
@@ -1052,7 +1051,6 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
       }
     }
   }
-
   return SERD_SUCCESS;
 }
 
@@ -1581,7 +1579,7 @@ tokcmp(SerdReader* const reader,
     return -1;
   }
 
-  return serd_strncasecmp((const char*)node->buf, tok, n);
+  return serd_strncasecmp(node->buf, tok, n);
 }
 
 SerdStatus
