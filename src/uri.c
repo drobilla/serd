@@ -72,27 +72,27 @@ serd_file_uri_parse(const uint8_t* uri, uint8_t** hostname)
 		++path;
 	}
 
-	SerdChunk chunk = { NULL, 0 };
+	SerdBuffer buffer = { NULL, 0 };
 	for (const uint8_t* s = path; *s; ++s) {
 		if (*s == '%') {
 			if (*(s + 1) == '%') {
-				serd_chunk_sink("%", 1, &chunk);
+				serd_buffer_sink("%", 1, &buffer);
 				++s;
 			} else if (is_digit(*(s + 1)) && is_digit(*(s + 2))) {
 				const uint8_t code[3] = { *(s + 1), *(s + 2), 0 };
 				uint32_t num;
 				sscanf((const char*)code, "%X", &num);
 				const uint8_t c = num;
-				serd_chunk_sink(&c, 1, &chunk);
+				serd_buffer_sink(&c, 1, &buffer);
 				s += 2;
 			} else {
 				s += 2;  // Junk escape, ignore
 			}
 		} else {
-			serd_chunk_sink(s, 1, &chunk);
+			serd_buffer_sink(s, 1, &buffer);
 		}
 	}
-	return serd_chunk_sink_finish(&chunk);
+	return serd_buffer_sink_finish(&buffer);
 }
 
 SERD_API

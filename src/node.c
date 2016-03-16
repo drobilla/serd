@@ -163,27 +163,27 @@ serd_node_new_file_uri(const uint8_t* path,
 		         evil ? "/" : "");
 	}
 
-	SerdChunk chunk = { uri, uri_len };
+	SerdBuffer buffer = { uri, uri_len };
 	for (size_t i = 0; i < path_len; ++i) {
 		if (evil && path[i] == '\\') {
-			serd_chunk_sink("/", 1, &chunk);
+			serd_buffer_sink("/", 1, &buffer);
 		} else if (path[i] == '%') {
-			serd_chunk_sink("%%", 2, &chunk);
+			serd_buffer_sink("%%", 2, &buffer);
 		} else if (!escape || is_uri_path_char(path[i])) {
-			serd_chunk_sink(path + i, 1, &chunk);
+			serd_buffer_sink(path + i, 1, &buffer);
 		} else {
 			char escape_str[4] = { '%', 0, 0, 0 };
 			snprintf(escape_str + 1, sizeof(escape_str) - 1, "%X", path[i]);
-			serd_chunk_sink(escape_str, 3, &chunk);
+			serd_buffer_sink(escape_str, 3, &buffer);
 		}
 	}
-	serd_chunk_sink_finish(&chunk);
+	serd_buffer_sink_finish(&buffer);
 
 	if (out) {
-		serd_uri_parse(chunk.buf, out);
+		serd_uri_parse(buffer.buf, out);
 	}
 
-	return serd_node_from_string(SERD_URI, chunk.buf);
+	return serd_node_from_string(SERD_URI, buffer.buf);
 }
 
 SERD_API
