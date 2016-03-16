@@ -168,12 +168,7 @@ push_byte(SerdReader* reader, Ref ref, const int c)
 
   uint8_t* const  s    = (uint8_t*)serd_stack_push(&reader->stack, 1);
   SerdNode* const node = (SerdNode*)(reader->stack.buf + ref);
-
   ++node->n_bytes;
-  if (!(c & 0x80)) { // Starts with 0 bit, start of new character
-    ++node->n_chars;
-  }
-
   *(s - 1) = (uint8_t)c;
   *s       = '\0';
   return SERD_SUCCESS;
