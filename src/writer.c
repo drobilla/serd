@@ -449,9 +449,9 @@ write_node(SerdWriter*        writer,
            Field              field,
            SerdStatementFlags flags)
 {
-	SerdChunk uri_prefix;
+	SerdSlice uri_prefix;
 	SerdNode  prefix;
-	SerdChunk suffix;
+	SerdSlice suffix;
 	bool      has_scheme;
 	switch (node->type) {
 	case SERD_BLANK:

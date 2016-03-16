@@ -319,7 +319,7 @@ remove_dot_segments(const char* path, size_t len, size_t* up)
 
 /// Merge `base` and `path` in-place
 static void
-merge(SerdChunk* base, SerdChunk* path)
+merge(SerdSlice* base, SerdSlice* path)
 {
 	size_t      up;
 	const char* begin = remove_dot_segments(path->buf, path->len, &up);

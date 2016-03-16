@@ -436,7 +436,7 @@ main(void)
 		return failure("Base URI mismatch\n");
 	}
 
-	SerdChunk prefix, suffix;
+	SerdSlice prefix, suffix;
 	if (!serd_env_expand(env, &b, &prefix, &suffix)) {
 		return failure("Expanded invalid curie %s\n", b.buf);
 	}
@@ -584,7 +584,7 @@ main(void)
 
 	o = serd_node_from_string(SERD_URI, "http://example.org/base");
 	if (serd_writer_set_base_uri(writer, &o)) {
-		return failure("Failed to write to chunk sink\n");
+		return failure("Failed to write to buffer sink\n");
 	}
 
 	serd_writer_free(writer);

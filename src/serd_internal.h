@@ -267,7 +267,7 @@ is_windows_path(const char* path)
 /* URI utilities */
 
 static inline bool
-chunk_equals(const SerdChunk* a, const SerdChunk* b)
+slice_equals(const SerdSlice* a, const SerdSlice* b)
 {
 	return a->len == b->len
 		&& !strncmp((const char*)a->buf, (const char*)b->buf, a->len);
@@ -294,8 +294,8 @@ static inline bool
 uri_is_under(const SerdURI* uri, const SerdURI* root)
 {
 	if (!root || !root->scheme.len ||
-	    !chunk_equals(&root->scheme, &uri->scheme) ||
-	    !chunk_equals(&root->authority, &uri->authority)) {
+	    !slice_equals(&root->scheme, &uri->scheme) ||
+	    !slice_equals(&root->authority, &uri->authority)) {
 		return false;
 	}
 
