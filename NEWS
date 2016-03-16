@@ -1,3 +1,9 @@
+serd (1.0.1) unstable;
+
+  * Add SerdBuffer for mutable buffers to keep SerdChunk const-correct
+
+ -- David Robillard <d@drobilla.net>  Sat, 19 Jan 2019 12:31:12 +0000
+
 serd (0.30.3) unstable;
 
   * Fix EOF handling while reading in bulk or from strings
