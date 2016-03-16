@@ -395,10 +395,7 @@ is_windows_path(const uint8_t* path)
 /* String utilities */
 
 size_t
-serd_substrlen(const uint8_t* str,
-               size_t         len,
-               size_t*        n_bytes,
-               SerdNodeFlags* flags);
+serd_substrlen(const uint8_t* str, size_t len, SerdNodeFlags* flags);
 
 static inline int
 serd_strncasecmp(const char* s1, const char* s2, size_t n)

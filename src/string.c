@@ -56,46 +56,32 @@ serd_update_flags(const uint8_t c, SerdNodeFlags* const flags)
 size_t
 serd_substrlen(const uint8_t* const str,
                const size_t         len,
-               size_t* const        n_bytes,
                SerdNodeFlags* const flags)
 {
-	size_t        n_chars = 0;
-	size_t        i       = 0;
-	SerdNodeFlags f       = 0;
+	assert(flags);
+
+	size_t i = 0;
+	*flags = 0;
 	for (; i < len && str[i]; ++i) {
-		if ((str[i] & 0xC0) != 0x80) {  // Start of new character
-			++n_chars;
-			serd_update_flags(str[i], &f);
-		}
+		serd_update_flags(str[i], flags);
 	}
-	if (n_bytes) {
-		*n_bytes = i;
-	}
-	if (flags) {
-		*flags = f;
-	}
-	return n_chars;
+
+	return i;
 }
 
 size_t
-serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags)
+serd_strlen(const uint8_t* str, SerdNodeFlags* flags)
 {
-	size_t        n_chars = 0;
-	size_t        i       = 0;
-	SerdNodeFlags f       = 0;
-	for (; str[i]; ++i) {
-		if ((str[i] & 0xC0) != 0x80) {  // Start of new character
-			++n_chars;
-			serd_update_flags(str[i], &f);
-		}
-	}
-	if (n_bytes) {
-		*n_bytes = i;
-	}
 	if (flags) {
-		*flags = f;
+		size_t i = 0;
+		*flags = 0;
+		for (; str[i]; ++i) {
+			serd_update_flags(str[i], flags);
+		}
+		return i;
 	}
-	return n_chars;
+
+	return strlen((const char*)str);
 }
 
 static inline double
