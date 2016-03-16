@@ -161,7 +161,6 @@ copy_node(SerdNode* const dst, const SerdNode* const src)
   if (new_buf) {
     dst->buf     = new_buf;
     dst->n_bytes = src->n_bytes;
-    dst->n_chars = src->n_chars;
     dst->flags   = src->flags;
     dst->type    = src->type;
     memcpy((char*)dst->buf, src->buf, new_size);
