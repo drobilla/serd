@@ -11,12 +11,9 @@
 
 #include <assert.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define USTR(s) ((const uint8_t*)(s))
 
 typedef struct {
   int n_base;
@@ -91,7 +88,7 @@ test_null_callbacks(void)
   assert(!serd_reader_get_handle(reader));
 
   const SerdStatus st =
-    serd_reader_read_string(reader, USTR("_:s <http://example.org/p> _:o ."));
+    serd_reader_read_string(reader, "_:s <http://example.org/p> _:o .");
 
   assert(!st);
   serd_reader_free(reader);
@@ -108,10 +105,10 @@ test_read_string(void)
   assert(serd_reader_get_handle(reader) == &rt);
 
   // Test reading a string that ends exactly at the end of input (no newline)
-  const SerdStatus st = serd_reader_read_string(
-    reader,
-    USTR("<http://example.org/s> <http://example.org/p> "
-         "<http://example.org/o> ."));
+  const SerdStatus st =
+    serd_reader_read_string(reader,
+                            "<http://example.org/s> <http://example.org/p> "
+                            "<http://example.org/o> .");
 
   assert(!st);
   assert(rt.n_base == 0);
@@ -185,14 +182,14 @@ test_read_eof_file(const char* const path)
     SERD_TURTLE, &rt, NULL, base_sink, prefix_sink, statement_sink, end_sink);
 
   fseek(f, 0L, SEEK_SET);
-  serd_reader_start_stream(reader, f, (const uint8_t*)"test", true);
+  serd_reader_start_stream(reader, f, "test", true);
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   serd_reader_end_stream(reader);
 
   fseek(f, 0L, SEEK_SET);
-  serd_reader_start_stream(reader, f, (const uint8_t*)"test", false);
+  serd_reader_start_stream(reader, f, "test", false);
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
@@ -211,12 +208,8 @@ test_read_eof_by_byte(void)
     SERD_TURTLE, &rt, NULL, base_sink, prefix_sink, statement_sink, end_sink);
 
   size_t n_reads = 0U;
-  serd_reader_start_source_stream(reader,
-                                  eof_test_read,
-                                  eof_test_error,
-                                  &n_reads,
-                                  (const uint8_t*)"test",
-                                  1U);
+  serd_reader_start_source_stream(
+    reader, eof_test_read, eof_test_error, &n_reads, "test", 1U);
 
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
