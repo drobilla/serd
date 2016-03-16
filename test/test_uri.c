@@ -157,7 +157,7 @@ test_uri_from_string(void)
 }
 
 static bool
-chunk_equals(const SerdChunk* const a, const SerdChunk* const b)
+chunk_equals(const SerdStringView* const a, const SerdStringView* const b)
 {
   return (!a->len && !b->len && !a->buf && !b->buf) ||
          (a->len && b->len && a->buf && b->buf &&

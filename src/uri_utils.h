@@ -16,7 +16,7 @@ typedef struct {
 } SlashIndexes;
 
 static inline bool
-chunk_equals(const SerdChunk* const a, const SerdChunk* const b)
+slice_equals(const SerdStringView* const a, const SerdStringView* const b)
 {
   return a->len == b->len && !strncmp(a->buf, b->buf, a->len);
 }
@@ -51,8 +51,8 @@ uri_rooted_index(const SerdURI* const uri, const SerdURI* const root)
   SlashIndexes indexes = {SIZE_MAX, SIZE_MAX};
 
   if (!root || !root->scheme.len ||
-      !chunk_equals(&root->scheme, &uri->scheme) ||
-      !chunk_equals(&root->authority, &uri->authority)) {
+      !slice_equals(&root->scheme, &uri->scheme) ||
+      !slice_equals(&root->authority, &uri->authority)) {
     return indexes;
   }
 

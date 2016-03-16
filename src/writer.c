@@ -751,8 +751,8 @@ get_xsd_name(const SerdEnv* const env, const SerdNode* const datatype)
   }
 
   if (datatype->type == SERD_CURIE) {
-    SerdChunk prefix = {NULL, 0};
-    SerdChunk suffix = {NULL, 0};
+    SerdStringView prefix = {NULL, 0};
+    SerdStringView suffix = {NULL, 0};
     // We can be a bit lazy/presumptive here due to grammar limitations
     if (!serd_env_expand(env, datatype, &prefix, &suffix)) {
       if (!strcmp(prefix.buf, NS_XSD)) {
@@ -804,9 +804,9 @@ write_IRIREF(SerdWriter* const writer, const SerdNode* const node)
 SERD_NODISCARD static SerdStatus
 write_uri_node(SerdWriter* const writer, const SerdNode* const node)
 {
-  SerdStatus st     = SERD_SUCCESS;
-  SerdNode   prefix = SERD_NODE_NULL;
-  SerdChunk  suffix = {NULL, 0U};
+  SerdStatus     st = SERD_SUCCESS;
+  SerdNode       prefix;
+  SerdStringView suffix;
 
   const bool has_scheme = serd_uri_string_has_scheme(node->buf);
   if (supports_abbrev(writer)) {
@@ -837,9 +837,9 @@ write_uri_node(SerdWriter* const writer, const SerdNode* const node)
 SERD_NODISCARD static SerdStatus
 write_curie(SerdWriter* const writer, const SerdNode* const node)
 {
-  SerdChunk  prefix = {NULL, 0};
-  SerdChunk  suffix = {NULL, 0};
-  SerdStatus st     = SERD_SUCCESS;
+  SerdStringView prefix = {NULL, 0};
+  SerdStringView suffix = {NULL, 0};
+  SerdStatus     st     = SERD_SUCCESS;
 
   // In fast-and-loose Turtle/TriG mode CURIEs are simply passed through
   const bool fast =
