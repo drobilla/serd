@@ -718,9 +718,9 @@ write_uri_node(SerdWriter* const writer,
                const SerdNode*   node,
                const Field       field)
 {
-  SerdStatus st     = SERD_SUCCESS;
-  SerdNode   prefix = SERD_NODE_NULL;
-  SerdChunk  suffix = {NULL, 0U};
+  SerdStatus     st = SERD_SUCCESS;
+  SerdNode       prefix;
+  SerdStringView suffix;
 
   const bool has_scheme = serd_uri_string_has_scheme(node->buf);
   if (supports_abbrev(writer)) {
@@ -781,9 +781,9 @@ write_uri_node(SerdWriter* const writer,
 SERD_NODISCARD static SerdStatus
 write_curie(SerdWriter* const writer, const SerdNode* const node)
 {
-  SerdChunk  prefix = {NULL, 0};
-  SerdChunk  suffix = {NULL, 0};
-  SerdStatus st     = SERD_SUCCESS;
+  SerdStringView prefix = {NULL, 0};
+  SerdStringView suffix = {NULL, 0};
+  SerdStatus     st     = SERD_SUCCESS;
 
   // In fast-and-loose Turtle/TriG mode CURIEs are simply passed through
   const bool fast =
