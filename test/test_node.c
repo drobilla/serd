@@ -99,7 +99,7 @@ test_double_to_node(void)
                         : ((const char*)node.buf == dbl_test_strs[i]);
     assert(pass);
     const size_t len = node.buf ? strlen((const char*)node.buf) : 0;
-    assert(node.n_bytes == len && node.n_chars == len);
+    assert(node.n_bytes == len);
     serd_node_free(&node);
   }
 }
@@ -116,7 +116,7 @@ test_integer_to_node(void)
     SerdNode node = serd_node_new_integer(int_test_nums[i]);
     assert(!strcmp((const char*)node.buf, (const char*)int_test_strs[i]));
     const size_t len = strlen((const char*)node.buf);
-    assert(node.n_bytes == len && node.n_chars == len);
+    assert(node.n_bytes == len);
     serd_node_free(&node);
   }
 }
@@ -132,7 +132,6 @@ test_blob_to_node(void)
 
     SerdNode blob = serd_node_new_blob(data, size, size % 5);
 
-    assert(blob.n_bytes == blob.n_chars);
     assert(blob.n_bytes == strlen((const char*)blob.buf));
 
     size_t   out_size = 0;
@@ -172,8 +171,7 @@ test_node_from_string(void)
   SerdNode node =
     serd_node_from_string(SERD_LITERAL, (const uint8_t*)"hello\"");
 
-  assert(node.n_bytes == 6 && node.n_chars == 6 &&
-         node.flags == SERD_HAS_QUOTE &&
+  assert(node.n_bytes == 6 && node.flags == SERD_HAS_QUOTE &&
          !strcmp((const char*)node.buf, "hello\""));
 
   node = serd_node_from_string(SERD_URI, NULL);
@@ -184,15 +182,14 @@ static void
 test_node_from_substring(void)
 {
   SerdNode empty = serd_node_from_substring(SERD_LITERAL, NULL, 32);
-  assert(!empty.buf && !empty.n_bytes && !empty.n_chars && !empty.flags &&
-         !empty.type);
+  assert(!empty.buf && !empty.n_bytes && !empty.flags && !empty.type);
 
   SerdNode a_b = serd_node_from_substring(SERD_LITERAL, USTR("a\"bc"), 3);
-  assert(a_b.n_bytes == 3 && a_b.n_chars == 3 && a_b.flags == SERD_HAS_QUOTE &&
+  assert(a_b.n_bytes == 3 && a_b.flags == SERD_HAS_QUOTE &&
          !strncmp((const char*)a_b.buf, "a\"b", 3));
 
   a_b = serd_node_from_substring(SERD_LITERAL, USTR("a\"bc"), 10);
-  assert(a_b.n_bytes == 4 && a_b.n_chars == 4 && a_b.flags == SERD_HAS_QUOTE &&
+  assert(a_b.n_bytes == 4 && a_b.flags == SERD_HAS_QUOTE &&
          !strncmp((const char*)a_b.buf, "a\"bc", 4));
 }
 
