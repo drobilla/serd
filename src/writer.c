@@ -568,8 +568,8 @@ write_uri_node(SerdWriter* const        writer,
                const Field              field,
                const SerdStatementFlags flags)
 {
-  SerdNode  prefix;
-  SerdChunk suffix;
+  SerdNode       prefix;
+  SerdStringView suffix;
 
   if (is_inline_start(writer, field, flags)) {
     ++writer->indent;
@@ -581,10 +581,6 @@ write_uri_node(SerdWriter* const        writer,
   if (supports_abbrev(writer)) {
     if (field == FIELD_PREDICATE && !strcmp(node->buf, NS_RDF "type")) {
       return sink("a", 1, writer) == 1;
-    }
-
-    if (!strcmp(node->buf, NS_RDF "nil")) {
-      return sink("()", 2, writer) == 2;
     }
 
     if (has_scheme && (writer->style & SERD_STYLE_CURIED) &&
@@ -640,10 +636,9 @@ write_curie(SerdWriter* const        writer,
             const Field              field,
             const SerdStatementFlags flags)
 {
-  SerdChunk  prefix = {NULL, 0};
-  SerdChunk  suffix = {NULL, 0};
-  SerdStatus st     = SERD_SUCCESS;
-
+  SerdStringView prefix = {NULL, 0};
+  SerdStringView suffix = {NULL, 0};
+  SerdStatus     st     = SERD_SUCCESS;
   switch (writer->syntax) {
   case SERD_NTRIPLES:
   case SERD_NQUADS:
@@ -669,7 +664,6 @@ write_curie(SerdWriter* const        writer,
       write_newline(writer);
     }
   }
-
   return true;
 }
 

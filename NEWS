@@ -3,6 +3,7 @@ serd (1.0.1) unstable;
   * Add SerdBuffer for mutable buffers to keep SerdChunk const-correct
   * Remove serd_uri_to_path()
   * Remove useless character counting from API
+  * Rename SerdChunk to SerdStringView
   * Use char* for strings in public API
 
  -- David Robillard <d@drobilla.net>  Wed, 13 Jan 2021 13:29:44 +0000
