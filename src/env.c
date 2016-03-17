@@ -245,7 +245,7 @@ serd_env_expand_node(const SerdEnv*  env,
 		}
 		const size_t len = prefix.len + suffix.len;
 		char*        buf = (char*)malloc(len + 1);
-		SerdNode     ret = { buf, len, 0, SERD_URI };
+		SerdNode     ret = { buf, len, 0, SERD_URI, serd_new_node_impl(buf) };
 		snprintf((char*)buf, ret.n_bytes + 1, "%s%s", prefix.buf, suffix.buf);
 		return ret;
 	}

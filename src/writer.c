@@ -31,9 +31,9 @@ typedef struct {
 } WriteContext;
 
 static const WriteContext WRITE_CONTEXT_NULL = {
-	{ 0, 0, 0, SERD_NOTHING },
-	{ 0, 0, 0, SERD_NOTHING },
-	{ 0, 0, 0, SERD_NOTHING }
+	{ 0, 0, 0, SERD_NOTHING, NULL },
+	{ 0, 0, 0, SERD_NOTHING, NULL },
+	{ 0, 0, 0, SERD_NOTHING, NULL }
 };
 
 typedef enum {
@@ -129,11 +129,16 @@ static void
 copy_node(SerdNode* dst, const SerdNode* src)
 {
 	if (src) {
-		dst->buf = (char*)realloc((char*)dst->buf, src->n_bytes + 1);
-		dst->n_bytes = src->n_bytes;
-		dst->flags   = src->flags;
-		dst->type    = src->type;
-		memcpy((char*)dst->buf, src->buf, src->n_bytes + 1);
+		if (!dst->impl) {
+			dst->impl = serd_new_node_impl((char*)malloc(src->n_bytes + 1));
+		} else {
+			dst->impl->buf = realloc(dst->impl->buf, src->n_bytes + 1);
+		}
+		dst->buf       = dst->impl->buf;
+		dst->n_bytes   = src->n_bytes;
+		dst->flags     = src->flags;
+		dst->type      = src->type;
+		memcpy(dst->impl->buf, src->buf, src->n_bytes + 1);
 	} else {
 		dst->type = SERD_NOTHING;
 	}

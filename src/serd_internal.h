@@ -38,6 +38,18 @@
 #    define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
+struct SerdNodeImpl {
+	char* buf;  ///< Dynamically allocated buffer
+};
+
+static inline SerdNodeImpl*
+serd_new_node_impl(char* buf)
+{
+	SerdNodeImpl* impl = (SerdNodeImpl*)malloc(sizeof(SerdNodeImpl));
+	impl->buf = buf;
+	return impl;
+}
+
 /* File and Buffer Utilities */
 
 static inline FILE*

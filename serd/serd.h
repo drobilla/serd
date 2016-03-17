@@ -82,6 +82,11 @@ typedef struct SerdReaderImpl SerdReader;
 typedef struct SerdWriterImpl SerdWriter;
 
 /**
+   Private implementation of a SerdNode.
+*/
+typedef struct SerdNodeImpl SerdNodeImpl;
+
+/**
    Return status code.
 */
 typedef enum {
@@ -204,10 +209,11 @@ typedef uint32_t SerdNodeFlags;
    A syntactic RDF node.
 */
 typedef struct {
-	const char*    buf;      /**< Value string */
-	size_t         n_bytes;  /**< Size in bytes (not including null) */
-	SerdNodeFlags  flags;    /**< Node flags (e.g. string properties) */
-	SerdType       type;     /**< Node type */
+	const char*   buf;      /**< Value string */
+	size_t        n_bytes;  /**< Size in bytes (not including null) */
+	SerdNodeFlags flags;    /**< Node flags (e.g. string properties) */
+	SerdType      type;     /**< Node type */
+	SerdNodeImpl* impl;     /**< Private implementation (possibly NULL). */
 } SerdNode;
 
 /**
@@ -404,7 +410,7 @@ serd_uri_serialise_relative(const SerdURI* uri,
    @{
 */
 
-static const SerdNode SERD_NODE_NULL = { NULL, 0, 0, SERD_NOTHING };
+static const SerdNode SERD_NODE_NULL = { NULL, 0, 0, SERD_NOTHING, NULL };
 
 /**
    Make a (shallow) node from `str`.

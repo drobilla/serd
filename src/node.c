@@ -37,7 +37,7 @@ serd_node_from_string(SerdType type, const char* buf)
 
 	uint32_t     flags   = 0;
 	const size_t n_bytes = serd_strlen(buf, &flags);
-	SerdNode ret = { buf, n_bytes, flags, type };
+	SerdNode     ret     = { buf, n_bytes, flags, type, NULL };
 	return ret;
 }
 
@@ -50,9 +50,10 @@ serd_node_copy(const SerdNode* node)
 	}
 
 	SerdNode copy = *node;
-	char* buf  = (char*)malloc(copy.n_bytes + 1);
+	char*    buf  = (char*)malloc(copy.n_bytes + 1);
 	memcpy(buf, node->buf, copy.n_bytes + 1);
-	copy.buf = buf;
+	copy.buf  = buf;
+	copy.impl = serd_new_node_impl(buf);
 	return copy;
 }
 
@@ -181,7 +182,9 @@ serd_node_new_file_uri(const char* path,
 		serd_uri_parse(buffer.buf, out);
 	}
 
-	return serd_node_from_string(SERD_URI, buffer.buf);
+	SerdNode node = serd_node_from_string(SERD_URI, buffer.buf);
+	node.impl = serd_new_node_impl(buffer.buf);
+	return node;
 }
 
 SERD_API
@@ -195,7 +198,7 @@ serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)
 
 	const size_t len        = serd_uri_string_length(&abs_uri);
 	char*        buf        = (char*)malloc(len + 1);
-	SerdNode     node       = { buf, len, 0, SERD_URI };
+	SerdNode     node       = { buf, len, 0, SERD_URI, serd_new_node_impl(buf) };
 	char*        ptr        = buf;
 	const size_t actual_len = serd_uri_serialise(&abs_uri, string_sink, &ptr);
 
@@ -252,7 +255,7 @@ serd_node_new_decimal(double d, unsigned frac_digits)
 	const double   abs_d      = fabs(d);
 	const unsigned int_digits = serd_digits(abs_d);
 	char*          buf        = (char*)calloc(int_digits + frac_digits + 3, 1);
-	SerdNode       node       = { buf, 0, 0, SERD_LITERAL };
+	SerdNode       node       = { buf, 0, 0, SERD_LITERAL, serd_new_node_impl(buf) };
 	const double   int_part   = floor(abs_d);
 
 	// Point s to decimal point location
@@ -268,6 +271,7 @@ serd_node_new_decimal(double d, unsigned frac_digits)
 	do {
 		*t-- = '0' + (dec % 10);
 	} while ((dec /= 10) > 0);
+
 
 	*s++ = '.';
 
@@ -303,7 +307,7 @@ serd_node_new_integer(int64_t i)
 	int64_t        abs_i  = (i < 0) ? -i : i;
 	const unsigned digits = serd_digits(abs_i);
 	char*          buf    = (char*)calloc(digits + 2, 1);
-	SerdNode       node   = { (const char*)buf, 0, 0, SERD_LITERAL };
+	SerdNode       node   = { buf, 0, 0, SERD_LITERAL, serd_new_node_impl(buf) };
 
 	// Point s to the end
 	char* s = buf + digits - 1;
@@ -349,7 +353,7 @@ serd_node_new_blob(const void* buf, size_t size, bool wrap_lines)
 {
 	const size_t len  = ((size + 2) / 3) * 4 + (wrap_lines ? (size / 57) : 0);
 	uint8_t*     str  = (uint8_t*)calloc(1, len + 2);
-	SerdNode     node = { (const char*)str, len, 0, SERD_LITERAL };
+	SerdNode     node = { (const char*)str, len, 0, SERD_LITERAL, serd_new_node_impl((char*)str) };
 	for (size_t i = 0, j = 0; i < size; i += 3, j += 4) {
 		uint8_t in[4] = { 0, 0, 0, 0 };
 		size_t  n_in  = MIN(3, size - i);
@@ -369,8 +373,10 @@ SERD_API
 void
 serd_node_free(SerdNode* node)
 {
-	if (node && node->buf) {
-		free((char*)node->buf);
-		node->buf = NULL;
+	if (node && node->impl) {
+		free(node->impl->buf);
+		free(node->impl);
+
+		*node = SERD_NODE_NULL;
 	}
 }

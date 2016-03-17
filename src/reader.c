@@ -1028,8 +1028,9 @@ read_BLANK_NODE_LABEL(SerdReader* reader, bool* ate_dot)
 		}
 	}
 
-	SerdNode* n = deref(reader, ref);
-	if (n->buf[n->n_bytes - 1] == '.' && !read_PN_CHARS(reader, ref)) {
+	SerdNode* n   = deref(reader, ref);
+	char*     buf = (char*)(n + 1);
+	if (buf[n->n_bytes - 1] == '.' && !read_PN_CHARS(reader, ref)) {
 		// Ate trailing dot, pop it from stack/node and inform caller
 		--n->n_bytes;
 		serd_stack_pop(&reader->stack, 1);
@@ -1037,12 +1038,12 @@ read_BLANK_NODE_LABEL(SerdReader* reader, bool* ate_dot)
 	}
 
 	if (reader->syntax == SERD_TURTLE) {
-		if (is_digit(n->buf[reader->bprefix_len + 1])) {
-			if ((n->buf[reader->bprefix_len]) == 'b') {
-				((char*)n->buf)[reader->bprefix_len] = 'B';  // Prevent clash
+		if (is_digit(buf[reader->bprefix_len + 1])) {
+			if ((buf[reader->bprefix_len]) == 'b') {
+				buf[reader->bprefix_len] = 'B';  // Prevent clash
 				reader->seen_genid = true;
 			} else if (reader->seen_genid &&
-			           n->buf[reader->bprefix_len] == 'B') {
+			           buf[reader->bprefix_len] == 'B') {
 				r_err(reader, SERD_ERR_ID_CLASH,
 				      "found both `b' and `B' blank IDs, prefix required\n");
 				return pop_node(reader, ref);
@@ -1056,9 +1057,9 @@ static void
 set_blank_id(SerdReader* reader, Ref ref, size_t buf_size)
 {
 	SerdNode*   node   = deref(reader, ref);
+	char*       buf    = (char*)(node + 1);
 	const char* prefix = reader->bprefix ? reader->bprefix : "";
-	node->n_bytes = snprintf(
-		(char*)node->buf, buf_size, "%sb%u", prefix, reader->next_id++);
+	node->n_bytes = snprintf(buf, buf_size, "%sb%u", prefix, reader->next_id++);
 }
 
 static size_t
