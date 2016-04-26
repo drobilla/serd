@@ -290,6 +290,18 @@ def earl_assertion(test, passed, asserter):
        passed_str,
        datetime.datetime.now().replace(microsecond=0).isoformat())
 
+def check_output(out_filename, check_filename, subst_from='', subst_to=''):
+    if not os.access(out_filename, os.F_OK):
+        Logs.pprint('RED', 'FAIL: output %s is missing' % out_filename)
+    elif not file_equals(check_filename, out_filename, subst_from, subst_to):
+        Logs.pprint('RED', 'FAIL: %s != %s' % (os.path.abspath(out_filename),
+                                               check_filename))
+    else:
+        Logs.pprint('GREEN', '** Pass %s' % out_filename)
+        return True
+
+    return False
+
 def test_thru(ctx, base, path, check_filename, flags):
     in_filename = os.path.join(ctx.path.abspath(), path);
     out_filename = path + '.thru'
@@ -300,20 +312,10 @@ def test_thru(ctx, base, path, check_filename, flags):
         in_filename, base,
         'serdi_static', base, out_filename)
 
-    passed = autowaf.run_test(ctx, APPNAME, command, 0, name=out_filename)
-    if not passed:
-        Logs.pprint('RED', '** Failed command: %s' % command)
-        return False
-
-    if not os.access(out_filename, os.F_OK):
-        Logs.pprint('RED', 'FAIL: %s is missing' % out_filename)
-    elif not file_equals(check_filename, out_filename, '_:docid', '_:genid'):
-        Logs.pprint('RED', 'FAIL: %s != %s' % (out_filename, check_filename))
+    if autowaf.run_test(ctx, APPNAME, command, 0, name=out_filename):
+        check_output(out_filename, check_filename, '_:docid', '_:genid')
     else:
-        #Logs.pprint('GREEN', '** Pass %s == %s' % (out_filename, check_filename))
-        return True
-
-    return False
+        Logs.pprint('RED', 'FAIL: error running %s' % command)
 
 def test_manifest(ctx, srcdir, testdir, report, base_uri):
     import rdflib
@@ -340,57 +342,30 @@ def test_manifest(ctx, srcdir, testdir, report, base_uri):
         rel     = os.path.relpath(action, os.path.join(srcdir, 'tests', testdir))
         command = 'serdi_static -f "%s" "%s" > %s' % (action, base_uri + rel, output)
 
-        return autowaf.run_test(ctx, APPNAME, command, expected_return, name=name)
+        return autowaf.run_test(ctx, APPNAME, command, expected_return, name=str(action))
 
-    for i in sorted(model.triples([None, rdf.type, rdft.TestTurtlePositiveSyntax])):
-        test        = i[0]
-        name        = model.value(test, mf.name, None)
-        action_node = model.value(test, mf.action, None)[len(base_uri):]
+    def run_tests(test_class, expected_return, check_result=False):
+        for i in sorted(model.triples([None, rdf.type, test_class])):
+            test        = i[0]
+            name        = model.value(test, mf.name, None)
+            action_node = model.value(test, mf.action, None)[len(base_uri):]
+            passed      = run_test(action_node, expected_return)
 
-        passed = run_test(action_node, 0)
-        report.write(earl_assertion(test, passed, asserter))
+            if passed and check_result:
+                result_node = model.value(test, mf.result, None)[len(base_uri):]
+                action      = os.path.join('tests', testdir, action_node)
+                output      = action + '.out'
+                result      = os.path.join(srcdir, 'tests', testdir, result_node)
+                passed      = check_output(output, result)
 
-    for i in sorted(model.triples([None, rdf.type, rdft.TestTurtleNegativeSyntax])):
-        test        = i[0]
-        name        = model.value(test, mf.name, None)
-        action_node = model.value(test, mf.action, None)[len(base_uri):]
+                test_thru(ctx, base_uri + action_node, action, result, "")
 
-        passed = run_test(action_node, 1)
-        report.write(earl_assertion(test, passed, asserter))
+            report.write(earl_assertion(test, passed, asserter))
 
-    for i in sorted(model.triples([None, rdf.type, rdft.TestTurtleNegativeEval])):
-        test        = i[0]
-        name        = model.value(test, mf.name, None)
-        action_node = model.value(test, mf.action, None)[len(base_uri):]
-
-        passed = run_test(action_node, 1)
-        report.write(earl_assertion(test, passed, asserter))
-
-    for i in sorted(model.triples([None, rdf.type, rdft.TestTurtleEval])):
-        test        = i[0]
-        name        = model.value(test, mf.name, None)
-        action_node = model.value(test, mf.action, None)[len(base_uri):]
-        result_node = model.value(test, mf.result, None)[len(base_uri):]
-
-        passed = run_test(action_node, 0)
-
-        if passed:
-            action = os.path.join('tests', testdir, action_node)
-            output = action + '.out'
-            result = os.path.join(srcdir, 'tests', testdir, result_node)
-
-            if not os.access(output, os.F_OK):
-                passed = False
-                Logs.pprint('RED', 'FAIL: %s output %s is missing' % (name, output))
-            elif not file_equals(result, output):
-                passed = False
-                Logs.pprint('RED', 'FAIL: %s != %s' % (os.path.abspath(output), result))
-            else:
-                Logs.pprint('GREEN', '** Pass %s' % output)
-
-            test_thru(ctx, base_uri + action_node, action, result, "")
-
-        report.write(earl_assertion(test, passed, asserter))
+    run_tests(rdft.TestTurtlePositiveSyntax, 0)
+    run_tests(rdft.TestTurtleNegativeSyntax, 1)
+    run_tests(rdft.TestTurtleNegativeEval, 1)
+    run_tests(rdft.TestTurtleEval, 0, True)
 
 def test(ctx):
     blddir = autowaf.build_dir(APPNAME, 'tests')
@@ -478,12 +453,7 @@ def test(ctx):
             check_filename = os.path.join(
                 srcdir, 'tests', tdir, test.replace('.ttl', '.nt'))
             out_filename = os.path.join('tests', tdir, test + '.out')
-            if not os.access(out_filename, os.F_OK):
-                Logs.pprint('RED', 'FAIL: %s output is missing' % test)
-            elif not file_equals(check_filename, out_filename):
-                Logs.pprint('RED', 'FAIL: %s is incorrect' % out_filename)
-            else:
-                Logs.pprint('GREEN', 'Pass: %s' % test)
+            check_output(out_filename, check_filename);
 
     # Bad tests
     commands = []
