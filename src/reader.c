@@ -187,7 +187,7 @@ push_node_padded(SerdReader* reader, size_t maxlen,
 	node->type    = type;
 	node->buf     = NULL;
 
-	char* buf = (uint8_t*)(node + 1);
+	char* buf = (char*)(node + 1);
 	memcpy(buf, str, n_bytes + 1);
 
 #ifdef SERD_STACK_CHECK
