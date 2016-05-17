@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2015 David Robillard <http://drobilla.net>
+  Copyright 2011-2016 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -173,8 +173,8 @@ static Ref
 push_node_padded(SerdReader* reader, size_t maxlen,
                  SerdType type, const char* str, size_t n_bytes)
 {
-	uint8_t* mem = serd_stack_push(&reader->stack,
-	                               sizeof(SerdNode) + maxlen + 1);
+	void* mem = serd_stack_push_aligned(
+		&reader->stack, sizeof(SerdNode) + maxlen + 1, sizeof(SerdNode));
 
 	SerdNode* const node = (SerdNode*)mem;
 	node->n_bytes = node->n_chars = n_bytes;
@@ -182,13 +182,13 @@ push_node_padded(SerdReader* reader, size_t maxlen,
 	node->type    = type;
 	node->buf     = NULL;
 
-	uint8_t* buf = mem + sizeof(SerdNode);
+	uint8_t* buf = (uint8_t*)(node + 1);
 	memcpy(buf, str, n_bytes + 1);
 
 #ifdef SERD_STACK_CHECK
 	reader->allocs = realloc(
 		reader->allocs, sizeof(uint8_t*) * (++reader->n_allocs));
-	reader->allocs[reader->n_allocs - 1] = (mem - reader->stack.buf);
+	reader->allocs[reader->n_allocs - 1] = ((uint8_t*)mem - reader->stack.buf);
 #endif
 	return (uint8_t*)node - reader->stack.buf;
 }
@@ -243,7 +243,7 @@ pop_node(SerdReader* reader, Ref ref)
 #endif
 		SerdNode* const node = deref(reader, ref);
 		uint8_t* const  top  = reader->stack.buf + reader->stack.size;
-		serd_stack_pop(&reader->stack, top - (uint8_t*)node);
+		serd_stack_pop_aligned(&reader->stack, top - (uint8_t*)node);
 	}
 	return 0;
 }

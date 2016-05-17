@@ -1,10 +1,11 @@
 serd (0.22.3) unstable;
 
   * Fix potential out of bounds read
+  * Fix unaligned memory access, undefined behaviour which breaks on ARM
   * Fix documentation generation
   * Update serdi man page
 
- -- David Robillard <d@drobilla.net>  Tue, 15 Mar 2016 17:46:00 -0400
+ -- David Robillard <d@drobilla.net>  Tue, 17 May 2016 11:58:20 -0400
 
 serd (0.22.0) stable;
 
