@@ -87,6 +87,7 @@ struct SerdReaderImpl {
 	bool              paging;     ///< True iff reading a page at a time
 	bool              strict;     ///< True iff strict parsing
 	bool              eof;
+	bool              error;
 	bool              seen_genid;
 #ifdef SERD_STACK_CHECK
 	Ref*              allocs;     ///< Stack of push offsets
@@ -115,7 +116,13 @@ page(SerdReader* reader)
 	if (n_read == 0) {
 		reader->file_buf[0] = '\0';
 		reader->eof         = true;
-		return ferror(reader->fd) ? SERD_ERR_UNKNOWN : SERD_FAILURE;
+		if (ferror(reader->fd)) {
+			reader->error = true;
+			return r_err(reader, SERD_ERR_UNKNOWN,
+			             "read error: %s\n", strerror(errno));
+		} else {
+			return SERD_FAILURE;
+		}
 	} else if (n_read < SERD_PAGE_SIZE) {
 		reader->file_buf[n_read] = '\0';
 	}
@@ -1446,7 +1453,7 @@ read_statement(SerdReader* reader)
 	switch (peek_byte(reader)) {
 	case '\0':
 		reader->eof = true;
-		return true;
+		return !reader->error;
 	case '@':
 		TRY_RET(read_directive(reader));
 		read_ws_star(reader);
@@ -1472,7 +1479,7 @@ read_turtleDoc(SerdReader* reader)
 	while (!reader->eof) {
 		TRY_RET(read_statement(reader));
 	}
-	return true;
+	return !reader->error;
 }
 
 SERD_API

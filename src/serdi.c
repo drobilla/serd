@@ -252,15 +252,19 @@ main(int argc, char** argv)
 	}
 
 	serd_reader_free(reader);
+	serd_writer_finish(writer);
+	serd_writer_free(writer);
+	serd_env_free(env);
+	serd_node_free(&base);
 
 	if (from_file) {
 		fclose(in_fd);
 	}
 
-	serd_writer_finish(writer);
-	serd_writer_free(writer);
-	serd_env_free(env);
-	serd_node_free(&base);
+	if (fclose(out_fd)) {
+		perror("serdi: write error");
+		status = SERD_ERR_UNKNOWN;
+	}
 
 	return (status > SERD_FAILURE) ? 1 : 0;
 }

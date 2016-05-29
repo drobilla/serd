@@ -1,11 +1,12 @@
 serd (0.22.3) unstable;
 
+  * Report I/O errors with message and return appropriate status code
   * Fix potential out of bounds read
   * Fix unaligned memory access, undefined behaviour which breaks on ARM
   * Fix documentation generation
   * Update serdi man page
 
- -- David Robillard <d@drobilla.net>  Tue, 17 May 2016 11:58:20 -0400
+ -- David Robillard <d@drobilla.net>  Sun, 29 May 2016 18:33:41 -0400
 
 serd (0.22.0) stable;
 
