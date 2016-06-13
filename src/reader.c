@@ -1493,33 +1493,18 @@ serd_reader_new(SerdSyntax        syntax,
                 SerdEndSink       end_sink)
 {
 	const Cursor cur = { NULL, 0, 0 };
-	SerdReader*  me  = (SerdReader*)malloc(sizeof(struct SerdReaderImpl));
+	SerdReader*  me  = (SerdReader*)calloc(1, sizeof(SerdReader));
 	me->handle           = handle;
 	me->free_handle      = free_handle;
 	me->base_sink        = base_sink;
 	me->prefix_sink      = prefix_sink;
 	me->statement_sink   = statement_sink;
 	me->end_sink         = end_sink;
-	me->error_sink       = NULL;
-	me->error_handle     = NULL;
 	me->default_graph    = SERD_NODE_NULL;
-	me->fd               = 0;
 	me->stack            = serd_stack_new(SERD_PAGE_SIZE);
 	me->syntax           = syntax;
 	me->cur              = cur;
-	me->bprefix          = NULL;
-	me->bprefix_len      = 0;
 	me->next_id          = 1;
-	me->read_buf         = 0;
-	me->file_buf         = 0;
-	me->read_head        = 0;
-	me->strict           = false;
-	me->eof              = false;
-	me->seen_genid       = false;
-#ifdef SERD_STACK_CHECK
-	me->allocs           = 0;
-	me->n_allocs         = 0;
-#endif
 
 	me->rdf_first = push_node(me, SERD_URI, NS_RDF "first", 48);
 	me->rdf_rest  = push_node(me, SERD_URI, NS_RDF "rest", 47);

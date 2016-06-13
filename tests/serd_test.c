@@ -602,10 +602,7 @@ main(void)
 	// Rewind and test reader
 	fseek(fd, 0, SEEK_SET);
 
-	ReaderTest* rt   = (ReaderTest*)malloc(sizeof(ReaderTest));
-	rt->n_statements = 0;
-	rt->graph        = NULL;
-
+	ReaderTest* rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
 	SerdReader* reader = serd_reader_new(
 		SERD_TURTLE, rt, free,
 		NULL, NULL, test_sink, NULL);

@@ -799,7 +799,7 @@ serd_writer_new(SerdSyntax     syntax,
                 void*          stream)
 {
 	const WriteContext context = WRITE_CONTEXT_NULL;
-	SerdWriter*        writer  = (SerdWriter*)malloc(sizeof(SerdWriter));
+	SerdWriter*        writer  = (SerdWriter*)calloc(1, sizeof(SerdWriter));
 	writer->syntax       = syntax;
 	writer->style        = style;
 	writer->env          = env;
@@ -809,15 +809,8 @@ serd_writer_new(SerdSyntax     syntax,
 	writer->anon_stack   = serd_stack_new(sizeof(WriteContext));
 	writer->sink         = ssink;
 	writer->stream       = stream;
-	writer->error_sink   = NULL;
-	writer->error_handle = NULL;
 	writer->context      = context;
 	writer->list_subj    = SERD_NODE_NULL;
-	writer->list_depth   = 0;
-	writer->bprefix      = NULL;
-	writer->bprefix_len  = 0;
-	writer->indent       = 0;
-	writer->last_sep     = SEP_NONE;
 	writer->empty        = true;
 	if (style & SERD_STYLE_BULK) {
 		writer->bulk_sink = serd_bulk_sink_new(ssink, stream, SERD_PAGE_SIZE);
