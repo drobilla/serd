@@ -47,13 +47,18 @@ test_strtod(double dbl, double max_delta)
 	char buf[1024];
 	snprintf(buf, sizeof(buf), "%f", dbl);
 
-	char* endptr = NULL;
-	const double out = serd_strtod(buf, &endptr);
+	size_t       end = NULL;
+	const double out = serd_strtod(buf, &end);
 
 	const double diff = fabs(out - dbl);
 	if (diff > max_delta) {
 		return !failure("Parsed %lf != %lf (delta %lf)\n", dbl, out, diff);
 	}
+
+	if (end != strlen(buf)) {
+		return !failure("Parsed %lf length %zu != %zu\n", end, strlen(buf));
+	}
+
 	return true;
 }
 
