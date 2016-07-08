@@ -80,7 +80,7 @@ Ref
 push_node_padded(SerdReader* reader, size_t maxlen,
                  SerdType type, const char* str, size_t n_bytes)
 {
-	char* mem = (char*)serd_stack_push_aligned(
+	void* mem = serd_stack_push_aligned(
 		&reader->stack, sizeof(SerdNode) + maxlen + 1, sizeof(SerdNode));
 
 	SerdNode* const node = (SerdNode*)mem;

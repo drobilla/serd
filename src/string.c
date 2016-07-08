@@ -101,7 +101,7 @@ read_sign(const char** sptr)
 }
 
 double
-serd_strtod(const char* str, char** endptr)
+serd_strtod(const char* str, size_t* end)
 {
 	double result = 0.0;
 
@@ -137,8 +137,8 @@ serd_strtod(const char* str, char** endptr)
 		result *= pow(10, expt * expt_sign);
 	}
 
-	if (endptr) {
-		*endptr = (char*)s;
+	if (end) {
+		*end = s - str;
 	}
 
 	return result * sign;

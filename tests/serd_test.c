@@ -39,11 +39,12 @@ test_strtod(double dbl, double max_delta)
 	char buf[1024];
 	snprintf(buf, sizeof(buf), "%f", dbl);
 
-	char* endptr = NULL;
-	const double out = serd_strtod(buf, &endptr);
+	size_t       end = 0;
+	const double out = serd_strtod(buf, &end);
 
 	const double diff = fabs(out - dbl);
 	assert(diff <= max_delta);
+	assert(end == strlen(buf));
 }
 
 static SerdStatus

@@ -208,7 +208,7 @@ serd_stack_free(SerdStack* stack)
 	stack->size     = 0;
 }
 
-static inline char*
+static inline void*
 serd_stack_push(SerdStack* stack, size_t n_bytes)
 {
 	const size_t new_size = stack->size + n_bytes;

@@ -316,13 +316,15 @@ serd_strlen(const char* str, SerdNodeFlags* flags);
 /**
    Parse a string to a double.
 
-   The API of this function is identical to the standard C strtod function,
+   The API of this function is similar to the standard C strtod function,
    except this function is locale-independent and always matches the lexical
-   format used in the Turtle grammar (the decimal point is always ".").
+   format used in the Turtle grammar (the decimal point is always ".").  The
+   end parameter is an offset from the start of `str` to avoid the
+   const-correctness issues of the strtod API.
 */
 SERD_API
 double
-serd_strtod(const char* str, char** endptr);
+serd_strtod(const char* str, size_t* end);
 
 /**
    Decode a base64 string.

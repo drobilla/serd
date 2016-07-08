@@ -1,6 +1,7 @@
 serd (1.0.1) unstable;
 
   * Add SerdBuffer for mutable buffers to keep SerdChunk const-correct
+  * Make serd_strtod API const-correct
   * Remove useless character counting from API
   * Rename SerdChunk to SerdStringView
   * Use char* for strings in public API
