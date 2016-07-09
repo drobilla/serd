@@ -297,7 +297,6 @@ def check_output(out_filename, check_filename, subst_from='', subst_to=''):
         Logs.pprint('RED', 'FAIL: %s != %s' % (os.path.abspath(out_filename),
                                                check_filename))
     else:
-        Logs.pprint('GREEN', '** Pass %s' % out_filename)
         return True
 
     return False
@@ -313,7 +312,9 @@ def test_thru(ctx, base, path, check_filename, flags):
         'serdi_static', base, out_filename)
 
     if autowaf.run_test(ctx, APPNAME, command, 0, name=out_filename):
-        check_output(out_filename, check_filename, '_:docid', '_:genid')
+        autowaf.run_test(ctx, APPNAME,
+                         [out_filename + '.check', check_output(out_filename, check_filename, '_:docid', '_:genid')],
+                         1)
     else:
         Logs.pprint('RED', 'FAIL: error running %s' % command)
 
@@ -345,6 +346,7 @@ def test_manifest(ctx, srcdir, testdir, report, base_uri):
         return autowaf.run_test(ctx, APPNAME, command, expected_return, name=str(action))
 
     def run_tests(test_class, expected_return, check_result=False):
+        autowaf.begin_tests(ctx, APPNAME, str(test_class))
         for i in sorted(model.triples([None, rdf.type, test_class])):
             test        = i[0]
             name        = model.value(test, mf.name, None)
@@ -361,6 +363,7 @@ def test_manifest(ctx, srcdir, testdir, report, base_uri):
                 test_thru(ctx, base_uri + action_node, action, result, "")
 
             report.write(earl_assertion(test, passed, asserter))
+        autowaf.end_tests(ctx, APPNAME, str(test_class))
 
     run_tests(rdft.TestTurtlePositiveSyntax, 0)
     run_tests(rdft.TestTurtleNegativeSyntax, 1)
@@ -397,11 +400,11 @@ def test(ctx):
 
     os.environ['PATH'] = '.' + os.pathsep + os.getenv('PATH')
 
-    autowaf.run_tests(ctx, APPNAME, ['serd_test'], dirs=['.'])
+    autowaf.run_test(ctx, APPNAME, 'serd_test', dirs=['.'])
 
     autowaf.run_tests(ctx, APPNAME, [
-            'serdi_static -q -o turtle "%s/tests/good/base.ttl" "base.ttl" > tests/good/base.ttl.out' % srcdir],
-                      0, name='base')
+            'serdi_static -q -o turtle "%s/tests/good/base.ttl" "base.ttl" > tests/good/base.ttl.out' % srcdir
+    ], 0, name='base')
 
     if not file_equals('%s/tests/good/base.ttl' % srcdir, 'tests/good/base.ttl.out'):
         Logs.pprint('RED', 'FAIL: build/tests/base.ttl.out is incorrect')
@@ -413,19 +416,16 @@ def test(ctx):
             'serdi_static -v > %s' % nul,
             'serdi_static -h > %s' % nul,
             'serdi_static -s "<foo> a <#Thingie> ." > %s' % nul,
-            'serdi_static %s > %s' % (nul, nul)],
-                      0, name='serdi-cmd-good')
+            'serdi_static %s > %s' % (nul, nul)
+    ], 0, name='serdi-cmd-good')
 
-    # Test read error by reading a directory
-    autowaf.run_test(ctx, APPNAME,
-                     'serdi_static "file://%s/"' % srcdir,
-                     1, name='read_error')
+    autowaf.run_tests(ctx, APPNAME, [
+        # Test read error by reading a directory
+        'serdi_static "file://%s/"' % srcdir,
 
-    # Test write error by writing to /dev/full
-    if os.path.exists('/dev/full'):
-        autowaf.run_test(ctx, APPNAME,
-                         'serdi_static "file://%s/tests/good/manifest.ttl" > /dev/full' % srcdir,
-                         1, name='write_error')
+        # Test write error by writing to /dev/full
+        'serdi_static "file://%s/tests/good/manifest.ttl" > /dev/full' % srcdir
+    ], 1, name='io_errors')
 
     autowaf.run_tests(ctx, APPNAME, [
             'serdi_static -q "file://%s/tests/bad-id-clash.ttl" > %s' % (srcdir, nul),
@@ -459,12 +459,16 @@ def test(ctx):
 
         autowaf.run_tests(ctx, APPNAME, commands, 0, name=tdir)
 
-        Logs.pprint('BOLD', '\nVerifying turtle => ntriples')
+        verify_tests = []
         for test in tests:
             check_filename = os.path.join(
                 srcdir, 'tests', tdir, test.replace('.ttl', '.nt'))
             out_filename = os.path.join('tests', tdir, test + '.out')
-            check_output(out_filename, check_filename);
+            if check_output(out_filename, check_filename):
+                verify_tests += [[out_filename, 0]]
+            else:
+                verify_tests += [[out_filename, 1]]
+        autowaf.run_tests(ctx, APPNAME, verify_tests, name='verify_turtle_to_ntriples')
 
     # Bad tests
     commands = []
@@ -479,6 +483,7 @@ def test(ctx):
     good_tests['good'].remove('test-id.ttl')
 
     # Round-trip good tests
+    autowaf.begin_tests(ctx, APPNAME, 'round_trip_good')
     for tdir, tests in good_tests.items():
         thru_tests = tests;
 
@@ -499,6 +504,7 @@ def test(ctx):
             path  = os.path.join('tests', tdir, test)
             check = os.path.join(srcdir, path.replace('.ttl', '.nt'))
             test_thru(ctx, test_base(test), path, check, flags)
+    autowaf.end_tests(ctx, APPNAME, 'round_trip_good')
 
     # New manifest-driven tests
     try:
