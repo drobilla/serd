@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2014 David Robillard <http://drobilla.net>
+  Copyright 2011-2016 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -243,9 +243,9 @@ serd_env_expand_node(const SerdEnv*  env,
 		if (serd_env_expand(env, node, &prefix, &suffix)) {
 			return SERD_NODE_NULL;
 		}
-		const size_t len = prefix.len + suffix.len;  // FIXME: UTF-8?
+		const size_t len = prefix.len + suffix.len;
 		uint8_t*     buf = (uint8_t*)malloc(len + 1);
-		SerdNode     ret = { buf, len, len, 0, SERD_URI };
+		SerdNode     ret = { buf, len, serd_strlen(buf, NULL, NULL), 0, SERD_URI };
 		snprintf((char*)buf, ret.n_bytes + 1, "%s%s", prefix.buf, suffix.buf);
 		return ret;
 	}

@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2012 David Robillard <http://drobilla.net>
+  Copyright 2011-2016 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -40,24 +40,27 @@ SERD_API
 size_t
 serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags)
 {
-	size_t n_chars = 0;
-	size_t i       = 0;
-	*flags         = 0;
+	size_t        n_chars = 0;
+	size_t        i       = 0;
+	SerdNodeFlags f       = 0;
 	for (; str[i]; ++i) {
 		if ((str[i] & 0xC0) != 0x80) {
 			// Does not start with `10', start of a new character
 			++n_chars;
 			switch (str[i]) {
 			case '\r': case '\n':
-				*flags |= SERD_HAS_NEWLINE;
+				f |= SERD_HAS_NEWLINE;
 				break;
 			case '"':
-				*flags |= SERD_HAS_QUOTE;
+				f |= SERD_HAS_QUOTE;
 			}
 		}
 	}
 	if (n_bytes) {
 		*n_bytes = i;
+	}
+	if (flags) {
+		*flags = f;
 	}
 	return n_chars;
 }

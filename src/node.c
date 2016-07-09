@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2015 David Robillard <http://drobilla.net>
+  Copyright 2011-2016 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -197,17 +197,15 @@ serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)
 		serd_uri_resolve(uri, base, &abs_uri);
 	}
 
-	const size_t len = serd_uri_string_length(&abs_uri);
-	uint8_t*     buf = (uint8_t*)malloc(len + 1);
-
-	SerdNode node = { buf, len, len, 0, SERD_URI };  // FIXME: UTF-8
-
+	const size_t len        = serd_uri_string_length(&abs_uri);
+	uint8_t*     buf        = (uint8_t*)malloc(len + 1);
+	SerdNode     node       = { buf, 0, 0, 0, SERD_URI };
 	uint8_t*     ptr        = buf;
 	const size_t actual_len = serd_uri_serialise(&abs_uri, string_sink, &ptr);
 
 	buf[actual_len] = '\0';
 	node.n_bytes    = actual_len;
-	node.n_chars    = actual_len;
+	node.n_chars    = serd_strlen(buf, NULL, NULL);
 
 	if (out) {
 		serd_uri_parse(buf, out);  // TODO: cleverly avoid double parse
