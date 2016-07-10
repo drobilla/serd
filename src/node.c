@@ -114,12 +114,10 @@ serd_node_new_uri_from_string(const uint8_t* str,
                               SerdURI*       out)
 {
 	if (!str || str[0] == '\0') {
-		if (base) {
-			return serd_node_new_uri(base, NULL, out);  // Empty URI => Base
-		} else {
-			return SERD_NODE_NULL;  // Nonsense
-		}
+		// Empty URI => Base URI, or nothing if no base is given
+		return base ? serd_node_new_uri(base, NULL, out) : SERD_NODE_NULL;
 	}
+
 	SerdURI uri;
 	serd_uri_parse(str, &uri);
 	return serd_node_new_uri(&uri, base, out);  // Resolve/Serialise
