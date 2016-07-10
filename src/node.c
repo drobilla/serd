@@ -212,6 +212,32 @@ serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)
 	return node;
 }
 
+SERD_API
+SerdNode
+serd_node_new_relative_uri(const SerdURI* uri,
+                           const SerdURI* base,
+                           const SerdURI* root,
+                           SerdURI*       out)
+{
+	const size_t uri_len  = serd_uri_string_length(uri);
+	const size_t base_len = serd_uri_string_length(base);
+	uint8_t*     buf        = (uint8_t*)malloc(uri_len + base_len + 1);
+	SerdNode     node       = { buf, 0, 0, 0, SERD_URI };
+	uint8_t*     ptr        = buf;
+	const size_t actual_len = serd_uri_serialise_relative(
+		uri, base, root, string_sink, &ptr);
+
+	buf[actual_len] = '\0';
+	node.n_bytes    = actual_len;
+	node.n_chars    = serd_strlen(buf, NULL, NULL);
+
+	if (out) {
+		serd_uri_parse(buf, out);  // TODO: cleverly avoid double parse
+	}
+
+	return node;
+}
+
 static inline unsigned
 serd_digits(double abs)
 {

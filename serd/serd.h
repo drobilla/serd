@@ -463,7 +463,7 @@ serd_node_new_file_uri(const uint8_t* path,
 /**
    Create a new node by serialising `uri` into a new string.
 
-   @param uri The URI to parse and serialise.
+   @param uri The URI to serialise.
 
    @param base Base URI to resolve `uri` against (or NULL for no resolution).
 
@@ -473,6 +473,25 @@ serd_node_new_file_uri(const uint8_t* path,
 SERD_API
 SerdNode
 serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out);
+
+/**
+   Create a new node by serialising `uri` into a new relative URI.
+
+   @param uri The URI to serialise.
+
+   @param base Base URI to make `uri` relative to, if possible.
+
+   @param root Root URI for resolution (see serd_uri_serialise_relative()).
+
+   @param out Set to the parsing of the new URI (i.e. points only to
+   memory owned by the new returned node).
+*/
+SERD_API
+SerdNode
+serd_node_new_relative_uri(const SerdURI* uri,
+                           const SerdURI* base,
+                           const SerdURI* root,
+                           SerdURI*       out);
 
 /**
    Create a new node by serialising `d` into an xsd:decimal string.

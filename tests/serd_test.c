@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2015 David Robillard <http://drobilla.net>
+  Copyright 2011-2016 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -415,9 +415,21 @@ main(void)
 	    nil2.type != SERD_URI || strcmp((const char*)nil2.buf, (const char*)base.buf)) {
 		return failure("URI %s != base %s\n", nil.buf, base.buf);
 	}
-	serd_node_free(&base);
 	serd_node_free(&nil);
 	serd_node_free(&nil2);
+
+	// Test serd_node_new_relative_uri
+	SerdNode abs = serd_node_from_string(SERD_URI, USTR("http://example.org/foo/bar"));
+	SerdURI  abs_uri;
+	serd_uri_parse(abs.buf, &abs_uri);
+
+	SerdURI  rel_uri;
+	SerdNode rel = serd_node_new_relative_uri(&abs_uri, &base_uri, NULL, &rel_uri);
+	if (strcmp((const char*)rel.buf, "/foo/bar")) {
+		return failure("Bad relative URI %s (expected '/foo/bar')\n", rel.buf);
+	}
+
+	serd_node_free(&base);
 
 	// Test SerdEnv
 
