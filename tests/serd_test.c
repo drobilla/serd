@@ -429,6 +429,7 @@ main(void)
 		return failure("Bad relative URI %s (expected '/foo/bar')\n", rel.buf);
 	}
 
+	serd_node_free(&rel);
 	serd_node_free(&base);
 
 	// Test SerdEnv
