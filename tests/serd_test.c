@@ -47,7 +47,7 @@ test_strtod(double dbl, double max_delta)
 	char buf[1024];
 	snprintf(buf, sizeof(buf), "%f", dbl);
 
-	size_t       end = NULL;
+	size_t       end = 0;
 	const double out = serd_strtod(buf, &end);
 
 	const double diff = fabs(out - dbl);
