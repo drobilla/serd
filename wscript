@@ -22,13 +22,9 @@ out     = 'build'       # Build directory
 
 def options(opt):
     opt.load('compiler_c')
-    autowaf.set_options(opt)
+    autowaf.set_options(opt, test=True)
     opt.add_option('--no-utils', action='store_true', dest='no_utils',
                    help='Do not build command line utilities')
-    opt.add_option('--test', action='store_true', dest='build_tests',
-                   help='Build unit tests')
-    opt.add_option('--no-coverage', action='store_true', dest='no_coverage',
-                   help='Do not use gcov for code coverage')
     opt.add_option('--stack-check', action='store_true', dest='stack_check',
                    help='Include runtime stack sanity checks')
     opt.add_option('--static', action='store_true', dest='static',
@@ -48,7 +44,6 @@ def configure(conf):
     autowaf.display_header('Serd Configuration')
     autowaf.set_c99_mode(conf)
 
-    conf.env.BUILD_TESTS  = Options.options.build_tests
     conf.env.BUILD_UTILS  = not Options.options.no_utils
     conf.env.BUILD_SHARED = not Options.options.no_shared
     conf.env.STATIC_PROGS = Options.options.static_progs
@@ -63,9 +58,6 @@ def configure(conf):
 
     if Options.options.largefile:
         conf.env.append_unique('DEFINES', ['_FILE_OFFSET_BITS=64'])
-
-    if conf.env.BUILD_TESTS and not Options.options.no_coverage:
-        conf.check_cc(lib='gcov', define_name='HAVE_GCOV', mandatory=False)
 
     if not Options.options.no_posix:
         conf.check(function_name = 'posix_memalign',
@@ -148,11 +140,12 @@ def build(bld):
             defines         = defines + ['SERD_INTERNAL'])
 
     if bld.env.BUILD_TESTS:
-        test_libs   = libs
-        test_cflags = ['']
-        if bld.is_defined('HAVE_GCOV'):
-            test_libs   += ['gcov']
-            test_cflags += ['-fprofile-arcs', '-ftest-coverage']
+        test_libs       = libs
+        test_cflags     = ['']
+        test_linkflags  = ['']
+        if not bld.env.NO_COVERAGE:
+            test_cflags    += ['--coverage']
+            test_linkflags += ['--coverage']
 
         # Profiled static library for test coverage
         bld(features     = 'c cstlib',
@@ -163,7 +156,8 @@ def build(bld):
             target       = 'serd_profiled',
             install_path = '',
             defines      = defines + ['SERD_INTERNAL'],
-            cflags       = test_cflags)
+            cflags       = test_cflags,
+            linkflags    = test_linkflags)
 
         # Static profiled serdi for tests
         bld(features     = 'c cprogram',
@@ -174,7 +168,8 @@ def build(bld):
             target       = 'serdi_static',
             install_path = '',
             defines      = defines,
-            cflags       = test_cflags)
+            cflags       = test_cflags,
+            linkflags    = test_linkflags)
 
         # Unit test program
         bld(features     = 'c cprogram',
@@ -185,7 +180,8 @@ def build(bld):
             target       = 'serd_test',
             install_path = '',
             defines      = defines,
-            cflags       = test_cflags)
+            cflags       = test_cflags,
+            linkflags    = test_linkflags)
 
     # Utilities
     if bld.env.BUILD_UTILS:
