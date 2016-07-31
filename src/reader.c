@@ -118,8 +118,9 @@ page(SerdReader* reader)
 		reader->eof         = true;
 		if (ferror(reader->fd)) {
 			reader->error = true;
-			return r_err(reader, SERD_ERR_UNKNOWN,
-			             "read error: %s\n", strerror(errno));
+			r_err(reader, SERD_ERR_UNKNOWN,
+			      "read error: %s\n", strerror(errno));
+			return SERD_ERR_UNKNOWN;
 		} else {
 			return SERD_FAILURE;
 		}
