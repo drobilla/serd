@@ -23,8 +23,12 @@
 #include <float.h>
 
 #ifdef _WIN32
-#    define isnan(x) _isnan(x)
-#    define isinf(x) (!_finite(x))
+#    ifndef isnan
+#        define isnan(x) _isnan(x)
+#    endif
+#    ifndef isinf
+#        define isinf(x) (!_finite(x))
+#    endif
 #endif
 
 SERD_API
