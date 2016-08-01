@@ -63,19 +63,19 @@ def configure(conf):
         conf.check(function_name = 'posix_memalign',
                    header_name   = 'stdlib.h',
                    define_name   = 'HAVE_POSIX_MEMALIGN',
-                   defines       = ['_POSIX_C_SOURCE=201112L'],
+                   defines       = ['_POSIX_C_SOURCE=200809L'],
                    mandatory     = False)
 
         conf.check(function_name = 'posix_fadvise',
                    header_name   = 'fcntl.h',
                    define_name   = 'HAVE_POSIX_FADVISE',
-                   defines       = ['_POSIX_C_SOURCE=201112L'],
+                   defines       = ['_POSIX_C_SOURCE=200809L'],
                    mandatory     = False)
 
         conf.check(function_name = 'fileno',
                    header_name   = 'stdio.h',
                    define_name   = 'HAVE_FILENO',
-                   defines       = ['_POSIX_C_SOURCE=201112L'],
+                   defines       = ['_POSIX_C_SOURCE=200809L'],
                    mandatory     = False)
 
     autowaf.define(conf, 'SERD_VERSION', SERD_VERSION)

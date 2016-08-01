@@ -17,7 +17,7 @@
 #ifndef SERD_INTERNAL_H
 #define SERD_INTERNAL_H
 
-#define _POSIX_C_SOURCE 201112L /* for posix_memalign and posix_fadvise */
+#define _POSIX_C_SOURCE 200809L /* for posix_memalign and posix_fadvise */
 
 #include <assert.h>
 #include <errno.h>
