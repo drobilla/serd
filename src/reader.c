@@ -1245,6 +1245,7 @@ read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 			return true;
 		}
 
+		bool ate_semi = false;
 		do {
 			read_ws_star(reader);
 			switch (c = peek_byte(reader)) {
@@ -1254,8 +1255,13 @@ read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 				return true;
 			case ';':
 				eat_byte_safe(reader, c);
+				ate_semi = true;
 			}
 		} while (c == ';');
+
+		if (!ate_semi) {
+			return r_err(reader, SERD_ERR_BAD_SYNTAX, "missing ';' or '.'\n");
+		}
 	}
 
 	pop_node(reader, ctx.predicate);
