@@ -426,7 +426,7 @@ bool
 serd_node_equals(const SerdNode* a, const SerdNode* b);
 
 /**
-   Simple wrapper for serd_node_new_uri to resolve a URI node.
+   Simple wrapper for serd_node_new_uri() to resolve a URI node.
 */
 SERD_API
 SerdNode
@@ -435,7 +435,7 @@ serd_node_new_uri_from_node(const SerdNode* uri_node,
                             SerdURI*        out);
 
 /**
-   Simple wrapper for serd_node_new_uri to resolve a URI string.
+   Simple wrapper for serd_node_new_uri() to resolve a URI string.
 */
 SERD_API
 SerdNode
