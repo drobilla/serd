@@ -415,13 +415,15 @@ def test(ctx):
             'serdi_static %s > %s' % (nul, nul)
     ], 0, name='serdi-cmd-good')
 
-    autowaf.run_tests(ctx, APPNAME, [
-        # Test read error by reading a directory
-        'serdi_static "file://%s/"' % srcdir,
+    # Test read error by reading a directory
+    autowaf.run_test(ctx, APPNAME, 'serdi_static "file://%s/"' % srcdir,
+                     1, name='read_error')
 
-        # Test write error by writing to /dev/full
-        'serdi_static "file://%s/tests/good/manifest.ttl" > /dev/full' % srcdir
-    ], 1, name='io_errors')
+    # Test write error by writing to /dev/full
+    if os.path.exists('/dev/full'):
+        autowaf.run_test(ctx, APPNAME,
+                         'serdi_static "file://%s/tests/good/manifest.ttl" > /dev/full' % srcdir,
+                         1, name='write_error')
 
     autowaf.run_tests(ctx, APPNAME, [
             'serdi_static -q "file://%s/tests/bad-id-clash.ttl" > %s' % (srcdir, nul),
