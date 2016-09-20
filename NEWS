@@ -1,4 +1,4 @@
-serd (0.23.0) unstable;
+serd (0.24.0) stable;
 
   * Add serd_node_new_relative_uri()
   * Fix construction and comparison of URIs with UTF-8 characters
@@ -9,7 +9,7 @@ serd (0.23.0) unstable;
   * Fix documentation generation
   * Update serdi man page
 
- -- David Robillard <d@drobilla.net>  Tue, 09 Aug 2016 16:54:23 -0400
+ -- David Robillard <d@drobilla.net>  Mon, 19 Sep 2016 22:21:47 -0400
 
 serd (0.22.0) stable;
 
