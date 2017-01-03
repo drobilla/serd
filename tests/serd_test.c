@@ -332,6 +332,23 @@ main(void)
 	free(out_path);
 	serd_node_free(&file_node);
 
+	// File URI with space and no escaping
+	path_str  = USTR("a/relative path");
+	file_node = serd_node_new_file_uri(path_str, 0, 0, false);
+	out_path  = serd_file_uri_parse(file_node.buf, &hostname);
+	if (strcmp((const char*)file_node.buf, "a/relative path")) {
+		return failure("Bad URI %s\n", file_node.buf);
+	} else if (hostname) {
+		return failure("hostname `%s' shouldn't exist\n", hostname);
+	} else if (strcmp((const char*)path_str, (const char*)out_path)) {
+		return failure("path=>URI=>path failure %s => %s => %s\n",
+		               path_str, file_node.buf, out_path);
+	}
+	free(hostname);
+	free(out_path);
+	serd_node_free(&file_node);
+
+	// File URI with space and escaping
 	path_str  = USTR("a/relative path");
 	file_node = serd_node_new_file_uri(path_str, 0, 0, false);
 	out_path  = serd_file_uri_parse(file_node.buf, &hostname);
