@@ -1,3 +1,9 @@
+serd (0.25.0) unstable;
+
+  * Add support for NQuads
+
+ -- David Robillard <d@drobilla.net>  Thu, 05 Jan 2017 16:20:09 -0500
+
 serd (0.24.0) stable;
 
   * Add serd_node_new_relative_uri()

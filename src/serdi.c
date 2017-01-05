@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2016 David Robillard <http://drobilla.net>
+  Copyright 2011-2017 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -33,7 +33,7 @@ static int
 print_version(void)
 {
 	printf("serdi " SERD_VERSION " <http://drobilla.net/software/serd>\n");
-	printf("Copyright 2011-2016 David Robillard <http://drobilla.net>.\n"
+	printf("Copyright 2011-2017 David Robillard <http://drobilla.net>.\n"
 	       "License: <http://www.opensource.org/licenses/isc>\n"
 	       "This is free software; you are free to change and redistribute it."
 	       "\nThere is NO WARRANTY, to the extent permitted by law.\n");
@@ -53,9 +53,9 @@ print_usage(const char* name, bool error)
 	fprintf(os, "  -e           Eat input one character at a time.\n");
 	fprintf(os, "  -f           Keep full URIs in input (don't qualify).\n");
 	fprintf(os, "  -h           Display this help and exit.\n");
-	fprintf(os, "  -i SYNTAX    Input syntax (`turtle' or `ntriples').\n");
+	fprintf(os, "  -i SYNTAX    Input syntax (turtle, ntriples, or nquads).\n");
 	fprintf(os, "  -l           Lax (non-strict) parsing.\n");
-	fprintf(os, "  -o SYNTAX    Output syntax (`turtle' or `ntriples').\n");
+	fprintf(os, "  -o SYNTAX    Output syntax (turtle, ntriples, or nquads).\n");
 	fprintf(os, "  -p PREFIX    Add PREFIX to blank node IDs.\n");
 	fprintf(os, "  -q           Suppress all output except data.\n");
 	fprintf(os, "  -r ROOT_URI  Keep relative URIs within ROOT_URI.\n");
@@ -71,6 +71,8 @@ set_syntax(SerdSyntax* syntax, const char* name)
 		*syntax = SERD_TURTLE;
 	} else if (!strcmp(name, "ntriples")) {
 		*syntax = SERD_NTRIPLES;
+	} else if (!strcmp(name, "nquads")) {
+		*syntax = SERD_NQUADS;
 	} else {
 		SERDI_ERRORF("unknown syntax `%s'\n", name);
 		return false;

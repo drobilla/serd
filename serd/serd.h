@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2016 David Robillard <http://drobilla.net>
+  Copyright 2011-2017 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -110,7 +110,13 @@ typedef enum {
 	   NTriples - Line-based RDF triples (ASCII).
 	   @see <a href="http://www.w3.org/TR/rdf-testcases#ntriples">NTriples</a>
 	*/
-	SERD_NTRIPLES = 2
+	SERD_NTRIPLES = 2,
+
+	/**
+	   NQuads - Line-based RDF quads (UTF-8).
+	   @see <a href="https://www.w3.org/TR/n-quads/">NQuads</a>
+	*/
+	SERD_NQUADS = 3
 } SerdSyntax;
 
 /**

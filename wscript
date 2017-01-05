@@ -11,7 +11,7 @@ import waflib.extras.autowaf as autowaf
 # major increment <=> incompatible changes
 # minor increment <=> compatible changes (additions)
 # micro increment <=> no interface changes
-SERD_VERSION       = '0.24.0'
+SERD_VERSION       = '0.25.0'
 SERD_MAJOR_VERSION = '0'
 
 # Mandatory waf variables
@@ -314,20 +314,22 @@ def test_thru(ctx, base, path, check_filename, flags):
     else:
         Logs.pprint('RED', 'FAIL: error running %s' % command)
 
-def test_manifest(ctx, srcdir, testdir, report, base_uri):
+def test_manifest(ctx, srcdir, testdir, report, base_uri, isyntax, osyntax, test_runs):
     import rdflib
     import urlparse
 
     rdf  = rdflib.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
     rdfs = rdflib.Namespace('http://www.w3.org/2000/01/rdf-schema#')
     mf   = rdflib.Namespace('http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#')
-    rdft = rdflib.Namespace('http://www.w3.org/ns/rdftest#')
     earl = rdflib.Namespace('http://www.w3.org/ns/earl#')
 
     model = rdflib.ConjunctiveGraph()
-    model.parse(os.path.join(srcdir, 'tests', testdir, 'manifest.ttl'),
-                rdflib.URIRef(base_uri + 'manifest.ttl'),
-                format='n3')
+    try:
+        model.parse(os.path.join(srcdir, 'tests', testdir, 'manifest.ttl'),
+                    rdflib.URIRef(base_uri + 'manifest.ttl'),
+                    format='n3')
+    except Exception as e:
+        print("Error: %s" % e)
 
     asserter = ''
     if os.getenv('USER') == 'drobilla':
@@ -337,7 +339,8 @@ def test_manifest(ctx, srcdir, testdir, report, base_uri):
         output  = os.path.join('tests', testdir, action_node + '.out')
         action  = os.path.join(srcdir, 'tests', testdir, action_node)
         rel     = os.path.relpath(action, os.path.join(srcdir, 'tests', testdir))
-        command = 'serdi_static -f "%s" "%s" > %s' % (action, base_uri + rel, output)
+        command = 'serdi_static -i %s -o %s -f "%s" "%s" > %s' % (
+            isyntax, osyntax, action, base_uri + rel, output)
 
         return autowaf.run_test(ctx, APPNAME, command, expected_return, name=str(action))
 
@@ -361,14 +364,12 @@ def test_manifest(ctx, srcdir, testdir, report, base_uri):
             report.write(earl_assertion(test, passed, asserter))
         autowaf.end_tests(ctx, APPNAME, str(test_class))
 
-    run_tests(rdft.TestTurtlePositiveSyntax, 0)
-    run_tests(rdft.TestTurtleNegativeSyntax, 1)
-    run_tests(rdft.TestTurtleNegativeEval, 1)
-    run_tests(rdft.TestTurtleEval, 0, True)
+    for i in test_runs:
+        run_tests(i[0], i[1], i[2])
 
 def test(ctx):
     blddir = autowaf.build_dir(APPNAME, 'tests')
-    for i in ['', 'bad', 'good', 'new', 'TurtleTests', 'extra']:
+    for i in ['', 'bad', 'good', 'new', 'TurtleTests', 'NQuadsTests', 'extra']:
         try:
             os.makedirs(os.path.join(blddir, i))
         except:
@@ -506,6 +507,10 @@ def test(ctx):
 
     # New manifest-driven tests
     try:
+        import rdflib
+        rdft = rdflib.Namespace('http://www.w3.org/ns/rdftest#')
+
+        # Start test report with serd information
         report = open('earl.ttl', 'w')
         report.write('''@prefix earl: <http://www.w3.org/ns/earl#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n''')
@@ -514,8 +519,21 @@ def test(ctx):
         for line in serd_ttl:
             report.write(line)
         serd_ttl.close()
+
+        # Run tests and append to report
         turtle_tests = 'http://www.w3.org/2013/TurtleTests/'
-        test_manifest(ctx, srcdir, 'TurtleTests', report, turtle_tests)
+        test_manifest(ctx, srcdir, 'TurtleTests', report, turtle_tests, 'turtle', 'ntriples',
+                      [[rdft.TestTurtlePositiveSyntax, 0, False],
+                       [rdft.TestTurtleNegativeSyntax, 1, False],
+                       [rdft.TestTurtleNegativeEval, 1, False],
+                       [rdft.TestTurtleEval, 0, True]])
+
+        nquads_tests = 'http://www.w3.org/2013/NQuadsTests/'
+        test_manifest(ctx, srcdir, 'NQuadsTests', report, nquads_tests, 'nquads', 'nquads',
+                      [[rdft.TestNQuadsPositiveSyntax, 0, False],
+                       [rdft.TestNQuadsNegativeSyntax, 1, False],
+                       [rdft.TestNQuadsNegativeEval, 1, False],
+                       [rdft.TestNQuadsEval, 0, True]])
         report.close()
 
     except:

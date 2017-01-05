@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2016 David Robillard <http://drobilla.net>
+  Copyright 2011-2017 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -431,7 +431,8 @@ typedef enum {
 	FIELD_NONE,
 	FIELD_SUBJECT,
 	FIELD_PREDICATE,
-	FIELD_OBJECT
+	FIELD_OBJECT,
+	FIELD_GRAPH
 } Field;
 
 static bool
@@ -491,6 +492,7 @@ write_node(SerdWriter*        writer,
 	case SERD_CURIE:
 		switch (writer->syntax) {
 		case SERD_NTRIPLES:
+		case SERD_NQUADS:
 			if (serd_env_expand(writer->env, node, &uri_prefix, &suffix)) {
 				w_err(writer, SERD_ERR_BAD_CURIE,
 				      "undefined namespace prefix `%s'\n", node->buf);
@@ -661,11 +663,16 @@ serd_writer_write_statement(SerdWriter*        writer,
 
 	switch (writer->syntax) {
 	case SERD_NTRIPLES:
+	case SERD_NQUADS:
 		TRY(write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags));
 		sink(" ", 1, writer);
 		TRY(write_node(writer, predicate, NULL, NULL, FIELD_PREDICATE, flags));
 		sink(" ", 1, writer);
 		TRY(write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
+		if (writer->syntax == SERD_NQUADS && graph) {
+			sink(" ", 1, writer);
+			TRY(write_node(writer, graph, datatype, lang, FIELD_GRAPH, flags));
+		}
 		sink(" .\n", 3, writer);
 		return SERD_SUCCESS;
 	default:
