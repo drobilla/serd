@@ -252,7 +252,7 @@ write_uri(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
 
 		// Bulk write all characters up to this special one
 		len += sink(&utf8[i], j - i, writer);
- 		if ((i = j) == n_bytes) {
+		if ((i = j) == n_bytes) {
 			break;  // Reached end
 		}
 
@@ -299,7 +299,7 @@ write_lname(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
 
 		// Bulk write all characters up to this special one
 		len += sink(&utf8[i], j - i, writer);
- 		if ((i = j) == n_bytes) {
+		if ((i = j) == n_bytes) {
 			break;  // Reached end
 		}
 

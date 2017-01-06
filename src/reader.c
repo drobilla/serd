@@ -57,7 +57,7 @@ typedef struct {
 	Ref                 predicate;
 	Ref                 object;
 	Ref                 datatype;
-	Ref                 language;
+	Ref                 lang;
 	SerdStatementFlags* flags;
 } ReadContext;
 
@@ -1263,7 +1263,7 @@ read_object(SerdReader* reader, ReadContext* ctx, bool emit, bool* ate_dot)
 	} else if (ret && !emit) {
 		ctx->object   = o;
 		ctx->datatype = datatype;
-		ctx->language = lang;
+		ctx->lang     = lang;
 		return true;
 	}
 
@@ -1600,25 +1600,16 @@ read_nquadsDoc(SerdReader* reader)
 			return !reader->error;
 		}
 
-		// subject
-		if (!(ctx.subject = read_subject(reader, ctx, &ctx.subject, &nested))) {
+		// subject predicate object
+		if (!(ctx.subject = read_subject(reader, ctx, &ctx.subject, &nested)) ||
+		    !read_ws_star(reader) ||
+		    !(ctx.predicate = read_IRIREF(reader)) ||
+		    !read_ws_star(reader) ||
+		    !read_object(reader, &ctx, false, &ate_dot)) {
 			return false;
 		}
 
-		// predicate
-		TRY_RET(read_ws_star(reader));
-		if (!(ctx.predicate = read_IRIREF(reader))) {
-			return false;
-		}
-
-		// object
-		TRY_RET(read_ws_star(reader));
-		if (!read_object(reader, &ctx, false, &ate_dot)) {
-			return false;
-		}
-
-		if (!ate_dot) {
-			// graphLabel?
+		if (!ate_dot) {  // graphLabel?
 			TRY_RET(read_ws_star(reader));
 			switch (peek_byte(reader)) {
 			case '.':
@@ -1637,9 +1628,9 @@ read_nquadsDoc(SerdReader* reader)
 			eat_byte_check(reader, '.');
 		}
 
-		TRY_RET(emit_statement(reader, ctx, ctx.object, ctx.datatype, ctx.language));
+		TRY_RET(emit_statement(reader, ctx, ctx.object, ctx.datatype, ctx.lang));
 		pop_node(reader, ctx.graph);
-		pop_node(reader, ctx.language);
+		pop_node(reader, ctx.lang);
 		pop_node(reader, ctx.datatype);
 		pop_node(reader, ctx.object);
 	}
