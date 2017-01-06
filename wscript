@@ -359,7 +359,8 @@ def test_manifest(ctx, srcdir, testdir, report, base_uri, isyntax, osyntax, test
                 result      = os.path.join(srcdir, 'tests', testdir, result_node)
                 passed      = check_output(output, result)
 
-                test_thru(ctx, base_uri + action_node, action, result, "")
+                if isyntax != 'trig':
+                    test_thru(ctx, base_uri + action_node, action, result, "")
 
             report.write(earl_assertion(test, passed, asserter))
         autowaf.end_tests(ctx, APPNAME, str(test_class))
@@ -369,7 +370,7 @@ def test_manifest(ctx, srcdir, testdir, report, base_uri, isyntax, osyntax, test
 
 def test(ctx):
     blddir = autowaf.build_dir(APPNAME, 'tests')
-    for i in ['', 'bad', 'good', 'new', 'TurtleTests', 'NQuadsTests', 'extra']:
+    for i in ['', 'bad', 'good', 'new', 'TurtleTests', 'NQuadsTests', 'TrigTests', 'extra']:
         try:
             os.makedirs(os.path.join(blddir, i))
         except:
@@ -534,6 +535,13 @@ def test(ctx):
                        [rdft.TestNQuadsNegativeSyntax, 1, False],
                        [rdft.TestNQuadsNegativeEval, 1, False],
                        [rdft.TestNQuadsEval, 0, True]])
+
+        trig_tests = 'http://www.w3.org/2013/TriGTests/'
+        test_manifest(ctx, srcdir, 'TrigTests', report, trig_tests, 'trig', 'nquads',
+                      [[rdft.TestTrigPositiveSyntax, 0, False],
+                       [rdft.TestTrigNegativeSyntax, 1, False],
+                       [rdft.TestTrigNegativeEval, 1, False],
+                       [rdft.TestTrigEval, 0, True]])
         report.close()
 
     except:

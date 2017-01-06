@@ -1,9 +1,10 @@
 serd (0.25.0) unstable;
 
-  * Add support for NQuads
+  * Add support for reading and writing NQuads
   * Add support for SPARQL PREFIX and BASE directives
+  * Add support for reading TriG
 
- -- David Robillard <d@drobilla.net>  Thu, 05 Jan 2017 16:20:09 -0500
+ -- David Robillard <d@drobilla.net>  Fri, 06 Jan 2017 14:44:10 -0500
 
 serd (0.24.0) stable;
 

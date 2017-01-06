@@ -356,7 +356,7 @@ write_text(SerdWriter* writer, TextContext ctx,
 			case '"':  len += sink("\\\"", 2, writer); continue;
 			default: break;
 			}
-			if (writer->syntax != SERD_NTRIPLES) {
+			if (writer->syntax == SERD_TURTLE) {
 				switch (in) {
 				case '\b': len += sink("\\b", 2, writer); continue;
 				case '\f': len += sink("\\f", 2, writer); continue;
@@ -438,7 +438,7 @@ typedef enum {
 static bool
 is_inline_start(const SerdWriter* writer, Field field, SerdStatementFlags flags)
 {
-	return (writer->syntax != SERD_NTRIPLES &&
+	return (writer->syntax == SERD_TURTLE &&
 	        ((field == FIELD_SUBJECT && (flags & SERD_ANON_S_BEGIN)) ||
 	         (field == FIELD_OBJECT &&  (flags & SERD_ANON_O_BEGIN))));
 }
@@ -460,19 +460,19 @@ write_node(SerdWriter*        writer,
 		if (is_inline_start(writer, field, flags)) {
 			++writer->indent;
 			write_sep(writer, SEP_ANON_BEGIN);
-		} else if (writer->syntax != SERD_NTRIPLES
+		} else if (writer->syntax == SERD_TURTLE
 		           && (field == FIELD_SUBJECT && (flags & SERD_LIST_S_BEGIN))) {
 			assert(writer->list_depth == 0);
 			copy_node(&writer->list_subj, node);
 			++writer->list_depth;
 			++writer->indent;
 			write_sep(writer, SEP_LIST_BEGIN);
-		} else if (writer->syntax != SERD_NTRIPLES
+		} else if (writer->syntax == SERD_TURTLE
 		           && (field == FIELD_OBJECT && (flags & SERD_LIST_O_BEGIN))) {
 			++writer->indent;
 			++writer->list_depth;
 			write_sep(writer, SEP_LIST_BEGIN);
-		} else if (writer->syntax != SERD_NTRIPLES
+		} else if (writer->syntax == SERD_TURTLE
 		           && ((field == FIELD_SUBJECT && (flags & SERD_EMPTY_S))
 		               || (field == FIELD_OBJECT && (flags & SERD_EMPTY_O)))) {
 			sink("[]", 2, writer);
@@ -504,6 +504,7 @@ write_node(SerdWriter*        writer,
 			sink(">", 1, writer);
 			break;
 		case SERD_TURTLE:
+		case SERD_TRIG:
 			if (is_inline_start(writer, field, flags)) {
 				++writer->indent;
 				write_sep(writer, SEP_ANON_BEGIN);
@@ -536,7 +537,7 @@ write_node(SerdWriter*        writer,
 				break;
 			}
 		}
-		if (writer->syntax != SERD_NTRIPLES
+		if (writer->syntax == SERD_TURTLE
 		    && (node->flags & (SERD_HAS_NEWLINE|SERD_HAS_QUOTE))) {
 			sink("\"\"\"", 3, writer);
 			write_text(writer, WRITE_LONG_STRING, node->buf, node->n_bytes);
@@ -585,7 +586,7 @@ write_node(SerdWriter*        writer,
 			bool rooted = uri_is_under(&writer->base_uri, &writer->root_uri);
 			SerdURI* root = rooted ? &writer->root_uri : & writer->base_uri;
 			if (!uri_is_under(&abs_uri, root) ||
-			    writer->syntax == SERD_NTRIPLES) {
+			    writer->syntax != SERD_TURTLE) {
 				serd_uri_serialise(&abs_uri, uri_sink, writer);
 			} else {
 				serd_uri_serialise_relative(
@@ -761,7 +762,7 @@ SerdStatus
 serd_writer_end_anon(SerdWriter*     writer,
                      const SerdNode* node)
 {
-	if (writer->syntax == SERD_NTRIPLES) {
+	if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
 		return SERD_SUCCESS;
 	}
 	if (serd_stack_is_empty(&writer->anon_stack) || writer->indent == 0) {
@@ -858,7 +859,7 @@ serd_writer_set_base_uri(SerdWriter*     writer,
 	if (!serd_env_set_base_uri(writer->env, uri)) {
 		serd_env_get_base_uri(writer->env, &writer->base_uri);
 
-		if (writer->syntax != SERD_NTRIPLES) {
+		if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
 			if (writer->context.graph.type || writer->context.subject.type) {
 				sink(" .\n\n", 4, writer);
 				reset_context(writer, false);
@@ -896,7 +897,7 @@ serd_writer_set_prefix(SerdWriter*     writer,
                        const SerdNode* uri)
 {
 	if (!serd_env_set_prefix(writer->env, name, uri)) {
-		if (writer->syntax != SERD_NTRIPLES) {
+		if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
 			if (writer->context.graph.type || writer->context.subject.type) {
 				sink(" .\n\n", 4, writer);
 				reset_context(writer, false);

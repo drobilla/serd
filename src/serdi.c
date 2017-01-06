@@ -53,9 +53,9 @@ print_usage(const char* name, bool error)
 	fprintf(os, "  -e           Eat input one character at a time.\n");
 	fprintf(os, "  -f           Keep full URIs in input (don't qualify).\n");
 	fprintf(os, "  -h           Display this help and exit.\n");
-	fprintf(os, "  -i SYNTAX    Input syntax (turtle, ntriples, or nquads).\n");
+	fprintf(os, "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads.\n");
 	fprintf(os, "  -l           Lax (non-strict) parsing.\n");
-	fprintf(os, "  -o SYNTAX    Output syntax (turtle, ntriples, or nquads).\n");
+	fprintf(os, "  -o SYNTAX    Output syntax: turtle/ntriples/nquads.\n");
 	fprintf(os, "  -p PREFIX    Add PREFIX to blank node IDs.\n");
 	fprintf(os, "  -q           Suppress all output except data.\n");
 	fprintf(os, "  -r ROOT_URI  Keep relative URIs within ROOT_URI.\n");
@@ -73,6 +73,8 @@ set_syntax(SerdSyntax* syntax, const char* name)
 		*syntax = SERD_NTRIPLES;
 	} else if (!strcmp(name, "nquads")) {
 		*syntax = SERD_NQUADS;
+	} else if (!strcmp(name, "trig")) {
+		*syntax = SERD_TRIG;
 	} else {
 		SERDI_ERRORF("unknown syntax `%s'\n", name);
 		return false;
@@ -200,16 +202,17 @@ main(int argc, char** argv)
 	SerdEnv* env    = serd_env_new(&base);
 
 	int output_style = 0;
-	if (output_syntax == SERD_NTRIPLES) {
+	if (output_syntax == SERD_NTRIPLES || output_syntax == SERD_NQUADS) {
 		output_style |= SERD_STYLE_ASCII;
-	} else {
+	} else if (output_syntax == SERD_TURTLE) {
 		output_style |= SERD_STYLE_ABBREVIATED;
 		if (!full_uris) {
 			output_style |= SERD_STYLE_CURIED;
 		}
 	}
 
-	if (input_syntax != SERD_NTRIPLES || (output_style & SERD_STYLE_CURIED)) {
+	if ((input_syntax == SERD_TURTLE || input_syntax == SERD_TRIG) ||
+	    (output_style & SERD_STYLE_CURIED)) {
 		// Base URI may change and/or we're abbreviating URIs, so must resolve
 		output_style |= SERD_STYLE_RESOLVED;  // Base may chan
 	}

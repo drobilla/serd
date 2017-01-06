@@ -101,13 +101,13 @@ struct SerdReaderImpl {
 static inline bool
 supports_fancy_literals(const SerdReader* reader)
 {
-	return reader->syntax == SERD_TURTLE;
+	return reader->syntax == SERD_TURTLE || reader->syntax == SERD_TRIG;
 }
 
 static inline bool
 supports_relative_iris(const SerdReader* reader)
 {
-	return reader->syntax == SERD_TURTLE;
+	return reader->syntax == SERD_TURTLE || reader->syntax == SERD_TRIG;
 }
 
 static int
@@ -156,7 +156,7 @@ eat_byte_safe(SerdReader* reader, const uint8_t byte)
 {
 	assert(peek_byte(reader) == byte);
 	switch (byte) {
-	case '\0': reader->eof = true; break;
+	case '\0': reader->eof = (byte != '\0'); break;
 	case '\n': ++reader->cur.line; reader->cur.col = 0; break;
 	default:   ++reader->cur.col;
 	}
@@ -520,13 +520,6 @@ read_ws_star(SerdReader* reader)
 }
 
 static inline bool
-read_ws_plus(SerdReader* reader)
-{
-	TRY_RET(read_ws(reader));
-	return read_ws_star(reader);
-}
-
-static inline bool
 peek_delim(SerdReader* reader, const char delim)
 {
 	read_ws_star(reader);
@@ -876,17 +869,13 @@ read_IRIREF(SerdReader* reader)
 static bool
 read_PrefixedName(SerdReader* reader, Ref dest, bool read_prefix, bool* ate_dot)
 {
-	if (read_prefix) {
-		if (read_PN_PREFIX(reader, dest) > SERD_FAILURE) {
-			return false;
-		}
-	}
-
-	if (eat_byte_check(reader, ':') != ':') {
+	if (read_prefix && read_PN_PREFIX(reader, dest) > SERD_FAILURE) {
+		return false;
+	} else if (peek_byte(reader) != ':') {
 		return false;
 	}
 
-	push_byte(reader, dest, ':');
+	push_byte(reader, dest, eat_byte_safe(reader, ':'));
 	return read_PN_LOCAL(reader, dest, ate_dot) <= SERD_FAILURE;
 }
 
@@ -1307,7 +1296,7 @@ read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 			switch (c = peek_byte(reader)) {
 			case 0:
 				return false;
-			case '.': case ']':
+			case '.': case ']': case '}':
 				return true;
 			case ';':
 				eat_byte_safe(reader, c);
@@ -1396,16 +1385,14 @@ read_collection(SerdReader* reader, ReadContext ctx, Ref* dest)
 }
 
 static Ref
-read_subject(SerdReader* reader, ReadContext ctx, Ref* dest, bool* nested)
+read_subject(SerdReader* reader, ReadContext ctx, Ref* dest, char* s_type)
 {
 	bool ate_dot = false;
-	switch (peek_byte(reader)) {
+	switch ((*s_type = peek_byte(reader))) {
 	case '[':
-		*nested = true;
 		read_anon(reader, ctx, true, dest);
 		break;
 	case '(':
-		*nested = true;
 		read_collection(reader, ctx, dest);
 		break;
 	case '_':
@@ -1417,15 +1404,36 @@ read_subject(SerdReader* reader, ReadContext ctx, Ref* dest, bool* nested)
 	return ate_dot ? pop_node(reader, *dest) : *dest;
 }
 
+static Ref
+read_labelOrSubject(SerdReader* reader, ReadContext ctx)
+{
+	Ref  subject = 0;
+	bool ate_dot = false;
+	switch (peek_byte(reader)) {
+	case '[':
+		eat_byte_safe(reader, '[');
+		read_ws_star(reader);
+		TRY_RET(eat_byte_check(reader, ']'));
+		return blank_id(reader);
+	case '_':
+		return read_BLANK_NODE_LABEL(reader, &ate_dot);
+	default:
+		read_iri(reader, &subject, &ate_dot);
+	}
+	return subject;
+}
+
 static bool
 read_triples(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 {
 	bool ret = false;
 	if (ctx.subject) {
-		TRY_RET(read_ws_plus(reader));
-		if (peek_byte(reader) == '.') {
-			eat_byte_safe(reader, '.');
-			*ate_dot = true;
+		read_ws_star(reader);
+		switch (peek_byte(reader)) {
+		case '.':
+			*ate_dot = eat_byte_safe(reader, '.');
+			return false;
+		case '}':
 			return false;
 		}
 		ret = read_predicateObjectList(reader, ctx, ate_dot);
@@ -1442,7 +1450,7 @@ read_base(SerdReader* reader, bool sparql, bool token)
 	}
 
 	Ref uri;
-	TRY_RET(read_ws_plus(reader));
+	read_ws_star(reader);
 	TRY_RET(uri = read_IRIREF(reader));
 	if (reader->base_sink) {
 		reader->base_sink(reader->handle, deref(reader, uri));
@@ -1466,7 +1474,7 @@ read_prefixID(SerdReader* reader, bool sparql, bool token)
 		TRY_RET(eat_string(reader, "prefix", 6));
 	}
 
-	TRY_RET(read_ws_plus(reader));
+	read_ws_star(reader);
 	bool ret  = true;
 	Ref  name = push_node(reader, SERD_LITERAL, "", 0);
 	if (read_PN_PREFIX(reader, name) > SERD_FAILURE) {
@@ -1521,6 +1529,30 @@ read_directive(SerdReader* reader)
 	return true;
 }
 
+static bool
+read_wrappedGraph(SerdReader* reader, ReadContext* ctx)
+{
+	bool ate_dot = false;
+	char s_type  = 0;
+	TRY_RET(eat_byte_check(reader, '{'));
+	read_ws_star(reader);
+	while (peek_byte(reader) != '}') {
+		ctx->subject = 0;
+		Ref subj = read_subject(reader, *ctx, &ctx->subject, &s_type);
+		if (!subj ||
+		    (!read_triples(reader, *ctx, &ate_dot) && s_type != '[')) {
+			return false;
+		}
+		pop_node(reader, subj);
+		read_ws_star(reader);
+		if (peek_byte(reader) == '.') {
+			eat_byte_safe(reader, '.');
+		}
+		read_ws_star(reader);
+	}
+	return eat_byte_check(reader, '}');
+}
+
 static int
 tokcmp(SerdReader* reader, Ref ref, const char* tok, size_t n)
 {
@@ -1545,7 +1577,7 @@ read_statement(SerdReader* reader)
 	ReadContext        ctx     = { 0, 0, 0, 0, 0, 0, &flags };
 	Ref                subj    = 0;
 	bool               ate_dot = false;
-	bool               nested  = false;
+	char               s_type  = false;
 	bool               ret     = true;
 	read_ws_star(reader);
 	switch (peek_byte(reader)) {
@@ -1556,16 +1588,38 @@ read_statement(SerdReader* reader)
 		TRY_RET(read_directive(reader));
 		read_ws_star(reader);
 		break;
+	case '{':
+		if (reader->syntax == SERD_TRIG) {
+			TRY_RET(read_wrappedGraph(reader, &ctx));
+			read_ws_star(reader);
+		} else {
+			return r_err(reader, SERD_ERR_BAD_SYNTAX, "graph in Turtle\n");
+		}
+		break;
 	default:
-		subj = read_subject(reader, ctx, &ctx.subject, &nested);
+		subj = read_subject(reader, ctx, &ctx.subject, &s_type);
 		if (!tokcmp(reader, ctx.subject, "base", 4)) {
 			ret = read_base(reader, true, false);
 		} else if (!tokcmp(reader, ctx.subject, "prefix", 6)) {
 			ret = read_prefixID(reader, true, false);
+		} else if (!tokcmp(reader, ctx.subject, "graph", 5)) {
+			read_ws_star(reader);
+			TRY_RET((ctx.graph = read_labelOrSubject(reader, ctx)));
+			read_ws_star(reader);
+			TRY_RET(read_wrappedGraph(reader, &ctx));
+			read_ws_star(reader);
+		} else if (read_ws_star(reader) && peek_byte(reader) == '{') {
+			if (s_type == '(' || (s_type == '[' && !*ctx.flags)) {
+				return false;  // invalid graph with complex label
+			}
+			ctx.graph   = subj;
+			ctx.subject = subj = 0;
+			TRY_RET(read_wrappedGraph(reader, &ctx));
+			read_ws_star(reader);
 		} else if (!subj) {
 			ret = r_err(reader, SERD_ERR_BAD_SYNTAX, "bad subject\n");
-		} else if (!read_triples(reader, ctx, &ate_dot) && !nested) {
-			ret = nested;
+		} else if (!read_triples(reader, ctx, &ate_dot)) {
+			ret = (s_type == '[');
 		} else if (!ate_dot) {
 			read_ws_star(reader);
 			ret = (eat_byte_check(reader, '.') == '.');
@@ -1573,12 +1627,20 @@ read_statement(SerdReader* reader)
 		pop_node(reader, subj);
 		break;
 	}
-	read_ws_star(reader); // remove?
 	return ret;
 }
 
 static bool
 read_turtleDoc(SerdReader* reader)
+{
+	while (!reader->eof) {
+		TRY_RET(read_statement(reader));
+	}
+	return !reader->error;
+}
+
+static bool
+read_trigDoc(SerdReader* reader)
 {
 	while (!reader->eof) {
 		TRY_RET(read_statement(reader));
@@ -1593,15 +1655,15 @@ read_nquadsDoc(SerdReader* reader)
 		SerdStatementFlags flags   = 0;
 		ReadContext        ctx     = { 0, 0, 0, 0, 0, 0, &flags };
 		bool               ate_dot = false;
-		bool               nested  = false;
+		char               s_type  = false;
 		read_ws_star(reader);
 		if (peek_byte(reader) == '\0') {
 			reader->eof = true;
-			return !reader->error;
+			break;
 		}
 
 		// subject predicate object
-		if (!(ctx.subject = read_subject(reader, ctx, &ctx.subject, &nested)) ||
+		if (!(ctx.subject = read_subject(reader, ctx, &ctx.subject, &s_type)) ||
 		    !read_ws_star(reader) ||
 		    !(ctx.predicate = read_IRIREF(reader)) ||
 		    !read_ws_star(reader) ||
@@ -1642,6 +1704,7 @@ read_doc(SerdReader* reader)
 {
 	switch (reader->syntax) {
 	case SERD_NQUADS: return read_nquadsDoc(reader);
+	case SERD_TRIG:   return read_trigDoc(reader);
 	default:          return read_turtleDoc(reader);
 	}
 }

@@ -116,7 +116,13 @@ typedef enum {
 	   NQuads - Line-based RDF quads (UTF-8).
 	   @see <a href="https://www.w3.org/TR/n-quads/">NQuads</a>
 	*/
-	SERD_NQUADS = 3
+	SERD_NQUADS = 3,
+
+	/**
+	   TRiG - Terse RDF quads (UTF-8).
+	   @see <a href="https://www.w3.org/TR/trig/">Trig</a>
+	*/
+	SERD_TRIG = 4
 } SerdSyntax;
 
 /**
@@ -190,7 +196,6 @@ typedef enum {
 	   <tt>nodeID</tt></a>
 	*/
 	SERD_BLANK = 4
-
 } SerdType;
 
 /**
