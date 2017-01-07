@@ -24,6 +24,6 @@
 	doap:developer <http://drobilla.net/drobilla#me> ;
 	doap:maintainer <http://drobilla.net/drobilla#me> ;
 	doap:repository [
-		a doap:SVNRepository ;
-		doap:location <http://svn.drobilla.net/serd/>
+		a doap:GitBranch ;
+		doap:location <http://git.drobilla.net/serd.git>
 	] .
