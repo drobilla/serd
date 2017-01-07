@@ -14,11 +14,14 @@
 	doap:name "Serd" ;
 	doap:homepage <http://drobilla.net/software/serd> ;
 	doap:license <http://opensource.org/licenses/isc> ;
-	doap:shortdesc "A high-performance Turtle/NTriples reader/writer" ;
-	doap:description "Serd is a lightweight high-performance C library for reading and writing RDF in the Turtle and NTriples syntaxes." ;
+	doap:shortdesc "A high-performance RDF reader/writer" ;
+	doap:description "Serd is a lightweight high-performance C library for reading and writing RDF in the Turtle, NTriples, TriG, and NQuads syntaxes." ;
 	doap:created "2011-09-28"^^xsd:date ;
 	doap:programming-language "C" ;
-	doap:implements <http://www.w3.org/TR/turtle/> ;
+	doap:implements <http://www.w3.org/TR/n-quads/> ,
+		<http://www.w3.org/TR/n-triples/> ,
+		<http://www.w3.org/TR/trig/> ,
+		<http://www.w3.org/TR/turtle/> ;
 	doap:bug-database <http://dev.drobilla.net/> ;
 	doap:blog <http://drobilla.net/> ;
 	doap:developer <http://drobilla.net/drobilla#me> ;

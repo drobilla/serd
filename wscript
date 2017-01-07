@@ -297,15 +297,15 @@ def check_output(out_filename, check_filename, subst_from='', subst_to=''):
 
     return False
 
-def test_thru(ctx, base, path, check_filename, flags):
+def test_thru(ctx, base, path, check_filename, flags, isyntax, osyntax):
     in_filename = os.path.join(ctx.path.abspath(), path);
     out_filename = path + '.thru'
 
-    command = ('%s %s -i turtle -o turtle -p foo "%s" "%s" | '
-               '%s -i turtle -o ntriples -c foo - "%s" > %s') % (
-        'serdi_static', flags.ljust(5),
-        in_filename, base,
-        'serdi_static', base, out_filename)
+    command = ('%s %s -i %s -o %s -p foo "%s" "%s" | '
+               '%s -i %s -o %s -c foo - "%s" > %s') % (
+                   'serdi_static', flags.ljust(5),
+                   isyntax, isyntax, in_filename, base,
+                   'serdi_static', isyntax, osyntax, base, out_filename)
 
     if autowaf.run_test(ctx, APPNAME, command, 0, name=out_filename):
         autowaf.run_test(ctx, APPNAME,
@@ -359,8 +359,7 @@ def test_manifest(ctx, srcdir, testdir, report, base_uri, isyntax, osyntax, test
                 result      = os.path.join(srcdir, 'tests', testdir, result_node)
                 passed      = check_output(output, result)
 
-                if isyntax != 'trig':
-                    test_thru(ctx, base_uri + action_node, action, result, "")
+                test_thru(ctx, base_uri + action_node, action, result, "", isyntax, osyntax)
 
             report.write(earl_assertion(test, passed, asserter))
         autowaf.end_tests(ctx, APPNAME, str(test_class))
@@ -503,7 +502,7 @@ def test(ctx):
 
             path  = os.path.join('tests', tdir, test)
             check = os.path.join(srcdir, path.replace('.ttl', '.nt'))
-            test_thru(ctx, test_base(test), path, check, flags)
+            test_thru(ctx, test_base(test), path, check, flags, 'turtle', 'ntriples')
     autowaf.end_tests(ctx, APPNAME, 'round_trip_good')
 
     # New manifest-driven tests

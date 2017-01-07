@@ -47,7 +47,9 @@ typedef enum {
 	SEP_ANON_END,    ///< End of anonymous node (']')
 	SEP_LIST_BEGIN,  ///< Start of list ('(')
 	SEP_LIST_SEP,    ///< List separator (whitespace)
-	SEP_LIST_END     ///< End of list (')')
+	SEP_LIST_END,    ///< End of list (')')
+	SEP_GRAPH_BEGIN, ///< Start of graph ('{')
+	SEP_GRAPH_END    ///< End of graph ('}')
 } Sep;
 
 typedef struct {
@@ -70,6 +72,8 @@ static const SepRule rules[] = {
 	{ "(",      1, 0, 0, 0 },
 	{ NULL,     1, 0, 1, 0 },
 	{ ")",      1, 1, 0, 0 },
+	{ " {",     2, 0, 1, 1 },
+	{ " }",     2, 0, 1, 1 },
 	{ "\n",     1, 0, 1, 0 }
 };
 
@@ -100,6 +104,12 @@ typedef enum {
 	WRITE_STRING,
 	WRITE_LONG_STRING
 } TextContext;
+
+static bool
+supports_abbrev(const SerdWriter* writer)
+{
+	return writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG;
+}
 
 static void
 w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
@@ -411,20 +421,24 @@ write_sep(SerdWriter* writer, const Sep sep)
 }
 
 static SerdStatus
-reset_context(SerdWriter* writer, bool del)
+reset_context(SerdWriter* writer, bool graph)
 {
-	if (del) {
-		serd_node_free(&writer->context.graph);
-		serd_node_free(&writer->context.subject);
-		serd_node_free(&writer->context.predicate);
-		writer->context = WRITE_CONTEXT_NULL;
-	} else {
-		writer->context.graph.type     = SERD_NOTHING;
-		writer->context.subject.type   = SERD_NOTHING;
-		writer->context.predicate.type = SERD_NOTHING;
+	if (graph) {
+		writer->context.graph.type = SERD_NOTHING;
 	}
-	writer->empty = false;
+	writer->context.subject.type   = SERD_NOTHING;
+	writer->context.predicate.type = SERD_NOTHING;
+	writer->empty                  = false;
 	return SERD_SUCCESS;
+}
+
+static SerdStatus
+free_context(SerdWriter* writer)
+{
+	serd_node_free(&writer->context.graph);
+	serd_node_free(&writer->context.subject);
+	serd_node_free(&writer->context.predicate);
+	return reset_context(writer, true);
 }
 
 typedef enum {
@@ -438,7 +452,7 @@ typedef enum {
 static bool
 is_inline_start(const SerdWriter* writer, Field field, SerdStatementFlags flags)
 {
-	return (writer->syntax == SERD_TURTLE &&
+	return (supports_abbrev(writer) &&
 	        ((field == FIELD_SUBJECT && (flags & SERD_ANON_S_BEGIN)) ||
 	         (field == FIELD_OBJECT &&  (flags & SERD_ANON_O_BEGIN))));
 }
@@ -460,19 +474,19 @@ write_node(SerdWriter*        writer,
 		if (is_inline_start(writer, field, flags)) {
 			++writer->indent;
 			write_sep(writer, SEP_ANON_BEGIN);
-		} else if (writer->syntax == SERD_TURTLE
+		} else if (supports_abbrev(writer)
 		           && (field == FIELD_SUBJECT && (flags & SERD_LIST_S_BEGIN))) {
 			assert(writer->list_depth == 0);
 			copy_node(&writer->list_subj, node);
 			++writer->list_depth;
 			++writer->indent;
 			write_sep(writer, SEP_LIST_BEGIN);
-		} else if (writer->syntax == SERD_TURTLE
+		} else if (supports_abbrev(writer)
 		           && (field == FIELD_OBJECT && (flags & SERD_LIST_O_BEGIN))) {
 			++writer->indent;
 			++writer->list_depth;
 			write_sep(writer, SEP_LIST_BEGIN);
-		} else if (writer->syntax == SERD_TURTLE
+		} else if (supports_abbrev(writer)
 		           && ((field == FIELD_SUBJECT && (flags & SERD_EMPTY_S))
 		               || (field == FIELD_OBJECT && (flags & SERD_EMPTY_O)))) {
 			sink("[]", 2, writer);
@@ -518,7 +532,7 @@ write_node(SerdWriter*        writer,
 		}
 		break;
 	case SERD_LITERAL:
-		if (writer->syntax == SERD_TURTLE && datatype && datatype->buf) {
+		if (supports_abbrev(writer) && datatype && datatype->buf) {
 			const char* type_uri = (const char*)datatype->buf;
 			if (!strncmp(type_uri, NS_XSD, sizeof(NS_XSD) - 1) && (
 				    !strcmp(type_uri + sizeof(NS_XSD) - 1, "boolean") ||
@@ -537,7 +551,7 @@ write_node(SerdWriter*        writer,
 				break;
 			}
 		}
-		if (writer->syntax == SERD_TURTLE
+		if (supports_abbrev(writer)
 		    && (node->flags & (SERD_HAS_NEWLINE|SERD_HAS_QUOTE))) {
 			sink("\"\"\"", 3, writer);
 			write_text(writer, WRITE_LONG_STRING, node->buf, node->n_bytes);
@@ -562,11 +576,11 @@ write_node(SerdWriter*        writer,
 			sink("== ", 3, writer);
 		}
 		has_scheme = serd_uri_string_has_scheme(node->buf);
-		if (field == FIELD_PREDICATE && (writer->syntax == SERD_TURTLE)
+		if (field == FIELD_PREDICATE && supports_abbrev(writer)
 		    && !strcmp((const char*)node->buf, NS_RDF "type")) {
 			sink("a", 1, writer);
 			break;
-		} else if ((writer->syntax == SERD_TURTLE)
+		} else if (supports_abbrev(writer)
 		           && !strcmp((const char*)node->buf, NS_RDF "nil")) {
 			sink("()", 2, writer);
 			break;
@@ -586,7 +600,8 @@ write_node(SerdWriter*        writer,
 			bool rooted = uri_is_under(&writer->base_uri, &writer->root_uri);
 			SerdURI* root = rooted ? &writer->root_uri : & writer->base_uri;
 			if (!uri_is_under(&abs_uri, root) ||
-			    writer->syntax != SERD_TURTLE) {
+			    writer->syntax == SERD_NTRIPLES ||
+			    writer->syntax == SERD_NQUADS) {
 				serd_uri_serialise(&abs_uri, uri_sink, writer);
 			} else {
 				serd_uri_serialise_relative(
@@ -680,11 +695,31 @@ serd_writer_write_statement(SerdWriter*        writer,
 		break;
 	}
 
+	if ((graph && !serd_node_equals(graph, &writer->context.graph)) ||
+	    (!graph && writer->context.graph.type)) {
+		writer->indent = 0;
+		if (writer->context.subject.type) {
+			write_sep(writer, SEP_END_S);
+		}
+		if (writer->context.graph.type) {
+			write_sep(writer, SEP_GRAPH_END);
+		}
+
+		reset_context(writer, true);
+		if (graph) {
+			TRY(write_node(writer, graph, datatype, lang, FIELD_GRAPH, flags));
+			++writer->indent;
+			write_sep(writer, SEP_GRAPH_BEGIN);
+			copy_node(&writer->context.graph, graph);
+		}
+	}
+
 	if ((flags & SERD_LIST_CONT)) {
 		if (write_list_obj(writer, flags, predicate, object, datatype, lang)) {
 			// Reached end of list
 			if (--writer->list_depth == 0 && writer->list_subj.type) {
-				reset_context(writer, true);
+				reset_context(writer, false);
+				serd_node_free(&writer->context.subject);
 				writer->context.subject = writer->list_subj;
 				writer->list_subj       = SERD_NODE_NULL;
 			}
@@ -728,7 +763,7 @@ serd_writer_write_statement(SerdWriter*        writer,
 			++writer->indent;
 		}
 
-		reset_context(writer, true);
+		reset_context(writer, false);
 		copy_node(&writer->context.subject, subject);
 
 		if (!(flags & SERD_LIST_S_BEGIN)) {
@@ -772,7 +807,7 @@ serd_writer_end_anon(SerdWriter*     writer,
 	}
 	--writer->indent;
 	write_sep(writer, SEP_ANON_END);
-	reset_context(writer, true);
+	free_context(writer);
 	writer->context = *anon_stack_top(writer);
 	serd_stack_pop(&writer->anon_stack, sizeof(WriteContext));
 	const bool is_subject = serd_node_equals(node, &writer->context.subject);
@@ -790,11 +825,14 @@ serd_writer_finish(SerdWriter* writer)
 	if (writer->context.subject.type) {
 		sink(" .\n", 3, writer);
 	}
+	if (writer->context.graph.type) {
+		sink("}\n", 2, writer);
+	}
 	if (writer->style & SERD_STYLE_BULK) {
 		serd_bulk_sink_flush(&writer->bulk_sink);
 	}
 	writer->indent = 0;
-	return reset_context(writer, true);
+	return free_context(writer);
 }
 
 SERD_API
@@ -862,14 +900,14 @@ serd_writer_set_base_uri(SerdWriter*     writer,
 		if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
 			if (writer->context.graph.type || writer->context.subject.type) {
 				sink(" .\n\n", 4, writer);
-				reset_context(writer, false);
+				reset_context(writer, true);
 			}
 			sink("@base <", 7, writer);
 			sink(uri->buf, uri->n_bytes, writer);
 			sink("> .\n", 4, writer);
 		}
 		writer->indent = 0;
-		return reset_context(writer, false);
+		return reset_context(writer, true);
 	}
 	return SERD_ERR_UNKNOWN;
 }
@@ -900,7 +938,7 @@ serd_writer_set_prefix(SerdWriter*     writer,
 		if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
 			if (writer->context.graph.type || writer->context.subject.type) {
 				sink(" .\n\n", 4, writer);
-				reset_context(writer, false);
+				reset_context(writer, true);
 			}
 			sink("@prefix ", 8, writer);
 			sink(name->buf, name->n_bytes, writer);
@@ -909,7 +947,7 @@ serd_writer_set_prefix(SerdWriter*     writer,
 			sink("> .\n", 4, writer);
 		}
 		writer->indent = 0;
-		return reset_context(writer, false);
+		return reset_context(writer, true);
 	}
 	return SERD_ERR_UNKNOWN;
 }
