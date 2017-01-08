@@ -513,8 +513,8 @@ def test(ctx):
         # Start test report with serd information
         report = open('earl.ttl', 'w')
         report.write('''@prefix earl: <http://www.w3.org/ns/earl#> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n''')
-
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .\n''')
         serd_ttl = open(os.path.join(srcdir, 'serd.ttl'))
         for line in serd_ttl:
             report.write(line)
