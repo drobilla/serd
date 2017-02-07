@@ -24,11 +24,6 @@
 #define SERDI_ERROR(msg)       fprintf(stderr, "serdi: " msg);
 #define SERDI_ERRORF(fmt, ...) fprintf(stderr, "serdi: " fmt, __VA_ARGS__);
 
-typedef struct {
-	SerdEnv*    env;
-	SerdWriter* writer;
-} State;
-
 static int
 print_version(void)
 {
@@ -214,7 +209,7 @@ main(int argc, char** argv)
 	if ((input_syntax == SERD_TURTLE || input_syntax == SERD_TRIG) ||
 	    (output_style & SERD_STYLE_CURIED)) {
 		// Base URI may change and/or we're abbreviating URIs, so must resolve
-		output_style |= SERD_STYLE_RESOLVED;  // Base may chan
+		output_style |= SERD_STYLE_RESOLVED;
 	}
 
 	if (bulk_write) {
