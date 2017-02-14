@@ -93,9 +93,9 @@ struct SerdWriterImpl {
 	WriteContext  context;
 	SerdNode      list_subj;
 	unsigned      list_depth;
+	unsigned      indent;
 	uint8_t*      bprefix;
 	size_t        bprefix_len;
-	unsigned      indent;
 	Sep           last_sep;
 	bool          empty;
 };

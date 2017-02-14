@@ -77,11 +77,11 @@ struct SerdReaderImpl {
 	FILE*             fd;
 	SerdStack         stack;
 	SerdSyntax        syntax;
+	unsigned          next_id;
 	Cursor            cur;
 	uint8_t*          buf;
 	uint8_t*          bprefix;
 	size_t            bprefix_len;
-	unsigned          next_id;
 	const uint8_t*    read_buf;
 	uint8_t*          file_buf;
 	int32_t           read_head;  ///< Offset into read_buf
