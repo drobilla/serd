@@ -255,7 +255,7 @@ end:
    Remove leading dot components from `path`.
    See http://tools.ietf.org/html/rfc3986#section-5.2.3
    @param up Set to the number of up-references (e.g. "../") trimmed
-   @return A pointer to the new start of @path
+   @return A pointer to the new start of `path`
 */
 static const uint8_t*
 remove_dot_segments(const uint8_t* path, size_t len, size_t* up)
