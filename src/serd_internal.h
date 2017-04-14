@@ -201,48 +201,56 @@ serd_stack_pop_aligned(SerdStack* stack, size_t n_bytes)
 	serd_stack_pop(stack, pad + 1);
 }
 
-/* Bulk Sink */
+/* Byte Sink */
 
-typedef struct SerdBulkSinkImpl {
+typedef struct SerdByteSinkImpl {
 	SerdSink sink;
 	void*    stream;
 	uint8_t* buf;
 	size_t   size;
 	size_t   block_size;
-} SerdBulkSink;
+} SerdByteSink;
 
-static inline SerdBulkSink
-serd_bulk_sink_new(SerdSink sink, void* stream, size_t block_size)
+static inline SerdByteSink
+serd_byte_sink_new(SerdSink sink, void* stream, size_t block_size)
 {
-	SerdBulkSink bsink;
+	SerdByteSink bsink;
 	bsink.sink       = sink;
 	bsink.stream     = stream;
 	bsink.size       = 0;
 	bsink.block_size = block_size;
-	bsink.buf        = (uint8_t*)serd_bufalloc(block_size);
+	bsink.buf        = ((block_size > 1)
+	                    ? (uint8_t*)serd_bufalloc(block_size)
+	                    : NULL);
 	return bsink;
 }
 
 static inline void
-serd_bulk_sink_flush(SerdBulkSink* bsink)
+serd_byte_sink_flush(SerdByteSink* bsink)
 {
-	if (bsink->size > 0) {
+	if (bsink->block_size > 1 && bsink->size > 0) {
 		bsink->sink(bsink->buf, bsink->size, bsink->stream);
+		bsink->size = 0;
 	}
-	bsink->size = 0;
 }
 
 static inline void
-serd_bulk_sink_free(SerdBulkSink* bsink)
+serd_byte_sink_free(SerdByteSink* bsink)
 {
-	serd_bulk_sink_flush(bsink);
+	serd_byte_sink_flush(bsink);
 	free(bsink->buf);
 	bsink->buf = NULL;
 }
 
 static inline size_t
-serd_bulk_sink_write(const void* buf, size_t len, SerdBulkSink* bsink)
+serd_byte_sink_write(const void* buf, size_t len, SerdByteSink* bsink)
 {
+	if (len == 0) {
+		return 0;
+	} else if (bsink->block_size == 1) {
+		return bsink->sink(buf, len, bsink->stream);
+	}
+
 	const size_t orig_len = len;
 	while (len) {
 		const size_t space = bsink->block_size - bsink->size;

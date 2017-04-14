@@ -85,9 +85,7 @@ struct SerdWriterImpl {
 	SerdURI       root_uri;
 	SerdURI       base_uri;
 	SerdStack     anon_stack;
-	SerdBulkSink  bulk_sink;
-	SerdSink      sink;
-	void*         stream;
+	SerdByteSink  byte_sink;
 	SerdErrorSink error_sink;
 	void*         error_handle;
 	WriteContext  context;
@@ -153,13 +151,7 @@ copy_node(SerdNode* dst, const SerdNode* src)
 static inline size_t
 sink(const void* buf, size_t len, SerdWriter* writer)
 {
-	if (len == 0) {
-		return 0;
-	} else if (writer->style & SERD_STYLE_BULK) {
-		return serd_bulk_sink_write(buf, len, &writer->bulk_sink);
-	} else {
-		return writer->sink(buf, len, writer->stream);
-	}
+	return serd_byte_sink_write(buf, len, &writer->byte_sink);
 }
 
 // Parse a UTF-8 character, set *size to the length, and return the code point
@@ -828,9 +820,7 @@ serd_writer_finish(SerdWriter* writer)
 	if (writer->context.graph.type) {
 		sink("}\n", 2, writer);
 	}
-	if (writer->style & SERD_STYLE_BULK) {
-		serd_bulk_sink_flush(&writer->bulk_sink);
-	}
+	serd_byte_sink_flush(&writer->byte_sink);
 	writer->indent = 0;
 	return free_context(writer);
 }
@@ -853,14 +843,11 @@ serd_writer_new(SerdSyntax     syntax,
 	writer->root_uri     = SERD_URI_NULL;
 	writer->base_uri     = base_uri ? *base_uri : SERD_URI_NULL;
 	writer->anon_stack   = serd_stack_new(sizeof(WriteContext));
-	writer->sink         = ssink;
-	writer->stream       = stream;
 	writer->context      = context;
 	writer->list_subj    = SERD_NODE_NULL;
 	writer->empty        = true;
-	if (style & SERD_STYLE_BULK) {
-		writer->bulk_sink = serd_bulk_sink_new(ssink, stream, SERD_PAGE_SIZE);
-	}
+	writer->byte_sink    = serd_byte_sink_new(
+		ssink, stream, (style & SERD_STYLE_BULK) ? SERD_PAGE_SIZE : 1);
 	return writer;
 }
 
@@ -959,9 +946,7 @@ serd_writer_free(SerdWriter* writer)
 	serd_writer_finish(writer);
 	serd_stack_free(&writer->anon_stack);
 	free(writer->bprefix);
-	if (writer->style & SERD_STYLE_BULK) {
-		serd_bulk_sink_free(&writer->bulk_sink);
-	}
+	serd_byte_sink_free(&writer->byte_sink);
 	serd_node_free(&writer->root_node);
 	free(writer);
 }
