@@ -79,6 +79,7 @@ struct SerdReaderImpl {
 	SerdSyntax        syntax;
 	unsigned          next_id;
 	Cursor            cur;
+	SerdStatus        status;
 	uint8_t*          buf;
 	uint8_t*          bprefix;
 	size_t            bprefix_len;
@@ -90,7 +91,6 @@ struct SerdReaderImpl {
 	bool              paging;     ///< True iff reading a page at a time
 	bool              strict;     ///< True iff strict parsing
 	bool              eof;
-	bool              error;
 	bool              seen_genid;
 #ifdef SERD_STACK_CHECK
 	Ref*              allocs;     ///< Stack of push offsets
@@ -131,14 +131,7 @@ page(SerdReader* reader)
 	if (n_read == 0) {
 		reader->file_buf[0] = '\0';
 		reader->eof         = true;
-		if (ferror(reader->fd)) {
-			reader->error = true;
-			r_err(reader, SERD_ERR_UNKNOWN,
-			      "read error: %s\n", strerror(errno));
-			return SERD_ERR_UNKNOWN;
-		} else {
-			return SERD_FAILURE;
-		}
+		return ferror(reader->fd) ? SERD_ERR_UNKNOWN : SERD_FAILURE;
 	} else if (n_read < SERD_PAGE_SIZE) {
 		reader->file_buf[n_read] = '\0';
 	}
@@ -168,7 +161,11 @@ eat_byte_safe(SerdReader* reader, const uint8_t byte)
 			reader->eof = true;
 		}
 	} else if (++reader->read_head == SERD_PAGE_SIZE && reader->paging) {
-		page(reader);
+		const SerdStatus st = page(reader);
+		if (st > SERD_FAILURE) {
+			reader->status = st;
+			r_err(reader, st, "read error: %s\n", strerror(errno));
+		}
 	}
 	return byte;
 }
@@ -1583,7 +1580,7 @@ read_statement(SerdReader* reader)
 	switch (peek_byte(reader)) {
 	case '\0':
 		reader->eof = true;
-		return !reader->error;
+		return reader->status <= SERD_FAILURE;
 	case '@':
 		TRY_RET(read_directive(reader));
 		read_ws_star(reader);
@@ -1636,7 +1633,7 @@ read_turtleDoc(SerdReader* reader)
 	while (!reader->eof) {
 		TRY_RET(read_statement(reader));
 	}
-	return !reader->error;
+	return reader->status <= SERD_FAILURE;
 }
 
 static bool
@@ -1645,7 +1642,7 @@ read_trigDoc(SerdReader* reader)
 	while (!reader->eof) {
 		TRY_RET(read_statement(reader));
 	}
-	return !reader->error;
+	return reader->status <= SERD_FAILURE;
 }
 
 static bool
@@ -1696,7 +1693,7 @@ read_nquadsDoc(SerdReader* reader)
 		pop_node(reader, ctx.datatype);
 		pop_node(reader, ctx.object);
 	}
-	return !reader->error;
+	return reader->status <= SERD_FAILURE;
 }
 
 static bool
