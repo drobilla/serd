@@ -377,6 +377,32 @@ void
 serd_uri_resolve(const SerdURI* uri, const SerdURI* base, SerdURI* out);
 
 /**
+   Function to detect I/O stream errors.
+
+   Identical semantics to `ferror`.
+
+   @return Non-zero if `stream` has encountered an error.
+*/
+typedef int (*SerdStreamErrorFunc)(void* stream);
+
+/**
+   Source function for raw string input.
+
+   Identical semantics to `fread`, but may set errno for more informative error
+   reporting than supported by SerdStreamErrorFunc.
+
+   @param buf Output buffer.
+   @param size Size of a single element of data in bytes (always 1).
+   @param nmemb Number of elements to read.
+   @param stream Stream to read from (FILE* for fread).
+   @return Number of elements (bytes) read.
+*/
+typedef size_t (*SerdSource)(void*  buf,
+                             size_t size,
+                             size_t nmemb,
+                             void*  stream);
+
+/**
    Sink function for raw string output.
 */
 typedef size_t (*SerdSink)(const void* buf, size_t len, void* stream);
@@ -799,6 +825,21 @@ serd_reader_start_stream(SerdReader*    me,
                          bool           bulk);
 
 /**
+   Start an incremental read from a user-specified source.
+
+   Iff `bulk` is true, `source` will be read a page at a time.  Otherwise,
+   `source` is guaranteed to only be called for single bytes.
+*/
+SERD_API
+SerdStatus
+serd_reader_start_source_stream(SerdReader*         me,
+                                SerdSource          read_func,
+                                SerdStreamErrorFunc error_func,
+                                void*               stream,
+                                const uint8_t*      name,
+                                bool                bulk);
+
+/**
    Read a single "chunk" of data during an incremental read.
 
    This function will read a single top level description, and return.  This
@@ -825,6 +866,17 @@ SerdStatus
 serd_reader_read_file_handle(SerdReader*    reader,
                              FILE*          file,
                              const uint8_t* name);
+
+/**
+   Read a user-specified byte source.
+*/
+SERD_API
+SerdStatus
+serd_reader_read_source(SerdReader*         reader,
+                        SerdSource          source,
+                        SerdStreamErrorFunc error,
+                        void*               stream,
+                        const uint8_t*      name);
 
 /**
    Read `utf8`.

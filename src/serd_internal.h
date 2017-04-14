@@ -66,6 +66,52 @@ serd_bufalloc(size_t size)
 #endif
 }
 
+/* Byte source */
+
+typedef struct {
+	SerdSource          read_func;    ///< Read function (e.g. fread)
+	SerdStreamErrorFunc error_func;   ///< Error function (e.g. ferror)
+	void*               stream;       ///< Stream (e.g. FILE)
+	uint8_t*            file_buf;     ///< Buffer iff reading pages from a file
+	const uint8_t*      read_buf;     ///< Pointer to file_buf or read_byte
+	size_t              read_head;    ///< Offset into read_buf
+	uint8_t             read_byte;    ///< 1-byte 'buffer' used when not paging
+	bool                from_stream;  ///< True iff reading from `stream`
+	bool                paging;       ///< True iff reading a page at a time
+	bool                prepared;     ///< True iff prepared for reading
+} SerdByteSource;
+
+SerdStatus
+serd_byte_source_open_file(SerdByteSource* source,
+                           FILE*           file,
+                           bool            bulk);
+
+SerdStatus
+serd_byte_source_open_string(SerdByteSource* source, const uint8_t* utf8);
+
+SerdStatus
+serd_byte_source_open_source(SerdByteSource*     source,
+                             SerdSource          read_func,
+                             SerdStreamErrorFunc error_func,
+                             void*               stream,
+                             bool                bulk);
+
+SerdStatus
+serd_byte_source_close(SerdByteSource* source);
+
+SerdStatus
+serd_byte_source_prepare(SerdByteSource* source);
+
+static inline uint8_t
+serd_byte_source_peek(SerdByteSource* source)
+{
+	assert(source->prepared);
+	return source->read_buf[source->read_head];
+}
+
+SerdStatus
+serd_byte_source_advance(SerdByteSource* source);
+
 /* Stack */
 
 /** A dynamic stack in memory. */

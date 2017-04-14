@@ -1,3 +1,9 @@
+serd (0.27.0) unstable;
+
+  * Add support for reading from a user provided callback
+
+ -- David Robillard <d@drobilla.net>  Fri, 14 Apr 2017 20:30:51 +0200
+
 serd (0.26.0) stable;
 
   * Add support for TriG and NQuads

@@ -11,7 +11,7 @@ import waflib.extras.autowaf as autowaf
 # major increment <=> incompatible changes
 # minor increment <=> compatible changes (additions)
 # micro increment <=> no interface changes
-SERD_VERSION       = '0.26.0'
+SERD_VERSION       = '0.27.0'
 SERD_MAJOR_VERSION = '0'
 
 # Mandatory waf variables
@@ -87,6 +87,7 @@ def configure(conf):
     print('')
 
 lib_source = [
+    'src/byte_source.c',
     'src/env.c',
     'src/node.c',
     'src/reader.c',
