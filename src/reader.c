@@ -1564,7 +1564,7 @@ tokcmp(SerdReader* reader, Ref ref, const char* tok, size_t n)
 			return ((*(uint8_t*)s1 < *(uint8_t*)s2) ? -1 : +1);
 		}
 	}
-    return 0;
+	return 0;
 }
 
 static bool
