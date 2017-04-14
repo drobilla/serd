@@ -420,8 +420,12 @@ def test(ctx):
     ], 0, name='serdi-cmd-good')
 
     # Test read error by reading a directory
-    autowaf.run_test(ctx, APPNAME, 'serdi_static "file://%s/"' % srcdir,
+    autowaf.run_test(ctx, APPNAME, 'serdi_static -e "file://%s/"' % srcdir,
                      1, name='read_error')
+
+    # Test read error with bulk input by reading a directory
+    autowaf.run_test(ctx, APPNAME, 'serdi_static "file://%s/"' % srcdir,
+                     1, name='read_error_bulk')
 
     # Test write error by writing to /dev/full
     if os.path.exists('/dev/full'):
