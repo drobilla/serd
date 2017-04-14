@@ -402,9 +402,9 @@ def test(ctx):
 
     autowaf.run_test(ctx, APPNAME, 'serd_test', dirs=['.'])
 
-    autowaf.run_tests(ctx, APPNAME, [
-            'serdi_static -q -o turtle "%s/tests/good/base.ttl" "base.ttl" > tests/good/base.ttl.out' % srcdir
-    ], 0, name='base')
+    autowaf.run_test(ctx, APPNAME,
+                     'serdi_static -q -o turtle "%s/tests/good/base.ttl" "base.ttl" > tests/good/base.ttl.out' % srcdir,
+                     0, name='base')
 
     if not file_equals('%s/tests/good/base.ttl' % srcdir, 'tests/good/base.ttl.out'):
         Logs.pprint('RED', 'FAIL: build/tests/base.ttl.out is incorrect')
@@ -455,15 +455,16 @@ def test(ctx):
 
     # Good tests
     for tdir, tests in good_tests.items():
-        commands = []
-
+        autowaf.begin_tests(ctx, APPNAME, tdir)
         for test in tests:
             for lax in ['', '-l']:
                 path = os.path.join('tests', tdir, test)
-                commands += [ 'serdi_static %s -f "%s" "%s" > %s.out' % (
-                    lax, os.path.join(srcdir, path), test_base(test), path) ]
-
-        autowaf.run_tests(ctx, APPNAME, commands, 0, name=tdir)
+                autowaf.run_test(
+                    ctx, APPNAME,
+                    'serdi_static %s -f "%s" "%s" > %s.out' % (
+                        lax, os.path.join(srcdir, path), test_base(test), path),
+                    name=path)
+        autowaf.end_tests(ctx, APPNAME, tdir)
 
         verify_tests = []
         for test in tests:
@@ -477,13 +478,16 @@ def test(ctx):
         autowaf.run_tests(ctx, APPNAME, verify_tests, name='verify_turtle_to_ntriples')
 
     # Bad tests
-    commands = []
+    autowaf.begin_tests(ctx, APPNAME, 'bad')
     for test in bad_tests:
         for lax in ['', '-l']:
-            commands += [ 'serdi_static %s -q "%s" "%s" > %s.out' % (
-                lax, os.path.join(srcdir, test), test_base(test), test) ]
-
-    autowaf.run_tests(ctx, APPNAME, commands, 1, name='bad')
+            autowaf.run_test(
+                ctx, APPNAME,
+                'serdi_static %s -q "%s" "%s" > %s.out' % (
+                    lax, os.path.join(srcdir, test), test_base(test), test),
+                1,
+                name=test)
+    autowaf.end_tests(ctx, APPNAME, 'bad')
 
     # Don't do a round-trip test for test-id.ttl, IDs have changed
     good_tests['good'].remove('test-id.ttl')
@@ -493,7 +497,6 @@ def test(ctx):
     for tdir, tests in good_tests.items():
         thru_tests = tests;
 
-        commands = []
         num = 0
         for test in thru_tests:
             num += 1
