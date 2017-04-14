@@ -336,13 +336,15 @@ def test_manifest(ctx, srcdir, testdir, report, base_uri, isyntax, osyntax, test
         asserter = 'http://drobilla.net/drobilla#me'
 
     def run_test(action_node, expected_return):
-        output  = os.path.join('tests', testdir, action_node + '.out')
-        action  = os.path.join(srcdir, 'tests', testdir, action_node)
-        rel     = os.path.relpath(action, os.path.join(srcdir, 'tests', testdir))
-        command = 'serdi_static -i %s -o %s -f "%s" "%s" > %s' % (
-            isyntax, osyntax, action, base_uri + rel, output)
+        action     = os.path.join('tests', testdir, action_node)
+        output     = os.path.join('tests', testdir, action_node + '.out')
+        abs_action = os.path.join(srcdir, action)
+        rel        = os.path.relpath(abs_action, os.path.join(srcdir, 'tests', testdir))
+        command    = 'serdi_static -i %s -o %s -f "%s" "%s" > %s' % (
+            isyntax, osyntax, abs_action, base_uri + rel, output)
 
-        return autowaf.run_test(ctx, APPNAME, command, expected_return, name=str(action))
+        return autowaf.run_test(ctx, APPNAME, command,
+                                expected_return, name=str(action))
 
     def run_tests(test_class, expected_return, check_result=False):
         autowaf.begin_tests(ctx, APPNAME, str(test_class))
