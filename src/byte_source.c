@@ -21,12 +21,12 @@ serd_byte_source_page(SerdByteSource* source)
 {
 	source->read_head = 0;
 	size_t n_read = source->read_func(
-		source->file_buf, 1, SERD_PAGE_SIZE, source->stream);
+		source->file_buf, 1, source->page_size, source->stream);
 	if (n_read == 0) {
 		source->file_buf[0] = '\0';
 		return (source->error_func(source->stream)
 		        ? SERD_ERR_UNKNOWN : SERD_FAILURE);
-	} else if (n_read < SERD_PAGE_SIZE) {
+	} else if (n_read < source->page_size) {
 		source->file_buf[n_read] = '\0';
 	}
 	return SERD_SUCCESS;
