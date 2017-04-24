@@ -1834,7 +1834,7 @@ serd_reader_start_stream(SerdReader*    me,
 		(SerdStreamErrorFunc)ferror,
 		file,
 		name,
-		bulk);
+		bulk ? SERD_PAGE_SIZE : 1);
 }
 
 SERD_API
@@ -1844,13 +1844,13 @@ serd_reader_start_source_stream(SerdReader*         me,
                                 SerdStreamErrorFunc error_func,
                                 void*               stream,
                                 const uint8_t*      name,
-                                bool                bulk)
+                                size_t              page_size)
 {
 	const Cursor cur = { name, 1, 1 };
 	me->cur = cur;
 
 	return serd_byte_source_open_source(
-		&me->source, read_func, error_func, stream, bulk);
+		&me->source, read_func, error_func, stream, page_size);
 }
 
 static SerdStatus
@@ -1895,7 +1895,8 @@ SerdStatus
 serd_reader_read_file_handle(SerdReader* me, FILE* file, const uint8_t* name)
 {
 	return serd_reader_read_source(
-		me, (SerdSource)fread, (SerdStreamErrorFunc)ferror, file, name);
+		me, (SerdSource)fread, (SerdStreamErrorFunc)ferror,
+		file, name, SERD_PAGE_SIZE);
 }
 
 SERD_API
@@ -1904,10 +1905,11 @@ serd_reader_read_source(SerdReader*         me,
                         SerdSource          source,
                         SerdStreamErrorFunc error,
                         void*               stream,
-                        const uint8_t*      name)
+                        const uint8_t*      name,
+                        size_t              page_size)
 {
 	SerdStatus st = serd_reader_start_source_stream(
-		me, source, error, stream, name, true);
+		me, source, error, stream, name, page_size);
 
 	if ((st = serd_reader_prepare(me))) {
 		serd_reader_end_stream(me);

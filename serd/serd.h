@@ -827,8 +827,8 @@ serd_reader_start_stream(SerdReader*    me,
 /**
    Start an incremental read from a user-specified source.
 
-   Iff `bulk` is true, `source` will be read a page at a time.  Otherwise,
-   `source` is guaranteed to only be called for single bytes.
+   The `read_func` is guaranteed to only be called for `page_size` elements
+   with size 1 (i.e. `page_size` bytes).
 */
 SERD_API
 SerdStatus
@@ -837,7 +837,7 @@ serd_reader_start_source_stream(SerdReader*         me,
                                 SerdStreamErrorFunc error_func,
                                 void*               stream,
                                 const uint8_t*      name,
-                                bool                bulk);
+                                size_t              page_size);
 
 /**
    Read a single "chunk" of data during an incremental read.
@@ -876,7 +876,8 @@ serd_reader_read_source(SerdReader*         reader,
                         SerdSource          source,
                         SerdStreamErrorFunc error,
                         void*               stream,
-                        const uint8_t*      name);
+                        const uint8_t*      name,
+                        size_t              page_size);
 
 /**
    Read `utf8`.

@@ -1,8 +1,8 @@
-serd (0.27.0) unstable;
+serd (0.27.1) unstable;
 
   * Add support for reading from a user provided callback
 
- -- David Robillard <d@drobilla.net>  Fri, 14 Apr 2017 20:30:51 +0200
+ -- David Robillard <d@drobilla.net>  Mon, 24 Apr 2017 19:06:08 +0200
 
 serd (0.26.0) stable;
 

@@ -72,12 +72,12 @@ typedef struct {
 	SerdSource          read_func;    ///< Read function (e.g. fread)
 	SerdStreamErrorFunc error_func;   ///< Error function (e.g. ferror)
 	void*               stream;       ///< Stream (e.g. FILE)
+	size_t              page_size;    ///< Number of bytes to read at a time
 	uint8_t*            file_buf;     ///< Buffer iff reading pages from a file
 	const uint8_t*      read_buf;     ///< Pointer to file_buf or read_byte
 	size_t              read_head;    ///< Offset into read_buf
 	uint8_t             read_byte;    ///< 1-byte 'buffer' used when not paging
 	bool                from_stream;  ///< True iff reading from `stream`
-	bool                paging;       ///< True iff reading a page at a time
 	bool                prepared;     ///< True iff prepared for reading
 } SerdByteSource;
 
@@ -94,7 +94,7 @@ serd_byte_source_open_source(SerdByteSource*     source,
                              SerdSource          read_func,
                              SerdStreamErrorFunc error_func,
                              void*               stream,
-                             bool                bulk);
+                             size_t              page_size);
 
 SerdStatus
 serd_byte_source_close(SerdByteSource* source);

@@ -37,19 +37,19 @@ serd_byte_source_open_source(SerdByteSource*     source,
                              SerdSource          read_func,
                              SerdStreamErrorFunc error_func,
                              void*               stream,
-                             bool                bulk)
+                             size_t              page_size)
 {
 	memset(source, '\0', sizeof(*source));
 	source->stream      = stream;
 	source->from_stream = true;
-	source->paging      = bulk;
+	source->page_size   = page_size;
 	source->error_func  = error_func;
 	source->read_func   = read_func;
 
-	if (bulk) {
-		source->file_buf = (uint8_t*)serd_bufalloc(SERD_PAGE_SIZE);
+	if (page_size > 1) {
+		source->file_buf = (uint8_t*)serd_bufalloc(page_size);
 		source->read_buf = source->file_buf;
-		memset(source->file_buf, '\0', SERD_PAGE_SIZE);
+		memset(source->file_buf, '\0', page_size);
 	} else {
 		source->read_buf = &source->read_byte;
 	}
@@ -62,7 +62,7 @@ serd_byte_source_prepare(SerdByteSource* source)
 {
 	if (!source->prepared) {
 		source->prepared = true;
-		if (source->paging) {
+		if (source->page_size > 1) {
 			return serd_byte_source_page(source);
 		} else if (source->from_stream) {
 			return serd_byte_source_advance(source);
@@ -83,7 +83,7 @@ serd_byte_source_open_string(SerdByteSource* source, const uint8_t* utf8)
 SerdStatus
 serd_byte_source_close(SerdByteSource* source)
 {
-	if (source->paging) {
+	if (source->page_size > 1) {
 		free(source->file_buf);
 	}
 	memset(source, '\0', sizeof(*source));
@@ -93,13 +93,14 @@ serd_byte_source_close(SerdByteSource* source)
 SerdStatus
 serd_byte_source_advance(SerdByteSource* source)
 {
-	SerdStatus st = SERD_SUCCESS;
-	if (source->from_stream && !source->paging) {
+	const bool paging = source->page_size > 1;
+	SerdStatus st     = SERD_SUCCESS;
+	if (source->from_stream && !paging) {
 		if (source->read_func(&source->read_byte, 1, 1, source->stream) == 0) {
 			return (source->error_func(source->stream)
 			        ? SERD_ERR_UNKNOWN : SERD_FAILURE);
 		}
-	} else if (++source->read_head == SERD_PAGE_SIZE && source->paging) {
+	} else if (++source->read_head == source->page_size && paging) {
 		st = serd_byte_source_page(source);
 	}
 
