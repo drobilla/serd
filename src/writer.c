@@ -49,7 +49,9 @@ typedef enum {
 	SEP_LIST_SEP,    ///< List separator (whitespace)
 	SEP_LIST_END,    ///< End of list (')')
 	SEP_GRAPH_BEGIN, ///< Start of graph ('{')
-	SEP_GRAPH_END    ///< End of graph ('}')
+	SEP_GRAPH_END,   ///< End of graph ('}')
+	SEP_URI_BEGIN,   ///< URI start quote ('<')
+	SEP_URI_END      ///< URI end quote ('>')
 } Sep;
 
 typedef struct {
@@ -74,6 +76,8 @@ static const SepRule rules[] = {
 	{ ")",      1, 1, 0, 0 },
 	{ " {",     2, 0, 1, 1 },
 	{ " }",     2, 0, 1, 1 },
+	{ "<",      1, 0, 0, 0 },
+	{ ">",      1, 0, 0, 0 },
 	{ "\n",     1, 0, 1, 0 }
 };
 
@@ -504,10 +508,10 @@ write_node(SerdWriter*        writer,
 				      "undefined namespace prefix `%s'\n", node->buf);
 				return false;
 			}
-			sink("<", 1, writer);
+			write_sep(writer, SEP_URI_BEGIN);
 			write_uri(writer, uri_prefix.buf, uri_prefix.len);
 			write_uri(writer, suffix.buf, suffix.len);
-			sink(">", 1, writer);
+			write_sep(writer, SEP_URI_END);
 			break;
 		case SERD_TURTLE:
 		case SERD_TRIG:
@@ -583,7 +587,7 @@ write_node(SerdWriter*        writer,
 			write_uri(writer, suffix.buf, suffix.len);
 			break;
 		}
-		sink("<", 1, writer);
+		write_sep(writer, SEP_URI_BEGIN);
 		if (writer->style & SERD_STYLE_RESOLVED) {
 			SerdURI in_base_uri, uri, abs_uri;
 			serd_env_get_base_uri(writer->env, &in_base_uri);
@@ -602,7 +606,7 @@ write_node(SerdWriter*        writer,
 		} else {
 			write_uri(writer, node->buf, node->n_bytes);
 		}
-		sink(">", 1, writer);
+		write_sep(writer, SEP_URI_END);
 		if (is_inline_start(writer, field, flags)) {
 			sink(" ;", 2, writer);
 			write_newline(writer);
@@ -815,10 +819,10 @@ SerdStatus
 serd_writer_finish(SerdWriter* writer)
 {
 	if (writer->context.subject.type) {
-		sink(" .\n", 3, writer);
+		write_sep(writer, SEP_END_S);
 	}
 	if (writer->context.graph.type) {
-		sink("}\n", 2, writer);
+		write_sep(writer, SEP_GRAPH_END);
 	}
 	serd_byte_sink_flush(&writer->byte_sink);
 	writer->indent = 0;
