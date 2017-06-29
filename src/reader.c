@@ -781,7 +781,7 @@ check_scheme(SerdReader* reader, uint8_t c, SchemeState* state)
 	if (!supports_relative_iris(reader) && *state == PREFIX) {
 		if (c == ':') {
 			*state = GOOD;
-		} else if (!isalpha(c)) {
+		} else if (!isalnum(c)) {
 			*state = BAD;
 			return r_err(reader, SERD_ERR_BAD_SYNTAX,
 			             "syntax does not support relative IRIs\n");
@@ -797,6 +797,13 @@ read_IRIREF(SerdReader* reader)
 	Ref         ref    = push_node(reader, SERD_URI, "", 0);
 	SchemeState scheme = PREFIX;
 	uint32_t    code;
+
+	if (!supports_relative_iris(reader) && !isalpha(peek_byte(reader))) {
+		r_err(reader, SERD_ERR_BAD_SYNTAX,
+		      "syntax does not support relative IRIs\n");
+		return pop_node(reader, ref);
+	}
+
 	while (true) {
 		const uint8_t c = peek_byte(reader);
 		if (!check_scheme(reader, c, &scheme)) {
