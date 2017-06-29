@@ -20,9 +20,9 @@
 
 SERD_API
 const uint8_t*
-serd_strerror(SerdStatus st)
+serd_strerror(SerdStatus status)
 {
-	switch (st) {
+	switch (status) {
 	case SERD_SUCCESS:        return (const uint8_t*)"Success";
 	case SERD_FAILURE:        return (const uint8_t*)"Non-fatal failure";
 	case SERD_ERR_UNKNOWN:    return (const uint8_t*)"Unknown error";

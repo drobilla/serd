@@ -189,7 +189,7 @@ push_node_padded(SerdReader* reader, size_t maxlen,
 
 #ifdef SERD_STACK_CHECK
 	reader->allocs = realloc(
-		reader->allocs, sizeof(uint8_t*) * (++reader->n_allocs));
+		reader->allocs, sizeof(reader->allocs) * (++reader->n_allocs));
 	reader->allocs[reader->n_allocs - 1] = ((uint8_t*)mem - reader->stack.buf);
 #endif
 	return (uint8_t*)node - reader->stack.buf;
@@ -278,10 +278,9 @@ read_HEX(SerdReader* reader)
 	const uint8_t c = peek_byte(reader);
 	if (is_digit(c) || in_range(c, 'A', 'F') || in_range(c, 'a', 'f')) {
 		return eat_byte_safe(reader, c);
-	} else {
-		return r_err(reader, SERD_ERR_BAD_SYNTAX,
-		             "invalid hexadecimal digit `%c'\n", c);
 	}
+	return r_err(reader, SERD_ERR_BAD_SYNTAX,
+	             "invalid hexadecimal digit `%c'\n", c);
 }
 
 // Read UCHAR escape, initial \ is already eaten by caller
@@ -456,9 +455,8 @@ read_character(SerdReader* reader, Ref dest, SerdNodeFlags* flags, uint8_t c)
 		}
 		push_byte(reader, dest, c);
 		return SERD_SUCCESS;
-	} else {
-		return read_utf8_character(reader, dest, c);
 	}
+	return read_utf8_character(reader, dest, c);
 }
 
 // [10] comment ::= '#' ( [^#xA #xD] )*
@@ -540,11 +538,10 @@ read_STRING_LITERAL_LONG(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 				if (q2 == q && q3 == q) {  // End of string
 					eat_byte_safe(reader, q3);
 					return ref;
-				} else {
-					*flags |= SERD_HAS_QUOTE;
-					push_byte(reader, ref, c);
-					read_character(reader, ref, flags, q2);
 				}
+				*flags |= SERD_HAS_QUOTE;
+				push_byte(reader, ref, c);
+				read_character(reader, ref, flags, q2);
 			} else {
 				read_character(reader, ref, flags, eat_byte_safe(reader, c));
 			}
@@ -672,11 +669,10 @@ read_PLX(SerdReader* reader, Ref dest)
 		if (is_alpha(c = peek_byte(reader))) {
 			// Escapes like \u \n etc. are not supported
 			return SERD_ERR_BAD_SYNTAX;
-		} else {
-			// Allow escaping of pretty much any other character
-			push_byte(reader, dest, eat_byte_safe(reader, c));
-			return SERD_SUCCESS;
 		}
+		// Allow escaping of pretty much any other character
+		push_byte(reader, dest, eat_byte_safe(reader, c));
+		return SERD_SUCCESS;
 	default:
 		return SERD_FAILURE;
 	}
@@ -1001,27 +997,26 @@ read_verb(SerdReader* reader, Ref* dest)
 {
 	if (peek_byte(reader) == '<') {
 		return (*dest = read_IRIREF(reader));
-	} else {
-		/* Either a qname, or "a".  Read the prefix first, and if it is in fact
-		   "a", produce that instead.
-		*/
-		*dest = push_node(reader, SERD_CURIE, "", 0);
-		SerdNode*        node    = deref(reader, *dest);
-		const SerdStatus st      = read_PN_PREFIX(reader, *dest);
-		bool             ate_dot = false;
-		if (!st && node->n_bytes == 1 && node->buf[0] == 'a' &&
-		    is_token_end(peek_byte(reader))) {
-			pop_node(reader, *dest);
-			return (*dest = push_node(reader, SERD_URI, NS_RDF "type", 47));
-		} else if (st > SERD_FAILURE ||
-		           !read_PrefixedName(reader, *dest, false, &ate_dot) ||
-		           ate_dot) {
-			return (*dest = pop_node(reader, *dest));
-		} else {
-			return true;
-		}
 	}
-	return false;
+
+	/* Either a qname, or "a".  Read the prefix first, and if it is in fact
+	   "a", produce that instead.
+	*/
+	*dest = push_node(reader, SERD_CURIE, "", 0);
+	SerdNode*        node    = deref(reader, *dest);
+	const SerdStatus st      = read_PN_PREFIX(reader, *dest);
+	bool             ate_dot = false;
+	if (!st && node->n_bytes == 1 && node->buf[0] == 'a' &&
+	    is_token_end(peek_byte(reader))) {
+		pop_node(reader, *dest);
+		return (*dest = push_node(reader, SERD_URI, NS_RDF "type", 47));
+	} else if (st > SERD_FAILURE ||
+	           !read_PrefixedName(reader, *dest, false, &ate_dot) ||
+	           ate_dot) {
+		return (*dest = pop_node(reader, *dest));
+	}
+
+	return true;
 }
 
 static Ref
@@ -1901,16 +1896,18 @@ serd_reader_end_stream(SerdReader* me)
 
 SERD_API
 SerdStatus
-serd_reader_read_file_handle(SerdReader* me, FILE* file, const uint8_t* name)
+serd_reader_read_file_handle(SerdReader*    reader,
+                             FILE*          file,
+                             const uint8_t* name)
 {
 	return serd_reader_read_source(
-		me, (SerdSource)fread, (SerdStreamErrorFunc)ferror,
+		reader, (SerdSource)fread, (SerdStreamErrorFunc)ferror,
 		file, name, SERD_PAGE_SIZE);
 }
 
 SERD_API
 SerdStatus
-serd_reader_read_source(SerdReader*         me,
+serd_reader_read_source(SerdReader*         reader,
                         SerdSource          source,
                         SerdStreamErrorFunc error,
                         void*               stream,
@@ -1918,17 +1915,17 @@ serd_reader_read_source(SerdReader*         me,
                         size_t              page_size)
 {
 	SerdStatus st = serd_reader_start_source_stream(
-		me, source, error, stream, name, page_size);
+		reader, source, error, stream, name, page_size);
 
-	if ((st = serd_reader_prepare(me))) {
-		serd_reader_end_stream(me);
+	if (st || (st = serd_reader_prepare(reader))) {
+		serd_reader_end_stream(reader);
 		return st;
-	} else if (!read_doc(me)) {
-		serd_reader_end_stream(me);
+	} else if (!read_doc(reader)) {
+		serd_reader_end_stream(reader);
 		return SERD_ERR_UNKNOWN;
 	}
 
-	return serd_reader_end_stream(me);
+	return serd_reader_end_stream(reader);
 }
 
 SERD_API

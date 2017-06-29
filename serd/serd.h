@@ -370,11 +370,13 @@ SerdStatus
 serd_uri_parse(const uint8_t* utf8, SerdURI* out);
 
 /**
-   Set `out` to `uri` resolved against `base`.
+   Set target `t` to reference `r` resolved against `base`.
+
+   @see http://tools.ietf.org/html/rfc3986#section-5.2.2
 */
 SERD_API
 void
-serd_uri_resolve(const SerdURI* uri, const SerdURI* base, SerdURI* out);
+serd_uri_resolve(const SerdURI* r, const SerdURI* base, SerdURI* t);
 
 /**
    Function to detect I/O stream errors.
@@ -766,7 +768,7 @@ SERD_API
 void
 serd_reader_set_error_sink(SerdReader*   reader,
                            SerdErrorSink error_sink,
-                           void*         handle);
+                           void*         error_handle);
 
 /**
    Return the `handle` passed to serd_reader_new().
@@ -908,7 +910,7 @@ serd_writer_new(SerdSyntax     syntax,
                 SerdStyle      style,
                 SerdEnv*       env,
                 const SerdURI* base_uri,
-                SerdSink       sink,
+                SerdSink       ssink,
                 void*          stream);
 
 /**
@@ -967,7 +969,7 @@ SERD_API
 void
 serd_writer_set_error_sink(SerdWriter*   writer,
                            SerdErrorSink error_sink,
-                           void*         handle);
+                           void*         error_handle);
 
 /**
    Set a prefix to be removed from matching blank node identifiers.
@@ -1026,8 +1028,8 @@ serd_writer_write_statement(SerdWriter*        writer,
                             const SerdNode*    subject,
                             const SerdNode*    predicate,
                             const SerdNode*    object,
-                            const SerdNode*    object_datatype,
-                            const SerdNode*    object_lang);
+                            const SerdNode*    datatype,
+                            const SerdNode*    lang);
 
 /**
    Mark the end of an anonymous node's description.

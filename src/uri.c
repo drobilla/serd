@@ -137,9 +137,9 @@ serd_uri_dump(const SerdURI* uri, FILE* file)
 
 SERD_API
 SerdStatus
-serd_uri_parse(const uint8_t* utf8, SerdURI* uri)
+serd_uri_parse(const uint8_t* utf8, SerdURI* out)
 {
-	*uri = SERD_URI_NULL;
+	*out = SERD_URI_NULL;
 
 	const uint8_t* ptr = utf8;
 
@@ -155,8 +155,8 @@ serd_uri_parse(const uint8_t* utf8, SerdURI* uri)
 				ptr = utf8;
 				goto path;  // Relative URI (starts with path by definition)
 			case ':':
-				uri->scheme.buf = utf8;
-				uri->scheme.len = (ptr++) - utf8;
+				out->scheme.buf = utf8;
+				out->scheme.len = (ptr++) - utf8;
 				goto maybe_authority;  // URI with scheme
 			case '+': case '-': case '.':
 				continue;
@@ -175,14 +175,14 @@ serd_uri_parse(const uint8_t* utf8, SerdURI* uri)
 maybe_authority:
 	if (*ptr == '/' && *(ptr + 1) == '/') {
 		ptr += 2;
-		uri->authority.buf = ptr;
+		out->authority.buf = ptr;
 		for (uint8_t c; (c = *ptr) != '\0'; ++ptr) {
 			switch (c) {
 			case '/': goto path;
 			case '?': goto query;
 			case '#': goto fragment;
 			default:
-				++uri->authority.len;
+				++out->authority.len;
 			}
 		}
 	}
@@ -197,14 +197,14 @@ path:
 	case '\0': goto end;
 	default:  break;
 	}
-	uri->path.buf = ptr;
-	uri->path.len = 0;
+	out->path.buf = ptr;
+	out->path.len = 0;
 	for (uint8_t c; (c = *ptr) != '\0'; ++ptr) {
 		switch (c) {
 		case '?': goto query;
 		case '#': goto fragment;
 		default:
-			++uri->path.len;
+			++out->path.len;
 		}
 	}
 
@@ -214,13 +214,13 @@ path:
 	*/
 query:
 	if (*ptr == '?') {
-		uri->query.buf = ++ptr;
+		out->query.buf = ++ptr;
 		for (uint8_t c; (c = *ptr) != '\0'; ++ptr) {
 			switch (c) {
 			case '#':
 				goto fragment;
 			default:
-				++uri->query.len;
+				++out->query.len;
 			}
 		}
 	}
@@ -231,16 +231,16 @@ query:
 	*/
 fragment:
 	if (*ptr == '#') {
-		uri->fragment.buf = ptr;
+		out->fragment.buf = ptr;
 		while (*ptr++ != '\0') {
-			++uri->fragment.len;
+			++out->fragment.len;
 		}
 	}
 
 end:
 	#ifdef URI_DEBUG
 	fprintf(stderr, "PARSE URI <%s>\n", utf8);
-	serd_uri_dump(uri, stderr);
+	serd_uri_dump(out, stderr);
 	fprintf(stderr, "\n");
 	#endif
 

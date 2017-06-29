@@ -211,6 +211,7 @@ def build(bld):
 
 def lint(ctx):
     subprocess.call('cpplint.py --filter=+whitespace/comments,-whitespace/tab,-whitespace/braces,-whitespace/labels,-build/header_guard,-readability/casting,-readability/todo,-build/include src/* serd/*', shell=True)
+    subprocess.call('clang-tidy -checks="*,-misc-unused-parameters,-readability-else-after-return,-llvm-header-guard,-google-readability-todo,-clang-analyzer-alpha.*" -extra-arg="-std=c99" -extra-arg="-I." -extra-arg="-Ibuild" ./serd/*.h ./src/*.c ./src/*.h', shell=True)
 
 def amalgamate(ctx):
     shutil.copy('serd/serd.h', 'build/serd.h')

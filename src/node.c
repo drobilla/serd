@@ -33,16 +33,16 @@
 
 SERD_API
 SerdNode
-serd_node_from_string(SerdType type, const uint8_t* buf)
+serd_node_from_string(SerdType type, const uint8_t* str)
 {
-	if (!buf) {
+	if (!str) {
 		return SERD_NODE_NULL;
 	}
 
 	uint32_t     flags       = 0;
 	size_t       buf_n_bytes = 0;
-	const size_t buf_n_chars = serd_strlen(buf, &buf_n_bytes, &flags);
-	SerdNode ret = { buf, buf_n_bytes, buf_n_chars, flags, type };
+	const size_t buf_n_chars = serd_strlen(str, &buf_n_bytes, &flags);
+	SerdNode ret = { str, buf_n_bytes, buf_n_chars, flags, type };
 	return ret;
 }
 

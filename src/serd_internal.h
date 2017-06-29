@@ -43,7 +43,7 @@
 static inline FILE*
 serd_fopen(const char* path, const char* mode)
 {
-	FILE* fd = fopen((const char*)path, mode);
+	FILE* fd = fopen(path, mode);
 	if (!fd) {
 		fprintf(stderr, "Error opening file %s (%s)\n", path, strerror(errno));
 		return NULL;
