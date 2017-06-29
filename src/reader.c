@@ -773,35 +773,44 @@ read_LANGTAG(SerdReader* reader)
 	return ref;
 }
 
-typedef enum { PREFIX, GOOD, BAD} SchemeState;
-
-static inline bool
-check_scheme(SerdReader* reader, uint8_t c, SchemeState* state)
+static bool
+read_IRIREF_scheme(SerdReader* reader, Ref dest)
 {
-	if (!supports_relative_iris(reader) && *state == PREFIX) {
-		if (c == ':') {
-			*state = GOOD;
-		} else if (!isalpha(c)) {
-			*state = BAD;
+	uint8_t c = peek_byte(reader);
+	if (!isalpha(c)) {
+		return r_err(reader, SERD_ERR_BAD_SYNTAX,
+		             "bad IRI scheme start `%c'\n", c);
+	}
+
+	while ((c = peek_byte(reader))) {
+		if (c == '>') {
+			return r_err(reader, SERD_ERR_BAD_SYNTAX, "missing IRI scheme\n");
+		} else if (!is_uri_scheme_char(c)) {
 			return r_err(reader, SERD_ERR_BAD_SYNTAX,
-			             "syntax does not support relative IRIs\n");
+			             "bad IRI scheme char `%X'\n", c);
+		}
+
+		push_byte(reader, dest, eat_byte_safe(reader, c));
+		if (c == ':') {
+			return true;  // End of scheme
 		}
 	}
-	return true;
+
+	return false;
 }
 
 static Ref
 read_IRIREF(SerdReader* reader)
 {
 	TRY_RET(eat_byte_check(reader, '<'));
-	Ref         ref    = push_node(reader, SERD_URI, "", 0);
-	SchemeState scheme = PREFIX;
-	uint32_t    code;
+	Ref ref = push_node(reader, SERD_URI, "", 0);
+	if (!supports_relative_iris(reader) && !read_IRIREF_scheme(reader, ref)) {
+		return pop_node(reader, ref);
+	}
+
+	uint32_t code;
 	while (true) {
 		const uint8_t c = peek_byte(reader);
-		if (!check_scheme(reader, c, &scheme)) {
-			return pop_node(reader, ref);
-		}
 		switch (c) {
 		case '"': case '<': case '^': case '`': case '{': case '|': case '}':
 			r_err(reader, SERD_ERR_BAD_SYNTAX,

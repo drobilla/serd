@@ -103,16 +103,12 @@ serd_uri_string_has_scheme(const uint8_t* utf8)
 	if (!utf8 || !is_alpha(utf8[0])) {
 		return false;  // Invalid scheme initial character, URI is relative
 	}
+
 	for (uint8_t c; (c = *++utf8) != '\0';) {
-		switch (c) {
-		case ':':
+		if (!is_uri_scheme_char(c)) {
+			return false;
+		} else if (c == ':') {
 			return true;  // End of scheme
-		case '+': case '-': case '.':
-			break;  // Valid scheme character, continue
-		default:
-			if (!is_alpha(c) && !is_digit(c)) {
-				return false;  // Invalid scheme character
-			}
 		}
 	}
 

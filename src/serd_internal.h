@@ -368,6 +368,17 @@ uri_is_under(const SerdURI* uri, const SerdURI* root)
 	return true;
 }
 
+static inline bool
+is_uri_scheme_char(const uint8_t c)
+{
+	switch (c) {
+	case ':': case '+': case '-': case '.':
+		return true;
+	default:
+		return is_alpha(c) || is_digit(c);
+	}
+}
+
 /* Error reporting */
 
 static inline void

@@ -1,8 +1,9 @@
 serd (0.27.1) unstable;
 
   * Add support for reading from a user provided callback
+  * Fix strict parsing of abolute URI schemes
 
- -- David Robillard <d@drobilla.net>  Mon, 24 Apr 2017 19:06:08 +0200
+ -- David Robillard <d@drobilla.net>  Thu, 29 Jun 2017 12:20:40 -0400
 
 serd (0.26.0) stable;
 

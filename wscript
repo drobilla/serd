@@ -392,7 +392,7 @@ def test(ctx):
     os.chdir(orig_dir)
 
     os.chdir(srcdir)
-    bad_tests = glob.glob('tests/bad/*.ttl')
+    bad_tests = glob.glob('tests/bad/*.ttl') + glob.glob('tests/bad/*.nt')
     bad_tests.sort()
     os.chdir(orig_dir)
 
@@ -483,8 +483,9 @@ def test(ctx):
         for lax in ['', '-l']:
             autowaf.run_test(
                 ctx, APPNAME,
-                'serdi_static %s -q "%s" "%s" > %s.out' % (
-                    lax, os.path.join(srcdir, test), test_base(test), test),
+                'serdi_static %s -i %s -q "%s" "%s" > %s.out' % (
+                    lax, 'turtle' if test.endswith('.ttl') else 'ntriples',
+                    os.path.join(srcdir, test), test_base(test), test),
                 1,
                 name=test)
     autowaf.end_tests(ctx, APPNAME, 'bad')
