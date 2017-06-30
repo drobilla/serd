@@ -570,7 +570,7 @@ def posts(ctx):
     autowaf.news_to_posts(
         os.path.join(path, 'NEWS'),
         {'title'        : 'Serd',
-         'description'  : autowaf.get_blurb(os.path.join(path, 'README')),
+         'description'  : autowaf.get_blurb(os.path.join(path, 'README.md')),
          'dist_pattern' : 'http://download.drobilla.net/serd-%s.tar.bz2'},
         { 'Author' : 'drobilla',
           'Tags'   : 'Hacking, RDF, Serd' },
