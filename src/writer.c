@@ -158,42 +158,44 @@ sink(const void* buf, size_t len, SerdWriter* writer)
 	return serd_byte_sink_write(buf, len, &writer->byte_sink);
 }
 
+// Return the number of bytes in a UTF-8 character
+static inline uint32_t
+utf8_num_bytes(const uint8_t* utf8)
+{
+	if ((utf8[0] & 0x80) == 0) {  // Starts with `0'
+		return 1;
+	}
+
+#ifdef HAVE_BUILTIN_CLZ
+	return __builtin_clz(~utf8[0] << 24);
+#else
+	if ((utf8[0] & 0xE0) == 0xC0) {  // Starts with `110'
+		return 2;
+	} else if ((utf8[0] & 0xF0) == 0xE0) {  // Starts with `1110'
+		return 3;
+	} else if ((utf8[0] & 0xF8) == 0xF0) {  // Starts with `11110'
+		return 4;
+	}
+	return 0;
+#endif
+}
+
 // Parse a UTF-8 character, set *size to the length, and return the code point
 static inline uint32_t
 parse_utf8_char(SerdWriter* writer, const uint8_t* utf8, size_t* size)
 {
-	uint32_t c = 0;
-	if ((utf8[0] & 0x80) == 0) {  // Starts with `0'
-		*size = 1;
-		c     = utf8[0];
-	} else if ((utf8[0] & 0xE0) == 0xC0) {  // Starts with `110'
-		*size = 2;
-		c     = utf8[0] & 0x1F;
-	} else if ((utf8[0] & 0xF0) == 0xE0) {  // Starts with `1110'
-		*size = 3;
-		c     = utf8[0] & 0x0F;
-	} else if ((utf8[0] & 0xF8) == 0xF0) {  // Starts with `11110'
-		*size = 4;
-		c     = utf8[0] & 0x07;
-	} else {
-		w_err(writer, SERD_ERR_BAD_ARG, "invalid UTF-8: %X\n", utf8[0]);
-		*size = 0;
+	switch (*size = utf8_num_bytes(utf8)) {
+	case 1: case 2: case 3: case 4:
+		break;
+	default:
 		return 0;
 	}
 
-	size_t  i  = 0;
-	uint8_t in = utf8[i++];
-
-#define READ_BYTE() \
-	in = utf8[i++] & 0x3F; \
-	c  = (c << 6) | in;
-
-	switch (*size) {
-	case 4: READ_BYTE();
-	case 3: READ_BYTE();
-	case 2: READ_BYTE();
+	uint32_t c = utf8[0] & ((1 << (8 - *size)) - 1);
+	for (size_t i = 1; i < *size; ++i) {
+		const uint8_t in = utf8[i] & 0x3F;
+		c = (c << 6) | in;
 	}
-
 	return c;
 }
 

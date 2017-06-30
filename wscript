@@ -78,6 +78,11 @@ def configure(conf):
                    defines       = ['_POSIX_C_SOURCE=200809L'],
                    mandatory     = False)
 
+    conf.check(fragment      = 'int main() { return __builtin_clz(1); }',
+               function_name = '__builtin_clz',
+               define_name   = 'HAVE_BUILTIN_CLZ',
+               mandatory     = False)
+
     autowaf.define(conf, 'SERD_VERSION', SERD_VERSION)
     autowaf.set_lib_env(conf, 'serd', SERD_VERSION)
     conf.write_config_header('serd_config.h', remove=False)
