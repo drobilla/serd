@@ -204,15 +204,14 @@ write_character(SerdWriter* writer, const uint8_t* utf8, size_t* size)
 {
 	const uint8_t replacement_char[] = { 0xEF, 0xBF, 0xBD };
 	char          escape[11]         = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-	const uint8_t in                 = utf8[0];
 
-	uint32_t c = parse_utf8_char(writer, utf8, size);
+	const uint32_t c = parse_utf8_char(writer, utf8, size);
 	switch (*size) {
 	case 0:
-		w_err(writer, SERD_ERR_BAD_ARG, "invalid UTF-8: %X\n", in);
+		w_err(writer, SERD_ERR_BAD_ARG, "invalid UTF-8: %X\n", utf8[0]);
 		return sink(replacement_char, sizeof(replacement_char), writer);
 	case 1:
-		snprintf(escape, sizeof(escape), "\\u%04X", in);
+		snprintf(escape, sizeof(escape), "\\u%04X", utf8[0]);
 		return sink(escape, 6, writer);
 	default:
 		break;
