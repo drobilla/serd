@@ -1828,13 +1828,13 @@ skip_bom(SerdReader* me)
 
 SERD_API
 SerdStatus
-serd_reader_start_stream(SerdReader*    me,
+serd_reader_start_stream(SerdReader*    reader,
                          FILE*          file,
                          const uint8_t* name,
                          bool           bulk)
 {
 	return serd_reader_start_source_stream(
-		me,
+		reader,
 		bulk ? (SerdSource)fread : serd_file_read_byte,
 		(SerdStreamErrorFunc)ferror,
 		file,
@@ -1844,7 +1844,7 @@ serd_reader_start_stream(SerdReader*    me,
 
 SERD_API
 SerdStatus
-serd_reader_start_source_stream(SerdReader*         me,
+serd_reader_start_source_stream(SerdReader*         reader,
                                 SerdSource          read_func,
                                 SerdStreamErrorFunc error_func,
                                 void*               stream,
@@ -1852,50 +1852,50 @@ serd_reader_start_source_stream(SerdReader*         me,
                                 size_t              page_size)
 {
 	const Cursor cur = { name, 1, 1 };
-	me->cur = cur;
+	reader->cur = cur;
 
 	return serd_byte_source_open_source(
-		&me->source, read_func, error_func, stream, page_size);
+		&reader->source, read_func, error_func, stream, page_size);
 }
 
 static SerdStatus
-serd_reader_prepare(SerdReader* me)
+serd_reader_prepare(SerdReader* reader)
 {
-	me->eof    = false;
-	me->status = serd_byte_source_prepare(&me->source);
-	if (me->status == SERD_SUCCESS) {
-		me->status = skip_bom(me);
-	} else if (me->status == SERD_FAILURE) {
-		me->eof = true;
+	reader->eof    = false;
+	reader->status = serd_byte_source_prepare(&reader->source);
+	if (reader->status == SERD_SUCCESS) {
+		reader->status = skip_bom(reader);
+	} else if (reader->status == SERD_FAILURE) {
+		reader->eof = true;
 	} else {
-		r_err(me, me->status, "read error: %s\n", strerror(errno));
+		r_err(reader, reader->status, "read error: %s\n", strerror(errno));
 	}
-	return me->status;
+	return reader->status;
 }
 
 SERD_API
 SerdStatus
-serd_reader_read_chunk(SerdReader* me)
+serd_reader_read_chunk(SerdReader* reader)
 {
 	SerdStatus st = SERD_SUCCESS;
-	if (!me->source.prepared) {
-		if ((st = serd_reader_prepare(me))) {
+	if (!reader->source.prepared) {
+		if ((st = serd_reader_prepare(reader))) {
 			return st;
 		}
-	} else if (me->eof) {
-		me->eof = false;
-		if ((st = serd_byte_source_advance(&me->source))) {
+	} else if (reader->eof) {
+		reader->eof = false;
+		if ((st = serd_byte_source_advance(&reader->source))) {
 			return st;
 		}
 	}
-	return read_statement(me) ? SERD_SUCCESS : SERD_FAILURE;
+	return read_statement(reader) ? SERD_SUCCESS : SERD_FAILURE;
 }
 
 SERD_API
 SerdStatus
-serd_reader_end_stream(SerdReader* me)
+serd_reader_end_stream(SerdReader* reader)
 {
-	return serd_byte_source_close(&me->source);
+	return serd_byte_source_close(&reader->source);
 }
 
 SERD_API
@@ -1934,20 +1934,20 @@ serd_reader_read_source(SerdReader*         reader,
 
 SERD_API
 SerdStatus
-serd_reader_read_string(SerdReader* me, const uint8_t* utf8)
+serd_reader_read_string(SerdReader* reader, const uint8_t* utf8)
 {
 	const Cursor cur = { (const uint8_t*)"(string)", 1, 1 };
 
-	serd_byte_source_open_string(&me->source, utf8);
-	me->cur       = cur;
-	me->eof       = false;
+	serd_byte_source_open_string(&reader->source, utf8);
+	reader->cur = cur;
+	reader->eof = false;
 
-	SerdStatus st = serd_reader_prepare(me);
+	SerdStatus st = serd_reader_prepare(reader);
 	if (!st) {
-		st = read_doc(me) ? SERD_SUCCESS : SERD_ERR_UNKNOWN;
+		st = read_doc(reader) ? SERD_SUCCESS : SERD_ERR_UNKNOWN;
 	}
 
-	serd_byte_source_close(&me->source);
+	serd_byte_source_close(&reader->source);
 
 	return st;
 }

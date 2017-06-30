@@ -821,7 +821,7 @@ serd_reader_read_file(SerdReader*    reader,
 */
 SERD_API
 SerdStatus
-serd_reader_start_stream(SerdReader*    me,
+serd_reader_start_stream(SerdReader*    reader,
                          FILE*          file,
                          const uint8_t* name,
                          bool           bulk);
@@ -834,7 +834,7 @@ serd_reader_start_stream(SerdReader*    me,
 */
 SERD_API
 SerdStatus
-serd_reader_start_source_stream(SerdReader*         me,
+serd_reader_start_source_stream(SerdReader*         reader,
                                 SerdSource          read_func,
                                 SerdStreamErrorFunc error_func,
                                 void*               stream,
@@ -851,14 +851,14 @@ serd_reader_start_source_stream(SerdReader*         me,
 */
 SERD_API
 SerdStatus
-serd_reader_read_chunk(SerdReader* me);
+serd_reader_read_chunk(SerdReader* reader);
 
 /**
    Finish an incremental read from a file handle.
 */
 SERD_API
 SerdStatus
-serd_reader_end_stream(SerdReader* me);
+serd_reader_end_stream(SerdReader* reader);
 
 /**
    Read `file`.
@@ -886,7 +886,7 @@ serd_reader_read_source(SerdReader*         reader,
 */
 SERD_API
 SerdStatus
-serd_reader_read_string(SerdReader* me, const uint8_t* utf8);
+serd_reader_read_string(SerdReader* reader, const uint8_t* utf8);
 
 /**
    Free `reader`.
