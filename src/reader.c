@@ -1811,18 +1811,19 @@ serd_reader_read_file(SerdReader*    reader,
 	return ret;
 }
 
-static bool
+static SerdStatus
 skip_bom(SerdReader* me)
 {
 	if (peek_byte(me) == 0xEF) {
 		eat_byte_safe(me, 0xEF);
 		if (eat_byte_check(me, 0xBB) != 0xBB ||
 		    eat_byte_check(me, 0xBF) != 0xBF) {
-			return r_err(me, SERD_ERR_BAD_SYNTAX, "corrupt byte order mark\n");
+			r_err(me, SERD_ERR_BAD_SYNTAX, "corrupt byte order mark\n");
+			return SERD_ERR_BAD_SYNTAX;
 		}
 	}
 
-	return true;
+	return SERD_SUCCESS;
 }
 
 SERD_API
@@ -1860,11 +1861,14 @@ serd_reader_start_source_stream(SerdReader*         me,
 static SerdStatus
 serd_reader_prepare(SerdReader* me)
 {
-	me->eof = false;
-	if ((me->status = serd_byte_source_prepare(&me->source))) {
+	me->eof    = false;
+	me->status = serd_byte_source_prepare(&me->source);
+	if (me->status == SERD_SUCCESS) {
+		me->status = skip_bom(me);
+	} else if (me->status == SERD_FAILURE) {
+		me->eof = true;
+	} else {
 		r_err(me, me->status, "read error: %s\n", strerror(errno));
-	} else if (!skip_bom(me)) {
-		me->status = SERD_ERR_BAD_SYNTAX;
 	}
 	return me->status;
 }

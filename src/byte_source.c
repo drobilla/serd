@@ -20,7 +20,7 @@ static inline SerdStatus
 serd_byte_source_page(SerdByteSource* source)
 {
 	source->read_head = 0;
-	size_t n_read = source->read_func(
+	const size_t n_read = source->read_func(
 		source->file_buf, 1, source->page_size, source->stream);
 	if (n_read == 0) {
 		source->file_buf[0] = '\0';
