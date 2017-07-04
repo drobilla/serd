@@ -373,7 +373,7 @@ main(void)
 		return failure("bad tolerance of junk escape: `%s'\n", out_path);
 	}
 	free(out_path);
-	out_path = serd_file_uri_parse(USTR("file://host/foo/%0Abar"), NULL);
+	out_path = serd_file_uri_parse(USTR("file://host/foo/%0Xbar"), NULL);
 	if (strcmp((const char*)out_path, "/foo/bar")) {
 		return failure("bad tolerance of junk escape: `%s'\n", out_path);
 	}
