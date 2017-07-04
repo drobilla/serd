@@ -78,7 +78,7 @@ serd_file_uri_parse(const uint8_t* uri, uint8_t** hostname)
 			if (*(s + 1) == '%') {
 				serd_chunk_sink("%", 1, &chunk);
 				++s;
-			} else if (is_digit(*(s + 1)) && is_digit(*(s + 2))) {
+			} else if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
 				const uint8_t code[3] = { *(s + 1), *(s + 2), 0 };
 				uint32_t num;
 				sscanf((const char*)code, "%X", &num);
