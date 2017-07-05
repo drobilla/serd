@@ -294,6 +294,13 @@ is_digit(const uint8_t c)
 	return in_range(c, '0', '9');
 }
 
+/* RFC2234: HEXDIG ::= DIGIT / "A" / "B" / "C" / "D" / "E" / "F" */
+static inline bool
+is_hexdig(const uint8_t c)
+{
+        return is_digit(c) || in_range(c, 'A', 'F');
+}
+
 static inline bool
 is_space(const char c)
 {
