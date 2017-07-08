@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2016 David Robillard <http://drobilla.net>
+  Copyright 2011-2017 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -85,6 +85,40 @@ test_sink(void*              handle,
 	++rt->n_statements;
 	rt->graph = graph;
 	return SERD_SUCCESS;
+}
+
+static int
+check_file_uri(const char* hostname,
+               const char* path,
+               bool        escape,
+               const char* expected_uri,
+               const char* expected_path)
+{
+	if (!expected_path) {
+		expected_path = path;
+	}
+
+	SerdNode node = serd_node_new_file_uri(
+		USTR(path), USTR(hostname), 0, escape);
+
+	uint8_t* out_hostname = NULL;
+	uint8_t* out_path     = serd_file_uri_parse(node.buf, &out_hostname);
+	int      ret          = 0;
+	if (strcmp((const char*)node.buf, expected_uri)) {
+		ret = failure("Bad URI %s != %s\n", node.buf, expected_uri);
+	} else if (!hostname && out_hostname) {
+		ret = failure("hostname `%s' shouldn't exist\n", out_hostname);
+	} else if (hostname && !out_hostname) {
+		ret = failure("expected hostname `%s'\n", hostname);
+	} else if (strcmp((const char*)out_path, (const char*)expected_path)) {
+		ret = failure("path=>URI=>path failure %s => %s => %s\n",
+		              path, node.buf, out_path);
+	}
+
+	free(out_path);
+	free(out_hostname);
+	serd_node_free(&node);
+	return ret;
 }
 
 int
@@ -269,111 +303,27 @@ main(void)
 		return failure("Bad path %s for %s\n", serd_uri_to_path(uri), uri);
 	}
 
-	// Test serd_node_new_file_uri and serd_file_uri_parse
-	SerdURI        furi;
-	const uint8_t* path_str  = USTR("C:/My 100%");
-	SerdNode       file_node = serd_node_new_file_uri(path_str, 0, &furi, true);
-	uint8_t*       hostname  = NULL;
-	uint8_t*       out_path  = serd_file_uri_parse(file_node.buf, &hostname);
-	if (strcmp((const char*)file_node.buf, "file:///C:/My%20100%%")) {
-		return failure("Bad URI %s\n", file_node.buf);
-	} else if (hostname) {
-		return failure("hostname `%s' shouldn't exist\n", hostname);
-	} else if (strcmp((const char*)path_str, (const char*)out_path)) {
-		return failure("path=>URI=>path failure %s => %s => %s\n",
-		               path_str, file_node.buf, out_path);
-	}
-	free(out_path);
-	serd_node_free(&file_node);
+	// Test file URI escaping and parsing
 
-	path_str  = USTR("C:\\Pointless Space");
-	file_node = serd_node_new_file_uri(path_str, USTR("pwned"), 0, true);
-	hostname  = NULL;
-	out_path  = serd_file_uri_parse(file_node.buf, &hostname);
-	if (strcmp((const char*)file_node.buf, "file://pwned/C:/Pointless%20Space")) {
-		return failure("Bad URI %s\n", file_node.buf);
-	} else if (!hostname || strcmp((const char*)hostname, "pwned")) {
-		return failure("Bad hostname `%s'\n", hostname);
-	} else if (strcmp((const char*)out_path, "C:/Pointless Space")) {
-		return failure("path=>URI=>path failure %s => %s => %s\n",
-		               path_str, file_node.buf, out_path);
-	}
-	free(hostname);
-	free(out_path);
-	serd_node_free(&file_node);
-
-	path_str  = USTR("/foo/bar");
-	file_node = serd_node_new_file_uri(path_str, 0, 0, true);
-	hostname  = NULL;
-	out_path  = serd_file_uri_parse(file_node.buf, &hostname);
-	if (strcmp((const char*)file_node.buf, "file:///foo/bar")) {
-		return failure("Bad URI %s\n", file_node.buf);
-	} else if (hostname) {
-		return failure("hostname `%s' shouldn't exist\n", hostname);
-	} else if (strcmp((const char*)path_str, (const char*)out_path)) {
-		return failure("path=>URI=>path failure %s => %s => %s\n",
-		               path_str, file_node.buf, out_path);
-	}
-	free(out_path);
-	serd_node_free(&file_node);
-
-	path_str  = USTR("/foo/bar");
-	file_node = serd_node_new_file_uri(path_str, USTR("localhost"), 0, true);
-	out_path  = serd_file_uri_parse(file_node.buf, &hostname);
-	if (strcmp((const char*)file_node.buf, "file://localhost/foo/bar")) {
-		return failure("Bad URI %s\n", file_node.buf);
-	} else if (strcmp((const char*)hostname, "localhost")) {
-		return failure("incorrect hostname `%s'\n", hostname);
-	} else if (strcmp((const char*)path_str, (const char*)out_path)) {
-		return failure("path=>URI=>path failure %s => %s => %s\n",
-		               path_str, file_node.buf, out_path);
-	}
-	free(hostname);
-	free(out_path);
-	serd_node_free(&file_node);
-
-	// File URI with space and no escaping
-	path_str  = USTR("a/relative path");
-	file_node = serd_node_new_file_uri(path_str, 0, 0, false);
-	out_path  = serd_file_uri_parse(file_node.buf, &hostname);
-	if (strcmp((const char*)file_node.buf, "a/relative path")) {
-		return failure("Bad URI %s\n", file_node.buf);
-	} else if (hostname) {
-		return failure("hostname `%s' shouldn't exist\n", hostname);
-	} else if (strcmp((const char*)path_str, (const char*)out_path)) {
-		return failure("path=>URI=>path failure %s => %s => %s\n",
-		               path_str, file_node.buf, out_path);
-	}
-	free(hostname);
-	free(out_path);
-	serd_node_free(&file_node);
-
-	// File URI with space and escaping
-	path_str  = USTR("a/relative path");
-	file_node = serd_node_new_file_uri(path_str, 0, 0, false);
-	out_path  = serd_file_uri_parse(file_node.buf, &hostname);
-	if (strcmp((const char*)file_node.buf, "a/relative path")) {
-		return failure("Bad URI %s\n", file_node.buf);
-	} else if (hostname) {
-		return failure("hostname `%s' shouldn't exist\n", hostname);
-	} else if (strcmp((const char*)path_str, (const char*)out_path)) {
-		return failure("path=>URI=>path failure %s => %s => %s\n",
-		               path_str, file_node.buf, out_path);
-	}
-	free(hostname);
-	free(out_path);
-	serd_node_free(&file_node);
-
-	if (serd_file_uri_parse(USTR("file://invalid"), NULL)) {
-		return failure("successfully parsed bogus URI <file://invalid>\n");
+	if (check_file_uri(NULL, "C:/My 100%", true,
+	                   "file:///C:/My%20100%%", NULL) ||
+	    check_file_uri("ahost", "C:\\Pointless Space", true,
+	                   "file://ahost/C:/Pointless%20Space",
+	                   "C:/Pointless Space") ||
+	    check_file_uri(NULL, "/foo/bar", true,
+	                   "file:///foo/bar", NULL) ||
+	    check_file_uri("bhost", "/foo/bar", true,
+	                   "file://bhost/foo/bar", NULL) ||
+	    check_file_uri(NULL, "a/relative path", false,
+	                   "a/relative path", NULL) ||
+	    check_file_uri(NULL, "a/relative <path>", true,
+	                   "a/relative%20%3Cpath%3E", NULL)) {
+		return 1;
 	}
 
-	out_path = serd_file_uri_parse(USTR("file://host/foo/%XYbar"), NULL);
-	if (strcmp((const char*)out_path, "/foo/bar")) {
-		return failure("bad tolerance of junk escape: `%s'\n", out_path);
-	}
-	free(out_path);
-	out_path = serd_file_uri_parse(USTR("file://host/foo/%0Abar"), NULL);
+	// Test tolerance of parsing junk URI escapes
+
+	uint8_t* out_path = serd_file_uri_parse(USTR("file:///foo/%0Xbar"), NULL);
 	if (strcmp((const char*)out_path, "/foo/bar")) {
 		return failure("bad tolerance of junk escape: `%s'\n", out_path);
 	}
