@@ -62,6 +62,8 @@ typedef struct {
 	uint8_t     space_after_sep;   ///< Newline after sep if after sep
 } SepRule;
 
+static const uint8_t replacement_char[] = { 0xEF, 0xBF, 0xBD };
+
 static const SepRule rules[] = {
 	{ NULL,     0, 0, 0, 0 },
 	{ " .\n\n", 4, 0, 0, 0 },
@@ -166,7 +168,7 @@ parse_utf8_char(SerdWriter* writer, const uint8_t* utf8, size_t* size)
 	case 1: case 2: case 3: case 4:
 		break;
 	default:
-		return 0;
+		return *size = 0;
 	}
 
 	uint32_t c = utf8[0] & ((1 << (8 - *size)) - 1);
@@ -182,10 +184,8 @@ parse_utf8_char(SerdWriter* writer, const uint8_t* utf8, size_t* size)
 static size_t
 write_character(SerdWriter* writer, const uint8_t* utf8, size_t* size)
 {
-	const uint8_t replacement_char[] = { 0xEF, 0xBF, 0xBD };
-	char          escape[11]         = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-	const uint32_t c = parse_utf8_char(writer, utf8, size);
+	char           escape[11] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	const uint32_t c          = parse_utf8_char(writer, utf8, size);
 	switch (*size) {
 	case 0:
 		w_err(writer, SERD_ERR_BAD_ARG, "invalid UTF-8: %X\n", utf8[0]);
@@ -245,6 +245,11 @@ write_uri(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
 		size_t size = 0;
 		len += write_character(writer, utf8 + i, &size);
 		i   += size;
+		if (size == 0) {
+			// Corrupt input, write replacement char and scan to next start
+			sink(replacement_char, sizeof(replacement_char), writer);
+			for (; i < n_bytes && (utf8[i] & 0x80); ++i) {}
+		}
 	}
 	return len;
 }
@@ -351,9 +356,10 @@ write_text(SerdWriter* writer, TextContext ctx,
 
 		size_t size = 0;
 		len += write_character(writer, utf8 + i - 1, &size);
-
 		if (size == 0) {
-			return len;
+			// Corrupt input, write replacement char and scan to next start
+			sink(replacement_char, sizeof(replacement_char), writer);
+			for (; i < n_bytes && (utf8[i] & 0x80); ++i) {}
 		}
 
 		i += size - 1;

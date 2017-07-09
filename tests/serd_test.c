@@ -531,6 +531,7 @@ main(void)
 	                              { &SERD_NODE_NULL, &p, &o, NULL, NULL },
 	                              { &s, &o, &o, NULL, NULL },
 	                              { &o, &p, &o, NULL, NULL },
+	                              { &s, &p, &SERD_NODE_NULL, NULL, NULL },
 	                              { NULL, NULL, NULL, NULL, NULL } };
 	for (unsigned i = 0; i < sizeof(junk) / (sizeof(SerdNode*) * 5); ++i) {
 		if (!serd_writer_write_statement(
@@ -560,10 +561,16 @@ main(void)
 		}
 	}
 
-	// Write 1 statement with bad UTF-8 (should be replaced)
+	// Write statements with bad UTF-8 (should be replaced)
+	const uint8_t bad_str[] = { 0xFF, 0x90, 'h', 'i', 0 };
+	SerdNode      bad_lit   = serd_node_from_string(SERD_LITERAL, bad_str);
+	SerdNode      bad_uri   = serd_node_from_string(SERD_URI, bad_str);
 	if (serd_writer_write_statement(writer, 0, NULL,
-	                                &s, &p, &o, NULL, NULL)) {
-		return failure("Failed to write junk UTF-8\n");
+	                                &s, &p, &bad_lit, NULL, NULL)) {
+		return failure("Failed to write junk UTF-8 literal\n");
+	} else if (serd_writer_write_statement(writer, 0, NULL,
+	                                       &s, &p, &bad_uri, NULL, NULL)) {
+		return failure("Failed to write junk UTF-8 URI\n");
 	}
 
 	// Write 1 valid statement
@@ -624,7 +631,7 @@ main(void)
 	const SerdStatus st = serd_reader_read_file(reader, USTR(path));
 	if (st) {
 		return failure("Error reading file (%s)\n", serd_strerror(st));
-	} else if (rt->n_statements != 12) {
+	} else if (rt->n_statements != 13) {
 		return failure("Bad statement count %d\n", rt->n_statements);
 	} else if (!rt->graph || !rt->graph->buf ||
 	           strcmp((const char*)rt->graph->buf, "http://example.org/")) {

@@ -4,8 +4,9 @@ serd (0.27.2) unstable;
   * Add serd_node_from_substring()
   * Fix strict parsing of abolute URI schemes
   * Fix parsing of hex escapes in file URIs (thanks Johannes Mueller)
+  * Gracefully handle applications that write corrupt UTF-8
 
- -- David Robillard <d@drobilla.net>  Sun, 09 Jul 2017 14:58:47 +0200
+ -- David Robillard <d@drobilla.net>  Sun, 09 Jul 2017 20:43:13 +0200
 
 serd (0.26.0) stable;
 
