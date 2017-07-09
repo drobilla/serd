@@ -509,17 +509,11 @@ main(void)
 
 	if (!serd_writer_set_base_uri(writer, &lit)) {
 		return failure("Set base URI to %s\n", lit.buf);
-	}
-
-	if (!serd_writer_set_prefix(writer, &lit, &lit)) {
+	} else if (!serd_writer_set_prefix(writer, &lit, &lit)) {
 		return failure("Set prefix %s to %s\n", lit.buf, lit.buf);
-	}
-
-	if (!serd_writer_end_anon(writer, NULL)) {
+	} else if (!serd_writer_end_anon(writer, NULL)) {
 		return failure("Ended non-existent anonymous node\n");
-	}
-
-	if (serd_writer_get_env(writer) != env) {
+	} else if (serd_writer_get_env(writer) != env) {
 		return failure("Writer has incorrect env\n");
 	}
 
@@ -621,19 +615,16 @@ main(void)
 
 	if (!serd_reader_read_file(reader, USTR("http://notafile"))) {
 		return failure("Apparently read an http URI\n");
-	}
-	if (!serd_reader_read_file(reader, USTR("file:///better/not/exist"))) {
+	} else if (!serd_reader_read_file(reader, USTR("file:///better/not/exist"))) {
 		return failure("Apparently read a non-existent file\n");
-	}
-	if (!serd_reader_read_file(reader, USTR("file://"))) {
+	} else if (!serd_reader_read_file(reader, USTR("file://"))) {
 		return failure("Apparently read a file with no path\n");
 	}
-	SerdStatus st = serd_reader_read_file(reader, USTR(path));
+
+	const SerdStatus st = serd_reader_read_file(reader, USTR(path));
 	if (st) {
 		return failure("Error reading file (%s)\n", serd_strerror(st));
-	}
-
-	if (rt->n_statements != 12) {
+	} else if (rt->n_statements != 12) {
 		return failure("Bad statement count %d\n", rt->n_statements);
 	} else if (!rt->graph || !rt->graph->buf ||
 	           strcmp((const char*)rt->graph->buf, "http://example.org/")) {
