@@ -449,6 +449,16 @@ SerdNode
 serd_node_from_string(SerdType type, const uint8_t* str);
 
 /**
+   Make a (shallow) node from a prefix of `str`.
+
+   This measures, but does not copy, `str`.  No memory is allocated.
+   Note that the returned node may not be null terminated.
+*/
+SERD_API
+SerdNode
+serd_node_from_substring(SerdType type, const uint8_t* str, size_t len);
+
+/**
    Make a deep copy of `node`.
 
    @return a node that the caller must free with serd_node_free().

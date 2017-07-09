@@ -1,9 +1,11 @@
-serd (0.27.1) unstable;
+serd (0.27.2) unstable;
 
   * Add support for reading from a user provided callback
+  * Add serd_node_from_substring()
   * Fix strict parsing of abolute URI schemes
+  * Fix parsing of hex escapes in file URIs (thanks Johannes Mueller)
 
- -- David Robillard <d@drobilla.net>  Thu, 29 Jun 2017 12:20:40 -0400
+ -- David Robillard <d@drobilla.net>  Sun, 09 Jul 2017 14:58:47 +0200
 
 serd (0.26.0) stable;
 

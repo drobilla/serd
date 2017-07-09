@@ -325,6 +325,12 @@ is_windows_path(const uint8_t* path)
 		&& (path[2] == '/' || path[2] == '\\');
 }
 
+size_t
+serd_substrlen(const uint8_t* str,
+               const size_t   len,
+               size_t*        n_bytes,
+               SerdNodeFlags* flags);
+
 /* URI utilities */
 
 static inline bool

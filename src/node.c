@@ -48,6 +48,22 @@ serd_node_from_string(SerdType type, const uint8_t* str)
 
 SERD_API
 SerdNode
+serd_node_from_substring(SerdType type, const uint8_t* str, const size_t len)
+{
+	if (!str) {
+		return SERD_NODE_NULL;
+	}
+
+	uint32_t     flags       = 0;
+	size_t       buf_n_bytes = 0;
+	const size_t buf_n_chars = serd_substrlen(str, len, &buf_n_bytes, &flags);
+	assert(buf_n_bytes <= len);
+	SerdNode ret = { str, buf_n_bytes, buf_n_chars, flags, type };
+	return ret;
+}
+
+SERD_API
+SerdNode
 serd_node_copy(const SerdNode* node)
 {
 	if (!node || !node->buf) {
@@ -187,7 +203,7 @@ serd_node_new_file_uri(const uint8_t* path,
 		serd_uri_parse(chunk.buf, out);
 	}
 
-	return serd_node_from_string(SERD_URI, chunk.buf);
+	return serd_node_from_substring(SERD_URI, chunk.buf, chunk.len);
 }
 
 SERD_API

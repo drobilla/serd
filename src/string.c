@@ -36,6 +36,42 @@ serd_strerror(SerdStatus status)
 	return (const uint8_t*)"Unknown error";  // never reached
 }
 
+static inline void
+serd_update_flags(const uint8_t c, SerdNodeFlags* const flags)
+{
+	switch (c) {
+	case '\r': case '\n':
+		*flags |= SERD_HAS_NEWLINE;
+		break;
+	case '"':
+		*flags |= SERD_HAS_QUOTE;
+	}
+}
+
+size_t
+serd_substrlen(const uint8_t* const str,
+               const size_t         len,
+               size_t* const        n_bytes,
+               SerdNodeFlags* const flags)
+{
+	size_t        n_chars = 0;
+	size_t        i       = 0;
+	SerdNodeFlags f       = 0;
+	for (; i < len && str[i]; ++i) {
+		if ((str[i] & 0xC0) != 0x80) {  // Start of new character
+			++n_chars;
+			serd_update_flags(str[i], &f);
+		}
+	}
+	if (n_bytes) {
+		*n_bytes = i;
+	}
+	if (flags) {
+		*flags = f;
+	}
+	return n_chars;
+}
+
 SERD_API
 size_t
 serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags)
@@ -44,16 +80,9 @@ serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags)
 	size_t        i       = 0;
 	SerdNodeFlags f       = 0;
 	for (; str[i]; ++i) {
-		if ((str[i] & 0xC0) != 0x80) {
-			// Does not start with `10', start of a new character
+		if ((str[i] & 0xC0) != 0x80) {  // Start of new character
 			++n_chars;
-			switch (str[i]) {
-			case '\r': case '\n':
-				f |= SERD_HAS_NEWLINE;
-				break;
-			case '"':
-				f |= SERD_HAS_QUOTE;
-			}
+			serd_update_flags(str[i], &f);
 		}
 	}
 	if (n_bytes) {

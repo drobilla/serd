@@ -366,6 +366,27 @@ main(void)
 		return failure("Creating node from NULL string failed\n");
 	}
 
+	// Test serd_node_from_substring
+
+	SerdNode empty = serd_node_from_substring(SERD_LITERAL, NULL, 32);
+	if (empty.buf || empty.n_bytes || empty.n_chars || empty.flags || empty.type) {
+		return failure("Successfully created node from NULL substring\n");
+	}
+
+	SerdNode a_b = serd_node_from_substring(SERD_LITERAL, USTR("a\"bc"), 3);
+	if (a_b.n_bytes != 3 || a_b.n_chars != 3 || a_b.flags != SERD_HAS_QUOTE
+	    || strncmp((const char*)a_b.buf, "a\"b", 3)) {
+		return failure("Bad node %s %zu %zu %d %d\n",
+		               a_b.buf, a_b.n_bytes, a_b.n_chars, a_b.flags, a_b.type);
+	}
+
+	a_b = serd_node_from_substring(SERD_LITERAL, USTR("a\"bc"), 10);
+	if (a_b.n_bytes != 4 || a_b.n_chars != 4 || a_b.flags != SERD_HAS_QUOTE
+	    || strncmp((const char*)a_b.buf, "a\"bc", 4)) {
+		return failure("Bad node %s %zu %zu %d %d\n",
+		               a_b.buf, a_b.n_bytes, a_b.n_chars, a_b.flags, a_b.type);
+	}
+
 	// Test serd_node_new_uri_from_string
 
 	SerdNode nonsense = serd_node_new_uri_from_string(NULL, NULL, NULL);
