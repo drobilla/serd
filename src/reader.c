@@ -551,8 +551,8 @@ read_STRING_LITERAL(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 {
 	Ref ref = push_node(reader, SERD_LITERAL, "", 0);
 	while (true) {
-		const uint8_t c = peek_byte(reader);
-		uint32_t      code;
+		const uint8_t c    = peek_byte(reader);
+		uint32_t      code = 0;
 		switch (c) {
 		case '\n': case '\r':
 			r_err(reader, SERD_ERR_BAD_SYNTAX, "line end in short string\n");
@@ -798,7 +798,7 @@ read_IRIREF(SerdReader* reader)
 		return pop_node(reader, ref);
 	}
 
-	uint32_t code;
+	uint32_t code = 0;
 	while (true) {
 		const uint8_t c = peek_byte(reader);
 		switch (c) {
