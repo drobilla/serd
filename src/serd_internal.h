@@ -325,11 +325,34 @@ is_windows_path(const uint8_t* path)
 		&& (path[2] == '/' || path[2] == '\\');
 }
 
+/* String utilities */
+
 size_t
 serd_substrlen(const uint8_t* str,
                const size_t   len,
                size_t*        n_bytes,
                SerdNodeFlags* flags);
+
+static inline uint32_t
+utf8_num_bytes(const uint8_t c)
+{
+	if ((c & 0x80) == 0) {  // Starts with `0'
+		return 1;
+	}
+
+#ifdef HAVE_BUILTIN_CLZ
+	return __builtin_clz(~c << 24);
+#else
+	if ((c & 0xE0) == 0xC0) {  // Starts with `110'
+		return 2;
+	} else if ((c & 0xF0) == 0xE0) {  // Starts with `1110'
+		return 3;
+	} else if ((c & 0xF8) == 0xF0) {  // Starts with `11110'
+		return 4;
+	}
+	return 0;
+#endif
+}
 
 /* URI utilities */
 

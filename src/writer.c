@@ -158,33 +158,11 @@ sink(const void* buf, size_t len, SerdWriter* writer)
 	return serd_byte_sink_write(buf, len, &writer->byte_sink);
 }
 
-// Return the number of bytes in a UTF-8 character
-static inline uint32_t
-utf8_num_bytes(const uint8_t* utf8)
-{
-	if ((utf8[0] & 0x80) == 0) {  // Starts with `0'
-		return 1;
-	}
-
-#ifdef HAVE_BUILTIN_CLZ
-	return __builtin_clz(~utf8[0] << 24);
-#else
-	if ((utf8[0] & 0xE0) == 0xC0) {  // Starts with `110'
-		return 2;
-	} else if ((utf8[0] & 0xF0) == 0xE0) {  // Starts with `1110'
-		return 3;
-	} else if ((utf8[0] & 0xF8) == 0xF0) {  // Starts with `11110'
-		return 4;
-	}
-	return 0;
-#endif
-}
-
 // Parse a UTF-8 character, set *size to the length, and return the code point
 static inline uint32_t
 parse_utf8_char(SerdWriter* writer, const uint8_t* utf8, size_t* size)
 {
-	switch (*size = utf8_num_bytes(utf8)) {
+	switch (*size = utf8_num_bytes(utf8[0])) {
 	case 1: case 2: case 3: case 4:
 		break;
 	default:

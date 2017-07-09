@@ -409,14 +409,8 @@ bad_char(SerdReader* reader, Ref dest, const char* fmt, uint8_t c)
 static SerdStatus
 read_utf8_character(SerdReader* reader, Ref dest, uint8_t c)
 {
-	unsigned size = 1;
-	if ((c & 0xE0) == 0xC0) {  // Starts with `110'
-		size = 2;
-	} else if ((c & 0xF0) == 0xE0) {  // Starts with `1110'
-		size = 3;
-	} else if ((c & 0xF8) == 0xF0) {  // Starts with `11110'
-		size = 4;
-	} else {
+	const uint32_t size = utf8_num_bytes(c);
+	if (size <= 1 || size > 4) {
 		return bad_char(reader, dest, "invalid UTF-8 start 0x%X\n", c);
 	}
 
