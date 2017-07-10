@@ -403,7 +403,7 @@ bad_char(SerdReader* reader, Ref dest, const char* fmt, uint8_t c)
 		b = peek_byte(reader);
 	}
 
-	return SERD_SUCCESS;
+	return SERD_FAILURE;
 }
 
 static SerdStatus
@@ -511,7 +511,7 @@ static Ref
 read_STRING_LITERAL_LONG(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 {
 	Ref ref = push_node(reader, SERD_LITERAL, "", 0);
-	while (true) {
+	while (!reader->status) {
 		const uint8_t c = peek_byte(reader);
 		uint32_t      code;
 		switch (c) {
@@ -550,7 +550,7 @@ static Ref
 read_STRING_LITERAL(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 {
 	Ref ref = push_node(reader, SERD_LITERAL, "", 0);
-	while (true) {
+	while (!reader->status) {
 		const uint8_t c    = peek_byte(reader);
 		uint32_t      code = 0;
 		switch (c) {
@@ -799,18 +799,16 @@ read_IRIREF(SerdReader* reader)
 	}
 
 	uint32_t code = 0;
-	while (true) {
-		const uint8_t c = peek_byte(reader);
+	while (!reader->status) {
+		const uint8_t c = eat_byte_safe(reader, peek_byte(reader));
 		switch (c) {
 		case '"': case '<': case '^': case '`': case '{': case '|': case '}':
 			r_err(reader, SERD_ERR_BAD_SYNTAX,
 			      "invalid IRI character `%c'\n", c);
 			return pop_node(reader, ref);
 		case '>':
-			eat_byte_safe(reader, c);
 			return ref;
 		case '\\':
-			eat_byte_safe(reader, c);
 			if (!read_UCHAR(reader, ref, &code)) {
 				r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid IRI escape\n");
 				return pop_node(reader, ref);
@@ -834,12 +832,19 @@ read_IRIREF(SerdReader* reader)
 				if (reader->strict) {
 					return pop_node(reader, ref);
 				}
-				push_byte(reader, ref, eat_byte_safe(reader, c));
-			} else {
-				push_byte(reader, ref, eat_byte_safe(reader, c));
+				reader->status = SERD_FAILURE;
+				push_byte(reader, ref, c);
+			} else if (!(c & 0x80)) {
+				push_byte(reader, ref, c);
+			} else if (read_utf8_character(reader, ref, c)) {
+				if (reader->strict) {
+					return pop_node(reader, ref);
+				}
+				reader->status = SERD_FAILURE;
 			}
 		}
 	}
+	return pop_node(reader, ref);
 }
 
 static bool
@@ -1254,18 +1259,16 @@ read_objectList(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 static bool
 read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 {
-	uint8_t c;
-	while (true) {
-		TRY_THROW(read_verb(reader, &ctx.predicate));
-		read_ws_star(reader);
-
-		TRY_THROW(read_objectList(reader, ctx, ate_dot));
+	while (read_verb(reader, &ctx.predicate) &&
+	       read_ws_star(reader) &&
+	       read_objectList(reader, ctx, ate_dot)) {
 		ctx.predicate = pop_node(reader, ctx.predicate);
 		if (*ate_dot) {
 			return true;
 		}
 
-		bool ate_semi = false;
+		bool    ate_semi = false;
+		uint8_t c;
 		do {
 			read_ws_star(reader);
 			switch (c = peek_byte(reader)) {
@@ -1284,11 +1287,7 @@ read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 		}
 	}
 
-	pop_node(reader, ctx.predicate);
-	return true;
-except:
-	pop_node(reader, ctx.predicate);
-	return false;
+	return pop_node(reader, ctx.predicate);
 }
 
 static bool
