@@ -11,7 +11,7 @@ import waflib.extras.autowaf as autowaf
 # major increment <=> incompatible changes
 # minor increment <=> compatible changes (additions)
 # micro increment <=> no interface changes
-SERD_VERSION       = '0.28.0'
+SERD_VERSION       = '0.29.1'
 SERD_MAJOR_VERSION = '0'
 
 # Mandatory waf variables
@@ -486,7 +486,7 @@ def test(ctx):
     # Bad tests
     autowaf.begin_tests(ctx, APPNAME, 'bad')
     for test in bad_tests:
-        for lax in ['', '-l']:
+        for lax in ['']:
             autowaf.run_test(
                 ctx, APPNAME,
                 'serdi_static %s -i %s -q "%s" "%s" > %s.out' % (
