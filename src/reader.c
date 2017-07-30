@@ -601,33 +601,30 @@ read_String(SerdReader* reader, SerdNodeFlags* flags)
 	return read_STRING_LITERAL_LONG(reader, flags, q1);
 }
 
-static bool
+static SerdStatus
 read_PN_CHARS_BASE(SerdReader* reader, Ref dest)
 {
 	const uint8_t c = peek_byte(reader);
 	if ((c & 0x80)) {  // Multi-byte character
-		return !read_utf8_character(reader, dest, eat_byte_safe(reader, c));
-	}
-	if (is_alpha(c)) {
+		return read_utf8_character(reader, dest, eat_byte_safe(reader, c));
+	} else if (is_alpha(c)) {
 		push_byte(reader, dest, eat_byte_safe(reader, c));
-		return true;
+		return SERD_SUCCESS;
 	}
-	return false;
+	return SERD_FAILURE;
 }
 
-static bool
+static SerdStatus
 read_PN_CHARS(SerdReader* reader, Ref dest)
 {
 	const uint8_t c = peek_byte(reader);
 	if ((c & 0x80)) {  // Multi-byte character
-		return !read_utf8_character(reader, dest, eat_byte_safe(reader, c));
-	}
-
-	if (is_alpha(c) || is_digit(c) || c == '_' || c == '-') {
+		return read_utf8_character(reader, dest, eat_byte_safe(reader, c));
+	} else if (is_alpha(c) || is_digit(c) || c == '_' || c == '-') {
 		push_byte(reader, dest, eat_byte_safe(reader, c));
-		return true;
+		return SERD_SUCCESS;
 	}
-	return false;
+	return SERD_FAILURE;
 }
 
 static bool
@@ -681,7 +678,7 @@ read_PN_LOCAL(SerdReader* reader, Ref dest, bool* ate_dot)
 	default:
 		if ((st = read_PLX(reader, dest)) > SERD_FAILURE) {
 			return st;
-		} else if (st != SERD_SUCCESS && !read_PN_CHARS_BASE(reader, dest)) {
+		} else if (st != SERD_SUCCESS && read_PN_CHARS_BASE(reader, dest)) {
 			return SERD_FAILURE;
 		}
 	}
@@ -691,7 +688,7 @@ read_PN_LOCAL(SerdReader* reader, Ref dest, bool* ate_dot)
 			push_byte(reader, dest, eat_byte_safe(reader, c));
 		} else if ((st = read_PLX(reader, dest)) > SERD_FAILURE) {
 			return st;
-		} else if (st != SERD_SUCCESS && !read_PN_CHARS(reader, dest)) {
+		} else if (st != SERD_SUCCESS && read_PN_CHARS(reader, dest)) {
 			break;
 		}
 	}
@@ -715,13 +712,13 @@ read_PN_PREFIX_tail(SerdReader* reader, Ref dest)
 	while ((c = peek_byte(reader))) {  // Middle: (PN_CHARS | '.')*
 		if (c == '.') {
 			push_byte(reader, dest, eat_byte_safe(reader, c));
-		} else if (!read_PN_CHARS(reader, dest)) {
+		} else if (read_PN_CHARS(reader, dest)) {
 			break;
 		}
 	}
 
 	const SerdNode* const n = deref(reader, dest);
-	if (n->buf[n->n_bytes - 1] == '.' && !read_PN_CHARS(reader, dest)) {
+	if (n->buf[n->n_bytes - 1] == '.' && read_PN_CHARS(reader, dest)) {
 		r_err(reader, SERD_ERR_BAD_SYNTAX, "prefix ends with `.'\n");
 		return SERD_ERR_BAD_SYNTAX;
 	}
@@ -732,7 +729,7 @@ read_PN_PREFIX_tail(SerdReader* reader, Ref dest)
 static SerdStatus
 read_PN_PREFIX(SerdReader* reader, Ref dest)
 {
-	if (read_PN_CHARS_BASE(reader, dest)) {
+	if (!read_PN_CHARS_BASE(reader, dest)) {
 		return read_PN_PREFIX_tail(reader, dest);
 	}
 	return SERD_FAILURE;
@@ -1026,7 +1023,7 @@ read_BLANK_NODE_LABEL(SerdReader* reader, bool* ate_dot)
 	uint8_t c = peek_byte(reader);  // First: (PN_CHARS | '_' | [0-9])
 	if (is_digit(c) || c == '_') {
 		push_byte(reader, ref, eat_byte_safe(reader, c));
-	} else if (!read_PN_CHARS(reader, ref)) {
+	} else if (read_PN_CHARS(reader, ref)) {
 		r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid name start character\n");
 		return pop_node(reader, ref);
 	}
@@ -1034,13 +1031,13 @@ read_BLANK_NODE_LABEL(SerdReader* reader, bool* ate_dot)
 	while ((c = peek_byte(reader))) {  // Middle: (PN_CHARS | '.')*
 		if (c == '.') {
 			push_byte(reader, ref, eat_byte_safe(reader, c));
-		} else if (!read_PN_CHARS(reader, ref)) {
+		} else if (read_PN_CHARS(reader, ref)) {
 			break;
 		}
 	}
 
 	SerdNode* n = deref(reader, ref);
-	if (n->buf[n->n_bytes - 1] == '.' && !read_PN_CHARS(reader, ref)) {
+	if (n->buf[n->n_bytes - 1] == '.' && read_PN_CHARS(reader, ref)) {
 		// Ate trailing dot, pop it from stack/node and inform caller
 		--n->n_bytes;
 		serd_stack_pop(&reader->stack, 1);
@@ -1205,7 +1202,7 @@ read_object(SerdReader* reader, ReadContext* ctx, bool emit, bool* ate_dot)
 		   it is in fact a "true" or "false" literal, produce that instead.
 		*/
 		node = deref(reader, o = push_node(reader, SERD_CURIE, "", 0));
-		while (read_PN_CHARS_BASE(reader, o)) {}
+		while (!read_PN_CHARS_BASE(reader, o)) {}
 		if ((node->n_bytes == 4 && !memcmp(node->buf, "true", 4)) ||
 		    (node->n_bytes == 5 && !memcmp(node->buf, "false", 5))) {
 			node->type = SERD_LITERAL;
