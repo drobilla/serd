@@ -356,6 +356,30 @@ utf8_num_bytes(const uint8_t c)
 #endif
 }
 
+/// Return the code point of a UTF-8 character with known length
+static inline uint32_t
+parse_counted_utf8_char(const uint8_t* utf8, size_t size)
+{
+	uint32_t c = utf8[0] & ((1 << (8 - size)) - 1);
+	for (size_t i = 1; i < size; ++i) {
+		const uint8_t in = utf8[i] & 0x3F;
+		c = (c << 6) | in;
+	}
+	return c;
+}
+
+/// Parse a UTF-8 character, set *size to the length, and return the code point
+static inline uint32_t
+parse_utf8_char(const uint8_t* utf8, size_t* size)
+{
+	switch (*size = utf8_num_bytes(utf8[0])) {
+	case 1: case 2: case 3: case 4:
+		return parse_counted_utf8_char(utf8, *size);
+	default:
+		return *size = 0;
+	}
+}
+
 /* URI utilities */
 
 static inline bool

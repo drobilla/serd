@@ -174,32 +174,13 @@ sink(const void* buf, size_t len, SerdWriter* writer)
 	return serd_byte_sink_write(buf, len, &writer->byte_sink);
 }
 
-// Parse a UTF-8 character, set *size to the length, and return the code point
-static inline uint32_t
-parse_utf8_char(SerdWriter* writer, const uint8_t* utf8, size_t* size)
-{
-	switch (*size = utf8_num_bytes(utf8[0])) {
-	case 1: case 2: case 3: case 4:
-		break;
-	default:
-		return *size = 0;
-	}
-
-	uint32_t c = utf8[0] & ((1 << (8 - *size)) - 1);
-	for (size_t i = 1; i < *size; ++i) {
-		const uint8_t in = utf8[i] & 0x3F;
-		c = (c << 6) | in;
-	}
-	return c;
-}
-
 // Write a single character, as an escape for single byte characters
 // (Caller prints any single byte characters that don't need escaping)
 static size_t
 write_character(SerdWriter* writer, const uint8_t* utf8, size_t* size)
 {
 	char           escape[11] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-	const uint32_t c          = parse_utf8_char(writer, utf8, size);
+	const uint32_t c          = parse_utf8_char(utf8, size);
 	switch (*size) {
 	case 0:
 		w_err(writer, SERD_ERR_BAD_ARG, "invalid UTF-8: %X\n", utf8[0]);
