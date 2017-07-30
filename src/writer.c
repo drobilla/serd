@@ -62,8 +62,6 @@ typedef struct {
 	uint8_t     space_after_sep;   ///< Newline after sep if after sep
 } SepRule;
 
-static const uint8_t replacement_char[] = { 0xEF, 0xBF, 0xBD };
-
 static const SepRule rules[] = {
 	{ NULL,     0, 0, 0, 0 },
 	{ " .\n\n", 4, 0, 0, 0 },

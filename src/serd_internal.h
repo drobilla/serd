@@ -38,6 +38,8 @@
 #    define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
+static const uint8_t replacement_char[] = { 0xEF, 0xBF, 0xBD };
+
 /* File and Buffer Utilities */
 
 static inline FILE*

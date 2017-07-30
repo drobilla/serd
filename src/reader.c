@@ -227,11 +227,11 @@ push_byte(SerdReader* reader, Ref ref, const uint8_t c)
 }
 
 static inline void
-push_replacement(SerdReader* reader, Ref dest)
+push_bytes(SerdReader* reader, Ref ref, const uint8_t* bytes, unsigned len)
 {
-	push_byte(reader, dest, 0xEF);
-	push_byte(reader, dest, 0xBF);
-	push_byte(reader, dest, 0xBD);
+	for (unsigned i = 0; i < len; ++i) {
+		push_byte(reader, ref, bytes[i]);
+	}
 }
 
 static Ref
@@ -323,7 +323,7 @@ read_UCHAR(SerdReader* reader, Ref dest, uint32_t* char_code)
 	} else {
 		r_err(reader, SERD_ERR_BAD_SYNTAX,
 		      "unicode character 0x%X out of range\n", code);
-		push_replacement(reader, dest);
+		push_bytes(reader, dest, replacement_char, 3);
 		*char_code = 0xFFFD;
 		return true;
 	}
@@ -348,9 +348,7 @@ read_UCHAR(SerdReader* reader, Ref dest, uint32_t* char_code)
 		buf[0] = (uint8_t)c;
 	}
 
-	for (unsigned i = 0; i < size; ++i) {
-		push_byte(reader, dest, buf[i]);
-	}
+	push_bytes(reader, dest, buf, size);
 	*char_code = code;
 	return true;
 }
@@ -395,7 +393,7 @@ static inline SerdStatus
 bad_char(SerdReader* reader, Ref dest, const char* fmt, uint8_t c)
 {
 	r_err(reader, SERD_ERR_BAD_SYNTAX, fmt, c);
-	push_replacement(reader, dest);
+	push_bytes(reader, dest, replacement_char, 3);
 
 	// Skip bytes until the next start byte
 	for (uint8_t b = peek_byte(reader); (b & 0x80);) {
@@ -414,7 +412,7 @@ read_utf8_character(SerdReader* reader, Ref dest, uint8_t c)
 		return bad_char(reader, dest, "invalid UTF-8 start 0x%X\n", c);
 	}
 
-	char bytes[4];
+	uint8_t bytes[4];
 	bytes[0] = c;
 
 	// Check character validity
@@ -427,9 +425,7 @@ read_utf8_character(SerdReader* reader, Ref dest, uint8_t c)
 	}
 
 	// Emit character
-	for (unsigned i = 0; i < size; ++i) {
-		push_byte(reader, dest, bytes[i]);
-	}
+	push_bytes(reader, dest, bytes, size);
 	return SERD_SUCCESS;
 }
 
