@@ -166,7 +166,7 @@ eat_string(SerdReader* reader, const char* str, unsigned n)
 {
 	bool bad = false;
 	for (unsigned i = 0; i < n; ++i) {
-		bad |= eat_byte_check(reader, ((const uint8_t*)str)[i]);
+		bad |= (bool)eat_byte_check(reader, ((const uint8_t*)str)[i]);
 	}
 	return bad;
 }
@@ -649,8 +649,9 @@ read_PN_CHARS_BASE(SerdReader* reader, Ref dest)
 	                                eat_byte_safe(reader, c)))) {
 		return st;
 	} else if (reader->strict && !is_PN_CHARS_BASE(code)) {
-		return r_err(reader, SERD_ERR_BAD_SYNTAX,
-		             "invalid character U+%04X in name\n", code);
+		r_err(reader, SERD_ERR_BAD_SYNTAX,
+		      "invalid character U+%04X in name\n", code);
+		return SERD_ERR_BAD_SYNTAX;
 	}
 	return st;
 }

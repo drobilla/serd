@@ -2,6 +2,7 @@ serd (0.29.2) unstable;
 
   * Support strict parsing of prefixed names
   * Report errors for prematurely terminated statements
+  * Fix building with MSVC
 
  -- David Robillard <d@drobilla.net>  Mon, 28 Aug 2017 12:39:47 +0200
 
