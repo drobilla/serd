@@ -241,9 +241,8 @@ write_uri(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
 		len += write_character(writer, utf8 + i, &size);
 		i   += size;
 		if (size == 0) {
-			// Corrupt input, write replacement char and scan to next start
-			sink(replacement_char, sizeof(replacement_char), writer);
-			for (; i < n_bytes && (utf8[i] & 0x80); ++i) {}
+			// Corrupt input, scan to start of next character
+			for (++i; i < n_bytes && (utf8[i] & 0x80); ++i) {}
 		}
 	}
 	return len;
@@ -315,7 +314,7 @@ write_text(SerdWriter* writer, TextContext ctx,
 			break;  // Reached end
 		}
 
-		uint8_t in = utf8[i++];
+		const uint8_t in = utf8[i++];
 		if (ctx == WRITE_LONG_STRING) {
 			switch (in) {
 			case '\\': len += sink("\\\\", 2, writer); continue;
@@ -349,15 +348,15 @@ write_text(SerdWriter* writer, TextContext ctx,
 			}
 		}
 
+		// Write UTF-8 character
 		size_t size = 0;
 		len += write_character(writer, utf8 + i - 1, &size);
 		if (size == 0) {
-			// Corrupt input, write replacement char and scan to next start
-			sink(replacement_char, sizeof(replacement_char), writer);
+			// Corrupt input, scan to start of next character
 			for (; i < n_bytes && (utf8[i] & 0x80); ++i) {}
+		} else {
+			i += size - 1;
 		}
-
-		i += size - 1;
 	}
 	return len;
 }

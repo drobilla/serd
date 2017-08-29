@@ -340,12 +340,7 @@ utf8_num_bytes(const uint8_t c)
 {
 	if ((c & 0x80) == 0) {  // Starts with `0'
 		return 1;
-	}
-
-#ifdef HAVE_BUILTIN_CLZ
-	return __builtin_clz(~c << 24);
-#else
-	if ((c & 0xE0) == 0xC0) {  // Starts with `110'
+	} else if ((c & 0xE0) == 0xC0) {  // Starts with `110'
 		return 2;
 	} else if ((c & 0xF0) == 0xE0) {  // Starts with `1110'
 		return 3;
@@ -353,7 +348,6 @@ utf8_num_bytes(const uint8_t c)
 		return 4;
 	}
 	return 0;
-#endif
 }
 
 /// Return the code point of a UTF-8 character with known length
