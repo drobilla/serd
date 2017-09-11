@@ -7,90 +7,6 @@
     rdfs:comment "Turtle good syntax test cases (must pass)" ;
     mf:entries
     (
-     [  mf:name      "test-00" ;
-        rdfs:comment "Blank subject" ;
-        mf:action [ qt:data   <test-00.ttl> ] ;
-        mf:result  <test-00.out>
-     ]
-
-     [  mf:name      "test-01" ;
-        rdfs:comment "@prefix and qnames" ;
-        mf:action [ qt:data   <test-01.ttl> ] ;
-        mf:result  <test-01.out>
-     ]
-
-     [  mf:name      "test-02" ;
-        rdfs:comment ", operator" ;
-        mf:action [ qt:data   <test-02.ttl> ] ;
-        mf:result  <test-02.out>
-     ]
-
-     [  mf:name      "test-03" ;
-        rdfs:comment "; operator" ;
-        mf:action [ qt:data   <test-03.ttl> ] ;
-        mf:result  <test-03.out>
-     ]
-
-     [  mf:name      "test-04" ;
-        rdfs:comment "empty [] as subject and object" ;
-        mf:action [ qt:data   <test-04.ttl> ] ;
-        mf:result  <test-04.out>
-     ]
-
-     [  mf:name      "test-05" ;
-        rdfs:comment "non-empty [] as subject and object" ;
-        mf:action [ qt:data   <test-05.ttl> ] ;
-        mf:result  <test-05.out>
-     ]
-
-     [  mf:name      "test-06" ;
-        rdfs:comment "'a' as predicate" ;
-        mf:action [ qt:data   <test-06.ttl> ] ;
-        mf:result  <test-06.out>
-     ]
-
-     [  mf:name      "test-07" ;
-        rdfs:comment "simple collection" ;
-        mf:action [ qt:data   <test-07.ttl> ] ;
-        mf:result  <test-07.out>
-     ]
-
-     [  mf:name      "test-08" ;
-        rdfs:comment "empty collection" ;
-        mf:action [ qt:data   <test-08.ttl> ] ;
-        mf:result  <test-08.out>
-     ]
-
-     [  mf:name      "test-09" ;
-        rdfs:comment "integer datatyped literal" ;
-        mf:action [ qt:data   <test-09.ttl> ] ;
-        mf:result  <test-09.out>
-     ]
-
-     [  mf:name      "test-10" ;
-        rdfs:comment "decimal integer canonicalization" ;
-        mf:action [ qt:data   <test-10.ttl> ] ;
-        mf:result  <test-10.out>
-     ]
-
-     [  mf:name      "test-11" ;
-        rdfs:comment "- and _ in names and qnames" ;
-        mf:action [ qt:data   <test-11.ttl> ] ;
-        mf:result  <test-11.out>
-     ]
-
-     [  mf:name      "test-12" ;
-        rdfs:comment "tests for rdf:_<numbers> and other qnames starting with _" ;
-        mf:action [ qt:data   <test-12.ttl> ] ;
-        mf:result  <test-12.out>
-     ]
-
-     [  mf:name      "test-13" ;
-        rdfs:comment "bare : allowed" ;
-        mf:action [ qt:data   <test-13.ttl> ] ;
-        mf:result  <test-13.out>
-     ]
-
      [  mf:name      "test-14" ;
         rdfs:comment "10000 triples, more than the default Bison stack size" ;
         mf:action [ qt:data   <test-14.ttl> ] ;
@@ -109,82 +25,10 @@
         mf:result  <test-16.out>
      ]
 
-     [  mf:name      "test-17" ;
-        rdfs:comment "simple long literal" ;
-        mf:action [ qt:data   <test-17.ttl> ] ;
-        mf:result  <test-17.out>
-     ]
-
      [  mf:name      "test-18" ;
         rdfs:comment "long literals with escapes" ;
         mf:action [ qt:data   <test-18.ttl> ] ;
         mf:result  <test-18.out>
-     ]
-
-     [  mf:name      "test-19" ;
-        rdfs:comment "floating point number" ;
-        mf:action [ qt:data   <test-19.ttl> ] ;
-        mf:result  <test-19.out>
-     ]
-
-     [  mf:name      "test-20" ;
-        rdfs:comment "empty literals, normal and long variant" ;
-        mf:action [ qt:data   <test-20.ttl> ] ;
-        mf:result  <test-20.out>
-     ]
-
-     [  mf:name      "test-21" ;
-        rdfs:comment "positive integer, decimal and doubles" ;
-        mf:action [ qt:data   <test-21.ttl> ] ;
-        mf:result  <test-21.out>
-     ]
-
-     [  mf:name      "test-22" ;
-        rdfs:comment "negative integer, decimal and doubles" ;
-        mf:action [ qt:data   <test-22.ttl> ] ;
-        mf:result  <test-22.out>
-     ]
-
-     [  mf:name      "test-23" ;
-        rdfs:comment "long literal ending in double quote" ;
-        mf:action [ qt:data   <test-23.ttl> ] ;
-        mf:result  <test-23.out>
-     ]
-
-     [  mf:name      "test-24" ;
-        rdfs:comment "boolean literals" ;
-        mf:action [ qt:data   <test-24.ttl> ] ;
-        mf:result  <test-24.out>
-     ]
-
-     [  mf:name      "test-25" ;
-        rdfs:comment "comments" ;
-        mf:action [ qt:data   <test-25.ttl> ] ;
-        mf:result  <test-25.out>
-     ]
-
-     [  mf:name      "test-26" ;
-        rdfs:comment "no final mewline" ;
-        mf:action [ qt:data   <test-26.ttl> ] ;
-        mf:result  <test-26.out>
-     ]
-
-     [  mf:name      "test-27" ;
-        rdfs:comment "duplicate prefix" ;
-        mf:action [ qt:data   <test-27.ttl> ] ;
-        mf:result  <test-27.out>
-     ]
-
-     [  mf:name      "test-28" ;
-        rdfs:comment "decimal data types (serializing test)" ;
-        mf:action [ qt:data   <test-28.ttl> ] ;
-        mf:result  <test-28.out>
-     ]
-
-     [  mf:name      "test-29" ;
-        rdfs:comment "Escaping U+0001 to U+007F in a URI" ;
-        mf:action [ qt:data   <test-29.ttl> ] ;
-        mf:result  <test-29.out>
      ]
 
      [  mf:name      "test-30" ;
