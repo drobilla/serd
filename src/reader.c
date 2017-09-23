@@ -979,7 +979,7 @@ read_number(SerdReader* reader, Ref* dest, Ref* datatype, bool* ate_dot)
 except:
 	pop_node(reader, *datatype);
 	pop_node(reader, ref);
-	return false;
+	return r_err(reader, SERD_ERR_BAD_SYNTAX, "bad number syntax\n");
 }
 
 static bool
@@ -1021,7 +1021,7 @@ except:
 	*datatype = pop_node(reader, *datatype);
 	*lang     = pop_node(reader, *lang);
 	pop_node(reader, str);
-	return false;
+	return r_err(reader, SERD_ERR_BAD_SYNTAX, "bad literal syntax\n");
 }
 
 inline static bool
@@ -1057,7 +1057,8 @@ read_verb(SerdReader* reader, Ref* dest)
 	} else if (st > SERD_FAILURE ||
 	           !read_PrefixedName(reader, *dest, false, &ate_dot) ||
 	           ate_dot) {
-		return (*dest = pop_node(reader, *dest));
+		*dest = pop_node(reader, *dest);
+		return r_err(reader, SERD_ERR_BAD_SYNTAX, "bad verb\n");
 	}
 
 	return true;
@@ -1225,6 +1226,7 @@ read_object(SerdReader* reader, ReadContext* ctx, bool emit, bool* ate_dot)
 	}
 	switch (c) {
 	case '\0':
+		return r_err(reader, SERD_ERR_BAD_SYNTAX, "end of file in object\n");
 	case ')':
 		return false;
 	case '[':
@@ -1264,7 +1266,9 @@ read_object(SerdReader* reader, ReadContext* ctx, bool emit, bool* ate_dot)
 		} else if (read_PN_PREFIX_tail(reader, o) > SERD_FAILURE) {
 			ret = false;
 		} else {
-			ret = read_PrefixedName(reader, o, false, ate_dot);
+			if (!(ret = read_PrefixedName(reader, o, false, ate_dot))) {
+				r_err(reader, SERD_ERR_BAD_SYNTAX, "expected prefixed name\n");
+			}
 		}
 	}
 
@@ -1323,7 +1327,8 @@ read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 			read_ws_star(reader);
 			switch (c = peek_byte(reader)) {
 			case 0:
-				return false;
+				return r_err(reader, SERD_ERR_BAD_SYNTAX,
+				             "unexpected end of file\n");
 			case '.': case ']': case '}':
 				return true;
 			case ';':
@@ -1456,7 +1461,7 @@ read_triples(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 		switch (peek_byte(reader)) {
 		case '.':
 			*ate_dot = eat_byte_safe(reader, '.');
-			return false;
+			return r_err(reader, SERD_ERR_BAD_SYNTAX, "syntax error\n");
 		case '}':
 			return false;
 		}
@@ -1653,9 +1658,7 @@ read_statement(SerdReader* reader)
 		} else if (!subj) {
 			ret = r_err(reader, SERD_ERR_BAD_SYNTAX, "bad subject\n");
 		} else if (!read_triples(reader, ctx, &ate_dot)) {
-			if (!(ret = (s_type == '['))) {
-				r_err(reader, SERD_ERR_BAD_SYNTAX, "expected predicate\n");
-			}
+			ret = (s_type == '[');
 		} else if (!ate_dot) {
 			read_ws_star(reader);
 			ret = (eat_byte_check(reader, '.') == '.');
