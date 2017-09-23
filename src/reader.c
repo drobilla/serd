@@ -1660,16 +1660,7 @@ read_statement(SerdReader* reader)
 }
 
 static bool
-read_turtleDoc(SerdReader* reader)
-{
-	while (!reader->eof) {
-		TRY_RET(read_statement(reader));
-	}
-	return reader->status <= SERD_FAILURE;
-}
-
-static bool
-read_trigDoc(SerdReader* reader)
+read_turtleTrigDoc(SerdReader* reader)
 {
 	while (!reader->eof) {
 		TRY_RET(read_statement(reader));
@@ -1736,8 +1727,7 @@ read_doc(SerdReader* reader)
 {
 	switch (reader->syntax) {
 	case SERD_NQUADS: return read_nquadsDoc(reader);
-	case SERD_TRIG:   return read_trigDoc(reader);
-	default:          return read_turtleDoc(reader);
+	default:          return read_turtleTrigDoc(reader);
 	}
 }
 
