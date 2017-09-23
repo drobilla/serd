@@ -1561,9 +1561,13 @@ read_wrappedGraph(SerdReader* reader, ReadContext* ctx)
 	while (peek_byte(reader) != '}') {
 		ctx->subject = 0;
 		Ref subj = read_subject(reader, *ctx, &ctx->subject, &s_type);
-		if (!subj ||
-		    (!read_triples(reader, *ctx, &ate_dot) && s_type != '[')) {
+		if (!subj && ctx->subject) {
+			return r_err(reader, SERD_ERR_BAD_SYNTAX, "bad subject\n");
+		} else if (!subj) {
 			return false;
+		} else if (!read_triples(reader, *ctx, &ate_dot) && s_type != '[') {
+			return r_err(reader, SERD_ERR_BAD_SYNTAX,
+			             "missing predicate object list\n");
 		}
 		pop_node(reader, subj);
 		read_ws_star(reader);
@@ -1637,7 +1641,8 @@ read_statement(SerdReader* reader)
 			read_ws_star(reader);
 		} else if (read_ws_star(reader) && peek_byte(reader) == '{') {
 			if (s_type == '(' || (s_type == '[' && !*ctx.flags)) {
-				return false;  // invalid graph with complex label
+				return r_err(reader, SERD_ERR_BAD_SYNTAX,
+				             "invalid graph name\n");
 			}
 			ctx.graph   = subj;
 			ctx.subject = subj = 0;
