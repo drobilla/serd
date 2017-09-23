@@ -380,7 +380,7 @@ def test_manifest(ctx, srcdir, testdir, report, base_uri, isyntax, osyntax, test
 
 def test(ctx):
     blddir = autowaf.build_dir(APPNAME, 'tests')
-    for i in ['', 'bad', 'good', 'new', 'TurtleTests', 'NQuadsTests', 'TrigTests', 'extra']:
+    for i in ['', 'bad', 'good', 'new', 'TurtleTests', 'NTriplesTests', 'NQuadsTests', 'TrigTests', 'extra']:
         try:
             os.makedirs(os.path.join(blddir, i))
         except:
@@ -540,6 +540,13 @@ def test(ctx):
                        [rdft.TestTurtleNegativeSyntax, 1, False],
                        [rdft.TestTurtleNegativeEval, 1, False],
                        [rdft.TestTurtleEval, 0, True]])
+
+        ntriples_tests = 'http://www.w3.org/2013/N-TriplesTests/'
+        test_manifest(ctx, srcdir, 'NTriplesTests', report, ntriples_tests, 'ntriples', 'ntriples',
+                      [[rdft.TestNTriplesPositiveSyntax, 0, False],
+                       [rdft.TestNTriplesNegativeSyntax, 1, False],
+                       [rdft.TestNTriplesNegativeEval, 1, False],
+                       [rdft.TestNTriplesEval, 0, True]])
 
         nquads_tests = 'http://www.w3.org/2013/NQuadsTests/'
         test_manifest(ctx, srcdir, 'NQuadsTests', report, nquads_tests, 'nquads', 'nquads',
