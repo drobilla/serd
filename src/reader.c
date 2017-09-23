@@ -642,10 +642,12 @@ read_PN_CHARS_BASE(SerdReader* reader, Ref dest)
 	} else if ((st = read_utf8_code(reader, dest, &code,
 	                                eat_byte_safe(reader, c)))) {
 		return st;
-	} else if (reader->strict && !is_PN_CHARS_BASE(code)) {
+	} else if (!is_PN_CHARS_BASE(code)) {
 		r_err(reader, SERD_ERR_BAD_SYNTAX,
 		      "invalid character U+%04X in name\n", code);
-		return SERD_ERR_BAD_SYNTAX;
+		if (reader->strict) {
+			return SERD_ERR_BAD_SYNTAX;
+		}
 	}
 	return st;
 }
@@ -670,7 +672,7 @@ read_PN_CHARS(SerdReader* reader, Ref dest)
 	} else if ((st = read_utf8_code(reader, dest, &code,
 	                                eat_byte_safe(reader, c)))) {
 		return st;
-	} else if (reader->strict && !is_PN_CHARS(code)) {
+	} else if (!is_PN_CHARS(code)) {
 		r_err(reader, (st = SERD_ERR_BAD_SYNTAX),
 		      "invalid character U+%04X in name\n", code);
 	}
