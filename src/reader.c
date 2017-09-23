@@ -1669,11 +1669,25 @@ read_statement(SerdReader* reader)
 	return ret;
 }
 
+static void
+skip_until(SerdReader* reader, uint8_t byte)
+{
+	for (uint8_t c = 0; (c = peek_byte(reader)) && c != byte;) {
+		eat_byte_safe(reader, c);
+	}
+}
+
 static bool
 read_turtleTrigDoc(SerdReader* reader)
 {
 	while (!reader->eof) {
-		TRY_RET(read_statement(reader));
+		if (!read_statement(reader)) {
+			if (reader->strict) {
+				return 0;
+			}
+			skip_until(reader, '\n');
+			reader->status = SERD_ERR_BAD_SYNTAX;
+		}
 	}
 	return reader->status <= SERD_FAILURE;
 }
