@@ -301,7 +301,7 @@ def check_output(out_filename, check_filename, subst_from='', subst_to=''):
 
     return False
 
-def test_thru(ctx, base, path, check_filename, flags, isyntax, osyntax):
+def test_thru(ctx, base, path, check_filename, flags, isyntax, osyntax, quiet=False):
     in_filename = os.path.join(ctx.path.abspath(), path);
     out_filename = path + '.thru'
 
@@ -311,10 +311,13 @@ def test_thru(ctx, base, path, check_filename, flags, isyntax, osyntax):
                    isyntax, isyntax, in_filename, base,
                    'serdi_static', isyntax, osyntax, base, out_filename)
 
-    if autowaf.run_test(ctx, APPNAME, command, 0, name=out_filename):
-        autowaf.run_test(ctx, APPNAME,
-                         [out_filename + '.check', check_output(out_filename, check_filename, '_:docid', '_:genid')],
-                         1)
+    if autowaf.run_test(ctx, APPNAME, command, 0, name='  to ' + out_filename, quiet=quiet):
+        autowaf.run_test(
+            ctx, APPNAME,
+            lambda: check_output(out_filename, check_filename, '_:docid', '_:genid'),
+            True,
+            name='from ' + out_filename,
+            quiet=quiet)
     else:
         Logs.pprint('RED', 'FAIL: error running %s' % command)
 
@@ -347,28 +350,30 @@ def test_manifest(ctx, srcdir, testdir, report, base_uri, isyntax, osyntax, test
         command    = 'serdi_static -i %s -o %s -f "%s" "%s" > %s' % (
             isyntax, osyntax, abs_action, base_uri + rel, output)
 
-        return autowaf.run_test(ctx, APPNAME, command,
-                                expected_return, name=str(action))
+        ret = autowaf.run_test(ctx, APPNAME, command, expected_return, name=str(action))
+        autowaf.run_test(ctx, APPNAME,
+                         lambda: expected_return == 0 or ret[1][1] != '',
+                         True, name=str(action) + ' has error message', quiet=True)
+        return ret
 
-    def run_tests(test_class, expected_return, check_result=False):
-        autowaf.begin_tests(ctx, APPNAME, str(test_class))
-        for i in sorted(model.triples([None, rdf.type, test_class])):
-            test        = i[0]
-            name        = model.value(test, mf.name, None)
-            action_node = model.value(test, mf.action, None)[len(base_uri):]
-            passed      = run_test(action_node, expected_return)
+    def run_tests(test_class, expected_return, check=False):
+        with autowaf.begin_tests(ctx, APPNAME, str(test_class)):
+            for i in sorted(model.triples([None, rdf.type, test_class])):
+                test        = i[0]
+                name        = model.value(test, mf.name, None)
+                action_node = model.value(test, mf.action, None)[len(base_uri):]
+                result      = run_test(action_node, expected_return)
 
-            if passed and check_result:
-                result_node = model.value(test, mf.result, None)[len(base_uri):]
-                action      = os.path.join('tests', testdir, action_node)
-                output      = action + '.out'
-                result      = os.path.join(srcdir, 'tests', testdir, result_node)
-                passed      = check_output(output, result)
+                if result[0] and check:
+                    output_node = model.value(test, mf.result, None)[len(base_uri):]
+                    action      = os.path.join('tests', testdir, action_node)
+                    out_path    = action + '.out'
+                    check_path  = os.path.join(srcdir, 'tests', testdir, output_node)
+                    result      = (check_output(out_path, check_path), result[1])
 
-                test_thru(ctx, base_uri + action_node, action, result, "", isyntax, osyntax)
+                    test_thru(ctx, base_uri + action_node, action, check_path, "", isyntax, osyntax, quiet=True)
 
-            report.write(earl_assertion(test, passed, asserter))
-        autowaf.end_tests(ctx, APPNAME, str(test_class))
+                report.write(earl_assertion(test, result[0], asserter))
 
     for i in test_runs:
         run_tests(i[0], i[1], i[2])
@@ -422,20 +427,6 @@ def test(ctx):
             'serdi_static %s > %s' % (nul, nul)
     ], 0, name='serdi-cmd-good')
 
-    # Test read error by reading a directory
-    autowaf.run_test(ctx, APPNAME, 'serdi_static -e "file://%s/"' % srcdir,
-                     1, name='read_error')
-
-    # Test read error with bulk input by reading a directory
-    autowaf.run_test(ctx, APPNAME, 'serdi_static "file://%s/"' % srcdir,
-                     1, name='read_error_bulk')
-
-    # Test write error by writing to /dev/full
-    if os.path.exists('/dev/full'):
-        autowaf.run_test(ctx, APPNAME,
-                         'serdi_static "file://%s/tests/good/manifest.ttl" > /dev/full' % srcdir,
-                         1, name='write_error')
-
     autowaf.run_tests(ctx, APPNAME, [
             'serdi_static -q "file://%s/tests/bad-id-clash.ttl" > %s' % (srcdir, nul),
             'serdi_static > %s' % nul,
@@ -452,72 +443,80 @@ def test(ctx):
             'serdi_static /no/such/file > %s' % nul],
                       1, name='serdi-cmd-bad')
 
+    with autowaf.begin_tests(ctx, APPNAME, 'io-error'):
+        # Test read error by reading a directory
+        autowaf.run_test(ctx, APPNAME, 'serdi_static -e "file://%s/"' % srcdir,
+                         1, name='read_error')
+
+        # Test read error with bulk input by reading a directory
+        autowaf.run_test(ctx, APPNAME, 'serdi_static "file://%s/"' % srcdir,
+                         1, name='read_error_bulk')
+
+        # Test write error by writing to /dev/full
+        if os.path.exists('/dev/full'):
+            autowaf.run_test(ctx, APPNAME,
+                             'serdi_static "file://%s/tests/good/manifest.ttl" > /dev/full' % srcdir,
+                             1, name='write_error')
+
     def test_base(test):
         return ('http://www.w3.org/2001/sw/DataAccess/df1/tests/'
                 + test.replace('\\', '/'))
 
     # Good tests
     for tdir, tests in good_tests.items():
-        autowaf.begin_tests(ctx, APPNAME, tdir)
-        for test in tests:
-            for lax in ['', '-l']:
-                path = os.path.join('tests', tdir, test)
-                autowaf.run_test(
-                    ctx, APPNAME,
-                    'serdi_static %s -f "%s" "%s" > %s.out' % (
-                        lax, os.path.join(srcdir, path), test_base(test), path),
-                    name=path)
-        autowaf.end_tests(ctx, APPNAME, tdir)
+        for flags in [('', 'strict'), ('-l', 'lax')]:
+            with autowaf.begin_tests(ctx, APPNAME, tdir + ' ' + flags[1]):
+                for test in tests:
+                    path = os.path.join('tests', tdir, test)
+                    autowaf.run_test(
+                        ctx, APPNAME,
+                        'serdi_static %s -f "%s" "%s" > %s.out' % (
+                            flags[0], os.path.join(srcdir, path), test_base(test), path),
+                        name=path)
 
-        verify_tests = []
-        for test in tests:
-            check_filename = os.path.join(
-                srcdir, 'tests', tdir, test.replace('.ttl', '.nt'))
-            out_filename = os.path.join('tests', tdir, test + '.out')
-            if check_output(out_filename, check_filename):
-                verify_tests += [[out_filename, 0]]
-            else:
-                verify_tests += [[out_filename, 1]]
-        autowaf.run_tests(ctx, APPNAME, verify_tests, name='verify_turtle_to_ntriples')
+                    check_filename = os.path.join(
+                        srcdir, 'tests', tdir, test.replace('.ttl', '.nt'))
+                    autowaf.run_test(ctx, APPNAME,
+                                     lambda: check_output(path + '.out', check_filename), True,
+                                     name='check ' + path + '.out',
+                                     quiet=True)
 
     # Bad tests
-    autowaf.begin_tests(ctx, APPNAME, 'bad')
-    for test in bad_tests:
-        for lax in ['']:
-            autowaf.run_test(
-                ctx, APPNAME,
-                'serdi_static %s -i %s -q "%s" "%s" > %s.out' % (
-                    lax, 'turtle' if test.endswith('.ttl') else 'ntriples',
-                    os.path.join(srcdir, test), test_base(test), test),
-                1,
-                name=test)
-    autowaf.end_tests(ctx, APPNAME, 'bad')
+    for flags in [('', 'strict', 1), ('-l', 'lax', None)]:
+        with autowaf.begin_tests(ctx, APPNAME, 'bad ' + flags[1]):
+            for test in bad_tests:
+                lang = 'turtle' if test.endswith('.ttl') else 'ntriples'
+                cmd = 'serdi_static %s -i %s "%s" "%s" > %s.out' % (
+                    flags[0], lang, os.path.join(srcdir, test), test_base(test), test)
+                out = autowaf.run_test(ctx, APPNAME, cmd, flags[2], name=test)
+                if out[1][1] == '':
+                    Logs.pprint('RED', cmd)
+                    Logs.pprint('RED', 'Parsing failed without error message')
 
     # Don't do a round-trip test for test-id.ttl, IDs have changed
     good_tests['good'].remove('test-id.ttl')
 
     # Round-trip good tests
-    autowaf.begin_tests(ctx, APPNAME, 'round_trip_good')
-    for tdir, tests in good_tests.items():
-        thru_tests = tests;
+    with autowaf.begin_tests(ctx, APPNAME, 'round_trip_good'):
+        for tdir, tests in good_tests.items():
+            thru_tests = tests;
 
-        num = 0
-        for test in thru_tests:
-            num += 1
-            flags = ''
-            if (num % 2 == 0):
-                flags += '-b'
-            if (num % 5 == 0):
-                flags += ' -f'
-            if (num % 3 == 0):
-                flags += ' -r http://www.w3.org/'
-            if (num % 7 == 0):
-                flags += ' -e'
+            num = 0
+            for test in thru_tests:
+                num += 1
+                flags = ''
+                if (num % 2 == 0):
+                    flags += '-b'
+                if (num % 5 == 0):
+                    flags += ' -f'
+                if (num % 3 == 0):
+                    flags += ' -r http://www.w3.org/'
+                if (num % 7 == 0):
+                    flags += ' -e'
 
-            path  = os.path.join('tests', tdir, test)
-            check = os.path.join(srcdir, path.replace('.ttl', '.nt'))
-            test_thru(ctx, test_base(test), path, check, flags, 'turtle', 'ntriples')
-    autowaf.end_tests(ctx, APPNAME, 'round_trip_good')
+                path  = os.path.join('tests', tdir, test)
+                check = os.path.join(srcdir, path.replace('.ttl', '.nt'))
+                test_thru(ctx, test_base(test), path, check, flags, 'turtle', 'ntriples', quiet=False)
 
     # New manifest-driven tests
     try:
