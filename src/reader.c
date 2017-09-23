@@ -1293,6 +1293,11 @@ static bool
 read_objectList(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 {
 	TRY_RET(read_object(reader, &ctx, true, ate_dot));
+	if (!fancy_syntax(reader) && peek_delim(reader, ',')) {
+		return r_err(reader, SERD_ERR_BAD_SYNTAX,
+		             "syntax does not support abbreviation\n");
+	}
+
 	while (!*ate_dot && eat_delim(reader, ',')) {
 		TRY_RET(read_object(reader, &ctx, true, ate_dot));
 	}
@@ -1602,6 +1607,10 @@ read_statement(SerdReader* reader)
 		reader->eof = true;
 		return reader->status <= SERD_FAILURE;
 	case '@':
+		if (!fancy_syntax(reader)) {
+			return r_err(reader, SERD_ERR_BAD_SYNTAX,
+			             "syntax does not support directives\n");
+		}
 		TRY_RET(read_directive(reader));
 		read_ws_star(reader);
 		break;
@@ -1610,7 +1619,8 @@ read_statement(SerdReader* reader)
 			TRY_RET(read_wrappedGraph(reader, &ctx));
 			read_ws_star(reader);
 		} else {
-			return r_err(reader, SERD_ERR_BAD_SYNTAX, "graph in Turtle\n");
+			return r_err(reader, SERD_ERR_BAD_SYNTAX,
+			             "syntax does not support graphs\n");
 		}
 		break;
 	default:
@@ -1679,6 +1689,9 @@ read_nquadsDoc(SerdReader* reader)
 		if (peek_byte(reader) == '\0') {
 			reader->eof = true;
 			break;
+		} else if (peek_byte(reader) == '@') {
+			return r_err(reader, SERD_ERR_BAD_SYNTAX,
+			             "syntax does not support directives\n");
 		}
 
 		// subject predicate object
