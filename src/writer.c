@@ -862,7 +862,7 @@ serd_writer_new(SerdSyntax     syntax,
 	writer->root_node    = SERD_NODE_NULL;
 	writer->root_uri     = SERD_URI_NULL;
 	writer->base_uri     = base_uri ? *base_uri : SERD_URI_NULL;
-	writer->anon_stack   = serd_stack_new(sizeof(WriteContext));
+	writer->anon_stack   = serd_stack_new(4 * sizeof(WriteContext));
 	writer->context      = context;
 	writer->list_subj    = SERD_NODE_NULL;
 	writer->empty        = true;

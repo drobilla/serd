@@ -2,9 +2,10 @@ serd (0.29.3) unstable;
 
   * Support strict parsing of prefixed names
   * Report errors for all failing test cases
+  * Use more efficient stack allocation and growth policies
   * Fix building with MSVC
 
- -- David Robillard <d@drobilla.net>  Sat, 23 Sep 2017 14:41:49 +0200
+ -- David Robillard <d@drobilla.net>  Sat, 23 Sep 2017 14:53:55 +0200
 
 serd (0.28.0) stable;
 
