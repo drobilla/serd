@@ -93,13 +93,7 @@ struct SerdReaderImpl {
 };
 
 static inline bool
-supports_fancy_literals(const SerdReader* reader)
-{
-	return reader->syntax == SERD_TURTLE || reader->syntax == SERD_TRIG;
-}
-
-static inline bool
-supports_relative_iris(const SerdReader* reader)
+fancy_syntax(const SerdReader* reader)
 {
 	return reader->syntax == SERD_TURTLE || reader->syntax == SERD_TRIG;
 }
@@ -615,7 +609,7 @@ read_String(SerdReader* reader, SerdNodeFlags* flags)
 		return push_node(reader, SERD_LITERAL, "", 0);
 	}
 
-	if (!supports_fancy_literals(reader)) {
+	if (!fancy_syntax(reader)) {
 		return r_err(reader, SERD_ERR_BAD_SYNTAX,
 		             "syntax does not support long literals\n");
 	}
@@ -843,7 +837,7 @@ read_IRIREF(SerdReader* reader)
 {
 	TRY_RET(eat_byte_check(reader, '<'));
 	Ref ref = push_node(reader, SERD_URI, "", 0);
-	if (!supports_relative_iris(reader) && !read_IRIREF_scheme(reader, ref)) {
+	if (!fancy_syntax(reader) && !read_IRIREF_scheme(reader, ref)) {
 		return pop_node(reader, ref);
 	}
 
@@ -1220,7 +1214,7 @@ read_object(SerdReader* reader, ReadContext* ctx, bool emit, bool* ate_dot)
 	Ref           lang     = 0;
 	uint32_t      flags    = 0;
 	const uint8_t c        = peek_byte(reader);
-	if (!supports_fancy_literals(reader)) {
+	if (!fancy_syntax(reader)) {
 		switch (c) {
 		case '"': case ':': case '<': case '_': break;
 		default: return r_err(reader, SERD_ERR_BAD_SYNTAX,
