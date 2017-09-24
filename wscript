@@ -301,18 +301,27 @@ def test_thru(ctx, base, path, check_filename, flags, isyntax, osyntax, quiet=Fa
         Logs.pprint('RED', 'FAIL: error running %s' % command)
 
 def test_suite(ctx, srcdir, base, testdir, report, isyntax, osyntax):
-    import rdflib
     import itertools
 
-    earl = rdflib.Namespace('http://www.w3.org/ns/earl#')
-    mf   = rdflib.Namespace('http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#')
-    rdf  = rdflib.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
+    def load_rdf(filename):
+        "Load an RDF file into python dictionaries via serdi.  Only supports URIs."
+        import subprocess
+        import re
+        model = {}
+        proc  = subprocess.Popen(['./serdi_static', filename], stdout=subprocess.PIPE)
+        for line in proc.communicate()[0].splitlines():
+            matches = re.match('<([^ ]*)> <([^ ]*)> <([^ ]*)> \.', line)
+            if matches:
+                if matches.group(1) not in model:
+                    model[matches.group(1)] = {}
+                if matches.group(2) not in model[matches.group(1)]:
+                    model[matches.group(1)][matches.group(2)] = []
+                model[matches.group(1)][matches.group(2)] += [matches.group(3)]
+        return model
 
+    mf = 'http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#'
     base_uri = os.path.join(base, testdir, '')
-    model = rdflib.ConjunctiveGraph()
-    model.parse(os.path.join(srcdir, 'tests', testdir, 'manifest.ttl'),
-                rdflib.URIRef(base_uri + 'manifest.ttl'),
-                format='n3')
+    model = load_rdf(os.path.join(srcdir, 'tests', testdir, 'manifest.ttl'))
 
     asserter = ''
     if os.getenv('USER') == 'drobilla':
@@ -327,15 +336,16 @@ def test_suite(ctx, srcdir, base, testdir, report, isyntax, osyntax):
         return result
 
     def run_tests(test_class, expected_return):
-        tests = sorted(model.triples([None, rdf.type, test_class]))
+        tests = []
+        for s, desc in model.iteritems():
+            if str(test_class) in desc['http://www.w3.org/1999/02/22-rdf-syntax-ns#type']:
+                tests += [s]
         if len(tests) == 0:
             return
 
         with autowaf.begin_tests(ctx, APPNAME, str(test_class)):
-            for (num, i) in enumerate(tests):
-                test        = i[0]
-                action_node = model.value(test, mf.action, None)
-                output_node = model.value(test, mf.result, None)
+            for (num, test) in enumerate(tests):
+                action_node = model[test][mf + 'action'][0]
                 action      = os.path.join('tests', testdir, os.path.basename(action_node))
                 abs_action  = os.path.join(srcdir, action)
                 uri         = base_uri + os.path.basename(action)
@@ -344,10 +354,9 @@ def test_suite(ctx, srcdir, base, testdir, report, isyntax, osyntax):
 
                 # Run strict test
                 result = run_test(command, expected_return, action)
-                if output_node:
+                if (mf + 'result') in model[test]:
                     # Check output against test suite
-                    output_rel = output_node[len(base_uri):]
-                    check_path = os.path.join(srcdir, 'tests', testdir, output_rel)
+                    check_path = model[test][mf + 'result'][0][len('file://'):]
                     result     = autowaf.run_test(
                         ctx, APPNAME,
                         lambda: check_output(action + '.out', check_path),
@@ -368,24 +377,19 @@ def test_suite(ctx, srcdir, base, testdir, report, isyntax, osyntax):
                 run_test(command.replace('-f', '-l -f'), None, action)
 
     def test_types():
-        rdft = rdflib.Namespace('http://www.w3.org/ns/rdftest#')
         types = []
         for lang in ['Turtle', 'NTriples', 'Trig', 'NQuads']:
-            types += [[rdft['Test%sPositiveSyntax' % lang], 0],
-                      [rdft['Test%sNegativeSyntax' % lang], 1],
-                      [rdft['Test%sNegativeEval' % lang], 1],
-                      [rdft['Test%sEval' % lang], 0]]
+            types += [['http://www.w3.org/ns/rdftest#Test%sPositiveSyntax' % lang, 0],
+                      ['http://www.w3.org/ns/rdftest#Test%sNegativeSyntax' % lang, 1],
+                      ['http://www.w3.org/ns/rdftest#Test%sNegativeEval' % lang, 1],
+                      ['http://www.w3.org/ns/rdftest#Test%sEval' % lang, 0]]
         return types
 
     for i in test_types():
         run_tests(i[0], i[1])
 
 def test(ctx):
-    try:
-        import rdflib
-    except:
-        Logs.error('error: python rdflib is required to run tests')
-        return
+    "runs test suite"
 
     # Create test output directories
     for i in ['bad', 'good', 'TurtleTests', 'NTriplesTests', 'NQuadsTests', 'TriGTests']:
