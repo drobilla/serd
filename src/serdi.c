@@ -50,6 +50,20 @@ get_syntax(const char* name)
 	return (SerdSyntax)0;
 }
 
+static SerdSyntax
+guess_syntax(const char* filename)
+{
+	const char* ext = strrchr(filename, '.');
+	if (ext) {
+		for (const Syntax* s = syntaxes; s->name; ++s) {
+			if (!serd_strncasecmp(s->extension, ext, strlen(ext))) {
+				return s->syntax;
+			}
+		}
+	}
+	return (SerdSyntax)0;
+}
+
 static int
 print_version(void)
 {
@@ -106,8 +120,8 @@ main(int argc, char** argv)
 	}
 
 	FILE*          in_fd         = NULL;
-	SerdSyntax     input_syntax  = SERD_TURTLE;
-	SerdSyntax     output_syntax = SERD_NTRIPLES;
+	SerdSyntax     input_syntax  = (SerdSyntax)0;
+	SerdSyntax     output_syntax = (SerdSyntax)0;
 	bool           from_file     = true;
 	bool           bulk_read     = true;
 	bool           bulk_write    = false;
@@ -190,6 +204,17 @@ main(int argc, char** argv)
 				return 1;
 			}
 		}
+	}
+
+	if (!input_syntax && !(input_syntax = guess_syntax((const char*)in_name))) {
+		input_syntax = SERD_TRIG;
+	}
+
+	if (!output_syntax) {
+		output_syntax = (
+			(input_syntax == SERD_TURTLE || input_syntax == SERD_NTRIPLES)
+			? SERD_NTRIPLES
+			: SERD_NQUADS);
 	}
 
 	SerdURI  base_uri = SERD_URI_NULL;

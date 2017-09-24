@@ -1,5 +1,6 @@
 serd (0.29.3) unstable;
 
+  * Make serdi guess input syntax from extension if unspecified
   * Make serdi syntax options case-insensitive
   * Add basic error tolerant parsing for line-based formats
   * Support strict parsing of prefixed names
@@ -8,7 +9,7 @@ serd (0.29.3) unstable;
   * Add NTriples test suite
   * Fix building with MSVC
 
- -- David Robillard <d@drobilla.net>  Sun, 24 Sep 2017 16:34:20 +0200
+ -- David Robillard <d@drobilla.net>  Sun, 24 Sep 2017 16:36:37 +0200
 
 serd (0.28.0) stable;
 
