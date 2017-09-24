@@ -8,8 +8,9 @@ serd (0.29.3) unstable;
   * Use more efficient stack allocation and growth policies
   * Add NTriples test suite
   * Fix building with MSVC
+  * Clean up testing code
 
- -- David Robillard <d@drobilla.net>  Sun, 24 Sep 2017 16:36:37 +0200
+ -- David Robillard <d@drobilla.net>  Sun, 24 Sep 2017 18:51:27 +0200
 
 serd (0.28.0) stable;
 

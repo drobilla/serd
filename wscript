@@ -321,106 +321,120 @@ def test_thru(ctx, base, path, check_filename, flags, isyntax, osyntax, quiet=Fa
     else:
         Logs.pprint('RED', 'FAIL: error running %s' % command)
 
-def test_manifest(ctx, srcdir, testdir, report, base_uri, isyntax, osyntax, test_runs):
+def test_suite(ctx, srcdir, base, testdir, report, isyntax, osyntax):
     import rdflib
-    import urlparse
+    import itertools
 
-    rdf  = rdflib.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
-    rdfs = rdflib.Namespace('http://www.w3.org/2000/01/rdf-schema#')
-    mf   = rdflib.Namespace('http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#')
     earl = rdflib.Namespace('http://www.w3.org/ns/earl#')
+    mf   = rdflib.Namespace('http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#')
+    rdf  = rdflib.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
 
+    base_uri = os.path.join(base, testdir, '')
     model = rdflib.ConjunctiveGraph()
-    try:
-        model.parse(os.path.join(srcdir, 'tests', testdir, 'manifest.ttl'),
-                    rdflib.URIRef(base_uri + 'manifest.ttl'),
-                    format='n3')
-    except Exception as e:
-        print("Error: %s" % e)
+    model.parse(os.path.join(srcdir, 'tests', testdir, 'manifest.ttl'),
+                rdflib.URIRef(base_uri + 'manifest.ttl'),
+                format='n3')
 
     asserter = ''
     if os.getenv('USER') == 'drobilla':
         asserter = 'http://drobilla.net/drobilla#me'
 
-    def run_test(action_node, expected_return):
-        action     = os.path.join('tests', testdir, action_node)
-        output     = os.path.join('tests', testdir, action_node + '.out')
-        abs_action = os.path.join(srcdir, action)
-        rel        = os.path.relpath(abs_action, os.path.join(srcdir, 'tests', testdir))
-        command    = 'serdi_static -i %s -o %s -f "%s" "%s" > %s' % (
-            isyntax, osyntax, abs_action, base_uri + rel, output)
+    def run_test(command, expected_return, name):
+        result = autowaf.run_test(ctx, APPNAME, command, expected_return, name=name)
+        if not result[0]:
+            autowaf.run_test(ctx, APPNAME,
+                             lambda: result[1][1] != '',
+                             True, name=name + ' has error message', quiet=True)
+        return result
 
-        ret = autowaf.run_test(ctx, APPNAME, command, expected_return, name=str(action))
-        autowaf.run_test(ctx, APPNAME,
-                         lambda: expected_return == 0 or ret[1][1] != '',
-                         True, name=str(action) + ' has error message', quiet=True)
-        return ret
+    def run_tests(test_class, expected_return):
+        tests = sorted(model.triples([None, rdf.type, test_class]))
+        if len(tests) == 0:
+            return
 
-    def run_tests(test_class, expected_return, check=False):
         with autowaf.begin_tests(ctx, APPNAME, str(test_class)):
-            for i in sorted(model.triples([None, rdf.type, test_class])):
+            for (num, i) in enumerate(tests):
                 test        = i[0]
-                name        = model.value(test, mf.name, None)
-                action_node = model.value(test, mf.action, None)[len(base_uri):]
-                result      = run_test(action_node, expected_return)
+                action_node = model.value(test, mf.action, None)
+                output_node = model.value(test, mf.result, None)
+                action      = os.path.join('tests', testdir, os.path.basename(action_node))
+                abs_action  = os.path.join(srcdir, action)
+                uri         = base_uri + os.path.basename(action)
+                command     = 'serdi_static -f "%s" "%s" > %s' % (
+                    abs_action, uri, action + '.out')
 
-                if result[0] and check:
-                    output_node = model.value(test, mf.result, None)[len(base_uri):]
-                    action      = os.path.join('tests', testdir, action_node)
-                    out_path    = action + '.out'
-                    check_path  = os.path.join(srcdir, 'tests', testdir, output_node)
-                    result      = (check_output(out_path, check_path), result[1])
+                # Run strict test
+                result = run_test(command, expected_return, action)
+                if output_node:
+                    # Check output against test suite
+                    output_rel = output_node[len(base_uri):]
+                    check_path = os.path.join(srcdir, 'tests', testdir, output_rel)
+                    result     = autowaf.run_test(
+                        ctx, APPNAME,
+                        lambda: check_output(action + '.out', check_path),
+                        True, name=str(action) + ' check', quiet=True)
 
-                    test_thru(ctx, base_uri + action_node, action, check_path, "", isyntax, osyntax, quiet=True)
+                    # Run round-trip tests
+                    thru_flags = ['-b', '-e', '-f', '-r http://example.org/']
+                    for n in range(len(thru_flags) + 1):
+                        for flags in itertools.combinations(thru_flags, n):
+                            test_thru(ctx, uri, action, check_path,
+                                      ' '.join(flags), isyntax, osyntax, quiet=True)
 
-                report.write(earl_assertion(test, result[0], asserter))
+                # Write test report entry
+                if report is not None:
+                    report.write(earl_assertion(test, result[0], asserter))
 
-    for i in test_runs:
-        run_tests(i[0], i[1], i[2])
+                # Run lax test
+                run_test(command.replace('-f', '-l -f'), None, action)
+
+    def test_types():
+        rdft = rdflib.Namespace('http://www.w3.org/ns/rdftest#')
+        types = []
+        for lang in ['Turtle', 'NTriples', 'Trig', 'NQuads']:
+            types += [[rdft['Test%sPositiveSyntax' % lang], 0],
+                      [rdft['Test%sNegativeSyntax' % lang], 1],
+                      [rdft['Test%sNegativeEval' % lang], 1],
+                      [rdft['Test%sEval' % lang], 0]]
+        return types
+
+    for i in test_types():
+        run_tests(i[0], i[1])
 
 def test(ctx):
-    blddir = autowaf.build_dir(APPNAME, 'tests')
-    for i in ['', 'bad', 'good', 'new', 'TurtleTests', 'NTriplesTests', 'NQuadsTests', 'TrigTests', 'extra']:
+    try:
+        import rdflib
+    except:
+        Logs.error('error: python rdflib is required to run tests')
+        return
+
+    # Create test output directories
+    for i in ['bad', 'good', 'TurtleTests', 'NTriplesTests', 'NQuadsTests', 'TriGTests']:
         try:
-            os.makedirs(os.path.join(blddir, i))
+            test_dir = os.path.join(autowaf.build_dir(APPNAME, 'tests'), i)
+            os.makedirs(test_dir)
+            for i in glob.glob(test_dir + '/*.*'):
+                os.remove(i)
         except:
             pass
 
-    for i in glob.glob(blddir + '/*.*'):
-        os.remove(i)
-
-    srcdir   = ctx.path.abspath()
-    orig_dir = os.path.abspath(os.curdir)
-
-    os.chdir(os.path.join(srcdir, 'tests', 'good'))
-    old_good_tests = glob.glob('*.ttl')
-    old_good_tests.sort()
-    old_good_tests.remove('manifest.ttl')
-    good_tests = { 'good': old_good_tests }
-    os.chdir(orig_dir)
-
-    os.chdir(srcdir)
-    bad_tests = glob.glob('tests/bad/*.ttl') + glob.glob('tests/bad/*.nt')
-    bad_tests.sort()
-    os.chdir(orig_dir)
-
-    autowaf.pre_test(ctx, APPNAME)
-
+    srcdir = ctx.path.abspath()
     os.environ['PATH'] = '.' + os.pathsep + os.getenv('PATH')
 
+    autowaf.pre_test(ctx, APPNAME)
     autowaf.run_test(ctx, APPNAME, 'serd_test', dirs=['.'])
 
     autowaf.run_test(ctx, APPNAME,
                      'serdi_static -q -o turtle "%s/tests/good/base.ttl" "base.ttl" > tests/good/base.ttl.out' % srcdir,
                      0, name='base')
 
-    if not file_equals('%s/tests/good/base.ttl' % srcdir, 'tests/good/base.ttl.out'):
-        Logs.pprint('RED', 'FAIL: build/tests/base.ttl.out is incorrect')
+    autowaf.run_test(ctx, APPNAME,
+                     lambda: file_equals('%s/tests/good/base.ttl' % srcdir, 'tests/good/base.ttl.out'),
+                     True, name='base-check')
 
     nul = os.devnull
     autowaf.run_tests(ctx, APPNAME, [
             'serdi_static "file://%s/tests/good/manifest.ttl" > %s' % (srcdir, nul),
-#            'serdi_static %s/tests/good/UTF-8.ttl > %s' % (srcdir, nul),
             'serdi_static -v > %s' % nul,
             'serdi_static -h > %s' % nul,
             'serdi_static -s "<foo> a <#Thingie> ." > %s' % nul,
@@ -458,113 +472,26 @@ def test(ctx):
                              'serdi_static "file://%s/tests/good/manifest.ttl" > /dev/full' % srcdir,
                              1, name='write_error')
 
-    def test_base(test):
-        return ('http://www.w3.org/2001/sw/DataAccess/df1/tests/'
-                + test.replace('\\', '/'))
+    # Serd-specific test cases
+    serd_base = 'http://drobilla.net/sw/serd/tests/'
+    test_suite(ctx, srcdir, serd_base, 'good', None, 'Turtle', 'NTriples')
+    test_suite(ctx, srcdir, serd_base, 'bad', None, 'Turtle', 'NTriples')
 
-    # Good tests
-    for tdir, tests in good_tests.items():
-        for flags in [('', 'strict'), ('-l', 'lax')]:
-            with autowaf.begin_tests(ctx, APPNAME, tdir + ' ' + flags[1]):
-                for test in tests:
-                    path = os.path.join('tests', tdir, test)
-                    autowaf.run_test(
-                        ctx, APPNAME,
-                        'serdi_static %s -f "%s" "%s" > %s.out' % (
-                            flags[0], os.path.join(srcdir, path), test_base(test), path),
-                        name=path)
+    # Standard test suites
+    with open('earl.ttl', 'w') as report:
+        report.write('@prefix earl: <http://www.w3.org/ns/earl#> .\n'
+                     '@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n'
+                     '@prefix dc: <http://purl.org/dc/elements/1.1/> .\n')
 
-                    check_filename = os.path.join(
-                        srcdir, 'tests', tdir, test.replace('.ttl', '.nt'))
-                    autowaf.run_test(ctx, APPNAME,
-                                     lambda: check_output(path + '.out', check_filename), True,
-                                     name='check ' + path + '.out',
-                                     quiet=True)
+        with open(os.path.join(srcdir, 'serd.ttl')) as serd_ttl:
+            for line in serd_ttl:
+                report.write(line)
 
-    # Bad tests
-    for flags in [('', 'strict', 1), ('-l', 'lax', None)]:
-        with autowaf.begin_tests(ctx, APPNAME, 'bad ' + flags[1]):
-            for test in bad_tests:
-                lang = 'turtle' if test.endswith('.ttl') else 'ntriples'
-                cmd = 'serdi_static %s -i %s "%s" "%s" > %s.out' % (
-                    flags[0], lang, os.path.join(srcdir, test), test_base(test), test)
-                out = autowaf.run_test(ctx, APPNAME, cmd, flags[2], name=test)
-                if out[1][1] == '':
-                    Logs.pprint('RED', cmd)
-                    Logs.pprint('RED', 'Parsing failed without error message')
-
-    # Don't do a round-trip test for test-id.ttl, IDs have changed
-    good_tests['good'].remove('test-id.ttl')
-
-    # Round-trip good tests
-    with autowaf.begin_tests(ctx, APPNAME, 'round_trip_good'):
-        for tdir, tests in good_tests.items():
-            thru_tests = tests;
-
-            num = 0
-            for test in thru_tests:
-                num += 1
-                flags = ''
-                if (num % 2 == 0):
-                    flags += '-b'
-                if (num % 5 == 0):
-                    flags += ' -f'
-                if (num % 3 == 0):
-                    flags += ' -r http://www.w3.org/'
-                if (num % 7 == 0):
-                    flags += ' -e'
-
-                path  = os.path.join('tests', tdir, test)
-                check = os.path.join(srcdir, path.replace('.ttl', '.nt'))
-                test_thru(ctx, test_base(test), path, check, flags, 'turtle', 'ntriples', quiet=False)
-
-    # New manifest-driven tests
-    try:
-        import rdflib
-        rdft = rdflib.Namespace('http://www.w3.org/ns/rdftest#')
-
-        # Start test report with serd information
-        report = open('earl.ttl', 'w')
-        report.write('''@prefix earl: <http://www.w3.org/ns/earl#> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-@prefix dc: <http://purl.org/dc/elements/1.1/> .\n''')
-        serd_ttl = open(os.path.join(srcdir, 'serd.ttl'))
-        for line in serd_ttl:
-            report.write(line)
-        serd_ttl.close()
-
-        # Run tests and append to report
-        turtle_tests = 'http://www.w3.org/2013/TurtleTests/'
-        test_manifest(ctx, srcdir, 'TurtleTests', report, turtle_tests, 'turtle', 'ntriples',
-                      [[rdft.TestTurtlePositiveSyntax, 0, False],
-                       [rdft.TestTurtleNegativeSyntax, 1, False],
-                       [rdft.TestTurtleNegativeEval, 1, False],
-                       [rdft.TestTurtleEval, 0, True]])
-
-        ntriples_tests = 'http://www.w3.org/2013/N-TriplesTests/'
-        test_manifest(ctx, srcdir, 'NTriplesTests', report, ntriples_tests, 'ntriples', 'ntriples',
-                      [[rdft.TestNTriplesPositiveSyntax, 0, False],
-                       [rdft.TestNTriplesNegativeSyntax, 1, False],
-                       [rdft.TestNTriplesNegativeEval, 1, False],
-                       [rdft.TestNTriplesEval, 0, True]])
-
-        nquads_tests = 'http://www.w3.org/2013/NQuadsTests/'
-        test_manifest(ctx, srcdir, 'NQuadsTests', report, nquads_tests, 'nquads', 'nquads',
-                      [[rdft.TestNQuadsPositiveSyntax, 0, False],
-                       [rdft.TestNQuadsNegativeSyntax, 1, False],
-                       [rdft.TestNQuadsNegativeEval, 1, False],
-                       [rdft.TestNQuadsEval, 0, True]])
-
-        trig_tests = 'http://www.w3.org/2013/TriGTests/'
-        test_manifest(ctx, srcdir, 'TrigTests', report, trig_tests, 'trig', 'nquads',
-                      [[rdft.TestTrigPositiveSyntax, 0, False],
-                       [rdft.TestTrigNegativeSyntax, 1, False],
-                       [rdft.TestTrigNegativeEval, 1, False],
-                       [rdft.TestTrigEval, 0, True]])
-        report.close()
-
-    except:
-        pass
+        w3c_base = 'http://www.w3.org/2013/'
+        test_suite(ctx, srcdir, w3c_base, 'TurtleTests', report, 'Turtle', 'NTriples')
+        test_suite(ctx, srcdir, w3c_base, 'NTriplesTests', report, 'NTriples', 'NTriples')
+        test_suite(ctx, srcdir, w3c_base, 'NQuadsTests', report, 'NQuads', 'NQuads')
+        test_suite(ctx, srcdir, w3c_base, 'TriGTests', report, 'Trig', 'NQuads')
 
     autowaf.post_test(ctx, APPNAME)
 
