@@ -1593,14 +1593,7 @@ tokcmp(SerdReader* reader, Ref ref, const char* tok, size_t n)
 	if (!node || node->n_bytes != n) {
 		return -1;
 	}
-	const char* s1 = (const char*)node->buf;
-	const char* s2 = tok;
-	for (; n > 0 && *s2; s1++, s2++, --n) {
-		if (toupper(*s1) != toupper(*s2)) {
-			return ((*(uint8_t*)s1 < *(uint8_t*)s2) ? -1 : +1);
-		}
-	}
-	return 0;
+	return serd_strncasecmp((const char*)node->buf, tok, n);
 }
 
 static bool

@@ -24,6 +24,32 @@
 #define SERDI_ERROR(msg)       fprintf(stderr, "serdi: " msg);
 #define SERDI_ERRORF(fmt, ...) fprintf(stderr, "serdi: " fmt, __VA_ARGS__);
 
+typedef struct {
+	SerdSyntax  syntax;
+	const char* name;
+	const char* extension;
+} Syntax;
+
+static const Syntax syntaxes[] = {
+	{SERD_TURTLE,   "turtle",   ".ttl"},
+	{SERD_NTRIPLES, "ntriples", ".nt"},
+	{SERD_NQUADS,   "nquads",   ".nq"},
+	{SERD_TRIG,     "trig",     ".trig"},
+	{(SerdSyntax)0, NULL, NULL}
+};
+
+static SerdSyntax
+get_syntax(const char* name)
+{
+	for (const Syntax* s = syntaxes; s->name; ++s) {
+		if (!serd_strncasecmp(s->name, name, strlen(name))) {
+			return s->syntax;
+		}
+	}
+	SERDI_ERRORF("unknown syntax `%s'\n", name);
+	return (SerdSyntax)0;
+}
+
 static int
 print_version(void)
 {
@@ -57,24 +83,6 @@ print_usage(const char* name, bool error)
 	fprintf(os, "  -s INPUT     Parse INPUT as string (terminates options).\n");
 	fprintf(os, "  -v           Display version information and exit.\n");
 	return error ? 1 : 0;
-}
-
-static bool
-set_syntax(SerdSyntax* syntax, const char* name)
-{
-	if (!strcmp(name, "turtle")) {
-		*syntax = SERD_TURTLE;
-	} else if (!strcmp(name, "ntriples")) {
-		*syntax = SERD_NTRIPLES;
-	} else if (!strcmp(name, "nquads")) {
-		*syntax = SERD_NQUADS;
-	} else if (!strcmp(name, "trig")) {
-		*syntax = SERD_TRIG;
-	} else {
-		SERDI_ERRORF("unknown syntax `%s'\n", name);
-		return false;
-	}
-	return true;
 }
 
 static int
@@ -138,13 +146,13 @@ main(int argc, char** argv)
 		} else if (argv[a][1] == 'i') {
 			if (++a == argc) {
 				return missing_arg(argv[0], 'i');
-			} else if (!set_syntax(&input_syntax, argv[a])) {
+			} else if (!(input_syntax = get_syntax(argv[a]))) {
 				return print_usage(argv[0], true);
 			}
 		} else if (argv[a][1] == 'o') {
 			if (++a == argc) {
 				return missing_arg(argv[0], 'o');
-			} else if (!set_syntax(&output_syntax, argv[a])) {
+			} else if (!(output_syntax = get_syntax(argv[a]))) {
 				return print_usage(argv[0], true);
 			}
 		} else if (argv[a][1] == 'p') {
