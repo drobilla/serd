@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import glob
 import os
-import shutil
-import subprocess
 import waflib.Logs as Logs
 import waflib.Options as Options
 import waflib.extras.autowaf as autowaf
@@ -143,18 +141,14 @@ def build(bld):
             defines         = defines + ['SERD_INTERNAL'])
 
     if bld.env.BUILD_TESTS:
-        test_libs       = libs
-        test_cflags     = ['']
-        test_linkflags  = ['']
-        if not bld.env.NO_COVERAGE:
-            test_cflags    += ['--coverage']
-            test_linkflags += ['--coverage']
+        test_cflags     = [''] if bld.env.NO_COVERAGE else ['--coverage']
+        test_linkflags  = [''] if bld.env.NO_COVERAGE else ['--coverage']
 
         # Profiled static library for test coverage
         bld(features     = 'c cstlib',
             source       = lib_source,
             includes     = ['.', './src'],
-            lib          = test_libs,
+            lib          = libs,
             name         = 'libserd_profiled',
             target       = 'serd_profiled',
             install_path = '',
@@ -162,29 +156,19 @@ def build(bld):
             cflags       = test_cflags,
             linkflags    = test_linkflags)
 
-        # Static profiled serdi for tests
-        bld(features     = 'c cprogram',
-            source       = 'src/serdi.c',
-            includes     = ['.', './src'],
-            use          = 'libserd_profiled',
-            lib          = test_libs,
-            target       = 'serdi_static',
-            install_path = '',
-            defines      = defines,
-            cflags       = test_cflags,
-            linkflags    = test_linkflags)
-
-        # Unit test program
-        bld(features     = 'c cprogram',
-            source       = 'tests/serd_test.c',
-            includes     = ['.', './src'],
-            use          = 'libserd_profiled',
-            lib          = test_libs,
-            target       = 'serd_test',
-            install_path = '',
-            defines      = defines,
-            cflags       = test_cflags,
-            linkflags    = test_linkflags)
+        # Test programs
+        for prog in [('serdi_static', 'src/serdi.c'),
+                     ('serd_test', 'tests/serd_test.c')]:
+            bld(features     = 'c cprogram',
+                source       = prog[1],
+                includes     = ['.', './src'],
+                use          = 'libserd_profiled',
+                lib          = libs,
+                target       = prog[0],
+                install_path = '',
+                defines      = defines,
+                cflags       = test_cflags,
+                linkflags    = test_linkflags)
 
     # Utilities
     if bld.env.BUILD_UTILS:
@@ -212,34 +196,29 @@ def build(bld):
         bld.add_post_fun(fix_docs)
 
 def lint(ctx):
+    import subprocess
     subprocess.call('cpplint.py --filter=+whitespace/comments,-whitespace/tab,-whitespace/braces,-whitespace/labels,-build/header_guard,-readability/casting,-readability/todo,-build/include src/* serd/*', shell=True)
     subprocess.call('clang-tidy -checks="*,-misc-unused-parameters,-readability-else-after-return,-llvm-header-guard,-google-readability-todo,-clang-analyzer-alpha.*" -extra-arg="-std=c99" -extra-arg="-I." -extra-arg="-Ibuild" ./serd/*.h ./src/*.c ./src/*.h', shell=True)
 
 def amalgamate(ctx):
+    import shutil
     shutil.copy('serd/serd.h', 'build/serd.h')
-    amalgamation = open('build/serd.c', 'w')
+    with open('build/serd.c', 'w') as amalgamation:
+        with open('src/serd_internal.h') as serd_internal_h:
+            for l in serd_internal_h:
+                amalgamation.write(l.replace('serd/serd.h', 'serd.h'))
 
-    serd_internal_h = open('src/serd_internal.h')
-    for l in serd_internal_h:
-        if l == '#include "serd/serd.h"\n':
-            amalgamation.write('#include "serd.h"\n')
-        else:
-            amalgamation.write(l)
-    serd_internal_h.close()
-
-    for f in lib_source:
-        fd = open(f)
-        amalgamation.write('\n/**\n   @file %s\n*/' % f)
-        header = True
-        for l in fd:
-            if header:
-                if l == '*/\n':
-                    header = False
-            else:
-                if l != '#include "serd_internal.h"\n':
-                    amalgamation.write(l)
-        fd.close()
-    amalgamation.close()
+        for f in lib_source:
+            with open(f) as fd:
+                amalgamation.write('\n/**\n   @file %s\n*/' % f)
+                header = True
+                for l in fd:
+                    if header:
+                        if l == '*/\n':
+                            header = False
+                    else:
+                        if l != '#include "serd_internal.h"\n':
+                            amalgamation.write(l)
 
     for i in ['c', 'h']:
         Logs.info('Wrote build/serd.%s' % i)
@@ -255,13 +234,13 @@ def upload_docs(ctx):
         os.system('rsync -avz --delete -e ssh build/%s.html drobilla@drobilla.net:~/drobilla.net/man/' % page)
 
 def file_equals(patha, pathb, subst_from='', subst_to=''):
-    fa = open(patha, 'rU')
-    fb = open(pathb, 'rU')
-    for line in fa:
-        if line.replace(subst_from, subst_to) != fb.readline().replace(subst_from, subst_to):
-            return False
-    fa.close()
-    fb.close()
+    with open(patha, 'rU') as fa:
+        with open(pathb, 'rU') as fb:
+            for linea in fa:
+                lineb = fb.readline()
+                if (linea.replace(subst_from, subst_to) !=
+                    lineb.replace(subst_from, subst_to)):
+                    return False
     return True
 
 def earl_assertion(test, passed, asserter):
@@ -480,7 +459,6 @@ def test(ctx):
     # Standard test suites
     with open('earl.ttl', 'w') as report:
         report.write('@prefix earl: <http://www.w3.org/ns/earl#> .\n'
-                     '@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n'
                      '@prefix dc: <http://purl.org/dc/elements/1.1/> .\n')
 
         with open(os.path.join(srcdir, 'serd.ttl')) as serd_ttl:
