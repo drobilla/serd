@@ -1225,10 +1225,8 @@ read_object(SerdReader* reader, ReadContext* ctx, bool emit, bool* ate_dot)
 		}
 	}
 	switch (c) {
-	case '\0':
-		return r_err(reader, SERD_ERR_BAD_SYNTAX, "end of file in object\n");
-	case ')':
-		return false;
+	case '\0': case ')':
+		return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected object\n");
 	case '[':
 		simple = false;
 		TRY_THROW(ret = read_anon(reader, *ctx, false, &o));
