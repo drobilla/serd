@@ -140,7 +140,10 @@ eat_byte_safe(SerdReader* reader, const uint8_t byte)
 	default:   ++reader->cur.col;
 	}
 
-	reader->status = serd_byte_source_advance(&reader->source);
+	const SerdStatus st = serd_byte_source_advance(&reader->source);
+	if (st) {
+		reader->status = st;
+	}
 	return byte;
 }
 
