@@ -21,20 +21,16 @@ out     = 'build'       # Build directory
 def options(opt):
     opt.load('compiler_c')
     autowaf.set_options(opt, test=True)
-    opt.add_option('--no-utils', action='store_true', dest='no_utils',
-                   help='Do not build command line utilities')
-    opt.add_option('--stack-check', action='store_true', dest='stack_check',
-                   help='Include runtime stack sanity checks')
-    opt.add_option('--static', action='store_true', dest='static',
-                   help='Build static library')
-    opt.add_option('--no-shared', action='store_true', dest='no_shared',
-                   help='Do not build shared library')
-    opt.add_option('--static-progs', action='store_true', dest='static_progs',
-                   help='Build programs as static binaries')
-    opt.add_option('--largefile', action='store_true', dest='largefile',
-                   help='Build with large file support on 32-bit systems')
-    opt.add_option('--no-posix', action='store_true', dest='no_posix',
-                   help='Do not use posix_memalign, posix_fadvise, and fileno, even if present')
+    flags = {'no-utils':     'Do not build command line utilities',
+             'stack-check':  'Include runtime stack sanity checks',
+             'static':       'Build static library',
+             'no-shared':    'Do not build shared library',
+             'static-progs': 'Build programs as static binaries',
+             'largefile':    'Build with large file support on 32-bit systems',
+             'no-posix':     'Do not use POSIX functions, even if present'}
+    for name, desc in flags.iteritems():
+        opt.add_option('--' + name, action='store_true',
+                       dest=name.replace('-', '_'), help=desc)
 
 def configure(conf):
     conf.load('compiler_c')
@@ -42,11 +38,11 @@ def configure(conf):
     autowaf.display_header('Serd Configuration')
     autowaf.set_c99_mode(conf)
 
-    conf.env.BUILD_UTILS  = not Options.options.no_utils
-    conf.env.BUILD_SHARED = not Options.options.no_shared
-    conf.env.STATIC_PROGS = Options.options.static_progs
-    conf.env.BUILD_STATIC = (Options.options.static or
-                             Options.options.static_progs)
+    conf.env.update({
+        'BUILD_UTILS':  not Options.options.no_utils,
+        'BUILD_SHARED': not Options.options.no_shared,
+        'STATIC_PROGS': Options.options.static_progs,
+        'BUILD_STATIC': Options.options.static or Options.options.static_progs})
 
     if not conf.env.BUILD_SHARED and not conf.env.BUILD_STATIC:
         conf.fatal('Neither a shared nor a static build requested')
@@ -58,23 +54,14 @@ def configure(conf):
         conf.env.append_unique('DEFINES', ['_FILE_OFFSET_BITS=64'])
 
     if not Options.options.no_posix:
-        conf.check(function_name = 'posix_memalign',
-                   header_name   = 'stdlib.h',
-                   define_name   = 'HAVE_POSIX_MEMALIGN',
-                   defines       = ['_POSIX_C_SOURCE=200809L'],
-                   mandatory     = False)
-
-        conf.check(function_name = 'posix_fadvise',
-                   header_name   = 'fcntl.h',
-                   define_name   = 'HAVE_POSIX_FADVISE',
-                   defines       = ['_POSIX_C_SOURCE=200809L'],
-                   mandatory     = False)
-
-        conf.check(function_name = 'fileno',
-                   header_name   = 'stdio.h',
-                   define_name   = 'HAVE_FILENO',
-                   defines       = ['_POSIX_C_SOURCE=200809L'],
-                   mandatory     = False)
+        for name, header in {'posix_memalign': 'stdlib.h',
+                             'posix_fadvise':  'fcntl.h',
+                             'fileno':         'stdio.h'}.iteritems():
+            conf.check(function_name = name,
+                       header_name   = header,
+                       define_name   = 'HAVE_' + name.upper(),
+                       defines       = ['_POSIX_C_SOURCE=200809L'],
+                       mandatory     = False)
 
     autowaf.define(conf, 'SERD_VERSION', SERD_VERSION)
     autowaf.set_lib_env(conf, 'serd', SERD_VERSION)
@@ -86,15 +73,13 @@ def configure(conf):
     autowaf.display_msg(conf, 'Unit tests', bool(conf.env.BUILD_TESTS))
     print('')
 
-lib_source = [
-    'src/byte_source.c',
-    'src/env.c',
-    'src/node.c',
-    'src/reader.c',
-    'src/string.c',
-    'src/uri.c',
-    'src/writer.c',
-]
+lib_source = ['src/byte_source.c',
+              'src/env.c',
+              'src/node.c',
+              'src/reader.c',
+              'src/string.c',
+              'src/uri.c',
+              'src/writer.c']
 
 def build(bld):
     # C Headers
@@ -105,70 +90,60 @@ def build(bld):
     autowaf.build_pc(bld, 'SERD', SERD_VERSION, SERD_MAJOR_VERSION, [],
                      {'SERD_MAJOR_VERSION' : SERD_MAJOR_VERSION})
 
-    libflags = ['-fvisibility=hidden']
-    libs     = ['m']
-    defines  = []
+    defines = []
+    lib_args = {'export_includes': ['.'],
+                'includes':        ['.', './src'],
+                'cflags':          ['-fvisibility=hidden'],
+                'lib':             ['m'],
+                'vnum':            SERD_VERSION,
+                'install_path':    '${LIBDIR}'}
     if bld.env.MSVC_COMPILER:
-        libflags = []
-        libs     = []
-        defines  = ['snprintf=_snprintf']
+        lib_args['cflags'] = []
+        lib_args['lib']    = []
+        defines            = ['snprintf=_snprintf']
 
     # Shared Library
     if bld.env.BUILD_SHARED:
         bld(features        = 'c cshlib',
-            export_includes = ['.'],
             source          = lib_source,
-            includes        = ['.', './src'],
-            lib             = libs,
             name            = 'libserd',
             target          = 'serd-%s' % SERD_MAJOR_VERSION,
-            vnum            = SERD_VERSION,
-            install_path    = '${LIBDIR}',
             defines         = defines + ['SERD_SHARED', 'SERD_INTERNAL'],
-            cflags          = libflags)
+            **lib_args)
 
     # Static library
     if bld.env.BUILD_STATIC:
         bld(features        = 'c cstlib',
-            export_includes = ['.'],
             source          = lib_source,
-            includes        = ['.', './src'],
-            lib             = libs,
             name            = 'libserd_static',
             target          = 'serd-%s' % SERD_MAJOR_VERSION,
-            vnum            = SERD_VERSION,
-            install_path    = '${LIBDIR}',
-            defines         = defines + ['SERD_INTERNAL'])
+            defines         = defines + ['SERD_INTERNAL'],
+            **lib_args)
 
     if bld.env.BUILD_TESTS:
-        test_cflags     = [''] if bld.env.NO_COVERAGE else ['--coverage']
-        test_linkflags  = [''] if bld.env.NO_COVERAGE else ['--coverage']
+        test_args = {'includes':     ['.', './src'],
+                     'cflags':       [''] if bld.env.NO_COVERAGE else ['--coverage'],
+                     'linkflags':    [''] if bld.env.NO_COVERAGE else ['--coverage'],
+                     'lib':          lib_args['lib'],
+                     'install_path': ''}
 
         # Profiled static library for test coverage
         bld(features     = 'c cstlib',
             source       = lib_source,
-            includes     = ['.', './src'],
-            lib          = libs,
             name         = 'libserd_profiled',
             target       = 'serd_profiled',
-            install_path = '',
             defines      = defines + ['SERD_INTERNAL'],
-            cflags       = test_cflags,
-            linkflags    = test_linkflags)
+            **test_args)
 
         # Test programs
         for prog in [('serdi_static', 'src/serdi.c'),
                      ('serd_test', 'tests/serd_test.c')]:
             bld(features     = 'c cprogram',
                 source       = prog[1],
-                includes     = ['.', './src'],
                 use          = 'libserd_profiled',
-                lib          = libs,
                 target       = prog[0],
-                install_path = '',
                 defines      = defines,
-                cflags       = test_cflags,
-                linkflags    = test_linkflags)
+                **test_args)
 
     # Utilities
     if bld.env.BUILD_UTILS:
@@ -177,7 +152,7 @@ def build(bld):
                   target       = 'serdi',
                   includes     = ['.', './src'],
                   use          = 'libserd',
-                  lib          = libs,
+                  lib          = lib_args['lib'],
                   install_path = '${BINDIR}')
         if not bld.env.BUILD_SHARED or bld.env.STATIC_PROGS:
             obj.use = 'libserd_static'
