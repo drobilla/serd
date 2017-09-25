@@ -329,8 +329,8 @@ def test_suite(ctx, srcdir, base, testdir, report, isyntax, osyntax):
     if os.getenv('USER') == 'drobilla':
         asserter = 'http://drobilla.net/drobilla#me'
 
-    def run_test(command, expected_return, name):
-        result = autowaf.run_test(ctx, APPNAME, command, expected_return, name=name)
+    def run_test(command, expected_return, name, quiet=False):
+        result = autowaf.run_test(ctx, APPNAME, command, expected_return, name=name, quiet=quiet)
         if not result[0]:
             autowaf.run_test(ctx, APPNAME,
                              lambda: result[1][1] != '',
@@ -376,7 +376,7 @@ def test_suite(ctx, srcdir, base, testdir, report, isyntax, osyntax):
                     report.write(earl_assertion(test, result[0], asserter))
 
                 # Run lax test
-                run_test(command.replace('-f', '-l -f'), None, action)
+                run_test(command.replace('-f', '-l -f'), None, action + ' lax', True)
 
     def test_types():
         types = []
