@@ -28,7 +28,7 @@ def options(opt):
              'static-progs': 'Build programs as static binaries',
              'largefile':    'Build with large file support on 32-bit systems',
              'no-posix':     'Do not use POSIX functions, even if present'}
-    for name, desc in flags.iteritems():
+    for name, desc in flags.items():
         opt.add_option('--' + name, action='store_true',
                        dest=name.replace('-', '_'), help=desc)
 
@@ -56,7 +56,7 @@ def configure(conf):
     if not Options.options.no_posix:
         for name, header in {'posix_memalign': 'stdlib.h',
                              'posix_fadvise':  'fcntl.h',
-                             'fileno':         'stdio.h'}.iteritems():
+                             'fileno':         'stdio.h'}.items():
             conf.check(function_name = name,
                        header_name   = header,
                        define_name   = 'HAVE_' + name.upper(),
@@ -287,7 +287,7 @@ def test_suite(ctx, srcdir, base, testdir, report, isyntax, osyntax):
         model = {}
         proc  = subprocess.Popen(['./serdi_static', filename], stdout=subprocess.PIPE)
         for line in proc.communicate()[0].splitlines():
-            matches = re.match('<([^ ]*)> <([^ ]*)> <([^ ]*)> \.', line)
+            matches = re.match('<([^ ]*)> <([^ ]*)> <([^ ]*)> \.', line.decode('utf-8'))
             if matches:
                 if matches.group(1) not in model:
                     model[matches.group(1)] = {}
@@ -314,7 +314,7 @@ def test_suite(ctx, srcdir, base, testdir, report, isyntax, osyntax):
 
     def run_tests(test_class, expected_return):
         tests = []
-        for s, desc in model.iteritems():
+        for s, desc in model.items():
             if str(test_class) in desc['http://www.w3.org/1999/02/22-rdf-syntax-ns#type']:
                 tests += [s]
         if len(tests) == 0:
