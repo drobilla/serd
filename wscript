@@ -169,7 +169,7 @@ def build(bld):
 
     bld.add_post_fun(autowaf.run_ldconfig)
     if bld.env.DOCS:
-        bld.add_post_fun(fix_docs)
+        bld.add_post_fun(lambda ctx: autowaf.make_simple_dox(APPNAME))
 
 def lint(ctx):
     "checks code for style issues"
@@ -200,10 +200,6 @@ def amalgamate(ctx):
 
     for i in ['c', 'h']:
         Logs.info('Wrote build/serd.%s' % i)
-
-def fix_docs(ctx):
-    if ctx.cmd == 'build':
-        autowaf.make_simple_dox(APPNAME)
 
 def upload_docs(ctx):
     os.system('rsync -ravz --delete -e ssh build/doc/html/ drobilla@drobilla.net:~/drobilla.net/docs/serd/')
