@@ -18,16 +18,17 @@ VERSION = SERD_VERSION  # Package version for waf dist
 top     = '.'           # Source directory
 out     = 'build'       # Build directory
 
-def options(opt):
-    opt.load('compiler_c')
-    autowaf.set_options(opt, test=True)
-    flags = {'no-utils':     'Do not build command line utilities',
-             'stack-check':  'Include runtime stack sanity checks',
-             'static':       'Build static library',
-             'no-shared':    'Do not build shared library',
-             'static-progs': 'Build programs as static binaries',
-             'largefile':    'Build with large file support on 32-bit systems',
-             'no-posix':     'Do not use POSIX functions, even if present'}
+def options(ctx):
+    ctx.load('compiler_c')
+    autowaf.set_options(ctx, test=True)
+    opt = ctx.get_option_group('Configuration options')
+    flags = {'no-utils':     'do not build command line utilities',
+             'stack-check':  'include runtime stack sanity checks',
+             'static':       'build static library',
+             'no-shared':    'do not build shared library',
+             'static-progs': 'build programs as static binaries',
+             'largefile':    'build with large file support on 32-bit systems',
+             'no-posix':     'do not use POSIX functions, even if present'}
     for name, desc in flags.items():
         opt.add_option('--' + name, action='store_true',
                        dest=name.replace('-', '_'), help=desc)
