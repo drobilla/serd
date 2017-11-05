@@ -1680,7 +1680,7 @@ read_turtleTrigDoc(SerdReader* reader)
 				return 0;
 			}
 			skip_until(reader, '\n');
-			reader->status = SERD_ERR_BAD_SYNTAX;
+			reader->status = SERD_SUCCESS;
 		}
 	}
 	return reader->status <= SERD_FAILURE;
