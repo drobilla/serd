@@ -33,6 +33,9 @@
 #   include <fcntl.h>
 #endif
 
+#define NS_XSD "http://www.w3.org/2001/XMLSchema#"
+#define NS_RDF "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+
 #define SERD_PAGE_SIZE 4096
 
 #ifndef MIN
