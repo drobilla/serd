@@ -44,8 +44,6 @@ typedef struct {
 	unsigned       col;
 } Cursor;
 
-typedef uint32_t uchar;
-
 /* Reference to a node in the stack (we can not use pointers since the
    stack may be reallocated, invalidating any pointers to elements).
 */
