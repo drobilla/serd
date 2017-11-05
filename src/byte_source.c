@@ -38,12 +38,16 @@ serd_byte_source_open_source(SerdByteSource*     source,
                              SerdSource          read_func,
                              SerdStreamErrorFunc error_func,
                              void*               stream,
+                             const uint8_t*      name,
                              size_t              page_size)
 {
+	const Cursor cur = { name, 1, 1 };
+
 	memset(source, '\0', sizeof(*source));
 	source->stream      = stream;
 	source->from_stream = true;
 	source->page_size   = page_size;
+	source->cur         = cur;
 	source->error_func  = error_func;
 	source->read_func   = read_func;
 
@@ -76,7 +80,10 @@ serd_byte_source_prepare(SerdByteSource* source)
 SerdStatus
 serd_byte_source_open_string(SerdByteSource* source, const uint8_t* utf8)
 {
+	const Cursor cur = { (const uint8_t*)"(string)", 1, 1 };
+
 	memset(source, '\0', sizeof(*source));
+	source->cur      = cur;
 	source->read_buf = utf8;
 	source->prepared = true;
 	return SERD_SUCCESS;
@@ -97,6 +104,13 @@ serd_byte_source_advance(SerdByteSource* source)
 {
 	const bool paging = source->page_size > 1;
 	SerdStatus st     = SERD_SUCCESS;
+
+	switch (serd_byte_source_peek(source)) {
+	case '\0': break;
+	case '\n': ++source->cur.line; source->cur.col = 0; break;
+	default:   ++source->cur.col;
+	}
+
 	if (source->from_stream && !paging) {
 		if (source->read_func(&source->read_byte, 1, 1, source->stream) == 0) {
 			return (source->error_func(source->stream)

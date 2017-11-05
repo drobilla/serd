@@ -35,12 +35,6 @@
 #    define SERD_STACK_ASSERT_TOP(reader, ref)
 #endif
 
-typedef struct {
-	const uint8_t* filename;
-	unsigned       line;
-	unsigned       col;
-} Cursor;
-
 /* Reference to a node in the stack (we can not use pointers since the
    stack may be reallocated, invalidating any pointers to elements).
 */
@@ -73,7 +67,6 @@ struct SerdReaderImpl {
 	SerdStack         stack;
 	SerdSyntax        syntax;
 	unsigned          next_id;
-	Cursor            cur;
 	SerdStatus        status;
 	uint8_t*          buf;
 	uint8_t*          bprefix;
@@ -97,9 +90,8 @@ r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
-	const SerdError e = {
-		st, reader->cur.filename, reader->cur.line, reader->cur.col, fmt, &args
-	};
+	const Cursor* const cur = &reader->source.cur;
+	const SerdError e = { st, cur->filename, cur->line, cur->col, fmt, &args };
 	serd_error(reader->error_sink, reader->error_handle, &e);
 	va_end(args);
 	return 0;
@@ -128,12 +120,6 @@ static inline uint8_t
 eat_byte_safe(SerdReader* reader, const uint8_t byte)
 {
 	assert(peek_byte(reader) == byte);
-	switch (byte) {
-	case '\0': break;
-	case '\n': ++reader->cur.line; reader->cur.col = 0; break;
-	default:   ++reader->cur.col;
-	}
-
 	const SerdStatus st = serd_byte_source_advance(&reader->source);
 	if (st) {
 		reader->status = st;
@@ -1753,7 +1739,6 @@ serd_reader_new(SerdSyntax        syntax,
                 SerdStatementSink statement_sink,
                 SerdEndSink       end_sink)
 {
-	const Cursor cur = { NULL, 0, 0 };
 	SerdReader*  me  = (SerdReader*)calloc(1, sizeof(SerdReader));
 	me->handle           = handle;
 	me->free_handle      = free_handle;
@@ -1764,7 +1749,6 @@ serd_reader_new(SerdSyntax        syntax,
 	me->default_graph    = SERD_NODE_NULL;
 	me->stack            = serd_stack_new(SERD_PAGE_SIZE);
 	me->syntax           = syntax;
-	me->cur              = cur;
 	me->next_id          = 1;
 	me->strict           = true;
 
@@ -1905,11 +1889,8 @@ serd_reader_start_source_stream(SerdReader*         reader,
                                 const uint8_t*      name,
                                 size_t              page_size)
 {
-	const Cursor cur = { name, 1, 1 };
-	reader->cur = cur;
-
 	return serd_byte_source_open_source(
-		&reader->source, read_func, error_func, stream, page_size);
+		&reader->source, read_func, error_func, stream, name, page_size);
 }
 
 static SerdStatus
@@ -1989,10 +1970,7 @@ SERD_API
 SerdStatus
 serd_reader_read_string(SerdReader* reader, const uint8_t* utf8)
 {
-	const Cursor cur = { (const uint8_t*)"(string)", 1, 1 };
-
 	serd_byte_source_open_string(&reader->source, utf8);
-	reader->cur = cur;
 
 	SerdStatus st = serd_reader_prepare(reader);
 	if (!st) {
