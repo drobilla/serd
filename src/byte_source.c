@@ -24,6 +24,7 @@ serd_byte_source_page(SerdByteSource* source)
 		source->file_buf, 1, source->page_size, source->stream);
 	if (n_read == 0) {
 		source->file_buf[0] = '\0';
+		source->eof         = true;
 		return (source->error_func(source->stream)
 		        ? SERD_ERR_UNKNOWN : SERD_FAILURE);
 	} else if (n_read < source->page_size) {
@@ -61,6 +62,7 @@ SerdStatus
 serd_byte_source_prepare(SerdByteSource* source)
 {
 	if (!source->prepared) {
+		source->eof      = false;
 		source->prepared = true;
 		if (source->page_size > 1) {
 			return serd_byte_source_page(source);

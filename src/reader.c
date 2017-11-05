@@ -79,7 +79,6 @@ struct SerdReaderImpl {
 	uint8_t*          bprefix;
 	size_t            bprefix_len;
 	bool              strict;     ///< True iff strict parsing
-	bool              eof;
 	bool              seen_genid;
 #ifdef SERD_STACK_CHECK
 	Ref*              allocs;     ///< Stack of push offsets
@@ -130,7 +129,7 @@ eat_byte_safe(SerdReader* reader, const uint8_t byte)
 {
 	assert(peek_byte(reader) == byte);
 	switch (byte) {
-	case '\0': reader->eof = (byte != '\0'); break;
+	case '\0': break;
 	case '\n': ++reader->cur.line; reader->cur.col = 0; break;
 	default:   ++reader->cur.col;
 	}
@@ -1604,7 +1603,7 @@ read_statement(SerdReader* reader)
 	read_ws_star(reader);
 	switch (peek_byte(reader)) {
 	case '\0':
-		reader->eof = true;
+		reader->source.eof = true;
 		return reader->status <= SERD_FAILURE;
 	case '@':
 		if (!fancy_syntax(reader)) {
@@ -1669,7 +1668,7 @@ skip_until(SerdReader* reader, uint8_t byte)
 static bool
 read_turtleTrigDoc(SerdReader* reader)
 {
-	while (!reader->eof) {
+	while (!reader->source.eof) {
 		if (!read_statement(reader)) {
 			if (reader->strict) {
 				return 0;
@@ -1684,14 +1683,14 @@ read_turtleTrigDoc(SerdReader* reader)
 static bool
 read_nquadsDoc(SerdReader* reader)
 {
-	while (!reader->eof) {
+	while (!reader->source.eof) {
 		SerdStatementFlags flags   = 0;
 		ReadContext        ctx     = { 0, 0, 0, 0, 0, 0, &flags };
 		bool               ate_dot = false;
 		char               s_type  = false;
 		read_ws_star(reader);
 		if (peek_byte(reader) == '\0') {
-			reader->eof = true;
+			reader->source.eof = true;
 			break;
 		} else if (peek_byte(reader) == '@') {
 			return r_err(reader, SERD_ERR_BAD_SYNTAX,
@@ -1916,12 +1915,11 @@ serd_reader_start_source_stream(SerdReader*         reader,
 static SerdStatus
 serd_reader_prepare(SerdReader* reader)
 {
-	reader->eof    = false;
 	reader->status = serd_byte_source_prepare(&reader->source);
 	if (reader->status == SERD_SUCCESS) {
 		reader->status = skip_bom(reader);
 	} else if (reader->status == SERD_FAILURE) {
-		reader->eof = true;
+		reader->source.eof = true;
 	} else {
 		r_err(reader, reader->status, "read error: %s\n", strerror(errno));
 	}
@@ -1937,8 +1935,8 @@ serd_reader_read_chunk(SerdReader* reader)
 		if ((st = serd_reader_prepare(reader))) {
 			return st;
 		}
-	} else if (reader->eof) {
-		reader->eof = false;
+	} else if (reader->source.eof) {
+		reader->source.eof = false;
 		if ((st = serd_byte_source_advance(&reader->source))) {
 			return st;
 		}
@@ -1995,7 +1993,6 @@ serd_reader_read_string(SerdReader* reader, const uint8_t* utf8)
 
 	serd_byte_source_open_string(&reader->source, utf8);
 	reader->cur = cur;
-	reader->eof = false;
 
 	SerdStatus st = serd_reader_prepare(reader);
 	if (!st) {

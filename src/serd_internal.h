@@ -85,6 +85,7 @@ typedef struct {
 	uint8_t             read_byte;    ///< 1-byte 'buffer' used when not paging
 	bool                from_stream;  ///< True iff reading from `stream`
 	bool                prepared;     ///< True iff prepared for reading
+	bool                eof;          ///< True iff end of file reached
 } SerdByteSource;
 
 SerdStatus
