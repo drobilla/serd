@@ -1772,6 +1772,7 @@ serd_reader_new(SerdSyntax        syntax,
 	me->syntax           = syntax;
 	me->cur              = cur;
 	me->next_id          = 1;
+	me->strict           = true;
 
 	me->rdf_first = push_node(me, SERD_URI, NS_RDF "first", 48);
 	me->rdf_rest  = push_node(me, SERD_URI, NS_RDF "rest", 47);
