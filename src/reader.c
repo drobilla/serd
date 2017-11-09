@@ -253,11 +253,10 @@ static inline uint8_t
 read_HEX(SerdReader* reader)
 {
 	const uint8_t c = peek_byte(reader);
-	if (is_digit(c) || in_range(c, 'A', 'F') || in_range(c, 'a', 'f')) {
-		return eat_byte_safe(reader, c);
-	}
-	return r_err(reader, SERD_ERR_BAD_SYNTAX,
-	             "invalid hexadecimal digit `%c'\n", c);
+	return is_xdigit(c)
+		? eat_byte_safe(reader, c)
+		: r_err(reader, SERD_ERR_BAD_SYNTAX,
+		        "invalid hexadecimal digit `%c'\n", c);
 }
 
 // Read UCHAR escape, initial \ is already eaten by caller

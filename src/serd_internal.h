@@ -296,7 +296,7 @@ in_range(const uint8_t c, const uint8_t min, const uint8_t max)
 	return (c >= min && c <= max);
 }
 
-/** RFC2234: ALPHA := %x41-5A / %x61-7A  ; A-Z / a-z */
+/** RFC2234: ALPHA ::= %x41-5A / %x61-7A  ; A-Z / a-z */
 static inline bool
 is_alpha(const uint8_t c)
 {
@@ -315,6 +315,13 @@ static inline bool
 is_hexdig(const uint8_t c)
 {
 	return is_digit(c) || in_range(c, 'A', 'F');
+}
+
+/* Turtle / JSON / C: XDIGIT ::= DIGIT / A-F / a-f */
+static inline bool
+is_xdigit(const uint8_t c)
+{
+	return is_hexdig(c) || in_range(c, 'a', 'f');
 }
 
 static inline bool
