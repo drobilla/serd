@@ -1,0 +1,1137 @@
+@prefix dc: <http://purl.org/dc/terms/> .
+@prefix jld: <https://json-ld.org/test-suite/vocab#> .
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<>
+	a mf:Manifest ;
+	rdfs:comment "JSON-LD to RDF tests generate N-Quads output and use string comparison." ;
+	mf:entries (
+		<#t0001>
+		<#t0002>
+		<#t0003>
+		<#t0004>
+		<#t0005>
+		<#t0006>
+		<#t0007>
+		<#t0008>
+		<#t0009>
+		<#t0010>
+		<#t0011>
+		<#t0012>
+		<#t0013>
+		<#t0014>
+		<#t0015>
+		<#t0016>
+		<#t0017>
+		<#t0018>
+		<#t0019>
+		<#t0020>
+		<#t0022>
+		<#t0023>
+		<#t0024>
+		<#t0025>
+		<#t0026>
+		<#t0027>
+		<#t0028>
+		<#t0029>
+		<#t0030>
+		<#t0031>
+		<#t0032>
+		<#t0033>
+		<#t0034>
+		<#t0035>
+		<#t0036>
+		<#t0041>
+		<#t0042>
+		<#t0043>
+		<#t0044>
+		<#t0045>
+		<#t0046>
+		<#t0047>
+		<#t0048>
+		<#t0049>
+		<#t0050>
+		<#t0051>
+		<#t0052>
+		<#t0053>
+		<#t0054>
+		<#t0055>
+		<#t0056>
+		<#t0057>
+		<#t0058>
+		<#t0059>
+		<#t0060>
+		<#t0061>
+		<#t0062>
+		<#t0063>
+		<#t0064>
+		<#t0065>
+		<#t0066>
+		<#t0067>
+		<#t0068>
+		<#t0069>
+		<#t0070>
+		<#t0071>
+		<#t0072>
+		<#t0073>
+		<#t0074>
+		<#t0075>
+		<#t0076>
+		<#t0077>
+		<#t0078>
+		<#t0079>
+		<#t0080>
+		<#t0081>
+		<#t0082>
+		<#t0083>
+		<#t0084>
+		<#t0085>
+		<#t0086>
+		<#t0087>
+		<#t0088>
+		<#t0089>
+		<#t0090>
+		<#t0091>
+		<#t0092>
+		<#t0093>
+		<#t0094>
+		<#t0095>
+		<#t0096>
+		<#t0097>
+		<#t0098>
+		<#t0099>
+		<#t0100>
+		<#t0101>
+		<#t0102>
+		<#t0103>
+		<#t0104>
+		<#t0105>
+		<#t0106>
+		<#t0107>
+		<#t0108>
+		<#t0109>
+		<#t0110>
+		<#t0111>
+		<#t0112>
+		<#t0113>
+		<#t0114>
+		<#t0115>
+		<#t0116>
+		<#t0117>
+		<#t0118>
+		<#t0119>
+		<#t0120>
+		<#t0121>
+		<#t0122>
+		<#t0123>
+		<#t0124>
+		<#t0125>
+		<#t0126>
+		<#t0127>
+		<#t0128>
+		<#t0129>
+	) .
+
+<toRdf-manifest.jsonld>
+	mf:name "Transform JSON-LD to RDF" ;
+	jld:baseIri "http://json-ld.org/test-suite/tests/" .
+
+<#t0001>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests generation of a triple using full URIs and a plain literal." ;
+	mf:action <toRdf-0001-in.jsonld> ;
+	mf:name "Plain literal with URIs" ;
+	mf:result <toRdf-0001-out.nq> .
+
+<#t0002>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests generation of a triple using a CURIE defined in the default context." ;
+	mf:action <toRdf-0002-in.jsonld> ;
+	mf:name "Plain literal with CURIE from default context" ;
+	mf:result <toRdf-0002-out.nq> .
+
+<#t0003>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that a BNode is created if no explicit subject is set." ;
+	mf:action <toRdf-0003-in.jsonld> ;
+	mf:name "Default subject is BNode" ;
+	mf:result <toRdf-0003-out.nq> .
+
+<#t0004>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that a plain literal is created with a language tag." ;
+	mf:action <toRdf-0004-in.jsonld> ;
+	mf:name "Literal with language tag" ;
+	mf:result <toRdf-0004-out.nq> .
+
+<#t0005>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that a literal may be created using extended characters." ;
+	mf:action <toRdf-0005-in.jsonld> ;
+	mf:name "Extended character set literal" ;
+	mf:result <toRdf-0005-out.nq> .
+
+<#t0006>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests creation of a literal with a datatype." ;
+	mf:action <toRdf-0006-in.jsonld> ;
+	mf:name "Typed literal" ;
+	mf:result <toRdf-0006-out.nq> .
+
+<#t0007>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment """Verify that 'a' is an alias for rdf:type, and the object is created as an IRI.""" ;
+	mf:action <toRdf-0007-in.jsonld> ;
+	mf:name """Tests 'a' generates rdf:type and object is implicit IRI""" ;
+	mf:result <toRdf-0007-out.nq> .
+
+<#t0008>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Generate an IRI using a prefix defined within an @context." ;
+	mf:action <toRdf-0008-in.jsonld> ;
+	mf:name "Test prefix defined in @context" ;
+	mf:result <toRdf-0008-out.nq> .
+
+<#t0009>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "An empty suffix may be used." ;
+	mf:action <toRdf-0009-in.jsonld> ;
+	mf:name "Test using an empty suffix" ;
+	mf:result <toRdf-0009-out.nq> .
+
+<#t0010>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "A property referencing an associative array gets object from subject of array." ;
+	mf:action <toRdf-0010-in.jsonld> ;
+	mf:name "Test object processing defines object" ;
+	mf:result <toRdf-0010-out.nq> .
+
+<#t0011>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "If no @ is specified, a BNode is created, and will be used as the object of an enclosing property." ;
+	mf:action <toRdf-0011-in.jsonld> ;
+	mf:name "Test object processing defines object with implicit BNode" ;
+	mf:result <toRdf-0011-out.nq> .
+
+<#t0012>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that Multiple Objects are for a Single Property using array syntax." ;
+	mf:action <toRdf-0012-in.jsonld> ;
+	mf:name "Multiple Objects for a Single Property" ;
+	mf:result <toRdf-0012-out.nq> .
+
+<#t0013>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that @list: [] generates an empty list." ;
+	mf:action <toRdf-0013-in.jsonld> ;
+	mf:name "Creation of an empty list" ;
+	mf:result <toRdf-0013-out.nq> .
+
+<#t0014>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that @list generates a list." ;
+	mf:action <toRdf-0014-in.jsonld> ;
+	mf:name "Creation of a list with single element" ;
+	mf:result <toRdf-0014-out.nq> .
+
+<#t0015>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that list with multiple elements." ;
+	mf:action <toRdf-0015-in.jsonld> ;
+	mf:name "Creation of a list with multiple elements" ;
+	mf:result <toRdf-0015-out.nq> .
+
+<#t0016>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expanding an empty IRI uses the test file location." ;
+	mf:action <toRdf-0016-in.jsonld> ;
+	mf:name "Empty IRI expands to resource location" ;
+	mf:result <toRdf-0016-out.nq> .
+
+<#t0017>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expanding a relative IRI uses the test file location." ;
+	mf:action <toRdf-0017-in.jsonld> ;
+	mf:name "Relative IRI expands relative resource location" ;
+	mf:result <toRdf-0017-out.nq> .
+
+<#t0018>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expanding a fragment uses the test file location." ;
+	mf:action <toRdf-0018-in.jsonld> ;
+	mf:name "Frag ID expands relative resource location" ;
+	mf:result <toRdf-0018-out.nq> .
+
+<#t0019>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests coercion of object to anyURI when specified." ;
+	mf:action <toRdf-0019-in.jsonld> ;
+	mf:name "Test type coercion to anyURI" ;
+	mf:result <toRdf-0019-out.nq> .
+
+<#t0020>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests coercion of object to a typed literal when specified." ;
+	mf:action <toRdf-0020-in.jsonld> ;
+	mf:name "Test type coercion to typed literal" ;
+	mf:result <toRdf-0020-out.nq> .
+
+<#t0022>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that a decimal value generates a xsd:double typed literal;." ;
+	mf:action <toRdf-0022-in.jsonld> ;
+	mf:name "Test coercion of double value" ;
+	mf:result <toRdf-0022-out.nq> .
+
+<#t0023>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that a decimal value generates a xsd:integer typed literal." ;
+	mf:action <toRdf-0023-in.jsonld> ;
+	mf:name "Test coercion of integer value" ;
+	mf:result <toRdf-0023-out.nq> .
+
+<#t0024>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that a decimal value generates a xsd:boolean typed literal." ;
+	mf:action <toRdf-0024-in.jsonld> ;
+	mf:name "Test coercion of boolean value" ;
+	mf:result <toRdf-0024-out.nq> .
+
+<#t0025>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that an array with a single element on a property with @list coercion creates an RDF Collection." ;
+	mf:action <toRdf-0025-in.jsonld> ;
+	mf:name "Test list coercion with single element" ;
+	mf:result <toRdf-0025-out.nq> .
+
+<#t0026>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that @type with an array of types creates multiple types." ;
+	mf:action <toRdf-0026-in.jsonld> ;
+	mf:name "Test creation of multiple types" ;
+	mf:result <toRdf-0026-out.nq> .
+
+<#t0027>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Using @graph with other keys places triples in a named graph." ;
+	mf:action <toRdf-0027-in.jsonld> ;
+	mf:name "Simple named graph (Wikidata)" ;
+	mf:result <toRdf-0027-out.nq> .
+
+<#t0028>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Signing a graph." ;
+	mf:action <toRdf-0028-in.jsonld> ;
+	mf:name "Simple named graph" ;
+	mf:result <toRdf-0028-out.nq> .
+
+<#t0029>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that named graphs containing named graphs flatten to single level of graph naming." ;
+	mf:action <toRdf-0029-in.jsonld> ;
+	mf:name "named graph with embedded named graph" ;
+	mf:result <toRdf-0029-out.nq> .
+
+<#t0030>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests graphs containing subject references as strings." ;
+	mf:action <toRdf-0030-in.jsonld> ;
+	mf:name "top-level graph with string subject reference" ;
+	mf:result <toRdf-0030-out.nq> .
+
+<#t0031>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests conversion of reverse properties." ;
+	mf:action <toRdf-0031-in.jsonld> ;
+	mf:name "Reverse property" ;
+	mf:result <toRdf-0031-out.nq> .
+
+<#t0032>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that generated triples do not depend on order of @context." ;
+	mf:action <toRdf-0032-in.jsonld> ;
+	mf:name "@context reordering" ;
+	mf:result <toRdf-0032-out.nq> .
+
+<#t0033>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that generated triples do not depend on order of @id." ;
+	mf:action <toRdf-0033-in.jsonld> ;
+	mf:name "@id reordering" ;
+	mf:result <toRdf-0033-out.nq> .
+
+<#t0034>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that generated triples do not depend on order of properties inside @context." ;
+	mf:action <toRdf-0034-in.jsonld> ;
+	mf:name "context properties reordering" ;
+	mf:result <toRdf-0034-out.nq> .
+
+<#t0035>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment """xsd:double's canonical lexical is used when converting numbers without fraction that are coerced to xsd:double""" ;
+	mf:action <toRdf-0035-in.jsonld> ;
+	mf:name "non-fractional numbers converted to xsd:double" ;
+	mf:result <toRdf-0035-out.nq> .
+
+<#t0036>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "The toRDF algorithm does not relabel blank nodes; it reuses the counter from the nodeMapGeneration to generate new ones" ;
+	mf:action <toRdf-0036-in.jsonld> ;
+	mf:name "Use nodeMapGeneration bnode labels" ;
+	mf:result <toRdf-0036-out.nq> .
+
+<#t0041>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Free-floating nodes do not generate RDF triples" ;
+	mf:action <toRdf-0041-in.jsonld> ;
+	mf:name "drop free-floating nodes" ;
+	mf:result <toRdf-0041-out.nq> .
+
+<#t0042>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Basic RDF conversion" ;
+	mf:action <toRdf-0042-in.jsonld> ;
+	mf:name "basic" ;
+	mf:result <toRdf-0042-out.nq> .
+
+<#t0043>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Properties mapped to null or which are never mapped are dropped" ;
+	mf:action <toRdf-0043-in.jsonld> ;
+	mf:name "drop null and unmapped properties" ;
+	mf:result <toRdf-0043-out.nq> .
+
+<#t0044>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0004" ;
+	mf:action <toRdf-0044-in.jsonld> ;
+	mf:name "optimize @set, keep empty arrays" ;
+	mf:result <toRdf-0044-out.nq> .
+
+<#t0045>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0005" ;
+	mf:action <toRdf-0045-in.jsonld> ;
+	mf:name "do not expand aliased @id/@type" ;
+	mf:result <toRdf-0045-out.nq> .
+
+<#t0046>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0006" ;
+	mf:action <toRdf-0046-in.jsonld> ;
+	mf:name "alias keywords" ;
+	mf:result <toRdf-0046-out.nq> .
+
+<#t0047>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Type-coerced dates generate typed literals" ;
+	mf:action <toRdf-0047-in.jsonld> ;
+	mf:name "date type-coercion" ;
+	mf:result <toRdf-0047-out.nq> .
+
+<#t0048>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0008" ;
+	mf:action <toRdf-0048-in.jsonld> ;
+	mf:name "@value with @language" ;
+	mf:result <toRdf-0048-out.nq> .
+
+<#t0049>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0009" ;
+	mf:action <toRdf-0049-in.jsonld> ;
+	mf:name "@graph with terms" ;
+	mf:result <toRdf-0049-out.nq> .
+
+<#t0050>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Native types generate typed literals" ;
+	mf:action <toRdf-0050-in.jsonld> ;
+	mf:name "native types" ;
+	mf:result <toRdf-0050-out.nq> .
+
+<#t0051>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0011" ;
+	mf:action <toRdf-0051-in.jsonld> ;
+	mf:name "coerced @id" ;
+	mf:result <toRdf-0051-out.nq> .
+
+<#t0052>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0012" ;
+	mf:action <toRdf-0052-in.jsonld> ;
+	mf:name "@graph with embed" ;
+	mf:result <toRdf-0052-out.nq> .
+
+<#t0053>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0013" ;
+	mf:action <toRdf-0053-in.jsonld> ;
+	mf:name "expand already expanded" ;
+	mf:result <toRdf-0053-out.nq> .
+
+<#t0054>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0014" ;
+	mf:action <toRdf-0054-in.jsonld> ;
+	mf:name "@set of @value objects with keyword aliases" ;
+	mf:result <toRdf-0054-out.nq> .
+
+<#t0055>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0015" ;
+	mf:action <toRdf-0055-in.jsonld> ;
+	mf:name "collapse set of sets, keep empty lists" ;
+	mf:result <toRdf-0055-out.nq> .
+
+<#t0056>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0016" ;
+	mf:action <toRdf-0056-in.jsonld> ;
+	mf:name "context reset" ;
+	mf:result <toRdf-0056-out.nq> .
+
+<#t0057>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0017" ;
+	mf:action <toRdf-0057-in.jsonld> ;
+	mf:name "@graph and @id aliased" ;
+	mf:result <toRdf-0057-out.nq> .
+
+<#t0058>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0018" ;
+	mf:action <toRdf-0058-in.jsonld> ;
+	mf:name "override default @language" ;
+	mf:result <toRdf-0058-out.nq> .
+
+<#t0059>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0019" ;
+	mf:action <toRdf-0059-in.jsonld> ;
+	mf:name "remove @value = null" ;
+	mf:result <toRdf-0059-out.nq> .
+
+<#t0060>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Embedded @graph without @id creates BNode-labeled named graph" ;
+	mf:action <toRdf-0060-in.jsonld> ;
+	mf:name "do not remove @graph if not at top-level" ;
+	mf:result <toRdf-0060-out.nq> .
+
+<#t0061>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0021" ;
+	mf:action <toRdf-0061-in.jsonld> ;
+	mf:name "do not remove @graph at top-level if not only property" ;
+	mf:result <toRdf-0061-out.nq> .
+
+<#t0062>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0022" ;
+	mf:action <toRdf-0062-in.jsonld> ;
+	mf:name "expand value with default language" ;
+	mf:result <toRdf-0062-out.nq> .
+
+<#t0063>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0023" ;
+	mf:action <toRdf-0063-in.jsonld> ;
+	mf:name "Lists and sets of properties with list/set coercion" ;
+	mf:result <toRdf-0063-out.nq> .
+
+<#t0064>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0024" ;
+	mf:action <toRdf-0064-in.jsonld> ;
+	mf:name "Multiple contexts" ;
+	mf:result <toRdf-0064-out.nq> .
+
+<#t0065>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0025" ;
+	mf:action <toRdf-0065-in.jsonld> ;
+	mf:name "Problematic IRI expansion tests" ;
+	mf:result <toRdf-0065-out.nq> .
+
+<#t0066>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0026" ;
+	mf:action <toRdf-0066-in.jsonld> ;
+	mf:name "Expanding term mapping to @type uses @type syntax" ;
+	mf:result <toRdf-0066-out.nq> .
+
+<#t0067>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0027" ;
+	mf:action <toRdf-0067-in.jsonld> ;
+	mf:name "Keep duplicate values in @list and @set" ;
+	mf:result <toRdf-0067-out.nq> .
+
+<#t0068>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0028" ;
+	mf:action <toRdf-0068-in.jsonld> ;
+	mf:name "Use @vocab in properties and @type but not in @id" ;
+	mf:result <toRdf-0068-out.nq> .
+
+<#t0069>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0029" ;
+	mf:action <toRdf-0069-in.jsonld> ;
+	mf:name "Relative IRIs" ;
+	mf:result <toRdf-0069-out.nq> .
+
+<#t0070>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0030" ;
+	mf:action <toRdf-0070-in.jsonld> ;
+	mf:name "Language maps" ;
+	mf:result <toRdf-0070-out.nq> .
+
+<#t0071>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0031" ;
+	mf:action <toRdf-0071-in.jsonld> ;
+	mf:name "type-coercion of native types" ;
+	mf:result <toRdf-0071-out.nq> .
+
+<#t0072>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0032" ;
+	mf:action <toRdf-0072-in.jsonld> ;
+	mf:name "Mapping a term to null decouples it from @vocab" ;
+	mf:result <toRdf-0072-out.nq> .
+
+<#t0073>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0033" ;
+	mf:action <toRdf-0073-in.jsonld> ;
+	mf:name "Using @vocab with with type-coercion" ;
+	mf:result <toRdf-0073-out.nq> .
+
+<#t0074>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0034" ;
+	mf:action <toRdf-0074-in.jsonld> ;
+	mf:name "Multiple properties expanding to the same IRI" ;
+	mf:result <toRdf-0074-out.nq> .
+
+<#t0075>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0035" ;
+	mf:action <toRdf-0075-in.jsonld> ;
+	mf:name "Language maps with @vocab, default language, and colliding property" ;
+	mf:result <toRdf-0075-out.nq> .
+
+<#t0076>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0036" ;
+	mf:action <toRdf-0076-in.jsonld> ;
+	mf:name "Expanding @index" ;
+	mf:result <toRdf-0076-out.nq> .
+
+<#t0077>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0037" ;
+	mf:action <toRdf-0077-in.jsonld> ;
+	mf:name "Expanding @reverse" ;
+	mf:result <toRdf-0077-out.nq> .
+
+<#t0078>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Triples with blank node predicates are dropped by default." ;
+	mf:action <toRdf-0078-in.jsonld> ;
+	mf:name "Drop blank node predicates by default" ;
+	mf:result <toRdf-0078-out.nq> .
+
+<#t0079>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0039" ;
+	mf:action <toRdf-0079-in.jsonld> ;
+	mf:name "Using terms in a reverse-maps" ;
+	mf:result <toRdf-0079-out.nq> .
+
+<#t0080>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0040" ;
+	mf:action <toRdf-0080-in.jsonld> ;
+	mf:name "language and index expansion on non-objects" ;
+	mf:result <toRdf-0080-out.nq> .
+
+<#t0081>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0041" ;
+	mf:action <toRdf-0081-in.jsonld> ;
+	mf:name "Reset the default language" ;
+	mf:result <toRdf-0081-out.nq> .
+
+<#t0082>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0042" ;
+	mf:action <toRdf-0082-in.jsonld> ;
+	mf:name "Expanding reverse properties" ;
+	mf:result <toRdf-0082-out.nq> .
+
+<#t0083>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0043" ;
+	mf:action <toRdf-0083-in.jsonld> ;
+	mf:name "Using reverse properties inside a @reverse-container" ;
+	mf:result <toRdf-0083-out.nq> .
+
+<#t0084>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0044" ;
+	mf:action <toRdf-0084-in.jsonld> ;
+	mf:name "Ensure index maps use language mapping" ;
+	mf:result <toRdf-0084-out.nq> .
+
+<#t0085>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0045" ;
+	mf:action <toRdf-0085-in.jsonld> ;
+	mf:name "Top-level value objects are removed" ;
+	mf:result <toRdf-0085-out.nq> .
+
+<#t0086>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0046" ;
+	mf:action <toRdf-0086-in.jsonld> ;
+	mf:name "Free-floating nodes are removed" ;
+	mf:result <toRdf-0086-out.nq> .
+
+<#t0087>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0047" ;
+	mf:action <toRdf-0087-in.jsonld> ;
+	mf:name "Remove free-floating set values and lists" ;
+	mf:result <toRdf-0087-out.nq> .
+
+<#t0088>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0048" ;
+	mf:action <toRdf-0088-in.jsonld> ;
+	mf:name "Terms are ignored in @id" ;
+	mf:result <toRdf-0088-out.nq> .
+
+<#t0089>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0049" ;
+	mf:action <toRdf-0089-in.jsonld> ;
+	mf:name "Using strings as value of a reverse property" ;
+	mf:result <toRdf-0089-out.nq> .
+
+<#t0090>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0050" ;
+	mf:action <toRdf-0090-in.jsonld> ;
+	mf:name "Term definitions with prefix separate from prefix definitions" ;
+	mf:result <toRdf-0090-out.nq> .
+
+<#t0091>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0051" ;
+	mf:action <toRdf-0091-in.jsonld> ;
+	mf:name "Expansion of keyword aliases in term definitions" ;
+	mf:result <toRdf-0091-out.nq> .
+
+<#t0092>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0052" ;
+	mf:action <toRdf-0092-in.jsonld> ;
+	mf:name "@vocab-relative IRIs in term definitions" ;
+	mf:result <toRdf-0092-out.nq> .
+
+<#t0093>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0053" ;
+	mf:action <toRdf-0093-in.jsonld> ;
+	mf:name "Expand absolute IRI with @type: @vocab" ;
+	mf:result <toRdf-0093-out.nq> .
+
+<#t0094>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0054" ;
+	mf:action <toRdf-0094-in.jsonld> ;
+	mf:name "Expand term with @type: @vocab" ;
+	mf:result <toRdf-0094-out.nq> .
+
+<#t0095>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0055" ;
+	mf:action <toRdf-0095-in.jsonld> ;
+	mf:name "Expand @vocab-relative term with @type: @vocab" ;
+	mf:result <toRdf-0095-out.nq> .
+
+<#t0096>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0056" ;
+	mf:action <toRdf-0096-in.jsonld> ;
+	mf:name "Use terms with @type: @vocab but not with @type: @id" ;
+	mf:result <toRdf-0096-out.nq> .
+
+<#t0097>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0057" ;
+	mf:action <toRdf-0097-in.jsonld> ;
+	mf:name "Expand relative IRI with @type: @vocab" ;
+	mf:result <toRdf-0097-out.nq> .
+
+<#t0098>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0058" ;
+	mf:action <toRdf-0098-in.jsonld> ;
+	mf:name "Expand compact IRI with @type: @vocab" ;
+	mf:result <toRdf-0098-out.nq> .
+
+<#t0099>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0059" ;
+	mf:action <toRdf-0099-in.jsonld> ;
+	mf:name "Reset @vocab by setting it to null" ;
+	mf:result <toRdf-0099-out.nq> .
+
+<#t0100>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0060" ;
+	mf:action <toRdf-0100-in.jsonld> ;
+	mf:name "Overwrite document base with @base and reset it again" ;
+	mf:result <toRdf-0100-out.nq> .
+
+<#t0101>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0061" ;
+	mf:action <toRdf-0101-in.jsonld> ;
+	mf:name "Coercing native types to arbitrary datatypes" ;
+	mf:result <toRdf-0101-out.nq> .
+
+<#t0102>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0062" ;
+	mf:action <toRdf-0102-in.jsonld> ;
+	mf:name "Various relative IRIs with with @base" ;
+	mf:result <toRdf-0102-out.nq> .
+
+<#t0103>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0063" ;
+	mf:action <toRdf-0103-in.jsonld> ;
+	mf:name "Expand a reverse property with an index-container" ;
+	mf:result <toRdf-0103-out.nq> .
+
+<#t0104>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0064" ;
+	mf:action <toRdf-0104-in.jsonld> ;
+	mf:name "Expand reverse property whose values are unlabeled blank nodes" ;
+	mf:result <toRdf-0104-out.nq> .
+
+<#t0105>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0065" ;
+	mf:action <toRdf-0105-in.jsonld> ;
+	mf:name "Keys that are not mapped to an IRI in a reverse-map are dropped" ;
+	mf:result <toRdf-0105-out.nq> .
+
+<#t0106>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0066" ;
+	mf:action <toRdf-0106-in.jsonld> ;
+	mf:name "Use @vocab to expand keys in reverse-maps" ;
+	mf:result <toRdf-0106-out.nq> .
+
+<#t0107>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0067" ;
+	mf:action <toRdf-0107-in.jsonld> ;
+	mf:name "prefix:://sufffix not a compact IRI" ;
+	mf:result <toRdf-0107-out.nq> .
+
+<#t0108>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0068" ;
+	mf:action <toRdf-0108-in.jsonld> ;
+	mf:name "_::sufffix not a compact IRI" ;
+	mf:result <toRdf-0108-out.nq> .
+
+<#t0109>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0069" ;
+	mf:action <toRdf-0109-in.jsonld> ;
+	mf:name "Compact IRI as term with type mapping" ;
+	mf:result <toRdf-0109-out.nq> .
+
+<#t0110>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0070" ;
+	mf:action <toRdf-0110-in.jsonld> ;
+	mf:name "Redefine compact IRI with itself" ;
+	mf:result <toRdf-0110-out.nq> .
+
+<#t0111>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0071" ;
+	mf:action <toRdf-0111-in.jsonld> ;
+	mf:name "Redefine terms looking like compact IRIs" ;
+	mf:result <toRdf-0111-out.nq> .
+
+<#t0112>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0072" ;
+	mf:action <toRdf-0112-in.jsonld> ;
+	mf:name "Redefine term using @vocab, not itself" ;
+	mf:result <toRdf-0112-out.nq> .
+
+<#t0113>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Basic use of creating a named graph using an IRI name" ;
+	mf:action <toRdf-0113-in.jsonld> ;
+	mf:name "Dataset with a IRI named graph" ;
+	mf:result <toRdf-0113-out.nq> .
+
+<#t0114>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Basic use of creating a named graph using a BNode name" ;
+	mf:action <toRdf-0114-in.jsonld> ;
+	mf:name "Dataset with a IRI named graph" ;
+	mf:result <toRdf-0114-out.nq> .
+
+<#t0115>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Dataset with a default and two named graphs (IRI and BNode)" ;
+	mf:action <toRdf-0115-in.jsonld> ;
+	mf:name "Dataset with a default and two named graphs" ;
+	mf:result <toRdf-0115-out.nq> .
+
+<#t0116>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Embedding @graph in a node creates a named graph" ;
+	mf:action <toRdf-0116-in.jsonld> ;
+	mf:name "Dataset from node with embedded named graph" ;
+	mf:result <toRdf-0116-out.nq> .
+
+<#t0117>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Embedding @graph in a node creates a named graph. Graph name is created if there is no subject" ;
+	mf:action <toRdf-0117-in.jsonld> ;
+	mf:name "Dataset from node with embedded named graph (bnode)" ;
+	mf:result <toRdf-0117-out.nq> .
+
+<#t0118>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Triples with blank node predicates are not dropped if the produce generalized RDF flag is true." ;
+	mf:action <toRdf-0118-in.jsonld> ;
+	mf:name "produce generalized RDF flag" ;
+	mf:result <toRdf-0118-out.nq> ;
+	jld:option [
+		jld:produceGeneralizedRdf true
+	] .
+
+<#t0119>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Proper (re-)labeling of blank nodes if used with reverse properties." ;
+	mf:action <toRdf-0119-in.jsonld> ;
+	mf:name "Blank nodes with reverse properties" ;
+	mf:result <toRdf-0119-out.nq> .
+
+<#t0120>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <toRdf-0120-in.jsonld> ;
+	mf:name "IRI Resolution (0)" ;
+	mf:result <toRdf-0120-out.nq> .
+
+<#t0121>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <toRdf-0121-in.jsonld> ;
+	mf:name "IRI Resolution (1)" ;
+	mf:result <toRdf-0121-out.nq> .
+
+<#t0122>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <toRdf-0122-in.jsonld> ;
+	mf:name "IRI Resolution (2)" ;
+	mf:result <toRdf-0122-out.nq> .
+
+<#t0123>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <toRdf-0123-in.jsonld> ;
+	mf:name "IRI Resolution (3)" ;
+	mf:result <toRdf-0123-out.nq> .
+
+<#t0124>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <toRdf-0124-in.jsonld> ;
+	mf:name "IRI Resolution (4)" ;
+	mf:result <toRdf-0124-out.nq> .
+
+<#t0125>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <toRdf-0125-in.jsonld> ;
+	mf:name "IRI Resolution (5)" ;
+	mf:result <toRdf-0125-out.nq> .
+
+<#t0126>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <toRdf-0126-in.jsonld> ;
+	mf:name "IRI Resolution (6)" ;
+	mf:result <toRdf-0126-out.nq> .
+
+<#t0127>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <toRdf-0127-in.jsonld> ;
+	mf:name "IRI Resolution (7)" ;
+	mf:result <toRdf-0127-out.nq> .
+
+<#t0128>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <toRdf-0128-in.jsonld> ;
+	mf:name "IRI Resolution (8)" ;
+	mf:result <toRdf-0128-out.nq> .
+
+<#t0129>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <toRdf-0129-in.jsonld> ;
+	mf:name "IRI Resolution (9)" ;
+	mf:result <toRdf-0129-out.nq> .
+
