@@ -1,0 +1,5042 @@
+@prefix jld: <https://w3c.github.io/json-ld-api/tests/vocab#> .
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<>
+	a mf:Manifest ;
+	rdfs:comment "These tests implement the requirements for the JSON-LD [Deserialize JSON-LD to RDF Algorithm](https://www.w3.org/TR/json-ld11-api/#deserialize-json-ld-to-rdf-algorithm)." ;
+	mf:entries (
+		<#t0001>
+		<#t0002>
+		<#t0003>
+		<#t0004>
+		<#t0005>
+		<#t0006>
+		<#t0007>
+		<#t0008>
+		<#t0009>
+		<#t0010>
+		<#t0011>
+		<#t0012>
+		<#t0013>
+		<#t0014>
+		<#t0015>
+		<#t0016>
+		<#t0017>
+		<#t0018>
+		<#t0019>
+		<#t0020>
+		<#t0022>
+		<#t0023>
+		<#t0024>
+		<#t0025>
+		<#t0026>
+		<#t0027>
+		<#t0028>
+		<#t0029>
+		<#t0030>
+		<#t0031>
+		<#t0032>
+		<#t0033>
+		<#t0034>
+		<#t0035>
+		<#t0036>
+		<#t0113>
+		<#t0114>
+		<#t0115>
+		<#t0116>
+		<#t0117>
+		<#t0118>
+		<#t0119>
+		<#t0120>
+		<#t0121>
+		<#t0122>
+		<#t0123>
+		<#t0124>
+		<#t0125>
+		<#t0126>
+		<#t0127>
+		<#t0128>
+		<#t0129>
+		<#t0130>
+		<#t0131>
+		<#t0132>
+		<#tc001>
+		<#tc002>
+		<#tc003>
+		<#tc004>
+		<#tc005>
+		<#tc006>
+		<#tc007>
+		<#tc008>
+		<#tc009>
+		<#tc010>
+		<#tc011>
+		<#tc012>
+		<#tc013>
+		<#tc014>
+		<#tc015>
+		<#tc016>
+		<#tc017>
+		<#tc018>
+		<#tc019>
+		<#tc020>
+		<#tc021>
+		<#tc022>
+		<#tc023>
+		<#tc024>
+		<#tc025>
+		<#tc026>
+		<#tc027>
+		<#tc028>
+		<#tc029>
+		<#tc030>
+		<#tc031>
+		<#tc032>
+		<#tc033>
+		<#tc034>
+		<#tc035>
+		<#tc036>
+		<#tc037>
+		<#tc038>
+		<#tdi01>
+		<#tdi02>
+		<#tdi03>
+		<#tdi04>
+		<#tdi05>
+		<#tdi06>
+		<#tdi07>
+		<#tdi08>
+		<#tdi09>
+		<#tdi10>
+		<#tdi11>
+		<#tdi12>
+		<#te001>
+		<#te002>
+		<#te003>
+		<#te004>
+		<#te005>
+		<#te006>
+		<#te007>
+		<#te008>
+		<#te009>
+		<#te010>
+		<#te011>
+		<#te012>
+		<#te013>
+		<#te014>
+		<#te015>
+		<#te016>
+		<#te017>
+		<#te018>
+		<#te019>
+		<#te020>
+		<#te021>
+		<#te022>
+		<#te023>
+		<#te024>
+		<#te025>
+		<#te026>
+		<#te027>
+		<#te028>
+		<#te029>
+		<#te030>
+		<#te031>
+		<#te032>
+		<#te033>
+		<#te034>
+		<#te035>
+		<#te036>
+		<#te037>
+		<#te038>
+		<#te039>
+		<#te040>
+		<#te041>
+		<#te042>
+		<#te043>
+		<#te044>
+		<#te045>
+		<#te046>
+		<#te047>
+		<#te048>
+		<#te049>
+		<#te050>
+		<#te051>
+		<#te052>
+		<#te053>
+		<#te054>
+		<#te055>
+		<#te056>
+		<#te057>
+		<#te058>
+		<#te059>
+		<#te060>
+		<#te061>
+		<#te062>
+		<#te063>
+		<#te064>
+		<#te065>
+		<#te066>
+		<#te067>
+		<#te068>
+		<#te069>
+		<#te070>
+		<#te071>
+		<#te072>
+		<#te073>
+		<#te074>
+		<#te075>
+		<#te076>
+		<#te077>
+		<#te078>
+		<#te079>
+		<#te080>
+		<#te081>
+		<#te082>
+		<#te083>
+		<#te084>
+		<#te085>
+		<#te086>
+		<#te087>
+		<#te088>
+		<#te089>
+		<#te090>
+		<#te091>
+		<#te092>
+		<#te093>
+		<#te094>
+		<#te095>
+		<#te096>
+		<#te097>
+		<#te098>
+		<#te099>
+		<#te100>
+		<#te101>
+		<#te102>
+		<#te103>
+		<#te104>
+		<#te105>
+		<#te106>
+		<#te107>
+		<#te108>
+		<#te109>
+		<#te110>
+		<#te111>
+		<#te112>
+		<#te113>
+		<#te114>
+		<#te115>
+		<#te116>
+		<#te117>
+		<#te118>
+		<#te119>
+		<#te120>
+		<#te121>
+		<#te122>
+		<#te123>
+		<#te124>
+		<#te125>
+		<#te126>
+		<#te127>
+		<#te128>
+		<#te129>
+		<#te130>
+		<#tec01>
+		<#tec02>
+		<#tem01>
+		<#ten01>
+		<#ten02>
+		<#ten03>
+		<#ten04>
+		<#ten05>
+		<#ten06>
+		<#tep02>
+		<#tep03>
+		<#ter01>
+		<#ter02>
+		<#ter03>
+		<#ter04>
+		<#ter05>
+		<#ter06>
+		<#ter07>
+		<#ter08>
+		<#ter09>
+		<#ter10>
+		<#ter11>
+		<#ter12>
+		<#ter13>
+		<#ter14>
+		<#ter15>
+		<#ter17>
+		<#ter18>
+		<#ter19>
+		<#ter20>
+		<#ter21>
+		<#ter22>
+		<#ter23>
+		<#ter24>
+		<#ter25>
+		<#ter26>
+		<#ter27>
+		<#ter28>
+		<#ter29>
+		<#ter30>
+		<#ter31>
+		<#ter32>
+		<#ter33>
+		<#ter34>
+		<#ter35>
+		<#ter36>
+		<#ter37>
+		<#ter38>
+		<#ter39>
+		<#ter40>
+		<#ter41>
+		<#ter42>
+		<#ter43>
+		<#ter44>
+		<#ter48>
+		<#ter49>
+		<#ter50>
+		<#ter51>
+		<#ter52>
+		<#ter53>
+		<#ter54>
+		<#ter55>
+		<#tin01>
+		<#tin02>
+		<#tin03>
+		<#tin04>
+		<#tin05>
+		<#tin06>
+		<#tin07>
+		<#tin08>
+		<#tin09>
+		<#tjs01>
+		<#tjs02>
+		<#tjs03>
+		<#tjs04>
+		<#tjs05>
+		<#tjs06>
+		<#tjs07>
+		<#tjs08>
+		<#tjs09>
+		<#tjs10>
+		<#tjs11>
+		<#tjs12>
+		<#tjs13>
+		<#tjs14>
+		<#tjs15>
+		<#tjs16>
+		<#tjs17>
+		<#tjs18>
+		<#tjs19>
+		<#tjs20>
+		<#tjs21>
+		<#tjs22>
+		<#tjs23>
+		<#tli01>
+		<#tli02>
+		<#tli03>
+		<#tli04>
+		<#tli05>
+		<#tli06>
+		<#tli07>
+		<#tli08>
+		<#tli09>
+		<#tli10>
+		<#tli11>
+		<#tli12>
+		<#tli13>
+		<#tli14>
+		<#tm001>
+		<#tm002>
+		<#tm003>
+		<#tm004>
+		<#tm005>
+		<#tm006>
+		<#tm007>
+		<#tm008>
+		<#tm009>
+		<#tm010>
+		<#tm011>
+		<#tm012>
+		<#tm013>
+		<#tm014>
+		<#tm015>
+		<#tm016>
+		<#tm017>
+		<#tm018>
+		<#tm019>
+		<#tm020>
+		<#tn001>
+		<#tn002>
+		<#tn003>
+		<#tn004>
+		<#tn005>
+		<#tn006>
+		<#tn007>
+		<#tn008>
+		<#tnt01>
+		<#tnt02>
+		<#tnt03>
+		<#tnt04>
+		<#tnt05>
+		<#tnt06>
+		<#tnt07>
+		<#tnt08>
+		<#tnt09>
+		<#tnt10>
+		<#tnt11>
+		<#tnt12>
+		<#tnt13>
+		<#tnt14>
+		<#tnt15>
+		<#tnt16>
+		<#tp001>
+		<#tp002>
+		<#tp003>
+		<#tp004>
+		<#tpi01>
+		<#tpi02>
+		<#tpi03>
+		<#tpi04>
+		<#tpi05>
+		<#tpi06>
+		<#tpi07>
+		<#tpi08>
+		<#tpi09>
+		<#tpi10>
+		<#tpi11>
+		<#tpr01>
+		<#tpr02>
+		<#tpr03>
+		<#tpr04>
+		<#tpr05>
+		<#tpr06>
+		<#tpr08>
+		<#tpr09>
+		<#tpr10>
+		<#tpr11>
+		<#tpr12>
+		<#tpr13>
+		<#tpr14>
+		<#tpr15>
+		<#tpr16>
+		<#tpr17>
+		<#tpr18>
+		<#tpr19>
+		<#tpr20>
+		<#tpr21>
+		<#tpr22>
+		<#tpr23>
+		<#tpr24>
+		<#tpr25>
+		<#tpr26>
+		<#tpr27>
+		<#tpr28>
+		<#tpr29>
+		<#tpr30>
+		<#tpr31>
+		<#tpr32>
+		<#tpr33>
+		<#tpr34>
+		<#tpr35>
+		<#tpr36>
+		<#tpr37>
+		<#tpr38>
+		<#tpr39>
+		<#tpr40>
+		<#trt01>
+		<#tso01>
+		<#tso02>
+		<#tso03>
+		<#tso05>
+		<#tso06>
+		<#tso07>
+		<#tso08>
+		<#tso09>
+		<#tso10>
+		<#tso11>
+		<#tso12>
+		<#tso13>
+		<#ttn01>
+		<#ttn02>
+		<#twf01>
+		<#twf02>
+		<#twf03>
+		<#twf04>
+		<#twf05>
+		<#twf07>
+	) ;
+	mf:name "Transform JSON-LD to RDF" ;
+	jld:baseIri "https://w3c.github.io/json-ld-api/tests/" .
+
+<#t0001>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests generation of a triple using full URIs and a plain literal." ;
+	mf:action <0001-in.jsonld> ;
+	mf:name "Plain literal with URIs" ;
+	mf:result <0001-out.nq> .
+
+<#t0002>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests generation of a triple using a CURIE defined in the default context." ;
+	mf:action <0002-in.jsonld> ;
+	mf:name "Plain literal with CURIE from default context" ;
+	mf:result <0002-out.nq> .
+
+<#t0003>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that a BNode is created if no explicit subject is set." ;
+	mf:action <0003-in.jsonld> ;
+	mf:name "Default subject is BNode" ;
+	mf:result <0003-out.nq> .
+
+<#t0004>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that a plain literal is created with a language tag." ;
+	mf:action <0004-in.jsonld> ;
+	mf:name "Literal with language tag" ;
+	mf:result <0004-out.nq> .
+
+<#t0005>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that a literal may be created using extended characters." ;
+	mf:action <0005-in.jsonld> ;
+	mf:name "Extended character set literal" ;
+	mf:result <0005-out.nq> .
+
+<#t0006>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests creation of a literal with a datatype." ;
+	mf:action <0006-in.jsonld> ;
+	mf:name "Typed literal" ;
+	mf:result <0006-out.nq> .
+
+<#t0007>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verify that 'a' is an alias for rdf:type, and the object is created as an IRI." ;
+	mf:action <0007-in.jsonld> ;
+	mf:name "Tests 'a' generates rdf:type and object is implicit IRI" ;
+	mf:result <0007-out.nq> .
+
+<#t0008>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Generate an IRI using a prefix defined within an @context." ;
+	mf:action <0008-in.jsonld> ;
+	mf:name "Test prefix defined in @context" ;
+	mf:result <0008-out.nq> .
+
+<#t0009>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "An empty suffix may be used." ;
+	mf:action <0009-in.jsonld> ;
+	mf:name "Test using an empty suffix" ;
+	mf:result <0009-out.nq> .
+
+<#t0010>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "A property referencing an associative array gets object from subject of array." ;
+	mf:action <0010-in.jsonld> ;
+	mf:name "Test object processing defines object" ;
+	mf:result <0010-out.nq> .
+
+<#t0011>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "If no @ is specified, a BNode is created, and will be used as the object of an enclosing property." ;
+	mf:action <0011-in.jsonld> ;
+	mf:name "Test object processing defines object with implicit BNode" ;
+	mf:result <0011-out.nq> .
+
+<#t0012>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that Multiple Objects are for a Single Property using array syntax." ;
+	mf:action <0012-in.jsonld> ;
+	mf:name "Multiple Objects for a Single Property" ;
+	mf:result <0012-out.nq> .
+
+<#t0013>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that @list: [] generates an empty list." ;
+	mf:action <0013-in.jsonld> ;
+	mf:name "Creation of an empty list" ;
+	mf:result <0013-out.nq> .
+
+<#t0014>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that @list generates a list." ;
+	mf:action <0014-in.jsonld> ;
+	mf:name "Creation of a list with single element" ;
+	mf:result <0014-out.nq> .
+
+<#t0015>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that list with multiple elements." ;
+	mf:action <0015-in.jsonld> ;
+	mf:name "Creation of a list with multiple elements" ;
+	mf:result <0015-out.nq> .
+
+<#t0016>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expanding an empty IRI uses the test file location." ;
+	mf:action <0016-in.jsonld> ;
+	mf:name "Empty IRI expands to resource location" ;
+	mf:result <0016-out.nq> .
+
+<#t0017>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expanding a relative IRI uses the test file location." ;
+	mf:action <0017-in.jsonld> ;
+	mf:name "Relative IRI expands relative resource location" ;
+	mf:result <0017-out.nq> .
+
+<#t0018>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expanding a fragment uses the test file location." ;
+	mf:action <0018-in.jsonld> ;
+	mf:name "Frag ID expands relative resource location" ;
+	mf:result <0018-out.nq> .
+
+<#t0019>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests coercion of object to anyURI when specified." ;
+	mf:action <0019-in.jsonld> ;
+	mf:name "Test type coercion to anyURI" ;
+	mf:result <0019-out.nq> .
+
+<#t0020>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests coercion of object to a typed literal when specified." ;
+	mf:action <0020-in.jsonld> ;
+	mf:name "Test type coercion to typed literal" ;
+	mf:result <0020-out.nq> .
+
+<#t0022>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that a decimal value generates a xsd:double typed literal;." ;
+	mf:action <0022-in.jsonld> ;
+	mf:name "Test coercion of double value" ;
+	mf:result <0022-out.nq> .
+
+<#t0023>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that a decimal value generates a xsd:integer typed literal." ;
+	mf:action <0023-in.jsonld> ;
+	mf:name "Test coercion of integer value" ;
+	mf:result <0023-out.nq> .
+
+<#t0024>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that a decimal value generates a xsd:boolean typed literal." ;
+	mf:action <0024-in.jsonld> ;
+	mf:name "Test coercion of boolean value" ;
+	mf:result <0024-out.nq> .
+
+<#t0025>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that an array with a single element on a property with @list coercion creates an RDF Collection." ;
+	mf:action <0025-in.jsonld> ;
+	mf:name "Test list coercion with single element" ;
+	mf:result <0025-out.nq> .
+
+<#t0026>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that @type with an array of types creates multiple types." ;
+	mf:action <0026-in.jsonld> ;
+	mf:name "Test creation of multiple types" ;
+	mf:result <0026-out.nq> .
+
+<#t0027>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Using @graph with other keys places triples in a named graph." ;
+	mf:action <0027-in.jsonld> ;
+	mf:name "Simple named graph (Wikidata)" ;
+	mf:result <0027-out.nq> .
+
+<#t0028>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Signing a graph." ;
+	mf:action <0028-in.jsonld> ;
+	mf:name "Simple named graph" ;
+	mf:result <0028-out.nq> .
+
+<#t0029>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that named graphs containing named graphs flatten to single level of graph naming." ;
+	mf:action <0029-in.jsonld> ;
+	mf:name "named graph with embedded named graph" ;
+	mf:result <0029-out.nq> .
+
+<#t0030>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests graphs containing subject references as strings." ;
+	mf:action <0030-in.jsonld> ;
+	mf:name "top-level graph with string subject reference" ;
+	mf:result <0030-out.nq> .
+
+<#t0031>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests conversion of reverse properties." ;
+	mf:action <0031-in.jsonld> ;
+	mf:name "Reverse property" ;
+	mf:result <0031-out.nq> .
+
+<#t0032>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that generated triples do not depend on order of @context." ;
+	mf:action <0032-in.jsonld> ;
+	mf:name "@context reordering" ;
+	mf:result <0032-out.nq> .
+
+<#t0033>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that generated triples do not depend on order of @id." ;
+	mf:action <0033-in.jsonld> ;
+	mf:name "@id reordering" ;
+	mf:result <0033-out.nq> .
+
+<#t0034>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests that generated triples do not depend on order of properties inside @context." ;
+	mf:action <0034-in.jsonld> ;
+	mf:name "context properties reordering" ;
+	mf:result <0034-out.nq> .
+
+<#t0035>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "xsd:double's canonical lexical is used when converting numbers without fraction that are coerced to xsd:double" ;
+	mf:action <0035-in.jsonld> ;
+	mf:name "non-fractional numbers converted to xsd:double" ;
+	mf:result <0035-out.nq> .
+
+<#t0036>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "The toRDF algorithm does not relabel blank nodes; it reuses the counter from the nodeMapGeneration to generate new ones" ;
+	mf:action <0036-in.jsonld> ;
+	mf:name "Use nodeMapGeneration bnode labels" ;
+	mf:result <0036-out.nq> .
+
+<#t0113>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Basic use of creating a named graph using an IRI name" ;
+	mf:action <0113-in.jsonld> ;
+	mf:name "Dataset with a IRI named graph" ;
+	mf:result <0113-out.nq> .
+
+<#t0114>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Basic use of creating a named graph using a BNode name" ;
+	mf:action <0114-in.jsonld> ;
+	mf:name "Dataset with a IRI named graph" ;
+	mf:result <0114-out.nq> .
+
+<#t0115>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Dataset with a default and two named graphs (IRI and BNode)" ;
+	mf:action <0115-in.jsonld> ;
+	mf:name "Dataset with a default and two named graphs" ;
+	mf:result <0115-out.nq> .
+
+<#t0116>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Embedding @graph in a node creates a named graph" ;
+	mf:action <0116-in.jsonld> ;
+	mf:name "Dataset from node with embedded named graph" ;
+	mf:result <0116-out.nq> .
+
+<#t0117>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Embedding @graph in a node creates a named graph. Graph name is created if there is no subject" ;
+	mf:action <0117-in.jsonld> ;
+	mf:name "Dataset from node with embedded named graph (bnode)" ;
+	mf:result <0117-out.nq> .
+
+<#t0118>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Triples with blank node predicates are not dropped if the produce generalized RDF flag is true." ;
+	mf:action <0118-in.jsonld> ;
+	mf:name "produce generalized RDF flag" ;
+	mf:result <0118-out.nq> ;
+	jld:option [
+		jld:produceGeneralizedRdf true ;
+		jld:specVersion "json-ld-1.0"^^xsd:string
+	] ;
+	jld:requires "GeneralizedRdf" .
+
+<#t0119>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Proper (re-)labeling of blank nodes if used with reverse properties." ;
+	mf:action <0119-in.jsonld> ;
+	mf:name "Blank nodes with reverse properties" ;
+	mf:result <0119-out.nq> .
+
+<#t0120>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <0120-in.jsonld> ;
+	mf:name "IRI Resolution (0)" ;
+	mf:result <0120-out.nq> .
+
+<#t0121>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <0121-in.jsonld> ;
+	mf:name "IRI Resolution (1)" ;
+	mf:result <0121-out.nq> .
+
+<#t0122>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <0122-in.jsonld> ;
+	mf:name "IRI Resolution (2)" ;
+	mf:result <0122-out.nq> .
+
+<#t0123>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <0123-in.jsonld> ;
+	mf:name "IRI Resolution (3)" ;
+	mf:result <0123-out.nq> .
+
+<#t0124>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <0124-in.jsonld> ;
+	mf:name "IRI Resolution (4)" ;
+	mf:result <0124-out.nq> .
+
+<#t0125>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <0125-in.jsonld> ;
+	mf:name "IRI Resolution (5)" ;
+	mf:result <0125-out.nq> .
+
+<#t0126>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <0126-in.jsonld> ;
+	mf:name "IRI Resolution (6)" ;
+	mf:result <0126-out.nq> .
+
+<#t0127>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <0127-in.jsonld> ;
+	mf:name "IRI Resolution (7)" ;
+	mf:result <0127-out.nq> .
+
+<#t0128>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <0128-in.jsonld> ;
+	mf:name "IRI Resolution (8)" ;
+	mf:result <0128-out.nq> .
+
+<#t0129>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <0129-in.jsonld> ;
+	mf:name "IRI Resolution (9)" ;
+	mf:result <0129-out.nq> .
+
+<#t0130>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <0130-in.jsonld> ;
+	mf:name "IRI Resolution (10)" ;
+	mf:result <0130-out.nq> .
+
+<#t0131>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <0131-in.jsonld> ;
+	mf:name "IRI Resolution (11)" ;
+	mf:result <0131-out.nq> .
+
+<#t0132>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "IRI resolution according to RFC3986." ;
+	mf:action <0132-in.jsonld> ;
+	mf:name "IRI Resolution (12)" ;
+	mf:result <0132-out.nq> .
+
+<#tc001>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using a scoped context uses term scope for selecting proper term" ;
+	mf:action <c001-in.jsonld> ;
+	mf:name "adding new term" ;
+	mf:result <c001-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc002>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using a scoped context uses term scope for selecting proper term" ;
+	mf:action <c002-in.jsonld> ;
+	mf:name "overriding a term" ;
+	mf:result <c002-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc003>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using a scoped context uses term scope for selecting proper term" ;
+	mf:action <c003-in.jsonld> ;
+	mf:name "property and value with different terms mapping to the same expanded property" ;
+	mf:result <c003-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc004>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using a scoped context uses term scope for selecting proper term" ;
+	mf:action <c004-in.jsonld> ;
+	mf:name "deep @context affects nested nodes" ;
+	mf:result <c004-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc005>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using a scoped context uses term scope for selecting proper term" ;
+	mf:action <c005-in.jsonld> ;
+	mf:name "scoped context layers on intemediate contexts" ;
+	mf:result <c005-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc006>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "scoped context on @type" ;
+	mf:action <c006-in.jsonld> ;
+	mf:name "adding new term" ;
+	mf:result <c006-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc007>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "scoped context on @type" ;
+	mf:action <c007-in.jsonld> ;
+	mf:name "overriding a term" ;
+	mf:result <c007-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc008>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "scoped context on @type" ;
+	mf:action <c008-in.jsonld> ;
+	mf:name "alias of @type" ;
+	mf:result <c008-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc009>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "scoped context on @type" ;
+	mf:action <c009-in.jsonld> ;
+	mf:name "deep @type-scoped @context does NOT affect nested nodes" ;
+	mf:result <c009-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc010>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "scoped context on @type" ;
+	mf:action <c010-in.jsonld> ;
+	mf:name "scoped context layers on intemediate contexts" ;
+	mf:result <c010-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc011>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "scoped context on @type" ;
+	mf:action <c011-in.jsonld> ;
+	mf:name "orders @type terms when applying scoped contexts" ;
+	mf:result <c011-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc012>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "scoped context on @type" ;
+	mf:action <c012-in.jsonld> ;
+	mf:name "deep property-term scoped @context in @type-scoped @context affects nested nodes" ;
+	mf:result <c012-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc013>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "scoped context on @type" ;
+	mf:action <c013-in.jsonld> ;
+	mf:name "type maps use scoped context from type index and not scoped context from containing" ;
+	mf:result <c013-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc014>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "type-scoped context nullification" ;
+	mf:action <c014-in.jsonld> ;
+	mf:name "type-scoped context nullification" ;
+	mf:result <c014-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc015>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "type-scoped base" ;
+	mf:action <c015-in.jsonld> ;
+	mf:name "type-scoped base" ;
+	mf:result <c015-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc016>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "type-scoped vocab" ;
+	mf:action <c016-in.jsonld> ;
+	mf:name "type-scoped vocab" ;
+	mf:result <c016-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc017>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "multiple type-scoped contexts are property reverted" ;
+	mf:action <c017-in.jsonld> ;
+	mf:name "multiple type-scoped contexts are properly reverted" ;
+	mf:result <c017-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc018>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "multiple type-scoped types resolved against previous context" ;
+	mf:action <c018-in.jsonld> ;
+	mf:name "multiple type-scoped types resolved against previous context" ;
+	mf:result <c018-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc019>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "type-scoped context with multiple property scoped terms" ;
+	mf:action <c019-in.jsonld> ;
+	mf:name "type-scoped context with multiple property scoped terms" ;
+	mf:result <c019-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc020>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "type-scoped value" ;
+	mf:action <c020-in.jsonld> ;
+	mf:name "type-scoped value" ;
+	mf:result <c020-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc021>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "type-scoped value mix" ;
+	mf:action <c021-in.jsonld> ;
+	mf:name "type-scoped value mix" ;
+	mf:result <c021-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc022>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "type-scoped property-scoped contexts including @type:@vocab" ;
+	mf:action <c022-in.jsonld> ;
+	mf:name "type-scoped property-scoped contexts including @type:@vocab" ;
+	mf:result <c022-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc023>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "composed type-scoped property-scoped contexts including @type:@vocab" ;
+	mf:action <c023-in.jsonld> ;
+	mf:name "composed type-scoped property-scoped contexts including @type:@vocab" ;
+	mf:result <c023-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc024>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "type-scoped + property-scoped + values evaluates against previous context" ;
+	mf:action <c024-in.jsonld> ;
+	mf:name "type-scoped + property-scoped + values evaluates against previous context" ;
+	mf:result <c024-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc025>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "type-scoped + graph container" ;
+	mf:action <c025-in.jsonld> ;
+	mf:name "type-scoped + graph container" ;
+	mf:result <c025-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc026>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "type-scoped context with @propagate: true survive node-objects" ;
+	mf:action <c026-in.jsonld> ;
+	mf:name "@propagate: true on type-scoped context" ;
+	mf:result <c026-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc027>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "property-scoped context with @propagate: false do not survive node-objects" ;
+	mf:action <c027-in.jsonld> ;
+	mf:name "@propagate: false on property-scoped context" ;
+	mf:result <c027-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc028>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "embedded context with @propagate: false do not survive node-objects" ;
+	mf:action <c028-in.jsonld> ;
+	mf:name "@propagate: false on embedded context" ;
+	mf:result <c028-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc029>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "@propagate is invalid in 1.0" ;
+	mf:action <c029-in.jsonld> ;
+	mf:name "@propagate is invalid in 1.0" ;
+	mf:result "invalid context entry" ;
+	jld:option [
+		jld:processingMode "json-ld-1.0"^^xsd:string ;
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc030>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "@propagate must be boolean valued" ;
+	mf:action <c030-in.jsonld> ;
+	mf:name "@propagate must be boolean valued" ;
+	mf:result "invalid @propagate value" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc031>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "URL resolution follows RFC3986" ;
+	mf:action <c031-in.jsonld> ;
+	mf:name "@context resolutions respects relative URLs." ;
+	mf:result <c031-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc032>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "An embedded context which is never used should still be checked." ;
+	mf:action <c032-in.jsonld> ;
+	mf:name "Unused embedded context with error." ;
+	mf:result "invalid scoped context" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc033>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "An unused context with an embedded context should still be checked." ;
+	mf:action <c033-in.jsonld> ;
+	mf:name "Unused context with an embedded context error." ;
+	mf:result "invalid scoped context" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc034>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Scoped contexts may be externally loaded." ;
+	mf:action <c034-in.jsonld> ;
+	mf:name "Remote scoped context." ;
+	mf:result <c034-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc035>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Terms should make use of @vocab relative to the scope in which the term was defined." ;
+	mf:action <c035-in.jsonld> ;
+	mf:name "Term scoping with embedded contexts." ;
+	mf:result <c035-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc036>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Adding a minimal/empty property-scoped context should not affect expansion of terms defined in the outer scope." ;
+	mf:action <c036-in.jsonld> ;
+	mf:name "Expansion with empty property-scoped context." ;
+	mf:result <c036-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc037>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Nesting terms may have property-scoped contexts defined." ;
+	mf:action <c037-in.jsonld> ;
+	mf:name "property-scoped contexts which are alias of @nest" ;
+	mf:result <c037-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tc038>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Nesting terms may have property-scoped contexts defined." ;
+	mf:action <c038-in.jsonld> ;
+	mf:name "Bibframe example (poor-mans inferrence)" ;
+	mf:result <c038-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tdi01>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Strings are coerced to have @direction based on default and term direction." ;
+	mf:action <di01-in.jsonld> ;
+	mf:name "Expand string using default and term directions" ;
+	mf:result <di01-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tdi02>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Strings are coerced to have @direction based on default and term direction." ;
+	mf:action <di02-in.jsonld> ;
+	mf:name "Expand string using default and term directions and languages" ;
+	mf:result <di02-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tdi03>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "List values where the term has @direction are used in expansion." ;
+	mf:action <di03-in.jsonld> ;
+	mf:name "expand list values with @direction" ;
+	mf:result <di03-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tdi04>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Term selection with language maps and @direction." ;
+	mf:action <di04-in.jsonld> ;
+	mf:name "simple language map with term direction" ;
+	mf:result <di04-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tdi05>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Term selection with language maps and @direction." ;
+	mf:action <di05-in.jsonld> ;
+	mf:name "simple language mapwith overriding term direction" ;
+	mf:result <di05-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tdi06>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Term selection with language maps and @direction." ;
+	mf:action <di06-in.jsonld> ;
+	mf:name "simple language mapwith overriding null direction" ;
+	mf:result <di06-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tdi07>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Term selection with language maps and @direction." ;
+	mf:action <di07-in.jsonld> ;
+	mf:name "simple language map with mismatching term direction" ;
+	mf:result <di07-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tdi08>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Generate an error if @direction has illegal value." ;
+	mf:action <di08-in.jsonld> ;
+	mf:name "@direction must be one of ltr or rtl" ;
+	mf:result "invalid base direction" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tdi09>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Generates i18n datatype from literal with direction with option." ;
+	mf:action <di09-in.jsonld> ;
+	mf:name "rdfDirection: i18n-datatype with direction and no language" ;
+	mf:result <di09-out.nq> ;
+	jld:option [
+		jld:normative false ;
+		jld:rdfDirection "i18n-datatype" ;
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] ;
+	jld:requires "I18nDatatype" .
+
+<#tdi10>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Generates i18n datatype from literal with direction with option." ;
+	mf:action <di10-in.jsonld> ;
+	mf:name "rdfDirection: i18n-datatype with direction and language" ;
+	mf:result <di10-out.nq> ;
+	jld:option [
+		jld:normative false ;
+		jld:rdfDirection "i18n-datatype" ;
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] ;
+	jld:requires "I18nDatatype" .
+
+<#tdi11>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Generates i18n datatype from literal with direction with option." ;
+	mf:action <di11-in.jsonld> ;
+	mf:name "rdfDirection: compound-literal with direction and no language" ;
+	mf:result <di11-out.nq> ;
+	jld:option [
+		jld:normative false ;
+		jld:rdfDirection "compound-literal" ;
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] ;
+	jld:requires "CompoundLiteral" .
+
+<#tdi12>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Generates compound literal from literal with direction with option." ;
+	mf:action <di12-in.jsonld> ;
+	mf:name "rdfDirection: compound-literal with direction and language" ;
+	mf:result <di12-out.nq> ;
+	jld:option [
+		jld:normative false ;
+		jld:rdfDirection "compound-literal" ;
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] ;
+	jld:requires "CompoundLiteral" .
+
+<#te001>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Free-floating nodes do not generate RDF triples (from expand-0001)" ;
+	mf:action <e001-in.jsonld> ;
+	mf:name "drop free-floating nodes" ;
+	mf:result <e001-out.nq> .
+
+<#te002>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Basic RDF conversion (from expand-0002)" ;
+	mf:action <e002-in.jsonld> ;
+	mf:name "basic" ;
+	mf:result <e002-out.nq> .
+
+<#te003>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Properties mapped to null or which are never mapped are dropped (from expand-0003)" ;
+	mf:action <e003-in.jsonld> ;
+	mf:name "drop null and unmapped properties" ;
+	mf:result <e003-out.nq> .
+
+<#te004>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0004" ;
+	mf:action <e004-in.jsonld> ;
+	mf:name "optimize @set, keep empty arrays" ;
+	mf:result <e004-out.nq> .
+
+<#te005>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0005" ;
+	mf:action <e005-in.jsonld> ;
+	mf:name "do not expand aliased @id/@type" ;
+	mf:result <e005-out.nq> .
+
+<#te006>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0006" ;
+	mf:action <e006-in.jsonld> ;
+	mf:name "alias keywords" ;
+	mf:result <e006-out.nq> .
+
+<#te007>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Type-coerced dates generate typed literals (from expand-0007)" ;
+	mf:action <e007-in.jsonld> ;
+	mf:name "date type-coercion" ;
+	mf:result <e007-out.nq> .
+
+<#te008>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0008" ;
+	mf:action <e008-in.jsonld> ;
+	mf:name "@value with @language" ;
+	mf:result <e008-out.nq> .
+
+<#te009>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0009" ;
+	mf:action <e009-in.jsonld> ;
+	mf:name "@graph with terms" ;
+	mf:result <e009-out.nq> .
+
+<#te010>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Native types generate typed literals (from expand-0010)" ;
+	mf:action <e010-in.jsonld> ;
+	mf:name "native types" ;
+	mf:result <e010-out.nq> .
+
+<#te011>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0011" ;
+	mf:action <e011-in.jsonld> ;
+	mf:name "coerced @id" ;
+	mf:result <e011-out.nq> .
+
+<#te012>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0012" ;
+	mf:action <e012-in.jsonld> ;
+	mf:name "@graph with embed" ;
+	mf:result <e012-out.nq> .
+
+<#te013>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0013" ;
+	mf:action <e013-in.jsonld> ;
+	mf:name "expand already expanded" ;
+	mf:result <e013-out.nq> .
+
+<#te014>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0014" ;
+	mf:action <e014-in.jsonld> ;
+	mf:name "@set of @value objects with keyword aliases" ;
+	mf:result <e014-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.0"^^xsd:string
+	] .
+
+<#te015>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0015" ;
+	mf:action <e015-in.jsonld> ;
+	mf:name "collapse set of sets, keep empty lists" ;
+	mf:result <e015-out.nq> .
+
+<#te016>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0016" ;
+	mf:action <e016-in.jsonld> ;
+	mf:name "context reset" ;
+	mf:result <e016-out.nq> .
+
+<#te017>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0017" ;
+	mf:action <e017-in.jsonld> ;
+	mf:name "@graph and @id aliased" ;
+	mf:result <e017-out.nq> .
+
+<#te018>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0018" ;
+	mf:action <e018-in.jsonld> ;
+	mf:name "override default @language" ;
+	mf:result <e018-out.nq> .
+
+<#te019>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0019" ;
+	mf:action <e019-in.jsonld> ;
+	mf:name "remove @value = null" ;
+	mf:result <e019-out.nq> .
+
+<#te020>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Embedded @graph without @id creates BNode-labeled named graph (from expand-0020)" ;
+	mf:action <e020-in.jsonld> ;
+	mf:name "do not remove @graph if not at top-level" ;
+	mf:result <e020-out.nq> .
+
+<#te021>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0021" ;
+	mf:action <e021-in.jsonld> ;
+	mf:name "do not remove @graph at top-level if not only property" ;
+	mf:result <e021-out.nq> .
+
+<#te022>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0022" ;
+	mf:action <e022-in.jsonld> ;
+	mf:name "expand value with default language" ;
+	mf:result <e022-out.nq> .
+
+<#te023>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0023" ;
+	mf:action <e023-in.jsonld> ;
+	mf:name "Lists and sets of properties with list/set coercion" ;
+	mf:result <e023-out.nq> .
+
+<#te024>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0024" ;
+	mf:action <e024-in.jsonld> ;
+	mf:name "Multiple contexts" ;
+	mf:result <e024-out.nq> .
+
+<#te025>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0025" ;
+	mf:action <e025-in.jsonld> ;
+	mf:name "Problematic IRI expansion tests" ;
+	mf:result <e025-out.nq> .
+
+<#te026>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0026" ;
+	mf:action <e026-in.jsonld> ;
+	mf:name "Expanding term mapping to @type uses @type syntax" ;
+	mf:result <e026-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.0"^^xsd:string
+	] .
+
+<#te027>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0027" ;
+	mf:action <e027-in.jsonld> ;
+	mf:name "Keep duplicate values in @list and @set" ;
+	mf:result <e027-out.nq> .
+
+<#te028>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0028" ;
+	mf:action <e028-in.jsonld> ;
+	mf:name "Use @vocab in properties and @type but not in @id" ;
+	mf:result <e028-out.nq> .
+
+<#te029>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0029" ;
+	mf:action <e029-in.jsonld> ;
+	mf:name "Relative IRIs" ;
+	mf:result <e029-out.nq> .
+
+<#te030>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0030" ;
+	mf:action <e030-in.jsonld> ;
+	mf:name "Language maps" ;
+	mf:result <e030-out.nq> .
+
+<#te031>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0031" ;
+	mf:action <e031-in.jsonld> ;
+	mf:name "type-coercion of native types" ;
+	mf:result <e031-out.nq> .
+
+<#te032>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0032" ;
+	mf:action <e032-in.jsonld> ;
+	mf:name "Mapping a term to null decouples it from @vocab" ;
+	mf:result <e032-out.nq> .
+
+<#te033>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0033" ;
+	mf:action <e033-in.jsonld> ;
+	mf:name "Using @vocab with with type-coercion" ;
+	mf:result <e033-out.nq> .
+
+<#te034>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0034" ;
+	mf:action <e034-in.jsonld> ;
+	mf:name "Multiple properties expanding to the same IRI" ;
+	mf:result <e034-out.nq> .
+
+<#te035>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0035" ;
+	mf:action <e035-in.jsonld> ;
+	mf:name "Language maps with @vocab, default language, and colliding property" ;
+	mf:result <e035-out.nq> .
+
+<#te036>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0036" ;
+	mf:action <e036-in.jsonld> ;
+	mf:name "Expanding @index" ;
+	mf:result <e036-out.nq> .
+
+<#te037>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0037" ;
+	mf:action <e037-in.jsonld> ;
+	mf:name "Expanding @reverse" ;
+	mf:result <e037-out.nq> .
+
+<#te038>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Triples with blank node predicates are dropped by default (from expand-0038)." ;
+	mf:action <e038-in.jsonld> ;
+	mf:name "Drop blank node predicates by default" ;
+	mf:result <e038-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.0"^^xsd:string
+	] .
+
+<#te039>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0039" ;
+	mf:action <e039-in.jsonld> ;
+	mf:name "Using terms in a reverse-maps" ;
+	mf:result <e039-out.nq> .
+
+<#te040>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0040" ;
+	mf:action <e040-in.jsonld> ;
+	mf:name "language and index expansion on non-objects" ;
+	mf:result <e040-out.nq> .
+
+<#te041>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0041" ;
+	mf:action <e041-in.jsonld> ;
+	mf:name "Reset the default language" ;
+	mf:result <e041-out.nq> .
+
+<#te042>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0042" ;
+	mf:action <e042-in.jsonld> ;
+	mf:name "Expanding reverse properties" ;
+	mf:result <e042-out.nq> .
+
+<#te043>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0043" ;
+	mf:action <e043-in.jsonld> ;
+	mf:name "Using reverse properties inside a @reverse-container" ;
+	mf:result <e043-out.nq> .
+
+<#te044>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0044" ;
+	mf:action <e044-in.jsonld> ;
+	mf:name "Ensure index maps use language mapping" ;
+	mf:result <e044-out.nq> .
+
+<#te045>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0045" ;
+	mf:action <e045-in.jsonld> ;
+	mf:name "Top-level value objects are removed" ;
+	mf:result <e045-out.nq> .
+
+<#te046>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0046" ;
+	mf:action <e046-in.jsonld> ;
+	mf:name "Free-floating nodes are removed" ;
+	mf:result <e046-out.nq> .
+
+<#te047>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0047" ;
+	mf:action <e047-in.jsonld> ;
+	mf:name "Remove free-floating set values and lists" ;
+	mf:result <e047-out.nq> .
+
+<#te048>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0048" ;
+	mf:action <e048-in.jsonld> ;
+	mf:name "Terms are ignored in @id" ;
+	mf:result <e048-out.nq> .
+
+<#te049>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0049" ;
+	mf:action <e049-in.jsonld> ;
+	mf:name "Using strings as value of a reverse property" ;
+	mf:result <e049-out.nq> .
+
+<#te050>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0050" ;
+	mf:action <e050-in.jsonld> ;
+	mf:name "Term definitions with prefix separate from prefix definitions" ;
+	mf:result <e050-out.nq> .
+
+<#te051>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0051" ;
+	mf:action <e051-in.jsonld> ;
+	mf:name "Expansion of keyword aliases in term definitions" ;
+	mf:result <e051-out.nq> .
+
+<#te052>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0052" ;
+	mf:action <e052-in.jsonld> ;
+	mf:name "@vocab-relative IRIs in term definitions" ;
+	mf:result <e052-out.nq> .
+
+<#te053>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0053" ;
+	mf:action <e053-in.jsonld> ;
+	mf:name "Expand absolute IRI with @type: @vocab" ;
+	mf:result <e053-out.nq> .
+
+<#te054>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0054" ;
+	mf:action <e054-in.jsonld> ;
+	mf:name "Expand term with @type: @vocab" ;
+	mf:result <e054-out.nq> .
+
+<#te055>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0055" ;
+	mf:action <e055-in.jsonld> ;
+	mf:name "Expand @vocab-relative term with @type: @vocab" ;
+	mf:result <e055-out.nq> .
+
+<#te056>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0056" ;
+	mf:action <e056-in.jsonld> ;
+	mf:name "Use terms with @type: @vocab but not with @type: @id" ;
+	mf:result <e056-out.nq> .
+
+<#te057>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0057" ;
+	mf:action <e057-in.jsonld> ;
+	mf:name "Expand relative IRI with @type: @vocab" ;
+	mf:result <e057-out.nq> .
+
+<#te058>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0058" ;
+	mf:action <e058-in.jsonld> ;
+	mf:name "Expand compact IRI with @type: @vocab" ;
+	mf:result <e058-out.nq> .
+
+<#te059>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0059" ;
+	mf:action <e059-in.jsonld> ;
+	mf:name "Reset @vocab by setting it to null" ;
+	mf:result <e059-out.nq> .
+
+<#te060>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0060" ;
+	mf:action <e060-in.jsonld> ;
+	mf:name "Overwrite document base with @base and reset it again" ;
+	mf:result <e060-out.nq> .
+
+<#te061>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0061" ;
+	mf:action <e061-in.jsonld> ;
+	mf:name "Coercing native types to arbitrary datatypes" ;
+	mf:result <e061-out.nq> .
+
+<#te062>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0062" ;
+	mf:action <e062-in.jsonld> ;
+	mf:name "Various relative IRIs with with @base" ;
+	mf:result <e062-out.nq> .
+
+<#te063>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0063" ;
+	mf:action <e063-in.jsonld> ;
+	mf:name "Expand a reverse property with an index-container" ;
+	mf:result <e063-out.nq> .
+
+<#te064>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0064" ;
+	mf:action <e064-in.jsonld> ;
+	mf:name "Expand reverse property whose values are unlabeled blank nodes" ;
+	mf:result <e064-out.nq> .
+
+<#te065>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0065" ;
+	mf:action <e065-in.jsonld> ;
+	mf:name "Keys that are not mapped to an IRI in a reverse-map are dropped" ;
+	mf:result <e065-out.nq> .
+
+<#te066>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0066" ;
+	mf:action <e066-in.jsonld> ;
+	mf:name "Use @vocab to expand keys in reverse-maps" ;
+	mf:result <e066-out.nq> .
+
+<#te067>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0067" ;
+	mf:action <e067-in.jsonld> ;
+	mf:name "prefix:://sufffix not a compact IRI" ;
+	mf:result <e067-out.nq> .
+
+<#te068>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0068" ;
+	mf:action <e068-in.jsonld> ;
+	mf:name "_::sufffix not a compact IRI" ;
+	mf:result <e068-out.nq> .
+
+<#te069>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0069" ;
+	mf:action <e069-in.jsonld> ;
+	mf:name "Compact IRI as term with type mapping" ;
+	mf:result <e069-out.nq> .
+
+<#te070>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0070" ;
+	mf:action <e070-in.jsonld> ;
+	mf:name "Redefine compact IRI with itself" ;
+	mf:result <e070-out.nq> .
+
+<#te071>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0071" ;
+	mf:action <e071-in.jsonld> ;
+	mf:name "Redefine terms looking like compact IRIs" ;
+	mf:result <e071-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.0"^^xsd:string
+	] .
+
+<#te072>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "RDF version of expand-0072" ;
+	mf:action <e072-in.jsonld> ;
+	mf:name "Redefine term using @vocab, not itself" ;
+	mf:result <e072-out.nq> .
+
+<#te073>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Objects are unordered, so serialized node definition containing @context may have @context at the end of the node definition" ;
+	mf:action <e073-in.jsonld> ;
+	mf:name "@context not first property" ;
+	mf:result <e073-out.nq> .
+
+<#te074>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Objects are unordered, so serialized node definition containing @id may have @id at the end of the node definition" ;
+	mf:action <e074-in.jsonld> ;
+	mf:name "@id not first property" ;
+	mf:result <e074-out.nq> .
+
+<#te075>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use @vocab to map all properties to blank node identifiers" ;
+	mf:action <e075-in.jsonld> ;
+	mf:name "@vocab as blank node identifier" ;
+	mf:result <e075-out.nq> ;
+	jld:option [
+		jld:processingMode "json-ld-1.0"^^xsd:string ;
+		jld:produceGeneralizedRdf true
+	] ;
+	jld:requires "GeneralizedRdf" .
+
+<#te076>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of the base option overrides the document location" ;
+	mf:action <e076-in.jsonld> ;
+	mf:name "base option overrides document location" ;
+	mf:result <e076-out.nq> ;
+	jld:option [
+		jld:base <http://example/base/>
+	] .
+
+<#te077>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of the expandContext option to expand the input document" ;
+	mf:action <e077-in.jsonld> ;
+	mf:name "expandContext option" ;
+	mf:result <e077-out.nq> ;
+	jld:option [
+		jld:expandContext <e077-context.jsonld>
+	] .
+
+<#te078>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of multiple reverse properties" ;
+	mf:action <e078-in.jsonld> ;
+	mf:name "multiple reverse properties" ;
+	mf:result <e078-out.nq> .
+
+<#te079>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of @graph containers" ;
+	mf:action <e079-in.jsonld> ;
+	mf:name "expand @graph container" ;
+	mf:result <e079-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te080>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of [@graph, @set] containers" ;
+	mf:action <e080-in.jsonld> ;
+	mf:name "expand [@graph, @set] container" ;
+	mf:result <e080-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te081>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Don't double-expand an already expanded graph" ;
+	mf:action <e081-in.jsonld> ;
+	mf:name "Creates an @graph container if value is a graph" ;
+	mf:result <e081-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te082>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of @graph containers with @index" ;
+	mf:action <e082-in.jsonld> ;
+	mf:name "expand [@graph, @index] container" ;
+	mf:result <e082-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te083>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of @graph containers with @index and @set" ;
+	mf:action <e083-in.jsonld> ;
+	mf:name "expand [@graph, @index, @set] container" ;
+	mf:result <e083-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te084>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Does not create a new graph object if indexed value is already a graph object" ;
+	mf:action <e084-in.jsonld> ;
+	mf:name "Do not expand [@graph, @index] container if value is a graph" ;
+	mf:result <e084-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te085>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of @graph containers with @id" ;
+	mf:action <e085-in.jsonld> ;
+	mf:name "expand [@graph, @id] container" ;
+	mf:result <e085-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te086>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of @graph containers with @id and @set" ;
+	mf:action <e086-in.jsonld> ;
+	mf:name "expand [@graph, @id, @set] container" ;
+	mf:result <e086-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te087>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Does not create a new graph object if indexed value is already a graph object" ;
+	mf:action <e087-in.jsonld> ;
+	mf:name "Do not expand [@graph, @id] container if value is a graph" ;
+	mf:result <e087-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te088>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Value Expansion does not expand native values, such as booleans, to a node object" ;
+	mf:action <e088-in.jsonld> ;
+	mf:name "Do not expand native values to IRIs" ;
+	mf:result <e088-out.nq> .
+
+<#te089>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of an empty @base is applied to the base option" ;
+	mf:action <e089-in.jsonld> ;
+	mf:name "empty @base applied to the base option" ;
+	mf:result <e089-out.nq> ;
+	jld:option [
+		jld:base <http://example/base/>
+	] .
+
+<#te090>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of a relative @base overrides base option and document location" ;
+	mf:action <e090-in.jsonld> ;
+	mf:name "relative @base overrides base option and document location" ;
+	mf:result <e090-out.nq> ;
+	jld:option [
+		jld:base <http://example/base/>
+	] .
+
+<#te091>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of a relative and absolute @base overrides base option and document location" ;
+	mf:action <e091-in.jsonld> ;
+	mf:name "relative and absolute @base overrides base option and document location" ;
+	mf:result <e091-out.nq> ;
+	jld:option [
+		jld:base <http://example/base/>
+	] .
+
+<#te092>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Pathological relative property IRIs" ;
+	mf:action <e092-in.jsonld> ;
+	mf:name "Various relative IRIs as properties with with @vocab: ''" ;
+	mf:result <e092-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te093>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of @graph containers" ;
+	mf:action <e093-in.jsonld> ;
+	mf:name "expand @graph container (multiple objects)" ;
+	mf:result <e093-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te094>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of [@graph, @set] containers" ;
+	mf:action <e094-in.jsonld> ;
+	mf:name "expand [@graph, @set] container (multiple objects)" ;
+	mf:result <e094-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te095>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Don't double-expand an already expanded graph" ;
+	mf:action <e095-in.jsonld> ;
+	mf:name "Creates an @graph container if value is a graph (multiple objects)" ;
+	mf:result <e095-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te096>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of @graph containers with @index" ;
+	mf:action <e096-in.jsonld> ;
+	mf:name "expand [@graph, @index] container (multiple indexed objects)" ;
+	mf:result <e096-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te097>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of @graph containers with @index and @set" ;
+	mf:action <e097-in.jsonld> ;
+	mf:name "expand [@graph, @index, @set] container (multiple objects)" ;
+	mf:result <e097-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te098>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Does not create a new graph object if indexed value is already a graph object" ;
+	mf:action <e098-in.jsonld> ;
+	mf:name "Do not expand [@graph, @index] container if value is a graph (multiple objects)" ;
+	mf:result <e098-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te099>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of @graph containers with @id" ;
+	mf:action <e099-in.jsonld> ;
+	mf:name "expand [@graph, @id] container (multiple objects)" ;
+	mf:result <e099-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te100>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of @graph containers with @id and @set" ;
+	mf:action <e100-in.jsonld> ;
+	mf:name "expand [@graph, @id, @set] container (multiple objects)" ;
+	mf:result <e100-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te101>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Does not create a new graph object if indexed value is already a graph object" ;
+	mf:action <e101-in.jsonld> ;
+	mf:name "Do not expand [@graph, @id] container if value is a graph (multiple objects)" ;
+	mf:result <e101-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te102>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Does not create a new graph object if indexed value is already a graph object" ;
+	mf:action <e102-in.jsonld> ;
+	mf:name "Expand @graph container if value is a graph (multiple objects)" ;
+	mf:result <e102-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te103>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Does not create a new graph object if indexed value is already a graph object" ;
+	mf:action <e103-in.jsonld> ;
+	mf:name "Expand @graph container if value is a graph (multiple graphs)" ;
+	mf:result <e103-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te104>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Don't double-expand an already expanded graph" ;
+	mf:action <e104-in.jsonld> ;
+	mf:name "Creates an @graph container if value is a graph (mixed graph and object)" ;
+	mf:result <e104-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te105>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Does not create a new graph object if indexed value is already a graph object" ;
+	mf:action <e105-in.jsonld> ;
+	mf:name "Do not expand [@graph, @index] container if value is a graph (mixed graph and object)" ;
+	mf:result <e105-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te106>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Does not create a new graph object if indexed value is already a graph object" ;
+	mf:action <e106-in.jsonld> ;
+	mf:name "Do not expand [@graph, @id] container if value is a graph (mixed graph and object)" ;
+	mf:result <e106-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te107>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of @graph containers with @index" ;
+	mf:action <e107-in.jsonld> ;
+	mf:name "expand [@graph, @index] container (indexes with multiple objects)" ;
+	mf:result <e107-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te108>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Use of @graph containers with @id" ;
+	mf:action <e108-in.jsonld> ;
+	mf:name "expand [@graph, @id] container (multiple ids and objects)" ;
+	mf:result <e108-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te109>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Do not treat as absolute IRIs values that look like compact IRIs if they're not absolute" ;
+	mf:action <e109-in.jsonld> ;
+	mf:name "IRI expansion of fragments including ':'" ;
+	mf:result <e109-out.nq> .
+
+<#te110>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Pathological relative property IRIs" ;
+	mf:action <e110-in.jsonld> ;
+	mf:name "Various relative IRIs as properties with with relative @vocab" ;
+	mf:result <e110-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te111>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Pathological relative property IRIs" ;
+	mf:action <e111-in.jsonld> ;
+	mf:name "Various relative IRIs as properties with with relative @vocab itself relative to an existing vocabulary base" ;
+	mf:result <e111-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te112>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Pathological relative property IRIs" ;
+	mf:action <e112-in.jsonld> ;
+	mf:name "Various relative IRIs as properties with with relative @vocab relative to another relative vocabulary base" ;
+	mf:result <e112-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te113>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expand with context including JavaScript Object property names" ;
+	mf:action <e113-in.jsonld> ;
+	mf:name "context with JavaScript Object property names" ;
+	mf:result <e113-out.nq> .
+
+<#te114>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "An exception for the colliding keywords error is made for @type" ;
+	mf:action <e114-in.jsonld> ;
+	mf:name "Expansion allows multiple properties expanding to @type" ;
+	mf:result <e114-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te115>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Pathological relative property IRIs in 1.0" ;
+	mf:action <e115-in.jsonld> ;
+	mf:name "Verifies that relative IRIs as properties with @vocab: '' in 1.0 generate an error" ;
+	mf:result "invalid vocab mapping" ;
+	jld:option [
+		jld:specVersion "json-ld-1.0"^^xsd:string
+	] .
+
+<#te116>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Pathological relative property IRIs in 1.0" ;
+	mf:action <e116-in.jsonld> ;
+	mf:name "Verifies that relative IRIs as properties with relative @vocab in 1.0 generate an error" ;
+	mf:result "invalid vocab mapping" ;
+	jld:option [
+		jld:specVersion "json-ld-1.0"^^xsd:string
+	] .
+
+<#te117>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Terms may begin with a colon and not be treated as IRIs." ;
+	mf:action <e117-in.jsonld> ;
+	mf:name "A term starting with a colon can expand to a different IRI" ;
+	mf:result <e117-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te118>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Terms may begin with a colon and not be treated as IRIs." ;
+	mf:action <e118-in.jsonld> ;
+	mf:name "Expanding a value staring with a colon does not treat that value as an IRI" ;
+	mf:result <e118-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te119>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Processors SHOULD generate a warning and MUST ignore terms having the form of a keyword." ;
+	mf:action <e119-in.jsonld> ;
+	mf:name "Ignore some terms with @, allow others." ;
+	mf:result <e119-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te120>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Processors SHOULD generate a warning and MUST ignore values of @id having the form of a keyword." ;
+	mf:action <e120-in.jsonld> ;
+	mf:name "Ignore some values of @id with @, allow others." ;
+	mf:result <e120-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te121>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Processors SHOULD generate a warning and MUST ignore values of @reverse having the form of a keyword." ;
+	mf:action <e121-in.jsonld> ;
+	mf:name "Ignore some values of @reverse with @, allow others." ;
+	mf:result <e121-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te122>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Processors SHOULD generate a warning and MUST ignore IRIs having the form of a keyword." ;
+	mf:action <e122-in.jsonld> ;
+	mf:name "Ignore some IRIs when that start with @ when expanding." ;
+	mf:result <e122-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te123>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Processors MUST validate datatype IRIs." ;
+	mf:action <e123-in.jsonld> ;
+	mf:name "Value objects including invalid literal datatype IRIs are rejected" ;
+	mf:result "invalid typed value" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te124>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that @vocab defined as a compact IRI expands properly" ;
+	mf:action <e124-in.jsonld> ;
+	mf:name "compact IRI as @vocab" ;
+	mf:result <e124-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te125>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that @vocab defined as a term expands properly" ;
+	mf:action <e125-in.jsonld> ;
+	mf:name "term as @vocab" ;
+	mf:result <e125-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te126>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that no exception is raised on expansion when processing a scoped context referencing itself directly" ;
+	mf:action <e126-in.jsonld> ;
+	mf:name "A scoped context may include itself recursively (direct)" ;
+	mf:result <e126-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te127>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that no exception is raised on expansion when processing a scoped context referencing itself indirectly" ;
+	mf:action <e127-in.jsonld> ;
+	mf:name "A scoped context may include itself recursively (indirect)" ;
+	mf:result <e127-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te128>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that no exception is raised on expansion when processing two scoped contexts referencing a shared context" ;
+	mf:action <e128-in.jsonld> ;
+	mf:name "Two scoped context may include a shared context" ;
+	mf:result <e128-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te129>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verify URI resolution relative to base (without trailing slash, without path) according to RFC 3986" ;
+	mf:action <e129-in.jsonld> ;
+	mf:name "Base without trailing slash, without path" ;
+	mf:result <e129-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#te130>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verify URI resolution relative to base (without trailing slash, with path) according to RFC 3986" ;
+	mf:action <e130-in.jsonld> ;
+	mf:name "Base without trailing slash, with path" ;
+	mf:result <e130-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tec01>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a invalid term definition is found" ;
+	mf:action <ec01-in.jsonld> ;
+	mf:name "Invalid keyword in term definition" ;
+	mf:result "invalid term definition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tec02>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised if @type is defined as a term with an empty map" ;
+	mf:action <ec02-in.jsonld> ;
+	mf:name "Term definition on @type with empty map" ;
+	mf:result "keyword redefinition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tem01>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a invalid container mapping is found" ;
+	mf:action <em01-in.jsonld> ;
+	mf:name "Invalid container mapping" ;
+	mf:result "invalid container mapping" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#ten01>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "container: @nest" ;
+	mf:action <en01-in.jsonld> ;
+	mf:name "@nest MUST NOT have a string value" ;
+	mf:result "invalid @nest value" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#ten02>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Transparent Nesting" ;
+	mf:action <en02-in.jsonld> ;
+	mf:name "@nest MUST NOT have a boolen value" ;
+	mf:result "invalid @nest value" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#ten03>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Transparent Nesting" ;
+	mf:action <en03-in.jsonld> ;
+	mf:name "@nest MUST NOT have a numeric value" ;
+	mf:result "invalid @nest value" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#ten04>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Transparent Nesting" ;
+	mf:action <en04-in.jsonld> ;
+	mf:name "@nest MUST NOT have a value object value" ;
+	mf:result "invalid @nest value" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#ten05>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Transparent Nesting" ;
+	mf:action <en05-in.jsonld> ;
+	mf:name "does not allow a keyword other than @nest for the value of @nest" ;
+	mf:result "invalid @nest value" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#ten06>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Transparent Nesting" ;
+	mf:action <en06-in.jsonld> ;
+	mf:name "does not allow @nest with @reverse" ;
+	mf:result "invalid reverse property" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tep02>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "If processingMode is explicitly json-ld-1.0, it will conflict with 1.1 features." ;
+	mf:action <ep02-in.jsonld> ;
+	mf:name "processingMode json-ld-1.0 conflicts with @version: 1.1" ;
+	mf:result "processing mode conflict" ;
+	jld:option [
+		jld:processingMode "json-ld-1.0"^^xsd:string ;
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tep03>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "If @version is specified, it must be 1.1" ;
+	mf:action <ep03-in.jsonld> ;
+	mf:name "@version must be 1.1" ;
+	mf:result "invalid @version value" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#ter01>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when processing an invalid context aliasing a keyword to another keyword" ;
+	mf:action <er01-in.jsonld> ;
+	mf:name "Keywords cannot be aliased to other keywords" ;
+	mf:result "keyword redefinition" .
+
+<#ter02>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when processing a context referencing itself" ;
+	mf:action <er02-in.jsonld> ;
+	mf:name "A context may not include itself recursively (direct)" ;
+	mf:result "recursive context inclusion" ;
+	jld:option [
+		jld:specVersion "json-ld-1.0"^^xsd:string
+	] .
+
+<#ter03>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when processing a context referencing itself indirectly" ;
+	mf:action <er03-in.jsonld> ;
+	mf:name "A context may not include itself recursively (indirect)" ;
+	mf:result "recursive context inclusion" ;
+	jld:option [
+		jld:specVersion "json-ld-1.0"^^xsd:string
+	] .
+
+<#ter04>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a context dereference results in an error" ;
+	mf:action <er04-in.jsonld> ;
+	mf:name "Error dereferencing a remote context" ;
+	mf:result "loading remote context failed" .
+
+<#ter05>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a remote context is not an object containing @context" ;
+	mf:action <er05-in.jsonld> ;
+	mf:name "Invalid remote context" ;
+	mf:result "invalid remote context" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#ter06>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a context is not a string or object" ;
+	mf:action <er06-in.jsonld> ;
+	mf:name "Invalid local context" ;
+	mf:result "invalid local context" .
+
+<#ter07>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a context contains an invalid @base" ;
+	mf:action <er07-in.jsonld> ;
+	mf:name "Invalid base IRI" ;
+	mf:result "invalid base IRI" .
+
+<#ter08>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a context contains an invalid @vocab mapping" ;
+	mf:action <er08-in.jsonld> ;
+	mf:name "Invalid vocab mapping" ;
+	mf:result "invalid vocab mapping" .
+
+<#ter09>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a context contains an invalid @language" ;
+	mf:action <er09-in.jsonld> ;
+	mf:name "Invalid default language" ;
+	mf:result "invalid default language" .
+
+<#ter10>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a cyclic IRI mapping is found" ;
+	mf:action <er10-in.jsonld> ;
+	mf:name "Cyclic IRI mapping" ;
+	mf:result "cyclic IRI mapping" .
+
+<#ter11>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a invalid term definition is found" ;
+	mf:action <er11-in.jsonld> ;
+	mf:name "Invalid term definition" ;
+	mf:result "invalid term definition" .
+
+<#ter12>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a invalid type mapping is found" ;
+	mf:action <er12-in.jsonld> ;
+	mf:name "Invalid type mapping (not a string)" ;
+	mf:result "invalid type mapping" .
+
+<#ter13>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a invalid type mapping is found" ;
+	mf:action <er13-in.jsonld> ;
+	mf:name "Invalid type mapping (not absolute IRI)" ;
+	mf:result "invalid type mapping" .
+
+<#ter14>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a invalid reverse property is found" ;
+	mf:action <er14-in.jsonld> ;
+	mf:name "Invalid reverse property (contains @id)" ;
+	mf:result "invalid reverse property" .
+
+<#ter15>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a invalid IRI mapping is found" ;
+	mf:action <er15-in.jsonld> ;
+	mf:name "Invalid IRI mapping (@reverse not a string)" ;
+	mf:result "invalid IRI mapping" .
+
+<#ter17>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a invalid reverse property is found" ;
+	mf:action <er17-in.jsonld> ;
+	mf:name "Invalid reverse property (invalid @container)" ;
+	mf:result "invalid reverse property" .
+
+<#ter18>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a invalid IRI mapping is found" ;
+	mf:action <er18-in.jsonld> ;
+	mf:name "Invalid IRI mapping (@id not a string)" ;
+	mf:result "invalid IRI mapping" .
+
+<#ter19>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a invalid keyword alias is found" ;
+	mf:action <er19-in.jsonld> ;
+	mf:name "Invalid keyword alias (@context)" ;
+	mf:result "invalid keyword alias" .
+
+<#ter20>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a invalid IRI mapping is found" ;
+	mf:action <er20-in.jsonld> ;
+	mf:name "Invalid IRI mapping (no vocab mapping)" ;
+	mf:result "invalid IRI mapping" .
+
+<#ter21>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a invalid container mapping is found" ;
+	mf:action <er21-in.jsonld> ;
+	mf:name "Invalid container mapping" ;
+	mf:result "invalid container mapping" ;
+	jld:option [
+		jld:processingMode "json-ld-1.0"^^xsd:string ;
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#ter22>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a invalid language mapping is found" ;
+	mf:action <er22-in.jsonld> ;
+	mf:name "Invalid language mapping" ;
+	mf:result "invalid language mapping" .
+
+<#ter23>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a invalid type mapping is found" ;
+	mf:action <er23-in.jsonld> ;
+	mf:name "Invalid IRI mapping (relative IRI in @type)" ;
+	mf:result "invalid type mapping" .
+
+<#ter24>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when a list of lists is found" ;
+	mf:action <er24-in.jsonld> ;
+	mf:name "List of lists (from array)" ;
+	mf:result "list of lists" ;
+	jld:option [
+		jld:specVersion "json-ld-1.0"^^xsd:string
+	] .
+
+<#ter25>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when a invalid reverse property map is found" ;
+	mf:action <er25-in.jsonld> ;
+	mf:name "Invalid reverse property map" ;
+	mf:result "invalid reverse property map" .
+
+<#ter26>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when colliding keywords are found" ;
+	mf:action <er26-in.jsonld> ;
+	mf:name "Colliding keywords" ;
+	mf:result "colliding keywords" .
+
+<#ter27>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when an invalid @id value is found" ;
+	mf:action <er27-in.jsonld> ;
+	mf:name "Invalid @id value" ;
+	mf:result "invalid @id value" .
+
+<#ter28>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when an invalid type value is found" ;
+	mf:action <er28-in.jsonld> ;
+	mf:name "Invalid type value" ;
+	mf:result "invalid type value" .
+
+<#ter29>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when an invalid value object value is found" ;
+	mf:action <er29-in.jsonld> ;
+	mf:name "Invalid value object value" ;
+	mf:result "invalid value object value" .
+
+<#ter30>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when an invalid language-tagged string value is found" ;
+	mf:action <er30-in.jsonld> ;
+	mf:name "Invalid language-tagged string" ;
+	mf:result "invalid language-tagged string" .
+
+<#ter31>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when an invalid @index value value is found" ;
+	mf:action <er31-in.jsonld> ;
+	mf:name "Invalid @index value" ;
+	mf:result "invalid @index value" .
+
+<#ter32>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when a list of lists is found" ;
+	mf:action <er32-in.jsonld> ;
+	mf:name "List of lists (from array)" ;
+	mf:result "list of lists" ;
+	jld:option [
+		jld:specVersion "json-ld-1.0"^^xsd:string
+	] .
+
+<#ter33>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when an invalid @reverse value is found" ;
+	mf:action <er33-in.jsonld> ;
+	mf:name "Invalid @reverse value" ;
+	mf:result "invalid @reverse value" .
+
+<#ter34>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when an invalid reverse property value is found" ;
+	mf:action <er34-in.jsonld> ;
+	mf:name "Invalid reverse property value (in @reverse)" ;
+	mf:result "invalid reverse property value" .
+
+<#ter35>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when an invalid language map value is found" ;
+	mf:action <er35-in.jsonld> ;
+	mf:name "Invalid language map value" ;
+	mf:result "invalid language map value" .
+
+<#ter36>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when an invalid reverse property value is found" ;
+	mf:action <er36-in.jsonld> ;
+	mf:name "Invalid reverse property value (through coercion)" ;
+	mf:result "invalid reverse property value" .
+
+<#ter37>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when an invalid value object is found" ;
+	mf:action <er37-in.jsonld> ;
+	mf:name "Invalid value object (unexpected keyword)" ;
+	mf:result "invalid value object" .
+
+<#ter38>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when an invalid value object is found" ;
+	mf:action <er38-in.jsonld> ;
+	mf:name "Invalid value object (@type and @language)" ;
+	mf:result "invalid value object" .
+
+<#ter39>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when an invalid language-tagged value is found" ;
+	mf:action <er39-in.jsonld> ;
+	mf:name "Invalid language-tagged value" ;
+	mf:result "invalid language-tagged value" .
+
+<#ter40>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when an invalid typed value is found" ;
+	mf:action <er40-in.jsonld> ;
+	mf:name "Invalid typed value" ;
+	mf:result "invalid typed value" .
+
+<#ter41>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when an invalid set or list object is found" ;
+	mf:action <er41-in.jsonld> ;
+	mf:name "Invalid set or list object" ;
+	mf:result "invalid set or list object" .
+
+<#ter42>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when processing an invalid context attempting to define @container on a keyword" ;
+	mf:action <er42-in.jsonld> ;
+	mf:name "Keywords may not be redefined in 1.0" ;
+	mf:result "keyword redefinition" ;
+	jld:option [
+		jld:processingMode "json-ld-1.0"^^xsd:string ;
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#ter43>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expanding term mapping to @type uses @type syntax now illegal" ;
+	mf:action <er43-in.jsonld> ;
+	mf:name "Term definition with @id: @type" ;
+	mf:result "invalid IRI mapping" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#ter44>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Term definitions may look like compact IRIs, but must be consistent." ;
+	mf:action <er44-in.jsonld> ;
+	mf:name "Redefine terms looking like compact IRIs" ;
+	mf:result "invalid IRI mapping" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#ter48>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that a relative IRI cannot be used as a term." ;
+	mf:action <er48-in.jsonld> ;
+	mf:name "Invalid term as relative IRI" ;
+	mf:result "invalid IRI mapping" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#ter49>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that a relative IRI cannot be used as a term." ;
+	mf:action <er49-in.jsonld> ;
+	mf:name "A relative IRI cannot be used as a prefix" ;
+	mf:result "invalid term definition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#ter50>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when an invalid IRI is used for @reverse." ;
+	mf:action <er50-in.jsonld> ;
+	mf:name "Invalid reverse id" ;
+	mf:result "invalid IRI mapping" .
+
+<#ter51>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised in Expansion when an invalid value object value is found using a value alias" ;
+	mf:action <er51-in.jsonld> ;
+	mf:name "Invalid value object value using a value alias" ;
+	mf:result "invalid value object value" .
+
+<#ter52>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a context contains a definition for the empty term" ;
+	mf:action <er52-in.jsonld> ;
+	mf:name "Definition for the empty term" ;
+	mf:result "invalid term definition" .
+
+<#ter53>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Verifies that an exception is raised on expansion when a context contains an invalid @prefix value" ;
+	mf:action <er53-in.jsonld> ;
+	mf:name "Invalid prefix value" ;
+	mf:result "invalid @prefix value" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#ter54>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "The value of @type in a value object MUST be a string or null." ;
+	mf:action <er54-in.jsonld> ;
+	mf:name "Invalid value object, multiple values for @type." ;
+	mf:result "invalid typed value" .
+
+<#ter55>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "The value of @type in an expanded term definition object MUST be a string or null." ;
+	mf:action <er55-in.jsonld> ;
+	mf:name "Invalid term definition, multiple values for @type." ;
+	mf:result "invalid type mapping" .
+
+<#tin01>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests included blocks." ;
+	mf:action <in01-in.jsonld> ;
+	mf:name "Basic Included array" ;
+	mf:result <in01-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tin02>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests included blocks." ;
+	mf:action <in02-in.jsonld> ;
+	mf:name "Basic Included object" ;
+	mf:result <in02-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tin03>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests included blocks." ;
+	mf:action <in03-in.jsonld> ;
+	mf:name "Multiple properties mapping to @included are folded together" ;
+	mf:result <in03-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tin04>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests included blocks." ;
+	mf:action <in04-in.jsonld> ;
+	mf:name "Included containing @included" ;
+	mf:result <in04-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tin05>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests included blocks." ;
+	mf:action <in05-in.jsonld> ;
+	mf:name "Property value with @included" ;
+	mf:result <in05-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tin06>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests included blocks." ;
+	mf:action <in06-in.jsonld> ;
+	mf:name "json.api example" ;
+	mf:result <in06-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tin07>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests included blocks." ;
+	mf:action <in07-in.jsonld> ;
+	mf:name "Error if @included value is a string" ;
+	mf:result "invalid @included value" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tin08>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests included blocks." ;
+	mf:action <in08-in.jsonld> ;
+	mf:name "Error if @included value is a value object" ;
+	mf:result "invalid @included value" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tin09>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests included blocks." ;
+	mf:action <in09-in.jsonld> ;
+	mf:name "Error if @included value is a list object" ;
+	mf:result "invalid @included value" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tjs01>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming property with @type @json to a JSON literal (boolean true)." ;
+	mf:action <js01-in.jsonld> ;
+	mf:name "Transform JSON literal (boolean true)" ;
+	mf:result <js01-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs02>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming property with @type @json to a JSON literal (boolean false)." ;
+	mf:action <js02-in.jsonld> ;
+	mf:name "Transform JSON literal (boolean false)" ;
+	mf:result <js02-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs03>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming property with @type @json to a JSON literal (double)." ;
+	mf:action <js03-in.jsonld> ;
+	mf:name "Transform JSON literal (double)" ;
+	mf:result <js03-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs04>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming property with @type @json to a JSON literal (double-zero)." ;
+	mf:action <js04-in.jsonld> ;
+	mf:name "Transform JSON literal (double-zero)" ;
+	mf:result <js04-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs05>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming property with @type @json to a JSON literal (integer)." ;
+	mf:action <js05-in.jsonld> ;
+	mf:name "Transform JSON literal (integer)" ;
+	mf:result <js05-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs06>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming property with @type @json to a JSON literal (object)." ;
+	mf:action <js06-in.jsonld> ;
+	mf:name "Transform JSON literal (object)" ;
+	mf:result <js06-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs07>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming property with @type @json to a JSON literal (array)." ;
+	mf:action <js07-in.jsonld> ;
+	mf:name "Transform JSON literal (array)" ;
+	mf:result <js07-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs08>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming JSON literal with array canonicalization." ;
+	mf:action <js08-in.jsonld> ;
+	mf:name "Transform JSON literal with array canonicalization" ;
+	mf:result <js08-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs09>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming JSON literal with string canonicalization." ;
+	mf:action <js09-in.jsonld> ;
+	mf:name "Transform JSON literal with string canonicalization" ;
+	mf:result <js09-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs10>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming JSON literal with structural canonicalization." ;
+	mf:action <js10-in.jsonld> ;
+	mf:name "Transform JSON literal with structural canonicalization" ;
+	mf:result <js10-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs11>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming JSON literal with unicode canonicalization." ;
+	mf:action <js11-in.jsonld> ;
+	mf:name "Transform JSON literal with unicode canonicalization" ;
+	mf:result <js11-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs12>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming JSON literal with value canonicalization." ;
+	mf:action <js12-in.jsonld> ;
+	mf:name "Transform JSON literal with value canonicalization" ;
+	mf:result <js12-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs13>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming JSON literal with wierd canonicalization." ;
+	mf:action <js13-in.jsonld> ;
+	mf:name "Transform JSON literal with wierd canonicalization" ;
+	mf:result <js13-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs14>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming JSON literal does not expand terms inside json." ;
+	mf:action <js14-in.jsonld> ;
+	mf:name "Transform JSON literal without expanding contents" ;
+	mf:result <js14-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs15>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming JSON literal in expanded form." ;
+	mf:action <js15-in.jsonld> ;
+	mf:name "Transform JSON literal aleady in expanded form" ;
+	mf:result <js15-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs16>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming JSON literal in expanded form with aliased keys in value object." ;
+	mf:action <js16-in.jsonld> ;
+	mf:name "Transform JSON literal aleady in expanded form with aliased keys" ;
+	mf:result <js16-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs17>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming property with @type @json to a JSON literal (string)." ;
+	mf:action <js17-in.jsonld> ;
+	mf:name "Transform JSON literal (string)" ;
+	mf:result <js17-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs18>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming property with @type @json to a JSON literal (null)." ;
+	mf:action <js18-in.jsonld> ;
+	mf:name "Transform JSON literal (null)" ;
+	mf:result <js18-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs19>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming JSON literal with aliased @type." ;
+	mf:action <js19-in.jsonld> ;
+	mf:name "Transform JSON literal with aliased @type" ;
+	mf:result <js19-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs20>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming JSON literal with aliased @value." ;
+	mf:action <js20-in.jsonld> ;
+	mf:name "Transform JSON literal with aliased @value" ;
+	mf:result <js20-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs21>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming JSON literal with a @context." ;
+	mf:action <js21-in.jsonld> ;
+	mf:name "Transform JSON literal with @context" ;
+	mf:result <js21-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs22>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming property with @type @json to a JSON literal (null)." ;
+	mf:action <js22-in.jsonld> ;
+	mf:name "Transform JSON literal (null) aleady in expanded form." ;
+	mf:result <js22-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tjs23>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests transforming property with @type @json to a JSON literal (empty array)." ;
+	mf:action <js23-in.jsonld> ;
+	mf:name "Transform JSON literal (empty array)." ;
+	mf:result <js23-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string ;
+		jld:useJCS true
+	] .
+
+<#tli01>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "List of lists." ;
+	mf:action <li01-in.jsonld> ;
+	mf:name "@list containing @list" ;
+	mf:result <li01-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tli02>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "List of lists." ;
+	mf:action <li02-in.jsonld> ;
+	mf:name "@list containing empty @list" ;
+	mf:result <li02-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tli03>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "List of lists" ;
+	mf:action <li03-in.jsonld> ;
+	mf:name "@list containing @list (with coercion)" ;
+	mf:result <li03-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tli04>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "List of lists" ;
+	mf:action <li04-in.jsonld> ;
+	mf:name "@list containing empty @list (with coercion)" ;
+	mf:result <li04-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tli05>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "List of lists" ;
+	mf:action <li05-in.jsonld> ;
+	mf:name "coerced @list containing an array" ;
+	mf:result <li05-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tli06>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "List of lists" ;
+	mf:action <li06-in.jsonld> ;
+	mf:name "coerced @list containing an empty array" ;
+	mf:result <li06-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tli07>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "List of lists" ;
+	mf:action <li07-in.jsonld> ;
+	mf:name "coerced @list containing deep arrays" ;
+	mf:result <li07-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tli08>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "List of lists" ;
+	mf:action <li08-in.jsonld> ;
+	mf:name "coerced @list containing deep empty arrays" ;
+	mf:result <li08-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tli09>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "List of lists" ;
+	mf:action <li09-in.jsonld> ;
+	mf:name "coerced @list containing multiple lists" ;
+	mf:result <li09-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tli10>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "List of lists" ;
+	mf:action <li10-in.jsonld> ;
+	mf:name "coerced @list containing mixed list values" ;
+	mf:result <li10-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tli11>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests list elements expanded to IRIs with a good @base." ;
+	mf:action <li11-in.jsonld> ;
+	mf:name "List with good @base." ;
+	mf:result <li11-out.nq> ;
+	jld:option [
+		jld:base <http://example.com/> ;
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tli12>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests list elements expanded to IRIs with a bad @base." ;
+	mf:action <li12-in.jsonld> ;
+	mf:name "List with bad @base." ;
+	mf:result <li12-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tli13>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests list elements expanded to IRIs with an empty @base." ;
+	mf:action <li13-in.jsonld> ;
+	mf:name "List with empty @base." ;
+	mf:result <li13-out.nq> ;
+	jld:option [
+		jld:base <http://example.com/> ;
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tli14>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Tests list elements expanded to IRIs with a null @base." ;
+	mf:action <li14-in.jsonld> ;
+	mf:name "List with null @base." ;
+	mf:result <li14-out.nq> ;
+	jld:option [
+		jld:base <http://example.com/> ;
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm001>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using @container: @id" ;
+	mf:action <m001-in.jsonld> ;
+	mf:name "Adds @id to object not having an @id" ;
+	mf:result <m001-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm002>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using @container: @id" ;
+	mf:action <m002-in.jsonld> ;
+	mf:name "Retains @id in object already having an @id" ;
+	mf:result <m002-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm003>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using @container: @type" ;
+	mf:action <m003-in.jsonld> ;
+	mf:name "Adds @type to object not having an @type" ;
+	mf:result <m003-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm004>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using @container: @type" ;
+	mf:action <m004-in.jsonld> ;
+	mf:name "Prepends @type in object already having an @type" ;
+	mf:result <m004-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm005>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using @container: @id" ;
+	mf:action <m005-in.jsonld> ;
+	mf:name "Adds expanded @id to object" ;
+	mf:result <m005-out.nq> ;
+	jld:option [
+		jld:base <http://example.org/> ;
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm006>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using @container: @type" ;
+	mf:action <m006-in.jsonld> ;
+	mf:name "Adds vocabulary expanded @type to object" ;
+	mf:result <m006-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm007>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using @container: @type" ;
+	mf:action <m007-in.jsonld> ;
+	mf:name "Adds document expanded @type to object" ;
+	mf:result <m007-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm008>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "scoped context on @type" ;
+	mf:action <m008-in.jsonld> ;
+	mf:name "When type is in a type map" ;
+	mf:result <m008-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm009>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "index on @language" ;
+	mf:action <m009-in.jsonld> ;
+	mf:name "language map with @none" ;
+	mf:result <m009-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm010>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "index on @language" ;
+	mf:action <m010-in.jsonld> ;
+	mf:name "language map with alias of @none" ;
+	mf:result <m010-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm011>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "index on @id" ;
+	mf:action <m011-in.jsonld> ;
+	mf:name "id map with @none" ;
+	mf:result <m011-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm012>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "index on @type" ;
+	mf:action <m012-in.jsonld> ;
+	mf:name "type map with alias of @none" ;
+	mf:result <m012-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm013>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "index on @graph and @index" ;
+	mf:action <m013-in.jsonld> ;
+	mf:name "graph index map with @none" ;
+	mf:result <m013-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm014>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "index on @graph and @index" ;
+	mf:action <m014-in.jsonld> ;
+	mf:name "graph index map with alias @none" ;
+	mf:result <m014-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm015>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "index on @graph and @id with @none" ;
+	mf:action <m015-in.jsonld> ;
+	mf:name "graph id index map with aliased @none" ;
+	mf:result <m015-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm016>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "index on @graph and @id with @none" ;
+	mf:action <m016-in.jsonld> ;
+	mf:name "graph id index map with aliased @none" ;
+	mf:result <m016-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm017>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "index on @type" ;
+	mf:action <m017-in.jsonld> ;
+	mf:name "string value of type map expands to node reference" ;
+	mf:result <m017-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm018>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "index on @type" ;
+	mf:action <m018-in.jsonld> ;
+	mf:name "string value of type map expands to node reference with @type: @id" ;
+	mf:result <m018-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm019>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "index on @type" ;
+	mf:action <m019-in.jsonld> ;
+	mf:name "string value of type map expands to node reference with @type: @vocab" ;
+	mf:result <m019-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tm020>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "index on @type" ;
+	mf:action <m020-in.jsonld> ;
+	mf:name "string value of type map must not be a literal" ;
+	mf:result "invalid type mapping" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tn001>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using @nest" ;
+	mf:action <n001-in.jsonld> ;
+	mf:name "Expands input using @nest" ;
+	mf:result <n001-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tn002>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using @nest" ;
+	mf:action <n002-in.jsonld> ;
+	mf:name "Expands input using aliased @nest" ;
+	mf:result <n002-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tn003>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using @nest" ;
+	mf:action <n003-in.jsonld> ;
+	mf:name "Appends nested values when property at base and nested" ;
+	mf:result <n003-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tn004>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using @nest" ;
+	mf:action <n004-in.jsonld> ;
+	mf:name "Appends nested values from all @nest aliases in term order" ;
+	mf:result <n004-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tn005>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using @nest" ;
+	mf:action <n005-in.jsonld> ;
+	mf:name "Nested nested containers" ;
+	mf:result <n005-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tn006>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using @nest" ;
+	mf:action <n006-in.jsonld> ;
+	mf:name "Arrays of nested values" ;
+	mf:result <n006-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tn007>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using @nest" ;
+	mf:action <n007-in.jsonld> ;
+	mf:name "A nest of arrays" ;
+	mf:result <n007-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tn008>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion using @nest" ;
+	mf:action <n008-in.jsonld> ;
+	mf:name "Multiple keys may mapping to @type when nesting" ;
+	mf:result <n008-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tnt01>
+	a jld:PositiveSyntaxTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "literal_ascii_boundaries '\\x00\\x26\\x28...' from N-Triples" ;
+	mf:action <nt01-in.jsonld> ;
+	mf:name "literal_ascii_boundaries" .
+
+<#tnt02>
+	a jld:PositiveSyntaxTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "literal_with_UTF8_boundaries '\\x80\\x7ff\\x800\\xfff...' from N-Triples" ;
+	mf:action <nt02-in.jsonld> ;
+	mf:name "literal_with_UTF8_boundaries" .
+
+<#tnt03>
+	a jld:PositiveSyntaxTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "literal_all_controls '\\x00\\x01\\x02\\x03\\x04...' from N-Triples" ;
+	mf:action <nt03-in.jsonld> ;
+	mf:name "literal_all_controls" .
+
+<#tnt04>
+	a jld:PositiveSyntaxTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "literal_all_punctuation '!\"#$%&()...' from N-Triples" ;
+	mf:action <nt04-in.jsonld> ;
+	mf:name "literal_all_punctuation" .
+
+<#tnt05>
+	a jld:PositiveSyntaxTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "literal with squote \"x'y\" from N-Triples" ;
+	mf:action <nt05-in.jsonld> ;
+	mf:name "literal_with_squote" .
+
+<#tnt06>
+	a jld:PositiveSyntaxTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "literal with 2 squotes \"x''y\" from N-Triples" ;
+	mf:action <nt06-in.jsonld> ;
+	mf:name "literal_with_2_squotes" .
+
+<#tnt07>
+	a jld:PositiveSyntaxTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "literal with dquote \"x\"y\" from N-Triples" ;
+	mf:action <nt07-in.jsonld> ;
+	mf:name "literal_with_dquote" .
+
+<#tnt08>
+	a jld:PositiveSyntaxTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "literal with 2 dquotes \"\"\"a\"\"b\"\"\" from N-Triples" ;
+	mf:action <nt08-in.jsonld> ;
+	mf:name "literal_with_2_dquotes" .
+
+<#tnt09>
+	a jld:PositiveSyntaxTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "REVERSE SOLIDUS at end of literal from N-Triples" ;
+	mf:action <nt09-in.jsonld> ;
+	mf:name "literal_with_REVERSE_SOLIDUS2" .
+
+<#tnt10>
+	a jld:PositiveSyntaxTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "literal with CHARACTER TABULATION from N-Triples" ;
+	mf:action <nt10-in.jsonld> ;
+	mf:name "literal_with_CHARACTER_TABULATION" .
+
+<#tnt11>
+	a jld:PositiveSyntaxTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "literal with BACKSPACE from N-Triples" ;
+	mf:action <nt11-in.jsonld> ;
+	mf:name "literal_with_BACKSPACE" .
+
+<#tnt12>
+	a jld:PositiveSyntaxTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "literal with LINE FEED from N-Triples" ;
+	mf:action <nt12-in.jsonld> ;
+	mf:name "literal_with_LINE_FEED" .
+
+<#tnt13>
+	a jld:PositiveSyntaxTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "literal with CARRIAGE RETURN from N-Triples" ;
+	mf:action <nt13-in.jsonld> ;
+	mf:name "literal_with_CARRIAGE_RETURN" .
+
+<#tnt14>
+	a jld:PositiveSyntaxTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "literal with FORM FEED from N-Triples" ;
+	mf:action <nt14-in.jsonld> ;
+	mf:name "literal_with_FORM_FEED" .
+
+<#tnt15>
+	a jld:PositiveSyntaxTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "literal with REVERSE SOLIDUS from N-Triples" ;
+	mf:action <nt15-in.jsonld> ;
+	mf:name "literal_with_REVERSE_SOLIDUS" .
+
+<#tnt16>
+	a jld:PositiveSyntaxTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "literal with numeric escape4 \\u from N-Triples" ;
+	mf:action <nt16-in.jsonld> ;
+	mf:name "literal_with_numeric_escape4" .
+
+<#tp001>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "If processing mode is not set through API, it is set by the first context containing @version." ;
+	mf:action <p001-in.jsonld> ;
+	mf:name "@version may be specified after first context" ;
+	mf:result <p001-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tp002>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "If processing mode is not set through API, it is set by the first context containing @version." ;
+	mf:action <p002-in.jsonld> ;
+	mf:name "@version setting [1.0, 1.1, 1.0]" ;
+	mf:result <p002-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tp003>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "If processing mode is not set through API, it is set by the first context containing @version." ;
+	mf:action <p003-in.jsonld> ;
+	mf:name "@version setting [1.1, 1.0]" ;
+	mf:result <p003-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tp004>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "If processing mode is not set through API, it is set by the first context containing @version." ;
+	mf:action <p004-in.jsonld> ;
+	mf:name "@version setting [1.1, 1.0, 1.1]" ;
+	mf:result <p004-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpi01>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expanding index maps where index is a property." ;
+	mf:action <pi01-in.jsonld> ;
+	mf:name "error if @version is json-ld-1.0 for property-valued index" ;
+	mf:result "invalid term definition" ;
+	jld:option [
+		jld:processingMode "json-ld-1.0"^^xsd:string ;
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpi02>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expanding index maps where index is a property." ;
+	mf:action <pi02-in.jsonld> ;
+	mf:name "error if @container does not include @index for property-valued index" ;
+	mf:result "invalid term definition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpi03>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expanding index maps where index is a property." ;
+	mf:action <pi03-in.jsonld> ;
+	mf:name "error if @index is a keyword for property-valued index" ;
+	mf:result "invalid term definition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpi04>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expanding index maps where index is a property." ;
+	mf:action <pi04-in.jsonld> ;
+	mf:name "error if @index is not a string for property-valued index" ;
+	mf:result "invalid term definition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpi05>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expanding index maps where index is a property." ;
+	mf:action <pi05-in.jsonld> ;
+	mf:name "error if attempting to add property to value object for property-valued index" ;
+	mf:result "invalid value object" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpi06>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expanding index maps where index is a property." ;
+	mf:action <pi06-in.jsonld> ;
+	mf:name "property-valued index expands to property value, instead of @index (value)" ;
+	mf:result <pi06-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpi07>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expanding index maps where index is a property." ;
+	mf:action <pi07-in.jsonld> ;
+	mf:name "property-valued index appends to property value, instead of @index (value)" ;
+	mf:result <pi07-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpi08>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expanding index maps where index is a property." ;
+	mf:action <pi08-in.jsonld> ;
+	mf:name "property-valued index expands to property value, instead of @index (node)" ;
+	mf:result <pi08-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpi09>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expanding index maps where index is a property." ;
+	mf:action <pi09-in.jsonld> ;
+	mf:name "property-valued index appends to property value, instead of @index (node)" ;
+	mf:result <pi09-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpi10>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expanding index maps where index is a property." ;
+	mf:action <pi10-in.jsonld> ;
+	mf:name "property-valued index does not output property for @none" ;
+	mf:result <pi10-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpi11>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expanding index maps where index is a property." ;
+	mf:action <pi11-in.jsonld> ;
+	mf:name "property-valued index adds property to graph object" ;
+	mf:result <pi11-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr01>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Check error when overriding a protected term." ;
+	mf:action <pr01-in.jsonld> ;
+	mf:name "Protect a term" ;
+	mf:result "protected term redefinition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr02>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "A term with @protected: false is not protected." ;
+	mf:action <pr02-in.jsonld> ;
+	mf:name "Set a term to not be protected" ;
+	mf:result <pr02-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr03>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "A protected context protects all term definitions." ;
+	mf:action <pr03-in.jsonld> ;
+	mf:name "Protect all terms in context" ;
+	mf:result "protected term redefinition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr04>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "A protected context does not protect terms with @protected: false." ;
+	mf:action <pr04-in.jsonld> ;
+	mf:name "Do not protect term with @protected: false" ;
+	mf:result "protected term redefinition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr05>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "The Active context be set to null from an embedded context." ;
+	mf:action <pr05-in.jsonld> ;
+	mf:name "Clear active context with protected terms from an embedded context" ;
+	mf:result "invalid context nullification" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr06>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "The Active context may be set to null from a scoped context of a term." ;
+	mf:action <pr06-in.jsonld> ;
+	mf:name "Clear active context of protected terms from a term." ;
+	mf:result <pr06-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr08>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "A scoped context can protect terms." ;
+	mf:action <pr08-in.jsonld> ;
+	mf:name "Term with protected scoped context." ;
+	mf:result "protected term redefinition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr09>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "A protected term cannot redefine another protected term." ;
+	mf:action <pr09-in.jsonld> ;
+	mf:name "Attempt to redefine term in other protected context." ;
+	mf:result "protected term redefinition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr10>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Simple protected and unprotected terms." ;
+	mf:action <pr10-in.jsonld> ;
+	mf:name "Simple protected and unprotected terms." ;
+	mf:result <pr10-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr11>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Fail to override protected term." ;
+	mf:action <pr11-in.jsonld> ;
+	mf:name "Fail to override protected term." ;
+	mf:result "protected term redefinition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr12>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Scoped context fail to override protected term." ;
+	mf:action <pr12-in.jsonld> ;
+	mf:name "Scoped context fail to override protected term." ;
+	mf:result "protected term redefinition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr13>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Override unprotected term." ;
+	mf:action <pr13-in.jsonld> ;
+	mf:name "Override unprotected term." ;
+	mf:result <pr13-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr14>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Clear protection with null context." ;
+	mf:action <pr14-in.jsonld> ;
+	mf:name "Clear protection with null context." ;
+	mf:result <pr14-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr15>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Clear protection with array with null context" ;
+	mf:action <pr15-in.jsonld> ;
+	mf:name "Clear protection with array with null context" ;
+	mf:result <pr15-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr16>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Override protected terms after null." ;
+	mf:action <pr16-in.jsonld> ;
+	mf:name "Override protected terms after null." ;
+	mf:result <pr16-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr17>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Fail to override protected terms with type." ;
+	mf:action <pr17-in.jsonld> ;
+	mf:name "Fail to override protected terms with type." ;
+	mf:result "invalid context nullification" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr18>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Fail to override protected terms with type+null+ctx." ;
+	mf:action <pr18-in.jsonld> ;
+	mf:name "Fail to override protected terms with type+null+ctx." ;
+	mf:result "invalid context nullification" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr19>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Mix of protected and unprotected terms." ;
+	mf:action <pr19-in.jsonld> ;
+	mf:name "Mix of protected and unprotected terms." ;
+	mf:result <pr19-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr20>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Fail with mix of protected and unprotected terms with type+null+ctx." ;
+	mf:action <pr20-in.jsonld> ;
+	mf:name "Fail with mix of protected and unprotected terms with type+null+ctx." ;
+	mf:result "invalid context nullification" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr21>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Fail with mix of protected and unprotected terms with type+null." ;
+	mf:action <pr21-in.jsonld> ;
+	mf:name "Fail with mix of protected and unprotected terms with type+null." ;
+	mf:result "invalid context nullification" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr22>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Check legal overriding of type-scoped protected term from nested node." ;
+	mf:action <pr22-in.jsonld> ;
+	mf:name "Check legal overriding of type-scoped protected term from nested node." ;
+	mf:result <pr22-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr23>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Allows redefinition of protected alias term with same definition." ;
+	mf:action <pr23-in.jsonld> ;
+	mf:name "Allows redefinition of protected alias term with same definition." ;
+	mf:result <pr23-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr24>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Allows redefinition of protected prefix term with same definition." ;
+	mf:action <pr24-in.jsonld> ;
+	mf:name "Allows redefinition of protected prefix term with same definition." ;
+	mf:result <pr24-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr25>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Allows redefinition of terms with scoped contexts using same definitions." ;
+	mf:action <pr25-in.jsonld> ;
+	mf:name "Allows redefinition of terms with scoped contexts using same definitions." ;
+	mf:result <pr25-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr26>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Fails on redefinition of terms with scoped contexts using different definitions." ;
+	mf:action <pr26-in.jsonld> ;
+	mf:name "Fails on redefinition of terms with scoped contexts using different definitions." ;
+	mf:result "protected term redefinition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr27>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Allows redefinition of protected alias term with same definition modulo protected flag." ;
+	mf:action <pr27-in.jsonld> ;
+	mf:name "Allows redefinition of protected alias term with same definition modulo protected flag." ;
+	mf:result <pr27-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr28>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "A protected term with a null IRI mapping cannot be redefined." ;
+	mf:action <pr28-in.jsonld> ;
+	mf:name "Fails if trying to redefine a protected null term." ;
+	mf:result "protected term redefinition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr29>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Expansion of Compact IRIs considers if the term can be used as a prefix." ;
+	mf:action <pr29-in.jsonld> ;
+	mf:name "Does not expand a Compact IRI using a non-prefix term." ;
+	mf:result <pr29-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr30>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Keywords may not be redefined other than to protect them." ;
+	mf:action <pr30-in.jsonld> ;
+	mf:name "Keywords may be protected." ;
+	mf:result <pr30-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr31>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Keywords may not be redefined other than to protect them." ;
+	mf:action <pr31-in.jsonld> ;
+	mf:name "Protected keyword aliases cannot be overridden." ;
+	mf:result "protected term redefinition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr32>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Keywords may not be redefined other than to protect them." ;
+	mf:action <pr32-in.jsonld> ;
+	mf:name "Protected @type cannot be overridden." ;
+	mf:result "protected term redefinition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr33>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Keyword aliases can not be used as prefixes." ;
+	mf:action <pr33-in.jsonld> ;
+	mf:name "Fails if trying to declare a keyword alias as prefix." ;
+	mf:result "invalid term definition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr34>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Terms in the form of a keyword, which are not keywords, are ignored." ;
+	mf:action <pr34-in.jsonld> ;
+	mf:name "Ignores a non-keyword term starting with '@'" ;
+	mf:result <pr34-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr35>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Terms in the form of a keyword, which are not keywords, are ignored." ;
+	mf:action <pr35-in.jsonld> ;
+	mf:name "Ignores a non-keyword term starting with '@' (with @vocab)" ;
+	mf:result <pr35-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr36>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Terms in the form of a keyword, which are not keywords, are ignored." ;
+	mf:action <pr36-in.jsonld> ;
+	mf:name "Ignores a term mapping to a value in the form of a keyword." ;
+	mf:result <pr36-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr37>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Terms in the form of a keyword, which are not keywords, are ignored." ;
+	mf:action <pr37-in.jsonld> ;
+	mf:name "Ignores a term mapping to a value in the form of a keyword (with @vocab)." ;
+	mf:result <pr37-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr38>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Terms in the form of a keyword, which are not keywords, are ignored." ;
+	mf:action <pr38-in.jsonld> ;
+	mf:name "Ignores a term mapping to a value in the form of a keyword (@reverse)." ;
+	mf:result <pr38-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr39>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Terms in the form of a keyword, which are not keywords, are ignored." ;
+	mf:action <pr39-in.jsonld> ;
+	mf:name "Ignores a term mapping to a value in the form of a keyword (@reverse with @vocab)." ;
+	mf:result <pr39-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tpr40>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Check overriding of protected term from property-scoped context." ;
+	mf:action <pr40-in.jsonld> ;
+	mf:name "Protected terms and property-scoped contexts" ;
+	mf:result <pr40-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#trt01>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "numbers with no fractions but that are >= 1e21 are represented as xsd:double" ;
+	mf:action <rt01-in.jsonld> ;
+	mf:name "Representing numbers >= 1e21" ;
+	mf:result <rt01-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tso01>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "@import is invalid in 1.0." ;
+	mf:action <so01-in.jsonld> ;
+	mf:name "@import is invalid in 1.0." ;
+	mf:result "invalid context entry" ;
+	jld:option [
+		jld:processingMode "json-ld-1.0"^^xsd:string ;
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tso02>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "@import must be a string." ;
+	mf:action <so02-in.jsonld> ;
+	mf:name "@import must be a string" ;
+	mf:result "invalid @import value" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tso03>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "Processors must detect source contexts that include @import." ;
+	mf:action <so03-in.jsonld> ;
+	mf:name "@import overflow" ;
+	mf:result "invalid context entry" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tso05>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "type-scoped context with @propagate: true survive node-objects (with @import)" ;
+	mf:action <so05-in.jsonld> ;
+	mf:name "@propagate: true on type-scoped context with @import" ;
+	mf:result <so05-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tso06>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "property-scoped context with @propagate: false do not survive node-objects (with @import)" ;
+	mf:action <so06-in.jsonld> ;
+	mf:name "@propagate: false on property-scoped context with @import" ;
+	mf:result <so06-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tso07>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "A protected context protects all term definitions." ;
+	mf:action <so07-in.jsonld> ;
+	mf:name "Protect all terms in sourced context" ;
+	mf:result "protected term redefinition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tso08>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "The containing context is merged into the source context." ;
+	mf:action <so08-in.jsonld> ;
+	mf:name "Override term defined in sourced context" ;
+	mf:result <so08-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tso09>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "The containing context is merged into the source context." ;
+	mf:action <so09-in.jsonld> ;
+	mf:name "Override @vocab defined in sourced context" ;
+	mf:result <so09-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tso10>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "The containing context is merged into the source context." ;
+	mf:action <so10-in.jsonld> ;
+	mf:name "Protect terms in sourced context" ;
+	mf:result "protected term redefinition" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tso11>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "The containing context is merged into the source context." ;
+	mf:action <so11-in.jsonld> ;
+	mf:name "Override protected terms in sourced context" ;
+	mf:result <so11-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tso12>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "@import only valid within a term definition." ;
+	mf:action <so12-in.jsonld> ;
+	mf:name "@import may not be used in an imported context." ;
+	mf:result "invalid context entry" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#tso13>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "@import can only reference a single context." ;
+	mf:action <so13-in.jsonld> ;
+	mf:name "@import can only reference a single context" ;
+	mf:result "invalid remote context" ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#ttn01>
+	a jld:NegativeEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "@type: @none is illegal in json-ld-1.0." ;
+	mf:action <tn01-in.jsonld> ;
+	mf:name "@type: @none is illegal in 1.0." ;
+	mf:result "invalid type mapping" ;
+	jld:option [
+		jld:processingMode "json-ld-1.0"^^xsd:string ;
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#ttn02>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "@type: @none leaves inputs other than strings alone" ;
+	mf:action <tn02-in.jsonld> ;
+	mf:name "@type: @none expands strings as value objects" ;
+	mf:result <tn02-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#twf01>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "ToRdf emits only well-formed statements." ;
+	mf:action <wf01-in.jsonld> ;
+	mf:name "Triples including invalid subject IRIs are rejected" ;
+	mf:result <wf01-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#twf02>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "ToRdf emits only well-formed statements." ;
+	mf:action <wf02-in.jsonld> ;
+	mf:name "Triples including invalid predicate IRIs are rejected" ;
+	mf:result <wf02-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#twf03>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "ToRdf emits only well-formed statements." ;
+	mf:action <wf03-in.jsonld> ;
+	mf:name "Triples including invalid object IRIs are rejected" ;
+	mf:result <wf03-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#twf04>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "ToRdf emits only well-formed statements." ;
+	mf:action <wf04-in.jsonld> ;
+	mf:name "Triples including invalid type IRIs are rejected" ;
+	mf:result <wf04-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#twf05>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "ToRdf emits only well-formed statements." ;
+	mf:action <wf05-in.jsonld> ;
+	mf:name "Triples including invalid language tags are rejected" ;
+	mf:result <wf05-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
+
+<#twf07>
+	a jld:PositiveEvaluationTest ,
+		jld:ToRDFTest ;
+	rdfs:comment "ToRdf emits only well-formed statements." ;
+	mf:action <wf07-in.jsonld> ;
+	mf:name "Triples including invalid graph name IRIs are rejected" ;
+	mf:result <wf07-out.nq> ;
+	jld:option [
+		jld:specVersion "json-ld-1.1"^^xsd:string
+	] .
