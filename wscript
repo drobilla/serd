@@ -37,7 +37,6 @@ def configure(conf):
     conf.load('compiler_c')
     autowaf.configure(conf)
     autowaf.display_header('Serd Configuration')
-    autowaf.set_c99_mode(conf)
 
     conf.env.update({
         'BUILD_UTILS':  not Options.options.no_utils,
