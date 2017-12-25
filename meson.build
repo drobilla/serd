@@ -109,6 +109,7 @@ sources = [
   'src/node_syntax.c',
   'src/nodes.c',
   'src/output_stream.c',
+  'src/read_jsonld.c',
   'src/read_nquads.c',
   'src/read_ntriples.c',
   'src/read_utf8.c',

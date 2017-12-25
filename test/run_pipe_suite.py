@@ -41,6 +41,9 @@ def test_thru(
     osyntax,
     command_prefix,
 ):
+    if isyntax.upper() == 'JSONLD':
+        return 0
+
     """Test rewriting a file in the input syntax.
 
     This rewrites a source test file in the original fancy syntax, then
@@ -262,8 +265,10 @@ def test_suite(
     # Run all test types in the test suite
     results = Results()
     ns_rdftest = "http://www.w3.org/ns/rdftest#"
+    ns_jsonldtest = "https://w3c.github.io/json-ld-api/tests/vocab#"
     for test_class, instances in instances.items():
-        if test_class.startswith(ns_rdftest):
+        if (test_class.startswith(ns_rdftest) or
+            test_class.startswith(ns_jsonldtest)):
             expected = (
                 1
                 if "lax" not in command_prefix and "Negative" in test_class

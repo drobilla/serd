@@ -1225,6 +1225,9 @@ serd_writer_write_statement(SerdWriter* const          writer,
   case SERD_TRIG:
     return write_trig_statement(
       writer, flags, subject, predicate, object, graph);
+
+  case SERD_JSONLD:
+    return SERD_ERR_INTERNAL;
   }
 
   return SERD_SUCCESS;

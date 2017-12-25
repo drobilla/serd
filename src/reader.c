@@ -195,6 +195,18 @@ emit_statement(SerdReader* const reader,
 static SerdStatus
 read_statement(SerdReader* const reader)
 {
+  switch (reader->syntax) {
+  case SERD_SYNTAX_EMPTY:
+    return SERD_FAILURE;
+  case SERD_TURTLE:
+  case SERD_NTRIPLES:
+  case SERD_NQUADS:
+  case SERD_TRIG:
+    break;
+  case SERD_JSONLD:
+    return read_jsonLdDoc(reader);
+  }
+
   return read_n3_statement(reader);
 }
 
@@ -229,6 +241,8 @@ serd_reader_read_document(SerdReader* const reader)
     return read_nquadsDoc(reader);
   case SERD_TRIG:
     return read_turtleTrigDoc(reader);
+  case SERD_JSONLD:
+    return read_jsonLdDoc(reader);
   }
 
   return SERD_SUCCESS;
@@ -258,7 +272,7 @@ serd_reader_new(SerdWorld* const      world,
   me->stack   = serd_stack_new(stack_size, serd_node_align);
   me->syntax  = syntax;
   me->flags   = flags;
-  me->next_id = 1;
+  me->next_id = syntax == SERD_JSONLD ? 0 : 1;
   me->strict  = !(flags & SERD_READ_LAX);
 
   // Reserve a bit of space at the end of the stack to zero pad nodes

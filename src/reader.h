@@ -54,6 +54,7 @@ struct SerdReaderImpl {
   SerdByteSource* source;
   SerdEnv*        env;
   SerdStack       stack;
+  SerdStack       env_stack;
   SerdSyntax      syntax;
   SerdReaderFlags flags;
   unsigned        next_id;
@@ -119,6 +120,12 @@ read_n3_statement(SerdReader* reader);
 
 SerdStatus
 read_turtleTrigDoc(SerdReader* reader);
+
+SerdStatus
+read_jsonLd_statement(SerdReader* reader);
+
+SerdStatus
+read_jsonLdDoc(SerdReader* reader);
 
 static inline int
 peek_byte(SerdReader* reader)

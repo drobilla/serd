@@ -31,6 +31,7 @@ static const Syntax syntaxes[] = {
   {"ntriples", ".nt", SERD_NTRIPLES},
   {"nquads", ".nq", SERD_NQUADS},
   {"trig", ".trig", SERD_TRIG},
+  {"jsonld", ".jsonld", SERD_JSONLD},
   {NULL, NULL, SERD_SYNTAX_EMPTY},
 };
 

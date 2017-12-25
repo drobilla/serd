@@ -32,6 +32,9 @@ def test_input_syntax(test_class):
     if "Trig" in test_class:
         return "Trig"
 
+    if "json-ld" in test_class:
+        return "JSONLD"
+
     raise Exception("Unknown test class <{}>".format(test_class))
 
 
@@ -42,6 +45,9 @@ def test_output_syntax(test_class):
         return "NTriples"
 
     if "NQuads" in test_class or "Trig" in test_class:
+        return "NQuads"
+
+    if "json-ld" in test_class:
         return "NQuads"
 
     raise Exception("Unknown test class <{}>".format(test_class))

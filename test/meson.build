@@ -436,6 +436,7 @@ if is_variable('serd_pipe') and is_variable('serd_sort')
   subdir('NTriplesTests')
   subdir('TriGTests')
   subdir('TurtleTests')
+  subdir('JSONLDTests')
 
   # Extra RDF-driven test suites for serd
   subdir('bad')

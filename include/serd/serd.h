@@ -369,7 +369,8 @@ typedef enum {
   SERD_TURTLE       = 1, ///< Terse triples http://www.w3.org/TR/turtle
   SERD_NTRIPLES     = 2, ///< Flat triples http://www.w3.org/TR/n-triples/
   SERD_NQUADS       = 3, ///< Flat quads http://www.w3.org/TR/n-quads/
-  SERD_TRIG         = 4  ///< Terse quads http://www.w3.org/TR/trig/
+  SERD_TRIG         = 4, ///< Terse quads http://www.w3.org/TR/trig/
+  SERD_JSONLD       = 5, ///< JSON-LD https://www.w3.org/TR/json-ld11/
 } SerdSyntax;
 
 /**

@@ -17,7 +17,8 @@
 #ifndef SERD_NAMESPACES_H
 #define SERD_NAMESPACES_H
 
-#define NS_XSD "http://www.w3.org/2001/XMLSchema#"
-#define NS_RDF "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+#define NS_XSD  "http://www.w3.org/2001/XMLSchema#"
+#define NS_RDF  "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+#define NS_RDFS "http://www.w3.org/2000/01/rdf-schema#"
 
 #endif // SERD_NAMESPACES_H
