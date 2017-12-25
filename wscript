@@ -354,7 +354,7 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
         thru_options_iter = itertools.cycle(thru_options)
 
         with autowaf.begin_tests(ctx, APPNAME, str(test_class)):
-            for (num, test) in enumerate(tests):
+            for (num, test) in enumerate(sorted(tests)):
                 action_node = model[test][mf + 'action'][0]
                 action      = os.path.join('tests', testdir, os.path.basename(action_node))
                 abs_action  = os.path.join(srcdir, action)
