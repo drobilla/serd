@@ -718,6 +718,16 @@ serd_env_set_prefix_from_strings(SerdEnv*       env,
                                  const uint8_t* uri);
 
 /**
+   Set a term.
+*/
+SERD_API
+SerdStatus
+serd_env_set_term(SerdEnv*        env,
+                  const SerdNode* name,
+                  const SerdNode* uri,
+                  const SerdNode* datatype);
+
+/**
    Qualify `uri` into a CURIE if possible.
 */
 SERD_API
@@ -749,6 +759,17 @@ SERD_API
 SerdNode
 serd_env_expand_node(const SerdEnv*  env,
                      const SerdNode* node);
+
+/**
+   Expand `node`.
+*/
+SERD_API
+SerdStatus
+serd_env_expand_term(const SerdEnv*   env,
+                     const SerdNode*  term,
+                     SerdChunk*       uri_prefix,
+                     SerdChunk*       uri_suffix,
+                     const SerdNode** datatype);
 
 /**
    Call `func` for each prefix defined in `env`.
