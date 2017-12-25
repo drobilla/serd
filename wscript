@@ -74,6 +74,7 @@ def configure(conf):
 
 lib_source = ['src/byte_source.c',
               'src/env.c',
+              'src/jsonld.c',
               'src/n3.c',
               'src/node.c',
               'src/reader.c',
@@ -237,6 +238,9 @@ def earl_assertion(test, passed, asserter):
 serdi = './serdi_static'
 
 def test_thru(check, base, path, check_path, flags, isyntax, osyntax, opts=[]):
+    if isyntax == 'JSONLD':
+        return
+
     out_path = path + '.pass'
     out_cmd = [serdi] + opts + [f for sublist in flags for f in sublist] + [
         '-i', isyntax,
@@ -269,7 +273,7 @@ def file_uri_to_path(uri):
 def _test_output_syntax(test_class):
     if 'NTriples' in test_class or 'Turtle' in test_class:
         return 'NTriples'
-    elif 'NQuads' in test_class or 'Trig' in test_class:
+    elif 'NQuads' in test_class or 'Trig' in test_class or 'json' in test_class:
         return 'NQuads'
     raise Exception('Unknown test class <%s>' % test_class)
 
@@ -367,8 +371,10 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, options=[]):
                       expected=None, name=action + ' lax')
 
     ns_rdftest = 'http://www.w3.org/ns/rdftest#'
+    ns_jsonldtest = 'https://json-ld.org/test-suite/vocab#'
     for test_class, instances in instances.items():
-        if test_class.startswith(ns_rdftest):
+        if (test_class.startswith(ns_rdftest) or
+            test_class.startswith(ns_jsonldtest)):
             expected = 1 if 'Negative' in test_class else 0
             run_tests(test_class, instances, expected)
 
@@ -376,7 +382,7 @@ def test(tst):
     import tempfile
 
     # Create test output directories
-    for i in ['bad', 'good', 'TurtleTests', 'NTriplesTests', 'NQuadsTests', 'TriGTests']:
+    for i in ['bad', 'good', 'TurtleTests', 'NTriplesTests', 'NQuadsTests', 'TriGTests', 'JSONLDTests']:
         try:
             test_dir = os.path.join('tests', i)
             os.makedirs(test_dir)
@@ -457,6 +463,8 @@ def test(tst):
                    'NQuadsTests', report, 'NQuads')
         test_suite(tst, w3c_base + 'TriGTests/',
                    'TriGTests', report, 'Trig', ['-a'])
+        test_suite(tst, 'http://json-ld.org/test-suite/tests/',
+                   'JSONLDTests', report, 'JSONLD', ['-a'])
 
 def posts(ctx):
     path = str(ctx.path.abspath())

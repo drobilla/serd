@@ -152,7 +152,8 @@ static bool
 read_statement(SerdReader* reader)
 {
 	switch (reader->syntax) {
-	default: return read_n3_statement(reader);
+	case SERD_JSONLD: return read_js_doc(reader);
+	default:          return read_n3_statement(reader);
 	}
 }
 
@@ -160,6 +161,7 @@ static bool
 read_doc(SerdReader* reader)
 {
 	switch (reader->syntax) {
+	case SERD_JSONLD: return read_js_doc(reader);
 	case SERD_NQUADS: return read_nquadsDoc(reader);
 	default:          return read_turtleTrigDoc(reader);
 	}
@@ -184,7 +186,7 @@ serd_reader_new(SerdSyntax        syntax,
 	me->default_graph    = SERD_NODE_NULL;
 	me->stack            = serd_stack_new(SERD_PAGE_SIZE);
 	me->syntax           = syntax;
-	me->next_id          = 1;
+	me->next_id          = syntax == SERD_JSONLD ? 0 : 1;
 	me->strict           = true;
 
 	me->rdf_first = push_node(me, SERD_URI, NS_RDF "first", 48);

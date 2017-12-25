@@ -565,6 +565,9 @@ write_curie(SerdWriter* const        writer,
 			sink(" ;", 2, writer);
 			write_newline(writer);
 		}
+		return true;
+	default:
+		return false;
 	}
 	return true;
 }

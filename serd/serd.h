@@ -121,7 +121,13 @@ typedef enum {
 	   TriG - Terse RDF quads (UTF-8).
 	   @see <a href="https://www.w3.org/TR/trig/">Trig</a>
 	*/
-	SERD_TRIG = 4
+	SERD_TRIG = 4,
+
+	/**
+	   JSON-LD - JSON-based Linked Data (UTF-8).
+	   @see <a href="https://json-ld.org/spec/latest/json-ld/">JSON-LD</a>
+	*/
+	SERD_JSONLD = 5
 } SerdSyntax;
 
 /**

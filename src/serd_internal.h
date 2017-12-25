@@ -33,8 +33,9 @@
 #   include <fcntl.h>
 #endif
 
-#define NS_XSD "http://www.w3.org/2001/XMLSchema#"
-#define NS_RDF "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+#define NS_XSD  "http://www.w3.org/2001/XMLSchema#"
+#define NS_RDF  "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+#define NS_RDFS "http://www.w3.org/2000/01/rdf-schema#"
 
 #define SERD_PAGE_SIZE 4096
 
@@ -582,6 +583,7 @@ struct SerdReaderImpl {
 	SerdNode          default_graph;
 	SerdByteSource    source;
 	SerdStack         stack;
+	SerdStack         env_stack;
 	SerdSyntax        syntax;
 	unsigned          next_id;
 	SerdStatus        status;
@@ -620,6 +622,9 @@ bool emit_statement(SerdReader* reader, ReadContext ctx, Ref o, Ref d, Ref l);
 bool read_n3_statement(SerdReader* reader);
 bool read_nquadsDoc(SerdReader* reader);
 bool read_turtleTrigDoc(SerdReader* reader);
+
+bool read_js_statement(SerdReader* reader);
+bool read_js_doc(SerdReader* reader);
 
 typedef enum {
 	FIELD_NONE,

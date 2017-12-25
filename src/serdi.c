@@ -40,6 +40,7 @@ static const Syntax syntaxes[] = {
 	{SERD_NTRIPLES, "ntriples", ".nt"},
 	{SERD_NQUADS,   "nquads",   ".nq"},
 	{SERD_TRIG,     "trig",     ".trig"},
+	{SERD_JSONLD,   "jsonld",   ".jsonld"},
 	{(SerdSyntax)0, NULL, NULL}
 };
 
@@ -255,7 +256,9 @@ main(int argc, char** argv)
 		}
 	}
 
-	if ((input_syntax == SERD_TURTLE || input_syntax == SERD_TRIG) ||
+	if ((input_syntax == SERD_TURTLE ||
+	     input_syntax == SERD_TRIG ||
+	     input_syntax == SERD_JSONLD) ||
 	    (output_style & SERD_STYLE_CURIED)) {
 		// Base URI may change and/or we're abbreviating URIs, so must resolve
 		output_style |= SERD_STYLE_RESOLVED;
