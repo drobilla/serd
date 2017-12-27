@@ -83,6 +83,7 @@ print_usage(const char* name, bool error)
 	fprintf(os, "Usage: %s [OPTION]... INPUT [BASE_URI]\n", name);
 	fprintf(os, "Read and write RDF syntax.\n");
 	fprintf(os, "Use - for INPUT to read from standard input.\n\n");
+	fprintf(os, "  -a           Write ASCII output if possible.\n");
 	fprintf(os, "  -b           Fast bulk output for large serialisations.\n");
 	fprintf(os, "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n");
 	fprintf(os, "  -e           Eat input one character at a time.\n");
@@ -123,6 +124,7 @@ main(int argc, char** argv)
 	SerdSyntax     input_syntax  = (SerdSyntax)0;
 	SerdSyntax     output_syntax = (SerdSyntax)0;
 	bool           from_file     = true;
+	bool           ascii         = false;
 	bool           bulk_read     = true;
 	bool           bulk_write    = false;
 	bool           full_uris     = false;
@@ -138,6 +140,8 @@ main(int argc, char** argv)
 			in_name = (const uint8_t*)"(stdin)";
 			in_fd   = stdin;
 			break;
+		} else if (argv[a][1] == 'a') {
+			ascii = true;
 		} else if (argv[a][1] == 'b') {
 			bulk_write = true;
 		} else if (argv[a][1] == 'e') {
@@ -230,7 +234,8 @@ main(int argc, char** argv)
 	SerdEnv* env    = serd_env_new(&base);
 
 	int output_style = 0;
-	if (output_syntax == SERD_NTRIPLES || output_syntax == SERD_NQUADS) {
+	if (output_syntax == SERD_NTRIPLES || output_syntax == SERD_NQUADS ||
+	    ascii) {
 		output_style |= SERD_STYLE_ASCII;
 	} else if (output_syntax == SERD_TURTLE) {
 		output_style |= SERD_STYLE_ABBREVIATED;
