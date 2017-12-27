@@ -51,7 +51,8 @@ serd_fopen(const char* path, const char* mode)
 {
 	FILE* fd = fopen(path, mode);
 	if (!fd) {
-		fprintf(stderr, "Error opening file %s (%s)\n", path, strerror(errno));
+		fprintf(stderr, "error: failed to open file %s (%s)\n",
+		        path, strerror(errno));
 		return NULL;
 	}
 #if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
