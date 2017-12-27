@@ -34,9 +34,9 @@ def options(ctx):
                        dest=name.replace('-', '_'), help=desc)
 
 def configure(conf):
-    conf.load('compiler_c')
-    autowaf.configure(conf)
     autowaf.display_header('Serd Configuration')
+    conf.load('compiler_c', cache=True)
+    conf.load('autowaf', cache=True)
 
     conf.env.update({
         'BUILD_UTILS':  not Options.options.no_utils,
@@ -57,16 +57,17 @@ def configure(conf):
         for name, header in {'posix_memalign': 'stdlib.h',
                              'posix_fadvise':  'fcntl.h',
                              'fileno':         'stdio.h'}.items():
-            conf.check(function_name = name,
-                       header_name   = header,
-                       define_name   = 'HAVE_' + name.upper(),
-                       defines       = ['_POSIX_C_SOURCE=200809L'],
-                       mandatory     = False)
+            autowaf.check_function(conf, 'c', name,
+                                   header_name = header,
+                                   define_name = 'HAVE_' + name.upper(),
+                                   defines     = ['_POSIX_C_SOURCE=200809L'],
+                                   mandatory   = False)
 
     autowaf.define(conf, 'SERD_VERSION', SERD_VERSION)
     autowaf.set_lib_env(conf, 'serd', SERD_VERSION)
     conf.write_config_header('serd_config.h', remove=False)
 
+    autowaf.display_summary(conf)
     autowaf.display_msg(conf, 'Static library', bool(conf.env.BUILD_STATIC))
     autowaf.display_msg(conf, 'Shared library', bool(conf.env.BUILD_SHARED))
     autowaf.display_msg(conf, 'Utilities', bool(conf.env.BUILD_UTILS))
