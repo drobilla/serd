@@ -250,11 +250,21 @@ def earl_assertion(test, passed, asserter):
        datetime.datetime.now().replace(microsecond=0).isoformat())
 
 def check_output(out_filename, check_filename, subst_from='', subst_to=''):
+    import difflib
+    import sys
     if not os.access(out_filename, os.F_OK):
         Logs.pprint('RED', 'FAIL: output %s is missing' % out_filename)
     elif not file_equals(check_filename, out_filename, subst_from, subst_to):
         Logs.pprint('RED', 'FAIL: %s != %s' % (os.path.abspath(out_filename),
                                                check_filename))
+        with open(out_filename) as out_file:
+            with open(check_filename) as check_file:
+                diff = difflib.unified_diff(check_file.readlines(),
+                                            out_file.readlines(),
+                                            fromfile=check_filename,
+                                            tofile=out_filename)
+                for line in diff:
+                    sys.stderr.write(line)
     else:
         return True
 
