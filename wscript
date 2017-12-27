@@ -270,15 +270,16 @@ def check_output(out_filename, check_filename, subst_from='', subst_to=''):
 
     return False
 
-def test_thru(ctx, base, path, check_filename, flags, isyntax, osyntax, quiet=False):
+def test_thru(ctx, base, path, check_filename, flags, isyntax, osyntax,
+              options='', quiet=False):
     in_filename = os.path.join(ctx.path.abspath(), path);
     out_filename = path + '.thru'
 
-    command = ('%s %s -i %s -o %s -p foo "%s" "%s" | '
-               '%s -i %s -o %s -c foo - "%s" > %s') % (
-                   'serdi_static', flags.ljust(5),
+    command = ('serdi_static %s %s -i %s -o %s -p foo "%s" "%s" | '
+               'serdi_static %s -i %s -o %s -c foo - "%s" > %s') % (
+                   options, flags.ljust(5),
                    isyntax, isyntax, in_filename, base,
-                   'serdi_static', isyntax, osyntax, base, out_filename)
+                   options, isyntax, osyntax, base, out_filename)
 
     if autowaf.run_test(ctx, APPNAME, command, 0, name='  to ' + out_filename, quiet=quiet):
         autowaf.run_test(
@@ -290,8 +291,10 @@ def test_thru(ctx, base, path, check_filename, flags, isyntax, osyntax, quiet=Fa
     else:
         Logs.pprint('RED', 'FAIL: error running %s' % command)
 
-def test_suite(ctx, srcdir, base, testdir, report, isyntax, osyntax):
+def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
     import itertools
+
+    srcdir = ctx.path.abspath()
 
     def load_rdf(filename):
         "Load an RDF file into python dictionaries via serdi.  Only supports URIs."
@@ -310,7 +313,6 @@ def test_suite(ctx, srcdir, base, testdir, report, isyntax, osyntax):
         return model
 
     mf = 'http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#'
-    base_uri = os.path.join(base, testdir, '')
     model = load_rdf(os.path.join(srcdir, 'tests', testdir, 'manifest.ttl'))
 
     asserter = ''
@@ -339,8 +341,8 @@ def test_suite(ctx, srcdir, base, testdir, report, isyntax, osyntax):
                 action      = os.path.join('tests', testdir, os.path.basename(action_node))
                 abs_action  = os.path.join(srcdir, action)
                 uri         = base_uri + os.path.basename(action)
-                command     = 'serdi_static -f "%s" "%s" > %s' % (
-                    abs_action, uri, action + '.out')
+                command     = 'serdi_static %s -f "%s" "%s" > %s' % (
+                    options, abs_action, uri, action + '.out')
 
                 # Run strict test
                 result = run_test(command, expected_return, action)
@@ -353,11 +355,11 @@ def test_suite(ctx, srcdir, base, testdir, report, isyntax, osyntax):
                         True, name=str(action) + ' check', quiet=True)
 
                     # Run round-trip tests
-                    thru_flags = ['-b', '-e', '-f', '-r http://example.org/']
+                    thru_flags = [options, '-b', '-e', '-f', '-r http://example.org/']
                     for n in range(len(thru_flags) + 1):
                         for flags in itertools.combinations(thru_flags, n):
                             test_thru(ctx, uri, action, check_path,
-                                      ' '.join(flags), isyntax, osyntax, quiet=True)
+                                      ' '.join(flags), isyntax, osyntax, options, quiet=True)
 
                 # Write test report entry
                 if report is not None:
@@ -447,8 +449,8 @@ def test(ctx):
 
     # Serd-specific test cases
     serd_base = 'http://drobilla.net/sw/serd/tests/'
-    test_suite(ctx, srcdir, serd_base, 'good', None, 'Turtle', 'NTriples')
-    test_suite(ctx, srcdir, serd_base, 'bad', None, 'Turtle', 'NTriples')
+    test_suite(ctx, serd_base + 'good/', 'good', None, 'Turtle', 'NTriples')
+    test_suite(ctx, serd_base + 'bad/', 'bad', None, 'Turtle', 'NTriples')
 
     # Standard test suites
     with open('earl.ttl', 'w') as report:
@@ -460,10 +462,12 @@ def test(ctx):
                 report.write(line)
 
         w3c_base = 'http://www.w3.org/2013/'
-        test_suite(ctx, srcdir, w3c_base, 'TurtleTests', report, 'Turtle', 'NTriples')
-        test_suite(ctx, srcdir, w3c_base, 'NTriplesTests', report, 'NTriples', 'NTriples')
-        test_suite(ctx, srcdir, w3c_base, 'NQuadsTests', report, 'NQuads', 'NQuads')
-        test_suite(ctx, srcdir, w3c_base, 'TriGTests', report, 'Trig', 'NQuads')
+        test_suite(ctx, w3c_base + 'NTriplesTests/',
+                   'NTriplesTests', report, 'NTriples', 'NTriples')
+        test_suite(ctx, w3c_base + 'NQuadsTests/',
+                   'NQuadsTests', report, 'NQuads', 'NQuads')
+        test_suite(ctx, w3c_base + 'TriGTests/',
+                   'TriGTests', report, 'TriG', 'NQuads', '-a')
 
     autowaf.post_test(ctx, APPNAME)
 

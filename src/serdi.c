@@ -234,8 +234,7 @@ main(int argc, char** argv)
 	SerdEnv* env    = serd_env_new(&base);
 
 	int output_style = 0;
-	if (output_syntax == SERD_NTRIPLES || output_syntax == SERD_NQUADS ||
-	    ascii) {
+	if (output_syntax == SERD_NTRIPLES || ascii) {
 		output_style |= SERD_STYLE_ASCII;
 	} else if (output_syntax == SERD_TURTLE) {
 		output_style |= SERD_STYLE_ABBREVIATED;
