@@ -291,6 +291,16 @@ def test_thru(ctx, base, path, check_filename, flags, isyntax, osyntax,
     else:
         Logs.pprint('RED', 'FAIL: error running %s' % command)
 
+def file_uri_to_path(uri):
+    try:
+        from urlparse import urlparse # Python 2
+    except:
+        from urllib.parse import urlparse # Python 3
+
+    path  = urlparse(uri).path
+    drive = os.path.splitdrive(path[1:])[0]
+    return path if not drive else path[1:]
+
 def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
     import itertools
 
@@ -355,7 +365,8 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
                 result = run_test(command, expected_return, action)
                 if (mf + 'result') in model[test]:
                     # Check output against test suite
-                    check_path = model[test][mf + 'result'][0][len('file://'):]
+                    check_uri  = model[test][mf + 'result'][0]
+                    check_path = file_uri_to_path(check_uri)
                     result     = autowaf.run_test(
                         ctx, APPNAME,
                         lambda: check_output(action + '.out', check_path),
