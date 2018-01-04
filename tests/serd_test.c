@@ -484,7 +484,7 @@ main(void)
 	// Test SerdReader and SerdWriter
 
 	const char* path = "serd_test.ttl";
-	FILE* fd = fopen(path, "w");
+	FILE* fd = fopen(path, "wb");
 	if (!fd) {
 		FAILF("Failed to open file %s\n", path);
 	}

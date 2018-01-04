@@ -1837,7 +1837,7 @@ serd_reader_read_file(SerdReader*    reader,
 		return SERD_ERR_BAD_ARG;
 	}
 
-	FILE* fd = serd_fopen((const char*)path, "r");
+	FILE* fd = serd_fopen((const char*)path, "rb");
 	if (!fd) {
 		free(path);
 		return SERD_ERR_UNKNOWN;
