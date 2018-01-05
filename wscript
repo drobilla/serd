@@ -374,7 +374,7 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
 
                     # Run round-trip tests
                     test_thru(ctx, uri, action, check_path,
-                              ' '.join(thru_options_iter.next()), isyntax, osyntax, options, quiet=True)
+                              ' '.join(next(thru_options_iter)), isyntax, osyntax, options, quiet=True)
 
                 # Write test report entry
                 if report is not None:
