@@ -335,6 +335,13 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
         if len(tests) == 0:
             return
 
+        thru_flags   = ['-e', '-f', '-b', '-r http://example.org/']
+        thru_options = []
+        for n in range(len(thru_flags) + 1):
+            for flags in itertools.combinations(thru_flags, n):
+                thru_options += [flags]
+        thru_options_iter = itertools.cycle(thru_options)
+
         with autowaf.begin_tests(ctx, APPNAME, str(test_class)):
             for (num, test) in enumerate(tests):
                 action_node = model[test][mf + 'action'][0]
@@ -355,11 +362,8 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
                         True, name=str(action) + ' check', quiet=True)
 
                     # Run round-trip tests
-                    thru_flags = [options, '-b', '-e', '-f', '-r http://example.org/']
-                    for n in range(len(thru_flags) + 1):
-                        for flags in itertools.combinations(thru_flags, n):
-                            test_thru(ctx, uri, action, check_path,
-                                      ' '.join(flags), isyntax, osyntax, options, quiet=True)
+                    test_thru(ctx, uri, action, check_path,
+                              ' '.join(thru_options_iter.next()), isyntax, osyntax, options, quiet=True)
 
                 # Write test report entry
                 if report is not None:
