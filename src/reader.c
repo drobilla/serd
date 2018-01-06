@@ -264,7 +264,7 @@ serd_reader_read_file(SerdReader*    reader,
 
 	FILE* fd = serd_fopen((const char*)path, "rb");
 	if (!fd) {
-		free(path);
+		serd_free(path);
 		return SERD_ERR_UNKNOWN;
 	}
 

@@ -106,8 +106,8 @@ check_file_uri(const char* hostname,
 		            path, node.buf, out_path);
 	}
 
-	free(out_path);
-	free(out_hostname);
+	serd_free(out_path);
+	serd_free(out_hostname);
 	serd_node_free(&node);
 	return ret;
 }
@@ -225,7 +225,7 @@ main(void)
 		}
 
 		serd_node_free(&blob);
-		free(out);
+		serd_free(out);
 		free(data);
 	}
 
@@ -325,7 +325,7 @@ main(void)
 	if (strcmp((const char*)out_path, "/foo/bar")) {
 		FAILF("bad tolerance of junk escape: `%s'\n", out_path);
 	}
-	free(out_path);
+	serd_free(out_path);
 
 	// Test serd_node_equals
 
@@ -618,7 +618,7 @@ main(void)
 		FAILF("Incorrect chunk output:\n%s\n", chunk.buf);
 	}
 
-	free(out);
+	serd_free(out);
 
 	// Rewind and test reader
 	fseek(fd, 0, SEEK_SET);

@@ -275,6 +275,17 @@ typedef enum {
 } SerdStyle;
 
 /**
+   Free memory allocated by Serd.
+
+   This function exists because some systems require memory allocated by a
+   library to be freed by code in the same library.  It is otherwise equivalent
+   to the standard C free() function.
+*/
+SERD_API
+void
+serd_free(void* ptr);
+
+/**
    @name String Utilities
    @{
 */
@@ -316,7 +327,7 @@ serd_strtod(const char* str, char** endptr);
    @param str Base64 string to decode.
    @param len The length of `str`.
    @param size Set to the size of the returned blob in bytes.
-   @return A newly allocated blob which must be freed with free().
+   @return A newly allocated blob which must be freed with serd_free().
 */
 SERD_API
 void*
@@ -386,7 +397,7 @@ serd_uri_to_path(const uint8_t* uri);
    @param hostname If non-NULL, set to the hostname, if present.
    @return The path component of the URI.
 
-   The returned path and `*hostname` must be freed with free().
+   The returned path and `*hostname` must be freed with serd_free().
 */
 SERD_API
 uint8_t*

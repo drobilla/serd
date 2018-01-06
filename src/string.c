@@ -18,6 +18,12 @@
 
 #include <math.h>
 
+void
+serd_free(void* ptr)
+{
+	free(ptr);
+}
+
 const uint8_t*
 serd_strerror(SerdStatus status)
 {
