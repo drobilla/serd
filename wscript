@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import glob
+import io
 import os
 import waflib.Logs as Logs
 import waflib.Options as Options
@@ -214,8 +215,8 @@ def upload_docs(ctx):
         os.system('rsync -avz --delete -e ssh build/%s.html drobilla@drobilla.net:~/drobilla.net/man/' % page)
 
 def file_equals(patha, pathb, subst_from='', subst_to=''):
-    with open(patha, 'rU', encoding='utf-8') as fa:
-        with open(pathb, 'rU', encoding='utf-8') as fb:
+    with io.open(patha, 'rU', encoding='utf-8') as fa:
+        with io.open(pathb, 'rU', encoding='utf-8') as fb:
             for linea in fa:
                 lineb = fb.readline()
                 if (linea.replace(subst_from, subst_to) !=
@@ -257,8 +258,8 @@ def check_output(out_filename, check_filename, subst_from='', subst_to=''):
     elif not file_equals(check_filename, out_filename, subst_from, subst_to):
         Logs.pprint('RED', 'FAIL: %s != %s' % (os.path.abspath(out_filename),
                                                check_filename))
-        with open(out_filename, encoding='utf-8') as out_file:
-            with open(check_filename, encoding='utf-8') as check_file:
+        with io.open(out_filename, encoding='utf-8') as out_file:
+            with io.open(check_filename, encoding='utf-8') as check_file:
                 diff = difflib.unified_diff(check_file.readlines(),
                                             out_file.readlines(),
                                             fromfile=check_filename,
