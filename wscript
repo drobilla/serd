@@ -487,6 +487,8 @@ def test(ctx):
                    'TriGTests', report, 'TriG', 'NQuads', '-a')
 
     autowaf.post_test(ctx, APPNAME)
+    if ctx.autowaf_tests[APPNAME]['failed'] > 0:
+        ctx.fatal('Failed %s tests' % APPNAME)
 
 def posts(ctx):
     path = str(ctx.path.abspath())
