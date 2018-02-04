@@ -610,6 +610,26 @@ SERD_API
 SerdNode
 serd_node_copy(const SerdNode* SERD_NULLABLE node);
 
+/// Return the type of a node (SERD_URI, SERD_BLANK, or SERD_LITERAL)
+SERD_PURE_API
+SerdNodeType
+serd_node_type(const SerdNode* SERD_NONNULL node);
+
+/// Return the string value of a node
+SERD_PURE_API
+const char* SERD_NONNULL
+serd_node_string(const SerdNode* SERD_NONNULL node);
+
+/// Return the length of the string value of a node in bytes
+SERD_PURE_API
+size_t
+serd_node_length(const SerdNode* SERD_NONNULL node);
+
+/// Return the flags (string properties) of a node
+SERD_PURE_API
+SerdNodeFlags
+serd_node_flags(const SerdNode* SERD_NONNULL node);
+
 /// Return true iff `a` is equal to `b`
 SERD_PURE_API
 bool
