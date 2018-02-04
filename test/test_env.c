@@ -26,65 +26,79 @@ count_prefixes(void* handle, const SerdNode* name, const SerdNode* uri)
 static void
 test_env(void)
 {
-  SerdNode u   = serd_node_from_string(SERD_URI, NS_EG "foo");
-  SerdNode b   = serd_node_from_string(SERD_CURIE, "invalid");
-  SerdNode c   = serd_node_from_string(SERD_CURIE, "eg.2:b");
-  SerdEnv* env = serd_env_new(NULL);
+  SerdNode* u   = serd_new_string(SERD_URI, NS_EG "foo");
+  SerdNode* b   = serd_new_string(SERD_CURIE, "invalid");
+  SerdNode* e   = serd_new_string(SERD_URI, "");
+  SerdNode* c   = serd_new_string(SERD_CURIE, "eg.2:b");
+  SerdNode* s   = serd_new_string(SERD_LITERAL, "hello");
+  SerdEnv*  env = serd_env_new(NULL);
   serd_env_set_prefix_from_strings(env, "eg.2", NS_EG "");
 
+  assert(!serd_env_new(s));
+
+  const SerdNode* prefix_node = NULL;
+  ZixStringView   prefix      = zix_empty_string();
+  ZixStringView   suffix      = zix_empty_string();
+
+  assert(!serd_env_qualify(NULL, u, &prefix_node, &suffix));
+
+  assert(serd_env_expand(env, NULL, &prefix, &suffix) == SERD_BAD_CURIE);
+
+  assert(serd_env_set_prefix_from_strings(env, "eg.3", "rel") == SERD_BAD_ARG);
+
+  assert(!serd_env_expand_node(NULL, u));
+  assert(!serd_env_expand_node(env, b));
+  assert(!serd_env_expand_node(env, s));
+  assert(!serd_env_expand_node(env, e));
+
   assert(!serd_env_set_base_uri(env, NULL));
-  assert(serd_env_set_base_uri(env, &SERD_NODE_NULL));
-  assert(serd_node_equals(serd_env_base_uri(env, NULL), &SERD_NODE_NULL));
 
-  ZixStringView prefix;
-  ZixStringView suffix;
-  assert(!serd_env_qualify(NULL, &u, &u, &suffix));
-  assert(serd_env_expand(NULL, &c, &prefix, &suffix));
-  assert(serd_env_expand(env, &b, &prefix, &suffix) == SERD_BAD_ARG);
-  assert(serd_env_expand(env, &u, &prefix, &suffix) == SERD_BAD_ARG);
+  SerdNode* xu = serd_env_expand_node(env, u);
+  assert(!strcmp(serd_node_string(xu), NS_EG "foo"));
+  serd_node_free(xu);
 
-  SerdNode nxnode = serd_env_expand_node(NULL, &c);
-  assert(serd_node_equals(&nxnode, &SERD_NODE_NULL));
+  SerdNode* badpre  = serd_new_string(SERD_CURIE, "hm:what");
+  SerdNode* xbadpre = serd_env_expand_node(env, badpre);
+  assert(!xbadpre);
 
-  SerdNode xnode = serd_env_expand_node(env, &SERD_NODE_NULL);
-  assert(serd_node_equals(&xnode, &SERD_NODE_NULL));
+  SerdNode* xc = serd_env_expand_node(env, c);
+  assert(!strcmp(serd_node_string(xc), NS_EG "b"));
+  serd_node_free(xc);
 
-  SerdNode xu = serd_env_expand_node(env, &u);
-  assert(!strcmp(xu.buf, NS_EG "foo"));
-  serd_node_free(&xu);
+  SerdNode* lit = serd_new_string(SERD_LITERAL, "hello");
+  assert(serd_env_set_prefix(env, b, lit));
 
-  SerdNode badpre  = serd_node_from_string(SERD_CURIE, "hm:what");
-  SerdNode xbadpre = serd_env_expand_node(env, &badpre);
-  assert(serd_node_equals(&xbadpre, &SERD_NODE_NULL));
-
-  SerdNode xc = serd_env_expand_node(env, &c);
-  assert(!strcmp(xc.buf, NS_EG "b"));
-  serd_node_free(&xc);
-
-  assert(serd_env_set_prefix(env, &SERD_NODE_NULL, &SERD_NODE_NULL));
-
-  const SerdNode lit = serd_node_from_string(SERD_LITERAL, "hello");
-  assert(serd_env_set_prefix(env, &b, &lit));
-
-  assert(!serd_env_new(&lit));
-
-  const SerdNode blank  = serd_node_from_string(SERD_BLANK, "b1");
-  const SerdNode xblank = serd_env_expand_node(env, &blank);
-  assert(serd_node_equals(&xblank, &SERD_NODE_NULL));
+  SerdNode* blank = serd_new_string(SERD_BLANK, "b1");
+  assert(!serd_env_expand_node(env, blank));
+  serd_node_free(blank);
 
   int n_prefixes = 0;
   serd_env_set_prefix_from_strings(env, "eg.2", NS_EG "");
   serd_env_foreach(env, count_prefixes, &n_prefixes);
   assert(n_prefixes == 1);
 
-  SerdNode shorter_uri = serd_node_from_string(SERD_URI, "urn:foo");
-  SerdNode prefix_name;
-  assert(!serd_env_qualify(env, &shorter_uri, &prefix_name, &suffix));
+  SerdNode* shorter_uri = serd_new_string(SERD_URI, "urn:foo");
+  assert(!serd_env_qualify(env, shorter_uri, &prefix_node, &suffix));
 
-  assert(!serd_env_set_base_uri(env, &u));
-  assert(serd_node_equals(serd_env_base_uri(env, NULL), &u));
+  assert(!serd_env_set_base_uri(env, u));
+  assert(serd_node_equals(serd_env_base_uri(env, NULL), u));
+
+  SerdNode* xe = serd_env_expand_node(env, e);
+  assert(xe);
+  assert(!strcmp(serd_node_string(xe), NS_EG "foo"));
+  serd_node_free(xe);
+
   assert(!serd_env_set_base_uri(env, NULL));
-  assert(!serd_env_base_uri(env, NULL)->buf);
+  assert(!serd_env_base_uri(env, NULL));
+
+  serd_node_free(shorter_uri);
+  serd_node_free(lit);
+  serd_node_free(badpre);
+  serd_node_free(s);
+  serd_node_free(c);
+  serd_node_free(e);
+  serd_node_free(b);
+  serd_node_free(u);
 
   serd_env_free(env);
 }

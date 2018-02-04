@@ -23,8 +23,10 @@ KeepEmptyLinesAtTheStartOfBlocks: false
 SpacesInContainerLiterals: false
 AttributeMacros:
   - SERD_API
+  - SERD_CONST_API
   - SERD_FALLTHROUGH
   - SERD_MALLOC_API
+  - SERD_PURE_API
   - ZIX_ALLOCATED
   - ZIX_ALWAYS_INLINE_FUNC
   - ZIX_CONST_FUNC

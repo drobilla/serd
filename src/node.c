@@ -4,12 +4,16 @@
 #include "node.h"
 
 #include "base64.h"
+#include "node_impl.h"
 #include "string_utils.h"
+#include "system.h"
 
 #include "serd/buffer.h"
 #include "serd/node.h"
 #include "serd/string.h"
 #include "serd/uri.h"
+#include "zix/attributes.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <float.h>
@@ -38,83 +42,167 @@ string_sink(const void* const buf, const size_t len, void* const stream)
   return len;
 }
 
-SerdNode
-serd_node_from_string(const SerdNodeType type, const char* const str)
+char*
+serd_node_buffer(SerdNode* const node)
 {
-  if (!str) {
-    return SERD_NODE_NULL;
-  }
-
-  SerdNodeFlags  flags   = 0;
-  const size_t   n_bytes = serd_strlen(str, &flags);
-  const SerdNode ret     = {str, n_bytes, flags, type};
-  return ret;
+  return (char*)(node + 1);
 }
 
-SerdNode
-serd_node_from_substring(const SerdNodeType type,
-                         const char* const  str,
-                         const size_t       len)
+ZIX_CONST_FUNC static size_t
+serd_node_pad_length(const size_t length)
 {
-  if (!str) {
-    return SERD_NODE_NULL;
-  }
-
-  SerdNodeFlags  flags   = 0;
-  const size_t   n_bytes = serd_substrlen(str, len, &flags);
-  const SerdNode ret     = {str, n_bytes, flags, type};
-  return ret;
+  const size_t terminated = length + 1U;
+  const size_t padded     = (terminated + 3U) & ~0x03U;
+  assert(padded % 4U == 0U);
+  return padded;
 }
 
-SerdNode
-serd_node_copy(const SerdNode* const node)
+static ZIX_PURE_FUNC size_t
+serd_node_total_size(const SerdNode* const node)
 {
-  if (!node || !node->buf) {
-    return SERD_NODE_NULL;
+  return node ? (sizeof(SerdNode) + serd_node_pad_length(node->length)) : 0;
+}
+
+static SerdNode*
+serd_node_malloc(const size_t        max_length,
+                 const SerdNodeFlags flags,
+                 const SerdNodeType  type)
+{
+  const size_t    size = sizeof(SerdNode) + serd_node_pad_length(max_length);
+  SerdNode* const node = (SerdNode*)calloc(1U, size);
+
+  node->flags = flags;
+  node->type  = type;
+
+  return node;
+}
+
+void
+serd_node_set_header(SerdNode* const     node,
+                     const size_t        length,
+                     const SerdNodeFlags flags,
+                     const SerdNodeType  type)
+{
+  node->length = length;
+  node->flags  = flags;
+  node->type   = type;
+}
+
+void
+serd_node_set(SerdNode** const dst, const SerdNode* const src)
+{
+  assert(dst);
+  assert(src);
+
+  const size_t size = serd_node_total_size(src);
+  if (!*dst || serd_node_total_size(*dst) < size) {
+    serd_free_aligned(*dst);
+    *dst = (SerdNode*)calloc(1U, size);
   }
 
-  SerdNode copy = *node;
-  char*    buf  = (char*)malloc(copy.n_bytes + 1);
-  memcpy(buf, node->buf, copy.n_bytes + 1);
-  copy.buf = buf;
+  assert(*dst);
+  memcpy(*dst, src, sizeof(SerdNode) + src->length + 1);
+}
+
+SerdNode*
+serd_new_string(SerdNodeType type, const char* str)
+{
+  SerdNodeFlags flags  = 0;
+  const size_t  length = serd_strlen(str, &flags);
+  SerdNode*     node   = serd_node_malloc(length, flags, type);
+  memcpy(serd_node_buffer(node), str, length);
+  node->length = length;
+  return node;
+}
+
+SerdNode*
+serd_new_substring(const SerdNodeType type,
+                   const char* const  str,
+                   const size_t       len)
+{
+  SerdNodeFlags flags  = 0;
+  const size_t  length = serd_substrlen(str, len, &flags);
+  SerdNode*     node   = serd_node_malloc(length, flags, type);
+  memcpy(serd_node_buffer(node), str, length);
+  node->length = length;
+  return node;
+}
+
+SerdNode*
+serd_new_expanded_uri(const ZixStringView prefix, const ZixStringView suffix)
+{
+  const size_t    length = prefix.length + suffix.length;
+  SerdNode* const node   = serd_node_malloc(length, 0, SERD_URI);
+  char* const     buffer = serd_node_buffer(node);
+
+  memcpy(buffer, prefix.data, prefix.length);
+  memcpy(buffer + prefix.length, suffix.data, suffix.length);
+  node->length = length;
+  return node;
+}
+
+SerdNode*
+serd_node_copy(const SerdNode* node)
+{
+  if (!node) {
+    return NULL;
+  }
+
+  const size_t    size = serd_node_total_size(node);
+  SerdNode* const copy = (SerdNode*)calloc(1U, size);
+  memcpy(copy, node, size);
   return copy;
 }
 
 bool
 serd_node_equals(const SerdNode* const a, const SerdNode* const b)
 {
-  assert(a);
-  assert(b);
-
   return (a == b) ||
-         (a->type == b->type && a->n_bytes == b->n_bytes &&
-          ((a->buf == b->buf) || !memcmp(a->buf, b->buf, a->n_bytes + 1)));
+         (a && b && a->type == b->type && a->length == b->length &&
+          !memcmp(serd_node_string(a), serd_node_string(b), a->length));
 }
 
-SerdNode
-serd_new_uri_from_node(const SerdNode* const    uri_node,
-                       const SerdURIView* const base,
-                       SerdURIView* const       out)
+SerdNode*
+serd_new_uri(const char* const str)
 {
-  assert(uri_node);
+  assert(str);
 
-  return (uri_node->type == SERD_URI && uri_node->buf)
-           ? serd_new_uri_from_string(uri_node->buf, base, out)
-           : SERD_NODE_NULL;
+  const size_t length = strlen(str);
+  SerdNode*    node   = serd_node_malloc(length, 0, SERD_URI);
+  memcpy(serd_node_buffer(node), str, length);
+  node->length = length;
+  return node;
 }
 
-SerdNode
-serd_new_uri_from_string(const char* const        str,
-                         const SerdURIView* const base,
-                         SerdURIView* const       out)
+SerdNode*
+serd_new_parsed_uri(const SerdURIView uri)
 {
-  if (!str || str[0] == '\0') {
-    // Empty URI => Base URI, or nothing if no base is given
-    return base ? serd_new_uri(base, NULL, out) : SERD_NODE_NULL;
+  const size_t    len        = serd_uri_string_length(uri);
+  SerdNode* const node       = serd_node_malloc(len, 0, SERD_URI);
+  char*           ptr        = serd_node_buffer(node);
+  const size_t    actual_len = serd_write_uri(uri, string_sink, &ptr);
+
+  assert(actual_len == len);
+
+  serd_node_buffer(node)[actual_len] = '\0';
+  node->length                       = actual_len;
+
+  return node;
+}
+
+SerdNode*
+serd_new_resolved_uri(const ZixStringView string, const SerdURIView base)
+{
+  const SerdURIView uri     = serd_parse_uri(string.data);
+  const SerdURIView abs_uri = serd_resolve_uri(uri, base);
+  SerdNode* const   result  = serd_new_parsed_uri(abs_uri);
+
+  if (!serd_uri_string_has_scheme(serd_node_string(result))) {
+    serd_node_free(result);
+    return NULL;
   }
 
-  SerdURIView uri = serd_parse_uri(str);
-  return serd_new_uri(&uri, base, out); // Resolve/Serialise
+  return result;
 }
 
 static bool
@@ -133,7 +221,7 @@ is_dir_sep(const char c)
 #endif
 }
 
-SerdNode
+SerdNode*
 serd_new_file_uri(const char* const  path,
                   const char* const  hostname,
                   SerdURIView* const out)
@@ -176,39 +264,14 @@ serd_new_file_uri(const char* const  path,
     }
   }
 
+  const size_t      length = buffer.len;
   const char* const string = serd_buffer_sink_finish(&buffer);
-  if (string && out) {
-    *out = serd_parse_uri(string);
-  }
-
-  return serd_node_from_substring(SERD_URI, string, buffer.len);
-}
-
-SerdNode
-serd_new_uri(const SerdURIView* const uri,
-             const SerdURIView* const base,
-             SerdURIView* const       out)
-{
-  assert(uri);
-
-  SerdURIView abs_uri = *uri;
-  if (base) {
-    abs_uri = serd_resolve_uri(*uri, *base);
-  }
-
-  const size_t len        = serd_uri_string_length(abs_uri);
-  char*        buf        = (char*)malloc(len + 1);
-  SerdNode     node       = {buf, len, 0, SERD_URI};
-  char*        ptr        = buf;
-  const size_t actual_len = serd_write_uri(abs_uri, string_sink, &ptr);
-
-  buf[actual_len] = '\0';
-  node.n_bytes    = actual_len;
-
+  SerdNode* const   node   = serd_new_substring(SERD_URI, string, length);
   if (out) {
-    *out = serd_parse_uri(buf); // TODO: cleverly avoid double parse
+    *out = serd_parse_uri(serd_node_buffer(node));
   }
 
+  free(buffer.buf);
   return node;
 }
 
@@ -219,18 +282,19 @@ serd_digits(const double abs)
   return lg < 1.0 ? 1U : (unsigned)lg;
 }
 
-SerdNode
+SerdNode*
 serd_new_decimal(const double d, const unsigned frac_digits)
 {
   if (isnan(d) || isinf(d)) {
-    return SERD_NODE_NULL;
+    return NULL;
   }
 
-  const double   abs_d      = fabs(d);
-  const unsigned int_digits = serd_digits(abs_d);
-  char*          buf        = (char*)calloc(int_digits + frac_digits + 3, 1);
-  SerdNode       node       = {buf, 0, 0, SERD_LITERAL};
-  const double   int_part   = floor(abs_d);
+  const double    abs_d      = fabs(d);
+  const unsigned  int_digits = serd_digits(abs_d);
+  const size_t    len        = int_digits + frac_digits + 3;
+  SerdNode* const node       = serd_node_malloc(len, 0, SERD_LITERAL);
+  char* const     buf        = serd_node_buffer(node);
+  const double    int_part   = floor(abs_d);
 
   // Point s to decimal point location
   char* s = buf + int_digits;
@@ -252,7 +316,7 @@ serd_new_decimal(const double d, const unsigned frac_digits)
   double frac_part = fabs(d - int_part);
   if (frac_part < DBL_EPSILON) {
     *s++         = '0';
-    node.n_bytes = (size_t)(s - buf);
+    node->length = (size_t)(s - buf);
   } else {
     uint64_t frac = (uint64_t)llround(frac_part * pow(10.0, (int)frac_digits));
     s += frac_digits - 1;
@@ -262,7 +326,7 @@ serd_new_decimal(const double d, const unsigned frac_digits)
     for (; i < frac_digits - 1 && !(frac % 10); ++i, --s, frac /= 10) {
     }
 
-    node.n_bytes = (size_t)(s - buf) + 1U;
+    node->length = (size_t)(s - buf) + 1U;
 
     // Write digits from last trailing zero to decimal point
     for (; i < frac_digits; ++i) {
@@ -274,13 +338,13 @@ serd_new_decimal(const double d, const unsigned frac_digits)
   return node;
 }
 
-SerdNode
+SerdNode*
 serd_new_integer(const int64_t i)
 {
   uint64_t       abs_i  = (uint64_t)((i < 0) ? -i : i);
   const unsigned digits = serd_digits((double)abs_i);
-  char*          buf    = (char*)calloc(digits + 2, 1);
-  SerdNode       node   = {(const char*)buf, 0, 0, SERD_LITERAL};
+  SerdNode*      node   = serd_node_malloc(digits + 2, 0, SERD_LITERAL);
+  char*          buf    = serd_node_buffer(node);
 
   // Point s to the end
   char* s = buf + digits - 1;
@@ -289,7 +353,7 @@ serd_new_integer(const int64_t i)
     ++s;
   }
 
-  node.n_bytes = (size_t)(s - buf) + 1U;
+  node->length = (size_t)(s - buf) + 1U;
 
   // Write integer part (right to left)
   do {
@@ -299,27 +363,73 @@ serd_new_integer(const int64_t i)
   return node;
 }
 
-SerdNode
+SerdNode*
 serd_new_blob(const void* const buf, const size_t size, const bool wrap_lines)
 {
   assert(buf);
 
-  const size_t len  = serd_base64_get_length(size, wrap_lines);
-  char* const  str  = (char*)calloc(len + 2, 1);
-  SerdNode     node = {str, len, 0, SERD_LITERAL};
-
-  if (serd_base64_encode((uint8_t*)str, buf, size, wrap_lines)) {
-    node.flags |= SERD_HAS_NEWLINE;
+  if (!size) {
+    return NULL;
   }
 
+  const size_t    len  = serd_base64_get_length(size, wrap_lines);
+  SerdNode* const node = serd_node_malloc(len + 1, 0, SERD_LITERAL);
+  uint8_t* const  str  = (uint8_t*)serd_node_buffer(node);
+
+  if (serd_base64_encode(str, buf, size, wrap_lines)) {
+    node->flags |= SERD_HAS_NEWLINE;
+  }
+
+  node->length = len;
   return node;
 }
 
 void
 serd_node_free(SerdNode* const node)
 {
-  if (node && node->buf) {
-    free((char*)node->buf);
-    node->buf = NULL;
-  }
+  serd_free_aligned(node);
+}
+
+SerdNodeType
+serd_node_type(const SerdNode* const node)
+{
+  assert(node);
+  return node->type;
+}
+
+SerdNodeFlags
+serd_node_flags(const SerdNode* const node)
+{
+  assert(node);
+  return node->flags;
+}
+
+size_t
+serd_node_length(const SerdNode* const node)
+{
+  assert(node);
+  return node->length;
+}
+
+const char*
+serd_node_string(const SerdNode* const node)
+{
+  assert(node);
+  return (const char*)(node + 1);
+}
+
+ZixStringView
+serd_node_string_view(const SerdNode* const node)
+{
+  assert(node);
+  const ZixStringView r = {(const char*)(node + 1), node->length};
+  return r;
+}
+
+ZIX_PURE_FUNC SerdURIView
+serd_node_uri_view(const SerdNode* const node)
+{
+  assert(node);
+  return (node->type == SERD_URI) ? serd_parse_uri(serd_node_string(node))
+                                  : SERD_URI_NULL;
 }

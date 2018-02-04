@@ -34,7 +34,7 @@ SERD_API void
 serd_env_free(SerdEnv* ZIX_NULLABLE env);
 
 /// Get the current base URI
-SERD_API const SerdNode* ZIX_NONNULL
+SERD_API const SerdNode* ZIX_NULLABLE
 serd_env_base_uri(const SerdEnv* ZIX_NONNULL env,
                   SerdURIView* ZIX_NULLABLE  out);
 
@@ -63,10 +63,10 @@ serd_env_set_prefix_from_strings(SerdEnv* ZIX_NONNULL    env,
 
 /// Qualify `uri` into a CURIE if possible
 SERD_API bool
-serd_env_qualify(const SerdEnv* ZIX_NULLABLE env,
-                 const SerdNode* ZIX_NONNULL uri,
-                 SerdNode* ZIX_NONNULL       prefix,
-                 ZixStringView* ZIX_NONNULL  suffix);
+serd_env_qualify(const SerdEnv* ZIX_NULLABLE               env,
+                 const SerdNode* ZIX_NONNULL               uri,
+                 const SerdNode* ZIX_NULLABLE* ZIX_NONNULL prefix,
+                 ZixStringView* ZIX_NONNULL                suffix);
 
 /**
    Expand `curie`.
@@ -75,17 +75,17 @@ serd_env_qualify(const SerdEnv* ZIX_NULLABLE env,
    not defined in `env`.
 */
 SERD_API SerdStatus
-serd_env_expand(const SerdEnv* ZIX_NULLABLE env,
-                const SerdNode* ZIX_NONNULL curie,
-                ZixStringView* ZIX_NONNULL  uri_prefix,
-                ZixStringView* ZIX_NONNULL  uri_suffix);
+serd_env_expand(const SerdEnv* ZIX_NULLABLE  env,
+                const SerdNode* ZIX_NULLABLE curie,
+                ZixStringView* ZIX_NONNULL   uri_prefix,
+                ZixStringView* ZIX_NONNULL   uri_suffix);
 
 /**
    Expand `node`, which must be a CURIE or URI, to a full URI.
 
    Returns null if `node` can not be expanded.
 */
-SERD_API SerdNode
+SERD_API SerdNode* ZIX_ALLOCATED
 serd_env_expand_node(const SerdEnv* ZIX_NULLABLE env,
                      const SerdNode* ZIX_NONNULL node);
 

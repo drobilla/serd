@@ -5,6 +5,7 @@
 #define SERD_SRC_READER_H
 
 #include "byte_source.h"
+#include "node_impl.h"
 #include "stack.h"
 
 #include "serd/error.h"
@@ -81,13 +82,13 @@ push_node_padded(SerdReader*  reader,
                  size_t       maxlen,
                  SerdNodeType type,
                  const char*  str,
-                 size_t       n_bytes);
+                 size_t       length);
 
 Ref
 push_node(SerdReader*  reader,
           SerdNodeType type,
           const char*  str,
-          size_t       n_bytes);
+          size_t       length);
 
 ZIX_PURE_FUNC size_t
 genid_size(const SerdReader* reader);
@@ -182,7 +183,7 @@ push_byte(SerdReader* reader, Ref ref, const int c)
   *(s - 1) = (char)c;
   *s       = '\0';
 
-  ++node->n_bytes;
+  ++node->length;
   return SERD_SUCCESS;
 }
 
