@@ -1,8 +1,10 @@
 serd (1.1.1) unstable; urgency=medium
 
   * Bump major version and revise API
+  * Remove SERD_DISABLE_DEPRECATED and SERD_DEPRECATED_BY
+  * Remove serd_uri_to_path()
 
- -- David Robillard <d@drobilla.net>  Sat, 21 Sep 2024 12:22:16 +0000
+ -- David Robillard <d@drobilla.net>  Sat, 21 Sep 2024 12:24:08 +0000
 
 serd (0.32.9) unstable; urgency=medium
 
