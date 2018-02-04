@@ -59,8 +59,7 @@ serd_reader_set_error_sink(SerdReader* SERD_NONNULL    reader,
                            void* SERD_NULLABLE         error_handle);
 
 /// Return the `handle` passed to serd_reader_new()
-SERD_PURE_API
-void* SERD_NULLABLE
+SERD_PURE_API void* SERD_NULLABLE
 serd_reader_handle(const SerdReader* SERD_NONNULL reader);
 
 /**

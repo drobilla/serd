@@ -10,9 +10,9 @@
 #include <stddef.h>
 
 struct SerdNodeImpl {
-  size_t        n_bytes; /**< Size in bytes (not including null) */
-  SerdNodeFlags flags;   /**< Node flags (e.g. string properties) */
-  SerdNodeType  type;    /**< Node type */
+  size_t        length; ///< Length in bytes (not including null)
+  SerdNodeFlags flags;  ///< Node flags
+  SerdNodeType  type;   ///< Node type
 };
 
 static inline char* SERD_NONNULL
@@ -28,10 +28,10 @@ serd_node_buffer_c(const SerdNode* SERD_NONNULL node)
 }
 
 SerdNode* SERD_ALLOCATED
-serd_node_malloc(size_t n_bytes, SerdNodeFlags flags, SerdNodeType type);
+serd_node_malloc(size_t length, SerdNodeFlags flags, SerdNodeType type);
 
 void
-serd_node_set(SerdNode* SERD_NULLABLE* SERD_NONNULL dst,
-              const SerdNode* SERD_NULLABLE         src);
+serd_node_set(SerdNode* SERD_NONNULL* SERD_NONNULL dst,
+              const SerdNode* SERD_NONNULL         src);
 
 #endif // SERD_SRC_NODE_H

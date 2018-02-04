@@ -12,7 +12,6 @@
 #include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/syntax.h"
-#include "serd/uri.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -49,20 +48,19 @@ typedef uint32_t SerdWriterFlags;
 
 /// Create a new RDF writer
 SERD_API SerdWriter* SERD_ALLOCATED
-serd_writer_new(SerdSyntax                       syntax,
-                SerdWriterFlags                  flags,
-                SerdEnv* SERD_NONNULL            env,
-                const SerdURIView* SERD_NULLABLE base_uri,
-                SerdSink SERD_NONNULL            ssink,
-                void* SERD_NULLABLE              stream);
+serd_writer_new(SerdSyntax                    syntax,
+                SerdWriterFlags               flags,
+                SerdEnv* SERD_NONNULL         env,
+                const SerdNode* SERD_NULLABLE base_uri,
+                SerdSink SERD_NONNULL         ssink,
+                void* SERD_NULLABLE           stream);
 
 /// Free `writer`
 SERD_API void
 serd_writer_free(SerdWriter* SERD_NULLABLE writer);
 
 /// Return the env used by `writer`
-SERD_PURE_API
-SerdEnv* SERD_NONNULL
+SERD_PURE_API SerdEnv* SERD_NONNULL
 serd_writer_env(SerdWriter* SERD_NONNULL writer);
 
 /**
