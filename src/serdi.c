@@ -211,11 +211,15 @@ main(int argc, char** argv)
 	_setmode(fileno(stdout), _O_BINARY);
 #endif
 
-	const char* input = (const char*)argv[a++];
+	char*       input_path = NULL;
+	const char* input      = (const char*)argv[a++];
 	if (from_file) {
 		in_name = in_name ? in_name : input;
 		if (!in_fd) {
-			input = serd_uri_to_path(in_name);
+			if (!strncmp(input, "file:", 5)) {
+				input_path = serd_file_uri_parse(input, NULL);
+				input      = input_path;
+			}
 			if (!input || !(in_fd = serd_fopen(input, "rb"))) {
 				return 1;
 			}
@@ -306,6 +310,7 @@ main(int argc, char** argv)
 	serd_writer_free(writer);
 	serd_env_free(env);
 	serd_node_free(base);
+	free(input_path);
 
 	if (from_file) {
 		fclose(in_fd);

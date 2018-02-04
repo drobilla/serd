@@ -302,34 +302,6 @@ test_strerror(void)
 }
 
 static void
-test_uri_to_path(void)
-{
-	const char* uri = "file:///home/user/foo.ttl";
-	assert(!strcmp(serd_uri_to_path(uri), "/home/user/foo.ttl"));
-
-	uri = "file://localhost/home/user/foo.ttl";
-	assert(!strcmp(serd_uri_to_path(uri), "/home/user/foo.ttl"));
-
-	uri = "file:illegal/file/uri";
-	assert(!serd_uri_to_path(uri));
-
-	uri = "file:///c:/awful/system";
-	assert(!strcmp(serd_uri_to_path(uri), "c:/awful/system"));
-
-	uri = "file:///c:awful/system";
-	assert(!strcmp(serd_uri_to_path(uri), "/c:awful/system"));
-
-	uri = "file:///0/1";
-	assert(!strcmp(serd_uri_to_path(uri), "/0/1"));
-
-	uri = "C:\\Windows\\Sucks";
-	assert(!strcmp(serd_uri_to_path(uri), "C:\\Windows\\Sucks"));
-
-	uri = "C|/Windows/Sucks";
-	assert(!strcmp(serd_uri_to_path(uri), "C|/Windows/Sucks"));
-}
-
-static void
 test_uri_parsing(void)
 {
 	test_file_uri(NULL, "C:/My 100%", true,
@@ -659,7 +631,6 @@ main(void)
 	test_blob_to_node();
 	test_strlen();
 	test_strerror();
-	test_uri_to_path();
 	test_uri_parsing();
 	test_node_equals();
 	test_node_from_string();

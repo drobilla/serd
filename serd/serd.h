@@ -376,17 +376,6 @@ static const SerdURI SERD_URI_NULL = {
 };
 
 /**
-   Return the local path for `uri`, or NULL if `uri` is not a file URI.
-   Note this (inappropriately named) function only removes the file scheme if
-   necessary, and returns `uri` unmodified if it is an absolute path.  Percent
-   encoding and other issues are not handled, to properly convert a file URI to
-   a path, use serd_file_uri_parse().
-*/
-SERD_API
-const char*
-serd_uri_to_path(const char* uri);
-
-/**
    Get the unescaped path and hostname from a file URI.
    @param uri A file URI.
    @param hostname If non-NULL, set to the hostname, if present.

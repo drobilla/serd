@@ -4,6 +4,7 @@ serd (1.0.1) unstable;
   * Make nodes opaque
   * Make serd_strtod API const-correct
   * Make serd_strtod API const-correct
+  * Remove half-baked serd_uri_to_path()
   * Remove useless character counting from API
   * Rename SerdChunk to SerdStringView
   * Use char* for strings in public API

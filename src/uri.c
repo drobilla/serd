@@ -19,29 +19,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-const char*
-serd_uri_to_path(const char* uri)
-{
-	const char* path = uri;
-	if (!is_windows_path(uri) && serd_uri_string_has_scheme(uri)) {
-		if (strncmp(uri, "file:", 5)) {
-			fprintf(stderr, "Non-file URI `%s'\n", uri);
-			return NULL;
-		} else if (!strncmp(uri, "file://localhost/", 17)) {
-			path = uri + 16;
-		} else if (!strncmp(uri, "file://", 7)) {
-			path = uri + 7;
-		} else {
-			fprintf(stderr, "Invalid file URI `%s'\n", uri);
-			return NULL;
-		}
-		if (is_windows_path(path + 1)) {
-			++path;  // Special case for terrible Windows file URIs
-		}
-	}
-	return path;
-}
-
 char*
 serd_file_uri_parse(const char* uri, char** hostname)
 {
