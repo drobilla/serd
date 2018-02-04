@@ -480,4 +480,93 @@ serd_error(SerdErrorSink error_sink, void* handle, const SerdError* e)
 	}
 }
 
+int
+r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
+
+/* Reader */
+
+#ifdef SERD_STACK_CHECK
+#    define SERD_STACK_ASSERT_TOP(reader, ref) \
+            assert(ref == reader->allocs[reader->n_allocs - 1]);
+#else
+#    define SERD_STACK_ASSERT_TOP(reader, ref)
+#endif
+
+/* Reference to a node in the stack (we can not use pointers since the
+   stack may be reallocated, invalidating any pointers to elements).
+*/
+typedef size_t Ref;
+
+typedef struct {
+	Ref                 graph;
+	Ref                 subject;
+	Ref                 predicate;
+	Ref                 object;
+	Ref                 datatype;
+	Ref                 lang;
+	SerdStatementFlags* flags;
+} ReadContext;
+
+struct SerdReaderImpl {
+	void*             handle;
+	void              (*free_handle)(void* ptr);
+	SerdBaseSink      base_sink;
+	SerdPrefixSink    prefix_sink;
+	SerdStatementSink statement_sink;
+	SerdEndSink       end_sink;
+	SerdErrorSink     error_sink;
+	void*             error_handle;
+	Ref               rdf_first;
+	Ref               rdf_rest;
+	Ref               rdf_nil;
+	SerdNode          default_graph;
+	SerdByteSource    source;
+	SerdStack         stack;
+	SerdSyntax        syntax;
+	unsigned          next_id;
+	SerdStatus        status;
+	uint8_t*          buf;
+	uint8_t*          bprefix;
+	size_t            bprefix_len;
+	bool              strict;     ///< True iff strict parsing
+	bool              seen_genid;
+#ifdef SERD_STACK_CHECK
+	Ref*              allocs;     ///< Stack of push offsets
+	size_t            n_allocs;   ///< Number of stack pushes
+#endif
+};
+
+Ref push_node_padded(SerdReader* reader,
+                     size_t      maxlen,
+                     SerdType    type,
+                     const char* str,
+                     size_t      n_bytes);
+
+Ref push_node(SerdReader* reader,
+              SerdType    type,
+              const char* str,
+              size_t      n_bytes);
+
+size_t genid_size(SerdReader* reader);
+Ref    blank_id(SerdReader* reader);
+void   set_blank_id(SerdReader* reader, Ref ref, size_t buf_size);
+
+SerdNode* deref(SerdReader* reader, Ref ref);
+
+Ref pop_node(SerdReader* reader, Ref ref);
+
+bool emit_statement(SerdReader* reader, ReadContext ctx, Ref o, Ref d, Ref l);
+
+bool read_n3_statement(SerdReader* reader);
+bool read_nquadsDoc(SerdReader* reader);
+bool read_turtleTrigDoc(SerdReader* reader);
+
+typedef enum {
+	FIELD_NONE,
+	FIELD_SUBJECT,
+	FIELD_PREDICATE,
+	FIELD_OBJECT,
+	FIELD_GRAPH
+} Field;
+
 #endif  // SERD_INTERNAL_H

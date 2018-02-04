@@ -104,14 +104,6 @@ typedef enum {
 	WRITE_LONG_STRING
 } TextContext;
 
-typedef enum {
-	FIELD_NONE,
-	FIELD_SUBJECT,
-	FIELD_PREDICATE,
-	FIELD_OBJECT,
-	FIELD_GRAPH
-} Field;
-
 static bool
 write_node(SerdWriter*        writer,
            const SerdNode*    node,

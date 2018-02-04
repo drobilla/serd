@@ -77,6 +77,7 @@ def configure(conf):
 
 lib_source = ['src/byte_source.c',
               'src/env.c',
+              'src/n3.c',
               'src/node.c',
               'src/reader.c',
               'src/string.c',
