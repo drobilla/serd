@@ -126,7 +126,7 @@ typedef enum {
 } SerdSyntax;
 
 /**
-   Flags indication inline abbreviation information for a statement.
+   Flags indicating inline abbreviation information for a statement.
 */
 typedef enum {
 	SERD_EMPTY_S      = 1 << 1,  /**< Empty blank node subject */
