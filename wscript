@@ -416,13 +416,20 @@ def test(ctx):
     autowaf.pre_test(ctx, APPNAME)
     autowaf.run_test(ctx, APPNAME, 'serd_test', dirs=['.'])
 
-    autowaf.run_test(ctx, APPNAME,
-                     'serdi_static -q -o turtle "%s/tests/good/base.ttl" "base.ttl" > tests/good/base.ttl.out' % srcdir,
-                     0, name='base')
+    def test_ttl(in_name, expected_name):
+        in_path = 'tests/good/%s.ttl' % in_name
+        autowaf.run_test(
+            ctx, APPNAME,
+            'serdi_static -o turtle "%s/%s" "%s" > %s.out' % (srcdir, in_path, in_path, in_path),
+            0, name=in_name)
 
-    autowaf.run_test(ctx, APPNAME,
-                     lambda: file_equals('%s/tests/good/base.ttl' % srcdir, 'tests/good/base.ttl.out'),
-                     True, name='base-check')
+        autowaf.run_test(
+            ctx, APPNAME,
+            lambda: file_equals('%s.out' % in_path,
+                                '%s/tests/good/%s.ttl' % (srcdir, expected_name)),
+            True, name=in_name + '-check')
+
+    test_ttl('base', 'base')
 
     nul = os.devnull
     autowaf.run_tests(ctx, APPNAME, [
