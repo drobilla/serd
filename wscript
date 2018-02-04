@@ -430,6 +430,7 @@ def test(ctx):
             True, name=in_name + '-check')
 
     test_ttl('base', 'base')
+    test_ttl('qualify-in', 'qualify-out')
 
     nul = os.devnull
     autowaf.run_tests(ctx, APPNAME, [
