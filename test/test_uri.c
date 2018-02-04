@@ -64,38 +64,6 @@ check_file_uri(const char* const hostname,
   serd_node_free(&node);
 }
 
-#if defined(__GNUC__)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-
-static void
-check_uri_to_path(const char* const uri, const char* const expected_path)
-{
-  const uint8_t* const path = serd_uri_to_path((const uint8_t*)uri);
-  assert(expect_string((const char*)path, expected_path));
-}
-
-static void
-test_uri_to_path(void)
-{
-  assert(!serd_uri_to_path((const uint8_t*)"file:invalid/file/uri"));
-  assert(!serd_uri_to_path((const uint8_t*)"http://example.org/path"));
-
-  check_uri_to_path("file:///home/user/foo.ttl", "/home/user/foo.ttl");
-  check_uri_to_path("file://localhost/home/user/foo.ttl", "/home/user/foo.ttl");
-  check_uri_to_path("file:///c:/awful/system", "c:/awful/system");
-  check_uri_to_path("file:///c:awful/system", "/c:awful/system");
-  check_uri_to_path("file:///0/1", "/0/1");
-  check_uri_to_path("C:\\Windows\\Sucks", "C:\\Windows\\Sucks");
-  check_uri_to_path("C|/Windows/Sucks", "C|/Windows/Sucks");
-  check_uri_to_path("rel", "rel");
-}
-
-#if defined(__GNUC__)
-#  pragma GCC diagnostic pop
-#endif
-
 static void
 test_uri_parsing(void)
 {
@@ -364,7 +332,6 @@ test_relative_uri(void)
 int
 main(void)
 {
-  test_uri_to_path();
   test_uri_string_has_scheme();
   test_uri_parsing();
   test_uri_from_string();
