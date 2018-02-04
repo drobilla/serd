@@ -25,32 +25,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-const uint8_t*
-serd_uri_to_path(const uint8_t* uri)
-{
-  const uint8_t* path = uri;
-  if (!is_windows_path(uri) && serd_uri_string_has_scheme(uri)) {
-    if (strncmp((const char*)uri, "file:", 5)) {
-      fprintf(stderr, "Non-file URI `%s'\n", uri);
-      return NULL;
-    }
-
-    if (!strncmp((const char*)uri, "file://localhost/", 17)) {
-      path = uri + 16;
-    } else if (!strncmp((const char*)uri, "file://", 7)) {
-      path = uri + 7;
-    } else {
-      fprintf(stderr, "Invalid file URI `%s'\n", uri);
-      return NULL;
-    }
-
-    if (is_windows_path(path + 1)) {
-      ++path; // Special case for terrible Windows file URIs
-    }
-  }
-  return path;
-}
-
 uint8_t*
 serd_file_uri_parse(const uint8_t* uri, uint8_t** hostname)
 {
@@ -58,6 +32,7 @@ serd_file_uri_parse(const uint8_t* uri, uint8_t** hostname)
   if (hostname) {
     *hostname = NULL;
   }
+
   if (!strncmp((const char*)uri, "file://", 7)) {
     const uint8_t* auth = uri + 7;
     if (*auth == '/') { // No hostname

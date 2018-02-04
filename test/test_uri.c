@@ -50,46 +50,6 @@ test_file_uri(const char* hostname,
   serd_node_free(&node);
 }
 
-#if defined(__GNUC__)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-
-static void
-test_uri_to_path(void)
-{
-  const uint8_t* uri = (const uint8_t*)"file:///home/user/foo.ttl";
-  assert(!strcmp((const char*)serd_uri_to_path(uri), "/home/user/foo.ttl"));
-
-  uri = (const uint8_t*)"file://localhost/home/user/foo.ttl";
-  assert(!strcmp((const char*)serd_uri_to_path(uri), "/home/user/foo.ttl"));
-
-  uri = (const uint8_t*)"file:illegal/file/uri";
-  assert(!serd_uri_to_path(uri));
-
-  uri = (const uint8_t*)"file:///c:/awful/system";
-  assert(!strcmp((const char*)serd_uri_to_path(uri), "c:/awful/system"));
-
-  uri = (const uint8_t*)"file:///c:awful/system";
-  assert(!strcmp((const char*)serd_uri_to_path(uri), "/c:awful/system"));
-
-  uri = (const uint8_t*)"file:///0/1";
-  assert(!strcmp((const char*)serd_uri_to_path(uri), "/0/1"));
-
-  uri = (const uint8_t*)"C:\\Windows\\Sucks";
-  assert(!strcmp((const char*)serd_uri_to_path(uri), "C:\\Windows\\Sucks"));
-
-  uri = (const uint8_t*)"C|/Windows/Sucks";
-  assert(!strcmp((const char*)serd_uri_to_path(uri), "C|/Windows/Sucks"));
-
-  uri = (const uint8_t*)"http://example.org/path";
-  assert(!serd_uri_to_path(uri));
-}
-
-#if defined(__GNUC__)
-#  pragma GCC diagnostic pop
-#endif
-
 static void
 test_uri_parsing(void)
 {
@@ -175,7 +135,6 @@ test_relative_uri(void)
 int
 main(void)
 {
-  test_uri_to_path();
   test_uri_parsing();
   test_uri_from_string();
   test_relative_uri();

@@ -1,3 +1,9 @@
+serd (1.0.1) unstable;
+
+  * Remove serd_uri_to_path()
+
+ -- David Robillard <d@drobilla.net>  Wed, 13 Jan 2021 13:29:44 +0000
+
 serd (0.30.11) unstable;
 
   * Fix writing long literals with triple quotes
