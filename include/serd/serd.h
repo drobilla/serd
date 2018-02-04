@@ -48,18 +48,6 @@
 #define SERD_PURE_API SERD_API SERD_PURE_FUNC
 #define SERD_CONST_API SERD_API SERD_CONST_FUNC
 
-#ifndef SERD_DISABLE_DEPRECATED
-#  if defined(__clang__) && __clang_major__ >= 7
-#    define SERD_DEPRECATED_BY(rep) __attribute__((deprecated("", rep)))
-#  elif defined(__GNUC__) && __GNUC__ > 4
-#    define SERD_DEPRECATED_BY(rep) __attribute__((deprecated("Use " rep)))
-#  elif defined(__GNUC__)
-#    define SERD_DEPRECATED_BY(rep) __attribute__((deprecated))
-#  else
-#    define SERD_DEPRECATED_BY(rep)
-#  endif
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #  if defined(__GNUC__)
@@ -238,21 +226,6 @@ typedef struct {
 
 static const SerdURI SERD_URI_NULL =
   {{NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}};
-
-#ifndef SERD_DISABLE_DEPRECATED
-
-/**
-   Return the local path for `uri`, or NULL if `uri` is not a file URI.
-   Note this (inappropriately named) function only removes the file scheme if
-   necessary, and returns `uri` unmodified if it is an absolute path.  Percent
-   encoding and other issues are not handled, to properly convert a file URI to
-   a path, use serd_file_uri_parse().
-*/
-SERD_DEPRECATED_BY("serd_file_uri_parse")
-SERD_API const uint8_t* SERD_NULLABLE
-serd_uri_to_path(const uint8_t* SERD_NONNULL uri);
-
-#endif
 
 /**
    Get the unescaped path and hostname from a file URI.
