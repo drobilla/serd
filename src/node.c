@@ -370,6 +370,30 @@ serd_node_new_blob(const void* buf, size_t size, bool wrap_lines)
 	return node;
 }
 
+SerdType
+serd_node_get_type(const SerdNode* node)
+{
+	return node ? node->type : SERD_NOTHING;
+}
+
+const char*
+serd_node_get_string(const SerdNode* node)
+{
+	return node->buf;
+}
+
+size_t
+serd_node_get_length(const SerdNode* node)
+{
+	return node->n_bytes;
+}
+
+SerdNodeFlags
+serd_node_get_flags(const SerdNode* node)
+{
+	return node->flags;
+}
+
 void
 serd_node_free(SerdNode* node)
 {

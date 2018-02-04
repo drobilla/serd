@@ -606,6 +606,34 @@ SerdNode
 serd_node_new_blob(const void* buf, size_t size, bool wrap_lines);
 
 /**
+   Return the type of a node (SERD_URI, SERD_BLANK, or SERD_LITERAL).
+*/
+SERD_API
+SerdType
+serd_node_get_type(const SerdNode* node);
+
+/**
+   Return the string value of a node.
+*/
+SERD_API
+const char*
+serd_node_get_string(const SerdNode* node);
+
+/**
+   Return the length of the string value of a node in bytes.
+*/
+SERD_API
+size_t
+serd_node_get_length(const SerdNode* node);
+
+/**
+   Return the flags (string properties) of a node.
+*/
+SERD_API
+SerdNodeFlags
+serd_node_get_flags(const SerdNode* node);
+
+/**
    Free any data owned by `node`.
 
    Note that if `node` is itself dynamically allocated (which is not the case
