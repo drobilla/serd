@@ -16,6 +16,7 @@
 
 #include "reader.h"
 #include "byte_source.h"
+#include "node.h"
 #include "stack.h"
 #include "system.h"
 
@@ -44,9 +45,11 @@ void
 set_blank_id(SerdReader* const reader, const Ref ref, const size_t buf_size)
 {
   SerdNode*   node   = deref(reader, ref);
+  char*       buf    = (char*)(node + 1);
   const char* prefix = reader->bprefix ? (const char*)reader->bprefix : "";
-  node->n_bytes      = (size_t)snprintf(
-    (char*)node->buf, buf_size, "%sb%u", prefix, reader->next_id++);
+
+  node->length =
+    (size_t)snprintf(buf, buf_size, "%sb%u", prefix, reader->next_id++);
 }
 
 size_t
@@ -87,19 +90,19 @@ push_node_padded(SerdReader* const  reader,
                  const size_t       maxlen,
                  const SerdNodeType type,
                  const char* const  str,
-                 const size_t       n_bytes)
+                 const size_t       length)
 {
   void* mem = serd_stack_push_aligned(
     &reader->stack, sizeof(SerdNode) + maxlen + 1, sizeof(SerdNode));
 
   SerdNode* const node = (SerdNode*)mem;
-  node->n_bytes        = n_bytes;
-  node->flags          = 0;
-  node->type           = type;
-  node->buf            = NULL;
+
+  node->length = length;
+  node->flags  = 0;
+  node->type   = type;
 
   char* buf = (char*)(node + 1);
-  memcpy(buf, str, n_bytes + 1);
+  memcpy(buf, str, length + 1);
 
 #ifdef SERD_STACK_CHECK
   reader->allocs                       = (Ref*)realloc(reader->allocs,
@@ -113,20 +116,16 @@ Ref
 push_node(SerdReader* const  reader,
           const SerdNodeType type,
           const char* const  str,
-          const size_t       n_bytes)
+          const size_t       length)
 {
-  return push_node_padded(reader, n_bytes, type, str, n_bytes);
+  return push_node_padded(reader, length, type, str, length);
 }
 
+SERD_PURE_FUNC
 SerdNode*
 deref(SerdReader* const reader, const Ref ref)
 {
-  if (ref) {
-    SerdNode* node = (SerdNode*)(reader->stack.buf + ref);
-    node->buf      = (char*)node + sizeof(SerdNode);
-    return node;
-  }
-  return NULL;
+  return ref ? (SerdNode*)(reader->stack.buf + ref) : NULL;
 }
 
 Ref
@@ -153,8 +152,8 @@ emit_statement(SerdReader* const reader,
                const Ref         l)
 {
   SerdNode* graph = deref(reader, ctx.graph);
-  if (!graph && reader->default_graph.buf) {
-    graph = &reader->default_graph;
+  if (!graph && reader->default_graph) {
+    graph = reader->default_graph;
   }
 
   const SerdStatus st = !reader->statement_sink
@@ -201,7 +200,7 @@ serd_reader_new(const SerdSyntax syntax,
   me->prefix_sink    = prefix_sink;
   me->statement_sink = statement_sink;
   me->end_sink       = end_sink;
-  me->default_graph  = SERD_NODE_NULL;
+  me->default_graph  = NULL;
   me->stack          = serd_stack_new(SERD_PAGE_SIZE);
   me->syntax         = syntax;
   me->next_id        = 1;
@@ -239,7 +238,7 @@ serd_reader_free(SerdReader* const reader)
   pop_node(reader, reader->rdf_nil);
   pop_node(reader, reader->rdf_rest);
   pop_node(reader, reader->rdf_first);
-  serd_node_free(&reader->default_graph);
+  serd_node_free(reader->default_graph);
 
 #ifdef SERD_STACK_CHECK
   free(reader->allocs);
@@ -277,7 +276,7 @@ void
 serd_reader_set_default_graph(SerdReader* const     reader,
                               const SerdNode* const graph)
 {
-  serd_node_free(&reader->default_graph);
+  serd_node_free(reader->default_graph);
   reader->default_graph = serd_node_copy(graph);
 }
 

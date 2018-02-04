@@ -32,16 +32,17 @@ test_file_uri(const char* hostname,
     expected_path = path;
   }
 
-  SerdNode node         = serd_new_file_uri(path, hostname, 0);
-  char*    out_hostname = NULL;
-  char*    out_path     = serd_file_uri_parse(node.buf, &out_hostname);
-  assert(!strcmp(node.buf, expected_uri));
+  SerdNode*   node         = serd_new_file_uri(path, hostname, 0);
+  const char* node_str     = serd_node_string(node);
+  char*       out_hostname = NULL;
+  char*       out_path     = serd_file_uri_parse(node_str, &out_hostname);
+  assert(!strcmp(node_str, expected_uri));
   assert((hostname && out_hostname) || (!hostname && !out_hostname));
   assert(!strcmp(out_path, expected_path));
 
   serd_free(out_path);
   serd_free(out_hostname);
-  serd_node_free(&node);
+  serd_node_free(node);
 }
 
 static void
@@ -66,57 +67,57 @@ test_uri_parsing(void)
 static void
 test_uri_from_string(void)
 {
-  SerdNode nonsense = serd_new_uri_from_string(NULL, NULL, NULL);
-  assert(nonsense.type == SERD_NOTHING);
+  assert(!serd_new_uri_from_string(NULL, NULL, NULL));
 
   SerdURIView base_uri;
-  SerdNode    base =
+  SerdNode*   base =
     serd_new_uri_from_string("http://example.org/", NULL, &base_uri);
-  SerdNode nil  = serd_new_uri_from_string(NULL, &base_uri, NULL);
-  SerdNode nil2 = serd_new_uri_from_string("", &base_uri, NULL);
-  assert(nil.type == SERD_URI);
-  assert(!strcmp(nil.buf, base.buf));
-  assert(nil2.type == SERD_URI);
-  assert(!strcmp(nil2.buf, base.buf));
-  serd_node_free(&nil);
-  serd_node_free(&nil2);
-
-  serd_node_free(&base);
+  SerdNode* nil  = serd_new_uri_from_string(NULL, &base_uri, NULL);
+  SerdNode* nil2 = serd_new_uri_from_string("", &base_uri, NULL);
+  assert(serd_node_type(nil) == SERD_URI);
+  assert(!strcmp(serd_node_string(nil), serd_node_string(base)));
+  assert(serd_node_type(nil2) == SERD_URI);
+  assert(!strcmp(serd_node_string(nil2), serd_node_string(base)));
+  serd_node_free(nil);
+  serd_node_free(nil2);
+  serd_node_free(base);
 }
 
 static void
 test_relative_uri(void)
 {
   SerdURIView base_uri;
-  SerdNode    base =
+  SerdNode*   base =
     serd_new_uri_from_string("http://example.org/", NULL, &base_uri);
 
-  SerdNode abs = serd_node_from_string(SERD_URI, "http://example.org/foo/bar");
+  SerdNode*   abs = serd_new_string(SERD_URI, "http://example.org/foo/bar");
   SerdURIView abs_uri;
-  serd_uri_parse(abs.buf, &abs_uri);
+  serd_uri_parse(serd_node_string(abs), &abs_uri);
 
   SerdURIView rel_uri;
-  SerdNode    rel = serd_new_relative_uri(&abs_uri, &base_uri, NULL, &rel_uri);
-  assert(!strcmp(rel.buf, "/foo/bar"));
+  SerdNode*   rel = serd_new_relative_uri(&abs_uri, &base_uri, NULL, &rel_uri);
+  assert(!strcmp(serd_node_string(rel), "/foo/bar"));
 
-  SerdNode up = serd_new_relative_uri(&base_uri, &abs_uri, NULL, NULL);
-  assert(!strcmp(up.buf, "../"));
+  SerdNode* up = serd_new_relative_uri(&base_uri, &abs_uri, NULL, NULL);
+  assert(!strcmp(serd_node_string(up), "../"));
 
-  SerdNode noup = serd_new_relative_uri(&base_uri, &abs_uri, &abs_uri, NULL);
-  assert(!strcmp(noup.buf, "http://example.org/"));
+  SerdNode* noup = serd_new_relative_uri(&base_uri, &abs_uri, &abs_uri, NULL);
+  assert(!strcmp(serd_node_string(noup), "http://example.org/"));
 
-  SerdNode    x = serd_node_from_string(SERD_URI, "http://example.org/foo/x");
+  SerdNode*   x = serd_new_string(SERD_URI, "http://example.org/foo/x");
   SerdURIView x_uri;
-  serd_uri_parse(x.buf, &x_uri);
+  serd_uri_parse(serd_node_string(x), &x_uri);
 
-  SerdNode x_rel = serd_new_relative_uri(&x_uri, &abs_uri, &abs_uri, NULL);
-  assert(!strcmp(x_rel.buf, "x"));
+  SerdNode* x_rel = serd_new_relative_uri(&x_uri, &abs_uri, &abs_uri, NULL);
+  assert(!strcmp(serd_node_string(x_rel), "x"));
 
-  serd_node_free(&x_rel);
-  serd_node_free(&noup);
-  serd_node_free(&up);
-  serd_node_free(&rel);
-  serd_node_free(&base);
+  serd_node_free(x_rel);
+  serd_node_free(x);
+  serd_node_free(noup);
+  serd_node_free(up);
+  serd_node_free(abs);
+  serd_node_free(rel);
+  serd_node_free(base);
 }
 
 int

@@ -30,7 +30,8 @@
    @param wrap_lines Wrap lines at 76 characters to conform to RFC 2045.
    @return The length of the base64 encoding, excluding null terminator.
 */
-SERD_CONST_FUNC size_t
+SERD_CONST_FUNC
+size_t
 serd_base64_get_length(size_t size, bool wrap_lines);
 
 /**

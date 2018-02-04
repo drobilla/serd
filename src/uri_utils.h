@@ -50,7 +50,8 @@ uri_path_at(const SerdURIView* uri, size_t i)
    Return the index of the first differing character after the last root slash,
    or zero if `uri` is not under `root`.
 */
-static inline SERD_PURE_FUNC size_t
+static inline SERD_PURE_FUNC
+size_t
 uri_rooted_index(const SerdURIView* uri, const SerdURIView* root)
 {
   if (!root || !root->scheme.len ||
@@ -80,14 +81,16 @@ uri_rooted_index(const SerdURIView* uri, const SerdURIView* root)
 }
 
 /** Return true iff `uri` shares path components with `root` */
-static inline SERD_PURE_FUNC bool
+static inline SERD_PURE_FUNC
+bool
 uri_is_related(const SerdURIView* uri, const SerdURIView* root)
 {
   return uri_rooted_index(uri, root) > 0;
 }
 
 /** Return true iff `uri` is within the base of `root` */
-static inline SERD_PURE_FUNC bool
+static inline SERD_PURE_FUNC
+bool
 uri_is_under(const SerdURIView* uri, const SerdURIView* root)
 {
   const size_t index = uri_rooted_index(uri, root);

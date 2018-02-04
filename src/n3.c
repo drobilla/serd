@@ -15,6 +15,7 @@
 */
 
 #include "byte_source.h"
+#include "node.h"
 #include "reader.h"
 #include "serd_internal.h"
 #include "stack.h"
@@ -627,7 +628,7 @@ read_PN_LOCAL(SerdReader* const reader, const Ref dest, bool* const ate_dot)
   SerdNode* const n = deref(reader, dest);
   if (trailing_unescaped_dot) {
     // Ate trailing dot, pop it from stack/node and inform caller
-    --n->n_bytes;
+    --n->length;
     serd_stack_pop(&reader->stack, 1);
     *ate_dot = true;
   }
@@ -649,7 +650,8 @@ read_PN_PREFIX_tail(SerdReader* const reader, const Ref dest)
   }
 
   const SerdNode* const n = deref(reader, dest);
-  if (n->buf[n->n_bytes - 1] == '.' && read_PN_CHARS(reader, dest)) {
+  if (serd_node_string(n)[n->length - 1] == '.' &&
+      read_PN_CHARS(reader, dest)) {
     return r_err(reader, SERD_ERR_BAD_SYNTAX, "prefix ends with `.'\n");
   }
 
@@ -980,8 +982,8 @@ read_verb(SerdReader* const reader, Ref* const dest)
   bool       ate_dot = false;
   SerdNode*  node    = deref(reader, *dest);
   const int  next    = peek_byte(reader);
-  if (!st && node->n_bytes == 1 && node->buf[0] == 'a' && next != ':' &&
-      !is_PN_CHARS_BASE((uint32_t)next)) {
+  if (!st && node->length == 1 && serd_node_string(node)[0] == 'a' &&
+      next != ':' && !is_PN_CHARS_BASE((uint32_t)next)) {
     pop_node(reader, *dest);
     *dest = push_node(reader, SERD_URI, NS_RDF "type", 47);
     return SERD_SUCCESS;
@@ -1025,20 +1027,21 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
     }
   }
 
-  SerdNode* n = deref(reader, ref);
-  if (n->buf[n->n_bytes - 1] == '.' && read_PN_CHARS(reader, ref)) {
+  SerdNode* n   = deref(reader, ref);
+  char*     buf = serd_node_buffer(n);
+  if (buf[n->length - 1] == '.' && read_PN_CHARS(reader, ref)) {
     // Ate trailing dot, pop it from stack/node and inform caller
-    --n->n_bytes;
+    --n->length;
     serd_stack_pop(&reader->stack, 1);
     *ate_dot = true;
   }
 
   if (fancy_syntax(reader)) {
-    if (is_digit(n->buf[reader->bprefix_len + 1])) {
-      if ((n->buf[reader->bprefix_len]) == 'b') {
-        ((char*)n->buf)[reader->bprefix_len] = 'B'; // Prevent clash
-        reader->seen_genid                   = true;
-      } else if (reader->seen_genid && n->buf[reader->bprefix_len] == 'B') {
+    if (is_digit(buf[reader->bprefix_len + 1])) {
+      if ((buf[reader->bprefix_len]) == 'b') {
+        buf[reader->bprefix_len] = 'B'; // Prevent clash
+        reader->seen_genid       = true;
+      } else if (reader->seen_genid && buf[reader->bprefix_len] == 'B') {
         *dest = pop_node(reader, *dest);
         return r_err(reader,
                      SERD_ERR_ID_CLASH,
@@ -1201,8 +1204,8 @@ read_object(SerdReader* const  reader,
     while (!read_PN_CHARS_BASE(reader, o)) {
     }
     node = deref(reader, o);
-    if ((node->n_bytes == 4 && !memcmp(node->buf, "true", 4)) ||
-        (node->n_bytes == 5 && !memcmp(node->buf, "false", 5))) {
+    if ((node->length == 4 && !memcmp(serd_node_string(node), "true", 4)) ||
+        (node->length == 5 && !memcmp(serd_node_string(node), "false", 5))) {
       node->type = SERD_LITERAL;
       datatype   = push_node(reader, SERD_URI, XSD_BOOLEAN, XSD_BOOLEAN_LEN);
       ret        = SERD_SUCCESS;
@@ -1588,11 +1591,11 @@ tokcmp(SerdReader* const reader,
        const size_t      n)
 {
   SerdNode* node = deref(reader, ref);
-  if (!node || node->n_bytes != n) {
+  if (!node || node->length != n) {
     return -1;
   }
 
-  return serd_strncasecmp(node->buf, tok, n);
+  return serd_strncasecmp(serd_node_string(node), tok, n);
 }
 
 SerdStatus
