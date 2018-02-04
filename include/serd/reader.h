@@ -48,8 +48,7 @@ serd_reader_new(SerdWorld* ZIX_NONNULL world,
                 SerdEndFunc ZIX_NULLABLE       end_func);
 
 /// Return the `handle` passed to serd_reader_new()
-SERD_PURE_API
-void* ZIX_UNSPECIFIED
+SERD_PURE_API void* ZIX_UNSPECIFIED
 serd_reader_handle(const SerdReader* ZIX_NONNULL reader);
 
 /**

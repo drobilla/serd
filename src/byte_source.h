@@ -59,7 +59,7 @@ serd_byte_source_prepare(SerdByteSource* source);
 SerdStatus
 serd_byte_source_page(SerdByteSource* source);
 
-static inline ZIX_PURE_FUNC uint8_t
+ZIX_PURE_FUNC static inline uint8_t
 serd_byte_source_peek(SerdByteSource* source)
 {
   assert(source->prepared);
