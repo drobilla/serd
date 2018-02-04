@@ -41,9 +41,11 @@ void
 set_blank_id(SerdReader* reader, Ref ref, size_t buf_size)
 {
 	SerdNode*   node   = deref(reader, ref);
+	char*       buf    = (char*)(node + 1);
 	const char* prefix = reader->bprefix ? (const char*)reader->bprefix : "";
-	node->n_bytes = (size_t)snprintf(
-		(char*)node->buf, buf_size, "%sb%u", prefix, reader->next_id++);
+
+	node->n_bytes =
+		(size_t)snprintf(buf, buf_size, "%sb%u", prefix, reader->next_id++);
 }
 
 size_t
@@ -87,7 +89,6 @@ push_node_padded(SerdReader* reader, size_t maxlen,
 	node->n_bytes = n_bytes;
 	node->flags   = 0;
 	node->type    = type;
-	node->buf     = NULL;
 
 	char* buf = (char*)(node + 1);
 	memcpy(buf, str, n_bytes + 1);
@@ -109,12 +110,7 @@ push_node(SerdReader* reader, SerdType type, const char* str, size_t n_bytes)
 SerdNode*
 deref(SerdReader* reader, const Ref ref)
 {
-	if (ref) {
-		SerdNode* node = (SerdNode*)(reader->stack.buf + ref);
-		node->buf = (char*)node + sizeof(SerdNode);
-		return node;
-	}
-	return NULL;
+	return ref ? (SerdNode*)(reader->stack.buf + ref) : NULL;
 }
 
 Ref
@@ -137,8 +133,8 @@ bool
 emit_statement(SerdReader* reader, ReadContext ctx, Ref o, Ref d, Ref l)
 {
 	SerdNode* graph = deref(reader, ctx.graph);
-	if (!graph && reader->default_graph.buf) {
-		graph = &reader->default_graph;
+	if (!graph && reader->default_graph) {
+		graph = reader->default_graph;
 	}
 	bool ret = !reader->statement_sink ||
 		!reader->statement_sink(
@@ -180,7 +176,7 @@ serd_reader_new(SerdSyntax        syntax,
 	me->prefix_sink      = prefix_sink;
 	me->statement_sink   = statement_sink;
 	me->end_sink         = end_sink;
-	me->default_graph    = SERD_NODE_NULL;
+	me->default_graph    = NULL;
 	me->stack            = serd_stack_new(SERD_PAGE_SIZE);
 	me->syntax           = syntax;
 	me->next_id          = 1;
@@ -214,7 +210,7 @@ serd_reader_free(SerdReader* reader)
 	pop_node(reader, reader->rdf_nil);
 	pop_node(reader, reader->rdf_rest);
 	pop_node(reader, reader->rdf_first);
-	serd_node_free(&reader->default_graph);
+	serd_node_free(reader->default_graph);
 
 #ifdef SERD_STACK_CHECK
 	free(reader->allocs);
@@ -251,7 +247,7 @@ void
 serd_reader_set_default_graph(SerdReader*     reader,
                               const SerdNode* graph)
 {
-	serd_node_free(&reader->default_graph);
+	serd_node_free(reader->default_graph);
 	reader->default_graph = serd_node_copy(graph);
 }
 

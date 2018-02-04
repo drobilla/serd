@@ -50,7 +50,15 @@
 
 static const uint8_t replacement_char[] = { 0xEF, 0xBF, 0xBD };
 
-char* serd_node_buffer(SerdNode* node);
+struct SerdNodeImpl {
+	size_t        n_bytes;  /**< Size in bytes (not including null) */
+	SerdNodeFlags flags;    /**< Node flags (e.g. string properties) */
+	SerdType      type;     /**< Node type */
+};
+
+SerdNode* serd_node_malloc(size_t n_bytes, SerdNodeFlags flags, SerdType type);
+void      serd_node_set(SerdNode** dst, const SerdNode* src);
+char*     serd_node_buffer(SerdNode* node);
 
 /* File and Buffer Utilities */
 
@@ -586,7 +594,7 @@ struct SerdReaderImpl {
 	Ref               rdf_first;
 	Ref               rdf_rest;
 	Ref               rdf_nil;
-	SerdNode          default_graph;
+	SerdNode*         default_graph;
 	SerdByteSource    source;
 	SerdStack         stack;
 	SerdSyntax        syntax;
