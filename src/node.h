@@ -22,9 +22,9 @@
 #include <stddef.h>
 
 struct SerdNodeImpl {
-  size_t        n_bytes; /**< Size in bytes (not including null) */
-  SerdNodeFlags flags;   /**< Node flags (e.g. string properties) */
-  SerdNodeType  type;    /**< Node type */
+  size_t        length; ///< Length in bytes (not including null)
+  SerdNodeFlags flags;  ///< Node flags
+  SerdNodeType  type;   ///< Node type
 };
 
 static inline char*
@@ -40,7 +40,7 @@ serd_node_buffer_c(const SerdNode* node)
 }
 
 SerdNode*
-serd_node_malloc(size_t n_bytes, SerdNodeFlags flags, SerdNodeType type);
+serd_node_malloc(size_t length, SerdNodeFlags flags, SerdNodeType type);
 
 void
 serd_node_set(SerdNode** dst, const SerdNode* src);
