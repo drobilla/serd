@@ -94,7 +94,7 @@ serd_env_find(const SerdEnv* env,
 	for (size_t i = 0; i < env->n_prefixes; ++i) {
 		const SerdNode* const prefix_name = &env->prefixes[i].name;
 		if (prefix_name->n_bytes == name_len) {
-			if (!memcmp(prefix_name->buf, name, name_len)) {
+			if (!memcmp(serd_node_get_string(prefix_name), name, name_len)) {
 				return &env->prefixes[i];
 			}
 		}
@@ -107,7 +107,8 @@ serd_env_add(SerdEnv*        env,
              const SerdNode* name,
              const SerdNode* uri)
 {
-	SerdPrefix* const prefix = serd_env_find(env, name->buf, name->n_bytes);
+	const char*       name_str = serd_node_get_string(name);
+	SerdPrefix* const prefix   = serd_env_find(env, name_str, name->n_bytes);
 	if (prefix) {
 		SerdNode old_prefix_uri = prefix->uri;
 		prefix->uri = serd_node_copy(uri);
@@ -127,7 +128,7 @@ serd_env_set_prefix(SerdEnv*        env,
 {
 	if (!name->buf || uri->type != SERD_URI) {
 		return SERD_ERR_BAD_ARG;
-	} else if (serd_uri_string_has_scheme(uri->buf)) {
+	} else if (serd_uri_string_has_scheme(serd_node_get_string(uri))) {
 		// Set prefix to absolute URI
 		serd_env_add(env, name, uri);
 	} else {
@@ -163,11 +164,12 @@ serd_env_qualify(const SerdEnv*  env,
 	for (size_t i = 0; i < env->n_prefixes; ++i) {
 		const SerdNode* const prefix_uri = &env->prefixes[i].uri;
 		if (uri->n_bytes >= prefix_uri->n_bytes) {
-			if (!strncmp((const char*)uri->buf,
-			             (const char*)prefix_uri->buf,
-			             prefix_uri->n_bytes)) {
+			const char* prefix_str = serd_node_get_string(prefix_uri);
+			const char* uri_str    = serd_node_get_string(uri);
+
+			if (!strncmp(uri_str, prefix_str, prefix_uri->n_bytes)) {
 				*prefix = env->prefixes[i].name;
-				suffix->buf = uri->buf + prefix_uri->n_bytes;
+				suffix->buf = uri_str + prefix_uri->n_bytes;
 				suffix->len = uri->n_bytes - prefix_uri->n_bytes;
 				return true;
 			}
@@ -182,16 +184,16 @@ serd_env_expand(const SerdEnv*  env,
                 SerdStringView* uri_prefix,
                 SerdStringView* uri_suffix)
 {
-	const char* const colon = (const char*)memchr(
-		curie->buf, ':', curie->n_bytes + 1);
+	const char* const str   = serd_node_get_string(curie);
+	const char* const colon = (const char*)memchr(str, ':', curie->n_bytes + 1);
 	if (curie->type != SERD_CURIE || !colon) {
 		return SERD_ERR_BAD_ARG;
 	}
 
-	const size_t            name_len = (size_t)(colon - curie->buf);
-	const SerdPrefix* const prefix   = serd_env_find(env, curie->buf, name_len);
+	const size_t            name_len = (size_t)(colon - str);
+	const SerdPrefix* const prefix   = serd_env_find(env, str, name_len);
 	if (prefix) {
-		uri_prefix->buf = prefix->uri.buf;
+		uri_prefix->buf = serd_node_get_string(&prefix->uri);
 		uri_prefix->len = prefix->uri.n_bytes;
 		uri_suffix->buf = colon + 1;
 		uri_suffix->len = curie->n_bytes - name_len - 1;

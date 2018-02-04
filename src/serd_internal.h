@@ -50,6 +50,8 @@
 
 static const uint8_t replacement_char[] = { 0xEF, 0xBF, 0xBD };
 
+char* serd_node_buffer(SerdNode* node);
+
 /* File and Buffer Utilities */
 
 static inline FILE*
