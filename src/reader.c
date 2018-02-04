@@ -4,12 +4,14 @@
 #include "reader.h"
 
 #include "byte_source.h"
+#include "node_impl.h"
 #include "serd_internal.h"
 #include "stack.h"
 #include "system.h"
 
 #include "serd/stream.h"
 #include "serd/uri.h"
+#include "zix/attributes.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -36,10 +38,13 @@ r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
 void
 set_blank_id(SerdReader* const reader, const Ref ref, const size_t buf_size)
 {
-  SerdNode*   node   = deref(reader, ref);
-  const char* prefix = reader->bprefix ? (const char*)reader->bprefix : "";
-  node->n_bytes      = (size_t)snprintf(
-    (char*)node->buf, buf_size, "%sb%u", prefix, reader->next_id++);
+  SerdNode* const   node = deref(reader, ref);
+  char* const       buf  = (char*)(node + 1);
+  const char* const prefix =
+    reader->bprefix ? (const char*)reader->bprefix : "";
+
+  node->length =
+    (size_t)snprintf(buf, buf_size, "%sb%u", prefix, reader->next_id++);
 }
 
 size_t
@@ -61,19 +66,19 @@ push_node_padded(SerdReader* const  reader,
                  const size_t       maxlen,
                  const SerdNodeType type,
                  const char* const  str,
-                 const size_t       n_bytes)
+                 const size_t       length)
 {
   void* mem = serd_stack_push_aligned(
     &reader->stack, sizeof(SerdNode) + maxlen + 1, sizeof(SerdNode));
 
   SerdNode* const node = (SerdNode*)mem;
-  node->n_bytes        = n_bytes;
-  node->flags          = 0;
-  node->type           = type;
-  node->buf            = NULL;
+
+  node->length = length;
+  node->flags  = 0;
+  node->type   = type;
 
   char* buf = (char*)(node + 1);
-  memcpy(buf, str, n_bytes + 1);
+  memcpy(buf, str, length + 1);
 
 #ifdef SERD_STACK_CHECK
   reader->allocs                       = (Ref*)realloc(reader->allocs,
@@ -87,20 +92,15 @@ Ref
 push_node(SerdReader* const  reader,
           const SerdNodeType type,
           const char* const  str,
-          const size_t       n_bytes)
+          const size_t       length)
 {
-  return push_node_padded(reader, n_bytes, type, str, n_bytes);
+  return push_node_padded(reader, length, type, str, length);
 }
 
-SerdNode*
+ZIX_PURE_FUNC SerdNode*
 deref(SerdReader* const reader, const Ref ref)
 {
-  if (ref) {
-    SerdNode* node = (SerdNode*)(reader->stack.buf + ref);
-    node->buf      = (char*)node + sizeof(SerdNode);
-    return node;
-  }
-  return NULL;
+  return ref ? (SerdNode*)(reader->stack.buf + ref) : NULL;
 }
 
 Ref

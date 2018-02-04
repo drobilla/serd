@@ -6,32 +6,28 @@
 
 #include "serd/node.h"
 #include "zix/attributes.h"
+#include "zix/string_view.h"
 
 #include <stddef.h>
 
-struct SerdNodeImpl {
-  size_t        n_bytes; /**< Size in bytes (not including null) */
-  SerdNodeFlags flags;   /**< Node flags (e.g. string properties) */
-  SerdNodeType  type;    /**< Node type */
-};
+ZIX_CONST_FUNC char* ZIX_NONNULL
+serd_node_buffer(SerdNode* ZIX_NONNULL node);
 
-static inline char* ZIX_NONNULL
-serd_node_buffer(SerdNode* ZIX_NONNULL node)
-{
-  return (char*)(node + 1);
-}
-
-static inline const char* ZIX_NONNULL
-serd_node_buffer_c(const SerdNode* ZIX_NONNULL node)
-{
-  return (const char*)(node + 1);
-}
+ZIX_CONST_FUNC const char* ZIX_NONNULL
+serd_node_buffer_c(const SerdNode* ZIX_NONNULL node);
 
 SerdNode* ZIX_ALLOCATED
-serd_node_malloc(size_t n_bytes, SerdNodeFlags flags, SerdNodeType type);
+serd_node_malloc(size_t length, SerdNodeFlags flags, SerdNodeType type);
 
 void
-serd_node_set(SerdNode* ZIX_NULLABLE* ZIX_NONNULL dst,
-              const SerdNode* ZIX_NULLABLE        src);
+serd_node_set(SerdNode* ZIX_NONNULL* ZIX_NONNULL dst,
+              const SerdNode* ZIX_NONNULL        src);
+
+void
+serd_node_reset(SerdNode* ZIX_NONNULL node);
+
+/// Create a new URI from a prefix and suffix (expanded from a CURIE)
+SerdNode* ZIX_ALLOCATED
+serd_new_expanded_uri(ZixStringView prefix, ZixStringView suffix);
 
 #endif // SERD_SRC_NODE_H
