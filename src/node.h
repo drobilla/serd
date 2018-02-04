@@ -5,33 +5,34 @@
 #define SERD_SRC_NODE_H
 
 #include "serd/node.h"
+#include "serd/uri.h"
 #include "zix/attributes.h"
+#include "zix/string_view.h"
 
 #include <stddef.h>
 
-struct SerdNodeImpl {
-  size_t        n_bytes; /**< Size in bytes (not including null) */
-  SerdNodeFlags flags;   /**< Node flags (e.g. string properties) */
-  SerdNodeType  type;    /**< Node type */
-};
+/// Return a mutable pointer to the string buffer of a node
+ZIX_CONST_FUNC char* ZIX_NONNULL
+serd_node_buffer(SerdNode* ZIX_NONNULL node);
 
-static inline char* ZIX_NONNULL
-serd_node_buffer(SerdNode* ZIX_NONNULL node)
-{
-  return (char*)(node + 1);
-}
-
-static inline const char* ZIX_NONNULL
-serd_node_buffer_c(const SerdNode* ZIX_NONNULL node)
-{
-  return (const char*)(node + 1);
-}
-
-SerdNode* ZIX_ALLOCATED
-serd_node_malloc(size_t n_bytes, SerdNodeFlags flags, SerdNodeType type);
-
+/// Set the header of a node, completely overwriting previous values
 void
-serd_node_set(SerdNode* ZIX_NULLABLE* ZIX_NONNULL dst,
-              const SerdNode* ZIX_NULLABLE        src);
+serd_node_set_header(SerdNode* ZIX_NONNULL node,
+                     size_t                length,
+                     SerdNodeFlags         flags,
+                     SerdNodeType          type);
+
+/// Set `dst` to be equal to `src`, re-allocating it if necessary
+void
+serd_node_set(SerdNode* ZIX_NONNULL* ZIX_NONNULL dst,
+              const SerdNode* ZIX_NONNULL        src);
+
+/// Create a new URI from a prefix and suffix (expanded from a CURIE)
+SerdNode* ZIX_ALLOCATED
+serd_new_expanded_uri(ZixStringView prefix, ZixStringView suffix);
+
+/// Create a new URI from a string, resolved against a base URI
+SerdNode* ZIX_ALLOCATED
+serd_new_resolved_uri(ZixStringView string, SerdURIView base_uri);
 
 #endif // SERD_SRC_NODE_H
