@@ -36,7 +36,7 @@ serd_env_free(SerdEnv* SERD_NULLABLE env);
 
 /// Get the current base URI
 SERD_API
-const SerdNode* SERD_NONNULL
+const SerdNode* SERD_NULLABLE
 serd_env_base_uri(const SerdEnv* SERD_NONNULL env,
                   SerdURIView* SERD_NULLABLE  out);
 
@@ -69,10 +69,10 @@ serd_env_set_prefix_from_strings(SerdEnv* SERD_NONNULL    env,
 /// Qualify `uri` into a CURIE if possible
 SERD_API
 bool
-serd_env_qualify(const SerdEnv* SERD_NULLABLE env,
-                 const SerdNode* SERD_NONNULL uri,
-                 SerdNode* SERD_NONNULL       prefix,
-                 SerdStringView* SERD_NONNULL suffix);
+serd_env_qualify(const SerdEnv* SERD_NULLABLE                env,
+                 const SerdNode* SERD_NONNULL                uri,
+                 const SerdNode* SERD_NULLABLE* SERD_NONNULL prefix,
+                 SerdStringView* SERD_NONNULL                suffix);
 
 /**
    Expand `curie`.
@@ -82,10 +82,10 @@ serd_env_qualify(const SerdEnv* SERD_NULLABLE env,
 */
 SERD_API
 SerdStatus
-serd_env_expand(const SerdEnv* SERD_NULLABLE env,
-                const SerdNode* SERD_NONNULL curie,
-                SerdStringView* SERD_NONNULL uri_prefix,
-                SerdStringView* SERD_NONNULL uri_suffix);
+serd_env_expand(const SerdEnv* SERD_NULLABLE  env,
+                const SerdNode* SERD_NULLABLE curie,
+                SerdStringView* SERD_NONNULL  uri_prefix,
+                SerdStringView* SERD_NONNULL  uri_suffix);
 
 /**
    Expand `node`, which must be a CURIE or URI, to a full URI.
@@ -93,7 +93,7 @@ serd_env_expand(const SerdEnv* SERD_NULLABLE env,
    Returns null if `node` can not be expanded.
 */
 SERD_API
-SerdNode
+SerdNode* SERD_ALLOCATED
 serd_env_expand_node(const SerdEnv* SERD_NULLABLE env,
                      const SerdNode* SERD_NONNULL node);
 

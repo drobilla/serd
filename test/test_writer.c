@@ -23,12 +23,15 @@ test_write_long_literal(void)
 
   assert(writer);
 
-  SerdNode s = serd_node_from_string(SERD_URI, "http://example.org/s");
-  SerdNode p = serd_node_from_string(SERD_URI, "http://example.org/p");
-  SerdNode o = serd_node_from_string(SERD_LITERAL, "hello \"\"\"world\"\"\"!");
+  SerdNode* s = serd_new_string(SERD_URI, "http://example.org/s");
+  SerdNode* p = serd_new_string(SERD_URI, "http://example.org/p");
+  SerdNode* o = serd_new_string(SERD_LITERAL, "hello \"\"\"world\"\"\"!");
 
-  assert(!serd_writer_write_statement(writer, 0, NULL, &s, &p, &o, NULL, NULL));
+  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o, NULL, NULL));
 
+  serd_node_free(o);
+  serd_node_free(p);
+  serd_node_free(s);
   serd_writer_free(writer);
   serd_env_free(env);
 
