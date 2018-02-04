@@ -26,12 +26,15 @@ test_write_long_literal(void)
 
   assert(writer);
 
-  SerdNode s = serd_node_from_string(SERD_URI, "http://example.org/s");
-  SerdNode p = serd_node_from_string(SERD_URI, "http://example.org/p");
-  SerdNode o = serd_node_from_string(SERD_LITERAL, "hello \"\"\"world\"\"\"!");
+  SerdNode* s = serd_new_string(SERD_URI, "http://example.org/s");
+  SerdNode* p = serd_new_string(SERD_URI, "http://example.org/p");
+  SerdNode* o = serd_new_string(SERD_LITERAL, "hello \"\"\"world\"\"\"!");
 
-  assert(!serd_writer_write_statement(writer, 0, NULL, &s, &p, &o, NULL, NULL));
+  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o, NULL, NULL));
 
+  serd_node_free(o);
+  serd_node_free(p);
+  serd_node_free(s);
   serd_writer_free(writer);
   serd_env_free(env);
 
@@ -62,12 +65,12 @@ test_writer_cleanup(void)
   SerdWriter* writer =
     serd_writer_new(SERD_TURTLE, 0U, env, NULL, null_sink, NULL);
 
-  SerdNode s = serd_node_from_string(SERD_URI, "http://example.org/s");
-  SerdNode p = serd_node_from_string(SERD_URI, "http://example.org/p");
-  SerdNode o = serd_node_from_string(SERD_BLANK, "http://example.org/o");
+  SerdNode* s = serd_new_string(SERD_URI, "http://example.org/s");
+  SerdNode* p = serd_new_string(SERD_URI, "http://example.org/p");
+  SerdNode* o = serd_new_string(SERD_BLANK, "http://example.org/o");
 
   st = serd_writer_write_statement(
-    writer, SERD_ANON_O_BEGIN, NULL, &s, &p, &o, NULL, NULL);
+    writer, SERD_ANON_O_BEGIN, NULL, s, p, o, NULL, NULL);
 
   assert(!st);
 
@@ -76,11 +79,12 @@ test_writer_cleanup(void)
     char buf[12] = {0};
     snprintf(buf, sizeof(buf), "b%u", i);
 
-    SerdNode next_o = serd_node_from_string(SERD_BLANK, buf);
+    SerdNode* next_o = serd_new_string(SERD_BLANK, buf);
 
     st = serd_writer_write_statement(
-      writer, SERD_ANON_O_BEGIN, NULL, &o, &p, &next_o, NULL, NULL);
+      writer, SERD_ANON_O_BEGIN, NULL, o, p, next_o, NULL, NULL);
 
+    serd_node_free(o);
     o = next_o;
   }
 
@@ -88,6 +92,9 @@ test_writer_cleanup(void)
   assert(!(st = serd_writer_finish(writer)));
 
   // Free (which could leak if the writer doesn't clean up the stack properly)
+  serd_node_free(o);
+  serd_node_free(p);
+  serd_node_free(s);
   serd_writer_free(writer);
   serd_env_free(env);
 }
