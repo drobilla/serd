@@ -27,12 +27,15 @@ test_write_long_literal(void)
 
   assert(writer);
 
-  SerdNode s = serd_node_from_string(SERD_URI, "http://example.org/s");
-  SerdNode p = serd_node_from_string(SERD_URI, "http://example.org/p");
-  SerdNode o = serd_node_from_string(SERD_LITERAL, "hello \"\"\"world\"\"\"!");
+  SerdNode* s = serd_new_string(SERD_URI, "http://example.org/s");
+  SerdNode* p = serd_new_string(SERD_URI, "http://example.org/p");
+  SerdNode* o = serd_new_string(SERD_LITERAL, "hello \"\"\"world\"\"\"!");
 
-  assert(!serd_writer_write_statement(writer, 0, NULL, &s, &p, &o, NULL, NULL));
+  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o, NULL, NULL));
 
+  serd_node_free(o);
+  serd_node_free(p);
+  serd_node_free(s);
   serd_writer_free(writer);
   serd_env_free(env);
 
@@ -63,12 +66,12 @@ test_writer_cleanup(void)
   SerdWriter* writer =
     serd_writer_new(SERD_TURTLE, 0U, env, NULL, null_sink, NULL);
 
-  SerdNode s = serd_node_from_string(SERD_URI, "http://example.org/s");
-  SerdNode p = serd_node_from_string(SERD_URI, "http://example.org/p");
-  SerdNode o = serd_node_from_string(SERD_BLANK, "http://example.org/o");
+  SerdNode* s = serd_new_string(SERD_URI, "http://example.org/s");
+  SerdNode* p = serd_new_string(SERD_URI, "http://example.org/p");
+  SerdNode* o = serd_new_string(SERD_BLANK, "http://example.org/o");
 
   st = serd_writer_write_statement(
-    writer, SERD_ANON_O_BEGIN, NULL, &s, &p, &o, NULL, NULL);
+    writer, SERD_ANON_O_BEGIN, NULL, s, p, o, NULL, NULL);
 
   assert(!st);
 
@@ -77,11 +80,12 @@ test_writer_cleanup(void)
     char buf[12] = {0};
     snprintf(buf, sizeof(buf), "b%u", i);
 
-    SerdNode next_o = serd_node_from_string(SERD_BLANK, buf);
+    SerdNode* next_o = serd_new_string(SERD_BLANK, buf);
 
     st = serd_writer_write_statement(
-      writer, SERD_ANON_O_BEGIN, NULL, &o, &p, &next_o, NULL, NULL);
+      writer, SERD_ANON_O_BEGIN, NULL, o, p, next_o, NULL, NULL);
 
+    serd_node_free(o);
     o = next_o;
   }
 
@@ -92,6 +96,9 @@ test_writer_cleanup(void)
   assert(!(st = serd_writer_set_base_uri(writer, NULL)));
 
   // Free (which could leak if the writer doesn't clean up the stack properly)
+  serd_node_free(o);
+  serd_node_free(p);
+  serd_node_free(s);
   serd_writer_free(writer);
   serd_env_free(env);
 }
@@ -111,17 +118,17 @@ test_strict_write(void)
 
   const uint8_t bad_str[] = {0xFF, 0x90, 'h', 'i', 0};
 
-  SerdNode s = serd_node_from_string(SERD_URI, "http://example.org/s");
-  SerdNode p = serd_node_from_string(SERD_URI, "http://example.org/p");
+  SerdNode* s = serd_new_string(SERD_URI, "http://example.org/s");
+  SerdNode* p = serd_new_string(SERD_URI, "http://example.org/p");
 
-  SerdNode bad_lit = serd_node_from_string(SERD_LITERAL, (const char*)bad_str);
-  SerdNode bad_uri = serd_node_from_string(SERD_URI, (const char*)bad_str);
-
-  assert(serd_writer_write_statement(
-           writer, 0, NULL, &s, &p, &bad_lit, NULL, NULL) == SERD_ERR_BAD_TEXT);
+  SerdNode* bad_lit = serd_new_string(SERD_LITERAL, (const char*)bad_str);
+  SerdNode* bad_uri = serd_new_string(SERD_URI, (const char*)bad_str);
 
   assert(serd_writer_write_statement(
-           writer, 0, NULL, &s, &p, &bad_uri, NULL, NULL) == SERD_ERR_BAD_TEXT);
+           writer, 0, NULL, s, p, bad_lit, NULL, NULL) == SERD_ERR_BAD_TEXT);
+
+  assert(serd_writer_write_statement(
+           writer, 0, NULL, s, p, bad_uri, NULL, NULL) == SERD_ERR_BAD_TEXT);
 
   serd_writer_free(writer);
   serd_env_free(env);
@@ -145,12 +152,12 @@ test_write_error(void)
   SerdWriter*    writer = NULL;
   SerdStatus     st     = SERD_SUCCESS;
 
-  SerdNode u = serd_node_from_string(SERD_URI, "http://example.com/u");
+  SerdNode* u = serd_new_string(SERD_URI, "http://example.com/u");
 
   writer = serd_writer_new(
     SERD_TURTLE, (SerdWriterFlags)0, env, NULL, error_sink, NULL);
   assert(writer);
-  st = serd_writer_write_statement(writer, 0U, NULL, &u, &u, &u, NULL, NULL);
+  st = serd_writer_write_statement(writer, 0U, NULL, u, u, u, NULL, NULL);
   assert(st == SERD_ERR_BAD_WRITE);
   serd_writer_free(writer);
 
