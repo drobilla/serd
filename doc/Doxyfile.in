@@ -26,8 +26,6 @@ MACRO_EXPANSION        = YES
 PREDEFINED             = SERD_ALLOCATED \
                          SERD_API \
                          SERD_CONST_FUNC= \
-                         SERD_DEPRECATED_BY(x)= \
-                         SERD_DISABLE_DEPRECATED \
                          SERD_NONNULL= \
                          SERD_NULLABLE= \
                          SERD_PURE_FUNC= \
