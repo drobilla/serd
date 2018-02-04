@@ -91,14 +91,14 @@ test_double_to_node(void)
                                  NULL};
 
   for (size_t i = 0; i < sizeof(dbl_test_nums) / sizeof(double); ++i) {
-    SerdNode   node = serd_new_decimal(dbl_test_nums[i], 8);
-    const bool pass = (node.buf && dbl_test_strs[i])
-                        ? !strcmp(node.buf, dbl_test_strs[i])
-                        : (node.buf == dbl_test_strs[i]);
+    SerdNode*   node     = serd_new_decimal(dbl_test_nums[i], 8);
+    const char* node_str = node ? serd_node_string(node) : NULL;
+    const bool  pass     = (node_str && dbl_test_strs[i])
+                             ? !strcmp(node_str, dbl_test_strs[i])
+                             : (node_str == dbl_test_strs[i]);
     assert(pass);
-    const size_t len = node.buf ? strlen(node.buf) : 0;
-    assert(node.n_bytes == len);
-    serd_node_free(&node);
+    assert(!node || serd_node_length(node) == strlen(node_str));
+    serd_node_free(node);
   }
 }
 
@@ -111,36 +111,39 @@ test_integer_to_node(void)
     "0", "0", "-23", "23", "-12340", "1000", "-1000"};
 
   for (size_t i = 0; i < sizeof(int_test_nums) / sizeof(double); ++i) {
-    SerdNode node = serd_new_integer(int_test_nums[i]);
-    assert(!strcmp(node.buf, int_test_strs[i]));
-    assert(node.n_bytes == strlen(node.buf));
-    serd_node_free(&node);
+    SerdNode*   node     = serd_new_integer(int_test_nums[i]);
+    const char* node_str = serd_node_string(node);
+    assert(!strcmp(node_str, int_test_strs[i]));
+    assert(serd_node_length(node) == strlen(node_str));
+    serd_node_free(node);
   }
 }
 
 static void
 test_blob_to_node(void)
 {
+  assert(!serd_new_blob(&SERD_URI_NULL, 0, false));
+
   for (size_t size = 1; size < 256; ++size) {
     uint8_t* const data = (uint8_t*)malloc(size);
     for (size_t i = 0; i < size; ++i) {
       data[i] = (uint8_t)((size + i) % 256);
     }
 
-    SerdNode blob = serd_new_blob(data, size, size % 5);
+    size_t      out_size = 0;
+    SerdNode*   blob     = serd_new_blob(data, size, size % 5);
+    const char* blob_str = serd_node_string(blob);
+    uint8_t*    out =
+      (uint8_t*)serd_base64_decode(blob_str, serd_node_length(blob), &out_size);
 
-    assert(blob.n_bytes == strlen(blob.buf));
-
-    size_t   out_size = 0;
-    uint8_t* out =
-      (uint8_t*)serd_base64_decode(blob.buf, blob.n_bytes, &out_size);
+    assert(serd_node_length(blob) == strlen(blob_str));
     assert(out_size == size);
 
     for (size_t i = 0; i < size; ++i) {
       assert(out[i] == data[i]);
     }
 
-    serd_node_free(&blob);
+    serd_node_free(blob);
     serd_free(out);
     free(data);
   }
@@ -150,46 +153,45 @@ static void
 test_node_equals(void)
 {
   const uint8_t replacement_char_str[] = {0xEF, 0xBF, 0xBD, 0};
-  SerdNode      lhs =
-    serd_node_from_string(SERD_LITERAL, (const char*)replacement_char_str);
-  SerdNode rhs = serd_node_from_string(SERD_LITERAL, "123");
-  assert(!serd_node_equals(&lhs, &rhs));
+  SerdNode*     lhs =
+    serd_new_string(SERD_LITERAL, (const char*)replacement_char_str);
+  SerdNode* rhs = serd_new_string(SERD_LITERAL, "123");
+  assert(!serd_node_equals(lhs, rhs));
 
-  SerdNode qnode = serd_node_from_string(SERD_CURIE, "foo:bar");
-  assert(!serd_node_equals(&lhs, &qnode));
-  assert(serd_node_equals(&lhs, &lhs));
+  SerdNode* qnode = serd_new_string(SERD_CURIE, "foo:bar");
+  assert(!serd_node_equals(lhs, qnode));
+  assert(serd_node_equals(lhs, lhs));
 
-  SerdNode null_copy = serd_node_copy(&SERD_NODE_NULL);
-  assert(serd_node_equals(&SERD_NODE_NULL, &null_copy));
+  assert(!serd_node_copy(NULL));
+
+  serd_node_free(qnode);
+  serd_node_free(lhs);
+  serd_node_free(rhs);
 }
 
 static void
 test_node_from_string(void)
 {
-  SerdNode node = serd_node_from_string(SERD_LITERAL, "hello\"");
-  assert(node.n_bytes == 6 && node.flags == SERD_HAS_QUOTE &&
-         !strcmp(node.buf, "hello\""));
+  SerdNode* hello = serd_new_string(SERD_LITERAL, "hello\"");
+  assert(serd_node_length(hello) == 6 &&
+         serd_node_flags(hello) == SERD_HAS_QUOTE &&
+         !strcmp(serd_node_string(hello), "hello\""));
 
-  assert(node.n_bytes == 6 && node.flags == SERD_HAS_QUOTE &&
-         !strcmp((const char*)node.buf, "hello\""));
-
-  node = serd_node_from_string(SERD_URI, NULL);
-  assert(serd_node_equals(&node, &SERD_NODE_NULL));
+  serd_node_free(hello);
 }
 
 static void
 test_node_from_substring(void)
 {
-  SerdNode empty = serd_node_from_substring(SERD_LITERAL, NULL, 32);
-  assert(!empty.buf && !empty.n_bytes && !empty.flags && !empty.type);
+  SerdNode* a_b = serd_new_substring(SERD_LITERAL, "a\"bc", 3);
+  assert(serd_node_length(a_b) == 3 && serd_node_flags(a_b) == SERD_HAS_QUOTE &&
+         !strncmp(serd_node_string(a_b), "a\"b", 3));
 
-  SerdNode a_b = serd_node_from_substring(SERD_LITERAL, "a\"bc", 3);
-  assert(a_b.n_bytes == 3 && a_b.flags == SERD_HAS_QUOTE &&
-         !strncmp(a_b.buf, "a\"b", 3));
-
-  a_b = serd_node_from_substring(SERD_LITERAL, "a\"bc", 10);
-  assert(a_b.n_bytes == 4 && a_b.flags == SERD_HAS_QUOTE &&
-         !strncmp(a_b.buf, "a\"bc", 4));
+  serd_node_free(a_b);
+  a_b = serd_new_substring(SERD_LITERAL, "a\"bc", 10);
+  assert(serd_node_length(a_b) == 4 && serd_node_flags(a_b) == SERD_HAS_QUOTE &&
+         !strncmp(serd_node_string(a_b), "a\"bc", 4));
+  serd_node_free(a_b);
 }
 
 int
