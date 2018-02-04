@@ -6,6 +6,7 @@
 
 #include "serd/attributes.h"
 #include "serd/uri.h"
+#include "zix/string_view.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -205,7 +206,11 @@ serd_new_blob(const void* ZIX_NONNULL buf, size_t size, bool wrap_lines);
 SERD_API SerdNode
 serd_node_copy(const SerdNode* ZIX_NULLABLE node);
 
-/// Return true iff `a` is equal to `b`
+/**
+   Return true if two nodes are equal.
+
+   Nodes are equal if they have the same type, length, and string.
+*/
 SERD_PURE_API
 bool
 serd_node_equals(const SerdNode* ZIX_NONNULL a, const SerdNode* ZIX_NONNULL b);
@@ -218,6 +223,35 @@ serd_node_equals(const SerdNode* ZIX_NONNULL a, const SerdNode* ZIX_NONNULL b);
 */
 SERD_API void
 serd_node_free(SerdNode* ZIX_NULLABLE node);
+
+/// Return the type of a node
+SERD_PURE_API
+SerdNodeType
+serd_node_type(const SerdNode* ZIX_NONNULL node);
+
+/// Return the additional flags of a node
+SERD_PURE_API
+SerdNodeFlags
+serd_node_flags(const SerdNode* ZIX_NONNULL node);
+
+/// Return the length of a node's string in bytes, excluding the terminator
+SERD_PURE_API
+size_t
+serd_node_length(const SerdNode* ZIX_NONNULL node);
+
+/// Return the string contents of a node
+SERD_PURE_API
+const char* ZIX_NONNULL
+serd_node_string(const SerdNode* ZIX_NONNULL node);
+
+/**
+   Return a view of the string in a node.
+
+   This is a convenience wrapper for serd_node_string() and serd_node_length()
+   that can be used to get both in a single call.
+*/
+SERD_PURE_API ZixStringView
+serd_node_string_view(const SerdNode* ZIX_NONNULL node);
 
 /**
    @}

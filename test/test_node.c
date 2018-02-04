@@ -6,6 +6,7 @@
 #include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/string.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <float.h>
@@ -161,14 +162,16 @@ test_node_equals(void)
 static void
 test_node_from_string(void)
 {
-  SerdNode node = serd_node_from_string(SERD_LITERAL, "hello\"");
-  assert(node.n_bytes == 6 && node.flags == SERD_HAS_QUOTE &&
-         !strcmp(node.buf, "hello\""));
+  SerdNode            hello = serd_node_from_string(SERD_LITERAL, "hello\"");
+  const ZixStringView hello_string = serd_node_string_view(&hello);
 
-  assert(node.n_bytes == 6 && node.flags == SERD_HAS_QUOTE &&
-         !strcmp((const char*)node.buf, "hello\""));
+  assert(serd_node_type(&hello) == SERD_LITERAL);
+  assert(serd_node_flags(&hello) == SERD_HAS_QUOTE);
+  assert(serd_node_length(&hello) == 6U);
+  assert(hello_string.length == 6U);
+  assert(!strcmp(hello_string.data, "hello\""));
 
-  node = serd_node_from_string(SERD_URI, NULL);
+  SerdNode node = serd_node_from_string(SERD_URI, NULL);
   assert(serd_node_equals(&node, &SERD_NODE_NULL));
 }
 

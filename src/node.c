@@ -10,6 +10,7 @@
 #include "serd/node.h"
 #include "serd/string.h"
 #include "serd/uri.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <float.h>
@@ -355,4 +356,40 @@ serd_node_free(SerdNode* const node)
     free((char*)node->buf);
     node->buf = NULL;
   }
+}
+
+SerdNodeType
+serd_node_type(const SerdNode* const node)
+{
+  assert(node);
+  return node->type;
+}
+
+SerdNodeFlags
+serd_node_flags(const SerdNode* const node)
+{
+  assert(node);
+  return node->flags;
+}
+
+size_t
+serd_node_length(const SerdNode* const node)
+{
+  assert(node);
+  return node->n_bytes;
+}
+
+const char*
+serd_node_string(const SerdNode* const node)
+{
+  assert(node);
+  return (const char*)node->buf;
+}
+
+ZixStringView
+serd_node_string_view(const SerdNode* const node)
+{
+  assert(node);
+  const ZixStringView r = {(const char*)node->buf, node->n_bytes};
+  return r;
 }
