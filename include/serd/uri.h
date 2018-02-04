@@ -53,8 +53,7 @@ serd_file_uri_parse(const char* SERD_NONNULL          uri,
                     char* SERD_NONNULL* SERD_NULLABLE hostname);
 
 /// Return true iff `utf8` starts with a valid URI scheme
-SERD_PURE_API
-bool
+SERD_PURE_API bool
 serd_uri_string_has_scheme(const char* SERD_NULLABLE utf8);
 
 /// Parse `utf8`, writing result to `out`
