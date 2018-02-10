@@ -633,8 +633,8 @@ Ref pop_node(SerdReader* reader, Ref ref);
 bool emit_statement(SerdReader* reader, ReadContext ctx, Ref o, Ref d, Ref l);
 
 bool read_n3_statement(SerdReader* reader);
-bool read_nquadsDoc(SerdReader* reader);
-bool read_turtleTrigDoc(SerdReader* reader);
+SerdStatus read_nquadsDoc(SerdReader* reader);
+SerdStatus read_turtleTrigDoc(SerdReader* reader);
 
 typedef enum {
 	FIELD_NONE,

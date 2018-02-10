@@ -122,7 +122,12 @@ test_read_chunks(void)
 	assert(serd_reader_get_handle(reader) == rt);
 	assert(f);
 
-	SerdStatus st = serd_reader_start_stream(reader, f, NULL, false);
+	SerdStatus st = serd_reader_start_stream(reader,
+	                                         (SerdSource)fread,
+	                                         (SerdStreamErrorFunc)ferror,
+	                                         f,
+	                                         NULL,
+	                                         1);
 	assert(st == SERD_SUCCESS);
 
 	// Write two statement separated by null characters
@@ -158,9 +163,14 @@ test_read_chunks(void)
 	assert(st == SERD_SUCCESS); // FIXME: return SERD_FAILURE?
 	assert(rt->n_statements == 2);
 
-	// EOF
+	// FIXME: Successful read of nothing
 	st = serd_reader_read_chunk(reader);
 	assert(st == SERD_SUCCESS); // FIXME: return SERD_FAILURE?
+	assert(rt->n_statements == 2);
+
+	// EOF
+	st = serd_reader_read_chunk(reader);
+	assert(st == SERD_FAILURE);
 	assert(rt->n_statements == 2);
 
 	serd_reader_free(reader);

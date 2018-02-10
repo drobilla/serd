@@ -1444,22 +1444,22 @@ skip_until(SerdReader* reader, uint8_t byte)
 	}
 }
 
-bool
+SerdStatus
 read_turtleTrigDoc(SerdReader* reader)
 {
 	while (!reader->source.eof) {
 		if (!read_n3_statement(reader)) {
 			if (reader->strict) {
-				return 0;
+				return SERD_ERR_UNKNOWN;
 			}
 			skip_until(reader, '\n');
 			reader->status = SERD_SUCCESS;
 		}
 	}
-	return reader->status <= SERD_FAILURE;
+	return reader->status;
 }
 
-bool
+SerdStatus
 read_nquadsDoc(SerdReader* reader)
 {
 	while (!reader->source.eof) {
@@ -1471,8 +1471,9 @@ read_nquadsDoc(SerdReader* reader)
 		if (peek_byte(reader) == EOF) {
 			break;
 		} else if (peek_byte(reader) == '@') {
-			return r_err(reader, SERD_ERR_BAD_SYNTAX,
-			             "syntax does not support directives\n");
+			r_err(reader, SERD_ERR_BAD_SYNTAX,
+			      "syntax does not support directives\n");
+			return SERD_ERR_BAD_SYNTAX;
 		}
 
 		// subject predicate object
@@ -1481,11 +1482,11 @@ read_nquadsDoc(SerdReader* reader)
 		    !(ctx.predicate = read_IRIREF(reader)) ||
 		    !read_ws_star(reader) ||
 		    !read_object(reader, &ctx, false, &ate_dot)) {
-			return false;
+			return SERD_ERR_UNKNOWN;
 		}
 
 		if (!ate_dot) {  // graphLabel?
-			TRY_RET(read_ws_star(reader));
+			read_ws_star(reader);
 			switch (peek_byte(reader)) {
 			case '.':
 				break;
@@ -1494,20 +1495,23 @@ read_nquadsDoc(SerdReader* reader)
 				break;
 			default:
 				if (!(ctx.graph = read_IRIREF(reader))) {
-					return false;
+					return SERD_ERR_UNKNOWN;
 				}
 			}
 
 			// Terminating '.'
-			TRY_RET(read_ws_star(reader));
+			read_ws_star(reader);
 			eat_byte_check(reader, '.');
 		}
 
-		TRY_RET(emit_statement(reader, ctx, ctx.object, ctx.datatype, ctx.lang));
+		if (!emit_statement(reader, ctx, ctx.object, ctx.datatype, ctx.lang)) {
+			break;
+		}
+
 		pop_node(reader, ctx.graph);
 		pop_node(reader, ctx.lang);
 		pop_node(reader, ctx.datatype);
 		pop_node(reader, ctx.object);
 	}
-	return reader->status <= SERD_FAILURE;
+	return reader->status;
 }
