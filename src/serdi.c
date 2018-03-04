@@ -227,7 +227,8 @@ main(int argc, char** argv)
 		base = serd_node_new_uri_from_string(
 			(const uint8_t*)argv[a], NULL, &base_uri);
 	} else if (from_file && in_fd != stdin) {  // Use input file URI
-		base = serd_node_new_file_uri(input, NULL, &base_uri, true);
+		const uint8_t* const path = serd_realpath(input);
+		base = serd_node_new_file_uri(path, NULL, &base_uri, true);
 	}
 
 	FILE*    out_fd = stdout;
