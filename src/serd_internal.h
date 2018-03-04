@@ -18,11 +18,14 @@
 #define SERD_INTERNAL_H
 
 #define _POSIX_C_SOURCE 200809L /* for posix_memalign and posix_fadvise */
+#define _XOPEN_SOURCE   500     /* for realpath */
 
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -70,6 +73,19 @@ serd_bufalloc(size_t size)
 	return ret ? NULL : ptr;
 #else
 	return malloc(size);
+#endif
+}
+
+static inline const uint8_t*
+serd_realpath(const uint8_t* path)
+{
+#if defined(_WIN32)
+	static uint8_t real[MAX_PATH];
+	GetFullPathName(path, MAX_PATH, real, NULL);
+	return real;
+#else
+	static char real[PATH_MAX];
+	return (const uint8_t*)realpath((const char*)path, real);
 #endif
 }
 
