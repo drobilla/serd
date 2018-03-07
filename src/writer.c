@@ -733,7 +733,7 @@ serd_writer_write_statement(SerdWriter*        writer,
 				++writer->indent;
 			}
 			write_sep(writer, SEP_END_O);
-			write_node(writer, object, datatype, lang, FIELD_OBJECT, flags);
+			TRY(write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
 			if (!(flags & SERD_ANON_O_BEGIN)) {
 				--writer->indent;
 			}
@@ -742,7 +742,7 @@ serd_writer_write_statement(SerdWriter*        writer,
 			Sep sep = writer->context.predicate.type ? SEP_END_P : SEP_S_P;
 			write_sep(writer, sep);
 			write_pred(writer, flags, predicate);
-			write_node(writer, object, datatype, lang, FIELD_OBJECT, flags);
+			TRY(write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
 		}
 	} else {
 		// No abbreviation
@@ -757,7 +757,7 @@ serd_writer_write_statement(SerdWriter*        writer,
 		}
 
 		if (!(flags & SERD_ANON_CONT)) {
-			write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags);
+			TRY(write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags));
 			++writer->indent;
 			write_sep(writer, SEP_S_P);
 		} else {
@@ -771,7 +771,7 @@ serd_writer_write_statement(SerdWriter*        writer,
 			write_pred(writer, flags, predicate);
 		}
 
-		write_node(writer, object, datatype, lang, FIELD_OBJECT, flags);
+		TRY(write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
 	}
 
 	if (flags & (SERD_ANON_S_BEGIN|SERD_ANON_O_BEGIN)) {
