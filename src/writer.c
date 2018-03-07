@@ -477,7 +477,10 @@ write_uri_node(SerdWriter* const        writer,
 		sink("== ", 3, writer);
 	}
 
-	const bool has_scheme = serd_uri_string_has_scheme(node->buf);
+	const bool has_scheme   = serd_uri_string_has_scheme(node->buf);
+	const bool supports_rel = (writer->syntax != SERD_NTRIPLES &&
+	                           writer->syntax != SERD_NQUADS);
+
 	if (field == FIELD_PREDICATE && supports_abbrev(writer)
 	    && !strcmp((const char*)node->buf, NS_RDF "type")) {
 		return sink("a", 1, writer) == 1;
@@ -501,11 +504,15 @@ write_uri_node(SerdWriter* const        writer,
 			return false;
 		}
 		serd_uri_resolve(&uri, &in_base_uri, &abs_uri);
+		if (!abs_uri.scheme.len && !supports_rel) {
+			w_err(writer, SERD_ERR_BAD_SYNTAX,
+			      "unable to write relative URI `%s'\n", node->buf);
+			return false;
+		}
+
 		bool rooted = uri_is_under(&writer->base_uri, &writer->root_uri);
 		SerdURI* root = rooted ? &writer->root_uri : & writer->base_uri;
-		if (!uri_is_under(&abs_uri, root) ||
-		    writer->syntax == SERD_NTRIPLES ||
-		    writer->syntax == SERD_NQUADS) {
+		if (!uri_is_under(&abs_uri, root) || !supports_rel) {
 			serd_uri_serialise(&abs_uri, uri_sink, writer);
 		} else {
 			serd_uri_serialise_relative(
