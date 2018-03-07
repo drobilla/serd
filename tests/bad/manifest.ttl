@@ -28,6 +28,7 @@
 		<#bad-char-in-local>
 		<#bad-char-in-prefix>
 		<#bad-char-in-uri>
+		<#bad-colon-in-first-path-segment>
 		<#bad-datatype>
 		<#bad-dot-after-subject>
 		<#bad-eof-in-blank>
@@ -173,6 +174,11 @@
 	rdf:type rdft:TestTurtleNegativeSyntax ;
 	mf:name "bad-char-in-uri" ;
 	mf:action <bad-char-in-uri.ttl> .
+
+<#bad-colon-in-first-path-segment>
+	rdf:type rdft:TestTurtleNegativeSyntax ;
+	mf:name "bad-colon-in-first-path-segment" ;
+	mf:action <bad-colon-in-first-path-segment.ttl> .
 
 <#bad-datatype>
 	rdf:type rdft:TestTurtleNegativeSyntax ;

@@ -141,7 +141,8 @@ serd_uri_parse(const uint8_t* utf8, SerdURI* out)
 {
 	*out = SERD_URI_NULL;
 
-	const uint8_t* ptr = utf8;
+	const uint8_t* ptr            = utf8;
+	bool           path_has_slash = false;
 
 	/* See http://tools.ietf.org/html/rfc3986#section-3
 	   URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
@@ -203,6 +204,15 @@ path:
 		switch (c) {
 		case '?': goto query;
 		case '#': goto fragment;
+		case '/':
+			++out->path.len;
+			path_has_slash = true;
+			break;
+		case ':':
+			if (!path_has_slash) {
+				// RFC3987 S2.2: isegment-nz-nc can not contain a colon
+				return SERD_ERR_BAD_SYNTAX;
+			}
 		default:
 			++out->path.len;
 		}
