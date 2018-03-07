@@ -420,7 +420,7 @@ def test(ctx):
         in_path = 'tests/good/%s.ttl' % in_name
         autowaf.run_test(
             ctx, APPNAME,
-            'serdi_static -o turtle "%s/%s" "%s" > %s.out' % (srcdir, in_path, in_path, in_path),
+            'serdi_static -o turtle "%s/%s" > %s.out' % (srcdir, in_path, in_path),
             0, name=in_name)
 
         autowaf.run_test(
@@ -437,7 +437,8 @@ def test(ctx):
             'serdi_static "file://%s/tests/good/manifest.ttl" > %s' % (srcdir, nul),
             'serdi_static -v > %s' % nul,
             'serdi_static -h > %s' % nul,
-            'serdi_static -s "<foo> a <#Thingie> ." > %s' % nul,
+            'serdi_static -s "<x> a <#Thing> ." "http://example.org" > %s' % nul,
+            'serdi_static -o turtle -s "<x> a <#Thing> ." > %s' % nul,
             'serdi_static %s > %s' % (nul, nul)
     ], 0, name='serdi-cmd-good')
 
@@ -445,6 +446,7 @@ def test(ctx):
             'serdi_static -q "file://%s/tests/bad/bad-id-clash.ttl" > %s' % (srcdir, nul),
             'serdi_static > %s' % nul,
             'serdi_static ftp://example.org/unsupported.ttl > %s' % nul,
+            'serdi_static -s "<x> a <#Thing> ." > %s' % nul,
             'serdi_static -i > %s' % nul,
             'serdi_static -o > %s' % nul,
             'serdi_static -z > %s' % nul,
