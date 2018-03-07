@@ -496,7 +496,10 @@ write_uri_node(SerdWriter* const        writer,
 	if (writer->style & SERD_STYLE_RESOLVED) {
 		SerdURI in_base_uri, uri, abs_uri;
 		serd_env_get_base_uri(writer->env, &in_base_uri);
-		serd_uri_parse(node->buf, &uri);
+		if (serd_uri_parse(node->buf, &uri)) {
+			w_err(writer, SERD_ERR_BAD_SYNTAX, "invalid URI `%s'\n", node->buf);
+			return false;
+		}
 		serd_uri_resolve(&uri, &in_base_uri, &abs_uri);
 		bool rooted = uri_is_under(&writer->base_uri, &writer->root_uri);
 		SerdURI* root = rooted ? &writer->root_uri : & writer->base_uri;
