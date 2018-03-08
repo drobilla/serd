@@ -1,5 +1,6 @@
 serd (0.29.3) unstable;
 
+  * Fix parsing local names that end with escaped dots
   * Add serdi option to write ASCII output
   * Make serdi guess input syntax from extension if unspecified
   * Make serdi syntax options case-insensitive
@@ -11,7 +12,7 @@ serd (0.29.3) unstable;
   * Fix building with MSVC
   * Clean up testing code
 
- -- David Robillard <d@drobilla.net>  Sun, 24 Dec 2017 14:14:15 -0500
+ -- David Robillard <d@drobilla.net>  Thu, 08 Mar 2018 15:42:51 -0500
 
 serd (0.28.0) stable;
 

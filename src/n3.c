@@ -495,8 +495,9 @@ read_PLX(SerdReader* reader, Ref dest)
 static SerdStatus
 read_PN_LOCAL(SerdReader* reader, Ref dest, bool* ate_dot)
 {
-	uint8_t    c  = peek_byte(reader);
-	SerdStatus st = SERD_SUCCESS;
+	uint8_t    c                      = peek_byte(reader);
+	SerdStatus st                     = SERD_SUCCESS;
+	bool       trailing_unescaped_dot = false;
 	switch (c) {
 	case '0': case '1': case '2': case '3': case '4': case '5':
 	case '6': case '7': case '8': case '9': case ':': case '_':
@@ -518,10 +519,11 @@ read_PN_LOCAL(SerdReader* reader, Ref dest, bool* ate_dot)
 		} else if (st != SERD_SUCCESS && (st = read_PN_CHARS(reader, dest))) {
 			break;
 		}
+		trailing_unescaped_dot = (c == '.');
 	}
 
 	SerdNode* const n = deref(reader, dest);
-	if (n->buf[n->n_bytes - 1] == '.') {
+	if (trailing_unescaped_dot) {
 		// Ate trailing dot, pop it from stack/node and inform caller
 		--n->n_bytes;
 		serd_stack_pop(&reader->stack, 1);
