@@ -510,7 +510,7 @@ read_PN_LOCAL(SerdReader* reader, Ref dest, bool* ate_dot)
 		}
 	}
 
-	while ((c = peek_byte(reader))) {  // Middle: (PN_CHARS | '.' | ';')*
+	while ((c = peek_byte(reader))) {  // Middle: (PN_CHARS | '.' | ':')*
 		if (c == '.' || c == ':') {
 			push_byte(reader, dest, eat_byte_safe(reader, c));
 		} else if ((st = read_PLX(reader, dest)) > SERD_FAILURE) {
