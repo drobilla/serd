@@ -630,7 +630,7 @@ SerdNode* deref(SerdReader* reader, Ref ref);
 
 Ref pop_node(SerdReader* reader, Ref ref);
 
-bool emit_statement(SerdReader* reader, ReadContext ctx, Ref o, Ref d, Ref l);
+bool emit_statement(SerdReader* reader, ReadContext ctx, Ref o);
 
 bool read_n3_statement(SerdReader* reader);
 SerdStatus read_nquadsDoc(SerdReader* reader);

@@ -116,7 +116,7 @@ pop_node(SerdReader* reader, Ref ref)
 }
 
 bool
-emit_statement(SerdReader* reader, ReadContext ctx, Ref o, Ref d, Ref l)
+emit_statement(SerdReader* reader, ReadContext ctx, Ref o)
 {
 	SerdNode* graph = deref(reader, ctx.graph);
 	if (!graph && reader->default_graph) {
@@ -126,7 +126,7 @@ emit_statement(SerdReader* reader, ReadContext ctx, Ref o, Ref d, Ref l)
 		!reader->statement_sink(
 			reader->handle, *ctx.flags, graph,
 			deref(reader, ctx.subject), deref(reader, ctx.predicate),
-			deref(reader, o), deref(reader, d), deref(reader, l));
+			deref(reader, o));
 	*ctx.flags &= SERD_ANON_CONT|SERD_LIST_CONT;  // Preserve only cont flags
 	return ret;
 }

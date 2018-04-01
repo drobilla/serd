@@ -68,16 +68,12 @@ test_sink(void*              handle,
           const SerdNode*    graph,
           const SerdNode*    subject,
           const SerdNode*    predicate,
-          const SerdNode*    object,
-          const SerdNode*    object_datatype,
-          const SerdNode*    object_lang)
+          const SerdNode*    object)
 {
 	(void)flags;
 	(void)subject;
 	(void)predicate;
 	(void)object;
-	(void)object_datatype;
-	(void)object_lang;
 
 	ReaderTest* rt = (ReaderTest*)handle;
 	++rt->n_statements;
@@ -383,6 +379,36 @@ test_node_from_substring(void)
 	serd_node_free(a_b);
 }
 
+static void test_literal(void)
+{
+	assert(!serd_node_new_literal(NULL, NULL, NULL));
+
+	SerdNode* hello2 = serd_node_new_literal("hello\"", NULL, NULL);
+	assert(serd_node_get_length(hello2) == 6 &&
+	       serd_node_get_flags(hello2) == SERD_HAS_QUOTE &&
+	       !strcmp(serd_node_get_string(hello2), "hello\""));
+	serd_node_free(hello2);
+
+	SerdNode* hello_l = serd_node_new_literal("hello_l\"", NULL, "en");
+	assert(serd_node_get_length(hello_l) == 8);
+	assert(!strcmp(serd_node_get_string(hello_l), "hello_l\""));
+	assert(serd_node_get_flags(hello_l) ==
+	       (SERD_HAS_QUOTE | SERD_HAS_LANGUAGE));
+	assert(!strcmp(serd_node_get_string(serd_node_get_language(hello_l)),
+	               "en"));
+	serd_node_free(hello_l);
+
+	SerdNode* hello_dt = serd_node_new_literal(
+	        "hello_dt\"", "http://example.org/Thing", NULL);
+	assert(serd_node_get_length(hello_dt) == 9);
+	assert(!strcmp(serd_node_get_string(hello_dt), "hello_dt\""));
+	assert(serd_node_get_flags(hello_dt) ==
+	       (SERD_HAS_QUOTE | SERD_HAS_DATATYPE));
+	assert(!strcmp(serd_node_get_string(serd_node_get_datatype(hello_dt)),
+	               "http://example.org/Thing"));
+	serd_node_free(hello_dt);
+}
+
 static void
 test_uri_from_string(void)
 {
@@ -524,38 +550,38 @@ test_writer(const char* const path)
 	SerdNode* o = serd_node_new_string(SERD_LITERAL, (char*)buf);
 
 	// Write 3 invalid statements (should write nothing)
-	const SerdNode* junk[][5] = { { s,    p,    NULL, NULL, NULL },
-	                              { s,    NULL, o,    NULL, NULL },
-	                              { NULL, p,    o,    NULL, NULL },
-	                              { s,    p,    NULL, NULL, NULL },
-	                              { s,    NULL, o,    NULL, NULL },
-	                              { NULL, p,    o,    NULL, NULL },
-	                              { s,    o,    o,    NULL, NULL },
-	                              { o,    p,    o,    NULL, NULL },
-	                              { s,    p,    NULL, NULL, NULL },
-	                              { NULL, NULL, NULL, NULL, NULL } };
+	const SerdNode* junk[][5] = { { s,    p,    NULL },
+	                              { s,    NULL, o    },
+	                              { NULL, p,    o    },
+	                              { s,    p,    NULL },
+	                              { s,    NULL, o    },
+	                              { NULL, p,    o    },
+	                              { s,    o,    o    },
+	                              { o,    p,    o    },
+	                              { s,    p,    NULL },
+	                              { NULL, NULL, NULL } };
 	for (unsigned i = 0; i < sizeof(junk) / (sizeof(SerdNode*) * 5); ++i) {
 		assert(serd_writer_write_statement(
 			       writer, 0, NULL,
-			       junk[i][0], junk[i][1], junk[i][2], junk[i][3], junk[i][4]));
+			       junk[i][0], junk[i][1], junk[i][2]));
 	}
 
-	SerdNode* t = serd_node_new_string(SERD_URI, "urn:Type");
-	SerdNode* l = serd_node_new_string(SERD_LITERAL, "en");
-	const SerdNode* good[][5] = { { s, p, o, NULL, NULL },
-	                              { s, p, o, NULL, NULL },
-	                              { s, p, o, t,    NULL },
-	                              { s, p, o, NULL, l },
-	                              { s, p, o, t,    l },
-	                              { s, p, o, t,    NULL },
-	                              { s, p, o, NULL, l },
-	                              { s, p, o, NULL, NULL },
-	                              { s, p, o, NULL, NULL },
-	                              { s, p, o, NULL, NULL } };
+	SerdNode* t = serd_node_new_literal((char*)buf, "urn:Type", NULL);
+	SerdNode* l = serd_node_new_literal((char*)buf, NULL, "en");
+	const SerdNode* good[][5] = { { s, p, o },
+	                              { s, p, o },
+	                              { s, p, t },
+	                              { s, p, l },
+	                              { s, p, l },
+	                              { s, p, t },
+	                              { s, p, l },
+	                              { s, p, o },
+	                              { s, p, o },
+	                              { s, p, o } };
 	for (unsigned i = 0; i < sizeof(good) / (sizeof(SerdNode*) * 5); ++i) {
 		assert(!serd_writer_write_statement(
 			       writer, 0, NULL,
-			       good[i][0], good[i][1], good[i][2], good[i][3], good[i][4]));
+			       good[i][0], good[i][1], good[i][2]));
 	}
 
 	// Write statements with bad UTF-8 (should be replaced)
@@ -563,9 +589,9 @@ test_writer(const char* const path)
 	SerdNode*  bad_lit   = serd_node_new_string(SERD_LITERAL, bad_str);
 	SerdNode*  bad_uri   = serd_node_new_string(SERD_URI, bad_str);
 	assert(!serd_writer_write_statement(
-	        writer, 0, NULL, s, p, bad_lit, NULL, NULL));
+	        writer, 0, NULL, s, p, bad_lit));
 	assert(!serd_writer_write_statement(writer, 0, NULL,
-	                                    s, p, bad_uri, NULL, NULL));
+	                                    s, p, bad_uri));
 	serd_node_free(bad_lit);
 	serd_node_free(bad_uri);
 
@@ -573,7 +599,7 @@ test_writer(const char* const path)
 	serd_node_free(o);
 	o = serd_node_new_string(SERD_LITERAL, "hello");
 	assert(!serd_writer_write_statement(writer, 0, NULL,
-	                                    s, p, o, NULL, NULL));
+	                                    s, p, o));
 
 	serd_writer_free(writer);
 	serd_node_free(lit);
@@ -645,6 +671,7 @@ main(void)
 	test_node_equals();
 	test_node_from_string();
 	test_node_from_substring();
+	test_literal();
 	test_uri_from_string();
 	test_relative_uri();
 	test_env();

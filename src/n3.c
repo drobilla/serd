@@ -719,7 +719,11 @@ read_0_9(SerdReader* reader, Ref str, bool at_least_one)
 }
 
 static bool
-read_number(SerdReader* reader, Ref* dest, Ref* datatype, bool* ate_dot)
+read_number(SerdReader*    reader,
+            Ref*           dest,
+            Ref*           datatype,
+            SerdNodeFlags* flags,
+            bool*          ate_dot)
 {
 	#define XSD_DECIMAL NS_XSD "decimal"
 	#define XSD_DOUBLE  NS_XSD "double"
@@ -775,6 +779,7 @@ read_number(SerdReader* reader, Ref* dest, Ref* datatype, bool* ate_dot)
 		*datatype = push_node(reader, SERD_URI,
 		                      XSD_INTEGER, sizeof(XSD_INTEGER) - 1);
 	}
+	*flags |= SERD_HAS_DATATYPE;
 	*dest = ref;
 	return true;
 except:
@@ -808,11 +813,13 @@ read_literal(SerdReader* reader, Ref* dest,
 	switch (peek_byte(reader)) {
 	case '@':
 		eat_byte_safe(reader, '@');
+		*flags |= SERD_HAS_LANGUAGE;
 		TRY_THROW(*lang = read_LANGTAG(reader));
 		break;
 	case '^':
 		eat_byte_safe(reader, '^');
 		eat_byte_check(reader, '^');
+		*flags |= SERD_HAS_DATATYPE;
 		TRY_THROW(read_iri(reader, datatype, ate_dot));
 		break;
 	}
@@ -941,7 +948,7 @@ read_anon(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest)
 		*dest = blank_id(reader);
 	}
 	if (ctx.subject) {
-		TRY_RET(emit_statement(reader, ctx, *dest, 0, 0));
+		TRY_RET(emit_statement(reader, ctx, *dest));
 	}
 
 	ctx.subject = *dest;
@@ -1011,7 +1018,7 @@ read_object(SerdReader* reader, ReadContext* ctx, bool emit, bool* ate_dot)
 		break;
 	case '+': case '-': case '.': case '0': case '1': case '2': case '3':
 	case '4': case '5': case '6': case '7': case '8': case '9':
-		TRY_THROW(ret = read_number(reader, &o, &datatype, ate_dot));
+		TRY_THROW(ret = read_number(reader, &o, &datatype, &flags, ate_dot));
 		break;
 	case '\"':
 	case '\'':
@@ -1028,6 +1035,7 @@ read_object(SerdReader* reader, ReadContext* ctx, bool emit, bool* ate_dot)
 		     !memcmp(serd_node_get_string(node), "true", 4)) ||
 		    (node->n_bytes == 5 &&
 		     !memcmp(serd_node_get_string(node), "false", 5))) {
+			flags      = flags | SERD_HAS_DATATYPE;
 			node->type = SERD_LITERAL;
 			datatype   = push_node(
 				reader, SERD_URI, XSD_BOOLEAN, XSD_BOOLEAN_LEN);
@@ -1046,7 +1054,7 @@ read_object(SerdReader* reader, ReadContext* ctx, bool emit, bool* ate_dot)
 	}
 
 	if (ret && emit && simple) {
-		ret = emit_statement(reader, *ctx, o, datatype, lang);
+		ret = emit_statement(reader, *ctx, o);
 	} else if (ret && !emit) {
 		ctx->object   = o;
 		ctx->datatype = datatype;
@@ -1132,7 +1140,7 @@ read_collection(SerdReader* reader, ReadContext ctx, Ref* dest)
 	if (ctx.subject) {
 		// subject predicate _:head
 		*ctx.flags |= (end ? 0 : SERD_LIST_O_BEGIN);
-		TRY_RET(emit_statement(reader, ctx, *dest, 0, 0));
+		TRY_RET(emit_statement(reader, ctx, *dest));
 		*ctx.flags |= SERD_LIST_CONT;
 	} else {
 		*ctx.flags |= (end ? 0 : SERD_LIST_S_BEGIN);
@@ -1171,8 +1179,7 @@ read_collection(SerdReader* reader, ReadContext ctx, Ref* dest)
 		// _:node rdf:rest _:rest
 		*ctx.flags |= SERD_LIST_CONT;
 		ctx.predicate = reader->rdf_rest;
-		TRY_RET(emit_statement(reader, ctx,
-		                       (end ? reader->rdf_nil : rest), 0, 0));
+		TRY_RET(emit_statement(reader, ctx, (end ? reader->rdf_nil : rest)));
 
 		ctx.subject = rest;         // _:node = _:rest
 		rest        = node;         // _:rest = (old)_:node
@@ -1504,7 +1511,7 @@ read_nquadsDoc(SerdReader* reader)
 			eat_byte_check(reader, '.');
 		}
 
-		if (!emit_statement(reader, ctx, ctx.object, ctx.datatype, ctx.lang)) {
+		if (!emit_statement(reader, ctx, ctx.object)) {
 			break;
 		}
 
