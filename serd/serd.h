@@ -140,7 +140,7 @@ typedef enum {
 } SerdStatementFlag;
 
 /**
-   Bitwise OR of SerdNodeFlag values.
+   Bitwise OR of SerdStatementFlag values.
 */
 typedef uint32_t SerdStatementFlags;
 
