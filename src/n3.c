@@ -824,9 +824,9 @@ read_verb(SerdReader* reader, Ref* dest)
 	   "a", produce that instead.
 	*/
 	*dest = push_node(reader, SERD_CURIE, "", 0);
-	SerdNode*        node    = deref(reader, *dest);
 	const SerdStatus st      = read_PN_PREFIX(reader, *dest);
 	bool             ate_dot = false;
+	SerdNode*        node    = deref(reader, *dest);
 	if (!st && node->n_bytes == 1 && node->buf[0] == 'a' &&
 	    is_token_end(peek_byte(reader))) {
 		pop_node(reader, *dest);
@@ -1007,8 +1007,9 @@ read_object(SerdReader* reader, ReadContext* ctx, bool emit, bool* ate_dot)
 		/* Either a boolean literal, or a qname.  Read the prefix first, and if
 		   it is in fact a "true" or "false" literal, produce that instead.
 		*/
-		node = deref(reader, o = push_node(reader, SERD_CURIE, "", 0));
+		o = push_node(reader, SERD_CURIE, "", 0);
 		while (!read_PN_CHARS_BASE(reader, o)) {}
+		node = deref(reader, o);
 		if ((node->n_bytes == 4 && !memcmp(node->buf, "true", 4)) ||
 		    (node->n_bytes == 5 && !memcmp(node->buf, "false", 5))) {
 			node->type = SERD_LITERAL;
