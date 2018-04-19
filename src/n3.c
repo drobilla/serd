@@ -1391,6 +1391,8 @@ read_n3_statement(SerdReader* reader)
 			TRY_RET((ctx.graph = read_labelOrSubject(reader, ctx)));
 			read_ws_star(reader);
 			TRY_RET(read_wrappedGraph(reader, &ctx));
+			pop_node(reader, ctx.graph);
+			ctx.graph = 0;
 			read_ws_star(reader);
 		} else if (read_ws_star(reader) && peek_byte(reader) == '{') {
 			if (s_type == '(' || (s_type == '[' && !*ctx.flags)) {
@@ -1400,6 +1402,7 @@ read_n3_statement(SerdReader* reader)
 			ctx.graph   = subj;
 			ctx.subject = subj = 0;
 			TRY_RET(read_wrappedGraph(reader, &ctx));
+			pop_node(reader, ctx.graph);
 			read_ws_star(reader);
 		} else if (!subj) {
 			ret = r_err(reader, SERD_ERR_BAD_SYNTAX, "bad subject\n");
