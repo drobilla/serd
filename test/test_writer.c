@@ -22,18 +22,46 @@
 #include <string.h>
 
 static void
-test_write_long_literal(void)
+test_write_bad_prefix(void)
 {
-  SerdEnv*    env    = serd_env_new(NULL);
+  SerdEnv*    env    = serd_env_new(SERD_EMPTY_STRING());
   SerdBuffer  buffer = {NULL, 0};
   SerdWriter* writer =
-    serd_writer_new(SERD_TURTLE, 0u, env, NULL, serd_buffer_sink, &buffer);
+    serd_writer_new(SERD_TURTLE, 0u, env, serd_buffer_sink, &buffer);
 
   assert(writer);
 
-  SerdNode* s = serd_new_string(SERD_URI, "http://example.org/s");
-  SerdNode* p = serd_new_string(SERD_URI, "http://example.org/p");
-  SerdNode* o = serd_new_string(SERD_LITERAL, "hello \"\"\"world\"\"\"!");
+  SerdNode* name = serd_new_string(SERD_STRING("eg"));
+  SerdNode* uri  = serd_new_uri(SERD_STRING("rel"));
+
+  assert(serd_writer_set_prefix(writer, name, uri) == SERD_ERR_BAD_ARG);
+
+  char* const out = serd_buffer_sink_finish(&buffer);
+
+  assert(!strcmp(out, ""));
+  serd_free(out);
+
+  serd_node_free(uri);
+  serd_node_free(name);
+  serd_writer_free(writer);
+  serd_env_free(env);
+}
+
+static void
+test_write_long_literal(void)
+{
+  SerdEnv*    env    = serd_env_new(SERD_EMPTY_STRING());
+  SerdBuffer  buffer = {NULL, 0};
+  SerdWriter* writer =
+    serd_writer_new(SERD_TURTLE, 0u, env, serd_buffer_sink, &buffer);
+
+  assert(writer);
+
+  SerdNode* s = serd_new_uri(SERD_STRING("http://example.org/s"));
+  SerdNode* p = serd_new_uri(SERD_STRING("http://example.org/p"));
+  SerdNode* o = serd_new_literal(SERD_STRING("hello \"\"\"world\"\"\"!"),
+                                 SERD_EMPTY_STRING(),
+                                 SERD_EMPTY_STRING());
 
   assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o));
 
@@ -56,6 +84,7 @@ test_write_long_literal(void)
 int
 main(void)
 {
+  test_write_bad_prefix();
   test_write_long_literal();
 
   return 0;
