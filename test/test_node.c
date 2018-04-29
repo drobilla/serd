@@ -6,6 +6,7 @@
 #include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/string.h"
+#include "serd/string_view.h"
 #include "serd/uri.h"
 
 #include <assert.h>
@@ -146,19 +147,22 @@ test_blob_to_node(void)
 static void
 test_node_equals(void)
 {
-  const uint8_t replacement_char_str[] = {0xEF, 0xBF, 0xBD, 0};
-  SerdNode*     lhs =
-    serd_new_string(SERD_LITERAL, (const char*)replacement_char_str);
-  SerdNode* rhs = serd_new_string(SERD_LITERAL, "123");
+  static const uint8_t replacement_char_str[] = {0xEF, 0xBF, 0xBD, 0};
+
+  SerdNode* const lhs =
+    serd_new_string(serd_substring((const char*)replacement_char_str, 3));
+
+  assert(serd_node_equals(lhs, lhs));
+
+  SerdNode* const rhs = serd_new_string(serd_string("123"));
   assert(!serd_node_equals(lhs, rhs));
 
-  SerdNode* qnode = serd_new_string(SERD_CURIE, "foo:bar");
+  SerdNode* const qnode = serd_new_curie(serd_string("foo:bar"));
   assert(!serd_node_equals(lhs, qnode));
-  assert(serd_node_equals(lhs, lhs));
+  serd_node_free(qnode);
 
   assert(!serd_node_copy(NULL));
 
-  serd_node_free(qnode);
   serd_node_free(lhs);
   serd_node_free(rhs);
 }
@@ -166,25 +170,21 @@ test_node_equals(void)
 static void
 test_node_from_string(void)
 {
-  SerdNode* hello = serd_new_string(SERD_LITERAL, "hello\"");
-  assert(serd_node_length(hello) == 6 &&
-         serd_node_flags(hello) == SERD_HAS_QUOTE &&
-         !strcmp(serd_node_string(hello), "hello\""));
-
+  SerdNode* const hello = serd_new_string(serd_string("hello\""));
+  assert(serd_node_length(hello) == 6);
+  assert(serd_node_flags(hello) == SERD_HAS_QUOTE);
+  assert(!strncmp(serd_node_string(hello), "hello\"", 6));
   serd_node_free(hello);
 }
 
 static void
 test_node_from_substring(void)
 {
-  SerdNode* a_b = serd_new_substring(SERD_LITERAL, "a\"bc", 3);
-  assert(serd_node_length(a_b) == 3 && serd_node_flags(a_b) == SERD_HAS_QUOTE &&
-         !strncmp(serd_node_string(a_b), "a\"b", 3));
-
-  serd_node_free(a_b);
-  a_b = serd_new_substring(SERD_LITERAL, "a\"bc", 10);
-  assert(serd_node_length(a_b) == 4 && serd_node_flags(a_b) == SERD_HAS_QUOTE &&
-         !strncmp(serd_node_string(a_b), "a\"bc", 4));
+  SerdNode* const a_b = serd_new_string(serd_substring("a\"bc", 3));
+  assert(serd_node_length(a_b) == 3);
+  assert(serd_node_flags(a_b) == SERD_HAS_QUOTE);
+  assert(strlen(serd_node_string(a_b)) == 3);
+  assert(!strncmp(serd_node_string(a_b), "a\"b", 3));
   serd_node_free(a_b);
 }
 
@@ -201,14 +201,18 @@ check_copy_equals(const SerdNode* const node)
 static void
 test_literal(void)
 {
-  SerdNode* hello2 = serd_new_literal("hello\"", NULL, NULL);
+  SerdNode* hello2 = serd_new_literal(
+    serd_string("hello\""), serd_empty_string(), serd_empty_string());
+
   assert(serd_node_length(hello2) == 6 &&
          serd_node_flags(hello2) == SERD_HAS_QUOTE &&
          !strcmp(serd_node_string(hello2), "hello\""));
   check_copy_equals(hello2);
   serd_node_free(hello2);
 
-  SerdNode* hello_l = serd_new_literal("hello_l\"", NULL, "en");
+  SerdNode* hello_l = serd_new_literal(
+    serd_string("hello_l\""), serd_empty_string(), serd_string("en"));
+
   assert(serd_node_length(hello_l) == 8);
   assert(!strcmp(serd_node_string(hello_l), "hello_l\""));
   assert(serd_node_flags(hello_l) == (SERD_HAS_QUOTE | SERD_HAS_LANGUAGE));
@@ -219,8 +223,10 @@ test_literal(void)
   check_copy_equals(hello_l);
   serd_node_free(hello_l);
 
-  SerdNode* hello_dt =
-    serd_new_literal("hello_dt\"", "http://example.org/Thing", NULL);
+  SerdNode* hello_dt = serd_new_literal(serd_string("hello_dt\""),
+                                        serd_string("http://example.org/Thing"),
+                                        serd_empty_string());
+
   assert(serd_node_length(hello_dt) == 9);
   assert(!strcmp(serd_node_string(hello_dt), "hello_dt\""));
   assert(serd_node_flags(hello_dt) == (SERD_HAS_QUOTE | SERD_HAS_DATATYPE));
@@ -231,6 +237,16 @@ test_literal(void)
 
   check_copy_equals(hello_dt);
   serd_node_free(hello_dt);
+}
+
+static void
+test_blank(void)
+{
+  SerdNode* blank = serd_new_blank(serd_string("b0"));
+  assert(serd_node_length(blank) == 2);
+  assert(serd_node_flags(blank) == 0);
+  assert(!strcmp(serd_node_string(blank), "b0"));
+  serd_node_free(blank);
 }
 
 int
@@ -244,6 +260,7 @@ main(void)
   test_node_from_string();
   test_node_from_substring();
   test_literal();
+  test_blank();
 
   printf("Success\n");
   return 0;

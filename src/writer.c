@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: ISC
 
 #include "byte_sink.h"
+#include "env.h"
 #include "node.h"
 #include "serd_internal.h"
 #include "stack.h"
@@ -721,7 +722,7 @@ write_uri_node(SerdWriter* const writer,
   }
 
   if (!has_scheme && !supports_uriref(writer) &&
-      !serd_env_base_uri(writer->env, NULL)) {
+      !serd_env_base_uri(writer->env)) {
     return w_err(writer,
                  SERD_ERR_BAD_ARG,
                  "syntax does not support URI reference <%s>\n",
@@ -729,22 +730,18 @@ write_uri_node(SerdWriter* const writer,
   }
 
   TRY(st, esink("<", 1, writer));
-  if (writer->flags & SERD_WRITE_RESOLVED) {
-    const SerdURIView uri = serd_parse_uri(node_str);
-
-    SerdURIView in_base_uri;
-    serd_env_base_uri(writer->env, &in_base_uri);
-
-    const SerdURIView  abs_uri = serd_resolve_uri(uri, in_base_uri);
-    const bool         rooted  = uri_is_under(&in_base_uri, &writer->root_uri);
-    const SerdURIView* root    = rooted ? &writer->root_uri : &in_base_uri;
+  if ((writer->flags & SERD_WRITE_RESOLVED) && serd_env_base_uri(writer->env)) {
+    const SerdURIView  base_uri = serd_env_base_uri_view(writer->env);
+    SerdURIView        uri      = serd_parse_uri(node_str);
+    SerdURIView        abs_uri  = serd_resolve_uri(uri, base_uri);
+    bool               rooted   = uri_is_under(&base_uri, &writer->root_uri);
+    const SerdURIView* root     = rooted ? &writer->root_uri : &base_uri;
 
     if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS ||
-        !uri_is_under(&abs_uri, root) ||
-        !uri_is_related(&abs_uri, &in_base_uri)) {
+        !uri_is_under(&abs_uri, root) || !uri_is_related(&abs_uri, &base_uri)) {
       serd_write_uri(abs_uri, uri_sink, writer);
     } else {
-      serd_write_uri(serd_relative_uri(uri, in_base_uri), uri_sink, writer);
+      serd_write_uri(serd_relative_uri(uri, base_uri), uri_sink, writer);
     }
   } else {
     write_uri_from_node(writer, node);
@@ -1089,7 +1086,6 @@ SerdWriter*
 serd_writer_new(SerdSyntax      syntax,
                 SerdWriterFlags flags,
                 SerdEnv*        env,
-                const SerdNode* base_uri,
                 SerdSink        ssink,
                 void*           stream)
 {
@@ -1106,7 +1102,6 @@ serd_writer_new(SerdSyntax      syntax,
   writer->byte_sink  = serd_byte_sink_new(
     ssink, stream, (flags & SERD_WRITE_BULK) ? SERD_PAGE_SIZE : 1);
 
-  serd_env_set_base_uri(writer->env, base_uri);
   return writer;
 }
 
@@ -1137,11 +1132,21 @@ serd_writer_chop_blank_prefix(SerdWriter* writer, const char* prefix)
 SerdStatus
 serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 {
+  if (uri && serd_node_type(uri) != SERD_URI) {
+    return SERD_ERR_BAD_ARG;
+  }
+
+  if (serd_node_equals(serd_env_base_uri(writer->env), uri)) {
+    return SERD_SUCCESS;
+  }
+
+  const SerdStringView uri_string =
+    uri ? serd_node_string_view(uri) : serd_empty_string();
+
   SerdStatus st = SERD_SUCCESS;
+  TRY(st, serd_env_set_base_uri(writer->env, uri_string));
 
-  TRY(st, serd_env_set_base_uri(writer->env, uri));
-
-  if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
+  if ((writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) && uri) {
     TRY(st, terminate_context(writer));
     TRY(st, esink("@base <", 7, writer));
     TRY(st, esink(serd_node_string(uri), uri->length, writer));
@@ -1162,7 +1167,7 @@ serd_writer_set_root_uri(SerdWriter* writer, const SerdNode* uri)
 
   if (uri) {
     writer->root_node = serd_node_copy(uri);
-    writer->root_uri  = serd_parse_uri(serd_node_string(writer->root_node));
+    writer->root_uri  = serd_node_uri_view(writer->root_node);
   }
 
   return SERD_SUCCESS;
@@ -1175,7 +1180,9 @@ serd_writer_set_prefix(SerdWriter*     writer,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  TRY(st, serd_env_set_prefix(writer->env, name, uri));
+  TRY(st,
+      serd_env_set_prefix(
+        writer->env, serd_node_string_view(name), serd_node_string_view(uri)));
 
   if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
     TRY(st, terminate_context(writer));
