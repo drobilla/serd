@@ -41,7 +41,9 @@ test_file_uri(const char* const hostname,
     expected_path = path;
   }
 
-  SerdNode*   node         = serd_new_file_uri(path, hostname, 0);
+  SerdNode* node =
+    serd_new_file_uri(serd_string(path), serd_optional_string(hostname));
+
   const char* node_str     = serd_node_string(node);
   char*       out_hostname = NULL;
   char*       out_path     = serd_parse_file_uri(node_str, &out_hostname);
@@ -147,7 +149,7 @@ check_rel_uri(const char*     uri_string,
 
   SerdNode* const rel =
     is_within ? serd_new_parsed_uri(serd_relative_uri(uri, base_uri))
-              : serd_new_uri(uri_string);
+              : serd_new_uri(serd_string(uri_string));
 
   const int ret = strcmp(serd_node_string(rel), expected);
   serd_node_free(rel);
@@ -157,8 +159,10 @@ check_rel_uri(const char*     uri_string,
 static void
 test_relative_uri(void)
 {
-  SerdNode* const root = serd_new_uri("http://example.org/a/b/ignored");
-  SerdNode* const base = serd_new_uri("http://example.org/a/b/c/");
+  SerdNode* const root =
+    serd_new_uri(serd_string("http://example.org/a/b/ignored"));
+
+  SerdNode* const base = serd_new_uri(serd_string("http://example.org/a/b/c/"));
 
   check_rel_uri("http://example.org/a/b/c/foo", base, NULL, "foo");
   check_rel_uri("http://example.org/a/", base, NULL, "../../");
