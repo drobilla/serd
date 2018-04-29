@@ -100,27 +100,40 @@ typedef uint32_t SerdNodeFlags;
 */
 
 /**
-   Create a new node from `str`.
+   Create a new simple "token" node.
+
+   A "token" is a node that isn't a typed or tagged literal.  This can be used
+   to create URIs, blank nodes, CURIEs, and simple string literals.
 */
 SERD_API SerdNode* SERD_ALLOCATED
-serd_new_string(SerdNodeType type, const char* SERD_NONNULL str);
+serd_new_token(SerdNodeType type, SerdStringView string);
 
 /**
-   Create a new node from a prefix of `str`.
+   Create a new string literal node.
 */
 SERD_API SerdNode* SERD_ALLOCATED
-serd_new_substring(SerdNodeType type, const char* SERD_NONNULL str, size_t len);
+serd_new_string(SerdStringView string);
 
 /**
    Create a new literal node from `str`.
 
-   Either `datatype` or `lang` can be given, but not both, unless `datatype` is
-   rdf:langString in which case it is ignored.
+   Either `datatype_uri` or `lang` can be given, but not both, unless
+   `datatype_uri` is rdf:langString in which case it is ignored.
 */
 SERD_API SerdNode* SERD_ALLOCATED
-serd_new_literal(const char* SERD_NONNULL  str,
-                 const char* SERD_NULLABLE datatype,
-                 const char* SERD_NULLABLE lang);
+serd_new_literal(SerdStringView string,
+                 SerdStringView datatype_uri,
+                 SerdStringView lang);
+
+/**
+   Create a new node from a blank node label.
+*/
+SERD_API SerdNode* SERD_ALLOCATED
+serd_new_blank(SerdStringView string);
+
+/// Create a new CURIE node
+SERD_API SerdNode* SERD_ALLOCATED
+serd_new_curie(SerdStringView string);
 
 /**
    Create a new URI node from a parsed URI.
@@ -132,7 +145,7 @@ serd_new_parsed_uri(SerdURIView uri);
    Create a new URI node from a string.
 */
 SERD_API SerdNode* SERD_ALLOCATED
-serd_new_uri(const char* SERD_NONNULL str);
+serd_new_uri(SerdStringView string);
 
 /**
    Create a new file URI node from a file system path and optional hostname.
@@ -141,12 +154,9 @@ serd_new_uri(const char* SERD_NONNULL str);
    percent encoded as necessary.
 
    If `path` is relative, `hostname` is ignored.
-   If `out` is not NULL, it will be set to the parsed URI.
 */
 SERD_API SerdNode* SERD_ALLOCATED
-serd_new_file_uri(const char* SERD_NONNULL   path,
-                  const char* SERD_NULLABLE  hostname,
-                  SerdURIView* SERD_NULLABLE out);
+serd_new_file_uri(SerdStringView path, SerdStringView hostname);
 
 /**
    Create a new node by serialising `d` into an xsd:decimal string.
@@ -235,7 +245,7 @@ serd_node_string_view(const SerdNode* SERD_NONNULL node);
    idea to keep the value if you will be using it several times in the same
    scope.
 */
-SERD_API SerdURIView
+SERD_PURE_API SerdURIView
 serd_node_uri_view(const SerdNode* SERD_NONNULL node);
 
 /**
