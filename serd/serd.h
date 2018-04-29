@@ -55,6 +55,13 @@ extern "C" {
 */
 
 /**
+   World.
+
+   The World represents all library state shared between various objects.
+*/
+typedef struct SerdWorldImpl SerdWorld;
+
+/**
    Environment.
 
    Represents the state required to resolve a CURIE or relative URI, e.g. the
@@ -716,6 +723,41 @@ typedef struct SerdSink {
 
 /**
    @}
+   @name World
+   @{
+*/
+
+/**
+   Create a new Serd World.
+
+   It is safe to use multiple worlds in one process, though no objects can be
+   shared between worlds.
+*/
+SERD_API
+SerdWorld*
+serd_world_new(void);
+
+/**
+   Free `world`.
+*/
+SERD_API
+void
+serd_world_free(SerdWorld* world);
+
+/**
+   Set a function to be called when errors occur.
+
+   The `error_sink` will be called with `handle` as its first argument.  If
+   no error function is set, errors are printed to stderr.
+*/
+SERD_API
+void
+serd_world_set_error_sink(SerdWorld*    world,
+                          SerdErrorSink error_sink,
+                          void*         handle);
+
+/**
+   @}
    @name Environment
    @{
 */
@@ -821,7 +863,7 @@ serd_env_foreach(const SerdEnv* env,
 */
 SERD_API
 SerdReader*
-serd_reader_new(SerdSyntax syntax, const SerdSink* sink);
+serd_reader_new(SerdWorld* world, SerdSyntax syntax, const SerdSink* sink);
 
 /**
    Enable or disable strict parsing.
@@ -833,18 +875,6 @@ serd_reader_new(SerdSyntax syntax, const SerdSink* sink);
 SERD_API
 void
 serd_reader_set_strict(SerdReader* reader, bool strict);
-
-/**
-   Set a function to be called when errors occur during reading.
-
-   The `error_sink` will be called with `handle` as its first argument.  If
-   no error function is set, errors are printed to stderr in GCC style.
-*/
-SERD_API
-void
-serd_reader_set_error_sink(SerdReader*   reader,
-                           SerdErrorSink error_sink,
-                           void*         error_handle);
 
 /**
    Set a prefix to be added to all blank node identifiers.
@@ -957,7 +987,8 @@ serd_reader_free(SerdReader* reader);
 */
 SERD_API
 SerdWriter*
-serd_writer_new(SerdSyntax     syntax,
+serd_writer_new(SerdWorld*     world,
+                SerdSyntax     syntax,
                 SerdStyle      style,
                 SerdEnv*       env,
                 const SerdURI* base_uri,
@@ -1006,18 +1037,6 @@ serd_buffer_sink(const void* buf, size_t size, size_t nmemb, void* stream);
 SERD_API
 char*
 serd_buffer_sink_finish(SerdBuffer* stream);
-
-/**
-   Set a function to be called when errors occur during writing.
-
-   The `error_sink` will be called with `handle` as its first argument.  If
-   no error function is set, errors are printed to stderr.
-*/
-SERD_API
-void
-serd_writer_set_error_sink(SerdWriter*   writer,
-                           SerdErrorSink error_sink,
-                           void*         error_handle);
 
 /**
    Set a prefix to be removed from matching blank node identifiers.

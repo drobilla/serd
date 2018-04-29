@@ -264,8 +264,9 @@ main(int argc, char** argv)
 		base = serd_node_new_file_uri(input, NULL, &base_uri, true);
 	}
 
-	FILE*    out_fd = stdout;
-	SerdEnv* env    = serd_env_new(base);
+	FILE*      out_fd = stdout;
+	SerdWorld* world  = serd_world_new();
+	SerdEnv*   env    = serd_env_new(base);
 
 	int output_style = 0;
 	if (output_syntax == SERD_NTRIPLES || ascii) {
@@ -287,7 +288,8 @@ main(int argc, char** argv)
 		output_style |= SERD_STYLE_BULK;
 	}
 
-	SerdWriter* writer = serd_writer_new(output_syntax,
+	SerdWriter* writer = serd_writer_new(world,
+	                                     output_syntax,
 	                                     (SerdStyle)output_style,
 	                                     env,
 	                                     &base_uri,
@@ -295,12 +297,11 @@ main(int argc, char** argv)
 	                                     out_fd);
 
 	SerdReader* reader =
-		serd_reader_new(input_syntax, serd_writer_get_sink(writer));
+		serd_reader_new(world, input_syntax, serd_writer_get_sink(writer));
 
 	serd_reader_set_strict(reader, !lax);
 	if (quiet) {
-		serd_reader_set_error_sink(reader, quiet_error_sink, NULL);
-		serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
+		serd_world_set_error_sink(world, quiet_error_sink, NULL);
 	}
 
 	SerdNode* root = serd_node_new_string(SERD_URI, root_uri);
@@ -331,6 +332,7 @@ main(int argc, char** argv)
 	serd_writer_free(writer);
 	serd_env_free(env);
 	serd_node_free(base);
+	serd_world_free(world);
 	free(input_path);
 
 	if (from_file) {

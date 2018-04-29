@@ -27,6 +27,8 @@
 #include "serd/serd.h"
 #include "serd_config.h"
 
+#include "world.h"
+
 #if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
 #   include <fcntl.h>
 #endif
@@ -68,10 +70,10 @@ serd_bufalloc(size_t size)
 }
 
 static inline void
-serd_error(SerdErrorSink error_sink, void* handle, const SerdError* e)
+serd_error(const SerdWorld* world, const SerdError* e)
 {
-	if (error_sink) {
-		error_sink(handle, e);
+	if (world->error_sink) {
+		world->error_sink(world->error_handle, e);
 	} else {
 		fprintf(stderr, "error: %s:%u:%u: ", e->filename, e->line, e->col);
 		vfprintf(stderr, e->fmt, *e->args);

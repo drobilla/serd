@@ -52,7 +52,8 @@ typedef struct {
 } ReadContext;
 
 struct SerdReaderImpl {
-	const SerdSink* sink;
+	SerdWorld*               world;
+	const SerdSink*          sink;
 	SerdErrorSink            error_sink;
 	void*                    error_handle;
 	Ref                      rdf_first;
