@@ -11,6 +11,7 @@
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/status.h"
+#include "serd/string_view.h"
 #include "serd/syntax.h"
 #include "serd/uri.h"
 #include "serd/writer.h"
@@ -313,20 +314,19 @@ main(int argc, char** argv)
   const SerdWriterFlags writer_flags =
     choose_style(input_syntax, output_syntax, ascii, bulk_write, full_uris);
 
-  SerdURIView base_uri = SERD_URI_NULL;
-  SerdNode*   base     = NULL;
+  SerdNode* base = NULL;
   if (a < argc) { // Base URI given on command line
-    base_uri = serd_parse_uri(argv[a]);
-    base     = serd_new_parsed_uri(base_uri);
+    base = serd_new_uri(serd_string((const char*)argv[a]));
   } else if (from_file && in_fd != stdin) { // Use input file URI
-    base = serd_new_file_uri(input, NULL, &base_uri);
+    base = serd_new_file_uri(serd_string(input), serd_empty_string());
   }
 
   FILE* const    out_fd = stdout;
-  SerdEnv* const env    = serd_env_new(base);
+  SerdEnv* const env =
+    serd_env_new(base ? serd_node_string_view(base) : serd_empty_string());
 
-  SerdWriter* const writer = serd_writer_new(
-    output_syntax, writer_flags, env, &base_uri, serd_file_sink, out_fd);
+  SerdWriter* const writer =
+    serd_writer_new(output_syntax, writer_flags, env, serd_file_sink, out_fd);
 
   SerdReader* const reader =
     serd_reader_new(input_syntax,
@@ -343,11 +343,14 @@ main(int argc, char** argv)
     serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
   }
 
-  SerdNode* root = root_uri ? serd_new_string(SERD_URI, root_uri) : NULL;
-  serd_writer_set_root_uri(writer, root);
+  if (root_uri) {
+    SerdNode* const root = serd_new_uri(serd_string(root_uri));
+    serd_writer_set_root_uri(writer, root);
+    serd_node_free(root);
+  }
+
   serd_writer_chop_blank_prefix(writer, chop_prefix);
   serd_reader_add_blank_prefix(reader, add_prefix);
-  serd_node_free(root);
 
   SerdStatus st = SERD_SUCCESS;
   if (!from_file) {

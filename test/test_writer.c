@@ -7,6 +7,8 @@
 #include "serd/env.h"
 #include "serd/memory.h"
 #include "serd/node.h"
+#include "serd/status.h"
+#include "serd/string_view.h"
 #include "serd/syntax.h"
 #include "serd/writer.h"
 
@@ -14,18 +16,46 @@
 #include <string.h>
 
 static void
-test_write_long_literal(void)
+test_write_bad_prefix(void)
 {
-  SerdEnv*    env    = serd_env_new(NULL);
+  SerdEnv*    env    = serd_env_new(serd_empty_string());
   SerdBuffer  buffer = {NULL, 0};
   SerdWriter* writer =
-    serd_writer_new(SERD_TURTLE, 0U, env, NULL, serd_buffer_sink, &buffer);
+    serd_writer_new(SERD_TURTLE, 0U, env, serd_buffer_sink, &buffer);
 
   assert(writer);
 
-  SerdNode* s = serd_new_string(SERD_URI, "http://example.org/s");
-  SerdNode* p = serd_new_string(SERD_URI, "http://example.org/p");
-  SerdNode* o = serd_new_string(SERD_LITERAL, "hello \"\"\"world\"\"\"!");
+  SerdNode* name = serd_new_string(serd_string("eg"));
+  SerdNode* uri  = serd_new_uri(serd_string("rel"));
+
+  assert(serd_writer_set_prefix(writer, name, uri) == SERD_ERR_BAD_ARG);
+
+  char* const out = serd_buffer_sink_finish(&buffer);
+
+  assert(!strcmp(out, ""));
+  serd_free(out);
+
+  serd_node_free(uri);
+  serd_node_free(name);
+  serd_writer_free(writer);
+  serd_env_free(env);
+}
+
+static void
+test_write_long_literal(void)
+{
+  SerdEnv*    env    = serd_env_new(serd_empty_string());
+  SerdBuffer  buffer = {NULL, 0};
+  SerdWriter* writer =
+    serd_writer_new(SERD_TURTLE, 0U, env, serd_buffer_sink, &buffer);
+
+  assert(writer);
+
+  SerdNode* s = serd_new_uri(serd_string("http://example.org/s"));
+  SerdNode* p = serd_new_uri(serd_string("http://example.org/p"));
+  SerdNode* o = serd_new_literal(serd_string("hello \"\"\"world\"\"\"!"),
+                                 serd_empty_string(),
+                                 serd_empty_string());
 
   assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o));
 
@@ -48,6 +78,7 @@ test_write_long_literal(void)
 int
 main(void)
 {
+  test_write_bad_prefix();
   test_write_long_literal();
 
   return 0;

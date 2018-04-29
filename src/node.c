@@ -10,7 +10,6 @@
 #include "serd/attributes.h"
 #include "serd/buffer.h"
 #include "serd/node.h"
-#include "serd/string.h"
 #include "serd/string_view.h"
 #include "serd/uri.h"
 
@@ -35,6 +34,9 @@
 static const size_t serd_node_align = 2 * sizeof(uint64_t);
 
 static const SerdNodeFlags meta_mask = (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE);
+
+static SerdNode*
+serd_new_from_uri(SerdURIView uri, SerdURIView base);
 
 static size_t
 serd_uri_string_length(const SerdURIView* const uri)
@@ -128,72 +130,89 @@ serd_node_set(SerdNode** const dst, const SerdNode* const src)
 }
 
 SerdNode*
-serd_new_string(SerdNodeType type, const char* str)
+serd_new_token(const SerdNodeType type, const SerdStringView str)
 {
-  SerdNodeFlags flags  = 0;
-  const size_t  length = serd_strlen(str, &flags);
+  SerdNodeFlags flags  = 0U;
+  const size_t  length = str.buf ? str.len : 0U;
   SerdNode*     node   = serd_node_malloc(length, flags, type);
 
-  memcpy(serd_node_buffer(node), str, length);
-  node->length = length;
+  if (node) {
+    if (str.buf) {
+      memcpy(serd_node_buffer(node), str.buf, length);
+    }
 
-  return node;
-}
-
-SerdNode*
-serd_new_substring(const SerdNodeType type,
-                   const char* const  str,
-                   const size_t       len)
-{
-  SerdNodeFlags flags  = 0;
-  const size_t  length = serd_substrlen(str, len, &flags);
-  SerdNode*     node   = serd_node_malloc(length, flags, type);
-  memcpy(serd_node_buffer(node), str, length);
-  node->length = length;
-  return node;
-}
-
-SerdNode*
-serd_new_literal(const char* const str,
-                 const char* const datatype,
-                 const char* const lang)
-{
-  SerdNodeFlags flags  = 0;
-  const size_t  length = serd_strlen(str, &flags);
-  const size_t  len    = serd_node_pad_size(length);
-
-  SerdNode* node = NULL;
-  if (lang) {
-    flags |= SERD_HAS_LANGUAGE;
-    const size_t lang_len  = strlen(lang);
-    const size_t total_len = len + sizeof(SerdNode) + lang_len;
-    node                   = serd_node_malloc(total_len, flags, SERD_LITERAL);
-    memcpy(serd_node_buffer(node), str, length);
-    node->length = length;
-
-    SerdNode* lang_node = node + 1 + (len / sizeof(SerdNode));
-    lang_node->type     = SERD_LITERAL;
-    lang_node->length   = lang_len;
-    memcpy(serd_node_buffer(lang_node), lang, lang_len);
-  } else if (datatype) {
-    flags |= SERD_HAS_DATATYPE;
-    const size_t datatype_len = strlen(datatype);
-    const size_t total_len    = len + sizeof(SerdNode) + datatype_len;
-    node = serd_node_malloc(total_len, flags, SERD_LITERAL);
-    memcpy(serd_node_buffer(node), str, length);
-    node->length = length;
-
-    SerdNode* datatype_node = node + 1 + (len / sizeof(SerdNode));
-    datatype_node->type     = SERD_URI;
-    datatype_node->length   = datatype_len;
-    memcpy(serd_node_buffer(datatype_node), datatype, datatype_len);
-  } else {
-    node = serd_node_malloc(length, flags, SERD_LITERAL);
-    memcpy(serd_node_buffer(node), str, length);
     node->length = length;
   }
 
   return node;
+}
+
+SerdNode*
+serd_new_string(const SerdStringView str)
+{
+  SerdNodeFlags flags  = 0;
+  const size_t  length = serd_substrlen(str.buf, str.len, &flags);
+  SerdNode*     node   = serd_node_malloc(length, flags, SERD_LITERAL);
+
+  memcpy(serd_node_buffer(node), str.buf, str.len);
+  node->length = length;
+
+  return node;
+}
+
+SerdNode*
+serd_new_literal(const SerdStringView str,
+                 const SerdStringView datatype_uri,
+                 const SerdStringView lang)
+{
+  SerdNodeFlags flags  = 0;
+  const size_t  length = serd_substrlen(str.buf, str.len, &flags);
+  const size_t  len    = serd_node_pad_size(length);
+
+  SerdNode* node = NULL;
+  if (lang.len) {
+    const size_t total_len = len + sizeof(SerdNode) + lang.len;
+
+    node = serd_node_malloc(total_len, flags | SERD_HAS_LANGUAGE, SERD_LITERAL);
+    node->length = length;
+    memcpy(serd_node_buffer(node), str.buf, length);
+
+    SerdNode* lang_node = node + 1 + (len / sizeof(SerdNode));
+    lang_node->type     = SERD_LITERAL;
+    lang_node->length   = lang.len;
+    memcpy(serd_node_buffer(lang_node), lang.buf, lang.len);
+
+  } else if (datatype_uri.len) {
+    const size_t total_len = len + sizeof(SerdNode) + datatype_uri.len;
+
+    node = serd_node_malloc(total_len, flags | SERD_HAS_DATATYPE, SERD_LITERAL);
+    node->length = length;
+    memcpy(serd_node_buffer(node), str.buf, length);
+
+    SerdNode* datatype_node = node + 1 + (len / sizeof(SerdNode));
+    datatype_node->type     = SERD_URI;
+    datatype_node->length   = datatype_uri.len;
+    memcpy(serd_node_buffer(datatype_node), datatype_uri.buf, datatype_uri.len);
+
+  } else {
+    node = serd_node_malloc(length, flags, SERD_LITERAL);
+    memcpy(serd_node_buffer(node), str.buf, length);
+    node->length = length;
+  }
+
+  return node;
+}
+
+SerdNode*
+serd_new_blank(const SerdStringView str)
+{
+  return serd_new_token(SERD_BLANK, str);
+}
+
+SerdNode*
+serd_new_curie(const SerdStringView str)
+{
+  return serd_new_token(SERD_CURIE, str);
 }
 
 SerdNode*
@@ -239,13 +258,9 @@ serd_node_equals(const SerdNode* const a, const SerdNode* const b)
 }
 
 SerdNode*
-serd_new_uri(const char* const str)
+serd_new_uri(const SerdStringView str)
 {
-  const size_t length = strlen(str);
-  SerdNode*    node   = serd_node_malloc(length, 0, SERD_URI);
-  memcpy(serd_node_buffer(node), str, length);
-  node->length = length;
-  return node;
+  return serd_new_token(SERD_URI, str);
 }
 
 SerdNode*
@@ -338,54 +353,48 @@ is_dir_sep(const char c)
 }
 
 SerdNode*
-serd_new_file_uri(const char* const  path,
-                  const char* const  hostname,
-                  SerdURIView* const out)
+serd_new_file_uri(const SerdStringView path, const SerdStringView hostname)
 {
-  const size_t path_len     = strlen(path);
-  const size_t hostname_len = hostname ? strlen(hostname) : 0;
-  const bool   is_windows   = is_windows_path(path);
-  size_t       uri_len      = 0;
-  char*        uri          = NULL;
+  const bool is_windows = is_windows_path(path.buf);
+  size_t     uri_len    = 0;
+  char*      uri        = NULL;
 
-  if (is_dir_sep(path[0]) || is_windows) {
-    uri_len = strlen("file://") + hostname_len + is_windows;
+  if (is_dir_sep(path.buf[0]) || is_windows) {
+    uri_len = strlen("file://") + hostname.len + is_windows;
     uri     = (char*)calloc(uri_len + 1, 1);
 
     memcpy(uri, "file://", 7);
 
-    if (hostname) {
-      memcpy(uri + 7, hostname, hostname_len + 1);
+    if (hostname.len) {
+      memcpy(uri + 7, hostname.buf, hostname.len + 1);
     }
 
     if (is_windows) {
-      uri[7 + hostname_len] = '/';
+      uri[7 + hostname.len] = '/';
     }
   }
 
   SerdBuffer buffer = {uri, uri_len};
-  for (size_t i = 0; i < path_len; ++i) {
-    if (path[i] == '%') {
+  for (size_t i = 0; i < path.len; ++i) {
+    if (path.buf[i] == '%') {
       serd_buffer_sink("%%", 2, &buffer);
-    } else if (is_uri_path_char(path[i])) {
-      serd_buffer_sink(path + i, 1, &buffer);
+    } else if (is_uri_path_char(path.buf[i])) {
+      serd_buffer_sink(path.buf + i, 1, &buffer);
 #ifdef _WIN32
-    } else if (path[i] == '\\') {
+    } else if (path.buf[i] == '\\') {
       serd_buffer_sink("/", 1, &buffer);
 #endif
     } else {
       char escape_str[10] = {'%', 0, 0, 0, 0, 0, 0, 0, 0, 0};
-      snprintf(escape_str + 1, sizeof(escape_str) - 1, "%X", (unsigned)path[i]);
+      snprintf(
+        escape_str + 1, sizeof(escape_str) - 1, "%X", (unsigned)path.buf[i]);
       serd_buffer_sink(escape_str, 3, &buffer);
     }
   }
 
   const size_t      length = buffer.len;
   const char* const string = serd_buffer_sink_finish(&buffer);
-  SerdNode* const   node   = serd_new_substring(SERD_URI, string, length);
-  if (out) {
-    *out = serd_parse_uri(serd_node_buffer(node));
-  }
+  SerdNode* const   node   = serd_new_string(serd_substring(string, length));
 
   free(buffer.buf);
   return node;
@@ -532,6 +541,14 @@ serd_node_uri_view(const SerdNode* const node)
                                   : SERD_URI_NULL;
 }
 
+SERD_PURE_FUNC
+static const SerdNode*
+serd_node_meta_node(const SerdNode* node)
+{
+  const size_t len = serd_node_pad_size(node->length);
+  return node + 1 + (len / sizeof(SerdNode));
+}
+
 const SerdNode*
 serd_node_datatype(const SerdNode* const node)
 {
@@ -539,8 +556,7 @@ serd_node_datatype(const SerdNode* const node)
     return NULL;
   }
 
-  const size_t          len      = serd_node_pad_size(node->length);
-  const SerdNode* const datatype = node + 1 + (len / sizeof(SerdNode));
+  const SerdNode* const datatype = serd_node_meta_node(node);
   assert(datatype->type == SERD_URI || datatype->type == SERD_CURIE);
   return datatype;
 }
@@ -552,8 +568,7 @@ serd_node_language(const SerdNode* const node)
     return NULL;
   }
 
-  const size_t          len  = serd_node_pad_size(node->length);
-  const SerdNode* const lang = node + 1 + (len / sizeof(SerdNode));
+  const SerdNode* const lang = serd_node_meta_node(node);
   assert(lang->type == SERD_LITERAL);
   return lang;
 }
