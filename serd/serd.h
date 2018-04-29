@@ -486,6 +486,16 @@ serd_node_new_literal(const char*     str,
                       const char*     lang);
 
 /**
+   Create a new blank node.
+
+   Note this function measures `str`, which is a common bottleneck.
+   Use sord_node_from_serd_node() instead if `str` is already measured.
+*/
+SERD_API
+SerdNode*
+serd_node_new_blank(const char* str);
+
+/**
    Return a deep copy of `node`.
 */
 SERD_API

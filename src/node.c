@@ -164,6 +164,20 @@ serd_node_new_literal(const char*     str,
 }
 
 SerdNode*
+serd_node_new_blank(const char* str)
+{
+	if (!str) {
+		return NULL;
+	}
+
+	const size_t n_bytes = strlen(str);
+	SerdNode*    node    = serd_node_malloc(n_bytes, 0, SERD_BLANK);
+	memcpy(serd_node_buffer(node), str, n_bytes);
+	node->n_bytes = n_bytes;
+	return node;
+}
+
+SerdNode*
 serd_node_copy(const SerdNode* node)
 {
 	if (!node) {

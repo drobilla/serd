@@ -472,8 +472,22 @@ test_relative_uri(void)
 }
 
 static void
+test_blank(void)
+{
+	assert(!serd_node_new_blank(NULL));
+
+	SerdNode* blank = serd_node_new_blank("b0");
+	assert(serd_node_get_length(blank) == 2);
+	assert(serd_node_get_flags(blank) == 0);
+	assert(!strcmp(serd_node_get_string(blank), "b0"));
+	serd_node_free(blank);
+}
+
+static void
 test_env(void)
 {
+	SerdWorld* world = serd_world_new();
+
 	SerdNode* u   = serd_node_new_string(SERD_URI, "http://example.org/foo");
 	SerdNode* b   = serd_node_new_string(SERD_CURIE, "invalid");
 	SerdNode* c   = serd_node_new_string(SERD_CURIE, "eg.2:b");
@@ -526,6 +540,7 @@ test_env(void)
 	serd_node_free(u);
 
 	serd_env_free(env);
+	serd_world_free(world);
 }
 
 static void
@@ -688,6 +703,7 @@ main(void)
 	test_literal();
 	test_uri_from_string();
 	test_relative_uri();
+	test_blank();
 	test_env();
 	test_read_chunks();
 
