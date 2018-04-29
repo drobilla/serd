@@ -516,37 +516,48 @@ serd_write_uri(SerdURIView           uri,
 */
 
 /**
-   Create a new node from `str`.
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_string(SerdNodeType type, const char* SERD_NULLABLE str);
+   Create a new "simple" node that is just a string.
 
-/**
-   Create a new node from a prefix of `str`.
+   This can be used to create blank, CURIE, or URI nodes from an already
+   measured string or slice of a buffer, which avoids a strlen compared to the
+   friendly constructors.  This may not be used for literals since those must
+   be measured to set the SERD_HAS_NEWLINE and SERD_HAS_QUOTE flags.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_substring(SerdNodeType              type,
-                   const char* SERD_NULLABLE str,
-                   size_t                    len);
+serd_new_simple_node(SerdNodeType type, SerdStringView string);
+
+/// Create a new plain literal string node from `str`
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_new_string(SerdStringView string);
 
 /**
    Create a new literal node from `str`.
 
-   Either `datatype` or `lang` can be given, but not both, unless `datatype` is
-   rdf:langString in which case it is ignored.
+   Either `datatype_uri` or `lang` can be given, but not both, unless
+   `datatype_uri` is rdf:langString in which case it is ignored.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_literal(const char* SERD_NONNULL  str,
-                 const char* SERD_NULLABLE datatype,
-                 const char* SERD_NULLABLE lang);
+serd_new_literal(SerdStringView string,
+                 SerdStringView datatype_uri,
+                 SerdStringView lang);
+
+/// Create a new blank node
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_new_blank(SerdStringView string);
+
+/// Create a new CURIE node
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_new_curie(SerdStringView string);
 
 /// Create a new URI from a string
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_uri(const char* SERD_NONNULL str);
+serd_new_uri(SerdStringView string);
 
 /// Create a new URI from a URI view
 SERD_API
@@ -560,13 +571,10 @@ serd_new_parsed_uri(SerdURIView uri);
    percent encoded as necessary.
 
    If `path` is relative, `hostname` is ignored.
-   If `out` is not NULL, it will be set to the parsed URI.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_file_uri(const char* SERD_NONNULL   path,
-                  const char* SERD_NULLABLE  hostname,
-                  SerdURIView* SERD_NULLABLE out);
+serd_new_file_uri(SerdStringView path, SerdStringView hostname);
 
 /**
    Create a new node by serialising `d` into an xsd:decimal string
@@ -750,7 +758,7 @@ typedef SerdStatus (*SerdEndSink)(void* SERD_NULLABLE          handle,
 /// Create a new environment
 SERD_API
 SerdEnv* SERD_ALLOCATED
-serd_env_new(const SerdNode* SERD_NULLABLE base_uri);
+serd_env_new(SerdStringView base_uri);
 
 /// Free `env`
 SERD_API
@@ -758,16 +766,14 @@ void
 serd_env_free(SerdEnv* SERD_NULLABLE env);
 
 /// Get the current base URI
-SERD_API
+SERD_PURE_API
 const SerdNode* SERD_NULLABLE
-serd_env_base_uri(const SerdEnv* SERD_NONNULL env,
-                  SerdURIView* SERD_NULLABLE  out);
+serd_env_base_uri(const SerdEnv* SERD_NONNULL env);
 
 /// Set the current base URI
 SERD_API
 SerdStatus
-serd_env_set_base_uri(SerdEnv* SERD_NONNULL         env,
-                      const SerdNode* SERD_NULLABLE uri);
+serd_env_set_base_uri(SerdEnv* SERD_NONNULL env, SerdStringView uri);
 
 /**
    Set a namespace prefix
@@ -778,16 +784,9 @@ serd_env_set_base_uri(SerdEnv* SERD_NONNULL         env,
 */
 SERD_API
 SerdStatus
-serd_env_set_prefix(SerdEnv* SERD_NONNULL        env,
-                    const SerdNode* SERD_NONNULL name,
-                    const SerdNode* SERD_NONNULL uri);
-
-/// Set a namespace prefix
-SERD_API
-SerdStatus
-serd_env_set_prefix_from_strings(SerdEnv* SERD_NONNULL    env,
-                                 const char* SERD_NONNULL name,
-                                 const char* SERD_NONNULL uri);
+serd_env_set_prefix(SerdEnv* SERD_NONNULL env,
+                    SerdStringView        name,
+                    SerdStringView        uri);
 
 /// Qualify `uri` into a CURIE if possible
 SERD_API
@@ -988,12 +987,11 @@ serd_reader_free(SerdReader* SERD_NULLABLE reader);
 /// Create a new RDF writer
 SERD_API
 SerdWriter* SERD_ALLOCATED
-serd_writer_new(SerdSyntax                       syntax,
-                SerdWriterFlags                  flags,
-                SerdEnv* SERD_NONNULL            env,
-                const SerdURIView* SERD_NULLABLE base_uri,
-                SerdSink SERD_NONNULL            ssink,
-                void* SERD_NULLABLE              stream);
+serd_writer_new(SerdSyntax            syntax,
+                SerdWriterFlags       flags,
+                SerdEnv* SERD_NONNULL env,
+                SerdSink SERD_NONNULL ssink,
+                void* SERD_NULLABLE   stream);
 
 /// Free `writer`
 SERD_API
