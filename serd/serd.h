@@ -481,7 +481,9 @@ serd_node_new_substring(SerdType type, const char* str, size_t len);
 */
 SERD_API
 SerdNode*
-serd_node_new_literal(const char* str, const char* datatype, const char* lang);
+serd_node_new_literal(const char*     str,
+                      const SerdNode* datatype,
+                      const char*     lang);
 
 /**
    Return a deep copy of `node`.

@@ -117,9 +117,13 @@ serd_node_new_substring(SerdType type, const char* str, const size_t len)
 }
 
 SerdNode*
-serd_node_new_literal(const char* str, const char* datatype, const char* lang)
+serd_node_new_literal(const char*     str,
+                      const SerdNode* datatype,
+                      const char*     lang)
 {
-	if (!str || (lang && datatype && strcmp(datatype, NS_RDF "#langString"))) {
+	if (!str || (lang && datatype &&
+	             strcmp(serd_node_buffer_c(datatype), NS_RDF "langString")) ||
+	    (datatype && serd_node_get_type(datatype) != SERD_URI)) {
 		return NULL;
 	}
 
@@ -142,16 +146,14 @@ serd_node_new_literal(const char* str, const char* datatype, const char* lang)
 		memcpy(serd_node_buffer(lang_node), lang, lang_len);
 	} else if (datatype) {
 		flags |= SERD_HAS_DATATYPE;
-		const size_t datatype_len = strlen(datatype);
+		const size_t datatype_len = strlen(serd_node_buffer_c(datatype));
 		const size_t total_len    = len + sizeof(SerdNode) + datatype_len;
 		node = serd_node_malloc(total_len, flags, SERD_LITERAL);
 		memcpy(serd_node_buffer(node), str, n_bytes);
 		node->n_bytes = n_bytes;
 
 		SerdNode* datatype_node = node + 1 + (len / serd_node_align);
-		datatype_node->type    = SERD_URI;
-		datatype_node->n_bytes = datatype_len;
-		memcpy(serd_node_buffer(datatype_node), datatype, datatype_len);
+		memcpy(datatype_node, datatype, sizeof(SerdNode) + datatype_len);
 	} else {
 		node = serd_node_malloc(n_bytes, flags, SERD_LITERAL);
 		memcpy(serd_node_buffer(node), str, n_bytes);
