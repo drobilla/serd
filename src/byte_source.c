@@ -14,6 +14,8 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "byte_source.h"
+
 #include "serd_internal.h"
 
 SerdStatus

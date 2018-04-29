@@ -25,6 +25,8 @@
 #include <string.h>
 
 #include "reader.h"
+#include "string_utils.h"
+#include "uri_utils.h"
 
 #define TRY_THROW(exp) if (!(exp)) goto except;
 #define TRY_RET(exp)   if (!(exp)) return 0;
@@ -609,7 +611,7 @@ static bool
 read_IRIREF_scheme(SerdReader* reader, Ref dest)
 {
 	int c = peek_byte(reader);
-	if (!isalpha(c)) {
+	if (!is_alpha(c)) {
 		return r_err(reader, SERD_ERR_BAD_SYNTAX,
 		             "bad IRI scheme start `%c'\n", c);
 	}

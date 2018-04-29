@@ -26,6 +26,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "string_utils.h"
+
 #define SERDI_ERROR(msg)       fprintf(stderr, "serdi: " msg);
 #define SERDI_ERRORF(fmt, ...) fprintf(stderr, "serdi: " fmt, __VA_ARGS__);
 

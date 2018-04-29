@@ -19,6 +19,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "node.h"
+
 typedef struct {
 	SerdNode* name;
 	SerdNode* uri;

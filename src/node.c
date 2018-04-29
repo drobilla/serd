@@ -16,10 +16,14 @@
 
 #include "serd_internal.h"
 
+#include <assert.h>
 #include <float.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "node.h"
+#include "string_utils.h"
 
 #ifdef _WIN32
 #    ifndef isnan
@@ -65,12 +69,6 @@ serd_node_malloc(size_t n_bytes, SerdNodeFlags flags, SerdType type)
 	node->type    = type;
 	assert((intptr_t)node % serd_node_align == 0);
 	return node;
-}
-
-char*
-serd_node_buffer(SerdNode* node)
-{
-	return (char*)(node + 1);
 }
 
 void

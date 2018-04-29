@@ -21,11 +21,25 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "byte_sink.h"
+#include "node.h"
+#include "stack.h"
+#include "string_utils.h"
+#include "uri_utils.h"
+
 typedef struct {
 	SerdNode* graph;
 	SerdNode* subject;
 	SerdNode* predicate;
 } WriteContext;
+
+typedef enum {
+	FIELD_NONE,
+	FIELD_SUBJECT,
+	FIELD_PREDICATE,
+	FIELD_OBJECT,
+	FIELD_GRAPH
+} Field;
 
 static const WriteContext WRITE_CONTEXT_NULL = { NULL, NULL, NULL };
 

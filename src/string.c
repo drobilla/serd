@@ -15,6 +15,7 @@
 */
 
 #include "serd_internal.h"
+#include "string_utils.h"
 
 #include <math.h>
 
@@ -39,34 +40,6 @@ serd_strerror(SerdStatus status)
 	case SERD_ERR_INTERNAL:   return "Internal error";
 	}
 	return "Unknown error";  // never reached
-}
-
-static inline void
-serd_update_flags(const char c, SerdNodeFlags* const flags)
-{
-	switch (c) {
-	case '\r': case '\n':
-		*flags |= SERD_HAS_NEWLINE;
-		break;
-	case '"':
-		*flags |= SERD_HAS_QUOTE;
-	}
-}
-
-size_t
-serd_substrlen(const char* const    str,
-               const size_t         len,
-               SerdNodeFlags* const flags)
-{
-	assert(flags);
-
-	size_t i = 0;
-	*flags = 0;
-	for (; i < len && str[i]; ++i) {
-		serd_update_flags(str[i], flags);
-	}
-
-	return i;
 }
 
 size_t

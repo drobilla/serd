@@ -200,24 +200,35 @@ def lint(ctx):
 def amalgamate(ctx):
     "builds single-file amalgamated source"
     import shutil
+    import re
     shutil.copy('serd/serd.h', 'build/serd.h')
+
+    def include_line(line):
+        return (not re.match('#include "[^/]*\.h"', line) and
+                not re.match('#include "serd/serd.h"', line))
+
     with open('build/serd.c', 'w') as amalgamation:
-        with open('src/serd_internal.h') as serd_internal_h:
-            for l in serd_internal_h:
-                amalgamation.write(l.replace('serd/serd.h', 'serd.h'))
+        amalgamation.write('/* This is amalgamated code, do not edit! */\n')
+        amalgamation.write('#include "serd.h"\n\n')
+
+        for header_path in ['src/serd_internal.h',
+                            'src/byte_sink.h',
+                            'src/byte_source.h',
+                            'src/stack.h',
+                            'src/string_utils.h',
+                            'src/uri_utils.h',
+                            'src/reader.h']:
+            with open(header_path) as header:
+                for l in header:
+                    if include_line(l):
+                        amalgamation.write(l)
 
         for f in lib_headers + lib_source:
             with open(f) as fd:
                 amalgamation.write('\n/**\n   @file %s\n*/' % f)
-                header = True
                 for l in fd:
-                    if header:
-                        if l == '*/\n':
-                            header = False
-                    else:
-                        if (not l.startswith('#include "') and
-                            l != '#include "serd.h"\n'):
-                            amalgamation.write(l)
+                    if include_line(l):
+                        amalgamation.write(l)
 
     for i in ['c', 'h']:
         Logs.info('Wrote build/serd.%s' % i)

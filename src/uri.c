@@ -19,6 +19,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "uri_utils.h"
+
 char*
 serd_file_uri_parse(const char* uri, char** hostname)
 {
