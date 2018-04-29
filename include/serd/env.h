@@ -9,7 +9,6 @@
 #include "serd/sink.h"
 #include "serd/status.h"
 #include "serd/string_view.h"
-#include "serd/uri.h"
 
 #include <stdbool.h>
 
@@ -27,7 +26,7 @@ typedef struct SerdEnvImpl SerdEnv;
 /// Create a new environment
 SERD_API
 SerdEnv* SERD_ALLOCATED
-serd_env_new(const SerdNode* SERD_NULLABLE base_uri);
+serd_env_new(SerdStringView base_uri);
 
 /// Free `env`
 SERD_API
@@ -35,16 +34,14 @@ void
 serd_env_free(SerdEnv* SERD_NULLABLE env);
 
 /// Get the current base URI
-SERD_API
+SERD_PURE_API
 const SerdNode* SERD_NULLABLE
-serd_env_base_uri(const SerdEnv* SERD_NONNULL env,
-                  SerdURIView* SERD_NULLABLE  out);
+serd_env_base_uri(const SerdEnv* SERD_NULLABLE env);
 
 /// Set the current base URI
 SERD_API
 SerdStatus
-serd_env_set_base_uri(SerdEnv* SERD_NONNULL         env,
-                      const SerdNode* SERD_NULLABLE uri);
+serd_env_set_base_uri(SerdEnv* SERD_NONNULL env, SerdStringView uri);
 
 /**
    Set a namespace prefix.
@@ -55,16 +52,9 @@ serd_env_set_base_uri(SerdEnv* SERD_NONNULL         env,
 */
 SERD_API
 SerdStatus
-serd_env_set_prefix(SerdEnv* SERD_NONNULL        env,
-                    const SerdNode* SERD_NONNULL name,
-                    const SerdNode* SERD_NONNULL uri);
-
-/// Set a namespace prefix
-SERD_API
-SerdStatus
-serd_env_set_prefix_from_strings(SerdEnv* SERD_NONNULL    env,
-                                 const char* SERD_NONNULL name,
-                                 const char* SERD_NONNULL uri);
+serd_env_set_prefix(SerdEnv* SERD_NONNULL env,
+                    SerdStringView        name,
+                    SerdStringView        uri);
 
 /// Qualify `uri` into a CURIE if possible
 SERD_API
