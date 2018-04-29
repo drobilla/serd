@@ -161,27 +161,28 @@ static void
 test_writer(const char* const path)
 {
   FILE*    fd  = fopen(path, "wb");
-  SerdEnv* env = serd_env_new(NULL);
+  SerdEnv* env = serd_env_new(SERD_EMPTY_STRING());
   assert(fd);
 
-  SerdWriter* writer =
-    serd_writer_new(SERD_TURTLE, 0, env, NULL, serd_file_sink, fd);
+  SerdWriter* writer = serd_writer_new(SERD_TURTLE, 0, env, serd_file_sink, fd);
   assert(writer);
 
   serd_writer_chop_blank_prefix(writer, "tmp");
   serd_writer_chop_blank_prefix(writer, NULL);
 
-  SerdNode* lit = serd_new_string(SERD_LITERAL, "hello");
+  SerdNode* lit = serd_new_string(SERD_STATIC_STRING("hello"));
 
   assert(serd_writer_set_base_uri(writer, lit));
   assert(serd_writer_set_prefix(writer, lit, lit));
   assert(serd_writer_end_anon(writer, NULL));
   assert(serd_writer_env(writer) == env);
 
-  uint8_t   buf[] = {0xEF, 0xBF, 0xBD, 0};
-  SerdNode* s     = serd_new_string(SERD_URI, "");
-  SerdNode* p     = serd_new_string(SERD_URI, "http://example.org/pred");
-  SerdNode* o     = serd_new_string(SERD_LITERAL, (char*)buf);
+  static const uint8_t buf[]    = {0xEF, 0xBF, 0xBD, 0};
+  const SerdStringView buf_view = {(const char*)buf, 3};
+
+  SerdNode* s = serd_new_uri(SERD_EMPTY_STRING());
+  SerdNode* p = serd_new_uri(SERD_STATIC_STRING("http://example.org/pred"));
+  SerdNode* o = serd_new_string(buf_view);
 
   // Write 3 invalid statements (should write nothing)
   const SerdNode* junk[][3] = {{s, o, o}, {o, p, o}, {s, o, p}};
@@ -190,26 +191,33 @@ test_writer(const char* const path)
       writer, 0, NULL, junk[i][0], junk[i][1], junk[i][2]));
   }
 
-  SerdNode*       t         = serd_new_literal((char*)buf, "urn:Type", NULL);
-  SerdNode*       l         = serd_new_literal((char*)buf, NULL, "en");
+  static const SerdStringView empty    = SERD_EMPTY_STRING();
+  static const SerdStringView urn_Type = SERD_STATIC_STRING("urn:Type");
+  static const SerdStringView en       = SERD_STATIC_STRING("en");
+
+  SerdNode* const t         = serd_new_literal(buf_view, urn_Type, empty);
+  SerdNode* const l         = serd_new_literal(buf_view, empty, en);
   const SerdNode* good[][3] = {{s, p, o}, {s, p, t}, {s, p, l}};
+
   for (size_t i = 0; i < sizeof(good) / (sizeof(SerdNode*) * 3); ++i) {
     assert(!serd_writer_write_statement(
       writer, 0, NULL, good[i][0], good[i][1], good[i][2]));
   }
 
   // Write statements with bad UTF-8 (should be replaced)
-  const char bad_str[] = {(char)0xFF, (char)0x90, 'h', 'i', 0};
-  SerdNode*  bad_lit   = serd_new_string(SERD_LITERAL, bad_str);
-  SerdNode*  bad_uri   = serd_new_string(SERD_URI, bad_str);
+  const char           bad_str[] = {(char)0xFF, (char)0x90, 'h', 'i', 0};
+  const SerdStringView bad_view  = {(const char*)bad_str, 4};
+  SerdNode*            bad_lit   = serd_new_string(bad_view);
+  SerdNode*            bad_uri   = serd_new_uri(bad_view);
   assert(!serd_writer_write_statement(writer, 0, NULL, s, p, bad_lit));
   assert(!serd_writer_write_statement(writer, 0, NULL, s, p, bad_uri));
-  serd_node_free(bad_lit);
+
   serd_node_free(bad_uri);
+  serd_node_free(bad_lit);
 
   // Write 1 valid statement
   serd_node_free(o);
-  o = serd_new_string(SERD_LITERAL, "hello");
+  o = serd_new_string(SERD_STATIC_STRING("hello"));
   assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o));
 
   serd_writer_free(writer);
@@ -220,13 +228,14 @@ test_writer(const char* const path)
 
   // Test buffer sink
   SerdBuffer buffer = {NULL, 0};
-  writer =
-    serd_writer_new(SERD_TURTLE, 0, env, NULL, serd_buffer_sink, &buffer);
+  writer = serd_writer_new(SERD_TURTLE, 0, env, serd_buffer_sink, &buffer);
 
-  o = serd_new_string(SERD_URI, "http://example.org/base");
-  assert(!serd_writer_set_base_uri(writer, o));
+  SerdNode* const base =
+    serd_new_uri(SERD_STATIC_STRING("http://example.org/base"));
 
-  serd_node_free(o);
+  serd_writer_set_base_uri(writer, base);
+
+  serd_node_free(base);
   serd_writer_free(writer);
   char* out = serd_buffer_sink_finish(&buffer);
 
@@ -249,7 +258,7 @@ test_reader(const char* path)
   assert(reader);
   assert(serd_reader_handle(reader) == rt);
 
-  SerdNode* g = serd_new_string(SERD_URI, "http://example.org/");
+  SerdNode* g = serd_new_uri(SERD_STATIC_STRING("http://example.org/"));
   serd_reader_set_default_graph(reader, g);
   serd_reader_add_blank_prefix(reader, "tmp");
 
