@@ -462,6 +462,19 @@ write_literal(SerdWriter*        writer,
 	return true;
 }
 
+// Return true iff `buf` is a valid prefixed name suffix
+static inline bool
+is_name(const uint8_t* buf, const size_t len)
+{
+	// TODO: This is more strict than it should be.
+	for (size_t i = 0; i < len; ++i) {
+		if (!(is_alpha(buf[i]) || is_digit(buf[i]))) {
+			return false;
+		}
+	}
+	return true;
+}
+
 static bool
 write_uri_node(SerdWriter* const        writer,
                const SerdNode*          node,
@@ -485,7 +498,8 @@ write_uri_node(SerdWriter* const        writer,
 	           && !strcmp((const char*)node->buf, NS_RDF "nil")) {
 		return sink("()", 2, writer) == 2;
 	} else if (has_scheme && (writer->style & SERD_STYLE_CURIED) &&
-	           serd_env_qualify(writer->env, node, &prefix, &suffix)) {
+	           serd_env_qualify(writer->env, node, &prefix, &suffix) &&
+	           is_name(suffix.buf, suffix.len)) {
 		write_uri(writer, prefix.buf, prefix.n_bytes);
 		sink(":", 1, writer);
 		write_uri(writer, suffix.buf, suffix.len);

@@ -160,27 +160,6 @@ serd_env_set_prefix_from_strings(SerdEnv*       env,
 	return serd_env_set_prefix(env, &name_node, &uri_node);
 }
 
-static inline bool
-is_nameChar(const uint8_t c)
-{
-	return is_alpha(c) || is_digit(c) || c == '_';
-}
-
-/**
-   Return true iff `buf` is a valid prefixed name suffix.
-   TODO: This is more strict than it should be.
-*/
-static inline bool
-is_name(const uint8_t* buf, size_t len)
-{
-	for (size_t i = 0; i < len; ++i) {
-		if (!is_nameChar(buf[i])) {
-			return false;
-		}
-	}
-	return true;
-}
-
 SERD_API
 bool
 serd_env_qualify(const SerdEnv*  env,
@@ -197,9 +176,7 @@ serd_env_qualify(const SerdEnv*  env,
 				*prefix = env->prefixes[i].name;
 				suffix->buf = uri->buf + prefix_uri->n_bytes;
 				suffix->len = uri->n_bytes - prefix_uri->n_bytes;
-				if (is_name(suffix->buf, suffix->len)) {
-					return true;
-				}
+				return true;
 			}
 		}
 	}
