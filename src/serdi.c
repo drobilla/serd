@@ -294,12 +294,8 @@ main(int argc, char** argv)
 	                                     (SerdWriteFunc)fwrite,
 	                                     out_fd);
 
-	SerdReader* reader = serd_reader_new(
-		input_syntax, writer, NULL,
-		(SerdBaseSink)serd_writer_set_base_uri,
-		(SerdPrefixSink)serd_writer_set_prefix,
-		(SerdStatementSink)serd_writer_write_statement,
-		(SerdEndSink)serd_writer_end_anon);
+	SerdReader* reader =
+		serd_reader_new(input_syntax, serd_writer_get_sink(writer));
 
 	serd_reader_set_strict(reader, !lax);
 	if (quiet) {

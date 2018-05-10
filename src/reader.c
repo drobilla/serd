@@ -124,9 +124,9 @@ emit_statement(SerdReader* reader, ReadContext ctx, Ref o)
 	if (!graph && reader->default_graph) {
 		graph = reader->default_graph;
 	}
-	bool ret = !reader->statement_sink ||
-		!reader->statement_sink(
-			reader->handle, *ctx.flags, graph,
+	bool ret = !reader->sink->statement ||
+		!reader->sink->statement(
+			reader->sink->handle, *ctx.flags, graph,
 			deref(reader, ctx.subject), deref(reader, ctx.predicate),
 			deref(reader, o));
 	*ctx.flags &= SERD_ANON_CONT|SERD_LIST_CONT;  // Preserve only cont flags
@@ -156,26 +156,16 @@ serd_reader_read_document(SerdReader* reader)
 }
 
 SerdReader*
-serd_reader_new(SerdSyntax        syntax,
-                void*             handle,
-                void              (*free_handle)(void*),
-                SerdBaseSink      base_sink,
-                SerdPrefixSink    prefix_sink,
-                SerdStatementSink statement_sink,
-                SerdEndSink       end_sink)
+serd_reader_new(SerdSyntax syntax, const SerdSink* sink)
 {
-	SerdReader*  me  = (SerdReader*)calloc(1, sizeof(SerdReader));
-	me->handle           = handle;
-	me->free_handle      = free_handle;
-	me->base_sink        = base_sink;
-	me->prefix_sink      = prefix_sink;
-	me->statement_sink   = statement_sink;
-	me->end_sink         = end_sink;
-	me->default_graph    = NULL;
-	me->stack            = serd_stack_new(SERD_PAGE_SIZE);
-	me->syntax           = syntax;
-	me->next_id          = 1;
-	me->strict           = true;
+	SerdReader* me = (SerdReader*)calloc(1, sizeof(SerdReader));
+
+	me->sink          = sink;
+	me->default_graph = NULL;
+	me->stack         = serd_stack_new(SERD_PAGE_SIZE);
+	me->syntax        = syntax;
+	me->next_id       = 1;
+	me->strict        = true;
 
 	me->rdf_first = push_node(me, SERD_URI, NS_RDF "first", 48);
 	me->rdf_rest  = push_node(me, SERD_URI, NS_RDF "rest", 47);
@@ -212,16 +202,7 @@ serd_reader_free(SerdReader* reader)
 #endif
 	free(reader->stack.buf);
 	free(reader->bprefix);
-	if (reader->free_handle) {
-		reader->free_handle(reader->handle);
-	}
 	free(reader);
-}
-
-void*
-serd_reader_get_handle(const SerdReader* reader)
-{
-	return reader->handle;
 }
 
 void

@@ -89,6 +89,7 @@ static const SepRule rules[] = {
 };
 
 struct SerdWriterImpl {
+	SerdSink      iface;
 	SerdSyntax    syntax;
 	SerdStyle     style;
 	SerdEnv*      env;
@@ -113,6 +114,11 @@ typedef enum {
 	WRITE_STRING,
 	WRITE_LONG_STRING
 } TextContext;
+
+static SerdStatus
+serd_writer_set_prefix(SerdWriter*     writer,
+                       const SerdNode* name,
+                       const SerdNode* uri);
 
 static bool
 write_node(SerdWriter*        writer,
@@ -689,7 +695,7 @@ write_list_obj(SerdWriter*        writer,
 	return false;
 }
 
-SerdStatus
+static SerdStatus
 serd_writer_write_statement(SerdWriter*        writer,
                             SerdStatementFlags flags,
                             const SerdNode*    graph,
@@ -822,7 +828,7 @@ serd_writer_write_statement(SerdWriter*        writer,
 	return SERD_SUCCESS;
 }
 
-SerdStatus
+static SerdStatus
 serd_writer_end_anon(SerdWriter*     writer,
                      const SerdNode* node)
 {
@@ -885,6 +891,13 @@ serd_writer_new(SerdSyntax     syntax,
 	writer->empty        = true;
 	writer->byte_sink    = serd_byte_sink_new(
 		ssink, stream, (style & SERD_STYLE_BULK) ? SERD_PAGE_SIZE : 1);
+
+	writer->iface.handle    = writer;
+	writer->iface.base      = (SerdBaseSink)serd_writer_set_base_uri;
+	writer->iface.prefix    = (SerdPrefixSink)serd_writer_set_prefix;
+	writer->iface.statement = (SerdStatementSink)serd_writer_write_statement;
+	writer->iface.end       = (SerdEndSink)serd_writer_end_anon;
+
 	return writer;
 }
 
@@ -981,6 +994,12 @@ serd_writer_free(SerdWriter* writer)
 	serd_byte_sink_free(&writer->byte_sink);
 	serd_node_free(writer->root_node);
 	free(writer);
+}
+
+const SerdSink*
+serd_writer_get_sink(SerdWriter* writer)
+{
+	return &writer->iface;
 }
 
 SerdEnv*

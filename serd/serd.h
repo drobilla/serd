@@ -704,6 +704,17 @@ typedef SerdStatus (*SerdEndSink)(void*           handle,
                                   const SerdNode* node);
 
 /**
+   An interface that receives a stream of RDF data.
+*/
+typedef struct SerdSink {
+	void*             handle;
+	SerdBaseSink      base;
+	SerdPrefixSink    prefix;
+	SerdStatementSink statement;
+	SerdEndSink       end;
+} SerdSink;
+
+/**
    @}
    @name Environment
    @{
@@ -810,13 +821,7 @@ serd_env_foreach(const SerdEnv* env,
 */
 SERD_API
 SerdReader*
-serd_reader_new(SerdSyntax        syntax,
-                void*             handle,
-                void              (*free_handle)(void*),
-                SerdBaseSink      base_sink,
-                SerdPrefixSink    prefix_sink,
-                SerdStatementSink statement_sink,
-                SerdEndSink       end_sink);
+serd_reader_new(SerdSyntax syntax, const SerdSink* sink);
 
 /**
    Enable or disable strict parsing.
@@ -840,13 +845,6 @@ void
 serd_reader_set_error_sink(SerdReader*   reader,
                            SerdErrorSink error_sink,
                            void*         error_handle);
-
-/**
-   Return the `handle` passed to serd_reader_new().
-*/
-SERD_API
-void*
-serd_reader_get_handle(const SerdReader* reader);
 
 /**
    Set a prefix to be added to all blank node identifiers.
@@ -974,6 +972,13 @@ void
 serd_writer_free(SerdWriter* writer);
 
 /**
+   Return a sink interface that emits statements via `writer`.
+*/
+SERD_API
+const SerdSink*
+serd_writer_get_sink(SerdWriter* writer);
+
+/**
    Return the env used by `writer`.
 */
 SERD_API
@@ -1046,41 +1051,6 @@ SERD_API
 SerdStatus
 serd_writer_set_root_uri(SerdWriter*     writer,
                          const SerdNode* uri);
-
-/**
-   Set a namespace prefix (and emit directive if applicable).
-
-   Note this function can be safely casted to SerdPrefixSink.
-*/
-SERD_API
-SerdStatus
-serd_writer_set_prefix(SerdWriter*     writer,
-                       const SerdNode* name,
-                       const SerdNode* uri);
-
-/**
-   Write a statement.
-
-   Note this function can be safely casted to SerdStatementSink.
-*/
-SERD_API
-SerdStatus
-serd_writer_write_statement(SerdWriter*        writer,
-                            SerdStatementFlags flags,
-                            const SerdNode*    graph,
-                            const SerdNode*    subject,
-                            const SerdNode*    predicate,
-                            const SerdNode*    object);
-
-/**
-   Mark the end of an anonymous node's description.
-
-   Note this function can be safely casted to SerdEndSink.
-*/
-SERD_API
-SerdStatus
-serd_writer_end_anon(SerdWriter*     writer,
-                     const SerdNode* node);
 
 /**
    Finish a write.
