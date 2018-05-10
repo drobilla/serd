@@ -153,7 +153,8 @@ def build(bld):
         # Test programs
         for prog in [('serdi_static', 'src/serdi.c'),
                      ('cursor_test', 'tests/cursor_test.c'),
-                     ('serd_test', 'tests/serd_test.c')]:
+                     ('serd_test', 'tests/serd_test.c'),
+                     ('read_chunk_test', 'tests/read_chunk_test.c')]:
             bld(features     = 'c cprogram',
                 source       = prog[1],
                 use          = 'libserd_profiled',
@@ -430,6 +431,7 @@ def test(tst):
     with tst.group('Unit') as check:
         check(['./cursor_test'])
         check(['./serd_test'])
+        check(['./read_chunk_test'])
 
     def test_syntax_io(check, in_name, check_name, lang):
         in_path = 'tests/good/%s' % in_name
