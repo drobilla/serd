@@ -162,7 +162,6 @@ read_doc(SerdReader* reader)
 	}
 }
 
-SERD_API
 SerdReader*
 serd_reader_new(SerdSyntax        syntax,
                 void*             handle,
@@ -192,14 +191,12 @@ serd_reader_new(SerdSyntax        syntax,
 	return me;
 }
 
-SERD_API
 void
 serd_reader_set_strict(SerdReader* reader, bool strict)
 {
 	reader->strict = strict;
 }
 
-SERD_API
 void
 serd_reader_set_error_sink(SerdReader*   reader,
                            SerdErrorSink error_sink,
@@ -209,7 +206,6 @@ serd_reader_set_error_sink(SerdReader*   reader,
 	reader->error_handle = error_handle;
 }
 
-SERD_API
 void
 serd_reader_free(SerdReader* reader)
 {
@@ -229,14 +225,12 @@ serd_reader_free(SerdReader* reader)
 	free(reader);
 }
 
-SERD_API
 void*
 serd_reader_get_handle(const SerdReader* reader)
 {
 	return reader->handle;
 }
 
-SERD_API
 void
 serd_reader_add_blank_prefix(SerdReader*    reader,
                              const uint8_t* prefix)
@@ -251,7 +245,6 @@ serd_reader_add_blank_prefix(SerdReader*    reader,
 	}
 }
 
-SERD_API
 void
 serd_reader_set_default_graph(SerdReader*     reader,
                               const SerdNode* graph)
@@ -260,7 +253,6 @@ serd_reader_set_default_graph(SerdReader*     reader,
 	reader->default_graph = serd_node_copy(graph);
 }
 
-SERD_API
 SerdStatus
 serd_reader_read_file(SerdReader*    reader,
                       const uint8_t* uri)
@@ -299,7 +291,6 @@ skip_bom(SerdReader* me)
 	return SERD_SUCCESS;
 }
 
-SERD_API
 SerdStatus
 serd_reader_start_stream(SerdReader*    reader,
                          FILE*          file,
@@ -315,7 +306,6 @@ serd_reader_start_stream(SerdReader*    reader,
 		bulk ? SERD_PAGE_SIZE : 1);
 }
 
-SERD_API
 SerdStatus
 serd_reader_start_source_stream(SerdReader*         reader,
                                 SerdSource          read_func,
@@ -342,7 +332,6 @@ serd_reader_prepare(SerdReader* reader)
 	return reader->status;
 }
 
-SERD_API
 SerdStatus
 serd_reader_read_chunk(SerdReader* reader)
 {
@@ -356,14 +345,12 @@ serd_reader_read_chunk(SerdReader* reader)
 	return st ? st : read_statement(reader) ? SERD_SUCCESS : SERD_FAILURE;
 }
 
-SERD_API
 SerdStatus
 serd_reader_end_stream(SerdReader* reader)
 {
 	return serd_byte_source_close(&reader->source);
 }
 
-SERD_API
 SerdStatus
 serd_reader_read_file_handle(SerdReader*    reader,
                              FILE*          file,
@@ -374,7 +361,6 @@ serd_reader_read_file_handle(SerdReader*    reader,
 		file, name, SERD_PAGE_SIZE);
 }
 
-SERD_API
 SerdStatus
 serd_reader_read_source(SerdReader*         reader,
                         SerdSource          source,
@@ -397,7 +383,6 @@ serd_reader_read_source(SerdReader*         reader,
 	return serd_reader_end_stream(reader);
 }
 
-SERD_API
 SerdStatus
 serd_reader_read_string(SerdReader* reader, const uint8_t* utf8)
 {

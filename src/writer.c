@@ -670,7 +670,6 @@ write_list_obj(SerdWriter*        writer,
 	return false;
 }
 
-SERD_API
 SerdStatus
 serd_writer_write_statement(SerdWriter*        writer,
                             SerdStatementFlags flags,
@@ -807,7 +806,6 @@ serd_writer_write_statement(SerdWriter*        writer,
 	return SERD_SUCCESS;
 }
 
-SERD_API
 SerdStatus
 serd_writer_end_anon(SerdWriter*     writer,
                      const SerdNode* node)
@@ -833,7 +831,6 @@ serd_writer_end_anon(SerdWriter*     writer,
 	return SERD_SUCCESS;
 }
 
-SERD_API
 SerdStatus
 serd_writer_finish(SerdWriter* writer)
 {
@@ -848,7 +845,6 @@ serd_writer_finish(SerdWriter* writer)
 	return free_context(writer);
 }
 
-SERD_API
 SerdWriter*
 serd_writer_new(SerdSyntax     syntax,
                 SerdStyle      style,
@@ -874,7 +870,6 @@ serd_writer_new(SerdSyntax     syntax,
 	return writer;
 }
 
-SERD_API
 void
 serd_writer_set_error_sink(SerdWriter*   writer,
                            SerdErrorSink error_sink,
@@ -884,7 +879,6 @@ serd_writer_set_error_sink(SerdWriter*   writer,
 	writer->error_handle = error_handle;
 }
 
-SERD_API
 void
 serd_writer_chop_blank_prefix(SerdWriter*    writer,
                               const uint8_t* prefix)
@@ -899,7 +893,6 @@ serd_writer_chop_blank_prefix(SerdWriter*    writer,
 	}
 }
 
-SERD_API
 SerdStatus
 serd_writer_set_base_uri(SerdWriter*     writer,
                          const SerdNode* uri)
@@ -922,7 +915,6 @@ serd_writer_set_base_uri(SerdWriter*     writer,
 	return SERD_ERR_UNKNOWN;
 }
 
-SERD_API
 SerdStatus
 serd_writer_set_root_uri(SerdWriter*     writer,
                          const SerdNode* uri)
@@ -938,7 +930,6 @@ serd_writer_set_root_uri(SerdWriter*     writer,
 	return SERD_SUCCESS;
 }
 
-SERD_API
 SerdStatus
 serd_writer_set_prefix(SerdWriter*     writer,
                        const SerdNode* name,
@@ -962,7 +953,6 @@ serd_writer_set_prefix(SerdWriter*     writer,
 	return SERD_ERR_UNKNOWN;
 }
 
-SERD_API
 void
 serd_writer_free(SerdWriter* writer)
 {
@@ -974,21 +964,18 @@ serd_writer_free(SerdWriter* writer)
 	free(writer);
 }
 
-SERD_API
 SerdEnv*
 serd_writer_get_env(SerdWriter* writer)
 {
 	return writer->env;
 }
 
-SERD_API
 size_t
 serd_file_sink(const void* buf, size_t len, void* stream)
 {
 	return fwrite(buf, 1, len, (FILE*)stream);
 }
 
-SERD_API
 size_t
 serd_chunk_sink(const void* buf, size_t len, void* stream)
 {
@@ -999,7 +986,6 @@ serd_chunk_sink(const void* buf, size_t len, void* stream)
 	return len;
 }
 
-SERD_API
 uint8_t*
 serd_chunk_sink_finish(SerdChunk* stream)
 {

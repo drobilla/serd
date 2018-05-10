@@ -18,7 +18,6 @@
 
 #include <math.h>
 
-SERD_API
 const uint8_t*
 serd_strerror(SerdStatus status)
 {
@@ -72,7 +71,6 @@ serd_substrlen(const uint8_t* const str,
 	return n_chars;
 }
 
-SERD_API
 size_t
 serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags)
 {
@@ -105,7 +103,6 @@ read_sign(const char** sptr)
 	}
 }
 
-SERD_API
 double
 serd_strtod(const char* str, char** endptr)
 {
@@ -176,7 +173,6 @@ decode_chunk(const uint8_t in[4], uint8_t out[3])
 	return 1 + (in[2] != '=') + ((in[2] != '=') && (in[3] != '='));
 }
 
-SERD_API
 void*
 serd_base64_decode(const uint8_t* str, size_t len, size_t* size)
 {

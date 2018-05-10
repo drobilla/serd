@@ -31,7 +31,6 @@
 #    endif
 #endif
 
-SERD_API
 SerdNode
 serd_node_from_string(SerdType type, const uint8_t* str)
 {
@@ -46,7 +45,6 @@ serd_node_from_string(SerdType type, const uint8_t* str)
 	return ret;
 }
 
-SERD_API
 SerdNode
 serd_node_from_substring(SerdType type, const uint8_t* str, const size_t len)
 {
@@ -62,7 +60,6 @@ serd_node_from_substring(SerdType type, const uint8_t* str, const size_t len)
 	return ret;
 }
 
-SERD_API
 SerdNode
 serd_node_copy(const SerdNode* node)
 {
@@ -77,7 +74,6 @@ serd_node_copy(const SerdNode* node)
 	return copy;
 }
 
-SERD_API
 bool
 serd_node_equals(const SerdNode* a, const SerdNode* b)
 {
@@ -116,7 +112,6 @@ string_sink(const void* buf, size_t len, void* stream)
 	return len;
 }
 
-SERD_API
 SerdNode
 serd_node_new_uri_from_node(const SerdNode* uri_node,
                             const SerdURI*  base,
@@ -127,7 +122,6 @@ serd_node_new_uri_from_node(const SerdNode* uri_node,
 		: SERD_NODE_NULL;
 }
 
-SERD_API
 SerdNode
 serd_node_new_uri_from_string(const uint8_t* str,
                               const SerdURI* base,
@@ -162,7 +156,6 @@ is_uri_path_char(const uint8_t c)
 	}
 }
 
-SERD_API
 SerdNode
 serd_node_new_file_uri(const uint8_t* path,
                        const uint8_t* hostname,
@@ -206,7 +199,6 @@ serd_node_new_file_uri(const uint8_t* path,
 	return serd_node_from_substring(SERD_URI, chunk.buf, chunk.len);
 }
 
-SERD_API
 SerdNode
 serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)
 {
@@ -232,7 +224,6 @@ serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)
 	return node;
 }
 
-SERD_API
 SerdNode
 serd_node_new_relative_uri(const SerdURI* uri,
                            const SerdURI* base,
@@ -265,7 +256,6 @@ serd_digits(double abs)
 	return lg < 1.0 ? 1U : (unsigned)lg;
 }
 
-SERD_API
 SerdNode
 serd_node_new_decimal(double d, unsigned frac_digits)
 {
@@ -320,7 +310,6 @@ serd_node_new_decimal(double d, unsigned frac_digits)
 	return node;
 }
 
-SERD_API
 SerdNode
 serd_node_new_integer(int64_t i)
 {
@@ -367,7 +356,6 @@ encode_chunk(uint8_t out[4], const uint8_t in[3], size_t n_in)
 	out[3] = ((n_in > 2) ? b64_map[in[2] & 0x3F] : (uint8_t)'=');
 }
 
-SERD_API
 SerdNode
 serd_node_new_blob(const void* buf, size_t size, bool wrap_lines)
 {
@@ -389,7 +377,6 @@ serd_node_new_blob(const void* buf, size_t size, bool wrap_lines)
 	return node;
 }
 
-SERD_API
 void
 serd_node_free(SerdNode* node)
 {

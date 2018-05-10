@@ -21,7 +21,6 @@
 
 // #define URI_DEBUG 1
 
-SERD_API
 const uint8_t*
 serd_uri_to_path(const uint8_t* uri)
 {
@@ -45,7 +44,6 @@ serd_uri_to_path(const uint8_t* uri)
 	return path;
 }
 
-SERD_API
 uint8_t*
 serd_file_uri_parse(const uint8_t* uri, uint8_t** hostname)
 {
@@ -95,7 +93,6 @@ serd_file_uri_parse(const uint8_t* uri, uint8_t** hostname)
 	return serd_chunk_sink_finish(&chunk);
 }
 
-SERD_API
 bool
 serd_uri_string_has_scheme(const uint8_t* utf8)
 {
@@ -135,7 +132,6 @@ serd_uri_dump(const SerdURI* uri, FILE* file)
 }
 #endif
 
-SERD_API
 SerdStatus
 serd_uri_parse(const uint8_t* utf8, SerdURI* out)
 {
@@ -341,7 +337,6 @@ merge(SerdChunk* base, SerdChunk* path)
 }
 
 /// See http://tools.ietf.org/html/rfc3986#section-5.2.2
-SERD_API
 void
 serd_uri_resolve(const SerdURI* r, const SerdURI* base, SerdURI* t)
 {
@@ -458,7 +453,6 @@ write_rel_path(SerdSink       sink,
 }
 
 /// See http://tools.ietf.org/html/rfc3986#section-5.3
-SERD_API
 size_t
 serd_uri_serialise_relative(const SerdURI* uri,
                             const SerdURI* base,
@@ -496,7 +490,6 @@ serd_uri_serialise_relative(const SerdURI* uri,
 }
 
 /// See http://tools.ietf.org/html/rfc3986#section-5.3
-SERD_API
 size_t
 serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream)
 {
