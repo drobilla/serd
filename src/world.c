@@ -16,7 +16,32 @@
 
 #include "serd_internal.h"
 
+#include <stdarg.h>
+
 #include "world.h"
+
+SerdStatus
+serd_world_error(const SerdWorld* world, const SerdError* e)
+{
+	if (world->error_sink) {
+		world->error_sink(world->error_handle, e);
+	} else {
+		fprintf(stderr, "error: %s:%u:%u: ", e->filename, e->line, e->col);
+		vfprintf(stderr, e->fmt, *e->args);
+	}
+	return e->status;
+}
+
+SerdStatus
+serd_world_errorf(const SerdWorld* world, SerdStatus st, const char* fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	const SerdError e = { st, NULL, 0, 0, fmt, &args };
+	serd_world_error(world, &e);
+	va_end(args);
+	return st;
+}
 
 SerdWorld*
 serd_world_new(void)

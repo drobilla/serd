@@ -36,7 +36,7 @@ r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...)
 	va_start(args, fmt);
 	const Cursor* const cur = &reader->source.cur;
 	const SerdError e = { st, cur->filename, cur->line, cur->col, fmt, &args };
-	serd_error(reader->world, &e);
+	serd_world_error(reader->world, &e);
 	va_end(args);
 	return 0;
 }

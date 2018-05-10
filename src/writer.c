@@ -133,22 +133,6 @@ supports_abbrev(const SerdWriter* writer)
 	return writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG;
 }
 
-static void
-w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
-{
-	/* TODO: This results in errors with no file information, which is not
-	   helpful when re-serializing a file (particularly for "undefined
-	   namespace prefix" errors.  The statement sink API needs to be changed to
-	   add a Cursor parameter so the source can notify the writer of the
-	   statement origin for better error reporting. */
-
-	va_list args;
-	va_start(args, fmt);
-	const SerdError e = { st, NULL, 0, 0, fmt, &args };
-	serd_error(writer->world, &e);
-	va_end(args);
-}
-
 static inline WriteContext*
 anon_stack_top(SerdWriter* writer)
 {
@@ -187,7 +171,8 @@ write_character(SerdWriter* writer, const uint8_t* utf8, size_t* size)
 	const uint32_t c          = parse_utf8_char(utf8, size);
 	switch (*size) {
 	case 0:
-		w_err(writer, SERD_ERR_BAD_ARG, "invalid UTF-8: %X\n", utf8[0]);
+		serd_world_errorf(
+			writer->world, SERD_ERR_BAD_ARG, "invalid UTF-8: %X\n", utf8[0]);
 		return sink(replacement_char, sizeof(replacement_char), writer);
 	case 1:
 		snprintf(escape, sizeof(escape), "\\u%04X", utf8[0]);
@@ -576,7 +561,8 @@ write_curie(SerdWriter* const        writer,
 	case SERD_NTRIPLES:
 	case SERD_NQUADS:
 		if ((st = serd_env_expand(writer->env, node, &prefix, &suffix))) {
-			w_err(writer, st, "undefined namespace prefix `%s'\n", node_str);
+			serd_world_errorf(writer->world, st,
+			                  "undefined namespace prefix `%s'\n", node_str);
 			return false;
 		}
 		write_sep(writer, SEP_URI_BEGIN);
@@ -837,9 +823,8 @@ serd_writer_end_anon(SerdWriter*     writer,
 		return SERD_SUCCESS;
 	}
 	if (serd_stack_is_empty(&writer->anon_stack) || writer->indent == 0) {
-		w_err(writer, SERD_ERR_UNKNOWN,
-		      "unexpected end of anonymous node\n");
-		return SERD_ERR_UNKNOWN;
+		return serd_world_errorf(writer->world, SERD_ERR_UNKNOWN,
+		                         "unexpected end of anonymous node\n");
 	}
 	--writer->indent;
 	write_sep(writer, SEP_ANON_END);
