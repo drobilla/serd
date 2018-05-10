@@ -20,6 +20,7 @@
 #include "serd_internal.h"
 #include "stack.h"
 #include "system.h"
+#include "world.h"
 
 #include <errno.h>
 #include <stdarg.h>
@@ -37,7 +38,7 @@ r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
   va_start(args, fmt);
   const Cursor* const cur = &reader->source.cur;
   const SerdError     e = {st, cur->filename, cur->line, cur->col, fmt, &args};
-  serd_error(reader->world, &e);
+  serd_world_error(reader->world, &e);
   va_end(args);
   return st;
 }

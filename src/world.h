@@ -24,4 +24,10 @@ struct SerdWorldImpl {
   void*         error_handle;
 };
 
+SerdStatus
+serd_world_error(const SerdWorld* world, const SerdError* e);
+
+SerdStatus
+serd_world_errorf(const SerdWorld* world, SerdStatus st, const char* fmt, ...);
+
 #endif // SERD_WORLD_H
