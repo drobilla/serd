@@ -9,11 +9,11 @@
 #include "stack.h"
 #include "string_utils.h"
 #include "uri_utils.h"
+#include "world.h"
 
 #include "serd/attributes.h"
 #include "serd/buffer.h"
 #include "serd/env.h"
-#include "serd/error.h"
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
@@ -26,7 +26,6 @@
 #include "serd/writer.h"
 
 #include <assert.h>
-#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -137,32 +136,16 @@ supports_uriref(const SerdWriter* writer)
   return writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG;
 }
 
-static void
-w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
-{
-  /* TODO: This results in errors with no file information, which is not
-     helpful when re-serializing a file (particularly for "undefined
-     namespace prefix" errors.  The statement sink API needs to be changed to
-     add a Cursor parameter so the source can notify the writer of the
-     statement origin for better error reporting. */
-
-  va_list args;
-  va_start(args, fmt);
-  const SerdError e = {st, NULL, 0, 0, fmt, &args};
-  serd_error(writer->world, &e);
-  va_end(args);
-}
-
 SERD_PURE_FUNC
 static WriteContext*
-anon_stack_top(SerdWriter* writer)
+anon_stack_top(SerdWriter* const writer)
 {
   assert(!serd_stack_is_empty(&writer->anon_stack));
   return (WriteContext*)(writer->anon_stack.buf + writer->anon_stack.size -
                          sizeof(WriteContext));
 }
 
-static inline SerdNode*
+static SerdNode*
 ctx(SerdWriter* writer, const Field field)
 {
   SerdNode* node = NULL;
@@ -192,7 +175,8 @@ write_character(SerdWriter* writer, const uint8_t* utf8, size_t* size)
   const uint32_t c          = parse_utf8_char(utf8, size);
   switch (*size) {
   case 0:
-    w_err(writer, SERD_ERR_BAD_ARG, "invalid UTF-8 start: %X\n", utf8[0]);
+    serd_world_errorf(
+      writer->world, SERD_ERR_BAD_ARG, "invalid UTF-8 start: %X\n", utf8[0]);
     return 0;
   case 1:
     snprintf(escape, sizeof(escape), "\\u%04X", utf8[0]);
@@ -611,10 +595,10 @@ write_uri_node(SerdWriter* const writer,
 
   if (!has_scheme && !supports_uriref(writer) &&
       !serd_env_base_uri(writer->env)) {
-    w_err(writer,
-          SERD_ERR_BAD_ARG,
-          "syntax does not support URI reference <%s>\n",
-          node_str);
+    serd_world_errorf(writer->world,
+                      SERD_ERR_BAD_ARG,
+                      "syntax does not support URI reference <%s>\n",
+                      node_str);
     return false;
   }
 
@@ -651,7 +635,8 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
   case SERD_NTRIPLES:
   case SERD_NQUADS:
     if ((st = serd_env_expand(writer->env, node, &prefix, &suffix))) {
-      w_err(writer, st, "undefined namespace prefix '%s'\n", node_str);
+      serd_world_errorf(
+        writer->world, st, "undefined namespace prefix '%s'\n", node_str);
       return false;
     }
     write_sep(writer, SEP_URI_BEGIN);
@@ -913,20 +898,24 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
   if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
     return SERD_SUCCESS;
   }
+
   if (serd_stack_is_empty(&writer->anon_stack) || writer->indent == 0) {
-    w_err(writer, SERD_ERR_UNKNOWN, "unexpected end of anonymous node\n");
-    return SERD_ERR_UNKNOWN;
+    return serd_world_errorf(
+      writer->world, SERD_ERR_UNKNOWN, "unexpected end of anonymous node\n");
   }
+
   --writer->indent;
   write_sep(writer, SEP_ANON_END);
   free_context(&writer->context);
   writer->context = *anon_stack_top(writer);
   serd_stack_pop(&writer->anon_stack, sizeof(WriteContext));
+
   const bool is_subject = serd_node_equals(node, writer->context.subject);
   if (is_subject) {
     serd_node_set(&writer->context.subject, node);
     memset(writer->context.predicate, 0, sizeof(SerdNode));
   }
+
   return SERD_SUCCESS;
 }
 
