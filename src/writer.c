@@ -9,10 +9,10 @@
 #include "try.h"
 #include "uri_utils.h"
 #include "warnings.h"
+#include "world_internal.h"
 
 #include <serd/buffer.h>
 #include <serd/env.h>
-#include <serd/error.h>
 #include <serd/node.h>
 #include <serd/statement_flags.h>
 #include <serd/status.h>
@@ -159,8 +159,9 @@ w_err(SerdWriter* const writer, const SerdStatus st, const char* const fmt, ...)
 
   va_list args; // NOLINT(cppcoreguidelines-init-variables)
   va_start(args, fmt);
-  const SerdError e = {st, NULL, 0, 0, fmt, &args};
-  serd_error(writer->world, &e);
+
+  serd_world_verrorf(writer->world, st, fmt, args);
+
   va_end(args);
   return st;
 }
@@ -837,6 +838,8 @@ is_resource(const SerdNode* const node)
 ZIX_NODISCARD static SerdStatus
 write_pred(SerdWriter* const writer, const SerdNode* const pred)
 {
+  ZixAllocator* const allocator = serd_world_allocator(writer->world);
+
   SerdStatus st =
     (pred->type == SERD_URI && !strcmp((const char*)pred->buf, NS_RDF "type"))
       ? esink("a", 1, writer)
@@ -846,7 +849,7 @@ write_pred(SerdWriter* const writer, const SerdNode* const pred)
     st = write_sep(writer, SEP_P_O);
   }
 
-  copy_node(writer->world->allocator, &writer->context.predicate, pred);
+  copy_node(allocator, &writer->context.predicate, pred);
   writer->context.comma_indented = false;
   return st;
 }
@@ -1129,7 +1132,7 @@ serd_writer_new(SerdWorld* const         world,
 
   if ((flags & SERD_WRITE_BULK) && !writer->byte_sink.buf) {
     serd_stack_free(&writer->anon_stack);
-    zix_free(world->allocator, writer);
+    zix_free(allocator, writer);
     return NULL;
   }
 
@@ -1142,15 +1145,16 @@ serd_writer_chop_blank_prefix(SerdWriter* const writer,
 {
   assert(writer);
 
-  zix_free(writer->world->allocator, writer->bprefix);
+  ZixAllocator* const allocator = serd_world_allocator(writer->world);
+
+  zix_free(allocator, writer->bprefix);
   writer->bprefix_len = 0;
   writer->bprefix     = NULL;
 
   const size_t prefix_len = prefix ? strlen(prefix) : 0;
   if (prefix_len) {
     writer->bprefix_len = prefix_len;
-    writer->bprefix =
-      (char*)zix_malloc(writer->world->allocator, writer->bprefix_len + 1);
+    writer->bprefix     = (char*)zix_malloc(allocator, writer->bprefix_len + 1);
     memcpy(writer->bprefix, prefix, writer->bprefix_len + 1);
   }
 }
@@ -1247,10 +1251,10 @@ serd_writer_free(SerdWriter* const writer)
   free_context(writer);
   free_anon_stack(writer);
   serd_stack_free(&writer->anon_stack);
-  zix_free(writer->world->allocator, writer->bprefix);
+  zix_free(allocator, writer->bprefix);
   serd_byte_sink_free(allocator, &writer->byte_sink);
   serd_node_free(allocator, &writer->root_node);
-  zix_free(writer->world->allocator, writer);
+  zix_free(allocator, writer);
 }
 
 SerdEnv*
