@@ -33,6 +33,7 @@
 		<#test-escapes>
 		<#test-ext-namedblank-iri>
 		<#test-ext-namedblank-prefix>
+		<#test-form-feed>
 		<#test-id>
 		<#test-lang>
 		<#test-list-in-blank>
@@ -206,6 +207,12 @@
 	mf:name "test-ext-namedblank-prefix" ;
 	mf:action <test-ext-namedblank-prefix.ttl> ;
 	mf:result <test-ext-namedblank-prefix.nt> .
+
+<#test-form-feed>
+	rdf:type rdft:TestTurtleEval ;
+	mf:name "test-form-feed" ;
+	mf:action <test-form-feed.ttl> ;
+	mf:result <test-form-feed.nt> .
 
 <#test-id>
 	rdf:type rdft:TestTurtleEval ;
