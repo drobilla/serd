@@ -10,11 +10,11 @@
 #include "string_utils.h"
 #include "try.h"
 #include "uri_utils.h"
+#include "world.h"
 
 #include "serd/attributes.h"
 #include "serd/buffer.h"
 #include "serd/env.h"
-#include "serd/error.h"
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
@@ -191,8 +191,9 @@ w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
 
   va_list args; // NOLINT(cppcoreguidelines-init-variables)
   va_start(args, fmt);
-  const SerdError e = {st, NULL, 0, 0, fmt, &args};
-  serd_error(writer->world, &e);
+
+  serd_world_verrorf(writer->world, st, fmt, args);
+
   va_end(args);
   return st;
 }
