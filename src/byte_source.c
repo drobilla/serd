@@ -65,9 +65,8 @@ serd_byte_source_open_source(SerdByteSource*     source,
 SerdStatus
 serd_byte_source_prepare(SerdByteSource* source)
 {
-	if (!source->prepared) {
-		source->eof      = false;
-		source->prepared = true;
+	source->prepared = true;
+	if (source->from_stream) {
 		if (source->page_size > 1) {
 			return serd_byte_source_page(source);
 		} else if (source->from_stream) {
@@ -85,7 +84,6 @@ serd_byte_source_open_string(SerdByteSource* source, const uint8_t* utf8)
 	memset(source, '\0', sizeof(*source));
 	source->cur      = cur;
 	source->read_buf = utf8;
-	source->prepared = true;
 	return SERD_SUCCESS;
 }
 
@@ -111,13 +109,22 @@ serd_byte_source_advance(SerdByteSource* source)
 	default:   ++source->cur.col;
 	}
 
-	if (source->from_stream && !paging) {
-		if (source->read_func(&source->read_byte, 1, 1, source->stream) == 0) {
-			return (source->error_func(source->stream)
-			        ? SERD_ERR_UNKNOWN : SERD_FAILURE);
+	// Reset EOF marker for reading from sockets/pipes
+	source->eof = source->eof && !source->from_stream;
+
+	if (source->from_stream && paging) {
+		if (++source->read_head == source->page_size) {
+			st = serd_byte_source_page(source);
 		}
-	} else if (++source->read_head == source->page_size && paging) {
-		st = serd_byte_source_page(source);
+	} else if (source->from_stream) {
+		if (!source->read_func(&source->read_byte, 1, 1, source->stream)) {
+			st = source->error_func(source->stream) ? SERD_ERR_UNKNOWN
+			                                        : SERD_FAILURE;
+		}
+	} else if (source->eof) {
+		st = SERD_FAILURE; // Can't read past end of string
+	} else {
+		++source->read_head; // Move to next character in string
 	}
 
 	return st;

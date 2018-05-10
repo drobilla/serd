@@ -348,16 +348,12 @@ serd_reader_read_chunk(SerdReader* reader)
 {
 	SerdStatus st = SERD_SUCCESS;
 	if (!reader->source.prepared) {
-		if ((st = serd_reader_prepare(reader))) {
-			return st;
-		}
+		st = serd_reader_prepare(reader);
 	} else if (reader->source.eof) {
-		reader->source.eof = false;
-		if ((st = serd_byte_source_advance(&reader->source))) {
-			return st;
-		}
+		st = serd_byte_source_advance(&reader->source);
 	}
-	return read_statement(reader) ? SERD_SUCCESS : SERD_FAILURE;
+
+	return st ? st : read_statement(reader) ? SERD_SUCCESS : SERD_FAILURE;
 }
 
 SERD_API
