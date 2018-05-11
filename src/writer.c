@@ -15,6 +15,7 @@
 */
 
 #include "byte_sink.h"
+#include "env.h"
 #include "node.h"
 #include "serd_internal.h"
 #include "stack.h"
@@ -101,7 +102,6 @@ struct SerdWriterImpl {
 	SerdEnv*      env;
 	SerdNode*     root_node;
 	SerdURI       root_uri;
-	SerdURI       base_uri;
 	SerdStack     anon_stack;
 	SerdByteSink  byte_sink;
 	SerdErrorSink error_sink;
@@ -526,19 +526,18 @@ write_uri_node(SerdWriter* const        writer,
 
 	write_sep(writer, SEP_URI_BEGIN);
 	if (writer->style & SERD_STYLE_RESOLVED) {
-		SerdURI in_base_uri, uri, abs_uri;
-		serd_env_get_base_uri(writer->env, &in_base_uri);
+		const SerdURI* base_uri = serd_env_get_parsed_base_uri(writer->env);
+		SerdURI uri, abs_uri;
 		serd_uri_parse(node_str, &uri);
-		serd_uri_resolve(&uri, &in_base_uri, &abs_uri);
-		bool rooted = uri_is_under(&writer->base_uri, &writer->root_uri);
-		SerdURI* root = rooted ? &writer->root_uri : & writer->base_uri;
+		serd_uri_resolve(&uri, base_uri, &abs_uri);
+		bool rooted = uri_is_under(base_uri, &writer->root_uri);
+		const SerdURI* root = rooted ? &writer->root_uri : base_uri;
 		if (!uri_is_under(&abs_uri, root) ||
 		    writer->syntax == SERD_NTRIPLES ||
 		    writer->syntax == SERD_NQUADS) {
 			serd_uri_serialise(&abs_uri, uri_sink, writer);
 		} else {
-			serd_uri_serialise_relative(
-				&uri, &writer->base_uri, root, uri_sink, writer);
+			serd_uri_serialise_relative(&uri, base_uri, root, uri_sink, writer);
 		}
 	} else {
 		write_uri_from_node(writer, node);
@@ -865,7 +864,6 @@ serd_writer_new(SerdWorld*     world,
                 SerdSyntax     syntax,
                 SerdStyle      style,
                 SerdEnv*       env,
-                const SerdURI* base_uri,
                 SerdWriteFunc  ssink,
                 void*          stream)
 {
@@ -877,7 +875,6 @@ serd_writer_new(SerdWorld*     world,
 	writer->env          = env;
 	writer->root_node    = NULL;
 	writer->root_uri     = SERD_URI_NULL;
-	writer->base_uri     = base_uri ? *base_uri : SERD_URI_NULL;
 	writer->anon_stack   = serd_stack_new(4 * sizeof(WriteContext));
 	writer->context      = context;
 	writer->list_subj    = NULL;
@@ -913,8 +910,6 @@ serd_writer_set_base_uri(SerdWriter*     writer,
                          const SerdNode* uri)
 {
 	if (!serd_env_set_base_uri(writer->env, uri)) {
-		serd_env_get_base_uri(writer->env, &writer->base_uri);
-
 		if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
 			if (ctx(writer, FIELD_GRAPH) || ctx(writer, FIELD_SUBJECT)) {
 				sink(" .\n\n", 4, writer);

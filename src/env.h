@@ -14,33 +14,11 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#ifndef SERD_NODE_H
-#define SERD_NODE_H
+#ifndef SERD_ENV_H
+#define SERD_ENV_H
 
 #include "serd/serd.h"
 
-#include <stddef.h>
+const SerdURI* serd_env_get_parsed_base_uri(const SerdEnv* env);
 
-struct SerdNodeImpl {
-	size_t        n_bytes;  /**< Size in bytes (not including null) */
-	SerdNodeFlags flags;    /**< Node flags (e.g. string properties) */
-	SerdType      type;     /**< Node type */
-};
-
-static inline char*
-serd_node_buffer(SerdNode* node)
-{
-	return (char*)(node + 1);
-}
-
-static inline const char*
-serd_node_buffer_c(const SerdNode* node)
-{
-	return (const char*)(node + 1);
-}
-
-SerdNode* serd_node_malloc(size_t n_bytes, SerdNodeFlags flags, SerdType type);
-void      serd_node_set(SerdNode** dst, const SerdNode* src);
-SerdNode* serd_node_new_resolved_uri_i(const char* str, const SerdURI* base);
-
-#endif  // SERD_NODE_H
+#endif  // SERD_ENV_H
