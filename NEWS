@@ -3,6 +3,7 @@ serd (0.29.3) unstable;
   * Clarify errors returned by serd_env_expand()
   * Fix reported error when reading statements with only a blank node
   * Fix parsing local names that end with escaped dots
+  * Improve relative URI serialisation
   * Add serdi option to write ASCII output
   * Make serdi guess input syntax from extension if unspecified
   * Make serdi syntax options case-insensitive

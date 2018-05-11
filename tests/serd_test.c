@@ -408,6 +408,18 @@ main(void)
 		FAILF("Bad relative URI %s (expected '/foo/bar')\n", rel.buf);
 	}
 
+	SerdNode up = serd_node_new_relative_uri(&base_uri, &abs_uri, NULL, NULL);
+	if (strcmp((const char*)up.buf, "../")) {
+		FAILF("Bad relative URI %s (expected '../')\n", up.buf);
+	}
+
+	SerdNode noup = serd_node_new_relative_uri(&base_uri, &abs_uri, &abs_uri, NULL);
+	if (strcmp((const char*)noup.buf, "http://example.org/")) {
+		FAILF("Bad relative URI %s (expected 'http://example.org/')\n", noup.buf);
+	}
+
+	serd_node_free(&noup);
+	serd_node_free(&up);
 	serd_node_free(&rel);
 	serd_node_free(&base);
 

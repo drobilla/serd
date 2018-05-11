@@ -433,8 +433,6 @@ write_rel_path(SerdSink       sink,
 
 	if (i == path_len && i == base_len) {  // Paths are identical
 		return 0;
-	} else if (last_shared_sep == 0) {  // No common components
-		return write_path_tail(sink, stream, uri, 0);
 	}
 
 	// Find the number of up references ("..") required
@@ -451,6 +449,10 @@ write_rel_path(SerdSink       sink,
 		len += sink("../", 3, stream);
 	}
 
+	if (last_shared_sep == 0 && up == 0) {
+		len += sink("/", 1, stream);
+	}
+
 	// Write suffix
 	return len += write_path_tail(sink, stream, uri, last_shared_sep + 1);
 }
@@ -464,8 +466,10 @@ serd_uri_serialise_relative(const SerdURI* uri,
                             SerdSink       sink,
                             void*          stream)
 {
-	size_t     len      = 0;
-	const bool relative = uri_is_under(uri, root ? root : base);
+	size_t     len = 0;
+	const bool relative =
+		root ? uri_is_under(uri, root) : uri_is_related(uri, base);
+
 	if (relative) {
 		len = write_rel_path(sink, stream, uri, base);
 	}
