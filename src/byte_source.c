@@ -15,10 +15,12 @@
 */
 
 #include "byte_source.h"
+
 #include "system.h"
 
-#include "serd_internal.h"
+#include "serd/serd.h"
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 

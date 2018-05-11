@@ -19,6 +19,12 @@
 
 #include "string_utils.h"
 
+#include "serd/serd.h"
+
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
 static inline bool
 slice_equals(const SerdStringView* a, const SerdStringView* b)
 {

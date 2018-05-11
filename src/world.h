@@ -17,7 +17,10 @@
 #ifndef SERD_WORLD_H
 #define SERD_WORLD_H
 
-#include "serd_internal.h"
+#include "serd/serd.h"
+
+#include <stdint.h>
+#include <stdio.h>
 
 struct SerdWorldImpl {
 	SerdErrorSink error_sink;

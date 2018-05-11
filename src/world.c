@@ -16,7 +16,8 @@
 
 #define _POSIX_C_SOURCE 200809L /* for posix_fadvise */
 
-#include "serd_internal.h"
+#include "world.h"
+
 #include "serd_config.h"
 
 #include <errno.h>
@@ -27,8 +28,6 @@
 #if defined(HAVE_POSIX_FADVISE) || defined(HAVE_FILENO)
 #   include <fcntl.h>
 #endif
-
-#include "world.h"
 
 FILE*
 serd_world_fopen(SerdWorld* world, const char* path, const char* mode)

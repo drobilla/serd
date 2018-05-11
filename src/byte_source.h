@@ -17,11 +17,12 @@
 #ifndef SERD_BYTE_SOURCE_H
 #define SERD_BYTE_SOURCE_H
 
-#include "serd_internal.h"
+#include "serd/serd.h"
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stddef.h>
-#include <stdio.h>
+#include <stdint.h>
 
 typedef int (*SerdStreamCloseFunc)(void*);
 

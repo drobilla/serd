@@ -17,8 +17,13 @@
 #ifndef SERD_STRING_UTILS_H
 #define SERD_STRING_UTILS_H
 
+#include "serd/serd.h"
+
 #include <assert.h>
 #include <ctype.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 /** Unicode replacement character in UTF-8 */

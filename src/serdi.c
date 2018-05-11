@@ -14,21 +14,19 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include "serd_internal.h"
+#include "string_utils.h"
+#include "system.h"
+
+#include "serd/serd.h"
 
 #ifdef _WIN32
 #include <fcntl.h>
 #include <io.h>
 #endif
 
-#include <assert.h>
-#include <errno.h>
-#include <stdlib.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
-
-#include "string_utils.h"
-#include "system.h"
-#include "world.h"
 
 #define SERDI_ERROR(msg)       fprintf(stderr, "serdi: " msg);
 #define SERDI_ERRORF(fmt, ...) fprintf(stderr, "serdi: " fmt, __VA_ARGS__);

@@ -17,12 +17,14 @@
 #ifndef SERD_BYTE_SINK_H
 #define SERD_BYTE_SINK_H
 
-#include <stddef.h>
-#include <string.h>
+#include "serd_internal.h"
+#include "system.h"
 
 #include "serd/serd.h"
 
-#include "system.h"
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 
 typedef struct SerdByteSinkImpl {
 	SerdWriteFunc sink;

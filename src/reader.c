@@ -15,19 +15,21 @@
 */
 
 #include "reader.h"
-#include "serd_internal.h"
 
-#include <ctype.h>
+#include "byte_source.h"
+#include "node.h"
+#include "serd/serd.h"
+#include "serd_internal.h"
+#include "stack.h"
+#include "system.h"
+#include "world.h"
+
 #include <errno.h>
 #include <stdarg.h>
-#include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "reader.h"
-#include "system.h"
-#include "world.h"
 
 static SerdStatus serd_reader_prepare(SerdReader* reader);
 

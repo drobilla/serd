@@ -17,7 +17,9 @@
 #ifndef SERD_NODE_H
 #define SERD_NODE_H
 
-#include "serd_internal.h"
+#include "serd/serd.h"
+
+#include <stddef.h>
 
 struct SerdNodeImpl {
 	size_t        n_bytes;  /**< Size in bytes (not including null) */

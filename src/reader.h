@@ -17,11 +17,16 @@
 #ifndef SERD_READER_H
 #define SERD_READER_H
 
-#include "serd_internal.h"
-
 #include "byte_source.h"
 #include "node.h"
 #include "stack.h"
+
+#include "serd/serd.h"
+
+#include <assert.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef SERD_STACK_CHECK
 #    define SERD_STACK_ASSERT_TOP(reader, ref) \

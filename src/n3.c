@@ -14,18 +14,23 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "byte_source.h"
+#include "node.h"
+#include "reader.h"
 #include "serd_internal.h"
+#include "stack.h"
+#include "string_utils.h"
+#include "uri_utils.h"
+
+#include "serd/serd.h"
 
 #include <assert.h>
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "reader.h"
-#include "string_utils.h"
-#include "uri_utils.h"
 
 #define TRY_THROW(exp) if (!(exp)) goto except;
 #define TRY_RET(exp)   if (!(exp)) return 0;

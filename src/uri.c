@@ -14,12 +14,15 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include "serd_internal.h"
+#include "string_utils.h"
+#include "uri_utils.h"
 
+#include "serd/serd.h"
+
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "uri_utils.h"
 
 char*
 serd_file_uri_parse(const char* uri, char** hostname)

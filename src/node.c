@@ -14,16 +14,19 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "node.h"
+
 #include "serd_internal.h"
+#include "string_utils.h"
 
 #include <assert.h>
 #include <float.h>
 #include <math.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "node.h"
-#include "string_utils.h"
 
 #ifdef _WIN32
 #    ifndef isnan

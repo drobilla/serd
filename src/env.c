@@ -14,12 +14,14 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include "serd_internal.h"
+#include "node.h"
 
+#include "serd/serd.h"
+
+#include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "node.h"
 
 typedef struct {
 	SerdNode* name;

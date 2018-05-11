@@ -14,19 +14,23 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "byte_sink.h"
+#include "node.h"
 #include "serd_internal.h"
+#include "stack.h"
+#include "string_utils.h"
+#include "system.h"
+#include "uri_utils.h"
+#include "world.h"
+
+#include "serd/serd.h"
 
 #include <assert.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "byte_sink.h"
-#include "node.h"
-#include "stack.h"
-#include "string_utils.h"
-#include "uri_utils.h"
-#include "world.h"
 
 typedef struct {
 	SerdNode* graph;
