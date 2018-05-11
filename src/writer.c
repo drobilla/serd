@@ -26,6 +26,7 @@
 #include "stack.h"
 #include "string_utils.h"
 #include "uri_utils.h"
+#include "world.h"
 
 typedef struct {
 	SerdNode* graph;

@@ -18,6 +18,7 @@
 #include "string_utils.h"
 
 #include <math.h>
+#include <stdlib.h>
 
 void
 serd_free(void* ptr)

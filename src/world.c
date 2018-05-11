@@ -19,9 +19,12 @@
 #include "serd_internal.h"
 #include "serd_config.h"
 
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
-#if defined(HAVE_POSIX_FADVISE)
+#include <stdlib.h>
+#include <string.h>
+#if defined(HAVE_POSIX_FADVISE) || defined(HAVE_FILENO)
 #   include <fcntl.h>
 #endif
 

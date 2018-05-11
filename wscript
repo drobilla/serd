@@ -86,6 +86,7 @@ lib_source = ['src/byte_source.c',
               'src/node.c',
               'src/reader.c',
               'src/string.c',
+              'src/system.c',
               'src/uri.c',
               'src/world.c',
               'src/writer.c']

@@ -19,6 +19,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <string.h>
 
 /** Unicode replacement character in UTF-8 */
 static const uint8_t replacement_char[] = { 0xEF, 0xBF, 0xBD };

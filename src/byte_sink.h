@@ -22,6 +22,8 @@
 
 #include "serd/serd.h"
 
+#include "system.h"
+
 typedef struct SerdByteSinkImpl {
 	SerdWriteFunc sink;
 	void*         stream;
@@ -39,7 +41,7 @@ serd_byte_sink_new(SerdWriteFunc sink, void* stream, size_t block_size)
 	bsink.size       = 0;
 	bsink.block_size = block_size;
 	bsink.buf        = ((block_size > 1)
-	                    ? (char*)serd_bufalloc(block_size)
+	                    ? (char*)serd_allocate_buffer(block_size)
 	                    : NULL);
 	return bsink;
 }

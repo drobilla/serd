@@ -27,6 +27,7 @@
 #include <string.h>
 
 #include "string_utils.h"
+#include "system.h"
 #include "world.h"
 
 #define SERDI_ERROR(msg)       fprintf(stderr, "serdi: " msg);

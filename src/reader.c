@@ -26,6 +26,8 @@
 #include <string.h>
 
 #include "reader.h"
+#include "system.h"
+#include "world.h"
 
 static SerdStatus serd_reader_prepare(SerdReader* reader);
 

@@ -15,8 +15,12 @@
 */
 
 #include "byte_source.h"
+#include "system.h"
 
 #include "serd_internal.h"
+
+#include <stdlib.h>
+#include <string.h>
 
 SerdStatus
 serd_byte_source_page(SerdByteSource* source)
@@ -58,7 +62,7 @@ serd_byte_source_open_source(SerdByteSource*     source,
 	source->from_stream = true;
 
 	if (page_size > 1) {
-		source->file_buf = (uint8_t*)serd_bufalloc(page_size);
+		source->file_buf = (uint8_t*)serd_allocate_buffer(page_size);
 		source->read_buf = source->file_buf;
 		memset(source->file_buf, '\0', page_size);
 	} else {

@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2016 David Robillard <http://drobilla.net>
+  Copyright 2011-2018 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -14,17 +14,31 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#ifndef SERD_INTERNAL_H
-#define SERD_INTERNAL_H
+#ifndef SERD_SYSTEM_H
+#define SERD_SYSTEM_H
 
-#include "serd/serd.h"
-#include "serd_config.h"
+#include <stdint.h>
+#include <stdio.h>
 
-#define NS_XSD "http://www.w3.org/2001/XMLSchema#"
-#define NS_RDF "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+#define SERD_PAGE_SIZE 4096
 
-#ifndef MIN
-#    define MIN(a, b) (((a) < (b)) ? (a) : (b))
-#endif
+/** Faster fread-like wrapper for getc. */
+static inline size_t
+serd_file_read_byte(void* buf, size_t size, size_t nmemb, void* stream)
+{
+	(void)size;
+	(void)nmemb;
 
-#endif  // SERD_INTERNAL_H
+	const int c = getc((FILE*)stream);
+	if (c == EOF) {
+		*((uint8_t*)buf) = 0;
+		return 0;
+	}
+	*((uint8_t*)buf) = (uint8_t)c;
+	return 1;
+}
+
+/** Allocate an aligned buffer for I/O. */
+void* serd_allocate_buffer(size_t size);
+
+#endif  // SERD_SYSTEM_H
