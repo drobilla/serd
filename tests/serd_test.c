@@ -244,6 +244,10 @@ main(void)
 		      str, len, flags);
 	}
 
+	if (serd_strlen(str, &n_bytes, NULL) != 5) {
+		FAILF("Bad serd_strlen(%s) n_bytes=%zu no flags\n", str, n_bytes);
+	}
+
 	// Test serd_strerror
 
 	const uint8_t* msg = NULL;
