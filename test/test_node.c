@@ -25,6 +25,8 @@
 #  define NAN (INFINITY - INFINITY)
 #endif
 
+#define NS_XSD "http://www.w3.org/2001/XMLSchema#"
+
 static void
 test_uri_view(void)
 {
@@ -99,8 +101,17 @@ test_double_to_node(void)
                              ? !strcmp(node_str, dbl_test_strs[i])
                              : (node_str == dbl_test_strs[i]);
     assert(pass);
-    assert(!node || serd_node_length(node) == strlen(node_str));
-    serd_node_free(node);
+
+    const size_t len = node_str ? strlen(node_str) : 0;
+    assert((!node && len == 0) || serd_node_length(node) == len);
+
+    if (node) {
+      const SerdNode* const datatype = serd_node_datatype(node);
+      assert(datatype);
+      assert(!dbl_test_strs[i] ||
+             !strcmp(serd_node_string(datatype), NS_XSD "decimal"));
+      serd_node_free(node);
+    }
   }
 }
 
@@ -118,7 +129,12 @@ test_integer_to_node(void)
     SerdNode*   node     = serd_new_integer(int_test_nums[i]);
     const char* node_str = serd_node_string(node);
     assert(!strcmp(node_str, int_test_strs[i]));
-    assert(serd_node_length(node) == strlen(node_str));
+    const size_t len = strlen(node_str);
+    assert(serd_node_length(node) == len);
+
+    const SerdNode* const datatype = serd_node_datatype(node);
+    assert(datatype);
+    assert(!strcmp(serd_node_string(datatype), NS_XSD "integer"));
     serd_node_free(node);
   }
 
@@ -148,6 +164,10 @@ test_blob_to_node(void)
     for (size_t i = 0; i < size; ++i) {
       assert(out[i] == data[i]);
     }
+
+    const SerdNode* const datatype = serd_node_datatype(blob);
+    assert(datatype);
+    assert(!strcmp(serd_node_string(datatype), NS_XSD "base64Binary"));
 
     serd_node_free(blob);
     serd_free(out);
