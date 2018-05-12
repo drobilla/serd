@@ -250,9 +250,15 @@ def earl_assertion(test, passed, asserter):
        passed_str,
        datetime.datetime.now().replace(microsecond=0).isoformat())
 
-def check_output(out_filename, check_filename, subst_from='', subst_to=''):
+def show_diff(from_lines, to_lines, from_filename, to_filename):
     import difflib
     import sys
+
+    for line in difflib.unified_diff(
+            from_lines, to_lines, fromfile=from_filename, tofile=to_filename):
+        sys.stderr.write(line)
+
+def check_output(out_filename, check_filename, subst_from='', subst_to=''):
     if not os.access(out_filename, os.F_OK):
         Logs.pprint('RED', 'FAIL: output %s is missing' % out_filename)
     elif not file_equals(check_filename, out_filename, subst_from, subst_to):
@@ -260,12 +266,10 @@ def check_output(out_filename, check_filename, subst_from='', subst_to=''):
                                                check_filename))
         with io.open(out_filename, encoding='utf-8') as out_file:
             with io.open(check_filename, encoding='utf-8') as check_file:
-                diff = difflib.unified_diff(check_file.readlines(),
-                                            out_file.readlines(),
-                                            fromfile=check_filename,
-                                            tofile=out_filename)
-                for line in diff:
-                    sys.stderr.write(line)
+                show_diff(check_file.readlines(),
+                          out_file.readlines(),
+                          check_filename,
+                          out_filename)
     else:
         return True
 
@@ -273,7 +277,7 @@ def check_output(out_filename, check_filename, subst_from='', subst_to=''):
 
 def test_thru(ctx, base, path, check_filename, flags, isyntax, osyntax,
               options='', quiet=False):
-    in_filename = os.path.join(ctx.path.abspath(), path);
+    in_filename = os.path.join(ctx.path.abspath(), path)
     out_filename = path + '.thru'
 
     command = ('serdi_static %s %s -i %s -o %s -p foo "%s" "%s" | '
