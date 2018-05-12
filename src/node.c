@@ -16,6 +16,7 @@
 
 #include "node.h"
 
+#include "base64.h"
 #include "serd_internal.h"
 #include "string_utils.h"
 
@@ -487,27 +488,6 @@ serd_node_new_integer(int64_t i)
 	return node;
 }
 
-/**
-   Base64 encoding table.
-   @see <a href="http://tools.ietf.org/html/rfc3548#section-3">RFC3986 S3</a>.
-*/
-static const uint8_t b64_map[] =
-	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-/**
-   Encode 3 raw bytes to 4 base64 characters.
-*/
-static inline void
-encode_chunk(uint8_t out[4], const uint8_t in[3], size_t n_in)
-{
-	out[0] = b64_map[in[0] >> 2];
-	out[1] = b64_map[((in[0] & 0x03) << 4) | ((in[1] & 0xF0) >> 4)];
-	out[2] = ((n_in > 1)
-	          ? (b64_map[((in[1] & 0x0F) << 2) | ((in[2] & 0xC0) >> 6)])
-	          : (uint8_t)'=');
-	out[3] = ((n_in > 2) ? b64_map[in[2] & 0x3F] : (uint8_t)'=');
-}
-
 SerdNode*
 serd_node_new_blob(const void* buf, size_t size, bool wrap_lines)
 {
@@ -515,21 +495,13 @@ serd_node_new_blob(const void* buf, size_t size, bool wrap_lines)
 		return NULL;
 	}
 
-	const size_t len  = (size + 2) / 3 * 4 + (wrap_lines * ((size - 1) / 57));
-	SerdNode*    node = serd_node_malloc(len + 1, 0, SERD_LITERAL);
-	uint8_t*     str  = (uint8_t*)serd_node_buffer(node);
-	for (size_t i = 0, j = 0; i < size; i += 3, j += 4) {
-		uint8_t in[4] = { 0, 0, 0, 0 };
-		size_t  n_in  = MIN(3, size - i);
-		memcpy(in, (const uint8_t*)buf + i, n_in);
+	const size_t    len  = serd_base64_get_length(size, wrap_lines);
+	SerdNode* const node = serd_node_malloc(len + 1, 0, SERD_LITERAL);
 
-		if (wrap_lines && i > 0 && (i % 57) == 0) {
-			str[j++] = '\n';
-			node->flags |= SERD_HAS_NEWLINE;
-		}
-
-		encode_chunk(str + j, in, n_in);
+	if (serd_base64_encode(serd_node_buffer(node), buf, size, wrap_lines)) {
+		node->flags |= SERD_HAS_NEWLINE;
 	}
+
 	node->n_bytes = len;
 	return node;
 }
