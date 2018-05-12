@@ -120,9 +120,11 @@ serd_env_add(SerdEnv*        env,
 	const char*       name_str = serd_node_get_string(name);
 	SerdPrefix* const prefix   = serd_env_find(env, name_str, name->n_bytes);
 	if (prefix) {
-		SerdNode* old_prefix_uri = prefix->uri;
-		prefix->uri = serd_node_copy(uri);
-		serd_node_free(old_prefix_uri);
+		if (!serd_node_equals(prefix->uri, uri)) {
+			SerdNode* old_prefix_uri = prefix->uri;
+			prefix->uri = serd_node_copy(uri);
+			serd_node_free(old_prefix_uri);
+		}
 	} else {
 		env->prefixes = (SerdPrefix*)realloc(
 			env->prefixes, (++env->n_prefixes) * sizeof(SerdPrefix));
