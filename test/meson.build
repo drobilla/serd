@@ -47,6 +47,7 @@ unit_tests = [
   'sink',
   'string',
   'uri',
+  'world',
   'writer',
 ]
 
