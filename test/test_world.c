@@ -14,29 +14,34 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#ifndef SERD_WORLD_H
-#define SERD_WORLD_H
+#undef NDEBUG
 
 #include "serd/serd.h"
 
-#include <stdint.h>
+#include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
-struct SerdWorldImpl {
-  SerdErrorFunc error_func;
-  void*         error_handle;
-  uint32_t      next_blank_id;
-  SerdNode*     blank_node;
-};
+static void
+test_get_blank(void)
+{
+  SerdWorld* world = serd_world_new();
+  char       expected[12];
 
-/// Open a file configured for fast sequential reading
-FILE*
-serd_world_fopen(SerdWorld* world, const char* path, const char* mode);
+  for (unsigned i = 0; i < 32; ++i) {
+    const SerdNode* blank = serd_world_get_blank(world);
 
-SerdStatus
-serd_world_error(const SerdWorld* world, const SerdError* e);
+    snprintf(expected, sizeof(expected), "b%u", i + 1);
+    assert(!strcmp(serd_node_string(blank), expected));
+  }
 
-SerdStatus
-serd_world_errorf(const SerdWorld* world, SerdStatus st, const char* fmt, ...);
+  serd_world_free(world);
+}
 
-#endif // SERD_WORLD_H
+int
+main(void)
+{
+  test_get_blank();
+
+  return 0;
+}
