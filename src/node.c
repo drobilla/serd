@@ -18,6 +18,7 @@
 
 #include "base64.h"
 #include "serd_internal.h"
+#include "static_nodes.h"
 #include "string_utils.h"
 #include "system.h"
 
@@ -49,8 +50,22 @@ serd_new_from_uri(SerdURIView uri, SerdURIView base);
 static size_t
 serd_node_pad_size(const size_t n_bytes)
 {
-  const size_t pad = sizeof(SerdNode) - (n_bytes + 2) % sizeof(SerdNode);
-  return n_bytes + 2 + pad;
+  const size_t pad  = sizeof(SerdNode) - (n_bytes + 2) % sizeof(SerdNode);
+  const size_t size = n_bytes + 2 + pad;
+  assert(size % sizeof(SerdNode) == 0);
+  return size;
+}
+
+static const SerdNode*
+serd_node_meta_c(const SerdNode* const node)
+{
+  return node + 1 + (serd_node_pad_size(node->length) / sizeof(SerdNode));
+}
+
+static SerdNode*
+serd_node_meta(SerdNode* const node)
+{
+  return node + 1 + (serd_node_pad_size(node->length) / sizeof(SerdNode));
 }
 
 static const SerdNode*
@@ -401,21 +416,28 @@ serd_digits(const double abs)
 }
 
 SerdNode*
-serd_new_decimal(const double d, const unsigned frac_digits)
+serd_new_decimal(const double          d,
+                 const unsigned        frac_digits,
+                 const SerdNode* const datatype)
 {
   if (isnan(d) || isinf(d)) {
     return NULL;
   }
 
+  const SerdNode* type       = datatype ? datatype : &serd_xsd_decimal.node;
   const double    abs_d      = fabs(d);
   const unsigned  int_digits = serd_digits(abs_d);
   const size_t    len        = int_digits + frac_digits + 3;
-  SerdNode* const node       = serd_node_malloc(len, 0, SERD_LITERAL);
-  char* const     buf        = serd_node_buffer(node);
-  const double    int_part   = floor(abs_d);
+  const size_t    type_len   = serd_node_total_size(type);
+  const size_t    total_len  = len + type_len;
+
+  SerdNode* const node =
+    serd_node_malloc(total_len, SERD_HAS_DATATYPE, SERD_LITERAL);
 
   // Point s to decimal point location
-  char* s = buf + int_digits;
+  char* const  buf      = serd_node_buffer(node);
+  const double int_part = floor(abs_d);
+  char*        s        = buf + int_digits;
   if (d < 0.0) {
     *buf = '-';
     ++s;
@@ -453,19 +475,24 @@ serd_new_decimal(const double d, const unsigned frac_digits)
     }
   }
 
+  memcpy(serd_node_meta(node), type, type_len);
   return node;
 }
 
 SerdNode*
-serd_new_integer(const int64_t i)
+serd_new_integer(const int64_t i, const SerdNode* const datatype)
 {
-  uint64_t       abs_i  = (i < 0) ? -i : i;
-  const unsigned digits = serd_digits((double)abs_i);
-  SerdNode*      node   = serd_node_malloc(digits + 2, 0, SERD_LITERAL);
-  char*          buf    = serd_node_buffer(node);
+  const SerdNode* type      = datatype ? datatype : &serd_xsd_integer.node;
+  uint64_t        abs_i     = (uint64_t)((i < 0) ? -i : i);
+  const unsigned  digits    = serd_digits((double)abs_i);
+  const size_t    type_len  = serd_node_total_size(type);
+  const size_t    total_len = digits + 2 + type_len;
+
+  SerdNode* node = serd_node_malloc(total_len, SERD_HAS_DATATYPE, SERD_LITERAL);
 
   // Point s to the end
-  char* s = buf + digits - 1;
+  char* buf = serd_node_buffer(node);
+  char* s   = buf + digits - 1;
   if (i < 0) {
     *buf = '-';
     ++s;
@@ -478,25 +505,35 @@ serd_new_integer(const int64_t i)
     *s-- = (char)('0' + (abs_i % 10));
   } while ((abs_i /= 10) > 0);
 
+  memcpy(serd_node_meta(node), type, type_len);
   return node;
 }
 
 SerdNode*
-serd_new_blob(const void* const buf, const size_t size, const bool wrap_lines)
+serd_new_blob(const void* const     buf,
+              const size_t          size,
+              const bool            wrap_lines,
+              const SerdNode* const datatype)
 {
   if (!buf || !size) {
     return NULL;
   }
 
-  const size_t len  = serd_base64_get_length(size, wrap_lines);
-  SerdNode*    node = serd_node_malloc(len + 1, 0, SERD_LITERAL);
-  uint8_t*     str  = (uint8_t*)serd_node_buffer(node);
+  const SerdNode* type      = datatype ? datatype : &serd_xsd_base64Binary.node;
+  const size_t    len       = serd_base64_get_length(size, wrap_lines);
+  const size_t    type_len  = serd_node_total_size(type);
+  const size_t    total_len = len + 1 + type_len;
 
+  SerdNode* const node =
+    serd_node_malloc(total_len, SERD_HAS_DATATYPE, SERD_LITERAL);
+
+  uint8_t* str = (uint8_t*)serd_node_buffer(node);
   if (serd_base64_encode(str, buf, size, wrap_lines)) {
     node->flags |= SERD_HAS_NEWLINE;
   }
 
   node->length = len;
+  memcpy(serd_node_meta(node), type, type_len);
   return node;
 }
 
@@ -539,14 +576,6 @@ serd_node_uri_view(const SerdNode* SERD_NONNULL node)
                                   : SERD_URI_NULL;
 }
 
-static const SerdNode*
-serd_node_meta_node(const SerdNode* node)
-{
-  const size_t len = serd_node_pad_size(node->length);
-  assert(len % sizeof(SerdNode) == 0);
-  return node + 1 + (len / sizeof(SerdNode));
-}
-
 const SerdNode*
 serd_node_datatype(const SerdNode* const node)
 {
@@ -554,7 +583,7 @@ serd_node_datatype(const SerdNode* const node)
     return NULL;
   }
 
-  const SerdNode* const datatype = serd_node_meta_node(node);
+  const SerdNode* const datatype = serd_node_meta_c(node);
   assert(datatype->type == SERD_URI || datatype->type == SERD_CURIE);
   return datatype;
 }
@@ -566,7 +595,7 @@ serd_node_language(const SerdNode* const node)
     return NULL;
   }
 
-  const SerdNode* const lang = serd_node_meta_node(node);
+  const SerdNode* const lang = serd_node_meta_c(node);
   assert(lang->type == SERD_LITERAL);
   return lang;
 }
