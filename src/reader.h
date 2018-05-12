@@ -41,18 +41,13 @@
 #    define SERD_LOG_FUNC(fmt, arg1)
 #endif
 
-/* Reference to a node in the stack (we can not use pointers since the
-   stack may be reallocated, invalidating any pointers to elements).
-*/
-typedef size_t Ref;
-
 typedef struct {
-	Ref                 graph;
-	Ref                 subject;
-	Ref                 predicate;
-	Ref                 object;
-	Ref                 datatype;
-	Ref                 lang;
+	SerdNode*           graph;
+	SerdNode*           subject;
+	SerdNode*           predicate;
+	SerdNode*           object;
+	SerdNode*           datatype;
+	SerdNode*           lang;
 	SerdStatementFlags* flags;
 } ReadContext;
 
@@ -61,9 +56,9 @@ struct SerdReaderImpl {
 	const SerdSink*          sink;
 	SerdErrorSink            error_sink;
 	void*                    error_handle;
-	Ref                      rdf_first;
-	Ref                      rdf_rest;
-	Ref                      rdf_nil;
+	SerdNode*                rdf_first;
+	SerdNode*                rdf_rest;
+	SerdNode*                rdf_nil;
 	SerdNode*                default_graph;
 	SerdByteSource           source;
 	SerdStack                stack;
@@ -76,7 +71,7 @@ struct SerdReaderImpl {
 	bool                     strict; ///< True iff strict parsing
 	bool                     seen_genid;
 #ifdef SERD_STACK_CHECK
-	Ref*                     allocs; ///< Stack of push offsets
+	SerdNode**               allocs; ///< Stack of push offsets
 	size_t                   n_allocs; ///< Number of stack pushes
 #endif
 };
@@ -84,26 +79,24 @@ struct SerdReaderImpl {
 SERD_LOG_FUNC(3, 4)
 int r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
 
-Ref push_node_padded(SerdReader* reader,
-                     size_t      maxlen,
-                     SerdType    type,
-                     const char* str,
-                     size_t      n_bytes);
+SerdNode* push_node_padded(SerdReader* reader,
+                           size_t      maxlen,
+                           SerdType    type,
+                           const char* str,
+                           size_t      n_bytes);
 
-Ref push_node(SerdReader* reader,
-              SerdType    type,
-              const char* str,
-              size_t      n_bytes);
+SerdNode* push_node(SerdReader* reader,
+                    SerdType    type,
+                    const char* str,
+                    size_t      n_bytes);
 
-size_t genid_size(SerdReader* reader);
-Ref    blank_id(SerdReader* reader);
-void   set_blank_id(SerdReader* reader, Ref ref, size_t buf_size);
+size_t    genid_size(SerdReader* reader);
+SerdNode* blank_id(SerdReader* reader);
+void      set_blank_id(SerdReader* reader, SerdNode* node, size_t buf_size);
 
-SerdNode* deref(SerdReader* reader, Ref ref);
+SerdNode* pop_node(SerdReader* reader, const SerdNode* node);
 
-Ref pop_node(SerdReader* reader, Ref ref);
-
-bool emit_statement(SerdReader* reader, ReadContext ctx, Ref o);
+bool emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o);
 
 bool read_n3_statement(SerdReader* reader);
 SerdStatus read_nquadsDoc(SerdReader* reader);
@@ -160,25 +153,33 @@ eat_string(SerdReader* reader, const char* str, unsigned n)
 }
 
 static inline SerdStatus
-push_byte(SerdReader* reader, Ref ref, const int c)
+push_byte(SerdReader* reader, SerdNode* node, const int c)
 {
 	assert(c != EOF);
 	SERD_STACK_ASSERT_TOP(reader, ref);
 
-	char* const     s    = (char*)serd_stack_push(&reader->stack, 1);
-	SerdNode* const node = (SerdNode*)(reader->stack.buf + ref);
+	char* const s = (char*)serd_stack_push(&reader->stack, 1);
+	if (!s) {
+		return SERD_ERR_OVERFLOW;
+	}
+
 	++node->n_bytes;
 	*(s - 1) = (uint8_t)c;
 	*s       = '\0';
 	return SERD_SUCCESS;
 }
 
-static inline void
-push_bytes(SerdReader* reader, Ref ref, const uint8_t* bytes, unsigned len)
+static inline SerdStatus
+push_bytes(SerdReader* reader, SerdNode* ref, const uint8_t* bytes, unsigned len)
 {
+	if (reader->stack.buf_size < reader->stack.size + len) {
+		return SERD_ERR_OVERFLOW;
+	}
+
 	for (unsigned i = 0; i < len; ++i) {
 		push_byte(reader, ref, bytes[i]);
 	}
+	return SERD_SUCCESS;
 }
 
 #endif // SERD_READER_H

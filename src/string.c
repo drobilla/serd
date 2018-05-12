@@ -42,6 +42,7 @@ serd_strerror(SerdStatus status)
 	case SERD_ERR_ID_CLASH:   return "Blank node ID clash";
 	case SERD_ERR_BAD_CURIE:  return "Invalid CURIE";
 	case SERD_ERR_INTERNAL:   return "Internal error";
+	case SERD_ERR_OVERFLOW:   return "Stack overflow";
 	}
 	return "Unknown error";  // never reached
 }

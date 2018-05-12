@@ -24,9 +24,10 @@
 #include <io.h>
 #endif
 
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <string.h>
+#include <stdlib.h>
 
 #define SERDI_ERROR(msg)       fprintf(stderr, "serdi: " msg);
 #define SERDI_ERRORF(fmt, ...) fprintf(stderr, "serdi: " fmt, __VA_ARGS__);
@@ -97,6 +98,7 @@ print_usage(const char* name, bool error)
 	fprintf(os, "  -f           Keep full URIs in input (don't qualify).\n");
 	fprintf(os, "  -h           Display this help and exit.\n");
 	fprintf(os, "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads.\n");
+	fprintf(os, "  -k BYTES     Parser stack size.\n");
 	fprintf(os, "  -l           Lax (non-strict) parsing.\n");
 	fprintf(os, "  -o SYNTAX    Output syntax: turtle/ntriples/nquads.\n");
 	fprintf(os, "  -p PREFIX    Add PREFIX to blank node IDs.\n");
@@ -139,6 +141,7 @@ main(int argc, char** argv)
 	bool           full_uris     = false;
 	bool           lax           = false;
 	bool           quiet         = false;
+	size_t         stack_size    = 4194304;
 	const char*    add_prefix    = NULL;
 	const char*    chop_prefix   = NULL;
 	const char*    root_uri      = NULL;
@@ -173,6 +176,17 @@ main(int argc, char** argv)
 			} else if (!(input_syntax = get_syntax(argv[a]))) {
 				return print_usage(argv[0], true);
 			}
+		} else if (argv[a][1] == 'k') {
+			if (++a == argc) {
+				return missing_arg(argv[0], 'k');
+			}
+			char*      endptr = NULL;
+			const long size   = strtol(argv[a], &endptr, 10);
+			if (size <= 0 || size == LONG_MAX || *endptr != '\0') {
+				SERDI_ERRORF("invalid stack size `%s'\n", argv[a]);
+				return 1;
+			}
+			stack_size = (size_t)size;
 		} else if (argv[a][1] == 'o') {
 			if (++a == argc) {
 				return missing_arg(argv[0], 'o');
@@ -261,8 +275,8 @@ main(int argc, char** argv)
 	                                     (SerdWriteFunc)fwrite,
 	                                     out_fd);
 
-	SerdReader* reader =
-		serd_reader_new(world, input_syntax, serd_writer_get_sink(writer));
+	SerdReader* reader = serd_reader_new(
+		world, input_syntax, serd_writer_get_sink(writer), stack_size);
 
 	serd_reader_set_strict(reader, !lax);
 	if (quiet) {

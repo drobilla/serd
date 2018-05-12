@@ -116,7 +116,7 @@ test_read_chunks(void)
 	FILE* const       f      = tmpfile();
 	static const char null   = 0;
 	SerdSink          sink   = {rt, NULL, NULL, test_sink, NULL};
-	SerdReader*       reader = serd_reader_new(world, SERD_TURTLE, &sink);
+	SerdReader*       reader = serd_reader_new(world, SERD_TURTLE, &sink, 4096);
 
 	assert(reader);
 	assert(f);
@@ -332,7 +332,7 @@ test_strerror(void)
 {
 	const char* msg = NULL;
 	assert(!strcmp((msg = serd_strerror(SERD_SUCCESS)), "Success"));
-	for (int i = SERD_FAILURE; i <= SERD_ERR_INTERNAL; ++i) {
+	for (int i = SERD_FAILURE; i <= SERD_ERR_OVERFLOW; ++i) {
 		msg = serd_strerror((SerdStatus)i);
 		assert(strcmp(msg, "Success"));
 	}
@@ -726,7 +726,7 @@ test_reader(const char* path)
 	SerdWorld*  world  = serd_world_new();
 	ReaderTest  rt     = { 0, NULL };
 	SerdSink    sink   = { &rt, NULL, NULL, test_sink, NULL };
-	SerdReader* reader = serd_reader_new(world, SERD_TURTLE, &sink);
+	SerdReader* reader = serd_reader_new(world, SERD_TURTLE, &sink, 4096);
 	assert(reader);
 
 	SerdNode* g = serd_node_new_uri("http://example.org/");

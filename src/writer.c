@@ -875,7 +875,7 @@ serd_writer_new(SerdWorld*     world,
 	writer->env          = env;
 	writer->root_node    = NULL;
 	writer->root_uri     = SERD_URI_NULL;
-	writer->anon_stack   = serd_stack_new(4 * sizeof(WriteContext));
+	writer->anon_stack   = serd_stack_new(SERD_PAGE_SIZE);
 	writer->context      = context;
 	writer->list_subj    = NULL;
 	writer->empty        = true;

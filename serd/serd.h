@@ -99,7 +99,8 @@ typedef enum {
 	SERD_ERR_NOT_FOUND,   /**< Not found */
 	SERD_ERR_ID_CLASH,    /**< Encountered clashing blank node IDs */
 	SERD_ERR_BAD_CURIE,   /**< Invalid CURIE (e.g. prefix does not exist) */
-	SERD_ERR_INTERNAL     /**< Unexpected internal error (should not happen) */
+	SERD_ERR_INTERNAL,    /**< Unexpected internal error (should not happen) */
+	SERD_ERR_OVERFLOW     /**< Stack overflow */
 } SerdStatus;
 
 /**
@@ -904,7 +905,10 @@ serd_env_foreach(const SerdEnv* env,
 */
 SERD_API
 SerdReader*
-serd_reader_new(SerdWorld* world, SerdSyntax syntax, const SerdSink* sink);
+serd_reader_new(SerdWorld*      world,
+                SerdSyntax      syntax,
+                const SerdSink* sink,
+                size_t          stack_size);
 
 /**
    Enable or disable strict parsing.
