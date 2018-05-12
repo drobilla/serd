@@ -120,6 +120,11 @@ emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o)
 	if (!graph && reader->default_graph) {
 		graph = reader->default_graph;
 	}
+
+	/* Zero the pad of the object node on the top of the stack.  Lower nodes
+	   (subject and predicate) were already zeroed by subsequent pushes. */
+	serd_node_zero_pad(o);
+
 	bool ret = !reader->sink->statement ||
 		!reader->sink->statement(
 			reader->sink->handle, *ctx.flags, graph,

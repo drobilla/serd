@@ -218,6 +218,27 @@ serd_node_new_uri(const char* str)
 	return str ? serd_node_new_simple_node(SERD_URI, str, strlen(str)) : NULL;
 }
 
+/**
+   Zero node padding.
+
+   This is used for nodes which live in re-used stack memory during reading,
+   which must be normalized before being passed to a sink so comparison will
+   work correctly.
+*/
+void
+serd_node_zero_pad(SerdNode* node)
+{
+	char*        buf         = serd_node_buffer(node);
+	const size_t size        = node->n_bytes;
+	const size_t padded_size = serd_node_pad_size(node->n_bytes);
+
+	memset(buf + size, 0, padded_size - size);
+
+	if (node->flags & (SERD_HAS_DATATYPE|SERD_HAS_LANGUAGE)) {
+		serd_node_zero_pad(serd_node_get_meta(node));
+	}
+}
+
 SerdNode*
 serd_node_copy(const SerdNode* node)
 {
@@ -226,6 +247,13 @@ serd_node_copy(const SerdNode* node)
 	}
 
 	const size_t size = serd_node_total_size(node);
+#ifndef NDEBUG
+	const size_t unpadded_size = node->n_bytes;
+	const size_t padded_size   = serd_node_pad_size(node->n_bytes);
+	for (size_t i = 0; i < padded_size - unpadded_size; ++i) {
+		assert(serd_node_buffer_c(node)[unpadded_size + i] == '\0');
+	}
+#endif
 	SerdNode*    copy = (SerdNode*)calloc(1, size + 3);
 	memcpy(copy, node, size);
 	return copy;

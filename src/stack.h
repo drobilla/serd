@@ -82,6 +82,7 @@ static inline void
 serd_stack_pop_to(SerdStack* stack, size_t n_bytes)
 {
 	assert(stack->size >= n_bytes);
+	memset(stack->buf + n_bytes, 0, stack->size - n_bytes);
 	stack->size = n_bytes;
 }
 
