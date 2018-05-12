@@ -19,11 +19,14 @@
 
 #include "serd/serd.h"
 
+#include <stdint.h>
 #include <stdio.h>
 
 struct SerdWorldImpl {
   SerdErrorFunc error_func;
   void*         error_handle;
+  uint32_t      next_blank_id;
+  SerdNode*     blank_node;
 };
 
 /// Open a file configured for fast sequential reading
