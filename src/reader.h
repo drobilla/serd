@@ -39,8 +39,6 @@ typedef struct {
   SerdNode*           subject;
   SerdNode*           predicate;
   SerdNode*           object;
-  SerdNode*           datatype;
-  SerdNode*           lang;
   SerdStatementFlags* flags;
 } ReadContext;
 
