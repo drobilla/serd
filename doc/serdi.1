@@ -1,4 +1,4 @@
-.TH SERDI 1 "05 Jan 2017"
+.TH SERDI 1 "06 Jan 2019"
 
 .SH NAME
 .B serdi \- Read and write RDF syntax
@@ -29,6 +29,13 @@ page of input has arrived.  With this option serdi uses one page less memory,
 but will likely be significantly slower.
 
 .TP
+.BR \-f
+Fast serialisation without object inlining.  This affects only model
+(non-streaming) serialisation, and disables searching and statement reordering
+for pretty printing.  Statements will be written in simple sorted order, which
+is faster, but may result in less readable output in Turtle or TriG.
+
+.TP
 .BR \-h
 Print the command line options.
 
@@ -44,6 +51,12 @@ Parser stack size.
 .TP
 .BR \-l
 Lax (non-strict) parsing.
+
+.TP
+.BR \-m
+Build and serialise a model.  This loads the complete input data into memory
+before writing the output.  This will normalize statement order, at the cost of
+performance and memory consumption.
 
 .TP
 .BR \-o " " \fISYNTAX\fR
@@ -74,7 +87,7 @@ Display version information and exit.
 Serdi was written by David Robillard <d@drobilla.net>
 
 .SH COPYRIGHT
-Copyright \(co 2011-2017 David Robillard.
+Copyright \(co 2011-2019 David Robillard.
 .br
 License: <http://www.opensource.org/licenses/isc>
 .br

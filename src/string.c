@@ -38,6 +38,7 @@ serd_strerror(SerdStatus status)
 	case SERD_ERR_UNKNOWN:    return "Unknown error";
 	case SERD_ERR_BAD_SYNTAX: return "Invalid syntax";
 	case SERD_ERR_BAD_ARG:    return "Invalid argument";
+	case SERD_ERR_BAD_ITER:   return "Invalid iterator";
 	case SERD_ERR_NOT_FOUND:  return "Not found";
 	case SERD_ERR_ID_CLASH:   return "Blank node ID clash";
 	case SERD_ERR_BAD_CURIE:  return "Invalid CURIE";

@@ -73,6 +73,18 @@ typedef struct SerdCursorImpl SerdCursor;
 /// Lexical environment for relative URIs or CURIEs (base URI and namespaces)
 typedef struct SerdEnvImpl SerdEnv;
 
+/// An indexed set of statements
+typedef struct SerdModelImpl SerdModel;
+
+/// A statement sink that inserts into a model
+typedef struct SerdInserterImpl SerdInserter;
+
+/// Model Iterator
+typedef struct SerdIterImpl SerdIter;
+
+/// Model Range
+typedef struct SerdRangeImpl SerdRange;
+
 /// Streaming parser that reads a text stream and writes to a statement sink
 typedef struct SerdReaderImpl SerdReader;
 
@@ -92,6 +104,7 @@ typedef enum {
 	SERD_ERR_UNKNOWN,     ///< Unknown error
 	SERD_ERR_BAD_SYNTAX,  ///< Invalid syntax
 	SERD_ERR_BAD_ARG,     ///< Invalid argument
+	SERD_ERR_BAD_ITER,    ///< Use of invalidated iterator
 	SERD_ERR_NOT_FOUND,   ///< Not found
 	SERD_ERR_ID_CLASH,    ///< Encountered clashing blank node IDs
 	SERD_ERR_BAD_CURIE,   ///< Invalid CURIE (e.g. prefix does not exist)
@@ -118,6 +131,14 @@ typedef enum {
 
 /// Bitwise OR of SerdStatementFlag values
 typedef uint32_t SerdStatementFlags;
+
+/// Flags that control style for a model serialisation
+typedef enum {
+	SERD_NO_INLINE_OBJECTS = 1 << 0 ///< Disable object inlining
+} SerdSerialisationFlag;
+
+/// Bitwise OR of SerdStatementFlag values
+typedef uint32_t SerdSerialisationFlags;
 
 /**
    Type of a syntactic RDF node
@@ -182,6 +203,21 @@ typedef enum {
 	SERD_OBJECT    = 2,  ///< Object    ("value")
 	SERD_GRAPH     = 3   ///< Graph     ("context")
 } SerdField;
+
+/// Indexing option
+typedef enum {
+	SERD_INDEX_SPO     = 1,       ///< Subject,   Predicate, Object
+	SERD_INDEX_SOP     = 1 << 1,  ///< Subject,   Object,    Predicate
+	SERD_INDEX_OPS     = 1 << 2,  ///< Object,    Predicate, Subject
+	SERD_INDEX_OSP     = 1 << 3,  ///< Object,    Subject,   Predicate
+	SERD_INDEX_PSO     = 1 << 4,  ///< Predicate, Subject,   Object
+	SERD_INDEX_POS     = 1 << 5,  ///< Predicate, Object,    Subject
+	SERD_INDEX_GRAPHS  = 1 << 6,  ///< Support multiple graphs in model
+	SERD_STORE_CURSORS = 1 << 7   ///< Store original cursor of statements
+} SerdModelFlag;
+
+/// Bitwise OR of SerdModelFlag values
+typedef uint32_t SerdModelFlags;
 
 /// A syntactic RDF node
 typedef struct SerdNodeImpl SerdNode;
@@ -1329,9 +1365,265 @@ serd_nodes_deref(SerdNodes* nodes, const SerdNode* node);
 
 /**
    @}
+   @name Model
+   @{
+*/
+
+/**
+   Create a new model
+
+   @param world The world in which to make this model.
+
+   @param flags Model options, including enabled indices, for example `SERD_SPO |
+   SERD_OPS`.  Be sure to enable an index where the most significant node(s)
+   are not variables in your queries.  For example, to make (? P O) queries,
+   enable either SERD_OPS or SERD_POS.
+*/
+SERD_API
+SerdModel*
+serd_model_new(SerdWorld* world, SerdModelFlags flags);
+
+/// Return a deep copy of `model`
+SERD_API
+SerdModel*
+serd_model_copy(const SerdModel* model);
+
+/// Return true iff `a` is equal to `b`, ignoring statement cursor metadata
+SERD_API
+bool
+serd_model_equals(const SerdModel* a, const SerdModel* b);
+
+/// Close and free `model`
+SERD_API
+void
+serd_model_free(SerdModel* model);
+
+/// Get the world associated with `model`
+SERD_API
+SerdWorld*
+serd_model_get_world(SerdModel* model);
+
+/// Get the flags enabled on `model`
+SERD_API
+SerdModelFlags
+serd_model_get_flags(const SerdModel* model);
+
+/// Return the number of statements stored in `model`
+SERD_API
+size_t
+serd_model_size(const SerdModel* model);
+
+/// Return true iff there are no statements stored in `model`
+SERD_API
+bool
+serd_model_empty(const SerdModel* model);
+
+/// Return an iterator to the start of `model`
+SERD_API
+SerdIter*
+serd_model_begin(const SerdModel* model);
+
+/// Return an iterator to the end of `model`
+SERD_API
+const SerdIter*
+serd_model_end(const SerdModel* model);
+
+/// Return a range of all statements in `model`
+SERD_API
+SerdRange*
+serd_model_all(const SerdModel* model);
+
+/**
+   Search for statements by a quad pattern
+
+   @return An iterator to the first match, or NULL if no matches found.
+*/
+SERD_API
+SerdIter*
+serd_model_find(const SerdModel* model,
+                const SerdNode*  s,
+                const SerdNode*  p,
+                const SerdNode*  o,
+                const SerdNode*  g);
+
+/**
+   Search for statements by a quad pattern
+
+   @return A range containins all matching statements.
+*/
+SERD_API
+SerdRange*
+serd_model_range(const SerdModel* model,
+                 const SerdNode*  s,
+                 const SerdNode*  p,
+                 const SerdNode*  o,
+                 const SerdNode*  g);
+
+/**
+   Search for a single node that matches a pattern
+
+   Exactly one of `s`, `p`, `o` must be NULL.
+   This function is mainly useful for predicates that only have one value.
+   @return The first matching node, or NULL if no matches are found.
+*/
+SERD_API
+const SerdNode*
+serd_model_get(const SerdModel* model,
+               const SerdNode*  s,
+               const SerdNode*  p,
+               const SerdNode*  o,
+               const SerdNode*  g);
+
+/**
+   Search for a single statement that matches a pattern
+
+   This function is mainly useful for predicates that only have one value.
+
+   @return The first matching statement, or NULL if none are found.
+*/
+SERD_API
+const SerdStatement*
+serd_model_get_statement(const SerdModel* model,
+                         const SerdNode*  s,
+                         const SerdNode*  p,
+                         const SerdNode*  o,
+                         const SerdNode*  g);
+
+/// Return true iff a statement exists
+SERD_API
+bool
+serd_model_ask(const SerdModel* model,
+               const SerdNode*  s,
+               const SerdNode*  p,
+               const SerdNode*  o,
+               const SerdNode*  g);
+
+/// Return the number of matching statements
+SERD_API
+size_t
+serd_model_count(const SerdModel* model,
+                 const SerdNode*  s,
+                 const SerdNode*  p,
+                 const SerdNode*  o,
+                 const SerdNode*  g);
+
+/**
+   Add a statement to a model from nodes
+
+   This function fails if there are any active iterators on `model`.
+*/
+SERD_API
+SerdStatus
+serd_model_add(SerdModel*      model,
+               const SerdNode* s,
+               const SerdNode* p,
+               const SerdNode* o,
+               const SerdNode* g);
+
+/**
+   Add a statement to a model
+
+   This function fails if there are any active iterators on `model`.
+*/
+SERD_API
+SerdStatus
+serd_model_insert(SerdModel* model, const SerdStatement* statement);
+
+/**
+   Add a range of statements to a model
+
+   This function fails if there are any active iterators on `model`.
+*/
+SERD_API
+SerdStatus
+serd_model_add_range(SerdModel* model, SerdRange* range);
+
+/**
+   Remove a quad from a model via an iterator
+
+   Calling this function invalidates all iterators on `model` except `iter`.
+
+   @param model The model which `iter` points to.
+   @param iter Iterator to the element to erase, which is incremented to the
+   next value on return.
+*/
+SERD_API
+SerdStatus
+serd_model_erase(SerdModel* model, SerdIter* iter);
+
+/**
+   Remove a range from a model
+
+   Calling this function invalidates all iterators on `model` except `iter`.
+
+   @param model The model which `range` points to.
+   @param range Range to erase, which will be empty on return;
+*/
+SERD_API
+SerdStatus
+serd_model_erase_range(SerdModel* model, SerdRange* range);
+
+/**
+   @}
+   @name Inserter
+   @{
+*/
+
+/// Create an inserter for writing statements to a model
+SERD_API
+SerdInserter*
+serd_inserter_new(SerdModel*      model,
+                  SerdEnv*        env,
+                  const SerdNode* default_graph);
+
+/// Free an inserter
+SERD_API
+void
+serd_inserter_free(SerdInserter* inserter);
+
+/// Return a sink interface that adds statements via `inserter`
+SERD_API
+const SerdSink*
+serd_inserter_get_sink(SerdInserter* inserter);
+
+/**
+   @}
    @name Statement
    @{
 */
+
+/**
+   Create a new statement
+
+   Note that, to minimise model overhead, statements do not own their nodes, so
+   they must have a longer lifetime than the statement for it to be valid.  For
+   statements in models, this is the lifetime of the model.  For user-created
+   statements, the simplest way to handle this is to use `SerdNodes`.
+
+   @param s The subject
+   @param p The predicate ("key")
+   @param o The object ("value")
+   @param g The graph ("context")
+   @param cursor Optional cursor at the origin of this statement
+   @return A new statement that must be freed with serd_statement_free()
+*/
+SERD_API
+SerdStatement*
+serd_statement_new(const SerdNode*   s,
+                   const SerdNode*   p,
+                   const SerdNode*   o,
+                   const SerdNode*   g,
+                   const SerdCursor* cursor);
+
+/// Return a copy of `statement`
+SERD_API
+SerdStatement*
+serd_statement_copy(const SerdStatement* statement);
+
+/// Free `statement`
+SERD_API
+void
+serd_statement_free(SerdStatement* statement);
 
 /// Return the given node in `statement`
 SERD_API
@@ -1362,6 +1654,136 @@ serd_statement_get_graph(const SerdStatement* statement);
 SERD_API
 const SerdCursor*
 serd_statement_get_cursor(const SerdStatement* statement);
+
+/**
+   Return true iff `a` is equal to `b`, ignoring statement cursor metadata
+
+   Only returns true if nodes are equivalent, does not perform wildcard matching.
+*/
+SERD_API
+bool
+serd_statement_equals(const SerdStatement* a, const SerdStatement* b);
+
+/**
+   Return true iff `statement` matches the given pattern
+
+   The matching rules are the same used for querying: nodes match if they are
+   equivalent, and NULL acts as a wildcard that matches any node.
+*/
+SERD_API
+bool
+serd_statement_matches(const SerdStatement* statement,
+                       const SerdNode*      subject,
+                       const SerdNode*      predicate,
+                       const SerdNode*      object,
+                       const SerdNode*      graph);
+
+/**
+   @}
+   @name Iterator
+   @{
+*/
+
+/// Return a new copy of `iter`
+SERD_API
+SerdIter*
+serd_iter_copy(const SerdIter* iter);
+
+/// Return the statement pointed to by `iter`
+SERD_API
+const SerdStatement*
+serd_iter_get(const SerdIter* iter);
+
+/**
+   Increment `iter` to point to the next statement
+
+   @return True iff `iter` has reached the end.
+*/
+SERD_API
+bool
+serd_iter_next(SerdIter* iter);
+
+/// Return true iff `lhs` is equal to `rhs`
+SERD_API
+bool
+serd_iter_equals(const SerdIter* lhs, const SerdIter* rhs);
+
+/// Free `iter`
+SERD_API
+void
+serd_iter_free(SerdIter* iter);
+
+/**
+   @}
+   @name Range
+   @{
+*/
+
+/// Return a new copy of `range`
+SERD_API
+SerdRange*
+serd_range_copy(const SerdRange* range);
+
+/// Free `range`
+SERD_API
+void
+serd_range_free(SerdRange* range);
+
+/// Return the first statement in `range`, or NULL if `range` is empty
+SERD_API
+const SerdStatement*
+serd_range_front(const SerdRange* range);
+
+/// Return true iff `lhs` is equal to `rhs`
+SERD_API
+bool
+serd_range_equals(const SerdRange* lhs, const SerdRange* rhs);
+
+/// Increment the start of `range` to point to the next statement
+SERD_API
+bool
+serd_range_next(SerdRange* range);
+
+/// Return true iff there are no statements in `range`
+SERD_API
+bool
+serd_range_empty(const SerdRange* range);
+
+/// Return an iterator to the start of `range`
+SERD_API
+const SerdIter*
+serd_range_cbegin(const SerdRange* range);
+
+/// Return an iterator to the end of `range`
+SERD_API
+const SerdIter*
+serd_range_cend(const SerdRange* range);
+
+/// Return an iterator to the start of `range`
+SERD_API
+SerdIter*
+serd_range_begin(SerdRange* range);
+
+/// Return an iterator to the end of `range`
+SERD_API
+SerdIter*
+serd_range_end(SerdRange* range);
+
+/**
+   Write `range` to `sink`
+
+   The serialisation style can be controlled with `flags`.  The default is to
+   write statements in an order suited for pretty-printing with Turtle or TriG
+   with as many objects written inline as possible.  If
+   `SERD_NO_INLINE_OBJECTS` is given, a simple sorted stream is written
+   instead, which is significantly faster since no searching is required, but
+   can result in ugly output for Turtle or Trig.
+*/
+SERD_API
+SerdStatus
+serd_range_serialise(const SerdRange*       range,
+                     const SerdSink*        sink,
+                     SerdSerialisationFlags flags);
 
 /**
    @}

@@ -28,8 +28,9 @@ post_tags    = ['Hacking', 'RDF', 'Serd']
 
 def options(ctx):
     ctx.load('compiler_c')
+    opt = ctx.configuration_options()
     ctx.add_flags(
-        ctx.configuration_options(),
+        opt,
         {'no-utils':     'do not build command line utilities',
          'stack-check':  'include runtime stack sanity checks',
          'static':       'build static library',
@@ -85,9 +86,13 @@ lib_source = ['src/base64.c',
               'src/byte_source.c',
               'src/cursor.c',
               'src/env.c',
+              'src/inserter.c',
+              'src/iter.c',
+              'src/model.c',
               'src/n3.c',
               'src/node.c',
               'src/nodes.c',
+              'src/range.c',
               'src/reader.c',
               'src/sink.c',
               'src/statement.c',
@@ -97,6 +102,7 @@ lib_source = ['src/base64.c',
               'src/uri.c',
               'src/world.c',
               'src/writer.c',
+              'src/zix/btree.c',
               'src/zix/digest.c',
               'src/zix/hash.c']
 
@@ -158,10 +164,13 @@ def build(bld):
         for prog in [('serdi_static', 'src/serdi.c'),
                      ('base64_test', 'tests/base64_test.c'),
                      ('cursor_test', 'tests/cursor_test.c'),
+                     ('statement_test', 'tests/statement_test.c'),
+                     ('sink_test', 'tests/sink_test.c'),
                      ('serd_test', 'tests/serd_test.c'),
                      ('read_chunk_test', 'tests/read_chunk_test.c'),
                      ('nodes_test', 'tests/nodes_test.c'),
-                     ('overflow_test', 'tests/overflow_test.c')]:
+                     ('overflow_test', 'tests/overflow_test.c'),
+                     ('model_test', 'tests/model_test.c')]:
             bld(features     = 'c cprogram',
                 source       = prog[1],
                 use          = 'libserd_profiled',
@@ -356,6 +365,22 @@ def _load_rdf(filename):
 
     return model, instances
 
+def _file_lines_equal(patha, pathb, subst_from='', subst_to=''):
+    import io
+
+    for path in (patha, pathb):
+        if not os.access(path, os.F_OK):
+            Logs.pprint('RED', 'error: missing file %s' % path)
+            return False
+
+    la = sorted(set(io.open(patha, encoding='utf-8').readlines()))
+    lb = sorted(set(io.open(pathb, encoding='utf-8').readlines()))
+    if la != lb:
+        autowaf.show_diff(la, lb, patha, pathb)
+        return False
+
+    return True
+
 def test_suite(ctx, base_uri, testdir, report, isyntax, options=[]):
     import itertools
 
@@ -413,6 +438,16 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, options=[]):
                 if report is not None:
                     report.write(earl_assertion(test, result, asserter))
 
+                if expected_return == 0:
+                    # Run model test for positive test (must succeed)
+                    model_out_path = action + '.model.out'
+                    check([command[0]] + ['-m'] + command[1:], stdout=model_out_path,
+                          name=action + ' model')
+
+                    if result and ((mf + 'result') in model[test]):
+                        check(lambda: _file_lines_equal(check_path, model_out_path),
+                              name=action + ' model check')
+
     ns_rdftest = 'http://www.w3.org/ns/rdftest#'
     for test_class, instances in instances.items():
         if test_class.startswith(ns_rdftest):
@@ -438,6 +473,9 @@ def test(tst):
     with tst.group('Unit') as check:
         check(['./base64_test'])
         check(['./cursor_test'])
+        check(['./statement_test'])
+        check(['./sink_test'])
+        check(['./model_test'])
         check(['./nodes_test'])
         check(['./overflow_test'])
         check(['./serd_test'])

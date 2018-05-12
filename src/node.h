@@ -39,6 +39,18 @@ serd_node_buffer_c(const SerdNode* node)
 	return (const char*)(node + 1);
 }
 
+static inline int
+serd_node_wildcard_compare(const SerdNode* a, const SerdNode* b)
+{
+	return (!a || !b) ? 0 : serd_node_compare(a, b);
+}
+
+static inline bool
+serd_node_pattern_match(const SerdNode* a, const SerdNode* b)
+{
+	return !a || !b || serd_node_equals(a, b);
+}
+
 SerdNode*
 serd_node_malloc(size_t n_bytes, SerdNodeFlags flags, SerdNodeType type);
 

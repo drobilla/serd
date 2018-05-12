@@ -14,27 +14,29 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#ifndef SERD_STATEMENT_H
-#define SERD_STATEMENT_H
+#ifndef SERD_MODEL_H
+#define SERD_MODEL_H
 
 #include "serd/serd.h"
+#include "zix/btree.h"
 
-#include <stdbool.h>
+#include <stdint.h>
 
-/**
-   Quad of nodes (a statement), or a quad pattern.
-
-   Nodes are ordered (S P O G).  The ID of the default graph is 0.
-*/
-typedef const SerdNode* SerdQuad[4];
-
-struct SerdStatementImpl {
-	SerdQuad    nodes;
-	SerdCursor* cursor;
+struct SerdModelImpl
+{
+	SerdWorld*     world;       ///< World this model is a part of
+	ZixBTree*      indices[12]; ///< Trees of SordQuad
+	SerdIter*      end;         ///< End iterator (always the same)
+	uint64_t       version;     ///< Version incremented on every change
+	SerdModelFlags flags;       ///< Active indices and features
 };
 
-bool
-serd_statement_matches_quad(const SerdStatement* statement,
-                            const SerdQuad       quad);
+SerdStatus
+serd_model_add_internal(SerdModel*        model,
+                        const SerdCursor* cursor,
+                        const SerdNode*   s,
+                        const SerdNode*   p,
+                        const SerdNode*   o,
+                        const SerdNode*   g);
 
-#endif  // SERD_STATEMENT_H
+#endif // SERD_MODEL_H
