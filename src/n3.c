@@ -840,7 +840,6 @@ read_0_9(SerdReader* const reader, SerdNode* const str, const bool at_least_one)
 static SerdStatus
 read_number(SerdReader* const    reader,
             SerdNode** const     dest,
-            SerdNode** const     datatype,
             SerdNodeFlags* const flags,
             bool* const          ate_dot)
 {
@@ -897,16 +896,13 @@ read_number(SerdReader* const    reader,
       break;
     }
     TRY(st, read_0_9(reader, *dest, true));
-    *datatype = push_node(reader, SERD_URI, XSD_DOUBLE, sizeof(XSD_DOUBLE) - 1);
+    push_node(reader, SERD_URI, XSD_DOUBLE, sizeof(XSD_DOUBLE) - 1);
+    *flags |= SERD_HAS_DATATYPE;
   } else if (has_decimal) {
-    *datatype =
-      push_node(reader, SERD_URI, XSD_DECIMAL, sizeof(XSD_DECIMAL) - 1);
+    push_node(reader, SERD_URI, XSD_DECIMAL, sizeof(XSD_DECIMAL) - 1);
+    *flags |= SERD_HAS_DATATYPE;
   } else {
-    *datatype =
-      push_node(reader, SERD_URI, XSD_INTEGER, sizeof(XSD_INTEGER) - 1);
-  }
-
-  if (*datatype) {
+    push_node(reader, SERD_URI, XSD_INTEGER, sizeof(XSD_INTEGER) - 1);
     *flags |= SERD_HAS_DATATYPE;
   }
 
@@ -930,8 +926,6 @@ read_iri(SerdReader* const reader, SerdNode** const dest, bool* const ate_dot)
 static SerdStatus
 read_literal(SerdReader* const    reader,
              SerdNode** const     dest,
-             SerdNode** const     datatype,
-             SerdNode** const     lang,
              SerdNodeFlags* const flags,
              bool* const          ate_dot)
 {
@@ -943,11 +937,13 @@ read_literal(SerdReader* const    reader,
     return st;
   }
 
+  SerdNode* datatype = NULL;
+  SerdNode* lang     = NULL;
   switch (peek_byte(reader)) {
   case '@':
     eat_byte_safe(reader, '@');
     *flags |= SERD_HAS_LANGUAGE;
-    if ((st = read_LANGTAG(reader, lang))) {
+    if ((st = read_LANGTAG(reader, &lang))) {
       return r_err(reader, st, "bad literal\n");
     }
     break;
@@ -955,7 +951,7 @@ read_literal(SerdReader* const    reader,
     eat_byte_safe(reader, '^');
     eat_byte_check(reader, '^');
     *flags |= SERD_HAS_DATATYPE;
-    if ((st = read_iri(reader, datatype, ate_dot))) {
+    if ((st = read_iri(reader, &datatype, ate_dot))) {
       return r_err(reader, st, "bad literal\n");
     }
     break;
@@ -1136,12 +1132,10 @@ read_object(SerdReader* const  reader,
 
   SerdStatus ret = SERD_FAILURE;
 
-  bool      simple   = (ctx->subject != 0);
-  SerdNode* o        = 0;
-  SerdNode* datatype = 0;
-  SerdNode* lang     = 0;
-  uint32_t  flags    = 0;
-  const int c        = peek_byte(reader);
+  bool      simple = (ctx->subject != 0);
+  SerdNode* o      = 0;
+  uint32_t  flags  = 0;
+  const int c      = peek_byte(reader);
   if (!fancy_syntax(reader)) {
     switch (c) {
     case '"':
@@ -1185,11 +1179,11 @@ read_object(SerdReader* const  reader,
   case '7':
   case '8':
   case '9':
-    ret = read_number(reader, &o, &datatype, &flags, ate_dot);
+    ret = read_number(reader, &o, &flags, ate_dot);
     break;
   case '\"':
   case '\'':
-    ret = read_literal(reader, &o, &datatype, &lang, &flags, ate_dot);
+    ret = read_literal(reader, &o, &flags, ate_dot);
     break;
   default:
     /* Either a boolean literal, or a qname.  Read the prefix first, and if
@@ -1203,10 +1197,10 @@ read_object(SerdReader* const  reader,
     }
     if ((o->length == 4 && !memcmp(serd_node_string(o), "true", 4)) ||
         (o->length == 5 && !memcmp(serd_node_string(o), "false", 5))) {
-      flags    = flags | SERD_HAS_DATATYPE;
-      o->type  = SERD_LITERAL;
-      datatype = push_node(reader, SERD_URI, XSD_BOOLEAN, XSD_BOOLEAN_LEN);
-      ret      = SERD_SUCCESS;
+      flags   = flags | SERD_HAS_DATATYPE;
+      o->type = SERD_LITERAL;
+      push_node(reader, SERD_URI, XSD_BOOLEAN, XSD_BOOLEAN_LEN);
+      ret = SERD_SUCCESS;
     } else if (read_PN_PREFIX_tail(reader, o) > SERD_FAILURE) {
       ret = SERD_ERR_BAD_SYNTAX;
     } else {
@@ -1224,9 +1218,7 @@ read_object(SerdReader* const  reader,
   if (!ret && emit && simple) {
     ret = emit_statement(reader, *ctx, o);
   } else if (!ret && !emit) {
-    ctx->object   = o;
-    ctx->datatype = datatype;
-    ctx->lang     = lang;
+    ctx->object = o;
     return SERD_SUCCESS;
   }
 
@@ -1589,7 +1581,7 @@ SerdStatus
 read_n3_statement(SerdReader* const reader)
 {
   SerdStatementFlags flags   = 0;
-  ReadContext        ctx     = {0, 0, 0, 0, 0, 0, &flags};
+  ReadContext        ctx     = {0, 0, 0, 0, &flags};
   bool               ate_dot = false;
   int                s_type  = 0;
   SerdStatus         st      = SERD_SUCCESS;
@@ -1682,10 +1674,12 @@ read_turtleTrigDoc(SerdReader* const reader)
         serd_stack_pop_to(&reader->stack, orig_stack_size);
         return st;
       }
+
       skip_until(reader, '\n');
     }
     serd_stack_pop_to(&reader->stack, orig_stack_size);
   }
+
   return SERD_SUCCESS;
 }
 
@@ -1697,7 +1691,7 @@ read_nquadsDoc(SerdReader* const reader)
     const size_t orig_stack_size = reader->stack.size;
 
     SerdStatementFlags flags   = 0;
-    ReadContext        ctx     = {0, 0, 0, 0, 0, 0, &flags};
+    ReadContext        ctx     = {0, 0, 0, 0, &flags};
     bool               ate_dot = false;
     int                s_type  = 0;
     read_ws_star(reader);
@@ -1742,5 +1736,6 @@ read_nquadsDoc(SerdReader* const reader)
 
     serd_stack_pop_to(&reader->stack, orig_stack_size);
   }
+
   return SERD_SUCCESS;
 }
