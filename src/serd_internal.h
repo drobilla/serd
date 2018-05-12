@@ -144,7 +144,7 @@ static inline SerdStack
 serd_stack_new(size_t size)
 {
 	SerdStack stack;
-	stack.buf       = (uint8_t*)malloc(size);
+	stack.buf       = (uint8_t*)calloc(1, size);
 	stack.buf_size  = size;
 	stack.size      = SERD_STACK_BOTTOM;
 	return stack;
