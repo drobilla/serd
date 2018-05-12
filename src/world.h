@@ -25,6 +25,8 @@
 struct SerdWorldImpl {
 	SerdErrorSink error_sink;
 	void*         error_handle;
+	uint32_t      next_blank_id;
+	SerdNode*     blank_node;
 };
 
 FILE* serd_world_fopen(SerdWorld* world, const char* path, const char* mode);

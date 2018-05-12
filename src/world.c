@@ -18,6 +18,7 @@
 
 #include "world.h"
 
+#include "node.h"
 #include "serd_config.h"
 
 #include <errno.h>
@@ -28,6 +29,8 @@
 #if defined(HAVE_POSIX_FADVISE) || defined(HAVE_FILENO)
 #   include <fcntl.h>
 #endif
+
+#define BLANK_CHARS 11
 
 FILE*
 serd_world_fopen(SerdWorld* world, const char* path, const char* mode)
@@ -71,13 +74,28 @@ serd_world_errorf(const SerdWorld* world, SerdStatus st, const char* fmt, ...)
 SerdWorld*
 serd_world_new(void)
 {
-	return (SerdWorld*)calloc(1, sizeof(SerdWorld));
+	SerdWorld* world = (SerdWorld*)calloc(1, sizeof(SerdWorld));
+
+	world->blank_node = serd_node_new_blank("b0000000000");
+
+	return world;
 }
 
 void
 serd_world_free(SerdWorld* world)
 {
+	serd_node_free(world->blank_node);
 	free(world);
+}
+
+const SerdNode*
+serd_world_get_blank(SerdWorld* world)
+{
+	char* buf = serd_node_buffer(world->blank_node);
+	memset(buf, 0, BLANK_CHARS + 1);
+	world->blank_node->n_bytes = snprintf(
+		buf, BLANK_CHARS, "b%u", ++world->next_blank_id);
+	return world->blank_node;
 }
 
 void

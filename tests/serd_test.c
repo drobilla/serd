@@ -176,6 +176,23 @@ test_read_chunks(void)
 	serd_world_free(world);
 }
 
+static int
+test_get_blank(void)
+{
+	SerdWorld* world = serd_world_new();
+	char       expected[8];
+
+	for (unsigned i = 0; i < 32; ++i) {
+		const SerdNode* blank = serd_world_get_blank(world);
+
+		snprintf(expected, sizeof(expected), "b%u", i + 1);
+		assert(!strcmp(serd_node_get_string(blank), expected));
+	}
+
+	serd_world_free(world);
+	return 0;
+}
+
 static void
 test_string_to_double(void)
 {
@@ -742,6 +759,7 @@ main(void)
 	test_blank();
 	test_env();
 	test_read_chunks();
+	test_get_blank();
 
 	const char* const path = "serd_test.ttl";
 	test_writer(path);
