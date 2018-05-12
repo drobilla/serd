@@ -909,6 +909,16 @@ void
 serd_world_free(SerdWorld* SERD_NULLABLE world);
 
 /**
+   Return a unique blank node.
+
+   The returned node is valid only until the next time serd_world_get_blank()
+   is called or the world is destroyed.
+*/
+SERD_API
+const SerdNode* SERD_NONNULL
+serd_world_get_blank(SerdWorld* SERD_NONNULL world);
+
+/**
    Set a function to be called when errors occur.
 
    The `error_func` will be called with `handle` as its first argument.  If
