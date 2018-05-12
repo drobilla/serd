@@ -594,18 +594,27 @@ serd_node_new_relative_uri(const char*     str,
    represent a double and float, respectively.
 
    @param d The value for the new node.
+
    @param frac_digits The maximum number of digits after the decimal place.
+
+   @param datatype Datatype of node, may be NULL in which case the node has
+   type xsd:decimal.
 */
 SERD_API
 SerdNode*
-serd_node_new_decimal(double d, unsigned frac_digits);
+serd_node_new_decimal(double d, unsigned frac_digits, const SerdNode* datatype);
 
 /**
    Create a new node by serialising `i` into an xsd:integer string.
+
+   @param i Integer value to serialise.
+
+   @param datatype Datatype of node, may be NULL in which case the node has
+   type xsd:integer.
 */
 SERD_API
 SerdNode*
-serd_node_new_integer(int64_t i);
+serd_node_new_integer(int64_t i, const SerdNode* datatype);
 
 /**
    Create a node by serialising `buf` into an xsd:base64Binary string.
@@ -613,12 +622,19 @@ serd_node_new_integer(int64_t i);
    binary data, which can be decoded using serd_base64_decode().
 
    @param buf Raw binary input data.
+
    @param size Size of `buf`.
+
    @param wrap_lines Wrap lines at 76 characters to conform to RFC 2045.
+
+   @param datatype Datatype of node, may be NULL in which case the node has
+   type xsd:base64Binary.
 */
 SERD_API
-SerdNode*
-serd_node_new_blob(const void* buf, size_t size, bool wrap_lines);
+SerdNode* serd_node_new_blob(const void*     buf,
+                             size_t          size,
+                             bool            wrap_lines,
+                             const SerdNode* datatype);
 
 /**
    Return the type of a node (SERD_URI, SERD_BLANK, or SERD_LITERAL).

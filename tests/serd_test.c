@@ -34,6 +34,8 @@
 #    define NAN (INFINITY - INFINITY)
 #endif
 
+#define NS_XSD "http://www.w3.org/2001/XMLSchema#"
+
 static void
 test_strtod(double dbl, double max_delta)
 {
@@ -242,13 +244,17 @@ test_double_to_node(void)
 	};
 
 	for (unsigned i = 0; i < sizeof(dbl_test_nums) / sizeof(double); ++i) {
-		SerdNode*   node     = serd_node_new_decimal(dbl_test_nums[i], 8);
+		SerdNode*   node     = serd_node_new_decimal(dbl_test_nums[i], 8, NULL);
 		const char* node_str = serd_node_get_string(node);
 		const bool  pass     = (node_str && dbl_test_strs[i])
 		                          ? !strcmp(node_str, dbl_test_strs[i])
 		                          : (node_str == dbl_test_strs[i]);
 		assert(pass);
-		assert(serd_node_get_length(node) == (node_str ? strlen(node_str) : 0));
+		const size_t len = node_str ? strlen(node_str) : 0;
+		assert(serd_node_get_length(node) == len);
+		assert(!dbl_test_strs[i] ||
+		       !strcmp(serd_node_get_string(serd_node_get_datatype(node)),
+		               NS_XSD "decimal"));
 		serd_node_free(node);
 	}
 }
@@ -265,10 +271,13 @@ test_integer_to_node(void)
 	};
 
 	for (unsigned i = 0; i < sizeof(int_test_nums) / sizeof(double); ++i) {
-		SerdNode*   node     = serd_node_new_integer(int_test_nums[i]);
+		SerdNode*   node     = serd_node_new_integer(int_test_nums[i], NULL);
 		const char* node_str = serd_node_get_string(node);
 		assert(!strcmp(node_str, int_test_strs[i]));
-		assert(serd_node_get_length(node) == strlen(node_str));
+		const size_t len = strlen(node_str);
+		assert(serd_node_get_length(node) == len);
+		assert(!strcmp(serd_node_get_string(serd_node_get_datatype(node)),
+		               NS_XSD "integer"));
 		serd_node_free(node);
 	}
 }
@@ -276,8 +285,8 @@ test_integer_to_node(void)
 static void
 test_blob_to_node(void)
 {
-	assert(!serd_node_new_blob(NULL, 0, true));
-	assert(!serd_node_new_blob("data", 0, true));
+	assert(!serd_node_new_blob(NULL, 0, true, NULL));
+	assert(!serd_node_new_blob("data", 0, true, NULL));
 
 	for (size_t size = 1; size < 256; ++size) {
 		uint8_t* data = (uint8_t*)malloc(size);
@@ -286,7 +295,7 @@ test_blob_to_node(void)
 		}
 
 		size_t      out_size;
-		SerdNode*   blob     = serd_node_new_blob(data, size, size % 5);
+		SerdNode*   blob     = serd_node_new_blob(data, size, size % 5, NULL);
 		const char* blob_str = serd_node_get_string(blob);
 		uint8_t*    out      = (uint8_t*)serd_base64_decode(
 			blob_str, serd_node_get_length(blob), &out_size);
@@ -297,6 +306,9 @@ test_blob_to_node(void)
 		for (size_t i = 0; i < size; ++i) {
 			assert(out[i] == data[i]);
 		}
+
+		assert(!strcmp(serd_node_get_string(serd_node_get_datatype(blob)),
+		               NS_XSD "base64Binary"));
 
 		serd_node_free(blob);
 		serd_free(out);
