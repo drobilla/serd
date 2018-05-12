@@ -801,7 +801,6 @@ read_0_9(SerdReader* const reader, SerdNode* const str, const bool at_least_one)
 static SerdStatus
 read_number(SerdReader* const    reader,
             SerdNode** const     dest,
-            SerdNode** const     datatype,
             SerdNodeFlags* const flags,
             bool* const          ate_dot)
 {
@@ -809,14 +808,13 @@ read_number(SerdReader* const    reader,
 #define XSD_DOUBLE NS_XSD "double"
 #define XSD_INTEGER NS_XSD "integer"
 
-  *dest = push_node(reader, SERD_LITERAL, "", 0);
+  if (!(*dest = push_node(reader, SERD_LITERAL, "", 0))) {
+    return SERD_BAD_STACK;
+  }
 
   SerdStatus st          = SERD_SUCCESS;
   int        c           = peek_byte(reader);
   bool       has_decimal = false;
-  if (!*dest) {
-    return SERD_BAD_STACK;
-  }
 
   if (c == '-' || c == '+') {
     push_byte(reader, *dest, eat_byte_safe(reader, c));
@@ -845,6 +843,9 @@ read_number(SerdReader* const    reader,
       read_0_9(reader, *dest, false);
     }
   }
+
+  SerdNode* meta = NULL;
+
   c = peek_byte(reader);
   if (c == 'e' || c == 'E') {
     // double
@@ -854,20 +855,17 @@ read_number(SerdReader* const    reader,
       push_byte(reader, *dest, eat_byte_safe(reader, c));
     }
     TRY(st, read_0_9(reader, *dest, true));
-    *datatype = push_node(reader, SERD_URI, XSD_DOUBLE, sizeof(XSD_DOUBLE) - 1);
-  } else if (has_decimal) {
-    *datatype =
-      push_node(reader, SERD_URI, XSD_DECIMAL, sizeof(XSD_DECIMAL) - 1);
-  } else {
-    *datatype =
-      push_node(reader, SERD_URI, XSD_INTEGER, sizeof(XSD_INTEGER) - 1);
-  }
-
-  if (*datatype) {
+    meta = push_node(reader, SERD_URI, XSD_DOUBLE, sizeof(XSD_DOUBLE) - 1);
     *flags |= SERD_HAS_DATATYPE;
+  } else if (has_decimal) {
+    meta = push_node(reader, SERD_URI, XSD_DECIMAL, sizeof(XSD_DECIMAL) - 1);
+  } else {
+    meta = push_node(reader, SERD_URI, XSD_INTEGER, sizeof(XSD_INTEGER) - 1);
   }
 
-  return SERD_SUCCESS;
+  (*dest)->meta = meta;
+  *flags |= SERD_HAS_DATATYPE;
+  return meta ? SERD_SUCCESS : SERD_BAD_STACK;
 }
 
 static SerdStatus
@@ -887,8 +885,6 @@ read_iri(SerdReader* const reader, SerdNode** const dest, bool* const ate_dot)
 static SerdStatus
 read_literal(SerdReader* const    reader,
              SerdNode** const     dest,
-             SerdNode** const     datatype,
-             SerdNode** const     lang,
              SerdNodeFlags* const flags,
              bool* const          ate_dot)
 {
@@ -900,13 +896,17 @@ read_literal(SerdReader* const    reader,
     return st;
   }
 
-  const int next = peek_byte(reader);
+  SerdNode* datatype = NULL;
+  SerdNode* lang     = NULL;
+  const int next     = peek_byte(reader);
   if (next == '@') {
     skip_byte(reader, '@');
     *flags |= SERD_HAS_LANGUAGE;
-    if ((st = read_LANGTAG(reader, lang))) {
+    if ((st = read_LANGTAG(reader, &lang))) {
       return r_err(reader, st, "bad literal\n");
     }
+
+    (*dest)->meta = lang;
   } else if (next == '^') {
     skip_byte(reader, '^');
     if (!eat_byte_check(reader, '^')) {
@@ -914,9 +914,11 @@ read_literal(SerdReader* const    reader,
     }
 
     *flags |= SERD_HAS_DATATYPE;
-    if ((st = read_iri(reader, datatype, ate_dot))) {
+    if ((st = read_iri(reader, &datatype, ate_dot))) {
       return r_err(reader, st, "bad datatype\n");
     }
+
+    (*dest)->meta = datatype;
   }
 
   return SERD_SUCCESS;
@@ -1081,12 +1083,10 @@ read_object(SerdReader* const  reader,
 
   SerdStatus st = SERD_FAILURE;
 
-  bool      simple   = (ctx->subject != 0);
-  SerdNode* o        = 0;
-  SerdNode* datatype = 0;
-  SerdNode* lang     = 0;
-  uint32_t  flags    = 0;
-  const int c        = peek_byte(reader);
+  bool      simple = (ctx->subject != 0);
+  SerdNode* o      = 0;
+  uint32_t  flags  = 0;
+  const int c      = peek_byte(reader);
   if (!fancy_syntax(reader)) {
     if (c != '"' && c != ':' && c != '<' && c != '_') {
       return r_err(reader, SERD_BAD_SYNTAX, "expected: ':', '<', or '_'\n");
@@ -1124,11 +1124,11 @@ read_object(SerdReader* const  reader,
   case '7':
   case '8':
   case '9':
-    st = read_number(reader, &o, &datatype, &flags, ate_dot);
+    st = read_number(reader, &o, &flags, ate_dot);
     break;
   case '\"':
   case '\'':
-    st = read_literal(reader, &o, &datatype, &lang, &flags, ate_dot);
+    st = read_literal(reader, &o, &flags, ate_dot);
     break;
   default:
     /* Either a boolean literal, or a qname.  Read the prefix first, and if
@@ -1144,9 +1144,9 @@ read_object(SerdReader* const  reader,
     if ((o->length == 4 && !memcmp(serd_node_string(o), "true", 4)) ||
         (o->length == 5 && !memcmp(serd_node_string(o), "false", 5))) {
       flags    = flags | SERD_HAS_DATATYPE;
-      o->type  = SERD_LITERAL;
       o->flags = flags;
-      datatype = push_node(reader, SERD_URI, XSD_BOOLEAN, XSD_BOOLEAN_LEN);
+      o->type  = SERD_LITERAL;
+      o->meta  = push_node(reader, SERD_URI, XSD_BOOLEAN, XSD_BOOLEAN_LEN);
       st       = SERD_SUCCESS;
     } else if (read_PN_PREFIX_tail(reader, o) > SERD_FAILURE) {
       st = SERD_BAD_SYNTAX;
@@ -1163,22 +1163,10 @@ read_object(SerdReader* const  reader,
   }
 
   if (!st && emit && simple) {
-    ctx->object   = o;
-    ctx->datatype = datatype;
-    ctx->lang     = lang;
-
-    o->flags = flags;
-    if (flags & SERD_HAS_DATATYPE) {
-      o->meta = datatype;
-    } else if (flags & SERD_HAS_LANGUAGE) {
-      o->meta = lang;
-    }
-
-    st = emit_statement(reader, *ctx, o);
+    ctx->object = o;
+    st          = emit_statement(reader, *ctx, o);
   } else if (!st && !emit) {
-    ctx->object   = o;
-    ctx->datatype = datatype;
-    ctx->lang     = lang;
+    ctx->object = o;
     return SERD_SUCCESS;
   }
 
@@ -1544,7 +1532,7 @@ SerdStatus
 read_n3_statement(SerdReader* const reader)
 {
   SerdStatementFlags flags   = 0;
-  ReadContext        ctx     = {0, 0, 0, 0, 0, 0, &flags};
+  ReadContext        ctx     = {0, 0, 0, 0, &flags};
   bool               ate_dot = false;
   int                s_type  = 0;
   SerdStatus         st      = SERD_SUCCESS;
@@ -1659,7 +1647,7 @@ read_nquads_statement(SerdReader* const reader)
 {
   SerdStatus         st      = SERD_SUCCESS;
   SerdStatementFlags flags   = 0;
-  ReadContext        ctx     = {0, 0, 0, 0, 0, 0, &flags};
+  ReadContext        ctx     = {0, 0, 0, 0, &flags};
   bool               ate_dot = false;
   int                s_type  = 0;
 
