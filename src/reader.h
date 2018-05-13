@@ -75,7 +75,7 @@ struct SerdReaderImpl {
 };
 
 SERD_LOG_FUNC(3, 4)
-int r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
+SerdStatus r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
 
 SerdNode* push_node_padded(SerdReader* reader,
                            size_t      maxlen,
@@ -92,9 +92,9 @@ size_t    genid_size(SerdReader* reader);
 SerdNode* blank_id(SerdReader* reader);
 void      set_blank_id(SerdReader* reader, SerdNode* node, size_t buf_size);
 
-bool emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o);
+SerdStatus emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o);
 
-bool read_n3_statement(SerdReader* reader);
+SerdStatus read_n3_statement(SerdReader* reader);
 SerdStatus read_nquadsDoc(SerdReader* reader);
 SerdStatus read_turtleTrigDoc(SerdReader* reader);
 
@@ -132,20 +132,22 @@ eat_byte_check(SerdReader* reader, const int byte)
 {
 	const int c = peek_byte(reader);
 	if (c != byte) {
-		return r_err(reader, SERD_ERR_BAD_SYNTAX,
-		             "expected `%c', not `%c'\n", byte, c);
+		r_err(reader, SERD_ERR_BAD_SYNTAX,
+		      "expected `%c', not `%c'\n", byte, c);
+		return 0;
 	}
 	return eat_byte_safe(reader, byte);
 }
 
-static inline bool
+static inline SerdStatus
 eat_string(SerdReader* reader, const char* str, unsigned n)
 {
-	bool bad = false;
 	for (unsigned i = 0; i < n; ++i) {
-		bad |= (bool)eat_byte_check(reader, ((const uint8_t*)str)[i]);
+		if (!eat_byte_check(reader, ((const uint8_t*)str)[i])) {
+			return SERD_ERR_BAD_SYNTAX;
+		}
 	}
-	return bad;
+	return SERD_SUCCESS;
 }
 
 static inline SerdStatus

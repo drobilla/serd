@@ -33,7 +33,7 @@
 
 static SerdStatus serd_reader_prepare(SerdReader* reader);
 
-int
+SerdStatus
 r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...)
 {
 	va_list args;
@@ -42,7 +42,7 @@ r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...)
 	const SerdError e = { st, cur->filename, cur->line, cur->col, fmt, &args };
 	serd_world_error(reader->world, &e);
 	va_end(args);
-	return 0;
+	return st;
 }
 
 void
@@ -113,11 +113,13 @@ push_node(SerdReader* reader, SerdType type, const char* str, size_t n_bytes)
 	return push_node_padded(reader, n_bytes, type, str, n_bytes);
 }
 
-bool
+SerdStatus
 emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o)
 {
 	SerdNode* graph = ctx.graph;
-	if (!graph && reader->default_graph) {
+	if (!reader->sink->statement) {
+		return SERD_SUCCESS;
+	} else if (!graph && reader->default_graph) {
 		graph = reader->default_graph;
 	}
 
@@ -125,15 +127,14 @@ emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o)
 	   (subject and predicate) were already zeroed by subsequent pushes. */
 	serd_node_zero_pad(o);
 
-	bool ret = !reader->sink->statement ||
-		!reader->sink->statement(
-			reader->sink->handle, *ctx.flags, graph,
-			ctx.subject, ctx.predicate, o);
+	const SerdStatus st = reader->sink->statement(
+		reader->sink->handle, *ctx.flags, graph,
+		ctx.subject, ctx.predicate, o);
 	*ctx.flags &= SERD_ANON_CONT|SERD_LIST_CONT;  // Preserve only cont flags
-	return ret;
+	return st;
 }
 
-static bool
+static SerdStatus
 read_statement(SerdReader* reader)
 {
 	switch (reader->syntax) {
@@ -307,7 +308,7 @@ serd_reader_read_chunk(SerdReader* reader)
 		eat_byte_safe(reader, 0);
 	}
 
-	return st ? st : read_statement(reader) ? SERD_SUCCESS : SERD_FAILURE;
+	return st ? st : read_statement(reader);
 }
 
 SerdStatus

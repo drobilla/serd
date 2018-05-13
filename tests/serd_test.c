@@ -162,11 +162,6 @@ test_read_chunks(void)
 	assert(st == SERD_SUCCESS); // FIXME: return SERD_FAILURE?
 	assert(rt->n_statements == 2);
 
-	// FIXME: Successful read of nothing
-	st = serd_reader_read_chunk(reader);
-	assert(st == SERD_SUCCESS); // FIXME: return SERD_FAILURE?
-	assert(rt->n_statements == 2);
-
 	// EOF
 	st = serd_reader_read_chunk(reader);
 	assert(st == SERD_FAILURE);
