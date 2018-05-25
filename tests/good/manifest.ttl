@@ -21,8 +21,9 @@
 		<#test-bad-utf8>
 		<#test-base-query>
 		<#test-blank-cont>
-		<#test-blankdot>
 		<#test-blank-in-list>
+		<#test-blank-node-statement>
+		<#test-blankdot>
 		<#test-bom>
 		<#test-cr>
 		<#test-delete>
@@ -145,6 +146,12 @@
 	mf:name "test-blank-in-list" ;
 	mf:action <test-blank-in-list.ttl> ;
 	mf:result <test-blank-in-list.nt> .
+
+<#test-blank-node-statement>
+	rdf:type rdft:TestTurtleEval ;
+	mf:name "test-blank-node-statement" ;
+	mf:action <test-blank-node-statement.ttl> ;
+	mf:result <test-blank-node-statement.nt> .
 
 <#test-bom>
 	rdf:type rdft:TestTurtleEval ;

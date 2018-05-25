@@ -1,5 +1,6 @@
 serd (0.29.3) unstable;
 
+  * Fix reported error when reading statements with only a blank node
   * Fix parsing local names that end with escaped dots
   * Add serdi option to write ASCII output
   * Make serdi guess input syntax from extension if unspecified

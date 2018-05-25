@@ -1214,7 +1214,7 @@ read_triples(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 		switch (peek_byte(reader)) {
 		case '.':
 			*ate_dot = eat_byte_safe(reader, '.');
-			return r_err(reader, SERD_ERR_BAD_SYNTAX, "syntax error\n");
+			return false;
 		case '}':
 			return false;
 		}
