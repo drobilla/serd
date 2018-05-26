@@ -24,7 +24,7 @@
 
 typedef struct StaticNode {
   SerdNode node;
-  char     buf[sizeof(NS_XSD "base64Binary")];
+  char     buf[sizeof(NS_XSD "base64Binary") + sizeof(SerdNode)];
 } StaticNode;
 
 #define DEFINE_XSD_NODE(name)                 \
