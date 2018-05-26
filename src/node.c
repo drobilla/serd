@@ -91,6 +91,23 @@ serd_node_maybe_get_meta_c(const SerdNode* const node)
   return (node->flags & meta_mask) ? serd_node_meta_c(node) : NULL;
 }
 
+static void
+serd_node_check_padding(const SerdNode* node)
+{
+  (void)node;
+#ifndef NDEBUG
+  if (node) {
+    const size_t unpadded_size = node->length;
+    const size_t padded_size   = serd_node_pad_size(unpadded_size);
+    for (size_t i = 0; i < padded_size - unpadded_size; ++i) {
+      assert(serd_node_buffer_c(node)[unpadded_size + i] == '\0');
+    }
+
+    serd_node_check_padding(serd_node_maybe_get_meta_c(node));
+  }
+#endif
+}
+
 static SERD_PURE_FUNC
 size_t
 serd_node_total_size(const SerdNode* const node)
@@ -171,6 +188,8 @@ serd_new_token(const SerdNodeType type, const SerdStringView str)
     node->length = length;
   }
 
+  serd_node_check_padding(node);
+
   return node;
 }
 
@@ -184,6 +203,7 @@ serd_new_string(const SerdStringView str)
   memcpy(serd_node_buffer(node), str.buf, str.len);
   node->length = length;
 
+  serd_node_check_padding(node);
   return node;
 }
 
@@ -208,6 +228,7 @@ serd_new_literal(const SerdStringView str,
     lang_node->type     = SERD_LITERAL;
     lang_node->length   = lang.len;
     memcpy(serd_node_buffer(lang_node), lang.buf, lang.len);
+    serd_node_check_padding(lang_node);
 
   } else if (datatype_uri.len) {
     const size_t total_len = len + sizeof(SerdNode) + datatype_uri.len;
@@ -220,6 +241,7 @@ serd_new_literal(const SerdStringView str,
     datatype_node->type     = SERD_URI;
     datatype_node->length   = datatype_uri.len;
     memcpy(serd_node_buffer(datatype_node), datatype_uri.buf, datatype_uri.len);
+    serd_node_check_padding(datatype_node);
 
   } else {
     node = serd_node_malloc(length, flags, SERD_LITERAL);
@@ -227,6 +249,7 @@ serd_new_literal(const SerdStringView str,
     node->length = length;
   }
 
+  serd_node_check_padding(node);
   return node;
 }
 
@@ -250,14 +273,8 @@ serd_node_copy(const SerdNode* node)
   }
 
   const size_t size = serd_node_total_size(node);
-#ifndef NDEBUG
-  const size_t unpadded_size = node->length;
-  const size_t padded_size   = serd_node_pad_size(node->length);
-  for (size_t i = 0; i < padded_size - unpadded_size; ++i) {
-    assert(serd_node_buffer_c(node)[unpadded_size + i] == '\0');
-  }
-#endif
-  SerdNode* copy = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
+  SerdNode*    copy = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
+
   memcpy(copy, node, size);
   return copy;
 }
@@ -308,6 +325,7 @@ serd_new_parsed_uri(const SerdURIView uri)
   serd_node_buffer(node)[actual_len] = '\0';
   node->length                       = actual_len;
 
+  serd_node_check_padding(node);
   return node;
 }
 
@@ -323,6 +341,7 @@ serd_new_from_uri(const SerdURIView uri, const SerdURIView base)
   serd_node_buffer(node)[actual_len] = '\0';
   node->length                       = actual_len;
 
+  serd_node_check_padding(node);
   return node;
 }
 
@@ -337,6 +356,7 @@ serd_new_resolved_uri(const SerdStringView string, const SerdURIView base)
     return NULL;
   }
 
+  serd_node_check_padding(result);
   return result;
 }
 
@@ -419,6 +439,7 @@ serd_new_file_uri(const SerdStringView path, const SerdStringView hostname)
     serd_new_uri(serd_substring((const char*)buffer.buf, buffer.len - 1));
 
   free(buffer.buf);
+  serd_node_check_padding(node);
   return node;
 }
 
@@ -490,6 +511,7 @@ serd_new_decimal(const double          d,
   }
 
   memcpy(serd_node_meta(node), type, type_len);
+  serd_node_check_padding(node);
   return node;
 }
 
@@ -520,6 +542,7 @@ serd_new_integer(const int64_t i, const SerdNode* const datatype)
   } while ((abs_i /= 10) > 0);
 
   memcpy(serd_node_meta(node), type, type_len);
+  serd_node_check_padding(node);
   return node;
 }
 
@@ -548,6 +571,7 @@ serd_new_blob(const void* const     buf,
 
   node->length = len;
   memcpy(serd_node_meta(node), type, type_len);
+  serd_node_check_padding(node);
   return node;
 }
 
