@@ -8,7 +8,6 @@
 #include "serd_internal.h"
 #include "string_utils.h"
 #include "system.h"
-#include "warnings.h"
 
 #include "serd/buffer.h"
 #include "serd/node.h"
@@ -104,6 +103,23 @@ serd_node_maybe_get_meta_c(const SerdNode* const node)
   return (node->flags & meta_mask) ? serd_node_meta_c(node) : NULL;
 }
 
+static void
+serd_node_check_padding(const SerdNode* node)
+{
+  (void)node;
+#ifndef NDEBUG
+  if (node) {
+    const size_t unpadded_size = node->length;
+    const size_t padded_size   = serd_node_pad_size(unpadded_size);
+    for (size_t i = 0; i < padded_size - unpadded_size; ++i) {
+      assert(serd_node_buffer_c(node)[unpadded_size + i] == '\0');
+    }
+
+    serd_node_check_padding(serd_node_maybe_get_meta_c(node));
+  }
+#endif
+}
+
 static ZIX_PURE_FUNC size_t
 serd_node_total_size(const SerdNode* const node)
 {
@@ -192,6 +208,8 @@ serd_new_token(const SerdNodeType type, const ZixStringView str)
     node->length = length;
   }
 
+  serd_node_check_padding(node);
+
   return node;
 }
 
@@ -205,6 +223,7 @@ serd_new_string(const ZixStringView str)
   memcpy(serd_node_buffer(node), str.data, str.length);
   node->length = length;
 
+  serd_node_check_padding(node);
   return node;
 }
 
@@ -230,7 +249,9 @@ serd_new_plain_literal_i(const ZixStringView str,
   lang_node->type     = SERD_LITERAL;
   lang_node->length   = lang.length;
   memcpy(serd_node_buffer(lang_node), lang.data, lang.length);
+  serd_node_check_padding(lang_node);
 
+  serd_node_check_padding(node);
   return node;
 }
 
@@ -276,7 +297,9 @@ serd_new_typed_literal(const ZixStringView str,
   datatype_node->type     = SERD_URI;
   memcpy(
     serd_node_buffer(datatype_node), datatype_uri.data, datatype_uri.length);
+  serd_node_check_padding(datatype_node);
 
+  serd_node_check_padding(node);
   return node;
 }
 
@@ -300,16 +323,8 @@ serd_node_copy(const SerdNode* node)
   }
 
   const size_t size = serd_node_total_size(node);
-#ifndef NDEBUG
-  SERD_DISABLE_NULL_WARNINGS
-  const size_t unpadded_size = node->length;
-  const size_t padded_size   = serd_node_pad_size(node->length);
-  for (size_t i = 0; i < padded_size - unpadded_size; ++i) {
-    assert(serd_node_buffer_c(node)[unpadded_size + i] == '\0');
-  }
-  SERD_RESTORE_WARNINGS
-#endif
-  SerdNode* copy = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
+  SerdNode*    copy = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
+
   memcpy(copy, node, size);
   return copy;
 }
@@ -362,6 +377,7 @@ serd_new_parsed_uri(const SerdURIView uri)
   serd_node_buffer(node)[actual_len] = '\0';
   node->length                       = actual_len;
 
+  serd_node_check_padding(node);
   return node;
 }
 
@@ -377,6 +393,7 @@ serd_new_resolved_uri(const ZixStringView string, const SerdURIView base)
     return NULL;
   }
 
+  serd_node_check_padding(result);
   return result;
 }
 
@@ -469,6 +486,7 @@ serd_new_file_uri(const ZixStringView path, const ZixStringView hostname)
   SerdNode* const   node   = serd_new_string(zix_substring(string, length));
 
   free(buffer.buf);
+  serd_node_check_padding(node);
   return node;
 }
 
@@ -549,6 +567,7 @@ serd_new_decimal(const double d, const unsigned frac_digits)
   }
 
   memcpy(serd_node_meta(node), datatype, datatype_len);
+  serd_node_check_padding(node);
   return node;
 }
 
@@ -580,6 +599,7 @@ serd_new_integer(const int64_t i)
   } while ((abs_i /= 10) > 0);
 
   memcpy(serd_node_meta(node), datatype, datatype_len);
+  serd_node_check_padding(node);
   return node;
 }
 
@@ -608,6 +628,7 @@ serd_new_blob(const void* const buf, const size_t size, const bool wrap_lines)
 
   node->length = len;
   memcpy(serd_node_meta(node), datatype, datatype_len);
+  serd_node_check_padding(node);
   return node;
 }
 
