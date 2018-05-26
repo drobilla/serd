@@ -159,15 +159,14 @@ push_byte(SerdReader* reader, SerdNode* node, const int c)
   assert(c != EOF);
   SERD_STACK_ASSERT_TOP(reader, node);
 
-  char* const s = (char*)serd_stack_push(&reader->stack, 1);
-  if (!s) {
+  if (reader->stack.size + 1 > reader->stack.buf_size) {
     return SERD_ERR_OVERFLOW;
   }
 
-  *(uint8_t*)(s - 1) = (uint8_t)c;
-  *s                 = '\0';
-
+  ((uint8_t*)reader->stack.buf)[reader->stack.size - 1] = (uint8_t)c;
+  ++reader->stack.size;
   ++node->length;
+
   return SERD_SUCCESS;
 }
 
