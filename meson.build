@@ -102,6 +102,7 @@ sources = [
   'src/syntax.c',
   'src/system.c',
   'src/uri.c',
+  'src/validate.c',
   'src/world.c',
   'src/writer.c',
   'src/zix/btree.c',
@@ -142,6 +143,10 @@ exess_dep = dependency('exess-0',
                        version: '>= 0.0.1',
                        fallback: ['exess', 'exess_dep'])
 
+rerex_dep = dependency('rerex-0',
+                       version: '>= 0.0.1',
+                       fallback: ['rerex', 'rerex_dep'])
+
 # Build shared and/or static library/libraries
 libserd = build_target(
   versioned_name,
@@ -149,7 +154,7 @@ libserd = build_target(
   version: meson.project_version(),
   include_directories: include_directories('include', 'src'),
   c_args: c_warnings + library_args,
-  dependencies: [exess_dep, m_dep],
+  dependencies: [exess_dep, m_dep, rerex_dep],
   gnu_symbol_visibility: 'hidden',
   install: true,
   target_type: library_type)

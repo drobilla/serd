@@ -1,0 +1,51 @@
+@prefix eg: <http://example.org/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+eg:index
+	a rdf:Property ;
+	rdfs:label "index" .
+
+eg:name
+	a rdf:Property ;
+	rdfs:label "name" .
+
+eg:ThingWithIndex
+	a rdfs:Class ;
+	rdfs:label "Thing With Index" ;
+	rdfs:subClassOf [
+		a owl:Restriction ;
+		owl:onProperty eg:index ;
+		owl:minCardinality 1
+	] .
+
+eg:ThingWithName
+	a rdfs:Class ;
+	rdfs:label "Thing With Name" ;
+	rdfs:subClassOf [
+		a owl:Restriction ;
+		owl:onProperty eg:name ;
+		owl:minCardinality 1
+	] .
+
+eg:something
+	a rdf:Property ;
+	rdfs:label "something" ;
+	rdfs:range [
+		owl:unionOf (
+			eg:ThingWithIndex
+			eg:ThingWithName
+		)
+	] .
+
+eg:s1
+	eg:something [
+		eg:index 42
+	] .
+
+eg:s2
+	eg:something [
+		eg:name "ess"
+	] .

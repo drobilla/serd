@@ -64,6 +64,8 @@ serd_strerror(const SerdStatus status)
     return "Invalid call";
   case SERD_ERR_BAD_URI:
     return "Invalid or unresolved URI";
+  case SERD_ERR_INVALID:
+    return "Invalid data";
   }
 
   return "Unknown error";

@@ -18,6 +18,9 @@ IndentCaseLabels: false
 IndentPPDirectives: AfterHash
 KeepEmptyLinesAtTheStartOfBlocks: false
 SpacesInContainerLiterals: false
+ForEachMacros:
+  - SERD_FOREACH
+  - SERD_FOREACH_NODE
 StatementMacros:
   - SERD_ALLOCATED
   - SERD_API

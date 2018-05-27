@@ -1,7 +1,25 @@
 @prefix doap: <http://usefulinc.com/ns/doap#> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix serd: <http://drobilla.net/ns/serd#> .
+@prefix checks: <http://drobilla.net/ns/serd/checks#> .
+
+<http://www.w3.org/TR/n-quads/>
+	a doap:Specification ;
+	rdfs:label "NQuads" .
+
+<http://www.w3.org/TR/n-triples/>
+	a doap:Specification ;
+	rdfs:label "NTriples" .
+
+<http://www.w3.org/TR/trig/>
+	a doap:Specification ;
+	rdfs:label "TriG" .
+
+<http://www.w3.org/TR/turtle/>
+	a doap:Specification ;
+	rdfs:label "Turtle" .
 
 <http://drobilla.net/drobilla#me>
 	a foaf:Person ;
@@ -30,3 +48,133 @@
 		a doap:GitBranch ;
 		doap:location <http://gitlab.com/drobilla/serd.git>
 	] .
+
+serd:ValidatorCheck
+	a rdfs:Class ;
+	rdfs:label "Validator Check" ;
+	rdfs:comment "A serd validator check" .
+
+checks:allValuesFrom
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that all properties with owl:allValuesFrom restrictions have valid value types." .
+
+checks:anyUri
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that the value of any property with range xsd:anyURI is a URI." .
+
+checks:cardinalityEqual
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that any instance of a class with a owl:cardinality property restriction has exactly that many values of that property." .
+
+checks:cardinalityMax
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that any instance of a class with a owl:maxCardinality property restriction has no more than that many values of that property." .
+
+checks:cardinalityMin
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that any instance of a class with a owl:minCardinality property restriction has at least that many values of that property." .
+
+checks:classLabel
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that every rdfs:Class has an rdfs:label." .
+
+checks:classCycle
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that no class is a sub-class of itself, recursively.  This ensures that the graph is acyclic with respect to rdfs:subClassOf." .
+
+checks:datatypeProperty
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that datatype properties have literal (not instance) values." .
+
+checks:datatypeType
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that every datatype is defined as a rdfs:Datatype." .
+
+checks:deprecatedClass
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that there are no instances of deprecated classes." .
+
+checks:deprecatedProperty
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that there are no uses of deprecated properties." .
+
+checks:functionalProperty
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that no instance has several values of a functional property." .
+
+checks:instanceLiteral
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that there are no instances where a literal is expected." .
+
+checks:instanceType
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that every instance with an explicit type matches that type.  This is a broad check that triggers other type-related checks, but mainly it will check that every instance of a class conforms to any restrictions on that class." .
+
+checks:inverseFunctionalProperty
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that at most one instance has a given value of an inverse functional property." .
+
+checks:literalInstance
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that there are no literals where an instance is expected." .
+
+checks:literalMaxExclusive
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that literal values are not greater than or equal to any applicable xsd:maxExclusive datatype restrictions." .
+
+checks:literalMaxInclusive
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that literal values are not greater than any applicable xsd:maxInclusive datatype restrictions." .
+
+checks:literalMinExclusive
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that literal values are not less than or equal to any applicable xsd:minExclusive datatype restrictions." .
+
+checks:literalMinInclusive
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that literal values are not less than any applicable xsd:minInclusive datatype restrictions." .
+
+checks:literalPattern
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that literals with xsd:pattern restrictions match the regular expression pattern for their datatype." .
+
+checks:literalRestriction
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that literals with supported restrictions conform to those restrictions.  This is a high-level check that triggers the more specific individual literal restriction checks." .
+
+checks:literalValue
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that literals with supported XSD datatypes are valid.  The set of supported types is the same as when writing canonical forms." .
+
+checks:objectProperty
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that object properties have instance (not literal) values." .
+
+checks:plainLiteralDatatype
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that there are no typed literals where a plain literal is expected.  A plain literal may have an optional language tag, but not a datatype." .
+
+checks:predicateType
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that every predicate is defined as an rdf:Property." .
+
+checks:propertyCycle
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that no property is a sub-property of itself, recursively.  This ensures that the graph is acyclic with respect to rdfs:subPropertyOf." .
+
+checks:propertyDomain
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that any instance with a property with an rdfs:domain is in that domain." .
+
+checks:propertyLabel
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that every rdf:Property has an rdfs:label." .
+
+checks:propertyRange
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that the value for any property with an rdfs:range is in that range." .
+
+checks:someValuesFrom
+	a serd:ValidatorCheck ;
+	rdfs:comment "Checks that instances of classes with owl:someValuesFrom property restrictions have at least one matching property value." .
+

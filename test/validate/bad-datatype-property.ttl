@@ -1,0 +1,19 @@
+@prefix eg: <http://example.org/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+eg:name
+	a owl:DatatypeProperty ;
+	rdfs:label "name" .
+
+eg:Thing
+	a rdfs:Class ;
+	rdfs:label "Thing" .
+
+eg:s1
+	a eg:Thing .
+
+eg:s2
+	eg:name eg:s1 .
+

@@ -1,6 +1,7 @@
 autoship = find_program('autoship', required: false)
 
 run_test_suite = find_program('run_test_suite.py')
+run_validation_test_suite = find_program('run_validation_test_suite.py')
 
 wrapper = meson.get_cross_property('exe_wrapper', '')
 
@@ -66,6 +67,8 @@ if get_option('utils')
     ['/no/such/file'],
     ['ftp://example.org/unsupported.ttl'],
     ['-I'],
+    ['-V'],
+    ['-X'],
     ['-c'],
     ['-i', 'unknown'],
     ['-i', 'turtle'],
@@ -188,6 +191,8 @@ if get_option('utils')
          timeout: 240)
   endforeach
 
+  manifest = files('terse' / 'manifest.ttl')
+  base_uri = serd_base + 'terse' + '/'
   test('terse', run_test_suite,
        args: script_args + ['--osyntax', 'turtle', manifest, base_uri, '--', '-t'],
        suite: ['rdf', 'serd'],
@@ -205,6 +210,21 @@ if get_option('utils')
   base_uri = serd_base + 'lax/'
   test('lax', run_test_suite,
        args: script_args + [manifest, base_uri, '--', '-l'],
+       suite: ['rdf', 'serd'],
+       timeout: 240)
+
+  # Validation test suite
+  manifest = files('validate' / 'manifest.ttl')
+  base_uri = serd_base + 'validate' + '/'
+  test('validate', run_validation_test_suite,
+       args: script_args + [
+         manifest,
+         base_uri,
+         meson.current_source_dir() / '../schemas/owl.ttl',
+         meson.current_source_dir() / '../schemas/rdf.ttl',
+         meson.current_source_dir() / '../schemas/rdfs.ttl',
+         meson.current_source_dir() / '../schemas/xsd.ttl',
+       ],
        suite: ['rdf', 'serd'],
        timeout: 240)
 
