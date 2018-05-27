@@ -124,9 +124,11 @@ def main():
     parser.add_argument(
         "--pipe", default="tools/serd-pipe", help="serd-pipe executable"
     )
+
     parser.add_argument(
         "--filter", default="tools/serd-filter", help="serd-filter executable"
     )
+
     parser.add_argument("--wrapper", default="", help="executable wrapper")
     parser.add_argument("manifest", help="test suite manifest.ttl file")
     parser.add_argument("base_uri", help="base URI for tests")

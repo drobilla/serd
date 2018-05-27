@@ -173,6 +173,7 @@ pages:
     - mv build/doc/serd-filter.html public/man/serd-filter.html
     - mv build/doc/serd-pipe.html public/man/serd-pipe.html
     - mv build/doc/serd-sort.html public/man/serd-sort.html
+    - mv build/doc/serd-validate.html public/man/serd-validate.html
     - mv build/doc/mandoc.css public/man/mandoc.css
   dependencies:
     - x64_dbg
