@@ -713,6 +713,9 @@ serd_env_qualify(const SerdEnv*  env,
 
 /**
    Expand `curie`.
+
+   Errors: SERD_ERR_BAD_ARG if `curie` is not valid, or SERD_ERR_BAD_CURIE if
+   prefix is not defined in `env`.
 */
 SERD_API
 SerdStatus
@@ -723,6 +726,8 @@ serd_env_expand(const SerdEnv*  env,
 
 /**
    Expand `node`, which must be a CURIE or URI, to a full URI.
+
+   Returns null if `node` can not be expanded.
 */
 SERD_API
 SerdNode

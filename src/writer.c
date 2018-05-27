@@ -525,14 +525,14 @@ write_curie(SerdWriter* const        writer,
             const Field              field,
             const SerdStatementFlags flags)
 {
-	SerdChunk prefix;
-	SerdChunk suffix;
+	SerdChunk  prefix;
+	SerdChunk  suffix;
+	SerdStatus st;
 	switch (writer->syntax) {
 	case SERD_NTRIPLES:
 	case SERD_NQUADS:
-		if (serd_env_expand(writer->env, node, &prefix, &suffix)) {
-			w_err(writer, SERD_ERR_BAD_CURIE,
-			      "undefined namespace prefix `%s'\n", node->buf);
+		if ((st = serd_env_expand(writer->env, node, &prefix, &suffix))) {
+			w_err(writer, st, "undefined namespace prefix `%s'\n", node->buf);
 			return false;
 		}
 		write_sep(writer, SEP_URI_BEGIN);

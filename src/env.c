@@ -215,8 +215,8 @@ serd_env_expand(const SerdEnv*  env,
 {
 	const uint8_t* const colon = (const uint8_t*)memchr(
 		curie->buf, ':', curie->n_bytes + 1);
-	if (!colon) {
-		return SERD_ERR_BAD_ARG;  // Invalid CURIE
+	if (curie->type != SERD_CURIE || !colon) {
+		return SERD_ERR_BAD_ARG;
 	}
 
 	const size_t            name_len = colon - curie->buf;
@@ -228,7 +228,7 @@ serd_env_expand(const SerdEnv*  env,
 		uri_suffix->len = curie->n_bytes - (colon - curie->buf) - 1;
 		return SERD_SUCCESS;
 	}
-	return SERD_ERR_NOT_FOUND;
+	return SERD_ERR_BAD_CURIE;
 }
 
 SERD_API
