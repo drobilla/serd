@@ -119,7 +119,7 @@ typedef enum {
 	SERD_NQUADS = 3,
 
 	/**
-	   TRiG - Terse RDF quads (UTF-8).
+	   TriG - Terse RDF quads (UTF-8).
 	   @see <a href="https://www.w3.org/TR/trig/">Trig</a>
 	*/
 	SERD_TRIG = 4
