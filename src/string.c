@@ -44,6 +44,7 @@ serd_strerror(SerdStatus status)
 	case SERD_ERR_BAD_CURIE:  return "Invalid CURIE";
 	case SERD_ERR_INTERNAL:   return "Internal error";
 	case SERD_ERR_OVERFLOW:   return "Stack overflow";
+	case SERD_ERR_INVALID:    return "Invalid data";
 	}
 	return "Unknown error";  // never reached
 }
