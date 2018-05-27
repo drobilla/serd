@@ -1,0 +1,204 @@
+.Dd August 10, 2021
+.Dt SERD-VALIDATE 1
+.Os Serd 0.30.11
+.Sh NAME
+.Nm serd-validate
+.Nd validate RDF data
+.Sh SYNOPSIS
+.Nm serd-validate
+.Op Fl hV
+.Op Fl B Ar base
+.Op Fl I Ar syntax
+.Op Fl W Ar checks
+.Op Fl X Ar checks
+.Op Fl k Ar bytes
+.Ar input ...
+.Sh DESCRIPTION
+.Nm
+validates RDF data against one or more RDFS or OWL schemas.
+Unlike other serd tools,
+.Nm
+does not write any data,
+it only prints messages and returns a status that indicates whether the data is valid.
+.Pp
+The options are as follows:
+.Pp
+.Bl -tag -compact -width 3n
+.It Fl B Ar base
+Base URI or path.
+See
+.Xr serd-pipe 1
+for details.
+.Pp
+.It Fl I Ar syntax
+Input syntax or option:
+.Dq NQuads ,
+.Dq NTriples ,
+.Dq TriG ,
+.Dq Turtle ,
+.Dq lax ,
+.Dq variables ,
+.Dq relative ,
+or
+.Dq labels .
+See
+.Xr serd-pipe 1
+for details.
+.Pp
+.It Fl W Ar checks
+Warn about any issues found by the given
+.Ar checks ,
+which is a regular expression that matches a set of check names to enable,
+or the special value
+.Dq all
+which enables all checks.
+See
+.Sx CHECKS
+below for a detailed list of all checks.
+.Pp
+.It Fl X Ar checks
+Exclude
+.Ar checks
+from the set of checks enabled by a previous
+.Fl W
+option.
+This is typically used after
+.Fl W Li all
+to suppress a few specific checks.
+.Pp
+.It Fl V
+Display version information and exit.
+.Pp
+.It Fl h
+Print the command line options.
+.Pp
+.It Fl k Ar bytes
+Parser stack size.
+See
+.Xr serd-pipe 1
+for details.
+.El
+.Sh CHECKS
+.Bl -tag -compact -width 3n
+.It Va allValuesFrom
+Checks that all properties with owl:allValuesFrom restrictions have valid value types.
+.It Va cardinalityEqual
+Checks that any instance of a class with a owl:cardinality property restriction has exactly that many values of that property.
+.It Va cardinalityMax
+Checks that any instance of a class with a owl:maxCardinality property restriction has no more than that many values of that property.
+.It Va cardinalityMin
+Checks that any instance of a class with a owl:minCardinality property restriction has at least that many values of that property.
+.It Va classLabel
+Checks that every rdfs:Class has an rdfs:label.
+.It Va datatypeProperty
+Checks that datatype properties have literal (not instance) values.
+.It Va datatypeType
+Checks that every datatype is defined as a rdfs:Datatype.
+.It Va deprecatedClass
+Checks that there are no instances of deprecated classes.
+.It Va deprecatedProperty
+Checks that there are no uses of deprecated properties.
+.It Va functionalProperty
+Checks that no instance has several values of a functional property.
+.It Va instanceLiteral
+Checks that there are no instances where a literal is expected.
+.It Va instanceType
+Checks that every instance with an explicit type matches that type.
+This is a broad check that triggers other type-related checks, but mainly it will check that every instance of a class conforms to any restrictions on that class.
+.It Va inverseFunctionalProperty
+Checks that at most one instance has a given value of an inverse functional property.
+.It Va literalInstance
+Checks that there are no literals where an instance is expected.
+.It Va literalMaxExclusive
+Checks that literal values are not greater than or equal to any applicable xsd:maxExclusive datatype restrictions.
+.It Va literalMaxInclusive
+Checks that literal values are not greater than any applicable xsd:maxInclusive datatype restrictions.
+.It Va literalMinExclusive
+Checks that literal values are not less than or equal to any applicable xsd:minExclusive datatype restrictions.
+.It Va literalMinInclusive
+Checks that literal values are not less than any applicable xsd:minInclusive datatype restrictions.
+.It Va literalPattern
+Checks that literals with xsd:pattern restrictions match the regular expression pattern for their datatype.
+.It Va literalRestriction
+Checks that literals with supported restrictions conform to those restrictions.
+This is a high-level check that triggers the more specific individual literal restriction checks.
+.It Va literalValue
+Checks that literals with supported XSD datatypes are valid.
+The set of supported types is the same as when writing canonical forms.
+.It Va objectProperty
+Checks that object properties have instance (not literal) values.
+.It Va plainLiteralDatatype
+Checks that there are no typed literals where a plain literal is expected.
+A plain literal may have an optional language tag, but not a datatype.
+.It Va predicateType
+Checks that every predicate is defined as an rdf:Property.
+.It Va propertyDomain
+Checks that any instance with a property with an rdfs:domain is in that domain.
+.It Va propertyLabel
+Checks that every rdf:Property has an rdfs:label.
+.It Va propertyRange
+Checks that the value for any property with an rdfs:range is in that range.
+.It Va someValuesFrom
+Checks that instances of classes with owl:someValuesFrom property restrictions have at least one matching property value.
+.It Va subclassCycle
+Checks that no class is a sub-class of itself, recursively.
+This ensures that the graph is acyclic with respect to rdfs:subClassOf.
+.It Va subpropertyCycle
+Checks that no property is a sub-property of itself, recursively.
+This ensures that the graph is acyclic with respect to rdfs:subPropertyOf.
+.El
+.Sh EXIT STATUS
+.Nm
+exits with a status of 0 on success,
+17 if the data is invalid,
+or another non-zero status if an error occured.
+.Sh EXAMPLES
+To run all checks on a file:
+.Pp
+.Dl $ serd-validate -W all input.ttl
+.Pp
+To run only the
+.Li classLabel
+check on a file:
+.Pp
+.Dl $ serd-validate -W classLabel input.ttl
+.Pp
+To run all checks
+.Em except
+.Li classLabel
+on a file:
+.Pp
+.Dl $ serd-validate -W all -X classLabel input.ttl
+.Sh SEE ALSO
+.Bl -item -compact
+.It
+.Xr serd-pipe 1
+.It
+.Xr serd-filter 1
+.It
+.Xr serd-sort 1
+.It
+.Lk http://drobilla.net/software/serd/
+.El
+.Sh STANDARDS
+.Bl -item
+.It
+.Rs
+.%A W3C
+.%T OWL 2 Web Ontology Language
+.%D December 2012
+.Re
+.Lk https://www.w3.org/TR/owl2-syntax/
+.It
+.Rs
+.%A W3C
+.%D February 2014
+.%T RDF Schema 1.1
+.Re
+.Lk https://www.w3.org/TR/rdf-schema/
+.El
+.Sh AUTHORS
+.Nm
+is a part of serd, by
+.An David Robillard
+.Mt d@drobilla.net .

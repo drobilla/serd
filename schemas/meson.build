@@ -1,0 +1,12 @@
+install_data(
+  files(
+    'dc.ttl',
+    'dcterms.ttl',
+    'manifest.ttl',
+    'mf.ttl',
+    'owl.ttl',
+    'rdf.ttl',
+    'rdfs.ttl',
+    'xsd.ttl',
+  )
+)

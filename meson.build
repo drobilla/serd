@@ -116,6 +116,7 @@ sources = [
   'src/syntax.c',
   'src/system.c',
   'src/uri.c',
+  'src/validate.c',
   'src/world.c',
   'src/writer.c',
 ]
@@ -167,6 +168,10 @@ exess_dep = dependency('exess-0',
                        version: '>= 0.0.1',
                        fallback: ['exess', 'exess_dep'])
 
+rerex_dep = dependency('rerex-0',
+                       version: '>= 0.0.1',
+                       fallback: ['rerex', 'rerex_dep'])
+
 # Build shared and/or static library/libraries
 libserd = build_target(
   library_name,
@@ -174,7 +179,7 @@ libserd = build_target(
   version: meson.project_version(),
   include_directories: include_directories('include', 'src'),
   c_args: c_warnings + library_args,
-  dependencies: [exess_dep, m_dep, zix_dep],
+  dependencies: [exess_dep, m_dep, rerex_dep, zix_dep],
   gnu_symbol_visibility: 'hidden',
   install: true,
   target_type: library_type)
@@ -199,6 +204,7 @@ if get_option('tools')
     install_man('doc/serd-filter.1')
     install_man('doc/serd-pipe.1')
     install_man('doc/serd-sort.1')
+    install_man('doc/serd-validate.1')
   endif
 endif
 
@@ -212,6 +218,8 @@ endif
 if get_option('tests')
   subdir('test')
 endif
+
+subdir('schemas')
 
 if not meson.is_subproject() and meson.version().version_compare('>=0.53.0')
   summary('Tests', get_option('tests'), bool_yn: true)

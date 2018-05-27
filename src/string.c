@@ -75,6 +75,8 @@ serd_strerror(const SerdStatus status)
     return "Invalid or unresolved URI";
   case SERD_BAD_WRITE:
     return "Error writing to file";
+  case SERD_BAD_DATA:
+    return "Invalid data";
   }
 
   return "Unknown error";

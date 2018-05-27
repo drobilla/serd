@@ -78,6 +78,13 @@ terminal_supports_color(FILE* const stream)
 
 #if USE_FILENO && USE_ISATTY
   // Assume support if TERM contains "color" (doing this properly is hard...)
+  /* const char* const term = getenv("TERM"); */
+  /* if (term) { */
+  /*   fprintf(stderr, "TERM: %s\n", term); */
+  /*   fprintf(stderr, "ISATTY: %d\n", isatty(fileno(stream))); */
+  /* } */
+  // Assume support if TERM contains "color" (doing this properly is hard...)
+  /* return isatty(fileno(stream)); */
   return isatty(fileno(stream));
 
 #else
@@ -184,6 +191,13 @@ serd_world_vlogf(const SerdWorld* const    world,
 
     // Using a copy isn't necessary here, but it avoids a clang-tidy bug
     vfprintf(stderr, fmt, ap);
+
+    // Print clang-tidy-style check suffix
+    const char* const check = serd_log_entry_get_field(&e, "SERD_CHECK");
+    if (check) {
+      fprintf(stderr, " [%s]", check);
+    }
+
     fprintf(stderr, "\n");
   }
 
