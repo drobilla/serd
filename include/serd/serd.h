@@ -73,14 +73,6 @@ extern "C" {
    @{
 */
 
-/// RDF syntax type
-typedef enum {
-  SERD_TURTLE   = 1, ///< Terse triples http://www.w3.org/TR/turtle
-  SERD_NTRIPLES = 2, ///< Line-based triples http://www.w3.org/TR/n-triples/
-  SERD_NQUADS   = 3, ///< Line-based quads http://www.w3.org/TR/n-quads/
-  SERD_TRIG     = 4  ///< Terse quads http://www.w3.org/TR/trig/
-} SerdSyntax;
-
 /// Flags indicating certain string properties relevant to serialisation
 typedef enum {
   SERD_HAS_NEWLINE  = 1u << 0u, ///< Contains line breaks ('\\n' or '\\r')
@@ -306,6 +298,49 @@ typedef size_t (*SerdWriteFunc)(const void* SERD_NONNULL buf,
                                 size_t                   size,
                                 size_t                   nmemb,
                                 void* SERD_NONNULL       stream);
+
+/**
+   @}
+   @defgroup serd_syntax Syntax Utilities
+   @{
+*/
+
+/// Syntax supported by serd
+typedef enum {
+  SERD_TURTLE   = 1, ///< Terse triples http://www.w3.org/TR/turtle
+  SERD_NTRIPLES = 2, ///< Line-based triples http://www.w3.org/TR/n-triples/
+  SERD_NQUADS   = 3, ///< Line-based quads http://www.w3.org/TR/n-quads/
+  SERD_TRIG     = 4  ///< Terse quads http://www.w3.org/TR/trig/
+} SerdSyntax;
+
+/**
+   Get a syntax by name.
+
+   Case-insensitive, supports "Turtle", "NTriples", "NQuads", and "TriG".  Zero
+   is returned if the name is not recognized.
+*/
+SERD_PURE_API
+SerdSyntax
+serd_syntax_by_name(const char* SERD_NONNULL name);
+
+/**
+   Guess a syntax from a filename.
+
+   This uses the file extension to guess the syntax of a file.  Zero is
+   returned if the extension is not recognized.
+*/
+SERD_PURE_API
+SerdSyntax
+serd_guess_syntax(const char* SERD_NONNULL filename);
+
+/**
+   Return whether a syntax can represent multiple graphs.
+
+   @return True for #SERD_NQUADS and #SERD_TRIG, false otherwise.
+*/
+SERD_CONST_API
+bool
+serd_syntax_has_graphs(SerdSyntax syntax);
 
 /**
    @}
