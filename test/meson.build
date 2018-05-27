@@ -124,6 +124,7 @@ unit_tests = [
   'reader',
   'reader_writer',
   'string',
+  'syntax',
   'uri',
   'writer',
 ]

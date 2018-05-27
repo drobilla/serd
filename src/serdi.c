@@ -2,9 +2,7 @@
 // SPDX-License-Identifier: ISC
 
 #include "serd_config.h"
-#include "string_utils.h"
 
-#include "serd/attributes.h"
 #include "serd/env.h"
 #include "serd/error.h"
 #include "serd/node.h"
@@ -36,46 +34,6 @@
 
 #define SERDI_ERROR(msg) fprintf(stderr, "serdi: " msg)
 #define SERDI_ERRORF(fmt, ...) fprintf(stderr, "serdi: " fmt, __VA_ARGS__)
-
-typedef struct {
-  SerdSyntax  syntax;
-  const char* name;
-  const char* extension;
-} Syntax;
-
-static const Syntax syntaxes[] = {{SERD_TURTLE, "turtle", ".ttl"},
-                                  {SERD_NTRIPLES, "ntriples", ".nt"},
-                                  {SERD_NQUADS, "nquads", ".nq"},
-                                  {SERD_TRIG, "trig", ".trig"},
-                                  {(SerdSyntax)0, NULL, NULL}};
-
-static SerdSyntax
-get_syntax(const char* const name)
-{
-  for (const Syntax* s = syntaxes; s->name; ++s) {
-    if (!serd_strcasecmp(s->name, name)) {
-      return s->syntax;
-    }
-  }
-
-  SERDI_ERRORF("unknown syntax '%s'\n", name);
-  return (SerdSyntax)0;
-}
-
-static SERD_PURE_FUNC SerdSyntax
-guess_syntax(const char* const filename)
-{
-  const char* ext = strrchr(filename, '.');
-  if (ext) {
-    for (const Syntax* s = syntaxes; s->name; ++s) {
-      if (!serd_strcasecmp(s->extension, ext)) {
-        return s->syntax;
-      }
-    }
-  }
-
-  return (SerdSyntax)0;
-}
 
 static int
 print_version(void)
@@ -258,7 +216,7 @@ main(int argc, char** argv)
           return missing_arg(prog, 'i');
         }
 
-        if (!(input_syntax = get_syntax(argv[a]))) {
+        if (!(input_syntax = serd_syntax_by_name(argv[a]))) {
           return print_usage(prog, true);
         }
         break;
@@ -267,7 +225,7 @@ main(int argc, char** argv)
           return missing_arg(prog, 'o');
         }
 
-        if (!(output_syntax = get_syntax(argv[a]))) {
+        if (!(output_syntax = serd_syntax_by_name(argv[a]))) {
           return print_usage(prog, true);
         }
         break;
@@ -317,15 +275,13 @@ main(int argc, char** argv)
     }
   }
 
-  if (!input_syntax && !(input_syntax = guess_syntax(in_name))) {
+  if (!input_syntax && !(input_syntax = serd_guess_syntax(in_name))) {
     input_syntax = SERD_TRIG;
   }
 
+  const bool input_has_graphs = serd_syntax_has_graphs(input_syntax);
   if (!output_syntax) {
-    output_syntax =
-      ((input_syntax == SERD_TURTLE || input_syntax == SERD_NTRIPLES)
-         ? SERD_NTRIPLES
-         : SERD_NQUADS);
+    output_syntax = input_has_graphs ? SERD_NQUADS : SERD_NTRIPLES;
   }
 
   const SerdWriterFlags writer_flags = choose_style(
