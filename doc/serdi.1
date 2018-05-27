@@ -8,6 +8,8 @@
 .Nm serdi
 .Op Fl abefhlmqtvx
 .Op Fl I Ar base
+.Op Fl V Ar checks
+.Op Fl X Ar checks
 .Op Fl c Ar prefix
 .Op Fl i Ar syntax
 .Op Fl k Ar bytes
@@ -42,6 +44,29 @@ When the input is a file,
 the URI of the file is automatically used as the base URI.
 This option can be used to override that,
 or to provide a base URI for input from stdin or a string.
+.Pp
+.It Fl V Ar checks
+Validate data with the given
+.Ar checks ,
+which is a regular expression that matches a set of check names to enable,
+or the special value
+.Dq all
+which enables all checks.
+See
+.Sx VALIDATION
+below for a detailed list of all checks.
+Validation requires a model, so this option implicitly enables
+.Fl m .
+.Pp
+.It Fl X Ar checks
+Exclude
+.Ar checks
+from the set of checks enabled by a previous
+.Fl V
+option.
+This is typically after
+.Fl V Ar all
+to suppress a few specific checks.
 .Pp
 .It Fl a
 Write ASCII output.
@@ -156,6 +181,75 @@ Variables can be written in SPARQL style, for example
 .Dq ?var
 or
 .Dq $var .
+.El
+.Sh VALIDATION
+.Bl -tag -compact -width 3n
+.It Va allValuesFrom
+Checks that all properties with owl:allValuesFrom restrictions have valid value types.
+.It Va cardinalityEqual
+Checks that any instance of a class with a owl:cardinality property restriction has exactly that many values of that property.
+.It Va cardinalityMax
+Checks that any instance of a class with a owl:maxCardinality property restriction has no more than that many values of that property.
+.It Va cardinalityMin
+Checks that any instance of a class with a owl:minCardinality property restriction has at least that many values of that property.
+.It Va classLabel
+Checks that every rdfs:Class has an rdfs:label.
+.It Va datatypeProperty
+Checks that datatype properties have literal (not instance) values.
+.It Va datatypeType
+Checks that every datatype is defined as a rdfs:Datatype.
+.It Va deprecatedClass
+Checks that there are no instances of deprecated classes.
+.It Va deprecatedProperty
+Checks that there are no uses of deprecated properties.
+.It Va functionalProperty
+Checks that no instance has several values of a functional property.
+.It Va instanceLiteral
+Checks that there are no instances where a literal is expected.
+.It Va instanceType
+Checks that every instance with an explicit type matches that type.
+This is a broad check that triggers other type-related checks, but mainly it will check that every instance of a class conforms to any restrictions on that class.
+.It Va inverseFunctionalProperty
+Checks that at most one instance has a given value of an inverse functional property.
+.It Va literalInstance
+Checks that there are no literals where an instance is expected.
+.It Va literalMaxExclusive
+Checks that literal values are not greater than or equal to any applicable xsd:maxExclusive datatype restrictions.
+.It Va literalMaxInclusive
+Checks that literal values are not greater than any applicable xsd:maxInclusive datatype restrictions.
+.It Va literalMinExclusive
+Checks that literal values are not less than or equal to any applicable xsd:minExclusive datatype restrictions.
+.It Va literalMinInclusive
+Checks that literal values are not less than any applicable xsd:minInclusive datatype restrictions.
+.It Va literalPattern
+Checks that literals with xsd:pattern restrictions match the regular expression pattern for their datatype.
+.It Va literalRestriction
+Checks that literals with supported restrictions conform to those restrictions.
+This is a high-level check that triggers the more specific individual literal restriction checks.
+.It Va literalValue
+Checks that literals with supported XSD datatypes are valid.
+The set of supported types is the same as when writing canonical forms.
+.It Va objectProperty
+Checks that object properties have instance (not literal) values.
+.It Va plainLiteralDatatype
+Checks that there are no typed literals where a plain literal is expected.
+A plain literal may have an optional language tag, but not a datatype.
+.It Va predicateType
+Checks that every predicate is defined as an rdf:Property.
+.It Va propertyDomain
+Checks that any instance with a property with an rdfs:domain is in that domain.
+.It Va propertyLabel
+Checks that every rdf:Property has an rdfs:label.
+.It Va propertyRange
+Checks that the value for any property with an rdfs:range is in that range.
+.It Va someValuesFrom
+Checks that instances of classes with owl:someValuesFrom property restrictions have at least one matching property value.
+.It Va subclassCycle
+Checks that no class is a sub-class of itself, recursively.
+This ensures that the graph is acyclic with respect to rdfs:subClassOf.
+.It Va subpropertyCycle
+Checks that no property is a sub-property of itself, recursively.
+This ensures that the graph is acyclic with respect to rdfs:subPropertyOf.
 .El
 .Sh EXIT STATUS
 .Nm

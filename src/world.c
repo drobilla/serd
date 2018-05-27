@@ -175,6 +175,13 @@ serd_world_vlogf(const SerdWorld* const    world,
 
     // Using a copy isn't necessary here, but it avoids a clang-tidy bug
     vfprintf(stderr, fmt, ap);
+
+    // Print clang-tidy-style check suffix
+    const char* const check = serd_log_entry_get_field(&e, "SERD_CHECK");
+    if (check) {
+      fprintf(stderr, " [%s]", check);
+    }
+
     fprintf(stderr, "\n");
   }
 

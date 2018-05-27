@@ -57,6 +57,8 @@ print_usage(const char* const name, const bool error)
   fprintf(os, "Read and write RDF syntax.\n");
   fprintf(os, "Use - for INPUT to read from standard input.\n\n");
   fprintf(os, "  -I BASE_URI  Input base URI.\n");
+  fprintf(os, "  -V CHECKS    Validate with checks matching CHECKS.\n");
+  fprintf(os, "  -X CHECKS    Exclude validation checks matching CHECKS.\n");
   fprintf(os, "  -a           Write ASCII output if possible.\n");
   fprintf(os, "  -b           Fast bulk output for large serialisations.\n");
   fprintf(os, "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n");
@@ -76,6 +78,7 @@ print_usage(const char* const name, const bool error)
   fprintf(os, "  -v           Display version information and exit.\n");
   fprintf(os, "  -w FILENAME  Write output to FILENAME instead of stdout.\n");
   fprintf(os, "  -x           Support parsing variable nodes like `?x'.\n");
+  fprintf(os, "\nSee serdi(1) for more detailed information: man serdi\n");
   return error ? 1 : 0;
 }
 
@@ -152,6 +155,7 @@ main(int argc, char** argv)
   bool            bulk_write    = false;
   bool            no_inline     = false;
   bool            osyntax_set   = false;
+  bool            validate      = false;
   bool            use_model     = false;
   bool            quiet         = false;
   size_t          stack_size    = 4194304;
@@ -199,6 +203,14 @@ main(int argc, char** argv)
         }
 
         base = serd_new_token(SERD_URI, SERD_STRING(argv[a]));
+        break;
+      } else if (opt == 'V' || opt == 'X') {
+        if (++a == argc) {
+          return missing_arg(prog, opt);
+        }
+
+        // Just enable validation and skip the pattern, checks are parsed below
+        validate = use_model = true;
         break;
       } else if (opt == 'c') {
         if (argv[a][o + 1] || ++a == argc) {
@@ -339,11 +351,17 @@ main(int argc, char** argv)
   SerdSink*       inserter = NULL;
   const SerdSink* sink     = NULL;
   if (use_model) {
-    const SerdModelFlags flags = (input_has_graphs ? SERD_STORE_GRAPHS : 0u);
+    const SerdModelFlags flags = (input_has_graphs ? SERD_STORE_GRAPHS : 0u) |
+                                 (validate ? SERD_STORE_CARETS : 0u);
 
     model = serd_model_new(world, SERD_ORDER_SPO, flags);
+
     if (input_has_graphs) {
       serd_model_add_index(model, SERD_ORDER_GSPO);
+    }
+
+    if (validate) {
+      serd_model_add_index(model, SERD_ORDER_POS);
     }
 
     if (!no_inline) {
@@ -455,6 +473,24 @@ main(int argc, char** argv)
     serd_cursor_free(everything);
   }
 
+  if (st <= SERD_FAILURE && validate) {
+    SerdValidator* const validator = serd_validator_new(world);
+
+    for (int i = 1; i < argc; ++i) {
+      if (argv[i][0] == '-') {
+        if (argv[i][1] == 'V') {
+          serd_validator_enable_checks(validator, argv[++i]);
+        } else if (argv[i][1] == 'X') {
+          serd_validator_disable_checks(validator, argv[++i]);
+        }
+      }
+    }
+
+    st = serd_validate_model(validator, model, NULL);
+
+    serd_validator_free(validator);
+  }
+
   serd_sink_free(inserter);
   serd_model_free(model);
   serd_writer_free(writer);
@@ -470,5 +506,5 @@ main(int argc, char** argv)
 
   serd_byte_sink_free(byte_sink);
 
-  return (st > SERD_FAILURE) ? 1 : 0;
+  return st <= SERD_FAILURE ? 0 : (int)st;
 }

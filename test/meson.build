@@ -1,6 +1,7 @@
 autoship = find_program('autoship', required: false)
 
 run_test_suite = find_program('run_test_suite.py')
+run_validation_test_suite = find_program('run_validation_test_suite.py')
 
 wrapper = meson.get_cross_property('exe_wrapper', '')
 
@@ -78,6 +79,8 @@ if get_option('utils')
     ['/no/such/file'],
     ['ftp://unsupported.org'],
     ['-I'],
+    ['-V'],
+    ['-X'],
     ['-c'],
     ['-i', 'unknown'],
     ['-i', 'turtle'],
@@ -266,6 +269,20 @@ if get_option('utils')
        args: script_args + [lax_manifest, lax_base_uri, '--', '-l'],
        env: test_env,
        is_parallel: false,
+       suite: ['rdf', 'serd'],
+       timeout: 240)
+
+  # Validation test suite
+  test('validate', run_validation_test_suite,
+       args: script_args + [
+         files('validate/manifest.ttl'),
+         serd_base + 'validate' + '/',
+         meson.current_source_dir() / '../schemas/owl.ttl',
+         meson.current_source_dir() / '../schemas/rdf.ttl',
+         meson.current_source_dir() / '../schemas/rdfs.ttl',
+         meson.current_source_dir() / '../schemas/xsd.ttl',
+       ],
+       env: test_env,
        suite: ['rdf', 'serd'],
        timeout: 240)
 
