@@ -132,6 +132,7 @@ sources = files(
   'src/node.c',
   'src/reader.c',
   'src/string.c',
+  'src/syntax.c',
   'src/system.c',
   'src/uri.c',
   'src/writer.c',
