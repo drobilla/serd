@@ -21,6 +21,7 @@ unit_test_names = [
   'reader',
   'reader_writer',
   'string',
+  'syntax',
   'uri',
   'writer',
 ]
