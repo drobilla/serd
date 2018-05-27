@@ -66,6 +66,8 @@ serd_strerror(const SerdStatus status)
     return "Invalid or unresolved URI";
   case SERD_ERR_BAD_INDEX:
     return "No optimal model index available";
+  case SERD_ERR_INVALID:
+    return "Invalid data";
   }
 
   return "Unknown error";
