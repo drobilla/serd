@@ -107,6 +107,7 @@ unit_tests = [
   'reader_writer',
   'sink',
   'string',
+  'syntax',
   'uri',
   'writer',
 ]
