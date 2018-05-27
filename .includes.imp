@@ -1,12 +1,14 @@
 [
-  { "symbol": [ "int16_t",  "private", "<stdint.h>", "public" ] },
-  { "symbol": [ "int32_t",  "private", "<stdint.h>", "public" ] },
-  { "symbol": [ "int64_t",  "private", "<stdint.h>", "public" ] },
-  { "symbol": [ "int8_t",   "private", "<stdint.h>", "public" ] },
-  { "symbol": [ "uint16_t", "private", "<stdint.h>", "public" ] },
-  { "symbol": [ "uint32_t", "private", "<stdint.h>", "public" ] },
-  { "symbol": [ "uint64_t", "private", "<stdint.h>", "public" ] },
-  { "symbol": [ "uint8_t",  "private", "<stdint.h>", "public" ] },
+  { "symbol": [ "int16_t",   "private", "<stdint.h>", "public" ] },
+  { "symbol": [ "int32_t",   "private", "<stdint.h>", "public" ] },
+  { "symbol": [ "int64_t",   "private", "<stdint.h>", "public" ] },
+  { "symbol": [ "int8_t",    "private", "<stdint.h>", "public" ] },
+  { "symbol": [ "intptr_t",  "private", "<stdint.h>", "public" ] },
+  { "symbol": [ "uint16_t",  "private", "<stdint.h>", "public" ] },
+  { "symbol": [ "uint32_t",  "private", "<stdint.h>", "public" ] },
+  { "symbol": [ "uint64_t",  "private", "<stdint.h>", "public" ] },
+  { "symbol": [ "uint8_t",   "private", "<stdint.h>", "public" ] },
+  { "symbol": [ "uintptr_t", "private", "<stdint.h>", "public" ] },
 
   { "include": [ "<bits/struct_stat.h>", "private", "<sys/stat.h>", "public", ] },
 ]

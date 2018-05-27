@@ -4,6 +4,7 @@ run_filter_suite = find_program('run_filter_suite.py')
 run_pipe_suite = find_program('run_pipe_suite.py')
 run_pretty_suite = find_program('run_pretty_suite.py')
 run_sort_suite = find_program('run_sort_suite.py')
+run_validation_test_suite = find_program('run_validation_test_suite.py')
 
 wrapper = meson.get_cross_property('exe_wrapper', '')
 
@@ -403,6 +404,27 @@ if is_variable('serd_filter')
   # RDF-driven test suite
   subdir('filter')
 
+  validate_test_script_args = (common_script_options +
+                               ['--pipe', serd_pipe] +
+                               ['--validate', serd_validate])
+
+  # Validation test suite
+  test('validate',
+       run_validation_test_suite,
+       args: validate_test_script_args + [
+         files('validate/manifest.ttl'),
+         'http://drobilla.net/sw/serd/test/validate/',
+         serd_src_root / 'schemas/dc.ttl',
+         serd_src_root / 'schemas/dcam.ttl',
+         serd_src_root / 'schemas/dcterms.ttl',
+         serd_src_root / 'schemas/owl.ttl',
+         serd_src_root / 'schemas/rdf.ttl',
+         serd_src_root / 'schemas/rdfs.ttl',
+         serd_src_root / 'schemas/xsd.ttl',
+       ],
+       env: test_env,
+       suite: ['suite', 'validate'],
+       timeout: 240)
 endif
 
 # Run RDF-driven test suites using serd-pipe and serd-sort

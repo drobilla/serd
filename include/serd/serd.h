@@ -3330,6 +3330,273 @@ serd_inserter_new(SerdModel* SERD_NONNULL       model,
 
 /**
    @}
+   @defgroup serd_validator Validator
+   @{
+*/
+
+/// Model validator
+typedef struct SerdValidatorImpl SerdValidator;
+
+/// A check that a validator can perform against a model
+typedef enum {
+  /// Checks nothing and always succeeds (for use as a sentinel)
+  SERD_CHECK_NOTHING,
+
+  /**
+     Checks that all properties with owl:allValuesFrom restrictions have
+     valid value types.
+  */
+  SERD_CHECK_ALL_VALUES_FROM,
+
+  /// Checks that the value of any property with range xsd:anyURI is a URI
+  SERD_CHECK_ANY_URI,
+
+  /**
+     Checks that any instance of a class with a owl:cardinality property
+     restriction has exactly that many values of that property.
+  */
+  SERD_CHECK_CARDINALITY_EQUAL,
+
+  /**
+     Checks that any instance of a class with a owl:maxCardinality
+     property restriction has no more than that many values of that
+     property.
+  */
+  SERD_CHECK_CARDINALITY_MAX,
+
+  /**
+     Checks that any instance of a class with a owl:minCardinality
+     property restriction has at least that many values of that property.
+  */
+  SERD_CHECK_CARDINALITY_MIN,
+
+  /**
+     Checks that no class is a sub-class of itself, recursively.
+
+     This ensures that the graph is acyclic with respect to rdfs:subClassOf.
+     If this check fails, all further checks are aborted.
+  */
+  SERD_CHECK_CLASS_CYCLE,
+
+  /// Checks that every rdfs:Class has an rdfs:label
+  SERD_CHECK_CLASS_LABEL,
+
+  /**
+     Checks that no datatype is a sub-datatype of itself, recursively.
+
+     This ensures that the graph is acyclic with respect to owl:onDatatype.  If
+     this check fails, all further checks are aborted.
+  */
+  SERD_CHECK_DATATYPE_CYCLE,
+
+  /// Checks that datatype properties have literal (not instance) values
+  SERD_CHECK_DATATYPE_PROPERTY,
+
+  /// Checks that every datatype is defined as a rdfs:Datatype
+  SERD_CHECK_DATATYPE_TYPE,
+
+  /// Checks that there are no instances of deprecated classes
+  SERD_CHECK_DEPRECATED_CLASS,
+
+  /// Checks that there are no uses of deprecated properties
+  SERD_CHECK_DEPRECATED_PROPERTY,
+
+  /**
+     Checks that every instance explicitly has every type required of it.
+
+     This is a (often overly) strict check that assumes a closed world and
+     requires every instance to explicitly have the type(s) required of
+     it.
+  */
+  SERD_CHECK_EXPLICIT_INSTANCE_TYPE,
+
+  /// Checks that no instance has several values of a functional property
+  SERD_CHECK_FUNCTIONAL_PROPERTY,
+
+  /// Checks that there are no instances where a literal is expected
+  SERD_CHECK_INSTANCE_LITERAL,
+
+  /**
+     Checks that every instance with an explicit type matches that type.
+
+     This is a broad check that triggers other type-related checks, but mainly
+     it will check that every instance of a class conforms to any
+     restrictions on that class.
+  */
+  SERD_CHECK_INSTANCE_TYPE,
+
+  /**
+     Checks that at most one instance has a given value of an inverse
+     functional property.
+  */
+  SERD_CHECK_INVERSE_FUNCTIONAL_PROPERTY,
+
+  /// Checks that there are no literals where an instance is expected
+  SERD_CHECK_LITERAL_INSTANCE,
+
+  /**
+     Checks that literal values are not greater than or equal to any
+     applicable xsd:maxExclusive datatype restrictions.
+  */
+  SERD_CHECK_LITERAL_MAX_EXCLUSIVE,
+
+  /**
+     Checks that literal values are not greater than any applicable
+     xsd:maxInclusive datatype restrictions.
+  */
+  SERD_CHECK_LITERAL_MAX_INCLUSIVE,
+
+  /**
+     Checks that literal values are not less than or equal to any
+     applicable xsd:minExclusive datatype restrictions.
+  */
+  SERD_CHECK_LITERAL_MIN_EXCLUSIVE,
+
+  /**
+     Checks that literal values are not less than any applicable
+     xsd:minInclusive datatype restrictions.
+  */
+  SERD_CHECK_LITERAL_MIN_INCLUSIVE,
+
+  /**
+     Checks that literals with xsd:pattern restrictions match the regular
+     expression pattern for their datatype.
+  */
+  SERD_CHECK_LITERAL_PATTERN,
+
+  /**
+     Checks that literals with supported restrictions conform to those
+     restrictions.
+
+     This is a high-level check that triggers the more specific individual
+     literal restriction checks.
+  */
+  SERD_CHECK_LITERAL_RESTRICTION,
+
+  /**
+     Checks that literals with supported XSD datatypes are valid.
+
+     The set of supported types is the same as when writing canonical forms.
+  */
+  SERD_CHECK_LITERAL_VALUE,
+
+  /// Checks that object properties have instance (not literal) values
+  SERD_CHECK_OBJECT_PROPERTY,
+
+  /**
+     Checks that there are no typed literals where a plain literal is expected.
+
+     A plain literal may have an optional language tag, but not a datatype.
+  */
+  SERD_CHECK_PLAIN_LITERAL_DATATYPE,
+
+  /// Checks that every predicate is defined as an rdf:Property
+  SERD_CHECK_PREDICATE_TYPE,
+
+  /**
+     Checks that no property is a sub-property of itself, recursively.
+
+     This ensures that the graph is acyclic with respect to rdfs:subPropertyOf.
+     If this check fails, all further checks are aborted.
+  */
+  SERD_CHECK_PROPERTY_CYCLE,
+
+  /**
+     Checks that any instance with a property with an rdfs:domain is in
+     that domain.
+  */
+  SERD_CHECK_PROPERTY_DOMAIN,
+
+  /// Checks that every rdf:Property has an rdfs:label
+  SERD_CHECK_PROPERTY_LABEL,
+
+  /**
+     Checks that the value for any property with an rdfs:range is in that
+     range.
+  */
+  SERD_CHECK_PROPERTY_RANGE,
+
+  /**
+     Checks that instances of classes with owl:someValuesFrom property
+     restrictions have at least one matching property value.
+  */
+  SERD_CHECK_SOME_VALUES_FROM,
+} SerdValidatorCheck;
+
+/**
+   Create a new validator.
+
+   @return A newly-allocated validator with no checks enabled which must be
+   freed with serd_validator_free().
+*/
+SERD_MALLOC_API
+SerdValidator* SERD_ALLOCATED
+serd_validator_new(SerdWorld* SERD_NONNULL world);
+
+/// Free `validator`
+SERD_API
+void
+serd_validator_free(SerdValidator* SERD_NULLABLE validator);
+
+/// Enable a validator check
+SERD_API
+SerdStatus
+serd_validator_enable_check(SerdValidator* SERD_NONNULL validator,
+                            SerdValidatorCheck          check);
+
+/// Disable a validator check
+SERD_API
+SerdStatus
+serd_validator_disable_check(SerdValidator* SERD_NONNULL validator,
+                             SerdValidatorCheck          check);
+
+/// Enable all validator checks with names that match the given pattern
+SERD_API
+SerdStatus
+serd_validator_enable_checks(SerdValidator* SERD_NONNULL validator,
+                             const char* SERD_NONNULL    regex);
+
+/// Disable all validator checks with names that match the given pattern
+SERD_API
+SerdStatus
+serd_validator_disable_checks(SerdValidator* SERD_NONNULL validator,
+                              const char* SERD_NONNULL    regex);
+
+/// Set the environment used to shorten URIs in log messages
+SERD_API
+SerdStatus
+serd_validator_set_log_env(SerdValidator* SERD_NONNULL  validator,
+                           const SerdEnv* SERD_NULLABLE env);
+
+/**
+   Validate a model.
+
+   This performs validation based on the XSD, RDF, RDFS, and OWL vocabularies.
+   All necessary data, including those vocabularies and any property/class
+   definitions that use them, are assumed to be in the model.
+
+   Validation errors are reported to the world's error sink.
+
+   @param validator Validator configured to run the desired checks.
+
+   @param model The model to validate.
+
+   @param graph Optional graph to check.  Is this is given, then top-level
+   checks will be initiated only for statements in the given graph.  The entire
+   model is still searched while running a check so that, for example, schemas
+   that define classes and properties can be stored in separate graphs.
+
+   @return #SERD_SUCCESS if no errors are found, or #SERD_BAD_DATA if
+   validation checks failed.
+*/
+SERD_API
+SerdStatus
+serd_validate(SerdValidator* SERD_NONNULL const validator,
+              const SerdModel* SERD_NONNULL     model,
+              const SerdNode* SERD_NULLABLE     graph);
+
+/**
+   @}
    @}
 */
 

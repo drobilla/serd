@@ -51,6 +51,7 @@ x64_dbg:
     - mandoc -Thtml -Wwarning -O style=mandoc.css,man=%N.html doc/man/serd-filter.1 > build/doc/serd-filter.html
     - mandoc -Thtml -Wwarning -O style=mandoc.css,man=%N.html doc/man/serd-pipe.1 > build/doc/serd-pipe.html
     - mandoc -Thtml -Wwarning -O style=mandoc.css,man=%N.html doc/man/serd-sort.1 > build/doc/serd-sort.html
+    - mandoc -Thtml -Wwarning -O style=mandoc.css,man=%N.html doc/man/serd-validate.1 > build/doc/serd-validate.html
   artifacts:
     paths:
       - build/doc

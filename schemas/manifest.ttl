@@ -1,0 +1,50 @@
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix dcam: <http://purl.org/dc/dcam/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix doap: <http://usefulinc.com/ns/doap#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+dc:
+	a owl:Ontology ;
+	rdfs:seeAlso <dc.ttl> .
+
+dcam:
+	a owl:Ontology ;
+	rdfs:seeAlso <dcam.ttl> .
+
+dcterms:
+	a owl:Ontology ;
+	rdfs:seeAlso <dcterms.ttl> .
+
+rdf:
+	a owl:Ontology ;
+	rdfs:seeAlso <rdf.ttl> .
+
+rdfs:
+	a owl:Ontology ;
+	rdfs:seeAlso <rdfs.ttl> .
+
+xsd:
+	a owl:Ontology ;
+	rdfs:seeAlso <xsd.ttl> .
+
+doap:
+	a owl:Ontology ;
+	rdfs:seeAlso <doap.ttl> .
+
+foaf:
+	a owl:Ontology ;
+	rdfs:seeAlso <foaf.ttl> .
+
+mf:
+	a owl:Ontology ;
+	rdfs:seeAlso <mf.ttl> .
+
+owl:
+	a owl:Ontology ;
+	rdfs:seeAlso <owl.ttl> .

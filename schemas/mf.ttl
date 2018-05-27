@@ -1,0 +1,176 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+
+mf:
+	dc:creator "Andy Seaborne" ;
+	dc:date "2004-07" ;
+	dc:description "Test case manifest vocabulary" ;
+	dc:format "RDF" ;
+	dc:identifier mf: ;
+	dc:publisher "W3C RDF Data Access Working Group" ;
+	dc:subject "" ;
+	dc:title "Test case manifest vocabulary" ;
+	rdfs:comment "Manifest vocabulary for test cases" .
+
+mf:IllFormedLiterals
+	a mf:Notable ;
+	rdfs:comment "Tests that involve lexical forms which are illegal for the datatype" .
+
+mf:KnownTypesDefault2Neq
+	a mf:Requirement ;
+	rdfs:comment "Values in disjoint value spaces are not equal" .
+
+mf:LangTagAwareness
+	a mf:Requirement ;
+	rdfs:comment "Tests that require langauge tag handling in FILTERs" .
+
+mf:LaxCardinality
+	a mf:ResultCardinality ;
+	rdfs:comment "The given mf:result for a test with an mf:resultCardinality of mf:ReducedCardinalityTest is the results as if the REDUCED keyword were omitted. To pass such a test, an implementation must produce a result set with each solution in the expected results appearing at least once and no more than the number of times it appears in the expected results. Of course, there must also be no results produced that are not in the expected results." .
+
+mf:Manifest
+	a rdfs:Class ;
+	rdfs:comment "The class of manifests" ;
+	rdfs:label "Manifest" .
+
+mf:ManifestEntry
+	a rdfs:Class ;
+	rdfs:comment "One entry in rdf:type list of entries" ;
+	rdfs:label "Manifest Entry" .
+
+mf:NegativeSyntaxTest
+	a rdfs:Class ;
+	rdfs:comment "A type of test specifically for syntax testing. Syntax tests are not required to have an associated result, only an action. Negative syntax tests are tests of which the result should be a parser error." ;
+	rdfs:label "Negative Syntax Test" .
+
+mf:NegativeSyntaxTest11
+	a rdfs:Class ;
+	rdfs:comment "A type of test specifically for syntax testing of new features in the SPARQL1.1 Query Language. Syntax tests are not required to have an associated result, only an action. Negative syntax tests are tests of which the result should be a parser error." ;
+	rdfs:label "Negative Syntax Test for SPARQL1.1 Query" .
+
+mf:NegativeUpdateSyntaxTest11
+	a rdfs:Class ;
+	rdfs:comment "A type of test specifically for syntax testing of SPARQL1.1 Update. Syntax tests are not required to have an associated result, only an action. Negative syntax tests are tests of which the result should be a parser error." ;
+	rdfs:label "Negative Syntax Test for SPARQL1.1 Update" .
+
+mf:Notable
+	a rdfs:Class ;
+	rdfs:comment "Requirements for a  particular test" ;
+	rdfs:label "Notable" .
+
+mf:PositiveSyntaxTest
+	a rdfs:Class ;
+	rdfs:comment "A type of test specifically for syntax testing. Syntax tests are not required to have an associated result, only an action." ;
+	rdfs:label "Positive Syntax Test" .
+
+mf:PositiveSyntaxTest11
+	a rdfs:Class ;
+	rdfs:comment "A type of test specifically for syntax testing of new features in the SPARQL1.1 Query Language. Syntax tests are not required to have an associated result, only an action." ;
+	rdfs:label "Positive Syntax Test for SPARQL1.1 Query" .
+
+mf:PositiveUpdateSyntaxTest11
+	a rdfs:Class ;
+	rdfs:comment "A type of test specifically for syntax testing of SPARQL1.1 Update. Syntax tests are not required to have an associated result, only an action." ;
+	rdfs:label "Positive Syntax Test for SPARQL1.1 Update" .
+
+mf:QueryEvaluationTest
+	a rdfs:Class ;
+	rdfs:comment "A type of test specifically for query evaluation testing. Query evaluation tests are required to have an associated input dataset, a query, and an expected output dataset." ;
+	rdfs:label "Query Evaluation Test" .
+
+mf:Requirement
+	a rdfs:Class ;
+	rdfs:comment "Requirements for a  particular test" ;
+	rdfs:label "Requirement" .
+
+mf:ResultCardinality
+	a rdfs:Class ;
+	rdfs:comment "Potential modes of evaluating a test's results with respect to solution cardinality" ;
+	rdfs:label "Result Cardinality" .
+
+mf:StringSimpleLiteralCmp
+	a mf:Requirement ;
+	rdfs:comment "Tests that require simple literal is the same value as an xsd:string of the same lexicial form" .
+
+mf:TestStatus
+	a rdfs:Class ;
+	rdfs:comment "Statuses a test can have" ;
+	rdfs:label "Test Status" .
+
+mf:UpdateEvaluationTest
+	a rdfs:Class ;
+	rdfs:comment "The class of all SPARQL 1.1 Update evaluation tests" ;
+	rdfs:label "Update Evaluation Test" .
+
+mf:XsdDateOperations
+	a mf:Requirement ;
+	rdfs:comment "Tests that require xsd:date operations" .
+
+mf:accepted
+	a mf:TestStatus ;
+	rdfs:label "accepted" .
+
+mf:action
+	a rdf:Property ;
+	rdfs:comment "Action to perform" ;
+	rdfs:domain mf:ManifestEntry ;
+	rdfs:label "action" .
+
+mf:entries
+	a rdf:Property ;
+	rdfs:comment "Connects the manifest resource to rdf:type list of entries" ;
+	rdfs:domain mf:Manifest ;
+	rdfs:label "entries" ;
+	rdfs:range rdf:List .
+
+mf:include
+	a rdf:Property ;
+	rdfs:comment "Connects the manifest resource to rdf:type list of manifests" ;
+	rdfs:domain mf:Manifest ;
+	rdfs:label "include" ;
+	rdfs:range rdf:List .
+
+mf:name
+	a rdf:Property ;
+	rdfs:comment "Optional name of this entry" ;
+	rdfs:domain mf:ManifestEntry ;
+	rdfs:label "name" ;
+	rdfs:range rdfs:Literal .
+
+mf:notable
+	a rdf:Property ;
+	rdfs:comment "Notable feature of this test (advisory)" ;
+	rdfs:domain mf:ManifestEntry ;
+	rdfs:label "notable" .
+
+mf:proposed
+	a mf:TestStatus ;
+	rdfs:label "proposed" .
+
+mf:rejected
+	a mf:TestStatus ;
+	rdfs:label "rejected" .
+
+mf:requires
+	a rdf:Property ;
+	rdfs:comment "Required functionality for execution of this test" ;
+	rdfs:domain mf:ManifestEntry ;
+	rdfs:label "requires" ;
+	rdfs:range mf:Requirement .
+
+mf:result
+	a rdf:Property ;
+	rdfs:comment "The expected outcome" ,
+		"The test status" ;
+	rdfs:domain mf:ManifestEntry ;
+	rdfs:label "result" ;
+	rdfs:range mf:TestStatus .
+
+mf:resultCardinality
+	a rdf:Property ;
+	rdfs:comment "Specifies whether passing the test requires strict or lax cardinality adherence" ;
+	rdfs:domain mf:ManifestEntry ;
+	rdfs:label "result cardinality" ;
+	rdfs:range mf:ResultCardinality .

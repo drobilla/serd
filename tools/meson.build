@@ -25,3 +25,10 @@ serd_sort = executable('serd-sort',
                        link_args: tool_link_args,
                        install: true,
                        dependencies: serd_dep)
+
+serd_validate = executable('serd-validate',
+                           ['serd-validate.c', 'console.c'],
+                           c_args: tool_c_args,
+                           link_args: tool_link_args,
+                           install: true,
+                           dependencies: serd_dep)

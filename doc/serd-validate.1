@@ -1,0 +1,247 @@
+.Dd October 21, 2021
+.Dt SERD-VALIDATE 1
+.Os Serd
+.Sh NAME
+.Nm serd-validate
+.Nd validate RDF data
+.Sh SYNOPSIS
+.Nm serd-validate
+.Op Fl hVv
+.Op Fl B Ar base
+.Op Fl I Ar syntax
+.Op Fl W Ar checks
+.Op Fl X Ar checks
+.Op Fl k Ar bytes
+.Op Fl s Ar schema
+.Ar input ...
+.Sh DESCRIPTION
+.Nm
+validates RDF data against one or more RDFS or OWL schemas.
+Unlike other serd tools,
+.Nm
+does not write any data,
+it only prints messages and returns a status that indicates whether the data is valid.
+.Pp
+All inputs to check must be given as an
+.Ar input .
+Schemas can also be given as an
+.Ar input ,
+in which case they will also be checked for issues.
+Alternatively, schemas can be given using the
+.Fl s
+option, which will load the schema to check against,
+but not initiate checks for schema statements themselves.
+This roughly means that error messages will not be printed for the schema files,
+although some may still appear if they are related to issues in the input files.
+When using schemas in this way, it is highly recommended to ensure that the schemas are valid first,
+otherwise the validator may not work correctly.
+.Pp
+The options are as follows:
+.Pp
+.Bl -tag -compact -width 3n
+.It Fl B Ar base
+Base URI or path.
+See
+.Xr serd-pipe 1
+for details.
+.Pp
+.It Fl I Ar syntax
+Input syntax or option:
+.Cm NQuads ,
+.Cm NTriples ,
+.Cm TriG ,
+.Cm Turtle ,
+.Cm lax ,
+.Cm variables ,
+.Cm relative ,
+or
+.Cm labels .
+See
+.Xr serd-pipe 1
+for details.
+.Pp
+.It Fl W Ar checks
+Warn about any issues found by the given
+.Ar checks ,
+which is a regular expression that matches a set of check names to enable,
+or a special name for standard sets of checks:
+.Bl -tag -width 3n
+.It Cm all
+Enables all checks that should pass on typical well-formed data.
+.It Cm everything
+Enables all the checks of
+.Cm all ,
+along with additional strict checks that are useful for making data simpler and more explicit.
+.El
+.Pp
+See
+.Sx CHECKS
+below for a detailed list of all checks.
+.Pp
+.It Fl X Ar checks
+Exclude
+.Ar checks
+from the set of checks enabled by a previous
+.Fl W
+option.
+This is typically used after
+.Fl W Cm all
+or
+.Fl W Cm everything
+to suppress a few specific checks.
+.Pp
+.It Fl V
+Display version information and exit.
+.Pp
+.It Fl h
+Print the command line options.
+.Pp
+.It Fl k Ar bytes
+Parser stack size.
+See
+.Xr serd-pipe 1
+for details.
+.Pp
+.It Fl s Ar schema
+Schema input file.
+The schema will be loaded like an input,
+but into a separate graph that is not checked for issues.
+.Pp
+.It Fl v
+Print verbose messages about loaded resources.
+.El
+.Sh CHECKS
+.Bl -tag -compact -width 3n
+.It Cm allValuesFrom
+Checks that all properties with owl:allValuesFrom restrictions have valid value types.
+.It Cm anyUri
+Checks that the value of any property with range xsd:anyURI is a URI.
+.It Cm cardinalityEqual
+Checks that any instance of a class with a owl:cardinality property restriction has exactly that many values of that property.
+.It Cm cardinalityMax
+Checks that any instance of a class with a owl:maxCardinality property restriction has no more than that many values of that property.
+.It Cm cardinalityMin
+Checks that any instance of a class with a owl:minCardinality property restriction has at least that many values of that property.
+.It Cm classCycle
+Checks that no class is a sub-class of itself, recursively.
+This ensures that the graph is acyclic with respect to rdfs:subClassOf.
+If this check fails, all further checks are aborted.
+.It Cm classLabel
+Checks that every rdfs:Class has an rdfs:label.
+.It Cm datatypeCycle
+Checks that no datatype is a sub-datatype of itself, recursively.
+This ensures that the graph is acyclic with respect to owl:onDatatype.
+If this check fails, all further checks are aborted.
+.It Cm datatypeProperty
+Checks that datatype properties have literal (not instance) values.
+.It Cm datatypeType
+Checks that every datatype is defined as a rdfs:Datatype.
+.It Cm deprecatedClass
+Checks that there are no instances of deprecated classes.
+.It Cm deprecatedProperty
+Checks that there are no uses of deprecated properties.
+.It Cm explicitInstanceType
+Checks that every instance explicitly has every type required of it.
+This is a (often overly) strict check that assumes a closed world and requires every instance to explicitly have the type(s) required of it.
+.It Cm functionalProperty
+Checks that no instance has several values of a functional property.
+.It Cm instanceLiteral
+Checks that there are no instances where a literal is expected.
+.It Cm instanceType
+Checks that every instance with an explicit type matches that type.
+This is a broad check that triggers other type-related checks, but mainly it will check that every instance of a class conforms to any restrictions on that class.
+.It Cm inverseFunctionalProperty
+Checks that at most one instance has a given value of an inverse functional property.
+.It Cm literalInstance
+Checks that there are no literals where an instance is expected.
+.It Cm literalMaxExclusive
+Checks that literal values are not greater than or equal to any applicable xsd:maxExclusive datatype restrictions.
+.It Cm literalMaxInclusive
+Checks that literal values are not greater than any applicable xsd:maxInclusive datatype restrictions.
+.It Cm literalMinExclusive
+Checks that literal values are not less than or equal to any applicable xsd:minExclusive datatype restrictions.
+.It Cm literalMinInclusive
+Checks that literal values are not less than any applicable xsd:minInclusive datatype restrictions.
+.It Cm literalPattern
+Checks that literals with xsd:pattern restrictions match the regular expression pattern for their datatype.
+.It Cm literalRestriction
+Checks that literals with supported restrictions conform to those restrictions.
+This is a high-level check that triggers the more specific individual literal restriction checks.
+.It Cm literalValue
+Checks that literals with supported XSD datatypes are valid.
+The set of supported types is the same as when writing canonical forms.
+.It Cm objectProperty
+Checks that object properties have instance (not literal) values.
+.It Cm plainLiteralDatatype
+Checks that there are no typed literals where a plain literal is expected.
+A plain literal may have an optional language tag, but not a datatype.
+.It Cm predicateType
+Checks that every predicate is defined as an rdf:Property.
+.It Cm propertyCycle
+Checks that no property is a sub-property of itself, recursively.
+This ensures that the graph is acyclic with respect to rdfs:subPropertyOf.
+If this check fails, all further checks are aborted.
+.It Cm propertyDomain
+Checks that any instance with a property with an rdfs:domain is in that domain.
+.It Cm propertyLabel
+Checks that every rdf:Property has an rdfs:label.
+.It Cm propertyRange
+Checks that the value for any property with an rdfs:range is in that range.
+.It Cm someValuesFrom
+Checks that instances of classes with owl:someValuesFrom property restrictions have at least one matching property value.
+.El
+.Sh EXIT STATUS
+.Nm
+exits with a status of 0 on success,
+17 if the data is invalid,
+or another non-zero status if an error occured.
+.Sh EXAMPLES
+To run all checks on a file:
+.Pp
+.Dl $ serd-validate -W all input.ttl
+.Pp
+To run only the
+.Li classLabel
+check on a file:
+.Pp
+.Dl $ serd-validate -W classLabel input.ttl
+.Pp
+To run all checks
+.Em except
+.Li classLabel
+on a file:
+.Pp
+.Dl $ serd-validate -W all -X classLabel input.ttl
+.Sh SEE ALSO
+.Bl -item -compact
+.It
+.Xr serd-pipe 1
+.It
+.Xr serd-filter 1
+.It
+.Xr serd-sort 1
+.It
+.Lk http://drobilla.net/software/serd/
+.El
+.Sh STANDARDS
+.Bl -item -compact
+.It
+.Rs
+.%A W3C
+.%T OWL 2 Web Ontology Language
+.%D December 2012
+.Re
+.Lk https://www.w3.org/TR/owl2-syntax/
+.It
+.Rs
+.%A W3C
+.%D February 2014
+.%T RDF Schema 1.1
+.Re
+.Lk https://www.w3.org/TR/rdf-schema/
+.El
+.Sh AUTHORS
+.Nm
+is a part of serd, by
+.An David Robillard
+.Mt d@drobilla.net .

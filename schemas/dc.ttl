@@ -1,0 +1,101 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcam: <http://purl.org/dc/dcam/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://purl.org/dc/elements/1.1/>
+	dcterms:modified "2012-06-14"^^<http://www.w3.org/2001/XMLSchema#date> ;
+	dcterms:publisher <http://purl.org/dc/aboutdcmi#DCMI> ;
+	dcterms:title "Dublin Core Metadata Element Set, Version 1.1"@en .
+
+<http://purl.org/dc/elements/1.1/contributor>
+	a rdf:Property ;
+	rdfs:comment "An entity responsible for making contributions to the resource."@en ;
+	rdfs:isDefinedBy <http://purl.org/dc/elements/1.1/> ;
+	rdfs:label "Contributor"@en .
+
+<http://purl.org/dc/elements/1.1/coverage>
+	a rdf:Property ;
+	rdfs:comment "The spatial or temporal topic of the resource, spatial applicability of the resource, or jurisdiction under which the resource is relevant."@en ;
+	rdfs:isDefinedBy <http://purl.org/dc/elements/1.1/> ;
+	rdfs:label "Coverage"@en .
+
+<http://purl.org/dc/elements/1.1/creator>
+	a rdf:Property ;
+	rdfs:comment "An entity primarily responsible for making the resource."@en ;
+	rdfs:isDefinedBy <http://purl.org/dc/elements/1.1/> ;
+	rdfs:label "Creator"@en .
+
+<http://purl.org/dc/elements/1.1/date>
+	a rdf:Property ;
+	rdfs:comment "A point or period of time associated with an event in the lifecycle of the resource."@en ;
+	rdfs:isDefinedBy <http://purl.org/dc/elements/1.1/> ;
+	rdfs:label "Date"@en .
+
+<http://purl.org/dc/elements/1.1/description>
+	a rdf:Property ;
+	rdfs:comment "An account of the resource."@en ;
+	rdfs:isDefinedBy <http://purl.org/dc/elements/1.1/> ;
+	rdfs:label "Description"@en .
+
+<http://purl.org/dc/elements/1.1/format>
+	a rdf:Property ;
+	rdfs:comment "The file format, physical medium, or dimensions of the resource."@en ;
+	rdfs:isDefinedBy <http://purl.org/dc/elements/1.1/> ;
+	rdfs:label "Format"@en .
+
+<http://purl.org/dc/elements/1.1/identifier>
+	a rdf:Property ;
+	rdfs:comment "An unambiguous reference to the resource within a given context."@en ;
+	rdfs:isDefinedBy <http://purl.org/dc/elements/1.1/> ;
+	rdfs:label "Identifier"@en .
+
+<http://purl.org/dc/elements/1.1/language>
+	a rdf:Property ;
+	rdfs:comment "A language of the resource."@en ;
+	rdfs:isDefinedBy <http://purl.org/dc/elements/1.1/> ;
+	rdfs:label "Language"@en .
+
+<http://purl.org/dc/elements/1.1/publisher>
+	a rdf:Property ;
+	rdfs:comment "An entity responsible for making the resource available."@en ;
+	rdfs:isDefinedBy <http://purl.org/dc/elements/1.1/> ;
+	rdfs:label "Publisher"@en .
+
+<http://purl.org/dc/elements/1.1/relation>
+	a rdf:Property ;
+	rdfs:comment "A related resource."@en ;
+	rdfs:isDefinedBy <http://purl.org/dc/elements/1.1/> ;
+	rdfs:label "Relation"@en .
+
+<http://purl.org/dc/elements/1.1/rights>
+	a rdf:Property ;
+	rdfs:comment "Information about rights held in and over the resource."@en ;
+	rdfs:isDefinedBy <http://purl.org/dc/elements/1.1/> ;
+	rdfs:label "Rights"@en .
+
+<http://purl.org/dc/elements/1.1/source>
+	a rdf:Property ;
+	rdfs:comment "A related resource from which the described resource is derived."@en ;
+	rdfs:isDefinedBy <http://purl.org/dc/elements/1.1/> ;
+	rdfs:label "Source"@en .
+
+<http://purl.org/dc/elements/1.1/subject>
+	a rdf:Property ;
+	rdfs:comment "The topic of the resource."@en ;
+	rdfs:isDefinedBy <http://purl.org/dc/elements/1.1/> ;
+	rdfs:label "Subject"@en .
+
+<http://purl.org/dc/elements/1.1/title>
+	a rdf:Property ;
+	rdfs:comment "A name given to the resource."@en ;
+	rdfs:isDefinedBy <http://purl.org/dc/elements/1.1/> ;
+	rdfs:label "Title"@en .
+
+<http://purl.org/dc/elements/1.1/type>
+	a rdf:Property ;
+	rdfs:comment "The nature or genre of the resource."@en ;
+	rdfs:isDefinedBy <http://purl.org/dc/elements/1.1/> ;
+	rdfs:label "Type"@en .

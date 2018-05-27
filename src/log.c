@@ -158,8 +158,14 @@ serd_vxlogf(const SerdWorld* const    world,
 
   // Format and print the message itself
   vfprintf(stderr, fmt, args);
-  fprintf(stderr, "\n");
 
+  // Print clang-tidy-style check name (validation errors)
+  const char* const check = get_log_field(n_fields, fields, "SERD_CHECK");
+  if (check) {
+    fprintf(stderr, " [%s]", check);
+  }
+
+  fprintf(stderr, "\n");
   return SERD_SUCCESS;
 }
 

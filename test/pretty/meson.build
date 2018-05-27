@@ -1,17 +1,27 @@
 base_uri = 'http://drobilla.net/sw/serd/test/good/'
 
-args = [files('manifest.ttl')]
+args = [
+  files('manifest.ttl')
+]
 
 test('pretty',
      run_pretty_suite,
-     args: pipe_test_script_args + ['-o', meson.current_build_dir() / 'pipe'] + args,
+     args: common_script_options + [
+       '--tool', serd_pipe,
+       '--out-dir',
+       meson.current_build_dir() / 'pipe'
+     ] + args,
      env: test_env,
      suite: ['suite', 'extra', 'pipe'],
      timeout: 240)
 
 test('pretty',
      run_pretty_suite,
-     args: sort_test_script_args + ['-o', meson.current_build_dir() / 'sort'] + args,
+     args: common_script_options + [
+       '--tool', serd_sort,
+       '--out-dir',
+       meson.current_build_dir() / 'sort'
+     ] + args,
      env: test_env,
      suite: ['suite', 'extra', 'sort'],
      timeout: 240)
