@@ -2,6 +2,8 @@
 
 """Run an RDF test suite with serdi."""
 
+import serd_test_util
+
 import argparse
 import datetime
 import difflib
@@ -13,31 +15,6 @@ import subprocess
 import sys
 import tempfile
 import urllib.parse
-
-
-def earl_assertion(test, passed, asserter):
-    """Return a Turtle description of an assertion for the test report."""
-
-    asserter_str = ""
-    if asserter is not None:
-        asserter_str = "\n\tearl:assertedBy <%s> ;" % asserter
-
-    return """
-[]
-\ta earl:Assertion ;%s
-\tearl:subject <http://drobilla.net/sw/serd> ;
-\tearl:test <%s> ;
-\tearl:result [
-\t\ta earl:TestResult ;
-\t\tearl:outcome %s ;
-\t\tdc:date "%s"^^xsd:dateTime
-\t] .
-""" % (
-        asserter_str,
-        test,
-        "earl:passed" if passed else "earl:failed",
-        datetime.datetime.now().replace(microsecond=0).isoformat(),
-    )
 
 
 def log_error(message):
@@ -141,37 +118,6 @@ def _test_output_syntax(test_class):
     raise Exception("Unknown test class <{}>".format(test_class))
 
 
-def _load_rdf(filename, base_uri, command_prefix):
-    """Load an RDF file as dictionaries via serdi (only supports URIs)."""
-
-    rdf_type = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-    model = {}
-    instances = {}
-
-    cmd = command_prefix + ["-I", base_uri, filename]
-    proc = subprocess.run(cmd, capture_output=True, check=True)
-    for line in proc.stdout.splitlines():
-        matches = re.match(
-            r"<([^ ]*)> <([^ ]*)> <([^ ]*)> \.", line.decode("utf-8")
-        )
-        if matches:
-            s, p, o = (matches.group(1), matches.group(2), matches.group(3))
-            if s not in model:
-                model[s] = {p: [o]}
-            elif p not in model[s]:
-                model[s][p] = [o]
-            else:
-                model[s][p].append(o)
-
-            if p == rdf_type:
-                if o not in instances:
-                    instances[o] = set([s])
-                else:
-                    instances[o].update([s])
-
-    return model, instances
-
-
 def _option_combinations(options):
     """Return an iterator that cycles through all combinations of options."""
 
@@ -213,7 +159,7 @@ def _file_lines_equal(patha, pathb, subst_from="", subst_to=""):
 
     for path in (patha, pathb):
         if not os.access(path, os.F_OK):
-            sys.stderr.write("error: missing file %s" % path)
+            log_error("missing file %s\n" % path)
             return False
 
     la = sorted(set(io.open(patha, encoding="utf-8").readlines()))
@@ -237,7 +183,9 @@ def test_suite(
 
     mf = "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#"
     test_dir = os.path.dirname(manifest_path)
-    model, instances = _load_rdf(manifest_path, base_uri, command_prefix)
+    model, instances = serd_test_util.load_rdf(
+        manifest_path, base_uri, command_prefix
+    )
 
     top_dir = os.path.commonpath([os.getcwd(), os.path.abspath(test_dir)])
     out_test_dir = os.path.relpath(test_dir, top_dir)
@@ -306,7 +254,7 @@ def test_suite(
                     if not _file_equals(check_path, out_filename):
                         results.n_failures += 1
                         log_error(
-                            "Output {} does not match {}".format(
+                            "Output {} does not match {}\n".format(
                                 out_filename, check_path
                             )
                         )
@@ -324,7 +272,9 @@ def test_suite(
                     )
 
                     # Run model test for positive test (must succeed)
-                    out_filename = os.path.join(out_test_dir, test_name + ".model.out")
+                    out_filename = os.path.join(
+                        out_test_dir, test_name + ".model.out"
+                    )
 
                     model_command = command_prefix + [
                         "-m",
@@ -340,7 +290,9 @@ def test_suite(
 
                     proc = subprocess.run(model_command, check=True)
 
-                    if proc.returncode == 0 and ((mf + 'result') in model[test]):
+                    if proc.returncode == 0 and (
+                        (mf + "result") in model[test]
+                    ):
                         if not _file_lines_equal(check_path, out_filename):
                             results.n_failures += 1
 
@@ -375,7 +327,9 @@ def test_suite(
             # Write test report entry
             if report_filename:
                 with open(report_filename, "a") as report:
-                    report.write(earl_assertion(test, passed, asserter))
+                    report.write(
+                        serd_test_util.earl_assertion(test, passed, asserter)
+                    )
 
     # Run all test types in the test suite
     results = Results()

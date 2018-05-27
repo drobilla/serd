@@ -1,0 +1,13 @@
+@prefix eg: <http://example.org/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+eg:Square
+	a rdfs:Class ;
+	rdfs:subClassOf eg:Rectangle ;
+	rdfs:label "Square" .
+
+eg:Rectangle
+	a rdfs:Class ;
+	rdfs:subClassOf eg:Square ;
+	rdfs:label "Rectangle" .
+

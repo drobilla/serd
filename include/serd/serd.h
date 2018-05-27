@@ -401,6 +401,7 @@ typedef enum {
   SERD_ERR_BAD_WRITE,  ///< Error writing to file/stream
   SERD_ERR_BAD_CALL,   ///< Invalid call
   SERD_ERR_BAD_URI,    ///< Invalid or unresolved URI
+  SERD_ERR_INVALID,    ///< Invalid data
 } SerdStatus;
 
 /// Return a string describing a status code
@@ -2020,6 +2021,64 @@ SerdStatus
 serd_model_erase_range(SerdModel* SERD_NONNULL model,
                        SerdRange* SERD_NONNULL range);
 
+/// Validator
+typedef struct SerdValidatorImpl SerdValidator;
+
+typedef enum {
+  SERD_CHECK_ALL_VALUES_FROM,
+  SERD_CHECK_ANY_URI,
+  SERD_CHECK_CARDINALITY_EQUAL,
+  SERD_CHECK_CARDINALITY_MAX,
+  SERD_CHECK_CARDINALITY_MIN,
+  SERD_CHECK_CLASS_CYCLE,
+  SERD_CHECK_CLASS_LABEL,
+  SERD_CHECK_DATATYPE_PROPERTY,
+  SERD_CHECK_DATATYPE_TYPE,
+  SERD_CHECK_DEPRECATED_CLASS,
+  SERD_CHECK_DEPRECATED_PROPERTY,
+  SERD_CHECK_FUNCTIONAL_PROPERTY,
+  SERD_CHECK_INSTANCE_LITERAL,
+  SERD_CHECK_INSTANCE_TYPE,
+  SERD_CHECK_INVERSE_FUNCTIONAL_PROPERTY,
+  SERD_CHECK_LITERAL_INSTANCE,
+  SERD_CHECK_LITERAL_MAX_EXCLUSIVE,
+  SERD_CHECK_LITERAL_MAX_INCLUSIVE,
+  SERD_CHECK_LITERAL_MIN_EXCLUSIVE,
+  SERD_CHECK_LITERAL_MIN_INCLUSIVE,
+  SERD_CHECK_LITERAL_PATTERN,
+  SERD_CHECK_LITERAL_RESTRICTION,
+  SERD_CHECK_LITERAL_VALUE,
+  SERD_CHECK_OBJECT_PROPERTY,
+  SERD_CHECK_PLAIN_LITERAL_DATATYPE,
+  SERD_CHECK_PREDICATE_TYPE,
+  SERD_CHECK_PROPERTY_CYCLE,
+  SERD_CHECK_PROPERTY_DOMAIN,
+  SERD_CHECK_PROPERTY_LABEL,
+  SERD_CHECK_PROPERTY_RANGE,
+  SERD_CHECK_SOME_VALUES_FROM,
+} SerdValidatorCheck;
+
+typedef uint64_t SerdValidatorChecks;
+
+SERD_MALLOC_API
+SerdValidator* SERD_ALLOCATED
+serd_validator_new(SerdWorld* SERD_NONNULL world);
+
+/// Free `validator`
+SERD_API
+void
+serd_validator_free(SerdValidator* SERD_NULLABLE validator);
+
+SERD_API
+SerdStatus
+serd_validator_enable_checks(SerdValidator* SERD_NONNULL validator,
+                             const char* SERD_NONNULL    pattern);
+
+SERD_API
+SerdStatus
+serd_validator_disable_checks(SerdValidator* SERD_NONNULL validator,
+                              const char* SERD_NONNULL    pattern);
+
 /**
    Remove everything from a model.
 
@@ -2030,6 +2089,35 @@ serd_model_erase_range(SerdModel* SERD_NONNULL model,
 SERD_API
 SerdStatus
 serd_model_clear(SerdModel* SERD_NONNULL model);
+
+/**
+   Validate model.
+
+   This performs validation based on the XSD, RDF, RDFS, and OWL vocabularies.
+   All necessary data, including those vocabularies and any property/class
+   definitions that use them, are assumed to be in `model`.
+
+   Validation errors are reported to the world's error sink.
+
+   @param validator Validator configured to run the desired checks.
+
+   @param model The model to run the validator on.
+
+   @param graph Optional graph to check.  Is this is non-null, then top-level
+   checks will be initiated only by statements in the given graph.  The entire
+   model is still searched while running a check so that, for example, schemas
+   that define classes and properties can be stored in separate graphs.  If
+   this is null, then the validator simply ignores graphs and searches the
+   entire model for everything.
+
+   @return #SERD_SUCCESS if no errors are found, or #SERD_ERR_INVALID if
+   validation checks failed.
+*/
+SERD_API
+SerdStatus
+serd_validate_model(SerdValidator* SERD_NONNULL const validator,
+                    const SerdModel* SERD_NONNULL     model,
+                    const SerdNode* SERD_NULLABLE     graph);
 
 /**
    @}
