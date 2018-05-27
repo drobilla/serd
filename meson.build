@@ -97,6 +97,7 @@ sources = [
   'src/reader.c',
   'src/sink.c',
   'src/string.c',
+  'src/syntax.c',
   'src/system.c',
   'src/uri.c',
   'src/writer.c',
