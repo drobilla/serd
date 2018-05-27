@@ -399,6 +399,42 @@ typedef size_t (*SerdWriteFunc)(const void* buf,
 
 /**
    @}
+   @name Syntax Utilities
+   @{
+*/
+
+/**
+   Get a syntax by name.
+
+   Case-insensitive, supports "Turtle", "NTriples", "NQuads", and "TriG".  Zero
+   is returned if the name is not recognized.
+*/
+SERD_API
+SerdSyntax
+serd_syntax_by_name(const char* name);
+
+/**
+   Guess a syntax from a filename.
+
+   This uses the file extension to guess the syntax of a file.  Zero is
+   returned if the extension is not recognized.
+*/
+SERD_API
+SerdSyntax
+serd_guess_syntax(const char* filename);
+
+/**
+   Guess a syntax from a filename.
+
+   This uses the file extension to guess the syntax of a file.  Zero is
+   returned if the extension is not recognized.
+*/
+SERD_API
+bool
+serd_syntax_has_graphs(SerdSyntax syntax);
+
+/**
+   @}
    @name URI
    @{
 */
