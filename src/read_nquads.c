@@ -11,6 +11,7 @@
 #include "stack.h"
 #include "try.h"
 
+#include "serd/caret_view.h"
 #include "serd/event.h"
 #include "serd/node.h"
 #include "serd/sink.h"
@@ -45,6 +46,9 @@ read_nquads_statement(SerdReader* const reader)
     return st;
   }
 
+  // Preserve the caret for error reporting and read object
+  const SerdCaretView orig_caret = reader->source->caret;
+
   if ((st = read_nt_object(reader, &ctx.object, &ate_dot)) ||
       (st = read_horizontal_whitespace(reader))) {
     return st;
@@ -66,7 +70,8 @@ read_nquads_statement(SerdReader* const reader)
   const SerdStatementView statement = {serd_node_token_view(ctx.subject),
                                        serd_node_token_view(ctx.predicate),
                                        serd_node_object_view(ctx.object),
-                                       serd_node_graph_view(ctx.graph)};
+                                       serd_node_graph_view(ctx.graph),
+                                       orig_caret};
 
   return serd_sink_write_statement(reader->sink, *ctx.flags, statement);
 }

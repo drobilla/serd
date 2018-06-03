@@ -227,6 +227,7 @@ emit_statement_at(SerdReader* const   reader,
     serd_node_token_view(ctx.predicate),
     serd_node_object_view(o),
     serd_node_graph_view(ctx.graph),
+    caret,
   };
 
   st =

@@ -18,6 +18,8 @@
 #include <assert.h>
 #include <stddef.h>
 
+static const SerdCaretView no_caret = {NULL, 0, 0};
+
 SerdSink*
 serd_sink_new(ZixAllocator* const allocator,
               void* const         handle,
@@ -85,8 +87,6 @@ serd_sink_write_statement(const SerdSink*               sink,
                           const SerdStatementEventFlags flags,
                           const SerdStatementView       statement)
 {
-  static const SerdCaretView no_caret = {NULL, 0, 0};
-
   return serd_sink_write_statement_from(sink, flags, statement, no_caret);
 }
 
@@ -125,6 +125,7 @@ serd_sink_write(const SerdSink*               sink,
     serd_node_token_view(predicate),
     serd_node_object_view(object),
     serd_node_graph_view(graph),
+    no_caret,
   };
 
   return serd_sink_write_statement(sink, flags, statement);
@@ -140,7 +141,8 @@ serd_sink_write_views(const SerdSink*               sink,
 {
   assert(sink);
 
-  const SerdStatementView statement = {subject, predicate, object, graph};
+  const SerdStatementView statement = {
+    subject, predicate, object, graph, no_caret};
 
   return serd_sink_write_statement(sink, flags, statement);
 }

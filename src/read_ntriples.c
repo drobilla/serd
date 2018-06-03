@@ -10,11 +10,13 @@
 #include "read_utf8.h"
 #include "reader_impl.h"
 #include "reader_internal.h"
+#include "serd/statement_view.h"
 #include "stack.h"
 #include "string_utils.h"
 #include "try.h"
 #include "uri_utils.h"
 
+#include "serd/caret_view.h"
 #include "serd/event.h"
 #include "serd/sink.h"
 
@@ -652,6 +654,9 @@ read_triple(SerdReader* const reader)
     return st;
   }
 
+  // Preserve the caret for error reporting and read object
+  const SerdCaretView orig_caret = reader->source->caret;
+
   if ((st = read_nt_object(reader, &ctx.object, &ate_dot)) ||
       (st = read_horizontal_whitespace(reader))) {
     return st;
@@ -667,12 +672,16 @@ read_triple(SerdReader* const reader)
   assert(ctx.object);
   TRY(st, push_node_termination(reader));
 
-  return serd_sink_write(reader->sink,
-                         *ctx.flags,
-                         ctx.subject,
-                         ctx.predicate,
-                         ctx.object,
-                         ctx.graph);
+  const SerdStatementView statement = {
+    serd_node_token_view(ctx.subject),
+    serd_node_token_view(ctx.predicate),
+    serd_node_object_view(ctx.object),
+    serd_node_graph_view(ctx.graph),
+    orig_caret,
+  };
+
+  return serd_sink_write_statement_from(
+    reader->sink, *ctx.flags, statement, orig_caret);
 }
 
 SerdStatus

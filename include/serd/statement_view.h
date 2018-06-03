@@ -5,13 +5,13 @@
 #define SERD_STATEMENT_VIEW_H
 
 #include "serd/attributes.h"
+#include "serd/caret_view.h"
 #include "serd/object_view.h"
 #include "serd/token_view.h"
 
 SERD_BEGIN_DECLS
 
 /**
-   @defgroup serd_statement_view Statement View
    @ingroup serd_streaming
    @{
 */
@@ -22,6 +22,7 @@ typedef struct {
   SerdTokenView  predicate;
   SerdObjectView object;
   SerdTokenView  graph;
+  SerdCaretView  caret;
 } SerdStatementView;
 
 /**
