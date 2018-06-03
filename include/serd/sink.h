@@ -6,6 +6,7 @@
 
 #include "serd/attributes.h"
 #include "serd/node.h"
+#include "serd/statement.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
 
@@ -106,6 +107,12 @@ SERD_API SerdStatus
 serd_sink_write_prefix(const SerdSink* SERD_NONNULL sink,
                        const SerdNode* SERD_NONNULL name,
                        const SerdNode* SERD_NONNULL uri);
+
+/// Write a statement
+SERD_API SerdStatus
+serd_sink_write_statement(const SerdSink* SERD_NONNULL sink,
+                          SerdStatementFlags           flags,
+                          SerdStatementView            statement);
 
 /// Write a statement from individual nodes
 SERD_API SerdStatus

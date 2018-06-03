@@ -19,15 +19,12 @@
 #define NS_EG "http://example.org/"
 
 typedef struct {
-  const SerdNode* last_base;
-  const SerdNode* last_name;
-  const SerdNode* last_namespace;
-  const SerdNode* last_end;
-  const SerdNode* last_subject;
-  const SerdNode* last_predicate;
-  const SerdNode* last_object;
-  const SerdNode* last_graph;
-  SerdStatus      return_status;
+  const SerdNode*   last_base;
+  const SerdNode*   last_name;
+  const SerdNode*   last_namespace;
+  const SerdNode*   last_end;
+  SerdStatementView last_statement;
+  SerdStatus        return_status;
 } State;
 
 static SerdStatus
@@ -58,10 +55,7 @@ on_statement(void*                   handle,
 
   State* state = (State*)handle;
 
-  state->last_subject   = statement.subject;
-  state->last_predicate = statement.predicate;
-  state->last_object    = statement.object;
-  state->last_graph     = statement.graph;
+  state->last_statement = statement;
 
   return state->return_status;
 }
@@ -83,13 +77,19 @@ test_callbacks(void)
   SerdNode* const uri   = serd_new_uri(serd_string(NS_EG "uri"));
   SerdNode* const blank = serd_new_blank(serd_string("b1"));
   SerdEnv*        env   = serd_env_new(serd_node_string_view(base));
-  State           state = {0, 0, 0, 0, 0, 0, 0, 0, SERD_SUCCESS};
+  State           state = {
+    0, 0, 0, 0, {NULL, NULL, NULL, NULL, {NULL, 0, 0}}, SERD_SUCCESS};
+
+  SerdStatement* const statement =
+    serd_statement_new(base, uri, blank, NULL, NULL);
 
   // Call functions on a sink with no functions set
 
   SerdSink* null_sink = serd_sink_new(&state, NULL);
   assert(!serd_sink_write_base(null_sink, base));
   assert(!serd_sink_write_prefix(null_sink, name, uri));
+  assert(
+    !serd_sink_write_statement(null_sink, 0, serd_statement_view(statement)));
   assert(!serd_sink_write(null_sink, 0, base, uri, blank, NULL));
   assert(!serd_sink_write_end(null_sink, blank));
   serd_sink_free(null_sink);
@@ -109,16 +109,18 @@ test_callbacks(void)
   assert(serd_node_equals(state.last_name, name));
   assert(serd_node_equals(state.last_namespace, uri));
 
-  assert(!serd_sink_write(sink, 0, base, uri, blank, NULL));
-  assert(serd_node_equals(state.last_subject, base));
-  assert(serd_node_equals(state.last_predicate, uri));
-  assert(serd_node_equals(state.last_object, blank));
-  assert(!state.last_graph);
+  assert(!serd_sink_write_statement(sink, 0, serd_statement_view(statement)));
+  assert(state.last_statement.subject == base);
+  assert(state.last_statement.predicate == uri);
+  assert(state.last_statement.object == blank);
+  assert(!state.last_statement.graph);
 
   assert(!serd_sink_write_end(sink, blank));
   assert(serd_node_equals(state.last_end, blank));
 
   serd_sink_free(sink);
+
+  serd_statement_free(statement);
   serd_env_free(env);
   serd_node_free(blank);
   serd_node_free(uri);

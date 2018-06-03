@@ -78,6 +78,15 @@ serd_sink_write_prefix(const SerdSink* sink,
 }
 
 SerdStatus
+serd_sink_write_statement(const SerdSink*          sink,
+                          const SerdStatementFlags flags,
+                          const SerdStatementView  statement)
+{
+  return sink->statement ? sink->statement(sink->handle, flags, statement)
+                         : SERD_SUCCESS;
+}
+
+SerdStatus
 serd_sink_write(const SerdSink*          sink,
                 const SerdStatementFlags flags,
                 const SerdNode*          subject,
@@ -90,7 +99,8 @@ serd_sink_write(const SerdSink*          sink,
   assert(predicate);
   assert(object);
 
-  const SerdStatementView statement = {subject, predicate, object, graph};
+  const SerdStatementView statement = {
+    subject, predicate, object, graph, {NULL, 0, 0}};
 
   return sink->statement ? sink->statement(sink->handle, flags, statement)
                          : SERD_SUCCESS;

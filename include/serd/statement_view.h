@@ -5,9 +5,8 @@
 #define SERD_STATEMENT_VIEW_H
 
 #include "serd/attributes.h"
+#include "serd/caret_view.h"
 #include "serd/node.h"
-#include "serd/statement.h"
-#include "serd/status.h"
 
 SERD_BEGIN_DECLS
 
@@ -22,6 +21,7 @@ typedef struct {
   const SerdNode* SERD_NONNULL  predicate;
   const SerdNode* SERD_NONNULL  object;
   const SerdNode* SERD_NULLABLE graph;
+  SerdCaretView                 caret;
 } SerdStatementView;
 
 /**

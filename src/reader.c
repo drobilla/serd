@@ -10,6 +10,8 @@
 #include "system.h"
 #include "world.h"
 
+#include "serd/caret_view.h"
+#include "serd/statement_view.h"
 #include "serd/stream.h"
 #include "serd/string_view.h"
 #include "serd/uri.h"
@@ -118,8 +120,15 @@ emit_statement(SerdReader* const reader,
      (subject and predicate) were already zeroed by subsequent pushes. */
   serd_node_zero_pad(o);
 
-  const SerdStatus st = serd_sink_write(
-    reader->sink, *ctx.flags, ctx.subject, ctx.predicate, o, ctx.graph);
+  const SerdCaretView caret = {reader->source.caret.document,
+                               reader->source.caret.line,
+                               reader->source.caret.col};
+
+  const SerdStatementView statement = {
+    ctx.subject, ctx.predicate, o, ctx.graph, caret};
+
+  const SerdStatus st =
+    serd_sink_write_statement(reader->sink, *ctx.flags, statement);
 
   *ctx.flags = 0;
   return st;
