@@ -38,12 +38,10 @@ typedef SerdStatus (*SerdPrefixFunc)(void* SERD_NULLABLE          handle,
 
    Called for every RDF statement in the serialisation.
 */
-typedef SerdStatus (*SerdStatementFunc)(void* SERD_NULLABLE           handle,
-                                        SerdStatementFlags            flags,
-                                        const SerdNode* SERD_NULLABLE graph,
-                                        const SerdNode* SERD_NONNULL  subject,
-                                        const SerdNode* SERD_NONNULL  predicate,
-                                        const SerdNode* SERD_NONNULL  object);
+typedef SerdStatus (*SerdStatementFunc)(void* SERD_NULLABLE handle,
+                                        SerdStatementFlags  flags,
+                                        const SerdStatement* SERD_NONNULL
+                                          statement);
 
 /**
    Sink function for anonymous node end markers.
@@ -116,6 +114,13 @@ SerdStatus
 serd_sink_write_prefix(const SerdSink* SERD_NONNULL sink,
                        const SerdNode* SERD_NONNULL name,
                        const SerdNode* SERD_NONNULL uri);
+
+/// Write a statement
+SERD_API
+SerdStatus
+serd_sink_write_statement(const SerdSink* SERD_NONNULL      sink,
+                          SerdStatementFlags                flags,
+                          const SerdStatement* SERD_NONNULL statement);
 
 /// Write a statement from individual nodes
 SERD_API
