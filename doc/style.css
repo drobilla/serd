@@ -188,6 +188,10 @@ td.indexvalue {
 	margin: 2px 0;
 }
 
+table.memname {
+    padding-bottom: 1ex;
+}
+
 tr.memlist {
 	background-color: #EEF1F7;
 }
@@ -359,8 +363,10 @@ td.mlabels-right {
 }
 
 .memitem {
-	padding: 0;
+	padding: 0.5em;
 	margin: 1em 0 1em 0;
+    border: 1px solid #DDD;
+	border-radius: 6px;
 }
 
 .memproto {
@@ -375,7 +381,7 @@ td.mlabels-right {
 }
 
 .memdoc {
-	padding: 0 0 0.5em 2em;
+	padding: 0 0 0 2em;
 }
 
 .paramkey {
@@ -391,10 +397,7 @@ td.mlabels-right {
 	color: #444;
 	white-space: nowrap;
 	font-weight: bold;
-}
-
-td.paramname {
-	vertical-align: top;
+    padding-left: 0.5em;
 }
 
 .fieldname {
@@ -402,14 +405,16 @@ td.paramname {
 }
 
 td.fieldname {
-	padding-right: 1em;
+	padding-right: 0.5em;
+    padding-left: 2em;
 	vertical-align: top;
 }
 
 td.fieldtype {
-	vertical-align: top;
 	color: #444;
 	padding-right: 0.5em;
+    padding-left: 2em;
+	vertical-align: top;
 }
 
 td.fielddoc p {
