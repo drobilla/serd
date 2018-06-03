@@ -16,6 +16,8 @@
 
 #include "serd/serd.h"
 
+#include "statement.h"
+
 SerdStatus
 serd_sink_write_base(const SerdSink* sink, const SerdNode* uri)
 {
@@ -35,12 +37,7 @@ serd_sink_write_statement(const SerdSink*          sink,
                           const SerdStatementFlags flags,
                           const SerdStatement*     statement)
 {
-	return sink->statement(sink->handle,
-	                       flags,
-	                       serd_statement_get_graph(statement),
-	                       serd_statement_get_subject(statement),
-	                       serd_statement_get_predicate(statement),
-	                       serd_statement_get_object(statement));
+	return sink->statement(sink->handle, flags, statement);
 }
 
 SerdStatus
@@ -51,8 +48,8 @@ serd_sink_write(const SerdSink*          sink,
                 const SerdNode*          object,
                 const SerdNode*          graph)
 {
-	return sink->statement(
-	        sink->handle, flags, graph, subject, predicate, object);
+	const SerdStatement statement = { { subject, predicate, object, graph } };
+	return sink->statement(sink->handle, flags, &statement);
 }
 
 SerdStatus

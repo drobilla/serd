@@ -21,6 +21,7 @@
 #include "serd/serd.h"
 #include "serd_internal.h"
 #include "stack.h"
+#include "statement.h"
 #include "system.h"
 #include "world.h"
 
@@ -127,9 +128,12 @@ emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o)
 	   (subject and predicate) were already zeroed by subsequent pushes. */
 	serd_node_zero_pad(o);
 
+	const SerdStatement statement = {
+		{ ctx.subject, ctx.predicate, o, graph }
+	};
+
 	const SerdStatus st = reader->sink->statement(
-		reader->sink->handle, *ctx.flags, graph,
-		ctx.subject, ctx.predicate, o);
+		reader->sink->handle, *ctx.flags, &statement);
 	*ctx.flags &= SERD_ANON_CONT|SERD_LIST_CONT;  // Preserve only cont flags
 	return st;
 }

@@ -66,21 +66,16 @@ typedef struct {
 } ReaderTest;
 
 static SerdStatus
-test_sink(void*              handle,
-          SerdStatementFlags flags,
-          const SerdNode*    graph,
-          const SerdNode*    subject,
-          const SerdNode*    predicate,
-          const SerdNode*    object)
+test_sink(void*                handle,
+          SerdStatementFlags   flags,
+          const SerdStatement* statement)
 {
 	(void)flags;
-	(void)subject;
-	(void)predicate;
-	(void)object;
+	(void)statement;
 
 	ReaderTest* rt = (ReaderTest*)handle;
 	++rt->n_statements;
-	rt->graph = graph;
+	rt->graph = serd_statement_get_graph(statement);
 	return SERD_SUCCESS;
 }
 
@@ -648,9 +643,8 @@ test_writer(const char* const path)
 	                              { s,    p,    NULL },
 	                              { NULL, NULL, NULL } };
 	for (unsigned i = 0; i < sizeof(junk) / (sizeof(SerdNode*) * 5); ++i) {
-		assert(iface->statement(
-			       iface->handle, 0, NULL,
-			       junk[i][0], junk[i][1], junk[i][2]));
+		assert(serd_sink_write(
+		        iface, 0, junk[i][0], junk[i][1], junk[i][2], 0));
 	}
 
 	SerdNode* urn_Type = serd_node_new_uri("urn:Type");
@@ -668,24 +662,23 @@ test_writer(const char* const path)
 	                              { s, p, o },
 	                              { s, p, o } };
 	for (unsigned i = 0; i < sizeof(good) / (sizeof(SerdNode*) * 5); ++i) {
-		assert(!iface->statement(
-		        iface->handle, 0, NULL, good[i][0], good[i][1], good[i][2]));
+		assert(!serd_sink_write(
+		        iface, 0, good[i][0], good[i][1], good[i][2], 0));
 	}
 
 	// Write statements with bad UTF-8 (should be replaced)
 	const char bad_str[] = { (char)0xFF, (char)0x90, 'h', 'i', 0 };
 	SerdNode*  bad_lit   = serd_node_new_string(bad_str);
 	SerdNode*  bad_uri   = serd_node_new_uri(bad_str);
-	assert(!iface->statement(iface->handle, 0, NULL, s, p, bad_lit));
-	assert(!iface->statement(iface->handle, 0, NULL, s, p, bad_uri));
-
+	assert(!serd_sink_write(iface, 0, s, p, bad_lit, 0));
+	assert(!serd_sink_write(iface, 0, s, p, bad_uri, 0));
 	serd_node_free(bad_uri);
 	serd_node_free(bad_lit);
 
 	// Write 1 valid statement
 	serd_node_free(o);
 	o = serd_node_new_string("hello");
-	assert(!iface->statement(iface->handle, 0, NULL, s, p, o));
+	assert(!serd_sink_write(iface, 0, s, p, o, 0));
 
 	serd_writer_free(writer);
 	serd_node_free(lit);

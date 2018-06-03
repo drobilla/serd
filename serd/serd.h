@@ -779,12 +779,9 @@ typedef SerdStatus (*SerdPrefixSink)(void*           handle,
 
    Called for every RDF statement in the serialisation.
 */
-typedef SerdStatus (*SerdStatementSink)(void*              handle,
-                                        SerdStatementFlags flags,
-                                        const SerdNode*    graph,
-                                        const SerdNode*    subject,
-                                        const SerdNode*    predicate,
-                                        const SerdNode*    object);
+typedef SerdStatus (*SerdStatementSink)(void*                handle,
+                                        SerdStatementFlags   flags,
+                                        const SerdStatement* statement);
 
 /**
    Sink (callback) for anonymous node end markers.
