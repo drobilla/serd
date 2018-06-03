@@ -10,6 +10,7 @@
 #include "serd/string_view.h"
 #include "serd/uri.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -37,6 +38,13 @@ static inline const char* SERD_NONNULL
 serd_node_string_i(const SerdNode* const SERD_NONNULL node)
 {
   return (const char*)(node + 1);
+}
+
+static inline bool
+serd_node_pattern_match(const SerdNode* SERD_NULLABLE a,
+                        const SerdNode* SERD_NULLABLE b)
+{
+  return !a || !b || serd_node_equals(a, b);
 }
 
 SerdNode* SERD_ALLOCATED

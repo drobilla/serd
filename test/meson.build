@@ -126,6 +126,7 @@ unit_tests = [
   'overflow',
   'reader_writer',
   'sink',
+  'statement',
   'string',
   'syntax',
   'uri',

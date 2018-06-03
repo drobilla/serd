@@ -962,14 +962,15 @@ terminate_context(SerdWriter* writer)
 }
 
 static SerdStatus
-serd_writer_write_statement(SerdWriter* const     writer,
-                            SerdStatementFlags    flags,
-                            const SerdNode* const graph,
-                            const SerdNode* const subject,
-                            const SerdNode* const predicate,
-                            const SerdNode* const object)
+serd_writer_write_statement(SerdWriter* const          writer,
+                            SerdStatementFlags         flags,
+                            const SerdStatement* const statement)
 {
-  SerdStatus st = SERD_SUCCESS;
+  SerdStatus            st        = SERD_SUCCESS;
+  const SerdNode* const subject   = serd_statement_subject(statement);
+  const SerdNode* const predicate = serd_statement_predicate(statement);
+  const SerdNode* const object    = serd_statement_object(statement);
+  const SerdNode* const graph     = serd_statement_graph(statement);
 
   if (!is_resource(subject) || !is_resource(predicate) || !object) {
     return SERD_BAD_ARG;
