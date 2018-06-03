@@ -13,6 +13,7 @@ unit_tests = [
   'read_chunk',
   'reader_writer',
   'sink',
+  'statement',
   'string',
   'uri',
   'world',
