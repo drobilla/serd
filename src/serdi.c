@@ -247,15 +247,18 @@ main(int argc, char** argv)
 	serd_reader_add_blank_prefix(reader, add_prefix);
 	serd_node_free(root);
 
-	SerdStatus status = SERD_SUCCESS;
+	SerdStatus status     = SERD_SUCCESS;
+	SerdNode*  input_name = NULL;
 	if (from_string) {
-		status = serd_reader_start_string(reader, input);
+		input_name = serd_new_string("string");
+		status = serd_reader_start_string(reader, input, input_name);
 	} else if (from_stdin) {
+		input_name = serd_new_string("stdin");
 		status = serd_reader_start_stream(reader,
 		                                  serd_file_read_byte,
 		                                  (SerdStreamErrorFunc)ferror,
 		                                  stdin,
-		                                  "(stdin)",
+		                                  input_name,
 		                                  1);
 	} else {
 		status = serd_reader_start_file(reader, input, bulk_read);

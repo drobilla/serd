@@ -48,11 +48,9 @@ serd_byte_source_open_source(SerdByteSource*     source,
                              SerdStreamErrorFunc error_func,
                              SerdStreamCloseFunc close_func,
                              void*               stream,
-                             const char*         name,
+                             const SerdNode*     name,
                              size_t              page_size)
 {
-	const Cursor cur = { name, 1, 1 };
-
 	memset(source, '\0', sizeof(*source));
 	source->read_func   = read_func;
 	source->error_func  = error_func;
@@ -60,8 +58,11 @@ serd_byte_source_open_source(SerdByteSource*     source,
 	source->stream      = stream;
 	source->page_size   = page_size;
 	source->buf_size    = page_size;
-	source->cur         = cur;
+	source->name        = serd_node_copy(name);
 	source->from_stream = true;
+
+	const SerdCursor cur = { source->name, 1, 1 };
+	source->cur = cur;
 
 	if (page_size > 1) {
 		source->file_buf = (uint8_t*)serd_allocate_buffer(page_size);
@@ -89,13 +90,18 @@ serd_byte_source_prepare(SerdByteSource* source)
 }
 
 SerdStatus
-serd_byte_source_open_string(SerdByteSource* source, const char* utf8)
+serd_byte_source_open_string(SerdByteSource* source,
+                             const char*     utf8,
+                             const SerdNode* name)
 {
-	const Cursor cur = { "(string)", 1, 1 };
-
 	memset(source, '\0', sizeof(*source));
-	source->cur      = cur;
+
+	source->name     = name ? serd_node_copy(name) : serd_new_string("string");
 	source->read_buf = (const uint8_t*)utf8;
+
+	const SerdCursor cur = {source->name, 1, 1};
+	source->cur          = cur;
+
 	return SERD_SUCCESS;
 }
 
@@ -110,6 +116,7 @@ serd_byte_source_close(SerdByteSource* source)
 	if (source->page_size > 1) {
 		free(source->file_buf);
 	}
+	serd_node_free(source->name);
 	memset(source, '\0', sizeof(*source));
 	return st;
 }

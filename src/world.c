@@ -18,6 +18,7 @@
 
 #include "world.h"
 
+#include "cursor.h"
 #include "node.h"
 #include "serd_config.h"
 
@@ -54,7 +55,14 @@ serd_world_error(const SerdWorld* world, const SerdError* e)
 	if (world->error_sink) {
 		world->error_sink(world->error_handle, e);
 	} else {
-		fprintf(stderr, "error: %s:%u:%u: ", e->filename, e->line, e->col);
+		fprintf(stderr, "error: ");
+		if (e->cursor) {
+			fprintf(stderr,
+			        "%s:%u:%u: ",
+			        serd_node_get_string(e->cursor->file),
+			        e->cursor->line,
+			        e->cursor->col);
+		}
 		vfprintf(stderr, e->fmt, *e->args);
 	}
 	return e->status;
@@ -65,7 +73,7 @@ serd_world_errorf(const SerdWorld* world, SerdStatus st, const char* fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
-	const SerdError e = { st, NULL, 0, 0, fmt, &args };
+	const SerdError e = { st, NULL, fmt, &args };
 	serd_world_error(world, &e);
 	va_end(args);
 	return st;

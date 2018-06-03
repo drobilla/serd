@@ -69,6 +69,11 @@ typedef struct SerdWorldImpl SerdWorld;
 typedef struct SerdStatementImpl SerdStatement;
 
 /**
+   Cursor, the origin of a statement in a document.
+*/
+typedef struct SerdCursorImpl SerdCursor;
+
+/**
    Environment.
 
    Represents the state required to resolve a CURIE or relative URI, e.g. the
@@ -255,12 +260,10 @@ typedef struct {
    An error description.
 */
 typedef struct {
-	SerdStatus  status;    /**< Error code */
-	const char* filename;  /**< File where error was encountered, or NULL */
-	unsigned    line;      /**< Line where error was encountered, or 0 */
-	unsigned    col;       /**< Column where error was encountered */
-	const char* fmt;       /**< Message format string (printf style) */
-	va_list*    args;      /**< Arguments for fmt */
+	SerdStatus        status;  /**< Error code */
+	const SerdCursor* cursor;  /**< Origin of error, or NULL */
+	const char*       fmt;     /**< Message format string (printf style) */
+	va_list*          args;    /**< Arguments for fmt */
 } SerdError;
 
 /**
@@ -1112,7 +1115,7 @@ serd_reader_start_stream(SerdReader*         reader,
                          SerdReadFunc        read_func,
                          SerdStreamErrorFunc error_func,
                          void*               stream,
-                         const char*         name,
+                         const SerdNode*     name,
                          size_t              page_size);
 
 /**
@@ -1120,7 +1123,9 @@ serd_reader_start_stream(SerdReader*         reader,
 */
 SERD_API
 SerdStatus
-serd_reader_start_string(SerdReader* reader, const char* utf8);
+serd_reader_start_string(SerdReader*     reader,
+                         const char*     utf8,
+                         const SerdNode* name);
 
 /**
    Read a single "chunk" of data during an incremental read.
@@ -1300,6 +1305,70 @@ serd_statement_get_object(const SerdStatement* statement);
 SERD_API
 const SerdNode*
 serd_statement_get_graph(const SerdStatement* statement);
+
+/**
+   @}
+   @name Cursor
+   @{
+*/
+
+/**
+   Create a new cursor
+
+   Note that, to minimise model overhead, the cursor does not own the name
+   node, so `name` must have a longer lifetime than the cursor for it to be
+   valid.  That is, serd_cursor_get_name() will return exactly the pointer
+   `name`, not a copy.  For cursors from models, this is the lifetime of the
+   model.  For user-created cursors, the simplest way to handle this is to use
+   `SerdNodes`.
+
+   @param name The name of the document or stream (usually a file URI)
+   @param line The line number in the document (1-based)
+   @param col The column number in the document (1-based)
+   @return A new cursor that must be freed with serd_cursor_free()
+*/
+SERD_API
+SerdCursor*
+serd_cursor_new(const SerdNode* name, unsigned line, unsigned col);
+
+/// Return a copy of `cursor`
+SERD_API
+SerdCursor*
+serd_cursor_copy(const SerdCursor* cursor);
+
+/// Free `cursor`
+SERD_API
+void
+serd_cursor_free(SerdCursor* cursor);
+
+/// Return true iff `lhs` is equal to `rhs`
+SERD_API
+bool
+serd_cursor_equals(const SerdCursor* lhs, const SerdCursor* rhs);
+
+/**
+   Return the document name.
+
+   This is typically a file URI, but may be a descriptive string node for
+   statements that originate from streams.
+*/
+SERD_API
+const SerdNode*
+serd_cursor_get_name(const SerdCursor* cursor);
+
+/**
+   Return the one-relative line number in the document.
+*/
+SERD_API
+unsigned
+serd_cursor_get_line(const SerdCursor* cursor);
+
+/**
+   Return the zero-relative column number in the line.
+*/
+SERD_API
+unsigned
+serd_cursor_get_column(const SerdCursor* cursor);
 
 /**
    @}
