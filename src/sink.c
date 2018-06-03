@@ -16,6 +16,8 @@
 
 #include "sink.h"
 
+#include "statement.h"
+
 #include "serd/serd.h"
 
 #include <stdlib.h>
@@ -86,6 +88,15 @@ serd_sink_write_prefix(const SerdSink* sink,
 }
 
 SerdStatus
+serd_sink_write_statement(const SerdSink*          sink,
+                          const SerdStatementFlags flags,
+                          const SerdStatement*     statement)
+{
+  return sink->statement ? sink->statement(sink->handle, flags, statement)
+                         : SERD_SUCCESS;
+}
+
+SerdStatus
 serd_sink_write(const SerdSink*          sink,
                 const SerdStatementFlags flags,
                 const SerdNode*          subject,
@@ -93,10 +104,8 @@ serd_sink_write(const SerdSink*          sink,
                 const SerdNode*          object,
                 const SerdNode*          graph)
 {
-  return sink->statement
-           ? sink->statement(
-               sink->handle, flags, graph, subject, predicate, object)
-           : SERD_SUCCESS;
+  const SerdStatement statement = {{subject, predicate, object, graph}, NULL};
+  return serd_sink_write_statement(sink, flags, &statement);
 }
 
 SerdStatus
