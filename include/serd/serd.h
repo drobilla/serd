@@ -873,7 +873,11 @@ serd_env_expand(const SerdEnv* SERD_NONNULL  env,
                 SerdStringView* SERD_NONNULL uri_suffix);
 
 /**
-   Expand `node`, which must be a CURIE or URI, to a full URI.
+   Expand `node`, transforming CURIEs into URIs.
+
+   If `node` is a relative URI reference, it is expanded to a full URI if
+   possible.  If `node` is a literal, its datatype is expanded if necessary.
+   If `node` is a CURIE, it is expanded to a full URI if possible.
 
    Returns null if `node` can not be expanded.
 */
