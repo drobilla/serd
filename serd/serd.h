@@ -949,6 +949,66 @@ serd_env_foreach(const SerdEnv* env,
 
 /**
    @}
+   @name Sink
+   @{
+*/
+
+/**
+   Set the base URI.
+
+   Simple wrapper for the `SerdBaseSink` of `sink`.
+*/
+SERD_API
+SerdStatus
+serd_sink_write_base(const SerdSink* sink, const SerdNode* uri);
+
+/**
+   Set a namespace prefix.
+
+   Simple wrapper for the `SerdPrefixSink` of `sink`.
+*/
+SERD_API
+SerdStatus
+serd_sink_write_prefix(const SerdSink* sink,
+                       const SerdNode* name,
+                       const SerdNode* uri);
+
+/**
+   Write a statement.
+
+   Simple wrapper for the `SerdStatementSink` of `sink`.
+*/
+SERD_API
+SerdStatus
+serd_sink_write_statement(const SerdSink*      sink,
+                          SerdStatementFlags   flags,
+                          const SerdStatement* statement);
+
+/**
+   Write a statement from individual nodes.
+
+   Simple wrapper for the `SerdStatementSink` of `sink`.
+*/
+SERD_API
+SerdStatus
+serd_sink_write(const SerdSink*    sink,
+                SerdStatementFlags flags,
+                const SerdNode*    subject,
+                const SerdNode*    predicate,
+                const SerdNode*    object,
+                const SerdNode*    graph);
+
+/**
+   Mark the end of an anonymous node.
+
+   Simple wrapper for the `SerdEndSink` of `sink`.
+*/
+SERD_API
+SerdStatus
+serd_sink_write_end(const SerdSink* sink, const SerdNode* node);
+
+/**
+   @}
    @name Reader
    @{
 */
