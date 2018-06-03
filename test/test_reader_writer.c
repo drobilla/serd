@@ -57,18 +57,12 @@ test_prefix_sink(void* handle, const SerdNode* name, const SerdNode* uri)
 }
 
 static SerdStatus
-test_statement_sink(void*              handle,
-                    SerdStatementFlags flags,
-                    const SerdNode*    graph,
-                    const SerdNode*    subject,
-                    const SerdNode*    predicate,
-                    const SerdNode*    object)
+test_statement_sink(void*                    handle,
+                    const SerdStatementFlags flags,
+                    const SerdStatement*     statement)
 {
-  (void)graph;
   (void)flags;
-  (void)subject;
-  (void)predicate;
-  (void)object;
+  (void)statement;
 
   ReaderTest* rt = (ReaderTest*)handle;
   ++rt->n_statement;
