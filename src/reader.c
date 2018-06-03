@@ -214,7 +214,7 @@ emit_statement_at(SerdReader* const   reader,
   serd_node_zero_pad(o);
 
   const SerdStatementView statement = {
-    ctx.subject, ctx.predicate, o, ctx.graph};
+    ctx.subject, ctx.predicate, o, ctx.graph, caret};
 
   const SerdStatus st =
     serd_sink_write_statement_from(reader->sink, *ctx.flags, statement, caret);

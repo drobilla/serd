@@ -11,6 +11,7 @@
 #include "serd/node.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
+#include "serd/statement.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
 

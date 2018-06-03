@@ -122,7 +122,8 @@ serd_sink_write(const SerdSink*               sink,
   assert(predicate);
   assert(object);
 
-  const SerdStatementView statement = {subject, predicate, object, graph};
+  const SerdStatementView statement = {
+    subject, predicate, object, graph, {NULL, 0, 0}};
 
   return serd_sink_write_statement(sink, flags, statement);
 }

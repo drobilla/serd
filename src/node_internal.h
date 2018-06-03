@@ -10,6 +10,7 @@
 #include "zix/attributes.h"
 #include "zix/string_view.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
