@@ -62,6 +62,13 @@ extern "C" {
 typedef struct SerdWorldImpl SerdWorld;
 
 /**
+   Statement.
+
+   A subject, predicate, and object, with optional graph context.
+*/
+typedef struct SerdStatementImpl SerdStatement;
+
+/**
    Environment.
 
    Represents the state required to resolve a CURIE or relative URI, e.g. the
@@ -1159,6 +1166,47 @@ serd_writer_set_root_uri(SerdWriter*     writer,
 SERD_API
 SerdStatus
 serd_writer_finish(SerdWriter* writer);
+
+/**
+   @}
+   @name Statement
+   @{
+*/
+
+/**
+   Return the given node in `statement`.
+*/
+SERD_API
+const SerdNode*
+serd_statement_get_node(const SerdStatement* statement, SerdField field);
+
+/**
+   Return the subject in `statement`.
+*/
+SERD_API
+const SerdNode*
+serd_statement_get_subject(const SerdStatement* statement);
+
+/**
+   Return the predicate in `statement`.
+*/
+SERD_API
+const SerdNode*
+serd_statement_get_predicate(const SerdStatement* statement);
+
+/**
+   Return the object in `statement`.
+*/
+SERD_API
+const SerdNode*
+serd_statement_get_object(const SerdStatement* statement);
+
+/**
+   Return the graph in `statement`.
+*/
+SERD_API
+const SerdNode*
+serd_statement_get_graph(const SerdStatement* statement);
 
 /**
    @}
