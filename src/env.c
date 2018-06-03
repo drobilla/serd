@@ -209,8 +209,20 @@ SerdNode*
 serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
 {
   switch (node->type) {
-  case SERD_LITERAL:
-    break;
+  case SERD_LITERAL: {
+    const SerdNode* const short_datatype = serd_node_datatype(node);
+    if (short_datatype) {
+      SerdNode* const datatype = serd_env_expand_node(env, short_datatype);
+      if (datatype) {
+        SerdNode* ret = serd_new_literal(serd_node_string_view(node),
+                                         serd_node_string_view(datatype),
+                                         SERD_EMPTY_STRING());
+        serd_node_free(datatype);
+        return ret;
+      }
+    }
+    return NULL;
+  }
   case SERD_URI:
     return serd_new_resolved_uri(serd_node_string_view(node), env->base_uri);
   case SERD_CURIE: {
