@@ -235,6 +235,18 @@ serd_env_expand_node(const SerdEnv*  env,
 		ret->n_bytes = len;
 		return ret;
 	}
+	case SERD_LITERAL:
+		if (serd_node_get_datatype(node)) {
+			SerdNode* datatype = serd_env_expand_node(
+				env, serd_node_get_datatype(node));
+			if (datatype) {
+				SerdNode* ret = serd_node_new_literal(
+					serd_node_get_string(node), datatype, NULL);
+				serd_node_free(datatype);
+				return ret;
+			}
+		}
+		return NULL;
 	case SERD_URI:
 		return serd_node_new_resolved_uri_i(
 			serd_node_get_string(node), &env->base_uri);
