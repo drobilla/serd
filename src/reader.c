@@ -20,6 +20,7 @@
 #include "node.h"
 #include "serd_internal.h"
 #include "stack.h"
+#include "statement.h"
 #include "system.h"
 #include "world.h"
 
@@ -128,8 +129,11 @@ emit_statement(SerdReader* const reader,
      (subject and predicate) were already zeroed by subsequent pushes. */
   serd_node_zero_pad(o);
 
-  const SerdStatus st = serd_sink_write(
-    reader->sink, *ctx.flags, ctx.subject, ctx.predicate, o, ctx.graph);
+  const SerdStatement statement = {{ctx.subject, ctx.predicate, o, ctx.graph},
+                                   &reader->source.cur};
+
+  const SerdStatus st =
+    serd_sink_write_statement(reader->sink, *ctx.flags, &statement);
 
   *ctx.flags &= SERD_ANON_CONT | SERD_LIST_CONT; // Preserve only cont flags
   return st;

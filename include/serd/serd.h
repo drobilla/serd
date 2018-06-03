@@ -846,6 +846,15 @@ SERD_PURE_API
 unsigned
 serd_cursor_column(const SerdCursor* SERD_NONNULL cursor);
 
+/**
+   @}
+   @defgroup serd_statement Statement
+   @{
+*/
+
+/// A subject, predicate, and object, with optional graph context
+typedef struct SerdStatementImpl SerdStatement;
+
 /// Index of a node in a statement
 typedef enum {
   SERD_SUBJECT   = 0, ///< Subject
@@ -853,6 +862,37 @@ typedef enum {
   SERD_OBJECT    = 2, ///< Object ("value")
   SERD_GRAPH     = 3, ///< Graph ("context")
 } SerdField;
+
+/// Return the given node of the statement
+SERD_PURE_API
+const SerdNode* SERD_NULLABLE
+serd_statement_node(const SerdStatement* SERD_NONNULL statement,
+                    SerdField                         field);
+
+/// Return the subject of the statement
+SERD_PURE_API
+const SerdNode* SERD_NONNULL
+serd_statement_subject(const SerdStatement* SERD_NONNULL statement);
+
+/// Return the predicate of the statement
+SERD_PURE_API
+const SerdNode* SERD_NONNULL
+serd_statement_predicate(const SerdStatement* SERD_NONNULL statement);
+
+/// Return the object of the statement
+SERD_PURE_API
+const SerdNode* SERD_NONNULL
+serd_statement_object(const SerdStatement* SERD_NONNULL statement);
+
+/// Return the graph of the statement
+SERD_PURE_API
+const SerdNode* SERD_NULLABLE
+serd_statement_graph(const SerdStatement* SERD_NONNULL statement);
+
+/// Return the source location where the statement originated, or NULL
+SERD_PURE_API
+const SerdCursor* SERD_NULLABLE
+serd_statement_cursor(const SerdStatement* SERD_NONNULL statement);
 
 /**
    @}
@@ -960,12 +1000,10 @@ typedef SerdStatus (*SerdPrefixFunc)(void* SERD_NULLABLE          handle,
 
    Called for every RDF statement in the serialisation.
 */
-typedef SerdStatus (*SerdStatementFunc)(void* SERD_NULLABLE           handle,
-                                        SerdStatementFlags            flags,
-                                        const SerdNode* SERD_NULLABLE graph,
-                                        const SerdNode* SERD_NONNULL  subject,
-                                        const SerdNode* SERD_NONNULL  predicate,
-                                        const SerdNode* SERD_NONNULL  object);
+typedef SerdStatus (*SerdStatementFunc)(void* SERD_NULLABLE handle,
+                                        SerdStatementFlags  flags,
+                                        const SerdStatement* SERD_NONNULL
+                                          statement);
 
 /**
    Sink function for anonymous node end markers.
@@ -1044,6 +1082,13 @@ SerdStatus
 serd_sink_write_prefix(const SerdSink* SERD_NONNULL sink,
                        const SerdNode* SERD_NONNULL name,
                        const SerdNode* SERD_NONNULL uri);
+
+/// Write a statement
+SERD_API
+SerdStatus
+serd_sink_write_statement(const SerdSink* SERD_NONNULL      sink,
+                          SerdStatementFlags                flags,
+                          const SerdStatement* SERD_NONNULL statement);
 
 /// Write a statement from individual nodes
 SERD_API

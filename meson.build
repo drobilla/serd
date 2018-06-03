@@ -94,6 +94,7 @@ sources = [
   'src/node.c',
   'src/reader.c',
   'src/sink.c',
+  'src/statement.c',
   'src/string.c',
   'src/syntax.c',
   'src/system.c',
