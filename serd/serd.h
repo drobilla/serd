@@ -324,6 +324,43 @@ serd_base64_decode(const uint8_t* str, size_t len, size_t* size);
 
 /**
    @}
+   @name Byte Streams
+   @{
+*/
+
+/**
+   Function to detect I/O stream errors.
+
+   Identical semantics to `ferror`.
+
+   @return Non-zero if `stream` has encountered an error.
+*/
+typedef int (*SerdStreamErrorFunc)(void* stream);
+
+/**
+   Source function for raw string input.
+
+   Identical semantics to `fread`, but may set errno for more informative error
+   reporting than supported by SerdStreamErrorFunc.
+
+   @param buf Output buffer.
+   @param size Size of a single element of data in bytes (always 1).
+   @param nmemb Number of elements to read.
+   @param stream Stream to read from (FILE* for fread).
+   @return Number of elements (bytes) read.
+*/
+typedef size_t (*SerdSource)(void*  buf,
+                             size_t size,
+                             size_t nmemb,
+                             void*  stream);
+
+/**
+   Sink function for raw string output.
+*/
+typedef size_t (*SerdSink)(const void* buf, size_t len, void* stream);
+
+/**
+   @}
    @name URI
    @{
 */
@@ -377,37 +414,6 @@ serd_uri_parse(const uint8_t* utf8, SerdURI* out);
 SERD_API
 void
 serd_uri_resolve(const SerdURI* r, const SerdURI* base, SerdURI* t);
-
-/**
-   Function to detect I/O stream errors.
-
-   Identical semantics to `ferror`.
-
-   @return Non-zero if `stream` has encountered an error.
-*/
-typedef int (*SerdStreamErrorFunc)(void* stream);
-
-/**
-   Source function for raw string input.
-
-   Identical semantics to `fread`, but may set errno for more informative error
-   reporting than supported by SerdStreamErrorFunc.
-
-   @param buf Output buffer.
-   @param size Size of a single element of data in bytes (always 1).
-   @param nmemb Number of elements to read.
-   @param stream Stream to read from (FILE* for fread).
-   @return Number of elements (bytes) read.
-*/
-typedef size_t (*SerdSource)(void*  buf,
-                             size_t size,
-                             size_t nmemb,
-                             void*  stream);
-
-/**
-   Sink function for raw string output.
-*/
-typedef size_t (*SerdSink)(const void* buf, size_t len, void* stream);
 
 /**
    Serialise `uri` with a series of calls to `sink`.
