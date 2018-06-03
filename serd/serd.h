@@ -1307,6 +1307,13 @@ const SerdNode*
 serd_statement_get_graph(const SerdStatement* statement);
 
 /**
+   Return the source location where `statement` originated, or NULL.
+*/
+SERD_API
+const SerdCursor*
+serd_statement_get_cursor(const SerdStatement* statement);
+
+/**
    @}
    @name Cursor
    @{

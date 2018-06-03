@@ -45,3 +45,9 @@ serd_statement_get_graph(const SerdStatement* statement)
 {
 	return statement->nodes[SERD_GRAPH];
 }
+
+const SerdCursor*
+serd_statement_get_cursor(const SerdStatement* statement)
+{
+	return statement->cursor;
+}

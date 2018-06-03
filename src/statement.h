@@ -27,7 +27,8 @@
 typedef const SerdNode* SerdQuad[4];
 
 struct SerdStatementImpl {
-	SerdQuad nodes;
+	SerdQuad    nodes;
+	SerdCursor* cursor;
 };
 
 #endif  // SERD_STATEMENT_H

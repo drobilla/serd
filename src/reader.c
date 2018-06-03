@@ -128,7 +128,8 @@ emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o)
 	serd_node_zero_pad(o);
 
 	const SerdStatement statement = {
-		{ ctx.subject, ctx.predicate, o, graph }
+		{ ctx.subject, ctx.predicate, o, graph },
+		&reader->source.cur
 	};
 
 	const SerdStatus st = reader->sink->statement(

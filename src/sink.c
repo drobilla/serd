@@ -48,7 +48,8 @@ serd_sink_write(const SerdSink*          sink,
                 const SerdNode*          object,
                 const SerdNode*          graph)
 {
-	const SerdStatement statement = { { subject, predicate, object, graph } };
+	const SerdStatement statement = { { subject, predicate, object, graph },
+		                              NULL };
 	return sink->statement(sink->handle, flags, &statement);
 }
 
