@@ -777,13 +777,15 @@ write_list_obj(SerdWriter* const        writer,
 }
 
 static SerdStatus
-serd_writer_write_statement(SerdWriter* const        writer,
-                            const SerdStatementFlags flags,
-                            const SerdNode* const    graph,
-                            const SerdNode* const    subject,
-                            const SerdNode* const    predicate,
-                            const SerdNode* const    object)
+serd_writer_write_statement(SerdWriter* const          writer,
+                            const SerdStatementFlags   flags,
+                            const SerdStatement* const statement)
 {
+  const SerdNode* const subject   = serd_statement_subject(statement);
+  const SerdNode* const predicate = serd_statement_predicate(statement);
+  const SerdNode* const object    = serd_statement_object(statement);
+  const SerdNode* const graph     = serd_statement_graph(statement);
+
   if (!is_resource(subject) || !is_resource(predicate) || !object) {
     return SERD_ERR_BAD_ARG;
   }

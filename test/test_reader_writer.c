@@ -25,18 +25,12 @@
 #include <string.h>
 
 static SerdStatus
-test_sink(void*              handle,
-          SerdStatementFlags flags,
-          const SerdNode*    graph,
-          const SerdNode*    subject,
-          const SerdNode*    predicate,
-          const SerdNode*    object)
+test_sink(void*                handle,
+          SerdStatementFlags   flags,
+          const SerdStatement* statement)
 {
   (void)flags;
-  (void)subject;
-  (void)predicate;
-  (void)object;
-  (void)graph;
+  (void)statement;
 
   ++*(size_t*)handle;
 
@@ -161,6 +155,8 @@ test_read_string(void)
 
   assert(reader);
   assert(sink);
+
+  serd_sink_set_statement_func(sink, test_sink);
 
   serd_sink_set_statement_func(sink, test_sink);
 
