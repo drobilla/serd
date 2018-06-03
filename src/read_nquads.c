@@ -10,6 +10,7 @@
 #include "stack.h"
 #include "try.h"
 
+#include "serd/caret_view.h"
 #include "serd/event.h"
 #include "serd/node.h"
 #include "serd/sink.h"
@@ -43,6 +44,9 @@ read_nquads_statement(SerdReader* const reader)
       (st = read_horizontal_whitespace(reader))) {
     return st;
   }
+
+  // Preserve the caret for error reporting and read object
+  const SerdCaretView orig_caret = reader->source->caret;
 
   if ((st = read_nt_object(reader, &ctx.object, &ate_dot)) ||
       (st = read_horizontal_whitespace(reader))) {

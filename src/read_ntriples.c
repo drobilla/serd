@@ -10,11 +10,13 @@
 #include "read_utf8.h"
 #include "reader_impl.h"
 #include "reader_internal.h"
+#include "serd/statement_view.h"
 #include "stack.h"
 #include "string_utils.h"
 #include "try.h"
 #include "uri_utils.h"
 
+#include "serd/caret_view.h"
 #include "serd/event.h"
 #include "serd/sink.h"
 #include "serd/statement_view.h"
@@ -657,6 +659,9 @@ read_triple(SerdReader* const reader)
       (st = read_horizontal_whitespace(reader))) {
     return st;
   }
+
+  // Preserve the caret for error reporting and read object
+  const SerdCaretView orig_caret = reader->source->caret;
 
   if ((st = read_nt_object(reader, &ctx.object, &ate_dot)) ||
       (st = read_horizontal_whitespace(reader))) {

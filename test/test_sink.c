@@ -25,15 +25,12 @@
 #define NS_EG "http://example.org/"
 
 typedef struct {
-  ZixStringView  last_base_uri;
-  ZixStringView  last_prefix_name;
-  ZixStringView  last_prefix_uri;
-  ZixStringView  last_end_label;
-  SerdTokenView  last_subject;
-  SerdTokenView  last_predicate;
-  SerdObjectView last_object;
-  SerdTokenView  last_graph;
-  SerdStatus     return_status;
+  ZixStringView     last_base_uri;
+  ZixStringView     last_prefix_name;
+  ZixStringView     last_prefix_uri;
+  ZixStringView     last_end_label;
+  SerdStatementView last_statement;
+  SerdStatus        return_status;
 } State;
 
 static bool
@@ -78,10 +75,7 @@ on_statement(void* const                   handle,
 
   State* const state = (State*)handle;
 
-  state->last_subject   = statement.subject;
-  state->last_predicate = statement.predicate;
-  state->last_object    = statement.object;
-  state->last_graph     = statement.graph;
+  state->last_statement = statement;
 
   return state->return_status;
 }
@@ -134,11 +128,10 @@ test_failed_alloc(void)
 static void
 test_callbacks(void)
 {
-  static const ZixStringView empty     = ZIX_STATIC_STRING("");
-  static const ZixStringView base_str  = ZIX_STATIC_STRING(NS_EG);
-  static const ZixStringView name_str  = ZIX_STATIC_STRING("eg");
-  static const ZixStringView uri_str   = ZIX_STATIC_STRING(NS_EG "uri");
-  static const ZixStringView blank_str = ZIX_STATIC_STRING("b1");
+  static const SerdCaretView  no_caret  = {NULL, 0U, 0U};
+  static const SerdTokenView  no_token  = {(SerdNodeType)0, {"", 0U}};
+  static const SerdObjectView no_object = {
+    (SerdNodeType)0, 0U, {"", 0U}, no_token};
 
   static const SerdTokenView  no_tok = {empty, (SerdNodeType)0};
   static const SerdObjectView no_obj = {empty, (SerdNodeType)0, 0U, no_tok};

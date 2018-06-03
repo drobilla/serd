@@ -184,6 +184,7 @@ sources = files(
   'src/reader.c',
   'src/sink.c',
   'src/statement_view.c',
+  'src/statement.c',
   'src/stream_stdio.c',
   'src/string.c',
   'src/syntax.c',
