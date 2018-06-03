@@ -15,6 +15,7 @@
 #include "try.h"
 #include "uri_utils.h"
 
+#include "serd/caret_view.h"
 #include "serd/event.h"
 #include "serd/sink.h"
 #include "serd/statement_view.h"
@@ -653,6 +654,9 @@ read_triple(SerdReader* const reader)
     return st;
   }
 
+  // Preserve the caret for error reporting and read object
+  const SerdCaretView orig_caret = reader->source->caret;
+
   if ((st = read_nt_object(reader, &ctx.object, &ate_dot)) ||
       (st = read_horizontal_whitespace(reader))) {
     return st;
@@ -667,7 +671,7 @@ read_triple(SerdReader* const reader)
   TRY(st, push_node_termination(reader));
 
   const SerdStatementView statement = {
-    ctx.subject, ctx.predicate, ctx.object, ctx.graph};
+    ctx.subject, ctx.predicate, ctx.object, ctx.graph, orig_caret};
 
   return serd_sink_write_statement(reader->sink, *ctx.flags, statement);
 }

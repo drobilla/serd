@@ -174,6 +174,7 @@ sources = files(
   'src/read_utf8.c',
   'src/reader.c',
   'src/sink.c',
+  'src/statement.c',
   'src/stream_stdio.c',
   'src/string.c',
   'src/syntax.c',

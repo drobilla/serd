@@ -5,13 +5,13 @@
 #define SERD_STATEMENT_VIEW_H
 
 #include "serd/attributes.h"
+#include "serd/caret_view.h"
 #include "serd/node.h"
 #include "zix/attributes.h"
 
 SERD_BEGIN_DECLS
 
 /**
-   @defgroup serd_statement_view Statement View
    @ingroup serd_streaming
    @{
 */
@@ -22,6 +22,7 @@ typedef struct {
   const SerdNode* ZIX_NONNULL  predicate;
   const SerdNode* ZIX_NONNULL  object;
   const SerdNode* ZIX_NULLABLE graph;
+  SerdCaretView                caret;
 } SerdStatementView;
 
 /**

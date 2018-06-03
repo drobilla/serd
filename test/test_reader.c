@@ -560,7 +560,7 @@ check_cursor(void* handle, const SerdEvent* event)
   bool* const called = (bool*)handle;
 
   if (event->type == SERD_STATEMENT) {
-    const SerdCaretView caret = event->statement.caret;
+    const SerdCaretView caret = event->statement.statement.caret;
     assert(caret.document);
     assert(!strcmp(serd_node_string(caret.document), "string"));
     assert(caret.line == 1);
