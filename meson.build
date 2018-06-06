@@ -49,7 +49,7 @@ if get_option('strict')
   elif cc.get_id() == 'msvc'
     c_suppressions += [
       '/wd4061',  # enumerator in switch is not explicitly handled
-      '/wd4365',  # signed/unsigned mismatch
+      '/wd4200',  # nonstandard: zero-sized array in struct/union
       '/wd4514',  # unreferenced inline function has been removed
       '/wd4706',  # assignment within conditional expression
       '/wd4710',  # function not inlined
@@ -124,6 +124,8 @@ else
     '-DEXESS_STATIC',
     '-DSERD_INTERNAL',
     '-DSERD_STATIC',
+    '-DZIX_INTERNAL',
+    '-DZIX_STATIC',
   ]
 endif
 
