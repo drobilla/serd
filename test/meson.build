@@ -4,6 +4,18 @@
 run_suite = find_program('run_suite.py')
 wrapper = meson.get_external_property('exe_wrapper', '')
 
+#######################
+# Runtime Environment #
+#######################
+
+test_env = []
+if build_machine.system() == 'windows' and host_machine.system() == 'windows'
+  # For Windows, we need to add to PATH so that DLLs are found
+  test_env = [
+    'PATH=@0@'.format('subprojects' / 'zix'),
+  ]
+endif
+
 ###################
 # Header Warnings #
 ###################
@@ -40,6 +52,7 @@ foreach name : unit_test_names
       dependencies: serd_dep,
       implicit_include_directories: false,
     ),
+    env: test_env,
     suite: 'unit',
   )
 endforeach
@@ -89,7 +102,7 @@ if is_variable('serdi')
   bad_input_file = files('extra/bad/bad-base.ttl')
   text_input_file = files('extra/bad/README.md')
 
-  test('serd_ttl', serdi, args: [serd_ttl], suite: 'data')
+  test('serd_ttl', serdi, args: [serd_ttl], env: test_env, suite: 'data')
 
   # Command line options
 
@@ -101,18 +114,20 @@ if is_variable('serdi')
         ' '.join(args).substring(1).underscorify(),
         serdi,
         args: args,
+        env: test_env,
         should_fail: kind == 'bad',
         suite: cmd_suite,
       )
     endforeach
   endforeach
 
-  test('none', serdi, should_fail: true, suite: cmd_suite)
+  test('none', serdi, env: test_env, should_fail: true, suite: cmd_suite)
 
   test(
     'quiet',
     files('test_quiet.py'),
     args: script_args + [bad_input_file],
+    env: test_env,
     suite: cmd_suite,
   )
 
@@ -128,10 +143,23 @@ if is_variable('serdi')
   }
 
   foreach name, args : bad_input_tests
-    test(name, serdi, args: args, should_fail: true, suite: input_suite)
+    test(
+      name,
+      serdi,
+      args: args,
+      env: test_env,
+      should_fail: true,
+      suite: input_suite,
+    )
   endforeach
 
-  test('stdin', files('test_stdin.py'), args: script_args, suite: input_suite)
+  test(
+    'stdin',
+    files('test_stdin.py'),
+    args: script_args,
+    env: test_env,
+    suite: input_suite,
+  )
 
   # Output
 
@@ -139,6 +167,7 @@ if is_variable('serdi')
     'empty',
     files('test_empty.py'),
     args: script_args + [serd_ttl],
+    env: test_env,
     suite: 'output',
   )
 
@@ -151,13 +180,14 @@ if is_variable('serdi')
   }
 
   foreach name, args : io_error_tests
-    test(name, serdi, args: args, should_fail: true, suite: 'io')
+    test(name, serdi, args: args, env: test_env, should_fail: true, suite: 'io')
   endforeach
 
   test(
     'write_error',
     files('test_write_error.py'),
     args: script_args + [serd_ttl],
+    env: test_env,
     suite: 'io',
   )
 endif
@@ -313,6 +343,7 @@ if is_variable('serdi')
       name,
       run_suite,
       args: script_args + args,
+      env: test_env,
       suite: ['suite'],
       timeout: 240,
     )

@@ -40,5 +40,6 @@ test(
     dependencies: serd_dep,
     implicit_include_directories: false,
   ),
+  env: test_env,
   suite: 'unit',
 )

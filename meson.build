@@ -9,6 +9,7 @@ project(
     'buildtype=release',
     'c_std=c99',
     'c_winlibs=[]',
+    'cpp_std=c++17',
   ],
   license: 'ISC',
   meson_version: '>= 0.56.0',
@@ -85,6 +86,12 @@ elif cc.get_id() == 'gcc'
     if host_machine.system() == 'windows'
       c_suppressions += ['-Wno-float-conversion']
     endif
+  endif
+
+  if warning_level in ['everything', '3']
+    c_suppressions += [
+      '-Wno-pedantic', # C11
+    ]
   endif
 
 elif cc.get_id() == 'msvc'
@@ -185,6 +192,24 @@ else
   endforeach
 endif
 
+################
+# Dependencies #
+################
+
+zix_dep = dependency(
+  'zix-0',
+  default_options: [
+    'benchmarks=disabled',
+    'docs=disabled',
+    'lint=false',
+    'tests=disabled',
+    'tests_cpp=disabled',
+  ],
+  fallback: ['zix', 'zix_dep'],
+  include_type: 'system',
+  version: '>= 0.6.2',
+)
+
 ###########
 # Library #
 ###########
@@ -241,7 +266,7 @@ libserd = library(
     '-DSERD_INTERNAL',
   ] + c_suppressions + extra_c_args + platform_c_args,
   darwin_versions: [serd_major_version + '.0.0', meson.project_version()],
-  dependencies: m_dep,
+  dependencies: [m_dep, zix_dep],
   gnu_symbol_visibility: 'hidden',
   implicit_include_directories: false,
   include_directories: include_dirs,

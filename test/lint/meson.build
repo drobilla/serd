@@ -101,6 +101,7 @@ if is_variable('serdi')
       ttl_file_path.substring(3).underscorify(),
       check_formatting_py,
       args: [files(ttl_file_path), serdi, '-o', 'turtle'],
+      env: test_env,
       suite: 'data',
     )
   endforeach
@@ -128,6 +129,7 @@ if not meson.is_subproject()
         '--suppressions-list=' + suppress_path,
         '-q',
       ],
+      env: test_env,
       suite: 'code',
     )
   endif
