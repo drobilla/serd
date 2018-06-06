@@ -66,7 +66,7 @@ x64_static:
   <<: *build_definition
   image: lv2plugin/debian-x64
   script:
-    - meson setup build -Ddocs=disabled -Dstrict=true -Dwerror=true -Dstatic=true -Ddefault_library=static -Dexess:default_library=static
+    - meson setup build -Ddocs=disabled -Dstrict=true -Dwerror=true -Dstatic=true -Ddefault_library=static -Dexess:default_library=static -Dzix:default_library=static
     - ninja -C build test
 
 
