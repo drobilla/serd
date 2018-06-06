@@ -58,6 +58,10 @@ exess_dep = dependency('exess-0',
                        version: '>= 0.0.1',
                        fallback: ['exess', 'exess_dep'])
 
+zix_dep = dependency('zix-0',
+                     version: '>= 0.0.1',
+                     fallback: ['zix', 'zix_dep'])
+
 ###########
 # Library #
 ###########
@@ -135,7 +139,7 @@ libserd = library(
     '-DSERD_MINOR_VERSION=@0@'.format(serd_minor_version),
     '-DSERD_VERSION="@0@"'.format(meson.project_version()),
   ],
-  dependencies: [exess_dep, m_dep],
+  dependencies: [exess_dep, m_dep, zix_dep],
   gnu_symbol_visibility: 'hidden',
   include_directories: include_dirs,
   install: true,
