@@ -34,7 +34,7 @@ static:
   stage: build
   image: lv2plugin/debian-x64
   script:
-    - meson setup build -Ddefault_library=static -Ddocs=disabled -Dstatic=true -Dwarning_level=3 -Dwerror=true
+    - meson setup build -Ddefault_library=static -Ddocs=disabled -Dstatic=true -Dwarning_level=3 -Dwerror=true -Dzix:default_library=static
     - ninja -C build test
 
 sanitize:
@@ -99,7 +99,7 @@ mingw32:
     - meson configure -Dbuildtype=release build
     - ninja -C build test
   variables:
-    WINEPATH: "Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\10-win32"
+    WINEPATH: "Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\10-win32;Z:\\builds\\drobilla\\serd\\build\\subprojects\\zix"
 
 mingw64:
   stage: build
@@ -110,7 +110,7 @@ mingw64:
     - meson configure -Dbuildtype=release build
     - ninja -C build test
   variables:
-    WINEPATH: "Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\8.3-win32"
+    WINEPATH: "Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\8.3-win32;Z:\\builds\\drobilla\\serd\\build\\subprojects\\zix"
 
 # Non-Linux/Docker rows (not hosted)
 
