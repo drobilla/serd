@@ -1,0 +1,8 @@
+# Copyright 2021 David Robillard <d@drobilla.net>
+# SPDX-License-Identifier: 0BSD OR ISC
+
+[wrap-git]
+url = https://gitlab.com/drobilla/zix.git
+push-url = git@gitlab.com:drobilla/zix.git
+revision = main
+depth = 1

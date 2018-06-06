@@ -70,6 +70,12 @@ if is_variable('cc')
       endif
     endif
 
+    if warning_level in ['everything', '3']
+      c_suppressions += [
+        '-Wno-pedantic', # C11
+      ]
+    endif
+
   elif cc.get_id() == 'msvc'
     c_suppressions += [
       '/experimental:external',
