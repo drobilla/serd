@@ -9,6 +9,7 @@ project(
     'buildtype=release',
     'c_std=c99',
     'c_winlibs=[]',
+    'cpp_std=c++17',
     'warning_level=3',
   ],
   license: 'ISC',
@@ -109,6 +110,10 @@ exess_dep = dependency('exess-0',
                        version: '>= 0.0.1',
                        fallback: ['exess', 'exess_dep'])
 
+zix_dep = dependency('zix-0',
+                     version: '>= 0.0.1',
+                     fallback: ['zix', 'zix_dep'])
+
 ###########
 # Library #
 ###########
@@ -170,7 +175,7 @@ libserd = library(
     '-DSERD_INTERNAL',
     '-DSERD_VERSION="@0@"'.format(meson.project_version()),
   ] + c_suppressions + extra_c_args + platform_c_args,
-  dependencies: [exess_dep, m_dep],
+  dependencies: [exess_dep, m_dep, zix_dep],
   gnu_symbol_visibility: 'hidden',
   include_directories: include_dirs,
   install: true,
