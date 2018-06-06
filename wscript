@@ -383,7 +383,8 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
                     report.write(earl_assertion(test, result[0], asserter))
 
                 # Run lax test
-                run_test(command.replace('-f', '-l -f'), None, action + ' lax', True)
+                run_test(command.replace('serdi_static', 'serdi_static -l'),
+                         None, action + ' lax', True)
 
     def test_types():
         types = []
