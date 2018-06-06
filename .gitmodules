@@ -4,3 +4,7 @@
 [submodule "subprojects/exess"]
 	path = subprojects/exess
 	url = ../exess.git
+
+[submodule "subprojects/zix"]
+	path = subprojects/zix
+	url = ../zix.git

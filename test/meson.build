@@ -140,7 +140,9 @@ unit_tests = [
 test_env = []
 if build_machine.system() == 'windows' and host_machine.system() == 'windows'
   # For Windows, we need to add to PATH so that DLLs are found
-  test_env = ['PATH=@0@;@1@'.format('subprojects' / 'exess')]
+  test_env = [
+    'PATH=@0@;@1@'.format('subprojects' / 'exess', 'subprojects' / 'zix'),
+  ]
 endif
 
 foreach unit : unit_tests
