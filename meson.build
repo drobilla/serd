@@ -50,7 +50,7 @@ if get_option('strict')
   elif cc.get_id() == 'msvc'
     c_suppressions += [
       '/wd4061',  # enumerator in switch is not explicitly handled
-      '/wd4365',  # signed/unsigned mismatch
+      '/wd4200',  # nonstandard: zero-sized array in struct/union
       '/wd4514',  # unreferenced inline function has been removed
       '/wd4706',  # assignment within conditional expression
       '/wd4710',  # function not inlined
@@ -114,7 +114,7 @@ if get_option('default_library') == 'both'
 
   prog_args = []
   library_type = 'both_libraries'
-  library_args = ['-DSERD_INTERNAL']
+  library_args = ['-DSERD_INTERNAL', '-DZIX_API=']
 elif get_option('default_library') == 'shared'
   if host_machine.system() == 'windows'
     # Meson annoyingly adds its own suffix, so remove this one
@@ -123,7 +123,7 @@ elif get_option('default_library') == 'shared'
 
   prog_args = []
   library_type = 'shared_library'
-  library_args = ['-DSERD_INTERNAL']
+  library_args = ['-DSERD_INTERNAL', '-DZIX_API=']
 else
   prog_args = ['-DSERD_STATIC']
   library_type = 'static_library'
@@ -131,6 +131,7 @@ else
     '-DEXESS_STATIC',
     '-DSERD_INTERNAL',
     '-DSERD_STATIC',
+    '-DZIX_API=',
   ]
 endif
 
