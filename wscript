@@ -312,29 +312,36 @@ def _test_output_syntax(test_class):
         return 'NQuads'
     raise Exception('Unknown test class <%s>' % test_class)
 
+def _load_rdf(filename):
+    "Load an RDF file into python dictionaries via serdi.  Only supports URIs."
+    import subprocess
+    import re
+    model = {}
+    proc  = subprocess.Popen(['./serdi_static', filename], stdout=subprocess.PIPE)
+    for line in proc.communicate()[0].splitlines():
+        matches = re.match('<([^ ]*)> <([^ ]*)> <([^ ]*)> \.', line.decode('utf-8'))
+        if matches:
+            if matches.group(1) not in model:
+                model[matches.group(1)] = {}
+            if matches.group(2) not in model[matches.group(1)]:
+                model[matches.group(1)][matches.group(2)] = []
+            model[matches.group(1)][matches.group(2)] += [matches.group(3)]
+    return model
+
+def _get_resources_with_type(model, rdf_class):
+    tests = []
+    for s, desc in model.items():
+        if rdf_class in desc['http://www.w3.org/1999/02/22-rdf-syntax-ns#type']:
+	        tests += [s]
+    return tests
+
 def test_suite(ctx, base_uri, testdir, report, isyntax, options=''):
     import itertools
 
     srcdir = ctx.path.abspath()
 
-    def load_rdf(filename):
-        "Load an RDF file into python dictionaries via serdi.  Only supports URIs."
-        import subprocess
-        import re
-        model = {}
-        proc  = subprocess.Popen(['./serdi_static', filename], stdout=subprocess.PIPE)
-        for line in proc.communicate()[0].splitlines():
-            matches = re.match('<([^ ]*)> <([^ ]*)> <([^ ]*)> \.', line.decode('utf-8'))
-            if matches:
-                if matches.group(1) not in model:
-                    model[matches.group(1)] = {}
-                if matches.group(2) not in model[matches.group(1)]:
-                    model[matches.group(1)][matches.group(2)] = []
-                model[matches.group(1)][matches.group(2)] += [matches.group(3)]
-        return model
-
     mf = 'http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#'
-    model = load_rdf(os.path.join(srcdir, 'tests', testdir, 'manifest.ttl'))
+    model = _load_rdf(os.path.join(srcdir, 'tests', testdir, 'manifest.ttl'))
 
     asserter = ''
     if os.getenv('USER') == 'drobilla':
@@ -350,10 +357,7 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, options=''):
         return result
 
     def run_tests(test_class, expected_return):
-        tests = []
-        for s, desc in model.items():
-            if test_class in desc['http://www.w3.org/1999/02/22-rdf-syntax-ns#type']:
-                tests += [s]
+        tests = _get_resources_with_type(model, test_class)
         if len(tests) == 0:
             return
 
