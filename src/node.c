@@ -184,8 +184,7 @@ is_dir_sep(const char c)
 SerdNode
 serd_node_new_file_uri(const uint8_t* const path,
                        const uint8_t* const hostname,
-                       SerdURI* const       out,
-                       const bool           escape)
+                       SerdURI* const       out)
 {
   assert(path);
 
@@ -214,7 +213,7 @@ serd_node_new_file_uri(const uint8_t* const path,
   for (size_t i = 0; i < path_len; ++i) {
     if (path[i] == '%') {
       serd_chunk_sink("%%", 2, &chunk);
-    } else if (!escape || is_uri_path_char(path[i])) {
+    } else if (is_uri_path_char(path[i])) {
       serd_chunk_sink(path + i, 1, &chunk);
 #ifdef _WIN32
     } else if (path[i] == '\\') {
