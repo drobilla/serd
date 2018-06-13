@@ -33,7 +33,7 @@ uri_path_len(const SerdURIView* uri)
 }
 
 static inline char
-uri_path_at(const SerdURIView* uri, size_t i)
+uri_path_at(const SerdURIView* uri, const size_t i)
 {
   if (i < uri->path_prefix.length) {
     return uri->path_prefix.data[i];

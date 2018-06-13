@@ -9,9 +9,10 @@ serd (1.1.1) unstable; urgency=medium
   * Rename SerdChunk to SerdStringView
   * Simplify statement flags
   * Simplify writer style options and write UTF-8 by default
+  * Strictly parse percent-encoding in file URIs
   * Use char* for strings in public API
 
- -- David Robillard <d@drobilla.net>  Tue, 30 Jan 2024 14:40:49 +0000
+ -- David Robillard <d@drobilla.net>  Fri, 07 Jun 2024 02:32:48 +0000
 
 serd (0.32.3) unstable; urgency=medium
 
