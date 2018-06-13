@@ -197,9 +197,9 @@ main(int argc, char** argv)
 
 	SerdNode* base = NULL;
 	if (a < argc) {  // Base URI given on command line
-		base = serd_node_new_uri((const char*)argv[a]);
+		base = serd_new_uri((const char*)argv[a]);
 	} else if (!from_string && !from_stdin) {  // Use input file URI
-		base = serd_node_new_file_uri(input, NULL, true);
+		base = serd_new_file_uri(input, NULL, true);
 	}
 
 	FILE*      out_fd = stdout;
@@ -241,7 +241,7 @@ main(int argc, char** argv)
 		serd_world_set_error_sink(world, quiet_error_sink, NULL);
 	}
 
-	SerdNode* root = serd_node_new_uri(root_uri);
+	SerdNode* root = serd_new_uri(root_uri);
 	serd_writer_set_root_uri(writer, root);
 	serd_writer_chop_blank_prefix(writer, chop_prefix);
 	serd_reader_add_blank_prefix(reader, add_prefix);

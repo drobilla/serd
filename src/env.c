@@ -80,7 +80,7 @@ serd_env_set_base_uri(SerdEnv*        env,
 	}
 
 	// Resolve base URI and create a new node and URI for it
-	SerdNode* base_uri_node = serd_node_new_resolved_uri_i(
+	SerdNode* base_uri_node = serd_new_resolved_uri_i(
 		serd_node_get_string(uri), &env->base_uri);
 
 	SerdURI   base_uri;
@@ -145,7 +145,7 @@ serd_env_set_prefix(SerdEnv*        env,
 		serd_env_add(env, name, uri);
 	} else {
 		// Resolve relative URI and create a new node and URI for it
-		SerdNode* abs_uri = serd_node_new_resolved_uri_i(
+		SerdNode* abs_uri = serd_new_resolved_uri_i(
 			serd_node_get_string(uri), &env->base_uri);
 
 		// Set prefix to resolved (absolute) URI
@@ -160,8 +160,8 @@ serd_env_set_prefix_from_strings(SerdEnv*    env,
                                  const char* name,
                                  const char* uri)
 {
-	SerdNode* name_node = serd_node_new_string(name);
-	SerdNode* uri_node  = serd_node_new_uri(uri);
+	SerdNode* name_node = serd_new_string(name);
+	SerdNode* uri_node  = serd_new_uri(uri);
 
 	const SerdStatus st = serd_env_set_prefix(env, name_node, uri_node);
 
@@ -240,15 +240,15 @@ serd_env_expand_node(const SerdEnv*  env,
 			SerdNode* datatype = serd_env_expand_node(
 				env, serd_node_get_datatype(node));
 			if (datatype) {
-				SerdNode* ret = serd_node_new_literal(
-					serd_node_get_string(node), datatype, NULL);
+				SerdNode* ret = serd_new_typed_literal(
+					serd_node_get_string(node), datatype);
 				serd_node_free(datatype);
 				return ret;
 			}
 		}
 		return NULL;
 	case SERD_URI:
-		return serd_node_new_resolved_uri_i(
+		return serd_new_resolved_uri_i(
 			serd_node_get_string(node), &env->base_uri);
 	default:
 		return NULL;

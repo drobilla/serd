@@ -76,7 +76,7 @@ serd_world_new(void)
 {
 	SerdWorld* world = (SerdWorld*)calloc(1, sizeof(SerdWorld));
 
-	world->blank_node = serd_node_new_blank("b0000000000");
+	world->blank_node = serd_new_blank("b0000000000");
 
 	return world;
 }

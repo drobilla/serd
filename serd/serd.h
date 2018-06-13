@@ -344,7 +344,7 @@ serd_strtod(const char* str, size_t* end);
 /**
    Decode a base64 string.
    This function can be used to deserialise a blob node created with
-   serd_node_new_blob().
+   serd_new_blob().
 
    @param str Base64 string to decode.
    @param len The length of `str`.
@@ -523,47 +523,83 @@ serd_uri_serialise_relative(const SerdURI* uri,
 */
 SERD_API
 SerdNode*
-serd_node_new_simple_node(SerdType type, const char* str, size_t len);
+serd_new_simple_node(SerdType type, const char* str, size_t len);
 
 /**
    Create a new plain literal string node from `str`.
 */
 SERD_API
 SerdNode*
-serd_node_new_string(const char* str);
+serd_new_string(const char* str);
 
 /**
    Create a new plain literal string node from a prefix of `str`.
 */
 SERD_API
 SerdNode*
-serd_node_new_substring(const char* str, size_t len);
+serd_new_substring(const char* str, size_t len);
+
+/**
+   Create a new literal node from substrings.
+
+   This is a low-level constructor which can be used for constructing a literal
+   from slices of a buffer (for example, directly from a Turtle literal)
+   without copying.  In most cases, applications should use the simpler
+   serd_new_plain_literal() or serd_new_typed_literal().
+
+   Either `datatype_uri` or `lang` can be given, but not both, unless
+   `datatype_uri` is rdf:langString in which case it is ignored.
+
+   @param str Literal body string.
+   @param str_len Length of `str` in bytes.
+   @param datatype_uri Full datatype URI, or NULL.
+   @param datatype_uri_len Length of `datatype_uri` in bytes.
+   @param lang Language string.
+   @param lang_len Length of `lang` in bytes.
+*/
+SERD_API
+SerdNode*
+serd_new_literal(const char* str,
+                 size_t      str_len,
+                 const char* datatype_uri,
+                 size_t      datatype_uri_len,
+                 const char* lang,
+                 size_t      lang_len);
 
 /**
    Create a new literal node from `str`.
 
-   Either `datatype` or `lang` can be given, but not both, unless `datatype` is
-   rdf:langString in which case it is ignored.
+   A plain literal has no datatype, but may have a language tag.  The `lang`
+   may be NULL, in which case this is equivalent to `serd_new_string()`.
 */
 SERD_API
 SerdNode*
-serd_node_new_literal(const char*     str,
-                      const SerdNode* datatype,
-                      const char*     lang);
+serd_new_plain_literal(const char* str, const char* lang);
+
+/**
+   Create a new typed literal node from `str`.
+
+   A typed literal has no language tag, but may have a datatype.  The
+   `datatype` may be NULL, in which case this is equivalent to
+   `serd_new_string()`.
+*/
+SERD_API
+SerdNode*
+serd_new_typed_literal(const char* str, const SerdNode* datatype);
 
 /**
    Create a new blank node.
 */
 SERD_API
 SerdNode*
-serd_node_new_blank(const char* str);
+serd_new_blank(const char* str);
 
 /**
    Create a new CURIE node.
 */
 SERD_API
 SerdNode*
-serd_node_new_curie(const char* str);
+serd_new_curie(const char* str);
 
 /**
    Return a deep copy of `node`.
@@ -584,14 +620,14 @@ serd_node_equals(const SerdNode* a, const SerdNode* b);
 */
 SERD_API
 SerdNode*
-serd_node_new_uri(const char* str);
+serd_new_uri(const char* str);
 
 /**
    Create a new URI from a string, resolved against a base URI.
 */
 SERD_API
 SerdNode*
-serd_node_new_resolved_uri(const char* str, const SerdNode* base);
+serd_new_resolved_uri(const char* str, const SerdNode* base);
 
 /**
    Resolve `node` against `base`.
@@ -614,7 +650,7 @@ serd_node_resolve(const SerdNode* node, const SerdNode* base);
 */
 SERD_API
 SerdNode*
-serd_node_new_file_uri(const char* path, const char* hostname, bool escape);
+serd_new_file_uri(const char* path, const char* hostname, bool escape);
 
 /**
    Create a new URI from a string, relative to a base URI.
@@ -631,9 +667,9 @@ serd_node_new_file_uri(const char* path, const char* hostname, bool escape);
 */
 SERD_API
 SerdNode*
-serd_node_new_relative_uri(const char*     str,
-                           const SerdNode* base,
-                           const SerdNode* root);
+serd_new_relative_uri(const char*     str,
+                      const SerdNode* base,
+                      const SerdNode* root);
 
 /**
    Create a new node by serialising `d` into an xsd:decimal string.
@@ -656,7 +692,7 @@ serd_node_new_relative_uri(const char*     str,
 */
 SERD_API
 SerdNode*
-serd_node_new_decimal(double d, unsigned frac_digits, const SerdNode* datatype);
+serd_new_decimal(double d, unsigned frac_digits, const SerdNode* datatype);
 
 /**
    Create a new node by serialising `i` into an xsd:integer string.
@@ -668,7 +704,7 @@ serd_node_new_decimal(double d, unsigned frac_digits, const SerdNode* datatype);
 */
 SERD_API
 SerdNode*
-serd_node_new_integer(int64_t i, const SerdNode* datatype);
+serd_new_integer(int64_t i, const SerdNode* datatype);
 
 /**
    Create a node by serialising `buf` into an xsd:base64Binary string.
@@ -685,10 +721,11 @@ serd_node_new_integer(int64_t i, const SerdNode* datatype);
    type xsd:base64Binary.
 */
 SERD_API
-SerdNode* serd_node_new_blob(const void*     buf,
-                             size_t          size,
-                             bool            wrap_lines,
-                             const SerdNode* datatype);
+SerdNode*
+serd_new_blob(const void*     buf,
+              size_t          size,
+              bool            wrap_lines,
+              const SerdNode* datatype);
 
 /**
    Return the type of a node (SERD_URI, SERD_BLANK, or SERD_LITERAL).
