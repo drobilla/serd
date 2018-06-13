@@ -82,7 +82,6 @@ test_sink(void*                handle,
 static void
 test_file_uri(const char* hostname,
               const char* path,
-              bool        escape,
               const char* expected_uri,
               const char* expected_path)
 {
@@ -90,7 +89,7 @@ test_file_uri(const char* hostname,
 		expected_path = path;
 	}
 
-	SerdNode*   node         = serd_new_file_uri(path, hostname, escape);
+	SerdNode*   node         = serd_new_file_uri(path, hostname);
 	const char* node_str     = serd_node_get_string(node);
 	char*       out_hostname = NULL;
 	char*       out_path     = serd_file_uri_parse(node_str, &out_hostname);
@@ -332,17 +331,15 @@ test_strerror(void)
 static void
 test_uri_parsing(void)
 {
-	test_file_uri(NULL, "C:/My 100%", true,
+	test_file_uri(NULL, "C:/My 100%",
 	              "file:///C:/My%20100%%", NULL);
-	test_file_uri("ahost", "C:\\Pointless Space", true,
+	test_file_uri("ahost", "C:\\Pointless Space",
 	              "file://ahost/C:/Pointless%20Space", "C:/Pointless Space");
-	test_file_uri(NULL, "/foo/bar", true,
+	test_file_uri(NULL, "/foo/bar",
 	              "file:///foo/bar", NULL);
-	test_file_uri("bhost", "/foo/bar", true,
+	test_file_uri("bhost", "/foo/bar",
 	              "file://bhost/foo/bar", NULL);
-	test_file_uri(NULL, "a/relative path", false,
-	              "a/relative path", NULL);
-	test_file_uri(NULL, "a/relative <path>", true,
+	test_file_uri(NULL, "a/relative <path>",
 	              "a/relative%20%3Cpath%3E", NULL);
 
 	// Test tolerance of parsing junk URI escapes

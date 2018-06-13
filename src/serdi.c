@@ -199,7 +199,7 @@ main(int argc, char** argv)
 	if (a < argc) {  // Base URI given on command line
 		base = serd_new_uri((const char*)argv[a]);
 	} else if (!from_string && !from_stdin) {  // Use input file URI
-		base = serd_new_file_uri(input, NULL, true);
+		base = serd_new_file_uri(input, NULL);
 	}
 
 	FILE*      out_fd = stdout;

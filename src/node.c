@@ -453,7 +453,7 @@ is_uri_path_char(const char c)
 }
 
 SerdNode*
-serd_new_file_uri(const char* path, const char* hostname, bool escape)
+serd_new_file_uri(const char* path, const char* hostname)
 {
 	const size_t path_len     = strlen(path);
 	const size_t hostname_len = hostname ? strlen(hostname) : 0;
@@ -474,7 +474,7 @@ serd_new_file_uri(const char* path, const char* hostname, bool escape)
 			serd_buffer_sink("/", 1, 1, &buffer);
 		} else if (path[i] == '%') {
 			serd_buffer_sink("%%", 1, 2, &buffer);
-		} else if (!escape || is_uri_path_char(path[i])) {
+		} else if (is_uri_path_char(path[i])) {
 			serd_buffer_sink(path + i, 1, 1, &buffer);
 		} else {
 			char escape_str[4] = { '%', 0, 0, 0 };
