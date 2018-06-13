@@ -52,17 +52,16 @@ test_uri_string_length(void)
 }
 
 static void
-test_file_uri(const char* const hostname,
-              const char* const path,
-              const bool        escape,
-              const char* const expected_uri,
-              const char*       expected_path)
+check_file_uri(const char* const hostname,
+               const char* const path,
+               const char* const expected_uri,
+               const char*       expected_path)
 {
   if (!expected_path) {
     expected_path = path;
   }
 
-  SerdNode node         = serd_node_new_file_uri(path, hostname, 0, escape);
+  SerdNode node         = serd_node_new_file_uri(path, hostname, 0);
   char*    out_hostname = NULL;
   char*    out_path = serd_parse_file_uri((const char*)node.buf, &out_hostname);
   assert(!strcmp(node.buf, expected_uri));
@@ -76,64 +75,51 @@ test_file_uri(const char* const hostname,
 }
 
 static void
-test_uri_parsing(void)
+test_file_uri(void)
 {
-  test_file_uri(NULL, "C:/My 100%", true, "file:///C:/My%20100%%", NULL);
-  test_file_uri(NULL, "/foo/bar", true, "file:///foo/bar", NULL);
-  test_file_uri("bhost", "/foo/bar", true, "file://bhost/foo/bar", NULL);
-  test_file_uri(NULL, "a/relative path", false, "a/relative path", NULL);
-  test_file_uri(
-    NULL, "a/relative <path>", true, "a/relative%20%3Cpath%3E", NULL);
+  check_file_uri(NULL, "C:/My Documents", "file:///C:/My%20Documents", NULL);
+  check_file_uri(NULL, "/foo/bar", "file:///foo/bar", NULL);
+  check_file_uri("bhost", "/foo/bar", "file://bhost/foo/bar", NULL);
+  check_file_uri(NULL, "a/relative <path>", "a/relative%20%3Cpath%3E", NULL);
 
 #ifdef _WIN32
-  test_file_uri(
-    NULL, "C:\\My 100%", true, "file:///C:/My%20100%%", "C:/My 100%");
+  check_file_uri(
+    NULL, "C:\\My Documents", "file:///C:/My%20Documents", "C:/My Documents");
 
-  test_file_uri(NULL,
-                "\\drive\\relative",
-                true,
-                "file:///drive/relative",
-                "/drive/relative");
+  check_file_uri(
+    NULL, "\\drive\\relative", "file:///drive/relative", "/drive/relative");
 
-  test_file_uri(NULL,
-                "C:\\Program Files\\Serd",
-                true,
-                "file:///C:/Program%20Files/Serd",
-                "C:/Program Files/Serd");
+  check_file_uri(NULL,
+                 "C:\\Program Files\\Serd",
+                 "file:///C:/Program%20Files/Serd",
+                 "C:/Program Files/Serd");
 
-  test_file_uri("ahost",
-                "C:\\Pointless Space",
-                true,
-                "file://ahost/C:/Pointless%20Space",
-                "C:/Pointless Space");
+  check_file_uri("ahost",
+                 "C:\\Pointless Space",
+                 "file://ahost/C:/Pointless%20Space",
+                 "C:/Pointless Space");
 #else
   /* What happens with Windows paths on other platforms is a bit weird, but
      more or less unavoidable.  It doesn't work to interpret backslashes as
      path separators on any other platform. */
 
-  test_file_uri("ahost",
-                "C:\\Pointless Space",
-                true,
-                "file://ahost/C:%5CPointless%20Space",
-                "/C:\\Pointless Space");
+  check_file_uri("ahost",
+                 "C:\\Pointless Space",
+                 "file://ahost/C:%5CPointless%20Space",
+                 "/C:\\Pointless Space");
 
-  test_file_uri(NULL,
-                "\\drive\\relative",
-                true,
-                "%5Cdrive%5Crelative",
-                "\\drive\\relative");
+  check_file_uri(
+    NULL, "\\drive\\relative", "%5Cdrive%5Crelative", "\\drive\\relative");
 
-  test_file_uri(NULL,
-                "C:\\Program Files\\Serd",
-                true,
-                "file:///C:%5CProgram%20Files%5CSerd",
-                "/C:\\Program Files\\Serd");
+  check_file_uri(NULL,
+                 "C:\\Program Files\\Serd",
+                 "file:///C:%5CProgram%20Files%5CSerd",
+                 "/C:\\Program Files\\Serd");
 
-  test_file_uri("ahost",
-                "C:\\Pointless Space",
-                true,
-                "file://ahost/C:%5CPointless%20Space",
-                "/C:\\Pointless Space");
+  check_file_uri("ahost",
+                 "C:\\Pointless Space",
+                 "file://ahost/C:%5CPointless%20Space",
+                 "/C:\\Pointless Space");
 #endif
 
   // Test tolerance of NULL hostname parameter
@@ -141,15 +127,10 @@ test_uri_parsing(void)
   assert(!strcmp(hosted, "/path"));
   serd_free(hosted);
 
-  // Test tolerance of parsing junk URI escapes
-
-  char* const junk1 = serd_parse_file_uri("file:///foo/%0Xbar", NULL);
-  assert(!strcmp(junk1, "/foo/bar"));
-  serd_free(junk1);
-
-  char* const junk2 = serd_parse_file_uri("file:///foo/%X0bar", NULL);
-  assert(!strcmp(junk2, "/foo/bar"));
-  serd_free(junk2);
+  // Test rejection of invalid precent-encoding
+  assert(!serd_parse_file_uri("file:///dir/%X0", NULL));
+  assert(!serd_parse_file_uri("file:///dir/%0X", NULL));
+  assert(!serd_parse_file_uri("file:///dir/100%%", NULL));
 }
 
 static void
@@ -416,7 +397,7 @@ main(void)
 {
   test_uri_string_has_scheme();
   test_uri_string_length();
-  test_uri_parsing();
+  test_file_uri();
   test_uri_from_string();
   test_is_within();
   test_relative_uri();

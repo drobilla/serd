@@ -50,17 +50,15 @@ serd_parse_file_uri(const char* const uri, char** const hostname)
   SerdBuffer buffer = {NULL, 0};
   for (const char* s = path; *s; ++s) {
     if (*s == '%') {
-      if (*(s + 1) == '%') {
-        serd_buffer_sink("%", 1, &buffer);
-        ++s;
-      } else if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
+      if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
         const uint8_t hi = hex_digit_value((const uint8_t)s[1]);
         const uint8_t lo = hex_digit_value((const uint8_t)s[2]);
         const char    c  = (char)((hi << 4U) | lo);
         serd_buffer_sink(&c, 1, &buffer);
         s += 2;
       } else {
-        s += 2; // Junk escape, ignore
+        free(buffer.buf);
+        return NULL; // Invalid percent-encoding
       }
     } else {
       serd_buffer_sink(s, 1, &buffer);

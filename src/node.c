@@ -136,8 +136,7 @@ is_dir_sep(const char c)
 SerdNode
 serd_node_new_file_uri(const char* const  path,
                        const char* const  hostname,
-                       SerdURIView* const out,
-                       const bool         escape)
+                       SerdURIView* const out)
 {
   assert(path);
 
@@ -164,9 +163,7 @@ serd_node_new_file_uri(const char* const  path,
 
   SerdBuffer buffer = {uri, uri_len};
   for (size_t i = 0; i < path_len; ++i) {
-    if (path[i] == '%') {
-      serd_buffer_sink("%%", 2, &buffer);
-    } else if (!escape || is_uri_path_char(path[i])) {
+    if (is_uri_path_char(path[i])) {
       serd_buffer_sink(path + i, 1, &buffer);
 #ifdef _WIN32
     } else if (path[i] == '\\') {
