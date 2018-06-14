@@ -920,17 +920,14 @@ serd_env_get_base_uri(const SerdEnv* env);
 */
 SERD_API
 SerdStatus
-serd_env_set_base_uri(SerdEnv*        env,
-                      const SerdNode* uri);
+serd_env_set_base_uri(SerdEnv* env, const SerdNode* uri);
 
 /**
    Set a namespace prefix.
 */
 SERD_API
 SerdStatus
-serd_env_set_prefix(SerdEnv*        env,
-                    const SerdNode* name,
-                    const SerdNode* uri);
+serd_env_set_prefix(SerdEnv* env, const SerdNode* name, const SerdNode* uri);
 
 /**
    Set a namespace prefix.
@@ -943,26 +940,12 @@ serd_env_set_prefix_from_strings(SerdEnv*    env,
 
 /**
    Qualify `uri` into a CURIE if possible.
+
+   Returns null if `node` can not be qualified.
 */
 SERD_API
-bool
-serd_env_qualify(const SerdEnv*   env,
-                 const SerdNode*  uri,
-                 const SerdNode** prefix,
-                 SerdStringView*  suffix);
-
-/**
-   Expand `curie`.
-
-   Errors: SERD_ERR_BAD_ARG if `curie` is not valid, or SERD_ERR_BAD_CURIE if
-   prefix is not defined in `env`.
-*/
-SERD_API
-SerdStatus
-serd_env_expand(const SerdEnv*  env,
-                const SerdNode* curie,
-                SerdStringView* uri_prefix,
-                SerdStringView* uri_suffix);
+SerdNode*
+serd_env_qualify(const SerdEnv* env, const SerdNode* uri);
 
 /**
    Expand `node`, which must be a CURIE or URI, to a full URI.
@@ -971,8 +954,7 @@ serd_env_expand(const SerdEnv*  env,
 */
 SERD_API
 SerdNode*
-serd_env_expand_node(const SerdEnv*  env,
-                     const SerdNode* node);
+serd_env_expand(const SerdEnv* env, const SerdNode* node);
 
 /**
    Call `func` for each prefix defined in `env`.

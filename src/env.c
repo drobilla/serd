@@ -155,26 +155,11 @@ serd_env_set_prefix(SerdEnv*        env,
 	return SERD_SUCCESS;
 }
 
-SerdStatus
-serd_env_set_prefix_from_strings(SerdEnv*    env,
-                                 const char* name,
-                                 const char* uri)
-{
-	SerdNode* name_node = serd_new_string(name);
-	SerdNode* uri_node  = serd_new_uri(uri);
-
-	const SerdStatus st = serd_env_set_prefix(env, name_node, uri_node);
-
-	serd_node_free(name_node);
-	serd_node_free(uri_node);
-	return st;
-}
-
 bool
-serd_env_qualify(const SerdEnv*   env,
-                 const SerdNode*  uri,
-                 const SerdNode** prefix,
-                 SerdStringView*  suffix)
+serd_env_qualify_in_place(const SerdEnv*   env,
+                          const SerdNode*  uri,
+                          const SerdNode** prefix,
+                          SerdStringView*  suffix)
 {
 	for (size_t i = 0; i < env->n_prefixes; ++i) {
 		const SerdNode* const prefix_uri = env->prefixes[i].uri;
@@ -194,10 +179,46 @@ serd_env_qualify(const SerdEnv*   env,
 }
 
 SerdStatus
-serd_env_expand(const SerdEnv*  env,
-                const SerdNode* curie,
-                SerdStringView* uri_prefix,
-                SerdStringView* uri_suffix)
+serd_env_set_prefix_from_strings(SerdEnv*    env,
+                                 const char* name,
+                                 const char* uri)
+{
+	SerdNode* name_node = serd_new_string(name);
+	SerdNode* uri_node  = serd_new_uri(uri);
+
+	const SerdStatus st = serd_env_set_prefix(env, name_node, uri_node);
+
+	serd_node_free(name_node);
+	serd_node_free(uri_node);
+	return st;
+}
+
+SerdNode*
+serd_env_qualify(const SerdEnv* env, const SerdNode* uri)
+{
+	const SerdNode* prefix = NULL;
+	SerdStringView  suffix = {NULL, 0};
+	if (serd_env_qualify_in_place(env, uri, &prefix, &suffix)) {
+		const size_t prefix_len = serd_node_get_length(prefix);
+		const size_t n_bytes    = prefix_len + 1 + suffix.len;
+		SerdNode*    node       = serd_node_malloc(n_bytes, 0, SERD_CURIE);
+		memcpy(serd_node_buffer(node),
+		       serd_node_get_string(prefix),
+		       prefix_len);
+		serd_node_buffer(node)[prefix_len] = ':';
+		memcpy(serd_node_buffer(node) + 1 + prefix_len, suffix.buf, suffix.len);
+		node->n_bytes = n_bytes;
+		return node;
+	}
+
+	return NULL;
+}
+
+SerdStatus
+serd_env_expand_in_place(const SerdEnv*  env,
+                         const SerdNode* curie,
+                         SerdStringView* uri_prefix,
+                         SerdStringView* uri_suffix)
 {
 	const char* const str   = serd_node_get_string(curie);
 	const char* const colon = (const char*)memchr(str, ':', curie->n_bytes + 1);
@@ -218,14 +239,17 @@ serd_env_expand(const SerdEnv*  env,
 }
 
 SerdNode*
-serd_env_expand_node(const SerdEnv*  env,
-                     const SerdNode* node)
+serd_env_expand(const SerdEnv* env, const SerdNode* node)
 {
+	if (!node) {
+		return NULL;
+	}
+
 	switch (node->type) {
 	case SERD_CURIE: {
 		SerdStringView prefix;
 		SerdStringView suffix;
-		if (serd_env_expand(env, node, &prefix, &suffix)) {
+		if (serd_env_expand_in_place(env, node, &prefix, &suffix)) {
 			return NULL;
 		}
 		const size_t len = prefix.len + suffix.len;
@@ -237,7 +261,7 @@ serd_env_expand_node(const SerdEnv*  env,
 	}
 	case SERD_LITERAL:
 		if (serd_node_get_datatype(node)) {
-			SerdNode* datatype = serd_env_expand_node(
+			SerdNode* datatype = serd_env_expand(
 				env, serd_node_get_datatype(node));
 			if (datatype) {
 				SerdNode* ret = serd_new_typed_literal(

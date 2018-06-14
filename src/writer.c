@@ -510,7 +510,7 @@ write_uri_node(SerdWriter* const        writer,
 	} else if (supports_abbrev(writer) && !strcmp(node_str, NS_RDF "nil")) {
 		return sink("()", 2, writer) == 2;
 	} else if (has_scheme && (writer->style & SERD_STYLE_CURIED) &&
-	           serd_env_qualify(writer->env, node, &prefix, &suffix) &&
+	           serd_env_qualify_in_place(writer->env, node, &prefix, &suffix) &&
 	           is_name(suffix.buf, suffix.len)) {
 		write_uri_from_node(writer, prefix);
 		sink(":", 1, writer);
@@ -558,9 +558,12 @@ write_curie(SerdWriter* const        writer,
 	switch (writer->syntax) {
 	case SERD_NTRIPLES:
 	case SERD_NQUADS:
-		if ((st = serd_env_expand(writer->env, node, &prefix, &suffix))) {
-			serd_world_errorf(writer->world, st,
-			                  "undefined namespace prefix `%s'\n", node_str);
+		if ((st = serd_env_expand_in_place(
+			     writer->env, node, &prefix, &suffix))) {
+			serd_world_errorf(writer->world,
+			                  st,
+			                  "undefined namespace prefix `%s'\n",
+			                  node_str);
 			return false;
 		}
 		write_sep(writer, SEP_URI_BEGIN);
