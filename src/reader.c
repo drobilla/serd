@@ -20,6 +20,7 @@
 #include "node.h"
 #include "serd/serd.h"
 #include "serd_internal.h"
+#include "sink.h"
 #include "stack.h"
 #include "statement.h"
 #include "system.h"

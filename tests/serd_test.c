@@ -109,11 +109,13 @@ test_read_chunks(void)
 	ReaderTest* const rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
 	FILE* const       f      = tmpfile();
 	static const char null   = 0;
-	SerdSink          sink   = {rt, NULL, NULL, test_sink, NULL};
-	SerdReader*       reader = serd_reader_new(world, SERD_TURTLE, &sink, 4096);
+	SerdSink*         sink   = serd_sink_new(rt);
+	SerdReader*       reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
 
 	assert(reader);
 	assert(f);
+
+	serd_sink_set_statement_func(sink, test_sink);
 
 	SerdStatus st = serd_reader_start_stream(reader,
 	                                         (SerdReadFunc)fread,
@@ -162,6 +164,7 @@ test_read_chunks(void)
 	assert(rt->n_statements == 2);
 
 	serd_reader_free(reader);
+	serd_sink_free(sink);
 	fclose(f);
 	free(rt);
 	serd_world_free(world);
@@ -632,9 +635,9 @@ test_writer(const char* const path)
 	SerdNode* lit = serd_new_string("hello");
 
 	const SerdSink* iface = serd_writer_get_sink(writer);
-	assert(iface->base(iface->handle, lit));
-	assert(iface->prefix(iface->handle, lit, lit));
-	assert(iface->end(iface->handle, NULL));
+	assert(serd_sink_write_base(iface, lit));
+	assert(serd_sink_write_prefix(iface, lit, lit));
+	assert(serd_sink_write_end(iface, NULL));
 	assert(serd_writer_get_env(writer) == env);
 
 	uint8_t buf[] = { 0xEF, 0xBF, 0xBD, 0 };
@@ -723,9 +726,12 @@ static void
 test_reader(const char* path)
 {
 	SerdWorld*  world  = serd_world_new();
-	ReaderTest  rt     = { 0, NULL };
-	SerdSink    sink   = { &rt, NULL, NULL, test_sink, NULL };
-	SerdReader* reader = serd_reader_new(world, SERD_TURTLE, &sink, 4096);
+
+	ReaderTest rt   = { 0, NULL };
+	SerdSink*  sink = serd_sink_new(&rt);
+	serd_sink_set_statement_func(sink, test_sink);
+
+	SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
 	assert(reader);
 
 	SerdNode* g = serd_new_uri("http://example.org/");
@@ -746,6 +752,8 @@ test_reader(const char* path)
 	serd_reader_finish(reader);
 
 	serd_reader_free(reader);
+	serd_sink_free(sink);
+
 	serd_world_free(world);
 }
 
