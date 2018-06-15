@@ -149,12 +149,15 @@ test_write_nested_anon(void)
 }
 
 static size_t
-null_sink(const void* const buf, const size_t len, void* const stream)
+null_sink(const void* const buf,
+          const size_t      size,
+          const size_t      nmemb,
+          void* const       stream)
 {
   (void)buf;
   (void)stream;
 
-  return len;
+  return size * nmemb;
 }
 
 static void
@@ -239,9 +242,13 @@ test_strict_write(void)
 
 // Produce a write error without setting errno
 static size_t
-error_sink(const void* const buf, const size_t len, void* const stream)
+error_sink(const void* const buf,
+           const size_t      size,
+           const size_t      len,
+           void* const       stream)
 {
   (void)buf;
+  (void)size;
   (void)len;
   (void)stream;
   return 0U;
