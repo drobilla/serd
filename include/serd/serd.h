@@ -283,17 +283,29 @@ typedef int (*SerdStreamErrorFunc)(void* SERD_NONNULL stream);
    @param size Size of a single element of data in bytes (always 1).
    @param nmemb Number of elements to read.
    @param stream Stream to read from (FILE* for fread).
-   @return Number of elements (bytes) read.
+   @return Number of elements (bytes) read, which is short on error.
 */
-typedef size_t (*SerdSource)(void* SERD_NONNULL buf,
-                             size_t             size,
-                             size_t             nmemb,
-                             void* SERD_NONNULL stream);
+typedef size_t (*SerdReadFunc)(void* SERD_NONNULL buf,
+                               size_t             size,
+                               size_t             nmemb,
+                               void* SERD_NONNULL stream);
 
-/// Sink function for raw string output
-typedef size_t (*SerdSink)(const void* SERD_NONNULL buf,
-                           size_t                   len,
-                           void* SERD_NONNULL       stream);
+/**
+   Sink function for raw string output.
+
+   Identical semantics to `fwrite`, but may set errno for more informative
+   error reporting than supported by SerdStreamErrorFunc.
+
+   @param buf Input buffer.
+   @param size Size of a single element of data in bytes (always 1).
+   @param nmemb Number of elements to read.
+   @param stream Stream to write to (FILE* for fread).
+   @return Number of elements (bytes) written, which is short on error.
+*/
+typedef size_t (*SerdWriteFunc)(const void* SERD_NONNULL buf,
+                                size_t                   size,
+                                size_t                   nmemb,
+                                void* SERD_NONNULL       stream);
 
 /**
    @}
@@ -422,9 +434,9 @@ serd_uri_is_within(SerdURIView r, SerdURIView base);
 */
 SERD_API
 size_t
-serd_write_uri(SerdURIView           uri,
-               SerdSink SERD_NONNULL sink,
-               void* SERD_NONNULL    stream);
+serd_write_uri(SerdURIView                uri,
+               SerdWriteFunc SERD_NONNULL sink,
+               void* SERD_NONNULL         stream);
 
 /**
    @}
@@ -929,7 +941,7 @@ serd_reader_start_stream(SerdReader* SERD_NONNULL  reader,
 SERD_API
 SerdStatus
 serd_reader_start_source_stream(SerdReader* SERD_NONNULL         reader,
-                                SerdSource SERD_NONNULL          read_func,
+                                SerdReadFunc SERD_NONNULL        read_func,
                                 SerdStreamErrorFunc SERD_NONNULL error_func,
                                 void* SERD_NONNULL               stream,
                                 const char* SERD_NULLABLE        name,
@@ -963,7 +975,7 @@ serd_reader_read_file_handle(SerdReader* SERD_NONNULL  reader,
 SERD_API
 SerdStatus
 serd_reader_read_source(SerdReader* SERD_NONNULL         reader,
-                        SerdSource SERD_NONNULL          source,
+                        SerdReadFunc SERD_NONNULL        source,
                         SerdStreamErrorFunc SERD_NONNULL error,
                         void* SERD_NONNULL               stream,
                         const char* SERD_NULLABLE        name,
@@ -1010,11 +1022,11 @@ typedef uint32_t SerdWriterFlags;
 /// Create a new RDF writer
 SERD_API
 SerdWriter* SERD_ALLOCATED
-serd_writer_new(SerdSyntax            syntax,
-                SerdWriterFlags       flags,
-                SerdEnv* SERD_NONNULL env,
-                SerdSink SERD_NONNULL ssink,
-                void* SERD_NULLABLE   stream);
+serd_writer_new(SerdSyntax                 syntax,
+                SerdWriterFlags            flags,
+                SerdEnv* SERD_NONNULL      env,
+                SerdWriteFunc SERD_NONNULL ssink,
+                void* SERD_NULLABLE        stream);
 
 /// Free `writer`
 SERD_API
@@ -1027,18 +1039,6 @@ SerdEnv* SERD_NONNULL
 serd_writer_env(SerdWriter* SERD_NONNULL writer);
 
 /**
-   A convenience sink function for writing to a FILE*.
-
-   This function can be used as a SerdSink when writing to a FILE*.  The
-   `stream` parameter must be a FILE* opened for writing.
-*/
-SERD_API
-size_t
-serd_file_sink(const void* SERD_NONNULL buf,
-               size_t                   len,
-               void* SERD_NONNULL       stream);
-
-/**
    A convenience sink function for writing to a string.
 
    This function can be used as a SerdSink to write to a SerdBuffer which is
@@ -1049,7 +1049,8 @@ serd_file_sink(const void* SERD_NONNULL buf,
 SERD_API
 size_t
 serd_buffer_sink(const void* SERD_NONNULL buf,
-                 size_t                   len,
+                 size_t                   size,
+                 size_t                   nmemb,
                  void* SERD_NONNULL       stream);
 
 /**
