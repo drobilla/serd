@@ -56,7 +56,7 @@ static const SerdNodeFlags meta_mask = (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE);
 static SerdNode*
 serd_new_from_uri(SerdURIView uri, SerdURIView base);
 
-SERD_PURE_FUNC static size_t
+static size_t
 serd_uri_string_length(const SerdURIView* const uri)
 {
   size_t len = uri->path_prefix.length;
@@ -76,12 +76,15 @@ serd_uri_string_length(const SerdURIView* const uri)
 }
 
 static size_t
-string_sink(const void* const buf, const size_t len, void* const stream)
+string_sink(const void* const buf,
+            const size_t      size,
+            const size_t      nmemb,
+            void* const       stream)
 {
   char** ptr = (char**)stream;
-  memcpy(*ptr, buf, len);
-  *ptr += len;
-  return len;
+  memcpy(*ptr, buf, size * nmemb);
+  *ptr += size * nmemb;
+  return nmemb;
 }
 
 SERD_PURE_FUNC static size_t
@@ -428,18 +431,18 @@ serd_new_file_uri(const SerdStringView path, const SerdStringView hostname)
   SerdBuffer buffer = {uri, uri_len};
   for (size_t i = 0; i < path.length; ++i) {
     if (path.data[i] == '%') {
-      serd_buffer_sink("%%", 2, &buffer);
+      serd_buffer_sink("%%", 1, 2, &buffer);
     } else if (is_uri_path_char(path.data[i])) {
-      serd_buffer_sink(path.data + i, 1, &buffer);
+      serd_buffer_sink(path.data + i, 1, 1, &buffer);
 #ifdef _WIN32
     } else if (path.data[i] == '\\') {
-      serd_buffer_sink("/", 1, &buffer);
+      serd_buffer_sink("/", 1, 1, &buffer);
 #endif
     } else {
       char escape_str[10] = {'%', 0, 0, 0, 0, 0, 0, 0, 0, 0};
       snprintf(
         escape_str + 1, sizeof(escape_str) - 1, "%X", (unsigned)path.data[i]);
-      serd_buffer_sink(escape_str, 3, &buffer);
+      serd_buffer_sink(escape_str, 1, 3, &buffer);
     }
   }
 
