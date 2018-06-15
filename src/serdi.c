@@ -346,8 +346,8 @@ main(int argc, char** argv)
   SerdEnv* const env =
     serd_env_new(base ? serd_node_string_view(base) : SERD_EMPTY_STRING());
 
-  SerdWriter* const writer =
-    serd_writer_new(output_syntax, writer_flags, env, serd_file_sink, out_fd);
+  SerdWriter* writer = serd_writer_new(
+    output_syntax, writer_flags, env, (SerdWriteFunc)fwrite, out_fd);
 
   SerdReader* const reader =
     serd_reader_new(input_syntax,
@@ -375,7 +375,7 @@ main(int argc, char** argv)
     st = serd_reader_start_string(reader, input);
   } else {
     st = serd_reader_start_stream(reader,
-                                  bulk_read ? (SerdSource)fread
+                                  bulk_read ? (SerdReadFunc)fread
                                             : serd_file_read_byte,
                                   (SerdStreamErrorFunc)ferror,
                                   in_fd,

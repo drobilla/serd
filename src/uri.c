@@ -57,18 +57,18 @@ serd_parse_file_uri(const char* const uri, char** const hostname)
   for (const char* s = path; *s; ++s) {
     if (*s == '%') {
       if (*(s + 1) == '%') {
-        serd_buffer_sink("%", 1, &buffer);
+        serd_buffer_sink("%", 1, 1, &buffer);
         ++s;
       } else if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
         const char code[3] = {*(s + 1), *(s + 2), 0};
         const char c       = (char)strtoul(code, NULL, 16);
-        serd_buffer_sink(&c, 1, &buffer);
+        serd_buffer_sink(&c, 1, 1, &buffer);
         s += 2;
       } else {
         s += 2; // Junk escape, ignore
       }
     } else {
-      serd_buffer_sink(s, 1, &buffer);
+      serd_buffer_sink(s, 1, 1, &buffer);
     }
   }
 
@@ -411,48 +411,49 @@ serd_uri_is_within(const SerdURIView uri, const SerdURIView base)
 
 /// See http://tools.ietf.org/html/rfc3986#section-5.3
 size_t
-serd_write_uri(const SerdURIView uri, SerdSink sink, void* const stream)
+serd_write_uri(const SerdURIView   uri,
+               const SerdWriteFunc sink,
+               void* const         stream)
 {
   size_t len = 0;
 
   if (uri.scheme.buf) {
-    len += sink(uri.scheme.buf, uri.scheme.len, stream);
-    len += sink(":", 1, stream);
+    len += sink(uri.scheme.buf, 1, uri.scheme.len, stream);
+    len += sink(":", 1, 1, stream);
   }
 
   if (uri.authority.buf) {
-    len += sink("//", 2, stream);
-    len += sink(uri.authority.buf, uri.authority.len, stream);
+    len += sink("//", 1, 2, stream);
+    len += sink(uri.authority.buf, 1, uri.authority.len, stream);
 
     if (uri.authority.len > 0 && uri_path_len(&uri) > 0 &&
         uri_path_at(&uri, 0) != '/') {
       // Special case: ensure path begins with a slash
       // https://tools.ietf.org/html/rfc3986#section-3.2
-      len += sink("/", 1, stream);
+      len += sink("/", 1, 1, stream);
     }
   }
 
   if (uri.path_prefix.buf) {
-    len += sink(uri.path_prefix.buf, uri.path_prefix.len, stream);
+    len += sink(uri.path_prefix.buf, 1, uri.path_prefix.len, stream);
   } else if (uri.path_prefix.len) {
     for (size_t i = 0; i < uri.path_prefix.len; ++i) {
-      len += sink("../", 3, stream);
+      len += sink("../", 1, 3, stream);
     }
   }
 
   if (uri.path.buf) {
-    len += sink(uri.path.buf, uri.path.len, stream);
+    len += sink(uri.path.buf, 1, uri.path.len, stream);
   }
 
   if (uri.query.buf) {
-    len += sink("?", 1, stream);
-    len += sink(uri.query.buf, uri.query.len, stream);
+    len += sink("?", 1, 1, stream);
+    len += sink(uri.query.buf, 1, uri.query.len, stream);
   }
 
   if (uri.fragment.buf) {
     // Note that uri.fragment.buf includes the leading `#'
-    len += sink(uri.fragment.buf, uri.fragment.len, stream);
+    len += sink(uri.fragment.buf, 1, uri.fragment.len, stream);
   }
-
   return len;
 }
