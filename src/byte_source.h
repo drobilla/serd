@@ -32,7 +32,7 @@ typedef struct {
 } Cursor;
 
 typedef struct {
-  SerdSource          read_func;   ///< Read function (e.g. fread)
+  SerdReadFunc        read_func;   ///< Read function (e.g. fread)
   SerdStreamErrorFunc error_func;  ///< Error function (e.g. ferror)
   void*               stream;      ///< Stream (e.g. FILE)
   size_t              page_size;   ///< Number of bytes to read at a time
@@ -55,7 +55,7 @@ serd_byte_source_open_string(SerdByteSource* source, const char* utf8);
 
 SerdStatus
 serd_byte_source_open_source(SerdByteSource*     source,
-                             SerdSource          read_func,
+                             SerdReadFunc        read_func,
                              SerdStreamErrorFunc error_func,
                              void*               stream,
                              const char*         name,

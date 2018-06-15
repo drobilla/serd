@@ -48,7 +48,7 @@ serd_byte_source_page(SerdByteSource* const source)
 
 SerdStatus
 serd_byte_source_open_source(SerdByteSource* const     source,
-                             const SerdSource          read_func,
+                             const SerdReadFunc        read_func,
                              const SerdStreamErrorFunc error_func,
                              void* const               stream,
                              const char* const         name,

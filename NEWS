@@ -1,6 +1,7 @@
 serd (1.0.1) unstable;
 
   * Add SerdBuffer for mutable buffers to keep SerdChunk const-correct
+  * Bring read/write interface closer to C standard
   * Make nodes opaque
   * Remove serd_uri_to_path()
   * Remove useless character counting from API

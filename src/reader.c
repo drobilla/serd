@@ -279,7 +279,7 @@ serd_reader_read_file(SerdReader* const reader, const char* const uri)
   }
 
   SerdStatus st = serd_reader_start_stream(reader,
-                                           (SerdSource)fread,
+                                           (SerdReadFunc)fread,
                                            (SerdStreamErrorFunc)ferror,
                                            fd,
                                            path,
@@ -316,7 +316,7 @@ skip_bom(SerdReader* const me)
 
 SerdStatus
 serd_reader_start_stream(SerdReader* const         reader,
-                         const SerdSource          read_func,
+                         const SerdReadFunc        read_func,
                          const SerdStreamErrorFunc error_func,
                          void* const               stream,
                          const char* const         name,
