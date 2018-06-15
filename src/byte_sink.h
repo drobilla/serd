@@ -23,15 +23,15 @@
 #include "serd/serd.h"
 
 typedef struct SerdByteSinkImpl {
-	SerdSink sink;
-	void*    stream;
-	char*    buf;
-	size_t   size;
-	size_t   block_size;
+	SerdWriteFunc sink;
+	void*         stream;
+	char*         buf;
+	size_t        size;
+	size_t        block_size;
 } SerdByteSink;
 
 static inline SerdByteSink
-serd_byte_sink_new(SerdSink sink, void* stream, size_t block_size)
+serd_byte_sink_new(SerdWriteFunc sink, void* stream, size_t block_size)
 {
 	SerdByteSink bsink;
 	bsink.sink       = sink;
@@ -48,7 +48,7 @@ static inline void
 serd_byte_sink_flush(SerdByteSink* bsink)
 {
 	if (bsink->block_size > 1 && bsink->size > 0) {
-		bsink->sink(bsink->buf, bsink->size, bsink->stream);
+		bsink->sink(bsink->buf, 1, bsink->size, bsink->stream);
 		bsink->size = 0;
 	}
 }
@@ -67,7 +67,7 @@ serd_byte_sink_write(const void* buf, size_t len, SerdByteSink* bsink)
 	if (len == 0) {
 		return 0;
 	} else if (bsink->block_size == 1) {
-		return bsink->sink(buf, len, bsink->stream);
+		return bsink->sink(buf, 1, len, bsink->stream);
 	}
 
 	const size_t orig_len = len;
@@ -83,7 +83,7 @@ serd_byte_sink_write(const void* buf, size_t len, SerdByteSink* bsink)
 
 		// Flush page if buffer is full
 		if (bsink->size == bsink->block_size) {
-			bsink->sink(bsink->buf, bsink->block_size, bsink->stream);
+			bsink->sink(bsink->buf, 1, bsink->block_size, bsink->stream);
 			bsink->size = 0;
 		}
 	}

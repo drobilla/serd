@@ -119,7 +119,7 @@ test_read_chunks(void)
 	assert(f);
 
 	SerdStatus st = serd_reader_start_stream(reader,
-	                                         (SerdSource)fread,
+	                                         (SerdReadFunc)fread,
 	                                         (SerdStreamErrorFunc)ferror,
 	                                         f,
 	                                         NULL,
@@ -531,7 +531,7 @@ test_writer(const char* const path)
 	assert(fd);
 
 	SerdWriter* writer = serd_writer_new(
-		SERD_TURTLE, (SerdStyle)0, env, NULL, serd_file_sink, fd);
+		SERD_TURTLE, (SerdStyle)0, env, NULL, (SerdWriteFunc)fwrite, fd);
 	assert(writer);
 
 	serd_writer_chop_blank_prefix(writer, "tmp");

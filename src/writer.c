@@ -366,9 +366,11 @@ write_text(SerdWriter* writer, TextContext ctx,
 }
 
 static size_t
-uri_sink(const void* buf, size_t len, void* stream)
+uri_sink(const void* buf, size_t size, size_t nmemb, void* stream)
 {
-	return write_uri((SerdWriter*)stream, (const char*)buf, len);
+	(void)size;
+	assert(size == 1);
+	return write_uri((SerdWriter*)stream, (const char*)buf, nmemb);
 }
 
 static void
@@ -866,7 +868,7 @@ serd_writer_new(SerdSyntax     syntax,
                 SerdStyle      style,
                 SerdEnv*       env,
                 const SerdURI* base_uri,
-                SerdSink       ssink,
+                SerdWriteFunc  ssink,
                 void*          stream)
 {
 	const WriteContext context = WRITE_CONTEXT_NULL;
@@ -988,24 +990,21 @@ serd_writer_get_env(SerdWriter* writer)
 }
 
 size_t
-serd_file_sink(const void* buf, size_t len, void* stream)
+serd_buffer_sink(const void* buf, size_t size, size_t nmemb, void* stream)
 {
-	return fwrite(buf, 1, len, (FILE*)stream);
-}
+	assert(size == 1);
+	(void)size;
 
-size_t
-serd_buffer_sink(const void* buf, size_t len, void* stream)
-{
 	SerdBuffer* buffer = (SerdBuffer*)stream;
-	buffer->buf = (char*)realloc(buffer->buf, buffer->len + len);
-	memcpy((uint8_t*)buffer->buf + buffer->len, buf, len);
-	buffer->len += len;
-	return len;
+	buffer->buf = (char*)realloc(buffer->buf, buffer->len + nmemb);
+	memcpy((uint8_t*)buffer->buf + buffer->len, buf, nmemb);
+	buffer->len += nmemb;
+	return nmemb;
 }
 
 char*
 serd_buffer_sink_finish(SerdBuffer* stream)
 {
-	serd_buffer_sink("", 1, stream);
+	serd_buffer_sink("", 1, 1, stream);
 	return (char*)stream->buf;
 }

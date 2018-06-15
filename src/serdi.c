@@ -287,9 +287,12 @@ main(int argc, char** argv)
 		output_style |= SERD_STYLE_BULK;
 	}
 
-	SerdWriter* writer = serd_writer_new(
-		output_syntax, (SerdStyle)output_style,
-		env, &base_uri, serd_file_sink, out_fd);
+	SerdWriter* writer = serd_writer_new(output_syntax,
+	                                     (SerdStyle)output_style,
+	                                     env,
+	                                     &base_uri,
+	                                     (SerdWriteFunc)fwrite,
+	                                     out_fd);
 
 	SerdReader* reader = serd_reader_new(
 		input_syntax, writer, NULL,
@@ -316,7 +319,7 @@ main(int argc, char** argv)
 	} else {
 		status = serd_reader_start_stream(
 			reader,
-			bulk_read ? (SerdSource)fread : serd_file_read_byte,
+			bulk_read ? (SerdReadFunc)fread : serd_file_read_byte,
 			(SerdStreamErrorFunc)ferror,
 			in_fd,
 			in_name,

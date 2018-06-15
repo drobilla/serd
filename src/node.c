@@ -205,12 +205,12 @@ serd_uri_string_length(const SerdURI* uri)
 }
 
 static size_t
-string_sink(const void* buf, size_t len, void* stream)
+string_sink(const void* buf, size_t size, size_t nmemb, void* stream)
 {
 	char** ptr = (char**)stream;
-	memcpy(*ptr, buf, len);
-	*ptr += len;
-	return len;
+	memcpy(*ptr, buf, size * nmemb);
+	*ptr += size * nmemb;
+	return nmemb;
 }
 
 SerdNode*
@@ -280,15 +280,15 @@ serd_node_new_file_uri(const char* path,
 	SerdBuffer buffer = { uri, uri_len };
 	for (size_t i = 0; i < path_len; ++i) {
 		if (evil && path[i] == '\\') {
-			serd_buffer_sink("/", 1, &buffer);
+			serd_buffer_sink("/", 1, 1, &buffer);
 		} else if (path[i] == '%') {
-			serd_buffer_sink("%%", 2, &buffer);
+			serd_buffer_sink("%%", 1, 2, &buffer);
 		} else if (!escape || is_uri_path_char(path[i])) {
-			serd_buffer_sink(path + i, 1, &buffer);
+			serd_buffer_sink(path + i, 1, 1, &buffer);
 		} else {
 			char escape_str[4] = { '%', 0, 0, 0 };
 			snprintf(escape_str + 1, sizeof(escape_str) - 1, "%X", path[i]);
-			serd_buffer_sink(escape_str, 3, &buffer);
+			serd_buffer_sink(escape_str, 1, 3, &buffer);
 		}
 	}
 	serd_buffer_sink_finish(&buffer);

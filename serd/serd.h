@@ -355,17 +355,29 @@ typedef int (*SerdStreamErrorFunc)(void* stream);
    @param size Size of a single element of data in bytes (always 1).
    @param nmemb Number of elements to read.
    @param stream Stream to read from (FILE* for fread).
-   @return Number of elements (bytes) read.
+   @return Number of elements (bytes) read, which is short on error.
 */
-typedef size_t (*SerdSource)(void*  buf,
-                             size_t size,
-                             size_t nmemb,
-                             void*  stream);
+typedef size_t (*SerdReadFunc)(void*  buf,
+                               size_t size,
+                               size_t nmemb,
+                               void*  stream);
 
 /**
    Sink function for raw string output.
+
+   Identical semantics to `fwrite`, but may set errno for more informative
+   error reporting than supported by SerdStreamErrorFunc.
+
+   @param buf Input buffer.
+   @param size Size of a single element of data in bytes (always 1).
+   @param nmemb Number of elements to read.
+   @param stream Stream to write to (FILE* for fread).
+   @return Number of elements (bytes) written, which is short on error.
 */
-typedef size_t (*SerdSink)(const void* buf, size_t len, void* stream);
+typedef size_t (*SerdWriteFunc)(const void* buf,
+                                size_t      size,
+                                size_t      nmemb,
+                                void*       stream);
 
 /**
    @}
@@ -417,7 +429,7 @@ serd_uri_resolve(const SerdURI* r, const SerdURI* base, SerdURI* t);
 */
 SERD_API
 size_t
-serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream);
+serd_uri_serialise(const SerdURI* uri, SerdWriteFunc sink, void* stream);
 
 /**
    Serialise `uri` relative to `base` with a series of calls to `sink`.
@@ -431,7 +443,7 @@ size_t
 serd_uri_serialise_relative(const SerdURI* uri,
                             const SerdURI* base,
                             const SerdURI* root,
-                            SerdSink       sink,
+                            SerdWriteFunc  sink,
                             void*          stream);
 
 /**
@@ -879,7 +891,7 @@ serd_reader_read_file(SerdReader* reader,
 SERD_API
 SerdStatus
 serd_reader_start_stream(SerdReader*         reader,
-                         SerdSource          read_func,
+                         SerdReadFunc        read_func,
                          SerdStreamErrorFunc error_func,
                          void*               stream,
                          const char*         name,
@@ -951,7 +963,7 @@ serd_writer_new(SerdSyntax     syntax,
                 SerdStyle      style,
                 SerdEnv*       env,
                 const SerdURI* base_uri,
-                SerdSink       ssink,
+                SerdWriteFunc  ssink,
                 void*          stream);
 
 /**
@@ -969,16 +981,6 @@ SerdEnv*
 serd_writer_get_env(SerdWriter* writer);
 
 /**
-   A convenience sink function for writing to a FILE*.
-
-   This function can be used as a SerdSink when writing to a FILE*.  The
-   `stream` parameter must be a FILE* opened for writing.
-*/
-SERD_API
-size_t
-serd_file_sink(const void* buf, size_t len, void* stream);
-
-/**
    A convenience sink function for writing to a string.
 
    This function can be used as a SerdSink to write to a SerdBuffer which is
@@ -988,7 +990,7 @@ serd_file_sink(const void* buf, size_t len, void* stream);
 */
 SERD_API
 size_t
-serd_buffer_sink(const void* buf, size_t len, void* stream);
+serd_buffer_sink(const void* buf, size_t size, size_t nmemb, void* stream);
 
 /**
    Finish a serialisation to a buffer with serd_buffer_sink().
