@@ -321,7 +321,7 @@ serd_reader_start_stream(SerdReader* const reader,
   assert(file);
 
   return serd_reader_start_source_stream(reader,
-                                         bulk ? (SerdSource)fread
+                                         bulk ? (SerdReadFunc)fread
                                               : serd_file_read_byte,
                                          (SerdStreamErrorFunc)ferror,
                                          file,
@@ -331,7 +331,7 @@ serd_reader_start_stream(SerdReader* const reader,
 
 SerdStatus
 serd_reader_start_source_stream(SerdReader* const         reader,
-                                const SerdSource          read_func,
+                                const SerdReadFunc        read_func,
                                 const SerdStreamErrorFunc error_func,
                                 void* const               stream,
                                 const char* const         name,
@@ -395,7 +395,7 @@ serd_reader_read_file_handle(SerdReader* const reader,
                              const char* const name)
 {
   return serd_reader_read_source(reader,
-                                 (SerdSource)fread,
+                                 (SerdReadFunc)fread,
                                  (SerdStreamErrorFunc)ferror,
                                  file,
                                  name,
@@ -404,7 +404,7 @@ serd_reader_read_file_handle(SerdReader* const reader,
 
 SerdStatus
 serd_reader_read_source(SerdReader* const         reader,
-                        const SerdSource          source,
+                        const SerdReadFunc        source,
                         const SerdStreamErrorFunc error,
                         void* const               stream,
                         const char* const         name,

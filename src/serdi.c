@@ -9,6 +9,7 @@
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/status.h"
+#include "serd/stream.h"
 #include "serd/syntax.h"
 #include "serd/uri.h"
 #include "serd/version.h"
@@ -299,7 +300,7 @@ main(int argc, char** argv)
   SerdEnv* const env    = serd_env_new(&base);
 
   SerdWriter* const writer = serd_writer_new(
-    output_syntax, writer_flags, env, &base_uri, serd_file_sink, out_fd);
+    output_syntax, writer_flags, env, &base_uri, (SerdWriteFunc)fwrite, out_fd);
 
   SerdReader* const reader =
     serd_reader_new(input_syntax,

@@ -13,7 +13,6 @@
 #include "serd/stream.h"
 #include "serd/syntax.h"
 
-#include <stddef.h>
 #include <stdint.h>
 
 SERD_BEGIN_DECLS
@@ -52,7 +51,7 @@ serd_writer_new(SerdSyntax                       syntax,
                 SerdWriterFlags                  flags,
                 SerdEnv* SERD_NONNULL            env,
                 const SerdURIView* SERD_NULLABLE base_uri,
-                SerdSink SERD_NONNULL            ssink,
+                SerdWriteFunc SERD_NONNULL       ssink,
                 void* SERD_UNSPECIFIED           stream);
 
 /// Free `writer`
@@ -63,17 +62,6 @@ serd_writer_free(SerdWriter* SERD_NULLABLE writer);
 SERD_PURE_API
 SerdEnv* SERD_NONNULL
 serd_writer_env(SerdWriter* SERD_NONNULL writer);
-
-/**
-   A convenience sink function for writing to a FILE*.
-
-   This function can be used as a #SerdSink when writing to a FILE*.  The
-   `stream` parameter must be a FILE* opened for writing.
-*/
-SERD_API size_t
-serd_file_sink(const void* SERD_NONNULL buf,
-               size_t                   len,
-               void* SERD_UNSPECIFIED   stream);
 
 /**
    Set a function to be called when errors occur during writing.

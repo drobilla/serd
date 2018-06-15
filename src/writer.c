@@ -554,12 +554,15 @@ typedef struct {
 } UriSinkContext;
 
 SERD_NODISCARD static size_t
-uri_sink(const void* buf, size_t len, void* stream)
+uri_sink(const void* buf, size_t size, size_t nmemb, void* stream)
 {
+  (void)size;
+  assert(size == 1);
+
   UriSinkContext* const context = (UriSinkContext*)stream;
   SerdWriter* const     writer  = context->writer;
 
-  return write_uri(writer, (const char*)buf, len, &context->status);
+  return write_uri(writer, (const char*)buf, nmemb, &context->status);
 }
 
 SERD_NODISCARD static SerdStatus
@@ -1143,7 +1146,7 @@ serd_writer_new(SerdSyntax         syntax,
                 SerdWriterFlags    flags,
                 SerdEnv*           env,
                 const SerdURIView* base_uri,
-                SerdSink           ssink,
+                SerdWriteFunc      ssink,
                 void*              stream)
 {
   assert(env);
@@ -1284,33 +1287,29 @@ serd_writer_env(SerdWriter* writer)
 }
 
 size_t
-serd_file_sink(const void* buf, size_t len, void* stream)
+serd_buffer_sink(const void* const buf,
+                 const size_t      size,
+                 const size_t      nmemb,
+                 void* const       stream)
 {
   assert(buf);
   assert(stream);
-  return fwrite(buf, 1, len, (FILE*)stream);
-}
-
-size_t
-serd_buffer_sink(const void* const buf, const size_t len, void* const stream)
-{
-  assert(buf);
-  assert(stream);
+  assert(size == 1);
+  (void)size;
 
   SerdBuffer* buffer  = (SerdBuffer*)stream;
-  char*       new_buf = (char*)realloc((char*)buffer->buf, buffer->len + len);
+  char*       new_buf = (char*)realloc(buffer->buf, buffer->len + nmemb);
   if (new_buf) {
-    memcpy(new_buf + buffer->len, buf, len);
+    memcpy(new_buf + buffer->len, buf, nmemb);
     buffer->buf = new_buf;
-    buffer->len += len;
+    buffer->len += nmemb;
   }
-  return len;
+  return nmemb;
 }
 
 char*
 serd_buffer_sink_finish(SerdBuffer* const stream)
 {
-  assert(stream);
-  serd_buffer_sink("", 1, stream);
+  serd_buffer_sink("", 1, 1, stream);
   return (char*)stream->buf;
 }

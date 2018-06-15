@@ -51,19 +51,19 @@ serd_file_uri_parse(const char* const uri, char** const hostname)
   for (const char* s = path; *s; ++s) {
     if (*s == '%') {
       if (*(s + 1) == '%') {
-        serd_buffer_sink("%", 1, &buffer);
+        serd_buffer_sink("%", 1, 1, &buffer);
         ++s;
       } else if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
         const uint8_t hi = hex_digit_value((const uint8_t)s[1]);
         const uint8_t lo = hex_digit_value((const uint8_t)s[2]);
         const char    c  = (char)((hi << 4U) | lo);
-        serd_buffer_sink(&c, 1, &buffer);
+        serd_buffer_sink(&c, 1, 1, &buffer);
         s += 2;
       } else {
         s += 2; // Junk escape, ignore
       }
     } else {
-      serd_buffer_sink(s, 1, &buffer);
+      serd_buffer_sink(s, 1, 1, &buffer);
     }
   }
   return serd_buffer_sink_finish(&buffer);
@@ -317,7 +317,7 @@ serd_uri_resolve(const SerdURIView* const r,
 
 /** Write the path of `uri` starting at index `i` */
 static size_t
-write_path_tail(SerdSink                 sink,
+write_path_tail(SerdWriteFunc            sink,
                 void* const              stream,
                 const SerdURIView* const uri,
                 const size_t             i)
@@ -326,15 +326,15 @@ write_path_tail(SerdSink                 sink,
 
   size_t len = 0;
   if (i < uri->path_base.length) {
-    len += sink(uri->path_base.data + i, uri->path_base.length - i, stream);
+    len += sink(uri->path_base.data + i, 1U, uri->path_base.length - i, stream);
   }
 
   if (uri->path.data) {
     if (i < uri->path_base.length) {
-      len += sink(uri->path.data, uri->path.length, stream);
+      len += sink(uri->path.data, 1U, uri->path.length, stream);
     } else {
       const size_t j = (i - uri->path_base.length);
-      len += sink(uri->path.data + j, uri->path.length - j, stream);
+      len += sink(uri->path.data + j, 1U, uri->path.length - j, stream);
     }
   }
 
@@ -345,7 +345,7 @@ write_path_tail(SerdSink                 sink,
 
 /** Write the path of `uri` relative to the path of `base`. */
 static size_t
-write_rel_path(SerdSink                 sink,
+write_rel_path(SerdWriteFunc            sink,
                void* const              stream,
                const SerdURIView* const uri,
                const SerdURIView* const base)
@@ -378,7 +378,7 @@ write_rel_path(SerdSink                 sink,
   // Write up references
   size_t len = 0;
   for (size_t u = 0; u < up; ++u) {
-    len += sink("../", 3, stream);
+    len += sink("../", 1, 3, stream);
   }
 
   // Write suffix
@@ -398,7 +398,7 @@ size_t
 serd_uri_serialise_relative(const SerdURIView* const uri,
                             const SerdURIView* const base,
                             const SerdURIView* const root,
-                            SerdSink                 sink,
+                            SerdWriteFunc            sink,
                             void* const              stream)
 {
   assert(uri);
@@ -417,12 +417,12 @@ serd_uri_serialise_relative(const SerdURIView* const uri,
 
   if (!relative || (!len && base->query.data)) {
     if (uri->scheme.data) {
-      len += sink(uri->scheme.data, uri->scheme.length, stream);
-      len += sink(":", 1, stream);
+      len += sink(uri->scheme.data, 1, uri->scheme.length, stream);
+      len += sink(":", 1, 1, stream);
     }
     if (uri->authority.data) {
-      len += sink("//", 2, stream);
-      len += sink(uri->authority.data, uri->authority.length, stream);
+      len += sink("//", 1, 2, stream);
+      len += sink(uri->authority.data, 1, uri->authority.length, stream);
 
       const bool authority_ends_with_slash =
         (uri->authority.length > 0 &&
@@ -432,20 +432,20 @@ serd_uri_serialise_relative(const SerdURIView* const uri,
           serd_uri_path_starts_without_slash(uri)) {
         // Special case: ensure path begins with a slash
         // https://tools.ietf.org/html/rfc3986#section-3.2
-        len += sink("/", 1, stream);
+        len += sink("/", 1, 1, stream);
       }
     }
     len += write_path_tail(sink, stream, uri, 0);
   }
 
   if (uri->query.data) {
-    len += sink("?", 1, stream);
-    len += sink(uri->query.data, uri->query.length, stream);
+    len += sink("?", 1, 1, stream);
+    len += sink(uri->query.data, 1, uri->query.length, stream);
   }
 
   if (uri->fragment.data) {
     // Note uri->fragment.data includes the leading '#'
-    len += sink(uri->fragment.data, uri->fragment.length, stream);
+    len += sink(uri->fragment.data, 1, uri->fragment.length, stream);
   }
 
   SERD_RESTORE_WARNINGS
@@ -456,7 +456,7 @@ serd_uri_serialise_relative(const SerdURIView* const uri,
 /// See http://tools.ietf.org/html/rfc3986#section-5.3
 size_t
 serd_uri_serialise(const SerdURIView* const uri,
-                   SerdSink                 sink,
+                   const SerdWriteFunc      sink,
                    void* const              stream)
 {
   assert(sink);
