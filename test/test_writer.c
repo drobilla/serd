@@ -78,12 +78,15 @@ test_write_long_literal(void)
 }
 
 static size_t
-null_sink(const void* const buf, const size_t len, void* const stream)
+null_sink(const void* const buf,
+          const size_t      size,
+          const size_t      nmemb,
+          void* const       stream)
 {
   (void)buf;
   (void)stream;
 
-  return len;
+  return size * nmemb;
 }
 
 static void
