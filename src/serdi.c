@@ -314,8 +314,8 @@ main(int argc, char** argv)
   SerdEnv* const env =
     serd_env_new(base ? serd_node_string_view(base) : serd_empty_string());
 
-  SerdWriter* const writer =
-    serd_writer_new(output_syntax, writer_flags, env, serd_file_sink, out_fd);
+  SerdWriter* writer = serd_writer_new(
+    output_syntax, writer_flags, env, (SerdWriteFunc)fwrite, out_fd);
 
   SerdReader* const reader =
     serd_reader_new(input_syntax,
