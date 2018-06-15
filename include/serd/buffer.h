@@ -33,7 +33,8 @@ typedef struct {
 SERD_API
 size_t
 serd_buffer_sink(const void* SERD_NONNULL buf,
-                 size_t                   len,
+                 size_t                   size,
+                 size_t                   nmemb,
                  void* SERD_NONNULL       stream);
 
 /**
