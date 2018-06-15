@@ -28,14 +28,15 @@ typedef struct {
 /**
    A convenience sink function for writing to a string.
 
-   This function can be used as a #SerdSink to write to a SerdBuffer which is
-   resized as necessary with realloc().  The `stream` parameter must point to
+   This function can be used as a #SerdWriteFunc to write to a SerdBuffer which
+   is resized as necessary with realloc().  The `stream` parameter must point to
    an initialized #SerdBuffer.  When the write is finished, the string should be
    retrieved with serd_buffer_sink_finish().
 */
 SERD_API size_t
 serd_buffer_sink(const void* SERD_NONNULL buf,
-                 size_t                   len,
+                 size_t                   size,
+                 size_t                   nmemb,
                  void* SERD_NONNULL       stream);
 
 /**

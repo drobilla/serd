@@ -374,21 +374,27 @@ test_read_string(void)
 }
 
 static size_t
-faulty_sink(const void* const buf, const size_t len, void* const stream)
+faulty_sink(const void* const buf,
+            const size_t      size,
+            const size_t      nmemb,
+            void* const       stream)
 {
   (void)buf;
-  (void)len;
+  (void)size;
+  (void)nmemb;
+
+  assert(size == 1);
 
   ErrorContext* const ctx           = (ErrorContext*)stream;
-  const size_t        new_n_written = ctx->n_written + len;
+  const size_t        new_n_written = ctx->n_written + nmemb;
   if (new_n_written >= ctx->error_offset) {
     errno = EINVAL;
     return 0U;
   }
 
-  ctx->n_written += len;
+  ctx->n_written += nmemb;
   errno = 0;
-  return len;
+  return nmemb;
 }
 
 static SerdStatus
@@ -448,7 +454,8 @@ test_writer(const char* const path)
   SerdEnv* env = serd_env_new(serd_empty_string());
   assert(fd);
 
-  SerdWriter* writer = serd_writer_new(SERD_TURTLE, 0, env, serd_file_sink, fd);
+  SerdWriter* writer =
+    serd_writer_new(SERD_TURTLE, 0, env, (SerdWriteFunc)fwrite, fd);
   assert(writer);
 
   serd_writer_chop_blank_prefix(writer, "tmp");
@@ -595,7 +602,7 @@ test_reader(const char* path)
   {
     size_t n_reads = 0;
     serd_reader_start_source_stream(reader,
-                                    (SerdSource)eof_test_read,
+                                    (SerdReadFunc)eof_test_read,
                                     (SerdStreamErrorFunc)eof_test_error,
                                     &n_reads,
                                     NULL,
