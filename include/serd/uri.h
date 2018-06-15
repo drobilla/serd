@@ -140,9 +140,9 @@ serd_uri_is_within(SerdURIView r, SerdURIView base);
 */
 SERD_API
 size_t
-serd_write_uri(SerdURIView           uri,
-               SerdSink SERD_NONNULL sink,
-               void* SERD_NONNULL    stream);
+serd_write_uri(SerdURIView                uri,
+               SerdWriteFunc SERD_NONNULL sink,
+               void* SERD_NONNULL         stream);
 
 /**
    @}

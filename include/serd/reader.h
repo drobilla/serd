@@ -119,7 +119,7 @@ serd_reader_start_stream(SerdReader* SERD_NONNULL  reader,
 SERD_API
 SerdStatus
 serd_reader_start_source_stream(SerdReader* SERD_NONNULL         reader,
-                                SerdSource SERD_NONNULL          read_func,
+                                SerdReadFunc SERD_NONNULL        read_func,
                                 SerdStreamErrorFunc SERD_NONNULL error_func,
                                 void* SERD_NONNULL               stream,
                                 const char* SERD_NULLABLE        name,
@@ -153,7 +153,7 @@ serd_reader_read_file_handle(SerdReader* SERD_NONNULL  reader,
 SERD_API
 SerdStatus
 serd_reader_read_source(SerdReader* SERD_NONNULL         reader,
-                        SerdSource SERD_NONNULL          source,
+                        SerdReadFunc SERD_NONNULL        source,
                         SerdStreamErrorFunc SERD_NONNULL error,
                         void* SERD_NONNULL               stream,
                         const char* SERD_NULLABLE        name,

@@ -46,11 +46,11 @@ typedef uint32_t SerdWriterFlags;
 /// Create a new RDF writer
 SERD_API
 SerdWriter* SERD_ALLOCATED
-serd_writer_new(SerdSyntax            syntax,
-                SerdWriterFlags       flags,
-                SerdEnv* SERD_NONNULL env,
-                SerdSink SERD_NONNULL ssink,
-                void* SERD_NULLABLE   stream);
+serd_writer_new(SerdSyntax                 syntax,
+                SerdWriterFlags            flags,
+                SerdEnv* SERD_NONNULL      env,
+                SerdWriteFunc SERD_NONNULL ssink,
+                void* SERD_NULLABLE        stream);
 
 /// Free `writer`
 SERD_API
@@ -61,18 +61,6 @@ serd_writer_free(SerdWriter* SERD_NULLABLE writer);
 SERD_PURE_API
 SerdEnv* SERD_NONNULL
 serd_writer_env(SerdWriter* SERD_NONNULL writer);
-
-/**
-   A convenience sink function for writing to a FILE*.
-
-   This function can be used as a SerdSink when writing to a FILE*.  The
-   `stream` parameter must be a FILE* opened for writing.
-*/
-SERD_API
-size_t
-serd_file_sink(const void* SERD_NONNULL buf,
-               size_t                   len,
-               void* SERD_NONNULL       stream);
 
 /**
    Set a function to be called when errors occur during writing.

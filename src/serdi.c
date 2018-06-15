@@ -11,6 +11,7 @@
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/status.h"
+#include "serd/stream.h"
 #include "serd/string_view.h"
 #include "serd/syntax.h"
 #include "serd/uri.h"
@@ -325,8 +326,8 @@ main(int argc, char** argv)
   SerdEnv* const env =
     serd_env_new(base ? serd_node_string_view(base) : serd_empty_string());
 
-  SerdWriter* const writer =
-    serd_writer_new(output_syntax, writer_flags, env, serd_file_sink, out_fd);
+  SerdWriter* writer = serd_writer_new(
+    output_syntax, writer_flags, env, (SerdWriteFunc)fwrite, out_fd);
 
   SerdReader* const reader =
     serd_reader_new(input_syntax,

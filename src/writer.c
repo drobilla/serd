@@ -436,9 +436,11 @@ write_text(SerdWriter* writer,
 }
 
 static size_t
-uri_sink(const void* buf, size_t len, void* stream)
+uri_sink(const void* buf, size_t size, size_t nmemb, void* stream)
 {
-  return write_uri((SerdWriter*)stream, (const char*)buf, len);
+  (void)size;
+  assert(size == 1);
+  return write_uri((SerdWriter*)stream, (const char*)buf, nmemb);
 }
 
 static void
@@ -936,7 +938,7 @@ SerdWriter*
 serd_writer_new(SerdSyntax      syntax,
                 SerdWriterFlags flags,
                 SerdEnv*        env,
-                SerdSink        ssink,
+                SerdWriteFunc   ssink,
                 void*           stream)
 {
   const WriteContext context = WRITE_CONTEXT_NULL;
@@ -984,29 +986,30 @@ serd_writer_chop_blank_prefix(SerdWriter* writer, const char* prefix)
 SerdStatus
 serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 {
-  SerdStatus st = SERD_SUCCESS;
+  if (serd_node_equals(serd_env_base_uri(writer->env), uri)) {
+    return SERD_SUCCESS;
+  }
+
   if (uri && serd_node_type(uri) != SERD_URI) {
-    st = SERD_ERR_BAD_ARG;
-  } else if (uri) {
-    st = serd_env_set_base_uri(writer->env, serd_node_string_view(uri));
-  } else {
-    st = serd_env_set_base_uri(writer->env, serd_empty_string());
+    return SERD_ERR_BAD_ARG;
   }
 
-  if (st) {
-    return st;
-  }
+  const SerdStringView uri_string =
+    uri ? serd_node_string_view(uri) : serd_empty_string();
 
-  if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
-    if (ctx(writer, FIELD_GRAPH) || ctx(writer, FIELD_SUBJECT)) {
-      sink(" .\n\n", 4, writer);
-      reset_context(writer, true);
-    }
+  SerdStatus st = SERD_SUCCESS;
+  if (!(st = serd_env_set_base_uri(writer->env, uri_string))) {
+    if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
+      if (ctx(writer, FIELD_GRAPH) || ctx(writer, FIELD_SUBJECT)) {
+        sink(" .\n\n", 4, writer);
+        reset_context(writer, true);
+      }
 
-    if (uri) {
-      sink("@base <", 7, writer);
-      sink(serd_node_string(uri), uri->length, writer);
-      sink("> .\n", 4, writer);
+      if (uri) {
+        sink("@base <", 7, writer);
+        sink(serd_node_string(uri), uri->length, writer);
+        sink("> .\n", 4, writer);
+      }
     }
   }
 
@@ -1085,25 +1088,24 @@ serd_writer_env(SerdWriter* writer)
 }
 
 size_t
-serd_file_sink(const void* buf, size_t len, void* stream)
+serd_buffer_sink(const void* const buf,
+                 const size_t      size,
+                 const size_t      nmemb,
+                 void* const       stream)
 {
-  return fwrite(buf, 1, len, (FILE*)stream);
-}
+  assert(size == 1);
+  (void)size;
 
-size_t
-serd_buffer_sink(const void* const buf, const size_t len, void* const stream)
-{
   SerdBuffer* buffer = (SerdBuffer*)stream;
-
-  buffer->buf = (char*)realloc(buffer->buf, buffer->len + len);
-  memcpy((uint8_t*)buffer->buf + buffer->len, buf, len);
-  buffer->len += len;
-  return len;
+  buffer->buf        = (char*)realloc(buffer->buf, buffer->len + nmemb);
+  memcpy((uint8_t*)buffer->buf + buffer->len, buf, nmemb);
+  buffer->len += nmemb;
+  return nmemb;
 }
 
 char*
 serd_buffer_sink_finish(SerdBuffer* const stream)
 {
-  serd_buffer_sink("", 1, stream);
+  serd_buffer_sink("", 1, 1, stream);
   return (char*)stream->buf;
 }

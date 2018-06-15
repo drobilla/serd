@@ -261,7 +261,8 @@ test_writer(const char* const path)
   SerdEnv* env = serd_env_new(serd_empty_string());
   assert(fd);
 
-  SerdWriter* writer = serd_writer_new(SERD_TURTLE, 0, env, serd_file_sink, fd);
+  SerdWriter* writer =
+    serd_writer_new(SERD_TURTLE, 0, env, (SerdWriteFunc)fwrite, fd);
   assert(writer);
 
   serd_writer_chop_blank_prefix(writer, "tmp");
@@ -409,7 +410,7 @@ test_reader(const char* path)
   {
     size_t n_reads = 0;
     serd_reader_start_source_stream(reader,
-                                    (SerdSource)eof_test_read,
+                                    (SerdReadFunc)eof_test_read,
                                     (SerdStreamErrorFunc)eof_test_error,
                                     &n_reads,
                                     NULL,
