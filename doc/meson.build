@@ -12,6 +12,10 @@ build_docs = doxygen.found() and sphinx_build.found()
 if build_docs
   subdir('_static')
   subdir('c')
+
+  if is_variable('cpp')
+    subdir('cpp')
+  endif
 endif
 
 if not meson.is_subproject() and meson.version().version_compare('>=0.53.0')
