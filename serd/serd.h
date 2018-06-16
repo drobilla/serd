@@ -1175,6 +1175,9 @@ serd_reader_read_document(SerdReader* reader);
 
 /**
    Finish reading from the source.
+
+   This will close the open file, if applicable, and ensure the reader has
+   processed all input.
 */
 SERD_API
 SerdStatus
@@ -1182,6 +1185,8 @@ serd_reader_finish(SerdReader* reader);
 
 /**
    Free `reader`.
+
+   The reader will be finished via `serd_reader_finish()` if necessary.
 */
 SERD_API
 void

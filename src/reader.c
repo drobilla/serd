@@ -193,6 +193,7 @@ serd_reader_set_strict(SerdReader* reader, bool strict)
 void
 serd_reader_free(SerdReader* reader)
 {
+	serd_reader_finish(reader);
 	serd_node_free(reader->default_graph);
 
 #ifdef SERD_STACK_CHECK
