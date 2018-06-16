@@ -1,3 +1,6 @@
+option('bindings_cpp', type: 'feature', value: 'auto', yield: true,
+       description: 'Build C++ bindings')
+
 option('docs', type: 'feature', value: 'auto', yield: true,
        description: 'Build documentation')
 
