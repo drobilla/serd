@@ -14,6 +14,7 @@ pygments_style = "friendly"
 
 try:
     import sphinx_lv2_theme
+
     have_lv2_theme = True
 except ModuleNotFoundError:
     have_lv2_theme = False
@@ -45,7 +46,17 @@ _opaque = [
     "va_list",
 ]
 
-nitpick_ignore = list(map(lambda x: ("c:identifier", x), _opaque))
+_c_nitpick_ignore = map(lambda x: ("c:identifier", x), _opaque)
+_cpp_nitpick_ignore = map(lambda x: ("cpp:identifier", x), _opaque)
+nitpick_ignore = (
+    list(_c_nitpick_ignore)
+    + list(_cpp_nitpick_ignore)
+    + [
+        ("cpp:identifier", "detail"),
+        ("cpp:identifier", "serd"),
+        ("cpp:identifier", "serd::detail"),
+    ]
+)
 
 # HTML output
 
@@ -57,7 +68,7 @@ html_theme = "sphinx_lv2_theme"
 if have_lv2_theme:
     html_theme = "sphinx_lv2_theme"
 
-    if tags.has('singlehtml'):
+    if tags.has("singlehtml"):
         html_sidebars = {
             "**": [
                 "globaltoc.html",
