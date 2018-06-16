@@ -1,0 +1,22 @@
+# Copyright 2020-2022 David Robillard <d@drobilla.net>
+# SPDX-License-Identifier: 0BSD OR ISC
+
+Checks: >
+  -*-magic-numbers,
+  -*-named-parameter,
+  -*-non-private-member-variables-in-classes,
+  -*-uppercase-literal-suffix,
+  -clang-analyzer-deadcode.DeadStores,
+  -clang-analyzer-nullability.NullablePassedToNonnull,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-pro-type-vararg,
+  -fuchsia-default-argument*,
+  -fuchsia-multiple-inheritance,
+  -fuchsia-overloaded-operator,
+  -google-runtime-references,
+  -hicpp-no-array-decay,
+  -hicpp-signed-bitwise,
+  -hicpp-vararg,
+  -readability-implicit-bool-conversion,
+InheritParentConfig: true

@@ -302,3 +302,8 @@ endif
 if not get_option('docs').disabled()
   subdir('doc')
 endif
+
+if add_languages('cpp', native: false, required: get_option('bindings_cpp'))
+  cpp = meson.get_compiler('cpp')
+  subdir('bindings/cpp')
+endif

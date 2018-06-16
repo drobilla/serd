@@ -52,7 +52,17 @@ _opaque = [
     "va_list",
 ]
 
-nitpick_ignore = list(map(lambda x: ("c:identifier", x), _opaque))
+_c_nitpick_ignore = map(lambda x: ("c:identifier", x), _opaque)
+_cpp_nitpick_ignore = map(lambda x: ("cpp:identifier", x), _opaque)
+nitpick_ignore = (
+    list(_c_nitpick_ignore)
+    + list(_cpp_nitpick_ignore)
+    + [
+        ("cpp:identifier", "detail"),
+        ("cpp:identifier", "serd"),
+        ("cpp:identifier", "serd::detail"),
+    ]
+)
 
 # HTML output
 
