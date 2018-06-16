@@ -210,6 +210,15 @@ if not get_option('docs').disabled()
   subdir('doc')
 endif
 
+if not get_option('bindings_cpp').disabled()
+  if add_languages('cpp',
+                   native: false,
+                   required: get_option('bindings_cpp').enabled())
+    cpp = meson.get_compiler('cpp')
+    subdir('bindings/cpp')
+  endif
+endif
+
 if not meson.is_subproject()
   summary('Tests', not get_option('tests').disabled(), bool_yn: true)
   summary('Tools', not get_option('tools').disabled(), bool_yn: true)
