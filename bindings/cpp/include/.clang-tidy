@@ -1,0 +1,17 @@
+Checks: >
+  *,
+  -*-named-parameter,
+  -*-non-private-member-variables-in-classes,
+  -*-uppercase-literal-suffix,
+  -cert-dcl50-cpp,
+  -clang-diagnostic-unused-macros,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -fuchsia-default-arguments-declarations,
+  -fuchsia-multiple-inheritance,
+  -fuchsia-overloaded-operator,
+  -llvmlibc-*,
+  -modernize-use-trailing-return-type,
+  -readability-implicit-bool-conversion,
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*'
+FormatStyle: file
