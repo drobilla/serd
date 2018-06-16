@@ -304,3 +304,8 @@ if not get_option('tests').disabled()
 endif
 
 subdir('doc')
+
+if add_languages('cpp', native: false, required: get_option('bindings_cpp'))
+  cpp = meson.get_compiler('cpp')
+  subdir('bindings/cpp')
+endif

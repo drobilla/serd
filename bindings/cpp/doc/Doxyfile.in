@@ -1,0 +1,50 @@
+# Copyright 2021-2022 David Robillard <d@drobilla.net>
+# SPDX-License-Identifier: 0BSD OR ISC
+
+PROJECT_NAME           = Serd
+PROJECT_BRIEF          = "A lightweight library for working with RDF data"
+
+QUIET                  = YES
+WARN_AS_ERROR          = NO
+WARN_IF_UNDOCUMENTED   = YES
+WARN_NO_PARAMDOC       = NO
+
+CASE_SENSE_NAMES       = YES
+EXTRACT_ALL            = NO
+EXTRACT_LOCAL_CLASSES  = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+HIDE_FRIEND_COMPOUNDS  = YES
+HIDE_IN_BODY_DOCS      = YES
+HIDE_UNDOC_CLASSES     = YES
+HIDE_UNDOC_MEMBERS     = YES
+INHERIT_DOCS           = NO
+INLINE_INHERITED_MEMB  = NO
+REFERENCES_LINK_SOURCE = NO
+
+AUTOLINK_SUPPORT       = NO
+GENERATE_HTML          = NO
+GENERATE_LATEX         = NO
+GENERATE_XML           = YES
+JAVADOC_AUTOBRIEF      = YES
+SHOW_FILES             = NO
+XML_PROGRAMLISTING     = NO
+
+MACRO_EXPANSION        = YES
+PREDEFINED             = SERD_API \
+                         SERD_CONST_API= \
+                         SERD_MALLOC_API= \
+                         SERD_PURE_API= \
+                         ZIX_ALLOCATED= \
+                         ZIX_ALWAYS_INLINE_FUNC= \
+                         ZIX_CONST_FUNC= \
+                         ZIX_NONNULL= \
+                         ZIX_NULLABLE= \
+                         ZIX_PURE_FUNC= \
+
+RECURSIVE              = YES
+STRIP_FROM_PATH        = @SERD_SRCDIR@
+INPUT                  = @SERD_SRCDIR@/bindings/cpp/include \
+                         @SERD_SRCDIR@/include
+
+OUTPUT_DIRECTORY       = @DOX_OUTPUT@
