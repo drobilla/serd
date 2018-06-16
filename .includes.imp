@@ -11,4 +11,5 @@
   { "symbol": [ "uintptr_t", "private", "<stdint.h>", "public" ] },
 
   { "include": [ "<bits/struct_stat.h>", "private", "<sys/stat.h>", "public", ] },
+  { "symbol": [ "std::ostringstream", "private", "<sstream>", "public" ] }
 ]
