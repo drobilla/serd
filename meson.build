@@ -6,6 +6,7 @@ project('serd', ['c'],
           'b_ndebug=if-release',
           'buildtype=release',
           'c_std=c99',
+          'cpp_std=c++14',
           'default_library=shared',
           'warning_level=2',
         ])
@@ -18,6 +19,10 @@ versioned_name = 'serd' + version_suffix
 # Load build tools
 pkg = import('pkgconfig')
 cc = meson.get_compiler('c')
+
+if add_languages('cpp', required: get_option('bindings_cpp'))
+  cpp = meson.get_compiler('cpp')
+endif
 
 # Set ultra strict warnings for developers, if requested
 c_warnings = []
@@ -199,6 +204,11 @@ endif
 
 # Install header to a versioned include directory
 install_headers(c_headers, subdir: versioned_name / 'serd')
+
+# C++ bindings
+if is_variable('cpp')
+  subdir('bindings/cpp')
+endif
 
 if not get_option('docs').disabled()
   subdir('doc')
