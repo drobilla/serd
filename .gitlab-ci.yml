@@ -10,14 +10,14 @@ default:
   stage: build
   image: lv2plugin/debian-x64
   script:
-    - meson setup build -Dwerror=true
+    - meson setup build -Dwerror=true -Dbindings_cpp=enabled
     - ninja -C build test
 
 dev:
   stage: build
   image: lv2plugin/debian-x64
   script:
-    - meson setup build -Db_coverage=true -Dbuildtype=debug -Dc_std=c11 -Ddocs=enabled -Dprefix=/ -Dwarning_level=3 -Dwerror=true
+    - meson setup build -Db_coverage=true -Dbuildtype=debug -Dc_std=c11 -Ddocs=enabled -Dprefix=/ -Dwarning_level=3 -Dwerror=true -Dbindings_cpp=enabled
     - ninja -C build test
     - ninja -C build coverage-html
     - DESTDIR=$(pwd)/build/dest meson install -C build
@@ -34,14 +34,14 @@ static:
   stage: build
   image: lv2plugin/debian-x64
   script:
-    - meson setup build -Ddefault_library=static -Ddocs=disabled -Dstatic=true -Dwarning_level=3 -Dwerror=true -Dexess:default_library=static -Dzix:default_library=static
+    - meson setup build -Dbindings_cpp=enabled -Ddefault_library=static -Ddocs=disabled -Dstatic=true -Dwarning_level=3 -Dwerror=true -Dexess:default_library=static -Dzix:default_library=static
     - ninja -C build test
 
 sanitize:
   stage: build
   image: lv2plugin/debian-x64-clang
   script:
-    - meson setup build -Db_lundef=false -Dbuildtype=plain -Dc_std=c11 -Ddocs=disabled -Dwarning_level=3 -Dwerror=true
+    - meson setup build -Db_lundef=false -Dbindings_cpp=enabled -Dbuildtype=plain -Dc_std=c11 -Ddocs=disabled -Dwarning_level=3 -Dwerror=true
     - ninja -C build test
   variables:
     CC: "clang"
@@ -67,7 +67,7 @@ arm32:
   stage: build
   image: lv2plugin/debian-arm32
   script:
-    - meson setup build --cross-file=/usr/share/meson/cross/arm-linux-gnueabihf.ini -Dbuildtype=debug -Dc_std=c11 -Ddocs=disabled -Dwarning_level=3 -Dwerror=true
+    - meson setup build --cross-file=/usr/share/meson/cross/arm-linux-gnueabihf.ini -Dbindings_cpp=enabled -Dbuildtype=debug -Dc_std=c11 -Ddocs=disabled -Dwarning_level=3 -Dwerror=true
     - ninja -C build test
     - meson configure -Dbuildtype=release build
     - ninja -C build test
@@ -76,7 +76,7 @@ arm64:
   stage: build
   image: lv2plugin/debian-arm64
   script:
-    - meson setup build --cross-file=/usr/share/meson/cross/aarch64-linux-gnu.ini -Dbuildtype=debug -Dc_std=c11 -Ddocs=disabled -Dwarning_level=3 -Dwerror=true
+    - meson setup build --cross-file=/usr/share/meson/cross/aarch64-linux-gnu.ini -Dbindings_cpp=enabled -Dbuildtype=debug -Dc_std=c11 -Ddocs=disabled -Dwarning_level=3 -Dwerror=true
     - ninja -C build test
     - meson configure -Dbuildtype=release build
     - ninja -C build test
@@ -85,7 +85,7 @@ x32:
   stage: build
   image: lv2plugin/debian-x32
   script:
-    - meson setup build --cross-file=/usr/share/meson/cross/i686-linux-gnu.ini -Dbuildtype=debug -Ddocs=disabled -Dwarning_level=3 -Dwerror=true
+    - meson setup build --cross-file=/usr/share/meson/cross/i686-linux-gnu.ini -Dbindings_cpp=enabled -Dbuildtype=debug -Ddocs=disabled -Dwarning_level=3 -Dwerror=true
     - ninja -C build test
     - meson configure -Dbuildtype=release build
     - ninja -C build test
@@ -94,7 +94,7 @@ mingw32:
   stage: build
   image: lv2plugin/debian-mingw32
   script:
-    - meson setup build --cross-file=/usr/share/meson/cross/i686-w64-mingw32.ini -Dbuildtype=debug -Dc_std=c11 -Ddocs=disabled -Dwarning_level=3 -Dwerror=true
+    - meson setup build --cross-file=/usr/share/meson/cross/i686-w64-mingw32.ini -Dbindings_cpp=enabled -Dbuildtype=debug -Dc_std=c11 -Ddocs=disabled -Dwarning_level=3 -Dwerror=true
     - ninja -C build test
     - meson configure -Dbuildtype=release build
     - ninja -C build test
@@ -105,7 +105,7 @@ mingw64:
   stage: build
   image: lv2plugin/debian-mingw64
   script:
-    - meson setup build --cross-file=/usr/share/meson/cross/x86_64-w64-mingw32.ini -Dbuildtype=debug -Dc_std=c11 -Ddocs=disabled -Dwarning_level=3 -Dwerror=true
+    - meson setup build --cross-file=/usr/share/meson/cross/x86_64-w64-mingw32.ini -Dbindings_cpp=enabled -Dbuildtype=debug -Dc_std=c11 -Ddocs=disabled -Dwarning_level=3 -Dwerror=true
     - ninja -C build test
     - meson configure -Dbuildtype=release build
     - ninja -C build test
@@ -118,7 +118,7 @@ freebsd:
   stage: build
   tags: [freebsd,meson]
   script:
-    - meson setup build -Dbuildtype=debug -Dwarning_level=everything -Dwerror=true
+    - meson setup build -Dbuildtype=debug -Dwarning_level=everything -Dwerror=true -Dbindings_cpp=enabled
     - ninja -C build test
     - meson configure -Dbuildtype=release build
     - ninja -C build test
@@ -127,7 +127,7 @@ mac:
   stage: build
   tags: [macos]
   script:
-    - meson setup build -Dbuildtype=debug -Dc_std=c11 -Ddocs=disabled -Dwarning_level=everything -Dwerror=true
+    - meson setup build -Dbindings_cpp=enabled -Dbuildtype=debug -Dc_std=c11 -Ddocs=disabled -Dwarning_level=everything -Dwerror=true
     - ninja -C build test
     - meson configure -Dbuildtype=release build
     - ninja -C build test
@@ -136,7 +136,7 @@ win:
   stage: build
   tags: [windows,meson]
   script:
-    - meson setup build -Dbuildtype=debug -Ddocs=disabled -Dwarning_level=everything -Dwerror=true
+    - meson setup build -Dbuildtype=debug -Ddocs=disabled -Dwarning_level=everything -Dwerror=true -Dbindings_cpp=enabled
     - ninja -C build test
     - meson configure -Dbuildtype=release build
     - ninja -C build test
