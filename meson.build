@@ -19,6 +19,10 @@ versioned_name = 'serd' + version_suffix
 pkg = import('pkgconfig')
 cc = meson.get_compiler('c')
 
+if add_languages('cpp', required: get_option('bindings_cpp'))
+  cpp = meson.get_compiler('cpp')
+endif
+
 # Set ultra strict warnings for developers, if requested
 c_warnings = []
 c_suppressions = []
@@ -195,6 +199,11 @@ endif
 
 if get_option('tests')
   subdir('test')
+endif
+
+# C++ bindings
+if is_variable('cpp')
+  subdir('bindings/cpp')
 endif
 
 if not meson.is_subproject() and meson.version().version_compare('>=0.53.0')

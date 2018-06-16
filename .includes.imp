@@ -7,4 +7,6 @@
   { "symbol": [ "uint32_t", "private", "<stdint.h>", "public" ] },
   { "symbol": [ "uint64_t", "private", "<stdint.h>", "public" ] },
   { "symbol": [ "uint8_t",  "private", "<stdint.h>", "public" ] },
+
+  { "symbol": [ "std::ostringstream", "private", "<sstream>", "public" ] }
 ]

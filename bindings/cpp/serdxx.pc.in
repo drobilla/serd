@@ -1,0 +1,10 @@
+prefix=@PREFIX@
+exec_prefix=@EXEC_PREFIX@
+libdir=@LIBDIR@
+includedir=@INCLUDEDIR@
+
+Name: Serdxx
+Version: @SERD_VERSION@
+Description: C++ bindings for serd, a lightweight RDF syntax library
+Requires: serd-@SERD_MAJOR_VERSION@
+Cflags: -I${includedir}/serdxx-@SERD_MAJOR_VERSION@
