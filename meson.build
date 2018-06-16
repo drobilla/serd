@@ -9,6 +9,7 @@ project('serd', ['c'],
           'b_ndebug=if-release',
           'buildtype=release',
           'c_std=c99',
+          'cpp_std=c++17',
         ])
 
 serd_major_version = meson.project_version().split('.')[0]
@@ -155,6 +156,7 @@ pkg.generate(
 # Install header to a versioned include directory
 install_headers(c_headers, subdir: versioned_name / 'serd')
 
+
 #########
 # Tools #
 #########
@@ -170,6 +172,13 @@ endif
 
 if not get_option('tests').disabled()
   subdir('test')
+endif
+
+if not get_option('bindings_cpp').disabled()
+  if add_languages('cpp', required: get_option('bindings_cpp').enabled())
+    cpp = meson.get_compiler('cpp')
+    subdir('bindings/cpp')
+  endif
 endif
 
 if not get_option('docs').disabled()

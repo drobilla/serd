@@ -6,9 +6,10 @@
 ########################
 
 conf_config = configuration_data()
-conf_config.set('SERD_VERSION', meson.project_version())
 conf_config.set('SERD_SRCDIR', serd_src_root)
+conf_config.set('SERD_STATIC_PATH', serd_src_root / 'doc' / '_static')
 conf_config.set('SERD_TITLE', get_option('title'))
+conf_config.set('SERD_VERSION', meson.project_version())
 
 conf_py = configure_file(
   configuration: conf_config,
@@ -23,14 +24,14 @@ conf_py = configure_file(
 doc_config = configuration_data()
 if mandoc.found()
   doc_config.set('SERD_COMMAND_LINE_INDEX_ENTRY', '\n   command_line_tools\n')
+  doc_config.set('SERD_FILTER_LINK', '`serd-filter <../man/serd-filter.html>`_')
   doc_config.set('SERD_PIPE_LINK', '`serd-pipe <../man/serd-pipe.html>`_')
   doc_config.set('SERD_SORT_LINK', '`serd-sort <../man/serd-sort.html>`_')
-  doc_config.set('SERD_FILTER_LINK', '`serd-filter <../man/serd-filter.html>`_')
 else
   doc_config.set('SERD_COMMAND_LINE_INDEX_ENTRY', '')
+  doc_config.set('SERD_FILTER_LINK', '``serd-filter``')
   doc_config.set('SERD_PIPE_LINK', '``serd-pipe``')
   doc_config.set('SERD_SORT_LINK', '``serd-sort``')
-  doc_config.set('SERD_FILTER_LINK', '``serd-filter``')
 endif
 
 configure_file(
