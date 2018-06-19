@@ -623,7 +623,7 @@ test_writer(const char* const path)
 
 	SerdWriter* writer = serd_writer_new(world,
 	                                     SERD_TURTLE,
-	                                     (SerdStyle)0,
+	                                     0,
 	                                     env,
 	                                     (SerdWriteFunc)fwrite,
 	                                     fd);
@@ -706,7 +706,7 @@ test_writer(const char* const path)
 	// Test buffer sink
 	SerdBuffer buffer = { NULL, 0 };
 	writer = serd_writer_new(
-		world, SERD_TURTLE, (SerdStyle)0, env, serd_buffer_sink, &buffer);
+		world, SERD_TURTLE, 0, env, serd_buffer_sink, &buffer);
 
 	o = serd_new_uri("http://example.org/base");
 	assert(!serd_writer_set_base_uri(writer, o));

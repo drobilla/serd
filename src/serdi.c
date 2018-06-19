@@ -206,7 +206,7 @@ main(int argc, char** argv)
 	SerdWorld* world  = serd_world_new();
 	SerdEnv*   env    = serd_env_new(base);
 
-	int output_style = 0;
+	SerdStyleFlags output_style = 0;
 	if (output_syntax == SERD_NTRIPLES || ascii) {
 		output_style |= SERD_STYLE_ASCII;
 	} else if (output_syntax == SERD_TURTLE) {
@@ -228,7 +228,7 @@ main(int argc, char** argv)
 
 	SerdWriter* writer = serd_writer_new(world,
 	                                     output_syntax,
-	                                     (SerdStyle)output_style,
+	                                     output_style,
 	                                     env,
 	                                     (SerdWriteFunc)fwrite,
 	                                     out_fd);

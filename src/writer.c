@@ -862,7 +862,7 @@ serd_writer_finish(SerdWriter* writer)
 SerdWriter*
 serd_writer_new(SerdWorld*     world,
                 SerdSyntax     syntax,
-                SerdStyle      style,
+                SerdStyleFlags style,
                 SerdEnv*       env,
                 SerdWriteFunc  ssink,
                 void*          stream)
