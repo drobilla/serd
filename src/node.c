@@ -109,7 +109,7 @@ serd_node_malloc(const size_t        length,
   node->flags  = flags;
   node->type   = type;
 
-  assert((intptr_t)node % serd_node_align == 0);
+  assert((uintptr_t)node % serd_node_align == 0);
   return node;
 }
 
