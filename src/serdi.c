@@ -92,61 +92,24 @@ quiet_error_func(void* const handle, const SerdError* const e)
   return SERD_SUCCESS;
 }
 
-static SerdWriterFlags
-choose_style(const SerdSyntax input_syntax,
-             const SerdSyntax output_syntax,
-             const bool       ascii,
-             const bool       bulk_write,
-             const bool       full_uris,
-             const bool       lax)
-{
-  SerdWriterFlags writer_flags = 0U;
-  if (output_syntax == SERD_NTRIPLES || ascii) {
-    writer_flags |= SERD_WRITE_ASCII;
-  } else if (output_syntax == SERD_TURTLE) {
-    writer_flags |= SERD_WRITE_ABBREVIATED;
-    if (!full_uris) {
-      writer_flags |= SERD_WRITE_CURIED;
-    }
-  }
-
-  if ((input_syntax == SERD_TURTLE || input_syntax == SERD_TRIG) ||
-      (writer_flags & SERD_WRITE_CURIED)) {
-    // Base URI may change and/or we're abbreviating URIs, so must resolve
-    writer_flags |= SERD_WRITE_RESOLVED;
-  }
-
-  if (bulk_write) {
-    writer_flags |= SERD_WRITE_BULK;
-  }
-
-  if (!lax) {
-    writer_flags |= SERD_WRITE_STRICT;
-  }
-
-  return writer_flags;
-}
-
 int
 main(int argc, char** argv)
 {
   const char* const prog = argv[0];
 
-  SerdSyntax  input_syntax  = (SerdSyntax)0;
-  SerdSyntax  output_syntax = (SerdSyntax)0;
-  bool        from_string   = false;
-  bool        from_stdin    = false;
-  bool        ascii         = false;
-  bool        bulk_read     = true;
-  bool        bulk_write    = false;
-  bool        full_uris     = false;
-  bool        lax           = false;
-  bool        quiet         = false;
-  size_t      stack_size    = 1048576U;
-  const char* add_prefix    = NULL;
-  const char* chop_prefix   = NULL;
-  const char* root_uri      = NULL;
-  int         a             = 1;
+  SerdSyntax      input_syntax  = (SerdSyntax)0;
+  SerdSyntax      output_syntax = (SerdSyntax)0;
+  SerdWriterFlags writer_flags  = SERD_WRITE_STRICT;
+  bool            from_string   = false;
+  bool            from_stdin    = false;
+  bool            bulk_read     = true;
+  bool            lax           = false;
+  bool            quiet         = false;
+  size_t          stack_size    = 1048576U;
+  const char*     add_prefix    = NULL;
+  const char*     chop_prefix   = NULL;
+  const char*     root_uri      = NULL;
+  int             a             = 1;
   for (; a < argc && !from_string && argv[a][0] == '-'; ++a) {
     if (argv[a][1] == '\0') {
       from_stdin = true;
@@ -165,17 +128,18 @@ main(int argc, char** argv)
       const char opt = argv[a][o];
 
       if (opt == 'a') {
-        ascii = true;
+        writer_flags |= SERD_WRITE_ASCII;
       } else if (opt == 'b') {
-        bulk_write = true;
+        writer_flags |= SERD_WRITE_BULK;
       } else if (opt == 'e') {
         bulk_read = false;
       } else if (opt == 'f') {
-        full_uris = true;
+        writer_flags |= (SERD_WRITE_UNQUALIFIED | SERD_WRITE_UNRESOLVED);
       } else if (opt == 'h') {
         return print_usage(prog, false);
       } else if (opt == 'l') {
         lax = true;
+        writer_flags &= ~(SerdWriterFlags)SERD_WRITE_STRICT;
       } else if (opt == 'q') {
         quiet = true;
       } else if (opt == 'v') {
@@ -262,9 +226,6 @@ main(int argc, char** argv)
   if (!output_syntax) {
     output_syntax = input_has_graphs ? SERD_NQUADS : SERD_NTRIPLES;
   }
-
-  const SerdWriterFlags writer_flags = choose_style(
-    input_syntax, output_syntax, ascii, bulk_write, full_uris, lax);
 
   SerdNode* base = NULL;
   if (a < argc) { // Base URI given on command line

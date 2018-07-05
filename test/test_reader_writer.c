@@ -409,8 +409,7 @@ test_write_errors(void)
 {
   SerdWorld* const      world = serd_world_new();
   ErrorContext          ctx   = {0U, 0U};
-  const SerdWriterFlags style =
-    (SerdWriterFlags)(SERD_WRITE_STRICT | SERD_WRITE_CURIED);
+  const SerdWriterFlags style = (SerdWriterFlags)SERD_WRITE_STRICT;
 
   const size_t max_offsets[] = {0, 386, 1911, 2003, 386};
 
