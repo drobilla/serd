@@ -409,9 +409,8 @@ quiet_error_sink(void* const handle, const SerdError* const e)
 static void
 test_write_errors(void)
 {
-  ErrorContext          ctx = {0U, 0U};
-  const SerdWriterFlags style =
-    (SerdWriterFlags)(SERD_WRITE_STRICT | SERD_WRITE_CURIED);
+  ErrorContext          ctx   = {0U, 0U};
+  const SerdWriterFlags style = (SerdWriterFlags)SERD_WRITE_STRICT;
 
   const size_t max_offsets[] = {0, 386, 1911, 2003, 386};
 
