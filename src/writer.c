@@ -510,7 +510,7 @@ write_uri_node(SerdWriter* const        writer,
 		return sink("a", 1, writer) == 1;
 	} else if (supports_abbrev(writer) && !strcmp(node_str, NS_RDF "nil")) {
 		return sink("()", 2, writer) == 2;
-	} else if (has_scheme && (writer->style & SERD_STYLE_CURIED) &&
+	} else if (has_scheme && supports_abbrev(writer) &&
 	           serd_env_qualify_in_place(writer->env, node, &prefix, &suffix) &&
 	           is_name(serd_node_get_string(prefix), serd_node_get_length(prefix)) &&
 	           is_name(suffix.buf, suffix.len)) {
@@ -521,7 +521,7 @@ write_uri_node(SerdWriter* const        writer,
 	}
 
 	write_sep(writer, SEP_URI_BEGIN);
-	if (writer->style & SERD_STYLE_RESOLVED) {
+	if (serd_env_get_base_uri(writer->env)) {
 		const SerdURI* base_uri = serd_env_get_parsed_base_uri(writer->env);
 		SerdURI uri, abs_uri;
 		serd_uri_parse(node_str, &uri);

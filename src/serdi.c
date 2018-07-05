@@ -55,7 +55,6 @@ print_usage(const char* name, bool error)
 	fprintf(os, "  -b           Fast bulk output for large serialisations.\n");
 	fprintf(os, "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n");
 	fprintf(os, "  -e           Eat input one character at a time.\n");
-	fprintf(os, "  -f           Keep full URIs in input (don't qualify).\n");
 	fprintf(os, "  -h           Display this help and exit.\n");
 	fprintf(os, "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads.\n");
 	fprintf(os, "  -k BYTES     Parser stack size.\n");
@@ -98,7 +97,6 @@ main(int argc, char** argv)
 	bool           ascii         = false;
 	bool           bulk_read     = true;
 	bool           bulk_write    = false;
-	bool           full_uris     = false;
 	bool           lax           = false;
 	bool           quiet         = false;
 	size_t         stack_size    = 4194304;
@@ -116,8 +114,6 @@ main(int argc, char** argv)
 			bulk_write = true;
 		} else if (argv[a][1] == 'e') {
 			bulk_read = false;
-		} else if (argv[a][1] == 'f') {
-			full_uris = true;
 		} else if (argv[a][1] == 'h') {
 			return print_usage(argv[0], false);
 		} else if (argv[a][1] == 'l') {
@@ -206,25 +202,8 @@ main(int argc, char** argv)
 	SerdWorld* world  = serd_world_new();
 	SerdEnv*   env    = serd_env_new(base);
 
-	SerdStyleFlags output_style = 0;
-	if (output_syntax == SERD_NTRIPLES || ascii) {
-		output_style |= SERD_STYLE_ASCII;
-	} else if (output_syntax == SERD_TURTLE) {
-		output_style |= SERD_STYLE_ABBREVIATED;
-		if (!full_uris) {
-			output_style |= SERD_STYLE_CURIED;
-		}
-	}
-
-	if ((input_syntax == SERD_TURTLE || input_syntax == SERD_TRIG) ||
-	    (output_style & SERD_STYLE_CURIED)) {
-		// Base URI may change and/or we're abbreviating URIs, so must resolve
-		output_style |= SERD_STYLE_RESOLVED;
-	}
-
-	if (bulk_write) {
-		output_style |= SERD_STYLE_BULK;
-	}
+	const SerdStyleFlags output_style = ((ascii ? SERD_STYLE_ASCII : 0) |
+	                                     (bulk_write ? SERD_STYLE_BULK : 0));
 
 	SerdWriter* writer = serd_writer_new(world,
 	                                     output_syntax,
