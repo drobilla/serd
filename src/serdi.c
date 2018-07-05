@@ -87,36 +87,6 @@ quiet_error_func(void* const handle, const SerdError* const e)
   return SERD_SUCCESS;
 }
 
-static SerdWriterFlags
-choose_style(const SerdSyntax input_syntax,
-             const SerdSyntax output_syntax,
-             const bool       ascii,
-             const bool       bulk_write,
-             const bool       full_uris)
-{
-  SerdWriterFlags writer_flags = 0u;
-  if (output_syntax == SERD_NTRIPLES || ascii) {
-    writer_flags |= SERD_WRITE_ASCII;
-  } else if (output_syntax == SERD_TURTLE) {
-    writer_flags |= SERD_WRITE_ABBREVIATED;
-    if (!full_uris) {
-      writer_flags |= SERD_WRITE_CURIED;
-    }
-  }
-
-  if ((input_syntax == SERD_TURTLE || input_syntax == SERD_TRIG) ||
-      (writer_flags & SERD_WRITE_CURIED)) {
-    // Base URI may change and/or we're abbreviating URIs, so must resolve
-    writer_flags |= SERD_WRITE_RESOLVED;
-  }
-
-  if (bulk_write) {
-    writer_flags |= SERD_WRITE_BULK;
-  }
-
-  return writer_flags;
-}
-
 int
 main(int argc, char** argv)
 {
@@ -249,7 +219,9 @@ main(int argc, char** argv)
   }
 
   const SerdWriterFlags writer_flags =
-    choose_style(input_syntax, output_syntax, ascii, bulk_write, full_uris);
+    ((ascii ? SERD_WRITE_ASCII : 0u) |     //
+     (bulk_write ? SERD_WRITE_BULK : 0u) | //
+     (full_uris ? (SERD_WRITE_UNQUALIFIED | SERD_WRITE_UNRESOLVED) : 0u));
 
   SerdNode* base = NULL;
   if (a < argc) { // Base URI given on command line
