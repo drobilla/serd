@@ -294,10 +294,10 @@ test_suites = {
   ],
   'bulk': [
     files('extra/good/manifest.ttl'), ns_serdtest + 'good/',
-    '--', '-b',
+    '--', '-a', '-b',
   ],
   'fast': [
-    files('extra/good/manifest.ttl'), ns_serdtest + 'good/',
+    files('extra/perfect/manifest.ttl'), ns_serdtest + 'perfect/',
     '--', '-f',
   ],
   'full': [
@@ -306,11 +306,12 @@ test_suites = {
   ],
   'good': [
     files('extra/good/manifest.ttl'), ns_serdtest + 'good/',
+    '--', '-a',
   ],
   'lax_lax': [
     '--lax',
     files('extra/lax/manifest.ttl'), ns_serdtest + 'lax/',
-    '--', '-l',
+    '--', '-a', '-l',
   ],
   'lax_strict': [
     files('extra/lax/manifest.ttl'), ns_serdtest + 'lax/',
