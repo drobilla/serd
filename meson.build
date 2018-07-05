@@ -35,7 +35,6 @@ if get_option('strict')
       '-Wno-nullable-to-nonnull-conversion',
       '-Wno-padded',
       '-Wno-reserved-id-macro',
-      '-Wno-sign-conversion',
     ]
   elif cc.get_id() == 'gcc'
     c_suppressions += [
@@ -43,7 +42,6 @@ if get_option('strict')
       '-Wno-float-conversion', # MinGW
       '-Wno-format-nonliteral',
       '-Wno-padded',
-      '-Wno-sign-conversion',
       '-Wno-switch-default',
       '-Wno-unsuffixed-float-constants',
       '-Wno-unused-const-variable',
