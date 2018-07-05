@@ -236,9 +236,6 @@ if not get_option('tools').disabled()
     base_uri = w3c_base + syntax + 'Tests/'
 
     args = ['--syntax', syntax, manifest, base_uri]
-    if syntax == 'TriG'
-      args += ['--', '-a']
-    endif
 
     test(syntax, run_test_suite,
          args: script_args + args,
