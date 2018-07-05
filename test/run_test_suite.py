@@ -50,6 +50,13 @@ def log_error(message):
     sys.stderr.write(message)
 
 
+def test_osyntax_options(osyntax):
+    if osyntax.lower() == "ntriples" or osyntax.lower() == "nquads":
+        return ["-a"]
+
+    return []
+
+
 def test_thru(
     base_uri,
     path,
@@ -85,16 +92,21 @@ def test_thru(
         ]
     )
 
-    thru_cmd = command_prefix + [
-        "-i",
-        isyntax,
-        "-o",
-        osyntax,
-        "-c",
-        "serd_test",
-        out_path,
-        base_uri,
-    ]
+    thru_cmd = (
+        command_prefix
+        + test_osyntax_options(osyntax)
+        + [
+            "-i",
+            isyntax,
+            "-o",
+            osyntax,
+            "-c",
+            "serd_test",
+            "-a",
+            out_path,
+            base_uri,
+        ]
+    )
 
     with open(out_path, "wb") as out:
         subprocess.run(out_cmd, check=True, stdout=out)
@@ -245,7 +257,7 @@ def test_suite(
             test_name = os.path.basename(test_uri_path)
             test_path = os.path.join(test_dir, test_name)
 
-            command = command_prefix + ["-f", test_path, test_uri]
+            command = command_prefix + ["-a"] + [test_path, test_uri]
             command_string = " ".join(shlex.quote(c) for c in command)
             out_filename = os.path.join(out_test_dir, test_name + ".out")
 
