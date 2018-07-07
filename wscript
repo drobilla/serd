@@ -488,6 +488,8 @@ def test(ctx):
                 report.write(line)
 
         w3c_base = 'http://www.w3.org/2013/'
+        test_suite(ctx, w3c_base + 'TurtleTests/',
+                   'TurtleTests', report, 'Turtle', 'NTriples')
         test_suite(ctx, w3c_base + 'NTriplesTests/',
                    'NTriplesTests', report, 'NTriples', 'NTriples')
         test_suite(ctx, w3c_base + 'NQuadsTests/',
