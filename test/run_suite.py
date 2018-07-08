@@ -41,13 +41,12 @@ def run_eval_test(command, in_path, good_path, out_path):
     """Run a positive eval test and return whether the output matches."""
 
     syntax = util.syntax_from_path(out_path)
-    command = command + ["-O", syntax, in_path]
-
-    with subprocess.Popen(command, stdout=PIPE, encoding="utf-8") as proc:
-        out = list(proc.stdout)
+    command = command + ["-O", syntax, "-o", out_path, in_path]
+    subprocess.check_call(command, encoding="utf-8")
 
     with open(good_path, "r", encoding="utf-8") as good:
-        return util.lines_equal(list(good), out, good_path, out_path)
+        with open(out_path, "r", encoding="utf-8") as out:
+            return util.lines_equal(list(good), list(out), good_path, out_path)
 
 
 def run_positive_test(command, in_path):
