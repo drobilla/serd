@@ -85,6 +85,7 @@ c_headers = files(
 )
 
 sources = files(
+  'src/byte_sink.c',
   'src/byte_source.c',
   'src/caret.c',
   'src/env.c',
