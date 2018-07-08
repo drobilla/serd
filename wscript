@@ -81,6 +81,7 @@ def configure(conf):
 lib_headers = ['src/reader.h']
 
 lib_source = ['src/base64.c',
+              'src/byte_sink.c',
               'src/byte_source.c',
               'src/cursor.c',
               'src/env.c',

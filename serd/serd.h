@@ -105,6 +105,11 @@ typedef struct SerdWriterImpl SerdWriter;
 typedef struct SerdSinkImpl SerdSink;
 
 /**
+   A sink for bytes that receives string output.
+*/
+typedef struct SerdByteSinkImpl SerdByteSink;
+
+/**
    Return status code.
 */
 typedef enum {
@@ -413,6 +418,43 @@ typedef size_t (*SerdWriteFunc)(const void* buf,
                                 size_t      size,
                                 size_t      nmemb,
                                 void*       stream);
+
+/**
+   Create a new byte sink.
+
+   @param write_func Function called with bytes to consume.
+   @param stream Context parameter passed to `sink`.
+   @param block_size Number of bytes to write per call.
+*/
+SERD_API
+SerdByteSink*
+serd_byte_sink_new(SerdWriteFunc write_func, void* stream, size_t block_size);
+
+/**
+   Write to `sink`.
+
+   Compatible with SerdWriteFunc.
+*/
+SERD_API
+size_t
+serd_byte_sink_write(const void*   buf,
+                     size_t        size,
+                     size_t        nmemb,
+                     SerdByteSink* sink);
+
+/**
+   Flush any pending output in `sink` to the underlying write function.
+*/
+SERD_API
+void
+serd_byte_sink_flush(SerdByteSink* sink);
+
+/**
+   Free `sink`.
+*/
+SERD_API
+void
+serd_byte_sink_free(SerdByteSink* sink);
 
 /**
    @}
