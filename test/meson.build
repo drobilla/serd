@@ -171,6 +171,7 @@ simple_command_tests = {
       ['-r'],
       ['-s', '<foo> a <Bar> .'],
       ['-s'],
+      ['-w'],
       ['-z'],
     ],
     'good': [
@@ -312,6 +313,14 @@ if is_variable('serdi')
     files('test_write_error.py'),
     args: script_args + [serd_ttl],
     env: test_env,
+    suite: 'io',
+  )
+  test(
+    'missing_output',
+    serdi,
+    args: ['-w', '/does/not/exist.ttl', serd_ttl],
+    env: test_env,
+    should_fail: true,
     suite: 'io',
   )
 

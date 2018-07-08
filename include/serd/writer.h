@@ -79,11 +79,6 @@ typedef enum {
      carefully, since it can result in data loss.
   */
   SERD_WRITE_LAX = 1U << 4U,
-
-  /**
-     Write output in pages.
-  */
-  SERD_WRITE_BULK = 1U << 5U,
 } SerdWriterFlag;
 
 /// Bitwise OR of SerdWriterFlag values
