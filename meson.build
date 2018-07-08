@@ -84,6 +84,7 @@ c_header_files = files(c_headers)
 c_header = files('include/serd/serd.h')
 
 sources = [
+  'src/byte_sink.c',
   'src/byte_source.c',
   'src/caret.c',
   'src/env.c',
