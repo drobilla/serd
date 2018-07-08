@@ -53,6 +53,7 @@ print_usage(const char* const name, const bool error)
     "  -s STRING    Parse STRING as input.\n"
     "  -t           Write terser output without newlines.\n"
     "  -v           Display version information and exit.\n"
+    "  -w FILENAME  Write output to FILENAME instead of stdout.\n"
     "  -x           Support parsing variable nodes like \"?x\".\n";
 
   FILE* const os = error ? stderr : stdout;
@@ -118,6 +119,7 @@ main(int argc, char** argv)
   SerdReaderFlags reader_flags  = 0;
   SerdWriterFlags writer_flags  = 0;
   bool            bulk_read     = true;
+  bool            bulk_write    = false;
   bool            osyntax_set   = false;
   bool            quiet         = false;
   size_t          stack_size    = 1048576U;
@@ -125,6 +127,7 @@ main(int argc, char** argv)
   const char*     add_prefix    = "";
   const char*     chop_prefix   = NULL;
   const char*     root_uri      = NULL;
+  const char*     out_filename  = NULL;
   int             a             = 1;
   for (; a < argc && argv[a][0] == '-'; ++a) {
     if (argv[a][1] == '\0') {
@@ -137,7 +140,7 @@ main(int argc, char** argv)
       if (opt == 'a') {
         writer_flags |= SERD_WRITE_ASCII;
       } else if (opt == 'b') {
-        writer_flags |= SERD_WRITE_BULK;
+        bulk_write = true;
       } else if (opt == 'e') {
         bulk_read = false;
       } else if (opt == 'f') {
@@ -224,6 +227,13 @@ main(int argc, char** argv)
 
         input_string = argv[a];
         break;
+      } else if (opt == 'w') {
+        if (argv[a][o + 1] || ++a == argc) {
+          return missing_arg(argv[0], 'w');
+        }
+
+        out_filename = argv[a];
+        break;
       } else {
         SERDI_ERRORF("invalid option -- '%s'\n", argv[a] + 1);
         return print_usage(prog, true);
@@ -237,7 +247,9 @@ main(int argc, char** argv)
   }
 
   serd_set_stream_utf8_mode(stdin);
-  serd_set_stream_utf8_mode(stdout);
+  if (!out_filename) {
+    serd_set_stream_utf8_mode(stdout);
+  }
 
   char* const* const inputs   = argv + a;
   const int          n_inputs = argc - a;
@@ -265,16 +277,27 @@ main(int argc, char** argv)
     zix_free(NULL, input_path);
   }
 
-  FILE* const      out_fd = stdout;
-  SerdWorld* const world  = serd_world_new();
+  SerdWorld* const world = serd_world_new();
   SerdEnv* const   env =
     serd_env_new(base ? serd_node_string_view(base) : serd_empty_string());
 
-  SerdOutputStream out = serd_open_output_stream(
-    (SerdWriteFunc)fwrite, (SerdStreamCloseFunc)fclose, out_fd);
+  SerdOutputStream out =
+    out_filename ? serd_open_output_file(out_filename)
+                 : serd_open_output_stream((SerdWriteFunc)fwrite,
+                                           (SerdStreamCloseFunc)fclose,
+                                           stdout);
 
-  SerdWriter* const writer =
-    serd_writer_new(world, output_syntax, writer_flags, env, &out, 1);
+  if (!out.stream) {
+    perror("serdi: error opening output file");
+    return 1;
+  }
+
+  SerdWriter* const writer = serd_writer_new(world,
+                                             output_syntax,
+                                             writer_flags,
+                                             env,
+                                             &out,
+                                             bulk_write ? SERD_PAGE_SIZE : 1);
 
   if (quiet) {
     serd_set_log_func(world, serd_quiet_log_func, NULL);
@@ -349,7 +372,7 @@ main(int argc, char** argv)
   serd_node_free(base);
   serd_world_free(world);
 
-  if (fclose(stdout)) {
+  if (serd_close_output(&out)) {
     perror("serdi: write error");
     st = SERD_ERR_UNKNOWN;
   }
