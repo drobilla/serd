@@ -84,6 +84,7 @@ c_header = files('include/serd/serd.h')
 
 sources = [
   'src/base64.c',
+  'src/byte_sink.c',
   'src/byte_source.c',
   'src/cursor.c',
   'src/env.c',
