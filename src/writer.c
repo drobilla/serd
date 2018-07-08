@@ -14,7 +14,6 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include "byte_sink.h"
 #include "env.h"
 #include "node.h"
 #include "serd_internal.h"
@@ -93,7 +92,7 @@ struct SerdWriterImpl {
   SerdNode*       root_node;
   SerdURIView     root_uri;
   SerdStack       anon_stack;
-  SerdByteSink    byte_sink;
+  SerdByteSink*   byte_sink;
   WriteContext    context;
   SerdNode*       list_subj;
   unsigned        list_depth;
@@ -156,7 +155,7 @@ ctx(SerdWriter* writer, const SerdField field)
 static size_t
 sink(const void* buf, size_t len, SerdWriter* writer)
 {
-  return serd_byte_sink_write(buf, len, &writer->byte_sink);
+  return serd_byte_sink_write(buf, 1, len, writer->byte_sink);
 }
 
 // Write a single character, as an escape for single byte characters
@@ -944,7 +943,7 @@ serd_writer_finish(SerdWriter* writer)
   if (ctx(writer, SERD_GRAPH)) {
     write_sep(writer, SEP_GRAPH_END);
   }
-  serd_byte_sink_flush(&writer->byte_sink);
+  serd_byte_sink_flush(writer->byte_sink);
   free_context(&writer->context);
   writer->indent  = 0;
   writer->context = WRITE_CONTEXT_NULL;
@@ -1084,7 +1083,7 @@ serd_writer_free(SerdWriter* writer)
 
   serd_stack_free(&writer->anon_stack);
   free(writer->bprefix);
-  serd_byte_sink_free(&writer->byte_sink);
+  serd_byte_sink_free(writer->byte_sink);
   serd_node_free(writer->root_node);
   free(writer);
 }
