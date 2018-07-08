@@ -250,6 +250,9 @@ serd_strlen(const char* SERD_NONNULL str, SerdNodeFlags* SERD_NULLABLE flags);
    @{
 */
 
+/// A sink for bytes that receives text output
+typedef struct SerdByteSinkImpl SerdByteSink;
+
 /**
    Function to detect I/O stream errors.
 
@@ -292,6 +295,41 @@ typedef size_t (*SerdWriteFunc)(const void* SERD_NONNULL buf,
                                 size_t                   size,
                                 size_t                   nmemb,
                                 void* SERD_NONNULL       stream);
+
+/**
+   Create a new byte sink.
+
+   @param write_func Function called with bytes to consume.
+   @param stream Context parameter passed to `sink`.
+   @param block_size Number of bytes to write per call.
+*/
+SERD_API
+SerdByteSink* SERD_ALLOCATED
+serd_byte_sink_new(SerdWriteFunc SERD_NONNULL write_func,
+                   void* SERD_NULLABLE        stream,
+                   size_t                     block_size);
+
+/**
+   Write to `sink`.
+
+   Compatible with SerdWriteFunc.
+*/
+SERD_API
+size_t
+serd_byte_sink_write(const void* SERD_NONNULL   buf,
+                     size_t                     size,
+                     size_t                     nmemb,
+                     SerdByteSink* SERD_NONNULL sink);
+
+/// Flush any pending output in `sink` to the underlying write function
+SERD_API
+void
+serd_byte_sink_flush(SerdByteSink* SERD_NONNULL sink);
+
+/// Free `sink`
+SERD_API
+void
+serd_byte_sink_free(SerdByteSink* SERD_NULLABLE sink);
 
 /**
    @}
@@ -1416,9 +1454,8 @@ typedef struct SerdWriterImpl SerdWriter;
 */
 typedef enum {
   SERD_WRITE_ASCII       = 1U << 0U, ///< Escape all non-ASCII characters
-  SERD_WRITE_BULK        = 1U << 1U, ///< Write output in pages
-  SERD_WRITE_UNQUALIFIED = 1U << 2U, ///< Do not shorten URIs into CURIEs
-  SERD_WRITE_UNRESOLVED  = 1U << 3U  ///< Do not make URIs relative
+  SERD_WRITE_UNQUALIFIED = 1U << 1U, ///< Do not shorten URIs into CURIEs
+  SERD_WRITE_UNRESOLVED  = 1U << 2U  ///< Do not make URIs relative
 } SerdWriterFlag;
 
 /// Bitwise OR of SerdWriterFlag values
@@ -1431,7 +1468,7 @@ serd_writer_new(SerdWorld* SERD_NONNULL    world,
                 SerdSyntax                 syntax,
                 SerdWriterFlags            flags,
                 SerdEnv* SERD_NONNULL      env,
-                SerdWriteFunc SERD_NONNULL ssink,
+                SerdWriteFunc SERD_NONNULL write_func,
                 void* SERD_NULLABLE        stream);
 
 /// Free `writer`
