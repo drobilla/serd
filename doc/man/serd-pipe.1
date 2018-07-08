@@ -15,24 +15,47 @@
 .Op Fl b Ar bytes
 .Op Fl c Ar prefix
 .Op Fl k Ar bytes
+.Op Fl o Ar filename
 .Op Fl p Ar prefix
 .Op Fl r Ar root
 .Op Fl s Ar string
 .Op Ar input ...
 .Sh DESCRIPTION
 .Nm
-is a fast command-line utility for streaming and processing RDF data.
-It reads one or more RDF documents and writes the data to stdout,
-possibly transformed and/or in a different syntax.
-By default,
-the input syntax is guessed from the file extension,
-and output is written in NTriples or NQuads.
+is a fast command-line utility for streaming RDF data.
+It reads data in some syntax and writes it in another,
+possibly with some transformations applied.
 .Pp
 .Nm
-can be used to check for syntax errors,
-convert from one syntax to another,
-pretty-print documents,
-or transform URIs and blank node IDs.
+writes statements immediately as they are read,
+so it uses little memory and is suitable for use in pipelines and with huge files.
+It is also useful as a quick utility for things like checking syntax,
+converting to another,
+pretty-printing,
+merging files,
+expanding URIs,
+and so on.
+.Pp
+Syntax is guessed from the file extension if possible,
+so working with files is most convenient.
+For example,
+many common tasks can be accomplished with simple commands like:
+.Pp
+.Dl $ serd-pipe -o pretty.ttl input.nt
+.Pp
+The
+.Ar input
+operands are processed in command-line order.
+If
+.Ar input
+is
+.Ar -
+or absent,
+standard input is read.
+Similarly, output defaults to standard output.
+If syntax isn't given and can't be determined from filenames,
+then input is read as TriG and output is written as NQuads
+(which will function properly with Turtle and NTriples, respectively).
 .Pp
 The options are as follows:
 .Bl -tag -width 3n
@@ -124,6 +147,10 @@ Parsing is performed using a pre-allocated stack for performance and security re
 By default, the stack is 512 KiB, which should be sufficient for most data.
 This can be increased to support unusually structured data and huge literals,
 or decreased to reduce overall memory requirements and reduce startup time.
+.It Fl o Ar filename
+Write output to the given
+.Ar filename
+instead of stdout.
 .It Fl p Ar prefix
 Add
 .Ar prefix
@@ -186,21 +213,45 @@ If set to 0, color is disabled.
 .It Ev CLICOLOR_FORCE
 If set to anything other than 0, color is forced on.
 .El
+.Sh FILES
+No files are accessed except those given on the command-line.
+Filename extensions are significant if no syntax is specified:
+.Pa .nq
+is used for NQuads,
+.Pa .nt
+for NTriples,
+.Pa .trig
+for TriG, and
+.Pa .ttl
+for Turtle.
 .Sh EXIT STATUS
 .Nm
 exits with a status of 0, or non-zero if an error occurred.
 .Sh EXAMPLES
 .Bl -tag -width 3n
-.It Pretty-print a document:
-.Nm Fl o
+.It Format a Turtle file to stdout:
+.Nm Fl O
 .Ar turtle
-.Pa file.ttl
->
-.Pa out.ttl
+.Pa input.ttl
 .It Print only errors and discard the output:
 .Nm Fl O
 .Ar empty
 .Pa input.ttl
+.It Convert an NTriples file to Turtle:
+.Nm Fl o
+.Ar output.ttl
+.Pa input.nt
+.It Expand all prefixed names into full URIs:
+.Nm Fl O
+.Ar expanded
+.Fl o
+.Ar expanded.ttl
+.Pa input.ttl
+.It Merge two files:
+.Nm Fl o
+.Pa merged.ttl
+.Pa header.ttl
+.Pa body.ttl
 .El
 .Sh SEE ALSO
 .Bl -item -compact

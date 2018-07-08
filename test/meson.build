@@ -203,6 +203,7 @@ simple_command_tests = {
       ['-r'],
       ['-rx'],
       ['-s'],
+      ['-o'],
       ['-z'],
     ],
     'good': [
@@ -316,6 +317,7 @@ if is_variable('serd_pipe')
     'read_dir_bulk': [serd_src_root],
     'read_dir_bytes': ['-b', '1', serd_src_root],
     'read_dir_uri': ['file://@0@/'.format(serd_src_root)],
+    'write_dir': ['-o', meson.current_build_dir(), serd_ttl],
   }
 
   foreach name, args : io_error_tests
@@ -341,6 +343,14 @@ if is_variable('serd_pipe')
     files('test_write_error.py'),
     args: pipe_script_args + [small_ttl, '--', '-b', '1024'],
     env: test_env,
+    suite: 'io',
+  )
+  test(
+    'missing_output',
+    serd_pipe,
+    args: ['-o', '/does/not/exist.ttl', serd_ttl],
+    env: test_env,
+    should_fail: true,
     suite: 'io',
   )
 
