@@ -431,36 +431,52 @@ uri_path_at(const SerdURI* uri, size_t i)
 	}
 }
 
-/** Return true iff `uri` shares path components with `root` */
-static inline bool
-uri_is_related(const SerdURI* uri, const SerdURI* root)
+/**
+   Return the index of the first differing character after the last root slash,
+   or zero if `uri` is not under `root`.
+*/
+static inline size_t
+uri_rooted_index(const SerdURI* uri, const SerdURI* root)
 {
 	if (!root || !root->scheme.len ||
 	    !chunk_equals(&root->scheme, &uri->scheme) ||
 	    !chunk_equals(&root->authority, &uri->authority)) {
-		return false;
+		return 0;
 	}
 
-	bool         differ   = false;
-	const size_t path_len = uri_path_len(uri);
-	const size_t root_len = uri_path_len(root);
+	bool         differ          = false;
+	const size_t path_len        = uri_path_len(uri);
+	const size_t root_len        = uri_path_len(root);
+	size_t       last_root_slash = 0;
 	for (size_t i = 0; i < path_len && i < root_len; ++i) {
-		if (uri_path_at(uri, i) != uri_path_at(root, i)) {
-			differ = true;
-		}
-		if (differ && uri_path_at(root, i) == '/') {
-			return false;
+		const uint8_t u = uri_path_at(uri, i);
+		const uint8_t r = uri_path_at(root, i);
+
+		differ = differ || u != r;
+		if (r == '/') {
+			last_root_slash = i;
+			if (differ) {
+				return 0;
+			}
 		}
 	}
 
-	return true;
+	return last_root_slash + 1;
+}
+
+/** Return true iff `uri` shares path components with `root` */
+static inline bool
+uri_is_related(const SerdURI* uri, const SerdURI* root)
+{
+	return uri_rooted_index(uri, root) > 0;
 }
 
 /** Return true iff `uri` is within the base of `root` */
 static inline bool
 uri_is_under(const SerdURI* uri, const SerdURI* root)
 {
-	return uri->path.len >= root->path.len && uri_is_related(uri, root);
+	const size_t index = uri_rooted_index(uri, root);
+	return index > 0 && uri->path.len > index;
 }
 
 static inline bool

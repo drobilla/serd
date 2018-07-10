@@ -422,6 +422,15 @@ main(void)
 		FAILF("Bad relative URI %s (expected 'http://example.org/')\n", noup.buf);
 	}
 
+	SerdNode x = serd_node_from_string(SERD_URI, USTR("http://example.org/foo/x"));
+	SerdURI  x_uri;
+	serd_uri_parse(x.buf, &x_uri);
+
+	SerdNode x_rel = serd_node_new_relative_uri(&x_uri, &abs_uri, &abs_uri, NULL);
+	if (strcmp((const char*)x_rel.buf, "x")) {
+		FAILF("Bad relative URI %s (expected 'x')\n", x_rel.buf);
+	}
+
 	serd_node_free(&noup);
 	serd_node_free(&up);
 	serd_node_free(&rel);
