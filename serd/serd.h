@@ -302,7 +302,6 @@ typedef struct {
 */
 typedef enum {
 	SERD_STYLE_ASCII = 1 << 0,  /**< Escape all non-ASCII characters. */
-	SERD_STYLE_BULK  = 1 << 1   /**< Write output in pages. */
 } SerdStyle;
 
 /**
@@ -1239,7 +1238,7 @@ serd_writer_new(SerdWorld*      world,
                 SerdSyntax      syntax,
                 SerdStyleFlags  style,
                 SerdEnv*        env,
-                SerdWriteFunc   ssink,
+                SerdWriteFunc   write_func,
                 void*           stream);
 
 /**

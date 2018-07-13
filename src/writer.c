@@ -95,7 +95,8 @@ struct SerdWriterImpl {
 	SerdNode*     root_node;
 	SerdURI       root_uri;
 	SerdStack     anon_stack;
-	SerdByteSink* byte_sink;
+	SerdWriteFunc write_func;
+	void*         stream;
 	SerdErrorSink error_sink;
 	void*         error_handle;
 	WriteContext  context;
@@ -156,7 +157,7 @@ ctx(SerdWriter* writer, const SerdField field)
 static inline size_t
 sink(const void* buf, size_t len, SerdWriter* writer)
 {
-	return serd_byte_sink_write(buf, 1, len, writer->byte_sink);
+	return writer->write_func(buf, 1, len, writer->stream);
 }
 
 // Write a single character, as an escape for single byte characters
@@ -852,7 +853,6 @@ serd_writer_finish(SerdWriter* writer)
 	if (ctx(writer, SERD_GRAPH)) {
 		write_sep(writer, SEP_GRAPH_END);
 	}
-	serd_byte_sink_flush(writer->byte_sink);
 	free_context(writer);
 	writer->indent  = 0;
 	writer->context = WRITE_CONTEXT_NULL;
@@ -864,7 +864,7 @@ serd_writer_new(SerdWorld*     world,
                 SerdSyntax     syntax,
                 SerdStyleFlags style,
                 SerdEnv*       env,
-                SerdWriteFunc  ssink,
+                SerdWriteFunc  write_func,
                 void*          stream)
 {
 	const WriteContext context = WRITE_CONTEXT_NULL;
@@ -876,11 +876,11 @@ serd_writer_new(SerdWorld*     world,
 	writer->root_node    = NULL;
 	writer->root_uri     = SERD_URI_NULL;
 	writer->anon_stack   = serd_stack_new(SERD_PAGE_SIZE);
+	writer->write_func   = write_func;
+	writer->stream       = stream;
 	writer->context      = context;
 	writer->list_subj    = NULL;
 	writer->empty        = true;
-	writer->byte_sink    = serd_byte_sink_new(
-		ssink, stream, (style & SERD_STYLE_BULK) ? SERD_PAGE_SIZE : 1);
 
 	writer->iface.handle    = writer;
 	writer->iface.base      = (SerdBaseSink)serd_writer_set_base_uri;
@@ -970,7 +970,6 @@ serd_writer_free(SerdWriter* writer)
 	serd_writer_finish(writer);
 	serd_stack_free(&writer->anon_stack);
 	free(writer->bprefix);
-	serd_byte_sink_free(writer->byte_sink);
 	serd_node_free(writer->root_node);
 	free(writer);
 }
