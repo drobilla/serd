@@ -92,7 +92,8 @@ struct SerdWriterImpl {
   SerdNode*       root_node;
   SerdURIView     root_uri;
   SerdStack       anon_stack;
-  SerdByteSink*   byte_sink;
+  SerdWriteFunc   write_func;
+  void*           stream;
   WriteContext    context;
   SerdNode*       list_subj;
   unsigned        list_depth;
@@ -155,7 +156,7 @@ ctx(SerdWriter* writer, const SerdField field)
 static size_t
 sink(const void* buf, size_t len, SerdWriter* writer)
 {
-  return serd_byte_sink_write(buf, 1, len, writer->byte_sink);
+  return writer->write_func(buf, 1, len, writer->stream);
 }
 
 // Write a single character, as an escape for single byte characters
@@ -943,7 +944,6 @@ serd_writer_finish(SerdWriter* writer)
   if (ctx(writer, SERD_GRAPH)) {
     write_sep(writer, SEP_GRAPH_END);
   }
-  serd_byte_sink_flush(writer->byte_sink);
   free_context(&writer->context);
   writer->indent  = 0;
   writer->context = WRITE_CONTEXT_NULL;
@@ -955,7 +955,7 @@ serd_writer_new(SerdWorld*      world,
                 SerdSyntax      syntax,
                 SerdWriterFlags flags,
                 SerdEnv*        env,
-                SerdWriteFunc   ssink,
+                SerdWriteFunc   write_func,
                 void*           stream)
 {
   const WriteContext context = WRITE_CONTEXT_NULL;
@@ -968,11 +968,11 @@ serd_writer_new(SerdWorld*      world,
   writer->root_node  = NULL;
   writer->root_uri   = SERD_URI_NULL;
   writer->anon_stack = serd_stack_new(SERD_PAGE_SIZE);
+  writer->write_func = write_func;
+  writer->stream     = stream;
   writer->context    = context;
   writer->list_subj  = NULL;
   writer->empty      = true;
-  writer->byte_sink  = serd_byte_sink_new(
-    ssink, stream, (flags & SERD_WRITE_BULK) ? SERD_PAGE_SIZE : 1);
 
   writer->iface.handle   = writer;
   writer->iface.on_event = (SerdEventFunc)serd_writer_on_event;
@@ -1083,7 +1083,6 @@ serd_writer_free(SerdWriter* writer)
 
   serd_stack_free(&writer->anon_stack);
   free(writer->bprefix);
-  serd_byte_sink_free(writer->byte_sink);
   serd_node_free(writer->root_node);
   free(writer);
 }
