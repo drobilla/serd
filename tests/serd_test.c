@@ -206,6 +206,9 @@ main(void)
 		if (blob.n_bytes != blob.n_chars) {
 			FAILF("Blob %zu bytes != %zu chars\n",
 			      blob.n_bytes, blob.n_chars);
+		} else if (blob.n_bytes != strlen((const char*)blob.buf)) {
+			FAILF("Blob %zu bytes != length %zu\n",
+			      blob.n_bytes, strlen((const char*)blob.buf));
 		}
 
 		size_t   out_size;

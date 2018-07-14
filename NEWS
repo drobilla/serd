@@ -1,5 +1,6 @@
 serd (0.29.3) unstable;
 
+  * Fix length of base64 encoded nodes
   * Clarify errors returned by serd_env_expand()
   * Fix reported error when reading statements with only a blank node
   * Fix parsing local names that end with escaped dots
@@ -15,7 +16,7 @@ serd (0.29.3) unstable;
   * Fix building with MSVC
   * Clean up testing code
 
- -- David Robillard <d@drobilla.net>  Sun, 27 May 2018 17:51:33 +0200
+ -- David Robillard <d@drobilla.net>  Sat, 14 Jul 2018 10:26:05 +0200
 
 serd (0.28.0) stable;
 
