@@ -10,7 +10,7 @@ import waflib.extras.autowaf as autowaf
 # major increment <=> incompatible changes
 # minor increment <=> compatible changes (additions)
 # micro increment <=> no interface changes
-SERD_VERSION       = '0.29.4'
+SERD_VERSION       = '0.30.0'
 SERD_MAJOR_VERSION = '0'
 
 # Mandatory waf variables

@@ -1,4 +1,4 @@
-serd (0.29.4) unstable;
+serd (0.30.0) stable;
 
   * Upgrade to waf 2.0.9 and autowaf a328983
   * Fix length of base64 encoded nodes
@@ -18,7 +18,7 @@ serd (0.29.4) unstable;
   * Clean up testing code
   * Add serd_free for freeing memory allocated by serd
 
- -- David Robillard <d@drobilla.net>  Sat, 21 Jul 2018 21:13:40 +0200
+ -- David Robillard <d@drobilla.net>  Sun, 22 Jul 2018 20:34:09 +0200
 
 serd (0.28.0) stable;
 
