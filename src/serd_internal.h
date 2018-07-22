@@ -118,6 +118,9 @@ serd_byte_source_close(SerdByteSource* source);
 SerdStatus
 serd_byte_source_prepare(SerdByteSource* source);
 
+SerdStatus
+serd_byte_source_page(SerdByteSource* source);
+
 static inline uint8_t
 serd_byte_source_peek(SerdByteSource* source)
 {
@@ -125,8 +128,37 @@ serd_byte_source_peek(SerdByteSource* source)
 	return source->read_buf[source->read_head];
 }
 
-SerdStatus
-serd_byte_source_advance(SerdByteSource* source);
+static inline SerdStatus
+serd_byte_source_advance(SerdByteSource* source)
+{
+	SerdStatus st = SERD_SUCCESS;
+
+	switch (serd_byte_source_peek(source)) {
+	case '\0': break;
+	case '\n': ++source->cur.line; source->cur.col = 0; break;
+	default:   ++source->cur.col;
+	}
+
+	if (source->from_stream) {
+		source->eof = false;
+		if (source->page_size > 1) {
+			if (++source->read_head == source->page_size) {
+				st = serd_byte_source_page(source);
+			}
+		} else {
+			if (!source->read_func(&source->read_byte, 1, 1, source->stream)) {
+				st = source->error_func(source->stream) ? SERD_ERR_UNKNOWN
+				                                        : SERD_FAILURE;
+			}
+		}
+	} else if (source->eof) {
+		st = SERD_FAILURE; // Can't read past end of string
+	} else {
+		++source->read_head; // Move to next character in string
+	}
+
+	return st;
+}
 
 /* Stack */
 
