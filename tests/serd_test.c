@@ -434,6 +434,7 @@ main(void)
 		FAILF("Bad relative URI %s (expected 'x')\n", x_rel.buf);
 	}
 
+	serd_node_free(&x_rel);
 	serd_node_free(&noup);
 	serd_node_free(&up);
 	serd_node_free(&rel);
