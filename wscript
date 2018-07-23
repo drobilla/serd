@@ -10,7 +10,7 @@ import waflib.extras.autowaf as autowaf
 # major increment <=> incompatible changes
 # minor increment <=> compatible changes (additions)
 # micro increment <=> no interface changes
-SERD_VERSION       = '0.30.0'
+SERD_VERSION       = '0.30.1'
 SERD_MAJOR_VERSION = '0'
 
 # Mandatory waf variables
@@ -38,6 +38,7 @@ def configure(conf):
     autowaf.display_header('Serd Configuration')
     conf.load('compiler_c', cache=True)
     conf.load('autowaf', cache=True)
+    autowaf.set_c_lang(conf, 'c99')
 
     conf.env.update({
         'BUILD_UTILS':  not Options.options.no_utils,
