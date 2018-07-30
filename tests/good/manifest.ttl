@@ -28,6 +28,7 @@
 		<#test-cr>
 		<#test-delete>
 		<#test-digit-start-pname>
+		<#test-empty-path-base>
 		<#test-empty>
 		<#test-eof-at-page-end>
 		<#test-escapes>
@@ -177,6 +178,12 @@
 	mf:name "test-digit-start-pname" ;
 	mf:action <test-digit-start-pname.ttl> ;
 	mf:result <test-digit-start-pname.nt> .
+
+<#test-empty-path-base>
+	rdf:type rdft:TestTurtleEval ;
+	mf:name "test-empty-path-base" ;
+	mf:action <test-empty-path-base.ttl> ;
+	mf:result <test-empty-path-base.nt> .
 
 <#test-empty>
 	rdf:type rdft:TestTurtleEval ;

@@ -452,6 +452,14 @@ write_rel_path(SerdSink       sink,
 	return len += write_path_tail(sink, stream, uri, last_shared_sep + 1);
 }
 
+static uint8_t
+serd_uri_path_starts_without_slash(const SerdURI* uri)
+{
+	return ((uri->path_base.len || uri->path.len) &&
+	        ((!uri->path_base.len || uri->path_base.buf[0] != '/') &&
+	         (!uri->path.len || uri->path.buf[0] != '/')));
+}
+
 /// See http://tools.ietf.org/html/rfc3986#section-5.3
 size_t
 serd_uri_serialise_relative(const SerdURI* uri,
@@ -475,6 +483,12 @@ serd_uri_serialise_relative(const SerdURI* uri,
 		if (uri->authority.buf) {
 			len += sink("//", 2, stream);
 			len += sink(uri->authority.buf, uri->authority.len, stream);
+			if (uri->authority.buf[uri->authority.len - 1] != '/' &&
+			    serd_uri_path_starts_without_slash(uri)) {
+				// Special case: ensure path begins with a slash
+				// https://tools.ietf.org/html/rfc3986#section-3.2
+				len += sink("/", 1, stream);
+			}
 		}
 		len += write_path_tail(sink, stream, uri, 0);
 	}
