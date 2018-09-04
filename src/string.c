@@ -103,9 +103,14 @@ read_sign(const char** sptr)
 {
 	double sign = 1.0;
 	switch (**sptr) {
-	case '-': sign = -1.0;
-	case '+': ++(*sptr);
-	default:  return sign;
+	case '-':
+		sign = -1.0;
+		// fallthru
+	case '+':
+		++(*sptr);
+		// fallthru
+	default:
+		return sign;
 	}
 }
 

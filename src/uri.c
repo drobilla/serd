@@ -278,7 +278,8 @@ remove_dot_segments(const uint8_t* path, size_t len, size_t* up)
 				}
 				break;
 			case '\0':
-				++begin;  // Chop input "." (and fall-through)
+				++begin;  // Chop input "."
+                // fallthru
 			default:
 				return begin;
 			}
