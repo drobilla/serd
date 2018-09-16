@@ -1,10 +1,10 @@
 #!/usr/bin/env python
+
 import glob
 import io
 import os
-import waflib.Logs as Logs
-import waflib.Options as Options
-import waflib.extras.autowaf as autowaf
+from waflib import Logs, Options
+from waflib.extras import autowaf
 
 # Library and package version (UNIX style major, minor, micro)
 # major increment <=> incompatible changes
@@ -23,16 +23,15 @@ def options(ctx):
     ctx.load('compiler_c')
     autowaf.set_options(ctx, test=True)
     opt = ctx.get_option_group('Configuration options')
-    flags = {'no-utils':     'do not build command line utilities',
-             'stack-check':  'include runtime stack sanity checks',
-             'static':       'build static library',
-             'no-shared':    'do not build shared library',
-             'static-progs': 'build programs as static binaries',
-             'largefile':    'build with large file support on 32-bit systems',
-             'no-posix':     'do not use POSIX functions, even if present'}
-    for name, desc in flags.items():
-        opt.add_option('--' + name, action='store_true',
-                       dest=name.replace('-', '_'), help=desc)
+    autowaf.add_flags(
+        opt,
+        {'no-utils':     'do not build command line utilities',
+         'stack-check':  'include runtime stack sanity checks',
+         'static':       'build static library',
+         'no-shared':    'do not build shared library',
+         'static-progs': 'build programs as static binaries',
+         'largefile':    'build with large file support on 32-bit systems',
+         'no-posix':     'do not use POSIX functions, even if present'})
 
 def configure(conf):
     autowaf.display_header('Serd Configuration')
@@ -50,7 +49,7 @@ def configure(conf):
         conf.fatal('Neither a shared nor a static build requested')
 
     if Options.options.stack_check:
-        autowaf.define(conf, 'SERD_STACK_CHECK', SERD_VERSION)
+        conf.define('SERD_STACK_CHECK', SERD_VERSION)
 
     if Options.options.largefile:
         conf.env.append_unique('DEFINES', ['_FILE_OFFSET_BITS=64'])
@@ -65,16 +64,15 @@ def configure(conf):
                                    defines     = ['_POSIX_C_SOURCE=200809L'],
                                    mandatory   = False)
 
-    autowaf.define(conf, 'SERD_VERSION', SERD_VERSION)
     autowaf.set_lib_env(conf, 'serd', SERD_VERSION)
     conf.write_config_header('serd_config.h', remove=False)
 
-    autowaf.display_summary(conf)
-    autowaf.display_msg(conf, 'Static library', bool(conf.env.BUILD_STATIC))
-    autowaf.display_msg(conf, 'Shared library', bool(conf.env.BUILD_SHARED))
-    autowaf.display_msg(conf, 'Utilities', bool(conf.env.BUILD_UTILS))
-    autowaf.display_msg(conf, 'Unit tests', bool(conf.env.BUILD_TESTS))
-    print('')
+    autowaf.display_summary(
+        conf,
+        {'Build static library': bool(conf.env['BUILD_STATIC']),
+         'Build shared library': bool(conf.env['BUILD_SHARED']),
+         'Build utilities':      bool(conf.env['BUILD_UTILS']),
+         'Build unit tests':     conf.is_defined('HAVE_GL')})
 
 lib_source = ['src/byte_source.c',
               'src/env.c',
