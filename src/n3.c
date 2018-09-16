@@ -77,8 +77,9 @@ read_UCHAR(SerdReader* reader, Ref dest, uint32_t* char_code)
 		}
 	}
 
-	uint32_t code;
-	sscanf((const char*)buf, "%X", &code);
+	char*          endptr = NULL;
+	const uint32_t code   = strtoul((const char*)buf, &endptr, 16);
+	assert(endptr == (char*)buf + length);
 
 	unsigned size = 0;
 	if (code < 0x00000080) {
