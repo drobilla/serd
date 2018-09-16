@@ -60,13 +60,13 @@ def set_options(opt, debug_by_default=False, test=False):
         opts.add_option('--optimize', action='store_false', default=True,
                         dest='debug', help="build optimized binaries")
     else:
-        opts.add_option('--debug', action='store_true', default=False,
+        opts.add_option('-d', '--debug', action='store_true', default=False,
                         dest='debug', help="build debuggable binaries")
         opts.add_option('--pardebug', action='store_true', default=False,
                         dest='pardebug',
                         help="build debug libraries with D suffix")
 
-    opts.add_option('--strict', action='store_true', default=False,
+    opts.add_option('-s', '--strict', action='store_true', default=False,
                     dest='strict',
                     help="use strict compiler flags and show all warnings")
     opts.add_option('--ultra-strict', action='store_true', default=False,
@@ -78,12 +78,12 @@ def set_options(opt, debug_by_default=False, test=False):
     # Test options
     if test:
         test_opts = opt.add_option_group('Test options', '')
-        opts.add_option('--test', action='store_true', dest='build_tests',
+        opts.add_option('-T', '--test', action='store_true', dest='build_tests',
                         help='build unit tests')
         opts.add_option('--no-coverage', action='store_true',
                         dest='no_coverage',
                         help='do not instrument code for test coverage')
-        test_opts.add_option('--test-wrapper', type='string',
+        test_opts.add_option('--wrapper', type='string',
                              dest='test_wrapper',
                              help='command prefix for tests (e.g. valgrind)')
         test_opts.add_option('--verbose-tests', action='store_true',
@@ -440,6 +440,8 @@ def set_lib_env(conf, name, version):
     conf.env['INCLUDES_' + NAME] = ['${INCLUDEDIR}/%s-%s' % (name, major_ver)]
     conf.env['LIBPATH_' + NAME]  = [conf.env.LIBDIR]
     conf.env['LIB_' + NAME]      = [lib_name]
+
+    conf.define(NAME + '_VERSION', version)
 
 def set_line_just(conf, width):
     global line_just
