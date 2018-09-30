@@ -42,8 +42,8 @@ def gen(sp2b_dir, n_min, n_max, step):
 
 def write_header(results, progs):
     "Write the header line for TSV output"
-    results.write('n')
-    for prog in progs:
+    results.write('n\tserdi_stream\tserdi_model')
+    for prog in progs[2:]:
         results.write('\t' + os.path.basename(prog.split()[0]))
     results.write('\n')
 
@@ -200,7 +200,8 @@ Example:
         opt.print_usage()
         sys.exit(1)
 
-    progs = ['serdi -b -f -i turtle -o turtle'] + options.run
+    progs = ['serdi -b -i turtle -o turtle',
+             'serdi -m -b -i turtle -o turtle'] + options.run
     min_n = int(options.max / 10)
     max_n = options.max
     step = min_n
