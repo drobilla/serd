@@ -39,6 +39,16 @@ typedef struct SerdEnvImpl SerdEnv;
 SERD_API SerdEnv* ZIX_ALLOCATED
 serd_env_new(ZixAllocator* ZIX_NULLABLE allocator, ZixStringView base_uri);
 
+/// Copy an environment
+SERD_API SerdEnv* ZIX_ALLOCATED
+serd_env_copy(ZixAllocator* ZIX_NULLABLE  allocator,
+              const SerdEnv* ZIX_NULLABLE env);
+
+/// Return true iff `lhs` is equal to `rhs`
+SERD_PURE_API bool
+serd_env_equals(const SerdEnv* ZIX_NULLABLE lhs,
+                const SerdEnv* ZIX_NULLABLE rhs);
+
 /// Free an environment allocated by #serd_env_new
 SERD_API void
 serd_env_free(SerdEnv* ZIX_NULLABLE env);
