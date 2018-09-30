@@ -21,6 +21,47 @@
 #include <assert.h>
 #include <string.h>
 
+static void
+test_copy(void)
+{
+  assert(!serd_env_copy(NULL));
+
+  SerdEnv* const env = serd_env_new(SERD_STRING("http://example.org/base/"));
+
+  serd_env_set_prefix(
+    env, SERD_STRING("eg"), SERD_STRING("http://example.org/"));
+
+  SerdEnv* const env_copy = serd_env_copy(env);
+
+  assert(serd_env_equals(env, env_copy));
+
+  serd_env_set_prefix(
+    env_copy, SERD_STRING("test"), SERD_STRING("http://example.org/test"));
+
+  assert(!serd_env_equals(env, env_copy));
+
+  serd_env_set_prefix(
+    env, SERD_STRING("test2"), SERD_STRING("http://example.org/test2"));
+
+  assert(!serd_env_equals(env, env_copy));
+
+  serd_env_free(env_copy);
+  serd_env_free(env);
+}
+
+static void
+test_comparison(void)
+{
+  SerdEnv* const env = serd_env_new(SERD_EMPTY_STRING());
+
+  assert(!serd_env_equals(env, NULL));
+  assert(!serd_env_equals(NULL, env));
+  assert(serd_env_equals(NULL, NULL));
+  assert(serd_env_equals(env, env));
+
+  serd_env_free(env);
+}
+
 static SerdStatus
 count_prefixes(void* handle, const SerdEvent* event)
 {
@@ -120,6 +161,7 @@ test_env(void)
   serd_node_free(empty);
   serd_node_free(foo_u);
   serd_node_free(b);
+  serd_node_free(rel);
 
   serd_env_free(env);
 }
@@ -127,6 +169,8 @@ test_env(void)
 int
 main(void)
 {
+  test_copy();
+  test_comparison();
   test_env();
   return 0;
 }

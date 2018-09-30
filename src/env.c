@@ -48,6 +48,31 @@ serd_env_new(const SerdStringView base_uri)
   return env;
 }
 
+SerdEnv*
+serd_env_copy(const SerdEnv* const env)
+{
+  if (!env) {
+    return NULL;
+  }
+
+  SerdEnv* copy = (SerdEnv*)calloc(1, sizeof(struct SerdEnvImpl));
+  if (copy) {
+    copy->n_prefixes = env->n_prefixes;
+    copy->prefixes = (SerdPrefix*)malloc(copy->n_prefixes * sizeof(SerdPrefix));
+    for (size_t i = 0; i < copy->n_prefixes; ++i) {
+      copy->prefixes[i].name = serd_node_copy(env->prefixes[i].name);
+      copy->prefixes[i].uri  = serd_node_copy(env->prefixes[i].uri);
+    }
+
+    const SerdNode* const base = serd_env_base_uri(env);
+    if (base) {
+      serd_env_set_base_uri(copy, serd_node_string_view(base));
+    }
+  }
+
+  return copy;
+}
+
 void
 serd_env_free(SerdEnv* const env)
 {
@@ -62,6 +87,28 @@ serd_env_free(SerdEnv* const env)
   free(env->prefixes);
   serd_node_free(env->base_uri_node);
   free(env);
+}
+
+bool
+serd_env_equals(const SerdEnv* const a, const SerdEnv* const b)
+{
+  if (!a || !b) {
+    return !a == !b;
+  }
+
+  if (a->n_prefixes != b->n_prefixes ||
+      !serd_node_equals(a->base_uri_node, b->base_uri_node)) {
+    return false;
+  }
+
+  for (size_t i = 0; i < a->n_prefixes; ++i) {
+    if (!serd_node_equals(a->prefixes[i].name, b->prefixes[i].name) ||
+        !serd_node_equals(a->prefixes[i].uri, b->prefixes[i].uri)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 SerdURIView
