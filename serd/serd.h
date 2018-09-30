@@ -939,6 +939,20 @@ SerdEnv*
 serd_env_new(const SerdNode* base_uri);
 
 /**
+   Copy an environment.
+*/
+SERD_API
+SerdEnv*
+serd_env_copy(const SerdEnv* env);
+
+/**
+   Return true iff `a` is equal to `b`.
+*/
+SERD_API
+bool
+serd_env_equals(const SerdEnv* a, const SerdEnv* b);
+
+/**
    Free `ns`.
 */
 SERD_API
