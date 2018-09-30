@@ -20,6 +20,7 @@
 
 #include "serd/serd.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -275,8 +276,9 @@ serd_env_expand(const SerdEnv* env, const SerdNode* node)
 		return serd_new_resolved_uri_i(
 			serd_node_get_string(node), &env->base_uri);
 	default:
-		return NULL;
+		break;
 	}
+	return NULL;
 }
 
 void

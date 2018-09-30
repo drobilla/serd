@@ -1351,11 +1351,10 @@ read_directive(SerdReader* reader)
 	switch (peek_byte(reader)) {
 	case 'B': case 'b': return read_base(reader, sparql, true);
 	case 'P': case 'p': return read_prefixID(reader, sparql, true);
-	default:
-		return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid directive\n");
+	default: break;
 	}
 
-	return SERD_SUCCESS;
+	return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid directive\n");
 }
 
 static SerdStatus
