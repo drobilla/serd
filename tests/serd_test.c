@@ -486,12 +486,13 @@ check_rel_uri(const char*     uri,
 static void
 test_relative_uri(void)
 {
-	SerdNode* root = serd_new_uri("http://example.org/a/b/");
+	SerdNode* root = serd_new_uri("http://example.org/a/b/ignored");
 	SerdNode* base = serd_new_uri("http://example.org/a/b/c/");
 
 	check_rel_uri("http://example.org/a/b/c/foo", base, NULL, "foo");
 	check_rel_uri("http://example.org/a/", base, NULL, "../../");
 	check_rel_uri("http://example.org/a/", base, root, "http://example.org/a/");
+	check_rel_uri("http://example.org/a/b/x", root, root, "x");
 	check_rel_uri("http://example.org/", base, NULL, "../../../");
 	check_rel_uri("http://drobilla.net/a", base, NULL, "http://drobilla.net/a");
 
