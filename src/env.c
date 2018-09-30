@@ -18,6 +18,7 @@
 #include <zix/string_view.h>
 
 #include <assert.h>
+#include <stdbool.h>
 #include <string.h>
 
 typedef struct {
@@ -67,6 +68,45 @@ serd_env_new(ZixAllocator* const allocator, const ZixStringView base_uri)
   return env;
 }
 
+SerdEnv*
+serd_env_copy(ZixAllocator* const allocator, const SerdEnv* const env)
+{
+  if (!env) {
+    return NULL;
+  }
+
+  SerdEnv* const copy =
+    (SerdEnv*)zix_calloc(allocator, 1, sizeof(struct SerdEnvImpl));
+  if (!copy) {
+    return NULL;
+  }
+
+  copy->sink.handle   = copy;
+  copy->sink.on_event = serd_env_on_event;
+
+  if (!(copy->prefixes = (SerdPrefix*)zix_calloc(
+          allocator, env->n_prefixes, sizeof(SerdPrefix))) ||
+      serd_env_set_base_uri(copy, serd_env_base_uri_string(env))) {
+    serd_env_free(copy);
+    return NULL;
+  }
+
+  copy->n_prefixes = env->n_prefixes;
+  for (size_t i = 0; i < copy->n_prefixes; ++i) {
+    copy->prefixes[i].name.length = env->prefixes[i].name.length;
+    copy->prefixes[i].uri.length  = env->prefixes[i].uri.length;
+    if (!(copy->prefixes[i].name.data = zix_string_view_copy(
+            allocator, serd_string_view(env->prefixes[i].name))) ||
+        !(copy->prefixes[i].uri.data = zix_string_view_copy(
+            allocator, serd_string_view(env->prefixes[i].uri)))) {
+      serd_env_free(copy);
+      return NULL;
+    }
+  }
+
+  return copy;
+}
+
 void
 serd_env_free(SerdEnv* const env)
 {
@@ -87,6 +127,34 @@ const SerdSink*
 serd_env_sink(SerdEnv* const env)
 {
   return &env->sink;
+}
+
+static bool
+string_equals(const SerdString lhs, const SerdString rhs)
+{
+  return zix_string_view_equals(serd_string_view(lhs), serd_string_view(rhs));
+}
+
+bool
+serd_env_equals(const SerdEnv* const lhs, const SerdEnv* const rhs)
+{
+  if (!lhs || !rhs) {
+    return !lhs == !rhs;
+  }
+
+  if (lhs->n_prefixes != rhs->n_prefixes ||
+      !string_equals(lhs->base_uri_string, rhs->base_uri_string)) {
+    return false;
+  }
+
+  for (size_t i = 0; i < lhs->n_prefixes; ++i) {
+    if (!string_equals(lhs->prefixes[i].name, rhs->prefixes[i].name) ||
+        !string_equals(lhs->prefixes[i].uri, rhs->prefixes[i].uri)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 ZixStringView

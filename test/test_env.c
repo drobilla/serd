@@ -46,6 +46,35 @@ test_new_failed_alloc(void)
 }
 
 static void
+test_copy_failed_alloc(void)
+{
+  static const char name[] = "eg";
+  static const char uri[]  = "http://example.org/";
+
+  SerdFailingAllocator allocator = serd_failing_allocator();
+
+  SerdEnv* const env = serd_env_new(&allocator.base, zix_empty_string());
+
+  assert(!serd_env_set_prefix(env, zix_string(name), zix_string(uri)));
+  assert(!serd_env_set_base_uri(env, zix_string(uri)));
+
+  // Successfully copy an env to count the number of allocations
+  serd_failing_allocator_reset(&allocator, SIZE_MAX);
+  SerdEnv* const copy = serd_env_copy(&allocator.base, env);
+  assert(copy);
+
+  // Test that each allocation failing is handled gracefully
+  const size_t n_copy_allocs = serd_failing_allocator_reset(&allocator, 0);
+  for (size_t i = 0; i < n_copy_allocs; ++i) {
+    serd_failing_allocator_reset(&allocator, i);
+    assert(!serd_env_copy(&allocator.base, env));
+  }
+
+  serd_env_free(copy);
+  serd_env_free(env);
+}
+
+static void
 test_set_base_failed_alloc(void)
 {
   static const ZixStringView base_uri =
@@ -147,8 +176,73 @@ test_set_prefix_relative_failed_alloc(void)
 }
 
 static void
+test_copy(void)
+{
+  assert(!serd_env_copy(NULL, NULL));
+
+  SerdEnv* const env =
+    serd_env_new(NULL, zix_string("http://example.org/base/"));
+
+  serd_env_set_prefix(env, zix_string("eg"), zix_string(NS_EG));
+
+  SerdEnv* const env_copy = serd_env_copy(NULL, env);
+  assert(serd_env_equals(env, env_copy));
+
+  serd_env_set_prefix(env_copy, zix_string("test"), zix_string(NS_EG "test"));
+  assert(!serd_env_equals(env, env_copy));
+
+  serd_env_set_prefix(env, zix_string("test"), zix_string(NS_EG "test"));
+  assert(serd_env_equals(env, env_copy));
+
+  serd_env_set_prefix(env, zix_string("test2"), zix_string(NS_EG "test2"));
+  assert(!serd_env_equals(env, env_copy));
+
+  serd_env_free(env_copy);
+  serd_env_free(env);
+}
+
+static void
+test_equals(void)
+{
+  static const ZixStringView name1 = ZIX_STATIC_STRING("n1");
+  static const ZixStringView base1 = ZIX_STATIC_STRING(NS_EG "b1/");
+  static const ZixStringView base2 = ZIX_STATIC_STRING(NS_EG "b2/");
+
+  SerdEnv* const env1 = serd_env_new(NULL, base1);
+  SerdEnv* const env2 = serd_env_new(NULL, base2);
+
+  assert(!serd_env_equals(env1, NULL));
+  assert(!serd_env_equals(NULL, env1));
+  assert(serd_env_equals(NULL, NULL));
+  assert(!serd_env_equals(env1, env2));
+
+  serd_env_set_base_uri(env2, base1);
+  assert(serd_env_equals(env1, env2));
+
+  assert(!serd_env_set_prefix(env1, name1, zix_string(NS_EG "n1")));
+  assert(!serd_env_equals(env1, env2));
+  assert(!serd_env_set_prefix(env2, name1, zix_string(NS_EG "othern1")));
+  assert(!serd_env_equals(env1, env2));
+  assert(!serd_env_set_prefix(env2, name1, zix_string(NS_EG "n1")));
+  assert(serd_env_equals(env1, env2));
+
+  serd_env_set_base_uri(env2, base2);
+  assert(!serd_env_equals(env1, env2));
+
+  SerdEnv* const env3 = serd_env_copy(NULL, env2);
+  assert(serd_env_equals(env3, env2));
+  serd_env_free(env3);
+
+  serd_env_free(env2);
+  serd_env_free(env1);
+}
+
+static void
 test_null(void)
 {
+  // "Copying" NULL returns null
+  assert(!serd_env_copy(NULL, NULL));
+
   // Accessors are tolerant to a NULL env for convenience
   SerdStringPairView pair = {{"", 0}, {"", 0}};
   assert(!serd_uri_has_scheme(serd_env_base_uri_view(NULL)));
@@ -156,6 +250,9 @@ test_null(void)
   assert(serd_env_expand(NULL, zix_empty_string(), &pair) == SERD_BAD_ARG);
   assert(serd_env_qualify(NULL, zix_empty_string(), &pair) == SERD_BAD_ARG);
   assert(serd_env_resolve(NULL, serd_no_token(), &pair) == SERD_BAD_ARG);
+
+  // Only null is equal to null
+  assert(serd_env_equals(NULL, NULL));
 }
 
 static SerdStatus
@@ -572,10 +669,13 @@ int
 main(void)
 {
   test_new_failed_alloc();
+  test_copy_failed_alloc();
   test_set_base_failed_alloc();
   test_set_prefix_existing_failed_alloc();
   test_set_prefix_absolute_failed_alloc();
   test_set_prefix_relative_failed_alloc();
+  test_copy();
+  test_equals();
   test_null();
   test_base_uri();
   test_set_prefix();
