@@ -15,6 +15,67 @@
 
 #define NS_EG "http://example.org/"
 
+static void
+test_copy(void)
+{
+  assert(!serd_env_copy(NULL));
+
+  SerdEnv* const env = serd_env_new(zix_string(NS_EG "base/"));
+
+  serd_env_set_prefix(env, zix_string("eg"), zix_string(NS_EG ""));
+
+  SerdEnv* const env_copy = serd_env_copy(env);
+  assert(serd_env_equals(env, env_copy));
+
+  serd_env_set_prefix(env_copy, zix_string("test"), zix_string(NS_EG "test"));
+  assert(!serd_env_equals(env, env_copy));
+
+  serd_env_set_prefix(env, zix_string("test"), zix_string(NS_EG "test"));
+  assert(serd_env_equals(env, env_copy));
+
+  serd_env_set_prefix(env, zix_string("test2"), zix_string(NS_EG "test2"));
+  assert(!serd_env_equals(env, env_copy));
+
+  serd_env_free(env_copy);
+  serd_env_free(env);
+}
+
+static void
+test_equals(void)
+{
+  static const ZixStringView name1 = ZIX_STATIC_STRING("n1");
+  static const ZixStringView base1 = ZIX_STATIC_STRING(NS_EG "b1/");
+  static const ZixStringView base2 = ZIX_STATIC_STRING(NS_EG "b2/");
+
+  SerdEnv* const env1 = serd_env_new(base1);
+  SerdEnv* const env2 = serd_env_new(base2);
+
+  assert(!serd_env_equals(env1, NULL));
+  assert(!serd_env_equals(NULL, env1));
+  assert(serd_env_equals(NULL, NULL));
+  assert(!serd_env_equals(env1, env2));
+
+  serd_env_set_base_uri(env2, base1);
+  assert(serd_env_equals(env1, env2));
+
+  assert(!serd_env_set_prefix(env1, name1, zix_string(NS_EG "n1")));
+  assert(!serd_env_equals(env1, env2));
+  assert(!serd_env_set_prefix(env2, name1, zix_string(NS_EG "othern1")));
+  assert(!serd_env_equals(env1, env2));
+  assert(!serd_env_set_prefix(env2, name1, zix_string(NS_EG "n1")));
+  assert(serd_env_equals(env1, env2));
+
+  serd_env_set_base_uri(env2, base2);
+  assert(!serd_env_equals(env1, env2));
+
+  SerdEnv* const env3 = serd_env_copy(env2);
+  assert(serd_env_equals(env3, env2));
+  serd_env_free(env3);
+
+  serd_env_free(env2);
+  serd_env_free(env1);
+}
+
 static SerdStatus
 count_prefixes(void* handle, const SerdEvent* event)
 {
@@ -111,6 +172,8 @@ test_env(void)
 int
 main(void)
 {
+  test_copy();
+  test_equals();
   test_env();
   return 0;
 }
