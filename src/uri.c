@@ -60,7 +60,7 @@ serd_file_uri_parse(const uint8_t* uri, uint8_t** hostname)
 				return NULL;
 			}
 			if (hostname) {
-				*hostname = (uint8_t*)calloc(1, path - auth + 1);
+				*hostname = (uint8_t*)calloc(path - auth + 1, 1);
 				memcpy(*hostname, auth, path - auth);
 			}
 		}

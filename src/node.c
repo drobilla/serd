@@ -360,7 +360,7 @@ SerdNode
 serd_node_new_blob(const void* buf, size_t size, bool wrap_lines)
 {
 	const size_t len  = (size + 2) / 3 * 4 + (wrap_lines * ((size - 1) / 57));
-	uint8_t*     str  = (uint8_t*)calloc(1, len + 2);
+	uint8_t*     str  = (uint8_t*)calloc(len + 2, 1);
 	SerdNode     node = { str, len, len, 0, SERD_LITERAL };
 	for (size_t i = 0, j = 0; i < size; i += 3, j += 4) {
 		uint8_t in[4] = { 0, 0, 0, 0 };

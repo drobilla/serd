@@ -34,7 +34,7 @@ struct SerdEnvImpl {
 SerdEnv*
 serd_env_new(const SerdNode* base_uri)
 {
-	SerdEnv* env = (SerdEnv*)calloc(sizeof(struct SerdEnvImpl), 1);
+	SerdEnv* env = (SerdEnv*)calloc(1, sizeof(struct SerdEnvImpl));
 	if (env && base_uri) {
 		serd_env_set_base_uri(env, base_uri);
 	}
