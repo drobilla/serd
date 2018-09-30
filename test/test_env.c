@@ -13,6 +13,47 @@
 #include <assert.h>
 #include <string.h>
 
+static void
+test_copy(void)
+{
+  assert(!serd_env_copy(NULL));
+
+  SerdEnv* const env = serd_env_new(serd_string("http://example.org/base/"));
+
+  serd_env_set_prefix(
+    env, serd_string("eg"), serd_string("http://example.org/"));
+
+  SerdEnv* const env_copy = serd_env_copy(env);
+
+  assert(serd_env_equals(env, env_copy));
+
+  serd_env_set_prefix(
+    env_copy, serd_string("test"), serd_string("http://example.org/test"));
+
+  assert(!serd_env_equals(env, env_copy));
+
+  serd_env_set_prefix(
+    env, serd_string("test2"), serd_string("http://example.org/test2"));
+
+  assert(!serd_env_equals(env, env_copy));
+
+  serd_env_free(env_copy);
+  serd_env_free(env);
+}
+
+static void
+test_comparison(void)
+{
+  SerdEnv* const env = serd_env_new(serd_empty_string());
+
+  assert(!serd_env_equals(env, NULL));
+  assert(!serd_env_equals(NULL, env));
+  assert(serd_env_equals(NULL, NULL));
+  assert(serd_env_equals(env, env));
+
+  serd_env_free(env);
+}
+
 static SerdStatus
 count_prefixes(void* handle, const SerdEvent* event)
 {
@@ -118,6 +159,8 @@ test_env(void)
 int
 main(void)
 {
+  test_copy();
+  test_comparison();
   test_env();
   return 0;
 }
