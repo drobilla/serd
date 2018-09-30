@@ -11,6 +11,8 @@
 #include "zix/attributes.h"
 #include "zix/string_view.h"
 
+#include <stdbool.h>
+
 SERD_BEGIN_DECLS
 
 /**
@@ -25,6 +27,14 @@ typedef struct SerdEnvImpl SerdEnv;
 /// Create a new environment
 SERD_API SerdEnv* ZIX_ALLOCATED
 serd_env_new(ZixStringView base_uri);
+
+/// Copy an environment
+SERD_API SerdEnv* ZIX_ALLOCATED
+serd_env_copy(const SerdEnv* ZIX_NULLABLE env);
+
+/// Return true iff `a` is equal to `b`
+SERD_PURE_API bool
+serd_env_equals(const SerdEnv* ZIX_NULLABLE a, const SerdEnv* ZIX_NULLABLE b);
 
 /// Free `env`
 SERD_API void
