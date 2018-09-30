@@ -93,11 +93,34 @@ test_env(void)
   SerdNode* qualified = serd_env_qualify(env, foo_u);
   assert(serd_node_equals(qualified, foo_c));
 
+  SerdEnv* env_copy = serd_env_copy(env);
+  assert(serd_env_equals(env, env_copy));
+  assert(!serd_env_equals(env, NULL));
+  assert(!serd_env_equals(NULL, env));
+  assert(serd_env_equals(NULL, NULL));
+
+  SerdNode* qualified2 = serd_env_expand(env_copy, foo_u);
+  assert(serd_node_equals(qualified, foo_c));
+  serd_node_free(qualified2);
+
+  serd_env_set_prefix(env_copy,
+                      SERD_STATIC_STRING("test"),
+                      SERD_STATIC_STRING("http://example.org/test"));
+
+  assert(!serd_env_equals(env, env_copy));
+
+  serd_env_set_prefix(env,
+                      SERD_STATIC_STRING("test2"),
+                      SERD_STATIC_STRING("http://example.org/test"));
+
+  assert(!serd_env_equals(env, env_copy));
+
   serd_node_free(qualified);
   serd_sink_free(count_prefixes_sink);
   serd_node_free(foo_c);
   serd_node_free(foo_u);
   serd_node_free(b);
+  serd_env_free(env_copy);
 
   serd_env_free(env);
 }
