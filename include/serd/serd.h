@@ -944,6 +944,16 @@ SERD_API
 SerdEnv* SERD_ALLOCATED
 serd_env_new(SerdStringView base_uri);
 
+/// Copy an environment
+SERD_API
+SerdEnv* SERD_ALLOCATED
+serd_env_copy(const SerdEnv* SERD_NULLABLE env);
+
+/// Return true iff `a` is equal to `b`
+SERD_PURE_API
+bool
+serd_env_equals(const SerdEnv* SERD_NULLABLE a, const SerdEnv* SERD_NULLABLE b);
+
 /// Free `env`
 SERD_API
 void
