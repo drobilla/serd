@@ -878,7 +878,7 @@ read_BLANK_NODE_LABEL(SerdReader* reader, bool* ate_dot)
 		*ate_dot = true;
 	}
 
-	if (reader->syntax == SERD_TURTLE) {
+	if (fancy_syntax(reader)) {
 		if (is_digit(n->buf[reader->bprefix_len + 1])) {
 			if ((n->buf[reader->bprefix_len]) == 'b') {
 				((char*)n->buf)[reader->bprefix_len] = 'B';  // Prevent clash

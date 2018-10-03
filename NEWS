@@ -2,8 +2,9 @@ serd (0.30.1) unstable;
 
   * Fix GCC 4 build
   * Fix resolving some URIs against base URIs with no trailing slash
+  * Fix colliding blank nodes when parsing TriG
 
- -- David Robillard <d@drobilla.net>  Mon, 30 Jul 2018 19:28:32 +0200
+ -- David Robillard <d@drobilla.net>  Wed, 03 Oct 2018 15:50:38 +0200
 
 serd (0.30.0) stable;
 
