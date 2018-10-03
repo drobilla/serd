@@ -392,7 +392,7 @@
    rdfs:comment "anonymous blank node graph" ;
    rdft:approval rdft:Approved ;
    mf:action    <anonymous_blank_node_graph.trig> ;
-   mf:result    <labeled_blank_node_graph.nq> ;
+   mf:result    <anonymous_blank_node_graph.nq> ;
    .
 
 <#labeled_blank_node_graph> rdf:type rdft:TestTrigEval ;
