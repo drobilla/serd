@@ -54,6 +54,7 @@ print_usage(const char* name, bool error)
 	fprintf(os, "Read and write RDF syntax.\n");
 	fprintf(os, "Use - for INPUT to read from standard input.\n\n");
 	fprintf(os, "  -I BASE_URI  Input base URI.\n");
+	fprintf(os, "  -V           Validate inputs.\n");
 	fprintf(os, "  -a           Write ASCII output if possible.\n");
 	fprintf(os, "  -b           Fast bulk output for large serialisations.\n");
 	fprintf(os, "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n");
@@ -144,6 +145,7 @@ main(int argc, char** argv)
 	bool            bulk_write    = false;
 	bool            no_inline     = false;
 	bool            osyntax_set   = false;
+	bool            validate      = false;
 	bool            use_model     = false;
 	bool            quiet         = false;
 	size_t          stack_size    = 4194304;
@@ -160,6 +162,8 @@ main(int argc, char** argv)
 				return missing_arg(argv[0], 'I');
 			}
 			base = serd_new_uri(argv[a]);
+		} else if (argv[a][1] == 'V') {
+			validate = use_model = true;
 		} else if (argv[a][1] == 'a') {
 			writer_flags |= SERD_WRITE_ASCII;
 		} else if (argv[a][1] == 'b') {
@@ -278,7 +282,9 @@ main(int argc, char** argv)
 	if (use_model) {
 		const SerdModelFlags flags =
 		        SERD_INDEX_SPO | (input_has_graphs ? SERD_INDEX_GRAPHS : 0U) |
-		        (no_inline ? 0U : SERD_INDEX_OPS);
+		        (no_inline ? 0U : SERD_INDEX_OPS) |
+		        (validate ? SERD_STORE_CURSORS : 0U);
+
 		model    = serd_model_new(world, flags);
 		inserter = serd_inserter_new(model, env, NULL);
 		sink     = serd_inserter_get_sink(inserter);
@@ -346,6 +352,10 @@ main(int argc, char** argv)
 		}
 	}
 	free(prefix);
+
+	if (!st && validate) {
+		st = serd_validate(model);
+	}
 
 	if (st <= SERD_FAILURE && use_model) {
 		const SerdSink* wsink = serd_writer_get_sink(writer);

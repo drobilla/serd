@@ -1,0 +1,205 @@
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdft: <http://www.w3.org/ns/rdftest#> .
+@prefix serd: <http://drobilla.net/ns/serd#> .
+
+serd:TestTurtleNegativeValidate
+	a rdfs:Class ;
+	rdfs:subClassOf rdft:Test .
+
+serd:TestTurtlePositiveValidate
+	a rdfs:Class ;
+	rdfs:subClassOf rdft:Test .
+
+<>
+	rdf:type mf:Manifest ;
+	rdfs:comment "Serd validation test cases" ;
+	mf:entries (
+		<#bad-all-values-from>
+		<#bad-cardinality-high>
+		<#bad-cardinality-low>
+		<#bad-cardinality>
+		<#bad-datatype-property>
+		<#bad-domain>
+		<#bad-functional-property>
+		<#bad-inverse-functional-property>
+		<#bad-literal-pattern>
+		<#bad-literal-value-high-inclusive>
+		<#bad-literal-value-low-inclusive>
+		<#bad-literal-value-high-exclusive>
+		<#bad-literal-value-low-exclusive>
+		<#bad-string-literal-value-high>
+		<#bad-string-literal-value-low>
+		<#bad-object-property>
+		<#bad-pattern>
+		<#bad-plain-literal>
+		<#bad-range-instance-not-literal>
+		<#bad-range-instance>
+		<#bad-range-literal-not-instance>
+		<#bad-range-literal>
+		<#bad-some-values-from>
+		<#bad-unknown-datatype>
+		<#bad-unknown-property>
+		<#good-cardinality>
+		<#good-literal-value-high-inclusive>
+		<#good-literal-value-low-inclusive>
+		<#good-pattern>
+		<#good-some-values-from>
+		<#good-string-literal-value-low>
+	) .
+
+<#bad-all-values-from>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-all-values-from" ;
+	mf:action <bad-all-values-from.ttl> .
+
+<#bad-cardinality-low>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-cardinality-low" ;
+	mf:action <bad-cardinality-low.ttl> .
+
+<#bad-cardinality-high>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-cardinality-high" ;
+	mf:action <bad-cardinality-high.ttl> .
+
+<#bad-cardinality>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-cardinality" ;
+	mf:action <bad-cardinality.ttl> .
+
+<#bad-datatype-property>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-datatype-property" ;
+	mf:action <bad-datatype-property.ttl> .
+
+<#bad-domain>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-domain" ;
+	mf:action <bad-domain.ttl> .
+
+<#bad-functional-property>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-functional-property" ;
+	mf:action <bad-functional-property.ttl> .
+
+<#bad-inverse-functional-property>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-inverse-functional-property" ;
+	mf:action <bad-inverse-functional-property.ttl> .
+
+<#bad-literal-pattern>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-literal-pattern" ;
+	mf:action <bad-literal-pattern.ttl> .
+
+<#bad-literal-value-low-inclusive>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-literal-value-low-inclusive" ;
+	mf:action <bad-literal-value-low-inclusive.ttl> .
+
+<#bad-literal-value-high-inclusive>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-literal-value-high-inclusive" ;
+	mf:action <bad-literal-value-high-inclusive.ttl> .
+
+<#bad-literal-value-low-exclusive>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-literal-value-low-exclusive" ;
+	mf:action <bad-literal-value-low-exclusive.ttl> .
+
+<#bad-literal-value-high-exclusive>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-literal-value-high-exclusive" ;
+	mf:action <bad-literal-value-high-exclusive.ttl> .
+
+<#bad-string-literal-value-low>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-string-literal-value-low" ;
+	mf:action <bad-string-literal-value-low.ttl> .
+
+<#bad-string-literal-value-high>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-string-literal-value-high" ;
+	mf:action <bad-string-literal-value-high.ttl> .
+
+<#bad-object-property>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-object-property" ;
+	mf:action <bad-object-property.ttl> .
+
+<#bad-pattern>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-pattern" ;
+	mf:action <bad-pattern.ttl> .
+
+<#bad-plain-literal>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-plain-literal" ;
+	mf:action <bad-plain-literal.ttl> .
+
+<#bad-range-instance-not-literal>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-range-instance-not-literal" ;
+	mf:action <bad-range-instance-not-literal.ttl> .
+
+<#bad-range-instance>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-range-instance" ;
+	mf:action <bad-range-instance.ttl> .
+
+<#bad-range-literal-not-instance>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-range-literal-not-instance" ;
+	mf:action <bad-range-literal-not-instance.ttl> .
+
+<#bad-range-literal>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-range-literal" ;
+	mf:action <bad-range-literal.ttl> .
+
+<#bad-some-values-from>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-some-values-from" ;
+	mf:action <bad-some-values-from.ttl> .
+
+<#bad-unknown-datatype>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-unknown-datatype" ;
+	mf:action <bad-unknown-datatype.ttl> .
+
+<#bad-unknown-property>
+	rdf:type serd:TestTurtleNegativeValidate ;
+	mf:name "bad-unknown-property" ;
+	mf:action <bad-unknown-property.ttl> .
+
+<#good-cardinality>
+	rdf:type serd:TestTurtlePositiveValidate ;
+	mf:name "good-cardinality" ;
+	mf:action <good-cardinality.ttl> .
+
+<#good-literal-value-low-inclusive>
+	rdf:type serd:TestTurtlePositiveValidate ;
+	mf:name "good-literal-value-low-inclusive" ;
+	mf:action <good-literal-value-low-inclusive.ttl> .
+
+<#good-literal-value-high-inclusive>
+	rdf:type serd:TestTurtlePositiveValidate ;
+	mf:name "good-literal-value-high-inclusive" ;
+	mf:action <good-literal-value-high-inclusive.ttl> .
+
+<#good-some-values-from>
+	rdf:type serd:TestTurtlePositiveValidate ;
+	mf:name "good-some-values-from" ;
+	mf:action <good-some-values-from.ttl> .
+
+<#good-pattern>
+	rdf:type serd:TestTurtlePositiveValidate ;
+	mf:name "good-pattern" ;
+	mf:action <good-pattern.ttl> .
+
+<#good-string-literal-value-low>
+	rdf:type serd:TestTurtlePositiveValidate ;
+	mf:name "good-string-literal-value-low" ;
+	mf:action <good-string-literal-value-low.ttl> .

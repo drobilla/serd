@@ -1,0 +1,21 @@
+@prefix eg: <http://example.org/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+eg:BrokenLiteral
+	a rdfs:Datatype ;
+	rdfs:label "broken literal" ;
+	owl:withRestrictions (
+		[
+			xsd:pattern "["
+		]
+	) .
+
+eg:value
+	a rdf:Property ;
+	rdfs:label "value" ;
+	rdfs:range eg:BinaryLiteral .
+
+eg:s
+	eg:value "no match"^^eg:BrokenLiteral .
+

@@ -1,0 +1,15 @@
+@prefix eg: <http://example.org/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+eg:identity
+	rdfs:label "identity" ;
+	a owl:InverseFunctionalProperty .
+
+eg:s1
+	eg:identity "me" .
+
+eg:s2
+	eg:identity "me" .
+

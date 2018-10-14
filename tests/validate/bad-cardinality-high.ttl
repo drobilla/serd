@@ -1,0 +1,18 @@
+@prefix eg: <http://example.org/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+eg:Thing
+	a rdfs:Class ;
+	rdfs:subClassOf [
+		a owl:Restriction ;
+		owl:onProperty rdf:value ;
+		owl:maxCardinality 1
+	] .
+
+eg:s
+	a eg:Thing ;
+	rdf:value 1 ,
+		2 .
+

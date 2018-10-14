@@ -13,6 +13,13 @@ serdi [\fIOPTION\fR]... \fIINPUT\fR...
 Set input base URI.
 
 .TP
+.BR \-V
+Validate inputs.
+All necessary data, including schemas, must be passed as inputs.
+Output will only be written if validation succeeds.
+Combine with -o empty to suppress output and only show validation errors.
+
+.TP
 .BR \-a
 Write ASCII output if possible.
 

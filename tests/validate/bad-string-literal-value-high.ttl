@@ -1,0 +1,19 @@
+@prefix eg: <http://example.org/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+eg:startsWithC
+	a rdfs:Datatype ;
+	rdfs:label "starts with C" ;
+	owl:onDatatype xsd:string ;
+	owl:withRestrictions (
+		[
+			xsd:maxExclusive "D"
+		] [
+			xsd:minInclusive "B"
+		]
+	) .
+
+eg:s
+	rdf:value "Door"^^eg:startsWithC .
+

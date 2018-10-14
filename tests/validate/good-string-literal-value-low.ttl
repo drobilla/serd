@@ -1,0 +1,19 @@
+@prefix eg: <http://example.org/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+eg:betweenBAndD
+	a rdfs:Datatype ;
+	rdfs:label "between B and D" ;
+	owl:onDatatype xsd:string ;
+	owl:withRestrictions (
+		[
+			xsd:maxInclusive "D"
+		]
+		[
+			xsd:minExclusive "B"
+		]
+	) .
+
+eg:s
+	rdf:value "Cat"^^eg:betweenBAndD .

@@ -1,0 +1,19 @@
+@prefix eg: <http://example.org/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+eg:Normal
+	a rdfs:Datatype ;
+	rdfs:label "normal" ;
+	owl:onDatatype xsd:double ;
+	owl:withRestrictions (
+		[
+			xsd:maxInclusive 1.0
+		]
+		[
+			xsd:minInclusive 0.0
+		]
+	) .
+
+eg:s
+	rdf:value "1.0"^^eg:Normal .
