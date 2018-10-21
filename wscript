@@ -420,22 +420,23 @@ def test(ctx):
     autowaf.pre_test(ctx, APPNAME)
     autowaf.run_tests(ctx, APPNAME, ['serd_test'], name='Unit')
 
-    def test_ttl(in_name, expected_name):
-        in_path = 'tests/good/%s.ttl' % in_name
+    def test_syntax_io(in_name, expected_name, lang):
+        in_path = 'tests/good/%s' % in_name
         autowaf.run_test(
             ctx, APPNAME,
-            'serdi_static -o turtle "%s/%s" "%s" > %s.out' % (srcdir, in_path, in_path, in_path),
+            'serdi_static -o %s "%s/%s" "%s" > %s.out' % (
+                lang, srcdir, in_path, in_path, in_path),
             0, name=in_name)
 
         autowaf.run_test(
             ctx, APPNAME,
-            lambda: file_equals('%s.out' % in_path,
-                                '%s/tests/good/%s.ttl' % (srcdir, expected_name)),
+            lambda: file_equals('%s/tests/good/%s' % (srcdir, expected_name),
+                                '%s.out' % in_path),
             True, quiet=True, name=in_name + '-check')
 
     with autowaf.begin_tests(ctx, APPNAME, 'ThroughSyntax'):
-        test_ttl('base', 'base')
-        test_ttl('qualify-in', 'qualify-out')
+        test_syntax_io('base.ttl',       'base.ttl',        'turtle')
+        test_syntax_io('qualify-in.ttl', 'qualify-out.ttl', 'turtle')
 
     nul = os.devnull
     autowaf.run_tests(ctx, APPNAME, [
