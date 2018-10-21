@@ -133,7 +133,7 @@ emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o)
 
 	const SerdStatus st = reader->sink->statement(
 		reader->sink->handle, *ctx.flags, &statement);
-	*ctx.flags &= SERD_ANON_CONT|SERD_LIST_CONT;  // Preserve only cont flags
+	*ctx.flags = 0;
 	return st;
 }
 

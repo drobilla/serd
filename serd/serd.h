@@ -166,14 +166,11 @@ typedef enum {
    Flags indicating inline abbreviation information for a statement.
 */
 typedef enum {
-	SERD_EMPTY_S      = 1 << 1,  /**< Empty blank node subject */
-	SERD_EMPTY_O      = 1 << 2,  /**< Empty blank node object */
-	SERD_ANON_S_BEGIN = 1 << 3,  /**< Start of anonymous subject */
-	SERD_ANON_O_BEGIN = 1 << 4,  /**< Start of anonymous object */
-	SERD_ANON_CONT    = 1 << 5,  /**< Continuation of anonymous node */
-	SERD_LIST_S_BEGIN = 1 << 6,  /**< Start of list subject */
-	SERD_LIST_O_BEGIN = 1 << 7,  /**< Start of list object */
-	SERD_LIST_CONT    = 1 << 8   /**< Continuation of list */
+	SERD_EMPTY_S      = 1 << 0,  /**< Empty blank node subject */
+	SERD_ANON_S_BEGIN = 1 << 1,  /**< Start of anonymous subject */
+	SERD_ANON_O_BEGIN = 1 << 2,  /**< Start of anonymous object */
+	SERD_LIST_S_BEGIN = 1 << 3,  /**< Start of list subject */
+	SERD_LIST_O_BEGIN = 1 << 4,  /**< Start of list object */
 } SerdStatementFlag;
 
 /**

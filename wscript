@@ -452,6 +452,7 @@ def test(tst):
     with tst.group('ThroughSyntax') as check:
         test_syntax_io(check, 'base.ttl',       'base.ttl',        'turtle')
         test_syntax_io(check, 'qualify-in.ttl', 'qualify-out.ttl', 'turtle')
+        test_syntax_io(check, 'pretty.trig',    'pretty.trig',     'trig')
 
     with tst.group('GoodCommands') as check:
         check([serdi, '%s/tests/good/manifest.ttl' % srcdir])
