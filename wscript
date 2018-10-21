@@ -221,6 +221,12 @@ def file_equals(patha, pathb, subst_from='', subst_to=''):
                 lineb = fb.readline()
                 if (linea.replace(subst_from, subst_to) !=
                     lineb.replace(subst_from, subst_to)):
+                    fa.seek(0)
+                    fb.seek(0)
+                    show_diff(fa.readlines(),
+                              fb.readlines(),
+                              patha,
+                              pathb)
                     return False
     return True
 
@@ -255,7 +261,9 @@ def show_diff(from_lines, to_lines, from_filename, to_filename):
     import sys
 
     for line in difflib.unified_diff(
-            from_lines, to_lines, fromfile=from_filename, tofile=to_filename):
+            from_lines, to_lines,
+            fromfile=os.path.abspath(from_filename),
+            tofile=os.path.abspath(to_filename)):
         sys.stderr.write(line)
 
 def check_output(out_filename, check_filename, subst_from='', subst_to=''):
@@ -264,12 +272,6 @@ def check_output(out_filename, check_filename, subst_from='', subst_to=''):
     elif not file_equals(check_filename, out_filename, subst_from, subst_to):
         Logs.pprint('RED', 'FAIL: %s != %s' % (os.path.abspath(out_filename),
                                                check_filename))
-        with io.open(out_filename, encoding='utf-8') as out_file:
-            with io.open(check_filename, encoding='utf-8') as check_file:
-                show_diff(check_file.readlines(),
-                          out_file.readlines(),
-                          check_filename,
-                          out_filename)
     else:
         return True
 
