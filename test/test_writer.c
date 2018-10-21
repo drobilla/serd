@@ -90,7 +90,7 @@ test_write_long_literal(void)
 
   static const char* const expected =
     "<http://example.org/s>\n"
-    "\t<http://example.org/p> \"\"\"hello \"\"\\\"world\"\"\\\"!\"\"\" .\n\n";
+    "\t<http://example.org/p> \"\"\"hello \"\"\\\"world\"\"\\\"!\"\"\" .\n";
 
   assert(!strcmp((char*)out, expected));
   serd_free(out);
@@ -124,8 +124,8 @@ test_writer_stack_overflow(void)
   SerdNode* const s = serd_new_uri(serd_string("http://example.org/s"));
   SerdNode* const p = serd_new_uri(serd_string("http://example.org/p"));
 
-  SerdNode*  o  = serd_new_blank(serd_string("http://example.org/o"));
-  SerdStatus st = serd_sink_write(sink, SERD_ANON_O_BEGIN, s, p, o, NULL);
+  SerdNode*  o  = serd_new_blank(serd_string("blank"));
+  SerdStatus st = serd_sink_write(sink, SERD_ANON_O, s, p, o, NULL);
   assert(!st);
 
   // Repeatedly write nested anonymous objects until the writer stack overflows
@@ -135,7 +135,7 @@ test_writer_stack_overflow(void)
 
     SerdNode* next_o = serd_new_blank(serd_string(buf));
 
-    st = serd_sink_write(sink, SERD_ANON_O_BEGIN, o, p, next_o, NULL);
+    st = serd_sink_write(sink, SERD_ANON_O, o, p, next_o, NULL);
 
     serd_node_free(o);
     o = next_o;
