@@ -109,14 +109,11 @@ typedef struct SerdByteSinkImpl SerdByteSink;
 
 /// Flags indicating inline abbreviation information for a statement
 typedef enum {
-  SERD_EMPTY_S      = 1u << 1u, ///< Empty blank node subject
-  SERD_EMPTY_O      = 1u << 2u, ///< Empty blank node object
-  SERD_ANON_S_BEGIN = 1u << 3u, ///< Start of anonymous subject
-  SERD_ANON_O_BEGIN = 1u << 4u, ///< Start of anonymous object
-  SERD_ANON_CONT    = 1u << 5u, ///< Continuation of anonymous node
-  SERD_LIST_S_BEGIN = 1u << 6u, ///< Start of list subject
-  SERD_LIST_O_BEGIN = 1u << 7u, ///< Start of list object
-  SERD_LIST_CONT    = 1u << 8u  ///< Continuation of list
+  SERD_EMPTY_S      = 1u << 0u, ///< Empty blank node subject
+  SERD_ANON_S_BEGIN = 1u << 1u, ///< Start of anonymous subject
+  SERD_ANON_O_BEGIN = 1u << 2u, ///< Start of anonymous object
+  SERD_LIST_S_BEGIN = 1u << 3u, ///< Start of list subject
+  SERD_LIST_O_BEGIN = 1u << 4u, ///< Start of list object
 } SerdStatementFlag;
 
 /// Bitwise OR of SerdStatementFlag values
