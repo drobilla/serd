@@ -9,6 +9,7 @@ unit_tests = [
   'env',
   'free_null',
   'node',
+  'nodes',
   'overflow',
   'read_chunk',
   'reader_writer',
