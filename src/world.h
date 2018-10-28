@@ -7,18 +7,27 @@
 #include "log.h"
 
 #include "serd/node.h"
+#include "serd/nodes.h"
 #include "serd/world.h"
 #include "zix/allocator.h"
 
 #include <stdint.h>
 
 struct SerdWorldImpl {
-  SerdLimits    limits;
-  ZixAllocator* allocator;
-  SerdLog       log;
-  uint32_t      next_blank_id;
-  uint32_t      next_document_id;
-  SerdNode*     blank_node;
+  SerdLimits      limits;
+  ZixAllocator*   allocator;
+  SerdLog         log;
+  SerdNodes*      nodes;
+  const SerdNode* rdf_first;
+  const SerdNode* rdf_nil;
+  const SerdNode* rdf_rest;
+  const SerdNode* rdf_type;
+  const SerdNode* xsd_boolean;
+  const SerdNode* xsd_decimal;
+  const SerdNode* xsd_integer;
+  SerdNode*       blank_node;
+  uint32_t        next_blank_id;
+  uint32_t        next_document_id;
 };
 
 #endif // SERD_SRC_WORLD_H

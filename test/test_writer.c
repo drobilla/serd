@@ -75,7 +75,7 @@ test_write_failed_alloc(void)
   SerdFailingAllocator allocator = serd_failing_allocator();
 
   SerdWorld*       world  = serd_world_new(&allocator.base);
-  SerdNodes*       nodes  = serd_nodes_new(&allocator.base);
+  SerdNodes*       nodes  = serd_world_nodes(world);
   SerdEnv*         env    = serd_env_new(NULL, zix_empty_string());
   SerdBuffer       buffer = {&allocator.base, NULL, 0};
   SerdOutputStream output = serd_open_output_buffer(&buffer);
@@ -128,7 +128,6 @@ test_write_failed_alloc(void)
   serd_buffer_close(&buffer);
   zix_free(buffer.allocator, buffer.buf);
 
-  serd_nodes_free(nodes);
   serd_world_free(world);
 }
 
