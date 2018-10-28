@@ -83,6 +83,7 @@ sources = files(
   'src/n3.c',
   'src/node.c',
   'src/node_syntax.c',
+  'src/nodes.c',
   'src/read_nquads.c',
   'src/read_ntriples.c',
   'src/read_utf8.c',
@@ -118,7 +119,7 @@ libserd = library(
   ],
   dependencies: [exess_dep, m_dep, zix_dep],
   gnu_symbol_visibility: 'hidden',
-  include_directories: include_dirs,
+  include_directories: include_directories(['include', 'src']),
   install: true,
   version: meson.project_version(),
 )
