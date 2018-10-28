@@ -87,6 +87,7 @@ lib_source = ['src/base64.c',
               'src/env.c',
               'src/n3.c',
               'src/node.c',
+              'src/nodes.c',
               'src/reader.c',
               'src/sink.c',
               'src/statement.c',
@@ -95,7 +96,9 @@ lib_source = ['src/base64.c',
               'src/system.c',
               'src/uri.c',
               'src/world.c',
-              'src/writer.c']
+              'src/writer.c',
+              'src/zix/digest.c',
+              'src/zix/hash.c']
 
 def build(bld):
     # C Headers
@@ -155,7 +158,8 @@ def build(bld):
         for prog in [('serdi_static', 'src/serdi.c'),
                      ('cursor_test', 'tests/cursor_test.c'),
                      ('serd_test', 'tests/serd_test.c'),
-                     ('read_chunk_test', 'tests/read_chunk_test.c')]:
+                     ('read_chunk_test', 'tests/read_chunk_test.c'),
+                     ('nodes_test', 'tests/nodes_test.c')]:
             bld(features     = 'c cprogram',
                 source       = prog[1],
                 use          = 'libserd_profiled',
@@ -431,6 +435,7 @@ def test(tst):
 
     with tst.group('Unit') as check:
         check(['./cursor_test'])
+        check(['./nodes_test'])
         check(['./serd_test'])
         check(['./read_chunk_test'])
 

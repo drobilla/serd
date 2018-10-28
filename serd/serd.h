@@ -62,6 +62,14 @@ extern "C" {
 typedef struct SerdWorldImpl SerdWorld;
 
 /**
+   Nodes.
+
+   A hashing container for nodes that can be used for interning and simplified
+   memory management.
+*/
+typedef struct SerdNodesImpl SerdNodes;
+
+/**
    Statement.
 
    A subject, predicate, and object, with optional graph context.
@@ -1337,6 +1345,63 @@ serd_writer_set_root_uri(SerdWriter*     writer,
 SERD_API
 SerdStatus
 serd_writer_finish(SerdWriter* writer);
+
+/**
+   @}
+   @name Nodes
+   @{
+*/
+
+/**
+   Create a new node set.
+*/
+SERD_API
+SerdNodes*
+serd_nodes_new(void);
+
+/**
+   Free `nodes` and all nodes that are stored in it.
+
+   Note that this invalidates any pointers previously returned from
+   `serd_nodes_intern()` or `serd_nodes_manage()` calls on `nodes`.
+*/
+SERD_API
+void
+serd_nodes_free(SerdNodes* nodes);
+
+/**
+   Intern `node`.
+
+   Multiple calls with equivalent nodes will return the same pointer.
+
+   @return A node that is different than, but equivalent to, `node`.
+*/
+SERD_API
+const SerdNode*
+serd_nodes_intern(SerdNodes* nodes, const SerdNode* node);
+
+/**
+   Manage `node`.
+
+   Like `serd_nodes_intern`, but takes ownership of `node`, freeing it and
+   returning a previously interned/managed equivalent node if necessary.
+
+   @return A node that is equivalent to `node`.
+*/
+SERD_API
+const SerdNode*
+serd_nodes_manage(SerdNodes* nodes, SerdNode* node);
+
+/**
+   Dereference `node`.
+
+   Decrements the reference count of `node`, and frees the internally stored
+   equivalent node if this was the last reference.  Does nothing if no node
+   equivalent to `node` is stored in `nodes`.
+*/
+SERD_API
+void
+serd_nodes_deref(SerdNodes* nodes, const SerdNode* node);
 
 /**
    @}

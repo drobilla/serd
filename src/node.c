@@ -90,7 +90,7 @@ serd_node_check_padding(const SerdNode* node)
 #endif
 }
 
-static size_t
+size_t
 serd_node_total_size(const SerdNode* node)
 {
 	return node ? (sizeof(SerdNode) + serd_node_pad_size(node->n_bytes) +
