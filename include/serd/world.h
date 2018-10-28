@@ -6,6 +6,7 @@
 
 #include "serd/attributes.h"
 #include "serd/node.h"
+#include "serd/nodes.h"
 #include "serd/status.h"
 #include "zix/allocator.h"
 #include "zix/attributes.h"
@@ -66,6 +67,16 @@ serd_world_limits(const SerdWorld* ZIX_NONNULL world);
 */
 SERD_API SerdStatus
 serd_world_set_limits(SerdWorld* ZIX_NONNULL world, SerdLimits limits);
+
+/**
+   Return the nodes cache in `world`.
+
+   The returned cache is owned by the world and contains various nodes used
+   frequently by the implementation.  For convenience, it may be used to store
+   additional nodes which will be freed when the world is freed.
+*/
+SERD_PURE_API SerdNodes* ZIX_NONNULL
+serd_world_nodes(SerdWorld* ZIX_NONNULL world);
 
 /**
    Return a unique blank node.

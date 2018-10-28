@@ -162,20 +162,20 @@ serd_node_pad_length(const size_t n_bytes)
 char*
 serd_node_buffer(SerdNode* const node)
 {
-  return (char*)(node + 1);
+  return (char*)(node + 1U);
 }
 
 SerdNode*
 serd_node_meta(SerdNode* const node)
 {
-  return node + 1 + (serd_node_pad_length(node->length) / sizeof(SerdNode));
+  return node + 1U + (serd_node_pad_length(node->length) / sizeof(SerdNode));
 }
 
 const SerdNode*
 serd_node_meta_c(const SerdNode* const node)
 {
-  assert(serd_node_flags(node) & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE));
-  return node + 1 + (serd_node_pad_length(node->length) / sizeof(SerdNode));
+  assert(node->flags & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE));
+  return node + 1U + (serd_node_pad_length(node->length) / sizeof(SerdNode));
 }
 
 // Round size up to an even multiple of the node alignment
