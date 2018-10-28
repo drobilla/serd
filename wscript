@@ -415,7 +415,7 @@ def test(ctx):
     os.environ['PATH'] = '.' + os.pathsep + os.getenv('PATH')
 
     autowaf.pre_test(ctx, APPNAME)
-    autowaf.run_test(ctx, APPNAME, 'serd_test', dirs=['.'])
+    autowaf.run_tests(ctx, APPNAME, ['serd_test'], name='Unit')
 
     def test_ttl(in_name, expected_name):
         in_path = 'tests/good/%s.ttl' % in_name
@@ -430,8 +430,9 @@ def test(ctx):
                                 '%s/tests/good/%s.ttl' % (srcdir, expected_name)),
             True, name=in_name + '-check')
 
-    test_ttl('base', 'base')
-    test_ttl('qualify-in', 'qualify-out')
+    with autowaf.begin_tests(ctx, APPNAME, 'ThroughSyntax'):
+        test_ttl('base', 'base')
+        test_ttl('qualify-in', 'qualify-out')
 
     nul = os.devnull
     autowaf.run_tests(ctx, APPNAME, [
@@ -440,7 +441,7 @@ def test(ctx):
             'serdi_static -h > %s' % nul,
             'serdi_static -s "<foo> a <#Thingie> ." > %s' % nul,
             'serdi_static %s > %s' % (nul, nul)
-    ], 0, name='serdi-cmd-good')
+    ], 0, name='GoodCommands')
 
     autowaf.run_tests(ctx, APPNAME, [
             'serdi_static -q ../tests/bad/bad-id-clash.ttl > %s' % nul,
@@ -456,9 +457,9 @@ def test(ctx):
             'serdi_static -o illegal > %s' % nul,
             'serdi_static -i turtle > %s' % nul,
             'serdi_static /no/such/file > %s' % nul],
-                      1, name='serdi-cmd-bad')
+                      1, name='BadCommands')
 
-    with autowaf.begin_tests(ctx, APPNAME, 'io-error'):
+    with autowaf.begin_tests(ctx, APPNAME, 'IoErrors'):
         # Test read error by reading a directory
         autowaf.run_test(ctx, APPNAME, 'serdi_static -e "file://%s/"' % srcdir,
                          1, name='read_error')
