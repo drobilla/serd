@@ -331,7 +331,8 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
         asserter = 'http://drobilla.net/drobilla#me'
 
     def run_test(command, expected_return, name, quiet=False):
-        result = autowaf.run_test(ctx, APPNAME, command, expected_return, name=name, quiet=quiet)
+        header = Options.options.verbose_tests
+        result = autowaf.run_test(ctx, APPNAME, command, expected_return, name=name, header=header, quiet=quiet)
         if not result[0]:
             autowaf.run_test(ctx, APPNAME,
                              lambda: result[1][1] != '',
@@ -341,7 +342,7 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
     def run_tests(test_class, expected_return):
         tests = []
         for s, desc in model.items():
-            if str(test_class) in desc['http://www.w3.org/1999/02/22-rdf-syntax-ns#type']:
+            if test_class in desc['http://www.w3.org/1999/02/22-rdf-syntax-ns#type']:
                 tests += [s]
         if len(tests) == 0:
             return
@@ -353,7 +354,9 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
                 thru_options += [flags]
         thru_options_iter = itertools.cycle(thru_options)
 
-        with autowaf.begin_tests(ctx, APPNAME, str(test_class)):
+        quiet = not Options.options.verbose_tests
+        test_class_name = test_class[test_class.find('#') + 1:]
+        with autowaf.begin_tests(ctx, APPNAME, test_class_name):
             for (num, test) in enumerate(sorted(tests)):
                 action_node = model[test][mf + 'action'][0]
                 action      = os.path.join('tests', testdir, os.path.basename(action_node))
@@ -364,7 +367,7 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
                     options, rel_action, uri, action + '.out')
 
                 # Run strict test
-                result = run_test(command, expected_return, action)
+                result = run_test(command, expected_return, action, quiet=quiet)
                 if (mf + 'result') in model[test]:
                     # Check output against test suite
                     check_uri  = model[test][mf + 'result'][0]
@@ -428,7 +431,7 @@ def test(ctx):
             ctx, APPNAME,
             lambda: file_equals('%s.out' % in_path,
                                 '%s/tests/good/%s.ttl' % (srcdir, expected_name)),
-            True, name=in_name + '-check')
+            True, quiet=True, name=in_name + '-check')
 
     with autowaf.begin_tests(ctx, APPNAME, 'ThroughSyntax'):
         test_ttl('base', 'base')
@@ -499,8 +502,6 @@ def test(ctx):
                    'TriGTests', report, 'TriG', 'NQuads', '-a')
 
     autowaf.post_test(ctx, APPNAME)
-    if ctx.autowaf_tests[APPNAME]['failed'] > 0:
-        ctx.fatal('Failed %s tests' % APPNAME)
 
 def posts(ctx):
     path = str(ctx.path.abspath())
