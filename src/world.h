@@ -23,10 +23,18 @@
 #include <stdio.h>
 
 struct SerdWorldImpl {
-  SerdErrorFunc error_func;
-  void*         error_handle;
-  uint32_t      next_blank_id;
-  SerdNode*     blank_node;
+  SerdNodes*      nodes;
+  SerdErrorFunc   error_func;
+  void*           error_handle;
+  SerdNode*       blank_node;
+  const SerdNode* rdf_first;
+  const SerdNode* rdf_nil;
+  const SerdNode* rdf_rest;
+  const SerdNode* rdf_type;
+  const SerdNode* xsd_boolean;
+  const SerdNode* xsd_decimal;
+  const SerdNode* xsd_integer;
+  uint32_t        next_blank_id;
 };
 
 /// Open a file configured for fast sequential reading
