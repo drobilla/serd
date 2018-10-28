@@ -88,7 +88,6 @@ serd_node_check_padding(const SerdNode* node)
 #endif
 }
 
-static SERD_PURE_FUNC
 size_t
 serd_node_total_size(const SerdNode* const node)
 {
