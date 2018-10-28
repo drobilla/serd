@@ -357,10 +357,11 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
             for (num, test) in enumerate(sorted(tests)):
                 action_node = model[test][mf + 'action'][0]
                 action      = os.path.join('tests', testdir, os.path.basename(action_node))
+                rel_action  = os.path.join(os.path.relpath(srcdir), action)
                 abs_action  = os.path.join(srcdir, action)
                 uri         = base_uri + os.path.basename(action)
-                command     = 'serdi_static %s -f "%s" "%s" > %s' % (
-                    options, abs_action, uri, action + '.out')
+                command     = 'serdi_static %s -f %s "%s" > %s' % (
+                    options, rel_action, uri, action + '.out')
 
                 # Run strict test
                 result = run_test(command, expected_return, action)
@@ -434,7 +435,7 @@ def test(ctx):
 
     nul = os.devnull
     autowaf.run_tests(ctx, APPNAME, [
-            'serdi_static "file://%s/tests/good/manifest.ttl" > %s' % (srcdir, nul),
+            'serdi_static ../tests/good/manifest.ttl > %s' % nul,
             'serdi_static -v > %s' % nul,
             'serdi_static -h > %s' % nul,
             'serdi_static -s "<foo> a <#Thingie> ." > %s' % nul,
@@ -442,7 +443,7 @@ def test(ctx):
     ], 0, name='serdi-cmd-good')
 
     autowaf.run_tests(ctx, APPNAME, [
-            'serdi_static -q "file://%s/tests/bad/bad-id-clash.ttl" > %s' % (srcdir, nul),
+            'serdi_static -q ../tests/bad/bad-id-clash.ttl > %s' % nul,
             'serdi_static > %s' % nul,
             'serdi_static ftp://example.org/unsupported.ttl > %s' % nul,
             'serdi_static -i > %s' % nul,
