@@ -6,16 +6,25 @@
 
 #include "serd/log.h"
 #include "serd/node.h"
+#include "serd/nodes.h"
 
 #include <stdbool.h>
 #include <stdint.h>
 
 struct SerdWorldImpl {
-  SerdLogFunc log_func;
-  void*       log_handle;
-  uint32_t    next_blank_id;
-  uint32_t    next_document_id;
-  SerdNode*   blank_node;
+  SerdNodes*      nodes;
+  SerdLogFunc     log_func;
+  void*           log_handle;
+  SerdNode*       blank_node;
+  const SerdNode* rdf_first;
+  const SerdNode* rdf_nil;
+  const SerdNode* rdf_rest;
+  const SerdNode* rdf_type;
+  const SerdNode* xsd_boolean;
+  const SerdNode* xsd_decimal;
+  const SerdNode* xsd_integer;
+  uint32_t        next_blank_id;
+  uint32_t        next_document_id;
 
   bool stderr_color;
 };
