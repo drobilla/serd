@@ -3,6 +3,7 @@
 
 #include "world.h"
 
+#include "namespaces.h"
 #include "node.h"
 #include "serd_config.h"
 
@@ -58,8 +59,26 @@ SerdWorld*
 serd_world_new(void)
 {
   SerdWorld* world = (SerdWorld*)calloc(1, sizeof(SerdWorld));
+  SerdNodes* nodes = serd_nodes_new();
+
+  const SerdStringView rdf_first   = serd_string(NS_RDF "first");
+  const SerdStringView rdf_nil     = serd_string(NS_RDF "nil");
+  const SerdStringView rdf_rest    = serd_string(NS_RDF "rest");
+  const SerdStringView rdf_type    = serd_string(NS_RDF "type");
+  const SerdStringView xsd_boolean = serd_string(NS_XSD "boolean");
+  const SerdStringView xsd_decimal = serd_string(NS_XSD "decimal");
+  const SerdStringView xsd_integer = serd_string(NS_XSD "integer");
+
+  world->rdf_first   = serd_nodes_uri(nodes, rdf_first);
+  world->rdf_nil     = serd_nodes_uri(nodes, rdf_nil);
+  world->rdf_rest    = serd_nodes_uri(nodes, rdf_rest);
+  world->rdf_type    = serd_nodes_uri(nodes, rdf_type);
+  world->xsd_boolean = serd_nodes_uri(nodes, xsd_boolean);
+  world->xsd_decimal = serd_nodes_uri(nodes, xsd_decimal);
+  world->xsd_integer = serd_nodes_uri(nodes, xsd_integer);
 
   world->blank_node = serd_new_token(SERD_BLANK, serd_string("b00000000000"));
+  world->nodes      = nodes;
 
   world->stderr_color = terminal_supports_color(stderr);
 
@@ -91,4 +110,11 @@ serd_world_get_blank(SerdWorld* const world)
   return world->blank_node;
 
 #undef BLANK_CHARS
+}
+
+SerdNodes*
+serd_world_nodes(SerdWorld* const world)
+{
+  assert(world);
+  return world->nodes;
 }

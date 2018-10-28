@@ -5,7 +5,6 @@
 
 #include "block_dumper.h"
 #include "env.h"
-#include "namespaces.h"
 #include "node.h"
 #include "sink.h"
 #include "string_utils.h"
@@ -13,6 +12,7 @@
 #include "try.h"
 #include "turtle.h"
 #include "uri_utils.h"
+#include "world.h"
 
 #include "serd/attributes.h"
 #include "serd/env.h"
@@ -774,14 +774,12 @@ write_literal(SerdWriter* const        writer,
   const char* const     type_uri = datatype ? serd_node_string(datatype) : NULL;
 
   if (supports_abbrev(writer) && type_uri) {
-    if (!strncmp(type_uri, NS_XSD, sizeof(NS_XSD) - 1) &&
-        (!strcmp(type_uri + sizeof(NS_XSD) - 1, "boolean") ||
-         !strcmp(type_uri + sizeof(NS_XSD) - 1, "integer"))) {
+    if (serd_node_equals(datatype, writer->world->xsd_boolean) ||
+        serd_node_equals(datatype, writer->world->xsd_integer)) {
       return esink(node_str, node->length, writer);
     }
 
-    if (!strncmp(type_uri, NS_XSD, sizeof(NS_XSD) - 1) &&
-        !strcmp(type_uri + sizeof(NS_XSD) - 1, "decimal") &&
+    if (serd_node_equals(datatype, writer->world->xsd_decimal) &&
         strchr(node_str, '.') && node_str[node->length - 1] != '.') {
       /* xsd:decimal literals without trailing digits, e.g. "5.", can
          not be written bare in Turtle.  We could add a 0 which is
@@ -858,11 +856,12 @@ write_uri_node(SerdWriter* const     writer,
   const bool           has_scheme = serd_uri_string_has_scheme(string.data);
 
   if (supports_abbrev(writer)) {
-    if (field == SERD_PREDICATE && !strcmp(string.data, NS_RDF "type")) {
+    if (field == SERD_PREDICATE &&
+        serd_node_equals(node, writer->world->rdf_type)) {
       return esink("a", 1, writer);
     }
 
-    if (!strcmp(string.data, NS_RDF "nil")) {
+    if (serd_node_equals(node, writer->world->rdf_nil)) {
       return esink("()", 2, writer);
     }
 
@@ -990,12 +989,12 @@ write_list_next(SerdWriter* const        writer,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  if (!strcmp(serd_node_string(object), NS_RDF "nil")) {
+  if (serd_node_equals(object, writer->world->rdf_nil)) {
     TRY(st, write_sep(writer, writer->context.flags, SEP_LIST_END));
     return SERD_FAILURE;
   }
 
-  if (!strcmp(serd_node_string(predicate), NS_RDF "first")) {
+  if (serd_node_equals(predicate, writer->world->rdf_first)) {
     TRY(st, write_node(writer, object, SERD_OBJECT, flags));
   } else {
     TRY(st, write_sep(writer, writer->context.flags, SEP_LIST_SEP));
@@ -1102,8 +1101,8 @@ write_list_statement(SerdWriter* const        writer,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  if (!strcmp(serd_node_string(predicate), NS_RDF "first") &&
-      !strcmp(serd_node_string(object), NS_RDF "nil")) {
+  if (serd_node_equals(predicate, writer->world->rdf_first) &&
+      serd_node_equals(object, writer->world->rdf_nil)) {
     return esink("()", 2, writer);
   }
 
