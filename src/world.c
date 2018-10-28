@@ -21,6 +21,7 @@
 #include "cursor.h"
 #include "node.h"
 #include "serd_config.h"
+#include "serd_internal.h"
 
 #include <errno.h>
 #include <stdarg.h>
@@ -83,8 +84,18 @@ SerdWorld*
 serd_world_new(void)
 {
 	SerdWorld* world = (SerdWorld*)calloc(1, sizeof(SerdWorld));
+	SerdNodes* nodes = serd_nodes_new();
+
+	world->rdf_first   = serd_nodes_manage(nodes, serd_new_uri(NS_RDF "first"));
+	world->rdf_nil     = serd_nodes_manage(nodes, serd_new_uri(NS_RDF "nil"));
+	world->rdf_rest    = serd_nodes_manage(nodes, serd_new_uri(NS_RDF "rest"));
+	world->rdf_type    = serd_nodes_manage(nodes, serd_new_uri(NS_RDF "type"));
+	world->xsd_boolean = serd_nodes_manage(nodes, serd_new_uri(NS_XSD "boolean"));
+	world->xsd_decimal = serd_nodes_manage(nodes, serd_new_uri(NS_XSD "decimal"));
+	world->xsd_integer = serd_nodes_manage(nodes, serd_new_uri(NS_XSD "integer"));
 
 	world->blank_node = serd_new_blank("b0000000000");
+	world->nodes      = nodes;
 
 	return world;
 }
@@ -93,6 +104,7 @@ void
 serd_world_free(SerdWorld* world)
 {
 	serd_node_free(world->blank_node);
+	serd_nodes_free(world->nodes);
 	free(world);
 }
 

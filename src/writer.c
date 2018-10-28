@@ -16,7 +16,6 @@
 
 #include "env.h"
 #include "node.h"
-#include "serd_internal.h"
 #include "sink.h"
 #include "stack.h"
 #include "string_utils.h"
@@ -437,13 +436,11 @@ write_literal(SerdWriter*        writer,
 	const char*     node_str = serd_node_get_string(node);
 	const char*     type_uri = serd_node_get_string(datatype);
 	if (supports_abbrev(writer) && type_uri) {
-		if (!strncmp(type_uri, NS_XSD, sizeof(NS_XSD) - 1) && (
-			    !strcmp(type_uri + sizeof(NS_XSD) - 1, "boolean") ||
-			    !strcmp(type_uri + sizeof(NS_XSD) - 1, "integer"))) {
+		if (serd_node_equals(datatype, writer->world->xsd_boolean) ||
+		    serd_node_equals(datatype, writer->world->xsd_integer)) {
 			sink(node_str, node->n_bytes, writer);
 			return true;
-		} else if (!strncmp(type_uri, NS_XSD, sizeof(NS_XSD) - 1) &&
-		           !strcmp(type_uri + sizeof(NS_XSD) - 1, "decimal") &&
+		} else if (serd_node_equals(datatype, writer->world->xsd_decimal) &&
 		           strchr(node_str, '.') &&
 		           node_str[node->n_bytes - 1] != '.') {
 			/* xsd:decimal literals without trailing digits, e.g. "5.", can
@@ -506,9 +503,10 @@ write_uri_node(SerdWriter* const        writer,
 	const char* node_str   = serd_node_get_string(node);
 	const bool  has_scheme = serd_uri_string_has_scheme(node_str);
 	if (field == SERD_PREDICATE && supports_abbrev(writer)
-	    && !strcmp(node_str, NS_RDF "type")) {
+	    && serd_node_equals(node, writer->world->rdf_type)) {
 		return sink("a", 1, writer) == 1;
-	} else if (supports_abbrev(writer) && !strcmp(node_str, NS_RDF "nil")) {
+	} else if (supports_abbrev(writer) &&
+	           serd_node_equals(node, writer->world->rdf_nil)) {
 		return sink("()", 2, writer) == 2;
 	} else if (has_scheme && supports_abbrev(writer) &&
 	           serd_env_qualify_in_place(writer->env, node, &prefix, &suffix) &&
@@ -674,11 +672,11 @@ write_list_obj(SerdWriter*        writer,
                const SerdNode*    predicate,
                const SerdNode*    object)
 {
-	if (!strcmp(serd_node_get_string(object), NS_RDF "nil")) {
+	if (serd_node_equals(object, writer->world->rdf_nil)) {
 		--writer->indent;
 		write_sep(writer, SEP_LIST_END);
 		return true;
-	} else if (!strcmp(serd_node_get_string(predicate), NS_RDF "first")) {
+	} else if (serd_node_equals(predicate, writer->world->rdf_first)) {
 		write_sep(writer, SEP_LIST_SEP);
 		write_node(writer, object, SERD_OBJECT, flags);
 	}
