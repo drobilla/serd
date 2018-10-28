@@ -25,10 +25,22 @@ test_get_blank(void)
   serd_world_free(world);
 }
 
+static void
+test_nodes(void)
+{
+  SerdWorld* const world = serd_world_new();
+  SerdNodes* const nodes = serd_world_nodes(world);
+
+  assert(serd_nodes_size(nodes) > 0U);
+
+  serd_world_free(world);
+}
+
 int
 main(void)
 {
   test_get_blank();
+  test_nodes();
 
   return 0;
 }
