@@ -21,6 +21,7 @@
 #include "caret.h"
 #include "node.h"
 #include "serd_config.h"
+#include "serd_internal.h"
 #include "system.h"
 
 #if defined(USE_POSIX_FADVISE)
@@ -92,8 +93,25 @@ SerdWorld*
 serd_world_new(void)
 {
   SerdWorld* world = (SerdWorld*)calloc(1, sizeof(SerdWorld));
+  SerdNodes* nodes = serd_nodes_new();
 
-  world->blank_node = serd_new_blank(SERD_STRING("b00000000000"));
+  const SerdStringView rdf_first   = SERD_STRING(NS_RDF "first");
+  const SerdStringView rdf_nil     = SERD_STRING(NS_RDF "nil");
+  const SerdStringView rdf_rest    = SERD_STRING(NS_RDF "rest");
+  const SerdStringView rdf_type    = SERD_STRING(NS_RDF "type");
+  const SerdStringView xsd_boolean = SERD_STRING(NS_XSD "boolean");
+  const SerdStringView xsd_decimal = SERD_STRING(NS_XSD "decimal");
+  const SerdStringView xsd_integer = SERD_STRING(NS_XSD "integer");
+
+  world->rdf_first   = serd_nodes_manage(nodes, serd_new_uri(rdf_first));
+  world->rdf_nil     = serd_nodes_manage(nodes, serd_new_uri(rdf_nil));
+  world->rdf_rest    = serd_nodes_manage(nodes, serd_new_uri(rdf_rest));
+  world->rdf_type    = serd_nodes_manage(nodes, serd_new_uri(rdf_type));
+  world->xsd_boolean = serd_nodes_manage(nodes, serd_new_uri(xsd_boolean));
+  world->xsd_decimal = serd_nodes_manage(nodes, serd_new_uri(xsd_decimal));
+  world->xsd_integer = serd_nodes_manage(nodes, serd_new_uri(xsd_integer));
+  world->blank_node  = serd_new_blank(SERD_STRING("b00000000000"));
+  world->nodes       = nodes;
 
   return world;
 }
@@ -103,8 +121,15 @@ serd_world_free(SerdWorld* const world)
 {
   if (world) {
     serd_node_free(world->blank_node);
+    serd_nodes_free(world->nodes);
     free(world);
   }
+}
+
+SerdNodes*
+serd_world_nodes(SerdWorld* const world)
+{
+  return world->nodes;
 }
 
 const SerdNode*
