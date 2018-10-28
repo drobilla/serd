@@ -90,6 +90,7 @@ sources = [
   'src/env.c',
   'src/n3.c',
   'src/node.c',
+  'src/nodes.c',
   'src/reader.c',
   'src/sink.c',
   'src/statement.c',
@@ -99,6 +100,8 @@ sources = [
   'src/uri.c',
   'src/world.c',
   'src/writer.c',
+  'src/zix/digest.c',
+  'src/zix/hash.c',
 ]
 
 # System libraries
@@ -138,7 +141,7 @@ libserd = build_target(
   versioned_name,
   sources,
   version: meson.project_version(),
-  include_directories: include_directories(['include']),
+  include_directories: include_directories('include', 'src'),
   c_args: c_warnings + library_args,
   dependencies: [exess_dep, m_dep],
   gnu_symbol_visibility: 'hidden',
