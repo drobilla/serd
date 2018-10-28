@@ -787,6 +787,82 @@ serd_node_equals(const SerdNode* SERD_NULLABLE a,
 
 /**
    @}
+   @defgroup serd_nodes Nodes
+   @{
+*/
+
+/// Hashing node container for interning and simplified memory management
+typedef struct SerdNodesImpl SerdNodes;
+
+/// Create a new node set
+SERD_API
+SerdNodes* SERD_ALLOCATED
+serd_nodes_new(void);
+
+/**
+   Free `nodes` and all nodes that are stored in it.
+
+   Note that this invalidates any pointers previously returned from
+   `serd_nodes_intern()` or `serd_nodes_manage()` calls on `nodes`.
+*/
+SERD_API
+void
+serd_nodes_free(SerdNodes* SERD_NULLABLE nodes);
+
+/// Return the number of interned nodes
+SERD_PURE_API
+size_t
+serd_nodes_size(const SerdNodes* SERD_NONNULL nodes);
+
+/**
+   Return the existing interned copy of a node if it exists.
+
+   This either returns an equivalent to the given node, or null if this node
+   has not been interned.
+*/
+SERD_API
+const SerdNode* SERD_NULLABLE
+serd_nodes_get(const SerdNodes* SERD_NONNULL nodes,
+               const SerdNode* SERD_NULLABLE node);
+
+/**
+   Intern `node`.
+
+   Multiple calls with equivalent nodes will return the same pointer.
+
+   @return A node that is different than, but equivalent to, `node`.
+*/
+SERD_API
+const SerdNode* SERD_ALLOCATED
+serd_nodes_intern(SerdNodes* SERD_NONNULL       nodes,
+                  const SerdNode* SERD_NULLABLE node);
+
+/**
+   Manage `node`.
+
+   Like `serd_nodes_intern`, but takes ownership of `node`, freeing it and
+   returning a previously interned/managed equivalent node if necessary.
+
+   @return A node that is equivalent to `node`.
+*/
+SERD_API
+const SerdNode* SERD_ALLOCATED
+serd_nodes_manage(SerdNodes* SERD_NONNULL nodes, SerdNode* SERD_NULLABLE node);
+
+/**
+   Dereference `node`.
+
+   Decrements the reference count of `node`, and frees the internally stored
+   equivalent node if this was the last reference.  Does nothing if no node
+   equivalent to `node` is stored in `nodes`.
+*/
+SERD_API
+void
+serd_nodes_deref(SerdNodes* SERD_NONNULL      nodes,
+                 const SerdNode* SERD_NONNULL node);
+
+/**
+   @}
    @defgroup serd_world World
    @{
 */
