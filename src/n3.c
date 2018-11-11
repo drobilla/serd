@@ -1411,7 +1411,10 @@ read_n3_statement(SerdReader* reader)
 		} else if (!subj) {
 			ret = r_err(reader, SERD_ERR_BAD_SYNTAX, "bad subject\n");
 		} else if (!read_triples(reader, ctx, &ate_dot)) {
-			ret = (s_type == '[');
+			if (!(ret = (s_type == '[')) && ate_dot) {
+				ret = r_err(reader, SERD_ERR_BAD_SYNTAX,
+				            "unexpected end of statement\n");
+			}
 		} else if (!ate_dot) {
 			read_ws_star(reader);
 			ret = (eat_byte_check(reader, '.') == '.');
