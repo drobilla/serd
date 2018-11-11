@@ -339,10 +339,10 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
     def run_test(command, expected_return, name, quiet=False):
         header = Options.options.verbose_tests
         result = autowaf.run_test(ctx, APPNAME, command, expected_return, name=name, header=header, quiet=quiet)
-        if not result[0]:
+        if expected_return is not None and expected_return != 0:
             autowaf.run_test(ctx, APPNAME,
-                             lambda: result[1][1] != '',
-                             True, name=name + ' has error message', quiet=True)
+                             lambda: bool(result[1][1]),
+                             True, name=name + ' prints error message', quiet=True)
         return result
 
     def run_tests(test_class, expected_return):
