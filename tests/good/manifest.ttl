@@ -42,6 +42,7 @@
 		<#test-list>
 		<#test-long-string>
 		<#test-no-spaces>
+		<#test-non-curie-uri>
 		<#test-num>
 		<#test-out-of-range-unicode>
 		<#test-prefix>
@@ -262,6 +263,12 @@
 	mf:name "test-no-spaces" ;
 	mf:action <test-no-spaces.ttl> ;
 	mf:result <test-no-spaces.nt> .
+
+<#test-non-curie-uri>
+	rdf:type rdft:TestTurtleEval ;
+	mf:name "test-non-curie-uri" ;
+	mf:action <test-non-curie-uri.ttl> ;
+	mf:result <test-non-curie-uri.nt> .
 
 <#test-num>
 	rdf:type rdft:TestTurtleEval ;
