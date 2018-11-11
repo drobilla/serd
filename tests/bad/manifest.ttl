@@ -50,6 +50,8 @@
 		<#bad-list>
 		<#bad-long-literal-in-list>
 		<#bad-missing-semi>
+		<#bad-misspelled-base>
+		<#bad-misspelled-prefix>
 		<#bad-namespace>
 		<#bad-ns>
 		<#bad-num>
@@ -283,6 +285,16 @@
 	rdf:type rdft:TestTurtleNegativeSyntax ;
 	mf:name "bad-missing-semi" ;
 	mf:action <bad-missing-semi.ttl> .
+
+<#bad-misspelled-base>
+	rdf:type rdft:TestTurtleNegativeSyntax ;
+	mf:name "bad-misspelled-base" ;
+	mf:action <bad-misspelled-base.ttl> .
+
+<#bad-misspelled-prefix>
+	rdf:type rdft:TestTurtleNegativeSyntax ;
+	mf:name "bad-misspelled-prefix" ;
+	mf:action <bad-misspelled-prefix.ttl> .
 
 <#bad-namespace>
 	rdf:type rdft:TestTurtleNegativeSyntax ;
