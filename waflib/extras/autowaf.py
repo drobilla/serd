@@ -818,6 +818,7 @@ def post_test(ctx, appname, dirs=['src'], remove=['*boost*', 'c++*']):
     Logs.pprint('GREEN', '[  PASSED  ] %d tests' % passed_tests)
     if failed_tests > 0:
         Logs.pprint('RED', '[  FAILED  ] %d tests' % failed_tests)
+        sys.exit(1)
     Logs.pprint('', '')
 
     top_level = (len(ctx.stack_path) > 1)
