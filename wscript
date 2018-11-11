@@ -361,8 +361,8 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
         thru_options_iter = itertools.cycle(thru_options)
 
         quiet = not Options.options.verbose_tests
-        test_class_name = test_class[test_class.find('#') + 1:]
-        with autowaf.begin_tests(ctx, APPNAME, test_class_name):
+        tests_name = '%s.%s' % (testdir, test_class[test_class.find('#') + 1:])
+        with autowaf.begin_tests(ctx, APPNAME, tests_name):
             for (num, test) in enumerate(sorted(tests)):
                 action_node = model[test][mf + 'action'][0]
                 action      = os.path.join('tests', testdir, os.path.basename(action_node))
