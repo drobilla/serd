@@ -72,18 +72,6 @@
 	mf:action <manifest.ttl> ;
 	mf:result <manifest.nt> .
 
-<#rdf-schema>
-	rdf:type rdft:TestTurtleEval ;
-	mf:name "rdf-schema" ;
-	mf:action <rdf-schema.ttl> ;
-	mf:result <rdf-schema.nt> .
-
-<#rdfs-namespace>
-	rdf:type rdft:TestTurtleEval ;
-	mf:name "rdfs-namespace" ;
-	mf:action <rdfs-namespace.ttl> ;
-	mf:result <rdfs-namespace.nt> .
-
 <#test-14>
 	rdf:type rdft:TestTurtleEval ;
 	mf:name "test-14" ;
