@@ -151,13 +151,11 @@ serd_byte_source_advance(SerdByteSource* source)
 				                                        : SERD_FAILURE;
 			}
 		}
-	} else if (source->eof) {
-		st = SERD_FAILURE; // Can't read past end of string
-	} else {
+	} else if (!source->eof) {
 		++source->read_head; // Move to next character in string
 	}
 
-	return st;
+	return source->eof ? SERD_FAILURE : st;
 }
 
 /* Stack */
