@@ -176,14 +176,14 @@ push_bytes(SerdReader*    reader,
            const uint8_t* bytes,
            unsigned       len)
 {
-  if (reader->stack.buf_size < reader->stack.size + len) {
-    return SERD_ERR_OVERFLOW;
+  const bool has_space = reader->stack.buf_size >= reader->stack.size + len;
+  if (has_space) {
+    for (unsigned i = 0; i < len; ++i) {
+      push_byte(reader, ref, bytes[i]);
+    }
   }
 
-  for (unsigned i = 0; i < len; ++i) {
-    push_byte(reader, ref, bytes[i]);
-  }
-  return SERD_SUCCESS;
+  return has_space ? SERD_SUCCESS : SERD_ERR_OVERFLOW;
 }
 
 #endif // SERD_READER_H
