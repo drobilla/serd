@@ -101,24 +101,24 @@ static const SepRule rules[] = {
 };
 
 struct SerdWriterImpl {
-	SerdWorld*    world;
-	SerdSink      iface;
-	SerdSyntax    syntax;
-	SerdStyle     style;
-	SerdEnv*      env;
-	SerdNode*     root_node;
-	SerdURI       root_uri;
-	SerdStack     anon_stack;
-	SerdWriteFunc write_func;
-	void*         stream;
-	SerdErrorSink error_sink;
-	void*         error_handle;
-	WriteContext  context;
-	unsigned      indent;
-	char*         bprefix;
-	size_t        bprefix_len;
-	Sep           last_sep;
-	bool          empty;
+	SerdWorld*     world;
+	SerdSink       iface;
+	SerdSyntax     syntax;
+	SerdStyleFlags style;
+	SerdEnv*       env;
+	SerdNode*      root_node;
+	SerdURI        root_uri;
+	SerdStack      anon_stack;
+	SerdWriteFunc  write_func;
+	void*          stream;
+	SerdErrorSink  error_sink;
+	void*          error_handle;
+	WriteContext   context;
+	unsigned       indent;
+	char*          bprefix;
+	size_t         bprefix_len;
+	Sep            last_sep;
+	bool           empty;
 };
 
 typedef enum {
