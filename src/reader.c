@@ -193,7 +193,7 @@ serd_reader_new(SerdWorld* const      world,
 
   me->world   = world;
   me->sink    = sink;
-  me->stack   = serd_stack_new(stack_size);
+  me->stack   = serd_stack_new(stack_size, serd_node_align);
   me->syntax  = syntax;
   me->next_id = 1;
   me->strict  = !(flags & SERD_READ_LAX);
@@ -225,7 +225,7 @@ serd_reader_free(SerdReader* const reader)
 #ifdef SERD_STACK_CHECK
   free(reader->allocs);
 #endif
-  free(reader->stack.buf);
+  serd_free_aligned(reader->stack.buf);
   free(reader->bprefix);
   free(reader);
 }
