@@ -1111,7 +1111,7 @@ serd_writer_new(SerdWorld*      world,
   writer->env        = env;
   writer->root_node  = NULL;
   writer->root_uri   = SERD_URI_NULL;
-  writer->anon_stack = serd_stack_new(SERD_PAGE_SIZE);
+  writer->anon_stack = serd_stack_new(SERD_PAGE_SIZE, SERD_PAGE_SIZE);
   writer->write_func = write_func;
   writer->stream     = stream;
   writer->context    = context;
