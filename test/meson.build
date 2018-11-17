@@ -10,6 +10,7 @@ unit_tests = [
   'free_null',
   'node',
   'nodes',
+  'overflow',
   'read_chunk',
   'reader_writer',
   'string',
