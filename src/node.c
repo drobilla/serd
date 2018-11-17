@@ -37,8 +37,6 @@ typedef struct {
   size_t                    len;
 } SerdConstBuffer;
 
-static const size_t serd_node_align = sizeof(SerdNode);
-
 static SerdNode*
 serd_new_from_uri(SerdURIView uri, SerdURIView base);
 

@@ -28,6 +28,8 @@ struct SerdNodeImpl {
   SerdNodeType  type;   ///< Node type
 };
 
+static const size_t serd_node_align = sizeof(SerdNode);
+
 static inline char* SERD_NONNULL
 serd_node_buffer(SerdNode* SERD_NONNULL node)
 {
