@@ -4,14 +4,12 @@
 #ifndef SERD_SRC_STACK_H
 #define SERD_SRC_STACK_H
 
+#include "system.h"
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdlib.h>
 #include <string.h>
-
-/** An offset to start the stack at. Note 0 is reserved for NULL. */
-#define SERD_STACK_BOTTOM sizeof(void*)
 
 /** A dynamic stack in memory. */
 typedef struct {
@@ -20,23 +18,22 @@ typedef struct {
   size_t size;     ///< Conceptual size of stack in buf
 } SerdStack;
 
-/** An offset to start the stack at. Note 0 is reserved for NULL. */
-#define SERD_STACK_BOTTOM sizeof(void*)
-
 static inline SerdStack
-serd_stack_new(size_t size)
+serd_stack_new(size_t size, size_t align)
 {
+  const size_t aligned_size = (size + (align - 1)) / align * align;
+
   SerdStack stack;
-  stack.buf      = (char*)calloc(size, 1);
+  stack.buf      = (char*)serd_calloc_aligned(align, aligned_size);
   stack.buf_size = size;
-  stack.size     = SERD_STACK_BOTTOM;
+  stack.size     = align; // 0 is reserved for null
   return stack;
 }
 
 static inline void
 serd_stack_free(SerdStack* stack)
 {
-  free(stack->buf);
+  serd_free_aligned(stack->buf);
   stack->buf      = NULL;
   stack->buf_size = 0;
   stack->size     = 0;
