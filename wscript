@@ -159,7 +159,8 @@ def build(bld):
                      ('cursor_test', 'tests/cursor_test.c'),
                      ('serd_test', 'tests/serd_test.c'),
                      ('read_chunk_test', 'tests/read_chunk_test.c'),
-                     ('nodes_test', 'tests/nodes_test.c')]:
+                     ('nodes_test', 'tests/nodes_test.c'),
+                     ('overflow_test', 'tests/overflow_test.c')]:
             bld(features     = 'c cprogram',
                 source       = prog[1],
                 use          = 'libserd_profiled',
@@ -436,6 +437,7 @@ def test(tst):
     with tst.group('Unit') as check:
         check(['./cursor_test'])
         check(['./nodes_test'])
+        check(['./overflow_test'])
         check(['./serd_test'])
         check(['./read_chunk_test'])
 
