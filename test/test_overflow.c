@@ -71,12 +71,14 @@ static void
 test_turtle_overflow(void)
 {
   static const char* const test_strings[] = {
+    "<http://example.org/s> <http://example.org/p> :%99 .",
     "<http://example.org/s> <http://example.org/p> <http://example.org/> .",
     "<http://example.org/s> <http://example.org/p> "
     "<thisisanabsurdlylongurischeme://because/testing/> .",
+    "<http://example.org/s> <http://example.org/p> eg:foo .",
     "<http://example.org/s> <http://example.org/p> 1234 .",
     "<http://example.org/s> <http://example.org/p> (1 2 3 4) .",
-    "<http://example.org/s> <http://example.org/p> ((((((((42)))))))) .",
+    "<http://example.org/s> <http://example.org/p> (((((((42))))))) .",
     "<http://example.org/s> <http://example.org/p> \"literal\" .",
     "<http://example.org/s> <http://example.org/p> _:blank .",
     "<http://example.org/s> <http://example.org/p> true .",
