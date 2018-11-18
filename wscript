@@ -356,8 +356,7 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
         thru_flags   = ['-e', '-f', '-b', '-r http://example.org/']
         thru_options = []
         for n in range(len(thru_flags) + 1):
-            for flags in itertools.combinations(thru_flags, n):
-                thru_options += [flags]
+            thru_options += list(itertools.combinations(thru_flags, n))
         thru_options_iter = itertools.cycle(thru_options)
 
         quiet = not Options.options.verbose_tests
