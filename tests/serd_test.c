@@ -415,6 +415,8 @@ test_literal(void)
 	assert(!serd_new_typed_literal(NULL, NULL));
 
 	SerdNode* hello2 = serd_new_string("hello\"");
+	assert(!serd_new_typed_literal("bad type", hello2));
+
 	assert(serd_node_get_length(hello2) == 6 &&
 	       serd_node_get_flags(hello2) == SERD_HAS_QUOTE &&
 	       !strcmp(serd_node_get_string(hello2), "hello\""));
@@ -422,6 +424,10 @@ test_literal(void)
 	SerdNode* hello3 = serd_new_plain_literal("hello\"", NULL);
 	assert(serd_node_equals(hello2, hello3));
 
+	SerdNode* hello4 = serd_new_typed_literal("hello\"", NULL);
+	assert(serd_node_equals(hello4, hello2));
+
+	serd_node_free(hello4);
 	serd_node_free(hello3);
 	serd_node_free(hello2);
 
