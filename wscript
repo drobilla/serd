@@ -445,7 +445,7 @@ def test(ctx):
 
     nul = os.devnull
     autowaf.run_tests(ctx, APPNAME, [
-            'serdi_static ../tests/good/manifest.ttl > %s' % nul,
+            'serdi_static %s/tests/good/manifest.ttl > %s' % (srcdir, nul),
             'serdi_static -v > %s' % nul,
             'serdi_static -h > %s' % nul,
             'serdi_static -s "<foo> a <#Thingie> ." > %s' % nul,
@@ -453,7 +453,7 @@ def test(ctx):
     ], 0, name='GoodCommands')
 
     autowaf.run_tests(ctx, APPNAME, [
-            'serdi_static -q ../tests/bad/bad-id-clash.ttl > %s' % nul,
+            'serdi_static -q %s/tests/bad/bad-id-clash.ttl > %s' % (srcdir, nul),
             'serdi_static > %s' % nul,
             'serdi_static ftp://example.org/unsupported.ttl > %s' % nul,
             'serdi_static -i > %s' % nul,
