@@ -2,6 +2,7 @@ import glob
 import os
 import subprocess
 import sys
+import time
 
 from waflib import Build, Context, Logs, Options, Utils
 from waflib.TaskGen import feature, before, after
@@ -69,7 +70,7 @@ def set_options(opt, debug_by_default=False, test=False):
     opts.add_option('-s', '--strict', action='store_true', default=False,
                     dest='strict',
                     help="use strict compiler flags and show all warnings")
-    opts.add_option('--ultra-strict', action='store_true', default=False,
+    opts.add_option('-S', '--ultra-strict', action='store_true', default=False,
                     dest='ultra_strict',
                     help="use extremely strict compiler flags (likely noisy)")
     opts.add_option('--docs', action='store_true', default=False, dest='docs',
@@ -742,6 +743,7 @@ def pre_test(ctx, appname, dirs=['src']):
     Logs.pprint('GREEN', '\n[==========] Running %s tests' % appname)
 
     if not hasattr(ctx, 'autowaf_tests_total'):
+        ctx.autowaf_tests_start_time   = time.clock()
         ctx.autowaf_tests_total        = 0
         ctx.autowaf_tests_failed       = 0
         ctx.autowaf_local_tests_total  = 0
@@ -765,6 +767,9 @@ def pre_test(ctx, appname, dirs=['src']):
                 Logs.warn('Failed to run lcov, no coverage report generated')
         finally:
             clear_log.close()
+
+class TestFailed(Exception):
+    pass
 
 def post_test(ctx, appname, dirs=['src'], remove=['*boost*', 'c++*']):
     if not ctx.env.NO_COVERAGE:
@@ -806,11 +811,12 @@ def post_test(ctx, appname, dirs=['src'], remove=['*boost*', 'c++*']):
             coverage_lcov.close()
             coverage_log.close()
 
+    duration = (time.clock() - ctx.autowaf_tests_start_time) * 1000.0
     total_tests = ctx.autowaf_tests[appname]['total']
     failed_tests = ctx.autowaf_tests[appname]['failed']
     passed_tests = total_tests - failed_tests
-    Logs.pprint('GREEN', '[==========] %d tests from %s ran' % (
-        total_tests, appname))
+    Logs.pprint('GREEN', '\n[==========] %d tests from %s ran (%d ms total)' % (
+        total_tests, appname, duration))
     if not ctx.env.NO_COVERAGE:
         Logs.pprint('GREEN', '[----------] Coverage: <file://%s>'
                     % os.path.abspath('coverage/index.html'))
@@ -818,7 +824,7 @@ def post_test(ctx, appname, dirs=['src'], remove=['*boost*', 'c++*']):
     Logs.pprint('GREEN', '[  PASSED  ] %d tests' % passed_tests)
     if failed_tests > 0:
         Logs.pprint('RED', '[  FAILED  ] %d tests' % failed_tests)
-        sys.exit(1)
+        raise TestFailed('Tests from %s failed' % appname)
     Logs.pprint('', '')
 
     top_level = (len(ctx.stack_path) > 1)
@@ -893,7 +899,8 @@ def tests_name(ctx, appname, name='*'):
 def begin_tests(ctx, appname, name='*'):
     ctx.autowaf_local_tests_failed = 0
     ctx.autowaf_local_tests_total  = 0
-    Logs.pprint('GREEN', '[----------] %s' % (
+    ctx.autowaf_local_tests_start_time = time.clock()
+    Logs.pprint('GREEN', '\n[----------] %s' % (
         tests_name(ctx, appname, name)))
 
     class Handle:
@@ -906,14 +913,15 @@ def begin_tests(ctx, appname, name='*'):
     return Handle()
 
 def end_tests(ctx, appname, name='*'):
+    duration = (time.clock() - ctx.autowaf_local_tests_start_time) * 1000.0
     total = ctx.autowaf_local_tests_total
     failures = ctx.autowaf_local_tests_failed
     if failures == 0:
-        Logs.pprint('GREEN', '[----------] %d tests from %s\n' % (
-            ctx.autowaf_local_tests_total, tests_name(ctx, appname, name)))
+        Logs.pprint('GREEN', '[----------] %d tests from %s (%d ms total)' % (
+            ctx.autowaf_local_tests_total, tests_name(ctx, appname, name), duration))
     else:
-        Logs.pprint('RED', '[----------] %d/%d tests from %s\n' % (
-            total - failures, total, tests_name(ctx, appname, name)))
+        Logs.pprint('RED', '[----------] %d/%d tests from %s (%d ms total)' % (
+            total - failures, total, tests_name(ctx, appname, name), duration))
 
 def run_tests(ctx,
               appname,
