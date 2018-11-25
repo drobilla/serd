@@ -1418,7 +1418,7 @@ read_n3_statement(SerdReader* reader)
 	read_ws_star(reader);
 	switch (peek_byte(reader)) {
 	case EOF: case '\0':
-		return reader->status;
+		return SERD_FAILURE;
 	case '@':
 		if (!fancy_syntax(reader)) {
 			return r_err(reader, SERD_ERR_BAD_SYNTAX,
