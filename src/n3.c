@@ -302,8 +302,9 @@ eat_delim(SerdReader* reader, const char delim)
 static Ref
 read_STRING_LITERAL_LONG(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 {
-	Ref ref = push_node(reader, SERD_LITERAL, "", 0);
-	while (!reader->status) {
+	Ref        ref = push_node(reader, SERD_LITERAL, "", 0);
+	SerdStatus st  = SERD_SUCCESS;
+	while (!reader->status && !(st && reader->strict)) {
 		const uint8_t c = peek_byte(reader);
 		if (c == '\\') {
 			eat_byte_safe(reader, c);
@@ -326,7 +327,7 @@ read_STRING_LITERAL_LONG(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 			push_byte(reader, ref, c);
 			read_character(reader, ref, flags, q2);
 		} else {
-			read_character(reader, ref, flags, eat_byte_safe(reader, c));
+			st = read_character(reader, ref, flags, eat_byte_safe(reader, c));
 		}
 	}
 	return ref;
@@ -337,8 +338,9 @@ read_STRING_LITERAL_LONG(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 static Ref
 read_STRING_LITERAL(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 {
-	Ref ref = push_node(reader, SERD_LITERAL, "", 0);
-	while (!reader->status) {
+	Ref        ref = push_node(reader, SERD_LITERAL, "", 0);
+	SerdStatus st  = SERD_SUCCESS;
+	while (!reader->status && !(st && reader->strict)) {
 		const uint8_t c    = peek_byte(reader);
 		uint32_t      code = 0;
 		switch (c) {
@@ -359,7 +361,7 @@ read_STRING_LITERAL(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 				eat_byte_check(reader, q);
 				return ref;
 			} else {
-				read_character(reader, ref, flags, eat_byte_safe(reader, c));
+				st = read_character(reader, ref, flags, eat_byte_safe(reader, c));
 			}
 		}
 	}
@@ -615,13 +617,14 @@ static Ref
 read_IRIREF(SerdReader* reader)
 {
 	TRY_RET(eat_byte_check(reader, '<'));
-	Ref ref = push_node(reader, SERD_URI, "", 0);
+	Ref        ref = push_node(reader, SERD_URI, "", 0);
+	SerdStatus st  = SERD_SUCCESS;
 	if (!fancy_syntax(reader) && !read_IRIREF_scheme(reader, ref)) {
 		return pop_node(reader, ref);
 	}
 
 	uint32_t code = 0;
-	while (!reader->status) {
+	while (!reader->status && !(st && reader->strict)) {
 		const uint8_t c = eat_byte_safe(reader, peek_byte(reader));
 		switch (c) {
 		case '"': case '<': case '^': case '`': case '{': case '|': case '}':
@@ -660,11 +663,11 @@ read_IRIREF(SerdReader* reader)
 				push_byte(reader, ref, c);
 			} else if (!(c & 0x80)) {
 				push_byte(reader, ref, c);
-			} else if (read_utf8_character(reader, ref, c)) {
+			} else if ((st = read_utf8_character(reader, ref, c))) {
 				if (reader->strict) {
+					reader->status = SERD_FAILURE;
 					return pop_node(reader, ref);
 				}
-				reader->status = SERD_FAILURE;
 			}
 		}
 	}
