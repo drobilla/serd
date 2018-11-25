@@ -9,7 +9,6 @@
 	mf:entries (
 		<#test-14>
 		<#base>
-		<#manifest>
 		<#rdf-schema>
 		<#rdfs-namespace>
 		<#test-14>
@@ -65,12 +64,6 @@
 	mf:name "base" ;
 	mf:action <base.ttl> ;
 	mf:result <base.nt> .
-
-<#manifest>
-	rdf:type rdft:TestTurtleEval ;
-	mf:name "manifest" ;
-	mf:action <manifest.ttl> ;
-	mf:result <manifest.nt> .
 
 <#test-14>
 	rdf:type rdft:TestTurtleEval ;
