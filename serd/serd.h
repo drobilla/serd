@@ -110,7 +110,8 @@ typedef enum {
 	SERD_ERR_BAD_CURIE,   ///< Invalid CURIE (e.g. prefix does not exist)
 	SERD_ERR_INTERNAL,    ///< Unexpected internal error (should not happen)
 	SERD_ERR_OVERFLOW,    ///< Stack overflow
-	SERD_ERR_INVALID      ///< Invalid data
+	SERD_ERR_INVALID,     ///< Invalid data
+	SERD_ERR_NO_DATA      ///< Unexpected end of input
 } SerdStatus;
 
 /// RDF syntax type

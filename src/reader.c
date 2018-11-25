@@ -91,7 +91,6 @@ push_node_padded(SerdReader* reader, size_t maxlen,
 		&reader->stack, sizeof(SerdNode) + maxlen + 1, sizeof(SerdNode));
 
 	if (!mem) {
-		reader->status = SERD_ERR_OVERFLOW;
 		return NULL;
 	}
 
@@ -285,15 +284,15 @@ serd_reader_start_string(SerdReader*     reader,
 static SerdStatus
 serd_reader_prepare(SerdReader* reader)
 {
-	reader->status = serd_byte_source_prepare(&reader->source);
-	if (reader->status == SERD_SUCCESS) {
-		reader->status = skip_bom(reader);
-	} else if (reader->status == SERD_FAILURE) {
+	SerdStatus st = serd_byte_source_prepare(&reader->source);
+	if (st == SERD_SUCCESS) {
+		st = skip_bom(reader);
+	} else if (st == SERD_FAILURE) {
 		reader->source.eof = true;
 	} else {
-		r_err(reader, reader->status, "read error: %s\n", strerror(errno));
+		r_err(reader, st, "error preparing read: %s\n", strerror(errno));
 	}
-	return reader->status;
+	return st;
 }
 
 SerdStatus

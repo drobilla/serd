@@ -203,9 +203,10 @@ read_utf8_character(SerdReader* reader, SerdNode* dest, uint8_t c)
 	uint32_t   size;
 	uint8_t    bytes[4];
 	SerdStatus st = read_utf8_bytes(reader, bytes, &size, c);
-	if (st) {
-		push_bytes(reader, dest, replacement_char, 3);
+	if (st && reader->strict) {
 		return st;
+	} else if (st) {
+		return push_bytes(reader, dest, replacement_char, 3);
 	}
 
 	return push_bytes(reader, dest, bytes, size);
@@ -218,8 +219,8 @@ read_utf8_code(SerdReader* reader, SerdNode* dest, uint32_t* code, uint8_t c)
 	uint8_t    bytes[4] = { 0, 0, 0, 0 };
 	SerdStatus st = read_utf8_bytes(reader, bytes, &size, c);
 	if (st) {
-		push_bytes(reader, dest, replacement_char, 3);
-		return st;
+		return reader->strict ? st
+		                      : push_bytes(reader, dest, replacement_char, 3);
 	}
 
 	if (!(st = push_bytes(reader, dest, bytes, size))) {
@@ -307,7 +308,7 @@ static SerdStatus
 read_STRING_LITERAL_LONG(SerdReader* reader, SerdNode* dest, uint8_t q)
 {
 	SerdStatus st = SERD_SUCCESS;
-	while (!reader->status && !(st && reader->strict)) {
+	while (!st || (st == SERD_ERR_BAD_SYNTAX && !reader->strict)) {
 		const int c = peek_byte(reader);
 		if (c == '\\') {
 			eat_byte_safe(reader, c);
@@ -320,6 +321,8 @@ read_STRING_LITERAL_LONG(SerdReader* reader, SerdNode* dest, uint8_t q)
 				      peek_byte(reader));
 				return SERD_ERR_BAD_SYNTAX;
 			}
+		} else if (c == EOF) {
+			st = r_err(reader, SERD_ERR_NO_DATA, "unexpected end of file\n");
 		} else if (c == q) {
 			eat_byte_safe(reader, q);
 			const int q2 = eat_byte_safe(reader, peek_byte(reader));
@@ -346,7 +349,7 @@ static SerdStatus
 read_STRING_LITERAL(SerdReader* reader, SerdNode* dest, uint8_t q)
 {
 	SerdStatus st = SERD_SUCCESS;
-	while (!reader->status && !(st && reader->strict)) {
+	while (!st || (st == SERD_ERR_BAD_SYNTAX && !reader->strict)) {
 		const int c    = peek_byte(reader);
 		uint32_t  code = 0;
 		switch (c) {
@@ -354,19 +357,20 @@ read_STRING_LITERAL(SerdReader* reader, SerdNode* dest, uint8_t q)
 			r_err(reader, SERD_ERR_BAD_SYNTAX, "end of file in short string\n");
 			return SERD_ERR_BAD_SYNTAX;
 		case '\n': case '\r':
-			r_err(reader, SERD_ERR_BAD_SYNTAX, "line end in short string\n");
-			return SERD_ERR_BAD_SYNTAX;
+			st = r_err(reader, SERD_ERR_NO_DATA,
+			           "line end in short string\n");
+			break;
 		case '\\':
 			eat_byte_safe(reader, c);
 			if ((st = read_ECHAR(reader, dest, &dest->flags)) &&
 			    (st = read_UCHAR(reader, dest, &code))) {
-				return r_err(reader, st,
-				             "invalid escape `\\%c'\n", peek_byte(reader));
+				st = r_err(reader, st,
+				           "invalid escape `\\%c'\n", peek_byte(reader));
 			}
 			break;
 		default:
 			if (c == q) {
-				eat_byte_check(reader, q);
+				eat_byte_safe(reader, q);
 				return SERD_SUCCESS;
 			} else {
 				st = read_character(
@@ -375,8 +379,7 @@ read_STRING_LITERAL(SerdReader* reader, SerdNode* dest, uint8_t q)
 		}
 	}
 
-	return st ? st
-	          : eat_byte_check(reader, q) ? SERD_SUCCESS : SERD_ERR_BAD_SYNTAX;
+	return st;
 }
 
 static SerdStatus
@@ -689,9 +692,7 @@ read_IRIREF(SerdReader* reader, SerdNode** dest)
 			} else if (!(c & 0x80)) {
 				push_byte(reader, *dest, c);
 			} else if (read_utf8_character(reader, *dest, (uint8_t)c)) {
-				if (reader->strict) {
-					return SERD_ERR_BAD_SYNTAX;
-				}
+				st = reader->strict ? SERD_ERR_BAD_SYNTAX : SERD_FAILURE;
 			}
 		}
 	}
@@ -1453,8 +1454,6 @@ read_n3_statement(SerdReader* reader)
 			ctx.subject = subj = 0;
 			TRY(st, read_wrappedGraph(reader, &ctx));
 			read_ws_star(reader);
-		} else if (!ctx.subject) {
-			st = r_err(reader, SERD_ERR_BAD_SYNTAX, "bad subject\n");
 		} else if ((st = read_triples(reader, ctx, &ate_dot))) {
 			if (st == SERD_FAILURE && s_type == '[') {
 				return SERD_SUCCESS;
@@ -1489,23 +1488,23 @@ read_turtleTrigDoc(SerdReader* reader)
 		const size_t orig_stack_size = reader->stack.size;
 		const SerdStatus st = read_n3_statement(reader);
 		if (st > SERD_FAILURE) {
-			if (reader->strict) {
+			if (reader->strict || reader->source.eof ||
+			    st == SERD_ERR_OVERFLOW) {
 				serd_stack_pop_to(&reader->stack, orig_stack_size);
 				return st;
 			}
 			skip_until(reader, '\n');
-			reader->status = SERD_SUCCESS;
 		}
 		serd_stack_pop_to(&reader->stack, orig_stack_size);
 	}
-	return reader->status;
+	return SERD_SUCCESS;
 }
 
 SerdStatus
 read_nquadsDoc(SerdReader* reader)
 {
 	SerdStatus st = SERD_SUCCESS;
-	while (!reader->source.eof) {
+	while (!st && !reader->source.eof) {
 		const size_t orig_stack_size = reader->stack.size;
 
 		SerdStatementFlags flags   = 0;
@@ -1549,11 +1548,8 @@ read_nquadsDoc(SerdReader* reader)
 			}
 		}
 
-		if (emit_statement(reader, ctx, ctx.object)) {
-			break;
-		}
-
+		st = emit_statement(reader, ctx, ctx.object);
 		serd_stack_pop_to(&reader->stack, orig_stack_size);
 	}
-	return reader->status;
+	return st;
 }

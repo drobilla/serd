@@ -88,9 +88,9 @@ serd_byte_source_advance(SerdByteSource* source)
 
 	const bool was_eof = source->eof;
 	if (source->from_stream) {
-		source->eof = false;
 		if (source->page_size > 1) {
 			if (++source->read_head == source->page_size) {
+				source->eof = false;
 				st = serd_byte_source_page(source);
 			} else if (source->read_head == source->buf_size) {
 				source->eof = true;
