@@ -110,8 +110,8 @@ struct SerdWriterImpl {
 	SerdStack       anon_stack;
 	SerdWriteFunc   write_func;
 	void*           stream;
-	SerdErrorSink   error_sink;
-	void*           msg_handle;
+	SerdLogFunc     log_func;
+	void*           log_handle;
 	WriteContext    context;
 	unsigned        indent;
 	char*           bprefix;
@@ -180,8 +180,9 @@ write_character(SerdWriter* writer, const uint8_t* utf8, size_t* size)
 	const uint32_t c          = parse_utf8_char(utf8, size);
 	switch (*size) {
 	case 0:
-		serd_world_errorf(
-			writer->world, SERD_ERR_BAD_ARG, "invalid UTF-8: %X\n", utf8[0]);
+		SERD_LOG_ERRORF(writer->world, SERD_ERR_BAD_ARG,
+		                "invalid UTF-8: %X\n",
+		                utf8[0]);
 		return sink(replacement_char, sizeof(replacement_char), writer);
 	case 1:
 		snprintf(escape, sizeof(escape), "\\u%04X", utf8[0]);
@@ -585,10 +586,9 @@ write_curie(SerdWriter* const        writer,
 	case SERD_NQUADS:
 		if ((st = serd_env_expand_in_place(
 			     writer->iface.env, node, &prefix, &suffix))) {
-			serd_world_errorf(writer->world,
-			                  st,
-			                  "undefined namespace prefix `%s'\n",
-			                  serd_node_get_string(node));
+			SERD_LOG_ERRORF(writer->world, st,
+			                "undefined namespace prefix `%s'\n",
+			                serd_node_get_string(node));
 			return false;
 		}
 		sink("<", 1, writer);
@@ -863,8 +863,8 @@ serd_writer_end_anon(SerdWriter*     writer,
 	if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
 		return SERD_SUCCESS;
 	} else if (serd_stack_is_empty(&writer->anon_stack)) {
-		return serd_world_errorf(writer->world, SERD_ERR_UNKNOWN,
-		                         "unexpected end of anonymous node\n");
+		return SERD_LOG_ERROR(writer->world, SERD_ERR_UNKNOWN,
+		                      "unexpected end of anonymous node\n");
 	}
 
 	write_sep(writer, SEP_ANON_END);

@@ -39,8 +39,12 @@ r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
-	const SerdError e = { st, &reader->source.cur, fmt, &args };
-	serd_world_error(reader->world, &e);
+	serd_world_vlogf_internal(reader->world,
+	                          st,
+	                          SERD_LOG_LEVEL_ERR,
+	                          &reader->source.cur,
+	                          fmt,
+	                          args);
 	va_end(args);
 	return st;
 }
