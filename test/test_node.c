@@ -877,6 +877,79 @@ test_blank(void)
   serd_node_free(NULL, blank);
 }
 
+static void
+test_compare(void)
+{
+  SerdNode* const de = serd_node_new(NULL, serd_a_string("de"));
+  SerdNode* const en = serd_node_new(NULL, serd_a_string("en"));
+
+  SerdNode* const eg_Aardvark =
+    serd_node_new(NULL, serd_a_uri_string(NS_EG "Aardvark"));
+
+  SerdNode* const eg_Badger =
+    serd_node_new(NULL, serd_a_uri_string(NS_EG "Badger"));
+
+  SerdNode* angst = serd_node_new(NULL, serd_a_string("angst"));
+
+  SerdNode* angst_de =
+    serd_node_new(NULL, serd_a_plain_literal(zix_string("angst"), de));
+
+  SerdNode* angst_en =
+    serd_node_new(NULL, serd_a_plain_literal(zix_string("angst"), en));
+
+  SerdNode* hallo =
+    serd_node_new(NULL, serd_a_plain_literal(zix_string("Hallo"), de));
+
+  assert(!serd_node_language(angst));
+  assert(serd_node_language(angst_de) == de);
+  assert(serd_node_language(angst_en) == en);
+  assert(serd_node_language(hallo) == de);
+
+  SerdNode* hello     = serd_node_new(NULL, serd_a_string("Hello"));
+  SerdNode* universe  = serd_node_new(NULL, serd_a_string("Universe"));
+  SerdNode* integer   = serd_node_new(NULL, serd_a_integer(4));
+  SerdNode* short_int = serd_node_new(NULL, serd_a_primitive(serd_short(4)));
+  SerdNode* blank     = serd_node_new(NULL, serd_a_blank_string("b1"));
+  SerdNode* uri       = serd_node_new(NULL, serd_a_uri_string(NS_EG));
+
+  SerdNode* aardvark =
+    serd_node_new(NULL, serd_a_typed_literal(zix_string("alex"), eg_Aardvark));
+
+  SerdNode* badger =
+    serd_node_new(NULL, serd_a_typed_literal(zix_string("bobby"), eg_Badger));
+
+  // Types are ordered according to their SerdNodeType (more or less arbitrary)
+  assert(serd_node_compare(integer, hello) < 0);
+  assert(serd_node_compare(hello, uri) < 0);
+  assert(serd_node_compare(uri, blank) < 0);
+
+  // If the types are the same, then strings are compared
+  assert(serd_node_compare(hello, universe) < 0);
+
+  // If literal strings are the same, languages or datatypes are compared
+  assert(serd_node_compare(angst, angst_de) < 0);
+  assert(serd_node_compare(angst_de, angst_en) < 0);
+  assert(serd_node_compare(aardvark, badger) < 0);
+  assert(serd_node_compare(integer, short_int) < 0);
+
+  serd_node_free(NULL, badger);
+  serd_node_free(NULL, aardvark);
+  serd_node_free(NULL, uri);
+  serd_node_free(NULL, blank);
+  serd_node_free(NULL, short_int);
+  serd_node_free(NULL, integer);
+  serd_node_free(NULL, universe);
+  serd_node_free(NULL, hello);
+  serd_node_free(NULL, hallo);
+  serd_node_free(NULL, angst_en);
+  serd_node_free(NULL, angst_de);
+  serd_node_free(NULL, angst);
+  serd_node_free(NULL, eg_Badger);
+  serd_node_free(NULL, eg_Aardvark);
+  serd_node_free(NULL, en);
+  serd_node_free(NULL, de);
+}
+
 int
 main(void)
 {
@@ -903,6 +976,7 @@ main(void)
   test_lang_tagged_literal();
   test_literal();
   test_blank();
+  test_compare();
 
   printf("Success\n");
   return 0;
