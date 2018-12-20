@@ -33,6 +33,12 @@ serd_node_buffer_c(const SerdNode* SERD_NONNULL node)
   return (const char*)(node + 1);
 }
 
+static inline const char* SERD_NONNULL
+serd_node_string_i(const SerdNode* const SERD_NONNULL node)
+{
+  return (const char*)(node + 1);
+}
+
 SerdNode* SERD_ALLOCATED
 serd_node_malloc(size_t length, SerdNodeFlags flags, SerdNodeType type);
 
