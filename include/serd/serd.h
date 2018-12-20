@@ -1071,6 +1071,18 @@ serd_node_equals(const SerdNode* SERD_NULLABLE a,
                  const SerdNode* SERD_NULLABLE b);
 
 /**
+   Compare two nodes.
+
+   Returns less than, equal to, or greater than zero if `a` is less than, equal
+   to, or greater than `b`, respectively.  NULL is treated as less than any
+   other node.
+*/
+SERD_PURE_API
+int
+serd_node_compare(const SerdNode* SERD_NULLABLE a,
+                  const SerdNode* SERD_NULLABLE b);
+
+/**
    @}
    @defgroup serd_world World
    @{
