@@ -1033,6 +1033,13 @@ serd_env_foreach(const SerdEnv* env,
                  void*          handle);
 
 /**
+   Write all prefixes in `env` to `sink`.
+*/
+SERD_API
+void
+serd_env_write_prefixes(const SerdEnv* env, const SerdSink* sink);
+
+/**
    @}
    @name Sink
    @{
