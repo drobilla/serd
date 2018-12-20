@@ -415,6 +415,20 @@ serd_node_equals(const SerdNode* SERD_NULLABLE a,
                  const SerdNode* SERD_NULLABLE b);
 
 /**
+   Compare two nodes.
+
+   Returns less than, equal to, or greater than zero if `a` is less than, equal
+   to, or greater than `b`, respectively.
+
+   Nodes are ordered first by type, then by string, then by language or
+   datatype, if present.
+*/
+SERD_PURE_API
+int
+serd_node_compare(const SerdNode* SERD_NONNULL a,
+                  const SerdNode* SERD_NONNULL b);
+
+/**
    @}
 */
 
