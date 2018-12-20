@@ -517,6 +517,56 @@ test_blank(void)
   serd_node_free(blank);
 }
 
+static void
+test_compare(void)
+{
+  SerdNode* xsd_short =
+    serd_new_uri(serd_string("http://www.w3.org/2001/XMLSchema#short"));
+
+  SerdNode* angst =
+    serd_new_plain_literal(serd_string("angst"), serd_empty_string());
+
+  SerdNode* angst_de =
+    serd_new_plain_literal(serd_string("angst"), serd_string("de"));
+
+  SerdNode* angst_en =
+    serd_new_plain_literal(serd_string("angst"), serd_string("en"));
+
+  SerdNode* hallo =
+    serd_new_plain_literal(serd_string("Hallo"), serd_string("de"));
+
+  SerdNode* hello         = serd_new_string(serd_string("Hello"));
+  SerdNode* universe      = serd_new_string(serd_string("Universe"));
+  SerdNode* integer       = serd_new_integer(4, NULL);
+  SerdNode* short_integer = serd_new_integer(4, xsd_short);
+  SerdNode* blank         = serd_new_blank(serd_string("b1"));
+  SerdNode* uri           = serd_new_uri(serd_string("http://example.org/"));
+
+  // Types are ordered according to their SerdNodeType (more or less arbitrary)
+  assert(serd_node_compare(hello, uri) < 0);
+  assert(serd_node_compare(uri, blank) < 0);
+
+  // If the types are the same, then strings are compared
+  assert(serd_node_compare(hello, universe) < 0);
+
+  // If literal strings are the same, languages or datatypes are compared
+  assert(serd_node_compare(angst, angst_de) < 0);
+  assert(serd_node_compare(angst_de, angst_en) < 0);
+  assert(serd_node_compare(integer, short_integer) < 0);
+
+  serd_node_free(uri);
+  serd_node_free(blank);
+  serd_node_free(short_integer);
+  serd_node_free(integer);
+  serd_node_free(universe);
+  serd_node_free(hello);
+  serd_node_free(hallo);
+  serd_node_free(angst_en);
+  serd_node_free(angst_de);
+  serd_node_free(angst);
+  serd_node_free(xsd_short);
+}
+
 int
 main(void)
 {
@@ -536,6 +586,7 @@ main(void)
   test_node_from_substring();
   test_literal();
   test_blank();
+  test_compare();
 
   printf("Success\n");
   return 0;
