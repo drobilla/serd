@@ -367,6 +367,25 @@ serd_node_equals(const SerdNode* a, const SerdNode* b)
 	return serd_node_total_size(b) == a_size && !memcmp(a, b, a_size);
 }
 
+int
+serd_node_compare(const SerdNode* a, const SerdNode* b)
+{
+	if (a == b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	} else if (a->type != b->type) {
+		return (a->type < b->type) ? -1 : 1;
+	}
+
+	const int cmp = strcmp(serd_node_get_string(a), serd_node_get_string(b));
+	return cmp ? cmp
+	           : serd_node_compare(serd_node_maybe_get_meta_c(a),
+	                               serd_node_maybe_get_meta_c(b));
+}
+
 static size_t
 serd_uri_string_length(const SerdURI* uri)
 {

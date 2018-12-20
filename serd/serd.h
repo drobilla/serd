@@ -672,6 +672,17 @@ bool
 serd_node_equals(const SerdNode* a, const SerdNode* b);
 
 /**
+   Compare two nodes.
+
+   Returns less than, equal to, or greater than zero if `a` is less than, equal
+   to, or greater than `b`, respectively.  NULL is treated as less than any
+   other node.
+*/
+SERD_API
+int
+serd_node_compare(const SerdNode* a, const SerdNode* b);
+
+/**
    Create a new URI from a string.
 */
 SERD_API
