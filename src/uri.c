@@ -19,8 +19,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// #define URI_DEBUG 1
-
 const uint8_t*
 serd_uri_to_path(const uint8_t* uri)
 {
@@ -109,26 +107,6 @@ serd_uri_string_has_scheme(const uint8_t* utf8)
 
 	return false;
 }
-
-#ifdef URI_DEBUG
-static void
-serd_uri_dump(const SerdURI* uri, FILE* file)
-{
-#define PRINT_PART(range, name) \
-	if (range.buf) { \
-		fprintf(stderr, "  " name " = "); \
-		fwrite((range).buf, 1, (range).len, stderr); \
-		fprintf(stderr, "\n"); \
-	}
-
-	PRINT_PART(uri->scheme,    "scheme   ");
-	PRINT_PART(uri->authority, "authority");
-	PRINT_PART(uri->path_base, "path_base");
-	PRINT_PART(uri->path,      "path     ");
-	PRINT_PART(uri->query,     "query    ");
-	PRINT_PART(uri->fragment,  "fragment ");
-}
-#endif
 
 SerdStatus
 serd_uri_parse(const uint8_t* utf8, SerdURI* out)
@@ -232,12 +210,6 @@ fragment:
 	}
 
 end:
-	#ifdef URI_DEBUG
-	fprintf(stderr, "PARSE URI <%s>\n", utf8);
-	serd_uri_dump(out, stderr);
-	fprintf(stderr, "\n");
-	#endif
-
 	return SERD_SUCCESS;
 }
 
@@ -374,16 +346,6 @@ serd_uri_resolve(const SerdURI* r, const SerdURI* base, SerdURI* t)
 		t->scheme   = base->scheme;
 		t->fragment = r->fragment;
 	}
-
-	#ifdef URI_DEBUG
-	fprintf(stderr, "## RESOLVE URI\n# BASE\n");
-	serd_uri_dump(base, stderr);
-	fprintf(stderr, "# URI\n");
-	serd_uri_dump(r, stderr);
-	fprintf(stderr, "# RESULT\n");
-	serd_uri_dump(t, stderr);
-	fprintf(stderr, "\n");
-	#endif
 }
 
 /** Write the path of `uri` starting at index `i` */
