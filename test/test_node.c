@@ -394,6 +394,61 @@ test_blank(void)
   serd_node_free(blank);
 }
 
+static void
+test_compare(void)
+{
+  SerdNode* const de = serd_new_string(zix_string("de"));
+  SerdNode* const en = serd_new_string(zix_string("en"));
+
+  SerdNode* const eg_Aardvark =
+    serd_new_uri(zix_string("http://example.org/Aardvark"));
+
+  SerdNode* const eg_Badger =
+    serd_new_uri(zix_string("http://example.org/Badger"));
+
+  SerdNode* angst    = serd_new_plain_literal(zix_string("angst"), NULL);
+  SerdNode* angst_de = serd_new_plain_literal(zix_string("angst"), de);
+  SerdNode* angst_en = serd_new_plain_literal(zix_string("angst"), en);
+  SerdNode* hallo    = serd_new_plain_literal(zix_string("Hallo"), de);
+
+  SerdNode* hello    = serd_new_string(zix_string("Hello"));
+  SerdNode* universe = serd_new_string(zix_string("Universe"));
+  SerdNode* integer  = serd_new_integer(4);
+  SerdNode* blank    = serd_new_blank(zix_string("b1"));
+  SerdNode* uri      = serd_new_uri(zix_string("http://example.org/"));
+
+  SerdNode* aardvark = serd_new_typed_literal(zix_string("alex"), eg_Aardvark);
+  SerdNode* badger   = serd_new_typed_literal(zix_string("bobby"), eg_Badger);
+
+  // Types are ordered according to their SerdNodeType (more or less arbitrary)
+  assert(serd_node_compare(hello, uri) < 0);
+  assert(serd_node_compare(uri, blank) < 0);
+
+  // If the types are the same, then strings are compared
+  assert(serd_node_compare(hello, universe) < 0);
+
+  // If literal strings are the same, languages or datatypes are compared
+  assert(serd_node_compare(angst, angst_de) < 0);
+  assert(serd_node_compare(angst_de, angst_en) < 0);
+  assert(serd_node_compare(aardvark, badger) < 0);
+
+  serd_node_free(uri);
+  serd_node_free(blank);
+  serd_node_free(integer);
+  serd_node_free(badger);
+  serd_node_free(aardvark);
+  serd_node_free(universe);
+  serd_node_free(hello);
+  serd_node_free(hallo);
+  serd_node_free(angst_en);
+  serd_node_free(angst_de);
+  serd_node_free(angst);
+  serd_node_free(eg_Badger);
+  serd_node_free(eg_Aardvark);
+  serd_node_free(en);
+  serd_node_free(de);
+}
+
 int
 main(void)
 {
@@ -409,6 +464,7 @@ main(void)
   test_node_from_substring();
   test_literal();
   test_blank();
+  test_compare();
 
   printf("Success\n");
   return 0;

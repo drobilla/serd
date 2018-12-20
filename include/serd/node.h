@@ -238,6 +238,18 @@ serd_node_equals(const SerdNode* ZIX_NULLABLE a,
                  const SerdNode* ZIX_NULLABLE b);
 
 /**
+   Compare two nodes.
+
+   Returns less than, equal to, or greater than zero if `a` is less than, equal
+   to, or greater than `b`, respectively.
+
+   Nodes are ordered first by type, then by string, then by language or
+   datatype, if present.
+*/
+SERD_PURE_API int
+serd_node_compare(const SerdNode* ZIX_NONNULL a, const SerdNode* ZIX_NONNULL b);
+
+/**
    @}
    @defgroup serd_node_accessors Accessors
    @{
