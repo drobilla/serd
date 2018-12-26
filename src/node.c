@@ -670,6 +670,12 @@ serd_new_integer(int64_t i, const SerdNode* datatype)
 }
 
 SerdNode*
+serd_new_boolean(bool b)
+{
+	return serd_new_typed_literal(b ? "true" : "false", &serd_xsd_boolean.node);
+}
+
+SerdNode*
 serd_new_blob(const void*     buf,
               size_t          size,
               bool            wrap_lines,

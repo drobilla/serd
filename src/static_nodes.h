@@ -30,6 +30,7 @@ typedef struct StaticNode {
 	        {sizeof(NS_XSD #name) - 1, 0, SERD_URI}, NS_XSD #name};
 
 DEFINE_XSD_NODE(base64Binary)
+DEFINE_XSD_NODE(boolean)
 DEFINE_XSD_NODE(decimal)
 DEFINE_XSD_NODE(integer)
 
