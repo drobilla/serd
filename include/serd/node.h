@@ -141,6 +141,10 @@ serd_new_parsed_uri(SerdURIView uri);
 SERD_API SerdNode* SERD_ALLOCATED
 serd_new_file_uri(SerdStringView path, SerdStringView hostname);
 
+/// Create a new node by serialising `b` into an xsd:boolean string
+SERD_API SerdNode* SERD_ALLOCATED
+serd_new_boolean(bool b);
+
 /**
    Create a new canonical xsd:decimal literal.
 
