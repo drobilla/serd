@@ -45,6 +45,7 @@ typedef struct StaticNode {
     {sizeof(NS_XSD #name) - 1, 0, SERD_URI}, NS_XSD #name};
 
 DEFINE_XSD_NODE(base64Binary)
+DEFINE_XSD_NODE(boolean)
 DEFINE_XSD_NODE(decimal)
 DEFINE_XSD_NODE(integer)
 
@@ -455,6 +456,13 @@ serd_digits(const double abs)
 {
   const double lg = ceil(log10(floor(abs) + 1.0));
   return lg < 1.0 ? 1U : (unsigned)lg;
+}
+
+SerdNode*
+serd_new_boolean(bool b)
+{
+  return serd_new_typed_literal(b ? serd_string("true") : serd_string("false"),
+                                serd_node_string_view(&serd_xsd_boolean.node));
 }
 
 SerdNode*
