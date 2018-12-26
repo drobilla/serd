@@ -167,6 +167,12 @@ SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_file_uri(ZixStringView path, ZixStringView hostname);
 
 /**
+   Create a new canonical xsd:boolean node.
+*/
+SERD_API SerdNode* ZIX_ALLOCATED
+serd_new_boolean(bool b);
+
+/**
    Create a new canonical xsd:decimal literal.
 
    The resulting node will always contain a '.', start with a digit, and end
