@@ -19,6 +19,7 @@
 #include "serd/serd.h"
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,6 +48,26 @@ test_integer_to_node(void)
     assert(!strcmp(serd_node_string(datatype), NS_XSD "integer"));
     serd_node_free(node);
   }
+}
+
+static void
+test_boolean(void)
+{
+  SerdNode* const true_node = serd_new_boolean(true);
+  assert(!strcmp(serd_node_string(true_node), "true"));
+
+  const SerdNode* const true_datatype = serd_node_datatype(true_node);
+  assert(true_datatype);
+  assert(!strcmp(serd_node_string(true_datatype), NS_XSD "boolean"));
+  serd_node_free(true_node);
+
+  SerdNode* const false_node = serd_new_boolean(false);
+  assert(!strcmp(serd_node_string(false_node), "false"));
+
+  const SerdNode* const false_datatype = serd_node_datatype(false_node);
+  assert(false_datatype);
+  assert(!strcmp(serd_node_string(false_datatype), NS_XSD "boolean"));
+  serd_node_free(false_node);
 }
 
 static void
@@ -220,6 +241,7 @@ main(void)
 {
   test_integer_to_node();
   test_blob_to_node();
+  test_boolean();
   test_node_equals();
   test_node_from_string();
   test_node_from_substring();
