@@ -108,6 +108,12 @@ serd_world_free(SerdWorld* world)
 	free(world);
 }
 
+SerdNodes*
+serd_world_get_nodes(SerdWorld* world)
+{
+	return world->nodes;
+}
+
 const SerdNode*
 serd_world_get_blank(SerdWorld* world)
 {

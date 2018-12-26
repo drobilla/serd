@@ -920,6 +920,17 @@ void
 serd_world_free(SerdWorld* world);
 
 /**
+   Return the nodes cache in `world`.
+
+   The returned cache is owned by the world and contains various nodes used
+   frequently by the implementation.  For convenience, it may be used to store
+   additional nodes which will be freed when the world is freed.
+*/
+SERD_API
+SerdNodes*
+serd_world_get_nodes(SerdWorld* world);
+
+/**
    Return a unique blank node.
 
    The returned node is valid only until the next time serd_world_get_blank()
