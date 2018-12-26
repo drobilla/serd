@@ -519,6 +519,13 @@ serd_new_custom_literal(const void* const          user_data,
 }
 
 SerdNode*
+serd_new_boolean(bool b)
+{
+  return serd_new_typed_literal(b ? serd_string("true") : serd_string("false"),
+                                serd_node_string_view(&serd_xsd_boolean.node));
+}
+
+SerdNode*
 serd_new_decimal(const double d, const SerdNode* const datatype)
 {
   // Use given datatype, or xsd:decimal as a default if it is null
