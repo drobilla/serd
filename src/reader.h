@@ -40,7 +40,6 @@ struct SerdReaderImpl {
   SerdNode*       rdf_first;
   SerdNode*       rdf_rest;
   SerdNode*       rdf_nil;
-  SerdNode*       default_graph;
   SerdByteSource  source;
   SerdStack       stack;
   SerdSyntax      syntax;
