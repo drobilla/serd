@@ -22,13 +22,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-
-typedef struct {
-  int             n_statements;
-  const SerdNode* graph;
-} ReaderTest;
 
 static SerdStatus
 test_sink(void*              handle,
@@ -42,10 +36,10 @@ test_sink(void*              handle,
   (void)subject;
   (void)predicate;
   (void)object;
+  (void)graph;
 
-  ReaderTest* rt = (ReaderTest*)handle;
-  ++rt->n_statements;
-  rt->graph = graph;
+  ++*(size_t*)handle;
+
   return SERD_SUCCESS;
 }
 
@@ -80,11 +74,11 @@ eof_test_error(void* stream)
 static void
 test_read_chunks(void)
 {
-  SerdWorld*        world  = serd_world_new();
-  ReaderTest* const rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
-  FILE* const       f      = tmpfile();
-  static const char null   = 0;
-  SerdSink*         sink   = serd_sink_new(rt, NULL);
+  SerdWorld*        world        = serd_world_new();
+  size_t            n_statements = 0;
+  FILE* const       f            = tmpfile();
+  static const char null         = 0;
+  SerdSink*         sink         = serd_sink_new(&n_statements, NULL);
   SerdReader*       reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
 
   assert(reader);
@@ -107,37 +101,36 @@ test_read_chunks(void)
   // Read prefix
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_SUCCESS);
-  assert(rt->n_statements == 0);
+  assert(n_statements == 0);
 
   // Read first statement
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_SUCCESS);
-  assert(rt->n_statements == 1);
+  assert(n_statements == 1);
 
   // Read terminator
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_FAILURE);
-  assert(rt->n_statements == 1);
+  assert(n_statements == 1);
 
   // Read second statement (after null terminator)
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_SUCCESS);
-  assert(rt->n_statements == 2);
+  assert(n_statements == 2);
 
   // Read terminator
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_FAILURE);
-  assert(rt->n_statements == 2);
+  assert(n_statements == 2);
 
   // EOF
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_FAILURE);
-  assert(rt->n_statements == 2);
+  assert(n_statements == 2);
 
   serd_reader_free(reader);
   serd_sink_free(sink);
   fclose(f);
-  free(rt);
   serd_world_free(world);
 }
 
@@ -161,10 +154,10 @@ test_get_blank(void)
 static void
 test_read_string(void)
 {
-  SerdWorld*  world  = serd_world_new();
-  ReaderTest* rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
-  SerdSink*   sink   = serd_sink_new(rt, NULL);
-  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+  SerdWorld*  world        = serd_world_new();
+  size_t      n_statements = 0;
+  SerdSink*   sink         = serd_sink_new(&n_statements, NULL);
+  SerdReader* reader       = serd_reader_new(world, SERD_TURTLE, sink, 4096);
 
   assert(reader);
   assert(sink);
@@ -178,12 +171,11 @@ test_read_string(void)
                               "<http://example.org/o> ."));
 
   assert(!serd_reader_read_document(reader));
-  assert(rt->n_statements == 1);
+  assert(n_statements == 1);
   assert(!serd_reader_finish(reader));
 
   serd_reader_free(reader);
   serd_sink_free(sink);
-  free(rt);
   serd_world_free(world);
 }
 
@@ -292,9 +284,9 @@ test_writer(const char* const path)
 static void
 test_reader(const char* path)
 {
-  SerdWorld*      world = serd_world_new();
-  ReaderTest      rt    = {0, NULL};
-  SerdSink* const sink  = serd_sink_new(&rt, NULL);
+  SerdWorld*      world        = serd_world_new();
+  size_t          n_statements = 0;
+  SerdSink* const sink         = serd_sink_new(&n_statements, NULL);
   assert(sink);
   serd_sink_set_statement_func(sink, test_sink);
 
@@ -304,8 +296,6 @@ test_reader(const char* path)
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
   assert(reader);
 
-  SerdNode* g = serd_new_uri(SERD_STATIC_STRING("http://example.org/"));
-  serd_reader_set_default_graph(reader, g);
   serd_reader_add_blank_prefix(reader, "tmp");
 
 #if defined(__GNUC__)
@@ -317,17 +307,13 @@ test_reader(const char* path)
 #  pragma GCC diagnostic pop
 #endif
 
-  serd_node_free(g);
-
   assert(serd_reader_start_file(reader, "http://notafile", false));
   assert(serd_reader_start_file(reader, "file://invalid", false));
   assert(serd_reader_start_file(reader, "file:///nonexistant", false));
 
   assert(!serd_reader_start_file(reader, path, true));
   assert(!serd_reader_read_document(reader));
-  assert(rt.n_statements == 6);
-  assert(rt.graph && serd_node_string(rt.graph) &&
-         !strcmp(serd_node_string(rt.graph), "http://example.org/"));
+  assert(n_statements == 6);
   serd_reader_finish(reader);
 
   // A read of a big page hits EOF then fails to read chunks immediately
