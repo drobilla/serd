@@ -29,11 +29,10 @@
 #include <string.h>
 
 typedef struct {
-  int             n_base;
-  int             n_prefix;
-  int             n_statement;
-  int             n_end;
-  const SerdNode* graph;
+  int n_base;
+  int n_prefix;
+  int n_statement;
+  int n_end;
 } ReaderTest;
 
 static SerdStatus
@@ -65,6 +64,7 @@ test_statement_sink(void*              handle,
                     const SerdNode*    predicate,
                     const SerdNode*    object)
 {
+  (void)graph;
   (void)flags;
   (void)subject;
   (void)predicate;
@@ -72,7 +72,6 @@ test_statement_sink(void*              handle,
 
   ReaderTest* rt = (ReaderTest*)handle;
   ++rt->n_statement;
-  rt->graph = graph;
   return SERD_SUCCESS;
 }
 
@@ -370,7 +369,7 @@ static void
 test_reader(const char* path)
 {
   SerdWorld*      world = serd_world_new();
-  ReaderTest      rt    = {0, 0, 0, 0, NULL};
+  ReaderTest      rt    = {0, 0, 0, 0};
   SerdSink* const sink  = serd_sink_new(&rt, NULL);
   assert(sink);
 
@@ -388,8 +387,6 @@ test_reader(const char* path)
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(serd_reader_read_document(reader) == SERD_FAILURE);
 
-  SerdNode* g = serd_new_uri(serd_string("http://example.org/"));
-  serd_reader_set_default_graph(reader, g);
   serd_reader_add_blank_prefix(reader, "tmp");
 
 #if defined(__GNUC__)
@@ -401,8 +398,6 @@ test_reader(const char* path)
 #  pragma GCC diagnostic pop
 #endif
 
-  serd_node_free(g);
-
   assert(serd_reader_start_file(reader, "http://notafile", false));
   assert(serd_reader_start_file(reader, "file://invalid", false));
   assert(serd_reader_start_file(reader, "file:///nonexistant", false));
@@ -413,9 +408,7 @@ test_reader(const char* path)
   assert(rt.n_prefix == 0);
   assert(rt.n_statement == 6);
   assert(rt.n_end == 0);
-  assert(rt.graph && serd_node_string(rt.graph) &&
-         !strcmp(serd_node_string(rt.graph), "http://example.org/"));
-  serd_reader_finish(reader);
+  assert(!serd_reader_finish(reader));
 
   // A read of a big page hits EOF then fails to read chunks immediately
   {
