@@ -166,16 +166,11 @@ emit_statement(SerdReader* const reader,
                const Ref         d,
                const Ref         l)
 {
-  SerdNode* graph = deref(reader, ctx.graph);
-  if (!graph && reader->default_graph.buf) {
-    graph = &reader->default_graph;
-  }
-
   const SerdStatus st = !reader->statement_sink
                           ? SERD_SUCCESS
                           : reader->statement_sink(reader->handle,
                                                    *ctx.flags,
-                                                   graph,
+                                                   deref(reader, ctx.graph),
                                                    deref(reader, ctx.subject),
                                                    deref(reader, ctx.predicate),
                                                    deref(reader, o),
@@ -209,7 +204,6 @@ serd_reader_new(const SerdSyntax syntax,
   me->prefix_sink    = prefix_sink;
   me->statement_sink = statement_sink;
   me->end_sink       = end_sink;
-  me->default_graph  = SERD_NODE_NULL;
   me->stack          = serd_stack_new(SERD_PAGE_SIZE);
   me->syntax         = syntax;
   me->next_id        = 1;
@@ -249,7 +243,6 @@ serd_reader_free(SerdReader* const reader)
   pop_node(reader, reader->rdf_nil);
   pop_node(reader, reader->rdf_rest);
   pop_node(reader, reader->rdf_first);
-  serd_node_free(&reader->default_graph);
 
 #ifdef SERD_STACK_CHECK
   free(reader->allocs);
@@ -285,15 +278,6 @@ serd_reader_add_blank_prefix(SerdReader* const    reader,
     reader->bprefix     = (uint8_t*)malloc(reader->bprefix_len + 1);
     memcpy(reader->bprefix, prefix, reader->bprefix_len + 1);
   }
-}
-
-void
-serd_reader_set_default_graph(SerdReader* const     reader,
-                              const SerdNode* const graph)
-{
-  assert(reader);
-  serd_node_free(&reader->default_graph);
-  reader->default_graph = serd_node_copy(graph);
 }
 
 SerdStatus
