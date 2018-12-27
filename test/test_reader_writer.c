@@ -32,8 +32,7 @@ typedef struct {
 } ErrorContext;
 
 typedef struct {
-  int             n_statement;
-  const SerdNode* graph;
+  int n_statement;
 } ReaderTest;
 
 static const char* const doc_string =
@@ -72,6 +71,7 @@ test_statement_sink(void*              handle,
                     const SerdNode*    object_lang)
 {
   (void)flags;
+  (void)graph;
   (void)subject;
   (void)predicate;
   (void)object;
@@ -80,7 +80,6 @@ test_statement_sink(void*              handle,
 
   ReaderTest* rt = (ReaderTest*)handle;
   ++rt->n_statement;
-  rt->graph = graph;
   return SERD_SUCCESS;
 }
 
@@ -283,8 +282,6 @@ test_reader(const char* path)
 
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
 
-  SerdNode g = serd_node_from_string(SERD_URI, "http://example.org/");
-  serd_reader_set_default_graph(reader, &g);
   serd_reader_add_blank_prefix(reader, "tmp");
 
 #if defined(__GNUC__)
@@ -303,8 +300,6 @@ test_reader(const char* path)
   const SerdStatus st = serd_reader_read_file(reader, path);
   assert(!st);
   assert(rt->n_statement == 13);
-  assert(rt->graph && rt->graph->buf &&
-         !strcmp(rt->graph->buf, "http://example.org/"));
 
   assert(serd_reader_read_string(reader, "This isn't Turtle at all."));
 
