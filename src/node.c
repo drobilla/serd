@@ -423,14 +423,22 @@ serd_node_resolve(const SerdNode* node, const SerdNode* base)
 SerdNode*
 serd_new_resolved_uri_i(const char* str, const SerdURI* base)
 {
+	SerdNode* result = NULL;
 	if (!str || str[0] == '\0') {
 		// Empty URI => Base URI, or nothing if no base is given
-		return base ? serd_new_from_uri(base, NULL) : NULL;
+		result = base ? serd_new_from_uri(base, NULL) : NULL;
+	} else {
+		SerdURI uri;
+		serd_uri_parse(str, &uri);
+		result = serd_new_from_uri(&uri, base);
 	}
 
-	SerdURI uri;
-	serd_uri_parse(str, &uri);
-	return serd_new_from_uri(&uri, base);
+	if (!serd_uri_string_has_scheme(serd_node_get_string(result))) {
+		serd_node_free(result);
+		return NULL;
+	}
+
+	return result;
 }
 
 static inline bool

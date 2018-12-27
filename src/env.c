@@ -120,11 +120,10 @@ serd_env_set_base_uri(SerdEnv*        env,
 	SerdNode* base_uri_node = serd_new_resolved_uri_i(
 		serd_node_get_string(uri), &env->base_uri);
 
-	SerdURI   base_uri;
-	serd_uri_parse(serd_node_get_string(base_uri_node), &base_uri);
-
 	if (base_uri_node) {
 		// Replace the current base URI
+		SerdURI   base_uri;
+		serd_uri_parse(serd_node_get_string(base_uri_node), &base_uri);
 		serd_node_free(env->base_uri_node);
 		env->base_uri_node = base_uri_node;
 		env->base_uri      = base_uri;
