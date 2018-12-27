@@ -120,8 +120,6 @@ emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o)
 	SerdNode* graph = ctx.graph;
 	if (!reader->sink->statement) {
 		return SERD_SUCCESS;
-	} else if (!graph && reader->default_graph) {
-		graph = reader->default_graph;
 	}
 
 	/* Zero the pad of the object node on the top of the stack.  Lower nodes
@@ -171,7 +169,6 @@ serd_reader_new(SerdWorld*      world,
 
 	me->world         = world;
 	me->sink          = sink;
-	me->default_graph = NULL;
 	me->stack         = serd_stack_new(stack_size);
 	me->syntax        = syntax;
 	me->next_id       = 1;
@@ -194,7 +191,6 @@ void
 serd_reader_free(SerdReader* reader)
 {
 	serd_reader_finish(reader);
-	serd_node_free(reader->default_graph);
 
 #ifdef SERD_STACK_CHECK
 	free(reader->allocs);
@@ -216,14 +212,6 @@ serd_reader_add_blank_prefix(SerdReader* reader,
 		reader->bprefix     = (char*)malloc(reader->bprefix_len + 1);
 		memcpy(reader->bprefix, prefix, reader->bprefix_len + 1);
 	}
-}
-
-void
-serd_reader_set_default_graph(SerdReader*     reader,
-                              const SerdNode* graph)
-{
-	serd_node_free(reader->default_graph);
-	reader->default_graph = serd_node_copy(graph);
 }
 
 static SerdStatus
