@@ -915,12 +915,11 @@ serd_reader_set_default_graph(SerdReader*     reader,
                               const SerdNode* graph);
 
 /**
-   Read a file at a given `uri`.
+   Prepare to read from the file at a local file `uri`.
 */
 SERD_API
 SerdStatus
-serd_reader_read_file(SerdReader* reader,
-                      const char* uri);
+serd_reader_start_file(SerdReader* reader, const char* uri, bool bulk);
 
 /**
    Prepare to read from a stream.
@@ -972,14 +971,7 @@ serd_reader_read_document(SerdReader* reader);
 */
 SERD_API
 SerdStatus
-serd_reader_end_stream(SerdReader* reader);
-
-/**
-   Read `utf8`.
-*/
-SERD_API
-SerdStatus
-serd_reader_read_string(SerdReader* reader, const char* utf8);
+serd_reader_finish(SerdReader* reader);
 
 /**
    Free `reader`.

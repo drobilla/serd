@@ -40,6 +40,7 @@ SerdStatus
 serd_byte_source_open_source(SerdByteSource*     source,
                              SerdReadFunc        read_func,
                              SerdStreamErrorFunc error_func,
+                             SerdStreamCloseFunc close_func,
                              void*               stream,
                              const char*         name,
                              size_t              page_size)
@@ -47,13 +48,14 @@ serd_byte_source_open_source(SerdByteSource*     source,
 	const Cursor cur = { name, 1, 1 };
 
 	memset(source, '\0', sizeof(*source));
+	source->read_func   = read_func;
+	source->error_func  = error_func;
+	source->close_func  = close_func;
 	source->stream      = stream;
-	source->from_stream = true;
 	source->page_size   = page_size;
 	source->buf_size    = page_size;
 	source->cur         = cur;
-	source->error_func  = error_func;
-	source->read_func   = read_func;
+	source->from_stream = true;
 
 	if (page_size > 1) {
 		source->file_buf = (uint8_t*)serd_bufalloc(page_size);
@@ -94,9 +96,14 @@ serd_byte_source_open_string(SerdByteSource* source, const char* utf8)
 SerdStatus
 serd_byte_source_close(SerdByteSource* source)
 {
+	SerdStatus st = SERD_SUCCESS;
+	if (source->close_func) {
+		st = source->close_func(source->stream) ? SERD_ERR_UNKNOWN
+		                                        : SERD_SUCCESS;
+	}
 	if (source->page_size > 1) {
 		free(source->file_buf);
 	}
 	memset(source, '\0', sizeof(*source));
-	return SERD_SUCCESS;
+	return st;
 }

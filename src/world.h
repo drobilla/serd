@@ -24,6 +24,8 @@ struct SerdWorldImpl {
 	void*         error_handle;
 };
 
+FILE* serd_world_fopen(SerdWorld* world, const char* path, const char* mode);
+
 SerdStatus serd_world_error(const SerdWorld* world, const SerdError* e);
 
 SerdStatus
