@@ -110,11 +110,6 @@ emit_statement(SerdReader* const reader,
                const ReadContext ctx,
                SerdNode* const   o)
 {
-  SerdNode* graph = ctx.graph;
-  if (!graph && reader->default_graph) {
-    graph = reader->default_graph;
-  }
-
   if (reader->stack.size + (2 * sizeof(SerdNode)) > reader->stack.buf_size) {
     return SERD_ERR_OVERFLOW;
   }
@@ -124,7 +119,7 @@ emit_statement(SerdReader* const reader,
   serd_node_zero_pad(o);
 
   const SerdStatus st = serd_sink_write(
-    reader->sink, *ctx.flags, ctx.subject, ctx.predicate, o, graph);
+    reader->sink, *ctx.flags, ctx.subject, ctx.predicate, o, ctx.graph);
 
   *ctx.flags &= SERD_ANON_CONT | SERD_LIST_CONT; // Preserve only cont flags
   return st;
@@ -162,13 +157,12 @@ serd_reader_new(SerdWorld* const      world,
 
   SerdReader* me = (SerdReader*)calloc(1, sizeof(SerdReader));
 
-  me->world         = world;
-  me->sink          = sink;
-  me->default_graph = NULL;
-  me->stack         = serd_stack_new(stack_size);
-  me->syntax        = syntax;
-  me->next_id       = 1;
-  me->strict        = true;
+  me->world   = world;
+  me->sink    = sink;
+  me->stack   = serd_stack_new(stack_size);
+  me->syntax  = syntax;
+  me->next_id = 1;
+  me->strict  = true;
 
   // Reserve a bit of space at the end of the stack to zero pad nodes
   me->stack.buf_size -= serd_node_align;
@@ -199,7 +193,6 @@ serd_reader_free(SerdReader* const reader)
   }
 
   serd_reader_finish(reader);
-  serd_node_free(reader->default_graph);
 
   free(reader->stack.buf);
   free(reader->bprefix);
@@ -219,14 +212,6 @@ serd_reader_add_blank_prefix(SerdReader* const reader, const char* const prefix)
     reader->bprefix     = (char*)malloc(reader->bprefix_len + 1);
     memcpy(reader->bprefix, prefix, reader->bprefix_len + 1);
   }
-}
-
-void
-serd_reader_set_default_graph(SerdReader* const     reader,
-                              const SerdNode* const graph)
-{
-  serd_node_free(reader->default_graph);
-  reader->default_graph = serd_node_copy(graph);
 }
 
 static SerdStatus
