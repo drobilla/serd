@@ -55,7 +55,6 @@ struct SerdReaderImpl {
   Ref               rdf_first;
   Ref               rdf_rest;
   Ref               rdf_nil;
-  SerdNode          default_graph;
   SerdByteSource    source;
   SerdStack         stack;
   SerdSyntax        syntax;

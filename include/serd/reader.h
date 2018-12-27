@@ -6,7 +6,6 @@
 
 #include "serd/attributes.h"
 #include "serd/error.h"
-#include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/status.h"
 #include "serd/stream.h"
@@ -74,17 +73,6 @@ serd_reader_handle(const SerdReader* SERD_NONNULL reader);
 SERD_API void
 serd_reader_add_blank_prefix(SerdReader* SERD_NONNULL  reader,
                              const char* SERD_NULLABLE prefix);
-
-/**
-   Set the URI of the default graph.
-
-   If this is set, the reader will emit quads with the graph set to the given
-   node for any statements that are not in a named graph (which is currently
-   all of them since Serd currently does not support any graph syntaxes).
-*/
-SERD_API void
-serd_reader_set_default_graph(SerdReader* SERD_NONNULL      reader,
-                              const SerdNode* SERD_NULLABLE graph);
 
 /// Read a file at a given `uri`
 SERD_API SerdStatus
