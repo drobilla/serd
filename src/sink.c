@@ -23,11 +23,13 @@
 #include <stdlib.h>
 
 SerdSink*
-serd_sink_new(void* handle)
+serd_sink_new(void* handle, SerdEnv* env)
 {
 	SerdSink* sink = (SerdSink*)calloc(1, sizeof(SerdSink));
 
 	sink->handle = handle;
+	sink->env    = env;
+
 	return sink;
 }
 
@@ -35,6 +37,12 @@ void
 serd_sink_free(SerdSink* sink)
 {
 	free(sink);
+}
+
+const SerdEnv*
+serd_sink_get_env(const SerdSink* sink)
+{
+	return sink->env;
 }
 
 SerdStatus
@@ -68,7 +76,10 @@ serd_sink_set_end_func(SerdSink* sink, SerdEndSink end_func)
 SerdStatus
 serd_sink_write_base(const SerdSink* sink, const SerdNode* uri)
 {
-	return sink->base ? sink->base(sink->handle, uri) : SERD_SUCCESS;
+	const SerdStatus st = (sink->env ? serd_env_set_base_uri(sink->env, uri)
+	                                 : SERD_SUCCESS);
+
+	return (!st && sink->base) ? sink->base(sink->handle, uri) : st;
 }
 
 SerdStatus
@@ -76,7 +87,10 @@ serd_sink_write_prefix(const SerdSink* sink,
                        const SerdNode* name,
                        const SerdNode* uri)
 {
-	return sink->prefix ? sink->prefix(sink->handle, name, uri) : SERD_SUCCESS;
+	const SerdStatus st = (sink->env ? serd_env_set_prefix(sink->env, name, uri)
+	                                 : SERD_SUCCESS);
+
+	return (!st && sink->prefix) ? sink->prefix(sink->handle, name, uri) : st;
 }
 
 SerdStatus

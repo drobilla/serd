@@ -102,7 +102,7 @@ test_read_chunks(void)
 	size_t            n_statements = 0;
 	FILE* const       f            = tmpfile();
 	static const char null         = 0;
-	SerdSink*         sink         = serd_sink_new(&n_statements);
+	SerdSink*         sink         = serd_sink_new(&n_statements, NULL);
 
 	assert(sink);
 	serd_sink_set_statement_func(sink, count_statements);
@@ -592,10 +592,11 @@ test_env(void)
 	assert(serd_env_set_prefix(env, b, lit));
 
 	size_t    n_prefixes          = 0;
-	SerdSink* count_prefixes_sink = serd_sink_new(&n_prefixes);
+	SerdSink* count_prefixes_sink = serd_sink_new(&n_prefixes, NULL);
 	serd_sink_set_prefix_func(count_prefixes_sink, count_prefixes);
 	serd_env_set_prefix(env, pre, eg);
 	serd_env_write_prefixes(env, count_prefixes_sink);
+	serd_sink_free(count_prefixes_sink);
 	assert(n_prefixes == 1);
 
 	SerdNode* shorter_uri = serd_new_uri("urn:foo");
@@ -659,7 +660,7 @@ test_writer(const char* const path)
 	assert(serd_sink_write_base(iface, lit));
 	assert(serd_sink_write_prefix(iface, lit, lit));
 	assert(serd_sink_write_end(iface, NULL));
-	assert(serd_writer_get_env(writer) == env);
+	assert(serd_sink_get_env(iface) == env);
 
 	uint8_t buf[] = { 0xEF, 0xBF, 0xBD, 0 };
 	SerdNode* s = serd_new_uri("");
@@ -757,7 +758,7 @@ test_reader(const char* path)
 	SerdWorld*  world  = serd_world_new();
 
 	size_t    n_statements = 0;
-	SerdSink* sink         = serd_sink_new(&n_statements);
+	SerdSink* sink         = serd_sink_new(&n_statements, NULL);
 	serd_sink_set_statement_func(sink, count_statements);
 
 	SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);

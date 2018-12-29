@@ -18,7 +18,6 @@
 #include "node.h"
 #include "reader.h"
 #include "serd_internal.h"
-#include "sink.h"
 #include "stack.h"
 #include "string_utils.h"
 #include "uri_utils.h"
@@ -975,8 +974,8 @@ read_anon(SerdReader* reader, ReadContext ctx, bool subject, SerdNode** dest)
 		*ctx.flags = old_flags;
 	}
 
-	if (reader->sink->end && (!subject || !empty)) {
-		reader->sink->end(reader->sink->handle, *dest);
+	if (!subject || !empty) {
+		serd_sink_write_end(reader->sink, *dest);
 	}
 
 	return (eat_byte_check(reader, ']') == ']') ? SERD_SUCCESS
@@ -1279,10 +1278,8 @@ read_base(SerdReader* reader, bool sparql, bool token)
 	read_ws_star(reader);
 	SerdNode* uri = NULL;
 	TRY(st, read_IRIREF(reader, &uri));
-	if (reader->sink->base) {
-		serd_node_zero_pad(uri);
-		reader->sink->base(reader->sink->handle, uri);
-	}
+	serd_node_zero_pad(uri);
+	serd_sink_write_base(reader->sink, uri);
 
 	read_ws_star(reader);
 	if (!sparql) {
@@ -1318,11 +1315,10 @@ read_prefixID(SerdReader* reader, bool sparql, bool token)
 	SerdNode* uri = NULL;
 	TRY(st, read_IRIREF(reader, &uri));
 
-	if (reader->sink->prefix) {
-		serd_node_zero_pad(name);
-		serd_node_zero_pad(uri);
-		st = reader->sink->prefix(reader->sink->handle, name, uri);
-	}
+	serd_node_zero_pad(name);
+	serd_node_zero_pad(uri);
+	st = serd_sink_write_prefix(reader->sink, name, uri);
+
 	if (!sparql) {
 		read_ws_star(reader);
 		st = eat_byte_check(reader, '.') ? SERD_SUCCESS : SERD_ERR_BAD_SYNTAX;

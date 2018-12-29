@@ -20,7 +20,6 @@
 #include "node.h"
 #include "serd/serd.h"
 #include "serd_internal.h"
-#include "sink.h"
 #include "stack.h"
 #include "statement.h"
 #include "system.h"
@@ -121,9 +120,6 @@ SerdStatus
 emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o)
 {
 	SerdNode* graph = ctx.graph;
-	if (!reader->sink->statement) {
-		return SERD_SUCCESS;
-	}
 
 	/* Zero the pad of the object node on the top of the stack.  Lower nodes
 	   (subject and predicate) were already zeroed by subsequent pushes. */
@@ -134,8 +130,9 @@ emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o)
 		&reader->source.cur
 	};
 
-	const SerdStatus st = reader->sink->statement(
-		reader->sink->handle, *ctx.flags, &statement);
+	const SerdStatus st = serd_sink_write_statement(
+		reader->sink, *ctx.flags, &statement);
+
 	*ctx.flags = 0;
 	return st;
 }

@@ -74,7 +74,7 @@ int
 main(void)
 {
 	SerdWorld* world = serd_world_new();
-	SerdSink*  sink  = serd_sink_new(NULL);
+	SerdSink*  sink  = serd_sink_new(NULL, NULL);
 	serd_sink_set_base_func(sink, on_base);
 	serd_sink_set_prefix_func(sink, on_prefix);
 	serd_sink_set_statement_func(sink, on_statement);

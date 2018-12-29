@@ -1095,10 +1095,11 @@ serd_env_write_prefixes(const SerdEnv* env, const SerdSink* sink);
    serd_sink_set_*_func functions to set handlers for various events.
 
    @param handle Opaque handle that will be passed to sink functions.
+   @param env Environment for sink, updated as base uri or prefixes change.
 */
 SERD_API
 SerdSink*
-serd_sink_new(void* handle);
+serd_sink_new(void* handle, SerdEnv* env);
 
 /**
    Free `sink`.
@@ -1106,6 +1107,13 @@ serd_sink_new(void* handle);
 SERD_API
 void
 serd_sink_free(SerdSink* sink);
+
+/**
+   Return the env used by `writer`.
+*/
+SERD_API
+const SerdEnv*
+serd_sink_get_env(const SerdSink* sink);
 
 /**
    Set a function to be called when the base URI changes.
@@ -1334,13 +1342,6 @@ serd_writer_free(SerdWriter* writer);
 SERD_API
 const SerdSink*
 serd_writer_get_sink(SerdWriter* writer);
-
-/**
-   Return the env used by `writer`.
-*/
-SERD_API
-SerdEnv*
-serd_writer_get_env(SerdWriter* writer);
 
 /**
    A convenience sink function for writing to a string.
