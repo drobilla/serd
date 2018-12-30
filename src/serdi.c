@@ -202,14 +202,14 @@ main(int argc, char** argv)
 	SerdWorld* world  = serd_world_new();
 	SerdEnv*   env    = serd_env_new(base);
 
-	const SerdStyleFlags output_style = (ascii ? SERD_STYLE_ASCII : 0);
+	const SerdWriterFlags writer_flags = (ascii ? SERD_STYLE_ASCII : 0);
 
 	SerdByteSink* byte_sink = serd_byte_sink_new(
 		(SerdWriteFunc)fwrite, out_fd, bulk_write ? 4096 : 1);
 
 	SerdWriter* writer = serd_writer_new(world,
 	                                     output_syntax,
-	                                     output_style,
+	                                     writer_flags,
 	                                     env,
 	                                     (SerdWriteFunc)serd_byte_sink_write,
 	                                     byte_sink);
