@@ -213,7 +213,7 @@ static SerdStatus
 read_utf8_code(SerdReader* reader, Ref dest, uint32_t* code, uint8_t c)
 {
 	uint32_t   size;
-	uint8_t    bytes[4];
+	uint8_t    bytes[4] = { 0, 0, 0, 0 };
 	SerdStatus st = read_utf8_bytes(reader, bytes, &size, c);
 	if (st) {
 		push_bytes(reader, dest, replacement_char, 3);
