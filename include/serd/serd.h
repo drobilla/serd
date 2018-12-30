@@ -864,25 +864,28 @@ serd_reader_free(SerdReader* SERD_NULLABLE reader);
 typedef struct SerdWriterImpl SerdWriter;
 
 /**
-   Syntax style options.
+   Writer style options.
 
    These flags allow more precise control of writer output style.  Note that
    some options are only supported for some syntaxes, for example, NTriples
    does not support abbreviation and is always ASCII.
 */
 typedef enum {
-  SERD_STYLE_ABBREVIATED = 1U << 0U, ///< Abbreviate triples when possible.
-  SERD_STYLE_ASCII       = 1U << 1U, ///< Escape all non-ASCII characters.
-  SERD_STYLE_RESOLVED    = 1U << 2U, ///< Resolve URIs against base URI.
-  SERD_STYLE_CURIED      = 1U << 3U, ///< Shorten URIs into CURIEs.
-  SERD_STYLE_BULK        = 1U << 4U, ///< Write output in pages.
-} SerdStyle;
+  SERD_WRITE_ABBREVIATED = 1U << 0U, ///< Abbreviate triples when possible
+  SERD_WRITE_ASCII       = 1U << 1U, ///< Escape all non-ASCII characters
+  SERD_WRITE_RESOLVED    = 1U << 2U, ///< Resolve URIs against base URI
+  SERD_WRITE_CURIED      = 1U << 3U, ///< Shorten URIs into CURIEs
+  SERD_WRITE_BULK        = 1U << 4U, ///< Write output in pages
+} SerdWriterFlag;
+
+/// Bitwise OR of SerdWriterFlag values
+typedef uint32_t SerdWriterFlags;
 
 /// Create a new RDF writer
 SERD_API
 SerdWriter* SERD_ALLOCATED
 serd_writer_new(SerdSyntax                       syntax,
-                SerdStyle                        style,
+                SerdWriterFlags                  flags,
                 SerdEnv* SERD_NONNULL            env,
                 const SerdURIView* SERD_NULLABLE base_uri,
                 SerdSink SERD_NONNULL            ssink,
