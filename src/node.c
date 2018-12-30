@@ -290,7 +290,7 @@ serd_node_new_decimal(double d, unsigned frac_digits)
 		*s++ = '0';
 		node.n_bytes = node.n_chars = (s - buf);
 	} else {
-		uint64_t frac = frac_part * pow(10.0, (int)frac_digits) + 0.5;
+		uint64_t frac = lround(frac_part * pow(10.0, (int)frac_digits));
 		s += frac_digits - 1;
 		unsigned i = 0;
 
