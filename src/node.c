@@ -16,11 +16,10 @@
 
 #include "serd_internal.h"
 
+#include <float.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <math.h>
-#include <float.h>
 
 #ifdef _WIN32
 #    ifndef isnan
