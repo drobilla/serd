@@ -92,24 +92,24 @@ static const SepRule rules[] = {{NULL, 0, 0, 0, 0},
                                 {"\n", 1, 0, 1, 0}};
 
 struct SerdWriterImpl {
-  SerdSyntax    syntax;
-  SerdStyle     style;
-  SerdEnv*      env;
-  SerdNode      root_node;
-  SerdURIView   root_uri;
-  SerdURIView   base_uri;
-  SerdStack     anon_stack;
-  SerdByteSink  byte_sink;
-  SerdErrorSink error_sink;
-  void*         error_handle;
-  WriteContext  context;
-  SerdNode      list_subj;
-  unsigned      list_depth;
-  unsigned      indent;
-  char*         bprefix;
-  size_t        bprefix_len;
-  Sep           last_sep;
-  bool          empty;
+  SerdSyntax      syntax;
+  SerdWriterFlags flags;
+  SerdEnv*        env;
+  SerdNode        root_node;
+  SerdURIView     root_uri;
+  SerdURIView     base_uri;
+  SerdStack       anon_stack;
+  SerdByteSink    byte_sink;
+  SerdErrorSink   error_sink;
+  void*           error_handle;
+  WriteContext    context;
+  SerdNode        list_subj;
+  unsigned        list_depth;
+  unsigned        indent;
+  char*           bprefix;
+  size_t          bprefix_len;
+  Sep             last_sep;
+  bool            empty;
 };
 
 typedef enum { WRITE_STRING, WRITE_LONG_STRING } TextContext;
@@ -196,7 +196,7 @@ write_character(SerdWriter* writer, const uint8_t* utf8, size_t* size)
     break;
   }
 
-  if (!(writer->style & SERD_STYLE_ASCII)) {
+  if (!(writer->flags & SERD_WRITE_ASCII)) {
     // Write UTF-8 character directly to UTF-8 output
     return sink(utf8, *size, writer);
   }
@@ -583,7 +583,7 @@ write_uri_node(SerdWriter* const        writer,
       return sink("a", 1, writer) == 1;
     }
 
-    if (has_scheme && (writer->style & SERD_STYLE_CURIED) &&
+    if (has_scheme && (writer->flags & SERD_WRITE_CURIED) &&
         serd_env_qualify(writer->env, node, &prefix, &suffix) &&
         is_name(suffix.buf, suffix.len)) {
       write_uri(writer, prefix.buf, prefix.n_bytes);
@@ -603,7 +603,7 @@ write_uri_node(SerdWriter* const        writer,
   }
 
   write_sep(writer, SEP_URI_BEGIN);
-  if (writer->style & SERD_STYLE_RESOLVED) {
+  if (writer->flags & SERD_WRITE_RESOLVED) {
     SerdURIView in_base_uri;
     SerdURIView uri;
     SerdURIView abs_uri;
@@ -957,7 +957,7 @@ serd_writer_finish(SerdWriter* writer)
 
 SerdWriter*
 serd_writer_new(SerdSyntax         syntax,
-                SerdStyle          style,
+                SerdWriterFlags    flags,
                 SerdEnv*           env,
                 const SerdURIView* base_uri,
                 SerdSink           ssink,
@@ -967,7 +967,7 @@ serd_writer_new(SerdSyntax         syntax,
   SerdWriter*        writer  = (SerdWriter*)calloc(1, sizeof(SerdWriter));
 
   writer->syntax     = syntax;
-  writer->style      = style;
+  writer->flags      = flags;
   writer->env        = env;
   writer->root_node  = SERD_NODE_NULL;
   writer->root_uri   = SERD_URI_NULL;
@@ -977,7 +977,7 @@ serd_writer_new(SerdSyntax         syntax,
   writer->list_subj  = SERD_NODE_NULL;
   writer->empty      = true;
   writer->byte_sink  = serd_byte_sink_new(
-    ssink, stream, (style & SERD_STYLE_BULK) ? SERD_PAGE_SIZE : 1);
+    ssink, stream, (flags & SERD_WRITE_BULK) ? SERD_PAGE_SIZE : 1);
 
   return writer;
 }
