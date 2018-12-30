@@ -18,7 +18,7 @@
 struct SerdNodeImpl {
   size_t        n_bytes; ///< Size in bytes (not including null)
   SerdNodeFlags flags;   ///< Node flags (e.g. string properties)
-  SerdType      type;    ///< Node type
+  SerdNodeType  type;    ///< Node type
 };
 
 static size_t
@@ -50,7 +50,7 @@ string_sink(const void* const buf, const size_t len, void* const stream)
 }
 
 SerdNode
-serd_node_from_string(SerdType type, const char* const str)
+serd_node_from_string(const SerdNodeType type, const char* const str)
 {
   if (!str) {
     return SERD_NODE_NULL;
@@ -63,9 +63,9 @@ serd_node_from_string(SerdType type, const char* const str)
 }
 
 SerdNode
-serd_node_from_substring(const SerdType    type,
-                         const char* const str,
-                         const size_t      len)
+serd_node_from_substring(const SerdNodeType type,
+                         const char* const  str,
+                         const size_t       len)
 {
   if (!str) {
     return SERD_NODE_NULL;
