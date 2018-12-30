@@ -13,8 +13,8 @@ test_write_long_literal(void)
 {
   SerdEnv*    env    = serd_env_new(NULL);
   SerdBuffer  buffer = {NULL, 0};
-  SerdWriter* writer = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_buffer_sink, &buffer);
+  SerdWriter* writer =
+    serd_writer_new(SERD_TURTLE, 0U, env, NULL, serd_buffer_sink, &buffer);
 
   assert(writer);
 
