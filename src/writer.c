@@ -445,8 +445,8 @@ is_inline_start(const SerdWriter*  writer,
                 SerdStatementFlags flags)
 {
 	return (supports_abbrev(writer) &&
-	        ((field == SERD_SUBJECT && (flags & SERD_ANON_S_BEGIN)) ||
-	         (field == SERD_OBJECT &&  (flags & SERD_ANON_O_BEGIN))));
+	        ((field == SERD_SUBJECT && (flags & SERD_ANON_S)) ||
+	         (field == SERD_OBJECT &&  (flags & SERD_ANON_O))));
 }
 
 static bool
@@ -619,8 +619,8 @@ write_blank(SerdWriter* const        writer,
 	if (supports_abbrev(writer)) {
 		if (is_inline_start(writer, field, flags)) {
 			return write_sep(writer, SEP_ANON_BEGIN);
-		} else if ((field == SERD_SUBJECT && (flags & SERD_LIST_S_BEGIN)) ||
-		           (field == SERD_OBJECT && (flags & SERD_LIST_O_BEGIN))) {
+		} else if ((field == SERD_SUBJECT && (flags & SERD_LIST_S)) ||
+		           (field == SERD_OBJECT && (flags & SERD_LIST_O))) {
 			return write_sep(writer, SEP_LIST_BEGIN);
 		} else if (field == SERD_SUBJECT && (flags & SERD_EMPTY_S)) {
 			/* Last character is technically a separator, but reset because we
@@ -795,9 +795,9 @@ serd_writer_write_statement(SerdWriter*          writer,
 
 		if (serd_stack_is_empty(&writer->anon_stack)) {
 			write_node(writer, subject, SERD_SUBJECT, flags);
-			if (!(flags & (SERD_ANON_S_BEGIN | SERD_LIST_S_BEGIN))) {
+			if (!(flags & (SERD_ANON_S | SERD_LIST_S))) {
 				write_sep(writer, SEP_S_P);
-			} else if (flags & SERD_ANON_S_BEGIN) {
+			} else if (flags & SERD_ANON_S) {
 				write_sep(writer, SEP_ANON_S_P);
 			}
 		} else {
@@ -807,14 +807,14 @@ serd_writer_write_statement(SerdWriter*          writer,
 		reset_context(writer, false);
 		serd_node_set(&writer->context.subject, subject);
 
-		if (!(flags & SERD_LIST_S_BEGIN)) {
+		if (!(flags & SERD_LIST_S)) {
 			write_pred(writer, flags, predicate);
 		}
 
 		write_node(writer, object, SERD_OBJECT, flags);
 	}
 
-	if (flags & (SERD_LIST_S_BEGIN)) {
+	if (flags & (SERD_LIST_S)) {
 		WriteContext* ctx = (WriteContext*)serd_stack_push(
 			&writer->anon_stack, sizeof(WriteContext));
 		*ctx = writer->context;
@@ -824,7 +824,7 @@ serd_writer_write_statement(SerdWriter*          writer,
 		writer->context = new_context;
 	}
 
-	if (flags & (SERD_LIST_O_BEGIN)) {
+	if (flags & (SERD_LIST_O)) {
 		WriteContext* ctx = (WriteContext*)serd_stack_push(
 			&writer->anon_stack, sizeof(WriteContext));
 		*ctx = writer->context;
@@ -834,15 +834,15 @@ serd_writer_write_statement(SerdWriter*          writer,
 		writer->context = new_context;
 	}
 
-	if (flags & (SERD_ANON_S_BEGIN|SERD_ANON_O_BEGIN)) {
+	if (flags & (SERD_ANON_S|SERD_ANON_O)) {
 		WriteContext* ctx = (WriteContext*)serd_stack_push(
 		        &writer->anon_stack, sizeof(WriteContext));
 		*ctx = writer->context;
 		WriteContext new_context = {
-			(flags & (SERD_LIST_S_BEGIN|SERD_LIST_O_BEGIN))
+			(flags & (SERD_LIST_S|SERD_LIST_O))
 			? CTX_LIST : CTX_BLANK,
 			serd_node_copy(graph), serd_node_copy(subject), NULL };
-		if ((flags & SERD_ANON_S_BEGIN)) {
+		if ((flags & SERD_ANON_S)) {
 			new_context.predicate = serd_node_copy(predicate);
 		}
 		writer->context = new_context;

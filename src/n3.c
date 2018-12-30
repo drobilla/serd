@@ -944,9 +944,9 @@ read_anon(SerdReader* reader, ReadContext ctx, bool subject, SerdNode** dest)
 	bool empty;
 	eat_byte_safe(reader, '[');
 	if ((empty = peek_delim(reader, ']'))) {
-		*ctx.flags |= (subject) ? SERD_EMPTY_S : SERD_ANON_O_BEGIN;
+		*ctx.flags |= (subject) ? SERD_EMPTY_S : SERD_ANON_O;
 	} else {
-		*ctx.flags |= (subject) ? SERD_ANON_S_BEGIN : SERD_ANON_O_BEGIN;
+		*ctx.flags |= (subject) ? SERD_ANON_S : SERD_ANON_O;
 		if (peek_delim(reader, '=')) {
 			if (!(*dest = read_blankName(reader)) ||
 			    !eat_delim(reader, ';')) {
@@ -1146,10 +1146,10 @@ read_collection(SerdReader* reader, ReadContext ctx, SerdNode** dest)
 	*dest = end ? reader->rdf_nil : blank_id(reader);
 	if (ctx.subject) {
 		// subject predicate _:head
-		*ctx.flags |= (end ? 0 : SERD_LIST_O_BEGIN);
+		*ctx.flags |= (end ? 0 : SERD_LIST_O);
 		TRY(st, emit_statement(reader, ctx, *dest));
 	} else {
-		*ctx.flags |= (end ? 0 : SERD_LIST_S_BEGIN);
+		*ctx.flags |= (end ? 0 : SERD_LIST_S);
 	}
 
 	if (end) {
