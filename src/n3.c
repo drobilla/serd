@@ -1080,9 +1080,9 @@ read_anon(SerdReader* const reader,
   const bool               empty     = peek_delim(reader, ']');
 
   if (subject) {
-    *ctx.flags |= empty ? SERD_EMPTY_S : SERD_ANON_S_BEGIN;
+    *ctx.flags |= empty ? SERD_EMPTY_S : SERD_ANON_S;
   } else {
-    *ctx.flags |= SERD_ANON_O_BEGIN;
+    *ctx.flags |= SERD_ANON_O;
   }
 
   if (!*dest) {
@@ -1325,10 +1325,10 @@ read_collection(SerdReader* const reader,
   *dest    = end ? reader->rdf_nil : blank_id(reader);
   if (ctx.subject) {
     // subject predicate _:head
-    *ctx.flags |= (end ? 0 : SERD_LIST_O_BEGIN);
+    *ctx.flags |= (end ? 0 : SERD_LIST_O);
     TRY(st, emit_statement(reader, ctx, *dest));
   } else {
-    *ctx.flags |= (end ? 0 : SERD_LIST_S_BEGIN);
+    *ctx.flags |= (end ? 0 : SERD_LIST_S);
   }
 
   if (end) {
