@@ -17,8 +17,8 @@ test_write_long_literal(void)
 {
   SerdEnv*    env    = serd_env_new(NULL);
   SerdBuffer  buffer = {NULL, 0};
-  SerdWriter* writer = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_buffer_sink, &buffer);
+  SerdWriter* writer =
+    serd_writer_new(SERD_TURTLE, 0U, env, NULL, serd_buffer_sink, &buffer);
 
   assert(writer);
 
@@ -46,8 +46,8 @@ test_write_nested_anon(void)
 {
   SerdEnv*    env    = serd_env_new(NULL);
   SerdBuffer  buffer = {NULL, 0};
-  SerdWriter* writer = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_buffer_sink, &buffer);
+  SerdWriter* writer =
+    serd_writer_new(SERD_TURTLE, 0U, env, NULL, serd_buffer_sink, &buffer);
 
   assert(writer);
 
@@ -129,7 +129,7 @@ test_writer_cleanup(void)
   SerdStatus  st  = SERD_SUCCESS;
   SerdEnv*    env = serd_env_new(NULL);
   SerdWriter* writer =
-    serd_writer_new(SERD_TURTLE, (SerdStyle)0U, env, NULL, null_sink, NULL);
+    serd_writer_new(SERD_TURTLE, 0U, env, NULL, null_sink, NULL);
 
   SerdNode s = serd_node_from_string(SERD_URI, NS_EG "s");
   SerdNode p = serd_node_from_string(SERD_URI, NS_EG "p");
@@ -180,7 +180,7 @@ test_write_bad_anon_stack(void)
   SerdStatus  st  = SERD_SUCCESS;
   SerdEnv*    env = serd_env_new(NULL);
   SerdWriter* writer =
-    serd_writer_new(SERD_TURTLE, (SerdStyle)0U, env, NULL, null_sink, NULL);
+    serd_writer_new(SERD_TURTLE, 0U, env, NULL, null_sink, NULL);
 
   SerdNode s  = serd_node_from_string(SERD_URI, NS_EG "s");
   SerdNode p  = serd_node_from_string(SERD_URI, NS_EG "p");
@@ -212,7 +212,7 @@ test_strict_write(void)
 
   SerdEnv* const    env    = serd_env_new(NULL);
   SerdWriter* const writer = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)SERD_STYLE_STRICT, env, NULL, null_sink, fd);
+    SERD_TURTLE, (SerdWriterFlags)SERD_WRITE_STRICT, env, NULL, null_sink, fd);
 
   assert(writer);
 
@@ -255,8 +255,8 @@ test_write_error(void)
 
   SerdNode u = serd_node_from_string(SERD_URI, NS_EG "u");
 
-  writer =
-    serd_writer_new(SERD_TURTLE, (SerdStyle)0, env, NULL, error_sink, NULL);
+  writer = serd_writer_new(
+    SERD_TURTLE, (SerdWriterFlags)0, env, NULL, error_sink, NULL);
   assert(writer);
   st = serd_writer_write_statement(writer, 0U, NULL, &u, &u, &u, NULL, NULL);
   assert(st == SERD_ERR_BAD_WRITE);
