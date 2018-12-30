@@ -394,8 +394,9 @@ quiet_error_sink(void* const handle, const SerdError* const e)
 static void
 test_write_errors(void)
 {
-  ErrorContext    ctx   = {0U, 0U};
-  const SerdStyle style = (SerdStyle)(SERD_STYLE_STRICT | SERD_STYLE_CURIED);
+  ErrorContext          ctx = {0U, 0U};
+  const SerdWriterFlags style =
+    (SerdWriterFlags)(SERD_WRITE_STRICT | SERD_WRITE_CURIED);
 
   const size_t max_offsets[] = {0, 386, 1911, 2003, 386};
 
@@ -440,7 +441,7 @@ test_writer(const char* const path)
   assert(fd);
 
   SerdWriter* writer =
-    serd_writer_new(SERD_TURTLE, (SerdStyle)0, env, NULL, serd_file_sink, fd);
+    serd_writer_new(SERD_TURTLE, 0, env, NULL, serd_file_sink, fd);
   assert(writer);
 
   serd_writer_chop_blank_prefix(writer, "tmp");
@@ -516,8 +517,8 @@ test_writer(const char* const path)
 
   // Test buffer sink
   SerdBuffer buffer = {NULL, 0};
-  writer            = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_buffer_sink, &buffer);
+  writer =
+    serd_writer_new(SERD_TURTLE, 0, env, NULL, serd_buffer_sink, &buffer);
 
   o = serd_node_from_string(SERD_URI, "http://example.org/base");
   assert(!serd_writer_set_base_uri(writer, &o));
@@ -533,8 +534,8 @@ test_writer(const char* const path)
 
   buffer.buf = NULL;
   buffer.len = 0;
-  writer     = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_buffer_sink, &buffer);
+  writer =
+    serd_writer_new(SERD_TURTLE, 0U, env, NULL, serd_buffer_sink, &buffer);
 
   assert(!serd_writer_write_statement(
     writer, 0, NULL, &s, &p, &nothing, NULL, NULL));
