@@ -63,6 +63,9 @@ blank_id(SerdReader* reader)
 static size_t
 serd_file_read_byte(void* buf, size_t size, size_t nmemb, void* stream)
 {
+	(void)size;
+	(void)nmemb;
+
 	const int c = getc((FILE*)stream);
 	if (c == EOF) {
 		*((uint8_t*)buf) = 0;

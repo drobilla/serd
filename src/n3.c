@@ -1191,7 +1191,7 @@ read_subject(SerdReader* reader, ReadContext ctx, Ref* dest, char* s_type)
 }
 
 static Ref
-read_labelOrSubject(SerdReader* reader, ReadContext ctx)
+read_labelOrSubject(SerdReader* reader)
 {
 	Ref  subject = 0;
 	bool ate_dot = false;
@@ -1392,7 +1392,7 @@ read_n3_statement(SerdReader* reader)
 			ret = read_prefixID(reader, true, false);
 		} else if (!tokcmp(reader, ctx.subject, "graph", 5)) {
 			read_ws_star(reader);
-			TRY_RET((ctx.graph = read_labelOrSubject(reader, ctx)));
+			TRY_RET((ctx.graph = read_labelOrSubject(reader)));
 			read_ws_star(reader);
 			TRY_RET(read_wrappedGraph(reader, &ctx));
 			pop_node(reader, ctx.graph);

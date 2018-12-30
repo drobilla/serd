@@ -52,6 +52,9 @@ test_strtod(double dbl, double max_delta)
 static SerdStatus
 count_prefixes(void* handle, const SerdNode* name, const SerdNode* uri)
 {
+	(void)name;
+	(void)uri;
+
 	++*(int*)handle;
 	return SERD_SUCCESS;
 }
@@ -71,6 +74,13 @@ test_sink(void*              handle,
           const SerdNode*    object_datatype,
           const SerdNode*    object_lang)
 {
+	(void)flags;
+	(void)subject;
+	(void)predicate;
+	(void)object;
+	(void)object_datatype;
+	(void)object_lang;
+
 	ReaderTest* rt = (ReaderTest*)handle;
 	++rt->n_statements;
 	rt->graph = graph;

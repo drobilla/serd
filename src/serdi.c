@@ -110,6 +110,8 @@ missing_arg(const char* name, char opt)
 static SerdStatus
 quiet_error_sink(void* handle, const SerdError* e)
 {
+	(void)handle;
+	(void)e;
 	return SERD_SUCCESS;
 }
 

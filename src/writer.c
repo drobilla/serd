@@ -419,7 +419,6 @@ write_literal(SerdWriter*        writer,
               const SerdNode*    node,
               const SerdNode*    datatype,
               const SerdNode*    lang,
-              Field              field,
               SerdStatementFlags flags)
 {
 	if (supports_abbrev(writer) && datatype && datatype->buf) {
@@ -621,7 +620,7 @@ write_node(SerdWriter*        writer,
 	bool ret = false;
 	switch (node->type) {
 	case SERD_LITERAL:
-		ret = write_literal(writer, node, datatype, lang, field, flags);
+		ret = write_literal(writer, node, datatype, lang, flags);
 		break;
 	case SERD_URI:
 		ret = write_uri_node(writer, node, field, flags);

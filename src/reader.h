@@ -36,6 +36,8 @@ eat_byte(SerdReader* reader)
 static inline uint8_t
 eat_byte_safe(SerdReader* reader, const uint8_t byte)
 {
+	(void)byte;
+
 	const uint8_t c = eat_byte(reader);
 	assert(c == byte);
 	return c;
