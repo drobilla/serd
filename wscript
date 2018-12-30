@@ -176,8 +176,10 @@ def lint(ctx):
     "checks code for style issues"
     import subprocess
     cmd = ("clang-tidy -p=. -header-filter=.* -checks=\"*," +
+           "-bugprone-suspicious-string-compare," +
            "-clang-analyzer-alpha.*," +
            "-google-readability-todo," +
+           "-hicpp-signed-bitwise," +
            "-llvm-header-guard," +
            "-misc-unused-parameters," +
            "-readability-else-after-return\" " +
