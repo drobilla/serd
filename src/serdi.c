@@ -138,7 +138,7 @@ serd_fopen(const char* const path, const char* const mode)
   return fd;
 }
 
-static SerdStyle
+static SerdWriterFlags
 choose_style(const SerdSyntax input_syntax,
              const SerdSyntax output_syntax,
              const bool       ascii,
@@ -146,31 +146,31 @@ choose_style(const SerdSyntax input_syntax,
              const bool       full_uris,
              const bool       lax)
 {
-  unsigned output_style = 0U;
+  SerdWriterFlags writer_flags = 0U;
   if (output_syntax == SERD_NTRIPLES || ascii) {
-    output_style |= SERD_STYLE_ASCII;
+    writer_flags |= SERD_WRITE_ASCII;
   } else if (output_syntax == SERD_TURTLE) {
-    output_style |= SERD_STYLE_ABBREVIATED;
+    writer_flags |= SERD_WRITE_ABBREVIATED;
     if (!full_uris) {
-      output_style |= SERD_STYLE_CURIED;
+      writer_flags |= SERD_WRITE_CURIED;
     }
   }
 
   if ((input_syntax == SERD_TURTLE || input_syntax == SERD_TRIG) ||
-      (output_style & SERD_STYLE_CURIED)) {
+      (writer_flags & SERD_WRITE_CURIED)) {
     // Base URI may change and/or we're abbreviating URIs, so must resolve
-    output_style |= SERD_STYLE_RESOLVED;
+    writer_flags |= SERD_WRITE_RESOLVED;
   }
 
   if (bulk_write) {
-    output_style |= SERD_STYLE_BULK;
+    writer_flags |= SERD_WRITE_BULK;
   }
 
   if (!lax) {
-    output_style |= SERD_STYLE_STRICT;
+    writer_flags |= SERD_WRITE_STRICT;
   }
 
-  return (SerdStyle)output_style;
+  return writer_flags;
 }
 
 int
@@ -313,7 +313,7 @@ main(int argc, char** argv)
          : SERD_NQUADS);
   }
 
-  const SerdStyle output_style = choose_style(
+  const SerdWriterFlags writer_flags = choose_style(
     input_syntax, output_syntax, ascii, bulk_write, full_uris, lax);
 
   SerdURIView base_uri = SERD_URI_NULL;
@@ -328,7 +328,7 @@ main(int argc, char** argv)
   SerdEnv* const env    = serd_env_new(&base);
 
   SerdWriter* const writer = serd_writer_new(
-    output_syntax, output_style, env, &base_uri, serd_file_sink, out_fd);
+    output_syntax, writer_flags, env, &base_uri, serd_file_sink, out_fd);
 
   SerdReader* const reader =
     serd_reader_new(input_syntax,
