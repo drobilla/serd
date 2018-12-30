@@ -188,12 +188,10 @@ query:
 	if (*ptr == '?') {
 		out->query.buf = ++ptr;
 		for (uint8_t c; (c = *ptr) != '\0'; ++ptr) {
-			switch (c) {
-			case '#':
+			if (c == '#') {
 				goto fragment;
-			default:
-				++out->query.len;
 			}
+			++out->query.len;
 		}
 	}
 
