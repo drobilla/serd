@@ -39,7 +39,7 @@
 #endif
 
 SerdNode
-serd_node_from_string(SerdType type, const char* const str)
+serd_node_from_string(const SerdNodeType type, const char* const str)
 {
   if (!str) {
     return SERD_NODE_NULL;
@@ -52,9 +52,9 @@ serd_node_from_string(SerdType type, const char* const str)
 }
 
 SerdNode
-serd_node_from_substring(const SerdType    type,
-                         const char* const str,
-                         const size_t      len)
+serd_node_from_substring(const SerdNodeType type,
+                         const char* const  str,
+                         const size_t       len)
 {
   if (!str) {
     return SERD_NODE_NULL;

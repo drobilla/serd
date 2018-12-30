@@ -158,7 +158,7 @@ typedef enum {
      Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
   */
   SERD_BLANK = 4
-} SerdType;
+} SerdNodeType;
 
 /// Flags indicating certain string properties relevant to serialisation
 typedef enum {
@@ -174,7 +174,7 @@ typedef struct {
   const char* SERD_NULLABLE buf;     ///< Value string
   size_t                    n_bytes; ///< Size in bytes (excluding null)
   SerdNodeFlags             flags;   ///< Node flags (string properties)
-  SerdType                  type;    ///< Node type
+  SerdNodeType              type;    ///< Node type
 } SerdNode;
 
 /**
@@ -423,7 +423,7 @@ static const SerdNode SERD_NODE_NULL = {NULL, 0, 0, SERD_NOTHING};
 */
 SERD_API
 SerdNode
-serd_node_from_string(SerdType type, const char* SERD_NULLABLE str);
+serd_node_from_string(SerdNodeType type, const char* SERD_NULLABLE str);
 
 /**
    Make a (shallow) node from a prefix of `str`.
@@ -433,7 +433,7 @@ serd_node_from_string(SerdType type, const char* SERD_NULLABLE str);
 */
 SERD_API
 SerdNode
-serd_node_from_substring(SerdType                  type,
+serd_node_from_substring(SerdNodeType              type,
                          const char* SERD_NULLABLE str,
                          size_t                    len);
 
