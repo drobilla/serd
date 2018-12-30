@@ -104,13 +104,15 @@ check_write_error_offset(const SerdSyntax syntax,
                          const size_t     offset,
                          const SerdStatus expected_status)
 {
-  ErrorContext    ctx   = {0U, offset};
-  const SerdStyle style = (SerdStyle)(SERD_STYLE_STRICT | SERD_STYLE_CURIED);
-  SerdEnv* const  env   = serd_env_new(NULL);
+  SerdEnv* const env = serd_env_new(NULL);
   assert(env);
 
+  ErrorContext          ctx = {0U, offset};
+  const SerdWriterFlags flags =
+    (SerdWriterFlags)(SERD_WRITE_STRICT | SERD_WRITE_CURIED);
+
   SerdWriter* const writer =
-    serd_writer_new(syntax, style, env, NULL, faulty_sink, &ctx);
+    serd_writer_new(syntax, flags, env, NULL, faulty_sink, &ctx);
   assert(writer);
 
   SerdReader* const reader =
@@ -166,7 +168,7 @@ test_writer(const char* const path)
   assert(env);
 
   SerdWriter* writer =
-    serd_writer_new(SERD_TURTLE, (SerdStyle)0, env, NULL, serd_file_sink, fd);
+    serd_writer_new(SERD_TURTLE, 0U, env, NULL, serd_file_sink, fd);
   assert(writer);
 
   serd_writer_chop_blank_prefix(writer, "tmp");
