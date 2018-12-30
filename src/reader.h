@@ -70,14 +70,17 @@ SerdStatus
 r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
 
 Ref
-push_node_padded(SerdReader* reader,
-                 size_t      maxlen,
-                 SerdType    type,
-                 const char* str,
-                 size_t      n_bytes);
+push_node_padded(SerdReader*  reader,
+                 size_t       maxlen,
+                 SerdNodeType type,
+                 const char*  str,
+                 size_t       n_bytes);
 
 Ref
-push_node(SerdReader* reader, SerdType type, const char* str, size_t n_bytes);
+push_node(SerdReader*  reader,
+          SerdNodeType type,
+          const char*  str,
+          size_t       n_bytes);
 
 SERD_PURE_FUNC size_t
 genid_size(const SerdReader* reader);

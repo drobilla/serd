@@ -72,11 +72,11 @@ serd_file_read_byte(void* const  buf,
 }
 
 Ref
-push_node_padded(SerdReader* const reader,
-                 const size_t      maxlen,
-                 const SerdType    type,
-                 const char* const str,
-                 const size_t      n_bytes)
+push_node_padded(SerdReader* const  reader,
+                 const size_t       maxlen,
+                 const SerdNodeType type,
+                 const char* const  str,
+                 const size_t       n_bytes)
 {
   void* mem = serd_stack_push_aligned(
     &reader->stack, sizeof(SerdNode) + maxlen + 1, sizeof(SerdNode));
@@ -99,10 +99,10 @@ push_node_padded(SerdReader* const reader,
 }
 
 Ref
-push_node(SerdReader* const reader,
-          const SerdType    type,
-          const char* const str,
-          const size_t      n_bytes)
+push_node(SerdReader* const  reader,
+          const SerdNodeType type,
+          const char* const  str,
+          const size_t       n_bytes)
 {
   return push_node_padded(reader, n_bytes, type, str, n_bytes);
 }
