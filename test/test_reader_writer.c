@@ -169,7 +169,7 @@ test_writer(const char* const path)
   assert(fd);
 
   SerdWriter* writer =
-    serd_writer_new(SERD_TURTLE, (SerdStyle)0, env, NULL, serd_file_sink, fd);
+    serd_writer_new(SERD_TURTLE, 0, env, NULL, serd_file_sink, fd);
   assert(writer);
 
   serd_writer_chop_blank_prefix(writer, "tmp");
@@ -245,8 +245,8 @@ test_writer(const char* const path)
 
   // Test buffer sink
   SerdBuffer buffer = {NULL, 0};
-  writer            = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_buffer_sink, &buffer);
+  writer =
+    serd_writer_new(SERD_TURTLE, 0, env, NULL, serd_buffer_sink, &buffer);
 
   o = serd_node_from_string(SERD_URI, "http://example.org/base");
   assert(!serd_writer_set_base_uri(writer, &o));
@@ -261,8 +261,7 @@ test_writer(const char* const path)
   SerdNode    nothing = serd_node_from_string(SERD_NOTHING, "");
   FILE* const empty   = tmpfile();
 
-  writer = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_file_sink, empty);
+  writer = serd_writer_new(SERD_TURTLE, 0, env, NULL, serd_file_sink, empty);
 
   // FIXME: error handling
   serd_writer_write_statement(writer, 0, NULL, &s, &p, &nothing, NULL, NULL);
