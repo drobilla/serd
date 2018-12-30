@@ -590,9 +590,11 @@ test_env(void)
 	SerdNode* lit = serd_new_string("hello");
 	assert(serd_env_set_prefix(env, b, lit));
 
-	int n_prefixes = 0;
+	size_t    n_prefixes          = 0;
+	SerdSink* count_prefixes_sink = serd_sink_new(&n_prefixes);
+	serd_sink_set_prefix_func(count_prefixes_sink, count_prefixes);
 	serd_env_set_prefix(env, pre, eg);
-	serd_env_foreach(env, count_prefixes, &n_prefixes);
+	serd_env_write_prefixes(env, count_prefixes_sink);
 	assert(n_prefixes == 1);
 
 	SerdNode* shorter_uri = serd_new_uri("urn:foo");

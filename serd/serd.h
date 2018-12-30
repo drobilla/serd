@@ -1024,15 +1024,6 @@ SerdNode*
 serd_env_expand(const SerdEnv* env, const SerdNode* node);
 
 /**
-   Call `func` for each prefix defined in `env`.
-*/
-SERD_API
-void
-serd_env_foreach(const SerdEnv* env,
-                 SerdPrefixSink func,
-                 void*          handle);
-
-/**
    Write all prefixes in `env` to `sink`.
 */
 SERD_API

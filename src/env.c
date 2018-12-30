@@ -317,16 +317,6 @@ serd_env_expand(const SerdEnv* env, const SerdNode* node)
 }
 
 void
-serd_env_foreach(const SerdEnv* env,
-                 SerdPrefixSink func,
-                 void*          handle)
-{
-	for (size_t i = 0; i < env->n_prefixes; ++i) {
-		func(handle, env->prefixes[i].name, env->prefixes[i].uri);
-	}
-}
-
-void
 serd_env_write_prefixes(const SerdEnv* env, const SerdSink* sink)
 {
 	for (size_t i = 0; i < env->n_prefixes; ++i) {
