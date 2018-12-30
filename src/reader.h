@@ -76,16 +76,16 @@ struct SerdReaderImpl {
 SERD_LOG_FUNC(3, 4)
 SerdStatus r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
 
-SerdNode* push_node_padded(SerdReader* reader,
-                           size_t      maxlen,
-                           SerdType    type,
-                           const char* str,
-                           size_t      n_bytes);
+SerdNode* push_node_padded(SerdReader*  reader,
+                           size_t       maxlen,
+                           SerdNodeType type,
+                           const char*  str,
+                           size_t       n_bytes);
 
-SerdNode* push_node(SerdReader* reader,
-                    SerdType    type,
-                    const char* str,
-                    size_t      n_bytes);
+SerdNode* push_node(SerdReader*  reader,
+                    SerdNodeType type,
+                    const char*  str,
+                    size_t       n_bytes);
 
 size_t    genid_size(SerdReader* reader);
 SerdNode* blank_id(SerdReader* reader);

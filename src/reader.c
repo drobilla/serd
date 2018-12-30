@@ -75,7 +75,7 @@ blank_id(SerdReader* reader)
 
 SerdNode*
 push_node_padded(SerdReader* reader, size_t maxlen,
-                 SerdType type, const char* str, size_t n_bytes)
+                 SerdNodeType type, const char* str, size_t n_bytes)
 {
 	// Push a null byte to ensure the previous node was null terminated
 	char* terminator = (char*)serd_stack_push(&reader->stack, 1);
@@ -109,7 +109,10 @@ push_node_padded(SerdReader* reader, size_t maxlen,
 }
 
 SerdNode*
-push_node(SerdReader* reader, SerdType type, const char* str, size_t n_bytes)
+push_node(SerdReader*  reader,
+          SerdNodeType type,
+          const char*  str,
+          size_t       n_bytes)
 {
 	return push_node_padded(reader, n_bytes, type, str, n_bytes);
 }
