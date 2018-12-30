@@ -345,14 +345,14 @@ typedef enum {
      Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
   */
   SERD_BLANK,
-} SerdType;
+} SerdNodeType;
 
 /// A syntactic RDF node
 typedef struct {
   const char* SERD_NULLABLE buf;     ///< Value string
   size_t                    n_bytes; ///< Size in bytes (excluding null)
   SerdNodeFlags             flags;   ///< Node flags (string properties)
-  SerdType                  type;    ///< Node type
+  SerdNodeType              type;    ///< Node type
 } SerdNode;
 
 static const SerdNode SERD_NODE_NULL = {NULL, 0, 0, SERD_NOTHING};
@@ -363,7 +363,7 @@ static const SerdNode SERD_NODE_NULL = {NULL, 0, 0, SERD_NOTHING};
    This measures, but does not copy, `str`.  No memory is allocated.
 */
 SERD_API SerdNode
-serd_node_from_string(SerdType type, const char* SERD_NULLABLE str);
+serd_node_from_string(SerdNodeType type, const char* SERD_NULLABLE str);
 
 /**
    Make a (shallow) node from a prefix of `str`.
@@ -372,7 +372,7 @@ serd_node_from_string(SerdType type, const char* SERD_NULLABLE str);
    Note that the returned node may not be null terminated.
 */
 SERD_API SerdNode
-serd_node_from_substring(SerdType                  type,
+serd_node_from_substring(SerdNodeType              type,
                          const char* SERD_NULLABLE str,
                          size_t                    len);
 
