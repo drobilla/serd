@@ -40,8 +40,9 @@ serd_file_uri_parse(const char* uri, char** hostname)
 				return NULL;
 			}
 			if (hostname) {
-				*hostname = (char*)calloc((size_t)(path - auth + 1), 1);
-				memcpy(*hostname, auth, (size_t)(path - auth));
+				const size_t len = (size_t)(path - auth);
+				*hostname = (char*)calloc(len + 1, 1);
+				memcpy(*hostname, auth, len);
 			}
 		}
 	}
@@ -58,7 +59,7 @@ serd_file_uri_parse(const char* uri, char** hostname)
 				++s;
 			} else if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
 				const char code[3] = {*(s + 1), *(s + 2), 0};
-				const char c       = (char)strtoul((const char*)code, NULL, 16);
+				const char c       = (char)strtoul(code, NULL, 16);
 				serd_buffer_sink(&c, 1, 1, &buffer);
 				s += 2;
 			} else {

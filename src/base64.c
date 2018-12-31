@@ -39,7 +39,7 @@ static const uint8_t b64_map[] =
    for decoding, shifted up by 47 to be in the range of printable ASCII.
    A '$' is a placeholder for characters not in the base64 alphabet.
 */
-static const char b64_unmap[] =
+static const uint8_t b64_unmap[] =
 	"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$m$$$ncdefghijkl$$$$$$"
 	"$/0123456789:;<=>?@ABCDEFGH$$$$$$IJKLMNOPQRSTUVWXYZ[\\]^_`ab$$$$"
 	"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
@@ -96,7 +96,7 @@ serd_base64_encode(char* const       str,
 static inline uint8_t
 unmap(const uint8_t in)
 {
-	return (uint8_t)(b64_unmap[in] - 47);
+	return (uint8_t)(b64_unmap[in] - 47u);
 }
 
 /** Decode 4 base64 characters to 3 raw bytes. */
@@ -106,7 +106,7 @@ decode_chunk(const uint8_t in[4], uint8_t out[3])
 	out[0] = (uint8_t)(((unmap(in[0]) << 2))        | unmap(in[1]) >> 4);
 	out[1] = (uint8_t)(((unmap(in[1]) << 4) & 0xF0) | unmap(in[2]) >> 2);
 	out[2] = (uint8_t)(((unmap(in[2]) << 6) & 0xC0) | unmap(in[3]));
-	return 1 + (in[2] != '=') + ((in[2] != '=') && (in[3] != '='));
+	return 1U + (in[2] != '=') + ((in[2] != '=') && (in[3] != '='));
 }
 
 SerdStatus
@@ -119,7 +119,7 @@ serd_base64_decode(void* buf, size_t* size, const char* str, size_t len)
 		uint8_t in[] = "====";
 		size_t  n_in = 0;
 		for (; i < len && n_in < 4; ++n_in) {
-			for (; i < len && !is_base64(ustr[i]); ++i) {} // Skip junk
+			for (; i < len && !is_base64(str[i]); ++i) {} // Skip junk
 			in[n_in] = ustr[i++];
 		}
 		if (n_in > 1) {

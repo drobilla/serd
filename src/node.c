@@ -29,15 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef _WIN32
-#    ifndef isnan
-#        define isnan(x) _isnan(x)
-#    endif
-#    ifndef isinf
-#        define isinf(x) (!_finite(x))
-#    endif
-#endif
-
 static const size_t serd_node_align = sizeof(SerdNode);
 
 static SerdNode*
@@ -465,6 +456,7 @@ is_uri_path_char(const char c)
 	if (is_alpha(c) || is_digit(c)) {
 		return true;
 	}
+
 	switch (c) {
 	case '-': case '.': case '_': case '~':	 // unreserved
 	case ':': case '@':	 // pchar
@@ -577,7 +569,7 @@ serd_digits(double abs)
 SerdNode*
 serd_new_decimal(double d, unsigned frac_digits, const SerdNode* datatype)
 {
-	if (isnan(d) || isinf(d)) {
+	if (!isfinite(d)) {
 		return NULL;
 	}
 

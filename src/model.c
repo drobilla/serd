@@ -110,9 +110,9 @@ serd_model_best_index(const SerdModel* model,
 {
 	const bool graph_search = (pat[SERD_GRAPH] != 0);
 
-	const unsigned sig = ((pat[0] ? 1 : 0) * 0x100 +
-	                      (pat[1] ? 1 : 0) * 0x010 +
-	                      (pat[2] ? 1 : 0) * 0x001);
+	const unsigned sig = ((pat[0] ? 1U : 0U) * 0x100 +
+	                      (pat[1] ? 1U : 0U) * 0x010 +
+	                      (pat[2] ? 1U : 0U) * 0x001);
 
 	SerdOrder good[2] = { (SerdOrder)-1, (SerdOrder)-1 };
 

@@ -268,7 +268,7 @@ serd_reader_start_file(SerdReader* reader, const char* uri, bool bulk)
 		(SerdStreamCloseFunc)fclose,
 		fd,
 		name,
-		bulk ? SERD_PAGE_SIZE : 1);
+		bulk ? SERD_PAGE_SIZE : 1U);
 	serd_node_free(name);
 	return st;
 }

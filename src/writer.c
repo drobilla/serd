@@ -113,7 +113,7 @@ struct SerdWriterImpl {
 	SerdLogFunc     log_func;
 	void*           log_handle;
 	WriteContext    context;
-	unsigned        indent;
+	int             indent;
 	char*           bprefix;
 	size_t          bprefix_len;
 	Sep             last_sep;
@@ -142,12 +142,13 @@ supports_abbrev(const SerdWriter* writer)
 	return writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG;
 }
 
-static inline WriteContext*
-anon_stack_top(SerdWriter* writer)
+static inline const WriteContext*
+anon_stack_top(const SerdWriter* writer)
 {
 	assert(!serd_stack_is_empty(&writer->anon_stack));
-	return (WriteContext*)(writer->anon_stack.buf
-	                       + writer->anon_stack.size - sizeof(WriteContext));
+	const char* const end = writer->anon_stack.buf + writer->anon_stack.size;
+	const void* const top = end - sizeof(WriteContext);
+	return (const WriteContext*)top;
 }
 
 static inline SerdNode*
@@ -319,7 +320,7 @@ write_text(SerdWriter* writer, TextContext ctx,
 			break;  // Reached end
 		}
 
-		const uint8_t in = utf8[i++];
+		const char in = utf8[i++];
 		if (ctx == WRITE_LONG_STRING) {
 			switch (in) {
 			case '\\': len += sink("\\\\", 2, writer); continue;
@@ -379,7 +380,7 @@ static void
 write_newline(SerdWriter* writer)
 {
 	sink("\n", 1, writer);
-	for (unsigned i = 0; i < writer->indent; ++i) {
+	for (int i = 0; i < writer->indent; ++i) {
 		sink("\t", 1, writer);
 	}
 }
@@ -391,7 +392,7 @@ write_sep(SerdWriter* writer, const Sep sep)
 
 	// Adjust indent, but tolerate if it would become negative
 	writer->indent =
-		((rule->indent >= 0 || writer->indent >= (unsigned)-rule->indent)
+		((rule->indent >= 0 || writer->indent >= -rule->indent)
 		 ? writer->indent + rule->indent
 		 : 0);
 

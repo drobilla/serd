@@ -76,7 +76,7 @@ is_space(const char c)
 }
 
 static inline bool
-is_base64(const char c)
+is_base64(const int c)
 {
 	return is_alpha(c) || is_digit(c) || c == '+' || c == '/' || c == '=';
 }
@@ -146,9 +146,9 @@ utf8_num_bytes(const uint8_t c)
 static inline uint32_t
 parse_counted_utf8_char(const uint8_t* utf8, size_t size)
 {
-	uint32_t c = utf8[0] & ((1 << (8 - size)) - 1);
+	uint32_t c = utf8[0] & ((1U << (8 - size)) - 1U);
 	for (size_t i = 1; i < size; ++i) {
-		const uint8_t in = utf8[i] & 0x3F;
+		const uint8_t in = utf8[i] & 0x3FU;
 		c = (c << 6) | in;
 	}
 	return c;
@@ -162,7 +162,8 @@ parse_utf8_char(const uint8_t* utf8, size_t* size)
 	case 1: case 2: case 3: case 4:
 		return parse_counted_utf8_char(utf8, *size);
 	default:
-		return *size = 0;
+		*size = 0;
+		return 0U;
 	}
 }
 

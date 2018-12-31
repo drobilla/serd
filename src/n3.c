@@ -286,14 +286,14 @@ read_ws_star(SerdReader* reader)
 }
 
 static inline bool
-peek_delim(SerdReader* reader, const char delim)
+peek_delim(SerdReader* reader, const uint8_t delim)
 {
 	read_ws_star(reader);
 	return peek_byte(reader) == delim;
 }
 
 static inline bool
-eat_delim(SerdReader* reader, const char delim)
+eat_delim(SerdReader* reader, const uint8_t delim)
 {
 	if (peek_delim(reader, delim)) {
 		eat_byte_safe(reader, delim);
@@ -429,9 +429,9 @@ is_PN_CHARS_BASE(const uint32_t c)
 static SerdStatus
 read_PN_CHARS_BASE(SerdReader* reader, SerdNode* dest)
 {
-	uint32_t   code;
-	const int  c  = peek_byte(reader);
-	SerdStatus st = SERD_SUCCESS;
+	uint32_t   code = 0;
+	const int  c    = peek_byte(reader);
+	SerdStatus st   = SERD_SUCCESS;
 	if (is_alpha(c)) {
 		push_byte(reader, dest, eat_byte_safe(reader, c));
 	} else if (c == EOF || !(c & 0x80)) {
@@ -459,9 +459,9 @@ is_PN_CHARS(const uint32_t c)
 static SerdStatus
 read_PN_CHARS(SerdReader* reader, SerdNode* dest)
 {
-	uint32_t   code;
-	const int  c  = peek_byte(reader);
-	SerdStatus st = SERD_SUCCESS;
+	uint32_t   code = 0;
+	const int  c    = peek_byte(reader);
+	SerdStatus st   = SERD_SUCCESS;
 	if (is_alpha(c) || is_digit(c) || c == '_' || c == '-') {
 		push_byte(reader, dest, eat_byte_safe(reader, c));
 	} else if (c == EOF || !(c & 0x80)) {

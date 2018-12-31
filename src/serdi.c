@@ -211,13 +211,13 @@ main(int argc, char** argv)
 	SerdWorld* world  = serd_world_new();
 	SerdEnv*   env    = serd_env_new(base);
 
-	const SerdWriterFlags writer_flags = (ascii ? SERD_STYLE_ASCII : 0);
+	const SerdWriterFlags writer_flags = (ascii ? SERD_STYLE_ASCII : 0U);
 
 	const SerdSerialisationFlags serialisation_flags =
-		no_inline ? SERD_NO_INLINE_OBJECTS : 0;
+		no_inline ? SERD_NO_INLINE_OBJECTS : 0U;
 
 	SerdByteSink* byte_sink = serd_byte_sink_new(
-		(SerdWriteFunc)fwrite, out_fd, bulk_write ? 4096 : 1);
+		(SerdWriteFunc)fwrite, out_fd, bulk_write ? 4096U : 1U);
 
 	SerdWriter* writer = serd_writer_new(world,
 	                                     output_syntax,
@@ -232,8 +232,8 @@ main(int argc, char** argv)
 	const SerdSink* sink     = NULL;
 	if (use_model) {
 		const SerdModelFlags flags =
-		        SERD_INDEX_SPO | (input_has_graphs ? SERD_INDEX_GRAPHS : 0) |
-		        (no_inline ? 0 : SERD_INDEX_OPS);
+		        SERD_INDEX_SPO | (input_has_graphs ? SERD_INDEX_GRAPHS : 0U) |
+		        (no_inline ? 0U : SERD_INDEX_OPS);
 		model    = serd_model_new(world, flags);
 		inserter = serd_inserter_new(model, env, NULL);
 		sink     = serd_inserter_get_sink(inserter);

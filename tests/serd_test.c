@@ -220,13 +220,27 @@ test_string_to_double(void)
 static void
 test_double_to_node(void)
 {
-	const double dbl_test_nums[] = {
-		0.0, 9.0, 10.0, .01, 2.05, -16.00001, 5.000000005, 0.0000000001, NAN, INFINITY
-	};
+	const double dbl_test_nums[] = { 0.0,
+	                                 9.0,
+	                                 10.0,
+	                                 .01,
+	                                 2.05,
+	                                 -16.00001,
+	                                 5.000000005,
+	                                 0.0000000001,
+	                                 (double)NAN,
+	                                 (double)INFINITY };
 
-	const char* dbl_test_strs[] = {
-		"0.0", "9.0", "10.0", "0.01", "2.05", "-16.00001", "5.00000001", "0.0", NULL, NULL
-	};
+	const char* dbl_test_strs[] = { "0.0",
+	                                "9.0",
+	                                "10.0",
+	                                "0.01",
+	                                "2.05",
+	                                "-16.00001",
+	                                "5.00000001",
+	                                "0.0",
+	                                NULL,
+	                                NULL };
 
 	for (unsigned i = 0; i < sizeof(dbl_test_nums) / sizeof(double); ++i) {
 		SerdNode*   node     = serd_new_decimal(dbl_test_nums[i], 8, NULL);
@@ -719,9 +733,9 @@ test_writer(const char* const path)
 	}
 
 	// Write statements with bad UTF-8 (should be replaced)
-	const char bad_str[] = { (char)0xFF, (char)0x90, 'h', 'i', 0 };
-	SerdNode*  bad_lit   = serd_new_string(bad_str);
-	SerdNode*  bad_uri   = serd_new_uri(bad_str);
+	const uint8_t bad_str[] = { 0xFF, 0x90, 'h', 'i', 0 };
+	SerdNode* bad_lit       = serd_new_string((const char*)bad_str);
+	SerdNode* bad_uri       = serd_new_uri((const char*)bad_str);
 	assert(!serd_sink_write(iface, 0, s, p, bad_lit, 0));
 	assert(!serd_sink_write(iface, 0, s, p, bad_uri, 0));
 	serd_node_free(bad_uri);

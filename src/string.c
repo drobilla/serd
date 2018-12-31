@@ -86,7 +86,7 @@ serd_strtod(const char* str, size_t* end)
 {
 	double result = 0.0;
 
-#define SET_END(index) if (end) { *end = index; }
+#define SET_END(index) if (end) { *end = (size_t)(index); }
 
 	if (!strcmp(str, "NaN")) {
 		SET_END(3);

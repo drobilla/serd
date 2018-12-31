@@ -221,7 +221,7 @@ serd_world_get_blank(SerdWorld* world)
 {
 	char* buf = serd_node_buffer(world->blank_node);
 	memset(buf, 0, BLANK_CHARS + 1);
-	world->blank_node->n_bytes = snprintf(
+	world->blank_node->n_bytes = (size_t)snprintf(
 		buf, BLANK_CHARS, "b%u", ++world->next_blank_id);
 	return world->blank_node;
 }
