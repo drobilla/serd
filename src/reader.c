@@ -143,9 +143,7 @@ emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o)
 static SerdStatus
 read_statement(SerdReader* reader)
 {
-	switch (reader->syntax) {
-	default: return read_n3_statement(reader);
-	}
+	return read_n3_statement(reader);
 }
 
 SerdStatus
