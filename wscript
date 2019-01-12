@@ -339,7 +339,7 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
         asserter = 'http://drobilla.net/drobilla#me'
 
     def run_test(command, expected_return, name, quiet=False):
-        header = Options.options.verbose_tests
+        header = Options.options.verbose
         result = autowaf.run_test(ctx, APPNAME, command, expected_return, name=name, header=header, quiet=quiet)
         if expected_return is not None and expected_return != 0:
             autowaf.run_test(ctx, APPNAME,
@@ -361,7 +361,7 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
             thru_options += list(itertools.combinations(thru_flags, n))
         thru_options_iter = itertools.cycle(thru_options)
 
-        quiet = not Options.options.verbose_tests
+        quiet = not Options.options.verbose
         tests_name = '%s.%s' % (testdir, test_class[test_class.find('#') + 1:])
         with autowaf.begin_tests(ctx, APPNAME, tests_name):
             for (num, test) in enumerate(sorted(tests)):
