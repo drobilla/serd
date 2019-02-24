@@ -235,16 +235,8 @@ def build(bld):
 def lint(ctx):
     "checks code for style issues"
     import subprocess
-    cmd = ("clang-tidy -p=. -header-filter=.* -checks=\"*," +
-           "-bugprone-suspicious-string-compare," +
-           "-clang-analyzer-alpha.*," +
-           "-google-readability-todo," +
-           "-hicpp-signed-bitwise," +
-           "-llvm-header-guard," +
-           "-misc-unused-parameters," +
-           "-readability-else-after-return\" " +
-           "../src/*.c")
-    subprocess.call(cmd, cwd='build', shell=True)
+    subprocess.call('clang-tidy ../src/*.c ../tests/*.c ../tests/*.cpp',
+                    cwd='build', shell=True)
 
 def amalgamate(ctx):
     "builds single-file amalgamated source"
