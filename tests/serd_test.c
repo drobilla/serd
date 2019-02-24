@@ -373,13 +373,14 @@ test_strlen(void)
 static void
 test_strerror(void)
 {
-	const char* msg = NULL;
-	assert(!strcmp((msg = serd_strerror(SERD_SUCCESS)), "Success"));
+	const char* msg = serd_strerror(SERD_SUCCESS);
+	assert(!strcmp(msg, "Success"));
 	for (int i = SERD_FAILURE; i <= SERD_ERR_NO_DATA; ++i) {
 		msg = serd_strerror((SerdStatus)i);
 		assert(strcmp(msg, "Success"));
 	}
 	msg = serd_strerror((SerdStatus)-1);
+	assert(!strcmp(msg, "Unknown error"));
 }
 
 static void
