@@ -46,28 +46,28 @@ serd_sink_get_env(const SerdSink* sink)
 }
 
 SerdStatus
-serd_sink_set_base_func(SerdSink* sink, SerdBaseSink base_func)
+serd_sink_set_base_func(SerdSink* sink, SerdBaseFunc base_func)
 {
 	sink->base = base_func;
 	return SERD_SUCCESS;
 }
 
 SerdStatus
-serd_sink_set_prefix_func(SerdSink* sink, SerdPrefixSink prefix_func)
+serd_sink_set_prefix_func(SerdSink* sink, SerdPrefixFunc prefix_func)
 {
 	sink->prefix = prefix_func;
 	return SERD_SUCCESS;
 }
 
 SerdStatus
-serd_sink_set_statement_func(SerdSink* sink, SerdStatementSink statement_func)
+serd_sink_set_statement_func(SerdSink* sink, SerdStatementFunc statement_func)
 {
 	sink->statement = statement_func;
 	return SERD_SUCCESS;
 }
 
 SerdStatus
-serd_sink_set_end_func(SerdSink* sink, SerdEndSink end_func)
+serd_sink_set_end_func(SerdSink* sink, SerdEndFunc end_func)
 {
 	sink->end = end_func;
 	return SERD_SUCCESS;

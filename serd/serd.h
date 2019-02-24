@@ -759,34 +759,34 @@ serd_node_free(SerdNode* node);
 
    Called whenever the base URI of the serialisation changes.
 */
-typedef SerdStatus (*SerdBaseSink)(void* handle, const SerdNode* uri);
+typedef SerdStatus (*SerdBaseFunc)(void* handle, const SerdNode* uri);
 
 /**
-   Sink (callback) for namespace definitions
+   Sink function for namespace definitions
 
    Called whenever a prefix is defined in the serialisation.
 */
-typedef SerdStatus (*SerdPrefixSink)(void*           handle,
+typedef SerdStatus (*SerdPrefixFunc)(void*           handle,
                                      const SerdNode* name,
                                      const SerdNode* uri);
 
 /**
-   Sink (callback) for statements
+   Sink function for statements
 
    Called for every RDF statement in the serialisation.
 */
-typedef SerdStatus (*SerdStatementSink)(void*                handle,
+typedef SerdStatus (*SerdStatementFunc)(void*                handle,
                                         SerdStatementFlags   flags,
                                         const SerdStatement* statement);
 
 /**
-   Sink (callback) for anonymous node end markers
+   Sink function for anonymous node end markers
 
    This is called to indicate that the anonymous node with the given
    `value` will no longer be referred to by any future statements
    (i.e. the anonymous serialisation of the node is finished).
 */
-typedef SerdStatus (*SerdEndSink)(void* handle, const SerdNode* node);
+typedef SerdStatus (*SerdEndFunc)(void* handle, const SerdNode* node);
 
 /**
    @}
@@ -1033,22 +1033,22 @@ serd_sink_get_env(const SerdSink* sink);
 /// Set a function to be called when the base URI changes
 SERD_API
 SerdStatus
-serd_sink_set_base_func(SerdSink* sink, SerdBaseSink base_func);
+serd_sink_set_base_func(SerdSink* sink, SerdBaseFunc base_func);
 
 /// Set a function to be called when a namespace prefix is defined
 SERD_API
 SerdStatus
-serd_sink_set_prefix_func(SerdSink* sink, SerdPrefixSink prefix_func);
+serd_sink_set_prefix_func(SerdSink* sink, SerdPrefixFunc prefix_func);
 
 /// Set a function to be called when a statement is emitted
 SERD_API
 SerdStatus
-serd_sink_set_statement_func(SerdSink* sink, SerdStatementSink statement_func);
+serd_sink_set_statement_func(SerdSink* sink, SerdStatementFunc statement_func);
 
 /// Set a function to be called when an anonymous node ends
 SERD_API
 SerdStatus
-serd_sink_set_end_func(SerdSink* sink, SerdEndSink end_func);
+serd_sink_set_end_func(SerdSink* sink, SerdEndFunc end_func);
 
 /// Set the base URI
 SERD_API

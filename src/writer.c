@@ -918,10 +918,10 @@ serd_writer_new(SerdWorld*      world,
 
 	writer->iface.handle    = writer;
 	writer->iface.env       = env;
-	writer->iface.base      = (SerdBaseSink)serd_writer_set_base_uri;
-	writer->iface.prefix    = (SerdPrefixSink)serd_writer_set_prefix;
-	writer->iface.statement = (SerdStatementSink)serd_writer_write_statement;
-	writer->iface.end       = (SerdEndSink)serd_writer_end_anon;
+	writer->iface.base      = (SerdBaseFunc)serd_writer_set_base_uri;
+	writer->iface.prefix    = (SerdPrefixFunc)serd_writer_set_prefix;
+	writer->iface.statement = (SerdStatementFunc)serd_writer_write_statement;
+	writer->iface.end       = (SerdEndFunc)serd_writer_end_anon;
 
 	return writer;
 }
