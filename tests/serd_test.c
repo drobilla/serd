@@ -72,6 +72,33 @@ count_statements(void*                handle,
 	return SERD_SUCCESS;
 }
 
+/// Returns EOF after a statement, then succeeds again (like a socket)
+static size_t
+eof_test_read(void* buf, size_t size, size_t nmemb, void* stream)
+{
+	assert(nmemb == 1);
+
+	static const char* const string = "_:s1 <http://example.org/p> _:o1 .\n"
+	                                  "_:s2 <http://example.org/p> _:o2 .\n";
+
+	size_t* count = (size_t*)stream;
+	if (*count == 34 || *count == 35 || *count + nmemb >= strlen(string)) {
+		++*count;
+		return 0;
+	}
+
+	memcpy((char*)buf, string + *count, size * nmemb);
+	*count += nmemb;
+	return nmemb;
+}
+
+static int
+eof_test_error(void* stream)
+{
+	(void)stream;
+	return 0;
+}
+
 static void
 test_file_uri(const char* hostname,
               const char* path,
@@ -805,6 +832,44 @@ test_reader(const char* path)
 	assert(!serd_reader_read_document(reader));
 	assert(n_statements == 13);
 	serd_reader_finish(reader);
+
+	// A reader a big page hits EOF then fails to read chunks immediately
+	{
+		FILE* temp = tmpfile();
+		assert(temp);
+		fprintf(temp, "_:s <http://example.org/p> _:o .\n");
+		fflush(temp);
+		fseek(temp, 0L, SEEK_SET);
+
+		serd_reader_start_stream(
+			reader,
+			(SerdReadFunc)fread, (SerdStreamErrorFunc)ferror, temp,
+			NULL,
+			4096);
+
+		assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
+		assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
+		assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
+
+		serd_reader_finish(reader);
+		fclose(temp);
+	}
+
+	// A byte-wise reader that hits EOF once then continues (like a socket)
+	{
+		size_t n_reads = 0;
+		serd_reader_start_stream(reader,
+		                         (SerdReadFunc)eof_test_read,
+		                         (SerdStreamErrorFunc)eof_test_error,
+		                         &n_reads,
+		                         NULL,
+		                         1);
+
+		assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
+		assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
+		assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
+		assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
+	}
 
 	serd_reader_free(reader);
 	serd_sink_free(sink);

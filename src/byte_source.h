@@ -90,12 +90,12 @@ serd_byte_source_advance(SerdByteSource* source)
 	if (source->from_stream) {
 		if (source->page_size > 1) {
 			if (++source->read_head == source->page_size) {
-				source->eof = false;
 				st = serd_byte_source_page(source);
 			} else if (source->read_head == source->buf_size) {
 				source->eof = true;
 			}
 		} else {
+			source->eof = false;
 			if (!source->read_func(&source->read_byte, 1, 1, source->stream)) {
 				source->eof = true;
 				st = source->error_func(source->stream) ? SERD_ERR_UNKNOWN
