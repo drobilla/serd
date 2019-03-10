@@ -1032,7 +1032,8 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
   write_sep(writer, writer->context.flags, SEP_ANON_END);
   pop_context(writer);
 
-  if (serd_node_equals(node, writer->context.subject)) {
+  if (writer->context.predicate &&
+      serd_node_equals(node, writer->context.subject)) {
     // Now-finished anonymous node is the new subject with no other context
     memset(writer->context.predicate, 0, sizeof(SerdNode));
   }
