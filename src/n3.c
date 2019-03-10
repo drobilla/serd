@@ -1457,7 +1457,7 @@ read_n3_statement(SerdReader* reader)
 		} else if ((st = read_triples(reader, ctx, &ate_dot))) {
 			if (st == SERD_FAILURE && s_type == '[') {
 				return SERD_SUCCESS;
-			} else if (ate_dot) {
+			} else if (ate_dot && (reader->strict || (s_type != '('))) {
 				return r_err(reader, SERD_ERR_BAD_SYNTAX,
 				             "unexpected end of statement\n");
 			} else {
