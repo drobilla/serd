@@ -1051,6 +1051,7 @@ serd_writer_finish(SerdWriter* writer)
   free_context(writer);
   writer->indent  = 0;
   writer->context = WRITE_CONTEXT_NULL;
+  writer->empty   = true;
   return SERD_SUCCESS;
 }
 
