@@ -40,13 +40,14 @@ typedef enum {
 
 typedef struct
 {
-	ContextType type;
-	SerdNode*   graph;
-	SerdNode*   subject;
-	SerdNode*   predicate;
+	ContextType        type;
+	SerdStatementFlags flags;
+	SerdNode*          graph;
+	SerdNode*          subject;
+	SerdNode*          predicate;
 } WriteContext;
 
-static const WriteContext WRITE_CONTEXT_NULL = { CTX_NAMED, NULL, NULL, NULL };
+static const WriteContext WRITE_CONTEXT_NULL = {CTX_NAMED, 0, NULL, NULL, NULL};
 
 typedef enum {
 	SEP_NONE,
@@ -725,18 +726,19 @@ pop_context(SerdWriter* const writer)
 }
 
 static WriteContext*
-push_context(SerdWriter* const     writer,
-             const ContextType     type,
-             const SerdNode* const g,
-             const SerdNode* const s,
-             const SerdNode* const p)
+push_context(SerdWriter* const        writer,
+             const ContextType        type,
+             const SerdStatementFlags flags,
+             const SerdNode* const    g,
+             const SerdNode* const    s,
+             const SerdNode* const    p)
 {
 	WriteContext* old = (WriteContext*)serd_stack_push(&writer->anon_stack,
 	                                                   sizeof(WriteContext));
 
 	*old = writer->context;
 	const WriteContext new_context = {
-		type, serd_node_copy(g), serd_node_copy(s), serd_node_copy(p)
+		type, flags, serd_node_copy(g), serd_node_copy(s), serd_node_copy(p)
 	};
 	writer->context = new_context;
 
@@ -852,17 +854,18 @@ serd_writer_write_statement(SerdWriter*          writer,
 
 	WriteContext* old_ctx = NULL;
 	if (flags & SERD_LIST_S) {
-		old_ctx = push_context(writer, CTX_LIST, graph, subject, NULL);
+		old_ctx = push_context(writer, CTX_LIST, flags, graph, subject, NULL);
 	}
 
 	if (flags & SERD_LIST_O) {
-		old_ctx = push_context(writer, CTX_LIST, graph, object, NULL);
+		old_ctx = push_context(writer, CTX_LIST, flags, graph, object, NULL);
 	}
 
 	if (flags & (SERD_ANON_S | SERD_ANON_O)) {
 		old_ctx = push_context(
 		        writer,
 		        (flags & (SERD_LIST_S | SERD_LIST_O)) ? CTX_LIST : CTX_BLANK,
+		        flags,
 		        graph,
 		        subject,
 		        (flags & SERD_ANON_S) ? predicate : NULL);
