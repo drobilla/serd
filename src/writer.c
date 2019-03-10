@@ -596,8 +596,10 @@ write_newline(SerdWriter* writer)
 }
 
 SERD_NODISCARD static SerdStatus
-write_sep(SerdWriter* writer, const Sep sep)
+write_sep(SerdWriter* writer, const SerdStatementFlags flags, Sep sep)
 {
+  (void)flags;
+
   SerdStatus           st   = SERD_SUCCESS;
   const SepRule* const rule = &rules[sep];
 
@@ -853,12 +855,12 @@ write_blank(SerdWriter* const        writer,
   if (supports_abbrev(writer)) {
     if ((field == SERD_SUBJECT && (flags & SERD_ANON_S)) ||
         (field == SERD_OBJECT && (flags & SERD_ANON_O))) {
-      return write_sep(writer, SEP_ANON_BEGIN);
+      return write_sep(writer, flags, SEP_ANON_BEGIN);
     }
 
     if ((field == SERD_SUBJECT && (flags & SERD_LIST_S)) ||
         (field == SERD_OBJECT && (flags & SERD_LIST_O))) {
-      return write_sep(writer, SEP_LIST_BEGIN);
+      return write_sep(writer, flags, SEP_LIST_BEGIN);
     }
 
     if ((field == SERD_SUBJECT && (flags & SERD_EMPTY_S)) ||
@@ -923,7 +925,7 @@ write_pred(SerdWriter* writer, SerdStatementFlags flags, const SerdNode* pred)
   SerdStatus st = SERD_SUCCESS;
 
   TRY(st, write_node(writer, pred, SERD_PREDICATE, flags));
-  TRY(st, write_sep(writer, SEP_P_O));
+  TRY(st, write_sep(writer, flags, SEP_P_O));
 
   serd_node_set(&writer->context.predicate, pred);
   writer->context.predicates     = true;
@@ -940,14 +942,14 @@ write_list_next(SerdWriter* const        writer,
   SerdStatus st = SERD_SUCCESS;
 
   if (!strcmp(serd_node_string(object), NS_RDF "nil")) {
-    TRY(st, write_sep(writer, SEP_LIST_END));
+    TRY(st, write_sep(writer, writer->context.flags, SEP_LIST_END));
     return SERD_FAILURE;
   }
 
   if (!strcmp(serd_node_string(predicate), NS_RDF "first")) {
     TRY(st, write_node(writer, object, SERD_OBJECT, flags));
   } else {
-    TRY(st, write_sep(writer, SEP_LIST_SEP));
+    TRY(st, write_sep(writer, writer->context.flags, SEP_LIST_SEP));
   }
 
   return st;
@@ -959,11 +961,11 @@ terminate_context(SerdWriter* writer)
   SerdStatus st = SERD_SUCCESS;
 
   if (ctx(writer, SERD_SUBJECT)) {
-    TRY(st, write_sep(writer, SEP_END_S));
+    TRY(st, write_sep(writer, writer->context.flags, SEP_END_S));
   }
 
   if (ctx(writer, SERD_GRAPH)) {
-    TRY(st, write_sep(writer, SEP_GRAPH_END));
+    TRY(st, write_sep(writer, writer->context.flags, SEP_GRAPH_END));
   }
 
   return st;
@@ -1024,7 +1026,7 @@ serd_writer_write_statement(SerdWriter* const          writer,
     if (graph) {
       TRY(st, write_newline(writer));
       TRY(st, write_node(writer, graph, SERD_GRAPH, flags));
-      TRY(st, write_sep(writer, SEP_GRAPH_BEGIN));
+      TRY(st, write_sep(writer, flags, SEP_GRAPH_BEGIN));
       serd_node_set(&writer->context.graph, graph);
     }
   }
@@ -1056,6 +1058,7 @@ serd_writer_write_statement(SerdWriter* const          writer,
 
       TRY(st,
           write_sep(writer,
+                    flags,
                     after_end ? (open_o ? SEP_JOIN_O_AA : SEP_JOIN_O_AN)
                               : (open_o ? SEP_JOIN_O_NA : SEP_END_O)));
 
@@ -1068,7 +1071,7 @@ serd_writer_write_statement(SerdWriter* const          writer,
       }
 
       const bool first = !ctx(writer, SERD_PREDICATE);
-      TRY(st, write_sep(writer, first ? SEP_S_P : SEP_END_P));
+      TRY(st, write_sep(writer, flags, first ? SEP_S_P : SEP_END_P));
       TRY(st, write_pred(writer, flags, predicate));
     }
 
@@ -1078,7 +1081,7 @@ serd_writer_write_statement(SerdWriter* const          writer,
     // No abbreviation
     if (serd_stack_is_empty(&writer->anon_stack)) {
       if (ctx(writer, SERD_SUBJECT)) {
-        TRY(st, write_sep(writer, SEP_END_S));
+        TRY(st, write_sep(writer, flags, SEP_END_S));
       }
 
       if (writer->last_sep == SEP_END_S || writer->last_sep == SEP_END_DIRECT) {
@@ -1087,13 +1090,13 @@ serd_writer_write_statement(SerdWriter* const          writer,
 
       TRY(st, write_node(writer, subject, SERD_SUBJECT, flags));
       if ((flags & (SERD_ANON_S | SERD_LIST_S))) {
-        TRY(st, write_sep(writer, SEP_ANON_S_P));
+        TRY(st, write_sep(writer, flags, SEP_ANON_S_P));
       } else {
-        TRY(st, write_sep(writer, SEP_S_P));
+        TRY(st, write_sep(writer, flags, SEP_S_P));
       }
 
     } else {
-      TRY(st, write_sep(writer, SEP_ANON_S_P));
+      TRY(st, write_sep(writer, flags, SEP_ANON_S_P));
     }
 
     reset_context(writer, 0U);
@@ -1146,7 +1149,7 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
   }
 
   // Write the end separator ']' and pop the context
-  TRY(st, write_sep(writer, SEP_ANON_END));
+  TRY(st, write_sep(writer, writer->context.flags, SEP_ANON_END));
   pop_context(writer);
 
   if (writer->context.predicate &&
@@ -1255,7 +1258,7 @@ serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
     TRY(st, esink(uri_string.data, uri_string.length, writer));
     TRY(st, esink(">", 1, writer));
     writer->last_sep = SEP_NODE;
-    TRY(st, write_sep(writer, SEP_END_DIRECT));
+    TRY(st, write_sep(writer, writer->context.flags, SEP_END_DIRECT));
   }
 
   SERD_RESTORE_WARNINGS
@@ -1297,7 +1300,7 @@ serd_writer_set_prefix(SerdWriter*     writer,
     TRY(st, ewrite_uri(writer, serd_node_string(uri), uri->length));
     TRY(st, esink(">", 1, writer));
     writer->last_sep = SEP_NODE;
-    TRY(st, write_sep(writer, SEP_END_DIRECT));
+    TRY(st, write_sep(writer, writer->context.flags, SEP_END_DIRECT));
   }
 
   return reset_context(writer, RESET_GRAPH | RESET_INDENT);
