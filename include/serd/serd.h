@@ -273,8 +273,9 @@ typedef struct {
 */
 typedef enum {
   SERD_WRITE_ASCII       = 1u << 0u, ///< Escape all non-ASCII characters
-  SERD_WRITE_UNQUALIFIED = 1u << 2u, ///< Do not shorten URIs into CURIEs
-  SERD_WRITE_UNRESOLVED  = 1u << 3u  ///< Do not make URIs relative
+  SERD_WRITE_UNQUALIFIED = 1u << 1u, ///< Do not shorten URIs into CURIEs
+  SERD_WRITE_UNRESOLVED  = 1u << 2u, ///< Do not make URIs relative
+  SERD_WRITE_TERSE       = 1u << 3u  ///< Write terser output without newlines
 } SerdWriterFlag;
 
 /// Bitwise OR of SerdWriterFlag values
