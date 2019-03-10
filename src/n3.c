@@ -1658,7 +1658,7 @@ read_n3_statement(SerdReader* const reader)
         return SERD_SUCCESS;
       }
 
-      if (ate_dot) {
+      if (ate_dot && (reader->strict || (s_type != '('))) {
         return r_err(
           reader, SERD_ERR_BAD_SYNTAX, "unexpected end of statement\n");
       }
