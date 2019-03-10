@@ -7,6 +7,7 @@ serd (1.0.1) unstable;
   * Add model for storing statements in memory
   * Add option for writing terse output without newlines
   * Add support for validation
+  * Add support for writing terse collections
   * Bring read/write interface closer to C standard
   * Make nodes opaque
   * Make serd_strtod API const-correct

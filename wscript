@@ -189,6 +189,7 @@ def build(bld):
                      ('sink_test', 'tests/sink_test.c'),
                      ('serd_test', 'tests/serd_test.c'),
                      ('read_chunk_test', 'tests/read_chunk_test.c'),
+                     ('terse_write_test', 'tests/terse_write_test.c'),
                      ('nodes_test', 'tests/nodes_test.c'),
                      ('overflow_test', 'tests/overflow_test.c'),
                      ('model_test', 'tests/model_test.c')]:
@@ -407,7 +408,13 @@ def _option_combinations(options):
 
     return itertools.cycle(combinations)
 
-def test_suite(ctx, base_uri, testdir, report, isyntax, options=[]):
+def test_suite(ctx,
+               base_uri,
+               testdir,
+               report,
+               isyntax,
+               options=[],
+               output_syntax=None):
     import itertools
 
     srcdir = ctx.path.abspath()
@@ -422,7 +429,8 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, options=[]):
 
     def run_tests(test_class, tests, expected_return):
         thru_flags   = [['-e'], ['-b'], ['-r', 'http://example.org/']]
-        osyntax = _test_output_syntax(test_class)
+        osyntax = output_syntax or _test_output_syntax(test_class)
+        extra_options_iter = _option_combinations([] if output_syntax else [['-f']])
         thru_options_iter = _option_combinations(thru_flags)
         tests_name = '%s.%s' % (testdir, test_class[test_class.find('#') + 1:])
         with ctx.group(tests_name) as check:
@@ -431,7 +439,10 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, options=[]):
                 action      = os.path.join('tests', testdir, os.path.basename(action_node))
                 rel_action  = os.path.join(os.path.relpath(srcdir), action)
                 uri         = base_uri + os.path.basename(action)
-                command     = [serdi, '-a'] + options + [rel_action, uri]
+                command     = ([serdi, '-a', '-o', osyntax] +
+                               options +
+                               flatten_options(next(extra_options_iter)) +
+                               [rel_action, uri])
 
                 # Run strict test
                 if expected_return == 0:
@@ -480,7 +491,7 @@ def test(tst):
     import tempfile
 
     # Create test output directories
-    for i in ['bad', 'good', 'lax',
+    for i in ['bad', 'good', 'lax', 'terse',
               'TurtleTests', 'NTriplesTests', 'NQuadsTests', 'TriGTests']:
         try:
             test_dir = os.path.join('tests', i)
@@ -501,6 +512,7 @@ def test(tst):
         check(['./nodes_test'])
         check(['./overflow_test'])
         check(['./serd_test'])
+        check(['./terse_write_test'])
         check(['./read_chunk_test'])
 
     def test_syntax_io(check, in_name, check_name, lang):
@@ -581,6 +593,8 @@ def test(tst):
     test_suite(tst, serd_base + 'bad/', 'bad', None, 'Turtle')
     test_suite(tst, serd_base + 'lax/', 'lax', None, 'Turtle', ['-l'])
     test_suite(tst, serd_base + 'lax/', 'lax', None, 'Turtle')
+    test_suite(tst, serd_base + 'terse/', 'terse', None, 'Turtle', ['-t'],
+               output_syntax='Turtle')
 
     # Standard test suites
     with open('earl.ttl', 'w') as report:
