@@ -716,6 +716,33 @@ write_list_obj(SerdWriter*        writer,
 	return false;
 }
 
+static void
+pop_context(SerdWriter* const writer)
+{
+	free_context(writer);
+	writer->context = *anon_stack_top(writer);
+	serd_stack_pop(&writer->anon_stack, sizeof(WriteContext));
+}
+
+static WriteContext*
+push_context(SerdWriter* const     writer,
+             const ContextType     type,
+             const SerdNode* const g,
+             const SerdNode* const s,
+             const SerdNode* const p)
+{
+	WriteContext* old = (WriteContext*)serd_stack_push(&writer->anon_stack,
+	                                                   sizeof(WriteContext));
+
+	*old = writer->context;
+	const WriteContext new_context = {
+		type, serd_node_copy(g), serd_node_copy(s), serd_node_copy(p)
+	};
+	writer->context = new_context;
+
+	return old;
+}
+
 static SerdStatus
 serd_writer_write_statement(SerdWriter*          writer,
                             SerdStatementFlags   flags,
@@ -776,9 +803,7 @@ serd_writer_write_statement(SerdWriter*          writer,
 	if (writer->context.type == CTX_LIST) {
 		if (write_list_obj(writer, flags, predicate, object)) {
 			// Reached end of list
-			free_context(writer);
-			writer->context = *anon_stack_top(writer);
-			serd_stack_pop(&writer->anon_stack, sizeof(WriteContext));
+			pop_context(writer);
 			return SERD_SUCCESS;
 		}
 	} else if (serd_node_equals(subject, writer->context.subject)) {
@@ -825,39 +850,25 @@ serd_writer_write_statement(SerdWriter*          writer,
 		write_node(writer, object, SERD_OBJECT, flags);
 	}
 
-	if (flags & (SERD_LIST_S)) {
-		WriteContext* ctx = (WriteContext*)serd_stack_push(
-			&writer->anon_stack, sizeof(WriteContext));
-		*ctx = writer->context;
-		WriteContext new_context = {
-			CTX_LIST,
-			serd_node_copy(graph), serd_node_copy(subject), NULL };
-		writer->context = new_context;
+	WriteContext* old_ctx = NULL;
+	if (flags & SERD_LIST_S) {
+		old_ctx = push_context(writer, CTX_LIST, graph, subject, NULL);
 	}
 
-	if (flags & (SERD_LIST_O)) {
-		WriteContext* ctx = (WriteContext*)serd_stack_push(
-			&writer->anon_stack, sizeof(WriteContext));
-		*ctx = writer->context;
-		WriteContext new_context = {
-			CTX_LIST,
-			serd_node_copy(graph), serd_node_copy(object), NULL };
-		writer->context = new_context;
+	if (flags & SERD_LIST_O) {
+		old_ctx = push_context(writer, CTX_LIST, graph, object, NULL);
 	}
 
-	if (flags & (SERD_ANON_S|SERD_ANON_O)) {
-		WriteContext* ctx = (WriteContext*)serd_stack_push(
-		        &writer->anon_stack, sizeof(WriteContext));
-		*ctx = writer->context;
-		WriteContext new_context = {
-			(flags & (SERD_LIST_S|SERD_LIST_O))
-			? CTX_LIST : CTX_BLANK,
-			serd_node_copy(graph), serd_node_copy(subject), NULL };
-		if ((flags & SERD_ANON_S)) {
-			new_context.predicate = serd_node_copy(predicate);
-		}
-		writer->context = new_context;
-	} else {
+	if (flags & (SERD_ANON_S | SERD_ANON_O)) {
+		old_ctx = push_context(
+		        writer,
+		        (flags & (SERD_LIST_S | SERD_LIST_O)) ? CTX_LIST : CTX_BLANK,
+		        graph,
+		        subject,
+		        (flags & SERD_ANON_S) ? predicate : NULL);
+	}
+
+	if (!old_ctx) {
 		serd_node_set(&writer->context.graph, graph);
 		serd_node_set(&writer->context.subject, subject);
 		serd_node_set(&writer->context.predicate, predicate);
@@ -878,9 +889,7 @@ serd_writer_end_anon(SerdWriter*     writer,
 	}
 
 	write_sep(writer, SEP_ANON_END);
-	free_context(writer);
-	writer->context = *anon_stack_top(writer);
-	serd_stack_pop(&writer->anon_stack, sizeof(WriteContext));
+	pop_context(writer);
 
 	if (serd_node_equals(node, writer->context.subject)) {
 		// Now-finished anonymous node is the new subject with no other context
