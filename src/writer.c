@@ -192,7 +192,7 @@ write_character(SerdWriter* writer, const uint8_t* utf8, size_t* size)
 		break;
 	}
 
-	if (!(writer->flags & SERD_STYLE_ASCII)) {
+	if (!(writer->flags & SERD_WRITE_ASCII)) {
 		// Write UTF-8 character directly to UTF-8 output
 		return sink(utf8, *size, writer);
 	}

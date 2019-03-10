@@ -211,7 +211,7 @@ main(int argc, char** argv)
 	SerdWorld* world  = serd_world_new();
 	SerdEnv*   env    = serd_env_new(base);
 
-	const SerdWriterFlags writer_flags = (ascii ? SERD_STYLE_ASCII : 0U);
+	const SerdWriterFlags writer_flags = (ascii ? SERD_WRITE_ASCII : 0U);
 
 	const SerdSerialisationFlags serialisation_flags =
 		no_inline ? SERD_NO_INLINE_OBJECTS : 0U;
