@@ -858,7 +858,9 @@ serd_writer_write_statement(SerdWriter* const          writer,
   const SerdNode* const object    = serd_statement_object(statement);
   const SerdNode* const graph     = serd_statement_graph(statement);
 
-  if (!is_resource(subject) || !is_resource(predicate) || !object) {
+  if (!is_resource(subject) || !is_resource(predicate) || !object ||
+      ((flags & SERD_ANON_S) && (flags & SERD_LIST_S)) ||
+      ((flags & SERD_ANON_O) && (flags & SERD_LIST_O))) {
     return SERD_ERR_BAD_ARG;
   }
 
