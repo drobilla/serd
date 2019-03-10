@@ -142,7 +142,7 @@ test_write_errors(void)
   // Syntax-keyed array of output document sizes
   static const size_t max_offsets[] = {0, 450, 1920, 2012, 464};
 
-  static const SerdLimits limits = {1024, 128};
+  static const SerdLimits limits = {1024, 256};
 
   SerdWorld* const world = serd_world_new(NULL);
   assert(world);

@@ -50,6 +50,7 @@ typedef enum {
 typedef struct WriteContext {
   struct WriteContext* back;
   ContextType          type;
+  bool                 terse;
   bool                 comma_indented;
   TokenHeader          graph;
   TokenHeader          subject;
@@ -267,6 +268,7 @@ append_string(char* const buf, const size_t len, const char* const str)
 ZIX_NODISCARD static SerdStatus
 push_context(SerdWriter* const   writer,
              const ContextType   type,
+             const bool          terse,
              const SerdTokenView graph,
              const SerdTokenView subject,
              const SerdTokenView predicate)
@@ -292,6 +294,7 @@ push_context(SerdWriter* const   writer,
   WriteContext* const ctx = (WriteContext*)top;
   ctx->back               = writer->context;
   ctx->type               = type;
+  ctx->terse              = terse;
   ctx->comma_indented     = false;
   ctx->graph.type         = graph.type;
   ctx->graph.flags        = 0U;
@@ -625,9 +628,13 @@ uri_sink(const void* const buf, const size_t len, void* const stream)
 }
 
 ZIX_NODISCARD static SerdStatus
-write_newline(SerdWriter* const writer)
+write_newline(SerdWriter* const writer, const bool terse)
 {
   SerdStatus st = SERD_SUCCESS;
+
+  if (terse || writer->context->terse) {
+    return esink(" ", 1, writer);
+  }
 
   TRY(st, esink("\n", 1, writer));
   for (int i = 0; i < writer->indent; ++i) {
@@ -638,15 +645,23 @@ write_newline(SerdWriter* const writer)
 }
 
 ZIX_NODISCARD static SerdStatus
-write_space(SerdWriter* const writer, const uint8_t flags)
+write_space(SerdWriter* const writer, const uint8_t flags, const bool terse)
 {
-  return (flags & PRE_LINE)    ? write_newline(writer)
+  return (flags & PRE_LINE)    ? write_newline(writer, terse)
          : (flags & PRE_SPACE) ? esink(" ", 1, writer)
                                : SERD_SUCCESS;
 }
 
 ZIX_NODISCARD static SerdStatus
-write_sep(SerdWriter* const writer, const Sep sep)
+write_top_level_sep(SerdWriter* const writer)
+{
+  return (writer->last_sep && !(writer->flags & SERD_WRITE_TERSE))
+           ? write_newline(writer, false)
+           : SERD_SUCCESS;
+}
+
+ZIX_NODISCARD static SerdStatus
+write_sep(SerdWriter* const writer, const bool terse, const Sep sep)
 {
   SerdStatus           st   = SERD_SUCCESS;
   const SepRule* const rule = &rules[sep];
@@ -667,7 +682,7 @@ write_sep(SerdWriter* const writer, const Sep sep)
   }
 
   // Write newline or space before separator if necessary
-  TRY(st, write_space(writer, rule->flags));
+  TRY(st, write_space(writer, rule->flags, terse));
 
   // Write actual separator string
   if (rule->sep) {
@@ -675,13 +690,15 @@ write_sep(SerdWriter* const writer, const Sep sep)
   }
 
   // Write newline after separator if necessary
-  TRY(st, write_space(writer, rule->flags >> 2U));
+  TRY(st, write_space(writer, rule->flags >> 2U, terse));
 
   // Reset context and write a blank line after ends of subjects
   if (sep == SEP_STOP) {
     writer->indent      = top_has_field(writer, SERD_GRAPH) ? 1 : 0;
     ctx->comma_indented = false;
-    TRY(st, esink("\n", 1, writer));
+    if (!terse) {
+      TRY(st, esink("\n", 1, writer));
+    }
   }
 
   writer->last_sep = sep;
@@ -840,6 +857,18 @@ write_iri(SerdWriter* const writer, const SerdTokenView node)
                                      : SERD_BAD_ARG;
 }
 
+ZIX_NODISCARD static Sep
+blank_start_sep(const SerdField field, const SerdEventFlags flags)
+{
+  return ((field == SERD_SUBJECT && (flags & SERD_ANON_S)) ||
+          (field == SERD_OBJECT && (flags & SERD_ANON_O)))
+           ? SEP_ANON_L
+         : ((field == SERD_SUBJECT && (flags & SERD_LIST_S)) ||
+            (field == SERD_OBJECT && (flags & SERD_LIST_O)))
+           ? SEP_LIST_L
+           : SEP_NONE;
+}
+
 ZIX_NODISCARD static SerdStatus
 write_literal(SerdWriter* const   writer,
               const ZixStringView string,
@@ -888,14 +917,12 @@ write_blank(SerdWriter* const    writer,
   SerdStatus st = SERD_SUCCESS;
 
   if (supports_abbrev(writer)) {
-    if ((field == SERD_SUBJECT && (flags & SERD_ANON_S)) ||
-        (field == SERD_OBJECT && (flags & SERD_ANON_O))) {
-      return write_sep(writer, SEP_ANON_L);
-    }
-
-    if ((field == SERD_SUBJECT && (flags & SERD_LIST_S)) ||
-        (field == SERD_OBJECT && (flags & SERD_LIST_O))) {
-      return write_sep(writer, SEP_LIST_L);
+    const Sep sep = blank_start_sep(field, flags);
+    if (sep) {
+      return write_sep(writer,
+                       ((field == SERD_SUBJECT && (flags & SERD_TERSE_S)) ||
+                        (field == SERD_OBJECT && (flags & SERD_TERSE_O))),
+                       sep);
     }
 
     if ((field == SERD_SUBJECT && (flags & SERD_EMPTY_S)) ||
@@ -949,7 +976,7 @@ write_pred(SerdWriter* writer, const SerdTokenView pred)
                                                       : write_iri(writer, pred);
 
   if (!st) {
-    st = write_sep(writer, SEP_P_O);
+    st = write_sep(writer, false, SEP_P_O);
   }
 
   return st ? st : top_set(writer, SERD_PREDICATE, pred);
@@ -964,14 +991,14 @@ write_list_next(SerdWriter* const    writer,
   SerdStatus st = SERD_SUCCESS;
 
   if (token_equals_symbol(serd_object_token_view(object), RDF_NIL)) {
-    TRY(st, write_sep(writer, SEP_LIST_R));
+    TRY(st, write_sep(writer, false, SEP_LIST_R));
     return SERD_FAILURE;
   }
 
   if (token_equals_symbol(predicate, RDF_FIRST)) {
     TRY(st, write_object(writer, flags, object));
   } else {
-    TRY(st, write_sep(writer, SEP_LIST_SEP));
+    TRY(st, write_sep(writer, false, SEP_LIST_SEP));
   }
 
   return st;
@@ -983,11 +1010,11 @@ terminate_context(SerdWriter* const writer)
   SerdStatus st = SERD_SUCCESS;
 
   if (top_has_field(writer, SERD_SUBJECT)) {
-    TRY(st, write_sep(writer, SEP_STOP));
+    TRY(st, write_sep(writer, false, SEP_STOP));
   }
 
   if (top_has_field(writer, SERD_GRAPH)) {
-    TRY(st, write_sep(writer, SEP_GRAPH_R));
+    TRY(st, write_sep(writer, false, SEP_GRAPH_R));
   }
 
   return st;
@@ -1062,10 +1089,10 @@ write_statement(SerdWriter* const       writer,
       (!has_graph && top_has_field(writer, SERD_GRAPH))) {
     TRY(st, terminate_context(writer));
     reset_context(writer, RESET_GRAPH | RESET_INDENT);
-    TRY(st, write_newline(writer));
+    TRY(st, write_top_level_sep(writer));
     if (has_graph) {
       TRY(st, write_token(writer, SERD_GRAPH, flags, graph));
-      TRY(st, write_sep(writer, SEP_GRAPH_L));
+      TRY(st, write_sep(writer, false, SEP_GRAPH_L));
       TRY(st, top_set(writer, SERD_GRAPH, graph));
     }
   }
@@ -1095,6 +1122,7 @@ write_statement(SerdWriter* const       writer,
 
       TRY(st,
           write_sep(writer,
+                    false,
                     before_name ? SEP_END_O_N
                     : after_end ? SEP_END_O_AA
                                 : SEP_END_O_NA));
@@ -1103,7 +1131,7 @@ write_statement(SerdWriter* const       writer,
       // Elide S (write P and O)
 
       const bool first = !top_has_field(writer, SERD_PREDICATE);
-      TRY(st, write_sep(writer, first ? SEP_S_P : SEP_END_P));
+      TRY(st, write_sep(writer, false, first ? SEP_S_P : SEP_END_P));
       TRY(st, write_pred(writer, predicate));
     }
 
@@ -1117,17 +1145,17 @@ write_statement(SerdWriter* const       writer,
     }
 
     if (top_has_field(writer, SERD_SUBJECT)) {
-      TRY(st, write_sep(writer, SEP_STOP));
+      TRY(st, write_sep(writer, false, SEP_STOP));
     }
 
     if (writer->last_sep == SEP_STOP) {
-      TRY(st, write_newline(writer));
+      TRY(st, write_top_level_sep(writer));
     }
 
     // Write subject node
     TRY(st, write_token(writer, SERD_SUBJECT, flags, subject));
     if (!(flags & SERD_LIST_S)) {
-      TRY(st, write_sep(writer, SEP_S_P));
+      TRY(st, write_sep(writer, flags & SERD_TERSE_S, SEP_S_P));
     }
 
     // Set context to new subject
@@ -1148,6 +1176,7 @@ write_statement(SerdWriter* const       writer,
 
     st = push_context(writer,
                       is_list ? CTX_LIST : CTX_BLANK,
+                      writer->context->terse || (flags & SERD_TERSE_S),
                       graph,
                       subject,
                       is_list ? serd_no_token() : predicate);
@@ -1159,6 +1188,7 @@ write_statement(SerdWriter* const       writer,
 
     st = push_context(writer,
                       (flags & SERD_LIST_O) ? CTX_LIST : CTX_BLANK,
+                      writer->context->terse || (flags & SERD_TERSE_O),
                       graph,
                       anon_subject,
                       serd_no_token());
@@ -1190,7 +1220,7 @@ write_end(SerdWriter* const writer, const ZixStringView label)
   }
 
   // Write the end separator ']' and pop the context
-  TRY(st, write_sep(writer, SEP_ANON_R));
+  TRY(st, write_sep(writer, false, SEP_ANON_R));
   pop_context(writer);
 
   const SerdTokenView node = {SERD_BLANK, label};
@@ -1210,7 +1240,9 @@ serd_writer_finish(SerdWriter* const writer)
 
   const SerdStatus st0 = terminate_context(writer);
   const SerdStatus st1 = serd_byte_sink_flush(&writer->byte_sink);
+
   reset_context(writer, RESET_GRAPH | RESET_INDENT);
+  writer->last_sep = SEP_NONE;
   return st0 ? st0 : st1;
 }
 
@@ -1257,8 +1289,9 @@ serd_writer_new(SerdWorld* const      world,
 
   void* const ctx = serd_stack_push(&writer->stack, sizeof(WriteContext));
   if (ctx) {
-    writer->context       = (WriteContext*)ctx;
-    writer->context->back = writer->context;
+    writer->context        = (WriteContext*)ctx;
+    writer->context->back  = writer->context;
+    writer->context->terse = (flags & SERD_WRITE_TERSE);
   }
 
   writer->byte_sink = serd_byte_sink_new(
@@ -1315,7 +1348,7 @@ write_base(SerdWriter* const writer, const ZixStringView uri)
     TRY(st, esink("@base <", 7, writer));
     TRY(st, esink(uri.data, uri.length, writer));
     TRY(st, esink(">", 1, writer));
-    TRY(st, write_sep(writer, SEP_STOP));
+    TRY(st, write_sep(writer, false, SEP_STOP));
   }
 
   return reset_context(writer, RESET_GRAPH | RESET_INDENT);
@@ -1364,7 +1397,7 @@ write_prefix(SerdWriter* const   writer,
     TRY(st, esink(": <", 3, writer));
     TRY(st, ewrite_uri(writer, uri));
     TRY(st, esink(">", 1, writer));
-    TRY(st, write_sep(writer, SEP_STOP));
+    TRY(st, write_sep(writer, false, SEP_STOP));
   }
 
   return reset_context(writer, RESET_GRAPH | RESET_INDENT);

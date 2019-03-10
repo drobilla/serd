@@ -1,0 +1,39 @@
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdft: <http://www.w3.org/ns/rdftest#> .
+
+<>
+	a mf:Manifest ;
+	rdfs:comment "Serd terse writing test suite" ;
+	mf:entries (
+		<#blank_object>
+		<#blank_subject>
+		<#collection_object>
+		<#collection_subject>
+		<#nil_object>
+		<#nil_subject>
+	) .
+
+<#blank_object>
+	a rdft:TestTurtleEval ;
+	mf:action <blank_object.ttl> ;
+	mf:name "blank_object" ;
+	mf:result <blank_object.ttl> .
+
+<#blank_subject>
+	a rdft:TestTurtleEval ;
+	mf:action <blank_subject.ttl> ;
+	mf:name "blank_subject" ;
+	mf:result <blank_subject.ttl> .
+
+<#collection_object>
+	a rdft:TestTurtleEval ;
+	mf:action <collection_object.ttl> ;
+	mf:name "collection_object" ;
+	mf:result <collection_object.ttl> .
+
+<#collection_subject>
+	a rdft:TestTurtleEval ;
+	mf:action <collection_subject.ttl> ;
+	mf:name "collection_subject" ;
+	mf:result <collection_subject.ttl> .

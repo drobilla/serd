@@ -40,6 +40,7 @@ typedef enum {
   SERD_WRITE_UNRESOLVED  = 1U << 2U, ///< Don't make URIs relative
   SERD_WRITE_BULK        = 1U << 3U, ///< Write output in pages
   SERD_WRITE_LAX         = 1U << 4U, ///< Tolerate lossy output
+  SERD_WRITE_TERSE       = 1U << 5U, ///< Write terse output without newlines
 } SerdWriterFlag;
 
 /// Bitwise OR of #SerdWriterFlag values

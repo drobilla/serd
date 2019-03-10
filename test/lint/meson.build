@@ -28,6 +28,7 @@ ttl_metadata_file_paths = [
   '../extra/pretty/manifest.ttl',
   '../extra/qualify/manifest.ttl',
   '../extra/root/manifest.ttl',
+  '../extra/terse/manifest.ttl',
 ]
 
 plot_scripts = files(plot_script_paths)
