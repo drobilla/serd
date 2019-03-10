@@ -158,7 +158,11 @@ free_context(SerdWriter* writer)
 }
 
 static SerdStatus
-push_context(SerdWriter* writer, const WriteContext new_context)
+push_context(SerdWriter* const     writer,
+             const ContextType     type,
+             const SerdNode* const g,
+             const SerdNode* const s,
+             const SerdNode* const p)
 {
   WriteContext* top =
     (WriteContext*)serd_stack_push(&writer->anon_stack, sizeof(WriteContext));
@@ -167,7 +171,11 @@ push_context(SerdWriter* writer, const WriteContext new_context)
     return SERD_ERR_OVERFLOW;
   }
 
-  *top            = writer->context;
+  *top = writer->context;
+
+  const WriteContext new_context = {
+    type, serd_node_copy(g), serd_node_copy(s), serd_node_copy(p), false};
+
   writer->context = new_context;
   return SERD_SUCCESS;
 }
@@ -969,45 +977,37 @@ serd_writer_write_statement(SerdWriter* const          writer,
     write_node(writer, object, SERD_OBJECT, flags);
   }
 
-  // Push context for anonymous or list subject if necessary
-  if (flags & (SERD_ANON_S | SERD_LIST_S)) {
-    const bool is_list = (flags & SERD_LIST_S);
-
-    const WriteContext ctx = {is_list ? CTX_LIST : CTX_BLANK,
-                              serd_node_copy(graph),
-                              serd_node_copy(subject),
-                              is_list ? NULL : serd_node_copy(predicate),
-                              false};
-    if ((st = push_context(writer, ctx))) {
-      return st;
+  // Push context for list or anonymous subject if necessary
+  if (!st) {
+    if (flags & SERD_ANON_S) {
+      st = push_context(writer, CTX_BLANK, graph, subject, predicate);
+    } else if (flags & SERD_LIST_S) {
+      st = push_context(writer, CTX_LIST, graph, subject, NULL);
     }
   }
 
-  // Push context for anonymous or list object if necessary
-  if (flags & (SERD_ANON_O | SERD_LIST_O)) {
-    const bool is_list = (flags & SERD_LIST_O);
-
-    const WriteContext ctx = {is_list ? CTX_LIST : CTX_BLANK,
-                              serd_node_copy(graph),
-                              serd_node_copy(object),
-                              NULL,
-                              false};
-    if ((st = push_context(writer, ctx))) {
-      return st;
+  // Push context for list or anonymous object if necessary
+  if (!st) {
+    if (flags & SERD_ANON_O) {
+      st = push_context(writer, CTX_BLANK, graph, object, NULL);
+    } else if (flags & SERD_LIST_O) {
+      st = push_context(writer, CTX_LIST, graph, object, NULL);
     }
   }
 
-  if (!(flags & (SERD_ANON_S | SERD_LIST_S | SERD_ANON_O | SERD_LIST_O))) {
-    // Update current context to this statement
-    if (graph) {
-      serd_node_set(&writer->context.graph, graph);
-    }
+  // Update current context to this statement if this isn't a new context
+  if (!st) {
+    if (!(flags & (SERD_ANON_S | SERD_LIST_S | SERD_ANON_O | SERD_LIST_O))) {
+      if (graph) {
+        serd_node_set(&writer->context.graph, graph);
+      }
 
-    serd_node_set(&writer->context.subject, subject);
-    serd_node_set(&writer->context.predicate, predicate);
+      serd_node_set(&writer->context.subject, subject);
+      serd_node_set(&writer->context.predicate, predicate);
+    }
   }
 
-  return SERD_SUCCESS;
+  return st;
 }
 
 static SerdStatus
