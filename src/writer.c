@@ -673,7 +673,7 @@ write_node(SerdWriter*        writer,
 static inline bool
 is_resource(const SerdNode* node)
 {
-	return node->type > SERD_LITERAL;
+	return node && node->type > SERD_LITERAL;
 }
 
 static void
@@ -714,8 +714,7 @@ serd_writer_write_statement(SerdWriter*          writer,
 	const SerdNode* const object    = serd_statement_get_object(statement);
 	const SerdNode* const graph     = serd_statement_get_graph(statement);
 
-	if (!subject || !predicate || !object ||
-	    !is_resource(subject) || !is_resource(predicate)) {
+	if (!is_resource(subject) || !is_resource(predicate) || !object) {
 		return SERD_ERR_BAD_ARG;
 	}
 
