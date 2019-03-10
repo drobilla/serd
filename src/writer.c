@@ -39,18 +39,16 @@ typedef enum {
 } ContextType;
 
 typedef struct {
-  ContextType type;
-  SerdNode*   graph;
-  SerdNode*   subject;
-  SerdNode*   predicate;
-  bool        indented_object;
+  ContextType        type;
+  SerdStatementFlags flags;
+  SerdNode*          graph;
+  SerdNode*          subject;
+  SerdNode*          predicate;
+  bool               indented_object;
 } WriteContext;
 
-static const WriteContext WRITE_CONTEXT_NULL = {CTX_NAMED,
-                                                NULL,
-                                                NULL,
-                                                NULL,
-                                                false};
+static const WriteContext WRITE_CONTEXT_NULL =
+  {CTX_NAMED, 0, NULL, NULL, NULL, false};
 
 typedef enum {
   SEP_NONE,        ///< Placeholder for nodes or nothing
@@ -158,11 +156,12 @@ free_context(SerdWriter* writer)
 }
 
 static SerdStatus
-push_context(SerdWriter* const     writer,
-             const ContextType     type,
-             const SerdNode* const g,
-             const SerdNode* const s,
-             const SerdNode* const p)
+push_context(SerdWriter* const        writer,
+             const ContextType        type,
+             const SerdStatementFlags flags,
+             const SerdNode* const    g,
+             const SerdNode* const    s,
+             const SerdNode* const    p)
 {
   WriteContext* top =
     (WriteContext*)serd_stack_push(&writer->anon_stack, sizeof(WriteContext));
@@ -173,8 +172,12 @@ push_context(SerdWriter* const     writer,
 
   *top = writer->context;
 
-  const WriteContext new_context = {
-    type, serd_node_copy(g), serd_node_copy(s), serd_node_copy(p), false};
+  const WriteContext new_context = {type,
+                                    flags,
+                                    serd_node_copy(g),
+                                    serd_node_copy(s),
+                                    serd_node_copy(p),
+                                    false};
 
   writer->context = new_context;
   return SERD_SUCCESS;
@@ -980,18 +983,18 @@ serd_writer_write_statement(SerdWriter* const          writer,
   // Push context for list or anonymous subject if necessary
   if (!st) {
     if (flags & SERD_ANON_S) {
-      st = push_context(writer, CTX_BLANK, graph, subject, predicate);
+      st = push_context(writer, CTX_BLANK, flags, graph, subject, predicate);
     } else if (flags & SERD_LIST_S) {
-      st = push_context(writer, CTX_LIST, graph, subject, NULL);
+      st = push_context(writer, CTX_LIST, flags, graph, subject, NULL);
     }
   }
 
   // Push context for list or anonymous object if necessary
   if (!st) {
     if (flags & SERD_ANON_O) {
-      st = push_context(writer, CTX_BLANK, graph, object, NULL);
+      st = push_context(writer, CTX_BLANK, flags, graph, object, NULL);
     } else if (flags & SERD_LIST_O) {
-      st = push_context(writer, CTX_LIST, graph, object, NULL);
+      st = push_context(writer, CTX_LIST, flags, graph, object, NULL);
     }
   }
 
