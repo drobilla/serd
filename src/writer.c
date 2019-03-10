@@ -385,6 +385,14 @@ write_newline(SerdWriter* writer)
 	}
 }
 
+static void
+write_top_level_sep(SerdWriter* writer)
+{
+	if (!writer->empty) {
+		write_newline(writer);
+	}
+}
+
 static bool
 write_sep(SerdWriter* writer, const Sep sep)
 {
@@ -749,9 +757,7 @@ serd_writer_write_statement(SerdWriter*          writer,
 		if (ctx(writer, SERD_GRAPH)) {
 			write_sep(writer, SEP_GRAPH_END);
 		}
-		if (!writer->empty) {
-			write_newline(writer); // Blank line between top level items
-		}
+		write_top_level_sep(writer);
 
 		reset_context(writer, true);
 		if (graph) {
@@ -789,9 +795,7 @@ serd_writer_write_statement(SerdWriter*          writer,
 			if (ctx(writer, SERD_SUBJECT)) {
 				write_sep(writer, SEP_END_S); // Terminate last subject
 			}
-			if (!writer->empty) {
-				write_newline(writer); // Blank line between top level items
-			}
+			write_top_level_sep(writer);
 		}
 
 		if (serd_stack_is_empty(&writer->anon_stack)) {
