@@ -1061,7 +1061,7 @@ read_object(SerdReader* reader, ReadContext* ctx, bool emit, bool* ate_dot)
 
 	if (!emit) {
 		ctx->object = o;
-	} else if (!ret && emit && simple && o) {
+	} else if (!ret && simple && o) {
 		ret = emit_statement(reader, *ctx, o);
 		serd_stack_pop_to(&reader->stack, orig_stack_size);
 	}

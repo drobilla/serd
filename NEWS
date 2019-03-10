@@ -5,6 +5,7 @@ serd (1.0.1) unstable;
   * Add extensible logging API
   * Add extensible logging API
   * Add model for storing statements in memory
+  * Add option for writing terse output without newlines
   * Add support for validation
   * Bring read/write interface closer to C standard
   * Make nodes opaque

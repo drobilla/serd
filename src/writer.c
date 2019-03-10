@@ -379,16 +379,20 @@ uri_sink(const void* buf, size_t size, size_t nmemb, void* stream)
 static void
 write_newline(SerdWriter* writer)
 {
-	sink("\n", 1, writer);
-	for (int i = 0; i < writer->indent; ++i) {
-		sink("\t", 1, writer);
+	if (writer->flags & SERD_WRITE_TERSE) {
+		sink(" ", 1, writer);
+	} else {
+		sink("\n", 1, writer);
+		for (int i = 0; i < writer->indent; ++i) {
+			sink("\t", 1, writer);
+		}
 	}
 }
 
 static void
 write_top_level_sep(SerdWriter* writer)
 {
-	if (!writer->empty) {
+	if (!writer->empty && !(writer->flags & SERD_WRITE_TERSE)) {
 		write_newline(writer);
 	}
 }

@@ -262,6 +262,7 @@ typedef struct {
 */
 typedef enum {
 	SERD_WRITE_ASCII = 1 << 0,  ///< Escape all non-ASCII characters
+	SERD_WRITE_TERSE = 1 << 1,  ///< Write terser output without newlines
 } SerdWriterFlag;
 
 /// Bitwise OR of SerdWriterFlag values

@@ -67,6 +67,7 @@ print_usage(const char* name, bool error)
 	fprintf(os, "  -q           Suppress all output except data.\n");
 	fprintf(os, "  -r ROOT_URI  Keep relative URIs within ROOT_URI.\n");
 	fprintf(os, "  -s INPUT     Parse INPUT as string (terminates options).\n");
+	fprintf(os, "  -t           Write terser output without newlines.\n");
 	fprintf(os, "  -v           Display version information and exit.\n");
 	return error ? 1 : 0;
 }
@@ -93,28 +94,28 @@ main(int argc, char** argv)
 		return print_usage(argv[0], true);
 	}
 
-	SerdSyntax     input_syntax  = (SerdSyntax)0;
-	SerdSyntax     output_syntax = (SerdSyntax)0;
-	bool           from_string   = false;
-	bool           from_stdin    = false;
-	bool           ascii         = false;
-	bool           bulk_read     = true;
-	bool           bulk_write    = false;
-	bool           no_inline     = false;
-	bool           lax           = false;
-	bool           use_model     = false;
-	bool           quiet         = false;
-	size_t         stack_size    = 4194304;
-	const char*    add_prefix    = NULL;
-	const char*    chop_prefix   = NULL;
-	const char*    root_uri      = NULL;
-	int            a             = 1;
+	SerdSyntax      input_syntax  = (SerdSyntax)0;
+	SerdSyntax      output_syntax = (SerdSyntax)0;
+	SerdWriterFlags writer_flags  = 0;
+	bool            from_string   = false;
+	bool            from_stdin    = false;
+	bool            bulk_read     = true;
+	bool            bulk_write    = false;
+	bool            no_inline     = false;
+	bool            lax           = false;
+	bool            use_model     = false;
+	bool            quiet         = false;
+	size_t          stack_size    = 4194304;
+	const char*     add_prefix    = NULL;
+	const char*     chop_prefix   = NULL;
+	const char*     root_uri      = NULL;
+	int             a             = 1;
 	for (; a < argc && argv[a][0] == '-'; ++a) {
 		if (argv[a][1] == '\0') {
 			from_stdin = true;
 			break;
 		} else if (argv[a][1] == 'a') {
-			ascii = true;
+			writer_flags |= SERD_WRITE_ASCII;
 		} else if (argv[a][1] == 'b') {
 			bulk_write = true;
 		} else if (argv[a][1] == 'e') {
@@ -135,6 +136,8 @@ main(int argc, char** argv)
 			from_string = true;
 			++a;
 			break;
+		} else if (argv[a][1] == 't') {
+			writer_flags |= SERD_WRITE_TERSE;
 		} else if (argv[a][1] == 'i') {
 			if (++a == argc) {
 				return missing_arg(argv[0], 'i');
@@ -210,8 +213,6 @@ main(int argc, char** argv)
 	FILE*      out_fd = stdout;
 	SerdWorld* world  = serd_world_new();
 	SerdEnv*   env    = serd_env_new(base);
-
-	const SerdWriterFlags writer_flags = (ascii ? SERD_WRITE_ASCII : 0U);
 
 	const SerdSerialisationFlags serialisation_flags =
 		no_inline ? SERD_NO_INLINE_OBJECTS : 0U;
