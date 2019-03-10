@@ -512,8 +512,10 @@ write_top_level_sep(SerdWriter* writer)
 }
 
 static bool
-write_sep(SerdWriter* writer, const Sep sep)
+write_sep(SerdWriter* writer, const SerdStatementFlags flags, Sep sep)
 {
+  (void)flags;
+
   const SepRule* rule = &rules[sep];
 
   // Adjust indent, but tolerate if it would become negative
@@ -659,7 +661,7 @@ write_uri_node(SerdWriter* const        writer,
                const SerdStatementFlags flags)
 {
   if (is_inline_start(writer, field, flags)) {
-    write_sep(writer, SEP_ANON_BEGIN);
+    write_sep(writer, flags, SEP_ANON_BEGIN);
     sink(" == ", 4, writer);
   }
 
@@ -753,7 +755,7 @@ write_curie(SerdWriter* const        writer,
   case SERD_TURTLE:
   case SERD_TRIG:
     if (is_inline_start(writer, field, flags)) {
-      write_sep(writer, SEP_ANON_BEGIN);
+      write_sep(writer, flags, SEP_ANON_BEGIN);
       sink(" == ", 4, writer);
     }
     write_lname(writer, serd_node_string(node), node->length);
@@ -773,12 +775,12 @@ write_blank(SerdWriter* const        writer,
   const char* node_str = serd_node_string(node);
   if (supports_abbrev(writer)) {
     if (is_inline_start(writer, field, flags)) {
-      return write_sep(writer, SEP_ANON_BEGIN);
+      return write_sep(writer, flags, SEP_ANON_BEGIN);
     }
 
     if ((field == SERD_SUBJECT && (flags & SERD_LIST_S)) ||
         (field == SERD_OBJECT && (flags & SERD_LIST_O))) {
-      return write_sep(writer, SEP_LIST_BEGIN);
+      return write_sep(writer, flags, SEP_LIST_BEGIN);
     }
 
     if (field == SERD_SUBJECT && (flags & SERD_EMPTY_S)) {
@@ -831,7 +833,7 @@ static void
 write_pred(SerdWriter* writer, SerdStatementFlags flags, const SerdNode* pred)
 {
   write_node(writer, pred, SERD_PREDICATE, flags);
-  write_sep(writer, SEP_P_O);
+  write_sep(writer, flags, SEP_P_O);
   serd_node_set(&writer->context.predicate, pred);
 }
 
@@ -842,14 +844,14 @@ write_list_obj(SerdWriter* const        writer,
                const SerdNode* const    object)
 {
   if (serd_node_equals(object, writer->world->rdf_nil)) {
-    write_sep(writer, SEP_LIST_END);
+    write_sep(writer, writer->context.flags, SEP_LIST_END);
     return true;
   }
 
   if (serd_node_equals(predicate, writer->world->rdf_first)) {
     write_node(writer, object, SERD_OBJECT, flags);
   } else {
-    write_sep(writer, SEP_LIST_SEP);
+    write_sep(writer, writer->context.flags, SEP_LIST_SEP);
   }
 
   return false;
@@ -899,11 +901,11 @@ serd_writer_write_statement(SerdWriter* const          writer,
   if ((graph && !serd_node_equals(graph, writer->context.graph)) ||
       (!graph && ctx(writer, SERD_GRAPH))) {
     if (ctx(writer, SERD_SUBJECT)) {
-      write_sep(writer, SEP_END_S);
+      write_sep(writer, writer->context.flags, SEP_END_S);
     }
 
     if (ctx(writer, SERD_GRAPH)) {
-      write_sep(writer, SEP_GRAPH_END);
+      write_sep(writer, writer->context.flags, SEP_GRAPH_END);
     }
 
     write_top_level_sep(writer);
@@ -911,7 +913,7 @@ serd_writer_write_statement(SerdWriter* const          writer,
 
     if (graph) {
       TRY(write_node(writer, graph, SERD_GRAPH, flags));
-      write_sep(writer, SEP_GRAPH_BEGIN);
+      write_sep(writer, flags, SEP_GRAPH_BEGIN);
       serd_node_set(&writer->context.graph, graph);
     }
   }
@@ -931,7 +933,7 @@ serd_writer_write_statement(SerdWriter* const          writer,
         writer->context.indented_object = true;
       }
 
-      write_sep(writer, SEP_END_O);
+      write_sep(writer, writer->context.flags, SEP_END_O);
       write_node(writer, object, SERD_OBJECT, flags);
     } else {
       // Abbreviate S
@@ -941,8 +943,8 @@ serd_writer_write_statement(SerdWriter* const          writer,
       }
 
       Sep sep = ctx(writer, SERD_PREDICATE) ? SEP_END_P : SEP_S_P;
-      write_sep(writer, sep);
-      write_pred(writer, flags, predicate);
+      write_sep(writer, writer->context.flags, sep);
+      write_pred(writer, writer->context.flags, predicate);
       write_node(writer, object, SERD_OBJECT, flags);
     }
   } else {
@@ -953,8 +955,8 @@ serd_writer_write_statement(SerdWriter* const          writer,
     }
 
     if (serd_stack_is_empty(&writer->anon_stack)) {
-      if (ctx(writer, SERD_SUBJECT)) {
-        write_sep(writer, SEP_END_S); // Terminate last subject
+      if (ctx(writer, SERD_SUBJECT)) { // Terminate last subject
+        write_sep(writer, writer->context.flags, SEP_END_S);
       }
       write_top_level_sep(writer);
     }
@@ -962,12 +964,12 @@ serd_writer_write_statement(SerdWriter* const          writer,
     if (serd_stack_is_empty(&writer->anon_stack)) {
       write_node(writer, subject, SERD_SUBJECT, flags);
       if (!(flags & (SERD_ANON_S | SERD_LIST_S))) {
-        write_sep(writer, SEP_S_P);
+        write_sep(writer, writer->context.flags, SEP_S_P);
       } else if (flags & SERD_ANON_S) {
-        write_sep(writer, SEP_ANON_S_P);
+        write_sep(writer, writer->context.flags, SEP_ANON_S_P);
       }
     } else {
-      write_sep(writer, SEP_ANON_S_P);
+      write_sep(writer, writer->context.flags, SEP_ANON_S_P);
     }
 
     reset_context(writer, false);
@@ -1027,7 +1029,7 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
                              serd_node_string(node));
   }
 
-  write_sep(writer, SEP_ANON_END);
+  write_sep(writer, writer->context.flags, SEP_ANON_END);
   pop_context(writer);
 
   if (serd_node_equals(node, writer->context.subject)) {
@@ -1061,11 +1063,11 @@ SerdStatus
 serd_writer_finish(SerdWriter* writer)
 {
   if (ctx(writer, SERD_SUBJECT)) {
-    write_sep(writer, SEP_END_S);
+    write_sep(writer, writer->context.flags, SEP_END_S);
   }
 
   if (ctx(writer, SERD_GRAPH)) {
-    write_sep(writer, SEP_GRAPH_END);
+    write_sep(writer, writer->context.flags, SEP_GRAPH_END);
   }
 
   // Free any lingering contexts in case there was an error
