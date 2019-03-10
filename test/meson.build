@@ -40,6 +40,7 @@ unit_test_names = [
   'string',
   'string_pair_view',
   'syntax',
+  'terse_write',
   'token_view',
   'uri',
   'views',
@@ -422,6 +423,12 @@ test_suites = {
     '--',
     ['-r', 'http://example.org/top/root/'],
     ['-k', '512'],
+  ],
+  'terse': [
+    files('extra/terse/manifest.ttl'),
+    ns_serdtest + 'terse/',
+    '--',
+    '-t',
   ],
 }
 
