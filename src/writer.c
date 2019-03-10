@@ -45,16 +45,17 @@ typedef enum {
 } ContextType;
 
 typedef struct {
-  ContextType type;
-  SerdNode*   graph;
-  SerdNode*   subject;
-  SerdNode*   predicate;
-  bool        predicates;
-  bool        comma_indented;
+  ContextType        type;
+  SerdStatementFlags flags;
+  SerdNode*          graph;
+  SerdNode*          subject;
+  SerdNode*          predicate;
+  bool               predicates;
+  bool               comma_indented;
 } WriteContext;
 
 static const WriteContext WRITE_CONTEXT_NULL =
-  {CTX_NAMED, NULL, NULL, NULL, 0U, 0U};
+  {CTX_NAMED, 0U, NULL, NULL, NULL, 0U, 0U};
 
 typedef enum {
   SEP_NONE,        ///< Sentinel before the start of a document
@@ -209,11 +210,12 @@ ctx(SerdWriter* writer, const SerdField field)
 }
 
 SERD_NODISCARD static SerdStatus
-push_context(SerdWriter* const     writer,
-             const ContextType     type,
-             const SerdNode* const graph,
-             const SerdNode* const subject,
-             const SerdNode* const predicate)
+push_context(SerdWriter* const        writer,
+             const ContextType        type,
+             const SerdStatementFlags flags,
+             const SerdNode* const    graph,
+             const SerdNode* const    subject,
+             const SerdNode* const    predicate)
 {
   // Push the current context to the stack
   void* const top = serd_stack_push(&writer->anon_stack, sizeof(WriteContext));
@@ -226,6 +228,7 @@ push_context(SerdWriter* const     writer,
   // Update the current context
 
   const WriteContext current = {type,
+                                flags,
                                 serd_node_copy(graph),
                                 serd_node_copy(subject),
                                 serd_node_copy(predicate),
@@ -1109,6 +1112,7 @@ serd_writer_write_statement(SerdWriter* const          writer,
     TRY(st,
         push_context(writer,
                      is_list ? CTX_LIST : CTX_BLANK,
+                     flags,
                      graph,
                      subject,
                      is_list ? NULL : predicate));
@@ -1119,6 +1123,7 @@ serd_writer_write_statement(SerdWriter* const          writer,
     TRY(st,
         push_context(writer,
                      (flags & SERD_LIST_O) ? CTX_LIST : CTX_BLANK,
+                     flags,
                      graph,
                      object,
                      NULL));
