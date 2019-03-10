@@ -6,7 +6,7 @@
 .Nd read and write RDF syntax
 .Sh SYNOPSIS
 .Nm serdi
-.Op Fl abefhlqv
+.Op Fl abefhlqtv
 .Op Fl c Ar prefix
 .Op Fl i Ar syntax
 .Op Fl k Ar bytes
@@ -113,6 +113,9 @@ that enter a parent of
 Parse
 .Ar string
 input instead of a file (terminates options).
+.Pp
+.It Fl t
+Write terser output without newlines.
 .Pp
 .It Fl v
 Display version information and exit.
