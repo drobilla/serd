@@ -216,21 +216,17 @@ def upload_docs(ctx):
         os.system('soelim %s | pre-grohtml troff -man -wall -Thtml | post-grohtml > build/%s.html' % (page, page))
         os.system('rsync -avz --delete -e ssh build/%s.html drobilla@drobilla.net:~/drobilla.net/man/' % page)
 
-def file_equals(patha, pathb, subst_from='', subst_to=''):
+def file_equals(patha, pathb):
+    import filecmp
+
+    if filecmp.cmp(patha, pathb, shallow=False):
+        return True
+
     with io.open(patha, 'rU', encoding='utf-8') as fa:
         with io.open(pathb, 'rU', encoding='utf-8') as fb:
-            for linea in fa:
-                lineb = fb.readline()
-                if (linea.replace(subst_from, subst_to) !=
-                    lineb.replace(subst_from, subst_to)):
-                    fa.seek(0)
-                    fb.seek(0)
-                    show_diff(fa.readlines(),
-                              fb.readlines(),
-                              patha,
-                              pathb)
-                    return False
-    return True
+            show_diff(fa.readlines(), fb.readlines(), patha, pathb)
+
+    return False
 
 def earl_assertion(test, passed, asserter):
     import datetime
@@ -258,6 +254,9 @@ def earl_assertion(test, passed, asserter):
        passed_str,
        datetime.datetime.now().replace(microsecond=0).isoformat())
 
+def build_path(ctx, path):
+    return os.path.relpath(path, os.getcwd())
+
 def show_diff(from_lines, to_lines, from_filename, to_filename):
     import difflib
     import sys
@@ -268,21 +267,17 @@ def show_diff(from_lines, to_lines, from_filename, to_filename):
             tofile=os.path.abspath(to_filename)):
         sys.stderr.write(line)
 
-def check_output(out_filename, check_filename, subst_from='', subst_to=''):
+def check_output(out_filename, check_filename):
     if not os.access(out_filename, os.F_OK):
-        Logs.pprint('RED', 'FAIL: output %s is missing' % out_filename)
-    elif not file_equals(check_filename, out_filename, subst_from, subst_to):
-        Logs.pprint('RED', 'FAIL: %s != %s' % (os.path.abspath(out_filename),
-                                               check_filename))
-    else:
-        return True
+        Logs.pprint('RED', 'error: missing output file %s' % out_filename)
+        return False
 
-    return False
+    return file_equals(check_filename, out_filename)
 
 def test_thru(ctx, base, path, check_filename, flags, isyntax, osyntax,
               options='', quiet=False):
-    in_filename = os.path.join(ctx.path.abspath(), path)
-    out_filename = path + '.thru'
+    in_filename = build_path(ctx, os.path.join(ctx.path.abspath(), path))
+    out_filename = build_path(ctx, path + '.thru')
 
     command = ('serdi_static %s %s -i %s -o %s -p foo "%s" "%s" | '
                'serdi_static %s -i %s -o %s -c foo - "%s" > %s') % (
@@ -290,12 +285,12 @@ def test_thru(ctx, base, path, check_filename, flags, isyntax, osyntax,
                    isyntax, isyntax, in_filename, base,
                    options, isyntax, osyntax, base, out_filename)
 
-    if autowaf.run_test(ctx, APPNAME, command, 0, name='  to ' + out_filename, quiet=quiet):
+    if autowaf.run_test(ctx, APPNAME, command, 0, name=out_filename, quiet=quiet):
         autowaf.run_test(
             ctx, APPNAME,
-            lambda: check_output(out_filename, check_filename, '_:docid', '_:genid'),
+            lambda: check_output(out_filename, check_filename),
             True,
-            name='from ' + out_filename,
+            name=out_filename,
             quiet=quiet)
     else:
         Logs.pprint('RED', 'FAIL: error running %s' % command)
@@ -375,18 +370,20 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
 
                 # Run strict test
                 result = run_test(command, expected_return, action, quiet=quiet)
-                if (mf + 'result') in model[test]:
+                if result[0] and ((mf + 'result') in model[test]):
                     # Check output against test suite
                     check_uri  = model[test][mf + 'result'][0]
-                    check_path = file_uri_to_path(check_uri)
+                    check_path = build_path(ctx, file_uri_to_path(check_uri))
                     result     = autowaf.run_test(
                         ctx, APPNAME,
                         lambda: check_output(action + '.out', check_path),
-                        True, name=str(action) + ' check', quiet=True)
+                        True, name=action, quiet=True)
 
                     # Run round-trip tests
-                    test_thru(ctx, uri, action, check_path,
-                              ' '.join(next(thru_options_iter)), isyntax, osyntax, options, quiet=True)
+                    if result[0]:
+                        test_thru(ctx, uri, action, check_path,
+                                  ' '.join(next(thru_options_iter)),
+                                  isyntax, osyntax, options, quiet=True)
 
                 # Write test report entry
                 if report is not None:
