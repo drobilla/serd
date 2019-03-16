@@ -16,6 +16,11 @@
 
 #include "serd_internal.h"
 
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#endif
+
 #include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -200,6 +205,11 @@ main(int argc, char** argv)
 		SERDI_ERROR("missing input\n");
 		return 1;
 	}
+
+#ifdef _WIN32
+	_setmode(fileno(stdin), _O_BINARY);
+	_setmode(fileno(stdout), _O_BINARY);
+#endif
 
 	const uint8_t* input = (const uint8_t*)argv[a++];
 	if (from_file) {
