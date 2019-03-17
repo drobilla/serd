@@ -1314,11 +1314,11 @@ read_directive(SerdReader* reader)
 static bool
 read_wrappedGraph(SerdReader* reader, ReadContext* ctx)
 {
-	bool ate_dot = false;
-	char s_type  = 0;
 	TRY_RET(eat_byte_check(reader, '{'));
 	read_ws_star(reader);
 	while (peek_byte(reader) != '}') {
+		bool ate_dot = false;
+		char s_type  = 0;
 		ctx->subject = 0;
 		Ref subj = read_subject(reader, *ctx, &ctx->subject, &s_type);
 		if (!subj && ctx->subject) {

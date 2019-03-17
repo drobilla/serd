@@ -40,6 +40,7 @@
 		<#test-list-subject>
 		<#test-list>
 		<#test-long-string>
+		<#test-several-eaten-dots>
 		<#test-no-spaces>
 		<#test-non-curie-uri>
 		<#test-num>
@@ -238,6 +239,12 @@
 	mf:name "test-long-string" ;
 	mf:action <test-long-string.ttl> ;
 	mf:result <test-long-string.nt> .
+
+<#test-several-eaten-dots>
+	rdf:type rdft:TestTrigEval ;
+	mf:name "test-several-eaten-dots" ;
+	mf:action <test-several-eaten-dots.trig> ;
+	mf:result <test-several-eaten-dots.nq> .
 
 <#test-no-spaces>
 	rdf:type rdft:TestTurtleEval ;
