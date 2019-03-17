@@ -316,24 +316,29 @@ def _load_rdf(filename):
     "Load an RDF file into python dictionaries via serdi.  Only supports URIs."
     import subprocess
     import re
+
+    rdf_type = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
     model = {}
+    instances = {}
     proc  = subprocess.Popen(['./serdi_static', filename], stdout=subprocess.PIPE)
     for line in proc.communicate()[0].splitlines():
         matches = re.match('<([^ ]*)> <([^ ]*)> <([^ ]*)> \.', line.decode('utf-8'))
         if matches:
-            if matches.group(1) not in model:
-                model[matches.group(1)] = {}
-            if matches.group(2) not in model[matches.group(1)]:
-                model[matches.group(1)][matches.group(2)] = []
-            model[matches.group(1)][matches.group(2)] += [matches.group(3)]
-    return model
+            s, p, o = (matches.group(1), matches.group(2), matches.group(3))
+            if s not in model:
+                model[s] = {p: [o]}
+            elif p not in model[s]:
+                model[s][p] = [o]
+            else:
+                model[s][p].append(o)
 
-def _get_resources_with_type(model, rdf_class):
-    tests = []
-    for s, desc in model.items():
-        if rdf_class in desc['http://www.w3.org/1999/02/22-rdf-syntax-ns#type']:
-	        tests += [s]
-    return tests
+            if p == rdf_type:
+                if o not in instances:
+                    instances[o] = set([s])
+                else:
+                    instances[o].update([s])
+
+    return model, instances
 
 def test_suite(ctx, base_uri, testdir, report, isyntax, options=''):
     import itertools
@@ -341,7 +346,8 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, options=''):
     srcdir = ctx.path.abspath()
 
     mf = 'http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#'
-    model = _load_rdf(os.path.join(srcdir, 'tests', testdir, 'manifest.ttl'))
+    manifest_path = os.path.join(srcdir, 'tests', testdir, 'manifest.ttl')
+    model, instances = _load_rdf(manifest_path)
 
     asserter = ''
     if os.getenv('USER') == 'drobilla':
@@ -356,11 +362,7 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, options=''):
                              True, name=name + ' prints error message', quiet=True)
         return result
 
-    def run_tests(test_class, expected_return):
-        tests = _get_resources_with_type(model, test_class)
-        if len(tests) == 0:
-            return
-
+    def run_tests(test_class, tests, expected_return):
         thru_flags   = ['-e', '-f', '-b', '-r http://example.org/']
         thru_options = []
         for n in range(len(thru_flags) + 1):
@@ -371,7 +373,7 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, options=''):
         quiet = not Options.options.verbose
         tests_name = '%s.%s' % (testdir, test_class[test_class.find('#') + 1:])
         with autowaf.begin_tests(ctx, APPNAME, tests_name):
-            for (num, test) in enumerate(sorted(tests)):
+            for test in sorted(tests):
                 action_node = model[test][mf + 'action'][0]
                 action      = os.path.join('tests', testdir, os.path.basename(action_node))
                 rel_action  = os.path.join(os.path.relpath(srcdir), action)
@@ -405,17 +407,11 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, options=''):
                 run_test(command.replace('serdi_static', 'serdi_static -l'),
                          None, action + ' lax', True)
 
-    def test_types():
-        types = []
-        for lang in ['Turtle', 'NTriples', 'Trig', 'NQuads']:
-            types += [['http://www.w3.org/ns/rdftest#Test%sPositiveSyntax' % lang, 0],
-                      ['http://www.w3.org/ns/rdftest#Test%sNegativeSyntax' % lang, 1],
-                      ['http://www.w3.org/ns/rdftest#Test%sNegativeEval' % lang, 1],
-                      ['http://www.w3.org/ns/rdftest#Test%sEval' % lang, 0]]
-        return types
-
-    for i in test_types():
-        run_tests(i[0], i[1])
+    ns_rdftest = 'http://www.w3.org/ns/rdftest#'
+    for test_class, instances in instances.items():
+        if test_class.startswith(ns_rdftest):
+            expected = 1 if 'Negative' in test_class else 0
+            run_tests(test_class, instances, expected)
 
 def test(ctx):
     "runs test suite"
