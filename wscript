@@ -305,7 +305,14 @@ def file_uri_to_path(uri):
     drive = os.path.splitdrive(path[1:])[0]
     return path if not drive else path[1:]
 
-def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
+def _test_output_syntax(test_class):
+    if 'NTriples' in test_class or 'Turtle' in test_class:
+        return 'NTriples'
+    elif 'NQuads' in test_class or 'Trig' in test_class:
+        return 'NQuads'
+    raise Exception('Unknown test class <%s>' % test_class)
+
+def test_suite(ctx, base_uri, testdir, report, isyntax, options=''):
     import itertools
 
     srcdir = ctx.path.abspath()
@@ -356,6 +363,7 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, osyntax, options=''):
             thru_options += list(itertools.combinations(thru_flags, n))
         thru_options_iter = itertools.cycle(thru_options)
 
+        osyntax = _test_output_syntax(test_class)
         quiet = not Options.options.verbose
         tests_name = '%s.%s' % (testdir, test_class[test_class.find('#') + 1:])
         with autowaf.begin_tests(ctx, APPNAME, tests_name):
@@ -484,8 +492,8 @@ def test(ctx):
 
     # Serd-specific test cases
     serd_base = 'http://drobilla.net/sw/serd/tests/'
-    test_suite(ctx, serd_base + 'good/', 'good', None, 'Turtle', 'NTriples')
-    test_suite(ctx, serd_base + 'bad/', 'bad', None, 'Turtle', 'NTriples')
+    test_suite(ctx, serd_base + 'good/', 'good', None, 'Turtle')
+    test_suite(ctx, serd_base + 'bad/', 'bad', None, 'Turtle')
 
     # Standard test suites
     with open('earl.ttl', 'w') as report:
@@ -498,13 +506,13 @@ def test(ctx):
 
         w3c_base = 'http://www.w3.org/2013/'
         test_suite(ctx, w3c_base + 'TurtleTests/',
-                   'TurtleTests', report, 'Turtle', 'NTriples')
+                   'TurtleTests', report, 'Turtle')
         test_suite(ctx, w3c_base + 'NTriplesTests/',
-                   'NTriplesTests', report, 'NTriples', 'NTriples')
+                   'NTriplesTests', report, 'NTriples')
         test_suite(ctx, w3c_base + 'NQuadsTests/',
-                   'NQuadsTests', report, 'NQuads', 'NQuads')
+                   'NQuadsTests', report, 'NQuads')
         test_suite(ctx, w3c_base + 'TriGTests/',
-                   'TriGTests', report, 'TriG', 'NQuads', '-a')
+                   'TriGTests', report, 'TriG', '-a')
 
     autowaf.post_test(ctx, APPNAME)
 
