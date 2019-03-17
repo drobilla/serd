@@ -279,12 +279,13 @@ test_blob_to_node(void)
 			data[i] = (uint8_t)(rand() % 256);
 		}
 
-		size_t      out_size;
-		SerdNode*   blob     = serd_new_blob(data, size, size % 5, NULL);
-		const char* blob_str = serd_node_get_string(blob);
-		uint8_t*    out      = (uint8_t*)serd_base64_decode(
-			blob_str, serd_node_get_length(blob), &out_size);
+		size_t       out_size = 0;
+		SerdNode*    blob     = serd_new_blob(data, size, size % 5, NULL);
+		const char*  blob_str = serd_node_get_string(blob);
+		const size_t len      = serd_node_get_length(blob);
 
+		uint8_t* out = (uint8_t*)malloc(serd_base64_decoded_size(len));
+		assert(!serd_base64_decode(out, &out_size, blob_str, len));
 		assert(serd_node_get_length(blob) == strlen(blob_str));
 		assert(out_size == size);
 
@@ -296,7 +297,7 @@ test_blob_to_node(void)
 		               NS_XSD "base64Binary"));
 
 		serd_node_free(blob);
-		serd_free(out);
+		free(out);
 		free(data);
 	}
 }

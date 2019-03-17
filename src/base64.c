@@ -14,8 +14,6 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include "base64.h"
-
 #include "serd_internal.h"
 #include "string_utils.h"
 
@@ -60,9 +58,15 @@ encode_chunk(uint8_t out[4], const uint8_t in[3], size_t n_in)
 }
 
 size_t
-serd_base64_get_length(const size_t size, const bool wrap_lines)
+serd_base64_encoded_length(const size_t size, const bool wrap_lines)
 {
 	return (size + 2) / 3 * 4 + (wrap_lines * ((size - 1) / 57));
+}
+
+size_t
+serd_base64_decoded_size(const size_t len)
+{
+	return (len * 3) / 4 + 2;
 }
 
 bool
@@ -105,13 +109,12 @@ decode_chunk(const uint8_t in[4], uint8_t out[3])
 	return 1 + (in[2] != '=') + ((in[2] != '=') && (in[3] != '='));
 }
 
-void*
-serd_base64_decode(const char* str, size_t len, size_t* size)
+SerdStatus
+serd_base64_decode(void* buf, size_t* size, const char* str, size_t len)
 {
 	const uint8_t* ustr = (const uint8_t*)str;
 
-	void* buf = malloc((len * 3) / 4 + 2);
-	*size     = 0;
+	*size = 0;
 	for (size_t i = 0, j = 0; i < len; j += 3) {
 		uint8_t in[] = "====";
 		size_t  n_in = 0;
@@ -123,5 +126,6 @@ serd_base64_decode(const char* str, size_t len, size_t* size)
 			*size += decode_chunk(in, (uint8_t*)buf + j);
 		}
 	}
-	return buf;
+
+	return SERD_SUCCESS;
 }

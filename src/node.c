@@ -16,7 +16,6 @@
 
 #include "node.h"
 
-#include "base64.h"
 #include "serd_internal.h"
 #include "static_nodes.h"
 #include "string_utils.h"
@@ -681,7 +680,7 @@ serd_new_blob(const void*     buf,
 	}
 
 	const SerdNode* type      = datatype ? datatype : &serd_xsd_base64Binary.node;
-	const size_t    len       = serd_base64_get_length(size, wrap_lines);
+	const size_t    len       = serd_base64_encoded_length(size, wrap_lines);
 	const size_t    type_len  = serd_node_total_size(type);
 	const size_t    total_len = len + 1 + type_len;
 
