@@ -888,9 +888,10 @@ class TestScope:
         if 'stderr' in kwargs and kwargs['stderr'] == NONEMPTY:
             # Run with a temp file for stderr and check that it is non-empty
             import tempfile
-            with tempfile.TemporaryFile(mode='w') as stderr:
+            with tempfile.TemporaryFile() as stderr:
                 kwargs['stderr'] = stderr
                 output = self.run(test, **kwargs)
+                stderr.seek(0, 2) # Seek to end
                 return (output if not output else
                         self.run(
                             lambda: stderr.tell() > 0,
