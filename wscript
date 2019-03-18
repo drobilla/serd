@@ -239,7 +239,7 @@ def earl_assertion(test, passed, asserter):
 serdi = './serdi_static'
 
 def test_thru(check, base, path, check_path, flags, isyntax, osyntax, opts=[]):
-    out_path = path + '.out'
+    out_path = path + '.pass'
     out_cmd = [serdi] + opts + [f for sublist in flags for f in sublist] + [
         '-i', isyntax,
         '-o', isyntax,
@@ -389,7 +389,7 @@ def test(tst):
 
     def test_syntax_io(check, in_name, check_name, lang):
         in_path = 'tests/good/%s' % in_name
-        out_path = in_path + '.out'
+        out_path = in_path + '.io'
         check_path = '%s/tests/good/%s' % (srcdir, check_name)
 
         check([serdi, '-o', lang, '%s/%s' % (srcdir, in_path), in_path],
