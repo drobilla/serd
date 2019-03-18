@@ -807,11 +807,15 @@ def show_diff(from_lines, to_lines, from_filename, to_filename):
     import difflib
     import sys
 
+    same = True
     for line in difflib.unified_diff(
             from_lines, to_lines,
             fromfile=os.path.abspath(from_filename),
             tofile=os.path.abspath(to_filename)):
         sys.stderr.write(line)
+        same = False
+
+    return same
 
 def test_file_equals(patha, pathb):
     import filecmp
@@ -827,9 +831,7 @@ def test_file_equals(patha, pathb):
 
     with io.open(patha, 'rU', encoding='utf-8') as fa:
         with io.open(pathb, 'rU', encoding='utf-8') as fb:
-            show_diff(fa.readlines(), fb.readlines(), patha, pathb)
-
-    return False
+            return show_diff(fa.readlines(), fb.readlines(), patha, pathb)
 
 def bench_time():
     if hasattr(time, 'perf_counter'): # Added in Python 3.3
