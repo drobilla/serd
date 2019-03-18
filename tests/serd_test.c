@@ -666,6 +666,9 @@ test_env(void)
 
 	SerdEnv* env_copy = serd_env_copy(env);
 	assert(serd_env_equals(env, env_copy));
+	assert(!serd_env_equals(env, NULL));
+	assert(!serd_env_equals(NULL, env));
+	assert(serd_env_equals(NULL, NULL));
 
 	SerdNode* qualified2 = serd_env_expand(env_copy, foo_u);
 	assert(serd_node_equals(qualified, foo_c));
