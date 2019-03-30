@@ -16,6 +16,7 @@
 		<#test-16>
 		<#test-18>
 		<#test-30>
+		<#test-a-without-whitespace>
 		<#test-backspace>
 		<#test-bad-utf8>
 		<#test-base-query>
@@ -95,6 +96,12 @@
 	mf:name "test-30" ;
 	mf:action <test-30.ttl> ;
 	mf:result <test-30.nt> .
+
+<#test-a-without-whitespace>
+	rdf:type rdft:TestTurtleEval ;
+	mf:name "test-a-without-whitespace" ;
+	mf:action <test-a-without-whitespace.ttl> ;
+	mf:result <test-a-without-whitespace.nt> .
 
 <#test-backspace>
 	rdf:type rdft:TestTurtleEval ;

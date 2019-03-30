@@ -801,18 +801,6 @@ except:
 	return r_err(reader, SERD_ERR_BAD_SYNTAX, "bad literal syntax\n");
 }
 
-inline static bool
-is_token_end(uint8_t c)
-{
-	switch (c) {
-	case 0x9: case 0xA: case 0xD: case 0x20: case '\0':
-	case '#': case '.': case ';': case '<':
-		return true;
-	default:
-		return false;
-	}
-}
-
 static bool
 read_verb(SerdReader* reader, Ref* dest)
 {
@@ -827,8 +815,9 @@ read_verb(SerdReader* reader, Ref* dest)
 	const SerdStatus st      = read_PN_PREFIX(reader, *dest);
 	bool             ate_dot = false;
 	SerdNode*        node    = deref(reader, *dest);
+	const uint8_t    next    = peek_byte(reader);
 	if (!st && node->n_bytes == 1 && node->buf[0] == 'a' &&
-	    is_token_end(peek_byte(reader))) {
+	    next != ':' && !is_PN_CHARS_BASE(next)) {
 		pop_node(reader, *dest);
 		return (*dest = push_node(reader, SERD_URI, NS_RDF "type", 47));
 	} else if (st > SERD_FAILURE ||
