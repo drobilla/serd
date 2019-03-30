@@ -167,8 +167,6 @@ def build(bld):
     bld.install_files('${MANDIR}/man1', 'doc/serdi.1')
 
     bld.add_post_fun(autowaf.run_ldconfig)
-    if bld.env.DOCS:
-        bld.add_post_fun(lambda ctx: autowaf.make_simple_dox(APPNAME))
 
 def lint(ctx):
     "checks code for style issues"
