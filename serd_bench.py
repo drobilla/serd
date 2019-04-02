@@ -2,12 +2,12 @@
 
 import csv
 import itertools
-import matplotlib.pyplot as plt
+import math
+import matplotlib
 import optparse
 import os
 import subprocess
 import sys
-import math
 
 
 class WorkingDirectory:
@@ -76,6 +76,10 @@ def get_dashes():
 
 def plot(in_file, out_filename, x_label, y_label, y_max=None):
     "Plot a TSV file as SVG"
+
+    matplotlib.use('agg')
+    import matplotlib.pyplot as plt
+
     fig_height = 4.0
     dashes = get_dashes()
     markers = itertools.cycle(['o', 's', 'v', 'D', '*', 'p', 'P', 'h', 'X'])
