@@ -281,7 +281,12 @@ def _load_rdf(filename):
     rdf_type = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
     model = {}
     instances = {}
-    proc  = subprocess.Popen(['./serdi_static', filename], stdout=subprocess.PIPE)
+
+    cmd = ['./serdi_static', filename]
+    if Options.options.test_wrapper:
+        cmd = [Options.options.test_wrapper] + cmd
+
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     for line in proc.communicate()[0].splitlines():
         matches = re.match('<([^ ]*)> <([^ ]*)> <([^ ]*)> \.', line.decode('utf-8'))
         if matches:
