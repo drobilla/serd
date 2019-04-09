@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2018 David Robillard <http://drobilla.net>
+  Copyright 2011-2019 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -37,6 +37,12 @@ serd_file_read_byte(void* buf, size_t size, size_t nmemb, void* stream)
 	*((uint8_t*)buf) = (uint8_t)c;
 	return 1;
 }
+
+/** Allocate a buffer aligned to `alignment` bytes. */
+void* serd_malloc_aligned(size_t size, size_t alignment);
+
+/** Allocate a zeroed buffer aligned to `alignment` bytes. */
+void* serd_calloc_aligned(size_t size, size_t alignment);
 
 /** Allocate an aligned buffer for I/O. */
 void* serd_allocate_buffer(size_t size);

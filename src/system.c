@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2018 David Robillard <http://drobilla.net>
+  Copyright 2011-2019 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -21,15 +21,36 @@
 #include "serd_config.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 void*
-serd_allocate_buffer(size_t size)
+serd_malloc_aligned(size_t size, size_t alignment)
 {
 #ifdef HAVE_POSIX_MEMALIGN
-	void* ptr;
-	const int ret = posix_memalign(&ptr, SERD_PAGE_SIZE, size);
+	void*     ptr = NULL;
+	const int ret = posix_memalign(&ptr, alignment, size);
 	return ret ? NULL : ptr;
 #else
 	return malloc(size);
 #endif
+}
+
+void*
+serd_calloc_aligned(size_t size, size_t alignment)
+{
+#ifdef HAVE_POSIX_MEMALIGN
+	void* ptr = serd_malloc_aligned(size, alignment);
+	if (ptr) {
+		memset(ptr, 0, size);
+	}
+	return ptr;
+#else
+	return calloc(1, size);
+#endif
+}
+
+void*
+serd_allocate_buffer(size_t size)
+{
+	return serd_malloc_aligned(size, SERD_PAGE_SIZE);
 }

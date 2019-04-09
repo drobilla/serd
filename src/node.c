@@ -19,6 +19,7 @@
 #include "serd_internal.h"
 #include "static_nodes.h"
 #include "string_utils.h"
+#include "system.h"
 
 #include <assert.h>
 #include <float.h>
@@ -92,11 +93,13 @@ SerdNode*
 serd_node_malloc(size_t n_bytes, SerdNodeFlags flags, SerdNodeType type)
 {
 	const size_t size = sizeof(SerdNode) + serd_node_pad_size(n_bytes);
-	SerdNode*    node = (SerdNode*)calloc(1, size);
+	SerdNode*    node = (SerdNode*)serd_calloc_aligned(size, serd_node_align);
+
+	assert((uintptr_t)node % serd_node_align == 0);
+
 	node->n_bytes = 0;
 	node->flags   = flags;
 	node->type    = type;
-	assert((intptr_t)node % serd_node_align == 0);
 	return node;
 }
 
@@ -337,9 +340,13 @@ serd_node_copy(const SerdNode* node)
 		return NULL;
 	}
 
-	const size_t size = serd_node_total_size(node);
 	serd_node_check_padding(node);
-	SerdNode*    copy = (SerdNode*)calloc(1, size + 3);
+
+	const size_t size = serd_node_total_size(node);
+	SerdNode* copy = (SerdNode*)serd_calloc_aligned(size + 3, serd_node_align);
+
+	assert((intptr_t)node % serd_node_align == 0);
+
 	memcpy(copy, node, size);
 	return copy;
 }
