@@ -20,9 +20,10 @@
 #include "serd/serd.h"
 
 #include <stddef.h>
+#include <stdint.h>
 
 struct SerdNodeImpl {
-	size_t        n_bytes;  /**< Size in bytes (not including null) */
+	uint64_t      n_bytes;  /**< Size in bytes (not including null) */
 	SerdNodeFlags flags;    /**< Node flags (e.g. string properties) */
 	SerdNodeType  type;     /**< Node type */
 };
