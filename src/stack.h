@@ -17,6 +17,8 @@
 #ifndef SERD_STACK_H
 #define SERD_STACK_H
 
+#include "system.h"
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -38,7 +40,7 @@ static inline SerdStack
 serd_stack_new(size_t size)
 {
 	SerdStack stack;
-	stack.buf       = (char*)calloc(size, 1);
+	stack.buf       = (char*)serd_calloc_aligned(size, sizeof(SerdNode));
 	stack.buf_size  = size;
 	stack.size      = SERD_STACK_BOTTOM;
 	return stack;

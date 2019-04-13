@@ -90,6 +90,7 @@ push_node_padded(SerdReader* reader, size_t maxlen,
 	void* mem = serd_stack_push_aligned(
 		&reader->stack, sizeof(SerdNode) + maxlen + 1, sizeof(SerdNode));
 
+	assert((uintptr_t)mem % sizeof(SerdNode) == 0);
 	if (!mem) {
 		return NULL;
 	}

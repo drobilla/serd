@@ -345,7 +345,7 @@ serd_node_copy(const SerdNode* node)
 	const size_t size = serd_node_total_size(node);
 	SerdNode* copy = (SerdNode*)serd_calloc_aligned(size + 3, serd_node_align);
 
-	assert((intptr_t)node % serd_node_align == 0);
+	assert((uintptr_t)copy % serd_node_align == 0);
 
 	memcpy(copy, node, size);
 	return copy;
