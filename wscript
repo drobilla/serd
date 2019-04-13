@@ -70,7 +70,7 @@ def configure(conf):
         {'Build static library': bool(conf.env['BUILD_STATIC']),
          'Build shared library': bool(conf.env['BUILD_SHARED']),
          'Build utilities':      bool(conf.env['BUILD_UTILS']),
-         'Build unit tests':     conf.is_defined('HAVE_GL')})
+         'Build unit tests':     bool(conf.env['BUILD_TESTS'])})
 
 lib_source = ['src/byte_source.c',
               'src/env.c',
