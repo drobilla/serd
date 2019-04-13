@@ -1,3 +1,19 @@
+arm-linux-gnueabihf:
+  image: drobilla/debian-stretch
+  variables:
+    CC: "arm-linux-gnueabihf-gcc"
+    CXX: "arm-linux-gnueabihf-g++"
+  script:
+    - python ./waf configure build test -dsT --no-coverage --wrapper=qemu-arm
+
+aarch64-linux-gnu:
+  image: drobilla/debian-stretch
+  variables:
+    CC: "aarch64-linux-gnu-gcc"
+    CXX: "aarch64-linux-gnu-g++"
+  script:
+    - python ./waf configure build test -dsT --no-coverage --wrapper=qemu-aarch64
+
 lin_dbg:
   script:
     - python ./waf configure build test -dsT --no-coverage
@@ -65,4 +81,3 @@ win_rel:
     - python ./waf configure build test -T --no-coverage
   tags:
     - windows
-
