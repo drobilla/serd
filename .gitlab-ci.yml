@@ -17,7 +17,7 @@ stages:
       - build/coverage
 
 
-arm:
+arm_dbg:
   <<: *build_definition
   image: drobilla/debian-stretch
   script: python ./waf configure build -dsT
@@ -25,15 +25,31 @@ arm:
     CC: "arm-linux-gnueabihf-gcc"
     CXX: "arm-linux-gnueabihf-g++"
 
-test:arm:
+test:arm_dbg:
   <<: *test_definition
   image: drobilla/debian-stretch
   script: python ./waf test --wrapper=qemu-arm
   dependencies:
-    - arm
+    - arm_dbg
 
 
-aarch64:
+arm_rel:
+  <<: *build_definition
+  image: drobilla/debian-stretch
+  script: python ./waf configure build -sT
+  variables:
+    CC: "arm-linux-gnueabihf-gcc"
+    CXX: "arm-linux-gnueabihf-g++"
+
+test:arm_rel:
+  <<: *test_definition
+  image: drobilla/debian-stretch
+  script: python ./waf test --wrapper=qemu-arm
+  dependencies:
+    - arm_rel
+
+
+aarch64_dbg:
   <<: *build_definition
   image: drobilla/debian-stretch
   script: python ./waf configure build -dsT
@@ -41,12 +57,28 @@ aarch64:
     CC: "aarch64-linux-gnu-gcc"
     CXX: "aarch64-linux-gnu-g++"
 
-test:aarch64:
+test:aarch64_dbg:
   <<: *test_definition
   image: drobilla/debian-stretch
   script: python ./waf test --wrapper=qemu-aarch64
   dependencies:
-    - aarch64
+    - aarch64_dbg
+
+
+aarch64_rel:
+  <<: *build_definition
+  image: drobilla/debian-stretch
+  script: python ./waf configure build -sT
+  variables:
+    CC: "aarch64-linux-gnu-gcc"
+    CXX: "aarch64-linux-gnu-g++"
+
+test:aarch64_rel:
+  <<: *test_definition
+  image: drobilla/debian-stretch
+  script: python ./waf test --wrapper=qemu-aarch64
+  dependencies:
+    - aarch64_rel
 
 
 amd64_dbg:
