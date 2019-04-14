@@ -24,27 +24,27 @@ lin_rel:
 
 lin_dbg_st:
   script:
-    - python ./waf configure build test -dsT --no-coverage --static --static-progs --no-shared
+    - python ./waf configure build test -dsT --no-coverage --static-progs --no-shared
 
 lin_rel_st:
   script:
-    - python ./waf configure build test -sT --no-coverage --static --static-progs --no-shared
+    - python ./waf configure build test -sT --no-coverage --static-progs --no-shared
 
 lin_dbg_no_posix:
   script:
-    - python ./waf configure build test --no-posix -dsT --no-coverage
+    - python ./waf configure build test -dsT --no-posix --no-coverage
 
 lin_rel_no_posix:
   script:
-    - python ./waf configure build test --no-posix -sT --no-coverage
+    - python ./waf configure build test -sT --no-posix --no-coverage
 
 lin_dbg_st_no_posix:
   script:
-    - python ./waf configure build test --no-posix -dsT --no-coverage --static --static-progs --no-shared
+    - python ./waf configure build test -dsT --no-posix --no-coverage --static-progs --no-shared
 
 lin_rel_st_no_posix:
   script:
-    - python ./waf configure build test --no-posix -sT --no-coverage --static --static-progs --no-shared
+    - python ./waf configure build test -sT --no-posix --no-coverage --static-progs --no-shared
 
 mac_dbg:
   script:
@@ -60,13 +60,13 @@ mac_rel:
 
 mac_dbg_no_posix:
   script:
-    - python ./waf configure build test --no-posix -dsT --no-coverage
+    - python ./waf configure build test -dsT --no-posix --no-coverage
   tags:
     - macos
 
 mac_rel_no_posix:
   script:
-    - python ./waf configure build test --no-posix -sT --no-coverage
+    - python ./waf configure build test -sT --no-posix --no-coverage
   tags:
     - macos
 
