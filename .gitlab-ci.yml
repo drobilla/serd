@@ -4,7 +4,7 @@ arm-linux-gnueabihf:
     CC: "arm-linux-gnueabihf-gcc"
     CXX: "arm-linux-gnueabihf-g++"
   script:
-    - python ./waf configure build test -dsT --no-coverage --wrapper=qemu-arm
+    - python ./waf configure build test -dsT --wrapper=qemu-arm
 
 aarch64-linux-gnu:
   image: drobilla/debian-stretch
@@ -12,39 +12,47 @@ aarch64-linux-gnu:
     CC: "aarch64-linux-gnu-gcc"
     CXX: "aarch64-linux-gnu-g++"
   script:
-    - python ./waf configure build test -dsT --no-coverage --wrapper=qemu-aarch64
+    - python ./waf configure build test -dsT --wrapper=qemu-aarch64
 
 lin_dbg:
+  image: drobilla/debian-stretch
   script:
-    - python ./waf configure build test -dsT --no-coverage
+    - python ./waf configure build test -dsT
 
 lin_rel:
+  image: drobilla/debian-stretch
   script:
-    - python ./waf configure build test -sT --no-coverage
+    - python ./waf configure build test -sT
 
 lin_dbg_st:
+  image: drobilla/debian-stretch
   script:
-    - python ./waf configure build test -dsT --no-coverage --static-progs --no-shared
+    - python ./waf configure build test -dsT --static-progs --no-shared
 
 lin_rel_st:
+  image: drobilla/debian-stretch
   script:
-    - python ./waf configure build test -sT --no-coverage --static-progs --no-shared
+    - python ./waf configure build test -sT --static-progs --no-shared
 
 lin_dbg_no_posix:
+  image: drobilla/debian-stretch
   script:
-    - python ./waf configure build test -dsT --no-posix --no-coverage
+    - python ./waf configure build test -dsT --no-posix
 
 lin_rel_no_posix:
+  image: drobilla/debian-stretch
   script:
-    - python ./waf configure build test -sT --no-posix --no-coverage
+    - python ./waf configure build test -sT --no-posix
 
 lin_dbg_st_no_posix:
+  image: drobilla/debian-stretch
   script:
-    - python ./waf configure build test -dsT --no-posix --no-coverage --static-progs --no-shared
+    - python ./waf configure build test -dsT --no-posix --static-progs --no-shared
 
 lin_rel_st_no_posix:
+  image: drobilla/debian-stretch
   script:
-    - python ./waf configure build test -sT --no-posix --no-coverage --static-progs --no-shared
+    - python ./waf configure build test -sT --no-posix --static-progs --no-shared
 
 mac_dbg:
   script:
