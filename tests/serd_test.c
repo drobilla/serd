@@ -35,7 +35,7 @@
 #    define NAN (INFINITY - INFINITY)
 #endif
 
-static int
+static void
 test_strtod(double dbl, double max_delta)
 {
 	char buf[1024];
@@ -46,7 +46,6 @@ test_strtod(double dbl, double max_delta)
 
 	const double diff = fabs(out - dbl);
 	assert(diff <= max_delta);
-	return 0;
 }
 
 static SerdStatus
@@ -87,12 +86,12 @@ test_sink(void*              handle,
 	return SERD_SUCCESS;
 }
 
-static int
-check_file_uri(const char* hostname,
-               const char* path,
-               bool        escape,
-               const char* expected_uri,
-               const char* expected_path)
+static void
+test_file_uri(const char* hostname,
+              const char* path,
+              bool        escape,
+              const char* expected_uri,
+              const char* expected_path)
 {
 	if (!expected_path) {
 		expected_path = path;
@@ -103,7 +102,6 @@ check_file_uri(const char* hostname,
 
 	uint8_t* out_hostname = NULL;
 	uint8_t* out_path     = serd_file_uri_parse(node.buf, &out_hostname);
-	int      ret          = 0;
 	assert(!strcmp((const char*)node.buf, expected_uri));
 	assert((hostname && out_hostname) || (!hostname && !out_hostname));
 	assert(!strcmp((const char*)out_path, (const char*)expected_path));
@@ -111,7 +109,6 @@ check_file_uri(const char* hostname,
 	serd_free(out_path);
 	serd_free(out_hostname);
 	serd_node_free(&node);
-	return ret;
 }
 
 int
@@ -123,9 +120,7 @@ main(void)
 		double dbl = rand() % MAX;
 		dbl += (rand() % MAX) / (double)MAX;
 
-		if (test_strtod(dbl, 1 / (double)MAX)) {
-			return 1;
-		}
+		test_strtod(dbl, 1 / (double)MAX);
 	}
 
 	const double expt_test_nums[] = {
@@ -259,21 +254,18 @@ main(void)
 
 	// Test file URI escaping and parsing
 
-	if (check_file_uri(NULL, "C:/My 100%", true,
-	                   "file:///C:/My%20100%%", NULL) ||
-	    check_file_uri("ahost", "C:\\Pointless Space", true,
-	                   "file://ahost/C:/Pointless%20Space",
-	                   "C:/Pointless Space") ||
-	    check_file_uri(NULL, "/foo/bar", true,
-	                   "file:///foo/bar", NULL) ||
-	    check_file_uri("bhost", "/foo/bar", true,
-	                   "file://bhost/foo/bar", NULL) ||
-	    check_file_uri(NULL, "a/relative path", false,
-	                   "a/relative path", NULL) ||
-	    check_file_uri(NULL, "a/relative <path>", true,
-	                   "a/relative%20%3Cpath%3E", NULL)) {
-		return 1;
-	}
+	test_file_uri(NULL, "C:/My 100%", true,
+	              "file:///C:/My%20100%%", NULL);
+	test_file_uri("ahost", "C:\\Pointless Space", true,
+	              "file://ahost/C:/Pointless%20Space", "C:/Pointless Space");
+	test_file_uri(NULL, "/foo/bar", true,
+	              "file:///foo/bar", NULL);
+	test_file_uri("bhost", "/foo/bar", true,
+	              "file://bhost/foo/bar", NULL);
+	test_file_uri(NULL, "a/relative path", false,
+	              "a/relative path", NULL);
+	test_file_uri(NULL, "a/relative <path>", true,
+	              "a/relative%20%3Cpath%3E", NULL);
 
 	// Test tolerance of parsing junk URI escapes
 
