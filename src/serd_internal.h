@@ -42,6 +42,12 @@
 #    define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
+#if defined(__GNUC__)
+#    define SERD_LOG_FUNC(fmt, arg1) __attribute__((format(printf, fmt, arg1)))
+#else
+#    define SERD_LOG_FUNC(fmt, arg1)
+#endif
+
 static const uint8_t replacement_char[] = { 0xEF, 0xBF, 0xBD };
 
 /* File and Buffer Utilities */
@@ -533,6 +539,7 @@ serd_error(SerdErrorSink error_sink, void* handle, const SerdError* e)
 	}
 }
 
+SERD_LOG_FUNC(3, 4)
 int
 r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
 

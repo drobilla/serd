@@ -646,10 +646,12 @@ read_IRIREF(SerdReader* reader)
 			if (c <= 0x20) {
 				if (isprint(c)) {
 					r_err(reader, SERD_ERR_BAD_SYNTAX,
-					      "invalid IRI character `%c' (escape %%%02X)\n", c, c);
+					      "invalid IRI character `%c' (escape %%%02X)\n",
+					      c, (unsigned)c);
 				} else {
 					r_err(reader, SERD_ERR_BAD_SYNTAX,
-					      "invalid IRI character (escape %%%02X)\n", c, c);
+					      "invalid IRI character (escape %%%02X)\n",
+					      (unsigned)c);
 				}
 				if (reader->strict) {
 					return pop_node(reader, ref);
