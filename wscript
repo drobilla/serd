@@ -413,7 +413,7 @@ def test(tst):
         with tempfile.TemporaryFile(mode='r') as stdin:
             check([serdi, '-'], stdin=stdin)
 
-    with tst.group('BadCommands', expected=1) as check:
+    with tst.group('BadCommands', expected=1, stderr=autowaf.NONEMPTY) as check:
         check([serdi])
         check([serdi, '/no/such/file'])
         check([serdi, 'ftp://example.org/unsupported.ttl'])
@@ -424,7 +424,7 @@ def test(tst):
         check([serdi, '-o', 'illegal'])
         check([serdi, '-o'])
         check([serdi, '-p'])
-        check([serdi, '-q', '%s/tests/bad/bad-id-clash.ttl' % srcdir])
+        check([serdi, '-q', '%s/tests/bad/bad-base.ttl' % srcdir], stderr=None)
         check([serdi, '-r'])
         check([serdi, '-z'])
 
