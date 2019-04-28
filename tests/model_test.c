@@ -30,6 +30,7 @@
 #define NS_RDF    "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 #define RDF_FIRST NS_RDF "first"
 #define RDF_REST  NS_RDF "rest"
+#define RDF_NIL   NS_RDF "nil"
 
 #define N_OBJECTS_PER 2U
 
@@ -744,6 +745,72 @@ test_write_bad_list(SerdWorld* world, const size_t n_quads)
 	return 0;
 }
 
+typedef struct {
+	size_t n_written;
+	size_t max_successes;
+} FailingWriteFuncState;
+
+/// Write function that fails after *(int*)stream statements
+static size_t
+failing_write_func(const void* buf, size_t size, size_t nmemb, void* stream)
+{
+	(void)buf;
+	(void)size;
+	(void)nmemb;
+
+	FailingWriteFuncState* state = (FailingWriteFuncState*)stream;
+
+	return (++state->n_written > state->max_successes) ? 0 : nmemb;
+}
+
+static int
+test_write_error_in_list(SerdWorld* world, const size_t n_quads)
+{
+	(void)n_quads;
+
+	serd_world_set_log_func(world, expected_error, NULL);
+
+	SerdModel*      model     = serd_model_new(world, SERD_INDEX_SPO);
+	SerdNodes*      nodes     = serd_nodes_new();
+	const SerdNode* s         = manage(world, serd_new_uri("urn:s"));
+	const SerdNode* p         = manage(world, serd_new_uri("urn:p"));
+	const SerdNode* l1        = manage(world, serd_new_blank("l1"));
+	const SerdNode* one       = manage(world, serd_new_integer(1, NULL));
+	const SerdNode* l2        = manage(world, serd_new_blank("l2"));
+	const SerdNode* two       = manage(world, serd_new_integer(2, NULL));
+	const SerdNode* rdf_first = manage(world, serd_new_uri(RDF_FIRST));
+	const SerdNode* rdf_rest  = manage(world, serd_new_uri(RDF_REST));
+	const SerdNode* rdf_nil   = manage(world, serd_new_uri(RDF_NIL));
+
+	serd_model_add(model, s, p, l1, NULL);
+	serd_model_add(model, l1, rdf_first, one, NULL);
+	serd_model_add(model, l1, rdf_rest, l2, NULL);
+	serd_model_add(model, l2, rdf_first, two, NULL);
+	serd_model_add(model, l2, rdf_rest, rdf_nil, NULL);
+
+	SerdEnv* env = serd_env_new(NULL);
+
+	for (size_t max_successes = 0; max_successes < 22; ++max_successes) {
+		FailingWriteFuncState state  = {0, max_successes};
+		SerdWriter*           writer = serd_writer_new(
+                world, SERD_TURTLE, 0, env, failing_write_func, &state);
+
+		const SerdSink* const sink = serd_writer_get_sink(writer);
+		SerdRange* const      all  = serd_model_all(model);
+		const SerdStatus      st   = serd_range_serialise(all, sink, 0);
+		serd_range_free(all);
+
+		assert(st == SERD_ERR_BAD_WRITE);
+
+		serd_writer_free(writer);
+	}
+
+	serd_env_free(env);
+	serd_model_free(model);
+	serd_nodes_free(nodes);
+	return 0;
+}
+
 int
 main(void)
 {
@@ -772,6 +839,7 @@ main(void)
 	                          test_remove_graph,
 	                          test_default_graph,
 	                          test_write_bad_list,
+	                          test_write_error_in_list,
 	                          NULL};
 
 	SerdWorld* world = serd_world_new();
