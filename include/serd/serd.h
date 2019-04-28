@@ -266,6 +266,14 @@ typedef struct {
   size_t              len; ///< Size of buffer in bytes
 } SerdBuffer;
 
+/// Reader options
+typedef enum {
+  SERD_READ_LAX = 1u << 0u ///< Tolerate invalid input where possible
+} SerdReaderFlag;
+
+/// Bitwise OR of SerdReaderFlag values
+typedef uint32_t SerdReaderFlags;
+
 /**
    Writer style options.
 
@@ -278,7 +286,7 @@ typedef enum {
   SERD_WRITE_UNQUALIFIED = 1u << 1u, ///< Do not shorten URIs into CURIEs
   SERD_WRITE_UNRESOLVED  = 1u << 2u, ///< Do not make URIs relative
   SERD_WRITE_TERSE       = 1u << 3u, ///< Write terser output without newlines
-  SERD_WRITE_STRICT      = 1u << 4u  ///< Abort with error on lossy output
+  SERD_WRITE_LAX         = 1u << 4u  ///< Tolerate lossy output
 } SerdWriterFlag;
 
 /// Bitwise OR of SerdWriterFlag values
@@ -1193,22 +1201,12 @@ SERD_API
 SerdReader* SERD_ALLOCATED
 serd_reader_new(SerdWorld* SERD_NONNULL      world,
                 SerdSyntax                   syntax,
+                SerdReaderFlags              flags,
                 const SerdSink* SERD_NONNULL sink,
                 size_t                       stack_size);
 
 /**
-   Enable or disable strict parsing
-
-   The reader is non-strict (lax) by default, which will tolerate URIs with
-   invalid characters.  Setting strict will fail when parsing such files.  An
-   error is printed for invalid input in either case.
-*/
-SERD_API
-void
-serd_reader_set_strict(SerdReader* SERD_NONNULL reader, bool strict);
-
-/**
-   Set a prefix to be added to all blank node identifiers.
+   Set a prefix to be added to all blank node identifiers
 
    This is useful when multiple files are to be parsed into the same output (a
    model or a file).  Since Serd preserves blank node IDs, this could cause

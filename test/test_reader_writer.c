@@ -81,7 +81,7 @@ test_read_chunks(void)
   SerdSink* const sink = serd_sink_new(&n_statements, count_statements, NULL);
   assert(sink);
 
-  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0, sink, 4096);
   assert(reader);
 
   SerdStatus st = serd_reader_start_stream(
@@ -152,12 +152,12 @@ test_get_blank(void)
 static int
 test_strict_write(void)
 {
-  SerdWorld*  world  = serd_world_new();
-  const char* path   = "serd_strict_write_test.ttl";
-  FILE*       fd     = fopen(path, "wb");
-  SerdEnv*    env    = serd_env_new(SERD_EMPTY_STRING());
-  SerdWriter* writer = serd_writer_new(
-    world, SERD_TURTLE, SERD_WRITE_STRICT, env, (SerdWriteFunc)fwrite, fd);
+  SerdWorld*  world = serd_world_new();
+  const char* path  = "serd_strict_write_test.ttl";
+  FILE*       fd    = fopen(path, "wb");
+  SerdEnv*    env   = serd_env_new(SERD_EMPTY_STRING());
+  SerdWriter* writer =
+    serd_writer_new(world, SERD_TURTLE, 0, env, (SerdWriteFunc)fwrite, fd);
 
   assert(fd);
   assert(writer);
@@ -188,13 +188,13 @@ test_strict_write(void)
 static void
 test_read_string(void)
 {
-  SerdWorld* world        = serd_world_new();
-  size_t     n_statements = 0;
+  SerdWorld* const world        = serd_world_new();
+  size_t           n_statements = 0;
 
-  SerdSink* sink = serd_sink_new(&n_statements, count_statements, NULL);
+  SerdSink* const sink = serd_sink_new(&n_statements, count_statements, NULL);
   assert(sink);
 
-  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0, sink, 4096);
   assert(reader);
 
   // Test reading a string that ends exactly at the end of input (no newline)
@@ -222,8 +222,8 @@ test_writer(const char* const path)
 
   SerdWorld* world = serd_world_new();
 
-  SerdWriter* writer =
-    serd_writer_new(world, SERD_TURTLE, 0, env, (SerdWriteFunc)fwrite, fd);
+  SerdWriter* writer = serd_writer_new(
+    world, SERD_TURTLE, SERD_WRITE_LAX, env, (SerdWriteFunc)fwrite, fd);
   assert(writer);
 
   serd_writer_chop_blank_prefix(writer, "tmp");
@@ -328,9 +328,9 @@ test_reader(const char* path)
   assert(sink);
 
   // Test that too little stack space fails gracefully
-  assert(!serd_reader_new(world, SERD_TURTLE, sink, 32));
+  assert(!serd_reader_new(world, SERD_TURTLE, 0, sink, 32));
 
-  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0, sink, 4096);
   assert(reader);
 
   serd_reader_add_blank_prefix(reader, "tmp");

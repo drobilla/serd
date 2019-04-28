@@ -343,7 +343,7 @@ write_uri(SerdWriter* writer, const char* utf8, size_t n_bytes, SerdStatus* st)
     size_t size = 0;
     len += write_character(writer, (const uint8_t*)utf8 + i, &size, st);
     i += size;
-    if (*st && (writer->flags & SERD_WRITE_STRICT)) {
+    if (*st && !(writer->flags & SERD_WRITE_LAX)) {
       break;
     }
 
@@ -366,7 +366,7 @@ ewrite_uri(SerdWriter* writer, const char* utf8, size_t n_bytes)
   SerdStatus st = SERD_SUCCESS;
   write_uri(writer, utf8, n_bytes, &st);
 
-  return (writer->flags & SERD_WRITE_STRICT) ? st : SERD_SUCCESS;
+  return (writer->flags & SERD_WRITE_LAX) ? SERD_SUCCESS : st;
 }
 
 SERD_WARN_UNUSED_RESULT static SerdStatus
@@ -531,7 +531,7 @@ write_text(SerdWriter* writer,
     // Write UTF-8 character
     size_t size = 0;
     len += write_character(writer, (const uint8_t*)utf8 + i - 1, &size, &st);
-    if (st && (writer->flags & SERD_WRITE_STRICT)) {
+    if (st && !(writer->flags & SERD_WRITE_LAX)) {
       return st;
     }
 
@@ -545,7 +545,7 @@ write_text(SerdWriter* writer,
     }
   }
 
-  return (writer->flags & SERD_WRITE_STRICT) ? st : SERD_SUCCESS;
+  return (writer->flags & SERD_WRITE_LAX) ? SERD_SUCCESS : st;
 }
 
 typedef struct {
@@ -796,7 +796,7 @@ write_uri_node(SerdWriter* const        writer,
       : serd_write_uri(serd_relative_uri(uri, base_uri), uri_sink, &ctx);
 
     st = ctx.status;
-    if (st && (writer->flags & SERD_WRITE_STRICT)) {
+    if (st && !(writer->flags & SERD_WRITE_LAX)) {
       return st;
     }
   } else {

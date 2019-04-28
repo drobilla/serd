@@ -94,7 +94,7 @@ main(void)
   SerdWorld* world = serd_world_new();
   SerdSink*  sink  = serd_sink_new(NULL, on_event, NULL);
 
-  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0, sink, 4096);
   assert(reader);
 
   assert(!serd_reader_start_string(reader,
