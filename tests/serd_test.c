@@ -134,7 +134,7 @@ test_read_chunks(void)
 	assert(sink);
 	serd_sink_set_statement_func(sink, count_statements);
 
-	SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+	SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0, sink, 4096);
 	assert(reader);
 	assert(f);
 
@@ -216,7 +216,7 @@ test_strict_write(void)
 	SerdEnv*    env    = serd_env_new(NULL);
 	SerdWriter* writer = serd_writer_new(world,
 	                                     SERD_TURTLE,
-	                                     SERD_WRITE_STRICT,
+	                                     0,
 	                                     env,
 	                                     (SerdWriteFunc)fwrite,
 	                                     fd);
@@ -742,7 +742,7 @@ test_writer(const char* const path)
 
 	SerdWriter* writer = serd_writer_new(world,
 	                                     SERD_TURTLE,
-	                                     0,
+	                                     SERD_WRITE_LAX,
 	                                     env,
 	                                     (SerdWriteFunc)fwrite,
 	                                     fd);
@@ -858,7 +858,7 @@ test_reader(const char* path)
 	SerdSink* sink         = serd_sink_new(&n_statements, NULL);
 	serd_sink_set_statement_func(sink, count_statements);
 
-	SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+	SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0, sink, 4096);
 	assert(reader);
 
 	serd_reader_add_blank_prefix(reader, "tmp");

@@ -281,7 +281,7 @@ write_uri(SerdWriter* writer, const char* utf8, size_t n_bytes, SerdStatus* st)
 		size_t size = 0;
 		len += write_character(writer, (const uint8_t*)utf8 + i, &size, st);
 		i   += size;
-		if (*st && (writer->flags & SERD_WRITE_STRICT)) {
+		if (*st && !(writer->flags & SERD_WRITE_LAX)) {
 			break;
 		} else if (size == 0) {
 			// Corrupt input, scan to start of next character
@@ -297,7 +297,7 @@ ewrite_uri(SerdWriter* writer, const char* utf8, size_t n_bytes)
 	SerdStatus st = SERD_SUCCESS;
 	write_uri(writer, utf8, n_bytes, &st);
 
-	return (writer->flags & SERD_WRITE_STRICT) ? st : SERD_SUCCESS;
+	return (writer->flags & SERD_WRITE_LAX) ? SERD_SUCCESS : st;
 }
 
 SERD_WARN_UNUSED_RESULT static SerdStatus
@@ -423,7 +423,7 @@ write_text(SerdWriter* writer,
 		}
 	}
 
-	return (writer->flags & SERD_WRITE_STRICT) ? st : SERD_SUCCESS;
+	return (writer->flags & SERD_WRITE_LAX) ? SERD_SUCCESS : st;
 }
 
 SERD_WARN_UNUSED_RESULT static size_t
