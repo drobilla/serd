@@ -46,6 +46,7 @@ serd_strerror(SerdStatus status)
 	case SERD_ERR_OVERFLOW:   return "Stack overflow";
 	case SERD_ERR_INVALID:    return "Invalid data";
 	case SERD_ERR_NO_DATA:    return "Unexpectd end of input";
+	case SERD_ERR_BAD_WRITE:  return "Error writing to file";
 	}
 	return "Unknown error";  // never reached
 }

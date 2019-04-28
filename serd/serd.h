@@ -111,7 +111,8 @@ typedef enum {
 	SERD_ERR_INTERNAL,    ///< Unexpected internal error (should not happen)
 	SERD_ERR_OVERFLOW,    ///< Stack overflow
 	SERD_ERR_INVALID,     ///< Invalid data
-	SERD_ERR_NO_DATA      ///< Unexpected end of input
+	SERD_ERR_NO_DATA,     ///< Unexpected end of input
+	SERD_ERR_BAD_WRITE    ///< Error writing to file/stream
 } SerdStatus;
 
 /// RDF syntax type
@@ -263,8 +264,9 @@ typedef struct {
    always ASCII).
 */
 typedef enum {
-	SERD_WRITE_ASCII = 1 << 0,  ///< Escape all non-ASCII characters
-	SERD_WRITE_TERSE = 1 << 1,  ///< Write terser output without newlines
+	SERD_WRITE_ASCII  = 1 << 0,  ///< Escape all non-ASCII characters
+	SERD_WRITE_TERSE  = 1 << 1,  ///< Write terser output without newlines
+	SERD_WRITE_STRICT = 1 << 2,  ///< Abort with error on lossy output
 } SerdWriterFlag;
 
 /// Bitwise OR of SerdWriterFlag values

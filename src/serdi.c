@@ -96,7 +96,7 @@ main(int argc, char** argv)
 
 	SerdSyntax      input_syntax  = (SerdSyntax)0;
 	SerdSyntax      output_syntax = (SerdSyntax)0;
-	SerdWriterFlags writer_flags  = 0;
+	SerdWriterFlags writer_flags  = SERD_WRITE_STRICT;
 	bool            from_string   = false;
 	bool            from_stdin    = false;
 	bool            bulk_read     = true;
@@ -125,6 +125,7 @@ main(int argc, char** argv)
 		} else if (argv[a][1] == 'h') {
 			return print_usage(argv[0], false);
 		} else if (argv[a][1] == 'l') {
+			writer_flags &= ~SERD_WRITE_STRICT;
 			lax = true;
 		} else if (argv[a][1] == 'm') {
 			use_model = true;

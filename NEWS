@@ -14,6 +14,7 @@ serd (1.0.1) unstable;
   * Remove half-baked serd_uri_to_path()
   * Remove useless character counting from API
   * Rename SerdChunk to SerdStringView
+  * Report writer errors and add strict write mode
   * Simplify streaming API and improve pretty printing
   * Simplify writer style options
   * Use a fixed-size reader stack

@@ -26,11 +26,20 @@
 #include "serd/serd.h"
 
 #include <assert.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef _MSC_VER
+#define SERD_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
+#else
+#define SERD_WARN_UNUSED_RESULT
+#endif
+
+#define TRY(st, exp) if (((st) = (exp))) { return (st); }
 
 typedef enum {
 	CTX_NAMED, ///< Normal non-anonymous context
@@ -137,7 +146,7 @@ serd_writer_set_prefix(SerdWriter*     writer,
                        const SerdNode* name,
                        const SerdNode* uri);
 
-static bool
+SERD_WARN_UNUSED_RESULT static SerdStatus
 write_node(SerdWriter*        writer,
            const SerdNode*    node,
            SerdField          field,
@@ -173,16 +182,35 @@ ctx(SerdWriter* writer, const SerdField field)
 	return node && node->type ? node : NULL;
 }
 
-static inline size_t
+SERD_WARN_UNUSED_RESULT static inline size_t
 sink(const void* buf, size_t len, SerdWriter* writer)
 {
-	return writer->write_func(buf, 1, len, writer->stream);
+	const size_t written = writer->write_func(buf, 1, len, writer->stream);
+	if (written != len) {
+		if (errno) {
+			SERD_LOG_ERRORF(writer->world, SERD_ERR_BAD_WRITE,
+			                "write error (%s)\n", strerror(errno));
+		} else {
+			SERD_LOG_ERROR(writer->world, SERD_ERR_BAD_WRITE, "write error\n");
+		}
+	}
+
+	return written;
+}
+
+SERD_WARN_UNUSED_RESULT static inline SerdStatus
+esink(const void* buf, size_t len, SerdWriter* writer)
+{
+	return sink(buf, len, writer) == len ? SERD_SUCCESS : SERD_ERR_BAD_WRITE;
 }
 
 // Write a single character, as an escape for single byte characters
 // (Caller prints any single byte characters that don't need escaping)
-static size_t
-write_character(SerdWriter* writer, const uint8_t* utf8, size_t* size)
+SERD_WARN_UNUSED_RESULT static size_t
+write_character(SerdWriter*    writer,
+                const uint8_t* utf8,
+                size_t*        size,
+                SerdStatus*    st)
 {
 	char           escape[11] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	const uint32_t c          = parse_utf8_char(utf8, size);
@@ -191,6 +219,7 @@ write_character(SerdWriter* writer, const uint8_t* utf8, size_t* size)
 		SERD_LOG_ERRORF(writer->world, SERD_ERR_BAD_ARG,
 		                "invalid UTF-8: %X\n",
 		                utf8[0]);
+		*st = SERD_ERR_INVALID;
 		return sink(replacement_char, sizeof(replacement_char), writer);
 	case 1:
 		snprintf(escape, sizeof(escape), "\\u%04X", utf8[0]);
@@ -226,7 +255,7 @@ uri_must_escape(const char c)
 }
 
 static size_t
-write_uri(SerdWriter* writer, const char* utf8, size_t n_bytes)
+write_uri(SerdWriter* writer, const char* utf8, size_t n_bytes, SerdStatus* st)
 {
 	size_t len = 0;
 	for (size_t i = 0; i < n_bytes;) {
@@ -238,16 +267,23 @@ write_uri(SerdWriter* writer, const char* utf8, size_t n_bytes)
 		}
 
 		// Bulk write all characters up to this special one
-		len += sink(&utf8[i], j - i, writer);
+		const size_t n_bulk = sink(&utf8[i], j - i, writer);
+		len += n_bulk;
+		if (n_bulk != j - i) {
+			return len;
+		}
+
 		if ((i = j) == n_bytes) {
 			break;  // Reached end
 		}
 
 		// Write UTF-8 character
 		size_t size = 0;
-		len += write_character(writer, (const uint8_t*)utf8 + i, &size);
+		len += write_character(writer, (const uint8_t*)utf8 + i, &size, st);
 		i   += size;
-		if (size == 0) {
+		if (*st && (writer->flags & SERD_WRITE_STRICT)) {
+			break;
+		} else if (size == 0) {
 			// Corrupt input, scan to start of next character
 			for (++i; i < n_bytes && (utf8[i] & 0x80); ++i) {}
 		}
@@ -255,10 +291,19 @@ write_uri(SerdWriter* writer, const char* utf8, size_t n_bytes)
 	return len;
 }
 
-static size_t
+SERD_WARN_UNUSED_RESULT static SerdStatus
+ewrite_uri(SerdWriter* writer, const char* utf8, size_t n_bytes)
+{
+	SerdStatus st = SERD_SUCCESS;
+	write_uri(writer, utf8, n_bytes, &st);
+
+	return (writer->flags & SERD_WRITE_STRICT) ? st : SERD_SUCCESS;
+}
+
+SERD_WARN_UNUSED_RESULT static SerdStatus
 write_uri_from_node(SerdWriter* writer, const SerdNode* node)
 {
-	return write_uri(writer, serd_node_get_string(node), node->n_bytes);
+	return ewrite_uri(writer, serd_node_get_string(node), node->n_bytes);
 }
 
 static bool
@@ -282,10 +327,10 @@ lname_must_escape(const char c)
 	return false;
 }
 
-static size_t
+SERD_WARN_UNUSED_RESULT static SerdStatus
 write_lname(SerdWriter* writer, const char* utf8, size_t n_bytes)
 {
-	size_t len = 0;
+	SerdStatus st = SERD_SUCCESS;
 	for (size_t i = 0; i < n_bytes; ++i) {
 		size_t j = i;  // Index of next character that must be escaped
 		for (; j < n_bytes; ++j) {
@@ -295,23 +340,27 @@ write_lname(SerdWriter* writer, const char* utf8, size_t n_bytes)
 		}
 
 		// Bulk write all characters up to this special one
-		len += sink(&utf8[i], j - i, writer);
+		TRY(st, esink(&utf8[i], j - i, writer));
 		if ((i = j) == n_bytes) {
 			break;  // Reached end
 		}
 
 		// Write escape
-		len += sink("\\", 1, writer);
-		len += sink(&utf8[i], 1, writer);
+		TRY(st, esink("\\", 1, writer));
+		TRY(st, esink(&utf8[i], 1, writer));
 	}
-	return len;
+
+	return st;
 }
 
-static size_t
-write_text(SerdWriter* writer, TextContext ctx,
-           const char* utf8, size_t n_bytes)
+SERD_WARN_UNUSED_RESULT static SerdStatus
+write_text(SerdWriter* writer,
+           TextContext ctx,
+           const char* utf8,
+           size_t      n_bytes)
 {
-	size_t len = 0;
+	size_t     len = 0;
+	SerdStatus st  = SERD_SUCCESS;
 	for (size_t i = 0; i < n_bytes;) {
 		// Fast bulk write for long strings of printable ASCII
 		size_t j = i;
@@ -363,7 +412,8 @@ write_text(SerdWriter* writer, TextContext ctx,
 
 		// Write UTF-8 character
 		size_t size = 0;
-		len += write_character(writer, (const uint8_t*)utf8 + i - 1, &size);
+		len += write_character(
+		        writer, (const uint8_t*)utf8 + i - 1, &size, &st);
 
 		if (size == 0) {
 			// Corrupt input, scan to start of next character
@@ -372,41 +422,47 @@ write_text(SerdWriter* writer, TextContext ctx,
 			i += size - 1;
 		}
 	}
-	return len;
+
+	return (writer->flags & SERD_WRITE_STRICT) ? st : SERD_SUCCESS;
 }
 
-static size_t
+SERD_WARN_UNUSED_RESULT static size_t
 uri_sink(const void* buf, size_t size, size_t nmemb, void* stream)
 {
 	(void)size;
 	assert(size == 1);
-	return write_uri((SerdWriter*)stream, (const char*)buf, nmemb);
+	SerdStatus st = SERD_SUCCESS;
+	return write_uri((SerdWriter*)stream, (const char*)buf, nmemb, &st);
 }
 
-static void
+SERD_WARN_UNUSED_RESULT static SerdStatus
 write_newline(SerdWriter* writer, bool terse)
 {
 	if (terse || (writer->flags & SERD_WRITE_TERSE)) {
-		sink(" ", 1, writer);
-	} else {
-		sink("\n", 1, writer);
-		for (int i = 0; i < writer->indent; ++i) {
-			sink("\t", 1, writer);
-		}
+		return esink(" ", 1, writer);
 	}
+
+	SerdStatus st = SERD_SUCCESS;
+	TRY(st, esink("\n", 1, writer));
+	for (int i = 0; i < writer->indent; ++i) {
+		TRY(st, esink("\t", 1, writer));
+	}
+
+	return st;
 }
 
-static void
+SERD_WARN_UNUSED_RESULT static SerdStatus
 write_top_level_sep(SerdWriter* writer)
 {
-	if (!writer->empty && !(writer->flags & SERD_WRITE_TERSE)) {
-		write_newline(writer, false);
-	}
+	return ((!writer->empty && !(writer->flags & SERD_WRITE_TERSE))
+	        ? write_newline(writer, false)
+	        : SERD_SUCCESS);
 }
 
-static bool
+SERD_WARN_UNUSED_RESULT static SerdStatus
 write_sep(SerdWriter* writer, const SerdStatementFlags flags, Sep sep)
 {
+	SerdStatus     st    = SERD_SUCCESS;
 	const SepRule* rule  = &rules[sep];
 	const bool     terse = (((flags & SERD_TERSE_S) && (flags & SERD_LIST_S)) ||
 	                        ((flags & SERD_TERSE_O) && (flags & SERD_LIST_O)));
@@ -422,24 +478,24 @@ write_sep(SerdWriter* writer, const SerdStatementFlags flags, Sep sep)
 
 	// Write newline or space before separator if necessary
 	if (rule->pre_line_after & (1u << writer->last_sep)) {
-		write_newline(writer, terse);
+		TRY(st, write_newline(writer, terse));
 	} else if (rule->pre_space_after & (1u << writer->last_sep)) {
-		sink(" ", 1, writer);
+		TRY(st, esink(" ", 1, writer));
 	}
 
 	// Write actual separator string
-	sink(rule->str, rule->len, writer);
+	TRY(st, esink(rule->str, rule->len, writer));
 
 	// Write newline after separator if necessary
 	if (rule->post_line_after & (1u << writer->last_sep)) {
-		write_newline(writer, terse);
+		TRY(st, write_newline(writer, terse));
 	}
 
 	writer->last_sep = sep;
-	return true;
+	return st;
 }
 
-static SerdStatus
+static void
 reset_context(SerdWriter* writer, bool graph)
 {
 	if (graph && writer->context.graph) {
@@ -452,7 +508,6 @@ reset_context(SerdWriter* writer, bool graph)
 		memset(writer->context.predicate, 0, sizeof(SerdNode));
 	}
 	writer->empty = false;
-	return SERD_SUCCESS;
 }
 
 static SerdStatus
@@ -474,7 +529,7 @@ is_inline_start(const SerdWriter*  writer,
 	         (field == SERD_OBJECT &&  (flags & SERD_ANON_O))));
 }
 
-static bool
+SERD_WARN_UNUSED_RESULT static SerdStatus
 write_literal(SerdWriter*        writer,
               const SerdNode*    node,
               SerdStatementFlags flags)
@@ -488,8 +543,7 @@ write_literal(SerdWriter*        writer,
 	if (supports_abbrev(writer) && type_uri) {
 		if (serd_node_equals(datatype, writer->world->xsd_boolean) ||
 		    serd_node_equals(datatype, writer->world->xsd_integer)) {
-			sink(node_str, node->n_bytes, writer);
-			return true;
+			return esink(node_str, node->n_bytes, writer);
 		} else if (serd_node_equals(datatype, writer->world->xsd_decimal) &&
 		           strchr(node_str, '.') &&
 		           node_str[node->n_bytes - 1] != '.') {
@@ -497,29 +551,29 @@ write_literal(SerdWriter*        writer,
 			   not be written bare in Turtle.  We could add a 0 which is
 			   prettier, but changes the text and breaks round tripping.
 			*/
-			sink(node_str, node->n_bytes, writer);
-			return true;
+			return esink(node_str, node->n_bytes, writer);
 		}
 	}
 
-	if (supports_abbrev(writer)
-	    && (node->flags & (SERD_HAS_NEWLINE|SERD_HAS_QUOTE))) {
-		sink("\"\"\"", 3, writer);
-		write_text(writer, WRITE_LONG_STRING, node_str, node->n_bytes);
-		sink("\"\"\"", 3, writer);
+	SerdStatus st = SERD_SUCCESS;
+	if (supports_abbrev(writer) &&
+	    (node->flags & (SERD_HAS_NEWLINE | SERD_HAS_QUOTE))) {
+		TRY(st, esink("\"\"\"", 3, writer));
+		TRY(st, write_text(writer, WRITE_LONG_STRING, node_str, node->n_bytes));
+		TRY(st, esink("\"\"\"", 3, writer));
 	} else {
-		sink("\"", 1, writer);
-		write_text(writer, WRITE_STRING, node_str, node->n_bytes);
-		sink("\"", 1, writer);
+		TRY(st, esink("\"", 1, writer));
+		TRY(st, write_text(writer, WRITE_STRING, node_str, node->n_bytes));
+		TRY(st, esink("\"", 1, writer));
 	}
 	if (lang && serd_node_get_string(lang)) {
-		sink("@", 1, writer);
-		sink(serd_node_get_string(lang), lang->n_bytes, writer);
+		TRY(st, esink("@", 1, writer));
+		TRY(st, esink(serd_node_get_string(lang), lang->n_bytes, writer));
 	} else if (type_uri) {
-		sink("^^", 2, writer);
+		TRY(st, esink("^^", 2, writer));
 		return write_node(writer, datatype, (SerdField)-1, flags);
 	}
-	return true;
+	return st;
 }
 
 // Return true iff `buf` is a valid prefixed name prefix or suffix
@@ -535,18 +589,19 @@ is_name(const char* buf, const size_t len)
 	return true;
 }
 
-static bool
+SERD_WARN_UNUSED_RESULT static SerdStatus
 write_uri_node(SerdWriter* const        writer,
                const SerdNode*          node,
                const SerdField          field,
                const SerdStatementFlags flags)
 {
 	SerdEnv* const env = writer->iface.env;
+	SerdStatus     st  = SERD_SUCCESS;
 
 	writer->last_sep = SEP_NONE;
 	if (is_inline_start(writer, field, flags)) {
-		write_sep(writer, flags, SEP_ANON_BEGIN);
-		sink(" == ", 4, writer);
+		TRY(st, write_sep(writer, flags, SEP_ANON_BEGIN));
+		TRY(st, esink(" == ", 4, writer));
 	}
 
 	const SerdNode* prefix;
@@ -555,21 +610,20 @@ write_uri_node(SerdWriter* const        writer,
 	const bool      has_scheme = serd_uri_string_has_scheme(node_str);
 	if (field == SERD_PREDICATE && supports_abbrev(writer) &&
 	    serd_node_equals(node, writer->world->rdf_type)) {
-		return sink("a", 1, writer) == 1;
+		return esink("a", 1, writer);
 	} else if (supports_abbrev(writer) &&
 	           serd_node_equals(node, writer->world->rdf_nil)) {
-		return sink("()", 2, writer) == 2;
+		return esink("()", 2, writer);
 	} else if (has_scheme && supports_abbrev(writer) &&
 	           serd_env_qualify_in_place(env, node, &prefix, &suffix) &&
 	           is_name(serd_node_get_string(prefix), serd_node_get_length(prefix)) &&
 	           is_name(suffix.buf, suffix.len)) {
-		write_uri_from_node(writer, prefix);
-		sink(":", 1, writer);
-		write_uri(writer, suffix.buf, suffix.len);
-		return true;
+		TRY(st, write_uri_from_node(writer, prefix));
+		TRY(st, esink(":", 1, writer));
+		return ewrite_uri(writer, suffix.buf, suffix.len);
 	}
 
-	sink("<", 1, writer);
+	TRY(st, esink("<", 1, writer));
 	if (serd_env_get_base_uri(env)) {
 		const SerdURI* base_uri = serd_env_get_parsed_base_uri(env);
 		SerdURI uri, abs_uri;
@@ -585,17 +639,15 @@ write_uri_node(SerdWriter* const        writer,
 			serd_uri_serialise_relative(&uri, base_uri, root, uri_sink, writer);
 		}
 	} else {
-		write_uri_from_node(writer, node);
+		TRY(st, write_uri_from_node(writer, node));
 	}
-	sink(">", 1, writer);
+	TRY(st, esink(">", 1, writer));
 	writer->last_sep = SEP_NONE;
-	if (is_inline_start(writer, field, flags)) {
-		sink(" ;", 2, writer);
-	}
-	return true;
+
+	return is_inline_start(writer, field, flags) ? esink(" ;", 2, writer) : st;
 }
 
-static bool
+SERD_WARN_UNUSED_RESULT static SerdStatus
 write_curie(SerdWriter* const        writer,
             const SerdNode*          node,
             const SerdField          field,
@@ -605,7 +657,7 @@ write_curie(SerdWriter* const        writer,
 
 	SerdStringView prefix;
 	SerdStringView suffix;
-	SerdStatus     st;
+	SerdStatus     st = SERD_SUCCESS;
 	switch (writer->syntax) {
 	case SERD_NTRIPLES:
 	case SERD_NQUADS:
@@ -614,28 +666,28 @@ write_curie(SerdWriter* const        writer,
 			SERD_LOG_ERRORF(writer->world, st,
 			                "undefined namespace prefix `%s'\n",
 			                serd_node_get_string(node));
-			return false;
+			return st;
 		}
-		sink("<", 1, writer);
-		write_uri(writer, prefix.buf, prefix.len);
-		write_uri(writer, suffix.buf, suffix.len);
-		sink(">", 1, writer);
+		TRY(st, esink("<", 1, writer));
+		TRY(st, ewrite_uri(writer, prefix.buf, prefix.len));
+		TRY(st, ewrite_uri(writer, suffix.buf, suffix.len));
+		TRY(st, esink(">", 1, writer));
 		break;
 	case SERD_TURTLE:
 	case SERD_TRIG:
 		if (is_inline_start(writer, field, flags)) {
-			write_sep(writer, flags, SEP_ANON_BEGIN);
-			sink(" == ", 4, writer);
+			TRY(st, write_sep(writer, flags, SEP_ANON_BEGIN));
+			TRY(st, esink(" == ", 4, writer));
 		}
-		write_lname(writer, serd_node_get_string(node), node->n_bytes);
+		TRY(st, write_lname(writer, serd_node_get_string(node), node->n_bytes));
 		if (is_inline_start(writer, field, flags)) {
-			sink(" ;", 2, writer);
+			TRY(st, esink(" ;", 2, writer));
 		}
 	}
-	return true;
+	return st;
 }
 
-static bool
+SERD_WARN_UNUSED_RESULT static SerdStatus
 write_blank(SerdWriter* const        writer,
             const SerdNode*          node,
             const SerdField          field,
@@ -652,46 +704,46 @@ write_blank(SerdWriter* const        writer,
 			/* Last character is technically a separator, but reset because we
 			   want to treat "[]" like a node. */
 			writer->last_sep = SEP_NONE;
-			return sink("[]", 2, writer) == 2;
+			return esink("[]", 2, writer);
 		}
 	}
 
-	sink("_:", 2, writer);
-	if (writer->bprefix &&
+	SerdStatus st = esink("_:", 2, writer);
+	if (!st && writer->bprefix &&
 	    !strncmp(node_str, writer->bprefix, writer->bprefix_len)) {
-		sink(node_str + writer->bprefix_len,
-		     node->n_bytes - writer->bprefix_len,
-		     writer);
+		TRY(st, esink(node_str + writer->bprefix_len,
+		              node->n_bytes - writer->bprefix_len,
+		              writer));
 	} else {
-		sink(node_str, node->n_bytes, writer);
+		TRY(st, esink(node_str, node->n_bytes, writer));
 	}
 
 	writer->last_sep = SEP_NONE;
-	return true;
+	return st;
 }
 
-static bool
+SERD_WARN_UNUSED_RESULT static SerdStatus
 write_node(SerdWriter*        writer,
            const SerdNode*    node,
            const SerdField    field,
            SerdStatementFlags flags)
 {
-	bool ret = false;
+	SerdStatus st = SERD_ERR_INTERNAL;
 	switch (node->type) {
 	case SERD_LITERAL:
-		ret = write_literal(writer, node, flags);
+		st = write_literal(writer, node, flags);
 		break;
 	case SERD_URI:
-		ret = write_uri_node(writer, node, field, flags);
+		st = write_uri_node(writer, node, field, flags);
 		break;
 	case SERD_CURIE:
-		ret = write_curie(writer, node, field, flags);
+		st = write_curie(writer, node, field, flags);
 		break;
 	case SERD_BLANK:
-		ret = write_blank(writer, node, field, flags);
+		st = write_blank(writer, node, field, flags);
 	default: break;
 	}
-	return ret;
+	return st;
 }
 
 static inline bool
@@ -700,32 +752,31 @@ is_resource(const SerdNode* node)
 	return node && node->type > SERD_LITERAL;
 }
 
-static void
+SERD_WARN_UNUSED_RESULT static SerdStatus
 write_pred(SerdWriter* writer, SerdStatementFlags flags, const SerdNode* pred)
 {
-	write_node(writer, pred, SERD_PREDICATE, flags);
-	write_sep(writer, flags, SEP_P_O);
+	SerdStatus st = SERD_SUCCESS;
+	TRY(st, write_node(writer, pred, SERD_PREDICATE, flags));
+	TRY(st, write_sep(writer, flags, SEP_P_O));
 	serd_node_set(&writer->context.predicate, pred);
+	return st;
 }
 
-static bool
+SERD_WARN_UNUSED_RESULT static SerdStatus
 write_list_obj(SerdWriter*        writer,
                SerdStatementFlags flags,
                const SerdNode*    predicate,
-               const SerdNode*    object)
+               const SerdNode*    object,
+               bool*              is_end)
 {
 	if (serd_node_equals(object, writer->world->rdf_nil)) {
-		write_sep(writer, writer->context.flags, SEP_LIST_END);
-		return true;
+		*is_end = true;
+		return write_sep(writer, writer->context.flags, SEP_LIST_END);
 	}
 
-	if (serd_node_equals(predicate, writer->world->rdf_first)) {
-		write_node(writer, object, SERD_OBJECT, flags);
-	} else {
-		write_sep(writer, writer->context.flags, SEP_LIST_SEP);
-	}
-
-	return false;
+	return (serd_node_equals(predicate, writer->world->rdf_first)
+	        ? write_node(writer, object, SERD_OBJECT, flags)
+	        : write_sep(writer, writer->context.flags, SEP_LIST_SEP));
 }
 
 static void
@@ -774,25 +825,21 @@ serd_writer_write_statement(SerdWriter*          writer,
 		return SERD_ERR_BAD_ARG;
 	}
 
-#define TRY(write_result) \
-	if (!(write_result)) { \
-		return SERD_ERR_UNKNOWN; \
-	}
-
+	SerdStatus st = SERD_SUCCESS;
 	switch (writer->syntax) {
 	case SERD_NTRIPLES:
 	case SERD_NQUADS:
-		TRY(write_node(writer, subject, SERD_SUBJECT, flags));
-		sink(" ", 1, writer);
-		TRY(write_node(writer, predicate, SERD_PREDICATE, flags));
-		sink(" ", 1, writer);
-		TRY(write_node(writer, object, SERD_OBJECT, flags));
+		TRY(st, write_node(writer, subject, SERD_SUBJECT, flags));
+		TRY(st, esink(" ", 1, writer));
+		TRY(st, write_node(writer, predicate, SERD_PREDICATE, flags));
+		TRY(st, esink(" ", 1, writer));
+		TRY(st, write_node(writer, object, SERD_OBJECT, flags));
 		if (writer->syntax == SERD_NQUADS && graph) {
-			sink(" ", 1, writer);
-			TRY(write_node(writer, graph, SERD_GRAPH, flags));
+			TRY(st, esink(" ", 1, writer));
+			TRY(st, write_node(writer, graph, SERD_GRAPH, flags));
 		}
-		sink(" .\n", 3, writer);
-		return SERD_SUCCESS;
+		TRY(st, esink(" .\n", 3, writer));
+		return st;
 	default:
 		break;
 	}
@@ -800,23 +847,25 @@ serd_writer_write_statement(SerdWriter*          writer,
 	if ((graph && !serd_node_equals(graph, writer->context.graph)) ||
 	    (!graph && ctx(writer, SERD_GRAPH))) {
 		if (ctx(writer, SERD_SUBJECT)) {
-			write_sep(writer, writer->context.flags, SEP_END_S);
+			TRY(st, write_sep(writer, writer->context.flags, SEP_END_S));
 		}
 		if (ctx(writer, SERD_GRAPH)) {
-			write_sep(writer, writer->context.flags, SEP_GRAPH_END);
+			TRY(st, write_sep(writer, writer->context.flags, SEP_GRAPH_END));
 		}
-		write_top_level_sep(writer);
+		TRY(st, write_top_level_sep(writer));
 
 		reset_context(writer, true);
 		if (graph) {
-			TRY(write_node(writer, graph, SERD_GRAPH, flags));
-			write_sep(writer, flags, SEP_GRAPH_BEGIN);
+			TRY(st, write_node(writer, graph, SERD_GRAPH, flags));
+			TRY(st, write_sep(writer, flags, SEP_GRAPH_BEGIN));
 			serd_node_set(&writer->context.graph, graph);
 		}
 	}
 
 	if (writer->context.type == CTX_LIST) {
-		if (write_list_obj(writer, flags, predicate, object)) {
+		bool is_end = false;
+		TRY(st, write_list_obj(writer, flags, predicate, object, &is_end));
+		if (is_end) {
 			// Reached end of list
 			pop_context(writer);
 			return SERD_SUCCESS;
@@ -825,44 +874,45 @@ serd_writer_write_statement(SerdWriter*          writer,
 		if (serd_node_equals(predicate, writer->context.predicate)) {
 			// Abbreviate S P
 			++writer->indent;
-			write_sep(writer, writer->context.flags, SEP_END_O);
+			TRY(st, write_sep(writer, writer->context.flags, SEP_END_O));
 			--writer->indent;
-			write_node(writer, object, SERD_OBJECT, flags);
+			TRY(st, write_node(writer, object, SERD_OBJECT, flags));
 		} else {
 			// Abbreviate S
-			Sep sep = ctx(writer, SERD_PREDICATE) ? SEP_END_P : SEP_S_P;
-			write_sep(writer, writer->context.flags, sep);
-			write_pred(writer, writer->context.flags, predicate);
-			write_node(writer, object, SERD_OBJECT, flags);
+			const Sep sep = ctx(writer, SERD_PREDICATE) ? SEP_END_P : SEP_S_P;
+
+			TRY(st, write_sep(writer, writer->context.flags, sep));
+			TRY(st, write_pred(writer, writer->context.flags, predicate));
+			TRY(st, write_node(writer, object, SERD_OBJECT, flags));
 		}
 	} else {
 		// No abbreviation
 		if (serd_stack_is_empty(&writer->anon_stack)) {
 			if (ctx(writer, SERD_SUBJECT)) { // Terminate last subject
-				write_sep(writer, writer->context.flags, SEP_END_S);
+				TRY(st, write_sep(writer, writer->context.flags, SEP_END_S));
 			}
-			write_top_level_sep(writer);
+			TRY(st, write_top_level_sep(writer));
 		}
 
 		if (serd_stack_is_empty(&writer->anon_stack)) {
-			write_node(writer, subject, SERD_SUBJECT, flags);
+			TRY(st, write_node(writer, subject, SERD_SUBJECT, flags));
 			if (!(flags & (SERD_ANON_S | SERD_LIST_S))) {
-				write_sep(writer, writer->context.flags, SEP_S_P);
+				TRY(st, write_sep(writer, writer->context.flags, SEP_S_P));
 			} else if (flags & SERD_ANON_S) {
-				write_sep(writer, writer->context.flags, SEP_ANON_S_P);
+				TRY(st, write_sep(writer, writer->context.flags, SEP_ANON_S_P));
 			}
 		} else {
-			write_sep(writer, writer->context.flags, SEP_ANON_S_P);
+			TRY(st, write_sep(writer, writer->context.flags, SEP_ANON_S_P));
 		}
 
 		reset_context(writer, false);
 		serd_node_set(&writer->context.subject, subject);
 
 		if (!(flags & SERD_LIST_S)) {
-			write_pred(writer, flags, predicate);
+			TRY(st, write_pred(writer, flags, predicate));
 		}
 
-		write_node(writer, object, SERD_OBJECT, flags);
+		TRY(st, write_node(writer, object, SERD_OBJECT, flags));
 	}
 
 	WriteContext* old_ctx = NULL;
@@ -890,10 +940,10 @@ serd_writer_write_statement(SerdWriter*          writer,
 		serd_node_set(&writer->context.predicate, predicate);
 	}
 
-	return SERD_SUCCESS;
+	return st;
 }
 
-static SerdStatus
+SERD_WARN_UNUSED_RESULT static SerdStatus
 serd_writer_end_anon(SerdWriter*     writer,
                      const SerdNode* node)
 {
@@ -904,7 +954,7 @@ serd_writer_end_anon(SerdWriter*     writer,
 		                      "unexpected end of anonymous node\n");
 	}
 
-	write_sep(writer, writer->context.flags, SEP_ANON_END);
+	SerdStatus st = write_sep(writer, writer->context.flags, SEP_ANON_END);
 	pop_context(writer);
 
 	if (writer->context.predicate &&
@@ -913,23 +963,26 @@ serd_writer_end_anon(SerdWriter*     writer,
 		memset(writer->context.predicate, 0, sizeof(SerdNode));
 	}
 
-	return SERD_SUCCESS;
+	return st;
 }
 
 SerdStatus
 serd_writer_finish(SerdWriter* writer)
 {
+	SerdStatus st = SERD_SUCCESS;
 	if (ctx(writer, SERD_SUBJECT)) {
-		write_sep(writer, writer->context.flags, SEP_END_S);
+		st = write_sep(writer, writer->context.flags, SEP_END_S);
 	}
-	if (ctx(writer, SERD_GRAPH)) {
-		write_sep(writer, writer->context.flags, SEP_GRAPH_END);
+
+	if (!st && ctx(writer, SERD_GRAPH)) {
+		st = write_sep(writer, writer->context.flags, SEP_GRAPH_END);
 	}
+
 	free_context(writer);
 	writer->indent  = 0;
 	writer->context = WRITE_CONTEXT_NULL;
 	writer->empty   = true;
-	return SERD_SUCCESS;
+	return st;
 }
 
 SerdWriter*
@@ -981,17 +1034,19 @@ SerdStatus
 serd_writer_set_base_uri(SerdWriter*     writer,
                          const SerdNode* uri)
 {
+	SerdStatus st = SERD_SUCCESS;
 	if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
 		if (ctx(writer, SERD_GRAPH) || ctx(writer, SERD_SUBJECT)) {
-			sink(" .\n\n", 4, writer);
+			TRY(st, esink(" .\n\n", 4, writer));
 			reset_context(writer, true);
 		}
-		sink("@base <", 7, writer);
-		sink(serd_node_get_string(uri), uri->n_bytes, writer);
-		sink("> .\n", 4, writer);
+		TRY(st, esink("@base <", 7, writer));
+		TRY(st, esink(serd_node_get_string(uri), uri->n_bytes, writer));
+		TRY(st, esink("> .\n", 4, writer));
 	}
 	writer->indent = 0;
-	return reset_context(writer, true);
+	reset_context(writer, true);
+	return st;
 }
 
 SerdStatus
@@ -1015,19 +1070,21 @@ serd_writer_set_prefix(SerdWriter*     writer,
                        const SerdNode* name,
                        const SerdNode* uri)
 {
+	SerdStatus st = SERD_SUCCESS;
 	if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
 		if (ctx(writer, SERD_GRAPH) || ctx(writer, SERD_SUBJECT)) {
-			sink(" .\n\n", 4, writer);
+			TRY(st, esink(" .\n\n", 4, writer));
 			reset_context(writer, true);
 		}
-		sink("@prefix ", 8, writer);
-		sink(serd_node_get_string(name), name->n_bytes, writer);
-		sink(": <", 3, writer);
-		write_uri_from_node(writer, uri);
-		sink("> .\n", 4, writer);
+		TRY(st, esink("@prefix ", 8, writer));
+		TRY(st, esink(serd_node_get_string(name), name->n_bytes, writer));
+		TRY(st, esink(": <", 3, writer));
+		TRY(st, write_uri_from_node(writer, uri));
+		TRY(st, esink("> .\n", 4, writer));
 	}
 	writer->indent = 0;
-	return reset_context(writer, true);
+	reset_context(writer, true);
+	return st;
 }
 
 void

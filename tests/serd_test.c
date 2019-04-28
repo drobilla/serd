@@ -207,6 +207,42 @@ test_get_blank(void)
 	return 0;
 }
 
+static int
+test_strict_write(void)
+{
+	SerdWorld*  world  = serd_world_new();
+	const char* path   = "serd_strict_write_test.ttl";
+	FILE*       fd     = fopen(path, "wb");
+	SerdEnv*    env    = serd_env_new(NULL);
+	SerdWriter* writer = serd_writer_new(world,
+	                                     SERD_TURTLE,
+	                                     SERD_WRITE_STRICT,
+	                                     env,
+	                                     (SerdWriteFunc)fwrite,
+	                                     fd);
+	assert(fd);
+	assert(writer);
+
+	const SerdSink* sink      = serd_writer_get_sink(writer);
+	const uint8_t   bad_str[] = {0xFF, 0x90, 'h', 'i', 0};
+	SerdNode*       s         = serd_new_uri("http://example.org/s");
+	SerdNode*       p         = serd_new_uri("http://example.org/s");
+	SerdNode*       bad_lit   = serd_new_string((const char*)bad_str);
+	SerdNode*       bad_uri   = serd_new_uri((const char*)bad_str);
+	assert(serd_sink_write(sink, 0, s, p, bad_lit, 0) == SERD_ERR_INVALID);
+	assert(serd_sink_write(sink, 0, s, p, bad_uri, 0) == SERD_ERR_INVALID);
+	serd_node_free(bad_uri);
+	serd_node_free(bad_lit);
+	serd_node_free(s);
+	serd_node_free(p);
+
+	serd_writer_free(writer);
+	serd_env_free(env);
+	fclose(fd);
+	serd_world_free(world);
+	return 0;
+}
+
 static void
 test_string_to_double(void)
 {
@@ -375,7 +411,7 @@ test_strerror(void)
 {
 	const char* msg = serd_strerror(SERD_SUCCESS);
 	assert(!strcmp(msg, "Success"));
-	for (int i = SERD_FAILURE; i <= SERD_ERR_NO_DATA; ++i) {
+	for (int i = SERD_FAILURE; i <= SERD_ERR_BAD_WRITE; ++i) {
 		msg = serd_strerror((SerdStatus)i);
 		assert(strcmp(msg, "Success"));
 	}
@@ -904,6 +940,7 @@ main(void)
 	test_env();
 	test_read_chunks();
 	test_get_blank();
+	test_strict_write();
 
 	const char* const path = "serd_test.ttl";
 	test_writer(path);
