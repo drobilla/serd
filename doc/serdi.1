@@ -7,6 +7,7 @@
 .Sh SYNOPSIS
 .Nm serdi
 .Op Fl abefhlqtv
+.Op Fl I Ar base
 .Op Fl c Ar prefix
 .Op Fl i Ar syntax
 .Op Fl k Ar bytes
@@ -16,7 +17,6 @@
 .Op Fl s Ar string
 .Op Fl w Ar filename
 .Ar input
-.Op Ar base_uri
 .Sh DESCRIPTION
 .Nm
 is a fast command-line utility for streaming and processing RDF data.
@@ -35,6 +35,14 @@ or transform URIs and blank node IDs.
 The options are as follows:
 .Pp
 .Bl -tag -compact -width 3n
+.It Fl I Ar base
+Input base URI.
+Relative URI references in the input will be resolved against this.
+When the input is a file,
+the URI of the file is automatically used as the base URI.
+This option can be used to override that,
+or to provide a base URI for input from stdin or a string.
+.Pp
 .It Fl a
 Write ASCII output.
 If this is enabled, all non-ASCII characters will be escaped, even if the output syntax allows them to be written in UTF-8.

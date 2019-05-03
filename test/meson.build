@@ -59,6 +59,7 @@ if get_option('utils')
   bad_args = [
     ['/no/such/file'],
     ['ftp://example.org/unsupported.ttl'],
+    ['-I'],
     ['-c'],
     ['-i', 'unknown'],
     ['-i', 'turtle'],
