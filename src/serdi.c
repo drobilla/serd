@@ -50,6 +50,7 @@ print_usage(const char* const name, const bool error)
   static const char* const description =
     "Read and write RDF syntax.\n"
     "Use - for INPUT to read from standard input.\n\n"
+    "  -I BASE_URI  Input base URI.\n"
     "  -a           Write ASCII output if possible.\n"
     "  -b           Fast bulk output for large serialisations.\n"
     "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n"
@@ -70,7 +71,7 @@ print_usage(const char* const name, const bool error)
 
   FILE* const os = error ? stderr : stdout;
   fprintf(os, "%s", error ? "\n" : "");
-  fprintf(os, "Usage: %s [OPTION]... INPUT [BASE_URI]\n", name);
+  fprintf(os, "Usage: %s [OPTION]... INPUT...\n", name);
   fprintf(os, "%s", description);
   return error ? 1 : 0;
 }
@@ -95,6 +96,7 @@ main(int argc, char** argv)
 {
   const char* const prog = argv[0];
 
+  SerdNode*       base          = NULL;
   SerdSyntax      input_syntax  = SERD_SYNTAX_EMPTY;
   SerdSyntax      output_syntax = SERD_SYNTAX_EMPTY;
   SerdReaderFlags reader_flags  = 0;
@@ -141,6 +143,13 @@ main(int argc, char** argv)
         return print_version();
       } else if (opt == 's') {
         from_string = true;
+        break;
+      } else if (argv[a][1] == 'I') {
+        if (++a == argc) {
+          return missing_arg(prog, 'I');
+        }
+
+        base = serd_new_uri(serd_string(argv[a]));
         break;
       } else if (opt == 'c') {
         if (argv[a][o + 1] || ++a == argc) {
@@ -227,10 +236,7 @@ main(int argc, char** argv)
     output_syntax = input_has_graphs ? SERD_NQUADS : SERD_NTRIPLES;
   }
 
-  SerdNode* base = NULL;
-  if (a < argc) { // Base URI given on command line
-    base = serd_new_uri(serd_string(argv[a]));
-  } else if (!from_string && !from_stdin) { // Use input file URI
+  if (!base && !from_string && !from_stdin) { // Use input file URI
     base = serd_new_file_uri(serd_string(input), serd_empty_string());
   }
 

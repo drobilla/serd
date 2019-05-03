@@ -89,8 +89,9 @@ def test_thru(
             "serd_test",
             "-w",
             out_path,
-            path,
+            "-I",
             base_uri,
+            path,
         ]
     )
 
@@ -105,8 +106,9 @@ def test_thru(
             "-c",
             "serd_test",
             "-a",
-            out_path,
+            "-I",
             base_uri,
+            out_path,
         ]
     )
 
@@ -171,7 +173,7 @@ def _load_rdf(filename, base_uri, command_prefix):
     model = {}
     instances = {}
 
-    cmd = command_prefix + [filename, base_uri]
+    cmd = command_prefix + ["-I", base_uri, filename]
     proc = subprocess.run(
         cmd, capture_output=True, encoding="utf-8", check=True
     )
@@ -262,9 +264,15 @@ def test_suite(
             test_name = os.path.basename(test_uri_path)
             test_path = os.path.join(test_dir, test_name)
 
-            command = (
-                command_prefix + ["-a", "-o", osyntax] + [test_path, test_uri]
-            )
+            command = command_prefix + [
+                "-a",
+                "-o",
+                osyntax,
+                "-I",
+                test_uri,
+                test_path,
+            ]
+
             command_string = " ".join(shlex.quote(c) for c in command)
             out_filename = os.path.join(out_test_dir, test_name + ".out")
 
