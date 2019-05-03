@@ -106,6 +106,7 @@ if not get_option('tools').disabled()
   bad_args = [
     ['/no/such/file'],
     ['ftp://unsupported.org'],
+    ['-I'],
     ['-c'],
     ['-i', 'unknown'],
     ['-i', 'turtle'],
