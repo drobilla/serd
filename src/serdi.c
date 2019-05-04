@@ -166,17 +166,17 @@ main(int argc, char** argv)
 			if (++a == argc) {
 				return missing_arg(argv[0], 'p');
 			}
-			add_prefix = (const char*)argv[a];
+			add_prefix = argv[a];
 		} else if (argv[a][1] == 'c') {
 			if (++a == argc) {
 				return missing_arg(argv[0], 'c');
 			}
-			chop_prefix = (const char*)argv[a];
+			chop_prefix = argv[a];
 		} else if (argv[a][1] == 'r') {
 			if (++a == argc) {
 				return missing_arg(argv[0], 'r');
 			}
-			root_uri = (const char*)argv[a];
+			root_uri = argv[a];
 		} else {
 			SERDI_ERRORF("invalid option -- '%s'\n", argv[a] + 1);
 			return print_usage(argv[0], true);
@@ -193,7 +193,7 @@ main(int argc, char** argv)
 	_setmode(_fileno(stdout), _O_BINARY);
 #endif
 
-	const char* input = (const char*)argv[a++];
+	const char* input = argv[a++];
 
 	if (!input_syntax && !(input_syntax = serd_guess_syntax(input))) {
 		input_syntax = SERD_TRIG;
@@ -206,7 +206,7 @@ main(int argc, char** argv)
 
 	SerdNode* base = NULL;
 	if (a < argc) {  // Base URI given on command line
-		base = serd_new_uri((const char*)argv[a]);
+		base = serd_new_uri(argv[a]);
 	} else if (!from_string && !from_stdin) {  // Use input file URI
 		base = serd_new_file_uri(input, NULL);
 	}
