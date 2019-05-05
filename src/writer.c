@@ -683,6 +683,8 @@ write_curie(SerdWriter* const        writer,
 		if (is_inline_start(writer, field, flags)) {
 			TRY(st, esink(" ;", 2, writer));
 		}
+	case SERD_SYNTAX_EMPTY:
+		break;
 	}
 	return st;
 }
@@ -741,7 +743,7 @@ write_node(SerdWriter*        writer,
 		break;
 	case SERD_BLANK:
 		st = write_blank(writer, node, field, flags);
-	default: break;
+		break;
 	}
 	return st;
 }
@@ -812,6 +814,10 @@ serd_writer_write_statement(SerdWriter*          writer,
                             SerdStatementFlags   flags,
                             const SerdStatement* statement)
 {
+	if (writer->syntax == SERD_SYNTAX_EMPTY) {
+		return SERD_SUCCESS;
+	}
+
 	const SerdNode* const subject   = serd_statement_get_subject(statement);
 	const SerdNode* const predicate = serd_statement_get_predicate(statement);
 	const SerdNode* const object    = serd_statement_get_object(statement);
@@ -944,10 +950,9 @@ serd_writer_write_statement(SerdWriter*          writer,
 }
 
 SERD_WARN_UNUSED_RESULT static SerdStatus
-serd_writer_end_anon(SerdWriter*     writer,
-                     const SerdNode* node)
+serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
 {
-	if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
+	if (writer->syntax != SERD_TURTLE && writer->syntax != SERD_TRIG) {
 		return SERD_SUCCESS;
 	} else if (serd_stack_is_empty(&writer->anon_stack)) {
 		return SERD_LOG_ERROR(writer->world, SERD_ERR_UNKNOWN,

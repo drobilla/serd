@@ -538,8 +538,14 @@ def test(tst):
         check([serdi, '-h'])
         check([serdi, '-k', '512', '-s', '<foo> a <#Thingie> .'])
         check([serdi, os.devnull])
+
         with tempfile.TemporaryFile(mode='r') as stdin:
             check([serdi, '-'], stdin=stdin)
+
+        with tempfile.TemporaryFile(mode='w') as stdout:
+            check([serdi, '-o', 'empty', '%s/serd.ttl' % srcdir], stdout=stdout)
+            stdout.seek(0, 2) # Seek to end
+            check(lambda: stdout.tell() == 0, name='empty output')
 
     with tst.group('BadCommands', expected=1, stderr=autowaf.NONEMPTY) as check:
         check([serdi])

@@ -29,6 +29,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define SERDI_ERROR(msg)       fprintf(stderr, "serdi: " msg);
 #define SERDI_ERRORF(fmt, ...) fprintf(stderr, "serdi: " fmt, __VA_ARGS__);
@@ -96,14 +97,15 @@ main(int argc, char** argv)
 	}
 
 	SerdNode*       base          = NULL;
-	SerdSyntax      input_syntax  = (SerdSyntax)0;
-	SerdSyntax      output_syntax = (SerdSyntax)0;
+	SerdSyntax      input_syntax  = SERD_SYNTAX_EMPTY;
+	SerdSyntax      output_syntax = SERD_SYNTAX_EMPTY;
 	SerdReaderFlags reader_flags  = 0;
 	SerdWriterFlags writer_flags  = 0;
 	bool            from_stdin    = false;
 	bool            bulk_read     = true;
 	bool            bulk_write    = false;
 	bool            no_inline     = false;
+	bool            osyntax_set   = false;
 	bool            use_model     = false;
 	bool            quiet         = false;
 	size_t          stack_size    = 4194304;
@@ -165,8 +167,11 @@ main(int argc, char** argv)
 			}
 			stack_size = (size_t)size;
 		} else if (argv[a][1] == 'o') {
+			osyntax_set = true;
 			if (++a == argc) {
 				return missing_arg(argv[0], 'o');
+			} else if (!strcmp(argv[a], "empty")) {
+				output_syntax = SERD_SYNTAX_EMPTY;
 			} else if (!(output_syntax = serd_syntax_by_name(argv[a]))) {
 				return print_usage(argv[0], true);
 			}
@@ -208,7 +213,7 @@ main(int argc, char** argv)
 	}
 
 	const bool input_has_graphs = serd_syntax_has_graphs(input_syntax);
-	if (!output_syntax) {
+	if (!output_syntax && !osyntax_set) {
 		output_syntax = input_has_graphs ? SERD_NQUADS : SERD_NTRIPLES;
 	}
 
