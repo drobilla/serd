@@ -91,6 +91,42 @@ quiet_error_func(void* const handle, const SerdError* const e)
   return SERD_SUCCESS;
 }
 
+static SerdStatus
+read_file(SerdWorld* const      world,
+          SerdSyntax            syntax,
+          const SerdReaderFlags flags,
+          const SerdSink* const sink,
+          const size_t          stack_size,
+          const char* const     filename,
+          const char* const     add_prefix,
+          const bool            bulk_read)
+{
+  syntax = syntax ? syntax : serd_guess_syntax(filename);
+  syntax = syntax ? syntax : SERD_TRIG;
+
+  SerdStatus  st     = SERD_SUCCESS;
+  SerdReader* reader = serd_reader_new(world, syntax, flags, sink, stack_size);
+
+  serd_reader_add_blank_prefix(reader, add_prefix);
+
+  if (!strcmp(filename, "-")) {
+    SerdNode* name = serd_new_string(SERD_STATIC_STRING("stdin"));
+
+    st = serd_reader_start_stream(
+      reader, serd_file_read_byte, (SerdStreamErrorFunc)ferror, stdin, name, 1);
+
+    serd_node_free(name);
+  } else {
+    st = serd_reader_start_file(reader, filename, bulk_read);
+  }
+
+  st = st ? st : serd_reader_read_document(reader);
+
+  serd_reader_free(reader);
+
+  return st;
+}
+
 int
 main(int argc, char** argv)
 {
@@ -104,21 +140,19 @@ main(int argc, char** argv)
   SerdSyntax      output_syntax = SERD_SYNTAX_EMPTY;
   SerdReaderFlags reader_flags  = 0;
   SerdWriterFlags writer_flags  = 0;
-  bool            from_stdin    = false;
   bool            bulk_read     = true;
   bool            bulk_write    = false;
   bool            osyntax_set   = false;
   bool            quiet         = false;
   size_t          stack_size    = 4194304;
   const char*     input_string  = NULL;
-  const char*     add_prefix    = NULL;
+  const char*     add_prefix    = "";
   const char*     chop_prefix   = NULL;
   const char*     root_uri      = NULL;
   const char*     out_filename  = NULL;
   int             a             = 1;
   for (; a < argc && argv[a][0] == '-'; ++a) {
     if (argv[a][1] == '\0') {
-      from_stdin = true;
       break;
     }
 
@@ -232,19 +266,31 @@ main(int argc, char** argv)
     return 1;
   }
 
-  const char* input = argv[a++];
+  char* const* const inputs   = argv + a;
+  const int          n_inputs = argc - a;
 
-  if ((!input_syntax && !input) || !(input_syntax = serd_guess_syntax(input))) {
-    input_syntax = SERD_TRIG;
+  bool input_has_graphs = serd_syntax_has_graphs(input_syntax);
+  for (int i = a; i < argc; ++i) {
+    if (serd_syntax_has_graphs(serd_guess_syntax(argv[i]))) {
+      input_has_graphs = true;
+      break;
+    }
   }
 
-  const bool input_has_graphs = serd_syntax_has_graphs(input_syntax);
   if (!output_syntax && !osyntax_set) {
     output_syntax = input_has_graphs ? SERD_NQUADS : SERD_NTRIPLES;
   }
 
-  if (!base && input) { // Use input file URI
-    base = serd_new_file_uri(SERD_MEASURE_STRING(input), SERD_EMPTY_STRING());
+  if (!base && n_inputs == 1 &&
+      (output_syntax == SERD_NQUADS || output_syntax == SERD_NTRIPLES)) {
+    // Choose base URI from the single input path
+    char* const input_path = serd_canonical_path(inputs[0]);
+    if (!input_path ||
+        !(base = serd_new_file_uri(SERD_MEASURE_STRING(input_path),
+                                   SERD_EMPTY_STRING()))) {
+      SERDI_ERRORF("unable to determine base URI from path %s\n", inputs[0]);
+    }
+    serd_free(input_path);
   }
 
   SerdWorld* const world = serd_world_new();
@@ -272,9 +318,6 @@ main(int argc, char** argv)
   SerdWriter* const writer =
     serd_writer_new(world, output_syntax, writer_flags, env, byte_sink);
 
-  SerdReader* const reader = serd_reader_new(
-    world, input_syntax, reader_flags, serd_writer_sink(writer), stack_size);
-
   if (quiet) {
     serd_world_set_error_func(world, quiet_error_func, NULL);
   }
@@ -282,32 +325,70 @@ main(int argc, char** argv)
   SerdNode* root = serd_new_uri(SERD_MEASURE_STRING(root_uri));
   serd_writer_set_root_uri(writer, root);
   serd_writer_chop_blank_prefix(writer, chop_prefix);
-  serd_reader_add_blank_prefix(reader, add_prefix);
   serd_node_free(root);
 
   SerdStatus st         = SERD_SUCCESS;
   SerdNode*  input_name = NULL;
   if (input_string) {
-    input_name = serd_new_string(SERD_STATIC_STRING("string"));
-    st         = serd_reader_start_string(reader, input_string, input_name);
-  } else if (from_stdin) {
-    input_name = serd_new_string(SERD_STATIC_STRING("stdin"));
-    st         = serd_reader_start_stream(reader,
-                                  serd_file_read_byte,
-                                  (SerdStreamErrorFunc)ferror,
-                                  stdin,
-                                  input_name,
-                                  1);
-  } else {
-    st = serd_reader_start_file(reader, input, bulk_read);
+    SerdReader* const reader =
+      serd_reader_new(world,
+                      input_syntax ? input_syntax : SERD_TRIG,
+                      reader_flags,
+                      serd_writer_sink(writer),
+                      stack_size);
+
+    serd_reader_add_blank_prefix(reader, add_prefix);
+
+    SerdNode* name = serd_new_string(SERD_STATIC_STRING("string"));
+    if (!(st = serd_reader_start_string(reader, input_string, name))) {
+      st = serd_reader_read_document(reader);
+    }
+
+    serd_node_free(name);
+    serd_reader_free(reader);
   }
 
-  if (!st) {
-    st = serd_reader_read_document(reader);
+  size_t prefix_len = 0;
+  char*  prefix     = NULL;
+  if (n_inputs > 1) {
+    prefix_len = 8 + strlen(add_prefix);
+    prefix     = (char*)calloc(1, prefix_len);
   }
 
-  serd_reader_finish(reader);
-  serd_reader_free(reader);
+  for (int i = 0; !st && i < n_inputs; ++i) {
+    if (!base && strcmp(inputs[i], "-")) {
+      char* const input_path = serd_canonical_path(inputs[i]);
+      if (!input_path) {
+        SERDI_ERRORF("failed to resolve path %s", inputs[i]);
+        st = SERD_ERR_BAD_ARG;
+        break;
+      }
+
+      SerdNode* const file_uri =
+        serd_new_file_uri(SERD_MEASURE_STRING(input_path), SERD_EMPTY_STRING());
+
+      serd_env_set_base_uri(env, serd_node_string_view(file_uri));
+      serd_node_free(file_uri);
+      serd_free(input_path);
+    }
+
+    if (n_inputs > 1) {
+      snprintf(prefix, prefix_len, "f%d%s", i, add_prefix);
+    }
+
+    if ((st = read_file(world,
+                        input_syntax,
+                        reader_flags,
+                        serd_writer_sink(writer),
+                        stack_size,
+                        inputs[i],
+                        n_inputs > 1 ? prefix : add_prefix,
+                        bulk_read))) {
+      break;
+    }
+  }
+  free(prefix);
+
   serd_writer_free(writer);
   serd_node_free(input_name);
   serd_env_free(env);
