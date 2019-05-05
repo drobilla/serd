@@ -533,7 +533,7 @@ def test(tst):
         test_syntax_io(check, 'pretty.trig',    'pretty.trig',     'trig')
 
     with tst.group('GoodCommands') as check:
-        check([serdi, '%s/tests/good/manifest.ttl' % srcdir])
+        check([serdi, '%s/serd.ttl' % srcdir], stdout=os.devnull)
         check([serdi, '-v'])
         check([serdi, '-h'])
         check([serdi, '-k', '512', '-s', '<foo> a <#Thingie> .'])
