@@ -67,7 +67,7 @@ print_usage(const char* name, bool error)
 	fprintf(os, "  -p PREFIX    Add PREFIX to blank node IDs.\n");
 	fprintf(os, "  -q           Suppress all output except data.\n");
 	fprintf(os, "  -r ROOT_URI  Keep relative URIs within ROOT_URI.\n");
-	fprintf(os, "  -s INPUT     Parse INPUT as string (terminates options).\n");
+	fprintf(os, "  -s INPUT     Parse INPUT as string.\n");
 	fprintf(os, "  -t           Write terser output without newlines.\n");
 	fprintf(os, "  -v           Display version information and exit.\n");
 	return error ? 1 : 0;
@@ -100,7 +100,6 @@ main(int argc, char** argv)
 	SerdSyntax      output_syntax = (SerdSyntax)0;
 	SerdReaderFlags reader_flags  = 0;
 	SerdWriterFlags writer_flags  = 0;
-	bool            from_string   = false;
 	bool            from_stdin    = false;
 	bool            bulk_read     = true;
 	bool            bulk_write    = false;
@@ -108,6 +107,7 @@ main(int argc, char** argv)
 	bool            use_model     = false;
 	bool            quiet         = false;
 	size_t          stack_size    = 4194304;
+	const char*     input_string  = NULL;
 	const char*     add_prefix    = NULL;
 	const char*     chop_prefix   = NULL;
 	const char*     root_uri      = NULL;
@@ -141,9 +141,10 @@ main(int argc, char** argv)
 		} else if (argv[a][1] == 'v') {
 			return print_version();
 		} else if (argv[a][1] == 's') {
-			from_string = true;
-			++a;
-			break;
+			if (++a == argc) {
+				return missing_arg(argv[0], 's');
+			}
+			input_string = argv[a];
 		} else if (argv[a][1] == 't') {
 			writer_flags |= SERD_WRITE_TERSE;
 		} else if (argv[a][1] == 'i') {
@@ -190,7 +191,7 @@ main(int argc, char** argv)
 		}
 	}
 
-	if (a == argc) {
+	if (a == argc && !input_string) {
 		SERDI_ERROR("missing input\n");
 		return 1;
 	}
@@ -202,7 +203,7 @@ main(int argc, char** argv)
 
 	const char* input = argv[a++];
 
-	if (!input_syntax && !(input_syntax = serd_guess_syntax(input))) {
+	if (!input_syntax && !input || !(input_syntax = serd_guess_syntax(input))) {
 		input_syntax = SERD_TRIG;
 	}
 
@@ -211,7 +212,7 @@ main(int argc, char** argv)
 		output_syntax = input_has_graphs ? SERD_NQUADS : SERD_NTRIPLES;
 	}
 
-	if (!base) {
+	if (!base && input) {
 		base = serd_new_file_uri(input, NULL);
 	}
 
@@ -262,9 +263,9 @@ main(int argc, char** argv)
 
 	SerdStatus st         = SERD_SUCCESS;
 	SerdNode*  input_name = NULL;
-	if (from_string) {
+	if (input_string) {
 		input_name = serd_new_string("string");
-		st         = serd_reader_start_string(reader, input, input_name);
+		st         = serd_reader_start_string(reader, input_string, input_name);
 	} else if (from_stdin) {
 		input_name = serd_new_string("stdin");
 		st         = serd_reader_start_stream(reader,

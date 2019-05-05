@@ -559,6 +559,7 @@ def test(tst):
         check([serdi, '-p'])
         check([serdi, '-q', '%s/tests/bad/bad-base.ttl' % srcdir], stderr=None)
         check([serdi, '-r'])
+        check([serdi, '-s'])
         check([serdi, '-z'])
         check([serdi] + ['%s/tests/bad/bad-base.ttl' % srcdir] * 2)
 
