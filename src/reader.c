@@ -24,7 +24,6 @@
 #include "system.h"
 #include "world.h"
 
-#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -311,8 +310,6 @@ serd_reader_prepare(SerdReader* const reader)
     st = skip_bom(reader);
   } else if (st == SERD_FAILURE) {
     reader->source.eof = true;
-  } else {
-    r_err(reader, st, "error preparing read: %s\n", strerror(errno));
   }
   return st;
 }
