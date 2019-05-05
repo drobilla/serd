@@ -381,6 +381,16 @@ def _file_lines_equal(patha, pathb, subst_from='', subst_to=''):
 
     return True
 
+def _option_combinations(options):
+    "Return an iterator that cycles through all combinations of the given options"
+    import itertools
+
+    combinations = []
+    for n in range(len(options) + 1):
+        combinations += list(itertools.combinations(options, n))
+
+    return itertools.cycle(combinations)
+
 def test_suite(ctx, base_uri, testdir, report, isyntax, options=[]):
     import itertools
 
@@ -396,12 +406,8 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, options=[]):
 
     def run_tests(test_class, tests, expected_return):
         thru_flags   = [['-e'], ['-b'], ['-r', 'http://example.org/']]
-        thru_options = []
-        for n in range(len(thru_flags) + 1):
-            thru_options += list(itertools.combinations(thru_flags, n))
-        thru_options_iter = itertools.cycle(thru_options)
-
         osyntax = _test_output_syntax(test_class)
+        thru_options_iter = _option_combinations(thru_flags)
         tests_name = '%s.%s' % (testdir, test_class[test_class.find('#') + 1:])
         with ctx.group(tests_name) as check:
             for test in sorted(tests):
