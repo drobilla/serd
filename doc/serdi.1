@@ -33,18 +33,15 @@ Chop \fIPREFIX\fR from matching blank node IDs.
 
 .TP
 .BR \-e
-Eat input one character at a time, rather than a page at a time which is the
-default.  This is useful when reading from a pipe since output will be
-generated immediately as input arrives, rather than waiting until an entire
-page of input has arrived.  With this option serdi uses one page less memory,
-but will likely be significantly slower.
+Eat input one character at a time, rather than a page at a time which is the default.
+This is useful when reading from a pipe since output will be generated immediately as input arrives, rather than waiting until an entire page of input has arrived.
+With this option serdi uses one page less memory, but will likely be significantly slower.
 
 .TP
 .BR \-f
-Fast serialisation without object inlining.  This affects only model
-(non-streaming) serialisation, and disables searching and statement reordering
-for pretty printing.  Statements will be written in simple sorted order, which
-is faster, but may result in less readable output in Turtle or TriG.
+Fast serialisation without object inlining.
+This affects only model (non-streaming) serialisation, and disables searching and statement reordering for pretty printing.
+Statements will be written in simple sorted order, which is faster, but may result in less readable output in Turtle or TriG.
 
 .TP
 .BR \-h
@@ -65,14 +62,15 @@ Lax (non-strict) parsing.
 
 .TP
 .BR \-m
-Build and serialise a model.  This loads the complete input data into memory
-before writing the output.  This will normalize statement order, at the cost of
-performance and memory consumption.
+Build and serialise a model.
+This loads the complete input data into memory before writing the output.
+This will normalize statement order, at the cost of performance and memory consumption.
 
 .TP
 .BR \-o " " \fISYNTAX\fR
 Write output as \fISYNTAX\fR.
-Valid values (case-insensitive): \*(lqturtle\*(rq, \*(lqntriples\*(rq, \*(lqtrig\*(rq, \*(lqnquads\*(rq, , \*(lqempty\*(rq.  When \*(lqempty\*(rq is given, output is suppressed, so only errors will be printed.
+Valid values (case-insensitive): \*(lqturtle\*(rq, \*(lqntriples\*(rq, \*(lqtrig\*(rq, \*(lqnquads\*(rq, , \*(lqempty\*(rq.
+When \*(lqempty\*(rq is given, output is suppressed, so only errors will be printed.
 
 .TP
 .BR \-p " " \fIPREFIX\fR
