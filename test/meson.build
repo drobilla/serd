@@ -99,6 +99,10 @@ if get_option('utils')
        args: script_args,
        suite: ['serdi', 'input'])
 
+  test('multiple', files('test_multifile.py'),
+       args: script_args + [meson.current_source_dir() / 'multifile'],
+       suite: ['serdi', 'input'])
+
   test('string', serdi,
        args: ['-s', '<foo> a <Bar> .'],
        should_fail: true,
