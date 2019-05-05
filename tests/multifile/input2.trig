@@ -1,0 +1,7 @@
+[]
+	a <http://example.org/Type> .
+
+<http://example.org/graph> {
+	[]
+		a <http://example.org/OtherType> .
+}
