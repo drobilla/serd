@@ -229,25 +229,25 @@ main(int argc, char** argv)
 	serd_reader_add_blank_prefix(reader, add_prefix);
 	serd_node_free(root);
 
-	SerdStatus status     = SERD_SUCCESS;
+	SerdStatus st         = SERD_SUCCESS;
 	SerdNode*  input_name = NULL;
 	if (from_string) {
 		input_name = serd_new_string("string");
-		status = serd_reader_start_string(reader, input, input_name);
+		st         = serd_reader_start_string(reader, input, input_name);
 	} else if (from_stdin) {
 		input_name = serd_new_string("stdin");
-		status = serd_reader_start_stream(reader,
-		                                  serd_file_read_byte,
-		                                  (SerdStreamErrorFunc)ferror,
-		                                  stdin,
-		                                  input_name,
-		                                  1);
+		st         = serd_reader_start_stream(reader,
+		                                      serd_file_read_byte,
+		                                      (SerdStreamErrorFunc)ferror,
+		                                      stdin,
+		                                      input_name,
+		                                      1);
 	} else {
-		status = serd_reader_start_file(reader, input, bulk_read);
+		st = serd_reader_start_file(reader, input, bulk_read);
 	}
 
-	if (!status) {
-		status = serd_reader_read_document(reader);
+	if (!st) {
+		st = serd_reader_read_document(reader);
 	}
 
 	serd_reader_finish(reader);
@@ -260,8 +260,8 @@ main(int argc, char** argv)
 
 	if (fclose(stdout)) {
 		perror("serdi: write error");
-		status = SERD_ERR_UNKNOWN;
+		st = SERD_ERR_UNKNOWN;
 	}
 
-	return (status > SERD_FAILURE) ? 1 : 0;
+	return (st > SERD_FAILURE) ? 1 : 0;
 }
