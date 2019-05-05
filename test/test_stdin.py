@@ -14,7 +14,12 @@ parser.add_argument("--serdi", default="./serdi", help="path to serdi")
 parser.add_argument("--wrapper", default="", help="executable wrapper")
 
 args = parser.parse_args(sys.argv[1:])
-command = shlex.split(args.wrapper) + [args.serdi, "-"]
+command = shlex.split(args.wrapper) + [
+    args.serdi,
+    "-I",
+    "http://example.org",
+    "-",
+]
 
 DOCUMENT = "<{0}s> <{0}p> <{0}o> .".format("http://example.org/")
 
