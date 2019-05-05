@@ -119,6 +119,7 @@ if not get_option('tools').disabled()
     ['-o'],
     ['-p'],
     ['-r'],
+    ['-s'],
     ['-w'],
     ['-z'],
     ['-s', '<foo> a <Bar> .'],
