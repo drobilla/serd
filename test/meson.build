@@ -152,6 +152,11 @@ if not get_option('tools').disabled()
        env: test_env,
        suite: ['serdi', 'input'])
 
+  test('multiple', files('test_multifile.py'),
+       args: script_args + [meson.current_source_dir() / 'multifile'],
+       env: test_env,
+       suite: ['serdi', 'input'])
+
   test('string', serdi,
        args: ['-s', '<foo> a <Bar> .'],
        env: test_env,
