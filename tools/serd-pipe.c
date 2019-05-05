@@ -49,7 +49,7 @@ print_usage(const char* const name, const bool error)
     "  -p PREFIX    Add PREFIX to blank node IDs\n"
     "  -q           Suppress all output except data\n"
     "  -r ROOT_URI  Keep relative URIs within ROOT_URI\n"
-    "  -s INPUT     Parse INPUT as string (terminates options)\n"
+    "  -s STRING    Parse STRING as input\n"
     "  -t           Write terser output without newlines\n"
     "  -v           Display version information and exit\n";
 
@@ -113,18 +113,18 @@ main(int argc, char** argv)
   SerdSyntax      output_syntax = SERD_SYNTAX_EMPTY;
   SerdReaderFlags reader_flags  = 0U;
   SerdWriterFlags writer_flags  = 0U;
-  bool            from_string   = false;
   bool            from_stdin    = false;
   bool            bulk_read     = true;
   bool            bulk_write    = false;
   bool            osyntax_set   = false;
   bool            quiet         = false;
   size_t          stack_size    = 524288U;
+  const char*     input_string  = NULL;
   const char*     add_prefix    = NULL;
   const char*     chop_prefix   = NULL;
   const char*     root_uri      = NULL;
   int             a             = 1;
-  for (; a < argc && !from_string && argv[a][0] == '-'; ++a) {
+  for (; a < argc && argv[a][0] == '-'; ++a) {
     if (argv[a][1] == '\0') {
       from_stdin = true;
       break;
@@ -164,9 +164,6 @@ main(int argc, char** argv)
         quiet = true;
       } else if (opt == 't') {
         writer_flags |= SERD_WRITE_TERSE;
-      } else if (opt == 's') {
-        from_string = true;
-        break;
       } else if (argv[a][1] == 'B') {
         if (++a == argc) {
           return missing_arg(prog, 'B');
@@ -229,6 +226,13 @@ main(int argc, char** argv)
 
         root_uri = argv[a];
         break;
+      } else if (opt == 's') {
+        if (argv[a][o + 1] || ++a == argc) {
+          return missing_arg(prog, 's');
+        }
+
+        input_string = argv[a];
+        break;
       } else {
         LOG_ERRF("invalid option -- '%s'\n", argv[a] + 1);
         return print_usage(prog, true);
@@ -236,7 +240,7 @@ main(int argc, char** argv)
     }
   }
 
-  if (a == argc) {
+  if (a == argc && !input_string) {
     LOG_ERR("missing input\n");
     return print_usage(prog, true);
   }
@@ -246,7 +250,7 @@ main(int argc, char** argv)
 
   const char* input = argv[a++];
 
-  if (!input_syntax && !(input_syntax = serd_guess_syntax(input))) {
+  if ((!input_syntax && !input) || !(input_syntax = serd_guess_syntax(input))) {
     input_syntax = SERD_TRIG;
   }
 
@@ -262,7 +266,7 @@ main(int argc, char** argv)
     } else {
       base = base_uri_from_path(base_arg);
     }
-  } else if (!from_string && !from_stdin) { // Use input file URI
+  } else if (!from_stdin && input) { // Use input file URI
     base = base_uri_from_path(input);
   }
 
@@ -296,8 +300,8 @@ main(int argc, char** argv)
   const char*     position   = NULL;
   SerdInputStream in         = {NULL, NULL, NULL};
   size_t          block_size = 1U;
-  if (from_string) {
-    position   = input;
+  if (input_string) {
+    position   = input_string;
     input_name = zix_string("string");
     in         = serd_open_input_string(&position);
   } else if (from_stdin) {
