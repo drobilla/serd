@@ -63,9 +63,9 @@ serd_world_logf_internal(const SerdWorld*  world,
                          ...);
 
 #define SERD_LOG_ERRORF(world, st, fmt, ...) \
-	serd_world_logf_internal(world, st, SERD_LOG_LEVEL_ERR, NULL, fmt, __VA_ARGS__);
+	serd_world_logf_internal(world, st, SERD_LOG_LEVEL_ERR, NULL, fmt, __VA_ARGS__)
 
 #define SERD_LOG_ERROR(world, st, msg) \
-	serd_world_logf_internal(world, st, SERD_LOG_LEVEL_ERR, NULL, msg);
+	serd_world_logf_internal(world, st, SERD_LOG_LEVEL_ERR, NULL, msg)
 
 #endif  // SERD_WORLD_H

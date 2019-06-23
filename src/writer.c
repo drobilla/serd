@@ -39,7 +39,7 @@
 #define SERD_WARN_UNUSED_RESULT
 #endif
 
-#define TRY(st, exp) if (((st) = (exp))) { return (st); }
+#define TRY(st, exp) do { if (((st) = (exp))) { return (st); } } while (0)
 
 typedef enum {
 	CTX_NAMED, ///< Normal non-anonymous context

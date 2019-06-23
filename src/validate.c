@@ -37,19 +37,19 @@
 #define NS_xsd  "http://www.w3.org/2001/XMLSchema#"
 
 #define VERRORF(ctx, statement, fmt, ...)                                      \
-	report(ctx, statement, SERD_LOG_LEVEL_ERR, fmt, __VA_ARGS__);
+	report(ctx, statement, SERD_LOG_LEVEL_ERR, fmt, __VA_ARGS__)
 
 #define VERROR(ctx, statement, fmt)                                            \
-	report(ctx, statement, SERD_LOG_LEVEL_ERR, fmt);
+	report(ctx, statement, SERD_LOG_LEVEL_ERR, fmt)
 
 #define VWARNF(ctx, statement, fmt, ...)                                       \
-	report(ctx, statement, SERD_LOG_LEVEL_WARNING, fmt, __VA_ARGS__);
+	report(ctx, statement, SERD_LOG_LEVEL_WARNING, fmt, __VA_ARGS__)
 
 #define VNOTEF(ctx, statement, fmt, ...)                                       \
-	report(ctx, statement, SERD_LOG_LEVEL_NOTICE, fmt, __VA_ARGS__);
+	report(ctx, statement, SERD_LOG_LEVEL_NOTICE, fmt, __VA_ARGS__)
 
 #define VNOTE(ctx, statement, fmt)                                             \
-	report(ctx, statement, SERD_LOG_LEVEL_NOTICE, fmt);
+	report(ctx, statement, SERD_LOG_LEVEL_NOTICE, fmt)
 
 #define SERD_FOREACH(name, range)                                              \
 	for (const SerdStatement* (name) = NULL;                                   \

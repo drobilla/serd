@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TRY(st, exp) if (((st) = (exp))) { return (st); }
+#define TRY(st, exp) do { if (((st) = (exp))) { return (st); } } while (0)
 
 static inline bool
 fancy_syntax(const SerdReader* reader)
