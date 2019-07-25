@@ -161,7 +161,14 @@ def build(bld):
             obj.linkflags        = ['-static']
 
     # Documentation
-    autowaf.build_dox(bld, 'SERD', SERD_VERSION, top, out)
+    if bld.env.DOCS:
+        autowaf.build_dox(bld, 'SERD', SERD_VERSION, top, out)
+        bld(features='subst',
+            source='doc/index.html.in',
+            target='doc/index.html',
+            install_path='',
+            name='index',
+            SERD_VERSION=SERD_VERSION)
 
     # Man page
     bld.install_files('${MANDIR}/man1', 'doc/serdi.1')
