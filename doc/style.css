@@ -703,6 +703,11 @@ th {
 	padding: 0.125em;
 }
 
+#navrow1 {
+	/* Disable menu from Doxygen 1.8.15, it is faked in the template */
+	display: none;
+}
+
 /* tabs*/
 
 .tablist {
