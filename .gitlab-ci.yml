@@ -94,6 +94,7 @@ test:x64_dbg:
   image: lv2plugin/debian-x64
   script:
     - python ./waf test
+    - cp doc/*.svg build/doc/
     - groff -Thtml -P -l -P -r -man -wall doc/serdi.1 > build/doc/serdi.html
   dependencies:
     - x64_dbg
@@ -195,6 +196,8 @@ pages:
   script:
     - mkdir -p .public/doc
     - mkdir -p .public/man
+    - mkdir -p .public/images
+    - mv build/doc/*.svg .public/images
     - mv build/doc/html/ .public/doc/html
     - mv build/coverage/ .public/coverage
     - mv build/doc/index.html .public/index.html
