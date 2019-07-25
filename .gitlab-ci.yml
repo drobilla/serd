@@ -87,14 +87,20 @@ test:arm64_rel:
 x64_dbg:
   <<: *build_definition
   image: lv2plugin/debian-x64
-  script: python ./waf configure build -dsT
+  script: python ./waf configure build -dsT --docs
 
 test:x64_dbg:
   <<: *test_definition
   image: lv2plugin/debian-x64
-  script: python ./waf test
+  script:
+    - python ./waf test
+    - groff -Thtml -P -l -P -r -man -wall doc/serdi.1 > build/doc/serdi.html
   dependencies:
     - x64_dbg
+  artifacts:
+    paths:
+      - build/coverage
+      - build/doc
 
 
 x64_rel:
@@ -186,11 +192,17 @@ test:win_rel:
 
 pages:
   stage: deploy
-  script: mv build/coverage/ public/
+  script:
+    - mkdir -p .public/doc
+    - mkdir -p .public/man
+    - mv build/doc/html/ .public/doc/html
+    - mv build/coverage/ .public/coverage
+    - mv build/doc/index.html .public/index.html
+    - mv build/doc/serdi.html .public/man/serdi.html
+    - mv .public public
   dependencies:
     - test:x64_dbg
   artifacts:
-    expire_in: 30 days
     paths:
       - public
   only:
