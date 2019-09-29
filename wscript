@@ -122,6 +122,7 @@ lib_source = ['src/base64.c',
               'src/range.c',
               'src/reader.c',
               'src/sink.c',
+              'src/soft_float.c',
               'src/statement.c',
               'src/string.c',
               'src/syntax.c',
@@ -202,6 +203,7 @@ def build(bld):
                      ('sink_test', 'tests/sink_test.c'),
                      ('serd_test', 'tests/serd_test.c'),
                      ('read_chunk_test', 'tests/read_chunk_test.c'),
+                     ('soft_float_test', 'tests/soft_float_test.c'),
                      ('terse_write_test', 'tests/terse_write_test.c'),
                      ('nodes_test', 'tests/nodes_test.c'),
                      ('overflow_test', 'tests/overflow_test.c'),
@@ -559,6 +561,7 @@ def test(tst):
         check(['./nodes_test'])
         check(['./overflow_test'])
         check(['./serd_test'])
+        check(['./soft_float_test'])
         check(['./terse_write_test'])
         check(['./read_chunk_test'])
 
