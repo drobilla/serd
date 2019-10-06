@@ -23,4 +23,10 @@
 int
 serd_count_digits(uint64_t i);
 
+unsigned
+serd_double_int_digits(double abs);
+
+unsigned
+serd_decimals(double d, char* buf, unsigned max_digits);
+
 #endif // SERD_DECIMAL_H

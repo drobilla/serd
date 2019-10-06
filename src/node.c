@@ -23,7 +23,6 @@
 #include "system.h"
 
 #include <assert.h>
-#include <float.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -567,13 +566,6 @@ serd_new_relative_uri(const char*     str,
 	return node;
 }
 
-static inline unsigned
-serd_digits(double abs)
-{
-	const double lg = ceil(log10(floor(abs) + 1.0));
-	return lg < 1.0 ? 1U : (unsigned)lg;
-}
-
 SerdNode*
 serd_new_decimal(double d, unsigned frac_digits, const SerdNode* datatype)
 {
@@ -583,7 +575,7 @@ serd_new_decimal(double d, unsigned frac_digits, const SerdNode* datatype)
 
 	const SerdNode* type       = datatype ? datatype : &serd_xsd_decimal.node;
 	const double    abs_d      = fabs(d);
-	const unsigned  int_digits = serd_digits(abs_d);
+	const unsigned  int_digits = serd_double_int_digits(abs_d);
 	const size_t    len        = int_digits + frac_digits + 3;
 	const size_t    type_len   = serd_node_total_size(type);
 	const size_t    total_len  = len + type_len;
@@ -591,46 +583,7 @@ serd_new_decimal(double d, unsigned frac_digits, const SerdNode* datatype)
 	SerdNode* const node =
 		serd_node_malloc(total_len, SERD_HAS_DATATYPE, SERD_LITERAL);
 
-	// Point s to decimal point location
-	char* const  buf      = serd_node_buffer(node);
-	const double int_part = floor(abs_d);
-	char*        s        = buf + int_digits;
-	if (d < 0.0) {
-		*buf = '-';
-		++s;
-	}
-
-	// Write integer part (right to left)
-	char*    t   = s - 1;
-	uint64_t dec = (uint64_t)int_part;
-	do {
-		*t-- = (char)('0' + dec % 10);
-	} while ((dec /= 10) > 0);
-
-
-	*s++ = '.';
-
-	// Write fractional part (right to left)
-	double frac_part = fabs(d - int_part);
-	if (frac_part < DBL_EPSILON) {
-		*s++ = '0';
-		node->n_bytes = (size_t)(s - buf);
-	} else {
-		uint64_t frac = (uint64_t)llround(frac_part * pow(10.0, (int)frac_digits));
-		s += frac_digits - 1;
-		unsigned i = 0;
-
-		// Skip trailing zeros
-		for (; i < frac_digits - 1 && !(frac % 10); ++i, --s, frac /= 10) {}
-
-		node->n_bytes = (size_t)(s - buf) + 1u;
-
-		// Write digits from last trailing zero to decimal point
-		for (; i < frac_digits; ++i) {
-			*s-- = (char)('0' + (frac % 10));
-			frac /= 10;
-		}
-	}
+	node->n_bytes = serd_decimals(d, serd_node_buffer(node), frac_digits);
 
 	memcpy(serd_node_get_meta(node), type, type_len);
 	serd_node_check_padding(node);
