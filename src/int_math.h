@@ -21,6 +21,7 @@
 
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
+#define CLAMP(x, l, h) MAX(l, MIN(h, x))
 
 static const uint64_t POW10[] = {1ull,
                                  10ull,
