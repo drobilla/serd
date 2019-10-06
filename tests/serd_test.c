@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2017 David Robillard <http://drobilla.net>
+  Copyright 2011-2019 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -17,8 +17,6 @@
 #undef NDEBUG
 
 #include <assert.h>
-#include <float.h>
-#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -27,28 +25,7 @@
 
 #include "serd/serd.h"
 
-#ifndef INFINITY
-#    define INFINITY (DBL_MAX + DBL_MAX)
-#endif
-#ifndef NAN
-#    define NAN (INFINITY - INFINITY)
-#endif
-
 #define NS_XSD "http://www.w3.org/2001/XMLSchema#"
-
-static void
-test_strtod(double dbl, double max_delta)
-{
-	char buf[1024];
-	snprintf(buf, sizeof(buf), "%f", dbl);
-
-	size_t       end = 0;
-	const double out = serd_strtod(buf, &end);
-
-	const double diff = fabs(out - dbl);
-	assert(diff <= max_delta);
-	assert(end == strlen(buf));
-}
 
 static SerdStatus
 count_prefixes(void* handle, const SerdNode* name, const SerdNode* uri)
@@ -241,84 +218,6 @@ test_strict_write(void)
 	fclose(fd);
 	serd_world_free(world);
 	return 0;
-}
-
-static void
-test_string_to_double(void)
-{
-#define MAX       1000000
-#define NUM_TESTS 1000
-	for (int i = 0; i < NUM_TESTS; ++i) {
-		double dbl = rand() % MAX;
-		dbl += (rand() % MAX) / (double)MAX;
-
-		test_strtod(dbl, 1 / (double)MAX);
-	}
-
-	size_t end = 0;
-	assert(isnan(serd_strtod("NaN", &end)));
-	assert(end == 3);
-
-	assert(serd_strtod("INF", &end) == INFINITY);
-	assert(end == 3);
-
-	assert(serd_strtod("-INF", &end) == -INFINITY);
-	assert(end == 4);
-
-	const double expt_test_nums[] = {
-		2.0E18, -5e19, +8e20, 2e+24, -5e-5, 8e0, 9e-0, 2e+0
-	};
-
-	const char* expt_test_strs[] = {
-		"02e18", "-5e019", "+8e20", "2E+24", "-5E-5", "8E0", "9e-0", " 2e+0"
-	};
-
-	for (unsigned i = 0; i < sizeof(expt_test_nums) / sizeof(double); ++i) {
-		const double num   = serd_strtod(expt_test_strs[i], NULL);
-		const double delta = fabs(num - expt_test_nums[i]);
-		assert(delta <= DBL_EPSILON);
-	}
-}
-
-static void
-test_double_to_node(void)
-{
-	const double dbl_test_nums[] = { 0.0,
-	                                 9.0,
-	                                 10.0,
-	                                 .01,
-	                                 2.05,
-	                                 -16.00001,
-	                                 5.000000005,
-	                                 0.0000000001,
-	                                 (double)NAN,
-	                                 (double)INFINITY };
-
-	const char* dbl_test_strs[] = { "0.0",
-	                                "9.0",
-	                                "10.0",
-	                                "0.01",
-	                                "2.05",
-	                                "-16.00001",
-	                                "5.0",
-	                                "0.0",
-	                                NULL,
-	                                NULL };
-
-	for (size_t i = 0; i < sizeof(dbl_test_nums) / sizeof(double); ++i) {
-		SerdNode*   node     = serd_new_decimal(dbl_test_nums[i], 17, 8, NULL);
-		const char* node_str = serd_node_get_string(node);
-		const bool  pass     = (node_str && dbl_test_strs[i])
-		                          ? !strcmp(node_str, dbl_test_strs[i])
-		                          : (node_str == dbl_test_strs[i]);
-		assert(pass);
-		const size_t len = node_str ? strlen(node_str) : 0;
-		assert(serd_node_get_length(node) == len);
-		assert(!dbl_test_strs[i] ||
-		       !strcmp(serd_node_get_string(serd_node_get_datatype(node)),
-		               NS_XSD "decimal"));
-		serd_node_free(node);
-	}
 }
 
 static void
@@ -920,8 +819,6 @@ test_reader(const char* path)
 int
 main(void)
 {
-	test_string_to_double();
-	test_double_to_node();
 	test_integer_to_node();
 	test_blob_to_node();
 	test_boolean();
