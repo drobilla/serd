@@ -626,7 +626,8 @@ write_uri_node(SerdWriter* const        writer,
 	TRY(st, esink("<", 1, writer));
 	if (serd_env_get_base_uri(env)) {
 		const SerdURI* base_uri = serd_env_get_parsed_base_uri(env);
-		SerdURI uri, abs_uri;
+		SerdURI        uri;
+		SerdURI        abs_uri;
 		serd_uri_parse(node_str, &uri);
 		serd_uri_resolve(&uri, base_uri, &abs_uri);
 		bool rooted = uri_is_under(base_uri, &writer->root_uri);

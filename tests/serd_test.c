@@ -305,7 +305,7 @@ test_double_to_node(void)
 	                                NULL,
 	                                NULL };
 
-	for (unsigned i = 0; i < sizeof(dbl_test_nums) / sizeof(double); ++i) {
+	for (size_t i = 0; i < sizeof(dbl_test_nums) / sizeof(double); ++i) {
 		SerdNode*   node     = serd_new_decimal(dbl_test_nums[i], 8, NULL);
 		const char* node_str = serd_node_get_string(node);
 		const bool  pass     = (node_str && dbl_test_strs[i])
@@ -775,7 +775,7 @@ test_writer(const char* const path)
 	                              { o,    p,    o    },
 	                              { s,    p,    NULL },
 	                              { NULL, NULL, NULL } };
-	for (unsigned i = 0; i < sizeof(junk) / (sizeof(SerdNode*) * 5); ++i) {
+	for (size_t i = 0; i < sizeof(junk) / (sizeof(SerdNode*) * 5); ++i) {
 		assert(serd_sink_write(
 		        iface, 0, junk[i][0], junk[i][1], junk[i][2], 0));
 	}
@@ -794,7 +794,7 @@ test_writer(const char* const path)
 	                              { s, p, o },
 	                              { s, p, o },
 	                              { s, p, o } };
-	for (unsigned i = 0; i < sizeof(good) / (sizeof(SerdNode*) * 5); ++i) {
+	for (size_t i = 0; i < sizeof(good) / (sizeof(SerdNode*) * 5); ++i) {
 		assert(!serd_sink_write(
 		        iface, 0, good[i][0], good[i][1], good[i][2], 0));
 	}
