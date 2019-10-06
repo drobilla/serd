@@ -300,13 +300,13 @@ test_double_to_node(void)
 	                                "0.01",
 	                                "2.05",
 	                                "-16.00001",
-	                                "5.00000001",
+	                                "5.0",
 	                                "0.0",
 	                                NULL,
 	                                NULL };
 
 	for (size_t i = 0; i < sizeof(dbl_test_nums) / sizeof(double); ++i) {
-		SerdNode*   node     = serd_new_decimal(dbl_test_nums[i], 8, NULL);
+		SerdNode*   node     = serd_new_decimal(dbl_test_nums[i], 17, 8, NULL);
 		const char* node_str = serd_node_get_string(node);
 		const bool  pass     = (node_str && dbl_test_strs[i])
 		                          ? !strcmp(node_str, dbl_test_strs[i])

@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2016 David Robillard <http://drobilla.net>
+  Copyright 2011-2019 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -17,6 +17,7 @@
 #include "node.h"
 
 #include "decimal.h"
+#include "int_math.h"
 #include "namespaces.h"
 #include "static_nodes.h"
 #include "string_utils.h"
@@ -29,6 +30,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+// Define C11 numeric constants if the compiler hasn't already
+#ifndef DBL_DECIMAL_DIG
+#    define DBL_DECIMAL_DIG 17
+#endif
 
 static const size_t serd_node_align = sizeof(SerdNode);
 
@@ -566,25 +572,126 @@ serd_new_relative_uri(const char*     str,
 	return node;
 }
 
-SerdNode*
-serd_new_decimal(double d, unsigned frac_digits, const SerdNode* datatype)
+static size_t
+copy_digits(char* const dest, const char* const src, const size_t n)
 {
-	if (!isfinite(d)) {
+	memcpy(dest, src, n);
+	return n;
+}
+
+static size_t
+set_zeros(char* const dest, const size_t n)
+{
+	memset(dest, '0', n);
+	return n;
+}
+
+typedef enum { POINT_AFTER, POINT_BEFORE, POINT_BETWEEN } PointLocation;
+
+typedef struct {
+	PointLocation point_loc;      ///< Location of decimal point
+	unsigned      n_zeros_before; ///< Number of additional zeros before point
+	unsigned      n_zeros_after;  ///< Number of additional zeros after point
+	unsigned      n_digits;       ///< Number of significant digits
+} SerdDecimalMetrics;
+
+static SerdDecimalMetrics
+get_decimal_metrics(const SerdDecimalCount count)
+{
+	const int expt =
+		count.expt >= 0 ? (count.expt - (int)count.count + 1) : count.expt;
+
+	const unsigned     n_digits = count.count;
+	SerdDecimalMetrics metrics  = {POINT_AFTER, 0, 0, n_digits};
+	if (count.expt >= (int)n_digits - 1) {
+		metrics.point_loc      = POINT_AFTER;
+		metrics.n_zeros_before = (unsigned)count.expt - (count.count - 1u);
+		metrics.n_zeros_after  = 1u;
+	} else if (count.expt < 0) {
+		metrics.point_loc      = POINT_BEFORE;
+		metrics.n_zeros_before = 1u;
+		metrics.n_zeros_after = (unsigned)(-expt - 1);
+	} else {
+		metrics.point_loc = POINT_BETWEEN;
+	}
+
+	return metrics;
+}
+
+SerdNode*
+serd_new_decimal(const double    d,
+                 const unsigned  max_precision,
+                 const unsigned  max_frac_digits,
+                 const SerdNode* datatype)
+{
+	const SerdNode* const type    = datatype ? datatype : &serd_xsd_decimal.node;
+	const int             fpclass = fpclassify(d);
+
+	if (fpclass == FP_ZERO) {
+		return signbit(d) ? serd_new_typed_literal("-0.0", type)
+		                  : serd_new_typed_literal("0.0", type);
+	} else if (fpclass != FP_NORMAL && fpclass != FP_SUBNORMAL) {
 		return NULL;
 	}
 
-	const SerdNode* type       = datatype ? datatype : &serd_xsd_decimal.node;
-	const double    abs_d      = fabs(d);
-	const unsigned  int_digits = serd_double_int_digits(abs_d);
-	const size_t    len        = int_digits + frac_digits + 3;
-	const size_t    type_len   = serd_node_total_size(type);
-	const size_t    total_len  = len + type_len;
+	// Adjust precision to get the right number of fractional digits
+	unsigned precision = max_precision;
+	if (max_frac_digits) {
+		const int order              = (int)(log10(fabs(d)) + 1);
+		const int required_precision = (int)max_frac_digits + order;
 
-	SerdNode* const node =
-		serd_node_malloc(total_len, SERD_HAS_DATATYPE, SERD_LITERAL);
+		precision = (unsigned)MIN((int)max_precision,
+		                          MAX(0, required_precision));
+	}
 
-	node->n_bytes = serd_decimals(d, serd_node_buffer(node), frac_digits);
+	if (precision == 0) {
+		return serd_new_typed_literal("0.0", type);
+	}
 
+	// Get decimal digits and measure
+	char                   digits[DBL_DECIMAL_DIG + 1] = {0};
+	const SerdDecimalCount count = serd_decimals(fabs(d), digits, precision);
+	SerdDecimalMetrics     m     = get_decimal_metrics(count);
+
+	// Calculate string length and allocate node
+	const unsigned           n_zeros  = m.n_zeros_before + m.n_zeros_after;
+	const size_t             len      = (d < 0) + m.n_digits + 1 + n_zeros;
+	const size_t             type_len = serd_node_total_size(type);
+	SerdNode* const          node =
+		serd_node_malloc(len + type_len, SERD_HAS_DATATYPE, SERD_LITERAL);
+
+	char* ptr = serd_node_buffer(node);
+	if (d < 0) {
+		*ptr++ = '-';
+	}
+
+	if (m.point_loc == POINT_AFTER) {
+		ptr += copy_digits(ptr, digits, m.n_digits);
+		ptr += set_zeros(ptr, m.n_zeros_before);
+		*ptr++ = '.';
+		*ptr++ = '0';
+	} else if (m.point_loc == POINT_BEFORE) {
+		*ptr++ = '0';
+		*ptr++ = '.';
+		ptr += set_zeros(ptr, m.n_zeros_after);
+		copy_digits(ptr, digits, m.n_digits);
+	} else {
+		assert(m.point_loc == POINT_BETWEEN);
+		assert(count.expt >= -1);
+
+		const size_t n_before = (size_t)count.expt + 1u;
+		const size_t n_after =
+		        (max_frac_digits ? MIN(max_frac_digits, m.n_digits - n_before)
+		                         : m.n_digits - n_before);
+
+		ptr += copy_digits(ptr, digits, n_before);
+		*ptr++ = '.';
+		memcpy(ptr, digits + n_before, n_after);
+	}
+
+	assert(strlen(serd_node_buffer(node)) == len);
+	node->n_bytes = len;
+	assert(serd_node_get_meta(node)->type == 0);
 	memcpy(serd_node_get_meta(node), type, type_len);
 	serd_node_check_padding(node);
 	return node;

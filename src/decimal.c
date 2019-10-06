@@ -16,11 +16,15 @@
 
 #include "decimal.h"
 
+#include "bigint.h"
+#include "ieee_float.h"
 #include "int_math.h"
+#include "int_math.h"
+#include "soft_float.h"
 
 #include <assert.h>
-#include <float.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stddef.h>
 
 int
@@ -29,60 +33,216 @@ serd_count_digits(const uint64_t i)
 	return i == 0 ? 1 : (int)serd_ilog10(i) + 1;
 }
 
-unsigned
-serd_double_int_digits(const double abs)
+/*
+  This is more or less just an implementation of the classic rational number
+  based floating point print routine ("Dragon4").  See "How to Print
+  Floating-Point Numbers Accurately" by Guy L. Steele Jr. and Jon L White for
+  the canonical source.  The basic idea is to find a big rational between 1 and
+  10 where value = (numer / denom) * 10^e, then continuously divide it to
+  generate decimal digits.
+
+  Unfortunately, this algorithm requires pretty massive bigints to work
+  correctly for all doubles, and isn't particularly fast.  Something like
+  Grisu3 could be added to improve performance, but that has the annoying
+  property of needing a more precise fallback in some cases, meaning it would
+  only add more code, not replace any.  Since this is already a pretty
+  ridiculous amount of code, I'll hold off on this until it becomes a problem,
+  or somebody comes up with a better algorithm.
+*/
+
+/// Return true if the number is within the lower boundary
+static bool
+within_lower(const SerdBigint* const numer,
+             const SerdBigint* const d_lower,
+             const bool              is_even)
 {
-	const double lg = ceil(log10(floor(abs) + 1.0));
-	return lg < 1.0 ? 1U : (unsigned)lg;
+	return is_even ? serd_bigint_compare(numer, d_lower) <= 0
+	               : serd_bigint_compare(numer, d_lower) < 0;
 }
 
-unsigned
-serd_decimals(const double d, char* const buf, const unsigned frac_digits)
+/// Return true if the number is within the upper boundary
+static bool
+within_upper(const SerdBigint* const numer,
+             const SerdBigint* const denom,
+             const SerdBigint* const d_upper,
+             const bool              is_even)
 {
-	assert(isfinite(d));
+	return is_even ? serd_bigint_plus_compare(numer, d_upper, denom) >= 0
+	               : serd_bigint_plus_compare(numer, d_upper, denom) > 0;
+}
 
-	// Point s to decimal point location
-	const double   abs_d      = fabs(d);
-	const double   int_part   = floor(abs_d);
-	const unsigned int_digits = serd_double_int_digits(abs_d);
-	unsigned       n_bytes    = 0;
-	char*          s          = buf + int_digits;
-	if (d < 0.0) {
-		*buf = '-';
-		++s;
-	}
+/**
+   Find values so that 0.1 <= numer/denom < 1 or 1 <= numer/denom < 10.
 
-	// Write integer part (right to left)
-	char*    t   = s - 1;
-	uint64_t dec = (uint64_t)int_part;
-	do {
-		*t-- = (char)('0' + dec % 10);
-	} while ((dec /= 10) > 0);
+   @param significand Double significand.
+   @param exponent Double exponent (base 2).
+   @param decimal_power Decimal exponent (log10 of the double).
+   @param[out] numer Numerator of rational number.
+   @param[out] denom Denominator of rational number.
+   @param[out] delta Distance to the lower and upper boundaries.
+*/
+static void
+calculate_initial_values(const uint64_t    significand,
+                         const int         exponent,
+                         const int         decimal_power,
+                         const bool        lower_is_closer,
+                         SerdBigint* const numer,
+                         SerdBigint* const denom,
+                         SerdBigint* const delta)
+{
+	/* Use a common denominator of 2^1 so that boundary distance is an integer.
+	   If the lower boundary is closer, we need to scale everything but the
+	   lower boundary to compensate, so add another factor of two here (this is
+	   faster than shifting them again later as in the paper). */
+	const unsigned lg_denom = 1u + lower_is_closer;
 
+	if (exponent >= 0) {
+		// delta = 2^e
+		serd_bigint_set_u32(delta, 1);
+		serd_bigint_shift_left(delta, (unsigned)exponent);
 
-	*s++ = '.';
+		// numer = f * 2^e
+		serd_bigint_set_u64(numer, significand);
+		serd_bigint_shift_left(numer, (unsigned)exponent + lg_denom);
 
-	// Write fractional part (right to left)
-	double frac_part = fabs(d - int_part);
-	if (frac_part < DBL_EPSILON) {
-		*s++ = '0';
-		n_bytes = (size_t)(s - buf);
+		// denom = 10^d
+		serd_bigint_set_pow10(denom, (unsigned)decimal_power);
+		serd_bigint_shift_left(denom, lg_denom);
+	} else if (decimal_power >= 0) {
+		// delta = 2^e, which is just 1 here since 2^-e is in the denominator
+		serd_bigint_set_u32(delta, 1);
+
+		// numer = f
+		serd_bigint_set_u64(numer, significand);
+		serd_bigint_shift_left(numer, lg_denom);
+
+		// denom = 10^d * 2^-e
+		serd_bigint_set_pow10(denom, (unsigned)decimal_power);
+		serd_bigint_shift_left(denom, (unsigned)-exponent + lg_denom);
 	} else {
-		uint64_t frac = (uint64_t)llround(frac_part * pow(10.0, (int)frac_digits));
-		s += frac_digits - 1;
-		unsigned i = 0;
+		// delta = 10^d
+		serd_bigint_set_pow10(delta, (unsigned)-decimal_power);
 
-		// Skip trailing zeros
-		for (; i < frac_digits - 1 && !(frac % 10); ++i, --s, frac /= 10) {}
+		// numer = f * 10^-d
+		serd_bigint_set(numer, delta);
+		serd_bigint_multiply_u64(numer, significand);
+		serd_bigint_shift_left(numer, lg_denom);
 
-		n_bytes = (size_t)(s - buf) + 1u;
+		// denom = 2^-exponent
+		serd_bigint_set_u32(denom, 1);
+		serd_bigint_shift_left(denom, (unsigned)-exponent + lg_denom);
+	}
+}
 
-		// Write digits from last trailing zero to decimal point
-		for (; i < frac_digits; ++i) {
-			*s-- = (char)('0' + (frac % 10));
-			frac /= 10;
+#ifndef NDEBUG
+static bool
+check_initial_values(const SerdBigint* const numer,
+                     const SerdBigint* const denom,
+                     const SerdBigint* const d_upper)
+{
+	SerdBigint upper = *numer;
+	serd_bigint_add(&upper, d_upper);
+	assert(serd_bigint_compare(&upper, denom) >= 0);
+
+	const uint32_t div = serd_bigint_divmod(&upper, denom);
+	assert(div >= 1 && div < 10);
+	return true;
+}
+#endif
+
+static unsigned
+emit_digits(SerdBigint* const       numer,
+            const SerdBigint* const denom,
+            SerdBigint* const       d_lower,
+            SerdBigint* const       d_upper,
+            const bool              is_even,
+            char* const             buffer,
+            const size_t            max_digits)
+{
+	unsigned length = 0;
+	for (size_t i = 0; i < max_digits; ++i) {
+		// Emit the next digit
+		const uint32_t digit = serd_bigint_divmod(numer, denom);
+		assert(digit <= 9);
+		buffer[length++] = (char)('0' + digit);
+
+		// Check for termination
+		const bool within_low  = within_lower(numer, d_lower, is_even);
+		const bool within_high = within_upper(numer, denom, d_upper, is_even);
+		if (!within_low && !within_high) {
+			serd_bigint_multiply_u32(numer, 10);
+			serd_bigint_multiply_u32(d_lower, 10);
+			if (d_lower != d_upper) {
+				serd_bigint_multiply_u32(d_upper, 10);
+			}
+		} else {
+			if (!within_low ||
+			    (within_high &&
+			     serd_bigint_plus_compare(numer, numer, denom) >= 0)) {
+				// In high only, or halfway and the next digit is > 5, round up
+				assert(buffer[length - 1] != '9');
+				buffer[length - 1]++;
+			}
+
+			break;
 		}
 	}
 
-	return n_bytes;
+	return length;
+}
+
+SerdDecimalCount
+serd_decimals(const double d, char* const buf, const unsigned max_digits)
+{
+	assert(isfinite(d) && fpclassify(d) != FP_ZERO);
+
+	const SerdSoftFloat value           = soft_float_from_double(d);
+	const int           power           = (int)(log10(d));
+	const bool          is_even         = !(value.f & 1);
+	const bool          lower_is_closer = double_lower_boundary_is_closer(d);
+
+	// Calculate initial values so that v = (numer / denom) * 10^power
+	SerdBigint numer;
+	SerdBigint denom;
+	SerdBigint d_lower;
+	calculate_initial_values(
+	        value.f, value.e, power, lower_is_closer, &numer, &denom, &d_lower);
+
+	SerdBigint  d_upper_storage;
+	SerdBigint* d_upper = NULL;
+	if (lower_is_closer) {
+		// Scale upper boundary to account for the closer lower boundary
+		// (the numerator and denominator were already scaled above)
+		d_upper_storage = d_lower;
+		d_upper         = &d_upper_storage;
+		serd_bigint_shift_left(d_upper, 1);
+	} else {
+		d_upper = &d_lower; // Boundaries are the same, reuse the lower
+	}
+
+	// Scale if necessary to make 1 <= (numer + delta) / denom < 10
+	SerdDecimalCount count = {0, 0};
+	if (within_upper(&numer, &denom, d_upper, is_even)) {
+		count.expt = power;
+	} else {
+		count.expt = power - 1;
+		serd_bigint_multiply_u32(&numer, 10);
+		serd_bigint_multiply_u32(&d_lower, 10);
+		if (d_upper != &d_lower) {
+			serd_bigint_multiply_u32(d_upper, 10);
+		}
+	}
+
+	// Write digits to output
+	assert(check_initial_values(&numer, &denom, d_upper));
+	count.count = emit_digits(
+	        &numer, &denom, &d_lower, d_upper, is_even, buf, max_digits);
+
+	// Trim trailing zeros
+	while (count.count > 1 && buf[count.count - 1] == '0') {
+		buf[--count.count] = 0;
+	}
+
+	buf[count.count] = '\0';
+	return count;
 }

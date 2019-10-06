@@ -726,16 +726,24 @@ serd_new_relative_uri(const char*     str,
    will be written after the decimal point, but trailing zeros will
    automatically be omitted (except one if `d` is a round integer).
 
-   Note that about 16 and 8 fractional digits are required to precisely
-   represent a double and float, respectively.
+   Note that 17 and 9 significant digits are required to precisely represent
+   any double and float, respectively.  This function may be lossy if
+   `precision` is too low, or if `frac_digits` is not 0 (unlimited).
+
+   This function may produce very long strings, serd_new_float() or
+   serd_new_double() may be a better choice for very large or small numbers.
 
    @param d The value for the new node.
-   @param frac_digits The maximum number of digits after the decimal place.
+   @param max_precision Maximum number of significant decimal digits.
+   @param max_frac_digits Maximum number of digits after decimal point, or 0.
    @param datatype Datatype of node, or NULL for xsd:decimal.
 */
 SERD_API
 SerdNode*
-serd_new_decimal(double d, unsigned frac_digits, const SerdNode* datatype);
+serd_new_decimal(double          d,
+                 unsigned        max_precision,
+                 unsigned        max_frac_digits,
+                 const SerdNode* datatype);
 
 /**
    Create a new node by serialising `i` into an xsd:integer string
