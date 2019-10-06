@@ -6,6 +6,11 @@ Checks: >
   -altera-*,
   -llvmlibc-*,
   -readability-identifier-length,
+CheckOptions:
+  - key:   hicpp-uppercase-literal-suffix.NewSuffixes
+    value: 'L;U;UL;ULL'
+  - key:   readability-uppercase-literal-suffix.NewSuffixes
+    value: 'L;U;UL;ULL'
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
 FormatStyle: file
