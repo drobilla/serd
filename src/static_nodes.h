@@ -34,6 +34,8 @@ typedef struct StaticNode {
 DEFINE_XSD_NODE(base64Binary)
 DEFINE_XSD_NODE(boolean)
 DEFINE_XSD_NODE(decimal)
+DEFINE_XSD_NODE(double)
+DEFINE_XSD_NODE(float)
 DEFINE_XSD_NODE(integer)
 
 #endif // SERD_STATIC_NODES_H

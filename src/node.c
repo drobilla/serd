@@ -525,6 +525,32 @@ serd_new_custom_literal(const void* const          user_data,
   return node;
 }
 
+SerdNode*
+serd_new_double(const double d)
+{
+  char buf[EXESS_MAX_DOUBLE_LENGTH + 1] = {0};
+
+  const ExessResult r = exess_write_double(d, sizeof(buf), buf);
+
+  return r.status
+           ? NULL
+           : serd_new_typed_literal(SERD_STRING_VIEW(buf, r.count),
+                                    SERD_STATIC_STRING(EXESS_XSD_URI "double"));
+}
+
+SerdNode*
+serd_new_float(const float f)
+{
+  char buf[EXESS_MAX_FLOAT_LENGTH + 1] = {0};
+
+  const ExessResult r = exess_write_float(f, sizeof(buf), buf);
+
+  return r.status
+           ? NULL
+           : serd_new_typed_literal(SERD_STRING_VIEW(buf, r.count),
+                                    SERD_STATIC_STRING(EXESS_XSD_URI "float"));
+}
+
 static size_t
 write_variant_literal(const void* const user_data,
                       const size_t      buf_size,
