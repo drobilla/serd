@@ -655,6 +655,36 @@ SerdNode* SERD_ALLOCATED
 serd_new_decimal(double d, const SerdNode* SERD_NULLABLE datatype);
 
 /**
+   Create a new canonical xsd:double literal.
+
+   The returned node will always be in scientific notation, like "1.23E4",
+   except for NaN and negative/positive infinity, which are "NaN", "-INF", and
+   "INF", respectively.
+
+   Uses the shortest possible representation that precisely describes `d`,
+   which has at most 17 significant digits (under 24 characters total).
+
+   @param d Double value to write.
+   @return A literal node with datatype xsd:double.
+*/
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_new_double(double d);
+
+/**
+   Create a new canonical xsd:float literal.
+
+   Uses identical formatting to serd_new_double(), except with at most 9
+   significant digits (under 14 characters total).
+
+   @param f Float value to serialise.
+   @return A literal node with datatype xsd:float.
+*/
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_new_float(float f);
+
+/**
    Create a new canonical xsd:integer literal.
 
    @param i Integer value of literal.
