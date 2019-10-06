@@ -32,6 +32,9 @@
 #include <string.h>
 
 // Define C11 numeric constants if the compiler hasn't already
+#ifndef FLT_DECIMAL_DIG
+#    define FLT_DECIMAL_DIG 9
+#endif
 #ifndef DBL_DECIMAL_DIG
 #    define DBL_DECIMAL_DIG 17
 #endif
@@ -695,6 +698,84 @@ serd_new_decimal(const double    d,
 	memcpy(serd_node_get_meta(node), type, type_len);
 	serd_node_check_padding(node);
 	return node;
+}
+
+static SerdNode*
+serd_new_scientific(const double    d,
+                    const unsigned  precision,
+                    const SerdNode* datatype)
+{
+	const size_t type_len = serd_node_total_size(datatype);
+	const int    fpclass  = fpclassify(d);
+
+	if (fpclass == FP_INFINITE && d < 0) {
+		return serd_new_typed_literal("-INF", datatype);
+	} else if (fpclass == FP_INFINITE && d > 0) {
+		return serd_new_typed_literal("INF", datatype);
+	} else if (fpclass == FP_NAN) {
+		return serd_new_typed_literal("NaN", datatype);
+	} else if (fpclass == FP_ZERO) {
+		return signbit(d) ? serd_new_typed_literal("-0.0E0", datatype)
+		                  : serd_new_typed_literal("0.0E0", datatype);
+	}
+
+	// Get decimal digits
+	const double           abs_d      = fabs(d);
+	char                   digits[32] = {0};
+	const SerdDecimalCount count      = serd_decimals(abs_d, digits, precision);
+	assert(count.count == 1 || digits[count.count - 1] != '0');
+
+	// Calculate string length and allocate node
+	const size_t   len            = count.count;
+	const int      expt           = count.expt;
+	unsigned       abs_expt       = (unsigned)abs(expt);
+	const unsigned abs_exp_digits = (unsigned)serd_count_digits(abs_expt);
+
+	SerdNode* node = serd_node_malloc(type_len + len + abs_exp_digits + 4,
+	                                  SERD_HAS_DATATYPE,
+	                                  SERD_LITERAL);
+
+	char* const buf = serd_node_buffer(node);
+	if (d < 0.0) {
+		buf[node->n_bytes++] = '-';
+	}
+
+	// Write mantissa, with decimal point after the first (normal form)
+	buf[node->n_bytes++] = digits[0];
+	buf[node->n_bytes++] = '.';
+	if (len > 1) {
+		node->n_bytes += copy_digits(buf + node->n_bytes, digits + 1, len - 1);
+	} else {
+		buf[node->n_bytes++] = '0';
+	}
+
+	// Write exponent
+	buf[node->n_bytes++] = 'E';
+	if (expt < 0) {
+		buf[node->n_bytes++] = '-';
+	}
+	char* s = buf + node->n_bytes + abs_exp_digits - 1;
+	do {
+		*s-- = (char)('0' + (abs_expt % 10));
+	} while ((abs_expt /= 10) > 0);
+	node->n_bytes += abs_exp_digits;
+
+	memcpy(serd_node_get_meta(node), datatype, type_len);
+	serd_node_check_padding(node);
+	return node;
+}
+
+SerdNode*
+serd_new_double(const double d)
+{
+	return serd_new_scientific(d, DBL_DECIMAL_DIG, &serd_xsd_double.node);
+}
+
+SerdNode*
+serd_new_float(const float f)
+{
+	return serd_new_scientific(
+	        (double)f, FLT_DECIMAL_DIG, &serd_xsd_float.node);
 }
 
 SerdNode*

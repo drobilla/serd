@@ -746,6 +746,36 @@ serd_new_decimal(double          d,
                  const SerdNode* datatype);
 
 /**
+   Create a new node by serialising `d` into a normalised xsd:double string.
+
+   The returned node will always be in normalised scientific notation, like
+   "1.23E4", except for NaN and negative/positive infinity, which are "NaN",
+   "-INF", and "INF", respectively.
+
+   Uses the shortest possible representation that precisely describes `d`,
+   which has at most 17 significant digits (under 24 characters total).
+
+   @param d Double value to serialise.
+   @return A literal node with datatype xsd:double.
+*/
+SERD_API
+SerdNode*
+serd_new_double(double d);
+
+/**
+   Create a new node by serialising `f` into a normalised xsd:float string.
+
+   Uses identical formatting to serd_new_double(), except with at most 9
+   significant digits (under 14 characters total).
+
+   @param f Float value to serialise.
+   @return A literal node with datatype xsd:float.
+*/
+SERD_API
+SerdNode*
+serd_new_float(float f);
+
+/**
    Create a new node by serialising `i` into an xsd:integer string
 
    @param i Integer value to serialise.
