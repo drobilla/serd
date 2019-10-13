@@ -70,6 +70,15 @@ def configure(conf):
                                 defines     = ['_POSIX_C_SOURCE=200809L'],
                                 mandatory   = False)
 
+    conf.check_cc(msg         = 'Checking for __builtin_clz',
+                  define_name = 'HAVE_BUILTIN_CLZ',
+                  fragment    = 'int main() { return __builtin_clz(0); }',
+                  mandatory   = False)
+    conf.check_cc(msg         = 'Checking for __builtin_clzll',
+                  define_name = 'HAVE_BUILTIN_CLZLL',
+                  fragment    = 'int main() { return __builtin_clzll(0ll); }',
+                  mandatory   = False)
+
     if not Options.options.no_pcre:
         autowaf.check_pkg(conf, 'libpcre', uselib_store='PCRE', mandatory=False)
 
@@ -103,6 +112,7 @@ lib_source = ['src/base64.c',
               'src/cursor.c',
               'src/env.c',
               'src/inserter.c',
+              'src/int_math.c',
               'src/iter.c',
               'src/model.c',
               'src/n3.c',
@@ -185,6 +195,7 @@ def build(bld):
         for prog in [('serdi_static', 'src/serdi.c'),
                      ('base64_test', 'tests/base64_test.c'),
                      ('cursor_test', 'tests/cursor_test.c'),
+                     ('int_math_test', 'tests/int_math_test.c'),
                      ('statement_test', 'tests/statement_test.c'),
                      ('sink_test', 'tests/sink_test.c'),
                      ('serd_test', 'tests/serd_test.c'),
@@ -538,6 +549,7 @@ def test(tst):
     with tst.group('Unit') as check:
         check(['./base64_test'])
         check(['./cursor_test'])
+        check(['./int_math_test'])
         check(['./statement_test'])
         check(['./sink_test'])
         check(['./model_test'])
