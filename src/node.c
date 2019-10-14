@@ -52,7 +52,7 @@ string_sink(const void* const buf,
   return nmemb;
 }
 
-static size_t
+size_t
 serd_node_pad_size(const size_t n_bytes)
 {
   const size_t pad  = sizeof(SerdNode) - (n_bytes + 2) % sizeof(SerdNode);
