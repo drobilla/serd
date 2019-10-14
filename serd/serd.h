@@ -1102,6 +1102,9 @@ serd_env_write_prefixes(const SerdEnv* env, const SerdSink* sink);
    @{
 */
 
+/// Function to free an opaque handle
+typedef void (*SerdFreeFunc)(void* ptr);
+
 /**
    Create a new sink
 
@@ -1109,11 +1112,12 @@ serd_env_write_prefixes(const SerdEnv* env, const SerdSink* sink);
    serd_sink_set_*_func functions to set handlers for various events.
 
    @param handle Opaque handle that will be passed to sink functions.
+   @param free_handle Free function to call on handle in serd_sink_free().
    @param env Environment for sink, updated as base uri or prefixes change.
 */
 SERD_API
 SerdSink*
-serd_sink_new(void* handle, SerdEnv* env);
+serd_sink_new(void* handle, SerdFreeFunc free_handle, SerdEnv* env);
 
 /// Free `sink`
 SERD_API

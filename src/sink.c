@@ -23,12 +23,13 @@
 #include <stdlib.h>
 
 SerdSink*
-serd_sink_new(void* handle, SerdEnv* env)
+serd_sink_new(void* handle, SerdFreeFunc free_handle, SerdEnv* env)
 {
 	SerdSink* sink = (SerdSink*)calloc(1, sizeof(SerdSink));
 
-	sink->handle = handle;
-	sink->env    = env;
+	sink->handle      = handle;
+	sink->free_handle = free_handle;
+	sink->env         = env;
 
 	return sink;
 }
@@ -36,7 +37,13 @@ serd_sink_new(void* handle, SerdEnv* env)
 void
 serd_sink_free(SerdSink* sink)
 {
-	free(sink);
+	if (sink) {
+		if (sink->free_handle) {
+			sink->free_handle(sink->handle);
+		}
+
+		free(sink);
+	}
 }
 
 const SerdEnv*

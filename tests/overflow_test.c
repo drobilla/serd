@@ -58,7 +58,7 @@ main(void)
 	                      {NULL, 0}};
 
 	SerdWorld* world = serd_world_new();
-	SerdSink*  sink  = serd_sink_new(NULL, NULL);
+	SerdSink*  sink  = serd_sink_new(NULL, NULL, NULL);
 
 	for (const Test* t = tests; t->str; ++t) {
 		const SerdStatus st = test(world, sink, t->str, t->stack_size);

@@ -1050,7 +1050,7 @@ public:
 class Sink : public SinkWrapper<SerdSink>
 {
 public:
-	Sink() : SinkWrapper(serd_sink_new(this, nullptr)) {}
+	Sink() : SinkWrapper(serd_sink_new(this, nullptr, nullptr)) {}
 
 	// EnvView env() const { return serd_sink_get_env(cobj()); }
 

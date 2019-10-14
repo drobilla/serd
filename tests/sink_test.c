@@ -20,6 +20,7 @@
 
 #include <assert.h>
 #include <stddef.h>
+#include <string.h>
 
 #define NS_EG "http://example.org/"
 
@@ -32,6 +33,12 @@ typedef struct
 	const SerdStatement* last_statement;
 	SerdStatus           return_status;
 } State;
+
+static void
+clear_state(void* ptr)
+{
+	memset(ptr, 0, sizeof(State));
+}
 
 static SerdStatus
 on_base(void* handle, const SerdNode* uri)
@@ -89,7 +96,7 @@ main(void)
 		serd_statement_new(base, uri, blank, NULL, NULL);
 
 	State     state = {0, 0, 0, 0, 0, SERD_SUCCESS};
-	SerdSink* sink  = serd_sink_new(&state, env);
+	SerdSink* sink  = serd_sink_new(&state, clear_state, env);
 
 	assert(serd_sink_get_env(sink) == env);
 
@@ -121,6 +128,8 @@ main(void)
 	assert(serd_node_equals(state.last_end, blank));
 
 	serd_sink_free(sink);
+	assert(!state.last_base);
+
 	serd_statement_free(statement);
 	serd_env_free(env);
 	serd_nodes_free(nodes);
