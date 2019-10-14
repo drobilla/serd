@@ -114,9 +114,9 @@ serd_node_new_string(const char* str)
 		return NULL;
 	}
 
-	uint32_t     flags   = 0;
-	const size_t n_bytes = serd_strlen(str, &flags);
-	SerdNode*    node    = serd_node_malloc(n_bytes, flags, SERD_LITERAL);
+	SerdNodeFlags flags   = 0;
+	const size_t  n_bytes = serd_strlen(str, &flags);
+	SerdNode*     node    = serd_node_malloc(n_bytes, flags, SERD_LITERAL);
 	memcpy(serd_node_buffer(node), str, n_bytes);
 	node->n_bytes = n_bytes;
 	return node;
@@ -129,9 +129,9 @@ serd_node_new_substring(const char* str, const size_t len)
 		return NULL;
 	}
 
-	uint32_t     flags   = 0;
-	const size_t n_bytes = serd_substrlen(str, len, &flags);
-	SerdNode*    node    = serd_node_malloc(n_bytes, flags, SERD_LITERAL);
+	SerdNodeFlags flags   = 0;
+	const size_t  n_bytes = serd_substrlen(str, len, &flags);
+	SerdNode*     node    = serd_node_malloc(n_bytes, flags, SERD_LITERAL);
 	memcpy(serd_node_buffer(node), str, n_bytes);
 	node->n_bytes = n_bytes;
 	return node;
@@ -148,9 +148,9 @@ serd_node_new_literal(const char*     str,
 		return NULL;
 	}
 
-	uint32_t     flags   = 0;
-	const size_t n_bytes = serd_strlen(str, &flags);
-	const size_t len     = serd_node_pad_size(n_bytes);
+	SerdNodeFlags flags   = 0;
+	const size_t  n_bytes = serd_strlen(str, &flags);
+	const size_t  len     = serd_node_pad_size(n_bytes);
 
 	SerdNode* node = NULL;
 	if (lang) {
