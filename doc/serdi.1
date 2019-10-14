@@ -67,6 +67,14 @@ This loads the complete input data into memory before writing the output.
 This will normalize statement order, at the cost of performance and memory consumption.
 
 .TP
+\fB\-n\fR
+Normalise literals.
+This normalises supported XSD literals to their canonical form.
+Normalisation is conservative in that malformed literals are passed through unmodified.
+Supported types: \fIdecimal\fR and all its subtypes, \fIboolean\fR, \fIfloat\fR, and \fIdouble\fR.
+Note that this is not a validator, and it will not, for example, guarantee that a \fInonNegativeInteger\fR is actually non-negative.
+
+.TP
 .BR \-o " " \fISYNTAX\fR
 Write output as \fISYNTAX\fR.
 Valid values (case-insensitive): \*(lqturtle\*(rq, \*(lqntriples\*(rq, \*(lqtrig\*(rq, \*(lqnquads\*(rq, , \*(lqempty\*(rq.

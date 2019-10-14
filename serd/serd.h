@@ -678,6 +678,10 @@ SERD_API
 SerdNode*
 serd_new_resolved_uri(const char* str, const SerdNode* base);
 
+/// Return a normalised version of `node` if possible, NULL otherwise
+SerdNode*
+serd_node_normalise(const SerdEnv* env, const SerdNode* node);
+
 /**
    Resolve `node` against `base`
 
@@ -1182,6 +1186,36 @@ serd_sink_write(const SerdSink*    sink,
 SERD_API
 SerdStatus
 serd_sink_write_end(const SerdSink* sink, const SerdNode* node);
+
+/**
+   @}
+   @name Normalisation
+   @{
+*/
+
+/// Sink wrapper that normalises nodes
+typedef struct SerdNormaliserImpl SerdNormaliser;
+
+/**
+   Return a sink that normalises literal nodes in statements where possible.
+
+   The returned sink acts like `target` in all respects, except literal nodes
+   in statements may be modified from the original.
+*/
+SERD_API
+SerdNormaliser*
+serd_normaliser_new(const SerdSink* target);
+
+/// Free `normaliser`
+SERD_API
+void
+serd_normaliser_free(SerdNormaliser* normaliser);
+
+/// Return a sink interface that forwards statements with normalised nodes
+SERD_API
+const SerdSink*
+serd_normaliser_get_sink(const SerdNormaliser* normaliser);
+
 
 /**
    @}

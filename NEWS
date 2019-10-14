@@ -6,6 +6,7 @@ serd (1.0.1) unstable;
   * Add extensible logging API
   * Add model for storing statements in memory
   * Add option for writing terse output without newlines
+  * Add support for basic literal normalisation
   * Add support for validation
   * Add support for writing terse collections
   * Add support for xsd:float and xsd:double literals
