@@ -1567,6 +1567,32 @@ serd_sink_write_end(const SerdSink* SERD_NONNULL sink,
 
 /**
    @}
+   @defgroup serd_stream_processing Stream Processing
+   @{
+*/
+
+/// Flags that control canonical node transformation
+typedef enum {
+  SERD_CANON_LAX = 1u << 0u, ///< Tolerate and pass through invalid input
+} SerdCanonFlag;
+
+/// Bitwise OR of SerdCanonFlag values
+typedef uint32_t SerdCanonFlags;
+
+/**
+   Return a sink that transforms literals to canonical form where possible.
+
+   The returned sink acts like `target` in all respects, except literal nodes
+   in statements may be modified from the original.
+*/
+SERD_API
+SerdSink* SERD_ALLOCATED
+serd_canon_new(const SerdWorld* SERD_NULLABLE world,
+               const SerdSink* SERD_NONNULL   target,
+               SerdReaderFlags                flags);
+
+/**
+   @}
    @defgroup serd_reader Reader
    @{
 */

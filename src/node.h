@@ -64,6 +64,10 @@ void
 serd_node_set(SerdNode* SERD_NONNULL* SERD_NONNULL dst,
               const SerdNode* SERD_NULLABLE        src);
 
+SERD_CONST_FUNC
+size_t
+serd_node_pad_size(size_t n_bytes);
+
 SERD_PURE_FUNC
 size_t
 serd_node_total_size(const SerdNode* SERD_NULLABLE node);

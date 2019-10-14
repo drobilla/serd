@@ -85,6 +85,7 @@ sources = [
   'src/base64.c',
   'src/byte_sink.c',
   'src/byte_source.c',
+  'src/canon.c',
   'src/cursor.c',
   'src/env.c',
   'src/inserter.c',

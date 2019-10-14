@@ -62,7 +62,7 @@ is_xdigit(const int c)
 }
 
 static inline bool
-is_space(const char c)
+is_space(const int c)
 {
   switch (c) {
   case ' ':
