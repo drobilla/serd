@@ -57,6 +57,9 @@ def configure(conf):
     if not conf.env.BUILD_SHARED and not conf.env.BUILD_STATIC:
         conf.fatal('Neither a shared nor a static build requested')
 
+    if Options.options.ultra_strict and not conf.env.MSVC_COMPILER:
+        conf.env.append_value('CFLAGS', ['-Wsign-conversion'])
+
     if Options.options.stack_check:
         conf.define('SERD_STACK_CHECK', SERD_VERSION)
 
