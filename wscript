@@ -56,11 +56,11 @@ def configure(conf):
         for name, header in {'posix_memalign': 'stdlib.h',
                              'posix_fadvise':  'fcntl.h',
                              'fileno':         'stdio.h'}.items():
-            autowaf.check_function(conf, 'c', name,
-                                   header_name = header,
-                                   define_name = 'HAVE_' + name.upper(),
-                                   defines     = ['_POSIX_C_SOURCE=200809L'],
-                                   mandatory   = False)
+            conf.check_function('c', name,
+                                header_name = header,
+                                define_name = 'HAVE_' + name.upper(),
+                                defines     = ['_POSIX_C_SOURCE=200809L'],
+                                mandatory   = False)
 
     autowaf.set_lib_env(conf, 'serd', SERD_VERSION)
     conf.write_config_header('serd_config.h', remove=False)
