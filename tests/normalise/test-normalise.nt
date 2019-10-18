@@ -63,6 +63,7 @@ _:b1 <http://example.org/integer> "0"^^<http://www.w3.org/2001/XMLSchema#nonNega
 _:b1 <http://example.org/integer> "36893488147419103232"^^<http://www.w3.org/2001/XMLSchema#nonNegativeInteger> .
 _:b1 <http://example.org/integer> "1"^^<http://www.w3.org/2001/XMLSchema#positiveInteger> .
 _:b1 <http://example.org/integer> "36893488147419103232"^^<http://www.w3.org/2001/XMLSchema#positiveInteger> .
+_:b1 <http://example.org/langString> "no language tag" .
 _:b1 <http://example.org/other> "untyped" .
 _:b1 <http://example.org/other> <http://example.org/uri> .
 _:b1 <http://example.org/other> "notxsd"^^<http://example.org/sometype> .

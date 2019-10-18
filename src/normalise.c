@@ -222,6 +222,8 @@ serd_node_normalise(const SerdEnv* env, const SerdNode* const node)
 	                   INTEGER_TYPE_LEN,
 	                   (int (*)(const void*, const void*))strcmp)) {
 		result = serd_normalise_integer(str, datatype);
+	} else if (!strcmp(datatype_uri, NS_RDF "langString")) {
+		result = serd_new_string(serd_node_get_string(node));
 	}
 
 	serd_node_free(datatype);

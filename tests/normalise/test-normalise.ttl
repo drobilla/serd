@@ -1,4 +1,5 @@
 @base <http://example.org/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 [
@@ -67,6 +68,7 @@
 		" 036893488147419103232 "^^xsd:nonNegativeInteger ,
 		" +01 "^^xsd:positiveInteger ,
 		" 036893488147419103232 "^^xsd:positiveInteger ;
+	<langString> "no language tag"^^rdf:langString ;
 	<other> "untyped" ,
 		<uri> ,
 		"notxsd"^^<sometype> ,
