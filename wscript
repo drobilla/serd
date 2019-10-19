@@ -294,7 +294,8 @@ def _load_rdf(filename):
 
     cmd = ['./serdi_static', filename]
     if Options.options.test_wrapper:
-        cmd = [Options.options.test_wrapper] + cmd
+        import shlex
+        cmd = shlex.split(Options.options.test_wrapper) + cmd
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     for line in proc.communicate()[0].splitlines():
