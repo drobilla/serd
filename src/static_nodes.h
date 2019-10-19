@@ -17,8 +17,8 @@
 #ifndef SERD_STATIC_NODES_H
 #define SERD_STATIC_NODES_H
 
+#include "namespaces.h"
 #include "node.h"
-#include "serd_internal.h"
 
 typedef struct StaticNode {
 	SerdNode node;

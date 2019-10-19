@@ -17,9 +17,9 @@
 #include "reader.h"
 
 #include "byte_source.h"
+#include "namespaces.h"
 #include "node.h"
 #include "serd/serd.h"
-#include "serd_internal.h"
 #include "stack.h"
 #include "statement.h"
 #include "system.h"

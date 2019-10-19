@@ -19,9 +19,9 @@
 #include "world.h"
 
 #include "cursor.h"
+#include "namespaces.h"
 #include "node.h"
 #include "serd_config.h"
-#include "serd_internal.h"
 
 #include <errno.h>
 #include <stdarg.h>

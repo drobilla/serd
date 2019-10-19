@@ -265,7 +265,7 @@ def amalgamate(ctx):
         amalgamation.write('/* This is amalgamated code, do not edit! */\n')
         amalgamation.write('#include "serd.h"\n\n')
 
-        for header_path in ['src/serd_internal.h',
+        for header_path in ['src/namespaces.h',
                             'src/byte_sink.h',
                             'src/byte_source.h',
                             'src/stack.h',

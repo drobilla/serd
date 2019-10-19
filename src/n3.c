@@ -15,9 +15,9 @@
 */
 
 #include "byte_source.h"
+#include "namespaces.h"
 #include "node.h"
 #include "reader.h"
-#include "serd_internal.h"
 #include "stack.h"
 #include "string_utils.h"
 #include "uri_utils.h"
