@@ -325,7 +325,7 @@ compare_buffer(const char* buf, const int expt, const SerdSoftFloat upper)
 double
 serd_strtod(const char* const str, size_t* const end)
 {
-#define SET_END(index) if (end) { *end = (size_t)(index); }
+#define SET_END(index) do { if (end) { *end = (size_t)(index); } } while (0)
 
 	static const int n_exact_pow10        = sizeof(POW10) / sizeof(POW10[0]);
 	static const int max_exact_int_digits = 15;   // Digits that fit exactly
