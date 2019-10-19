@@ -984,6 +984,11 @@ serd_writer_finish(SerdWriter* writer)
 		st = write_sep(writer, writer->context.flags, SEP_GRAPH_END);
 	}
 
+	// Free any lingering contexts in case there was an error
+	while (!serd_stack_is_empty(&writer->anon_stack)) {
+		pop_context(writer);
+	}
+
 	free_context(writer);
 	writer->indent  = 0;
 	writer->context = WRITE_CONTEXT_NULL;
