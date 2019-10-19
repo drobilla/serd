@@ -1,7 +1,4 @@
-stages:
-  - build
-  - test
-  - deploy
+stages: [build, test, deploy]
 
 variables:
   GIT_SUBMODULE_STRATEGY: normal
@@ -9,15 +6,12 @@ variables:
 .build_template: &build_definition
   stage: build
   artifacts:
-    paths:
-      - build/
-      - .lock-waf*
+    paths: ["build/", ".lock-waf*"]
 
 .test_template: &test_definition
   stage: test
   artifacts:
-    paths:
-      - build/coverage
+    paths: [build/coverage]
 
 
 arm32_dbg:
@@ -94,9 +88,7 @@ test:x64_dbg:
     - groff -Thtml -P -l -P -r -man -wall doc/serdi.1 > build/doc/serdi.html
   needs: ["x64_dbg"]
   artifacts:
-    paths:
-      - build/coverage
-      - build/doc
+    paths: ["build/coverage", "build/doc"]
 
 
 x64_rel:
@@ -160,44 +152,37 @@ mingw64_rel:
 mac_dbg:
   <<: *build_definition
   script: python ./waf configure build -dsT --no-coverage
-  tags:
-    - macos
+  tags: [macos]
 
 test:mac_dbg:
   <<: *test_definition
   script: python ./waf test
   needs: ["mac_dbg"]
-  tags:
-    - macos
+  tags: [macos]
 
 
 mac_rel:
   <<: *build_definition
   script: python ./waf configure build -sT --no-coverage
-  tags:
-    - macos
+  tags: [macos]
 
 test:mac_rel:
   <<: *test_definition
   script: python ./waf test
   needs: ["mac_rel"]
-  tags:
-    - macos
+  tags: [macos]
 
 
 win_dbg:
   <<: *build_definition
-  script:
-    - python ./waf configure build -dT --no-coverage
-  tags:
-    - windows
+  script: python ./waf configure build -dT --no-coverage
+  tags: [windows]
 
 test:win_dbg:
   <<: *test_definition
   script: python ./waf test
   needs: ["win_dbg"]
-  tags:
-    - windows
+  tags: [windows]
 
 
 win_rel:
@@ -210,8 +195,7 @@ test:win_rel:
   <<: *test_definition
   script: python ./waf test
   needs: ["win_rel"]
-  tags:
-    - windows
+  tags: [windows]
 
 
 pages:
