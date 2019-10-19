@@ -210,7 +210,6 @@ pages:
     - mv build/doc/index.html .public/index.html
     - mv build/doc/serdi.html .public/man/serdi.html
     - mv .public public
-  needs: ["test:x64_dbg"]
   artifacts:
     paths:
       - public
