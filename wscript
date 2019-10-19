@@ -60,6 +60,18 @@ def configure(conf):
     if Options.options.ultra_strict and not conf.env.MSVC_COMPILER:
         conf.env.append_value('CFLAGS', ['-Wsign-conversion'])
 
+    if Options.options.ultra_strict and 'clang' in conf.env.CC:
+        for var in ['CFLAGS', 'CXXFLAGS']:
+            conf.env[var] = [f for f in conf.env[var] if not f.startswith('-W')]
+            conf.env.append_value('CXXFLAGS', ['-Wno-c++98-compat',
+                                               '-Wno-c++98-compat-pedantic'])
+            conf.env.append_value(var, ['-Weverything',
+                                        '-Wno-float-equal',
+                                        '-Wno-format-nonliteral',
+                                        '-Wno-padded',
+                                        '-Wno-reserved-id-macro',
+                                        '-Wno-switch-enum'])
+
     if Options.options.stack_check:
         conf.define('SERD_STACK_CHECK', SERD_VERSION)
 
