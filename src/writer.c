@@ -129,10 +129,10 @@ struct SerdWriterImpl {
 	SerdLogFunc     log_func;
 	void*           log_handle;
 	WriteContext    context;
-	int             indent;
 	char*           bprefix;
 	size_t          bprefix_len;
 	Sep             last_sep;
+	int             indent;
 	bool            empty;
 };
 
