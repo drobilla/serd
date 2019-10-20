@@ -1,4 +1,4 @@
-serd (0.30.1) unstable;
+serd (0.30.2) stable;
 
   * Fix GCC 4 build
   * Fix colliding blank nodes when parsing TriG
@@ -6,9 +6,10 @@ serd (0.30.1) unstable;
   * Fix parsing "a" abbreviation without padding whitespace
   * Fix parsing TriG graphs with several squashed trailing dots
   * Fix resolving some URIs against base URIs with no trailing slash
+  * Improve build system and CI integration
   * Improve documentation
 
- -- David Robillard <d@drobilla.net>  Sat, 30 Mar 2019 11:57:54 +0000
+ -- David Robillard <d@drobilla.net>  Sun, 20 Oct 2019 22:28:01 +0000
 
 serd (0.30.0) stable;
 
