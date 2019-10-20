@@ -3,6 +3,7 @@
 import glob
 import io
 import os
+import sys
 
 from waflib import Logs, Options
 from waflib.extras import autowaf
@@ -443,6 +444,28 @@ def test(tst):
         if os.path.exists('/dev/full'):
             check([serdi, 'file://%s/tests/good/manifest.ttl' % srcdir],
                   stdout='/dev/full', name='Write error')
+
+    if sys.version_info.major >= 3:
+        from waflib.extras import autoship
+        try:
+            import rdflib
+            with tst.group('NEWS') as check:
+                news_path = os.path.join(srcdir, 'NEWS')
+                entries = autoship.read_news(top=srcdir)
+                autoship.write_news(entries, 'NEWS.norm')
+                check.file_equals(news_path, 'NEWS.norm')
+
+                meta_path = os.path.join(srcdir, 'serd.ttl')
+                autoship.write_news(entries, 'NEWS.ttl',
+                                    format='turtle', template=meta_path)
+
+                ttl_entries = autoship.read_news('NEWS.ttl',
+                                                 top=srcdir, format='turtle')
+
+                autoship.write_news(ttl_entries, 'NEWS.round')
+                check.file_equals(news_path, 'NEWS.round')
+        except ImportError:
+            Logs.warn('Failed to import rdflib, not running NEWS tests')
 
     # Serd-specific test suites
     serd_base = 'http://drobilla.net/sw/serd/tests/'
