@@ -72,6 +72,8 @@ def configure(conf):
          'Build utilities':      bool(conf.env['BUILD_UTILS']),
          'Build unit tests':     bool(conf.env['BUILD_TESTS'])})
 
+lib_headers = ['src/reader.h']
+
 lib_source = ['src/byte_source.c',
               'src/env.c',
               'src/n3.c',
@@ -198,7 +200,7 @@ def amalgamate(ctx):
             for l in serd_internal_h:
                 amalgamation.write(l.replace('serd/serd.h', 'serd.h'))
 
-        for f in lib_source:
+        for f in lib_headers + lib_source:
             with open(f) as fd:
                 amalgamation.write('\n/**\n   @file %s\n*/' % f)
                 header = True
@@ -207,7 +209,8 @@ def amalgamate(ctx):
                         if l == '*/\n':
                             header = False
                     else:
-                        if l != '#include "serd_internal.h"\n':
+                        if (not l.startswith('#include "') and
+                            l != '#include "serd.h"\n'):
                             amalgamation.write(l)
 
     for i in ['c', 'h']:
