@@ -49,7 +49,6 @@ Documentation
 -------------
 
  * [API reference](https://drobilla.gitlab.io/serd/doc/html/index.html)
- * [Test coverage report](https://drobilla.gitlab.io/serd/coverage/index.html)
  * [`serdi` man page](https://drobilla.gitlab.io/serd/man/serdi.html)
 
  -- David Robillard <d@drobilla.net>
