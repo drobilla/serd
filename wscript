@@ -20,6 +20,11 @@ VERSION = SERD_VERSION  # Package version for waf dist
 top     = '.'           # Source directory
 out     = 'build'       # Build directory
 
+# Release variables
+uri          = 'http://drobilla.net/sw/serd'
+dist_pattern = 'http://download.drobilla.net/serd-%d.%d.%d.tar.bz2'
+post_tags    = ['Hacking', 'RDF', 'Serd']
+
 def options(ctx):
     ctx.load('compiler_c')
     ctx.add_flags(
@@ -461,14 +466,3 @@ def test(tst):
                    'NQuadsTests', report, 'NQuads')
         test_suite(tst, w3c_base + 'TriGTests/',
                    'TriGTests', report, 'Trig', ['-a'])
-
-def posts(ctx):
-    path = str(ctx.path.abspath())
-    autowaf.news_to_posts(
-        os.path.join(path, 'NEWS'),
-        {'title'        : 'Serd',
-         'description'  : autowaf.get_blurb(os.path.join(path, 'README.md')),
-         'dist_pattern' : 'http://download.drobilla.net/serd-%s.tar.bz2'},
-        { 'Author' : 'drobilla',
-          'Tags'   : 'Hacking, RDF, Serd' },
-        os.path.join(out, 'posts'))
