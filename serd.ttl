@@ -22,11 +22,11 @@
 		<http://www.w3.org/TR/n-triples/> ,
 		<http://www.w3.org/TR/trig/> ,
 		<http://www.w3.org/TR/turtle/> ;
-	doap:bug-database <http://dev.drobilla.net/> ;
+	doap:bug-database <https://gitlab.com/drobilla/serd/issues> ;
 	doap:blog <http://drobilla.net/> ;
 	doap:developer <http://drobilla.net/drobilla#me> ;
 	doap:maintainer <http://drobilla.net/drobilla#me> ;
 	doap:repository [
 		a doap:GitBranch ;
-		doap:location <http://git.drobilla.net/serd.git>
+		doap:location <http://gitlab.com/drobilla/serd.git>
 	] .
