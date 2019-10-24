@@ -305,6 +305,11 @@ read_STRING_LITERAL_LONG(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 	Ref ref = push_node(reader, SERD_LITERAL, "", 0);
 	while (!reader->status) {
 		const uint8_t c = peek_byte(reader);
+		if (c == '\0') {
+			r_err(reader, SERD_ERR_BAD_SYNTAX,
+			      "unexpected end of file while reading string literal\n");
+			return pop_node(reader, ref);
+		}
 		if (c == '\\') {
 			eat_byte_safe(reader, c);
 			uint32_t code;
