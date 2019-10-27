@@ -18,6 +18,7 @@
 		<#test-30>
 		<#test-a-without-whitespace>
 		<#test-backspace>
+		<#test-base-nopath>
 		<#test-base-query>
 		<#test-blank-cont>
 		<#test-blank-in-list>
@@ -107,6 +108,12 @@
 	mf:name "test-backspace" ;
 	mf:action <test-backspace.ttl> ;
 	mf:result <test-backspace.nt> .
+
+<#test-base-nopath>
+	rdf:type rdft:TestTurtleEval ;
+	mf:name "test-base-nopath" ;
+	mf:action <test-base-nopath.ttl> ;
+	mf:result <test-base-nopath.nt> .
 
 <#test-base-query>
 	rdf:type rdft:TestTurtleEval ;
