@@ -48,8 +48,9 @@ read_HEX(SerdReader* reader)
 	if (is_xdigit(c)) {
 		return eat_byte_safe(reader, c);
 	}
-	return r_err(reader, SERD_ERR_BAD_SYNTAX,
-	             "invalid hexadecimal digit `%c'\n", c);
+
+	return (uint8_t)r_err(reader, SERD_ERR_BAD_SYNTAX,
+	                      "invalid hexadecimal digit `%c'\n", c);
 }
 
 // Read UCHAR escape, initial \ is already eaten by caller
@@ -78,7 +79,7 @@ read_UCHAR(SerdReader* reader, Ref dest, uint32_t* char_code)
 	}
 
 	char*          endptr = NULL;
-	const uint32_t code   = strtoul((const char*)buf, &endptr, 16);
+	const uint32_t code   = (uint32_t)strtoul((const char*)buf, &endptr, 16);
 	assert(endptr == (char*)buf + length);
 
 	unsigned size = 0;
@@ -103,17 +104,17 @@ read_UCHAR(SerdReader* reader, Ref dest, uint32_t* char_code)
 	uint32_t c = code;
 	switch (size) {
 	case 4:
-		buf[3] = 0x80 | (uint8_t)(c & 0x3F);
+		buf[3] = (uint8_t)(0x80u | (c & 0x3Fu));
 		c >>= 6;
 		c |= (16 << 12);  // set bit 4
         // fallthru
 	case 3:
-		buf[2] = 0x80 | (uint8_t)(c & 0x3F);
+		buf[2] = (uint8_t)(0x80u | (c & 0x3Fu));
 		c >>= 6;
 		c |= (32 << 6);  // set bit 5
         // fallthru
 	case 2:
-		buf[1] = 0x80 | (uint8_t)(c & 0x3F);
+		buf[1] = (uint8_t)(0x80u | (c & 0x3Fu));
 		c >>= 6;
 		c |= 0xC0;  // set bits 6 and 7
         // fallthru
@@ -926,7 +927,7 @@ read_anon(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest)
 
 	ctx.subject = *dest;
 	if (!empty) {
-		*ctx.flags &= ~(SERD_LIST_CONT);
+		*ctx.flags &= ~(unsigned)SERD_LIST_CONT;
 		if (!subject) {
 			*ctx.flags |= SERD_ANON_CONT;
 		}
@@ -1097,7 +1098,7 @@ end_collection(SerdReader* reader, ReadContext ctx, Ref n1, Ref n2, bool ret)
 {
 	pop_node(reader, n2);
 	pop_node(reader, n1);
-	*ctx.flags &= ~SERD_LIST_CONT;
+	*ctx.flags &= ~(unsigned)SERD_LIST_CONT;
 	return ret && (eat_byte_safe(reader, ')') == ')');
 }
 

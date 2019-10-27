@@ -279,7 +279,7 @@ serd_node_new_decimal(double d, unsigned frac_digits)
 	char*    t   = s - 1;
 	uint64_t dec = (uint64_t)int_part;
 	do {
-		*t-- = '0' + (dec % 10);
+		*t-- = (char)('0' + dec % 10);
 	} while ((dec /= 10) > 0);
 
 	*s++ = '.';
@@ -288,20 +288,20 @@ serd_node_new_decimal(double d, unsigned frac_digits)
 	double frac_part = fabs(d - int_part);
 	if (frac_part < DBL_EPSILON) {
 		*s++ = '0';
-		node.n_bytes = node.n_chars = (s - buf);
+		node.n_bytes = node.n_chars = (size_t)(s - buf);
 	} else {
-		uint64_t frac = llround(frac_part * pow(10.0, (int)frac_digits));
+		uint64_t frac = (uint64_t)llround(frac_part * pow(10.0, (int)frac_digits));
 		s += frac_digits - 1;
 		unsigned i = 0;
 
 		// Skip trailing zeros
 		for (; i < frac_digits - 1 && !(frac % 10); ++i, --s, frac /= 10) {}
 
-		node.n_bytes = node.n_chars = (s - buf) + 1;
+		node.n_bytes = node.n_chars = (size_t)(s - buf) + 1u;
 
 		// Write digits from last trailing zero to decimal point
 		for (; i < frac_digits; ++i) {
-			*s-- = '0' + (frac % 10);
+			*s-- = (char)('0' + (frac % 10));
 			frac /= 10;
 		}
 	}
@@ -313,7 +313,7 @@ SerdNode
 serd_node_new_integer(int64_t i)
 {
 	int64_t        abs_i  = (i < 0) ? -i : i;
-	const unsigned digits = serd_digits(abs_i);
+	const unsigned digits = serd_digits((double)abs_i);
 	char*          buf    = (char*)calloc(digits + 2, 1);
 	SerdNode       node   = { (const uint8_t*)buf, 0, 0, 0, SERD_LITERAL };
 
@@ -324,11 +324,11 @@ serd_node_new_integer(int64_t i)
 		++s;
 	}
 
-	node.n_bytes = node.n_chars = (s - buf) + 1;
+	node.n_bytes = node.n_chars = (size_t)(s - buf) + 1u;
 
 	// Write integer part (right to left)
 	do {
-		*s-- = '0' + (abs_i % 10);
+		*s-- = (char)('0' + (abs_i % 10));
 	} while ((abs_i /= 10) > 0);
 
 	return node;

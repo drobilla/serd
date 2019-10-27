@@ -228,13 +228,14 @@ serd_stack_push_aligned(SerdStack* stack, size_t n_bytes, size_t align)
 	serd_stack_push(stack, 1);
 
 	// Push padding if necessary
-	const uint8_t pad = align - stack->size % align;
+	const size_t pad = align - stack->size % align;
 	if (pad > 0) {
 		serd_stack_push(stack, pad);
 	}
 
 	// Set top of stack to pad count so we can properly pop later
-	stack->buf[stack->size - 1] = pad;
+	assert(pad < UINT8_MAX);
+	stack->buf[stack->size - 1] = (uint8_t)pad;
 
 	// Push requested space at aligned location
 	return serd_stack_push(stack, n_bytes);
@@ -250,7 +251,7 @@ serd_stack_pop_aligned(SerdStack* stack, size_t n_bytes)
 	const uint8_t pad = stack->buf[stack->size - 1];
 
 	// Pop padding and pad count
-	serd_stack_pop(stack, pad + 1);
+	serd_stack_pop(stack, pad + 1u);
 }
 
 /* Byte Sink */
@@ -422,7 +423,7 @@ utf8_num_bytes(const uint8_t c)
 static inline uint32_t
 parse_counted_utf8_char(const uint8_t* utf8, size_t size)
 {
-	uint32_t c = utf8[0] & ((1 << (8 - size)) - 1);
+	uint32_t c = utf8[0] & ((1u << (8 - size)) - 1);
 	for (size_t i = 1; i < size; ++i) {
 		const uint8_t in = utf8[i] & 0x3F;
 		c = (c << 6) | in;
@@ -438,7 +439,8 @@ parse_utf8_char(const uint8_t* utf8, size_t* size)
 	case 1: case 2: case 3: case 4:
 		return parse_counted_utf8_char(utf8, *size);
 	default:
-		return *size = 0;
+		*size = 0;
+		return 0;
 	}
 }
 

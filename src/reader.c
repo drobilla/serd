@@ -41,7 +41,7 @@ set_blank_id(SerdReader* reader, Ref ref, size_t buf_size)
 {
 	SerdNode*   node   = deref(reader, ref);
 	const char* prefix = reader->bprefix ? (const char*)reader->bprefix : "";
-	node->n_bytes = node->n_chars = snprintf(
+	node->n_bytes = node->n_chars = (size_t)snprintf(
 		(char*)node->buf, buf_size, "%sb%u", prefix, reader->next_id++);
 }
 
@@ -96,7 +96,7 @@ push_node_padded(SerdReader* reader, size_t maxlen,
 		reader->allocs, sizeof(reader->allocs) * (++reader->n_allocs));
 	reader->allocs[reader->n_allocs - 1] = ((uint8_t*)mem - reader->stack.buf);
 #endif
-	return (uint8_t*)node - reader->stack.buf;
+	return (Ref)((uint8_t*)node - reader->stack.buf);
 }
 
 Ref
@@ -127,7 +127,7 @@ pop_node(SerdReader* reader, Ref ref)
 #endif
 		SerdNode* const node = deref(reader, ref);
 		uint8_t* const  top  = reader->stack.buf + reader->stack.size;
-		serd_stack_pop_aligned(&reader->stack, top - (uint8_t*)node);
+		serd_stack_pop_aligned(&reader->stack, (size_t)(top - (uint8_t*)node));
 	}
 	return 0;
 }

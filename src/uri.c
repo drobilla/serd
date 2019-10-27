@@ -58,8 +58,8 @@ serd_file_uri_parse(const uint8_t* uri, uint8_t** hostname)
 				return NULL;
 			}
 			if (hostname) {
-				*hostname = (uint8_t*)calloc(path - auth + 1, 1);
-				memcpy(*hostname, auth, path - auth);
+				*hostname = (uint8_t*)calloc((size_t)(path - auth + 1), 1);
+				memcpy(*hostname, auth, (size_t)(path - auth));
 			}
 		}
 	}
@@ -128,7 +128,7 @@ serd_uri_parse(const uint8_t* utf8, SerdURI* out)
 				goto path;  // Relative URI (starts with path by definition)
 			case ':':
 				out->scheme.buf = utf8;
-				out->scheme.len = (ptr++) - utf8;
+				out->scheme.len = (size_t)((ptr++) - utf8);
 				goto maybe_authority;  // URI with scheme
 			case '+': case '-': case '.':
 				continue;
@@ -297,12 +297,12 @@ merge(SerdChunk* base, SerdChunk* path)
 		} while (up > 0 && (--base_last > base->buf));
 
 		// Set path prefix
-		base->len = base_last - base->buf + 1;
+		base->len = (size_t)(base_last - base->buf + 1);
 	}
 
 	// Set path suffix
 	path->buf = begin;
-	path->len = end - begin;
+	path->len = (size_t)(end - begin);
 }
 
 /// See http://tools.ietf.org/html/rfc3986#section-5.2.2

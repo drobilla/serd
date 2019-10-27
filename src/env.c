@@ -188,13 +188,13 @@ serd_env_expand(const SerdEnv*  env,
 		return SERD_ERR_BAD_ARG;
 	}
 
-	const size_t            name_len = colon - curie->buf;
+	const size_t            name_len = (size_t)(colon - curie->buf);
 	const SerdPrefix* const prefix   = serd_env_find(env, curie->buf, name_len);
 	if (prefix) {
 		uri_prefix->buf = prefix->uri.buf;
 		uri_prefix->len = prefix->uri.n_bytes;
 		uri_suffix->buf = colon + 1;
-		uri_suffix->len = curie->n_bytes - (colon - curie->buf) - 1;
+		uri_suffix->len = curie->n_bytes - name_len - 1;
 		return SERD_SUCCESS;
 	}
 	return SERD_ERR_BAD_CURIE;
