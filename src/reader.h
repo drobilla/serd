@@ -16,16 +16,21 @@
 
 #include "serd_internal.h"
 
-static inline uint8_t
+#include <assert.h>
+#include <stdio.h>
+
+static inline int
 peek_byte(SerdReader* reader)
 {
-	return serd_byte_source_peek(&reader->source);
+	SerdByteSource* source = &reader->source;
+
+	return source->eof ? EOF : (int)source->read_buf[source->read_head];
 }
 
-static inline uint8_t
+static inline int
 eat_byte(SerdReader* reader)
 {
-	const uint8_t    c  = peek_byte(reader);
+	const int        c  = peek_byte(reader);
 	const SerdStatus st = serd_byte_source_advance(&reader->source);
 	if (st) {
 		reader->status = st;
@@ -33,20 +38,20 @@ eat_byte(SerdReader* reader)
 	return c;
 }
 
-static inline uint8_t
-eat_byte_safe(SerdReader* reader, const uint8_t byte)
+static inline int
+eat_byte_safe(SerdReader* reader, const int byte)
 {
 	(void)byte;
 
-	const uint8_t c = eat_byte(reader);
+	const int c = eat_byte(reader);
 	assert(c == byte);
 	return c;
 }
 
-static inline uint8_t
-eat_byte_check(SerdReader* reader, const uint8_t byte)
+static inline int
+eat_byte_check(SerdReader* reader, const int byte)
 {
-	const uint8_t c = peek_byte(reader);
+	const int c = peek_byte(reader);
 	if (c != byte) {
 		return r_err(reader, SERD_ERR_BAD_SYNTAX,
 		             "expected `%c', not `%c'\n", byte, c);
@@ -65,16 +70,18 @@ eat_string(SerdReader* reader, const char* str, unsigned n)
 }
 
 static inline SerdStatus
-push_byte(SerdReader* reader, Ref ref, const uint8_t c)
+push_byte(SerdReader* reader, Ref ref, const int c)
 {
+	assert(c != EOF);
 	SERD_STACK_ASSERT_TOP(reader, ref);
+
 	uint8_t* const  s    = serd_stack_push(&reader->stack, 1);
 	SerdNode* const node = (SerdNode*)(reader->stack.buf + ref);
 	++node->n_bytes;
 	if (!(c & 0x80)) {  // Starts with 0 bit, start of new character
 		++node->n_chars;
 	}
-	*(s - 1) = c;
+	*(s - 1) = (uint8_t)c;
 	*s       = '\0';
 	return SERD_SUCCESS;
 }

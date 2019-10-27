@@ -328,35 +328,35 @@ serd_byte_sink_write(const void* buf, size_t len, SerdByteSink* bsink)
 
 /** Return true if `c` lies within [`min`...`max`] (inclusive) */
 static inline bool
-in_range(const uint8_t c, const uint8_t min, const uint8_t max)
+in_range(const int c, const int min, const int max)
 {
 	return (c >= min && c <= max);
 }
 
 /** RFC2234: ALPHA ::= %x41-5A / %x61-7A  ; A-Z / a-z */
 static inline bool
-is_alpha(const uint8_t c)
+is_alpha(const int c)
 {
 	return in_range(c, 'A', 'Z') || in_range(c, 'a', 'z');
 }
 
 /** RFC2234: DIGIT ::= %x30-39  ; 0-9 */
 static inline bool
-is_digit(const uint8_t c)
+is_digit(const int c)
 {
 	return in_range(c, '0', '9');
 }
 
 /* RFC2234: HEXDIG ::= DIGIT / "A" / "B" / "C" / "D" / "E" / "F" */
 static inline bool
-is_hexdig(const uint8_t c)
+is_hexdig(const int c)
 {
 	return is_digit(c) || in_range(c, 'A', 'F');
 }
 
 /* Turtle / JSON / C: XDIGIT ::= DIGIT / A-F / a-f */
 static inline bool
-is_xdigit(const uint8_t c)
+is_xdigit(const int c)
 {
 	return is_hexdig(c) || in_range(c, 'a', 'f');
 }
@@ -518,7 +518,7 @@ uri_is_under(const SerdURI* uri, const SerdURI* root)
 }
 
 static inline bool
-is_uri_scheme_char(const uint8_t c)
+is_uri_scheme_char(const int c)
 {
 	switch (c) {
 	case ':': case '+': case '-': case '.':
