@@ -159,10 +159,8 @@ read_statement(SerdReader* reader)
 static bool
 read_doc(SerdReader* reader)
 {
-	switch (reader->syntax) {
-	case SERD_NQUADS: return read_nquadsDoc(reader);
-	default:          return read_turtleTrigDoc(reader);
-	}
+	return ((reader->syntax == SERD_NQUADS) ? read_nquadsDoc(reader)
+	                                        : read_turtleTrigDoc(reader));
 }
 
 SerdReader*
