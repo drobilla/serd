@@ -29,6 +29,7 @@ serd_byte_source_page(SerdByteSource* source)
 		        ? SERD_ERR_UNKNOWN : SERD_FAILURE);
 	} else if (n_read < source->page_size) {
 		source->file_buf[n_read] = '\0';
+		source->buf_size         = n_read;
 	}
 	return SERD_SUCCESS;
 }
@@ -47,6 +48,7 @@ serd_byte_source_open_source(SerdByteSource*     source,
 	source->stream      = stream;
 	source->from_stream = true;
 	source->page_size   = page_size;
+	source->buf_size    = page_size;
 	source->cur         = cur;
 	source->error_func  = error_func;
 	source->read_func   = read_func;

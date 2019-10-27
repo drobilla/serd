@@ -30,6 +30,8 @@
 		<#bad-char-in-uri>
 		<#bad-datatype>
 		<#bad-dot-after-subject>
+		<#bad-eof-after-quotes>
+		<#bad-eof-at-string-start>
 		<#bad-eof-in-blank>
 		<#bad-eof-in-escape>
 		<#bad-eof-in-lang-suffix>
@@ -38,9 +40,11 @@
 		<#bad-eof-in-object-list2>
 		<#bad-eof-in-object-list>
 		<#bad-eof-in-predicate-list>
+		<#bad-eof-in-long-string>
 		<#bad-eof-in-string>
 		<#bad-eof-in-triple-quote>
 		<#bad-eof-in-uri>
+		<#bad-eof-in-uri-scheme>
 		<#bad-escape>
 		<#bad-ext-namedblank-op>
 		<#bad-hex-digit>
@@ -186,6 +190,16 @@
 	mf:name "bad-dot-after-subject" ;
 	mf:action <bad-dot-after-subject.ttl> .
 
+<#bad-eof-after-quotes>
+	rdf:type rdft:TestTurtleNegativeSyntax ;
+	mf:name "bad-eof-after-quotes" ;
+	mf:action <bad-eof-after-quotes.ttl> .
+
+<#bad-eof-at-string-start>
+	rdf:type rdft:TestTurtleNegativeSyntax ;
+	mf:name "bad-eof-at-string-start" ;
+	mf:action <bad-eof-at-string-start.ttl> .
+
 <#bad-eof-in-blank>
 	rdf:type rdft:TestTurtleNegativeSyntax ;
 	mf:name "bad-eof-in-blank" ;
@@ -226,6 +240,11 @@
 	mf:name "bad-eof-in-predicate-list" ;
 	mf:action <bad-eof-in-predicate-list.ttl> .
 
+<#bad-eof-in-long-string>
+	rdf:type rdft:TestTurtleNegativeSyntax ;
+	mf:name "bad-eof-in-long-string" ;
+	mf:action <bad-eof-in-long-string.ttl> .
+
 <#bad-eof-in-string>
 	rdf:type rdft:TestTurtleNegativeSyntax ;
 	mf:name "bad-eof-in-string" ;
@@ -240,6 +259,11 @@
 	rdf:type rdft:TestTurtleNegativeSyntax ;
 	mf:name "bad-eof-in-uri" ;
 	mf:action <bad-eof-in-uri.ttl> .
+
+<#bad-eof-in-uri-scheme>
+	rdf:type rdft:TestNTriplesNegativeSyntax ;
+	mf:name "bad-eof-in-uri-scheme" ;
+	mf:action <bad-eof-in-uri-scheme.nt> .
 
 <#bad-escape>
 	rdf:type rdft:TestTurtleNegativeSyntax ;

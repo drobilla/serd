@@ -167,7 +167,7 @@ static inline SerdStatus
 bad_char(SerdReader* reader, const char* fmt, uint8_t c)
 {
 	// Skip bytes until the next start byte
-	for (int b = peek_byte(reader); (b & 0x80);) {
+	for (int b = peek_byte(reader); b != EOF && ((uint8_t)b & 0x80);) {
 		eat_byte_safe(reader, b);
 		b = peek_byte(reader);
 	}
@@ -187,7 +187,7 @@ read_utf8_bytes(SerdReader* reader, uint8_t bytes[4], uint32_t* size, uint8_t c)
 	bytes[0] = c;
 	for (unsigned i = 1; i < *size; ++i) {
 		const int b = peek_byte(reader);
-		if ((b & 0x80) == 0) {
+		if (b == EOF || ((uint8_t)b & 0x80) == 0) {
 			return bad_char(reader, "invalid UTF-8 continuation 0x%X\n",
 			                (uint8_t)b);
 		}
@@ -255,7 +255,7 @@ read_comment(SerdReader* reader)
 {
 	eat_byte_safe(reader, '#');
 	int c;
-	while (((c = peek_byte(reader)) != 0xA) && (c != 0xD) && c) {
+	while (((c = peek_byte(reader)) != 0xA) && c != 0xD && c != EOF && c) {
 		eat_byte_safe(reader, c);
 	}
 }
@@ -330,6 +330,9 @@ read_STRING_LITERAL_LONG(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 			*flags |= SERD_HAS_QUOTE;
 			push_byte(reader, ref, c);
 			read_character(reader, ref, flags, (uint8_t)q2);
+		} else if (c == EOF) {
+			r_err(reader, SERD_ERR_BAD_SYNTAX, "end of file in long string\n");
+			return pop_node(reader, ref);
 		} else {
 			st = read_character(
 				reader, ref, flags, (uint8_t)eat_byte_safe(reader, c));
@@ -349,6 +352,9 @@ read_STRING_LITERAL(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 		const int c    = peek_byte(reader);
 		uint32_t  code = 0;
 		switch (c) {
+		case EOF:
+			r_err(reader, SERD_ERR_BAD_SYNTAX, "end of file in short string\n");
+			return pop_node(reader, ref);
 		case '\n': case '\r':
 			r_err(reader, SERD_ERR_BAD_SYNTAX, "line end in short string\n");
 			return pop_node(reader, ref);
@@ -382,13 +388,17 @@ read_String(SerdReader* reader, SerdNodeFlags* flags)
 	eat_byte_safe(reader, q1);
 
 	const int q2 = peek_byte(reader);
-	if (q2 != q1) {  // Short string (not triple quoted)
+	if (q2 == EOF) {
+		return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file\n");
+	} else if (q2 != q1) {  // Short string (not triple quoted)
 		return read_STRING_LITERAL(reader, flags, (uint8_t)q1);
 	}
 
 	eat_byte_safe(reader, q2);
 	const int q3 = peek_byte(reader);
-	if (q3 != q1) {  // Empty short string ("" or '')
+	if (q3 == EOF) {
+		return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file\n");
+	} else if (q3 != q1) {  // Empty short string ("" or '')
 		return push_node(reader, SERD_LITERAL, "", 0);
 	}
 
@@ -420,7 +430,7 @@ read_PN_CHARS_BASE(SerdReader* reader, Ref dest)
 	SerdStatus st = SERD_SUCCESS;
 	if (is_alpha(c)) {
 		push_byte(reader, dest, eat_byte_safe(reader, c));
-	} else if (!(c & 0x80)) {
+	} else if (c == EOF || !(c & 0x80)) {
 		return SERD_FAILURE;
 	} else if ((st = read_utf8_code(reader, dest, &code,
 	                                (uint8_t)eat_byte_safe(reader, c)))) {
@@ -450,7 +460,7 @@ read_PN_CHARS(SerdReader* reader, Ref dest)
 	SerdStatus st = SERD_SUCCESS;
 	if (is_alpha(c) || is_digit(c) || c == '_' || c == '-') {
 		push_byte(reader, dest, eat_byte_safe(reader, c));
-	} else if (!(c & 0x80)) {
+	} else if (c == EOF || !(c & 0x80)) {
 		return SERD_FAILURE;
 	} else if ((st = read_utf8_code(reader, dest, &code,
 	                                (uint8_t)eat_byte_safe(reader, c)))) {
@@ -603,7 +613,7 @@ read_IRIREF_scheme(SerdReader* reader, Ref dest)
 		             "bad IRI scheme start `%c'\n", c);
 	}
 
-	while ((c = peek_byte(reader))) {
+	while ((c = peek_byte(reader)) != EOF) {
 		if (c == '>') {
 			return r_err(reader, SERD_ERR_BAD_SYNTAX, "missing IRI scheme\n");
 		} else if (!is_uri_scheme_char(c)) {
@@ -617,7 +627,7 @@ read_IRIREF_scheme(SerdReader* reader, Ref dest)
 		}
 	}
 
-	return false;
+	return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file\n");
 }
 
 static Ref
@@ -981,7 +991,7 @@ read_object(SerdReader* reader, ReadContext* ctx, bool emit, bool* ate_dot)
 		}
 	}
 	switch (c) {
-	case '\0': case ')':
+	case EOF: case '\0': case ')':
 		return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected object\n");
 	case '[':
 		simple = false;
@@ -1081,7 +1091,7 @@ read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 		do {
 			read_ws_star(reader);
 			switch (c = peek_byte(reader)) {
-			case 0:
+			case EOF: case '\0':
 				return r_err(reader, SERD_ERR_BAD_SYNTAX,
 				             "unexpected end of file\n");
 			case '.': case ']': case '}':
@@ -1362,8 +1372,7 @@ read_n3_statement(SerdReader* reader)
 	bool               ret     = true;
 	read_ws_star(reader);
 	switch (peek_byte(reader)) {
-	case '\0':
-		reader->source.eof = true;
+	case EOF: case '\0':
 		return reader->status <= SERD_FAILURE;
 	case '@':
 		if (!fancy_syntax(reader)) {
@@ -1455,8 +1464,7 @@ read_nquadsDoc(SerdReader* reader)
 		bool               ate_dot = false;
 		int                s_type  = 0;
 		read_ws_star(reader);
-		if (peek_byte(reader) == '\0') {
-			reader->source.eof = true;
+		if (peek_byte(reader) == EOF) {
 			break;
 		} else if (peek_byte(reader) == '@') {
 			return r_err(reader, SERD_ERR_BAD_SYNTAX,
