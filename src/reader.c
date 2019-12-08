@@ -14,6 +14,7 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "reader.h"
 #include "serd_internal.h"
 
 #include <ctype.h>
@@ -341,6 +342,11 @@ serd_reader_read_chunk(SerdReader* reader)
 		st = serd_reader_prepare(reader);
 	} else if (reader->source.eof) {
 		st = serd_byte_source_advance(&reader->source);
+	}
+
+	if (peek_byte(reader) == 0) {
+		// Skip leading null byte, for reading from a null-delimited socket
+		eat_byte_safe(reader, 0);
 	}
 
 	return st ? st : read_statement(reader) ? SERD_SUCCESS : SERD_FAILURE;

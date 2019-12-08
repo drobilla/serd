@@ -111,6 +111,64 @@ test_file_uri(const char* hostname,
 	serd_node_free(&node);
 }
 
+static void
+test_read_chunks()
+{
+	ReaderTest* const rt   = (ReaderTest*)calloc(1, sizeof(ReaderTest));
+	FILE* const       f    = tmpfile();
+	static const char null = 0;
+	SerdReader* const reader =
+	        serd_reader_new(SERD_TURTLE, rt, free, NULL, NULL, test_sink, NULL);
+
+	assert(reader);
+	assert(serd_reader_get_handle(reader) == rt);
+	assert(f);
+
+	SerdStatus st = serd_reader_start_stream(reader, f, NULL, false);
+	assert(st == SERD_SUCCESS);
+
+	// Write two statement separated by null characters
+	fprintf(f, "@prefix eg: <http://example.org/> .\n");
+	fprintf(f, "eg:s eg:p eg:o1 .\n");
+	fwrite(&null, sizeof(null), 1, f);
+	fprintf(f, "eg:s eg:p eg:o2 .\n");
+	fwrite(&null, sizeof(null), 1, f);
+	fseek(f, 0, SEEK_SET);
+
+	// Read prefix
+	st = serd_reader_read_chunk(reader);
+	assert(st == SERD_SUCCESS);
+	assert(rt->n_statements == 0);
+
+	// Read first statement
+	st = serd_reader_read_chunk(reader);
+	assert(st == SERD_SUCCESS);
+	assert(rt->n_statements == 1);
+
+	// Read terminator
+	st = serd_reader_read_chunk(reader);
+	assert(st == SERD_SUCCESS); // FIXME: return SERD_FAILURE?
+	assert(rt->n_statements == 1);
+
+	// Read second statement (after null terminator)
+	st = serd_reader_read_chunk(reader);
+	assert(st == SERD_SUCCESS);
+	assert(rt->n_statements == 2);
+
+	// Read terminator
+	st = serd_reader_read_chunk(reader);
+	assert(st == SERD_SUCCESS); // FIXME: return SERD_FAILURE?
+	assert(rt->n_statements == 2);
+
+	// EOF
+	st = serd_reader_read_chunk(reader);
+	assert(st == SERD_SUCCESS); // FIXME: return SERD_FAILURE?
+	assert(rt->n_statements == 2);
+
+	serd_reader_free(reader);
+	fclose(f);
+}
+
 int
 main(void)
 {
@@ -489,6 +547,9 @@ main(void)
 
 	assert(!strcmp((const char*)out, "@base <http://example.org/base> .\n"));
 	serd_free(out);
+
+	// Test reading a series of chunks (like from a socket)
+	test_read_chunks();
 
 	// Rewind and test reader
 	fseek(fd, 0, SEEK_SET);

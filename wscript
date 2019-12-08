@@ -12,7 +12,7 @@ from waflib.extras import autowaf
 # major increment <=> incompatible changes
 # minor increment <=> compatible changes (additions)
 # micro increment <=> no interface changes
-SERD_VERSION       = '0.30.2'
+SERD_VERSION       = '0.30.3'
 SERD_MAJOR_VERSION = '0'
 
 # Mandatory waf variables

@@ -2,8 +2,9 @@ serd (0.30.3) unstable;
 
   * Fix EOF handling while reading in bulk or from strings
   * Fix lax handling of string errors
+  * Fix reading from a null-delimited socket
 
- -- David Robillard <d@drobilla.net>  Sun, 27 Oct 2019 21:41:05 +0000
+ -- David Robillard <d@drobilla.net>  Sun, 08 Dec 2019 22:20:08 +0000
 
 serd (0.30.2) stable;
 
