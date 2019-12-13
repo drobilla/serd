@@ -169,8 +169,8 @@ test_read_chunks()
 	fclose(f);
 }
 
-int
-main(void)
+static void
+test_string_to_double(void)
 {
 #define MAX       1000000
 #define NUM_TESTS 1000
@@ -194,9 +194,11 @@ main(void)
 		const double delta = fabs(num - expt_test_nums[i]);
 		assert(delta <= DBL_EPSILON);
 	}
+}
 
-	// Test serd_node_new_decimal
-
+static void
+test_double_to_node(void)
+{
 	const double dbl_test_nums[] = {
 		0.0, 9.0, 10.0, .01, 2.05, -16.00001, 5.000000005, 0.0000000001, NAN, INFINITY
 	};
@@ -215,9 +217,11 @@ main(void)
 		assert(node.n_bytes == len && node.n_chars == len);
 		serd_node_free(&node);
 	}
+}
 
-	// Test serd_node_new_integer
-
+static void
+test_integer_to_node(void)
+{
 	const long int_test_nums[] = {
 		0, -0, -23, 23, -12340, 1000, -1000
 	};
@@ -233,8 +237,11 @@ main(void)
 		assert(node.n_bytes == len && node.n_chars == len);
 		serd_node_free(&node);
 	}
+}
 
-	// Test serd_node_new_blob
+static void
+test_blob_to_node(void)
+{
 	for (size_t size = 0; size < 256; ++size) {
 		uint8_t* data = (uint8_t*)malloc(size);
 		for (size_t i = 0; i < size; ++i) {
@@ -259,9 +266,11 @@ main(void)
 		serd_free(out);
 		free(data);
 	}
+}
 
-	// Test serd_strlen
-
+static void
+test_strlen(void)
+{
 	const uint8_t str[] = { '"', '5', 0xE2, 0x82, 0xAC, '"', '\n', 0 };
 
 	size_t        n_bytes;
@@ -273,9 +282,11 @@ main(void)
 	assert(len == 5);
 
 	assert(serd_strlen(str, &n_bytes, NULL) == 5);
+}
 
-	// Test serd_strerror
-
+static void
+test_strerror(void)
+{
 	const uint8_t* msg = NULL;
 	assert(!strcmp((const char*)(msg = serd_strerror(SERD_SUCCESS)), "Success"));
 	for (int i = SERD_FAILURE; i <= SERD_ERR_INTERNAL; ++i) {
@@ -283,9 +294,11 @@ main(void)
 		assert(strcmp((const char*)msg, "Success"));
 	}
 	msg = serd_strerror((SerdStatus)-1);
+}
 
-	// Test serd_uri_to_path
-
+static void
+test_uri_to_path(void)
+{
 	const uint8_t* uri = (const uint8_t*)"file:///home/user/foo.ttl";
 	assert(!strcmp((const char*)serd_uri_to_path(uri), "/home/user/foo.ttl"));
 
@@ -309,9 +322,11 @@ main(void)
 
 	uri = (const uint8_t*)"C|/Windows/Sucks";
 	assert(!strcmp((const char*)serd_uri_to_path(uri), "C|/Windows/Sucks"));
+}
 
-	// Test file URI escaping and parsing
-
+static void
+test_uri_parsing(void)
+{
 	test_file_uri(NULL, "C:/My 100%", true,
 	              "file:///C:/My%20100%%", NULL);
 	test_file_uri("ahost", "C:\\Pointless Space", true,
@@ -330,9 +345,11 @@ main(void)
 	uint8_t* out_path = serd_file_uri_parse(USTR("file:///foo/%0Xbar"), NULL);
 	assert(!strcmp((const char*)out_path, "/foo/bar"));
 	serd_free(out_path);
+}
 
-	// Test serd_node_equals
-
+static void
+test_node_equals(void)
+{
 	const uint8_t replacement_char_str[] = { 0xEF, 0xBF, 0xBD, 0 };
 	SerdNode lhs = serd_node_from_string(SERD_LITERAL, replacement_char_str);
 	SerdNode rhs = serd_node_from_string(SERD_LITERAL, USTR("123"));
@@ -344,9 +361,11 @@ main(void)
 
 	SerdNode null_copy = serd_node_copy(&SERD_NODE_NULL);
 	assert(serd_node_equals(&SERD_NODE_NULL, &null_copy));
+}
 
-	// Test serd_node_from_string
-
+static void
+test_node_from_string(void)
+{
 	SerdNode node = serd_node_from_string(SERD_LITERAL, (const uint8_t*)"hello\"");
 	assert(node.n_bytes == 6 && node.n_chars == 6 &&
 	       node.flags == SERD_HAS_QUOTE &&
@@ -354,9 +373,11 @@ main(void)
 
 	node = serd_node_from_string(SERD_URI, NULL);
 	assert(serd_node_equals(&node, &SERD_NODE_NULL));
+}
 
-	// Test serd_node_from_substring
-
+static void
+test_node_from_substring(void)
+{
 	SerdNode empty = serd_node_from_substring(SERD_LITERAL, NULL, 32);
 	assert(!empty.buf && !empty.n_bytes && !empty.n_chars && !empty.flags &&
 	       !empty.type);
@@ -370,9 +391,11 @@ main(void)
 	assert(a_b.n_bytes == 4 && a_b.n_chars == 4 &&
 	       a_b.flags == SERD_HAS_QUOTE &&
 	       !strncmp((const char*)a_b.buf, "a\"bc", 4));
+}
 
-	// Test serd_node_new_uri_from_string
-
+static void
+test_uri_from_string(void)
+{
 	SerdNode nonsense = serd_node_new_uri_from_string(NULL, NULL, NULL);
 	assert(nonsense.type == SERD_NOTHING);
 
@@ -388,7 +411,16 @@ main(void)
 	serd_node_free(&nil);
 	serd_node_free(&nil2);
 
-	// Test serd_node_new_relative_uri
+	serd_node_free(&base);
+}
+
+static void
+test_relative_uri(void)
+{
+	SerdURI base_uri;
+	SerdNode base = serd_node_new_uri_from_string(USTR("http://example.org/"),
+	                                              NULL, &base_uri);
+
 	SerdNode abs = serd_node_from_string(SERD_URI, USTR("http://example.org/foo/bar"));
 	SerdURI  abs_uri;
 	serd_uri_parse(abs.buf, &abs_uri);
@@ -415,9 +447,11 @@ main(void)
 	serd_node_free(&up);
 	serd_node_free(&rel);
 	serd_node_free(&base);
+}
 
-	// Test SerdEnv
-
+static void
+test_env(void)
+{
 	SerdNode u   = serd_node_from_string(SERD_URI, USTR("http://example.org/foo"));
 	SerdNode b   = serd_node_from_string(SERD_CURIE, USTR("invalid"));
 	SerdNode c   = serd_node_from_string(SERD_CURIE, USTR("eg.2:b"));
@@ -425,13 +459,13 @@ main(void)
 	serd_env_set_prefix_from_strings(env, USTR("eg.2"), USTR("http://example.org/"));
 
 	assert(serd_env_set_base_uri(env, NULL));
-	assert(serd_env_set_base_uri(env, &node));
-	assert(serd_node_equals(serd_env_get_base_uri(env, NULL), &node));
+	assert(serd_env_set_base_uri(env, &SERD_NODE_NULL));
+	assert(serd_node_equals(serd_env_get_base_uri(env, NULL), &SERD_NODE_NULL));
 
 	SerdChunk prefix, suffix;
 	assert(serd_env_expand(env, &b, &prefix, &suffix));
 
-	SerdNode xnode = serd_env_expand_node(env, &node);
+	SerdNode xnode = serd_env_expand_node(env, &SERD_NODE_NULL);
 	assert(serd_node_equals(&xnode, &SERD_NODE_NULL));
 
 	SerdNode xu = serd_env_expand_node(env, &u);
@@ -460,10 +494,14 @@ main(void)
 	SerdNode prefix_name;
 	assert(!serd_env_qualify(env, &shorter_uri, &prefix_name, &suffix));
 
-	// Test SerdReader and SerdWriter
+	serd_env_free(env);
+}
 
-	const char* path = "serd_test.ttl";
+static void
+test_writer(const char* const path)
+{
 	FILE* fd = fopen(path, "wb");
+	SerdEnv* env = serd_env_new(NULL);
 	assert(fd);
 
 	SerdWriter* writer = serd_writer_new(
@@ -472,6 +510,8 @@ main(void)
 
 	serd_writer_chop_blank_prefix(writer, USTR("tmp"));
 	serd_writer_chop_blank_prefix(writer, NULL);
+
+	const SerdNode lit = serd_node_from_string(SERD_LITERAL, USTR("hello"));
 
 	assert(serd_writer_set_base_uri(writer, &lit));
 	assert(serd_writer_set_prefix(writer, &lit, &lit));
@@ -547,13 +587,13 @@ main(void)
 
 	assert(!strcmp((const char*)out, "@base <http://example.org/base> .\n"));
 	serd_free(out);
+	serd_env_free(env);
+	fclose(fd);
+}
 
-	// Test reading a series of chunks (like from a socket)
-	test_read_chunks();
-
-	// Rewind and test reader
-	fseek(fd, 0, SEEK_SET);
-
+static void
+test_reader(const char* path)
+{
 	ReaderTest* rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
 	SerdReader* reader = serd_reader_new(
 		SERD_TURTLE, rt, free,
@@ -579,9 +619,30 @@ main(void)
 	assert(serd_reader_read_string(reader, USTR("This isn't Turtle at all.")));
 
 	serd_reader_free(reader);
-	fclose(fd);
+}
 
-	serd_env_free(env);
+int
+main(void)
+{
+	test_string_to_double();
+	test_double_to_node();
+	test_integer_to_node();
+	test_blob_to_node();
+	test_strlen();
+	test_strerror();
+	test_uri_to_path();
+	test_uri_parsing();
+	test_node_equals();
+	test_node_from_string();
+	test_node_from_substring();
+	test_uri_from_string();
+	test_relative_uri();
+	test_env();
+	test_read_chunks();
+
+	const char* const path = "serd_test.ttl";
+	test_writer(path);
+	test_reader(path);
 
 	printf("Success\n");
 	return 0;
