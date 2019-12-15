@@ -112,7 +112,7 @@ test_file_uri(const char* hostname,
 }
 
 static void
-test_read_chunks()
+test_read_chunks(void)
 {
 	ReaderTest* const rt   = (ReaderTest*)calloc(1, sizeof(ReaderTest));
 	FILE* const       f    = tmpfile();
