@@ -266,7 +266,7 @@ serd_env_expand_in_place(const SerdEnv*  env,
 	const SerdPrefix* const prefix   = serd_env_find(env, str, name_len);
 	if (prefix) {
 		uri_prefix->buf = serd_node_get_string(prefix->uri);
-		uri_prefix->len = prefix->uri->n_bytes;
+		uri_prefix->len = prefix->uri ? prefix->uri->n_bytes : 0;
 		uri_suffix->buf = colon + 1;
 		uri_suffix->len = curie->n_bytes - name_len - 1;
 		return SERD_SUCCESS;
