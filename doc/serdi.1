@@ -3,10 +3,11 @@
 .Os Serd 0.30.11
 .Sh NAME
 .Nm serdi
-.Nd read, transform, and write RDF data
+.Nd read, filter, transform, and write RDF data
 .Sh SYNOPSIS
 .Nm serdi
 .Op Fl Cabefhlmqtvx
+.Op Fl F Ar pattern | Fl G Ar pattern
 .Op Fl I Ar base
 .Op Fl V Ar checks
 .Op Fl X Ar checks
@@ -48,6 +49,23 @@ All numeric datatypes are supported, as well as
 .Vt hexBinary ,
 and
 .Vt base64Binary .
+.Pp
+.It Fl F Ar pattern
+Filter out statements that match
+.Ar pattern .
+The pattern must be a single statement written in NTriples or NQuads,
+with variables like
+.Dq ?name
+for wildcards.
+The names of variables in the pattern are insignificant.
+.Pp
+.It Fl G Ar pattern
+Only include statements that match
+.Ar pattern .
+This option is like
+.Fl p
+but inverted,
+so that only matching statements are included, like grep.
 .Pp
 .It Fl I Ar base
 Input base URI.
@@ -274,6 +292,14 @@ To pretty-print a document:
 To print any errors:
 .Pp
 .Dl $ serdi file.ttl > /dev/null
+.Pp
+To remove any rdf:type properties:
+.Pp
+.Dl $ serdi -F \(dq?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?o .\(dq file.ttl
+.Pp
+To include only rdf:type properties:
+.Pp
+.Dl $ serdi -G \(dq?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?o .\(dq file.ttl
 .Sh SEE ALSO
 .Bl -item -compact
 .It
