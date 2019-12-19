@@ -28,20 +28,23 @@
 SerdStatus
 serd_byte_source_page(SerdByteSource* const source)
 {
-  source->read_head = 0;
-  const size_t n_read =
-    source->read_func(source->file_buf, 1, source->page_size, source->stream);
+  uint8_t* const buf =
+    (source->page_size > 1 ? source->file_buf : &source->read_byte);
 
-  if (n_read == 0) {
-    source->file_buf[0] = '\0';
-    source->eof         = true;
-    return (source->error_func(source->stream) ? SERD_ERR_UNKNOWN
-                                               : SERD_FAILURE);
-  }
+  const size_t n_read =
+    source->read_func(buf, 1, source->page_size, source->stream);
+
+  source->buf_size  = n_read;
+  source->read_head = 0;
+  source->eof       = false;
 
   if (n_read < source->page_size) {
-    source->file_buf[n_read] = '\0';
-    source->buf_size         = n_read;
+    buf[n_read] = '\0';
+    if (n_read == 0) {
+      source->eof = true;
+      return (source->error_func(source->stream) ? SERD_ERR_UNKNOWN
+                                                 : SERD_FAILURE);
+    }
   }
 
   return SERD_SUCCESS;
@@ -56,6 +59,7 @@ serd_byte_source_open_source(SerdByteSource* const     source,
                              const SerdNode* const     name,
                              const size_t              page_size)
 {
+  assert(page_size > 0);
   memset(source, '\0', sizeof(*source));
   source->read_func   = read_func;
   source->error_func  = error_func;
@@ -100,6 +104,7 @@ serd_byte_source_open_string(SerdByteSource* const source,
 {
   memset(source, '\0', sizeof(*source));
 
+  source->page_size = 1;
   source->name =
     name ? serd_node_copy(name) : serd_new_string(SERD_STATIC_STRING("string"));
 
