@@ -92,6 +92,7 @@ sources = [
   'src/compare.c',
   'src/cursor.c',
   'src/env.c',
+  'src/filter.c',
   'src/inserter.c',
   'src/model.c',
   'src/n3.c',
