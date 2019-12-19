@@ -821,6 +821,20 @@ serd_node_equals(const SerdNode* SERD_NULLABLE a,
 /**
    @}
    @}
+   @defgroup serd_statement Statement
+   @{
+*/
+
+/// Index of a node in a statement
+typedef enum {
+  SERD_SUBJECT   = 0U, ///< Subject
+  SERD_PREDICATE = 1U, ///< Predicate ("key")
+  SERD_OBJECT    = 2U, ///< Object ("value")
+  SERD_GRAPH     = 3U, ///< Graph ("context")
+} SerdField;
+
+/**
+   @}
    @defgroup serd_world World
    @{
 */
