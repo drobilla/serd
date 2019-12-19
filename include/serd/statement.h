@@ -16,6 +16,14 @@ SERD_BEGIN_DECLS
    @{
 */
 
+/// Index of a node in a statement
+typedef enum {
+  SERD_SUBJECT   = 0U, ///< Subject
+  SERD_PREDICATE = 1U, ///< Predicate ("key")
+  SERD_OBJECT    = 2U, ///< Object ("value")
+  SERD_GRAPH     = 3U, ///< Graph ("context")
+} SerdField;
+
 /// Flags indicating inline abbreviation information for a statement
 typedef enum {
   SERD_EMPTY_S      = 1U << 1U, ///< Empty blank node subject
