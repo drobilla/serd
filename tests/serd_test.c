@@ -178,6 +178,16 @@ test_string_to_double(void)
 		test_strtod(dbl, 1 / (double)MAX);
 	}
 
+	size_t end = 0;
+	assert(isnan(serd_strtod("NaN", &end)));
+	assert(end == 3);
+
+	assert(serd_strtod("INF", &end) == INFINITY);
+	assert(end == 3);
+
+	assert(serd_strtod("-INF", &end) == -INFINITY);
+	assert(end == 4);
+
 	const double expt_test_nums[] = {
 		2.0E18, -5e19, +8e20, 2e+24, -5e-5, 8e0, 9e-0, 2e+0
 	};
