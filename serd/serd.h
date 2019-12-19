@@ -1229,6 +1229,50 @@ serd_normaliser_get_sink(const SerdNormaliser* normaliser);
 
 /**
    @}
+   @name Filtering
+   @{
+*/
+
+/// Sink wrapper that filters statements
+typedef struct SerdFilterImpl SerdFilter;
+
+/**
+   Return a sink that filters out statements that do not match a pattern.
+
+   The returned sink acts like `target` in all respects, except statements that
+   do not match the pattern are dropped.
+*/
+SERD_API
+SerdFilter*
+serd_filter_new(const SerdSink* target);
+
+/// Free `filter`
+SERD_API
+void
+serd_filter_free(SerdFilter* filter);
+
+/**
+   Set the statement to filter.
+
+   Only statements where each node is either equivalent to the corresponding
+   pattern node, or the pattern node is null, will be passed through to the
+   target sink.
+*/
+SERD_API
+SerdStatus
+serd_filter_set_statement(SerdFilter*     filter,
+                          const SerdNode* subject,
+                          const SerdNode* predicate,
+                          const SerdNode* object,
+                          const SerdNode* graph);
+
+/// Return a sink interface that forwards unfiltered statements
+SERD_API
+const SerdSink*
+serd_filter_get_sink(const SerdFilter* filter);
+
+/**
+   @}
    @name Reader
    @{
 */

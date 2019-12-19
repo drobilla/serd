@@ -14,6 +14,7 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "reader.h"
 #include "serd_config.h"
 #include "system.h"
 
@@ -60,6 +61,7 @@ print_usage(const char* name, bool error)
 	fprintf(os, "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n");
 	fprintf(os, "  -e           Eat input one character at a time.\n");
 	fprintf(os, "  -f           Fast serialisation without inlining.\n");
+	fprintf(os, "  -g PATTERN   Grep statements matching PATTERN.\n");
 	fprintf(os, "  -h           Display this help and exit.\n");
 	fprintf(os, "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads.\n");
 	fprintf(os, "  -k BYTES     Parser stack size.\n");
@@ -90,6 +92,42 @@ quiet_error_func(void* handle, const SerdLogEntry* entry)
 	(void)handle;
 	(void)entry;
 	return SERD_SUCCESS;
+}
+
+static SerdStatus
+on_filter_statement(void*                handle,
+                    SerdStatementFlags   flags,
+                    const SerdStatement* statement)
+{
+	(void)flags;
+
+	serd_filter_set_statement((SerdFilter*)handle,
+	                          serd_statement_get_subject(statement),
+	                          serd_statement_get_predicate(statement),
+	                          serd_statement_get_object(statement),
+	                          serd_statement_get_graph(statement));
+
+	return SERD_SUCCESS;
+}
+
+static SerdFilter*
+parse_filter(SerdWorld* world, const SerdSink* sink, const char* str)
+{
+	SerdFilter* filter  = serd_filter_new(sink);
+	SerdSink*   in_sink = serd_sink_new(filter, NULL, NULL);
+
+	serd_sink_set_statement_func(in_sink, on_filter_statement);
+
+	SerdReader* reader = serd_reader_new(
+	        world, SERD_NQUADS, SERD_READ_VARIABLES, in_sink, 4096);
+
+	serd_reader_start_string(reader, str, NULL);
+	serd_reader_read_document(reader);
+
+	serd_reader_free(reader);
+	serd_sink_free(in_sink);
+
+	return filter;
 }
 
 static SerdStatus
@@ -153,6 +191,7 @@ main(int argc, char** argv)
 	bool            quiet         = false;
 	size_t          stack_size    = 4194304;
 	const char*     input_string  = NULL;
+	const char*     pattern       = NULL;
 	const char*     add_prefix    = "";
 	const char*     chop_prefix   = NULL;
 	const char*     root_uri      = NULL;
@@ -184,6 +223,11 @@ main(int argc, char** argv)
 			use_model = true;
 		} else if (argv[a][1] == 'n') {
 			normalise = true;
+		} else if (argv[a][1] == 'g') {
+			if (++a == argc) {
+				return missing_arg(argv[0], 's');
+			}
+			pattern = argv[a];
 		} else if (argv[a][1] == 'q') {
 			quiet = true;
 		} else if (argv[a][1] == 'v') {
@@ -307,6 +351,12 @@ main(int argc, char** argv)
 		sink       = serd_normaliser_get_sink(normaliser);
 	}
 
+	SerdFilter* filter = NULL;
+	if (pattern) {
+		filter = parse_filter(world, sink, pattern);
+		sink   = serd_filter_get_sink(filter);
+	}
+
 	if (quiet) {
 		serd_world_set_log_func(world, quiet_error_func, NULL);
 	}
@@ -381,6 +431,7 @@ main(int argc, char** argv)
 		serd_range_free(range);
 	}
 
+	serd_filter_free(filter);
 	serd_normaliser_free(normaliser);
 	serd_node_free(input_name);
 	serd_inserter_free(inserter);

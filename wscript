@@ -131,6 +131,7 @@ lib_source = ['src/base64.c',
               'src/cursor.c',
               'src/decimal.c',
               'src/env.c',
+              'src/filter.c',
               'src/inserter.c',
               'src/int_math.c',
               'src/iter.c',
@@ -569,6 +570,7 @@ def validation_test_suite(tst, base_uri, testdir, isyntax, osyntax, options=''):
                     check(command, expected=expected, name=action)
 
 def test(tst):
+    import subprocess
     import tempfile
 
     # Create test output directories
@@ -638,12 +640,23 @@ def test(tst):
         check.file_equals('%s/tests/multifile/output.nq' % srcdir,
                           'tests/multifile/output.out.nq')
 
+    with tst.group('GrepCommand') as check:
+        with tempfile.TemporaryFile(mode='w+') as stdout:
+            check(lambda: subprocess.check_output(
+                [serdi,
+                 '-g', '?s <urn:example:p> <urn:example:o> .',
+                 '-s',
+                 '<urn:example:s> <urn:example:p> <urn:example:o> .\n'
+                 '<urn:example:s> <urn:example:q> <urn:example:r> .\n']).decode('utf-8') == '<urn:example:s> <urn:example:p> <urn:example:o> .\n',
+                  name='wildcard subject')
+
     with tst.group('BadCommands', expected=1, stderr=autowaf.NONEMPTY) as check:
         check([serdi])
         check([serdi, '/no/such/file'])
         check([serdi, 'ftp://example.org/unsupported.ttl'])
         check([serdi, '-I'])
         check([serdi, '-c'])
+        check([serdi, '-g'])
         check([serdi, '-i', 'illegal'])
         check([serdi, '-i', 'turtle'])
         check([serdi, '-i'])
