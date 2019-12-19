@@ -142,6 +142,7 @@ test_writer_cleanup(void)
   serd_node_free(s);
   serd_writer_free(writer);
   serd_env_free(env);
+  serd_world_free(world);
 }
 
 static void
