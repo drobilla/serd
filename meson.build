@@ -216,6 +216,7 @@ c_headers = files(
   'include/serd/buffer.h',
   'include/serd/env.h',
   'include/serd/error.h',
+  'include/serd/field.h',
   'include/serd/node.h',
   'include/serd/node_flags.h',
   'include/serd/node_type.h',

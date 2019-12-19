@@ -54,6 +54,7 @@
    @{
 */
 
+#include <serd/field.h>
 #include <serd/node.h>
 #include <serd/statement_flags.h>
 #include <serd/uri.h>
