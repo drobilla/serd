@@ -27,7 +27,8 @@ typedef struct SerdReaderImpl SerdReader;
 
 /// Reader options
 typedef enum {
-  SERD_READ_LAX = 1U << 0U, ///< Tolerate invalid input where possible
+  SERD_READ_LAX       = 1U << 0U, ///< Tolerate invalid input where possible
+  SERD_READ_VARIABLES = 1U << 1U, ///< Support variable nodes
 } SerdReaderFlag;
 
 /// Bitwise OR of SerdReaderFlag values

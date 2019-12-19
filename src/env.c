@@ -234,6 +234,7 @@ serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
     return ret;
   }
   case SERD_BLANK:
+  case SERD_VARIABLE:
     break;
   }
   return NULL;

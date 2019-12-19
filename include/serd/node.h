@@ -68,6 +68,15 @@ typedef enum {
      Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
   */
   SERD_BLANK = 4,
+
+  /**
+     A variable node.
+
+     Value is a variable name without any syntactic prefix, like "name",
+     which is meaningful only within this serialisation.  @see [SPARQL 1.1
+     Query Language](https://www.w3.org/TR/sparql11-query/#rVar)
+  */
+  SERD_VARIABLE = 5,
 } SerdNodeType;
 
 /// Node flags, which ORed together make a #SerdNodeFlags

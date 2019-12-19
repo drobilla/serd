@@ -72,7 +72,8 @@ print_usage(const char* const name, const bool error)
     "  -s STRING    Parse STRING as input.\n"
     "  -t           Write terser output without newlines.\n"
     "  -v           Display version information and exit.\n"
-    "  -w FILENAME  Write output to FILENAME instead of stdout.\n";
+    "  -w FILENAME  Write output to FILENAME instead of stdout.\n"
+    "  -x           Support parsing variable nodes like \"?x\".\n";
 
   FILE* const os = error ? stderr : stdout;
   fprintf(os, "%s", error ? "\n" : "");
@@ -191,6 +192,8 @@ main(int argc, char** argv)
         writer_flags |= SERD_WRITE_TERSE;
       } else if (opt == 'v') {
         return print_version();
+      } else if (opt == 'x') {
+        reader_flags |= SERD_READ_VARIABLES;
       } else if (argv[a][1] == 'I') {
         if (++a == argc) {
           return missing_arg(prog, 'I');

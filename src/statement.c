@@ -17,7 +17,8 @@ is_resource(const SerdNode* const node)
 {
   const SerdNodeType type = serd_node_type(node);
 
-  return type == SERD_URI || type == SERD_CURIE || type == SERD_BLANK;
+  return type == SERD_URI || type == SERD_CURIE || type == SERD_BLANK ||
+         type == SERD_VARIABLE;
 }
 
 bool
