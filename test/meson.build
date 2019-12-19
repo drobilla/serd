@@ -219,6 +219,14 @@ if get_option('utils')
        suite: ['rdf', 'serd'],
        timeout: 240)
 
+  manifest = files('pattern' / 'manifest.ttl')
+  base_uri = serd_base + 'pattern' + '/'
+  test('pattern', run_test_suite,
+       args: script_args + [manifest, base_uri, '--', '-x'],
+       env: test_env,
+       suite: ['rdf', 'serd'],
+       timeout: 240)
+
   ### The lax suite is special because it is run twice...
   lax_manifest = files('lax/manifest.ttl')
   lax_base_uri = serd_base + name + '/'
