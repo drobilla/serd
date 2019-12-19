@@ -783,6 +783,14 @@ bool
 serd_node_equals(const SerdNode* SERD_NULLABLE a,
                  const SerdNode* SERD_NULLABLE b);
 
+/// Index of a node in a statement
+typedef enum {
+  SERD_SUBJECT   = 0, ///< Subject
+  SERD_PREDICATE = 1, ///< Predicate ("key")
+  SERD_OBJECT    = 2, ///< Object ("value")
+  SERD_GRAPH     = 3, ///< Graph ("context")
+} SerdField;
+
 /**
    @}
    @defgroup serd_world World
