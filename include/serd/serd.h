@@ -532,7 +532,8 @@ typedef struct SerdNodeImpl SerdNode;
 
    An RDF node, in the abstract sense, can be either a resource, literal, or a
    blank.  This type is more precise, because syntactically there are two ways
-   to refer to a resource (by URI or CURIE).
+   to refer to a resource (by URI or CURIE).  Serd also has support for
+   variable nodes to support some features, which are not RDF nodes.
 
    There are also two ways to refer to a blank node in syntax (by ID or
    anonymously), but this is handled by statement flags rather than distinct
@@ -571,7 +572,16 @@ typedef enum {
      is meaningful only within this serialisation.  @see [RDF 1.1
      Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
   */
-  SERD_BLANK = 4
+  SERD_BLANK = 4,
+
+  /**
+     A variable node.
+
+     Value is a variable name without any syntactic prefix, like "name",
+     which is meaningful only within this serialisation.  @see [SPARQL 1.1
+     Query Language](https://www.w3.org/TR/sparql11-query/#rVar)
+  */
+  SERD_VARIABLE = 5
 } SerdNodeType;
 
 /**
@@ -1553,7 +1563,8 @@ typedef struct SerdReaderImpl SerdReader;
 
 /// Reader options
 typedef enum {
-  SERD_READ_LAX = 1u << 0u ///< Tolerate invalid input where possible
+  SERD_READ_LAX       = 1u << 0u, ///< Tolerate invalid input where possible
+  SERD_READ_VARIABLES = 1u << 1u  ///< Support variable nodes
 } SerdReaderFlag;
 
 /// Bitwise OR of SerdReaderFlag values
