@@ -26,7 +26,8 @@ test(SerdWorld* world, SerdSink* sink, const char* str, size_t stack_size)
 {
   SerdByteSource* byte_source = serd_byte_source_new_string(str, NULL);
 
-  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0, sink, stack_size);
+  SerdReader* reader =
+    serd_reader_new(world, SERD_TURTLE, SERD_READ_VARIABLES, sink, stack_size);
 
   serd_reader_start(reader, byte_source);
   const SerdStatus st = serd_reader_read_document(reader);
@@ -56,6 +57,7 @@ main(void)
     {":s :p \"literal\"", sizes + 264},
     {":s :p \"verb\"", sizes + 263},
     {":s :p _:blank .", sizes + 276},
+    {":s :p ?o .", sizes + 295},
     {":s :p true .", sizes + 295},
     {":s :p true .", sizes + 329},
     {":s :p \"\"@en .", sizes + 302},

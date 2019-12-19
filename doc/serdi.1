@@ -6,7 +6,7 @@
 .Nd read and write RDF syntax
 .Sh SYNOPSIS
 .Nm serdi
-.Op Fl abefhlqtv
+.Op Fl abefhlqtvx
 .Op Fl I Ar base
 .Op Fl c Ar prefix
 .Op Fl i Ar syntax
@@ -139,6 +139,13 @@ Display version information and exit.
 Write output to the given
 .Ar filename
 instead of stdout.
+.Pp
+.It Fl x
+Support parsing variable nodes.
+Variables can be written in SPARQL style, for example
+.Dq ?var
+or
+.Dq $var .
 .El
 .Sh EXIT STATUS
 .Nm

@@ -972,10 +972,53 @@ read_literal(SerdReader* const reader,
 }
 
 static SerdStatus
-read_verb(SerdReader* const reader, SerdNode** const dest)
+read_VARNAME(SerdReader* const reader, SerdNode** const dest)
+{
+  // Simplified from SPARQL: VARNAME ::= (PN_CHARS_U | [0-9])+
+  SerdNode*  n  = *dest;
+  SerdStatus st = SERD_SUCCESS;
+  int        c  = 0;
+  peek_byte(reader);
+  while ((c = peek_byte(reader))) {
+    if (is_digit(c) || c == '_') {
+      st = push_byte(reader, n, eat_byte_safe(reader, c));
+    } else if ((st = read_PN_CHARS(reader, n))) {
+      st = st > SERD_FAILURE ? st : SERD_SUCCESS;
+      break;
+    }
+  }
+
+  return st;
+}
+
+static SerdStatus
+read_Var(SerdReader* const reader, SerdNode** const dest)
+{
+  if (!(reader->flags & SERD_READ_VARIABLES)) {
+    return r_err(
+      reader, SERD_ERR_BAD_SYNTAX, "syntax does not support variables\n");
+  }
+
+  if (!(*dest = push_node(reader, SERD_VARIABLE, "", 0))) {
+    return SERD_ERR_OVERFLOW;
+  }
+
+  assert(peek_byte(reader) == '$' || peek_byte(reader) == '?');
+  serd_byte_source_advance(reader->source);
+
+  return read_VARNAME(reader, dest);
+}
+
+static SerdStatus
+read_verb(SerdReader* reader, SerdNode** dest)
 {
   const size_t orig_stack_size = reader->stack.size;
-  if (peek_byte(reader) == '<') {
+
+  switch (peek_byte(reader)) {
+  case '$':
+  case '?':
+    return read_Var(reader, dest);
+  case '<':
     return read_IRIREF(reader, dest);
   }
 
@@ -1162,6 +1205,12 @@ read_object(SerdReader* const  reader,
     case '<':
     case '_':
       break;
+    case '$':
+    case '?':
+      if (reader->flags & SERD_READ_VARIABLES) {
+        break;
+      }
+      break;
     default:
       return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected: ':', '<', or '_'\n");
     }
@@ -1171,6 +1220,10 @@ read_object(SerdReader* const  reader,
   case EOF:
   case ')':
     return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected object\n");
+  case '$':
+  case '?':
+    ret = read_Var(reader, &o);
+    break;
   case '[':
     simple = false;
     ret    = read_anon(reader, *ctx, false, &o);
@@ -1400,6 +1453,10 @@ read_subject(SerdReader* const reader,
   SerdStatus st      = SERD_SUCCESS;
   bool       ate_dot = false;
   switch ((*s_type = peek_byte(reader))) {
+  case '$':
+  case '?':
+    st = read_Var(reader, dest);
+    break;
   case '[':
     st = read_anon(reader, ctx, true, dest);
     break;
@@ -1657,6 +1714,7 @@ read_n3_statement(SerdReader* const reader)
       if (s_type == '(' || (s_type == '[' && !*ctx.flags)) {
         return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid graph name\n");
       }
+
       ctx.graph   = ctx.subject;
       ctx.subject = NULL;
       TRY(st, read_wrappedGraph(reader, &ctx));
@@ -1672,6 +1730,7 @@ read_n3_statement(SerdReader* const reader)
       }
 
       return st > SERD_FAILURE ? st : SERD_ERR_BAD_SYNTAX;
+
     } else if (!ate_dot) {
       read_ws_star(reader);
       st = (eat_byte_check(reader, '.') == '.') ? SERD_SUCCESS
@@ -1732,10 +1791,22 @@ read_nquadsDoc(SerdReader* const reader)
       return SERD_ERR_BAD_SYNTAX;
     }
 
-    // subject predicate object
     if ((st = read_subject(reader, ctx, &ctx.subject, &s_type)) ||
-        !read_ws_star(reader) || (st = read_IRIREF(reader, &ctx.predicate)) ||
-        !read_ws_star(reader) ||
+        !read_ws_star(reader)) {
+      return st;
+    }
+
+    switch (peek_byte(reader)) {
+    case '$':
+    case '?':
+      st = read_Var(reader, &ctx.predicate);
+      break;
+    case '<':
+      st = read_IRIREF(reader, &ctx.predicate);
+      break;
+    }
+
+    if (st || !read_ws_star(reader) ||
         (st = read_object(reader, &ctx, false, &ate_dot))) {
       return st;
     }
@@ -1744,6 +1815,9 @@ read_nquadsDoc(SerdReader* const reader)
       read_ws_star(reader);
       switch (peek_byte(reader)) {
       case '.':
+        break;
+      case '?':
+        TRY(st, read_Var(reader, &ctx.graph));
         break;
       case '_':
         TRY(st, read_BLANK_NODE_LABEL(reader, &ctx.graph, &ate_dot));
