@@ -66,6 +66,13 @@ if get_option('utils')
   bad_args = [
     ['/no/such/file'],
     ['ftp://example.org/unsupported.ttl'],
+    ['-F', '', '-G', ''],
+    ['-F'],
+    ['-F', '?s ?p ?o . ?q ?r ?s .', '-s', ''],
+    ['-F', 'bad_pattern', '-s', ''],
+    ['-G'],
+    ['-G', '?s ?p ?o . ?q ?r ?s .', '-s', ''],
+    ['-G', 'bad_pattern', '-s', ''],
     ['-I'],
     ['-V'],
     ['-X'],
@@ -112,6 +119,14 @@ if get_option('utils')
 
   test('quiet', files('test_quiet.py'),
        args: script_args + files('bad/bad-base.ttl'),
+       suite: ['serdi', 'options'])
+
+  test('filter', files('test_filter.py'),
+       args: script_args,
+       suite: ['serdi', 'options'])
+
+  test('grep', files('test_grep.py'),
+       args: script_args,
        suite: ['serdi', 'options'])
 
   # Inputs

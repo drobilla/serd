@@ -1592,6 +1592,23 @@ serd_canon_new(const SerdWorld* SERD_NULLABLE world,
                SerdReaderFlags                flags);
 
 /**
+   Return a sink that filters out statements that do not match a pattern.
+
+   The returned sink acts like `target` in all respects, except that some
+   statements may be dropped.  If `inclusive` is true, then only statements
+   that match the pattern are passed through.  Otherwise, only statements that
+   do *not* match the pattern are passed through.
+*/
+SERD_API
+SerdSink* SERD_ALLOCATED
+serd_filter_new(const SerdSink* SERD_NONNULL  target,
+                const SerdNode* SERD_NULLABLE subject,
+                const SerdNode* SERD_NULLABLE predicate,
+                const SerdNode* SERD_NULLABLE object,
+                const SerdNode* SERD_NULLABLE graph,
+                bool                          inclusive);
+
+/**
    @}
    @defgroup serd_reader Reader
    @{
