@@ -154,13 +154,6 @@ typedef uint32_t SerdStatementFlags;
 */
 typedef enum {
 	/**
-	   The type of a nonexistent node.
-
-	   This type is useful as a sentinel, but is never emitted by the reader.
-	*/
-	SERD_NOTHING = 0,
-
-	/**
 	   Literal value.
 
 	   A literal optionally has either a language, or a datatype (not both).
