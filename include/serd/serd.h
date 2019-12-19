@@ -55,6 +55,7 @@
    @{
 */
 
+#include "serd/field.h"
 #include "serd/node.h"
 #include "serd/uri.h"
 
