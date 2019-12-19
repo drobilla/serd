@@ -861,6 +861,14 @@ void
 serd_nodes_deref(SerdNodes* SERD_NONNULL      nodes,
                  const SerdNode* SERD_NONNULL node);
 
+/// Index of a node in a statement
+typedef enum {
+  SERD_SUBJECT   = 0, ///< Subject
+  SERD_PREDICATE = 1, ///< Predicate ("key")
+  SERD_OBJECT    = 2, ///< Object ("value")
+  SERD_GRAPH     = 3, ///< Graph ("context")
+} SerdField;
+
 /**
    @}
    @defgroup serd_world World
