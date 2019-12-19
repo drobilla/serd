@@ -261,22 +261,8 @@ test_writer(const char* const path)
   assert(!strcmp(out, "@base <http://example.org/base> .\n"));
   serd_free(out);
 
-  // Test writing empty node
-  SerdNode*   nothing = serd_new_string(SERD_NOTHING, "");
-  FILE* const empty   = tmpfile();
-
-  writer = serd_writer_new(SERD_TURTLE, 0, env, NULL, serd_file_sink, empty);
-
-  // FIXME: error handling
-  serd_writer_write_statement(writer, 0, NULL, s, p, nothing, NULL, NULL);
-
-  assert((size_t)ftell(empty) == strlen("<>\n\t<http://example.org/pred> "));
-
-  serd_writer_free(writer);
-  fclose(empty);
-  serd_node_free(nothing);
-  serd_node_free(s);
   serd_node_free(p);
+  serd_node_free(s);
 
   serd_env_free(env);
   fclose(fd);
