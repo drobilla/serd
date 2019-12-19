@@ -8,7 +8,7 @@
 .Nd read and write RDF syntax
 .Sh SYNOPSIS
 .Nm serdi
-.Op Fl abefhlqtv
+.Op Fl abefhlqtvx
 .Op Fl B Ar base
 .Op Fl c Ar prefix
 .Op Fl i Ar syntax
@@ -155,6 +155,12 @@ as input.
 Write terser output without newlines.
 .It Fl v
 Display version information and exit.
+.It Fl x
+Support parsing variable nodes.
+Variables can be written in SPARQL style, for example
+.Dq ?var
+or
+.Dq $var .
 .El
 .Sh EXIT STATUS
 .Nm

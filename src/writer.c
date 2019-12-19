@@ -955,6 +955,18 @@ write_blank(SerdWriter* const        writer,
 }
 
 SERD_NODISCARD static SerdStatus
+write_variable(SerdWriter* const writer, const SerdNode* const node)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  TRY(st, esink("?", 1, writer));
+  TRY(st, esink(serd_node_string(node), node->length, writer));
+
+  writer->last_sep = SEP_NONE;
+  return st;
+}
+
+SERD_NODISCARD static SerdStatus
 write_node(SerdWriter* const        writer,
            const SerdNode* const    node,
            const SerdField          field,
@@ -974,6 +986,9 @@ write_node(SerdWriter* const        writer,
     break;
   case SERD_BLANK:
     st = write_blank(writer, node, field, flags);
+    break;
+  case SERD_VARIABLE:
+    st = write_variable(writer, node);
     break;
   }
 

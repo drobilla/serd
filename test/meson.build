@@ -361,6 +361,10 @@ test_suites = {
   'lax_strict': [
     files('extra/lax/manifest.ttl'), ns_serdtest + 'lax/',
   ],
+  'pattern': [
+    files('extra/pattern/manifest.ttl'), ns_serdtest + 'pattern/',
+    '--', '-x',
+  ],
   'perfect_forward': [
     files('extra/perfect/manifest.ttl'), ns_serdtest + 'perfect/',
   ],
