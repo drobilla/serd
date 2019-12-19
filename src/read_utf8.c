@@ -6,7 +6,8 @@
 #include "reader.h"
 #include "string_utils.h"
 
-#include <serd/serd.h>
+#include <serd/reader.h>
+#include <serd/status.h>
 
 #include <stdio.h>
 

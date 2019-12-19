@@ -13,6 +13,7 @@
 
 #include <serd/buffer.h>
 #include <serd/env.h>
+#include <serd/field.h>
 #include <serd/node.h>
 #include <serd/node_flags.h>
 #include <serd/node_type.h>
@@ -40,14 +41,6 @@ typedef enum {
   CTX_BLANK, ///< Anonymous blank node
   CTX_LIST,  ///< Anonymous list
 } ContextType;
-
-typedef enum {
-  FIELD_NONE,
-  FIELD_SUBJECT,
-  FIELD_PREDICATE,
-  FIELD_OBJECT,
-  FIELD_GRAPH,
-} Field;
 
 typedef struct {
   ContextType type;
@@ -927,25 +920,25 @@ write_literal(SerdWriter* const     writer,
 ZIX_NODISCARD static SerdStatus
 write_blank(SerdWriter* const        writer,
             const SerdNode* const    node,
-            const Field              field,
+            const SerdField          field,
             const SerdStatementFlags flags)
 {
   SerdStatus          st    = SERD_SUCCESS;
   const ZixStringView label = serd_node_string_view(node);
 
   if (supports_abbrev(writer)) {
-    if ((field == FIELD_SUBJECT && (flags & SERD_ANON_S)) ||
-        (field == FIELD_OBJECT && (flags & SERD_ANON_O))) {
+    if ((field == SERD_SUBJECT && (flags & SERD_ANON_S)) ||
+        (field == SERD_OBJECT && (flags & SERD_ANON_O))) {
       return write_sep(writer, SEP_ANON_L);
     }
 
-    if ((field == FIELD_SUBJECT && (flags & SERD_LIST_S)) ||
-        (field == FIELD_OBJECT && (flags & SERD_LIST_O))) {
+    if ((field == SERD_SUBJECT && (flags & SERD_LIST_S)) ||
+        (field == SERD_OBJECT && (flags & SERD_LIST_O))) {
       return write_sep(writer, SEP_LIST_L);
     }
 
-    if ((field == FIELD_SUBJECT && (flags & SERD_EMPTY_S)) ||
-        (field == FIELD_OBJECT && (flags & SERD_EMPTY_O))) {
+    if ((field == SERD_SUBJECT && (flags & SERD_EMPTY_S)) ||
+        (field == SERD_OBJECT && (flags & SERD_EMPTY_O))) {
       return esink("[]", 2, writer);
     }
   }
@@ -969,7 +962,7 @@ write_node(SerdWriter* const        writer,
            const SerdNode* const    node,
            const SerdNode* const    datatype,
            const SerdNode* const    lang,
-           const Field              field,
+           const SerdField          field,
            const SerdStatementFlags flags)
 {
   return (node->type == SERD_LITERAL)
@@ -1021,7 +1014,7 @@ write_list_next(SerdWriter* const        writer,
   }
 
   if (!strcmp(predicate->buf, NS_RDF "first")) {
-    TRY(st, write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
+    TRY(st, write_node(writer, object, datatype, lang, SERD_OBJECT, flags));
   } else {
     TRY(st, write_sep(writer, SEP_LIST_SEP));
   }
@@ -1081,14 +1074,14 @@ serd_writer_write_statement(SerdWriter* const        writer,
 
   // Simple case: write a line of NTriples or NQuads
   if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
-    TRY(st, write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags));
+    TRY(st, write_node(writer, subject, NULL, NULL, SERD_SUBJECT, flags));
     TRY(st, esink(" ", 1, writer));
-    TRY(st, write_node(writer, predicate, NULL, NULL, FIELD_PREDICATE, flags));
+    TRY(st, write_node(writer, predicate, NULL, NULL, SERD_PREDICATE, flags));
     TRY(st, esink(" ", 1, writer));
-    TRY(st, write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
+    TRY(st, write_node(writer, object, datatype, lang, SERD_OBJECT, flags));
     if (writer->syntax == SERD_NQUADS && graph) {
       TRY(st, esink(" ", 1, writer));
-      TRY(st, write_node(writer, graph, datatype, lang, FIELD_GRAPH, flags));
+      TRY(st, write_node(writer, graph, datatype, lang, SERD_GRAPH, flags));
     }
     TRY(st, esink(" .\n", 3, writer));
     return SERD_SUCCESS;
@@ -1102,8 +1095,7 @@ serd_writer_write_statement(SerdWriter* const        writer,
     reset_context(writer, RESET_GRAPH | RESET_INDENT);
     TRY(st, write_newline(writer));
     if (out_graph) {
-      TRY(st,
-          write_node(writer, out_graph, datatype, lang, FIELD_GRAPH, flags));
+      TRY(st, write_node(writer, out_graph, datatype, lang, SERD_GRAPH, flags));
       TRY(st, write_sep(writer, SEP_GRAPH_L));
       copy_node(allocator, &writer->context.graph, out_graph);
     }
@@ -1145,7 +1137,7 @@ serd_writer_write_statement(SerdWriter* const        writer,
       TRY(st, write_pred(writer, predicate));
     }
 
-    TRY(st, write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
+    TRY(st, write_node(writer, object, datatype, lang, SERD_OBJECT, flags));
 
   } else {
     // No abbreviation
@@ -1162,7 +1154,7 @@ serd_writer_write_statement(SerdWriter* const        writer,
       TRY(st, write_newline(writer));
     }
 
-    TRY(st, write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags));
+    TRY(st, write_node(writer, subject, NULL, NULL, SERD_SUBJECT, flags));
     if (!(flags & SERD_LIST_S)) {
       TRY(st, write_sep(writer, SEP_S_P));
     }
@@ -1174,7 +1166,7 @@ serd_writer_write_statement(SerdWriter* const        writer,
       TRY(st, write_pred(writer, predicate));
     }
 
-    TRY(st, write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
+    TRY(st, write_node(writer, object, datatype, lang, SERD_OBJECT, flags));
   }
 
   if (flags & (SERD_ANON_S | SERD_LIST_S)) {
