@@ -168,6 +168,14 @@ typedef enum {
 /// Bitwise OR of SerdNodeFlag values
 typedef uint32_t SerdNodeFlags;
 
+/// Index of a node in a statement
+typedef enum {
+  SERD_SUBJECT   = 0, ///< Subject
+  SERD_PREDICATE = 1, ///< Predicate ("key")
+  SERD_OBJECT    = 2, ///< Object ("value")
+  SERD_GRAPH     = 3, ///< Graph ("context")
+} SerdField;
+
 /// A syntactic RDF node
 typedef struct SerdNodeImpl SerdNode;
 
