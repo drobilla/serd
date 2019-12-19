@@ -339,6 +339,7 @@ serd_env_expand(const SerdEnv* env, const SerdNode* node)
     case SERD_CURIE:
       return expand_curie(env, node);
     case SERD_BLANK:
+    case SERD_VARIABLE:
       return NULL;
     }
   }

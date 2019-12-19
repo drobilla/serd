@@ -167,7 +167,8 @@ serd_node_zero_pad(SerdNode* node)
 SerdNode*
 serd_new_simple_node(const SerdNodeType type, const SerdStringView str)
 {
-  if (type != SERD_BLANK && type != SERD_CURIE && type != SERD_URI) {
+  if (type != SERD_BLANK && type != SERD_CURIE && type != SERD_URI &&
+      type != SERD_VARIABLE) {
     return NULL;
   }
 

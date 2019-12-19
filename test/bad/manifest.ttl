@@ -71,6 +71,7 @@
 		<#bad-string>
 		<#bad-subject>
 		<#bad-uri-escape>
+		<#bad-var>
 		<#bad-verb>
 		<#invalid-char-in-local>
 		<#invalid-char-in-prefix>
@@ -399,6 +400,11 @@
 	rdf:type rdft:TestTurtleNegativeSyntax ;
 	mf:name "bad-uri-escape" ;
 	mf:action <bad-uri-escape.ttl> .
+
+<#bad-var>
+	rdf:type rdft:TestTurtleNegativeSyntax ;
+	mf:name "bad-var" ;
+	mf:action <bad-var.ttl> .
 
 <#bad-verb>
 	rdf:type rdft:TestTurtleNegativeSyntax ;

@@ -179,6 +179,7 @@ serd_reader_new(SerdWorld* const      world,
   me->sink    = sink;
   me->stack   = serd_stack_new(stack_size, serd_node_align);
   me->syntax  = syntax;
+  me->flags   = flags;
   me->next_id = 1;
   me->strict  = !(flags & SERD_READ_LAX);
 
