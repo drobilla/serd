@@ -174,6 +174,7 @@ serd_reader_new(SerdWorld*      world,
 	me->sink          = sink;
 	me->stack         = serd_stack_new(stack_size);
 	me->syntax        = syntax;
+	me->flags         = flags;
 	me->next_id       = 1;
 	me->strict        = !(flags & SERD_READ_LAX);
 

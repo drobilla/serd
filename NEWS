@@ -7,6 +7,7 @@ serd (1.0.1) unstable;
   * Add model for storing statements in memory
   * Add option for writing terse output without newlines
   * Add support for basic literal normalisation
+  * Add support for parsing variables
   * Add support for validation
   * Add support for writing terse collections
   * Add support for xsd:float and xsd:double literals
@@ -22,7 +23,7 @@ serd (1.0.1) unstable;
   * Use a fixed-size reader stack
   * Use char* for strings in public API
 
- -- David Robillard <d@drobilla.net>  Sat, 19 Jan 2019 12:31:12 +0000
+ -- David Robillard <d@drobilla.net>  Thu, 19 Dec 2019 14:47:28 -0500
 
 serd (0.30.3) unstable;
 

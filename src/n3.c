@@ -837,10 +837,50 @@ read_literal(SerdReader* reader, SerdNode** dest, bool* ate_dot)
 }
 
 static SerdStatus
+read_VARNAME(SerdReader* reader, SerdNode** dest)
+{
+	// Simplified from SPARQL: VARNAME ::= (PN_CHARS_U | [0-9])+
+	SerdNode*  n  = *dest;
+	SerdStatus st = SERD_SUCCESS;
+	int        c  = 0;
+	peek_byte(reader);
+	while ((c = peek_byte(reader))) {
+		if (is_digit(c) || c == '_') {
+			push_byte(reader, n, eat_byte_safe(reader, c));
+		} else if ((st = read_PN_CHARS(reader, n))) {
+			st = st > SERD_FAILURE ? st : SERD_SUCCESS;
+			break;
+		}
+	}
+
+	return st;
+}
+
+static SerdStatus
+read_Var(SerdReader* reader, SerdNode** dest)
+{
+	if (!(reader->flags & SERD_READ_VARIABLES)) {
+		return r_err(reader, SERD_ERR_BAD_SYNTAX,
+		             "syntax does not support variables\n");
+	} else if (!(*dest = push_node(reader, SERD_VARIABLE, "", 0))) {
+		return SERD_ERR_OVERFLOW;
+	}
+
+	assert(peek_byte(reader) == '$' || peek_byte(reader) == '?');
+	eat_byte(reader);
+
+	return read_VARNAME(reader, dest);
+}
+
+static SerdStatus
 read_verb(SerdReader* reader, SerdNode** dest)
 {
 	const size_t orig_stack_size = reader->stack.size;
-	if (peek_byte(reader) == '<') {
+
+	switch (peek_byte(reader)) {
+	case '$': case '?':
+		return read_Var(reader, dest);
+	case '<':
 		return read_IRIREF(reader, dest);
 	}
 
@@ -999,15 +1039,25 @@ read_object(SerdReader* reader, ReadContext* ctx, bool emit, bool* ate_dot)
 	const int  c      = peek_byte(reader);
 	if (!fancy_syntax(reader)) {
 		switch (c) {
-		case '"': case ':': case '<': case '_': break;
-		default: return r_err(reader, SERD_ERR_BAD_SYNTAX,
-		                      "expected: ':', '<', or '_'\n");
+		case '"': case ':': case '<': case '_':
+			break;
+		case '$': case '?':
+			if (reader->flags & SERD_READ_VARIABLES) {
+				break;
+			}
+			// fallthrough
+		default:
+			return r_err(reader, SERD_ERR_BAD_SYNTAX,
+			             "expected: ':', '<', or '_'\n");
 		}
 	}
 
 	switch (c) {
 	case EOF: case '\0': case ')':
 		return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected object\n");
+	case '$': case '?':
+		ret = read_Var(reader, &o);
+		break;
 	case '[':
 		simple = false;
 		ret = read_anon(reader, *ctx, false, &o);
@@ -1203,6 +1253,9 @@ read_subject(SerdReader* reader, ReadContext ctx, SerdNode** dest, int* s_type)
 	SerdStatus st      = SERD_SUCCESS;
 	bool       ate_dot = false;
 	switch ((*s_type = peek_byte(reader))) {
+	case '$': case '?':
+		st = read_Var(reader, dest);
+		break;
 	case '[':
 		read_anon(reader, ctx, true, dest);
 		break;
@@ -1519,11 +1572,21 @@ read_nquadsDoc(SerdReader* reader)
 			return SERD_ERR_BAD_SYNTAX;
 		}
 
-		// subject predicate object
 		if ((st = read_subject(reader, ctx, &ctx.subject, &s_type)) ||
-		    !read_ws_star(reader) ||
-		    (st = read_IRIREF(reader, &ctx.predicate)) ||
-		    !read_ws_star(reader) ||
+		    !read_ws_star(reader)) {
+			return st;
+		}
+
+		switch (peek_byte(reader)) {
+		case '$': case '?':
+			st = read_Var(reader, &ctx.predicate);
+			break;
+		case '<':
+			st = read_IRIREF(reader, &ctx.predicate);
+			break;
+		}
+
+		if (st || !read_ws_star(reader) ||
 		    (st = read_object(reader, &ctx, false, &ate_dot))) {
 			return st;
 		}

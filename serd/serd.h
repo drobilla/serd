@@ -188,7 +188,16 @@ typedef enum {
 	   is meaningful only within this serialisation.  @see [RDF 1.1
 	   Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
 	*/
-	SERD_BLANK = 4
+	SERD_BLANK = 4,
+
+	/**
+	   A variable node
+
+	   Value is a variable name without any syntactic prefix, like "name",
+	   which is meaningful only within this serialisation.  @see [SPARQL 1.1
+	   Query Language](https://www.w3.org/TR/sparql11-query/#rVar)
+	*/
+	SERD_VARIABLE = 5
 } SerdNodeType;
 
 /// Flags indicating certain string properties relevant to serialisation
@@ -258,7 +267,8 @@ typedef struct {
 
 /// Reader options
 typedef enum {
-	SERD_READ_LAX = 1 << 0  ///< Tolerate invalid input where possible
+	SERD_READ_LAX       = 1 << 0, ///< Tolerate invalid input where possible
+	SERD_READ_VARIABLES = 1 << 1  ///< Support variable nodes
 } SerdReaderFlag;
 
 /// Bitwise OR of SerdReaderFlag values

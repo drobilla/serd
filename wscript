@@ -572,7 +572,7 @@ def test(tst):
     import tempfile
 
     # Create test output directories
-    for i in ['bad', 'good', 'lax', 'normalise', 'terse', 'multifile',
+    for i in ['bad', 'good', 'lax', 'normalise', 'pattern', 'terse', 'multifile',
               'TurtleTests', 'NTriplesTests', 'NQuadsTests', 'TriGTests']:
         try:
             test_dir = os.path.join('tests', i)
@@ -697,6 +697,7 @@ def test(tst):
     test_suite(tst, serd_base + 'bad/', 'bad', None, 'Turtle')
     test_suite(tst, serd_base + 'lax/', 'lax', None, 'Turtle', ['-l'])
     test_suite(tst, serd_base + 'lax/', 'lax', None, 'Turtle')
+    test_suite(tst, serd_base + 'pattern/', 'pattern', None, 'Turtle', ['-x'])
     test_suite(tst, serd_base + 'normalise/', 'normalise', None, 'Turtle',
                ['-n'])
     test_suite(tst, serd_base + 'terse/', 'terse', None, 'Turtle', ['-t'],
