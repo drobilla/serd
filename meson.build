@@ -89,6 +89,7 @@ sources = [
   'src/canon.c',
   'src/cursor.c',
   'src/env.c',
+  'src/filter.c',
   'src/inserter.c',
   'src/iter.c',
   'src/model.c',
