@@ -203,6 +203,14 @@ if get_option('utils')
        suite: ['rdf', 'serd'],
        timeout: 240)
 
+  manifest = files('pattern' / 'manifest.ttl')
+  base_uri = serd_base + 'pattern' + '/'
+  test('pattern', run_test_suite,
+       args: script_args + [manifest, base_uri, '--', '-x'],
+       env: test_env,
+       suite: ['rdf', 'serd'],
+       timeout: 240)
+
   ### Run the lax suite with lax parsing enabled as well
   manifest = files('lax/manifest.ttl')
   base_uri = serd_base + 'lax/'

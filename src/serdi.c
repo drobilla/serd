@@ -73,6 +73,7 @@ print_usage(const char* const name, const bool error)
   fprintf(os, "  -t           Write terser output without newlines.\n");
   fprintf(os, "  -v           Display version information and exit.\n");
   fprintf(os, "  -w FILENAME  Write output to FILENAME instead of stdout.\n");
+  fprintf(os, "  -x           Support parsing variable nodes like `?x'.\n");
   return error ? 1 : 0;
 }
 
@@ -187,6 +188,8 @@ main(int argc, char** argv)
         writer_flags |= SERD_WRITE_TERSE;
       } else if (opt == 'v') {
         return print_version();
+      } else if (opt == 'x') {
+        reader_flags |= SERD_READ_VARIABLES;
       } else if (argv[a][1] == 'I') {
         if (++a == argc) {
           return missing_arg(prog, 'I');
