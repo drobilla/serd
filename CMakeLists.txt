@@ -43,7 +43,7 @@ src/zix/hash.c
 )
 #target_compile_definitions(serd_reader PUBLIC SERD_SHARED)
 #target_compile_definitions(serd_reader PRIVATE SERD_INTERNAL)
-target_include_directories(serd_reader PUBLIC ${CMAKE_SOURCE_DIR} src ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(serd_reader PUBLIC ${CMAKE_CURRENT_LIST_DIR} src ${CMAKE_CURRENT_BINARY_DIR})
 set_target_properties(serd_reader PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 add_library(serd_cpp INTERFACE)
