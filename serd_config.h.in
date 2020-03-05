@@ -1,0 +1,3 @@
+#pragma once
+//TODO add the same defines as the wscript
+#define SERD_VERSION "@SERD_VERSION@"
