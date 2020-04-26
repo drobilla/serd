@@ -1,10 +1,10 @@
-serd (0.30.3) unstable;
+serd (0.30.4) stable;
 
   * Fix EOF handling while reading in bulk or from strings
   * Fix lax handling of string errors
   * Fix reading from a null-delimited socket
 
- -- David Robillard <d@drobilla.net>  Sun, 08 Dec 2019 22:20:08 +0000
+ -- David Robillard <d@drobilla.net>  Sun, 26 Apr 2020 16:04:05 +0000
 
 serd (0.30.2) stable;
 
