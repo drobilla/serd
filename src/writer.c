@@ -129,7 +129,7 @@ w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
 
 	va_list args;
 	va_start(args, fmt);
-	const SerdError e = { st, NULL, 0, 0, fmt, &args };
+	const SerdError e = { st, (const uint8_t*)"", 0, 0, fmt, &args };
 	serd_error(writer->error_sink, writer->error_handle, &e);
 	va_end(args);
 }
