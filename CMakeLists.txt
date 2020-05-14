@@ -1,5 +1,7 @@
 cmake_minimum_required (VERSION 3.10.0)
-cmake_policy(SET CMP0076 NEW)
+if(POLICY 76)
+  cmake_policy(SET CMP0076 NEW)
+endif()
 project (serd)
 
 #TODO add the same defines as the wscript
@@ -48,12 +50,12 @@ set_target_properties(serd_reader PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 add_library(serd_cpp INTERFACE)
 target_sources(serd_cpp INTERFACE 
-serd/serd.hpp
-serd/detail/Copyable.hpp
-serd/detail/Flags.hpp
-serd/detail/Optional.hpp
-serd/detail/StringView.hpp
-serd/detail/Wrapper.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/serd/serd.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/serd/detail/Copyable.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/serd/detail/Flags.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/serd/detail/Optional.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/serd/detail/StringView.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/serd/detail/Wrapper.hpp
 )
 target_link_libraries(serd_cpp INTERFACE serd_reader)
 
@@ -65,7 +67,7 @@ target_link_libraries(serd_c INTERFACE serd_reader)
 
 if(CMAKE_CURRENT_LIST_DIR STREQUAL CMAKE_SOURCE_DIR)
     enable_testing()
-    add_custom_target(build_and_test ${CMAKE_CTEST_COMMAND} -V)
+    add_custom_target(build_and_test_serd ${CMAKE_CTEST_COMMAND} -V)
 
     macro(package_add_test TESTNAME)
         add_executable(${TESTNAME} ${ARGN})
@@ -73,7 +75,7 @@ if(CMAKE_CURRENT_LIST_DIR STREQUAL CMAKE_SOURCE_DIR)
         set_target_properties(${TESTNAME} PROPERTIES FOLDER tests)
         set_target_properties(${TESTNAME} PROPERTIES EXCLUDE_FROM_ALL TRUE)
         add_test(TEST_${TESTNAME} ${TESTNAME})
-        add_dependencies(build_and_test ${TESTNAME})
+        add_dependencies(build_and_test_serd ${TESTNAME})
     endmacro()
 
     package_add_test(serdi_static src/serdi.c)
