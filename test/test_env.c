@@ -46,6 +46,10 @@ test_env(void)
 
   serd_env_set_prefix(env, prefix, eg);
 
+  assert(!serd_env_base_uri(NULL));
+  assert(!serd_env_expand(NULL, NULL));
+  assert(!serd_env_qualify(NULL, foo_u));
+
   assert(!serd_env_base_uri(env));
   assert(!serd_env_set_base_uri(env, SERD_EMPTY_STRING()));
   assert(!serd_env_base_uri(env));

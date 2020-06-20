@@ -120,7 +120,7 @@ serd_env_base_uri_view(const SerdEnv* const env)
 const SerdNode*
 serd_env_base_uri(const SerdEnv* const env)
 {
-  return env->base_uri_node;
+  return env ? env->base_uri_node : NULL;
 }
 
 SerdStatus
@@ -211,6 +211,10 @@ serd_env_qualify_in_place(const SerdEnv* const   env,
                           const SerdNode** const prefix,
                           SerdStringView* const  suffix)
 {
+  if (!env) {
+    return false;
+  }
+
   for (size_t i = 0; i < env->n_prefixes; ++i) {
     const SerdNode* const prefix_uri = env->prefixes[i].uri;
     if (uri->length >= prefix_uri->length) {
@@ -253,6 +257,10 @@ serd_env_expand_in_place(const SerdEnv* const  env,
                          SerdStringView* const uri_prefix,
                          SerdStringView* const uri_suffix)
 {
+  if (!env) {
+    return SERD_ERR_BAD_CURIE;
+  }
+
   const char* const str   = serd_node_string(curie);
   const char* const colon = (const char*)memchr(str, ':', curie->length + 1);
   if (curie->type != SERD_CURIE || !colon) {
