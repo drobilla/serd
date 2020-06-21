@@ -146,6 +146,8 @@ unit_tests = [
   'free_null',
   'log',
   'node',
+  # FIXME
+  # 'node_syntax',
   'nodes',
   'overflow',
   'reader',
