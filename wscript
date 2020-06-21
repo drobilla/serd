@@ -11,7 +11,7 @@ from waflib.extras import autowaf
 # major increment <=> incompatible changes
 # minor increment <=> compatible changes (additions)
 # micro increment <=> no interface changes
-SERD_VERSION       = '0.30.4'
+SERD_VERSION       = '0.30.5'
 SERD_MAJOR_VERSION = '0'
 
 # Mandatory waf variables
@@ -61,11 +61,15 @@ def configure(conf):
         conf.env.append_unique('DEFINES', ['_FILE_OFFSET_BITS=64'])
 
     if not Options.options.no_posix:
-        for name, header in {'posix_memalign': 'stdlib.h',
-                             'posix_fadvise':  'fcntl.h',
-                             'fileno':         'stdio.h'}.items():
+        funcs = {'posix_memalign': ('stdlib.h', 'int', 'void**,size_t,size_t'),
+                 'posix_fadvise':  ('fcntl.h', 'int', 'int,off_t,off_t,int'),
+                 'fileno':         ('stdio.h', 'int', 'FILE*')}
+
+        for name, (header, ret, args) in funcs.items():
             conf.check_function('c', name,
                                 header_name = header,
+                                return_type = ret,
+                                arg_types   = args,
                                 define_name = 'HAVE_' + name.upper(),
                                 defines     = ['_POSIX_C_SOURCE=200809L'],
                                 mandatory   = False)

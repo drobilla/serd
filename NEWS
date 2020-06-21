@@ -1,3 +1,9 @@
+serd (0.30.5) unstable;
+
+  * Fix various minor warnings and other code quality issues
+
+ -- David Robillard <d@drobilla.net>  Sun, 21 Jun 2020 18:05:27 +0200
+
 serd (0.30.4) stable;
 
   * Fix EOF handling while reading in bulk or from strings
