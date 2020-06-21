@@ -82,6 +82,8 @@
 */
 
 #include "serd/input_stream.h"
+// FIXME
+// #include "serd/node_syntax.h"
 #include "serd/output_stream.h"
 #include "serd/reader.h"
 #include "serd/stream.h"

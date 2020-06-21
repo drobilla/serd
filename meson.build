@@ -135,6 +135,8 @@ c_headers = files(
   'include/serd/log.h',
   'include/serd/node.h',
   'include/serd/node_flags.h',
+  # FIXME
+  # 'include/serd/node_syntax.h',
   'include/serd/node_type.h',
   'include/serd/nodes.h',
   'include/serd/object_view.h',
@@ -167,6 +169,8 @@ sources = files(
   'src/input_stream.c',
   'src/log.c',
   'src/node.c',
+  # FIXME
+  # 'src/node_syntax.c',
   'src/nodes.c',
   'src/output_stream.c',
   'src/read_nquads.c',
