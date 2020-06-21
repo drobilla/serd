@@ -35,6 +35,7 @@ struct SerdWorldImpl {
   const SerdNode* xsd_boolean;
   const SerdNode* xsd_decimal;
   const SerdNode* xsd_integer;
+  const SerdNode* xsd_long;
   uint32_t        next_blank_id;
 };
 
