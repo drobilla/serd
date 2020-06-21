@@ -39,6 +39,8 @@
 
 #include "serd/env.h"
 
+#include "serd/node_syntax.h"
+
 #include "serd/reader.h"
 #include "serd/writer.h"
 
