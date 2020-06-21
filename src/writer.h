@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2020 David Robillard <d@drobilla.net>
+  Copyright 2019-2020 David Robillard <d@drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -14,33 +14,7 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#ifndef SERD_WORLD_H
-#define SERD_WORLD_H
-
 #include "serd/serd.h"
 
-#include <stdint.h>
-
-struct SerdWorldImpl {
-  SerdNodes*      nodes;
-  SerdErrorFunc   error_func;
-  void*           error_handle;
-  SerdNode*       blank_node;
-  const SerdNode* rdf_first;
-  const SerdNode* rdf_nil;
-  const SerdNode* rdf_rest;
-  const SerdNode* rdf_type;
-  const SerdNode* xsd_boolean;
-  const SerdNode* xsd_decimal;
-  const SerdNode* xsd_integer;
-  const SerdNode* xsd_long;
-  uint32_t        next_blank_id;
-};
-
 SerdStatus
-serd_world_error(const SerdWorld* world, const SerdError* e);
-
-SerdStatus
-serd_world_errorf(const SerdWorld* world, SerdStatus st, const char* fmt, ...);
-
-#endif // SERD_WORLD_H
+serd_writer_write_node(SerdWriter* writer, const SerdNode* node);
