@@ -333,6 +333,9 @@ test_reader(const char* path)
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0, sink, 4096);
   assert(reader);
 
+  assert(serd_reader_read_document(reader) == SERD_FAILURE);
+  assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
+
   serd_reader_add_blank_prefix(reader, "tmp");
 
 #if defined(__GNUC__)
