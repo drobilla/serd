@@ -254,7 +254,7 @@ test_blob_to_node(void)
 		assert(blob.n_bytes == blob.n_chars);
 		assert(blob.n_bytes == strlen((const char*)blob.buf));
 
-		size_t   out_size;
+		size_t   out_size = 0;
 		uint8_t* out = (uint8_t*)serd_base64_decode(
 			blob.buf, blob.n_bytes, &out_size);
 		assert(out_size == size);
@@ -274,9 +274,9 @@ test_strlen(void)
 {
 	const uint8_t str[] = { '"', '5', 0xE2, 0x82, 0xAC, '"', '\n', 0 };
 
-	size_t        n_bytes;
-	SerdNodeFlags flags;
-	size_t        len = serd_strlen(str, &n_bytes, &flags);
+	size_t        n_bytes = 0;
+	SerdNodeFlags flags   = 0;
+	size_t        len     = serd_strlen(str, &n_bytes, &flags);
 	assert(len == 5 && n_bytes == 7 &&
 	       flags == (SERD_HAS_QUOTE | SERD_HAS_NEWLINE));
 	len = serd_strlen(str, NULL, &flags);

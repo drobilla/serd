@@ -102,7 +102,7 @@ serd_uri_string_has_scheme(const uint8_t* utf8)
 		return false;  // Invalid scheme initial character, URI is relative
 	}
 
-	for (uint8_t c; (c = *++utf8) != '\0';) {
+	for (uint8_t c = 0; (c = *++utf8) != '\0';) {
 		if (!is_uri_scheme_char(c)) {
 			return false;
 		} else if (c == ':') {
@@ -153,7 +153,7 @@ maybe_authority:
 	if (*ptr == '/' && *(ptr + 1) == '/') {
 		ptr += 2;
 		out->authority.buf = ptr;
-		for (uint8_t c; (c = *ptr) != '\0'; ++ptr) {
+		for (uint8_t c = 0; (c = *ptr) != '\0'; ++ptr) {
 			switch (c) {
 			case '/': goto path;
 			case '?': goto query;
@@ -176,7 +176,7 @@ path:
 	}
 	out->path.buf = ptr;
 	out->path.len = 0;
-	for (uint8_t c; (c = *ptr) != '\0'; ++ptr) {
+	for (uint8_t c = 0; (c = *ptr) != '\0'; ++ptr) {
 		switch (c) {
 		case '?': goto query;
 		case '#': goto fragment;
@@ -192,7 +192,7 @@ path:
 query:
 	if (*ptr == '?') {
 		out->query.buf = ++ptr;
-		for (uint8_t c; (c = *ptr) != '\0'; ++ptr) {
+		for (uint8_t c = 0; (c = *ptr) != '\0'; ++ptr) {
 			if (c == '#') {
 				goto fragment;
 			}
@@ -287,7 +287,7 @@ remove_dot_segments(const uint8_t* path, size_t len, size_t* up)
 static void
 merge(SerdChunk* base, SerdChunk* path)
 {
-	size_t         up;
+	size_t         up    = 0;
 	const uint8_t* begin = remove_dot_segments(path->buf, path->len, &up);
 	const uint8_t* end   = path->buf + path->len;
 

@@ -545,9 +545,10 @@ write_curie(SerdWriter* const        writer,
             const Field              field,
             const SerdStatementFlags flags)
 {
-	SerdChunk  prefix;
-	SerdChunk  suffix;
-	SerdStatus st;
+	SerdChunk  prefix = {NULL, 0};
+	SerdChunk  suffix = {NULL, 0};
+	SerdStatus st     = SERD_SUCCESS;
+
 	switch (writer->syntax) {
 	case SERD_NTRIPLES:
 	case SERD_NQUADS:

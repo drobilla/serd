@@ -72,7 +72,7 @@ static inline void*
 serd_bufalloc(size_t size)
 {
 #ifdef HAVE_POSIX_MEMALIGN
-	void* ptr;
+	void*     ptr = NULL;
 	const int ret = posix_memalign(&ptr, SERD_PAGE_SIZE, size);
 	return ret ? NULL : ptr;
 #else
