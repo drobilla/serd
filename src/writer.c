@@ -512,7 +512,9 @@ write_uri_node(SerdWriter* const        writer,
 
 	write_sep(writer, SEP_URI_BEGIN);
 	if (writer->style & SERD_STYLE_RESOLVED) {
-		SerdURI in_base_uri, uri, abs_uri;
+		SerdURI in_base_uri;
+		SerdURI uri;
+		SerdURI abs_uri;
 		serd_env_get_base_uri(writer->env, &in_base_uri);
 		serd_uri_parse(node->buf, &uri);
 		serd_uri_resolve(&uri, &in_base_uri, &abs_uri);
