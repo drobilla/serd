@@ -4,7 +4,7 @@ import glob
 import os
 import sys
 
-from waflib import Logs, Options
+from waflib import Build, Logs, Options
 from waflib.extras import autowaf
 
 # Library and package version (UNIX style major, minor, micro)
@@ -46,6 +46,11 @@ def configure(conf):
 
     if Options.options.strict and not conf.env.MSVC_COMPILER:
         conf.env.append_unique('CFLAGS', '-Wno-cast-align')
+
+        # Check for programs used by lint target
+        conf.find_program("flake8", var="FLAKE8", mandatory=False)
+        conf.find_program("clang-tidy", var="CLANG_TIDY", mandatory=False)
+        conf.find_program("iwyu_tool", var="IWYU_TOOL", mandatory=False)
 
     conf.env.update({
         'BUILD_UTILS': not Options.options.no_utils,
@@ -196,29 +201,52 @@ def build(bld):
     bld.add_post_fun(autowaf.run_ldconfig)
 
 
+class LintContext(Build.BuildContext):
+    fun = cmd = 'lint'
+
+
 def lint(ctx):
     "checks code for style issues"
     import subprocess
 
-    subprocess.call(["flake8",
-                     "wscript",
-                     "--ignore=E101,E129,W191,E221,W504,E251,E241,E741"])
+    st = 0
 
-    cmd = ("clang-tidy -p=. -header-filter=.* -checks=\"*," +
-           "-bugprone-suspicious-string-compare," +
-           "-clang-analyzer-alpha.*," +
-           "-google-readability-todo," +
-           "-hicpp-signed-bitwise," +
-           "-llvm-header-guard," +
-           "-misc-unused-parameters," +
-           "-readability-else-after-return\" " +
-           "../src/*.c")
-    subprocess.call(cmd, cwd='build', shell=True)
+    if "FLAKE8" in ctx.env:
+        Logs.info("Running flake8")
+        st = subprocess.call([ctx.env.FLAKE8[0],
+                              "wscript",
+                              "--ignore",
+                              "E101,E129,W191,E221,W504,E251,E241,E741"])
+    else:
+        Logs.warn("Not running flake8")
 
-    try:
-        subprocess.call(["iwyu_tool.py", "-o", "clang", "-p", "build"])
-    except Exception:
-        Logs.warn("Failed to call iwyu_tool.py")
+    if "IWYU_TOOL" in ctx.env:
+        Logs.info("Running include-what-you-use")
+        cmd = [ctx.env.IWYU_TOOL[0], "-o", "clang", "-p", "build"]
+        output = subprocess.check_output(cmd).decode('utf-8')
+        if 'error: ' in output:
+            sys.stdout.write(output)
+            st += 1
+    else:
+        Logs.warn("Not running include-what-you-use")
+
+    if "CLANG_TIDY" in ctx.env and "clang" in ctx.env.CC[0]:
+        Logs.info("Running clang-tidy")
+        sources = glob.glob('src/*.c') + glob.glob('tests/*.c')
+        sources = list(map(os.path.abspath, sources))
+        procs = []
+        for source in sources:
+            cmd = [ctx.env.CLANG_TIDY[0], "--quiet", "-p=.", source]
+            procs += [subprocess.Popen(cmd, cwd="build")]
+
+        for proc in procs:
+            stdout, stderr = proc.communicate()
+            st += proc.returncode
+    else:
+        Logs.warn("Not running clang-tidy")
+
+    if st != 0:
+        sys.exit(st)
 
 
 def amalgamate(ctx):
