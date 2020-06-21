@@ -87,6 +87,10 @@ serd_byte_source_open_source(SerdByteSource* const     source,
 SerdStatus
 serd_byte_source_prepare(SerdByteSource* const source)
 {
+  if (source->page_size == 0) {
+    return SERD_FAILURE;
+  }
+
   source->prepared = true;
 
   if (source->from_stream) {
