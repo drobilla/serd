@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import glob
-import io
 import os
 import sys
 
@@ -26,6 +25,7 @@ uri          = 'http://drobilla.net/sw/serd'
 dist_pattern = 'http://download.drobilla.net/serd-%d.%d.%d.tar.bz2'
 post_tags    = ['Hacking', 'RDF', 'Serd']
 
+
 def options(ctx):
     ctx.load('compiler_c')
     ctx.add_flags(
@@ -38,16 +38,18 @@ def options(ctx):
          'largefile':    'build with large file support on 32-bit systems',
          'no-posix':     'do not use POSIX functions, even if present'})
 
+
 def configure(conf):
     conf.load('compiler_c', cache=True)
     conf.load('autowaf', cache=True)
     autowaf.set_c_lang(conf, 'c99')
 
     conf.env.update({
-        'BUILD_UTILS':  not Options.options.no_utils,
+        'BUILD_UTILS': not Options.options.no_utils,
         'BUILD_SHARED': not Options.options.no_shared,
         'STATIC_PROGS': Options.options.static_progs,
-        'BUILD_STATIC': Options.options.static or Options.options.static_progs})
+        'BUILD_STATIC': (Options.options.static or
+                         Options.options.static_progs)})
 
     if not conf.env.BUILD_SHARED and not conf.env.BUILD_STATIC:
         conf.fatal('Neither a shared nor a static build requested')
@@ -78,6 +80,7 @@ def configure(conf):
          'Build utilities':      bool(conf.env['BUILD_UTILS']),
          'Build unit tests':     bool(conf.env['BUILD_TESTS'])})
 
+
 lib_headers = ['src/reader.h']
 
 lib_source = ['src/byte_source.c',
@@ -89,6 +92,7 @@ lib_source = ['src/byte_source.c',
               'src/uri.c',
               'src/writer.c']
 
+
 def build(bld):
     # C Headers
     includedir = '${INCLUDEDIR}/serd-%s/serd' % SERD_MAJOR_VERSION
@@ -96,7 +100,7 @@ def build(bld):
 
     # Pkgconfig file
     autowaf.build_pc(bld, 'SERD', SERD_VERSION, SERD_MAJOR_VERSION, [],
-                     {'SERD_MAJOR_VERSION' : SERD_MAJOR_VERSION})
+                     {'SERD_MAJOR_VERSION': SERD_MAJOR_VERSION})
 
     defines = []
     lib_args = {'export_includes': ['.'],
@@ -129,9 +133,10 @@ def build(bld):
             **lib_args)
 
     if bld.env.BUILD_TESTS:
+        coverage_flags = [''] if bld.env.NO_COVERAGE else ['--coverage']
         test_args = {'includes':     ['.', './src'],
-                     'cflags':       [''] if bld.env.NO_COVERAGE else ['--coverage'],
-                     'linkflags':    [''] if bld.env.NO_COVERAGE else ['--coverage'],
+                     'cflags':       coverage_flags,
+                     'linkflags':    coverage_flags,
                      'lib':          lib_args['lib'],
                      'install_path': ''}
 
@@ -183,9 +188,15 @@ def build(bld):
 
     bld.add_post_fun(autowaf.run_ldconfig)
 
+
 def lint(ctx):
     "checks code for style issues"
     import subprocess
+
+    subprocess.call(["flake8",
+                     "wscript",
+                     "--ignore=E101,E129,W191,E221,W504,E251,E241,E741"])
+
     cmd = ("clang-tidy -p=. -header-filter=.* -checks=\"*," +
            "-bugprone-suspicious-string-compare," +
            "-clang-analyzer-alpha.*," +
@@ -196,6 +207,7 @@ def lint(ctx):
            "-readability-else-after-return\" " +
            "../src/*.c")
     subprocess.call(cmd, cwd='build', shell=True)
+
 
 def amalgamate(ctx):
     "builds single-file amalgamated source"
@@ -214,13 +226,13 @@ def amalgamate(ctx):
                     if header:
                         if l == '*/\n':
                             header = False
-                    else:
-                        if (not l.startswith('#include "') and
-                            l != '#include "serd.h"\n'):
-                            amalgamation.write(l)
+                    elif (not l.startswith('#include "') and
+                          l != '#include "serd.h"\n'):
+                        amalgamation.write(l)
 
     for i in ['c', 'h']:
         Logs.info('Wrote build/serd.%s' % i)
+
 
 def earl_assertion(test, passed, asserter):
     import datetime
@@ -244,7 +256,9 @@ def earl_assertion(test, passed, asserter):
        'earl:passed' if passed else 'earl:failed',
        datetime.datetime.now().replace(microsecond=0).isoformat())
 
+
 serdi = './serdi_static'
+
 
 def test_thru(check, base, path, check_path, flags, isyntax, osyntax, opts=[]):
     out_path = path + '.pass'
@@ -266,15 +280,17 @@ def test_thru(check, base, path, check_path, flags, isyntax, osyntax, opts=[]):
             check(thru_cmd, stdout=thru_path, verbosity=0, name=thru_path) and
             check.file_equals(check_path, thru_path, verbosity=0))
 
+
 def file_uri_to_path(uri):
     try:
-        from urlparse import urlparse # Python 2
-    except:
-        from urllib.parse import urlparse # Python 3
+        from urlparse import urlparse  # Python 2
+    except ImportError:
+        from urllib.parse import urlparse  # Python 3
 
     path  = urlparse(uri).path
     drive = os.path.splitdrive(path[1:])[0]
     return path if not drive else path[1:]
+
 
 def _test_output_syntax(test_class):
     if 'NTriples' in test_class or 'Turtle' in test_class:
@@ -282,6 +298,7 @@ def _test_output_syntax(test_class):
     elif 'NQuads' in test_class or 'Trig' in test_class:
         return 'NQuads'
     raise Exception('Unknown test class <%s>' % test_class)
+
 
 def _load_rdf(filename):
     "Load an RDF file into python dictionaries via serdi.  Only supports URIs."
@@ -299,7 +316,8 @@ def _load_rdf(filename):
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     for line in proc.communicate()[0].splitlines():
-        matches = re.match('<([^ ]*)> <([^ ]*)> <([^ ]*)> \.', line.decode('utf-8'))
+        matches = re.match(r'<([^ ]*)> <([^ ]*)> <([^ ]*)> \.',
+                           line.decode('utf-8'))
         if matches:
             s, p, o = (matches.group(1), matches.group(2), matches.group(3))
             if s not in model:
@@ -316,6 +334,7 @@ def _load_rdf(filename):
                     instances[o].update([s])
 
     return model, instances
+
 
 def test_suite(ctx, base_uri, testdir, report, isyntax, options=[]):
     import itertools
@@ -342,14 +361,17 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, options=[]):
         with ctx.group(tests_name) as check:
             for test in sorted(tests):
                 action_node = model[test][mf + 'action'][0]
-                action      = os.path.join('tests', testdir, os.path.basename(action_node))
+                basename    = os.path.basename(action_node)
+                action      = os.path.join('tests', testdir, basename)
                 rel_action  = os.path.join(os.path.relpath(srcdir), action)
                 uri         = base_uri + os.path.basename(action)
                 command     = [serdi] + options + ['-f', rel_action, uri]
 
                 # Run strict test
                 if expected_return == 0:
-                    result = check(command, stdout=action + '.out', name=action)
+                    result = check(command,
+                                   stdout=action + '.out',
+                                   name=action)
                 else:
                     result = check(command,
                                    stdout=action + '.out',
@@ -377,8 +399,10 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, options=[]):
     ns_rdftest = 'http://www.w3.org/ns/rdftest#'
     for test_class, instances in instances.items():
         if test_class.startswith(ns_rdftest):
-            expected = 1 if '-l' not in options and 'Negative' in test_class else 0
+            expected = (1 if '-l' not in options and 'Negative' in test_class
+                        else 0)
             run_tests(test_class, instances, expected)
+
 
 def test(tst):
     import tempfile
@@ -391,7 +415,7 @@ def test(tst):
             os.makedirs(test_dir)
             for i in glob.glob(test_dir + '/*.*'):
                 os.remove(i)
-        except:
+        except Exception:
             pass
 
     srcdir = tst.path.abspath()
@@ -422,7 +446,9 @@ def test(tst):
         with tempfile.TemporaryFile(mode='r') as stdin:
             check([serdi, '-'], stdin=stdin)
 
-    with tst.group('BadCommands', expected=1, stderr=autowaf.NONEMPTY) as check:
+    with tst.group('BadCommands',
+                   expected=1,
+                   stderr=autowaf.NONEMPTY) as check:
         check([serdi])
         check([serdi, '/no/such/file'])
         check([serdi, 'ftp://example.org/unsupported.ttl'])
@@ -447,7 +473,6 @@ def test(tst):
     if sys.version_info.major >= 3:
         from waflib.extras import autoship
         try:
-            import rdflib
             with tst.group('NEWS') as check:
                 news_path = os.path.join(srcdir, 'NEWS')
                 entries = autoship.read_news(top=srcdir)
