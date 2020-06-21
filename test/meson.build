@@ -11,6 +11,7 @@ unit_tests = [
   'env',
   'free_null',
   'node',
+  'node_syntax',
   'nodes',
   'overflow',
   'read_chunk',

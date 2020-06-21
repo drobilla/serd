@@ -88,6 +88,7 @@ sources = [
   'src/env.c',
   'src/n3.c',
   'src/node.c',
+  'src/node_syntax.c',
   'src/nodes.c',
   'src/reader.c',
   'src/sink.c',
