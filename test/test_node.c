@@ -651,7 +651,7 @@ test_node_equals(void)
 }
 
 static void
-test_node_from_string(void)
+test_node_from_syntax(void)
 {
   SerdNode* const     hello = serd_node_new(NULL, serd_a_string("hello\""));
   const ZixStringView hello_string = serd_node_string_view(hello);
@@ -879,7 +879,7 @@ main(void)
   test_base64();
   test_decode();
   test_node_equals();
-  test_node_from_string();
+  test_node_from_syntax();
   test_node_from_substring();
   test_uri();
   test_literal();
