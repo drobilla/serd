@@ -1,6 +1,9 @@
 option('bindings_cpp', type: 'feature', value: 'auto', yield: true,
        description: 'Build C++ bindings')
 
+option('bindings_py', type: 'feature', value: 'auto', yield: true,
+       description: 'Build Python bindings')
+
 option('docs', type: 'feature', value: 'auto', yield: true,
        description: 'Build documentation')
 

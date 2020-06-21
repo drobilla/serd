@@ -206,10 +206,32 @@ if is_variable('cpp')
   subdir('bindings/cpp')
 endif
 
+# Find system programs we might need for the build
+cython = find_program('cython3', required: get_option('bindings_py'))
+doxygen = find_program('doxygen', required: get_option('docs'))
+sphinx_build = find_program(
+  'sphinx-build',
+  required: (get_option('docs').enabled() or
+             (get_option('bindings_py').enabled() and
+              get_option('tests'))))
+
+docdir = get_option('datadir') / 'doc'
+
+# Python bindings
+py_dep = disabler()
+if not get_option('bindings_py').disabled()
+  pymod = import('python')
+  py = pymod.find_installation('python3')
+  py_dep = py.dependency(required: get_option('bindings_py'))
+  if py_dep.found() and cython.found()
+    subdir('bindings/python')
+  endif
+endif
+
 if not meson.is_subproject() and meson.version().version_compare('>=0.53.0')
   summary('Tests', get_option('tests'), bool_yn: true)
   summary('Utilities', get_option('utils'), bool_yn: true)
-
+  summary('Python bindings', py_dep.found() and cython.found(), bool_yn: true)
   summary('Install prefix', get_option('prefix'))
 
   summary('Headers', get_option('prefix') / get_option('includedir'))
