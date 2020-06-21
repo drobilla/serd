@@ -2,7 +2,7 @@ serd (0.30.5) unstable;
 
   * Fix various minor warnings and other code quality issues
 
- -- David Robillard <d@drobilla.net>  Sun, 21 Jun 2020 18:05:27 +0200
+ -- David Robillard <d@drobilla.net>  Sun, 21 Jun 2020 16:05:27 +0000
 
 serd (0.30.4) stable;
 
