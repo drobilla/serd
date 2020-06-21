@@ -211,7 +211,7 @@ test_double_to_node(void)
 	for (unsigned i = 0; i < sizeof(dbl_test_nums) / sizeof(double); ++i) {
 		SerdNode   node = serd_node_new_decimal(dbl_test_nums[i], 8);
 		const bool pass = (node.buf && dbl_test_strs[i])
-			? !strcmp((const char*)node.buf, (const char*)dbl_test_strs[i])
+			? !strcmp((const char*)node.buf, dbl_test_strs[i])
 			: ((const char*)node.buf == dbl_test_strs[i]);
 		assert(pass);
 		const size_t len = node.buf ? strlen((const char*)node.buf) : 0;
