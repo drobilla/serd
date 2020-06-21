@@ -7,11 +7,7 @@ Files: .clang-format **/.clang* .clant.json .includes.imp meson_options.txt test
 Copyright: 2022 David Robillard <d@drobilla.net>
 License: CC0-1.0 OR ISC
 
-Files: *.md AUTHORS INSTALL NEWS resources/* doc/*.1 doc/*.svg doc/*.css serd.ttl scripts/*
-Copyright: 2022 David Robillard <d@drobilla.net>
-License: ISC
-
-Files: doc/*.rst
+Files: *.md **/*.css **/*.svg AUTHORS INSTALL NEWS bindings/python/*.rst doc/*.1 doc/*.rst resources/* scripts/* serd.ttl
 Copyright: 2022 David Robillard <d@drobilla.net>
 License: ISC
 

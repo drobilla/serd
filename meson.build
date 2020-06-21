@@ -152,6 +152,15 @@ endif
 
 # Programs used by the build
 
+if not get_option('bindings_py').disabled()
+  cython3 = find_program('cython3', required: false)
+  if cython3.found()
+    cython = cython3
+  else
+    cython = find_program('cython', required: get_option('bindings_py'))
+  endif
+endif
+
 mandoc = find_program('mandoc', required: get_option('man_html'))
 
 sphinx_build = find_program(
@@ -159,7 +168,9 @@ sphinx_build = find_program(
   required: (get_option('docs').enabled() or
              get_option('epub').enabled() or
              get_option('html').enabled() or
-             get_option('singlehtml').enabled()))
+             get_option('singlehtml').enabled() or
+             (get_option('bindings_py').enabled() and
+              get_option('tests'))))
 
 # Determine library type and the flags needed to build it
 library_name = versioned_name
@@ -249,9 +260,21 @@ if get_option('tests')
   subdir('test')
 endif
 
+# Python bindings
+py_dep = disabler()
+if not get_option('bindings_py').disabled()
+  pymod = import('python')
+  py = pymod.find_installation('python3')
+  py_dep = py.dependency(required: get_option('bindings_py').enabled())
+  if py_dep.found() and cython.found()
+    subdir('bindings/python')
+  endif
+endif
+
 if not meson.is_subproject() and meson.version().version_compare('>=0.53.0')
   summary('Tests', get_option('tests'), bool_yn: true)
   summary('Tools', get_option('tools'), bool_yn: true)
+  summary('Python bindings', py_dep.found() and cython.found(), bool_yn: true)
 
   summary('Install prefix', get_option('prefix'))
 
