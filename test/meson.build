@@ -109,6 +109,7 @@ unit_tests = [
   'free_null',
   'log',
   'node',
+  'node_syntax',
   'overflow',
   'reader',
   'reader_writer',
