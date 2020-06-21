@@ -143,7 +143,14 @@ if host_machine.system() != 'windows'
 endif
 
 # Programs used by the build
+cython = find_program('cython3', required: get_option('bindings_py'))
+doxygen = find_program('doxygen', required: get_option('docs'))
 mandoc = find_program('mandoc', required: false)
+sphinx_build = find_program(
+  'sphinx-build',
+  required: (get_option('docs').enabled() or
+             (get_option('bindings_py').enabled() and
+              get_option('tests'))))
 
 # Determine library type and the flags needed to build it
 library_name = versioned_name
@@ -230,6 +237,7 @@ if is_variable('cpp')
   subdir('bindings/cpp')
 endif
 
+docdir = get_option('datadir') / 'doc'
 if not get_option('docs').disabled()
   subdir('doc')
 endif
@@ -240,9 +248,21 @@ endif
 
 subdir('schemas')
 
+# Python bindings
+py_dep = disabler()
+if not get_option('bindings_py').disabled()
+  pymod = import('python')
+  py = pymod.find_installation('python3')
+  py_dep = py.dependency(required: get_option('bindings_py'))
+  if py_dep.found() and cython.found()
+    subdir('bindings/python')
+  endif
+endif
+
 if not meson.is_subproject() and meson.version().version_compare('>=0.53.0')
   summary('Tests', get_option('tests'), bool_yn: true)
   summary('Tools', get_option('tools'), bool_yn: true)
+  summary('Python bindings', py_dep.found() and cython.found(), bool_yn: true)
 
   summary('Install prefix', get_option('prefix'))
 

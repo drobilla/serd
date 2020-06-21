@@ -168,10 +168,13 @@ pages:
     - mkdir public/c
     - mkdir public/c/epub
     - mkdir public/man
+    - mkdir public/python
     - mv build/meson-logs/coveragereport/ public/coverage
     - mv build/doc/c/html/ public/c/html/
     - mv build/doc/c/singlehtml/ public/c/singlehtml/
     - mv build/doc/c/epub/Serd-*.epub public/c/epub/
+    - mv bindings/python/html/ public/python/html/
+    - mv bindings/python/singlehtml/ public/python/singlehtml/
     - mv build/doc/man/ public/man/
   dependencies:
     - x64_dbg
