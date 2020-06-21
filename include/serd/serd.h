@@ -88,7 +88,7 @@ extern "C" {
    @{
 */
 
-/// Flags indicating certain string properties relevant to serialisation
+/// Flags that describe the details of a node
 typedef enum {
   SERD_IS_LONG      = 1u << 0u, ///< Literal node should be triple-quoted
   SERD_HAS_DATATYPE = 1u << 1u, ///< Literal node has datatype
