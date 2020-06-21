@@ -288,13 +288,12 @@ test_strlen(void)
 static void
 test_strerror(void)
 {
-	const uint8_t* msg = NULL;
-	assert(!strcmp((const char*)(msg = serd_strerror(SERD_SUCCESS)), "Success"));
+	assert(!strcmp((const char*)(serd_strerror(SERD_SUCCESS)), "Success"));
 	for (int i = SERD_FAILURE; i <= SERD_ERR_INTERNAL; ++i) {
-		msg = serd_strerror((SerdStatus)i);
+		const uint8_t* const msg = serd_strerror((SerdStatus)i);
 		assert(strcmp((const char*)msg, "Success"));
 	}
-	msg = serd_strerror((SerdStatus)-1);
+	serd_strerror((SerdStatus)-1);
 }
 
 static void

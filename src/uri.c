@@ -413,7 +413,7 @@ write_rel_path(SerdSink       sink,
 	}
 
 	// Write suffix
-	return len += write_path_tail(sink, stream, uri, last_shared_sep + 1);
+	return len + write_path_tail(sink, stream, uri, last_shared_sep + 1);
 }
 
 static uint8_t

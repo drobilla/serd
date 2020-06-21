@@ -1147,7 +1147,7 @@ read_collection(SerdReader* reader, ReadContext ctx, Ref* dest)
 	Ref rest = 0;
 
 	ctx.subject = *dest;
-	while (!(end = peek_delim(reader, ')'))) {
+	while (!peek_delim(reader, ')')) {
 		// _:node rdf:first object
 		ctx.predicate = reader->rdf_first;
 		bool ate_dot = false;
