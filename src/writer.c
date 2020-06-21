@@ -259,6 +259,8 @@ lname_must_escape(const uint8_t c)
 	case '(': case ')': case '*': case '+': case ',': case '/':
 	case ';': case '=': case '?': case '@': case '~':
 		return true;
+	default:
+		break;
 	}
 	return false;
 }
@@ -338,6 +340,7 @@ write_text(SerdWriter* writer, TextContext ctx,
 				switch (in) {
 				case '\b': len += sink("\\b", 2, writer); continue;
 				case '\f': len += sink("\\f", 2, writer); continue;
+				default: break;
 				}
 			}
 		}

@@ -41,6 +41,7 @@ serd_strerror(SerdStatus status)
 	case SERD_ERR_ID_CLASH:   return (const uint8_t*)"Blank node ID clash";
 	case SERD_ERR_BAD_CURIE:  return (const uint8_t*)"Invalid CURIE";
 	case SERD_ERR_INTERNAL:   return (const uint8_t*)"Internal error";
+	default:                  break;
 	}
 	return (const uint8_t*)"Unknown error";  // never reached
 }
@@ -54,6 +55,8 @@ serd_update_flags(const uint8_t c, SerdNodeFlags* const flags)
 		break;
 	case '"':
 		*flags |= SERD_HAS_QUOTE;
+	default:
+		break;
 	}
 }
 

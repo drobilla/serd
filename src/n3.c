@@ -121,6 +121,9 @@ read_UCHAR(SerdReader* reader, Ref dest, uint32_t* char_code)
         // fallthru
 	case 1:
 		buf[0] = (uint8_t)c;
+		// fallthru
+	default:
+		break;
 	}
 
 	push_bytes(reader, dest, buf, size);
@@ -242,6 +245,8 @@ read_character(SerdReader* reader, Ref dest, SerdNodeFlags* flags, uint8_t c)
 			break;
 		case '"': case '\'':
 			*flags |= SERD_HAS_QUOTE;
+			break;
+		default:
 			break;
 		}
 		push_byte(reader, dest, c);
@@ -661,6 +666,8 @@ read_IRIREF(SerdReader* reader)
 				r_err(reader, SERD_ERR_BAD_SYNTAX,
 				      "invalid escaped IRI character %X %c\n", code, code);
 				return pop_node(reader, ref);
+			default:
+				break;
 			}
 			break;
 		default:
