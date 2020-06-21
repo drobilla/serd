@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2017 David Robillard <http://drobilla.net>
+  Copyright 2011-2020 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -17,7 +17,6 @@
 #include "reader.h"
 #include "serd_internal.h"
 
-#include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdint.h>

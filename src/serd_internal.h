@@ -19,19 +19,20 @@
 
 #define _POSIX_C_SOURCE 200809L /* for posix_memalign and posix_fadvise */
 
+#include "serd_config.h"
+
+#include "serd/serd.h"
+
+#if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
+#   include <fcntl.h>
+#endif
+
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "serd/serd.h"
-#include "serd_config.h"
-
-#if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
-#   include <fcntl.h>
-#endif
 
 #define NS_XSD "http://www.w3.org/2001/XMLSchema#"
 #define NS_RDF "http://www.w3.org/1999/02/22-rdf-syntax-ns#"

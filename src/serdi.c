@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2017 David Robillard <http://drobilla.net>
+  Copyright 2011-2020 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -14,16 +14,19 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "serd_config.h"
 #include "serd_internal.h"
+
+#include "serd/serd.h"
 
 #ifdef _WIN32
 #include <fcntl.h>
 #include <io.h>
 #endif
 
-#include <assert.h>
-#include <errno.h>
-#include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #define SERDI_ERROR(msg)       fprintf(stderr, "serdi: " msg);

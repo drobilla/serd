@@ -44,6 +44,9 @@ def configure(conf):
     conf.load('autowaf', cache=True)
     autowaf.set_c_lang(conf, 'c99')
 
+    if Options.options.strict and not conf.env.MSVC_COMPILER:
+        conf.env.append_unique('CFLAGS', '-Wno-cast-align')
+
     conf.env.update({
         'BUILD_UTILS': not Options.options.no_utils,
         'BUILD_SHARED': not Options.options.no_shared,
@@ -211,6 +214,11 @@ def lint(ctx):
            "-readability-else-after-return\" " +
            "../src/*.c")
     subprocess.call(cmd, cwd='build', shell=True)
+
+    try:
+        subprocess.call(["iwyu_tool.py", "-o", "clang", "-p", "build"])
+    except Exception:
+        Logs.warn("Failed to call iwyu_tool.py")
 
 
 def amalgamate(ctx):
