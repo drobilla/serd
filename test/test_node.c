@@ -429,7 +429,7 @@ test_node_equals(void)
 }
 
 static void
-test_node_from_string(void)
+test_node_from_syntax(void)
 {
   SerdNode* const hello = serd_new_string(SERD_STRING("hello\""));
   assert(serd_node_length(hello) == 6);
@@ -547,7 +547,7 @@ main(void)
   test_base64();
   test_get_base64();
   test_node_equals();
-  test_node_from_string();
+  test_node_from_syntax();
   test_node_from_substring();
   test_simple_node();
   test_literal();
