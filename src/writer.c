@@ -1,6 +1,8 @@
 // Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
+#include "writer.h"
+
 #include "block_dumper.h"
 #include "log.h"
 #include "memory.h"
@@ -18,7 +20,6 @@
 #include "serd/event.h"
 #include "serd/field.h"
 #include "serd/log.h"
-#include "serd/node.h"
 #include "serd/output_stream.h"
 #include "serd/sink.h"
 #include "serd/statement_view.h"
@@ -1403,6 +1404,12 @@ serd_writer_on_event(void* const handle, const SerdEvent* const event)
   }
 
   return SERD_BAD_ARG;
+}
+
+SerdStatus
+serd_writer_write_node(SerdWriter* writer, const SerdNode* node)
+{
+  return write_node(writer, node, SERD_OBJECT, 0);
 }
 
 SerdStatus
