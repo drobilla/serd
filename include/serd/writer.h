@@ -8,6 +8,7 @@
 #include "serd/buffer.h"
 #include "serd/byte_sink.h"
 #include "serd/env.h"
+#include "serd/log.h"
 #include "serd/node.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
