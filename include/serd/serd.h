@@ -769,6 +769,44 @@ serd_write_uri(SerdURIView                uri,
 */
 
 /**
+   Create a node from a string representation in `syntax`.
+
+   The string should be a node as if written as an object in the given syntax,
+   without any extra quoting or punctuation, which is the format returned by
+   serd_node_to_syntax().  These two functions, when used with #SERD_TURTLE,
+   can be used to round-trip any node to a string and back.
+
+   @param str String representation of a node.
+
+   @param syntax Syntax to use.  Should be either SERD_TURTLE or SERD_NTRIPLES
+   (the others are redundant).  Note that namespaced (CURIE) nodes and relative
+   URIs can not be expressed in NTriples.
+
+   @return A newly allocated node that must be freed with serd_node_free().
+*/
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_node_from_syntax(const char* SERD_NONNULL str, SerdSyntax syntax);
+
+/**
+   Return a string representation of `node` in `syntax`.
+
+   The returned string represents that node as if written as an object in the
+   given syntax, without any extra quoting or punctuation.
+
+   @param node Node to write as a string.
+
+   @param syntax Syntax to use.  Should be either SERD_TURTLE or SERD_NTRIPLES
+   (the others are redundant).  Note that namespaced (CURIE) nodes and relative
+   URIs can not be expressed in NTriples.
+
+   @return A newly allocated string that must be freed with serd_free().
+*/
+SERD_API
+char* SERD_ALLOCATED
+serd_node_to_syntax(const SerdNode* SERD_NONNULL node, SerdSyntax syntax);
+
+/**
    Create a new "simple" node that is just a string.
 
    This can be used to create blank, CURIE, or URI nodes from an already

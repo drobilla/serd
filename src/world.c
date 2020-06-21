@@ -75,6 +75,7 @@ serd_world_new(void)
   const SerdStringView xsd_boolean = SERD_STATIC_STRING(NS_XSD "boolean");
   const SerdStringView xsd_decimal = SERD_STATIC_STRING(NS_XSD "decimal");
   const SerdStringView xsd_integer = SERD_STATIC_STRING(NS_XSD "integer");
+  const SerdStringView xsd_long    = SERD_STATIC_STRING(NS_XSD "long");
 
   world->rdf_first   = serd_nodes_manage(nodes, serd_new_uri(rdf_first));
   world->rdf_nil     = serd_nodes_manage(nodes, serd_new_uri(rdf_nil));
@@ -83,6 +84,7 @@ serd_world_new(void)
   world->xsd_boolean = serd_nodes_manage(nodes, serd_new_uri(xsd_boolean));
   world->xsd_decimal = serd_nodes_manage(nodes, serd_new_uri(xsd_decimal));
   world->xsd_integer = serd_nodes_manage(nodes, serd_new_uri(xsd_integer));
+  world->xsd_long    = serd_nodes_manage(nodes, serd_new_uri(xsd_long));
   world->blank_node  = serd_new_blank(SERD_STATIC_STRING("b00000000000"));
   world->nodes       = nodes;
 
