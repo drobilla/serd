@@ -5,6 +5,7 @@
 #define SERD_READER_H
 
 #include "serd/attributes.h"
+#include "serd/byte_source.h"
 #include "serd/error.h"
 #include "serd/sink.h"
 #include "serd/syntax.h"
@@ -55,34 +56,11 @@ void
 serd_reader_add_blank_prefix(SerdReader* SERD_NONNULL  reader,
                              const char* SERD_NULLABLE prefix);
 
-/// Prepare to read from the file at a local file `uri`
+/// Prepare to read from a byte source
 SERD_API
 SerdStatus
-serd_reader_start_file(SerdReader* SERD_NONNULL reader,
-                       const char* SERD_NONNULL uri,
-                       bool                     bulk);
-
-/**
-   Prepare to read from a stream.
-
-   The `read_func` is guaranteed to only be called for `page_size` elements
-   with size 1 (i.e. `page_size` bytes).
-*/
-SERD_API
-SerdStatus
-serd_reader_start_stream(SerdReader* SERD_NONNULL         reader,
-                         SerdReadFunc SERD_NONNULL        read_func,
-                         SerdStreamErrorFunc SERD_NONNULL error_func,
-                         void* SERD_NONNULL               stream,
-                         const SerdNode* SERD_NULLABLE    name,
-                         size_t                           page_size);
-
-/// Prepare to read from a string
-SERD_API
-SerdStatus
-serd_reader_start_string(SerdReader* SERD_NONNULL      reader,
-                         const char* SERD_NONNULL      utf8,
-                         const SerdNode* SERD_NULLABLE name);
+serd_reader_start(SerdReader* SERD_NONNULL     reader,
+                  SerdByteSource* SERD_NONNULL byte_source);
 
 /**
    Read a single "chunk" of data during an incremental read.

@@ -64,7 +64,7 @@ serd_byte_sink_new_filename(const char* const path, const size_t block_size)
   }
 
 #if USE_POSIX_FADVISE && USE_FILENO
-  posix_fadvise(fileno(file), 0, 0, POSIX_FADV_SEQUENTIAL);
+  (void)posix_fadvise(fileno(file), 0, 0, POSIX_FADV_SEQUENTIAL);
 #endif
 
   return serd_byte_sink_new_internal(

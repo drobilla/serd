@@ -10,6 +10,7 @@
 #include "try.h"
 #include "uri_utils.h"
 
+#include "serd/byte_source.h"
 #include "serd/node.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
@@ -1673,7 +1674,7 @@ serd_reader_skip_until_byte(SerdReader* const reader, const uint8_t byte)
 SerdStatus
 read_turtleTrigDoc(SerdReader* const reader)
 {
-  while (!reader->source.eof) {
+  while (!reader->source->eof) {
     const size_t     orig_stack_size = reader->stack.size;
     const SerdStatus st              = read_n3_statement(reader);
 
@@ -1695,7 +1696,7 @@ SerdStatus
 read_nquadsDoc(SerdReader* const reader)
 {
   SerdStatus st = SERD_SUCCESS;
-  while (!st && !reader->source.eof) {
+  while (!st && !reader->source->eof) {
     const size_t orig_stack_size = reader->stack.size;
 
     SerdStatementFlags flags   = 0;
