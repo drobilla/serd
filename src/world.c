@@ -21,39 +21,13 @@
 #include "cursor.h"
 #include "namespaces.h"
 #include "node.h"
-#include "serd_config.h"
 
-#if defined(USE_POSIX_FADVISE)
-#  include <fcntl.h>
-#endif
-
-#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define BLANK_CHARS 12
-
-FILE*
-serd_world_fopen(SerdWorld* world, const char* path, const char* mode)
-{
-  FILE* fd = fopen(path, mode);
-  if (!fd) {
-    serd_world_errorf(world,
-                      SERD_ERR_INTERNAL,
-                      "failed to open file %s (%s)\n",
-                      path,
-                      strerror(errno));
-    return NULL;
-  }
-
-#if USE_POSIX_FADVISE && USE_FILENO
-  posix_fadvise(fileno(fd), 0, 0, POSIX_FADV_SEQUENTIAL);
-#endif
-
-  return fd;
-}
 
 SerdStatus
 serd_world_error(const SerdWorld* const world, const SerdError* const e)
