@@ -26,42 +26,29 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef int (*SerdStreamCloseFunc)(void*);
+typedef enum {
+  FROM_STRING,   ///< Reading from a user-provided buffer
+  FROM_FILENAME, ///< Reading from a file we opened
+  FROM_FUNCTION, ///< Reading from a user-provided function
+} SerdByteSourceType;
 
-typedef struct {
-  SerdReadFunc        read_func;   ///< Read function (e.g. fread)
-  SerdStreamErrorFunc error_func;  ///< Error function (e.g. ferror)
-  SerdStreamCloseFunc close_func;  ///< Function for closing stream
-  void*               stream;      ///< Stream (e.g. FILE)
-  size_t              page_size;   ///< Number of bytes to read at a time
-  size_t              buf_size;    ///< Number of bytes in file_buf
-  SerdNode*           name;        ///< Name of stream (referenced by cur)
-  SerdCursor          cur;         ///< Cursor for error reporting
-  uint8_t*            file_buf;    ///< Buffer iff reading pages from a file
-  const uint8_t*      read_buf;    ///< Pointer to file_buf or read_byte
-  size_t              read_head;   ///< Offset into read_buf
-  uint8_t             read_byte;   ///< 1-byte 'buffer' used when not paging
-  bool                from_stream; ///< True iff reading from `stream`
-  bool                prepared;    ///< True iff prepared for reading
-  bool                eof;         ///< True iff end of file reached
-} SerdByteSource;
-
-SerdStatus
-serd_byte_source_open_string(SerdByteSource* source,
-                             const char*     utf8,
-                             const SerdNode* name);
-
-SerdStatus
-serd_byte_source_open_source(SerdByteSource*     source,
-                             SerdReadFunc        read_func,
-                             SerdStreamErrorFunc error_func,
-                             SerdStreamCloseFunc close_func,
-                             void*               stream,
-                             const SerdNode*     name,
-                             size_t              page_size);
-
-SerdStatus
-serd_byte_source_close(SerdByteSource* source);
+struct SerdByteSourceImpl {
+  SerdReadFunc        read_func;  ///< Read function (e.g. fread)
+  SerdStreamErrorFunc error_func; ///< Error function (e.g. ferror)
+  SerdStreamCloseFunc close_func; ///< Function for closing stream
+  void*               stream;     ///< Stream (e.g. FILE)
+  size_t              page_size;  ///< Number of bytes to read at a time
+  size_t              buf_size;   ///< Number of bytes in file_buf
+  SerdNode*           name;       ///< Name of stream (referenced by cur)
+  SerdCursor          cur;        ///< Cursor for error reporting
+  uint8_t*            file_buf;   ///< Buffer iff reading pages from a file
+  const uint8_t*      read_buf;   ///< Pointer to file_buf or read_byte
+  size_t              read_head;  ///< Offset into read_buf
+  SerdByteSourceType  type;       ///< Type of input
+  uint8_t             read_byte;  ///< 1-byte 'buffer' used when not paging
+  bool                prepared;   ///< True iff prepared for reading
+  bool                eof;        ///< True iff end of file reached
+};
 
 SerdStatus
 serd_byte_source_prepare(SerdByteSource* source);
@@ -92,7 +79,7 @@ serd_byte_source_advance(SerdByteSource* source)
     ++source->cur.col;
   }
 
-  if (source->from_stream) {
+  if (source->type != FROM_STRING) {
     if (++source->read_head >= source->buf_size) {
       st = serd_byte_source_page(source);
     }
