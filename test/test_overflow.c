@@ -17,15 +17,17 @@ test_size(SerdWorld* const  world,
           const SerdSyntax  syntax,
           const size_t      stack_size)
 {
-  SerdSink*         sink = serd_sink_new(NULL, NULL, NULL);
+  SerdSink*         sink        = serd_sink_new(NULL, NULL, NULL);
+  SerdByteSource*   byte_source = serd_byte_source_new_string(str, NULL);
   SerdReader* const reader =
     serd_reader_new(world, syntax, 0U, sink, stack_size);
 
   assert(reader);
 
-  serd_reader_start_string(reader, str, NULL);
+  serd_reader_start(reader, byte_source);
   const SerdStatus st = serd_reader_read_document(reader);
   serd_reader_free(reader);
+  serd_byte_source_free(byte_source);
   serd_sink_free(sink);
 
   return st;

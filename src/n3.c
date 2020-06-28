@@ -1667,7 +1667,7 @@ skip_until(SerdReader* const reader, const uint8_t byte)
 SerdStatus
 read_turtleTrigDoc(SerdReader* const reader)
 {
-  while (!reader->source.eof) {
+  while (!reader->source->eof) {
     const size_t     orig_stack_size = reader->stack.size;
     const SerdStatus st              = read_n3_statement(reader);
 
@@ -1690,7 +1690,7 @@ SerdStatus
 read_nquadsDoc(SerdReader* const reader)
 {
   SerdStatus st = SERD_SUCCESS;
-  while (!st && !reader->source.eof) {
+  while (!st && !reader->source->eof) {
     const size_t orig_stack_size = reader->stack.size;
 
     SerdStatementFlags flags   = 0;
