@@ -83,6 +83,8 @@ def test_thru(
             isyntax,
             "-p",
             "foo",
+            "-w",
+            out_path,
             path,
             base_uri,
         ]
@@ -98,14 +100,16 @@ def test_thru(
             osyntax,
             "-c",
             "foo",
+            "-w",
+            thru_path,
             "-a",
             out_path,
             base_uri,
         ]
     )
 
-    with open(out_path, "wb") as out:
-        subprocess.run(out_cmd, check=True, stdout=out)
+    subprocess.run(out_cmd, check=True)
+    subprocess.run(thru_cmd, check=True)
 
     with open(thru_path, "wb") as out:
         subprocess.run(thru_cmd, check=True, stdout=out)

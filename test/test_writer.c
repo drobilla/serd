@@ -27,11 +27,12 @@
 static void
 test_write_bad_event(void)
 {
-  SerdWorld*  world  = serd_world_new();
-  SerdEnv*    env    = serd_env_new(SERD_EMPTY_STRING());
-  SerdBuffer  buffer = {NULL, 0};
-  SerdWriter* writer =
-    serd_writer_new(world, SERD_TURTLE, 0u, env, serd_buffer_sink, &buffer);
+  SerdWorld*    world     = serd_world_new();
+  SerdEnv*      env       = serd_env_new(SERD_EMPTY_STRING());
+  SerdBuffer    buffer    = {NULL, 0};
+  SerdByteSink* byte_sink = serd_byte_sink_new_buffer(&buffer);
+
+  SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0u, env, byte_sink);
 
   assert(writer);
 
@@ -52,11 +53,12 @@ test_write_bad_event(void)
 static void
 test_write_bad_prefix(void)
 {
-  SerdWorld*  world  = serd_world_new();
-  SerdEnv*    env    = serd_env_new(SERD_EMPTY_STRING());
-  SerdBuffer  buffer = {NULL, 0};
-  SerdWriter* writer =
-    serd_writer_new(world, SERD_TURTLE, 0u, env, serd_buffer_sink, &buffer);
+  SerdWorld*    world     = serd_world_new();
+  SerdEnv*      env       = serd_env_new(SERD_EMPTY_STRING());
+  SerdBuffer    buffer    = {NULL, 0};
+  SerdByteSink* byte_sink = serd_byte_sink_new_buffer(&buffer);
+
+  SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0u, env, byte_sink);
 
   assert(writer);
 
@@ -81,11 +83,12 @@ test_write_bad_prefix(void)
 static void
 test_write_long_literal(void)
 {
-  SerdWorld*  world  = serd_world_new();
-  SerdEnv*    env    = serd_env_new(SERD_EMPTY_STRING());
-  SerdBuffer  buffer = {NULL, 0};
-  SerdWriter* writer =
-    serd_writer_new(world, SERD_TURTLE, 0u, env, serd_buffer_sink, &buffer);
+  SerdWorld*    world     = serd_world_new();
+  SerdEnv*      env       = serd_env_new(SERD_EMPTY_STRING());
+  SerdBuffer    buffer    = {NULL, 0};
+  SerdByteSink* byte_sink = serd_byte_sink_new_buffer(&buffer);
+
+  SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0u, env, byte_sink);
 
   assert(writer);
 
@@ -128,11 +131,11 @@ null_sink(const void* const buf,
 static void
 test_writer_stack_overflow(void)
 {
-  SerdWorld* world = serd_world_new();
-  SerdEnv*   env   = serd_env_new(SERD_EMPTY_STRING());
+  SerdWorld*    world     = serd_world_new();
+  SerdEnv*      env       = serd_env_new(SERD_EMPTY_STRING());
+  SerdByteSink* byte_sink = serd_byte_sink_new_function(null_sink, NULL, 1u);
 
-  SerdWriter* writer =
-    serd_writer_new(world, SERD_TURTLE, 0u, env, null_sink, NULL);
+  SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0u, env, byte_sink);
 
   const SerdSink* sink = serd_writer_sink(writer);
 
@@ -167,6 +170,7 @@ test_writer_stack_overflow(void)
   serd_node_free(p);
   serd_node_free(s);
   serd_writer_free(writer);
+  serd_byte_sink_free(byte_sink);
   serd_env_free(env);
   serd_world_free(world);
 }
@@ -179,9 +183,12 @@ test_strict_write(void)
   FILE*       fd    = fopen(path, "wb");
   assert(fd);
 
-  SerdEnv*    env = serd_env_new(SERD_EMPTY_STRING());
-  SerdWriter* writer =
-    serd_writer_new(world, SERD_TURTLE, 0u, env, (SerdWriteFunc)fwrite, fd);
+  SerdEnv* env = serd_env_new(SERD_EMPTY_STRING());
+
+  SerdByteSink* byte_sink =
+    serd_byte_sink_new_function((SerdWriteFunc)fwrite, fd, 1);
+
+  SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, byte_sink);
 
   assert(writer);
 
@@ -202,6 +209,7 @@ test_strict_write(void)
   serd_node_free(p);
 
   serd_writer_free(writer);
+  serd_byte_sink_free(byte_sink);
   serd_env_free(env);
   fclose(fd);
   serd_world_free(world);
@@ -236,8 +244,9 @@ test_write_error(void)
 
   // Test with setting errno
 
-  SerdWriter* writer =
-    serd_writer_new(world, SERD_TURTLE, 0u, env, faulty_sink, NULL);
+  SerdByteSink* byte_sink = serd_byte_sink_new_function(faulty_sink, NULL, 1);
+
+  SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0u, env, byte_sink);
 
   assert(writer);
 
@@ -245,9 +254,11 @@ test_write_error(void)
   assert(st == SERD_ERR_BAD_WRITE);
 
   serd_writer_free(writer);
+  serd_byte_sink_free(byte_sink);
 
   // Test without setting errno
-  writer = serd_writer_new(world, SERD_TURTLE, 0u, env, faulty_sink, world);
+  byte_sink = serd_byte_sink_new_function(faulty_sink, world, 1);
+  writer    = serd_writer_new(world, SERD_TURTLE, 0u, env, byte_sink);
 
   assert(writer);
 
@@ -255,6 +266,7 @@ test_write_error(void)
          SERD_ERR_BAD_WRITE);
 
   serd_writer_free(writer);
+  serd_byte_sink_free(byte_sink);
 
   serd_node_free(o);
   serd_node_free(p);
@@ -266,15 +278,16 @@ test_write_error(void)
 static void
 test_write_empty_syntax(void)
 {
-  SerdWorld* world  = serd_world_new();
-  SerdEnv*   env    = serd_env_new(SERD_EMPTY_STRING());
-  SerdNode*  s      = serd_new_uri(SERD_STRING("http://example.org/s"));
-  SerdNode*  p      = serd_new_uri(SERD_STRING("http://example.org/p"));
-  SerdNode*  o      = serd_new_curie(SERD_STRING("eg:o"));
-  SerdBuffer buffer = {NULL, 0};
+  SerdWorld*    world     = serd_world_new();
+  SerdEnv*      env       = serd_env_new(SERD_EMPTY_STRING());
+  SerdNode*     s         = serd_new_uri(SERD_STRING("http://example.org/s"));
+  SerdNode*     p         = serd_new_uri(SERD_STRING("http://example.org/p"));
+  SerdNode*     o         = serd_new_curie(SERD_STRING("eg:o"));
+  SerdBuffer    buffer    = {NULL, 0};
+  SerdByteSink* byte_sink = serd_byte_sink_new_buffer(&buffer);
 
-  SerdWriter* writer = serd_writer_new(
-    world, SERD_SYNTAX_EMPTY, 0u, env, serd_buffer_sink, &buffer);
+  SerdWriter* writer =
+    serd_writer_new(world, SERD_SYNTAX_EMPTY, 0u, env, byte_sink);
 
   assert(writer);
 
