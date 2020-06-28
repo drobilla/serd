@@ -77,6 +77,7 @@
    @{
 */
 
+#include "serd/input_stream.h"
 #include "serd/reader.h"
 #include "serd/stream.h"
 #include "serd/writer.h"
