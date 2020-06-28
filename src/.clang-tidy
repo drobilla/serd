@@ -3,6 +3,7 @@ Checks: >
   -*-magic-numbers,
   -*-uppercase-literal-suffix,
   -altera-*,
+  -android-cloexec-fopen,
   -bugprone-branch-clone,
   -bugprone-easily-swappable-parameters,
   -bugprone-reserved-identifier,
