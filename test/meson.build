@@ -6,6 +6,7 @@ wrapper = meson.get_cross_property('exe_wrapper', '')
 
 unit_tests = [
   'byte_sink',
+  'byte_source',
   'cursor',
   'env',
   'free_null',

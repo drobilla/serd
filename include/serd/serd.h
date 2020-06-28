@@ -104,9 +104,6 @@ typedef struct SerdWriterImpl SerdWriter;
 /// An interface that receives a stream of RDF data
 typedef struct SerdSinkImpl SerdSink;
 
-/// A sink for bytes that receives string output
-typedef struct SerdByteSinkImpl SerdByteSink;
-
 /// Flags indicating inline abbreviation information for a statement
 typedef enum {
   SERD_EMPTY_S = 1u << 0u, ///< Empty blank node subject
@@ -323,6 +320,7 @@ typedef enum {
   SERD_ERR_NO_DATA,    ///< Unexpected end of input
   SERD_ERR_BAD_TEXT,   ///< Invalid text encoding
   SERD_ERR_BAD_WRITE,  ///< Error writing to file/stream
+  SERD_ERR_BAD_CALL,   ///< Invalid call
 } SerdStatus;
 
 /// Return a string describing a status code
@@ -365,9 +363,12 @@ serd_base64_decode(const char* SERD_NONNULL str,
 
 /**
    @}
-   @defgroup serd_streams Byte Streams
+   @defgroup serd_byte_source Byte Source
    @{
 */
+
+/// A source for bytes that provides text input
+typedef struct SerdByteSourceImpl SerdByteSource;
 
 /**
    Return `path` as a canonicalized absolute path.
@@ -392,6 +393,15 @@ serd_canonical_path(const char* SERD_NONNULL path);
 typedef int (*SerdStreamErrorFunc)(void* SERD_NONNULL stream);
 
 /**
+   Function to close an I/O stream.
+
+   Identical semantics to `fclose`.
+
+   @return Non-zero if `stream` has encountered an error.
+*/
+typedef int (*SerdStreamCloseFunc)(void* SERD_NONNULL stream);
+
+/**
    Source function for raw string input.
 
    Identical semantics to `fread`, but may set errno for more informative error
@@ -409,7 +419,71 @@ typedef size_t (*SerdReadFunc)(void* SERD_NONNULL buf,
                                void* SERD_NONNULL stream);
 
 /**
-   Sink function for raw string output.
+   Create a new byte source that reads from a string.
+
+   @param string Null-terminated UTF-8 string to read from.
+   @param name Optional name of stream for error messages (string or URI).
+*/
+SERD_API
+SerdByteSource* SERD_ALLOCATED
+serd_byte_source_new_string(const char* SERD_NONNULL      string,
+                            const SerdNode* SERD_NULLABLE name);
+
+/**
+   Create a new byte source that reads from a file.
+
+   An arbitrary `FILE*` can be used via serd_byte_source_new_function() as
+   well, this is just a convenience function that opens the file properly, sets
+   flags for optimized I/O if possible, and automatically sets the name of the
+   source to the file path.
+
+   @param path Path of file to open and read from.
+   @param page_size Number of bytes to read per call.
+*/
+SERD_API
+SerdByteSource* SERD_ALLOCATED
+serd_byte_source_new_filename(const char* SERD_NONNULL path, size_t page_size);
+
+/**
+   Create a new byte source that reads from a user-specified function
+
+   The `stream` will be passed to the `read_func`, which is compatible with the
+   standard C `fread` if `stream` is a `FILE*`.  Note that the reader only ever
+   reads individual bytes at a time, that is, the `size` parameter will always
+   be 1 (but `nmemb` may be higher).
+
+   @param read_func Streadm read function, like `fread`.
+   @param error_func Stream error function, like `ferror`.
+   @param close_func Stream close function, like `fclose`.
+   @param stream Context parameter passed to `read_func` and `error_func`.
+   @param name Optional name of stream for error messages (string or URI).
+   @param page_size Number of bytes to read per call.
+*/
+SERD_API
+SerdByteSource* SERD_ALLOCATED
+serd_byte_source_new_function(SerdReadFunc SERD_NONNULL         read_func,
+                              SerdStreamErrorFunc SERD_NONNULL  error_func,
+                              SerdStreamCloseFunc SERD_NULLABLE close_func,
+                              void* SERD_NULLABLE               stream,
+                              const SerdNode* SERD_NULLABLE     name,
+                              size_t                            page_size);
+
+/// Free `source`
+SERD_API
+void
+serd_byte_source_free(SerdByteSource* SERD_NULLABLE source);
+
+/**
+   @}
+   @defgroup serd_byte_sink Byte Sink
+   @{
+*/
+
+/// A sink for bytes that receives text output
+typedef struct SerdByteSinkImpl SerdByteSink;
+
+/**
+   Sink function for raw string output
 
    Identical semantics to `fwrite`, but may set errno for more informative
    error reporting than supported by SerdStreamErrorFunc.
@@ -1274,37 +1348,14 @@ void
 serd_reader_add_blank_prefix(SerdReader* SERD_NONNULL  reader,
                              const char* SERD_NULLABLE prefix);
 
-/// Prepare to read from the file at a local file `uri`
+/// Prepare to read from a byte source
 SERD_API
 SerdStatus
-serd_reader_start_file(SerdReader* SERD_NONNULL reader,
-                       const char* SERD_NONNULL uri,
-                       bool                     bulk);
+serd_reader_start(SerdReader* SERD_NONNULL     reader,
+                  SerdByteSource* SERD_NONNULL byte_source);
 
 /**
-   Prepare to read from a stream.
-
-   The `read_func` is guaranteed to only be called for `page_size` elements
-   with size 1 (i.e. `page_size` bytes).
-*/
-SERD_API
-SerdStatus
-serd_reader_start_stream(SerdReader* SERD_NONNULL         reader,
-                         SerdReadFunc SERD_NONNULL        read_func,
-                         SerdStreamErrorFunc SERD_NONNULL error_func,
-                         void* SERD_NONNULL               stream,
-                         const SerdNode* SERD_NULLABLE    name,
-                         size_t                           page_size);
-
-/// Prepare to read from a string
-SERD_API
-SerdStatus
-serd_reader_start_string(SerdReader* SERD_NONNULL      reader,
-                         const char* SERD_NONNULL      utf8,
-                         const SerdNode* SERD_NULLABLE name);
-
-/**
-   Read a single "chunk" of data during an incremental read
+   Read a single "chunk" of data during an incremental read.
 
    This function will read a single top level description, and return.  This
    may be a directive, statement, or several statements; essentially it reads

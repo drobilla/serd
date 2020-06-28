@@ -24,11 +24,14 @@
 static SerdStatus
 test(SerdWorld* world, SerdSink* sink, const char* str, size_t stack_size)
 {
+  SerdByteSource* byte_source = serd_byte_source_new_string(str, NULL);
+
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0, sink, stack_size);
 
-  serd_reader_start_string(reader, str, NULL);
+  serd_reader_start(reader, byte_source);
   const SerdStatus st = serd_reader_read_document(reader);
   serd_reader_free(reader);
+  serd_byte_source_free(byte_source);
   return st;
 }
 

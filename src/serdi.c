@@ -104,25 +104,34 @@ read_file(SerdWorld* const      world,
   syntax = syntax ? syntax : serd_guess_syntax(filename);
   syntax = syntax ? syntax : SERD_TRIG;
 
-  SerdStatus  st     = SERD_SUCCESS;
+  SerdByteSource* byte_source = NULL;
+  if (!strcmp(filename, "-")) {
+    SerdNode* name = serd_new_string(SERD_STATIC_STRING("stdin"));
+
+    byte_source = serd_byte_source_new_function(
+      serd_file_read_byte, (SerdStreamErrorFunc)ferror, NULL, stdin, name, 1);
+
+    serd_node_free(name);
+  } else {
+    byte_source =
+      serd_byte_source_new_filename(filename, bulk_read ? SERD_PAGE_SIZE : 1u);
+  }
+
+  if (!byte_source) {
+    SERDI_ERRORF("failed to open input file `%s'\n", filename);
+    return SERD_ERR_UNKNOWN;
+  }
+
   SerdReader* reader = serd_reader_new(world, syntax, flags, sink, stack_size);
 
   serd_reader_add_blank_prefix(reader, add_prefix);
 
-  if (!strcmp(filename, "-")) {
-    SerdNode* name = serd_new_string(SERD_STATIC_STRING("stdin"));
-
-    st = serd_reader_start_stream(
-      reader, serd_file_read_byte, (SerdStreamErrorFunc)ferror, stdin, name, 1);
-
-    serd_node_free(name);
-  } else {
-    st = serd_reader_start_file(reader, filename, bulk_read);
-  }
+  SerdStatus st = serd_reader_start(reader, byte_source);
 
   st = st ? st : serd_reader_read_document(reader);
 
   serd_reader_free(reader);
+  serd_byte_source_free(byte_source);
 
   return st;
 }
@@ -330,6 +339,9 @@ main(int argc, char** argv)
   SerdStatus st         = SERD_SUCCESS;
   SerdNode*  input_name = NULL;
   if (input_string) {
+    SerdByteSource* const byte_source =
+      serd_byte_source_new_string(input_string, NULL);
+
     SerdReader* const reader =
       serd_reader_new(world,
                       input_syntax ? input_syntax : SERD_TRIG,
@@ -339,13 +351,12 @@ main(int argc, char** argv)
 
     serd_reader_add_blank_prefix(reader, add_prefix);
 
-    SerdNode* name = serd_new_string(SERD_STATIC_STRING("string"));
-    if (!(st = serd_reader_start_string(reader, input_string, name))) {
+    if (!(st = serd_reader_start(reader, byte_source))) {
       st = serd_reader_read_document(reader);
     }
 
-    serd_node_free(name);
     serd_reader_free(reader);
+    serd_byte_source_free(byte_source);
   }
 
   size_t prefix_len = 0;
