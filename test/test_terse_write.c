@@ -73,10 +73,11 @@ test(void)
   serd_env_set_prefix(
     env, SERD_STATIC_STRING("rdf"), SERD_STATIC_STRING(NS_RDF));
 
-  SerdWriter* writer = serd_writer_new(
-    world, SERD_TURTLE, 0, env, (SerdWriteFunc)serd_buffer_sink, &buffer);
+  SerdByteSink* const byte_sink = serd_byte_sink_new_buffer(&buffer);
+  SerdWriter* const   writer =
+    serd_writer_new(world, SERD_TURTLE, 0, env, byte_sink);
 
-  const SerdSink* sink = serd_writer_sink(writer);
+  const SerdSink* const sink = serd_writer_sink(writer);
 
   // Simple lone list
   serd_sink_write(sink, SERD_TERSE_S | SERD_LIST_S, l1, rdf_first, s1, NULL);
@@ -108,6 +109,7 @@ test(void)
 
   serd_buffer_sink_finish(&buffer);
   serd_writer_free(writer);
+  serd_byte_sink_free(byte_sink);
   serd_nodes_free(nodes);
   serd_env_free(env);
   serd_world_free(world);

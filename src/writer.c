@@ -14,6 +14,7 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "byte_sink.h"
 #include "env.h"
 #include "node.h"
 #include "sink.h"
@@ -131,8 +132,7 @@ struct SerdWriterImpl {
   SerdURIView     root_uri;
   WriteContext*   anon_stack;
   size_t          anon_stack_size;
-  SerdWriteFunc   write_func;
-  void*           stream;
+  SerdByteSink*   byte_sink;
   SerdErrorFunc   error_func;
   void*           error_handle;
   WriteContext    context;
@@ -232,7 +232,7 @@ ctx(SerdWriter* writer, const SerdField field)
 SERD_WARN_UNUSED_RESULT static size_t
 sink(const void* buf, size_t len, SerdWriter* writer)
 {
-  const size_t written = writer->write_func(buf, 1, len, writer->stream);
+  const size_t written = serd_byte_sink_write(buf, len, writer->byte_sink);
   if (written != len) {
     if (errno) {
       serd_world_errorf(writer->world,
@@ -1167,23 +1167,22 @@ serd_writer_new(SerdWorld*      world,
                 SerdSyntax      syntax,
                 SerdWriterFlags flags,
                 SerdEnv*        env,
-                SerdWriteFunc   write_func,
-                void*           stream)
+                SerdByteSink*   byte_sink)
 {
   const WriteContext context = WRITE_CONTEXT_NULL;
   SerdWriter*        writer  = (SerdWriter*)calloc(1, sizeof(SerdWriter));
-  writer->world              = world;
-  writer->syntax             = syntax;
-  writer->flags              = flags;
-  writer->env                = env;
-  writer->root_node          = NULL;
-  writer->root_uri           = SERD_URI_NULL;
+
+  writer->world     = world;
+  writer->syntax    = syntax;
+  writer->flags     = flags;
+  writer->env       = env;
+  writer->root_node = NULL;
+  writer->root_uri  = SERD_URI_NULL;
   writer->anon_stack =
     (WriteContext*)calloc(anon_stack_capacity, sizeof(WriteContext));
-  writer->write_func = write_func;
-  writer->stream     = stream;
-  writer->context    = context;
-  writer->empty      = true;
+  writer->byte_sink = byte_sink;
+  writer->context   = context;
+  writer->empty     = true;
 
   writer->iface.handle   = writer;
   writer->iface.on_event = (SerdEventFunc)serd_writer_on_event;
