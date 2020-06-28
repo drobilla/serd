@@ -5,6 +5,7 @@ run_test_suite = find_program('run_test_suite.py')
 wrapper = meson.get_cross_property('exe_wrapper', '')
 
 unit_tests = [
+  'byte_sink',
   'cursor',
   'env',
   'free_null',
@@ -71,6 +72,7 @@ if get_option('utils')
     ['-o'],
     ['-p'],
     ['-r'],
+    ['-w'],
     ['-z'],
     ['-s', '<foo> a <Bar> .'],
   ]
@@ -137,6 +139,12 @@ if get_option('utils')
 
   test('write_error', files('test_write_error.py'),
        args: script_args + [serd_ttl],
+       suite: 'io_errors')
+
+  test('write_bad_file', serdi,
+       args: ['-w', '/does/not/exist.ttl',
+              'file://@0@/serd.ttl'.format(meson.source_root())],
+       should_fail: true,
        suite: 'io_errors')
 
   # RDF test suites

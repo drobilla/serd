@@ -426,7 +426,35 @@ typedef size_t (*SerdWriteFunc)(const void* SERD_NONNULL buf,
                                 void* SERD_NONNULL       stream);
 
 /**
-   Create a new byte sink.
+   Create a new byte sink that writes to a buffer.
+
+   The `buffer` is owned by the caller, but will be expanded as necessary.
+
+   @param buffer Buffer to write output to.
+*/
+SERD_API
+SerdByteSink* SERD_ALLOCATED
+serd_byte_sink_new_buffer(SerdBuffer* SERD_NONNULL buffer);
+
+/**
+   Create a new byte sink that writes to a file
+
+   An arbitrary `FILE*` can be used via serd_byte_sink_new_function() as well,
+   this is just a convenience function that opens the file properly and sets
+   flags for optimized I/O if possible.
+
+   @param path Path of file to open and write to.
+   @param block_size Number of bytes to write per call.
+*/
+SERD_API
+SerdByteSink* SERD_ALLOCATED
+serd_byte_sink_new_filename(const char* SERD_NONNULL path, size_t block_size);
+
+/**
+   Create a new byte sink that writes to a user-specified function.
+
+   The `stream` will be passed to the `write_func`, which is compatible with
+   the standard C `fwrite` if `stream` is a `FILE*`.
 
    @param write_func Function called with bytes to consume.
    @param stream Context parameter passed to `sink`.
@@ -434,28 +462,27 @@ typedef size_t (*SerdWriteFunc)(const void* SERD_NONNULL buf,
 */
 SERD_API
 SerdByteSink* SERD_ALLOCATED
-serd_byte_sink_new(SerdWriteFunc SERD_NONNULL write_func,
-                   void* SERD_NULLABLE        stream,
-                   size_t                     block_size);
-
-/**
-   Write to `sink`.
-
-   Compatible with SerdWriteFunc.
-*/
-SERD_API
-size_t
-serd_byte_sink_write(const void* SERD_NONNULL   buf,
-                     size_t                     size,
-                     size_t                     nmemb,
-                     SerdByteSink* SERD_NONNULL sink);
+serd_byte_sink_new_function(SerdWriteFunc SERD_NONNULL write_func,
+                            void* SERD_NULLABLE        stream,
+                            size_t                     block_size);
 
 /// Flush any pending output in `sink` to the underlying write function
 SERD_API
 void
 serd_byte_sink_flush(SerdByteSink* SERD_NONNULL sink);
 
-/// Free `sink`
+/**
+   Close `sink`, including the underlying file if necessary.
+
+   If `sink` was created with serd_byte_sink_new_filename(), then the file is
+   closed.  If there was an error, then SERD_ERR_UNKNOWN is returned and
+   `errno` is set.
+*/
+SERD_API
+SerdStatus
+serd_byte_sink_close(SerdByteSink* SERD_NONNULL sink);
+
+/// Free `sink`, flushing and closing first if necessary
 SERD_API
 void
 serd_byte_sink_free(SerdByteSink* SERD_NULLABLE sink);
@@ -1330,8 +1357,7 @@ serd_writer_new(SerdWorld* SERD_NONNULL    world,
                 SerdSyntax                 syntax,
                 SerdWriterFlags            flags,
                 SerdEnv* SERD_NONNULL      env,
-                SerdWriteFunc SERD_NONNULL write_func,
-                void* SERD_NULLABLE        stream);
+                SerdByteSink* SERD_NONNULL byte_sink);
 
 /// Free `writer`
 SERD_API
