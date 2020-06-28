@@ -14,12 +14,13 @@
 .Op Fl p Ar prefix
 .Op Fl r Ar root
 .Op Fl s Ar string
+.Op Fl w Ar filename
 .Ar input
 .Op Ar base_uri
 .Sh DESCRIPTION
 .Nm
 is a fast command-line utility for streaming and processing RDF data.
-It reads an RDF document and writes the data to stdout,
+It reads an RDF document and writes the data again,
 possibly transformed and/or in a different syntax.
 By default,
 the input syntax is guessed from the file extension,
@@ -125,6 +126,11 @@ Write terser output without newlines.
 .Pp
 .It Fl v
 Display version information and exit.
+.Pp
+.It Fl w Ar filename
+Write output to the given
+.Ar filename
+instead of stdout.
 .El
 .Sh EXIT STATUS
 .Nm
