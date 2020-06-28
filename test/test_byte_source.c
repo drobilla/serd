@@ -1,5 +1,5 @@
 /*
-  Copyright 2020 David Robillard <d@drobilla.net>
+  Copyright 2021 David Robillard <d@drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -18,22 +18,23 @@
 
 #include "serd/serd.h"
 
+#include <assert.h>
 #include <stddef.h>
+#include <stdio.h>
+
+static void
+test_bad_page_size(void)
+{
+  assert(!serd_byte_source_new_filename("file.ttl", 0));
+
+  assert(!serd_byte_source_new_function(
+    (SerdReadFunc)fread, (SerdStreamErrorFunc)ferror, NULL, NULL, NULL, 0));
+}
 
 int
 main(void)
 {
-  serd_free(NULL);
-  serd_byte_source_free(NULL);
-  serd_byte_sink_free(NULL);
-  serd_node_free(NULL);
-  serd_world_free(NULL);
-  serd_env_free(NULL);
-  serd_sink_free(NULL);
-  serd_reader_free(NULL);
-  serd_writer_free(NULL);
-  serd_nodes_free(NULL);
-  serd_caret_free(NULL);
+  test_bad_page_size();
 
   return 0;
 }
