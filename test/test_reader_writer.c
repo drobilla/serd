@@ -4,6 +4,7 @@
 #undef NDEBUG
 
 #include "serd/buffer.h"
+#include "serd/byte_source.h"
 #include "serd/env.h"
 #include "serd/event.h"
 #include "serd/memory.h"
@@ -22,7 +23,6 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -117,7 +117,10 @@ test_write_errors(void)
       SerdReader* const     reader =
         serd_reader_new(world, SERD_TRIG, 0U, sink, 4096U);
 
-      SerdStatus st = serd_reader_start_string(reader, doc_string, NULL);
+      SerdByteSource* const byte_source =
+        serd_byte_source_new_string(doc_string, NULL);
+
+      SerdStatus st = serd_reader_start(reader, byte_source);
       assert(!st);
       st = serd_reader_read_document(reader);
       assert(st == SERD_ERR_BAD_WRITE);
@@ -246,8 +249,8 @@ test_reader(const char* path)
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0U, sink, 4096);
   assert(reader);
 
-  assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
-  assert(serd_reader_read_document(reader) == SERD_FAILURE);
+  assert(serd_reader_read_chunk(reader) == SERD_ERR_BAD_CALL);
+  assert(serd_reader_read_document(reader) == SERD_ERR_BAD_CALL);
 
   serd_reader_add_blank_prefix(reader, "tmp");
 
@@ -260,14 +263,12 @@ test_reader(const char* path)
 #  pragma GCC diagnostic pop
 #endif
 
-  assert(serd_reader_start_file(reader, "http://notafile", false));
-  assert(serd_reader_start_file(reader, "file://invalid", false));
-  assert(serd_reader_start_file(reader, "file:///nonexistant", false));
-
-  assert(!serd_reader_start_file(reader, path, true));
+  SerdByteSource* byte_source = serd_byte_source_new_filename(path, 4096);
+  assert(!serd_reader_start(reader, byte_source));
   assert(!serd_reader_read_document(reader));
   assert(rt.n_statement == 6);
   assert(!serd_reader_finish(reader));
+  serd_byte_source_free(byte_source);
 
   serd_reader_free(reader);
   serd_sink_free(sink);

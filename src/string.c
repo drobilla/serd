@@ -48,6 +48,8 @@ serd_strerror(const SerdStatus status)
     return "Stack overflow";
   case SERD_ERR_NO_DATA:
     return "Unexpected end of input";
+  case SERD_ERR_BAD_CALL:
+    return "Invalid call";
   }
 
   return "Unknown error";
