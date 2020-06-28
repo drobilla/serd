@@ -6,6 +6,7 @@ wrapper = meson.get_cross_property('exe_wrapper', '')
 
 unit_tests = [
   'byte_sink',
+  'byte_source',
   'caret',
   'env',
   'free_null',
@@ -159,16 +160,24 @@ if get_option('utils')
   # IO errors
 
   test('read_dir', serdi,
-       args: ['-e', 'file://@0@/'.format(meson.source_root())],
+       args: ['-e', meson.source_root()],
        env: test_env,
        should_fail: true,
        suite: 'io_errors')
 
   test('bulk_read_dir', serdi,
-       args: ['file://@0@/'.format(meson.source_root())],
+       args: [meson.source_root()],
        env: test_env,
        should_fail: true,
        suite: 'io_errors')
+
+  if host_machine.system() == 'linux'
+    test('unreadable', serdi,
+         args: ['/sys/bus/pci/rescan'],
+         env: test_env,
+         should_fail: true,
+         suite: 'io_errors')
+  endif
 
   test('write_error', files('test_write_error.py'),
        args: script_args + [serd_ttl],
@@ -176,8 +185,7 @@ if get_option('utils')
        suite: 'io_errors')
 
   test('write_bad_file', serdi,
-       args: ['-w', '/does/not/exist.ttl',
-              'file://@0@/serd.ttl'.format(meson.source_root())],
+       args: ['-w', '/does/not/exist.ttl', meson.source_root() / 'serd.ttl'],
        env: test_env,
        should_fail: true,
        suite: 'io_errors')
