@@ -49,7 +49,7 @@ read_whitespace(SerdReader* const reader)
   case '\n':
   case '\r':
   case ' ':
-    return serd_byte_source_advance(&reader->source);
+    return serd_byte_source_advance(reader->source);
   case '#':
     return read_comment(reader);
   default:
@@ -1019,7 +1019,7 @@ read_turtle_statement(SerdReader* const reader)
 SerdStatus
 read_turtleDoc(SerdReader* const reader)
 {
-  while (!reader->source.eof) {
+  while (!reader->source->eof) {
     const size_t     orig_stack_size = reader->stack.size;
     const SerdStatus st              = read_turtle_statement(reader);
 

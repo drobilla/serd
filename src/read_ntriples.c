@@ -624,9 +624,9 @@ read_triple(SerdReader* const reader)
   }
 
   // Preserve the caret for error reporting and read object
-  const SerdCaretView orig_caret = {reader->source.caret.document,
-                                    reader->source.caret.line,
-                                    reader->source.caret.col};
+  const SerdCaretView orig_caret = {reader->source->caret.document,
+                                    reader->source->caret.line,
+                                    reader->source->caret.col};
 
   if ((st = read_nt_object(reader, &ctx.object, &ate_dot)) ||
       (st = skip_horizontal_whitespace(reader))) {

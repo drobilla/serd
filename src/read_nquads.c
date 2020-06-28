@@ -46,9 +46,9 @@ read_nquads_statement(SerdReader* const reader)
   }
 
   // Preserve the caret for error reporting and read object
-  SerdCaretView orig_caret = {reader->source.caret.document,
-                              reader->source.caret.line,
-                              reader->source.caret.col};
+  SerdCaretView orig_caret = {reader->source->caret.document,
+                              reader->source->caret.line,
+                              reader->source->caret.col};
 
   if ((st = read_nt_object(reader, &ctx.object, &ate_dot)) ||
       (st = skip_horizontal_whitespace(reader))) {
