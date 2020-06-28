@@ -6,7 +6,6 @@
 #include "serd/serd.h"
 
 #include <assert.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -143,8 +142,8 @@ test_reader(const char* path)
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0U, sink, 4096);
   assert(reader);
 
-  assert(serd_reader_read_document(reader) == SERD_FAILURE);
-  assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
+  assert(serd_reader_read_document(reader) == SERD_ERR_BAD_CALL);
+  assert(serd_reader_read_chunk(reader) == SERD_ERR_BAD_CALL);
 
   serd_reader_add_blank_prefix(reader, "tmp");
 
@@ -157,14 +156,12 @@ test_reader(const char* path)
 #  pragma GCC diagnostic pop
 #endif
 
-  assert(serd_reader_start_file(reader, "http://notafile", false));
-  assert(serd_reader_start_file(reader, "file://invalid", false));
-  assert(serd_reader_start_file(reader, "file:///nonexistant", false));
-
-  assert(!serd_reader_start_file(reader, path, true));
+  SerdByteSource* byte_source = serd_byte_source_new_filename(path, 4096);
+  assert(!serd_reader_start(reader, byte_source));
   assert(!serd_reader_read_document(reader));
   assert(n_statements == 6);
   serd_reader_finish(reader);
+  serd_byte_source_free(byte_source);
 
   serd_reader_free(reader);
   serd_sink_free(sink);

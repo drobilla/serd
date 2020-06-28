@@ -32,6 +32,15 @@ SERD_BEGIN_DECLS
 typedef int (*SerdStreamErrorFunc)(void* SERD_NONNULL stream);
 
 /**
+   Function to close an I/O stream.
+
+   Identical semantics to `fclose`.
+
+   @return Non-zero if `stream` has encountered an error.
+*/
+typedef int (*SerdStreamCloseFunc)(void* SERD_NONNULL stream);
+
+/**
    Function for reading input bytes from a stream.
 
    This has identical semantics to `fread`, but may set `errno` for more

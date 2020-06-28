@@ -9,6 +9,7 @@
 #include "stack.h"
 
 #include "serd/attributes.h"
+#include "serd/byte_source.h"
 #include "serd/error.h"
 #include "serd/node.h"
 #include "serd/reader.h"
@@ -45,11 +46,10 @@ struct SerdReaderImpl {
   SerdNode*       rdf_first;
   SerdNode*       rdf_rest;
   SerdNode*       rdf_nil;
-  SerdByteSource  source;
+  SerdByteSource* source;
   SerdStack       stack;
   SerdSyntax      syntax;
   unsigned        next_id;
-  uint8_t*        buf;
   char*           bprefix;
   size_t          bprefix_len;
   bool            strict; ///< True iff strict parsing
@@ -102,7 +102,7 @@ read_turtleTrigDoc(SerdReader* reader);
 static inline int
 peek_byte(SerdReader* reader)
 {
-  SerdByteSource* source = &reader->source;
+  SerdByteSource* source = reader->source;
 
   return source->eof ? EOF : (int)source->read_buf[source->read_head];
 }
@@ -115,7 +115,7 @@ eat_byte_safe(SerdReader* reader, const int byte)
   const int c = peek_byte(reader);
   assert(c == byte);
 
-  serd_byte_source_advance(&reader->source);
+  serd_byte_source_advance(reader->source);
   return c;
 }
 

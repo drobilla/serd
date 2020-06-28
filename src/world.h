@@ -10,7 +10,6 @@
 #include "serd/world.h"
 
 #include <stdint.h>
-#include <stdio.h>
 
 struct SerdWorldImpl {
   SerdErrorFunc error_func;
@@ -18,10 +17,6 @@ struct SerdWorldImpl {
   uint32_t      next_blank_id;
   SerdNode*     blank_node;
 };
-
-/// Open a file configured for fast sequential reading
-FILE*
-serd_world_fopen(SerdWorld* world, const char* path, const char* mode);
 
 SerdStatus
 serd_world_error(const SerdWorld* world, const SerdError* e);
