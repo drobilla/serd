@@ -3,6 +3,7 @@
 
 #undef NDEBUG
 
+#include "serd/byte_source.h"
 #include "serd/caret.h"
 #include "serd/env.h"
 #include "serd/memory.h"
@@ -18,6 +19,7 @@ int
 main(void)
 {
   serd_free(NULL);
+  serd_byte_source_free(NULL);
   serd_node_free(NULL);
   serd_world_free(NULL);
   serd_env_free(NULL);

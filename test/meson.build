@@ -103,6 +103,7 @@ subdir('headers')
 ##############
 
 unit_tests = [
+  'byte_source',
   'caret',
   'env',
   'free_null',
@@ -285,6 +286,17 @@ if is_variable('serdi')
     env: test_env,
     suite: 'io',
   )
+
+  if host_machine.system() == 'linux'
+    test(
+      'unreadable',
+      serdi,
+      args: ['/sys/bus/pci/rescan'],
+      env: test_env,
+      should_fail: true,
+      suite: 'io',
+    )
+  endif
 endif
 
 ###########################

@@ -28,6 +28,7 @@
 
 #include "serd/node.h"
 
+#include "serd/byte_source.h"
 #include "serd/caret.h"
 #include "serd/event.h"
 #include "serd/string.h"
