@@ -44,13 +44,54 @@ def configure(conf):
     conf.load('autowaf', cache=True)
     autowaf.set_c_lang(conf, 'c99')
 
-    if Options.options.strict and not conf.env.MSVC_COMPILER:
-        conf.env.append_unique('CFLAGS', '-Wno-cast-align')
-
+    if Options.options.strict:
         # Check for programs used by lint target
         conf.find_program("flake8", var="FLAKE8", mandatory=False)
         conf.find_program("clang-tidy", var="CLANG_TIDY", mandatory=False)
         conf.find_program("iwyu_tool", var="IWYU_TOOL", mandatory=False)
+
+    if Options.options.ultra_strict:
+        autowaf.add_compiler_flags(conf.env, '*', {
+            'clang': [
+                '-Wno-cast-align',
+                '-Wno-cast-qual',
+                '-Wno-covered-switch-default',
+                '-Wno-double-promotion',
+                '-Wno-format-nonliteral',
+                '-Wno-implicit-fallthrough',
+                '-Wno-padded',
+                '-Wno-reserved-id-macro',
+                '-Wno-sign-conversion',
+                '-Wno-switch-enum',
+            ],
+            'gcc': [
+                '-Wno-cast-align',
+                '-Wno-cast-qual',
+                '-Wno-padded',
+                '-Wno-sign-conversion',
+                '-Wno-switch-enum',
+            ],
+            'msvc': [
+                '/wd4061',  # enumerator in switch is not explicitly handled
+                '/wd4365',  # signed/unsigned mismatch
+                '/wd4514',  # unreferenced inline function has been removed
+                '/wd4820',  # padding added after construct
+                '/wd4996',  # POSIX name for this item is deprecated
+            ],
+        })
+
+        autowaf.add_compiler_flags(conf.env, 'c', {
+            'clang': [
+                '-Wno-bad-function-cast',
+            ],
+            'gcc': [
+                '-Wno-bad-function-cast',
+            ],
+            'msvc': [
+                '/wd4706',  # assignment within conditional expression
+                '/wd5045',  # will insert Spectre mitigation for memory load
+            ],
+        })
 
     conf.env.update({
         'BUILD_UTILS': not Options.options.no_utils,
