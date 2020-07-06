@@ -27,8 +27,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TRY_THROW(exp) if (!(exp)) goto except;
-#define TRY_RET(exp)   if (!(exp)) return 0;
+#define TRY_THROW(exp) do { if (!(exp)) goto except; } while (0)
+#define TRY_RET(exp)   do { if (!(exp)) return 0; } while (0)
 
 static inline bool
 fancy_syntax(const SerdReader* reader)

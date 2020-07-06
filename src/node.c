@@ -99,11 +99,11 @@ serd_uri_string_length(const SerdURI* uri)
 #define ADD_LEN(field, n_delims) \
 	if ((field).len) { len += (field).len + (n_delims); }
 
-	ADD_LEN(uri->path,      1);  // + possible leading `/'
-	ADD_LEN(uri->scheme,    1);  // + trailing `:'
-	ADD_LEN(uri->authority, 2);  // + leading `//'
-	ADD_LEN(uri->query,     1);  // + leading `?'
-	ADD_LEN(uri->fragment,  1);  // + leading `#'
+	ADD_LEN(uri->path,      1)  // + possible leading `/'
+	ADD_LEN(uri->scheme,    1)  // + trailing `:'
+	ADD_LEN(uri->authority, 2)  // + leading `//'
+	ADD_LEN(uri->query,     1)  // + leading `?'
+	ADD_LEN(uri->fragment,  1)  // + leading `#'
 
 	return len + 2;  // + 2 for authority `//'
 }

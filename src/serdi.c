@@ -29,8 +29,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#define SERDI_ERROR(msg)       fprintf(stderr, "serdi: " msg);
-#define SERDI_ERRORF(fmt, ...) fprintf(stderr, "serdi: " fmt, __VA_ARGS__);
+#define SERDI_ERROR(msg)       fprintf(stderr, "serdi: " msg)
+#define SERDI_ERRORF(fmt, ...) fprintf(stderr, "serdi: " fmt, __VA_ARGS__)
 
 typedef struct {
 	SerdSyntax  syntax;

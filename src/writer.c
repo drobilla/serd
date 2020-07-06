@@ -697,9 +697,11 @@ serd_writer_write_statement(SerdWriter*        writer,
 	}
 
 #define TRY(write_result) \
-	if (!(write_result)) { \
-		return SERD_ERR_UNKNOWN; \
-	}
+	do { \
+		if (!(write_result)) { \
+			return SERD_ERR_UNKNOWN; \
+		} \
+	} while (0)
 
 	switch (writer->syntax) {
 	case SERD_NTRIPLES:
