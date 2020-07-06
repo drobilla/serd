@@ -623,8 +623,11 @@ read_IRIREF_scheme(SerdReader* reader, Ref dest)
 		if (c == '>') {
 			return r_err(reader, SERD_ERR_BAD_SYNTAX, "missing IRI scheme\n");
 		} else if (!is_uri_scheme_char(c)) {
-			return r_err(reader, SERD_ERR_BAD_SYNTAX,
-			             "bad IRI scheme char `%X'\n", c);
+			return r_err(reader,
+			             SERD_ERR_BAD_SYNTAX,
+			             "bad IRI scheme char U+%04X (%c)\n",
+			             (unsigned)c,
+			             (char)c);
 		}
 
 		push_byte(reader, dest, eat_byte_safe(reader, c));
@@ -664,7 +667,7 @@ read_IRIREF(SerdReader* reader)
 			switch (code) {
 			case 0: case ' ': case '<': case '>':
 				r_err(reader, SERD_ERR_BAD_SYNTAX,
-				      "invalid escaped IRI character %X %c\n", code, code);
+				      "invalid escaped IRI character U+%04X\n", code);
 				return pop_node(reader, ref);
 			default:
 				break;

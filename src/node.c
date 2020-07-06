@@ -191,7 +191,10 @@ serd_node_new_file_uri(const uint8_t* path,
 			serd_chunk_sink(path + i, 1, &chunk);
 		} else {
 			char escape_str[4] = { '%', 0, 0, 0 };
-			snprintf(escape_str + 1, sizeof(escape_str) - 1, "%X", path[i]);
+			snprintf(escape_str + 1,
+			         sizeof(escape_str) - 1,
+			         "%X",
+			         (unsigned)path[i]);
 			serd_chunk_sink(escape_str, 3, &chunk);
 		}
 	}
