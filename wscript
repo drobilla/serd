@@ -56,6 +56,7 @@ def configure(conf):
                 '-Wno-cast-align',
                 '-Wno-cast-qual',
                 '-Wno-covered-switch-default',
+                '-Wno-disabled-macro-expansion',
                 '-Wno-double-promotion',
                 '-Wno-format-nonliteral',
                 '-Wno-implicit-fallthrough',
@@ -67,8 +68,11 @@ def configure(conf):
             'gcc': [
                 '-Wno-cast-align',
                 '-Wno-cast-qual',
+                '-Wno-inline',
                 '-Wno-padded',
                 '-Wno-sign-conversion',
+                '-Wno-suggest-attribute=const',
+                '-Wno-suggest-attribute=pure',
                 '-Wno-switch-enum',
             ],
             'msvc': [
