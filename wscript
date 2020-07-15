@@ -68,6 +68,7 @@ def configure(conf):
             'gcc': [
                 '-Wno-cast-align',
                 '-Wno-cast-qual',
+                '-Wno-float-conversion',
                 '-Wno-inline',
                 '-Wno-padded',
                 '-Wno-sign-conversion',
