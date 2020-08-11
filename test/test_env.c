@@ -21,6 +21,8 @@
 #include <assert.h>
 #include <string.h>
 
+#define NS_EG "http://example.org/"
+
 static void
 test_copy(void)
 {
@@ -62,106 +64,279 @@ test_comparison(void)
   serd_env_free(env);
 }
 
+static void
+test_null(void)
+{
+  SerdNode* const eg = serd_new_uri(SERD_STRING(NS_EG));
+
+  // "Copying" NULL returns null
+  assert(!serd_env_copy(NULL));
+
+  // Accessors are tolerant to a NULL env for convenience
+  assert(!serd_env_base_uri(NULL));
+  assert(!serd_env_expand(NULL, NULL));
+  assert(!serd_env_qualify(NULL, eg));
+
+  // Only null is equal to null
+  assert(serd_env_equals(NULL, NULL));
+
+  serd_node_free(eg);
+}
+
 static SerdStatus
 count_prefixes(void* handle, const SerdEvent* event)
 {
-  if (event->type == SERD_PREFIX) {
-    ++*(int*)handle;
-  }
+  *(int*)handle += event->type == SERD_PREFIX;
 
   return SERD_SUCCESS;
 }
 
 static void
-test_env(void)
+test_base_uri(void)
 {
-  static const SerdStringView prefix = SERD_STRING("eg.2");
-  static const SerdStringView eg     = SERD_STRING("http://example.org/");
+  SerdEnv* const  env = serd_env_new(SERD_EMPTY_STRING());
+  SerdNode* const eg  = serd_new_uri(SERD_STRING(NS_EG));
 
-  SerdNodes* nodes = serd_nodes_new();
-
-  const SerdNode* hello = serd_nodes_string(nodes, SERD_STRING("hello\""));
-  const SerdNode* rel   = serd_nodes_uri(nodes, SERD_STRING("rel"));
-
-  const SerdNode* foo_u =
-    serd_nodes_uri(nodes, SERD_STRING("http://example.org/foo"));
-
-  const SerdNode* foo_c = serd_nodes_curie(nodes, SERD_STRING("eg.2:foo"));
-  const SerdNode* b     = serd_nodes_curie(nodes, SERD_STRING("invalid"));
-
-  SerdEnv* env = serd_env_new(SERD_EMPTY_STRING());
-
-  serd_env_set_prefix(env, prefix, eg);
-
-  assert(!serd_env_base_uri(NULL));
-  assert(!serd_env_expand(NULL, NULL));
-  assert(!serd_env_expand(NULL, foo_c));
-  assert(!serd_env_expand(env, NULL));
-  assert(!serd_env_qualify(NULL, NULL));
-  assert(!serd_env_qualify(env, NULL));
-  assert(!serd_env_qualify(NULL, foo_u));
-
+  // Test that invalid calls work as expected
   assert(!serd_env_base_uri(env));
   assert(!serd_env_set_base_uri(env, SERD_EMPTY_STRING()));
   assert(!serd_env_base_uri(env));
 
-  serd_env_set_prefix(
-    env, SERD_STRING("eg.2"), SERD_STRING("http://example.org/"));
-
+  // Try setting a relative prefix with no base URI
   assert(serd_env_set_prefix(env, SERD_STRING("eg.3"), SERD_STRING("rel")) ==
          SERD_ERR_BAD_ARG);
 
-  SerdNode* xnode = serd_env_expand(env, hello);
-  assert(!xnode);
+  // Set a valid base URI
+  assert(!serd_env_set_base_uri(env, serd_node_string_view(eg)));
+  assert(serd_node_equals(serd_env_base_uri(env), eg));
 
-  assert(!serd_env_expand(env, b));
-  assert(!serd_env_expand(env, hello));
-
+  // Reset the base URI
   assert(!serd_env_set_base_uri(env, SERD_EMPTY_STRING()));
+  assert(!serd_env_base_uri(env));
 
-  SerdNode* xu = serd_env_expand(env, foo_c);
-  assert(!strcmp(serd_node_string(xu), "http://example.org/foo"));
-  serd_node_free(xu);
+  serd_env_free(env);
+  serd_node_free(eg);
+}
 
-  const SerdNode* badpre  = serd_nodes_curie(nodes, SERD_STRING("hm:what"));
-  SerdNode*       xbadpre = serd_env_expand(env, badpre);
-  assert(!xbadpre);
+static void
+test_set_prefix(void)
+{
+  static const SerdStringView eg    = SERD_STRING(NS_EG);
+  static const SerdStringView name1 = SERD_STRING("eg.1");
+  static const SerdStringView name2 = SERD_STRING("eg.2");
+  static const SerdStringView rel   = SERD_STRING("rel");
+  static const SerdStringView base  = SERD_STRING("http://example.org/");
 
-  SerdNode* xc = serd_env_expand(env, foo_c);
-  assert(serd_node_equals(xc, foo_u));
-  serd_node_free(xc);
+  SerdEnv* const env = serd_env_new(SERD_EMPTY_STRING());
 
-  const SerdNode* blank = serd_nodes_blank(nodes, SERD_STRING("b1"));
-  assert(!serd_env_expand(env, blank));
+  // Set a valid prefix
+  assert(!serd_env_set_prefix(env, name1, eg));
+
+  // Test setting a prefix from a relative URI
+  assert(serd_env_set_prefix(env, name2, rel) == SERD_ERR_BAD_ARG);
+  assert(!serd_env_set_base_uri(env, base));
+  assert(!serd_env_set_prefix(env, name2, rel));
+
+  // Test setting a prefix from strings
+  assert(!serd_env_set_prefix(
+    env, SERD_STRING("eg.3"), SERD_STRING("http://example.org/three")));
 
   size_t          n_prefixes = 0;
   SerdSink* const count_prefixes_sink =
     serd_sink_new(&n_prefixes, count_prefixes, NULL);
 
-  serd_env_set_prefix(env, prefix, eg);
   serd_env_write_prefixes(env, count_prefixes_sink);
-  assert(n_prefixes == 1);
-
-  SerdNode* qualified = serd_env_qualify(env, foo_u);
-  assert(serd_node_equals(qualified, foo_c));
-  serd_node_free(qualified);
-
-  const SerdNode* unqualifiable =
-    serd_nodes_uri(nodes, SERD_STRING("http://drobilla.net/"));
-
-  assert(!serd_env_qualify(env, unqualifiable));
-
-  assert(!serd_env_expand(env, rel));
-  serd_env_set_base_uri(env, SERD_STRING("http://example.org/base/"));
-  SerdNode* xrel = serd_env_expand(env, rel);
-  assert(xrel);
-  assert(!strcmp(serd_node_string(xrel), "http://example.org/base/rel"));
-  serd_node_free(xrel);
-
   serd_sink_free(count_prefixes_sink);
-  serd_nodes_free(nodes);
+  assert(n_prefixes == 3);
 
   serd_env_free(env);
+}
+
+static void
+test_expand_untyped_literal(void)
+{
+  SerdNode* const untyped = serd_new_string(SERD_STRING("data"));
+  SerdEnv* const  env     = serd_env_new(SERD_EMPTY_STRING());
+
+  assert(!serd_env_expand(env, untyped));
+
+  serd_env_free(env);
+  serd_node_free(untyped);
+}
+
+static void
+test_expand_bad_uri_datatype(void)
+{
+  static const SerdStringView type = SERD_STRING("Type");
+
+  SerdNode* const typed = serd_new_typed_literal(SERD_STRING("data"), type);
+  SerdEnv* const  env   = serd_env_new(SERD_EMPTY_STRING());
+
+  assert(!serd_env_expand(env, typed));
+
+  serd_env_free(env);
+  serd_node_free(typed);
+}
+
+static void
+test_expand_uri(void)
+{
+  static const SerdStringView base = SERD_STRING("http://example.org/b/");
+
+  SerdEnv* const  env       = serd_env_new(base);
+  SerdNode* const rel       = serd_new_uri(SERD_STRING("rel"));
+  SerdNode* const rel_out   = serd_env_expand(env, rel);
+  SerdNode* const empty     = serd_new_uri(SERD_EMPTY_STRING());
+  SerdNode* const empty_out = serd_env_expand(env, empty);
+
+  assert(!strcmp(serd_node_string(rel_out), "http://example.org/b/rel"));
+  assert(!strcmp(serd_node_string(empty_out), "http://example.org/b/"));
+
+  serd_node_free(empty_out);
+  serd_node_free(empty);
+  serd_node_free(rel_out);
+  serd_node_free(rel);
+  serd_env_free(env);
+}
+
+static void
+test_expand_empty_uri_ref(void)
+{
+  static const SerdStringView base = SERD_STRING("http://example.org/b/");
+
+  SerdNode* const rel     = serd_new_uri(SERD_STRING("rel"));
+  SerdEnv* const  env     = serd_env_new(base);
+  SerdNode* const rel_out = serd_env_expand(env, rel);
+
+  assert(!strcmp(serd_node_string(rel_out), "http://example.org/b/rel"));
+  serd_node_free(rel_out);
+
+  serd_env_free(env);
+  serd_node_free(rel);
+}
+
+static void
+test_expand_bad_uri(void)
+{
+  SerdNode* const bad_uri = serd_new_uri(SERD_STRING("rel"));
+  SerdEnv* const  env     = serd_env_new(SERD_EMPTY_STRING());
+
+  assert(!serd_env_expand(env, bad_uri));
+
+  serd_env_free(env);
+  serd_node_free(bad_uri);
+}
+
+static void
+test_expand_curie(void)
+{
+  static const SerdStringView name = SERD_STRING("eg.1");
+  static const SerdStringView eg   = SERD_STRING(NS_EG);
+
+  SerdNode* const curie = serd_new_curie(SERD_STRING("eg.1:foo"));
+  SerdEnv* const  env   = serd_env_new(SERD_EMPTY_STRING());
+
+  assert(!serd_env_set_prefix(env, name, eg));
+
+  SerdNode* const curie_out = serd_env_expand(env, curie);
+  assert(curie_out);
+  assert(!strcmp(serd_node_string(curie_out), "http://example.org/foo"));
+  serd_node_free(curie_out);
+
+  serd_env_free(env);
+  serd_node_free(curie);
+}
+
+static void
+test_expand_bad_curie(void)
+{
+  SerdNode* const curie = serd_new_curie(SERD_STRING("eg.1:foo"));
+  SerdEnv* const  env   = serd_env_new(SERD_EMPTY_STRING());
+
+  assert(!serd_env_expand(env, curie));
+
+  serd_env_free(env);
+  serd_node_free(curie);
+}
+
+static void
+test_expand_blank(void)
+{
+  SerdNode* const blank = serd_new_blank(SERD_STRING("b1"));
+  SerdEnv* const  env   = serd_env_new(SERD_EMPTY_STRING());
+
+  assert(!serd_env_expand(env, blank));
+
+  serd_env_free(env);
+  serd_node_free(blank);
+}
+
+static void
+test_qualify(void)
+{
+  static const SerdStringView eg = SERD_STRING(NS_EG);
+
+  SerdNodes* const nodes = serd_nodes_new();
+
+  const SerdNode* const name = serd_nodes_string(nodes, SERD_STRING("eg"));
+  const SerdNode* const c1   = serd_nodes_curie(nodes, SERD_STRING("eg:foo"));
+
+  const SerdNode* const u1 =
+    serd_nodes_uri(nodes, SERD_STRING("http://example.org/foo"));
+
+  const SerdNode* const u2 =
+    serd_nodes_uri(nodes, SERD_STRING("http://drobilla.net/bar"));
+
+  SerdEnv* const env = serd_env_new(SERD_EMPTY_STRING());
+
+  assert(!serd_env_set_prefix(env, serd_node_string_view(name), eg));
+
+  assert(!serd_env_expand(env, name));
+
+  SerdNode* const u1_out = serd_env_qualify(env, u1);
+  assert(serd_node_equals(u1_out, c1));
+  serd_node_free(u1_out);
+
+  assert(!serd_env_qualify(env, u2));
+
+  serd_env_free(env);
+  serd_nodes_free(nodes);
+}
+
+static void
+test_equals(void)
+{
+  static const SerdStringView name1 = SERD_STRING("n1");
+  static const SerdStringView base1 = SERD_STRING(NS_EG "b1/");
+  static const SerdStringView base2 = SERD_STRING(NS_EG "b2/");
+
+  SerdEnv* const env1 = serd_env_new(base1);
+  SerdEnv* const env2 = serd_env_new(base2);
+
+  assert(!serd_env_equals(env1, NULL));
+  assert(!serd_env_equals(NULL, env1));
+  assert(serd_env_equals(NULL, NULL));
+  assert(!serd_env_equals(env1, env2));
+
+  serd_env_set_base_uri(env2, base1);
+  assert(serd_env_equals(env1, env2));
+
+  assert(!serd_env_set_prefix(env1, name1, SERD_STRING(NS_EG "n1")));
+  assert(!serd_env_equals(env1, env2));
+  assert(!serd_env_set_prefix(env2, name1, SERD_STRING(NS_EG "othern1")));
+  assert(!serd_env_equals(env1, env2));
+  assert(!serd_env_set_prefix(env2, name1, SERD_STRING(NS_EG "n1")));
+  assert(serd_env_equals(env1, env2));
+
+  serd_env_set_base_uri(env2, base2);
+  assert(!serd_env_equals(env1, env2));
+
+  SerdEnv* const env3 = serd_env_copy(env2);
+  assert(serd_env_equals(env3, env2));
+  serd_env_free(env3);
+
+  serd_env_free(env1);
+  serd_env_free(env2);
 }
 
 int
@@ -169,6 +344,18 @@ main(void)
 {
   test_copy();
   test_comparison();
-  test_env();
+  test_null();
+  test_base_uri();
+  test_set_prefix();
+  test_expand_untyped_literal();
+  test_expand_bad_uri_datatype();
+  test_expand_uri();
+  test_expand_empty_uri_ref();
+  test_expand_bad_uri();
+  test_expand_curie();
+  test_expand_bad_curie();
+  test_expand_blank();
+  test_qualify();
+  test_equals();
   return 0;
 }
