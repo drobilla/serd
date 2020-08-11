@@ -193,14 +193,14 @@ serd_env_set_prefix(SerdEnv* const       env,
     serd_env_add(env, name, uri);
   } else if (!env->base_uri_node) {
     return SERD_ERR_BAD_ARG;
-  } else {
-    // Resolve relative URI and create a new node and URI for it
-    SerdNode* const abs_uri = serd_new_resolved_uri(uri, env->base_uri);
-
-    // Set prefix to resolved (absolute) URI
-    serd_env_add(env, name, serd_node_string_view(abs_uri));
-    serd_node_free(abs_uri);
   }
+
+  // Resolve relative URI and create a new node and URI for it
+  SerdNode* abs_uri = serd_new_resolved_uri(uri, env->base_uri);
+
+  // Set prefix to resolved (absolute) URI
+  serd_env_add(env, name, serd_node_string_view(abs_uri));
+  serd_node_free(abs_uri);
 
   return SERD_SUCCESS;
 }
@@ -257,10 +257,6 @@ serd_env_expand_in_place(const SerdEnv* const  env,
                          SerdStringView* const uri_prefix,
                          SerdStringView* const uri_suffix)
 {
-  if (!env) {
-    return SERD_ERR_BAD_CURIE;
-  }
-
   const char* const str   = serd_node_string(curie);
   const char* const colon = (const char*)memchr(str, ':', curie->length + 1);
   if (curie->type != SERD_CURIE || !colon) {
