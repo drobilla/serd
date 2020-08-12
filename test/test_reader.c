@@ -91,7 +91,7 @@ test_read_string(void)
                                              test_end_sink);
 
   assert(reader);
-  assert(serd_reader_get_handle(reader) == &rt);
+  assert(serd_reader_handle(reader) == &rt);
 
   // Test reading a string that ends exactly at the end of input (no newline)
   const SerdStatus st =
@@ -243,7 +243,7 @@ test_read_nquads_chunks(const char* const path)
                                              test_end_sink);
 
   assert(reader);
-  assert(serd_reader_get_handle(reader) == &rt);
+  assert(serd_reader_handle(reader) == &rt);
   assert(f);
 
   SerdStatus st = serd_reader_start_stream(reader, f, NULL, false);
@@ -323,7 +323,7 @@ test_read_turtle_chunks(const char* const path)
                                              test_end_sink);
 
   assert(reader);
-  assert(serd_reader_get_handle(reader) == &rt);
+  assert(serd_reader_handle(reader) == &rt);
   assert(f);
 
   SerdStatus st = serd_reader_start_stream(reader, f, NULL, false);

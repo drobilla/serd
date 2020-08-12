@@ -596,8 +596,8 @@ serd_env_free(SerdEnv* SERD_NULLABLE env);
 
 /// Get the current base URI
 SERD_API const SerdNode* SERD_NONNULL
-serd_env_get_base_uri(const SerdEnv* SERD_NONNULL env,
-                      SerdURIView* SERD_NULLABLE  out);
+serd_env_base_uri(const SerdEnv* SERD_NONNULL env,
+                  SerdURIView* SERD_NULLABLE  out);
 
 /// Set the current base URI
 SERD_API SerdStatus
@@ -699,7 +699,7 @@ serd_reader_set_error_sink(SerdReader* SERD_NONNULL    reader,
 /// Return the `handle` passed to serd_reader_new()
 SERD_PURE_API
 void* SERD_UNSPECIFIED
-serd_reader_get_handle(const SerdReader* SERD_NONNULL reader);
+serd_reader_handle(const SerdReader* SERD_NONNULL reader);
 
 /**
    Set a prefix to be added to all blank node identifiers.
@@ -853,7 +853,7 @@ serd_writer_free(SerdWriter* SERD_NULLABLE writer);
 /// Return the env used by `writer`
 SERD_PURE_API
 SerdEnv* SERD_NONNULL
-serd_writer_get_env(SerdWriter* SERD_NONNULL writer);
+serd_writer_env(SerdWriter* SERD_NONNULL writer);
 
 /**
    A convenience sink function for writing to a FILE*.
