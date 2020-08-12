@@ -85,7 +85,7 @@ test_null_callbacks(void)
     serd_reader_new(SERD_TURTLE, NULL, NULL, NULL, NULL, NULL, NULL);
 
   assert(reader);
-  assert(!serd_reader_get_handle(reader));
+  assert(!serd_reader_handle(reader));
 
   const SerdStatus st =
     serd_reader_read_string(reader, "_:s <http://example.org/p> _:o .");
@@ -102,7 +102,7 @@ test_read_string(void)
     SERD_TURTLE, &rt, NULL, base_sink, prefix_sink, statement_sink, end_sink);
 
   assert(reader);
-  assert(serd_reader_get_handle(reader) == &rt);
+  assert(serd_reader_handle(reader) == &rt);
 
   // Test reading a string that ends exactly at the end of input (no newline)
   const SerdStatus st =
@@ -251,7 +251,7 @@ test_read_nquads_chunks(const char* const path)
     SERD_NQUADS, &rt, NULL, base_sink, prefix_sink, statement_sink, end_sink);
 
   assert(reader);
-  assert(serd_reader_get_handle(reader) == &rt);
+  assert(serd_reader_handle(reader) == &rt);
   assert(f);
 
   SerdStatus st = serd_reader_start_source_stream(
@@ -329,7 +329,7 @@ test_read_turtle_chunks(const char* const path)
     SERD_TURTLE, &rt, NULL, base_sink, prefix_sink, statement_sink, end_sink);
 
   assert(reader);
-  assert(serd_reader_get_handle(reader) == &rt);
+  assert(serd_reader_handle(reader) == &rt);
   assert(f);
 
   SerdStatus st = serd_reader_start_source_stream(

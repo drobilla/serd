@@ -179,7 +179,7 @@ test_writer(const char* const path)
   assert(serd_writer_set_base_uri(writer, &lit));
   assert(serd_writer_set_prefix(writer, &lit, &lit));
   assert(serd_writer_end_anon(writer, NULL));
-  assert(serd_writer_get_env(writer) == env);
+  assert(serd_writer_env(writer) == env);
 
   const uint8_t buf[] = {0xEF, 0xBF, 0xBD, 0};
 
@@ -262,7 +262,7 @@ test_reader(const char* const path)
     SERD_TURTLE, rt, free, NULL, NULL, test_statement_sink, NULL);
 
   assert(reader);
-  assert(serd_reader_get_handle(reader) == rt);
+  assert(serd_reader_handle(reader) == rt);
 
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
 
