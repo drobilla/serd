@@ -250,6 +250,7 @@ serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
   case SERD_BLANK:
     break;
   }
+
   return NULL;
 }
 
