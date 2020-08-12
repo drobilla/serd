@@ -149,7 +149,7 @@ test_read_chunks(const char* const path)
                                              test_end_sink);
 
   assert(reader);
-  assert(serd_reader_get_handle(reader) == rt);
+  assert(serd_reader_handle(reader) == rt);
   assert(f);
 
   SerdStatus st = serd_reader_start_stream(reader, f, NULL, false);
@@ -231,7 +231,7 @@ test_read_string(void)
                                        test_end_sink);
 
   assert(reader);
-  assert(serd_reader_get_handle(reader) == rt);
+  assert(serd_reader_handle(reader) == rt);
 
   // Test reading a string that ends exactly at the end of input (no newline)
   const SerdStatus st =
@@ -267,7 +267,7 @@ test_writer(const char* const path)
   assert(serd_writer_set_base_uri(writer, &lit));
   assert(serd_writer_set_prefix(writer, &lit, &lit));
   assert(serd_writer_end_anon(writer, NULL));
-  assert(serd_writer_get_env(writer) == env);
+  assert(serd_writer_env(writer) == env);
 
   uint8_t  buf[] = {0xEF, 0xBF, 0xBD, 0};
   SerdNode s     = serd_node_from_string(SERD_URI, "");
@@ -381,7 +381,7 @@ test_reader(const char* path)
                                        test_end_sink);
 
   assert(reader);
-  assert(serd_reader_get_handle(reader) == rt);
+  assert(serd_reader_handle(reader) == rt);
 
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
 
