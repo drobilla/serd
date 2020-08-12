@@ -20,6 +20,7 @@
 
 #include "serd/serd.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -241,6 +242,7 @@ serd_env_qualify(const SerdEnv* const env, const SerdNode* const uri)
     const size_t prefix_len = serd_node_length(prefix);
     const size_t length     = prefix_len + 1 + suffix.len;
     SerdNode*    node       = serd_node_malloc(length, 0, SERD_CURIE);
+
     memcpy(serd_node_buffer(node), serd_node_string(prefix), prefix_len);
     serd_node_buffer(node)[prefix_len] = ':';
     memcpy(serd_node_buffer(node) + 1 + prefix_len, suffix.buf, suffix.len);
@@ -275,47 +277,67 @@ serd_env_expand_in_place(const SerdEnv* const  env,
   return SERD_ERR_BAD_CURIE;
 }
 
-SerdNode*
-serd_env_expand(const SerdEnv* const env, const SerdNode* const node)
+static SerdNode*
+expand_literal(const SerdEnv* const env, const SerdNode* const node)
 {
-  if (!node) {
-    return NULL;
-  }
+  assert(serd_node_type(node) == SERD_LITERAL);
 
-  switch (node->type) {
-  case SERD_LITERAL: {
-    const SerdNode* const short_datatype = serd_node_datatype(node);
-    if (short_datatype) {
-      SerdNode* const datatype = serd_env_expand(env, short_datatype);
-      if (datatype) {
-        SerdNode* ret = serd_new_typed_literal(serd_node_string_view(node),
-                                               serd_node_string_view(datatype));
-        serd_node_free(datatype);
-        return ret;
-      }
-    }
-    return NULL;
-  }
-  case SERD_URI:
-    return serd_new_resolved_uri(serd_node_string_view(node), env->base_uri);
-  case SERD_CURIE: {
-    SerdStringView prefix;
-    SerdStringView suffix;
-    if (serd_env_expand_in_place(env, node, &prefix, &suffix)) {
-      return NULL;
-    }
+  SerdNode* datatype = serd_env_expand(env, serd_node_datatype(node));
+  if (datatype) {
+    SerdNode* ret = serd_new_typed_literal(serd_node_string_view(node),
+                                           serd_node_string_view(datatype));
 
-    const size_t len = prefix.len + suffix.len;
-    SerdNode*    ret = serd_node_malloc(len, 0, SERD_URI);
-    char*        buf = serd_node_buffer(ret);
-
-    snprintf(buf, len + 1, "%s%s", prefix.buf, suffix.buf);
-    ret->length = len;
+    serd_node_free(datatype);
     return ret;
   }
-  case SERD_BLANK:
-    break;
+
+  return NULL;
+}
+
+static SerdNode*
+expand_uri(const SerdEnv* env, const SerdNode* node)
+{
+  assert(serd_node_type(node) == SERD_URI);
+
+  return serd_new_resolved_uri(serd_node_string_view(node), env->base_uri);
+}
+
+static SerdNode*
+expand_curie(const SerdEnv* env, const SerdNode* node)
+{
+  assert(serd_node_type(node) == SERD_CURIE);
+
+  SerdStringView prefix;
+  SerdStringView suffix;
+  if (serd_env_expand_in_place(env, node, &prefix, &suffix)) {
+    return NULL;
   }
+
+  const size_t len = prefix.len + suffix.len;
+  SerdNode*    ret = serd_node_malloc(len, 0, SERD_URI);
+  char*        buf = serd_node_buffer(ret);
+
+  snprintf(buf, len + 1, "%s%s", prefix.buf, suffix.buf);
+  ret->length = len;
+  return ret;
+}
+
+SerdNode*
+serd_env_expand(const SerdEnv* env, const SerdNode* node)
+{
+  if (node) {
+    switch (node->type) {
+    case SERD_LITERAL:
+      return expand_literal(env, node);
+    case SERD_URI:
+      return expand_uri(env, node);
+    case SERD_CURIE:
+      return expand_curie(env, node);
+    case SERD_BLANK:
+      return NULL;
+    }
+  }
+
   return NULL;
 }
 
