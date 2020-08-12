@@ -31,7 +31,7 @@ test_env(void)
 
   assert(!serd_env_set_base_uri(env, NULL));
   assert(serd_env_set_base_uri(env, &SERD_NODE_NULL));
-  assert(serd_node_equals(serd_env_get_base_uri(env, NULL), &SERD_NODE_NULL));
+  assert(serd_node_equals(serd_env_base_uri(env, NULL), &SERD_NODE_NULL));
 
   SerdStringView prefix;
   SerdStringView suffix;
@@ -79,9 +79,9 @@ test_env(void)
   assert(!serd_env_qualify(env, &shorter_uri, &prefix_name, &suffix));
 
   assert(!serd_env_set_base_uri(env, &u));
-  assert(serd_node_equals(serd_env_get_base_uri(env, NULL), &u));
+  assert(serd_node_equals(serd_env_base_uri(env, NULL), &u));
   assert(!serd_env_set_base_uri(env, NULL));
-  assert(!serd_env_get_base_uri(env, NULL)->buf);
+  assert(!serd_env_base_uri(env, NULL)->buf);
 
   serd_env_free(env);
 }
