@@ -288,8 +288,11 @@ expand_literal(const SerdEnv* const env, const SerdNode* const node)
     SerdStringView prefix = {NULL, 0};
     SerdStringView suffix = {NULL, 0};
     if (!serd_env_expand_in_place(env, datatype, &prefix, &suffix)) {
-      return serd_new_typed_literal_expanded(
-        serd_node_string_view(node), serd_node_flags(node), prefix, suffix);
+      return serd_new_typed_literal_expanded(serd_node_string_view(node),
+                                             serd_node_flags(node),
+                                             SERD_URI,
+                                             prefix,
+                                             suffix);
     }
 
   } else if (datatype && serd_node_type(datatype) == SERD_URI) {
