@@ -743,7 +743,7 @@ write_uri_node(SerdWriter* const writer,
   }
 
   if (!has_scheme && !supports_uriref(writer) &&
-      !serd_env_get_base_uri(writer->env, NULL)->buf) {
+      !serd_env_base_uri(writer->env, NULL)->buf) {
     return w_err(writer,
                  SERD_ERR_BAD_ARG,
                  "syntax does not support URI reference <%s>\n",
@@ -756,7 +756,7 @@ write_uri_node(SerdWriter* const writer,
     SerdURIView in_base_uri;
     SerdURIView uri;
     SerdURIView abs_uri;
-    serd_env_get_base_uri(writer->env, &in_base_uri);
+    serd_env_base_uri(writer->env, &in_base_uri);
     SERD_DISABLE_NULL_WARNINGS
     serd_uri_parse(node->buf, &uri);
     SERD_RESTORE_WARNINGS
@@ -1191,7 +1191,7 @@ serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 
   TRY(st, serd_env_set_base_uri(writer->env, uri));
 
-  serd_env_get_base_uri(writer->env, &writer->base_uri);
+  serd_env_base_uri(writer->env, &writer->base_uri);
 
   if (uri && (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG)) {
     TRY(st, terminate_context(writer));
@@ -1266,7 +1266,7 @@ serd_writer_free(SerdWriter* writer)
 }
 
 SerdEnv*
-serd_writer_get_env(SerdWriter* writer)
+serd_writer_env(SerdWriter* writer)
 {
   return writer->env;
 }
