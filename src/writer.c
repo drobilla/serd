@@ -577,6 +577,10 @@ write_uri_node(SerdWriter* const        writer,
       return sink("a", 1, writer) == 1;
     }
 
+    if (!strcmp(node->buf, NS_RDF "nil")) {
+      return sink("()", 2, writer) == 2;
+    }
+
     if (has_scheme && (writer->flags & SERD_WRITE_CURIED) &&
         serd_env_qualify(writer->env, node, &prefix, &suffix) &&
         is_name(prefix.buf, prefix.n_bytes) &&
@@ -589,7 +593,7 @@ write_uri_node(SerdWriter* const        writer,
   }
 
   if (!has_scheme && !supports_uriref(writer) &&
-      !serd_env_get_base_uri(writer->env, NULL)->buf) {
+      !serd_env_base_uri(writer->env, NULL)->buf) {
     w_err(writer,
           SERD_ERR_BAD_ARG,
           "syntax does not support URI reference <%s>\n",
@@ -602,7 +606,7 @@ write_uri_node(SerdWriter* const        writer,
     SerdURIView in_base_uri;
     SerdURIView uri;
     SerdURIView abs_uri;
-    serd_env_get_base_uri(writer->env, &in_base_uri);
+    serd_env_base_uri(writer->env, &in_base_uri);
     serd_uri_parse(node->buf, &uri);
     serd_uri_resolve(&uri, &in_base_uri, &abs_uri);
     bool         rooted = uri_is_under(&writer->base_uri, &writer->root_uri);
@@ -1001,7 +1005,7 @@ SerdStatus
 serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 {
   if (!serd_env_set_base_uri(writer->env, uri)) {
-    serd_env_get_base_uri(writer->env, &writer->base_uri);
+    serd_env_base_uri(writer->env, &writer->base_uri);
 
     if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
       if (writer->context.graph.type || writer->context.subject.type) {
@@ -1015,7 +1019,6 @@ serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
     writer->indent = 0;
     return reset_context(writer, true);
   }
-
   return SERD_ERR_UNKNOWN;
 }
 
@@ -1075,7 +1078,7 @@ serd_writer_free(SerdWriter* writer)
 }
 
 SerdEnv*
-serd_writer_get_env(SerdWriter* writer)
+serd_writer_env(SerdWriter* writer)
 {
   return writer->env;
 }
