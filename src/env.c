@@ -282,13 +282,21 @@ expand_literal(const SerdEnv* const env, const SerdNode* const node)
 {
   assert(serd_node_type(node) == SERD_LITERAL);
 
-  SerdNode* datatype = serd_env_expand(env, serd_node_datatype(node));
-  if (datatype) {
-    SerdNode* ret = serd_new_typed_literal(serd_node_string_view(node),
-                                           serd_node_string_view(datatype));
+  const SerdNode* const datatype = serd_node_datatype(node);
+  if (datatype && serd_node_type(datatype) == SERD_CURIE) {
+    SerdStringView prefix = {NULL, 0};
+    SerdStringView suffix = {NULL, 0};
+    if (!serd_env_expand_in_place(env, datatype, &prefix, &suffix)) {
+      return serd_new_typed_literal_expanded(
+        serd_node_string_view(node), serd_node_flags(node), prefix, suffix);
+    }
 
-    serd_node_free(datatype);
-    return ret;
+  } else if (datatype && serd_node_type(datatype) == SERD_URI) {
+    return serd_new_typed_literal_uri(
+      serd_node_string_view(node),
+      serd_node_flags(node),
+      serd_resolve_uri(serd_parse_uri(serd_node_string(datatype)),
+                       env->base_uri));
   }
 
   return NULL;

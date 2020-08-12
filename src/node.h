@@ -60,6 +60,17 @@ serd_node_zero_pad(SerdNode* SERD_NONNULL node);
 SerdNode* SERD_ALLOCATED
 serd_new_resolved_uri(SerdStringView string, SerdURIView base_uri);
 
+SerdNode* SERD_ALLOCATED
+serd_new_typed_literal_expanded(SerdStringView str,
+                                SerdNodeFlags  flags,
+                                SerdStringView datatype_prefix,
+                                SerdStringView datatype_suffix);
+
+SerdNode* SERD_ALLOCATED
+serd_new_typed_literal_uri(SerdStringView str,
+                           SerdNodeFlags  flags,
+                           SerdURIView    datatype_uri);
+
 ExessVariant
 serd_node_get_value_as(const SerdNode* SERD_NONNULL node,
                        ExessDatatype                value_type);
