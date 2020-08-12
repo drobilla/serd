@@ -53,7 +53,7 @@ serd_env_free(SerdEnv* const env)
 }
 
 const SerdNode*
-serd_env_get_base_uri(const SerdEnv* const env, SerdURIView* const out)
+serd_env_base_uri(const SerdEnv* const env, SerdURIView* const out)
 {
   assert(env);
 
