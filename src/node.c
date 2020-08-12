@@ -255,6 +255,7 @@ serd_new_plain_literal_i(const SerdStringView str,
 SerdNode*
 serd_new_typed_literal_expanded(const SerdStringView str,
                                 const SerdNodeFlags  flags,
+                                const SerdNodeType   datatype_type,
                                 const SerdStringView datatype_prefix,
                                 const SerdStringView datatype_suffix)
 {
@@ -272,7 +273,7 @@ serd_new_typed_literal_expanded(const SerdStringView str,
   char* const     datatype_buf  = serd_node_buffer(datatype_node);
 
   datatype_node->length = datatype_uri_len;
-  datatype_node->type   = SERD_URI;
+  datatype_node->type   = datatype_type;
   memcpy(datatype_buf, datatype_prefix.buf, datatype_prefix.len);
   memcpy(datatype_buf + datatype_prefix.len,
          datatype_suffix.buf,
