@@ -254,7 +254,7 @@ serd_reader_free(SerdReader* const reader)
 }
 
 void*
-serd_reader_get_handle(const SerdReader* const reader)
+serd_reader_handle(const SerdReader* const reader)
 {
   return reader->handle;
 }
