@@ -63,6 +63,7 @@ serd_new_resolved_uri(SerdStringView string, SerdURIView base_uri);
 SerdNode* SERD_ALLOCATED
 serd_new_typed_literal_expanded(SerdStringView str,
                                 SerdNodeFlags  flags,
+                                SerdNodeType   datatype_type,
                                 SerdStringView datatype_prefix,
                                 SerdStringView datatype_suffix);
 

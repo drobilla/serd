@@ -253,6 +253,7 @@ serd_new_plain_literal_i(const SerdStringView str,
 SerdNode*
 serd_new_typed_literal_expanded(const SerdStringView str,
                                 const SerdNodeFlags  flags,
+                                const SerdNodeType   datatype_type,
                                 const SerdStringView datatype_prefix,
                                 const SerdStringView datatype_suffix)
 {
@@ -270,7 +271,7 @@ serd_new_typed_literal_expanded(const SerdStringView str,
   char* const     datatype_buf  = serd_node_buffer(datatype_node);
 
   datatype_node->length = datatype_uri_len;
-  datatype_node->type   = SERD_URI;
+  datatype_node->type   = datatype_type;
   memcpy(datatype_buf, datatype_prefix.buf, datatype_prefix.len);
   memcpy(datatype_buf + datatype_prefix.len,
          datatype_suffix.buf,
@@ -315,14 +316,15 @@ serd_new_typed_literal_uri(const SerdStringView str,
 static SerdNode*
 serd_new_typed_literal_i(const SerdStringView str,
                          SerdNodeFlags        flags,
-                         const SerdStringView datatype_uri)
+                         SerdNodeType         datatype_type,
+                         const SerdStringView datatype)
 {
   assert(str.len);
-  assert(datatype_uri.len);
-  assert(strcmp(datatype_uri.buf, NS_RDF "langString"));
+  assert(datatype.len);
+  assert(strcmp(datatype.buf, NS_RDF "langString"));
 
   return serd_new_typed_literal_expanded(
-    str, flags, datatype_uri, SERD_EMPTY_STRING());
+    str, flags, datatype_type, datatype, SERD_EMPTY_STRING());
 }
 
 SerdNode*
@@ -353,7 +355,7 @@ serd_new_typed_literal(const SerdStringView str,
   SerdNodeFlags flags = 0;
   serd_strlen(str.buf, &flags);
 
-  return serd_new_typed_literal_i(str, flags, datatype_uri);
+  return serd_new_typed_literal_i(str, flags, SERD_URI, datatype_uri);
 }
 
 SerdNode*
