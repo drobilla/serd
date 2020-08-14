@@ -46,9 +46,9 @@
 
 #ifdef __cplusplus
 extern "C" {
-#    if defined(__clang__)
-#        pragma clang diagnostic push
-#        pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#    if defined(__GNUC__)
+#        pragma GCC diagnostic push
+#        pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
 #    endif
 #endif
 
@@ -1089,8 +1089,8 @@ serd_writer_finish(SerdWriter* writer);
 */
 
 #ifdef __cplusplus
-#    if defined(__clang__)
-#        pragma clang diagnostic pop
+#    if defined(__GNUC__)
+#        pragma GCC diagnostic pop
 #    endif
 }  /* extern "C" */
 #endif
