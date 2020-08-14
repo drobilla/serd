@@ -269,6 +269,39 @@ test_write_error(void)
   serd_world_free(world);
 }
 
+static void
+test_write_empty_syntax(void)
+{
+  SerdWorld* world = serd_world_new();
+  SerdNodes* nodes = serd_world_nodes(world);
+  SerdEnv*   env   = serd_env_new(SERD_EMPTY_STRING());
+
+  const SerdNode* s =
+    serd_nodes_uri(nodes, SERD_STRING("http://example.org/s"));
+  const SerdNode* p =
+    serd_nodes_uri(nodes, SERD_STRING("http://example.org/p"));
+
+  const SerdNode* o = serd_nodes_curie(nodes, SERD_STRING("eg:o"));
+
+  SerdBuffer buffer = {NULL, 0};
+
+  SerdWriter* writer = serd_writer_new(
+    world, SERD_SYNTAX_EMPTY, 0u, env, serd_buffer_sink, &buffer);
+
+  assert(writer);
+
+  assert(!serd_sink_write(serd_writer_sink(writer), 0u, s, p, o, NULL));
+
+  char* out = serd_buffer_sink_finish(&buffer);
+
+  assert(strlen(out) == 0);
+  serd_free(out);
+
+  serd_writer_free(writer);
+  serd_env_free(env);
+  serd_world_free(world);
+}
+
 int
 main(void)
 {
@@ -278,6 +311,7 @@ main(void)
   test_writer_stack_overflow();
   test_strict_write();
   test_write_error();
+  test_write_empty_syntax();
 
   return 0;
 }
