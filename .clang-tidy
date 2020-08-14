@@ -5,8 +5,6 @@ Checks: >
   -android-cloexec-fopen,
   -bugprone-branch-clone,
   -bugprone-suspicious-string-compare,
-  -cert-msc30-c,
-  -cert-msc50-cpp,
   -clang-analyzer-alpha.*,
   -clang-analyzer-valist.Uninitialized,
   -google-readability-todo,

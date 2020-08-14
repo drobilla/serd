@@ -173,15 +173,6 @@ test_read_chunks(void)
 static void
 test_string_to_double(void)
 {
-#define MAX       1000000
-#define NUM_TESTS 1000
-	for (int i = 0; i < NUM_TESTS; ++i) {
-		double dbl = rand() % MAX;
-		dbl += (rand() % MAX) / (double)MAX;
-
-		test_strtod(dbl, 1 / (double)MAX);
-	}
-
 	const double expt_test_nums[] = {
 		2.0E18, -5e19, +8e20, 2e+24, -5e-5, 8e0, 9e-0, 2e+0
 	};
@@ -194,6 +185,8 @@ test_string_to_double(void)
 		const double num   = serd_strtod(expt_test_strs[i], NULL);
 		const double delta = fabs(num - expt_test_nums[i]);
 		assert(delta <= DBL_EPSILON);
+
+		test_strtod(expt_test_nums[i], DBL_EPSILON);
 	}
 }
 
@@ -246,7 +239,7 @@ test_blob_to_node(void)
 	for (size_t size = 0; size < 256; ++size) {
 		uint8_t* data = size > 0 ? (uint8_t*)malloc(size) : NULL;
 		for (size_t i = 0; i < size; ++i) {
-			data[i] = (uint8_t)(rand() % 256);
+			data[i] = (uint8_t)((size + i) % 256);
 		}
 
 		SerdNode blob = serd_node_new_blob(data, size, size % 5);
