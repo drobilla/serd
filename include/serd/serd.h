@@ -84,8 +84,10 @@ typedef enum {
 
 /// Flags indicating certain string properties relevant to serialisation
 typedef enum {
-  SERD_HAS_NEWLINE = 1u << 0u, ///< Contains line breaks ('\\n' or '\\r')
-  SERD_HAS_QUOTE   = 1u << 1u  ///< Contains quotes ('"')
+  SERD_HAS_NEWLINE  = 1u << 0u, ///< Contains line breaks ('\\n' or '\\r')
+  SERD_HAS_QUOTE    = 1u << 1u, ///< Contains quotes ('"')
+  SERD_HAS_DATATYPE = 1u << 2u, ///< Literal node has datatype
+  SERD_HAS_LANGUAGE = 1u << 3u  ///< Literal node has language
 } SerdNodeFlag;
 
 /// Bitwise OR of SerdNodeFlag values
@@ -496,7 +498,21 @@ serd_new_substring(SerdNodeType              type,
                    const char* SERD_NULLABLE str,
                    size_t                    len);
 
-/// Simple wrapper for serd_new_uri() to resolve a URI node
+/**
+   Create a new literal node from `str`.
+
+   Either `datatype` or `lang` can be given, but not both, unless `datatype` is
+   rdf:langString in which case it is ignored.
+*/
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_new_literal(const char* SERD_NONNULL  str,
+                 const char* SERD_NULLABLE datatype,
+                 const char* SERD_NULLABLE lang);
+
+/**
+   Simple wrapper for serd_new_uri() to resolve a URI node.
+*/
 SERD_API
 SerdNode* SERD_ALLOCATED
 serd_new_uri(const char* SERD_NONNULL str);
@@ -614,6 +630,16 @@ SERD_PURE_API
 SerdNodeFlags
 serd_node_flags(const SerdNode* SERD_NONNULL node);
 
+/// Return the datatype of the literal node, if present
+SERD_PURE_API
+const SerdNode* SERD_NULLABLE
+serd_node_datatype(const SerdNode* SERD_NONNULL node);
+
+/// Return the language tag of the literal node, if present
+SERD_PURE_API
+const SerdNode* SERD_NULLABLE
+serd_node_language(const SerdNode* SERD_NONNULL node);
+
 /// Return true iff `a` is equal to `b`
 SERD_PURE_API
 bool
@@ -682,15 +708,12 @@ typedef SerdStatus (*SerdPrefixFunc)(void* SERD_NULLABLE          handle,
 
    Called for every RDF statement in the serialisation.
 */
-typedef SerdStatus (*SerdStatementFunc)(
-  void* SERD_NULLABLE           handle,
-  SerdStatementFlags            flags,
-  const SerdNode* SERD_NULLABLE graph,
-  const SerdNode* SERD_NONNULL  subject,
-  const SerdNode* SERD_NONNULL  predicate,
-  const SerdNode* SERD_NONNULL  object,
-  const SerdNode* SERD_NULLABLE object_datatype,
-  const SerdNode* SERD_NULLABLE object_lang);
+typedef SerdStatus (*SerdStatementFunc)(void* SERD_NULLABLE           handle,
+                                        SerdStatementFlags            flags,
+                                        const SerdNode* SERD_NULLABLE graph,
+                                        const SerdNode* SERD_NONNULL  subject,
+                                        const SerdNode* SERD_NONNULL  predicate,
+                                        const SerdNode* SERD_NONNULL  object);
 
 /**
    Sink function for anonymous node end markers.
@@ -1100,9 +1123,7 @@ serd_writer_write_statement(SerdWriter* SERD_NONNULL      writer,
                             const SerdNode* SERD_NULLABLE graph,
                             const SerdNode* SERD_NONNULL  subject,
                             const SerdNode* SERD_NONNULL  predicate,
-                            const SerdNode* SERD_NONNULL  object,
-                            const SerdNode* SERD_NULLABLE datatype,
-                            const SerdNode* SERD_NULLABLE lang);
+                            const SerdNode* SERD_NONNULL  object);
 
 /**
    Mark the end of an anonymous node's description.
