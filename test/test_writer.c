@@ -31,7 +31,7 @@ test_write_long_literal(void)
   SerdNode* p = serd_new_string(SERD_URI, "http://example.org/p");
   SerdNode* o = serd_new_string(SERD_LITERAL, "hello \"\"\"world\"\"\"!");
 
-  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o, NULL, NULL));
+  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o));
 
   serd_node_free(o);
   serd_node_free(p);
@@ -70,9 +70,7 @@ test_writer_cleanup(void)
   SerdNode* p = serd_new_string(SERD_URI, "http://example.org/p");
   SerdNode* o = serd_new_string(SERD_BLANK, "http://example.org/o");
 
-  st = serd_writer_write_statement(
-    writer, SERD_ANON_O_BEGIN, NULL, s, p, o, NULL, NULL);
-
+  st = serd_writer_write_statement(writer, SERD_ANON_O_BEGIN, NULL, s, p, o);
   assert(!st);
 
   // Write the start of several nested anonymous objects
@@ -83,7 +81,7 @@ test_writer_cleanup(void)
     SerdNode* next_o = serd_new_string(SERD_BLANK, buf);
 
     st = serd_writer_write_statement(
-      writer, SERD_ANON_O_BEGIN, NULL, o, p, next_o, NULL, NULL);
+      writer, SERD_ANON_O_BEGIN, NULL, o, p, next_o);
 
     serd_node_free(o);
     o = next_o;
@@ -124,11 +122,11 @@ test_strict_write(void)
   SerdNode* bad_lit = serd_new_string(SERD_LITERAL, (const char*)bad_str);
   SerdNode* bad_uri = serd_new_string(SERD_URI, (const char*)bad_str);
 
-  assert(serd_writer_write_statement(
-           writer, 0, NULL, s, p, bad_lit, NULL, NULL) == SERD_ERR_BAD_TEXT);
+  assert(serd_writer_write_statement(writer, 0, NULL, s, p, bad_lit) ==
+         SERD_ERR_BAD_TEXT);
 
-  assert(serd_writer_write_statement(
-           writer, 0, NULL, s, p, bad_uri, NULL, NULL) == SERD_ERR_BAD_TEXT);
+  assert(serd_writer_write_statement(writer, 0, NULL, s, p, bad_uri) ==
+         SERD_ERR_BAD_TEXT);
 
   serd_writer_free(writer);
   serd_env_free(env);
@@ -157,7 +155,7 @@ test_write_error(void)
   writer = serd_writer_new(
     SERD_TURTLE, (SerdWriterFlags)0, env, NULL, error_sink, NULL);
   assert(writer);
-  st = serd_writer_write_statement(writer, 0U, NULL, u, u, u, NULL, NULL);
+  st = serd_writer_write_statement(writer, 0U, NULL, u, u, u);
   assert(st == SERD_ERR_BAD_WRITE);
   serd_writer_free(writer);
 
