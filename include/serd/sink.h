@@ -38,15 +38,12 @@ typedef SerdStatus (*SerdPrefixFunc)(void* SERD_NULLABLE          handle,
 
    Called for every RDF statement in the serialisation.
 */
-typedef SerdStatus (*SerdStatementFunc)(
-  void* SERD_NULLABLE           handle,
-  SerdStatementFlags            flags,
-  const SerdNode* SERD_NULLABLE graph,
-  const SerdNode* SERD_NONNULL  subject,
-  const SerdNode* SERD_NONNULL  predicate,
-  const SerdNode* SERD_NONNULL  object,
-  const SerdNode* SERD_NULLABLE object_datatype,
-  const SerdNode* SERD_NULLABLE object_lang);
+typedef SerdStatus (*SerdStatementFunc)(void* SERD_NULLABLE           handle,
+                                        SerdStatementFlags            flags,
+                                        const SerdNode* SERD_NULLABLE graph,
+                                        const SerdNode* SERD_NONNULL  subject,
+                                        const SerdNode* SERD_NONNULL  predicate,
+                                        const SerdNode* SERD_NONNULL  object);
 
 /**
    Sink function for anonymous node end markers.

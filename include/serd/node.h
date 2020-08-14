@@ -71,8 +71,10 @@ typedef enum {
 
 /// Node flags, which ORed together make a #SerdNodeFlags
 typedef enum {
-  SERD_HAS_NEWLINE = 1U << 0U, ///< Contains line breaks ('\\n' or '\\r')
-  SERD_HAS_QUOTE   = 1U << 1U, ///< Contains quotes ('"')
+  SERD_HAS_NEWLINE  = 1U << 0U, ///< Contains line breaks ('\\n' or '\\r')
+  SERD_HAS_QUOTE    = 1U << 1U, ///< Contains quotes ('"')
+  SERD_HAS_DATATYPE = 1U << 2U, ///< Literal node has datatype
+  SERD_HAS_LANGUAGE = 1U << 3U, ///< Literal node has language
 } SerdNodeFlag;
 
 /// Bitwise OR of SerdNodeFlag values
@@ -93,6 +95,18 @@ SerdNode* SERD_ALLOCATED
 serd_new_substring(SerdNodeType              type,
                    const char* SERD_NULLABLE str,
                    size_t                    len);
+
+/**
+   Create a new literal node from `str`.
+
+   Either `datatype` or `lang` can be given, but not both, unless `datatype` is
+   rdf:langString in which case it is ignored.
+*/
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_new_literal(const char* SERD_NONNULL  str,
+                 const char* SERD_NULLABLE datatype,
+                 const char* SERD_NULLABLE lang);
 
 /// Create a new URI node
 SERD_API
@@ -211,6 +225,16 @@ serd_node_uri_view(const SerdNode* SERD_NONNULL node);
 SERD_PURE_API
 SerdNodeFlags
 serd_node_flags(const SerdNode* SERD_NONNULL node);
+
+/// Return the datatype of the literal node, if present
+SERD_PURE_API
+const SerdNode* SERD_NULLABLE
+serd_node_datatype(const SerdNode* SERD_NONNULL node);
+
+/// Return the language tag of the literal node, if present
+SERD_PURE_API
+const SerdNode* SERD_NULLABLE
+serd_node_language(const SerdNode* SERD_NONNULL node);
 
 /// Return true iff `a` is equal to `b`
 SERD_PURE_API
