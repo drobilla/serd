@@ -210,6 +210,13 @@ serd_env_expand_node(const SerdEnv*  env,
                      const SerdNode* node)
 {
 	switch (node->type) {
+	case SERD_NOTHING:
+	case SERD_LITERAL:
+		break;
+	case SERD_URI: {
+		SerdURI ignored;
+		return serd_node_new_uri_from_node(node, &env->base_uri, &ignored);
+	}
 	case SERD_CURIE: {
 		SerdChunk prefix;
 		SerdChunk suffix;
@@ -223,13 +230,10 @@ serd_env_expand_node(const SerdEnv*  env,
 		ret.n_chars = serd_strlen(buf, NULL, NULL);
 		return ret;
 	}
-	case SERD_URI: {
-		SerdURI ignored;
-		return serd_node_new_uri_from_node(node, &env->base_uri, &ignored);
+	case SERD_BLANK:
+		break;
 	}
-	default:
-		return SERD_NODE_NULL;
-	}
+	return SERD_NODE_NULL;
 }
 
 void

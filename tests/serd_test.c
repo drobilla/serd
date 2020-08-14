@@ -486,6 +486,10 @@ test_env(void)
 	const SerdNode lit = serd_node_from_string(SERD_LITERAL, USTR("hello"));
 	assert(serd_env_set_prefix(env, &b, &lit));
 
+	const SerdNode blank  = serd_node_from_string(SERD_BLANK, USTR("b1"));
+	const SerdNode xblank = serd_env_expand_node(env, &blank);
+	assert(serd_node_equals(&xblank, &SERD_NODE_NULL));
+
 	int n_prefixes = 0;
 	serd_env_set_prefix_from_strings(env, USTR("eg.2"), USTR("http://example.org/"));
 	serd_env_foreach(env, count_prefixes, &n_prefixes);
@@ -588,6 +592,23 @@ test_writer(const char* const path)
 
 	assert(!strcmp((const char*)out, "@base <http://example.org/base> .\n"));
 	serd_free(out);
+
+	// Test writing empty node
+	SerdNode    nothing = serd_node_from_string(SERD_NOTHING, USTR(""));
+	FILE* const empty   = tmpfile();
+
+	writer = serd_writer_new(
+		SERD_TURTLE, (SerdStyle)0, env, NULL, serd_file_sink, empty);
+
+	// FIXME: error handling
+	serd_writer_write_statement(writer, 0, NULL,
+	                            &s, &p, &nothing, NULL, NULL);
+
+	assert((size_t)ftell(empty) == strlen("<>\n\t<http://example.org/pred> "));
+
+	serd_writer_free(writer);
+	fclose(empty);
+
 	serd_env_free(env);
 	fclose(fd);
 }

@@ -63,7 +63,6 @@ def configure(conf):
                 '-Wno-padded',
                 '-Wno-reserved-id-macro',
                 '-Wno-sign-conversion',
-                '-Wno-switch-enum',
             ],
             'gcc': [
                 '-Wno-cast-align',
@@ -74,7 +73,6 @@ def configure(conf):
                 '-Wno-sign-conversion',
                 '-Wno-suggest-attribute=const',
                 '-Wno-suggest-attribute=pure',
-                '-Wno-switch-enum',
             ],
             'msvc': [
                 '/wd4061',  # enumerator in switch is not explicitly handled

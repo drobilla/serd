@@ -642,6 +642,8 @@ write_node(SerdWriter*        writer,
 {
 	bool ret = false;
 	switch (node->type) {
+	case SERD_NOTHING:
+		break;
 	case SERD_LITERAL:
 		ret = write_literal(writer, node, datatype, lang, flags);
 		break;
@@ -653,7 +655,7 @@ write_node(SerdWriter*        writer,
 		break;
 	case SERD_BLANK:
 		ret = write_blank(writer, node, field, flags);
-	default: break;
+		break;
 	}
 	writer->last_sep = SEP_NONE;
 	return ret;
@@ -715,9 +717,7 @@ serd_writer_write_statement(SerdWriter*        writer,
 		} \
 	} while (0)
 
-	switch (writer->syntax) {
-	case SERD_NTRIPLES:
-	case SERD_NQUADS:
+	if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
 		TRY(write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags));
 		sink(" ", 1, writer);
 		TRY(write_node(writer, predicate, NULL, NULL, FIELD_PREDICATE, flags));
@@ -729,8 +729,6 @@ serd_writer_write_statement(SerdWriter*        writer,
 		}
 		sink(" .\n", 3, writer);
 		return SERD_SUCCESS;
-	default:
-		break;
 	}
 
 	if ((graph && !serd_node_equals(graph, &writer->context.graph)) ||
