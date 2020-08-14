@@ -30,7 +30,7 @@ test_write_long_literal(void)
   SerdNode* p = serd_new_string(SERD_URI, "http://example.org/p");
   SerdNode* o = serd_new_string(SERD_LITERAL, "hello \"\"\"world\"\"\"!");
 
-  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o, NULL, NULL));
+  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o));
 
   serd_node_free(o);
   serd_node_free(p);
@@ -69,9 +69,7 @@ test_writer_cleanup(void)
   SerdNode* p = serd_new_string(SERD_URI, "http://example.org/p");
   SerdNode* o = serd_new_string(SERD_BLANK, "http://example.org/o");
 
-  st = serd_writer_write_statement(
-    writer, SERD_ANON_O_BEGIN, NULL, s, p, o, NULL, NULL);
-
+  st = serd_writer_write_statement(writer, SERD_ANON_O_BEGIN, NULL, s, p, o);
   assert(!st);
 
   // Write the start of several nested anonymous objects
@@ -82,7 +80,7 @@ test_writer_cleanup(void)
     SerdNode* next_o = serd_new_string(SERD_BLANK, buf);
 
     st = serd_writer_write_statement(
-      writer, SERD_ANON_O_BEGIN, NULL, o, p, next_o, NULL, NULL);
+      writer, SERD_ANON_O_BEGIN, NULL, o, p, next_o);
 
     serd_node_free(o);
     o = next_o;
