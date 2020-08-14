@@ -848,10 +848,11 @@ read_0_9(SerdReader* const reader, const Ref str, const bool at_least_one)
 }
 
 static SerdStatus
-read_number(SerdReader* const reader,
-            Ref* const        dest,
-            Ref* const        datatype,
-            bool* const       ate_dot)
+read_number(SerdReader* const    reader,
+            Ref* const           dest,
+            Ref* const           datatype,
+            SerdNodeFlags* const flags,
+            bool* const          ate_dot)
 {
 #define XSD_DECIMAL NS_XSD "decimal"
 #define XSD_DOUBLE NS_XSD "double"
@@ -910,6 +911,10 @@ read_number(SerdReader* const reader,
       push_node(reader, SERD_URI, XSD_INTEGER, sizeof(XSD_INTEGER) - 1);
   }
 
+  if (*datatype) {
+    *flags |= SERD_HAS_DATATYPE;
+  }
+
   return SERD_SUCCESS;
 }
 
@@ -944,6 +949,7 @@ read_literal(SerdReader* const    reader,
   switch (peek_byte(reader)) {
   case '@':
     eat_byte_safe(reader, '@');
+    *flags |= SERD_HAS_LANGUAGE;
     if ((st = read_LANGTAG(reader, lang))) {
       *datatype = pop_node(reader, *datatype);
       *lang     = pop_node(reader, *lang);
@@ -954,6 +960,7 @@ read_literal(SerdReader* const    reader,
   case '^':
     eat_byte_safe(reader, '^');
     eat_byte_check(reader, '^');
+    *flags |= SERD_HAS_DATATYPE;
     if ((st = read_iri(reader, datatype, ate_dot))) {
       *datatype = pop_node(reader, *datatype);
       *lang     = pop_node(reader, *lang);
@@ -962,7 +969,6 @@ read_literal(SerdReader* const    reader,
     }
     break;
   }
-
   return SERD_SUCCESS;
 }
 
@@ -1094,7 +1100,7 @@ read_anon(SerdReader* const reader,
 
   SerdStatus st = SERD_SUCCESS;
   if (ctx.subject) {
-    TRY(st, emit_statement(reader, ctx, *dest, 0, 0));
+    TRY(st, emit_statement(reader, ctx, *dest));
   }
 
   ctx.subject = *dest;
@@ -1103,21 +1109,17 @@ read_anon(SerdReader* const reader,
     if (!subject) {
       *ctx.flags |= SERD_ANON_CONT;
     }
-
     bool ate_dot_in_list = false;
     read_predicateObjectList(reader, ctx, &ate_dot_in_list);
     if (ate_dot_in_list) {
       return r_err(reader, SERD_ERR_BAD_SYNTAX, "`.' inside blank\n");
     }
-
     read_ws_star(reader);
     if (reader->end_sink) {
       reader->end_sink(reader->handle, deref(reader, *dest));
     }
-
     *ctx.flags = old_flags;
   }
-
   return (eat_byte_check(reader, ']') == ']') ? SERD_SUCCESS
                                               : SERD_ERR_BAD_SYNTAX;
 }
@@ -1190,7 +1192,7 @@ read_object(SerdReader* const  reader,
   case '7':
   case '8':
   case '9':
-    ret = read_number(reader, &o, &datatype, ate_dot);
+    ret = read_number(reader, &o, &datatype, &flags, ate_dot);
     break;
   case '\"':
   case '\'':
@@ -1206,6 +1208,7 @@ read_object(SerdReader* const  reader,
     node = deref(reader, o);
     if ((node->length == 4 && !memcmp(serd_node_string(node), "true", 4)) ||
         (node->length == 5 && !memcmp(serd_node_string(node), "false", 5))) {
+      flags      = flags | SERD_HAS_DATATYPE;
       node->type = SERD_LITERAL;
       datatype   = push_node(reader, SERD_URI, XSD_BOOLEAN, XSD_BOOLEAN_LEN);
       ret        = SERD_SUCCESS;
@@ -1225,7 +1228,7 @@ read_object(SerdReader* const  reader,
   }
 
   if (!ret && emit && simple) {
-    ret = emit_statement(reader, *ctx, o, datatype, lang);
+    ret = emit_statement(reader, *ctx, o);
   } else if (!ret && !emit) {
     ctx->object   = o;
     ctx->datatype = datatype;
@@ -1321,14 +1324,12 @@ read_collection(SerdReader* const reader, ReadContext ctx, Ref* const dest)
 {
   SerdStatus st = SERD_SUCCESS;
   eat_byte_safe(reader, '(');
-
   bool end = peek_delim(reader, ')');
-
-  *dest = end ? reader->rdf_nil : blank_id(reader);
+  *dest    = end ? reader->rdf_nil : blank_id(reader);
   if (ctx.subject) {
     // subject predicate _:head
     *ctx.flags |= (end ? 0 : SERD_LIST_O_BEGIN);
-    TRY(st, emit_statement(reader, ctx, *dest, 0, 0));
+    TRY(st, emit_statement(reader, ctx, *dest));
     *ctx.flags |= SERD_LIST_CONT;
   } else {
     *ctx.flags |= (end ? 0 : SERD_LIST_S_BEGIN);
@@ -1367,7 +1368,7 @@ read_collection(SerdReader* const reader, ReadContext ctx, Ref* const dest)
     // _:node rdf:rest _:rest
     *ctx.flags |= SERD_LIST_CONT;
     ctx.predicate = reader->rdf_rest;
-    TRY(st, emit_statement(reader, ctx, (end ? reader->rdf_nil : rest), 0, 0));
+    TRY(st, emit_statement(reader, ctx, (end ? reader->rdf_nil : rest)));
 
     ctx.subject = rest;        // _:node = _:rest
     rest        = node;        // _:rest = (old)_:node
@@ -1748,7 +1749,7 @@ read_nquadsDoc(SerdReader* const reader)
       }
     }
 
-    TRY(st, emit_statement(reader, ctx, ctx.object, ctx.datatype, ctx.lang));
+    TRY(st, emit_statement(reader, ctx, ctx.object));
 
     pop_node(reader, ctx.graph);
     pop_node(reader, ctx.lang);
