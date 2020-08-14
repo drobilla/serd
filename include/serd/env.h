@@ -8,7 +8,6 @@
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/status.h"
-#include "serd/uri.h"
 #include "zix/attributes.h"
 #include "zix/string_view.h"
 
@@ -27,21 +26,19 @@ typedef struct SerdEnvImpl SerdEnv;
 
 /// Create a new environment
 SERD_API SerdEnv* ZIX_ALLOCATED
-serd_env_new(const SerdNode* ZIX_NULLABLE base_uri);
+serd_env_new(ZixStringView base_uri);
 
 /// Free `env`
 SERD_API void
 serd_env_free(SerdEnv* ZIX_NULLABLE env);
 
 /// Get the current base URI
-SERD_API const SerdNode* ZIX_NULLABLE
-serd_env_base_uri(const SerdEnv* ZIX_NONNULL env,
-                  SerdURIView* ZIX_NULLABLE  out);
+SERD_PURE_API const SerdNode* ZIX_NULLABLE
+serd_env_base_uri(const SerdEnv* ZIX_NULLABLE env);
 
 /// Set the current base URI
 SERD_API SerdStatus
-serd_env_set_base_uri(SerdEnv* ZIX_NONNULL         env,
-                      const SerdNode* ZIX_NULLABLE uri);
+serd_env_set_base_uri(SerdEnv* ZIX_NONNULL env, ZixStringView uri);
 
 /**
    Set a namespace prefix.
@@ -51,15 +48,9 @@ serd_env_set_base_uri(SerdEnv* ZIX_NONNULL         env,
    expand to "http://www.w3.org/2001/XMLSchema#decimal".
 */
 SERD_API SerdStatus
-serd_env_set_prefix(SerdEnv* ZIX_NONNULL        env,
-                    const SerdNode* ZIX_NONNULL name,
-                    const SerdNode* ZIX_NONNULL uri);
-
-/// Set a namespace prefix
-SERD_API SerdStatus
-serd_env_set_prefix_from_strings(SerdEnv* ZIX_NONNULL    env,
-                                 const char* ZIX_NONNULL name,
-                                 const char* ZIX_NONNULL uri);
+serd_env_set_prefix(SerdEnv* ZIX_NONNULL env,
+                    ZixStringView        name,
+                    ZixStringView        uri);
 
 /// Qualify `uri` into a CURIE if possible
 SERD_API bool

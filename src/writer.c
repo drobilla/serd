@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: ISC
 
 #include "byte_sink.h"
+#include "env.h"
 #include "node.h"
 #include "serd_internal.h"
 #include "stack.h"
@@ -151,8 +152,6 @@ typedef enum { RESET_GRAPH = 1U << 0U, RESET_INDENT = 1U << 1U } ResetFlag;
 SERD_NODISCARD static SerdStatus
 write_node(SerdWriter*        writer,
            const SerdNode*    node,
-           const SerdNode*    datatype,
-           const SerdNode*    lang,
            Field              field,
            SerdStatementFlags flags);
 
@@ -701,16 +700,16 @@ reset_context(SerdWriter* writer, const unsigned flags)
 }
 
 SERD_NODISCARD static SerdStatus
-write_literal(SerdWriter*        writer,
-              const SerdNode*    node,
-              const SerdNode*    datatype,
-              const SerdNode*    lang,
-              SerdStatementFlags flags)
+write_literal(SerdWriter* const        writer,
+              const SerdNode* const    node,
+              const SerdStatementFlags flags)
 {
-  SerdStatus        st       = SERD_SUCCESS;
-  const char* const node_str = serd_node_string(node);
-  const size_t      node_len = serd_node_length(node);
-  const char* const type_uri = datatype ? serd_node_string(datatype) : NULL;
+  SerdStatus            st       = SERD_SUCCESS;
+  const SerdNode* const datatype = serd_node_datatype(node);
+  const SerdNode* const lang     = serd_node_language(node);
+  const char* const     node_str = serd_node_string(node);
+  const size_t          node_len = serd_node_length(node);
+  const char* const     type_uri = datatype ? serd_node_string(datatype) : NULL;
 
   if (supports_abbrev(writer) && type_uri) {
     if (!strncmp(type_uri, NS_XSD, sizeof(NS_XSD) - 1)) {
@@ -746,7 +745,7 @@ write_literal(SerdWriter*        writer,
     st = esink(serd_node_string(lang), lang_len, writer);
   } else if (type_uri) {
     TRY(st, esink("^^", 2, writer));
-    st = write_node(writer, datatype, NULL, NULL, FIELD_NONE, flags);
+    st = write_node(writer, datatype, FIELD_NONE, flags);
   }
 
   return st;
@@ -797,7 +796,7 @@ write_uri_node(SerdWriter* const writer,
   }
 
   if (!has_scheme && !supports_uriref(writer) &&
-      !serd_env_base_uri(writer->env, NULL)) {
+      !serd_env_base_uri(writer->env)) {
     return w_err(writer,
                  SERD_BAD_ARG,
                  "syntax does not support URI reference <%s>\n",
@@ -806,14 +805,14 @@ write_uri_node(SerdWriter* const writer,
 
   TRY(st, esink("<", 1, writer));
 
-  SerdURIView base_uri = SERD_URI_NULL;
   if (!(writer->flags & SERD_WRITE_UNRESOLVED) &&
-      serd_env_base_uri(writer->env, &base_uri)) {
-    SerdURIView        uri     = serd_parse_uri(node_str);
-    SerdURIView        abs_uri = serd_resolve_uri(uri, base_uri);
-    bool               rooted  = uri_is_under(&base_uri, &writer->root_uri);
-    const SerdURIView* root    = rooted ? &writer->root_uri : &base_uri;
-    UriSinkContext     ctx     = {writer, SERD_SUCCESS};
+      serd_env_base_uri(writer->env)) {
+    const SerdURIView  base_uri = serd_env_base_uri_view(writer->env);
+    SerdURIView        uri      = serd_parse_uri(node_str);
+    SerdURIView        abs_uri  = serd_resolve_uri(uri, base_uri);
+    bool               rooted   = uri_is_under(&base_uri, &writer->root_uri);
+    const SerdURIView* root     = rooted ? &writer->root_uri : &base_uri;
+    UriSinkContext     ctx      = {writer, SERD_SUCCESS};
 
     if (!supports_abbrev(writer) || !uri_is_under(&abs_uri, root)) {
       serd_write_uri(abs_uri, uri_sink, &ctx);
@@ -900,16 +899,14 @@ write_blank(SerdWriter* const        writer,
 }
 
 SERD_NODISCARD static SerdStatus
-write_node(SerdWriter*        writer,
-           const SerdNode*    node,
-           const SerdNode*    datatype,
-           const SerdNode*    lang,
-           Field              field,
-           SerdStatementFlags flags)
+write_node(SerdWriter* const        writer,
+           const SerdNode* const    node,
+           const Field              field,
+           const SerdStatementFlags flags)
 {
   switch (serd_node_type(node)) {
   case SERD_LITERAL:
-    return write_literal(writer, node, datatype, lang, flags);
+    return write_literal(writer, node, flags);
   case SERD_URI:
     return write_uri_node(writer, node, field);
   case SERD_CURIE:
@@ -932,7 +929,7 @@ write_pred(SerdWriter* writer, SerdStatementFlags flags, const SerdNode* pred)
 {
   SerdStatus st = SERD_SUCCESS;
 
-  TRY(st, write_node(writer, pred, NULL, NULL, FIELD_PREDICATE, flags));
+  TRY(st, write_node(writer, pred, FIELD_PREDICATE, flags));
   TRY(st, write_sep(writer, flags, SEP_P_O));
 
   serd_node_set(&writer->context.predicate, pred);
@@ -942,12 +939,10 @@ write_pred(SerdWriter* writer, SerdStatementFlags flags, const SerdNode* pred)
 }
 
 SERD_NODISCARD static SerdStatus
-write_list_next(SerdWriter*        writer,
-                SerdStatementFlags flags,
-                const SerdNode*    predicate,
-                const SerdNode*    object,
-                const SerdNode*    datatype,
-                const SerdNode*    lang)
+write_list_next(SerdWriter* const        writer,
+                const SerdStatementFlags flags,
+                const SerdNode* const    predicate,
+                const SerdNode* const    object)
 {
   SerdStatus st = SERD_SUCCESS;
 
@@ -957,7 +952,7 @@ write_list_next(SerdWriter*        writer,
   }
 
   if (!strcmp(serd_node_string(predicate), NS_RDF "first")) {
-    TRY(st, write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
+    TRY(st, write_node(writer, object, FIELD_OBJECT, flags));
   } else {
     TRY(st, write_sep(writer, writer->context.flags, SEP_LIST_SEP));
   }
@@ -982,14 +977,12 @@ terminate_context(SerdWriter* writer)
 }
 
 SerdStatus
-serd_writer_write_statement(SerdWriter*        writer,
-                            SerdStatementFlags flags,
-                            const SerdNode*    graph,
-                            const SerdNode*    subject,
-                            const SerdNode*    predicate,
-                            const SerdNode*    object,
-                            const SerdNode*    datatype,
-                            const SerdNode*    lang)
+serd_writer_write_statement(SerdWriter* const     writer,
+                            SerdStatementFlags    flags,
+                            const SerdNode* const graph,
+                            const SerdNode* const subject,
+                            const SerdNode* const predicate,
+                            const SerdNode* const object)
 {
   assert(writer);
 
@@ -1019,14 +1012,14 @@ serd_writer_write_statement(SerdWriter*        writer,
 
   // Simple case: write a line of NTriples or NQuads
   if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
-    TRY(st, write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags));
+    TRY(st, write_node(writer, subject, FIELD_SUBJECT, flags));
     TRY(st, esink(" ", 1, writer));
-    TRY(st, write_node(writer, predicate, NULL, NULL, FIELD_PREDICATE, flags));
+    TRY(st, write_node(writer, predicate, FIELD_PREDICATE, flags));
     TRY(st, esink(" ", 1, writer));
-    TRY(st, write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
+    TRY(st, write_node(writer, object, FIELD_OBJECT, flags));
     if (writer->syntax == SERD_NQUADS && graph) {
       TRY(st, esink(" ", 1, writer));
-      TRY(st, write_node(writer, graph, datatype, lang, FIELD_GRAPH, flags));
+      TRY(st, write_node(writer, graph, FIELD_GRAPH, flags));
     }
     TRY(st, esink(" .\n", 3, writer));
     return SERD_SUCCESS;
@@ -1041,7 +1034,7 @@ serd_writer_write_statement(SerdWriter*        writer,
     reset_context(writer, RESET_GRAPH | RESET_INDENT);
     if (graph) {
       TRY(st, write_top_level_sep(writer));
-      TRY(st, write_node(writer, graph, datatype, lang, FIELD_GRAPH, flags));
+      TRY(st, write_node(writer, graph, FIELD_GRAPH, flags));
       TRY(st, write_sep(writer, flags, SEP_GRAPH_BEGIN));
       serd_node_set(&writer->context.graph, graph);
     }
@@ -1056,9 +1049,7 @@ serd_writer_write_statement(SerdWriter*        writer,
       return esink("()", 2, writer);
     }
 
-    TRY_FAILING(
-      st, write_list_next(writer, flags, predicate, object, datatype, lang));
-
+    TRY_FAILING(st, write_list_next(writer, flags, predicate, object));
     if (st == SERD_FAILURE) { // Reached end of list
       pop_context(writer);
       return SERD_SUCCESS;
@@ -1093,7 +1084,7 @@ serd_writer_write_statement(SerdWriter*        writer,
       TRY(st, write_pred(writer, flags, predicate));
     }
 
-    TRY(st, write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
+    TRY(st, write_node(writer, object, FIELD_OBJECT, flags));
 
   } else {
     // No abbreviation
@@ -1106,7 +1097,7 @@ serd_writer_write_statement(SerdWriter*        writer,
         TRY(st, write_top_level_sep(writer));
       }
 
-      TRY(st, write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags));
+      TRY(st, write_node(writer, subject, FIELD_SUBJECT, flags));
       if ((flags & (SERD_ANON_S | SERD_LIST_S))) {
         TRY(st, write_sep(writer, flags, SEP_ANON_S_P));
       } else {
@@ -1124,7 +1115,7 @@ serd_writer_write_statement(SerdWriter*        writer,
       TRY(st, write_pred(writer, flags, predicate));
     }
 
-    TRY(st, write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
+    TRY(st, write_node(writer, object, FIELD_OBJECT, flags));
   }
 
   if (flags & (SERD_ANON_S | SERD_LIST_S)) {
@@ -1198,7 +1189,6 @@ serd_writer_new(SerdWorld*      world,
                 SerdSyntax      syntax,
                 SerdWriterFlags flags,
                 SerdEnv*        env,
-                const SerdNode* base_uri,
                 SerdWriteFunc   ssink,
                 void*           stream)
 {
@@ -1220,7 +1210,6 @@ serd_writer_new(SerdWorld*      world,
   writer->byte_sink  = serd_byte_sink_new(
     ssink, stream, (flags & SERD_WRITE_BULK) ? SERD_PAGE_SIZE : 1);
 
-  serd_env_set_base_uri(writer->env, base_uri);
   return writer;
 }
 
@@ -1246,19 +1235,31 @@ serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 {
   assert(writer);
 
-  SerdStatus st = SERD_SUCCESS;
+  SERD_DISABLE_NULL_WARNINGS
 
-  TRY(st, serd_env_set_base_uri(writer->env, uri));
+  if (uri && serd_node_type(uri) != SERD_URI) {
+    return SERD_BAD_ARG;
+  }
+
+  if (serd_node_equals(serd_env_base_uri(writer->env), uri)) {
+    return SERD_SUCCESS;
+  }
+
+  const ZixStringView uri_string =
+    uri ? serd_node_string_view(uri) : zix_empty_string();
+
+  SerdStatus st = SERD_SUCCESS;
+  TRY(st, serd_env_set_base_uri(writer->env, uri_string));
 
   if (uri && (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG)) {
     TRY(st, terminate_context(writer));
     TRY(st, esink("@base <", 7, writer));
-    SERD_DISABLE_NULL_WARNINGS
-    TRY(st, esink(serd_node_string(uri), serd_node_length(uri), writer));
-    SERD_RESTORE_WARNINGS
+    TRY(st, esink(uri_string.data, uri_string.length, writer));
     TRY(st, esink(">", 1, writer));
     TRY(st, write_sep(writer, writer->context.flags, SEP_END_DIRECT));
   }
+
+  SERD_RESTORE_WARNINGS
 
   return reset_context(writer, RESET_GRAPH | RESET_INDENT);
 }
@@ -1274,7 +1275,7 @@ serd_writer_set_root_uri(SerdWriter* writer, const SerdNode* uri)
 
   if (uri) {
     writer->root_node = serd_node_copy(uri);
-    writer->root_uri  = serd_parse_uri(serd_node_string(writer->root_node));
+    writer->root_uri  = serd_node_uri_view(writer->root_node);
   }
 
   return SERD_SUCCESS;
@@ -1285,20 +1286,18 @@ serd_writer_set_prefix(SerdWriter*     writer,
                        const SerdNode* name,
                        const SerdNode* uri)
 {
-  const char* const name_str = serd_node_string(name);
-  const size_t      name_len = serd_node_length(name);
-  const char* const uri_str  = serd_node_string(uri);
-  const size_t      uri_len  = serd_node_length(uri);
-  SerdStatus        st       = SERD_SUCCESS;
+  const ZixStringView name_string = serd_node_string_view(name);
+  const ZixStringView uri_string  = serd_node_string_view(uri);
+  SerdStatus          st          = SERD_SUCCESS;
 
-  TRY(st, serd_env_set_prefix(writer->env, name, uri));
+  TRY(st, serd_env_set_prefix(writer->env, name_string, uri_string));
 
   if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
     TRY(st, terminate_context(writer));
     TRY(st, esink("@prefix ", 8, writer));
-    TRY(st, esink(name_str, name_len, writer));
+    TRY(st, esink(name_string.data, name_string.length, writer));
     TRY(st, esink(": <", 3, writer));
-    TRY(st, ewrite_uri(writer, uri_str, uri_len));
+    TRY(st, ewrite_uri(writer, uri_string.data, uri_string.length));
     TRY(st, esink(">", 1, writer));
     TRY(st, write_sep(writer, writer->context.flags, SEP_END_DIRECT));
   }

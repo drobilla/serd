@@ -28,7 +28,7 @@
 static void
 test_uri_view(void)
 {
-  SerdNode* const string = serd_new_string(SERD_LITERAL, "httpstring");
+  SerdNode* const string = serd_new_string(zix_string("httpstring"));
 
   const SerdURIView uri = serd_node_uri_view(string);
   assert(!uri.scheme.length);
@@ -158,19 +158,22 @@ test_blob_to_node(void)
 static void
 test_node_equals(void)
 {
-  const uint8_t replacement_char_str[] = {0xEF, 0xBF, 0xBD, 0};
-  SerdNode*     lhs =
-    serd_new_string(SERD_LITERAL, (const char*)replacement_char_str);
-  SerdNode* rhs = serd_new_string(SERD_LITERAL, "123");
+  static const uint8_t replacement_char_str[] = {0xEF, 0xBF, 0xBD, 0};
+
+  SerdNode* const lhs =
+    serd_new_string(zix_substring((const char*)replacement_char_str, 3));
+
+  assert(serd_node_equals(lhs, lhs));
+
+  SerdNode* const rhs = serd_new_string(zix_string("123"));
   assert(!serd_node_equals(lhs, rhs));
 
-  SerdNode* qnode = serd_new_string(SERD_CURIE, "foo:bar");
+  SerdNode* const qnode = serd_new_curie(zix_string("foo:bar"));
   assert(!serd_node_equals(lhs, qnode));
-  assert(serd_node_equals(lhs, lhs));
+  serd_node_free(qnode);
 
   assert(!serd_node_copy(NULL));
 
-  serd_node_free(qnode);
   serd_node_free(lhs);
   serd_node_free(rhs);
 }
@@ -178,7 +181,7 @@ test_node_equals(void)
 static void
 test_node_from_string(void)
 {
-  SerdNode* const     hello        = serd_new_string(SERD_LITERAL, "hello\"");
+  SerdNode* const     hello        = serd_new_string(zix_string("hello\""));
   const ZixStringView hello_string = serd_node_string_view(hello);
 
   assert(serd_node_type(hello) == SERD_LITERAL);
@@ -188,7 +191,7 @@ test_node_from_string(void)
   assert(!strcmp(hello_string.data, "hello\""));
   serd_node_free(hello);
 
-  SerdNode* const uri = serd_new_string(SERD_URI, "http://example.org/");
+  SerdNode* const uri = serd_new_uri(zix_string("http://example.org/"));
   assert(serd_node_length(uri) == 19);
   assert(!strcmp(serd_node_string(uri), "http://example.org/"));
   assert(serd_node_uri_view(uri).authority.length == 11);
@@ -199,15 +202,73 @@ test_node_from_string(void)
 static void
 test_node_from_substring(void)
 {
-  SerdNode* a_b = serd_new_substring(SERD_LITERAL, "a\"bc", 3);
-  assert(serd_node_length(a_b) == 3 && serd_node_flags(a_b) == SERD_HAS_QUOTE &&
-         !strncmp(serd_node_string(a_b), "a\"b", 3));
+  SerdNode* const a_b = serd_new_string(zix_substring("a\"bc", 3));
+  assert(serd_node_length(a_b) == 3);
+  assert(serd_node_flags(a_b) == SERD_HAS_QUOTE);
+  assert(strlen(serd_node_string(a_b)) == 3);
+  assert(!strncmp(serd_node_string(a_b), "a\"b", 3));
+  serd_node_free(a_b);
+}
 
-  serd_node_free(a_b);
-  a_b = serd_new_substring(SERD_LITERAL, "a\"bc", 10);
-  assert(serd_node_length(a_b) == 4 && serd_node_flags(a_b) == SERD_HAS_QUOTE &&
-         !strncmp(serd_node_string(a_b), "a\"bc", 4));
-  serd_node_free(a_b);
+static void
+check_copy_equals(const SerdNode* const node)
+{
+  SerdNode* const copy = serd_node_copy(node);
+
+  assert(serd_node_equals(node, copy));
+
+  serd_node_free(copy);
+}
+
+static void
+test_literal(void)
+{
+  SerdNode* hello2 = serd_new_literal(
+    zix_string("hello\""), zix_empty_string(), zix_empty_string());
+
+  assert(serd_node_length(hello2) == 6 &&
+         serd_node_flags(hello2) == SERD_HAS_QUOTE &&
+         !strcmp(serd_node_string(hello2), "hello\""));
+  check_copy_equals(hello2);
+  serd_node_free(hello2);
+
+  SerdNode* hello_l = serd_new_literal(
+    zix_string("hello_l\""), zix_empty_string(), zix_string("en"));
+
+  assert(serd_node_length(hello_l) == 8);
+  assert(!strcmp(serd_node_string(hello_l), "hello_l\""));
+  assert(serd_node_flags(hello_l) == (SERD_HAS_QUOTE | SERD_HAS_LANGUAGE));
+
+  const SerdNode* const lang = serd_node_language(hello_l);
+  assert(lang);
+  assert(!strcmp(serd_node_string(lang), "en"));
+  check_copy_equals(hello_l);
+  serd_node_free(hello_l);
+
+  SerdNode* hello_dt = serd_new_literal(zix_string("hello_dt\""),
+                                        zix_string("http://example.org/Thing"),
+                                        zix_empty_string());
+
+  assert(serd_node_length(hello_dt) == 9);
+  assert(!strcmp(serd_node_string(hello_dt), "hello_dt\""));
+  assert(serd_node_flags(hello_dt) == (SERD_HAS_QUOTE | SERD_HAS_DATATYPE));
+
+  const SerdNode* const datatype = serd_node_datatype(hello_dt);
+  assert(datatype);
+  assert(!strcmp(serd_node_string(datatype), "http://example.org/Thing"));
+
+  check_copy_equals(hello_dt);
+  serd_node_free(hello_dt);
+}
+
+static void
+test_blank(void)
+{
+  SerdNode* blank = serd_new_blank(zix_string("b0"));
+  assert(serd_node_length(blank) == 2);
+  assert(serd_node_flags(blank) == 0);
+  assert(!strcmp(serd_node_string(blank), "b0"));
+  serd_node_free(blank);
 }
 
 int
@@ -221,6 +282,8 @@ main(void)
   test_node_equals();
   test_node_from_string();
   test_node_from_substring();
+  test_literal();
+  test_blank();
 
   printf("Success\n");
   return 0;

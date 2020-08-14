@@ -120,11 +120,7 @@ pop_node(SerdReader* const reader, const Ref ref)
 }
 
 SerdStatus
-emit_statement(SerdReader* const reader,
-               const ReadContext ctx,
-               const Ref         o,
-               const Ref         d,
-               const Ref         l)
+emit_statement(SerdReader* const reader, const ReadContext ctx, const Ref o)
 {
   const SerdStatus st = !reader->statement_func
                           ? SERD_SUCCESS
@@ -133,9 +129,7 @@ emit_statement(SerdReader* const reader,
                                                    deref(reader, ctx.graph),
                                                    deref(reader, ctx.subject),
                                                    deref(reader, ctx.predicate),
-                                                   deref(reader, o),
-                                                   deref(reader, d),
-                                                   deref(reader, l));
+                                                   deref(reader, o));
 
   *ctx.flags = 0;
   return st;

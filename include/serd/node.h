@@ -84,8 +84,10 @@ typedef enum {
 
 /// Node flags, which ORed together make a #SerdNodeFlags
 typedef enum {
-  SERD_HAS_NEWLINE = 1U << 0U, ///< Contains line breaks ('\\n' or '\\r')
-  SERD_HAS_QUOTE   = 1U << 1U, ///< Contains quotes ('"')
+  SERD_HAS_NEWLINE  = 1U << 0U, ///< Contains line breaks ('\\n' or '\\r')
+  SERD_HAS_QUOTE    = 1U << 1U, ///< Contains quotes ('"')
+  SERD_HAS_DATATYPE = 1U << 2U, ///< Literal node has datatype
+  SERD_HAS_LANGUAGE = 1U << 3U, ///< Literal node has language
 } SerdNodeFlag;
 
 /// Bitwise OR of #SerdNodeFlag values
@@ -98,16 +100,40 @@ typedef uint32_t SerdNodeFlags;
 */
 
 /**
-   Create a new node from `str`.
+   Create a new simple "token" node.
+
+   A "token" is a node that isn't a typed or tagged literal.  This can be used
+   to create URIs, blank nodes, CURIEs, and simple string literals.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_string(SerdNodeType type, const char* ZIX_NONNULL str);
+serd_new_token(SerdNodeType type, ZixStringView string);
 
 /**
-   Create a new node from a prefix of `str`.
+   Create a new string literal node.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_substring(SerdNodeType type, const char* ZIX_NONNULL str, size_t len);
+serd_new_string(ZixStringView string);
+
+/**
+   Create a new literal node from `str`.
+
+   Either `datatype_uri` or `lang` can be given, but not both, unless
+   `datatype_uri` is rdf:langString in which case it is ignored.
+*/
+SERD_API SerdNode* ZIX_ALLOCATED
+serd_new_literal(ZixStringView string,
+                 ZixStringView datatype_uri,
+                 ZixStringView lang);
+
+/**
+   Create a new node from a blank node label.
+*/
+SERD_API SerdNode* ZIX_ALLOCATED
+serd_new_blank(ZixStringView string);
+
+/// Create a new CURIE node
+SERD_API SerdNode* ZIX_ALLOCATED
+serd_new_curie(ZixStringView string);
 
 /**
    Create a new URI node from a parsed URI.
@@ -119,7 +145,7 @@ serd_new_parsed_uri(SerdURIView uri);
    Create a new URI node from a string.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_uri(const char* ZIX_NONNULL str);
+serd_new_uri(ZixStringView string);
 
 /**
    Create a new file URI node from a file system path and optional hostname.
@@ -128,12 +154,9 @@ serd_new_uri(const char* ZIX_NONNULL str);
    percent encoded as necessary.
 
    If `path` is relative, `hostname` is ignored.
-   If `out` is not NULL, it will be set to the parsed URI.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_file_uri(const char* ZIX_NONNULL   path,
-                  const char* ZIX_NULLABLE  hostname,
-                  SerdURIView* ZIX_NULLABLE out);
+serd_new_file_uri(ZixStringView path, ZixStringView hostname);
 
 /**
    Create a new node by serialising `d` into an xsd:decimal string.
@@ -242,6 +265,26 @@ serd_node_string_view(const SerdNode* ZIX_NONNULL node);
 */
 SERD_PURE_API SerdURIView
 serd_node_uri_view(const SerdNode* ZIX_NONNULL node);
+
+/**
+   Return the optional datatype of a literal node.
+
+   The datatype, if present, is always a URI, typically something like
+   <http://www.w3.org/2001/XMLSchema#boolean>.
+*/
+SERD_PURE_API const SerdNode* ZIX_NULLABLE
+serd_node_datatype(const SerdNode* ZIX_NONNULL node);
+
+/**
+   Return the optional language tag of a literal node.
+
+   The language tag, if present, is a well-formed BCP 47 (RFC 4647) language
+   tag like "en-ca".  Note that these must be handled case-insensitively, for
+   example, the common form "en-CA" is valid, but lowercase is considered
+   canonical here.
+*/
+SERD_PURE_API const SerdNode* ZIX_NULLABLE
+serd_node_language(const SerdNode* ZIX_NONNULL node);
 
 /**
    @}
