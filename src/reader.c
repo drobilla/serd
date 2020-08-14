@@ -15,6 +15,8 @@
 */
 
 #include "reader.h"
+#include "system.h"
+
 #include "serd_internal.h"
 
 #include <errno.h>

@@ -14,7 +14,11 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "byte_sink.h"
 #include "serd_internal.h"
+#include "stack.h"
+#include "string_utils.h"
+#include "uri_utils.h"
 
 #include "serd/serd.h"
 
@@ -25,6 +29,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+typedef enum {
+	FIELD_NONE,
+	FIELD_SUBJECT,
+	FIELD_PREDICATE,
+	FIELD_OBJECT,
+	FIELD_GRAPH
+} Field;
 
 typedef struct {
 	SerdNode graph;

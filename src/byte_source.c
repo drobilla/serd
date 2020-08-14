@@ -14,7 +14,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include "serd_internal.h"
+#include "byte_source.h"
+
+#include "system.h"
 
 #include "serd/serd.h"
 

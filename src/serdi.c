@@ -14,8 +14,10 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#define _POSIX_C_SOURCE 200809L /* for fileno and posix_fadvise */
+
 #include "serd_config.h"
-#include "serd_internal.h"
+#include "string_utils.h"
 
 #include "serd/serd.h"
 
@@ -24,6 +26,11 @@
 #include <io.h>
 #endif
 
+#if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
+#include <fcntl.h>
+#endif
+
+#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -121,6 +128,22 @@ quiet_error_sink(void* handle, const SerdError* e)
 	(void)handle;
 	(void)e;
 	return SERD_SUCCESS;
+}
+
+static inline FILE*
+serd_fopen(const char* path, const char* mode)
+{
+	FILE* fd = fopen(path, mode);
+	if (!fd) {
+		SERDI_ERRORF("failed to open file %s (%s)\n", path, strerror(errno));
+		return NULL;
+	}
+
+#if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
+	posix_fadvise(fileno(fd), 0, 0, POSIX_FADV_SEQUENTIAL|POSIX_FADV_NOREUSE);
+#endif
+
+	return fd;
 }
 
 int

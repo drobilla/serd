@@ -14,8 +14,12 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "byte_source.h"
 #include "reader.h"
 #include "serd_internal.h"
+#include "stack.h"
+#include "string_utils.h"
+#include "uri_utils.h"
 
 #include "serd/serd.h"
 
@@ -614,7 +618,7 @@ static bool
 read_IRIREF_scheme(SerdReader* reader, Ref dest)
 {
 	int c = peek_byte(reader);
-	if (!isalpha(c)) {
+	if (!is_alpha(c)) {
 		return r_err(reader, SERD_ERR_BAD_SYNTAX,
 		             "bad IRI scheme start `%c'\n", c);
 	}

@@ -14,7 +14,8 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include "serd_internal.h"
+#include "string_utils.h"
+#include "uri_utils.h"
 
 #include "serd/serd.h"
 
