@@ -436,9 +436,18 @@ def _load_rdf(filename):
     return model, instances
 
 
-def test_suite(ctx, base_uri, testdir, report, isyntax, options=[]):
+def _option_combinations(options):
+    "Return an iterator that cycles through all combinations of options"
     import itertools
 
+    combinations = []
+    for n in range(len(options) + 1):
+        combinations += list(itertools.combinations(options, n))
+
+    return itertools.cycle(combinations)
+
+
+def test_suite(ctx, base_uri, testdir, report, isyntax, options=[]):
     srcdir = ctx.path.abspath()
 
     mf = 'http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#'
@@ -450,13 +459,9 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, options=[]):
         asserter = 'http://drobilla.net/drobilla#me'
 
     def run_tests(test_class, tests, expected_return):
-        thru_flags   = [['-e'], ['-f'], ['-b'], ['-r', 'http://example.org/']]
-        thru_options = []
-        for n in range(len(thru_flags) + 1):
-            thru_options += list(itertools.combinations(thru_flags, n))
-        thru_options_iter = itertools.cycle(thru_options)
-
+        thru_flags = [['-e'], ['-f'], ['-b'], ['-r', 'http://example.org/']]
         osyntax = _test_output_syntax(test_class)
+        thru_options_iter = _option_combinations(thru_flags)
         tests_name = '%s.%s' % (testdir, test_class[test_class.find('#') + 1:])
         with ctx.group(tests_name) as check:
             for test in sorted(tests):
