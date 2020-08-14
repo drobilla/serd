@@ -67,6 +67,7 @@ Case is ignored, valid values are:
 .Dq NQuads ,
 .Dq NTriples ,
 .Dq TriG ,
+and
 .Dq Turtle .
 .Pp
 .It Fl k Ar bytes
@@ -86,10 +87,15 @@ Note that data may be lost when using this option.
 Write output as
 .Ar syntax .
 Case is ignored, valid values are:
+.Dq empty ,
 .Dq NQuads ,
 .Dq NTriples ,
 .Dq TriG ,
+and
 .Dq Turtle .
+When
+.Dq empty
+is given, output is suppressed, so only errors will be printed.
 .Pp
 .It Fl p Ar prefix
 Add
