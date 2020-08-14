@@ -146,9 +146,7 @@ serd_writer_write_statement(SerdWriter* SERD_NONNULL      writer,
                             const SerdNode* SERD_NULLABLE graph,
                             const SerdNode* SERD_NONNULL  subject,
                             const SerdNode* SERD_NONNULL  predicate,
-                            const SerdNode* SERD_NONNULL  object,
-                            const SerdNode* SERD_NULLABLE datatype,
-                            const SerdNode* SERD_NULLABLE lang);
+                            const SerdNode* SERD_NONNULL  object);
 
 /**
    Mark the end of an anonymous node's description.

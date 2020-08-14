@@ -27,7 +27,7 @@ test_write_long_literal(void)
   SerdNode* p = serd_new_string(SERD_URI, "http://example.org/p");
   SerdNode* o = serd_new_string(SERD_LITERAL, "hello \"\"\"world\"\"\"!");
 
-  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o, NULL, NULL));
+  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o));
 
   serd_node_free(o);
   serd_node_free(p);

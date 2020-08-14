@@ -72,8 +72,10 @@ typedef enum {
 
 /// Node flags, which ORed together make a #SerdNodeFlags
 typedef enum {
-  SERD_HAS_NEWLINE = 1U << 0U, ///< Contains line breaks ('\\n' or '\\r')
-  SERD_HAS_QUOTE   = 1U << 1U, ///< Contains quotes ('"')
+  SERD_HAS_NEWLINE  = 1U << 0U, ///< Contains line breaks ('\\n' or '\\r')
+  SERD_HAS_QUOTE    = 1U << 1U, ///< Contains quotes ('"')
+  SERD_HAS_DATATYPE = 1U << 2U, ///< Literal node has datatype
+  SERD_HAS_LANGUAGE = 1U << 3U, ///< Literal node has language
 } SerdNodeFlag;
 
 /// Bitwise OR of SerdNodeFlag values
@@ -94,6 +96,18 @@ SerdNode* SERD_ALLOCATED
 serd_new_substring(SerdNodeType              type,
                    const char* SERD_NULLABLE str,
                    size_t                    len);
+
+/**
+   Create a new literal node from `str`.
+
+   Either `datatype` or `lang` can be given, but not both, unless `datatype` is
+   rdf:langString in which case it is ignored.
+*/
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_new_literal(const char* SERD_NONNULL  str,
+                 const char* SERD_NULLABLE datatype,
+                 const char* SERD_NULLABLE lang);
 
 /// Create a new URI node
 SERD_API
@@ -212,6 +226,28 @@ serd_node_uri_view(const SerdNode* SERD_NONNULL node);
 SERD_PURE_API
 SerdNodeFlags
 serd_node_flags(const SerdNode* SERD_NONNULL node);
+
+/**
+   Return the optional datatype of a literal node.
+
+   The datatype, if present, is always a URI, typically something like
+   <http://www.w3.org/2001/XMLSchema#boolean>.
+*/
+SERD_PURE_API
+const SerdNode* SERD_NULLABLE
+serd_node_datatype(const SerdNode* SERD_NONNULL node);
+
+/**
+   Return the optional language tag of a literal node.
+
+   The language tag, if present, is a well-formed BCP 47 (RFC 4647) language
+   tag like "en-ca".  Note that these must be handled case-insensitively, for
+   example, the common form "en-CA" is valid, but lowercase is considered
+   canonical here.
+*/
+SERD_PURE_API
+const SerdNode* SERD_NULLABLE
+serd_node_language(const SerdNode* SERD_NONNULL node);
 
 /**
    Return true iff `a` is equal to `b`.
