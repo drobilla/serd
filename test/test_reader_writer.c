@@ -36,16 +36,12 @@ test_sink(void*              handle,
           const SerdNode*    graph,
           const SerdNode*    subject,
           const SerdNode*    predicate,
-          const SerdNode*    object,
-          const SerdNode*    object_datatype,
-          const SerdNode*    object_lang)
+          const SerdNode*    object)
 {
   (void)flags;
   (void)subject;
   (void)predicate;
   (void)object;
-  (void)object_datatype;
-  (void)object_lang;
 
   ReaderTest* rt = (ReaderTest*)handle;
   ++rt->n_statements;
@@ -188,57 +184,33 @@ test_writer(const char* const path)
   SerdNode* o     = serd_new_string(SERD_LITERAL, (char*)buf);
 
   // Write 3 invalid statements (should write nothing)
-  const SerdNode* junk[][5] = {
-    {s, o, o, NULL, NULL}, {o, p, o, NULL, NULL}, {s, o, p, NULL, NULL}};
-  for (size_t i = 0; i < sizeof(junk) / (sizeof(SerdNode*) * 5); ++i) {
-    assert(serd_writer_write_statement(writer,
-                                       0,
-                                       NULL,
-                                       junk[i][0],
-                                       junk[i][1],
-                                       junk[i][2],
-                                       junk[i][3],
-                                       junk[i][4]));
+  const SerdNode* junk[][3] = {{s, o, o}, {o, p, o}, {s, o, p}};
+  for (size_t i = 0; i < sizeof(junk) / (sizeof(SerdNode*) * 3); ++i) {
+    assert(serd_writer_write_statement(
+      writer, 0, NULL, junk[i][0], junk[i][1], junk[i][2]));
   }
 
-  SerdNode*       t         = serd_new_string(SERD_URI, "urn:Type");
-  SerdNode*       l         = serd_new_string(SERD_LITERAL, "en");
-  const SerdNode* good[][5] = {{s, p, o, NULL, NULL},
-                               {s, p, o, NULL, NULL},
-                               {s, p, o, t, NULL},
-                               {s, p, o, NULL, l},
-                               {s, p, o, t, l},
-                               {s, p, o, t, NULL},
-                               {s, p, o, NULL, l},
-                               {s, p, o, NULL, NULL},
-                               {s, p, o, NULL, NULL},
-                               {s, p, o, NULL, NULL}};
-  for (size_t i = 0; i < sizeof(good) / (sizeof(SerdNode*) * 5); ++i) {
-    assert(!serd_writer_write_statement(writer,
-                                        0,
-                                        NULL,
-                                        good[i][0],
-                                        good[i][1],
-                                        good[i][2],
-                                        good[i][3],
-                                        good[i][4]));
+  SerdNode*       t         = serd_new_literal((char*)buf, "urn:Type", NULL);
+  SerdNode*       l         = serd_new_literal((char*)buf, NULL, "en");
+  const SerdNode* good[][3] = {{s, p, o}, {s, p, t}, {s, p, l}};
+  for (size_t i = 0; i < sizeof(good) / (sizeof(SerdNode*) * 3); ++i) {
+    assert(!serd_writer_write_statement(
+      writer, 0, NULL, good[i][0], good[i][1], good[i][2]));
   }
 
   // Write statements with bad UTF-8 (should be replaced)
   const char bad_str[] = {(char)0xFF, (char)0x90, 'h', 'i', 0};
   SerdNode*  bad_lit   = serd_new_string(SERD_LITERAL, bad_str);
   SerdNode*  bad_uri   = serd_new_string(SERD_URI, bad_str);
-  assert(
-    !serd_writer_write_statement(writer, 0, NULL, s, p, bad_lit, NULL, NULL));
-  assert(
-    !serd_writer_write_statement(writer, 0, NULL, s, p, bad_uri, NULL, NULL));
+  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, bad_lit));
+  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, bad_uri));
   serd_node_free(bad_lit);
   serd_node_free(bad_uri);
 
   // Write 1 valid statement
   serd_node_free(o);
   o = serd_new_string(SERD_LITERAL, "hello");
-  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o, NULL, NULL));
+  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o));
 
   serd_writer_free(writer);
   serd_node_free(lit);
@@ -298,7 +270,7 @@ test_reader(const char* path)
 
   const SerdStatus st = serd_reader_read_file(reader, path);
   assert(!st);
-  assert(rt->n_statements == 13);
+  assert(rt->n_statements == 6);
   assert(rt->graph && serd_node_string(rt->graph) &&
          !strcmp(serd_node_string(rt->graph), "http://example.org/"));
 
