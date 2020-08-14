@@ -400,6 +400,14 @@ def _test_output_syntax(test_class):
     raise Exception('Unknown test class <%s>' % test_class)
 
 
+def _wrapped_command(cmd):
+    if Options.options.test_wrapper:
+        import shlex
+        return shlex.split(Options.options.test_wrapper) + cmd
+
+    return cmd
+
+
 def _load_rdf(filename):
     "Load an RDF file into python dictionaries via serdi.  Only supports URIs."
     import subprocess
@@ -409,11 +417,7 @@ def _load_rdf(filename):
     model = {}
     instances = {}
 
-    cmd = ['./serdi_static', filename]
-    if Options.options.test_wrapper:
-        import shlex
-        cmd = shlex.split(Options.options.test_wrapper) + cmd
-
+    cmd = _wrapped_command(['./serdi_static', filename])
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     for line in proc.communicate()[0].splitlines():
         matches = re.match(r'<([^ ]*)> <([^ ]*)> <([^ ]*)> \.',
