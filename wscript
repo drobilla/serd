@@ -78,6 +78,8 @@ def configure(conf):
                 '/wd4061',  # enumerator in switch is not explicitly handled
                 '/wd4365',  # signed/unsigned mismatch
                 '/wd4514',  # unreferenced inline function has been removed
+                '/wd4710',  # function not inlined
+                '/wd4711',  # function selected for automatic inline expansion
                 '/wd4820',  # padding added after construct
                 '/wd4996',  # POSIX name for this item is deprecated
             ],
