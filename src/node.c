@@ -46,10 +46,10 @@ serd_node_from_string(SerdType type, const uint8_t* str)
 		return SERD_NODE_NULL;
 	}
 
-	uint32_t     flags       = 0;
-	size_t       buf_n_bytes = 0;
-	const size_t buf_n_chars = serd_strlen(str, &buf_n_bytes, &flags);
-	SerdNode ret = { str, buf_n_bytes, buf_n_chars, flags, type };
+	SerdNodeFlags flags       = 0;
+	size_t        buf_n_bytes = 0;
+	const size_t  buf_n_chars = serd_strlen(str, &buf_n_bytes, &flags);
+	SerdNode ret = {str, buf_n_bytes, buf_n_chars, flags, type};
 	return ret;
 }
 
@@ -60,9 +60,9 @@ serd_node_from_substring(SerdType type, const uint8_t* str, const size_t len)
 		return SERD_NODE_NULL;
 	}
 
-	uint32_t     flags       = 0;
-	size_t       buf_n_bytes = 0;
-	const size_t buf_n_chars = serd_substrlen(str, len, &buf_n_bytes, &flags);
+	SerdNodeFlags flags       = 0;
+	size_t        buf_n_bytes = 0;
+	const size_t  buf_n_chars = serd_substrlen(str, len, &buf_n_bytes, &flags);
 	assert(buf_n_bytes <= len);
 	SerdNode ret = { str, buf_n_bytes, buf_n_chars, flags, type };
 	return ret;
