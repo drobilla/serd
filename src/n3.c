@@ -641,36 +641,32 @@ read_LANGTAG(SerdReader* reader)
 	return ref;
 }
 
-static bool
+static SerdStatus
 read_IRIREF_scheme(SerdReader* reader, Ref dest)
 {
 	int c = peek_byte(reader);
 	if (!is_alpha(c)) {
-		r_err(reader, SERD_ERR_BAD_SYNTAX, "bad IRI scheme start `%c'\n", c);
-		return false;
+		return r_err(reader, SERD_ERR_BAD_SYNTAX,
+		             "bad IRI scheme start `%c'\n", c);
 	}
 
 	while ((c = peek_byte(reader)) != EOF) {
 		if (c == '>') {
-			r_err(reader, SERD_ERR_BAD_SYNTAX, "missing IRI scheme\n");
-			return false;
+			return r_err(reader, SERD_ERR_BAD_SYNTAX, "missing IRI scheme\n");
 		} else if (!is_uri_scheme_char(c)) {
-			r_err(reader,
-			      SERD_ERR_BAD_SYNTAX,
-			      "bad IRI scheme char U+%04X (%c)\n",
-			      (unsigned)c,
-			      (char)c);
-			return false;
+			return r_err(reader, SERD_ERR_BAD_SYNTAX,
+			             "bad IRI scheme char U+%04X (%c)\n",
+			             (unsigned)c,
+			             (char)c);
 		}
 
 		push_byte(reader, dest, eat_byte_safe(reader, c));
 		if (c == ':') {
-			return true;  // End of scheme
+			return SERD_SUCCESS;  // End of scheme
 		}
 	}
 
-	r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file\n");
-	return false;
+	return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file\n");
 }
 
 static Ref
@@ -679,7 +675,7 @@ read_IRIREF(SerdReader* reader)
 	TRY_RET(eat_byte_check(reader, '<'));
 	Ref        ref = push_node(reader, SERD_URI, "", 0);
 	SerdStatus st  = SERD_SUCCESS;
-	if (!fancy_syntax(reader) && !read_IRIREF_scheme(reader, ref)) {
+	if (!fancy_syntax(reader) && read_IRIREF_scheme(reader, ref)) {
 		return pop_node(reader, ref);
 	}
 
