@@ -312,11 +312,14 @@ eat_delim(SerdReader* reader, const char delim)
 
 // STRING_LITERAL_LONG_QUOTE and STRING_LITERAL_LONG_SINGLE_QUOTE
 // Initial triple quotes are already eaten by caller
-static Ref
-read_STRING_LITERAL_LONG(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
+static SerdStatus
+read_STRING_LITERAL_LONG(SerdReader*    reader,
+                         Ref            ref,
+                         SerdNodeFlags* flags,
+                         uint8_t        q)
 {
-	Ref        ref = push_node(reader, SERD_LITERAL, "", 0);
-	SerdStatus st  = SERD_SUCCESS;
+	SerdStatus st = SERD_SUCCESS;
+
 	while (!reader->status && !(st && reader->strict)) {
 		const int c = peek_byte(reader);
 		if (c == '\\') {
@@ -324,9 +327,8 @@ read_STRING_LITERAL_LONG(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 			uint32_t code = 0;
 			if ((st = read_ECHAR(reader, ref, flags)) &&
 			    (st = read_UCHAR(reader, ref, &code))) {
-				r_err(reader, st,
-				      "invalid escape `\\%c'\n", peek_byte(reader));
-				return pop_node(reader, ref);
+				return r_err(reader, st,
+				             "invalid escape `\\%c'\n", peek_byte(reader));
 			}
 		} else if (c == q) {
 			eat_byte_safe(reader, q);
@@ -338,89 +340,90 @@ read_STRING_LITERAL_LONG(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 			}
 			*flags |= SERD_HAS_QUOTE;
 			push_byte(reader, ref, c);
-			read_character(reader, ref, flags, (uint8_t)q2);
+			st = read_character(reader, ref, flags, (uint8_t)q2);
 		} else if (c == EOF) {
-			r_err(reader, SERD_ERR_BAD_SYNTAX, "end of file in long string\n");
-			return pop_node(reader, ref);
+			return r_err(reader, SERD_ERR_BAD_SYNTAX,
+			             "end of file in long string\n");
 		} else {
 			st = read_character(
 				reader, ref, flags, (uint8_t)eat_byte_safe(reader, c));
 		}
 	}
-	return ref;
+
+	return (st && reader->strict) ? st : SERD_SUCCESS;
 }
 
 // STRING_LITERAL_QUOTE and STRING_LITERAL_SINGLE_QUOTE
 // Initial quote is already eaten by caller
-static Ref
-read_STRING_LITERAL(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
+static SerdStatus
+read_STRING_LITERAL(SerdReader*    reader,
+                    Ref            ref,
+                    SerdNodeFlags* flags,
+                    uint8_t        q)
 {
-	Ref        ref = push_node(reader, SERD_LITERAL, "", 0);
-	SerdStatus st  = SERD_SUCCESS;
+	SerdStatus st = SERD_SUCCESS;
+
 	while (!reader->status && !(st && reader->strict)) {
 		const int c    = peek_byte(reader);
 		uint32_t  code = 0;
 		switch (c) {
 		case EOF:
-			r_err(reader, SERD_ERR_BAD_SYNTAX, "end of file in short string\n");
-			return pop_node(reader, ref);
+			return r_err(reader, SERD_ERR_BAD_SYNTAX,
+			             "end of file in short string\n");
 		case '\n': case '\r':
-			r_err(reader, SERD_ERR_BAD_SYNTAX, "line end in short string\n");
-			return pop_node(reader, ref);
+			return r_err(reader, SERD_ERR_BAD_SYNTAX,
+			             "line end in short string\n");
 		case '\\':
 			eat_byte_safe(reader, c);
 			if ((st = read_ECHAR(reader, ref, flags)) &&
 			    (st = read_UCHAR(reader, ref, &code))) {
-				r_err(reader, st,
-				      "invalid escape `\\%c'\n", peek_byte(reader));
-				return pop_node(reader, ref);
+				return r_err(reader, st,
+				             "invalid escape `\\%c'\n", peek_byte(reader));
 			}
 			break;
 		default:
 			if (c == q) {
 				eat_byte_check(reader, q);
-				return ref;
+				return SERD_SUCCESS;
 			} else {
 				st = read_character(
 					reader, ref, flags, (uint8_t)eat_byte_safe(reader, c));
 			}
 		}
 	}
-	eat_byte_check(reader, q);
-	return ref;
+
+	return st ? st
+	          : eat_byte_check(reader, q) ? SERD_SUCCESS : SERD_ERR_BAD_SYNTAX;
 }
 
-static Ref
-read_String(SerdReader* reader, SerdNodeFlags* flags)
+static SerdStatus
+read_String(SerdReader* reader, Ref node, SerdNodeFlags* flags)
 {
 	const int q1 = peek_byte(reader);
 	eat_byte_safe(reader, q1);
 
 	const int q2 = peek_byte(reader);
 	if (q2 == EOF) {
-		r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file\n");
-		return 0;
+		return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file\n");
 	} else if (q2 != q1) {  // Short string (not triple quoted)
-		return read_STRING_LITERAL(reader, flags, (uint8_t)q1);
+		return read_STRING_LITERAL(reader, node, flags, (uint8_t)q1);
 	}
 
 	eat_byte_safe(reader, q2);
 	const int q3 = peek_byte(reader);
 	if (q3 == EOF) {
-		r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file\n");
-		return 0;
+		return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file\n");
 	} else if (q3 != q1) {  // Empty short string ("" or '')
-		return push_node(reader, SERD_LITERAL, "", 0);
+		return SERD_SUCCESS;
 	}
 
 	if (!fancy_syntax(reader)) {
-		r_err(reader, SERD_ERR_BAD_SYNTAX,
-		      "syntax does not support long literals\n");
-		return 0;
+		return r_err(reader, SERD_ERR_BAD_SYNTAX,
+		             "syntax does not support long literals\n");
 	}
 
 	eat_byte_safe(reader, q3);
-	return read_STRING_LITERAL_LONG(reader, flags, (uint8_t)q1);
+	return read_STRING_LITERAL_LONG(reader, node, flags, (uint8_t)q1);
 }
 
 static inline bool
@@ -845,9 +848,12 @@ static bool
 read_literal(SerdReader* reader, Ref* dest,
              Ref* datatype, Ref* lang, SerdNodeFlags* flags, bool* ate_dot)
 {
-	Ref str = read_String(reader, flags);
-	if (!str) {
-		return false;
+	*dest = push_node(reader, SERD_LITERAL, "", 0);
+
+	SerdStatus st = read_String(reader, *dest, flags);
+	if (st) {
+		*dest = pop_node(reader, *dest);
+		return st;
 	}
 
 	switch (peek_byte(reader)) {
@@ -861,12 +867,11 @@ read_literal(SerdReader* reader, Ref* dest,
 		TRY_THROW(read_iri(reader, datatype, ate_dot));
 		break;
 	}
-	*dest = str;
 	return true;
 except:
 	*datatype = pop_node(reader, *datatype);
 	*lang     = pop_node(reader, *lang);
-	pop_node(reader, str);
+	*dest     = pop_node(reader, *dest);
 	r_err(reader, SERD_ERR_BAD_SYNTAX, "bad literal syntax\n");
 	return false;
 }
