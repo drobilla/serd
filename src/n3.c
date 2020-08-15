@@ -731,17 +731,21 @@ read_IRIREF(SerdReader* reader)
 	return pop_node(reader, ref);
 }
 
-static bool
+static SerdStatus
 read_PrefixedName(SerdReader* reader, Ref dest, bool read_prefix, bool* ate_dot)
 {
-	if (read_prefix && read_PN_PREFIX(reader, dest) > SERD_FAILURE) {
-		return false;
+	SerdStatus st = SERD_SUCCESS;
+	if (read_prefix && ((st = read_PN_PREFIX(reader, dest)) > SERD_FAILURE)) {
+		return st;
 	} else if (peek_byte(reader) != ':') {
-		return false;
+		return SERD_FAILURE;
 	}
 
 	push_byte(reader, dest, eat_byte_safe(reader, ':'));
-	return read_PN_LOCAL(reader, dest, ate_dot) <= SERD_FAILURE;
+
+	st = read_PN_LOCAL(reader, dest, ate_dot);
+
+	return (st > SERD_FAILURE) ? st : SERD_SUCCESS;
 }
 
 static bool
@@ -831,7 +835,7 @@ read_iri(SerdReader* reader, Ref* dest, bool* ate_dot)
 		return true;
 	default:
 		*dest = push_node(reader, SERD_CURIE, "", 0);
-		return read_PrefixedName(reader, *dest, true, ate_dot);
+		return !read_PrefixedName(reader, *dest, true, ate_dot);
 	}
 }
 
@@ -875,16 +879,17 @@ read_verb(SerdReader* reader, Ref* dest)
 	   "a", produce that instead.
 	*/
 	*dest = push_node(reader, SERD_CURIE, "", 0);
-	const SerdStatus st      = read_PN_PREFIX(reader, *dest);
-	bool             ate_dot = false;
-	SerdNode*        node    = deref(reader, *dest);
-	const int        next    = peek_byte(reader);
+
+	SerdStatus st      = read_PN_PREFIX(reader, *dest);
+	bool       ate_dot = false;
+	SerdNode*  node    = deref(reader, *dest);
+	const int  next    = peek_byte(reader);
 	if (!st && node->n_bytes == 1 && node->buf[0] == 'a' &&
 	    next != ':' && !is_PN_CHARS_BASE((uint32_t)next)) {
 		pop_node(reader, *dest);
 		return (*dest = push_node(reader, SERD_URI, NS_RDF "type", 47));
 	} else if (st > SERD_FAILURE ||
-	           !read_PrefixedName(reader, *dest, false, &ate_dot) ||
+	           read_PrefixedName(reader, *dest, false, &ate_dot) ||
 	           ate_dot) {
 		*dest = pop_node(reader, *dest);
 		return r_err(reader, SERD_ERR_BAD_SYNTAX, "bad verb\n");
@@ -1071,7 +1076,7 @@ read_object(SerdReader* reader, ReadContext* ctx, bool emit, bool* ate_dot)
 		} else if (read_PN_PREFIX_tail(reader, o) > SERD_FAILURE) {
 			ret = false;
 		} else {
-			if (!(ret = read_PrefixedName(reader, o, false, ate_dot))) {
+			if (!(ret = !read_PrefixedName(reader, o, false, ate_dot))) {
 				r_err(reader, SERD_ERR_BAD_SYNTAX, "expected prefixed name\n");
 			}
 		}
