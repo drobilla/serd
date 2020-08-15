@@ -148,7 +148,7 @@ test_read_chunks(void)
 
 	// Read terminator
 	st = serd_reader_read_chunk(reader);
-	assert(st == SERD_SUCCESS); // FIXME: return SERD_FAILURE?
+	assert(st == SERD_FAILURE);
 	assert(rt->n_statements == 1);
 
 	// Read second statement (after null terminator)
@@ -158,12 +158,12 @@ test_read_chunks(void)
 
 	// Read terminator
 	st = serd_reader_read_chunk(reader);
-	assert(st == SERD_SUCCESS); // FIXME: return SERD_FAILURE?
+	assert(st == SERD_FAILURE);
 	assert(rt->n_statements == 2);
 
 	// EOF
 	st = serd_reader_read_chunk(reader);
-	assert(st == SERD_SUCCESS); // FIXME: return SERD_FAILURE?
+	assert(st == SERD_FAILURE);
 	assert(rt->n_statements == 2);
 
 	serd_reader_free(reader);

@@ -72,7 +72,6 @@ struct SerdReaderImpl {
 	SerdStack         stack;
 	SerdSyntax        syntax;
 	unsigned          next_id;
-	SerdStatus        status;
 	uint8_t*          buf;
 	uint8_t*          bprefix;
 	size_t            bprefix_len;
@@ -107,11 +106,12 @@ SerdNode* deref(SerdReader* reader, Ref ref);
 
 Ref pop_node(SerdReader* reader, Ref ref);
 
-bool emit_statement(SerdReader* reader, ReadContext ctx, Ref o, Ref d, Ref l);
+SerdStatus
+emit_statement(SerdReader* reader, ReadContext ctx, Ref o, Ref d, Ref l);
 
-bool read_n3_statement(SerdReader* reader);
-bool read_nquadsDoc(SerdReader* reader);
-bool read_turtleTrigDoc(SerdReader* reader);
+SerdStatus read_n3_statement(SerdReader* reader);
+SerdStatus read_nquadsDoc(SerdReader* reader);
+SerdStatus read_turtleTrigDoc(SerdReader* reader);
 
 static inline int
 peek_byte(SerdReader* reader)
@@ -126,10 +126,8 @@ eat_byte(SerdReader* reader)
 {
 	const int        c  = peek_byte(reader);
 	const SerdStatus st = serd_byte_source_advance(&reader->source);
-	if (st) {
-		reader->status = st;
-	}
-	return c;
+
+	return st > SERD_FAILURE ? EOF : c;
 }
 
 static inline int
@@ -154,14 +152,15 @@ eat_byte_check(SerdReader* reader, const int byte)
 	return eat_byte_safe(reader, byte);
 }
 
-static inline bool
+static inline SerdStatus
 eat_string(SerdReader* reader, const char* str, unsigned n)
 {
-	bool bad = false;
 	for (unsigned i = 0; i < n; ++i) {
-		bad |= (bool)eat_byte_check(reader, ((const uint8_t*)str)[i]);
+		if (!eat_byte_check(reader, ((const uint8_t*)str)[i])) {
+			return SERD_ERR_BAD_SYNTAX;
+		}
 	}
-	return bad;
+	return SERD_SUCCESS;
 }
 
 static inline SerdStatus
