@@ -103,6 +103,7 @@ unit_tests = [
   'env',
   'free_null',
   'node',
+  'overflow',
   'reader_writer',
   'sink',
   'string',
