@@ -59,7 +59,7 @@ read_HEX(SerdReader* reader)
 }
 
 // Read UCHAR escape, initial \ is already eaten by caller
-static inline bool
+static inline SerdStatus
 read_UCHAR(SerdReader* reader, Ref dest, uint32_t* char_code)
 {
 	const int b      = peek_byte(reader);
@@ -72,14 +72,14 @@ read_UCHAR(SerdReader* reader, Ref dest, uint32_t* char_code)
 		length = 4;
 		break;
 	default:
-		return false;
+		return SERD_ERR_BAD_SYNTAX;
 	}
 	eat_byte_safe(reader, b);
 
 	uint8_t buf[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	for (unsigned i = 0; i < length; ++i) {
 		if (!(buf[i] = read_HEX(reader))) {
-			return false;
+			return SERD_ERR_BAD_SYNTAX;
 		}
 	}
 
@@ -101,7 +101,7 @@ read_UCHAR(SerdReader* reader, Ref dest, uint32_t* char_code)
 		      "unicode character 0x%X out of range\n", code);
 		push_bytes(reader, dest, replacement_char, 3);
 		*char_code = 0xFFFD;
-		return true;
+		return SERD_SUCCESS;
 	}
 
 	// Build output in buf
@@ -132,11 +132,11 @@ read_UCHAR(SerdReader* reader, Ref dest, uint32_t* char_code)
 
 	push_bytes(reader, dest, buf, size);
 	*char_code = code;
-	return true;
+	return SERD_SUCCESS;
 }
 
 // Read ECHAR escape, initial \ is already eaten by caller
-static inline bool
+static inline SerdStatus
 read_ECHAR(SerdReader* reader, Ref dest, SerdNodeFlags* flags)
 {
 	const int c = peek_byte(reader);
@@ -144,30 +144,30 @@ read_ECHAR(SerdReader* reader, Ref dest, SerdNodeFlags* flags)
 	case 't':
 		eat_byte_safe(reader, 't');
 		push_byte(reader, dest, '\t');
-		return true;
+		return SERD_SUCCESS;
 	case 'b':
 		eat_byte_safe(reader, 'b');
 		push_byte(reader, dest, '\b');
-		return true;
+		return SERD_SUCCESS;
 	case 'n':
 		*flags |= SERD_HAS_NEWLINE;
 		eat_byte_safe(reader, 'n');
 		push_byte(reader, dest, '\n');
-		return true;
+		return SERD_SUCCESS;
 	case 'r':
 		*flags |= SERD_HAS_NEWLINE;
 		eat_byte_safe(reader, 'r');
 		push_byte(reader, dest, '\r');
-		return true;
+		return SERD_SUCCESS;
 	case 'f':
 		eat_byte_safe(reader, 'f');
 		push_byte(reader, dest, '\f');
-		return true;
+		return SERD_SUCCESS;
 	case '\\': case '"': case '\'':
 		push_byte(reader, dest, eat_byte_safe(reader, c));
-		return true;
+		return SERD_SUCCESS;
 	default:
-		return false;
+		return SERD_ERR_BAD_SYNTAX;
 	}
 }
 
@@ -322,9 +322,9 @@ read_STRING_LITERAL_LONG(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 		if (c == '\\') {
 			eat_byte_safe(reader, c);
 			uint32_t code = 0;
-			if (!read_ECHAR(reader, ref, flags) &&
-			    !read_UCHAR(reader, ref, &code)) {
-				r_err(reader, SERD_ERR_BAD_SYNTAX,
+			if ((st = read_ECHAR(reader, ref, flags)) &&
+			    (st = read_UCHAR(reader, ref, &code))) {
+				r_err(reader, st,
 				      "invalid escape `\\%c'\n", peek_byte(reader));
 				return pop_node(reader, ref);
 			}
@@ -369,9 +369,9 @@ read_STRING_LITERAL(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 			return pop_node(reader, ref);
 		case '\\':
 			eat_byte_safe(reader, c);
-			if (!read_ECHAR(reader, ref, flags) &&
-			    !read_UCHAR(reader, ref, &code)) {
-				r_err(reader, SERD_ERR_BAD_SYNTAX,
+			if ((st = read_ECHAR(reader, ref, flags)) &&
+			    (st = read_UCHAR(reader, ref, &code))) {
+				r_err(reader, st,
 				      "invalid escape `\\%c'\n", peek_byte(reader));
 				return pop_node(reader, ref);
 			}
@@ -693,8 +693,8 @@ read_IRIREF(SerdReader* reader)
 		case '>':
 			return ref;
 		case '\\':
-			if (!read_UCHAR(reader, ref, &code)) {
-				r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid IRI escape\n");
+			if ((st = read_UCHAR(reader, ref, &code))) {
+				r_err(reader, st, "invalid IRI escape\n");
 				return pop_node(reader, ref);
 			}
 			switch (code) {
