@@ -30,6 +30,7 @@
 		<#bad-char-in-uri>
 		<#bad-datatype>
 		<#bad-dot-after-subject>
+		<#bad-dot-in-collection>
 		<#bad-eof-after-quotes>
 		<#bad-eof-at-string-start>
 		<#bad-eof-in-blank>
@@ -192,6 +193,11 @@
 	rdf:type rdft:TestTurtleNegativeSyntax ;
 	mf:name "bad-dot-after-subject" ;
 	mf:action <bad-dot-after-subject.ttl> .
+
+<#bad-dot-in-collection>
+	rdf:type rdft:TestTurtleNegativeSyntax ;
+	mf:name "bad-dot-in-collection" ;
+	mf:action <bad-dot-in-collection.ttl> .
 
 <#bad-eof-after-quotes>
 	rdf:type rdft:TestTurtleNegativeSyntax ;

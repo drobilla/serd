@@ -1193,7 +1193,8 @@ end_collection(SerdReader* reader, ReadContext ctx, Ref n1, Ref n2, SerdStatus s
 	pop_node(reader, n1);
 	*ctx.flags &= ~(unsigned)SERD_LIST_CONT;
 	if (!st) {
-		eat_byte_safe(reader, ')');
+		return (eat_byte_check(reader, ')') == ')') ? SERD_SUCCESS
+		                                            : SERD_ERR_BAD_SYNTAX;
 	}
 	return st;
 }
