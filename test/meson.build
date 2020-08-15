@@ -41,6 +41,7 @@ unit_tests = [
   'env',
   'free_null',
   'node',
+  'overflow',
   'read_chunk',
   'reader_writer',
   'sink',
