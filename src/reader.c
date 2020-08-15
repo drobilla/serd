@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int
+SerdStatus
 r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...)
 {
 	va_list args;
@@ -35,7 +35,7 @@ r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...)
 	const SerdError e = { st, cur->filename, cur->line, cur->col, fmt, &args };
 	serd_error(reader->error_sink, reader->error_handle, &e);
 	va_end(args);
-	return 0;
+	return st;
 }
 
 void

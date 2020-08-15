@@ -85,7 +85,7 @@ struct SerdReaderImpl {
 };
 
 SERD_LOG_FUNC(3, 4)
-int
+SerdStatus
 r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
 
 Ref push_node_padded(SerdReader* reader,
@@ -147,8 +147,9 @@ eat_byte_check(SerdReader* reader, const int byte)
 {
 	const int c = peek_byte(reader);
 	if (c != byte) {
-		return r_err(reader, SERD_ERR_BAD_SYNTAX,
-		             "expected `%c', not `%c'\n", byte, c);
+		r_err(reader, SERD_ERR_BAD_SYNTAX,
+		      "expected `%c', not `%c'\n", byte, c);
+		return 0;
 	}
 	return eat_byte_safe(reader, byte);
 }
