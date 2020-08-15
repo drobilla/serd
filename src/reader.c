@@ -80,7 +80,7 @@ push_node_padded(SerdReader* const  reader,
   *terminator = 0;
 
   void* mem = serd_stack_push_aligned(
-    &reader->stack, sizeof(SerdNode) + maxlen + 1, sizeof(SerdNode));
+    &reader->stack, sizeof(SerdNode) + maxlen + 1, sizeof(void*));
 
   if (!mem) {
     return NULL;
@@ -158,7 +158,7 @@ serd_reader_new(SerdWorld* const      world,
 {
   assert(world);
 
-  if (stack_size < 3 * sizeof(SerdNode) + 192 + sizeof(void*)) {
+  if (stack_size < sizeof(void*) + (3U * (sizeof(SerdNode))) + 168) {
     return NULL;
   }
 
