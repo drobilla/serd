@@ -1063,7 +1063,7 @@ read_object(SerdReader* reader, ReadContext* ctx, bool emit, bool* ate_dot)
 		}
 	}
 	switch (c) {
-	case EOF: case '\0': case ')':
+	case EOF: case ')':
 		return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected object\n");
 	case '[':
 		simple = false;
@@ -1166,7 +1166,7 @@ read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 		do {
 			read_ws_star(reader);
 			switch (c = peek_byte(reader)) {
-			case EOF: case '\0':
+			case EOF:
 				return r_err(reader, SERD_ERR_BAD_SYNTAX,
 				             "unexpected end of file\n");
 			case '.': case ']': case '}':
@@ -1471,7 +1471,10 @@ read_n3_statement(SerdReader* reader)
 	SerdStatus         st      = SERD_SUCCESS;
 	read_ws_star(reader);
 	switch (peek_byte(reader)) {
-	case EOF: case '\0':
+	case '\0':
+		eat_byte_safe(reader, '\0');
+		return SERD_FAILURE;
+	case EOF:
 		return SERD_FAILURE;
 	case '@':
 		if (!fancy_syntax(reader)) {

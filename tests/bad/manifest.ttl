@@ -59,6 +59,7 @@
 		<#bad-misspelled-prefix>
 		<#bad-namespace>
 		<#bad-ns>
+		<#bad-null-byte>
 		<#bad-num>
 		<#bad-object2>
 		<#bad-object>
@@ -336,6 +337,11 @@
 	rdf:type rdft:TestTurtleNegativeSyntax ;
 	mf:name "bad-ns" ;
 	mf:action <bad-ns.ttl> .
+
+<#bad-null-byte>
+	rdf:type rdft:TestTurtleNegativeSyntax ;
+	mf:name "bad-null-byte" ;
+	mf:action <bad-null-byte.ttl> .
 
 <#bad-num>
 	rdf:type rdft:TestTurtleNegativeSyntax ;
