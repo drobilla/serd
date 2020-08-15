@@ -253,8 +253,7 @@ read_character(SerdReader* reader, Ref dest, SerdNodeFlags* flags, uint8_t c)
 		default:
 			break;
 		}
-		push_byte(reader, dest, c);
-		return SERD_SUCCESS;
+		return push_byte(reader, dest, c);
 	}
 	return read_utf8_character(reader, dest, c);
 }
