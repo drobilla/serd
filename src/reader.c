@@ -112,6 +112,10 @@ emit_statement(SerdReader* const reader,
                const ReadContext ctx,
                SerdNode* const   o)
 {
+  if (reader->stack.size + (2 * sizeof(SerdNode)) > reader->stack.buf_size) {
+    return SERD_BAD_STACK;
+  }
+
   /* Zero the pad of the object node on the top of the stack.  Lower nodes
      (subject and predicate) were already zeroed by subsequent pushes. */
   serd_node_zero_pad(o);
