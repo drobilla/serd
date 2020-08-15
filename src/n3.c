@@ -497,9 +497,46 @@ read_PERCENT(SerdReader* reader, Ref dest)
 }
 
 static SerdStatus
+read_PN_LOCAL_ESC(SerdReader* reader, Ref dest)
+{
+	eat_byte_safe(reader, '\\');
+
+	const int c = peek_byte(reader);
+	switch (c) {
+	case '!':
+	case '#':
+	case '$':
+	case '%':
+	case '&':
+	case '\'':
+	case '(':
+	case ')':
+	case '*':
+	case '+':
+	case ',':
+	case '-':
+	case '.':
+	case '/':
+	case ';':
+	case '=':
+	case '?':
+	case '@':
+	case '_':
+	case '~':
+		push_byte(reader, dest, eat_byte_safe(reader, c));
+		break;
+	default:
+		r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid escape\n");
+		return SERD_ERR_BAD_SYNTAX;
+	}
+
+	return SERD_SUCCESS;
+}
+
+static SerdStatus
 read_PLX(SerdReader* reader, Ref dest)
 {
-	int c = peek_byte(reader);
+	const int c = peek_byte(reader);
 	switch (c) {
 	case '%':
 		if (!read_PERCENT(reader, dest)) {
@@ -507,14 +544,7 @@ read_PLX(SerdReader* reader, Ref dest)
 		}
 		return SERD_SUCCESS;
 	case '\\':
-		eat_byte_safe(reader, c);
-		if (is_alpha(c = peek_byte(reader))) {
-			// Escapes like \u \n etc. are not supported
-			return SERD_ERR_BAD_SYNTAX;
-		}
-		// Allow escaping of pretty much any other character
-		push_byte(reader, dest, eat_byte_safe(reader, c));
-		return SERD_SUCCESS;
+		return read_PN_LOCAL_ESC(reader, dest);
 	default:
 		return SERD_FAILURE;
 	}
