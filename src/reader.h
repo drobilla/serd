@@ -33,10 +33,6 @@
 #    define SERD_LOG_FUNC(fmt, arg1)
 #endif
 
-SERD_LOG_FUNC(3, 4)
-int
-r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
-
 #ifdef SERD_STACK_CHECK
 #    define SERD_STACK_ASSERT_TOP(reader, ref) \
             assert(ref == reader->allocs[reader->n_allocs - 1]);
@@ -87,6 +83,10 @@ struct SerdReaderImpl {
 	size_t            n_allocs;   ///< Number of stack pushes
 #endif
 };
+
+SERD_LOG_FUNC(3, 4)
+int
+r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
 
 Ref push_node_padded(SerdReader* reader,
                      size_t      maxlen,
