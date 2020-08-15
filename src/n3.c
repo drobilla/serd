@@ -661,26 +661,27 @@ read_PN_PREFIX(SerdReader* const reader, SerdNode* const dest)
 }
 
 static SerdStatus
-read_LANGTAG(SerdReader* const reader, SerdNode** const dest)
+read_LANGTAG(SerdReader* const reader)
 {
   int c = peek_byte(reader);
   if (!is_alpha(c)) {
     return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected `%c'\n", c);
   }
 
-  if (!(*dest = push_node(reader, SERD_LITERAL, "", 0))) {
+  SerdNode* node = push_node(reader, SERD_LITERAL, "", 0);
+  if (!node) {
     return SERD_ERR_OVERFLOW;
   }
 
   SerdStatus st = SERD_SUCCESS;
-  TRY(st, push_byte(reader, *dest, eat_byte_safe(reader, c)));
+  TRY(st, push_byte(reader, node, eat_byte_safe(reader, c)));
   while ((c = peek_byte(reader)) && is_alpha(c)) {
-    TRY(st, push_byte(reader, *dest, eat_byte_safe(reader, c)));
+    TRY(st, push_byte(reader, node, eat_byte_safe(reader, c)));
   }
   while (peek_byte(reader) == '-') {
-    TRY(st, push_byte(reader, *dest, eat_byte_safe(reader, '-')));
+    TRY(st, push_byte(reader, node, eat_byte_safe(reader, '-')));
     while ((c = peek_byte(reader)) && (is_alpha(c) || is_digit(c))) {
-      TRY(st, push_byte(reader, *dest, eat_byte_safe(reader, c)));
+      TRY(st, push_byte(reader, node, eat_byte_safe(reader, c)));
     }
   }
   return SERD_SUCCESS;
@@ -926,12 +927,11 @@ read_literal(SerdReader* const reader,
   }
 
   SerdNode* datatype = NULL;
-  SerdNode* lang     = NULL;
   switch (peek_byte(reader)) {
   case '@':
     eat_byte_safe(reader, '@');
     (*dest)->flags |= SERD_HAS_LANGUAGE;
-    if ((st = read_LANGTAG(reader, &lang))) {
+    if ((st = read_LANGTAG(reader))) {
       return r_err(reader, st, "bad literal\n");
     }
     break;
