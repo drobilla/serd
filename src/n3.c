@@ -481,7 +481,7 @@ read_PN_CHARS(SerdReader* reader, Ref dest)
 	return st;
 }
 
-static bool
+static SerdStatus
 read_PERCENT(SerdReader* reader, Ref dest)
 {
 	push_byte(reader, dest, eat_byte_safe(reader, '%'));
@@ -489,10 +489,9 @@ read_PERCENT(SerdReader* reader, Ref dest)
 	const uint8_t h2 = read_HEX(reader);
 	if (h1 && h2) {
 		push_byte(reader, dest, h1);
-		push_byte(reader, dest, h2);
-		return true;
+		return push_byte(reader, dest, h2);
 	}
-	return false;
+	return SERD_ERR_BAD_SYNTAX;
 }
 
 static SerdStatus
@@ -538,10 +537,7 @@ read_PLX(SerdReader* reader, Ref dest)
 	const int c = peek_byte(reader);
 	switch (c) {
 	case '%':
-		if (!read_PERCENT(reader, dest)) {
-			return SERD_ERR_BAD_SYNTAX;
-		}
-		return SERD_SUCCESS;
+		return read_PERCENT(reader, dest);
 	case '\\':
 		return read_PN_LOCAL_ESC(reader, dest);
 	default:
