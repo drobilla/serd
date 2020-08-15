@@ -7,6 +7,7 @@
 #include "byte_source.h"
 #include "node_impl.h"
 #include "stack.h"
+#include "try.h"
 
 #include "serd/error.h"
 #include "serd/node.h"
@@ -123,26 +124,28 @@ eat_byte_safe(SerdReader* reader, const int byte)
   return byte;
 }
 
-static inline int ZIX_NODISCARD
+static inline SerdStatus ZIX_NODISCARD
 eat_byte_check(SerdReader* reader, const int byte)
 {
   const int c = peek_byte(reader);
   if (c != byte) {
-    r_err(reader, SERD_BAD_SYNTAX, "expected '%c', not '%c'\n", byte, c);
-    return 0;
+    return r_err(reader, SERD_BAD_SYNTAX, "expected '%c', not '%c'\n", byte, c);
   }
-  return eat_byte_safe(reader, byte);
+
+  skip_byte(reader, c);
+  return SERD_SUCCESS;
 }
 
 static inline SerdStatus
 eat_string(SerdReader* reader, const char* str, unsigned n)
 {
+  SerdStatus st = SERD_SUCCESS;
+
   for (unsigned i = 0; i < n; ++i) {
-    if (!eat_byte_check(reader, str[i])) {
-      return SERD_BAD_SYNTAX;
-    }
+    TRY(st, eat_byte_check(reader, str[i]));
   }
-  return SERD_SUCCESS;
+
+  return st;
 }
 
 static inline SerdStatus
