@@ -94,7 +94,7 @@ push_node_padded(SerdReader* reader, size_t maxlen,
 	memcpy(buf, str, n_bytes + 1);
 
 #ifdef SERD_STACK_CHECK
-	reader->allocs = realloc(
+	reader->allocs = (Ref*)realloc(
 		reader->allocs, sizeof(reader->allocs) * (++reader->n_allocs));
 	reader->allocs[reader->n_allocs - 1] = ((uint8_t*)mem - reader->stack.buf);
 #endif
