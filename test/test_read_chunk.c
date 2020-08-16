@@ -6,8 +6,7 @@
 #include "serd/serd.h"
 
 #include <assert.h>
-#include <stdbool.h>
-#include <stdio.h>
+#include <stddef.h>
 
 static size_t n_base      = 0;
 static size_t n_prefix    = 0;
@@ -67,21 +66,6 @@ on_end(void* handle, const SerdNode* node)
 int
 main(void)
 {
-  FILE* file = tmpfile();
-
-  fprintf(file,
-          "@prefix eg: <http://example.org/> .\n"
-          "@base <http://example.org/base> .\n"
-          "eg:s1 eg:p1 eg:o1 ;\n"
-          "      eg:p2 eg:o2 ,\n"
-          "            eg:o3 .\n"
-          "eg:s2 eg:p1 eg:o1 ;\n"
-          "      eg:p2 eg:o2 .\n"
-          "eg:s3 eg:p1 eg:o1 .\n"
-          "eg:s4 eg:p1 [ eg:p3 eg:o1 ] .\n");
-
-  fseek(file, 0, SEEK_SET);
-
   SerdSink* sink = serd_sink_new(NULL, NULL);
   serd_sink_set_base_func(sink, on_base);
   serd_sink_set_prefix_func(sink, on_prefix);
@@ -91,22 +75,30 @@ main(void)
   SerdReader* reader = serd_reader_new(SERD_TURTLE, sink);
   assert(reader);
 
-  assert(reader);
-  assert(!serd_reader_start_stream(reader, file, NULL, true));
+  assert(!serd_reader_start_string(reader,
+                                   "@prefix eg: <http://example.org/> .\n"
+                                   "@base <http://example.org/base> .\n"
+                                   "eg:s1 eg:p1 eg:o1 ;\n"
+                                   "      eg:p2 eg:o2 ,\n"
+                                   "            eg:o3 .\n"
+                                   "eg:s2 eg:p1 eg:o1 ;\n"
+                                   "      eg:p2 eg:o2 .\n"
+                                   "eg:s3 eg:p1 eg:o1 .\n"
+                                   "eg:s4 eg:p1 [ eg:p3 eg:o1 ] .\n"));
 
   assert(!serd_reader_read_chunk(reader) && n_prefix == 1);
   assert(!serd_reader_read_chunk(reader) && n_base == 1);
   assert(!serd_reader_read_chunk(reader) && n_statement == 3);
   assert(!serd_reader_read_chunk(reader) && n_statement == 5);
   assert(!serd_reader_read_chunk(reader) && n_statement == 6);
-  assert(!serd_reader_read_chunk(reader) && n_statement == 8 && n_end == 1);
+  assert(!serd_reader_read_chunk(reader) && n_statement == 8);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
+  assert(n_end == 1);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
+  assert(!serd_reader_finish(reader));
 
-  assert(!serd_reader_end_stream(reader));
   serd_reader_free(reader);
   serd_sink_free(sink);
-  fclose(file);
 
   return 0;
 }
