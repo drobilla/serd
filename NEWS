@@ -2,9 +2,10 @@ serd (0.30.5) unstable;
 
   * Fix various minor warnings and other code quality issues
   * Improve reader error handling
+  * Make all free functions tolerant of NULL
   * Parse prefixed names more strictly
 
- -- David Robillard <d@drobilla.net>  Sat, 15 Aug 2020 16:22:12 +0000
+ -- David Robillard <d@drobilla.net>  Sun, 16 Aug 2020 11:01:53 +0000
 
 serd (0.30.4) stable;
 

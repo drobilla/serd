@@ -978,6 +978,10 @@ serd_writer_set_prefix(SerdWriter*     writer,
 void
 serd_writer_free(SerdWriter* writer)
 {
+	if (!writer) {
+		return;
+	}
+
 	serd_writer_finish(writer);
 	serd_stack_free(&writer->anon_stack);
 	free(writer->bprefix);

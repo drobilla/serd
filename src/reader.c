@@ -218,6 +218,10 @@ serd_reader_set_error_sink(SerdReader*   reader,
 void
 serd_reader_free(SerdReader* reader)
 {
+	if (!reader) {
+		return;
+	}
+
 	pop_node(reader, reader->rdf_nil);
 	pop_node(reader, reader->rdf_rest);
 	pop_node(reader, reader->rdf_first);

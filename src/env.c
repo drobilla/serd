@@ -47,6 +47,10 @@ serd_env_new(const SerdNode* base_uri)
 void
 serd_env_free(SerdEnv* env)
 {
+	if (!env) {
+		return;
+	}
+
 	for (size_t i = 0; i < env->n_prefixes; ++i) {
 		serd_node_free(&env->prefixes[i].name);
 		serd_node_free(&env->prefixes[i].uri);
