@@ -23,7 +23,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 
 #if defined(_WIN32) && !defined(SERD_STATIC) && defined(SERD_INTERNAL)
 #  define SERD_API __declspec(dllexport)
@@ -916,34 +915,25 @@ serd_reader_read_file(SerdReader* SERD_NONNULL reader,
                       const char* SERD_NONNULL uri);
 
 /**
-   Start an incremental read from a file handle.
-
-   Iff `bulk` is true, `file` will be read a page at a time.  This is more
-   efficient, but uses a page of memory and means that an entire page of input
-   must be ready before any callbacks will fire.  To react as soon as input
-   arrives, set `bulk` to false.
-*/
-SERD_API
-SerdStatus
-serd_reader_start_stream(SerdReader* SERD_NONNULL  reader,
-                         FILE* SERD_NONNULL        file,
-                         const char* SERD_NULLABLE name,
-                         bool                      bulk);
-
-/**
-   Start an incremental read from a user-specified source.
+   Prepare to read from a stream.
 
    The `read_func` is guaranteed to only be called for `page_size` elements
    with size 1 (i.e. `page_size` bytes).
 */
 SERD_API
 SerdStatus
-serd_reader_start_source_stream(SerdReader* SERD_NONNULL         reader,
-                                SerdSource SERD_NONNULL          read_func,
-                                SerdStreamErrorFunc SERD_NONNULL error_func,
-                                void* SERD_NONNULL               stream,
-                                const char* SERD_NULLABLE        name,
-                                size_t                           page_size);
+serd_reader_start_stream(SerdReader* SERD_NONNULL         reader,
+                         SerdSource SERD_NONNULL          read_func,
+                         SerdStreamErrorFunc SERD_NONNULL error_func,
+                         void* SERD_NONNULL               stream,
+                         const char* SERD_NULLABLE        name,
+                         size_t                           page_size);
+
+/// Prepare to read from a string
+SERD_API
+SerdStatus
+serd_reader_start_string(SerdReader* SERD_NONNULL reader,
+                         const char* SERD_NONNULL utf8);
 
 /**
    Read a single "chunk" of data during an incremental read
@@ -957,27 +947,21 @@ SERD_API
 SerdStatus
 serd_reader_read_chunk(SerdReader* SERD_NONNULL reader);
 
-/// Finish an incremental read from a file handle
+/**
+   Read a complete document from the source.
+
+   This function will continue pulling from the source until a complete
+   document has been read.  Note that this may block when used with streams,
+   for incremental reading use serd_reader_read_chunk().
+*/
+SERD_API
+SerdStatus
+serd_reader_read_document(SerdReader* SERD_NONNULL reader);
+
+/// Finish reading from the source
 SERD_API
 SerdStatus
 serd_reader_end_stream(SerdReader* SERD_NONNULL reader);
-
-/// Read `file`
-SERD_API
-SerdStatus
-serd_reader_read_file_handle(SerdReader* SERD_NONNULL  reader,
-                             FILE* SERD_NONNULL        file,
-                             const char* SERD_NULLABLE name);
-
-/// Read a user-specified byte source
-SERD_API
-SerdStatus
-serd_reader_read_source(SerdReader* SERD_NONNULL         reader,
-                        SerdSource SERD_NONNULL          source,
-                        SerdStreamErrorFunc SERD_NONNULL error,
-                        void* SERD_NONNULL               stream,
-                        const char* SERD_NULLABLE        name,
-                        size_t                           page_size);
 
 /// Read `utf8`
 SERD_API

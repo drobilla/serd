@@ -19,7 +19,6 @@
 #include "serd/serd.h"
 
 #include <assert.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -90,7 +89,8 @@ test_read_chunks(void)
   assert(serd_reader_handle(reader) == rt);
   assert(f);
 
-  SerdStatus st = serd_reader_start_stream(reader, f, NULL, false);
+  SerdStatus st = serd_reader_start_stream(
+    reader, (SerdSource)fread, (SerdStreamErrorFunc)ferror, f, NULL, 1);
   assert(st == SERD_SUCCESS);
 
   // Write two statement separated by null characters
@@ -293,7 +293,8 @@ test_reader(const char* path)
     fflush(temp);
     fseek(temp, 0L, SEEK_SET);
 
-    serd_reader_start_stream(reader, temp, NULL, true);
+    serd_reader_start_stream(
+      reader, (SerdSource)fread, (SerdStreamErrorFunc)ferror, temp, NULL, 4096);
 
     assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
     assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
@@ -306,12 +307,12 @@ test_reader(const char* path)
   // A byte-wise reader that hits EOF once then continues (like a socket)
   {
     size_t n_reads = 0;
-    serd_reader_start_source_stream(reader,
-                                    (SerdSource)eof_test_read,
-                                    (SerdStreamErrorFunc)eof_test_error,
-                                    &n_reads,
-                                    NULL,
-                                    1);
+    serd_reader_start_stream(reader,
+                             (SerdSource)eof_test_read,
+                             (SerdStreamErrorFunc)eof_test_error,
+                             &n_reads,
+                             NULL,
+                             1);
 
     assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
     assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
