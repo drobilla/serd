@@ -19,6 +19,7 @@
 
 #include "attributes.h"
 
+#include <stdint.h>
 #include <stdio.h>
 
 /// Open a file configured for fast sequential reading
@@ -41,5 +42,21 @@ serd_allocate_buffer(size_t size);
 /// Free a buffer allocated with an aligned allocation function
 void
 serd_free_aligned(void* ptr);
+
+/** fread-like wrapper for getc (which is faster). */
+static inline size_t
+serd_file_read_byte(void* buf, size_t size, size_t nmemb, void* stream)
+{
+  (void)size;
+  (void)nmemb;
+
+  const int c = getc((FILE*)stream);
+  if (c == EOF) {
+    *((uint8_t*)buf) = 0;
+    return 0;
+  }
+  *((uint8_t*)buf) = (uint8_t)c;
+  return 1;
+}
 
 #endif // SERD_SYSTEM_H
