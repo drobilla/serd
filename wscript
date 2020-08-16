@@ -211,6 +211,7 @@ def build(bld):
 
         # Test programs
         for prog in [('serdi_static', 'src/serdi.c'),
+                     ('env_test', 'tests/env_test.c'),
                      ('read_chunk_test', 'tests/read_chunk_test.c'),
                      ('serd_test', 'tests/serd_test.c')]:
             bld(features     = 'c cprogram',
@@ -533,6 +534,7 @@ def test(tst):
     srcdir = tst.path.abspath()
 
     with tst.group('Unit') as check:
+        check(['./env_test'])
         check(['./read_chunk_test'])
         check(['./serd_test'])
 
