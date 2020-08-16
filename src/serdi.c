@@ -35,6 +35,7 @@
 
 #include <errno.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -148,6 +149,22 @@ serd_fopen(const char* const path, const char* const mode)
 #endif
 
   return fd;
+}
+
+/** fread-like wrapper for getc (which is faster). */
+static size_t
+serd_file_read_byte(void* buf, size_t size, size_t nmemb, void* stream)
+{
+  (void)size;
+  (void)nmemb;
+
+  const int c = getc((FILE*)stream);
+  if (c == EOF) {
+    *((uint8_t*)buf) = 0;
+    return 0;
+  }
+  *((uint8_t*)buf) = (uint8_t)c;
+  return 1;
 }
 
 static SerdWriterFlags
@@ -355,16 +372,22 @@ main(int argc, char** argv)
 
   SerdStatus st = SERD_SUCCESS;
   if (!from_file) {
-    st = serd_reader_read_string(reader, input);
-  } else if (bulk_read) {
-    st = serd_reader_read_file_handle(reader, in_fd, in_name);
+    st = serd_reader_start_string(reader, input);
   } else {
-    st = serd_reader_start_stream(reader, in_fd, in_name, false);
-    while (!st) {
-      st = serd_reader_read_chunk(reader);
-    }
-    serd_reader_end_stream(reader);
+    st = serd_reader_start_stream(reader,
+                                  bulk_read ? (SerdSource)fread
+                                            : serd_file_read_byte,
+                                  (SerdStreamErrorFunc)ferror,
+                                  in_fd,
+                                  in_name,
+                                  bulk_read ? 4096 : 1);
   }
+
+  if (!st) {
+    st = serd_reader_read_document(reader);
+  }
+
+  serd_reader_end_stream(reader);
 
   serd_reader_free(reader);
   serd_writer_finish(writer);
