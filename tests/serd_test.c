@@ -208,7 +208,7 @@ test_string_to_double(void)
 		"02e18", "-5e019", "+8e20", "2E+24", "-5E-5", "8E0", "9e-0", " 2e+0"
 	};
 
-	for (unsigned i = 0; i < sizeof(expt_test_nums) / sizeof(double); ++i) {
+	for (size_t i = 0; i < sizeof(expt_test_nums) / sizeof(double); ++i) {
 		const double num   = serd_strtod(expt_test_strs[i], NULL);
 		const double delta = fabs(num - expt_test_nums[i]);
 		assert(delta <= DBL_EPSILON);
@@ -228,7 +228,7 @@ test_double_to_node(void)
 		"0.0", "9.0", "10.0", "0.01", "2.05", "-16.00001", "5.00000001", "0.0", NULL, NULL
 	};
 
-	for (unsigned i = 0; i < sizeof(dbl_test_nums) / sizeof(double); ++i) {
+	for (size_t i = 0; i < sizeof(dbl_test_nums) / sizeof(double); ++i) {
 		SerdNode   node = serd_node_new_decimal(dbl_test_nums[i], 8);
 		const bool pass = (node.buf && dbl_test_strs[i])
 			? !strcmp((const char*)node.buf, dbl_test_strs[i])
@@ -251,7 +251,7 @@ test_integer_to_node(void)
 		"0", "0", "-23", "23", "-12340", "1000", "-1000"
 	};
 
-	for (unsigned i = 0; i < sizeof(int_test_nums) / sizeof(double); ++i) {
+	for (size_t i = 0; i < sizeof(int_test_nums) / sizeof(double); ++i) {
 		SerdNode node = serd_node_new_integer(int_test_nums[i]);
 		assert(!strcmp((const char*)node.buf, (const char*)int_test_strs[i]));
 		const size_t len = strlen((const char*)node.buf);
@@ -562,7 +562,7 @@ test_writer(const char* const path)
 	                              { &o, &p, &o, NULL, NULL },
 	                              { &s, &p, &SERD_NODE_NULL, NULL, NULL },
 	                              { NULL, NULL, NULL, NULL, NULL } };
-	for (unsigned i = 0; i < sizeof(junk) / (sizeof(SerdNode*) * 5); ++i) {
+	for (size_t i = 0; i < sizeof(junk) / (sizeof(SerdNode*) * 5); ++i) {
 		assert(serd_writer_write_statement(
 			       writer, 0, NULL,
 			       junk[i][0], junk[i][1], junk[i][2], junk[i][3], junk[i][4]));
@@ -580,7 +580,7 @@ test_writer(const char* const path)
 	                              { &s, &p, &o, NULL, &SERD_NODE_NULL },
 	                              { &s, &p, &o, &SERD_NODE_NULL, NULL },
 	                              { &s, &p, &o, &SERD_NODE_NULL, NULL } };
-	for (unsigned i = 0; i < sizeof(good) / (sizeof(SerdNode*) * 5); ++i) {
+	for (size_t i = 0; i < sizeof(good) / (sizeof(SerdNode*) * 5); ++i) {
 		assert(!serd_writer_write_statement(
 			       writer, 0, NULL,
 			       good[i][0], good[i][1], good[i][2], good[i][3], good[i][4]));
