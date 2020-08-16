@@ -313,15 +313,15 @@ main(int argc, char** argv)
 	serd_writer_chop_blank_prefix(writer, chop_prefix);
 	serd_reader_add_blank_prefix(reader, add_prefix);
 
-	SerdStatus status = SERD_SUCCESS;
+	SerdStatus st = SERD_SUCCESS;
 	if (!from_file) {
-		status = serd_reader_read_string(reader, input);
+		st = serd_reader_read_string(reader, input);
 	} else if (bulk_read) {
-		status = serd_reader_read_file_handle(reader, in_fd, in_name);
+		st = serd_reader_read_file_handle(reader, in_fd, in_name);
 	} else {
-		status = serd_reader_start_stream(reader, in_fd, in_name, false);
-		while (!status) {
-			status = serd_reader_read_chunk(reader);
+		st = serd_reader_start_stream(reader, in_fd, in_name, false);
+		while (!st) {
+			st = serd_reader_read_chunk(reader);
 		}
 		serd_reader_end_stream(reader);
 	}
@@ -338,8 +338,8 @@ main(int argc, char** argv)
 
 	if (fclose(out_fd)) {
 		perror("serdi: write error");
-		status = SERD_ERR_UNKNOWN;
+		st = SERD_ERR_UNKNOWN;
 	}
 
-	return (status > SERD_FAILURE) ? 1 : 0;
+	return (st > SERD_FAILURE) ? 1 : 0;
 }
