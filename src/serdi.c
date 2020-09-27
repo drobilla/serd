@@ -83,7 +83,7 @@ static int
 print_version(void)
 {
 	printf("serdi " SERD_VERSION " <http://drobilla.net/software/serd>\n");
-	printf("Copyright 2011-2017 David Robillard <http://drobilla.net>.\n"
+	printf("Copyright 2011-2020 David Robillard <http://drobilla.net>.\n"
 	       "License: <http://www.opensource.org/licenses/isc>\n"
 	       "This is free software; you are free to change and redistribute it."
 	       "\nThere is NO WARRANTY, to the extent permitted by law.\n");
