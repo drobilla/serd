@@ -122,21 +122,14 @@ peek_byte(SerdReader* reader)
 }
 
 static inline int
-eat_byte(SerdReader* reader)
-{
-	const int        c  = peek_byte(reader);
-	const SerdStatus st = serd_byte_source_advance(&reader->source);
-
-	return st > SERD_FAILURE ? EOF : c;
-}
-
-static inline int
 eat_byte_safe(SerdReader* reader, const int byte)
 {
 	(void)byte;
 
-	const int c = eat_byte(reader);
+	const int c = peek_byte(reader);
 	assert(c == byte);
+
+	serd_byte_source_advance(&reader->source);
 	return c;
 }
 
