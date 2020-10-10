@@ -350,7 +350,31 @@ endif
 ns_serdtest = 'http://drobilla.net/sw/serd/test/'
 ns_w3 = 'http://www.w3.org/2013/'
 
-test_suites = {
+test_suites = {}
+
+writer_flag_suites = [
+  'absolute',
+  'baseless',
+  'expanded',
+  'longhand',
+  'prefixless',
+  'terse',
+  'verbatim',
+]
+
+foreach name : writer_flag_suites
+  test_suites += {
+    name: [
+      files('extra/@0@/manifest.ttl'.format(name)),
+      ns_serdtest + name + '/',
+      '--',
+      ['-O', name],
+      ['-k', '1024'],
+    ],
+  }
+endforeach
+
+test_suites += {
   'nquads': [
     files('w3c/nquads/manifest.ttl'),
     ns_w3 + 'NQuadsTests/',
@@ -433,17 +457,8 @@ test_suites = {
     ns_serdtest + 'perfect/',
     '--',
     ['-I', 'global'],
-    ['-O', 'unqualified'],
-    ['-O', 'unresolved'],
+    ['-O', 'verbatim'],
     ['-k', '8192'],
-  ],
-  'full': [
-    files('extra/full/manifest.ttl'),
-    ns_serdtest + 'full/',
-    '--',
-    ['-O', 'unqualified'],
-    ['-O', 'unresolved'],
-    ['-k', '1024'],
   ],
   'generated': [
     files('extra/generated/manifest.ttl'),
@@ -471,6 +486,11 @@ test_suites = {
     ns_serdtest + 'lax/',
     '--',
     ['-k', '1024'],
+  ],
+  'longhand_reverse': [
+    '--reverse',
+    files('extra/longhand/manifest.ttl'),
+    ns_serdtest + 'longhand/',
   ],
   'ordered': [
     files('extra/ordered/manifest.ttl'),
@@ -516,12 +536,6 @@ test_suites = {
     '--',
     ['-R', 'http://example.org/top/root/'],
     ['-k', '512'],
-  ],
-  'terse': [
-    files('extra/terse/manifest.ttl'),
-    ns_serdtest + 'terse/',
-    '--',
-    ['-O', 'terse'],
   ],
 }
 

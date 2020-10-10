@@ -1,0 +1,9 @@
+@base <http://example.org/b/> .
+@prefix eg: <http://example.org/p/> .
+
+<http://example.org/s1>
+	eg:qualified-p eg:qualified-o ;
+	<resolved-p> <resolved-o> ;
+	<http://example.org/p/unqualified-p> <http://example.org/p/unqualified-o> ;
+	<http://example.org/b/unresolved-p> <http://example.org/p/unresolved-o> ;
+	unknown:badprefix-p unknown:badprefix-o .

@@ -1,0 +1,23 @@
+@prefix eg: <http://example.org/eg#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+eg:s1
+	a eg:Node .
+
+eg:s2
+	eg:anon [
+		a eg:NodeChild
+	] .
+
+eg:s3
+	eg:list (
+		[
+			a eg:ListItem
+		]
+	) .
+
+eg:s4
+	eg:boolean true ;
+	eg:decimal 1.2 ;
+	eg:integer 3 .

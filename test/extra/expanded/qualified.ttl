@@ -1,0 +1,7 @@
+@prefix eg: <http://example.org/prefix/> .
+
+<http://example.org/a/s1>
+	<http://example.org/a/p1> <http://example.org/a/o1> .
+
+eg:s1
+	eg:p1 eg:o1 .

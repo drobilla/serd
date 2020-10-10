@@ -35,10 +35,91 @@ typedef struct SerdWriterImpl SerdWriter;
    does not support abbreviation and is always ASCII.
 */
 typedef enum {
-  SERD_WRITE_ESCAPED     = 1U << 0U, ///< Escape additional characters
-  SERD_WRITE_UNQUALIFIED = 1U << 1U, ///< Don't shorten URIs into CURIEs
-  SERD_WRITE_UNRESOLVED  = 1U << 2U, ///< Don't make URIs relative
-  SERD_WRITE_TERSE       = 1U << 4U, ///< Write terse output without newlines
+  /**
+     Write "flat" line-based output.
+
+     This disables abbreviation and avoids writing inline blank nodes, lists,
+     and long literals, so the output has one statement per line.  Implied by
+     #SERD_NTRIPLES and #SERD_NQUADS.
+  */
+  SERD_WRITE_LINES = 1U << 0U,
+
+  /**
+     Write terser output with fewer lines.
+
+     For Turtle and TriG, this enables a terser form of output which only has
+     newlines at the top level.  This can result in very long lines, but is
+     more compact, and convenient for things like debug logging.
+  */
+  SERD_WRITE_TERSE = 1U << 1U,
+
+  /**
+     Suppress writing base URI directives.
+
+     This writes data as usual, but suppresses writing Turtle/TriG `base`
+     directives.  Note that the resulting output may not parse correctly if it
+     contains relative URI references and base URI changes.  Implied by
+     #SERD_NTRIPLES and #SERD_NQUADS.
+  */
+  SERD_WRITE_BASELESS = 1U << 3U,
+
+  /**
+     Suppress writing namespace prefix directives.
+
+     This writes data as usual, but suppresses writing Turtle/TriG `prefix`
+     directives.  Note that the resulting output may not parse correctly if it
+     contains CURIEs and namespace prefix changes.  Implied by #SERD_NTRIPLES
+     and #SERD_NQUADS.
+  */
+  SERD_WRITE_PREFIXLESS = 1U << 4U,
+
+  /**
+     Escape additional characters as in RDF Test Cases format.
+
+     This writes "extended" characters as printable ASCII, using "U" escapes in
+     URIs and strings where necessary.  This is the format used by the outputs
+     in the Turtle test suite (which predates RDF 1.1 NTriples).  This makes
+     NTriples/NQuads output non-canonical, so should only be used for
+     compatibility purposes.  See <https://www.w3.org/TR/rdf-testcases/>.
+  */
+  SERD_WRITE_ESCAPED = 1U << 5U,
+
+  /**
+     Write rdf:type and numeric literals generically.
+
+     This disables the special Turtle/TriG "a" syntax, and unquoted writing of
+     xsd:boolean, xsd:integer, and xsd:decimal literals.  Implied by
+     #SERD_NTRIPLES and #SERD_NQUADS.
+  */
+  SERD_WRITE_LONGHAND = 1U << 6U,
+
+  /**
+     Write only absolute URIs.
+
+     This will refuse to write any relative URI reference that couldn't be
+     resolved.  Implied by #SERD_NTRIPLES and #SERD_NQUADS.
+  */
+  SERD_WRITE_ABSOLUTE = 1U << 7U,
+
+  /**
+     Write expanded URIs instead of prefixed names.
+
+     This avoids shortening URIs into CURIEs, and expands CURIEs from the input
+     into full URIs before writing.  Implied by #SERD_NTRIPLES and
+     #SERD_NQUADS.
+  */
+  SERD_WRITE_EXPANDED = 1U << 8U,
+
+  /**
+     Write URI references and CURIEs exactly as in the input.
+
+     Normally, the writer expands CURIEs and resolves URI references, then
+     tries to abbreviate the resulting URI.  This flag disables that, so CURIE
+     and URI references are simply written directly from the input.  This
+     bypasses some error checking, so CURIEs with unknown prefixes can be
+     written.
+  */
+  SERD_WRITE_VERBATIM = 1U << 9U,
 } SerdWriterFlag;
 
 /// Bitwise OR of #SerdWriterFlag values

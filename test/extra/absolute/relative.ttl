@@ -1,0 +1,11 @@
+@base <http://example.org/base/> .
+@prefix eg: <http://example.org/prefix/> .
+
+<s1>
+	<p1> <o1> .
+
+<http://example.com/s2>
+	<http://example.com/p2> <http://example.com/o2> .
+
+eg:s3
+	eg:p3 eg:o3 .

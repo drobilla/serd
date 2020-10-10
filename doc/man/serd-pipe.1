@@ -148,6 +148,18 @@ can be
 .Cm Turtle ,
 or an option:
 .Bl -tag -width 3n
+.It Cm absolute
+Write only absolute URIs.
+Normally, URIs are made relative if possible, and relative URI references that can't be resolved are written as-is.
+This option disables that, and makes it an error if a URI can't be made absolute.
+.It Cm baseless
+Suppress writing
+.Ql @base
+URI directives.
+Normally, these are preserved in Turtle or TriG.
+This option disables that,
+so the output has an implicit base URI.
+Note that this may corrupt data that contains relative URIs references and base URI changes!
 .It Cm escaped
 Escape additional characters like in the Turtle test suite outputs,
 for compatibility with older NTriples readers.
@@ -157,21 +169,62 @@ for backspace,
 .Ql \eu000C
 for form-feed,
 and similar escapes for extended characters in URIs.
+.It Cm expanded
+Write expanded URIs instead of prefixed names.
+Normally, URIs are abbreviated if a suitable namespace prefix is defined.
+This option disables that,
+so even URIs that could be abbreviated are written in full.
+.It Cm lines
+Write
+.Dq flat
+line-based output.
+This option disables abbreviation and avoids writing inline blank nodes, lists, and long literals,
+so the output has one statement per line.
+.It Cm longhand
+Disable shorthands for
+.Li rdf:type
+predicates and unquoted
+.Li xsd:boolean ,
+.Li xsd:decimal ,
+and
+.Li xsd:integer
+literals.
+.It Cm prefixless
+Suppress writing namespace
+.Ql @prefix
+directives.
+Normally, these are preserved in Turtle or TriG.
+This option disables that,
+so the output has implicit namespace prefixes.
+Note that this may corrupt data that contains prefixed names!
 .It Cm terse
 Write terser output with fewer lines.
 Normally, statements are written on separate lines, including abbreviated statements, list elements, and so on.
 This option enables a terser style which only separates top-level descriptions by line.
 Note that this may produce extremely long lines.
-.It Cm unqualified
-Don't shorten URIs into prefixed names.
-.It Cm unresolved
-Don't make URIs relative.
+.It Cm verbatim
+Write URI references and prefixed names exactly as in the input.
+Normally, the writer first expands/resolves, then tries to abbreviate the resulting URI.
+This option disables that, so prefixed names and URI references are written as-is.
+Note that this may produce invalid output!
 .El
 .Pp
 The
 .Cm empty
 syntax suppresses the output,
 so that only warnings and errors will be printed.
+The
+.Cm absolute ,
+.Cm baseless ,
+.Cm expanded ,
+.Cm lines ,
+.Cm longhand ,
+and
+.Cm prefixless
+options are implied for
+.Cm NQuads
+and
+.Cm NTriples .
 .It Fl R Ar root
 Keep relative URIs within a
 .Ar root

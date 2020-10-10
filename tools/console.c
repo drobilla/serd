@@ -306,10 +306,15 @@ serd_set_output_option(const ZixStringView    name,
   } OutputOption;
 
   static const OutputOption output_options[] = {
-    {"escaped", SERD_WRITE_ESCAPED},
-    {"unqualified", SERD_WRITE_UNQUALIFIED},
-    {"unresolved", SERD_WRITE_UNRESOLVED},
+    {"lines", SERD_WRITE_LINES},
     {"terse", SERD_WRITE_TERSE},
+    {"baseless", SERD_WRITE_BASELESS},
+    {"prefixless", SERD_WRITE_PREFIXLESS},
+    {"escaped", SERD_WRITE_ESCAPED},
+    {"longhand", SERD_WRITE_LONGHAND},
+    {"absolute", SERD_WRITE_ABSOLUTE},
+    {"expanded", SERD_WRITE_EXPANDED},
+    {"verbatim", SERD_WRITE_VERBATIM},
     {NULL, SERD_WRITE_ESCAPED},
   };
 
