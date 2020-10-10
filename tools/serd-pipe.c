@@ -40,7 +40,7 @@ print_usage(const char* const name, const bool error)
     "  -I SYNTAX    Input syntax (turtle/ntriples/trig/nquads),\n"
     "               or flag (generated/lax/variables).\n"
     "  -O SYNTAX    Output syntax (empty/turtle/ntriples/nquads),\n"
-    "               or flag (ascii/lax/terse/unresolved/unqualified).\n"
+    "               or flag (ascii/expanded/lax/terse/verbatim).\n"
     "  -b BYTES     I/O block size.\n"
     "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n"
     "  -h           Display this help and exit.\n"
