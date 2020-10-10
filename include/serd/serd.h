@@ -275,8 +275,9 @@ typedef struct {
 
 /// Reader options
 typedef enum {
-  SERD_READ_LAX       = 1u << 0u, ///< Tolerate invalid input where possible
-  SERD_READ_VARIABLES = 1u << 1u  ///< Support variable nodes
+  SERD_READ_LAX          = 1u << 0u, ///< Tolerate invalid input where possible
+  SERD_READ_VARIABLES    = 1u << 1u, ///< Support variable nodes
+  SERD_READ_EXACT_BLANKS = 1u << 2u, ///< Allow clashes with generated blanks
 } SerdReaderFlag;
 
 /// Bitwise OR of SerdReaderFlag values
