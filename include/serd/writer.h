@@ -36,11 +36,50 @@ typedef struct SerdWriterImpl SerdWriter;
    does not support abbreviation and is always ASCII.
 */
 typedef enum {
-  SERD_WRITE_ASCII       = 1U << 0U, ///< Escape all non-ASCII characters
-  SERD_WRITE_UNQUALIFIED = 1U << 1U, ///< Do not shorten URIs into CURIEs
-  SERD_WRITE_UNRESOLVED  = 1U << 2U, ///< Do not make URIs relative
-  SERD_WRITE_LAX         = 1U << 3U, ///< Tolerate lossy output
-  SERD_WRITE_TERSE       = 1U << 4U, ///< Write terser output without newlines
+  /**
+     Escape all non-ASCII characters.
+
+     Although all the supported syntaxes are UTF-8 by definition, this can be
+     used to escape all non-ASCII characters so that data will survive
+     transmission through ASCII-only channels.
+  */
+  SERD_WRITE_ASCII = 1U << 0U,
+
+  /**
+     Write expanded URIs instead of prefixed names.
+
+     This will avoid shortening URIs into CURIEs entirely, even if the output
+     syntax supports prefixed names.  This can be useful for making chunks of
+     syntax context-free.
+  */
+  SERD_WRITE_EXPANDED = 1U << 1U,
+
+  /**
+     Write URI references exactly as they are received.
+
+     Normally, the writer resolves URIs against the base URI, so it can
+     potentially write them as relative URI references.  This flag disables
+     that, so URI nodes are written exactly as they are received.
+  */
+  SERD_WRITE_VERBATIM = 1U << 2U,
+
+  /**
+     Write terser output without newlines.
+
+     For Turtle and TriG, this enables a terser form of output which only has
+     newlines at the top level.  This can result in very long lines, but is
+     more compact and useful for making these abbreviated syntaxes line-based.
+  */
+  SERD_WRITE_TERSE = 1U << 3U,
+
+  /**
+     Tolerate lossy output.
+
+     This will tolerate input that can not be written without loss, in
+     particular invalid UTF-8 text.  Note that this flag should be used
+     carefully, since it can result in data loss.
+  */
+  SERD_WRITE_LAX = 1U << 4U,
 } SerdWriterFlag;
 
 /// Bitwise OR of #SerdWriterFlag values

@@ -129,10 +129,10 @@ serd_set_output_option(const ZixStringView    name,
 
   static const OutputOption output_options[] = {
     {"ascii", SERD_WRITE_ASCII},
-    {"unqualified", SERD_WRITE_UNQUALIFIED},
-    {"unresolved", SERD_WRITE_UNRESOLVED},
-    {"lax", SERD_WRITE_LAX},
+    {"expanded", SERD_WRITE_EXPANDED},
+    {"verbatim", SERD_WRITE_VERBATIM},
     {"terse", SERD_WRITE_TERSE},
+    {"lax", SERD_WRITE_LAX},
     {NULL, SERD_WRITE_ASCII},
   };
 
