@@ -137,12 +137,6 @@ typedef bool (*const BytePredicate)(uint8_t) ZIX_NODISCARD;
 ZIX_NODISCARD static SerdStatus
 serd_writer_on_event(void* handle, const SerdEvent* event);
 
-ZIX_NODISCARD static bool
-supports_abbrev(const SerdWriter* const writer)
-{
-  return writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG;
-}
-
 ZIX_LOG_FUNC(3, 4)
 static SerdStatus
 w_err(SerdWriter* const writer, const SerdStatus st, const char* const fmt, ...)
@@ -832,31 +826,27 @@ write_IRIREF(SerdWriter* const writer, const ZixStringView string)
 {
   SerdStatus st = SERD_SUCCESS;
 
-  TRY(st, esink(writer, 1, "<"));
-
-  // Write the string and return early if resolution is disabled or impossible
-  const SerdURIView base_uri = serd_env_base_uri_view(writer->env);
-  if ((writer->flags & SERD_WRITE_UNRESOLVED) ||
-      !serd_uri_has_scheme(base_uri)) {
-    TRY(st, ewrite_uri(writer, string));
-    return esink(writer, 1, ">");
-  }
-
   // Resolve the input URI reference to a (hopefully) absolute URI
-  const SerdURIView in_uri  = serd_parse_uri(string.data);
-  SerdURIView       out_uri = serd_resolve_uri(in_uri, base_uri);
-
-  // Determine if the absolute URI should be written, or make it relative again
-  const bool write_abs =
-    !supports_abbrev(writer) ||
-    (writer->root_uri_string && !serd_uri_is_within(out_uri, writer->root_uri));
-  if (!write_abs) {
-    const SerdURIView rel_uri = serd_relative_uri(out_uri, base_uri);
-    if (!serd_uri_is_null(rel_uri)) {
-      out_uri = rel_uri;
+  const SerdURIView base_uri = serd_env_base_uri_view(writer->env);
+  const SerdURIView in_uri   = serd_parse_uri(string.data);
+  SerdURIView       out_uri  = serd_resolve_uri(in_uri, base_uri);
+  if (!(writer->flags & SERD_WRITE_ABSOLUTE)) {
+    // Make the URI relative to the output if possible/desired
+    if (!writer->root_uri_string ||
+        serd_uri_is_within(out_uri, writer->root_uri)) {
+      const SerdURIView rel_uri = serd_relative_uri(out_uri, base_uri);
+      if (!serd_uri_is_null(rel_uri)) {
+        out_uri = rel_uri;
+      }
     }
+  } else if (!serd_uri_has_scheme(out_uri)) {
+    return w_err(writer,
+                 SERD_BAD_ARG,
+                 "unable to resolve <%s> without a base URI",
+                 string.data);
   }
 
+  TRY(st, esink(writer, 1, "<"));
   const SerdStreamResult r = serd_write_uri(out_uri, uri_sink, writer);
   return r.status ? r.status : esink(writer, 1, ">");
 }
@@ -864,31 +854,29 @@ write_IRIREF(SerdWriter* const writer, const ZixStringView string)
 ZIX_NODISCARD static SerdStatus
 write_uri(SerdWriter* const writer, const ZixStringView string)
 {
-  SerdStatus st         = SERD_SUCCESS;
-  const bool has_scheme = serd_uri_string_has_scheme(string.data);
+  SerdStatus st = SERD_SUCCESS;
 
-  if (supports_abbrev(writer)) {
-    if (token_equals_symbol(
-          writer, serd_token_view(SERD_URI, string), RDF_NIL)) {
-      return esink(writer, 2, "()");
-    }
-
-    SerdStringPairView pair = {{"", 0}, {"", 0}};
-    if (has_scheme && !(writer->flags & SERD_WRITE_UNQUALIFIED) &&
-        !serd_env_qualify(writer->env, string, &pair)) {
-      TRY(st, write_lname(writer, pair.prefix));
-      TRY(st, esink(writer, 1, ":"));
-      return write_lname(writer, pair.suffix);
-    }
+  // If we're abbreviating and this is rdf:nil, simply write "()"
+  if (!(writer->flags & SERD_WRITE_LINES) &&
+      zix_string_view_equals(string, serd_symbols[RDF_NIL])) {
+    return esink(writer, 2, "()");
   }
 
-  if (!has_scheme &&
-      (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) &&
-      !serd_uri_has_scheme(serd_env_base_uri_view(writer->env))) {
-    return w_err(writer,
-                 SERD_BAD_ARG,
-                 "unable to resolve <%s> without a base URI",
-                 string.data);
+  // If verbatim mode is enabled, write the string (avoid parsing/resolution)
+  if ((writer->flags & SERD_WRITE_VERBATIM)) {
+    TRY(st, esink(writer, 1, "<"));
+    TRY(st, ewrite_uri(writer, string));
+    return esink(writer, 1, ">");
+  }
+
+  // Try to qualify the URI and write a prefixed name if successful
+  const bool         has_scheme = serd_uri_string_has_scheme(string.data);
+  SerdStringPairView pair       = {{"", 0}, {"", 0}};
+  if (!(writer->flags & SERD_WRITE_EXPANDED) && has_scheme &&
+      !serd_env_qualify(writer->env, string, &pair)) {
+    TRY(st, write_lname(writer, pair.prefix));
+    TRY(st, esink(writer, 1, ":"));
+    return write_lname(writer, pair.suffix);
   }
 
   return write_IRIREF(writer, string);
@@ -900,17 +888,14 @@ write_curie(SerdWriter* const writer, const ZixStringView curie)
   SerdStringPairView pair = {{"", 0}, {"", 0}};
   SerdStatus         st   = SERD_SUCCESS;
 
-  // In fast-and-loose Turtle/TriG mode CURIEs are simply passed through
-  const bool fast =
-    (writer->flags & (SERD_WRITE_UNQUALIFIED | SERD_WRITE_UNRESOLVED));
-
-  if (!supports_abbrev(writer) || !fast) {
+  if ((writer->flags & SERD_WRITE_EXPANDED) ||
+      !(writer->flags & SERD_WRITE_VERBATIM)) {
     if ((st = serd_env_expand(writer->env, curie, &pair))) {
       return w_err(writer, st, "undefined namespace prefix '%s'", curie.data);
     }
   }
 
-  if (!supports_abbrev(writer)) {
+  if ((writer->flags & SERD_WRITE_EXPANDED)) {
     TRY(st, esink(writer, 1, "<"));
     TRY(st, ewrite_uri(writer, pair.prefix));
     TRY(st, ewrite_uri(writer, pair.suffix));
@@ -962,7 +947,8 @@ write_literal(SerdWriter* const   writer,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  if (supports_abbrev(writer) && (node_flags & SERD_HAS_DATATYPE)) {
+  if (!(writer->flags & SERD_WRITE_LONGHAND) &&
+      (node_flags & SERD_HAS_DATATYPE)) {
     if (token_equals_symbol(writer, meta, XSD_BOOLEAN) ||
         token_equals_symbol(writer, meta, XSD_INTEGER) ||
         (token_equals_symbol(writer, meta, XSD_DECIMAL) &&
@@ -971,7 +957,7 @@ write_literal(SerdWriter* const   writer,
     }
   }
 
-  if (supports_abbrev(writer) && (node_flags & SERD_IS_LONG)) {
+  if (!(writer->flags & SERD_WRITE_LINES) && (node_flags & SERD_IS_LONG)) {
     TRY(st, esink(writer, 3, "\"\"\""));
     TRY(st, write_long_text(writer, string.data, string.length));
     st = esink(writer, 3, "\"\"\"");
@@ -1000,7 +986,7 @@ write_blank(SerdWriter* const    writer,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  if (supports_abbrev(writer)) {
+  if (!(writer->flags & SERD_WRITE_LINES)) {
     const Sep sep = blank_start_sep(field, flags);
     if (sep) {
       return write_sep(writer,
@@ -1048,7 +1034,8 @@ write_object(SerdWriter* const    writer,
 ZIX_NODISCARD static SerdStatus
 write_pred(SerdWriter* writer, const SerdTokenView pred)
 {
-  SerdStatus st = token_equals_symbol(writer, pred, RDF_TYPE)
+  SerdStatus st = (!(writer->flags & SERD_WRITE_LONGHAND) &&
+                   token_equals_symbol(writer, pred, RDF_TYPE))
                     ? esink(writer, 1, "a")
                     : write_iri(writer, pred);
 
@@ -1097,32 +1084,13 @@ terminate_context(SerdWriter* const writer)
   return st;
 }
 
-ZIX_NODISCARD static SerdStatus
-write_ntriples_statement(SerdWriter* const    writer,
-                         const SerdEventFlags flags,
-                         const SerdTokenView  subject,
-                         const SerdTokenView  predicate,
-                         const SerdObjectView object)
-{
-  SerdStatus st = SERD_SUCCESS;
-
-  TRY(st, write_token(writer, SERD_SUBJECT, flags, subject));
-  TRY(st, esink(writer, 1, " "));
-  TRY(st, write_token(writer, SERD_PREDICATE, flags, predicate));
-  TRY(st, esink(writer, 1, " "));
-  TRY(st, write_object(writer, flags, object));
-  TRY(st, esink(writer, 3, " .\n"));
-
-  return st;
-}
-
 static SerdStatus
-write_nquads_statement(SerdWriter* const    writer,
-                       const SerdEventFlags flags,
-                       const SerdTokenView  subject,
-                       const SerdTokenView  predicate,
-                       const SerdObjectView object,
-                       const SerdTokenView  graph)
+write_flat_statement(SerdWriter* const    writer,
+                     const SerdEventFlags flags,
+                     const SerdTokenView  subject,
+                     const SerdTokenView  predicate,
+                     const SerdObjectView object,
+                     const SerdTokenView  graph)
 {
   SerdStatus st = SERD_SUCCESS;
 
@@ -1342,7 +1310,10 @@ write_statement(SerdWriter* const       writer,
   const SerdTokenView  subject   = statement.subject;
   const SerdTokenView  predicate = statement.predicate;
   const SerdObjectView object    = statement.object;
-  const SerdTokenView  graph     = statement.graph;
+  const SerdTokenView  graph =
+    (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_TURTLE)
+       ? serd_no_token()
+       : statement.graph;
 
   // Refuse to write incoherent statements
   if (!serd_field_supports(SERD_SUBJECT, subject.type) ||
@@ -1357,27 +1328,15 @@ write_statement(SerdWriter* const       writer,
     return SERD_BAD_ARG;
   }
 
-  switch (writer->syntax) {
-  case SERD_SYNTAX_EMPTY:
-    break;
-
-  case SERD_TURTLE:
-    return write_turtle_trig_statement(
-      writer, flags, subject, predicate, object, serd_no_token());
-
-  case SERD_NTRIPLES:
-    return write_ntriples_statement(writer, flags, subject, predicate, object);
-
-  case SERD_NQUADS:
-    return write_nquads_statement(
-      writer, flags, subject, predicate, object, graph);
-
-  case SERD_TRIG:
-    return write_trig_statement(
-      writer, flags, subject, predicate, object, graph);
-  }
-
-  return SERD_SUCCESS;
+  return (writer->syntax == SERD_SYNTAX_EMPTY) ? SERD_SUCCESS
+         : (writer->flags & SERD_WRITE_LINES)
+           ? write_flat_statement(
+               writer, flags, subject, predicate, object, graph)
+         : (writer->syntax == SERD_TRIG)
+           ? write_trig_statement(
+               writer, flags, subject, predicate, object, graph)
+           : write_turtle_trig_statement(
+               writer, flags, subject, predicate, object, graph);
 }
 
 ZIX_NODISCARD static SerdStatus
@@ -1387,7 +1346,7 @@ write_end(SerdWriter* const writer, const ZixStringView label)
 
   SerdStatus st = SERD_SUCCESS;
 
-  if (writer->syntax != SERD_TURTLE && writer->syntax != SERD_TRIG) {
+  if ((writer->flags & SERD_WRITE_LINES)) {
     return SERD_SUCCESS;
   }
 
@@ -1477,6 +1436,13 @@ serd_writer_new(SerdWorld* const      world,
   writer->flags  = flags;
   writer->env    = env;
 
+  if (writer->syntax == SERD_SYNTAX_EMPTY || writer->syntax == SERD_NTRIPLES ||
+      writer->syntax == SERD_NQUADS) {
+    writer->flags |= SERD_WRITE_BASELESS | SERD_WRITE_PREFIXLESS |
+                     SERD_WRITE_EXPANDED | SERD_WRITE_LONGHAND |
+                     SERD_WRITE_ABSOLUTE | SERD_WRITE_LINES;
+  }
+
   writer->root_uri_string = NULL;
   writer->root_uri        = serd_no_uri();
 
@@ -1508,12 +1474,12 @@ write_base(SerdWriter* const writer, const ZixStringView uri)
     return st == SERD_NO_CHANGE ? SERD_SUCCESS : st;
   }
 
-  if (uri.length &&
-      (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG)) {
-    const bool had_subject = writer->context->subject.type;
-    TRY(st, terminate_context(writer));
+  const bool had_subject = writer->context->subject.type;
+  TRY(st, terminate_context(writer));
+
+  if (uri.length && !(writer->flags & SERD_WRITE_BASELESS)) {
     if (had_subject) {
-      TRY(st, esink(writer, 1, "\n"));
+      TRY(st, write_top_level_sep(writer));
     }
 
     TRY(st, esink(writer, 7, "@base <"));
@@ -1549,18 +1515,17 @@ write_prefix(SerdWriter* const   writer,
              const ZixStringView name,
              const ZixStringView uri)
 {
-  assert(writer);
-
   SerdStatus st = serd_env_set_prefix(writer->env, name, uri);
   if (st) {
     return st == SERD_NO_CHANGE ? SERD_SUCCESS : st;
   }
 
-  if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
-    const bool had_subject = writer->context->subject.type;
-    TRY(st, terminate_context(writer));
+  const bool had_subject = writer->context->subject.type;
+  TRY(st, terminate_context(writer));
+
+  if (!(writer->flags & SERD_WRITE_PREFIXLESS)) {
     if (had_subject) {
-      TRY(st, esink(writer, 1, "\n"));
+      TRY(st, write_top_level_sep(writer));
     }
 
     TRY(st, esink(writer, 8, "@prefix "));

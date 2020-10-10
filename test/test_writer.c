@@ -605,7 +605,7 @@ check_strict_write(const SerdWriterFlags flags)
 static void
 test_strict_write(void)
 {
-  check_strict_write((SerdWriterFlags)SERD_WRITE_UNRESOLVED);
+  check_strict_write((SerdWriterFlags)SERD_WRITE_VERBATIM);
   check_strict_write((SerdWriterFlags)SERD_WRITE_ESCAPED);
 }
 
@@ -679,7 +679,7 @@ test_write_nothing_node(void)
   SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
 
   SerdWriter* const writer =
-    serd_writer_new(world, SERD_TURTLE, SERD_WRITE_UNRESOLVED, env);
+    serd_writer_new(world, SERD_TURTLE, SERD_WRITE_VERBATIM, env);
   assert(writer);
   assert(!serd_writer_start(writer, &null_out, 1U));
 

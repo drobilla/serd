@@ -4,13 +4,13 @@
 
 <>
 	a mf:Manifest ;
-	rdfs:comment "Serd full URI test suite" ;
+	rdfs:comment "Serd prefixless test suite" ;
 	mf:entries (
-		<#full-uris>
+		<#prefixless>
 	) .
 
-<#full-uris>
+<#prefixless>
 	a rdft:TestTurtleEval ;
-	mf:action <full-uris.ttl> ;
-	mf:name "full-uris" ;
-	mf:result <full-uris.ttl> .
+	mf:action <prefixed.ttl> ;
+	mf:name "prefixless" ;
+	mf:result <prefixless.ttl> .

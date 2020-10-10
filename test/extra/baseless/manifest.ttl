@@ -1,0 +1,16 @@
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdft: <http://www.w3.org/ns/rdftest#> .
+
+<>
+	a mf:Manifest ;
+	rdfs:comment "Serd baseless test suite" ;
+	mf:entries (
+		<#baseless>
+	) .
+
+<#baseless>
+	a rdft:TestTurtleEval ;
+	mf:action <based.ttl> ;
+	mf:name "baseless" ;
+	mf:result <baseless.ttl> .
