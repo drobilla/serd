@@ -422,15 +422,13 @@ test_suites = {
     files('extra/perfect/manifest.ttl'),
     ns_serdtest + 'perfect/',
     '--',
-    ['-O', 'unqualified'],
-    ['-O', 'unresolved'],
+    ['-O', 'verbatim'],
   ],
   'full': [
     files('extra/full/manifest.ttl'),
     ns_serdtest + 'full/',
     '--',
-    ['-O', 'unqualified'],
-    ['-O', 'unresolved'],
+    ['-O', 'expanded'],
   ],
   'good': [
     files('extra/good/manifest.ttl'),

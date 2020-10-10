@@ -793,10 +793,10 @@ write_literal(SerdWriter* const        writer,
 SERD_NODISCARD static SerdStatus
 write_full_uri_node(SerdWriter* const writer, const SerdNode* const node)
 {
-  SerdStatus st               = SERD_SUCCESS;
-  const bool resolve_disabled = writer->flags & SERD_WRITE_UNRESOLVED;
+  SerdStatus st       = SERD_SUCCESS;
+  const bool verbatim = (writer->flags & SERD_WRITE_VERBATIM);
 
-  if (resolve_disabled || !serd_env_base_uri(writer->env)) {
+  if (verbatim || !serd_env_base_uri(writer->env)) {
     // Resolution disabled or we have no base URI, simply write the node
     TRY(st, esink("<", 1, writer));
     TRY(st, write_uri_from_node(writer, node));
@@ -847,7 +847,7 @@ write_uri_node(SerdWriter* const     writer,
       return esink("()", 2, writer);
     }
 
-    if (has_scheme && !(writer->flags & SERD_WRITE_UNQUALIFIED) &&
+    if (has_scheme && !(writer->flags & SERD_WRITE_EXPANDED) &&
         serd_env_qualify_in_place(writer->env, node, &prefix_node, &suffix)) {
       const ZixStringView prefix = serd_node_string_view(prefix_node);
       TRY(st, write_lname(writer, prefix.data, prefix.length));
@@ -875,9 +875,8 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
   ZixStringView     suffix   = {NULL, 0};
   SerdStatus        st       = SERD_SUCCESS;
 
-  // In fast-and-loose Turtle/TriG mode CURIEs are simply passed through
-  const bool fast =
-    (writer->flags & (SERD_WRITE_UNQUALIFIED | SERD_WRITE_UNRESOLVED));
+  // In verbatim Turtle/TriG mode, CURIEs are simply passed through
+  const bool fast = (writer->flags & SERD_WRITE_VERBATIM);
 
   if (!supports_abbrev(writer) || !fast) {
     const ZixStringView curie = serd_node_string_view(node);
