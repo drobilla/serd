@@ -113,6 +113,8 @@ or an option:
 .Bl -tag -width 3n
 .It Cm ascii
 Escape all non-ASCII characters.
+.It Cm expanded
+Write expanded URIs instead of prefixed names.
 .It Cm lax
 Tolerate corrupt UTF-8 and write replacements.
 .It Cm terse
@@ -121,6 +123,8 @@ Write terser output with fewer, longer lines.
 Don't shorten URIs into CURIEs.
 .It Cm unresolved
 Don't make URIs relative.
+.It Cm verbatim
+Write URI references exactly as in the input.
 .El
 .Pp
 The

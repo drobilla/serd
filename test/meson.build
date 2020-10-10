@@ -444,16 +444,14 @@ test_suites = {
     files('extra/perfect/manifest.ttl'),
     ns_serdtest + 'perfect/',
     '--',
-    ['-O', 'unqualified'],
-    ['-O', 'unresolved'],
+    ['-O', 'verbatim'],
     ['-k', '16384'],
   ],
   'full': [
     files('extra/full/manifest.ttl'),
     ns_serdtest + 'full/',
     '--',
-    ['-O', 'unqualified'],
-    ['-O', 'unresolved'],
+    ['-O', 'expanded'],
     ['-k', '1024'],
   ],
   'good': [
