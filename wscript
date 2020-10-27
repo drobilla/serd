@@ -406,9 +406,9 @@ def _test_output_syntax(test_class):
 
 
 def _wrapped_command(cmd):
-    if Options.options.test_wrapper:
+    if Options.options.wrapper:
         import shlex
-        return shlex.split(Options.options.test_wrapper) + cmd
+        return shlex.split(Options.options.wrapper) + cmd
 
     return cmd
 
