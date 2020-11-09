@@ -1,0 +1,9 @@
+Checks: >
+  *,
+  -*-magic-numbers,
+  -*-uppercase-literal-suffix,
+  -android-cloexec-fopen,
+  -hicpp-signed-bitwise,
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*'
+FormatStyle: file

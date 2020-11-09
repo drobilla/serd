@@ -2,16 +2,12 @@ Checks: >
   *,
   -*-magic-numbers,
   -*-uppercase-literal-suffix,
-  -android-cloexec-fopen,
   -bugprone-branch-clone,
   -bugprone-suspicious-string-compare,
-  -clang-analyzer-alpha.*,
-  -clang-analyzer-valist.Uninitialized,
   -google-readability-todo,
   -hicpp-signed-bitwise,
   -llvm-header-guard,
   -readability-else-after-return,
-  -readability-implicit-bool-conversion,
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
 FormatStyle: file
