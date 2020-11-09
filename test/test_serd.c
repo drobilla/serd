@@ -255,36 +255,6 @@ test_blob_to_node(void)
 }
 
 static void
-test_strlen(void)
-{
-	const uint8_t str[] = { '"', '5', 0xE2, 0x82, 0xAC, '"', '\n', 0 };
-
-	size_t        n_bytes = 0;
-	SerdNodeFlags flags   = 0;
-	size_t        len     = serd_strlen(str, &n_bytes, &flags);
-	assert(len == 5 && n_bytes == 7 &&
-	       flags == (SERD_HAS_QUOTE | SERD_HAS_NEWLINE));
-	len = serd_strlen(str, NULL, &flags);
-	assert(len == 5);
-
-	assert(serd_strlen(str, &n_bytes, NULL) == 5);
-}
-
-static void
-test_strerror(void)
-{
-	const uint8_t* msg = serd_strerror(SERD_SUCCESS);
-	assert(!strcmp((const char*)msg, "Success"));
-	for (int i = SERD_FAILURE; i <= SERD_ERR_INTERNAL; ++i) {
-		msg = serd_strerror((SerdStatus)i);
-		assert(strcmp((const char*)msg, "Success"));
-	}
-
-	msg = serd_strerror((SerdStatus)-1);
-	assert(!strcmp((const char*)msg, "Unknown error"));
-}
-
-static void
 test_node_equals(void)
 {
 	const uint8_t replacement_char_str[] = { 0xEF, 0xBF, 0xBD, 0 };
@@ -512,8 +482,6 @@ main(void)
 	test_double_to_node();
 	test_integer_to_node();
 	test_blob_to_node();
-	test_strlen();
-	test_strerror();
 	test_node_equals();
 	test_node_from_string();
 	test_node_from_substring();

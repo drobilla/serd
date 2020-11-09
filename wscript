@@ -215,6 +215,7 @@ def build(bld):
                      ('test_free_null', 'test/test_free_null.c'),
                      ('test_read_chunk', 'test/test_read_chunk.c'),
                      ('test_serd', 'test/test_serd.c'),
+                     ('test_string', 'test/test_string.c'),
                      ('test_uri', 'test/test_uri.c')]:
             bld(features     = 'c cprogram',
                 source       = prog[1],
@@ -542,6 +543,7 @@ def test(tst):
         check(['./test_free_null'])
         check(['./test_read_chunk'])
         check(['./test_serd'])
+        check(['./test_string'])
         check(['./test_uri'])
 
     def test_syntax_io(check, in_name, check_name, lang):
