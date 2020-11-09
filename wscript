@@ -211,10 +211,10 @@ def build(bld):
 
         # Test programs
         for prog in [('serdi_static', 'src/serdi.c'),
-                     ('env_test', 'test/env_test.c'),
-                     ('free_null_test', 'test/free_null_test.c'),
-                     ('read_chunk_test', 'test/read_chunk_test.c'),
-                     ('serd_test', 'test/serd_test.c')]:
+                     ('test_env', 'test/test_env.c'),
+                     ('test_free_null', 'test/test_free_null.c'),
+                     ('test_read_chunk', 'test/test_read_chunk.c'),
+                     ('test_serd', 'test/test_serd.c')]:
             bld(features     = 'c cprogram',
                 source       = prog[1],
                 use          = 'libserd_profiled',
@@ -537,10 +537,10 @@ def test(tst):
     srcdir = tst.path.abspath()
 
     with tst.group('Unit') as check:
-        check(['./env_test'])
-        check(['./free_null_test'])
-        check(['./read_chunk_test'])
-        check(['./serd_test'])
+        check(['./test_env'])
+        check(['./test_free_null'])
+        check(['./test_read_chunk'])
+        check(['./test_serd'])
 
     def test_syntax_io(check, in_name, check_name, lang):
         in_path = 'test/good/%s' % in_name
