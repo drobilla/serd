@@ -1,7 +1,7 @@
 Checks: >
   *,
+  -*-uppercase-literal-suffix,
   -clang-diagnostic-unused-macros,
-  -hicpp-signed-bitwise,
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
 FormatStyle: file

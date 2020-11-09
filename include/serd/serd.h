@@ -132,14 +132,14 @@ typedef enum {
    Flags indicating inline abbreviation information for a statement.
 */
 typedef enum {
-	SERD_EMPTY_S      = 1 << 1,  /**< Empty blank node subject */
-	SERD_EMPTY_O      = 1 << 2,  /**< Empty blank node object */
-	SERD_ANON_S_BEGIN = 1 << 3,  /**< Start of anonymous subject */
-	SERD_ANON_O_BEGIN = 1 << 4,  /**< Start of anonymous object */
-	SERD_ANON_CONT    = 1 << 5,  /**< Continuation of anonymous node */
-	SERD_LIST_S_BEGIN = 1 << 6,  /**< Start of list subject */
-	SERD_LIST_O_BEGIN = 1 << 7,  /**< Start of list object */
-	SERD_LIST_CONT    = 1 << 8   /**< Continuation of list */
+	SERD_EMPTY_S      = 1u << 1u,  /**< Empty blank node subject */
+	SERD_EMPTY_O      = 1u << 2u,  /**< Empty blank node object */
+	SERD_ANON_S_BEGIN = 1u << 3u,  /**< Start of anonymous subject */
+	SERD_ANON_O_BEGIN = 1u << 4u,  /**< Start of anonymous object */
+	SERD_ANON_CONT    = 1u << 5u,  /**< Continuation of anonymous node */
+	SERD_LIST_S_BEGIN = 1u << 6u,  /**< Start of list subject */
+	SERD_LIST_O_BEGIN = 1u << 7u,  /**< Start of list object */
+	SERD_LIST_CONT    = 1u << 8u   /**< Continuation of list */
 } SerdStatementFlag;
 
 /**
@@ -205,8 +205,8 @@ typedef enum {
    Flags indicating certain string properties relevant to serialisation.
 */
 typedef enum {
-	SERD_HAS_NEWLINE = 1,      /**< Contains line breaks ('\\n' or '\\r') */
-	SERD_HAS_QUOTE   = 1 << 1  /**< Contains quotes ('"') */
+	SERD_HAS_NEWLINE = 1u << 0u, /**< Contains line breaks ('\\n' or '\\r') */
+	SERD_HAS_QUOTE   = 1u << 1u  /**< Contains quotes ('"') */
 } SerdNodeFlag;
 
 /**
@@ -270,11 +270,11 @@ typedef struct {
    always ASCII).
 */
 typedef enum {
-	SERD_STYLE_ABBREVIATED = 1,       /**< Abbreviate triples when possible. */
-	SERD_STYLE_ASCII       = 1 << 1,  /**< Escape all non-ASCII characters. */
-	SERD_STYLE_RESOLVED    = 1 << 2,  /**< Resolve URIs against base URI. */
-	SERD_STYLE_CURIED      = 1 << 3,  /**< Shorten URIs into CURIEs. */
-	SERD_STYLE_BULK        = 1 << 4   /**< Write output in pages. */
+	SERD_STYLE_ABBREVIATED = 1u << 0u,  /**< Abbreviate triples when possible. */
+	SERD_STYLE_ASCII       = 1u << 1u,  /**< Escape all non-ASCII characters. */
+	SERD_STYLE_RESOLVED    = 1u << 2u,  /**< Resolve URIs against base URI. */
+	SERD_STYLE_CURIED      = 1u << 3u,  /**< Shorten URIs into CURIEs. */
+	SERD_STYLE_BULK        = 1u << 4u,  /**< Write output in pages. */
 } SerdStyle;
 
 /**
