@@ -213,8 +213,9 @@ def build(bld):
         for prog in [('serdi_static', 'src/serdi.c'),
                      ('test_env', 'test/test_env.c'),
                      ('test_free_null', 'test/test_free_null.c'),
+                     ('test_node', 'test/test_node.c'),
                      ('test_read_chunk', 'test/test_read_chunk.c'),
-                     ('test_serd', 'test/test_serd.c'),
+                     ('test_reader_writer', 'test/test_reader_writer.c'),
                      ('test_string', 'test/test_string.c'),
                      ('test_uri', 'test/test_uri.c')]:
             bld(features     = 'c cprogram',
@@ -541,8 +542,9 @@ def test(tst):
     with tst.group('Unit') as check:
         check(['./test_env'])
         check(['./test_free_null'])
+        check(['./test_node'])
         check(['./test_read_chunk'])
-        check(['./test_serd'])
+        check(['./test_reader_writer'])
         check(['./test_string'])
         check(['./test_uri'])
 
