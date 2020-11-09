@@ -164,8 +164,8 @@ def build(bld):
                      {'SERD_MAJOR_VERSION': SERD_MAJOR_VERSION})
 
     defines = []
-    lib_args = {'export_includes': ['.'],
-                'includes':        ['.', './src'],
+    lib_args = {'export_includes': ['include'],
+                'includes':        ['include', './src'],
                 'cflags':          ['-fvisibility=hidden'],
                 'lib':             ['m'],
                 'vnum':            SERD_VERSION,
@@ -195,7 +195,7 @@ def build(bld):
 
     if bld.env.BUILD_TESTS:
         coverage_flags = [''] if bld.env.NO_COVERAGE else ['--coverage']
-        test_args = {'includes':     ['.', './src'],
+        test_args = {'includes':     ['include', './src'],
                      'cflags':       coverage_flags,
                      'linkflags':    coverage_flags,
                      'lib':          lib_args['lib'],
@@ -227,7 +227,7 @@ def build(bld):
         obj = bld(features     = 'c cprogram',
                   source       = 'src/serdi.c',
                   target       = 'serdi',
-                  includes     = ['.', './src'],
+                  includes     = ['include', './src'],
                   use          = 'libserd',
                   lib          = lib_args['lib'],
                   install_path = '${BINDIR}')
