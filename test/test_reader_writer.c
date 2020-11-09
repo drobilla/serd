@@ -141,6 +141,28 @@ test_read_chunks(void)
 }
 
 static void
+test_read_string(void)
+{
+	ReaderTest* rt = (ReaderTest*)calloc(1, sizeof(ReaderTest));
+	SerdReader* reader =
+	    serd_reader_new(SERD_TURTLE, rt, free, NULL, NULL, test_sink, NULL);
+
+	assert(reader);
+	assert(serd_reader_get_handle(reader) == rt);
+
+	// Test reading a string that ends exactly at the end of input (no newline)
+	const SerdStatus st =
+		serd_reader_read_string(reader,
+		                        USTR("<http://example.org/s> <http://example.org/p> "
+		                             "<http://example.org/o> ."));
+
+	assert(!st);
+	assert(rt->n_statements == 1);
+
+	serd_reader_free(reader);
+}
+
+static void
 test_writer(const char* const path)
 {
 	FILE* fd = fopen(path, "wb");
@@ -319,6 +341,7 @@ int
 main(void)
 {
 	test_read_chunks();
+	test_read_string();
 
 	const char* const path = "serd_test.ttl";
 	test_writer(path);
