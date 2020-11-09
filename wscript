@@ -284,7 +284,9 @@ def lint(ctx):
 
     if "CLANG_TIDY" in ctx.env and "clang" in ctx.env.CC[0]:
         Logs.info("Running clang-tidy")
-        sources = glob.glob('src/*.c') + glob.glob('test/*.c')
+        sources = glob.glob('include/serd/*.h*')
+        sources += glob.glob('src/*.c')
+        sources += glob.glob('test/*.c')
         sources = list(map(os.path.abspath, sources))
         procs = []
         for source in sources:
