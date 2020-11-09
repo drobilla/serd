@@ -11,7 +11,7 @@ from waflib.extras import autowaf
 # major increment <=> incompatible changes
 # minor increment <=> compatible changes (additions)
 # micro increment <=> no interface changes
-SERD_VERSION       = '0.30.6'
+SERD_VERSION       = '0.30.7'
 SERD_MAJOR_VERSION = '0'
 
 # Mandatory waf variables
@@ -211,10 +211,10 @@ def build(bld):
 
         # Test programs
         for prog in [('serdi_static', 'src/serdi.c'),
-                     ('env_test', 'tests/env_test.c'),
-                     ('free_null_test', 'tests/free_null_test.c'),
-                     ('read_chunk_test', 'tests/read_chunk_test.c'),
-                     ('serd_test', 'tests/serd_test.c')]:
+                     ('env_test', 'test/env_test.c'),
+                     ('free_null_test', 'test/free_null_test.c'),
+                     ('read_chunk_test', 'test/read_chunk_test.c'),
+                     ('serd_test', 'test/serd_test.c')]:
             bld(features     = 'c cprogram',
                 source       = prog[1],
                 use          = 'libserd_profiled',
@@ -284,7 +284,7 @@ def lint(ctx):
 
     if "CLANG_TIDY" in ctx.env and "clang" in ctx.env.CC[0]:
         Logs.info("Running clang-tidy")
-        sources = glob.glob('src/*.c') + glob.glob('tests/*.c')
+        sources = glob.glob('src/*.c') + glob.glob('test/*.c')
         sources = list(map(os.path.abspath, sources))
         procs = []
         for source in sources:
@@ -460,7 +460,7 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, options=[]):
     srcdir = ctx.path.abspath()
 
     mf = 'http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#'
-    manifest_path = os.path.join(srcdir, 'tests', testdir, 'manifest.ttl')
+    manifest_path = os.path.join(srcdir, 'test', testdir, 'manifest.ttl')
     model, instances = _load_rdf(manifest_path)
 
     asserter = ''
@@ -476,7 +476,7 @@ def test_suite(ctx, base_uri, testdir, report, isyntax, options=[]):
             for test in sorted(tests):
                 action_node = model[test][mf + 'action'][0]
                 basename    = os.path.basename(action_node)
-                action      = os.path.join('tests', testdir, basename)
+                action      = os.path.join('test', testdir, basename)
                 rel_action  = os.path.join(os.path.relpath(srcdir), action)
                 uri         = base_uri + os.path.basename(action)
                 command     = [serdi] + options + ['-f', rel_action, uri]
@@ -525,7 +525,7 @@ def test(tst):
     for i in ['bad', 'good', 'lax',
               'TurtleTests', 'NTriplesTests', 'NQuadsTests', 'TriGTests']:
         try:
-            test_dir = os.path.join('tests', i)
+            test_dir = os.path.join('test', i)
             os.makedirs(test_dir)
             for i in glob.glob(test_dir + '/*.*'):
                 os.remove(i)
@@ -541,9 +541,9 @@ def test(tst):
         check(['./serd_test'])
 
     def test_syntax_io(check, in_name, check_name, lang):
-        in_path = 'tests/good/%s' % in_name
+        in_path = 'test/good/%s' % in_name
         out_path = in_path + '.io'
-        check_path = '%s/tests/good/%s' % (srcdir, check_name)
+        check_path = '%s/test/good/%s' % (srcdir, check_name)
 
         check([serdi, '-o', lang, '%s/%s' % (srcdir, in_path), in_path],
               stdout=out_path, name=in_name)
@@ -555,7 +555,7 @@ def test(tst):
         test_syntax_io(check, 'qualify-in.ttl', 'qualify-out.ttl', 'turtle')
 
     with tst.group('GoodCommands') as check:
-        check([serdi, '%s/tests/good/manifest.ttl' % srcdir])
+        check([serdi, '%s/test/good/manifest.ttl' % srcdir])
         check([serdi, '-v'])
         check([serdi, '-h'])
         check([serdi, '-s', '<foo> a <#Thingie> .'])
@@ -576,7 +576,7 @@ def test(tst):
         check([serdi, '-o', 'illegal'])
         check([serdi, '-o'])
         check([serdi, '-p'])
-        check([serdi, '-q', '%s/tests/bad/bad-base.ttl' % srcdir], stderr=None)
+        check([serdi, '-q', '%s/test/bad/bad-base.ttl' % srcdir], stderr=None)
         check([serdi, '-r'])
         check([serdi, '-z'])
 
@@ -584,7 +584,7 @@ def test(tst):
         check([serdi, '-e', 'file://%s/' % srcdir], name='Read directory')
         check([serdi, 'file://%s/' % srcdir], name='Bulk read directory')
         if os.path.exists('/dev/full'):
-            check([serdi, 'file://%s/tests/good/manifest.ttl' % srcdir],
+            check([serdi, 'file://%s/test/good/manifest.ttl' % srcdir],
                   stdout='/dev/full', name='Write error')
 
     if sys.version_info.major >= 3:
@@ -609,7 +609,7 @@ def test(tst):
             Logs.warn('Failed to import rdflib, not running NEWS tests')
 
     # Serd-specific test suites
-    serd_base = 'http://drobilla.net/sw/serd/tests/'
+    serd_base = 'http://drobilla.net/sw/serd/test/'
     test_suite(tst, serd_base + 'good/', 'good', None, 'Turtle')
     test_suite(tst, serd_base + 'bad/', 'bad', None, 'Turtle')
     test_suite(tst, serd_base + 'lax/', 'lax', None, 'Turtle', ['-l'])

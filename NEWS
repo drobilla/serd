@@ -1,3 +1,9 @@
+serd (0.30.7) unstable;
+
+  * Split up and reorganize unit tests
+
+ -- David Robillard <d@drobilla.net>  Mon, 09 Nov 2020 19:00:39 +0000
+
 serd (0.30.6) stable;
 
   * Fix various minor warnings and other code quality issues
