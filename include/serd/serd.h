@@ -370,6 +370,19 @@ serd_base64_decode(const char* SERD_NONNULL str,
 */
 
 /**
+   Return `path` as a canonicalized absolute path.
+
+   This expands all symbolic links, relative references, and removes extra
+   directory separators.  Null is returned on error, including if the path does
+   not exist.
+
+   @return A new string that must be freed with serd_free(), or null.
+*/
+SERD_API
+char* SERD_NULLABLE
+serd_canonical_path(const char* SERD_NONNULL path);
+
+/**
    Function to detect I/O stream errors.
 
    Identical semantics to `ferror`.
