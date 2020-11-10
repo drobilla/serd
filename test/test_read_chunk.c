@@ -113,6 +113,7 @@ main(void)
 	assert(!serd_reader_read_chunk(reader) && n_statement == 8 && n_end == 1);
 	assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
 	assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
+	assert(!serd_reader_end_stream(reader));
 
 	serd_reader_free(reader);
 	fclose(file);
