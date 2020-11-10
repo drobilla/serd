@@ -44,6 +44,7 @@ platform_args = []
 if host_machine.system() in ['gnu', 'linux']
   platform_args += [
     '-D_POSIX_C_SOURCE=200809L',
+    '-D_XOPEN_SOURCE=600',
   ]
 endif
 

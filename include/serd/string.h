@@ -29,6 +29,19 @@ size_t
 serd_strlen(const char* SERD_NONNULL str, SerdNodeFlags* SERD_NULLABLE flags);
 
 /**
+   Return `path` as a canonical absolute path.
+
+   This expands all symbolic links, relative references, and removes extra
+   directory separators.  Null is returned on error, including if the path does
+   not exist.
+
+   @return A new string that must be freed with serd_free(), or null.
+*/
+SERD_API
+char* SERD_NULLABLE
+serd_canonical_path(const char* SERD_NONNULL path);
+
+/**
    Decode a base64 string.
 
    This function can be used to decode a node created with serd_new_base64().
