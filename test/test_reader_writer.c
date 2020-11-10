@@ -286,7 +286,15 @@ test_reader(const char* path)
 	SerdNode g = serd_node_from_string(SERD_URI, USTR("http://example.org/"));
 	serd_reader_set_default_graph(reader, &g);
 	serd_reader_add_blank_prefix(reader, USTR("tmp"));
+
+#if defined(__GNUC__)
+#	pragma GCC diagnostic push
+#	pragma GCC diagnostic ignored "-Wnonnull"
+#endif
 	serd_reader_add_blank_prefix(reader, NULL);
+#if defined(__GNUC__)
+#	pragma GCC diagnostic pop
+#endif
 
 	assert(serd_reader_read_file(reader, USTR("http://notafile")));
 	assert(serd_reader_read_file(reader, USTR("file:///better/not/exist")));

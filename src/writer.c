@@ -694,6 +694,7 @@ write_list_obj(SerdWriter*        writer,
 	return false;
 }
 
+// TODO: Make subject, predicate,object nonnull in next major release
 SerdStatus
 serd_writer_write_statement(SerdWriter*        writer,
                             SerdStatementFlags flags,

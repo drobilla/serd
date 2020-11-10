@@ -70,6 +70,7 @@ serd_env_get_base_uri(const SerdEnv* env,
 	return &env->base_uri_node;
 }
 
+// TODO: Make env nonnull in next major release
 SerdStatus
 serd_env_set_base_uri(SerdEnv*        env,
                       const SerdNode* uri)
