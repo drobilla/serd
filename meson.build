@@ -109,7 +109,10 @@ m_dep = cc.find_library('m', required: false)
 # System defines needed to expose platform APIs
 platform_args = []
 if host_machine.system() != 'windows'
-  platform_args += ['-D_POSIX_C_SOURCE=200809L']
+  platform_args += [
+    '-D_POSIX_C_SOURCE=200809L',
+    '-D_XOPEN_SOURCE=600',
+  ]
 endif
 
 # Determine library type and the flags needed to build it
