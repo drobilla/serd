@@ -102,7 +102,8 @@ def configure(conf):
         if 'mingw' in conf.env.CC[0]:
             conf.env.append_value('CFLAGS', '-Wno-unused-macros')
 
-        if ('clang' in conf.env.CC[0] and (
+        if ('clang' in conf.env.CC[0] and
+            '-Wl,--no-undefined' in conf.env.LINKFLAGS and (
                 '-fsanitize=address' in conf.env.CFLAGS or
                 '-fsanitize=undefined' in conf.env.CFLAGS)):
             conf.env.LINKFLAGS.remove('-Wl,--no-undefined')
@@ -137,7 +138,8 @@ def configure(conf):
                                 defines     = ['_POSIX_C_SOURCE=200809L'],
                                 mandatory   = False)
 
-    autowaf.set_lib_env(conf, 'serd', SERD_VERSION)
+    autowaf.set_lib_env(conf, 'serd', SERD_VERSION,
+                        include_path=str(conf.path.find_node('include')))
     conf.write_config_header('serd_config.h', remove=False)
 
     autowaf.display_summary(
@@ -173,7 +175,7 @@ def build(bld):
 
     defines = []
     lib_args = {'export_includes': ['include'],
-                'includes':        ['include', './src'],
+                'includes':        ['.', 'include', './src'],
                 'cflags':          ['-fvisibility=hidden'],
                 'lib':             ['m'],
                 'vnum':            SERD_VERSION,
@@ -203,7 +205,7 @@ def build(bld):
 
     if bld.env.BUILD_TESTS:
         coverage_flags = [''] if bld.env.NO_COVERAGE else ['--coverage']
-        test_args = {'includes':     ['include', './src'],
+        test_args = {'includes':     ['.', 'include', './src'],
                      'cflags':       coverage_flags,
                      'linkflags':    coverage_flags,
                      'lib':          lib_args['lib'],
@@ -238,7 +240,7 @@ def build(bld):
         obj = bld(features     = 'c cprogram',
                   source       = 'src/serdi.c',
                   target       = 'serdi',
-                  includes     = ['include', './src'],
+                  includes     = ['.', 'include', './src'],
                   use          = 'libserd',
                   lib          = lib_args['lib'],
                   install_path = '${BINDIR}')
