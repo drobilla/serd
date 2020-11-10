@@ -5,6 +5,7 @@ Checks: >
   -altera-struct-pack-align,
   -android-cloexec-fopen,
   -bugprone-reserved-identifier,
+  -bugprone-suspicious-string-compare,
   -cert-dcl37-c,
   -cert-dcl51-cpp,
   -clang-analyzer-nullability.NullabilityBase,

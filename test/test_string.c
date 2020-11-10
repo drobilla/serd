@@ -18,6 +18,11 @@
 
 #include "serd/serd.h"
 
+#if defined(_WIN32) && !defined(__MINGW32__)
+#  include <io.h>
+#  define mkstemp(pat) _mktemp(pat)
+#endif
+
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -48,11 +53,34 @@ test_strerror(void)
   assert(!strcmp(msg, "Unknown error"));
 }
 
-int
-main(void)
+static void
+test_canonical_path(const char* const path)
 {
+  char* const canonical = serd_canonical_path(path);
+
+  assert(canonical);
+  assert(!strstr(canonical, "../"));
+
+#if defined(_WIN32)
+  assert(strlen(canonical) > 2);
+  assert(canonical[0] >= 'A' && canonical[0] <= 'Z');
+  assert(canonical[1] == ':');
+  assert(!strstr(canonical, "..\\"));
+#else
+  assert(canonical[0] == '/');
+#endif
+
+  serd_free(canonical);
+}
+
+int
+main(int argc, char** argv)
+{
+  (void)argc;
+
   test_strlen();
   test_strerror();
+  test_canonical_path(argv[0]);
 
   printf("Success\n");
   return 0;
