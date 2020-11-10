@@ -15,13 +15,17 @@
 */
 
 #define _POSIX_C_SOURCE 200809L /* for posix_memalign */
+#define _XOPEN_SOURCE 600       /* for realpath */
 
 #include "system.h"
 
+#include "serd/serd.h"
 #include "serd_config.h"
 
 #ifdef _WIN32
+#  define WIN32_LEAN_AND_MEAN 1
 #  include <malloc.h>
+#  include <windows.h>
 #endif
 
 #include <stdio.h>
@@ -71,5 +75,27 @@ serd_free_aligned(void* const ptr)
   _aligned_free(ptr);
 #else
   free(ptr);
+#endif
+}
+
+char*
+serd_canonical_path(const char* const path)
+{
+#ifdef _WIN32
+  const DWORD size = GetFullPathName(path, 0, NULL, NULL);
+  if (size == 0) {
+    return NULL;
+  }
+
+  char* const out = (char*)calloc(size, 1);
+  const DWORD ret = GetFullPathName(path, MAX_PATH, out, NULL);
+  if (ret == 0 || ret >= size) {
+    free(out);
+    return NULL;
+  }
+
+  return out;
+#else
+  return path ? realpath(path, NULL) : NULL;
 #endif
 }
