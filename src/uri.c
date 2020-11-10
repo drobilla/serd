@@ -448,7 +448,8 @@ serd_uri_serialise_relative(const SerdURI* uri,
 		if (uri->authority.buf) {
 			len += sink("//", 2, stream);
 			len += sink(uri->authority.buf, uri->authority.len, stream);
-			if (uri->authority.buf[uri->authority.len - 1] != '/' &&
+			if (uri->authority.len > 0 &&
+			    uri->authority.buf[uri->authority.len - 1] != '/' &&
 			    serd_uri_path_starts_without_slash(uri)) {
 				// Special case: ensure path begins with a slash
 				// https://tools.ietf.org/html/rfc3986#section-3.2
