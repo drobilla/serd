@@ -157,7 +157,7 @@ lib_source = ['src/base64.c',
 def build(bld):
     # C Headers
     includedir = '${INCLUDEDIR}/serd-%s/serd' % SERD_MAJOR_VERSION
-    bld.install_files(includedir, bld.path.ant_glob('serd/*.h'))
+    bld.install_files(includedir, bld.path.ant_glob('include/serd/*.h'))
 
     # Pkgconfig file
     autowaf.build_pc(bld, 'SERD', SERD_VERSION, SERD_MAJOR_VERSION, [],
