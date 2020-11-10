@@ -37,6 +37,17 @@
 #    define SERD_API
 #endif
 
+#ifdef __GNUC__
+#    define SERD_PURE_FUNC __attribute__((pure))
+#    define SERD_CONST_FUNC __attribute__((const))
+#else
+#    define SERD_PURE_FUNC
+#    define SERD_CONST_FUNC
+#endif
+
+#define SERD_PURE_API SERD_API SERD_PURE_FUNC
+#define SERD_CONST_API SERD_API SERD_CONST_FUNC
+
 #ifdef __cplusplus
 extern "C" {
 #    if defined(__GNUC__)
@@ -289,7 +300,7 @@ serd_free(void* ptr);
 /**
    Return a string describing a status code.
 */
-SERD_API
+SERD_CONST_API
 const uint8_t*
 serd_strerror(SerdStatus status);
 
@@ -402,7 +413,7 @@ serd_file_uri_parse(const uint8_t* uri, uint8_t** hostname);
 /**
    Return true iff `utf8` starts with a valid URI scheme.
 */
-SERD_API
+SERD_PURE_API
 bool
 serd_uri_string_has_scheme(const uint8_t* utf8);
 
@@ -590,7 +601,7 @@ serd_node_copy(const SerdNode* node);
 /**
    Return true iff `a` is equal to `b`.
 */
-SERD_API
+SERD_PURE_API
 bool
 serd_node_equals(const SerdNode* a, const SerdNode* b);
 
@@ -801,7 +812,7 @@ serd_reader_set_error_sink(SerdReader*   reader,
 /**
    Return the `handle` passed to serd_reader_new().
 */
-SERD_API
+SERD_PURE_API
 void*
 serd_reader_get_handle(const SerdReader* reader);
 
@@ -951,7 +962,7 @@ serd_writer_free(SerdWriter* writer);
 /**
    Return the env used by `writer`.
 */
-SERD_API
+SERD_PURE_API
 SerdEnv*
 serd_writer_get_env(SerdWriter* writer);
 

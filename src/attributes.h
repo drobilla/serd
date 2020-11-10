@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2020 David Robillard <http://drobilla.net>
+  Copyright 2019-2020 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -14,17 +14,13 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#ifndef SERD_SYSTEM_H
-#define SERD_SYSTEM_H
+#ifndef SERD_ATTRIBUTES_H
+#define SERD_ATTRIBUTES_H
 
-#include "attributes.h"
+#ifdef __GNUC__
+#    define SERD_MALLOC_FUNC __attribute__((malloc))
+#else
+#    define SERD_MALLOC_FUNC
+#endif
 
-#include <stdio.h>
-
-FILE*
-serd_fopen(const char* path, const char* mode);
-
-SERD_MALLOC_FUNC void*
-serd_bufalloc(size_t size);
-
-#endif // SERD_SYSTEM_H
+#endif // SERD_ATTRIBUTES_H

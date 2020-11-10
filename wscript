@@ -71,8 +71,6 @@ def configure(conf):
                 '-Wno-inline',
                 '-Wno-padded',
                 '-Wno-sign-conversion',
-                '-Wno-suggest-attribute=const',
-                '-Wno-suggest-attribute=pure',
             ],
             'msvc': [
                 '/wd4061',  # enumerator in switch is not explicitly handled
@@ -91,7 +89,6 @@ def configure(conf):
             ],
             'gcc': [
                 '-Wno-bad-function-cast',
-                '-Wno-suggest-attribute=malloc'
             ],
             'msvc': [
                 '/wd4706',  # assignment within conditional expression

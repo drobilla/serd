@@ -66,7 +66,7 @@ get_syntax(const char* name)
 	return (SerdSyntax)0;
 }
 
-static SerdSyntax
+static SERD_PURE_FUNC SerdSyntax
 guess_syntax(const char* filename)
 {
 	const char* ext = strrchr(filename, '.');

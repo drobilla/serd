@@ -93,7 +93,7 @@ serd_env_set_base_uri(SerdEnv*        env,
 	return SERD_ERR_BAD_ARG;
 }
 
-static inline SerdPrefix*
+static inline SERD_PURE_FUNC SerdPrefix*
 serd_env_find(const SerdEnv* env,
               const uint8_t* name,
               size_t         name_len)
