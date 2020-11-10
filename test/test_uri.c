@@ -20,6 +20,11 @@
 
 #include "serd/serd.h"
 
+#if defined(_WIN32) && !defined(__MINGW32__)
+#  include <io.h>
+#  define mkstemp(pat) _mktemp(pat)
+#endif
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
