@@ -102,12 +102,6 @@ def configure(conf):
         if 'mingw' in conf.env.CC[0]:
             conf.env.append_value('CFLAGS', '-Wno-unused-macros')
 
-        if ('clang' in conf.env.CC[0] and
-            '-Wl,--no-undefined' in conf.env.LINKFLAGS and (
-                '-fsanitize=address' in conf.env.CFLAGS or
-                '-fsanitize=undefined' in conf.env.CFLAGS)):
-            conf.env.LINKFLAGS.remove('-Wl,--no-undefined')
-
     conf.env.update({
         'BUILD_UTILS': not Options.options.no_utils,
         'BUILD_SHARED': not Options.options.no_shared,
