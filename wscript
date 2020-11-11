@@ -141,7 +141,7 @@ def configure(conf):
     else:
         serdi_node = conf.path.get_bld().make_node('serdi')
 
-    conf.env.SERDI = [os.path.abspath(str(serdi_node))]
+    conf.env.SERDI = [serdi_node.abspath()]
 
     conf.write_config_header('serd_config.h', remove=False)
 
