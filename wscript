@@ -132,8 +132,17 @@ def configure(conf):
                                 defines     = ['_POSIX_C_SOURCE=200809L'],
                                 mandatory   = False)
 
+    # Set up environment for building/using as a subproject
     autowaf.set_lib_env(conf, 'serd', SERD_VERSION,
                         include_path=str(conf.path.find_node('include')))
+
+    if conf.env.BUILD_TESTS:
+        serdi_node = conf.path.get_bld().make_node('serdi_static')
+    else:
+        serdi_node = conf.path.get_bld().make_node('serdi')
+
+    conf.env.SERDI = [os.path.abspath(str(serdi_node))]
+
     conf.write_config_header('serd_config.h', remove=False)
 
     autowaf.display_summary(
