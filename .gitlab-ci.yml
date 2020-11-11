@@ -118,7 +118,7 @@ test:x64_static:
 x64_sanitize:
   <<: *build_definition
   image: lv2plugin/debian-x64-clang
-  script: python ./waf configure build -ST --werror
+  script: python ./waf configure build -ST --werror --no-coverage
   variables:
     CC: "clang"
     CFLAGS: "-fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=unsigned-integer-overflow -fsanitize=implicit-conversion -fsanitize=local-bounds -fsanitize=nullability"
