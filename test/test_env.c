@@ -43,7 +43,7 @@ test_env(void)
 	SerdEnv* env = serd_env_new(NULL);
 	serd_env_set_prefix_from_strings(env, USTR("eg.2"), USTR("http://example.org/"));
 
-	assert(serd_env_set_base_uri(env, NULL));
+	assert(!serd_env_set_base_uri(env, NULL));
 	assert(serd_env_set_base_uri(env, &SERD_NODE_NULL));
 	assert(serd_node_equals(serd_env_get_base_uri(env, NULL), &SERD_NODE_NULL));
 
@@ -83,6 +83,11 @@ test_env(void)
 	SerdNode shorter_uri = serd_node_from_string(SERD_URI, USTR("urn:foo"));
 	SerdNode prefix_name;
 	assert(!serd_env_qualify(env, &shorter_uri, &prefix_name, &suffix));
+
+	assert(!serd_env_set_base_uri(env, &u));
+	assert(serd_node_equals(serd_env_get_base_uri(env, NULL), &u));
+	assert(!serd_env_set_base_uri(env, NULL));
+	assert(!serd_env_get_base_uri(env, NULL)->buf);
 
 	serd_env_free(env);
 }

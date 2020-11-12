@@ -70,13 +70,17 @@ serd_env_get_base_uri(const SerdEnv* env,
 	return &env->base_uri_node;
 }
 
-// TODO: Make env nonnull in next major release
 SerdStatus
 serd_env_set_base_uri(SerdEnv*        env,
                       const SerdNode* uri)
 {
-	if (!env || !uri) {
+	if (!env || (uri && uri->type != SERD_URI)) {
 		return SERD_ERR_BAD_ARG;
+	} else if (!uri) {
+		serd_node_free(&env->base_uri_node);
+		env->base_uri_node = SERD_NODE_NULL;
+		env->base_uri      = SERD_URI_NULL;
+		return SERD_SUCCESS;
 	}
 
 	// Resolve base URI and create a new node and URI for it
