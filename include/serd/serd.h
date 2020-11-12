@@ -14,9 +14,7 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-/**
-   @file serd.h API for Serd, a lightweight RDF syntax library.
-*/
+/// @file serd.h API for Serd, a lightweight RDF syntax library
 
 #ifndef SERD_SERD_H
 #define SERD_SERD_H
@@ -80,85 +78,46 @@ extern "C" {
 */
 typedef struct SerdEnvImpl SerdEnv;
 
-/**
-   RDF reader.
-
-   Parses RDF by calling user-provided sink functions as input is consumed
-   (much like an XML SAX parser).
-*/
+/// Streaming parser that reads a text stream and writes to a statement sink
 typedef struct SerdReaderImpl SerdReader;
 
-/**
-   RDF writer.
-
-   Provides a number of functions to allow writing RDF syntax out to some
-   stream.  These functions are deliberately compatible with the sink functions
-   used by SerdReader, so a reader can be directly connected to a writer to
-   re-serialise a document with minimal overhead.
-*/
+/// Streaming serialiser that writes a text stream as statements are pushed
 typedef struct SerdWriterImpl SerdWriter;
 
-/**
-   Return status code.
-*/
+/// Return status code
 typedef enum {
-	SERD_SUCCESS,         /**< No error */
-	SERD_FAILURE,         /**< Non-fatal failure */
-	SERD_ERR_UNKNOWN,     /**< Unknown error */
-	SERD_ERR_BAD_SYNTAX,  /**< Invalid syntax */
-	SERD_ERR_BAD_ARG,     /**< Invalid argument */
-	SERD_ERR_NOT_FOUND,   /**< Not found */
-	SERD_ERR_ID_CLASH,    /**< Encountered clashing blank node IDs */
-	SERD_ERR_BAD_CURIE,   /**< Invalid CURIE (e.g. prefix does not exist) */
-	SERD_ERR_INTERNAL     /**< Unexpected internal error (should not happen) */
+	SERD_SUCCESS,        ///< No error
+	SERD_FAILURE,        ///< Non-fatal failure
+	SERD_ERR_UNKNOWN,    ///< Unknown error
+	SERD_ERR_BAD_SYNTAX, ///< Invalid syntax
+	SERD_ERR_BAD_ARG,    ///< Invalid argument
+	SERD_ERR_NOT_FOUND,  ///< Not found
+	SERD_ERR_ID_CLASH,   ///< Encountered clashing blank node IDs
+	SERD_ERR_BAD_CURIE,  ///< Invalid CURIE (e.g. prefix does not exist)
+	SERD_ERR_INTERNAL    ///< Unexpected internal error (should not happen)
 } SerdStatus;
 
-/**
-   RDF syntax type.
-*/
+/// RDF syntax type
 typedef enum {
-	/**
-	   Turtle - Terse RDF Triple Language (UTF-8).
-	   @see <a href="http://www.w3.org/TeamSubmission/turtle/">Turtle</a>
-	*/
-	SERD_TURTLE = 1,
-
-	/**
-	   NTriples - Line-based RDF triples (ASCII).
-	   @see <a href="http://www.w3.org/TR/rdf-testcases#ntriples">NTriples</a>
-	*/
-	SERD_NTRIPLES = 2,
-
-	/**
-	   NQuads - Line-based RDF quads (UTF-8).
-	   @see <a href="https://www.w3.org/TR/n-quads/">NQuads</a>
-	*/
-	SERD_NQUADS = 3,
-
-	/**
-	   TriG - Terse RDF quads (UTF-8).
-	   @see <a href="https://www.w3.org/TR/trig/">Trig</a>
-	*/
-	SERD_TRIG = 4
+	SERD_TURTLE   = 1, ///< Terse triples http://www.w3.org/TR/turtle
+	SERD_NTRIPLES = 2, ///< Line-based triples http://www.w3.org/TR/n-triples/
+	SERD_NQUADS   = 3, ///< Line-based quads http://www.w3.org/TR/n-quads/
+	SERD_TRIG     = 4  ///< Terse quads http://www.w3.org/TR/trig/
 } SerdSyntax;
 
-/**
-   Flags indicating inline abbreviation information for a statement.
-*/
+/// Flags indicating inline abbreviation information for a statement
 typedef enum {
-	SERD_EMPTY_S      = 1u << 1u,  /**< Empty blank node subject */
-	SERD_EMPTY_O      = 1u << 2u,  /**< Empty blank node object */
-	SERD_ANON_S_BEGIN = 1u << 3u,  /**< Start of anonymous subject */
-	SERD_ANON_O_BEGIN = 1u << 4u,  /**< Start of anonymous object */
-	SERD_ANON_CONT    = 1u << 5u,  /**< Continuation of anonymous node */
-	SERD_LIST_S_BEGIN = 1u << 6u,  /**< Start of list subject */
-	SERD_LIST_O_BEGIN = 1u << 7u,  /**< Start of list object */
-	SERD_LIST_CONT    = 1u << 8u   /**< Continuation of list */
+	SERD_EMPTY_S      = 1u << 1u, ///< Empty blank node subject
+	SERD_EMPTY_O      = 1u << 2u, ///< Empty blank node object
+	SERD_ANON_S_BEGIN = 1u << 3u, ///< Start of anonymous subject
+	SERD_ANON_O_BEGIN = 1u << 4u, ///< Start of anonymous object
+	SERD_ANON_CONT    = 1u << 5u, ///< Continuation of anonymous node
+	SERD_LIST_S_BEGIN = 1u << 6u, ///< Start of list subject
+	SERD_LIST_O_BEGIN = 1u << 7u, ///< Start of list object
+	SERD_LIST_CONT    = 1u << 8u  ///< Continuation of list
 } SerdStatementFlag;
 
-/**
-   Bitwise OR of SerdStatementFlag values.
-*/
+/// Bitwise OR of SerdStatementFlag values
 typedef uint32_t SerdStatementFlags;
 
 /**
@@ -191,7 +150,7 @@ typedef enum {
 	   Value is an unquoted URI string, which is either a relative reference
 	   with respect to the current base URI (e.g. "foo/bar"), or an absolute
 	   URI (e.g. "http://example.org/foo").
-	   @see <a href="http://tools.ietf.org/html/rfc3986">RFC3986</a>.
+	   @see [RFC3986](http://tools.ietf.org/html/rfc3986)
 	*/
 	SERD_URI = 2,
 
@@ -199,80 +158,68 @@ typedef enum {
 	   CURIE, a shortened URI.
 
 	   Value is an unquoted CURIE string relative to the current environment,
-	   e.g. "rdf:type".
-	   @see <a href="http://www.w3.org/TR/curie">CURIE Syntax 1.0</a>
+	   e.g. "rdf:type".  @see [CURIE Syntax 1.0](http://www.w3.org/TR/curie)
 	*/
 	SERD_CURIE = 3,
 
 	/**
 	   A blank node.
 
-	   Value is a blank node ID, e.g. "id3", which is meaningful only within
-	   this serialisation.
-	   @see <a href="http://www.w3.org/TeamSubmission/turtle#nodeID">Turtle
-	   <tt>nodeID</tt></a>
+	   Value is a blank node ID without any syntactic prefix, like "id3", which
+	   is meaningful only within this serialisation.  @see [RDF 1.1
+	   Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
 	*/
 	SERD_BLANK = 4
 } SerdType;
 
-/**
-   Flags indicating certain string properties relevant to serialisation.
-*/
+/// Flags indicating certain string properties relevant to serialisation
 typedef enum {
-	SERD_HAS_NEWLINE = 1u << 0u, /**< Contains line breaks ('\\n' or '\\r') */
-	SERD_HAS_QUOTE   = 1u << 1u  /**< Contains quotes ('"') */
+	SERD_HAS_NEWLINE = 1u << 0u, ///< Contains line breaks ('\\n' or '\\r')
+	SERD_HAS_QUOTE   = 1u << 1u  ///< Contains quotes ('"')
 } SerdNodeFlag;
 
-/**
-   Bitwise OR of SerdNodeFlag values.
-*/
+/// Bitwise OR of SerdNodeFlag values
 typedef uint32_t SerdNodeFlags;
 
-/**
-   A syntactic RDF node.
-*/
+/// A syntactic RDF node
 typedef struct {
-	const uint8_t* SERD_NULLABLE buf;  /**< Value string */
-	size_t        n_bytes;             /**< Size in bytes (excluding null) */
-	size_t        n_chars;             /**< String length (excluding null) */
-	SerdNodeFlags flags;               /**< Node flags (string properties) */
-	SerdType      type;                /**< Node type */
+	const uint8_t* SERD_NULLABLE buf;     ///< Value string
+	size_t                       n_bytes; ///< Size in bytes (excluding null)
+	size_t                       n_chars; ///< String length (excluding null)
+	SerdNodeFlags                flags;   ///< Node flags (string properties)
+	SerdType                     type;    ///< Node type
 } SerdNode;
 
-/**
-   An unterminated string fragment.
-*/
+/// An unterminated string fragment
 typedef struct {
-	const uint8_t* SERD_NULLABLE buf;  /**< Start of chunk */
-	size_t                       len;  /**< Length of chunk in bytes */
+	const uint8_t* SERD_NULLABLE buf; ///< Start of chunk
+	size_t                       len; ///< Length of chunk in bytes
 } SerdChunk;
 
-/**
-   An error description.
-*/
+/// An error description
 typedef struct {
-	SerdStatus                   status;    /**< Error code */
-	const uint8_t* SERD_NULLABLE filename;  /**< File with error */
-	unsigned                     line;      /**< Line in file with error or 0 */
-	unsigned                     col;       /**< Column in file with error */
-	const char* SERD_NONNULL     fmt;       /**< Printf-style format string */
-	va_list* SERD_NONNULL        args;      /**< Arguments for fmt */
+	SerdStatus                   status;   ///< Error code
+	const uint8_t* SERD_NULLABLE filename; ///< File with error
+	unsigned                     line;     ///< Line in file with error or 0
+	unsigned                     col;      ///< Column in file with error
+	const char* SERD_NONNULL     fmt;      ///< Printf-style format string
+	va_list* SERD_NONNULL        args;     ///< Arguments for fmt
 } SerdError;
 
 /**
-   A parsed URI.
+   A parsed URI
 
    This struct directly refers to chunks in other strings, it does not own any
    memory itself.  Thus, URIs can be parsed and/or resolved against a base URI
    in-place without allocating memory.
 */
 typedef struct {
-	SerdChunk scheme;     /**< Scheme */
-	SerdChunk authority;  /**< Authority */
-	SerdChunk path_base;  /**< Path prefix if relative */
-	SerdChunk path;       /**< Path suffix */
-	SerdChunk query;      /**< Query */
-	SerdChunk fragment;   /**< Fragment */
+	SerdChunk scheme;    ///< Scheme
+	SerdChunk authority; ///< Authority
+	SerdChunk path_base; ///< Path prefix if relative
+	SerdChunk path;      ///< Path suffix
+	SerdChunk query;     ///< Query
+	SerdChunk fragment;  ///< Fragment
 } SerdURI;
 
 /**
@@ -284,15 +231,15 @@ typedef struct {
    always ASCII).
 */
 typedef enum {
-	SERD_STYLE_ABBREVIATED = 1u << 0u,  /**< Abbreviate triples when possible. */
-	SERD_STYLE_ASCII       = 1u << 1u,  /**< Escape all non-ASCII characters. */
-	SERD_STYLE_RESOLVED    = 1u << 2u,  /**< Resolve URIs against base URI. */
-	SERD_STYLE_CURIED      = 1u << 3u,  /**< Shorten URIs into CURIEs. */
-	SERD_STYLE_BULK        = 1u << 4u,  /**< Write output in pages. */
+	SERD_STYLE_ABBREVIATED = 1u << 0u, ///< Abbreviate triples when possible.
+	SERD_STYLE_ASCII       = 1u << 1u, ///< Escape all non-ASCII characters.
+	SERD_STYLE_RESOLVED    = 1u << 2u, ///< Resolve URIs against base URI.
+	SERD_STYLE_CURIED      = 1u << 3u, ///< Shorten URIs into CURIEs.
+	SERD_STYLE_BULK        = 1u << 4u, ///< Write output in pages.
 } SerdStyle;
 
 /**
-   Free memory allocated by Serd.
+   Free memory allocated by Serd
 
    This function exists because some systems require memory allocated by a
    library to be freed by code in the same library.  It is otherwise equivalent
@@ -307,15 +254,14 @@ serd_free(void* SERD_NULLABLE ptr);
    @{
 */
 
-/**
-   Return a string describing a status code.
-*/
+/// Return a string describing a status code
 SERD_CONST_API
 const uint8_t* SERD_NONNULL
 serd_strerror(SerdStatus status);
 
 /**
    Measure a UTF-8 string.
+
    @return Length of `str` in characters (except NULL).
    @param str A null-terminated UTF-8 string.
    @param n_bytes (Output) Set to the size of `str` in bytes (except NULL).
@@ -341,6 +287,7 @@ serd_strtod(const char* SERD_NONNULL str,
 
 /**
    Decode a base64 string.
+
    This function can be used to deserialise a blob node created with
    serd_node_new_blob().
 
@@ -387,9 +334,7 @@ typedef size_t (*SerdSource)(void* SERD_NONNULL buf,
                              size_t             nmemb,
                              void* SERD_NONNULL stream);
 
-/**
-   Sink function for raw string output.
-*/
+/// Sink function for raw string output
 typedef size_t (*SerdSink)(const void* SERD_NONNULL buf,
                            size_t                   len,
                            void* SERD_NONNULL       stream);
@@ -417,27 +362,24 @@ serd_uri_to_path(const uint8_t* SERD_NONNULL uri);
 
 /**
    Get the unescaped path and hostname from a file URI.
+
+   The returned path and `*hostname` must be freed with serd_free().
+
    @param uri A file URI.
    @param hostname If non-NULL, set to the hostname, if present.
    @return The path component of the URI.
-
-   The returned path and `*hostname` must be freed with serd_free().
 */
 SERD_API
 uint8_t* SERD_NULLABLE
 serd_file_uri_parse(const uint8_t* SERD_NONNULL uri,
                     uint8_t* SERD_NONNULL* SERD_NULLABLE hostname);
 
-/**
-   Return true iff `utf8` starts with a valid URI scheme.
-*/
+/// Return true iff `utf8` starts with a valid URI scheme
 SERD_PURE_API
 bool
 serd_uri_string_has_scheme(const uint8_t* SERD_NULLABLE utf8);
 
-/**
-   Parse `utf8`, writing result to `out`.
-*/
+/// Parse `utf8`, writing result to `out`
 SERD_API
 SerdStatus
 serd_uri_parse(const uint8_t* SERD_NONNULL utf8, SerdURI* SERD_NONNULL out);
@@ -445,7 +387,7 @@ serd_uri_parse(const uint8_t* SERD_NONNULL utf8, SerdURI* SERD_NONNULL out);
 /**
    Set target `t` to reference `r` resolved against `base`.
 
-   @see http://tools.ietf.org/html/rfc3986#section-5.2.2
+   @see [RFC3986 5.2.2](http://tools.ietf.org/html/rfc3986#section-5.2.2)
 */
 SERD_API
 void
@@ -453,9 +395,7 @@ serd_uri_resolve(const SerdURI* SERD_NONNULL r,
                  const SerdURI* SERD_NONNULL base,
                  SerdURI* SERD_NONNULL       t);
 
-/**
-   Serialise `uri` with a series of calls to `sink`.
-*/
+/// Serialise `uri` with a series of calls to `sink`
 SERD_API
 size_t
 serd_uri_serialise(const SerdURI* SERD_NONNULL uri,
@@ -463,10 +403,10 @@ serd_uri_serialise(const SerdURI* SERD_NONNULL uri,
                    void* SERD_NONNULL          stream);
 
 /**
-   Serialise `uri` relative to `base` with a series of calls to `sink`.
+   Serialise `uri` relative to `base` with a series of calls to `sink`
 
-   The `uri` is written as a relative URI iff if it a child of `base` and @c
-   root.  The optional `root` parameter must be a prefix of `base` and can be
+   The `uri` is written as a relative URI iff if it a child of `base` and
+   `root`.  The optional `root` parameter must be a prefix of `base` and can be
    used keep up-references ("../") within a certain namespace.
 */
 SERD_API
@@ -506,18 +446,14 @@ serd_node_from_substring(SerdType                    type,
                          const uint8_t* SERD_NULLABLE str,
                          size_t                      len);
 
-/**
-   Simple wrapper for serd_node_new_uri() to resolve a URI node.
-*/
+/// Simple wrapper for serd_node_new_uri() to resolve a URI node
 SERD_API
 SerdNode
 serd_node_new_uri_from_node(const SerdNode* SERD_NONNULL uri_node,
                             const SerdURI* SERD_NULLABLE  base,
                             SerdURI* SERD_NULLABLE        out);
 
-/**
-   Simple wrapper for serd_node_new_uri() to resolve a URI string.
-*/
+/// Simple wrapper for serd_node_new_uri() to resolve a URI string
 SERD_API
 SerdNode
 serd_node_new_uri_from_string(const uint8_t* SERD_NULLABLE str,
@@ -577,7 +513,7 @@ serd_node_new_relative_uri(const SerdURI* SERD_NONNULL  uri,
                            SerdURI* SERD_NULLABLE       out);
 
 /**
-   Create a new node by serialising `d` into an xsd:decimal string.
+   Create a new node by serialising `d` into an xsd:decimal string
 
    The resulting node will always contain a `.', start with a digit, and end
    with a digit (i.e. will have a leading and/or trailing `0' if necessary).
@@ -595,15 +531,14 @@ SERD_API
 SerdNode
 serd_node_new_decimal(double d, unsigned frac_digits);
 
-/**
-   Create a new node by serialising `i` into an xsd:integer string.
-*/
+/// Create a new node by serialising `i` into an xsd:integer string
 SERD_API
 SerdNode
 serd_node_new_integer(int64_t i);
 
 /**
-   Create a node by serialising `buf` into an xsd:base64Binary string.
+   Create a node by serialising `buf` into an xsd:base64Binary string
+
    This function can be used to make a serialisable node out of arbitrary
    binary data, which can be decoded using serd_base64_decode().
 
@@ -624,9 +559,7 @@ SERD_API
 SerdNode
 serd_node_copy(const SerdNode* SERD_NULLABLE node);
 
-/**
-   Return true iff `a` is equal to `b`.
-*/
+/// Return true iff `a` is equal to `b`
 SERD_PURE_API
 bool
 serd_node_equals(const SerdNode* SERD_NONNULL a,
@@ -658,7 +591,7 @@ typedef SerdStatus (*SerdErrorSink)(void* SERD_NULLABLE           handle,
                                     const SerdError* SERD_NONNULL error);
 
 /**
-   Sink (callback) for base URI changes.
+   Sink (callback) for base URI changes
 
    Called whenever the base URI of the serialisation changes.
 */
@@ -666,7 +599,7 @@ typedef SerdStatus (*SerdBaseSink)(void* SERD_NULLABLE          handle,
                                    const SerdNode* SERD_NONNULL uri);
 
 /**
-   Sink (callback) for namespace definitions.
+   Sink (callback) for namespace definitions
 
    Called whenever a prefix is defined in the serialisation.
 */
@@ -675,7 +608,7 @@ typedef SerdStatus (*SerdPrefixSink)(void* SERD_NULLABLE          handle,
                                      const SerdNode* SERD_NONNULL uri);
 
 /**
-   Sink (callback) for statements.
+   Sink (callback) for statements
 
    Called for every RDF statement in the serialisation.
 */
@@ -690,7 +623,7 @@ typedef SerdStatus (*SerdStatementSink)(
     const SerdNode* SERD_NULLABLE object_lang);
 
 /**
-   Sink (callback) for anonymous node end markers.
+   Sink (callback) for anonymous node end markers
 
    This is called to indicate that the anonymous node with the given
    `value` will no longer be referred to by any future statements
@@ -705,57 +638,43 @@ typedef SerdStatus (*SerdEndSink)(void* SERD_NULLABLE          handle,
    @{
 */
 
-/**
-   Create a new environment.
-*/
+/// Create a new environment
 SERD_API
 SerdEnv* SERD_ALLOCATED
 serd_env_new(const SerdNode* SERD_NULLABLE base_uri);
 
-/**
-   Free `ns`.
-*/
+/// Free `env`
 SERD_API
 void
 serd_env_free(SerdEnv* SERD_NULLABLE env);
 
-/**
-   Get the current base URI.
-*/
+/// Get the current base URI
 SERD_API
 const SerdNode* SERD_NULLABLE
 serd_env_get_base_uri(const SerdEnv* SERD_NONNULL env,
                       SerdURI* SERD_NULLABLE      out);
 
-/**
-   Set the current base URI.
-*/
+/// Set the current base URI
 SERD_API
 SerdStatus
 serd_env_set_base_uri(SerdEnv* SERD_NONNULL         env,
                       const SerdNode* SERD_NULLABLE uri);
 
-/**
-   Set a namespace prefix.
-*/
+/// Set a namespace prefix
 SERD_API
 SerdStatus
 serd_env_set_prefix(SerdEnv* SERD_NONNULL        env,
                     const SerdNode* SERD_NONNULL name,
                     const SerdNode* SERD_NONNULL uri);
 
-/**
-   Set a namespace prefix.
-*/
+/// Set a namespace prefix
 SERD_API
 SerdStatus
 serd_env_set_prefix_from_strings(SerdEnv* SERD_NONNULL       env,
                                  const uint8_t* SERD_NONNULL name,
                                  const uint8_t* SERD_NONNULL uri);
 
-/**
-   Qualify `uri` into a CURIE if possible.
-*/
+/// Qualify `uri` into a CURIE if possible
 SERD_API
 bool
 serd_env_qualify(const SerdEnv* SERD_NONNULL  env,
@@ -801,9 +720,7 @@ serd_env_foreach(const SerdEnv* SERD_NONNULL env,
    @{
 */
 
-/**
-   Create a new RDF reader.
-*/
+/// Create a new RDF reader
 SERD_API
 SerdReader* SERD_ALLOCATED
 serd_reader_new(SerdSyntax          syntax,
@@ -815,7 +732,7 @@ serd_reader_new(SerdSyntax          syntax,
                 SerdEndSink SERD_NULLABLE       end_sink);
 
 /**
-   Enable or disable strict parsing.
+   Enable or disable strict parsing
 
    The reader is non-strict (lax) by default, which will tolerate URIs with
    invalid characters.  Setting strict will fail when parsing such files.  An
@@ -837,9 +754,7 @@ serd_reader_set_error_sink(SerdReader* SERD_NONNULL    reader,
                            SerdErrorSink SERD_NULLABLE error_sink,
                            void* SERD_NULLABLE         error_handle);
 
-/**
-   Return the `handle` passed to serd_reader_new().
-*/
+/// Return the `handle` passed to serd_reader_new()
 SERD_PURE_API
 void* SERD_NULLABLE
 serd_reader_get_handle(const SerdReader* SERD_NONNULL reader);
@@ -870,9 +785,7 @@ void
 serd_reader_set_default_graph(SerdReader* SERD_NONNULL      reader,
                               const SerdNode* SERD_NULLABLE graph);
 
-/**
-   Read a file at a given `uri`.
-*/
+/// Read a file at a given `uri`
 SERD_API
 SerdStatus
 serd_reader_read_file(SerdReader* SERD_NONNULL    reader,
@@ -909,7 +822,7 @@ serd_reader_start_source_stream(SerdReader* SERD_NONNULL         reader,
                                 size_t                           page_size);
 
 /**
-   Read a single "chunk" of data during an incremental read.
+   Read a single "chunk" of data during an incremental read
 
    This function will read a single top level description, and return.  This
    may be a directive, statement, or several statements; essentially it reads
@@ -920,25 +833,19 @@ SERD_API
 SerdStatus
 serd_reader_read_chunk(SerdReader* SERD_NONNULL reader);
 
-/**
-   Finish an incremental read from a file handle.
-*/
+/// Finish an incremental read from a file handle
 SERD_API
 SerdStatus
 serd_reader_end_stream(SerdReader* SERD_NONNULL reader);
 
-/**
-   Read `file`.
-*/
+/// Read `file`
 SERD_API
 SerdStatus
 serd_reader_read_file_handle(SerdReader* SERD_NONNULL     reader,
                              FILE* SERD_NONNULL           file,
                              const uint8_t* SERD_NULLABLE name);
 
-/**
-   Read a user-specified byte source.
-*/
+/// Read a user-specified byte source
 SERD_API
 SerdStatus
 serd_reader_read_source(SerdReader* SERD_NONNULL         reader,
@@ -948,17 +855,13 @@ serd_reader_read_source(SerdReader* SERD_NONNULL         reader,
                         const uint8_t* SERD_NULLABLE     name,
                         size_t                           page_size);
 
-/**
-   Read `utf8`.
-*/
+/// Read `utf8`
 SERD_API
 SerdStatus
 serd_reader_read_string(SerdReader* SERD_NONNULL    reader,
                         const uint8_t* SERD_NONNULL utf8);
 
-/**
-   Free `reader`.
-*/
+/// Free `reader`
 SERD_API
 void
 serd_reader_free(SerdReader* SERD_NULLABLE reader);
@@ -969,9 +872,7 @@ serd_reader_free(SerdReader* SERD_NULLABLE reader);
    @{
 */
 
-/**
-   Create a new RDF writer.
-*/
+/// Create a new RDF writer
 SERD_API
 SerdWriter* SERD_ALLOCATED
 serd_writer_new(SerdSyntax                   syntax,
@@ -981,16 +882,12 @@ serd_writer_new(SerdSyntax                   syntax,
                 SerdSink SERD_NONNULL        ssink,
                 void* SERD_NULLABLE          stream);
 
-/**
-   Free `writer`.
-*/
+/// Free `writer`
 SERD_API
 void
 serd_writer_free(SerdWriter* SERD_NULLABLE writer);
 
-/**
-   Return the env used by `writer`.
-*/
+/// Return the env used by `writer`
 SERD_PURE_API
 SerdEnv* SERD_NULLABLE
 serd_writer_get_env(SerdWriter* SERD_NONNULL writer);
@@ -1008,7 +905,7 @@ serd_file_sink(const void* SERD_NONNULL buf,
                void* SERD_NONNULL       stream);
 
 /**
-   A convenience sink function for writing to a string.
+   A convenience sink function for writing to a string
 
    This function can be used as a SerdSink to write to a SerdChunk which is
    resized as necessary with realloc().  The `stream` parameter must point to
@@ -1024,7 +921,7 @@ serd_chunk_sink(const void* SERD_NONNULL buf,
 /**
    Finish a serialisation to a chunk with serd_chunk_sink().
 
-   The returned string is the result of the serialisation, which is NULL
+   The returned string is the result of the serialisation, which is null
    terminated (by this function) and owned by the caller.
 */
 SERD_API
@@ -1043,9 +940,7 @@ serd_writer_set_error_sink(SerdWriter* SERD_NONNULL   writer,
                            SerdErrorSink SERD_NONNULL error_sink,
                            void* SERD_NULLABLE        error_handle);
 
-/**
-   Set a prefix to be removed from matching blank node identifiers.
-*/
+/// Set a prefix to be removed from matching blank node identifiers
 SERD_API
 void
 serd_writer_chop_blank_prefix(SerdWriter* SERD_NONNULL     writer,
@@ -1113,9 +1008,7 @@ SerdStatus
 serd_writer_end_anon(SerdWriter* SERD_NONNULL      writer,
                      const SerdNode* SERD_NULLABLE node);
 
-/**
-   Finish a write.
-*/
+/// Finish a write
 SERD_API
 SerdStatus
 serd_writer_finish(SerdWriter* SERD_NONNULL writer);
