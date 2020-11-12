@@ -3,6 +3,7 @@ Checks: >
   -*-magic-numbers,
   -*-uppercase-literal-suffix,
   -android-cloexec-fopen,
+  -clang-analyzer-nullability.NullabilityBase,
   -hicpp-signed-bitwise,
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
