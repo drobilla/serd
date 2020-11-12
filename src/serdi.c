@@ -147,6 +147,36 @@ serd_fopen(const char* path, const char* mode)
 	return fd;
 }
 
+static SerdStyle
+choose_style(const SerdSyntax input_syntax,
+             const SerdSyntax output_syntax,
+             const bool       ascii,
+             const bool       bulk_write,
+             const bool       full_uris)
+{
+	unsigned output_style = 0u;
+	if (output_syntax == SERD_NTRIPLES || ascii) {
+		output_style |= SERD_STYLE_ASCII;
+	} else if (output_syntax == SERD_TURTLE) {
+		output_style |= SERD_STYLE_ABBREVIATED;
+		if (!full_uris) {
+			output_style |= SERD_STYLE_CURIED;
+		}
+	}
+
+	if ((input_syntax == SERD_TURTLE || input_syntax == SERD_TRIG) ||
+	    (output_style & SERD_STYLE_CURIED)) {
+		// Base URI may change and/or we're abbreviating URIs, so must resolve
+		output_style |= SERD_STYLE_RESOLVED;
+	}
+
+	if (bulk_write) {
+		output_style |= SERD_STYLE_BULK;
+	}
+
+	return (SerdStyle)output_style;
+}
+
 int
 main(int argc, char** argv)
 {
@@ -260,6 +290,9 @@ main(int argc, char** argv)
 			: SERD_NQUADS);
 	}
 
+	const SerdStyle output_style =
+	    choose_style(input_syntax, output_syntax, ascii, bulk_write, full_uris);
+
 	SerdURI  base_uri = SERD_URI_NULL;
 	SerdNode base     = SERD_NODE_NULL;
 	if (a < argc) {  // Base URI given on command line
@@ -272,29 +305,8 @@ main(int argc, char** argv)
 	FILE*    out_fd = stdout;
 	SerdEnv* env    = serd_env_new(&base);
 
-	int output_style = 0;
-	if (output_syntax == SERD_NTRIPLES || ascii) {
-		output_style |= SERD_STYLE_ASCII;
-	} else if (output_syntax == SERD_TURTLE) {
-		output_style |= SERD_STYLE_ABBREVIATED;
-		if (!full_uris) {
-			output_style |= SERD_STYLE_CURIED;
-		}
-	}
-
-	if ((input_syntax == SERD_TURTLE || input_syntax == SERD_TRIG) ||
-	    (output_style & SERD_STYLE_CURIED)) {
-		// Base URI may change and/or we're abbreviating URIs, so must resolve
-		output_style |= SERD_STYLE_RESOLVED;
-	}
-
-	if (bulk_write) {
-		output_style |= SERD_STYLE_BULK;
-	}
-
 	SerdWriter* writer = serd_writer_new(
-		output_syntax, (SerdStyle)output_style,
-		env, &base_uri, serd_file_sink, out_fd);
+	    output_syntax, output_style, env, &base_uri, serd_file_sink, out_fd);
 
 	SerdReader* reader = serd_reader_new(
 		input_syntax, writer, NULL,
