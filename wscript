@@ -42,7 +42,9 @@ def options(ctx):
 def configure(conf):
     conf.load('compiler_c', cache=True)
     conf.load('autowaf', cache=True)
-    autowaf.set_c_lang(conf, 'c99')
+
+    if not autowaf.set_c_lang(conf, 'c11', mandatory=False):
+        autowaf.set_c_lang(conf, 'c99')
 
     if Options.options.strict:
         # Check for programs used by lint target

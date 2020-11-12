@@ -4,6 +4,7 @@ Checks: >
   -*-uppercase-literal-suffix,
   -android-cloexec-fopen,
   -clang-analyzer-nullability.NullabilityBase,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -hicpp-signed-bitwise,
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'

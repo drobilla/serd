@@ -4,6 +4,7 @@ Checks: >
   -*-uppercase-literal-suffix,
   -bugprone-branch-clone,
   -bugprone-suspicious-string-compare,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -google-readability-todo,
   -hicpp-signed-bitwise,
   -llvm-header-guard,
