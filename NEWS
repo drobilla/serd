@@ -3,8 +3,9 @@ serd (0.30.7) unstable;
   * Fix potential memory error when serialising URIs
   * Move headers to an include directory
   * Split up and reorganize unit tests
+  * Use aligned allocation via C11 or Windows API where possible
 
- -- David Robillard <d@drobilla.net>  Tue, 10 Nov 2020 21:04:06 +0000
+ -- David Robillard <d@drobilla.net>  Thu, 12 Nov 2020 19:18:33 +0000
 
 serd (0.30.6) stable;
 

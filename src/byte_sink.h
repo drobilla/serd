@@ -42,7 +42,7 @@ serd_byte_sink_new(SerdSink sink, void* stream, size_t block_size)
 	bsink.size       = 0;
 	bsink.block_size = block_size;
 	bsink.buf        = ((block_size > 1)
-	                    ? (uint8_t*)serd_bufalloc(block_size)
+	                    ? (uint8_t*)serd_allocate_buffer(block_size)
 	                    : NULL);
 	return bsink;
 }
@@ -60,7 +60,7 @@ static inline void
 serd_byte_sink_free(SerdByteSink* bsink)
 {
 	serd_byte_sink_flush(bsink);
-	free(bsink->buf);
+	serd_free_aligned(bsink->buf);
 	bsink->buf = NULL;
 }
 

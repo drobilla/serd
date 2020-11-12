@@ -25,10 +25,18 @@
 #   include <fcntl.h>
 #endif
 
+#ifdef _WIN32
+#	include <malloc.h>
+#endif
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define SERD_HAVE_ALIGNED_ALLOCATION                  \
+	defined(_WIN32) || defined(HAVE_ALIGNED_ALLOC) || \
+	    defined(HAVE_POSIX_MEMALIGN)
 
 FILE*
 serd_fopen(const char* path, const char* mode)
@@ -46,14 +54,49 @@ serd_fopen(const char* path, const char* mode)
 }
 
 void*
-serd_bufalloc(size_t size)
+serd_malloc_aligned(const size_t alignment, const size_t size)
 {
-#ifdef HAVE_POSIX_MEMALIGN
+#if defined(_WIN32)
+	return _aligned_malloc(size, alignment);
+#elif defined(HAVE_ALIGNED_ALLOC)
+	return aligned_alloc(alignment, size);
+#elif defined(HAVE_POSIX_MEMALIGN)
 	void*     ptr = NULL;
-	const int ret = posix_memalign(&ptr, SERD_PAGE_SIZE, size);
+	const int ret = posix_memalign(&ptr, alignment, size);
 	return ret ? NULL : ptr;
 #else
+	(void)alignment;
 	return malloc(size);
 #endif
 }
 
+void*
+serd_calloc_aligned(const size_t alignment, const size_t size)
+{
+#ifdef SERD_HAVE_ALIGNED_ALLOCATION
+	void* const ptr = serd_malloc_aligned(alignment, size);
+	if (ptr) {
+		memset(ptr, 0, size);
+	}
+	return ptr;
+#else
+	(void)alignment;
+	return calloc(1, size);
+#endif
+}
+
+void*
+serd_allocate_buffer(const size_t size)
+{
+	return serd_malloc_aligned(SERD_PAGE_SIZE, size);
+}
+
+void
+serd_free_aligned(void* const ptr)
+{
+#ifdef _WIN32
+	_aligned_free(ptr);
+#else
+	free(ptr);
+#endif
+}

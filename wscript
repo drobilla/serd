@@ -120,6 +120,13 @@ def configure(conf):
     if Options.options.largefile:
         conf.env.append_unique('DEFINES', ['_FILE_OFFSET_BITS=64'])
 
+    conf.check_function('c', 'aligned_alloc',
+                        header_name = 'stdlib.h',
+                        return_type = 'void*',
+                        arg_types   = 'size_t,size_t',
+                        define_name = 'HAVE_ALIGNED_ALLOC',
+                        mandatory   = False)
+
     if not Options.options.no_posix:
         funcs = {'posix_memalign': ('stdlib.h', 'int', 'void**,size_t,size_t'),
                  'posix_fadvise':  ('fcntl.h', 'int', 'int,off_t,off_t,int'),

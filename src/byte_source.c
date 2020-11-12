@@ -22,7 +22,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 SerdStatus
@@ -63,7 +62,7 @@ serd_byte_source_open_source(SerdByteSource*     source,
 	source->read_func   = read_func;
 
 	if (page_size > 1) {
-		source->file_buf = (uint8_t*)serd_bufalloc(page_size);
+		source->file_buf = (uint8_t*)serd_allocate_buffer(page_size);
 		source->read_buf = source->file_buf;
 		memset(source->file_buf, '\0', page_size);
 	} else {
@@ -102,7 +101,7 @@ SerdStatus
 serd_byte_source_close(SerdByteSource* source)
 {
 	if (source->page_size > 1) {
-		free(source->file_buf);
+		serd_free_aligned(source->file_buf);
 	}
 	memset(source, '\0', sizeof(*source));
 	return SERD_SUCCESS;
