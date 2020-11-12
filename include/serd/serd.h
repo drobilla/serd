@@ -48,9 +48,11 @@
 #ifdef __clang__
 #    define SERD_NONNULL _Nonnull
 #    define SERD_NULLABLE _Nullable
+#    define SERD_ALLOCATED _Null_unspecified
 #else
 #    define SERD_NONNULL
 #    define SERD_NULLABLE
+#    define SERD_ALLOCATED
 #endif
 
 #define SERD_PURE_API SERD_API SERD_PURE_FUNC
@@ -707,7 +709,7 @@ typedef SerdStatus (*SerdEndSink)(void* SERD_NULLABLE          handle,
    Create a new environment.
 */
 SERD_API
-SerdEnv* SERD_NULLABLE
+SerdEnv* SERD_ALLOCATED
 serd_env_new(const SerdNode* SERD_NULLABLE base_uri);
 
 /**
@@ -803,7 +805,7 @@ serd_env_foreach(const SerdEnv* SERD_NONNULL env,
    Create a new RDF reader.
 */
 SERD_API
-SerdReader* SERD_NULLABLE
+SerdReader* SERD_ALLOCATED
 serd_reader_new(SerdSyntax          syntax,
                 void* SERD_NULLABLE handle,
                 void (*SERD_NULLABLE free_handle)(void* SERD_NULLABLE),
@@ -971,7 +973,7 @@ serd_reader_free(SerdReader* SERD_NULLABLE reader);
    Create a new RDF writer.
 */
 SERD_API
-SerdWriter* SERD_NULLABLE
+SerdWriter* SERD_ALLOCATED
 serd_writer_new(SerdSyntax                   syntax,
                 SerdStyle                    style,
                 SerdEnv* SERD_NONNULL        env,
