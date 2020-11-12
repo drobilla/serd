@@ -302,13 +302,13 @@ main(int argc, char** argv)
 		base = serd_node_new_file_uri(input, NULL, &base_uri, true);
 	}
 
-	FILE*    out_fd = stdout;
-	SerdEnv* env    = serd_env_new(&base);
+	FILE* const    out_fd = stdout;
+	SerdEnv* const env    = serd_env_new(&base);
 
-	SerdWriter* writer = serd_writer_new(
+	SerdWriter* const writer = serd_writer_new(
 	    output_syntax, output_style, env, &base_uri, serd_file_sink, out_fd);
 
-	SerdReader* reader = serd_reader_new(
+	SerdReader* const reader = serd_reader_new(
 		input_syntax, writer, NULL,
 		(SerdBaseSink)serd_writer_set_base_uri,
 		(SerdPrefixSink)serd_writer_set_prefix,
