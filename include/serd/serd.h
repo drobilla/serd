@@ -700,9 +700,7 @@ SerdNode
 serd_env_expand_node(const SerdEnv* SERD_NONNULL  env,
                      const SerdNode* SERD_NONNULL node);
 
-/**
-   Call `func` for each prefix defined in `env`.
-*/
+/// Call `func` for each prefix defined in `env`
 SERD_API
 void
 serd_env_foreach(const SerdEnv* SERD_NONNULL env,
