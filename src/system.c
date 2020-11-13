@@ -34,10 +34,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define SERD_HAVE_ALIGNED_ALLOCATION                  \
-	defined(_WIN32) || defined(HAVE_ALIGNED_ALLOC) || \
-	    defined(HAVE_POSIX_MEMALIGN)
-
 FILE*
 serd_fopen(const char* path, const char* mode)
 {
@@ -67,21 +63,6 @@ serd_malloc_aligned(const size_t alignment, const size_t size)
 #else
 	(void)alignment;
 	return malloc(size);
-#endif
-}
-
-void*
-serd_calloc_aligned(const size_t alignment, const size_t size)
-{
-#ifdef SERD_HAVE_ALIGNED_ALLOCATION
-	void* const ptr = serd_malloc_aligned(alignment, size);
-	if (ptr) {
-		memset(ptr, 0, size);
-	}
-	return ptr;
-#else
-	(void)alignment;
-	return calloc(1, size);
 #endif
 }
 
