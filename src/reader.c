@@ -245,14 +245,15 @@ serd_reader_get_handle(const SerdReader* reader)
 }
 
 void
-serd_reader_add_blank_prefix(SerdReader*    reader,
-                             const uint8_t* prefix)
+serd_reader_add_blank_prefix(SerdReader* reader, const uint8_t* prefix)
 {
 	free(reader->bprefix);
 	reader->bprefix_len = 0;
 	reader->bprefix     = NULL;
-	if (prefix) {
-		reader->bprefix_len = strlen((const char*)prefix);
+
+	const size_t prefix_len = prefix ? strlen((const char*)prefix) : 0;
+	if (prefix_len) {
+		reader->bprefix_len = prefix_len;
 		reader->bprefix     = (uint8_t*)malloc(reader->bprefix_len + 1);
 		memcpy(reader->bprefix, prefix, reader->bprefix_len + 1);
 	}

@@ -903,14 +903,15 @@ serd_writer_set_error_sink(SerdWriter*   writer,
 }
 
 void
-serd_writer_chop_blank_prefix(SerdWriter*    writer,
-                              const uint8_t* prefix)
+serd_writer_chop_blank_prefix(SerdWriter* writer, const uint8_t* prefix)
 {
 	free(writer->bprefix);
 	writer->bprefix_len = 0;
 	writer->bprefix     = NULL;
-	if (prefix) {
-		writer->bprefix_len = strlen((const char*)prefix);
+
+	const size_t prefix_len = prefix ? strlen((const char*)prefix) : 0;
+	if (prefix_len) {
+		writer->bprefix_len = prefix_len;
 		writer->bprefix     = (uint8_t*)malloc(writer->bprefix_len + 1);
 		memcpy(writer->bprefix, prefix, writer->bprefix_len + 1);
 	}
