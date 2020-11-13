@@ -66,6 +66,7 @@
 		<#bad-object>
 		<#bad-pn-escape>
 		<#bad-prefix>
+		<#bad-quote-in-uri>
 		<#bad-semicolon-after-subject>
 		<#bad-string>
 		<#bad-subject>
@@ -373,6 +374,11 @@
 	rdf:type rdft:TestTurtleNegativeSyntax ;
 	mf:name "bad-prefix" ;
 	mf:action <bad-prefix.ttl> .
+
+<#bad-quote-in-uri>
+	rdf:type rdft:TestTurtleNegativeSyntax ;
+	mf:name "bad-quote-in-uri" ;
+	mf:action <bad-quote-in-uri.ttl> .
 
 <#bad-semicolon-after-subject>
 	rdf:type rdft:TestTurtleNegativeSyntax ;
