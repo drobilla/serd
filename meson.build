@@ -240,7 +240,6 @@ sources = files(
   'src/reader.c',
   'src/string.c',
   'src/syntax.c',
-  'src/system.c',
   'src/uri.c',
   'src/world.c',
   'src/writer.c',

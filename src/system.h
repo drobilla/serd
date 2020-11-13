@@ -11,10 +11,6 @@ enum {
   SERD_PAGE_SIZE = 4096U,
 };
 
-/// Open a file configured for fast sequential reading
-FILE*
-serd_fopen(const char* path, const char* mode);
-
 /// Wrapper for getc that is compatible with SerdReadFunc
 static inline size_t
 serd_file_read_byte(void* buf, size_t size, size_t nmemb, void* stream)

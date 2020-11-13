@@ -343,7 +343,7 @@ serd_reader_start_file(SerdReader* reader, const char* uri, bool bulk)
     return SERD_BAD_ARG;
   }
 
-  FILE* fd = serd_fopen(path, "rb");
+  FILE* fd = serd_world_fopen(reader->world, path, "rb");
   zix_free(NULL, path);
   if (!fd) {
     return SERD_BAD_STREAM;
