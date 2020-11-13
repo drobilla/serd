@@ -24,7 +24,6 @@
 #include "serd/serd.h"
 
 #include <assert.h>
-#include <ctype.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -714,7 +713,7 @@ read_IRIREF(SerdReader* reader, Ref* dest)
 			break;
 		default:
 			if (c <= 0x20) {
-				if (isprint(c)) {
+				if (is_print(c)) {
 					r_err(reader, SERD_ERR_BAD_SYNTAX,
 					      "invalid IRI character `%c' (escape %%%02X)\n",
 					      c, (unsigned)c);

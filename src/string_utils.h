@@ -20,7 +20,6 @@
 #include "serd/serd.h"
 
 #include <assert.h>
-#include <ctype.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -75,6 +74,12 @@ is_space(const char c)
 }
 
 static inline bool
+is_print(const int c)
+{
+	return c >= 0x20 && c <= 0x7E;
+}
+
+static inline bool
 is_base64(const uint8_t c)
 {
 	return is_alpha(c) || is_digit(c) || c == '+' || c == '/' || c == '=';
@@ -93,11 +98,17 @@ serd_substrlen(const uint8_t* str,
                size_t*        n_bytes,
                SerdNodeFlags* flags);
 
+static inline char
+serd_to_upper(const char c)
+{
+	return (char)((c >= 'a' && c <= 'z') ? c - 32 : c);
+}
+
 static inline int
 serd_strncasecmp(const char* s1, const char* s2, size_t n)
 {
 	for (; n > 0 && *s2; s1++, s2++, --n) {
-		if (toupper(*s1) != toupper(*s2)) {
+		if (serd_to_upper(*s1) != serd_to_upper(*s2)) {
 			return ((*(const uint8_t*)s1 < *(const uint8_t*)s2) ? -1 : +1);
 		}
 	}
