@@ -76,7 +76,7 @@ serd_env_set_base_uri(SerdEnv*        env,
 {
 	if (!env || (uri && uri->type != SERD_URI)) {
 		return SERD_ERR_BAD_ARG;
-	} else if (!uri) {
+	} else if (!uri || !uri->buf) {
 		serd_node_free(&env->base_uri_node);
 		env->base_uri_node = SERD_NODE_NULL;
 		env->base_uri      = SERD_URI_NULL;
@@ -88,14 +88,12 @@ serd_env_set_base_uri(SerdEnv*        env,
 	SerdNode base_uri_node = serd_node_new_uri_from_node(
 		uri, &env->base_uri, &base_uri);
 
-	if (base_uri_node.buf) {
-		// Replace the current base URI
-		serd_node_free(&env->base_uri_node);
-		env->base_uri_node = base_uri_node;
-		env->base_uri      = base_uri;
-		return SERD_SUCCESS;
-	}
-	return SERD_ERR_BAD_ARG;
+	// Replace the current base URI
+	serd_node_free(&env->base_uri_node);
+	env->base_uri_node = base_uri_node;
+	env->base_uri      = base_uri;
+
+	return SERD_SUCCESS;
 }
 
 static inline SERD_PURE_FUNC SerdPrefix*
