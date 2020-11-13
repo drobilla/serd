@@ -116,13 +116,15 @@ typedef enum {
 typedef uint32_t SerdStatementFlags;
 
 /**
-   Type of a syntactic RDF node.
+   Type of a node.
 
-   This is more precise than the type of an abstract RDF node.  An abstract
-   node is either a resource, literal, or blank.  In syntax there are two ways
-   to refer to a resource (by URI or CURIE) and two ways to refer to a blank
-   (by ID or anonymously).  Anonymous (inline) blank nodes are expressed using
-   SerdStatementFlags rather than this type.
+   An RDF node, in the abstract sense, can be either a resource, literal, or a
+   blank.  This type is more precise, because syntactically there are two ways
+   to refer to a resource (by URI or CURIE).
+
+   There are also two ways to refer to a blank node in syntax (by ID or
+   anonymously), but this is handled by statement flags rather than distinct
+   node types.
 */
 typedef enum {
 	/**
@@ -220,10 +222,9 @@ typedef struct {
 /**
    Syntax style options.
 
-   The style of the writer output can be controlled by ORing together
-   values from this enumeration.  Note that some options are only supported
-   for some syntaxes (e.g. NTriples does not support abbreviation and is
-   always ASCII).
+   These flags allow more precise control of writer output style.  Note that
+   some options are only supported for some syntaxes, for example, NTriples
+   does not support abbreviation and is always ASCII.
 */
 typedef enum {
 	SERD_STYLE_ABBREVIATED = 1u << 0u, ///< Abbreviate triples when possible.
@@ -655,7 +656,13 @@ SerdStatus
 serd_env_set_base_uri(SerdEnv* SERD_NONNULL         env,
                       const SerdNode* SERD_NULLABLE uri);
 
-/// Set a namespace prefix
+/**
+   Set a namespace prefix
+
+   A namespace prefix is used to expand CURIE nodes, for example, with the
+   prefix "xsd" set to "http://www.w3.org/2001/XMLSchema#", "xsd:decimal" will
+   expand to "http://www.w3.org/2001/XMLSchema#decimal".
+*/
 SERD_API
 SerdStatus
 serd_env_set_prefix(SerdEnv* SERD_NONNULL        env,
@@ -755,11 +762,11 @@ serd_reader_get_handle(const SerdReader* SERD_NONNULL reader);
 /**
    Set a prefix to be added to all blank node identifiers.
 
-   This is useful when multiple files are to be parsed into the same output
-   (e.g. a store, or other files).  Since Serd preserves blank node IDs, this
-   could cause conflicts where two non-equivalent blank nodes are merged,
-   resulting in corrupt data.  By setting a unique blank node prefix for each
-   parsed file, this can be avoided, while preserving blank node names.
+   This is useful when multiple files are to be parsed into the same output (a
+   model or a file).  Since Serd preserves blank node IDs, this could cause
+   conflicts where two non-equivalent blank nodes are merged, resulting in
+   corrupt data.  By setting a unique blank node prefix for each parsed file,
+   this can be avoided, while preserving blank node names.
 */
 SERD_API
 void
@@ -933,14 +940,19 @@ serd_writer_set_error_sink(SerdWriter* SERD_NONNULL   writer,
                            SerdErrorSink SERD_NONNULL error_sink,
                            void* SERD_NULLABLE        error_handle);
 
-/// Set a prefix to be removed from matching blank node identifiers
+/**
+   Set a prefix to be removed from matching blank node identifiers
+
+   This is the counterpart to serd_reader_add_blank_prefix() which can be used
+   to "undo" added prefixes.
+*/
 SERD_API
 void
 serd_writer_chop_blank_prefix(SerdWriter* SERD_NONNULL     writer,
                               const uint8_t* SERD_NULLABLE prefix);
 
 /**
-   Set the current output base URI (and emit directive if applicable).
+   Set the current output base URI, and emit a directive if applicable.
 
    Note this function can be safely casted to SerdBaseSink.
 */
@@ -1001,7 +1013,12 @@ SerdStatus
 serd_writer_end_anon(SerdWriter* SERD_NONNULL      writer,
                      const SerdNode* SERD_NULLABLE node);
 
-/// Finish a write
+/**
+   Finish a write
+
+   This flushes any pending output, for example terminating punctuation, so
+   that the output is a complete document.
+*/
 SERD_API
 SerdStatus
 serd_writer_finish(SerdWriter* SERD_NONNULL writer);
