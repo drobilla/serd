@@ -70,12 +70,7 @@ extern "C" {
    @{
 */
 
-/**
-   Environment.
-
-   Represents the state required to resolve a CURIE or relative URI, e.g. the
-   base URI and set of namespace prefixes at a particular point.
-*/
+/// Lexical environment for relative URIs or CURIEs (base URI and namespaces)
 typedef struct SerdEnvImpl SerdEnv;
 
 /// Streaming parser that reads a text stream and writes to a statement sink
