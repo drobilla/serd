@@ -43,7 +43,7 @@ serd_strtod(const char* ZIX_NONNULL             str,
    Decode a base64 string.
 
    This function can be used to deserialise a blob node created with
-   serd_node_new_blob().
+   serd_new_blob().
 
    @param str Base64 string to decode.
    @param len The length of `str`.

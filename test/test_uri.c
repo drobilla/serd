@@ -61,7 +61,7 @@ check_file_uri(const char* const hostname,
     expected_path = path;
   }
 
-  SerdNode node         = serd_node_new_file_uri(path, hostname, 0);
+  SerdNode node         = serd_new_file_uri(path, hostname, 0);
   char*    out_hostname = NULL;
   char*    out_path = serd_parse_file_uri((const char*)node.buf, &out_hostname);
   assert(!strcmp(node.buf, expected_uri));
@@ -136,14 +136,14 @@ test_file_uri(void)
 static void
 test_uri_from_string(void)
 {
-  SerdNode nonsense = serd_node_new_uri_from_string(NULL, NULL, NULL);
+  SerdNode nonsense = serd_new_uri_from_string(NULL, NULL, NULL);
   assert(nonsense.type == SERD_NOTHING);
 
   SerdURIView base_uri;
   SerdNode    base =
-    serd_node_new_uri_from_string("http://example.org/", NULL, &base_uri);
-  SerdNode nil  = serd_node_new_uri_from_string(NULL, &base_uri, NULL);
-  SerdNode nil2 = serd_node_new_uri_from_string("", &base_uri, NULL);
+    serd_new_uri_from_string("http://example.org/", NULL, &base_uri);
+  SerdNode nil  = serd_new_uri_from_string(NULL, &base_uri, NULL);
+  SerdNode nil2 = serd_new_uri_from_string("", &base_uri, NULL);
   assert(nil.type == SERD_URI);
   assert(!strcmp(nil.buf, base.buf));
   assert(nil2.type == SERD_URI);
@@ -210,21 +210,21 @@ check_relative_uri(const char* const uri_string,
   SerdURIView base   = SERD_URI_NULL;
   SerdURIView result = SERD_URI_NULL;
 
-  SerdNode uri_node  = serd_node_new_uri_from_string(uri_string, NULL, &uri);
-  SerdNode base_node = serd_node_new_uri_from_string(base_string, NULL, &base);
+  SerdNode uri_node  = serd_new_uri_from_string(uri_string, NULL, &uri);
+  SerdNode base_node = serd_new_uri_from_string(base_string, NULL, &base);
 
   SerdNode result_node = SERD_NODE_NULL;
   if (!root_string) {
     const SerdURIView rel = serd_relative_uri(uri, base);
-    result_node           = serd_node_new_uri(&rel, NULL, &result);
+    result_node           = serd_new_uri(&rel, NULL, &result);
   } else {
     const SerdURIView root      = serd_parse_uri(root_string);
-    SerdNode          root_node = serd_node_new_uri(&root, NULL, NULL);
+    SerdNode          root_node = serd_new_uri(&root, NULL, NULL);
     const SerdURIView rel       = serd_relative_uri(uri, base);
 
     result_node = serd_uri_is_within(uri, root)
-                    ? serd_node_new_uri(&rel, NULL, &result)
-                    : serd_node_new_uri_from_string(uri_string, NULL, &result);
+                    ? serd_new_uri(&rel, NULL, &result)
+                    : serd_new_uri_from_string(uri_string, NULL, &result);
 
     serd_node_free(&root_node);
   }
@@ -342,7 +342,7 @@ test_relative_uri(void)
 static void
 check_uri_string(const SerdURIView uri, const char* const expected)
 {
-  SerdNode node = serd_node_new_uri(&uri, NULL, NULL);
+  SerdNode node = serd_new_uri(&uri, NULL, NULL);
   assert(!strcmp(node.buf, expected));
   serd_node_free(&node);
 }
