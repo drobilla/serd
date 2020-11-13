@@ -189,16 +189,12 @@ test_writer(const char* const path)
 	SerdNode o = serd_node_from_string(SERD_LITERAL, buf);
 
 	// Write 3 invalid statements (should write nothing)
-	const SerdNode* junk[][5] = { { &s, &p, NULL, NULL, NULL },
-	                              { &s, NULL, &o, NULL, NULL },
-	                              { NULL, &p, &o, NULL, NULL },
-	                              { &s, &p, &SERD_NODE_NULL, NULL, NULL },
+	const SerdNode* junk[][5] = { { &s, &p, &SERD_NODE_NULL, NULL, NULL },
 	                              { &s, &SERD_NODE_NULL, &o, NULL, NULL },
 	                              { &SERD_NODE_NULL, &p, &o, NULL, NULL },
 	                              { &s, &o, &o, NULL, NULL },
 	                              { &o, &p, &o, NULL, NULL },
-	                              { &s, &p, &SERD_NODE_NULL, NULL, NULL },
-	                              { NULL, NULL, NULL, NULL, NULL } };
+	                              { &s, &p, &SERD_NODE_NULL, NULL, NULL } };
 	for (size_t i = 0; i < sizeof(junk) / (sizeof(SerdNode*) * 5); ++i) {
 		assert(serd_writer_write_statement(
 			       writer, 0, NULL,

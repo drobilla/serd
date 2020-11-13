@@ -115,8 +115,8 @@ test_integer_to_node(void)
 static void
 test_blob_to_node(void)
 {
-	for (size_t size = 0; size < 256; ++size) {
-		uint8_t* data = size > 0 ? (uint8_t*)malloc(size) : NULL;
+	for (size_t size = 1; size < 256; ++size) {
+		uint8_t* const data = (uint8_t*)malloc(size);
 		for (size_t i = 0; i < size; ++i) {
 			data[i] = (uint8_t)((size + i) % 256);
 		}
