@@ -585,7 +585,7 @@ def test(tst):
         test_syntax_io(check, 'qualify-in.ttl', 'qualify-out.ttl', 'turtle')
 
     with tst.group('GoodCommands') as check:
-        check([serdi, '%s/test/good/manifest.ttl' % srcdir])
+        check([serdi, '%s/serd.ttl' % srcdir], stdout=os.devnull)
         check([serdi, '-v'])
         check([serdi, '-h'])
         check([serdi, '-s', '<foo> a <#Thingie> .'])
