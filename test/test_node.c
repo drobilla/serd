@@ -91,7 +91,7 @@ test_double_to_node(void)
                                  NULL};
 
   for (size_t i = 0; i < sizeof(dbl_test_nums) / sizeof(double); ++i) {
-    SerdNode   node = serd_node_new_decimal(dbl_test_nums[i], 8);
+    SerdNode   node = serd_new_decimal(dbl_test_nums[i], 8);
     const bool pass = (node.buf && dbl_test_strs[i])
                         ? !strcmp(node.buf, dbl_test_strs[i])
                         : (node.buf == dbl_test_strs[i]);
@@ -111,7 +111,7 @@ test_integer_to_node(void)
     "0", "0", "-23", "23", "-12340", "1000", "-1000"};
 
   for (size_t i = 0; i < sizeof(int_test_nums) / sizeof(double); ++i) {
-    SerdNode node = serd_node_new_integer(int_test_nums[i]);
+    SerdNode node = serd_new_integer(int_test_nums[i]);
     assert(!strcmp(node.buf, int_test_strs[i]));
     assert(node.n_bytes == strlen(node.buf));
     serd_node_free(&node);
@@ -127,7 +127,7 @@ test_blob_to_node(void)
       data[i] = (uint8_t)((size + i) % 256);
     }
 
-    SerdNode blob = serd_node_new_blob(data, size, size % 5);
+    SerdNode blob = serd_new_blob(data, size, size % 5);
 
     assert(blob.n_bytes == strlen(blob.buf));
 
