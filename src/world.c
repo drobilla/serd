@@ -14,11 +14,41 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#define _POSIX_C_SOURCE 200809L /* for posix_fadvise */
+
 #include "world.h"
 
+#include "serd_config.h"
+
+#if defined(USE_POSIX_FADVISE)
+#  include <fcntl.h>
+#endif
+
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+FILE*
+serd_world_fopen(SerdWorld* world, const char* path, const char* mode)
+{
+  FILE* fd = fopen(path, mode);
+  if (!fd) {
+    serd_world_errorf(world,
+                      SERD_ERR_INTERNAL,
+                      "failed to open file %s (%s)\n",
+                      path,
+                      strerror(errno));
+    return NULL;
+  }
+
+#if USE_POSIX_FADVISE && USE_FILENO
+  posix_fadvise(fileno(fd), 0, 0, POSIX_FADV_SEQUENTIAL);
+#endif
+
+  return fd;
+}
 
 SerdStatus
 serd_world_error(const SerdWorld* const world, const SerdError* const e)
