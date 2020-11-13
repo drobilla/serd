@@ -118,17 +118,21 @@ serd_node_from_substring(SerdNodeType             type,
                          const char* ZIX_NULLABLE str,
                          size_t                   len);
 
-/// Simple wrapper for serd_node_new_uri() to resolve a URI node
+/**
+   Create a new URI node from a node.
+*/
 SERD_API SerdNode
-serd_node_new_uri_from_node(const SerdNode* ZIX_NONNULL     uri_node,
-                            const SerdURIView* ZIX_NULLABLE base,
-                            SerdURIView* ZIX_NULLABLE       out);
+serd_new_uri_from_node(const SerdNode* ZIX_NONNULL     uri_node,
+                       const SerdURIView* ZIX_NULLABLE base,
+                       SerdURIView* ZIX_NULLABLE       out);
 
-/// Simple wrapper for serd_node_new_uri() to resolve a URI string
+/**
+   Create a new URI node from a string.
+*/
 SERD_API SerdNode
-serd_node_new_uri_from_string(const char* ZIX_NULLABLE        str,
-                              const SerdURIView* ZIX_NULLABLE base,
-                              SerdURIView* ZIX_NULLABLE       out);
+serd_new_uri_from_string(const char* ZIX_NULLABLE        str,
+                         const SerdURIView* ZIX_NULLABLE base,
+                         SerdURIView* ZIX_NULLABLE       out);
 
 /**
    Create a new file URI node from a file system path and optional hostname.
@@ -140,9 +144,9 @@ serd_node_new_uri_from_string(const char* ZIX_NULLABLE        str,
    If `out` is not NULL, it will be set to the parsed URI.
 */
 SERD_API SerdNode
-serd_node_new_file_uri(const char* ZIX_NONNULL   path,
-                       const char* ZIX_NULLABLE  hostname,
-                       SerdURIView* ZIX_NULLABLE out);
+serd_new_file_uri(const char* ZIX_NONNULL   path,
+                  const char* ZIX_NULLABLE  hostname,
+                  SerdURIView* ZIX_NULLABLE out);
 
 /**
    Create a new node by serialising `uri` into a new string.
@@ -155,9 +159,9 @@ serd_node_new_file_uri(const char* ZIX_NONNULL   path,
    memory owned by the new returned node).
 */
 SERD_API SerdNode
-serd_node_new_uri(const SerdURIView* ZIX_NONNULL  uri,
-                  const SerdURIView* ZIX_NULLABLE base,
-                  SerdURIView* ZIX_NULLABLE       out);
+serd_new_uri(const SerdURIView* ZIX_NONNULL  uri,
+             const SerdURIView* ZIX_NULLABLE base,
+             SerdURIView* ZIX_NULLABLE       out);
 
 /**
    Create a new node by serialising `d` into an xsd:decimal string.
@@ -175,11 +179,11 @@ serd_node_new_uri(const SerdURIView* ZIX_NONNULL  uri,
    @param frac_digits The maximum number of digits after the decimal place.
 */
 SERD_API SerdNode
-serd_node_new_decimal(double d, unsigned frac_digits);
+serd_new_decimal(double d, unsigned frac_digits);
 
 /// Create a new node by serialising `i` into an xsd:integer string
 SERD_API SerdNode
-serd_node_new_integer(int64_t i);
+serd_new_integer(int64_t i);
 
 /**
    Create a node by serialising `buf` into an xsd:base64Binary string.
@@ -192,7 +196,7 @@ serd_node_new_integer(int64_t i);
    @param wrap_lines Wrap lines at 76 characters to conform to RFC 2045.
 */
 SERD_API SerdNode
-serd_node_new_blob(const void* ZIX_NONNULL buf, size_t size, bool wrap_lines);
+serd_new_blob(const void* ZIX_NONNULL buf, size_t size, bool wrap_lines);
 
 /**
    Make a deep copy of `node`.
