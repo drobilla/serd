@@ -9,10 +9,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-/// Open a file configured for fast sequential reading
-FILE*
-serd_fopen(const char* path, const char* mode);
-
 /// Allocate a buffer aligned to `alignment` bytes
 ZIX_MALLOC_FUNC void*
 serd_malloc_aligned(size_t alignment, size_t size);
