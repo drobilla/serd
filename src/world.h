@@ -19,10 +19,16 @@
 
 #include "serd/serd.h"
 
+#include <stdio.h>
+
 struct SerdWorldImpl {
   SerdErrorFunc error_func;
   void*         error_handle;
 };
+
+/// Open a file configured for fast sequential reading
+FILE*
+serd_world_fopen(SerdWorld* world, const char* path, const char* mode);
 
 SerdStatus
 serd_world_error(const SerdWorld* world, const SerdError* e);
