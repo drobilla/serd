@@ -664,7 +664,7 @@ write_node(SerdWriter*        writer,
 static inline bool
 is_resource(const SerdNode* node)
 {
-	return node->type > SERD_LITERAL;
+	return node && node->buf && node->type > SERD_LITERAL;
 }
 
 static void
@@ -694,7 +694,6 @@ write_list_obj(SerdWriter*        writer,
 	return false;
 }
 
-// TODO: Make subject, predicate,object nonnull in next major release
 SerdStatus
 serd_writer_write_statement(SerdWriter*        writer,
                             SerdStatementFlags flags,
@@ -705,9 +704,8 @@ serd_writer_write_statement(SerdWriter*        writer,
                             const SerdNode*    datatype,
                             const SerdNode*    lang)
 {
-	if (!subject || !predicate || !object
-	    || !subject->buf || !predicate->buf || !object->buf
-	    || !is_resource(subject) || !is_resource(predicate)) {
+	if (!is_resource(subject) || !is_resource(predicate) || !object ||
+	    !object->buf) {
 		return SERD_ERR_BAD_ARG;
 	}
 
