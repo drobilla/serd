@@ -118,19 +118,15 @@ test:x64_static:
 x64_sanitize:
   <<: *build_definition
   image: lv2plugin/debian-x64-clang
-  script: python ./waf configure build -ST --werror --no-coverage
+  script:
+    - python ./waf configure build -ST --werror --no-coverage
+    - python ./waf test
   variables:
     CC: "clang"
     CFLAGS: "-fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=unsigned-integer-overflow -fsanitize=implicit-conversion -fsanitize=local-bounds -fsanitize=nullability"
     CXX: "clang++"
     CXXFLAGS: "-fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=unsigned-integer-overflow -fsanitize=implicit-conversion -fsanitize=local-bounds -fsanitize=nullability"
     LINKFLAGS: "-fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=unsigned-integer-overflow -fsanitize=implicit-conversion -fsanitize=local-bounds -fsanitize=nullability"
-
-test:x64_sanitize:
-  <<: *test_definition
-  image: lv2plugin/debian-x64-clang
-  script: python ./waf test
-  needs: ["x64_sanitize"]
 
 
 mingw32_dbg:
