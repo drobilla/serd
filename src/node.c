@@ -95,29 +95,29 @@ serd_node_equals(const SerdNode* const a, const SerdNode* const b)
 }
 
 SerdNode
-serd_node_new_uri_from_node(const SerdNode* const    uri_node,
-                            const SerdURIView* const base,
-                            SerdURIView* const       out)
+serd_new_uri_from_node(const SerdNode* const    uri_node,
+                       const SerdURIView* const base,
+                       SerdURIView* const       out)
 {
   assert(uri_node);
 
   return (uri_node->type == SERD_URI && uri_node->buf)
-           ? serd_node_new_uri_from_string(uri_node->buf, base, out)
+           ? serd_new_uri_from_string(uri_node->buf, base, out)
            : SERD_NODE_NULL;
 }
 
 SerdNode
-serd_node_new_uri_from_string(const char* const        str,
-                              const SerdURIView* const base,
-                              SerdURIView* const       out)
+serd_new_uri_from_string(const char* const        str,
+                         const SerdURIView* const base,
+                         SerdURIView* const       out)
 {
   if (!str || str[0] == '\0') {
     // Empty URI => Base URI, or nothing if no base is given
-    return base ? serd_node_new_uri(base, NULL, out) : SERD_NODE_NULL;
+    return base ? serd_new_uri(base, NULL, out) : SERD_NODE_NULL;
   }
 
   SerdURIView uri = serd_parse_uri(str);
-  return serd_node_new_uri(&uri, base, out); // Resolve/Serialise
+  return serd_new_uri(&uri, base, out); // Resolve/Serialise
 }
 
 static bool
@@ -167,9 +167,9 @@ is_dir_sep(const char c)
 }
 
 SerdNode
-serd_node_new_file_uri(const char* const  path,
-                       const char* const  hostname,
-                       SerdURIView* const out)
+serd_new_file_uri(const char* const  path,
+                  const char* const  hostname,
+                  SerdURIView* const out)
 {
   assert(path);
 
@@ -218,9 +218,9 @@ serd_node_new_file_uri(const char* const  path,
 }
 
 SerdNode
-serd_node_new_uri(const SerdURIView* const uri,
-                  const SerdURIView* const base,
-                  SerdURIView* const       out)
+serd_new_uri(const SerdURIView* const uri,
+             const SerdURIView* const base,
+             SerdURIView* const       out)
 {
   assert(uri);
 
@@ -253,7 +253,7 @@ serd_digits(const double abs)
 }
 
 SerdNode
-serd_node_new_decimal(const double d, const unsigned frac_digits)
+serd_new_decimal(const double d, const unsigned frac_digits)
 {
   if (isnan(d) || isinf(d)) {
     return SERD_NODE_NULL;
@@ -308,7 +308,7 @@ serd_node_new_decimal(const double d, const unsigned frac_digits)
 }
 
 SerdNode
-serd_node_new_integer(const int64_t i)
+serd_new_integer(const int64_t i)
 {
   uint64_t       abs_i  = (uint64_t)((i < 0) ? -i : i);
   const unsigned digits = serd_digits((double)abs_i);
@@ -333,9 +333,7 @@ serd_node_new_integer(const int64_t i)
 }
 
 SerdNode
-serd_node_new_blob(const void* const buf,
-                   const size_t      size,
-                   const bool        wrap_lines)
+serd_new_blob(const void* const buf, const size_t size, const bool wrap_lines)
 {
   assert(buf);
 
