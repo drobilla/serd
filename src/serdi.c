@@ -35,6 +35,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define SERDI_ERROR(msg)       fprintf(stderr, "serdi: " msg)
@@ -268,11 +269,15 @@ main(int argc, char** argv)
 	_setmode(_fileno(stdout), _O_BINARY);
 #endif
 
-	const uint8_t* input = (const uint8_t*)argv[a++];
+	uint8_t*       input_path = NULL;
+	const uint8_t* input      = (const uint8_t*)argv[a++];
 	if (from_file) {
 		in_name = in_name ? in_name : input;
 		if (!in_fd) {
-			input = serd_uri_to_path(in_name);
+			if (!strncmp((const char*)input, "file:", 5)) {
+				input_path = serd_file_uri_parse(input, NULL);
+				input      = input_path;
+			}
 			if (!input || !(in_fd = serd_fopen((const char*)input, "rb"))) {
 				return 1;
 			}
@@ -344,6 +349,7 @@ main(int argc, char** argv)
 	serd_writer_free(writer);
 	serd_env_free(env);
 	serd_node_free(&base);
+	free(input_path);
 
 	if (from_file) {
 		fclose(in_fd);

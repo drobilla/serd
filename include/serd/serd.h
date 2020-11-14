@@ -56,6 +56,16 @@
 #define SERD_PURE_API SERD_API SERD_PURE_FUNC
 #define SERD_CONST_API SERD_API SERD_CONST_FUNC
 
+#ifndef SERD_DISABLE_DEPRECATED
+#    if defined(__clang__)
+#        define SERD_DEPRECATED_BY(rep) __attribute__((deprecated("", rep)))
+#    elif defined(__GNUC__)
+#        define SERD_DEPRECATED_BY(rep) __attribute__((deprecated("Use " rep)))
+#    else
+#        define SERD_DEPRECATED_BY(rep)
+#    endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #    if defined(__GNUC__)
@@ -352,7 +362,7 @@ static const SerdURI SERD_URI_NULL = {
    encoding and other issues are not handled, to properly convert a file URI to
    a path, use serd_file_uri_parse().
 */
-SERD_API
+SERD_API SERD_DEPRECATED_BY("serd_file_uri_parse")
 const uint8_t* SERD_NULLABLE
 serd_uri_to_path(const uint8_t* SERD_NONNULL uri);
 
