@@ -510,19 +510,20 @@ write_uri_node(SerdWriter* const        writer,
 	}
 
 	const bool has_scheme = serd_uri_string_has_scheme(node->buf);
-	if (field == FIELD_PREDICATE && supports_abbrev(writer)
-	    && !strcmp((const char*)node->buf, NS_RDF "type")) {
-		return sink("a", 1, writer) == 1;
-	} else if (supports_abbrev(writer)
-	           && !strcmp((const char*)node->buf, NS_RDF "nil")) {
-		return sink("()", 2, writer) == 2;
-	} else if (has_scheme && (writer->style & SERD_STYLE_CURIED) &&
-	           serd_env_qualify(writer->env, node, &prefix, &suffix) &&
-	           is_name(suffix.buf, suffix.len)) {
-		write_uri(writer, prefix.buf, prefix.n_bytes);
-		sink(":", 1, writer);
-		write_uri(writer, suffix.buf, suffix.len);
-		return true;
+	if (supports_abbrev(writer)) {
+		if (field == FIELD_PREDICATE &&
+		    !strcmp((const char*)node->buf, NS_RDF "type")) {
+			return sink("a", 1, writer) == 1;
+		} else if (!strcmp((const char*)node->buf, NS_RDF "nil")) {
+			return sink("()", 2, writer) == 2;
+		} else if (has_scheme && (writer->style & SERD_STYLE_CURIED) &&
+		           serd_env_qualify(writer->env, node, &prefix, &suffix) &&
+		           is_name(suffix.buf, suffix.len)) {
+			write_uri(writer, prefix.buf, prefix.n_bytes);
+			sink(":", 1, writer);
+			write_uri(writer, suffix.buf, suffix.len);
+			return true;
+		}
 	}
 
 	write_sep(writer, SEP_URI_BEGIN);
