@@ -588,7 +588,7 @@ def test(tst):
         check([serdi, '%s/serd.ttl' % srcdir], stdout=os.devnull)
         check([serdi, '-v'])
         check([serdi, '-h'])
-        check([serdi, '-s', '<foo> a <#Thingie> .'])
+        check([serdi, '-s', '<urn:eg:s> a <urn:eg:T> .'])
         check([serdi, os.devnull])
         with tempfile.TemporaryFile(mode='r') as stdin:
             check([serdi, '-'], stdin=stdin)
@@ -609,6 +609,7 @@ def test(tst):
         check([serdi, '-q', '%s/test/bad/bad-base.ttl' % srcdir], stderr=None)
         check([serdi, '-r'])
         check([serdi, '-z'])
+        check([serdi, '-s', '<foo> a <Bar> .'])
 
     with tst.group('IoErrors', expected=1) as check:
         check([serdi, '-e', 'file://%s/' % srcdir], name='Read directory')

@@ -135,6 +135,12 @@ supports_abbrev(const SerdWriter* writer)
 	return writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG;
 }
 
+static bool
+supports_uriref(const SerdWriter* writer)
+{
+	return writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG;
+}
+
 static void
 w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
 {
@@ -524,6 +530,15 @@ write_uri_node(SerdWriter* const        writer,
 			write_uri(writer, suffix.buf, suffix.len);
 			return true;
 		}
+	}
+
+	if (!has_scheme && !supports_uriref(writer) &&
+	    !serd_env_get_base_uri(writer->env, NULL)->buf) {
+		w_err(writer,
+		      SERD_ERR_BAD_ARG,
+		      "syntax does not support URI reference <%s>\n",
+		      node->buf);
+		return false;
 	}
 
 	write_sep(writer, SEP_URI_BEGIN);
