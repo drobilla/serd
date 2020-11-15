@@ -54,7 +54,7 @@ serd_malloc_aligned(const size_t alignment, const size_t size)
 {
 #if defined(_WIN32)
 	return _aligned_malloc(size, alignment);
-#elif defined(HAVE_ALIGNED_ALLOC)
+#elif __STDC_VERSION__ >= 201112L && defined(HAVE_ALIGNED_ALLOC)
 	return aligned_alloc(alignment, size);
 #elif defined(HAVE_POSIX_MEMALIGN)
 	void*     ptr = NULL;
