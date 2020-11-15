@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
+import argparse
 import csv
 import itertools
 import math
 import matplotlib
-import optparse
 import os
 import subprocess
 import sys
@@ -187,56 +187,50 @@ def plot_results():
 
 
 if __name__ == "__main__":
-
-    class OptParser(optparse.OptionParser):
-        def format_epilog(self, formatter):
-            return self.expand_prog_name(self.epilog)
-
-    opt = OptParser(
-        usage="%prog [OPTION]... SP2B_DIR",
+    ap = argparse.ArgumentParser(
+        usage="%(prog)s [OPTION]... SP2B_DIR",
         description="Benchmark RDF reading and writing commands\n",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Example:
-  %prog --max 100000 \\
+example:
+  %(prog)s --max 100000 \\
       --run 'rapper -i turtle -o turtle' \\
       --run 'riot --output=ttl' \\
       --run 'rdfpipe -i turtle -o turtle' /path/to/sp2b/src/
 """,
     )
 
-    opt.add_option(
-        "--max", type="int", default=1000000, help="maximum triple count"
+    ap.add_argument(
+        "--max", type=int, default=1000000, help="maximum triple count"
     )
-    opt.add_option(
+    ap.add_argument(
         "--run",
-        type="string",
+        type=str,
         action="append",
         default=[],
         help="additional command to run (input file is appended)",
     )
-    opt.add_option(
+    ap.add_argument(
         "--no-generate", action="store_true", help="do not generate data"
     )
-    opt.add_option(
+    ap.add_argument(
         "--no-execute", action="store_true", help="do not run benchmarks"
     )
-    opt.add_option(
+    ap.add_argument(
         "--no-plot", action="store_true", help="do not plot benchmarks"
     )
+    ap.add_argument("sp2b_dir", help="path to sp2b test data generator")
 
-    (options, args) = opt.parse_args()
-    if len(args) != 1:
-        opt.print_usage()
-        sys.exit(1)
+    args = ap.parse_args(sys.argv[1:])
 
-    progs = ["serdi -b -f -i turtle -o turtle"] + options.run
-    min_n = int(options.max / 10)
-    max_n = options.max
+    progs = ["serdi -b -f -i turtle -o turtle"] + args.run
+    min_n = int(args.max / 10)
+    max_n = args.max
     step = min_n
 
-    if not options.no_generate:
-        gen(str(args[0]), min_n, max_n, step)
-    if not options.no_execute:
+    if not args.no_generate:
+        gen(args.sp2b_dir, min_n, max_n, step)
+    if not args.no_execute:
         run(progs, min_n, max_n, step)
-    if not options.no_plot:
+    if not args.no_plot:
         plot_results()
