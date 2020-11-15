@@ -656,7 +656,7 @@ serd_env_free(SerdEnv* SERD_NULLABLE env);
 
 /// Get the current base URI
 SERD_API
-const SerdNode* SERD_NULLABLE
+const SerdNode* SERD_NONNULL
 serd_env_get_base_uri(const SerdEnv* SERD_NONNULL env,
                       SerdURI* SERD_NULLABLE      out);
 
