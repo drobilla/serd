@@ -294,6 +294,10 @@ def lint(ctx):
                               "wscript",
                               "--ignore",
                               "E101,E129,W191,E221,W504,E251,E241,E741"])
+        st += subprocess.call([ctx.env.FLAKE8[0],
+                               "scripts/serd_bench.py",
+                               "--ignore",
+                               "E203"])
     else:
         Logs.warn("Not running flake8")
 
