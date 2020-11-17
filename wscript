@@ -267,7 +267,7 @@ def build(bld):
         autowaf.build_dox(bld, 'SERD', SERD_VERSION, top, out)
         bld(features='subst',
             source='doc/index.html.in',
-            target='doc/index.html',
+            target='index.html',
             install_path='',
             name='index',
             SERD_VERSION=SERD_VERSION)

@@ -88,7 +88,7 @@ test:x64_dbg:
     - groff -Thtml -P -l -P -r -man -wall doc/serdi.1 > build/doc/serdi.html
   needs: ["x64_dbg"]
   artifacts:
-    paths: ["build/coverage", "build/doc"]
+    paths: ["build/index.html", "build/coverage", "build/doc"]
 
 
 x64_rel:
@@ -220,7 +220,7 @@ pages:
     - mv build/doc/*.svg .public/images
     - mv build/doc/html/ .public/doc/html
     - mv build/coverage/ .public/coverage
-    - mv build/doc/index.html .public/index.html
+    - mv build/index.html .public/index.html
     - mv build/doc/serdi.html .public/man/serdi.html
     - mv .public public
   artifacts:
