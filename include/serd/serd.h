@@ -303,7 +303,7 @@ serd_strtod(const char* SERD_NONNULL str,
    @return A newly allocated blob which must be freed with serd_free().
 */
 SERD_API
-void* SERD_NULLABLE
+void* SERD_ALLOCATED
 serd_base64_decode(const uint8_t* SERD_NONNULL str,
                    size_t                      len,
                    size_t* SERD_NONNULL        size);
@@ -899,7 +899,7 @@ serd_writer_free(SerdWriter* SERD_NULLABLE writer);
 
 /// Return the env used by `writer`
 SERD_PURE_API
-SerdEnv* SERD_NULLABLE
+SerdEnv* SERD_NONNULL
 serd_writer_get_env(SerdWriter* SERD_NONNULL writer);
 
 /**
