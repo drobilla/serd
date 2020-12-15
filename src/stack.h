@@ -17,10 +17,10 @@
 #ifndef SERD_STACK_H
 #define SERD_STACK_H
 
-#include "serd_internal.h"
-
 #include <assert.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 /** An offset to start the stack at. Note 0 is reserved for NULL. */

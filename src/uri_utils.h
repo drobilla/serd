@@ -17,8 +17,12 @@
 #ifndef SERD_URI_UTILS_H
 #define SERD_URI_UTILS_H
 
+#include "serd/serd.h"
+
 #include "string_utils.h"
 
+#include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 static inline bool
