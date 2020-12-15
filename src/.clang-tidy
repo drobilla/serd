@@ -1,14 +1,19 @@
 Checks: >
   *,
+  -*-else-after-return,
   -*-magic-numbers,
   -*-uppercase-literal-suffix,
   -bugprone-branch-clone,
+  -bugprone-reserved-identifier,
   -bugprone-suspicious-string-compare,
+  -cert-dcl37-c,
+  -cert-dcl51-cpp,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -google-readability-todo,
   -hicpp-signed-bitwise,
   -llvm-header-guard,
-  -readability-else-after-return,
+  -llvmlibc-*,
+  -misc-no-recursion,
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
 FormatStyle: file

@@ -4,8 +4,11 @@ Checks: >
   -*-uppercase-literal-suffix,
   -android-cloexec-fopen,
   -clang-analyzer-nullability.NullabilityBase,
+  -clang-analyzer-nullability.NullableDereferenced,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
+  -cppcoreguidelines-avoid-non-const-global-variables,
   -hicpp-signed-bitwise,
+  -llvmlibc-*,
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
 FormatStyle: file
