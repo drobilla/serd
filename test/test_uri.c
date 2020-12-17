@@ -82,6 +82,9 @@ test_uri_to_path(void)
 
 	uri = (const uint8_t*)"C|/Windows/Sucks";
 	assert(!strcmp((const char*)serd_uri_to_path(uri), "C|/Windows/Sucks"));
+
+	uri = (const uint8_t*)"http://example.org/path";
+	assert(!serd_uri_to_path(uri));
 }
 
 #if defined(__GNUC__)
