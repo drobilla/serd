@@ -1,6 +1,7 @@
 serd (0.30.7) unstable;
 
   * Deprecate serd_uri_to_path()
+  * Don't install API man pages
   * Fix potential memory error when serialising URIs
   * Move headers to an include directory
   * Refuse to write relative URI references to NTriples
@@ -8,7 +9,7 @@ serd (0.30.7) unstable;
   * Split up and reorganize unit tests
   * Use aligned allocation via C11 or Windows API where possible
 
- -- David Robillard <d@drobilla.net>  Sat, 14 Nov 2020 11:25:26 +0000
+ -- David Robillard <d@drobilla.net>  Thu, 17 Dec 2020 09:09:31 +0000
 
 serd (0.30.6) stable;
 
