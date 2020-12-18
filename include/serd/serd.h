@@ -59,8 +59,10 @@
 #ifndef SERD_DISABLE_DEPRECATED
 #    if defined(__clang__)
 #        define SERD_DEPRECATED_BY(rep) __attribute__((deprecated("", rep)))
-#    elif defined(__GNUC__)
+#    elif defined(__GNUC__) && __GNUC__ > 4
 #        define SERD_DEPRECATED_BY(rep) __attribute__((deprecated("Use " rep)))
+#    elif defined(__GNUC__)
+#        define SERD_DEPRECATED_BY(rep) __attribute__((deprecated))
 #    else
 #        define SERD_DEPRECATED_BY(rep)
 #    endif
