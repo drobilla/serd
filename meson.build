@@ -147,6 +147,7 @@ else
   library_type = 'static_library'
   library_args = [
     '-DEXESS_STATIC',
+    '-DREREX_STATIC',
     '-DSERD_INTERNAL',
     '-DSERD_STATIC',
     '-DZIX_API=',
