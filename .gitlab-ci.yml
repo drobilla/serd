@@ -68,7 +68,7 @@ x64_static:
   <<: *build_definition
   image: lv2plugin/debian-x64
   script:
-    - meson setup build -Dstatic=true -Ddefault_library=static -Dexess:default_library=static -Ddocs=disabled -Dstrict=true -Dwerror=true
+    - meson setup build -Dstatic=true -Ddefault_library=static -Dexess:default_library=static -Drerex:default_library=static -Ddocs=disabled -Dstrict=true -Dwerror=true
     - ninja -C build test
 
 
@@ -97,7 +97,7 @@ mingw32_dbg:
     - ninja -C build test
   variables:
     MESON_TESTTHREADS: "1"
-    WINEPATH: "Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\8.3-win32;Z:\\builds\\drobilla\\serd\\build\\subprojects\\exess"
+    WINEPATH: "Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\8.3-win32;Z:\\builds\\drobilla\\serd\\build\\subprojects\\exess;Z:\\builds\\drobilla\\serd\\build\\subprojects\\rerex"
 
 mingw32_rel:
   <<: *build_definition
@@ -107,7 +107,7 @@ mingw32_rel:
     - ninja -C build test
   variables:
     MESON_TESTTHREADS: "1"
-    WINEPATH: "Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\8.3-win32;Z:\\builds\\drobilla\\serd\\build\\subprojects\\exess"
+    WINEPATH: "Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\8.3-win32;Z:\\builds\\drobilla\\serd\\build\\subprojects\\exess;Z:\\builds\\drobilla\\serd\\build\\subprojects\\rerex"
 
 
 mingw64_dbg:
@@ -118,7 +118,7 @@ mingw64_dbg:
     - ninja -C build test
   variables:
     MESON_TESTTHREADS: "1"
-    WINEPATH: "Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\8.3-win32;Z:\\builds\\drobilla\\serd\\build\\subprojects\\exess"
+    WINEPATH: "Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\8.3-win32;Z:\\builds\\drobilla\\serd\\build\\subprojects\\exess;Z:\\builds\\drobilla\\serd\\build\\subprojects\\rerex"
 
 mingw64_rel:
   <<: *build_definition
@@ -128,7 +128,7 @@ mingw64_rel:
     - ninja -C build test
   variables:
     MESON_TESTTHREADS: "1"
-    WINEPATH: "Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\8.3-win32;Z:\\builds\\drobilla\\serd\\build\\subprojects\\exess"
+    WINEPATH: "Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\8.3-win32;Z:\\builds\\drobilla\\serd\\build\\subprojects\\exess;Z:\\builds\\drobilla\\serd\\build\\subprojects\\rerex"
 
 
 mac_dbg:
