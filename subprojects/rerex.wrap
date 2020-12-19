@@ -1,0 +1,5 @@
+[wrap-git]
+url = https://gitlab.com/drobilla/rerex.git
+push-url = git@gitlab.com:drobilla/rerex.git
+revision = main
+depth = 1
