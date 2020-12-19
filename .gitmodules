@@ -1,3 +1,6 @@
 [submodule "subprojects/exess"]
 	path = subprojects/exess
 	url = ../exess.git
+[submodule "subprojects/rerex"]
+	path = subprojects/rerex
+	url = ../rerex.git
