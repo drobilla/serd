@@ -258,7 +258,7 @@ void
 serd_free(void* SERD_NULLABLE ptr);
 
 /**
-   @name String Utilities
+   @defgroup string String Utilities
    @{
 */
 
@@ -312,7 +312,7 @@ serd_base64_decode(const uint8_t* SERD_NONNULL str,
 
 /**
    @}
-   @name Byte Streams
+   @defgroup streams Byte Streams
    @{
 */
 
@@ -349,7 +349,7 @@ typedef size_t (*SerdSink)(const void* SERD_NONNULL buf,
 
 /**
    @}
-   @name URI
+   @defgroup uri URI
    @{
 */
 
@@ -427,7 +427,7 @@ serd_uri_serialise_relative(const SerdURI* SERD_NONNULL  uri,
 
 /**
    @}
-   @name Node
+   @defgroup node Node
    @{
 */
 
@@ -585,7 +585,7 @@ serd_node_free(SerdNode* SERD_NULLABLE node);
 
 /**
    @}
-   @name Event Handlers
+   @defgroup event Event Handlers
    @{
 */
 
@@ -642,7 +642,7 @@ typedef SerdStatus (*SerdEndSink)(void* SERD_NULLABLE          handle,
 
 /**
    @}
-   @name Environment
+   @defgroup env Environment
    @{
 */
 
@@ -728,7 +728,7 @@ serd_env_foreach(const SerdEnv* SERD_NONNULL env,
 
 /**
    @}
-   @name Reader
+   @defgroup reader Reader
    @{
 */
 
@@ -880,7 +880,7 @@ serd_reader_free(SerdReader* SERD_NULLABLE reader);
 
 /**
    @}
-   @name Writer
+   @defgroup writer Writer
    @{
 */
 

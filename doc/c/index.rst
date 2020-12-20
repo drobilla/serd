@@ -1,0 +1,5 @@
+.. toctree::
+
+   serd
+   overview
+   reference

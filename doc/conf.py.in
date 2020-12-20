@@ -1,0 +1,86 @@
+# Project information
+
+project = "Serd"
+copyright = "2020, David Robillard"
+author = "David Robillard"
+release = "@SERD_VERSION@"
+
+# General configuration
+
+language = "en"
+
+extensions = [
+    # 'sphinx_rtd_theme',
+]
+
+# Enable nitpicky mode to get warnings about broken links
+# Unfortunately this means we need to explicitly ignore everything external
+nitpicky = True
+_opaque = [
+    "FILE",
+    "SerdByteSinkImpl",
+    "SerdByteSourceImpl",
+    "SerdCursorImpl",
+    "SerdEnvImpl",
+    "SerdIterImpl",
+    "SerdModelImpl",
+    "SerdNodeImpl",
+    "SerdNodesImpl",
+    "SerdRangeImpl",
+    "SerdReaderImpl",
+    "SerdSinkImpl",
+    "SerdStatementImpl",
+    "SerdWorldImpl",
+    "SerdWriterImpl",
+    "int64_t",
+    "size_t",
+    "uint32_t",
+    "uint8_t",
+    "uintptr_t",
+    "va_list",
+]
+
+nitpick_ignore = list(map(lambda x: ("c:identifier", x), _opaque))
+
+templates_path = ["_templates"]
+
+pygments_style = "friendly"
+
+# HTML output
+
+exclude_patterns = ["xml"]
+html_static_path = ["_static"]
+
+html_theme = "alabaster"
+# html_theme = "sphinx_rtd_theme"
+
+if html_theme == "alabaster":
+
+    html_theme_options = {
+        "description": "A lightweight library for RDF storage and serialisation",
+        "donate_url": "http://drobilla.net/pages/donate.html",
+        # "github_repo": "serd",
+        # "github_user": "lv2",
+        "logo": "serd.svg",
+        "logo_name": True,
+        "logo_text_align": "center",
+        "page_width": "80em - 20em",
+        "sidebar_width": "24em",
+    }
+
+    html_sidebars = {
+        "**": [
+            "about.html",
+            "localtoc.html",
+            "donate.html",
+        ]
+    }
+
+elif html_theme == "sphinx_rtd_theme":
+
+    html_theme_options = {
+        "sticky_navigation": False,
+        "collapse_navigation": False,
+        "navigation_depth": 4,
+        "display_version": True,
+    }

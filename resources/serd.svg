@@ -1,0 +1,20 @@
+<svg height="128" viewBox="0 0 33.867 33.867" width="128" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="#444" stroke-linejoin="round" stroke-width="1.058">
+    <path d="M26.726 7.14h6.529V.613h-6.529z" fill="#fff" fill-rule="evenodd"/>
+    <path d="M26.726 7.14h6.529V.613h-6.529z" fill="none"/>
+    <path d="M13.67 7.14h6.528V.613h-6.529z" fill="#fff" fill-rule="evenodd"/>
+    <path d="M13.67 7.14h6.528V.613h-6.529z" fill="none"/>
+    <path d="M.612 7.14h6.529V.613H.612z" fill="#fff" fill-rule="evenodd"/>
+    <path d="M.612 7.14h6.529V.613H.612z" fill="none"/>
+    <path d="M26.726 33.255h6.529v-6.529h-6.529z" fill="#fff" fill-rule="evenodd"/>
+    <path d="M26.726 33.255h6.529v-6.529h-6.529z" fill="none"/>
+    <path d="M13.67 33.255h6.528v-6.529h-6.529z" fill="#fff" fill-rule="evenodd"/>
+    <path d="M13.67 33.255h6.528v-6.529h-6.529z" fill="none"/>
+    <path d="M.612 33.255h6.529v-6.529H.612z" fill="#fff" fill-rule="evenodd"/>
+    <path d="M.612 33.255h6.529v-6.529H.612z" fill="none"/>
+    <path d="M13.67 20.198h6.528v-6.529h-6.529z" fill="#fff" fill-rule="evenodd"/>
+    <g fill="none">
+      <path d="M13.67 20.198h6.528v-6.529h-6.529zM20.198 3.876h6.528M7.14 3.876h6.53M7.14 7.14l6.53 6.53M20.198 20.198l6.528 6.528M7.14 29.99h6.53M20.198 29.99h6.528"/>
+    </g>
+  </g>
+</svg>

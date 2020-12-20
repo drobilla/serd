@@ -43,6 +43,9 @@ def configure(conf):
     conf.load('compiler_c', cache=True)
     conf.load('autowaf', cache=True)
 
+    if conf.env.DOCS:
+        conf.load('sphinx')
+
     if not autowaf.set_c_lang(conf, 'c11', mandatory=False):
         autowaf.set_c_lang(conf, 'c99')
 
@@ -264,13 +267,7 @@ def build(bld):
 
     # Documentation
     if bld.env.DOCS:
-        autowaf.build_dox(bld, 'SERD', SERD_VERSION, top, out)
-        bld(features='subst',
-            source='doc/index.html.in',
-            target='index.html',
-            install_path='',
-            name='index',
-            SERD_VERSION=SERD_VERSION)
+        bld.recurse('doc/c')
 
     # Man page
     bld.install_files('${MANDIR}/man1', 'doc/serdi.1')
