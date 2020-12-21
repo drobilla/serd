@@ -64,7 +64,7 @@ if html_theme == "alabaster":
         "logo": "serd.svg",
         "logo_name": True,
         "logo_text_align": "center",
-        "page_width": "80em - 20em",
+        "page_width": "80em - 24em",
         "sidebar_width": "24em",
     }
 
