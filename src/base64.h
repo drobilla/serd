@@ -45,4 +45,4 @@ serd_base64_get_length(size_t size, bool wrap_lines);
 bool
 serd_base64_encode(uint8_t* str, const void* buf, size_t size, bool wrap_lines);
 
-#endif  // SERD_BASE64_H
+#endif // SERD_BASE64_H

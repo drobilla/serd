@@ -26,54 +26,59 @@
 #include <stdio.h>
 
 #if defined(SERD_SHARED) && defined(SERD_INTERNAL) && defined(_WIN32)
-#    define SERD_API __declspec(dllexport)
+#  define SERD_API __declspec(dllexport)
 #elif defined(SERD_SHARED) && defined(_WIN32)
-#    define SERD_API __declspec(dllimport)
+#  define SERD_API __declspec(dllimport)
 #elif defined(SERD_SHARED) && defined(__GNUC__)
-#    define SERD_API __attribute__((visibility("default")))
+#  define SERD_API __attribute__((visibility("default")))
 #else
-#    define SERD_API
+#  define SERD_API
 #endif
 
 #ifdef __GNUC__
-#    define SERD_PURE_FUNC __attribute__((pure))
-#    define SERD_CONST_FUNC __attribute__((const))
+#  define SERD_PURE_FUNC __attribute__((pure))
+#  define SERD_CONST_FUNC __attribute__((const))
 #else
-#    define SERD_PURE_FUNC
-#    define SERD_CONST_FUNC
+#  define SERD_PURE_FUNC
+#  define SERD_CONST_FUNC
 #endif
 
 #ifdef __clang__
-#    define SERD_NONNULL _Nonnull
-#    define SERD_NULLABLE _Nullable
-#    define SERD_ALLOCATED _Null_unspecified
+#  define SERD_NONNULL _Nonnull
+#  define SERD_NULLABLE _Nullable
+#  define SERD_ALLOCATED _Null_unspecified
 #else
-#    define SERD_NONNULL
-#    define SERD_NULLABLE
-#    define SERD_ALLOCATED
+#  define SERD_NONNULL
+#  define SERD_NULLABLE
+#  define SERD_ALLOCATED
 #endif
 
-#define SERD_PURE_API SERD_API SERD_PURE_FUNC
-#define SERD_CONST_API SERD_API SERD_CONST_FUNC
+#define SERD_PURE_API \
+  SERD_API            \
+  SERD_PURE_FUNC
+
+#define SERD_CONST_API \
+  SERD_API             \
+  SERD_CONST_FUNC
 
 #ifndef SERD_DISABLE_DEPRECATED
-#    if defined(__clang__)
-#        define SERD_DEPRECATED_BY(rep) __attribute__((deprecated("", rep)))
-#    elif defined(__GNUC__) && __GNUC__ > 4
-#        define SERD_DEPRECATED_BY(rep) __attribute__((deprecated("Use " rep)))
-#    elif defined(__GNUC__)
-#        define SERD_DEPRECATED_BY(rep) __attribute__((deprecated))
-#    else
-#        define SERD_DEPRECATED_BY(rep)
-#    endif
+#  if defined(__clang__)
+#    define SERD_DEPRECATED_BY(rep) __attribute__((deprecated("", rep)))
+#  elif defined(__GNUC__) && __GNUC__ > 4
+#    define SERD_DEPRECATED_BY(rep) __attribute__((deprecated("Use " rep)))
+#  elif defined(__GNUC__)
+#    define SERD_DEPRECATED_BY(rep) __attribute__((deprecated))
+#  else
+#    define SERD_DEPRECATED_BY(rep)
+#  endif
 #endif
 
 #ifdef __cplusplus
 extern "C" {
-#    if defined(__GNUC__)
-#        pragma GCC diagnostic push
-#        pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-#    endif
+#  if defined(__GNUC__)
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#  endif
 #endif
 
 /**
@@ -93,35 +98,35 @@ typedef struct SerdWriterImpl SerdWriter;
 
 /// Return status code
 typedef enum {
-	SERD_SUCCESS,        ///< No error
-	SERD_FAILURE,        ///< Non-fatal failure
-	SERD_ERR_UNKNOWN,    ///< Unknown error
-	SERD_ERR_BAD_SYNTAX, ///< Invalid syntax
-	SERD_ERR_BAD_ARG,    ///< Invalid argument
-	SERD_ERR_NOT_FOUND,  ///< Not found
-	SERD_ERR_ID_CLASH,   ///< Encountered clashing blank node IDs
-	SERD_ERR_BAD_CURIE,  ///< Invalid CURIE (e.g. prefix does not exist)
-	SERD_ERR_INTERNAL    ///< Unexpected internal error (should not happen)
+  SERD_SUCCESS,        ///< No error
+  SERD_FAILURE,        ///< Non-fatal failure
+  SERD_ERR_UNKNOWN,    ///< Unknown error
+  SERD_ERR_BAD_SYNTAX, ///< Invalid syntax
+  SERD_ERR_BAD_ARG,    ///< Invalid argument
+  SERD_ERR_NOT_FOUND,  ///< Not found
+  SERD_ERR_ID_CLASH,   ///< Encountered clashing blank node IDs
+  SERD_ERR_BAD_CURIE,  ///< Invalid CURIE (e.g. prefix does not exist)
+  SERD_ERR_INTERNAL    ///< Unexpected internal error (should not happen)
 } SerdStatus;
 
 /// RDF syntax type
 typedef enum {
-	SERD_TURTLE   = 1, ///< Terse triples http://www.w3.org/TR/turtle
-	SERD_NTRIPLES = 2, ///< Line-based triples http://www.w3.org/TR/n-triples/
-	SERD_NQUADS   = 3, ///< Line-based quads http://www.w3.org/TR/n-quads/
-	SERD_TRIG     = 4  ///< Terse quads http://www.w3.org/TR/trig/
+  SERD_TURTLE   = 1, ///< Terse triples http://www.w3.org/TR/turtle
+  SERD_NTRIPLES = 2, ///< Line-based triples http://www.w3.org/TR/n-triples/
+  SERD_NQUADS   = 3, ///< Line-based quads http://www.w3.org/TR/n-quads/
+  SERD_TRIG     = 4  ///< Terse quads http://www.w3.org/TR/trig/
 } SerdSyntax;
 
 /// Flags indicating inline abbreviation information for a statement
 typedef enum {
-	SERD_EMPTY_S      = 1u << 1u, ///< Empty blank node subject
-	SERD_EMPTY_O      = 1u << 2u, ///< Empty blank node object
-	SERD_ANON_S_BEGIN = 1u << 3u, ///< Start of anonymous subject
-	SERD_ANON_O_BEGIN = 1u << 4u, ///< Start of anonymous object
-	SERD_ANON_CONT    = 1u << 5u, ///< Continuation of anonymous node
-	SERD_LIST_S_BEGIN = 1u << 6u, ///< Start of list subject
-	SERD_LIST_O_BEGIN = 1u << 7u, ///< Start of list object
-	SERD_LIST_CONT    = 1u << 8u  ///< Continuation of list
+  SERD_EMPTY_S      = 1u << 1u, ///< Empty blank node subject
+  SERD_EMPTY_O      = 1u << 2u, ///< Empty blank node object
+  SERD_ANON_S_BEGIN = 1u << 3u, ///< Start of anonymous subject
+  SERD_ANON_O_BEGIN = 1u << 4u, ///< Start of anonymous object
+  SERD_ANON_CONT    = 1u << 5u, ///< Continuation of anonymous node
+  SERD_LIST_S_BEGIN = 1u << 6u, ///< Start of list subject
+  SERD_LIST_O_BEGIN = 1u << 7u, ///< Start of list object
+  SERD_LIST_CONT    = 1u << 8u  ///< Continuation of list
 } SerdStatementFlag;
 
 /// Bitwise OR of SerdStatementFlag values
@@ -139,52 +144,52 @@ typedef uint32_t SerdStatementFlags;
    node types.
 */
 typedef enum {
-	/**
-	   The type of a nonexistent node.
+  /**
+     The type of a nonexistent node.
 
-	   This type is useful as a sentinel, but is never emitted by the reader.
-	*/
-	SERD_NOTHING = 0,
+     This type is useful as a sentinel, but is never emitted by the reader.
+  */
+  SERD_NOTHING = 0,
 
-	/**
-	   Literal value.
+  /**
+     Literal value.
 
-	   A literal optionally has either a language, or a datatype (not both).
-	*/
-	SERD_LITERAL = 1,
+     A literal optionally has either a language, or a datatype (not both).
+  */
+  SERD_LITERAL = 1,
 
-	/**
-	   URI (absolute or relative).
+  /**
+     URI (absolute or relative).
 
-	   Value is an unquoted URI string, which is either a relative reference
-	   with respect to the current base URI (e.g. "foo/bar"), or an absolute
-	   URI (e.g. "http://example.org/foo").
-	   @see [RFC3986](http://tools.ietf.org/html/rfc3986)
-	*/
-	SERD_URI = 2,
+     Value is an unquoted URI string, which is either a relative reference
+     with respect to the current base URI (e.g. "foo/bar"), or an absolute
+     URI (e.g. "http://example.org/foo").
+     @see [RFC3986](http://tools.ietf.org/html/rfc3986)
+  */
+  SERD_URI = 2,
 
-	/**
-	   CURIE, a shortened URI.
+  /**
+     CURIE, a shortened URI.
 
-	   Value is an unquoted CURIE string relative to the current environment,
-	   e.g. "rdf:type".  @see [CURIE Syntax 1.0](http://www.w3.org/TR/curie)
-	*/
-	SERD_CURIE = 3,
+     Value is an unquoted CURIE string relative to the current environment,
+     e.g. "rdf:type".  @see [CURIE Syntax 1.0](http://www.w3.org/TR/curie)
+  */
+  SERD_CURIE = 3,
 
-	/**
-	   A blank node.
+  /**
+     A blank node.
 
-	   Value is a blank node ID without any syntactic prefix, like "id3", which
-	   is meaningful only within this serialisation.  @see [RDF 1.1
-	   Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
-	*/
-	SERD_BLANK = 4
+     Value is a blank node ID without any syntactic prefix, like "id3", which
+     is meaningful only within this serialisation.  @see [RDF 1.1
+     Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
+  */
+  SERD_BLANK = 4
 } SerdType;
 
 /// Flags indicating certain string properties relevant to serialisation
 typedef enum {
-	SERD_HAS_NEWLINE = 1u << 0u, ///< Contains line breaks ('\\n' or '\\r')
-	SERD_HAS_QUOTE   = 1u << 1u  ///< Contains quotes ('"')
+  SERD_HAS_NEWLINE = 1u << 0u, ///< Contains line breaks ('\\n' or '\\r')
+  SERD_HAS_QUOTE   = 1u << 1u  ///< Contains quotes ('"')
 } SerdNodeFlag;
 
 /// Bitwise OR of SerdNodeFlag values
@@ -192,27 +197,27 @@ typedef uint32_t SerdNodeFlags;
 
 /// A syntactic RDF node
 typedef struct {
-	const uint8_t* SERD_NULLABLE buf;     ///< Value string
-	size_t                       n_bytes; ///< Size in bytes (excluding null)
-	size_t                       n_chars; ///< String length (excluding null)
-	SerdNodeFlags                flags;   ///< Node flags (string properties)
-	SerdType                     type;    ///< Node type
+  const uint8_t* SERD_NULLABLE buf;     ///< Value string
+  size_t                       n_bytes; ///< Size in bytes (excluding null)
+  size_t                       n_chars; ///< String length (excluding null)
+  SerdNodeFlags                flags;   ///< Node flags (string properties)
+  SerdType                     type;    ///< Node type
 } SerdNode;
 
 /// An unterminated string fragment
 typedef struct {
-	const uint8_t* SERD_NULLABLE buf; ///< Start of chunk
-	size_t                       len; ///< Length of chunk in bytes
+  const uint8_t* SERD_NULLABLE buf; ///< Start of chunk
+  size_t                       len; ///< Length of chunk in bytes
 } SerdChunk;
 
 /// An error description
 typedef struct {
-	SerdStatus                   status;   ///< Error code
-	const uint8_t* SERD_NULLABLE filename; ///< File with error
-	unsigned                     line;     ///< Line in file with error or 0
-	unsigned                     col;      ///< Column in file with error
-	const char* SERD_NONNULL     fmt;      ///< Printf-style format string
-	va_list* SERD_NONNULL        args;     ///< Arguments for fmt
+  SerdStatus                   status;   ///< Error code
+  const uint8_t* SERD_NULLABLE filename; ///< File with error
+  unsigned                     line;     ///< Line in file with error or 0
+  unsigned                     col;      ///< Column in file with error
+  const char* SERD_NONNULL     fmt;      ///< Printf-style format string
+  va_list* SERD_NONNULL        args;     ///< Arguments for fmt
 } SerdError;
 
 /**
@@ -223,12 +228,12 @@ typedef struct {
    in-place without allocating memory.
 */
 typedef struct {
-	SerdChunk scheme;    ///< Scheme
-	SerdChunk authority; ///< Authority
-	SerdChunk path_base; ///< Path prefix if relative
-	SerdChunk path;      ///< Path suffix
-	SerdChunk query;     ///< Query
-	SerdChunk fragment;  ///< Fragment
+  SerdChunk scheme;    ///< Scheme
+  SerdChunk authority; ///< Authority
+  SerdChunk path_base; ///< Path prefix if relative
+  SerdChunk path;      ///< Path suffix
+  SerdChunk query;     ///< Query
+  SerdChunk fragment;  ///< Fragment
 } SerdURI;
 
 /**
@@ -239,11 +244,11 @@ typedef struct {
    does not support abbreviation and is always ASCII.
 */
 typedef enum {
-	SERD_STYLE_ABBREVIATED = 1u << 0u, ///< Abbreviate triples when possible.
-	SERD_STYLE_ASCII       = 1u << 1u, ///< Escape all non-ASCII characters.
-	SERD_STYLE_RESOLVED    = 1u << 2u, ///< Resolve URIs against base URI.
-	SERD_STYLE_CURIED      = 1u << 3u, ///< Shorten URIs into CURIEs.
-	SERD_STYLE_BULK        = 1u << 4u, ///< Write output in pages.
+  SERD_STYLE_ABBREVIATED = 1u << 0u, ///< Abbreviate triples when possible.
+  SERD_STYLE_ASCII       = 1u << 1u, ///< Escape all non-ASCII characters.
+  SERD_STYLE_RESOLVED    = 1u << 2u, ///< Resolve URIs against base URI.
+  SERD_STYLE_CURIED      = 1u << 3u, ///< Shorten URIs into CURIEs.
+  SERD_STYLE_BULK        = 1u << 4u, ///< Write output in pages.
 } SerdStyle;
 
 /**
@@ -353,9 +358,8 @@ typedef size_t (*SerdSink)(const void* SERD_NONNULL buf,
    @{
 */
 
-static const SerdURI SERD_URI_NULL = {
-	{NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}
-};
+static const SerdURI SERD_URI_NULL =
+  {{NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}};
 
 /**
    Return the local path for `uri`, or NULL if `uri` is not a file URI.
@@ -364,7 +368,8 @@ static const SerdURI SERD_URI_NULL = {
    encoding and other issues are not handled, to properly convert a file URI to
    a path, use serd_file_uri_parse().
 */
-SERD_API SERD_DEPRECATED_BY("serd_file_uri_parse")
+SERD_API
+SERD_DEPRECATED_BY("serd_file_uri_parse")
 const uint8_t* SERD_NULLABLE
 serd_uri_to_path(const uint8_t* SERD_NONNULL uri);
 
@@ -431,7 +436,7 @@ serd_uri_serialise_relative(const SerdURI* SERD_NONNULL  uri,
    @{
 */
 
-static const SerdNode SERD_NODE_NULL = { NULL, 0, 0, 0, SERD_NOTHING };
+static const SerdNode SERD_NODE_NULL = {NULL, 0, 0, 0, SERD_NOTHING};
 
 /**
    Make a (shallow) node from `str`.
@@ -450,16 +455,16 @@ serd_node_from_string(SerdType type, const uint8_t* SERD_NULLABLE str);
 */
 SERD_API
 SerdNode
-serd_node_from_substring(SerdType                    type,
+serd_node_from_substring(SerdType                     type,
                          const uint8_t* SERD_NULLABLE str,
-                         size_t                      len);
+                         size_t                       len);
 
 /// Simple wrapper for serd_node_new_uri() to resolve a URI node
 SERD_API
 SerdNode
 serd_node_new_uri_from_node(const SerdNode* SERD_NONNULL uri_node,
-                            const SerdURI* SERD_NULLABLE  base,
-                            SerdURI* SERD_NULLABLE        out);
+                            const SerdURI* SERD_NULLABLE base,
+                            SerdURI* SERD_NULLABLE       out);
 
 /// Simple wrapper for serd_node_new_uri() to resolve a URI string
 SERD_API
@@ -621,14 +626,14 @@ typedef SerdStatus (*SerdPrefixSink)(void* SERD_NULLABLE          handle,
    Called for every RDF statement in the serialisation.
 */
 typedef SerdStatus (*SerdStatementSink)(
-    void* SERD_NULLABLE           handle,
-    SerdStatementFlags            flags,
-    const SerdNode* SERD_NULLABLE graph,
-    const SerdNode* SERD_NONNULL  subject,
-    const SerdNode* SERD_NONNULL  predicate,
-    const SerdNode* SERD_NONNULL  object,
-    const SerdNode* SERD_NULLABLE object_datatype,
-    const SerdNode* SERD_NULLABLE object_lang);
+  void* SERD_NULLABLE           handle,
+  SerdStatementFlags            flags,
+  const SerdNode* SERD_NULLABLE graph,
+  const SerdNode* SERD_NONNULL  subject,
+  const SerdNode* SERD_NONNULL  predicate,
+  const SerdNode* SERD_NONNULL  object,
+  const SerdNode* SERD_NULLABLE object_datatype,
+  const SerdNode* SERD_NULLABLE object_lang);
 
 /**
    Sink (callback) for anonymous node end markers
@@ -1041,10 +1046,10 @@ serd_writer_finish(SerdWriter* SERD_NONNULL writer);
 */
 
 #ifdef __cplusplus
-#    if defined(__GNUC__)
-#        pragma GCC diagnostic pop
-#    endif
-}  /* extern "C" */
+#  if defined(__GNUC__)
+#    pragma GCC diagnostic pop
+#  endif
+} /* extern "C" */
 #endif
 
-#endif  /* SERD_SERD_H */
+#endif /* SERD_SERD_H */

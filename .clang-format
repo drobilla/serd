@@ -1,0 +1,24 @@
+---
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignEscapedNewlinesLeft: true
+BasedOnStyle: Mozilla
+BraceWrapping:
+  AfterNamespace: false
+  AfterClass: true
+  AfterEnum: false
+  AfterExternBlock: false
+  AfterFunction: true
+  AfterStruct: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+BreakBeforeBraces: Custom
+Cpp11BracedListStyle: true
+IndentCaseLabels: false
+IndentPPDirectives: AfterHash
+KeepEmptyLinesAtTheStartOfBlocks: false
+SpacesInContainerLiterals: false
+StatementMacros:
+  - SERD_API
+  - SERD_DEPRECATED_BY
+...

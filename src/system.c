@@ -22,11 +22,11 @@
 #include "serd_internal.h"
 
 #if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
-#   include <fcntl.h>
+#  include <fcntl.h>
 #endif
 
 #ifdef _WIN32
-#	include <malloc.h>
+#  include <malloc.h>
 #endif
 
 #include <errno.h>
@@ -37,47 +37,48 @@
 FILE*
 serd_fopen(const char* path, const char* mode)
 {
-	FILE* fd = fopen(path, mode);
-	if (!fd) {
-		fprintf(stderr, "error: failed to open file %s (%s)\n",
-		        path, strerror(errno));
-		return NULL;
-	}
+  FILE* fd = fopen(path, mode);
+  if (!fd) {
+    fprintf(
+      stderr, "error: failed to open file %s (%s)\n", path, strerror(errno));
+    return NULL;
+  }
+
 #if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
-	posix_fadvise(fileno(fd), 0, 0, POSIX_FADV_SEQUENTIAL);
+  posix_fadvise(fileno(fd), 0, 0, POSIX_FADV_SEQUENTIAL);
 #endif
-	return fd;
+  return fd;
 }
 
 void*
 serd_malloc_aligned(const size_t alignment, const size_t size)
 {
 #if defined(_WIN32)
-	return _aligned_malloc(size, alignment);
+  return _aligned_malloc(size, alignment);
 #elif __STDC_VERSION__ >= 201112L && defined(HAVE_ALIGNED_ALLOC)
-	return aligned_alloc(alignment, size);
+  return aligned_alloc(alignment, size);
 #elif defined(HAVE_POSIX_MEMALIGN)
-	void*     ptr = NULL;
-	const int ret = posix_memalign(&ptr, alignment, size);
-	return ret ? NULL : ptr;
+  void*     ptr = NULL;
+  const int ret = posix_memalign(&ptr, alignment, size);
+  return ret ? NULL : ptr;
 #else
-	(void)alignment;
-	return malloc(size);
+  (void)alignment;
+  return malloc(size);
 #endif
 }
 
 void*
 serd_allocate_buffer(const size_t size)
 {
-	return serd_malloc_aligned(SERD_PAGE_SIZE, size);
+  return serd_malloc_aligned(SERD_PAGE_SIZE, size);
 }
 
 void
 serd_free_aligned(void* const ptr)
 {
 #ifdef _WIN32
-	_aligned_free(ptr);
+  _aligned_free(ptr);
 #else
-	free(ptr);
+  free(ptr);
 #endif
 }

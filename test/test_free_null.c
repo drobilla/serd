@@ -23,11 +23,11 @@
 int
 main(void)
 {
-	serd_free(NULL);
-	serd_node_free(NULL);
-	serd_env_free(NULL);
-	serd_reader_free(NULL);
-	serd_writer_free(NULL);
+  serd_free(NULL);
+  serd_node_free(NULL);
+  serd_env_free(NULL);
+  serd_reader_free(NULL);
+  serd_writer_free(NULL);
 
-	return 0;
+  return 0;
 }

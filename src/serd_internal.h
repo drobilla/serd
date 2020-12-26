@@ -27,7 +27,7 @@
 #define SERD_PAGE_SIZE 4096
 
 #ifndef MIN
-#    define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#  define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
 /* Error reporting */
@@ -35,12 +35,12 @@
 static inline void
 serd_error(SerdErrorSink error_sink, void* handle, const SerdError* e)
 {
-	if (error_sink) {
-		error_sink(handle, e);
-	} else {
-		fprintf(stderr, "error: %s:%u:%u: ", e->filename, e->line, e->col);
-		vfprintf(stderr, e->fmt, *e->args);
-	}
+  if (error_sink) {
+    error_sink(handle, e);
+  } else {
+    fprintf(stderr, "error: %s:%u:%u: ", e->filename, e->line, e->col);
+    vfprintf(stderr, e->fmt, *e->args);
+  }
 }
 
-#endif  // SERD_INTERNAL_H
+#endif // SERD_INTERNAL_H
