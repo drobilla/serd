@@ -205,7 +205,9 @@ main(int argc, char** argv)
 			in_name = (const uint8_t*)"(stdin)";
 			in_fd   = stdin;
 			break;
-		} else if (argv[a][1] == 'a') {
+		}
+
+		if (argv[a][1] == 'a') {
 			ascii = true;
 		} else if (argv[a][1] == 'b') {
 			bulk_write = true;
@@ -229,29 +231,36 @@ main(int argc, char** argv)
 		} else if (argv[a][1] == 'i') {
 			if (++a == argc) {
 				return missing_arg(argv[0], 'i');
-			} else if (!(input_syntax = get_syntax(argv[a]))) {
+			}
+
+			if (!(input_syntax = get_syntax(argv[a]))) {
 				return print_usage(argv[0], true);
 			}
 		} else if (argv[a][1] == 'o') {
 			if (++a == argc) {
 				return missing_arg(argv[0], 'o');
-			} else if (!(output_syntax = get_syntax(argv[a]))) {
+			}
+
+			if (!(output_syntax = get_syntax(argv[a]))) {
 				return print_usage(argv[0], true);
 			}
 		} else if (argv[a][1] == 'p') {
 			if (++a == argc) {
 				return missing_arg(argv[0], 'p');
 			}
+
 			add_prefix = (const uint8_t*)argv[a];
 		} else if (argv[a][1] == 'c') {
 			if (++a == argc) {
 				return missing_arg(argv[0], 'c');
 			}
+
 			chop_prefix = (const uint8_t*)argv[a];
 		} else if (argv[a][1] == 'r') {
 			if (++a == argc) {
 				return missing_arg(argv[0], 'r');
 			}
+
 			root_uri = (const uint8_t*)argv[a];
 		} else {
 			SERDI_ERRORF("invalid option -- '%s'\n", argv[a] + 1);

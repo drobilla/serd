@@ -403,7 +403,9 @@ read_String(SerdReader* reader, Ref node, SerdNodeFlags* flags)
 	const int q2 = peek_byte(reader);
 	if (q2 == EOF) {
 		return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file\n");
-	} else if (q2 != q1) {  // Short string (not triple quoted)
+	}
+
+	if (q2 != q1) {  // Short string (not triple quoted)
 		return read_STRING_LITERAL(reader, node, flags, (uint8_t)q1);
 	}
 
@@ -411,7 +413,9 @@ read_String(SerdReader* reader, Ref node, SerdNodeFlags* flags)
 	const int q3 = peek_byte(reader);
 	if (q3 == EOF) {
 		return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file\n");
-	} else if (q3 != q1) {  // Empty short string ("" or '')
+	}
+
+	if (q3 != q1) {  // Empty short string ("" or '')
 		return SERD_SUCCESS;
 	}
 
@@ -655,7 +659,9 @@ read_IRIREF_scheme(SerdReader* reader, Ref dest)
 	while ((c = peek_byte(reader)) != EOF) {
 		if (c == '>') {
 			return r_err(reader, SERD_ERR_BAD_SYNTAX, "missing IRI scheme\n");
-		} else if (!is_uri_scheme_char(c)) {
+		}
+
+		if (!is_uri_scheme_char(c)) {
 			return r_err(reader, SERD_ERR_BAD_SYNTAX,
 			             "bad IRI scheme char U+%04X (%c)\n",
 			             (unsigned)c,
@@ -752,7 +758,9 @@ read_PrefixedName(SerdReader* reader, Ref dest, bool read_prefix, bool* ate_dot)
 	SerdStatus st = SERD_SUCCESS;
 	if (read_prefix && ((st = read_PN_PREFIX(reader, dest)) > SERD_FAILURE)) {
 		return st;
-	} else if (peek_byte(reader) != ':') {
+	}
+
+	if (peek_byte(reader) != ':') {
 		return SERD_FAILURE;
 	}
 
@@ -907,9 +915,11 @@ read_verb(SerdReader* reader, Ref* dest)
 		pop_node(reader, *dest);
 		*dest = push_node(reader, SERD_URI, NS_RDF "type", 47);
 		return SERD_SUCCESS;
-	} else if (st > SERD_FAILURE ||
-	           read_PrefixedName(reader, *dest, false, &ate_dot) ||
-	           ate_dot) {
+	}
+
+	if (st > SERD_FAILURE ||
+	    read_PrefixedName(reader, *dest, false, &ate_dot) ||
+	    ate_dot) {
 		*dest = pop_node(reader, *dest);
 		return r_err(reader, SERD_ERR_BAD_SYNTAX, "bad verb\n");
 	}
@@ -1352,10 +1362,13 @@ read_base(SerdReader* reader, bool sparql, bool token)
 	read_ws_star(reader);
 	if (!sparql) {
 		return eat_byte_check(reader, '.') ? SERD_SUCCESS : SERD_ERR_BAD_SYNTAX;
-	} else if (peek_byte(reader) == '.') {
+	}
+
+	if (peek_byte(reader) == '.') {
 		return r_err(reader, SERD_ERR_BAD_SYNTAX,
 		             "full stop after SPARQL BASE\n");
 	}
+
 	return SERD_SUCCESS;
 }
 
@@ -1432,10 +1445,13 @@ read_wrappedGraph(SerdReader* reader, ReadContext* ctx)
 		SerdStatus st = read_subject(reader, *ctx, &ctx->subject, &s_type);
 		if (st) {
 			return r_err(reader, SERD_ERR_BAD_SYNTAX, "bad subject\n");
-		} else if (read_triples(reader, *ctx, &ate_dot) && s_type != '[') {
+		}
+
+		if (read_triples(reader, *ctx, &ate_dot) && s_type != '[') {
 			return r_err(reader, SERD_ERR_BAD_SYNTAX,
 			             "missing predicate object list\n");
 		}
+
 		pop_node(reader, ctx->subject);
 		read_ws_star(reader);
 		if (peek_byte(reader) == '.') {
@@ -1527,12 +1543,14 @@ read_n3_statement(SerdReader* reader)
 		} else if ((st = read_triples(reader, ctx, &ate_dot))) {
 			if (st == SERD_FAILURE && s_type == '[') {
 				return SERD_SUCCESS;
-			} else if (ate_dot) {
+			}
+
+			if (ate_dot) {
 				return r_err(reader, SERD_ERR_BAD_SYNTAX,
 				             "unexpected end of statement\n");
-			} else {
-				return st > SERD_FAILURE ? st : SERD_ERR_BAD_SYNTAX;
 			}
+
+			return st > SERD_FAILURE ? st : SERD_ERR_BAD_SYNTAX;
 		} else if (!ate_dot) {
 			read_ws_star(reader);
 			st = (eat_byte_check(reader, '.') == '.') ? SERD_SUCCESS
@@ -1578,7 +1596,9 @@ read_nquadsDoc(SerdReader* reader)
 		read_ws_star(reader);
 		if (peek_byte(reader) == EOF) {
 			break;
-		} else if (peek_byte(reader) == '@') {
+		}
+
+		if (peek_byte(reader) == '@') {
 			return r_err(reader, SERD_ERR_BAD_SYNTAX,
 			             "syntax does not support directives\n");
 		}

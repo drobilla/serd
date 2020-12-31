@@ -394,7 +394,9 @@ serd_reader_read_source(SerdReader*         reader,
 	if (st || (st = serd_reader_prepare(reader))) {
 		serd_reader_end_stream(reader);
 		return st;
-	} else if ((st = read_doc(reader))) {
+	}
+
+	if ((st = read_doc(reader))) {
 		serd_reader_end_stream(reader);
 		return st;
 	}

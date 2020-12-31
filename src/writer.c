@@ -212,10 +212,10 @@ write_character(SerdWriter* writer, const uint8_t* utf8, size_t* size)
 	if (c <= 0xFFFF) {
 		snprintf(escape, sizeof(escape), "\\u%04X", c);
 		return sink(escape, 6, writer);
-	} else {
-		snprintf(escape, sizeof(escape), "\\U%08X", c);
-		return sink(escape, 10, writer);
 	}
+
+	snprintf(escape, sizeof(escape), "\\U%08X", c);
+	return sink(escape, 10, writer);
 }
 
 static inline bool
@@ -454,10 +454,12 @@ write_literal(SerdWriter*        writer,
 			    !strcmp(type_uri + sizeof(NS_XSD) - 1, "integer"))) {
 			sink(node->buf, node->n_bytes, writer);
 			return true;
-		} else if (!strncmp(type_uri, NS_XSD, sizeof(NS_XSD) - 1) &&
-		           !strcmp(type_uri + sizeof(NS_XSD) - 1, "decimal") &&
-		           strchr((const char*)node->buf, '.') &&
-		           node->buf[node->n_bytes - 1] != '.') {
+		}
+
+		if (!strncmp(type_uri, NS_XSD, sizeof(NS_XSD) - 1) &&
+		    !strcmp(type_uri + sizeof(NS_XSD) - 1, "decimal") &&
+		    strchr((const char*)node->buf, '.') &&
+		    node->buf[node->n_bytes - 1] != '.') {
 			/* xsd:decimal literals without trailing digits, e.g. "5.", can
 			   not be written bare in Turtle.  We could add a 0 which is
 			   prettier, but changes the text and breaks round tripping.
@@ -520,11 +522,15 @@ write_uri_node(SerdWriter* const        writer,
 		if (field == FIELD_PREDICATE &&
 		    !strcmp((const char*)node->buf, NS_RDF "type")) {
 			return sink("a", 1, writer) == 1;
-		} else if (!strcmp((const char*)node->buf, NS_RDF "nil")) {
+		}
+
+		if (!strcmp((const char*)node->buf, NS_RDF "nil")) {
 			return sink("()", 2, writer) == 2;
-		} else if (has_scheme && (writer->style & SERD_STYLE_CURIED) &&
-		           serd_env_qualify(writer->env, node, &prefix, &suffix) &&
-		           is_name(suffix.buf, suffix.len)) {
+		}
+
+		if (has_scheme && (writer->style & SERD_STYLE_CURIED) &&
+		    serd_env_qualify(writer->env, node, &prefix, &suffix) &&
+		    is_name(suffix.buf, suffix.len)) {
 			write_uri(writer, prefix.buf, prefix.n_bytes);
 			sink(":", 1, writer);
 			write_uri(writer, suffix.buf, suffix.len);
@@ -618,18 +624,24 @@ write_blank(SerdWriter* const        writer,
 		if (is_inline_start(writer, field, flags)) {
 			++writer->indent;
 			return write_sep(writer, SEP_ANON_BEGIN);
-		} else if (field == FIELD_SUBJECT && (flags & SERD_LIST_S_BEGIN)) {
+		}
+
+		if (field == FIELD_SUBJECT && (flags & SERD_LIST_S_BEGIN)) {
 			assert(writer->list_depth == 0);
 			copy_node(&writer->list_subj, node);
 			++writer->list_depth;
 			++writer->indent;
 			return write_sep(writer, SEP_LIST_BEGIN);
-		} else if (field == FIELD_OBJECT && (flags & SERD_LIST_O_BEGIN)) {
+		}
+
+		if (field == FIELD_OBJECT && (flags & SERD_LIST_O_BEGIN)) {
 			++writer->indent;
 			++writer->list_depth;
 			return write_sep(writer, SEP_LIST_BEGIN);
-		} else if ((field == FIELD_SUBJECT && (flags & SERD_EMPTY_S)) ||
-		           (field == FIELD_OBJECT && (flags & SERD_EMPTY_O))) {
+		}
+
+		if ((field == FIELD_SUBJECT && (flags & SERD_EMPTY_S)) ||
+		    (field == FIELD_OBJECT && (flags & SERD_EMPTY_O))) {
 			return sink("[]", 2, writer) == 2;
 		}
 	}
@@ -703,10 +715,13 @@ write_list_obj(SerdWriter*        writer,
 		--writer->indent;
 		write_sep(writer, SEP_LIST_END);
 		return true;
-	} else if (!strcmp((const char*)predicate->buf, NS_RDF "first")) {
+	}
+
+	if (!strcmp((const char*)predicate->buf, NS_RDF "first")) {
 		write_sep(writer, SEP_LIST_SEP);
 		write_node(writer, object, datatype, lang, FIELD_OBJECT, flags);
 	}
+
 	return false;
 }
 

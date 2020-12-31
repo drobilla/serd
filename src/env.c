@@ -76,7 +76,9 @@ serd_env_set_base_uri(SerdEnv*        env,
 {
 	if (!env || (uri && uri->type != SERD_URI)) {
 		return SERD_ERR_BAD_ARG;
-	} else if (!uri || !uri->buf) {
+	}
+
+	if (!uri || !uri->buf) {
 		serd_node_free(&env->base_uri_node);
 		env->base_uri_node = SERD_NODE_NULL;
 		env->base_uri      = SERD_URI_NULL;
@@ -139,7 +141,9 @@ serd_env_set_prefix(SerdEnv*        env,
 {
 	if (!name->buf || uri->type != SERD_URI) {
 		return SERD_ERR_BAD_ARG;
-	} else if (serd_uri_string_has_scheme(uri->buf)) {
+	}
+
+	if (serd_uri_string_has_scheme(uri->buf)) {
 		// Set prefix to absolute URI
 		serd_env_add(env, name, uri);
 	} else {
@@ -152,6 +156,7 @@ serd_env_set_prefix(SerdEnv*        env,
 		serd_env_add(env, name, &abs_uri_node);
 		serd_node_free(&abs_uri_node);
 	}
+
 	return SERD_SUCCESS;
 }
 

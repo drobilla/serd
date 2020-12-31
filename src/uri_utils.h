@@ -41,11 +41,8 @@ uri_path_len(const SerdURI* uri)
 static inline uint8_t
 uri_path_at(const SerdURI* uri, size_t i)
 {
-	if (i < uri->path_base.len) {
-		return uri->path_base.buf[i];
-	} else {
-		return uri->path.buf[i - uri->path_base.len];
-	}
+	return (i < uri->path_base.len) ? uri->path_base.buf[i]
+	                                : uri->path.buf[i - uri->path_base.len];
 }
 
 /**

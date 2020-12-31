@@ -30,15 +30,19 @@ serd_byte_source_page(SerdByteSource* source)
 	source->read_head = 0;
 	const size_t n_read = source->read_func(
 		source->file_buf, 1, source->page_size, source->stream);
+
 	if (n_read == 0) {
 		source->file_buf[0] = '\0';
 		source->eof         = true;
 		return (source->error_func(source->stream)
 		        ? SERD_ERR_UNKNOWN : SERD_FAILURE);
-	} else if (n_read < source->page_size) {
+	}
+
+	if (n_read < source->page_size) {
 		source->file_buf[n_read] = '\0';
 		source->buf_size         = n_read;
 	}
+
 	return SERD_SUCCESS;
 }
 
@@ -76,13 +80,12 @@ SerdStatus
 serd_byte_source_prepare(SerdByteSource* source)
 {
 	source->prepared = true;
+
 	if (source->from_stream) {
-		if (source->page_size > 1) {
-			return serd_byte_source_page(source);
-		} else if (source->from_stream) {
-			return serd_byte_source_advance(source);
-		}
+		return (source->page_size > 1 ? serd_byte_source_page(source)
+		                              : serd_byte_source_advance(source));
 	}
+
 	return SERD_SUCCESS;
 }
 

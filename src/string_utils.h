@@ -119,13 +119,20 @@ utf8_num_bytes(const uint8_t c)
 {
 	if ((c & 0x80) == 0) {  // Starts with `0'
 		return 1;
-	} else if ((c & 0xE0) == 0xC0) {  // Starts with `110'
+	}
+
+	if ((c & 0xE0) == 0xC0) {  // Starts with `110'
 		return 2;
-	} else if ((c & 0xF0) == 0xE0) {  // Starts with `1110'
+	}
+
+	if ((c & 0xF0) == 0xE0) {  // Starts with `1110'
 		return 3;
-	} else if ((c & 0xF8) == 0xF0) {  // Starts with `11110'
+	}
+
+	if ((c & 0xF8) == 0xF0) {  // Starts with `11110'
 		return 4;
 	}
+
 	return 0;
 }
 

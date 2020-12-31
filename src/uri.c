@@ -33,7 +33,9 @@ serd_uri_to_path(const uint8_t* uri)
 		if (strncmp((const char*)uri, "file:", 5)) {
 			fprintf(stderr, "Non-file URI `%s'\n", uri);
 			return NULL;
-		} else if (!strncmp((const char*)uri, "file://localhost/", 17)) {
+		}
+
+		if (!strncmp((const char*)uri, "file://localhost/", 17)) {
 			path = uri + 16;
 		} else if (!strncmp((const char*)uri, "file://", 7)) {
 			path = uri + 7;
@@ -41,6 +43,7 @@ serd_uri_to_path(const uint8_t* uri)
 			fprintf(stderr, "Invalid file URI `%s'\n", uri);
 			return NULL;
 		}
+
 		if (is_windows_path(path + 1)) {
 			++path;  // Special case for terrible Windows file URIs
 		}
@@ -106,7 +109,9 @@ serd_uri_string_has_scheme(const uint8_t* utf8)
 	for (uint8_t c = 0; (c = *++utf8) != '\0';) {
 		if (!is_uri_scheme_char(c)) {
 			return false;
-		} else if (c == ':') {
+		}
+
+		if (c == ':') {
 			return true;  // End of scheme
 		}
 	}

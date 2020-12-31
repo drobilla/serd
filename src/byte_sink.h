@@ -70,7 +70,9 @@ serd_byte_sink_write(const void* buf, size_t len, SerdByteSink* bsink)
 {
 	if (len == 0) {
 		return 0;
-	} else if (bsink->block_size == 1) {
+	}
+
+	if (bsink->block_size == 1) {
 		return bsink->sink(buf, len, bsink->stream);
 	}
 

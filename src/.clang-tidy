@@ -1,6 +1,5 @@
 Checks: >
   *,
-  -*-else-after-return,
   -*-magic-numbers,
   -*-uppercase-literal-suffix,
   -bugprone-branch-clone,
