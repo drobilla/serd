@@ -27,7 +27,7 @@
 #  include <io.h>
 #endif
 
-#if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
+#if USE_POSIX_FADVISE && USE_FILENO
 #  include <fcntl.h>
 #endif
 
@@ -141,7 +141,7 @@ serd_fopen(const char* path, const char* mode)
     return NULL;
   }
 
-#if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
+#if USE_POSIX_FADVISE && USE_FILENO
   posix_fadvise(fileno(fd), 0, 0, POSIX_FADV_SEQUENTIAL | POSIX_FADV_NOREUSE);
 #endif
 

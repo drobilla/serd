@@ -155,7 +155,7 @@ def configure(conf):
 
     conf.env.SERDI = [serdi_node.abspath()]
 
-    conf.write_config_header('serd_config.h', remove=False)
+    conf.define('SERD_NO_DEFAULT_CONFIG', 1)
 
     autowaf.display_summary(
         conf,
@@ -190,7 +190,7 @@ def build(bld):
 
     defines = []
     lib_args = {'export_includes': ['include'],
-                'includes':        ['.', 'include', './src'],
+                'includes':        ['include'],
                 'cflags':          ['-fvisibility=hidden'],
                 'lib':             ['m'],
                 'vnum':            SERD_VERSION,
@@ -220,7 +220,7 @@ def build(bld):
 
     if bld.env.BUILD_TESTS:
         coverage_flags = [''] if bld.env.NO_COVERAGE else ['--coverage']
-        test_args = {'includes':     ['.', 'include', './src'],
+        test_args = {'includes':     ['include'],
                      'cflags':       coverage_flags,
                      'linkflags':    coverage_flags,
                      'lib':          lib_args['lib'],
@@ -255,7 +255,7 @@ def build(bld):
         obj = bld(features     = 'c cprogram',
                   source       = 'src/serdi.c',
                   target       = 'serdi',
-                  includes     = ['.', 'include', './src'],
+                  includes     = ['include'],
                   use          = 'libserd',
                   lib          = lib_args['lib'],
                   install_path = '${BINDIR}')

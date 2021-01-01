@@ -21,7 +21,7 @@
 #include "serd_config.h"
 #include "serd_internal.h"
 
-#if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
+#if USE_POSIX_FADVISE && USE_FILENO
 #  include <fcntl.h>
 #endif
 
@@ -44,7 +44,7 @@ serd_fopen(const char* path, const char* mode)
     return NULL;
   }
 
-#if defined(HAVE_POSIX_FADVISE) && defined(HAVE_FILENO)
+#if USE_POSIX_FADVISE && USE_FILENO
   posix_fadvise(fileno(fd), 0, 0, POSIX_FADV_SEQUENTIAL);
 #endif
   return fd;
@@ -55,9 +55,9 @@ serd_malloc_aligned(const size_t alignment, const size_t size)
 {
 #if defined(_WIN32)
   return _aligned_malloc(size, alignment);
-#elif __STDC_VERSION__ >= 201112L && defined(HAVE_ALIGNED_ALLOC)
+#elif USE_ALIGNED_ALLOC
   return aligned_alloc(alignment, size);
-#elif defined(HAVE_POSIX_MEMALIGN)
+#elif USE_POSIX_MEMALIGN
   void*     ptr = NULL;
   const int ret = posix_memalign(&ptr, alignment, size);
   return ret ? NULL : ptr;
