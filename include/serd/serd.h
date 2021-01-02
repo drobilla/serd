@@ -25,11 +25,11 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#if defined(SERD_SHARED) && defined(SERD_INTERNAL) && defined(_WIN32)
+#if defined(_WIN32) && !defined(SERD_STATIC) && defined(SERD_INTERNAL)
 #  define SERD_API __declspec(dllexport)
-#elif defined(SERD_SHARED) && defined(_WIN32)
+#elif defined(_WIN32) && !defined(SERD_STATIC)
 #  define SERD_API __declspec(dllimport)
-#elif defined(SERD_SHARED) && defined(__GNUC__)
+#elif defined(__GNUC__)
 #  define SERD_API __attribute__((visibility("default")))
 #else
 #  define SERD_API

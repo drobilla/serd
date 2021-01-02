@@ -206,7 +206,7 @@ def build(bld):
             source          = lib_source,
             name            = 'libserd',
             target          = 'serd-%s' % SERD_MAJOR_VERSION,
-            defines         = defines + ['SERD_SHARED', 'SERD_INTERNAL'],
+            defines         = defines + ['SERD_INTERNAL'],
             **lib_args)
 
     # Static library
@@ -215,7 +215,7 @@ def build(bld):
             source          = lib_source,
             name            = 'libserd_static',
             target          = 'serd-%s' % SERD_MAJOR_VERSION,
-            defines         = defines + ['SERD_INTERNAL'],
+            defines         = defines + ['SERD_STATIC', 'SERD_INTERNAL'],
             **lib_args)
 
     if bld.env.BUILD_TESTS:
@@ -231,7 +231,7 @@ def build(bld):
             source       = lib_source,
             name         = 'libserd_profiled',
             target       = 'serd_profiled',
-            defines      = defines + ['SERD_INTERNAL'],
+            defines      = defines + ['SERD_STATIC', 'SERD_INTERNAL'],
             **test_args)
 
         # Test programs
@@ -247,7 +247,7 @@ def build(bld):
                 source       = prog[1],
                 use          = 'libserd_profiled',
                 target       = prog[0],
-                defines      = defines,
+                defines      = defines + ['SERD_STATIC'],
                 **test_args)
 
     # Utilities
