@@ -257,6 +257,12 @@ def dox_to_rst(index, lang, node):
 
         return " " + markup.strip()
 
+    if node.tag == "lsquo":
+        return "‘"
+
+    if node.tag == "rsquo":
+        return "’"
+
     if node.tag == "computeroutput":
         # assert len(node) == 0 FIXME
         return "``%s``" % node.text
