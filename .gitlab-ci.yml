@@ -220,6 +220,7 @@ pages:
     - mkdir -p .public/man
     - mkdir -p .public/c
     - mv build/doc/c/singlehtml .public/c/singlehtml
+    - mv build/doc/c/html .public/c/html
     - mv build/doc/serdi.html .public/man/serdi.html
     - mv .public public
   artifacts:

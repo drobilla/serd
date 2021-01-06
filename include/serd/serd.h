@@ -82,8 +82,8 @@ extern "C" {
 #endif
 
 /**
-   @defgroup serd Serd
-   A lightweight RDF syntax library.
+   @defgroup serd Serd C API
+   This is the complete public C API of serd.
    @{
 */
 

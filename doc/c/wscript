@@ -6,12 +6,9 @@ def build(bld):
 
     files = [
         ("../../resources/serd.svg", "sphinx/_static/serd.svg"),
-        ("../_static/custom.css", "sphinx/_static/custom.css"),
-        ("../_templates/about.html", "sphinx/_templates/about.html"),
-        ("../serd.rst", "sphinx/serd.rst"),
+        ("../summary.rst", "sphinx/summary.rst"),
         ("index.rst", "sphinx/index.rst"),
         ("overview.rst", "sphinx/overview.rst"),
-        ("reference.rst", "sphinx/reference.rst"),
     ]
 
     # Run Doxygen to generate XML documentation
@@ -33,10 +30,12 @@ def build(bld):
         source=index_xml,
         target="sphinx/api/")
 
-    # Run Sphinx to generate HTML documentation
     doc_dir = bld.env.DOCDIR + "/serd-%s/" % bld.env.SERD_MAJOR_VERSION
-    bld(features="sphinx",
-        sphinx_source=bld.path.get_bld().make_node("sphinx"),
-        sphinx_output_format="singlehtml",
-        sphinx_options=["-E", "-q"],
-        install_path=doc_dir + "c/singlehtml/")
+
+    # Run Sphinx to generate HTML documentation
+    for builder in ["html", "singlehtml"]:
+        bld(features="sphinx",
+            sphinx_source=bld.path.get_bld().make_node("sphinx"),
+            sphinx_output_format=builder,
+            sphinx_options=["-E", "-q", "-t", builder],
+            install_path=doc_dir + "c/%s/" % builder)

@@ -1,5 +1,10 @@
+####
+Serd
+####
+
+.. include:: summary.rst
+
 .. toctree::
 
-   serd
    overview
-   reference
+   api/serd
