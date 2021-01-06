@@ -548,28 +548,7 @@ def symbol_filename(name):
     return name.replace("::", "__")
 
 
-def emit_symbols(index, lang, symbol_dir, force):
-    """Write a description file for every symbol documented in the index."""
-
-    for record in index.values():
-        if (
-            record["kind"] in ["group", "namespace"]
-            or "parent" in record
-            and index[record["parent"]]["kind"] != "group"
-        ):
-            continue
-
-        name = record["name"]
-        filename = os.path.join(symbol_dir, symbol_filename("%s.rst" % name))
-        if not force and os.path.exists(filename):
-            raise FileExistsError("File already exists: '%s'" % filename)
-
-        with open(filename, "w") as rst:
-            rst.write(heading(local_name(name), 3))
-            rst.write(document_markup(index, lang, record))
-
-
-def emit_groups(index, output_dir, symbol_dir_name, force):
+def emit_groups(index, lang, output_dir, force):
     """Write a description file for every group documented in the index."""
 
     for record in index.values():
@@ -582,17 +561,17 @@ def emit_groups(index, output_dir, symbol_dir_name, force):
             raise FileExistsError("File already exists: '%s'" % filename)
 
         with open(filename, "w") as rst:
-            rst.write(heading(record["title"], 2))
+            rst.write(heading(record["title"], 1))
 
             # Get all child group and symbol names
-            group_names = []
-            symbol_names = []
+            child_groups = {}
+            child_symbols = {}
             for child_id in record["children"]:
                 child = index[child_id]
                 if child["kind"] == "group":
-                    group_names += [child["name"]]
+                    child_groups[child["name"]] = child
                 else:
-                    symbol_names += [child["name"]]
+                    child_symbols[child["name"]] = child
 
             # Emit description (document body)
             if len(record["briefdescription"]) > 0:
@@ -600,24 +579,20 @@ def emit_groups(index, output_dir, symbol_dir_name, force):
             if len(record["detaileddescription"]) > 0:
                 rst.write(record["detaileddescription"] + "\n\n")
 
-            # Emit TOC
-            rst.write(".. toctree::\n")
-
-            # Emit groups at the top of the TOC
-            for group_name in group_names:
-                rst.write("\n" + indent(group_name, 1))
+            if len(child_groups) > 0:
+                # Emit TOC for child groups
+                rst.write(".. toctree::\n\n")
+                for name, group in child_groups.items():
+                    rst.write(indent(group["name"], 1) + "\n")
 
             # Emit symbols in sorted order
-            for symbol_name in sorted(symbol_names):
-                path = "/".join(
-                    [symbol_dir_name, symbol_filename(symbol_name)]
-                )
-                rst.write("\n" + indent(path, 1))
-
-            rst.write("\n")
+            for name, symbol in child_symbols.items():
+                rst.write("\n")
+                rst.write(document_markup(index, lang, symbol))
+                rst.write("\n")
 
 
-def run(index_xml_path, output_dir, symbol_dir_name, language, force):
+def run(index_xml_path, output_dir, language, force):
     """Write a directory of Sphinx files from a Doxygen XML directory."""
 
     # Build skeleton index from index.xml
@@ -639,11 +614,14 @@ def run(index_xml_path, output_dir, symbol_dir_name, language, force):
     for root in definition_docs:
         read_definition_doc(index, language, root)
 
+    # Create output directory
+    try:
+        os.makedirs(output_dir)
+    except OSError:
+        pass
+
     # Emit output files
-    symbol_dir = os.path.join(output_dir, symbol_dir_name)
-    os.makedirs(symbol_dir, exist_ok=True)
-    emit_symbols(index, language, symbol_dir, force)
-    emit_groups(index, output_dir, symbol_dir_name, force)
+    emit_groups(index, language, output_dir, force)
 
 
 if __name__ == "__main__":
@@ -666,13 +644,6 @@ if __name__ == "__main__":
         default="c",
         choices=["c", "cpp"],
         help="language domain for output",
-    )
-
-    ap.add_argument(
-        "-s",
-        "--symbol-dir-name",
-        default="symbols",
-        help="name for subdirectory of symbol documentation files",
     )
 
     ap.add_argument("index_xml_path", help="path index.xml from Doxygen")
