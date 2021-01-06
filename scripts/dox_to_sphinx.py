@@ -264,7 +264,7 @@ def dox_to_rst(index, lang, node):
         return "’"
 
     if node.tag == "computeroutput":
-        # assert len(node) == 0 FIXME
+        assert len(node) == 0
         return "``%s``" % node.text
 
     if node.tag == "itemizedlist":
