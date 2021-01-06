@@ -238,7 +238,7 @@ def heading(text, level):
     chars = ("#", "*", "=", "-", "^", '"')
     line = chars[level] * len(text)
 
-    return "%s\n%s\n%s\n\n" % (line if level < 3 else "", text, line)
+    return "%s%s\n%s\n\n" % (line + "\n" if level < 3 else "", text, line)
 
 
 def dox_to_rst(index, lang, node):
@@ -338,7 +338,7 @@ def description_markup(index, lang, node):
     assert not (node.tag == "briefdescription" and len(node) > 1)
     assert len(node.text.strip()) == 0
 
-    return "".join([dox_to_rst(index, lang, child) for child in node])
+    return "".join([dox_to_rst(index, lang, child) for child in node]).strip()
 
 
 def set_descriptions(index, lang, definition, record):
@@ -511,9 +511,9 @@ def document_markup(index, lang, record):
     markup += ".. %s:: %s\n" % (role, declaration_string(record))
 
     # Write main description blurb
-    markup += "\n"
-    markup += indent(record["briefdescription"], 1)
-    markup += indent(record["detaileddescription"], 1)
+    markup += "\n" + indent(record["briefdescription"] + "\n", 1)
+    if len(record["detaileddescription"]) > 0:
+        markup += "\n" + indent(record["detaileddescription"], 1) + "\n"
 
     assert (
         kind in ["class", "enum", "namespace", "struct", "union"]
@@ -524,7 +524,7 @@ def document_markup(index, lang, record):
     child_indent = 0 if kind == "namespace" else 1
 
     # Write inline children if applicable
-    markup += "\n"
+    markup += "\n" if "children" in record else ""
     for child_id in record.get("children", []):
         child_record = index[child_id]
         child_role = sphinx_role(child_record, lang)
@@ -538,7 +538,6 @@ def document_markup(index, lang, record):
         markup += indent(child_header, child_indent)
         markup += indent(child_record["briefdescription"], child_indent + 1)
         markup += indent(child_record["detaileddescription"], child_indent + 1)
-        markup += "\n"
 
     return markup
 
@@ -596,8 +595,10 @@ def emit_groups(index, output_dir, symbol_dir_name, force):
                     symbol_names += [child["name"]]
 
             # Emit description (document body)
-            rst.write(record["briefdescription"] + "\n\n")
-            rst.write(record["detaileddescription"] + "\n\n")
+            if len(record["briefdescription"]) > 0:
+                rst.write(record["briefdescription"] + "\n\n")
+            if len(record["detaileddescription"]) > 0:
+                rst.write(record["detaileddescription"] + "\n\n")
 
             # Emit TOC
             rst.write(".. toctree::\n")
