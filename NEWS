@@ -1,4 +1,4 @@
-serd (0.30.7) unstable;
+serd (0.30.8) stable;
 
   * Deprecate serd_uri_to_path()
   * Don't install API man pages
@@ -10,7 +10,7 @@ serd (0.30.7) unstable;
   * Split up and reorganize unit tests
   * Use aligned allocation via C11 or Windows API where possible
 
- -- David Robillard <d@drobilla.net>  Fri, 01 Jan 2021 13:16:40 +0000
+ -- David Robillard <d@drobilla.net>  Thu, 07 Jan 2021 21:19:36 +0000
 
 serd (0.30.6) stable;
 
