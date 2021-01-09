@@ -189,23 +189,28 @@ serd_node_new_file_uri(const uint8_t* path,
 {
   const size_t path_len     = strlen((const char*)path);
   const size_t hostname_len = hostname ? strlen((const char*)hostname) : 0;
-  const bool   evil         = is_windows_path(path);
+  const bool   is_windows   = is_windows_path(path);
   size_t       uri_len      = 0;
   uint8_t*     uri          = NULL;
 
-  if (path[0] == '/' || is_windows_path(path)) {
-    uri_len = strlen("file://") + hostname_len + evil;
+  if (path[0] == '/' || is_windows) {
+    uri_len = strlen("file://") + hostname_len + is_windows;
     uri     = (uint8_t*)malloc(uri_len + 1);
-    snprintf((char*)uri,
-             uri_len + 1,
-             "file://%s%s",
-             hostname ? (const char*)hostname : "",
-             evil ? "/" : "");
+
+    strcpy((char*)uri, "file://");
+
+    if (hostname) {
+      strcpy((char*)uri + 7, (char*)hostname);
+    }
+
+    if (is_windows) {
+      ((char*)uri)[7 + hostname_len] = '/';
+    }
   }
 
   SerdChunk chunk = {uri, uri_len};
   for (size_t i = 0; i < path_len; ++i) {
-    if (evil && path[i] == '\\') {
+    if (is_windows && path[i] == '\\') {
       serd_chunk_sink("/", 1, &chunk);
     } else if (path[i] == '%') {
       serd_chunk_sink("%%", 2, &chunk);
