@@ -150,7 +150,7 @@ w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
   va_end(args);
 }
 
-static inline WriteContext*
+static inline SERD_PURE_FUNC WriteContext*
 anon_stack_top(SerdWriter* writer)
 {
   assert(!serd_stack_is_empty(&writer->anon_stack));

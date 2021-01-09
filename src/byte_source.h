@@ -70,7 +70,7 @@ serd_byte_source_prepare(SerdByteSource* source);
 SerdStatus
 serd_byte_source_page(SerdByteSource* source);
 
-static inline uint8_t
+static inline SERD_PURE_FUNC uint8_t
 serd_byte_source_peek(SerdByteSource* source)
 {
   assert(source->prepared);
