@@ -361,6 +361,8 @@ typedef size_t (*SerdSink)(const void* SERD_NONNULL buf,
 static const SerdURI SERD_URI_NULL =
   {{NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}};
 
+#ifndef SERD_DISABLE_DEPRECATED
+
 /**
    Return the local path for `uri`, or NULL if `uri` is not a file URI.
    Note this (inappropriately named) function only removes the file scheme if
@@ -372,6 +374,8 @@ SERD_API
 SERD_DEPRECATED_BY("serd_file_uri_parse")
 const uint8_t* SERD_NULLABLE
 serd_uri_to_path(const uint8_t* SERD_NONNULL uri);
+
+#endif
 
 /**
    Get the unescaped path and hostname from a file URI.
