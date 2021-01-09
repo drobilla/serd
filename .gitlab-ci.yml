@@ -1,231 +1,168 @@
-stages: [build, test, deploy]
-
-variables:
-  GIT_SUBMODULE_STRATEGY: normal
+stages:
+  - build
+  - deploy
 
 .build_template: &build_definition
   stage: build
-  artifacts:
-    paths: ["build/", ".lock-waf*"]
-
-.test_template: &test_definition
-  stage: test
-  artifacts:
-    paths: [build/coverage]
-
 
 arm32_dbg:
   <<: *build_definition
   image: lv2plugin/debian-arm32
-  script: python ./waf configure build -dST --werror
-  variables:
-    CC: "arm-linux-gnueabihf-gcc"
-    CXX: "arm-linux-gnueabihf-g++"
-
-test:arm32_dbg:
-  <<: *test_definition
-  image: lv2plugin/debian-arm32
-  script: python ./waf test --wrapper=qemu-arm
-  needs: ["arm32_dbg"]
-
+  script:
+    - meson setup build --cross-file=/usr/share/meson/cross/arm-linux-gnueabihf.ini -Dbuildtype=debug -Ddocs=disabled -Dstrict=true -Dwerror=true
+    - ninja -C build test
 
 arm32_rel:
   <<: *build_definition
   image: lv2plugin/debian-arm32
-  script: python ./waf configure build -ST --werror
-  variables:
-    CC: "arm-linux-gnueabihf-gcc"
-    CXX: "arm-linux-gnueabihf-g++"
-
-test:arm32_rel:
-  <<: *test_definition
-  image: lv2plugin/debian-arm32
-  script: python ./waf test --wrapper=qemu-arm
-  needs: ["arm32_rel"]
+  script:
+    - meson setup build --cross-file=/usr/share/meson/cross/arm-linux-gnueabihf.ini -Dbuildtype=release -Ddocs=disabled -Dstrict=true -Dwerror=true
+    - ninja -C build test
 
 
 arm64_dbg:
   <<: *build_definition
   image: lv2plugin/debian-arm64
-  script: python ./waf configure build -dST --werror
-  variables:
-    CC: "aarch64-linux-gnu-gcc"
-    CXX: "aarch64-linux-gnu-g++"
-
-test:arm64_dbg:
-  <<: *test_definition
-  image: lv2plugin/debian-arm64
-  script: python ./waf test --wrapper=qemu-aarch64
-  needs: ["arm64_dbg"]
-
+  script:
+    - meson setup build --cross-file=/usr/share/meson/cross/aarch64-linux-gnu.ini -Dbuildtype=debug -Ddocs=disabled -Dstrict=true -Dwerror=true
+    - ninja -C build test
 
 arm64_rel:
   <<: *build_definition
   image: lv2plugin/debian-arm64
-  script: python ./waf configure build -ST --werror
-  variables:
-    CC: "aarch64-linux-gnu-gcc"
-    CXX: "aarch64-linux-gnu-g++"
-
-test:arm64_rel:
-  <<: *test_definition
-  image: lv2plugin/debian-arm64
-  script: python ./waf test --wrapper=qemu-aarch64
-  needs: ["arm64_rel"]
+  script:
+    - meson setup build --cross-file=/usr/share/meson/cross/aarch64-linux-gnu.ini -Dbuildtype=release -Ddocs=disabled -Dstrict=true -Dwerror=true
+    - ninja -C build test
 
 
 x64_dbg:
   <<: *build_definition
   image: lv2plugin/debian-x64
-  script: python ./waf configure build -dST --werror --docs
-
-test:x64_dbg:
-  <<: *test_definition
-  image: lv2plugin/debian-x64
   script:
-    - python ./waf test
+    - meson setup build -Dbuildtype=debug -Ddocs=enabled -Dstrict=true -Dwerror=true
+    - ninja -C build test
+    - ninja -C build coverage-html
     - mkdir -p build/doc/
     - cp doc/*.svg build/doc/
     - cp doc/mandoc.css build/doc/
     - mandoc -Thtml -Werror -O style=mandoc.css doc/serdi.1 > build/doc/serdi.html
-  needs: ["x64_dbg"]
   artifacts:
     paths:
       - build/doc
-      - build/coverage
-
+      - build/meson-logs/coveragereport
 
 x64_rel:
   <<: *build_definition
   image: lv2plugin/debian-x64
-  script: python ./waf configure build -ST --werror
-
-test:x64_rel:
-  <<: *test_definition
-  image: lv2plugin/debian-x64
-  script: python ./waf test
-  needs: ["x64_rel"]
+  script:
+    - meson setup build -Dbuildtype=release -Ddocs=disabled -Dstrict=true -Dwerror=true
+    - ninja -C build test
 
 
 x64_static:
   <<: *build_definition
   image: lv2plugin/debian-x64
-  script: python ./waf configure build -ST --werror --no-posix --static-progs
-
-test:x64_static:
-  <<: *test_definition
-  image: lv2plugin/debian-x64
-  script: python ./waf test
-  needs: ["x64_static"]
+  script:
+    - meson setup build -Ddefault_library=static -Ddocs=disabled -Dstrict=true -Dwerror=true
+    - ninja -C build test
 
 
 x64_sanitize:
   <<: *build_definition
   image: lv2plugin/debian-x64-clang
   script:
-    - python ./waf configure build -ST --werror --no-coverage
-    - python ./waf test
+    - meson setup build -Db_lundef=false -Dbuildtype=plain -Ddocs=disabled -Dstrict=true -Dwerror=true
+    - ninja -C build test
   variables:
     CC: "clang"
-    CFLAGS: "-fno-sanitize-recover=all -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=unsigned-integer-overflow -fsanitize=implicit-conversion -fsanitize=local-bounds -fsanitize=nullability"
     CXX: "clang++"
+    CFLAGS: "-fno-sanitize-recover=all -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=unsigned-integer-overflow -fsanitize=implicit-conversion -fsanitize=local-bounds -fsanitize=nullability"
     CXXFLAGS: "-fno-sanitize-recover=all -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=unsigned-integer-overflow -fsanitize=implicit-conversion -fsanitize=local-bounds -fsanitize=nullability"
-    LINKFLAGS: "-fno-sanitize-recover=all -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=unsigned-integer-overflow -fsanitize=implicit-conversion -fsanitize=local-bounds -fsanitize=nullability"
+    LDFLAGS: "-fno-sanitize-recover=all -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=unsigned-integer-overflow -fsanitize=implicit-conversion -fsanitize=local-bounds -fsanitize=nullability"
 
 
 mingw32_dbg:
   <<: *build_definition
   image: lv2plugin/debian-mingw32
-  script: python ./waf configure build -dST --werror --no-coverage
+  script:
+    - meson setup build --cross-file=/usr/share/meson/cross/i686-w64-mingw32.ini -Dbuildtype=debug -Ddocs=disabled -Dstrict=true -Dwerror=true
+    - ninja -C build test
   variables:
-    CC: "i686-w64-mingw32-gcc"
-    CXX: "i686-w64-mingw32-g++"
+    MESON_TESTTHREADS: "1"
+    WINEPATH: "Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\8.3-win32"
 
 mingw32_rel:
   <<: *build_definition
   image: lv2plugin/debian-mingw32
-  script: python ./waf configure build -ST --werror --no-coverage
+  script:
+    - meson setup build --cross-file=/usr/share/meson/cross/i686-w64-mingw32.ini -Dbuildtype=release -Ddocs=disabled -Dstrict=true -Dwerror=true
+    - ninja -C build test
   variables:
-    CC: "i686-w64-mingw32-gcc"
-    CXX: "i686-w64-mingw32-g++"
+    MESON_TESTTHREADS: "1"
+    WINEPATH: "Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\8.3-win32"
 
 
 mingw64_dbg:
   <<: *build_definition
   image: lv2plugin/debian-mingw64
-  script: python ./waf configure build -dST --werror --no-coverage
+  script:
+    - meson setup build --cross-file=/usr/share/meson/cross/x86_64-w64-mingw32.ini -Dbuildtype=debug -Ddocs=disabled -Dstrict=true -Dwerror=true
+    - ninja -C build test
   variables:
-    CC: "x86_64-w64-mingw32-gcc"
-    CXX: "x86_64-w64-mingw32-g++"
+    MESON_TESTTHREADS: "1"
 
 mingw64_rel:
   <<: *build_definition
   image: lv2plugin/debian-mingw64
-  script: python ./waf configure build -ST --werror --no-coverage
+  script:
+    - meson setup build --cross-file=/usr/share/meson/cross/x86_64-w64-mingw32.ini -Dbuildtype=release -Ddocs=disabled -Dstrict=true -Dwerror=true
+    - ninja -C build test
   variables:
-    CC: "x86_64-w64-mingw32-gcc"
-    CXX: "x86_64-w64-mingw32-g++"
+    MESON_TESTTHREADS: "1"
 
 
 mac_dbg:
   <<: *build_definition
-  script: python ./waf configure build -dST --werror --no-coverage
   tags: [macos]
-
-test:mac_dbg:
-  <<: *test_definition
-  script: python ./waf test
-  needs: ["mac_dbg"]
-  tags: [macos]
-
+  script:
+    - meson setup build -Dbuildtype=debug -Ddocs=disabled -Dstrict=true -Dwerror=true
+    - ninja -C build test
 
 mac_rel:
   <<: *build_definition
-  script: python ./waf configure build -ST --werror --no-coverage
   tags: [macos]
-
-test:mac_rel:
-  <<: *test_definition
-  script: python ./waf test
-  needs: ["mac_rel"]
-  tags: [macos]
+  script:
+    - meson setup build -Dbuildtype=release -Ddocs=disabled -Dstrict=true -Dwerror=true
+    - ninja -C build test
 
 
 win_dbg:
   <<: *build_definition
-  script: python ./waf configure build -dST --werror --no-coverage
-  tags: [windows,msvc,python]
-
-test:win_dbg:
-  <<: *test_definition
-  script: python ./waf test
-  needs: ["win_dbg"]
-  tags: [windows,msvc,python]
-
+  tags: [windows,meson]
+  script:
+    - meson setup build -Dbuildtype=debug -Ddocs=disabled -Dstrict=true -Dwerror=true
+    - ninja -C build test
 
 win_rel:
   <<: *build_definition
-  script: python ./waf configure build -ST --werror --no-coverage
-  tags: [windows,msvc,python]
-
-test:win_rel:
-  <<: *test_definition
-  script: python ./waf test
-  needs: ["win_rel"]
-  tags: [windows,msvc,python]
-
+  tags: [windows,meson]
+  script:
+    - meson setup build -Dbuildtype=release -Ddocs=disabled -Dstrict=true -Dwerror=true
+    - ninja -C build test
 
 pages:
   stage: deploy
   script:
-    - mkdir -p .public/doc
-    - mkdir -p .public/man
-    - mkdir -p .public/c
-    - mv build/doc/c/singlehtml .public/c/singlehtml
-    - mv build/doc/c/html .public/c/html
-    - mv build/doc/serdi.html .public/man/serdi.html
-    - mv build/doc/mandoc.css .public/man/mandoc.css
-    - mv .public public
+    - mkdir public
+    - mkdir public/c
+    - mkdir public/man
+    - mv build/meson-logs/coveragereport/ public/coverage
+    - mv build/doc/c/html/ public/c/html/
+    - mv build/doc/c/singlehtml/ public/c/singlehtml/
+    - mv build/doc/serdi.html public/man/serdi.html
+    - mv build/doc/mandoc.css public/man/mandoc.css
+  dependencies:
+    - x64_dbg
   artifacts:
     paths:
       - public
