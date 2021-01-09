@@ -49,7 +49,7 @@
 #    if !defined(__APPLE__) && !defined(_WIN32)
 #      if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 #        define HAVE_ALIGNED_ALLOC
-#      elif defined(__cplusplus) && __cplusplus >= 201103L)
+#      elif defined(__cplusplus) && __cplusplus >= 201103L
 #        define HAVE_ALIGNED_ALLOC
 #      endif
 #    endif
