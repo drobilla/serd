@@ -362,185 +362,6 @@ def amalgamate(ctx):
         Logs.info('Wrote build/serd.%s' % i)
 
 
-def earl_assertion(test, passed, asserter):
-    import datetime
-
-    asserter_str = ''
-    if asserter is not None:
-        asserter_str = '\n\tearl:assertedBy <%s> ;' % asserter
-
-    return '''
-[]
-	a earl:Assertion ;%s
-	earl:subject <http://drobilla.net/sw/serd> ;
-	earl:test <%s> ;
-	earl:result [
-		a earl:TestResult ;
-		earl:outcome %s ;
-		dc:date "%s"^^xsd:dateTime
-	] .
-''' % (asserter_str,
-       test,
-       'earl:passed' if passed else 'earl:failed',
-       datetime.datetime.now().replace(microsecond=0).isoformat())
-
-
-serdi = './serdi_static'
-
-
-def test_thru(check, base, path, check_path, flags, isyntax, osyntax, opts=[]):
-    out_path = path + '.pass'
-    out_cmd = [serdi] + opts + [f for sublist in flags for f in sublist] + [
-        '-i', isyntax,
-        '-o', isyntax,
-        '-p', 'foo',
-        check.tst.src_path(path), base]
-
-    thru_path = path + '.thru'
-    thru_cmd = [serdi] + opts + [
-        '-i', isyntax,
-        '-o', osyntax,
-        '-c', 'foo',
-        out_path,
-        base]
-
-    return (check(out_cmd, stdout=out_path, verbosity=0, name=out_path) and
-            check(thru_cmd, stdout=thru_path, verbosity=0, name=thru_path) and
-            check.file_equals(check_path, thru_path, verbosity=0))
-
-
-def file_uri_to_path(uri):
-    try:
-        from urlparse import urlparse  # Python 2
-    except ImportError:
-        from urllib.parse import urlparse  # Python 3
-
-    path  = urlparse(uri).path
-    drive = os.path.splitdrive(path[1:])[0]
-    return path if not drive else path[1:]
-
-
-def _test_output_syntax(test_class):
-    if 'NTriples' in test_class or 'Turtle' in test_class:
-        return 'NTriples'
-    elif 'NQuads' in test_class or 'Trig' in test_class:
-        return 'NQuads'
-    raise Exception('Unknown test class <%s>' % test_class)
-
-
-def _wrapped_command(cmd):
-    if Options.options.wrapper:
-        import shlex
-        return shlex.split(Options.options.wrapper) + cmd
-
-    return cmd
-
-
-def _load_rdf(filename):
-    "Load an RDF file into python dictionaries via serdi.  Only supports URIs."
-    import subprocess
-    import re
-
-    rdf_type = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
-    model = {}
-    instances = {}
-
-    cmd = _wrapped_command(['./serdi_static', filename])
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    for line in proc.communicate()[0].splitlines():
-        matches = re.match(r'<([^ ]*)> <([^ ]*)> <([^ ]*)> \.',
-                           line.decode('utf-8'))
-        if matches:
-            s, p, o = (matches.group(1), matches.group(2), matches.group(3))
-            if s not in model:
-                model[s] = {p: [o]}
-            elif p not in model[s]:
-                model[s][p] = [o]
-            else:
-                model[s][p].append(o)
-
-            if p == rdf_type:
-                if o not in instances:
-                    instances[o] = set([s])
-                else:
-                    instances[o].update([s])
-
-    return model, instances
-
-
-def _option_combinations(options):
-    "Return an iterator that cycles through all combinations of options"
-    import itertools
-
-    combinations = []
-    for n in range(len(options) + 1):
-        combinations += list(itertools.combinations(options, n))
-
-    return itertools.cycle(combinations)
-
-
-def test_suite(ctx, base_uri, testdir, report, isyntax, options=[]):
-    srcdir = ctx.path.abspath()
-
-    mf = 'http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#'
-    manifest_path = os.path.join(srcdir, 'test', testdir, 'manifest.ttl')
-    model, instances = _load_rdf(manifest_path)
-
-    asserter = ''
-    if os.getenv('USER') == 'drobilla':
-        asserter = 'http://drobilla.net/drobilla#me'
-
-    def run_tests(test_class, tests, expected_return):
-        thru_flags = [['-e'], ['-f'], ['-b'], ['-r', 'http://example.org/']]
-        osyntax = _test_output_syntax(test_class)
-        thru_options_iter = _option_combinations(thru_flags)
-        tests_name = '%s.%s' % (testdir, test_class[test_class.find('#') + 1:])
-        with ctx.group(tests_name) as check:
-            for test in sorted(tests):
-                action_node = model[test][mf + 'action'][0]
-                basename    = os.path.basename(action_node)
-                action      = os.path.join('test', testdir, basename)
-                rel_action  = os.path.join(os.path.relpath(srcdir), action)
-                uri         = base_uri + os.path.basename(action)
-                command     = [serdi] + options + ['-f', rel_action, uri]
-
-                # Run strict test
-                if expected_return == 0:
-                    result = check(command,
-                                   stdout=action + '.out',
-                                   name=action)
-                else:
-                    result = check(command,
-                                   stdout=action + '.out',
-                                   stderr=autowaf.NONEMPTY,
-                                   expected=expected_return,
-                                   name=action)
-
-                if (result and expected_return == 0 and
-                    ((mf + 'result') in model[test])):
-                    # Check output against test suite
-                    check_uri  = model[test][mf + 'result'][0]
-                    check_path = ctx.src_path(file_uri_to_path(check_uri))
-                    result     = check.file_equals(action + '.out', check_path)
-
-                    # Run round-trip tests
-                    if result:
-                        test_thru(check, uri, action, check_path,
-                                  list(next(thru_options_iter)),
-                                  isyntax, osyntax, options)
-
-                # Write test report entry
-                if report is not None:
-                    report.write(earl_assertion(test, result, asserter))
-
-    ns_rdftest = 'http://www.w3.org/ns/rdftest#'
-    for test_class, instances in instances.items():
-        if test_class.startswith(ns_rdftest):
-            expected = (1 if '-l' not in options and 'Negative' in test_class
-                        else 0)
-            run_tests(test_class, instances, expected)
-
-
 def test(tst):
     import tempfile
 
@@ -555,6 +376,7 @@ def test(tst):
         except Exception:
             pass
 
+    serdi = './serdi_static'
     srcdir = tst.path.abspath()
 
     with tst.group('Unit') as check:
@@ -638,27 +460,45 @@ def test(tst):
         except ImportError:
             Logs.warn('Failed to import rdflib, not running NEWS tests')
 
-    # Serd-specific test suites
-    serd_base = 'http://drobilla.net/sw/serd/test/'
-    test_suite(tst, serd_base + 'good/', 'good', None, 'Turtle')
-    test_suite(tst, serd_base + 'bad/', 'bad', None, 'Turtle')
-    test_suite(tst, serd_base + 'lax/', 'lax', None, 'Turtle', ['-l'])
-    test_suite(tst, serd_base + 'lax/', 'lax', None, 'Turtle')
+    run_test_suite = ['../test/run_test_suite.py', '--serdi', './serdi_static']
 
-    # Standard test suites
-    with open('earl.ttl', 'w') as report:
-        report.write('@prefix earl: <http://www.w3.org/ns/earl#> .\n'
-                     '@prefix dc: <http://purl.org/dc/elements/1.1/> .\n')
+    with tst.group('TestSuites') as check:
+        # Run serd-specific test suites
+        serd_base = 'http://drobilla.net/sw/serd/test/'
+        check(run_test_suite + ['../test/good/manifest.ttl', serd_base + 'good/'])
+        check(run_test_suite + ['../test/bad/manifest.ttl', serd_base + 'bad/'])
+        check(run_test_suite + ['../test/lax/manifest.ttl', serd_base + 'lax/', '--', '-l'])
+        check(run_test_suite + ['../test/lax/manifest.ttl', serd_base + 'lax/'])
 
-        with open(os.path.join(srcdir, 'serd.ttl')) as serd_ttl:
-            report.writelines(serd_ttl)
+        # Start test report for standard test suites
+        report_filename = 'earl.ttl'
+        with open(report_filename, 'w') as report:
+            report.write('@prefix earl: <http://www.w3.org/ns/earl#> .\n'
+                         '@prefix dc: <http://purl.org/dc/elements/1.1/> .\n')
 
+            with open(os.path.join(srcdir, 'serd.ttl')) as serd_ttl:
+                report.writelines(serd_ttl)
+
+        # Run standard test suites
         w3c_base = 'http://www.w3.org/2013/'
-        test_suite(tst, w3c_base + 'TurtleTests/',
-                   'TurtleTests', report, 'Turtle')
-        test_suite(tst, w3c_base + 'NTriplesTests/',
-                   'NTriplesTests', report, 'NTriples')
-        test_suite(tst, w3c_base + 'NQuadsTests/',
-                   'NQuadsTests', report, 'NQuads')
-        test_suite(tst, w3c_base + 'TriGTests/',
-                   'TriGTests', report, 'Trig', ['-a'])
+
+        check(run_test_suite + [
+            '--syntax', 'Turtle',
+            '--report', report_filename,
+            '../test/TurtleTests/manifest.ttl', w3c_base + 'TurtleTests/'])
+
+        check(run_test_suite + [
+            '--syntax', 'NTriples',
+            '--report', report_filename,
+            '../test/NTriplesTests/manifest.ttl', w3c_base + 'NTriplesTests/'])
+
+        check(run_test_suite + [
+            '--syntax', 'NQuads',
+            '--report', report_filename,
+            '../test/NQuadsTests/manifest.ttl', w3c_base + 'NQuadsTests/'])
+
+        check(run_test_suite + [
+            '--syntax', 'TriG',
+            '--report', report_filename,
+            '../test/TriGTests/manifest.ttl', w3c_base + 'TriGTests/',
+            '--', '-a'])
