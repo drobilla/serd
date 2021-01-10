@@ -62,7 +62,7 @@
   SERD_CONST_FUNC
 
 #ifndef SERD_DISABLE_DEPRECATED
-#  if defined(__clang__)
+#  if defined(__clang__) && __clang_major__ >= 7
 #    define SERD_DEPRECATED_BY(rep) __attribute__((deprecated("", rep)))
 #  elif defined(__GNUC__) && __GNUC__ > 4
 #    define SERD_DEPRECATED_BY(rep) __attribute__((deprecated("Use " rep)))
