@@ -195,12 +195,12 @@ serd_node_new_file_uri(const uint8_t* path,
 
   if (path[0] == '/' || is_windows) {
     uri_len = strlen("file://") + hostname_len + is_windows;
-    uri     = (uint8_t*)malloc(uri_len + 1);
+    uri     = (uint8_t*)calloc(uri_len + 1, 1);
 
-    strcpy((char*)uri, "file://");
+    memcpy(uri, "file://", 7);
 
     if (hostname) {
-      strcpy((char*)uri + 7, (char*)hostname);
+      memcpy(uri + 7, hostname, hostname_len);
     }
 
     if (is_windows) {
