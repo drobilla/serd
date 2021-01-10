@@ -43,7 +43,7 @@
 #  define SERD_CONST_FUNC
 #endif
 
-#ifdef __clang__
+#if defined(__clang__) && __clang_major__ >= 7
 #  define SERD_NONNULL _Nonnull
 #  define SERD_NULLABLE _Nullable
 #  define SERD_ALLOCATED _Null_unspecified
