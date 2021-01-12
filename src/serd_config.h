@@ -19,10 +19,10 @@
 
   This allows compile-time configuration from the command line (typically via
   the build system) while still allowing the source to be built without any
-  configuration.  The build system can define SERD_NO_DEFAULT_CONFIG to disable
-  defaults, in which case it must define things like HAVE_FEATURE to enable
-  features.  The design here ensures that compiler warnings or
-  include-what-you-use will catch any mistakes.
+  configuration.  Each feature symbol can be defined one of three ways: 0 for
+  explicitly disabled, 1 for explicitly enabled, and undefined for automatic
+  detection.  You can also define SERD_NO_DEFAULT_CONFIG to disable defaults,
+  in which case every symbol should be explicitly defined.
 */
 
 #ifndef SERD_CONFIG_H
@@ -45,71 +45,47 @@
 #  endif
 
 // C99 and C++11: aligned_alloc()
-#  ifndef HAVE_ALIGNED_ALLOC
-#    if !defined(__APPLE__) && !defined(_WIN32)
-#      if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-#        define HAVE_ALIGNED_ALLOC
-#      elif defined(__cplusplus) && __cplusplus >= 201103L
-#        define HAVE_ALIGNED_ALLOC
-#      endif
+#  ifndef USE_ALIGNED_ALLOC
+#    if defined(__APPLE__) || defined(_WIN32)
+#      define USE_ALIGNED_ALLOC 0
+#    elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#      define USE_ALIGNED_ALLOC 1
+#    elif defined(__cplusplus) && __cplusplus >= 201103L
+#      define USE_ALIGNED_ALLOC 1
+#    else
+#      define USE_ALIGNED_ALLOC 0
 #    endif
 #  endif
 
 // POSIX.1-2001: fileno()
-#  ifndef HAVE_FILENO
+#  ifndef USE_FILENO
 #    if defined(_POSIX_VERSION) && _POSIX_VERSION >= 200112L
-#      define HAVE_FILENO
+#      define USE_FILENO 1
+#    else
+#      define USE_FILENO 0
 #    endif
 #  endif
 
 // POSIX.1-2001: posix_fadvise()
-#  ifndef HAVE_POSIX_FADVISE
-#    ifndef __APPLE__
-#      if defined(_POSIX_VERSION) && _POSIX_VERSION >= 200112L
-#        define HAVE_POSIX_FADVISE
-#      endif
+#  ifndef USE_POSIX_FADVISE
+#    if defined(__APPLE__)
+#      define USE_POSIX_FADVISE 0
+#    elif defined(_POSIX_VERSION) && _POSIX_VERSION >= 200112L
+#      define USE_POSIX_FADVISE 1
+#    else
+#      define USE_POSIX_FADVISE 0
 #    endif
 #  endif
 
 // POSIX.1-2001: posix_memalign()
-#  ifndef HAVE_POSIX_MEMALIGN
+#  ifndef USE_POSIX_MEMALIGN
 #    if defined(_POSIX_VERSION) && _POSIX_VERSION >= 200112L
-#      define HAVE_POSIX_MEMALIGN
+#      define USE_POSIX_MEMALIGN 1
+#    else
+#      define USE_POSIX_MEMALIGN 0
 #    endif
 #  endif
 
 #endif // !defined(SERD_NO_DEFAULT_CONFIG)
-
-/*
-  Make corresponding USE_FEATURE defines based on the HAVE_FEATURE defines from
-  above or the command line.  The code checks for these using #if (not #ifdef),
-  so there will be an undefined warning if it checks for an unknown feature,
-  and this header is always required by any code that checks for features, even
-  if the build system defines them all.
-*/
-
-#ifdef HAVE_ALIGNED_ALLOC
-#  define USE_ALIGNED_ALLOC 1
-#else
-#  define USE_ALIGNED_ALLOC 0
-#endif
-
-#ifdef HAVE_FILENO
-#  define USE_FILENO 1
-#else
-#  define USE_FILENO 0
-#endif
-
-#ifdef HAVE_POSIX_FADVISE
-#  define USE_POSIX_FADVISE 1
-#else
-#  define USE_POSIX_FADVISE 0
-#endif
-
-#ifdef HAVE_POSIX_MEMALIGN
-#  define USE_POSIX_MEMALIGN 1
-#else
-#  define USE_POSIX_MEMALIGN 0
-#endif
 
 #endif // SERD_CONFIG_H
