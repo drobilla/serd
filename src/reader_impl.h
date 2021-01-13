@@ -8,7 +8,6 @@
 #include "stack.h"
 
 #include "serd/env.h"
-#include "serd/error.h"
 #include "serd/node.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
@@ -21,8 +20,6 @@
 struct SerdReaderImpl {
   SerdWorld*      world;
   const SerdSink* sink;
-  SerdLogFunc     error_func;
-  void*           error_handle;
   SerdNode*       rdf_first;
   SerdNode*       rdf_rest;
   SerdNode*       rdf_nil;

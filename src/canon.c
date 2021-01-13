@@ -1,19 +1,19 @@
 // Copyright 2019-2024 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
+#include "log.h"
 #include "memory.h"
 #include "namespaces.h"
 #include "node_impl.h"
 #include "node_internal.h"
 #include "string_utils.h"
 #include "warnings.h"
-#include "world_internal.h"
 
 #include "exess/exess.h"
 #include "serd/canon.h"
 #include "serd/caret_view.h"
-#include "serd/error.h"
 #include "serd/event.h"
+#include "serd/log.h"
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/statement_view.h"
@@ -23,7 +23,7 @@
 #include "zix/attributes.h"
 
 #include <assert.h>
-#include <stdarg.h>
+#include <stdbool.h>
 #include <string.h>
 
 #define MAX_LANG_LEN 48 // RFC5646 requires 35, RFC4646 recommends 42
@@ -43,21 +43,6 @@ typedef struct {
   SerdNode node;
   char     buf[MAX_LANG_LEN];
 } SerdLangNode;
-
-static SerdStatus
-c_err(const SerdWorld* const world,
-      const SerdStatus       status,
-      const SerdCaretView    caret,
-      const char* const      fmt,
-      ...)
-{
-  va_list args; // NOLINT(cppcoreguidelines-init-variables)
-  va_start(args, fmt);
-  const SerdError e = {status, caret.document ? &caret : NULL, fmt, &args};
-  serd_world_error(world, &e);
-  va_end(args);
-  return status;
-}
 
 static SerdCanonicalNode
 build_typed(ZixAllocator* const ZIX_NONNULL   allocator,
@@ -161,18 +146,20 @@ serd_canon_on_statement(SerdCanonData* const          data,
   const ExessResult r           = node.result;
   const size_t      node_length = node.result.count;
   if (r.status) {
+    const bool lax = (data->flags & SERD_CANON_LAX);
+
     if (caret.document) {
       // Adjust column to point at the error within the literal
       caret.column = caret.column + 1U + (unsigned)node_length;
     }
 
-    c_err(data->world,
-          SERD_BAD_SYNTAX,
-          caret,
-          "invalid literal (%s)",
-          exess_strerror(r.status));
+    serd_logf_at(data->world,
+                 lax ? SERD_LOG_LEVEL_WARNING : SERD_LOG_LEVEL_ERROR,
+                 caret.document ? &caret : NULL,
+                 "invalid literal (%s)",
+                 exess_strerror(r.status));
 
-    if (!(data->flags & SERD_CANON_LAX)) {
+    if (!lax) {
       return r.status == EXESS_NO_SPACE ? SERD_BAD_ALLOC : SERD_BAD_LITERAL;
     }
   }

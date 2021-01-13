@@ -28,7 +28,7 @@
    @{
 */
 
-#include "serd/error.h"
+#include "serd/log.h"
 #include "serd/status.h"
 
 /**

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: ISC
 
 #include "block_dumper.h"
+#include "log.h"
 #include "memory.h"
 #include "namespaces.h"
 #include "node_internal.h"
@@ -12,11 +13,11 @@
 #include "turtle.h"
 #include "uri_utils.h"
 #include "warnings.h"
-#include "world_internal.h"
 
 #include "serd/env.h"
 #include "serd/event.h"
 #include "serd/field.h"
+#include "serd/log.h"
 #include "serd/node.h"
 #include "serd/output_stream.h"
 #include "serd/sink.h"
@@ -165,7 +166,7 @@ write_node(SerdWriter*             writer,
            SerdField               field,
            SerdStatementEventFlags flags);
 
-ZIX_NODISCARD static bool
+static bool
 supports_abbrev(const SerdWriter* writer)
 {
   return writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG;
@@ -195,7 +196,7 @@ w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
   va_list args; // NOLINT(cppcoreguidelines-init-variables)
   va_start(args, fmt);
 
-  serd_world_verrorf(writer->world, st, fmt, args);
+  serd_vlogf(writer->world, SERD_LOG_LEVEL_ERROR, fmt, args);
 
   va_end(args);
   return st;
@@ -1381,7 +1382,10 @@ serd_writer_end_anon(SerdWriter* const writer, const SerdNode* const node)
   }
 
   if (!writer->anon_stack_size) {
-    return w_err(writer, SERD_BAD_EVENT, "unexpected end of anonymous node");
+    return w_err(writer,
+                 SERD_BAD_EVENT,
+                 "unexpected end of anonymous node \"%s\"",
+                 serd_node_string(node));
   }
 
   // Write the end separator ']' and pop the context
