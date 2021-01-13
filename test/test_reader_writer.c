@@ -263,10 +263,11 @@ test_read_turtle_chunks(const char* const path)
   fwrite(&null, sizeof(null), 1, f);
   fseek(f, 0, SEEK_SET);
 
-  SerdWorld* const  world  = serd_world_new();
-  ReaderTest* const rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
-  SerdSink* const   sink   = serd_sink_new(rt, NULL);
-  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, sink, 512);
+  SerdWorld* const  world = serd_world_new();
+  ReaderTest* const rt    = (ReaderTest*)calloc(1, sizeof(ReaderTest));
+  SerdSink* const   sink  = serd_sink_new(rt, NULL);
+  SerdReader* const reader =
+    serd_reader_new(world, SERD_TURTLE, 0U, sink, 1024);
 
   assert(reader);
   assert(sink);
