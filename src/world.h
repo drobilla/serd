@@ -19,12 +19,13 @@
 
 #include "serd/serd.h"
 
+#include <stdbool.h>
 #include <stdint.h>
 
 struct SerdWorldImpl {
   SerdNodes*      nodes;
-  SerdErrorFunc   error_func;
-  void*           error_handle;
+  SerdLogFunc     log_func;
+  void*           log_handle;
   SerdNode*       blank_node;
   const SerdNode* rdf_first;
   const SerdNode* rdf_nil;
@@ -34,12 +35,8 @@ struct SerdWorldImpl {
   const SerdNode* xsd_decimal;
   const SerdNode* xsd_integer;
   uint32_t        next_blank_id;
+
+  bool stderr_color;
 };
-
-SerdStatus
-serd_world_error(const SerdWorld* world, const SerdError* e);
-
-SerdStatus
-serd_world_errorf(const SerdWorld* world, SerdStatus st, const char* fmt, ...);
 
 #endif // SERD_WORLD_H

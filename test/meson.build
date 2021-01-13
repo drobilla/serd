@@ -10,6 +10,7 @@ unit_tests = [
   'caret',
   'env',
   'free_null',
+  'log',
   'node',
   'nodes',
   'overflow',
@@ -100,6 +101,24 @@ if get_option('utils')
          should_fail: true,
          suite: ['serdi', 'options'])
   endforeach
+
+  test('ansi_clicolor_force',
+       serdi,
+       args: files('bad/bad-lang.ttl'),
+       env: test_env + ['CLICOLOR_FORCE=1'],
+       should_fail: true)
+
+  test('ansi_clicolor_off',
+       serdi,
+       args: files('bad/bad-lang.ttl'),
+       env: test_env + ['CLICOLOR=0'],
+       should_fail: true)
+
+  test('ansi_no_color',
+       serdi,
+       args: files('bad/bad-lang.ttl'),
+       env: test_env + ['NO_COLOR=1'],
+       should_fail: true)
 
   test('none',
        serdi,
