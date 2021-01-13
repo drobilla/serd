@@ -38,14 +38,20 @@
 #  define SERD_MALLOC_FUNC __attribute__((malloc))
 #  define SERD_PURE_FUNC __attribute__((pure))
 #  define SERD_NODISCARD __attribute__((warn_unused_result))
-#  define SERD_LOG_FUNC(fmt, arg1) __attribute__((format(printf, fmt, arg1)))
 #else
 #  define SERD_ALWAYS_INLINE_FUNC
 #  define SERD_CONST_FUNC
 #  define SERD_MALLOC_FUNC
 #  define SERD_PURE_FUNC
 #  define SERD_NODISCARD
-#  define SERD_LOG_FUNC(fmt, arg1)
+#endif
+
+#if defined(__MINGW32__)
+#  define SERD_LOG_FUNC(fmt, a) __attribute__((format(gnu_printf, fmt, a)))
+#elif defined(__GNUC__)
+#  define SERD_LOG_FUNC(fmt, a) __attribute__((format(printf, fmt, a)))
+#else
+#  define SERD_LOG_FUNC(fmt, a)
 #endif
 
 #if defined(__clang__) && __clang_major__ >= 7

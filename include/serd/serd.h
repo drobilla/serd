@@ -23,7 +23,7 @@
 #include "serd/stream.h"
 #include "serd/string_view.h"
 
-#include "serd/error.h"
+#include "serd/log.h"
 #include "serd/uri.h"
 
 #include "serd/node.h"

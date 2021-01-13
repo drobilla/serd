@@ -162,6 +162,18 @@ Variables can be written in SPARQL style, for example
 or
 .Dq $var .
 .El
+.Sh ENVIRONMENT
+Errors and warnings are printed in color by default if the output is a terminal.
+This can be overridden with environment variables:
+.Pp
+.Bl -tag -compact -width 14n
+.It Ev NO_COLOR
+If present (regardless of value), color is disabled.
+.It Ev CLICOLOR
+If set to 0, color is disabled.
+.It Ev CLICOLOR_FORCE
+If set to anything other than 0, color is forced on.
+.El
 .Sh EXIT STATUS
 .Nm
 exits with a status of 0, or non-zero if an error occurred.
@@ -215,6 +227,20 @@ exits with a status of 0, or non-zero if an error occurred.
 .%T RDF 1.1 Turtle
 .Re
 .Lk https://www.w3.org/TR/turtle/
+.It
+.Rs
+.%A Jan Niklas Hasse
+.%T CLICOLOR
+.%D April 2015
+.Re
+.Lk https://bixense.com/clicolors/
+.It
+.Rs
+.%A Joshua Stein
+.%T NO_COLOR
+.%D August 2017
+.Re
+.Lk http://no-color.org/
 .El
 .Sh AUTHORS
 .Nm

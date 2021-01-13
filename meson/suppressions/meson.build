@@ -52,6 +52,7 @@ if is_variable('cc')
         '/wd4514', # unreferenced inline function has been removed
         '/wd4710', # function not inlined
         '/wd4711', # function selected for automatic inline expansion
+        '/wd4774', # format string is not a string literal
         '/wd4800', # implicit conversion from int to bool
         '/wd4820', # padding added after construct
         '/wd5045', # will insert Spectre mitigation for memory load

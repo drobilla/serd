@@ -107,6 +107,7 @@ unit_tests = [
   'caret',
   'env',
   'free_null',
+  'log',
   'node',
   'overflow',
   'reader',
@@ -182,7 +183,7 @@ simple_command_tests = {
 if is_variable('serdi')
   script_args = common_script_args + ['--serdi', serdi]
   serd_ttl = files('../serd.ttl')[0]
-  bad_input_file = files('extra/bad/bad-base.ttl')
+  bad_input_file = files('extra/bad/bad-lang.ttl')
 
   test('serd_ttl', serdi, args: [serd_ttl], env: test_env, suite: 'data')
 
@@ -213,12 +214,38 @@ if is_variable('serdi')
     suite: cmd_suite,
   )
 
+  # Log
+
   test(
     'quiet',
     files('test_quiet.py'),
     args: script_args + [bad_input_file],
     env: test_env,
-    suite: cmd_suite,
+    suite: 'log',
+  )
+  test(
+    'CLICOLOR_FORCE',
+    serdi,
+    args: bad_input_file,
+    env: test_env + ['CLICOLOR_FORCE=1'],
+    should_fail: true,
+    suite: 'log',
+  )
+  test(
+    'CLICOLOR',
+    serdi,
+    args: bad_input_file,
+    env: test_env + ['CLICOLOR=0'],
+    should_fail: true,
+    suite: 'log',
+  )
+  test(
+    'NO_COLOR',
+    serdi,
+    args: bad_input_file,
+    env: test_env + ['NO_COLOR=1'],
+    should_fail: true,
+    suite: 'log',
   )
 
   # Inputs
