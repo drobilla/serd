@@ -37,7 +37,7 @@ r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
   va_start(args, fmt);
   const Cursor* const cur = &reader->source.cur;
   const SerdError     e = {st, cur->filename, cur->line, cur->col, fmt, &args};
-  serd_error(reader->error_func, reader->error_handle, &e);
+  serd_error(reader->world, &e);
   va_end(args);
   return st;
 }
@@ -160,7 +160,8 @@ serd_reader_read_document(SerdReader* const reader)
 }
 
 SerdReader*
-serd_reader_new(const SerdSyntax      syntax,
+serd_reader_new(SerdWorld* const      world,
+                const SerdSyntax      syntax,
                 const SerdSink* const sink,
                 const size_t          stack_size)
 {
@@ -170,6 +171,7 @@ serd_reader_new(const SerdSyntax      syntax,
 
   SerdReader* me = (SerdReader*)calloc(1, sizeof(SerdReader));
 
+  me->world         = world;
   me->sink          = sink;
   me->default_graph = NULL;
   me->stack         = serd_stack_new(stack_size);
@@ -188,15 +190,6 @@ void
 serd_reader_set_strict(SerdReader* const reader, const bool strict)
 {
   reader->strict = strict;
-}
-
-void
-serd_reader_set_error_sink(SerdReader* const   reader,
-                           const SerdErrorFunc error_func,
-                           void* const         error_handle)
-{
-  reader->error_func   = error_func;
-  reader->error_handle = error_handle;
 }
 
 void

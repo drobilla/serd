@@ -14,39 +14,27 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#ifndef SERD_INTERNAL_H
-#define SERD_INTERNAL_H
-
 #include "world.h"
 
-#include "serd/serd.h"
+#include <stdlib.h>
 
-#include <stdio.h>
-
-#define NS_XSD "http://www.w3.org/2001/XMLSchema#"
-#define NS_RDF "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-
-#define SERD_PAGE_SIZE 4096
-
-#ifndef MIN
-#  define MIN(a, b) (((a) < (b)) ? (a) : (b))
-#endif
-
-/* Error reporting */
-
-static inline void
-serd_error(const SerdWorld* world, const SerdError* e)
+SerdWorld*
+serd_world_new(void)
 {
-  if (world->error_func) {
-    world->error_func(world->error_handle, e);
-  } else {
-    if (e->filename) {
-      fprintf(stderr, "error: %s:%u:%u: ", e->filename, e->line, e->col);
-    } else {
-      fprintf(stderr, "error: ");
-    }
-    vfprintf(stderr, e->fmt, *e->args);
-  }
+  return (SerdWorld*)calloc(1, sizeof(SerdWorld));
 }
 
-#endif // SERD_INTERNAL_H
+void
+serd_world_free(SerdWorld* const world)
+{
+  free(world);
+}
+
+void
+serd_world_set_error_func(SerdWorld*    world,
+                          SerdErrorFunc error_func,
+                          void*         handle)
+{
+  world->error_func   = error_func;
+  world->error_handle = handle;
+}
