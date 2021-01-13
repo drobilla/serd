@@ -1,5 +1,6 @@
 serd (1.0.1) unstable;
 
+  * Add SerdBuffer for mutable buffers to keep SerdChunk const-correct
   * Remove serd_uri_to_path()
 
  -- David Robillard <d@drobilla.net>  Wed, 13 Jan 2021 13:29:44 +0000

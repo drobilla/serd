@@ -245,16 +245,16 @@ test_writer(const char* const path)
 
   serd_writer_free(writer);
 
-  // Test chunk sink
-  SerdChunk chunk = {NULL, 0};
-  writer          = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
+  // Test buffer sink
+  SerdBuffer buffer = {NULL, 0};
+  writer            = serd_writer_new(
+    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_buffer_sink, &buffer);
 
   o = serd_node_from_string(SERD_URI, USTR("http://example.org/base"));
   assert(!serd_writer_set_base_uri(writer, &o));
 
   serd_writer_free(writer);
-  uint8_t* out = serd_chunk_sink_finish(&chunk);
+  uint8_t* out = serd_buffer_sink_finish(&buffer);
 
   assert(!strcmp((const char*)out, "@base <http://example.org/base> .\n"));
   serd_free(out);

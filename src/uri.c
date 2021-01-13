@@ -41,7 +41,6 @@ serd_file_uri_parse(const uint8_t* const uri, uint8_t** const hostname)
       if (!(path = (const uint8_t*)strchr((const char*)auth, '/'))) {
         return NULL;
       }
-
       if (hostname) {
         *hostname = (uint8_t*)calloc((size_t)(path - auth + 1), 1);
         memcpy(*hostname, auth, (size_t)(path - auth));
@@ -53,26 +52,25 @@ serd_file_uri_parse(const uint8_t* const uri, uint8_t** const hostname)
     ++path;
   }
 
-  SerdChunk chunk = {NULL, 0};
+  SerdBuffer buffer = {NULL, 0};
   for (const uint8_t* s = path; *s; ++s) {
     if (*s == '%') {
       if (*(s + 1) == '%') {
-        serd_chunk_sink("%", 1, &chunk);
+        serd_buffer_sink("%", 1, &buffer);
         ++s;
       } else if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
         const uint8_t code[3] = {*(s + 1), *(s + 2), 0};
         const uint8_t c       = (uint8_t)strtoul((const char*)code, NULL, 16);
-        serd_chunk_sink(&c, 1, &chunk);
+        serd_buffer_sink(&c, 1, &buffer);
         s += 2;
       } else {
         s += 2; // Junk escape, ignore
       }
     } else {
-      serd_chunk_sink(s, 1, &chunk);
+      serd_buffer_sink(s, 1, &buffer);
     }
   }
-
-  return serd_chunk_sink_finish(&chunk);
+  return serd_buffer_sink_finish(&buffer);
 }
 
 bool

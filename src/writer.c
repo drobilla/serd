@@ -1109,18 +1109,19 @@ serd_file_sink(const void* buf, size_t len, void* stream)
 }
 
 size_t
-serd_chunk_sink(const void* buf, size_t len, void* stream)
+serd_buffer_sink(const void* const buf, const size_t len, void* const stream)
 {
-  SerdChunk* chunk = (SerdChunk*)stream;
-  chunk->buf       = (uint8_t*)realloc((uint8_t*)chunk->buf, chunk->len + len);
-  memcpy((uint8_t*)chunk->buf + chunk->len, buf, len);
-  chunk->len += len;
+  SerdBuffer* buffer = (SerdBuffer*)stream;
+
+  buffer->buf = (char*)realloc(buffer->buf, buffer->len + len);
+  memcpy((uint8_t*)buffer->buf + buffer->len, buf, len);
+  buffer->len += len;
   return len;
 }
 
 uint8_t*
-serd_chunk_sink_finish(SerdChunk* stream)
+serd_buffer_sink_finish(SerdBuffer* const stream)
 {
-  serd_chunk_sink("", 1, stream);
+  serd_buffer_sink("", 1, stream);
   return (uint8_t*)stream->buf;
 }
