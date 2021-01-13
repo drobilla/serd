@@ -37,9 +37,11 @@
 #ifdef __GNUC__
 #  define SERD_PURE_FUNC __attribute__((pure))
 #  define SERD_CONST_FUNC __attribute__((const))
+#  define SERD_MALLOC_FUNC __attribute__((malloc))
 #else
 #  define SERD_PURE_FUNC
 #  define SERD_CONST_FUNC
+#  define SERD_MALLOC_FUNC
 #endif
 
 #if defined(__clang__) && __clang_major__ >= 7
@@ -59,6 +61,10 @@
 #define SERD_CONST_API \
   SERD_API             \
   SERD_CONST_FUNC
+
+#define SERD_MALLOC_API \
+  SERD_API              \
+  SERD_MALLOC_FUNC
 
 #ifdef __cplusplus
 extern "C" {
@@ -781,24 +787,12 @@ serd_node_equals(const SerdNode* SERD_NULLABLE a,
 
 /**
    @}
-   @defgroup serd_event Event Handlers
+   @defgroup serd_world World
    @{
 */
 
-/// Flags indicating inline abbreviation information for a statement
-typedef enum {
-  SERD_EMPTY_S      = 1u << 1u, ///< Empty blank node subject
-  SERD_EMPTY_O      = 1u << 2u, ///< Empty blank node object
-  SERD_ANON_S_BEGIN = 1u << 3u, ///< Start of anonymous subject
-  SERD_ANON_O_BEGIN = 1u << 4u, ///< Start of anonymous object
-  SERD_ANON_CONT    = 1u << 5u, ///< Continuation of anonymous node
-  SERD_LIST_S_BEGIN = 1u << 6u, ///< Start of list subject
-  SERD_LIST_O_BEGIN = 1u << 7u, ///< Start of list object
-  SERD_LIST_CONT    = 1u << 8u  ///< Continuation of list
-} SerdStatementFlag;
-
-/// Bitwise OR of SerdStatementFlag values
-typedef uint32_t SerdStatementFlags;
+/// Global library state
+typedef struct SerdWorldImpl SerdWorld;
 
 /// An error description
 typedef struct {
@@ -820,7 +814,55 @@ typedef SerdStatus (*SerdErrorFunc)(void* SERD_NULLABLE           handle,
                                     const SerdError* SERD_NONNULL error);
 
 /**
-   Sink function for base URI changes.
+   Create a new Serd World.
+
+   It is safe to use multiple worlds in one process, though no objects can be
+   shared between worlds.
+*/
+SERD_MALLOC_API
+SerdWorld* SERD_ALLOCATED
+serd_world_new(void);
+
+/// Free `world`
+SERD_API
+void
+serd_world_free(SerdWorld* SERD_NULLABLE world);
+
+/**
+   Set a function to be called when errors occur.
+
+   The `error_func` will be called with `handle` as its first argument.  If
+   no error function is set, errors are printed to stderr.
+*/
+SERD_API
+void
+serd_world_set_error_func(SerdWorld* SERD_NONNULL     world,
+                          SerdErrorFunc SERD_NULLABLE error_func,
+                          void* SERD_NULLABLE         handle);
+
+/**
+   @}
+   @defgroup serd_event Event Handlers
+   @{
+*/
+
+/// Flags indicating inline abbreviation information for a statement
+typedef enum {
+  SERD_EMPTY_S      = 1u << 1u, ///< Empty blank node subject
+  SERD_EMPTY_O      = 1u << 2u, ///< Empty blank node object
+  SERD_ANON_S_BEGIN = 1u << 3u, ///< Start of anonymous subject
+  SERD_ANON_O_BEGIN = 1u << 4u, ///< Start of anonymous object
+  SERD_ANON_CONT    = 1u << 5u, ///< Continuation of anonymous node
+  SERD_LIST_S_BEGIN = 1u << 6u, ///< Start of list subject
+  SERD_LIST_O_BEGIN = 1u << 7u, ///< Start of list object
+  SERD_LIST_CONT    = 1u << 8u  ///< Continuation of list
+} SerdStatementFlag;
+
+/// Bitwise OR of SerdStatementFlag values
+typedef uint32_t SerdStatementFlags;
+
+/**
+   Sink function for base URI changes
 
    Called whenever the base URI of the serialisation changes.
 */
@@ -1034,7 +1076,8 @@ typedef struct SerdReaderImpl SerdReader;
 /// Create a new RDF reader
 SERD_API
 SerdReader* SERD_ALLOCATED
-serd_reader_new(SerdSyntax                   syntax,
+serd_reader_new(SerdWorld* SERD_NONNULL      world,
+                SerdSyntax                   syntax,
                 const SerdSink* SERD_NONNULL sink,
                 size_t                       stack_size);
 
@@ -1048,18 +1091,6 @@ serd_reader_new(SerdSyntax                   syntax,
 SERD_API
 void
 serd_reader_set_strict(SerdReader* SERD_NONNULL reader, bool strict);
-
-/**
-   Set a function to be called when errors occur during reading.
-
-   The `error_func` will be called with `handle` as its first argument.  If
-   no error function is set, errors are printed to stderr in GCC style.
-*/
-SERD_API
-void
-serd_reader_set_error_sink(SerdReader* SERD_NONNULL    reader,
-                           SerdErrorFunc SERD_NULLABLE error_func,
-                           void* SERD_NULLABLE         error_handle);
 
 /**
    Set a prefix to be added to all blank node identifiers.
@@ -1186,7 +1217,8 @@ typedef uint32_t SerdWriterFlags;
 /// Create a new RDF writer
 SERD_API
 SerdWriter* SERD_ALLOCATED
-serd_writer_new(SerdSyntax                 syntax,
+serd_writer_new(SerdWorld* SERD_NONNULL    world,
+                SerdSyntax                 syntax,
                 SerdWriterFlags            flags,
                 SerdEnv* SERD_NONNULL      env,
                 SerdWriteFunc SERD_NONNULL ssink,
@@ -1226,18 +1258,6 @@ serd_buffer_sink(const void* SERD_NONNULL buf,
 SERD_API
 char* SERD_NONNULL
 serd_buffer_sink_finish(SerdBuffer* SERD_NONNULL stream);
-
-/**
-   Set a function to be called when errors occur during writing.
-
-   The `error_func` will be called with `handle` as its first argument.  If
-   no error function is set, errors are printed to stderr.
-*/
-SERD_API
-void
-serd_writer_set_error_sink(SerdWriter* SERD_NONNULL   writer,
-                           SerdErrorFunc SERD_NONNULL error_func,
-                           void* SERD_NULLABLE        error_handle);
 
 /**
    Set a prefix to be removed from matching blank node identifiers.
