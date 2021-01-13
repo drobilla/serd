@@ -6,7 +6,6 @@ Checks: >
   -bugprone-easily-swappable-parameters,
   -bugprone-switch-missing-default-case,
   -cert-err33-c,
-  -clang-analyzer-valist.Uninitialized,
   -clang-diagnostic-unused-function,
   -hicpp-multiway-paths-covered,
   -hicpp-signed-bitwise,
