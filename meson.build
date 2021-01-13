@@ -71,6 +71,7 @@ sources = files(
   'src/byte_source.c',
   'src/caret.c',
   'src/env.c',
+  'src/log.c',
   'src/n3.c',
   'src/node.c',
   'src/reader.c',

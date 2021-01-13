@@ -9,7 +9,6 @@
 #include "stack.h"
 #include "statement.h"
 #include "system.h"
-#include "world.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -24,8 +23,10 @@ r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
 {
   va_list args;
   va_start(args, fmt);
-  const SerdError e = {st, &reader->source->caret, fmt, &args};
-  serd_world_error(reader->world, &e);
+
+  serd_vlogf_at(
+    reader->world, SERD_LOG_LEVEL_ERROR, &reader->source->caret, fmt, args);
+
   va_end(args);
   return st;
 }
@@ -240,7 +241,7 @@ skip_bom(SerdReader* const me)
         serd_byte_source_advance(me->source) ||
         serd_byte_source_peek(me->source) != 0xBF ||
         serd_byte_source_advance(me->source)) {
-      r_err(me, SERD_ERR_BAD_SYNTAX, "corrupt byte order mark\n");
+      r_err(me, SERD_ERR_BAD_SYNTAX, "corrupt byte order mark");
       return SERD_ERR_BAD_SYNTAX;
     }
   }
