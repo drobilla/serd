@@ -10,7 +10,6 @@
 
 #include "serd/attributes.h"
 #include "serd/byte_source.h"
-#include "serd/error.h"
 #include "serd/node.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
@@ -24,12 +23,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#if defined(__GNUC__)
-#  define SERD_LOG_FUNC(fmt, arg1) __attribute__((format(printf, fmt, arg1)))
-#else
-#  define SERD_LOG_FUNC(fmt, arg1)
-#endif
-
 typedef struct {
   SerdNode*           graph;
   SerdNode*           subject;
@@ -41,8 +34,6 @@ typedef struct {
 struct SerdReaderImpl {
   SerdWorld*      world;
   const SerdSink* sink;
-  SerdErrorFunc   error_func;
-  void*           error_handle;
   SerdNode*       rdf_first;
   SerdNode*       rdf_rest;
   SerdNode*       rdf_nil;
@@ -135,7 +126,7 @@ eat_byte_check(SerdReader* reader, const int byte)
   const int c = peek_byte(reader);
   if (c != byte) {
     return r_err(
-      reader, SERD_ERR_BAD_SYNTAX, "expected '%c', not '%c'\n", byte, c);
+      reader, SERD_ERR_BAD_SYNTAX, "expected '%c', not '%c'", byte, c);
   }
 
   skip_byte(reader, c);

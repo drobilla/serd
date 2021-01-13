@@ -6,7 +6,6 @@
 
 #include "serd/attributes.h"
 #include "serd/byte_source.h"
-#include "serd/error.h"
 #include "serd/sink.h"
 #include "serd/syntax.h"
 #include "serd/world.h"

@@ -49,6 +49,14 @@
 #  define SERD_NODISCARD
 #endif
 
+#if defined(__MINGW32__)
+#  define SERD_LOG_FUNC(fmt, a) __attribute__((format(gnu_printf, fmt, a)))
+#elif defined(__GNUC__)
+#  define SERD_LOG_FUNC(fmt, a) __attribute__((format(printf, fmt, a)))
+#else
+#  define SERD_LOG_FUNC(fmt, a)
+#endif
+
 #if defined(__clang__) && __clang_major__ >= 7
 #  define SERD_NONNULL _Nonnull
 #  define SERD_NULLABLE _Nullable
