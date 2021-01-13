@@ -223,6 +223,7 @@ def test_suite(
     base_uri,
     report_filename,
     input_syntax,
+    output_syntax,
     command_prefix,
     out_test_dir,
 ):
@@ -243,8 +244,11 @@ def test_suite(
 
     def run_tests(test_class, tests, expected_return, results):
         thru_flags = [["-e"], ["-f"], ["-b"], ["-r", "http://example.org/"]]
-        osyntax = _test_output_syntax(test_class)
         thru_options_iter = _option_combinations(thru_flags)
+        if output_syntax is not None:
+            osyntax = output_syntax
+        else:
+            osyntax = _test_output_syntax(test_class)
 
         if input_syntax is not None:
             isyntax = input_syntax
@@ -257,7 +261,9 @@ def test_suite(
             test_name = os.path.basename(test_uri_path)
             test_path = os.path.join(test_dir, test_name)
 
-            command = command_prefix + ["-a"] + [test_path, test_uri]
+            command = (
+                command_prefix + ["-a", "-o", osyntax] + [test_path, test_uri]
+            )
             command_string = " ".join(shlex.quote(c) for c in command)
             out_filename = os.path.join(out_test_dir, test_name + ".out")
 
@@ -382,6 +388,7 @@ def main():
     parser.add_argument("--report", help="path to write result report to")
     parser.add_argument("--serdi", default="serdi", help="path to serdi")
     parser.add_argument("--syntax", default=None, help="input syntax")
+    parser.add_argument("--osyntax", default=None, help="output syntax")
     parser.add_argument("--wrapper", default="", help="executable wrapper")
     parser.add_argument("manifest", help="test suite manifest.ttl file")
     parser.add_argument("base_uri", help="base URI for tests")
@@ -400,6 +407,7 @@ def main():
             args.base_uri,
             args.report,
             args.syntax,
+            args.osyntax,
             command_prefix,
             test_out_dir,
         )
