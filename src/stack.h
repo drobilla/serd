@@ -7,8 +7,8 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 /** An offset to start the stack at. Note 0 is reserved for NULL. */
 #define SERD_STACK_BOTTOM sizeof(void*)
@@ -68,38 +68,27 @@ serd_stack_pop(SerdStack* stack, size_t n_bytes)
   stack->size -= n_bytes;
 }
 
+static inline void
+serd_stack_pop_to(SerdStack* stack, size_t n_bytes)
+{
+  assert(stack->size >= n_bytes);
+  stack->size = n_bytes;
+}
+
 static inline void*
 serd_stack_push_aligned(SerdStack* stack, size_t n_bytes, size_t align)
 {
-  // Push one byte to ensure space for a pad count
-  if (!serd_stack_push(stack, 1)) {
-    return NULL;
-  }
-
   // Push padding if necessary
-  const size_t pad = align - stack->size % align;
-  if (!serd_stack_push(stack, pad)) {
+  const size_t pad     = align - stack->size % align;
+  void* const  padding = serd_stack_push(stack, pad);
+  if (!padding) {
     return NULL;
   }
 
-  // Set top of stack to pad count so we can properly pop later
-  stack->buf[stack->size - 1] = (char)pad;
+  memset(padding, 0, pad);
 
   // Push requested space at aligned location
   return serd_stack_push(stack, n_bytes);
-}
-
-static inline void
-serd_stack_pop_aligned(SerdStack* stack, size_t n_bytes)
-{
-  // Pop requested space down to aligned location
-  serd_stack_pop(stack, n_bytes);
-
-  // Get amount of padding from top of stack
-  const uint8_t pad = (uint8_t)stack->buf[stack->size - 1];
-
-  // Pop padding and pad count
-  serd_stack_pop(stack, pad + 1U);
 }
 
 #endif // SERD_SRC_STACK_H
