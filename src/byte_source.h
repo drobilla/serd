@@ -17,6 +17,8 @@
 #ifndef SERD_BYTE_SOURCE_H
 #define SERD_BYTE_SOURCE_H
 
+#include "cursor.h"
+
 #include "serd/serd.h"
 
 #include <assert.h>
@@ -27,19 +29,14 @@
 typedef int (*SerdStreamCloseFunc)(void*);
 
 typedef struct {
-  const char* filename;
-  unsigned    line;
-  unsigned    col;
-} Cursor;
-
-typedef struct {
   SerdReadFunc        read_func;   ///< Read function (e.g. fread)
   SerdStreamErrorFunc error_func;  ///< Error function (e.g. ferror)
   SerdStreamCloseFunc close_func;  ///< Function for closing stream
   void*               stream;      ///< Stream (e.g. FILE)
   size_t              page_size;   ///< Number of bytes to read at a time
   size_t              buf_size;    ///< Number of bytes in file_buf
-  Cursor              cur;         ///< Cursor for error reporting
+  SerdNode*           name;        ///< Name of stream (referenced by cur)
+  SerdCursor          cur;         ///< Cursor for error reporting
   uint8_t*            file_buf;    ///< Buffer iff reading pages from a file
   const uint8_t*      read_buf;    ///< Pointer to file_buf or read_byte
   size_t              read_head;   ///< Offset into read_buf
@@ -50,7 +47,9 @@ typedef struct {
 } SerdByteSource;
 
 SerdStatus
-serd_byte_source_open_string(SerdByteSource* source, const char* utf8);
+serd_byte_source_open_string(SerdByteSource* source,
+                             const char*     utf8,
+                             const SerdNode* name);
 
 SerdStatus
 serd_byte_source_open_source(SerdByteSource*     source,
@@ -58,7 +57,7 @@ serd_byte_source_open_source(SerdByteSource*     source,
                              SerdStreamErrorFunc error_func,
                              SerdStreamCloseFunc close_func,
                              void*               stream,
-                             const char*         name,
+                             const SerdNode*     name,
                              size_t              page_size);
 
 SerdStatus
