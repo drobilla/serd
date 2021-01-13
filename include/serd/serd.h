@@ -113,7 +113,9 @@ typedef enum {
   SERD_ANON_S  = 1u << 1u, ///< Start of anonymous subject
   SERD_ANON_O  = 1u << 2u, ///< Start of anonymous object
   SERD_LIST_S  = 1u << 3u, ///< Start of list subject
-  SERD_LIST_O  = 1u << 4u  ///< Start of list object
+  SERD_LIST_O  = 1u << 4u, ///< Start of list object
+  SERD_TERSE_S = 1u << 5u, ///< Terse serialisation of new subject
+  SERD_TERSE_O = 1u << 6u  ///< Terse serialisation of new object
 } SerdStatementFlag;
 
 /// Bitwise OR of SerdStatementFlag values

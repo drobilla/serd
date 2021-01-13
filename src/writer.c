@@ -61,8 +61,11 @@ typedef enum {
   SEP_ANON_S_P,    ///< Between start of anonymous node and predicate
   SEP_ANON_END,    ///< End of anonymous node (']')
   SEP_LIST_BEGIN,  ///< Start of list ('(')
-  SEP_LIST_SEP,    ///< List separator (whitespace)
+  SEP_LIST_SEP,    ///< List separator (newline)
   SEP_LIST_END,    ///< End of list (')')
+  SEP_TLIST_BEGIN, ///< Start of terse list ('(')
+  SEP_TLIST_SEP,   ///< Terse list separator (space)
+  SEP_TLIST_END,   ///< End of terse list (')')
   SEP_GRAPH_BEGIN, ///< Start of graph ('{')
   SEP_GRAPH_END,   ///< End of graph ('}')
 } Sep;
@@ -88,12 +91,15 @@ static const SepRule rules[] = {
   {",", 1, +0, SEP_ALL, SEP_NONE, ~(M(SEP_ANON_END) | M(SEP_LIST_END))},
   {"", 0, +1, SEP_NONE, SEP_NONE, SEP_ALL},
   {" ", 1, +0, SEP_NONE, SEP_NONE, SEP_NONE},
-  {"[", 1, +1, M(SEP_END_O), SEP_NONE, SEP_NONE},
+  {"[", 1, +1, M(SEP_END_O), M(SEP_TLIST_BEGIN) | M(SEP_TLIST_SEP), SEP_NONE},
   {"", 0, +0, SEP_NONE, SEP_ALL, SEP_NONE},
   {"]", 1, -1, SEP_NONE, ~M(SEP_ANON_BEGIN), SEP_NONE},
   {"(", 1, +1, M(SEP_END_O), SEP_NONE, SEP_ALL},
   {"", 0, +0, SEP_NONE, SEP_ALL, SEP_NONE},
   {")", 1, -1, SEP_NONE, SEP_ALL, SEP_NONE},
+  {"(", 1, +1, SEP_NONE, SEP_NONE, SEP_NONE},
+  {"", 0, +0, SEP_ALL, SEP_NONE, SEP_NONE},
+  {")", 1, -1, SEP_NONE, SEP_NONE, SEP_NONE},
   {"{", 1, +1, SEP_ALL, SEP_NONE, SEP_NONE},
   {"}", 1, -1, SEP_NONE, SEP_NONE, SEP_ALL},
   {"<", 1, +0, SEP_NONE, SEP_NONE, SEP_NONE},
@@ -491,9 +497,9 @@ uri_sink(const void* buf, size_t size, size_t nmemb, void* stream)
 }
 
 static void
-write_newline(SerdWriter* writer)
+write_newline(SerdWriter* writer, bool terse)
 {
-  if (writer->flags & SERD_WRITE_TERSE) {
+  if (terse || (writer->flags & SERD_WRITE_TERSE)) {
     sink(" ", 1, writer);
   } else {
     sink("\n", 1, writer);
@@ -507,16 +513,19 @@ static void
 write_top_level_sep(SerdWriter* writer)
 {
   if (!writer->empty && !(writer->flags & SERD_WRITE_TERSE)) {
-    write_newline(writer);
+    write_newline(writer, false);
   }
 }
 
 static bool
 write_sep(SerdWriter* writer, const SerdStatementFlags flags, Sep sep)
 {
-  (void)flags;
-
-  const SepRule* rule = &rules[sep];
+  const SepRule* rule  = &rules[sep];
+  const bool     terse = (((flags & SERD_TERSE_S) && (flags & SERD_LIST_S)) ||
+                      ((flags & SERD_TERSE_O) && (flags & SERD_LIST_O)));
+  if (terse && sep >= SEP_LIST_BEGIN && sep <= SEP_LIST_END) {
+    sep = (Sep)((int)sep + 3); // Switch to corresponding terse separator
+  }
 
   // Adjust indent, but tolerate if it would become negative
   if ((rule->pre_line_after & (1u << writer->last_sep) ||
@@ -528,7 +537,7 @@ write_sep(SerdWriter* writer, const SerdStatementFlags flags, Sep sep)
 
   // Write newline or space before separator if necessary
   if (rule->pre_line_after & (1u << writer->last_sep)) {
-    write_newline(writer);
+    write_newline(writer, terse);
   } else if (rule->pre_space_after & (1u << writer->last_sep)) {
     sink(" ", 1, writer);
   }
@@ -540,7 +549,7 @@ write_sep(SerdWriter* writer, const SerdStatementFlags flags, Sep sep)
 
   // Write newline after separator if necessary
   if (rule->post_line_after & (1u << writer->last_sep)) {
-    write_newline(writer);
+    write_newline(writer, terse);
     writer->last_sep = SEP_NONE;
   } else {
     writer->last_sep = sep;
@@ -872,8 +881,10 @@ serd_writer_write_statement(SerdWriter* const          writer,
   const SerdNode* const graph     = serd_statement_graph(statement);
 
   if (!is_resource(subject) || !is_resource(predicate) || !object ||
-      ((flags & SERD_ANON_S) && (flags & SERD_LIST_S)) ||
-      ((flags & SERD_ANON_O) && (flags & SERD_LIST_O))) {
+      ((flags & SERD_ANON_S) && (flags & SERD_LIST_S)) ||  // Nonsense
+      ((flags & SERD_ANON_O) && (flags & SERD_LIST_O)) ||  // Nonsense
+      ((flags & SERD_ANON_S) && (flags & SERD_TERSE_S)) || // Unsupported
+      ((flags & SERD_ANON_O) && (flags & SERD_TERSE_O))) { // Unsupported
     return SERD_ERR_BAD_ARG;
   }
 

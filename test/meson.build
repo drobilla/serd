@@ -13,6 +13,7 @@ unit_tests = [
   'read_chunk',
   'reader_writer',
   'string',
+  'terse_write',
   'uri',
 ]
 
@@ -169,6 +170,11 @@ if get_option('utils')
          timeout: 240)
   endforeach
 
+  test('terse', run_test_suite,
+       args: script_args + ['--osyntax', 'turtle', manifest, base_uri, '--', '-t'],
+       env: test_env,
+       suite: ['rdf', 'serd'],
+       timeout: 240)
 
   ### Run the lax suite with lax parsing enabled as well
   manifest = files('lax/manifest.ttl')
