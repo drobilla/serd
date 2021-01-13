@@ -53,6 +53,7 @@ if get_option('strict')
       '/wd4706',  # assignment within conditional expression
       '/wd4710',  # function not inlined
       '/wd4711',  # function selected for automatic inline expansion
+      '/wd4774',  # format string is not a string literal
       '/wd4800',  # implicit conversion from int to bool
       '/wd4820',  # padding added after construct
       '/wd4996',  # POSIX name for this item is deprecated
@@ -86,6 +87,7 @@ sources = [
   'src/byte_source.c',
   'src/caret.c',
   'src/env.c',
+  'src/log.c',
   'src/n3.c',
   'src/node.c',
   'src/nodes.c',
