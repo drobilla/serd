@@ -19,12 +19,14 @@
 
 #include "serd/serd.h"
 
+#include <stdarg.h>
+#include <stddef.h>
 #include <stdint.h>
 
 struct SerdWorldImpl {
   SerdNodes*      nodes;
-  SerdErrorFunc   error_func;
-  void*           error_handle;
+  SerdLogFunc     log_func;
+  void*           log_handle;
   SerdNode*       blank_node;
   const SerdNode* rdf_first;
   const SerdNode* rdf_nil;
@@ -37,10 +39,33 @@ struct SerdWorldImpl {
   uint32_t        next_blank_id;
 };
 
+/// Write a message to the log
+SERD_API
+SERD_LOG_FUNC(5, 0)
 SerdStatus
-serd_world_error(const SerdWorld* world, const SerdError* e);
+serd_world_vlogf_internal(const SerdWorld*  world,
+                          SerdStatus        st,
+                          SerdLogLevel      level,
+                          const SerdCursor* cursor,
+                          const char*       fmt,
+                          va_list           args);
 
+/// Write a message to the log
+SERD_API
+SERD_LOG_FUNC(5, 6)
 SerdStatus
-serd_world_errorf(const SerdWorld* world, SerdStatus st, const char* fmt, ...);
+serd_world_logf_internal(const SerdWorld*  world,
+                         SerdStatus        st,
+                         SerdLogLevel      level,
+                         const SerdCursor* cursor,
+                         const char*       fmt,
+                         ...);
+
+#define SERD_LOG_ERRORF(world, st, fmt, ...) \
+  serd_world_logf_internal(                  \
+    world, st, SERD_LOG_LEVEL_ERROR, NULL, fmt, __VA_ARGS__)
+
+#define SERD_LOG_ERROR(world, st, msg) \
+  serd_world_logf_internal(world, st, SERD_LOG_LEVEL_ERROR, NULL, msg)
 
 #endif // SERD_WORLD_H

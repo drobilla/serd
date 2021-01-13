@@ -67,6 +67,15 @@
   SERD_API              \
   SERD_MALLOC_FUNC
 
+#if defined(__MINGW32__)
+#  define SERD_LOG_FUNC(fmt, arg1) \
+    __attribute__((format(gnu_printf, fmt, arg1)))
+#elif defined(__GNUC__)
+#  define SERD_LOG_FUNC(fmt, arg1) __attribute__((format(printf, fmt, arg1)))
+#else
+#  define SERD_LOG_FUNC(fmt, arg1)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #  if defined(__GNUC__)
@@ -1097,15 +1106,6 @@ typedef struct {
 } SerdError;
 
 /**
-   Callback function for errors.
-
-   @param handle Handle for user data.
-   @param error Error description.
-*/
-typedef SerdStatus (*SerdErrorFunc)(void* SERD_NULLABLE           handle,
-                                    const SerdError* SERD_NONNULL error);
-
-/**
    Create a new Serd World.
 
    It is safe to use multiple worlds in one process, though no objects can be
@@ -1142,16 +1142,140 @@ const SerdNode* SERD_NONNULL
 serd_world_get_blank(SerdWorld* SERD_NONNULL world);
 
 /**
-   Set a function to be called when errors occur.
+   @}
+   @defgroup serd_logging Logging
+   @{
+*/
 
-   The `error_func` will be called with `handle` as its first argument.  If
-   no error function is set, errors are printed to stderr.
+/// Log message level, compatible with syslog
+typedef enum {
+  SERD_LOG_LEVEL_EMERGENCY, ///< Emergency, system is unusable
+  SERD_LOG_LEVEL_ALERT,     ///< Action must be taken immediately
+  SERD_LOG_LEVEL_CRITICAL,  ///< Critical condition
+  SERD_LOG_LEVEL_ERROR,     ///< Error
+  SERD_LOG_LEVEL_WARNING,   ///< Warning
+  SERD_LOG_LEVEL_NOTICE,    ///< Normal but significant condition
+  SERD_LOG_LEVEL_INFO,      ///< Informational message
+  SERD_LOG_LEVEL_DEBUG      ///< Debug message
+} SerdLogLevel;
+
+/**
+   A structured log field.
+
+   This can be used to pass additional information along with log messages.
+   Syslog-compatible keys should be used where possible, otherwise, keys should
+   be namespaced to prevent clashes.
+
+   Serd itself uses the following keys:
+   - ERRNO
+   - SERD_COL
+   - SERD_FILE
+   - SERD_LINE
+   - SERD_STATUS
+*/
+typedef struct {
+  const char* SERD_NONNULL key;   ///< Field name
+  const char* SERD_NONNULL value; ///< Field value
+} SerdLogField;
+
+/**
+   A log entry (message).
+
+   This is the description of a log entry which is passed to log functions.
+   It is only valid in the stack frame it appears in, and may not be copied.
+
+   An entry is a single self-contained message, so the string should not
+   include a trailing newline.
+*/
+typedef struct {
+  const SerdLogField* SERD_NULLABLE fields;   ///< Extra log fields
+  const char* SERD_NONNULL          fmt;      ///< Printf-style format string
+  va_list* SERD_NONNULL             args;     ///< Arguments for `fmt`
+  SerdLogLevel                      level;    ///< Log level
+  size_t                            n_fields; ///< Number of `fields`
+} SerdLogEntry;
+
+/**
+   Sink function for log messages.
+
+   @param handle Handle for user data.
+   @param entry Pointer to log entry description.
+*/
+typedef SerdStatus (*SerdLogFunc)(void* SERD_NULLABLE              handle,
+                                  const SerdLogEntry* SERD_NONNULL entry);
+
+/// A SerdLogFunc that does nothing, for suppressing log output
+SERD_API
+SerdStatus
+serd_quiet_error_func(void* SERD_NULLABLE              handle,
+                      const SerdLogEntry* SERD_NONNULL entry);
+
+/// Return the value of the log field named `key`, or NULL if none exists
+SERD_PURE_API
+const char* SERD_NULLABLE
+serd_log_entry_get_field(const SerdLogEntry* SERD_NONNULL entry,
+                         const char* SERD_NONNULL         key);
+
+/**
+   Set a function to be called with log messages (typically errors).
+
+   If no custom logging function is set, then messages are printed to stderr.
+
+   @param world World that will send log entries to the given function.
+
+   @param log_func Log function to call for every log message.  Each call to
+   this function represents a complete log message with an implicit trailing
+   newline.
+
+   @param handle Opaque handle that will be passed to every invocation of
+   `log_func`.
 */
 SERD_API
 void
-serd_world_set_error_func(SerdWorld* SERD_NONNULL     world,
-                          SerdErrorFunc SERD_NULLABLE error_func,
-                          void* SERD_NULLABLE         handle);
+serd_world_set_log_func(SerdWorld* SERD_NONNULL   world,
+                        SerdLogFunc SERD_NULLABLE log_func,
+                        void* SERD_NULLABLE       handle);
+
+/**
+   Write a message to the log.
+
+   This writes a single complete entry to the log, and so may not be used to
+   print parts of a line like a more general printf-like function.  There
+   should be no trailing newline in `fmt`.  Arguments following `fmt` should
+   correspond to conversion specifiers in the format string as in printf from
+   the standard C library.
+
+   @param world World to log to.
+   @param level Log level.
+   @param n_fields Number of entries in `fields`.
+   @param fields An array of `n_fields` extra log fields.
+   @param fmt Format string.
+*/
+SERD_API
+SERD_LOG_FUNC(5, 6)
+SerdStatus
+serd_world_logf(const SerdWorld* SERD_NONNULL     world,
+                SerdLogLevel                      level,
+                size_t                            n_fields,
+                const SerdLogField* SERD_NULLABLE fields,
+                const char* SERD_NONNULL          fmt,
+                ...);
+
+/**
+   Write a message to the log with a `va_list`.
+
+   This is the same as serd_world_logf() except it takes format arguments as a
+   `va_list` for composability.
+*/
+SERD_API
+SERD_LOG_FUNC(5, 0)
+SerdStatus
+serd_world_vlogf(const SerdWorld* SERD_NONNULL     world,
+                 SerdLogLevel                      level,
+                 size_t                            n_fields,
+                 const SerdLogField* SERD_NULLABLE fields,
+                 const char* SERD_NONNULL          fmt,
+                 va_list                           args);
 
 /**
    @}

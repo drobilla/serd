@@ -37,8 +37,10 @@ r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
 {
   va_list args;
   va_start(args, fmt);
-  const SerdError e = {st, &reader->source->cur, fmt, &args};
-  serd_world_error(reader->world, &e);
+
+  serd_world_vlogf_internal(
+    reader->world, st, SERD_LOG_LEVEL_ERROR, &reader->source->cur, fmt, args);
+
   va_end(args);
   return st;
 }
@@ -240,7 +242,7 @@ skip_bom(SerdReader* const me)
         serd_byte_source_advance(me->source) ||
         serd_byte_source_peek(me->source) != 0xBF ||
         serd_byte_source_advance(me->source)) {
-      r_err(me, SERD_ERR_BAD_SYNTAX, "corrupt byte order mark\n");
+      r_err(me, SERD_ERR_BAD_SYNTAX, "corrupt byte order mark");
       return SERD_ERR_BAD_SYNTAX;
     }
   }
@@ -267,7 +269,7 @@ serd_reader_prepare(SerdReader* const reader)
   } else if (st == SERD_FAILURE) {
     reader->source->eof = true;
   } else {
-    r_err(reader, st, "error preparing read: %s\n", strerror(errno));
+    r_err(reader, st, "error preparing read: %s", strerror(errno));
   }
   return st;
 }
