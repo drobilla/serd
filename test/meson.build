@@ -127,6 +127,7 @@ unit_tests = [
   'caret',
   'env',
   'free_null',
+  'log',
   'node',
   'overflow',
   'reader',
@@ -209,7 +210,7 @@ simple_command_tests = {
 if is_variable('serd_pipe')
   pipe_script_args = common_script_args + ['--tool', serd_pipe]
   serd_ttl = files('../serd.ttl')[0]
-  bad_input_file = files('extra/bad/bad-base.ttl')
+  bad_input_file = files('extra/bad/bad-lang.ttl')
   small_ttl = files('w3c/turtle/turtle-syntax-number-01.ttl')
 
   test('serd_ttl', serd_pipe, args: [serd_ttl], env: test_env, suite: 'data')
@@ -250,7 +251,31 @@ if is_variable('serd_pipe')
     files('test_quiet.py'),
     args: pipe_script_args + [bad_input_file],
     env: test_env,
-    suite: cmd_suite,
+    suite: 'log',
+  )
+  test(
+    'CLICOLOR_FORCE',
+    serd_pipe,
+    args: bad_input_file,
+    env: test_env + ['CLICOLOR_FORCE=1'],
+    should_fail: true,
+    suite: 'log',
+  )
+  test(
+    'CLICOLOR',
+    serd_pipe,
+    args: bad_input_file,
+    env: test_env + ['CLICOLOR=0'],
+    should_fail: true,
+    suite: 'log',
+  )
+  test(
+    'NO_COLOR',
+    serd_pipe,
+    args: bad_input_file,
+    env: test_env + ['NO_COLOR=1'],
+    should_fail: true,
+    suite: 'log',
   )
 
   # Inputs

@@ -4,6 +4,7 @@
 #include "reader.h"
 
 #include "byte_source.h"
+#include "log.h"
 #include "memory.h"
 #include "namespaces.h"
 #include "node.h"
@@ -16,6 +17,7 @@
 #include "world.h"
 
 #include "serd/input_stream.h"
+#include "serd/log.h"
 #include "serd/string.h"
 
 #include <assert.h>
@@ -31,8 +33,10 @@ r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
 {
   va_list args; // NOLINT(cppcoreguidelines-init-variables)
   va_start(args, fmt);
-  const SerdError e = {st, &reader->source->caret, fmt, &args};
-  serd_world_error(reader->world, &e);
+
+  serd_vlogf_at(
+    reader->world, SERD_LOG_LEVEL_ERROR, &reader->source->caret, fmt, args);
+
   va_end(args);
   return st;
 }

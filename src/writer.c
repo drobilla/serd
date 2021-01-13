@@ -3,6 +3,7 @@
 
 #include "block_dumper.h"
 #include "env.h"
+#include "log.h"
 #include "memory.h"
 #include "namespaces.h"
 #include "node.h"
@@ -17,6 +18,7 @@
 #include "serd/attributes.h"
 #include "serd/env.h"
 #include "serd/event.h"
+#include "serd/log.h"
 #include "serd/node.h"
 #include "serd/output_stream.h"
 #include "serd/sink.h"
@@ -167,7 +169,7 @@ write_node(SerdWriter*        writer,
            SerdField          field,
            SerdStatementFlags flags);
 
-SERD_NODISCARD static bool
+static bool
 supports_abbrev(const SerdWriter* writer)
 {
   return writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG;
@@ -201,7 +203,7 @@ w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
   va_list args; // NOLINT(cppcoreguidelines-init-variables)
   va_start(args, fmt);
 
-  serd_world_verrorf(writer->world, st, fmt, args);
+  serd_vlogf(writer->world, SERD_LOG_LEVEL_ERROR, fmt, args);
 
   va_end(args);
   return st;
@@ -916,7 +918,7 @@ write_uri_node(SerdWriter* const     writer,
       !serd_env_base_uri(writer->env)) {
     return w_err(writer,
                  SERD_BAD_ARG,
-                 "syntax does not support URI reference <%s>\n",
+                 "URI reference <%s> in unsupported syntax",
                  node_str);
   }
 
@@ -937,7 +939,7 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
   if (!supports_abbrev(writer) || !fast) {
     const ZixStringView curie = serd_node_string_view(node);
     if ((st = serd_env_expand_in_place(writer->env, curie, &prefix, &suffix))) {
-      return w_err(writer, st, "undefined namespace prefix '%s'\n", node_str);
+      return w_err(writer, st, "undefined namespace prefix '%s'", node_str);
     }
   }
 
@@ -1360,7 +1362,10 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
   }
 
   if (!writer->anon_stack_size) {
-    return w_err(writer, SERD_BAD_EVENT, "unexpected end of anonymous node\n");
+    return w_err(writer,
+                 SERD_BAD_EVENT,
+                 "unexpected end of anonymous node '%s'",
+                 serd_node_string(node));
   }
 
   // Write the end separator ']' and pop the context

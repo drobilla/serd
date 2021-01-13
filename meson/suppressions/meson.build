@@ -17,7 +17,6 @@ if is_variable('cc')
       c_suppressions += [
         '-Wno-cast-function-type-strict',
         '-Wno-declaration-after-statement',
-        '-Wno-format-nonliteral',
         '-Wno-padded',
         '-Wno-unsafe-buffer-usage',
       ]
@@ -50,7 +49,6 @@ if is_variable('cc')
   elif cc.get_id() == 'gcc'
     if warning_level == 'everything'
       c_suppressions += [
-        '-Wno-format-nonliteral',
         '-Wno-inline',
         '-Wno-padded',
         '-Wno-switch-default',

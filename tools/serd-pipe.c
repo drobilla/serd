@@ -4,8 +4,8 @@
 #include "console.h"
 
 #include "serd/env.h"
-#include "serd/error.h"
 #include "serd/input_stream.h"
+#include "serd/log.h"
 #include "serd/node.h"
 #include "serd/output_stream.h"
 #include "serd/reader.h"
@@ -62,14 +62,6 @@ missing_arg(const char* const name, const char opt)
 {
   LOG_ERRF("option requires an argument -- '%c'\n", opt);
   return print_usage(name, true);
-}
-
-static SerdStatus
-quiet_error_func(void* const handle, const SerdError* const e)
-{
-  (void)handle;
-  (void)e;
-  return SERD_SUCCESS;
 }
 
 static SerdStatus
@@ -285,7 +277,7 @@ main(int argc, char** argv)
     serd_writer_new(world, output_syntax, writer_flags, env, &out, block_size);
 
   if (quiet) {
-    serd_world_set_error_func(world, quiet_error_func, NULL);
+    serd_set_log_func(world, serd_quiet_log_func, NULL);
   }
 
   if (root_uri) {
