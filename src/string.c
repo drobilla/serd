@@ -51,6 +51,8 @@ serd_strerror(const SerdStatus status)
     return "Invalid CURIE";
   case SERD_ERR_INTERNAL:
     return "Internal error";
+  case SERD_ERR_OVERFLOW:
+    return "Stack overflow";
   }
 
   return "Unknown error";

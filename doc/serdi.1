@@ -9,6 +9,7 @@
 .Op Fl abefhlqv
 .Op Fl c Ar prefix
 .Op Fl i Ar syntax
+.Op Fl k Ar bytes
 .Op Fl o Ar syntax
 .Op Fl p Ar prefix
 .Op Fl r Ar root
@@ -67,6 +68,14 @@ Case is ignored, valid values are:
 .Dq NTriples ,
 .Dq TriG ,
 .Dq Turtle .
+.Pp
+.It Fl k Ar bytes
+Parser stack size.
+For performance reasons, parsing is performed with a fixed-size stack.
+By default, the stack is one page (4096 bytes), which should be sufficient for parsing most documents.
+This option can be used to increase or decrease the amount of memory available for parsing.
+It must be large enough to fit one statement, with some extra space for internal records.
+Something around twice the length of the longest statement in text (as if it were written in NTriples or NQuads) is a reasonable value.
 .Pp
 .It Fl l
 Lax (non-strict) parsing.
