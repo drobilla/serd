@@ -3,6 +3,7 @@ serd (1.0.1) unstable;
   * Add SerdBuffer for mutable buffers to keep SerdChunk const-correct
   * Add SerdWorld for shared library state
   * Add option for writing terse output without newlines
+  * Add support for writing terse collections
   * Add support for xsd:float and xsd:double literals
   * Bring read/write interface closer to C standard
   * Make nodes opaque
