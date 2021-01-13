@@ -5,14 +5,13 @@
 
 #include "serd/canon.h"
 #include "serd/env.h"
-#include "serd/error.h"
 #include "serd/input_stream.h"
+#include "serd/log.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
 #include "serd/tee.h"
-#include "serd/world.h"
 #include "serd/writer.h"
 #include "zix/string_view.h"
 
@@ -32,14 +31,6 @@ typedef struct {
   bool              quiet;
 } Options;
 
-static SerdStatus
-quiet_error_func(void* const handle, const SerdError* const e)
-{
-  (void)handle;
-  (void)e;
-  return SERD_SUCCESS;
-}
-
 // Run the tool using the given options
 static SerdStatus
 run(const Options opts)
@@ -56,7 +47,7 @@ run(const Options opts)
   serd_writer_set_root_uri(app.writer, zix_string(opts.root_uri));
 
   if (opts.quiet) {
-    serd_world_set_error_func(app.world, quiet_error_func, NULL);
+    serd_set_log_func(app.world, serd_quiet_log_func, NULL);
   }
 
   // Set up the output pipeline: [canon] -> writer

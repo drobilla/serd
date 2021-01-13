@@ -5,7 +5,6 @@
 #define SERD_WORLD_H
 
 #include "serd/attributes.h"
-#include "serd/error.h"
 #include "serd/node.h"
 #include "serd/status.h"
 #include "zix/allocator.h"
@@ -76,17 +75,6 @@ serd_world_set_limits(SerdWorld* ZIX_NONNULL world, SerdLimits limits);
 */
 SERD_API const SerdNode* ZIX_NONNULL
 serd_world_get_blank(SerdWorld* ZIX_NONNULL world);
-
-/**
-   Set a function to be called when errors occur.
-
-   The `error_func` will be called with `handle` as its first argument.  If
-   no error function is set, errors are printed to stderr.
-*/
-SERD_API void
-serd_world_set_error_func(SerdWorld* ZIX_NONNULL   world,
-                          SerdLogFunc ZIX_NULLABLE error_func,
-                          void* ZIX_NULLABLE       handle);
 
 /**
    @}
