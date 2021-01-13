@@ -62,9 +62,7 @@ test_write_long_literal(void)
 
   SerdNode* s = serd_new_uri(zix_string(NS_EG "s"));
   SerdNode* p = serd_new_uri(zix_string(NS_EG "p"));
-  SerdNode* o = serd_new_literal(zix_string("hello \"\"\"world\"\"\"!"),
-                                 zix_empty_string(),
-                                 zix_empty_string());
+  SerdNode* o = serd_new_string(zix_string("hello \"\"\"world\"\"\"!"));
 
   assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o));
 

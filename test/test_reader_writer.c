@@ -496,14 +496,13 @@ test_writer(const char* const path)
 
   serd_node_free(bad);
 
-  static const ZixStringView empty    = ZIX_STATIC_STRING("");
   static const ZixStringView urn_Type = ZIX_STATIC_STRING("urn:Type");
   static const ZixStringView en       = ZIX_STATIC_STRING("en");
 
   {
     SerdNode* const o = serd_new_string(zix_string("o"));
-    SerdNode* const t = serd_new_literal(zix_string("t"), urn_Type, empty);
-    SerdNode* const l = serd_new_literal(zix_string("l"), empty, en);
+    SerdNode* const t = serd_new_typed_literal(zix_string("t"), urn_Type);
+    SerdNode* const l = serd_new_plain_literal(zix_string("l"), en);
 
     const SerdNode* good[][3] = {{s, p, o}, {s, p, t}, {s, p, l}};
 
