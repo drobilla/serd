@@ -168,11 +168,11 @@ is_uri_path_char(const uint8_t c)
 static bool
 is_dir_sep(const char c)
 {
-  #ifdef _WIN32
+#ifdef _WIN32
   return c == '\\' || c == '/';
-  #else
+#else
   return c == '/';
-  #endif
+#endif
 }
 
 SerdNode
@@ -201,30 +201,30 @@ serd_node_new_file_uri(const uint8_t* const path,
     }
   }
 
-  SerdChunk chunk = {uri, uri_len};
+  SerdBuffer buffer = {uri, uri_len};
   for (size_t i = 0; i < path_len; ++i) {
     if (path[i] == '%') {
-      serd_chunk_sink("%%", 2, &chunk);
+      serd_buffer_sink("%%", 2, &buffer);
     } else if (is_uri_path_char(path[i])) {
-      serd_chunk_sink(path + i, 1, &chunk);
+      serd_buffer_sink(path + i, 1, &buffer);
 #ifdef _WIN32
     } else if (path[i] == '\\') {
-      serd_chunk_sink("/", 1, &chunk);
+      serd_buffer_sink("/", 1, &buffer);
 #endif
     } else {
       char escape_str[4] = {'%', 0, 0, 0};
       snprintf(escape_str + 1, sizeof(escape_str) - 1, "%X", (unsigned)path[i]);
-      serd_chunk_sink(escape_str, 3, &chunk);
+      serd_buffer_sink(escape_str, 3, &buffer);
     }
   }
 
-  const uint8_t* const string = serd_chunk_sink_finish(&chunk);
+  const uint8_t* const string = serd_buffer_sink_finish(&buffer);
 
   if (string && out) {
     serd_uri_parse(string, out);
   }
 
-  return serd_node_from_substring(SERD_URI, string, chunk.len);
+  return serd_node_from_substring(SERD_URI, string, buffer.len);
 }
 
 SerdNode
