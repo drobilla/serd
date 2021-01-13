@@ -200,12 +200,11 @@ test_writer(const char* const path)
     assert(serd_sink_write(iface, 0, junk[i][0], junk[i][1], junk[i][2], NULL));
   }
 
-  static const SerdStringView empty    = SERD_EMPTY_STRING();
   static const SerdStringView urn_Type = SERD_STATIC_STRING("urn:Type");
   static const SerdStringView en       = SERD_STATIC_STRING("en");
 
-  SerdNode* const t         = serd_new_literal(buf_view, urn_Type, empty);
-  SerdNode* const l         = serd_new_literal(buf_view, empty, en);
+  SerdNode* const t         = serd_new_typed_literal(buf_view, urn_Type);
+  SerdNode* const l         = serd_new_plain_literal(buf_view, en);
   const SerdNode* good[][3] = {{s, p, o}, {s, p, t}, {s, p, l}};
 
   for (size_t i = 0; i < sizeof(good) / (sizeof(SerdNode*) * 3); ++i) {
