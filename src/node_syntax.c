@@ -23,14 +23,6 @@
 #include <string.h>
 
 static SerdStatus
-quiet_error_func(void* const handle, const SerdError* const e)
-{
-  (void)handle;
-  (void)e;
-  return SERD_SUCCESS;
-}
-
-static SerdStatus
 on_node_string_event(void* const handle, const SerdEvent* const event)
 {
   if (event->type == SERD_STATEMENT) {
@@ -67,7 +59,7 @@ serd_node_from_syntax(const char* const str, const SerdSyntax syntax)
     sink,
     1024 + doc_len);
 
-  serd_world_set_error_func(world, quiet_error_func, NULL);
+  serd_world_set_log_func(world, serd_quiet_error_func, NULL);
   serd_reader_start(reader, source);
   serd_reader_read_document(reader);
   serd_reader_finish(reader);
@@ -90,7 +82,7 @@ serd_node_to_syntax(const SerdNode* const node, const SerdSyntax syntax)
   SerdByteSink* const out    = serd_byte_sink_new_buffer(&buffer);
   SerdWriter* const   writer = serd_writer_new(world, syntax, 0, env, out);
 
-  serd_world_set_error_func(world, quiet_error_func, NULL);
+  serd_world_set_log_func(world, serd_quiet_error_func, NULL);
 
   char* result = NULL;
   if (!serd_writer_write_node(writer, node) && !serd_writer_finish(writer)) {

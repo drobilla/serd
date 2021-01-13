@@ -85,14 +85,6 @@ missing_arg(const char* const name, const char opt)
 }
 
 static SerdStatus
-quiet_error_func(void* const handle, const SerdError* const e)
-{
-  (void)handle;
-  (void)e;
-  return SERD_SUCCESS;
-}
-
-static SerdStatus
 read_file(SerdWorld* const      world,
           SerdSyntax            syntax,
           const SerdReaderFlags flags,
@@ -333,7 +325,7 @@ main(int argc, char** argv)
     serd_writer_new(world, output_syntax, writer_flags, env, byte_sink);
 
   if (quiet) {
-    serd_world_set_error_func(world, quiet_error_func, NULL);
+    serd_world_set_log_func(world, serd_quiet_error_func, NULL);
   }
 
   SerdNode* root = serd_new_uri(SERD_MEASURE_STRING(root_uri));

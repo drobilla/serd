@@ -18,46 +18,232 @@
 
 #include "world.h"
 
-#include "cursor.h"
 #include "namespaces.h"
 #include "node.h"
+#include "serd_config.h"
+
+#if USE_FILENO && USE_ISATTY
+#  include <unistd.h>
+#endif
 
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define BLANK_CHARS 12
 
-SerdStatus
-serd_world_error(const SerdWorld* const world, const SerdError* const e)
+static int
+level_color(const SerdLogLevel level)
 {
-  if (world->error_func) {
-    world->error_func(world->error_handle, e);
-  } else {
-    fprintf(stderr, "error: ");
-    if (e->cursor) {
-      fprintf(stderr,
-              "%s:%u:%u: ",
-              serd_node_string(e->cursor->file),
-              e->cursor->line,
-              e->cursor->col);
-    }
-    vfprintf(stderr, e->fmt, *e->args);
+  switch (level) {
+  case SERD_LOG_LEVEL_EMERGENCY:
+  case SERD_LOG_LEVEL_ALERT:
+  case SERD_LOG_LEVEL_CRITICAL:
+  case SERD_LOG_LEVEL_ERROR:
+    return 31; // Red
+  case SERD_LOG_LEVEL_WARNING:
+    return 33; // Yellow
+  case SERD_LOG_LEVEL_NOTICE:
+  case SERD_LOG_LEVEL_INFO:
+  case SERD_LOG_LEVEL_DEBUG:
+    break;
   }
-  return e->status;
+
+  return 1; // White
+}
+
+static bool
+terminal_supports_color(FILE* const stream)
+{
+  // https://no-color.org/
+  if (!getenv("NO_COLOR")) {
+    // https://bixense.com/clicolors/
+    const char* const clicolor_force = getenv("CLICOLOR_FORCE");
+    if (clicolor_force && strcmp(clicolor_force, "0")) {
+      return true;
+    }
+
+    // https://bixense.com/clicolors/
+    const char* const clicolor = getenv("CLICOLOR");
+    if (clicolor && !strcmp(clicolor, "0")) {
+      return false;
+    }
+
+#if USE_FILENO && USE_ISATTY
+    // Assume support if TERM contains "color" (doing this properly is hard...)
+    const char* const term = getenv("TERM");
+    return isatty(fileno(stream)) && term && strstr(term, "color");
+#else
+    (void)stream;
+#endif
+  }
+
+  return false;
+}
+
+static bool
+serd_ansi_start(FILE* const stream, const int color, const bool bold)
+{
+  if (terminal_supports_color(stream)) {
+    return fprintf(stream, bold ? "\033[0;%d;1m" : "\033[0;%dm", color);
+  }
+
+  return 0;
+}
+
+static void
+serd_ansi_reset(FILE* const stream)
+{
+  if (terminal_supports_color(stream)) {
+    fprintf(stream, "\033[0m");
+    fflush(stream);
+  }
+}
+
+static const char* const log_level_strings[] = {"emergency",
+                                                "alert",
+                                                "critical",
+                                                "error",
+                                                "warning",
+                                                "note",
+                                                "info",
+                                                "debug"};
+
+SERD_CONST_FUNC
+SerdStatus
+serd_quiet_error_func(void* const handle, const SerdLogEntry* const entry)
+{
+  (void)handle;
+  (void)entry;
+  return SERD_SUCCESS;
+}
+
+static const char*
+get_log_field(const SerdLogField* const fields,
+              const size_t              n_fields,
+              const char* const         key)
+{
+  for (size_t i = 0; i < n_fields; ++i) {
+    if (!strcmp(fields[i].key, key)) {
+      return fields[i].value;
+    }
+  }
+
+  return NULL;
+}
+
+const char*
+serd_log_entry_get_field(const SerdLogEntry* const entry, const char* const key)
+{
+  return get_log_field(entry->fields, entry->n_fields, key);
 }
 
 SerdStatus
-serd_world_errorf(const SerdWorld* const world,
-                  const SerdStatus       st,
-                  const char* const      fmt,
-                  ...)
+serd_world_vlogf(const SerdWorld* const    world,
+                 const SerdLogLevel        level,
+                 const size_t              n_fields,
+                 const SerdLogField* const fields,
+                 const char* const         fmt,
+                 va_list                   args)
+{
+  // Copy args (which may be an array) to portably get a pointer
+  va_list ap;
+  va_copy(ap, args);
+
+  const SerdLogEntry e  = {fields, fmt, &ap, level, n_fields};
+  SerdStatus         st = SERD_SUCCESS;
+
+  if (world->log_func) {
+    st = world->log_func(world->log_handle, &e);
+  } else {
+    // Print input file and position prefix if available
+    const char* const file = serd_log_entry_get_field(&e, "SERD_FILE");
+    const char* const line = serd_log_entry_get_field(&e, "SERD_LINE");
+    const char* const col  = serd_log_entry_get_field(&e, "SERD_COL");
+    if (file && line && col) {
+      serd_ansi_start(stderr, 1, true);
+      fprintf(stderr, "%s:%s:%s: ", file, line, col);
+      serd_ansi_reset(stderr);
+    }
+
+    // Print GCC-style level prefix (error, warning, etc)
+    serd_ansi_start(stderr, level_color(level), true);
+    fprintf(stderr, "%s: ", log_level_strings[level]);
+    serd_ansi_reset(stderr);
+
+    // Using a copy isn't necessary here, but it avoids a clang-tidy bug
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+  }
+
+  va_end(ap);
+  return st;
+}
+
+SerdStatus
+serd_world_logf(const SerdWorld* const    world,
+                const SerdLogLevel        level,
+                const size_t              n_fields,
+                const SerdLogField* const fields,
+                const char* const         fmt,
+                ...)
 {
   va_list args;
   va_start(args, fmt);
-  const SerdError e = {st, NULL, fmt, &args};
-  serd_world_error(world, &e);
+
+  const SerdStatus st =
+    serd_world_vlogf(world, level, n_fields, fields, fmt, args);
+
+  va_end(args);
+  return st;
+}
+
+SerdStatus
+serd_world_vlogf_internal(const SerdWorld* const  world,
+                          const SerdStatus        st,
+                          const SerdLogLevel      level,
+                          const SerdCursor* const cursor,
+                          const char* const       fmt,
+                          va_list                 args)
+{
+  char st_str[12];
+  snprintf(st_str, sizeof(st_str), "%u", st);
+  if (cursor) {
+    const char* file = serd_node_string(serd_cursor_name(cursor));
+
+    char line[24];
+    snprintf(line, sizeof(line), "%u", serd_cursor_line(cursor));
+
+    char col[24];
+    snprintf(col, sizeof(col), "%u", serd_cursor_column(cursor));
+
+    const SerdLogField fields[] = {{"SERD_STATUS", st_str},
+                                   {"SERD_FILE", file},
+                                   {"SERD_LINE", line},
+                                   {"SERD_COL", col}};
+
+    serd_world_vlogf(world, level, 4, fields, fmt, args);
+  } else {
+    const SerdLogField fields[] = {{"SERD_STATUS", st_str}};
+    serd_world_vlogf(world, level, 1, fields, fmt, args);
+  }
+
+  return st;
+}
+
+SerdStatus
+serd_world_logf_internal(const SerdWorld* const  world,
+                         const SerdStatus        st,
+                         const SerdLogLevel      level,
+                         const SerdCursor* const cursor,
+                         const char* const       fmt,
+                         ...)
+{
+  va_list args;
+  va_start(args, fmt);
+  serd_world_vlogf_internal(world, st, level, cursor, fmt, args);
   va_end(args);
   return st;
 }
@@ -120,10 +306,10 @@ serd_world_get_blank(SerdWorld* const world)
 }
 
 void
-serd_world_set_error_func(SerdWorld*    world,
-                          SerdErrorFunc error_func,
-                          void*         handle)
+serd_world_set_log_func(SerdWorld* const  world,
+                        const SerdLogFunc log_func,
+                        void* const       handle)
 {
-  world->error_func   = error_func;
-  world->error_handle = handle;
+  world->log_func   = log_func;
+  world->log_handle = handle;
 }
