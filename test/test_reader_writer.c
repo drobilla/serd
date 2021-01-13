@@ -475,12 +475,11 @@ test_writer(const char* const path)
       writer, 0, NULL, junk[i][0], junk[i][1], junk[i][2]));
   }
 
-  const SerdStringView empty    = serd_empty_string();
   const SerdStringView urn_Type = serd_string("urn:Type");
   const SerdStringView en       = serd_string("en");
 
-  SerdNode* const t         = serd_new_literal(buf_view, urn_Type, empty);
-  SerdNode* const l         = serd_new_literal(buf_view, empty, en);
+  SerdNode* const t         = serd_new_typed_literal(buf_view, urn_Type);
+  SerdNode* const l         = serd_new_plain_literal(buf_view, en);
   const SerdNode* good[][3] = {{s, p, o}, {s, p, t}, {s, p, l}};
 
   for (size_t i = 0; i < sizeof(good) / (sizeof(SerdNode*) * 3); ++i) {
