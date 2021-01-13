@@ -2,6 +2,7 @@ serd (1.0.1) unstable;
 
   * Add SerdBuffer for mutable buffers to keep SerdChunk const-correct
   * Add SerdWorld for shared library state
+  * Add extensible logging API
   * Add option for writing terse output without newlines
   * Add support for parsing variables
   * Add support for writing terse collections
