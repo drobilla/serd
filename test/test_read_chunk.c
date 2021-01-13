@@ -98,7 +98,8 @@ main(void)
                                    "eg:s2 eg:p1 eg:o1 ;\n"
                                    "      eg:p2 eg:o2 .\n"
                                    "eg:s3 eg:p1 eg:o1 .\n"
-                                   "eg:s4 eg:p1 [ eg:p3 eg:o1 ] .\n"));
+                                   "eg:s4 eg:p1 [ eg:p3 eg:o1 ] .\n",
+                                   NULL));
 
   assert(!serd_reader_read_chunk(reader) && n_prefix == 1);
   assert(!serd_reader_read_chunk(reader) && n_base == 1);

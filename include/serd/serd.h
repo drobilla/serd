@@ -83,6 +83,9 @@ extern "C" {
 /// Global library state
 typedef struct SerdWorldImpl SerdWorld;
 
+/// The origin of a statement in a document
+typedef struct SerdCursorImpl SerdCursor;
+
 /// Lexical environment for relative URIs or CURIEs (base URI and namespaces)
 typedef struct SerdEnvImpl SerdEnv;
 
@@ -839,12 +842,10 @@ serd_node_equals(const SerdNode* SERD_NULLABLE a,
 
 /// An error description
 typedef struct {
-  SerdStatus                status;   ///< Error code
-  const char* SERD_NULLABLE filename; ///< File with error
-  unsigned                  line;     ///< Line in file with error or 0
-  unsigned                  col;      ///< Column in file with error
-  const char* SERD_NONNULL  fmt;      ///< Printf-style format string
-  va_list* SERD_NONNULL     args;     ///< Arguments for fmt
+  SerdStatus                      status; ///< Error code
+  const SerdCursor* SERD_NULLABLE cursor; ///< Origin of error
+  const char* SERD_NONNULL        fmt;    ///< Printf-style format string
+  va_list* SERD_NONNULL           args;   ///< Arguments for fmt
 } SerdError;
 
 /**
@@ -1148,14 +1149,15 @@ serd_reader_start_stream(SerdReader* SERD_NONNULL         reader,
                          SerdReadFunc SERD_NONNULL        read_func,
                          SerdStreamErrorFunc SERD_NONNULL error_func,
                          void* SERD_NONNULL               stream,
-                         const char* SERD_NULLABLE        name,
+                         const SerdNode* SERD_NULLABLE    name,
                          size_t                           page_size);
 
 /// Prepare to read from a string
 SERD_API
 SerdStatus
-serd_reader_start_string(SerdReader* SERD_NONNULL reader,
-                         const char* SERD_NONNULL utf8);
+serd_reader_start_string(SerdReader* SERD_NONNULL      reader,
+                         const char* SERD_NONNULL      utf8,
+                         const SerdNode* SERD_NULLABLE name);
 
 /**
    Read a single "chunk" of data during an incremental read
@@ -1299,6 +1301,67 @@ serd_writer_set_root_uri(SerdWriter* SERD_NONNULL      writer,
 SERD_API
 SerdStatus
 serd_writer_finish(SerdWriter* SERD_NONNULL writer);
+
+/**
+   @}
+   @defgroup serd_cursor Cursor
+   @{
+*/
+
+/**
+   Create a new cursor
+
+   Note that, to minimise model overhead, the cursor does not own the name
+   node, so `name` must have a longer lifetime than the cursor for it to be
+   valid.  That is, serd_cursor_name() will return exactly the pointer
+   `name`, not a copy.  For cursors from models, this is the lifetime of the
+   model.  For user-created cursors, the simplest way to handle this is to use
+   `SerdNodes`.
+
+   @param name The name of the document or stream (usually a file URI)
+   @param line The line number in the document (1-based)
+   @param col The column number in the document (1-based)
+   @return A new cursor that must be freed with serd_cursor_free()
+*/
+SERD_API
+SerdCursor* SERD_ALLOCATED
+serd_cursor_new(const SerdNode* SERD_NONNULL name, unsigned line, unsigned col);
+
+/// Return a copy of `cursor`
+SERD_API
+SerdCursor* SERD_ALLOCATED
+serd_cursor_copy(const SerdCursor* SERD_NULLABLE cursor);
+
+/// Free `cursor`
+SERD_API
+void
+serd_cursor_free(SerdCursor* SERD_NULLABLE cursor);
+
+/// Return true iff `lhs` is equal to `rhs`
+SERD_PURE_API
+bool
+serd_cursor_equals(const SerdCursor* SERD_NULLABLE lhs,
+                   const SerdCursor* SERD_NULLABLE rhs);
+
+/**
+   Return the document name.
+
+   This is typically a file URI, but may be a descriptive string node for
+   statements that originate from streams.
+*/
+SERD_PURE_API
+const SerdNode* SERD_NONNULL
+serd_cursor_name(const SerdCursor* SERD_NONNULL cursor);
+
+/// Return the one-relative line number in the document
+SERD_PURE_API
+unsigned
+serd_cursor_line(const SerdCursor* SERD_NONNULL cursor);
+
+/// Return the zero-relative column number in the line
+SERD_PURE_API
+unsigned
+serd_cursor_column(const SerdCursor* SERD_NONNULL cursor);
 
 /**
    @}
