@@ -2,18 +2,18 @@
 // SPDX-License-Identifier: ISC
 
 #include "caret_impl.h" // IWYU pragma: keep
+#include "log.h"
 #include "memory.h"
 #include "namespaces.h"
 #include "node_internal.h"
 #include "string_utils.h"
 #include "warnings.h"
-#include "world_internal.h"
 
 #include "exess/exess.h"
 #include "serd/canon.h"
 #include "serd/caret.h"
-#include "serd/error.h"
 #include "serd/event.h"
+#include "serd/log.h"
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/statement_view.h"
@@ -24,7 +24,6 @@
 #include "zix/string_view.h"
 
 #include <assert.h>
-#include <stdarg.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -33,21 +32,6 @@ typedef struct {
   const SerdSink*  target;
   SerdCanonFlags   flags;
 } SerdCanonData;
-
-static SerdStatus
-c_err(const SerdWorld* const world,
-      const SerdStatus       status,
-      const SerdCaret* const caret,
-      const char* const      fmt,
-      ...)
-{
-  va_list args; // NOLINT(cppcoreguidelines-init-variables)
-  va_start(args, fmt);
-  const SerdError e = {status, caret, fmt, &args};
-  serd_world_error(world, &e);
-  va_end(args);
-  return status;
-}
 
 static ExessResult
 build_typed(ZixAllocator* const ZIX_NONNULL   allocator,
@@ -166,11 +150,11 @@ serd_canon_on_statement(SerdCanonData* const          data,
       caret.col      = statement.caret.column + 1U + (unsigned)r.count;
     }
 
-    c_err(data->world,
-          SERD_BAD_SYNTAX,
-          statement.caret.document ? &caret : NULL,
-          "invalid literal (%s)",
-          exess_strerror(r.status));
+    serd_logf_at(data->world,
+                 lax ? SERD_LOG_LEVEL_WARNING : SERD_LOG_LEVEL_ERROR,
+                 statement.caret.document ? &caret : NULL,
+                 "invalid literal (%s)",
+                 exess_strerror(r.status));
 
     if (!lax) {
       return r.status == EXESS_NO_SPACE ? SERD_BAD_ALLOC : SERD_BAD_LITERAL;
