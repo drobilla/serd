@@ -16,9 +16,9 @@ static void
 test_write_long_literal(void)
 {
   SerdEnv*    env    = serd_env_new(NULL);
-  SerdChunk   chunk  = {NULL, 0};
+  SerdBuffer  buffer = {NULL, 0};
   SerdWriter* writer = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
+    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_buffer_sink, &buffer);
 
   assert(writer);
 
@@ -31,7 +31,7 @@ test_write_long_literal(void)
   serd_writer_free(writer);
   serd_env_free(env);
 
-  char* out = serd_chunk_sink_finish(&chunk);
+  char* out = serd_buffer_sink_finish(&buffer);
 
   static const char* const expected =
     "<http://example.org/s>\n"
@@ -45,9 +45,9 @@ static void
 test_write_nested_anon(void)
 {
   SerdEnv*    env    = serd_env_new(NULL);
-  SerdChunk   chunk  = {NULL, 0};
+  SerdBuffer  buffer = {NULL, 0};
   SerdWriter* writer = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
+    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_buffer_sink, &buffer);
 
   assert(writer);
 
@@ -97,7 +97,7 @@ test_write_nested_anon(void)
   serd_writer_free(writer);
   serd_env_free(env);
 
-  char* const out = serd_chunk_sink_finish(&chunk);
+  char* const out = serd_buffer_sink_finish(&buffer);
 
   static const char* const expected =
     "<http://example.org/s0>\n"

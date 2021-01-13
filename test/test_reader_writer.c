@@ -223,16 +223,16 @@ test_writer(const char* const path)
 
   serd_writer_free(writer);
 
-  // Test chunk sink
-  SerdChunk chunk = {NULL, 0};
-  writer          = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
+  // Test buffer sink
+  SerdBuffer buffer = {NULL, 0};
+  writer            = serd_writer_new(
+    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_buffer_sink, &buffer);
 
   o = serd_node_from_string(SERD_URI, "http://example.org/base");
   assert(!serd_writer_set_base_uri(writer, &o));
 
   serd_writer_free(writer);
-  char* out = serd_chunk_sink_finish(&chunk);
+  char* out = serd_buffer_sink_finish(&buffer);
 
   assert(!strcmp(out, "@base <http://example.org/base> .\n"));
   serd_free(out);
@@ -240,19 +240,19 @@ test_writer(const char* const path)
   // Test writing empty node
   SerdNode nothing = serd_node_from_string(SERD_NOTHING, "");
 
-  chunk.buf = NULL;
-  chunk.len = 0;
-  writer    = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
+  buffer.buf = NULL;
+  buffer.len = 0;
+  writer     = serd_writer_new(
+    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_buffer_sink, &buffer);
 
   assert(!serd_writer_write_statement(
     writer, 0, NULL, &s, &p, &nothing, NULL, NULL));
 
   assert(
-    !strncmp((const char*)chunk.buf, "<>\n\t<http://example.org/pred> ", 30));
+    !strncmp((const char*)buffer.buf, "<>\n\t<http://example.org/pred> ", 30));
 
   serd_writer_free(writer);
-  out = serd_chunk_sink_finish(&chunk);
+  out = serd_buffer_sink_finish(&buffer);
 
   assert(!strcmp((const char*)out, "<>\n\t<http://example.org/pred>  .\n"));
   serd_free(out);
