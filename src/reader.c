@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: ISC
 
 #include "byte_source.h"
+#include "log.h"
 #include "memory.h"
 #include "namespaces.h"
 #include "node_impl.h"
@@ -21,8 +22,8 @@
 #include "exess/exess.h"
 #include "serd/caret_view.h"
 #include "serd/env.h"
-#include "serd/error.h"
 #include "serd/input_stream.h"
+#include "serd/log.h"
 #include "serd/node.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
@@ -46,8 +47,10 @@ r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
 {
   va_list args; // NOLINT(cppcoreguidelines-init-variables)
   va_start(args, fmt);
-  const SerdError e = {st, &reader->source->caret, fmt, &args};
-  serd_world_error(reader->world, &e);
+
+  serd_vlogf_at(
+    reader->world, SERD_LOG_LEVEL_ERROR, &reader->source->caret, fmt, args);
+
   va_end(args);
   return st;
 }

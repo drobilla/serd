@@ -16,7 +16,6 @@ if is_variable('cc')
     if warning_level == 'everything'
       c_suppressions += [
         '-Wno-declaration-after-statement',
-        '-Wno-format-nonliteral',
         '-Wno-padded',
         '-Wno-unsafe-buffer-usage',
       ]
@@ -50,7 +49,6 @@ if is_variable('cc')
     if warning_level == 'everything'
       c_suppressions += [
         '-Wno-array-bounds',
-        '-Wno-format-nonliteral',
         '-Wno-inline',
         '-Wno-padded',
         '-Wno-switch-default',
