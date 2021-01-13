@@ -910,6 +910,10 @@ serd_writer_write_statement(SerdWriter* const        writer,
   if (flags & (SERD_ANON_S_BEGIN | SERD_ANON_O_BEGIN)) {
     WriteContext* ctx =
       (WriteContext*)serd_stack_push(&writer->anon_stack, sizeof(WriteContext));
+    if (!ctx) {
+      return SERD_ERR_OVERFLOW;
+    }
+
     *ctx                     = writer->context;
     WriteContext new_context = {
       serd_node_copy(graph), serd_node_copy(subject), NULL};
@@ -983,7 +987,7 @@ serd_writer_new(SerdSyntax      syntax,
   writer->env        = env;
   writer->root_node  = NULL;
   writer->root_uri   = SERD_URI_NULL;
-  writer->anon_stack = serd_stack_new(4 * sizeof(WriteContext));
+  writer->anon_stack = serd_stack_new(SERD_PAGE_SIZE);
   writer->context    = context;
   writer->list_subj  = NULL;
   writer->empty      = true;

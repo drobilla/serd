@@ -84,7 +84,7 @@ test_read_chunks(void)
   FILE* const       f      = tmpfile();
   static const char null   = 0;
   SerdSink*         sink   = serd_sink_new(rt, NULL);
-  SerdReader*       reader = serd_reader_new(SERD_TURTLE, sink);
+  SerdReader*       reader = serd_reader_new(SERD_TURTLE, sink, 4096);
 
   assert(reader);
   assert(sink);
@@ -144,7 +144,7 @@ test_read_string(void)
 {
   ReaderTest* rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
   SerdSink*   sink   = serd_sink_new(rt, NULL);
-  SerdReader* reader = serd_reader_new(SERD_TURTLE, sink);
+  SerdReader* reader = serd_reader_new(SERD_TURTLE, sink, 4096);
 
   assert(reader);
   assert(sink);
@@ -260,13 +260,16 @@ test_writer(const char* const path)
 static void
 test_reader(const char* path)
 {
-  ReaderTest      rt     = {0, NULL};
-  SerdSink* const sink   = serd_sink_new(&rt, NULL);
-  SerdReader*     reader = serd_reader_new(SERD_TURTLE, sink);
-
-  assert(reader);
+  ReaderTest      rt   = {0, NULL};
+  SerdSink* const sink = serd_sink_new(&rt, NULL);
   assert(sink);
   serd_sink_set_statement_func(sink, test_sink);
+
+  // Test that too little stack space fails gracefully
+  assert(!serd_reader_new(SERD_TURTLE, sink, 32));
+
+  SerdReader* reader = serd_reader_new(SERD_TURTLE, sink, 4096);
+  assert(reader);
 
   SerdNode* g = serd_new_uri(SERD_STATIC_STRING("http://example.org/"));
   serd_reader_set_default_graph(reader, g);

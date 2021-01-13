@@ -85,7 +85,7 @@ main(void)
   serd_sink_set_statement_func(sink, on_statement);
   serd_sink_set_end_func(sink, on_end);
 
-  SerdReader* reader = serd_reader_new(SERD_TURTLE, sink);
+  SerdReader* reader = serd_reader_new(SERD_TURTLE, sink, 4096);
   assert(reader);
 
   assert(!serd_reader_start_string(reader,
