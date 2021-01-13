@@ -31,7 +31,6 @@ serd_file_uri_parse(const char* const uri, char** const hostname)
       if (!(path = strchr(auth, '/'))) {
         return NULL;
       }
-
       if (hostname) {
         const size_t len = (size_t)(path - auth);
         *hostname        = (char*)calloc(len + 1, 1);
@@ -44,27 +43,26 @@ serd_file_uri_parse(const char* const uri, char** const hostname)
     ++path;
   }
 
-  SerdChunk chunk = {NULL, 0};
+  SerdBuffer buffer = {NULL, 0};
   for (const char* s = path; *s; ++s) {
     if (*s == '%') {
       if (*(s + 1) == '%') {
-        serd_chunk_sink("%", 1, &chunk);
+        serd_buffer_sink("%", 1, &buffer);
         ++s;
       } else if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
         const uint8_t hi = hex_digit_value((const uint8_t)s[1]);
         const uint8_t lo = hex_digit_value((const uint8_t)s[2]);
         const char    c  = (char)((hi << 4U) | lo);
-        serd_chunk_sink(&c, 1, &chunk);
+        serd_buffer_sink(&c, 1, &buffer);
         s += 2;
       } else {
         s += 2; // Junk escape, ignore
       }
     } else {
-      serd_chunk_sink(s, 1, &chunk);
+      serd_buffer_sink(s, 1, &buffer);
     }
   }
-
-  return serd_chunk_sink_finish(&chunk);
+  return serd_buffer_sink_finish(&buffer);
 }
 
 bool
