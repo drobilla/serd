@@ -6,7 +6,7 @@
 
 #include "serd/byte_source.h"
 #include "serd/env.h"
-#include "serd/error.h"
+#include "serd/log.h"
 #include "serd/node.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
@@ -85,14 +85,6 @@ missing_arg(const char* const name, const char opt)
 {
   SERDI_ERRORF("option requires an argument -- '%c'\n", opt);
   return print_usage(name, true);
-}
-
-static SerdStatus
-quiet_error_func(void* const handle, const SerdError* const e)
-{
-  (void)handle;
-  (void)e;
-  return SERD_SUCCESS;
 }
 
 static SerdStatus
@@ -311,7 +303,7 @@ main(int argc, char** argv)
     world, output_syntax, writer_flags, env, (SerdWriteFunc)fwrite, out_fd);
 
   if (quiet) {
-    serd_world_set_error_func(world, quiet_error_func, NULL);
+    serd_set_log_func(world, serd_quiet_log_func, NULL);
   }
 
   if (root_uri) {

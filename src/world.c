@@ -3,65 +3,54 @@
 
 #include "world.h"
 
-#include "caret.h"
 #include "node.h"
+#include "serd_config.h"
 
-#include "serd/caret.h"
 #include "serd/node.h"
-
 #include "serd/string_view.h"
+#include "serd/world.h"
 
-#include <stdarg.h>
+#if USE_FILENO && USE_ISATTY
+#  include <unistd.h>
+#endif
+
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-SerdStatus
-serd_world_error(const SerdWorld* const world, const SerdError* const e)
+static bool
+terminal_supports_color(FILE* const stream)
 {
-  if (world->error_func) {
-    world->error_func(world->error_handle, e);
-  } else {
-    fprintf(stderr, "error: ");
-    if (e->caret) {
-      fprintf(stderr,
-              "%s:%u:%u: ",
-              serd_node_string(e->caret->document),
-              e->caret->line,
-              e->caret->col);
-    }
-    vfprintf(stderr, e->fmt, *e->args);
+  // https://no-color.org/
+  // NOLINTNEXTLINE(concurrency-mt-unsafe)
+  if (getenv("NO_COLOR")) {
+    return false;
   }
-  return e->status;
-}
 
-SerdStatus
-serd_world_verrorf(const SerdWorld* const world,
-                   const SerdStatus       st,
-                   const char* const      fmt,
-                   va_list                args)
-{
-  va_list args_copy;
-  va_copy(args_copy, args);
+  // https://bixense.com/clicolors/
+  // NOLINTNEXTLINE(concurrency-mt-unsafe)
+  const char* const clicolor_force = getenv("CLICOLOR_FORCE");
+  if (clicolor_force && !!strcmp(clicolor_force, "0")) {
+    return true;
+  }
 
-  const SerdError e = {st, NULL, fmt, &args_copy};
-  serd_world_error(world, &e);
-  va_end(args_copy);
-  return st;
-}
+  // https://bixense.com/clicolors/
+  // NOLINTNEXTLINE(concurrency-mt-unsafe)
+  const char* const clicolor = getenv("CLICOLOR");
+  if (clicolor && !strcmp(clicolor, "0")) {
+    return false;
+  }
 
-SerdStatus
-serd_world_errorf(const SerdWorld* const world,
-                  const SerdStatus       st,
-                  const char* const      fmt,
-                  ...)
-{
-  va_list args; // NOLINT(cppcoreguidelines-init-variables)
-  va_start(args, fmt);
-  const SerdError e = {st, NULL, fmt, &args};
-  serd_world_error(world, &e);
-  va_end(args);
-  return st;
+#if USE_FILENO && USE_ISATTY
+
+  // Assume support if stream is a TTY (blissfully ignoring termcap nightmares)
+  return isatty(fileno(stream));
+
+#else
+  (void)stream;
+  return false;
+#endif
 }
 
 SerdWorld*
@@ -70,6 +59,8 @@ serd_world_new(void)
   SerdWorld* world = (SerdWorld*)calloc(1, sizeof(SerdWorld));
 
   world->blank_node = serd_new_blank(serd_string("b00000000000"));
+
+  world->stderr_color = terminal_supports_color(stderr);
 
   return world;
 }
@@ -97,13 +88,4 @@ serd_world_get_blank(SerdWorld* const world)
   return world->blank_node;
 
 #undef BLANK_CHARS
-}
-
-void
-serd_world_set_error_func(SerdWorld*    world,
-                          SerdErrorFunc error_func,
-                          void*         handle)
-{
-  world->error_func   = error_func;
-  world->error_handle = handle;
 }

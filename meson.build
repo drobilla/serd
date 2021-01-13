@@ -80,6 +80,13 @@ else
     platform_c_args += ['-DHAVE_FILENO']
   endif
   if cc.links(
+    template.format('unistd.h',
+                    'return isatty(0);'),
+    args: system_c_args,
+    name: 'isatty')
+    platform_c_args += ['-DHAVE_ISATTY']
+  endif
+  if cc.links(
     template.format('fcntl.h',
                     'posix_fadvise(0, 0, 4096, POSIX_FADV_SEQUENTIAL)'),
     args: system_c_args,
@@ -125,8 +132,8 @@ c_headers = files(
   'include/serd/buffer.h',
   'include/serd/caret.h',
   'include/serd/env.h',
-  'include/serd/error.h',
   'include/serd/event.h',
+  'include/serd/log.h',
   'include/serd/memory.h',
   'include/serd/node.h',
   'include/serd/reader.h',
@@ -147,6 +154,7 @@ sources = files(
   'src/byte_source.c',
   'src/caret.c',
   'src/env.c',
+  'src/log.c',
   'src/n3.c',
   'src/node.c',
   'src/reader.c',
