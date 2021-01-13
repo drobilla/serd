@@ -47,6 +47,7 @@ unit_tests = [
   'sink',
   'statement',
   'string',
+  'terse_write',
   'uri',
   'writer',
 ]
@@ -195,7 +196,7 @@ if not get_option('tools').disabled()
   serd_suites = ['good', 'bad']
   serd_base = 'http://drobilla.net/sw/serd/test/'
 
-  ### Run all suites with no special arguments
+  ### Run basic suites with no special arguments
   foreach name : serd_suites
     manifest = files(name / 'manifest.ttl')
     base_uri = serd_base + name + '/'
@@ -205,6 +206,16 @@ if not get_option('tools').disabled()
          suite: ['rdf', 'serd'],
          timeout: 240)
   endforeach
+
+  ### The terse suite needs to be run with -t
+  test('terse', run_test_suite,
+       args: script_args + ['--osyntax', 'turtle',
+                            files('terse/manifest.ttl'),
+                            serd_base + 'terse/',
+                            '--', '-t'],
+       env: test_env,
+       suite: ['rdf', 'serd'],
+       timeout: 240)
 
   ### The lax suite is special because it is run twice...
   lax_manifest = files('lax/manifest.ttl')
