@@ -51,6 +51,13 @@
 #    endif
 #  endif
 
+// POSIX.1-2001: isatty()
+#  ifndef HAVE_ISATTY
+#    if defined(_POSIX_VERSION) && _POSIX_VERSION >= 200112L
+#      define HAVE_ISATTY
+#    endif
+#  endif
+
 // POSIX.1-2001: posix_fadvise()
 #  ifndef HAVE_POSIX_FADVISE
 #    ifndef __APPLE__
@@ -81,6 +88,12 @@
 #  define USE_FILENO 1
 #else
 #  define USE_FILENO 0
+#endif
+
+#ifdef HAVE_ISATTY
+#  define USE_ISATTY 1
+#else
+#  define USE_ISATTY 0
 #endif
 
 #ifdef HAVE_POSIX_FADVISE

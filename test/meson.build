@@ -10,6 +10,7 @@ unit_tests = [
   'cursor',
   'env',
   'free_null',
+  'log',
   'node',
   'node_syntax',
   'nodes',
@@ -97,6 +98,18 @@ if get_option('utils')
          should_fail: true,
          suite: ['serdi', 'options'])
   endforeach
+
+  test('ansi_force',
+       serdi,
+       args: files('bad/bad-lang.ttl'),
+       env: test_env + ['CLICOLOR_FORCE=1'],
+       should_fail: true)
+
+  test('ansi_off',
+       serdi,
+       args: files('bad/bad-lang.ttl'),
+       env: test_env + ['CLICOLOR=0'],
+       should_fail: true)
 
   test('none',
        serdi,
