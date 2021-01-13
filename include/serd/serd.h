@@ -584,16 +584,25 @@ SerdNode* SERD_ALLOCATED
 serd_new_string(SerdStringView string);
 
 /**
-   Create a new literal node from `str`.
+   Create a new plain literal node from `str` with `lang`.
 
-   Either `datatype_uri` or `lang` can be given, but not both, unless
-   `datatype_uri` is rdf:langString in which case it is ignored.
+   A plain literal has no datatype, but may have a language tag.  The `lang`
+   may be empty, in which case this is equivalent to `serd_new_string()`.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_literal(SerdStringView string,
-                 SerdStringView datatype_uri,
-                 SerdStringView lang);
+serd_new_plain_literal(SerdStringView str, SerdStringView lang);
+
+/**
+   Create a new typed literal node from `str`.
+
+   A typed literal has no language tag, but may have a datatype.  The
+   `datatype` may be NULL, in which case this is equivalent to
+   `serd_new_string()`.
+*/
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_new_typed_literal(SerdStringView str, SerdStringView datatype_uri);
 
 /// Create a new blank node
 SERD_API

@@ -201,55 +201,92 @@ serd_new_string(const SerdStringView str)
   return node;
 }
 
-SerdNode*
-serd_new_literal(const SerdStringView str,
-                 const SerdStringView datatype_uri,
-                 const SerdStringView lang)
+/// Internal pre-measured implementation of serd_new_plain_literal
+static SerdNode*
+serd_new_plain_literal_i(const SerdStringView str,
+                         SerdNodeFlags        flags,
+                         const SerdStringView lang)
 {
-  if (!str.len || (lang.len && datatype_uri.len &&
-                   strcmp(datatype_uri.buf, NS_RDF "langString"))) {
-    return NULL;
-  }
+  assert(str.len);
+  assert(lang.len);
 
-  SerdNodeFlags flags  = 0;
-  const size_t  length = serd_substrlen(str.buf, str.len, &flags);
-  const size_t  len    = serd_node_pad_size(length);
+  flags |= SERD_HAS_LANGUAGE;
 
-  SerdNode* node = NULL;
-  if (lang.len) {
-    const size_t total_len = len + sizeof(SerdNode) + lang.len;
+  const size_t len       = serd_node_pad_size(str.len);
+  const size_t total_len = len + sizeof(SerdNode) + lang.len;
 
-    node = serd_node_malloc(total_len, flags | SERD_HAS_LANGUAGE, SERD_LITERAL);
-    node->length = length;
-    memcpy(serd_node_buffer(node), str.buf, length);
+  SerdNode* node = serd_node_malloc(total_len, flags, SERD_LITERAL);
+  memcpy(serd_node_buffer(node), str.buf, str.len);
+  node->length = str.len;
 
-    SerdNode* lang_node = node + 1 + (len / sizeof(SerdNode));
-    lang_node->type     = SERD_LITERAL;
-    lang_node->length   = lang.len;
-    memcpy(serd_node_buffer(lang_node), lang.buf, lang.len);
-    serd_node_check_padding(lang_node);
-
-  } else if (datatype_uri.len) {
-    const size_t total_len = len + sizeof(SerdNode) + datatype_uri.len;
-
-    node = serd_node_malloc(total_len, flags | SERD_HAS_DATATYPE, SERD_LITERAL);
-    node->length = length;
-    memcpy(serd_node_buffer(node), str.buf, length);
-
-    SerdNode* datatype_node = node + 1 + (len / sizeof(SerdNode));
-    datatype_node->type     = SERD_URI;
-    datatype_node->length   = datatype_uri.len;
-    memcpy(serd_node_buffer(datatype_node), datatype_uri.buf, datatype_uri.len);
-    serd_node_check_padding(datatype_node);
-
-  } else {
-    node = serd_node_malloc(length, flags, SERD_LITERAL);
-    memcpy(serd_node_buffer(node), str.buf, length);
-    node->length = length;
-  }
+  SerdNode* lang_node = node + 1 + (len / sizeof(SerdNode));
+  lang_node->type     = SERD_LITERAL;
+  lang_node->length   = lang.len;
+  memcpy(serd_node_buffer(lang_node), lang.buf, lang.len);
+  serd_node_check_padding(lang_node);
 
   serd_node_check_padding(node);
   return node;
+}
+
+/// Internal pre-measured implementation of serd_new_typed_literal
+static SerdNode*
+serd_new_typed_literal_i(const SerdStringView str,
+                         SerdNodeFlags        flags,
+                         const SerdStringView datatype_uri)
+{
+  assert(str.len);
+  assert(datatype_uri.len);
+  assert(strcmp(datatype_uri.buf, NS_RDF "langString"));
+
+  flags |= SERD_HAS_DATATYPE;
+
+  const size_t len       = serd_node_pad_size(str.len);
+  const size_t total_len = len + sizeof(SerdNode) + datatype_uri.len;
+
+  SerdNode* node = serd_node_malloc(total_len, flags, SERD_LITERAL);
+  memcpy(serd_node_buffer(node), str.buf, str.len);
+  node->length = str.len;
+
+  SerdNode* datatype_node = node + 1 + (len / sizeof(SerdNode));
+  datatype_node->length   = datatype_uri.len;
+  datatype_node->type     = SERD_URI;
+  memcpy(serd_node_buffer(datatype_node), datatype_uri.buf, datatype_uri.len);
+  serd_node_check_padding(datatype_node);
+
+  serd_node_check_padding(node);
+  return node;
+}
+
+SerdNode*
+serd_new_plain_literal(const SerdStringView str, const SerdStringView lang)
+{
+  if (!lang.len) {
+    return serd_new_string(str);
+  }
+
+  SerdNodeFlags flags = 0;
+  serd_strlen(str.buf, &flags);
+
+  return serd_new_plain_literal_i(str, flags, lang);
+}
+
+SerdNode*
+serd_new_typed_literal(const SerdStringView str,
+                       const SerdStringView datatype_uri)
+{
+  if (!datatype_uri.len) {
+    return serd_new_string(str);
+  }
+
+  if (!strcmp(datatype_uri.buf, NS_RDF "langString")) {
+    return NULL;
+  }
+
+  SerdNodeFlags flags = 0;
+  serd_strlen(str.buf, &flags);
+
+  return serd_new_typed_literal_i(str, flags, datatype_uri);
 }
 
 SerdNode*
