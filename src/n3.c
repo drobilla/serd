@@ -55,7 +55,7 @@ read_HEX(SerdReader* const reader)
     return (uint8_t)eat_byte_safe(reader, c);
   }
 
-  r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid hexadecimal digit `%c'\n", c);
+  r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid hexadecimal digit `%c'", c);
   return 0;
 }
 
@@ -100,10 +100,9 @@ read_UCHAR(SerdReader* const reader,
   } else if (code < 0x00110000) {
     size = 4;
   } else {
-    r_err(reader,
-          SERD_ERR_BAD_SYNTAX,
-          "unicode character 0x%X out of range\n",
-          code);
+    r_err(
+      reader, SERD_ERR_BAD_SYNTAX, "unicode character 0x%X out of range", code);
+
     *char_code          = 0xFFFD;
     const SerdStatus st = push_bytes(reader, dest, replacement_char, 3);
     return st ? st : SERD_SUCCESS;
@@ -192,14 +191,14 @@ read_utf8_bytes(SerdReader* const reader,
 {
   *size = utf8_num_bytes(c);
   if (*size <= 1 || *size > 4) {
-    return bad_char(reader, "invalid UTF-8 start 0x%X\n", c);
+    return bad_char(reader, "invalid UTF-8 start 0x%X", c);
   }
 
   bytes[0] = c;
   for (unsigned i = 1; i < *size; ++i) {
     const int b = peek_byte(reader);
     if (b == EOF || ((uint8_t)b & 0x80) == 0) {
-      return bad_char(reader, "invalid UTF-8 continuation 0x%X\n", (uint8_t)b);
+      return bad_char(reader, "invalid UTF-8 continuation 0x%X", (uint8_t)b);
     }
 
     eat_byte_safe(reader, b);
@@ -348,10 +347,10 @@ read_STRING_LITERAL_LONG(SerdReader* const reader,
       uint32_t code = 0;
       if ((st = read_ECHAR(reader, ref)) &&
           (st = read_UCHAR(reader, ref, &code))) {
-        return r_err(reader, st, "invalid escape `\\%c'\n", peek_byte(reader));
+        return r_err(reader, st, "invalid escape `\\%c'", peek_byte(reader));
       }
     } else if (c == EOF) {
-      st = r_err(reader, SERD_ERR_NO_DATA, "unexpected end of file\n");
+      st = r_err(reader, SERD_ERR_NO_DATA, "unexpected end of file");
     } else if (c == q) {
       eat_byte_safe(reader, q);
       const int q2 = eat_byte_safe(reader, peek_byte(reader));
@@ -386,16 +385,15 @@ read_STRING_LITERAL(SerdReader* const reader,
     uint32_t  code = 0;
     switch (c) {
     case EOF:
-      return r_err(
-        reader, SERD_ERR_BAD_SYNTAX, "end of file in short string\n");
+      return r_err(reader, SERD_ERR_BAD_SYNTAX, "end of file in short string");
     case '\n':
     case '\r':
-      return r_err(reader, SERD_ERR_BAD_SYNTAX, "line end in short string\n");
+      return r_err(reader, SERD_ERR_BAD_SYNTAX, "line end in short string");
     case '\\':
       eat_byte_safe(reader, c);
       if ((st = read_ECHAR(reader, ref)) &&
           (st = read_UCHAR(reader, ref, &code))) {
-        return r_err(reader, st, "invalid escape `\\%c'\n", peek_byte(reader));
+        return r_err(reader, st, "invalid escape `\\%c'", peek_byte(reader));
       }
       break;
     default:
@@ -419,7 +417,7 @@ read_String(SerdReader* const reader, SerdNode* const node)
 
   const int q2 = peek_byte(reader);
   if (q2 == EOF) {
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file\n");
+    return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file");
   }
 
   if (q2 != q1) { // Short string (not triple quoted)
@@ -429,7 +427,7 @@ read_String(SerdReader* const reader, SerdNode* const node)
   eat_byte_safe(reader, q2);
   const int q3 = peek_byte(reader);
   if (q3 == EOF) {
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file\n");
+    return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file");
   }
 
   if (q3 != q1) { // Empty short string ("" or '')
@@ -438,7 +436,7 @@ read_String(SerdReader* const reader, SerdNode* const node)
 
   if (!fancy_syntax(reader)) {
     return r_err(
-      reader, SERD_ERR_BAD_SYNTAX, "syntax does not support long literals\n");
+      reader, SERD_ERR_BAD_SYNTAX, "syntax does not support long literals");
   }
 
   eat_byte_safe(reader, q3);
@@ -471,7 +469,7 @@ read_PN_CHARS_BASE(SerdReader* const reader, SerdNode* const dest)
     return st;
   } else if (!is_PN_CHARS_BASE(code)) {
     r_err(
-      reader, SERD_ERR_BAD_SYNTAX, "invalid character U+%04X in name\n", code);
+      reader, SERD_ERR_BAD_SYNTAX, "invalid character U+%04X in name", code);
     if (reader->strict) {
       return SERD_ERR_BAD_SYNTAX;
     }
@@ -501,7 +499,7 @@ read_PN_CHARS(SerdReader* const reader, SerdNode* const dest)
     return st;
   } else if (!is_PN_CHARS(code)) {
     return r_err(
-      reader, SERD_ERR_BAD_SYNTAX, "invalid character U+%04X in name\n", code);
+      reader, SERD_ERR_BAD_SYNTAX, "invalid character U+%04X in name", code);
   }
   return st;
 }
@@ -559,7 +557,7 @@ read_PN_LOCAL_ESC(SerdReader* const reader, SerdNode* const dest)
     break;
   }
 
-  return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid escape\n");
+  return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid escape");
 }
 
 static SerdStatus
@@ -601,7 +599,7 @@ read_PN_LOCAL(SerdReader* const reader,
     break;
   default:
     if ((st = read_PLX(reader, dest)) > SERD_FAILURE) {
-      return r_err(reader, st, "bad escape\n");
+      return r_err(reader, st, "bad escape");
     } else if (st != SERD_SUCCESS && read_PN_CHARS_BASE(reader, dest)) {
       return SERD_FAILURE;
     }
@@ -611,7 +609,7 @@ read_PN_LOCAL(SerdReader* const reader,
     if (c == '.' || c == ':') {
       st = push_byte(reader, dest, eat_byte_safe(reader, c));
     } else if ((st = read_PLX(reader, dest)) > SERD_FAILURE) {
-      return r_err(reader, st, "bad escape\n");
+      return r_err(reader, st, "bad escape");
     } else if (st != SERD_SUCCESS && (st = read_PN_CHARS(reader, dest))) {
       break;
     }
@@ -647,7 +645,7 @@ read_PN_PREFIX_tail(SerdReader* const reader, SerdNode* const dest)
     if ((st = read_PN_CHARS(reader, dest))) {
       return r_err(reader,
                    st > SERD_FAILURE ? st : SERD_ERR_BAD_SYNTAX,
-                   "prefix ends with `.'\n");
+                   "prefix ends with `.'");
     }
   }
 
@@ -671,7 +669,7 @@ read_LANGTAG(SerdReader* const reader)
 {
   int c = peek_byte(reader);
   if (!is_alpha(c)) {
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected `%c'\n", c);
+    return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected `%c'", c);
   }
 
   SerdNode* node = push_node(reader, SERD_LITERAL, "", 0);
@@ -698,19 +696,19 @@ read_IRIREF_scheme(SerdReader* const reader, SerdNode* const dest)
 {
   int c = peek_byte(reader);
   if (!is_alpha(c)) {
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "bad IRI scheme start `%c'\n", c);
+    return r_err(reader, SERD_ERR_BAD_SYNTAX, "bad IRI scheme start `%c'", c);
   }
 
   SerdStatus st = SERD_SUCCESS;
   while ((c = peek_byte(reader)) != EOF) {
     if (c == '>') {
-      return r_err(reader, SERD_ERR_BAD_SYNTAX, "missing IRI scheme\n");
+      return r_err(reader, SERD_ERR_BAD_SYNTAX, "missing IRI scheme");
     }
 
     if (!is_uri_scheme_char(c)) {
       return r_err(reader,
                    SERD_ERR_BAD_SYNTAX,
-                   "bad IRI scheme char U+%04X (%c)\n",
+                   "bad IRI scheme char U+%04X (%c)",
                    (unsigned)c,
                    (char)c);
     }
@@ -740,7 +738,7 @@ read_IRIREF(SerdReader* const reader, SerdNode** const dest)
   }
 
   if (!fancy_syntax(reader) && (st = read_IRIREF_scheme(reader, *dest))) {
-    return r_err(reader, st, "expected IRI scheme\n");
+    return r_err(reader, st, "expected IRI scheme");
   }
 
   uint32_t code = 0;
@@ -750,12 +748,12 @@ read_IRIREF(SerdReader* const reader, SerdNode** const dest)
     case '"':
     case '<':
       return r_err(
-        reader, SERD_ERR_BAD_SYNTAX, "invalid IRI character `%c'\n", c);
+        reader, SERD_ERR_BAD_SYNTAX, "invalid IRI character `%c'", c);
     case '>':
       return SERD_SUCCESS;
     case '\\':
       if (read_UCHAR(reader, *dest, &code)) {
-        return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid IRI escape\n");
+        return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid IRI escape");
       }
       switch (code) {
       case 0:
@@ -764,7 +762,7 @@ read_IRIREF(SerdReader* const reader, SerdNode** const dest)
       case '>':
         return r_err(reader,
                      SERD_ERR_BAD_SYNTAX,
-                     "invalid escaped IRI character U+%04X\n",
+                     "invalid escaped IRI character U+%04X",
                      code);
       default:
         break;
@@ -776,12 +774,12 @@ read_IRIREF(SerdReader* const reader, SerdNode** const dest)
     case '|':
     case '}':
       return r_err(
-        reader, SERD_ERR_BAD_SYNTAX, "invalid IRI character `%c'\n", c);
+        reader, SERD_ERR_BAD_SYNTAX, "invalid IRI character `%c'", c);
     default:
       if (c <= 0x20) {
         st = r_err(reader,
                    SERD_ERR_BAD_SYNTAX,
-                   "invalid IRI character (escape %%%02X)\n",
+                   "invalid IRI character (escape %%%02X)",
                    (unsigned)c);
         if (reader->strict) {
           break;
@@ -834,7 +832,7 @@ read_0_9(SerdReader* const reader, SerdNode* const str, const bool at_least_one)
   }
 
   if (at_least_one && count == 0) {
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected digit\n");
+    return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected digit");
   }
 
   return st;
@@ -980,7 +978,7 @@ read_Var(SerdReader* const reader, SerdNode** const dest)
 {
   if (!(reader->flags & SERD_READ_VARIABLES)) {
     return r_err(
-      reader, SERD_ERR_BAD_SYNTAX, "syntax does not support variables\n");
+      reader, SERD_ERR_BAD_SYNTAX, "syntax does not support variables");
   }
 
   if (!(*dest = push_node(reader, SERD_VARIABLE, "", 0))) {
@@ -1032,7 +1030,7 @@ read_verb(SerdReader* reader, SerdNode** dest)
   if ((st = read_PrefixedName(reader, *dest, false, &ate_dot)) || ate_dot) {
     *dest = NULL;
     return r_err(
-      reader, st > SERD_FAILURE ? st : SERD_ERR_BAD_SYNTAX, "expected verb\n");
+      reader, st > SERD_FAILURE ? st : SERD_ERR_BAD_SYNTAX, "expected verb");
   }
 
   return SERD_SUCCESS;
@@ -1060,7 +1058,7 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
   if (is_digit(c) || c == '_') {
     TRY(st, push_byte(reader, n, eat_byte_safe(reader, c)));
   } else if ((st = read_PN_CHARS(reader, n))) {
-    return r_err(reader, st, "invalid name start\n");
+    return r_err(reader, st, "invalid name start");
   }
 
   while ((c = peek_byte(reader))) { // Middle: (PN_CHARS | '.')*
@@ -1091,7 +1089,7 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
       } else if (reader->seen_genid && buf[reader->bprefix_len] == 'B') {
         return r_err(reader,
                      SERD_ERR_ID_CLASH,
-                     "found both `b' and `B' blank IDs, prefix required\n");
+                     "found both `b' and `B' blank IDs, prefix required");
       }
     }
   }
@@ -1135,7 +1133,7 @@ read_anon(SerdReader* const reader,
     TRY(st, read_predicateObjectList(reader, ctx, &ate_dot_in_list));
 
     if (ate_dot_in_list) {
-      return r_err(reader, SERD_ERR_BAD_SYNTAX, "`.' inside blank\n");
+      return r_err(reader, SERD_ERR_BAD_SYNTAX, "`.' inside blank");
     }
 
     read_ws_star(reader);
@@ -1177,14 +1175,14 @@ read_object(SerdReader* const  reader,
     case '_':
       break;
     default:
-      return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected: ':', '<', or '_'\n");
+      return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected: ':', '<', or '_'");
     }
   }
 
   switch (c) {
   case EOF:
   case ')':
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected object\n");
+    return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected object");
   case '$':
   case '?':
     ret = read_Var(reader, &o);
@@ -1252,7 +1250,7 @@ read_object(SerdReader* const  reader,
     } else if ((ret = read_PN_PREFIX_tail(reader, o)) > SERD_FAILURE ||
                (ret = read_PrefixedName(reader, o, false, ate_dot))) {
       ret = (ret > SERD_FAILURE) ? ret : SERD_ERR_BAD_SYNTAX;
-      return r_err(reader, ret, "expected prefixed name\n");
+      return r_err(reader, ret, "expected prefixed name");
     }
   }
 
@@ -1277,7 +1275,7 @@ read_objectList(SerdReader* const reader, ReadContext ctx, bool* const ate_dot)
   TRY(st, read_object(reader, &ctx, true, ate_dot));
   if (!fancy_syntax(reader) && peek_delim(reader, ',')) {
     return r_err(
-      reader, SERD_ERR_BAD_SYNTAX, "syntax does not support abbreviation\n");
+      reader, SERD_ERR_BAD_SYNTAX, "syntax does not support abbreviation");
   }
 
   while (st <= SERD_FAILURE && !*ate_dot && eat_delim(reader, ',')) {
@@ -1309,7 +1307,7 @@ read_predicateObjectList(SerdReader* const reader,
       switch (c = peek_byte(reader)) {
       case EOF:
         serd_stack_pop_to(&reader->stack, orig_stack_size);
-        return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file\n");
+        return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file");
       case '.':
       case ']':
       case '}':
@@ -1323,7 +1321,7 @@ read_predicateObjectList(SerdReader* const reader,
 
     if (!ate_semi) {
       serd_stack_pop_to(&reader->stack, orig_stack_size);
-      return r_err(reader, SERD_ERR_BAD_SYNTAX, "missing ';' or '.'\n");
+      return r_err(reader, SERD_ERR_BAD_SYNTAX, "missing ';' or '.'");
     }
   }
 
@@ -1435,7 +1433,7 @@ read_subject(SerdReader* const reader,
   }
 
   if (ate_dot) {
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "subject ends with `.'\n");
+    return r_err(reader, SERD_ERR_BAD_SYNTAX, "subject ends with `.'");
   }
 
   return st;
@@ -1462,7 +1460,7 @@ read_labelOrSubject(SerdReader* const reader, SerdNode** const dest)
     if (!read_iri(reader, dest, &ate_dot)) {
       return SERD_SUCCESS;
     } else {
-      return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected label or subject\n");
+      return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected label or subject");
     }
   }
 }
@@ -1513,7 +1511,7 @@ read_base(SerdReader* const reader, const bool sparql, const bool token)
   }
 
   if (peek_byte(reader) == '.') {
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "full stop after SPARQL BASE\n");
+    return r_err(reader, SERD_ERR_BAD_SYNTAX, "full stop after SPARQL BASE");
   }
 
   return SERD_SUCCESS;
@@ -1569,7 +1567,7 @@ read_directive(SerdReader* const reader)
     switch (peek_byte(reader)) {
     case 'B':
     case 'P':
-      return r_err(reader, SERD_ERR_BAD_SYNTAX, "uppercase directive\n");
+      return r_err(reader, SERD_ERR_BAD_SYNTAX, "uppercase directive");
     }
   }
 
@@ -1584,7 +1582,7 @@ read_directive(SerdReader* const reader)
     break;
   }
 
-  return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid directive\n");
+  return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid directive");
 }
 
 static SerdStatus
@@ -1603,12 +1601,12 @@ read_wrappedGraph(SerdReader* const reader, ReadContext* const ctx)
 
     ctx->subject = 0;
     if ((st = read_subject(reader, *ctx, &ctx->subject, &s_type))) {
-      return r_err(reader, st, "expected subject\n");
+      return r_err(reader, st, "expected subject");
     }
 
     if (read_triples(reader, *ctx, &ate_dot) && s_type != '[') {
       return r_err(
-        reader, SERD_ERR_BAD_SYNTAX, "missing predicate object list\n");
+        reader, SERD_ERR_BAD_SYNTAX, "missing predicate object list");
     }
 
     serd_stack_pop_to(&reader->stack, orig_stack_size);
@@ -1622,7 +1620,7 @@ read_wrappedGraph(SerdReader* const reader, ReadContext* const ctx)
   eat_byte_safe(reader, '}');
   read_ws_star(reader);
   if (peek_byte(reader) == '.') {
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "graph followed by `.'\n");
+    return r_err(reader, SERD_ERR_BAD_SYNTAX, "graph followed by `.'");
   }
 
   return SERD_SUCCESS;
@@ -1654,7 +1652,7 @@ read_n3_statement(SerdReader* const reader)
   case '@':
     if (!fancy_syntax(reader)) {
       return r_err(
-        reader, SERD_ERR_BAD_SYNTAX, "syntax does not support directives\n");
+        reader, SERD_ERR_BAD_SYNTAX, "syntax does not support directives");
     }
     TRY(st, read_directive(reader));
     read_ws_star(reader);
@@ -1665,7 +1663,7 @@ read_n3_statement(SerdReader* const reader)
       read_ws_star(reader);
     } else {
       return r_err(
-        reader, SERD_ERR_BAD_SYNTAX, "syntax does not support graphs\n");
+        reader, SERD_ERR_BAD_SYNTAX, "syntax does not support graphs");
     }
     break;
   default:
@@ -1688,7 +1686,7 @@ read_n3_statement(SerdReader* const reader)
       read_ws_star(reader);
     } else if (read_ws_star(reader) && peek_byte(reader) == '{') {
       if (s_type == '(' || (s_type == '[' && !*ctx.flags)) {
-        return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid graph name\n");
+        return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid graph name");
       }
 
       ctx.graph   = ctx.subject;
@@ -1702,7 +1700,7 @@ read_n3_statement(SerdReader* const reader)
 
       if (ate_dot && (reader->strict || (s_type != '('))) {
         return r_err(
-          reader, SERD_ERR_BAD_SYNTAX, "unexpected end of statement\n");
+          reader, SERD_ERR_BAD_SYNTAX, "unexpected end of statement");
       }
 
       return st > SERD_FAILURE ? st : SERD_ERR_BAD_SYNTAX;
@@ -1764,8 +1762,7 @@ read_nquadsDoc(SerdReader* const reader)
     }
 
     if (peek_byte(reader) == '@') {
-      r_err(
-        reader, SERD_ERR_BAD_SYNTAX, "syntax does not support directives\n");
+      r_err(reader, SERD_ERR_BAD_SYNTAX, "syntax does not support directives");
       return SERD_ERR_BAD_SYNTAX;
     }
 

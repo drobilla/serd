@@ -25,7 +25,7 @@
 
 #include "serd/byte_sink.h"
 
-#include "serd/error.h"
+#include "serd/log.h"
 #include "serd/uri.h"
 
 #include "serd/node.h"

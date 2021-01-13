@@ -10,12 +10,13 @@
 #include "system.h"
 #include "try.h"
 #include "uri_utils.h"
-#include "world.h"
 
+#include "serd/attributes.h"
 #include "serd/buffer.h"
 #include "serd/byte_sink.h"
 #include "serd/env.h"
 #include "serd/event.h"
+#include "serd/log.h"
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
@@ -28,6 +29,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -146,6 +148,19 @@ write_node(SerdWriter*        writer,
            SerdField          field,
            SerdStatementFlags flags);
 
+SERD_LOG_FUNC(3, 4)
+static SerdStatus
+w_err(SerdWriter* const writer, const SerdStatus st, const char* const fmt, ...)
+{
+  va_list args;
+  va_start(args, fmt);
+
+  serd_vlogf(writer->world, SERD_LOG_LEVEL_ERROR, fmt, args);
+
+  va_end(args);
+  return st;
+}
+
 static bool
 supports_abbrev(const SerdWriter* writer)
 {
@@ -242,10 +257,13 @@ sink(const void* buf, size_t len, SerdWriter* writer)
       char message[1024] = {0};
       serd_system_strerror(errno, message, sizeof(message));
 
-      serd_world_errorf(
-        writer->world, SERD_ERR_BAD_WRITE, "write error (%s)\n", message);
+      w_err(writer, SERD_ERR_BAD_WRITE, "write error (%s)", message);
     } else {
-      serd_world_errorf(writer->world, SERD_ERR_BAD_WRITE, "write error\n");
+      w_err(writer,
+            SERD_ERR_BAD_WRITE,
+            "unknown write error, %zu / %zu bytes written",
+            written,
+            len);
     }
   }
 
@@ -270,8 +288,7 @@ write_character(SerdWriter*    writer,
   const uint32_t c          = parse_utf8_char(utf8, size);
   switch (*size) {
   case 0:
-    serd_world_errorf(
-      writer->world, SERD_ERR_BAD_ARG, "invalid UTF-8 start: %X\n", utf8[0]);
+    w_err(writer, SERD_ERR_BAD_TEXT, "invalid UTF-8 start: %X", utf8[0]);
     *st = SERD_ERR_BAD_TEXT;
     return 0;
   case 1:
@@ -823,11 +840,10 @@ write_uri_node(SerdWriter* const     writer,
 
   if (!has_scheme && !supports_uriref(writer) &&
       !serd_env_base_uri(writer->env)) {
-    serd_world_errorf(writer->world,
-                      SERD_ERR_BAD_ARG,
-                      "syntax does not support URI reference <%s>\n",
-                      node_str);
-    return SERD_ERR_BAD_ARG;
+    return w_err(writer,
+                 SERD_ERR_BAD_ARG,
+                 "syntax does not support URI reference <%s>",
+                 node_str);
   }
 
   return write_full_uri_node(writer, node);
@@ -844,11 +860,10 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
 
   if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
     if ((st = serd_env_expand_in_place(writer->env, node, &prefix, &suffix))) {
-      serd_world_errorf(writer->world,
-                        st,
-                        "undefined namespace prefix `%s'\n",
-                        serd_node_string(node));
-      return st;
+      return w_err(writer,
+                   st,
+                   "undefined namespace prefix in `%s'",
+                   serd_node_string(node));
     }
 
     TRY(st, esink("<", 1, writer));
@@ -1237,10 +1252,10 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
   }
 
   if (writer->anon_stack_size == 0) {
-    return serd_world_errorf(writer->world,
-                             SERD_ERR_UNKNOWN,
-                             "unexpected end of anonymous node `%s'\n",
-                             serd_node_string(node));
+    return w_err(writer,
+                 SERD_ERR_BAD_CALL,
+                 "unexpected end of anonymous node `%s'",
+                 serd_node_string(node));
   }
 
   SerdStatus st = write_sep(writer, writer->context.flags, SEP_ANON_END);
