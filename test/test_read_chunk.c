@@ -79,13 +79,14 @@ on_end(void* handle, const SerdNode* node)
 int
 main(void)
 {
-  SerdSink* sink = serd_sink_new(NULL, NULL);
+  SerdWorld* world = serd_world_new();
+  SerdSink*  sink  = serd_sink_new(NULL, NULL);
   serd_sink_set_base_func(sink, on_base);
   serd_sink_set_prefix_func(sink, on_prefix);
   serd_sink_set_statement_func(sink, on_statement);
   serd_sink_set_end_func(sink, on_end);
 
-  SerdReader* reader = serd_reader_new(SERD_TURTLE, sink, 4096);
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
   assert(reader);
 
   assert(!serd_reader_start_string(reader,
@@ -112,5 +113,6 @@ main(void)
 
   serd_reader_free(reader);
   serd_sink_free(sink);
+  serd_world_free(world);
   return 0;
 }

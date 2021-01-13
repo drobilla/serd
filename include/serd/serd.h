@@ -38,9 +38,11 @@
 #ifdef __GNUC__
 #  define SERD_PURE_FUNC __attribute__((pure))
 #  define SERD_CONST_FUNC __attribute__((const))
+#  define SERD_MALLOC_FUNC __attribute__((malloc))
 #else
 #  define SERD_PURE_FUNC
 #  define SERD_CONST_FUNC
+#  define SERD_MALLOC_FUNC
 #endif
 
 #if defined(__clang__) && __clang_major__ >= 7
@@ -61,6 +63,10 @@
   SERD_API             \
   SERD_CONST_FUNC
 
+#define SERD_MALLOC_API \
+  SERD_API              \
+  SERD_MALLOC_FUNC
+
 #ifdef __cplusplus
 extern "C" {
 #  if defined(__GNUC__)
@@ -73,6 +79,9 @@ extern "C" {
    @defgroup serd Serd C API
    @{
 */
+
+/// Global library state
+typedef struct SerdWorldImpl SerdWorld;
 
 /// Lexical environment for relative URIs or CURIEs (base URI and namespaces)
 typedef struct SerdEnvImpl SerdEnv;
@@ -880,6 +889,39 @@ typedef SerdStatus (*SerdEndFunc)(void* SERD_NULLABLE          handle,
 
 /**
    @}
+   @defgroup serd_world World
+   @{
+*/
+
+/**
+   Create a new Serd World.
+
+   It is safe to use multiple worlds in one process, though no objects can be
+   shared between worlds.
+*/
+SERD_MALLOC_API
+SerdWorld* SERD_ALLOCATED
+serd_world_new(void);
+
+/// Free `world`
+SERD_API
+void
+serd_world_free(SerdWorld* SERD_NULLABLE world);
+
+/**
+   Set a function to be called when errors occur.
+
+   The `error_func` will be called with `handle` as its first argument.  If
+   no error function is set, errors are printed to stderr.
+*/
+SERD_API
+void
+serd_world_set_error_func(SerdWorld* SERD_NONNULL     world,
+                          SerdErrorFunc SERD_NULLABLE error_func,
+                          void* SERD_NULLABLE         handle);
+
+/**
+   @}
    @defgroup serd_env Environment
    @{
 */
@@ -1049,7 +1091,8 @@ serd_sink_write_end(const SerdSink* SERD_NONNULL sink,
 /// Create a new RDF reader
 SERD_API
 SerdReader* SERD_ALLOCATED
-serd_reader_new(SerdSyntax                   syntax,
+serd_reader_new(SerdWorld* SERD_NONNULL      world,
+                SerdSyntax                   syntax,
                 const SerdSink* SERD_NONNULL sink,
                 size_t                       stack_size);
 
@@ -1063,18 +1106,6 @@ serd_reader_new(SerdSyntax                   syntax,
 SERD_API
 void
 serd_reader_set_strict(SerdReader* SERD_NONNULL reader, bool strict);
-
-/**
-   Set a function to be called when errors occur during reading.
-
-   The `error_func` will be called with `handle` as its first argument.  If
-   no error function is set, errors are printed to stderr in GCC style.
-*/
-SERD_API
-void
-serd_reader_set_error_sink(SerdReader* SERD_NONNULL    reader,
-                           SerdErrorFunc SERD_NULLABLE error_func,
-                           void* SERD_NULLABLE         error_handle);
 
 /**
    Set a prefix to be added to all blank node identifiers.
@@ -1180,7 +1211,8 @@ serd_reader_free(SerdReader* SERD_NULLABLE reader);
 /// Create a new RDF writer
 SERD_API
 SerdWriter* SERD_ALLOCATED
-serd_writer_new(SerdSyntax                 syntax,
+serd_writer_new(SerdWorld* SERD_NONNULL    world,
+                SerdSyntax                 syntax,
                 SerdWriterFlags            flags,
                 SerdEnv* SERD_NONNULL      env,
                 SerdWriteFunc SERD_NONNULL ssink,
@@ -1225,18 +1257,6 @@ serd_buffer_sink(const void* SERD_NONNULL buf,
 SERD_API
 char* SERD_NONNULL
 serd_buffer_sink_finish(SerdBuffer* SERD_NONNULL stream);
-
-/**
-   Set a function to be called when errors occur during writing.
-
-   The `error_func` will be called with `handle` as its first argument.  If
-   no error function is set, errors are printed to stderr.
-*/
-SERD_API
-void
-serd_writer_set_error_sink(SerdWriter* SERD_NONNULL   writer,
-                           SerdErrorFunc SERD_NONNULL error_func,
-                           void* SERD_NULLABLE        error_handle);
 
 /**
    Set a prefix to be removed from matching blank node identifiers
