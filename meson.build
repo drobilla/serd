@@ -1,5 +1,5 @@
 project('serd', ['c'],
-        version: '0.30.11',
+        version: '1.0.1',
         license: 'ISC',
         meson_version: '>= 0.49.2',
         default_options: [
