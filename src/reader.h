@@ -28,13 +28,6 @@
 #  define SERD_LOG_FUNC(fmt, arg1)
 #endif
 
-#ifdef SERD_STACK_CHECK
-#  define SERD_STACK_ASSERT_TOP(reader, ref) \
-    assert(ref == reader->allocs[reader->n_allocs - 1]);
-#else
-#  define SERD_STACK_ASSERT_TOP(reader, ref)
-#endif
-
 typedef struct {
   SerdNode*           graph;
   SerdNode*           subject;
@@ -62,10 +55,6 @@ struct SerdReaderImpl {
   size_t          bprefix_len;
   bool            strict; ///< True iff strict parsing
   bool            seen_genid;
-#ifdef SERD_STACK_CHECK
-  SerdNode** allocs;   ///< Stack of push offsets
-  size_t     n_allocs; ///< Number of stack pushes
-#endif
 };
 
 SERD_LOG_FUNC(3, 4)
@@ -94,9 +83,6 @@ blank_id(SerdReader* reader);
 
 void
 set_blank_id(SerdReader* reader, SerdNode* node, size_t buf_size);
-
-SerdNode*
-pop_node(SerdReader* reader, const SerdNode* node);
 
 SerdStatus
 emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o);
@@ -165,7 +151,6 @@ static inline SerdStatus
 push_byte(SerdReader* reader, SerdNode* node, const int c)
 {
   assert(c != EOF);
-  SERD_STACK_ASSERT_TOP(reader, ref);
 
   char* const s = (char*)serd_stack_push(&reader->stack, 1);
   if (!s) {
