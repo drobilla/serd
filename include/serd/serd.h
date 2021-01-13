@@ -184,6 +184,12 @@ typedef struct {
   size_t                       len; ///< Length of chunk in bytes
 } SerdChunk;
 
+/// A mutable buffer in memory
+typedef struct {
+  void* SERD_NULLABLE buf; ///< Buffer
+  size_t              len; ///< Size of buffer in bytes
+} SerdBuffer;
+
 /**
    Syntax style options.
 
@@ -905,26 +911,26 @@ serd_file_sink(const void* SERD_NONNULL buf,
 /**
    A convenience sink function for writing to a string
 
-   This function can be used as a SerdSink to write to a SerdChunk which is
+   This function can be used as a SerdSink to write to a SerdBuffer which is
    resized as necessary with realloc().  The `stream` parameter must point to
-   an initialized SerdChunk.  When the write is finished, the string should be
-   retrieved with serd_chunk_sink_finish().
+   an initialized SerdBuffer.  When the write is finished, the string should be
+   retrieved with serd_buffer_sink_finish().
 */
 SERD_API
 size_t
-serd_chunk_sink(const void* SERD_NONNULL buf,
-                size_t                   len,
-                void* SERD_NONNULL       stream);
+serd_buffer_sink(const void* SERD_NONNULL buf,
+                 size_t                   len,
+                 void* SERD_NONNULL       stream);
 
 /**
-   Finish a serialisation to a chunk with serd_chunk_sink().
+   Finish a serialisation to a chunk with serd_buffer_sink().
 
    The returned string is the result of the serialisation, which is null
    terminated (by this function) and owned by the caller.
 */
 SERD_API
 uint8_t* SERD_NULLABLE
-serd_chunk_sink_finish(SerdChunk* SERD_NONNULL stream);
+serd_buffer_sink_finish(SerdBuffer* SERD_NONNULL stream);
 
 /**
    Set a function to be called when errors occur during writing.
