@@ -78,6 +78,13 @@ push_node_padded(SerdReader* const  reader,
                  const char* const  str,
                  const size_t       length)
 {
+  // Push a null byte to ensure the previous node was null terminated
+  char* terminator = (char*)serd_stack_push(&reader->stack, 1);
+  if (!terminator) {
+    return NULL;
+  }
+  *terminator = 0;
+
   void* mem = serd_stack_push_aligned(
     &reader->stack, sizeof(SerdNode) + maxlen + 1, sizeof(SerdNode));
 
@@ -97,8 +104,7 @@ push_node_padded(SerdReader* const  reader,
 #ifdef SERD_STACK_CHECK
   reader->allocs = (SerdNode**)realloc(
     reader->allocs, sizeof(reader->allocs) * (++reader->n_allocs));
-  reader->allocs[reader->n_allocs - 1] =
-    (SerdNode*)((char*)mem - reader->stack.buf);
+  reader->allocs[reader->n_allocs - 1] = node;
 #endif
   return node;
 }
@@ -110,21 +116,6 @@ push_node(SerdReader* const  reader,
           const size_t       length)
 {
   return push_node_padded(reader, length, type, str, length);
-}
-
-SerdNode*
-pop_node(SerdReader* const reader, const SerdNode* const node)
-{
-  if (node && node != reader->rdf_first && node != reader->rdf_rest &&
-      node != reader->rdf_nil) {
-#ifdef SERD_STACK_CHECK
-    SERD_STACK_ASSERT_TOP(reader, node);
-    --reader->n_allocs;
-#endif
-    char* const top = reader->stack.buf + reader->stack.size;
-    serd_stack_pop_aligned(&reader->stack, (size_t)(top - (char*)node));
-  }
-  return NULL;
 }
 
 SerdStatus
@@ -211,9 +202,6 @@ serd_reader_free(SerdReader* const reader)
     return;
   }
 
-  pop_node(reader, reader->rdf_nil);
-  pop_node(reader, reader->rdf_rest);
-  pop_node(reader, reader->rdf_first);
   serd_reader_finish(reader);
   serd_node_free(reader->default_graph);
 
