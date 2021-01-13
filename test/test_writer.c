@@ -19,9 +19,9 @@ static void
 test_write_long_literal(void)
 {
   SerdEnv*    env    = serd_env_new(NULL);
-  SerdChunk   chunk  = {NULL, 0};
+  SerdBuffer  buffer = {NULL, 0};
   SerdWriter* writer = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
+    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_buffer_sink, &buffer);
   assert(writer);
 
   SerdNode s = serd_node_from_string(SERD_URI, NS_EG "s");
@@ -35,7 +35,7 @@ test_write_long_literal(void)
     "<http://example.org/s>\n"
     "\t<http://example.org/p> \"\"\"hello \"\"\\\"world\"\"\\\"!\"\"\" .\n";
 
-  char* const out = serd_chunk_sink_finish(&chunk);
+  char* const out = serd_buffer_sink_finish(&buffer);
   assert(expect_string(out, expected));
   serd_free(out);
 
@@ -47,9 +47,9 @@ static void
 test_write_nested_anon(void)
 {
   SerdEnv*    env    = serd_env_new(NULL);
-  SerdChunk   chunk  = {NULL, 0};
+  SerdBuffer  buffer = {NULL, 0};
   SerdWriter* writer = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
+    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_buffer_sink, &buffer);
   assert(writer);
 
   SerdNode s0  = serd_node_from_string(SERD_URI, NS_EG "s0");
@@ -106,7 +106,7 @@ test_write_nested_anon(void)
     "\t\t<http://example.org/p4> <http://example.org/o4>\n"
     "\t] .\n";
 
-  char* const out = serd_chunk_sink_finish(&chunk);
+  char* const out = serd_buffer_sink_finish(&buffer);
   assert(expect_string(out, expected));
   serd_free(out);
 
@@ -279,14 +279,14 @@ test_write_error(void)
 }
 
 static void
-test_chunk_sink(void)
+test_buffer_sink(void)
 {
   SerdEnv* const env = serd_env_new(NULL);
   assert(env);
 
-  SerdChunk         chunk  = {NULL, 0};
+  SerdBuffer        buffer = {NULL, 0};
   SerdWriter* const writer = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
+    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_buffer_sink, &buffer);
   assert(writer);
 
   const SerdNode base =
@@ -294,7 +294,7 @@ test_chunk_sink(void)
   assert(!serd_writer_set_base_uri(writer, &base));
   assert(!serd_writer_finish(writer));
 
-  char* const out = serd_chunk_sink_finish(&chunk);
+  char* out = serd_buffer_sink_finish(&buffer);
   assert(expect_string(out, "@base <http://example.org/base> .\n"));
   serd_free(out);
 
@@ -308,9 +308,9 @@ test_write_nothing_node(void)
   SerdEnv* const env = serd_env_new(NULL);
   assert(env);
 
-  SerdChunk         chunk  = {NULL, 0};
+  SerdBuffer        buffer = {NULL, 0};
   SerdWriter* const writer = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
+    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_buffer_sink, &buffer);
   assert(writer);
 
   SerdNode s = serd_node_from_string(SERD_URI, "");
@@ -319,7 +319,7 @@ test_write_nothing_node(void)
   assert(serd_writer_write_statement(writer, 0, NULL, &s, &p, &o, NULL, NULL) ==
          SERD_ERR_BAD_ARG);
 
-  assert(!chunk.buf);
+  assert(!buffer.buf);
   serd_writer_free(writer);
   serd_env_free(env);
 }
@@ -330,9 +330,9 @@ test_write_bad_statement(void)
   SerdEnv* const env = serd_env_new(NULL);
   assert(env);
 
-  SerdChunk         chunk  = {NULL, 0};
+  SerdBuffer        buffer = {NULL, 0};
   SerdWriter* const writer = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
+    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_buffer_sink, &buffer);
   assert(writer);
 
   SerdNode s = serd_node_from_string(SERD_URI, "http://example.org/s");
@@ -390,15 +390,15 @@ test_write_bad_statement(void)
 static void
 check_pname_escape(const char* const lname, const char* const expected)
 {
-  SerdEnv* const env   = serd_env_new(NULL);
-  SerdChunk      chunk = {NULL, 0};
+  SerdEnv* const env    = serd_env_new(NULL);
+  SerdBuffer     buffer = {NULL, 0};
 
   SerdWriter* const writer = serd_writer_new(SERD_TURTLE,
                                              (SerdStyle)SERD_STYLE_CURIED,
                                              env,
                                              NULL,
-                                             serd_chunk_sink,
-                                             &chunk);
+                                             serd_buffer_sink,
+                                             &buffer);
   assert(writer);
 
   static const char* const prefix     = NS_EG;
@@ -421,7 +421,7 @@ check_pname_escape(const char* const lname, const char* const expected)
   assert(!serd_writer_finish(writer));
   free(uri);
 
-  char* const out = serd_chunk_sink_finish(&chunk);
+  char* const out = serd_buffer_sink_finish(&buffer);
   assert(out);
   assert(!strcmp(out, expected));
   serd_free(out);
@@ -469,7 +469,7 @@ main(void)
   test_write_bad_anon_stack();
   test_strict_write();
   test_write_error();
-  test_chunk_sink();
+  test_buffer_sink();
   test_write_nothing_node();
   test_write_bad_statement();
   test_write_pname_escapes();
