@@ -2,8 +2,9 @@ serd (0.30.9) unstable;
 
   * Add fallback configuration if documentation theme is unavailable
   * Fix SERD_DISABLE_DEPRECATED
+  * Fix documentation installation directory
 
- -- David Robillard <d@drobilla.net>  Sat, 16 Jan 2021 12:46:46 +0000
+ -- David Robillard <d@drobilla.net>  Sat, 16 Jan 2021 21:22:27 +0000
 
 serd (0.30.8) stable;
 
