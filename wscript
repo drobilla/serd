@@ -267,6 +267,7 @@ def build(bld):
 
     # Documentation
     if bld.env.DOCS:
+        bld.env.SERD_MAJOR_VERSION = SERD_MAJOR_VERSION
         bld.recurse('doc/c')
 
     # Man page
