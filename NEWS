@@ -1,11 +1,11 @@
-serd (0.30.9) unstable;
+serd (0.30.10) stable;
 
   * Add fallback configuration if documentation theme is unavailable
   * Fix SERD_DISABLE_DEPRECATED
   * Fix building for older MacOS versions on newer MacOS
   * Fix documentation installation directory
 
- -- David Robillard <d@drobilla.net>  Sun, 17 Jan 2021 10:09:13 +0000
+ -- David Robillard <d@drobilla.net>  Wed, 20 Jan 2021 15:55:35 +0000
 
 serd (0.30.8) stable;
 
