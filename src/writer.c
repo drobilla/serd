@@ -332,8 +332,13 @@ write_text(SerdWriter*    writer,
            const uint8_t* utf8,
            size_t         n_bytes)
 {
-  size_t len = 0;
+  size_t len                  = 0;
+  size_t n_consecutive_quotes = 0;
   for (size_t i = 0; i < n_bytes;) {
+    if (utf8[i] != '"') {
+      n_consecutive_quotes = 0;
+    }
+
     // Fast bulk write for long strings of printable ASCII
     size_t j = i;
     for (; j < n_bytes; ++j) {
@@ -350,6 +355,8 @@ write_text(SerdWriter*    writer,
 
     const uint8_t in = utf8[i++];
     if (ctx == WRITE_LONG_STRING) {
+      n_consecutive_quotes = (in == '\"') ? (n_consecutive_quotes + 1) : 0;
+
       switch (in) {
       case '\\':
         len += sink("\\\\", 2, writer);
@@ -364,7 +371,8 @@ write_text(SerdWriter*    writer,
         len += sink(&in, 1, writer); // Write character as-is
         continue;
       case '\"':
-        if (i == n_bytes) { // '"' at string end
+        if (n_consecutive_quotes >= 3 || i == n_bytes) {
+          // Two quotes in a row, or quote at string end, escape
           len += sink("\\\"", 2, writer);
         } else {
           len += sink(&in, 1, writer);
