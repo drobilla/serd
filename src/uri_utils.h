@@ -24,13 +24,13 @@ slice_equals(const SerdStringView* a, const SerdStringView* b)
 }
 
 static inline size_t
-uri_path_len(const SerdURI* uri)
+uri_path_len(const SerdURIView* uri)
 {
   return uri->path_base.len + uri->path.len;
 }
 
 static inline char
-uri_path_at(const SerdURI* uri, size_t i)
+uri_path_at(const SerdURIView* uri, size_t i)
 {
   if (i < uri->path_base.len) {
     return uri->path_base.buf[i];
@@ -48,7 +48,7 @@ uri_path_at(const SerdURI* uri, size_t i)
    otherwise it may merely share some leading path components).
 */
 static inline SERD_PURE_FUNC SlashIndexes
-uri_rooted_index(const SerdURI* uri, const SerdURI* root)
+uri_rooted_index(const SerdURIView* uri, const SerdURIView* root)
 {
   SlashIndexes indexes = {SIZE_MAX, SIZE_MAX};
 
@@ -86,14 +86,14 @@ uri_rooted_index(const SerdURI* uri, const SerdURI* root)
 
 /** Return true iff `uri` shares path components with `root` */
 static inline SERD_PURE_FUNC bool
-uri_is_related(const SerdURI* uri, const SerdURI* root)
+uri_is_related(const SerdURIView* uri, const SerdURIView* root)
 {
   return uri_rooted_index(uri, root).shared != SIZE_MAX;
 }
 
 /** Return true iff `uri` is within the base of `root` */
 static inline SERD_PURE_FUNC bool
-uri_is_under(const SerdURI* uri, const SerdURI* root)
+uri_is_under(const SerdURIView* uri, const SerdURIView* root)
 {
   const SlashIndexes indexes = uri_rooted_index(uri, root);
   return indexes.shared && indexes.shared != SIZE_MAX &&
