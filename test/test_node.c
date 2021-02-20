@@ -171,6 +171,8 @@ test_node_from_string(void)
          serd_node_flags(hello) == SERD_HAS_QUOTE &&
          !strcmp(serd_node_string(hello), "hello\""));
 
+  assert(!strcmp(serd_node_string_view(hello).data, "hello\""));
+  assert(serd_node_string_view(hello).length == 6);
   serd_node_free(hello);
 }
 
