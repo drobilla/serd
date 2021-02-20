@@ -19,7 +19,7 @@ foreach unit : unit_tests
   test(unit,
        executable('test_@0@'.format(unit),
                   'test_@0@.c'.format(unit),
-                  c_args: c_warnings + prog_args,
+                  c_args: c_warnings + platform_args + prog_args,
                   dependencies: serd_dep),
        suite: 'unit')
 endforeach
