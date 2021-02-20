@@ -1215,7 +1215,7 @@ read_object(SerdReader* const  reader,
     o->flags = flags;
   }
 
-  if (!st && emit && simple) {
+  if (!st && emit && simple && o) {
     st = emit_statement(reader, *ctx, o);
   } else if (!st && !emit) {
     ctx->object = o;
@@ -1455,6 +1455,7 @@ read_base(SerdReader* const reader, const bool sparql, const bool token)
 
   SerdNode* uri = NULL;
   TRY(st, read_IRIREF(reader, &uri));
+  serd_node_zero_pad(uri);
   TRY(st, serd_sink_write_base(reader->sink, uri));
 
   read_ws_star(reader);
@@ -1493,6 +1494,8 @@ read_prefixID(SerdReader* const reader, const bool sparql, const bool token)
   SerdNode* uri = NULL;
   TRY(st, read_IRIREF(reader, &uri));
 
+  serd_node_zero_pad(name);
+  serd_node_zero_pad(uri);
   st = serd_sink_write_prefix(reader->sink, name, uri);
 
   if (!sparql) {
