@@ -109,8 +109,8 @@ struct SerdWriterImpl {
   SerdStyle     style;
   SerdEnv*      env;
   SerdNode      root_node;
-  SerdURI       root_uri;
-  SerdURI       base_uri;
+  SerdURIView   root_uri;
+  SerdURIView   base_uri;
   SerdStack     anon_stack;
   SerdByteSink  byte_sink;
   SerdErrorSink error_sink;
@@ -778,9 +778,9 @@ write_IRIREF(SerdWriter* const writer, const SerdNode* const node)
   }
 
   // Resolve the input URI reference to a (hopefully) absolute URI
-  SerdURI in_base_uri;
-  SerdURI uri;
-  SerdURI abs_uri;
+  SerdURIView in_base_uri;
+  SerdURIView uri;
+  SerdURIView abs_uri;
   serd_env_get_base_uri(writer->env, &in_base_uri);
   SERD_DISABLE_NULL_WARNINGS
   serd_uri_parse(node->buf, &uri);
@@ -788,9 +788,9 @@ write_IRIREF(SerdWriter* const writer, const SerdNode* const node)
   serd_uri_resolve(&uri, &in_base_uri, &abs_uri);
 
   // Determine if the absolute URI should be written, or make it relative again
-  const bool     rooted = uri_is_under(&writer->base_uri, &writer->root_uri);
-  const SerdURI* root   = rooted ? &writer->root_uri : &writer->base_uri;
-  UriSinkContext ctx    = {writer, SERD_SUCCESS};
+  const bool rooted       = uri_is_under(&writer->base_uri, &writer->root_uri);
+  const SerdURIView* root = rooted ? &writer->root_uri : &writer->base_uri;
+  UriSinkContext     ctx  = {writer, SERD_SUCCESS};
   if (!uri_is_under(&abs_uri, root) || writer->syntax == SERD_NTRIPLES ||
       writer->syntax == SERD_NQUADS) {
     serd_uri_serialise(&abs_uri, uri_sink, &ctx);
@@ -1237,12 +1237,12 @@ serd_writer_finish(SerdWriter* const writer)
 }
 
 SerdWriter*
-serd_writer_new(const SerdSyntax     syntax,
-                const SerdStyle      style,
-                SerdEnv* const       env,
-                const SerdURI* const base_uri,
-                SerdSink             ssink,
-                void* const          stream)
+serd_writer_new(const SerdSyntax         syntax,
+                const SerdStyle          style,
+                SerdEnv* const           env,
+                const SerdURIView* const base_uri,
+                SerdSink                 ssink,
+                void* const              stream)
 {
   assert(env);
   assert(ssink);
