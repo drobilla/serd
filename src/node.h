@@ -11,6 +11,10 @@
 
 #include <stddef.h>
 
+/// Return a string length padded to the number used with termination in a node
+ZIX_CONST_FUNC size_t
+serd_node_pad_length(size_t n_bytes);
+
 /// Return a mutable pointer to the string buffer of a node
 ZIX_CONST_FUNC char* ZIX_NONNULL
 serd_node_buffer(SerdNode* ZIX_NONNULL node);

@@ -68,7 +68,7 @@ serd_node_buffer(SerdNode* const node)
   return (char*)(node + 1);
 }
 
-ZIX_CONST_FUNC static size_t
+size_t
 serd_node_pad_length(const size_t length)
 {
   const size_t terminated = length + 1U;

@@ -4,6 +4,7 @@
 #include "reader.h"
 
 #include "byte_source.h"
+#include "node.h"
 #include "node_impl.h"
 #include "serd_internal.h"
 #include "stack.h"
@@ -108,10 +109,23 @@ push_node(SerdReader* const  reader,
 }
 
 SerdStatus
+push_node_termination(SerdReader* const reader)
+{
+  const size_t top = reader->stack.size;
+  const size_t pad = serd_node_pad_length(top) - top;
+
+  return serd_stack_push(&reader->stack, pad) ? SERD_SUCCESS : SERD_BAD_STACK;
+}
+
+SerdStatus
 emit_statement(SerdReader* const reader,
                const ReadContext ctx,
                SerdNode* const   o)
 {
+  // Push termination for the top node (object, language, or datatype)
+  // (Earlier nodes have been terminated by subsequent node pushed)
+  push_node_termination(reader);
+
   const SerdStatus st = serd_sink_write(
     reader->sink, *ctx.flags, ctx.subject, ctx.predicate, o, ctx.graph);
 

@@ -1141,7 +1141,7 @@ read_object(SerdReader* const  reader,
     }
   }
 
-  if (!st && emit && simple) {
+  if (!st && emit && simple && o) {
     ctx->object = o;
     st          = emit_statement(reader, *ctx, o);
   } else if (!st && !emit) {
@@ -1378,6 +1378,7 @@ read_base(SerdReader* const reader, const bool sparql, const bool token)
 
   SerdNode* uri = NULL;
   TRY(st, read_IRIREF(reader, &uri));
+  TRY(st, push_node_termination(reader));
   TRY(st, serd_sink_write_base(reader->sink, uri));
 
   read_ws_star(reader);
@@ -1407,6 +1408,7 @@ read_prefixID(SerdReader* const reader, const bool sparql, const bool token)
   }
 
   TRY_FAILING(st, read_PN_PREFIX(reader, name));
+  TRY(st, push_node_termination(reader));
 
   if (eat_byte_check(reader, ':') != ':') {
     return SERD_BAD_SYNTAX;
@@ -1415,6 +1417,7 @@ read_prefixID(SerdReader* const reader, const bool sparql, const bool token)
   read_ws_star(reader);
   SerdNode* uri = NULL;
   TRY(st, read_IRIREF(reader, &uri));
+  TRY(st, push_node_termination(reader));
 
   st = serd_sink_write_prefix(reader->sink, name, uri);
 
