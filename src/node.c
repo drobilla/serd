@@ -7,6 +7,7 @@
 #include "serd_internal.h"
 #include "string_utils.h"
 #include "system.h"
+#include "warnings.h"
 
 #include "serd/attributes.h"
 #include "serd/buffer.h"
@@ -152,6 +153,20 @@ serd_node_set(SerdNode** const dst, const SerdNode* const src)
   memcpy(*dst, src, size);
 }
 
+void
+serd_node_zero_pad(SerdNode* node)
+{
+  char*        buf         = serd_node_buffer(node);
+  const size_t size        = node->length;
+  const size_t padded_size = serd_node_pad_size(size);
+
+  memset(buf + size, 0, padded_size - size);
+
+  if (node->flags & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE)) {
+    serd_node_zero_pad(serd_node_meta(node));
+  }
+}
+
 SerdNode*
 serd_new_token(const SerdNodeType type, const SerdStringView str)
 {
@@ -275,7 +290,16 @@ serd_node_copy(const SerdNode* node)
   }
 
   const size_t size = serd_node_total_size(node);
-  SerdNode*    copy = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
+#ifndef NDEBUG
+  SERD_DISABLE_NULL_WARNINGS
+  const size_t unpadded_size = node->length;
+  const size_t padded_size   = serd_node_pad_size(node->length);
+  for (size_t i = 0; i < padded_size - unpadded_size; ++i) {
+    assert(serd_node_buffer_c(node)[unpadded_size + i] == '\0');
+  }
+  SERD_RESTORE_WARNINGS
+#endif
+  SerdNode* copy = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
   memcpy(copy, node, size);
   return copy;
 }
