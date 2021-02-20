@@ -98,16 +98,12 @@ serd_new_substring(SerdNodeType              type,
 /// Create a new URI node
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_uri_from_node(const SerdNode* SERD_NONNULL     uri_node,
-                       const SerdURIView* SERD_NULLABLE base,
-                       SerdURIView* SERD_NULLABLE       out);
+serd_new_uri(const char* SERD_NONNULL str);
 
-/// Simple wrapper for serd_new_uri() to resolve a URI string
+/// Create a new URI from a URI view
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_uri_from_string(const char* SERD_NULLABLE        str,
-                         const SerdURIView* SERD_NULLABLE base,
-                         SerdURIView* SERD_NULLABLE       out);
+serd_new_parsed_uri(SerdURIView uri);
 
 /**
    Create a new file URI node from a file system path and optional hostname.
@@ -123,41 +119,6 @@ SerdNode* SERD_ALLOCATED
 serd_new_file_uri(const char* SERD_NONNULL   path,
                   const char* SERD_NULLABLE  hostname,
                   SerdURIView* SERD_NULLABLE out);
-
-/**
-   Create a new node by serialising `uri` into a new string.
-
-   @param uri The URI to serialise.
-
-   @param base Base URI to resolve `uri` against (or NULL for no resolution).
-
-   @param out Set to the parsing of the new URI (i.e. points only to
-   memory owned by the new returned node).
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_uri(const SerdURIView* SERD_NONNULL  uri,
-             const SerdURIView* SERD_NULLABLE base,
-             SerdURIView* SERD_NULLABLE       out);
-
-/**
-   Create a new node by serialising `uri` into a new relative URI.
-
-   @param uri The URI to serialise.
-
-   @param base Base URI to make `uri` relative to, if possible.
-
-   @param root Root URI for resolution (see serd_uri_serialise_relative()).
-
-   @param out Set to the parsing of the new URI (i.e. points only to
-   memory owned by the new returned node).
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_relative_uri(const SerdURIView* SERD_NONNULL  uri,
-                      const SerdURIView* SERD_NULLABLE base,
-                      const SerdURIView* SERD_NULLABLE root,
-                      SerdURIView* SERD_NULLABLE       out);
 
 /**
    Create a new node by serialising `d` into an xsd:decimal string.

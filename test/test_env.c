@@ -26,6 +26,7 @@ test_env(void)
 {
   SerdNode* u   = serd_new_string(SERD_URI, "http://example.org/foo");
   SerdNode* b   = serd_new_string(SERD_CURIE, "invalid");
+  SerdNode* e   = serd_new_string(SERD_URI, "");
   SerdNode* c   = serd_new_string(SERD_CURIE, "eg.2:b");
   SerdNode* s   = serd_new_string(SERD_LITERAL, "hello");
   SerdEnv*  env = serd_env_new(NULL);
@@ -39,9 +40,13 @@ test_env(void)
 
   assert(serd_env_expand(env, NULL, &prefix, &suffix) == SERD_ERR_BAD_CURIE);
 
+  assert(serd_env_set_prefix_from_strings(env, "eg.3", "rel") ==
+         SERD_ERR_BAD_ARG);
+
   assert(!serd_env_expand_node(NULL, u));
   assert(!serd_env_expand_node(env, b));
   assert(!serd_env_expand_node(env, s));
+  assert(!serd_env_expand_node(env, e));
 
   assert(!serd_env_set_base_uri(env, NULL));
 
@@ -74,6 +79,12 @@ test_env(void)
 
   assert(!serd_env_set_base_uri(env, u));
   assert(serd_node_equals(serd_env_base_uri(env, NULL), u));
+
+  SerdNode* xe = serd_env_expand_node(env, e);
+  assert(xe);
+  assert(!strcmp(serd_node_string(xe), "http://example.org/foo"));
+  serd_node_free(xe);
+
   assert(!serd_env_set_base_uri(env, NULL));
   assert(!serd_env_base_uri(env, NULL));
 
@@ -82,6 +93,7 @@ test_env(void)
   serd_node_free(badpre);
   serd_node_free(s);
   serd_node_free(c);
+  serd_node_free(e);
   serd_node_free(b);
   serd_node_free(u);
 
