@@ -721,7 +721,7 @@ read_IRIREF(SerdReader* const reader, TokenHeader** const dest)
     case '<':
       return r_err_char(reader, "IRI", c);
     case '>':
-      return SERD_SUCCESS;
+      return push_node_termination(reader);
     case '\\':
       if (read_UCHAR(reader, *dest, &code)) {
         return r_err_char(reader, "IRI escape", c);
@@ -778,7 +778,7 @@ read_PrefixedName(SerdReader* const  reader,
 
   TRY(st, push_byte(reader, dest, eat_byte_safe(reader, ':')));
   TRY_FAILING(st, read_PN_LOCAL(reader, dest, ate_dot));
-  return SERD_SUCCESS;
+  return push_node_termination(reader);
 }
 
 static SerdStatus
