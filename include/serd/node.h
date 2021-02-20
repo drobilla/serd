@@ -5,6 +5,7 @@
 #define SERD_NODE_H
 
 #include "serd/attributes.h"
+#include "serd/string_view.h"
 #include "serd/uri.h"
 
 #include <stdbool.h>
@@ -237,6 +238,15 @@ serd_node_flags(const SerdNode* SERD_NONNULL node);
 /// Return the string contents of a node
 SERD_CONST_API const char* SERD_NONNULL
 serd_node_string(const SerdNode* SERD_NONNULL node);
+
+/**
+   Return a view of the string in a node.
+
+   This is a convenience wrapper for serd_node_string() and serd_node_length()
+   that can be used to get both in a single call.
+*/
+SERD_PURE_API SerdStringView
+serd_node_string_view(const SerdNode* SERD_NONNULL node);
 
 /**
    @}
