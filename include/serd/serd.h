@@ -623,6 +623,16 @@ SERD_PURE_API
 size_t
 serd_node_length(const SerdNode* SERD_NULLABLE node);
 
+/**
+   Return a view of the string in a node.
+
+   This is a convenience wrapper for serd_node_string() and serd_node_length()
+   that can be used to get both in a single call.
+*/
+SERD_PURE_API
+SerdStringView
+serd_node_string_view(const SerdNode* SERD_NONNULL node);
+
 /// Return the flags (string properties) of a node
 SERD_PURE_API
 SerdNodeFlags
