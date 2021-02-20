@@ -277,7 +277,7 @@ serd_reader_set_default_graph(SerdReader* const     reader,
 SerdStatus
 serd_reader_read_file(SerdReader* const reader, const char* const uri)
 {
-  char* const path = serd_file_uri_parse(uri, NULL);
+  char* const path = serd_parse_file_uri(uri, NULL);
   if (!path) {
     return SERD_ERR_BAD_ARG;
   }

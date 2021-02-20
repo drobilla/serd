@@ -295,7 +295,7 @@ main(int argc, char** argv)
     in_name = in_name ? in_name : input;
     if (!in_fd) {
       if (!strncmp(input, "file:", 5)) {
-        input_path = serd_file_uri_parse(input, NULL);
+        input_path = serd_parse_file_uri(input, NULL);
         input      = input_path;
       }
       if (!input || !(in_fd = serd_fopen(input, "rb"))) {
@@ -321,7 +321,8 @@ main(int argc, char** argv)
   SerdURIView base_uri = SERD_URI_NULL;
   SerdNode*   base     = NULL;
   if (a < argc) { // Base URI given on command line
-    base = serd_new_uri_from_string((const char*)argv[a], NULL, &base_uri);
+    base_uri = serd_parse_uri(argv[a]);
+    base     = serd_new_parsed_uri(base_uri);
   } else if (from_file && in_fd != stdin) { // Use input file URI
     base = serd_new_file_uri(input, NULL, &base_uri);
   }

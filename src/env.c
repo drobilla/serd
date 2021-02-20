@@ -85,15 +85,16 @@ serd_env_set_base_uri(SerdEnv* const env, const SerdNode* const uri)
     return SERD_SUCCESS;
   }
 
-  // Resolve base URI and create a new node and URI for it
-  SerdURIView base_uri;
-  SerdNode*   base_uri_node =
-    serd_new_uri_from_node(uri, &env->base_uri, &base_uri);
+  // Resolve the new base against the current base in case it is relative
+  const SerdURIView new_base_uri =
+    serd_resolve_uri(serd_parse_uri(serd_node_string(uri)), env->base_uri);
+
+  SerdNode* const new_base_node = serd_new_parsed_uri(new_base_uri);
 
   // Replace the current base URI
   serd_node_free(env->base_uri_node);
-  env->base_uri_node = base_uri_node;
-  env->base_uri      = base_uri;
+  env->base_uri_node = new_base_node;
+  env->base_uri      = serd_node_uri_view(env->base_uri_node);
 
   return SERD_SUCCESS;
 }
@@ -148,15 +149,17 @@ serd_env_set_prefix(SerdEnv* const        env,
   if (serd_uri_string_has_scheme(serd_node_string(uri))) {
     // Set prefix to absolute URI
     serd_env_add(env, name, uri);
+  } else if (!env->base_uri_node) {
+    return SERD_ERR_BAD_ARG;
   } else {
     // Resolve relative URI and create a new node and URI for it
-    SerdURIView abs_uri;
-    SerdNode*   abs_uri_node =
-      serd_new_uri_from_node(uri, &env->base_uri, &abs_uri);
+    SerdNode* const abs_uri =
+      serd_new_resolved_uri(serd_node_string_view(uri), env->base_uri);
 
     // Set prefix to resolved (absolute) URI
-    serd_env_add(env, name, abs_uri_node);
-    serd_node_free(abs_uri_node);
+    serd_env_add(env, name, abs_uri);
+
+    serd_node_free(abs_uri);
   }
 
   return SERD_SUCCESS;
@@ -230,16 +233,15 @@ serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
   switch (node->type) {
   case SERD_LITERAL:
     break;
-  case SERD_URI: {
-    SerdURIView ignored;
-    return serd_new_uri_from_node(node, &env->base_uri, &ignored);
-  }
+  case SERD_URI:
+    return serd_new_resolved_uri(serd_node_string_view(node), env->base_uri);
   case SERD_CURIE: {
     SerdStringView prefix;
     SerdStringView suffix;
     if (serd_env_expand(env, node, &prefix, &suffix)) {
       return NULL;
     }
+
     const size_t len = prefix.len + suffix.len;
     SerdNode*    ret = serd_node_malloc(len, 0, SERD_URI);
     char*        buf = serd_node_buffer(ret);

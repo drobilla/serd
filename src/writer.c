@@ -618,29 +618,32 @@ write_uri_node(SerdWriter* const        writer,
 
   write_sep(writer, SEP_URI_BEGIN);
   if (writer->flags & SERD_WRITE_RESOLVED) {
+    const SerdURIView uri = serd_parse_uri(node_str);
+
     SerdURIView in_base_uri;
-    SerdURIView uri;
-    SerdURIView abs_uri;
     serd_env_base_uri(writer->env, &in_base_uri);
-    serd_uri_parse(node_str, &uri);
-    serd_uri_resolve(&uri, &in_base_uri, &abs_uri);
-    bool         rooted = uri_is_under(&writer->base_uri, &writer->root_uri);
-    SerdURIView* root   = rooted ? &writer->root_uri : &writer->base_uri;
-    if (!uri_is_under(&abs_uri, root) || writer->syntax == SERD_NTRIPLES ||
-        writer->syntax == SERD_NQUADS) {
-      serd_uri_serialise(&abs_uri, uri_sink, writer);
+
+    const SerdURIView  abs_uri = serd_resolve_uri(uri, in_base_uri);
+    const bool         rooted  = uri_is_under(&in_base_uri, &writer->root_uri);
+    const SerdURIView* root    = rooted ? &writer->root_uri : &in_base_uri;
+
+    if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS ||
+        !uri_is_under(&abs_uri, root) ||
+        !uri_is_related(&abs_uri, &in_base_uri)) {
+      serd_write_uri(abs_uri, uri_sink, writer);
     } else {
-      serd_uri_serialise_relative(
-        &uri, &writer->base_uri, root, uri_sink, writer);
+      serd_write_uri(serd_relative_uri(uri, in_base_uri), uri_sink, writer);
     }
   } else {
     write_uri_from_node(writer, node);
   }
   write_sep(writer, SEP_URI_END);
+
   if (is_inline_start(writer, field, flags)) {
     sink(" ;", 2, writer);
     write_newline(writer);
   }
+
   return true;
 }
 
@@ -910,7 +913,10 @@ serd_writer_write_statement(SerdWriter* const        writer,
     }
     writer->context = new_context;
   } else {
-    serd_node_set(&writer->context.graph, graph);
+    if (graph) {
+      serd_node_set(&writer->context.graph, graph);
+    }
+
     serd_node_set(&writer->context.subject, subject);
     serd_node_set(&writer->context.predicate, predicate);
   }
@@ -1038,7 +1044,7 @@ serd_writer_set_root_uri(SerdWriter* writer, const SerdNode* uri)
 
   if (uri) {
     writer->root_node = serd_node_copy(uri);
-    serd_uri_parse(serd_node_string(writer->root_node), &writer->root_uri);
+    writer->root_uri  = serd_parse_uri(serd_node_string(writer->root_node));
   }
 
   return SERD_SUCCESS;
