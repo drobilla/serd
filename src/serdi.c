@@ -317,8 +317,8 @@ main(int argc, char** argv)
   const SerdStyle output_style =
     choose_style(input_syntax, output_syntax, ascii, bulk_write, full_uris);
 
-  SerdURI  base_uri = SERD_URI_NULL;
-  SerdNode base     = SERD_NODE_NULL;
+  SerdURIView base_uri = SERD_URI_NULL;
+  SerdNode    base     = SERD_NODE_NULL;
   if (a < argc) { // Base URI given on command line
     base = serd_node_new_uri_from_string((const char*)argv[a], NULL, &base_uri);
   } else if (from_file && in_fd != stdin) { // Use input file URI

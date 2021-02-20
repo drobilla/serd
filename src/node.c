@@ -89,7 +89,7 @@ serd_node_equals(const SerdNode* const a, const SerdNode* const b)
 }
 
 static size_t
-serd_uri_string_length(const SerdURI* const uri)
+serd_uri_string_length(const SerdURIView* const uri)
 {
   size_t len = uri->path_base.len;
 
@@ -117,9 +117,9 @@ string_sink(const void* const buf, const size_t len, void* const stream)
 }
 
 SerdNode
-serd_node_new_uri_from_node(const SerdNode* const uri_node,
-                            const SerdURI* const  base,
-                            SerdURI* const        out)
+serd_node_new_uri_from_node(const SerdNode* const    uri_node,
+                            const SerdURIView* const base,
+                            SerdURIView* const       out)
 {
   return (uri_node->type == SERD_URI && uri_node->buf)
            ? serd_node_new_uri_from_string(uri_node->buf, base, out)
@@ -127,16 +127,16 @@ serd_node_new_uri_from_node(const SerdNode* const uri_node,
 }
 
 SerdNode
-serd_node_new_uri_from_string(const char* const    str,
-                              const SerdURI* const base,
-                              SerdURI* const       out)
+serd_node_new_uri_from_string(const char* const        str,
+                              const SerdURIView* const base,
+                              SerdURIView* const       out)
 {
   if (!str || str[0] == '\0') {
     // Empty URI => Base URI, or nothing if no base is given
     return base ? serd_node_new_uri(base, NULL, out) : SERD_NODE_NULL;
   }
 
-  SerdURI uri;
+  SerdURIView uri;
   serd_uri_parse(str, &uri);
   return serd_node_new_uri(&uri, base, out); // Resolve/Serialise
 }
@@ -178,9 +178,9 @@ is_uri_path_char(const char c)
 }
 
 SerdNode
-serd_node_new_file_uri(const char* const path,
-                       const char* const hostname,
-                       SerdURI* const    out)
+serd_node_new_file_uri(const char* const  path,
+                       const char* const  hostname,
+                       SerdURIView* const out)
 {
   const size_t path_len     = strlen(path);
   const size_t hostname_len = hostname ? strlen(hostname) : 0;
@@ -228,11 +228,11 @@ serd_node_new_file_uri(const char* const path,
 }
 
 SerdNode
-serd_node_new_uri(const SerdURI* const uri,
-                  const SerdURI* const base,
-                  SerdURI* const       out)
+serd_node_new_uri(const SerdURIView* const uri,
+                  const SerdURIView* const base,
+                  SerdURIView* const       out)
 {
-  SerdURI abs_uri = *uri;
+  SerdURIView abs_uri = *uri;
   if (base) {
     serd_uri_resolve(uri, base, &abs_uri);
   }
@@ -254,10 +254,10 @@ serd_node_new_uri(const SerdURI* const uri,
 }
 
 SerdNode
-serd_node_new_relative_uri(const SerdURI* const uri,
-                           const SerdURI* const base,
-                           const SerdURI* const root,
-                           SerdURI* const       out)
+serd_node_new_relative_uri(const SerdURIView* const uri,
+                           const SerdURIView* const base,
+                           const SerdURIView* const root,
+                           SerdURIView* const       out)
 {
   const size_t uri_len  = serd_uri_string_length(uri);
   const size_t base_len = serd_uri_string_length(base);
