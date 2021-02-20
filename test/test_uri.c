@@ -69,8 +69,8 @@ test_uri_from_string(void)
   SerdNode nonsense = serd_node_new_uri_from_string(NULL, NULL, NULL);
   assert(nonsense.type == SERD_NOTHING);
 
-  SerdURI  base_uri;
-  SerdNode base =
+  SerdURIView base_uri;
+  SerdNode    base =
     serd_node_new_uri_from_string("http://example.org/", NULL, &base_uri);
   SerdNode nil  = serd_node_new_uri_from_string(NULL, &base_uri, NULL);
   SerdNode nil2 = serd_node_new_uri_from_string("", &base_uri, NULL);
@@ -87,16 +87,16 @@ test_uri_from_string(void)
 static void
 test_relative_uri(void)
 {
-  SerdURI  base_uri;
-  SerdNode base =
+  SerdURIView base_uri;
+  SerdNode    base =
     serd_node_new_uri_from_string("http://example.org/", NULL, &base_uri);
 
   SerdNode abs = serd_node_from_string(SERD_URI, "http://example.org/foo/bar");
-  SerdURI  abs_uri;
+  SerdURIView abs_uri;
   serd_uri_parse(abs.buf, &abs_uri);
 
-  SerdURI  rel_uri;
-  SerdNode rel =
+  SerdURIView rel_uri;
+  SerdNode    rel =
     serd_node_new_relative_uri(&abs_uri, &base_uri, NULL, &rel_uri);
   assert(!strcmp(rel.buf, "/foo/bar"));
 
@@ -107,8 +107,8 @@ test_relative_uri(void)
     serd_node_new_relative_uri(&base_uri, &abs_uri, &abs_uri, NULL);
   assert(!strcmp(noup.buf, "http://example.org/"));
 
-  SerdNode x = serd_node_from_string(SERD_URI, "http://example.org/foo/x");
-  SerdURI  x_uri;
+  SerdNode    x = serd_node_from_string(SERD_URI, "http://example.org/foo/x");
+  SerdURIView x_uri;
   serd_uri_parse(x.buf, &x_uri);
 
   SerdNode x_rel = serd_node_new_relative_uri(&x_uri, &abs_uri, &abs_uri, NULL);
