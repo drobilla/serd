@@ -106,33 +106,46 @@ blank_id(SerdReader* const reader)
 }
 
 static TokenHeader*
-push_node_padded(SerdReader* const   reader,
-                 const size_t        maxlen,
-                 const SerdNodeType  type,
-                 const ZixStringView string)
+push_node_start(SerdReader* const  reader,
+                const SerdNodeType type,
+                const size_t       body_size)
 {
-  // Push a null byte to ensure the previous node was null terminated
-  char* terminator = (char*)serd_stack_push(&reader->stack, 1);
-  if (!terminator) {
-    return NULL;
+  const SerdStatus st = push_node_termination(reader);
+  if (st) {
+    return 0;
   }
-  *terminator = 0;
 
-  void* mem = serd_stack_push_aligned(
-    &reader->stack, sizeof(TokenHeader) + maxlen + 1U, sizeof(TokenHeader));
+  const size_t total_size = sizeof(TokenHeader) + body_size;
+  void* const  mem        = serd_stack_push(&reader->stack, total_size);
   if (!mem) {
     return NULL;
   }
 
   TokenHeader* const node = (TokenHeader*)mem;
+  node->length            = 0;
+  node->flags             = 0U;
+  node->type              = type;
+  return node;
+}
 
-  node->type   = type;
-  node->flags  = 0U;
-  node->length = (uint32_t)string.length;
+TokenHeader*
+push_node_head(SerdReader* const reader, const SerdNodeType type)
+{
+  return push_node_start(reader, type, 0);
+}
 
-  char* const buf = (char*)(node + 1U);
-  memcpy(buf, string.data, string.length + 1U);
-
+TokenHeader*
+push_node_space(SerdReader* const  reader,
+                const SerdNodeType type,
+                const size_t       size)
+{
+  TokenHeader* const node = push_node_start(reader, type, size);
+  if (node) {
+    void* const body = serd_stack_push(&reader->stack, size);
+    if (body) {
+      ((char*)body)[0] = '\0';
+    }
+  }
   return node;
 }
 
@@ -141,21 +154,16 @@ push_node(SerdReader* const   reader,
           const SerdNodeType  type,
           const ZixStringView string)
 {
-  return push_node_padded(reader, string.length, type, string);
-}
+  assert(string.length);
 
-TokenHeader*
-push_node_head(SerdReader* const reader, const SerdNodeType type)
-{
-  return push_node_padded(reader, 0U, type, zix_empty_string());
-}
-
-TokenHeader*
-push_node_space(SerdReader* const  reader,
-                const SerdNodeType type,
-                const size_t       size)
-{
-  return push_node_padded(reader, size, type, zix_empty_string());
+  TokenHeader* const node = push_node_start(reader, type, string.length + 1);
+  if (node) {
+    char* const buf = (char*)(node + 1);
+    memcpy(buf, string.data, string.length);
+    buf[string.length] = '\0';
+    node->length       = (uint32_t)string.length;
+  }
+  return node;
 }
 
 bool
@@ -165,6 +173,24 @@ pop_last_node_char(SerdReader* const reader, TokenHeader* const header)
   --header->length;
   serd_stack_pop(&reader->stack, 1);
   return !!header;
+}
+
+SerdStatus
+push_node_termination(SerdReader* const reader)
+{
+  // Push first mandatory null termination byte
+  reader->stack.buf[reader->stack.size++] = '\0';
+
+  // Push extra null bytes for 32-bit alignment
+  const size_t top         = reader->stack.size;
+  const size_t n_end_bytes = ((top + 3U) & ~0x03U) - top;
+  void* const  end         = serd_stack_push(&reader->stack, n_end_bytes);
+  if (!end) {
+    return SERD_BAD_STACK;
+  }
+
+  memset(end, '\0', n_end_bytes);
+  return SERD_SUCCESS;
 }
 
 SerdTokenView

@@ -22,8 +22,8 @@
 
 #include <assert.h>
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 typedef struct {
   TokenHeader*    graph;
@@ -66,6 +66,9 @@ push_node_space(SerdReader* reader, SerdNodeType type, size_t size);
 
 ZIX_NODISCARD TokenHeader*
 push_node(SerdReader* reader, SerdNodeType type, ZixStringView string);
+
+ZIX_NODISCARD SerdStatus
+push_node_termination(SerdReader* reader);
 
 ZIX_PURE_FUNC bool
 tolerate_status(const SerdReader* reader, SerdStatus status);
@@ -165,35 +168,32 @@ push_byte(SerdReader* const reader, TokenHeader* const node, const int c)
 {
   assert(c >= 0);
 
-  char* const s = (char*)serd_stack_push(&reader->stack, 1);
-  if (!s) {
+  const size_t new_stack_size = reader->stack.size + 1U;
+  if (new_stack_size > reader->stack.buf_size) {
     return SERD_BAD_STACK;
   }
 
-  *(s - 1) = (char)c;
-  *s       = '\0';
-
+  ((uint8_t*)reader->stack.buf)[reader->stack.size] = (uint8_t)c;
+  reader->stack.size                                = new_stack_size;
   ++node->length;
   return SERD_SUCCESS;
 }
 
 ZIX_NODISCARD static inline SerdStatus
 push_bytes(SerdReader* const    reader,
-           TokenHeader* const   ref,
+           TokenHeader* const   node,
            const uint8_t* const bytes,
            const unsigned       len)
 {
-  SerdStatus st = SERD_SUCCESS;
-
   if (reader->stack.size + len > reader->stack.buf_size) {
     return SERD_BAD_STACK;
   }
 
-  for (unsigned i = 0; !st && i < len; ++i) {
-    st = push_byte(reader, ref, bytes[i]);
-  }
-
-  return st;
+  uint8_t* const buf = (uint8_t*)reader->stack.buf;
+  memcpy(&buf[reader->stack.size], bytes, len);
+  reader->stack.size += len;
+  node->length += len;
+  return SERD_SUCCESS;
 }
 
 #endif // SERD_SRC_READER_H

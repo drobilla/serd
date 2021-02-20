@@ -8,7 +8,7 @@
 
 #include <assert.h>
 #include <stdbool.h>
-#include <string.h>
+#include <stddef.h>
 
 /// A dynamic stack in memory
 typedef struct {
@@ -67,24 +67,6 @@ serd_stack_pop_to(SerdStack* stack, size_t n_bytes)
 {
   assert(stack->size >= n_bytes);
   stack->size = n_bytes;
-}
-
-static inline void*
-serd_stack_push_aligned(SerdStack* const stack,
-                        const size_t     n_bytes,
-                        const size_t     align)
-{
-  // Push padding if necessary
-  const size_t pad     = align - (stack->size % align);
-  void* const  padding = serd_stack_push(stack, pad);
-  if (!padding) {
-    return NULL;
-  }
-
-  memset(padding, 0, pad);
-
-  // Push requested space at aligned location
-  return serd_stack_push(stack, n_bytes);
 }
 
 #endif // SERD_SRC_STACK_H
