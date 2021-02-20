@@ -219,8 +219,8 @@ typedef size_t (*SerdSink)(const void* SERD_NONNULL buf,
 /**
    A parsed URI.
 
-   This struct directly refers to chunks in other strings, it does not own any
-   memory itself.  Thus, URIs can be parsed and/or resolved against a base URI
+   This struct directly refers to slices in other strings, it does not own any
+   memory itself.  This allows some URI operations like resolution to be done
    in-place without allocating memory.
 */
 typedef struct {
@@ -230,9 +230,9 @@ typedef struct {
   SerdStringView path;      ///< Path suffix
   SerdStringView query;     ///< Query
   SerdStringView fragment;  ///< Fragment
-} SerdURI;
+} SerdURIView;
 
-static const SerdURI SERD_URI_NULL =
+static const SerdURIView SERD_URI_NULL =
   {{NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}};
 
 /**
@@ -255,7 +255,7 @@ serd_uri_string_has_scheme(const char* SERD_NULLABLE utf8);
 
 /// Parse `utf8`, writing result to `out`
 SERD_API SerdStatus
-serd_uri_parse(const char* SERD_NONNULL utf8, SerdURI* SERD_NONNULL out);
+serd_uri_parse(const char* SERD_NONNULL utf8, SerdURIView* SERD_NONNULL out);
 
 /**
    Set target `t` to reference `r` resolved against `base`.
@@ -263,15 +263,15 @@ serd_uri_parse(const char* SERD_NONNULL utf8, SerdURI* SERD_NONNULL out);
    @see [RFC3986 5.2.2](http://tools.ietf.org/html/rfc3986#section-5.2.2)
 */
 SERD_API void
-serd_uri_resolve(const SerdURI* SERD_NONNULL r,
-                 const SerdURI* SERD_NONNULL base,
-                 SerdURI* SERD_NONNULL       t);
+serd_uri_resolve(const SerdURIView* SERD_NONNULL r,
+                 const SerdURIView* SERD_NONNULL base,
+                 SerdURIView* SERD_NONNULL       t);
 
 /// Serialise `uri` with a series of calls to `sink`
 SERD_API size_t
-serd_uri_serialise(const SerdURI* SERD_NONNULL uri,
-                   SerdSink SERD_NONNULL       sink,
-                   void* SERD_UNSPECIFIED      stream);
+serd_uri_serialise(const SerdURIView* SERD_NONNULL uri,
+                   SerdSink SERD_NONNULL           sink,
+                   void* SERD_UNSPECIFIED          stream);
 
 /**
    Serialise `uri` relative to `base` with a series of calls to `sink`
@@ -281,11 +281,11 @@ serd_uri_serialise(const SerdURI* SERD_NONNULL uri,
    used keep up-references ("../") within a certain namespace.
 */
 SERD_API size_t
-serd_uri_serialise_relative(const SerdURI* SERD_NONNULL  uri,
-                            const SerdURI* SERD_NULLABLE base,
-                            const SerdURI* SERD_NULLABLE root,
-                            SerdSink SERD_NONNULL        sink,
-                            void* SERD_UNSPECIFIED       stream);
+serd_uri_serialise_relative(const SerdURIView* SERD_NONNULL  uri,
+                            const SerdURIView* SERD_NULLABLE base,
+                            const SerdURIView* SERD_NULLABLE root,
+                            SerdSink SERD_NONNULL            sink,
+                            void* SERD_UNSPECIFIED           stream);
 
 /**
    @}
@@ -378,15 +378,15 @@ serd_node_from_substring(SerdType                  type,
 
 /// Simple wrapper for serd_node_new_uri() to resolve a URI node
 SERD_API SerdNode
-serd_node_new_uri_from_node(const SerdNode* SERD_NONNULL uri_node,
-                            const SerdURI* SERD_NULLABLE base,
-                            SerdURI* SERD_NULLABLE       out);
+serd_node_new_uri_from_node(const SerdNode* SERD_NONNULL     uri_node,
+                            const SerdURIView* SERD_NULLABLE base,
+                            SerdURIView* SERD_NULLABLE       out);
 
 /// Simple wrapper for serd_node_new_uri() to resolve a URI string
 SERD_API SerdNode
-serd_node_new_uri_from_string(const char* SERD_NULLABLE    str,
-                              const SerdURI* SERD_NULLABLE base,
-                              SerdURI* SERD_NULLABLE       out);
+serd_node_new_uri_from_string(const char* SERD_NULLABLE        str,
+                              const SerdURIView* SERD_NULLABLE base,
+                              SerdURIView* SERD_NULLABLE       out);
 
 /**
    Create a new file URI node from a file system path and optional hostname.
@@ -399,10 +399,10 @@ serd_node_new_uri_from_string(const char* SERD_NULLABLE    str,
    If `out` is not NULL, it will be set to the parsed URI.
 */
 SERD_API SerdNode
-serd_node_new_file_uri(const char* SERD_NONNULL  path,
-                       const char* SERD_NULLABLE hostname,
-                       SerdURI* SERD_NULLABLE    out,
-                       bool                      escape);
+serd_node_new_file_uri(const char* SERD_NONNULL   path,
+                       const char* SERD_NULLABLE  hostname,
+                       SerdURIView* SERD_NULLABLE out,
+                       bool                       escape);
 
 /**
    Create a new node by serialising `uri` into a new string.
@@ -415,9 +415,9 @@ serd_node_new_file_uri(const char* SERD_NONNULL  path,
    memory owned by the new returned node).
 */
 SERD_API SerdNode
-serd_node_new_uri(const SerdURI* SERD_NONNULL  uri,
-                  const SerdURI* SERD_NULLABLE base,
-                  SerdURI* SERD_NULLABLE       out);
+serd_node_new_uri(const SerdURIView* SERD_NONNULL  uri,
+                  const SerdURIView* SERD_NULLABLE base,
+                  SerdURIView* SERD_NULLABLE       out);
 
 /**
    Create a new node by serialising `uri` into a new relative URI.
@@ -432,10 +432,10 @@ serd_node_new_uri(const SerdURI* SERD_NONNULL  uri,
    memory owned by the new returned node).
 */
 SERD_API SerdNode
-serd_node_new_relative_uri(const SerdURI* SERD_NONNULL  uri,
-                           const SerdURI* SERD_NULLABLE base,
-                           const SerdURI* SERD_NULLABLE root,
-                           SerdURI* SERD_NULLABLE       out);
+serd_node_new_relative_uri(const SerdURIView* SERD_NONNULL  uri,
+                           const SerdURIView* SERD_NULLABLE base,
+                           const SerdURIView* SERD_NULLABLE root,
+                           SerdURIView* SERD_NULLABLE       out);
 
 /**
    Create a new node by serialising `d` into an xsd:decimal string.
@@ -597,7 +597,7 @@ serd_env_free(SerdEnv* SERD_NULLABLE env);
 /// Get the current base URI
 SERD_API const SerdNode* SERD_NONNULL
 serd_env_get_base_uri(const SerdEnv* SERD_NONNULL env,
-                      SerdURI* SERD_NULLABLE      out);
+                      SerdURIView* SERD_NULLABLE  out);
 
 /// Set the current base URI
 SERD_API SerdStatus
@@ -836,12 +836,12 @@ typedef enum {
 
 /// Create a new RDF writer
 SERD_API SerdWriter* SERD_ALLOCATED
-serd_writer_new(SerdSyntax                   syntax,
-                SerdStyle                    style,
-                SerdEnv* SERD_NONNULL        env,
-                const SerdURI* SERD_NULLABLE base_uri,
-                SerdSink SERD_NONNULL        ssink,
-                void* SERD_UNSPECIFIED       stream);
+serd_writer_new(SerdSyntax                       syntax,
+                SerdStyle                        style,
+                SerdEnv* SERD_NONNULL            env,
+                const SerdURIView* SERD_NULLABLE base_uri,
+                SerdSink SERD_NONNULL            ssink,
+                void* SERD_UNSPECIFIED           stream);
 
 /// Free `writer`
 SERD_API void
