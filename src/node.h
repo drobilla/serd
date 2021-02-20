@@ -30,6 +30,10 @@ serd_node_set(SerdNode* ZIX_NONNULL* ZIX_NONNULL dst,
 void
 serd_node_reset(SerdNode* ZIX_NONNULL node);
 
+/// Zero the padding (at least one trailing null byte) of a node
+void
+serd_node_zero_pad(SerdNode* ZIX_NONNULL node);
+
 /// Create a new URI from a prefix and suffix (expanded from a CURIE)
 SerdNode* ZIX_ALLOCATED
 serd_new_expanded_uri(ZixStringView prefix, ZixStringView suffix);
