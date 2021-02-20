@@ -5,6 +5,7 @@ Checks: >
   -altera-*,
   -android-cloexec-fopen,
   -bugprone-easily-swappable-parameters,
+  -bugprone-reserved-identifier,
   -clang-analyzer-nullability.NullabilityBase,
   -clang-analyzer-nullability.NullableDereferenced,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
