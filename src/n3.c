@@ -704,7 +704,7 @@ read_IRIREF(SerdReader* const reader, SerdNode** const dest)
     case '<':
       return r_err(reader, SERD_BAD_SYNTAX, "invalid IRI character '%c'\n", c);
     case '>':
-      return SERD_SUCCESS;
+      return push_node_termination(reader);
     case '\\':
       if (read_UCHAR(reader, *dest, &code)) {
         return r_err(reader, SERD_BAD_SYNTAX, "invalid IRI escape\n");
@@ -766,7 +766,7 @@ read_PrefixedName(SerdReader* const reader,
   push_byte(reader, dest, eat_byte_safe(reader, ':'));
 
   TRY_FAILING(st, read_PN_LOCAL(reader, dest, ate_dot));
-  return SERD_SUCCESS;
+  return push_node_termination(reader);
 }
 
 static SerdStatus
@@ -906,9 +906,11 @@ read_literal(SerdReader* const reader,
     }
 
     (*dest)->meta = datatype;
+  } else {
+    st = push_node_termination(reader);
   }
 
-  return SERD_SUCCESS;
+  return st;
 }
 
 static SerdStatus
@@ -1144,7 +1146,7 @@ read_object(SerdReader* const  reader,
     }
   }
 
-  if (!st && emit && simple) {
+  if (!st && emit && simple && o) {
     ctx->object = o;
     st          = emit_statement(reader, *ctx, o);
   } else if (!st && !emit) {
@@ -1410,6 +1412,7 @@ read_prefixID(SerdReader* const reader, const bool sparql, const bool token)
   }
 
   TRY_FAILING(st, read_PN_PREFIX(reader, name));
+  TRY(st, push_node_termination(reader));
 
   if (eat_byte_check(reader, ':') != ':') {
     return SERD_BAD_SYNTAX;

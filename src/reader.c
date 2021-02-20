@@ -4,6 +4,7 @@
 #include "reader.h"
 
 #include "byte_source.h"
+#include "node.h"
 #include "node_impl.h"
 #include "serd_internal.h"
 #include "stack.h"
@@ -71,12 +72,12 @@ push_node_padded(SerdReader* const  reader,
                  const char* const  str,
                  const size_t       length)
 {
-  // Push a null byte to ensure the previous node was null terminated
-  char* terminator = (char*)serd_stack_push(&reader->stack, 1);
-  if (!terminator) {
-    return NULL;
+  if (reader->stack.size > SERD_STACK_BOTTOM) {
+    // Push null bytes to terminate any previous node
+    if (push_node_termination(reader)) {
+      return NULL;
+    }
   }
-  *terminator = 0;
 
   void* mem = serd_stack_push_aligned(
     &reader->stack, sizeof(SerdNode) + maxlen + 1, sizeof(SerdNode));
@@ -108,11 +109,32 @@ push_node(SerdReader* const   reader,
 }
 
 SerdStatus
+push_node_termination(SerdReader* const reader)
+{
+  // Push first mandatory null termination byte
+  reader->stack.buf[reader->stack.size - 1U] = '\0';
+  ++reader->stack.size;
+
+  // Push extra null termination bytes for node alignment
+  const size_t top         = reader->stack.size;
+  const size_t n_end_bytes = serd_node_pad_length(top) - top;
+  void* const  end         = serd_stack_push(&reader->stack, n_end_bytes);
+  if (!end) {
+    return SERD_BAD_STACK;
+  }
+
+  memset(end, '\0', n_end_bytes);
+  return SERD_SUCCESS;
+}
+
+SerdStatus
 emit_statement(SerdReader* const reader,
                const ReadContext ctx,
                SerdNode* const   o)
 {
-  const SerdStatus st = serd_sink_write(
+  SerdStatus st = SERD_SUCCESS;
+
+  st = serd_sink_write(
     reader->sink, *ctx.flags, ctx.subject, ctx.predicate, o, ctx.graph);
 
   *ctx.flags = 0;

@@ -65,6 +65,9 @@ push_node_padded(SerdReader*  reader,
 SerdNode*
 push_node(SerdReader* reader, SerdNodeType type, ZixStringView string);
 
+SerdStatus ZIX_NODISCARD
+push_node_termination(SerdReader* reader);
+
 ZIX_PURE_FUNC size_t
 genid_size(const SerdReader* reader);
 
@@ -145,14 +148,12 @@ push_byte(SerdReader* reader, SerdNode* node, const int c)
 {
   assert(c != EOF);
 
-  char* const s = (char*)serd_stack_push(&reader->stack, 1);
-  if (!s) {
+  if (reader->stack.size + 1 > reader->stack.buf_size) {
     return SERD_BAD_STACK;
   }
 
-  *(s - 1) = (char)c;
-  *s       = '\0';
-
+  ((uint8_t*)reader->stack.buf)[reader->stack.size - 1] = (uint8_t)c;
+  ++reader->stack.size;
   ++node->length;
   return SERD_SUCCESS;
 }
