@@ -128,6 +128,10 @@ emit_statement(SerdReader* const reader,
     graph = reader->default_graph;
   }
 
+  /* Zero the pad of the object node on the top of the stack.  Lower nodes
+     (subject and predicate) were already zeroed by subsequent pushes. */
+  serd_node_zero_pad(o);
+
   const SerdStatus st = serd_sink_write(
     reader->sink, *ctx.flags, ctx.subject, ctx.predicate, o, graph);
 
