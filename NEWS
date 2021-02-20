@@ -11,6 +11,7 @@ serd (1.0.1) unstable;
   * Add support for writing terse collections
   * Add support for xsd:float and xsd:double literals
   * Bring read/write interface closer to C standard
+  * Make SERD_LONG_LITERAL a separate node type
   * Make nodes opaque
   * Remove serd_uri_to_path()
   * Remove useless character counting from API
@@ -21,7 +22,7 @@ serd (1.0.1) unstable;
   * Use a fixed-size reader stack
   * Use char* for strings in public API
 
- -- David Robillard <d@drobilla.net>  Wed, 13 Jan 2021 13:37:55 +0000
+ -- David Robillard <d@drobilla.net>  Sat, 29 May 2021 15:21:48 +0000
 
 serd (0.30.11) unstable;
 

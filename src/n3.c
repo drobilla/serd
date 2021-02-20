@@ -161,11 +161,9 @@ read_ECHAR(SerdReader* const reader, SerdNode* const dest)
     eat_byte_safe(reader, 'b');
     return push_byte(reader, dest, '\b');
   case 'n':
-    dest->flags |= SERD_HAS_NEWLINE;
     eat_byte_safe(reader, 'n');
     return push_byte(reader, dest, '\n');
   case 'r':
-    dest->flags |= SERD_HAS_NEWLINE;
     eat_byte_safe(reader, 'r');
     return push_byte(reader, dest, '\r');
   case 'f':
@@ -262,23 +260,8 @@ read_utf8_code(SerdReader* const reader,
 static SerdStatus
 read_character(SerdReader* const reader, SerdNode* const dest, const uint8_t c)
 {
-  if (!(c & 0x80)) {
-    switch (c) {
-    case 0xA:
-    case 0xD:
-      dest->flags |= SERD_HAS_NEWLINE;
-      break;
-    case '"':
-    case '\'':
-      dest->flags |= SERD_HAS_QUOTE;
-      break;
-    default:
-      break;
-    }
-
-    return push_byte(reader, dest, c);
-  }
-  return read_utf8_character(reader, dest, c);
+  return (c & 0x80) ? read_utf8_character(reader, dest, c)
+                    : push_byte(reader, dest, c);
 }
 
 // [10] comment ::= '#' ( [^#xA #xD] )*
@@ -366,7 +349,7 @@ read_STRING_LITERAL_LONG(SerdReader* const reader,
         eat_byte_safe(reader, q3);
         break;
       }
-      ref->flags |= SERD_HAS_QUOTE;
+
       if (!(st = push_byte(reader, ref, c))) {
         st = read_character(reader, ref, (uint8_t)q2);
       }
@@ -454,6 +437,8 @@ read_String(SerdReader* const reader, SerdNode* const node)
   }
 
   eat_byte_safe(reader, q3);
+  node->type = SERD_LONG_LITERAL;
+
   return read_STRING_LITERAL_LONG(reader, node, (uint8_t)q1);
 }
 

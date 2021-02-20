@@ -844,6 +844,7 @@ check_type(SerdValidator* const       ctx,
 
   switch (serd_node_type(node)) {
   case SERD_LITERAL:
+  case SERD_LONG_LITERAL:
     // Every literal is an rdfs:Literal
     if (serd_node_equals(type, ctx->uris.rdfs_Literal)) {
       return SERD_SUCCESS;

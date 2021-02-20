@@ -34,6 +34,7 @@ can_insert(SerdWorld* const world, const SerdNode* const node)
   if (node) {
     switch (serd_node_type(node)) {
     case SERD_LITERAL:
+    case SERD_LONG_LITERAL:
       return can_insert(world, serd_node_datatype(node));
 
     case SERD_URI:

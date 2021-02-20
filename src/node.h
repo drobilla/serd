@@ -22,6 +22,14 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
+
+typedef enum {
+  SERD_HAS_DATATYPE = 1u << 0u,
+  SERD_HAS_LANGUAGE = 1u << 1u,
+} SerdNodeFlag;
+
+typedef uint32_t SerdNodeFlags;
 
 struct SerdNodeImpl {
   size_t        length; ///< Length in bytes (not including null)
@@ -63,6 +71,11 @@ serd_node_malloc(size_t length, SerdNodeFlags flags, SerdNodeType type);
 void
 serd_node_set(SerdNode* SERD_NONNULL* SERD_NONNULL dst,
               const SerdNode* SERD_NULLABLE        src);
+
+/// Return the flags (string properties) of a node
+SERD_PURE_FUNC
+SerdNodeFlags
+serd_node_flags(const SerdNode* SERD_NONNULL node);
 
 SERD_CONST_FUNC
 size_t

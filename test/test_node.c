@@ -369,7 +369,6 @@ test_node_from_syntax(void)
 {
   SerdNode* const hello = serd_new_string(SERD_STATIC_STRING("hello\""));
   assert(serd_node_length(hello) == 6);
-  assert(serd_node_flags(hello) == SERD_HAS_QUOTE);
   assert(!strncmp(serd_node_string(hello), "hello\"", 6));
   serd_node_free(hello);
 }
@@ -379,16 +378,9 @@ test_node_from_substring(void)
 {
   SerdNode* const a_b = serd_new_string(SERD_STRING_VIEW("a\"bc", 3));
   assert(serd_node_length(a_b) == 3);
-  assert(serd_node_flags(a_b) == SERD_HAS_QUOTE);
   assert(strlen(serd_node_string(a_b)) == 3);
   assert(!strncmp(serd_node_string(a_b), "a\"b", 3));
   serd_node_free(a_b);
-}
-
-static void
-test_simple_node(void)
-{
-  assert(!serd_new_simple_node(SERD_LITERAL, SERD_STATIC_STRING("Literal")));
 }
 
 static void
@@ -397,7 +389,6 @@ test_literal(void)
   SerdNode* hello2 = serd_new_string(SERD_STATIC_STRING("hello\""));
 
   assert(serd_node_length(hello2) == 6 &&
-         serd_node_flags(hello2) == SERD_HAS_QUOTE &&
          !strcmp(serd_node_string(hello2), "hello\""));
 
   SerdNode* hello3 =
@@ -451,9 +442,11 @@ static void
 test_blank(void)
 {
   SerdNode* blank = serd_new_blank(SERD_STATIC_STRING("b0"));
+  assert(serd_node_type(blank) == SERD_BLANK);
   assert(serd_node_length(blank) == 2);
-  assert(serd_node_flags(blank) == 0);
   assert(!strcmp(serd_node_string(blank), "b0"));
+  assert(!serd_node_datatype(blank));
+  assert(!serd_node_language(blank));
   serd_node_free(blank);
 }
 
@@ -472,7 +465,6 @@ main(void)
   test_node_equals();
   test_node_from_syntax();
   test_node_from_substring();
-  test_simple_node();
   test_literal();
   test_blank();
 

@@ -31,6 +31,7 @@ is_resource(const SerdNode* const node)
 {
   switch (serd_node_type(node)) {
   case SERD_LITERAL:
+  case SERD_LONG_LITERAL:
     return false;
   case SERD_URI:
   case SERD_CURIE:
