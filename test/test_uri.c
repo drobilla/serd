@@ -114,8 +114,8 @@ test_uri_from_string(void)
   SerdNode nonsense = serd_node_new_uri_from_string(NULL, NULL, NULL);
   assert(nonsense.type == SERD_NOTHING);
 
-  SerdURI  base_uri;
-  SerdNode base =
+  SerdURIView base_uri;
+  SerdNode    base =
     serd_node_new_uri_from_string("http://example.org/", NULL, &base_uri);
   SerdNode nil  = serd_node_new_uri_from_string(NULL, &base_uri, NULL);
   SerdNode nil2 = serd_node_new_uri_from_string("", &base_uri, NULL);
@@ -147,17 +147,17 @@ check_relative_uri(const char* const uri_string,
   assert(base_string);
   assert(expected_string);
 
-  SerdURI uri    = SERD_URI_NULL;
-  SerdURI base   = SERD_URI_NULL;
-  SerdURI result = SERD_URI_NULL;
+  SerdURIView uri    = SERD_URI_NULL;
+  SerdURIView base   = SERD_URI_NULL;
+  SerdURIView result = SERD_URI_NULL;
 
   SerdNode uri_node  = serd_node_new_uri_from_string(uri_string, NULL, &uri);
   SerdNode base_node = serd_node_new_uri_from_string(base_string, NULL, &base);
 
   SerdNode result_node = SERD_NODE_NULL;
   if (root_string) {
-    SerdURI  root = SERD_URI_NULL;
-    SerdNode root_node =
+    SerdURIView root = SERD_URI_NULL;
+    SerdNode    root_node =
       serd_node_new_uri_from_string(root_string, NULL, &root);
 
     result_node = serd_node_new_relative_uri(&uri, &base, &root, &result);
@@ -168,7 +168,7 @@ check_relative_uri(const char* const uri_string,
 
   assert(!strcmp((const char*)result_node.buf, expected_string));
 
-  SerdURI expected = SERD_URI_NULL;
+  SerdURIView expected = SERD_URI_NULL;
   assert(!serd_uri_parse(expected_string, &expected));
   assert(chunk_equals(&result.scheme, &expected.scheme));
   assert(chunk_equals(&result.authority, &expected.authority));
