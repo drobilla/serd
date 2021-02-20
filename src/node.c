@@ -121,6 +121,27 @@ serd_node_set(SerdNode** const dst, const SerdNode* const src)
   }
 }
 
+/**
+   Zero node padding.
+
+   This is used for nodes which live in re-used stack memory during reading,
+   which must be normalized before being passed to a sink so comparison will
+   work correctly.
+*/
+void
+serd_node_zero_pad(SerdNode* node)
+{
+  char*        buf         = serd_node_buffer(node);
+  const size_t size        = node->length;
+  const size_t padded_size = serd_node_pad_size(size);
+
+  memset(buf + size, 0, padded_size - size);
+
+  if (node->flags & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE)) {
+    serd_node_zero_pad(serd_node_meta(node));
+  }
+}
+
 SerdNode*
 serd_new_simple_node(const SerdNodeType type, const SerdStringView str)
 {
@@ -224,7 +245,14 @@ serd_node_copy(const SerdNode* node)
   }
 
   const size_t size = serd_node_total_size(node);
-  SerdNode*    copy = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
+#ifndef NDEBUG
+  const size_t unpadded_size = node->length;
+  const size_t padded_size   = serd_node_pad_size(node->length);
+  for (size_t i = 0; i < padded_size - unpadded_size; ++i) {
+    assert(serd_node_buffer_c(node)[unpadded_size + i] == '\0');
+  }
+#endif
+  SerdNode* copy = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
   memcpy(copy, node, size);
   return copy;
 }
