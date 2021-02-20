@@ -45,6 +45,11 @@ test_env(void)
   SerdStringView  suffix = SERD_EMPTY_STRING();
   assert(!serd_env_qualify(NULL, u, &prefix, &suffix));
 
+  assert(serd_env_set_prefix_from_strings(env, "eg.3", "rel") ==
+         SERD_ERR_BAD_ARG);
+
+  assert(!serd_env_qualify(NULL, u, &prefix, &suffix));
+
   assert(!serd_env_expand_node(NULL, u));
   assert(!serd_env_expand_node(env, b));
   assert(!serd_env_expand_node(env, s));
