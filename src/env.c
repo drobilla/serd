@@ -17,7 +17,7 @@ struct SerdEnvImpl {
   SerdPrefix* prefixes;
   size_t      n_prefixes;
   SerdNode    base_uri_node;
-  SerdURI     base_uri;
+  SerdURIView base_uri;
 };
 
 SerdEnv*
@@ -52,7 +52,7 @@ serd_env_free(SerdEnv* const env)
 }
 
 const SerdNode*
-serd_env_get_base_uri(const SerdEnv* const env, SerdURI* const out)
+serd_env_get_base_uri(const SerdEnv* const env, SerdURIView* const out)
 {
   if (out) {
     *out = env->base_uri;
@@ -76,8 +76,8 @@ serd_env_set_base_uri(SerdEnv* const env, const SerdNode* const uri)
   }
 
   // Resolve base URI and create a new node and URI for it
-  SerdURI  base_uri;
-  SerdNode base_uri_node =
+  SerdURIView base_uri;
+  SerdNode    base_uri_node =
     serd_node_new_uri_from_node(uri, &env->base_uri, &base_uri);
 
   // Replace the current base URI
@@ -139,8 +139,8 @@ serd_env_set_prefix(SerdEnv* const        env,
     serd_env_add(env, name, uri);
   } else {
     // Resolve relative URI and create a new node and URI for it
-    SerdURI  abs_uri;
-    SerdNode abs_uri_node =
+    SerdURIView abs_uri;
+    SerdNode    abs_uri_node =
       serd_node_new_uri_from_node(uri, &env->base_uri, &abs_uri);
 
     // Set prefix to resolved (absolute) URI
@@ -226,7 +226,7 @@ serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
   case SERD_LITERAL:
     break;
   case SERD_URI: {
-    SerdURI ignored;
+    SerdURIView ignored;
     return serd_node_new_uri_from_node(node, &env->base_uri, &ignored);
   }
   case SERD_CURIE: {
