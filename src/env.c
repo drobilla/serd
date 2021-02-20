@@ -340,6 +340,7 @@ serd_env_expand(const SerdEnv* env, const SerdNode* node)
   if (node) {
     switch (node->type) {
     case SERD_LITERAL:
+    case SERD_LONG_LITERAL:
       return expand_literal(env, node);
     case SERD_URI:
       return expand_uri(env, node);

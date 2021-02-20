@@ -692,8 +692,7 @@ write_literal(SerdWriter* const        writer,
   }
 
   SerdStatus st = SERD_SUCCESS;
-  if (supports_abbrev(writer) &&
-      (node->flags & (SERD_HAS_NEWLINE | SERD_HAS_QUOTE))) {
+  if (supports_abbrev(writer) && (node->type == SERD_LONG_LITERAL)) {
     TRY(st, esink("\"\"\"", 3, writer));
     TRY(st, write_text(writer, WRITE_LONG_STRING, node_str, node->length));
     TRY(st, esink("\"\"\"", 3, writer));
@@ -901,6 +900,7 @@ write_node(SerdWriter* const        writer,
 {
   switch (node->type) {
   case SERD_LITERAL:
+  case SERD_LONG_LITERAL:
     return write_literal(writer, node, flags);
   case SERD_URI:
     return write_uri_node(writer, node, field, flags);

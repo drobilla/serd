@@ -96,9 +96,6 @@ is_windows_path(const char* path)
          (path[2] == '/' || path[2] == '\\');
 }
 
-size_t
-serd_substrlen(const char* str, size_t len, SerdNodeFlags* flags);
-
 static inline char
 serd_to_upper(const char c)
 {

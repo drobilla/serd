@@ -165,6 +165,14 @@ typedef enum {
   SERD_LITERAL = 1,
 
   /**
+     Long literal value.
+
+     A long literal is the same data as a literal, but is written with long
+     string syntax (triple quotes) to allow unescaped newlines.
+  */
+  SERD_LONG_LITERAL = 2,
+
+  /**
      URI (absolute or relative).
 
      Value is an unquoted URI string, which is either a relative reference
@@ -172,7 +180,7 @@ typedef enum {
      URI (e.g. "http://example.org/foo").
      @see [RFC3986](http://tools.ietf.org/html/rfc3986)
   */
-  SERD_URI = 2,
+  SERD_URI = 3,
 
   /**
      CURIE, a shortened URI.
@@ -180,7 +188,7 @@ typedef enum {
      Value is an unquoted CURIE string relative to the current environment,
      e.g. "rdf:type".  @see [CURIE Syntax 1.0](http://www.w3.org/TR/curie)
   */
-  SERD_CURIE = 3,
+  SERD_CURIE = 4,
 
   /**
      A blank node.
@@ -189,7 +197,7 @@ typedef enum {
      is meaningful only within this serialisation.  @see [RDF 1.1
      Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
   */
-  SERD_BLANK = 4,
+  SERD_BLANK = 5,
 
   /**
      A variable node
@@ -198,19 +206,8 @@ typedef enum {
      which is meaningful only within this serialisation.  @see [SPARQL 1.1
      Query Language](https://www.w3.org/TR/sparql11-query/#rVar)
   */
-  SERD_VARIABLE = 5
+  SERD_VARIABLE = 6
 } SerdNodeType;
-
-/// Flags indicating certain string properties relevant to serialisation
-typedef enum {
-  SERD_HAS_NEWLINE  = 1u << 0u, ///< Contains line breaks ('\\n' or '\\r')
-  SERD_HAS_QUOTE    = 1u << 1u, ///< Contains quotes ('"')
-  SERD_HAS_DATATYPE = 1u << 2u, ///< Literal node has datatype
-  SERD_HAS_LANGUAGE = 1u << 3u  ///< Literal node has language
-} SerdNodeFlag;
-
-/// Bitwise OR of SerdNodeFlag values
-typedef uint32_t SerdNodeFlags;
 
 /// Index of a node in a statement
 typedef enum {
@@ -414,17 +411,6 @@ serd_strerror(SerdStatus status);
    @defgroup serd_string String Utilities
    @{
 */
-
-/**
-   Measure a UTF-8 string.
-
-   @return Length of `str` in bytes.
-   @param str A null-terminated UTF-8 string.
-   @param flags (Output) Set to the applicable flags.
-*/
-SERD_API
-size_t
-serd_strlen(const char* SERD_NONNULL str, SerdNodeFlags* SERD_NULLABLE flags);
 
 /**
    Decode a base64 string.
@@ -878,10 +864,14 @@ serd_node_to_syntax(const SerdNode* SERD_NONNULL node, SerdSyntax syntax);
 /**
    Create a new "simple" node that is just a string.
 
-   This can be used to create blank, CURIE, or URI nodes from an already
-   measured string or slice of a buffer, which avoids a strlen compared to the
-   friendly constructors.  This may not be used for literals since those must
-   be measured to set the SERD_HAS_NEWLINE and SERD_HAS_QUOTE flags.
+   This can be used to create nodes from an already measured string or slice of
+   a buffer, which avoids measuring the string compared to the friendlier
+   constructors.  If `type` is #SERD_LITERAL or #SERD_LONG_LITERAL, then this
+   creates a plain literal with no language tag.
+
+   @param type The type of node to create.
+
+   @param string The string contents of the node.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
@@ -1075,7 +1065,7 @@ SERD_API
 void
 serd_node_free(SerdNode* SERD_NULLABLE node);
 
-/// Return the type of a node (SERD_URI, SERD_BLANK, or SERD_LITERAL)
+/// Return the type of a node
 SERD_PURE_API
 SerdNodeType
 serd_node_type(const SerdNode* SERD_NONNULL node);
@@ -1114,11 +1104,6 @@ serd_node_string_view(const SerdNode* SERD_NONNULL node);
 SERD_API
 SerdURIView
 serd_node_uri_view(const SerdNode* SERD_NONNULL node);
-
-/// Return the flags (string properties) of a node
-SERD_PURE_API
-SerdNodeFlags
-serd_node_flags(const SerdNode* SERD_NONNULL node);
 
 /// Return the datatype of a literal node, or NULL
 SERD_PURE_API
