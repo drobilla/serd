@@ -41,6 +41,9 @@ test_env(void)
   SerdEnv*  env = serd_env_new(NULL);
   serd_env_set_prefix_from_strings(env, "eg.2", "http://example.org/");
 
+  assert(serd_env_set_prefix_from_strings(env, "eg.3", "rel") ==
+         SERD_ERR_BAD_ARG);
+
   SerdStringView prefix;
   SerdStringView suffix;
   assert(serd_env_expand(env, b, &prefix, &suffix));

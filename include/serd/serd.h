@@ -387,21 +387,42 @@ typedef size_t (*SerdSink)(const void* SERD_NONNULL buf,
 /**
    A parsed URI.
 
-   This struct directly refers to slices in other strings, it does not own any
-   memory itself.  This allows some URI operations like resolution to be done
-   in-place without allocating memory.
+   This URI representation is designed for fast streaming, it allows creating
+   relative URI references or resolving them into absolute URIs in-place
+   without any string allocation.
+
+   Each component refers to slices in other strings, so a URI view must outlive
+   any strings it was parsed from.  The components are not necessarily
+   null-terminated.
+
+   The scheme, authority, path, query, and fragment simply point to the string
+   value of those components, not including any delimiters.  The path_prefix is
+   a special component for storing relative or resolved paths.  If it points to
+   a string (usually a base URI the URI was resolved against), then this string
+   is prepended to the path.  Otherwise, the length is interpret as the number
+   of up-references ("../") that must be prepended to the path.
 */
 typedef struct {
-  SerdStringView scheme;    ///< Scheme
-  SerdStringView authority; ///< Authority
-  SerdStringView path_base; ///< Path prefix if relative
-  SerdStringView path;      ///< Path suffix
-  SerdStringView query;     ///< Query
-  SerdStringView fragment;  ///< Fragment
+  SerdStringView scheme;      ///< Scheme
+  SerdStringView authority;   ///< Authority
+  SerdStringView path_prefix; ///< Path prefix for relative/resolved paths
+  SerdStringView path;        ///< Path suffix
+  SerdStringView query;       ///< Query
+  SerdStringView fragment;    ///< Fragment
 } SerdURIView;
 
 static const SerdURIView SERD_URI_NULL =
   {{NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}};
+
+/// Return true iff `string` starts with a valid URI scheme
+SERD_PURE_API
+bool
+serd_uri_string_has_scheme(const char* SERD_NONNULL string);
+
+/// Parse `string` and return a URI view that points into it
+SERD_API
+SerdURIView
+serd_parse_uri(const char* SERD_NONNULL string);
 
 /**
    Get the unescaped path and hostname from a file URI.
@@ -410,55 +431,83 @@ static const SerdURIView SERD_URI_NULL =
 
    @param uri A file URI.
    @param hostname If non-NULL, set to the hostname, if present.
-   @return The path component of the URI.
+   @return A filesystem path.
 */
 SERD_API
 char* SERD_NULLABLE
-serd_file_uri_parse(const char* SERD_NONNULL uri,
+serd_parse_file_uri(const char* SERD_NONNULL uri,
                     char* SERD_NONNULL* SERD_NULLABLE hostname);
 
-/// Return true iff `utf8` starts with a valid URI scheme
-SERD_PURE_API
-bool
-serd_uri_string_has_scheme(const char* SERD_NULLABLE utf8);
-
-/// Parse `utf8`, writing result to `out`
-SERD_API
-SerdStatus
-serd_uri_parse(const char* SERD_NONNULL utf8, SerdURIView* SERD_NONNULL out);
-
 /**
-   Set target `t` to reference `r` resolved against `base`.
+   Return reference `r` resolved against `base`.
+
+   This will make `r` an absolute URI if possible.
 
    @see [RFC3986 5.2.2](http://tools.ietf.org/html/rfc3986#section-5.2.2)
+
+   @param r URI reference to make absolute, for example "child/path".
+
+   @param base Base URI, for example "http://example.org/base/".
+
+   @return An absolute URI, for example "http://example.org/base/child/path",
+   or `r` if it is not a URI reference that can be resolved against `base`.
 */
 SERD_API
-void
-serd_uri_resolve(const SerdURIView* SERD_NONNULL r,
-                 const SerdURIView* SERD_NONNULL base,
-                 SerdURIView* SERD_NONNULL       t);
-
-/// Serialise `uri` with a series of calls to `sink`
-SERD_API
-size_t
-serd_uri_serialise(const SerdURIView* SERD_NONNULL uri,
-                   SerdSink SERD_NONNULL           sink,
-                   void* SERD_NONNULL              stream);
+SerdURIView
+serd_resolve_uri(SerdURIView r, SerdURIView base);
 
 /**
-   Serialise `uri` relative to `base` with a series of calls to `sink`
+   Return `r` as a reference relative to `base` if possible.
 
-   The `uri` is written as a relative URI iff if it a child of `base` and
-   `root`.  The optional `root` parameter must be a prefix of `base` and can be
-   used keep up-references ("../") within a certain namespace.
+   @see [RFC3986 5.2.2](http://tools.ietf.org/html/rfc3986#section-5.2.2)
+
+   @param r URI to make relative, for example
+   "http://example.org/base/child/path".
+
+   @param base Base URI, for example "http://example.org/base".
+
+   @return A relative URI reference, for example "child/path", `r` if it can
+   not be made relative to `base`, or a null URI if `r` could be made relative
+   to base, but the path prefix is already being used (most likely because `r`
+   was previously a relative URI reference that was resolved against some
+   base).
+*/
+SERD_API
+SerdURIView
+serd_relative_uri(SerdURIView r, SerdURIView base);
+
+/**
+   Return whether `r` can be written as a reference relative to `base`.
+
+   For example, with `base` "http://example.org/base/", this returns true if
+   `r` is also "http://example.org/base/", or something like
+   "http://example.org/base/child" ("child")
+   "http://example.org/base/child/grandchild#fragment"
+   ("child/grandchild#fragment"),
+   "http://example.org/base/child/grandchild?query" ("child/grandchild?query"),
+   and so on.
+
+   @return True if `r` and `base` are equal or if `r` is a child of `base`.
+*/
+SERD_PURE_API
+bool
+serd_uri_is_within(SerdURIView r, SerdURIView base);
+
+/**
+   Write `uri` as a string to `sink`.
+
+   This will call `sink` several times to emit the URI.
+
+   @param uri URI to write as a string.
+   @param sink Sink to write string output to.
+   @param stream Opaque user argument to pass to `sink`.
+   @return The number of bytes written.
 */
 SERD_API
 size_t
-serd_uri_serialise_relative(const SerdURIView* SERD_NONNULL  uri,
-                            const SerdURIView* SERD_NULLABLE base,
-                            const SerdURIView* SERD_NULLABLE root,
-                            SerdSink SERD_NONNULL            sink,
-                            void* SERD_NONNULL               stream);
+serd_write_uri(SerdURIView           uri,
+               SerdSink SERD_NONNULL sink,
+               void* SERD_NONNULL    stream);
 
 /**
    @}
@@ -494,21 +543,15 @@ serd_new_literal(const char* SERD_NONNULL  str,
                  const char* SERD_NULLABLE datatype,
                  const char* SERD_NULLABLE lang);
 
-/**
-   Simple wrapper for serd_new_uri() to resolve a URI node.
-*/
+/// Create a new URI from a string
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_uri_from_node(const SerdNode* SERD_NONNULL     uri_node,
-                       const SerdURIView* SERD_NULLABLE base,
-                       SerdURIView* SERD_NULLABLE       out);
+serd_new_uri(const char* SERD_NONNULL str);
 
-/// Simple wrapper for serd_new_uri() to resolve a URI string
+/// Create a new URI from a URI view
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_uri_from_string(const char* SERD_NULLABLE        str,
-                         const SerdURIView* SERD_NULLABLE base,
-                         SerdURIView* SERD_NULLABLE       out);
+serd_new_parsed_uri(SerdURIView uri);
 
 /**
    Create a new file URI node from a file system path and optional hostname.
@@ -524,41 +567,6 @@ SerdNode* SERD_ALLOCATED
 serd_new_file_uri(const char* SERD_NONNULL   path,
                   const char* SERD_NULLABLE  hostname,
                   SerdURIView* SERD_NULLABLE out);
-
-/**
-   Create a new node by serialising `uri` into a new string.
-
-   @param uri The URI to serialise.
-
-   @param base Base URI to resolve `uri` against (or NULL for no resolution).
-
-   @param out Set to the parsing of the new URI (i.e. points only to
-   memory owned by the new returned node).
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_uri(const SerdURIView* SERD_NONNULL  uri,
-             const SerdURIView* SERD_NULLABLE base,
-             SerdURIView* SERD_NULLABLE       out);
-
-/**
-   Create a new node by serialising `uri` into a new relative URI.
-
-   @param uri The URI to serialise.
-
-   @param base Base URI to make `uri` relative to, if possible.
-
-   @param root Root URI for resolution (see serd_uri_serialise_relative()).
-
-   @param out Set to the parsing of the new URI (i.e. points only to
-   memory owned by the new returned node).
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_relative_uri(const SerdURIView* SERD_NONNULL  uri,
-                      const SerdURIView* SERD_NULLABLE base,
-                      const SerdURIView* SERD_NULLABLE root,
-                      SerdURIView* SERD_NULLABLE       out);
 
 /**
    Create a new node by serialising `d` into an xsd:decimal string

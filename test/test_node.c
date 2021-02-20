@@ -213,7 +213,7 @@ test_literal(void)
   assert(!strcmp(serd_node_string(lang), "en"));
   serd_node_free(hello_l);
 
-  SerdNode* hello_dt =
+  SerdNode* const hello_dt =
     serd_new_literal("hello_dt\"", "http://example.org/Thing", NULL);
   assert(serd_node_length(hello_dt) == 9);
   assert(!strcmp(serd_node_string(hello_dt), "hello_dt\""));
