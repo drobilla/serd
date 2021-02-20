@@ -519,6 +519,14 @@ serd_node_length(const SerdNode* const node)
   return node->length;
 }
 
+SerdStringView
+serd_node_string_view(const SerdNode* SERD_NONNULL node)
+{
+  const SerdStringView result = {(const char*)(node + 1), node->length};
+
+  return result;
+}
+
 const SerdNode*
 serd_node_datatype(const SerdNode* const node)
 {
