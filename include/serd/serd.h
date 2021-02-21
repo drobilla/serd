@@ -29,6 +29,7 @@
 #include "serd/node.h"
 
 #include "serd/caret.h"
+#include "serd/event.h"
 #include "serd/string.h"
 
 #include "serd/sink.h"
