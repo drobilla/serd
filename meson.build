@@ -123,6 +123,7 @@ c_headers = files(
   'include/serd/caret.h',
   'include/serd/env.h',
   'include/serd/error.h',
+  'include/serd/event.h',
   'include/serd/memory.h',
   'include/serd/node.h',
   'include/serd/reader.h',

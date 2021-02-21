@@ -4,18 +4,16 @@
 #ifndef SERD_SRC_SINK_H
 #define SERD_SRC_SINK_H
 
+#include "serd/event.h"
 #include "serd/sink.h"
 
 /**
    An interface that receives a stream of RDF data.
 */
 struct SerdSinkImpl {
-  void*             handle;
-  SerdFreeFunc      free_handle;
-  SerdBaseFunc      base;
-  SerdPrefixFunc    prefix;
-  SerdStatementFunc statement;
-  SerdEndFunc       end;
+  void*         handle;
+  SerdFreeFunc  free_handle;
+  SerdEventFunc on_event;
 };
 
 #endif // SERD_SRC_SINK_H
