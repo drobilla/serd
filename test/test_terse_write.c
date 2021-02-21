@@ -5,9 +5,9 @@
 
 #include "serd/buffer.h"
 #include "serd/env.h"
+#include "serd/event.h"
 #include "serd/node.h"
 #include "serd/sink.h"
-#include "serd/statement.h"
 #include "serd/stream.h"
 #include "serd/string_view.h"
 #include "serd/syntax.h"
