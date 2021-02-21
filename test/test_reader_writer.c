@@ -12,14 +12,11 @@
 #include <string.h>
 
 static SerdStatus
-test_sink(void*                handle,
-          SerdStatementFlags   flags,
-          const SerdStatement* statement)
+count_statements(void* handle, const SerdEvent* event)
 {
-  (void)flags;
-  (void)statement;
-
-  ++*(size_t*)handle;
+  if (event->type == SERD_STATEMENT) {
+    ++*(size_t*)handle;
+  }
 
   return SERD_SUCCESS;
 }
@@ -75,13 +72,12 @@ test_read_chunks(void)
   size_t            n_statements = 0;
   FILE* const       f            = tmpfile();
   static const char null         = 0;
-  SerdSink*         sink         = serd_sink_new(&n_statements, NULL);
-  SerdReader*       reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
 
-  assert(reader);
+  SerdSink* const sink = serd_sink_new(&n_statements, count_statements, NULL);
   assert(sink);
-  assert(f);
-  serd_sink_set_statement_func(sink, test_sink);
+
+  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+  assert(reader);
 
   SerdStatus st = serd_reader_start_stream(
     reader, (SerdReadFunc)fread, (SerdStreamErrorFunc)ferror, f, NULL, 1);
@@ -134,17 +130,14 @@ test_read_chunks(void)
 static void
 test_read_string(void)
 {
-  SerdWorld*  world        = serd_world_new();
-  size_t      n_statements = 0;
-  SerdSink*   sink         = serd_sink_new(&n_statements, NULL);
-  SerdReader* reader       = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+  SerdWorld* world        = serd_world_new();
+  size_t     n_statements = 0;
 
-  assert(reader);
+  SerdSink* sink = serd_sink_new(&n_statements, count_statements, NULL);
   assert(sink);
 
-  serd_sink_set_statement_func(sink, test_sink);
-
-  serd_sink_set_statement_func(sink, test_sink);
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+  assert(reader);
 
   // Test reading a string that ends exactly at the end of input (no newline)
   assert(
@@ -268,9 +261,8 @@ test_reader(const char* path)
 {
   SerdWorld*      world        = serd_world_new();
   size_t          n_statements = 0;
-  SerdSink* const sink         = serd_sink_new(&n_statements, NULL);
+  SerdSink* const sink = serd_sink_new(&n_statements, count_statements, NULL);
   assert(sink);
-  serd_sink_set_statement_func(sink, test_sink);
 
   // Test that too little stack space fails gracefully
   assert(!serd_reader_new(world, SERD_TURTLE, sink, 32));
