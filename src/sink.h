@@ -23,12 +23,9 @@
    An interface that receives a stream of RDF data.
 */
 struct SerdSinkImpl {
-  void*             handle;
-  SerdFreeFunc      free_handle;
-  SerdBaseFunc      base;
-  SerdPrefixFunc    prefix;
-  SerdStatementFunc statement;
-  SerdEndFunc       end;
+  void*         handle;
+  SerdFreeFunc  free_handle;
+  SerdEventFunc on_event;
 };
 
 #endif // SERD_SINK_H
