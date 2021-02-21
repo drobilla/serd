@@ -14,11 +14,14 @@
 #include <stdlib.h>
 
 SerdSink*
-serd_sink_new(void* handle, SerdFreeFunc free_handle)
+serd_sink_new(void* const   handle,
+              SerdEventFunc event_func,
+              SerdFreeFunc  free_handle)
 {
   SerdSink* sink = (SerdSink*)calloc(1, sizeof(SerdSink));
 
   sink->handle      = handle;
+  sink->on_event    = event_func;
   sink->free_handle = free_handle;
 
   return sink;
@@ -37,37 +40,18 @@ serd_sink_free(SerdSink* sink)
 }
 
 SerdStatus
-serd_sink_set_base_func(SerdSink* sink, SerdBaseFunc base_func)
+serd_sink_write_event(const SerdSink* sink, const SerdEvent* event)
 {
-  sink->base = base_func;
-  return SERD_SUCCESS;
-}
-
-SerdStatus
-serd_sink_set_prefix_func(SerdSink* sink, SerdPrefixFunc prefix_func)
-{
-  sink->prefix = prefix_func;
-  return SERD_SUCCESS;
-}
-
-SerdStatus
-serd_sink_set_statement_func(SerdSink* sink, SerdStatementFunc statement_func)
-{
-  sink->statement = statement_func;
-  return SERD_SUCCESS;
-}
-
-SerdStatus
-serd_sink_set_end_func(SerdSink* sink, SerdEndFunc end_func)
-{
-  sink->end = end_func;
-  return SERD_SUCCESS;
+  return sink->on_event ? sink->on_event(sink->handle, event) : SERD_SUCCESS;
 }
 
 SerdStatus
 serd_sink_write_base(const SerdSink* sink, const SerdNode* uri)
 {
-  return sink->base ? sink->base(sink->handle, uri) : SERD_SUCCESS;
+  const SerdBaseEvent ev = {SERD_BASE, uri};
+
+  return sink->on_event ? sink->on_event(sink->handle, (const SerdEvent*)&ev)
+                        : SERD_SUCCESS;
 }
 
 SerdStatus
@@ -75,7 +59,10 @@ serd_sink_write_prefix(const SerdSink* sink,
                        const SerdNode* name,
                        const SerdNode* uri)
 {
-  return sink->prefix ? sink->prefix(sink->handle, name, uri) : SERD_SUCCESS;
+  const SerdPrefixEvent ev = {SERD_PREFIX, name, uri};
+
+  return sink->on_event ? sink->on_event(sink->handle, (const SerdEvent*)&ev)
+                        : SERD_SUCCESS;
 }
 
 SerdStatus
@@ -83,8 +70,11 @@ serd_sink_write_statement(const SerdSink*          sink,
                           const SerdStatementFlags flags,
                           const SerdStatement*     statement)
 {
-  return sink->statement ? sink->statement(sink->handle, flags, statement)
-                         : SERD_SUCCESS;
+  const SerdStatementEvent statement_ev = {SERD_STATEMENT, flags, statement};
+  SerdEvent                ev           = {SERD_STATEMENT};
+  ev.statement                          = statement_ev;
+
+  return sink->on_event ? sink->on_event(sink->handle, &ev) : SERD_SUCCESS;
 }
 
 SerdStatus
@@ -107,5 +97,8 @@ serd_sink_write(const SerdSink*          sink,
 SerdStatus
 serd_sink_write_end(const SerdSink* sink, const SerdNode* node)
 {
-  return sink->end ? sink->end(sink->handle, node) : SERD_SUCCESS;
+  const SerdEndEvent ev = {SERD_END, node};
+
+  return sink->on_event ? sink->on_event(sink->handle, (const SerdEvent*)&ev)
+                        : SERD_SUCCESS;
 }
