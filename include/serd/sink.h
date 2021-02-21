@@ -5,6 +5,7 @@
 #define SERD_SINK_H
 
 #include "serd/attributes.h"
+#include "serd/event.h"
 #include "serd/node.h"
 #include "serd/statement.h"
 
@@ -62,45 +63,26 @@ typedef void (*SerdFreeFunc)(void* SERD_NULLABLE ptr);
 /**
    Create a new sink.
 
-   Initially, the sink has no set functions and will do nothing.  Use the
-   serd_sink_set_*_func functions to set handlers for various events.
-
    @param handle Opaque handle that will be passed to sink functions.
+   @param event_func Function that will be called for every event.
    @param free_handle Free function to call on handle in serd_sink_free().
 */
 SERD_API
 SerdSink* SERD_ALLOCATED
-serd_sink_new(void* SERD_NULLABLE        handle,
-              SerdFreeFunc SERD_NULLABLE free_handle);
+serd_sink_new(void* SERD_NULLABLE         handle,
+              SerdEventFunc SERD_NULLABLE event_func,
+              SerdFreeFunc SERD_NULLABLE  free_handle);
 
 /// Free `sink`
 SERD_API
 void
 serd_sink_free(SerdSink* SERD_NULLABLE sink);
 
-/// Set a function to be called when the base URI changes
+/// Send an event to the sink
 SERD_API
 SerdStatus
-serd_sink_set_base_func(SerdSink* SERD_NONNULL     sink,
-                        SerdBaseFunc SERD_NULLABLE base_func);
-
-/// Set a function to be called when a namespace prefix is defined
-SERD_API
-SerdStatus
-serd_sink_set_prefix_func(SerdSink* SERD_NONNULL       sink,
-                          SerdPrefixFunc SERD_NULLABLE prefix_func);
-
-/// Set a function to be called when a statement is emitted
-SERD_API
-SerdStatus
-serd_sink_set_statement_func(SerdSink* SERD_NONNULL          sink,
-                             SerdStatementFunc SERD_NULLABLE statement_func);
-
-/// Set a function to be called when an anonymous node ends
-SERD_API
-SerdStatus
-serd_sink_set_end_func(SerdSink* SERD_NONNULL    sink,
-                       SerdEndFunc SERD_NULLABLE end_func);
+serd_sink_write_event(const SerdSink* SERD_NONNULL  sink,
+                      const SerdEvent* SERD_NONNULL event);
 
 /// Set the base URI
 SERD_API

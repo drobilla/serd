@@ -14,6 +14,7 @@
 #include "serd/attributes.h"
 #include "serd/buffer.h"
 #include "serd/env.h"
+#include "serd/event.h"
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
@@ -104,6 +105,9 @@ struct SerdWriterImpl {
 };
 
 typedef enum { WRITE_STRING, WRITE_LONG_STRING } TextContext;
+
+static SerdStatus
+serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri);
 
 static SerdStatus
 serd_writer_set_prefix(SerdWriter*     writer,
@@ -916,6 +920,25 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
   return SERD_SUCCESS;
 }
 
+static SerdStatus
+serd_writer_on_event(SerdWriter* writer, const SerdEvent* event)
+{
+  switch (event->type) {
+  case SERD_BASE:
+    return serd_writer_set_base_uri(writer, event->base.uri);
+  case SERD_PREFIX:
+    return serd_writer_set_prefix(
+      writer, event->prefix.name, event->prefix.uri);
+  case SERD_STATEMENT:
+    return serd_writer_write_statement(
+      writer, event->statement.flags, event->statement.statement);
+  case SERD_END:
+    return serd_writer_end_anon(writer, event->end.node);
+  }
+
+  return SERD_ERR_BAD_ARG;
+}
+
 SerdStatus
 serd_writer_finish(SerdWriter* writer)
 {
@@ -956,11 +979,8 @@ serd_writer_new(SerdWorld*      world,
   writer->byte_sink  = serd_byte_sink_new(
     ssink, stream, (flags & SERD_WRITE_BULK) ? SERD_PAGE_SIZE : 1);
 
-  writer->iface.handle    = writer;
-  writer->iface.base      = (SerdBaseFunc)serd_writer_set_base_uri;
-  writer->iface.prefix    = (SerdPrefixFunc)serd_writer_set_prefix;
-  writer->iface.statement = (SerdStatementFunc)serd_writer_write_statement;
-  writer->iface.end       = (SerdEndFunc)serd_writer_end_anon;
+  writer->iface.handle   = writer;
+  writer->iface.on_event = (SerdEventFunc)serd_writer_on_event;
 
   return writer;
 }
@@ -980,7 +1000,7 @@ serd_writer_chop_blank_prefix(SerdWriter* writer, const char* prefix)
   }
 }
 
-SerdStatus
+static SerdStatus
 serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 {
   if (serd_node_equals(serd_env_base_uri(writer->env), uri)) {

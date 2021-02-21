@@ -87,12 +87,11 @@ SerdNode* SERD_ALLOCATED
 serd_env_expand_node(const SerdEnv* SERD_NULLABLE env,
                      const SerdNode* SERD_NONNULL node);
 
-/// Call `func` for each prefix defined in `env`
+/// Write all prefixes in `env` to `sink`
 SERD_API
 void
-serd_env_foreach(const SerdEnv* SERD_NONNULL env,
-                 SerdPrefixFunc SERD_NONNULL func,
-                 void* SERD_NULLABLE         handle);
+serd_env_write_prefixes(const SerdEnv* SERD_NONNULL  env,
+                        const SerdSink* SERD_NONNULL sink);
 
 /**
    @}
