@@ -73,15 +73,6 @@ serd_writer_chop_blank_prefix(SerdWriter* ZIX_NONNULL  writer,
                               const char* ZIX_NULLABLE prefix);
 
 /**
-   Set the current output base URI, and emit a directive if applicable.
-
-   Note this function can be safely casted to #SerdBaseFunc.
-*/
-SERD_API SerdStatus
-serd_writer_set_base_uri(SerdWriter* ZIX_NONNULL      writer,
-                         const SerdNode* ZIX_NULLABLE uri);
-
-/**
    Set the current root URI.
 
    The root URI should be a prefix of the base URI.  The path of the root URI

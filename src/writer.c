@@ -16,9 +16,9 @@
 #include "serd/attributes.h"
 #include "serd/buffer.h"
 #include "serd/env.h"
+#include "serd/event.h"
 #include "serd/node.h"
 #include "serd/sink.h"
-#include "serd/statement.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
 #include "serd/stream.h"
@@ -53,13 +53,13 @@ typedef enum {
 } Field;
 
 typedef struct {
-  ContextType        type;
-  SerdStatementFlags flags;
-  SerdNode*          graph;
-  SerdNode*          subject;
-  SerdNode*          predicate;
-  bool               predicates;
-  bool               comma_indented;
+  ContextType             type;
+  SerdStatementEventFlags flags;
+  SerdNode*               graph;
+  SerdNode*               subject;
+  SerdNode*               predicate;
+  bool                    predicates;
+  bool                    comma_indented;
 } WriteContext;
 
 static const WriteContext WRITE_CONTEXT_NULL =
@@ -154,15 +154,18 @@ typedef enum { WRITE_STRING, WRITE_LONG_STRING } TextContext;
 typedef enum { RESET_GRAPH = 1U << 0U, RESET_INDENT = 1U << 1U } ResetFlag;
 
 SERD_NODISCARD static SerdStatus
+serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri);
+
+SERD_NODISCARD static SerdStatus
 serd_writer_set_prefix(SerdWriter*     writer,
                        const SerdNode* name,
                        const SerdNode* uri);
 
 SERD_NODISCARD static SerdStatus
-write_node(SerdWriter*        writer,
-           const SerdNode*    node,
-           Field              field,
-           SerdStatementFlags flags);
+write_node(SerdWriter*             writer,
+           const SerdNode*         node,
+           Field                   field,
+           SerdStatementEventFlags flags);
 
 SERD_NODISCARD static bool
 supports_abbrev(const SerdWriter* writer)
@@ -219,12 +222,12 @@ ctx(SerdWriter* writer, const Field field)
 }
 
 SERD_NODISCARD static SerdStatus
-push_context(SerdWriter* const        writer,
-             const ContextType        type,
-             const SerdStatementFlags flags,
-             const SerdNode* const    graph,
-             const SerdNode* const    subject,
-             const SerdNode* const    predicate)
+push_context(SerdWriter* const             writer,
+             const ContextType             type,
+             const SerdStatementEventFlags flags,
+             const SerdNode* const         graph,
+             const SerdNode* const         subject,
+             const SerdNode* const         predicate)
 {
   // Push the current context to the stack
   void* const top = serd_stack_push(&writer->anon_stack, sizeof(WriteContext));
@@ -615,7 +618,7 @@ write_top_level_sep(SerdWriter* writer)
 }
 
 SERD_NODISCARD static SerdStatus
-write_sep(SerdWriter* writer, const SerdStatementFlags flags, Sep sep)
+write_sep(SerdWriter* writer, const SerdStatementEventFlags flags, Sep sep)
 {
   SerdStatus           st   = SERD_SUCCESS;
   const SepRule* const rule = &rules[sep];
@@ -715,9 +718,9 @@ reset_context(SerdWriter* writer, const unsigned flags)
 }
 
 SERD_NODISCARD static SerdStatus
-write_literal(SerdWriter* const        writer,
-              const SerdNode* const    node,
-              const SerdStatementFlags flags)
+write_literal(SerdWriter* const             writer,
+              const SerdNode* const         node,
+              const SerdStatementEventFlags flags)
 {
   SerdStatus            st       = SERD_SUCCESS;
   const SerdNode* const datatype = serd_node_datatype(node);
@@ -873,10 +876,10 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
 }
 
 SERD_NODISCARD static SerdStatus
-write_blank(SerdWriter* const        writer,
-            const SerdNode*          node,
-            const Field              field,
-            const SerdStatementFlags flags)
+write_blank(SerdWriter* const             writer,
+            const SerdNode*               node,
+            const Field                   field,
+            const SerdStatementEventFlags flags)
 {
   SerdStatus        st       = SERD_SUCCESS;
   const char* const node_str = serd_node_string(node);
@@ -914,10 +917,10 @@ write_blank(SerdWriter* const        writer,
 }
 
 SERD_NODISCARD static SerdStatus
-write_node(SerdWriter* const        writer,
-           const SerdNode* const    node,
-           const Field              field,
-           const SerdStatementFlags flags)
+write_node(SerdWriter* const             writer,
+           const SerdNode* const         node,
+           const Field                   field,
+           const SerdStatementEventFlags flags)
 {
   switch (serd_node_type(node)) {
   case SERD_LITERAL:
@@ -940,7 +943,9 @@ is_resource(const SerdNode* node)
 }
 
 SERD_NODISCARD static SerdStatus
-write_pred(SerdWriter* writer, SerdStatementFlags flags, const SerdNode* pred)
+write_pred(SerdWriter*             writer,
+           SerdStatementEventFlags flags,
+           const SerdNode*         pred)
 {
   SerdStatus st = SERD_SUCCESS;
 
@@ -954,10 +959,10 @@ write_pred(SerdWriter* writer, SerdStatementFlags flags, const SerdNode* pred)
 }
 
 SERD_NODISCARD static SerdStatus
-write_list_next(SerdWriter* const        writer,
-                const SerdStatementFlags flags,
-                const SerdNode* const    predicate,
-                const SerdNode* const    object)
+write_list_next(SerdWriter* const             writer,
+                const SerdStatementEventFlags flags,
+                const SerdNode* const         predicate,
+                const SerdNode* const         object)
 {
   SerdStatus st = SERD_SUCCESS;
 
@@ -975,7 +980,7 @@ write_list_next(SerdWriter* const        writer,
   return st;
 }
 
-static SerdStatus
+SERD_NODISCARD static SerdStatus
 terminate_context(SerdWriter* writer)
 {
   SerdStatus st = SERD_SUCCESS;
@@ -991,9 +996,9 @@ terminate_context(SerdWriter* writer)
   return st;
 }
 
-static SerdStatus
+SERD_NODISCARD static SerdStatus
 serd_writer_write_statement(SerdWriter* const       writer,
-                            SerdStatementFlags      flags,
+                            SerdStatementEventFlags flags,
                             const SerdStatementView statement)
 {
   assert(writer);
@@ -1024,7 +1029,7 @@ serd_writer_write_statement(SerdWriter* const       writer,
     /* Tolerate LIST_O_BEGIN for "()" objects, even though it doesn't make
        much sense, because older versions handled this gracefully.  Consider
        making this an error in a later major version. */
-    flags &= (SerdStatementFlags)~SERD_LIST_O;
+    flags &= (SerdStatementEventFlags)~SERD_LIST_O;
   }
 
   // Simple case: write a line of NTriples or NQuads
@@ -1161,7 +1166,7 @@ serd_writer_write_statement(SerdWriter* const       writer,
   return st;
 }
 
-static SerdStatus
+SERD_NODISCARD static SerdStatus
 serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
 {
   assert(writer);
@@ -1173,7 +1178,7 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
   }
 
   if (serd_stack_is_empty(&writer->anon_stack)) {
-    return w_err(writer, SERD_BAD_CALL, "unexpected end of anonymous node\n");
+    return w_err(writer, SERD_BAD_EVENT, "unexpected end of anonymous node\n");
   }
 
   // Write the end separator ']' and pop the context
@@ -1187,6 +1192,25 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
   }
 
   return st;
+}
+
+SERD_NODISCARD static SerdStatus
+serd_writer_on_event(SerdWriter* writer, const SerdEvent* event)
+{
+  switch (event->type) {
+  case SERD_BASE:
+    return serd_writer_set_base_uri(writer, event->base.uri);
+  case SERD_PREFIX:
+    return serd_writer_set_prefix(
+      writer, event->prefix.name, event->prefix.uri);
+  case SERD_STATEMENT:
+    return serd_writer_write_statement(
+      writer, event->statement.flags, event->statement.statement);
+  case SERD_END:
+    return serd_writer_end_anon(writer, event->end.node);
+  }
+
+  return SERD_BAD_ARG;
 }
 
 SerdStatus
@@ -1229,11 +1253,8 @@ serd_writer_new(SerdWorld*      world,
   writer->byte_sink  = serd_byte_sink_new(
     ssink, stream, (flags & SERD_WRITE_BULK) ? SERD_PAGE_SIZE : 1);
 
-  writer->iface.handle    = writer;
-  writer->iface.base      = (SerdBaseFunc)serd_writer_set_base_uri;
-  writer->iface.prefix    = (SerdPrefixFunc)serd_writer_set_prefix;
-  writer->iface.statement = (SerdStatementFunc)serd_writer_write_statement;
-  writer->iface.end       = (SerdEndFunc)serd_writer_end_anon;
+  writer->iface.handle   = writer;
+  writer->iface.on_event = (SerdEventFunc)serd_writer_on_event;
 
   return writer;
 }
@@ -1255,7 +1276,7 @@ serd_writer_chop_blank_prefix(SerdWriter* writer, const char* prefix)
   }
 }
 
-SerdStatus
+SERD_NODISCARD static SerdStatus
 serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 {
   assert(writer);

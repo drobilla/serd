@@ -80,11 +80,10 @@ SERD_API SerdNode* ZIX_ALLOCATED
 serd_env_expand_node(const SerdEnv* ZIX_NULLABLE env,
                      const SerdNode* ZIX_NONNULL node);
 
-/// Call `func` for each prefix defined in `env`
-SERD_API void
-serd_env_foreach(const SerdEnv* ZIX_NONNULL env,
-                 SerdPrefixFunc ZIX_NONNULL func,
-                 void* ZIX_UNSPECIFIED      handle);
+/// Write all prefixes in `env` to `sink`
+SERD_API SerdStatus
+serd_env_write_prefixes(const SerdEnv* ZIX_NONNULL  env,
+                        const SerdSink* ZIX_NONNULL sink);
 
 /**
    @}
