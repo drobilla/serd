@@ -70,15 +70,29 @@ on_end(void* handle, const SerdNode* node)
   return SERD_SUCCESS;
 }
 
+static SerdStatus
+on_event(void* handle, const SerdEvent* event)
+{
+  switch (event->type) {
+  case SERD_BASE:
+    return on_base(handle, event->base.uri);
+  case SERD_PREFIX:
+    return on_prefix(handle, event->prefix.name, event->prefix.uri);
+  case SERD_STATEMENT:
+    return on_statement(
+      handle, event->statement.flags, event->statement.statement);
+  case SERD_END:
+    return on_end(handle, event->end.node);
+  }
+
+  return SERD_SUCCESS;
+}
+
 int
 main(void)
 {
   SerdWorld* world = serd_world_new();
-  SerdSink*  sink  = serd_sink_new(NULL, NULL);
-  serd_sink_set_base_func(sink, on_base);
-  serd_sink_set_prefix_func(sink, on_prefix);
-  serd_sink_set_statement_func(sink, on_statement);
-  serd_sink_set_end_func(sink, on_end);
+  SerdSink*  sink  = serd_sink_new(NULL, on_event, NULL);
 
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
   assert(reader);
@@ -109,5 +123,6 @@ main(void)
   serd_reader_free(reader);
   serd_sink_free(sink);
   serd_world_free(world);
+
   return 0;
 }

@@ -95,7 +95,7 @@ typedef struct SerdEnvImpl SerdEnv;
 /// Streaming reader that reads a text stream and writes to a sink
 typedef struct SerdReaderImpl SerdReader;
 
-/// Streaming serialiser that writes a text stream as statements are pushed
+/// Streaming writer that writes a text stream as it receives events
 typedef struct SerdWriterImpl SerdWriter;
 
 /// An interface that receives a stream of RDF data
@@ -839,7 +839,7 @@ serd_node_equals(const SerdNode* SERD_NULLABLE a,
 
 /**
    @}
-   @defgroup serd_event Event Handlers
+   @defgroup serd_world World
    @{
 */
 
@@ -859,49 +859,6 @@ typedef struct {
 */
 typedef SerdStatus (*SerdErrorFunc)(void* SERD_NULLABLE           handle,
                                     const SerdError* SERD_NONNULL error);
-
-/**
-   Sink function for base URI changes
-
-   Called whenever the base URI of the serialisation changes.
-*/
-typedef SerdStatus (*SerdBaseFunc)(void* SERD_NULLABLE          handle,
-                                   const SerdNode* SERD_NONNULL uri);
-
-/**
-   Sink function for namespace definitions
-
-   Called whenever a prefix is defined in the serialisation.
-*/
-typedef SerdStatus (*SerdPrefixFunc)(void* SERD_NULLABLE          handle,
-                                     const SerdNode* SERD_NONNULL name,
-                                     const SerdNode* SERD_NONNULL uri);
-
-/**
-   Sink function for statements
-
-   Called for every RDF statement in the serialisation.
-*/
-typedef SerdStatus (*SerdStatementFunc)(void* SERD_NULLABLE handle,
-                                        SerdStatementFlags  flags,
-                                        const SerdStatement* SERD_NONNULL
-                                          statement);
-
-/**
-   Sink function for anonymous node end markers
-
-   This is called to indicate that the anonymous node with the given
-   `value` will no longer be referred to by any future statements
-   (i.e. the anonymous serialisation of the node is finished).
-*/
-typedef SerdStatus (*SerdEndFunc)(void* SERD_NULLABLE          handle,
-                                  const SerdNode* SERD_NONNULL node);
-
-/**
-   @}
-   @defgroup serd_world World
-   @{
-*/
 
 /**
    Create a new Serd World.
@@ -1004,12 +961,90 @@ SerdNode* SERD_ALLOCATED
 serd_env_expand(const SerdEnv* SERD_NONNULL  env,
                 const SerdNode* SERD_NONNULL node);
 
-/// Call `func` for each prefix defined in `env`
+/// Write all prefixes in `env` to `sink`
 SERD_API
 void
-serd_env_foreach(const SerdEnv* SERD_NONNULL env,
-                 SerdPrefixFunc SERD_NONNULL func,
-                 void* SERD_NULLABLE         handle);
+serd_env_write_prefixes(const SerdEnv* SERD_NONNULL  env,
+                        const SerdSink* SERD_NONNULL sink);
+
+/**
+   @}
+   @defgroup serd_event Event Handlers
+   @{
+*/
+
+/// Type of a SerdEvent
+typedef enum {
+  SERD_BASE      = 1, ///< Base URI changed
+  SERD_PREFIX    = 2, ///< New URI prefix
+  SERD_STATEMENT = 3, ///< Statement
+  SERD_END       = 4  ///< End of anonymous node
+} SerdEventType;
+
+/**
+   Event for base URI changes.
+
+   Emitted whenever the base URI changes.
+*/
+typedef struct {
+  SerdEventType                type; ///< #SERD_BASE
+  const SerdNode* SERD_NONNULL uri;  ///< Base URI
+} SerdBaseEvent;
+
+/**
+   Event for namespace definitions.
+
+   Emitted whenever a prefix is defined.
+*/
+typedef struct {
+  SerdEventType                type; ///< #SERD_PREFIX
+  const SerdNode* SERD_NONNULL name; ///< Prefix name
+  const SerdNode* SERD_NONNULL uri;  ///< Namespace URI
+} SerdPrefixEvent;
+
+/**
+   Event for statements.
+
+   Emitted for every statement.
+*/
+typedef struct {
+  SerdEventType                     type;      ///< #SERD_STATEMENT
+  SerdStatementFlags                flags;     ///< Flags for pretty-printing
+  const SerdStatement* SERD_NONNULL statement; ///< Statement
+} SerdStatementEvent;
+
+/**
+   Event for the end of anonymous node descriptions.
+
+   This is emitted to indicate that the given anonymous node will no longer be
+   described.  This is used by the writer which may, for example, need to
+   write a delimiter.
+*/
+typedef struct {
+  SerdEventType                type; ///< #SERD_END
+  const SerdNode* SERD_NONNULL node; ///< Anonymous node that is finished
+} SerdEndEvent;
+
+/**
+   An event in a data stream.
+
+   Streams of data are represented as a series of events.  Events represent
+   everything that can occur in an RDF document, and are used to plumb together
+   different components.  For example, when parsing a document, a reader emits
+   a stream of events which can be sent to a writer to rewrite a document, or
+   to an inserter to build a model in memory.
+*/
+typedef union {
+  SerdEventType      type;      ///< Event type (always set)
+  SerdBaseEvent      base;      ///< Base URI changed
+  SerdPrefixEvent    prefix;    ///< New namespace prefix
+  SerdStatementEvent statement; ///< Statement
+  SerdEndEvent       end;       ///< End of anonymous node
+} SerdEvent;
+
+/// Function for handling events
+typedef SerdStatus (*SerdEventFunc)(void* SERD_NULLABLE           handle,
+                                    const SerdEvent* SERD_NONNULL event);
 
 /**
    @}
@@ -1027,41 +1062,25 @@ typedef void (*SerdFreeFunc)(void* SERD_NULLABLE ptr);
    serd_sink_set_*_func functions to set handlers for various events.
 
    @param handle Opaque handle that will be passed to sink functions.
+   @param event_func Function that will be called for every event
    @param free_handle Free function to call on handle in serd_sink_free().
 */
 SERD_API
 SerdSink* SERD_ALLOCATED
-serd_sink_new(void* SERD_NULLABLE        handle,
-              SerdFreeFunc SERD_NULLABLE free_handle);
+serd_sink_new(void* SERD_NULLABLE         handle,
+              SerdEventFunc SERD_NULLABLE event_func,
+              SerdFreeFunc SERD_NULLABLE  free_handle);
 
 /// Free `sink`
 SERD_API
 void
 serd_sink_free(SerdSink* SERD_NULLABLE sink);
 
-/// Set a function to be called when the base URI changes
+/// Send an event to the sink
 SERD_API
 SerdStatus
-serd_sink_set_base_func(SerdSink* SERD_NONNULL     sink,
-                        SerdBaseFunc SERD_NULLABLE base_func);
-
-/// Set a function to be called when a namespace prefix is defined
-SERD_API
-SerdStatus
-serd_sink_set_prefix_func(SerdSink* SERD_NONNULL       sink,
-                          SerdPrefixFunc SERD_NULLABLE prefix_func);
-
-/// Set a function to be called when a statement is emitted
-SERD_API
-SerdStatus
-serd_sink_set_statement_func(SerdSink* SERD_NONNULL          sink,
-                             SerdStatementFunc SERD_NULLABLE statement_func);
-
-/// Set a function to be called when an anonymous node ends
-SERD_API
-SerdStatus
-serd_sink_set_end_func(SerdSink* SERD_NONNULL    sink,
-                       SerdEndFunc SERD_NULLABLE end_func);
+serd_sink_write_event(const SerdSink* SERD_NONNULL  sink,
+                      const SerdEvent* SERD_NONNULL event);
 
 /// Set the base URI
 SERD_API
