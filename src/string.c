@@ -56,6 +56,8 @@ serd_strerror(const SerdStatus status)
     return "Invalid text encoding";
   case SERD_BAD_CALL:
     return "Invalid call";
+  case SERD_BAD_EVENT:
+    return "Invalid event in stream";
   case SERD_BAD_URI:
     return "Invalid or unresolved URI";
   case SERD_BAD_DATA:

@@ -10,10 +10,10 @@
 #include "try.h"
 #include "uri_utils.h"
 
+#include "serd/event.h"
 #include "serd/node.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
-#include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
 
@@ -1023,8 +1023,8 @@ read_anon(SerdReader* const reader,
 {
   skip_byte(reader, '[');
 
-  const SerdStatementFlags old_flags = *ctx.flags;
-  const bool               empty     = peek_delim(reader, ']');
+  const SerdStatementEventFlags old_flags = *ctx.flags;
+  const bool                    empty     = peek_delim(reader, ']');
 
   if (subject) {
     *ctx.flags |= empty ? SERD_EMPTY_S : SERD_ANON_S;
@@ -1524,11 +1524,11 @@ token_equals(SerdNode* const node, const char* const tok, const size_t n)
 SerdStatus
 read_n3_statement(SerdReader* const reader)
 {
-  SerdStatementFlags flags   = 0;
-  ReadContext        ctx     = {0, 0, 0, 0, &flags};
-  bool               ate_dot = false;
-  int                s_type  = 0;
-  SerdStatus         st      = SERD_SUCCESS;
+  SerdStatementEventFlags flags   = 0U;
+  ReadContext             ctx     = {0, 0, 0, 0, &flags};
+  bool                    ate_dot = false;
+  int                     s_type  = 0;
+  SerdStatus              st      = SERD_SUCCESS;
   read_ws_star(reader);
   switch (peek_byte(reader)) {
   case '\0':
@@ -1637,11 +1637,11 @@ read_turtleTrigDoc(SerdReader* const reader)
 SerdStatus
 read_nquads_statement(SerdReader* const reader)
 {
-  SerdStatus         st      = SERD_SUCCESS;
-  SerdStatementFlags flags   = 0;
-  ReadContext        ctx     = {0, 0, 0, 0, &flags};
-  bool               ate_dot = false;
-  int                s_type  = 0;
+  SerdStatus              st      = SERD_SUCCESS;
+  SerdStatementEventFlags flags   = 0U;
+  ReadContext             ctx     = {0, 0, 0, 0, &flags};
+  bool                    ate_dot = false;
+  int                     s_type  = 0;
 
   read_ws_star(reader);
   if (peek_byte(reader) == EOF) {

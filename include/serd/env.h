@@ -80,11 +80,15 @@ SERD_API SerdNode* ZIX_ALLOCATED
 serd_env_expand_node(const SerdEnv* ZIX_NULLABLE env,
                      const SerdNode* ZIX_NONNULL node);
 
-/// Call `func` for each prefix defined in `env`
-SERD_API void
-serd_env_foreach(const SerdEnv* ZIX_NONNULL env,
-                 SerdPrefixFunc ZIX_NONNULL func,
-                 void* ZIX_UNSPECIFIED      handle);
+/**
+   Describe an environment to a sink.
+
+   This will send to `sink` an event for the base URI (if one is defined),
+   followed by events for any defined namespace prefixes.
+*/
+SERD_API SerdStatus
+serd_env_describe(const SerdEnv* ZIX_NONNULL  env,
+                  const SerdSink* ZIX_NONNULL sink);
 
 /**
    @}
