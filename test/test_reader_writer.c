@@ -5,12 +5,11 @@
 
 #include "serd/buffer.h"
 #include "serd/env.h"
+#include "serd/event.h"
 #include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
-#include "serd/statement.h"
-#include "serd/statement_view.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
@@ -64,14 +63,12 @@ static const char* const doc_string =
   "( eg:o ) eg:t eg:u .\n";
 
 static SerdStatus
-test_statement_sink(void*                   handle,
-                    SerdStatementFlags      flags,
-                    const SerdStatementView statement)
+test_sink(void* const handle, const SerdEvent* const event)
 {
-  (void)flags;
-  (void)statement;
+  ReaderTest* const rt = (ReaderTest*)handle;
 
-  ReaderTest* rt = (ReaderTest*)handle;
+  assert(event->type == SERD_STATEMENT);
+
   ++rt->n_statement;
   return SERD_SUCCESS;
 }
@@ -252,10 +249,8 @@ test_reader(const char* path)
 {
   SerdWorld* const world = serd_world_new();
   ReaderTest       rt    = {0};
-  SerdSink* const  sink  = serd_sink_new(&rt, NULL);
+  SerdSink* const  sink  = serd_sink_new(&rt, test_sink, NULL);
   assert(sink);
-
-  serd_sink_set_statement_func(sink, test_statement_sink);
 
   // Test that too little stack space fails gracefully
   assert(!serd_reader_new(world, SERD_TURTLE, 0U, sink, 32));

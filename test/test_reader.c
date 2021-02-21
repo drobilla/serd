@@ -3,11 +3,9 @@
 
 #undef NDEBUG
 
-#include "serd/node.h"
+#include "serd/event.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
-#include "serd/statement.h"
-#include "serd/statement_view.h"
 #include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/syntax.h"
@@ -30,48 +28,25 @@ typedef struct {
 } ReaderTest;
 
 static SerdStatus
-test_base_sink(void* const handle, const SerdNode* const uri)
+test_sink(void* const handle, const SerdEvent* const event)
 {
-  (void)uri;
-
   ReaderTest* const rt = (ReaderTest*)handle;
-  ++rt->n_base;
-  return SERD_SUCCESS;
-}
 
-static SerdStatus
-test_prefix_sink(void* const           handle,
-                 const SerdNode* const name,
-                 const SerdNode* const uri)
-{
-  (void)name;
-  (void)uri;
+  switch (event->type) {
+  case SERD_BASE:
+    ++rt->n_base;
+    break;
+  case SERD_PREFIX:
+    ++rt->n_prefix;
+    break;
+  case SERD_STATEMENT:
+    ++rt->n_statement;
+    break;
+  case SERD_END:
+    ++rt->n_end;
+    break;
+  }
 
-  ReaderTest* const rt = (ReaderTest*)handle;
-  ++rt->n_prefix;
-  return SERD_SUCCESS;
-}
-
-static SerdStatus
-test_statement_sink(void* const             handle,
-                    SerdStatementFlags      flags,
-                    const SerdStatementView statement)
-{
-  (void)flags;
-  (void)statement;
-
-  ReaderTest* const rt = (ReaderTest*)handle;
-  ++rt->n_statement;
-  return SERD_SUCCESS;
-}
-
-static SerdStatus
-test_end_sink(void* const handle, const SerdNode* const node)
-{
-  (void)node;
-
-  ReaderTest* const rt = (ReaderTest*)handle;
-  ++rt->n_end;
   return SERD_SUCCESS;
 }
 
@@ -80,13 +55,8 @@ test_read_string(void)
 {
   SerdWorld* const world = serd_world_new();
   ReaderTest       rt    = {0, 0, 0, 0};
-  SerdSink* const  sink  = serd_sink_new(&rt, NULL);
+  SerdSink* const  sink  = serd_sink_new(&rt, test_sink, NULL);
   assert(sink);
-
-  serd_sink_set_base_func(sink, test_base_sink);
-  serd_sink_set_prefix_func(sink, test_prefix_sink);
-  serd_sink_set_statement_func(sink, test_statement_sink);
-  serd_sink_set_end_func(sink, test_end_sink);
 
   SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, sink, 512);
   assert(reader);
@@ -166,16 +136,11 @@ test_read_eof_by_page(const char* const path)
 
   SerdWorld* const  world = serd_world_new();
   ReaderTest        rt    = {0, 0, 0, 0};
-  SerdSink* const   sink  = serd_sink_new(&rt, NULL);
+  SerdSink* const   sink  = serd_sink_new(&rt, test_sink, NULL);
   SerdReader* const reader =
     serd_reader_new(world, SERD_TURTLE, 0U, sink, 1024);
   assert(reader);
   assert(sink);
-
-  serd_sink_set_base_func(sink, test_base_sink);
-  serd_sink_set_prefix_func(sink, test_prefix_sink);
-  serd_sink_set_statement_func(sink, test_statement_sink);
-  serd_sink_set_end_func(sink, test_end_sink);
 
   serd_reader_start_stream(
     reader, (SerdReadFunc)fread, (SerdErrorFunc)ferror, f, NULL, 4096);
@@ -197,16 +162,11 @@ test_read_eof_by_byte(void)
 {
   SerdWorld* const  world = serd_world_new();
   ReaderTest        rt    = {0, 0, 0, 0};
-  SerdSink* const   sink  = serd_sink_new(&rt, NULL);
+  SerdSink* const   sink  = serd_sink_new(&rt, test_sink, NULL);
   SerdReader* const reader =
     serd_reader_new(world, SERD_TURTLE, 0U, sink, 1024);
   assert(reader);
   assert(sink);
-
-  serd_sink_set_base_func(sink, test_base_sink);
-  serd_sink_set_prefix_func(sink, test_prefix_sink);
-  serd_sink_set_statement_func(sink, test_statement_sink);
-  serd_sink_set_end_func(sink, test_end_sink);
 
   size_t n_reads = 0U;
   serd_reader_start_stream(
@@ -250,13 +210,8 @@ test_read_nquads_chunks(const char* const path)
 
   SerdWorld* const world = serd_world_new();
   ReaderTest       rt    = {0, 0, 0, 0};
-  SerdSink* const  sink  = serd_sink_new(&rt, NULL);
+  SerdSink* const  sink  = serd_sink_new(&rt, test_sink, NULL);
   assert(sink);
-
-  serd_sink_set_base_func(sink, test_base_sink);
-  serd_sink_set_prefix_func(sink, test_prefix_sink);
-  serd_sink_set_statement_func(sink, test_statement_sink);
-  serd_sink_set_end_func(sink, test_end_sink);
 
   SerdReader* const reader =
     serd_reader_new(world, SERD_NQUADS, 0U, sink, 1024);
@@ -336,13 +291,8 @@ test_read_turtle_chunks(const char* const path)
 
   SerdWorld* const world = serd_world_new();
   ReaderTest       rt    = {0, 0, 0, 0};
-  SerdSink* const  sink  = serd_sink_new(&rt, NULL);
+  SerdSink* const  sink  = serd_sink_new(&rt, test_sink, NULL);
   assert(sink);
-
-  serd_sink_set_base_func(sink, test_base_sink);
-  serd_sink_set_prefix_func(sink, test_prefix_sink);
-  serd_sink_set_statement_func(sink, test_statement_sink);
-  serd_sink_set_end_func(sink, test_end_sink);
 
   SerdReader* const reader =
     serd_reader_new(world, SERD_TURTLE, 0U, sink, 1024);

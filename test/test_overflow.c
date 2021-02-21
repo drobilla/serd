@@ -17,7 +17,7 @@ test_size(SerdWorld* const  world,
           const SerdSyntax  syntax,
           const size_t      stack_size)
 {
-  SerdSink*         sink = serd_sink_new(NULL, NULL);
+  SerdSink* const   sink = serd_sink_new(NULL, NULL, NULL);
   SerdReader* const reader =
     serd_reader_new(world, syntax, 0U, sink, stack_size);
   assert(reader);

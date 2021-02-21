@@ -35,6 +35,7 @@ typedef enum {
   SERD_BAD_STACK,   ///< Stack overflow
   SERD_BAD_TEXT,    ///< Invalid text encoding
   SERD_BAD_CALL,    ///< Invalid call
+  SERD_BAD_EVENT,   ///< Invalid event in stream
   SERD_BAD_URI,     ///< Invalid or unresolved URI
   SERD_BAD_DATA,    ///< Invalid data
   SERD_BAD_LITERAL, ///< Invalid literal
