@@ -9,10 +9,10 @@
 #include "try.h"
 #include "uri_utils.h"
 
+#include "serd/event.h"
 #include "serd/node.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
-#include "serd/statement_event_flags.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
 

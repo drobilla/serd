@@ -4,10 +4,10 @@
 #undef NDEBUG
 
 #include "serd/env.h"
+#include "serd/event.h"
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
-#include "serd/statement_event_flags.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
 #include "serd/string_view.h"
@@ -72,6 +72,24 @@ on_end(void* const handle, const SerdNode* const node)
   return state->return_status;
 }
 
+static SerdStatus
+on_event(void* const handle, const SerdEvent* const event)
+{
+  switch (event->type) {
+  case SERD_BASE:
+    return on_base(handle, event->base.uri);
+  case SERD_PREFIX:
+    return on_prefix(handle, event->prefix.name, event->prefix.uri);
+  case SERD_STATEMENT:
+    return on_statement(
+      handle, event->statement.flags, event->statement.statement);
+  case SERD_END:
+    return on_end(handle, event->end.node);
+  }
+
+  return SERD_BAD_ARG;
+}
+
 static void
 test_callbacks(void)
 {
@@ -86,24 +104,40 @@ test_callbacks(void)
   SerdStatement* const statement =
     serd_statement_new(base, uri, blank, NULL, NULL);
 
+  const SerdStatementView statement_view = serd_statement_view(statement);
+
+  const SerdBaseEvent      base_event      = {SERD_BASE, uri};
+  const SerdPrefixEvent    prefix_event    = {SERD_PREFIX, name, uri};
+  const SerdStatementEvent statement_event = {
+    SERD_STATEMENT, 0U, statement_view};
+  const SerdEndEvent end_event = {SERD_END, blank};
+
   // Call functions on a sink with no functions set
 
-  SerdSink* const null_sink = serd_sink_new(&state, NULL);
+  SerdSink* const null_sink = serd_sink_new(&state, NULL, NULL);
+
   assert(!serd_sink_write_base(null_sink, base));
   assert(!serd_sink_write_prefix(null_sink, name, uri));
-  assert(
-    !serd_sink_write_statement(null_sink, 0, serd_statement_view(statement)));
+  assert(!serd_sink_write_statement(null_sink, 0, statement_view));
   assert(!serd_sink_write(null_sink, 0, base, uri, blank, NULL));
   assert(!serd_sink_write_end(null_sink, blank));
+
+  SerdEvent event = {SERD_BASE};
+
+  event.base = base_event;
+  assert(!serd_sink_write_event(null_sink, &event));
+  event.prefix = prefix_event;
+  assert(!serd_sink_write_event(null_sink, &event));
+  event.statement = statement_event;
+  assert(!serd_sink_write_event(null_sink, &event));
+  event.end = end_event;
+  assert(!serd_sink_write_event(null_sink, &event));
+
   serd_sink_free(null_sink);
 
   // Try again with a sink that has the event handler set
 
-  SerdSink* sink = serd_sink_new(&state, NULL);
-  serd_sink_set_base_func(sink, on_base);
-  serd_sink_set_prefix_func(sink, on_prefix);
-  serd_sink_set_statement_func(sink, on_statement);
-  serd_sink_set_end_func(sink, on_end);
+  SerdSink* sink = serd_sink_new(&state, on_event, NULL);
 
   assert(!serd_sink_write_base(sink, base));
   assert(serd_node_equals(state.last_base, base));
@@ -120,6 +154,9 @@ test_callbacks(void)
 
   assert(!serd_sink_write_end(sink, blank));
   assert(serd_node_equals(state.last_end, blank));
+
+  const SerdEvent junk = {(SerdEventType)42};
+  assert(serd_sink_write_event(sink, &junk) == SERD_BAD_ARG);
 
   serd_sink_free(sink);
 
@@ -139,7 +176,7 @@ test_free(void)
 
   // Set up a sink with dynamically allocated data and a free function
   uintptr_t* const data = (uintptr_t*)calloc(1, sizeof(uintptr_t));
-  SerdSink* const  sink = serd_sink_new(data, free);
+  SerdSink* const  sink = serd_sink_new(data, NULL, free);
 
   // Free the sink, which should free the data (rely on valgrind or sanitizers)
   serd_sink_free(sink);

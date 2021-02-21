@@ -5,10 +5,10 @@
 
 #include "serd/buffer.h"
 #include "serd/env.h"
+#include "serd/event.h"
 #include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/sink.h"
-#include "serd/statement_event_flags.h"
 #include "serd/status.h"
 #include "serd/string_view.h"
 #include "serd/syntax.h"
@@ -19,6 +19,31 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
+static void
+test_write_bad_event(void)
+{
+  SerdWorld*  world  = serd_world_new();
+  SerdEnv*    env    = serd_env_new(serd_empty_string());
+  SerdBuffer  buffer = {NULL, 0};
+  SerdWriter* writer =
+    serd_writer_new(world, SERD_TURTLE, 0U, env, serd_buffer_sink, &buffer);
+
+  assert(writer);
+
+  const SerdEvent event = {(SerdEventType)42};
+  assert(serd_sink_write_event(serd_writer_sink(writer), &event) ==
+         SERD_BAD_ARG);
+
+  char* const out = serd_buffer_sink_finish(&buffer);
+
+  assert(!strcmp(out, ""));
+  serd_free(out);
+
+  serd_writer_free(writer);
+  serd_env_free(env);
+  serd_world_free(world);
+}
 
 static void
 test_write_bad_prefix(void)
@@ -195,7 +220,6 @@ test_writer_cleanup(void)
 
   // Finish writing without terminating nodes
   assert(!(st = serd_writer_finish(writer)));
-  assert(!(st = serd_writer_set_base_uri(writer, NULL)));
 
   // Set the base to an empty URI
   SerdNode* empty_uri = serd_new_uri(serd_string(""));
@@ -323,6 +347,7 @@ test_write_empty_syntax(void)
 int
 main(void)
 {
+  test_write_bad_event();
   test_write_bad_prefix();
   test_write_long_literal();
   test_write_nested_anon();

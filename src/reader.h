@@ -11,10 +11,10 @@
 
 #include "serd/attributes.h"
 #include "serd/error.h"
+#include "serd/event.h"
 #include "serd/node.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
-#include "serd/statement_event_flags.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
