@@ -633,6 +633,21 @@ SERD_PURE_API
 SerdStringView
 serd_node_string_view(const SerdNode* SERD_NONNULL node);
 
+/**
+   Return a parsed view of the URI in a node.
+
+   It is best to check the node type before calling this function, though it is
+   safe to call on non-URI nodes.  In that case, it will return a null view
+   with all fields zero.
+
+   Note that this parses the URI string contained in the node, so it is a good
+   idea to keep the value if you will be using it several times in the same
+   scope.
+*/
+SERD_API
+SerdURIView
+serd_node_uri_view(const SerdNode* SERD_NONNULL node);
+
 /// Return the flags (string properties) of a node
 SERD_PURE_API
 SerdNodeFlags
