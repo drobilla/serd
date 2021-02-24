@@ -178,6 +178,11 @@ typedef struct {
 } SerdNode;
 
 /**
+   @defgroup serd_string_view String View
+   @{
+*/
+
+/**
    An immutable slice of a string.
 
    This type is used for many string parameters, to allow referring to slices
@@ -187,6 +192,60 @@ typedef struct {
   const char* SERD_NULLABLE buf; ///< Start of string
   size_t                    len; ///< Length of string in bytes
 } SerdStringView;
+
+#ifdef __cplusplus
+
+#  define SERD_EMPTY_STRING() \
+    SerdStringView { "", 0 }
+
+#  define SERD_STATIC_STRING(str) \
+    SerdStringView { (str), sizeof(str) - 1 }
+
+#  define SERD_MEASURE_STRING(str) \
+    SerdStringView { (str), (str) ? strlen(str) : 0 }
+
+#  define SERD_STRING_VIEW(str, len) \
+    SerdStringView { (str), (len) }
+
+#else
+
+/// Return a view of an empty string
+#  define SERD_EMPTY_STRING() \
+    (SerdStringView) { "", 0 }
+
+/**
+   Return a view of a static string literal.
+
+   This is faster than SERD_MEASURE_STRING, but must only be used for string
+   literals, since it measures the length with `sizeof`.
+
+   @param str String literal.
+*/
+#  define SERD_STATIC_STRING(str) \
+    (SerdStringView) { (str), sizeof(str) - 1 }
+
+/**
+   Return a view of a string by measuring it.
+
+   @param str char* string pointer.
+*/
+#  define SERD_MEASURE_STRING(str) \
+    (SerdStringView) { (str), ((str) != NULL) ? strlen(str) : 0 }
+
+/**
+   Return a string view with a specified length.
+
+   @param str char* string pointer.
+   @param len size_t string length, not including null terminator.
+*/
+#  define SERD_STRING_VIEW(str, len) \
+    (SerdStringView) { (str), (len) }
+
+#endif
+
+/**
+   @}
+*/
 
 /// A mutable buffer in memory
 typedef struct {
