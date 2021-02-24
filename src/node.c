@@ -471,3 +471,15 @@ serd_node_string_view(const SerdNode* const node)
   const ZixStringView r = {(const char*)(node + 1), node->length};
   return r;
 }
+
+SerdURIView
+serd_node_uri_view(const SerdNode* const node)
+{
+  SerdURIView result = SERD_URI_NULL;
+
+  if (node->type == SERD_URI) {
+    result = serd_parse_uri(serd_node_string(node));
+  }
+
+  return result;
+}
