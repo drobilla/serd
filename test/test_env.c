@@ -34,15 +34,15 @@ count_prefixes(void* handle, const SerdEvent* event)
 static void
 test_env(void)
 {
-  static const SerdStringView eg = SERD_STRING("http://example.org/");
+  static const SerdStringView prefix = SERD_STRING("eg.2");
+  static const SerdStringView eg     = SERD_STRING("http://example.org/");
 
   SerdNode* hello = serd_new_string(SERD_STRING("hello\""));
   SerdNode* foo_u = serd_new_uri(SERD_STRING("http://example.org/foo"));
+  SerdNode* empty = serd_new_uri(SERD_STRING(""));
   SerdNode* foo_c = serd_new_curie(SERD_STRING("eg.2:foo"));
   SerdNode* b     = serd_new_curie(SERD_STRING("invalid"));
-
-  const SerdStringView prefix = SERD_STRING("eg.2");
-  SerdEnv*             env    = serd_env_new(SERD_EMPTY_STRING());
+  SerdEnv*  env   = serd_env_new(SERD_EMPTY_STRING());
 
   serd_env_set_prefix(env, prefix, eg);
 
@@ -52,7 +52,6 @@ test_env(void)
 
   assert(!serd_env_base_uri(env));
   assert(!serd_env_set_base_uri(env, SERD_EMPTY_STRING()));
-  assert(!serd_env_base_uri(env));
   assert(!serd_env_base_uri(env));
 
   assert(serd_env_set_prefix(env, SERD_STRING("eg.3"), SERD_STRING("rel")) ==
@@ -122,6 +121,7 @@ test_env(void)
   serd_node_free(qualified);
   serd_sink_free(count_prefixes_sink);
   serd_node_free(foo_c);
+  serd_node_free(empty);
   serd_node_free(foo_u);
   serd_node_free(b);
   serd_env_free(env_copy);
