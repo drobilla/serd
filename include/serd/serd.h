@@ -21,9 +21,9 @@
 
 #include <stdarg.h>
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h> // IWYU pragma: keep
 
 #if defined(_WIN32) && !defined(SERD_STATIC) && defined(SERD_INTERNAL)
 #  define SERD_API __declspec(dllexport)
@@ -92,6 +92,11 @@ typedef enum {
 typedef uint32_t SerdNodeFlags;
 
 /**
+   @defgroup serd_string_view String View
+   @{
+*/
+
+/**
    An immutable slice of a string.
 
    This type is used for many string parameters, to allow referring to slices
@@ -101,6 +106,69 @@ typedef struct {
   const char* SERD_NULLABLE buf; ///< Start of string
   size_t                    len; ///< Length of string in bytes
 } SerdStringView;
+
+#ifdef __cplusplus
+
+#  define SERD_EMPTY_STRING() \
+    SerdStringView { "", 0u }
+
+#  define SERD_STRING(str) \
+    SerdStringView { str, strlen(str) }
+
+#  define SERD_OPTIONAL_STRING(str) \
+    SerdStringView { (str) ? (str) : "", (str) ? strlen(str) : 0u }
+
+#  define SERD_SUBSTRING(str, len) \
+    SerdStringView { (str), (len) }
+
+#else
+
+/// Return a view of an empty string
+#  define SERD_EMPTY_STRING() \
+    (SerdStringView) { "", 0u }
+
+/**
+   Return a view of an entire string by measuring it.
+
+   This makes a view of the given string by measuring it with `strlen`.
+
+   @param str Non-null pointer to the start of a null-terminated C string.
+*/
+#  define SERD_STRING(str) \
+    (SerdStringView) { (str), strlen(str) }
+
+/**
+   Return a view of an entire string by measuring it, or the empty string.
+
+   This is the same as SERD_STRING(), but tolerates null, in which case an empty
+   string view is returned.
+
+   @param str Pointer to the start of a null-terminated C string, or null.
+*/
+#  define SERD_OPTIONAL_STRING(str) \
+    (SerdStringView) { (str) ? (str) : "", (str) ? strlen(str) : 0u }
+
+/**
+   Return a view of a substring, or a premeasured string.
+
+   This makes either a view of a slice of a string (which may not be null
+   terminated), or a view of a string that has already been measured.  This is
+   faster than SERD_STRING() for dynamic strings since it does not call
+   `strlen`, so should be used when the length of the string is already known.
+
+   @param str Pointer to the start of the substring.
+
+   @param len Length of the substring in bytes, not including the trailing null
+   terminator if present.
+*/
+#  define SERD_SUBSTRING(str, len) \
+    (SerdStringView) { (str), (len) }
+
+#endif
+
+/**
+   @}
+*/
 
 /// A mutable buffer in memory
 typedef struct {
