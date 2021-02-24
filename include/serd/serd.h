@@ -8,9 +8,9 @@
 
 #include <stdarg.h>
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h> // IWYU pragma: keep
 
 #if defined(_WIN32) && !defined(SERD_STATIC) && defined(SERD_INTERNAL)
 #  define SERD_API __declspec(dllexport)
@@ -25,9 +25,11 @@
 #ifdef __GNUC__
 #  define SERD_PURE_FUNC __attribute__((pure))
 #  define SERD_CONST_FUNC __attribute__((const))
+#  define SERD_ALWAYS_INLINE_FUNC __attribute__((always_inline))
 #else
 #  define SERD_PURE_FUNC
 #  define SERD_CONST_FUNC
+#  define SERD_ALWAYS_INLINE_FUNC
 #endif
 
 #if defined(__clang__) && __clang_major__ >= 7
@@ -79,15 +81,86 @@ typedef enum {
 typedef uint32_t SerdNodeFlags;
 
 /**
+   @defgroup serd_string_view String View
+   @{
+*/
+
+/**
    An immutable slice of a string.
 
    This type is used for many string parameters, to allow referring to slices
    of strings in-place and to avoid redundant string measurement.
 */
 typedef struct {
-  const char* SERD_NULLABLE buf; ///< Start of string
-  size_t                    len; ///< Length of string in bytes
+  const char* SERD_NONNULL buf; ///< Start of string
+  size_t                   len; ///< Length of string in bytes
 } SerdStringView;
+
+/// Return a view of an empty string
+SERD_ALWAYS_INLINE_FUNC
+SERD_CONST_FUNC
+static inline SerdStringView
+serd_empty_string(void)
+{
+  const SerdStringView view = {"", 0U};
+  return view;
+}
+
+/**
+   Return a view of a substring, or a premeasured string.
+
+   This makes either a view of a slice of a string (which may not be null
+   terminated), or a view of a string that has already been measured.  This is
+   faster than serd_string() for dynamic strings since it does not call
+   `strlen`, so should be used when the length of the string is already known.
+
+   @param str Pointer to the start of the substring.
+
+   @param len Length of the substring in bytes, not including the trailing null
+   terminator if present.
+*/
+SERD_ALWAYS_INLINE_FUNC
+SERD_CONST_FUNC
+static inline SerdStringView
+serd_substring(const char* const SERD_NONNULL str, const size_t len)
+{
+  const SerdStringView view = {str, len};
+  return view;
+}
+
+/**
+   Return a view of an entire string by measuring it.
+
+   This makes a view of the given string by measuring it with `strlen`.
+
+   @param str Pointer to the start of a null-terminated C string, or null.
+*/
+SERD_ALWAYS_INLINE_FUNC
+SERD_PURE_FUNC
+static inline SerdStringView
+serd_string(const char* const SERD_NONNULL str)
+{
+  const SerdStringView view = {str, strlen(str)};
+  return view;
+}
+
+/**
+   Return a view of an entire string by measuring it.
+
+   This makes a view of the given string by measuring it with `strlen`.
+
+   @param str Pointer to the start of a null-terminated C string, or null.
+*/
+SERD_PURE_FUNC
+static inline SerdStringView
+serd_optional_string(const char* const SERD_NULLABLE str)
+{
+  return str ? serd_string(str) : serd_empty_string();
+}
+
+/**
+   @}
+*/
 
 /// A mutable buffer in memory
 typedef struct {
