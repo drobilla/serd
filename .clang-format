@@ -22,6 +22,7 @@ IndentPPDirectives: AfterHash
 KeepEmptyLinesAtTheStartOfBlocks: false
 SpacesInContainerLiterals: false
 StatementMacros:
+  - SERD_ALWAYS_INLINE_FUNC
   - SERD_API
   - _Pragma
 ...

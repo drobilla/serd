@@ -307,7 +307,7 @@ serd_uri_resolve(const SerdURIView* const r,
     return;
   }
 
-  t->path_base.buf = NULL;
+  t->path_base.buf = "";
   t->path_base.len = 0;
   if (r->scheme.len) {
     *t = *r;

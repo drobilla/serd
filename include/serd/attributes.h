@@ -36,14 +36,16 @@
 #endif
 
 #ifdef __GNUC__
+#  define SERD_ALWAYS_INLINE_FUNC __attribute__((always_inline))
 #  define SERD_CONST_FUNC __attribute__((const))
 #  define SERD_MALLOC_FUNC __attribute__((malloc))
 #  define SERD_PURE_FUNC __attribute__((pure))
 #  define SERD_NODISCARD __attribute__((warn_unused_result))
 #else
-#  define SERD_PURE_FUNC
+#  define SERD_ALWAYS_INLINE_FUNC
 #  define SERD_CONST_FUNC
 #  define SERD_MALLOC_FUNC
+#  define SERD_PURE_FUNC
 #  define SERD_NODISCARD
 #endif
 
