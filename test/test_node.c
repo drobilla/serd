@@ -25,6 +25,17 @@
 #endif
 
 static void
+test_uri_view(void)
+{
+  SerdNode* const string = serd_new_string(SERD_LITERAL, "httpstring");
+
+  const SerdURIView uri = serd_node_uri_view(string);
+  assert(!uri.scheme.length);
+
+  serd_node_free(string);
+}
+
+static void
 test_strtod(double dbl, double max_delta)
 {
   char buf[1024];
@@ -166,14 +177,20 @@ test_node_equals(void)
 static void
 test_node_from_string(void)
 {
-  SerdNode* hello = serd_new_string(SERD_LITERAL, "hello\"");
-  assert(serd_node_length(hello) == 6 &&
-         serd_node_flags(hello) == SERD_HAS_QUOTE &&
-         !strcmp(serd_node_string(hello), "hello\""));
-
+  SerdNode* const hello = serd_new_string(SERD_LITERAL, "hello\"");
+  assert(serd_node_length(hello) == 6);
+  assert(serd_node_flags(hello) == SERD_HAS_QUOTE);
+  assert(!strcmp(serd_node_string(hello), "hello\""));
   assert(!strcmp(serd_node_string_view(hello).data, "hello\""));
   assert(serd_node_string_view(hello).length == 6);
   serd_node_free(hello);
+
+  SerdNode* const uri = serd_new_string(SERD_URI, "http://example.org/");
+  assert(serd_node_length(uri) == 19);
+  assert(!strcmp(serd_node_string(uri), "http://example.org/"));
+  assert(serd_node_uri_view(uri).authority.length == 11);
+  assert(!strncmp(serd_node_uri_view(uri).authority.data, "example.org", 11));
+  serd_node_free(uri);
 }
 
 static void
@@ -193,6 +210,7 @@ test_node_from_substring(void)
 int
 main(void)
 {
+  test_uri_view();
   test_string_to_double();
   test_double_to_node();
   test_integer_to_node();
