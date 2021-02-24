@@ -527,6 +527,18 @@ serd_node_string_view(const SerdNode* SERD_NONNULL node)
   return result;
 }
 
+SerdURIView
+serd_node_uri_view(const SerdNode* SERD_NONNULL node)
+{
+  SerdURIView result = SERD_URI_NULL;
+
+  if (node->type == SERD_URI) {
+    serd_uri_parse(serd_node_string(node), &result);
+  }
+
+  return result;
+}
+
 const SerdNode*
 serd_node_datatype(const SerdNode* const node)
 {
