@@ -17,9 +17,9 @@
 #include "world.h"
 
 #include "caret.h"
+#include "namespaces.h"
 #include "node.h"
 #include "serd_config.h"
-#include "serd_internal.h"
 #include "system.h"
 
 #if defined(USE_POSIX_FADVISE)

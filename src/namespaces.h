@@ -1,5 +1,5 @@
 /*
-  Copyright 2019-2020 David Robillard <d@drobilla.net>
+  Copyright 2011-2020 David Robillard <d@drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -14,28 +14,10 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#ifndef SERD_STATIC_NODES_H
-#define SERD_STATIC_NODES_H
+#ifndef SERD_NAMESPACES_H
+#define SERD_NAMESPACES_H
 
-#include "serd/serd.h"
+#define NS_XSD "http://www.w3.org/2001/XMLSchema#"
+#define NS_RDF "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 
-#include "namespaces.h"
-#include "node.h"
-
-typedef struct StaticNode {
-  SerdNode node;
-  char     buf[sizeof(NS_XSD "base64Binary") + sizeof(SerdNode)];
-} StaticNode;
-
-#define DEFINE_XSD_NODE(name)                 \
-  static const StaticNode serd_xsd_##name = { \
-    {sizeof(NS_XSD #name) - 1, 0, SERD_URI}, NS_XSD #name};
-
-DEFINE_XSD_NODE(base64Binary)
-DEFINE_XSD_NODE(boolean)
-DEFINE_XSD_NODE(decimal)
-DEFINE_XSD_NODE(double)
-DEFINE_XSD_NODE(float)
-DEFINE_XSD_NODE(integer)
-
-#endif // SERD_STATIC_NODES_H
+#endif // SERD_NAMESPACES_H
