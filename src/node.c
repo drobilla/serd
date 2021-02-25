@@ -3,7 +3,7 @@
 
 #include "node.h"
 
-#include "serd_internal.h"
+#include "namespaces.h"
 #include "string_utils.h"
 #include "system.h"
 
