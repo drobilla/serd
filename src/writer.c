@@ -3,10 +3,11 @@
 
 #include "byte_sink.h"
 #include "env.h"
+#include "namespaces.h"
 #include "node.h"
-#include "serd_internal.h"
 #include "sink.h"
 #include "string_utils.h"
+#include "system.h"
 #include "try.h"
 #include "uri_utils.h"
 #include "warnings.h"
