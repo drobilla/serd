@@ -3,7 +3,7 @@
 
 #include "base64.h"
 
-#include "serd_internal.h"
+#include "macros.h"
 #include "string_utils.h"
 
 #include "serd/string.h"

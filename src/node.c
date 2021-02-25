@@ -4,8 +4,8 @@
 #include "node.h"
 
 #include "base64.h"
+#include "namespaces.h"
 #include "node_impl.h"
-#include "serd_internal.h"
 #include "string_utils.h"
 #include "system.h"
 
