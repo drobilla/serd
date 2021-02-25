@@ -79,6 +79,12 @@ void
 set_blank_id(SerdReader* reader, SerdNode* node, size_t buf_size);
 
 SerdStatus
+emit_statement_at(SerdReader* reader,
+                  ReadContext ctx,
+                  SerdNode*   o,
+                  SerdCaret*  caret);
+
+SerdStatus
 emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o);
 
 SerdStatus
