@@ -15,10 +15,12 @@
 */
 
 #include "byte_source.h"
+#include "cursor.h"
 #include "node.h"
 #include "reader.h"
 #include "serd_internal.h"
 #include "stack.h"
+#include "statement.h"
 #include "string_utils.h"
 #include "uri_utils.h"
 
@@ -1137,6 +1139,7 @@ read_object(SerdReader* const  reader,
   static const size_t      XSD_BOOLEAN_LEN = 40;
 
   const size_t orig_stack_size = reader->stack.size;
+  SerdCursor   orig_cursor     = reader->source.cur;
 
   SerdStatus ret    = SERD_FAILURE;
   bool       simple = (ctx->subject != 0);
@@ -1190,6 +1193,7 @@ read_object(SerdReader* const  reader,
     break;
   case '\"':
   case '\'':
+    ++orig_cursor.col;
     ret = read_literal(reader, &o, ate_dot);
     break;
   default:
@@ -1222,7 +1226,14 @@ read_object(SerdReader* const  reader,
   }
 
   if (!ret && emit && simple && o) {
-    ret = emit_statement(reader, *ctx, o);
+    serd_node_zero_pad(o);
+
+    const SerdStatement statement = {
+      {ctx->subject, ctx->predicate, o, ctx->graph}, &orig_cursor};
+
+    ret = serd_sink_write_statement(reader->sink, *ctx->flags, &statement);
+
+    *ctx->flags = 0;
   } else if (!ret && !emit) {
     ctx->object = o;
     return SERD_SUCCESS;
