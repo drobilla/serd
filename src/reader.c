@@ -148,9 +148,10 @@ push_node(SerdReader* const  reader,
 }
 
 SerdStatus
-emit_statement(SerdReader* const reader,
-               const ReadContext ctx,
-               SerdNode* const   o)
+emit_statement_at(SerdReader* const reader,
+                  const ReadContext ctx,
+                  SerdNode* const   o,
+                  SerdCaret* const  caret)
 {
   if (reader->stack.size + (2 * sizeof(SerdNode)) > reader->stack.buf_size) {
     return SERD_ERR_OVERFLOW;
@@ -161,13 +162,21 @@ emit_statement(SerdReader* const reader,
   serd_node_zero_pad(o);
 
   const SerdStatement statement = {{ctx.subject, ctx.predicate, o, ctx.graph},
-                                   &reader->source->caret};
+                                   caret};
 
   const SerdStatus st =
     serd_sink_write_statement(reader->sink, *ctx.flags, &statement);
 
   *ctx.flags = 0;
   return st;
+}
+
+SerdStatus
+emit_statement(SerdReader* const reader,
+               const ReadContext ctx,
+               SerdNode* const   o)
+{
+  return emit_statement_at(reader, ctx, o, &reader->source->caret);
 }
 
 static SerdStatus
