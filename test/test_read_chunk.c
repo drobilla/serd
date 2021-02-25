@@ -108,7 +108,7 @@ main(void)
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(n_end == 1);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
-  assert(!serd_reader_end_stream(reader));
+  assert(!serd_reader_finish(reader));
 
   serd_reader_free(reader);
   serd_sink_free(sink);
