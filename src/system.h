@@ -22,6 +22,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#define SERD_PAGE_SIZE 4096
+
 /// Allocate a buffer aligned to `alignment` bytes
 SERD_I_MALLOC_FUNC
 void*
