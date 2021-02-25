@@ -17,10 +17,9 @@
 #include "reader.h"
 #include "byte_source.h"
 #include "node.h"
+#include "serd_internal.h"
 #include "stack.h"
 #include "system.h"
-
-#include "serd_internal.h"
 
 #include <errno.h>
 #include <stdarg.h>
@@ -210,6 +209,7 @@ serd_reader_free(SerdReader* const reader)
   pop_node(reader, reader->rdf_nil);
   pop_node(reader, reader->rdf_rest);
   pop_node(reader, reader->rdf_first);
+  serd_reader_finish(reader);
   serd_node_free(reader->default_graph);
 
 #ifdef SERD_STACK_CHECK
@@ -243,39 +243,6 @@ serd_reader_set_default_graph(SerdReader* const     reader,
   reader->default_graph = serd_node_copy(graph);
 }
 
-SerdStatus
-serd_reader_read_file(SerdReader* const reader, const char* const uri)
-{
-  char* const path = serd_parse_file_uri(uri, NULL);
-  if (!path) {
-    return SERD_ERR_BAD_ARG;
-  }
-
-  FILE* fd = serd_fopen(path, "rb");
-  if (!fd) {
-    serd_free(path);
-    return SERD_ERR_UNKNOWN;
-  }
-
-  SerdStatus st = serd_reader_start_stream(reader,
-                                           (SerdReadFunc)fread,
-                                           (SerdStreamErrorFunc)ferror,
-                                           fd,
-                                           path,
-                                           SERD_PAGE_SIZE);
-
-  if (!st) {
-    st = serd_reader_read_document(reader);
-  }
-
-  const SerdStatus est = serd_reader_end_stream(reader);
-
-  fclose(fd);
-  free(path);
-
-  return st ? st : est;
-}
-
 static SerdStatus
 skip_bom(SerdReader* const me)
 {
@@ -302,7 +269,31 @@ serd_reader_start_stream(SerdReader* const         reader,
                          const size_t              page_size)
 {
   return serd_byte_source_open_source(
-    &reader->source, read_func, error_func, stream, name, page_size);
+    &reader->source, read_func, error_func, NULL, stream, name, page_size);
+}
+
+SerdStatus
+serd_reader_start_file(SerdReader* reader, const char* uri, bool bulk)
+{
+  char* const path = serd_parse_file_uri(uri, NULL);
+  if (!path) {
+    return SERD_ERR_BAD_ARG;
+  }
+
+  FILE* fd = serd_fopen(path, "rb");
+  free(path);
+  if (!fd) {
+    return SERD_ERR_UNKNOWN;
+  }
+
+  return serd_byte_source_open_source(&reader->source,
+                                      bulk ? (SerdReadFunc)fread
+                                           : serd_file_read_byte,
+                                      (SerdStreamErrorFunc)ferror,
+                                      (SerdStreamCloseFunc)fclose,
+                                      fd,
+                                      uri,
+                                      bulk ? SERD_PAGE_SIZE : 1);
 }
 
 SerdStatus
@@ -344,18 +335,7 @@ serd_reader_read_chunk(SerdReader* const reader)
 }
 
 SerdStatus
-serd_reader_end_stream(SerdReader* const reader)
+serd_reader_finish(SerdReader* const reader)
 {
   return serd_byte_source_close(&reader->source);
-}
-
-SerdStatus
-serd_reader_read_string(SerdReader* const reader, const char* const utf8)
-{
-  serd_reader_start_string(reader, utf8);
-
-  const SerdStatus st  = serd_reader_read_document(reader);
-  const SerdStatus est = serd_byte_source_close(&reader->source);
-
-  return st ? st : est;
 }

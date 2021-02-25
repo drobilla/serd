@@ -23,7 +23,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
+
+typedef int (*SerdStreamCloseFunc)(void*);
 
 typedef struct {
   const char* filename;
@@ -34,6 +35,7 @@ typedef struct {
 typedef struct {
   SerdReadFunc        read_func;   ///< Read function (e.g. fread)
   SerdStreamErrorFunc error_func;  ///< Error function (e.g. ferror)
+  SerdStreamCloseFunc close_func;  ///< Function for closing stream
   void*               stream;      ///< Stream (e.g. FILE)
   size_t              page_size;   ///< Number of bytes to read at a time
   size_t              buf_size;    ///< Number of bytes in file_buf
@@ -48,15 +50,13 @@ typedef struct {
 } SerdByteSource;
 
 SerdStatus
-serd_byte_source_open_file(SerdByteSource* source, FILE* file, bool bulk);
-
-SerdStatus
 serd_byte_source_open_string(SerdByteSource* source, const char* utf8);
 
 SerdStatus
 serd_byte_source_open_source(SerdByteSource*     source,
                              SerdReadFunc        read_func,
                              SerdStreamErrorFunc error_func,
+                             SerdStreamCloseFunc close_func,
                              void*               stream,
                              const char*         name,
                              size_t              page_size);

@@ -993,11 +993,12 @@ void
 serd_reader_set_default_graph(SerdReader* SERD_NONNULL      reader,
                               const SerdNode* SERD_NULLABLE graph);
 
-/// Read a file at a given `uri`
+/// Prepare to read from the file at a local file `uri`
 SERD_API
 SerdStatus
-serd_reader_read_file(SerdReader* SERD_NONNULL reader,
-                      const char* SERD_NONNULL uri);
+serd_reader_start_file(SerdReader* SERD_NONNULL reader,
+                       const char* SERD_NONNULL uri,
+                       bool                     bulk);
 
 /**
    Prepare to read from a stream.
@@ -1043,18 +1044,20 @@ SERD_API
 SerdStatus
 serd_reader_read_document(SerdReader* SERD_NONNULL reader);
 
-/// Finish reading from the source
+/**
+   Finish reading from the source.
+
+   This should be called before starting to read from another source.
+*/
 SERD_API
 SerdStatus
-serd_reader_end_stream(SerdReader* SERD_NONNULL reader);
+serd_reader_finish(SerdReader* SERD_NONNULL reader);
 
-/// Read `utf8`
-SERD_API
-SerdStatus
-serd_reader_read_string(SerdReader* SERD_NONNULL reader,
-                        const char* SERD_NONNULL utf8);
+/**
+   Free `reader`.
 
-/// Free `reader`
+   The reader will be finished via `serd_reader_finish()` if necessary.
+*/
 SERD_API
 void
 serd_reader_free(SerdReader* SERD_NULLABLE reader);
