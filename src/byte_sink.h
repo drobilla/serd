@@ -4,7 +4,7 @@
 #ifndef SERD_SRC_BYTE_SINK_H
 #define SERD_SRC_BYTE_SINK_H
 
-#include "serd_internal.h"
+#include "macros.h"
 #include "system.h"
 
 #include "serd/status.h"
