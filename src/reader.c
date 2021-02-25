@@ -4,9 +4,9 @@
 #include "reader.h"
 
 #include "byte_source.h"
+#include "namespaces.h"
 #include "node.h"
 #include "serd/statement_view.h"
-#include "serd_internal.h"
 #include "stack.h"
 #include "system.h"
 #include "world.h"
