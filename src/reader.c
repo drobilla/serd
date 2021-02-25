@@ -185,17 +185,16 @@ push_node_termination(SerdReader* const reader)
 }
 
 SerdStatus
-emit_statement(SerdReader* const reader,
-               const ReadContext ctx,
-               SerdNode* const   o)
+emit_statement_at(SerdReader* const   reader,
+                  const ReadContext   ctx,
+                  SerdNode* const     o,
+                  const SerdCaretView caret)
 {
   SerdStatus st = SERD_SUCCESS;
 
   // Push termination for the top node (object, language, or datatype)
   // (Earlier nodes have been terminated by subsequent node pushed)
   TRY(st, push_node_termination(reader));
-
-  const SerdCaretView caret = reader->source->caret;
 
   const SerdStatementView statement = {
     serd_node_token_view(ctx.subject),
@@ -209,6 +208,14 @@ emit_statement(SerdReader* const reader,
 
   *ctx.flags = 0;
   return st;
+}
+
+SerdStatus
+emit_statement(SerdReader* const reader,
+               const ReadContext ctx,
+               SerdNode* const   o)
+{
+  return emit_statement_at(reader, ctx, o, reader->source->caret);
 }
 
 SerdStatus

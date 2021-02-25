@@ -9,6 +9,7 @@
 #include "stack.h"
 #include "try.h"
 
+#include "serd/caret_view.h"
 #include "serd/env.h"
 #include "serd/error.h"
 #include "serd/event.h"
@@ -92,6 +93,12 @@ blank_id(SerdReader* reader);
 
 void
 set_blank_id(SerdReader* reader, SerdNode* node, size_t buf_size);
+
+SerdStatus
+emit_statement_at(SerdReader*   reader,
+                  ReadContext   ctx,
+                  SerdNode*     o,
+                  SerdCaretView caret);
 
 SerdStatus
 emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o);
