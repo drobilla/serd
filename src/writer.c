@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: ISC
 
 #include "byte_sink.h"
-#include "serd_internal.h"
+#include "namespaces.h"
 #include "stack.h"
 #include "string_utils.h"
 #include "system.h"
