@@ -6,8 +6,8 @@
 
 #include "serd/node.h"
 
+#include "namespaces.h"
 #include "node.h"
-#include "serd_internal.h"
 
 typedef struct StaticNode {
   SerdNode node;
