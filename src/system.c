@@ -19,7 +19,6 @@
 #include "system.h"
 
 #include "serd_config.h"
-#include "serd_internal.h"
 
 #ifdef _WIN32
 #  include <malloc.h>

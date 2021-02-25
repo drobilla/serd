@@ -16,10 +16,10 @@
 
 #include "env.h"
 #include "node.h"
-#include "serd_internal.h"
 #include "sink.h"
 #include "stack.h"
 #include "string_utils.h"
+#include "system.h"
 #include "uri_utils.h"
 #include "world.h"
 
