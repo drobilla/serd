@@ -16,9 +16,9 @@
 
 #include "byte_source.h"
 #include "cursor.h"
+#include "namespaces.h"
 #include "node.h"
 #include "reader.h"
-#include "serd_internal.h"
 #include "stack.h"
 #include "statement.h"
 #include "string_utils.h"
