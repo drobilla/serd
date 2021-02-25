@@ -13,6 +13,7 @@
 
 #include "serd/attributes.h"
 #include "serd/byte_source.h"
+#include "serd/caret.h"
 #include "serd/env.h"
 #include "serd/node.h"
 #include "serd/reader.h"
@@ -725,6 +726,7 @@ read_object(SerdReader* const  reader,
             bool* const        ate_dot)
 {
   const size_t orig_stack_size = reader->stack.size;
+  SerdCaret    orig_caret      = reader->source->caret;
 
   assert(ctx->subject);
 
@@ -775,6 +777,7 @@ read_object(SerdReader* const  reader,
     break;
   case '\"':
   case '\'':
+    ++orig_caret.col;
     st = read_literal(reader, &o, ate_dot);
     break;
   default:
@@ -783,7 +786,7 @@ read_object(SerdReader* const  reader,
   }
 
   if (!st && simple && o) {
-    st = emit_statement(reader, *ctx, o);
+    st = emit_statement_at(reader, *ctx, o, &orig_caret);
   }
 
   serd_stack_pop_to(&reader->stack, orig_stack_size);

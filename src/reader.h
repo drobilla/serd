@@ -10,6 +10,7 @@
 
 #include "serd/attributes.h"
 #include "serd/byte_source.h"
+#include "serd/caret.h"
 #include "serd/env.h"
 #include "serd/node.h"
 #include "serd/reader.h"
@@ -83,6 +84,12 @@ blank_id(SerdReader* reader);
 
 void
 set_blank_id(SerdReader* reader, SerdNode* node, size_t buf_size);
+
+SerdStatus
+emit_statement_at(SerdReader* reader,
+                  ReadContext ctx,
+                  SerdNode*   o,
+                  SerdCaret*  caret);
 
 SerdStatus
 emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o);

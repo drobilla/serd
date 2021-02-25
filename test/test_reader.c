@@ -423,6 +423,55 @@ test_read_empty(void)
   serd_world_free(world);
 }
 
+static SerdStatus
+check_cursor(void* handle, const SerdEvent* event)
+{
+  bool* const called = (bool*)handle;
+
+  if (event->type == SERD_STATEMENT) {
+    const SerdCaret* const caret =
+      serd_statement_caret(event->statement.statement);
+    assert(caret);
+
+    assert(!strcmp(serd_node_string(serd_caret_document(caret)), "string"));
+    assert(serd_caret_line(caret) == 1);
+    assert(serd_caret_column(caret) == 47);
+  }
+
+  *called = true;
+  return SERD_SUCCESS;
+}
+
+static void
+test_error_cursor(void)
+{
+  SerdWorld*        world  = serd_world_new();
+  bool              called = false;
+  SerdSink*         sink   = serd_sink_new(&called, check_cursor, NULL);
+  SerdEnv* const    env    = serd_env_new(serd_empty_string());
+  SerdReader* const reader =
+    serd_reader_new(world, SERD_TURTLE, 0, env, sink, 4096);
+
+  assert(sink);
+  assert(reader);
+
+  SerdByteSource* byte_source =
+    serd_byte_source_new_string("<http://example.org/s> <http://example.org/p> "
+                                "<http://example.org/o> .",
+                                NULL);
+
+  SerdStatus st = serd_reader_start(reader, byte_source);
+  assert(!st);
+  assert(serd_reader_read_document(reader) == SERD_SUCCESS);
+  assert(called);
+
+  serd_byte_source_free(byte_source);
+  serd_reader_free(reader);
+  serd_env_free(env);
+  serd_sink_free(sink);
+  serd_world_free(world);
+}
+
 int
 main(void)
 {
@@ -437,6 +486,7 @@ main(void)
   test_read_eof_by_byte();
   test_read_chunks(path);
   test_read_empty();
+  test_error_cursor();
 
   assert(!zix_remove(dir));
 
