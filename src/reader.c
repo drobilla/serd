@@ -168,9 +168,10 @@ token_equals(const SerdNode* const node, const char* const tok, const size_t n)
 }
 
 SerdStatus
-emit_statement(SerdReader* const reader,
-               const ReadContext ctx,
-               SerdNode* const   o)
+emit_statement_at(SerdReader* const   reader,
+                  const ReadContext   ctx,
+                  SerdNode* const     o,
+                  const SerdCaretView caret)
 {
   if (reader->stack.size + (2 * sizeof(SerdNode)) > reader->stack.buf_size) {
     return SERD_BAD_STACK;
@@ -180,8 +181,6 @@ emit_statement(SerdReader* const reader,
      (subject and predicate) were already zeroed by subsequent pushes. */
   serd_node_zero_pad(o);
 
-  const SerdCaretView caret = reader->source->caret;
-
   const SerdStatementView statement = {
     ctx.subject, ctx.predicate, o, ctx.graph};
 
@@ -190,6 +189,14 @@ emit_statement(SerdReader* const reader,
 
   *ctx.flags = 0;
   return st;
+}
+
+SerdStatus
+emit_statement(SerdReader* const reader,
+               const ReadContext ctx,
+               SerdNode* const   o)
+{
+  return emit_statement_at(reader, ctx, o, reader->source->caret);
 }
 
 SerdStatus
