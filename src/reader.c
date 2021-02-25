@@ -194,19 +194,28 @@ push_node_termination(SerdReader* const reader)
 }
 
 SerdStatus
-emit_statement(SerdReader* const reader,
-               const ReadContext ctx,
-               SerdNode* const   o)
+emit_statement_at(SerdReader* const   reader,
+                  const ReadContext   ctx,
+                  SerdNode* const     o,
+                  const SerdCaretView caret)
 {
   const SerdStatus st = serd_sink_write_event(
     reader->sink,
     serd_statement_event(
       *ctx.flags,
       serd_statement_view_nodes(ctx.subject, ctx.predicate, o, ctx.graph),
-      reader->source->caret));
+      caret));
 
   *ctx.flags = 0;
   return st;
+}
+
+SerdStatus
+emit_statement(SerdReader* const reader,
+               const ReadContext ctx,
+               SerdNode* const   o)
+{
+  return emit_statement_at(reader, ctx, o, reader->source->caret);
 }
 
 SerdStatus
