@@ -5,10 +5,13 @@
 
 #include "failing_allocator.h"
 
+#include "serd/caret.h"
 #include "serd/event.h"
 #include "serd/input_stream.h"
+#include "serd/node.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
+#include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/syntax.h"
@@ -23,6 +26,7 @@
 #endif
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -566,6 +570,56 @@ test_read_empty(const char* const path)
   serd_world_free(world);
 }
 
+static SerdStatus
+check_cursor(void* handle, const SerdEvent* event)
+{
+  bool* const called = (bool*)handle;
+
+  if (event->type == SERD_STATEMENT) {
+    const SerdCaret* const caret =
+      serd_statement_caret(event->statement.statement);
+    assert(caret);
+
+    assert(!strcmp(serd_node_string(serd_caret_document(caret)), "string"));
+    assert(serd_caret_line(caret) == 1);
+    assert(serd_caret_column(caret) == 47);
+  }
+
+  *called = true;
+  return SERD_SUCCESS;
+}
+
+static void
+test_error_cursor(void)
+{
+  SerdWorld* const  world  = serd_world_new(NULL);
+  bool              called = false;
+  SerdSink* const   sink   = serd_sink_new(NULL, &called, check_cursor, NULL);
+  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0, sink);
+  assert(sink);
+  assert(reader);
+
+  static const char* const string =
+    "<http://example.org/s> <http://example.org/p> "
+    "<http://example.org/o> .";
+
+  SerdNode* const string_name = serd_node_new(NULL, serd_a_string("string"));
+  const char*     position    = string;
+  SerdInputStream in          = serd_open_input_string(&position);
+
+  SerdStatus st = serd_reader_start(reader, &in, string_name, 1);
+  assert(!st);
+  assert(serd_reader_read_document(reader) == SERD_SUCCESS);
+  assert(!serd_reader_finish(reader));
+  assert(called);
+  assert(!serd_close_input(&in));
+
+  serd_node_free(NULL, string_name);
+  serd_reader_free(reader);
+  serd_sink_free(sink);
+  serd_world_free(world);
+}
+
 int
 main(void)
 {
@@ -586,6 +640,7 @@ main(void)
   test_read_string();
   test_read_eof_by_page(ttl_path);
   test_read_eof_by_byte();
+  test_error_cursor();
 
   assert(!zix_remove(dir));
 
