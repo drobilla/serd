@@ -19,6 +19,7 @@
 #include "serd/serd.h"
 
 #include <assert.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -28,33 +29,38 @@
 #define NS_XSD "http://www.w3.org/2001/XMLSchema#"
 #define NS_RDF "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 
-static void
-test_integer_to_node(void)
-{
-  const long int_test_nums[] = {0, -0, -23, 23, -12340, 1000, -1000};
+#if defined(__clang__)
 
-  const char* int_test_strs[] = {
-    "0", "0", "-23", "23", "-12340", "1000", "-1000"};
+#  define SERD_DISABLE_CONVERSION_WARNINGS               \
+    _Pragma("clang diagnostic push")                     \
+    _Pragma("clang diagnostic ignored \"-Wconversion\"") \
+    _Pragma("clang diagnostic ignored \"-Wdouble-promotion\"")
 
-  for (size_t i = 0; i < sizeof(int_test_nums) / sizeof(double); ++i) {
-    SerdNode*   node     = serd_new_integer(int_test_nums[i], NULL);
-    const char* node_str = serd_node_string(node);
-    assert(!strcmp(node_str, int_test_strs[i]));
-    const size_t len = strlen(node_str);
-    assert(serd_node_length(node) == len);
+#  define SERD_RESTORE_WARNINGS _Pragma("clang diagnostic pop")
 
-    const SerdNode* const datatype = serd_node_datatype(node);
-    assert(datatype);
-    assert(!strcmp(serd_node_string(datatype), NS_XSD "integer"));
-    serd_node_free(node);
-  }
-}
+#elif defined(__GNUC__)
+
+#  define SERD_DISABLE_CONVERSION_WARNINGS                   \
+    _Pragma("GCC diagnostic push")                           \
+    _Pragma("GCC diagnostic ignored \"-Wconversion\"")       \
+    _Pragma("GCC diagnostic ignored \"-Wfloat-conversion\"") \
+    _Pragma("GCC diagnostic ignored \"-Wdouble-promotion\"")
+
+#  define SERD_RESTORE_WARNINGS _Pragma("GCC diagnostic pop")
+
+#else
+
+#  define SERD_DISABLE_CONVERSION_WARNINGS
+#  define SERD_RESTORE_WARNINGS
+
+#endif
 
 static void
 test_boolean(void)
 {
   SerdNode* const true_node = serd_new_boolean(true);
   assert(!strcmp(serd_node_string(true_node), "true"));
+  assert(serd_get_boolean(true_node));
 
   const SerdNode* const true_datatype = serd_node_datatype(true_node);
   assert(true_datatype);
@@ -63,11 +69,225 @@ test_boolean(void)
 
   SerdNode* const false_node = serd_new_boolean(false);
   assert(!strcmp(serd_node_string(false_node), "false"));
+  assert(!serd_get_boolean(false_node));
 
   const SerdNode* const false_datatype = serd_node_datatype(false_node);
   assert(false_datatype);
   assert(!strcmp(serd_node_string(false_datatype), NS_XSD "boolean"));
   serd_node_free(false_node);
+}
+
+static void
+check_get_boolean(const char* string,
+                  const char* datatype_uri,
+                  const bool  expected)
+{
+  SerdNode* const node = serd_new_typed_literal(
+    SERD_MEASURE_STRING(string), SERD_MEASURE_STRING(datatype_uri));
+
+  assert(node);
+  assert(serd_get_boolean(node) == expected);
+
+  serd_node_free(node);
+}
+
+static void
+test_get_boolean(void)
+{
+  check_get_boolean("false", NS_XSD "boolean", false);
+  check_get_boolean("true", NS_XSD "boolean", true);
+  check_get_boolean("0", NS_XSD "boolean", false);
+  check_get_boolean("1", NS_XSD "boolean", true);
+  check_get_boolean("0", NS_XSD "integer", false);
+  check_get_boolean("1", NS_XSD "integer", true);
+  check_get_boolean("0.0", NS_XSD "double", false);
+  check_get_boolean("1.0", NS_XSD "double", true);
+  check_get_boolean("unknown", NS_XSD "string", false);
+  check_get_boolean("!invalid", NS_XSD "long", false);
+}
+
+static void
+test_double(void)
+{
+  const double test_values[]  = {0.0, -0.0, 1.2, -2.3, 4567890};
+  const char*  test_strings[] = {
+    "0.0E0", "-0.0E0", "1.2E0", "-2.3E0", "4.56789E6"};
+
+  for (size_t i = 0; i < sizeof(test_values) / sizeof(double); ++i) {
+    SerdNode*   node     = serd_new_double(test_values[i]);
+    const char* node_str = serd_node_string(node);
+    assert(!strcmp(node_str, test_strings[i]));
+
+    const size_t len = strlen(node_str);
+    assert(serd_node_length(node) == len);
+
+    const SerdNode* const datatype = serd_node_datatype(node);
+    assert(datatype);
+    assert(!strcmp(serd_node_string(datatype), NS_XSD "double"));
+
+    const double value = serd_get_double(node);
+    assert(!memcmp(&value, &test_values[i], sizeof(value)));
+    serd_node_free(node);
+  }
+}
+
+static void
+check_get_double(const char*  string,
+                 const char*  datatype_uri,
+                 const double expected)
+{
+  SerdNode* const node = serd_new_typed_literal(
+    SERD_MEASURE_STRING(string), SERD_MEASURE_STRING(datatype_uri));
+
+  assert(node);
+
+  const double value = serd_get_double(node);
+  assert(!memcmp(&value, &expected, sizeof(value)));
+
+  serd_node_free(node);
+}
+
+static void
+test_get_double(void)
+{
+  check_get_double("1.2", NS_XSD "double", 1.2);
+  check_get_double("-.5", NS_XSD "float", -0.5);
+  check_get_double("-67", NS_XSD "long", -67.0);
+  check_get_double("8.9", NS_XSD "decimal", 8.9);
+  check_get_double("false", NS_XSD "boolean", 0.0);
+  check_get_double("true", NS_XSD "boolean", 1.0);
+
+  SERD_DISABLE_CONVERSION_WARNINGS
+
+  SerdNode* const nan = serd_new_string(SERD_MEASURE_STRING("unknown"));
+  assert(isnan(serd_get_double(nan)));
+  serd_node_free(nan);
+
+  SerdNode* const invalid = serd_new_typed_literal(
+    SERD_STATIC_STRING("!invalid"), SERD_STATIC_STRING(NS_XSD "long"));
+
+  assert(isnan(serd_get_double(invalid)));
+
+  SERD_RESTORE_WARNINGS
+
+  serd_node_free(invalid);
+}
+
+static void
+test_float(void)
+{
+  const float test_values[]  = {0.0f, -0.0f, 1.5f, -2.5f, 4567890.0f};
+  const char* test_strings[] = {
+    "0.0E0", "-0.0E0", "1.5E0", "-2.5E0", "4.56789E6"};
+
+  for (size_t i = 0; i < sizeof(test_values) / sizeof(float); ++i) {
+    SerdNode*   node     = serd_new_float(test_values[i]);
+    const char* node_str = serd_node_string(node);
+    assert(!strcmp(node_str, test_strings[i]));
+
+    const size_t len = strlen(node_str);
+    assert(serd_node_length(node) == len);
+
+    const SerdNode* const datatype = serd_node_datatype(node);
+    assert(datatype);
+    assert(!strcmp(serd_node_string(datatype), NS_XSD "float"));
+
+    const float value = serd_get_float(node);
+    assert(!memcmp(&value, &test_values[i], sizeof(value)));
+    serd_node_free(node);
+  }
+}
+
+static void
+check_get_float(const char* string,
+                const char* datatype_uri,
+                const float expected)
+{
+  SerdNode* const node = serd_new_typed_literal(
+    SERD_MEASURE_STRING(string), SERD_MEASURE_STRING(datatype_uri));
+
+  assert(node);
+
+  const float value = serd_get_float(node);
+  assert(!memcmp(&value, &expected, sizeof(value)));
+
+  serd_node_free(node);
+}
+
+static void
+test_get_float(void)
+{
+  check_get_float("1.2", NS_XSD "float", 1.2f);
+  check_get_float("-.5", NS_XSD "float", -0.5f);
+  check_get_float("-67", NS_XSD "long", -67.0f);
+  check_get_float("1.5", NS_XSD "decimal", 1.5f);
+  check_get_float("false", NS_XSD "boolean", 0.0f);
+  check_get_float("true", NS_XSD "boolean", 1.0f);
+
+  SERD_DISABLE_CONVERSION_WARNINGS
+
+  SerdNode* const nan = serd_new_string(SERD_MEASURE_STRING("unknown"));
+  assert(isnan(serd_get_float(nan)));
+  serd_node_free(nan);
+
+  SerdNode* const invalid = serd_new_typed_literal(
+    SERD_STATIC_STRING("!invalid"), SERD_STATIC_STRING(NS_XSD "long"));
+
+  assert(isnan(serd_get_double(invalid)));
+
+  SERD_RESTORE_WARNINGS
+
+  serd_node_free(invalid);
+}
+
+static void
+test_integer(void)
+{
+  const int64_t test_values[]  = {0, -0, -23, 23, -12340, 1000, -1000};
+  const char*   test_strings[] = {
+    "0", "0", "-23", "23", "-12340", "1000", "-1000"};
+
+  for (size_t i = 0; i < sizeof(test_values) / sizeof(double); ++i) {
+    SerdNode*   node     = serd_new_integer(test_values[i], NULL);
+    const char* node_str = serd_node_string(node);
+    assert(!strcmp(node_str, test_strings[i]));
+    const size_t len = strlen(node_str);
+    assert(serd_node_length(node) == len);
+
+    const SerdNode* const datatype = serd_node_datatype(node);
+    assert(datatype);
+    assert(!strcmp(serd_node_string(datatype), NS_XSD "integer"));
+
+    assert(serd_get_integer(node) == test_values[i]);
+    serd_node_free(node);
+  }
+}
+
+static void
+check_get_integer(const char*   string,
+                  const char*   datatype_uri,
+                  const int64_t expected)
+{
+  SerdNode* const node = serd_new_typed_literal(
+    SERD_MEASURE_STRING(string), SERD_MEASURE_STRING(datatype_uri));
+
+  assert(node);
+  assert(serd_get_integer(node) == expected);
+
+  serd_node_free(node);
+}
+
+static void
+test_get_integer(void)
+{
+  check_get_integer("12", NS_XSD "long", 12);
+  check_get_integer("-34", NS_XSD "long", -34);
+  check_get_integer("56", NS_XSD "integer", 56);
+  check_get_integer("false", NS_XSD "boolean", 0);
+  check_get_integer("true", NS_XSD "boolean", 1);
+  check_get_integer("78.0", NS_XSD "decimal", 78);
+  check_get_integer("unknown", NS_XSD "string", 0);
+  check_get_integer("!invalid", NS_XSD "long", 0);
 }
 
 static void
@@ -131,6 +351,7 @@ test_node_equals(void)
   SerdNode* lhs = serd_new_string(replacement_char);
   SerdNode* rhs = serd_new_string(SERD_STATIC_STRING("123"));
 
+  assert(serd_node_equals(lhs, lhs));
   assert(!serd_node_equals(lhs, rhs));
 
   SerdNode* const qnode = serd_new_curie(SERD_STATIC_STRING("foo:bar"));
@@ -239,9 +460,15 @@ test_blank(void)
 int
 main(void)
 {
-  test_integer_to_node();
-  test_blob_to_node();
   test_boolean();
+  test_get_boolean();
+  test_double();
+  test_get_double();
+  test_float();
+  test_get_float();
+  test_integer();
+  test_get_integer();
+  test_blob_to_node();
   test_node_equals();
   test_node_from_string();
   test_node_from_substring();

@@ -17,6 +17,7 @@
 #ifndef SERD_NODE_H
 #define SERD_NODE_H
 
+#include "exess/exess.h"
 #include "serd/serd.h"
 
 #include <stddef.h>
@@ -52,5 +53,9 @@ serd_node_zero_pad(SerdNode* SERD_NONNULL node);
 /// Create a new URI from a string, resolved against a base URI
 SerdNode* SERD_ALLOCATED
 serd_new_resolved_uri(SerdStringView string, SerdURIView base_uri);
+
+ExessVariant
+serd_node_get_value_as(const SerdNode* SERD_NONNULL node,
+                       ExessDatatype                value_type);
 
 #endif // SERD_NODE_H
