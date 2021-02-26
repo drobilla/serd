@@ -26,4 +26,5 @@ StatementMacros:
   - SERD_DEPRECATED_BY
   - SERD_PURE_API
   - SERD_PURE_FUNC
+  - _Pragma
 ...

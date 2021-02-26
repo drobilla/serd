@@ -309,18 +309,6 @@ size_t
 serd_strlen(const char* SERD_NONNULL str, SerdNodeFlags* SERD_NULLABLE flags);
 
 /**
-   Parse a string to a double.
-
-   The API of this function is identical to the standard C strtod function,
-   except this function is locale-independent and always matches the lexical
-   format used in the Turtle grammar (the decimal point is always ".").
-*/
-SERD_API
-double
-serd_strtod(const char* SERD_NONNULL str,
-            const char* SERD_NONNULL* SERD_NULLABLE endptr);
-
-/**
    Decode a base64 string.
 
    This function can be used to decode a node created with serd_new_base64().
@@ -677,7 +665,7 @@ serd_new_double(double d);
    Uses identical formatting to serd_new_double(), except with at most 9
    significant digits (under 14 characters total).
 
-   @param f Float value to serialise.
+   @param f Float value of literal.
    @return A literal node with datatype xsd:float.
 */
 SERD_API
@@ -709,6 +697,51 @@ SerdNode* SERD_ALLOCATED
 serd_new_base64(const void* SERD_NONNULL      buf,
                 size_t                        size,
                 const SerdNode* SERD_NULLABLE datatype);
+
+/**
+   Return the value of `node` as a boolean.
+
+   This will work for booleans, and numbers of any datatype if they are 0 or
+   1.
+
+   @return The value of `node` as a `bool`, or `false` on error.
+*/
+SERD_API
+bool
+serd_get_boolean(const SerdNode* SERD_NONNULL node);
+
+/**
+   Return the value of `node` as a double.
+
+   This will coerce numbers of any datatype to double, if the value fits.
+
+   @return The value of `node` as a `double`, or NaN on error.
+*/
+SERD_API
+double
+serd_get_double(const SerdNode* SERD_NONNULL node);
+
+/**
+   Return the value of `node` as a float.
+
+   This will coerce numbers of any datatype to float, if the value fits.
+
+   @return The value of `node` as a `float`, or NaN on error.
+*/
+SERD_API
+float
+serd_get_float(const SerdNode* SERD_NONNULL node);
+
+/**
+   Return the value of `node` as a long (signed 64-bit integer).
+
+   This will coerce numbers of any datatype to long, if the value fits.
+
+   @return The value of `node` as a `int64_t`, or 0 on error.
+*/
+SERD_API
+int64_t
+serd_get_integer(const SerdNode* SERD_NONNULL node);
 
 /// Return a deep copy of `node`
 SERD_API

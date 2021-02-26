@@ -25,6 +25,7 @@
 #include "serd/serd.h"
 
 #include <assert.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -293,6 +294,71 @@ SerdNode*
 serd_new_curie(const SerdStringView str)
 {
   return serd_new_simple_node(SERD_CURIE, str);
+}
+
+ExessVariant
+serd_node_get_value_as(const SerdNode* const node,
+                       const ExessDatatype   value_type)
+{
+  const SerdNode* const datatype_node = serd_node_datatype(node);
+
+  const ExessDatatype node_type =
+    datatype_node ? exess_datatype_from_uri(serd_node_string(datatype_node))
+                  : EXESS_NOTHING;
+
+  if (!node_type) {
+    // No datatype, assume it matches and try reading the value directly
+    ExessVariant      v = exess_make_nothing(EXESS_SUCCESS);
+    const ExessResult r =
+      exess_read_variant(&v, value_type, serd_node_string(node));
+
+    return r.status ? exess_make_nothing(r.status) : v;
+  }
+
+  // Read the value from the node
+  ExessVariant      v = exess_make_nothing(EXESS_SUCCESS);
+  const ExessResult r =
+    exess_read_variant(&v, node_type, serd_node_string(node));
+
+  // Coerce value to the desired type if possible
+  return r.status ? exess_make_nothing(r.status)
+                  : exess_coerce(v, value_type, EXESS_REDUCE_PRECISION);
+}
+
+bool
+serd_get_boolean(const SerdNode* const node)
+{
+  const ExessVariant variant = serd_node_get_value_as(node, EXESS_BOOLEAN);
+  const bool* const  value   = exess_get_boolean(&variant);
+
+  return value ? *value : false;
+}
+
+double
+serd_get_double(const SerdNode* const node)
+{
+  const ExessVariant  variant = serd_node_get_value_as(node, EXESS_DOUBLE);
+  const double* const value   = exess_get_double(&variant);
+
+  return value ? *value : (double)NAN;
+}
+
+float
+serd_get_float(const SerdNode* const node)
+{
+  const ExessVariant variant = serd_node_get_value_as(node, EXESS_FLOAT);
+  const float* const value   = exess_get_float(&variant);
+
+  return value ? *value : NAN;
+}
+
+int64_t
+serd_get_integer(const SerdNode* const node)
+{
+  const ExessVariant   variant = serd_node_get_value_as(node, EXESS_LONG);
+  const int64_t* const value   = exess_get_long(&variant);
+
+  return value ? *value : 0;
 }
 
 SerdNode*
