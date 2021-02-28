@@ -620,6 +620,18 @@ bool
 serd_uri_is_within(SerdURIView r, SerdURIView base);
 
 /**
+   Return the length of `uri` as a string.
+
+   This can be used to get the expected number of bytes that will be written by
+   serd_write_uri().
+
+   @return A string length in bytes, not including the null terminator.
+*/
+SERD_PURE_API
+size_t
+serd_uri_string_length(SerdURIView uri);
+
+/**
    Write `uri` as a string to `sink`.
 
    This will call `sink` several times to emit the URI.
@@ -627,7 +639,9 @@ serd_uri_is_within(SerdURIView r, SerdURIView base);
    @param uri URI to write as a string.
    @param sink Sink to write string output to.
    @param stream Opaque user argument to pass to `sink`.
-   @return The number of bytes written.
+
+   @return The number of bytes written, which is less than
+   `serd_uri_string_length(uri)` on error.
 */
 SERD_API
 size_t
