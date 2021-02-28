@@ -8,6 +8,7 @@
 #include <serd/string_view.h>
 #include <serd/uri.h>
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -26,17 +27,19 @@ slice_equals(const SerdStringView* const a, const SerdStringView* const b)
 static inline size_t
 uri_path_len(const SerdURIView* const uri)
 {
-  return uri->path_base.length + uri->path.length;
+  return uri->path_prefix.length + uri->path.length;
 }
 
 static inline char
 uri_path_at(const SerdURIView* const uri, const size_t i)
 {
-  if (i < uri->path_base.length) {
-    return uri->path_base.data[i];
+  if (i < uri->path_prefix.length) {
+    return uri->path_prefix.data[i];
   }
 
-  return uri->path.data[i - uri->path_base.length];
+  const size_t p = i - uri->path_prefix.length;
+  assert(p < uri->path.length);
+  return uri->path.data[p];
 }
 
 /**
@@ -50,9 +53,11 @@ uri_path_at(const SerdURIView* const uri, const size_t i)
 static inline SERD_PURE_FUNC SlashIndexes
 uri_rooted_index(const SerdURIView* const uri, const SerdURIView* const root)
 {
+  assert(root);
+
   SlashIndexes indexes = {SIZE_MAX, SIZE_MAX};
 
-  if (!root || !root->scheme.length ||
+  if (!serd_uri_has_scheme(*root) ||
       !slice_equals(&root->scheme, &uri->scheme) ||
       !slice_equals(&root->authority, &uri->authority)) {
     return indexes;
@@ -82,13 +87,6 @@ uri_rooted_index(const SerdURIView* const uri, const SerdURIView* const root)
   }
 
   return indexes;
-}
-
-/// Return true iff `uri` shares path components with `root`
-static inline SERD_PURE_FUNC bool
-uri_is_related(const SerdURIView* const uri, const SerdURIView* const root)
-{
-  return uri_rooted_index(uri, root).shared != SIZE_MAX;
 }
 
 /// Return true iff `uri` is within the base of `root`
