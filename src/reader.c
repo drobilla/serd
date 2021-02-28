@@ -281,7 +281,7 @@ serd_reader_start_file(SerdReader* reader, const char* uri, bool bulk)
   assert(reader);
   assert(uri);
 
-  char* const path = serd_file_uri_parse(uri, NULL);
+  char* const path = serd_parse_file_uri(uri, NULL);
   if (!path) {
     return SERD_BAD_ARG;
   }
