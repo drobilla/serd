@@ -778,22 +778,19 @@ write_uri_node(SerdWriter* const writer,
 
   if (!(writer->flags & SERD_WRITE_UNRESOLVED)) {
     SerdURIView in_base_uri;
-    SerdURIView uri;
-    SerdURIView abs_uri;
     serd_env_base_uri(writer->env, &in_base_uri);
     SERD_DISABLE_NULL_WARNINGS
-    serd_uri_parse(node->buf, &uri);
+    const SerdURIView uri = serd_parse_uri(node->buf);
     SERD_RESTORE_WARNINGS
-    serd_uri_resolve(&uri, &in_base_uri, &abs_uri);
+    const SerdURIView abs_uri = serd_resolve_uri(uri, in_base_uri);
     bool           rooted = uri_is_under(&writer->base_uri, &writer->root_uri);
     SerdURIView*   root   = rooted ? &writer->root_uri : &writer->base_uri;
     UriSinkContext ctx    = {writer, SERD_SUCCESS};
     if (!uri_is_under(&abs_uri, root) || writer->syntax == SERD_NTRIPLES ||
         writer->syntax == SERD_NQUADS) {
-      serd_uri_serialise(&abs_uri, uri_sink, &ctx);
+      serd_write_uri(abs_uri, uri_sink, &ctx);
     } else {
-      serd_uri_serialise_relative(
-        &uri, &writer->base_uri, root, uri_sink, &ctx);
+      serd_write_uri(serd_relative_uri(uri, writer->base_uri), uri_sink, &ctx);
     }
   } else {
     TRY(st, write_uri_from_node(writer, node));
@@ -1252,7 +1249,7 @@ serd_writer_set_root_uri(SerdWriter* writer, const SerdNode* uri)
   if (uri && uri->buf) {
     writer->root_node = serd_node_copy(uri);
     SERD_DISABLE_NULL_WARNINGS
-    serd_uri_parse(uri->buf, &writer->root_uri);
+    writer->root_uri = serd_parse_uri(uri->buf);
     SERD_RESTORE_WARNINGS
   } else {
     writer->root_node = SERD_NODE_NULL;
