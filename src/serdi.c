@@ -237,7 +237,7 @@ main(int argc, char** argv)
     in_name = in_name ? in_name : input;
     if (!in_fd) {
       if (!strncmp(input, "file:", 5)) {
-        input_path = serd_file_uri_parse(input, NULL);
+        input_path = serd_parse_file_uri(input, NULL);
         input      = input_path;
       }
       if (!input || !(in_fd = serd_fopen(input, "rb"))) {

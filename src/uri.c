@@ -3,10 +3,8 @@
 
 #include "string_utils.h"
 #include "uri_utils.h"
-#include "warnings.h"
 
 #include "serd/buffer.h"
-#include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/string_view.h"
 #include "serd/uri.h"
@@ -19,7 +17,7 @@
 #include <string.h>
 
 char*
-serd_file_uri_parse(const char* const uri, char** const hostname)
+serd_parse_file_uri(const char* const uri, char** const hostname)
 {
   assert(uri);
 
@@ -27,6 +25,7 @@ serd_file_uri_parse(const char* const uri, char** const hostname)
   if (hostname) {
     *hostname = NULL;
   }
+
   if (!strncmp(uri, "file://", 7)) {
     const char* auth = uri + 7;
     if (*auth == '/') { // No hostname
@@ -35,6 +34,7 @@ serd_file_uri_parse(const char* const uri, char** const hostname)
       if (!(path = strchr(auth, '/'))) {
         return NULL;
       }
+
       if (hostname) {
         const size_t len = (size_t)(path - auth);
         *hostname        = (char*)calloc(len + 1, 1);
@@ -66,39 +66,36 @@ serd_file_uri_parse(const char* const uri, char** const hostname)
       serd_buffer_sink(s, 1, &buffer);
     }
   }
+
   return serd_buffer_sink_finish(&buffer);
 }
 
+/// RFC3986: scheme ::= ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
 bool
-serd_uri_string_has_scheme(const char* utf8)
+serd_uri_string_has_scheme(const char* const string)
 {
-  // RFC3986: scheme ::= ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
-  if (!utf8 || !is_alpha(utf8[0])) {
-    return false; // Invalid scheme initial character, URI is relative
-  }
+  if (string && is_alpha(string[0])) {
+    for (size_t i = 1; string[i]; ++i) {
+      if (!is_uri_scheme_char(string[i])) {
+        return false; // Non-scheme character before a ':'
+      }
 
-  for (char c = 0; (c = *++utf8) != '\0';) {
-    if (!is_uri_scheme_char(c)) {
-      return false;
-    }
-
-    if (c == ':') {
-      return true; // End of scheme
+      if (string[i] == ':') {
+        return true; // Valid scheme terminated by a ':'
+      }
     }
   }
 
   return false;
 }
 
-SerdStatus
-serd_uri_parse(const char* const utf8, SerdURIView* const out)
+SerdURIView
+serd_parse_uri(const char* const string)
 {
-  assert(utf8);
-  assert(out);
+  assert(string);
 
-  *out = SERD_URI_NULL;
-
-  const char* ptr = utf8;
+  SerdURIView result = SERD_URI_NULL;
+  const char* ptr    = string;
 
   /* See http://tools.ietf.org/html/rfc3986#section-3
      URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
@@ -112,11 +109,11 @@ serd_uri_parse(const char* const utf8, SerdURIView* const out)
       case '/':
       case '?':
       case '#':
-        ptr = utf8;
+        ptr = string;
         goto path; // Relative URI (starts with path by definition)
       case ':':
-        out->scheme.data   = utf8;
-        out->scheme.length = (size_t)((ptr++) - utf8);
+        result.scheme.data   = string;
+        result.scheme.length = (size_t)((ptr++) - string);
         goto maybe_authority; // URI with scheme
       case '+':
       case '-':
@@ -137,7 +134,7 @@ serd_uri_parse(const char* const utf8, SerdURIView* const out)
 maybe_authority:
   if (*ptr == '/' && *(ptr + 1) == '/') {
     ptr += 2;
-    out->authority.data = ptr;
+    result.authority.data = ptr;
     for (char c = 0; (c = *ptr) != '\0'; ++ptr) {
       switch (c) {
       case '/':
@@ -147,7 +144,7 @@ maybe_authority:
       case '#':
         goto fragment;
       default:
-        ++out->authority.length;
+        ++result.authority.length;
       }
     }
   }
@@ -166,8 +163,8 @@ path:
   default:
     break;
   }
-  out->path.data   = ptr;
-  out->path.length = 0;
+  result.path.data   = ptr;
+  result.path.length = 0;
   for (char c = 0; (c = *ptr) != '\0'; ++ptr) {
     switch (c) {
     case '?':
@@ -175,7 +172,7 @@ path:
     case '#':
       goto fragment;
     default:
-      ++out->path.length;
+      ++result.path.length;
     }
   }
 
@@ -185,12 +182,12 @@ path:
   */
 query:
   if (*ptr == '?') {
-    out->query.data = ++ptr;
+    result.query.data = ++ptr;
     for (char c = 0; (c = *ptr) != '\0'; ++ptr) {
       if (c == '#') {
         goto fragment;
       }
-      ++out->query.length;
+      ++result.query.length;
     }
   }
 
@@ -200,14 +197,14 @@ query:
   */
 fragment:
   if (*ptr == '#') {
-    out->fragment.data = ptr;
+    result.fragment.data = ptr;
     while (*ptr++ != '\0') {
-      ++out->fragment.length;
+      ++result.fragment.length;
     }
   }
 
 end:
-  return SERD_SUCCESS;
+  return result;
 }
 
 /**
@@ -269,196 +266,225 @@ merge(SerdStringView* const base, SerdStringView* const path)
 }
 
 /// See http://tools.ietf.org/html/rfc3986#section-5.2.2
-void
-serd_uri_resolve(const SerdURIView* const r,
-                 const SerdURIView* const base,
-                 SerdURIView* const       t)
+SerdURIView
+serd_resolve_uri(const SerdURIView r, const SerdURIView base)
 {
-  assert(r);
-  assert(base);
-  assert(t);
-
-  if (!base->scheme.length) {
-    *t = *r; // Don't resolve against non-absolute URIs
-    return;
+  if (r.scheme.length || !base.scheme.length) {
+    return r; // No resolution necessary || possible (respectively)
   }
 
-  t->path_base.data   = "";
-  t->path_base.length = 0;
-  if (r->scheme.length) {
-    *t = *r;
+  SerdURIView t = SERD_URI_NULL;
+
+  if (r.authority.length) {
+    t.authority = r.authority;
+    t.path      = r.path;
+    t.query     = r.query;
   } else {
-    if (r->authority.length) {
-      t->authority = r->authority;
-      t->path      = r->path;
-      t->query     = r->query;
+    t.path = r.path;
+    if (!r.path.length) {
+      t.path_prefix = base.path;
+      t.query       = r.query.length ? r.query : base.query;
     } else {
-      t->path = r->path;
-      if (!r->path.length) {
-        t->path_base = base->path;
-        if (r->query.length) {
-          t->query = r->query;
-        } else {
-          t->query = base->query;
-        }
-      } else {
-        if (r->path.data[0] != '/') {
-          t->path_base = base->path;
-        }
-        merge(&t->path_base, &t->path);
-        t->query = r->query;
+      if (r.path.data[0] != '/') {
+        t.path_prefix = base.path;
       }
-      t->authority = base->authority;
+
+      merge(&t.path_prefix, &t.path);
+      t.query = r.query;
     }
-    t->scheme   = base->scheme;
-    t->fragment = r->fragment;
+
+    t.authority = base.authority;
   }
+
+  t.scheme   = base.scheme;
+  t.fragment = r.fragment;
+
+  return t;
 }
 
-/** Write the path of `uri` starting at index `i` */
-static size_t
-write_path_tail(SerdWriteFunc            sink,
-                void* const              stream,
-                const SerdURIView* const uri,
-                const size_t             i)
+SerdURIView
+serd_relative_uri(const SerdURIView uri, const SerdURIView base)
 {
-  SERD_DISABLE_NULL_WARNINGS
-
-  size_t len = 0;
-  if (i < uri->path_base.length) {
-    len += sink(uri->path_base.data + i, uri->path_base.length - i, stream);
+  if (!uri_is_related(&uri, &base)) {
+    return uri;
   }
 
-  if (uri->path.data) {
-    if (i < uri->path_base.length) {
-      len += sink(uri->path.data, uri->path.length, stream);
-    } else {
-      const size_t j = (i - uri->path_base.length);
-      len += sink(uri->path.data + j, uri->path.length - j, stream);
-    }
-  }
+  SerdURIView result = SERD_URI_NULL;
 
-  return len;
+  // Regardless of the path, the query and/or fragment come along
+  result.query    = uri.query;
+  result.fragment = uri.fragment;
 
-  SERD_RESTORE_WARNINGS
-}
-
-/** Write the path of `uri` relative to the path of `base`. */
-static size_t
-write_rel_path(SerdWriteFunc            sink,
-               void* const              stream,
-               const SerdURIView* const uri,
-               const SerdURIView* const base)
-{
-  const size_t path_len = uri_path_len(uri);
-  const size_t base_len = uri_path_len(base);
+  const size_t path_len = uri_path_len(&uri);
+  const size_t base_len = uri_path_len(&base);
   const size_t min_len  = (path_len < base_len) ? path_len : base_len;
 
   // Find the last separator common to both paths
   size_t last_shared_sep = 0;
   size_t i               = 0;
-  for (; i < min_len && uri_path_at(uri, i) == uri_path_at(base, i); ++i) {
-    if (uri_path_at(uri, i) == '/') {
+  for (; i < min_len && uri_path_at(&uri, i) == uri_path_at(&base, i); ++i) {
+    if (uri_path_at(&uri, i) == '/') {
       last_shared_sep = i;
     }
   }
 
-  if (i == path_len && i == base_len) { // Paths are identical
-    return 0;
+  // If the URI and base URI have identical paths, the relative path is empty
+  if (i == path_len && i == base_len) {
+    result.path.data   = uri.path.data;
+    result.path.length = 0;
+    return result;
   }
+
+  // Otherwise, we need to build the relative path out of string slices
 
   // Find the number of up references ("..") required
   size_t up = 0;
   for (size_t s = last_shared_sep + 1; s < base_len; ++s) {
-    if (uri_path_at(base, s) == '/') {
+    if (uri_path_at(&base, s) == '/') {
       ++up;
     }
   }
 
-  // Write up references
-  size_t len = 0;
-  for (size_t u = 0; u < up; ++u) {
-    len += sink("../", 3, stream);
-  }
-
-  // Write suffix
-  return len + write_path_tail(sink, stream, uri, last_shared_sep + 1);
-}
-
-static uint8_t
-serd_uri_path_starts_without_slash(const SerdURIView* uri)
-{
-  return ((uri->path_base.length || uri->path.length) &&
-          ((!uri->path_base.length || uri->path_base.data[0] != '/') &&
-           (!uri->path.length || uri->path.data[0] != '/')));
-}
-
-/// See http://tools.ietf.org/html/rfc3986#section-5.3
-size_t
-serd_uri_serialise_relative(const SerdURIView* const uri,
-                            const SerdURIView* const base,
-                            const SerdURIView* const root,
-                            SerdWriteFunc            sink,
-                            void* const              stream)
-{
-  assert(uri);
-  assert(sink);
-
-  size_t     len = 0;
-  const bool relative =
-    root ? uri_is_under(uri, root) : uri_is_related(uri, base);
-
-  if (relative) {
-    len = write_rel_path(sink, stream, uri, base);
-  }
-
-  SERD_DISABLE_NULL_WARNINGS
-
-  if (!relative || (!len && base->query.data)) {
-    if (uri->scheme.data) {
-      len += sink(uri->scheme.data, uri->scheme.length, stream);
-      len += sink(":", 1, stream);
+  if (up > 0) {
+    if (last_shared_sep < uri.path_prefix.length) {
+      return SERD_URI_NULL;
     }
-    if (uri->authority.data) {
-      len += sink("//", 2, stream);
-      len += sink(uri->authority.data, uri->authority.length, stream);
 
-      const bool authority_ends_with_slash =
-        (uri->authority.length > 0 &&
-         uri->authority.data[uri->authority.length - 1] == '/');
+    // Special representation: NULL buffer and len set to the depth
+    result.path_prefix.length = up;
+  }
 
-      if (!authority_ends_with_slash &&
-          serd_uri_path_starts_without_slash(uri)) {
-        // Special case: ensure path begins with a slash
-        // https://tools.ietf.org/html/rfc3986#section-3.2
-        len += sink("/", 1, stream);
+  if (last_shared_sep < uri.path_prefix.length) {
+    result.path_prefix.data   = uri.path_prefix.data + last_shared_sep + 1;
+    result.path_prefix.length = uri.path_prefix.length - last_shared_sep - 1;
+    result.path               = uri.path;
+  } else {
+    result.path.data   = uri.path.data + last_shared_sep + 1;
+    result.path.length = uri.path.length - last_shared_sep - 1;
+  }
+
+  return result;
+}
+
+bool
+serd_uri_is_within(const SerdURIView uri, const SerdURIView base)
+{
+  if (!base.scheme.length || !slice_equals(&base.scheme, &uri.scheme) ||
+      !slice_equals(&base.authority, &uri.authority)) {
+    return false;
+  }
+
+  bool         differ   = false;
+  const size_t path_len = uri_path_len(&uri);
+  const size_t base_len = uri_path_len(&base);
+
+  size_t last_base_slash = 0;
+  for (size_t i = 0; i < path_len && i < base_len; ++i) {
+    const char u = uri_path_at(&uri, i);
+    const char b = uri_path_at(&base, i);
+
+    differ = differ || u != b;
+    if (b == '/') {
+      last_base_slash = i;
+      if (differ) {
+        return false;
       }
     }
-    len += write_path_tail(sink, stream, uri, 0);
   }
 
-  if (uri->query.data) {
-    len += sink("?", 1, stream);
-    len += sink(uri->query.data, uri->query.length, stream);
+  for (size_t i = last_base_slash + 1; i < base_len; ++i) {
+    if (uri_path_at(&base, i) == '/') {
+      return false;
+    }
   }
 
-  if (uri->fragment.data) {
-    // Note uri->fragment.data includes the leading '#'
-    len += sink(uri->fragment.data, uri->fragment.length, stream);
+  return true;
+}
+
+size_t
+serd_uri_string_length(const SerdURIView uri)
+{
+  size_t len = 0;
+
+  if (uri.scheme.data) {
+    len += uri.scheme.length + 1;
   }
 
-  SERD_RESTORE_WARNINGS
+  if (uri.authority.data) {
+    const bool needs_extra_slash =
+      (uri.authority.length && uri_path_len(&uri) &&
+       uri_path_at(&uri, 0) != '/');
+
+    len += 2 + uri.authority.length + needs_extra_slash;
+  }
+
+  if (uri.path_prefix.data) {
+    len += uri.path_prefix.length;
+  } else if (uri.path_prefix.length) {
+    len += 3 * uri.path_prefix.length;
+  }
+
+  if (uri.path.data) {
+    len += uri.path.length;
+  }
+
+  if (uri.query.data) {
+    len += uri.query.length + 1;
+  }
+
+  if (uri.fragment.data) {
+    len += uri.fragment.length;
+  }
 
   return len;
 }
 
 /// See http://tools.ietf.org/html/rfc3986#section-5.3
 size_t
-serd_uri_serialise(const SerdURIView* const uri,
-                   SerdWriteFunc            sink,
-                   void* const              stream)
+serd_write_uri(const SerdURIView uri, SerdWriteFunc sink, void* const stream)
 {
-  assert(uri);
   assert(sink);
-  return serd_uri_serialise_relative(uri, NULL, NULL, sink, stream);
+
+  size_t len = 0;
+
+  if (uri.scheme.data) {
+    len += sink(uri.scheme.data, uri.scheme.length, stream);
+    len += sink(":", 1, stream);
+  }
+
+  if (uri.authority.data) {
+    len += sink("//", 2, stream);
+    len += sink(uri.authority.data, uri.authority.length, stream);
+
+    if (uri.authority.length && uri_path_len(&uri) &&
+        uri_path_at(&uri, 0) != '/') {
+      // Special case: ensure path begins with a slash
+      // https://tools.ietf.org/html/rfc3986#section-3.2
+      len += sink("/", 1, stream);
+    }
+  }
+
+  if (uri.path_prefix.data) {
+    len += sink(uri.path_prefix.data, uri.path_prefix.length, stream);
+  } else if (uri.path_prefix.length) {
+    for (size_t i = 0; i < uri.path_prefix.length; ++i) {
+      len += sink("../", 3, stream);
+    }
+  }
+
+  if (uri.path.data) {
+    len += sink(uri.path.data, uri.path.length, stream);
+  }
+
+  if (uri.query.data) {
+    len += sink("?", 1, stream);
+    len += sink(uri.query.data, uri.query.length, stream);
+  }
+
+  if (uri.fragment.data) {
+    // Note that uri.fragment.data includes the leading '#'
+    len += sink(uri.fragment.data, uri.fragment.length, stream);
+  }
+
+  return len;
 }

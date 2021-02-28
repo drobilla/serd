@@ -161,24 +161,6 @@ serd_node_new_uri(const SerdURIView* SERD_NONNULL  uri,
                   SerdURIView* SERD_NULLABLE       out);
 
 /**
-   Create a new node by serialising `uri` into a new relative URI.
-
-   @param uri The URI to serialise.
-
-   @param base Base URI to make `uri` relative to, if possible.
-
-   @param root Root URI for resolution (see serd_uri_serialise_relative()).
-
-   @param out Set to the parsing of the new URI (i.e. points only to
-   memory owned by the new returned node).
-*/
-SERD_API SerdNode
-serd_node_new_relative_uri(const SerdURIView* SERD_NONNULL  uri,
-                           const SerdURIView* SERD_NULLABLE base,
-                           const SerdURIView* SERD_NULLABLE root,
-                           SerdURIView* SERD_NULLABLE       out);
-
-/**
    Create a new node by serialising `d` into an xsd:decimal string.
 
    The resulting node will always contain a '.', start with a digit, and end
