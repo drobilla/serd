@@ -409,6 +409,44 @@ serd_uri_is_within(const SerdURIView uri, const SerdURIView base)
   return true;
 }
 
+size_t
+serd_uri_string_length(const SerdURIView uri)
+{
+  size_t len = 0;
+
+  if (uri.scheme.buf) {
+    len += uri.scheme.len + 1;
+  }
+
+  if (uri.authority.buf) {
+    const bool needs_extra_slash =
+      (uri.authority.len > 0 && uri_path_len(&uri) > 0 &&
+       uri_path_at(&uri, 0) != '/');
+
+    len += 2 + uri.authority.len + needs_extra_slash;
+  }
+
+  if (uri.path_prefix.buf) {
+    len += uri.path_prefix.len;
+  } else if (uri.path_prefix.len) {
+    len += 3 * uri.path_prefix.len;
+  }
+
+  if (uri.path.buf) {
+    len += uri.path.len;
+  }
+
+  if (uri.query.buf) {
+    len += uri.query.len + 1;
+  }
+
+  if (uri.fragment.buf) {
+    len += uri.fragment.len;
+  }
+
+  return len;
+}
+
 /// See http://tools.ietf.org/html/rfc3986#section-5.3
 size_t
 serd_write_uri(const SerdURIView   uri,
