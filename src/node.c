@@ -87,25 +87,6 @@ serd_node_check_padding(const SerdNode* node)
 }
 
 static size_t
-serd_uri_string_length(const SerdURIView* uri)
-{
-  size_t len = uri->path_prefix.len;
-
-#define ADD_LEN(field, n_delims)     \
-  if ((field).len) {                 \
-    len += (field).len + (n_delims); \
-  }
-
-  ADD_LEN(uri->path, 1)      // + possible leading `/'
-  ADD_LEN(uri->scheme, 1)    // + trailing `:'
-  ADD_LEN(uri->authority, 2) // + leading `//'
-  ADD_LEN(uri->query, 1)     // + leading `?'
-  ADD_LEN(uri->fragment, 1)  // + leading `#'
-
-  return len + 2; // + 2 for authority `//'
-}
-
-static size_t
 string_sink(const void* buf, size_t size, size_t nmemb, void* stream)
 {
   char** ptr = (char**)stream;
@@ -288,7 +269,7 @@ serd_new_typed_literal_uri(const SerdStringView str,
                            const SerdNodeFlags  flags,
                            const SerdURIView    datatype_uri)
 {
-  const size_t datatype_uri_len = serd_uri_string_length(&datatype_uri);
+  const size_t datatype_uri_len = serd_uri_string_length(datatype_uri);
   const size_t len              = serd_node_pad_size(str.len);
   const size_t total_len        = len + sizeof(SerdNode) + datatype_uri_len;
 
@@ -302,6 +283,7 @@ serd_new_typed_literal_uri(const SerdStringView str,
   char*           ptr           = serd_node_buffer(datatype_node);
 
   const size_t actual_len = serd_write_uri(datatype_uri, string_sink, &ptr);
+  assert(actual_len == datatype_uri_len);
 
   serd_node_buffer(datatype_node)[actual_len] = '\0';
   datatype_node->length                       = actual_len;
@@ -473,10 +455,12 @@ serd_new_uri(const SerdStringView str)
 SerdNode*
 serd_new_parsed_uri(const SerdURIView uri)
 {
-  const size_t    len        = serd_uri_string_length(&uri);
+  const size_t    len        = serd_uri_string_length(uri);
   SerdNode* const node       = serd_node_malloc(len, 0, SERD_URI);
   char*           ptr        = serd_node_buffer(node);
   const size_t    actual_len = serd_write_uri(uri, string_sink, &ptr);
+
+  assert(actual_len == len);
 
   serd_node_buffer(node)[actual_len] = '\0';
   node->length                       = actual_len;
@@ -489,10 +473,12 @@ static SerdNode*
 serd_new_from_uri(const SerdURIView uri, const SerdURIView base)
 {
   const SerdURIView abs_uri    = serd_resolve_uri(uri, base);
-  const size_t      len        = serd_uri_string_length(&abs_uri);
+  const size_t      len        = serd_uri_string_length(abs_uri);
   SerdNode*         node       = serd_node_malloc(len, 0, SERD_URI);
   char*             ptr        = serd_node_buffer(node);
   const size_t      actual_len = serd_write_uri(abs_uri, string_sink, &ptr);
+
+  assert(actual_len == len);
 
   serd_node_buffer(node)[actual_len] = '\0';
   node->length                       = actual_len;
