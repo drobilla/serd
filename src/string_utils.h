@@ -97,7 +97,7 @@ is_base64(const int c)
 static inline bool
 is_windows_path(const char* path)
 {
-  return is_alpha(path[0]) && (path[1] == ':' || path[1] == '|') &&
+  return is_alpha(path[0]) && (path[1] == ':') &&
          (path[2] == '/' || path[2] == '\\');
 }
 

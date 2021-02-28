@@ -8,7 +8,6 @@
 #include "try.h"
 #include "turtle.h"
 #include "uri_utils.h"
-#include "warnings.h"
 
 #include <serd/attributes.h>
 #include <serd/buffer.h>
@@ -787,13 +786,9 @@ write_IRIREF(SerdWriter* const writer, const SerdNode* const node)
 
   // Resolve the input URI reference to a (hopefully) absolute URI
   SerdURIView in_base_uri;
-  SerdURIView uri;
-  SerdURIView abs_uri;
   serd_env_base_uri(writer->env, &in_base_uri);
-  SERD_DISABLE_NULL_WARNINGS
-  serd_uri_parse(node->buf, &uri);
-  SERD_RESTORE_WARNINGS
-  serd_uri_resolve(&uri, &in_base_uri, &abs_uri);
+  const SerdURIView uri     = serd_parse_uri(node->buf);
+  const SerdURIView abs_uri = serd_resolve_uri(uri, in_base_uri);
 
   // Determine if the absolute URI should be written, or make it relative again
   const bool rooted       = uri_is_under(&writer->base_uri, &writer->root_uri);
@@ -801,9 +796,9 @@ write_IRIREF(SerdWriter* const writer, const SerdNode* const node)
   UriSinkContext     ctx  = {writer, SERD_SUCCESS};
   if (!uri_is_under(&abs_uri, root) || writer->syntax == SERD_NTRIPLES ||
       writer->syntax == SERD_NQUADS) {
-    serd_uri_serialise(&abs_uri, uri_sink, &ctx);
+    serd_write_uri(abs_uri, uri_sink, &ctx);
   } else {
-    serd_uri_serialise_relative(&uri, &writer->base_uri, root, uri_sink, &ctx);
+    serd_write_uri(serd_relative_uri(uri, writer->base_uri), uri_sink, &ctx);
   }
 
   return esink(">", 1, writer);
@@ -1327,9 +1322,7 @@ serd_writer_set_root_uri(SerdWriter* const writer, const SerdNode* const uri)
 
   if (uri && uri->buf) {
     writer->root_node = serd_node_copy(uri);
-    SERD_DISABLE_NULL_WARNINGS
-    serd_uri_parse(uri->buf, &writer->root_uri);
-    SERD_RESTORE_WARNINGS
+    writer->root_uri  = serd_parse_uri(uri->buf);
   } else {
     writer->root_node = SERD_NODE_NULL;
     writer->root_uri  = SERD_URI_NULL;

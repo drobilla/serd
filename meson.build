@@ -42,6 +42,7 @@ if cc.get_id() in ['clang', 'emscripten']
       '-Wno-cast-qual',
       '-Wno-declaration-after-statement',
       '-Wno-format-nonliteral',
+      '-Wno-nrvo',
       '-Wno-padded',
       '-Wno-switch-default',
       '-Wno-unsafe-buffer-usage',

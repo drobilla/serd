@@ -38,6 +38,30 @@ test_uri_string_has_scheme(void)
 }
 
 static void
+test_uri_string_length(void)
+{
+  assert(serd_uri_string_length(serd_parse_uri(NULL)) == 0);
+  assert(serd_uri_string_length(serd_parse_uri("http:")) == 5);
+  assert(serd_uri_string_length(serd_parse_uri("file:///")) == 8);
+  assert(serd_uri_string_length(serd_parse_uri("http://example.org")) == 18);
+  assert(serd_uri_string_length(serd_parse_uri("http://example.org/p")) == 20);
+  assert(serd_uri_string_length(serd_parse_uri("http://example.org?q")) == 20);
+  assert(serd_uri_string_length(serd_parse_uri("http://example.org#f")) == 20);
+  assert(serd_uri_string_length(serd_parse_uri("web+ap://example.org/")) == 21);
+  assert(serd_uri_string_length(serd_parse_uri("wasm-js:")) == 8);
+  assert(serd_uri_string_length(serd_parse_uri("soap.beep:")) == 10);
+
+  // Needs additional slash
+  assert(serd_uri_string_length(serd_resolve_uri(
+           serd_parse_uri("p"), serd_parse_uri("http://example.org"))) == 20);
+
+  // Up references
+  assert(serd_uri_string_length(serd_relative_uri(
+           serd_parse_uri("http://example.org/"),
+           serd_parse_uri("http://example.org/sub/dir/"))) == 6);
+}
+
+static void
 check_file_uri(const char* const hostname,
                const char* const path,
                const bool        escape,
@@ -50,7 +74,7 @@ check_file_uri(const char* const hostname,
 
   SerdNode node         = serd_node_new_file_uri(path, hostname, 0, escape);
   char*    out_hostname = NULL;
-  char*    out_path = serd_file_uri_parse((const char*)node.buf, &out_hostname);
+  char*    out_path = serd_parse_file_uri((const char*)node.buf, &out_hostname);
   assert(expect_string(node.buf, expected_uri));
   assert((hostname && out_hostname) || (!hostname && !out_hostname));
   assert(!hostname || expect_string(hostname, out_hostname));
@@ -123,17 +147,20 @@ test_uri_parsing(void)
 #endif
 
   // Test tolerance of NULL hostname parameter
-  char* const hosted = serd_file_uri_parse("file://host/path", NULL);
+  char* const hosted = serd_parse_file_uri("file://host/path", NULL);
   assert(expect_string(hosted, "/path"));
   serd_free(hosted);
 
+  // Test missing trailing '/' after authority
+  assert(!serd_parse_file_uri("file://truncated", NULL));
+
   // Test tolerance of parsing junk URI escapes
 
-  char* const junk1 = serd_file_uri_parse("file:///foo/%0Xbar", NULL);
+  char* const junk1 = serd_parse_file_uri("file:///foo/%0Xbar", NULL);
   assert(expect_string(junk1, "/foo/bar"));
   serd_free(junk1);
 
-  char* const junk2 = serd_file_uri_parse("file:///foo/%X0bar", NULL);
+  char* const junk2 = serd_parse_file_uri("file:///foo/%X0bar", NULL);
   assert(expect_string(junk2, "/foo/bar"));
   serd_free(junk2);
 }
@@ -159,6 +186,40 @@ test_uri_from_string(void)
   serd_node_free(&base);
 }
 
+static void
+check_is_within(const char* const uri_string,
+                const char* const base_uri_string,
+                const bool        expected)
+{
+  const SerdURIView uri      = serd_parse_uri(uri_string);
+  const SerdURIView base_uri = serd_parse_uri(base_uri_string);
+
+  assert(serd_uri_is_within(uri, base_uri) == expected);
+}
+
+static void
+test_is_within(void)
+{
+  static const char* const base = "http://example.org/base/";
+
+  check_is_within("http://example.org/base/", base, true);
+  check_is_within("http://example.org/base/kid?q", base, true);
+  check_is_within("http://example.org/base/kid", base, true);
+  check_is_within("http://example.org/base/kid#f", base, true);
+  check_is_within("http://example.org/base/kid?q#f", base, true);
+  check_is_within("http://example.org/base/kid/grandkid", base, true);
+
+  check_is_within("http://example.org/base", base, false);
+  check_is_within("http://example.org/based", base, false);
+  check_is_within("http://example.org/bose", base, false);
+  check_is_within("http://example.org/", base, false);
+  check_is_within("http://other.org/base", base, false);
+  check_is_within("ftp://other.org/base", base, false);
+  check_is_within("base", base, false);
+
+  check_is_within("http://example.org/", "rel", false);
+}
+
 static bool
 chunk_equals(const SerdStringView* const a, const SerdStringView* const b)
 {
@@ -168,10 +229,9 @@ chunk_equals(const SerdStringView* const a, const SerdStringView* const b)
 }
 
 static void
-check_relative_uri(const char* const uri_string,
-                   const char* const base_string,
-                   const char* const root_string,
-                   const char* const expected_string)
+check_relative(const char* const uri_string,
+               const char* const base_string,
+               const char* const expected_string)
 {
   assert(uri_string);
   assert(base_string);
@@ -184,25 +244,15 @@ check_relative_uri(const char* const uri_string,
   SerdNode uri_node  = serd_node_new_uri_from_string(uri_string, NULL, &uri);
   SerdNode base_node = serd_node_new_uri_from_string(base_string, NULL, &base);
 
-  SerdNode result_node = SERD_NODE_NULL;
-  if (root_string) {
-    SerdURIView root = SERD_URI_NULL;
-    SerdNode    root_node =
-      serd_node_new_uri_from_string(root_string, NULL, &root);
-
-    result_node = serd_node_new_relative_uri(&uri, &base, &root, &result);
-    serd_node_free(&root_node);
-  } else {
-    result_node = serd_node_new_relative_uri(&uri, &base, NULL, &result);
-  }
+  const SerdURIView rel         = serd_relative_uri(uri, base);
+  SerdNode          result_node = serd_node_new_uri(&rel, NULL, &result);
 
   assert(expect_string(result_node.buf, expected_string));
 
-  SerdURIView expected = SERD_URI_NULL;
-  assert(!serd_uri_parse(expected_string, &expected));
+  const SerdURIView expected = serd_parse_uri(expected_string);
   assert(chunk_equals(&result.scheme, &expected.scheme));
   assert(chunk_equals(&result.authority, &expected.authority));
-  assert(chunk_equals(&result.path_base, &expected.path_base));
+  assert(chunk_equals(&result.path_prefix, &expected.path_prefix));
   assert(chunk_equals(&result.path, &expected.path));
   assert(chunk_equals(&result.query, &expected.query));
   assert(chunk_equals(&result.fragment, &expected.fragment));
@@ -215,120 +265,193 @@ check_relative_uri(const char* const uri_string,
 static void
 test_relative_uri(void)
 {
-  // Unrelated base
+  // URI is already relative (NOOP)
+  check_relative("a/b", "http://example.org/", "a/b");
 
-  check_relative_uri("http://example.org/a/b",
-                     "ftp://example.org/",
-                     NULL,
-                     "http://example.org/a/b");
+  // Base is already relative (NOOP)
+  check_relative("http://example.org/a/b", "a/", "http://example.org/a/b");
 
-  check_relative_uri("http://example.org/a/b",
-                     "http://example.com/",
-                     NULL,
-                     "http://example.org/a/b");
+  // Base is only a scheme (scheme-relative possible but not implemented)
+  check_relative("http://example.org/a/b", "http:", "http://example.org/a/b");
+
+  // Unrelated scheme (NOOP)
+  check_relative(
+    "http://example.org/a/b", "ftp://example.org/", "http://example.org/a/b");
+
+  // Unrelated authority (scheme-relative possible but not implemented)
+  check_relative(
+    "http://example.org/a/b", "http://example.com/", "http://example.org/a/b");
 
   // Related base
+  check_relative("http://example.org/a/b", "http://example.org/", "a/b");
+  check_relative("http://example.org/a/b", "http://example.org/a/", "b");
+  check_relative("http://example.org/a/b", "http://example.org/a/b", "");
+  check_relative("http://example.org/a/b", "http://example.org/a/b/", "../b");
+  check_relative("http://example.org/a/b/", "http://example.org/a/b/", "");
+  check_relative("http://example.org/", "http://example.org/", "");
+  check_relative("http://example.org/", "http://example.org/a", "");
+  check_relative("http://example.org/", "http://example.org/a/", "../");
+  check_relative("http://example.org/", "http://example.org/a/b", "../");
+  check_relative("http://example.org/", "http://example.org/a/b/", "../../");
 
-  check_relative_uri(
-    "http://example.org/a/b", "http://example.org/", NULL, "a/b");
+  // Relative queries and fragments
+  check_relative("http://example.org/p?q", "http://example.org/p", "?q");
+  check_relative("http://example.org/p#f", "http://example.org/p", "#f");
+  check_relative("http://example.org/p?q#f", "http://example.org/p", "?q#f");
+}
 
-  check_relative_uri(
-    "http://example.org/a/b", "http://example.org/a/", NULL, "b");
+static void
+check_uri_string(const SerdURIView uri, const char* const expected)
+{
+  SerdNode node = serd_node_new_uri(&uri, NULL, NULL);
+  assert(expect_string(node.buf, expected));
+  serd_node_free(&node);
+}
 
-  check_relative_uri(
-    "http://example.org/a/b", "http://example.org/a/b", NULL, "");
+static void
+check_resolve(const char* const r, const char* const base, const char* expected)
+{
+  check_uri_string(serd_resolve_uri(serd_parse_uri(r), serd_parse_uri(base)),
+                   expected);
+}
 
-  check_relative_uri(
-    "http://example.org/a/b", "http://example.org/a/b/", NULL, "../b");
+static void
+test_resolve_uri(void)
+{
+  // Relative base (NOOP)
+  check_resolve("rel", "/base", "rel");
 
-  check_relative_uri(
-    "http://example.org/a/b/", "http://example.org/a/b/", NULL, "");
+  // Pathless base (additional slash)
+  check_resolve("rel", "http://example.org", "http://example.org/rel");
+  check_resolve("/", "http://example.org", "http://example.org/");
 
-  check_relative_uri("http://example.org/", "http://example.org/", NULL, "");
+  // Scheme ... (absolute, NOOP)
+  check_resolve("http://example.org/", "ftp:", "http://example.org/");
+  check_resolve("urn:ietf:rfc:3986", "http://", "urn:ietf:rfc:3986");
 
-  check_relative_uri("http://example.org/", "http://example.org/a", NULL, "");
+  // Authority ...
+  check_resolve("//example.org", "http:", "http://example.org");
+  check_resolve("//example.org?q", "http:", "http://example.org?q");
+  check_resolve("//example.org#f", "http:", "http://example.org#f");
+  check_resolve("//example.org?q#f", "http:", "http://example.org?q#f");
+  check_resolve("//example.org/", "http:", "http://example.org/");
+  check_resolve("//example.org/?q", "http:", "http://example.org/?q");
+  check_resolve("//example.org/#f", "http:", "http://example.org/#f");
+  check_resolve("//example.org/?q#f", "http:", "http://example.org/?q#f");
+  check_resolve("//example.com/", "http://example.org/", "http://example.com/");
 
-  check_relative_uri(
-    "http://example.org/", "http://example.org/a/", NULL, "../");
+  // Path ...
+  check_resolve("/p", "http://example.org/b", "http://example.org/p");
+  check_resolve("/p", "http://example.org/b/", "http://example.org/p");
+  check_resolve("/p?q", "http://example.org/b/", "http://example.org/p?q");
+  check_resolve("/p#f", "http://example.org/b/", "http://example.org/p#f");
+  check_resolve("/p?q#f", "http://example.org/b/", "http://example.org/p?q#f");
+  check_resolve("p", "http://example.org/b", "http://example.org/p");
+  check_resolve("p?q", "http://example.org/b", "http://example.org/p?q");
+  check_resolve("p#f", "http://example.org/b", "http://example.org/p#f");
+  check_resolve("p?q#f", "http://example.org/b", "http://example.org/p?q#f");
+  check_resolve("p", "http://example.org", "http://example.org/p");
+  check_resolve("p", "http://example.org/b/", "http://example.org/b/p");
+  check_resolve("p?q", "http://example.org/b/", "http://example.org/b/p?q");
+  check_resolve("p#f", "http://example.org/b/", "http://example.org/b/p#f");
+  check_resolve("p?q#f", "http://example.org/b/", "http://example.org/b/p?q#f");
 
-  check_relative_uri(
-    "http://example.org/", "http://example.org/a/b", NULL, "../");
+  // Path ... (with dots)
+  check_resolve(".", "http://example.org/b/c/", "http://example.org/b/c/");
+  check_resolve("..", "http://example.org/b/c/", "http://example.org/b/");
+  check_resolve("/./p", "http://example.org/b/c/", "http://example.org/p");
+  check_resolve("/../p", "http://example.org/b/c/", "http://example.org/p");
+  check_resolve("./p", "http://example.org/b/c/", "http://example.org/b/c/p");
+  check_resolve("../p", "http://example.org/b/c/", "http://example.org/b/p");
+  check_resolve("../../p", "http://example.org/b/c/", "http://example.org/p");
 
-  check_relative_uri(
-    "http://example.org/", "http://example.org/a/b/", NULL, "../../");
+  // Path ... (file base)
+  check_resolve("p", "file:", "file:p");
+  check_resolve("p", "file://", "file://p");
+  check_resolve("p", "file:///", "file:///p");
+  check_resolve("p", "file://h/", "file://h/p");
+  check_resolve("p", "file://h/b/", "file://h/b/p");
 
-  // Unrelated root
+  // Query ...
+  check_resolve("?q", "http://example.org/b", "http://example.org/b?q");
+  check_resolve("?q#f", "http://example.org/b", "http://example.org/b?q#f");
 
-  check_relative_uri("http://example.org/",
-                     "http://example.org/a/b",
-                     "relative",
-                     "http://example.org/");
+  // Fragment ...
+  check_resolve("#f", "http://example.org/b", "http://example.org/b#f");
+  check_resolve("#f", "http://example.org/b?q", "http://example.org/b?q#f");
+}
 
-  check_relative_uri("http://example.org/",
-                     "http://example.org/a/b",
-                     "ftp://example.org/",
-                     "http://example.org/");
+static void
+check_relative_resolved(const char* const rel_str,
+                        const char* const old_base_str,
+                        const char* const new_base_str,
+                        const char* const expected_str)
+{
+  const SerdURIView rel_uri      = serd_parse_uri(rel_str);
+  const SerdURIView old_base_uri = serd_parse_uri(old_base_str);
+  const SerdURIView new_base_uri = serd_parse_uri(new_base_str);
+  const SerdURIView resolved     = serd_resolve_uri(rel_uri, old_base_uri);
+  const SerdURIView result       = serd_relative_uri(resolved, new_base_uri);
 
-  check_relative_uri("http://example.org/",
-                     "http://example.org/a/b",
-                     "http://example.com/",
-                     "http://example.org/");
-
-  // Related root
-
-  check_relative_uri("http://example.org/a/b",
-                     "http://example.org/",
-                     "http://example.org/c/d",
-                     "http://example.org/a/b");
-
-  check_relative_uri("http://example.org/",
-                     "http://example.org/a/b",
-                     "http://example.org/a/b",
-                     "http://example.org/");
-
-  check_relative_uri("http://example.org/a/b",
-                     "http://example.org/a/b",
-                     "http://example.org/a/b",
-                     "");
-
-  check_relative_uri("http://example.org/a/",
-                     "http://example.org/a/",
-                     "http://example.org/a/",
-                     "");
-
-  check_relative_uri("http://example.org/a/b",
-                     "http://example.org/a/b/c",
-                     "http://example.org/a/b",
-                     "../b");
-
-  check_relative_uri("http://example.org/a",
-                     "http://example.org/a/b/c",
-                     "http://example.org/a/b",
-                     "http://example.org/a");
-
-  // Tolerance of NULL URI output parameter
-  {
-    SerdURIView uri = SERD_URI_NULL;
-    assert(!serd_uri_parse("http://example.org/path", &uri));
-
-    SerdURIView base = SERD_URI_NULL;
-    assert(!serd_uri_parse("http://example.org/", &base));
-
-    SerdNode result_node = serd_node_new_relative_uri(&uri, &base, NULL, NULL);
-
-    assert(result_node.n_bytes == 4U);
-    assert(expect_string(result_node.buf, "path"));
-
-    serd_node_free(&result_node);
+  if (expected_str) {
+    check_uri_string(result, expected_str);
+  } else {
+    assert(!result.scheme.data);
+    assert(!result.scheme.length);
+    assert(!result.authority.data);
+    assert(!result.authority.length);
+    assert(!result.path_prefix.data);
+    assert(!result.path_prefix.length);
+    assert(!result.path.data);
+    assert(!result.path.length);
+    assert(!result.query.data);
+    assert(!result.query.length);
+    assert(!result.fragment.data);
+    assert(!result.fragment.length);
   }
+}
+
+static void
+test_relative_resolved(void)
+{
+  check_relative_resolved(
+    "http://example.org/b/r?q#f", "http:", "http://example.org/o", "b/r?q#f");
+
+  check_relative_resolved(
+    "//example.org/b/r?q#f", "http:", "http://example.org/o", "b/r?q#f");
+
+  check_relative_resolved(
+    "/b/r?q#f", "http://example.org/", "http://example.org/o", "b/r?q#f");
+
+  check_relative_resolved(
+    "?q#f", "http://example.org/b/r", "http://example.org/o", "b/r?q#f");
+
+  check_relative_resolved(
+    "#f", "http://example.org/b/r?q", "http://example.org/o", "b/r?q#f");
+
+  // Shared path prefix is within URI path prefix
+  check_relative_resolved(
+    "r?q#f", "http://example.org/b/", "http://example.org/o", "b/r?q#f");
+
+  // Failure to resolve because up-reference escapes path prefix
+  check_relative_resolved(
+    "r", "http://example.org/b/", "http://example.org/b/r/d", NULL);
+
+  // Resolved input matches new base
+  check_relative_resolved(
+    "r/", "http://example.org/b/", "http://example.org/b/r/", "");
 }
 
 int
 main(void)
 {
   test_uri_string_has_scheme();
+  test_uri_string_length();
   test_uri_parsing();
   test_uri_from_string();
+  test_is_within();
   test_relative_uri();
+  test_resolve_uri();
+  test_relative_resolved();
   return 0;
 }
