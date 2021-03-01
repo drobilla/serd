@@ -40,18 +40,26 @@ eof_test_read(void* buf, size_t size, size_t nmemb, void* stream)
 {
   assert(size == 1);
   assert(nmemb == 1);
+  (void)size;
 
   static const char* const string = "_:s1 <http://example.org/p> _:o1 .\n"
                                     "_:s2 <http://example.org/p> _:o2 .\n";
 
   size_t* count = (size_t*)stream;
-  if (*count == 34 || *count == 35 || *count + nmemb >= strlen(string)) {
+  if (*count == 34) {
+    ++*count;
+    *(char*)buf = 0;
+    return 1;
+  }
+
+  if (*count == 35 || *count + nmemb >= strlen(string) + 2) {
     ++*count;
     return 0;
   }
 
-  memcpy((char*)buf, string + *count, size * nmemb);
+  *(char*)buf = string[*count - (*count > 35 ? 2 : 0)];
   *count += nmemb;
+
   return nmemb;
 }
 
