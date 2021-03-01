@@ -1115,8 +1115,8 @@ read_anon(SerdReader* const reader,
       return r_err(reader, SERD_ERR_BAD_SYNTAX, "`.' inside blank\n");
     }
     read_ws_star(reader);
-    if (reader->end_sink) {
-      reader->end_sink(reader->handle, deref(reader, *dest));
+    if (reader->end_func) {
+      reader->end_func(reader->handle, deref(reader, *dest));
     }
     *ctx.flags = old_flags;
   }
@@ -1464,8 +1464,8 @@ read_base(SerdReader* const reader, const bool sparql, const bool token)
 
   Ref uri = 0;
   TRY(st, read_IRIREF(reader, &uri));
-  if (reader->base_sink) {
-    TRY(st, reader->base_sink(reader->handle, deref(reader, uri)));
+  if (reader->base_func) {
+    TRY(st, reader->base_func(reader->handle, deref(reader, uri)));
   }
   pop_node(reader, uri);
 
@@ -1504,8 +1504,8 @@ read_prefixID(SerdReader* const reader, const bool sparql, const bool token)
   Ref uri = 0;
   TRY(st, read_IRIREF(reader, &uri));
 
-  if (reader->prefix_sink) {
-    st = reader->prefix_sink(
+  if (reader->prefix_func) {
+    st = reader->prefix_func(
       reader->handle, deref(reader, name), deref(reader, uri));
   }
 

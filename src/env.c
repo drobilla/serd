@@ -236,7 +236,7 @@ serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
 
 void
 serd_env_foreach(const SerdEnv* const env,
-                 const SerdPrefixSink func,
+                 const SerdPrefixFunc func,
                  void* const          handle)
 {
   for (size_t i = 0; i < env->n_prefixes; ++i) {

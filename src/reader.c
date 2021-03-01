@@ -38,7 +38,7 @@ r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
   va_start(args, fmt);
   const Cursor* const cur = &reader->source.cur;
   const SerdError     e = {st, cur->filename, cur->line, cur->col, fmt, &args};
-  serd_error(reader->error_sink, reader->error_handle, &e);
+  serd_error(reader->error_func, reader->error_handle, &e);
   va_end(args);
   return st;
 }
@@ -135,9 +135,9 @@ emit_statement(SerdReader* const reader, const ReadContext ctx, const Ref o)
     graph = reader->default_graph;
   }
 
-  const SerdStatus st = !reader->statement_sink
+  const SerdStatus st = !reader->statement_func
                           ? SERD_SUCCESS
-                          : reader->statement_sink(reader->handle,
+                          : reader->statement_func(reader->handle,
                                                    *ctx.flags,
                                                    graph,
                                                    deref(reader, ctx.subject),
@@ -172,18 +172,18 @@ SerdReader*
 serd_reader_new(const SerdSyntax syntax,
                 void* const      handle,
                 void (*const free_handle)(void*),
-                const SerdBaseSink      base_sink,
-                const SerdPrefixSink    prefix_sink,
-                const SerdStatementSink statement_sink,
-                const SerdEndSink       end_sink)
+                const SerdBaseFunc      base_func,
+                const SerdPrefixFunc    prefix_func,
+                const SerdStatementFunc statement_func,
+                const SerdEndFunc       end_func)
 {
   SerdReader* me     = (SerdReader*)calloc(1, sizeof(SerdReader));
   me->handle         = handle;
   me->free_handle    = free_handle;
-  me->base_sink      = base_sink;
-  me->prefix_sink    = prefix_sink;
-  me->statement_sink = statement_sink;
-  me->end_sink       = end_sink;
+  me->base_func      = base_func;
+  me->prefix_func    = prefix_func;
+  me->statement_func = statement_func;
+  me->end_func       = end_func;
   me->default_graph  = NULL;
   me->stack          = serd_stack_new(SERD_PAGE_SIZE);
   me->syntax         = syntax;
@@ -205,10 +205,10 @@ serd_reader_set_strict(SerdReader* const reader, const bool strict)
 
 void
 serd_reader_set_error_sink(SerdReader* const   reader,
-                           const SerdErrorSink error_sink,
+                           const SerdErrorFunc error_func,
                            void* const         error_handle)
 {
-  reader->error_sink   = error_sink;
+  reader->error_func   = error_func;
   reader->error_handle = error_handle;
 }
 
