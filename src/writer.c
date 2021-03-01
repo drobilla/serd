@@ -123,7 +123,7 @@ struct SerdWriterImpl {
   SerdURIView     base_uri;
   SerdStack       anon_stack;
   SerdByteSink    byte_sink;
-  SerdErrorSink   error_sink;
+  SerdErrorFunc   error_func;
   void*           error_handle;
   WriteContext    context;
   char*           bprefix;
@@ -180,7 +180,7 @@ w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
   va_list args; // NOLINT(cppcoreguidelines-init-variables)
   va_start(args, fmt);
   const SerdError e = {st, "", 0, 0, fmt, &args};
-  serd_error(writer->error_sink, writer->error_handle, &e);
+  serd_error(writer->error_func, writer->error_handle, &e);
   va_end(args);
   return st;
 }
@@ -1162,10 +1162,10 @@ serd_writer_new(SerdSyntax         syntax,
 
 void
 serd_writer_set_error_sink(SerdWriter*   writer,
-                           SerdErrorSink error_sink,
+                           SerdErrorFunc error_func,
                            void*         error_handle)
 {
-  writer->error_sink   = error_sink;
+  writer->error_func   = error_func;
   writer->error_handle = error_handle;
 }
 
