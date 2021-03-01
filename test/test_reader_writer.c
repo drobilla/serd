@@ -124,10 +124,10 @@ test_write_errors(void)
         serd_reader_new(SERD_TRIG,
                         writer,
                         NULL,
-                        (SerdBaseSink)serd_writer_set_base_uri,
-                        (SerdPrefixSink)serd_writer_set_prefix,
-                        (SerdStatementSink)serd_writer_write_statement,
-                        (SerdEndSink)serd_writer_end_anon);
+                        (SerdBaseFunc)serd_writer_set_base_uri,
+                        (SerdPrefixFunc)serd_writer_set_prefix,
+                        (SerdStatementFunc)serd_writer_write_statement,
+                        (SerdEndFunc)serd_writer_end_anon);
 
       serd_reader_set_error_sink(reader, quiet_error_sink, NULL);
       serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
