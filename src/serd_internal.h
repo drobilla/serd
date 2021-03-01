@@ -33,10 +33,10 @@
 /* Error reporting */
 
 static inline void
-serd_error(SerdErrorSink error_sink, void* handle, const SerdError* e)
+serd_error(SerdErrorFunc error_func, void* handle, const SerdError* e)
 {
-  if (error_sink) {
-    error_sink(handle, e);
+  if (error_func) {
+    error_func(handle, e);
   } else {
     fprintf(stderr, "error: %s:%u:%u: ", e->filename, e->line, e->col);
     vfprintf(stderr, e->fmt, *e->args);
