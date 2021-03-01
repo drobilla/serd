@@ -281,24 +281,28 @@ test_writer(const char* const path)
   assert(serd_sink_write_prefix(iface, lit, lit));
   assert(serd_sink_write_end(iface, lit));
 
-  static const uint8_t buf[]    = {0xEF, 0xBF, 0xBD, 0};
-  const SerdStringView buf_view = {(const char*)buf, 3};
+  static const uint8_t bad_buf[]    = {0xEF, 0xBF, 0xBD, 0};
+  const SerdStringView bad_buf_view = {(const char*)bad_buf, 3};
 
-  SerdNode* s = serd_new_uri(serd_empty_string());
-  SerdNode* p = serd_new_uri(serd_string("http://example.org/pred"));
-  SerdNode* o = serd_new_string(buf_view);
+  SerdNode* s   = serd_new_uri(serd_string("http://example.org"));
+  SerdNode* p   = serd_new_uri(serd_string("http://example.org/pred"));
+  SerdNode* bad = serd_new_string(bad_buf_view);
 
   // Write 3 invalid statements (should write nothing)
-  const SerdNode* junk[][3] = {{s, o, o}, {o, p, o}, {s, o, p}};
+  const SerdNode* junk[][3] = {{s, bad, bad}, {bad, p, bad}, {s, bad, p}};
   for (size_t i = 0; i < sizeof(junk) / (sizeof(SerdNode*) * 3); ++i) {
     assert(serd_sink_write(iface, 0, junk[i][0], junk[i][1], junk[i][2], NULL));
   }
 
+  serd_node_free(bad);
+
   const SerdStringView urn_Type = serd_string("urn:Type");
   const SerdStringView en       = serd_string("en");
 
-  SerdNode* const t         = serd_new_typed_literal(buf_view, urn_Type);
-  SerdNode* const l         = serd_new_plain_literal(buf_view, en);
+  SerdNode* const o = serd_new_string(serd_string("o"));
+  SerdNode* const t = serd_new_typed_literal(serd_string("t"), urn_Type);
+  SerdNode* const l = serd_new_plain_literal(serd_string("l"), en);
+
   const SerdNode* good[][3] = {{s, p, o}, {s, p, t}, {s, p, l}};
 
   for (size_t i = 0; i < sizeof(good) / (sizeof(SerdNode*) * 3); ++i) {
@@ -306,11 +310,14 @@ test_writer(const char* const path)
       !serd_sink_write(iface, 0, good[i][0], good[i][1], good[i][2], NULL));
   }
 
+  static const uint8_t     bad_str_buf[] = {0xFF, 0x90, 'h', 'i', 0};
+  static const uint8_t     bad_uri_buf[] = {'f', 't', 'p', ':', 0xFF, 0x90, 0};
+  static const char* const bad_lit_str   = (const char*)bad_str_buf;
+  static const char* const bad_uri_str   = (const char*)bad_uri_buf;
+
   // Write statements with bad UTF-8 (should be replaced)
-  const char           bad_str[] = {(char)0xFF, (char)0x90, 'h', 'i', 0};
-  const SerdStringView bad_view  = {(const char*)bad_str, 4};
-  SerdNode*            bad_lit   = serd_new_string(bad_view);
-  SerdNode*            bad_uri   = serd_new_uri(bad_view);
+  SerdNode* bad_lit = serd_new_string(serd_string(bad_lit_str));
+  SerdNode* bad_uri = serd_new_uri(serd_string(bad_uri_str));
   assert(!serd_sink_write(iface, 0, s, p, bad_lit, 0));
   assert(!serd_sink_write(iface, 0, s, p, bad_uri, 0));
   serd_node_free(bad_uri);
@@ -322,6 +329,7 @@ test_writer(const char* const path)
   serd_node_free(hello);
 
   serd_writer_free(writer);
+
   serd_node_free(lit);
   serd_node_free(o);
   serd_node_free(t);
