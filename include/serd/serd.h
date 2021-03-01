@@ -725,37 +725,37 @@ typedef struct {
 } SerdError;
 
 /**
-   Sink (callback) for errors.
+   Callback function for errors.
 
    @param handle Handle for user data.
    @param error Error description.
 */
-typedef SerdStatus (*SerdErrorSink)(void* SERD_NULLABLE           handle,
+typedef SerdStatus (*SerdErrorFunc)(void* SERD_NULLABLE           handle,
                                     const SerdError* SERD_NONNULL error);
 
 /**
-   Sink (callback) for base URI changes
+   Sink function for base URI changes
 
    Called whenever the base URI of the serialisation changes.
 */
-typedef SerdStatus (*SerdBaseSink)(void* SERD_NULLABLE          handle,
+typedef SerdStatus (*SerdBaseFunc)(void* SERD_NULLABLE          handle,
                                    const SerdNode* SERD_NONNULL uri);
 
 /**
-   Sink (callback) for namespace definitions
+   Sink function for namespace definitions
 
    Called whenever a prefix is defined in the serialisation.
 */
-typedef SerdStatus (*SerdPrefixSink)(void* SERD_NULLABLE          handle,
+typedef SerdStatus (*SerdPrefixFunc)(void* SERD_NULLABLE          handle,
                                      const SerdNode* SERD_NONNULL name,
                                      const SerdNode* SERD_NONNULL uri);
 
 /**
-   Sink (callback) for statements
+   Sink function for statements
 
    Called for every RDF statement in the serialisation.
 */
-typedef SerdStatus (*SerdStatementSink)(void* SERD_NULLABLE           handle,
+typedef SerdStatus (*SerdStatementFunc)(void* SERD_NULLABLE           handle,
                                         SerdStatementFlags            flags,
                                         const SerdNode* SERD_NULLABLE graph,
                                         const SerdNode* SERD_NONNULL  subject,
@@ -763,13 +763,13 @@ typedef SerdStatus (*SerdStatementSink)(void* SERD_NULLABLE           handle,
                                         const SerdNode* SERD_NONNULL  object);
 
 /**
-   Sink (callback) for anonymous node end markers
+   Sink function for anonymous node end markers
 
    This is called to indicate that the anonymous node with the given
    `value` will no longer be referred to by any future statements
    (i.e. the anonymous serialisation of the node is finished).
 */
-typedef SerdStatus (*SerdEndSink)(void* SERD_NULLABLE          handle,
+typedef SerdStatus (*SerdEndFunc)(void* SERD_NULLABLE          handle,
                                   const SerdNode* SERD_NONNULL node);
 
 /**
@@ -846,7 +846,7 @@ serd_env_expand_node(const SerdEnv* SERD_NONNULL  env,
 SERD_API
 void
 serd_env_foreach(const SerdEnv* SERD_NONNULL env,
-                 SerdPrefixSink SERD_NONNULL func,
+                 SerdPrefixFunc SERD_NONNULL func,
                  void* SERD_NULLABLE         handle);
 
 /**
@@ -861,10 +861,10 @@ SerdReader* SERD_ALLOCATED
 serd_reader_new(SerdSyntax          syntax,
                 void* SERD_NULLABLE handle,
                 void (*SERD_NULLABLE free_handle)(void* SERD_NULLABLE),
-                SerdBaseSink SERD_NULLABLE      base_sink,
-                SerdPrefixSink SERD_NULLABLE    prefix_sink,
-                SerdStatementSink SERD_NULLABLE statement_sink,
-                SerdEndSink SERD_NULLABLE       end_sink);
+                SerdBaseFunc SERD_NULLABLE      base_func,
+                SerdPrefixFunc SERD_NULLABLE    prefix_func,
+                SerdStatementFunc SERD_NULLABLE statement_func,
+                SerdEndFunc SERD_NULLABLE       end_func);
 
 /**
    Enable or disable strict parsing
@@ -880,13 +880,13 @@ serd_reader_set_strict(SerdReader* SERD_NONNULL reader, bool strict);
 /**
    Set a function to be called when errors occur during reading.
 
-   The `error_sink` will be called with `handle` as its first argument.  If
+   The `error_func` will be called with `handle` as its first argument.  If
    no error function is set, errors are printed to stderr in GCC style.
 */
 SERD_API
 void
 serd_reader_set_error_sink(SerdReader* SERD_NONNULL    reader,
-                           SerdErrorSink SERD_NULLABLE error_sink,
+                           SerdErrorFunc SERD_NULLABLE error_func,
                            void* SERD_NULLABLE         error_handle);
 
 /// Return the `handle` passed to serd_reader_new()
@@ -1039,13 +1039,13 @@ serd_buffer_sink_finish(SerdBuffer* SERD_NONNULL stream);
 /**
    Set a function to be called when errors occur during writing.
 
-   The `error_sink` will be called with `handle` as its first argument.  If
+   The `error_func` will be called with `handle` as its first argument.  If
    no error function is set, errors are printed to stderr.
 */
 SERD_API
 void
 serd_writer_set_error_sink(SerdWriter* SERD_NONNULL   writer,
-                           SerdErrorSink SERD_NONNULL error_sink,
+                           SerdErrorFunc SERD_NONNULL error_func,
                            void* SERD_NULLABLE        error_handle);
 
 /**

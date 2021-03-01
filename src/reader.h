@@ -59,11 +59,11 @@ typedef struct {
 struct SerdReaderImpl {
   void* handle;
   void (*free_handle)(void* ptr);
-  SerdBaseSink      base_sink;
-  SerdPrefixSink    prefix_sink;
-  SerdStatementSink statement_sink;
-  SerdEndSink       end_sink;
-  SerdErrorSink     error_sink;
+  SerdBaseFunc      base_func;
+  SerdPrefixFunc    prefix_func;
+  SerdStatementFunc statement_func;
+  SerdEndFunc       end_func;
+  SerdErrorFunc     error_func;
   void*             error_handle;
   Ref               rdf_first;
   Ref               rdf_rest;
