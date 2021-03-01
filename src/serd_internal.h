@@ -20,12 +20,12 @@
 /* Error reporting */
 
 static inline void
-serd_error(const SerdErrorSink    error_sink,
+serd_error(const SerdErrorFunc    error_func,
            void* const            handle,
            const SerdError* const e)
 {
-  if (error_sink) {
-    error_sink(handle, e);
+  if (error_func) {
+    error_func(handle, e);
   } else {
     fprintf(stderr, "error: %s:%u:%u: ", e->filename, e->line, e->col);
     vfprintf(stderr, e->fmt, *e->args);
