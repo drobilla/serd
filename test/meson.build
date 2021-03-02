@@ -43,6 +43,7 @@ unit_tests = [
   'node',
   'read_chunk',
   'reader_writer',
+  'sink',
   'string',
   'uri',
   'writer',
