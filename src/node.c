@@ -158,12 +158,12 @@ is_uri_path_char(const uint8_t c)
   case '.':
   case '_':
   case '~':
-  // pchar:
   case ':':
-  case '@':
-  // separator:
-  case '/':
-  // sub-delimeters:
+
+  case '@': // pchar
+  case '/': // separator
+
+  // sub-delimiters:
   case '!':
   case '$':
   case '&':
