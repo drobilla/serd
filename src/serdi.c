@@ -7,7 +7,6 @@
 #include "serd/error.h"
 #include "serd/node.h"
 #include "serd/reader.h"
-#include "serd/sink.h"
 #include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/syntax.h"
@@ -233,16 +232,8 @@ main(int argc, char** argv)
   SerdWriter* const writer = serd_writer_new(
     world, output_syntax, writer_flags, env, serd_file_sink, out_fd);
 
-  SerdReader* const reader =
-    serd_reader_new(world,
-                    input_syntax,
-                    reader_flags,
-                    writer,
-                    NULL,
-                    (SerdBaseFunc)serd_writer_set_base_uri,
-                    (SerdPrefixFunc)serd_writer_set_prefix,
-                    (SerdStatementFunc)serd_writer_write_statement,
-                    (SerdEndFunc)serd_writer_end_anon);
+  SerdReader* const reader = serd_reader_new(
+    world, input_syntax, reader_flags, serd_writer_sink(writer));
 
   if (quiet) {
     serd_world_set_error_func(world, quiet_error_func, NULL);

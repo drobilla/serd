@@ -37,19 +37,10 @@ typedef uint32_t SerdReaderFlags;
 
 /// Create a new RDF reader
 SERD_API SerdReader* ZIX_ALLOCATED
-serd_reader_new(SerdWorld* ZIX_NONNULL world,
-                SerdSyntax             syntax,
-                SerdReaderFlags        flags,
-                void* ZIX_UNSPECIFIED  handle,
-                void (*ZIX_NULLABLE free_handle)(void* ZIX_NULLABLE),
-                SerdBaseFunc ZIX_NULLABLE      base_func,
-                SerdPrefixFunc ZIX_NULLABLE    prefix_func,
-                SerdStatementFunc ZIX_NULLABLE statement_func,
-                SerdEndFunc ZIX_NULLABLE       end_func);
-
-/// Return the `handle` passed to serd_reader_new()
-SERD_PURE_API void* ZIX_UNSPECIFIED
-serd_reader_handle(const SerdReader* ZIX_NONNULL reader);
+serd_reader_new(SerdWorld* ZIX_NONNULL      world,
+                SerdSyntax                  syntax,
+                SerdReaderFlags             flags,
+                const SerdSink* ZIX_NONNULL sink);
 
 /**
    Set a prefix to be added to all blank node identifiers.

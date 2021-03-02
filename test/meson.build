@@ -138,6 +138,7 @@ unit_tests = [
   'node',
   'reader',
   'reader_writer',
+  'sink',
   'string',
   'syntax',
   'terse_write',
