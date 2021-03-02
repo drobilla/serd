@@ -7,6 +7,7 @@
 #include "serd/env.h"
 #include "serd/memory.h"
 #include "serd/node.h"
+#include "serd/sink.h"
 #include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/string_view.h"
@@ -31,7 +32,8 @@ test_write_bad_prefix(void)
   SerdNode* name = serd_new_string(serd_string("eg"));
   SerdNode* uri  = serd_new_uri(serd_string("rel"));
 
-  assert(serd_writer_set_prefix(writer, name, uri) == SERD_BAD_ARG);
+  assert(serd_sink_write_prefix(serd_writer_sink(writer), name, uri) ==
+         SERD_BAD_ARG);
 
   char* const out = serd_buffer_sink_finish(&buffer);
 
@@ -58,7 +60,7 @@ test_write_long_literal(void)
   SerdNode* p = serd_new_uri(serd_string("http://example.org/p"));
   SerdNode* o = serd_new_string(serd_string("hello \"\"\"world\"\"\"!"));
 
-  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o));
+  assert(!serd_sink_write(serd_writer_sink(writer), 0, s, p, o, NULL));
 
   serd_node_free(o);
   serd_node_free(p);
@@ -86,6 +88,8 @@ test_write_nested_anon(void)
 
   assert(writer);
 
+  const SerdSink* const sink = serd_writer_sink(writer);
+
   SerdNode* s0 = serd_new_uri(serd_string("http://example.org/s0"));
   SerdNode* p0 = serd_new_uri(serd_string("http://example.org/p0"));
   SerdNode* b0 = serd_new_blank(serd_string("b0"));
@@ -99,23 +103,19 @@ test_write_nested_anon(void)
   SerdNode* nil =
     serd_new_uri(serd_string("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"));
 
-  assert(
-    !serd_writer_write_statement(writer, SERD_ANON_O_BEGIN, NULL, s0, p0, b0));
+  assert(!serd_sink_write(sink, SERD_ANON_O_BEGIN, s0, p0, b0, NULL));
 
-  assert(!serd_writer_write_statement(
-    writer, SERD_ANON_O_BEGIN | SERD_ANON_CONT, NULL, b0, p1, b1));
+  assert(!serd_sink_write(
+    sink, SERD_ANON_O_BEGIN | SERD_ANON_CONT, b0, p1, b1, NULL));
 
-  assert(
-    !serd_writer_write_statement(writer, SERD_ANON_CONT, NULL, b1, p2, o2));
+  assert(!serd_sink_write(sink, SERD_ANON_CONT, b1, p2, o2, NULL));
 
-  assert(!serd_writer_write_statement(
-    writer, SERD_ANON_CONT | SERD_LIST_O_BEGIN, NULL, b1, p3, nil));
+  assert(!serd_sink_write(
+    sink, SERD_ANON_CONT | SERD_LIST_O_BEGIN, b1, p3, nil, NULL));
 
-  assert(!serd_writer_end_anon(writer, b1));
-  assert(
-    !serd_writer_write_statement(writer, SERD_ANON_CONT, NULL, b0, p4, o4));
-
-  assert(!serd_writer_end_anon(writer, b0));
+  assert(!serd_sink_write_end(sink, b1));
+  assert(!serd_sink_write(sink, SERD_ANON_CONT, b0, p4, o4, NULL));
+  assert(!serd_sink_write_end(sink, b0));
 
   serd_node_free(s0);
   serd_node_free(p0);
@@ -167,11 +167,13 @@ test_writer_cleanup(void)
   SerdEnv*    env    = serd_env_new(serd_empty_string());
   SerdWriter* writer = serd_writer_new(SERD_TURTLE, 0U, env, null_sink, NULL);
 
+  const SerdSink* sink = serd_writer_sink(writer);
+
   SerdNode* s = serd_new_uri(serd_string("http://example.org/s"));
   SerdNode* p = serd_new_uri(serd_string("http://example.org/p"));
   SerdNode* o = serd_new_blank(serd_string("start"));
 
-  st = serd_writer_write_statement(writer, SERD_ANON_O_BEGIN, NULL, s, p, o);
+  st = serd_sink_write(sink, SERD_ANON_O_BEGIN, s, p, o, NULL);
   assert(!st);
 
   // Write the start of several nested anonymous objects
@@ -181,8 +183,7 @@ test_writer_cleanup(void)
 
     SerdNode* next_o = serd_new_blank(serd_string(buf));
 
-    st = serd_writer_write_statement(
-      writer, SERD_ANON_O_BEGIN, NULL, o, p, next_o);
+    st = serd_sink_write(sink, SERD_ANON_O_BEGIN, o, p, next_o, NULL);
 
     serd_node_free(o);
     o = next_o;
@@ -193,7 +194,9 @@ test_writer_cleanup(void)
   assert(!(st = serd_writer_set_base_uri(writer, NULL)));
 
   // Set the base to an empty URI
-  assert(!(st = serd_writer_set_base_uri(writer, NULL)));
+  SerdNode* empty_uri = serd_new_uri(serd_string(""));
+  assert(!(st = serd_sink_write_base(sink, empty_uri)));
+  serd_node_free(empty_uri);
 
   // Free (which could leak if the writer doesn't clean up the stack properly)
   serd_node_free(o);
@@ -216,6 +219,8 @@ test_strict_write(void)
 
   assert(writer);
 
+  const SerdSink* const sink = serd_writer_sink(writer);
+
   const uint8_t bad_str[] = {0xFF, 0x90, 'h', 'i', 0};
 
   SerdNode* s = serd_new_uri(serd_string("http://example.org/s"));
@@ -224,11 +229,8 @@ test_strict_write(void)
   SerdNode* bad_lit = serd_new_string(serd_string((const char*)bad_str));
   SerdNode* bad_uri = serd_new_uri(serd_string((const char*)bad_str));
 
-  assert(serd_writer_write_statement(writer, 0, NULL, s, p, bad_lit) ==
-         SERD_BAD_TEXT);
-
-  assert(serd_writer_write_statement(writer, 0, NULL, s, p, bad_uri) ==
-         SERD_BAD_TEXT);
+  assert(serd_sink_write(sink, 0, s, p, bad_lit, NULL) == SERD_BAD_TEXT);
+  assert(serd_sink_write(sink, 0, s, p, bad_uri, NULL) == SERD_BAD_TEXT);
 
   serd_node_free(bad_uri);
   serd_node_free(bad_lit);
@@ -266,7 +268,10 @@ test_write_error(void)
   writer =
     serd_writer_new(SERD_TURTLE, (SerdWriterFlags)0, env, error_sink, NULL);
   assert(writer);
-  st = serd_writer_write_statement(writer, 0U, NULL, u, u, u);
+
+  const SerdSink* const sink = serd_writer_sink(writer);
+
+  st = serd_sink_write(sink, 0U, u, u, u, NULL);
   assert(st == SERD_BAD_WRITE);
   serd_writer_free(writer);
 
