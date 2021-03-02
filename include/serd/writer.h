@@ -57,10 +57,10 @@ SERD_API
 void
 serd_writer_free(SerdWriter* SERD_NULLABLE writer);
 
-/// Return the env used by `writer`
-SERD_PURE_API
-SerdEnv* SERD_NONNULL
-serd_writer_env(SerdWriter* SERD_NONNULL writer);
+/// Return a sink interface that emits statements via `writer`
+SERD_CONST_API
+const SerdSink* SERD_NONNULL
+serd_writer_sink(SerdWriter* SERD_NONNULL writer);
 
 /**
    Set a function to be called when errors occur during writing.
@@ -109,41 +109,6 @@ SERD_API
 SerdStatus
 serd_writer_set_root_uri(SerdWriter* SERD_NONNULL      writer,
                          const SerdNode* SERD_NULLABLE uri);
-
-/**
-   Set a namespace prefix (and emit directive if applicable).
-
-   Note this function can be safely casted to SerdPrefixSink.
-*/
-SERD_API
-SerdStatus
-serd_writer_set_prefix(SerdWriter* SERD_NONNULL     writer,
-                       const SerdNode* SERD_NONNULL name,
-                       const SerdNode* SERD_NONNULL uri);
-
-/**
-   Write a statement.
-
-   Note this function can be safely casted to SerdStatementSink.
-*/
-SERD_API
-SerdStatus
-serd_writer_write_statement(SerdWriter* SERD_NONNULL      writer,
-                            SerdStatementFlags            flags,
-                            const SerdNode* SERD_NULLABLE graph,
-                            const SerdNode* SERD_NONNULL  subject,
-                            const SerdNode* SERD_NONNULL  predicate,
-                            const SerdNode* SERD_NONNULL  object);
-
-/**
-   Mark the end of an anonymous node's description.
-
-   Note this function can be safely casted to SerdEndSink.
-*/
-SERD_API
-SerdStatus
-serd_writer_end_anon(SerdWriter* SERD_NONNULL      writer,
-                     const SerdNode* SERD_NULLABLE node);
 
 /**
    Finish a write.

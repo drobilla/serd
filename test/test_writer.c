@@ -7,6 +7,7 @@
 #include "serd/env.h"
 #include "serd/memory.h"
 #include "serd/node.h"
+#include "serd/sink.h"
 #include "serd/status.h"
 #include "serd/string_view.h"
 #include "serd/syntax.h"
@@ -28,7 +29,8 @@ test_write_bad_prefix(void)
   SerdNode* name = serd_new_string(serd_string("eg"));
   SerdNode* uri  = serd_new_uri(serd_string("rel"));
 
-  assert(serd_writer_set_prefix(writer, name, uri) == SERD_ERR_BAD_ARG);
+  assert(serd_sink_write_prefix(serd_writer_sink(writer), name, uri) ==
+         SERD_ERR_BAD_ARG);
 
   char* const out = serd_buffer_sink_finish(&buffer);
 
@@ -57,7 +59,7 @@ test_write_long_literal(void)
                                  serd_empty_string(),
                                  serd_empty_string());
 
-  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o));
+  assert(!serd_sink_write(serd_writer_sink(writer), 0, s, p, o, NULL));
 
   serd_node_free(o);
   serd_node_free(p);

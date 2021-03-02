@@ -27,13 +27,7 @@ typedef struct SerdReaderImpl SerdReader;
 /// Create a new RDF reader
 SERD_API
 SerdReader* SERD_ALLOCATED
-serd_reader_new(SerdSyntax          syntax,
-                void* SERD_NULLABLE handle,
-                void (*SERD_NULLABLE free_handle)(void* SERD_NULLABLE),
-                SerdBaseFunc SERD_NULLABLE      base_func,
-                SerdPrefixFunc SERD_NULLABLE    prefix_func,
-                SerdStatementFunc SERD_NULLABLE statement_func,
-                SerdEndFunc SERD_NULLABLE       end_func);
+serd_reader_new(SerdSyntax syntax, const SerdSink* SERD_NONNULL sink);
 
 /**
    Enable or disable strict parsing.
@@ -57,11 +51,6 @@ void
 serd_reader_set_error_sink(SerdReader* SERD_NONNULL    reader,
                            SerdErrorFunc SERD_NULLABLE error_func,
                            void* SERD_NULLABLE         error_handle);
-
-/// Return the `handle` passed to serd_reader_new()
-SERD_PURE_API
-void* SERD_NULLABLE
-serd_reader_handle(const SerdReader* SERD_NONNULL reader);
 
 /**
    Set a prefix to be added to all blank node identifiers.

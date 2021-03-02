@@ -9,7 +9,6 @@
 #include "serd/error.h"
 #include "serd/node.h"
 #include "serd/reader.h"
-#include "serd/sink.h"
 #include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/string_view.h"
@@ -330,13 +329,7 @@ main(int argc, char** argv)
     output_syntax, writer_flags, env, (SerdWriteFunc)fwrite, out_fd);
 
   SerdReader* const reader =
-    serd_reader_new(input_syntax,
-                    writer,
-                    NULL,
-                    (SerdBaseFunc)serd_writer_set_base_uri,
-                    (SerdPrefixFunc)serd_writer_set_prefix,
-                    (SerdStatementFunc)serd_writer_write_statement,
-                    (SerdEndFunc)serd_writer_end_anon);
+    serd_reader_new(input_syntax, serd_writer_sink(writer));
 
   serd_reader_set_strict(reader, !lax);
   if (quiet) {
