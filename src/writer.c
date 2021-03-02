@@ -18,6 +18,7 @@
 #include "env.h"
 #include "node.h"
 #include "serd_internal.h"
+#include "sink.h"
 #include "stack.h"
 #include "string_utils.h"
 #include "uri_utils.h"
@@ -92,6 +93,7 @@ static const SepRule rules[] = {{NULL, 0, 0, 0, 0},
                                 {"\n", 1, 0, 1, 0}};
 
 struct SerdWriterImpl {
+  SerdSink        iface;
   SerdSyntax      syntax;
   SerdWriterFlags flags;
   SerdEnv*        env;
@@ -112,6 +114,11 @@ struct SerdWriterImpl {
 };
 
 typedef enum { WRITE_STRING, WRITE_LONG_STRING } TextContext;
+
+static SerdStatus
+serd_writer_set_prefix(SerdWriter*     writer,
+                       const SerdNode* name,
+                       const SerdNode* uri);
 
 static bool
 write_node(SerdWriter*        writer,
@@ -789,7 +796,7 @@ write_list_obj(SerdWriter* const        writer,
   return false;
 }
 
-SerdStatus
+static SerdStatus
 serd_writer_write_statement(SerdWriter* const        writer,
                             const SerdStatementFlags flags,
                             const SerdNode* const    graph,
@@ -922,7 +929,7 @@ serd_writer_write_statement(SerdWriter* const        writer,
   return SERD_SUCCESS;
 }
 
-SerdStatus
+static SerdStatus
 serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
 {
   if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
@@ -982,6 +989,12 @@ serd_writer_new(SerdSyntax      syntax,
   writer->empty      = true;
   writer->byte_sink  = serd_byte_sink_new(
     ssink, stream, (flags & SERD_WRITE_BULK) ? SERD_PAGE_SIZE : 1);
+
+  writer->iface.handle    = writer;
+  writer->iface.base      = (SerdBaseFunc)serd_writer_set_base_uri;
+  writer->iface.prefix    = (SerdPrefixFunc)serd_writer_set_prefix;
+  writer->iface.statement = (SerdStatementFunc)serd_writer_write_statement;
+  writer->iface.end       = (SerdEndFunc)serd_writer_end_anon;
 
   return writer;
 }
@@ -1089,6 +1102,12 @@ serd_writer_free(SerdWriter* writer)
   serd_byte_sink_free(&writer->byte_sink);
   serd_node_free(writer->root_node);
   free(writer);
+}
+
+const SerdSink*
+serd_writer_sink(SerdWriter* writer)
+{
+  return &writer->iface;
 }
 
 SerdEnv*

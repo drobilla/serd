@@ -57,27 +57,22 @@ typedef struct {
 } ReadContext;
 
 struct SerdReaderImpl {
-  void* handle;
-  void (*free_handle)(void* ptr);
-  SerdBaseFunc      base_func;
-  SerdPrefixFunc    prefix_func;
-  SerdStatementFunc statement_func;
-  SerdEndFunc       end_func;
-  SerdErrorFunc     error_func;
-  void*             error_handle;
-  Ref               rdf_first;
-  Ref               rdf_rest;
-  Ref               rdf_nil;
-  SerdNode*         default_graph;
-  SerdByteSource    source;
-  SerdStack         stack;
-  SerdSyntax        syntax;
-  unsigned          next_id;
-  uint8_t*          buf;
-  char*             bprefix;
-  size_t            bprefix_len;
-  bool              strict; ///< True iff strict parsing
-  bool              seen_genid;
+  const SerdSink* sink;
+  SerdErrorFunc   error_func;
+  void*           error_handle;
+  Ref             rdf_first;
+  Ref             rdf_rest;
+  Ref             rdf_nil;
+  SerdNode*       default_graph;
+  SerdByteSource  source;
+  SerdStack       stack;
+  SerdSyntax      syntax;
+  unsigned        next_id;
+  uint8_t*        buf;
+  char*           bprefix;
+  size_t          bprefix_len;
+  bool            strict; ///< True iff strict parsing
+  bool            seen_genid;
 #ifdef SERD_STACK_CHECK
   Ref*   allocs;   ///< Stack of push offsets
   size_t n_allocs; ///< Number of stack pushes
