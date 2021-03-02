@@ -104,6 +104,7 @@ unit_tests = [
   'free_null',
   'node',
   'reader_writer',
+  'sink',
   'string',
   'uri',
   'writer',

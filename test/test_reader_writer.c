@@ -177,17 +177,16 @@ test_read_chunks(const char* const path)
   fseek(f, 0, SEEK_SET);
 
   ReaderTest* const rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
-  SerdReader* const reader = serd_reader_new(SERD_TURTLE,
-                                             rt,
-                                             free,
-                                             test_base_sink,
-                                             test_prefix_sink,
-                                             test_statement_sink,
-                                             test_end_sink);
+  SerdSink* const   sink   = serd_sink_new(rt, NULL);
+  SerdReader* const reader = serd_reader_new(SERD_TURTLE, sink);
 
   assert(reader);
-  assert(serd_reader_handle(reader) == rt);
+  assert(sink);
   assert(f);
+  serd_sink_set_base_func(sink, test_base_sink);
+  serd_sink_set_prefix_func(sink, test_prefix_sink);
+  serd_sink_set_statement_func(sink, test_statement_sink);
+  serd_sink_set_end_func(sink, test_end_sink);
 
   SerdStatus st = serd_reader_start_stream(reader, f, NULL, false);
   assert(st == SERD_SUCCESS);
@@ -251,24 +250,26 @@ test_read_chunks(const char* const path)
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
 
   serd_reader_free(reader);
+  serd_sink_free(sink);
   fclose(f);
   remove(path);
+  free(rt);
 }
 
 static void
 test_read_string(void)
 {
   ReaderTest* rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
-  SerdReader* reader = serd_reader_new(SERD_TURTLE,
-                                       rt,
-                                       free,
-                                       test_base_sink,
-                                       test_prefix_sink,
-                                       test_statement_sink,
-                                       test_end_sink);
+  SerdSink*   sink   = serd_sink_new(rt, NULL);
+  SerdReader* reader = serd_reader_new(SERD_TURTLE, sink);
 
   assert(reader);
-  assert(serd_reader_handle(reader) == rt);
+  assert(sink);
+
+  serd_sink_set_base_func(sink, test_base_sink);
+  serd_sink_set_prefix_func(sink, test_prefix_sink);
+  serd_sink_set_statement_func(sink, test_statement_sink);
+  serd_sink_set_end_func(sink, test_end_sink);
 
   // Test reading a string that ends exactly at the end of input (no newline)
   const SerdStatus st =
@@ -283,6 +284,8 @@ test_read_string(void)
   assert(rt->n_end == 0);
 
   serd_reader_free(reader);
+  serd_sink_free(sink);
+  free(rt);
 }
 
 static size_t
@@ -337,14 +340,8 @@ test_write_errors(void)
       SerdWriter* const writer =
         serd_writer_new(syntax, style, env, faulty_sink, &ctx);
 
-      SerdReader* const reader =
-        serd_reader_new(SERD_TRIG,
-                        writer,
-                        NULL,
-                        (SerdBaseFunc)serd_writer_set_base_uri,
-                        (SerdPrefixFunc)serd_writer_set_prefix,
-                        (SerdStatementFunc)serd_writer_write_statement,
-                        (SerdEndFunc)serd_writer_end_anon);
+      const SerdSink* const sink   = serd_writer_sink(writer);
+      SerdReader* const     reader = serd_reader_new(SERD_TRIG, sink);
 
       serd_reader_set_error_sink(reader, quiet_error_sink, NULL);
       serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
@@ -375,10 +372,10 @@ test_writer(const char* const path)
 
   SerdNode* lit = serd_new_string(serd_string("hello"));
 
-  assert(serd_writer_set_base_uri(writer, lit));
-  assert(serd_writer_set_prefix(writer, lit, lit));
-  assert(serd_writer_end_anon(writer, NULL));
-  assert(serd_writer_env(writer) == env);
+  const SerdSink* const iface = serd_writer_sink(writer);
+  assert(serd_sink_write_base(iface, lit));
+  assert(serd_sink_write_prefix(iface, lit, lit));
+  assert(serd_sink_write_end(iface, lit));
 
   static const uint8_t buf[]    = {0xEF, 0xBF, 0xBD, 0};
   const SerdStringView buf_view = {(const char*)buf, 3};
@@ -390,8 +387,7 @@ test_writer(const char* const path)
   // Write 3 invalid statements (should write nothing)
   const SerdNode* junk[][3] = {{s, o, o}, {o, p, o}, {s, o, p}};
   for (size_t i = 0; i < sizeof(junk) / (sizeof(SerdNode*) * 3); ++i) {
-    assert(serd_writer_write_statement(
-      writer, 0, NULL, junk[i][0], junk[i][1], junk[i][2]));
+    assert(serd_sink_write(iface, 0, junk[i][0], junk[i][1], junk[i][2], NULL));
   }
 
   const SerdStringView empty    = serd_empty_string();
@@ -403,8 +399,8 @@ test_writer(const char* const path)
   const SerdNode* good[][3] = {{s, p, o}, {s, p, t}, {s, p, l}};
 
   for (size_t i = 0; i < sizeof(good) / (sizeof(SerdNode*) * 3); ++i) {
-    assert(!serd_writer_write_statement(
-      writer, 0, NULL, good[i][0], good[i][1], good[i][2]));
+    assert(
+      !serd_sink_write(iface, 0, good[i][0], good[i][1], good[i][2], NULL));
   }
 
   // Write statements with bad UTF-8 (should be replaced)
@@ -412,16 +408,15 @@ test_writer(const char* const path)
   const SerdStringView bad_view  = {(const char*)bad_str, 4};
   SerdNode*            bad_lit   = serd_new_string(bad_view);
   SerdNode*            bad_uri   = serd_new_uri(bad_view);
-  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, bad_lit));
-  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, bad_uri));
-
+  assert(!serd_sink_write(iface, 0, s, p, bad_lit, 0));
+  assert(!serd_sink_write(iface, 0, s, p, bad_uri, 0));
   serd_node_free(bad_uri);
   serd_node_free(bad_lit);
 
   // Write 1 valid statement
-  serd_node_free(o);
-  o = serd_new_string(serd_string("hello"));
-  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o));
+  SerdNode* const hello = serd_new_string(serd_string("hello"));
+  assert(!serd_sink_write(iface, 0, s, p, hello, 0));
+  serd_node_free(hello);
 
   serd_writer_free(writer);
   serd_node_free(lit);
@@ -454,17 +449,16 @@ test_writer(const char* const path)
 static void
 test_reader(const char* path)
 {
-  ReaderTest* rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
-  SerdReader* reader = serd_reader_new(SERD_TURTLE,
-                                       rt,
-                                       free,
-                                       test_base_sink,
-                                       test_prefix_sink,
-                                       test_statement_sink,
-                                       test_end_sink);
-
+  ReaderTest*     rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
+  SerdSink* const sink   = serd_sink_new(rt, NULL);
+  SerdReader*     reader = serd_reader_new(SERD_TURTLE, sink);
+  assert(sink);
   assert(reader);
-  assert(serd_reader_handle(reader) == rt);
+
+  serd_sink_set_base_func(sink, test_base_sink);
+  serd_sink_set_prefix_func(sink, test_prefix_sink);
+  serd_sink_set_statement_func(sink, test_statement_sink);
+  serd_sink_set_end_func(sink, test_end_sink);
 
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
 
@@ -528,6 +522,8 @@ test_reader(const char* path)
   }
 
   serd_reader_free(reader);
+  serd_sink_free(sink);
+  free(rt);
 }
 
 int
