@@ -5,6 +5,7 @@
 #include "env.h"
 #include "node.h"
 #include "serd_internal.h"
+#include "sink.h"
 #include "stack.h"
 #include "string_utils.h"
 #include "try.h"
@@ -16,6 +17,7 @@
 #include "serd/env.h"
 #include "serd/error.h"
 #include "serd/node.h"
+#include "serd/sink.h"
 #include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/stream.h"
@@ -124,6 +126,7 @@ static const SepRule rules[] = {
 #undef SEP_EACH
 
 struct SerdWriterImpl {
+  SerdSink        iface;
   SerdSyntax      syntax;
   SerdWriterFlags flags;
   SerdEnv*        env;
@@ -142,6 +145,11 @@ struct SerdWriterImpl {
 
 typedef enum { WRITE_STRING, WRITE_LONG_STRING } TextContext;
 typedef enum { RESET_GRAPH = 1U << 0U, RESET_INDENT = 1U << 1U } ResetFlag;
+
+SERD_NODISCARD static SerdStatus
+serd_writer_set_prefix(SerdWriter*     writer,
+                       const SerdNode* name,
+                       const SerdNode* uri);
 
 SERD_NODISCARD static SerdStatus
 write_node(SerdWriter*        writer,
@@ -952,7 +960,7 @@ terminate_context(SerdWriter* writer)
   return st;
 }
 
-SerdStatus
+static SerdStatus
 serd_writer_write_statement(SerdWriter* const     writer,
                             SerdStatementFlags    flags,
                             const SerdNode* const graph,
@@ -1103,7 +1111,7 @@ serd_writer_write_statement(SerdWriter* const     writer,
   return st;
 }
 
-SerdStatus
+static SerdStatus
 serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
 {
   SerdStatus st = SERD_SUCCESS;
@@ -1158,6 +1166,12 @@ serd_writer_new(SerdSyntax      syntax,
   writer->context    = context;
   writer->byte_sink  = serd_byte_sink_new(
     ssink, stream, (flags & SERD_WRITE_BULK) ? SERD_PAGE_SIZE : 1);
+
+  writer->iface.handle    = writer;
+  writer->iface.base      = (SerdBaseFunc)serd_writer_set_base_uri;
+  writer->iface.prefix    = (SerdPrefixFunc)serd_writer_set_prefix;
+  writer->iface.statement = (SerdStatementFunc)serd_writer_write_statement;
+  writer->iface.end       = (SerdEndFunc)serd_writer_end_anon;
 
   return writer;
 }
@@ -1278,10 +1292,10 @@ serd_writer_free(SerdWriter* writer)
   free(writer);
 }
 
-SerdEnv*
-serd_writer_env(SerdWriter* writer)
+const SerdSink*
+serd_writer_sink(SerdWriter* writer)
 {
-  return writer->env;
+  return &writer->iface;
 }
 
 size_t
