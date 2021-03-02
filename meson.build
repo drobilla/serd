@@ -95,6 +95,7 @@ sources = [
   'src/n3.c',
   'src/node.c',
   'src/reader.c',
+  'src/sink.c',
   'src/string.c',
   'src/system.c',
   'src/uri.c',

@@ -76,11 +76,14 @@ extern "C" {
 /// Lexical environment for relative URIs or CURIEs (base URI and namespaces)
 typedef struct SerdEnvImpl SerdEnv;
 
-/// Streaming parser that reads a text stream and writes to a statement sink
+/// Streaming reader that reads a text stream and writes to a sink
 typedef struct SerdReaderImpl SerdReader;
 
 /// Streaming serialiser that writes a text stream as statements are pushed
 typedef struct SerdWriterImpl SerdWriter;
+
+/// An interface that receives a stream of RDF data
+typedef struct SerdSinkImpl SerdSink;
 
 /// RDF syntax type
 typedef enum {
@@ -851,6 +854,87 @@ serd_env_foreach(const SerdEnv* SERD_NONNULL env,
 
 /**
    @}
+   @defgroup serd_sink Sink
+   @{
+*/
+
+/// Function to free an opaque handle
+typedef void (*SerdFreeFunc)(void* SERD_NULLABLE ptr);
+
+/**
+   Create a new sink.
+
+   Initially, the sink has no set functions and will do nothing.  Use the
+   serd_sink_set_*_func functions to set handlers for various events.
+
+   @param handle Opaque handle that will be passed to sink functions.
+   @param free_handle Free function to call on handle in serd_sink_free().
+*/
+SERD_API
+SerdSink* SERD_ALLOCATED
+serd_sink_new(void* SERD_NULLABLE        handle,
+              SerdFreeFunc SERD_NULLABLE free_handle);
+
+/// Free `sink`
+SERD_API
+void
+serd_sink_free(SerdSink* SERD_NULLABLE sink);
+
+/// Set a function to be called when the base URI changes
+SERD_API
+SerdStatus
+serd_sink_set_base_func(SerdSink* SERD_NONNULL     sink,
+                        SerdBaseFunc SERD_NULLABLE base_func);
+
+/// Set a function to be called when a namespace prefix is defined
+SERD_API
+SerdStatus
+serd_sink_set_prefix_func(SerdSink* SERD_NONNULL       sink,
+                          SerdPrefixFunc SERD_NULLABLE prefix_func);
+
+/// Set a function to be called when a statement is emitted
+SERD_API
+SerdStatus
+serd_sink_set_statement_func(SerdSink* SERD_NONNULL          sink,
+                             SerdStatementFunc SERD_NULLABLE statement_func);
+
+/// Set a function to be called when an anonymous node ends
+SERD_API
+SerdStatus
+serd_sink_set_end_func(SerdSink* SERD_NONNULL    sink,
+                       SerdEndFunc SERD_NULLABLE end_func);
+
+/// Set the base URI
+SERD_API
+SerdStatus
+serd_sink_write_base(const SerdSink* SERD_NONNULL sink,
+                     const SerdNode* SERD_NONNULL uri);
+
+/// Set a namespace prefix
+SERD_API
+SerdStatus
+serd_sink_write_prefix(const SerdSink* SERD_NONNULL sink,
+                       const SerdNode* SERD_NONNULL name,
+                       const SerdNode* SERD_NONNULL uri);
+
+/// Write a statement from individual nodes
+SERD_API
+SerdStatus
+serd_sink_write(const SerdSink* SERD_NONNULL  sink,
+                SerdStatementFlags            flags,
+                const SerdNode* SERD_NONNULL  subject,
+                const SerdNode* SERD_NONNULL  predicate,
+                const SerdNode* SERD_NONNULL  object,
+                const SerdNode* SERD_NULLABLE graph);
+
+/// Mark the end of an anonymous node
+SERD_API
+SerdStatus
+serd_sink_write_end(const SerdSink* SERD_NONNULL sink,
+                    const SerdNode* SERD_NONNULL node);
+
+/**
+   @}
    @defgroup serd_reader Reader
    @{
 */
@@ -858,13 +942,7 @@ serd_env_foreach(const SerdEnv* SERD_NONNULL env,
 /// Create a new RDF reader
 SERD_API
 SerdReader* SERD_ALLOCATED
-serd_reader_new(SerdSyntax          syntax,
-                void* SERD_NULLABLE handle,
-                void (*SERD_NULLABLE free_handle)(void* SERD_NULLABLE),
-                SerdBaseFunc SERD_NULLABLE      base_func,
-                SerdPrefixFunc SERD_NULLABLE    prefix_func,
-                SerdStatementFunc SERD_NULLABLE statement_func,
-                SerdEndFunc SERD_NULLABLE       end_func);
+serd_reader_new(SerdSyntax syntax, const SerdSink* SERD_NONNULL sink);
 
 /**
    Enable or disable strict parsing
@@ -888,11 +966,6 @@ void
 serd_reader_set_error_sink(SerdReader* SERD_NONNULL    reader,
                            SerdErrorFunc SERD_NULLABLE error_func,
                            void* SERD_NULLABLE         error_handle);
-
-/// Return the `handle` passed to serd_reader_new()
-SERD_PURE_API
-void* SERD_NULLABLE
-serd_reader_handle(const SerdReader* SERD_NONNULL reader);
 
 /**
    Set a prefix to be added to all blank node identifiers.
@@ -1006,6 +1079,11 @@ SERD_API
 void
 serd_writer_free(SerdWriter* SERD_NULLABLE writer);
 
+/// Return a sink interface that emits statements via `writer`
+SERD_CONST_API
+const SerdSink* SERD_NONNULL
+serd_writer_sink(SerdWriter* SERD_NONNULL writer);
+
 /// Return the env used by `writer`
 SERD_PURE_API
 SerdEnv* SERD_NONNULL
@@ -1083,41 +1161,6 @@ SERD_API
 SerdStatus
 serd_writer_set_root_uri(SerdWriter* SERD_NONNULL      writer,
                          const SerdNode* SERD_NULLABLE uri);
-
-/**
-   Set a namespace prefix (and emit directive if applicable).
-
-   Note this function can be safely casted to SerdPrefixSink.
-*/
-SERD_API
-SerdStatus
-serd_writer_set_prefix(SerdWriter* SERD_NONNULL     writer,
-                       const SerdNode* SERD_NONNULL name,
-                       const SerdNode* SERD_NONNULL uri);
-
-/**
-   Write a statement.
-
-   Note this function can be safely casted to SerdStatementSink.
-*/
-SERD_API
-SerdStatus
-serd_writer_write_statement(SerdWriter* SERD_NONNULL      writer,
-                            SerdStatementFlags            flags,
-                            const SerdNode* SERD_NULLABLE graph,
-                            const SerdNode* SERD_NONNULL  subject,
-                            const SerdNode* SERD_NONNULL  predicate,
-                            const SerdNode* SERD_NONNULL  object);
-
-/**
-   Mark the end of an anonymous node's description.
-
-   Note this function can be safely casted to SerdEndSink.
-*/
-SERD_API
-SerdStatus
-serd_writer_end_anon(SerdWriter* SERD_NONNULL      writer,
-                     const SerdNode* SERD_NULLABLE node);
 
 /**
    Finish a write
