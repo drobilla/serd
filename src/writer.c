@@ -577,7 +577,7 @@ write_uri_node(SerdWriter* const     writer,
     }
 
     if (has_scheme && !(writer->flags & SERD_WRITE_UNQUALIFIED) &&
-        serd_env_qualify(writer->env, node, &prefix, &suffix) &&
+        serd_env_qualify_in_place(writer->env, node, &prefix, &suffix) &&
         is_name(serd_node_string(prefix), serd_node_length(prefix)) &&
         is_name(suffix.buf, suffix.len)) {
       write_uri_from_node(writer, prefix);
@@ -629,7 +629,7 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
   switch (writer->syntax) {
   case SERD_NTRIPLES:
   case SERD_NQUADS:
-    if ((st = serd_env_expand(writer->env, node, &prefix, &suffix))) {
+    if ((st = serd_env_expand_in_place(writer->env, node, &prefix, &suffix))) {
       serd_world_errorf(
         writer->world, st, "undefined namespace prefix `%s'\n", node_str);
       return false;
