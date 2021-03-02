@@ -7,6 +7,7 @@
 #include "serd/env.h"
 #include "serd/memory.h"
 #include "serd/node.h"
+#include "serd/sink.h"
 #include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/string_view.h"
@@ -30,7 +31,8 @@ test_write_bad_prefix(void)
   SerdNode* name = serd_new_string(serd_string("eg"));
   SerdNode* uri  = serd_new_uri(serd_string("rel"));
 
-  assert(serd_writer_set_prefix(writer, name, uri) == SERD_ERR_BAD_ARG);
+  assert(serd_sink_write_prefix(serd_writer_sink(writer), name, uri) ==
+         SERD_ERR_BAD_ARG);
 
   char* const out = serd_buffer_sink_finish(&buffer);
 
@@ -59,7 +61,7 @@ test_write_long_literal(void)
                                  serd_empty_string(),
                                  serd_empty_string());
 
-  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o));
+  assert(!serd_sink_write(serd_writer_sink(writer), 0, s, p, o, NULL));
 
   serd_node_free(o);
   serd_node_free(p);
@@ -96,11 +98,13 @@ test_writer_cleanup(void)
   SerdEnv*    env    = serd_env_new(serd_empty_string());
   SerdWriter* writer = serd_writer_new(SERD_TURTLE, 0U, env, null_sink, NULL);
 
+  const SerdSink* sink = serd_writer_sink(writer);
+
   SerdNode* s = serd_new_uri(serd_string("http://example.org/s"));
   SerdNode* p = serd_new_uri(serd_string("http://example.org/p"));
   SerdNode* o = serd_new_blank(serd_string("start"));
 
-  st = serd_writer_write_statement(writer, SERD_ANON_O_BEGIN, NULL, s, p, o);
+  st = serd_sink_write(sink, SERD_ANON_O_BEGIN, s, p, o, NULL);
   assert(!st);
 
   // Write the start of several nested anonymous objects
@@ -110,8 +114,7 @@ test_writer_cleanup(void)
 
     SerdNode* next_o = serd_new_blank(serd_string(buf));
 
-    st = serd_writer_write_statement(
-      writer, SERD_ANON_O_BEGIN, NULL, o, p, next_o);
+    st = serd_sink_write(sink, SERD_ANON_O_BEGIN, o, p, next_o, NULL);
 
     serd_node_free(o);
     o = next_o;
