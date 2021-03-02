@@ -7,7 +7,7 @@
 #include "serd/attributes.h"
 #include "serd/env.h"
 #include "serd/node.h"
-#include "serd/statement.h"
+#include "serd/sink.h"
 #include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/syntax.h"
@@ -60,9 +60,9 @@ serd_writer_new(SerdWorld* ZIX_NONNULL    world,
 SERD_API void
 serd_writer_free(SerdWriter* ZIX_NULLABLE writer);
 
-/// Return the env used by `writer`
-SERD_PURE_API SerdEnv* ZIX_NONNULL
-serd_writer_env(SerdWriter* ZIX_NONNULL writer);
+/// Return a sink interface that emits statements via `writer`
+SERD_CONST_API const SerdSink* ZIX_NONNULL
+serd_writer_sink(SerdWriter* ZIX_NONNULL writer);
 
 /**
    A convenience sink function for writing to a FILE*.
@@ -86,15 +86,6 @@ serd_writer_chop_blank_prefix(SerdWriter* ZIX_NONNULL  writer,
                               const char* ZIX_NULLABLE prefix);
 
 /**
-   Set the current output base URI, and emit a directive if applicable.
-
-   Note this function can be safely casted to #SerdBaseFunc.
-*/
-SERD_API SerdStatus
-serd_writer_set_base_uri(SerdWriter* ZIX_NONNULL      writer,
-                         const SerdNode* ZIX_NULLABLE uri);
-
-/**
    Set the current root URI.
 
    The root URI should be a prefix of the base URI.  The path of the root URI
@@ -107,38 +98,6 @@ serd_writer_set_base_uri(SerdWriter* ZIX_NONNULL      writer,
 SERD_API SerdStatus
 serd_writer_set_root_uri(SerdWriter* ZIX_NONNULL      writer,
                          const SerdNode* ZIX_NULLABLE uri);
-
-/**
-   Set a namespace prefix (and emit directive if applicable).
-
-   Note this function can be safely casted to #SerdPrefixFunc.
-*/
-SERD_API SerdStatus
-serd_writer_set_prefix(SerdWriter* ZIX_NONNULL     writer,
-                       const SerdNode* ZIX_NONNULL name,
-                       const SerdNode* ZIX_NONNULL uri);
-
-/**
-   Write a statement.
-
-   Note this function can be safely casted to #SerdStatementFunc.
-*/
-SERD_API SerdStatus
-serd_writer_write_statement(SerdWriter* ZIX_NONNULL      writer,
-                            SerdStatementFlags           flags,
-                            const SerdNode* ZIX_NULLABLE graph,
-                            const SerdNode* ZIX_NONNULL  subject,
-                            const SerdNode* ZIX_NONNULL  predicate,
-                            const SerdNode* ZIX_NONNULL  object);
-
-/**
-   Mark the end of an anonymous node's description.
-
-   Note this function can be safely casted to #SerdEndFunc.
-*/
-SERD_API SerdStatus
-serd_writer_end_anon(SerdWriter* ZIX_NONNULL      writer,
-                     const SerdNode* ZIX_NULLABLE node);
 
 /**
    Finish a write.

@@ -7,6 +7,7 @@
 #include "serd/env.h"
 #include "serd/memory.h"
 #include "serd/node.h"
+#include "serd/sink.h"
 #include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
@@ -35,7 +36,8 @@ test_write_bad_prefix(void)
   SerdNode* name = serd_new_string(zix_string("eg"));
   SerdNode* uri  = serd_new_uri(zix_string("rel"));
 
-  assert(serd_writer_set_prefix(writer, name, uri) == SERD_BAD_ARG);
+  assert(serd_sink_write_prefix(serd_writer_sink(writer), name, uri) ==
+         SERD_BAD_ARG);
 
   char* const out = serd_buffer_sink_finish(&buffer);
 
@@ -64,7 +66,7 @@ test_write_long_literal(void)
   SerdNode* p = serd_new_uri(zix_string(NS_EG "p"));
   SerdNode* o = serd_new_string(zix_string("hello \"\"\"world\"\"\"!"));
 
-  assert(!serd_writer_write_statement(writer, 0, NULL, s, p, o));
+  assert(!serd_sink_write(serd_writer_sink(writer), 0, s, p, o, NULL));
 
   serd_node_free(o);
   serd_node_free(p);
@@ -95,6 +97,8 @@ test_write_nested_anon(void)
 
   assert(writer);
 
+  const SerdSink* const sink = serd_writer_sink(writer);
+
   SerdNode* s0 = serd_new_uri(zix_string(NS_EG "s0"));
   SerdNode* p0 = serd_new_uri(zix_string(NS_EG "p0"));
   SerdNode* b0 = serd_new_blank(zix_string("b0"));
@@ -108,13 +112,13 @@ test_write_nested_anon(void)
   SerdNode* nil =
     serd_new_uri(zix_string("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"));
 
-  assert(!serd_writer_write_statement(writer, SERD_ANON_O, NULL, s0, p0, b0));
-  assert(!serd_writer_write_statement(writer, SERD_ANON_O, NULL, b0, p1, b1));
-  assert(!serd_writer_write_statement(writer, 0U, NULL, b1, p2, o2));
-  assert(!serd_writer_write_statement(writer, SERD_LIST_O, NULL, b1, p3, nil));
-  assert(!serd_writer_end_anon(writer, b1));
-  assert(!serd_writer_write_statement(writer, 0U, NULL, b0, p4, o4));
-  assert(!serd_writer_end_anon(writer, b0));
+  assert(!serd_sink_write(sink, SERD_ANON_O, s0, p0, b0, NULL));
+  assert(!serd_sink_write(sink, SERD_ANON_O, b0, p1, b1, NULL));
+  assert(!serd_sink_write(sink, 0U, b1, p2, o2, NULL));
+  assert(!serd_sink_write(sink, SERD_LIST_O, b1, p3, nil, NULL));
+  assert(!serd_sink_write_end(sink, b1));
+  assert(!serd_sink_write(sink, 0U, b0, p4, o4, NULL));
+  assert(!serd_sink_write_end(sink, b0));
 
   serd_node_free(s0);
   serd_node_free(p0);
@@ -166,11 +170,13 @@ test_writer_cleanup(void)
   SerdWriter* const writer =
     serd_writer_new(world, SERD_TURTLE, 0U, env, null_sink, NULL);
 
+  const SerdSink* const sink = serd_writer_sink(writer);
+
   SerdNode* const s = serd_new_uri(zix_string(NS_EG "s"));
   SerdNode* const p = serd_new_uri(zix_string(NS_EG "p"));
   SerdNode*       o = serd_new_blank(zix_string("b0"));
 
-  st = serd_writer_write_statement(writer, SERD_ANON_O, NULL, s, p, o);
+  st = serd_sink_write(sink, SERD_ANON_O, s, p, o, NULL);
   assert(!st);
 
   // Write the start of several nested anonymous objects
@@ -180,7 +186,7 @@ test_writer_cleanup(void)
 
     SerdNode* next_o = serd_new_blank(zix_string(buf));
 
-    st = serd_writer_write_statement(writer, SERD_ANON_O, NULL, o, p, next_o);
+    st = serd_sink_write(sink, SERD_ANON_O, o, p, next_o, NULL);
 
     assert(!st);
 
@@ -190,10 +196,11 @@ test_writer_cleanup(void)
 
   // Finish writing without terminating nodes
   assert(!(st = serd_writer_finish(writer)));
-  assert(!(st = serd_writer_set_base_uri(writer, NULL)));
 
   // Set the base to an empty URI
-  assert(!(st = serd_writer_set_base_uri(writer, NULL)));
+  SerdNode* empty_uri = serd_new_uri(zix_string(""));
+  assert(!(st = serd_sink_write_base(sink, empty_uri)));
+  serd_node_free(empty_uri);
 
   // Free (which could leak if the writer doesn't clean up the stack properly)
   serd_node_free(o);
@@ -213,18 +220,20 @@ test_write_bad_anon_stack(void)
   SerdWriter* const writer =
     serd_writer_new(world, SERD_TURTLE, 0U, env, null_sink, NULL);
 
+  const SerdSink* const sink = serd_writer_sink(writer);
+
   SerdNode* s  = serd_new_uri(zix_string(NS_EG "s"));
   SerdNode* p  = serd_new_uri(zix_string(NS_EG "p"));
   SerdNode* b0 = serd_new_blank(zix_string("b0"));
   SerdNode* b1 = serd_new_blank(zix_string("b1"));
   SerdNode* b2 = serd_new_blank(zix_string("b2"));
 
-  st = serd_writer_write_statement(writer, SERD_ANON_O, NULL, s, p, b0);
+  st = serd_sink_write(sink, SERD_ANON_O, s, p, b0, NULL);
   assert(!st);
 
   // (missing call to end the anonymous node here)
 
-  st = serd_writer_write_statement(writer, SERD_ANON_O, NULL, b1, p, b2);
+  st = serd_sink_write(sink, SERD_ANON_O, b1, p, b2, NULL);
   assert(st == SERD_BAD_ARG);
 
   st = serd_writer_finish(writer);
@@ -254,6 +263,8 @@ test_strict_write(void)
 
   assert(writer);
 
+  const SerdSink* const sink = serd_writer_sink(writer);
+
   const uint8_t bad_str[] = {0xFF, 0x90, 'h', 'i', 0};
 
   SerdNode* s = serd_new_uri(zix_string(NS_EG "s"));
@@ -262,11 +273,8 @@ test_strict_write(void)
   SerdNode* bad_lit = serd_new_string(zix_string((const char*)bad_str));
   SerdNode* bad_uri = serd_new_uri(zix_string((const char*)bad_str));
 
-  assert(serd_writer_write_statement(writer, 0, NULL, s, p, bad_lit) ==
-         SERD_BAD_TEXT);
-
-  assert(serd_writer_write_statement(writer, 0, NULL, s, p, bad_uri) ==
-         SERD_BAD_TEXT);
+  assert(serd_sink_write(sink, 0, s, p, bad_lit, NULL) == SERD_BAD_TEXT);
+  assert(serd_sink_write(sink, 0, s, p, bad_uri, NULL) == SERD_BAD_TEXT);
 
   serd_node_free(bad_uri);
   serd_node_free(bad_lit);
@@ -302,7 +310,9 @@ test_write_error(void)
     serd_writer_new(world, SERD_TURTLE, 0U, env, error_sink, NULL);
   assert(writer);
 
-  st = serd_writer_write_statement(writer, 0U, NULL, u, u, u);
+  const SerdSink* const sink = serd_writer_sink(writer);
+
+  st = serd_sink_write(sink, 0U, u, u, u, NULL);
   assert(st == SERD_BAD_WRITE);
   serd_writer_free(writer);
 
@@ -327,7 +337,7 @@ test_write_empty_syntax(void)
     world, SERD_SYNTAX_EMPTY, 0U, env, serd_buffer_sink, &buffer);
 
   assert(writer);
-  assert(!serd_writer_write_statement(writer, 0U, NULL, s, p, o));
+  assert(!serd_sink_write(serd_writer_sink(writer), 0U, s, p, o, NULL));
 
   char* const out = serd_buffer_sink_finish(&buffer);
 

@@ -123,14 +123,12 @@ pop_node(SerdReader* const reader, const Ref ref)
 SerdStatus
 emit_statement(SerdReader* const reader, const ReadContext ctx, const Ref o)
 {
-  const SerdStatus st = !reader->statement_func
-                          ? SERD_SUCCESS
-                          : reader->statement_func(reader->handle,
-                                                   *ctx.flags,
-                                                   deref(reader, ctx.graph),
-                                                   deref(reader, ctx.subject),
-                                                   deref(reader, ctx.predicate),
-                                                   deref(reader, o));
+  const SerdStatus st = serd_sink_write(reader->sink,
+                                        *ctx.flags,
+                                        deref(reader, ctx.subject),
+                                        deref(reader, ctx.predicate),
+                                        deref(reader, o),
+                                        deref(reader, ctx.graph));
 
   *ctx.flags = 0;
   return st;
@@ -156,27 +154,18 @@ SerdReader*
 serd_reader_new(SerdWorld* const      world,
                 const SerdSyntax      syntax,
                 const SerdReaderFlags flags,
-                void* const           handle,
-                void (*const free_handle)(void*),
-                const SerdBaseFunc      base_func,
-                const SerdPrefixFunc    prefix_func,
-                const SerdStatementFunc statement_func,
-                const SerdEndFunc       end_func)
+                const SerdSink* const sink)
 {
   assert(world);
 
-  SerdReader* me     = (SerdReader*)calloc(1, sizeof(SerdReader));
-  me->world          = world;
-  me->handle         = handle;
-  me->free_handle    = free_handle;
-  me->base_func      = base_func;
-  me->prefix_func    = prefix_func;
-  me->statement_func = statement_func;
-  me->end_func       = end_func;
-  me->stack          = serd_stack_new(SERD_PAGE_SIZE);
-  me->syntax         = syntax;
-  me->next_id        = 1;
-  me->strict         = !(flags & SERD_READ_LAX);
+  SerdReader* me = (SerdReader*)calloc(1, sizeof(SerdReader));
+
+  me->world   = world;
+  me->sink    = sink;
+  me->stack   = serd_stack_new(SERD_PAGE_SIZE);
+  me->syntax  = syntax;
+  me->next_id = 1;
+  me->strict  = !(flags & SERD_READ_LAX);
 
   me->rdf_first = push_node(me, SERD_URI, NS_RDF "first", 48);
   me->rdf_rest  = push_node(me, SERD_URI, NS_RDF "rest", 47);
@@ -202,17 +191,7 @@ serd_reader_free(SerdReader* const reader)
 #endif
   free(reader->stack.buf);
   free(reader->bprefix);
-  if (reader->free_handle) {
-    reader->free_handle(reader->handle);
-  }
   free(reader);
-}
-
-void*
-serd_reader_handle(const SerdReader* const reader)
-{
-  assert(reader);
-  return reader->handle;
 }
 
 void

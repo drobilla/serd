@@ -5,6 +5,7 @@
 #include "env.h"
 #include "node.h"
 #include "serd_internal.h"
+#include "sink.h"
 #include "stack.h"
 #include "string_utils.h"
 #include "try.h"
@@ -15,7 +16,9 @@
 #include "serd/env.h"
 #include "serd/error.h"
 #include "serd/node.h"
+#include "serd/sink.h"
 #include "serd/statement.h"
+#include "serd/statement_view.h"
 #include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/syntax.h"
@@ -130,6 +133,7 @@ static const SepRule rules[] = {
 #undef SEP_EACH
 
 struct SerdWriterImpl {
+  SerdSink        iface;
   SerdWorld*      world;
   SerdSyntax      syntax;
   SerdWriterFlags flags;
@@ -147,6 +151,12 @@ struct SerdWriterImpl {
 
 typedef enum { WRITE_STRING, WRITE_LONG_STRING } TextContext;
 typedef enum { RESET_GRAPH = 1U << 0U, RESET_INDENT = 1U << 1U } ResetFlag;
+
+ZIX_NODISCARD static SerdStatus
+serd_writer_set_base_uri(void* handle, const SerdNode* uri);
+
+ZIX_NODISCARD static SerdStatus
+serd_writer_set_prefix(void* handle, const SerdNode* name, const SerdNode* uri);
 
 ZIX_NODISCARD static SerdStatus
 write_node(SerdWriter*        writer,
@@ -944,24 +954,24 @@ terminate_context(SerdWriter* writer)
   return st;
 }
 
-SerdStatus
-serd_writer_write_statement(SerdWriter* const     writer,
-                            SerdStatementFlags    flags,
-                            const SerdNode* const graph,
-                            const SerdNode* const subject,
-                            const SerdNode* const predicate,
-                            const SerdNode* const object)
+static SerdStatus
+serd_writer_write_statement(void* const             handle,
+                            SerdStatementFlags      flags,
+                            const SerdStatementView statement)
 {
+  SerdWriter* const writer = (SerdWriter*)handle;
   assert(writer);
-  assert(subject);
-  assert(predicate);
-  assert(object);
 
   SerdStatus st = SERD_SUCCESS;
 
   if (writer->syntax == SERD_SYNTAX_EMPTY) {
     return SERD_SUCCESS;
   }
+
+  const SerdNode* const subject   = statement.subject;
+  const SerdNode* const predicate = statement.predicate;
+  const SerdNode* const object    = statement.object;
+  const SerdNode* const graph     = statement.graph;
 
   if (!is_resource(subject) || !is_resource(predicate) ||
       ((flags & SERD_ANON_S) && (flags & SERD_LIST_S)) ||   // Nonsense
@@ -1115,9 +1125,10 @@ serd_writer_write_statement(SerdWriter* const     writer,
   return st;
 }
 
-SerdStatus
-serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
+static SerdStatus
+serd_writer_end_anon(void* const handle, const SerdNode* const node)
 {
+  SerdWriter* const writer = (SerdWriter*)handle;
   assert(writer);
 
   SerdStatus st = SERD_SUCCESS;
@@ -1183,6 +1194,12 @@ serd_writer_new(SerdWorld*      world,
   writer->byte_sink  = serd_byte_sink_new(
     ssink, stream, (flags & SERD_WRITE_BULK) ? SERD_PAGE_SIZE : 1);
 
+  writer->iface.handle    = writer;
+  writer->iface.base      = serd_writer_set_base_uri;
+  writer->iface.prefix    = serd_writer_set_prefix;
+  writer->iface.statement = serd_writer_write_statement;
+  writer->iface.end       = (SerdEndFunc)serd_writer_end_anon;
+
   return writer;
 }
 
@@ -1204,8 +1221,9 @@ serd_writer_chop_blank_prefix(SerdWriter* writer, const char* prefix)
 }
 
 SerdStatus
-serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
+serd_writer_set_base_uri(void* const handle, const SerdNode* const uri)
 {
+  SerdWriter* const writer = (SerdWriter*)handle;
   assert(writer);
 
   SERD_DISABLE_NULL_WARNINGS
@@ -1255,13 +1273,12 @@ serd_writer_set_root_uri(SerdWriter* writer, const SerdNode* uri)
 }
 
 SerdStatus
-serd_writer_set_prefix(SerdWriter*     writer,
-                       const SerdNode* name,
-                       const SerdNode* uri)
+serd_writer_set_prefix(void* const           handle,
+                       const SerdNode* const name,
+                       const SerdNode* const uri)
 {
+  SerdWriter* const writer = (SerdWriter*)handle;
   assert(writer);
-  assert(name);
-  assert(uri);
 
   const ZixStringView name_string = serd_node_string_view(name);
   const ZixStringView uri_string  = serd_node_string_view(uri);
@@ -1301,11 +1318,11 @@ serd_writer_free(SerdWriter* writer)
   free(writer);
 }
 
-SerdEnv*
-serd_writer_env(SerdWriter* writer)
+const SerdSink*
+serd_writer_sink(SerdWriter* writer)
 {
   assert(writer);
-  return writer->env;
+  return &writer->iface;
 }
 
 size_t
