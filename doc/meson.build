@@ -10,6 +10,8 @@ docdir = get_option('datadir') / 'doc'
 doxygen = find_program('doxygen', required: get_option('docs'))
 sphinx_build = find_program('sphinx-build', required: get_option('docs'))
 
+subdir('man')
+
 if doxygen.found() and sphinx_build.found()
   sphinxygen = find_program('sphinxygen', required: false)
   if not sphinxygen.found()
@@ -22,7 +24,6 @@ endif
 
 build_docs = doxygen.found() and sphinxygen.found() and sphinx_build.found()
 if build_docs
+subdir('_static')
   subdir('c')
 endif
-
-subdir('man')
