@@ -13,6 +13,63 @@ subdir('man')
 # Reference #
 #############
 
+doc_config = configuration_data()
+if is_variable('mandoc') and mandoc.found()
+  doc_config.set('SERD_COMMAND_LINE_INDEX_ENTRY', '\n   command_line_tools\n')
+  doc_config.set('SERD_FILTER_LINK', '`serd-filter <../man/serd-filter.html>`_')
+  doc_config.set('SERD_PIPE_LINK', '`serd-pipe <../man/serd-pipe.html>`_')
+  doc_config.set('SERD_SORT_LINK', '`serd-sort <../man/serd-sort.html>`_')
+else
+  doc_config.set('SERD_COMMAND_LINE_INDEX_ENTRY', '')
+  doc_config.set('SERD_FILTER_LINK', '``serd-filter``')
+  doc_config.set('SERD_PIPE_LINK', '``serd-pipe``')
+  doc_config.set('SERD_SORT_LINK', '``serd-sort``')
+endif
+
+command_line_tools_rst = configure_file(
+  configuration: doc_config,
+  input: files('command_line_tools.rst.in'),
+  output: 'command_line_tools.rst',
+)
+
+c_rst_files = files(
+  'data_model.rst',
+  'getting_started.rst',
+  'index.rst',
+  'model.rst',
+  'nodes.rst',
+  'overview.rst',
+  'reading_and_writing.rst',
+  'statements.rst',
+  'stream_processing.rst',
+  'string_views.rst',
+  'using_serd.rst',
+  'world.rst',
+)
+
+# Copy hand-written documentation files
+sphinx_input = []
+foreach f : c_rst_files
+  sphinx_input += [
+    configure_file(copy: true, input: f, output: '@PLAINNAME@'),
+  ]
+endforeach
+
+configure_file(
+  copy: true,
+  input: files('overview_code.c'),
+  output: 'overview_code.c',
+)
+
+if not get_option('docs').disabled()
+  executable(
+    'overview_code',
+    files('overview_code.c'),
+    dependencies: [serd_dep],
+    c_args: c_suppressions,
+  )
+endif
+
 # Find required programs
 doxygen = find_program('doxygen', required: get_option('docs'))
 sphinx_build = find_program('sphinx-build', required: get_option('docs'))
@@ -30,6 +87,8 @@ endif
 # Build documentation if all required tools are found
 build_docs = doxygen.found() and sphinxygen.found() and sphinx_build.found()
 if build_docs
+  subdir('_static')
+
   # Warn if the "official" theme isn't present
   pymod = import('python')
   doc_modules = ['sphinx_lv2_theme']
@@ -41,6 +100,7 @@ if build_docs
   # Configure conf.py for Sphinx
   conf_config = configuration_data()
   conf_config.set('SERD_SRCDIR', serd_src_root)
+  conf_config.set('SERD_STATIC_PATH', doc_static_build_dir)
   conf_config.set('SERD_TITLE', get_option('title'))
   conf_config.set('SERD_VERSION', meson.project_version())
   conf_py = configure_file(
@@ -49,16 +109,6 @@ if build_docs
     output: 'conf.py',
   )
 
-  # Copy hand-written documentation files
-  rst_sources = files('index.rst', 'overview.rst')
-  sphinx_input = []
-  foreach f : rst_sources
-    sphinx_input += [
-      configure_file(copy: true, input: f, output: '@PLAINNAME@'),
-    ]
-  endforeach
-
-  # Generate reference documentation input with Doxygen and Sphinxygen
   subdir('xml')
   subdir('api')
 
@@ -71,9 +121,18 @@ if build_docs
 
   # Run Sphinx to generate final documentation for each format
   sphinx_build_command = [sphinx_build] + sphinx_flags
-  foreach format : ['html', 'singlehtml']
+  foreach format : ['epub', 'html', 'singlehtml']
     if not get_option(format).disabled()
       subdir(format)
     endif
   endforeach
+endif
+
+if not meson.is_subproject()
+  summary(
+    'Reference',
+    build_docs,
+    bool_yn: true,
+    section: 'Components',
+  )
 endif

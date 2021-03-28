@@ -1,0 +1,85 @@
+<svg height="52pt" viewBox="0 0 239 52" width="424" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <style type="text/css">
+    svg { background: inherit; fill: #000; }
+    svg > path , g { stroke: #000; }
+    @media (prefers-color-scheme: dark) {
+      svg { fill: #CCC; }
+      svg > path , g { stroke: #CCC; }
+    }
+  </style>
+  <symbol id="a" overflow="visible">
+    <path d="M7.422 0l1.844-7.266H8.219L6.89-1.359 5.234-7.266h-1L2.625-1.359 1.25-7.266H.219L2.079 0h1.015l1.625-5.969L6.406 0zm0 0"/>
+  </symbol>
+  <symbol id="b" overflow="visible">
+    <path d="M.688-5.219V0h.843v-2.719c0-.734.188-1.234.578-1.515.266-.188.516-.25 1.094-.266v-.844c-.14-.015-.219-.031-.328-.031-.531 0-.938.328-1.422 1.094v-.938zm0 0"/>
+  </symbol>
+  <symbol id="c" overflow="visible">
+    <path d="M1.5-5.219H.672V0H1.5zm0-2.047H.656v1.047H1.5zm0 0"/>
+  </symbol>
+  <symbol id="d" overflow="visible">
+    <path d="M2.531-5.219h-.86v-1.437H.845v1.437H.14v.672h.703v3.953c0 .531.36.828 1.015.828.188 0 .391-.03.672-.078V-.53c-.11.015-.234.031-.39.031-.36 0-.47-.094-.47-.469v-3.578h.86zm0 0"/>
+  </symbol>
+  <symbol id="e" overflow="visible">
+    <path d="M5.11-2.328c0-.797-.063-1.281-.204-1.672-.343-.86-1.14-1.375-2.11-1.375-1.468 0-2.39 1.125-2.39 2.828 0 1.719.906 2.781 2.36 2.781C3.969.234 4.796-.453 5-1.578h-.828c-.234.687-.703 1.047-1.375 1.047a1.44 1.44 0 01-1.25-.688c-.203-.297-.266-.593-.281-1.11zm-3.83-.688c.078-.968.657-1.593 1.5-1.593.813 0 1.453.687 1.453 1.53 0 .032 0 .048-.015.063zm0 0"/>
+  </symbol>
+  <symbol id="f" overflow="visible">
+    <path d="M1.828-3.313h3.469v-.812H1.828v-2.328h3.938v-.813H.89V0h.937zm0 0"/>
+  </symbol>
+  <symbol id="g" overflow="visible">
+    <path d="M1.516-7.266H.672V0h.844zm0 0"/>
+  </symbol>
+  <symbol id="h" overflow="visible">
+    <path d="M1.86-3.125h2.39c.828 0 1.188.39 1.188 1.297v.64c0 .454.078.891.203 1.188h1.125v-.234c-.344-.235-.422-.5-.438-1.454-.016-1.203-.203-1.562-.984-1.906.812-.39 1.14-.906 1.14-1.734 0-1.25-.78-1.938-2.203-1.938H.921V0h.938zm0-.828v-2.5h2.234c.515 0 .828.078 1.047.281.25.203.375.547.375.984 0 .844-.438 1.235-1.422 1.235zm0 0"/>
+  </symbol>
+  <symbol id="i" overflow="visible">
+    <path d="M5.328-.484c-.078.015-.125.015-.172.015-.297 0-.453-.156-.453-.406v-3.078c0-.922-.672-1.422-1.969-1.422-.75 0-1.375.219-1.734.61-.234.265-.328.562-.36 1.093h.844c.079-.64.454-.937 1.235-.937.734 0 1.156.28 1.156.78v.22c0 .343-.203.5-.86.578-1.187.156-1.359.187-1.687.312-.594.25-.906.719-.906 1.406 0 .938.656 1.547 1.719 1.547.656 0 1.171-.234 1.765-.765.063.515.328.765.86.765.171 0 .296-.03.562-.093zM3.875-1.641c0 .282-.078.438-.328.672-.344.313-.75.469-1.235.469-.64 0-1.03-.313-1.03-.828 0-.563.374-.828 1.265-.969.875-.11 1.047-.156 1.328-.281zm0 0"/>
+  </symbol>
+  <symbol id="j" overflow="visible">
+    <path d="M4.938-7.266h-.829v2.704c-.343-.532-.906-.813-1.609-.813-1.36 0-2.234 1.094-2.234 2.75 0 1.766.859 2.86 2.265 2.86.719 0 1.219-.282 1.672-.922V0h.734zM2.64-4.594c.89 0 1.468.797 1.468 2.047 0 1.203-.578 2-1.453 2-.922 0-1.531-.812-1.531-2.031 0-1.203.61-2.016 1.516-2.016zm0 0"/>
+  </symbol>
+  <symbol id="k" overflow="visible">
+    <path d="M1.828-3.313h3.953v-.812H1.828v-2.328h4.11v-.813H.89V0h5.218v-.813H1.83zm0 0"/>
+  </symbol>
+  <symbol id="l" overflow="visible">
+    <path d="M.703-5.219V0h.828v-2.875c0-1.078.563-1.766 1.422-1.766.656 0 1.078.391 1.078 1.016V0h.828v-3.953c0-.86-.656-1.422-1.656-1.422-.781 0-1.281.297-1.734 1.031v-.875zm0 0"/>
+  </symbol>
+  <symbol id="m" overflow="visible">
+    <path d="M2.844 0l2-5.219h-.938L2.437-.984 1.032-5.22H.094L1.937 0zm0 0"/>
+  </symbol>
+  <use x="119.645" xlink:href="#a" y="44.517"/>
+  <use x="129.05" xlink:href="#b" y="44.517"/>
+  <use x="132.517" xlink:href="#c" y="44.517"/>
+  <use x="134.729" xlink:href="#d" y="44.517"/>
+  <use x="137.498" xlink:href="#e" y="44.517"/>
+  <use x="143.038" xlink:href="#b" y="44.517"/>
+  <path d="M113 33v16h40V33zm0 0" fill="none" stroke="#000" stroke-linejoin="round" stroke-miterlimit="10" stroke-width=".8"/>
+  <use x="65.931" xlink:href="#f" y="44.517"/>
+  <use x="72.019" xlink:href="#c" y="44.517"/>
+  <use x="74.23" xlink:href="#g" y="44.517"/>
+  <use x="76.442" xlink:href="#d" y="44.517"/>
+  <use x="79.212" xlink:href="#e" y="44.517"/>
+  <use x="84.751" xlink:href="#b" y="44.517"/>
+  <g stroke="#000" stroke-linejoin="round" stroke-miterlimit="10" stroke-width=".8">
+    <path d="M57 33v16h40V33zm0 0" fill="none"/>
+    <path d="M97 41h16" fill="none" stroke-dasharray="1 1"/>
+    <path d="M113 41l-5-1.664v3.328zm0 0" fill-rule="evenodd"/>
+    <path d="M41 41h16" fill="none" stroke-dasharray="1 1"/>
+    <path d="M57 41l-5-1.664v3.328zm0 0" fill-rule="evenodd"/>
+  </g>
+  <use x="4.667" xlink:href="#h" y="44.517"/>
+  <use x="11.859" xlink:href="#e" y="44.517"/>
+  <use x="17.399" xlink:href="#i" y="44.517"/>
+  <use x="22.938" xlink:href="#j" y="44.517"/>
+  <use x="28.477" xlink:href="#e" y="44.517"/>
+  <use x="34.016" xlink:href="#b" y="44.517"/>
+  <path d="M1 33v16h40V33zm0 0" fill="none" stroke="#000" stroke-linejoin="round" stroke-miterlimit="10" stroke-width=".8"/>
+  <use x="68.517" xlink:href="#k" y="12.599"/>
+  <use x="75.162" xlink:href="#l" y="12.599"/>
+  <use x="80.502" xlink:href="#m" y="12.599"/>
+  <g stroke="#000" stroke-linejoin="round" stroke-miterlimit="10" stroke-width=".8">
+    <path d="M57 1v16h40V1zM21 33V9h36" fill="none"/>
+    <path d="M57 9l-7-2.332v4.664zm0 0" fill-rule="evenodd"/>
+    <path d="M133 33V9H97" fill="none"/>
+    <path d="M97 9l7 2.332V6.668zm0 0" fill-rule="evenodd"/>
+  </g>
+</svg>

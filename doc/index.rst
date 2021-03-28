@@ -6,12 +6,15 @@
 Serd
 ####
 
-Serd is a lightweight C library for reading and writing RDF in Turtle_, NTriples_, NQuads_, and TriG_.
+Serd is a lightweight C library and set of command-line utilities for working with RDF data in Turtle_, NTriples_, NQuads_, and TriG_ formats.
 
 .. toctree::
    :numbered:
 
-   overview
+   getting_started
+   data_model
+   command_line_tools
+   using_serd
    api/serd
 
 .. _Turtle: http://www.w3.org/TR/turtle/
