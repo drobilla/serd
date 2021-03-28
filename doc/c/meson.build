@@ -9,9 +9,21 @@ configure_file(copy: true,
                input: files('../summary.rst'),
                output: 'summary.rst')
 
+configure_file(copy: true, input: files('overview.c'), output: 'overview.c')
+
+executable('overview', files('overview.c'), dependencies: [serd_dep])
+
 c_rst_files = files(
   'index.rst',
+  'model.rst',
+  'nodes.rst',
   'overview.rst',
+  'reading_and_writing.rst',
+  'statements.rst',
+  'stream_processing.rst',
+  'string_views.rst',
+  'using_serd.rst',
+  'world.rst',
 )
 
 foreach f : c_rst_files
@@ -22,7 +34,7 @@ subdir('xml')
 subdir('api')
 
 docs = custom_target(
-  'singlehtml documentation for serd',
+  'singlehtml C documentation for serd',
   command: [sphinx_build, '-M', 'singlehtml',
             meson.current_build_dir(), meson.current_build_dir(),
             '-E', '-q', '-t', 'singlehtml'],
@@ -33,7 +45,7 @@ docs = custom_target(
   install_dir: docdir / 'serd-0')
 
 docs = custom_target(
-  'html documentation for serd',
+  'html C documentation for serd',
   command: [sphinx_build, '-M', 'html',
             meson.current_build_dir(), meson.current_build_dir(),
             '-E', '-q', '-t', 'html'],
