@@ -1,0 +1,9 @@
+# Copyright 2021-2022 David Robillard <d@drobilla.net>
+# SPDX-License-Identifier: 0BSD OR ISC
+
+Checks: >
+  -*-magic-numbers,
+  -clang-analyzer-deadcode.DeadStores,
+  -clang-analyzer-nullability.NullablePassedToNonnull,
+  -hicpp-signed-bitwise,
+InheritParentConfig: true

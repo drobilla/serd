@@ -7,8 +7,11 @@ option('checks', type: 'feature', value: 'enabled', yield: true,
 option('docs', type: 'feature', value: 'auto', yield: true,
        description: 'Build documentation')
 
+option('epub', type: 'feature', value: 'disabled', yield: true,
+       description: 'Build EPub documentation')
+
 option('html', type: 'feature', value: 'auto', yield: true,
-       description: 'Build paginated HTML documentation')
+       description: 'Build HTML documentation')
 
 option('lint', type: 'boolean', value: false, yield: true,
        description: 'Run code quality checks')
@@ -19,7 +22,7 @@ option('man', type: 'feature', value: 'enabled', yield: true,
 option('man_html', type: 'feature', value: 'auto', yield: true,
        description: 'Build HTML man pages')
 
-option('singlehtml', type: 'feature', value: 'auto', yield: true,
+option('singlehtml', type: 'feature', value: 'disabled', yield: true,
        description: 'Build single-page HTML documentation')
 
 option('static', type: 'boolean', value: false, yield: true,

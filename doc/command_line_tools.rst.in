@@ -1,0 +1,12 @@
+##################
+Command-Line Tools
+##################
+
+Serd includes several tools that can be used to process data on the command-line.
+Each is documented by their own man page:
+
+ * @SERD_PIPE_LINK@ is a streaming tool for reading and writing documents.
+
+ * @SERD_SORT_LINK@ is similar to serd-pipe, but loads data into an in-memory model instead of streaming.
+
+ * @SERD_FILTER_LINK@ is a ``grep``-like statement filtering tool.
