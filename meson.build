@@ -145,7 +145,15 @@ if host_machine.system() != 'windows'
 endif
 
 # Programs used by the build
+
 mandoc = find_program('mandoc', required: get_option('man_html'))
+
+sphinx_build = find_program(
+  'sphinx-build',
+  required: (get_option('docs').enabled() or
+             get_option('epub').enabled() or
+             get_option('html').enabled() or
+             get_option('singlehtml').enabled()))
 
 # Determine library type and the flags needed to build it
 library_name = versioned_name

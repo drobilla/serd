@@ -46,7 +46,7 @@ x64_dbg:
     - ninja -C build test
     - ninja -C build coverage-html
     - mkdir -p build/doc/
-    - cp doc/*.svg build/doc/
+    - cp doc/*.svg resources/*.svg build/doc/
     - cp doc/man/mandoc.css build/doc/
     - mandoc -Thtml -Wwarning -O style=mandoc.css,man=%N.html doc/man/serd-filter.1 > build/doc/serd-filter.html
     - mandoc -Thtml -Wwarning -O style=mandoc.css,man=%N.html doc/man/serd-pipe.1 > build/doc/serd-pipe.html
@@ -180,10 +180,12 @@ pages:
   script:
     - mkdir public
     - mkdir public/c
+    - mkdir public/c/epub
     - mkdir public/man
     - mv build/meson-logs/coveragereport/ public/coverage
     - mv build/doc/c/html/ public/c/html/
     - mv build/doc/c/singlehtml/ public/c/singlehtml/
+    - mv build/doc/c/epub/Serd-*.epub public/c/epub/
     - mv build/doc/man/ public/man/
   dependencies:
     - x64_dbg

@@ -1,0 +1,42 @@
+pre {
+  padding: 0.4380em;
+}
+
+@media all and (min-color: 4) {
+  a:link {
+    color: #546E00;
+    text-decoration: none;
+  }
+
+  a:visited {
+    color: #3C4F00;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  div.highlight {
+    background-color: #F8F8F8;
+    margin: 0.6180em 0;
+    border-radius: 0.271em;
+  }
+}
+
+@media print {
+  a:link {
+    color: #000;
+    text-decoration: none;
+  }
+
+  a:visited {
+    color: #000;
+    text-decoration: none;
+  }
+
+  div.highlight {
+    background-color: #FFF;
+    margin: 0.6180em;
+  }
+}
