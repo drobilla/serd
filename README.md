@@ -55,9 +55,14 @@ Documentation
 -------------
 
  * [Installation instructions](INSTALL.md)
- * [Single-page API reference](https://drobilla.gitlab.io/serd/c/singlehtml)
- * [Paginated API reference](https://drobilla.gitlab.io/serd/c/html)
- * [`serd-pipe` man page](https://drobilla.gitlab.io/serd/man/serd-pipe.html)
+ * Overview and reference documentation:
+   * [Paginated HTML](https://drobilla.gitlab.io/serd/c/html)
+   * [Single-page HTML](https://drobilla.gitlab.io/serd/c/singlehtml)
+   * [EPUB](https://drobilla.gitlab.io/serd/c/epub/Serd-1.0.1.epub)
+ * Man pages:
+   * [`serd-filter`](https://drobilla.gitlab.io/serd/man/serd-filter.html)
+   * [`serd-pipe`](https://drobilla.gitlab.io/serd/man/serd-pipe.html)
+   * [`serd-sort`](https://drobilla.gitlab.io/serd/man/serd-sort.html)
 
 Versioning
 ----------
