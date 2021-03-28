@@ -27,3 +27,8 @@ Files: doc/_static/serd*.svg doc/serd*.svg doc/serd*.txt
 Copyright: 2011-2023 David Robillard <d@drobilla.net>
 Comment: Documentation
 License: ISC
+
+Files: doc/*.rst doc/c/*.rst doc/_static/*.*
+Copyright: 2020-2022 David Robillard <d@drobilla.net>
+Comment: Documentation
+License: ISC
