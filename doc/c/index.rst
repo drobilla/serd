@@ -6,5 +6,5 @@ Serd
 
 .. toctree::
 
-   overview
+   using_serd
    api/serd
