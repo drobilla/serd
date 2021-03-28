@@ -9,6 +9,10 @@ Serd
 .. include:: summary.rst
 
 .. toctree::
+   :numbered:
 
-   overview
+   getting_started
+   data_model
+   command_line_tools
+   using_serd
    api/serd

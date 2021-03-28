@@ -7,6 +7,7 @@ project = "@SERD_TITLE@"
 copyright = "2022, David Robillard"
 author = "David Robillard"
 release = "@SERD_VERSION@"
+version = "@SERD_VERSION@"
 
 # General configuration
 
@@ -29,11 +30,9 @@ _opaque = [
     "SerdCaretImpl",
     "SerdCursorImpl",
     "SerdEnvImpl",
-    "SerdIterImpl",
     "SerdModelImpl",
     "SerdNodeImpl",
     "SerdNodesImpl",
-    "SerdRangeImpl",
     "SerdReaderImpl",
     "SerdSinkImpl",
     "SerdStatementImpl",
@@ -57,6 +56,7 @@ nitpick_ignore = list(map(lambda x: ("c:identifier", x), _opaque))
 # HTML output
 
 html_copy_source = False
+html_secnumber_suffix = " "
 html_short_title = "@SERD_TITLE@"
 html_static_path = ["@SERD_SRCDIR@/doc/_static"]
 html_theme = "sphinx_lv2_theme"
@@ -119,3 +119,12 @@ else:
         "globaltoc_maxdepth": 1,
         "globaltoc_collapse": True,
     }
+
+# EPub output
+
+epub_show_urls = "no"
+epub_cover = ("../_static/serd.svg", "")
+epub_description = "Serd, a lightweight library for working with RDF"
+epub_title = "Serd @SERD_VERSION@ Documentation"
+epub_basename = "Serd-@SERD_VERSION@"
+epub_css_files = ["epubstyle.css"]
