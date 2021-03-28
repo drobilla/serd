@@ -278,6 +278,14 @@ if not meson.is_subproject()
   if not get_option('tools').disabled()
     summary(
       {
+        'Man pages': not get_option('man').disabled(),
+      },
+      bool_yn: true,
+      section: 'Components',
+    )
+
+    summary(
+      {
         'Executables': get_option('prefix') / get_option('bindir'),
       },
       section: 'Directories',
