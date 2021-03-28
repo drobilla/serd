@@ -8,8 +8,8 @@ Serd is a lightweight C library for working with RDF data.
 
 Serd can be used by high-performance or resource-limited applications to read
 or write [Turtle][], [TriG][], [NTriples][], and [NQuads][].  The included
-`serdi` tool can be used to efficiently process RDF documents in scripts or on
-the command-line.
+command line tools can be used to efficiently process RDF documents in scripts
+or on the command-line.
 
 Features
 --------
@@ -55,9 +55,14 @@ Documentation
 -------------
 
  * [Installation instructions](INSTALL.md)
- * [Single-page API reference](https://drobilla.gitlab.io/serd/c/singlehtml)
- * [Paginated API reference](https://drobilla.gitlab.io/serd/c/html)
- * [`serdi` man page](https://drobilla.gitlab.io/serd/man/serdi.html)
+ * Overview and reference documentation:
+   * [Paginated HTML](https://drobilla.gitlab.io/serd/c/html)
+   * [Single-page HTML](https://drobilla.gitlab.io/serd/c/singlehtml)
+   * [EPUB](https://drobilla.gitlab.io/serd/c/epub/Serd-1.0.1.epub)
+ * Man pages:
+   * [`serd-filter`](https://drobilla.gitlab.io/serd/man/serd-filter.html)
+   * [`serd-pipe`](https://drobilla.gitlab.io/serd/man/serd-pipe.html)
+   * [`serd-sort`](https://drobilla.gitlab.io/serd/man/serd-sort.html)
 
 Versioning
 ----------
