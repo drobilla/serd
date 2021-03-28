@@ -9,6 +9,10 @@ configure_file(copy: true,
                input: files('../summary.rst'),
                output: 'summary.rst')
 
+configure_file(copy: true, input: files('overview.c'), output: 'overview.c')
+
+executable('overview', files('overview.c'), dependencies: [serd_dep])
+
 c_rst_files = files(
   'index.rst',
   'overview.rst',
