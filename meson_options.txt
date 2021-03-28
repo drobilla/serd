@@ -7,6 +7,9 @@ option('checks', type: 'feature', value: 'enabled',
 option('docs', type: 'feature',
        description: 'Build documentation')
 
+option('epub', type: 'feature', value: 'disabled',
+       description: 'Build EPub documentation')
+
 option('html', type: 'feature',
        description: 'Build paginated HTML documentation')
 
@@ -19,7 +22,7 @@ option('man', type: 'feature', value: 'enabled',
 option('man_html', type: 'feature',
        description: 'Build HTML man pages')
 
-option('singlehtml', type: 'feature',
+option('singlehtml', type: 'feature', value: 'disabled',
        description: 'Build single-page HTML documentation')
 
 option('static', type: 'boolean', value: false,
