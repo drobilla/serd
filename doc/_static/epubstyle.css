@@ -1,0 +1,56 @@
+/*
+  Copyright 2020-2023 David Robillard <d@drobilla.net>
+  SPDX-License-Identifier: 0BSD or ISC
+*/
+
+pre {
+  padding: 0.4380em;
+}
+
+.signame, .descname {
+  font-weight: bold;
+}
+
+dl.field-list > dt::after,
+dl.docinfo > dt::after {
+  content: "";
+}
+
+@media all and (color >= 4) {
+  a:link {
+    color: #546E00;
+    text-decoration: none;
+  }
+
+  a:visited {
+    color: #3C4F00;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  div.highlight {
+    background-color: #F8F8F8;
+    margin: 0.6180em 0;
+    border-radius: 0.271em;
+  }
+}
+
+@media print {
+  a:link {
+    color: #000;
+    text-decoration: none;
+  }
+
+  a:visited {
+    color: #000;
+    text-decoration: none;
+  }
+
+  div.highlight {
+    background-color: #FFF;
+    margin: 0.6180em;
+  }
+}
