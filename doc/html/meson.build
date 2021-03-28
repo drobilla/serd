@@ -22,8 +22,20 @@ custom_target(
 
     '_static',
     'api',
+    'command_line_tools.html',
+    'data_model.html',
     'genindex.html',
+    'getting_started.html',
+    'model.html',
+    'nodes.html',
     'overview.html',
+    'reading_and_writing.html',
+    'search.html',
+    'statements.html',
+    'stream_processing.html',
+    'string_views.html',
+    'using_serd.html',
+    'world.html',
   ],
 )
 

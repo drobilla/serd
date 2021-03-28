@@ -148,9 +148,11 @@ pages:
   script:
     - mkdir public
     - mkdir public/doc
+    - mkdir public/doc/epub
     - mv build/meson-logs/coveragereport/ public/coverage
     - mv build/dest/share/doc/serd-0/html/ public/doc/html/
     - mv build/dest/share/doc/serd-0/singlehtml/ public/doc/singlehtml/
+    - mv build/doc/c/epub/Serd-*.epub public/c/epub/
     - mv build/doc/man/ public/man/
   needs:
     - dev

@@ -59,7 +59,7 @@ nitpick_ignore = list(map(lambda x: ("c:identifier", x), _opaque))
 html_copy_source = False
 html_secnumber_suffix = " "
 html_short_title = "@SERD_TITLE@"
-html_static_path = ["@SERD_SRCDIR@/doc/_static"]
+html_static_path = ["@SERD_STATIC_PATH@"]
 
 html_theme_options = {
     "description": desc,
@@ -133,3 +133,12 @@ else:
             "nosidebar": True,
             "show_relbars": True,
         }
+
+# EPub output
+
+epub_show_urls = "no"
+epub_cover = ("../_static/serd.svg", "")
+epub_description = "Serd, a lightweight library for working with RDF"
+epub_title = "Serd @SERD_VERSION@ Documentation"
+epub_basename = "Serd-@SERD_VERSION@"
+epub_css_files = ["epubstyle.css"]
