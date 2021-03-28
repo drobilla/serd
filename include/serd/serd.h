@@ -430,6 +430,8 @@ serd_base64_decode(const char* SERD_NONNULL str,
 
 /**
    @}
+   @defgroup serd_byte_io Byte I/O
+   @{
    @defgroup serd_byte_source Byte Source
    @{
 */
@@ -630,11 +632,12 @@ serd_byte_sink_free(SerdByteSink* SERD_NULLABLE sink);
 
 /**
    @}
-   @defgroup serd_syntax Syntax Utilities
+   @}
+   @defgroup serd_syntax Syntax
    @{
 */
 
-/// RDF syntax type
+/// Syntax supported by serd
 typedef enum {
   SERD_SYNTAX_EMPTY = 0, ///< Empty syntax (suppress input or output)
   SERD_TURTLE       = 1, ///< Terse triples http://www.w3.org/TR/turtle
@@ -1184,7 +1187,6 @@ const SerdNode* SERD_NONNULL
 serd_world_get_blank(SerdWorld* SERD_NONNULL world);
 
 /**
-   @}
    @defgroup serd_logging Logging
    @{
 */
@@ -1321,6 +1323,7 @@ serd_world_vlogf(const SerdWorld* SERD_NONNULL     world,
 
 /**
    @}
+   @}
    @defgroup serd_env Environment
    @{
 */
@@ -1401,6 +1404,8 @@ serd_env_write_prefixes(const SerdEnv* SERD_NONNULL  env,
 
 /**
    @}
+   @defgroup serd_streaming Streaming Data
+   @{
    @defgroup serd_event Event Handlers
    @{
 */
@@ -1552,7 +1557,7 @@ serd_sink_write_end(const SerdSink* SERD_NONNULL sink,
 
 /**
    @}
-   @defgroup serd_stream_processing Stream Processing
+   @defgroup serd_canon Canon
    @{
 */
 
@@ -1574,7 +1579,12 @@ SERD_API
 SerdSink* SERD_ALLOCATED
 serd_canon_new(const SerdWorld* SERD_NULLABLE world,
                const SerdSink* SERD_NONNULL   target,
-               SerdReaderFlags                flags);
+               SerdCanonFlags                 flags);
+/**
+   @}
+   @defgroup serd_filter Filter
+   @{
+*/
 
 /**
    Return a sink that filters out statements that do not match a pattern.
@@ -1595,6 +1605,9 @@ serd_filter_new(const SerdSink* SERD_NONNULL  target,
 
 /**
    @}
+   @}
+   @defgroup serd_read_write Reading and Writing Syntax
+   @{
    @defgroup serd_reader Reader
    @{
 */
@@ -1772,6 +1785,7 @@ SerdStatus
 serd_writer_finish(SerdWriter* SERD_NONNULL writer);
 
 /**
+   @}
    @}
    @defgroup serd_nodes Nodes
    @{
@@ -2148,7 +2162,6 @@ serd_validate_model(SerdValidator* SERD_NONNULL const validator,
                     const SerdNode* SERD_NULLABLE     graph);
 
 /**
-   @}
    @defgroup serd_inserter Inserter
    @{
 */
@@ -2425,6 +2438,7 @@ unsigned
 serd_cursor_column(const SerdCursor* SERD_NONNULL cursor);
 
 /**
+   @}
    @}
    @}
 */
