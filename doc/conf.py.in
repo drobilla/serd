@@ -1,7 +1,7 @@
 # Project information
 
 project = "Serd"
-copyright = "2020, David Robillard"
+copyright = "2021, David Robillard"
 author = "David Robillard"
 release = "@SERD_VERSION@"
 
@@ -25,12 +25,11 @@ _opaque = [
     "SerdByteSinkImpl",
     "SerdByteSourceImpl",
     "SerdCaretImpl",
+    "SerdCursorImpl",
     "SerdEnvImpl",
-    "SerdIterImpl",
     "SerdModelImpl",
     "SerdNodeImpl",
     "SerdNodesImpl",
-    "SerdRangeImpl",
     "SerdReaderImpl",
     "SerdSinkImpl",
     "SerdStatementImpl",
