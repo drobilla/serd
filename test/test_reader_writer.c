@@ -59,6 +59,7 @@ test_sink(void*              handle,
 static size_t
 eof_test_read(void* buf, size_t size, size_t nmemb, void* stream)
 {
+  assert(size == 1);
   assert(nmemb == 1);
 
   static const char* const string = "_:s1 <http://example.org/p> _:o1 .\n"

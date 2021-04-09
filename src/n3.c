@@ -723,7 +723,7 @@ read_IRIREF(SerdReader* reader, Ref* dest)
 
   SerdStatus st   = SERD_SUCCESS;
   uint32_t   code = 0;
-  while (!st) {
+  while (st <= SERD_FAILURE) {
     const int c = eat_byte_safe(reader, peek_byte(reader));
     switch (c) {
     case '"':
@@ -767,16 +767,16 @@ read_IRIREF(SerdReader* reader, Ref* dest)
 
     default:
       if (c <= 0x20) {
-        r_err(reader,
-              SERD_ERR_BAD_SYNTAX,
-              "invalid IRI character (escape %%%02X)\n",
-              (unsigned)c);
+        st = r_err(reader,
+                   SERD_ERR_BAD_SYNTAX,
+                   "invalid IRI character (escape %%%02X)\n",
+                   (unsigned)c);
         if (reader->strict) {
-          *dest = pop_node(reader, *dest);
-          return SERD_ERR_BAD_SYNTAX;
+          break;
+        } else {
+          st = SERD_FAILURE;
+          push_byte(reader, *dest, c);
         }
-        st = SERD_FAILURE;
-        push_byte(reader, *dest, c);
       } else if (!(c & 0x80)) {
         push_byte(reader, *dest, c);
       } else if (read_utf8_character(reader, *dest, (uint8_t)c)) {

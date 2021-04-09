@@ -7,9 +7,16 @@
 	rdf:type mf:Manifest ;
 	rdfs:comment "Serd lax syntax test cases" ;
 	mf:entries (
+		<#test-bad-string>
 		<#test-bad-uri>
 		<#test-bad-utf8>
 	) .
+
+<#test-bad-string>
+	rdf:type rdft:TestTurtleNegativeSyntax ;
+	mf:name "test-bad-string" ;
+	mf:action <test-bad-string.ttl> ;
+	mf:result <test-bad-string.nt> .
 
 <#test-bad-uri>
 	rdf:type rdft:TestTurtleNegativeSyntax ;
