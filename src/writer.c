@@ -188,8 +188,8 @@ write_character(SerdWriter* writer, const uint8_t* utf8, size_t* size)
   const uint32_t c          = parse_utf8_char(utf8, size);
   switch (*size) {
   case 0:
-    w_err(writer, SERD_ERR_BAD_ARG, "invalid UTF-8: %X\n", utf8[0]);
-    return sink(replacement_char, sizeof(replacement_char), writer);
+    w_err(writer, SERD_ERR_BAD_ARG, "invalid UTF-8 start: %X\n", utf8[0]);
+    return 0;
   case 1:
     snprintf(escape, sizeof(escape), "\\u%04X", utf8[0]);
     return sink(escape, 6, writer);
@@ -254,8 +254,11 @@ write_uri(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
     len += write_character(writer, utf8 + i, &size);
     i += size;
     if (size == 0) {
-      // Corrupt input, scan to start of next character
-      for (++i; i < n_bytes && (utf8[i] & 0x80); ++i) {
+      // Corrupt input, write percent-encoded bytes and scan to next start
+      char escape[4] = {0, 0, 0, 0};
+      for (; i < n_bytes && (utf8[i] & 0x80); ++i) {
+        snprintf(escape, sizeof(escape), "%%%02X", (uint8_t)utf8[i]);
+        len += sink(escape, 3, writer);
       }
     }
   }
@@ -419,7 +422,8 @@ write_text(SerdWriter*    writer,
     size_t size = 0;
     len += write_character(writer, utf8 + i - 1, &size);
     if (size == 0) {
-      // Corrupt input, scan to start of next character
+      // Corrupt input, write replacement character and scan to the next start
+      len += sink(replacement_char, sizeof(replacement_char), writer);
       for (; i < n_bytes && (utf8[i] & 0x80); ++i) {
       }
     } else {
