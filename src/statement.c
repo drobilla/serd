@@ -50,7 +50,13 @@ serd_statement_new(const SerdNode* const  s,
                    const SerdNode* const  g,
                    const SerdCaret* const caret)
 {
-  assert(serd_statement_is_valid(s, p, o, g));
+  assert(s);
+  assert(p);
+  assert(o);
+
+  if (!serd_statement_is_valid(s, p, o, g)) {
+    return NULL;
+  }
 
   SerdStatement* statement = (SerdStatement*)malloc(sizeof(SerdStatement));
   if (statement) {
