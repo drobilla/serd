@@ -208,6 +208,23 @@ def _file_equals(patha, pathb):
             return _show_diff(fa.readlines(), fb.readlines(), patha, pathb)
 
 
+def _file_lines_equal(patha, pathb, subst_from="", subst_to=""):
+    import io
+
+    for path in (patha, pathb):
+        if not os.access(path, os.F_OK):
+            sys.stderr.write("error: missing file %s" % path)
+            return False
+
+    la = sorted(set(io.open(patha, encoding="utf-8").readlines()))
+    lb = sorted(set(io.open(pathb, encoding="utf-8").readlines()))
+    if la != lb:
+        _show_diff(la, lb, patha, pathb)
+        return False
+
+    return True
+
+
 def test_suite(
     manifest_path,
     base_uri,
@@ -305,6 +322,27 @@ def test_suite(
                         osyntax,
                         command_prefix,
                     )
+
+                    # Run model test for positive test (must succeed)
+                    out_filename = os.path.join(out_test_dir, test_name + ".model.out")
+
+                    model_command = command_prefix + [
+                        "-m",
+                        "-a",
+                        "-o",
+                        osyntax,
+                        "-w",
+                        out_filename,
+                        "-I",
+                        test_uri,
+                        test_path,
+                    ]
+
+                    proc = subprocess.run(model_command, check=True)
+
+                    if proc.returncode == 0 and ((mf + 'result') in model[test]):
+                        if not _file_lines_equal(check_path, out_filename):
+                            results.n_failures += 1
 
             else:  # Negative test
                 with open(out_filename, "w") as stdout:
