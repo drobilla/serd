@@ -17,6 +17,7 @@ Checks: >
   -llvmlibc-*,
   -misc-no-recursion,
   -readability-function-cognitive-complexity,
+  -readability-suspicious-call-argument,
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
 FormatStyle: file
