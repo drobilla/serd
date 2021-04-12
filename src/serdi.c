@@ -183,8 +183,9 @@ choose_style(const SerdSyntax input_syntax,
 int
 main(int argc, char** argv)
 {
+  const char* const prog = argv[0];
   if (argc < 2) {
-    return print_usage(argv[0], true);
+    return print_usage(prog, true);
   }
 
   FILE*          in_fd         = NULL;
@@ -202,71 +203,79 @@ main(int argc, char** argv)
   const uint8_t* chop_prefix   = NULL;
   const uint8_t* root_uri      = NULL;
   int            a             = 1;
-  for (; a < argc && argv[a][0] == '-'; ++a) {
+  for (; a < argc && from_file && argv[a][0] == '-'; ++a) {
     if (argv[a][1] == '\0') {
       in_name = (const uint8_t*)"(stdin)";
       in_fd   = stdin;
       break;
     }
 
-    if (argv[a][1] == 'a') {
-      ascii = true;
-    } else if (argv[a][1] == 'b') {
-      bulk_write = true;
-    } else if (argv[a][1] == 'e') {
-      bulk_read = false;
-    } else if (argv[a][1] == 'f') {
-      full_uris = true;
-    } else if (argv[a][1] == 'h') {
-      return print_usage(argv[0], false);
-    } else if (argv[a][1] == 'l') {
-      lax = true;
-    } else if (argv[a][1] == 'q') {
-      quiet = true;
-    } else if (argv[a][1] == 'v') {
-      return print_version();
-    } else if (argv[a][1] == 's') {
-      in_name   = (const uint8_t*)"(string)";
-      from_file = false;
-      ++a;
-      break;
-    } else if (argv[a][1] == 'i') {
-      if (++a == argc) {
-        return missing_arg(argv[0], 'i');
-      }
+    for (int o = 1; argv[a][o]; ++o) {
+      const char opt = argv[a][o];
 
-      if (!(input_syntax = get_syntax(argv[a]))) {
-        return print_usage(argv[0], true);
-      }
-    } else if (argv[a][1] == 'o') {
-      if (++a == argc) {
-        return missing_arg(argv[0], 'o');
-      }
+      if (opt == 'a') {
+        ascii = true;
+      } else if (opt == 'b') {
+        bulk_write = true;
+      } else if (opt == 'e') {
+        bulk_read = false;
+      } else if (opt == 'f') {
+        full_uris = true;
+      } else if (opt == 'h') {
+        return print_usage(prog, false);
+      } else if (opt == 'l') {
+        lax = true;
+      } else if (opt == 'q') {
+        quiet = true;
+      } else if (opt == 'v') {
+        return print_version();
+      } else if (opt == 's') {
+        in_name   = (const uint8_t*)"(string)";
+        from_file = false;
+        break;
+      } else if (opt == 'i') {
+        if (argv[a][o + 1] || ++a == argc) {
+          return missing_arg(prog, 'i');
+        }
 
-      if (!(output_syntax = get_syntax(argv[a]))) {
-        return print_usage(argv[0], true);
-      }
-    } else if (argv[a][1] == 'p') {
-      if (++a == argc) {
-        return missing_arg(argv[0], 'p');
-      }
+        if (!(input_syntax = get_syntax(argv[a]))) {
+          return print_usage(prog, true);
+        }
+        break;
+      } else if (opt == 'o') {
+        if (argv[a][o + 1] || ++a == argc) {
+          return missing_arg(prog, 'o');
+        }
 
-      add_prefix = (const uint8_t*)argv[a];
-    } else if (argv[a][1] == 'c') {
-      if (++a == argc) {
-        return missing_arg(argv[0], 'c');
-      }
+        if (!(output_syntax = get_syntax(argv[a]))) {
+          return print_usage(prog, true);
+        }
+        break;
+      } else if (opt == 'p') {
+        if (argv[a][o + 1] || ++a == argc) {
+          return missing_arg(prog, 'p');
+        }
 
-      chop_prefix = (const uint8_t*)argv[a];
-    } else if (argv[a][1] == 'r') {
-      if (++a == argc) {
-        return missing_arg(argv[0], 'r');
-      }
+        add_prefix = (const uint8_t*)argv[a];
+        break;
+      } else if (opt == 'c') {
+        if (argv[a][o + 1] || ++a == argc) {
+          return missing_arg(prog, 'c');
+        }
 
-      root_uri = (const uint8_t*)argv[a];
-    } else {
-      SERDI_ERRORF("invalid option -- '%s'\n", argv[a] + 1);
-      return print_usage(argv[0], true);
+        chop_prefix = (const uint8_t*)argv[a];
+        break;
+      } else if (opt == 'r') {
+        if (argv[a][o + 1] || ++a == argc) {
+          return missing_arg(prog, 'r');
+        }
+
+        root_uri = (const uint8_t*)argv[a];
+        break;
+      } else {
+        SERDI_ERRORF("invalid option -- '%s'\n", argv[a] + 1);
+        return print_usage(prog, true);
+      }
     }
   }
 

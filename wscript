@@ -581,6 +581,8 @@ def test(tst):
 
     with tst.group('GoodCommands') as check:
         check([serdi, '%s/serd.ttl' % srcdir], stdout=os.devnull)
+        check([serdi, '-li', 'turtle', '%s/test/lax/test-bad-string.ttl' % srcdir],
+              stdout=os.devnull)
         check([serdi, '-v'])
         check([serdi, '-h'])
         check([serdi, '-s', '<urn:eg:s> a <urn:eg:T> .'])
@@ -598,6 +600,7 @@ def test(tst):
         check([serdi, '-i', 'illegal'])
         check([serdi, '-i', 'turtle'])
         check([serdi, '-i'])
+        check([serdi, '-fi'])
         check([serdi, '-o', 'illegal'])
         check([serdi, '-o'])
         check([serdi, '-p'])
