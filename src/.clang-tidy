@@ -11,4 +11,5 @@ Checks: >
   -llvm-header-guard,
   -misc-no-recursion,
   -readability-function-cognitive-complexity,
+  -readability-suspicious-call-argument,
 InheritParentConfig: true

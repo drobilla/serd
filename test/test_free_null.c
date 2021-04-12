@@ -20,6 +20,9 @@ main(void)
   serd_reader_free(NULL);
   serd_writer_free(NULL);
   serd_nodes_free(NULL);
+  serd_model_free(NULL);
+  serd_statement_free(NULL);
+  serd_cursor_free(NULL);
   serd_caret_free(NULL);
 
   return 0;
