@@ -90,6 +90,12 @@ serd_nodes_free(SerdNodes* nodes)
   }
 }
 
+size_t
+serd_nodes_size(const SerdNodes* nodes)
+{
+  return zix_hash_size(nodes->hash);
+}
+
 const SerdNode*
 serd_nodes_intern(SerdNodes* nodes, const SerdNode* node)
 {

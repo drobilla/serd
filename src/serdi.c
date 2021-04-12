@@ -60,11 +60,12 @@ print_usage(const char* const name, const bool error)
   fprintf(os, "  -b           Fast bulk output for large serialisations.\n");
   fprintf(os, "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n");
   fprintf(os, "  -e           Eat input one character at a time.\n");
-  fprintf(os, "  -f           Keep full URIs in input (don't qualify).\n");
+  fprintf(os, "  -f           Fast and loose mode (possibly ugly output).\n");
   fprintf(os, "  -h           Display this help and exit.\n");
   fprintf(os, "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads.\n");
   fprintf(os, "  -k BYTES     Parser stack size.\n");
   fprintf(os, "  -l           Lax (non-strict) parsing.\n");
+  fprintf(os, "  -m           Build a model in memory before writing.\n");
   fprintf(os, "  -o SYNTAX    Output syntax: empty/turtle/ntriples/nquads.\n");
   fprintf(os, "  -p PREFIX    Add PREFIX to blank node IDs.\n");
   fprintf(os, "  -q           Suppress all output except data.\n");
@@ -146,7 +147,9 @@ main(int argc, char** argv)
   SerdWriterFlags writer_flags  = 0;
   bool            bulk_read     = true;
   bool            bulk_write    = false;
+  bool            no_inline     = false;
   bool            osyntax_set   = false;
+  bool            use_model     = false;
   bool            quiet         = false;
   size_t          stack_size    = 4194304;
   const char*     input_string  = NULL;
@@ -170,12 +173,15 @@ main(int argc, char** argv)
       } else if (opt == 'e') {
         bulk_read = false;
       } else if (opt == 'f') {
+        no_inline = true;
         writer_flags |= (SERD_WRITE_UNQUALIFIED | SERD_WRITE_UNRESOLVED);
       } else if (opt == 'h') {
         return print_usage(prog, false);
       } else if (opt == 'l') {
         reader_flags |= SERD_READ_LAX;
         writer_flags |= SERD_WRITE_LAX;
+      } else if (argv[a][1] == 'm') {
+        use_model = true;
       } else if (opt == 'q') {
         quiet = true;
       } else if (opt == 't') {
@@ -310,6 +316,9 @@ main(int argc, char** argv)
   }
 #endif
 
+  const SerdSerialisationFlags serialisation_flags =
+    no_inline ? SERD_NO_INLINE_OBJECTS : 0u;
+
   const size_t        block_size = bulk_write ? 4096u : 1u;
   SerdByteSink* const byte_sink =
     out_filename
@@ -323,6 +332,20 @@ main(int argc, char** argv)
 
   SerdWriter* const writer =
     serd_writer_new(world, output_syntax, writer_flags, env, byte_sink);
+
+  SerdModel*      model    = NULL;
+  SerdSink*       inserter = NULL;
+  const SerdSink* sink     = NULL;
+  if (use_model) {
+    const SerdModelFlags flags = SERD_INDEX_SPO |
+                                 (input_has_graphs ? SERD_INDEX_GRAPHS : 0u) |
+                                 (no_inline ? 0u : SERD_INDEX_OPS);
+    model    = serd_model_new(world, flags);
+    inserter = serd_inserter_new(model, NULL);
+    sink     = inserter;
+  } else {
+    sink = serd_writer_sink(writer);
+  }
 
   if (quiet) {
     serd_world_set_log_func(world, serd_quiet_error_func, NULL);
@@ -344,7 +367,7 @@ main(int argc, char** argv)
                       input_syntax ? input_syntax : SERD_TRIG,
                       reader_flags,
                       env,
-                      serd_writer_sink(writer),
+                      sink,
                       stack_size);
 
     serd_reader_add_blank_prefix(reader, add_prefix);
@@ -389,7 +412,7 @@ main(int argc, char** argv)
                         input_syntax,
                         reader_flags,
                         env,
-                        serd_writer_sink(writer),
+                        sink,
                         stack_size,
                         inputs[i],
                         n_inputs > 1 ? prefix : add_prefix,
@@ -399,6 +422,18 @@ main(int argc, char** argv)
   }
   free(prefix);
 
+  if (st <= SERD_FAILURE && use_model) {
+    const SerdSink* writer_sink = serd_writer_sink(writer);
+    SerdRange*      range       = serd_model_ordered(model, SERD_ORDER_GSPO);
+
+    serd_env_write_prefixes(env, writer_sink);
+
+    st = serd_write_range(range, writer_sink, serialisation_flags);
+    serd_range_free(range);
+  }
+
+  serd_sink_free(inserter);
+  serd_model_free(model);
   serd_writer_free(writer);
   serd_node_free(input_name);
   serd_env_free(env);

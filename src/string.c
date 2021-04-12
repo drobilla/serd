@@ -42,6 +42,8 @@ serd_strerror(const SerdStatus status)
     return "Invalid syntax";
   case SERD_ERR_BAD_ARG:
     return "Invalid argument";
+  case SERD_ERR_BAD_ITER:
+    return "Invalid iterator";
   case SERD_ERR_NOT_FOUND:
     return "Not found";
   case SERD_ERR_ID_CLASH:
