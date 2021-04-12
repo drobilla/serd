@@ -233,6 +233,13 @@ main(int argc, char** argv)
         in_name   = (const uint8_t*)"(string)";
         from_file = false;
         break;
+      } else if (opt == 'c') {
+        if (argv[a][o + 1] || ++a == argc) {
+          return missing_arg(prog, 'c');
+        }
+
+        chop_prefix = (const uint8_t*)argv[a];
+        break;
       } else if (opt == 'i') {
         if (argv[a][o + 1] || ++a == argc) {
           return missing_arg(prog, 'i');
@@ -257,13 +264,6 @@ main(int argc, char** argv)
         }
 
         add_prefix = (const uint8_t*)argv[a];
-        break;
-      } else if (opt == 'c') {
-        if (argv[a][o + 1] || ++a == argc) {
-          return missing_arg(prog, 'c');
-        }
-
-        chop_prefix = (const uint8_t*)argv[a];
         break;
       } else if (opt == 'r') {
         if (argv[a][o + 1] || ++a == argc) {
