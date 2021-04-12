@@ -29,6 +29,8 @@ serd_strerror(const SerdStatus status)
     return "Invalid syntax";
   case SERD_ERR_BAD_ARG:
     return "Invalid argument";
+  case SERD_ERR_BAD_CURSOR:
+    return "Invalid cursor";
   case SERD_ERR_NOT_FOUND:
     return "Not found";
   case SERD_ERR_ID_CLASH:
@@ -51,6 +53,8 @@ serd_strerror(const SerdStatus status)
     return "Invalid or unresolved URI";
   case SERD_ERR_BAD_DATA:
     return "Invalid data";
+  case SERD_ERR_BAD_INDEX:
+    return "No optimal model index available";
   }
 
   return "Unknown error";

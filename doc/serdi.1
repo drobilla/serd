@@ -5,10 +5,10 @@
 .Os Serd 1.1.1
 .Sh NAME
 .Nm serdi
-.Nd read, filter, and write RDF data
+.Nd read, filter, transform, and write RDF data
 .Sh SYNOPSIS
 .Nm serdi
-.Op Fl Cfhqv
+.Op Fl Cfhmqv
 .Op Fl F Ar pattern | Fl G Ar pattern
 .Op Fl I Ar base
 .Op Fl b Ar bytes
@@ -21,8 +21,8 @@
 .Ar input ...
 .Sh DESCRIPTION
 .Nm
-is a fast command-line utility for streaming and processing RDF data.
-It reads one or more RDF documents and writes the data again,
+is a fast command-line utility for processing RDF data.
+It reads one or more documents and writes the data again,
 possibly transformed and/or in a different syntax.
 By default,
 the input syntax is guessed from the file extension,
@@ -81,7 +81,11 @@ The default is 4096, which should perform well in most cases.
 Note that this only applies to files, standard input and output are always processed one byte at a time.
 .Pp
 .It Fl f
-Keep full URIs in input (don't qualify with namespace prefixes or make URIs relative).
+Fast and loose mode.
+This disables shortening URIs into prefixed names or relative URI references.
+If the model is enabled, then this writes the model quickly in sorted order.
+Note that doing so with TriG or Turtle may make the output ugly,
+since blank nodes will not be inlined.
 .Pp
 .It Fl h
 Print the command line options.
@@ -132,6 +136,12 @@ By default, the stack is 4096 bytes, which should be sufficient for most data.
 If some data has very deep nesting or very large literal values,
 it may exceed the default amount of space,
 and this option can be used to increase it and allow the document to be parsed successfully.
+.Pp
+.It Fl m
+Build a model in memory.
+This loads all of the input into memory before writing the output.
+This will reorder statements and eliminate duplicates, at the cost of performance and memory consumption.
+When writing TriG or Turtle, this may enable better pretty-printing with more inline descriptions.
 .Pp
 .It Fl o Ar syntax
 Set an output syntax option.

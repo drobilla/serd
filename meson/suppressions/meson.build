@@ -40,6 +40,7 @@ if is_variable('cc')
         '-Wno-format-nonliteral',
         '-Wno-inline',
         '-Wno-padded',
+        '-Wno-strict-overflow',
         '-Wno-switch-default',
         '-Wno-unsuffixed-float-constants',
         '-Wno-unused-const-variable',

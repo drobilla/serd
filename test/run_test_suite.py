@@ -274,6 +274,41 @@ def test_suite(
                                 command_prefix,
                             )
 
+                    # Run model test for positive test (must succeed)
+                    out_filename = os.path.join(
+                        out_test_dir, test_name + ".model.out"
+                    )
+
+                    model_command = command_prefix + [
+                        "-m",
+                        "-o",
+                        osyntax,
+                        "-o",
+                        "ascii",
+                        "-w",
+                        out_filename,
+                        "-I",
+                        test_uri,
+                        test_path,
+                    ]
+
+                    proc = subprocess.run(model_command, check=True)
+
+                    if proc.returncode == 0 and (
+                        (mf + "result") in model[test]
+                    ):
+                        with open(check_path, "r", encoding="utf-8") as check:
+                            with open(
+                                out_filename, "r", encoding="utf-8"
+                            ) as out:
+                                if not _lines_equal(
+                                    sorted(set(check.readlines())),
+                                    sorted(set(out.readlines())),
+                                    check_path,
+                                    out_filename,
+                                ):
+                                    results.n_failures += 1
+
             else:  # Negative test
                 with tempfile.TemporaryFile() as stderr:
                     proc = subprocess.run(

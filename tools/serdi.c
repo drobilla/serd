@@ -6,11 +6,15 @@
 #include "serd/byte_sink.h"
 #include "serd/byte_source.h"
 #include "serd/canon.h"
+#include "serd/cursor.h"
 #include "serd/env.h"
 #include "serd/event.h"
 #include "serd/filter.h"
+#include "serd/inserter.h"
 #include "serd/log.h"
+#include "serd/model.h"
 #include "serd/node.h"
+#include "serd/range.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
@@ -50,11 +54,12 @@ print_usage(const char* const name, const bool error)
     "  -G PATTERN   Only include statements matching PATTERN.\n"
     "  -I BASE_URI  Input base URI.\n"
     "  -b BYTES     I/O block size.\n"
-    "  -f           Keep full URIs in input (don't qualify).\n"
+    "  -f           Fast and loose mode (possibly ugly output).\n"
     "  -h           Display this help and exit.\n"
     "  -i SYNTAX    Input syntax (turtle/ntriples/trig/nquads),\n"
     "               or flag (lax/variables/verbatim).\n"
     "  -k BYTES     Parser stack size.\n"
+    "  -m           Build a model in memory before writing.\n"
     "  -o SYNTAX    Output syntax (empty/turtle/ntriples/nquads),\n"
     "               or flag (ascii/expanded/verbatim/terse/lax).\n"
     "  -q           Suppress all output except data.\n"
@@ -175,8 +180,10 @@ main(int argc, char** argv)
   SerdSyntax      output_syntax = SERD_SYNTAX_EMPTY;
   SerdReaderFlags reader_flags  = 0;
   SerdWriterFlags writer_flags  = 0;
+  bool            no_inline     = false;
   bool            osyntax_set   = false;
   bool            canonical     = false;
+  bool            use_model     = false;
   bool            quiet         = false;
   size_t          block_size    = 4096U;
   size_t          stack_size    = 4194304U;
@@ -197,9 +204,12 @@ main(int argc, char** argv)
       if (opt == 'C') {
         canonical = true;
       } else if (opt == 'f') {
+        no_inline = true;
         writer_flags |= (SERD_WRITE_EXPANDED | SERD_WRITE_VERBATIM);
       } else if (opt == 'h') {
         return print_usage(prog, false);
+      } else if (argv[a][1] == 'm') {
+        use_model = true;
       } else if (opt == 'q') {
         quiet = true;
       } else if (opt == 'v') {
@@ -348,6 +358,9 @@ main(int argc, char** argv)
     serd_set_stream_utf8_mode(stdout);
   }
 
+  const SerdDescribeFlags describe_flags =
+    no_inline ? SERD_NO_INLINE_OBJECTS : 0u;
+
   SerdByteSink* const byte_sink = serd_open_output(out_filename, block_size);
   if (!byte_sink) {
     perror("serdi: error opening output file");
@@ -357,7 +370,29 @@ main(int argc, char** argv)
   SerdWriter* const writer =
     serd_writer_new(world, output_syntax, writer_flags, env, byte_sink);
 
-  const SerdSink* sink = serd_writer_sink(writer);
+  SerdModel*      model    = NULL;
+  SerdSink*       inserter = NULL;
+  const SerdSink* sink     = NULL;
+  if (use_model) {
+    const SerdModelFlags flags = (input_has_graphs ? SERD_STORE_GRAPHS : 0u);
+
+    model = serd_model_new(world, SERD_ORDER_SPO, flags);
+    if (input_has_graphs) {
+      serd_model_add_index(model, SERD_ORDER_GSPO);
+    }
+
+    if (!no_inline) {
+      serd_model_add_index(model, SERD_ORDER_OPS);
+      if (input_has_graphs) {
+        serd_model_add_index(model, SERD_ORDER_GOPS);
+      }
+    }
+
+    inserter = serd_inserter_new(model, NULL);
+    sink     = inserter;
+  } else {
+    sink = serd_writer_sink(writer);
+  }
 
   SerdSink* canon = NULL;
   if (canonical) {
@@ -435,8 +470,28 @@ main(int argc, char** argv)
     }
   }
 
+  if (st <= SERD_FAILURE && use_model) {
+    const SerdSink* writer_sink = serd_writer_sink(writer);
+    SerdCursor*     everything  = serd_model_begin_ordered(
+      model, input_has_graphs ? SERD_ORDER_GSPO : SERD_ORDER_SPO);
+
+    serd_env_write_prefixes(env, writer_sink);
+
+    st = serd_describe_range(
+      everything,
+      writer_sink,
+      describe_flags |
+        ((output_syntax == SERD_NTRIPLES || output_syntax == SERD_NQUADS)
+           ? SERD_NO_INLINE_OBJECTS
+           : 0u));
+
+    serd_cursor_free(everything);
+  }
+
   serd_sink_free(canon);
   serd_sink_free(filter);
+  serd_sink_free(inserter);
+  serd_model_free(model);
   serd_writer_free(writer);
   serd_env_free(env);
   serd_node_free(base);
