@@ -1,0 +1,268 @@
+/*
+  Copyright 2011-2020 David Robillard <d@drobilla.net>
+
+  Permission to use, copy, modify, and/or distribute this software for any
+  purpose with or without fee is hereby granted, provided that the above
+  copyright notice and this permission notice appear in all copies.
+
+  THIS SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+*/
+
+#include "cursor.h"
+#include "model.h"
+#include "world.h"
+
+#include "serd/serd.h"
+#include "zix/common.h"
+#include "zix/digest.h"
+#include "zix/hash.h"
+
+#include <assert.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+typedef enum { NAMED, ANON_S, ANON_O, LIST_S, LIST_O } NodeStyle;
+
+static SerdStatus
+write_range_statement(const SerdSink*      sink,
+                      const SerdModel*     model,
+                      ZixHash*             list_subjects,
+                      unsigned             depth,
+                      SerdStatementFlags   flags,
+                      const SerdStatement* statement);
+
+static NodeStyle
+get_node_style(const SerdModel* const model, const SerdNode* const node)
+{
+  if (serd_node_type(node) != SERD_BLANK) {
+    return NAMED; // Non-blank node can't be anonymous
+  }
+
+  const size_t n_as_object = serd_model_count(model, NULL, NULL, node, NULL);
+  if (n_as_object > 1) {
+    return NAMED; // Blank node referred to several times
+  }
+
+  if (serd_model_count(model, node, model->world->rdf_first, NULL, NULL) == 1 &&
+      serd_model_count(model, node, model->world->rdf_rest, NULL, NULL) == 1 &&
+      !serd_model_ask(model, NULL, model->world->rdf_rest, node, NULL)) {
+    return n_as_object == 0 ? LIST_S : LIST_O;
+  }
+
+  return n_as_object == 0 ? ANON_S : ANON_O;
+}
+
+static uint32_t
+ptr_hash(const void* const ptr)
+{
+  return zix_digest_add_ptr(zix_digest_start(), ptr);
+}
+
+static bool
+ptr_equals(const void* const a, const void* const b)
+{
+  return *(const void* const*)a == *(const void* const*)b;
+}
+
+static SerdStatus
+write_pretty_range(const SerdSink* const  sink,
+                   const unsigned         depth,
+                   const SerdModel* const model,
+                   SerdCursor* const      range)
+{
+  ZixHash* const list_subjects =
+    zix_hash_new(ptr_hash, ptr_equals, sizeof(void*));
+
+  SerdStatus st = SERD_SUCCESS;
+  while (!st && !serd_cursor_is_end(range)) {
+    const SerdStatement* const statement = serd_cursor_get(range);
+    assert(statement);
+
+    if (!(st = write_range_statement(
+            sink, model, list_subjects, depth, 0, statement))) {
+      st = serd_cursor_advance(range);
+      if (st == SERD_FAILURE) {
+        // FIXME: blech
+        st = SERD_SUCCESS;
+        break;
+      }
+    }
+  }
+
+  zix_hash_free(list_subjects);
+
+  return st;
+}
+
+static SerdStatus
+write_list(const SerdSink* const  sink,
+           const SerdModel* const model,
+           ZixHash* const         list_subjects,
+           const unsigned         depth,
+           SerdStatementFlags     flags,
+           const SerdNode*        object,
+           const SerdNode* const  graph)
+{
+  const SerdWorld* const world     = model->world;
+  const SerdNode* const  rdf_first = world->rdf_first;
+  const SerdNode* const  rdf_rest  = world->rdf_rest;
+  const SerdNode* const  rdf_nil   = world->rdf_nil;
+  SerdStatus             st        = SERD_SUCCESS;
+
+  const SerdStatement* fs =
+    serd_model_get_statement(model, object, rdf_first, NULL, graph);
+
+  if (!fs) {
+    return SERD_SUCCESS;
+  }
+
+  while (!st && !serd_node_equals(object, rdf_nil)) {
+    // Write rdf:first statement for this node
+    if ((st = write_range_statement(
+           sink, model, list_subjects, depth, flags, fs))) {
+      return st;
+    }
+
+    // Get rdf:rest statement
+    const SerdStatement* const rs =
+      serd_model_get_statement(model, object, rdf_rest, NULL, graph);
+
+    if (!rs) {
+      // Terminate malformed list with missing rdf:rest
+      return serd_sink_write(sink, 0, object, rdf_rest, rdf_nil, graph);
+    }
+
+    // Terminate if the next node has no rdf:first
+    const SerdNode* const next = serd_statement_object(rs);
+    if (!(fs = serd_model_get_statement(model, next, rdf_first, NULL, graph))) {
+      return serd_sink_write(sink, 0, object, rdf_rest, rdf_nil, graph);
+    }
+
+    // Write rdf:next statement and move to the next node
+    st     = serd_sink_write_statement(sink, 0, rs);
+    object = next;
+    flags  = 0u;
+  }
+
+  return st;
+}
+
+static bool
+skip_range_statement(const SerdModel* const     model,
+                     const SerdStatement* const statement)
+{
+  const SerdNode* const subject       = serd_statement_subject(statement);
+  const NodeStyle       subject_style = get_node_style(model, subject);
+  const SerdNode* const predicate     = serd_statement_predicate(statement);
+
+  if (subject_style == ANON_O || subject_style == LIST_O) {
+    return true; // Skip subject that will be inlined elsewhere
+  }
+
+  if (subject_style == LIST_S &&
+      (serd_node_equals(predicate, model->world->rdf_first) ||
+       serd_node_equals(predicate, model->world->rdf_rest))) {
+    return true; // Skip list statement that write_list will handle
+  }
+
+  return false;
+}
+
+static SerdStatus
+write_range_statement(const SerdSink* const             sink,
+                      const SerdModel* const            model,
+                      ZixHash* const                    list_subjects,
+                      const unsigned                    depth,
+                      SerdStatementFlags                flags,
+                      const SerdStatement* SERD_NONNULL statement)
+{
+  const SerdNode* const subject       = serd_statement_subject(statement);
+  const NodeStyle       subject_style = get_node_style(model, subject);
+  const SerdNode* const object        = serd_statement_object(statement);
+  const NodeStyle       object_style  = get_node_style(model, object);
+  const SerdNode* const graph         = serd_statement_graph(statement);
+  SerdStatus            st            = SERD_SUCCESS;
+  ZixStatus             zst           = ZIX_STATUS_SUCCESS;
+
+  if (subject_style == ANON_S) { // Write anonymous subject like "[] p o"
+    flags |= SERD_EMPTY_S;
+  }
+
+  if (depth == 0u) {
+    if (skip_range_statement(model, statement)) {
+      return SERD_SUCCESS; // Skip subject that will be inlined elsewhere
+    }
+
+    if (subject_style == LIST_S) {
+      // First write inline list subject, which this statement will follow
+      if (!(zst = zix_hash_insert(list_subjects, &subject, NULL))) {
+        if ((st = write_list(
+               sink, model, list_subjects, 2, SERD_LIST_S, subject, graph))) {
+          return st;
+        }
+      } else if (zst != ZIX_STATUS_EXISTS) {
+        return SERD_ERR_UNKNOWN;
+      }
+    }
+  }
+
+  if (object_style == ANON_O) { // Write anonymous object like "[ ... ]"
+    SerdCursor* const iter = serd_model_find(model, object, NULL, NULL, NULL);
+
+    flags |= SERD_ANON_O;
+    if (!(st = serd_sink_write_statement(sink, flags, statement))) {
+      if (!(st = write_pretty_range(sink, depth + 1, model, iter))) {
+        st = serd_sink_write_end(sink, object);
+      }
+    }
+
+    serd_cursor_free(iter);
+
+  } else if (object_style == LIST_O) { // Write list object like "( ... )"
+    flags |= SERD_LIST_O;
+    if (!(st = serd_sink_write_statement(sink, flags, statement))) {
+      st = write_list(sink, model, list_subjects, depth + 1, 0, object, graph);
+    }
+
+  } else {
+    st = serd_sink_write_statement(sink, flags, statement);
+  }
+
+  return st;
+}
+
+SerdStatus
+serd_write_range(const SerdCursor* const      range,
+                 const SerdSink*              sink,
+                 const SerdSerialisationFlags flags)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  if (serd_cursor_is_end(range)) {
+    return st;
+  }
+
+  SerdCursor copy = *range;
+
+  if (flags & SERD_NO_INLINE_OBJECTS) {
+    while (!st && !serd_cursor_is_end(&copy)) {
+      const SerdStatement* const f = serd_cursor_get(&copy);
+      if (!f) {
+        st = SERD_ERR_INTERNAL;
+      } else if (!(st = serd_sink_write_statement(sink, 0, f))) {
+        st = serd_cursor_advance(&copy);
+      }
+    }
+  } else {
+    st = write_pretty_range(sink, 0, range->model, &copy);
+  }
+
+  return st;
+}
