@@ -257,6 +257,9 @@ def dox_to_rst(index, lang, node):
 
         return " " + markup.strip()
 
+    if node.tag == "emphasis":
+        return "*%s*" % plain_text(node)
+
     if node.tag == "lsquo":
         return "‘"
 
