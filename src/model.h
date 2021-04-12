@@ -1,5 +1,5 @@
 /*
-  Copyright 2020 David Robillard <d@drobilla.net>
+  Copyright 2011-2020 David Robillard <d@drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -14,29 +14,24 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#undef NDEBUG
+#ifndef SERD_MODEL_H
+#define SERD_MODEL_H
+
+#include "cursor.h"
 
 #include "serd/serd.h"
+#include "zix/btree.h"
 
 #include <stddef.h>
 
-int
-main(void)
-{
-  serd_free(NULL);
-  serd_byte_source_free(NULL);
-  serd_byte_sink_free(NULL);
-  serd_node_free(NULL);
-  serd_world_free(NULL);
-  serd_env_free(NULL);
-  serd_sink_free(NULL);
-  serd_reader_free(NULL);
-  serd_writer_free(NULL);
-  serd_nodes_free(NULL);
-  serd_model_free(NULL);
-  serd_statement_free(NULL);
-  serd_cursor_free(NULL);
-  serd_caret_free(NULL);
+struct SerdModelImpl {
+  SerdWorld*         world;         ///< World this model is a part of
+  SerdNodes*         nodes;         ///< Interned nodes in this model
+  ZixBTree*          indices[12];   ///< Trees of SerdStatement pointers
+  SerdCursor         end;           ///< End cursor (always the same)
+  size_t             version;       ///< Version incremented on every change
+  SerdStatementOrder default_order; ///< Order for main statement-owning index
+  SerdModelFlags     flags;         ///< Active indices and features
+};
 
-  return 0;
-}
+#endif // SERD_MODEL_H

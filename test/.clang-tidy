@@ -10,6 +10,7 @@ Checks: >
   -clang-analyzer-nullability.NullabilityBase,
   -clang-analyzer-nullability.NullableDereferenced,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
+  -clang-analyzer-valist.Uninitialized,
   -cppcoreguidelines-avoid-non-const-global-variables,
   -hicpp-signed-bitwise,
   -llvmlibc-*,
