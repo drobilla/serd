@@ -14,28 +14,22 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#ifndef SERD_STATEMENT_H
-#define SERD_STATEMENT_H
+#ifndef SERD_RANGE_H
+#define SERD_RANGE_H
 
 #include "serd/serd.h"
 
 #include <stdbool.h>
 
-/**
-   Quad of nodes (a statement), or a quad pattern.
-
-   Nodes are ordered (S P O G).  The ID of the default graph is 0.
-*/
-typedef const SerdNode* SerdQuad[4];
-
-struct SerdStatementImpl {
-  SerdQuad    nodes;
-  SerdCursor* cursor;
+struct SerdRangeImpl {
+  SerdIter* begin; ///< Iterator to first statement in range
+  SerdIter* end;   ///< Iterator to end of range
 };
 
-SERD_PURE_FUNC
-bool
-serd_statement_matches_quad(const SerdStatement* statement,
-                            const SerdQuad       quad);
+SerdRange*
+serd_range_new(SerdIter* begin, SerdIter* end);
 
-#endif // SERD_STATEMENT_H
+bool
+serd_range_scan_next(SerdRange* range);
+
+#endif // SERD_RANGE_H
