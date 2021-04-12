@@ -14,6 +14,7 @@ pygments_style = "friendly"
 
 try:
     import sphinx_lv2_theme
+
     have_lv2_theme = True
 except ModuleNotFoundError:
     have_lv2_theme = False
@@ -24,6 +25,7 @@ _opaque = [
     "SerdByteSinkImpl",
     "SerdByteSourceImpl",
     "SerdCaretImpl",
+    "SerdCursorImpl",
     "SerdEnvImpl",
     "SerdIterImpl",
     "SerdModelImpl",
@@ -55,7 +57,7 @@ html_theme = "sphinx_lv2_theme"
 if have_lv2_theme:
     html_theme = "sphinx_lv2_theme"
 
-    if tags.has('singlehtml'):
+    if tags.has("singlehtml"):
         html_sidebars = {
             "**": [
                 "globaltoc.html",

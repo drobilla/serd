@@ -206,6 +206,7 @@ typedef enum {
   SERD_ERR_UNKNOWN,    ///< Unknown error
   SERD_ERR_BAD_SYNTAX, ///< Invalid syntax
   SERD_ERR_BAD_ARG,    ///< Invalid argument
+  SERD_ERR_BAD_CURSOR, ///< Use of invalidated cursor
   SERD_ERR_NOT_FOUND,  ///< Not found
   SERD_ERR_ID_CLASH,   ///< Encountered clashing blank node IDs
   SERD_ERR_BAD_CURIE,  ///< Invalid CURIE or unknown namespace prefix
@@ -216,6 +217,7 @@ typedef enum {
   SERD_ERR_NO_DATA,    ///< Unexpected end of input
   SERD_ERR_BAD_CALL,   ///< Invalid call
   SERD_ERR_BAD_URI,    ///< Invalid or unresolved URI
+  SERD_ERR_BAD_INDEX,  ///< No optimal model index available
 } SerdStatus;
 
 /**
@@ -548,7 +550,7 @@ serd_write_file_uri(SerdStringView             path,
    @{
 */
 
-/// A syntactic RDF node
+/// An RDF node
 typedef struct SerdNodeImpl SerdNode;
 
 /**
@@ -2345,6 +2347,411 @@ serd_writer_set_root_uri(SerdWriter* SERD_NONNULL      writer,
 SERD_API
 SerdStatus
 serd_writer_finish(SerdWriter* SERD_NONNULL writer);
+
+/**
+   @}
+   @defgroup serd_cursor Cursor
+   @{
+*/
+
+/**
+   A cursor that iterates over statements in a model.
+
+   A cursor is a smart iterator that visits all statements that match a
+   pattern.
+*/
+typedef struct SerdCursorImpl SerdCursor;
+
+/// Return a new copy of `cursor`
+SERD_API
+SerdCursor* SERD_ALLOCATED
+serd_cursor_copy(const SerdCursor* SERD_NULLABLE cursor);
+
+/// Return the statement pointed to by `cursor`
+SERD_API
+const SerdStatement* SERD_NULLABLE
+serd_cursor_get(const SerdCursor* SERD_NONNULL cursor);
+
+/**
+   Increment cursor to point to the next statement.
+
+   @return Failure if `cursor` was already at the end.
+*/
+SERD_API
+SerdStatus
+serd_cursor_advance(SerdCursor* SERD_NONNULL cursor);
+
+/// Return true if the cursor has reached its end
+SERD_PURE_API
+bool
+serd_cursor_is_end(const SerdCursor* SERD_NULLABLE cursor);
+
+/**
+   Return true iff `lhs` equals `rhs`.
+
+   Two cursors are equivalent if they point to the same statement in the same
+   index in the same model, or are both the end of the same model.  Note that
+   two cursors can point to the same statement but not be equivalent, since
+   they may have reached the statement via different indices.
+*/
+SERD_PURE_API
+bool
+serd_cursor_equals(const SerdCursor* SERD_NULLABLE lhs,
+                   const SerdCursor* SERD_NULLABLE rhs);
+
+/// Free `cursor`
+SERD_API
+void
+serd_cursor_free(SerdCursor* SERD_NULLABLE cursor);
+
+/**
+   @}
+   @defgroup serd_range Range
+   @{
+*/
+
+/// Flags that control the style of a model serialisation
+typedef enum {
+  SERD_NO_INLINE_OBJECTS = 1u << 0u ///< Disable object inlining
+} SerdDescribeFlag;
+
+/// Bitwise OR of SerdDescribeFlag values
+typedef uint32_t SerdDescribeFlags;
+
+/**
+   Describe a range of statements by writing to a sink.
+
+   This will consume the given cursor, and emit at least every statement it
+   visits.  More statements from the model may be written in order to describe
+   anonymous blank nodes that are associated with a subject in the range.
+
+   The default is to write statements in an order suited for pretty-printing
+   with Turtle or TriG with as many anonymous nodes as possible.  If
+   `SERD_NO_INLINE_OBJECTS` is given, a simple sorted stream is written
+   instead, which is faster since no searching is required, but can result in
+   ugly output for Turtle or Trig.
+*/
+SERD_API
+SerdStatus
+serd_describe_range(const SerdCursor* SERD_NULLABLE range,
+                    const SerdSink* SERD_NONNULL    sink,
+                    SerdDescribeFlags               flags);
+
+/**
+   @}
+   @defgroup serd_model Model
+   @{
+*/
+
+/// An indexed set of statements
+typedef struct SerdModelImpl SerdModel;
+
+/**
+   Statement ordering.
+
+   Statements themselves always have the same fields in the same order
+   (subject, predicate, object, graph), but a model can keep indices for
+   different orderings to provide good performance for different kinds of
+   queries.
+*/
+typedef enum {
+  SERD_ORDER_SPO,  ///<         Subject,   Predicate, Object
+  SERD_ORDER_SOP,  ///<         Subject,   Object,    Predicate
+  SERD_ORDER_OPS,  ///<         Object,    Predicate, Subject
+  SERD_ORDER_OSP,  ///<         Object,    Subject,   Predicate
+  SERD_ORDER_PSO,  ///<         Predicate, Subject,   Object
+  SERD_ORDER_POS,  ///<         Predicate, Object,    Subject
+  SERD_ORDER_GSPO, ///< Graph,  Subject,   Predicate, Object
+  SERD_ORDER_GSOP, ///< Graph,  Subject,   Object,    Predicate
+  SERD_ORDER_GOPS, ///< Graph,  Object,    Predicate, Subject
+  SERD_ORDER_GOSP, ///< Graph,  Object,    Subject,   Predicate
+  SERD_ORDER_GPSO, ///< Graph,  Predicate, Subject,   Object
+  SERD_ORDER_GPOS  ///< Graph,  Predicate, Object,    Subject
+} SerdStatementOrder;
+
+/// Flags that control model storage and indexing
+typedef enum {
+  SERD_STORE_GRAPHS = 1u << 0u, ///< Store and index the graph of statements
+  SERD_STORE_CARETS = 1u << 1u, ///< Store original caret of statements
+} SerdModelFlag;
+
+/// Bitwise OR of SerdModelFlag values
+typedef uint32_t SerdModelFlags;
+
+/**
+   Create a new model.
+
+   @param world The world in which to make this model.
+
+   @param default_order The order for the default index, which is always
+   present and responsible for owning all the statements in the model.  This
+   should almost always be #SERD_ORDER_SPO or #SERD_ORDER_GSPO (which
+   support writing pretty documents), but advanced applications that do not want
+   either of these indices can use a different order.  Additional indices can
+   be added with serd_model_add_index().
+
+   @param flags Options that control what data is stored in the model.
+*/
+SERD_API
+SerdModel* SERD_ALLOCATED
+serd_model_new(SerdWorld* SERD_NONNULL world,
+               SerdStatementOrder      default_order,
+               SerdModelFlags          flags);
+
+/// Return a deep copy of `model`
+SERD_API
+SerdModel* SERD_ALLOCATED
+serd_model_copy(const SerdModel* SERD_NONNULL model);
+
+/// Return true iff `a` is equal to `b`, ignoring statement cursor metadata
+SERD_API
+bool
+serd_model_equals(const SerdModel* SERD_NULLABLE a,
+                  const SerdModel* SERD_NULLABLE b);
+
+/// Close and free `model`
+SERD_API
+void
+serd_model_free(SerdModel* SERD_NULLABLE model);
+
+/**
+   Add an index for a particular statement order to the model.
+
+   @return Failure if this index already exists.
+*/
+SERD_API
+SerdStatus
+serd_model_add_index(SerdModel* SERD_NONNULL model, SerdStatementOrder order);
+
+/**
+   Add an index for a particular statement order to the model.
+
+   @return Failure if this index does not exist.
+*/
+SERD_API
+SerdStatus
+serd_model_drop_index(SerdModel* SERD_NONNULL model, SerdStatementOrder order);
+
+/// Get the world associated with `model`
+SERD_PURE_API
+SerdWorld* SERD_NONNULL
+serd_model_world(SerdModel* SERD_NONNULL model);
+
+/// Get all nodes interned in `model`
+SERD_PURE_API
+const SerdNodes* SERD_NONNULL
+serd_model_nodes(const SerdModel* SERD_NONNULL model);
+
+/// Get the default statement order of `model`
+SERD_PURE_API
+SerdStatementOrder
+serd_model_default_order(const SerdModel* SERD_NONNULL model);
+
+/// Get the flags enabled on `model`
+SERD_PURE_API
+SerdModelFlags
+serd_model_flags(const SerdModel* SERD_NONNULL model);
+
+/// Return the number of statements stored in `model`
+SERD_PURE_API
+size_t
+serd_model_size(const SerdModel* SERD_NONNULL model);
+
+/// Return true iff there are no statements stored in `model`
+SERD_PURE_API
+bool
+serd_model_empty(const SerdModel* SERD_NONNULL model);
+
+/**
+   Return a cursor at the start of every statement in the model.
+
+   The returned cursor will advance over every statement in the model's default
+   order.
+*/
+SERD_API
+SerdCursor* SERD_ALLOCATED
+serd_model_begin(const SerdModel* SERD_NONNULL model);
+
+/**
+   Return a cursor past the end of the model.
+
+   This returns the "universal" end cursor, which is equivalent to any cursor
+   for this model that has reached its end.
+*/
+SERD_CONST_API
+const SerdCursor* SERD_NONNULL
+serd_model_end(const SerdModel* SERD_NONNULL model);
+
+/// Return a cursor over all statements in the model in a specific order
+SERD_API
+SerdCursor* SERD_ALLOCATED
+serd_model_begin_ordered(const SerdModel* SERD_NONNULL model,
+                         SerdStatementOrder            order);
+
+/**
+   Search for statements that match a pattern.
+
+   @return An iterator to the first match, or NULL if no matches found.
+*/
+SERD_API
+SerdCursor* SERD_ALLOCATED
+serd_model_find(const SerdModel* SERD_NONNULL model,
+                const SerdNode* SERD_NULLABLE s,
+                const SerdNode* SERD_NULLABLE p,
+                const SerdNode* SERD_NULLABLE o,
+                const SerdNode* SERD_NULLABLE g);
+
+/**
+   Search for a single node that matches a pattern.
+
+   Exactly one of `s`, `p`, `o` must be NULL.
+   This function is mainly useful for predicates that only have one value.
+
+   @return The first matching node, or NULL if no matches are found.
+*/
+SERD_API
+const SerdNode* SERD_NULLABLE
+serd_model_get(const SerdModel* SERD_NONNULL model,
+               const SerdNode* SERD_NULLABLE s,
+               const SerdNode* SERD_NULLABLE p,
+               const SerdNode* SERD_NULLABLE o,
+               const SerdNode* SERD_NULLABLE g);
+
+/**
+   Search for a single statement that matches a pattern.
+
+   This function is mainly useful for predicates that only have one value.
+
+   @return The first matching statement, or NULL if none are found.
+*/
+SERD_API
+const SerdStatement* SERD_NULLABLE
+serd_model_get_statement(const SerdModel* SERD_NONNULL model,
+                         const SerdNode* SERD_NULLABLE s,
+                         const SerdNode* SERD_NULLABLE p,
+                         const SerdNode* SERD_NULLABLE o,
+                         const SerdNode* SERD_NULLABLE g);
+
+/// Return true iff a statement exists
+SERD_API
+bool
+serd_model_ask(const SerdModel* SERD_NONNULL model,
+               const SerdNode* SERD_NULLABLE s,
+               const SerdNode* SERD_NULLABLE p,
+               const SerdNode* SERD_NULLABLE o,
+               const SerdNode* SERD_NULLABLE g);
+
+/// Return the number of matching statements
+SERD_API
+size_t
+serd_model_count(const SerdModel* SERD_NONNULL model,
+                 const SerdNode* SERD_NULLABLE s,
+                 const SerdNode* SERD_NULLABLE p,
+                 const SerdNode* SERD_NULLABLE o,
+                 const SerdNode* SERD_NULLABLE g);
+
+/**
+   Add a statement to a model from nodes.
+
+   This function fails if there are any active iterators on `model`.
+*/
+SERD_API
+SerdStatus
+serd_model_add(SerdModel* SERD_NONNULL       model,
+               const SerdNode* SERD_NONNULL  s,
+               const SerdNode* SERD_NONNULL  p,
+               const SerdNode* SERD_NONNULL  o,
+               const SerdNode* SERD_NULLABLE g);
+
+/**
+   Add a statement to a model from nodes with a caret
+
+   This function fails if there are any active iterators on `model`.
+*/
+SERD_API
+SerdStatus
+serd_model_add_with_caret(SerdModel* SERD_NONNULL        model,
+                          const SerdNode* SERD_NONNULL   s,
+                          const SerdNode* SERD_NONNULL   p,
+                          const SerdNode* SERD_NONNULL   o,
+                          const SerdNode* SERD_NULLABLE  g,
+                          const SerdCaret* SERD_NULLABLE caret);
+
+/**
+   Add a statement to a model.
+
+   This function fails if there are any active iterators on `model`.
+   If statement is null, then SERD_FAILURE is returned.
+*/
+SERD_API
+SerdStatus
+serd_model_insert(SerdModel* SERD_NONNULL           model,
+                  const SerdStatement* SERD_NONNULL statement);
+
+/**
+   Add a range of statements to a model.
+
+   This function fails if there are any active iterators on `model`.
+*/
+SERD_API
+SerdStatus
+serd_model_insert_statements(SerdModel* SERD_NONNULL  model,
+                             SerdCursor* SERD_NONNULL range);
+
+/**
+   Remove a statement from a model via an iterator.
+
+   Calling this function invalidates all other iterators on this model.
+
+   @param model The model which `iter` points to.
+
+   @param cursor Cursor pointing to the element to erase.  This cursor is
+   advanced to the next statement on return.
+*/
+SERD_API
+SerdStatus
+serd_model_erase(SerdModel* SERD_NONNULL  model,
+                 SerdCursor* SERD_NONNULL cursor);
+
+/**
+   Remove a range of statements from a model.
+
+   This can be used with serd_model_find() to erase all statements in a model
+   that match a pattern.
+
+   Calling this function invalidates all iterators on `model`.
+
+   @param model The model which `range` points to.
+
+   @param range Range to erase, which will be empty on return.
+*/
+SERD_API
+SerdStatus
+serd_model_erase_statements(SerdModel* SERD_NONNULL  model,
+                            SerdCursor* SERD_NONNULL range);
+
+/**
+   Remove everything from a model.
+
+   Calling this function invalidates all iterators on `model`.
+
+   @param model The model to clear.
+*/
+SERD_API
+SerdStatus
+serd_model_clear(SerdModel* SERD_NONNULL model);
+
+/**
+   @}
+   @defgroup serd_inserter Inserter
+   @{
+*/
+
+/// Create an inserter for writing statements to a model
+SERD_API
+SerdSink* SERD_ALLOCATED
+serd_inserter_new(SerdModel* SERD_NONNULL       model,
+                  const SerdNode* SERD_NULLABLE default_graph);
 
 /**
    @}
