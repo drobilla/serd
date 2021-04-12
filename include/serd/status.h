@@ -21,6 +21,7 @@ typedef enum {
   SERD_ERR_UNKNOWN,    ///< Unknown error
   SERD_ERR_BAD_SYNTAX, ///< Invalid syntax
   SERD_ERR_BAD_ARG,    ///< Invalid argument
+  SERD_ERR_BAD_CURSOR, ///< Use of invalidated cursor
   SERD_ERR_NOT_FOUND,  ///< Not found
   SERD_ERR_ID_CLASH,   ///< Encountered clashing blank node IDs
   SERD_ERR_BAD_CURIE,  ///< Invalid CURIE or unknown namespace prefix
@@ -32,6 +33,7 @@ typedef enum {
   SERD_ERR_BAD_CALL,   ///< Invalid call
   SERD_ERR_BAD_URI,    ///< Invalid or unresolved URI
   SERD_ERR_BAD_DATA,   ///< Invalid data
+  SERD_ERR_BAD_INDEX,  ///< No optimal model index available
 } SerdStatus;
 
 /// Return a string describing a status code

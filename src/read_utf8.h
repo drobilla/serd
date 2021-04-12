@@ -4,7 +4,9 @@
 #ifndef SERD_SRC_READ_UTF8_H
 #define SERD_SRC_READ_UTF8_H
 
-#include "serd/serd.h"
+#include "serd/node.h"
+#include "serd/reader.h"
+#include "serd/status.h"
 
 #include <stdint.h>
 

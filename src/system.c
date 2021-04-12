@@ -3,8 +3,9 @@
 
 #include "system.h"
 
-#include "serd/serd.h"
 #include "serd_config.h"
+
+#include "serd/string.h"
 
 #ifdef _WIN32
 #  define WIN32_LEAN_AND_MEAN 1
