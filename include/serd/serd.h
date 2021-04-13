@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2020 David Robillard <d@drobilla.net>
+  Copyright 2011-2021 David Robillard <d@drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -83,7 +83,6 @@ extern "C" {
 
 /**
    @defgroup serd Serd C API
-   This is the complete public C API of serd.
    @{
 */
 
@@ -95,19 +94,6 @@ typedef struct SerdReaderImpl SerdReader;
 
 /// Streaming serialiser that writes a text stream as statements are pushed
 typedef struct SerdWriterImpl SerdWriter;
-
-/// Return status code
-typedef enum {
-  SERD_SUCCESS,        ///< No error
-  SERD_FAILURE,        ///< Non-fatal failure
-  SERD_ERR_UNKNOWN,    ///< Unknown error
-  SERD_ERR_BAD_SYNTAX, ///< Invalid syntax
-  SERD_ERR_BAD_ARG,    ///< Invalid argument
-  SERD_ERR_NOT_FOUND,  ///< Not found
-  SERD_ERR_ID_CLASH,   ///< Encountered clashing blank node IDs
-  SERD_ERR_BAD_CURIE,  ///< Invalid CURIE (e.g. prefix does not exist)
-  SERD_ERR_INTERNAL    ///< Unexpected internal error (should not happen)
-} SerdStatus;
 
 /// RDF syntax type
 typedef enum {
@@ -210,32 +196,6 @@ typedef struct {
   size_t                       len; ///< Length of chunk in bytes
 } SerdChunk;
 
-/// An error description
-typedef struct {
-  SerdStatus                   status;   ///< Error code
-  const uint8_t* SERD_NULLABLE filename; ///< File with error
-  unsigned                     line;     ///< Line in file with error or 0
-  unsigned                     col;      ///< Column in file with error
-  const char* SERD_NONNULL     fmt;      ///< Printf-style format string
-  va_list* SERD_NONNULL        args;     ///< Arguments for fmt
-} SerdError;
-
-/**
-   A parsed URI
-
-   This struct directly refers to chunks in other strings, it does not own any
-   memory itself.  Thus, URIs can be parsed and/or resolved against a base URI
-   in-place without allocating memory.
-*/
-typedef struct {
-  SerdChunk scheme;    ///< Scheme
-  SerdChunk authority; ///< Authority
-  SerdChunk path_base; ///< Path prefix if relative
-  SerdChunk path;      ///< Path suffix
-  SerdChunk query;     ///< Query
-  SerdChunk fragment;  ///< Fragment
-} SerdURI;
-
 /**
    Syntax style options.
 
@@ -263,14 +223,33 @@ void
 serd_free(void* SERD_NULLABLE ptr);
 
 /**
-   @defgroup serd_string String Utilities
+   @defgroup serd_status Status Codes
    @{
 */
+
+/// Return status code
+typedef enum {
+  SERD_SUCCESS,        ///< No error
+  SERD_FAILURE,        ///< Non-fatal failure
+  SERD_ERR_UNKNOWN,    ///< Unknown error
+  SERD_ERR_BAD_SYNTAX, ///< Invalid syntax
+  SERD_ERR_BAD_ARG,    ///< Invalid argument
+  SERD_ERR_NOT_FOUND,  ///< Not found
+  SERD_ERR_ID_CLASH,   ///< Encountered clashing blank node IDs
+  SERD_ERR_BAD_CURIE,  ///< Invalid CURIE (e.g. prefix does not exist)
+  SERD_ERR_INTERNAL    ///< Unexpected internal error (should not happen)
+} SerdStatus;
 
 /// Return a string describing a status code
 SERD_CONST_API
 const uint8_t* SERD_NONNULL
 serd_strerror(SerdStatus status);
+
+/**
+   @}
+   @defgroup serd_string String Utilities
+   @{
+*/
 
 /**
    Measure a UTF-8 string.
@@ -357,6 +336,22 @@ typedef size_t (*SerdSink)(const void* SERD_NONNULL buf,
    @defgroup serd_uri URI
    @{
 */
+
+/**
+   A parsed URI
+
+   This struct directly refers to chunks in other strings, it does not own any
+   memory itself.  Thus, URIs can be parsed and/or resolved against a base URI
+   in-place without allocating memory.
+*/
+typedef struct {
+  SerdChunk scheme;    ///< Scheme
+  SerdChunk authority; ///< Authority
+  SerdChunk path_base; ///< Path prefix if relative
+  SerdChunk path;      ///< Path suffix
+  SerdChunk query;     ///< Query
+  SerdChunk fragment;  ///< Fragment
+} SerdURI;
 
 static const SerdURI SERD_URI_NULL =
   {{NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}};
@@ -597,6 +592,16 @@ serd_node_free(SerdNode* SERD_NULLABLE node);
    @defgroup serd_event Event Handlers
    @{
 */
+
+/// An error description
+typedef struct {
+  SerdStatus                   status;   ///< Error code
+  const uint8_t* SERD_NULLABLE filename; ///< File with error
+  unsigned                     line;     ///< Line in file with error or 0
+  unsigned                     col;      ///< Column in file with error
+  const char* SERD_NONNULL     fmt;      ///< Printf-style format string
+  va_list* SERD_NONNULL        args;     ///< Arguments for fmt
+} SerdError;
 
 /**
    Sink (callback) for errors.
