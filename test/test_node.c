@@ -12,29 +12,21 @@
 #include <assert.h>
 #include <float.h>
 #include <math.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef INFINITY
-#  define INFINITY (DBL_MAX + DBL_MAX)
-#endif
-#ifndef NAN
-#  define NAN (INFINITY - INFINITY)
-#endif
-
 #define NS_XSD "http://www.w3.org/2001/XMLSchema#"
 #define NS_RDF "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 
 static void
-test_strtod(double dbl, double max_delta)
+check_strtod(const double dbl, const double max_delta)
 {
   char buf[1024];
   snprintf(buf, sizeof(buf), "%f", dbl);
 
-  char*        endptr = NULL;
+  const char*  endptr = NULL;
   const double out    = serd_strtod(buf, &endptr);
   const double diff   = fabs(out - dbl);
 
@@ -42,7 +34,7 @@ test_strtod(double dbl, double max_delta)
 }
 
 static void
-test_string_to_double(void)
+test_strtod(void)
 {
   const double expt_test_nums[] = {
     2.0E18, -5e19, +8e20, 2e+24, -5e-5, 8e0, 9e-0, 2e+0};
@@ -55,42 +47,31 @@ test_string_to_double(void)
     const double delta = fabs(num - expt_test_nums[i]);
     assert(delta <= DBL_EPSILON);
 
-    test_strtod(expt_test_nums[i], DBL_EPSILON);
+    check_strtod(expt_test_nums[i], DBL_EPSILON);
   }
 }
 
 static void
-test_double_to_node(void)
+test_new_decimal(void)
 {
-  const double dbl_test_nums[] = {0.0,
-                                  9.0,
-                                  10.0,
-                                  .01,
-                                  2.05,
-                                  -16.00001,
-                                  5.000000005,
-                                  0.0000000001,
-                                  NAN,
-                                  INFINITY};
+  static const double dbl_test_nums[] = {
+    0.0, 9.0, 10.0, .01, 2.05, -16.00001, 5.000000005, 0.0000000001};
 
-  const char* dbl_test_strs[] = {"0.0",
-                                 "9.0",
-                                 "10.0",
-                                 "0.01",
-                                 "2.05",
-                                 "-16.00001",
-                                 "5.00000001",
-                                 "0.0",
-                                 NULL,
-                                 NULL};
+  static const char* const dbl_test_strs[] = {"0.0",
+                                              "9.0",
+                                              "10.0",
+                                              "0.01",
+                                              "2.05",
+                                              "-16.00001",
+                                              "5.000000005",
+                                              "0.0000000001"};
 
   for (size_t i = 0; i < sizeof(dbl_test_nums) / sizeof(double); ++i) {
-    SerdNode*   node     = serd_new_decimal(dbl_test_nums[i], 8, NULL);
-    const char* node_str = node ? serd_node_string(node) : NULL;
-    const bool  pass     = (node_str && dbl_test_strs[i])
-                             ? !strcmp(node_str, dbl_test_strs[i])
-                             : (node_str == dbl_test_strs[i]);
-    assert(pass);
+    SerdNode* node = serd_new_decimal(dbl_test_nums[i], NULL);
+    assert(node);
+
+    const char* node_str = serd_node_string(node);
+    assert(!strcmp(node_str, dbl_test_strs[i]));
 
     const size_t len = node_str ? strlen(node_str) : 0;
     assert((!node && len == 0) || serd_node_length(node) == len);
@@ -134,8 +115,9 @@ test_integer_to_node(void)
 static void
 test_blob_to_node(void)
 {
-  assert(!serd_new_blob(&SERD_URI_NULL, 0, false, NULL));
+  assert(!serd_new_base64(&SERD_URI_NULL, 0, NULL));
 
+  // Test valid base64 blobs with a range of sizes
   for (size_t size = 1; size < 256; ++size) {
     uint8_t* const data = (uint8_t*)malloc(size);
     for (size_t i = 0; i < size; ++i) {
@@ -143,7 +125,7 @@ test_blob_to_node(void)
     }
 
     size_t      out_size = 0;
-    SerdNode*   blob     = serd_new_blob(data, size, size % 5, NULL);
+    SerdNode*   blob     = serd_new_base64(data, size, NULL);
     const char* blob_str = serd_node_string(blob);
     uint8_t*    out =
       (uint8_t*)serd_base64_decode(blob_str, serd_node_length(blob), &out_size);
@@ -163,6 +145,21 @@ test_blob_to_node(void)
     serd_free(out);
     free(data);
   }
+
+  // Test invalid base64 blob
+
+  SerdNode* const blob = serd_new_typed_literal(
+    serd_string("!nval!d$"), serd_string(NS_XSD "base64Binary"));
+
+  const char* const blob_str = serd_node_string(blob);
+  size_t            out_size = 42;
+  uint8_t*          out =
+    (uint8_t*)serd_base64_decode(blob_str, serd_node_length(blob), &out_size);
+
+  assert(!out);
+  assert(out_size == 0);
+
+  serd_node_free(blob);
 }
 
 static void
@@ -290,8 +287,8 @@ test_blank(void)
 int
 main(void)
 {
-  test_string_to_double();
-  test_double_to_node();
+  test_strtod();
+  test_new_decimal();
   test_integer_to_node();
   test_blob_to_node();
   test_node_equals();
