@@ -74,8 +74,9 @@
 		<#bad-object2>
 		<#bad-paths>
 		<#bad-pn-escape>
-		<#bad-prefix-missing-colon>
 		<#bad-prefix>
+		<#bad-prefix-dot>
+		<#bad-prefix-missing-colon>
 		<#bad-quote-in-uri>
 		<#bad-semicolon-after-subject>
 		<#bad-string>
@@ -435,6 +436,11 @@
 	a rdft:TestTurtleNegativeSyntax ;
 	mf:action <bad-prefix-missing-colon.ttl> ;
 	mf:name "bad-prefix-missing-colon" .
+
+<#bad-prefix-dot>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-prefix-dot.ttl> ;
+	mf:name "bad-prefix-dot" .
 
 <#bad-quote-in-uri>
 	a rdft:TestTurtleNegativeSyntax ;

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: ISC
 
 #include "byte_source.h"
+#include "env.h"
 #include "namespaces.h"
 #include "node.h"
 #include "ntriples.h"
@@ -12,6 +13,7 @@
 #include "try.h"
 #include "turtle.h"
 
+#include "serd/attributes.h"
 #include "serd/byte_source.h"
 #include "serd/env.h"
 #include "serd/node.h"
@@ -21,6 +23,7 @@
 #include "serd/status.h"
 #include "serd/string_view.h"
 #include "serd/syntax.h"
+#include "serd/uri.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -283,6 +286,66 @@ read_PN_PREFIX(SerdReader* const reader, SerdNode* const dest)
   return st ? st : read_PN_PREFIX_tail(reader, dest);
 }
 
+typedef struct {
+  SerdReader* reader;
+  SerdNode*   node;
+  SerdStatus  status;
+} WriteNodeContext;
+
+static size_t
+write_to_stack(const void* const SERD_NONNULL buf,
+               const size_t                   size,
+               const size_t                   nmemb,
+               void* const SERD_NONNULL       stream)
+{
+  WriteNodeContext* const ctx  = (WriteNodeContext*)stream;
+  const uint8_t* const    utf8 = (const uint8_t*)buf;
+
+  ctx->status = push_bytes(ctx->reader, ctx->node, utf8, nmemb * size);
+
+  return nmemb;
+}
+
+static SerdStatus
+resolve_IRIREF(SerdReader* const reader,
+               SerdNode* const   dest,
+               const size_t      string_start_offset)
+{
+  // If the URI is already absolute, we don't need to do anything
+  if (serd_uri_string_has_scheme(serd_node_string(dest))) {
+    return SERD_SUCCESS;
+  }
+
+  // Parse the URI reference so we can resolve it
+  SerdURIView uri = serd_parse_uri(serd_node_string(dest));
+
+  // Resolve relative URI reference to a full URI
+  uri = serd_resolve_uri(uri, serd_env_base_uri_view(reader->env));
+  if (!uri.scheme.length) {
+    return r_err(reader,
+                 SERD_ERR_BAD_SYNTAX,
+                 "failed to resolve relative URI reference <%s>",
+                 serd_node_string(dest));
+  }
+
+  // Push a new temporary node for constructing the resolved URI
+  SerdNode* const temp = push_node(reader, SERD_URI, "", 0);
+  if (!temp) {
+    return SERD_ERR_OVERFLOW;
+  }
+
+  // Write resolved URI to the temporary node
+  WriteNodeContext ctx = {reader, temp, SERD_SUCCESS};
+  temp->length         = serd_write_uri(uri, write_to_stack, &ctx);
+  if (!ctx.status) {
+    // Replace the destination with the new expanded node
+    memmove(dest, temp, serd_node_total_size(temp));
+    serd_stack_pop_to(&reader->stack, string_start_offset + dest->length);
+  }
+
+  return ctx.status;
+}
+
 static SerdStatus
 read_IRIREF(SerdReader* const reader, SerdNode** const dest)
 {
@@ -295,14 +358,24 @@ read_IRIREF(SerdReader* const reader, SerdNode** const dest)
     return SERD_ERR_OVERFLOW;
   }
 
-  return read_IRIREF_suffix(reader, *dest);
+  const size_t string_start_offset = reader->stack.size;
+
+  st = read_IRIREF_suffix(reader, *dest);
+  if (!tolerate_status(reader, st)) {
+    return st;
+  }
+
+  return (reader->flags & SERD_READ_RELATIVE)
+           ? SERD_SUCCESS
+           : resolve_IRIREF(reader, *dest, string_start_offset);
 }
 
 static SerdStatus
 read_PrefixedName(SerdReader* const reader,
                   SerdNode* const   dest,
                   const bool        read_prefix,
-                  bool* const       ate_dot)
+                  bool* const       ate_dot,
+                  const size_t      string_start_offset)
 {
   SerdStatus st = SERD_SUCCESS;
   if (read_prefix) {
@@ -313,8 +386,24 @@ read_PrefixedName(SerdReader* const reader,
     return SERD_FAILURE;
   }
 
-  TRY(st, push_byte(reader, dest, eat_byte_safe(reader, ':')));
-  TRY_FAILING(st, read_PN_LOCAL(reader, dest, ate_dot));
+  skip_byte(reader, ':');
+
+  // Search environment for the prefix URI
+  const SerdStringView prefix     = serd_node_string_view(dest);
+  const SerdStringView prefix_uri = serd_env_find_prefix(reader->env, prefix);
+  if (!prefix_uri.length) {
+    return r_err(reader, st, "unknown prefix \"%s\"", prefix.data);
+  }
+
+  // Pop back to the start of the string
+  serd_stack_pop_to(&reader->stack, string_start_offset);
+  dest->length = 0U;
+  dest->type   = SERD_URI;
+  push_bytes(reader, dest, (const uint8_t*)prefix_uri.data, prefix_uri.length);
+  if ((st = read_PN_LOCAL(reader, dest, ate_dot)) > SERD_FAILURE) {
+    return st;
+  }
+
   return SERD_SUCCESS;
 }
 
@@ -408,14 +497,15 @@ read_number(SerdReader* const reader,
 static SerdStatus
 read_iri(SerdReader* const reader, SerdNode** const dest, bool* const ate_dot)
 {
-  switch (peek_byte(reader)) {
-  case '<':
+  if (peek_byte(reader) == '<') {
     return read_IRIREF(reader, dest);
-  default:
-    *dest = push_node(reader, SERD_CURIE, "", 0);
-    return *dest ? read_PrefixedName(reader, *dest, true, ate_dot)
-                 : SERD_ERR_OVERFLOW;
   }
+
+  if (!(*dest = push_node(reader, SERD_CURIE, "", 0))) {
+    return SERD_ERR_OVERFLOW;
+  }
+
+  return read_PrefixedName(reader, *dest, true, ate_dot, reader->stack.size);
 }
 
 static SerdStatus
@@ -469,7 +559,8 @@ read_verb(SerdReader* reader, SerdNode** dest)
     return SERD_ERR_OVERFLOW;
   }
 
-  SerdStatus st = read_PN_PREFIX(reader, *dest);
+  const size_t string_start_offset = reader->stack.size;
+  SerdStatus   st                  = read_PN_PREFIX(reader, *dest);
   if (st > SERD_FAILURE) {
     return st;
   }
@@ -485,7 +576,9 @@ read_verb(SerdReader* reader, SerdNode** dest)
               : SERD_ERR_OVERFLOW);
   }
 
-  if ((st = read_PrefixedName(reader, *dest, false, &ate_dot)) || ate_dot) {
+  if ((st = read_PrefixedName(
+         reader, *dest, false, &ate_dot, string_start_offset)) ||
+      ate_dot) {
     *dest = NULL;
     return r_err(
       reader, st > SERD_FAILURE ? st : SERD_ERR_BAD_SYNTAX, "expected verb");
@@ -576,7 +669,7 @@ read_named_object(SerdReader* const reader,
   SerdStatus st   = SERD_SUCCESS;
 
   // Attempt to read a prefixed name
-  st = read_PrefixedName(reader, node, true, ate_dot);
+  st = read_PrefixedName(reader, node, true, ate_dot, reader->stack.size);
 
   // Check if this is actually a special boolean node
   if (st == SERD_FAILURE && (node_has_string(node, true_string) ||

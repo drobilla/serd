@@ -363,6 +363,37 @@ test_write_pname_escapes(void)
   check_pname_escape((const char*)last_escape, "eg:s\n\teg:p eg:wx%C3%B7 .\n");
 }
 
+static void
+test_write_bad_uri(void)
+{
+  SerdWorld* world = serd_world_new();
+  SerdEnv*   env   = serd_env_new(serd_empty_string());
+
+  SerdNode* s   = serd_new_uri(serd_string("http://example.org/s"));
+  SerdNode* p   = serd_new_uri(serd_string("http://example.org/p"));
+  SerdNode* rel = serd_new_uri(serd_string("rel"));
+
+  SerdBuffer buffer = {NULL, 0};
+
+  SerdWriter* writer =
+    serd_writer_new(world, SERD_NTRIPLES, 0U, env, serd_buffer_sink, &buffer);
+
+  assert(writer);
+
+  const SerdStatus st =
+    serd_sink_write(serd_writer_sink(writer), 0U, s, p, rel, NULL);
+  assert(st);
+  assert(st == SERD_ERR_BAD_ARG);
+
+  serd_free(serd_buffer_sink_finish(&buffer));
+  serd_writer_free(writer);
+  serd_node_free(rel);
+  serd_node_free(p);
+  serd_node_free(s);
+  serd_env_free(env);
+  serd_world_free(world);
+}
+
 int
 main(void)
 {
@@ -374,6 +405,7 @@ main(void)
   test_writer_stack_overflow();
   test_write_empty_syntax();
   test_write_pname_escapes();
+  test_write_bad_uri();
 
   return 0;
 }

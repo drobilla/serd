@@ -169,6 +169,7 @@ simple_command_tests = {
       ['-o'],
       ['-p'],
       ['-r'],
+      ['-s', '<foo> a <Bar> .'],
       ['-s'],
       ['-z'],
     ],
