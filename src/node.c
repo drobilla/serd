@@ -5,7 +5,9 @@
 
 #include "base64.h"
 #include "string_utils.h"
+#include "system.h"
 
+#include "serd/attributes.h"
 #include "serd/buffer.h"
 #include "serd/node.h"
 #include "serd/string.h"
@@ -28,6 +30,8 @@
 #    define isinf(x) (!_finite(x))
 #  endif
 #endif
+
+static const size_t serd_node_align = 2 * sizeof(uint64_t);
 
 static size_t
 serd_uri_string_length(const SerdURIView* const uri)
@@ -57,12 +61,26 @@ string_sink(const void* const buf, const size_t len, void* const stream)
   return len;
 }
 
+static size_t
+serd_node_pad_size(const size_t n_bytes)
+{
+  const size_t pad = sizeof(SerdNode) - (n_bytes + 2) % sizeof(SerdNode);
+  return n_bytes + 2 + pad;
+}
+
+static SERD_PURE_FUNC size_t
+serd_node_total_size(const SerdNode* const node)
+{
+  return node ? (sizeof(SerdNode) + serd_node_pad_size(node->length)) : 0;
+}
+
 SerdNode*
 serd_node_malloc(const size_t        length,
                  const SerdNodeFlags flags,
                  const SerdNodeType  type)
 {
-  SerdNode* node = (SerdNode*)calloc(1, sizeof(SerdNode) + length + 1);
+  const size_t size = sizeof(SerdNode) + serd_node_pad_size(length);
+  SerdNode*    node = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
 
   node->length = 0;
   node->flags  = flags;
@@ -77,10 +95,13 @@ serd_node_set(SerdNode** const dst, const SerdNode* const src)
   assert(dst);
   assert(src);
 
-  if (!*dst || (*dst)->length < src->length) {
-    (*dst) = (SerdNode*)realloc(*dst, sizeof(SerdNode) + src->length + 1);
+  const size_t size = serd_node_total_size(src);
+  if (!*dst || serd_node_total_size(*dst) < size) {
+    serd_free_aligned(*dst);
+    *dst = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
   }
 
+  assert(*dst);
   memcpy(*dst, src, sizeof(SerdNode) + src->length + 1);
 }
 
@@ -115,8 +136,8 @@ serd_node_copy(const SerdNode* node)
     return NULL;
   }
 
-  const size_t size = sizeof(SerdNode) + node->length + 1;
-  SerdNode*    copy = (SerdNode*)malloc(size);
+  const size_t size = serd_node_total_size(node);
+  SerdNode*    copy = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
   memcpy(copy, node, size);
   return copy;
 }
@@ -437,5 +458,5 @@ serd_node_flags(const SerdNode* const node)
 void
 serd_node_free(SerdNode* const node)
 {
-  free(node);
+  serd_free_aligned(node);
 }
