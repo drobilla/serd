@@ -1,0 +1,3 @@
+[submodule "subprojects/exess"]
+	path = subprojects/exess
+	url = ../exess.git

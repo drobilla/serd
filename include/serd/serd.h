@@ -318,13 +318,12 @@ serd_strlen(const char* SERD_NONNULL str, SerdNodeFlags* SERD_NULLABLE flags);
 SERD_API
 double
 serd_strtod(const char* SERD_NONNULL str,
-            char* SERD_NONNULL* SERD_NULLABLE endptr);
+            const char* SERD_NONNULL* SERD_NULLABLE endptr);
 
 /**
    Decode a base64 string.
 
-   This function can be used to deserialise a blob node created with
-   serd_new_blob().
+   This function can be used to decode a node created with serd_new_base64().
 
    @param str Base64 string to decode.
    @param len The length of `str`.
@@ -637,31 +636,23 @@ SerdNode* SERD_ALLOCATED
 serd_new_file_uri(SerdStringView path, SerdStringView hostname);
 
 /**
-   Create a new node by serialising `d` into an xsd:decimal string
+   Create a new canonical xsd:decimal literal.
 
    The resulting node will always contain a `.', start with a digit, and end
-   with a digit (i.e. will have a leading and/or trailing `0' if necessary).
-   It will never be in scientific notation.  A maximum of `frac_digits` digits
-   will be written after the decimal point, but trailing zeros will
-   automatically be omitted (except one if `d` is a round integer).
-
-   Note that about 16 and 8 fractional digits are required to precisely
-   represent a double and float, respectively.
+   with a digit (a leading and/or trailing `0` will be added if necessary).  It
+   will never be in scientific notation.
 
    @param d The value for the new node.
-   @param frac_digits The maximum number of digits after the decimal place.
    @param datatype Datatype of node, or NULL for xsd:decimal.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_decimal(double                        d,
-                 unsigned                      frac_digits,
-                 const SerdNode* SERD_NULLABLE datatype);
+serd_new_decimal(double d, const SerdNode* SERD_NULLABLE datatype);
 
 /**
-   Create a new node by serialising `i` into an xsd:integer string.
+   Create a new canonical xsd:integer literal.
 
-   @param i Integer value to serialise.
+   @param i Integer value of literal.
    @param datatype Datatype of node, or NULL for xsd:integer.
 */
 SERD_API
@@ -669,22 +660,20 @@ SerdNode* SERD_ALLOCATED
 serd_new_integer(int64_t i, const SerdNode* SERD_NULLABLE datatype);
 
 /**
-   Create a node by serialising `buf` into an xsd:base64Binary string
+   Create a new canonical xsd:base64Binary literal.
 
-   This function can be used to make a serialisable node out of arbitrary
-   binary data, which can be decoded using serd_base64_decode().
+   This function can be used to make a node out of arbitrary binary data, which
+   can be decoded using serd_base64_decode().
 
-   @param buf Raw binary input data.
-   @param size Size of `buf`.
-   @param wrap_lines Wrap lines at 76 characters to conform to RFC 2045.
-   @param datatype Datatype of node, or NULL for xsd:base64Binary.
+   @param buf Raw binary data to encode in node.
+   @param size Size of `buf` in bytes.
+   @param datatype Datatype of node, or null for xsd:base64Binary.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_blob(const void* SERD_NONNULL      buf,
-              size_t                        size,
-              bool                          wrap_lines,
-              const SerdNode* SERD_NULLABLE datatype);
+serd_new_base64(const void* SERD_NONNULL      buf,
+                size_t                        size,
+                const SerdNode* SERD_NULLABLE datatype);
 
 /// Return a deep copy of `node`
 SERD_API

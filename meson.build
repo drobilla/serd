@@ -30,9 +30,6 @@ if get_option('strict')
   if cc.get_id() == 'clang'
     c_suppressions += [
       '-Wno-cast-align',
-      '-Wno-cast-qual',
-      '-Wno-conversion',
-      '-Wno-double-promotion',
       '-Wno-format-nonliteral',
       '-Wno-nullability-extension',
       '-Wno-nullable-to-nonnull-conversion',
@@ -43,7 +40,6 @@ if get_option('strict')
   elif cc.get_id() == 'gcc'
     c_suppressions += [
       '-Wno-cast-align',
-      '-Wno-cast-qual',
       '-Wno-float-conversion', # MinGW
       '-Wno-format-nonliteral',
       '-Wno-padded',
@@ -122,8 +118,16 @@ elif get_option('default_library') == 'shared'
 else
   prog_args = ['-DSERD_STATIC']
   library_type = 'static_library'
-  library_args = ['-DSERD_INTERNAL', '-DSERD_STATIC']
+  library_args = [
+    '-DEXESS_STATIC',
+    '-DSERD_INTERNAL',
+    '-DSERD_STATIC',
+  ]
 endif
+
+exess_dep = dependency('exess-0',
+                       version: '>= 0.0.1',
+                       fallback: ['exess', 'exess_dep'])
 
 # Build shared and/or static library/libraries
 libserd = build_target(
@@ -132,7 +136,7 @@ libserd = build_target(
   version: meson.project_version(),
   include_directories: include_directories(['include']),
   c_args: c_warnings + library_args,
-  dependencies: m_dep,
+  dependencies: [exess_dep, m_dep],
   gnu_symbol_visibility: 'hidden',
   install: true,
   target_type: library_type)
