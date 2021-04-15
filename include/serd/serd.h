@@ -215,6 +215,7 @@ typedef enum {
   SERD_ERR_BAD_WRITE,  ///< Error writing to file/stream
   SERD_ERR_NO_DATA,    ///< Unexpected end of input
   SERD_ERR_BAD_CALL,   ///< Invalid call
+  SERD_ERR_BAD_URI,    ///< Invalid or unresolved URI
 } SerdStatus;
 
 /**
@@ -1739,6 +1740,8 @@ typedef enum {
   SERD_READ_LAX          = 1u << 0u, ///< Tolerate invalid input where possible
   SERD_READ_VARIABLES    = 1u << 1u, ///< Support variable nodes
   SERD_READ_EXACT_BLANKS = 1u << 2u, ///< Allow clashes with generated blanks
+  SERD_READ_PREFIXED     = 1u << 3u, ///< Do not expand prefixed names
+  SERD_READ_RELATIVE     = 1u << 4u, ///< Do not expand relative URI references
 } SerdReaderFlag;
 
 /// Bitwise OR of SerdReaderFlag values
