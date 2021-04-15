@@ -773,10 +773,10 @@ read_IRIREF(SerdReader* reader, Ref* dest)
                    (unsigned)c);
         if (reader->strict) {
           break;
-        } else {
-          st = SERD_FAILURE;
-          push_byte(reader, *dest, c);
         }
+
+        st = SERD_FAILURE;
+        push_byte(reader, *dest, c);
       } else if (!(c & 0x80)) {
         push_byte(reader, *dest, c);
       } else if (read_utf8_character(reader, *dest, (uint8_t)c)) {
