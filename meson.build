@@ -102,6 +102,13 @@ endif
 # Dependencies #
 ################
 
+exess_dep = dependency(
+  'exess-0',
+  fallback: ['exess', 'exess_dep'],
+  include_type: 'system',
+  version: '>= 0.0.1',
+)
+
 zix_dep = dependency(
   'zix-0',
   fallback: ['zix', 'zix_dep'],
@@ -170,7 +177,7 @@ libserd = library(
     '-DSERD_VERSION="@0@"'.format(meson.project_version()),
   ] + c_suppressions + extra_c_args + platform_c_args,
   darwin_versions: [serd_major_version + '.0.0', meson.project_version()],
-  dependencies: [m_dep, zix_dep],
+  dependencies: [exess_dep, m_dep, zix_dep],
   gnu_symbol_visibility: 'hidden',
   include_directories: include_dirs,
   install: true,
