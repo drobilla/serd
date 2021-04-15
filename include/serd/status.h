@@ -30,6 +30,7 @@ typedef enum {
   SERD_ERR_BAD_WRITE,  ///< Error writing to file/stream
   SERD_ERR_NO_DATA,    ///< Unexpected end of input
   SERD_ERR_BAD_CALL,   ///< Invalid call
+  SERD_ERR_BAD_URI,    ///< Invalid or unresolved URI
 } SerdStatus;
 
 /// Return a string describing a status code

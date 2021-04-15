@@ -166,10 +166,7 @@ push_byte(SerdReader* reader, SerdNode* node, const int c)
 }
 
 static inline SerdStatus
-push_bytes(SerdReader*    reader,
-           SerdNode*      ref,
-           const uint8_t* bytes,
-           unsigned       len)
+push_bytes(SerdReader* reader, SerdNode* ref, const uint8_t* bytes, size_t len)
 {
   const bool has_space = reader->stack.buf_size >= reader->stack.size + len;
   if (has_space) {
