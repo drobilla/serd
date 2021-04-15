@@ -61,12 +61,6 @@ is_print(const int c)
 }
 
 static inline bool
-is_base64(const int c)
-{
-  return is_alpha(c) || is_digit(c) || c == '+' || c == '/' || c == '=';
-}
-
-static inline bool
 is_windows_path(const char* path)
 {
   return is_alpha(path[0]) && (path[1] == ':' || path[1] == '|') &&

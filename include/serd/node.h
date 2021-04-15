@@ -177,37 +177,40 @@ serd_new_boolean(bool b);
 /**
    Create a new canonical xsd:decimal literal.
 
-   The resulting node will always contain a '.', start with a digit, and end
-   with a digit (i.e. will have a leading and/or trailing '0' if necessary).
-   It will never be in scientific notation.  A maximum of `frac_digits` digits
-   will be written after the decimal point, but trailing zeros will
-   automatically be omitted (except one if `d` is a round integer).
+   The node will be an xsd:decimal literal, like "12.34", with
+   datatype xsd:decimal by default, or a custom datatype.
 
-   Note that about 16 and 8 fractional digits are required to precisely
-   represent a double and float, respectively.
+   The node will always contain a '.', start with a digit, and end with a digit
+   (a leading and/or trailing '0' will be added if necessary), for example,
+   "1.0".  It will never be in scientific notation.
 
    @param d The value for the new node.
-   @param frac_digits The maximum number of digits after the decimal place.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_decimal(double d, unsigned frac_digits);
+serd_new_decimal(double d);
 
-/// Create a new canonical xsd:integer literal
+/**
+   Create a new canonical xsd:integer literal.
+
+   The node will be an xsd:integer literal like "1234", with datatype
+   xsd:integer.
+
+   @param i Integer value of literal.
+*/
 SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_integer(int64_t i);
 
 /**
    Create a new canonical xsd:base64Binary literal.
 
-   This function can be used to make a serialisable node out of arbitrary
-   binary data, which can be decoded using serd_base64_decode().
+   This function can be used to make a node out of arbitrary binary data, which
+   can be decoded using serd_base64_decode().
 
-   @param buf Raw binary input data.
-   @param size Size of `buf`.
-   @param wrap_lines Wrap lines at 76 characters to conform to RFC 2045.
+   @param buf Raw binary data to encode in node.
+   @param size Size of `buf` in bytes.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_blob(const void* ZIX_NONNULL buf, size_t size, bool wrap_lines);
+serd_new_base64(const void* ZIX_NONNULL buf, size_t size);
 
 /// Return a deep copy of `node`
 SERD_API SerdNode* ZIX_ALLOCATED
