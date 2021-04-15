@@ -136,6 +136,21 @@ serd_env_set_base_uri(SerdEnv* const env, const SerdStringView uri)
   return SERD_SUCCESS;
 }
 
+SerdStringView
+serd_env_find_prefix(const SerdEnv* const env, const SerdStringView name)
+{
+  for (size_t i = 0; i < env->n_prefixes; ++i) {
+    const SerdNode* const prefix_name = env->prefixes[i].name;
+    if (prefix_name->length == name.length) {
+      if (!memcmp(serd_node_string(prefix_name), name.data, name.length)) {
+        return serd_node_string_view(env->prefixes[i].uri);
+      }
+    }
+  }
+
+  return serd_empty_string();
+}
+
 SERD_PURE_FUNC static SerdPrefix*
 serd_env_find(const SerdEnv* const env,
               const char* const    name,

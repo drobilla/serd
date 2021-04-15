@@ -50,6 +50,8 @@ serd_strerror(const SerdStatus status)
     return "Unexpected end of input";
   case SERD_ERR_BAD_CALL:
     return "Invalid call";
+  case SERD_ERR_BAD_URI:
+    return "Invalid or unresolved URI";
   }
 
   return "Unknown error";
