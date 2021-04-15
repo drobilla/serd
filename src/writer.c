@@ -257,7 +257,7 @@ write_uri(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
       // Corrupt input, write percent-encoded bytes and scan to next start
       char escape[4] = {0, 0, 0, 0};
       for (; i < n_bytes && (utf8[i] & 0x80); ++i) {
-        snprintf(escape, sizeof(escape), "%%%02X", (uint8_t)utf8[i]);
+        snprintf(escape, sizeof(escape), "%%%02X", utf8[i]);
         len += sink(escape, 3, writer);
       }
     }
