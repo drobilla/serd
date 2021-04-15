@@ -17,12 +17,20 @@ unit_tests = [
   'writer',
 ]
 
+test_env = []
+if build_machine.system() == 'windows' and host_machine.system() == 'windows'
+  # For Windows, we need to add to PATH so that DLLs are found
+  test_env = ['PATH=@0@;@1@'.format('subprojects' / 'exess',
+                                    'subprojects' / 'rerex')]
+endif
+
 foreach unit : unit_tests
   test(unit,
        executable('test_@0@'.format(unit),
                   'test_@0@.c'.format(unit),
                   c_args: c_warnings + prog_args,
                   dependencies: serd_dep),
+       env: test_env,
        suite: 'unit')
 endforeach
 
@@ -40,7 +48,7 @@ if get_option('utils')
 
   serd_ttl = files('../serd.ttl')[0]
 
-  test('serd.ttl', serdi, args: [serd_ttl], suite: 'data')
+  test('serd.ttl', serdi, args: [serd_ttl], env: test_env, suite: 'data')
 
   # Command line options
 
@@ -51,7 +59,7 @@ if get_option('utils')
   ]
 
   foreach args : good_args
-    test(args[0], serdi, args: args, suite: ['serdi', 'options'])
+    test(args[0], serdi, args: args, env: test_env, suite: ['serdi', 'options'])
   endforeach
 
   bad_args = [
@@ -78,39 +86,50 @@ if get_option('utils')
     name = ' '.join(args).underscorify()
     test(name, serdi,
          args: args,
+         env: test_env,
          should_fail: true,
          suite: ['serdi', 'options'])
   endforeach
 
-  test('none', serdi, should_fail: true, suite: ['serdi', 'options'])
+  test('none',
+       serdi,
+       env: test_env,
+       should_fail: true,
+       suite: ['serdi', 'options'])
 
   test('quiet', files('test_quiet.py'),
        args: script_args + files('bad/bad-base.ttl'),
+       env: test_env,
        suite: ['serdi', 'options'])
 
   # Inputs
 
   test('stdin', files('test_stdin.py'),
        args: script_args,
+       env: test_env,
        suite: ['serdi', 'input'])
 
   test('string', serdi,
        args: ['-s', '<foo> a <Bar> .'],
+       env: test_env,
        should_fail: true,
        suite: ['serdi', 'input'])
 
   test('missing', serdi,
        args: ['-i', 'turtle'],
+       env: test_env,
        should_fail: true,
        suite: ['serdi', 'input'])
 
   test('no_such_file', serdi,
        args: ['no_such_file'],
+       env: test_env,
        should_fail: true,
        suite: ['serdi', 'input'])
 
   test('remote', serdi,
        args: ['ftp://example.org/unsupported.ttl'],
+       env: test_env,
        should_fail: true,
        suite: ['serdi', 'input'])
 
@@ -118,16 +137,19 @@ if get_option('utils')
 
   test('read_dir', serdi,
        args: ['-e', 'file://@0@/'.format(meson.source_root())],
+       env: test_env,
        should_fail: true,
        suite: 'io_errors')
 
   test('bulk_read_dir', serdi,
        args: ['file://@0@/'.format(meson.source_root())],
+       env: test_env,
        should_fail: true,
        suite: 'io_errors')
 
   test('write_error', files('test_write_error.py'),
        args: script_args + [serd_ttl],
+       env: test_env,
        suite: 'io_errors')
 
   # RDF test suites
@@ -143,6 +165,7 @@ if get_option('utils')
     base_uri = serd_base + name + '/'
     test(name, run_test_suite,
          args: script_args + [manifest, base_uri],
+         env: test_env,
          suite: ['rdf', 'serd'],
          timeout: 240)
   endforeach
@@ -154,6 +177,7 @@ if get_option('utils')
   ### ... once with strict parsing to test the hard errors
   test('lax.strict', run_test_suite,
        args: script_args + [lax_manifest, lax_base_uri],
+       env: test_env,
        is_parallel: false,
        suite: ['rdf', 'serd'],
        timeout: 240)
@@ -161,6 +185,7 @@ if get_option('utils')
   ### ... and once with lax parsing to tolerate them
   test('lax.lax', run_test_suite,
        args: script_args + [lax_manifest, lax_base_uri, '--', '-l'],
+       env: test_env,
        is_parallel: false,
        suite: ['rdf', 'serd'],
        timeout: 240)
@@ -182,6 +207,7 @@ if get_option('utils')
 
     test(syntax, run_test_suite,
          args: script_args + args,
+         env: test_env,
          suite: ['rdf', 'w3c'],
          timeout: 240)
 
