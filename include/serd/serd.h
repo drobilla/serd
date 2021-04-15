@@ -45,6 +45,7 @@
    @{
 */
 
+#include "serd/stream_result.h"
 #include "serd/string.h"
 #include "serd/syntax.h"
 

@@ -34,7 +34,7 @@ static:
   stage: build
   image: lv2plugin/debian-x64
   script:
-    - meson setup build -Ddefault_library=static -Ddocs=disabled -Dstatic=true -Dwarning_level=3 -Dwerror=true -Dzix:default_library=static
+    - meson setup build -Ddefault_library=static -Ddocs=disabled -Dstatic=true -Dwarning_level=3 -Dwerror=true -Dexess:default_library=static -Dzix:default_library=static
     - ninja -C build test
 
 sanitize:
@@ -46,9 +46,9 @@ sanitize:
   variables:
     CC: "clang"
     CXX: "clang++"
-    CFLAGS: "-fno-sanitize-recover=all -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=unsigned-integer-overflow -fsanitize=implicit-conversion -fsanitize=local-bounds -fsanitize=nullability"
-    CXXFLAGS: "-fno-sanitize-recover=all -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=unsigned-integer-overflow -fsanitize=implicit-conversion -fsanitize=local-bounds -fsanitize=nullability"
-    LDFLAGS: "-fno-sanitize-recover=all -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=unsigned-integer-overflow -fsanitize=implicit-conversion -fsanitize=local-bounds -fsanitize=nullability"
+    CFLAGS: "-fno-sanitize-recover=all -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=implicit-conversion -fsanitize=local-bounds -fsanitize=nullability"
+    CXXFLAGS: "-fno-sanitize-recover=all -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=implicit-conversion -fsanitize=local-bounds -fsanitize=nullability"
+    LDFLAGS: "-fno-sanitize-recover=all -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=implicit-conversion -fsanitize=local-bounds -fsanitize=nullability"
 
 # Linux Distributions
 
@@ -99,7 +99,7 @@ mingw32:
     - meson configure -Dbuildtype=release build
     - ninja -C build test
   variables:
-    WINEPATH: "Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\10-win32;Z:\\builds\\drobilla\\serd\\build\\subprojects\\zix"
+    WINEPATH: "Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\10-win32;Z:\\builds\\drobilla\\serd\\build\\subprojects\\exess;Z:\\builds\\drobilla\\serd\\build\\subprojects\\zix"
 
 mingw64:
   stage: build
@@ -110,7 +110,7 @@ mingw64:
     - meson configure -Dbuildtype=release build
     - ninja -C build test
   variables:
-    WINEPATH: "Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\8.3-win32;Z:\\builds\\drobilla\\serd\\build\\subprojects\\zix"
+    WINEPATH: "Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\8.3-win32;Z:\\builds\\drobilla\\serd\\build\\subprojects\\exess;Z:\\builds\\drobilla\\serd\\build\\subprojects\\zix"
 
 # Non-Linux/Docker rows (not hosted)
 

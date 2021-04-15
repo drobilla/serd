@@ -5,6 +5,7 @@
 #define SERD_NODE_H
 
 #include "serd/attributes.h"
+#include "serd/stream_result.h"
 #include "serd/uri.h"
 #include "zix/allocator.h"
 #include "zix/attributes.h"
@@ -201,44 +202,43 @@ serd_new_boolean(ZixAllocator* ZIX_NULLABLE allocator, bool b);
 /**
    Create a new canonical xsd:decimal literal.
 
-   The resulting node will always contain a '.', start with a digit, and end
-   with a digit (i.e. will have a leading and/or trailing '0' if necessary).
-   It will never be in scientific notation.  A maximum of `frac_digits` digits
-   will be written after the decimal point, but trailing zeros will
-   automatically be omitted (except one if `d` is a round integer).
-
-   Note that about 16 and 8 fractional digits are required to precisely
-   represent a double and float, respectively.
+   The node will be an xsd:decimal literal, like "12.34", with datatype
+   xsd:decimal.  This will always always contain a '.', start with a digit, and
+   end with a digit (a leading and/or trailing '0' will be added if necessary),
+   for example, "1.0".  It will never be in scientific notation.
 
    @param allocator Allocator for the returned node.
    @param d The value for the new node.
-   @param frac_digits The maximum number of digits after the decimal place.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_decimal(ZixAllocator* ZIX_NULLABLE allocator,
-                 double                     d,
-                 unsigned                   frac_digits);
+serd_new_decimal(ZixAllocator* ZIX_NULLABLE allocator, double d);
 
-/// Create a new canonical xsd:integer literal
+/**
+   Create a new canonical xsd:integer literal.
+
+   The node will be an xsd:integer literal like "1234", with datatype
+   xsd:integer.
+
+   @param allocator Allocator for the returned node.
+   @param i Integer value of literal.
+*/
 SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_integer(ZixAllocator* ZIX_NULLABLE allocator, int64_t i);
 
 /**
    Create a new canonical xsd:base64Binary literal.
 
-   This function can be used to make a serialisable node out of arbitrary
-   binary data, which can be decoded using serd_base64_decode().
+   This function can be used to make a node out of arbitrary binary data, which
+   can be decoded using serd_base64_decode().
 
    @param allocator Allocator for the returned node.
-   @param buf Raw binary input data.
-   @param size Size of `buf`.
-   @param wrap_lines Wrap lines at 76 characters to conform to RFC 2045.
+   @param buf Raw binary data to encode in node.
+   @param size Size of `buf` in bytes.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_blob(ZixAllocator* ZIX_NULLABLE allocator,
-              const void* ZIX_NONNULL    buf,
-              size_t                     size,
-              bool                       wrap_lines);
+serd_new_base64(ZixAllocator* ZIX_NULLABLE allocator,
+                const void* ZIX_NONNULL    buf,
+                size_t                     size);
 
 /**
    Return a deep copy of `node`.
@@ -339,6 +339,37 @@ serd_node_datatype(const SerdNode* ZIX_NONNULL node);
 */
 SERD_PURE_API const SerdNode* ZIX_NULLABLE
 serd_node_language(const SerdNode* ZIX_NONNULL node);
+
+/**
+   Return the maximum size of a decoded binary node in bytes.
+
+   This returns an upper bound on the number of bytes that the node would
+   decode to.  This is calculated as a simple constant-time arithmetic
+   expression based on the length of the encoded string, so may be larger than
+   the actual size of the data due to things like additional whitespace.
+*/
+SERD_PURE_API size_t
+serd_node_decoded_size(const SerdNode* ZIX_NONNULL node);
+
+/**
+   Decode a base64 node.
+
+   This function can be used to decode a node created with serd_new_base64().
+
+   @param node A literal node which is an encoded base64 string.
+
+   @param buf_size The size of `buf` in bytes.
+
+   @param buf Buffer where decoded data will be written.
+
+   @return On success, #SERD_SUCCESS is returned along with the number of bytes
+   written.  If the output buffer is too small, then #SERD_NO_SPACE is returned
+   along with the number of bytes required for successful decoding.
+*/
+SERD_API SerdStreamResult
+serd_node_decode(const SerdNode* ZIX_NONNULL node,
+                 size_t                      buf_size,
+                 void* ZIX_NONNULL           buf);
 
 /**
    @}

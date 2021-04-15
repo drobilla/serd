@@ -98,6 +98,13 @@ endif
 # Dependencies #
 ################
 
+exess_dep = dependency(
+  'exess-0',
+  fallback: ['exess', 'exess_dep'],
+  include_type: 'system',
+  version: '>= 0.0.1',
+)
+
 zix_dep = dependency(
   'zix-0',
   fallback: ['zix', 'zix_dep'],
@@ -128,6 +135,7 @@ c_headers = files(
   'include/serd/statement_view.h',
   'include/serd/status.h',
   'include/serd/stream.h',
+  'include/serd/stream_result.h',
   'include/serd/string.h',
   'include/serd/syntax.h',
   'include/serd/uri.h',
@@ -137,7 +145,6 @@ c_headers = files(
 )
 
 sources = files(
-  'src/base64.c',
   'src/block_dumper.c',
   'src/byte_source.c',
   'src/env.c',
@@ -176,7 +183,7 @@ libserd = library(
     '-DSERD_VERSION="@0@"'.format(meson.project_version()),
   ] + c_suppressions + extra_c_args + platform_c_args,
   darwin_versions: [serd_major_version + '.0.0', meson.project_version()],
-  dependencies: [m_dep, zix_dep],
+  dependencies: [exess_dep, m_dep, zix_dep],
   gnu_symbol_visibility: 'hidden',
   include_directories: include_dirs,
   install: true,
