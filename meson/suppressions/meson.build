@@ -17,9 +17,7 @@ if is_variable('cc')
       c_suppressions += [
         '-Wno-cast-align',
         '-Wno-cast-function-type-strict',
-        '-Wno-cast-qual',
         '-Wno-declaration-after-statement',
-        '-Wno-double-promotion',
         '-Wno-format-nonliteral',
         '-Wno-padded',
         '-Wno-unsafe-buffer-usage',
@@ -54,7 +52,6 @@ if is_variable('cc')
     if warning_level == 'everything'
       c_suppressions += [
         '-Wno-cast-align',
-        '-Wno-cast-qual',
         '-Wno-format-nonliteral',
         '-Wno-inline',
         '-Wno-padded',

@@ -3,11 +3,11 @@
 
 #include "node.h"
 
-#include "base64.h"
 #include "serd_internal.h"
 #include "string_utils.h"
 #include "system.h"
 
+#include "exess/exess.h"
 #include "serd/attributes.h"
 #include "serd/buffer.h"
 #include "serd/node.h"
@@ -16,22 +16,16 @@
 #include "serd/uri.h"
 
 #include <assert.h>
-#include <float.h>
-#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef _WIN32
-#  ifndef isnan
-#    define isnan(x) _isnan(x)
-#  endif
-#  ifndef isinf
-#    define isinf(x) (!_finite(x))
-#  endif
-#endif
+typedef struct {
+  const void* SERD_NULLABLE buf;
+  size_t                    len;
+} SerdConstBuffer;
 
 #define NS_XSD "http://www.w3.org/2001/XMLSchema#"
 
@@ -502,12 +496,9 @@ serd_new_file_uri(const SerdStringView path, const SerdStringView hostname)
   return node;
 }
 
-static unsigned
-serd_digits(const double abs)
-{
-  const double lg = ceil(log10(floor(abs) + 1.0));
-  return lg < 1.0 ? 1U : (unsigned)lg;
-}
+typedef size_t (*SerdWriteLiteralFunc)(const void* user_data,
+                                       size_t      buf_size,
+                                       char*       buf);
 
 SerdNode*
 serd_new_boolean(bool b)
@@ -516,67 +507,55 @@ serd_new_boolean(bool b)
                                 serd_node_string_view(&serd_xsd_boolean.node));
 }
 
-SerdNode*
-serd_new_decimal(const double          d,
-                 const unsigned        frac_digits,
-                 const SerdNode* const datatype)
+static SerdNode*
+serd_new_custom_literal(const void* const          user_data,
+                        const size_t               len,
+                        const SerdWriteLiteralFunc write,
+                        const SerdNode* const      datatype)
 {
-  if (isnan(d) || isinf(d)) {
+  if (len == 0 || !write) {
     return NULL;
   }
 
-  const SerdNode* type       = datatype ? datatype : &serd_xsd_decimal.node;
-  const double    abs_d      = fabs(d);
-  const unsigned  int_digits = serd_digits(abs_d);
-  const size_t    len        = int_digits + frac_digits + 3;
-  const size_t    type_len   = serd_node_total_size(type);
-  const size_t    total_len  = len + type_len;
+  const size_t datatype_size = serd_node_total_size(datatype);
+  const size_t total_size    = serd_node_pad_size(len + 1) + datatype_size;
 
+  SerdNode* const node = serd_node_malloc(
+    total_size, datatype ? SERD_HAS_DATATYPE : 0U, SERD_LITERAL);
+
+  node->length = write(user_data, len + 1, serd_node_buffer(node));
+
+  if (datatype) {
+    memcpy(serd_node_meta(node), datatype, datatype_size);
+  }
+
+  serd_node_check_padding(node);
+  return node;
+}
+
+SerdNode*
+serd_new_decimal(const double d, const SerdNode* const datatype)
+{
+  // Use given datatype, or xsd:decimal as a default if it is null
+  const SerdNode* type      = datatype ? datatype : &serd_xsd_decimal.node;
+  const size_t    type_size = serd_node_total_size(type);
+
+  // Measure integer string to know how much space the node will need
+  ExessResult r = exess_write_decimal(d, 0, NULL);
+  assert(!r.status);
+
+  // Allocate node with enough space for value and datatype URI
   SerdNode* const node =
-    serd_node_malloc(total_len, SERD_HAS_DATATYPE, SERD_LITERAL);
+    serd_node_malloc(serd_node_pad_size(r.count + 1) + type_size,
+                     SERD_HAS_DATATYPE,
+                     SERD_LITERAL);
 
-  // Point s to decimal point location
-  char* const  buf      = serd_node_buffer(node);
-  const double int_part = floor(abs_d);
-  char*        s        = buf + int_digits;
-  if (d < 0.0) {
-    *buf = '-';
-    ++s;
-  }
+  // Write string directly into node
+  r = exess_write_decimal(d, r.count + 1, serd_node_buffer(node));
+  assert(!r.status);
 
-  // Write integer part (right to left)
-  char*    t   = s - 1;
-  uint64_t dec = (uint64_t)int_part;
-  do {
-    *t-- = (char)('0' + dec % 10);
-  } while ((dec /= 10) > 0);
-
-  *s++ = '.';
-
-  // Write fractional part (right to left)
-  double frac_part = fabs(d - int_part);
-  if (frac_part < DBL_EPSILON) {
-    *s++         = '0';
-    node->length = (size_t)(s - buf);
-  } else {
-    uint64_t frac = (uint64_t)llround(frac_part * pow(10.0, (int)frac_digits));
-    s += frac_digits - 1;
-    unsigned i = 0;
-
-    // Skip trailing zeros
-    for (; i < frac_digits - 1 && !(frac % 10); ++i, --s, frac /= 10) {
-    }
-
-    node->length = (size_t)(s - buf) + 1U;
-
-    // Write digits from last trailing zero to decimal point
-    for (; i < frac_digits; ++i) {
-      *s-- = (char)('0' + (frac % 10));
-      frac /= 10;
-    }
-  }
-
-  memcpy(serd_node_meta(node), type, type_len);
+  node->length = r.count;
+  memcpy(serd_node_meta(node), type, type_size);
   serd_node_check_padding(node);
   return node;
 }
@@ -584,61 +563,51 @@ serd_new_decimal(const double          d,
 SerdNode*
 serd_new_integer(const int64_t i, const SerdNode* const datatype)
 {
+  // Use given datatype, or xsd:integer as a default if it is null
   const SerdNode* type      = datatype ? datatype : &serd_xsd_integer.node;
-  uint64_t        abs_i     = (uint64_t)((i < 0) ? -i : i);
-  const unsigned  digits    = serd_digits((double)abs_i);
-  const size_t    type_len  = serd_node_total_size(type);
-  const size_t    total_len = digits + 2 + type_len;
+  const size_t    type_size = serd_node_total_size(type);
 
-  SerdNode* node = serd_node_malloc(total_len, SERD_HAS_DATATYPE, SERD_LITERAL);
+  // Measure integer string to know how much space the node will need
+  ExessResult r = exess_write_long(i, 0, NULL);
+  assert(!r.status);
 
-  // Point s to the end
-  char* buf = serd_node_buffer(node);
-  char* s   = buf + digits - 1;
-  if (i < 0) {
-    *buf = '-';
-    ++s;
-  }
+  // Allocate node with enough space for value and datatype URI
+  SerdNode* const node =
+    serd_node_malloc(serd_node_pad_size(r.count + 1) + type_size,
+                     SERD_HAS_DATATYPE,
+                     SERD_LITERAL);
 
-  node->length = (size_t)(s - buf) + 1U;
+  // Write string directly into node
+  r = exess_write_long(i, r.count + 1U, serd_node_buffer(node));
+  assert(!r.status);
 
-  // Write integer part (right to left)
-  do {
-    *s-- = (char)('0' + (abs_i % 10));
-  } while ((abs_i /= 10) > 0);
-
-  memcpy(serd_node_meta(node), type, type_len);
+  node->length = r.count;
+  memcpy(serd_node_meta(node), type, type_size);
   serd_node_check_padding(node);
   return node;
 }
 
-SerdNode*
-serd_new_blob(const void* const     buf,
-              const size_t          size,
-              const bool            wrap_lines,
-              const SerdNode* const datatype)
+static size_t
+write_base64_literal(const void* const user_data,
+                     const size_t      buf_size,
+                     char* const       buf)
 {
-  if (!buf || !size) {
-    return NULL;
-  }
+  const SerdConstBuffer blob = *(const SerdConstBuffer*)user_data;
 
-  const SerdNode* type      = datatype ? datatype : &serd_xsd_base64Binary.node;
-  const size_t    len       = serd_base64_get_length(size, wrap_lines);
-  const size_t    type_len  = serd_node_total_size(type);
-  const size_t    total_len = len + 1 + type_len;
+  const ExessResult r =
+    exess_write_base64(blob.len, (const void*)blob.buf, buf_size, buf);
 
-  SerdNode* const node =
-    serd_node_malloc(total_len, SERD_HAS_DATATYPE, SERD_LITERAL);
+  return r.status ? 0 : r.count;
+}
 
-  uint8_t* str = (uint8_t*)serd_node_buffer(node);
-  if (serd_base64_encode(str, buf, size, wrap_lines)) {
-    node->flags |= SERD_HAS_NEWLINE;
-  }
+SerdNode*
+serd_new_base64(const void* buf, size_t size, const SerdNode* datatype)
+{
+  const size_t    len  = exess_write_base64(size, buf, 0, NULL).count;
+  const SerdNode* type = datatype ? datatype : &serd_xsd_base64Binary.node;
+  SerdConstBuffer blob = {buf, size};
 
-  node->length = len;
-  memcpy(serd_node_meta(node), type, type_len);
-  serd_node_check_padding(node);
-  return node;
+  return serd_new_custom_literal(&blob, len, write_base64_literal, type);
 }
 
 SerdNodeType

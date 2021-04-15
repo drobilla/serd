@@ -131,6 +131,12 @@ unit_tests = [
   'writer',
 ]
 
+test_env = []
+if build_machine.system() == 'windows' and host_machine.system() == 'windows'
+  # For Windows, we need to add to PATH so that DLLs are found
+  test_env = ['PATH=@0@;@1@'.format('subprojects' / 'exess')]
+endif
+
 foreach unit : unit_tests
   test(
     unit,
@@ -140,6 +146,7 @@ foreach unit : unit_tests
       c_args: c_suppressions,
       dependencies: serd_dep,
     ),
+    env: test_env,
     suite: 'unit',
   )
 endforeach
@@ -186,7 +193,7 @@ if is_variable('serdi')
   serd_ttl = files('../serd.ttl')[0]
   bad_input_file = files('extra/bad/bad-base.ttl')
 
-  test('serd_ttl', serdi, args: [serd_ttl], suite: 'data')
+  test('serd_ttl', serdi, args: [serd_ttl], env: test_env, suite: 'data')
 
   # Command line options
 
@@ -198,18 +205,20 @@ if is_variable('serdi')
         ' '.join(args).substring(1).underscorify(),
         serdi,
         args: args,
+        env: test_env,
         should_fail: kind == 'bad',
         suite: cmd_suite,
       )
     endforeach
   endforeach
 
-  test('none', serdi, should_fail: true, suite: cmd_suite)
+  test('none', serdi, env: test_env, should_fail: true, suite: cmd_suite)
 
   test(
     'quiet',
     files('test_quiet.py'),
     args: script_args + [bad_input_file],
+    env: test_env,
     suite: cmd_suite,
   )
 
@@ -224,10 +233,24 @@ if is_variable('serdi')
   }
 
   foreach name, args : bad_input_tests
-    test(name, serdi, args: args, should_fail: true, suite: input_suite)
+    test(
+      name,
+      serdi,
+      args: args,
+      env: test_env,
+      should_fail: true,
+      suite: input_suite,
+    )
   endforeach
 
-  test('stdin', files('test_stdin.py'), args: script_args, suite: input_suite)
+  test(
+    'stdin',
+    files('test_stdin.py'),
+    args: script_args,
+    env: test_env,
+    suite: input_suite,
+  )
+
 
   # IO errors
 
@@ -238,13 +261,14 @@ if is_variable('serdi')
   }
 
   foreach name, args : io_error_tests
-    test(name, serdi, args: args, should_fail: true, suite: 'io')
+    test(name, serdi, args: args, env: test_env, should_fail: true, suite: 'io')
   endforeach
 
   test(
     'write_error',
     files('test_write_error.py'),
     args: script_args + [serd_ttl],
+    env: test_env,
     suite: 'io',
   )
 endif
@@ -387,6 +411,7 @@ if is_variable('serdi')
       name,
       run_suite,
       args: script_args + args,
+      env: test_env,
       suite: ['suite'],
       timeout: 240,
     )

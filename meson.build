@@ -97,6 +97,16 @@ else
   endforeach
 endif
 
+################
+# Dependencies #
+################
+
+exess_dep = dependency(
+  'exess-0',
+  fallback: ['exess', 'exess_dep'],
+  version: '>= 0.0.1',
+)
+
 ###########
 # Library #
 ###########
@@ -156,7 +166,7 @@ libserd = library(
     '-DSERD_MINOR_VERSION=@0@'.format(serd_minor_version),
     '-DSERD_VERSION="@0@"'.format(meson.project_version()),
   ] + c_suppressions + extra_c_args + platform_c_args,
-  dependencies: m_dep,
+  dependencies: [exess_dep, m_dep],
   gnu_symbol_visibility: 'hidden',
   include_directories: include_dirs,
   install: true,
