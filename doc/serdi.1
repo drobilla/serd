@@ -111,6 +111,14 @@ Display version information and exit.
 .Sh EXIT STATUS
 .Nm
 exits with a status of 0, or non-zero if an error occured.
+.Sh EXAMPLES
+To pretty-print a document:
+.Pp
+.Dl $ serdi -o turtle file.ttl > out.ttl
+.Pp
+To print any errors:
+.Pp
+.Dl $ serdi file.ttl > /dev/null
 .Sh SEE ALSO
 .Bl -item -compact
 .It
