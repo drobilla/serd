@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: ISC
 
 #include "byte_source.h"
+#include "env.h"
 #include "namespaces.h"
 #include "node.h"
 #include "reader.h"
@@ -719,6 +720,64 @@ read_IRIREF_scheme(SerdReader* const reader, SerdNode* const dest)
   return SERD_FAILURE;
 }
 
+typedef struct {
+  SerdReader* reader;
+  SerdNode*   node;
+  SerdStatus  status;
+} WriteNodeContext;
+
+static size_t
+write_to_stack(const void* const SERD_NONNULL buf,
+               const size_t                   size,
+               const size_t                   nmemb,
+               void* const SERD_NONNULL       stream)
+{
+  WriteNodeContext* const ctx  = (WriteNodeContext*)stream;
+  const uint8_t* const    utf8 = (const uint8_t*)buf;
+
+  ctx->status = push_bytes(ctx->reader, ctx->node, utf8, nmemb * size);
+
+  return nmemb;
+}
+
+static SerdStatus
+resolve_IRIREF(SerdReader* const reader,
+               SerdNode* const   dest,
+               const size_t      string_start_offset)
+{
+  // If the URI is already absolute, we don't need to do anything
+  SerdURIView uri = serd_parse_uri(serd_node_string(dest));
+  if (uri.scheme.len) {
+    return SERD_SUCCESS;
+  }
+
+  // Resolve relative URI reference to a full URI
+  uri = serd_resolve_uri(uri, serd_env_base_uri_view(reader->env));
+  if (!uri.scheme.len) {
+    return r_err(reader,
+                 SERD_ERR_BAD_SYNTAX,
+                 "failed to resolve relative URI reference <%s>",
+                 serd_node_string(dest));
+  }
+
+  // Push a new temporary node for constructing the resolved URI
+  SerdNode* const temp = push_node(reader, SERD_URI, "", 0);
+  if (!temp) {
+    return SERD_ERR_OVERFLOW;
+  }
+
+  // Write resolved URI to the temporary node
+  WriteNodeContext ctx = {reader, temp, SERD_SUCCESS};
+  temp->length         = serd_write_uri(uri, write_to_stack, &ctx);
+  if (!ctx.status) {
+    // Replace the destination with the new expanded node
+    memmove(dest, temp, serd_node_total_size(temp));
+    serd_stack_pop_to(&reader->stack, string_start_offset + dest->length);
+  }
+
+  return ctx.status;
+}
+
 static SerdStatus
 read_IRIREF(SerdReader* const reader, SerdNode** const dest)
 {
@@ -730,6 +789,8 @@ read_IRIREF(SerdReader* const reader, SerdNode** const dest)
   if (!(*dest = push_node(reader, SERD_URI, "", 0))) {
     return SERD_ERR_OVERFLOW;
   }
+
+  const size_t string_start_offset = reader->stack.size;
 
   if (!fancy_syntax(reader) && (st = read_IRIREF_scheme(reader, *dest))) {
     return r_err(reader, st, "expected IRI scheme");
@@ -744,7 +805,9 @@ read_IRIREF(SerdReader* const reader, SerdNode** const dest)
       return r_err(
         reader, SERD_ERR_BAD_SYNTAX, "invalid IRI character `%c'", c);
     case '>':
-      return SERD_SUCCESS;
+      return (reader->flags & SERD_READ_RELATIVE)
+               ? SERD_SUCCESS
+               : resolve_IRIREF(reader, *dest, string_start_offset);
     case '\\':
       if (read_UCHAR(reader, *dest, &code)) {
         return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid IRI escape");
@@ -797,7 +860,8 @@ static SerdStatus
 read_PrefixedName(SerdReader* const reader,
                   SerdNode* const   dest,
                   const bool        read_prefix,
-                  bool* const       ate_dot)
+                  bool* const       ate_dot,
+                  const size_t      string_start_offset)
 {
   SerdStatus st = SERD_SUCCESS;
   if (read_prefix && ((st = read_PN_PREFIX(reader, dest)) > SERD_FAILURE)) {
@@ -809,9 +873,34 @@ read_PrefixedName(SerdReader* const reader,
   }
 
   if ((st = push_byte(reader, dest, eat_byte_safe(reader, ':'))) ||
-      (st = read_PN_LOCAL(reader, dest, ate_dot)) > SERD_FAILURE) {
+      (st = read_PN_LOCAL(reader, dest, ate_dot)) > SERD_FAILURE ||
+      (reader->flags & SERD_READ_PREFIXED)) {
     return st;
   }
+
+  // Expand to absolute URI
+  const SerdStringView curie = serd_node_string_view(dest);
+  SerdStringView       prefix;
+  SerdStringView       suffix;
+  if ((st = serd_env_expand_in_place(reader->env, curie, &prefix, &suffix))) {
+    return r_err(
+      reader, st, "failed to expand URI \"%s\"", serd_node_string(dest));
+  }
+
+  // Push a new temporary node for constructing the full URI
+  SerdNode* const temp = push_node(reader, SERD_URI, "", 0);
+  if ((st = push_bytes(reader, temp, (const uint8_t*)prefix.buf, prefix.len)) ||
+      (st = push_bytes(reader, temp, (const uint8_t*)suffix.buf, suffix.len))) {
+    return st;
+  }
+
+  // Replace the destination with the new expanded node
+  const size_t total_size = serd_node_total_size(temp);
+
+  memmove(dest, temp, total_size);
+
+  serd_stack_pop_to(&reader->stack,
+                    string_start_offset + serd_node_length(dest));
 
   return SERD_SUCCESS;
 }
@@ -906,14 +995,15 @@ read_number(SerdReader* const reader,
 static SerdStatus
 read_iri(SerdReader* const reader, SerdNode** const dest, bool* const ate_dot)
 {
-  switch (peek_byte(reader)) {
-  case '<':
+  if (peek_byte(reader) == '<') {
     return read_IRIREF(reader, dest);
-  default:
-    *dest = push_node(reader, SERD_CURIE, "", 0);
-    return *dest ? read_PrefixedName(reader, *dest, true, ate_dot)
-                 : SERD_ERR_OVERFLOW;
   }
+
+  if (!(*dest = push_node(reader, SERD_CURIE, "", 0))) {
+    return SERD_ERR_OVERFLOW;
+  }
+
+  return read_PrefixedName(reader, *dest, true, ate_dot, reader->stack.size);
 }
 
 static SerdStatus
@@ -1005,7 +1095,8 @@ read_verb(SerdReader* reader, SerdNode** dest)
     return SERD_ERR_OVERFLOW;
   }
 
-  SerdStatus st = read_PN_PREFIX(reader, *dest);
+  const size_t string_start_offset = reader->stack.size;
+  SerdStatus   st                  = read_PN_PREFIX(reader, *dest);
   if (st > SERD_FAILURE) {
     return st;
   }
@@ -1021,7 +1112,9 @@ read_verb(SerdReader* reader, SerdNode** dest)
               : SERD_ERR_OVERFLOW);
   }
 
-  if ((st = read_PrefixedName(reader, *dest, false, &ate_dot)) || ate_dot) {
+  if ((st = read_PrefixedName(
+         reader, *dest, false, &ate_dot, string_start_offset)) ||
+      ate_dot) {
     *dest = NULL;
     return r_err(
       reader, st > SERD_FAILURE ? st : SERD_ERR_BAD_SYNTAX, "expected verb");
@@ -1217,7 +1310,7 @@ read_object(SerdReader* const  reader,
   case '\'':
     ret = read_literal(reader, &o, ate_dot);
     break;
-  default:
+  default: {
     /* Either a boolean literal, or a qname.  Read the prefix first, and if
        it is in fact a "true" or "false" literal, produce that instead.
     */
@@ -1225,6 +1318,7 @@ read_object(SerdReader* const  reader,
       return SERD_ERR_OVERFLOW;
     }
 
+    const size_t string_start_offset = reader->stack.size;
     while (!(ret = read_PN_CHARS_BASE(reader, o))) {
     }
 
@@ -1242,10 +1336,12 @@ read_object(SerdReader* const  reader,
         ret = SERD_SUCCESS;
       }
     } else if ((ret = read_PN_PREFIX_tail(reader, o)) > SERD_FAILURE ||
-               (ret = read_PrefixedName(reader, o, false, ate_dot))) {
+               (ret = read_PrefixedName(
+                  reader, o, false, ate_dot, string_start_offset))) {
       ret = (ret > SERD_FAILURE) ? ret : SERD_ERR_BAD_SYNTAX;
       return r_err(reader, ret, "expected prefixed name");
     }
+  }
   }
 
   if (!ret && emit && simple && o) {
@@ -1555,6 +1651,7 @@ read_prefixID(SerdReader* const reader, const bool sparql, const bool token)
     read_ws_star(reader);
     st = eat_byte_check(reader, '.');
   }
+
   return st;
 }
 

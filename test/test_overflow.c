@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-static const size_t min_stack_size = 4U * sizeof(size_t) + 256U;
+static const size_t min_stack_size = 4U * sizeof(size_t) + 230U;
 static const size_t max_stack_size = 1024U;
 
 static SerdStatus
@@ -77,11 +77,9 @@ static void
 test_turtle_overflow(void)
 {
   static const char* const test_strings[] = {
-    "<http://example.org/s> <http://example.org/p> :%99 .",
     "<http://example.org/s> <http://example.org/p> <http://example.org/> .",
     "<http://example.org/s> <http://example.org/p> "
     "<thisisanabsurdlylongurischeme://because/testing/> .",
-    "<http://example.org/s> <http://example.org/p> eg:foo .",
     "<http://example.org/s> <http://example.org/p> 1234 .",
     "<http://example.org/s> <http://example.org/p> (1 2 3 4) .",
     "<http://example.org/s> <http://example.org/p> (((((((42))))))) .",
@@ -99,7 +97,41 @@ test_turtle_overflow(void)
     "@prefix ug.dot: <http://example.org/> . \nug.dot:s ug.dot:p ug.dot:o .\n",
 
     // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
-    "@prefix øøøøøøøøø: <http://example.org/long> . \n"
+    "<http://example.org/subject/with/a/long/path> "
+    "<http://example.org/predicate/with/a/long/path> "
+    "<http://example.org/object/with/a/long/path> .",
+
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+    "<http://example.org/s> <http://example.org/p> "
+    "\"typed\"^^<http://example.org/Datatype> .",
+
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+    "@prefix eg: <http://example.org/ns/test> .\n"
+    "<http://example.org/s> <http://example.org/p> "
+    "\"typed\"^^eg:Datatype .",
+
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+    "@prefix eg: <http://example.org/ns/test> .\n"
+    "<http://example.org/s> <http://example.org/p> eg:foo .",
+
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+    "@prefix prefix: <http://example.org/testing/curies> .\n"
+    "prefix:subject prefix:predicate prefix:object .\n",
+
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+    "@prefix eg: <http://example.org/> .\n"
+    "eg:s eg:p [ eg:p [ eg:p [ eg:p [ eg:p []]]]] .\n",
+
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+    "@prefix eg: <http://example.org/> .\n"
+    "eg:s eg:p ( 1 2 3 ( 4 5 6 ( 7 8 9 ) ) ) .\n",
+
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+    "@prefix eg: <http://example.org/ns/test> .\n"
+    "<http://example.org/s> <http://example.org/p> eg:%99 .",
+
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+    "@prefix øøøøøøøøø: <http://example.org/long> .\n"
     "<http://example.org/somewhatlongsubjecttooffsetthepredicate> øøøøøøøøø:p "
     "øøøøøøøøø:o .\n",
 
@@ -127,8 +159,8 @@ test_turtle_overflow(void)
 
     // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
     "@prefix prefix: <http://example.org/testing/curies> .\n"
-    "prefix:subjectthatwillcomearoundtobeingfinishedanycharacternow "
-    "prefix:predicate prefix:object .\n",
+    "<http://example.org/very/long/uri/subject/to/overflow/the/predicate> "
+    "prefix:predicate prefix:object ; prefix:p prefix:o .\n",
 
     // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
     "@prefix eg: <http://example.org/> .\n"

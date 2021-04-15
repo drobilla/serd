@@ -266,6 +266,39 @@ test_write_empty_syntax(void)
   serd_world_free(world);
 }
 
+static void
+test_write_bad_uri(void)
+{
+  SerdWorld* world = serd_world_new();
+  SerdEnv*   env   = serd_env_new(serd_empty_string());
+
+  SerdNode* s   = serd_new_uri(serd_string("http://example.org/s"));
+  SerdNode* p   = serd_new_uri(serd_string("http://example.org/p"));
+  SerdNode* rel = serd_new_uri(serd_string("rel"));
+
+  SerdBuffer    buffer    = {NULL, 0};
+  SerdByteSink* byte_sink = serd_byte_sink_new_buffer(&buffer);
+
+  SerdWriter* writer =
+    serd_writer_new(world, SERD_NTRIPLES, 0U, env, byte_sink);
+
+  assert(writer);
+
+  const SerdStatus st =
+    serd_sink_write(serd_writer_sink(writer), 0U, s, p, rel, NULL);
+  assert(st);
+  assert(st == SERD_ERR_BAD_ARG);
+
+  serd_free(serd_buffer_sink_finish(&buffer));
+  serd_writer_free(writer);
+  serd_byte_sink_free(byte_sink);
+  serd_node_free(rel);
+  serd_node_free(p);
+  serd_node_free(s);
+  serd_env_free(env);
+  serd_world_free(world);
+}
+
 int
 main(void)
 {
@@ -275,6 +308,7 @@ main(void)
   test_strict_write();
   test_write_error();
   test_write_empty_syntax();
+  test_write_bad_uri();
 
   return 0;
 }
