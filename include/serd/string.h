@@ -36,14 +36,13 @@ serd_strlen(const char* ZIX_NONNULL str, SerdNodeFlags* ZIX_NULLABLE flags);
    format used in the Turtle grammar (the decimal point is always ".").
 */
 SERD_API double
-serd_strtod(const char* ZIX_NONNULL             str,
-            char* ZIX_UNSPECIFIED* ZIX_NULLABLE endptr);
+serd_strtod(const char* ZIX_NONNULL                   str,
+            const char* ZIX_UNSPECIFIED* ZIX_NULLABLE endptr);
 
 /**
    Decode a base64 string.
 
-   This function can be used to deserialise a blob node created with
-   serd_new_blob().
+   This function can be used to decode a node created with serd_new_base64().
 
    @param str Base64 string to decode.
    @param len The length of `str`.
