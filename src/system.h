@@ -17,6 +17,10 @@ serd_fopen(const char* path, const char* mode);
 ZIX_MALLOC_FUNC void*
 serd_malloc_aligned(size_t alignment, size_t size);
 
+/// Allocate a zeroed buffer aligned to `alignment` bytes
+ZIX_MALLOC_FUNC void*
+serd_calloc_aligned(size_t alignment, size_t size);
+
 /// Allocate an aligned buffer for I/O
 ZIX_MALLOC_FUNC void*
 serd_allocate_buffer(size_t size);
