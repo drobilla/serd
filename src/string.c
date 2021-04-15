@@ -16,6 +16,7 @@
 
 #include "string_utils.h"
 
+#include "exess/exess.h"
 #include "serd/serd.h"
 
 #include <assert.h>
@@ -105,68 +106,14 @@ serd_strlen(const char* const str, SerdNodeFlags* const flags)
   return strlen(str);
 }
 
-static double
-read_sign(const char** const sptr)
-{
-  double sign = 1.0;
-
-  switch (**sptr) {
-  case '-':
-    sign = -1.0;
-    ++(*sptr);
-    break;
-  case '+':
-    ++(*sptr);
-    break;
-  default:
-    break;
-  }
-
-  return sign;
-}
-
 double
-serd_strtod(const char* const str, char** const endptr)
+serd_strtod(const char* const str, const char** const end)
 {
-  double result = 0.0;
-
-  // Point s at the first non-whitespace character
-  const char* s = str;
-  while (is_space(*s)) {
-    ++s;
+  double            value = (double)NAN;
+  const ExessResult r     = exess_read_double(&value, str);
+  if (end) {
+    *end = str + r.count;
   }
 
-  // Read leading sign if necessary
-  const double sign = read_sign(&s);
-
-  // Parse integer part
-  for (; is_digit(*s); ++s) {
-    result = (result * 10.0) + (*s - '0');
-  }
-
-  // Parse fractional part
-  if (*s == '.') {
-    double denom = 10.0;
-    for (++s; is_digit(*s); ++s) {
-      result += (*s - '0') / denom;
-      denom *= 10.0;
-    }
-  }
-
-  // Parse exponent
-  if (*s == 'e' || *s == 'E') {
-    ++s;
-    double expt      = 0.0;
-    double expt_sign = read_sign(&s);
-    for (; is_digit(*s); ++s) {
-      expt = (expt * 10.0) + (*s - '0');
-    }
-    result *= pow(10, expt * expt_sign);
-  }
-
-  if (endptr) {
-    *endptr = (char*)s;
-  }
-
-  return result * sign;
+  return r.status ? (double)NAN : value;
 }
