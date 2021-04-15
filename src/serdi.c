@@ -96,6 +96,7 @@ static SerdStatus
 read_file(SerdWorld* const      world,
           SerdSyntax            syntax,
           const SerdReaderFlags flags,
+          SerdEnv* const        env,
           const SerdSink* const sink,
           const size_t          stack_size,
           const char* const     filename,
@@ -123,7 +124,8 @@ read_file(SerdWorld* const      world,
     return SERD_ERR_UNKNOWN;
   }
 
-  SerdReader* reader = serd_reader_new(world, syntax, flags, sink, stack_size);
+  SerdReader* reader =
+    serd_reader_new(world, syntax, flags, env, sink, stack_size);
 
   serd_reader_add_blank_prefix(reader, add_prefix);
 
@@ -349,6 +351,7 @@ main(int argc, char** argv)
       serd_reader_new(world,
                       input_syntax ? input_syntax : SERD_TRIG,
                       reader_flags,
+                      env,
                       serd_writer_sink(writer),
                       stack_size);
 
@@ -393,6 +396,7 @@ main(int argc, char** argv)
     if ((st = read_file(world,
                         input_syntax,
                         reader_flags,
+                        env,
                         serd_writer_sink(writer),
                         stack_size,
                         inputs[i],

@@ -283,20 +283,27 @@ expand_literal(const SerdEnv* const env, const SerdNode* const node)
 {
   assert(serd_node_type(node) == SERD_LITERAL);
 
-  if (serd_node_datatype(node)) {
-    SerdNode* datatype = serd_env_expand(env, serd_node_datatype(node));
-    if (!datatype) {
-      return NULL;
-    }
-
-    SerdNode* ret = serd_new_typed_literal(serd_node_string_view(node),
-                                           serd_node_string_view(datatype));
-
-    serd_node_free(datatype);
-    return ret;
+  const SerdNode* const datatype = serd_node_datatype(node);
+  if (!datatype) {
+    return NULL;
   }
 
-  return NULL;
+  assert(serd_node_type(datatype) == SERD_URI);
+
+  const SerdURIView datatype_uri = serd_parse_uri(serd_node_string(datatype));
+
+  const SerdURIView abs_datatype_uri =
+    serd_resolve_uri(datatype_uri, env->base_uri);
+
+  if (!abs_datatype_uri.scheme.len) {
+    return NULL;
+  }
+
+  return serd_new_typed_literal_uri(
+    serd_node_string_view(node),
+    serd_node_flags(node),
+    serd_resolve_uri(serd_parse_uri(serd_node_string(datatype)),
+                     env->base_uri));
 }
 
 static SerdNode*

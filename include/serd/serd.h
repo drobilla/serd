@@ -278,6 +278,8 @@ typedef enum {
   SERD_READ_LAX          = 1u << 0u, ///< Tolerate invalid input where possible
   SERD_READ_VARIABLES    = 1u << 1u, ///< Support variable nodes
   SERD_READ_EXACT_BLANKS = 1u << 2u, ///< Allow clashes with generated blanks
+  SERD_READ_PREFIXED     = 1u << 3u, ///< Do not expand prefixed names
+  SERD_READ_RELATIVE     = 1u << 4u, ///< Do not expand relative URI references
 } SerdReaderFlag;
 
 /// Bitwise OR of SerdReaderFlag values
@@ -333,6 +335,7 @@ typedef enum {
   SERD_ERR_BAD_TEXT,   ///< Invalid text encoding
   SERD_ERR_BAD_WRITE,  ///< Error writing to file/stream
   SERD_ERR_BAD_CALL,   ///< Invalid call
+  SERD_ERR_BAD_URI,    ///< Invalid or unresolved URI
 } SerdStatus;
 
 /// Return a string describing a status code
@@ -1381,6 +1384,7 @@ SerdReader* SERD_ALLOCATED
 serd_reader_new(SerdWorld* SERD_NONNULL      world,
                 SerdSyntax                   syntax,
                 SerdReaderFlags              flags,
+                SerdEnv* SERD_NONNULL        env,
                 const SerdSink* SERD_NONNULL sink,
                 size_t                       stack_size);
 
@@ -1454,11 +1458,11 @@ serd_reader_free(SerdReader* SERD_NULLABLE reader);
 /// Create a new RDF writer
 SERD_API
 SerdWriter* SERD_ALLOCATED
-serd_writer_new(SerdWorld* SERD_NONNULL    world,
-                SerdSyntax                 syntax,
-                SerdWriterFlags            flags,
-                SerdEnv* SERD_NONNULL      env,
-                SerdByteSink* SERD_NONNULL byte_sink);
+serd_writer_new(SerdWorld* SERD_NONNULL     world,
+                SerdSyntax                  syntax,
+                SerdWriterFlags             flags,
+                const SerdEnv* SERD_NONNULL env,
+                SerdByteSink* SERD_NONNULL  byte_sink);
 
 /// Free `writer`
 SERD_API
@@ -1472,8 +1476,8 @@ serd_writer_sink(SerdWriter* SERD_NONNULL writer);
 
 /// Return the env used by `writer`
 SERD_PURE_API
-SerdEnv* SERD_NONNULL
-serd_writer_env(SerdWriter* SERD_NONNULL writer);
+const SerdEnv* SERD_NONNULL
+serd_writer_env(const SerdWriter* SERD_NONNULL writer);
 
 /**
    A convenience sink function for writing to a string.
