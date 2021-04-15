@@ -19,6 +19,7 @@
 #include "base64.h"
 #include "serd_internal.h"
 #include "string_utils.h"
+#include "system.h"
 
 #include "serd/serd.h"
 
@@ -40,12 +41,12 @@
 #  endif
 #endif
 
-static const size_t serd_node_align = sizeof(SerdNode);
+static const size_t serd_node_align = 2 * sizeof(size_t);
 
 static size_t
 serd_node_pad_size(const size_t n_bytes)
 {
-  const size_t pad = serd_node_align - (n_bytes + 2) % serd_node_align;
+  const size_t pad = sizeof(SerdNode) - (n_bytes + 2) % sizeof(SerdNode);
   return n_bytes + 2 + pad;
 }
 
@@ -53,7 +54,7 @@ static const SerdNode*
 serd_node_maybe_get_meta_c(const SerdNode* const node)
 {
   return (node->flags & (SERD_HAS_LANGUAGE | SERD_HAS_DATATYPE))
-           ? (node + 1 + (serd_node_pad_size(node->length) / serd_node_align))
+           ? (node + 1 + (serd_node_pad_size(node->length) / sizeof(SerdNode)))
            : NULL;
 }
 
@@ -72,7 +73,7 @@ serd_node_malloc(const size_t        length,
                  const SerdNodeType  type)
 {
   const size_t size = sizeof(SerdNode) + serd_node_pad_size(length);
-  SerdNode*    node = (SerdNode*)calloc(1, size);
+  SerdNode*    node = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
 
   node->length = 0;
   node->flags  = flags;
@@ -93,7 +94,8 @@ serd_node_set(SerdNode** const dst, const SerdNode* const src)
 
   const size_t size = serd_node_total_size(src);
   if (serd_node_total_size(*dst) < size) {
-    (*dst) = (SerdNode*)realloc(*dst, size);
+    serd_free_aligned(*dst);
+    *dst = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
   }
 
   if (*dst) {
@@ -149,7 +151,7 @@ serd_new_literal(const char* const str,
     memcpy(serd_node_buffer(node), str, length);
     node->length = length;
 
-    SerdNode* lang_node = node + 1 + (len / serd_node_align);
+    SerdNode* lang_node = node + 1 + (len / sizeof(SerdNode));
     lang_node->type     = SERD_LITERAL;
     lang_node->length   = lang_len;
     memcpy(serd_node_buffer(lang_node), lang, lang_len);
@@ -161,7 +163,7 @@ serd_new_literal(const char* const str,
     memcpy(serd_node_buffer(node), str, length);
     node->length = length;
 
-    SerdNode* datatype_node = node + 1 + (len / serd_node_align);
+    SerdNode* datatype_node = node + 1 + (len / sizeof(SerdNode));
     datatype_node->type     = SERD_URI;
     datatype_node->length   = datatype_len;
     memcpy(serd_node_buffer(datatype_node), datatype, datatype_len);
@@ -182,7 +184,7 @@ serd_node_copy(const SerdNode* node)
   }
 
   const size_t size = serd_node_total_size(node);
-  SerdNode*    copy = (SerdNode*)calloc(1, size + 3);
+  SerdNode*    copy = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
   memcpy(copy, node, size);
   return copy;
 }
@@ -525,10 +527,9 @@ serd_node_datatype(const SerdNode* const node)
   }
 
   const size_t len = serd_node_pad_size(node->length);
-  assert((intptr_t)node % serd_node_align == 0);
-  assert(len % serd_node_align == 0);
+  assert(len % sizeof(SerdNode) == 0);
 
-  const SerdNode* const datatype = node + 1 + (len / serd_node_align);
+  const SerdNode* const datatype = node + 1 + (len / sizeof(SerdNode));
   assert(datatype->type == SERD_URI || datatype->type == SERD_CURIE);
   return datatype;
 }
@@ -541,10 +542,9 @@ serd_node_language(const SerdNode* const node)
   }
 
   const size_t len = serd_node_pad_size(node->length);
-  assert((intptr_t)node % serd_node_align == 0);
-  assert(len % serd_node_align == 0);
+  assert(len % sizeof(SerdNode) == 0);
 
-  const SerdNode* const lang = node + 1 + (len / serd_node_align);
+  const SerdNode* const lang = node + 1 + (len / sizeof(SerdNode));
   assert(lang->type == SERD_LITERAL);
   return lang;
 }
@@ -558,5 +558,5 @@ serd_node_flags(const SerdNode* const node)
 void
 serd_node_free(SerdNode* const node)
 {
-  free(node);
+  serd_free_aligned(node);
 }
