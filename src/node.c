@@ -164,7 +164,7 @@ serd_node_check_padding(const SerdNode* node)
 #endif
 }
 
-static ZIX_PURE_FUNC size_t
+size_t
 serd_node_total_size(const SerdNode* const node)
 {
   const size_t real_length = serd_node_pad_length(node->length);

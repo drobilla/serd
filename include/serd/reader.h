@@ -55,6 +55,15 @@ typedef enum {
   SERD_READ_VARIABLES = 1U << 1U,
 
   /**
+     Read relative URI references exactly without resolving them.
+
+     Normally, the reader expands all relative URIs against the base URI.  This
+     flag disables that, so that URI references are passed to the sink exactly
+     as they are in the input.
+  */
+  SERD_READ_RELATIVE = 1U << 2U,
+
+  /**
      Read blank node labels without adding a prefix unique to the document.
 
      Normally, the reader adds a prefix like "f1", "f2", and so on, to blank

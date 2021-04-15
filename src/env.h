@@ -21,6 +21,14 @@ serd_env_qualify_in_place(const SerdEnv*   env,
                           ZixStringView*   suffix);
 
 /**
+   Return the URI for the prefix with the given name.
+
+   If no such prefix is known, returns an empty string view.
+*/
+ZIX_PURE_FUNC ZixStringView
+serd_env_find_prefix(const SerdEnv* env, ZixStringView name);
+
+/**
    Expand `curie`.
 
    Errors: SERD_BAD_ARG if `curie` is not valid, or SERD_BAD_CURIE if prefix is

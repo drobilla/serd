@@ -193,6 +193,7 @@ simple_command_tests = {
       ['-k'],
       ['-qi'],
       ['-r'],
+      ['-s', '<foo> a <Bar> .'],
       ['-s'],
       ['-o'],
       ['-z'],
@@ -456,6 +457,7 @@ test_suites = {
     ns_serdtest + 'perfect/',
     '--',
     ['-I', 'global'],
+    ['-I', 'relative'],
     ['-O', 'verbatim'],
   ],
   'full': [

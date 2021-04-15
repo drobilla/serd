@@ -476,6 +476,9 @@ SERD_NODISCARD static SerdStatus
 write_lname(SerdWriter* writer, const char* utf8, const size_t n_bytes)
 {
   SerdStatus st = SERD_SUCCESS;
+  if (!n_bytes) {
+    return st;
+  }
 
   /* Thanks to the horribly complicated Turtle grammar for prefixed names,
      making sure we never write an invalid character is tedious.  We need to

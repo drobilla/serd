@@ -178,19 +178,23 @@ push_byte(SerdReader* reader, SerdNode* node, const int c)
 }
 
 static inline SerdStatus
-push_bytes(SerdReader*    reader,
-           SerdNode*      ref,
-           const uint8_t* bytes,
-           unsigned       len)
+push_bytes(SerdReader* const    reader,
+           SerdNode* const      node,
+           const uint8_t* const bytes,
+           const size_t         len)
 {
-  const bool has_space = reader->stack.buf_size >= reader->stack.size + len;
-  if (has_space) {
-    for (unsigned i = 0; i < len; ++i) {
-      push_byte(reader, ref, bytes[i]);
-    }
+  if (reader->stack.buf_size < reader->stack.size + len) {
+    return SERD_BAD_STACK;
   }
 
-  return has_space ? SERD_SUCCESS : SERD_BAD_STACK;
+  const size_t begin = reader->stack.size - 1U;
+  for (unsigned i = 0U; i < len; ++i) {
+    reader->stack.buf[begin + i] = (char)bytes[i];
+  }
+
+  reader->stack.size += len;
+  node->length += len;
+  return SERD_SUCCESS;
 }
 
 #endif // SERD_SRC_READER_H
