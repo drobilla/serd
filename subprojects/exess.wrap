@@ -1,0 +1,8 @@
+# Copyright 2021-2022 David Robillard <d@drobilla.net>
+# SPDX-License-Identifier: 0BSD OR ISC
+
+[wrap-git]
+url = https://gitlab.com/drobilla/exess.git
+push-url = git@gitlab.com:drobilla/exess.git
+revision = main
+depth = 1

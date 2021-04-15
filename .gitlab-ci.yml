@@ -66,7 +66,7 @@ x64_static:
   <<: *build_definition
   image: lv2plugin/debian-x64
   script:
-    - meson setup build -Ddocs=disabled -Dstrict=true -Dwerror=true -Dstatic=true -Ddefault_library=static
+    - meson setup build -Ddocs=disabled -Dstrict=true -Dwerror=true -Dstatic=true -Ddefault_library=static -Dexess:default_library=static
     - ninja -C build test
 
 
@@ -106,7 +106,7 @@ mingw32_dbg:
     - meson setup build --cross-file=/usr/share/meson/cross/i686-w64-mingw32.ini -Dc_std=c11 -Dbuildtype=debug -Ddocs=disabled -Dstrict=true -Dwerror=true
     - ninja -C build
   variables:
-    WINEPATH: "Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\10-win32"
+    WINEPATH: "Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\10-win32;Z:\\builds\\drobilla\\serd\\build\\subprojects\\exess"
 
 mingw32_rel:
   <<: *build_definition
@@ -115,7 +115,7 @@ mingw32_rel:
     - meson setup build --cross-file=/usr/share/meson/cross/i686-w64-mingw32.ini -Dc_std=c11 -Dbuildtype=release -Ddocs=disabled -Dstrict=true -Dwerror=true
     - ninja -C build
   variables:
-    WINEPATH: "Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\10-win32"
+    WINEPATH: "Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\10-win32;Z:\\builds\\drobilla\\serd\\build\\subprojects\\exess"
 
 
 mingw64_dbg:
@@ -125,7 +125,7 @@ mingw64_dbg:
     - meson setup build --cross-file=/usr/share/meson/cross/x86_64-w64-mingw32.ini -Dc_std=c11 -Dbuildtype=debug -Ddocs=disabled -Dstrict=true -Dwerror=true
     - ninja -C build test
   variables:
-    WINEPATH: "Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\8.3-win32"
+    WINEPATH: "Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\8.3-win32;Z:\\builds\\drobilla\\serd\\build\\subprojects\\exess"
 
 mingw64_rel:
   <<: *build_definition
@@ -134,7 +134,7 @@ mingw64_rel:
     - meson setup build --cross-file=/usr/share/meson/cross/x86_64-w64-mingw32.ini -Dc_std=c11 -Dbuildtype=release -Ddocs=disabled -Dstrict=true -Dwerror=true
     - ninja -C build test
   variables:
-    WINEPATH: "Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\8.3-win32"
+    WINEPATH: "Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\8.3-win32;Z:\\builds\\drobilla\\serd\\build\\subprojects\\exess"
 
 
 mac_dbg:
