@@ -66,6 +66,21 @@ serd_malloc_aligned(const size_t alignment, const size_t size)
 }
 
 void*
+serd_calloc_aligned(const size_t alignment, const size_t size)
+{
+#if defined(_WIN32) || defined(USE_POSIX_MEMALIGN)
+  void* const ptr = serd_malloc_aligned(alignment, size);
+  if (ptr) {
+    memset(ptr, 0, size);
+  }
+  return ptr;
+#else
+  (void)alignment;
+  return calloc(1, size);
+#endif
+}
+
+void*
 serd_allocate_buffer(const size_t size)
 {
   return serd_malloc_aligned(SERD_PAGE_SIZE, size);
