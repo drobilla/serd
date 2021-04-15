@@ -55,19 +55,26 @@ serd_node_from_syntax(const char* const str, const SerdSyntax syntax)
 
   SerdNode*        object = NULL;
   SerdWorld* const world  = serd_world_new();
+  SerdEnv* const   env    = serd_env_new(SERD_EMPTY_STRING());
   SerdSink* const  sink   = serd_sink_new(&object, on_node_string_event, NULL);
 
   SerdByteSource* const source = serd_byte_source_new_string(doc, NULL);
   SerdReader* const     reader = serd_reader_new(
-    world, syntax, SERD_READ_EXACT_BLANKS, sink, 1024 + doc_len);
+    world,
+    syntax,
+    SERD_READ_EXACT_BLANKS | SERD_READ_PREFIXED | SERD_READ_RELATIVE,
+    env,
+    sink,
+    1024 + doc_len);
 
   serd_world_set_error_func(world, quiet_error_func, NULL);
   serd_reader_start(reader, source);
   serd_reader_read_document(reader);
   serd_reader_finish(reader);
-  serd_byte_source_free(source);
   serd_reader_free(reader);
+  serd_byte_source_free(source);
   serd_sink_free(sink);
+  serd_env_free(env);
   serd_world_free(world);
   free(doc);
 

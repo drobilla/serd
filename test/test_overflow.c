@@ -22,7 +22,7 @@
 #include <stdio.h>
 
 static const size_t min_stack_size = 64u;
-static const size_t max_stack_size = 1024u;
+static const size_t max_stack_size = 1280u;
 
 static SerdStatus
 test_size(SerdWorld* const  world,
@@ -32,14 +32,16 @@ test_size(SerdWorld* const  world,
 {
   SerdSink*         sink        = serd_sink_new(NULL, NULL, NULL);
   SerdByteSource*   byte_source = serd_byte_source_new_string(str, NULL);
+  SerdEnv* const    env         = serd_env_new(SERD_EMPTY_STRING());
   SerdReader* const reader =
-    serd_reader_new(world, syntax, 0u, sink, stack_size);
+    serd_reader_new(world, syntax, 0u, env, sink, stack_size);
 
   assert(reader);
 
   serd_reader_start(reader, byte_source);
   const SerdStatus st = serd_reader_read_document(reader);
   serd_reader_free(reader);
+  serd_env_free(env);
   serd_byte_source_free(byte_source);
   serd_sink_free(sink);
 
@@ -86,17 +88,16 @@ static void
 test_turtle_overflow(void)
 {
   static const char* const test_strings[] = {
-    ":s :p :%99 .",
-    ":s :p <http://example.org/> .",
-    ":s :p <thisisanabsurdlylongurischeme://because/testing/> .",
-    ":s :p eg:foo .",
-    ":s :p 1234 .",
-    ":s :p (1 2 3 4) .",
-    ":s :p ((((((((42)))))))) .",
-    ":s :p \"literal\" .",
-    ":s :p _:blank .",
-    ":s :p true .",
-    ":s :p \"\"@en .",
+    "<http://example.org/s> <http://example.org/p> <http://example.org/> .",
+    "<http://example.org/s> <http://example.org/p> "
+    "<thisisanabsurdlylongurischeme://because/testing/> .",
+    "<http://example.org/s> <http://example.org/p> 1234 .",
+    "<http://example.org/s> <http://example.org/p> (1 2 3 4) .",
+    "<http://example.org/s> <http://example.org/p> ((((((((42)))))))) .",
+    "<http://example.org/s> <http://example.org/p> \"literal\" .",
+    "<http://example.org/s> <http://example.org/p> _:blank .",
+    "<http://example.org/s> <http://example.org/p> true .",
+    "<http://example.org/s> <http://example.org/p> \"\"@en .",
     "(((((((((42))))))))) <http://example.org/p> <http://example.org/o> .",
     "@prefix eg: <http://example.org/ns/test> .",
     "@base <http://example.org/base> .",
@@ -106,7 +107,15 @@ test_turtle_overflow(void)
     "@prefix ug.dot: <http://example.org/> . \nug.dot:s ug.dot:p ug.dot:o .\n",
 
     // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
-    "@prefix øøøøøøøøø: <http://example.org/long> . \n"
+    "@prefix eg: <http://example.org/ns/test> .\n"
+    "<http://example.org/s> <http://example.org/p> eg:foo .",
+
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+    "@prefix eg: <http://example.org/ns/test> .\n"
+    "<http://example.org/s> <http://example.org/p> eg:%99 .",
+
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+    "@prefix øøøøøøøøø: <http://example.org/long> .\n"
     "<http://example.org/somewhatlongsubjecttooffsetthepredicate> øøøøøøøøø:p "
     "øøøøøøøøø:o .\n",
 

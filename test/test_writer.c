@@ -33,7 +33,6 @@ test_write_bad_event(void)
   SerdByteSink* byte_sink = serd_byte_sink_new_buffer(&buffer);
 
   SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0u, env, byte_sink);
-
   assert(writer);
 
   const SerdEvent event = {(SerdEventType)42};
@@ -46,36 +45,7 @@ test_write_bad_event(void)
   serd_free(out);
 
   serd_writer_free(writer);
-  serd_env_free(env);
-  serd_world_free(world);
-}
-
-static void
-test_write_bad_prefix(void)
-{
-  SerdWorld*    world     = serd_world_new();
-  SerdEnv*      env       = serd_env_new(SERD_EMPTY_STRING());
-  SerdBuffer    buffer    = {NULL, 0};
-  SerdByteSink* byte_sink = serd_byte_sink_new_buffer(&buffer);
-
-  SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0u, env, byte_sink);
-
-  assert(writer);
-
-  SerdNode* name = serd_new_string(SERD_STRING("eg"));
-  SerdNode* uri  = serd_new_uri(SERD_STRING("rel"));
-
-  assert(serd_sink_write_prefix(serd_writer_sink(writer), name, uri) ==
-         SERD_ERR_BAD_ARG);
-
-  char* const out = serd_buffer_sink_finish(&buffer);
-
-  assert(!strcmp(out, ""));
-  serd_free(out);
-
-  serd_node_free(uri);
-  serd_node_free(name);
-  serd_writer_free(writer);
+  serd_byte_sink_free(byte_sink);
   serd_env_free(env);
   serd_world_free(world);
 }
@@ -310,7 +280,6 @@ int
 main(void)
 {
   test_write_bad_event();
-  test_write_bad_prefix();
   test_write_long_literal();
   test_writer_stack_overflow();
   test_strict_write();
