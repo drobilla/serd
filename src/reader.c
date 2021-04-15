@@ -166,7 +166,8 @@ serd_reader_read_document(SerdReader* const reader)
 SerdReader*
 serd_reader_new(SerdWorld* const      world,
                 const SerdSyntax      syntax,
-                SerdReaderFlags       flags,
+                const SerdReaderFlags flags,
+                SerdEnv* const        env,
                 const SerdSink* const sink,
                 const size_t          stack_size)
 {
@@ -178,6 +179,7 @@ serd_reader_new(SerdWorld* const      world,
 
   me->world   = world;
   me->sink    = sink;
+  me->env     = env;
   me->stack   = serd_stack_new(stack_size, serd_node_align);
   me->syntax  = syntax;
   me->flags   = flags;
