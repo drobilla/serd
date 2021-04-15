@@ -37,14 +37,13 @@ serd_strlen(const char* SERD_NONNULL str, SerdNodeFlags* SERD_NULLABLE flags);
 */
 SERD_API
 double
-serd_strtod(const char* SERD_NONNULL          str,
-            char* SERD_NONNULL* SERD_NULLABLE endptr);
+serd_strtod(const char* SERD_NONNULL                str,
+            const char* SERD_NONNULL* SERD_NULLABLE endptr);
 
 /**
    Decode a base64 string.
 
-   This function can be used to deserialise a blob node created with
-   serd_new_blob().
+   This function can be used to decode a node created with serd_new_base64().
 
    @param str Base64 string to decode.
    @param len The length of `str`.
