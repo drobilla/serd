@@ -65,6 +65,7 @@
 		<#bad-object2>
 		<#bad-object>
 		<#bad-pn-escape>
+		<#bad-prefix-dot>
 		<#bad-prefix>
 		<#bad-quote-in-uri>
 		<#bad-semicolon-after-subject>
@@ -370,6 +371,11 @@
 	rdf:type rdft:TestTurtleNegativeSyntax ;
 	mf:name "bad-pn-escape" ;
 	mf:action <bad-pn-escape.ttl> .
+
+<#bad-prefix-dot>
+	rdf:type rdft:TestTurtleNegativeSyntax ;
+	mf:name "bad-prefix-dot" ;
+	mf:action <bad-prefix-dot.ttl> .
 
 <#bad-prefix>
 	rdf:type rdft:TestTurtleNegativeSyntax ;
