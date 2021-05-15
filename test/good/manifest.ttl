@@ -40,6 +40,8 @@
 		<#test-list-in-blank>
 		<#test-list-subject>
 		<#test-list>
+		<#test-local-name-ends-with-dot>
+		<#test-local-name-escapes>
 		<#test-long-string>
 		<#test-several-eaten-dots>
 		<#test-no-spaces>
@@ -240,6 +242,18 @@
 	mf:name "test-list" ;
 	mf:action <test-list.ttl> ;
 	mf:result <test-list.nt> .
+
+<#test-local-name-ends-with-dot>
+	rdf:type rdft:TestTurtleEval ;
+	mf:name "test-local-name-ends-with-dot" ;
+	mf:action <test-local-name-ends-with-dot.ttl> ;
+	mf:result <test-local-name-ends-with-dot.nt> .
+
+<#test-local-name-escapes>
+	rdf:type rdft:TestTurtleEval ;
+	mf:name "test-local-name-escapes" ;
+	mf:action <test-local-name-escapes.ttl> ;
+	mf:result <test-local-name-escapes.nt> .
 
 <#test-long-string>
 	rdf:type rdft:TestTurtleEval ;
