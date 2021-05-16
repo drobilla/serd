@@ -86,6 +86,7 @@ def configure(conf):
                 '/wd4514',  # unreferenced inline function has been removed
                 '/wd4710',  # function not inlined
                 '/wd4711',  # function selected for automatic inline expansion
+                '/wd4800',  # implicit conversion from int to bool
                 '/wd4820',  # padding added after construct
                 '/wd4996',  # POSIX name for this item is deprecated
             ],
