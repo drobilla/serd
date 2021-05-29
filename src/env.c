@@ -35,7 +35,7 @@ struct SerdEnvImpl {
 };
 
 SerdEnv*
-serd_env_new(const SerdNode* base_uri)
+serd_env_new(const SerdNode* const base_uri)
 {
   SerdEnv* env = (SerdEnv*)calloc(1, sizeof(struct SerdEnvImpl));
   if (env && base_uri) {
@@ -46,7 +46,7 @@ serd_env_new(const SerdNode* base_uri)
 }
 
 void
-serd_env_free(SerdEnv* env)
+serd_env_free(SerdEnv* const env)
 {
   if (!env) {
     return;
@@ -63,7 +63,7 @@ serd_env_free(SerdEnv* env)
 }
 
 const SerdNode*
-serd_env_get_base_uri(const SerdEnv* env, SerdURI* out)
+serd_env_get_base_uri(const SerdEnv* const env, SerdURI* const out)
 {
   if (out) {
     *out = env->base_uri;
@@ -73,7 +73,7 @@ serd_env_get_base_uri(const SerdEnv* env, SerdURI* out)
 }
 
 SerdStatus
-serd_env_set_base_uri(SerdEnv* env, const SerdNode* uri)
+serd_env_set_base_uri(SerdEnv* const env, const SerdNode* const uri)
 {
   if (!env || (uri && uri->type != SERD_URI)) {
     return SERD_ERR_BAD_ARG;
@@ -100,7 +100,9 @@ serd_env_set_base_uri(SerdEnv* env, const SerdNode* uri)
 }
 
 SERD_PURE_FUNC static SerdPrefix*
-serd_env_find(const SerdEnv* env, const uint8_t* name, size_t name_len)
+serd_env_find(const SerdEnv* const env,
+              const uint8_t* const name,
+              const size_t         name_len)
 {
   for (size_t i = 0; i < env->n_prefixes; ++i) {
     const SerdNode* const prefix_name = &env->prefixes[i].name;
@@ -115,7 +117,9 @@ serd_env_find(const SerdEnv* env, const uint8_t* name, size_t name_len)
 }
 
 static void
-serd_env_add(SerdEnv* env, const SerdNode* name, const SerdNode* uri)
+serd_env_add(SerdEnv* const        env,
+             const SerdNode* const name,
+             const SerdNode* const uri)
 {
   SerdPrefix* const prefix = serd_env_find(env, name->buf, name->n_bytes);
   if (prefix) {
@@ -133,7 +137,9 @@ serd_env_add(SerdEnv* env, const SerdNode* name, const SerdNode* uri)
 }
 
 SerdStatus
-serd_env_set_prefix(SerdEnv* env, const SerdNode* name, const SerdNode* uri)
+serd_env_set_prefix(SerdEnv* const        env,
+                    const SerdNode* const name,
+                    const SerdNode* const uri)
 {
   if (!name->buf || uri->type != SERD_URI) {
     return SERD_ERR_BAD_ARG;
@@ -157,9 +163,9 @@ serd_env_set_prefix(SerdEnv* env, const SerdNode* name, const SerdNode* uri)
 }
 
 SerdStatus
-serd_env_set_prefix_from_strings(SerdEnv*       env,
-                                 const uint8_t* name,
-                                 const uint8_t* uri)
+serd_env_set_prefix_from_strings(SerdEnv* const       env,
+                                 const uint8_t* const name,
+                                 const uint8_t* const uri)
 {
   const SerdNode name_node = serd_node_from_string(SERD_LITERAL, name);
   const SerdNode uri_node  = serd_node_from_string(SERD_URI, uri);
@@ -168,10 +174,10 @@ serd_env_set_prefix_from_strings(SerdEnv*       env,
 }
 
 bool
-serd_env_qualify(const SerdEnv*  env,
-                 const SerdNode* uri,
-                 SerdNode*       prefix,
-                 SerdChunk*      suffix)
+serd_env_qualify(const SerdEnv* const  env,
+                 const SerdNode* const uri,
+                 SerdNode* const       prefix,
+                 SerdChunk* const      suffix)
 {
   for (size_t i = 0; i < env->n_prefixes; ++i) {
     const SerdNode* const prefix_uri = &env->prefixes[i].uri;
@@ -190,10 +196,10 @@ serd_env_qualify(const SerdEnv*  env,
 }
 
 SerdStatus
-serd_env_expand(const SerdEnv*  env,
-                const SerdNode* curie,
-                SerdChunk*      uri_prefix,
-                SerdChunk*      uri_suffix)
+serd_env_expand(const SerdEnv* const  env,
+                const SerdNode* const curie,
+                SerdChunk* const      uri_prefix,
+                SerdChunk* const      uri_suffix)
 {
   const uint8_t* const colon =
     (const uint8_t*)memchr(curie->buf, ':', curie->n_bytes + 1);
@@ -214,7 +220,7 @@ serd_env_expand(const SerdEnv*  env,
 }
 
 SerdNode
-serd_env_expand_node(const SerdEnv* env, const SerdNode* node)
+serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
 {
   switch (node->type) {
   case SERD_NOTHING:
@@ -248,7 +254,9 @@ serd_env_expand_node(const SerdEnv* env, const SerdNode* node)
 }
 
 void
-serd_env_foreach(const SerdEnv* env, SerdPrefixSink func, void* handle)
+serd_env_foreach(const SerdEnv* const env,
+                 const SerdPrefixSink func,
+                 void* const          handle)
 {
   for (size_t i = 0; i < env->n_prefixes; ++i) {
     func(handle, &env->prefixes[i].name, &env->prefixes[i].uri);

@@ -49,7 +49,7 @@ static const char b64_unmap[] =
 
 /** Encode 3 raw bytes to 4 base64 characters. */
 static void
-encode_chunk(uint8_t out[4], const uint8_t in[3], size_t n_in)
+encode_chunk(uint8_t out[4], const uint8_t in[3], const size_t n_in)
 {
   out[0] = b64_map[in[0] >> 2];
   out[1] = b64_map[((in[0] & 0x03) << 4) | ((in[1] & 0xF0) >> 4)];
@@ -107,7 +107,9 @@ decode_chunk(const uint8_t in[4], uint8_t out[3])
 }
 
 void*
-serd_base64_decode(const uint8_t* str, size_t len, size_t* size)
+serd_base64_decode(const uint8_t* const str,
+                   const size_t         len,
+                   size_t* const        size)
 {
   void* buf = malloc((len * 3) / 4 + 2);
 

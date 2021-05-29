@@ -98,7 +98,7 @@ Ref
 push_node(SerdReader* reader, SerdType type, const char* str, size_t n_bytes);
 
 SERD_PURE_FUNC size_t
-genid_size(SerdReader* reader);
+genid_size(const SerdReader* reader);
 
 Ref
 blank_id(SerdReader* reader);
