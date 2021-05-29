@@ -52,6 +52,8 @@ serd_strerror(const SerdStatus status)
     return "Internal error";
   case SERD_ERR_OVERFLOW:
     return "Stack overflow";
+  case SERD_ERR_NO_DATA:
+    return "Unexpected end of input";
   }
 
   return "Unknown error";

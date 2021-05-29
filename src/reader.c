@@ -296,7 +296,7 @@ serd_reader_prepare(SerdReader* const reader)
   } else if (st == SERD_FAILURE) {
     reader->source.eof = true;
   } else {
-    r_err(reader, st, "read error: %s\n", strerror(errno));
+    r_err(reader, st, "error preparing read: %s\n", strerror(errno));
   }
   return st;
 }
