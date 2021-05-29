@@ -310,14 +310,14 @@ read_ws_star(SerdReader* reader)
 }
 
 static inline bool
-peek_delim(SerdReader* reader, const char delim)
+peek_delim(SerdReader* reader, const uint8_t delim)
 {
   read_ws_star(reader);
   return peek_byte(reader) == delim;
 }
 
 static inline bool
-eat_delim(SerdReader* reader, const char delim)
+eat_delim(SerdReader* reader, const uint8_t delim)
 {
   if (peek_delim(reader, delim)) {
     eat_byte_safe(reader, delim);
