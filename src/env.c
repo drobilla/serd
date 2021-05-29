@@ -99,7 +99,7 @@ serd_env_set_base_uri(SerdEnv* env, const SerdNode* uri)
   return SERD_SUCCESS;
 }
 
-static inline SERD_PURE_FUNC SerdPrefix*
+SERD_PURE_FUNC static SerdPrefix*
 serd_env_find(const SerdEnv* env, const uint8_t* name, size_t name_len)
 {
   for (size_t i = 0; i < env->n_prefixes; ++i) {

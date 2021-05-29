@@ -145,7 +145,7 @@ serd_node_new_uri_from_string(const uint8_t* str,
   return serd_node_new_uri(&uri, base, out); // Resolve/Serialise
 }
 
-static inline bool
+static bool
 is_uri_path_char(const uint8_t c)
 {
   if (is_alpha(c) || is_digit(c)) {
@@ -282,7 +282,7 @@ serd_node_new_relative_uri(const SerdURI* uri,
   return node;
 }
 
-static inline unsigned
+static unsigned
 serd_digits(double abs)
 {
   const double lg = ceil(log10(floor(abs) + 1.0));

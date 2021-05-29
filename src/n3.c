@@ -47,7 +47,7 @@ _Pragma("clang diagnostic ignored \"-Wmissing-declarations\"")
     }                     \
   } while (0)
 
-static inline bool
+static bool
 fancy_syntax(const SerdReader* reader)
 {
   return reader->syntax == SERD_TURTLE || reader->syntax == SERD_TRIG;
@@ -59,7 +59,7 @@ read_collection(SerdReader* reader, ReadContext ctx, Ref* dest);
 static SerdStatus
 read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool* ate_dot);
 
-static inline uint8_t
+static uint8_t
 read_HEX(SerdReader* reader)
 {
   const int c = peek_byte(reader);
@@ -72,7 +72,7 @@ read_HEX(SerdReader* reader)
 }
 
 // Read UCHAR escape, initial \ is already eaten by caller
-static inline SerdStatus
+static SerdStatus
 read_UCHAR(SerdReader* reader, Ref dest, uint32_t* char_code)
 {
   const int b      = peek_byte(reader);
@@ -152,7 +152,7 @@ read_UCHAR(SerdReader* reader, Ref dest, uint32_t* char_code)
 }
 
 // Read ECHAR escape, initial \ is already eaten by caller
-static inline SerdStatus
+static SerdStatus
 read_ECHAR(SerdReader* reader, Ref dest, SerdNodeFlags* flags)
 {
   const int c = peek_byte(reader);
@@ -189,7 +189,7 @@ read_ECHAR(SerdReader* reader, Ref dest, SerdNodeFlags* flags)
   }
 }
 
-static inline SerdStatus
+static SerdStatus
 bad_char(SerdReader* reader, const char* fmt, uint8_t c)
 {
   // Skip bytes until the next start byte
@@ -257,7 +257,7 @@ read_utf8_code(SerdReader* reader, Ref dest, uint32_t* code, uint8_t c)
 
 // Read one character (possibly multi-byte)
 // The first byte, c, has already been eaten by caller
-static inline SerdStatus
+static SerdStatus
 read_character(SerdReader* reader, Ref dest, SerdNodeFlags* flags, uint8_t c)
 {
   if (!(c & 0x80)) {
@@ -291,7 +291,7 @@ read_comment(SerdReader* reader)
 }
 
 // [24] ws ::= #x9 | #xA | #xD | #x20 | comment
-static inline bool
+static bool
 read_ws(SerdReader* reader)
 {
   const int c = peek_byte(reader);
@@ -310,7 +310,7 @@ read_ws(SerdReader* reader)
   }
 }
 
-static inline bool
+static bool
 read_ws_star(SerdReader* reader)
 {
   while (read_ws(reader)) {
@@ -319,14 +319,14 @@ read_ws_star(SerdReader* reader)
   return true;
 }
 
-static inline bool
+static bool
 peek_delim(SerdReader* reader, const uint8_t delim)
 {
   read_ws_star(reader);
   return peek_byte(reader) == delim;
 }
 
-static inline bool
+static bool
 eat_delim(SerdReader* reader, const uint8_t delim)
 {
   if (peek_delim(reader, delim)) {
@@ -454,7 +454,7 @@ read_String(SerdReader* reader, Ref node, SerdNodeFlags* flags)
   return read_STRING_LITERAL_LONG(reader, node, flags, (uint8_t)q1);
 }
 
-static inline bool
+static bool
 is_PN_CHARS_BASE(const uint32_t c)
 {
   return ((c >= 0x00C0 && c <= 0x00D6) || (c >= 0x00D8 && c <= 0x00F6) ||
@@ -488,7 +488,7 @@ read_PN_CHARS_BASE(SerdReader* reader, Ref dest)
   return st;
 }
 
-static inline bool
+static bool
 is_PN_CHARS(const uint32_t c)
 {
   return (is_PN_CHARS_BASE(c) || c == 0xB7 || (c >= 0x0300 && c <= 0x036F) ||
