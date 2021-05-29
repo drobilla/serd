@@ -65,7 +65,6 @@ def configure(conf):
                 '-Wno-disabled-macro-expansion',
                 '-Wno-double-promotion',
                 '-Wno-format-nonliteral',
-                '-Wno-implicit-fallthrough',
                 '-Wno-nullability-extension',
                 '-Wno-nullable-to-nonnull-conversion',
                 '-Wno-padded',
