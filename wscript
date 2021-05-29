@@ -61,7 +61,6 @@ def configure(conf):
                 '-Wno-cast-align',
                 '-Wno-cast-qual',
                 '-Wno-conversion',
-                '-Wno-covered-switch-default',
                 '-Wno-disabled-macro-expansion',
                 '-Wno-double-promotion',
                 '-Wno-format-nonliteral',
