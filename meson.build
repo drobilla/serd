@@ -29,7 +29,6 @@ if get_option('strict')
 
   if cc.get_id() == 'clang'
     c_suppressions += [
-      '-Wno-cast-align',
       '-Wno-format-nonliteral',
       '-Wno-nullability-extension',
       '-Wno-nullable-to-nonnull-conversion',
@@ -38,7 +37,6 @@ if get_option('strict')
     ]
   elif cc.get_id() == 'gcc'
     c_suppressions += [
-      '-Wno-cast-align',
       '-Wno-float-conversion', # MinGW
       '-Wno-format-nonliteral',
       '-Wno-padded',
