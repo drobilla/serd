@@ -14,8 +14,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include "byte_source.h"
 #include "reader.h"
+
+#include "byte_source.h"
 #include "stack.h"
 #include "system.h"
 
