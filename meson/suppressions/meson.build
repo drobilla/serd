@@ -17,7 +17,6 @@ if is_variable('cc')
   if get_option('strict')
     if cc.get_id() == 'clang'
       c_suppressions += [
-        '-Wno-cast-align',
         '-Wno-cast-qual',
         '-Wno-conversion',
         '-Wno-declaration-after-statement',
@@ -37,7 +36,6 @@ if is_variable('cc')
 
     elif cc.get_id() == 'gcc'
       c_suppressions += [
-        '-Wno-cast-align',
         '-Wno-cast-qual',
         '-Wno-format-nonliteral',
         '-Wno-inline',
