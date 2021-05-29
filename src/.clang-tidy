@@ -9,6 +9,7 @@ Checks: >
   -cert-dcl51-cpp,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -google-readability-todo,
+  -hicpp-multiway-paths-covered,
   -hicpp-signed-bitwise,
   -llvm-header-guard,
   -llvmlibc-*,

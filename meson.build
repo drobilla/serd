@@ -32,7 +32,6 @@ if get_option('strict')
       '-Wno-cast-align',
       '-Wno-cast-qual',
       '-Wno-conversion',
-      '-Wno-covered-switch-default',
       '-Wno-double-promotion',
       '-Wno-format-nonliteral',
       '-Wno-nullability-extension',

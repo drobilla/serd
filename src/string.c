@@ -50,8 +50,6 @@ serd_strerror(SerdStatus status)
     return (const uint8_t*)"Invalid CURIE";
   case SERD_ERR_INTERNAL:
     return (const uint8_t*)"Internal error";
-  default:
-    break;
   }
   return (const uint8_t*)"Unknown error"; // never reached
 }
