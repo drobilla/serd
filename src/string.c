@@ -66,6 +66,7 @@ serd_update_flags(const uint8_t c, SerdNodeFlags* const flags)
     break;
   case '"':
     *flags |= SERD_HAS_QUOTE;
+    break;
   default:
     break;
   }
@@ -120,16 +121,20 @@ static inline double
 read_sign(const char** sptr)
 {
   double sign = 1.0;
+
   switch (**sptr) {
   case '-':
     sign = -1.0;
-    // fallthru
+    ++(*sptr);
+    break;
   case '+':
     ++(*sptr);
-    // fallthru
+    break;
   default:
-    return sign;
+    break;
   }
+
+  return sign;
 }
 
 double

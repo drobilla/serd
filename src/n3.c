@@ -30,6 +30,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(__GNUC__)
+#  define SERD_FALLTHROUGH __attribute__((fallthrough))
+#endif
+
 #define TRY(st, exp)      \
   do {                    \
     if (((st) = (exp))) { \
@@ -118,20 +122,20 @@ read_UCHAR(SerdReader* reader, Ref dest, uint32_t* char_code)
     buf[3] = (uint8_t)(0x80u | (c & 0x3Fu));
     c >>= 6;
     c |= (16 << 12); // set bit 4
-    /* fallthru */
+    SERD_FALLTHROUGH;
   case 3:
     buf[2] = (uint8_t)(0x80u | (c & 0x3Fu));
     c >>= 6;
     c |= (32 << 6); // set bit 5
-    /* fallthru */
+    SERD_FALLTHROUGH;
   case 2:
     buf[1] = (uint8_t)(0x80u | (c & 0x3Fu));
     c >>= 6;
     c |= 0xC0; // set bits 6 and 7
-    /* fallthru */
+    SERD_FALLTHROUGH;
   case 1:
     buf[0] = (uint8_t)c;
-    /* fallthru */
+    SERD_FALLTHROUGH;
   default:
     break;
   }
@@ -873,6 +877,7 @@ read_number(SerdReader* reader, Ref* dest, Ref* datatype, bool* ate_dot)
     case '+':
     case '-':
       push_byte(reader, *dest, eat_byte_safe(reader, c));
+      break;
     default:
       break;
     }

@@ -35,7 +35,6 @@ if get_option('strict')
       '-Wno-covered-switch-default',
       '-Wno-double-promotion',
       '-Wno-format-nonliteral',
-      '-Wno-implicit-fallthrough',
       '-Wno-nullability-extension',
       '-Wno-nullable-to-nonnull-conversion',
       '-Wno-padded',
