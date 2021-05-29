@@ -54,7 +54,7 @@ serd_strerror(SerdStatus status)
   return (const uint8_t*)"Unknown error"; // never reached
 }
 
-static inline void
+static void
 serd_update_flags(const uint8_t c, SerdNodeFlags* const flags)
 {
   switch (c) {
@@ -115,7 +115,7 @@ serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags)
   return n_chars;
 }
 
-static inline double
+static double
 read_sign(const char** sptr)
 {
   double sign = 1.0;

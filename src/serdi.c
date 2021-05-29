@@ -134,7 +134,7 @@ quiet_error_sink(void* handle, const SerdError* e)
   return SERD_SUCCESS;
 }
 
-static inline FILE*
+static FILE*
 serd_fopen(const char* path, const char* mode)
 {
   FILE* fd = fopen(path, mode);

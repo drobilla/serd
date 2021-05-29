@@ -46,7 +46,6 @@ if get_option('strict')
       '-Wno-cast-qual',
       '-Wno-float-conversion', # MinGW
       '-Wno-format-nonliteral',
-      '-Wno-inline',
       '-Wno-padded',
       '-Wno-sign-conversion',
       '-Wno-switch-default',
