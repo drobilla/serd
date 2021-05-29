@@ -23,13 +23,13 @@
 #include <stdlib.h>
 
 void
-serd_free(void* ptr)
+serd_free(void* const ptr)
 {
   free(ptr);
 }
 
 const uint8_t*
-serd_strerror(SerdStatus status)
+serd_strerror(const SerdStatus status)
 {
   switch (status) {
   case SERD_SUCCESS:
@@ -95,7 +95,9 @@ serd_substrlen(const uint8_t* const str,
 }
 
 size_t
-serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags)
+serd_strlen(const uint8_t* const str,
+            size_t* const        n_bytes,
+            SerdNodeFlags* const flags)
 {
   size_t        n_chars = 0;
   size_t        i       = 0;
@@ -116,7 +118,7 @@ serd_strlen(const uint8_t* str, size_t* n_bytes, SerdNodeFlags* flags)
 }
 
 static double
-read_sign(const char** sptr)
+read_sign(const char** const sptr)
 {
   double sign = 1.0;
 
@@ -136,7 +138,7 @@ read_sign(const char** sptr)
 }
 
 double
-serd_strtod(const char* str, char** endptr)
+serd_strtod(const char* const str, char** const endptr)
 {
   double result = 0.0;
 

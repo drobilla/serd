@@ -40,7 +40,7 @@
 #endif
 
 SerdNode
-serd_node_from_string(SerdType type, const uint8_t* str)
+serd_node_from_string(const SerdType type, const uint8_t* const str)
 {
   if (!str) {
     return SERD_NODE_NULL;
@@ -54,7 +54,9 @@ serd_node_from_string(SerdType type, const uint8_t* str)
 }
 
 SerdNode
-serd_node_from_substring(SerdType type, const uint8_t* str, const size_t len)
+serd_node_from_substring(const SerdType       type,
+                         const uint8_t* const str,
+                         const size_t         len)
 {
   if (!str) {
     return SERD_NODE_NULL;
@@ -69,7 +71,7 @@ serd_node_from_substring(SerdType type, const uint8_t* str, const size_t len)
 }
 
 SerdNode
-serd_node_copy(const SerdNode* node)
+serd_node_copy(const SerdNode* const node)
 {
   if (!node || !node->buf) {
     return SERD_NODE_NULL;
@@ -83,7 +85,7 @@ serd_node_copy(const SerdNode* node)
 }
 
 bool
-serd_node_equals(const SerdNode* a, const SerdNode* b)
+serd_node_equals(const SerdNode* const a, const SerdNode* const b)
 {
   return (a == b) ||
          (a->type == b->type && a->n_bytes == b->n_bytes &&
@@ -93,7 +95,7 @@ serd_node_equals(const SerdNode* a, const SerdNode* b)
 }
 
 static size_t
-serd_uri_string_length(const SerdURI* uri)
+serd_uri_string_length(const SerdURI* const uri)
 {
   size_t len = uri->path_base.len;
 
@@ -112,7 +114,7 @@ serd_uri_string_length(const SerdURI* uri)
 }
 
 static size_t
-string_sink(const void* buf, size_t len, void* stream)
+string_sink(const void* const buf, const size_t len, void* const stream)
 {
   uint8_t** ptr = (uint8_t**)stream;
   memcpy(*ptr, buf, len);
@@ -121,9 +123,9 @@ string_sink(const void* buf, size_t len, void* stream)
 }
 
 SerdNode
-serd_node_new_uri_from_node(const SerdNode* uri_node,
-                            const SerdURI*  base,
-                            SerdURI*        out)
+serd_node_new_uri_from_node(const SerdNode* const uri_node,
+                            const SerdURI* const  base,
+                            SerdURI* const        out)
 {
   return (uri_node->type == SERD_URI && uri_node->buf)
            ? serd_node_new_uri_from_string(uri_node->buf, base, out)
@@ -131,9 +133,9 @@ serd_node_new_uri_from_node(const SerdNode* uri_node,
 }
 
 SerdNode
-serd_node_new_uri_from_string(const uint8_t* str,
-                              const SerdURI* base,
-                              SerdURI*       out)
+serd_node_new_uri_from_string(const uint8_t* const str,
+                              const SerdURI* const base,
+                              SerdURI* const       out)
 {
   if (!str || str[0] == '\0') {
     // Empty URI => Base URI, or nothing if no base is given
@@ -182,10 +184,10 @@ is_uri_path_char(const uint8_t c)
 }
 
 SerdNode
-serd_node_new_file_uri(const uint8_t* path,
-                       const uint8_t* hostname,
-                       SerdURI*       out,
-                       bool           escape)
+serd_node_new_file_uri(const uint8_t* const path,
+                       const uint8_t* const hostname,
+                       SerdURI* const       out,
+                       const bool           escape)
 {
   const size_t path_len     = strlen((const char*)path);
   const size_t hostname_len = hostname ? strlen((const char*)hostname) : 0;
@@ -233,7 +235,9 @@ serd_node_new_file_uri(const uint8_t* path,
 }
 
 SerdNode
-serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)
+serd_node_new_uri(const SerdURI* const uri,
+                  const SerdURI* const base,
+                  SerdURI* const       out)
 {
   SerdURI abs_uri = *uri;
   if (base) {
@@ -258,10 +262,10 @@ serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)
 }
 
 SerdNode
-serd_node_new_relative_uri(const SerdURI* uri,
-                           const SerdURI* base,
-                           const SerdURI* root,
-                           SerdURI*       out)
+serd_node_new_relative_uri(const SerdURI* const uri,
+                           const SerdURI* const base,
+                           const SerdURI* const root,
+                           SerdURI* const       out)
 {
   const size_t uri_len  = serd_uri_string_length(uri);
   const size_t base_len = serd_uri_string_length(base);
@@ -283,14 +287,14 @@ serd_node_new_relative_uri(const SerdURI* uri,
 }
 
 static unsigned
-serd_digits(double abs)
+serd_digits(const double abs)
 {
   const double lg = ceil(log10(floor(abs) + 1.0));
   return lg < 1.0 ? 1U : (unsigned)lg;
 }
 
 SerdNode
-serd_node_new_decimal(double d, unsigned frac_digits)
+serd_node_new_decimal(const double d, const unsigned frac_digits)
 {
   if (isnan(d) || isinf(d)) {
     return SERD_NODE_NULL;
@@ -345,7 +349,7 @@ serd_node_new_decimal(double d, unsigned frac_digits)
 }
 
 SerdNode
-serd_node_new_integer(int64_t i)
+serd_node_new_integer(const int64_t i)
 {
   uint64_t       abs_i  = (i < 0) ? -i : i;
   const unsigned digits = serd_digits((double)abs_i);
@@ -370,7 +374,9 @@ serd_node_new_integer(int64_t i)
 }
 
 SerdNode
-serd_node_new_blob(const void* buf, size_t size, bool wrap_lines)
+serd_node_new_blob(const void* const buf,
+                   const size_t      size,
+                   const bool        wrap_lines)
 {
   const size_t len  = serd_base64_get_length(size, wrap_lines);
   uint8_t*     str  = (uint8_t*)calloc(len + 2, 1);
@@ -384,7 +390,7 @@ serd_node_new_blob(const void* buf, size_t size, bool wrap_lines)
 }
 
 void
-serd_node_free(SerdNode* node)
+serd_node_free(SerdNode* const node)
 {
   if (node && node->buf) {
     free((uint8_t*)node->buf);

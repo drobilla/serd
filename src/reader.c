@@ -30,7 +30,7 @@
 #include <string.h>
 
 SerdStatus
-r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...)
+r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
 {
   va_list args;
   va_start(args, fmt);
@@ -42,7 +42,7 @@ r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...)
 }
 
 void
-set_blank_id(SerdReader* reader, Ref ref, size_t buf_size)
+set_blank_id(SerdReader* const reader, const Ref ref, const size_t buf_size)
 {
   SerdNode*   node   = deref(reader, ref);
   const char* prefix = reader->bprefix ? (const char*)reader->bprefix : "";
@@ -51,13 +51,13 @@ set_blank_id(SerdReader* reader, Ref ref, size_t buf_size)
 }
 
 size_t
-genid_size(SerdReader* reader)
+genid_size(const SerdReader* const reader)
 {
   return reader->bprefix_len + 1 + 10 + 1; // + "b" + UINT32_MAX + \0
 }
 
 Ref
-blank_id(SerdReader* reader)
+blank_id(SerdReader* const reader)
 {
   Ref ref = push_node_padded(reader, genid_size(reader), SERD_BLANK, "", 0);
   set_blank_id(reader, ref, genid_size(reader));
@@ -66,7 +66,10 @@ blank_id(SerdReader* reader)
 
 /** fread-like wrapper for getc (which is faster). */
 static size_t
-serd_file_read_byte(void* buf, size_t size, size_t nmemb, void* stream)
+serd_file_read_byte(void* const  buf,
+                    const size_t size,
+                    const size_t nmemb,
+                    void* const  stream)
 {
   (void)size;
   (void)nmemb;
@@ -81,11 +84,11 @@ serd_file_read_byte(void* buf, size_t size, size_t nmemb, void* stream)
 }
 
 Ref
-push_node_padded(SerdReader* reader,
-                 size_t      maxlen,
-                 SerdType    type,
-                 const char* str,
-                 size_t      n_bytes)
+push_node_padded(SerdReader* const reader,
+                 const size_t      maxlen,
+                 const SerdType    type,
+                 const char* const str,
+                 const size_t      n_bytes)
 {
   void* mem = serd_stack_push_aligned(
     &reader->stack, sizeof(SerdNode) + maxlen + 1, sizeof(SerdNode));
@@ -108,13 +111,16 @@ push_node_padded(SerdReader* reader,
 }
 
 Ref
-push_node(SerdReader* reader, SerdType type, const char* str, size_t n_bytes)
+push_node(SerdReader* const reader,
+          const SerdType    type,
+          const char* const str,
+          const size_t      n_bytes)
 {
   return push_node_padded(reader, n_bytes, type, str, n_bytes);
 }
 
 SerdNode*
-deref(SerdReader* reader, const Ref ref)
+deref(SerdReader* const reader, const Ref ref)
 {
   if (ref) {
     SerdNode* node = (SerdNode*)(reader->stack.buf + ref);
@@ -125,7 +131,7 @@ deref(SerdReader* reader, const Ref ref)
 }
 
 Ref
-pop_node(SerdReader* reader, Ref ref)
+pop_node(SerdReader* const reader, const Ref ref)
 {
   if (ref && ref != reader->rdf_first && ref != reader->rdf_rest &&
       ref != reader->rdf_nil) {
@@ -141,7 +147,11 @@ pop_node(SerdReader* reader, Ref ref)
 }
 
 SerdStatus
-emit_statement(SerdReader* reader, ReadContext ctx, Ref o, Ref d, Ref l)
+emit_statement(SerdReader* const reader,
+               const ReadContext ctx,
+               const Ref         o,
+               const Ref         d,
+               const Ref         l)
 {
   SerdNode* graph = deref(reader, ctx.graph);
   if (!graph && reader->default_graph.buf) {
@@ -164,26 +174,26 @@ emit_statement(SerdReader* reader, ReadContext ctx, Ref o, Ref d, Ref l)
 }
 
 static SerdStatus
-read_statement(SerdReader* reader)
+read_statement(SerdReader* const reader)
 {
   return read_n3_statement(reader);
 }
 
 static SerdStatus
-read_doc(SerdReader* reader)
+read_doc(SerdReader* const reader)
 {
   return ((reader->syntax == SERD_NQUADS) ? read_nquadsDoc(reader)
                                           : read_turtleTrigDoc(reader));
 }
 
 SerdReader*
-serd_reader_new(SerdSyntax syntax,
-                void*      handle,
-                void (*free_handle)(void*),
-                SerdBaseSink      base_sink,
-                SerdPrefixSink    prefix_sink,
-                SerdStatementSink statement_sink,
-                SerdEndSink       end_sink)
+serd_reader_new(const SerdSyntax syntax,
+                void* const      handle,
+                void (*const free_handle)(void*),
+                const SerdBaseSink      base_sink,
+                const SerdPrefixSink    prefix_sink,
+                const SerdStatementSink statement_sink,
+                const SerdEndSink       end_sink)
 {
   SerdReader* me     = (SerdReader*)calloc(1, sizeof(SerdReader));
   me->handle         = handle;
@@ -206,22 +216,22 @@ serd_reader_new(SerdSyntax syntax,
 }
 
 void
-serd_reader_set_strict(SerdReader* reader, bool strict)
+serd_reader_set_strict(SerdReader* const reader, const bool strict)
 {
   reader->strict = strict;
 }
 
 void
-serd_reader_set_error_sink(SerdReader*   reader,
-                           SerdErrorSink error_sink,
-                           void*         error_handle)
+serd_reader_set_error_sink(SerdReader* const   reader,
+                           const SerdErrorSink error_sink,
+                           void* const         error_handle)
 {
   reader->error_sink   = error_sink;
   reader->error_handle = error_handle;
 }
 
 void
-serd_reader_free(SerdReader* reader)
+serd_reader_free(SerdReader* const reader)
 {
   if (!reader) {
     return;
@@ -244,13 +254,14 @@ serd_reader_free(SerdReader* reader)
 }
 
 void*
-serd_reader_get_handle(const SerdReader* reader)
+serd_reader_get_handle(const SerdReader* const reader)
 {
   return reader->handle;
 }
 
 void
-serd_reader_add_blank_prefix(SerdReader* reader, const uint8_t* prefix)
+serd_reader_add_blank_prefix(SerdReader* const    reader,
+                             const uint8_t* const prefix)
 {
   free(reader->bprefix);
   reader->bprefix_len = 0;
@@ -265,14 +276,15 @@ serd_reader_add_blank_prefix(SerdReader* reader, const uint8_t* prefix)
 }
 
 void
-serd_reader_set_default_graph(SerdReader* reader, const SerdNode* graph)
+serd_reader_set_default_graph(SerdReader* const     reader,
+                              const SerdNode* const graph)
 {
   serd_node_free(&reader->default_graph);
   reader->default_graph = serd_node_copy(graph);
 }
 
 SerdStatus
-serd_reader_read_file(SerdReader* reader, const uint8_t* uri)
+serd_reader_read_file(SerdReader* const reader, const uint8_t* const uri)
 {
   uint8_t* const path = serd_file_uri_parse(uri, NULL);
   if (!path) {
@@ -292,7 +304,7 @@ serd_reader_read_file(SerdReader* reader, const uint8_t* uri)
 }
 
 static SerdStatus
-skip_bom(SerdReader* me)
+skip_bom(SerdReader* const me)
 {
   if (serd_byte_source_peek(&me->source) == 0xEF) {
     serd_byte_source_advance(&me->source);
@@ -309,10 +321,10 @@ skip_bom(SerdReader* me)
 }
 
 SerdStatus
-serd_reader_start_stream(SerdReader*    reader,
-                         FILE*          file,
-                         const uint8_t* name,
-                         bool           bulk)
+serd_reader_start_stream(SerdReader* const    reader,
+                         FILE* const          file,
+                         const uint8_t* const name,
+                         const bool           bulk)
 {
   return serd_reader_start_source_stream(reader,
                                          bulk ? (SerdSource)fread
@@ -324,19 +336,19 @@ serd_reader_start_stream(SerdReader*    reader,
 }
 
 SerdStatus
-serd_reader_start_source_stream(SerdReader*         reader,
-                                SerdSource          read_func,
-                                SerdStreamErrorFunc error_func,
-                                void*               stream,
-                                const uint8_t*      name,
-                                size_t              page_size)
+serd_reader_start_source_stream(SerdReader* const         reader,
+                                const SerdSource          read_func,
+                                const SerdStreamErrorFunc error_func,
+                                void* const               stream,
+                                const uint8_t* const      name,
+                                const size_t              page_size)
 {
   return serd_byte_source_open_source(
     &reader->source, read_func, error_func, stream, name, page_size);
 }
 
 static SerdStatus
-serd_reader_prepare(SerdReader* reader)
+serd_reader_prepare(SerdReader* const reader)
 {
   SerdStatus st = serd_byte_source_prepare(&reader->source);
   if (st == SERD_SUCCESS) {
@@ -350,7 +362,7 @@ serd_reader_prepare(SerdReader* reader)
 }
 
 SerdStatus
-serd_reader_read_chunk(SerdReader* reader)
+serd_reader_read_chunk(SerdReader* const reader)
 {
   SerdStatus st = SERD_SUCCESS;
   if (!reader->source.prepared) {
@@ -368,15 +380,15 @@ serd_reader_read_chunk(SerdReader* reader)
 }
 
 SerdStatus
-serd_reader_end_stream(SerdReader* reader)
+serd_reader_end_stream(SerdReader* const reader)
 {
   return serd_byte_source_close(&reader->source);
 }
 
 SerdStatus
-serd_reader_read_file_handle(SerdReader*    reader,
-                             FILE*          file,
-                             const uint8_t* name)
+serd_reader_read_file_handle(SerdReader* const    reader,
+                             FILE* const          file,
+                             const uint8_t* const name)
 {
   return serd_reader_read_source(reader,
                                  (SerdSource)fread,
@@ -387,12 +399,12 @@ serd_reader_read_file_handle(SerdReader*    reader,
 }
 
 SerdStatus
-serd_reader_read_source(SerdReader*         reader,
-                        SerdSource          source,
-                        SerdStreamErrorFunc error,
-                        void*               stream,
-                        const uint8_t*      name,
-                        size_t              page_size)
+serd_reader_read_source(SerdReader* const         reader,
+                        const SerdSource          source,
+                        const SerdStreamErrorFunc error,
+                        void* const               stream,
+                        const uint8_t* const      name,
+                        const size_t              page_size)
 {
   SerdStatus st = serd_reader_start_source_stream(
     reader, source, error, stream, name, page_size);
@@ -411,7 +423,7 @@ serd_reader_read_source(SerdReader*         reader,
 }
 
 SerdStatus
-serd_reader_read_string(SerdReader* reader, const uint8_t* utf8)
+serd_reader_read_string(SerdReader* const reader, const uint8_t* const utf8)
 {
   serd_byte_source_open_string(&reader->source, utf8);
 

@@ -35,7 +35,7 @@
 #include <string.h>
 
 FILE*
-serd_fopen(const char* path, const char* mode)
+serd_fopen(const char* const path, const char* const mode)
 {
   FILE* fd = fopen(path, mode);
   if (!fd) {

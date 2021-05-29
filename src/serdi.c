@@ -56,7 +56,7 @@ static const Syntax syntaxes[] = {{SERD_TURTLE, "turtle", ".ttl"},
                                   {(SerdSyntax)0, NULL, NULL}};
 
 static SerdSyntax
-get_syntax(const char* name)
+get_syntax(const char* const name)
 {
   for (const Syntax* s = syntaxes; s->name; ++s) {
     if (!serd_strncasecmp(s->name, name, strlen(name))) {
@@ -69,7 +69,7 @@ get_syntax(const char* name)
 }
 
 static SERD_PURE_FUNC SerdSyntax
-guess_syntax(const char* filename)
+guess_syntax(const char* const filename)
 {
   const char* ext = strrchr(filename, '.');
   if (ext) {
@@ -95,7 +95,7 @@ print_version(void)
 }
 
 static int
-print_usage(const char* name, bool error)
+print_usage(const char* const name, const bool error)
 {
   FILE* const os = error ? stderr : stdout;
   fprintf(os, "%s", error ? "\n" : "");
@@ -120,14 +120,14 @@ print_usage(const char* name, bool error)
 }
 
 static int
-missing_arg(const char* name, char opt)
+missing_arg(const char* const name, const char opt)
 {
   SERDI_ERRORF("option requires an argument -- '%c'\n", opt);
   return print_usage(name, true);
 }
 
 static SerdStatus
-quiet_error_sink(void* handle, const SerdError* e)
+quiet_error_sink(void* const handle, const SerdError* const e)
 {
   (void)handle;
   (void)e;
@@ -135,7 +135,7 @@ quiet_error_sink(void* handle, const SerdError* e)
 }
 
 static FILE*
-serd_fopen(const char* path, const char* mode)
+serd_fopen(const char* const path, const char* const mode)
 {
   FILE* fd = fopen(path, mode);
   if (!fd) {

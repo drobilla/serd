@@ -52,7 +52,7 @@ serd_uri_to_path(const uint8_t* uri)
 }
 
 uint8_t*
-serd_file_uri_parse(const uint8_t* uri, uint8_t** hostname)
+serd_file_uri_parse(const uint8_t* const uri, uint8_t** const hostname)
 {
   const uint8_t* path = uri;
   if (hostname) {
@@ -122,7 +122,7 @@ serd_uri_string_has_scheme(const uint8_t* utf8)
 }
 
 SerdStatus
-serd_uri_parse(const uint8_t* utf8, SerdURI* out)
+serd_uri_parse(const uint8_t* const utf8, SerdURI* const out)
 {
   *out = SERD_URI_NULL;
 
@@ -245,7 +245,9 @@ end:
    @return A pointer to the new start of `path`
 */
 static const uint8_t*
-remove_dot_segments(const uint8_t* path, size_t len, size_t* up)
+remove_dot_segments(const uint8_t* const path,
+                    const size_t         len,
+                    size_t* const        up)
 {
   const uint8_t*       begin = path;
   const uint8_t* const end   = path + len;
@@ -309,7 +311,7 @@ remove_dot_segments(const uint8_t* path, size_t len, size_t* up)
 
 /// Merge `base` and `path` in-place
 static void
-merge(SerdChunk* base, SerdChunk* path)
+merge(SerdChunk* const base, SerdChunk* const path)
 {
   size_t         up    = 0;
   const uint8_t* begin = remove_dot_segments(path->buf, path->len, &up);
@@ -336,7 +338,9 @@ merge(SerdChunk* base, SerdChunk* path)
 
 /// See http://tools.ietf.org/html/rfc3986#section-5.2.2
 void
-serd_uri_resolve(const SerdURI* r, const SerdURI* base, SerdURI* t)
+serd_uri_resolve(const SerdURI* const r,
+                 const SerdURI* const base,
+                 SerdURI* const       t)
 {
   if (!base->scheme.len) {
     *t = *r; // Don't resolve against non-absolute URIs
@@ -377,7 +381,10 @@ serd_uri_resolve(const SerdURI* r, const SerdURI* base, SerdURI* t)
 
 /** Write the path of `uri` starting at index `i` */
 static size_t
-write_path_tail(SerdSink sink, void* stream, const SerdURI* uri, size_t i)
+write_path_tail(SerdSink             sink,
+                void* const          stream,
+                const SerdURI* const uri,
+                const size_t         i)
 {
   size_t len = 0;
   if (i < uri->path_base.len) {
@@ -398,10 +405,10 @@ write_path_tail(SerdSink sink, void* stream, const SerdURI* uri, size_t i)
 
 /** Write the path of `uri` relative to the path of `base`. */
 static size_t
-write_rel_path(SerdSink       sink,
-               void*          stream,
-               const SerdURI* uri,
-               const SerdURI* base)
+write_rel_path(SerdSink             sink,
+               void* const          stream,
+               const SerdURI* const uri,
+               const SerdURI* const base)
 {
   const size_t path_len = uri_path_len(uri);
   const size_t base_len = uri_path_len(base);
@@ -452,11 +459,11 @@ serd_uri_path_starts_without_slash(const SerdURI* uri)
 
 /// See http://tools.ietf.org/html/rfc3986#section-5.3
 size_t
-serd_uri_serialise_relative(const SerdURI* uri,
-                            const SerdURI* base,
-                            const SerdURI* root,
-                            SerdSink       sink,
-                            void*          stream)
+serd_uri_serialise_relative(const SerdURI* const uri,
+                            const SerdURI* const base,
+                            const SerdURI* const root,
+                            SerdSink             sink,
+                            void* const          stream)
 {
   size_t     len = 0;
   const bool relative =
@@ -500,7 +507,7 @@ serd_uri_serialise_relative(const SerdURI* uri,
 
 /// See http://tools.ietf.org/html/rfc3986#section-5.3
 size_t
-serd_uri_serialise(const SerdURI* uri, SerdSink sink, void* stream)
+serd_uri_serialise(const SerdURI* const uri, SerdSink sink, void* const stream)
 {
   return serd_uri_serialise_relative(uri, NULL, NULL, sink, stream);
 }

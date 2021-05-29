@@ -25,7 +25,7 @@
 #include <string.h>
 
 SerdStatus
-serd_byte_source_page(SerdByteSource* source)
+serd_byte_source_page(SerdByteSource* const source)
 {
   source->read_head = 0;
   const size_t n_read =
@@ -47,12 +47,12 @@ serd_byte_source_page(SerdByteSource* source)
 }
 
 SerdStatus
-serd_byte_source_open_source(SerdByteSource*     source,
-                             SerdSource          read_func,
-                             SerdStreamErrorFunc error_func,
-                             void*               stream,
-                             const uint8_t*      name,
-                             size_t              page_size)
+serd_byte_source_open_source(SerdByteSource* const     source,
+                             const SerdSource          read_func,
+                             const SerdStreamErrorFunc error_func,
+                             void* const               stream,
+                             const uint8_t* const      name,
+                             const size_t              page_size)
 {
   const Cursor cur = {name, 1, 1};
 
@@ -77,7 +77,7 @@ serd_byte_source_open_source(SerdByteSource*     source,
 }
 
 SerdStatus
-serd_byte_source_prepare(SerdByteSource* source)
+serd_byte_source_prepare(SerdByteSource* const source)
 {
   source->prepared = true;
 
@@ -90,7 +90,8 @@ serd_byte_source_prepare(SerdByteSource* source)
 }
 
 SerdStatus
-serd_byte_source_open_string(SerdByteSource* source, const uint8_t* utf8)
+serd_byte_source_open_string(SerdByteSource* const source,
+                             const uint8_t* const  utf8)
 {
   const Cursor cur = {(const uint8_t*)"(string)", 1, 1};
 
@@ -101,7 +102,7 @@ serd_byte_source_open_string(SerdByteSource* source, const uint8_t* utf8)
 }
 
 SerdStatus
-serd_byte_source_close(SerdByteSource* source)
+serd_byte_source_close(SerdByteSource* const source)
 {
   if (source->page_size > 1) {
     serd_free_aligned(source->file_buf);
