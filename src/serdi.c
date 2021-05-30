@@ -56,6 +56,7 @@ print_usage(const char* const name, const bool error)
   fprintf(os, "Usage: %s [OPTION]... INPUT...\n", name);
   fprintf(os, "Read and write RDF syntax.\n");
   fprintf(os, "Use - for INPUT to read from standard input.\n\n");
+  fprintf(os, "  -C           Convert literals to canonical form.\n");
   fprintf(os, "  -I BASE_URI  Input base URI.\n");
   fprintf(os, "  -a           Write ASCII output if possible.\n");
   fprintf(os, "  -b           Fast bulk output for large serialisations.\n");
@@ -153,6 +154,7 @@ main(int argc, char** argv)
   bool            no_inline     = false;
   bool            osyntax_set   = false;
   bool            use_model     = false;
+  bool            canonical     = false;
   bool            quiet         = false;
   size_t          stack_size    = 4194304;
   const char*     input_string  = NULL;
@@ -169,7 +171,9 @@ main(int argc, char** argv)
     for (int o = 1; argv[a][o]; ++o) {
       const char opt = argv[a][o];
 
-      if (opt == 'a') {
+      if (opt == 'C') {
+        canonical = true;
+      } else if (opt == 'a') {
         writer_flags |= SERD_WRITE_ASCII;
       } else if (opt == 'b') {
         bulk_write = true;
@@ -337,7 +341,7 @@ main(int argc, char** argv)
 
   SerdModel*      model    = NULL;
   SerdSink*       inserter = NULL;
-  const SerdSink* sink     = NULL;
+  const SerdSink* out_sink = NULL;
   if (use_model) {
     const SerdModelFlags flags = (input_has_graphs ? SERD_STORE_GRAPHS : 0u);
 
@@ -354,9 +358,16 @@ main(int argc, char** argv)
     }
 
     inserter = serd_inserter_new(model, NULL);
-    sink     = inserter;
+    out_sink = inserter;
   } else {
-    sink = serd_writer_sink(writer);
+    out_sink = serd_writer_sink(writer);
+  }
+
+  const SerdSink* sink = out_sink;
+
+  SerdSink* canon = NULL;
+  if (canonical) {
+    sink = canon = serd_canon_new(world, out_sink, reader_flags);
   }
 
   if (quiet) {
@@ -455,6 +466,7 @@ main(int argc, char** argv)
     serd_cursor_free(everything);
   }
 
+  serd_sink_free(canon);
   serd_sink_free(inserter);
   serd_model_free(model);
   serd_writer_free(writer);
