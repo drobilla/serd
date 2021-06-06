@@ -86,15 +86,6 @@ extern "C" {
    @{
 */
 
-/// Lexical environment for relative URIs or CURIEs (base URI and namespaces)
-typedef struct SerdEnvImpl SerdEnv;
-
-/// Streaming parser that reads a text stream and writes to a statement sink
-typedef struct SerdReaderImpl SerdReader;
-
-/// Streaming serialiser that writes a text stream as statements are pushed
-typedef struct SerdWriterImpl SerdWriter;
-
 /// RDF syntax type
 typedef enum {
   SERD_TURTLE   = 1, ///< Terse triples http://www.w3.org/TR/turtle
@@ -102,75 +93,6 @@ typedef enum {
   SERD_NQUADS   = 3, ///< Line-based quads http://www.w3.org/TR/n-quads/
   SERD_TRIG     = 4  ///< Terse quads http://www.w3.org/TR/trig/
 } SerdSyntax;
-
-/// Flags indicating inline abbreviation information for a statement
-typedef enum {
-  SERD_EMPTY_S      = 1u << 1u, ///< Empty blank node subject
-  SERD_EMPTY_O      = 1u << 2u, ///< Empty blank node object
-  SERD_ANON_S_BEGIN = 1u << 3u, ///< Start of anonymous subject
-  SERD_ANON_O_BEGIN = 1u << 4u, ///< Start of anonymous object
-  SERD_ANON_CONT    = 1u << 5u, ///< Continuation of anonymous node
-  SERD_LIST_S_BEGIN = 1u << 6u, ///< Start of list subject
-  SERD_LIST_O_BEGIN = 1u << 7u, ///< Start of list object
-  SERD_LIST_CONT    = 1u << 8u  ///< Continuation of list
-} SerdStatementFlag;
-
-/// Bitwise OR of SerdStatementFlag values
-typedef uint32_t SerdStatementFlags;
-
-/**
-   Type of a node.
-
-   An RDF node, in the abstract sense, can be either a resource, literal, or a
-   blank.  This type is more precise, because syntactically there are two ways
-   to refer to a resource (by URI or CURIE).
-
-   There are also two ways to refer to a blank node in syntax (by ID or
-   anonymously), but this is handled by statement flags rather than distinct
-   node types.
-*/
-typedef enum {
-  /**
-     The type of a nonexistent node.
-
-     This type is useful as a sentinel, but is never emitted by the reader.
-  */
-  SERD_NOTHING = 0,
-
-  /**
-     Literal value.
-
-     A literal optionally has either a language, or a datatype (not both).
-  */
-  SERD_LITERAL = 1,
-
-  /**
-     URI (absolute or relative).
-
-     Value is an unquoted URI string, which is either a relative reference
-     with respect to the current base URI (e.g. "foo/bar"), or an absolute
-     URI (e.g. "http://example.org/foo").
-     @see [RFC3986](http://tools.ietf.org/html/rfc3986)
-  */
-  SERD_URI = 2,
-
-  /**
-     CURIE, a shortened URI.
-
-     Value is an unquoted CURIE string relative to the current environment,
-     e.g. "rdf:type".  @see [CURIE Syntax 1.0](http://www.w3.org/TR/curie)
-  */
-  SERD_CURIE = 3,
-
-  /**
-     A blank node.
-
-     Value is a blank node ID without any syntactic prefix, like "id3", which
-     is meaningful only within this serialisation.  @see [RDF 1.1
-     Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
-  */
-  SERD_BLANK = 4
-} SerdType;
 
 /// Flags indicating certain string properties relevant to serialisation
 typedef enum {
@@ -181,35 +103,11 @@ typedef enum {
 /// Bitwise OR of SerdNodeFlag values
 typedef uint32_t SerdNodeFlags;
 
-/// A syntactic RDF node
-typedef struct {
-  const uint8_t* SERD_NULLABLE buf;     ///< Value string
-  size_t                       n_bytes; ///< Size in bytes (excluding null)
-  size_t                       n_chars; ///< String length (excluding null)
-  SerdNodeFlags                flags;   ///< Node flags (string properties)
-  SerdType                     type;    ///< Node type
-} SerdNode;
-
 /// An unterminated string fragment
 typedef struct {
   const uint8_t* SERD_NULLABLE buf; ///< Start of chunk
   size_t                       len; ///< Length of chunk in bytes
 } SerdChunk;
-
-/**
-   Syntax style options.
-
-   These flags allow more precise control of writer output style.  Note that
-   some options are only supported for some syntaxes, for example, NTriples
-   does not support abbreviation and is always ASCII.
-*/
-typedef enum {
-  SERD_STYLE_ABBREVIATED = 1u << 0u, ///< Abbreviate triples when possible.
-  SERD_STYLE_ASCII       = 1u << 1u, ///< Escape all non-ASCII characters.
-  SERD_STYLE_RESOLVED    = 1u << 2u, ///< Resolve URIs against base URI.
-  SERD_STYLE_CURIED      = 1u << 3u, ///< Shorten URIs into CURIEs.
-  SERD_STYLE_BULK        = 1u << 4u, ///< Write output in pages.
-} SerdStyle;
 
 /**
    Free memory allocated by Serd
@@ -435,6 +333,69 @@ serd_uri_serialise_relative(const SerdURI* SERD_NONNULL  uri,
    @{
 */
 
+/**
+   Type of a node.
+
+   An RDF node, in the abstract sense, can be either a resource, literal, or a
+   blank.  This type is more precise, because syntactically there are two ways
+   to refer to a resource (by URI or CURIE).
+
+   There are also two ways to refer to a blank node in syntax (by ID or
+   anonymously), but this is handled by statement flags rather than distinct
+   node types.
+*/
+typedef enum {
+  /**
+     The type of a nonexistent node.
+
+     This type is useful as a sentinel, but is never emitted by the reader.
+  */
+  SERD_NOTHING = 0,
+
+  /**
+     Literal value.
+
+     A literal optionally has either a language, or a datatype (not both).
+  */
+  SERD_LITERAL = 1,
+
+  /**
+     URI (absolute or relative).
+
+     Value is an unquoted URI string, which is either a relative reference
+     with respect to the current base URI (e.g. "foo/bar"), or an absolute
+     URI (e.g. "http://example.org/foo").
+     @see [RFC3986](http://tools.ietf.org/html/rfc3986)
+  */
+  SERD_URI = 2,
+
+  /**
+     CURIE, a shortened URI.
+
+     Value is an unquoted CURIE string relative to the current environment,
+     e.g. "rdf:type".  @see [CURIE Syntax 1.0](http://www.w3.org/TR/curie)
+  */
+  SERD_CURIE = 3,
+
+  /**
+     A blank node.
+
+     Value is a blank node ID without any syntactic prefix, like "id3", which
+     is meaningful only within this serialisation.  @see [RDF 1.1
+     Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
+  */
+  SERD_BLANK = 4
+} SerdType;
+
+/// A syntactic RDF node
+typedef struct {
+  const uint8_t* SERD_NULLABLE buf;     ///< Value string
+  size_t                       n_bytes; ///< Size in bytes (excluding null)
+  size_t                       n_chars; ///< String length (excluding null)
+  SerdNodeFlags                flags;   ///< Node flags (string properties)
+  SerdType                     type;    ///< Node type
+} SerdNode;
+
 static const SerdNode SERD_NODE_NULL = {NULL, 0, 0, 0, SERD_NOTHING};
 
 /**
@@ -593,6 +554,21 @@ serd_node_free(SerdNode* SERD_NULLABLE node);
    @{
 */
 
+/// Flags indicating inline abbreviation information for a statement
+typedef enum {
+  SERD_EMPTY_S      = 1u << 1u, ///< Empty blank node subject
+  SERD_EMPTY_O      = 1u << 2u, ///< Empty blank node object
+  SERD_ANON_S_BEGIN = 1u << 3u, ///< Start of anonymous subject
+  SERD_ANON_O_BEGIN = 1u << 4u, ///< Start of anonymous object
+  SERD_ANON_CONT    = 1u << 5u, ///< Continuation of anonymous node
+  SERD_LIST_S_BEGIN = 1u << 6u, ///< Start of list subject
+  SERD_LIST_O_BEGIN = 1u << 7u, ///< Start of list object
+  SERD_LIST_CONT    = 1u << 8u  ///< Continuation of list
+} SerdStatementFlag;
+
+/// Bitwise OR of SerdStatementFlag values
+typedef uint32_t SerdStatementFlags;
+
 /// An error description
 typedef struct {
   SerdStatus                   status;   ///< Error code
@@ -659,6 +635,9 @@ typedef SerdStatus (*SerdEndSink)(void* SERD_NULLABLE          handle,
    @defgroup serd_env Environment
    @{
 */
+
+/// Lexical environment for relative URIs or CURIEs (base URI and namespaces)
+typedef struct SerdEnvImpl SerdEnv;
 
 /// Create a new environment
 SERD_API
@@ -745,6 +724,9 @@ serd_env_foreach(const SerdEnv* SERD_NONNULL env,
    @defgroup serd_reader Reader
    @{
 */
+
+/// Streaming parser that reads a text stream and writes to a statement sink
+typedef struct SerdReaderImpl SerdReader;
 
 /// Create a new RDF reader
 SERD_API
@@ -897,6 +879,24 @@ serd_reader_free(SerdReader* SERD_NULLABLE reader);
    @defgroup serd_writer Writer
    @{
 */
+
+/// Streaming serialiser that writes a text stream as statements are pushed
+typedef struct SerdWriterImpl SerdWriter;
+
+/**
+   Syntax style options.
+
+   These flags allow more precise control of writer output style.  Note that
+   some options are only supported for some syntaxes, for example, NTriples
+   does not support abbreviation and is always ASCII.
+*/
+typedef enum {
+  SERD_STYLE_ABBREVIATED = 1u << 0u, ///< Abbreviate triples when possible.
+  SERD_STYLE_ASCII       = 1u << 1u, ///< Escape all non-ASCII characters.
+  SERD_STYLE_RESOLVED    = 1u << 2u, ///< Resolve URIs against base URI.
+  SERD_STYLE_CURIED      = 1u << 3u, ///< Shorten URIs into CURIEs.
+  SERD_STYLE_BULK        = 1u << 4u, ///< Write output in pages.
+} SerdStyle;
 
 /// Create a new RDF writer
 SERD_API
