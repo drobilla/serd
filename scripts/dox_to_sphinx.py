@@ -51,7 +51,7 @@ def load_index(index_path):
         compound_id = compound.get("refid")
         compound_kind = compound.get("kind")
         compound_name = compound.find("name").text
-        if compound_kind in ["dir", "file", "page"]:
+        if compound_kind in ["dir", "file", "friend", "page"]:
             continue
 
         # Add record for compound (compounds appear only once in the index)
@@ -63,11 +63,19 @@ def load_index(index_path):
             "children": [],
         }
 
-        name_prefix = (
-            ("%s::" % compound_name) if compound_kind == "namespace" else ""
-        )
+        # if compound_kind == "namespace":
+        #     print("NAMESPACE: %s" % compound_name)
+        #     print(compound_name.split("::"))
+
+        name_prefix = ""
+        # (
+        #     ("%s::" % compound_name) if compound_kind == "namespace" else ""
+        # )
 
         for child in compound.findall("member"):
+            if child.get("kind") in ["friend"]:
+                continue
+
             if child.get("refid") in index:
                 assert compound_kind == "group"
                 continue
@@ -102,6 +110,10 @@ def resolve_index(index, root):
     """
 
     def add_child(index, parent_id, child_id):
+        # print("Parent: " + parent_id)
+        # print("Child: " + child_id)
+        # if child_id not in index:
+        #     return # FIXME?
         parent = index[parent_id]
         child = index[child_id]
 
@@ -110,16 +122,25 @@ def resolve_index(index, root):
             assert "parent" not in child or child["parent"] == parent_id
             child["parent"] = parent_id
 
-        else:
-            if parent["kind"] in ["class", "struct", "union"]:
-                assert "parent" not in child or child["parent"] == parent_id
-                child["parent"] = parent_id
+        elif child["kind"] == "namespace":
+            assert child["kind"] == "namespace"
+            child["parent"] = parent_id
+            # FIXME
+            child["name"] = child["name"][child["name"].find("::")+2:]
+            parent["children"] += [child_id]
+            # print("CHILD NAMESPACE: %s" % child)
+
+        elif parent["kind"] in ["class", "struct", "union"]:
+            assert "parent" not in child or child["parent"] == parent_id
+            child["parent"] = parent_id
 
         if child_id not in parent["children"]:
             parent["children"] += [child_id]
 
     compound = root.find("compounddef")
     compound_kind = compound.get("kind")
+
+    namespaces = {}
 
     if compound_kind == "group":
         for subgroup in compound.findall("innergroup"):
@@ -128,6 +149,17 @@ def resolve_index(index, root):
         for klass in compound.findall("innerclass"):
             add_child(index, compound.get("id"), klass.get("refid"))
 
+    elif compound_kind == "namespace":
+        for child in compound.findall("innernamespace"):
+            add_child(index, compound.get("id"), child.get("refid"))
+            # print("CHILD OF %s: %s" % (compound
+            # print(child.text)
+        # full_name = compound.find("compoundname")#.text.split("::")
+        # namespaces[full_name] = compound.get("id")
+
+    # print("NAMESPACES:")
+    # print(namespaces)
+
     for section in compound.findall("sectiondef"):
         if section.get("kind").startswith("private"):
             for member in section.findall("memberdef"):
@@ -135,6 +167,9 @@ def resolve_index(index, root):
                     del index[member.get("id")]
         else:
             for member in section.findall("memberdef"):
+                if member.get("kind") in ["friend"]:
+                    continue
+
                 member_id = member.get("id")
                 add_child(index, compound.get("id"), member_id)
 
@@ -142,6 +177,9 @@ def resolve_index(index, root):
                     index[member_id]["strong"] = member.get("strong") == "yes"
                     for value in member.findall("enumvalue"):
                         add_child(index, member_id, value.get("id"))
+
+    # import pprint
+    # pprint.pprint(index)
 
 
 def sphinx_role(record, lang):
@@ -417,14 +455,27 @@ def read_definition_doc(index, lang, root):
         if section.get("kind").startswith("private"):
             continue
 
+        set_template_params(compound, compound_record)
+
+        # templateparamlist = compound.find("templateparamlist")
+        # if templateparamlist is not None:
+        #     for tparam in templateparamlist.findall("param"):
+        #         if tparam.find("declname") is not None:
+        #             print("TEMPLATE PARAM: %s : %s" % (tparam.find("type").text, tparam.find("declname").text))
+                    
+
         for member in section.findall("memberdef"):
+            if member.get("id") not in index:
+                continue # FIXME?
+
             kind = member.get("kind")
             record = index[member.get("id")]
             set_descriptions(index, lang, member, record)
             set_template_params(member, record)
 
             if compound.get("kind") in ["class", "struct", "union"]:
-                assert kind in ["function", "typedef", "variable"]
+                # FIXME
+                # assert kind in ["function", "typedef", "variable"]
                 record["type"] = plain_text(member.find("type"))
 
             if kind == "enum":
@@ -554,26 +605,42 @@ def emit_groups(index, lang, output_dir, force):
     """Write a description file for every group documented in the index."""
 
     for record in index.values():
-        if record["kind"] != "group":
+        if record["kind"] not in ["group", "namespace"]:
             continue
+
+        if record["kind"] == "namespace":
+            print("EMIT NAMESPACE %s" % record["name"])
 
         name = record["name"]
         filename = os.path.join(output_dir, "%s.rst" % name)
         if not force and os.path.exists(filename):
             raise FileExistsError("File already exists: '%s'" % filename)
 
+        # print("FILENAME: %s" % filename)
         with open(filename, "w") as rst:
-            rst.write(heading(record["title"], 1))
+            if "title" not in record:
+                print("NO TITLE")
+            else:
+                rst.write(heading(record["title"], 1))
+            # rst.write(heading(record["name"], 1))
+
+            if record["kind"] == "namespace":
+                name = record["name"]
+                print(name)
+                rst.write(".. cpp:namespace:: %s\n\n" % name)#[0 : name.rindex("::")])
 
             # Get all child group and symbol names
             child_groups = {}
             child_symbols = {}
             for child_id in record["children"]:
                 child = index[child_id]
-                if child["kind"] == "group":
+                if child["kind"] in ["group", "namespace"]:
                     child_groups[child["name"]] = child
                 else:
                     child_symbols[child["name"]] = child
+
+            # print("CHILD GROUPS:")
+            # print(child_groups)
 
             # Emit description (document body)
             if len(record["briefdescription"]) > 0:

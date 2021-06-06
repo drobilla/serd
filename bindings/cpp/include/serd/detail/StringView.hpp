@@ -170,57 +170,57 @@ private:
 };
 
 inline bool
-operator==(const detail::StringView& lhs, const detail::StringView& rhs)
+operator==(const StringView& lhs, const StringView& rhs)
 {
   return !lhs.compare(rhs);
 }
 
 inline bool
-operator==(const detail::StringView& lhs, const std::string& rhs)
+operator==(const StringView& lhs, const std::string& rhs)
 {
   return lhs.length() == rhs.length() &&
          !strncmp(lhs.c_str(), rhs.c_str(), lhs.length());
 }
 
 inline bool
-operator==(const detail::StringView& lhs, const char* rhs)
+operator==(const StringView& lhs, const char* rhs)
 {
   return !strncmp(lhs.c_str(), rhs, lhs.length());
 }
 
 inline bool
-operator!=(const detail::StringView& lhs, const detail::StringView& rhs)
+operator!=(const StringView& lhs, const StringView& rhs)
 {
   return lhs.compare(rhs);
 }
 
 inline bool
-operator!=(const detail::StringView& lhs, const std::string& rhs)
+operator!=(const StringView& lhs, const std::string& rhs)
 {
   return lhs.length() != rhs.length() ||
          !!strncmp(lhs.c_str(), rhs.c_str(), lhs.length());
 }
 
 inline bool
-operator!=(const detail::StringView& lhs, const char* rhs)
+operator!=(const StringView& lhs, const char* rhs)
 {
   return !!strncmp(lhs.c_str(), rhs, lhs.length());
 }
 
 inline bool
-operator<(const detail::StringView& lhs, const detail::StringView& rhs)
+operator<(const StringView& lhs, const StringView& rhs)
 {
   return lhs.compare(rhs) < 0;
 }
 
 inline bool
-operator<(const detail::StringView& lhs, const std::string& rhs)
+operator<(const StringView& lhs, const std::string& rhs)
 {
   return lhs.c_str() < StringView(rhs);
 }
 
 inline bool
-operator<(const detail::StringView& lhs, const char* rhs)
+operator<(const StringView& lhs, const char* rhs)
 {
   return strncmp(lhs.c_str(), rhs, lhs.length()) < 0;
 }

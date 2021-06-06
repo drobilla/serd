@@ -14,8 +14,6 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-/// @file serd.hpp C++ API for Serd, a lightweight RDF syntax library
-
 #ifndef SERD_SERD_HPP
 #define SERD_SERD_HPP
 
@@ -40,18 +38,13 @@
 #include <utility>
 #include <vector>
 
-/**
-   @defgroup serdxx Serdxx
-   C++ bindings for Serd, a lightweight RDF syntax library.
+namespace serd {
 
-   @ingroup serd
+/**
+   @defgroup serdpp Serd C++ API
+   Serd C++ API wrapper.
    @{
 */
-
-/**
-   Serd C++ API namespace.
-*/
-namespace serd {
 
 template<typename T>
 using Optional = detail::Optional<T>;
@@ -107,7 +100,7 @@ enum class StatementFlag {
   terse_O = SERD_TERSE_O  ///< @copydoc SERD_TERSE_O
 };
 
-/// Bitwise OR of #StatementFlag values
+/// Bitwise OR of StatementFlag values
 using StatementFlags = detail::Flags<StatementFlag>;
 
 /// @copydoc SerdSerialisationFlag
@@ -115,7 +108,7 @@ enum class SerialisationFlag {
   no_inline_objects = SERD_NO_INLINE_OBJECTS ///< Disable object inlining
 };
 
-/// Bitwise OR of #SerialisationFlag values
+/// Bitwise OR of SerialisationFlag values
 using SerialisationFlags = detail::Flags<SerialisationFlag>;
 
 /// @copydoc SerdNodeType
@@ -162,7 +155,7 @@ enum class ModelFlag {
   store_cursors = SERD_STORE_CURSORS ///< @copydoc SERD_STORE_CURSORS
 };
 
-/// Bitwise OR of #ModelFlag values
+/// Bitwise OR of ModelFlag values
 using ModelFlags = detail::Flags<ModelFlag>;
 
 /// @copydoc SerdLogLevel
@@ -268,30 +261,31 @@ base64_decode(StringView str)
    @{
 */
 
+/// @copydoc SerdByteSource
 class ByteSource
   : public detail::BasicWrapper<SerdByteSource, serd_byte_source_free>
 {
 public:
   explicit ByteSource(std::istream& stream)
-    : BasicWrapper(serd_byte_source_new_function(s_read,
+    : BasicWrapper{serd_byte_source_new_function(s_read,
                                                  s_error,
                                                  nullptr,
                                                  this,
                                                  nullptr,
-                                                 1))
+                                                 1)}
     , _stream(&stream)
   {}
 
   explicit ByteSource(const std::string& string)
-    : BasicWrapper(serd_byte_source_new_string(string.c_str(), nullptr))
-    , _stream(nullptr)
+    : BasicWrapper{serd_byte_source_new_string(string.c_str(), nullptr)}
+    , _stream{nullptr}
   {}
 
-  ByteSource(const serd::ByteSource&) = delete;
-  ByteSource& operator=(const serd::ByteSource&) = delete;
+  ByteSource(const ByteSource&) = delete;
+  ByteSource& operator=(const ByteSource&) = delete;
 
-  ByteSource(serd::ByteSource&&) = delete;
-  ByteSource& operator=(serd::ByteSource&&) = delete;
+  ByteSource(ByteSource&&) = delete;
+  ByteSource& operator=(ByteSource&&) = delete;
 
   ~ByteSource() = default;
 
@@ -342,24 +336,25 @@ private:
 */
 using WriteFunc = std::function<size_t(const char*, size_t)>;
 
+/// @copydoc SerdByteSink
 class ByteSink : public detail::BasicWrapper<SerdByteSink, serd_byte_sink_free>
 {
 public:
   ByteSink(WriteFunc write_func, const size_t block_size)
-    : BasicWrapper(serd_byte_sink_new_function(s_write, this, block_size))
-    , _write_func(std::move(write_func))
+    : BasicWrapper{serd_byte_sink_new_function(s_write, this, block_size)}
+    , _write_func{std::move(write_func)}
   {}
 
   explicit ByteSink(WriteFunc write_func)
-    : ByteSink(write_func, 1)
+    : ByteSink{write_func, 1}
   {}
 
   explicit ByteSink(std::ostream& stream)
-    : BasicWrapper(serd_byte_sink_new_function(s_write, this, 1))
-    , _write_func([&](const char* str, size_t len) {
+    : BasicWrapper{serd_byte_sink_new_function(s_write, this, 1)}
+    , _write_func{[&](const char* str, size_t len) {
       stream.write(str, std::streamsize(len));
       return stream.good() ? len : size_t(0);
-    })
+    }}
   {}
 
   static inline size_t s_write(const void* buf,
@@ -424,6 +419,7 @@ class NodeWrapper;
 using Node     = NodeWrapper<SerdNode>;
 using NodeView = NodeWrapper<const SerdNode>;
 
+/// Node wrapper
 template<typename CObj>
 class NodeWrapper : public NodeHandle<CObj>
 {
@@ -432,7 +428,7 @@ public:
   using Base::cobj;
 
   explicit NodeWrapper(CObj* ptr)
-    : Base(ptr)
+    : Base{ptr}
   {}
 
   template<typename C>
@@ -463,7 +459,10 @@ public:
   size_t      size() const { return serd_node_length(cobj()); }
   size_t      length() const { return serd_node_length(cobj()); }
 
+  /// Return the datatype of a literal node if present
   Optional<NodeView> datatype() const;
+
+  /// Return the language of a literal node if present
   Optional<NodeView> language() const;
 
   SerdURIView uri_view() const { return serd_parse_uri(c_str()); }
@@ -481,7 +480,7 @@ public:
 
   explicit operator std::string() const
   {
-    return std::string(c_str(), length());
+    return std::string{c_str(), length()};
   }
 
   // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
@@ -620,7 +619,7 @@ make_base64(const void* buf, size_t size, NodeView datatype)
   return Node(serd_new_base64(buf, size, datatype.cobj()));
 }
 
-/// @copydoc serd_new_base64
+// FIXME: document
 inline Node
 make_base64(const void* buf, size_t size)
 {
@@ -678,7 +677,7 @@ parse_file_uri(StringView uri, std::string* hostname = nullptr)
     *hostname = c_hostname;
   }
 
-  std::string path(c_path);
+  std::string path{c_path};
   serd_free(c_hostname);
   serd_free(c_path);
   return path;
@@ -716,7 +715,7 @@ public:
   {}
 
   explicit URI(const SerdURIView& uri)
-    : _uri(uri)
+    : _uri{uri}
   {}
 
   Component scheme() const { return make_component(_uri.scheme); }
@@ -795,10 +794,12 @@ operator<<(std::ostream& os, const URI& uri)
    @{
 */
 
+/// Cursor handle
 template<typename CObj>
 using CursorHandle = detail::
   BasicCopyable<CObj, serd_cursor_copy, serd_cursor_equals, serd_cursor_free>;
 
+/// Cursor wrapper
 template<typename CObj>
 class CursorWrapper : public CursorHandle<CObj>
 {
@@ -807,7 +808,7 @@ public:
   using Base::cobj;
 
   explicit CursorWrapper(CObj* cursor)
-    : Base(cursor)
+    : Base{cursor}
   {}
 
   template<typename C>
@@ -821,6 +822,7 @@ public:
   unsigned column() const { return serd_cursor_column(cobj()); }
 };
 
+/// Cursor view
 using CursorView = CursorWrapper<const SerdCursor>;
 
 /// Extra data managed by mutable (user created) Cursor
@@ -828,6 +830,7 @@ struct CursorData {
   Node name_node;
 };
 
+/// @copydoc SerdCursor
 class Cursor
   : private CursorData
   , public CursorWrapper<SerdCursor>
@@ -869,11 +872,12 @@ using LogFields = std::map<StringView, StringView>;
 
 using LogFunc = std::function<Status(LogLevel, LogFields, std::string)>;
 
+/// @copydoc SerdWorld
 class World : public detail::BasicWrapper<SerdWorld, serd_world_free>
 {
 public:
   World()
-    : BasicWrapper(serd_world_new())
+    : BasicWrapper{serd_world_new()}
   {}
 
   NodeView get_blank() { return NodeView(serd_world_get_blank(cobj())); }
@@ -982,6 +986,7 @@ struct StatementData {
   Optional<Cursor> _cursor;
 };
 
+/// Statement wrapper
 template<typename CObj>
 class StatementWrapper : public StatementHandle<CObj>
 {
@@ -1029,6 +1034,15 @@ public:
     return CursorView(serd_statement_cursor(cobj()));
   }
 
+  bool matches(Optional<NodeView> subject,
+               Optional<NodeView> predicate,
+               Optional<NodeView> object,
+               Optional<NodeView> graph = {})
+  {
+    return serd_statement_matches(
+      cobj(), subject.cobj(), predicate.cobj(), object.cobj(), graph.cobj());
+  }
+
 private:
   template<typename CIter>
   friend class IterWrapper;
@@ -1038,6 +1052,7 @@ private:
   {}
 };
 
+/// @copydoc SerdStatement
 class Statement
   : public StatementData
   , public StatementWrapper<SerdStatement>
@@ -1086,25 +1101,20 @@ public:
    @{
 */
 
-/// @copydoc SerdBaseFunc
-using BaseFunc = std::function<Status(NodeView)>;
-
-/// @copydoc SerdPrefixFunc
-using PrefixFunc = std::function<Status(NodeView name, NodeView uri)>;
-
-/// @copydoc SerdStatementFunc
+// FIXME: Document
+using BaseFunc      = std::function<Status(NodeView)>;
+using PrefixFunc    = std::function<Status(NodeView name, NodeView uri)>;
 using StatementFunc = std::function<Status(StatementFlags, StatementView)>;
+using EndFunc       = std::function<Status(NodeView)>;
 
-/// @copydoc SerdEndFunc
-using EndFunc = std::function<Status(NodeView)>;
-
+/// Sink wrapper
 template<typename CSink>
 class SinkWrapper
   : public detail::Wrapper<CSink, detail::BasicDeleter<CSink, serd_sink_free>>
 {
 public:
   explicit SinkWrapper(CSink* ptr)
-    : detail::Wrapper<CSink, detail::BasicDeleter<CSink, serd_sink_free>>(ptr)
+    : detail::Wrapper<CSink, detail::BasicDeleter<CSink, serd_sink_free>>{ptr}
   {}
 
   /// @copydoc serd_sink_write_base
@@ -1149,24 +1159,26 @@ public:
   }
 };
 
+/// Sink view
 class SinkView : public SinkWrapper<const SerdSink>
 {
 public:
   explicit SinkView(const SerdSink* ptr)
-    : SinkWrapper<const SerdSink>(ptr)
+    : SinkWrapper<const SerdSink>{ptr}
   {}
 
   // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
   SinkView(const SinkWrapper<SerdSink>& sink)
-    : SinkWrapper<const SerdSink>(sink.cobj())
+    : SinkWrapper<const SerdSink>{sink.cobj()}
   {}
 };
 
+/// @copydoc SerdSink
 class Sink : public SinkWrapper<SerdSink>
 {
 public:
   Sink()
-    : SinkWrapper(serd_sink_new(this, s_event, nullptr))
+    : SinkWrapper{serd_sink_new(this, s_event, nullptr)}
   {}
 
   // EnvView env() const { return serd_sink_get_env(cobj()); }
@@ -1266,17 +1278,17 @@ template<typename CObj>
 using EnvHandle =
   detail::DynamicCopyable<CObj, serd_env_copy, serd_env_equals, serd_env_free>;
 
+/// Env wrapper
 template<typename CObj>
 class EnvWrapper : public EnvHandle<CObj>
 {
 public:
   using Base = EnvHandle<CObj>;
-  using UPtr = typename Base::UPtr;
 
   using Base::cobj;
 
-  explicit EnvWrapper(UPtr ptr)
-    : Base(std::move(ptr))
+  explicit EnvWrapper(typename EnvHandle<CObj>::UPtr ptr)
+    : Base{std::move(ptr)}
   {}
 
   /// Return the base URI
@@ -1313,18 +1325,19 @@ public:
   }
 };
 
+/// EnvView
 using EnvView = EnvWrapper<const SerdEnv>;
 
+/// @copydoc SerdEnv
 class Env : public EnvWrapper<SerdEnv>
 {
 public:
   Env()
-    : EnvWrapper(EnvWrapper::UPtr{serd_env_new(SERD_EMPTY_STRING()),
-                                  detail::Ownership::owned})
+    : EnvWrapper{{serd_env_new(SERD_EMPTY_STRING()), detail::Ownership::owned}}
   {}
 
   explicit Env(const NodeView& base)
-    : EnvWrapper(EnvWrapper::UPtr{serd_env_new(base), detail::Ownership::owned})
+    : EnvWrapper{{serd_env_new(base), detail::Ownership::owned}}
   {}
 };
 
@@ -1334,6 +1347,7 @@ public:
    @{
 */
 
+/// @copydoc SerdReader
 class Reader : public detail::BasicWrapper<SerdReader, serd_reader_free>
 {
 public:
@@ -1343,12 +1357,12 @@ public:
          Env&              env,
          SinkView          sink,
          size_t            stack_size)
-    : BasicWrapper(serd_reader_new(world.cobj(),
+    : BasicWrapper{serd_reader_new(world.cobj(),
                                    SerdSyntax(syntax),
                                    flags,
                                    env.cobj(),
                                    sink.cobj(),
-                                   stack_size))
+                                   stack_size)}
   {}
 
   void add_blank_prefix(StringView prefix)
@@ -1414,6 +1428,7 @@ struct WriterData {
   ByteSink _byte_sink;
 };
 
+/// @copydoc SerdWriter
 class Writer
   : public WriterData
   , public detail::BasicWrapper<SerdWriter, serd_writer_free>
@@ -1468,11 +1483,11 @@ class IterWrapper : public IterHandle<CObj>
 {
 public:
   using Base = IterHandle<CObj>;
-  using UPtr = typename Base::UPtr;
+
   using Base::cobj;
 
   explicit IterWrapper(CObj* ptr, detail::Ownership ownership)
-    : Base(UPtr{ptr, ownership})
+    : Base{{ptr, ownership}}
   {}
 
   IterWrapper(IterWrapper&&) noexcept = default;
@@ -1501,11 +1516,12 @@ protected:
 
 using IterView = IterWrapper<const SerdIter>;
 
+/// @copydoc SerdIter
 class Iter : public IterWrapper<SerdIter>
 {
 public:
   explicit Iter(SerdIter* ptr, detail::Ownership ownership)
-    : IterWrapper(ptr, ownership)
+    : IterWrapper{ptr, ownership}
   {}
 
   Iter(Iter&&)      = default;
@@ -1523,6 +1539,7 @@ public:
   }
 };
 
+/// @copydoc SerdRange
 class Range
   : public detail::BasicCopyable<SerdRange,
                                  serd_range_copy,
@@ -1536,7 +1553,7 @@ public:
                                      serd_range_free>;
 
   explicit Range(SerdRange* r)
-    : BasicCopyable(r)
+    : BasicCopyable{r}
     , _begin{serd_range_begin(r), detail::Ownership::view}
     , _end{serd_range_end(r), detail::Ownership::view}
   {}
@@ -1545,10 +1562,14 @@ public:
   Iter&       begin() { return _begin; }
   const Iter& end() const { return _end; }
 
+  /// @copydoc serd_write_range
   Status write(SinkView sink, SerialisationFlags flags = {})
   {
     return Status(serd_write_range(cobj(), sink.cobj(), flags));
   }
+
+  /// @copydoc serd_range_empty
+  bool empty() const { return serd_range_empty(cobj()); }
 
 private:
   Iter _begin;
@@ -1558,6 +1579,7 @@ private:
 using ModelHandle = detail::
   BasicCopyable<SerdModel, serd_model_copy, serd_model_equals, serd_model_free>;
 
+/// @copydoc SerdModel
 class Model : public ModelHandle
 {
 public:
@@ -1567,27 +1589,42 @@ public:
   using const_iterator = Iter;
 
   Model(World& world, ModelFlags flags)
-    : Base(serd_model_new(world.cobj(), flags))
+    : Base{serd_model_new(world.cobj(), flags)}
   {}
 
   Model(World& world, ModelFlag flag)
-    : Base(serd_model_new(world.cobj(), ModelFlags(flag)))
+    : Base{serd_model_new(world.cobj(), ModelFlags(flag))}
   {}
 
+  /// @copydoc serd_model_size
   size_t size() const { return serd_model_size(cobj()); }
 
+  /// @copydoc serd_model_empty
   bool empty() const { return serd_model_empty(cobj()); }
 
-  void insert(StatementView s) { serd_model_insert(cobj(), s.cobj()); }
-
-  void insert(const NodeView&    s,
-              const NodeView&    p,
-              const NodeView&    o,
-              Optional<NodeView> g = {})
+  /// @copydoc serd_model_insert
+  Status insert(StatementView s)
   {
-    serd_model_add(cobj(), s.cobj(), p.cobj(), o.cobj(), g.cobj());
+    return static_cast<Status>(serd_model_insert(cobj(), s.cobj()));
   }
 
+  /// @copydoc serd_model_add
+  Status insert(const NodeView&    s,
+                const NodeView&    p,
+                const NodeView&    o,
+                Optional<NodeView> g = {})
+  {
+    return static_cast<Status>(
+      serd_model_add(cobj(), s.cobj(), p.cobj(), o.cobj(), g.cobj()));
+  }
+
+  /// @copydoc serd_model_add_range
+  Status insert(Range&& range)
+  {
+    return static_cast<Status>(serd_model_add_range(cobj(), range.cobj()));
+  }
+
+  /// @copydoc serd_model_find
   Iter find(Optional<NodeView> s,
             Optional<NodeView> p,
             Optional<NodeView> o,
@@ -1597,6 +1634,7 @@ public:
                 detail::Ownership::owned);
   }
 
+  /// @copydoc serd_model_range
   Range range(Optional<NodeView> s,
               Optional<NodeView> p,
               Optional<NodeView> o,
@@ -1606,6 +1644,7 @@ public:
       serd_model_range(cobj(), s.cobj(), p.cobj(), o.cobj(), g.cobj()));
   }
 
+  /// @copydoc serd_model_get
   Optional<NodeView> get(Optional<NodeView> s,
                          Optional<NodeView> p,
                          Optional<NodeView> o,
@@ -1615,6 +1654,7 @@ public:
       serd_model_get(cobj(), s.cobj(), p.cobj(), o.cobj(), g.cobj()));
   }
 
+  /// @copydoc serd_model_get_statement
   Optional<StatementView> get_statement(Optional<NodeView> s,
                                         Optional<NodeView> p,
                                         Optional<NodeView> o,
@@ -1624,6 +1664,7 @@ public:
       serd_model_get_statement(cobj(), s.cobj(), p.cobj(), o.cobj(), g.cobj()));
   }
 
+  /// @copydoc serd_model_ask
   bool ask(Optional<NodeView> s,
            Optional<NodeView> p,
            Optional<NodeView> o,
@@ -1632,6 +1673,7 @@ public:
     return serd_model_ask(cobj(), s.cobj(), p.cobj(), o.cobj(), g.cobj());
   }
 
+  /// @copydoc serd_model_count
   size_t count(Optional<NodeView> s,
                Optional<NodeView> p,
                Optional<NodeView> o,
@@ -1640,8 +1682,10 @@ public:
     return serd_model_count(cobj(), s.cobj(), p.cobj(), o.cobj(), g.cobj());
   }
 
+  /// @copydoc serd_model_all
   Range all() const { return Range(serd_model_all(cobj())); }
 
+  /// @copydoc serd_model_ordered
   Range ordered(StatementOrder order) const
   {
     return Range(
@@ -1662,26 +1706,27 @@ public:
 private:
   friend class detail::Optional<Model>;
   explicit Model(std::nullptr_t)
-    : BasicCopyable(nullptr)
+    : BasicCopyable{nullptr}
   {}
 };
 
+/// Model inserter
 class Inserter : public SinkWrapper<SerdSink>
 {
 public:
   explicit Inserter(Model& model)
-    : SinkWrapper(serd_inserter_new(model.cobj(), nullptr))
+    : SinkWrapper{serd_inserter_new(model.cobj(), nullptr)}
   {}
 
   Inserter(Model& model, Optional<NodeView> default_graph)
-    : SinkWrapper(serd_inserter_new(model.cobj(), default_graph.cobj()))
+    : SinkWrapper{serd_inserter_new(model.cobj(), default_graph.cobj())}
   {}
 };
-
-} // namespace serd
 
 /**
    @}
 */
+
+} // namespace serd
 
 #endif // SERD_SERD_HPP

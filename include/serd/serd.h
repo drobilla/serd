@@ -1960,6 +1960,7 @@ serd_model_range(const SerdModel* SERD_NONNULL model,
 
    Exactly one of `s`, `p`, `o` must be NULL.
    This function is mainly useful for predicates that only have one value.
+
    @return The first matching node, or NULL if no matches are found.
 */
 SERD_API
@@ -2030,7 +2031,8 @@ serd_model_insert(SerdModel* SERD_NONNULL            model,
 /**
    Add a range of statements to a model
 
-   This function fails if there are any active iterators on `model`.
+   This function fails if there are any active iterators on `model`.  The range
+   will be consumed (advanced to the end) by this function.
 */
 SERD_API
 SerdStatus

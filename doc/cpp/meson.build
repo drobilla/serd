@@ -9,16 +9,17 @@ configure_file(copy: true,
                input: files('../summary.rst'),
                output: 'summary.rst')
 
-configure_file(copy: true, input: files('overview.c'), output: 'overview.c')
+configure_file(copy: true, input: files('overview.cpp'), output: 'overview.cpp')
 
-executable('overview', files('overview.c'), dependencies: [serd_dep])
+executable('overview', files('overview.cpp'),
+           dependencies: [serd_dep, serdpp_dep])
 
-c_rst_files = files(
+cpp_rst_files = files(
   'index.rst',
   'overview.rst',
 )
 
-foreach f : c_rst_files
+foreach f : cpp_rst_files
   configure_file(copy: true, input: f, output: '@PLAINNAME@')
 endforeach
 
@@ -26,22 +27,23 @@ subdir('xml')
 subdir('api')
 
 docs = custom_target(
-  'singlehtml C documentation for serd',
+  'singlehtml C++ documentation for serd',
   command: [sphinx_build, '-M', 'singlehtml',
             meson.current_build_dir(), meson.current_build_dir(),
             '-E', '-q', '-t', 'singlehtml'],
-  input: [c_rst_files, c_serd_rst, c_index_xml],
+  input: [cpp_rst_files, cpp_serd_rst, cpp_index_xml],
   output: 'singlehtml',
   build_by_default: true,
+  build_always: true,
   install: true,
   install_dir: docdir / 'serd-0')
 
 docs = custom_target(
-  'html C documentation for serd',
+  'html C++ documentation for serd',
   command: [sphinx_build, '-M', 'html',
             meson.current_build_dir(), meson.current_build_dir(),
             '-E', '-q', '-t', 'html'],
-  input: [c_rst_files, c_serd_rst, c_index_xml],
+  input: [cpp_rst_files, cpp_serd_rst, cpp_index_xml],
   output: 'html',
   build_by_default: true,
   install: true,

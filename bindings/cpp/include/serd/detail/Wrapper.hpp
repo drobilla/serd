@@ -25,6 +25,13 @@
 namespace serd {
 namespace detail {
 
+/**
+   @defgroup serdpp_detail Serd C++ API details
+   Internal C++ wrapper details that should not be used directly by clients.
+   @ingroup serdpp
+   @{
+*/
+
 template<typename T>
 class Optional;
 
@@ -56,7 +63,10 @@ struct BasicDeleter {
 };
 
 /// Ownership for `DynamicDeleter`
-enum class Ownership { owned, view };
+enum class Ownership {
+  owned, ///< This pointer owns the data and must delete it
+  view,  ///< This pointer is just a view and must not delete the data
+};
 
 /**
    Deleter for a C object that can handle dynamic ownership.
@@ -115,7 +125,7 @@ public:
   const T* cobj() const { return _ptr.get(); }
 
 protected:
-  friend class detail::Optional<T>;
+  friend class Optional<T>;
 
   explicit Wrapper(std::nullptr_t)
     : _ptr(nullptr)
@@ -134,6 +144,10 @@ public:
     : Wrapper<T, BasicDeleter<T, Free>>{ptr}
   {}
 };
+
+/**
+   @}
+*/
 
 } // namespace detail
 } // namespace serd

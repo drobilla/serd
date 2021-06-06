@@ -1,4 +1,4 @@
-versioned_cpp_name = 'serdxx' + version_suffix
+versioned_cpp_name = 'serdpp' + version_suffix
 
 # Set ultra strict warnings for developers, if requested
 cpp_suppressions = []
@@ -47,20 +47,24 @@ cpp_detail_headers = [
   'include/serd/detail/Wrapper.hpp',
 ]
 
-serdxx_dep = declare_dependency(
+cpp_header_files = files(cpp_headers)
+cpp_detail_header_files = files(cpp_detail_headers)
+
+serdpp_dep = declare_dependency(
   include_directories: include_directories(['include']),
   link_with: libserd)
 
 pkg.generate(
   description: 'C++ bindings for serd',
   filebase: versioned_cpp_name,
-  name: 'Serdxx',
+  name: 'Serdpp',
   subdirs: [versioned_cpp_name],
   version: meson.project_version())
 
 # Install headers to a versioned include directory
-install_headers(cpp_headers, subdir: versioned_cpp_name / 'serd')
-install_headers(cpp_detail_headers, subdir: versioned_cpp_name / 'serd/detail')
+install_headers(cpp_header_files, subdir: versioned_cpp_name / 'serd')
+install_headers(cpp_detail_header_files,
+                subdir: versioned_cpp_name / 'serd/detail')
 
 cpp_test_args = prog_args + cpp.get_supported_arguments(['-Wno-float-equal'])
 
@@ -69,5 +73,5 @@ test('bindings',
                 'test/test_serd_hpp.cpp',
                 include_directories: include_directories(['include']),
                 cpp_args: exess_cpp_args + cpp_test_args,
-                dependencies: [serd_dep, serdxx_dep]),
+                dependencies: [serd_dep, serdpp_dep]),
      suite: 'cpp')

@@ -200,17 +200,17 @@ endif
 # Install header to a versioned include directory
 install_headers(c_headers, subdir: versioned_name / 'serd')
 
+# C++ bindings
+if is_variable('cpp')
+  subdir('bindings/cpp')
+endif
+
 if not get_option('docs').disabled()
   subdir('doc')
 endif
 
 if get_option('tests')
   subdir('test')
-endif
-
-# C++ bindings
-if is_variable('cpp')
-  subdir('bindings/cpp')
 endif
 
 # Find system programs we might need for the build
