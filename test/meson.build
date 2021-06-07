@@ -38,6 +38,7 @@ subdir('headers')
 ##############
 
 unit_tests = [
+  'byte_sink',
   'caret',
   'env',
   'free_null',
@@ -115,6 +116,7 @@ if not get_option('tools').disabled()
     ['-o'],
     ['-p'],
     ['-r'],
+    ['-w'],
     ['-z'],
     ['-s', '<foo> a <Bar> .'],
   ]
@@ -196,6 +198,13 @@ if not get_option('tools').disabled()
   test('write_error', files('test_write_error.py'),
        args: script_args + [serd_ttl],
        env: test_env,
+       suite: 'io_errors')
+
+  test('write_bad_file', serdi,
+       args: ['-w', '/does/not/exist.ttl',
+              'file://@0@/serd.ttl'.format(serd_src_root)],
+       env: test_env,
+       should_fail: true,
        suite: 'io_errors')
 
   # RDF test suites

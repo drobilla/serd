@@ -3,13 +3,13 @@
 
 #undef NDEBUG
 
+#include "serd/byte_sink.h"
 #include "serd/caret.h"
 #include "serd/env.h"
 #include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
-#include "serd/stream.h"
 #include "serd/world.h"
 #include "serd/writer.h"
 

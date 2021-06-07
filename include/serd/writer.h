@@ -6,6 +6,7 @@
 
 #include "serd/attributes.h"
 #include "serd/buffer.h"
+#include "serd/byte_sink.h"
 #include "serd/env.h"
 #include "serd/error.h"
 #include "serd/node.h"
@@ -51,8 +52,7 @@ serd_writer_new(SerdWorld* SERD_NONNULL    world,
                 SerdSyntax                 syntax,
                 SerdWriterFlags            flags,
                 SerdEnv* SERD_NONNULL      env,
-                SerdWriteFunc SERD_NONNULL ssink,
-                void* SERD_NULLABLE        stream);
+                SerdByteSink* SERD_NONNULL byte_sink);
 
 /// Free `writer`
 SERD_API
