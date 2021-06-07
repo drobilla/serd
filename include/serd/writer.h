@@ -49,8 +49,7 @@ serd_writer_new(SerdWorld* SERD_NONNULL    world,
                 SerdSyntax                 syntax,
                 SerdWriterFlags            flags,
                 SerdEnv* SERD_NONNULL      env,
-                SerdWriteFunc SERD_NONNULL ssink,
-                void* SERD_NULLABLE        stream);
+                SerdByteSink* SERD_NONNULL byte_sink);
 
 /// Free `writer`
 SERD_API

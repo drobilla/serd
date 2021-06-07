@@ -23,6 +23,8 @@
 #include "serd/stream.h"
 #include "serd/string_view.h"
 
+#include "serd/byte_sink.h"
+
 #include "serd/error.h"
 #include "serd/uri.h"
 
