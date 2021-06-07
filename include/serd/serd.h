@@ -111,16 +111,6 @@ extern "C" {
 */
 #define SERD_MICRO_VERSION 1
 
-/// Flags that describe the details of a node
-typedef enum {
-  SERD_IS_LONG      = 1u << 0u, ///< Literal node should be triple-quoted
-  SERD_HAS_DATATYPE = 1u << 1u, ///< Literal node has datatype
-  SERD_HAS_LANGUAGE = 1u << 2u  ///< Literal node has language
-} SerdNodeFlag;
-
-/// Bitwise OR of SerdNodeFlag values
-typedef uint32_t SerdNodeFlags;
-
 /**
    @defgroup serd_string_view String View
    @{
@@ -464,6 +454,8 @@ serd_syntax_has_graphs(SerdSyntax syntax);
 
 /**
    @}
+   @defgroup serd_data Data
+   @{
    @defgroup serd_uri URI
    @{
 */
@@ -690,6 +682,16 @@ typedef enum {
   */
   SERD_VARIABLE = 4
 } SerdNodeType;
+
+/// Flags that describe the details of a node
+typedef enum {
+  SERD_IS_LONG      = 1u << 0u, ///< Literal node should be triple-quoted
+  SERD_HAS_DATATYPE = 1u << 1u, ///< Literal node has datatype
+  SERD_HAS_LANGUAGE = 1u << 2u  ///< Literal node has language
+} SerdNodeFlag;
+
+/// Bitwise OR of SerdNodeFlag values
+typedef uint32_t SerdNodeFlags;
 
 /**
    @defgroup serd_node_construction Construction
@@ -1652,6 +1654,7 @@ serd_statement_matches(const SerdStatement* SERD_NONNULL statement,
 
 /**
    @}
+   @}
    @defgroup serd_world World
    @{
 */
@@ -1838,7 +1841,12 @@ serd_world_vlogf(const SerdWorld* SERD_NONNULL     world,
 /**
    @}
    @}
-   @defgroup serd_event Event Handlers
+   @defgroup serd_streaming Data Streaming
+   @{
+*/
+
+/**
+   @defgroup serd_event Events
    @{
 */
 
@@ -2069,6 +2077,7 @@ serd_filter_new(const SerdWorld* SERD_NONNULL world,
 
 /**
    @}
+   @}
    @defgroup serd_env Environment
    @{
 */
@@ -2197,6 +2206,8 @@ serd_node_to_syntax(SerdWorld* SERD_NONNULL      world,
 
 /**
    @}
+   @defgroup serd_syntax_io Reading and Writing
+   @{
    @defgroup serd_input_stream Input Streams
 
    An input stream is used for reading input as a raw stream of bytes.  It is
@@ -2681,6 +2692,12 @@ serd_writer_finish(SerdWriter* SERD_NONNULL writer);
 
 /**
    @}
+   @}
+   @defgroup serd_storage Storage
+   @{
+*/
+
+/**
    @defgroup serd_cursor Cursor
    @{
 */
@@ -3085,6 +3102,7 @@ serd_inserter_new(SerdModel* SERD_NONNULL       model,
                   const SerdNode* SERD_NULLABLE default_graph);
 
 /**
+   @}
    @}
    @}
 */
