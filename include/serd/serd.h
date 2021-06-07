@@ -88,6 +88,15 @@ extern "C" {
 */
 
 /**
+   @defgroup serd_version Version
+
+   Serd uses a single [semantic version number](https://semver.org) which
+   reflects changes to the C library ABI.
+
+   @{
+*/
+
+/**
    The major version number of the serd library.
 
    Semver: Increments when incompatible API changes are made.
@@ -110,17 +119,8 @@ extern "C" {
 */
 #define SERD_MICRO_VERSION 1
 
-/// Flags that describe the details of a node
-typedef enum {
-  SERD_IS_LONG      = 1u << 0u, ///< Literal node should be triple-quoted
-  SERD_HAS_DATATYPE = 1u << 1u, ///< Literal node has datatype
-  SERD_HAS_LANGUAGE = 1u << 2u  ///< Literal node has language
-} SerdNodeFlag;
-
-/// Bitwise OR of SerdNodeFlag values
-typedef uint32_t SerdNodeFlags;
-
 /**
+   @}
    @defgroup serd_string_view String View
    @{
 */
@@ -405,14 +405,19 @@ serd_strncasecmp(const char* SERD_NONNULL s1,
 /**
    @}
    @defgroup serd_io_functions I/O Function Types
+
+   These function types define the low-level interface that serd uses to read
+   and write input.  They are deliberately compatible with the standard C
+   functions for reading and writing from files.
+
    @{
 */
 
 /**
-   Source function for raw string input.
+   Function for reading input bytes from a stream.
 
-   Identical semantics to `fread`, but may set errno for more informative error
-   reporting than supported by #SerdErrorFunc.
+   This has identical semantics to `fread`, but may set `errno` for more
+   informative error reporting than supported by #SerdErrorFunc.
 
    @param buf Output buffer.
    @param size Size of a single element of data in bytes (always 1).
@@ -426,10 +431,10 @@ typedef size_t (*SerdReadFunc)(void* SERD_NONNULL buf,
                                void* SERD_NONNULL stream);
 
 /**
-   Sink function for raw string output.
+   Function for writing output bytes to a stream.
 
-   Identical semantics to `fwrite`, but may set errno for more informative
-   error reporting than supported by #SerdErrorFunc.
+   This has identical semantics to `fwrite`, but may set `errno` for more
+   informative error reporting than supported by #SerdErrorFunc.
 
    @param buf Input buffer.
    @param size Size of a single element of data in bytes (always 1).
@@ -484,7 +489,7 @@ typedef enum {
    Case-insensitive, supports "Turtle", "NTriples", "NQuads", and "TriG".
 
    @return The syntax with the given name, or the empty syntax if the name is
-   not recognised.
+   unknown.
 */
 SERD_PURE_API
 SerdSyntax
@@ -493,18 +498,18 @@ serd_syntax_by_name(const char* SERD_NONNULL name);
 /**
    Guess a syntax from a filename.
 
-   This uses the file extension to guess the syntax of a file, for example
-   recognising ".ttl" as the extension of a Turtle file.
+   This uses the file extension to guess the syntax of a file, for example a
+   filename that ends with ".ttl" will be considered Turtle.
 
    @return The likely syntax of the given file, or the empty syntax if the
-   extension is not recognised.
+   extension is unknown.
 */
 SERD_PURE_API
 SerdSyntax
 serd_guess_syntax(const char* SERD_NONNULL filename);
 
 /**
-   Return whether a syntax can represent multiple graphs.
+   Return whether a syntax can represent multiple graphs in one document.
 
    @return True for #SERD_NQUADS and #SERD_TRIG, false otherwise.
 */
@@ -514,27 +519,29 @@ serd_syntax_has_graphs(SerdSyntax syntax);
 
 /**
    @}
+   @defgroup serd_data Data
+   @{
    @defgroup serd_uri URI
    @{
 */
 
 /**
-   A parsed URI.
+   A parsed view of a URI.
 
-   This URI representation is designed for fast streaming, it allows creating
-   relative URI references or resolving them into absolute URIs in-place
+   This representation is designed for fast streaming.  It makes it possible to
+   create relative URI references or resolve them into absolute URIs in-place
    without any string allocation.
 
    Each component refers to slices in other strings, so a URI view must outlive
-   any strings it was parsed from.  The components are not necessarily
-   null-terminated.
+   any strings it was parsed from.  Note that the components are not
+   necessarily null-terminated.
 
    The scheme, authority, path, query, and fragment simply point to the string
    value of those components, not including any delimiters.  The path_prefix is
    a special component for storing relative or resolved paths.  If it points to
    a string (usually a base URI the URI was resolved against), then this string
-   is prepended to the path.  Otherwise, the length is interpret as the number
-   of up-references ("../") that must be prepended to the path.
+   is prepended to the path.  Otherwise, the length is interpreted as the
+   number of up-references ("../") that must be prepended to the path.
 */
 typedef struct {
   SerdStringView scheme;      ///< Scheme
@@ -850,6 +857,16 @@ SERD_CONST_API
 SerdValue
 serd_ubyte(uint8_t v);
 
+/// Flags that describe the details of a node
+typedef enum {
+  SERD_IS_LONG      = 1u << 0u, ///< Literal node should be triple-quoted
+  SERD_HAS_DATATYPE = 1u << 1u, ///< Literal node has datatype
+  SERD_HAS_LANGUAGE = 1u << 2u  ///< Literal node has language
+} SerdNodeFlag;
+
+/// Bitwise OR of SerdNodeFlag values
+typedef uint32_t SerdNodeFlags;
+
 /**
    @}
    @defgroup serd_node_construction Construction
@@ -871,8 +888,8 @@ serd_ubyte(uint8_t v);
 
    This is the universal node constructor which can construct any node.  An
    error will be returned if the parameters do not make sense.  In particular,
-   SERD_HAS_DATATYPE or SERD_HAS_LANGUAGE (but not both) may only be given if
-   `type` is `SERD_LITERAL`, and `meta` must be syntactically valid based on
+   #SERD_HAS_DATATYPE or #SERD_HAS_LANGUAGE (but not both) may only be given if
+   `type` is #SERD_LITERAL, and `meta` must be syntactically valid based on
    that flag.
 
    This function may also be used to determine the size of buffer required by
@@ -1784,6 +1801,7 @@ serd_statement_matches(const SerdStatement* SERD_NONNULL statement,
 
 /**
    @}
+   @}
    @defgroup serd_world World
    @{
 */
@@ -2025,7 +2043,12 @@ serd_logf_at(const SerdWorld* SERD_NONNULL  world,
 
 /**
    @}
-   @defgroup serd_event Event Handlers
+   @defgroup serd_streaming Data Streaming
+   @{
+*/
+
+/**
+   @defgroup serd_event Events
    @{
 */
 
@@ -2256,6 +2279,7 @@ serd_filter_new(const SerdWorld* SERD_NONNULL world,
 
 /**
    @}
+   @}
    @defgroup serd_env Environment
    @{
 */
@@ -2430,6 +2454,8 @@ serd_node_to_syntax(SerdAllocator* SERD_NULLABLE allocator,
 
 /**
    @}
+   @defgroup serd_syntax_io Reading and Writing
+   @{
    @defgroup serd_input_stream Input Streams
 
    An input stream is used for reading input as a raw stream of bytes.  It is
@@ -2911,6 +2937,12 @@ serd_writer_finish(SerdWriter* SERD_NONNULL writer);
 
 /**
    @}
+   @}
+   @defgroup serd_storage Storage
+   @{
+*/
+
+/**
    @defgroup serd_cursor Cursor
    @{
 */
@@ -3329,6 +3361,7 @@ serd_inserter_new(SerdModel* SERD_NONNULL       model,
                   const SerdNode* SERD_NULLABLE default_graph);
 
 /**
+   @}
    @}
    @}
 */
