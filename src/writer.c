@@ -1,6 +1,7 @@
 // Copyright 2011-2020 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
+#include "byte_sink.h"
 #include "env.h"
 #include "node.h"
 #include "serd_internal.h"
@@ -117,8 +118,7 @@ struct SerdWriterImpl {
   SerdURIView     root_uri;
   WriteContext*   anon_stack;
   size_t          anon_stack_size;
-  SerdWriteFunc   write_func;
-  void*           stream;
+  SerdByteSink*   byte_sink;
   WriteContext    context;
   char*           bprefix;
   size_t          bprefix_len;
@@ -212,7 +212,7 @@ ctx(SerdWriter* writer, const SerdField field)
 SERD_WARN_UNUSED_RESULT static size_t
 sink(const void* buf, size_t len, SerdWriter* writer)
 {
-  const size_t written = writer->write_func(buf, 1, len, writer->stream);
+  const size_t written = serd_byte_sink_write(buf, len, writer->byte_sink);
   if (written != len) {
     if (errno) {
       char message[1024] = {0};
@@ -1122,22 +1122,20 @@ serd_writer_new(SerdWorld*      world,
                 SerdSyntax      syntax,
                 SerdWriterFlags flags,
                 SerdEnv*        env,
-                SerdWriteFunc   write_func,
-                void*           stream)
+                SerdByteSink*   byte_sink)
 {
   const WriteContext context = WRITE_CONTEXT_NULL;
   SerdWriter*        writer  = (SerdWriter*)calloc(1, sizeof(SerdWriter));
 
-  writer->world      = world;
-  writer->syntax     = syntax;
-  writer->flags      = flags;
-  writer->env        = env;
-  writer->root_node  = NULL;
-  writer->root_uri   = SERD_URI_NULL;
-  writer->write_func = write_func;
-  writer->stream     = stream;
-  writer->context    = context;
-  writer->empty      = true;
+  writer->world     = world;
+  writer->syntax    = syntax;
+  writer->flags     = flags;
+  writer->env       = env;
+  writer->root_node = NULL;
+  writer->root_uri  = SERD_URI_NULL;
+  writer->byte_sink = byte_sink;
+  writer->context   = context;
+  writer->empty     = true;
 
   writer->anon_stack =
     (WriteContext*)calloc(anon_stack_capacity, sizeof(WriteContext));
