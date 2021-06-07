@@ -256,12 +256,9 @@ serd_strlen(const char* SERD_NONNULL str, SerdNodeFlags* SERD_NULLABLE flags);
 
 /**
    @}
-   @defgroup serd_streams Byte Streams
+   @defgroup serd_io_functions I/O Function Types
    @{
 */
-
-/// A sink for bytes that receives text output
-typedef struct SerdByteSinkImpl SerdByteSink;
 
 /**
    Function to detect I/O stream errors.
@@ -305,6 +302,15 @@ typedef size_t (*SerdWriteFunc)(const void* SERD_NONNULL buf,
                                 size_t                   size,
                                 size_t                   nmemb,
                                 void* SERD_NONNULL       stream);
+
+/**
+   @}
+   @defgroup serd_streams Byte Streams
+   @{
+*/
+
+/// A sink for bytes that receives text output
+typedef struct SerdByteSinkImpl SerdByteSink;
 
 /**
    Create a new byte sink.
