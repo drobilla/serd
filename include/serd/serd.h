@@ -376,6 +376,8 @@ serd_syntax_has_graphs(SerdSyntax syntax);
 
 /**
    @}
+   @defgroup serd_data Data
+   @{
    @defgroup serd_uri URI
    @{
 */
@@ -1526,6 +1528,7 @@ serd_statement_matches(const SerdStatement* SERD_NONNULL statement,
 
 /**
    @}
+   @}
    @defgroup serd_world World
    @{
 */
@@ -1708,7 +1711,12 @@ serd_world_vlogf(const SerdWorld* SERD_NONNULL     world,
 /**
    @}
    @}
-   @defgroup serd_event Event Handlers
+   @defgroup serd_streaming Data Streaming
+   @{
+*/
+
+/**
+   @defgroup serd_event Events
    @{
 */
 
@@ -1933,6 +1941,7 @@ serd_filter_new(const SerdSink* SERD_NONNULL  target,
 
 /**
    @}
+   @}
    @defgroup serd_env Environment
    @{
 */
@@ -2053,6 +2062,8 @@ serd_node_to_syntax(const SerdNode* SERD_NONNULL node,
 
 /**
    @}
+   @defgroup serd_syntax_io Reading and Writing
+   @{
    @defgroup serd_byte_source Byte Source
    @{
 */
@@ -2397,6 +2408,12 @@ serd_writer_finish(SerdWriter* SERD_NONNULL writer);
 
 /**
    @}
+   @}
+   @defgroup serd_storage Storage
+   @{
+*/
+
+/**
    @defgroup serd_cursor Cursor
    @{
 */
@@ -3050,6 +3067,7 @@ serd_validate_model(SerdValidator* SERD_NONNULL const validator,
                     const SerdNode* SERD_NULLABLE     graph);
 
 /**
+   @}
    @}
    @}
 */
