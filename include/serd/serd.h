@@ -110,7 +110,7 @@ typedef struct {
 } SerdChunk;
 
 /**
-   Free memory allocated by Serd
+   Free memory allocated by Serd.
 
    This function exists because some systems require memory allocated by a
    library to be freed by code in the same library.  It is otherwise equivalent
@@ -236,7 +236,7 @@ typedef size_t (*SerdSink)(const void* SERD_NONNULL buf,
 */
 
 /**
-   A parsed URI
+   A parsed URI.
 
    This struct directly refers to chunks in other strings, it does not own any
    memory itself.  Thus, URIs can be parsed and/or resolved against a base URI
@@ -486,7 +486,7 @@ serd_node_new_relative_uri(const SerdURI* SERD_NONNULL  uri,
                            SerdURI* SERD_NULLABLE       out);
 
 /**
-   Create a new node by serialising `d` into an xsd:decimal string
+   Create a new node by serialising `d` into an xsd:decimal string.
 
    The resulting node will always contain a `.', start with a digit, and end
    with a digit (i.e. will have a leading and/or trailing `0' if necessary).
@@ -510,7 +510,7 @@ SerdNode
 serd_node_new_integer(int64_t i);
 
 /**
-   Create a node by serialising `buf` into an xsd:base64Binary string
+   Create a node by serialising `buf` into an xsd:base64Binary string.
 
    This function can be used to make a serialisable node out of arbitrary
    binary data, which can be decoded using serd_base64_decode().
@@ -589,7 +589,7 @@ typedef SerdStatus (*SerdErrorSink)(void* SERD_NULLABLE           handle,
                                     const SerdError* SERD_NONNULL error);
 
 /**
-   Sink (callback) for base URI changes
+   Sink (callback) for base URI changes.
 
    Called whenever the base URI of the serialisation changes.
 */
@@ -597,7 +597,7 @@ typedef SerdStatus (*SerdBaseSink)(void* SERD_NULLABLE          handle,
                                    const SerdNode* SERD_NONNULL uri);
 
 /**
-   Sink (callback) for namespace definitions
+   Sink (callback) for namespace definitions.
 
    Called whenever a prefix is defined in the serialisation.
 */
@@ -606,7 +606,7 @@ typedef SerdStatus (*SerdPrefixSink)(void* SERD_NULLABLE          handle,
                                      const SerdNode* SERD_NONNULL uri);
 
 /**
-   Sink (callback) for statements
+   Sink (callback) for statements.
 
    Called for every RDF statement in the serialisation.
 */
@@ -621,7 +621,7 @@ typedef SerdStatus (*SerdStatementSink)(
   const SerdNode* SERD_NULLABLE object_lang);
 
 /**
-   Sink (callback) for anonymous node end markers
+   Sink (callback) for anonymous node end markers.
 
    This is called to indicate that the anonymous node with the given
    `value` will no longer be referred to by any future statements
@@ -662,7 +662,7 @@ serd_env_set_base_uri(SerdEnv* SERD_NONNULL         env,
                       const SerdNode* SERD_NULLABLE uri);
 
 /**
-   Set a namespace prefix
+   Set a namespace prefix.
 
    A namespace prefix is used to expand CURIE nodes, for example, with the
    prefix "xsd" set to "http://www.w3.org/2001/XMLSchema#", "xsd:decimal" will
@@ -740,7 +740,7 @@ serd_reader_new(SerdSyntax          syntax,
                 SerdEndSink SERD_NULLABLE       end_sink);
 
 /**
-   Enable or disable strict parsing
+   Enable or disable strict parsing.
 
    The reader is non-strict (lax) by default, which will tolerate URIs with
    invalid characters.  Setting strict will fail when parsing such files.  An
@@ -830,7 +830,7 @@ serd_reader_start_source_stream(SerdReader* SERD_NONNULL         reader,
                                 size_t                           page_size);
 
 /**
-   Read a single "chunk" of data during an incremental read
+   Read a single "chunk" of data during an incremental read.
 
    This function will read a single top level description, and return.  This
    may be a directive, statement, or several statements; essentially it reads
@@ -931,7 +931,7 @@ serd_file_sink(const void* SERD_NONNULL buf,
                void* SERD_NONNULL       stream);
 
 /**
-   A convenience sink function for writing to a string
+   A convenience sink function for writing to a string.
 
    This function can be used as a SerdSink to write to a SerdChunk which is
    resized as necessary with realloc().  The `stream` parameter must point to
@@ -967,7 +967,7 @@ serd_writer_set_error_sink(SerdWriter* SERD_NONNULL   writer,
                            void* SERD_NULLABLE        error_handle);
 
 /**
-   Set a prefix to be removed from matching blank node identifiers
+   Set a prefix to be removed from matching blank node identifiers.
 
    This is the counterpart to serd_reader_add_blank_prefix() which can be used
    to "undo" added prefixes.
@@ -1040,7 +1040,7 @@ serd_writer_end_anon(SerdWriter* SERD_NONNULL      writer,
                      const SerdNode* SERD_NULLABLE node);
 
 /**
-   Finish a write
+   Finish a write.
 
    This flushes any pending output, for example terminating punctuation, so
    that the output is a complete document.
