@@ -1,0 +1,5 @@
+include LICENSE
+include NEWS
+include README.md
+include serd.h
+include serd.pyx
