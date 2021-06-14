@@ -20,7 +20,7 @@ cdef extern from "stdarg.h":
     ctypedef struct va_list:
         pass
 
-cdef extern from "serd/serd.h":
+cdef extern from "serd.h":
     ctypedef struct SerdWorld
     ctypedef struct SerdNodes
     ctypedef struct SerdStatement
