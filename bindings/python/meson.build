@@ -8,18 +8,28 @@ if cc.get_id() == 'clang' or cc.get_id() == 'gcc'
   ]
 endif
 
+# Copy files to make this build directory a Python package
+configure_file(copy: true, input: files('../../COPYING'), output: 'LICENSE')
+configure_file(copy: true, input: files('../../NEWS'), output: 'NEWS')
+configure_file(copy: true, input: files('../../README.md'), output: 'README.md')
+configure_file(copy: true, input: files('MANIFEST.in'), output: 'MANIFEST.in')
+configure_file(copy: true, input: files('setup.py'), output: 'setup.py')
+configure_file(copy: true, input: files('../../include/serd/serd.h'), output: 'serd.h')
+
+serd_pyx = configure_file(copy: true, input: files('serd.pyx'), output: 'serd.pyx')
+
 # Generate extension module C source code with cython
-pyserd_c = custom_target(
-  'serd.cpython.so',
+cython_serd_c = custom_target(
+  'serd.c cython extension',
   command: [cython, '-3', '--fast-fail', '-Wextra', '@INPUT0@', '-o', '@OUTPUT@'],
-  input: ['serd.pyx'],
-  output: 'pyserd.c',
+  input: serd_pyx,
+  output: 'serd.c',
   install: true,
   install_dir: py.get_install_dir())
 
 # Compile extension module
 pyserd = py.extension_module('serd',
-                             pyserd_c,
+                             cython_serd_c,
                              c_args: cython_c_args,
                              dependencies: [py_dep, serd_dep])
 
