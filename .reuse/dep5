@@ -3,7 +3,7 @@ Upstream-Name: serd
 Upstream-Contact: David Robillard <d@drobilla.net>
 Source: https://gitlab.com/drobilla/serd
 
-Files: .clang-format **/.clang* .clant.json .includes.imp meson_options.txt test/bad/* test/sort/* test/filter/* subprojects/*.wrap test/canon/* test/good/* doc/*.in .git* test/lax/* test/multifile/* test/pattern/* test/pretty/* test/*.py test/terse/*
+Files: .clang-format **/.clang* .clant.json .includes.imp bindings/python/MANIFEST.in meson_options.txt test/bad/* test/sort/* test/filter/* subprojects/*.wrap test/canon/* test/good/* doc/*.in .git* test/lax/* test/multifile/* test/pattern/* test/pretty/* test/*.py test/terse/*
 Copyright: 2022 David Robillard <d@drobilla.net>
 License: CC0-1.0 OR ISC
 

@@ -11,6 +11,14 @@ if cc.get_id() == 'clang' or cc.get_id() == 'gcc'
   ]
 endif
 
+# Copy files to make this build directory a Python package
+configure_file(copy: true, input: files('../../COPYING'), output: 'LICENSE')
+configure_file(copy: true, input: files('../../NEWS'), output: 'NEWS')
+configure_file(copy: true, input: files('../../README.md'), output: 'README.md')
+configure_file(copy: true, input: files('MANIFEST.in'), output: 'MANIFEST.in')
+configure_file(copy: true, input: files('setup.py'), output: 'setup.py')
+configure_file(copy: true, input: files('../../include/serd/serd.h'), output: 'serd.h')
+
 serd_pyx = configure_file(copy: true, input: files('serd.pyx'), output: 'serd.pyx')
 
 cython_args = ['-3', '--fast-fail', '-Wextra']
