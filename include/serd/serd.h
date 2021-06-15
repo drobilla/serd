@@ -1421,11 +1421,8 @@ typedef void (*SerdFreeFunc)(void* SERD_NULLABLE ptr);
 /**
    Create a new sink.
 
-   Initially, the sink has no set functions and will do nothing.  Use the
-   serd_sink_set_*_func functions to set handlers for various events.
-
    @param handle Opaque handle that will be passed to sink functions.
-   @param event_func Function that will be called for every event
+   @param event_func Function that will be called for every event.
    @param free_handle Free function to call on handle in serd_sink_free().
 */
 SERD_API

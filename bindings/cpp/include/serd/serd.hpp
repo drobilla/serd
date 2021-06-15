@@ -369,11 +369,6 @@ class NodeView;
 template<class CObj>
 class NodeWrapper : public NodeHandle<CObj>
 {
-protected:
-  explicit NodeWrapper(CObj* const ptr)
-    : NodeHandle<CObj>{ptr}
-  {}
-
 public:
   template<class C>
   // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
@@ -431,6 +426,11 @@ public:
 
   /// Return true if the node's string is empty
   bool empty() const { return length() == 0; }
+
+protected:
+  explicit NodeWrapper(CObj* const ptr)
+    : NodeHandle<CObj>{ptr}
+  {}
 };
 
 /// A non-owning constant view of some other node
@@ -1086,6 +1086,77 @@ enum class StatementFlag {
 /// Bitwise OR of StatementFlag values
 using StatementFlags = Flags<StatementFlag>;
 
+/// @copydoc SerdEventType
+enum class EventType {
+  base      = SERD_BASE,      ///< @copydoc SERD_BASE
+  prefix    = SERD_PREFIX,    ///< @copydoc SERD_PREFIX
+  statement = SERD_STATEMENT, ///< @copydoc SERD_STATEMENT
+  end       = SERD_END        ///< @copydoc SERD_END
+};
+
+struct BaseEvent {
+  NodeView uri; ///< Base URI
+};
+
+struct PrefixEvent {
+  NodeView name; ///< Prefix name
+  NodeView uri;  ///< Namespace URI
+};
+
+struct StatementEvent {
+  StatementFlags flags;     ///< Flags for pretty-printing
+  StatementView  statement; ///< Statement
+};
+
+struct EndEvent {
+  NodeView node; ///< Anonymous node that is finished
+};
+
+class Event
+{
+public:
+  explicit Event(const SerdEvent* const e)
+    : _event{*e}
+  {}
+
+  EventType type() const { return static_cast<EventType>(_event.type); }
+
+  BaseEvent base() const
+  {
+    assert(_event.type == SERD_BASE);
+    return {NodeView{_event.base.uri}};
+  }
+
+  PrefixEvent prefix() const
+  {
+    assert(_event.type == SERD_PREFIX);
+    return {NodeView{_event.prefix.name}, NodeView{_event.prefix.uri}};
+  }
+
+  StatementEvent statement() const
+  {
+    assert(_event.type == SERD_STATEMENT);
+    return {StatementFlags{_event.statement.flags},
+            StatementView{_event.statement.statement}};
+  }
+
+  EndEvent end() const
+  {
+    assert(_event.type == SERD_END);
+    return {NodeView{_event.end.node}};
+  }
+
+private:
+  SerdEvent _event;
+
+  // union {
+  //   BaseEvent      base;
+  //   PrefixEvent    prefix;
+  //   StatementEvent statement;
+  //   EndEvent       end;
+  // } event;
+};
+
 /**
    @}
    @defgroup serdpp_sink Sink
@@ -1098,15 +1169,11 @@ using PrefixFunc    = std::function<Status(NodeView name, NodeView uri)>;
 using StatementFunc = std::function<Status(StatementFlags, StatementView)>;
 using EndFunc       = std::function<Status(NodeView)>;
 
-/// Sink wrapper
+/// Common base class for any wrapped sink
 template<class CSink>
 class SinkWrapper : public detail::StaticWrapper<CSink, serd_sink_free>
 {
 public:
-  explicit SinkWrapper(CSink* const ptr)
-    : detail::StaticWrapper<CSink, serd_sink_free>{ptr}
-  {}
-
   /// @copydoc serd_sink_write_base
   Status base(const NodeView& uri) const
   {
@@ -1147,16 +1214,23 @@ public:
   {
     return Status(serd_sink_write_end(this->cobj(), node.cobj()));
   }
+
+protected:
+  explicit SinkWrapper(CSink* const ptr)
+    : detail::StaticWrapper<CSink, serd_sink_free>{ptr}
+  {}
 };
 
-/// Sink view
-class SinkView : public SinkWrapper<const SerdSink>
+/// A non-owning constant view of some other sink
+class SinkView final : public SinkWrapper<const SerdSink>
 {
 public:
+  /// Create a view of a C sink
   explicit SinkView(const SerdSink* const ptr)
     : SinkWrapper<const SerdSink>{ptr}
   {}
 
+  /// Create a view of some other sink
   // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
   SinkView(const SinkWrapper<SerdSink>& sink)
     : SinkWrapper<const SerdSink>{sink.cobj()}
@@ -1164,25 +1238,33 @@ public:
 };
 
 /// @copydoc SerdSink
-class Sink : public SinkWrapper<SerdSink>
+class Sink final : public SinkWrapper<SerdSink>
 {
 public:
   Sink()
     : SinkWrapper{serd_sink_new(this, s_event, nullptr)}
   {}
 
+  explicit Sink(SerdSink* const ptr)
+    : SinkWrapper{ptr}
+  {}
+
+  /// Set a function to be called when the base URI changes
   void set_base_func(BaseFunc base_func) { _base_func = std::move(base_func); }
 
+  /// Set a function to be called when a namespace prefix changes
   void set_prefix_func(PrefixFunc prefix_func)
   {
     _prefix_func = std::move(prefix_func);
   }
 
+  /// Set a function to be called for every statement
   void set_statement_func(StatementFunc statement_func)
   {
     _statement_func = std::move(statement_func);
   }
 
+  /// Set a function to be called at the end of an anonymous node
   void set_end_func(EndFunc end_func) { _end_func = std::move(end_func); }
 
 private:
@@ -1271,11 +1353,10 @@ enum class CanonFlag {
 using CanonFlags = Flags<CanonFlag>;
 
 /// @copydoc serd_canon_new
-inline SinkWrapper<SerdSink>
+inline Sink
 make_canon(const World& world, SinkView target, const CanonFlags flags)
 {
-  return SinkWrapper<SerdSink>{
-    serd_canon_new(world.cobj(), target.cobj(), flags)};
+  return Sink{serd_canon_new(world.cobj(), target.cobj(), flags)};
 }
 
 /**
@@ -1285,7 +1366,7 @@ make_canon(const World& world, SinkView target, const CanonFlags flags)
 */
 
 /// @copydoc serd_filter_new
-inline SinkWrapper<SerdSink>
+inline Sink
 make_filter(SinkView           target,
             Optional<NodeView> subject,
             Optional<NodeView> predicate,
@@ -1293,12 +1374,12 @@ make_filter(SinkView           target,
             Optional<NodeView> graph,
             const bool         inclusive)
 {
-  return SinkWrapper<SerdSink>{serd_filter_new(target.cobj(),
-                                               subject.cobj(),
-                                               predicate.cobj(),
-                                               object.cobj(),
-                                               graph.cobj(),
-                                               inclusive)};
+  return Sink{serd_filter_new(target.cobj(),
+                              subject.cobj(),
+                              predicate.cobj(),
+                              object.cobj(),
+                              graph.cobj(),
+                              inclusive)};
 }
 
 /**
@@ -1725,7 +1806,7 @@ public:
 class Iter : public IterWrapper<SerdIter>
 {
 public:
-  Iter(IterView iter)
+  explicit Iter(IterView iter)
     : IterWrapper{serd_iter_copy(iter.cobj()), detail::Ownership::owned}
   {}
 
@@ -2024,10 +2105,10 @@ private:
 
    @param model The model to insert received statements into.
 */
-inline SinkWrapper<SerdSink>
+inline Sink
 make_inserter(Model& model)
 {
-  return SinkWrapper<SerdSink>{serd_inserter_new(model.cobj(), nullptr)};
+  return Sink{serd_inserter_new(model.cobj(), nullptr)};
 }
 
 /**
@@ -2039,11 +2120,10 @@ make_inserter(Model& model)
    no graph.  This allows, for example, loading a Turtle document into an
    isolated graph in the model.
 */
-inline SinkWrapper<SerdSink>
+inline Sink
 make_inserter(Model& model, NodeView default_graph)
 {
-  return SinkWrapper<SerdSink>{
-    serd_inserter_new(model.cobj(), default_graph.cobj())};
+  return Sink{serd_inserter_new(model.cobj(), default_graph.cobj())};
 }
 
 /**
