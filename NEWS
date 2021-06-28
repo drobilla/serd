@@ -21,6 +21,7 @@ serd (0.31.1) unstable; urgency=medium
   * Improve writer error handling
   * Make URI writing stricter by default
   * Override pkg-config dependency within meson
+  * Remove support for writing Turtle named inline nodes extension
   * Replace duplicated dox_to_sphinx script with sphinxygen dependency
   * Test header for warnings more strictly
   * Update standard test suites

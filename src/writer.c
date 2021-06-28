@@ -592,20 +592,13 @@ is_name(const uint8_t* buf, const size_t len)
 }
 
 SERD_NODISCARD static SerdStatus
-write_uri_node(SerdWriter* const        writer,
-               const SerdNode*          node,
-               const Field              field,
-               const SerdStatementFlags flags)
+write_uri_node(SerdWriter* const writer,
+               const SerdNode*   node,
+               const Field       field)
 {
   SerdStatus st     = SERD_SUCCESS;
   SerdNode   prefix = SERD_NODE_NULL;
   SerdChunk  suffix = {NULL, 0U};
-
-  if (is_inline_start(writer, field, flags)) {
-    ++writer->indent;
-    TRY(st, write_sep(writer, SEP_ANON_BEGIN));
-    TRY(st, esink("== ", 3, writer));
-  }
 
   const bool has_scheme = serd_uri_string_has_scheme(node->buf);
   if (supports_abbrev(writer)) {
@@ -659,19 +652,11 @@ write_uri_node(SerdWriter* const        writer,
   }
   TRY(st, esink(">", 1, writer));
 
-  if (is_inline_start(writer, field, flags)) {
-    TRY(st, esink(" ;", 2, writer));
-    TRY(st, write_newline(writer));
-  }
-
   return SERD_SUCCESS;
 }
 
 SERD_NODISCARD static SerdStatus
-write_curie(SerdWriter* const        writer,
-            const SerdNode*          node,
-            const Field              field,
-            const SerdStatementFlags flags)
+write_curie(SerdWriter* const writer, const SerdNode* const node)
 {
   SerdChunk  prefix = {NULL, 0};
   SerdChunk  suffix = {NULL, 0};
@@ -693,16 +678,7 @@ write_curie(SerdWriter* const        writer,
     write_uri(writer, suffix.buf, suffix.len);
     TRY(st, esink(">", 1, writer));
   } else {
-    if (is_inline_start(writer, field, flags)) {
-      ++writer->indent;
-      TRY(st, write_sep(writer, SEP_ANON_BEGIN));
-      TRY(st, esink("== ", 3, writer));
-    }
     write_lname(writer, node->buf, node->n_bytes);
-    if (is_inline_start(writer, field, flags)) {
-      TRY(st, esink(" ;", 2, writer));
-      TRY(st, write_newline(writer));
-    }
   }
 
   return st;
@@ -772,10 +748,10 @@ write_node(SerdWriter*        writer,
     st = write_literal(writer, node, datatype, lang, flags);
     break;
   case SERD_URI:
-    st = write_uri_node(writer, node, field, flags);
+    st = write_uri_node(writer, node, field);
     break;
   case SERD_CURIE:
-    st = write_curie(writer, node, field, flags);
+    st = write_curie(writer, node);
     break;
   case SERD_BLANK:
     st = write_blank(writer, node, field, flags);

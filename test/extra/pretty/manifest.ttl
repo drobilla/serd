@@ -17,7 +17,6 @@
 		<#empty-list-object>
 		<#empty-list-subject>
 		<#empty-list-subject-and-object>
-		<#ext-named-blank>
 		<#graph-abbreviation>
 		<#inline-blank-subject>
 		<#inline-blanks-and-lists>
@@ -97,12 +96,6 @@
 	mf:action <empty-list-subject-and-object.ttl> ;
 	mf:name "empty-list-subject-and-object" ;
 	mf:result <empty-list-subject-and-object.ttl> .
-
-<#ext-named-blank>
-	a rdft:TestTurtleEval ;
-	mf:action <ext-named-blank.ttl> ;
-	mf:name "ext-named-blank" ;
-	mf:result <ext-named-blank.ttl> .
 
 <#graph-abbreviation>
 	a rdft:TestTrigEval ;
