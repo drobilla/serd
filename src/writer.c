@@ -767,6 +767,38 @@ is_name(const char* const buf, const size_t len)
   return true;
 }
 
+static SerdStatus
+write_IRIREF(SerdWriter* const writer, const ZixStringView string)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  TRY(st, esink("<", 1, writer));
+
+  // Write the string and return early if resolution is disabled or impossible
+  const SerdURIView base_uri = serd_env_base_uri_view(writer->env);
+  if ((writer->flags & SERD_WRITE_UNRESOLVED) || !base_uri.scheme.length) {
+    TRY(st, ewrite_uri(writer, string));
+    return esink(">", 1, writer);
+  }
+
+  // Resolve the input URI reference to a (hopefully) absolute URI
+  const SerdURIView in_uri  = serd_parse_uri(string.data);
+  SerdURIView       out_uri = serd_resolve_uri(in_uri, base_uri);
+
+  // Determine if the absolute URI should be written, or make it relative again
+  const bool write_abs =
+    !supports_abbrev(writer) ||
+    (writer->root_uri_string && !uri_is_under(&out_uri, &writer->root_uri));
+  if (!write_abs) {
+    out_uri = serd_relative_uri(in_uri, base_uri);
+  }
+
+  UriSinkContext context = {writer, SERD_SUCCESS};
+  serd_write_uri(out_uri, uri_sink, &context);
+
+  return context.status ? context.status : esink(">", 1, writer);
+}
+
 ZIX_NODISCARD static SerdStatus
 write_uri(SerdWriter* const writer, const ZixStringView string)
 {
@@ -798,27 +830,7 @@ write_uri(SerdWriter* const writer, const ZixStringView string)
                  string.data);
   }
 
-  TRY(st, esink("<", 1, writer));
-
-  if (!(writer->flags & SERD_WRITE_UNRESOLVED) &&
-      serd_env_base_uri_string(writer->env).length) {
-    const SerdURIView  base_uri = serd_env_base_uri_view(writer->env);
-    const SerdURIView  uri      = serd_parse_uri(string.data);
-    const SerdURIView  abs_uri  = serd_resolve_uri(uri, base_uri);
-    const bool         rooted   = uri_is_under(&base_uri, &writer->root_uri);
-    const SerdURIView* root     = rooted ? &writer->root_uri : &base_uri;
-    UriSinkContext     context  = {writer, SERD_SUCCESS};
-
-    if (!supports_abbrev(writer) || !uri_is_under(&abs_uri, root)) {
-      serd_write_uri(abs_uri, uri_sink, &context);
-    } else {
-      serd_write_uri(serd_relative_uri(uri, base_uri), uri_sink, &context);
-    }
-  } else {
-    st = ewrite_uri(writer, string);
-  }
-
-  return st ? st : esink(">", 1, writer);
+  return write_IRIREF(writer, string);
 }
 
 ZIX_NODISCARD static SerdStatus
