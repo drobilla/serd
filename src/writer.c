@@ -745,6 +745,43 @@ is_name(const char* buf, const size_t len)
 }
 
 SERD_WARN_UNUSED_RESULT static SerdStatus
+write_full_uri_node(SerdWriter* const writer, const SerdNode* const node)
+{
+  SerdStatus st               = SERD_SUCCESS;
+  const bool resolve_disabled = writer->flags & SERD_WRITE_UNRESOLVED;
+
+  if (resolve_disabled || !serd_env_base_uri(writer->env)) {
+    // Resolution disabled or we have no base URI, simply write the node
+    TRY(st, esink("<", 1, writer));
+    TRY(st, write_uri_from_node(writer, node));
+    TRY(st, esink(">", 1, writer));
+    return SERD_SUCCESS;
+  }
+
+  // Resolve the input node URI reference to a (hopefully) absolute URI
+  const SerdURIView base_uri = serd_env_base_uri_view(writer->env);
+  SerdURIView       uri      = serd_parse_uri(serd_node_string(node));
+  SerdURIView       abs_uri  = serd_resolve_uri(uri, base_uri);
+
+  // Determine if we should write the absolute URI or make it relative again
+  const bool         base_rooted = uri_is_under(&base_uri, &writer->root_uri);
+  const SerdURIView* root        = base_rooted ? &writer->root_uri : &base_uri;
+  const bool         rooted      = uri_is_under(&abs_uri, root);
+  const bool         write_abs   = !supports_abbrev(writer) || !rooted;
+
+  TRY(st, esink("<", 1, writer));
+
+  UriSinkContext context = {writer, SERD_SUCCESS};
+  if (write_abs) {
+    serd_write_uri(abs_uri, uri_sink, &context);
+  } else {
+    serd_write_uri(serd_relative_uri(uri, base_uri), uri_sink, &context);
+  }
+
+  return esink(">", 1, writer);
+}
+
+SERD_WARN_UNUSED_RESULT static SerdStatus
 write_uri_node(SerdWriter* const     writer,
                const SerdNode* const node,
                const SerdField       field)
@@ -782,27 +819,7 @@ write_uri_node(SerdWriter* const     writer,
     return SERD_ERR_BAD_ARG;
   }
 
-  TRY(st, esink("<", 1, writer));
-  if (!(writer->flags & SERD_WRITE_UNRESOLVED) &&
-      serd_env_base_uri(writer->env)) {
-    const SerdURIView  base_uri = serd_env_base_uri_view(writer->env);
-    SerdURIView        uri      = serd_parse_uri(node_str);
-    SerdURIView        abs_uri  = serd_resolve_uri(uri, base_uri);
-    bool               rooted   = uri_is_under(&base_uri, &writer->root_uri);
-    const SerdURIView* root     = rooted ? &writer->root_uri : &base_uri;
-    UriSinkContext     ctx      = {writer, SERD_SUCCESS};
-    const bool         write_abs =
-      (!supports_abbrev(writer) || !uri_is_under(&abs_uri, root));
-
-    write_abs
-      ? serd_write_uri(abs_uri, uri_sink, &ctx)
-      : serd_write_uri(serd_relative_uri(uri, base_uri), uri_sink, &ctx);
-
-  } else {
-    TRY(st, write_uri_from_node(writer, node));
-  }
-
-  return st ? st : esink(">", 1, writer);
+  return write_full_uri_node(writer, node);
 }
 
 SERD_WARN_UNUSED_RESULT static SerdStatus
