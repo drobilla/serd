@@ -201,10 +201,28 @@ push_context(SerdWriter* const        writer,
 }
 
 static void
+start_object_indent(SerdWriter* const writer)
+{
+  if (!writer->context.indented_object) {
+    ++writer->indent;
+    writer->context.indented_object = true;
+  }
+}
+
+static void
+end_object_indent(SerdWriter* const writer)
+{
+  if (writer->context.indented_object && writer->indent > 0) {
+    --writer->indent;
+    writer->context.indented_object = false;
+  }
+}
+
+static void
 pop_context(SerdWriter* writer)
 {
   assert(writer->anon_stack_size > 0);
-
+  end_object_indent(writer);
   free_context(writer);
   writer->context = writer->anon_stack[--writer->anon_stack_size];
 }
@@ -913,125 +931,59 @@ write_list_obj(SerdWriter* const        writer,
 }
 
 static SerdStatus
-serd_writer_write_statement(SerdWriter* const          writer,
-                            const SerdStatementFlags   flags,
-                            const SerdStatement* const statement)
+write_ntriples_statement(SerdWriter* const        writer,
+                         const SerdStatementFlags flags,
+                         const SerdNode* const    subject,
+                         const SerdNode* const    predicate,
+                         const SerdNode* const    object)
 {
-  assert(!((flags & SERD_ANON_S) && (flags & SERD_LIST_S)));
-  assert(!((flags & SERD_ANON_O) && (flags & SERD_LIST_O)));
+  SerdStatus st = SERD_SUCCESS;
 
-  if (writer->syntax == SERD_SYNTAX_EMPTY) {
-    return SERD_SUCCESS;
-  }
+  TRY(st, write_node(writer, subject, SERD_SUBJECT, flags));
+  TRY(st, esink(" ", 1, writer));
+  TRY(st, write_node(writer, predicate, SERD_PREDICATE, flags));
+  TRY(st, esink(" ", 1, writer));
+  TRY(st, write_node(writer, object, SERD_OBJECT, flags));
+  TRY(st, esink(" .\n", 3, writer));
 
-  SerdStatus            st        = SERD_SUCCESS;
-  const SerdNode* const subject   = serd_statement_subject(statement);
-  const SerdNode* const predicate = serd_statement_predicate(statement);
-  const SerdNode* const object    = serd_statement_object(statement);
-  const SerdNode* const graph     = serd_statement_graph(statement);
+  return st;
+}
 
-  if (!is_resource(subject) || !is_resource(predicate) || !object ||
-      ((flags & SERD_ANON_S) && (flags & SERD_LIST_S)) ||  // Nonsense
-      ((flags & SERD_ANON_O) && (flags & SERD_LIST_O)) ||  // Nonsense
-      ((flags & SERD_ANON_S) && (flags & SERD_TERSE_S)) || // Unsupported
-      ((flags & SERD_ANON_O) && (flags & SERD_TERSE_O))) { // Unsupported
-    return SERD_ERR_BAD_ARG;
-  }
+static SerdStatus
+write_nquads_statement(SerdWriter* const        writer,
+                       const SerdStatementFlags flags,
+                       const SerdNode* const    subject,
+                       const SerdNode* const    predicate,
+                       const SerdNode* const    object,
+                       const SerdNode* const    graph)
+{
+  SerdStatus st = SERD_SUCCESS;
 
-  if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
-    TRY(st, write_node(writer, subject, SERD_SUBJECT, flags));
+  TRY(st, write_node(writer, subject, SERD_SUBJECT, flags));
+  TRY(st, esink(" ", 1, writer));
+  TRY(st, write_node(writer, predicate, SERD_PREDICATE, flags));
+  TRY(st, esink(" ", 1, writer));
+  TRY(st, write_node(writer, object, SERD_OBJECT, flags));
+
+  if (graph) {
     TRY(st, esink(" ", 1, writer));
-    TRY(st, write_node(writer, predicate, SERD_PREDICATE, flags));
-    TRY(st, esink(" ", 1, writer));
-    TRY(st, write_node(writer, object, SERD_OBJECT, flags));
-    if (writer->syntax == SERD_NQUADS && graph) {
-      TRY(st, esink(" ", 1, writer));
-      TRY(st, write_node(writer, graph, SERD_GRAPH, flags));
-    }
-    TRY(st, esink(" .\n", 3, writer));
-    return SERD_SUCCESS;
+    TRY(st, write_node(writer, graph, SERD_GRAPH, flags));
   }
 
-  if ((graph && !serd_node_equals(graph, writer->context.graph)) ||
-      (!graph && ctx(writer, SERD_GRAPH))) {
-    if (ctx(writer, SERD_SUBJECT)) {
-      TRY(st, write_sep(writer, writer->context.flags, SEP_END_S));
-    }
+  TRY(st, esink(" .\n", 3, writer));
 
-    if (ctx(writer, SERD_GRAPH)) {
-      TRY(st, write_sep(writer, writer->context.flags, SEP_GRAPH_END));
-    }
+  return st;
+}
 
-    TRY(st, write_top_level_sep(writer));
-    reset_context(writer, true);
-
-    if (graph) {
-      TRY(st, write_node(writer, graph, SERD_GRAPH, flags));
-      TRY(st, write_sep(writer, flags, SEP_GRAPH_BEGIN));
-      serd_node_set(&writer->context.graph, graph);
-    }
-  }
-
-  if (writer->context.type == CTX_LIST) {
-    bool is_end = false;
-    TRY(st, write_list_obj(writer, flags, predicate, object, &is_end));
-    if (is_end) {
-      // Reached end of list
-      pop_context(writer);
-      return SERD_SUCCESS;
-    }
-  } else if (serd_node_equals(subject, writer->context.subject)) {
-    if (serd_node_equals(predicate, writer->context.predicate)) {
-      // Abbreviate S P
-      if (!writer->context.indented_object &&
-          !(flags & (SERD_ANON_O | SERD_LIST_O))) {
-        ++writer->indent;
-        writer->context.indented_object = true;
-      }
-
-      TRY(st, write_sep(writer, writer->context.flags, SEP_END_O));
-      TRY(st, write_node(writer, object, SERD_OBJECT, flags));
-    } else {
-      // Abbreviate S
-      if (writer->context.indented_object && writer->indent > 0) {
-        --writer->indent;
-        writer->context.indented_object = false;
-      }
-
-      const Sep sep = ctx(writer, SERD_PREDICATE) ? SEP_END_P : SEP_S_P;
-      TRY(st, write_sep(writer, writer->context.flags, sep));
-      TRY(st, write_pred(writer, writer->context.flags, predicate));
-      TRY(st, write_node(writer, object, SERD_OBJECT, flags));
-    }
-  } else {
-    // No abbreviation
-    if (writer->context.indented_object && writer->indent > 0) {
-      --writer->indent;
-      writer->context.indented_object = false;
-    }
-
-    if (ctx(writer, SERD_SUBJECT)) {
-      // Terminate last subject
-      TRY(st, write_sep(writer, writer->context.flags, SEP_END_S));
-    }
-
-    // Start new subject
-    TRY(st, write_top_level_sep(writer));
-    reset_context(writer, false);
-    serd_node_set(&writer->context.subject, subject);
-    TRY(st, write_node(writer, subject, SERD_SUBJECT, flags));
-    if (!(flags & (SERD_ANON_S | SERD_LIST_S))) {
-      TRY(st, write_sep(writer, writer->context.flags, SEP_S_P));
-    } else if (flags & SERD_ANON_S) {
-      TRY(st, write_sep(writer, writer->context.flags, SEP_ANON_S_P));
-    }
-
-    if (!(flags & SERD_LIST_S)) {
-      TRY(st, write_pred(writer, flags, predicate));
-    }
-
-    TRY(st, write_node(writer, object, SERD_OBJECT, flags));
-  }
+static SerdStatus
+update_abbreviation_context(SerdWriter* const        writer,
+                            const SerdStatementFlags flags,
+                            const SerdNode* const    subject,
+                            const SerdNode* const    predicate,
+                            const SerdNode* const    object,
+                            const SerdNode* const    graph)
+{
+  SerdStatus st = SERD_SUCCESS;
 
   // Push context for list or anonymous subject if necessary
   if (!st) {
@@ -1061,6 +1013,177 @@ serd_writer_write_statement(SerdWriter* const          writer,
   }
 
   return st;
+}
+
+static SerdStatus
+write_list_statement(SerdWriter* const        writer,
+                     const SerdStatementFlags flags,
+                     const SerdNode* const    subject,
+                     const SerdNode* const    predicate,
+                     const SerdNode* const    object,
+                     const SerdNode* const    graph)
+{
+  SerdStatus st     = SERD_SUCCESS;
+  bool       is_end = false;
+
+  TRY(st, write_list_obj(writer, flags, predicate, object, &is_end));
+  if (is_end) {
+    pop_context(writer);
+    return SERD_SUCCESS;
+  }
+
+  return update_abbreviation_context(
+    writer, flags, subject, predicate, object, graph);
+}
+
+static SerdStatus
+write_turtle_trig_statement(SerdWriter* const        writer,
+                            const SerdStatementFlags flags,
+                            const SerdNode* const    subject,
+                            const SerdNode* const    predicate,
+                            const SerdNode* const    object,
+                            const SerdNode* const    graph)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  if (writer->context.type == CTX_LIST) {
+    return write_list_statement(
+      writer, flags, subject, predicate, object, graph);
+  }
+
+  if (serd_node_equals(subject, writer->context.subject)) {
+    if (serd_node_equals(predicate, writer->context.predicate)) {
+      // Abbreviate S P
+      if (!(flags & (SERD_ANON_O | SERD_LIST_O))) {
+        start_object_indent(writer);
+      }
+
+      TRY(st, write_sep(writer, writer->context.flags, SEP_END_O));
+
+    } else {
+      // Abbreviate S
+      end_object_indent(writer);
+
+      const Sep sep = ctx(writer, SERD_PREDICATE) ? SEP_END_P : SEP_S_P;
+      TRY(st, write_sep(writer, writer->context.flags, sep));
+      TRY(st, write_pred(writer, writer->context.flags, predicate));
+    }
+
+  } else {
+    // No abbreviation
+    end_object_indent(writer);
+
+    if (ctx(writer, SERD_SUBJECT)) {
+      // Terminate last subject
+      TRY(st, write_sep(writer, writer->context.flags, SEP_END_S));
+    }
+
+    // Write new subject
+    TRY(st, write_top_level_sep(writer));
+    reset_context(writer, false);
+    serd_node_set(&writer->context.subject, subject);
+    TRY(st, write_node(writer, subject, SERD_SUBJECT, flags));
+
+    // Write appropriate S,P separator based on the context
+    if (!(flags & (SERD_ANON_S | SERD_LIST_S))) {
+      TRY(st, write_sep(writer, writer->context.flags, SEP_S_P));
+    } else if (flags & SERD_ANON_S) {
+      TRY(st, write_sep(writer, writer->context.flags, SEP_ANON_S_P));
+    }
+
+    if (!(flags & SERD_LIST_S)) {
+      TRY(st, write_pred(writer, flags, predicate));
+    }
+  }
+
+  TRY(st, write_node(writer, object, SERD_OBJECT, flags));
+
+  return update_abbreviation_context(
+    writer, flags, subject, predicate, object, graph);
+}
+
+static SerdStatus
+write_turtle_statement(SerdWriter* const        writer,
+                       const SerdStatementFlags flags,
+                       const SerdNode* const    subject,
+                       const SerdNode* const    predicate,
+                       const SerdNode* const    object)
+{
+  return write_turtle_trig_statement(
+    writer, flags, subject, predicate, object, NULL);
+}
+
+static SerdStatus
+write_trig_statement(SerdWriter* const        writer,
+                     const SerdStatementFlags flags,
+                     const SerdNode* const    subject,
+                     const SerdNode* const    predicate,
+                     const SerdNode* const    object,
+                     const SerdNode* const    graph)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  if (!serd_node_equals(graph, writer->context.graph)) {
+    if (ctx(writer, SERD_SUBJECT)) {
+      TRY(st, write_sep(writer, writer->context.flags, SEP_END_S));
+    }
+
+    if (ctx(writer, SERD_GRAPH)) {
+      TRY(st, write_sep(writer, writer->context.flags, SEP_GRAPH_END));
+    }
+
+    TRY(st, write_top_level_sep(writer));
+    reset_context(writer, true);
+
+    if (graph) {
+      TRY(st, write_node(writer, graph, SERD_GRAPH, flags));
+      TRY(st, write_sep(writer, flags, SEP_GRAPH_BEGIN));
+      serd_node_set(&writer->context.graph, graph);
+    }
+  }
+
+  return write_turtle_trig_statement(
+    writer, flags, subject, predicate, object, graph);
+}
+
+static SerdStatus
+serd_writer_write_statement(SerdWriter* const          writer,
+                            const SerdStatementFlags   flags,
+                            const SerdStatement* const statement)
+{
+  const SerdNode* const subject   = serd_statement_subject(statement);
+  const SerdNode* const predicate = serd_statement_predicate(statement);
+  const SerdNode* const object    = serd_statement_object(statement);
+  const SerdNode* const graph     = serd_statement_graph(statement);
+
+  if (!is_resource(subject) || !is_resource(predicate) || !object ||
+      ((flags & SERD_ANON_S) && (flags & SERD_LIST_S)) ||  // Nonsense
+      ((flags & SERD_ANON_O) && (flags & SERD_LIST_O)) ||  // Nonsense
+      ((flags & SERD_ANON_S) && (flags & SERD_TERSE_S)) || // Unsupported
+      ((flags & SERD_ANON_O) && (flags & SERD_TERSE_O))) { // Unsupported
+    return SERD_ERR_BAD_ARG;
+  }
+
+  switch (writer->syntax) {
+  case SERD_SYNTAX_EMPTY:
+    break;
+
+  case SERD_TURTLE:
+    return write_turtle_statement(writer, flags, subject, predicate, object);
+
+  case SERD_NTRIPLES:
+    return write_ntriples_statement(writer, flags, subject, predicate, object);
+
+  case SERD_NQUADS:
+    return write_nquads_statement(
+      writer, flags, subject, predicate, object, graph);
+
+  case SERD_TRIG:
+    return write_trig_statement(
+      writer, flags, subject, predicate, object, graph);
+  }
+
+  return SERD_SUCCESS;
 }
 
 SERD_WARN_UNUSED_RESULT static SerdStatus
