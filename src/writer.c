@@ -573,12 +573,6 @@ write_uri_node(SerdWriter* const        writer,
   SerdNode  prefix;
   SerdChunk suffix;
 
-  if (is_inline_start(writer, field, flags)) {
-    ++writer->indent;
-    write_sep(writer, SEP_ANON_BEGIN);
-    sink("== ", 3, writer);
-  }
-
   const bool has_scheme = serd_uri_string_has_scheme(node->buf);
   if (supports_abbrev(writer)) {
     if (field == FIELD_PREDICATE &&
@@ -664,11 +658,6 @@ write_curie(SerdWriter* const        writer,
     break;
   case SERD_TURTLE:
   case SERD_TRIG:
-    if (is_inline_start(writer, field, flags)) {
-      ++writer->indent;
-      write_sep(writer, SEP_ANON_BEGIN);
-      sink("== ", 3, writer);
-    }
     write_lname(writer, node->buf, node->n_bytes);
     if (is_inline_start(writer, field, flags)) {
       sink(" ;", 2, writer);
