@@ -49,7 +49,6 @@
 		<#bad-eof-in-uri>
 		<#bad-eof-in-uri-scheme>
 		<#bad-escape>
-		<#bad-ext-namedblank-op>
 		<#bad-graph-blank-label>
 		<#bad-hex-digit>
 		<#bad-id-clash>
@@ -291,11 +290,6 @@
 	rdf:type rdft:TestTurtleNegativeSyntax ;
 	mf:name "bad-escape" ;
 	mf:action <bad-escape.ttl> .
-
-<#bad-ext-namedblank-op>
-	rdf:type rdft:TestTurtleNegativeSyntax ;
-	mf:name "bad-ext-namedblank-op" ;
-	mf:action <bad-ext-namedblank-op.ttl> .
 
 <#bad-graph-blank-label>
 	rdf:type rdft:TestTrigNegativeSyntax ;

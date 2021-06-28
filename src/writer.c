@@ -552,19 +552,12 @@ is_name(const uint8_t* buf, const size_t len)
 }
 
 static bool
-write_uri_node(SerdWriter* const        writer,
-               const SerdNode*          node,
-               const Field              field,
-               const SerdStatementFlags flags)
+write_uri_node(SerdWriter* const writer,
+               const SerdNode*   node,
+               const Field       field)
 {
   SerdNode  prefix;
   SerdChunk suffix;
-
-  if (is_inline_start(writer, field, flags)) {
-    ++writer->indent;
-    write_sep(writer, SEP_ANON_BEGIN);
-    sink("== ", 3, writer);
-  }
 
   const bool has_scheme = serd_uri_string_has_scheme(node->buf);
   if (supports_abbrev(writer)) {
@@ -619,19 +612,11 @@ write_uri_node(SerdWriter* const        writer,
   }
 
   write_sep(writer, SEP_URI_END);
-  if (is_inline_start(writer, field, flags)) {
-    sink(" ;", 2, writer);
-    write_newline(writer);
-  }
-
   return true;
 }
 
 static bool
-write_curie(SerdWriter* const        writer,
-            const SerdNode*          node,
-            const Field              field,
-            const SerdStatementFlags flags)
+write_curie(SerdWriter* const writer, const SerdNode* const node)
 {
   SerdChunk  prefix = {NULL, 0};
   SerdChunk  suffix = {NULL, 0};
@@ -651,16 +636,7 @@ write_curie(SerdWriter* const        writer,
     break;
   case SERD_TURTLE:
   case SERD_TRIG:
-    if (is_inline_start(writer, field, flags)) {
-      ++writer->indent;
-      write_sep(writer, SEP_ANON_BEGIN);
-      sink("== ", 3, writer);
-    }
     write_lname(writer, node->buf, node->n_bytes);
-    if (is_inline_start(writer, field, flags)) {
-      sink(" ;", 2, writer);
-      write_newline(writer);
-    }
   }
 
   return true;
@@ -728,10 +704,10 @@ write_node(SerdWriter*        writer,
     ret = write_literal(writer, node, datatype, lang, flags);
     break;
   case SERD_URI:
-    ret = write_uri_node(writer, node, field, flags);
+    ret = write_uri_node(writer, node, field);
     break;
   case SERD_CURIE:
-    ret = write_curie(writer, node, field, flags);
+    ret = write_curie(writer, node);
     break;
   case SERD_BLANK:
     ret = write_blank(writer, node, field, flags);

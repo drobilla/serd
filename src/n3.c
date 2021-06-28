@@ -1035,21 +1035,6 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
   return SERD_SUCCESS;
 }
 
-static Ref
-read_blankName(SerdReader* const reader)
-{
-  if (skip_byte(reader, '=') || eat_byte_check(reader, '=') != '=') {
-    r_err(reader, SERD_ERR_BAD_SYNTAX, "expected '='\n");
-    return 0;
-  }
-
-  Ref  subject = 0;
-  bool ate_dot = false;
-  read_ws_star(reader);
-  read_iri(reader, &subject, &ate_dot);
-  return subject;
-}
-
 static SerdStatus
 read_anon(SerdReader* const reader,
           ReadContext       ctx,
@@ -1063,11 +1048,6 @@ read_anon(SerdReader* const reader,
     *ctx.flags |= (subject) ? SERD_EMPTY_S : SERD_EMPTY_O;
   } else {
     *ctx.flags |= (subject) ? SERD_ANON_S_BEGIN : SERD_ANON_O_BEGIN;
-    if (peek_delim(reader, '=')) {
-      if (!(*dest = read_blankName(reader)) || !eat_delim(reader, ';')) {
-        return SERD_ERR_BAD_SYNTAX;
-      }
-    }
   }
 
   if (!*dest) {
