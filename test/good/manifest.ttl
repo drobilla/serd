@@ -32,8 +32,6 @@
 		<#test-empty>
 		<#test-eof-at-page-end>
 		<#test-escapes>
-		<#test-ext-namedblank-iri>
-		<#test-ext-namedblank-prefix>
 		<#test-form-feed>
 		<#test-id>
 		<#test-lang>
@@ -192,18 +190,6 @@
 	mf:name "test-escapes" ;
 	mf:action <test-escapes.ttl> ;
 	mf:result <test-escapes.nt> .
-
-<#test-ext-namedblank-iri>
-	rdf:type rdft:TestTurtleEval ;
-	mf:name "test-ext-namedblank-iri" ;
-	mf:action <test-ext-namedblank-iri.ttl> ;
-	mf:result <test-ext-namedblank-iri.nt> .
-
-<#test-ext-namedblank-prefix>
-	rdf:type rdft:TestTurtleEval ;
-	mf:name "test-ext-namedblank-prefix" ;
-	mf:action <test-ext-namedblank-prefix.ttl> ;
-	mf:result <test-ext-namedblank-prefix.nt> .
 
 <#test-form-feed>
 	rdf:type rdft:TestTurtleEval ;
