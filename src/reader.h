@@ -101,9 +101,6 @@ SerdStatus
 read_n3_statement(SerdReader* reader);
 
 SerdStatus
-read_nquadsDoc(SerdReader* reader);
-
-SerdStatus
 read_turtleTrigDoc(SerdReader* reader);
 
 static inline int
