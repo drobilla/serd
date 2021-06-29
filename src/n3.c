@@ -18,6 +18,7 @@
 #include "serd/sink.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -519,22 +520,72 @@ read_anon(SerdReader* const reader,
   return st > SERD_FAILURE ? st : eat_byte_check(reader, ']');
 }
 
-/* If emit is true: recurses, calling statement_sink for every statement
-   encountered, and leaves stack in original calling state (i.e. pops
-   everything it pushes). */
+static bool
+node_has_string(const SerdNode* const node, const ZixStringView string)
+{
+  return node->length == string.length &&
+         !memcmp(serd_node_string(node), string.data, string.length);
+}
+
+// Read a "named" object: a boolean literal or a prefixed name
+static SerdStatus
+read_named_object(SerdReader* const reader,
+                  SerdNode** const  dest,
+                  bool* const       ate_dot)
+{
+  static const char* const   XSD_BOOLEAN     = NS_XSD "boolean";
+  static const size_t        XSD_BOOLEAN_LEN = 40;
+  static const ZixStringView true_string     = ZIX_STATIC_STRING("true");
+  static const ZixStringView false_string    = ZIX_STATIC_STRING("false");
+
+  /* This function deals with nodes that start with some letters.  Unlike
+     everything else, the cases here aren't nicely distinguished by leading
+     characters, so this is more tedious to deal with in a non-tokenizing
+     parser like this one.
+
+     Deal with this here by trying to read a prefixed node, then if it turns
+     out to actually be "true" or "false", switch it to a boolean literal. */
+
+  if (!(*dest = push_node(reader, SERD_CURIE, "", 0))) {
+    return SERD_BAD_STACK;
+  }
+
+  SerdNode*  node = *dest;
+  SerdStatus st   = SERD_SUCCESS;
+
+  // Attempt to read a prefixed name
+  st = read_PrefixedName(reader, node, true, ate_dot);
+
+  // Check if this is actually a special boolean node
+  if (st == SERD_FAILURE && (node_has_string(node, true_string) ||
+                             node_has_string(node, false_string))) {
+    node->flags = SERD_HAS_DATATYPE;
+    node->type  = SERD_LITERAL;
+    node->meta  = push_node(reader, SERD_URI, XSD_BOOLEAN, XSD_BOOLEAN_LEN);
+    return node->meta ? SERD_SUCCESS : SERD_BAD_STACK;
+  }
+
+  // Any other failure is a syntax error
+  if (st) {
+    st = st > SERD_FAILURE ? st : SERD_BAD_SYNTAX;
+    return r_err(reader, st, "expected prefixed name or boolean");
+  }
+
+  return SERD_SUCCESS;
+}
+
+// Read an object and emit statements, possibly recursively
 static SerdStatus
 read_object(SerdReader* const  reader,
             ReadContext* const ctx,
-            const bool         emit,
             bool* const        ate_dot)
 {
-  static const char* const XSD_BOOLEAN     = NS_XSD "boolean";
-  static const size_t      XSD_BOOLEAN_LEN = 40;
-
   const size_t orig_stack_size = reader->stack.size;
 
+  assert(ctx->subject);
+
   SerdStatus st     = SERD_FAILURE;
-  bool       simple = (ctx->subject != 0);
+  bool       simple = true;
   SerdNode*  o      = 0;
   const int  c      = peek_byte(reader);
 
@@ -579,39 +630,11 @@ read_object(SerdReader* const  reader,
     st = read_literal(reader, &o, ate_dot);
     break;
   default:
-    /* Either a boolean literal, or a qname.  Read the prefix first, and if
-       it is in fact a "true" or "false" literal, produce that instead.
-    */
-    if (!(o = push_node(reader, SERD_CURIE, "", 0))) {
-      return SERD_BAD_STACK;
-    }
-
-    while (!(st = read_PN_CHARS_BASE(reader, o))) {
-    }
-
-    if (st > SERD_FAILURE) {
-      return st;
-    }
-
-    if ((o->length == 4 && !memcmp(serd_node_string(o), "true", 4)) ||
-        (o->length == 5 && !memcmp(serd_node_string(o), "false", 5))) {
-      o->flags |= SERD_HAS_DATATYPE;
-      o->type = SERD_LITERAL;
-      if (!(o->meta =
-              push_node(reader, SERD_URI, XSD_BOOLEAN, XSD_BOOLEAN_LEN))) {
-        st = SERD_BAD_STACK;
-      } else {
-        st = SERD_SUCCESS;
-      }
-    } else if ((st = read_PN_PREFIX_tail(reader, o)) > SERD_FAILURE ||
-               (st = read_PrefixedName(reader, o, false, ate_dot))) {
-      st = (st > SERD_FAILURE) ? st : SERD_BAD_SYNTAX;
-      return r_err(reader, st, "expected prefixed name");
-    }
+    // Either a boolean literal or a prefixed name
+    st = read_named_object(reader, &o, ate_dot);
   }
 
-  ctx->object = o;
-  if (!st && emit && simple && o) {
+  if (!st && simple && o) {
     st = emit_statement(reader, *ctx, o);
   }
 
@@ -626,10 +649,10 @@ static SerdStatus
 read_objectList(SerdReader* const reader, ReadContext ctx, bool* const ate_dot)
 {
   SerdStatus st = SERD_SUCCESS;
-  TRY(st, read_object(reader, &ctx, true, ate_dot));
+  TRY(st, read_object(reader, &ctx, ate_dot));
 
   while (st <= SERD_FAILURE && !*ate_dot && eat_delim(reader, ',')) {
-    st = read_object(reader, &ctx, true, ate_dot);
+    st = read_object(reader, &ctx, ate_dot);
   }
 
   return st;
@@ -725,7 +748,7 @@ read_collection(SerdReader* const reader,
     // _:node rdf:first object
     ctx.predicate = reader->rdf_first;
     bool ate_dot  = false;
-    if ((st = read_object(reader, &ctx, true, &ate_dot)) || ate_dot) {
+    if ((st = read_object(reader, &ctx, &ate_dot)) || ate_dot) {
       return end_collection(reader, st);
     }
 
