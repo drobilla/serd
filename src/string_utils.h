@@ -139,21 +139,46 @@ utf8_num_bytes(const uint8_t c)
   return 0;
 }
 
+static inline unsigned
+utf8_num_bytes_for_codepoint(const uint32_t code)
+{
+  if (code < 0x00000080) {
+    return 1u;
+  }
+
+  if (code < 0x00000800) {
+    return 2u;
+  }
+
+  if (code < 0x00010000) {
+    return 3u;
+  }
+
+  if (code < 0x00110000) {
+    return 4u;
+  }
+
+  return 0u; // Out of range
+}
+
 /// Return the code point of a UTF-8 character with known length
 static inline uint32_t
-parse_counted_utf8_char(const uint8_t* utf8, size_t size)
+parse_counted_utf8_char(const uint8_t* const utf8, const size_t size)
 {
   uint32_t c = utf8[0] & ((1u << (8u - size)) - 1u);
+
   for (size_t i = 1; i < size; ++i) {
     const uint8_t in = utf8[i] & 0x3Fu;
-    c                = (c << 6) | in;
+
+    c = (c << 6) | in;
   }
+
   return c;
 }
 
 /// Parse a UTF-8 character, set *size to the length, and return the code point
 static inline uint32_t
-parse_utf8_char(const uint8_t* utf8, size_t* size)
+parse_utf8_char(const uint8_t* const utf8, size_t* const size)
 {
   switch (*size = utf8_num_bytes(utf8[0])) {
   case 1:
