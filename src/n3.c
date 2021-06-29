@@ -699,13 +699,15 @@ read_anon(SerdReader* const reader,
                                               : SERD_ERR_BAD_SYNTAX;
 }
 
-/* If emit is true: recurses, calling statement_sink for every statement
-   encountered, and leaves stack in original calling state (i.e. pops
-   everything it pushes). */
+/**
+   Reads an object and emits statments, possibly recursively.
+
+   May emit many statements if the object is an inline description, but always
+   leaves the stack in the original calling state.
+*/
 static SerdStatus
 read_object(SerdReader* const  reader,
             ReadContext* const ctx,
-            const bool         emit,
             bool* const        ate_dot)
 {
   static const char* const XSD_BOOLEAN     = NS_XSD "boolean";
@@ -795,7 +797,7 @@ read_object(SerdReader* const  reader,
   }
   }
 
-  if (!ret && emit && simple && o) {
+  if (!ret && simple && o) {
     serd_node_zero_pad(o);
 
     const SerdStatement statement = {
@@ -804,9 +806,6 @@ read_object(SerdReader* const  reader,
     ret = serd_sink_write_statement(reader->sink, *ctx->flags, &statement);
 
     *ctx->flags = 0;
-  } else if (!ret && !emit) {
-    ctx->object = o;
-    return SERD_SUCCESS;
   }
 
   serd_stack_pop_to(&reader->stack, orig_stack_size);
@@ -820,10 +819,10 @@ static SerdStatus
 read_objectList(SerdReader* const reader, ReadContext ctx, bool* const ate_dot)
 {
   SerdStatus st = SERD_SUCCESS;
-  TRY(st, read_object(reader, &ctx, true, ate_dot));
+  TRY(st, read_object(reader, &ctx, ate_dot));
 
   while (st <= SERD_FAILURE && !*ate_dot && eat_delim(reader, ',')) {
-    st = read_object(reader, &ctx, true, ate_dot);
+    st = read_object(reader, &ctx, ate_dot);
   }
 
   return st;
@@ -921,7 +920,7 @@ read_collection(SerdReader* const reader,
     // _:node rdf:first object
     ctx.predicate = reader->rdf_first;
     bool ate_dot  = false;
-    if ((st = read_object(reader, &ctx, true, &ate_dot)) || ate_dot) {
+    if ((st = read_object(reader, &ctx, &ate_dot)) || ate_dot) {
       return end_collection(reader, st);
     }
 
