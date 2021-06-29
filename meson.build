@@ -90,6 +90,7 @@ sources = [
   'src/n3.c',
   'src/node.c',
   'src/nodes.c',
+  'src/read_nquads.c',
   'src/read_ntriples.c',
   'src/read_utf8.c',
   'src/reader.c',

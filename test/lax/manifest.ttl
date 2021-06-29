@@ -9,6 +9,7 @@
 	mf:entries (
 		<#test-bad-string-ttl>
 		<#test-bad-string-nt>
+		<#test-bad-string-nq>
 		<#test-bad-uri-ttl>
 		<#test-bad-uri-nt>
 		<#test-bad-uri-nq>
@@ -30,6 +31,12 @@
 	mf:name "test-bad-string-nt" ;
 	mf:action <test-bad-string.nt> ;
 	mf:result <test-bad-string-out.nt> .
+
+<#test-bad-string-nq>
+	rdf:type rdft:TestNQuadsNegativeSynqax ;
+	mf:name "test-bad-string-nq" ;
+	mf:action <test-bad-string.nq> ;
+	mf:result <test-bad-string-out.nq> .
 
 <#test-bad-uri-ttl>
 	rdf:type rdft:TestTurtleNegativeSyntax ;
