@@ -942,6 +942,24 @@ read_verb(SerdReader* const reader, TokenHeader** const dest)
 }
 
 static SerdStatus
+adjust_blank_id(SerdReader* const reader, char* const buf)
+{
+  if (fancy_syntax(reader) && is_digit(buf[reader->bprefix_len + 1])) {
+    const char tag = buf[reader->bprefix_len];
+    if (tag == 'b') {
+      buf[reader->bprefix_len] = 'B'; // Prevent clash
+      reader->seen_genid       = true;
+    } else if (tag == 'B' && reader->seen_genid) {
+      return r_err(reader,
+                   SERD_BAD_LABEL,
+                   "found both 'b' and 'B' blank IDs, prefix required");
+    }
+  }
+
+  return SERD_SUCCESS;
+}
+
+static SerdStatus
 read_BLANK_NODE_LABEL(SerdReader* const   reader,
                       TokenHeader** const dest,
                       bool* const         ate_dot)
@@ -964,6 +982,7 @@ read_BLANK_NODE_LABEL(SerdReader* const   reader,
                    (unsigned)reader->bprefix_len));
   }
 
+  // Read first: (PN_CHARS | '_' | [0-9])
   int c = peek_byte(reader); // First: (PN_CHARS | '_' | [0-9])
   if (is_digit(c) || c == '_') {
     TRY(st, push_byte(reader, n, eat_byte_safe(reader, c)));
@@ -972,7 +991,8 @@ read_BLANK_NODE_LABEL(SerdReader* const   reader,
     return r_err(reader, st, "invalid name start");
   }
 
-  while (!st && (c = peek_byte(reader)) > 0) { // Middle: (PN_CHARS | '.')*
+  // Read middle: (PN_CHARS | '.')*
+  while (!st && (c = peek_byte(reader)) > 0) {
     st = (c == '.') ? push_byte(reader, n, eat_byte_safe(reader, c))
                     : read_PN_CHARS(reader, n);
   }
@@ -981,24 +1001,14 @@ read_BLANK_NODE_LABEL(SerdReader* const   reader,
     return st;
   }
 
+  // Deal with annoying edge case of having eaten the trailing dot
   char* const buf = (char*)(n + 1U);
   if (n->length && buf[n->length - 1] == '.' && read_PN_CHARS(reader, n)) {
-    // Ate trailing dot, pop it from stack/node and inform caller
     *ate_dot = pop_last_node_char(reader, n);
   }
 
-  if (fancy_syntax(reader)) {
-    if (is_digit(buf[reader->bprefix_len + 1])) {
-      if ((buf[reader->bprefix_len]) == 'b') {
-        buf[reader->bprefix_len] = 'B'; // Prevent clash
-        reader->seen_genid       = true;
-      } else if (reader->seen_genid && buf[reader->bprefix_len] == 'B') {
-        return r_err(reader,
-                     SERD_BAD_LABEL,
-                     "found both 'b' and 'B' blank IDs, prefix required");
-      }
-    }
-  }
+  // Adjust ID to avoid clashes with generated IDs if necessary
+  st = adjust_blank_id(reader, buf);
 
   return tolerate_status(reader, st) ? SERD_SUCCESS : st;
 }
