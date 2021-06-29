@@ -16,6 +16,7 @@
 		<#test-bad-utf8-nt>
 		<#test-bad-utf8-nq>
 		<#test-lone-list>
+		<#test-out-of-range-unicode>
 	) .
 
 <#test-bad-string-ttl>
@@ -71,3 +72,9 @@
 	mf:name "test-lone-list" ;
 	mf:action <test-lone-list.ttl> ;
 	mf:result <test-lone-list.nt> .
+
+<#test-out-of-range-unicode>
+	rdf:type rdft:TestTurtleNegativeSyntax ;
+	mf:name "test-out-of-range-unicode" ;
+	mf:action <test-out-of-range-unicode.ttl> ;
+	mf:result <test-out-of-range-unicode.nt> .
