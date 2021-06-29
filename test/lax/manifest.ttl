@@ -10,6 +10,7 @@
 		<#test-bad-string>
 		<#test-bad-uri>
 		<#test-bad-utf8>
+		<#test-out-of-range-unicode>
 	) .
 
 <#test-bad-string>
@@ -29,4 +30,10 @@
 	mf:name "test-bad-utf8" ;
 	mf:action <test-bad-utf8.ttl> ;
 	mf:result <test-bad-utf8.nt> .
+
+<#test-out-of-range-unicode>
+	rdf:type rdft:TestTurtleNegativeSyntax ;
+	mf:name "test-out-of-range-unicode" ;
+	mf:action <test-out-of-range-unicode.ttl> ;
+	mf:result <test-out-of-range-unicode.nt> .
 
