@@ -6,6 +6,7 @@
 #include "byte_source.h"
 #include "namespaces.h"
 #include "node.h"
+#include "read_ntriples.h"
 #include "stack.h"
 #include "statement.h"
 #include "system.h"
@@ -29,6 +30,24 @@ r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
 
   va_end(args);
   return st;
+}
+
+SerdStatus
+skip_horizontal_whitespace(SerdReader* const reader)
+{
+  while (peek_byte(reader) == '\t' || peek_byte(reader) == ' ') {
+    eat_byte(reader);
+  }
+
+  return SERD_SUCCESS;
+}
+
+void
+skip_until(SerdReader* const reader, const uint8_t byte)
+{
+  for (int c = 0; (c = peek_byte(reader)) && c != EOF && c != byte;) {
+    eat_byte_safe(reader, c);
+  }
 }
 
 void
@@ -156,15 +175,27 @@ serd_reader_read_document(SerdReader* const reader)
     return SERD_ERR_BAD_CALL;
   }
 
-  if (!reader->source->prepared) {
+  if (reader->syntax != SERD_SYNTAX_EMPTY && !reader->source->prepared) {
     SerdStatus st = serd_reader_prepare(reader);
     if (st) {
       return st;
     }
   }
 
-  return ((reader->syntax == SERD_NQUADS) ? read_nquadsDoc(reader)
-                                          : read_turtleTrigDoc(reader));
+  switch (reader->syntax) {
+  case SERD_SYNTAX_EMPTY:
+    break;
+  case SERD_TURTLE:
+    return read_turtleTrigDoc(reader);
+  case SERD_NTRIPLES:
+    return read_ntriplesDoc(reader);
+  case SERD_NQUADS:
+    return read_nquadsDoc(reader);
+  case SERD_TRIG:
+    return read_turtleTrigDoc(reader);
+  }
+
+  return SERD_SUCCESS;
 }
 
 SerdReader*

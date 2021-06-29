@@ -41,6 +41,12 @@ struct SerdReaderImpl {
   bool            seen_genid;
 };
 
+SerdStatus
+skip_horizontal_whitespace(SerdReader* reader);
+
+void
+skip_until(SerdReader* reader, uint8_t byte);
+
 SERD_LOG_FUNC(3, 4)
 SerdStatus
 r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
@@ -90,6 +96,18 @@ peek_byte(SerdReader* reader)
   SerdByteSource* source = reader->source;
 
   return source->eof ? EOF : (int)source->read_buf[source->read_head];
+}
+
+static inline int
+eat_byte(SerdReader* reader)
+{
+  const int c = peek_byte(reader);
+
+  if (c != EOF) {
+    serd_byte_source_advance(reader->source);
+  }
+
+  return c;
 }
 
 static inline int

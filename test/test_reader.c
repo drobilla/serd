@@ -6,6 +6,7 @@
 #include "serd/serd.h"
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -301,6 +302,59 @@ test_read_chunks(void)
   serd_world_free(world);
 }
 
+static size_t
+empty_test_read(void* buf, size_t size, size_t nmemb, void* stream)
+{
+  (void)buf;
+  (void)size;
+  (void)nmemb;
+  (void)stream;
+
+  assert(false);
+
+  return 0;
+}
+
+static int
+empty_test_error(void* stream)
+{
+  (void)stream;
+  return 0;
+}
+
+/// Test that reading SERD_SYNTAX_EMPTY "succeeds" without reading any input
+static void
+test_read_empty(void)
+{
+  SerdWorld* const world        = serd_world_new();
+  size_t           n_statements = 0;
+  FILE* const      f            = tmpfile();
+
+  SerdSink* const sink = serd_sink_new(&n_statements, count_statements, NULL);
+  assert(sink);
+
+  SerdEnv* const    env = serd_env_new(serd_empty_string());
+  SerdReader* const reader =
+    serd_reader_new(world, SERD_SYNTAX_EMPTY, 0, env, sink, 4096);
+
+  assert(reader);
+
+  SerdByteSource* byte_source = serd_byte_source_new_function(
+    empty_test_read, empty_test_error, NULL, f, NULL, 1);
+
+  SerdStatus st = serd_reader_start(reader, byte_source);
+  assert(!st);
+
+  assert(serd_reader_read_document(reader) == SERD_SUCCESS);
+  assert(n_statements == 0);
+
+  serd_byte_source_free(byte_source);
+  serd_reader_free(reader);
+  serd_env_free(env);
+  serd_sink_free(sink);
+  serd_world_free(world);
+}
+
 int
 main(void)
 {
@@ -309,5 +363,6 @@ main(void)
   test_read_eof_by_page();
   test_read_eof_by_byte();
   test_read_chunks();
+  test_read_empty();
   return 0;
 }
