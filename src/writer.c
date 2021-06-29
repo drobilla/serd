@@ -8,6 +8,7 @@
 #include "sink.h"
 #include "string_utils.h"
 #include "system.h"
+#include "try.h"
 #include "uri_utils.h"
 #include "world.h"
 
@@ -38,13 +39,6 @@
 #else
 #  define SERD_WARN_UNUSED_RESULT
 #endif
-
-#define TRY(st, exp)      \
-  do {                    \
-    if (((st) = (exp))) { \
-      return (st);        \
-    }                     \
-  } while (0)
 
 typedef enum {
   CTX_NAMED, ///< Normal non-anonymous context

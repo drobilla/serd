@@ -7,6 +7,7 @@
 #include "serd_internal.h"
 #include "stack.h"
 #include "string_utils.h"
+#include "try.h"
 #include "uri_utils.h"
 
 #include "serd/node.h"
@@ -32,13 +33,6 @@ _Pragma("clang diagnostic ignored \"-Wmissing-declarations\"")
 #else
 #  define SERD_FALLTHROUGH
 #endif
-
-#define TRY(st, exp)      \
-  do {                    \
-    if (((st) = (exp))) { \
-      return (st);        \
-    }                     \
-  } while (0)
 
 static bool
 fancy_syntax(const SerdReader* const reader)
