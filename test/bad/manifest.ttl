@@ -24,6 +24,7 @@
 		<#bad-14>
 		<#bad-base>
 		<#bad-blank>
+		<#bad-blank-node-label>
 		<#bad-blank-syntax>
 		<#bad-bom>
 		<#bad-char-in-local>
@@ -72,6 +73,7 @@
 		<#bad-semicolon-after-subject>
 		<#bad-string>
 		<#bad-subject>
+		<#bad-trailing-garbage>
 		<#bad-uri-escape>
 		<#bad-var>
 		<#bad-verb>
@@ -167,6 +169,11 @@
 	rdf:type rdft:TestTurtleNegativeSyntax ;
 	mf:name "bad-blank" ;
 	mf:action <bad-blank.ttl> .
+
+<#bad-blank-node-label>
+	rdf:type rdft:TestNTriplesNegativeSyntax ;
+	mf:name "bad-blank-node-label" ;
+	mf:action <bad-blank-node-label.nt> .
 
 <#bad-blank-syntax>
 	rdf:type rdft:TestTurtleNegativeSyntax ;
@@ -407,6 +414,11 @@
 	rdf:type rdft:TestTurtleNegativeSyntax ;
 	mf:name "bad-subject" ;
 	mf:action <bad-subject.ttl> .
+
+<#bad-trailing-garbage>
+	rdf:type rdft:TestNTriplesNegativeSyntax ;
+	mf:name "bad-trailing-garbage" ;
+	mf:action <bad-trailing-garbage.nt> .
 
 <#bad-uri-escape>
 	rdf:type rdft:TestTurtleNegativeSyntax ;
