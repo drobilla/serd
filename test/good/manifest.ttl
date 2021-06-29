@@ -43,7 +43,6 @@
 		<#test-no-spaces>
 		<#test-non-curie-uri>
 		<#test-num>
-		<#test-out-of-range-unicode>
 		<#test-prefix>
 		<#test-pretty>
 		<#test-rel>
@@ -256,12 +255,6 @@
 	mf:name "test-num" ;
 	mf:action <test-num.ttl> ;
 	mf:result <test-num.nt> .
-
-<#test-out-of-range-unicode>
-	rdf:type rdft:TestTurtleEval ;
-	mf:name "test-out-of-range-unicode" ;
-	mf:action <test-out-of-range-unicode.ttl> ;
-	mf:result <test-out-of-range-unicode.nt> .
 
 <#test-prefix>
 	rdf:type rdft:TestTurtleEval ;
