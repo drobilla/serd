@@ -1126,6 +1126,30 @@ read_verb(SerdReader* reader, SerdNode** dest)
   return SERD_SUCCESS;
 }
 
+static bool
+avoid_blank_clashes(const SerdReader* const reader)
+{
+  return fancy_syntax(reader) && !(reader->flags & SERD_READ_EXACT_BLANKS);
+}
+
+static SerdStatus
+adjust_blank_id(SerdReader* const reader, char* const buf)
+{
+  if (avoid_blank_clashes(reader) && is_digit(buf[reader->bprefix_len + 1])) {
+    const char tag = buf[reader->bprefix_len];
+    if (tag == 'b') {
+      buf[reader->bprefix_len] = 'B'; // Prevent clash
+      reader->seen_genid       = true;
+    } else if (tag == 'B' && reader->seen_genid) {
+      return r_err(reader,
+                   SERD_ERR_ID_CLASH,
+                   "found both 'b' and 'B' blank IDs, prefix required");
+    }
+  }
+
+  return SERD_SUCCESS;
+}
+
 static SerdStatus
 read_BLANK_NODE_LABEL(SerdReader* const reader,
                       SerdNode** const  dest,
@@ -1143,15 +1167,17 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
     return SERD_ERR_OVERFLOW;
   }
 
-  SerdNode* n = *dest;
-  int       c = peek_byte(reader); // First: (PN_CHARS | '_' | [0-9])
+  // Read first: (PN_CHARS | '_' | [0-9])
+  SerdNode* const n = *dest;
+  int             c = peek_byte(reader);
   if (is_digit(c) || c == '_') {
     TRY(st, push_byte(reader, n, eat_byte_safe(reader, c)));
   } else if ((st = read_PN_CHARS(reader, n))) {
     return r_err(reader, st, "invalid name start");
   }
 
-  while ((c = peek_byte(reader))) { // Middle: (PN_CHARS | '.')*
+  // Read middle: (PN_CHARS | '.')*
+  while ((c = peek_byte(reader))) {
     if (c == '.') {
       TRY(st, push_byte(reader, n, eat_byte_safe(reader, c)));
     } else if ((st = read_PN_CHARS(reader, n))) {
@@ -1163,26 +1189,16 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
     return st;
   }
 
-  char* buf = serd_node_buffer(n);
+  // Deal with annoying edge case of having eaten the trailing dot
+  char* const buf = serd_node_buffer(n);
   if (buf[n->length - 1] == '.' && read_PN_CHARS(reader, n)) {
-    // Ate trailing dot, pop it from stack/node and inform caller
     --n->length;
     serd_stack_pop(&reader->stack, 1);
     *ate_dot = true;
   }
 
-  if (fancy_syntax(reader) && !(reader->flags & SERD_READ_EXACT_BLANKS)) {
-    if (is_digit(buf[reader->bprefix_len + 1])) {
-      if ((buf[reader->bprefix_len]) == 'b') {
-        buf[reader->bprefix_len] = 'B'; // Prevent clash
-        reader->seen_genid       = true;
-      } else if (reader->seen_genid && buf[reader->bprefix_len] == 'B') {
-        return r_err(reader,
-                     SERD_ERR_ID_CLASH,
-                     "found both 'b' and 'B' blank IDs, prefix required");
-      }
-    }
-  }
+  // Adjust ID to avoid clashes with generated IDs if necessary
+  st = adjust_blank_id(reader, buf);
 
   return tolerate_status(reader, st) ? SERD_SUCCESS : st;
 }
