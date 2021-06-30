@@ -4,6 +4,7 @@
 #include "namespaces.h"
 #include "node.h"
 #include "node_impl.h"
+#include "read_utf8.h"
 #include "reader.h"
 #include "stack.h"
 #include "string_utils.h"
@@ -161,85 +162,6 @@ read_ECHAR(SerdReader* const reader, SerdNode* const dest)
   }
 }
 
-static SerdStatus
-bad_char(SerdReader* const reader, const char* const fmt, const uint8_t c)
-{
-  // Skip bytes until the next start byte
-  for (int b = peek_byte(reader); b != EOF && ((uint8_t)b & 0x80);) {
-    skip_byte(reader, b);
-    b = peek_byte(reader);
-  }
-
-  r_err(reader, SERD_BAD_SYNTAX, fmt, c);
-  return reader->strict ? SERD_BAD_SYNTAX : SERD_FAILURE;
-}
-
-static SerdStatus
-read_utf8_bytes(SerdReader* const reader,
-                uint8_t           bytes[4],
-                uint32_t* const   size,
-                const uint8_t     c)
-{
-  *size = utf8_num_bytes(c);
-  if (*size <= 1) {
-    return bad_char(reader, "invalid UTF-8 start 0x%X", c);
-  }
-
-  bytes[0] = c;
-  for (unsigned i = 1; i < *size; ++i) {
-    const int b = peek_byte(reader);
-    if (b == EOF || ((uint8_t)b & 0x80) == 0) {
-      return bad_char(reader, "invalid UTF-8 continuation 0x%X", (uint8_t)b);
-    }
-
-    bytes[i] = (uint8_t)eat_byte_safe(reader, b);
-  }
-
-  return SERD_SUCCESS;
-}
-
-static SerdStatus
-read_utf8_character(SerdReader* const reader,
-                    SerdNode* const   dest,
-                    const uint8_t     c)
-{
-  uint32_t   size     = 0;
-  uint8_t    bytes[4] = {0, 0, 0, 0};
-  SerdStatus st       = read_utf8_bytes(reader, bytes, &size, c);
-
-  if (!tolerate_status(reader, st)) {
-    return st;
-  }
-
-  if (st) {
-    const SerdStatus rst = push_bytes(reader, dest, replacement_char, 3);
-    return rst ? rst : st;
-  }
-
-  return push_bytes(reader, dest, bytes, size);
-}
-
-static SerdStatus
-read_utf8_code(SerdReader* const reader,
-               SerdNode* const   dest,
-               uint32_t* const   code,
-               const uint8_t     c)
-{
-  uint32_t   size     = 0;
-  uint8_t    bytes[4] = {0, 0, 0, 0};
-  SerdStatus st       = read_utf8_bytes(reader, bytes, &size, c);
-  if (st) {
-    const SerdStatus rst = push_bytes(reader, dest, replacement_char, 3);
-    return rst ? rst : st;
-  }
-
-  if (!(st = push_bytes(reader, dest, bytes, size))) {
-    *code = parse_counted_utf8_char(bytes, size);
-  }
-
-  return st;
-}
-
 // Read one character (possibly multi-byte)
 // The first byte, c, has already been eaten by caller
 static SerdStatus
@@ -254,7 +176,8 @@ read_character(SerdReader* const reader, SerdNode* const dest, const uint8_t c)
 
     return push_byte(reader, dest, c);
   }
-  return read_utf8_character(reader, dest, c);
+
+  return read_utf8_continuation(reader, dest, c);
 }
 
 // [10] comment ::= '#' ( [^#xA #xD] )*
@@ -460,8 +383,9 @@ read_PN_CHARS_BASE(SerdReader* const reader, SerdNode* const dest)
     return SERD_FAILURE;
   }
 
-  skip_byte(reader, c);
-  TRY(st, read_utf8_code(reader, dest, &code, (uint8_t)c));
+  if ((st = read_utf8_code_point(reader, dest, &code, (uint8_t)c))) {
+    return st;
+  }
 
   if (!is_PN_CHARS_BASE(code)) {
     r_err(reader, SERD_BAD_SYNTAX, "invalid character U+%04X in name", code);
@@ -495,8 +419,9 @@ read_PN_CHARS(SerdReader* const reader, SerdNode* const dest)
     return SERD_FAILURE;
   }
 
-  skip_byte(reader, c);
-  TRY(st, read_utf8_code(reader, dest, &code, (uint8_t)c));
+  if ((st = read_utf8_code_point(reader, dest, &code, (uint8_t)c))) {
+    return st;
+  }
 
   if (!is_PN_CHARS(code)) {
     return r_err(
@@ -754,7 +679,7 @@ read_IRIREF(SerdReader* const reader, SerdNode** const dest)
       } else if (!(c & 0x80)) {
         st = push_byte(reader, *dest, c);
       } else {
-        st = read_utf8_character(reader, *dest, (uint8_t)c);
+        st = read_utf8_continuation(reader, *dest, (uint8_t)c);
       }
     }
   }
