@@ -953,7 +953,7 @@ read_subject(SerdReader* const reader,
     break;
   default:
     if ((st = read_iri(reader, dest, &ate_dot))) {
-      return r_err(reader, st, "expected subject");
+      return st;
     }
   }
 
@@ -1091,33 +1091,6 @@ read_prefixID(SerdReader* const reader, const bool sparql, const bool token)
 }
 
 static SerdStatus
-read_directive(SerdReader* const reader)
-{
-  const bool sparql = peek_byte(reader) != '@';
-  if (!sparql) {
-    skip_byte(reader, '@');
-    switch (peek_byte(reader)) {
-    case 'B':
-    case 'P':
-      return r_err(reader, SERD_ERR_BAD_SYNTAX, "uppercase directive");
-    }
-  }
-
-  switch (peek_byte(reader)) {
-  case 'B':
-  case 'b':
-    return read_base(reader, sparql, true);
-  case 'P':
-  case 'p':
-    return read_prefixID(reader, sparql, true);
-  default:
-    break;
-  }
-
-  return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid directive");
-}
-
-static SerdStatus
 read_wrappedGraph(SerdReader* const reader, ReadContext* const ctx)
 {
   SerdStatus st = SERD_SUCCESS;
@@ -1159,88 +1132,133 @@ read_wrappedGraph(SerdReader* const reader, ReadContext* const ctx)
 }
 
 static int
-tokcmp(SerdNode* const node, const char* const tok, const size_t n)
+tokcmp(const SerdNode* const node, const char* const tok, const size_t n)
 {
   return ((!node || node->length != n)
             ? -1
             : serd_strncasecmp(serd_node_string(node), tok, n));
 }
 
-SerdStatus
-read_n3_statement(SerdReader* const reader)
+static SerdStatus
+read_turtle_directive(SerdReader* const reader)
 {
-  SerdStatementFlags flags   = 0;
-  ReadContext        ctx     = {0, 0, 0, 0, &flags};
-  bool               ate_dot = false;
-  int                s_type  = 0;
-  SerdStatus         st      = SERD_SUCCESS;
-  read_ws_star(reader);
+  skip_byte(reader, '@');
+
   switch (peek_byte(reader)) {
-  case '\0':
-    skip_byte(reader, '\0');
-    return SERD_FAILURE;
-  case EOF:
-    return SERD_FAILURE;
-  case '@':
-    TRY(st, read_directive(reader));
-    read_ws_star(reader);
-    break;
-  case '{':
-    if (reader->syntax == SERD_TRIG) {
-      TRY(st, read_wrappedGraph(reader, &ctx));
-      read_ws_star(reader);
-    } else {
-      return r_err(
-        reader, SERD_ERR_BAD_SYNTAX, "syntax does not support graphs");
-    }
-    break;
+  case 'b':
+    return read_base(reader, false, true);
+  case 'p':
+    return read_prefixID(reader, false, true);
   default:
-    if ((st = read_subject(reader, ctx, &ctx.subject, &s_type)) >
-        SERD_FAILURE) {
-      return st;
-    }
-
-    if (!tokcmp(ctx.subject, "base", 4)) {
-      st = read_base(reader, true, false);
-    } else if (!tokcmp(ctx.subject, "prefix", 6)) {
-      st = read_prefixID(reader, true, false);
-    } else if (!tokcmp(ctx.subject, "graph", 5)) {
-      ctx.subject = NULL;
-      read_ws_star(reader);
-      TRY(st, read_labelOrSubject(reader, &ctx.graph));
-      read_ws_star(reader);
-      TRY(st, read_wrappedGraph(reader, &ctx));
-      ctx.graph = 0;
-      read_ws_star(reader);
-    } else if (read_ws_star(reader) && peek_byte(reader) == '{') {
-      if (s_type == '(' || (s_type == '[' && !*ctx.flags)) {
-        return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid graph name");
-      }
-
-      ctx.graph   = ctx.subject;
-      ctx.subject = NULL;
-      TRY(st, read_wrappedGraph(reader, &ctx));
-      read_ws_star(reader);
-    } else if ((st = read_triples(reader, ctx, &ate_dot))) {
-      if (st == SERD_FAILURE && s_type == '[') {
-        return SERD_SUCCESS;
-      }
-
-      if (ate_dot && (reader->strict || (s_type != '('))) {
-        return r_err(
-          reader, SERD_ERR_BAD_SYNTAX, "unexpected end of statement");
-      }
-
-      return st > SERD_FAILURE ? st : SERD_ERR_BAD_SYNTAX;
-
-    } else if (!ate_dot) {
-      read_ws_star(reader);
-      st = eat_byte_check(reader, '.');
-    }
     break;
   }
 
-  return st;
+  return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected \"base\" or \"prefix\"");
+}
+
+static SerdStatus
+read_sparql_directive(SerdReader* const     reader,
+                      ReadContext* const    ctx,
+                      const SerdNode* const token)
+{
+  if (!tokcmp(token, "base", 4)) {
+    return read_base(reader, true, false);
+  }
+
+  if (!tokcmp(token, "prefix", 6)) {
+    return read_prefixID(reader, true, false);
+  }
+
+  if (!tokcmp(token, "graph", 5)) {
+    SerdStatus st = SERD_SUCCESS;
+    read_ws_star(reader);
+    TRY(st, read_labelOrSubject(reader, &ctx->graph));
+    read_ws_star(reader);
+    return read_wrappedGraph(reader, ctx);
+  }
+
+  return SERD_FAILURE;
+}
+
+static SerdStatus
+read_block(SerdReader* const reader, ReadContext* const ctx)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  // Try to read a subject, though it may actually be a directive or graph name
+  SerdNode* token  = NULL;
+  int       s_type = 0;
+  if ((st = read_subject(reader, *ctx, &token, &s_type)) > SERD_FAILURE) {
+    return st;
+  }
+
+  // Try to interpret as a SPARQL "PREFIX" or "BASE" directive
+  if (st && (st = read_sparql_directive(reader, ctx, token)) != SERD_FAILURE) {
+    return st;
+  }
+
+  // Try to interpret as a named TriG graph like "graphname { ..."
+  read_ws_star(reader);
+  if (peek_byte(reader) == '{') {
+    if (s_type == '(' || (s_type == '[' && !*ctx->flags)) {
+      return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid graph name");
+    }
+
+    ctx->graph = token;
+    return read_wrappedGraph(reader, ctx);
+  }
+
+  if (st) {
+    return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected directive or subject");
+  }
+
+  // Our token is really a subject, read some triples
+  bool ate_dot = false;
+  ctx->subject = token;
+  if ((st = read_triples(reader, *ctx, &ate_dot)) > SERD_FAILURE) {
+    return st;
+  }
+
+  // "Failure" is only allowed for anonymous subjects like "[ ... ] ."
+  if (st && s_type != '[') {
+    return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected triples");
+  }
+
+  // Ensure that triples are properly terminated
+  return ate_dot ? st : eat_byte_check(reader, '.');
+}
+
+SerdStatus
+read_n3_statement(SerdReader* const reader)
+{
+  SerdStatementFlags flags = 0;
+  ReadContext        ctx   = {0, 0, 0, 0, &flags};
+
+  // Handle nice cases we can distinguish from the next byte
+  read_ws_star(reader);
+  switch (peek_byte(reader)) {
+  case EOF:
+    return SERD_FAILURE;
+
+  case '\0':
+    eat_byte(reader);
+    return SERD_FAILURE;
+
+  case '@':
+    return read_turtle_directive(reader);
+
+  case '{':
+    return (reader->syntax == SERD_TRIG)
+             ? read_wrappedGraph(reader, &ctx)
+             : r_err(
+                 reader, SERD_ERR_BAD_SYNTAX, "syntax does not support graphs");
+
+  default:
+    break;
+  }
+
+  // No such luck, figure out what to read from the first token
+  return read_block(reader, &ctx);
 }
 
 SerdStatus
