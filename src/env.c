@@ -179,6 +179,10 @@ serd_env_qualify(const SerdEnv* const  env,
                  SerdNode* const       prefix,
                  SerdChunk* const      suffix)
 {
+  if (!env) {
+    return false;
+  }
+
   for (size_t i = 0; i < env->n_prefixes; ++i) {
     const SerdNode* const prefix_uri = &env->prefixes[i].uri;
     if (uri->n_bytes >= prefix_uri->n_bytes) {
@@ -201,6 +205,10 @@ serd_env_expand(const SerdEnv* const  env,
                 SerdChunk* const      uri_prefix,
                 SerdChunk* const      uri_suffix)
 {
+  if (!env) {
+    return SERD_ERR_BAD_CURIE;
+  }
+
   const uint8_t* const colon =
     (const uint8_t*)memchr(curie->buf, ':', curie->n_bytes + 1);
   if (curie->type != SERD_CURIE || !colon) {
@@ -222,6 +230,10 @@ serd_env_expand(const SerdEnv* const  env,
 SerdNode
 serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
 {
+  if (!env) {
+    return SERD_NODE_NULL;
+  }
+
   switch (node->type) {
   case SERD_NOTHING:
   case SERD_LITERAL:

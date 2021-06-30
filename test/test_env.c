@@ -50,7 +50,12 @@ test_env(void)
 
   SerdChunk prefix;
   SerdChunk suffix;
+  assert(!serd_env_qualify(NULL, &u, &u, &suffix));
+  assert(serd_env_expand(NULL, &c, &prefix, &suffix));
   assert(serd_env_expand(env, &b, &prefix, &suffix));
+
+  SerdNode nxnode = serd_env_expand_node(NULL, &c);
+  assert(serd_node_equals(&nxnode, &SERD_NODE_NULL));
 
   SerdNode xnode = serd_env_expand_node(env, &SERD_NODE_NULL);
   assert(serd_node_equals(&xnode, &SERD_NODE_NULL));
