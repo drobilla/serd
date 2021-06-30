@@ -36,6 +36,7 @@
 		<#bad-eof-after-quotes>
 		<#bad-eof-at-string-start>
 		<#bad-eof-in-blank>
+		<#bad-eof-in-character>
 		<#bad-eof-in-escape>
 		<#bad-eof-in-lang-suffix>
 		<#bad-eof-in-lang>
@@ -226,6 +227,11 @@
 	rdf:type rdft:TestTurtleNegativeSyntax ;
 	mf:name "bad-eof-in-blank" ;
 	mf:action <bad-eof-in-blank.ttl> .
+
+<#bad-eof-in-character>
+	rdf:type rdft:TestTurtleNegativeSyntax ;
+	mf:name "bad-eof-in-character" ;
+	mf:action <bad-eof-in-character.ttl> .
 
 <#bad-eof-in-escape>
 	rdf:type rdft:TestTurtleNegativeSyntax ;
