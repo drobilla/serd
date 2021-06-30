@@ -551,7 +551,7 @@ write_literal(SerdWriter*        writer,
   return true;
 }
 
-// Return true iff `buf` is a valid prefixed name suffix
+// Return true iff `buf` is a valid prefixed name prefix or suffix
 static bool
 is_name(const uint8_t* buf, const size_t len)
 {
@@ -593,6 +593,7 @@ write_uri_node(SerdWriter* const        writer,
 
     if (has_scheme && (writer->style & SERD_STYLE_CURIED) &&
         serd_env_qualify(writer->env, node, &prefix, &suffix) &&
+        is_name(prefix.buf, prefix.n_bytes) &&
         is_name(suffix.buf, suffix.len)) {
       write_uri(writer, prefix.buf, prefix.n_bytes);
       sink(":", 1, writer);
