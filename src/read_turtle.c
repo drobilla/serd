@@ -1,6 +1,7 @@
 // Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
+#include "read_turtle.h"
 #include "byte_source.h"
 #include "namespaces.h"
 #include "node_impl.h"
@@ -17,7 +18,6 @@
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/status.h"
-#include "serd/syntax.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -43,8 +43,8 @@ read_whitespace(SerdReader* const reader)
                       : SERD_FAILURE;
 }
 
-static bool
-read_ws_star(SerdReader* const reader)
+bool
+read_turtle_ws_star(SerdReader* const reader)
 {
   while (!read_whitespace(reader)) {
   }
@@ -55,7 +55,7 @@ read_ws_star(SerdReader* const reader)
 static bool
 peek_delim(SerdReader* const reader, const uint8_t delim)
 {
-  read_ws_star(reader);
+  read_turtle_ws_star(reader);
   return peek_byte(reader) == delim;
 }
 
@@ -64,7 +64,7 @@ eat_delim(SerdReader* const reader, const uint8_t delim)
 {
   if (peek_delim(reader, delim)) {
     skip_byte(reader, delim);
-    return read_ws_star(reader);
+    return read_turtle_ws_star(reader);
   }
 
   return false;
@@ -387,8 +387,10 @@ read_number(SerdReader* const reader,
   return meta ? SERD_SUCCESS : SERD_BAD_STACK;
 }
 
-static SerdStatus
-read_iri(SerdReader* const reader, SerdNode** const dest, bool* const ate_dot)
+SerdStatus
+read_turtle_iri(SerdReader* const reader,
+                SerdNode** const  dest,
+                bool* const       ate_dot)
 {
   if (peek_byte(reader) == '<') {
     return read_IRIREF(reader, dest);
@@ -425,7 +427,7 @@ read_literal(SerdReader* const reader,
   } else if (next == '^') {
     skip_byte(reader, '^');
     TRY(st, eat_byte_check(reader, '^'));
-    TRY(st, read_iri(reader, &datatype, ate_dot));
+    TRY(st, read_turtle_iri(reader, &datatype, ate_dot));
     (*dest)->meta = datatype;
     (*dest)->flags |= SERD_HAS_DATATYPE;
   }
@@ -512,7 +514,7 @@ read_anon(SerdReader* const reader,
       return r_err(reader, SERD_BAD_SYNTAX, "'.' inside blank");
     }
 
-    read_ws_star(reader);
+    read_turtle_ws_star(reader);
     *ctx.flags = old_flags;
     st         = serd_sink_write_end(reader->sink, *dest);
   }
@@ -608,7 +610,7 @@ read_object(SerdReader* const  reader,
     st = read_IRIREF(reader, &o);
     break;
   case ':':
-    st = read_iri(reader, &o, ate_dot);
+    st = read_turtle_iri(reader, &o, ate_dot);
     break;
   case '+':
   case '-':
@@ -666,14 +668,15 @@ read_predicateObjectList(SerdReader* const reader,
   const size_t orig_stack_size = reader->stack.size;
 
   SerdStatus st = SERD_SUCCESS;
-  while (!(st = read_verb(reader, &ctx.predicate)) && read_ws_star(reader) &&
+  while (!(st = read_verb(reader, &ctx.predicate)) &&
+         read_turtle_ws_star(reader) &&
          !(st = read_objectList(reader, ctx, ate_dot)) && !*ate_dot) {
     serd_stack_pop_to(&reader->stack, orig_stack_size);
 
     bool ate_semi = false;
     int  c        = 0;
     do {
-      read_ws_star(reader);
+      read_turtle_ws_star(reader);
       c = peek_byte(reader);
       if (c < 0) {
         return r_err(reader, SERD_BAD_SYNTAX, "unexpected end of file");
@@ -775,11 +778,11 @@ read_collection(SerdReader* const reader,
   return end_collection(reader, st);
 }
 
-static SerdStatus
-read_subject(SerdReader* const reader,
-             ReadContext       ctx,
-             SerdNode** const  dest,
-             int* const        s_type)
+SerdStatus
+read_turtle_subject(SerdReader* const reader,
+                    ReadContext       ctx,
+                    SerdNode** const  dest,
+                    int* const        s_type)
 {
   SerdStatus st      = SERD_SUCCESS;
   bool       ate_dot = false;
@@ -794,7 +797,7 @@ read_subject(SerdReader* const reader,
     st = read_BLANK_NODE_LABEL(reader, dest, &ate_dot);
     break;
   default:
-    st = read_iri(reader, dest, &ate_dot);
+    TRY(st, read_turtle_iri(reader, dest, &ate_dot));
   }
 
   if (ate_dot) {
@@ -804,36 +807,14 @@ read_subject(SerdReader* const reader,
   return st;
 }
 
-static SerdStatus
-read_labelOrSubject(SerdReader* const reader, SerdNode** const dest)
-{
-  SerdStatus st      = SERD_SUCCESS;
-  bool       ate_dot = false;
-
-  switch (peek_byte(reader)) {
-  case '[':
-    skip_byte(reader, '[');
-    read_ws_star(reader);
-    TRY(st, eat_byte_check(reader, ']'));
-    *dest = blank_id(reader);
-    return *dest ? SERD_SUCCESS : SERD_BAD_STACK;
-  case '_':
-    return read_BLANK_NODE_LABEL(reader, dest, &ate_dot);
-  default:
-    if (!read_iri(reader, dest, &ate_dot)) {
-      return SERD_SUCCESS;
-    } else {
-      return r_err(reader, SERD_BAD_SYNTAX, "expected label or subject");
-    }
-  }
-}
-
-static SerdStatus
-read_triples(SerdReader* const reader, ReadContext ctx, bool* const ate_dot)
+SerdStatus
+read_turtle_triples(SerdReader* const reader,
+                    ReadContext       ctx,
+                    bool* const       ate_dot)
 {
   SerdStatus st = SERD_FAILURE;
   if (ctx.subject) {
-    read_ws_star(reader);
+    read_turtle_ws_star(reader);
     const int c = peek_byte(reader);
     if (c == '.') {
       *ate_dot = eat_byte_safe(reader, '.');
@@ -851,22 +832,22 @@ read_triples(SerdReader* const reader, ReadContext ctx, bool* const ate_dot)
   return st > SERD_FAILURE ? st : SERD_SUCCESS;
 }
 
-static SerdStatus
-read_base(SerdReader* const reader, const bool sparql, const bool token)
+SerdStatus
+read_turtle_base(SerdReader* const reader, const bool sparql, const bool token)
 {
   SerdStatus st = SERD_SUCCESS;
   if (token) {
     TRY(st, eat_string(reader, "base", 4));
   }
 
-  read_ws_star(reader);
+  read_turtle_ws_star(reader);
 
   SerdNode* uri = NULL;
   TRY(st, read_IRIREF(reader, &uri));
   TRY(st, push_node_termination(reader));
   TRY(st, serd_sink_write_base(reader->sink, uri));
 
-  read_ws_star(reader);
+  read_turtle_ws_star(reader);
   if (!sparql) {
     return eat_byte_check(reader, '.');
   }
@@ -878,15 +859,17 @@ read_base(SerdReader* const reader, const bool sparql, const bool token)
   return SERD_SUCCESS;
 }
 
-static SerdStatus
-read_prefixID(SerdReader* const reader, const bool sparql, const bool token)
+SerdStatus
+read_turtle_prefixID(SerdReader* const reader,
+                     const bool        sparql,
+                     const bool        token)
 {
   SerdStatus st = SERD_SUCCESS;
   if (token) {
     TRY(st, eat_string(reader, "prefix", 6));
   }
 
-  read_ws_star(reader);
+  read_turtle_ws_star(reader);
   SerdNode* name = push_node(reader, SERD_LITERAL, "", 0);
   if (!name) {
     return SERD_BAD_STACK;
@@ -896,7 +879,7 @@ read_prefixID(SerdReader* const reader, const bool sparql, const bool token)
   TRY(st, push_node_termination(reader));
 
   TRY(st, eat_byte_check(reader, ':'));
-  read_ws_star(reader);
+  read_turtle_ws_star(reader);
 
   SerdNode* uri = NULL;
   TRY(st, read_IRIREF(reader, &uri));
@@ -905,171 +888,115 @@ read_prefixID(SerdReader* const reader, const bool sparql, const bool token)
   st = serd_sink_write_prefix(reader->sink, name, uri);
 
   if (!sparql) {
-    read_ws_star(reader);
+    read_turtle_ws_star(reader);
     st = eat_byte_check(reader, '.');
   }
   return st;
 }
 
-static SerdStatus
-read_directive(SerdReader* const reader)
+SerdStatus
+read_turtle_directive(SerdReader* const reader)
 {
-  const bool sparql = peek_byte(reader) != '@';
-  if (!sparql) {
-    skip_byte(reader, '@');
-    const int next = peek_byte(reader);
-    if (next == 'B' || next == 'P') {
-      return r_err(reader, SERD_BAD_SYNTAX, "uppercase directive");
-    }
-  }
+  skip_byte(reader, '@');
 
   const int next = peek_byte(reader);
 
-  if (next == 'B' || next == 'b') {
-    return read_base(reader, sparql, true);
+  if (next == 'b') {
+    return read_turtle_base(reader, false, true);
   }
 
-  if (next == 'P' || next == 'p') {
-    return read_prefixID(reader, sparql, true);
+  if (next == 'p') {
+    return read_turtle_prefixID(reader, false, true);
   }
 
-  return r_err(reader, SERD_BAD_SYNTAX, "invalid directive");
+  return r_err(reader, SERD_BAD_SYNTAX, "expected \"base\" or \"prefix\"");
 }
 
 static SerdStatus
-read_wrappedGraph(SerdReader* const reader, ReadContext* const ctx)
+read_sparql_directive(SerdReader* const reader, const SerdNode* const token)
+{
+  if (token_equals(token, "base", 4)) {
+    return read_turtle_base(reader, true, false);
+  }
+
+  if (token_equals(token, "prefix", 6)) {
+    return read_turtle_prefixID(reader, true, false);
+  }
+
+  return SERD_FAILURE;
+}
+
+static SerdStatus
+read_block(SerdReader* const reader, ReadContext* const ctx)
 {
   SerdStatus st = SERD_SUCCESS;
-  TRY(st, eat_byte_check(reader, '{'));
-  read_ws_star(reader);
 
-  while (peek_byte(reader) != '}') {
-    const size_t orig_stack_size = reader->stack.size;
-    bool         ate_dot         = false;
-    int          s_type          = 0;
-
-    ctx->subject = 0;
-    if ((st = read_subject(reader, *ctx, &ctx->subject, &s_type))) {
-      return r_err(reader, st, "expected subject");
-    }
-
-    if ((st = read_triples(reader, *ctx, &ate_dot)) && s_type != '[') {
-      return r_err(reader, st, "bad predicate object list");
-    }
-
-    serd_stack_pop_to(&reader->stack, orig_stack_size);
-    read_ws_star(reader);
-    if (peek_byte(reader) == '.') {
-      skip_byte(reader, '.');
-    }
-    read_ws_star(reader);
+  // Try to read a subject, though it may actually be a directive or graph name
+  SerdNode* token  = NULL;
+  int       s_type = 0;
+  if ((st = read_turtle_subject(reader, *ctx, &token, &s_type)) >
+      SERD_FAILURE) {
+    return st;
   }
 
-  skip_byte(reader, '}');
-  read_ws_star(reader);
-  if (peek_byte(reader) == '.') {
-    return r_err(reader, SERD_BAD_SYNTAX, "graph followed by '.'");
+  // Try to interpret as a SPARQL "PREFIX" or "BASE" directive
+  if (st && (st = read_sparql_directive(reader, token)) != SERD_FAILURE) {
+    return st;
   }
 
-  return SERD_SUCCESS;
-}
-
-static bool
-token_equals(SerdNode* const node, const char* const tok, const size_t n)
-{
-  if (!node || node->length != n) {
-    return false;
+  if (st) {
+    return r_err(reader, SERD_BAD_SYNTAX, "expected directive or subject");
   }
 
-  const char* const node_string = serd_node_string(node);
-  for (size_t i = 0U; i < n; ++i) {
-    if (serd_to_upper(node_string[i]) != serd_to_upper(tok[i])) {
-      return false;
-    }
+  // Our token is really a subject, read some triples
+  bool ate_dot = false;
+  ctx->subject = token;
+  if ((st = read_turtle_triples(reader, *ctx, &ate_dot)) > SERD_FAILURE) {
+    return st;
   }
 
-  return tok[n] == '\0';
+  // "Failure" is only allowed for anonymous subjects like "[ ... ] ."
+  if (st && s_type != '[') {
+    return r_err(reader, SERD_BAD_SYNTAX, "expected triples");
+  }
+
+  // Ensure that triples are properly terminated
+  return ate_dot ? st : eat_byte_check(reader, '.');
 }
 
 SerdStatus
-read_n3_statement(SerdReader* const reader)
+read_turtle_statement(SerdReader* const reader)
 {
-  SerdStatementEventFlags flags   = 0U;
-  ReadContext             ctx     = {0, 0, 0, 0, &flags};
-  bool                    ate_dot = false;
-  int                     s_type  = 0;
-  SerdStatus              st      = SERD_SUCCESS;
-  read_ws_star(reader);
+  SerdStatementEventFlags flags = 0U;
+  ReadContext             ctx   = {0, 0, 0, 0, &flags};
+
+  // Handle nice cases we can distinguish from the next byte
+  read_turtle_ws_star(reader);
   switch (peek_byte(reader)) {
-  case '\0':
-    skip_byte(reader, '\0');
-    return SERD_FAILURE;
   case EOF:
     return SERD_FAILURE;
+
+  case '\0':
+    eat_byte(reader);
+    return SERD_FAILURE;
+
   case '@':
-    TRY(st, read_directive(reader));
-    read_ws_star(reader);
-    break;
-  case '{':
-    if (reader->syntax == SERD_TRIG) {
-      TRY(st, read_wrappedGraph(reader, &ctx));
-      read_ws_star(reader);
-    } else {
-      return r_err(reader, SERD_BAD_SYNTAX, "syntax does not support graphs");
-    }
-    break;
+    return read_turtle_directive(reader);
+
   default:
-    TRY_FAILING(st, read_subject(reader, ctx, &ctx.subject, &s_type));
-
-    if (token_equals(ctx.subject, "base", 4)) {
-      st = read_base(reader, true, false);
-    } else if (token_equals(ctx.subject, "prefix", 6)) {
-      st = read_prefixID(reader, true, false);
-    } else if (token_equals(ctx.subject, "graph", 5)) {
-      ctx.subject = NULL;
-      read_ws_star(reader);
-      TRY(st, read_labelOrSubject(reader, &ctx.graph));
-      read_ws_star(reader);
-      TRY(st, read_wrappedGraph(reader, &ctx));
-      ctx.graph = 0;
-      read_ws_star(reader);
-    } else if (token_equals(ctx.subject, "true", 4) ||
-               token_equals(ctx.subject, "false", 5)) {
-      return r_err(reader, SERD_BAD_SYNTAX, "expected subject");
-    } else if (read_ws_star(reader) && peek_byte(reader) == '{') {
-      if (s_type == '(' || (s_type == '[' && !*ctx.flags)) {
-        return r_err(reader, SERD_BAD_SYNTAX, "invalid graph name");
-      }
-      ctx.graph   = ctx.subject;
-      ctx.subject = NULL;
-      TRY(st, read_wrappedGraph(reader, &ctx));
-      read_ws_star(reader);
-    } else if ((st = read_triples(reader, ctx, &ate_dot))) {
-      if (st == SERD_FAILURE && s_type == '[') {
-        return SERD_SUCCESS;
-      }
-
-      if (ate_dot && (reader->strict || (s_type != '('))) {
-        return r_err(reader, SERD_BAD_SYNTAX, "unexpected end of statement");
-      }
-
-      return st > SERD_FAILURE ? st : SERD_BAD_SYNTAX;
-    } else if (!ate_dot) {
-      read_ws_star(reader);
-      st = eat_byte_check(reader, '.');
-    }
     break;
   }
 
-  return st;
+  // No such luck, figure out what to read from the first token
+  return read_block(reader, &ctx);
 }
 
 SerdStatus
-read_turtleTrigDoc(SerdReader* const reader)
+read_turtleDoc(SerdReader* const reader)
 {
   while (!reader->source.eof) {
     const size_t     orig_stack_size = reader->stack.size;
-    const SerdStatus st              = read_n3_statement(reader);
+    const SerdStatus st              = read_turtle_statement(reader);
 
     if (st > SERD_FAILURE) {
       if (!tolerate_status(reader, st)) {

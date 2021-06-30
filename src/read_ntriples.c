@@ -624,8 +624,8 @@ read_triple(SerdReader* const reader)
   return serd_sink_write_statement(reader->sink, *ctx.flags, statement);
 }
 
-static SerdStatus
-read_line(SerdReader* const reader)
+SerdStatus
+read_ntriples_line(SerdReader* const reader)
 {
   SerdStatus st = SERD_SUCCESS;
 
@@ -668,14 +668,14 @@ SerdStatus
 read_ntriplesDoc(SerdReader* const reader)
 {
   // Read the first line
-  SerdStatus st = read_line(reader);
+  SerdStatus st = read_ntriples_line(reader);
   if (st == SERD_FAILURE || !tolerate_status(reader, st)) {
     return st;
   }
 
   // Continue reading lines for as long as possible
   for (st = SERD_SUCCESS; !st;) {
-    st = read_line(reader);
+    st = read_ntriples_line(reader);
     if (st > SERD_FAILURE && !reader->strict && tolerate_status(reader, st)) {
       serd_reader_skip_until_byte(reader, '\n');
       st = SERD_SUCCESS;
