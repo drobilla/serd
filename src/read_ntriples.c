@@ -591,8 +591,6 @@ read_triple(SerdReader* const reader)
 {
   SerdEventFlags flags   = 0U;
   ReadContext    ctx     = {NULL, NULL, NULL, &flags};
-  TokenHeader*   object  = NULL;
-  TokenHeader*   meta    = NULL;
   SerdStatus     st      = SERD_SUCCESS;
   bool           ate_dot = false;
 
@@ -604,6 +602,8 @@ read_triple(SerdReader* const reader)
     return st;
   }
 
+  TokenHeader* object = NULL;
+  TokenHeader* meta   = NULL;
   if ((st = read_nt_object(reader, &object, &meta, &ate_dot)) ||
       (st = skip_horizontal_whitespace(reader))) {
     return st;
@@ -616,8 +616,8 @@ read_triple(SerdReader* const reader)
   return emit_statement(reader, ctx, object, meta);
 }
 
-static SerdStatus
-read_line(SerdReader* const reader)
+SerdStatus
+read_ntriples_line(SerdReader* const reader)
 {
   SerdStatus st = SERD_SUCCESS;
 
@@ -656,14 +656,14 @@ SerdStatus
 read_ntriplesDoc(SerdReader* const reader)
 {
   // Read the first line
-  SerdStatus st = read_line(reader);
+  SerdStatus st = read_ntriples_line(reader);
   if (st == SERD_FAILURE || !tolerate_status(reader, st)) {
     return st;
   }
 
   // Continue reading lines for as long as possible
   for (st = SERD_SUCCESS; !st;) {
-    st = read_line(reader);
+    st = read_ntriples_line(reader);
     if (st > SERD_FAILURE && !reader->strict && tolerate_status(reader, st)) {
       serd_reader_skip_until_byte(reader, '\n');
       st = SERD_SUCCESS;

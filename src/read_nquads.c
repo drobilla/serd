@@ -29,10 +29,8 @@ read_graphLabel(SerdReader* const   reader,
 static SerdStatus
 read_nquads_statement(SerdReader* const reader)
 {
-  SerdEventFlags flags   = 0;
+  SerdEventFlags flags   = 0U;
   ReadContext    ctx     = {NULL, NULL, NULL, &flags};
-  TokenHeader*   object  = NULL;
-  TokenHeader*   meta    = NULL;
   SerdStatus     st      = SERD_SUCCESS;
   bool           ate_dot = false;
 
@@ -44,6 +42,8 @@ read_nquads_statement(SerdReader* const reader)
     return st;
   }
 
+  TokenHeader* object = NULL;
+  TokenHeader* meta   = NULL;
   if ((st = read_nt_object(reader, &object, &meta, &ate_dot)) ||
       (st = skip_horizontal_whitespace(reader))) {
     return st;
