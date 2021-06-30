@@ -39,6 +39,34 @@
 #  endif
 #endif
 
+static size_t
+serd_uri_string_length(const SerdURI* const uri)
+{
+  size_t len = uri->path_base.len;
+
+#define ADD_LEN(field, n_delims)     \
+  if ((field).len) {                 \
+    len += (field).len + (n_delims); \
+  }
+
+  ADD_LEN(uri->path, 1)      // + possible leading `/'
+  ADD_LEN(uri->scheme, 1)    // + trailing `:'
+  ADD_LEN(uri->authority, 2) // + leading `//'
+  ADD_LEN(uri->query, 1)     // + leading `?'
+  ADD_LEN(uri->fragment, 1)  // + leading `#'
+
+  return len + 2; // + 2 for authority `//'
+}
+
+static size_t
+string_sink(const void* const buf, const size_t len, void* const stream)
+{
+  uint8_t** ptr = (uint8_t**)stream;
+  memcpy(*ptr, buf, len);
+  *ptr += len;
+  return len;
+}
+
 SerdNode
 serd_node_from_string(const SerdType type, const uint8_t* const str)
 {
@@ -92,34 +120,6 @@ serd_node_equals(const SerdNode* const a, const SerdNode* const b)
           a->n_chars == b->n_chars &&
           ((a->buf == b->buf) ||
            !memcmp((const char*)a->buf, (const char*)b->buf, a->n_bytes + 1)));
-}
-
-static size_t
-serd_uri_string_length(const SerdURI* const uri)
-{
-  size_t len = uri->path_base.len;
-
-#define ADD_LEN(field, n_delims)     \
-  if ((field).len) {                 \
-    len += (field).len + (n_delims); \
-  }
-
-  ADD_LEN(uri->path, 1)      // + possible leading `/'
-  ADD_LEN(uri->scheme, 1)    // + trailing `:'
-  ADD_LEN(uri->authority, 2) // + leading `//'
-  ADD_LEN(uri->query, 1)     // + leading `?'
-  ADD_LEN(uri->fragment, 1)  // + leading `#'
-
-  return len + 2; // + 2 for authority `//'
-}
-
-static size_t
-string_sink(const void* const buf, const size_t len, void* const stream)
-{
-  uint8_t** ptr = (uint8_t**)stream;
-  memcpy(*ptr, buf, len);
-  *ptr += len;
-  return len;
 }
 
 SerdNode
