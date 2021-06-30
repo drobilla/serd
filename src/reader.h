@@ -72,6 +72,9 @@ push_node(SerdReader* reader, SerdNodeType type, ZixStringView string);
 SerdStatus ZIX_NODISCARD
 push_node_termination(SerdReader* reader);
 
+ZIX_PURE_FUNC bool
+token_equals(const SerdNode* node, const char* tok, size_t n);
+
 ZIX_PURE_FUNC size_t
 genid_length(const SerdReader* reader);
 
@@ -86,12 +89,6 @@ set_blank_id(SerdReader* reader, SerdNode* node, size_t buf_size);
 
 SerdStatus
 emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o);
-
-SerdStatus
-read_n3_statement(SerdReader* reader);
-
-SerdStatus
-read_turtleTrigDoc(SerdReader* reader);
 
 static inline int
 peek_byte(SerdReader* reader)
