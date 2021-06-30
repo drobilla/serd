@@ -29,7 +29,7 @@ read_graphLabel(SerdReader* const reader,
 static SerdStatus
 read_nquads_statement(SerdReader* const reader)
 {
-  SerdStatementEventFlags flags   = 0;
+  SerdStatementEventFlags flags   = 0U;
   ReadContext             ctx     = {0, 0, 0, 0, &flags};
   SerdStatus              st      = SERD_SUCCESS;
   bool                    ate_dot = false;

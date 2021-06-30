@@ -149,10 +149,11 @@ c_headers = files(
 sources = files(
   'src/byte_source.c',
   'src/env.c',
-  'src/n3.c',
   'src/node.c',
   'src/read_nquads.c',
   'src/read_ntriples.c',
+  'src/read_trig.c',
+  'src/read_turtle.c',
   'src/read_utf8.c',
   'src/reader.c',
   'src/sink.c',
