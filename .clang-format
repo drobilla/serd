@@ -21,4 +21,5 @@ SpacesInContainerLiterals: false
 StatementMacros:
   - SERD_API
   - SERD_DEPRECATED_BY
+  - _Pragma
 ...
