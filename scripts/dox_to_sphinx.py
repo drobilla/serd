@@ -197,6 +197,9 @@ def link_markup(index, lang, refid):
     if kind in ["class", "enum", "struct", "typedef", "union"]:
         return ":%s:`%s`" % (role, name)
 
+    if kind == "define":
+        return ":%s:macro:`%s`" % (lang, name)
+
     if kind == "function":
         return ":%s:func:`%s`" % (lang, name)
 
@@ -427,7 +430,16 @@ def read_definition_doc(index, lang, root):
                 assert kind in ["function", "typedef", "variable"]
                 record["type"] = plain_text(member.find("type"))
 
-            if kind == "enum":
+            if kind == "define":
+                if member.find('param') is not None:
+                    param_names = []
+                    for param in member.findall('param'):
+                        defname = param.find('defname')
+                        param_names += [defname.text] if defname is not None else []
+
+                    record["prototype"] = "%s(%s)" % (record["name"], ', '.join(param_names))
+
+            elif kind == "enum":
                 for value in member.findall("enumvalue"):
                     set_descriptions(
                         index, lang, value, index[value.get("id")]
@@ -481,7 +493,9 @@ def declaration_string(record):
     if "template_params" in record:
         result = "template <%s> " % record["template_params"]
 
-    if kind == "function":
+    if kind == "define" and "prototype" in record:
+        result += record["prototype"]
+    elif kind == "function":
         result += record["prototype"]
     elif kind == "typedef":
         result += record["definition"]
