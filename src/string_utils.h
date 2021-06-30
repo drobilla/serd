@@ -119,6 +119,16 @@ utf8_num_bytes(const uint8_t leading)
                                         : 0U; // Invalid
 }
 
+static inline uint8_t
+utf8_num_bytes_for_codepoint(const uint32_t code)
+{
+  return (code < 0x00000080U)   ? 1U
+         : (code < 0x00000800U) ? 2U
+         : (code < 0x00010000U) ? 3U
+         : (code < 0x00110000U) ? 4U
+                                : 0U;
+}
+
 /// Return the code point of a UTF-8 character with known length
 static inline uint32_t
 parse_counted_utf8_char(const uint8_t* const utf8, const uint8_t size)
