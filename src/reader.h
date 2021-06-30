@@ -74,6 +74,9 @@ ZIX_NODISCARD SerdStatus
 push_node_termination(SerdReader* reader);
 
 ZIX_PURE_FUNC bool
+token_equals(const TokenHeader* node, ZixStringView tok);
+
+ZIX_PURE_FUNC bool
 tolerate_status(const SerdReader* reader, SerdStatus status);
 
 ZIX_PURE_FUNC size_t
@@ -99,12 +102,6 @@ emit_statement(const SerdReader*  reader,
                ReadContext        ctx,
                const TokenHeader* object,
                const TokenHeader* meta);
-
-SerdStatus
-read_n3_statement(SerdReader* reader);
-
-SerdStatus
-read_turtleTrigDoc(SerdReader* reader);
 
 static inline int
 peek_byte(SerdReader* const reader)
