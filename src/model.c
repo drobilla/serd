@@ -37,115 +37,64 @@
 
 static const SerdQuad wildcard_pattern = {0, 0, 0, 0};
 
-/**
-   Return true iff `serd` has an index for `order`.
-   If `graphs` is true, `order` will be modified to be the
-   corresponding order with a G prepended (so G will be the MSN).
-*/
-static bool
-serd_model_has_index(const SerdModel* const    model,
-                     SerdStatementOrder* const order,
-                     int* const                n_prefix,
-                     const bool                graphs)
-{
-  if (graphs) {
-    *order = (SerdStatementOrder)(*order + SERD_ORDER_GSPO);
-    *n_prefix += 1;
-  }
+typedef struct {
+  SearchMode         mode;
+  unsigned           n_prefix;
+  unsigned           n_orders;
+  SerdStatementOrder orders[2];
+} SerdIterLens;
 
-  return model->indices[*order];
-}
+static const SerdIterLens perfect_lenses[] = {
+  [0x0000] = {ALL, 0u, 2u, {SERD_ORDER_GSPO, SERD_ORDER_SPO}},
+  [0x0001] = {RANGE, 0u, 1u, {SERD_ORDER_GSPO}},
 
-/**
-   Return the best available index for a pattern.
-   @param pat Pattern in standard (S P O G) order
-   @param mode Set to the (best) iteration mode for iterating over results
-   @param n_prefix Set to the length of the range prefix
-   (for `mode` == RANGE and `mode` == FILTER_RANGE)
-*/
-static SerdStatementOrder
-serd_model_best_index(const SerdModel* const model,
-                      const SerdQuad         pat,
-                      SearchMode* const      mode,
-                      int* const             n_prefix)
-{
-  const bool graph_search = (pat[SERD_GRAPH] != 0);
+  [0x0010] = {RANGE, 1u, 2u, {SERD_ORDER_OPS, SERD_ORDER_OSP}},
+  [0x0011] = {RANGE, 2u, 2u, {SERD_ORDER_GOPS, SERD_ORDER_GOSP}},
 
-  const unsigned sig =
-    ((pat[0] ? 1u : 0u) * 0x100 + (pat[1] ? 1u : 0u) * 0x010 +
-     (pat[2] ? 1u : 0u) * 0x001);
+  [0x0100] = {RANGE, 1u, 2u, {SERD_ORDER_POS, SERD_ORDER_PSO}},
+  [0x0101] = {RANGE, 2u, 2u, {SERD_ORDER_GPOS, SERD_ORDER_GPSO}},
 
-  SerdStatementOrder good[2] = {(SerdStatementOrder)-1, (SerdStatementOrder)-1};
+  [0x0110] = {RANGE, 2u, 2u, {SERD_ORDER_OPS, SERD_ORDER_POS}},
+  [0x0111] = {RANGE, 3u, 2u, {SERD_ORDER_GOPS, SERD_ORDER_GPOS}},
 
-#define PAT_CASE(sig, m, g0, g1, np) \
-  case sig:                          \
-    *mode     = m;                   \
-    good[0]   = g0;                  \
-    good[1]   = g1;                  \
-    *n_prefix = np;                  \
-    break
+  [0x1000] = {RANGE, 1u, 2u, {SERD_ORDER_SPO, SERD_ORDER_SOP}},
+  [0x1001] = {RANGE, 2u, 2u, {SERD_ORDER_GSPO, SERD_ORDER_GSOP}},
 
-  // Good orderings that don't require filtering
-  *mode     = RANGE;
-  *n_prefix = 0;
-  switch (sig) {
-    PAT_CASE(0x001, RANGE, SERD_ORDER_OPS, SERD_ORDER_OSP, 1);
-    PAT_CASE(0x010, RANGE, SERD_ORDER_POS, SERD_ORDER_PSO, 1);
-    PAT_CASE(0x011, RANGE, SERD_ORDER_OPS, SERD_ORDER_POS, 2);
-    PAT_CASE(0x100, RANGE, SERD_ORDER_SPO, SERD_ORDER_SOP, 1);
-    PAT_CASE(0x101, RANGE, SERD_ORDER_SOP, SERD_ORDER_OSP, 2);
-    PAT_CASE(0x110, RANGE, SERD_ORDER_SPO, SERD_ORDER_PSO, 2);
-  case 0x111:
-    *mode     = RANGE;
-    *n_prefix = graph_search ? 4 : 3;
-    return graph_search ? DEFAULT_GRAPH_ORDER : DEFAULT_ORDER;
-  default:
-    assert(sig == 0x000);
-    assert(graph_search);
-    *mode     = RANGE;
-    *n_prefix = 1;
-    return DEFAULT_GRAPH_ORDER;
-  }
+  [0x1010] = {RANGE, 2u, 2u, {SERD_ORDER_SOP, SERD_ORDER_OSP}},
+  [0x1011] = {RANGE, 3u, 2u, {SERD_ORDER_GSOP, SERD_ORDER_GOSP}},
 
-  if (*mode == RANGE) {
-    if (serd_model_has_index(model, &good[0], n_prefix, graph_search)) {
-      return good[0];
-    }
+  [0x1100] = {RANGE, 2u, 2u, {SERD_ORDER_SPO, SERD_ORDER_PSO}},
+  [0x1101] = {RANGE, 3u, 2u, {SERD_ORDER_GSPO, SERD_ORDER_GPSO}},
 
-    if (serd_model_has_index(model, &good[1], n_prefix, graph_search)) {
-      return good[1];
-    }
-  }
+  [0x1110] = {RANGE, 3u, 2u, {SERD_ORDER_SPO, SERD_ORDER_OPS}},
+  [0x1111] = {RANGE, 4u, 2u, {SERD_ORDER_GSPO, SERD_ORDER_GOPS}},
+};
 
-  // Not so good orderings that require filtering, but can
-  // still be constrained to a range
-  switch (sig) {
-    PAT_CASE(0x011, FILTER_RANGE, SERD_ORDER_OSP, SERD_ORDER_PSO, 1);
-    PAT_CASE(0x101, FILTER_RANGE, SERD_ORDER_SPO, SERD_ORDER_OPS, 1);
-    // SPO is always present, so 0x110 is never reached here
-  default:
-    break;
-  }
+static const SerdIterLens partial_lenses[] = {
+  [0x0000] = {ALL, 0u, 0u, {}},
+  [0x0001] = {ALL, 0u, 0u, {}},
 
-  if (*mode == FILTER_RANGE) {
-    if (serd_model_has_index(model, &good[0], n_prefix, graph_search)) {
-      return good[0];
-    }
+  [0x0010] = {ALL, 0u, 0u, {}},
+  [0x0011] = {FILTER_RANGE, 1u, 2u, {SERD_ORDER_GSPO, SERD_ORDER_GPOS}},
 
-    if (serd_model_has_index(model, &good[1], n_prefix, graph_search)) {
-      return good[1];
-    }
-  }
+  [0x0100] = {ALL, 0u, 0u, {}},
+  [0x0101] = {FILTER_RANGE, 1u, 2u, {SERD_ORDER_GSPO, SERD_ORDER_GOPS}},
 
-  if (graph_search) {
-    *mode     = FILTER_RANGE;
-    *n_prefix = 1;
-    return DEFAULT_GRAPH_ORDER;
-  }
+  [0x0110] = {FILTER_RANGE, 1u, 2u, {SERD_ORDER_OSP, SERD_ORDER_PSO}},
+  [0x0111] = {FILTER_RANGE, 2u, 2u, {SERD_ORDER_GOSP, SERD_ORDER_GPSO}},
 
-  *mode = FILTER_ALL;
-  return DEFAULT_ORDER;
-}
+  [0x1000] = {ALL, 0u, 0u, {}},
+  [0x1001] = {FILTER_RANGE, 1u, 2u, {SERD_ORDER_GOPS, SERD_ORDER_GPSO}},
+
+  [0x1010] = {FILTER_RANGE, 1u, 2u, {SERD_ORDER_SPO, SERD_ORDER_OPS}},
+  [0x1011] = {FILTER_RANGE, 2u, 2u, {SERD_ORDER_GSPO, SERD_ORDER_GOPS}},
+
+  [0x1100] = {FILTER_RANGE, 1u, 2u, {SERD_ORDER_SOP, SERD_ORDER_POS}},
+  [0x1101] = {FILTER_RANGE, 2u, 2u, {SERD_ORDER_GSOP, SERD_ORDER_GPOS}},
+
+  [0x1110] = {ALL, 0u, 0u, {}},
+  [0x1111] = {ALL, 0u, 0u, {}},
+};
 
 SerdModel*
 serd_model_new(SerdWorld* const world, const SerdModelFlags flags)
@@ -393,6 +342,21 @@ serd_model_ordered(const SerdModel* const model, const SerdStatementOrder order)
                         serd_model_end_ordered(model, real_order));
 }
 
+static bool
+serd_model_supports_lens(const SerdModel* const    model,
+                         const SerdIterLens        lens,
+                         SerdStatementOrder* const order)
+{
+  for (unsigned i = 0u; i < lens.n_orders; ++i) {
+    if (model->indices[lens.orders[i]]) {
+      *order = lens.orders[i];
+      return true;
+    }
+  }
+
+  return false;
+}
+
 SerdIter*
 serd_model_find(const SerdModel* const model,
                 const SerdNode* const  s,
@@ -400,28 +364,47 @@ serd_model_find(const SerdModel* const model,
                 const SerdNode* const  o,
                 const SerdNode* const  g)
 {
+  // Build a 4-bit signature for this pattern: SPOG, set if a node is given
   const SerdQuad pat = {s, p, o, g};
-  if (!pat[0] && !pat[1] && !pat[2] && !pat[3]) {
+  const unsigned sig = ((pat[0] ? 1u : 0u) * 0x1000 + //
+                        (pat[1] ? 1u : 0u) * 0x0100 + //
+                        (pat[2] ? 1u : 0u) * 0x0010 + //
+                        (pat[3] ? 1u : 0u) * 0x0001);
+
+  // Grab perfect and partial lenses to try from the tables
+  const SerdIterLens perfect = perfect_lenses[sig];
+  const SerdIterLens partial = partial_lenses[sig];
+
+  if (sig == 0x0000) {
     return serd_model_begin(model);
   }
 
-  SearchMode               mode     = ALL;
-  int                      n_prefix = 0;
-  const SerdStatementOrder index_order =
-    serd_model_best_index(model, pat, &mode, &n_prefix);
+  SerdStatementOrder index_order = SERD_ORDER_SPO;
+  SerdIterLens       lens        = {FILTER_ALL, 0u, 1u, {index_order}};
+
+  if (serd_model_supports_lens(model, perfect, &index_order)) {
+    lens = perfect;
+  } else if (serd_model_supports_lens(model, partial, &index_order)) {
+    lens = partial;
+  } else if (pat[3]) {
+    lens.mode   = FILTER_RANGE;
+    index_order = SERD_ORDER_GSPO;
+  }
 
   ZixBTree* const index = model->indices[index_order];
   ZixBTreeIter    cur   = zix_btree_end(index);
 
-  if (mode == FILTER_ALL) {
+  assert(index); // FIXME?
+
+  if (lens.mode == ALL || lens.mode == FILTER_ALL) {
     // No prefix shared with an index at all, linear search (worst case)
     cur = zix_btree_begin(index);
-  } else if (mode == FILTER_RANGE) {
+  } else if (lens.mode == FILTER_RANGE) {
     /* Some prefix, but filtering still required.  Build a search pattern
        with only the prefix to find the lower bound in log time. */
     SerdQuad         prefix_pat = {NULL, NULL, NULL, NULL};
     const int* const ordering   = orderings[index_order];
-    for (int i = 0; i < n_prefix; ++i) {
+    for (unsigned i = 0u; i < lens.n_prefix; ++i) {
       prefix_pat[ordering[i]] = pat[ordering[i]];
     }
 
@@ -449,11 +432,11 @@ serd_model_find(const SerdModel* const model,
   }
 
   const SerdStatement* const key = (const SerdStatement*)zix_btree_get(cur);
-  if (!key || (mode == RANGE && !serd_statement_matches_quad(key, pat))) {
+  if (!key || (lens.mode == RANGE && !serd_statement_matches_quad(key, pat))) {
     return NULL;
   }
 
-  return serd_iter_new(model, cur, pat, index_order, mode, n_prefix);
+  return serd_iter_new(model, cur, pat, index_order, lens.mode, lens.n_prefix);
 }
 
 SerdRange*

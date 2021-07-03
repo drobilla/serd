@@ -32,7 +32,7 @@ static bool
 serd_iter_pattern_matches(const SerdIter* const iter, const SerdQuad pat)
 {
   const SerdStatement* key = (const SerdStatement*)zix_btree_get(iter->cur);
-  for (int i = 0; i < iter->n_prefix; ++i) {
+  for (unsigned i = 0u; i < iter->n_prefix; ++i) {
     const int idx = orderings[iter->order][i];
     if (!serd_node_pattern_match(key->nodes[idx], pat[idx])) {
       return false;
@@ -86,7 +86,7 @@ serd_iter_new(const SerdModel* const   model,
               const SerdQuad           pat,
               const SerdStatementOrder order,
               const SearchMode         mode,
-              const int                n_prefix)
+              const unsigned           n_prefix)
 {
   SerdIter* const iter = (SerdIter* const)calloc(1, sizeof(SerdIter));
   iter->model          = model;

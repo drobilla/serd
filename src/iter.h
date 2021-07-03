@@ -25,7 +25,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/** Mode for searching or iteration */
 typedef enum {
   ALL,          ///< Iterate over entire store
   RANGE,        ///< Iterate over range with equal prefix
@@ -40,7 +39,7 @@ struct SerdIterImpl {
   SerdQuad           pat;      ///< Pattern (in ordering order)
   SerdStatementOrder order;    ///< Store order (which index)
   SearchMode         mode;     ///< Iteration mode
-  int                n_prefix; ///< Prefix for RANGE and FILTER_RANGE
+  unsigned           n_prefix; ///< Prefix for RANGE and FILTER_RANGE
 };
 
 #define NUM_ORDERS 12
@@ -71,7 +70,7 @@ serd_iter_new(const SerdModel*   model,
               const SerdQuad     pat,
               SerdStatementOrder order,
               SearchMode         mode,
-              int                n_prefix);
+              unsigned           n_prefix);
 
 bool
 serd_iter_scan_next(SerdIter* iter);
