@@ -51,11 +51,10 @@ serd_node_buffer_c(const SerdNode* SERD_NONNULL node)
   return (const char*)(node + 1);
 }
 
-static inline int
-serd_node_wildcard_compare(const SerdNode* SERD_NULLABLE a,
-                           const SerdNode* SERD_NULLABLE b)
+static inline const char* SERD_NONNULL
+serd_node_string_i(const SerdNode* const SERD_NONNULL node)
 {
-  return (!a || !b) ? 0 : serd_node_compare(a, b);
+  return (const char*)(node + 1);
 }
 
 static inline bool

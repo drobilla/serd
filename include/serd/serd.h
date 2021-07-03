@@ -888,8 +888,8 @@ serd_node_equals(const SerdNode* SERD_NULLABLE a,
 */
 SERD_PURE_API
 int
-serd_node_compare(const SerdNode* SERD_NULLABLE a,
-                  const SerdNode* SERD_NULLABLE b);
+serd_node_compare(const SerdNode* SERD_NONNULL a,
+                  const SerdNode* SERD_NONNULL b);
 
 /**
    @}

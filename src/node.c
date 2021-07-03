@@ -404,26 +404,27 @@ serd_node_equals(const SerdNode* const a, const SerdNode* const b)
 int
 serd_node_compare(const SerdNode* const a, const SerdNode* const b)
 {
-  if (a == b) {
-    return 0;
+  assert(a);
+  assert(b);
+
+  int cmp = 0;
+
+  if ((cmp = ((int)a->type - (int)b->type)) ||
+      (cmp = strcmp(serd_node_string_i(a), serd_node_string_i(b))) ||
+      (cmp = (int)a->flags - (int)b->flags) || !a->flags) {
+    return cmp;
   }
 
-  if (!a) {
-    return -1;
-  }
+  assert(a->flags & (SERD_HAS_LANGUAGE | SERD_HAS_DATATYPE));
+  assert(b->flags & (SERD_HAS_LANGUAGE | SERD_HAS_DATATYPE));
 
-  if (!b) {
-    return 1;
-  }
+  const SerdNode* const ma = serd_node_meta_c(a);
+  const SerdNode* const mb = serd_node_meta_c(b);
 
-  if (a->type != b->type) {
-    return (a->type < b->type) ? -1 : 1;
-  }
+  assert(ma->type == mb->type);
+  assert(ma->flags == mb->flags);
 
-  const int cmp = strcmp(serd_node_string(a), serd_node_string(b));
-  return cmp ? cmp
-             : serd_node_compare(serd_node_maybe_get_meta_c(a),
-                                 serd_node_maybe_get_meta_c(b));
+  return strcmp(serd_node_string_i(ma), serd_node_string_i(mb));
 }
 
 SerdNode*

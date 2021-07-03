@@ -36,7 +36,7 @@ typedef enum {
 struct SerdIterImpl {
   const SerdModel*   model;    ///< Model being iterated over
   uint64_t           version;  ///< Model version when iterator was created
-  ZixBTreeIter*      cur;      ///< Current DB cursor
+  ZixBTreeIter       cur;      ///< Current DB cursor
   SerdQuad           pat;      ///< Pattern (in ordering order)
   SerdStatementOrder order;    ///< Store order (which index)
   SearchMode         mode;     ///< Iteration mode
@@ -67,7 +67,7 @@ static const int orderings[NUM_ORDERS][TUP_LEN] = {
 
 SerdIter*
 serd_iter_new(const SerdModel*   model,
-              ZixBTreeIter*      cur,
+              ZixBTreeIter       cur,
               const SerdQuad     pat,
               SerdStatementOrder order,
               SearchMode         mode,

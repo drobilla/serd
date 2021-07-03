@@ -51,20 +51,20 @@ static bool
 serd_iter_seek_match(SerdIter* const iter, const SerdQuad pat)
 {
   for (; !zix_btree_iter_is_end(iter->cur);
-       zix_btree_iter_increment(iter->cur)) {
+       zix_btree_iter_increment(&iter->cur)) {
     const SerdStatement* s = (const SerdStatement*)zix_btree_get(iter->cur);
     if (serd_statement_matches_quad(s, pat)) {
       return false; // Found match
     }
 
     if (iter->mode == FILTER_RANGE && !serd_iter_pattern_matches(iter, pat)) {
-      zix_btree_iter_free(iter->cur);
-      iter->cur = NULL;
+      memset(&iter->cur, 0, sizeof(iter->cur)); // FIXME
+
       return true; // Reached end of range
     }
   }
 
-  assert(zix_btree_iter_is_end(iter->cur));
+  assert(zix_btree_iter_is_end(&iter->cur));
   return true; // Reached end of index
 }
 
@@ -82,7 +82,7 @@ check_version(const SerdIter* const iter)
 
 SerdIter*
 serd_iter_new(const SerdModel* const   model,
-              ZixBTreeIter* const      cur,
+              const ZixBTreeIter       cur,
               const SerdQuad           pat,
               const SerdStatementOrder order,
               const SearchMode         mode,
@@ -99,9 +99,9 @@ serd_iter_new(const SerdModel* const   model,
   switch (iter->mode) {
   case ALL:
   case RANGE:
-    assert(zix_btree_iter_is_end(iter->cur) ||
+    assert(zix_btree_iter_is_end(&iter->cur) ||
            serd_statement_matches_quad(
-             ((const SerdStatement*)zix_btree_get(iter->cur)), pat));
+             ((const SerdStatement*)zix_btree_get(&iter->cur)), pat));
     break;
   case FILTER_RANGE:
   case FILTER_ALL:
@@ -131,7 +131,6 @@ serd_iter_copy(const SerdIter* const iter)
 
   SerdIter* const copy = (SerdIter* const)malloc(sizeof(SerdIter));
   memcpy(copy, iter, sizeof(SerdIter));
-  copy->cur = zix_btree_iter_copy(iter->cur);
   return copy;
 }
 
@@ -158,9 +157,8 @@ serd_iter_scan_next(SerdIter* const iter)
   case RANGE:
     // At the end if the MSNs no longer match
     if (!serd_iter_pattern_matches(iter, iter->pat)) {
-      zix_btree_iter_free(iter->cur);
-      iter->cur = NULL;
-      is_end    = true;
+      memset(&iter->cur, 0, sizeof(iter->cur));
+      is_end = true;
     }
     break;
   case FILTER_RANGE:
@@ -180,7 +178,7 @@ serd_iter_next(SerdIter* const iter)
     return true;
   }
 
-  zix_btree_iter_increment(iter->cur);
+  zix_btree_iter_increment(&iter->cur);
   return serd_iter_scan_next(iter);
 }
 
@@ -204,8 +202,5 @@ serd_iter_equals(const SerdIter* const lhs, const SerdIter* const rhs)
 void
 serd_iter_free(SerdIter* const iter)
 {
-  if (iter) {
-    zix_btree_iter_free(iter->cur);
-    free(iter);
-  }
+  free(iter);
 }

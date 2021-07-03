@@ -16,6 +16,7 @@
 
 #include "model.h"
 
+#include "compare.h"
 #include "cursor.h"
 #include "iter.h"
 #include "node.h"
@@ -35,51 +36,6 @@
 #define DEFAULT_GRAPH_ORDER SERD_ORDER_GSPO
 
 static const SerdQuad wildcard_pattern = {0, 0, 0, 0};
-
-/**
-   Compare quads lexicographically, ignoring graph.
-
-   NULL IDs (equal to 0) are treated as wildcards, always less than every
-   other possible ID, except itself.
-*/
-static int
-serd_triple_compare(const void* const x,
-                    const void* const y,
-                    void* const       user_data)
-{
-  const int* const           ordering = (const int*)user_data;
-  const SerdStatement* const s        = (const SerdStatement*)x;
-  const SerdStatement* const t        = (const SerdStatement*)y;
-
-  for (int i = 0; i < TUP_LEN; ++i) {
-    const int o = ordering[i];
-    if (o != SERD_GRAPH) {
-      const int c = serd_node_wildcard_compare(s->nodes[o], t->nodes[o]);
-      if (c) {
-        return c;
-      }
-    }
-  }
-
-  return 0;
-}
-
-/**
-   Compare quads lexicographically, with exact (non-wildcard) graph matching.
-*/
-static int
-serd_quad_compare(const void* const x,
-                  const void* const y,
-                  void* const       user_data)
-{
-  const SerdStatement* const s = (const SerdStatement*)x;
-  const SerdStatement* const t = (const SerdStatement*)y;
-
-  // Compare graph without wildcard matching
-  const int cmp = serd_node_compare(s->nodes[SERD_GRAPH], t->nodes[SERD_GRAPH]);
-
-  return cmp ? cmp : serd_triple_compare(x, y, user_data);
-}
 
 /**
    Return true iff `serd` has an index for `order`.
@@ -205,11 +161,12 @@ serd_model_new(SerdWorld* const world, const SerdModelFlags flags)
     const int* const g_ordering = orderings[i + (NUM_ORDERS / 2)];
 
     if (model->flags & (1u << i)) {
-      model->indices[i] = zix_btree_new(
-        (ZixComparator)serd_triple_compare, (const void*)ordering, NULL);
+      model->indices[i] = zix_btree_new((ZixComparator)serd_triple_compare,
+                                        (const void*)ordering);
+
       if (model->flags & SERD_INDEX_GRAPHS) {
         model->indices[i + (NUM_ORDERS / 2)] = zix_btree_new(
-          (ZixComparator)serd_quad_compare, (const void*)g_ordering, NULL);
+          (ZixComparator)serd_quad_compare, (const void*)g_ordering);
       }
     }
   }
@@ -218,7 +175,7 @@ serd_model_new(SerdWorld* const world, const SerdModelFlags flags)
   const SerdStatementOrder order =
     model->indices[SERD_ORDER_GSPO] ? SERD_ORDER_GSPO : SERD_ORDER_SPO;
 
-  ZixBTreeIter*  cur = zix_btree_end(model->indices[order]);
+  ZixBTreeIter   cur = zix_btree_end(model->indices[order]);
   const SerdQuad pat = {0, 0, 0, 0};
 
   model->end = serd_iter_new(model, cur, pat, order, ALL, 0);
@@ -281,6 +238,8 @@ static void
 serd_model_drop_statement(SerdModel* const     model,
                           SerdStatement* const statement)
 {
+  assert(statement);
+
   for (unsigned i = 0; i < TUP_LEN; ++i) {
     if (statement->nodes[i]) {
       serd_nodes_deref(model->nodes, statement->nodes[i]);
@@ -303,21 +262,24 @@ serd_model_free(SerdModel* const model)
 
   serd_iter_free(model->end);
 
-  ZixBTree* index =
+  ZixBTree* const main_index =
     model->indices[model->indices[DEFAULT_GRAPH_ORDER] ? DEFAULT_GRAPH_ORDER
                                                        : DEFAULT_ORDER];
 
-  // Free statements (which drops all node references)
-  ZixBTreeIter* t = zix_btree_begin(index);
-  for (; !zix_btree_iter_is_end(t); zix_btree_iter_increment(t)) {
-    serd_model_drop_statement(model, (SerdStatement*)zix_btree_get(t));
+  // Free statements from main index
+  zix_btree_clear(main_index, (ZixDestroyFunc)serd_statement_free);
+
+#if 0
+  ZixBTreeIter t = zix_btree_begin(index);
+  for (; !zix_btree_iter_is_end(t); zix_btree_iter_increment(&t)) {
+    serd_statement_free((SerdStatement*)zix_btree_get(t));
   }
-  zix_btree_iter_free(t);
+#endif
 
   // Free indices
   for (unsigned o = 0; o < NUM_ORDERS; ++o) {
     if (model->indices[o]) {
-      zix_btree_free(model->indices[o]);
+      zix_btree_free(model->indices[o], NULL);
     }
   }
 
@@ -396,7 +358,8 @@ serd_model_begin(const SerdModel* const model)
 
   const SerdStatementOrder order =
     model->indices[SERD_ORDER_GSPO] ? SERD_ORDER_GSPO : SERD_ORDER_SPO;
-  ZixBTreeIter*  cur = zix_btree_begin(model->indices[order]);
+
+  ZixBTreeIter   cur = zix_btree_begin(model->indices[order]);
   const SerdQuad pat = {0, 0, 0, 0};
   return serd_iter_new(model, cur, pat, order, ALL, 0);
 }
@@ -448,7 +411,7 @@ serd_model_find(const SerdModel* const model,
     serd_model_best_index(model, pat, &mode, &n_prefix);
 
   ZixBTree* const db  = model->indices[index_order];
-  ZixBTreeIter*   cur = NULL;
+  ZixBTreeIter    cur = zix_btree_end(db);
 
   if (mode == FILTER_ALL) {
     // No prefix shared with an index at all, linear search (worst case)
@@ -461,20 +424,32 @@ serd_model_find(const SerdModel* const model,
     for (int i = 0; i < n_prefix; ++i) {
       prefix_pat[ordering[i]] = pat[ordering[i]];
     }
-    zix_btree_lower_bound(db, prefix_pat, &cur);
+
+    zix_btree_lower_bound(db,
+                          index_order < SERD_ORDER_GSPO
+                            ? (ZixComparator)serd_triple_compare_pattern
+                            : (ZixComparator)serd_quad_compare_pattern,
+                          ordering,
+                          prefix_pat,
+                          &cur);
+
   } else {
     // Ideal case, pattern matches an index with no filtering required
-    zix_btree_lower_bound(db, pat, &cur);
+    zix_btree_lower_bound(db,
+                          index_order < SERD_ORDER_GSPO
+                            ? (ZixComparator)serd_triple_compare_pattern
+                            : (ZixComparator)serd_quad_compare_pattern,
+                          orderings[index_order],
+                          pat,
+                          &cur);
   }
 
   if (zix_btree_iter_is_end(cur)) {
-    zix_btree_iter_free(cur);
     return NULL;
   }
 
   const SerdStatement* const key = (const SerdStatement*)zix_btree_get(cur);
   if (!key || (mode == RANGE && !serd_statement_matches_quad(key, pat))) {
-    zix_btree_iter_free(cur);
     return NULL;
   }
 
@@ -493,12 +468,18 @@ serd_model_range(const SerdModel* const model,
                           serd_iter_copy(serd_model_end(model)));
   }
 
+  ZixBTreeIter end_cur = {0}; // FIXME
+
   SerdIter* begin = serd_model_find(model, s, p, o, g);
-  SerdIter* end =
-    begin
-      ? serd_iter_new(
-          model, NULL, begin->pat, begin->order, begin->mode, begin->n_prefix)
-      : NULL;
+
+  SerdIter* end = begin ? serd_iter_new(model,
+                                        end_cur,
+                                        begin->pat,
+                                        begin->order,
+                                        begin->mode,
+                                        begin->n_prefix)
+                        : NULL;
+
   return serd_range_new(begin, end);
 }
 
@@ -545,7 +526,7 @@ serd_model_get_statement(const SerdModel* const model,
   }
 
   SerdIter* const i = serd_model_find(model, s, p, o, g);
-  if (i && i->cur) {
+  if (i && !zix_btree_iter_is_end(i->cur)) {
     const SerdStatement* statement = serd_iter_get(i);
     serd_iter_free(i);
     return statement;
@@ -609,6 +590,10 @@ serd_model_add_internal(SerdModel* const        model,
                         const SerdNode* const   g)
 {
   SerdStatement* statement = (SerdStatement*)calloc(1, sizeof(SerdStatement));
+
+  assert(s);
+  assert(p);
+  assert(o);
 
   statement->nodes[0] = s;
   statement->nodes[1] = p;
@@ -690,14 +675,41 @@ SerdStatus
 serd_model_erase(SerdModel* const model, SerdIter* const iter)
 {
   const SerdStatement* statement = serd_iter_get(iter);
+  SerdStatement*       removed   = NULL;
+  ZixStatus            zst       = ZIX_STATUS_SUCCESS;
 
-  SerdStatement* removed = NULL;
+  assert(statement);
+
+  // Erase from the index associated with this iterator
+  zst = zix_btree_remove(
+    model->indices[iter->order], statement, (void**)&removed, &iter->cur);
+
+  if (zst == ZIX_STATUS_NOT_FOUND) {
+    assert(!removed);
+    return SERD_FAILURE;
+  }
+
+  if (zst) {
+    return SERD_ERR_INTERNAL;
+  }
+
+  assert(removed);
+  assert(removed == statement);
+
   for (int i = SERD_ORDER_SPO; i <= SERD_ORDER_GPOS; ++i) {
-    if (model->indices[i]) {
-      zix_btree_remove(model->indices[i],
-                       statement,
-                       (void**)&removed,
-                       i == (int)iter->order ? &iter->cur : NULL);
+    if (model->indices[i] && i != (int)iter->order) {
+      SerdStatement* index_removed = NULL;
+      ZixBTreeIter   next          = {0}; // FIXME
+
+      zst = zix_btree_remove(
+        model->indices[i], statement, (void**)&index_removed, &next);
+
+      if (zst && zst != ZIX_STATUS_NOT_FOUND) {
+        return SERD_ERR_INTERNAL;
+      }
+
+      // FIXME removing triples from graph indices does this
+      //      assert(!index_removed || index_removed == removed);
     }
   }
   serd_iter_scan_next(iter);

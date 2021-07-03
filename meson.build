@@ -93,6 +93,7 @@ sources = [
   'src/byte_sink.c',
   'src/byte_source.c',
   'src/canon.c',
+  'src/compare.c',
   'src/cursor.c',
   'src/env.c',
   'src/filter.c',
