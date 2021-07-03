@@ -48,7 +48,7 @@ struct SerdIterImpl {
 
 /**
    Quads of indices for each order, from most to least significant
-   (array indexed by SordOrder)
+   (array indexed by SerdStatementOrder)
 */
 static const int orderings[NUM_ORDERS][TUP_LEN] = {
   {0, 1, 2, 3},
