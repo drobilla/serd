@@ -64,7 +64,7 @@ serd_iter_seek_match(SerdIter* const iter, const SerdQuad pat)
     }
   }
 
-  assert(zix_btree_iter_is_end(&iter->cur));
+  assert(zix_btree_iter_is_end(iter->cur));
   return true; // Reached end of index
 }
 
@@ -99,9 +99,9 @@ serd_iter_new(const SerdModel* const   model,
   switch (iter->mode) {
   case ALL:
   case RANGE:
-    assert(zix_btree_iter_is_end(&iter->cur) ||
+    assert(zix_btree_iter_is_end(iter->cur) ||
            serd_statement_matches_quad(
-             ((const SerdStatement*)zix_btree_get(&iter->cur)), pat));
+             ((const SerdStatement*)zix_btree_get(iter->cur)), pat));
     break;
   case FILTER_RANGE:
   case FILTER_ALL:
