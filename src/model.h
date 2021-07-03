@@ -25,7 +25,7 @@
 struct SerdModelImpl {
   SerdWorld*     world;       ///< World this model is a part of
   SerdNodes*     nodes;       ///< Interned nodes in this model
-  ZixBTree*      indices[12]; ///< Trees of SordQuad
+  ZixBTree*      indices[12]; ///< Trees of SerdStatement pointers
   SerdIter*      end;         ///< End iterator (always the same)
   uint64_t       version;     ///< Version incremented on every change
   SerdModelFlags flags;       ///< Active indices and features
