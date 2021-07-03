@@ -22,7 +22,7 @@
 /// Compare statements lexicographically, ignoring graph
 SERD_PURE_FUNC
 int
-serd_triple_compare(const void* x, const void* y, void* user_data);
+serd_triple_compare(const void* x, const void* y, const void* user_data);
 
 /**
    Compare statments with statement patterns lexicographically, ignoring graph.
@@ -32,12 +32,14 @@ serd_triple_compare(const void* x, const void* y, void* user_data);
 */
 SERD_PURE_FUNC
 int
-serd_triple_compare_pattern(const void* x, const void* y, void* user_data);
+serd_triple_compare_pattern(const void* x,
+                            const void* y,
+                            const void* user_data);
 
 /// Compare statements lexicographically
 SERD_PURE_FUNC
 int
-serd_quad_compare(const void* x, const void* y, void* user_data);
+serd_quad_compare(const void* x, const void* y, const void* user_data);
 
 /**
    Compare statments with statement patterns lexicographically.
@@ -47,6 +49,6 @@ serd_quad_compare(const void* x, const void* y, void* user_data);
 */
 SERD_PURE_FUNC
 int
-serd_quad_compare_pattern(const void* x, const void* y, void* user_data);
+serd_quad_compare_pattern(const void* x, const void* y, const void* user_data);
 
 #endif // SERD_COMPARE_H

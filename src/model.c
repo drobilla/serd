@@ -96,6 +96,68 @@ static const SerdIterLens partial_lenses[] = {
   [0x1111] = {ALL, 0u, 0u, {}},
 };
 
+static ZixBTree*
+serd_model_default_index(SerdModel* const model)
+{
+  return model->indices[SERD_ORDER_GSPO] ? model->indices[SERD_ORDER_GSPO]
+                                         : model->indices[SERD_ORDER_SPO];
+}
+
+static ZixComparator
+serd_model_comparator(const SerdModel* const   model,
+                      const SerdStatementOrder order)
+{
+  (void)model;
+
+  return serd_quad_compare;
+  return (ZixComparator)(order < SERD_ORDER_GSPO ? serd_triple_compare
+                                                 : serd_quad_compare);
+}
+
+static SerdStatus
+serd_model_add_index(SerdModel* const model, const SerdStatementOrder order)
+{
+  if (model->indices[order]) {
+    return SERD_FAILURE;
+  }
+
+  //  ZixBTree* const     index      = model->indices[order];
+  const int* const    ordering   = orderings[order];
+  const ZixComparator comparator = serd_model_comparator(model, order);
+
+  if (!(model->indices[order] = zix_btree_new(comparator, ordering))) {
+    return SERD_ERR_INTERNAL;
+  }
+
+  ZixBTree* const default_index = serd_model_default_index(model);
+
+  if (false) { // TODO
+    for (ZixBTreeIter i = zix_btree_begin(default_index);
+         !zix_btree_iter_is_end(i);
+         zix_btree_iter_increment(&i)) {
+      zix_btree_insert(model->indices[order], zix_btree_get(i));
+    }
+  }
+
+  return SERD_SUCCESS;
+}
+
+static SerdStatus
+serd_model_drop_index(SerdModel* const model, const SerdStatementOrder order)
+{
+  if (!model->indices[order]) {
+    return SERD_FAILURE;
+  }
+
+  if (model->indices[order] == serd_model_default_index(model)) {
+    return SERD_ERR_BAD_CALL;
+  }
+
+  zix_btree_free(model->indices[order], NULL);
+  model->indices[order] = NULL;
+  return SERD_SUCCESS;
+}
+
 SerdModel*
 serd_model_new(SerdWorld* const world, const SerdModelFlags flags)
 {
@@ -106,12 +168,14 @@ serd_model_new(SerdWorld* const world, const SerdModelFlags flags)
   model->flags = flags | SERD_INDEX_SPO; // SPO index is mandatory
 
   for (unsigned i = 0; i < (NUM_ORDERS / 2); ++i) {
-    const int* const ordering   = orderings[i];
-    const int* const g_ordering = orderings[i + (NUM_ORDERS / 2)];
+    const SerdStatementOrder order = (SerdStatementOrder)i;
 
     if (model->flags & (1u << i)) {
-      model->indices[i] = zix_btree_new((ZixComparator)serd_triple_compare,
-                                        (const void*)ordering);
+      const int* const    ordering   = orderings[i];
+      const int* const    g_ordering = orderings[i + (NUM_ORDERS / 2)];
+      const ZixComparator comparator = serd_model_comparator(model, order);
+
+      model->indices[i] = zix_btree_new(comparator, ordering);
 
       if (model->flags & SERD_INDEX_GRAPHS) {
         model->indices[i + (NUM_ORDERS / 2)] = zix_btree_new(

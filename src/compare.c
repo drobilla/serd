@@ -53,7 +53,7 @@ serd_node_wildcard_compare(const SerdNode* SERD_NONNULL  a,
 int
 serd_triple_compare(const void* const x,
                     const void* const y,
-                    void* const       user_data)
+                    const void* const user_data)
 {
   const int* const           ordering = (const int*)user_data;
   const SerdStatement* const s        = (const SerdStatement*)x;
@@ -91,7 +91,7 @@ serd_triple_compare(const void* const x,
 int
 serd_triple_compare_pattern(const void* const x,
                             const void* const y,
-                            void* const       user_data)
+                            const void* const user_data)
 {
   const int* const           ordering = (const int*)user_data;
   const SerdStatement* const s        = (const SerdStatement*)x;
@@ -153,11 +153,26 @@ serd_node_graph_compare(const SerdNode* SERD_NULLABLE a,
 int
 serd_quad_compare(const void* const x,
                   const void* const y,
-                  void* const       user_data)
+                  const void* const user_data)
 {
   const int* const           ordering = (const int*)user_data;
   const SerdStatement* const s        = (const SerdStatement*)x;
   const SerdStatement* const t        = (const SerdStatement*)y;
+
+  // Test the rest of the ordering
+  for (unsigned i = 0u; i < 4u; ++i) {
+    const int o = ordering[i];
+    const int c =
+      (o == SERD_GRAPH)
+        ? serd_node_graph_compare(s->nodes[SERD_GRAPH], t->nodes[SERD_GRAPH])
+        : serd_node_compare(s->nodes[o], t->nodes[o]);
+
+    if (c) {
+      return c;
+    }
+  }
+
+  return 0;
 
   assert(ordering[0] == SERD_GRAPH);
 
@@ -203,7 +218,7 @@ serd_quad_compare(const void* const x,
 int
 serd_quad_compare_pattern(const void* const x,
                           const void* const y,
-                          void* const       user_data)
+                          const void* const user_data)
 {
   const int* const           ordering = (const int*)user_data;
   const SerdStatement* const s        = (const SerdStatement*)x;
