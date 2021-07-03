@@ -410,12 +410,12 @@ serd_model_find(const SerdModel* const model,
   const SerdStatementOrder index_order =
     serd_model_best_index(model, pat, &mode, &n_prefix);
 
-  ZixBTree* const db  = model->indices[index_order];
-  ZixBTreeIter    cur = zix_btree_end(db);
+  ZixBTree* const index = model->indices[index_order];
+  ZixBTreeIter    cur   = zix_btree_end(index);
 
   if (mode == FILTER_ALL) {
     // No prefix shared with an index at all, linear search (worst case)
-    cur = zix_btree_begin(db);
+    cur = zix_btree_begin(index);
   } else if (mode == FILTER_RANGE) {
     /* Some prefix, but filtering still required.  Build a search pattern
        with only the prefix to find the lower bound in log time. */
@@ -425,7 +425,7 @@ serd_model_find(const SerdModel* const model,
       prefix_pat[ordering[i]] = pat[ordering[i]];
     }
 
-    zix_btree_lower_bound(db,
+    zix_btree_lower_bound(index,
                           index_order < SERD_ORDER_GSPO
                             ? (ZixComparator)serd_triple_compare_pattern
                             : (ZixComparator)serd_quad_compare_pattern,
@@ -435,7 +435,7 @@ serd_model_find(const SerdModel* const model,
 
   } else {
     // Ideal case, pattern matches an index with no filtering required
-    zix_btree_lower_bound(db,
+    zix_btree_lower_bound(index,
                           index_order < SERD_ORDER_GSPO
                             ? (ZixComparator)serd_triple_compare_pattern
                             : (ZixComparator)serd_quad_compare_pattern,
