@@ -23,6 +23,7 @@
 
 #include <assert.h>
 
+/// Compare a mandatory node with a node pattern
 static inline int
 serd_node_wildcard_compare(const SerdNode* SERD_NONNULL  a,
                            const SerdNode* SERD_NULLABLE b)
@@ -31,23 +32,25 @@ serd_node_wildcard_compare(const SerdNode* SERD_NONNULL  a,
   return b ? serd_node_compare(a, b) : 0;
 }
 
-/* int */
-/* serd_node_compare(const SerdNode* const a, const SerdNode* const b) */
-/* { */
-/*   assert(a); */
-/*   assert(b); */
+/// Compare an optional graph node with a node pattern
+static inline int
+serd_node_graph_compare(const SerdNode* SERD_NULLABLE a,
+                        const SerdNode* SERD_NULLABLE b)
+{
+  if (a == b) {
+    return 0;
+  }
 
-/*   int cmp = 0; */
-/*   if ((cmp = ((int)a->type - (int)b->type)) || */
-/*       (cmp = strcmp(serd_node_string(a), serd_node_string(b))) || */
-/*       (cmp = (int)a->flags - (int)b->flags)) { */
-/*     return cmp; */
-/*   } */
+  if (!a) {
+    return -1;
+  }
 
-/*   return a->flags ? serd_node_compare(serd_node_meta_c(a),
- * serd_node_meta_c(b)) */
-/*                   : 0; */
-/* } */
+  if (!b) {
+    return 1;
+  }
+
+  return serd_node_compare(a, b);
+}
 
 /// Compare statements lexicographically, ignoring graph
 int
@@ -130,25 +133,6 @@ serd_triple_compare_pattern(const void* const x,
   return 0;
 }
 
-static inline int
-serd_node_graph_compare(const SerdNode* SERD_NULLABLE a,
-                        const SerdNode* SERD_NULLABLE b)
-{
-  if (a == b) {
-    return 0;
-  }
-
-  if (!a) {
-    return -1;
-  }
-
-  if (!b) {
-    return 1;
-  }
-
-  return serd_node_compare(a, b);
-}
-
 /// Compare statements lexicographically
 int
 serd_quad_compare(const void* const x,
@@ -159,7 +143,6 @@ serd_quad_compare(const void* const x,
   const SerdStatement* const s        = (const SerdStatement*)x;
   const SerdStatement* const t        = (const SerdStatement*)y;
 
-  // Test the rest of the ordering
   for (unsigned i = 0u; i < 4u; ++i) {
     const int o = ordering[i];
     const int c =
@@ -168,40 +151,6 @@ serd_quad_compare(const void* const x,
         : serd_node_compare(s->nodes[o], t->nodes[o]);
 
     if (c) {
-      return c;
-    }
-  }
-
-  return 0;
-
-  assert(ordering[0] == SERD_GRAPH);
-
-  // First test the graph, which is always first here and may be null
-  int c = serd_node_graph_compare(s->nodes[SERD_GRAPH], t->nodes[SERD_GRAPH]);
-  if (c) {
-    return c;
-  }
-
-  /* fprintf( */
-  /*   stderr, */
-  /*   "QCMP %s %s %s %s\n    \t%s %s %s %s\n", */
-  /*   serd_node_string(serd_statement_subject(s)), */
-  /*   serd_node_string(serd_statement_predicate(s)), */
-  /*   serd_node_string(serd_statement_object(s)), */
-  /*   serd_statement_graph(s) ? serd_node_string(serd_statement_graph(s)) :
-   * "0", */
-  /*   serd_node_string(serd_statement_subject(t)), */
-  /*   serd_node_string(serd_statement_predicate(t)), */
-  /*   serd_node_string(serd_statement_object(t)), */
-  /*   serd_statement_graph(t) ? serd_node_string(serd_statement_graph(t)) :
-   * "0"); */
-
-  // Test the rest of the ordering
-  for (unsigned i = 1u; i < 4u; ++i) {
-    const int o = ordering[i];
-    assert(o < 3);
-
-    if ((c = serd_node_compare(s->nodes[o], t->nodes[o]))) {
       return c;
     }
   }
@@ -224,44 +173,14 @@ serd_quad_compare_pattern(const void* const x,
   const SerdStatement* const s        = (const SerdStatement*)x;
   const SerdStatement* const t        = (const SerdStatement*)y;
 
-  assert(ordering[0] == SERD_GRAPH);
-
-  // First test the graph, which is always first here and may be null
-  int c = serd_node_graph_compare(s->nodes[SERD_GRAPH], t->nodes[SERD_GRAPH]);
-  if (c) {
-    return c;
-  }
-
-  /* fprintf( */
-  /*   stderr, */
-  /*   "QCMP* \t%s %s %s %s\n      \t%s %s %s %s\n", */
-  /*   serd_statement_subject(s) ? serd_node_string(serd_statement_subject(s))
-   */
-  /*                             : "*", */
-  /*   serd_statement_predicate(s) ?
-   * serd_node_string(serd_statement_predicate(s)) */
-  /*                               : "*", */
-  /*   serd_statement_object(s) ? serd_node_string(serd_statement_object(s)) :
-   * "*", */
-  /*   serd_statement_graph(s) ? serd_node_string(serd_statement_graph(s)) :
-   * "*", */
-  /*   serd_statement_subject(t) ? serd_node_string(serd_statement_subject(t))
-   */
-  /*                             : "*", */
-  /*   serd_statement_predicate(t) ?
-   * serd_node_string(serd_statement_predicate(t)) */
-  /*                               : "*", */
-  /*   serd_statement_object(t) ? serd_node_string(serd_statement_object(t)) :
-   * "*", */
-  /*   serd_statement_graph(t) ? serd_node_string(serd_statement_graph(t)) :
-   * "*"); */
-
-  // Test the rest of the ordering
-  for (unsigned i = 1u; i < 4u; ++i) {
+  for (unsigned i = 0u; i < 4u; ++i) {
     const int o = ordering[i];
-    assert(o < 3);
+    const int c =
+      (o == SERD_GRAPH)
+        ? serd_node_graph_compare(s->nodes[SERD_GRAPH], t->nodes[SERD_GRAPH])
+        : serd_node_wildcard_compare(s->nodes[o], t->nodes[o]);
 
-    if ((c = serd_node_wildcard_compare(s->nodes[o], t->nodes[o]))) {
+    if (c) {
       return c;
     }
   }

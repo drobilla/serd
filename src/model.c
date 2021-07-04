@@ -32,8 +32,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#define DEFAULT_ORDER SERD_ORDER_SPO
-#define DEFAULT_GRAPH_ORDER SERD_ORDER_GSPO
+#include <stdio.h>
 
 static const SerdQuad wildcard_pattern = {0, 0, 0, 0};
 
@@ -42,96 +41,76 @@ typedef struct {
   unsigned           n_prefix;
   unsigned           n_orders;
   SerdStatementOrder orders[2];
-} SerdIterLens;
+} SerdSearchStrategy;
 
-static const SerdIterLens perfect_lenses[] = {
-  [0x0000] = {ALL, 0u, 2u, {SERD_ORDER_GSPO, SERD_ORDER_SPO}},
-  [0x0001] = {RANGE, 0u, 1u, {SERD_ORDER_GSPO}},
-
-  [0x0010] = {RANGE, 1u, 2u, {SERD_ORDER_OPS, SERD_ORDER_OSP}},
-  [0x0011] = {RANGE, 2u, 2u, {SERD_ORDER_GOPS, SERD_ORDER_GOSP}},
-
-  [0x0100] = {RANGE, 1u, 2u, {SERD_ORDER_POS, SERD_ORDER_PSO}},
-  [0x0101] = {RANGE, 2u, 2u, {SERD_ORDER_GPOS, SERD_ORDER_GPSO}},
-
-  [0x0110] = {RANGE, 2u, 2u, {SERD_ORDER_OPS, SERD_ORDER_POS}},
-  [0x0111] = {RANGE, 3u, 2u, {SERD_ORDER_GOPS, SERD_ORDER_GPOS}},
-
-  [0x1000] = {RANGE, 1u, 2u, {SERD_ORDER_SPO, SERD_ORDER_SOP}},
-  [0x1001] = {RANGE, 2u, 2u, {SERD_ORDER_GSPO, SERD_ORDER_GSOP}},
-
-  [0x1010] = {RANGE, 2u, 2u, {SERD_ORDER_SOP, SERD_ORDER_OSP}},
-  [0x1011] = {RANGE, 3u, 2u, {SERD_ORDER_GSOP, SERD_ORDER_GOSP}},
-
-  [0x1100] = {RANGE, 2u, 2u, {SERD_ORDER_SPO, SERD_ORDER_PSO}},
-  [0x1101] = {RANGE, 3u, 2u, {SERD_ORDER_GSPO, SERD_ORDER_GPSO}},
-
-  [0x1110] = {RANGE, 3u, 2u, {SERD_ORDER_SPO, SERD_ORDER_OPS}},
-  [0x1111] = {RANGE, 4u, 2u, {SERD_ORDER_GSPO, SERD_ORDER_GOPS}},
-};
-
-static const SerdIterLens partial_lenses[] = {
-  [0x0000] = {ALL, 0u, 0u, {}},
-  [0x0001] = {ALL, 0u, 0u, {}},
-
-  [0x0010] = {ALL, 0u, 0u, {}},
-  [0x0011] = {FILTER_RANGE, 1u, 2u, {SERD_ORDER_GSPO, SERD_ORDER_GPOS}},
-
-  [0x0100] = {ALL, 0u, 0u, {}},
-  [0x0101] = {FILTER_RANGE, 1u, 2u, {SERD_ORDER_GSPO, SERD_ORDER_GOPS}},
-
-  [0x0110] = {FILTER_RANGE, 1u, 2u, {SERD_ORDER_OSP, SERD_ORDER_PSO}},
-  [0x0111] = {FILTER_RANGE, 2u, 2u, {SERD_ORDER_GOSP, SERD_ORDER_GPSO}},
-
-  [0x1000] = {ALL, 0u, 0u, {}},
-  [0x1001] = {FILTER_RANGE, 1u, 2u, {SERD_ORDER_GOPS, SERD_ORDER_GPSO}},
-
-  [0x1010] = {FILTER_RANGE, 1u, 2u, {SERD_ORDER_SPO, SERD_ORDER_OPS}},
-  [0x1011] = {FILTER_RANGE, 2u, 2u, {SERD_ORDER_GSPO, SERD_ORDER_GOPS}},
-
-  [0x1100] = {FILTER_RANGE, 1u, 2u, {SERD_ORDER_SOP, SERD_ORDER_POS}},
-  [0x1101] = {FILTER_RANGE, 2u, 2u, {SERD_ORDER_GSOP, SERD_ORDER_GPOS}},
-
-  [0x1110] = {ALL, 0u, 0u, {}},
-  [0x1111] = {ALL, 0u, 0u, {}},
-};
-
-static ZixBTree*
-serd_model_default_index(SerdModel* const model)
+static const char*
+serd_model_order_string(const SerdModel* const   model,
+                        const SerdStatementOrder order)
 {
-  return model->indices[SERD_ORDER_GSPO] ? model->indices[SERD_ORDER_GSPO]
-                                         : model->indices[SERD_ORDER_SPO];
+  static const char* const quad_order_strings[] = {
+    [SERD_ORDER_SPO]  = "S P O G",
+    [SERD_ORDER_SOP]  = "S O P G",
+    [SERD_ORDER_OPS]  = "O P S G",
+    [SERD_ORDER_OSP]  = "O S P G",
+    [SERD_ORDER_PSO]  = "P S O G",
+    [SERD_ORDER_POS]  = "P O S G",
+    [SERD_ORDER_GSPO] = "G S P O",
+    [SERD_ORDER_GSOP] = "G S O P",
+    [SERD_ORDER_GOPS] = "G O P S",
+    [SERD_ORDER_GOSP] = "G O S P",
+    [SERD_ORDER_GPSO] = "G P S O",
+    [SERD_ORDER_GPOS] = "G P O S",
+  };
+
+  static const char* const triple_order_strings[] = {
+    [SERD_ORDER_SPO] = "S P O",
+    [SERD_ORDER_SOP] = "S O P",
+    [SERD_ORDER_OPS] = "O P S",
+    [SERD_ORDER_OSP] = "O S P",
+    [SERD_ORDER_PSO] = "P S O",
+    [SERD_ORDER_POS] = "P O S",
+  };
+
+  return (order >= SERD_ORDER_GSPO || (model->flags & SERD_STORE_GRAPHS))
+           ? quad_order_strings[order]
+           : triple_order_strings[order];
 }
 
 static ZixComparator
-serd_model_comparator(const SerdModel* const   model,
-                      const SerdStatementOrder order)
+serd_model_index_comparator(const SerdModel* const   model,
+                            const SerdStatementOrder order)
 {
-  (void)model;
-
-  return serd_quad_compare;
-  return (ZixComparator)(order < SERD_ORDER_GSPO ? serd_triple_compare
-                                                 : serd_quad_compare);
+  return (order < SERD_ORDER_GSPO && !(model->flags & SERD_STORE_GRAPHS))
+           ? serd_triple_compare
+           : serd_quad_compare;
 }
 
-static SerdStatus
+static ZixComparator
+serd_model_pattern_comparator(const SerdModel* const   model,
+                              const SerdStatementOrder order)
+{
+  return (order < SERD_ORDER_GSPO && !(model->flags & SERD_STORE_GRAPHS))
+           ? serd_triple_compare_pattern
+           : serd_quad_compare_pattern;
+}
+
+SerdStatus
 serd_model_add_index(SerdModel* const model, const SerdStatementOrder order)
 {
   if (model->indices[order]) {
     return SERD_FAILURE;
   }
 
-  //  ZixBTree* const     index      = model->indices[order];
   const int* const    ordering   = orderings[order];
-  const ZixComparator comparator = serd_model_comparator(model, order);
-
+  const ZixComparator comparator = serd_model_index_comparator(model, order);
   if (!(model->indices[order] = zix_btree_new(comparator, ordering))) {
     return SERD_ERR_INTERNAL;
   }
 
-  ZixBTree* const default_index = serd_model_default_index(model);
+  if (order != model->default_order) {
+    ZixBTree* const default_index = model->indices[model->default_order];
 
-  if (false) { // TODO
+    // Insert statements from the default index
     for (ZixBTreeIter i = zix_btree_begin(default_index);
          !zix_btree_iter_is_end(i);
          zix_btree_iter_increment(&i)) {
@@ -142,14 +121,14 @@ serd_model_add_index(SerdModel* const model, const SerdStatementOrder order)
   return SERD_SUCCESS;
 }
 
-static SerdStatus
+SerdStatus
 serd_model_drop_index(SerdModel* const model, const SerdStatementOrder order)
 {
   if (!model->indices[order]) {
     return SERD_FAILURE;
   }
 
-  if (model->indices[order] == serd_model_default_index(model)) {
+  if (order == model->default_order) {
     return SERD_ERR_BAD_CALL;
   }
 
@@ -159,39 +138,24 @@ serd_model_drop_index(SerdModel* const model, const SerdStatementOrder order)
 }
 
 SerdModel*
-serd_model_new(SerdWorld* const world, const SerdModelFlags flags)
+serd_model_new(SerdWorld* const         world,
+               const SerdStatementOrder default_order,
+               const SerdModelFlags     flags)
 {
   SerdModel* model = (SerdModel*)calloc(1, sizeof(struct SerdModelImpl));
 
-  model->world = world;
-  model->nodes = serd_nodes_new();
-  model->flags = flags | SERD_INDEX_SPO; // SPO index is mandatory
+  model->world         = world;
+  model->nodes         = serd_nodes_new();
+  model->default_order = default_order;
+  model->flags         = flags;
 
-  for (unsigned i = 0; i < (NUM_ORDERS / 2); ++i) {
-    const SerdStatementOrder order = (SerdStatementOrder)i;
-
-    if (model->flags & (1u << i)) {
-      const int* const    ordering   = orderings[i];
-      const int* const    g_ordering = orderings[i + (NUM_ORDERS / 2)];
-      const ZixComparator comparator = serd_model_comparator(model, order);
-
-      model->indices[i] = zix_btree_new(comparator, ordering);
-
-      if (model->flags & SERD_INDEX_GRAPHS) {
-        model->indices[i + (NUM_ORDERS / 2)] = zix_btree_new(
-          (ZixComparator)serd_quad_compare, (const void*)g_ordering);
-      }
-    }
-  }
+  serd_model_add_index(model, default_order);
 
   // Create end iterator
-  const SerdStatementOrder order =
-    model->indices[SERD_ORDER_GSPO] ? SERD_ORDER_GSPO : SERD_ORDER_SPO;
-
-  ZixBTreeIter   cur = zix_btree_end(model->indices[order]);
+  ZixBTreeIter   cur = zix_btree_end(model->indices[default_order]);
   const SerdQuad pat = {0, 0, 0, 0};
 
-  model->end = serd_iter_new(model, cur, pat, order, ALL, 0);
+  model->end = serd_iter_new(model, cur, pat, default_order, ALL, 0);
 
   return model;
 }
@@ -203,7 +167,8 @@ serd_model_copy(const SerdModel* const model)
     return NULL;
   }
 
-  SerdModel* copy = serd_model_new(model->world, model->flags);
+  SerdModel* copy =
+    serd_model_new(model->world, model->default_order, model->flags);
 
   SerdRange* all = serd_model_all(model);
   serd_model_add_range(copy, all);
@@ -214,7 +179,6 @@ serd_model_copy(const SerdModel* const model)
   return copy;
 }
 
-SERD_API
 bool
 serd_model_equals(const SerdModel* const a, const SerdModel* const b)
 {
@@ -275,21 +239,11 @@ serd_model_free(SerdModel* const model)
 
   serd_iter_free(model->end);
 
-  ZixBTree* const main_index =
-    model->indices[model->indices[DEFAULT_GRAPH_ORDER] ? DEFAULT_GRAPH_ORDER
-                                                       : DEFAULT_ORDER];
+  // Free all statements (which are owned by the default index)
+  ZixBTree* const default_index = model->indices[model->default_order];
+  zix_btree_clear(default_index, (ZixDestroyFunc)serd_statement_free);
 
-  // Free statements from main index
-  zix_btree_clear(main_index, (ZixDestroyFunc)serd_statement_free);
-
-#if 0
-  ZixBTreeIter t = zix_btree_begin(index);
-  for (; !zix_btree_iter_is_end(t); zix_btree_iter_increment(&t)) {
-    serd_statement_free((SerdStatement*)zix_btree_get(t));
-  }
-#endif
-
-  // Free indices
+  // Free indices themselves
   for (unsigned o = 0; o < NUM_ORDERS; ++o) {
     if (model->indices[o]) {
       zix_btree_free(model->indices[o], NULL);
@@ -321,9 +275,7 @@ serd_model_flags(const SerdModel* const model)
 size_t
 serd_model_size(const SerdModel* const model)
 {
-  const SerdStatementOrder order =
-    model->indices[SERD_ORDER_GSPO] ? SERD_ORDER_GSPO : SERD_ORDER_SPO;
-  return zix_btree_size(model->indices[order]);
+  return zix_btree_size(model->indices[model->default_order]);
 }
 
 bool
@@ -332,20 +284,46 @@ serd_model_empty(const SerdModel* const model)
   return serd_model_size(model) == 0;
 }
 
+static void
+log_bad_index(const SerdModel* const   model,
+              const char* const        description,
+              const SerdStatementOrder index_order,
+              const bool               s,
+              const bool               p,
+              const bool               o,
+              const bool               g)
+{
+  serd_world_logf_internal(model->world,
+                           SERD_ERR_BAD_INDEX,
+                           SERD_LOG_LEVEL_WARNING,
+                           NULL,
+                           "%s index (%s) for (%s %s %s%s) query",
+                           description,
+                           serd_model_order_string(model, index_order),
+                           s ? "S" : "?",
+                           p ? "P" : "?",
+                           o ? "O" : "?",
+                           (model->flags & SERD_STORE_GRAPHS) ? g ? " G" : " ?"
+                                                              : "");
+}
+
 // FIXME : expose
 
 static SerdIter*
 serd_model_begin_ordered(const SerdModel* const   model,
                          const SerdStatementOrder order)
 {
-  return model->indices[order]
-           ? serd_iter_new(model,
-                           zix_btree_begin(model->indices[order]),
-                           wildcard_pattern,
-                           order,
-                           ALL,
-                           0)
-           : NULL;
+  if (!model->indices[order]) {
+    log_bad_index(model, "missing", order, false, false, false, false);
+    return NULL;
+  }
+
+  return serd_iter_new(model,
+                       zix_btree_begin(model->indices[order]),
+                       wildcard_pattern,
+                       order,
+                       ALL,
+                       0);
 }
 
 static SerdIter*
@@ -369,12 +347,9 @@ serd_model_begin(const SerdModel* const model)
     return serd_iter_copy(serd_model_end(model));
   }
 
-  const SerdStatementOrder order =
-    model->indices[SERD_ORDER_GSPO] ? SERD_ORDER_GSPO : SERD_ORDER_SPO;
-
-  ZixBTreeIter   cur = zix_btree_begin(model->indices[order]);
+  ZixBTreeIter   cur = zix_btree_begin(model->indices[model->default_order]);
   const SerdQuad pat = {0, 0, 0, 0};
-  return serd_iter_new(model, cur, pat, order, ALL, 0);
+  return serd_iter_new(model, cur, pat, model->default_order, ALL, 0);
 }
 
 const SerdIter*
@@ -393,32 +368,110 @@ serd_model_all(const SerdModel* const model)
 SerdRange*
 serd_model_ordered(const SerdModel* const model, const SerdStatementOrder order)
 {
-  const SerdStatementOrder real_order =
-    (order >= SERD_ORDER_GSPO && !(model->flags & SERD_INDEX_GRAPHS))
-      ? (SerdStatementOrder)(order - SERD_ORDER_GSPO)
-      : order;
-
-  if (!model->indices[real_order]) {
+  if (!model->indices[order]) {
+    log_bad_index(model, "missing", order, false, false, false, false);
     return NULL;
   }
 
-  return serd_range_new(serd_model_begin_ordered(model, real_order),
-                        serd_model_end_ordered(model, real_order));
+  return serd_range_new(serd_model_begin_ordered(model, order),
+                        serd_model_end_ordered(model, order));
 }
 
 static bool
-serd_model_supports_lens(const SerdModel* const    model,
-                         const SerdIterLens        lens,
-                         SerdStatementOrder* const order)
+serd_model_adopt_strategy(const SerdModel* const model,
+                          const bool             with_graph,
+                          SerdSearchStrategy*    strategy)
 {
-  for (unsigned i = 0u; i < lens.n_orders; ++i) {
-    if (model->indices[lens.orders[i]]) {
-      *order = lens.orders[i];
+  for (unsigned i = 0u; i < strategy->n_orders; ++i) {
+    assert(!with_graph || strategy->orders[i] < SERD_ORDER_GSPO);
+
+    const SerdStatementOrder quad_order =
+      with_graph ? (strategy->orders[i] + 6u) : strategy->orders[i];
+
+    if (model->indices[quad_order]) {
+      strategy->orders[0] = quad_order;
       return true;
     }
   }
 
   return false;
+}
+
+/// Return the best search strategy, with orders[0] set to an available index
+static SerdSearchStrategy
+serd_model_strategy(const SerdModel* const model,
+                    const SerdNode* const  s,
+                    const SerdNode* const  p,
+                    const SerdNode* const  o,
+                    const SerdNode* const  g)
+{
+  const SerdSearchStrategy perfect_triple_strategies[] = {
+    [0x000] = {ALL, 0u, 0u, {}},
+    [0x001] = {RANGE, 1u, 2u, {SERD_ORDER_OPS, SERD_ORDER_OSP}},
+    [0x010] = {RANGE, 1u, 2u, {SERD_ORDER_PSO, SERD_ORDER_POS}},
+    [0x011] = {RANGE, 2u, 2u, {SERD_ORDER_OPS, SERD_ORDER_POS}},
+    [0x100] = {RANGE, 1u, 2u, {SERD_ORDER_SPO, SERD_ORDER_SOP}},
+    [0x101] = {RANGE, 2u, 2u, {SERD_ORDER_SOP, SERD_ORDER_OSP}},
+    [0x110] = {RANGE, 2u, 2u, {SERD_ORDER_SPO, SERD_ORDER_PSO}},
+    [0x111] = {RANGE, 3u, 2u, {model->default_order, SERD_ORDER_SPO}},
+  };
+
+  const SerdSearchStrategy partial_triple_strategies[] = {
+    [0x000] = {ALL, 0u, 0u, {}},
+    [0x001] = {ALL, 0u, 0u, {}},
+    [0x010] = {ALL, 0u, 0u, {}},
+    [0x011] = {FILTER_RANGE, 1u, 2u, {SERD_ORDER_OSP, SERD_ORDER_PSO}},
+    [0x100] = {ALL, 0u, 0u, {}},
+    [0x101] = {FILTER_RANGE, 1u, 2u, {SERD_ORDER_SPO, SERD_ORDER_OPS}},
+    [0x110] = {FILTER_RANGE, 1u, 2u, {SERD_ORDER_SOP, SERD_ORDER_POS}},
+    [0x111] = {ALL, 0u, 0u, {}},
+  };
+
+  // Build a hex signature for this pattern: SPO, 1 if a node is given
+  const unsigned sig = ((s ? 1u : 0u) * 0x100 + //
+                        (p ? 1u : 0u) * 0x010 + //
+                        (o ? 1u : 0u) * 0x001);
+
+  // If this is a total wildcard search, scan the whole default order
+  if (sig == 0x000 && !g) {
+    SerdSearchStrategy all = {ALL, 0u, 0u, {model->default_order}};
+    return all;
+  }
+
+  // If this is an exact triple search, just use the default order
+  if (sig == 0x111) {
+    const unsigned     n_prefix = g ? 4u : 3u;
+    SerdSearchStrategy exact    = {RANGE, n_prefix, 1, {model->default_order}};
+    return exact;
+  }
+
+  // Try to use a perfect strategy
+  SerdSearchStrategy perfect = perfect_triple_strategies[sig];
+  if (serd_model_adopt_strategy(model, g, &perfect)) {
+    return perfect;
+  }
+
+  // No perfect index, try to use a partial strategy with filtering
+  SerdSearchStrategy partial = partial_triple_strategies[sig];
+  if (serd_model_adopt_strategy(model, g, &partial)) {
+    return partial;
+  }
+
+  // Indices don't help with the triple at all, try to at least find a graph
+  if (g) {
+    for (unsigned i = SERD_ORDER_GSPO; i <= SERD_ORDER_GPOS; ++i) {
+      if (model->indices[i]) {
+        const SearchMode         mode     = sig == 0x000 ? RANGE : FILTER_RANGE;
+        const SerdSearchStrategy strategy = {mode, 1u, 1u, {i}};
+
+        return strategy;
+      }
+    }
+  }
+
+  // All is lost, regress to linear search
+  SerdSearchStrategy linear = {FILTER_ALL, 0u, 1u, {model->default_order}};
+  return linear;
 }
 
 SerdIter*
@@ -428,79 +481,54 @@ serd_model_find(const SerdModel* const model,
                 const SerdNode* const  o,
                 const SerdNode* const  g)
 {
-  // Build a 4-bit signature for this pattern: SPOG, set if a node is given
-  const SerdQuad pat = {s, p, o, g};
-  const unsigned sig = ((pat[0] ? 1u : 0u) * 0x1000 + //
-                        (pat[1] ? 1u : 0u) * 0x0100 + //
-                        (pat[2] ? 1u : 0u) * 0x0010 + //
-                        (pat[3] ? 1u : 0u) * 0x0001);
+  const SerdQuad           pattern  = {s, p, o, g};
+  const SerdSearchStrategy strategy = serd_model_strategy(model, s, p, o, g);
+  const SerdStatementOrder order    = strategy.orders[0];
+  ZixBTree* const          index    = model->indices[order];
 
-  // Grab perfect and partial lenses to try from the tables
-  const SerdIterLens perfect = perfect_lenses[sig];
-  const SerdIterLens partial = partial_lenses[sig];
-
-  if (sig == 0x0000) {
+  if (strategy.mode == ALL) {
+    // Total wildcard query, start at the beginning
     return serd_model_begin(model);
   }
 
-  SerdStatementOrder index_order = SERD_ORDER_SPO;
-  SerdIterLens       lens        = {FILTER_ALL, 0u, 1u, {index_order}};
-
-  if (serd_model_supports_lens(model, perfect, &index_order)) {
-    lens = perfect;
-  } else if (serd_model_supports_lens(model, partial, &index_order)) {
-    lens = partial;
-  } else if (pat[3]) {
-    lens.mode   = FILTER_RANGE;
-    index_order = SERD_ORDER_GSPO;
+  if (strategy.mode == FILTER_ALL) {
+    // Worst case scenario, linear search of a useless index with filtering
+    log_bad_index(model, "using linear", order, s, p, o, g);
+    return serd_iter_new(
+      model, zix_btree_begin(index), pattern, order, FILTER_ALL, 0);
   }
 
-  ZixBTree* const index = model->indices[index_order];
-  ZixBTreeIter    cur   = zix_btree_end(index);
-
-  assert(index); // FIXME?
-
-  if (lens.mode == ALL || lens.mode == FILTER_ALL) {
-    // No prefix shared with an index at all, linear search (worst case)
-    cur = zix_btree_begin(index);
-  } else if (lens.mode == FILTER_RANGE) {
-    /* Some prefix, but filtering still required.  Build a search pattern
-       with only the prefix to find the lower bound in log time. */
-    SerdQuad         prefix_pat = {NULL, NULL, NULL, NULL};
-    const int* const ordering   = orderings[index_order];
-    for (unsigned i = 0u; i < lens.n_prefix; ++i) {
-      prefix_pat[ordering[i]] = pat[ordering[i]];
-    }
-
-    zix_btree_lower_bound(index,
-                          index_order < SERD_ORDER_GSPO
-                            ? (ZixComparator)serd_triple_compare_pattern
-                            : (ZixComparator)serd_quad_compare_pattern,
-                          ordering,
-                          prefix_pat,
-                          &cur);
-
-  } else {
-    // Ideal case, pattern matches an index with no filtering required
-    zix_btree_lower_bound(index,
-                          index_order < SERD_ORDER_GSPO
-                            ? (ZixComparator)serd_triple_compare_pattern
-                            : (ZixComparator)serd_quad_compare_pattern,
-                          orderings[index_order],
-                          pat,
-                          &cur);
+  if (strategy.mode == FILTER_RANGE) {
+    // Index can constrain to some prefix, but filtering is still required
+    log_bad_index(model, "using prefix", order, s, p, o, g);
   }
+
+  // Working within a range in some index, find the first statement in it
+  ZixBTreeIter cur = zix_btree_end_iter;
+  zix_btree_lower_bound(index,
+                        serd_model_pattern_comparator(model, order),
+                        orderings[order],
+                        pattern,
+                        &cur);
 
   if (zix_btree_iter_is_end(cur)) {
     return NULL;
   }
 
-  const SerdStatement* const key = (const SerdStatement*)zix_btree_get(cur);
-  if (!key || (lens.mode == RANGE && !serd_statement_matches_quad(key, pat))) {
+  const SerdStatement* const first = (const SerdStatement*)zix_btree_get(cur);
+  for (unsigned i = 0u; i < strategy.n_prefix; ++i) {
+    const int field = orderings[order][i];
+    if (!serd_node_pattern_match(first->nodes[field], pattern[field])) {
+      return NULL;
+    }
+  }
+
+  if (strategy.mode == RANGE && !serd_statement_matches_quad(first, pattern)) {
     return NULL;
   }
 
-  return serd_iter_new(model, cur, pat, index_order, lens.mode, lens.n_prefix);
+  return serd_iter_new(
+    model, cur, pattern, order, strategy.mode, strategy.n_prefix);
 }
 
 SerdRange*
@@ -675,12 +703,6 @@ serd_model_add(SerdModel* const      model,
                const SerdNode* const o,
                const SerdNode* const g)
 {
-  if (!s || !p || !o) {
-    return SERD_LOG_ERROR(model->world,
-                          SERD_ERR_BAD_ARG,
-                          "attempt to add statement with NULL field");
-  }
-
   return serd_model_add_internal(model,
                                  NULL,
                                  serd_nodes_intern(model->nodes, s),

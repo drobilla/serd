@@ -33,6 +33,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <assert.h>
+
 #define SERDI_ERROR(msg) fprintf(stderr, "serdi: " msg)
 #define SERDI_ERRORF(fmt, ...) fprintf(stderr, "serdi: " fmt, __VA_ARGS__)
 
@@ -438,12 +440,40 @@ main(int argc, char** argv)
   SerdSink*       inserter = NULL;
   const SerdSink* out_sink = NULL;
   if (use_model) {
-    const SerdModelFlags flags =
-      SERD_INDEX_SPO | (input_has_graphs ? SERD_INDEX_GRAPHS : 0u) |
-      (no_inline ? 0u : SERD_INDEX_OPS) |
-      (validate ? (SERD_STORE_CURSORS | SERD_INDEX_POS) : 0u);
+    const SerdModelFlags flags = (input_has_graphs ? SERD_STORE_GRAPHS : 0u) |
+                                 (validate ? SERD_STORE_CURSORS : 0u);
 
-    model    = serd_model_new(world, flags);
+    model = serd_model_new(world, SERD_ORDER_SPO, flags);
+    if (input_has_graphs) {
+      serd_model_add_index(model, SERD_ORDER_GSPO);
+    }
+
+    /* serd_model_add_index(model, SERD_ORDER_SPO); */
+    /* serd_model_add_index(model, SERD_ORDER_SOP); */
+    /* serd_model_add_index(model, SERD_ORDER_OPS); */
+    /* serd_model_add_index(model, SERD_ORDER_OSP); */
+    /* serd_model_add_index(model, SERD_ORDER_PSO); */
+    /* serd_model_add_index(model, SERD_ORDER_POS); */
+    /* serd_model_add_index(model, SERD_ORDER_GSPO); */
+    /* serd_model_add_index(model, SERD_ORDER_GSOP); */
+    /* serd_model_add_index(model, SERD_ORDER_GOPS); */
+    /* serd_model_add_index(model, SERD_ORDER_GOSP); */
+    /* serd_model_add_index(model, SERD_ORDER_GPSO); */
+    /* serd_model_add_index(model, SERD_ORDER_GPOS); */
+
+    // FIXME: Move?
+
+    if (!no_inline) {
+      serd_model_add_index(model, SERD_ORDER_OPS);
+      if (input_has_graphs) {
+        serd_model_add_index(model, SERD_ORDER_GOPS);
+      }
+    }
+
+    if (validate) {
+      serd_model_add_index(model, SERD_ORDER_POS);
+    }
+
     inserter = serd_inserter_new(model, NULL);
     out_sink = inserter;
   } else {
@@ -553,11 +583,18 @@ main(int argc, char** argv)
 
   if (st <= SERD_FAILURE && use_model) {
     const SerdSink* writer_sink = serd_writer_sink(writer);
-    SerdRange*      range       = serd_model_ordered(model, SERD_ORDER_GSPO);
+    SerdRange*      range       = serd_model_ordered(
+      model, input_has_graphs ? SERD_ORDER_GSPO : SERD_ORDER_SPO);
 
     serd_env_write_prefixes(env, writer_sink);
 
-    st = serd_write_range(range, writer_sink, serialisation_flags);
+    st =
+      serd_write_range(range,
+                       writer_sink,
+                       serialisation_flags | (output_syntax == SERD_NTRIPLES ||
+                                              output_syntax == SERD_NQUADS)
+                         ? SERD_NO_INLINE_OBJECTS
+                         : 0u);
     serd_range_free(range);
   }
 

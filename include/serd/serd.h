@@ -208,6 +208,7 @@ typedef enum {
   SERD_ERR_BAD_CALL,   ///< Invalid call
   SERD_ERR_BAD_URI,    ///< Invalid or unresolved URI
   SERD_ERR_INVALID,    ///< Invalid data
+  SERD_ERR_BAD_INDEX,  ///< No optimal model index available
 } SerdStatus;
 
 /// Return a string describing a status code
@@ -2132,14 +2133,8 @@ typedef enum {
 
 /// Flags that control model storage and indexing
 typedef enum {
-  SERD_INDEX_SPO     = 1u << 0u, ///< Subject,   Predicate, Object
-  SERD_INDEX_SOP     = 1u << 1u, ///< Subject,   Object,    Predicate
-  SERD_INDEX_OPS     = 1u << 2u, ///< Object,    Predicate, Subject
-  SERD_INDEX_OSP     = 1u << 3u, ///< Object,    Subject,   Predicate
-  SERD_INDEX_PSO     = 1u << 4u, ///< Predicate, Subject,   Object
-  SERD_INDEX_POS     = 1u << 5u, ///< Predicate, Object,    Subject
-  SERD_INDEX_GRAPHS  = 1u << 6u, ///< Support multiple graphs in model
-  SERD_STORE_CURSORS = 1u << 7u, ///< Store original cursor of statements
+  SERD_STORE_GRAPHS  = 1u << 0u, ///< Store and index the graph of statements
+  SERD_STORE_CURSORS = 1u << 1u, ///< Store original cursor of statements
 } SerdModelFlag;
 
 /// Bitwise OR of SerdModelFlag values
@@ -2150,14 +2145,20 @@ typedef uint32_t SerdModelFlags;
 
    @param world The world in which to make this model.
 
-   @param flags Model options, including enabled indices, for example `SERD_SPO
-   | SERD_OPS`.  Be sure to enable an index where the most significant node(s)
-   are not variables in your queries.  For example, to make (? P O) queries,
-   enable either SERD_OPS or SERD_POS.
+   @param default_order The order for the default index, which is always
+   present and responsible for owning all the statements in the model.  This
+   should almost always be #SERD_ORDER_SPO or #SERD_ORDER_GSPO (which
+   support writing pretty documents), but advanced applications that do not want
+   either of these indices can use a different order.  Additional indices can
+   be added with serd_model_add_index() or serd_model_add_index_for().
+
+   @param flags Options that control what data is stored in the model.
 */
 SERD_API
 SerdModel* SERD_ALLOCATED
-serd_model_new(SerdWorld* SERD_NONNULL world, SerdModelFlags flags);
+serd_model_new(SerdWorld* SERD_NONNULL world,
+               SerdStatementOrder      default_order,
+               SerdModelFlags          flags);
 
 /// Return a deep copy of `model`
 SERD_API
@@ -2174,6 +2175,26 @@ serd_model_equals(const SerdModel* SERD_NULLABLE a,
 SERD_API
 void
 serd_model_free(SerdModel* SERD_NULLABLE model);
+
+/////////////
+
+SERD_API
+SerdStatus
+serd_model_add_index(SerdModel* SERD_NONNULL model, SerdStatementOrder order);
+
+SERD_API
+SerdStatus
+serd_model_drop_index(SerdModel* SERD_NONNULL model, SerdStatementOrder order);
+
+SERD_API
+SerdStatus
+serd_model_add_index_for(const SerdModel* SERD_NONNULL model,
+                         const SerdNode* SERD_NULLABLE s,
+                         const SerdNode* SERD_NULLABLE p,
+                         const SerdNode* SERD_NULLABLE o,
+                         const SerdNode* SERD_NULLABLE g);
+
+///////////////
 
 /// Get the world associated with `model`
 SERD_PURE_API
@@ -2304,9 +2325,9 @@ serd_model_count(const SerdModel* SERD_NONNULL model,
 SERD_API
 SerdStatus
 serd_model_add(SerdModel* SERD_NONNULL       model,
-               const SerdNode* SERD_NULLABLE s,
-               const SerdNode* SERD_NULLABLE p,
-               const SerdNode* SERD_NULLABLE o,
+               const SerdNode* SERD_NONNULL  s,
+               const SerdNode* SERD_NONNULL  p,
+               const SerdNode* SERD_NONNULL  o,
                const SerdNode* SERD_NULLABLE g);
 
 /**

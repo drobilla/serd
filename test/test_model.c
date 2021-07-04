@@ -61,6 +61,7 @@ generate(SerdWorld*      world,
          const SerdNode* graph)
 {
   SerdNodes* nodes = serd_world_nodes(world);
+  SerdStatus st    = SERD_SUCCESS;
 
   for (unsigned i = 0; i < n_quads; ++i) {
     unsigned num = (i * N_OBJECTS_PER) + 1U;
@@ -71,7 +72,8 @@ generate(SerdWorld*      world,
     }
 
     for (unsigned j = 0; j < N_OBJECTS_PER; ++j) {
-      assert(!serd_model_add(model, ids[0], ids[1], ids[2 + j], graph));
+      st = serd_model_add(model, ids[0], ids[1], ids[2 + j], graph);
+      assert(!st);
     }
   }
 
@@ -314,6 +316,23 @@ expected_error(void* handle, const SerdLogEntry* entry)
   return SERD_SUCCESS;
 }
 
+static SerdStatus
+ignore_index_error(void* handle, const SerdLogEntry* entry)
+{
+  (void)handle;
+
+  // FIXME: This seems questionable...
+  const char* const status_string =
+    serd_log_entry_get_field(entry, "SERD_STATUS");
+  if (!status_string || strcmp(status_string, "17")) {
+    fprintf(stderr, "unexpected: ");
+    vfprintf(stderr, entry->fmt, *entry->args);
+    fprintf(stderr, "\n");
+  }
+
+  return SERD_SUCCESS;
+}
+
 static int
 test_free_null(SerdWorld* world, const unsigned n_quads)
 {
@@ -329,7 +348,7 @@ test_get_world(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdModel* model = serd_model_new(world, SERD_INDEX_SPO);
+  SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0u);
   assert(serd_model_world(model) == world);
   serd_model_free(model);
   return 0;
@@ -340,9 +359,11 @@ test_get_flags(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  const SerdModelFlags flags = SERD_INDEX_OPS | SERD_INDEX_GRAPHS;
-  SerdModel*           model = serd_model_new(world, flags);
-  assert(serd_model_flags(model) == (SERD_INDEX_SPO | flags));
+  const SerdModelFlags flags = SERD_STORE_GRAPHS | SERD_STORE_CURSORS;
+  SerdModel*           model = serd_model_new(world, SERD_ORDER_SPO, flags);
+
+  assert(serd_model_flags(model) & SERD_STORE_GRAPHS);
+  assert(serd_model_flags(model) & SERD_STORE_CURSORS);
   serd_model_free(model);
   return 0;
 }
@@ -352,7 +373,7 @@ test_all_begin(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdModel* model = serd_model_new(world, SERD_INDEX_SPO);
+  SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0u);
   SerdRange* all   = serd_model_all(model);
   SerdIter*  begin = serd_model_find(model, NULL, NULL, NULL, NULL);
   assert(serd_iter_equals(serd_range_begin(all), begin));
@@ -365,31 +386,11 @@ test_all_begin(SerdWorld* world, const unsigned n_quads)
 }
 
 static int
-test_add_null(SerdWorld* world, const unsigned n_quads)
-{
-  (void)n_quads;
-
-  SerdModel* model = serd_model_new(world, SERD_INDEX_SPO);
-
-  serd_world_set_log_func(world, expected_error, NULL);
-
-  assert(serd_model_add(model, 0, 0, 0, 0));
-  assert(serd_model_add(model, uri(world, 1), 0, 0, 0));
-  assert(serd_model_add(model, uri(world, 1), uri(world, 2), 0, 0));
-  assert(serd_model_empty(model));
-
-  assert(serd_model_insert(model, NULL) == SERD_FAILURE);
-
-  serd_model_free(model);
-  return 0;
-}
-
-static int
 test_add_with_iterator(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdModel* model = serd_model_new(world, SERD_INDEX_SPO);
+  SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0u);
 
   serd_world_set_log_func(world, expected_error, NULL);
   assert(
@@ -414,7 +415,7 @@ test_add_remove_nodes(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdModel* model = serd_model_new(world, SERD_INDEX_SPO);
+  SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0u);
 
   assert(serd_model_nodes(model));
   assert(serd_nodes_size(serd_model_nodes(model)) == 0);
@@ -449,7 +450,7 @@ test_inserter(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdModel* model    = serd_model_new(world, SERD_INDEX_SPO);
+  SerdModel* model    = serd_model_new(world, SERD_ORDER_SPO, 0u);
   SerdSink*  inserter = serd_inserter_new(model, NULL);
 
   SerdNode* s     = serd_new_uri(SERD_STRING("http://example.org/s"));
@@ -476,7 +477,7 @@ test_erase_with_iterator(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdModel* model = serd_model_new(world, SERD_INDEX_SPO);
+  SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0u);
 
   serd_world_set_log_func(world, expected_error, NULL);
   assert(
@@ -510,7 +511,8 @@ test_add_erase(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdModel* model = serd_model_new(world, SERD_INDEX_SPO | SERD_INDEX_GRAPHS);
+  // FIXME: graphs?
+  SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, SERD_STORE_GRAPHS);
 
   // Add (s p "hello")
   const SerdNode* s     = uri(world, 1);
@@ -543,7 +545,7 @@ test_add_erase(SerdWorld* world, const unsigned n_quads)
 static int
 test_erase_all(SerdWorld* world, const unsigned n_quads)
 {
-  SerdModel* model = serd_model_new(world, SERD_INDEX_SPO);
+  SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0u);
   generate(world, model, n_quads, NULL);
 
   SerdIter* iter = serd_model_begin(model);
@@ -561,7 +563,7 @@ test_erase_all(SerdWorld* world, const unsigned n_quads)
 static int
 test_clear(SerdWorld* world, const unsigned n_quads)
 {
-  SerdModel* model = serd_model_new(world, SERD_INDEX_SPO);
+  SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0u);
   generate(world, model, n_quads, NULL);
 
   serd_model_clear(model);
@@ -574,7 +576,7 @@ test_clear(SerdWorld* world, const unsigned n_quads)
 static int
 test_copy(SerdWorld* world, const unsigned n_quads)
 {
-  SerdModel* model = serd_model_new(world, SERD_INDEX_SPO);
+  SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0u);
   generate(world, model, n_quads, NULL);
 
   SerdModel* copy = serd_model_copy(model);
@@ -588,7 +590,7 @@ test_copy(SerdWorld* world, const unsigned n_quads)
 static int
 test_equals(SerdWorld* world, const unsigned n_quads)
 {
-  SerdModel* model = serd_model_new(world, SERD_INDEX_SPO);
+  SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0u);
   generate(world, model, n_quads, NULL);
   serd_model_add(
     model, uri(world, 0), uri(world, 1), uri(world, 2), uri(world, 3));
@@ -597,10 +599,10 @@ test_equals(SerdWorld* world, const unsigned n_quads)
   assert(!serd_model_equals(NULL, model));
   assert(!serd_model_equals(model, NULL));
 
-  SerdModel* empty = serd_model_new(world, SERD_INDEX_SPO);
+  SerdModel* empty = serd_model_new(world, SERD_ORDER_SPO, 0u);
   assert(!serd_model_equals(model, empty));
 
-  SerdModel* different = serd_model_new(world, SERD_INDEX_SPO);
+  SerdModel* different = serd_model_new(world, SERD_ORDER_SPO, 0u);
   generate(world, different, n_quads, NULL);
   serd_model_add(
     different, uri(world, 1), uri(world, 1), uri(world, 2), uri(world, 3));
@@ -619,7 +621,7 @@ test_find_past_end(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdModel*      model = serd_model_new(world, SERD_INDEX_SPO);
+  SerdModel*      model = serd_model_new(world, SERD_ORDER_SPO, 0u);
   const SerdNode* s     = uri(world, 1);
   const SerdNode* p     = uri(world, 2);
   const SerdNode* o     = uri(world, 3);
@@ -638,7 +640,7 @@ test_find_past_end(SerdWorld* world, const unsigned n_quads)
 static int
 test_range(SerdWorld* world, const unsigned n_quads)
 {
-  SerdModel* model = serd_model_new(world, SERD_INDEX_SPO);
+  SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0u);
   generate(world, model, n_quads, NULL);
 
   SerdRange* range1 = serd_model_all(model);
@@ -673,7 +675,7 @@ test_iter_comparison(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdModel* model = serd_model_new(world, SERD_INDEX_SPO);
+  SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0u);
 
   assert(serd_iter_equals(serd_iter_copy(NULL), NULL));
 
@@ -701,8 +703,10 @@ test_iter_comparison(SerdWorld* world, const unsigned n_quads)
 static int
 test_triple_index_read(SerdWorld* world, const unsigned n_quads)
 {
+  serd_world_set_log_func(world, ignore_index_error, NULL);
+
   for (unsigned i = 0; i < 6; ++i) {
-    SerdModel* model = serd_model_new(world, (1u << i));
+    SerdModel* model = serd_model_new(world, (SerdStatementOrder)i, 0u);
     generate(world, model, n_quads, 0);
     assert(!test_read(world, model, 0, n_quads));
     serd_model_free(model);
@@ -714,8 +718,12 @@ test_triple_index_read(SerdWorld* world, const unsigned n_quads)
 static int
 test_quad_index_read(SerdWorld* world, const unsigned n_quads)
 {
+  serd_world_set_log_func(world, ignore_index_error, NULL);
+
   for (unsigned i = 0; i < 6; ++i) {
-    SerdModel* model = serd_model_new(world, (1u << i) | SERD_INDEX_GRAPHS);
+    SerdModel* model =
+      serd_model_new(world, (SerdStatementOrder)i, SERD_STORE_GRAPHS);
+
     const SerdNode* graph = uri(world, 42);
     generate(world, model, n_quads, graph);
     assert(!test_read(world, model, graph, n_quads));
@@ -730,7 +738,7 @@ test_remove_graph(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdModel* model = serd_model_new(world, SERD_INDEX_SPO | SERD_INDEX_GRAPHS);
+  SerdModel* model = serd_model_new(world, SERD_ORDER_GSPO, SERD_STORE_GRAPHS);
 
   // Generate a couple of graphs
   const SerdNode* graph42 = uri(world, 42);
@@ -769,10 +777,10 @@ test_default_graph(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdModel* model  = serd_model_new(world, SERD_INDEX_SPO | SERD_INDEX_GRAPHS);
-  const SerdNode* s = uri(world, 1);
-  const SerdNode* p = uri(world, 2);
-  const SerdNode* o = uri(world, 3);
+  SerdModel* model   = serd_model_new(world, SERD_ORDER_SPO, SERD_STORE_GRAPHS);
+  const SerdNode* s  = uri(world, 1);
+  const SerdNode* p  = uri(world, 2);
+  const SerdNode* o  = uri(world, 3);
   const SerdNode* g1 = uri(world, 101);
   const SerdNode* g2 = uri(world, 102);
 
@@ -781,7 +789,7 @@ test_default_graph(SerdWorld* world, const unsigned n_quads)
   assert(!serd_model_add(model, s, p, o, g2));
 
   // Ensure we only see statement once in the default graph
-  //assert(serd_model_count(model, s, p, o, NULL) == 1);
+  // assert(serd_model_count(model, s, p, o, NULL) == 1);
   // FIXME
 
   serd_model_free(model);
@@ -793,7 +801,7 @@ test_write_flat_range(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdModel* model = serd_model_new(world, SERD_INDEX_SPO | SERD_INDEX_GRAPHS);
+  SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, SERD_STORE_GRAPHS);
   SerdNodes* nodes = serd_nodes_new();
 
   const SerdNode* s  = manage(world, serd_new_uri(SERD_STRING("urn:s")));
@@ -844,8 +852,10 @@ test_write_bad_list(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdModel* model = serd_model_new(world, SERD_INDEX_SPO | SERD_INDEX_GRAPHS);
+  SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, SERD_STORE_GRAPHS);
   SerdNodes* nodes = serd_nodes_new();
+
+  serd_model_add_index(model, SERD_ORDER_OPS);
 
   const SerdNode* s       = manage(world, serd_new_uri(SERD_STRING("urn:s")));
   const SerdNode* p       = manage(world, serd_new_uri(SERD_STRING("urn:p")));
@@ -904,8 +914,10 @@ test_write_infinite_list(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdModel* model = serd_model_new(world, SERD_INDEX_SPO | SERD_INDEX_GRAPHS);
+  SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, SERD_STORE_GRAPHS);
   SerdNodes* nodes = serd_nodes_new();
+
+  serd_model_add_index(model, SERD_ORDER_OPS);
 
   const SerdNode* s     = manage(world, serd_new_uri(SERD_STRING("urn:s")));
   const SerdNode* p     = manage(world, serd_new_uri(SERD_STRING("urn:p")));
@@ -987,8 +999,10 @@ test_write_error_in_list(SerdWorld* world, const unsigned n_quads)
 
   serd_world_set_log_func(world, expected_error, NULL);
 
-  SerdModel* model = serd_model_new(world, SERD_INDEX_SPO);
+  SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0u);
   SerdNodes* nodes = serd_nodes_new();
+
+  serd_model_add_index(model, SERD_ORDER_OPS);
 
   const SerdNode* s  = manage(world, serd_new_uri(SERD_STRING("urn:s")));
   const SerdNode* p  = manage(world, serd_new_uri(SERD_STRING("urn:p")));
@@ -1048,7 +1062,6 @@ main(void)
                             test_get_world,
                             test_get_flags,
                             test_all_begin,
-                            test_add_null,
                             test_add_with_iterator,
                             test_add_remove_nodes,
                             test_inserter,

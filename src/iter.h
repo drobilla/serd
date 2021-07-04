@@ -36,8 +36,8 @@ struct SerdIterImpl {
   const SerdModel*   model;    ///< Model being iterated over
   uint64_t           version;  ///< Model version when iterator was created
   ZixBTreeIter       cur;      ///< Current DB cursor
-  SerdQuad           pat;      ///< Pattern (in ordering order)
-  SerdStatementOrder order;    ///< Store order (which index)
+  SerdQuad           pat;      ///< Search pattern
+  SerdStatementOrder order;    ///< Index order
   SearchMode         mode;     ///< Iteration mode
   unsigned           n_prefix; ///< Prefix for RANGE and FILTER_RANGE
 };
@@ -74,8 +74,5 @@ serd_iter_new(const SerdModel*   model,
 
 bool
 serd_iter_scan_next(SerdIter* iter);
-
-bool
-serd_quad_match(const SerdQuad x, const SerdQuad y);
 
 #endif // SERD_ITER_H

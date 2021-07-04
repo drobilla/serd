@@ -248,7 +248,11 @@ sink(const void* buf, size_t len, SerdWriter* writer)
       SERD_LOG_ERRORF(
         writer->world, SERD_ERR_BAD_WRITE, "write error (%s)", strerror(errno));
     } else {
-      SERD_LOG_ERROR(writer->world, SERD_ERR_BAD_WRITE, "write error");
+      SERD_LOG_ERRORF(writer->world,
+                      SERD_ERR_BAD_WRITE,
+                      "unknown write error, %zu / %zu bytes written",
+                      written,
+                      len);
     }
   }
 
