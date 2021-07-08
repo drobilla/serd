@@ -64,7 +64,7 @@ serd_env_base_uri(const SerdEnv* const env, SerdURIView* const out)
 SerdStatus
 serd_env_set_base_uri(SerdEnv* const env, const SerdNode* const uri)
 {
-  if (!env || (uri && uri->type != SERD_URI)) {
+  if (uri && uri->type != SERD_URI) {
     return SERD_ERR_BAD_ARG;
   }
 
