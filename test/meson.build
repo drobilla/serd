@@ -179,6 +179,10 @@ simple_command_tests = {
       ['-i', 'turt'],
       ['-i'],
       ['-ix'],
+      ['-k', '-1'],
+      ['-k', '1024junk'],
+      ['-k', '9223372036854775807'],
+      ['-k'],
       ['-o', '~unknown'],
       ['-o', 'ntripleses'],
       ['-o'],
@@ -309,6 +313,7 @@ test_suites = {
     '--',
     '-a',
     ['-i', 'NQuads'],
+    ['-k', '8192'],
   ],
   'ntriples': [
     files('w3c/ntriples/manifest.ttl'),
@@ -316,6 +321,7 @@ test_suites = {
     '--',
     '-a',
     ['-i', 'NTriples'],
+    ['-k', '1024'],
   ],
   'trig': [
     files('w3c/trig/manifest.ttl'),
@@ -323,6 +329,7 @@ test_suites = {
     '--',
     '-a',
     ['-i', 'TriG'],
+    ['-k', '1024'],
   ],
   'turtle': [
     files('w3c/turtle/manifest.ttl'),
@@ -330,25 +337,32 @@ test_suites = {
     '--',
     '-a',
     ['-i', 'Turtle'],
+    ['-k', '1024'],
   ],
 
   'abbreviate': [
     files('extra/abbreviate/manifest.ttl'),
     ns_serdtest + 'abbreviate/',
+    '--',
+    ['-k', '1024'],
   ],
   'bad': [
     files('extra/bad/manifest.ttl'),
     ns_serdtest + 'bad/',
+    '--',
+    ['-k', '1024'],
   ],
   'bad_turtle': [
     files('extra/bad/manifest.ttl'),
     ns_serdtest + 'bad/',
     '--',
     ['-o', 'turtle'],
+    ['-k', '1024'],
   ],
   'big': [
     files('extra/big/manifest.ttl'),
     ns_serdtest + 'big/',
+    ['-k', '1024'],
   ],
   'bulk': [
     files('extra/good/manifest.ttl'),
@@ -356,24 +370,28 @@ test_suites = {
     '--',
     '-a',
     '-b',
+    ['-k', '16384'],
   ],
   'fast': [
     files('extra/perfect/manifest.ttl'),
     ns_serdtest + 'perfect/',
     '--',
     '-f',
+    ['-k', '16384'],
   ],
   'full': [
     files('extra/full/manifest.ttl'),
     ns_serdtest + 'full/',
     '--',
     '-f',
+    ['-k', '1024'],
   ],
   'good': [
     files('extra/good/manifest.ttl'),
     ns_serdtest + 'good/',
     '--',
     '-a',
+    ['-k', '16384'],
   ],
   'lax_lax': [
     '--lax',
@@ -381,19 +399,26 @@ test_suites = {
     ns_serdtest + 'lax/',
     '--',
     '-l',
+    ['-k', '1024'],
   ],
   'lax_strict': [
     files('extra/lax/manifest.ttl'),
     ns_serdtest + 'lax/',
+    '--',
+    ['-k', '1024'],
   ],
   'perfect_forward': [
     files('extra/perfect/manifest.ttl'),
     ns_serdtest + 'perfect/',
+    '--',
+    ['-k', '1024'],
   ],
   'perfect_reverse': [
     '--reverse',
     files('extra/perfect/manifest.ttl'),
     ns_serdtest + 'perfect/',
+    '--',
+    ['-k', '1024'],
   ],
   'prefix_add': [
     '--reverse',
@@ -401,28 +426,34 @@ test_suites = {
     ns_serdtest + 'prefix/',
     '--',
     ['-p', 'test'],
+    ['-k', '1024'],
   ],
   'prefix_remove': [
     files('extra/prefix/manifest.ttl'),
     ns_serdtest + 'prefix/',
     '--',
     ['-c', 'test'],
+    ['-k', '1024'],
   ],
   'pretty': [
     files('extra/pretty/manifest.ttl'),
     ns_serdtest + 'pretty/',
+    '--',
+    ['-k', '1024'],
   ],
   'qualify': [
     files('extra/qualify/manifest.ttl'),
     ns_serdtest + 'qualify/',
     '--',
     ['-i', 'turtle'], # Just for coverage
+    ['-k', '1024'],
   ],
   'root': [
     files('extra/root/manifest.ttl'),
     ns_serdtest + 'root/',
     '--',
     ['-r', 'http://example.org/top/root/'],
+    ['-k', '1024'],
   ],
   'terse': [
     files('extra/terse/manifest.ttl'),
