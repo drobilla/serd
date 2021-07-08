@@ -88,7 +88,7 @@ test_read_string(void)
   serd_sink_set_statement_func(sink, test_statement_sink);
   serd_sink_set_end_func(sink, test_end_sink);
 
-  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, sink);
+  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, sink, 512);
   assert(reader);
 
   // Test reading a string that ends exactly at the end of input (no newline)
@@ -164,10 +164,11 @@ test_read_eof_by_page(const char* const path)
   fflush(f);
   fseek(f, 0L, SEEK_SET);
 
-  SerdWorld* const  world  = serd_world_new();
-  ReaderTest        rt     = {0, 0, 0, 0};
-  SerdSink* const   sink   = serd_sink_new(&rt, NULL);
-  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, sink);
+  SerdWorld* const  world = serd_world_new();
+  ReaderTest        rt    = {0, 0, 0, 0};
+  SerdSink* const   sink  = serd_sink_new(&rt, NULL);
+  SerdReader* const reader =
+    serd_reader_new(world, SERD_TURTLE, 0U, sink, 1024);
   assert(reader);
   assert(sink);
 
@@ -194,10 +195,11 @@ test_read_eof_by_page(const char* const path)
 static void
 test_read_eof_by_byte(void)
 {
-  SerdWorld* const  world  = serd_world_new();
-  ReaderTest        rt     = {0, 0, 0, 0};
-  SerdSink* const   sink   = serd_sink_new(&rt, NULL);
-  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, sink);
+  SerdWorld* const  world = serd_world_new();
+  ReaderTest        rt    = {0, 0, 0, 0};
+  SerdSink* const   sink  = serd_sink_new(&rt, NULL);
+  SerdReader* const reader =
+    serd_reader_new(world, SERD_TURTLE, 0U, sink, 1024);
   assert(reader);
   assert(sink);
 
@@ -256,7 +258,9 @@ test_read_nquads_chunks(const char* const path)
   serd_sink_set_statement_func(sink, test_statement_sink);
   serd_sink_set_end_func(sink, test_end_sink);
 
-  SerdReader* const reader = serd_reader_new(world, SERD_NQUADS, 0U, sink);
+  SerdReader* const reader =
+    serd_reader_new(world, SERD_NQUADS, 0U, sink, 1024);
+
   assert(reader);
 
   SerdStatus st = serd_reader_start_stream(
@@ -340,7 +344,8 @@ test_read_turtle_chunks(const char* const path)
   serd_sink_set_statement_func(sink, test_statement_sink);
   serd_sink_set_end_func(sink, test_end_sink);
 
-  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, sink);
+  SerdReader* const reader =
+    serd_reader_new(world, SERD_TURTLE, 0U, sink, 1024);
   assert(reader);
 
   SerdStatus st = serd_reader_start_stream(

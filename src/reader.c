@@ -11,7 +11,6 @@
 
 #include "serd/stream.h"
 #include "serd/uri.h"
-#include "zix/attributes.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -36,10 +35,11 @@ r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
 }
 
 void
-set_blank_id(SerdReader* const reader, const Ref ref, const size_t buf_size)
+set_blank_id(SerdReader* const reader,
+             SerdNode* const   node,
+             const size_t      buf_size)
 {
-  SerdNode* const   node = deref(reader, ref);
-  char* const       buf  = (char*)(node + 1);
+  char* const       buf = (char*)(node + 1);
   const char* const prefix =
     reader->bprefix ? (const char*)reader->bprefix : "";
 
@@ -53,15 +53,18 @@ genid_size(const SerdReader* const reader)
   return reader->bprefix_len + 1 + 10 + 1; // + "b" + UINT32_MAX + \0
 }
 
-Ref
+SerdNode*
 blank_id(SerdReader* const reader)
 {
-  Ref ref = push_node_padded(reader, genid_size(reader), SERD_BLANK, "", 0);
-  set_blank_id(reader, ref, genid_size(reader));
+  SerdNode* ref =
+    push_node_padded(reader, genid_size(reader), SERD_BLANK, "", 0);
+  if (ref) {
+    set_blank_id(reader, ref, genid_size(reader));
+  }
   return ref;
 }
 
-Ref
+SerdNode*
 push_node_padded(SerdReader* const  reader,
                  const size_t       maxlen,
                  const SerdNodeType type,
@@ -70,6 +73,10 @@ push_node_padded(SerdReader* const  reader,
 {
   void* mem = serd_stack_push_aligned(
     &reader->stack, sizeof(SerdNode) + maxlen + 1, sizeof(SerdNode));
+
+  if (!mem) {
+    return NULL;
+  }
 
   SerdNode* const node = (SerdNode*)mem;
 
@@ -82,14 +89,15 @@ push_node_padded(SerdReader* const  reader,
   memcpy(buf, str, length + 1);
 
 #ifdef SERD_STACK_CHECK
-  reader->allocs                       = (Ref*)realloc(reader->allocs,
-                                 sizeof(reader->allocs) * (++reader->n_allocs));
-  reader->allocs[reader->n_allocs - 1] = ((char*)mem - reader->stack.buf);
+  reader->allocs = (SerdNode**)realloc(
+    reader->allocs, sizeof(reader->allocs) * (++reader->n_allocs));
+  reader->allocs[reader->n_allocs - 1] =
+    (SerdNode*)((char*)mem - reader->stack.buf);
 #endif
-  return (Ref)((char*)node - reader->stack.buf);
+  return node;
 }
 
-Ref
+SerdNode*
 push_node(SerdReader* const  reader,
           const SerdNodeType type,
           const char* const  str,
@@ -98,37 +106,28 @@ push_node(SerdReader* const  reader,
   return push_node_padded(reader, length, type, str, length);
 }
 
-ZIX_PURE_FUNC SerdNode*
-deref(SerdReader* const reader, const Ref ref)
+SerdNode*
+pop_node(SerdReader* const reader, const SerdNode* const node)
 {
-  return ref ? (SerdNode*)(reader->stack.buf + ref) : NULL;
-}
-
-Ref
-pop_node(SerdReader* const reader, const Ref ref)
-{
-  if (ref && ref != reader->rdf_first && ref != reader->rdf_rest &&
-      ref != reader->rdf_nil) {
+  if (node && node != reader->rdf_first && node != reader->rdf_rest &&
+      node != reader->rdf_nil) {
 #ifdef SERD_STACK_CHECK
-    SERD_STACK_ASSERT_TOP(reader, ref);
+    SERD_STACK_ASSERT_TOP(reader, node);
     --reader->n_allocs;
 #endif
-    SerdNode* const node = deref(reader, ref);
-    char* const     top  = reader->stack.buf + reader->stack.size;
+    char* const top = reader->stack.buf + reader->stack.size;
     serd_stack_pop_aligned(&reader->stack, (size_t)(top - (char*)node));
   }
-  return 0;
+  return NULL;
 }
 
 SerdStatus
-emit_statement(SerdReader* const reader, const ReadContext ctx, const Ref o)
+emit_statement(SerdReader* const reader,
+               const ReadContext ctx,
+               SerdNode* const   o)
 {
-  const SerdStatus st = serd_sink_write(reader->sink,
-                                        *ctx.flags,
-                                        deref(reader, ctx.subject),
-                                        deref(reader, ctx.predicate),
-                                        deref(reader, o),
-                                        deref(reader, ctx.graph));
+  const SerdStatus st = serd_sink_write(
+    reader->sink, *ctx.flags, ctx.subject, ctx.predicate, o, ctx.graph);
 
   *ctx.flags = 0;
   return st;
@@ -154,22 +153,35 @@ SerdReader*
 serd_reader_new(SerdWorld* const      world,
                 const SerdSyntax      syntax,
                 const SerdReaderFlags flags,
-                const SerdSink* const sink)
+                const SerdSink* const sink,
+                const size_t          stack_size)
 {
   assert(world);
+
+  if (stack_size < 3 * sizeof(SerdNode) + 192 + sizeof(void*)) {
+    return NULL;
+  }
 
   SerdReader* me = (SerdReader*)calloc(1, sizeof(SerdReader));
 
   me->world   = world;
   me->sink    = sink;
-  me->stack   = serd_stack_new(SERD_PAGE_SIZE);
+  me->stack   = serd_stack_new(stack_size);
   me->syntax  = syntax;
   me->next_id = 1;
   me->strict  = !(flags & SERD_READ_LAX);
 
+  // Reserve a bit of space at the end of the stack to zero pad nodes
+  me->stack.buf_size -= sizeof(void*);
+
   me->rdf_first = push_node(me, SERD_URI, NS_RDF "first", 48);
   me->rdf_rest  = push_node(me, SERD_URI, NS_RDF "rest", 47);
   me->rdf_nil   = push_node(me, SERD_URI, NS_RDF "nil", 46);
+
+  // The initial stack size check should cover this
+  assert(me->rdf_first);
+  assert(me->rdf_rest);
+  assert(me->rdf_nil);
 
   return me;
 }

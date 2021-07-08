@@ -40,7 +40,8 @@ SERD_API SerdReader* ZIX_ALLOCATED
 serd_reader_new(SerdWorld* ZIX_NONNULL      world,
                 SerdSyntax                  syntax,
                 SerdReaderFlags             flags,
-                const SerdSink* ZIX_NONNULL sink);
+                const SerdSink* ZIX_NONNULL sink,
+                size_t                      stack_size);
 
 /**
    Set a prefix to be added to all blank node identifiers.

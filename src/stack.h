@@ -53,9 +53,9 @@ serd_stack_push(SerdStack* stack, size_t n_bytes)
 {
   const size_t new_size = stack->size + n_bytes;
   if (stack->buf_size < new_size) {
-    stack->buf_size += (stack->buf_size >> 1); // *= 1.5
-    stack->buf = (char*)realloc(stack->buf, stack->buf_size);
+    return NULL;
   }
+
   char* const ret = (stack->buf + stack->size);
   stack->size     = new_size;
   return ret;
@@ -72,11 +72,15 @@ static inline void*
 serd_stack_push_aligned(SerdStack* stack, size_t n_bytes, size_t align)
 {
   // Push one byte to ensure space for a pad count
-  serd_stack_push(stack, 1);
+  if (!serd_stack_push(stack, 1)) {
+    return NULL;
+  }
 
   // Push padding if necessary
   const size_t pad = align - stack->size % align;
-  serd_stack_push(stack, pad);
+  if (!serd_stack_push(stack, pad)) {
+    return NULL;
+  }
 
   // Set top of stack to pad count so we can properly pop later
   stack->buf[stack->size - 1] = (char)pad;
