@@ -2,6 +2,7 @@ Checks: >
   *,
   -*-magic-numbers,
   -*-uppercase-literal-suffix,
+  -altera-struct-pack-align,
   -android-cloexec-fopen,
   -clang-analyzer-nullability.NullabilityBase,
   -clang-analyzer-nullability.NullableDereferenced,
@@ -9,6 +10,7 @@ Checks: >
   -cppcoreguidelines-avoid-non-const-global-variables,
   -hicpp-signed-bitwise,
   -llvmlibc-*,
+  -readability-function-cognitive-complexity,
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
 FormatStyle: file
