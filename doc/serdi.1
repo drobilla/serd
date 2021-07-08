@@ -11,6 +11,7 @@
 .Op Fl abefhlqv
 .Op Fl c Ar prefix
 .Op Fl i Ar syntax
+.Op Fl k Ar bytes
 .Op Fl o Ar syntax
 .Op Fl p Ar prefix
 .Op Fl r Ar root
@@ -76,6 +77,14 @@ Case is ignored, valid values are:
 .Dq NTriples ,
 .Dq TriG ,
 .Dq Turtle .
+.Pp
+.It Fl k Ar bytes
+Parser stack size.
+For performance and security reasons, parsing is performed with a fixed-size stack.
+By default, the stack is 4096 bytes, which should be sufficient for most data.
+If some data has very deep nesting or very large literal values,
+it may exceed the default amount of space,
+and this option can be used to increase it and allow the document to be parsed successfully.
 .Pp
 .It Fl l
 Lax (non-strict) parsing.

@@ -26,7 +26,9 @@ typedef struct SerdReaderImpl SerdReader;
 /// Create a new RDF reader
 SERD_API
 SerdReader* SERD_ALLOCATED
-serd_reader_new(SerdSyntax syntax, const SerdSink* SERD_NONNULL sink);
+serd_reader_new(SerdSyntax                   syntax,
+                const SerdSink* SERD_NONNULL sink,
+                size_t                       stack_size);
 
 /**
    Enable or disable strict parsing.

@@ -81,7 +81,7 @@ if not get_option('tools').disabled()
   good_args = [
     ['-v'],
     ['-h'],
-    ['-s', '<urn:eg:s> a <urn:eg:T> .'],
+    ['-k', '512', '-s', '<urn:eg:s> a <urn:eg:T> .'],
   ]
 
   foreach args : good_args
@@ -96,6 +96,10 @@ if not get_option('tools').disabled()
     ['-i', 'turtle'],
     ['-i'],
     ['-fi'],
+    ['-k'],
+    ['-k', '-1'],
+    ['-k', '9223372036854775807'],
+    ['-k', '1024junk'],
     ['-o', 'unknown'],
     ['-o'],
     ['-p'],

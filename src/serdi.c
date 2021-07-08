@@ -24,8 +24,10 @@
 #  include <io.h>
 #endif
 
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define SERDI_ERROR(msg) fprintf(stderr, "serdi: " msg)
@@ -96,6 +98,7 @@ print_usage(const char* const name, const bool error)
     "  -f           Keep full URIs in input (don't qualify).\n"
     "  -h           Display this help and exit.\n"
     "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads.\n"
+    "  -k BYTES     Parser stack size.\n"
     "  -l           Lax (non-strict) parsing.\n"
     "  -o SYNTAX    Output syntax: turtle/ntriples/nquads.\n"
     "  -p PREFIX    Add PREFIX to blank node IDs.\n"
@@ -171,6 +174,7 @@ main(int argc, char** argv)
   bool        full_uris     = false;
   bool        lax           = false;
   bool        quiet         = false;
+  size_t      stack_size    = 4194304;
   const char* add_prefix    = NULL;
   const char* chop_prefix   = NULL;
   const char* root_uri      = NULL;
@@ -218,6 +222,19 @@ main(int argc, char** argv)
         if (!(input_syntax = get_syntax(argv[a]))) {
           return print_usage(prog, true);
         }
+        break;
+      } else if (opt == 'k') {
+        if (argv[a][o + 1] || ++a == argc) {
+          return missing_arg(prog, 'k');
+        }
+
+        char*      endptr = NULL;
+        const long size   = strtol(argv[a], &endptr, 10);
+        if (size <= 0 || size == LONG_MAX || *endptr != '\0') {
+          SERDI_ERRORF("invalid stack size '%s'\n", argv[a]);
+          return 1;
+        }
+        stack_size = (size_t)size;
         break;
       } else if (opt == 'o') {
         if (argv[a][o + 1] || ++a == argc) {
@@ -290,7 +307,7 @@ main(int argc, char** argv)
     output_syntax, writer_flags, env, (SerdWriteFunc)fwrite, out_fd);
 
   SerdReader* const reader =
-    serd_reader_new(input_syntax, serd_writer_sink(writer));
+    serd_reader_new(input_syntax, serd_writer_sink(writer), stack_size);
 
   serd_reader_set_strict(reader, !lax);
   if (quiet) {
