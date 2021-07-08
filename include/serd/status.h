@@ -23,8 +23,9 @@ typedef enum {
   SERD_ERR_BAD_ARG,    ///< Invalid argument
   SERD_ERR_NOT_FOUND,  ///< Not found
   SERD_ERR_ID_CLASH,   ///< Encountered clashing blank node IDs
-  SERD_ERR_BAD_CURIE,  ///< Invalid CURIE (e.g. prefix does not exist)
-  SERD_ERR_INTERNAL,   ///< Unexpected internal error (should not happen)
+  SERD_ERR_BAD_CURIE,  ///< Invalid CURIE or unknown namespace prefix
+  SERD_ERR_INTERNAL,   ///< Unexpected internal error
+  SERD_ERR_OVERFLOW,   ///< Stack overflow
 } SerdStatus;
 
 /// Return a string describing a status code
