@@ -41,8 +41,6 @@
 #  endif
 #endif
 
-static const size_t serd_node_align = 2 * sizeof(uint64_t);
-
 static SerdNode*
 serd_new_from_uri(SerdURIView uri, SerdURIView base);
 
