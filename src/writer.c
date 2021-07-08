@@ -210,7 +210,7 @@ ctx(SerdWriter* writer, const Field field)
   return node && node->type ? node : NULL;
 }
 
-static void
+SERD_NODISCARD static SerdStatus
 push_context(SerdWriter* const     writer,
              const ContextType     type,
              const SerdNode* const graph,
@@ -219,6 +219,10 @@ push_context(SerdWriter* const     writer,
 {
   // Push the current context to the stack
   void* const top = serd_stack_push(&writer->anon_stack, sizeof(WriteContext));
+  if (!top) {
+    return SERD_BAD_STACK;
+  }
+
   *(WriteContext*)top = writer->context;
 
   // Update the current context
@@ -231,6 +235,7 @@ push_context(SerdWriter* const     writer,
                                 0U};
 
   writer->context = current;
+  return SERD_SUCCESS;
 }
 
 static void
@@ -1092,20 +1097,22 @@ serd_writer_write_statement(SerdWriter* const     writer,
   if (flags & (SERD_ANON_S_BEGIN | SERD_LIST_S_BEGIN)) {
     // Push context for anonymous or list subject
     const bool is_list = (flags & SERD_LIST_S_BEGIN);
-    push_context(writer,
-                 is_list ? CTX_LIST : CTX_BLANK,
-                 graph,
-                 subject,
-                 is_list ? NULL : predicate);
+    TRY(st,
+        push_context(writer,
+                     is_list ? CTX_LIST : CTX_BLANK,
+                     graph,
+                     subject,
+                     is_list ? NULL : predicate));
   }
 
   if (flags & (SERD_ANON_O_BEGIN | SERD_LIST_O_BEGIN)) {
     // Push context for anonymous or list object if necessary
-    push_context(writer,
-                 (flags & SERD_LIST_O_BEGIN) ? CTX_LIST : CTX_BLANK,
-                 graph,
-                 object,
-                 NULL);
+    TRY(st,
+        push_context(writer,
+                     (flags & SERD_LIST_O_BEGIN) ? CTX_LIST : CTX_BLANK,
+                     graph,
+                     object,
+                     NULL));
   }
 
   return st;

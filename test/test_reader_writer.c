@@ -186,7 +186,7 @@ test_read_nquads_chunks(const char* const path)
 
   ReaderTest* const rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
   SerdSink* const   sink   = serd_sink_new(rt, NULL);
-  SerdReader* const reader = serd_reader_new(SERD_NQUADS, sink);
+  SerdReader* const reader = serd_reader_new(SERD_NQUADS, sink, 4096);
 
   assert(reader);
   assert(sink);
@@ -268,7 +268,7 @@ test_read_turtle_chunks(const char* const path)
 
   ReaderTest* const rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
   SerdSink* const   sink   = serd_sink_new(rt, NULL);
-  SerdReader* const reader = serd_reader_new(SERD_TURTLE, sink);
+  SerdReader* const reader = serd_reader_new(SERD_TURTLE, sink, 4096);
 
   assert(reader);
   assert(sink);
@@ -352,7 +352,7 @@ test_read_string(void)
 {
   ReaderTest* rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
   SerdSink*   sink   = serd_sink_new(rt, NULL);
-  SerdReader* reader = serd_reader_new(SERD_TURTLE, sink);
+  SerdReader* reader = serd_reader_new(SERD_TURTLE, sink, 4096);
 
   assert(reader);
   assert(sink);
@@ -433,7 +433,7 @@ test_write_errors(void)
         serd_writer_new(syntax, style, env, faulty_sink, &ctx);
 
       const SerdSink* const sink   = serd_writer_sink(writer);
-      SerdReader* const     reader = serd_reader_new(SERD_TRIG, sink);
+      SerdReader* const     reader = serd_reader_new(SERD_TRIG, sink, 4096U);
 
       serd_reader_set_error_sink(reader, quiet_error_sink, NULL);
       serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
@@ -542,16 +542,20 @@ test_writer(const char* const path)
 static void
 test_reader(const char* path)
 {
-  ReaderTest      rt     = {0, 0, 0, 0, NULL};
-  SerdSink* const sink   = serd_sink_new(&rt, NULL);
-  SerdReader*     reader = serd_reader_new(SERD_TURTLE, sink);
+  ReaderTest      rt   = {0, 0, 0, 0, NULL};
+  SerdSink* const sink = serd_sink_new(&rt, NULL);
   assert(sink);
-  assert(reader);
 
   serd_sink_set_base_func(sink, test_base_sink);
   serd_sink_set_prefix_func(sink, test_prefix_sink);
   serd_sink_set_statement_func(sink, test_statement_sink);
   serd_sink_set_end_func(sink, test_end_sink);
+
+  // Test that too little stack space fails gracefully
+  assert(!serd_reader_new(SERD_TURTLE, sink, 32));
+
+  SerdReader* reader = serd_reader_new(SERD_TURTLE, sink, 4096);
+  assert(reader);
 
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(serd_reader_read_document(reader) == SERD_FAILURE);

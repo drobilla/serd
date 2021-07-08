@@ -10,12 +10,15 @@
 #include "serd/uri.h"
 
 #include <stddef.h>
+#include <stdint.h>
 
 struct SerdNodeImpl {
   size_t        length; ///< Length in bytes (not including null)
   SerdNodeFlags flags;  ///< Node flags
   SerdNodeType  type;   ///< Node type
 };
+
+static const size_t serd_node_align = 2 * sizeof(uint64_t);
 
 static inline char* SERD_NONNULL
 serd_node_buffer(SerdNode* SERD_NONNULL node)

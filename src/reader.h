@@ -29,18 +29,13 @@
 #  define SERD_STACK_ASSERT_TOP(reader, ref)
 #endif
 
-/* Reference to a node in the stack (we can not use pointers since the
-   stack may be reallocated, invalidating any pointers to elements).
-*/
-typedef size_t Ref;
-
 typedef struct {
-  Ref                 graph;
-  Ref                 subject;
-  Ref                 predicate;
-  Ref                 object;
-  Ref                 datatype;
-  Ref                 lang;
+  SerdNode*           graph;
+  SerdNode*           subject;
+  SerdNode*           predicate;
+  SerdNode*           object;
+  SerdNode*           datatype;
+  SerdNode*           lang;
   SerdStatementFlags* flags;
 } ReadContext;
 
@@ -48,9 +43,9 @@ struct SerdReaderImpl {
   const SerdSink* sink;
   SerdErrorFunc   error_func;
   void*           error_handle;
-  Ref             rdf_first;
-  Ref             rdf_rest;
-  Ref             rdf_nil;
+  SerdNode*       rdf_first;
+  SerdNode*       rdf_rest;
+  SerdNode*       rdf_nil;
   SerdNode*       default_graph;
   SerdByteSource  source;
   SerdStack       stack;
@@ -62,8 +57,8 @@ struct SerdReaderImpl {
   bool            strict; ///< True iff strict parsing
   bool            seen_genid;
 #ifdef SERD_STACK_CHECK
-  Ref*   allocs;   ///< Stack of push offsets
-  size_t n_allocs; ///< Number of stack pushes
+  SerdNode** allocs;   ///< Stack of push offsets
+  size_t     n_allocs; ///< Number of stack pushes
 #endif
 };
 
@@ -71,14 +66,14 @@ SERD_LOG_FUNC(3, 4)
 SerdStatus
 r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
 
-Ref
+SerdNode*
 push_node_padded(SerdReader*  reader,
                  size_t       maxlen,
                  SerdNodeType type,
                  const char*  str,
                  size_t       length);
 
-Ref
+SerdNode*
 push_node(SerdReader*  reader,
           SerdNodeType type,
           const char*  str,
@@ -87,20 +82,17 @@ push_node(SerdReader*  reader,
 SERD_PURE_FUNC size_t
 genid_size(const SerdReader* reader);
 
-Ref
+SerdNode*
 blank_id(SerdReader* reader);
 
 void
-set_blank_id(SerdReader* reader, Ref ref, size_t buf_size);
+set_blank_id(SerdReader* reader, SerdNode* node, size_t buf_size);
 
 SerdNode*
-deref(SerdReader* reader, Ref ref);
-
-Ref
-pop_node(SerdReader* reader, Ref ref);
+pop_node(SerdReader* reader, const SerdNode* node);
 
 SerdStatus
-emit_statement(SerdReader* reader, ReadContext ctx, Ref o);
+emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o);
 
 SerdStatus
 read_n3_statement(SerdReader* reader);
@@ -166,13 +158,15 @@ eat_string(SerdReader* reader, const char* str, unsigned n)
 }
 
 static inline SerdStatus
-push_byte(SerdReader* reader, Ref ref, const int c)
+push_byte(SerdReader* reader, SerdNode* node, const int c)
 {
   assert(c != EOF);
   SERD_STACK_ASSERT_TOP(reader, ref);
 
-  char* const     s    = (char*)serd_stack_push(&reader->stack, 1);
-  SerdNode* const node = (SerdNode*)(reader->stack.buf + ref);
+  char* const s = (char*)serd_stack_push(&reader->stack, 1);
+  if (!s) {
+    return SERD_BAD_STACK;
+  }
 
   *(s - 1) = (char)c;
   *s       = '\0';
@@ -181,12 +175,20 @@ push_byte(SerdReader* reader, Ref ref, const int c)
   return SERD_SUCCESS;
 }
 
-static inline void
-push_bytes(SerdReader* reader, Ref ref, const uint8_t* bytes, unsigned len)
+static inline SerdStatus
+push_bytes(SerdReader*    reader,
+           SerdNode*      ref,
+           const uint8_t* bytes,
+           unsigned       len)
 {
+  if (reader->stack.buf_size < reader->stack.size + len) {
+    return SERD_BAD_STACK;
+  }
+
   for (unsigned i = 0; i < len; ++i) {
     push_byte(reader, ref, bytes[i]);
   }
+  return SERD_SUCCESS;
 }
 
 #endif // SERD_SRC_READER_H
