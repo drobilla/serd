@@ -10,6 +10,9 @@
 #include "zix/string_view.h"
 
 #include <stddef.h>
+#include <stdint.h>
+
+static const size_t serd_node_align = 2 * sizeof(uint64_t);
 
 ZIX_CONST_FUNC char* ZIX_NONNULL
 serd_node_buffer(SerdNode* ZIX_NONNULL node);
