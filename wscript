@@ -234,7 +234,8 @@ def build(bld):
                      ('test_read_chunk', 'test/test_read_chunk.c'),
                      ('test_reader_writer', 'test/test_reader_writer.c'),
                      ('test_string', 'test/test_string.c'),
-                     ('test_uri', 'test/test_uri.c')]:
+                     ('test_uri', 'test/test_uri.c'),
+                     ('test_writer', 'test/test_writer.c')]:
             bld(features     = 'c cprogram',
                 source       = prog[1],
                 use          = 'libserd_profiled',
@@ -563,6 +564,7 @@ def test(tst):
         check(['./test_reader_writer'])
         check(['./test_string'])
         check(['./test_uri'])
+        check(['./test_writer'])
 
     def test_syntax_io(check, in_name, check_name, lang):
         in_path = 'test/good/%s' % in_name
