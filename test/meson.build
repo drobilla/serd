@@ -159,6 +159,10 @@ simple_command_tests = {
       ['-i', 'turtle'],
       ['-i', 'unknown'],
       ['-i'],
+      ['-k', '-1'],
+      ['-k', '1024junk'],
+      ['-k', '9223372036854775807'],
+      ['-k'],
       ['-o', 'unknown'],
       ['-o'],
       ['-p'],
@@ -264,6 +268,7 @@ test_suites = {
     '--',
     '-a',
     ['-i', 'NTriples'],
+    ['-k', '1024'],
   ],
   'trig': [
     files('w3c/trig/manifest.ttl'),
