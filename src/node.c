@@ -46,8 +46,6 @@ DEFINE_XSD_NODE(base64Binary)
 DEFINE_XSD_NODE(decimal)
 DEFINE_XSD_NODE(integer)
 
-static const size_t serd_node_align = 2 * sizeof(uint64_t);
-
 static const SerdNodeFlags meta_mask = (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE);
 
 static SerdNode*
