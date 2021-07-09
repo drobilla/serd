@@ -55,6 +55,21 @@ genid_size(const SerdReader* const reader)
   return reader->bprefix_len + 1 + 10 + 1; // + "b" + UINT32_MAX + \0
 }
 
+bool
+tolerate_status(const SerdReader* const reader, const SerdStatus status)
+{
+  if (status == SERD_SUCCESS || status == SERD_FAILURE) {
+    return true;
+  }
+
+  if (status == SERD_BAD_STREAM || status == SERD_BAD_STACK ||
+      status == SERD_BAD_WRITE || status == SERD_NO_DATA) {
+    return false;
+  }
+
+  return !reader->strict;
+}
+
 SerdNode*
 blank_id(SerdReader* const reader)
 {
@@ -300,7 +315,7 @@ serd_reader_prepare(SerdReader* const reader)
   } else if (st == SERD_FAILURE) {
     reader->source.eof = true;
   } else {
-    r_err(reader, st, "read error: %s\n", strerror(errno));
+    r_err(reader, st, "error preparing read: %s\n", strerror(errno));
   }
   return st;
 }
