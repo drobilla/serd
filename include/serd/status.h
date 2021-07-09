@@ -28,6 +28,7 @@ typedef enum {
   SERD_ERR_OVERFLOW,   ///< Stack overflow
   SERD_ERR_BAD_TEXT,   ///< Invalid text encoding
   SERD_ERR_BAD_WRITE,  ///< Error writing to file/stream
+  SERD_ERR_NO_DATA,    ///< Unexpected end of input
 } SerdStatus;
 
 /// Return a string describing a status code
