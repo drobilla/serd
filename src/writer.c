@@ -500,11 +500,11 @@ reset_context(SerdWriter* writer, bool graph)
 }
 
 static SerdStatus
-free_context(SerdWriter* writer)
+free_context(const WriteContext* const ctx)
 {
-  serd_node_free(writer->context.graph);
-  serd_node_free(writer->context.subject);
-  serd_node_free(writer->context.predicate);
+  serd_node_free(ctx->graph);
+  serd_node_free(ctx->subject);
+  serd_node_free(ctx->predicate);
   return SERD_SUCCESS;
 }
 
@@ -919,7 +919,7 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
   }
   --writer->indent;
   write_sep(writer, SEP_ANON_END);
-  free_context(writer);
+  free_context(&writer->context);
   writer->context = *anon_stack_top(writer);
   serd_stack_pop(&writer->anon_stack, sizeof(WriteContext));
   const bool is_subject = serd_node_equals(node, writer->context.subject);
@@ -940,7 +940,7 @@ serd_writer_finish(SerdWriter* writer)
     write_sep(writer, SEP_GRAPH_END);
   }
   serd_byte_sink_flush(&writer->byte_sink);
-  free_context(writer);
+  free_context(&writer->context);
   writer->indent  = 0;
   writer->context = WRITE_CONTEXT_NULL;
   return SERD_SUCCESS;
@@ -961,7 +961,7 @@ serd_writer_new(SerdSyntax      syntax,
   writer->env        = env;
   writer->root_node  = NULL;
   writer->root_uri   = SERD_URI_NULL;
-  writer->anon_stack = serd_stack_new(4 * sizeof(WriteContext));
+  writer->anon_stack = serd_stack_new(SERD_PAGE_SIZE);
   writer->context    = context;
   writer->list_subj  = NULL;
   writer->empty      = true;
@@ -1092,6 +1092,13 @@ serd_writer_free(SerdWriter* writer)
   }
 
   serd_writer_finish(writer);
+
+  // Free any leaked entries in the anonymous context stack
+  while (!serd_stack_is_empty(&writer->anon_stack)) {
+    free_context(anon_stack_top(writer));
+    serd_stack_pop(&writer->anon_stack, sizeof(WriteContext));
+  }
+
   serd_stack_free(&writer->anon_stack);
   free(writer->bprefix);
   serd_byte_sink_free(&writer->byte_sink);
