@@ -71,6 +71,9 @@ push_node(SerdReader*  reader,
 SERD_PURE_FUNC size_t
 genid_size(const SerdReader* reader);
 
+SERD_PURE_FUNC bool
+tolerate_status(const SerdReader* reader, SerdStatus status);
+
 SerdNode*
 blank_id(SerdReader* reader);
 
