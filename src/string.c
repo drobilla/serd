@@ -46,6 +46,8 @@ serd_strerror(const SerdStatus status)
     return "Stack overflow";
   case SERD_ERR_BAD_TEXT:
     return "Invalid text encoding";
+  case SERD_ERR_NO_DATA:
+    return "Unexpected end of input";
   }
 
   return "Unknown error";
