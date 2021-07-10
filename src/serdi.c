@@ -120,10 +120,10 @@ main(int argc, char** argv)
   FILE*           in_fd         = NULL;
   SerdSyntax      input_syntax  = SERD_SYNTAX_EMPTY;
   SerdSyntax      output_syntax = SERD_SYNTAX_EMPTY;
+  SerdReaderFlags reader_flags  = 0U;
   SerdWriterFlags writer_flags  = 0U;
   bool            from_file     = true;
   bool            bulk_read     = true;
-  bool            lax           = false;
   bool            osyntax_set   = false;
   bool            quiet         = false;
   const char*     in_name       = NULL;
@@ -160,8 +160,8 @@ main(int argc, char** argv)
       } else if (opt == 'h') {
         return print_usage(prog, false);
       } else if (opt == 'l') {
+        reader_flags |= SERD_READ_LAX;
         writer_flags |= SERD_WRITE_LAX;
-        lax = true;
       } else if (opt == 'q') {
         quiet = true;
       } else if (opt == 't') {
@@ -271,6 +271,7 @@ main(int argc, char** argv)
 
   SerdReader* const reader =
     serd_reader_new(input_syntax,
+                    reader_flags,
                     writer,
                     NULL,
                     (SerdBaseFunc)serd_writer_set_base_uri,
@@ -278,7 +279,6 @@ main(int argc, char** argv)
                     (SerdStatementFunc)serd_writer_write_statement,
                     (SerdEndFunc)serd_writer_end_anon);
 
-  serd_reader_set_strict(reader, !lax);
   if (quiet) {
     serd_reader_set_error_sink(reader, quiet_error_sink, NULL);
     serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
