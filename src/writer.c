@@ -8,6 +8,7 @@
 #include "sink.h"
 #include "stack.h"
 #include "string_utils.h"
+#include "system.h"
 #include "try.h"
 #include "uri_utils.h"
 #include "warnings.h"
@@ -258,7 +259,9 @@ sink(const void* buf, size_t len, SerdWriter* writer)
   const size_t written = serd_byte_sink_write(buf, len, &writer->byte_sink);
   if (written != len) {
     if (errno) {
-      const char* const message = strerror(errno);
+      char message[1024] = {0};
+      serd_system_strerror(errno, message, sizeof(message));
+
       w_err(writer, SERD_BAD_WRITE, "write error (%s)\n", message);
     } else {
       w_err(writer, SERD_BAD_WRITE, "write error\n");

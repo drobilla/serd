@@ -86,6 +86,10 @@ else
       'stdlib.h',
       'void* mem=NULL; posix_memalign(&mem, 8U, 8U);',
     ],
+    'strerror_r': [
+      'string.h',
+      'char buf[128]; return strerror_r(0, &buf, sizeof(buf));',
+    ],
   }
 
   # Define HAVE_SOMETHING symbols for all detected features
