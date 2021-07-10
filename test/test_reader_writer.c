@@ -189,6 +189,7 @@ test_read_nquads_chunks(const char* const path)
 
   ReaderTest* const rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
   SerdReader* const reader = serd_reader_new(SERD_NQUADS,
+                                             0U,
                                              rt,
                                              free,
                                              test_base_sink,
@@ -270,6 +271,7 @@ test_read_turtle_chunks(const char* const path)
 
   ReaderTest* const rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
   SerdReader* const reader = serd_reader_new(SERD_TURTLE,
+                                             0U,
                                              rt,
                                              free,
                                              test_base_sink,
@@ -353,6 +355,7 @@ test_read_string(void)
 {
   ReaderTest* rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
   SerdReader* reader = serd_reader_new(SERD_TURTLE,
+                                       0U,
                                        rt,
                                        free,
                                        test_base_sink,
@@ -431,6 +434,7 @@ test_write_errors(void)
 
       SerdReader* const reader =
         serd_reader_new(SERD_TRIG,
+                        0U,
                         writer,
                         NULL,
                         (SerdBaseFunc)serd_writer_set_base_uri,
@@ -578,6 +582,7 @@ test_reader(const char* path)
 {
   ReaderTest  rt     = {0, 0, 0, 0, NULL};
   SerdReader* reader = serd_reader_new(SERD_TURTLE,
+                                       0U,
                                        &rt,
                                        NULL,
                                        test_base_sink,
