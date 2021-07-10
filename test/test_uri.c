@@ -14,10 +14,31 @@
 #include <string.h>
 
 static void
-test_file_uri(const char* hostname,
-              const char* path,
-              const char* expected_uri,
-              const char* expected_path)
+test_uri_string_has_scheme(void)
+{
+  assert(!serd_uri_string_has_scheme("relative"));
+  assert(!serd_uri_string_has_scheme("http"));
+  assert(!serd_uri_string_has_scheme("5nostartdigit"));
+  assert(!serd_uri_string_has_scheme("+nostartplus"));
+  assert(!serd_uri_string_has_scheme("-nostartminus"));
+  assert(!serd_uri_string_has_scheme(".nostartdot"));
+  assert(!serd_uri_string_has_scheme(":missing"));
+  assert(!serd_uri_string_has_scheme("a/slash/is/not/a/scheme/char"));
+
+  assert(serd_uri_string_has_scheme("http://example.org/"));
+  assert(serd_uri_string_has_scheme("https://example.org/"));
+  assert(serd_uri_string_has_scheme("allapha:path"));
+  assert(serd_uri_string_has_scheme("w1thd1g1t5:path"));
+  assert(serd_uri_string_has_scheme("with.dot:path"));
+  assert(serd_uri_string_has_scheme("with+plus:path"));
+  assert(serd_uri_string_has_scheme("with-minus:path"));
+}
+
+static void
+test_file_uri(const char* const hostname,
+              const char* const path,
+              const char* const expected_uri,
+              const char*       expected_path)
 {
   if (!expected_path) {
     expected_path = path;
@@ -29,6 +50,7 @@ test_file_uri(const char* hostname,
   char*       out_path     = serd_parse_file_uri(node_str, &out_hostname);
   assert(!strcmp(node_str, expected_uri));
   assert((hostname && out_hostname) || (!hostname && !out_hostname));
+  assert(!hostname || !strcmp(hostname, out_hostname));
   assert(!strcmp(out_path, expected_path));
 
   serd_free(out_path);
@@ -230,6 +252,7 @@ test_uri_resolution(void)
 int
 main(void)
 {
+  test_uri_string_has_scheme();
   test_uri_parsing();
   test_parse_uri();
   test_is_within();
