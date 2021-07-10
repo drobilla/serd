@@ -87,7 +87,7 @@ static void
 test_null_callbacks(void)
 {
   SerdReader* const reader =
-    serd_reader_new(SERD_TURTLE, NULL, NULL, NULL, NULL, NULL, NULL);
+    serd_reader_new(SERD_TURTLE, 0U, NULL, NULL, NULL, NULL, NULL, NULL);
 
   assert(reader);
   assert(!serd_reader_handle(reader));
@@ -103,8 +103,14 @@ static void
 test_read_string(void)
 {
   ReaderTest        rt     = {0, 0, 0, 0};
-  SerdReader* const reader = serd_reader_new(
-    SERD_TURTLE, &rt, NULL, base_sink, prefix_sink, statement_sink, end_sink);
+  SerdReader* const reader = serd_reader_new(SERD_TURTLE,
+                                             0U,
+                                             &rt,
+                                             NULL,
+                                             base_sink,
+                                             prefix_sink,
+                                             statement_sink,
+                                             end_sink);
 
   assert(reader);
   assert(serd_reader_handle(reader) == &rt);
@@ -183,8 +189,14 @@ test_read_eof_file(const char* const path)
   fseek(f, 0L, SEEK_SET);
 
   ReaderTest        rt     = {0, 0, 0, 0};
-  SerdReader* const reader = serd_reader_new(
-    SERD_TURTLE, &rt, NULL, base_sink, prefix_sink, statement_sink, end_sink);
+  SerdReader* const reader = serd_reader_new(SERD_TURTLE,
+                                             0U,
+                                             &rt,
+                                             NULL,
+                                             base_sink,
+                                             prefix_sink,
+                                             statement_sink,
+                                             end_sink);
 
   fseek(f, 0L, SEEK_SET);
   serd_reader_start_stream(reader, f, "test", true);
@@ -209,8 +221,14 @@ static void
 test_read_eof_by_byte(void)
 {
   ReaderTest        rt     = {0, 0, 0, 0};
-  SerdReader* const reader = serd_reader_new(
-    SERD_TURTLE, &rt, NULL, base_sink, prefix_sink, statement_sink, end_sink);
+  SerdReader* const reader = serd_reader_new(SERD_TURTLE,
+                                             0U,
+                                             &rt,
+                                             NULL,
+                                             base_sink,
+                                             prefix_sink,
+                                             statement_sink,
+                                             end_sink);
 
   size_t n_reads = 0U;
   serd_reader_start_source_stream(
@@ -252,8 +270,14 @@ test_read_nquads_chunks(const char* const path)
   fseek(f, 0, SEEK_SET);
 
   ReaderTest        rt     = {0, 0, 0, 0};
-  SerdReader* const reader = serd_reader_new(
-    SERD_NQUADS, &rt, NULL, base_sink, prefix_sink, statement_sink, end_sink);
+  SerdReader* const reader = serd_reader_new(SERD_NQUADS,
+                                             0U,
+                                             &rt,
+                                             NULL,
+                                             base_sink,
+                                             prefix_sink,
+                                             statement_sink,
+                                             end_sink);
 
   assert(reader);
   assert(serd_reader_handle(reader) == &rt);
@@ -330,8 +354,14 @@ test_read_turtle_chunks(const char* const path)
   fseek(f, 0, SEEK_SET);
 
   ReaderTest        rt     = {0, 0, 0, 0};
-  SerdReader* const reader = serd_reader_new(
-    SERD_TURTLE, &rt, NULL, base_sink, prefix_sink, statement_sink, end_sink);
+  SerdReader* const reader = serd_reader_new(SERD_TURTLE,
+                                             0U,
+                                             &rt,
+                                             NULL,
+                                             base_sink,
+                                             prefix_sink,
+                                             statement_sink,
+                                             end_sink);
 
   assert(reader);
   assert(serd_reader_handle(reader) == &rt);
@@ -431,6 +461,7 @@ test_read_empty(void)
 {
   ReaderTest        rt     = {0, 0, 0, 0};
   SerdReader* const reader = serd_reader_new(SERD_SYNTAX_EMPTY,
+                                             0U,
                                              &rt,
                                              NULL,
                                              base_sink,

@@ -26,9 +26,31 @@ SERD_BEGIN_DECLS
 /// Streaming parser that reads a text stream and writes to a statement sink
 typedef struct SerdReaderImpl SerdReader;
 
+/// Reader options
+typedef enum {
+  /**
+     Tolerate invalid input where possible.
+
+     This will attempt to ignore invalid input and continue reading.  Invalid
+     Unicode characters will be replaced with the replacement character, and
+     various other syntactic problems will be ignored.  If there are more
+     severe problems, the reader will try to skip the statement and continue
+     parsing.  This should work reasonably well for line-based syntaxes like
+     NTriples and NQuads, but abbreviated Turtle or TriG may not recover.
+
+     Note that this flag should be used carefully, since it can result in data
+     loss.
+  */
+  SERD_READ_LAX = 1U << 1U,
+} SerdReaderFlag;
+
+/// Bitwise OR of #SerdReaderFlag values
+typedef unsigned SerdReaderFlags;
+
 /// Create a new RDF reader
 SERD_API SerdReader* SERD_ALLOCATED
 serd_reader_new(SerdSyntax             syntax,
+                SerdReaderFlags        flags,
                 void* SERD_UNSPECIFIED handle,
                 void (*SERD_NULLABLE free_handle)(void* SERD_NULLABLE),
                 SerdBaseFunc SERD_NULLABLE      base_func,
@@ -39,16 +61,6 @@ serd_reader_new(SerdSyntax             syntax,
 /// Free `reader`
 SERD_API void
 serd_reader_free(SerdReader* SERD_NULLABLE reader);
-
-/**
-   Enable or disable strict parsing.
-
-   The reader is non-strict (lax) by default, which will tolerate URIs with
-   invalid characters.  Setting strict will fail when parsing such files.  An
-   error is printed for invalid input in either case.
-*/
-SERD_API void
-serd_reader_set_strict(SerdReader* SERD_NONNULL reader, bool strict);
 
 /**
    Set a function to be called when errors occur during reading.
