@@ -144,9 +144,9 @@ test_reader(const char* path)
   assert(sink);
 
   // Test that too little stack space fails gracefully
-  assert(!serd_reader_new(world, SERD_TURTLE, sink, 32));
+  assert(!serd_reader_new(world, SERD_TURTLE, 0u, sink, 32));
 
-  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0u, sink, 4096);
   assert(reader);
 
   serd_reader_add_blank_prefix(reader, "tmp");
