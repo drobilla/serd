@@ -18,6 +18,7 @@
 
 #include "world.h"
 
+#include "caret.h"
 #include "node.h"
 #include "serd_config.h"
 #include "system.h"
@@ -60,10 +61,13 @@ serd_world_error(const SerdWorld* const world, const SerdError* const e)
   if (world->error_func) {
     world->error_func(world->error_handle, e);
   } else {
-    if (e->filename) {
-      fprintf(stderr, "error: %s:%u:%u: ", e->filename, e->line, e->col);
-    } else {
-      fprintf(stderr, "error: ");
+    fprintf(stderr, "error: ");
+    if (e->caret) {
+      fprintf(stderr,
+              "%s:%u:%u: ",
+              serd_node_string(e->caret->file),
+              e->caret->line,
+              e->caret->col);
     }
     vfprintf(stderr, e->fmt, *e->args);
   }
@@ -78,7 +82,7 @@ serd_world_errorf(const SerdWorld* const world,
 {
   va_list args;
   va_start(args, fmt);
-  const SerdError e = {st, NULL, 0, 0, fmt, &args};
+  const SerdError e = {st, NULL, fmt, &args};
   serd_world_error(world, &e);
   va_end(args);
   return st;
