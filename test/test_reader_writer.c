@@ -130,6 +130,7 @@ test_write_errors(void)
 
       SerdReader* const reader =
         serd_reader_new(SERD_TRIG,
+                        0U,
                         writer,
                         NULL,
                         (SerdBaseFunc)serd_writer_set_base_uri,
@@ -275,7 +276,7 @@ test_reader(const char* path)
 {
   ReaderTest* rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
   SerdReader* reader = serd_reader_new(
-    SERD_TURTLE, rt, free, NULL, NULL, test_statement_sink, NULL);
+    SERD_TURTLE, 0U, rt, free, NULL, NULL, test_statement_sink, NULL);
 
   assert(reader);
   assert(serd_reader_handle(reader) == rt);
