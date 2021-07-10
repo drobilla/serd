@@ -370,9 +370,8 @@ faulty_sink(const void* const buf,
 static void
 test_write_errors(void)
 {
-  SerdWorld* const      world = serd_world_new();
-  ErrorContext          ctx   = {0U, 0U};
-  const SerdWriterFlags style = (SerdWriterFlags)SERD_WRITE_STRICT;
+  SerdWorld* const world = serd_world_new();
+  ErrorContext     ctx   = {0U, 0U};
 
   const size_t max_offsets[] = {0, 386, 1911, 2003, 386};
 
@@ -385,7 +384,7 @@ test_write_errors(void)
 
       SerdEnv* const    env = serd_env_new(serd_empty_string());
       SerdWriter* const writer =
-        serd_writer_new(world, syntax, style, env, faulty_sink, &ctx);
+        serd_writer_new(world, syntax, 0U, env, faulty_sink, &ctx);
 
       const SerdSink* const sink = serd_writer_sink(writer);
       SerdReader* const reader = serd_reader_new(world, SERD_TRIG, sink, 4096U);
@@ -413,8 +412,8 @@ test_writer(const char* const path)
 
   SerdWorld* world = serd_world_new();
 
-  SerdWriter* writer =
-    serd_writer_new(world, SERD_TURTLE, 0, env, (SerdWriteFunc)fwrite, fd);
+  SerdWriter* writer = serd_writer_new(
+    world, SERD_TURTLE, SERD_WRITE_LAX, env, (SerdWriteFunc)fwrite, fd);
   assert(writer);
 
   serd_writer_chop_blank_prefix(writer, "tmp");

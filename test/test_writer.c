@@ -243,10 +243,10 @@ test_strict_write(void)
   FILE* const       fd   = fopen(path, "wb");
   assert(fd);
 
-  SerdWorld*        world  = serd_world_new();
-  SerdEnv* const    env    = serd_env_new(serd_empty_string());
-  SerdWriter* const writer = serd_writer_new(
-    world, SERD_TURTLE, (SerdWriterFlags)SERD_WRITE_STRICT, env, null_sink, fd);
+  SerdWorld*        world = serd_world_new();
+  SerdEnv* const    env   = serd_env_new(serd_empty_string());
+  SerdWriter* const writer =
+    serd_writer_new(world, SERD_TURTLE, 0U, env, null_sink, fd);
 
   assert(writer);
 
