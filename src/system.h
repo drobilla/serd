@@ -9,6 +9,10 @@
 #include <stdint.h>
 #include <stdio.h>
 
+/// Write the message for a system error code (like errno) to a buffer
+int
+serd_system_strerror(int errnum, char* buf, size_t buflen);
+
 /// Allocate a buffer aligned to `alignment` bytes
 SERD_MALLOC_FUNC
 void*
