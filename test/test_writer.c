@@ -199,14 +199,14 @@ test_strict_write(void)
   FILE* const       fd   = fopen(path, "wb");
   assert(fd);
 
-  SerdEnv* const    env    = serd_env_new(NULL);
-  SerdWriter* const writer = serd_writer_new(
-    SERD_TURTLE,
-    (SerdWriterFlags)(SERD_WRITE_STRICT | SERD_WRITE_UNRESOLVED),
-    env,
-    NULL,
-    null_sink,
-    fd);
+  SerdEnv* const    env = serd_env_new(NULL);
+  SerdWriter* const writer =
+    serd_writer_new(SERD_TURTLE,
+                    (SerdWriterFlags)SERD_WRITE_UNRESOLVED,
+                    env,
+                    NULL,
+                    null_sink,
+                    fd);
 
   assert(writer);
 

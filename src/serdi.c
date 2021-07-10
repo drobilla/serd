@@ -120,7 +120,7 @@ main(int argc, char** argv)
   FILE*           in_fd         = NULL;
   SerdSyntax      input_syntax  = (SerdSyntax)0;
   SerdSyntax      output_syntax = (SerdSyntax)0;
-  SerdWriterFlags writer_flags  = SERD_WRITE_STRICT;
+  SerdWriterFlags writer_flags  = 0U;
   bool            from_file     = true;
   bool            bulk_read     = true;
   bool            lax           = false;
@@ -159,8 +159,8 @@ main(int argc, char** argv)
       } else if (opt == 'h') {
         return print_usage(prog, false);
       } else if (opt == 'l') {
+        writer_flags |= SERD_WRITE_LAX;
         lax = true;
-        writer_flags &= ~(SerdWriterFlags)SERD_WRITE_STRICT;
       } else if (opt == 'q') {
         quiet = true;
       } else if (opt == 't') {
