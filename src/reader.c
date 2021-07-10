@@ -181,6 +181,7 @@ serd_reader_read_document(SerdReader* const reader)
 SerdReader*
 serd_reader_new(SerdWorld* const      world,
                 const SerdSyntax      syntax,
+                SerdReaderFlags       flags,
                 const SerdSink* const sink,
                 const size_t          stack_size)
 {
@@ -195,19 +196,13 @@ serd_reader_new(SerdWorld* const      world,
   me->stack   = serd_stack_new(stack_size);
   me->syntax  = syntax;
   me->next_id = 1;
-  me->strict  = true;
+  me->strict  = !(flags & SERD_READ_LAX);
 
   me->rdf_first = push_node(me, SERD_URI, NS_RDF "first", 48);
   me->rdf_rest  = push_node(me, SERD_URI, NS_RDF "rest", 47);
   me->rdf_nil   = push_node(me, SERD_URI, NS_RDF "nil", 46);
 
   return me;
-}
-
-void
-serd_reader_set_strict(SerdReader* const reader, const bool strict)
-{
-  reader->strict = strict;
 }
 
 void

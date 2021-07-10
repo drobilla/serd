@@ -89,7 +89,9 @@ test_read_chunks(void)
   SerdSink* const sink = serd_sink_new(&n_statements, count_statements, NULL);
   assert(sink);
 
-  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+  SerdReader* const reader =
+    serd_reader_new(world, SERD_TURTLE, 0u, sink, 4096);
+
   assert(reader);
 
   SerdStatus st = serd_reader_start_stream(
@@ -149,7 +151,7 @@ test_read_string(void)
   SerdSink* sink = serd_sink_new(&n_statements, count_statements, NULL);
   assert(sink);
 
-  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0u, sink, 4096);
   assert(reader);
 
   // Test reading a string that ends exactly at the end of input (no newline)
@@ -285,9 +287,9 @@ test_reader(const char* path)
   assert(sink);
 
   // Test that too little stack space fails gracefully
-  assert(!serd_reader_new(world, SERD_TURTLE, sink, 32));
+  assert(!serd_reader_new(world, SERD_TURTLE, 0u, sink, 32));
 
-  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0u, sink, 4096);
   assert(reader);
 
   serd_reader_add_blank_prefix(reader, "tmp");
