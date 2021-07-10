@@ -115,8 +115,8 @@ test_write_errors(void)
       SerdWriter* const writer =
         serd_writer_new(world, syntax, 0U, env, faulty_sink, &ctx);
 
-      const SerdSink* const sink   = serd_writer_sink(writer);
-      SerdReader* const     reader = serd_reader_new(world, SERD_TRIG, sink);
+      const SerdSink* const sink = serd_writer_sink(writer);
+      SerdReader* const reader   = serd_reader_new(world, SERD_TRIG, 0U, sink);
 
       SerdStatus st = serd_reader_start_string(reader, doc_string, NULL);
       assert(!st);
@@ -246,11 +246,11 @@ test_reader(const char* path)
   SerdLimits       limits     = old_limits;
   limits.reader_stack_size    = 32U;
   serd_world_set_limits(world, limits);
-  assert(!serd_reader_new(world, SERD_TURTLE, sink));
+  assert(!serd_reader_new(world, SERD_TURTLE, 0U, sink));
 
-  // Restore original limits and successfully create reader
+  // Restore limits and successfully create reader
   serd_world_set_limits(world, old_limits);
-  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink);
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0U, sink);
   assert(reader);
 
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);

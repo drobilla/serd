@@ -22,7 +22,7 @@ test_size(SerdWorld* const  world,
   serd_world_set_limits(world, limits);
 
   SerdSink*         sink   = serd_sink_new(NULL, NULL, NULL);
-  SerdReader* const reader = serd_reader_new(world, syntax, sink);
+  SerdReader* const reader = serd_reader_new(world, syntax, 0U, sink);
   assert(reader);
 
   serd_reader_start_string(reader, str, NULL);
