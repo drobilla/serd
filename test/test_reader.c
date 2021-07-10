@@ -41,7 +41,7 @@ test_read_string(void)
   SerdSink* sink = serd_sink_new(&n_statements, count_statements, NULL);
   assert(sink);
 
-  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0u, sink, 4096);
   assert(reader);
 
   // Test reading a string that ends exactly at the end of input (no newline)
@@ -118,7 +118,7 @@ test_read_eof_by_page(void)
   SerdWorld*  world   = serd_world_new();
   size_t      ignored = 0u;
   SerdSink*   sink    = serd_sink_new(&ignored, count_statements, NULL);
-  SerdReader* reader  = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+  SerdReader* reader  = serd_reader_new(world, SERD_TURTLE, 0u, sink, 4096);
 
   serd_reader_start_stream(
     reader, (SerdReadFunc)fread, (SerdStreamErrorFunc)ferror, temp, NULL, 4096);
@@ -140,7 +140,7 @@ test_read_eof_by_byte(void)
   SerdWorld*  world   = serd_world_new();
   size_t      ignored = 0u;
   SerdSink*   sink    = serd_sink_new(&ignored, count_statements, NULL);
-  SerdReader* reader  = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+  SerdReader* reader  = serd_reader_new(world, SERD_TURTLE, 0u, sink, 4096);
 
   size_t n_reads = 0u;
   serd_reader_start_stream(reader,
@@ -171,7 +171,8 @@ test_read_chunks(void)
   SerdSink* const sink = serd_sink_new(&n_statements, count_statements, NULL);
   assert(sink);
 
-  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+  SerdReader* const reader =
+    serd_reader_new(world, SERD_TURTLE, 0u, sink, 4096);
   assert(reader);
 
   SerdStatus st = serd_reader_start_stream(
