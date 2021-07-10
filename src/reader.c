@@ -167,6 +167,7 @@ serd_reader_read_document(SerdReader* const reader)
 SerdReader*
 serd_reader_new(SerdWorld* const      world,
                 const SerdSyntax      syntax,
+                const SerdReaderFlags flags,
                 const SerdSink* const sink,
                 const size_t          stack_size)
 {
@@ -181,7 +182,7 @@ serd_reader_new(SerdWorld* const      world,
   me->stack   = serd_stack_new(stack_size);
   me->syntax  = syntax;
   me->next_id = 1;
-  me->strict  = true;
+  me->strict  = !(flags & SERD_READ_LAX);
 
   // Reserve a bit of space at the end of the stack to zero pad nodes
   me->stack.buf_size -= serd_node_align;
@@ -196,12 +197,6 @@ serd_reader_new(SerdWorld* const      world,
   assert(me->rdf_nil);
 
   return me;
-}
-
-void
-serd_reader_set_strict(SerdReader* const reader, const bool strict)
-{
-  reader->strict = strict;
 }
 
 void

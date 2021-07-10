@@ -24,24 +24,22 @@ SERD_BEGIN_DECLS
 /// Streaming parser that reads a text stream and writes to a statement sink
 typedef struct SerdReaderImpl SerdReader;
 
+/// Reader options
+typedef enum {
+  SERD_READ_LAX = 1U << 0U, ///< Tolerate invalid input where possible
+} SerdReaderFlag;
+
+/// Bitwise OR of SerdReaderFlag values
+typedef uint32_t SerdReaderFlags;
+
 /// Create a new RDF reader
 SERD_API
 SerdReader* SERD_ALLOCATED
 serd_reader_new(SerdWorld* SERD_NONNULL      world,
                 SerdSyntax                   syntax,
+                SerdReaderFlags              flags,
                 const SerdSink* SERD_NONNULL sink,
                 size_t                       stack_size);
-
-/**
-   Enable or disable strict parsing.
-
-   The reader is non-strict (lax) by default, which will tolerate URIs with
-   invalid characters.  Setting strict will fail when parsing such files.  An
-   error is printed for invalid input in either case.
-*/
-SERD_API
-void
-serd_reader_set_strict(SerdReader* SERD_NONNULL reader, bool strict);
 
 /**
    Set a prefix to be added to all blank node identifiers.
