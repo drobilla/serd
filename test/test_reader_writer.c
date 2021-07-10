@@ -122,6 +122,7 @@ check_write_error_offset(const SerdSyntax syntax,
 
   SerdReader* const reader =
     serd_reader_new(SERD_TRIG,
+                    0U,
                     writer,
                     NULL,
                     (SerdBaseFunc)serd_writer_set_base_uri,
@@ -264,7 +265,7 @@ test_reader(const char* const path)
   assert(rt);
 
   SerdReader* reader = serd_reader_new(
-    SERD_TURTLE, rt, free, NULL, NULL, test_statement_sink, NULL);
+    SERD_TURTLE, 0U, rt, free, NULL, NULL, test_statement_sink, NULL);
 
   assert(reader);
   assert(serd_reader_handle(reader) == rt);
