@@ -5,6 +5,7 @@ run_test_suite = find_program('run_test_suite.py')
 wrapper = meson.get_cross_property('exe_wrapper', '')
 
 unit_tests = [
+  'caret',
   'env',
   'free_null',
   'node',
