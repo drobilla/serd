@@ -381,7 +381,7 @@ write_uri_text(SerdWriter* const writer,
       write_uri_character(writer, (const uint8_t*)utf8 + i);
     i += r.read_count;
     result.write_count += r.write_count;
-    if (r.status && (writer->flags & SERD_WRITE_STRICT)) {
+    if (r.status && !(writer->flags & SERD_WRITE_LAX)) {
       result.status = r.status;
       break;
     }
@@ -409,7 +409,7 @@ ewrite_uri(SerdWriter* const writer,
 {
   const VariableResult r = write_uri_text(writer, utf8, n_bytes);
 
-  return (r.status == SERD_BAD_WRITE || (writer->flags & SERD_WRITE_STRICT))
+  return (r.status == SERD_BAD_WRITE || !(writer->flags & SERD_WRITE_LAX))
            ? r.status
            : SERD_SUCCESS;
 }
@@ -562,7 +562,7 @@ write_literal_character(SerdWriter* const writer,
   VariableResult vr = {SERD_SUCCESS, 0U, 0U};
 
   vr = write_text_character(writer, (const uint8_t*)utf8 + i);
-  if (!vr.read_count && !(writer->flags & SERD_WRITE_STRICT)) {
+  if (!vr.read_count && (writer->flags & SERD_WRITE_LAX)) {
     // Corrupt input, write replacement char and scan to the next start
     vr.status     = esink(replacement_char, sizeof(replacement_char), writer);
     vr.read_count = next_text_index(utf8, i, n_bytes, is_utf8_leading);

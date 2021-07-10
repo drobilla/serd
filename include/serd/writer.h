@@ -39,7 +39,7 @@ typedef enum {
   SERD_WRITE_UNQUALIFIED = 1U << 1U, ///< Don't shorten URIs into CURIEs
   SERD_WRITE_UNRESOLVED  = 1U << 2U, ///< Don't make URIs relative
   SERD_WRITE_BULK        = 1U << 3U, ///< Write output in pages
-  SERD_WRITE_STRICT      = 1U << 4U, ///< Abort with error on lossy output
+  SERD_WRITE_LAX         = 1U << 4U, ///< Tolerate lossy output
 } SerdWriterFlag;
 
 /// Bitwise OR of #SerdWriterFlag values
