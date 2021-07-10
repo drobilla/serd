@@ -92,6 +92,13 @@ else
     name: 'posix_memalign')
     platform_c_args += ['-DHAVE_POSIX_MEMALIGN']
   endif
+  if cc.links(
+    template.format('string.h',
+                    'char buf[128]; return strerror_r(0, &buf, sizeof(buf));'),
+    args: system_c_args,
+    name: 'strerror_r')
+    platform_c_args += ['-DHAVE_STRERROR_R']
+  endif
 endif
 
 ################
