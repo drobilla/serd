@@ -4,6 +4,7 @@
 #ifndef SERD_SRC_NODE_H
 #define SERD_SRC_NODE_H
 
+#include "serd/attributes.h"
 #include "serd/node.h"
 
 #include <stddef.h>
@@ -14,22 +15,23 @@ struct SerdNodeImpl {
   SerdNodeType  type;   ///< Node type
 };
 
-static inline char*
-serd_node_buffer(SerdNode* node)
+static inline char* SERD_NONNULL
+serd_node_buffer(SerdNode* SERD_NONNULL node)
 {
   return (char*)(node + 1);
 }
 
-static inline const char*
-serd_node_buffer_c(const SerdNode* node)
+static inline const char* SERD_NONNULL
+serd_node_buffer_c(const SerdNode* SERD_NONNULL node)
 {
   return (const char*)(node + 1);
 }
 
-SerdNode*
+SerdNode* SERD_ALLOCATED
 serd_node_malloc(size_t length, SerdNodeFlags flags, SerdNodeType type);
 
 void
-serd_node_set(SerdNode** dst, const SerdNode* src);
+serd_node_set(SerdNode* SERD_NULLABLE* SERD_NONNULL dst,
+              const SerdNode* SERD_NULLABLE         src);
 
 #endif // SERD_SRC_NODE_H
