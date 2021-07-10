@@ -411,8 +411,7 @@ quiet_error_sink(void* const handle, const SerdError* const e)
 static void
 test_write_errors(void)
 {
-  ErrorContext          ctx   = {0U, 0U};
-  const SerdWriterFlags style = (SerdWriterFlags)SERD_WRITE_STRICT;
+  ErrorContext ctx = {0U, 0U};
 
   const size_t max_offsets[] = {0, 386, 1911, 2003, 386};
 
@@ -425,7 +424,7 @@ test_write_errors(void)
 
       SerdEnv* const    env = serd_env_new(NULL);
       SerdWriter* const writer =
-        serd_writer_new(syntax, style, env, NULL, faulty_sink, &ctx);
+        serd_writer_new(syntax, 0U, env, NULL, faulty_sink, &ctx);
 
       SerdReader* const reader =
         serd_reader_new(SERD_TRIG,
@@ -456,8 +455,8 @@ test_writer(const char* const path)
   SerdEnv* env = serd_env_new(NULL);
   assert(fd);
 
-  SerdWriter* writer =
-    serd_writer_new(SERD_TURTLE, 0, env, NULL, (SerdWriteFunc)fwrite, fd);
+  SerdWriter* writer = serd_writer_new(
+    SERD_TURTLE, SERD_WRITE_LAX, env, NULL, (SerdWriteFunc)fwrite, fd);
   assert(writer);
 
   serd_writer_chop_blank_prefix(writer, "tmp");
