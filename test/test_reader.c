@@ -87,6 +87,7 @@ test_read_string(void)
 {
   ReaderTest        rt     = {0, 0, 0, 0};
   SerdReader* const reader = serd_reader_new(SERD_TURTLE,
+                                             0U,
                                              &rt,
                                              NULL,
                                              test_base_sink,
@@ -169,6 +170,7 @@ test_read_eof_by_page(const char* const path)
 
   ReaderTest        rt     = {0, 0, 0, 0};
   SerdReader* const reader = serd_reader_new(SERD_TURTLE,
+                                             0U,
                                              &rt,
                                              NULL,
                                              test_base_sink,
@@ -193,6 +195,7 @@ test_read_eof_by_byte(void)
 {
   ReaderTest        rt     = {0, 0, 0, 0};
   SerdReader* const reader = serd_reader_new(SERD_TURTLE,
+                                             0U,
                                              &rt,
                                              NULL,
                                              test_base_sink,
@@ -239,6 +242,7 @@ test_read_nquads_chunks(const char* const path)
 
   ReaderTest        rt     = {0, 0, 0, 0};
   SerdReader* const reader = serd_reader_new(SERD_NQUADS,
+                                             0U,
                                              &rt,
                                              NULL,
                                              test_base_sink,
@@ -319,6 +323,7 @@ test_read_turtle_chunks(const char* const path)
 
   ReaderTest        rt     = {0, 0, 0, 0};
   SerdReader* const reader = serd_reader_new(SERD_TURTLE,
+                                             0U,
                                              &rt,
                                              NULL,
                                              test_base_sink,

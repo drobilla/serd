@@ -172,8 +172,9 @@ read_doc(SerdReader* const reader)
 }
 
 SerdReader*
-serd_reader_new(const SerdSyntax syntax,
-                void* const      handle,
+serd_reader_new(const SerdSyntax      syntax,
+                const SerdReaderFlags flags,
+                void* const           handle,
                 void (*const free_handle)(void*),
                 const SerdBaseFunc      base_func,
                 const SerdPrefixFunc    prefix_func,
@@ -191,20 +192,13 @@ serd_reader_new(const SerdSyntax syntax,
   me->stack          = serd_stack_new(SERD_PAGE_SIZE);
   me->syntax         = syntax;
   me->next_id        = 1;
-  me->strict         = true;
+  me->strict         = !(flags & SERD_READ_LAX);
 
   me->rdf_first = push_node(me, SERD_URI, NS_RDF "first", 48);
   me->rdf_rest  = push_node(me, SERD_URI, NS_RDF "rest", 47);
   me->rdf_nil   = push_node(me, SERD_URI, NS_RDF "nil", 46);
 
   return me;
-}
-
-void
-serd_reader_set_strict(SerdReader* const reader, const bool strict)
-{
-  assert(reader);
-  reader->strict = strict;
 }
 
 void
