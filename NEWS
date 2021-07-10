@@ -6,6 +6,7 @@ serd (1.0.1) unstable;
   * Add support for writing terse collections
   * Add support for xsd:float and xsd:double literals
   * Bring read/write interface closer to C standard
+  * Improve error handling
   * Make nodes opaque
   * Remove serd_uri_to_path()
   * Remove support for Turtle named inline nodes extension
