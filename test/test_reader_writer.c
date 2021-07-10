@@ -55,24 +55,36 @@ test_sink(void*              handle,
   return SERD_SUCCESS;
 }
 
-/// Returns EOF after a statement, then succeeds again (like a socket)
+/// Reads a null byte after a statement, then succeeds again (like a socket)
 static size_t
 eof_test_read(void* buf, size_t size, size_t nmemb, void* stream)
 {
   assert(size == 1);
   assert(nmemb == 1);
+  (void)size;
 
   static const char* const string = "_:s1 <http://example.org/p> _:o1 .\n"
                                     "_:s2 <http://example.org/p> _:o2 .\n";
 
-  size_t* count = (size_t*)stream;
-  if (*count == 34 || *count == 35 || *count + nmemb >= strlen(string)) {
+  size_t* const count = (size_t*)stream;
+
+  // Normal reading for the first statement
+  if (*count < 35) {
+    *(char*)buf = string[*count];
+    ++*count;
+    return nmemb;
+  }
+
+  // EOF for the first read at the start of the second statement
+  if (*count == 35) {
+    assert(string[*count] == '_');
     ++*count;
     return 0;
   }
 
-  memcpy((char*)buf, string + *count, size * nmemb);
-  *count += nmemb;
+  // Normal reading after the EOF, adjusting for the skipped index 35
+  *(char*)buf = string[*count - 1];
+  ++*count;
   return nmemb;
 }
 
