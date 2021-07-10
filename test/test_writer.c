@@ -179,9 +179,9 @@ test_strict_write(void)
   FILE*       fd    = fopen(path, "wb");
   assert(fd);
 
-  SerdEnv*    env    = serd_env_new(SERD_EMPTY_STRING());
-  SerdWriter* writer = serd_writer_new(
-    world, SERD_TURTLE, SERD_WRITE_STRICT, env, (SerdWriteFunc)fwrite, fd);
+  SerdEnv*    env = serd_env_new(SERD_EMPTY_STRING());
+  SerdWriter* writer =
+    serd_writer_new(world, SERD_TURTLE, 0u, env, (SerdWriteFunc)fwrite, fd);
 
   assert(writer);
 
