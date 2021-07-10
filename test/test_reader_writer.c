@@ -82,6 +82,10 @@ eof_test_read(void* buf, size_t size, size_t nmemb, void* stream)
     return 0;
   }
 
+  if (*count >= strlen(string)) {
+    return 0;
+  }
+
   // Normal reading after the EOF, adjusting for the skipped index 35
   *(char*)buf = string[*count - 1];
   ++*count;
