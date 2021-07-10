@@ -94,7 +94,7 @@ main(int argc, char** argv)
 
   SerdSyntax      input_syntax  = (SerdSyntax)0;
   SerdSyntax      output_syntax = (SerdSyntax)0;
-  SerdWriterFlags writer_flags  = SERD_WRITE_STRICT;
+  SerdWriterFlags writer_flags  = 0;
   bool            from_string   = false;
   bool            from_stdin    = false;
   bool            bulk_read     = true;
@@ -125,7 +125,7 @@ main(int argc, char** argv)
       } else if (opt == 'h') {
         return print_usage(prog, false);
       } else if (opt == 'l') {
-        writer_flags &= ~(unsigned)SERD_WRITE_STRICT;
+        writer_flags |= SERD_WRITE_LAX;
         lax = true;
       } else if (opt == 'q') {
         quiet = true;
