@@ -236,11 +236,9 @@ check_strict_write(const SerdWriterFlags flags)
 static void
 test_strict_write(void)
 {
+  check_strict_write((SerdWriterFlags)SERD_WRITE_UNRESOLVED);
   check_strict_write(
-    (SerdWriterFlags)(SERD_WRITE_STRICT | SERD_WRITE_UNRESOLVED));
-  check_strict_write((SerdWriterFlags)(SERD_WRITE_STRICT |
-                                       SERD_WRITE_UNRESOLVED |
-                                       SERD_WRITE_ASCII));
+    (SerdWriterFlags)(SERD_WRITE_UNRESOLVED | SERD_WRITE_ASCII));
 }
 
 // Produce a write error without setting errno
