@@ -19,6 +19,7 @@
 #include "serd/serd.h"
 
 #include <assert.h>
+#include <stdint.h>
 #include <string.h>
 
 #define USTR(s) ((const uint8_t*)(s))
