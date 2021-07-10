@@ -820,6 +820,67 @@ serd_node_equals(const SerdNode* SERD_NULLABLE a,
 
 /**
    @}
+   @defgroup serd_caret Caret
+   @{
+*/
+
+/// The origin of a statement in a text document
+typedef struct SerdCaretImpl SerdCaret;
+
+/**
+   Create a new caret.
+
+   Note that, to minimise model overhead, the caret does not own the name
+   node, so `name` must have a longer lifetime than the caret for it to be
+   valid.  That is, serd_caret_name() will return exactly the pointer
+   `name`, not a copy.
+
+   @param name The name of the document or stream (usually a file URI)
+   @param line The line number in the document (1-based)
+   @param col The column number in the document (1-based)
+   @return A new caret that must be freed with serd_caret_free()
+*/
+SERD_API
+SerdCaret* SERD_ALLOCATED
+serd_caret_new(const SerdNode* SERD_NONNULL name, unsigned line, unsigned col);
+
+/// Return a copy of `caret`
+SERD_API
+SerdCaret* SERD_ALLOCATED
+serd_caret_copy(const SerdCaret* SERD_NULLABLE caret);
+
+/// Free `caret`
+SERD_API
+void
+serd_caret_free(SerdCaret* SERD_NULLABLE caret);
+
+/// Return true iff `lhs` is equal to `rhs`
+SERD_PURE_API
+bool
+serd_caret_equals(const SerdCaret* SERD_NULLABLE lhs,
+                  const SerdCaret* SERD_NULLABLE rhs);
+
+/**
+   Return the document name.
+
+   This is typically a file URI, but may be a descriptive string node for
+   statements that originate from streams.
+*/
+SERD_PURE_API
+const SerdNode* SERD_NONNULL
+serd_caret_name(const SerdCaret* SERD_NONNULL caret);
+
+/// Return the one-relative line number in the document
+SERD_PURE_API
+unsigned
+serd_caret_line(const SerdCaret* SERD_NONNULL caret);
+
+/// Return the zero-relative column number in the line
+SERD_PURE_API
+unsigned
+serd_caret_column(const SerdCaret* SERD_NONNULL caret);
+
+/**
    @}
    @defgroup serd_statement Statement
    @{
@@ -835,6 +896,7 @@ typedef enum {
 
 /**
    @}
+   @}
    @defgroup serd_world World
    @{
 */
@@ -844,12 +906,10 @@ typedef struct SerdWorldImpl SerdWorld;
 
 /// An error description
 typedef struct {
-  SerdStatus                status;   ///< Error code
-  const char* SERD_NULLABLE filename; ///< File with error
-  unsigned                  line;     ///< Line in file with error or 0
-  unsigned                  col;      ///< Column in file with error
-  const char* SERD_NONNULL  fmt;      ///< Printf-style format string
-  va_list* SERD_NONNULL     args;     ///< Arguments for fmt
+  SerdStatus                     status; ///< Error code
+  const SerdCaret* SERD_NULLABLE caret;  ///< File origin of error
+  const char* SERD_NONNULL       fmt;    ///< Printf-style format string
+  va_list* SERD_NONNULL          args;   ///< Arguments for fmt
 } SerdError;
 
 /**
@@ -1189,14 +1249,15 @@ serd_reader_start_stream(SerdReader* SERD_NONNULL         reader,
                          SerdReadFunc SERD_NONNULL        read_func,
                          SerdStreamErrorFunc SERD_NONNULL error_func,
                          void* SERD_NONNULL               stream,
-                         const char* SERD_NULLABLE        name,
+                         const SerdNode* SERD_NULLABLE    name,
                          size_t                           page_size);
 
 /// Prepare to read from a string
 SERD_API
 SerdStatus
-serd_reader_start_string(SerdReader* SERD_NONNULL reader,
-                         const char* SERD_NONNULL utf8);
+serd_reader_start_string(SerdReader* SERD_NONNULL      reader,
+                         const char* SERD_NONNULL      utf8,
+                         const SerdNode* SERD_NULLABLE name);
 
 /**
    Read a single "chunk" of data during an incremental read.
