@@ -14,7 +14,7 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#define _POSIX_C_SOURCE 200809L /* for posix_memalign */
+#define _POSIX_C_SOURCE 200809L /* for posix_memalign and strerror_r */
 
 #include "system.h"
 
@@ -28,6 +28,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+int
+serd_system_strerror(const int errnum, char* const buf, const size_t buflen)
+{
+#if USE_STRERROR_R
+  return strerror_r(errnum, buf, buflen);
+
+#else // Not thread-safe, but... oh well?
+  const char* const message = strerror(errnum);
+
+  strncpy(buf, message, buflen);
+  return 0;
+#endif
+}
 
 void*
 serd_malloc_aligned(const size_t alignment, const size_t size)
