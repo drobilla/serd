@@ -4,6 +4,7 @@
 #include "statement.h"
 
 #include "caret.h"
+#include "node.h"
 
 #include "serd/statement.h"
 
@@ -126,4 +127,17 @@ serd_statement_equals(const SerdStatement* const a,
                      serd_node_equals(a->nodes[1], b->nodes[1]) &&
                      serd_node_equals(a->nodes[2], b->nodes[2]) &&
                      serd_node_equals(a->nodes[3], b->nodes[3])));
+}
+
+bool
+serd_statement_matches(const SerdStatement* const statement,
+                       const SerdNode* const      subject,
+                       const SerdNode* const      predicate,
+                       const SerdNode* const      object,
+                       const SerdNode* const      graph)
+{
+  return (serd_node_pattern_match(statement->nodes[0], subject) &&
+          serd_node_pattern_match(statement->nodes[1], predicate) &&
+          serd_node_pattern_match(statement->nodes[2], object) &&
+          serd_node_pattern_match(statement->nodes[3], graph));
 }
