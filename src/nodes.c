@@ -179,12 +179,6 @@ serd_nodes_uri(SerdNodes* const nodes, const SerdStringView string)
 }
 
 const SerdNode*
-serd_nodes_curie(SerdNodes* const nodes, const SerdStringView string)
-{
-  return serd_nodes_manage(nodes, serd_new_curie(string));
-}
-
-const SerdNode*
 serd_nodes_blank(SerdNodes* const nodes, const SerdStringView string)
 {
   return serd_nodes_manage(nodes, serd_new_blank(string));
