@@ -45,6 +45,7 @@ struct SerdReaderImpl {
   SerdNode*       rdf_rest;
   SerdNode*       rdf_nil;
   SerdByteSource* source;
+  SerdEnv*        env;
   SerdStack       stack;
   SerdSyntax      syntax;
   SerdReaderFlags flags;
