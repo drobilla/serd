@@ -79,15 +79,26 @@ on_end(void* handle, const SerdNode* node)
 static void
 test_callbacks(void)
 {
-  SerdNode* const base  = serd_new_uri(SERD_STRING(NS_EG));
-  SerdNode* const name  = serd_new_string(SERD_STRING("eg"));
-  SerdNode* const uri   = serd_new_uri(SERD_STRING(NS_EG "uri"));
-  SerdNode* const blank = serd_new_blank(SERD_STRING("b1"));
-  SerdEnv*        env   = serd_env_new(serd_node_string_view(base));
-  State           state = {0, 0, 0, 0, 0, SERD_SUCCESS};
+  SerdNodes* const nodes = serd_nodes_new();
+
+  const SerdNode* base =
+    serd_nodes_manage(nodes, serd_new_uri(SERD_STRING(NS_EG)));
+
+  const SerdNode* name =
+    serd_nodes_manage(nodes, serd_new_string(SERD_STRING("eg")));
+
+  const SerdNode* uri =
+    serd_nodes_manage(nodes, serd_new_uri(SERD_STRING(NS_EG "uri")));
+
+  const SerdNode* blank =
+    serd_nodes_manage(nodes, serd_new_blank(SERD_STRING("b1")));
+
+  SerdEnv* env = serd_env_new(serd_node_string_view(base));
 
   SerdStatement* const statement =
     serd_statement_new(base, uri, blank, NULL, NULL);
+
+  State state = {0, 0, 0, 0, 0, SERD_SUCCESS};
 
   // Call functions on a sink with no functions set
 
@@ -121,11 +132,10 @@ test_callbacks(void)
   assert(serd_node_equals(state.last_end, blank));
 
   serd_sink_free(sink);
+
+  serd_statement_free(statement);
   serd_env_free(env);
-  serd_node_free(blank);
-  serd_node_free(uri);
-  serd_node_free(name);
-  serd_node_free(base);
+  serd_nodes_free(nodes);
 }
 
 static void
