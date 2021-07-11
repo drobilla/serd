@@ -27,10 +27,10 @@ serd_env_qualify_in_place(const SerdEnv*   env,
    not defined in `env`.
 */
 SerdStatus
-serd_env_expand_in_place(const SerdEnv*  env,
-                         const SerdNode* curie,
-                         ZixStringView*  uri_prefix,
-                         ZixStringView*  uri_suffix);
+serd_env_expand_in_place(const SerdEnv* env,
+                         ZixStringView  curie,
+                         ZixStringView* uri_prefix,
+                         ZixStringView* uri_suffix);
 
 ZIX_PURE_FUNC SerdURIView
 serd_env_base_uri_view(const SerdEnv* env);
