@@ -2,6 +2,7 @@ Checks: >
   *,
   -*-magic-numbers,
   -*-uppercase-literal-suffix,
+  -altera-struct-pack-align,
   -clang-analyzer-deadcode.DeadStores,
   -clang-analyzer-nullability.NullablePassedToNonnull,
   -hicpp-signed-bitwise,
