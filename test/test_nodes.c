@@ -150,24 +150,6 @@ test_uri(void)
 }
 
 static void
-test_curie(void)
-{
-  static const SerdStringView string = SERD_STRING("eg:name");
-
-  SerdNodes* const      nodes = serd_nodes_new();
-  const SerdNode* const node  = serd_nodes_curie(nodes, string);
-
-  assert(node);
-  assert(serd_node_type(node) == SERD_CURIE);
-  assert(!serd_node_datatype(node));
-  assert(!serd_node_language(node));
-  assert(serd_node_length(node) == string.len);
-  assert(!strcmp(serd_node_string(node), string.buf));
-
-  serd_nodes_free(nodes);
-}
-
-static void
 test_blank(void)
 {
   static const SerdStringView string = SERD_STRING("b42");
@@ -228,7 +210,6 @@ main(void)
   test_plain_literal();
   test_typed_literal();
   test_uri();
-  test_curie();
   test_blank();
   test_deref();
   test_get();
