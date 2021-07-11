@@ -2335,11 +2335,12 @@ serd_model_insert_statements(SerdModel* SERD_NONNULL  model,
 /**
    Remove a statement from a model via an iterator.
 
-   Calling this function invalidates all iterators on `model` except `iter`.
+   Calling this function invalidates all other iterators on this model.
 
    @param model The model which `iter` points to.
-   @param iter Iterator to the element to erase, which is incremented to the
-   next value on return.
+
+   @param cursor Cursor pointing to the element to erase.  This cursor is
+   advanced to the next statement on return.
 */
 SERD_API
 SerdStatus
