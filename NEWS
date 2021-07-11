@@ -1,6 +1,7 @@
 serd (0.30.17) unstable; urgency=medium
 
   * Fix crash when trying to read chunks without starting
+  * Fix hang when skipping an error at EOF when lax parsing
   * Override pkg-config dependency within meson
   * Test header for warnings more strictly
 
