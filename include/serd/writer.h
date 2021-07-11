@@ -45,11 +45,11 @@ typedef uint32_t SerdWriterFlags;
 /// Create a new RDF writer
 SERD_API
 SerdWriter* SERD_ALLOCATED
-serd_writer_new(SerdWorld* SERD_NONNULL    world,
-                SerdSyntax                 syntax,
-                SerdWriterFlags            flags,
-                SerdEnv* SERD_NONNULL      env,
-                SerdByteSink* SERD_NONNULL byte_sink);
+serd_writer_new(SerdWorld* SERD_NONNULL     world,
+                SerdSyntax                  syntax,
+                SerdWriterFlags             flags,
+                const SerdEnv* SERD_NONNULL env,
+                SerdByteSink* SERD_NONNULL  byte_sink);
 
 /// Free `writer`
 SERD_API

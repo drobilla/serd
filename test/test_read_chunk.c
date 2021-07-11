@@ -93,7 +93,8 @@ main(void)
                                 "eg:s4 eg:p1 [ eg:p3 eg:o1 ] .\n",
                                 NULL);
 
-  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0, sink, 4096);
+  SerdEnv*    env    = serd_env_new(serd_empty_string());
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0, env, sink, 4096);
   assert(reader);
 
   assert(!serd_reader_start(reader, byte_source));
@@ -110,6 +111,7 @@ main(void)
   assert(!serd_reader_finish(reader));
 
   serd_reader_free(reader);
+  serd_env_free(env);
   serd_byte_source_free(byte_source);
   serd_sink_free(sink);
   serd_world_free(world);
