@@ -1135,6 +1135,20 @@ serd_statement_equals(const SerdStatement* SERD_NULLABLE a,
                       const SerdStatement* SERD_NULLABLE b);
 
 /**
+   Return true iff the statement matches the given pattern.
+
+   Nodes match if they are equivalent, or if one of them is NULL.  The
+   statement matches if every node matches.
+*/
+SERD_PURE_API
+bool
+serd_statement_matches(const SerdStatement* SERD_NONNULL statement,
+                       const SerdNode* SERD_NULLABLE     subject,
+                       const SerdNode* SERD_NULLABLE     predicate,
+                       const SerdNode* SERD_NULLABLE     object,
+                       const SerdNode* SERD_NULLABLE     graph);
+
+/**
    @}
    @defgroup serd_world World
    @{

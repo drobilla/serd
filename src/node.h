@@ -20,6 +20,7 @@
 #include "exess/exess.h"
 #include "serd/serd.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 
 struct SerdNodeImpl {
@@ -46,6 +47,13 @@ static inline const char* SERD_NONNULL
 serd_node_string_i(const SerdNode* const SERD_NONNULL node)
 {
   return (const char*)(node + 1);
+}
+
+static inline bool
+serd_node_pattern_match(const SerdNode* SERD_NULLABLE a,
+                        const SerdNode* SERD_NULLABLE b)
+{
+  return !a || !b || serd_node_equals(a, b);
 }
 
 SerdNode* SERD_ALLOCATED
