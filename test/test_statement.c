@@ -14,21 +14,19 @@ static void
 test_new(void)
 {
   SerdNode* const u = serd_new_uri(serd_string(NS_EG "s"));
-  SerdNode* const c = serd_new_curie(serd_string("eg:c"));
   SerdNode* const b = serd_new_blank(serd_string("b0"));
   SerdNode* const l = serd_new_string(serd_string("str"));
 
-  assert(!serd_statement_new(c, b, u, NULL, NULL));
-  assert(!serd_statement_new(l, c, u, NULL, NULL));
-  assert(!serd_statement_new(l, u, c, u, NULL));
-  assert(!serd_statement_new(u, l, c, NULL, NULL));
-  assert(!serd_statement_new(u, l, u, u, NULL));
-  assert(!serd_statement_new(u, l, u, u, NULL));
+  assert(!serd_statement_new(u, b, u, NULL, NULL));
+  assert(!serd_statement_new(l, u, u, NULL, NULL));
+  assert(!serd_statement_new(l, u, b, u, NULL));
+  assert(!serd_statement_new(u, l, b, NULL, NULL));
+  assert(!serd_statement_new(u, l, b, u, NULL));
+  assert(!serd_statement_new(u, u, u, l, NULL));
 
   serd_node_free(l);
   serd_node_free(b);
   serd_node_free(u);
-  serd_node_free(c);
 }
 
 static void
