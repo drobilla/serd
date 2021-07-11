@@ -171,8 +171,7 @@ result(const SerdStatus status, const size_t count)
 SerdNode*
 serd_new_simple_node(const SerdNodeType type, const SerdStringView str)
 {
-  if (type != SERD_BLANK && type != SERD_CURIE && type != SERD_URI &&
-      type != SERD_VARIABLE) {
+  if (type != SERD_BLANK && type != SERD_URI && type != SERD_VARIABLE) {
     return NULL;
   }
 
@@ -286,12 +285,6 @@ SerdNode*
 serd_new_blank(const SerdStringView str)
 {
   return serd_new_simple_node(SERD_BLANK, str);
-}
-
-SerdNode*
-serd_new_curie(const SerdStringView str)
-{
-  return serd_new_simple_node(SERD_CURIE, str);
 }
 
 ExessVariant
@@ -717,7 +710,7 @@ serd_node_datatype(const SerdNode* const node)
   }
 
   const SerdNode* const datatype = serd_node_meta_c(node);
-  assert(datatype->type == SERD_URI || datatype->type == SERD_CURIE);
+  assert(datatype->type == SERD_URI);
   return datatype;
 }
 

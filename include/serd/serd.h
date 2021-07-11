@@ -568,21 +568,13 @@ typedef enum {
   SERD_URI = 2,
 
   /**
-     CURIE, a shortened URI.
-
-     Value is an unquoted CURIE string relative to the current environment,
-     e.g. "rdf:type".  @see [CURIE Syntax 1.0](http://www.w3.org/TR/curie)
-  */
-  SERD_CURIE = 3,
-
-  /**
      A blank node.
 
      Value is a blank node ID without any syntactic prefix, like "id3", which
      is meaningful only within this serialisation.  @see [RDF 1.1
      Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
   */
-  SERD_BLANK = 4,
+  SERD_BLANK = 3,
 
   /**
      A variable node.
@@ -591,7 +583,7 @@ typedef enum {
      which is meaningful only within this serialisation.  @see [SPARQL 1.1
      Query Language](https://www.w3.org/TR/sparql11-query/#rVar)
   */
-  SERD_VARIABLE = 5
+  SERD_VARIABLE = 4
 } SerdNodeType;
 
 /**
@@ -636,11 +628,6 @@ serd_new_typed_literal(SerdStringView str, SerdStringView datatype_uri);
 SERD_API
 SerdNode* SERD_ALLOCATED
 serd_new_blank(SerdStringView string);
-
-/// Create a new CURIE node
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_curie(SerdStringView string);
 
 /// Create a new URI node
 SERD_API
@@ -996,15 +983,6 @@ serd_nodes_typed_literal(SerdNodes* SERD_NONNULL nodes,
 SERD_API
 const SerdNode* SERD_ALLOCATED
 serd_nodes_uri(SerdNodes* SERD_NONNULL nodes, SerdStringView string);
-
-/**
-   Make a CURIE node.
-
-   A new node will be added if an equivalent node is not already in the set.
-*/
-SERD_API
-const SerdNode* SERD_ALLOCATED
-serd_nodes_curie(SerdNodes* SERD_NONNULL nodes, SerdStringView string);
 
 /**
    Make a blank node.
@@ -1580,17 +1558,6 @@ serd_env_set_prefix(SerdEnv* SERD_NONNULL env,
                     SerdStringView        uri);
 
 /**
-   Qualify `uri` into a CURIE if possible.
-
-   Returns null if `uri` can not be qualified (usually because no corresponding
-   prefix is defined).
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_env_qualify(const SerdEnv* SERD_NULLABLE  env,
-                 const SerdNode* SERD_NULLABLE uri);
-
-/**
    Expand `node`, which must be a CURIE or URI, to a full URI.
 
    Returns null if `node` can not be expanded.
@@ -1599,6 +1566,10 @@ SERD_API
 SerdNode* SERD_ALLOCATED
 serd_env_expand(const SerdEnv* SERD_NULLABLE  env,
                 const SerdNode* SERD_NULLABLE node);
+
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_env_expand_curie(const SerdEnv* SERD_NULLABLE env, SerdStringView curie);
 
 /// Write all prefixes in `env` to `sink`
 SERD_API
