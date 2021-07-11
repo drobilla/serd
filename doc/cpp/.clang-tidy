@@ -4,6 +4,7 @@ Checks: >
   -*-named-parameter,
   -*-non-private-member-variables-in-classes,
   -*-uppercase-literal-suffix,
+  -altera-struct-pack-align,
   -clang-analyzer-deadcode.DeadStores,
   -clang-analyzer-nullability.NullablePassedToNonnull,
   -cppcoreguidelines-pro-bounds-array-to-pointer-decay,

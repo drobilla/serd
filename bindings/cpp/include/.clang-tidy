@@ -3,6 +3,7 @@ Checks: >
   -*-named-parameter,
   -*-non-private-member-variables-in-classes,
   -*-uppercase-literal-suffix,
+  -altera-struct-pack-align,
   -cert-dcl50-cpp,
   -clang-diagnostic-unused-macros,
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,

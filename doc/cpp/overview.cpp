@@ -36,7 +36,7 @@
 #  pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #endif
 
-using namespace serd;
+using namespace serd; // NOLINT(google-build-using-namespace)
 
 static void
 statements()

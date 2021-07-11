@@ -3,6 +3,7 @@ Checks: >
   -*-magic-numbers,
   -*-non-private-member-variables-in-classes,
   -*-uppercase-literal-suffix,
+  -altera-struct-pack-align,
   -cert-dcl50-cpp,
   -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,
@@ -21,6 +22,7 @@ Checks: >
   -misc-no-recursion,
   -modernize-use-trailing-return-type,
   -performance-unnecessary-value-param,
+  -readability-function-cognitive-complexity,
   -readability-implicit-bool-conversion,
   -readability-named-parameter,
 WarningsAsErrors: '*'
