@@ -27,6 +27,7 @@
 #  include <unistd.h>
 #endif
 
+#include <assert.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -137,6 +138,9 @@ get_log_field(const SerdLogField* const fields,
 const char*
 serd_log_entry_get_field(const SerdLogEntry* const entry, const char* const key)
 {
+  assert(entry);
+  assert(key);
+
   return get_log_field(entry->fields, entry->n_fields, key);
 }
 
@@ -197,6 +201,9 @@ serd_world_logf(const SerdWorld* const    world,
                 const char* const         fmt,
                 ...)
 {
+  assert(world);
+  assert(fmt);
+
   va_list args;
   va_start(args, fmt);
 
@@ -297,12 +304,15 @@ serd_world_free(SerdWorld* const world)
 SerdNodes*
 serd_world_nodes(SerdWorld* const world)
 {
+  assert(world);
   return world->nodes;
 }
 
 const SerdNode*
 serd_world_get_blank(SerdWorld* const world)
 {
+  assert(world);
+
   char* buf = serd_node_buffer(world->blank_node);
   memset(buf, 0, BLANK_CHARS + 1);
 
@@ -317,6 +327,8 @@ serd_world_set_log_func(SerdWorld* const  world,
                         const SerdLogFunc log_func,
                         void* const       handle)
 {
+  assert(world);
+
   world->log_func   = log_func;
   world->log_handle = handle;
 }

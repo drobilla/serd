@@ -18,6 +18,7 @@
 
 #include "serd/serd.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,6 +37,8 @@ on_node_string_event(void* const handle, const SerdEvent* const event)
 SerdNode*
 serd_node_from_syntax(const char* const str, const SerdSyntax syntax)
 {
+  assert(str);
+
   static const char* const prelude =
     "_:s <http://www.w3.org/2000/01/rdf-schema#object>";
 
@@ -76,6 +79,8 @@ serd_node_from_syntax(const char* const str, const SerdSyntax syntax)
 char*
 serd_node_to_syntax(const SerdNode* const node, const SerdSyntax syntax)
 {
+  assert(node);
+
   SerdWorld* const    world  = serd_world_new();
   SerdEnv* const      env    = serd_env_new(SERD_EMPTY_STRING());
   SerdBuffer          buffer = {NULL, 0};

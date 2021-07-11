@@ -22,6 +22,7 @@
 #include "rerex/rerex.h"
 #include "serd/serd.h"
 
+#include <assert.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -1714,6 +1715,8 @@ statement_check_valid_literal(SerdValidator* const       ctx,
 SerdValidator*
 serd_validator_new(SerdWorld* const world)
 {
+  assert(world);
+
   SerdValidator* const validator =
     (SerdValidator*)calloc(1, sizeof(SerdValidator));
 
@@ -1787,6 +1790,8 @@ SerdStatus
 serd_validator_enable_check(SerdValidator* const     validator,
                             const SerdValidatorCheck check)
 {
+  assert(validator);
+
   validator->checks |= (SerdValidatorChecks)check;
   return SERD_SUCCESS;
 }
@@ -1795,6 +1800,8 @@ SerdStatus
 serd_validator_disable_check(SerdValidator* const     validator,
                              const SerdValidatorCheck check)
 {
+  assert(validator);
+
   validator->checks &= ~(SerdValidatorChecks)check;
   return SERD_SUCCESS;
 }
@@ -1830,6 +1837,9 @@ SerdStatus
 serd_validator_enable_checks(SerdValidator* const validator,
                              const char* const    regex)
 {
+  assert(validator);
+  assert(regex);
+
   if (!strcmp(regex, "all")) {
     validator->checks = ~0u;
     return SERD_SUCCESS;
@@ -1842,6 +1852,9 @@ SerdStatus
 serd_validator_disable_checks(SerdValidator* const validator,
                               const char* const    regex)
 {
+  assert(validator);
+  assert(regex);
+
   if (!strcmp(regex, "all")) {
     validator->checks = 0u;
     return SERD_SUCCESS;
@@ -1881,6 +1894,9 @@ serd_validate_model(SerdValidator* const   validator,
                     const SerdModel* const model,
                     const SerdNode* const  graph)
 {
+  assert(validator);
+  assert(model);
+
   SerdValidator* const ctx = validator;
   SerdStatus           st  = SERD_SUCCESS;
 

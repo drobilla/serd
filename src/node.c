@@ -338,6 +338,8 @@ serd_node_get_value_as(const SerdNode* const node,
 bool
 serd_get_boolean(const SerdNode* const node)
 {
+  assert(node);
+
   const ExessVariant variant = serd_node_get_value_as(node, EXESS_BOOLEAN);
   const bool* const  value   = exess_get_boolean(&variant);
 
@@ -347,6 +349,8 @@ serd_get_boolean(const SerdNode* const node)
 double
 serd_get_double(const SerdNode* const node)
 {
+  assert(node);
+
   const ExessVariant  variant = serd_node_get_value_as(node, EXESS_DOUBLE);
   const double* const value   = exess_get_double(&variant);
 
@@ -356,6 +360,8 @@ serd_get_double(const SerdNode* const node)
 float
 serd_get_float(const SerdNode* const node)
 {
+  assert(node);
+
   const ExessVariant variant = serd_node_get_value_as(node, EXESS_FLOAT);
   const float* const value   = exess_get_float(&variant);
 
@@ -365,6 +371,8 @@ serd_get_float(const SerdNode* const node)
 int64_t
 serd_get_integer(const SerdNode* const node)
 {
+  assert(node);
+
   const ExessVariant   variant = serd_node_get_value_as(node, EXESS_LONG);
   const int64_t* const value   = exess_get_long(&variant);
 
@@ -693,6 +701,8 @@ write_base64_literal(const void* const user_data,
 SerdNode*
 serd_new_base64(const void* buf, size_t size, const SerdNode* datatype)
 {
+  assert(buf);
+
   const size_t    len  = exess_write_base64(size, buf, 0, NULL).count;
   const SerdNode* type = datatype ? datatype : &serd_xsd_base64Binary.node;
   SerdConstBuffer blob = {buf, size};
@@ -703,32 +713,42 @@ serd_new_base64(const void* buf, size_t size, const SerdNode* datatype)
 SerdNodeType
 serd_node_type(const SerdNode* const node)
 {
+  assert(node);
+
   return node->type;
 }
 
 const char*
 serd_node_string(const SerdNode* const node)
 {
+  assert(node);
+
   return (const char*)(node + 1);
 }
 
 size_t
 serd_node_length(const SerdNode* const node)
 {
+  assert(node);
+
   return node->length;
 }
 
 SerdStringView
-serd_node_string_view(const SerdNode* SERD_NONNULL node)
+serd_node_string_view(const SerdNode* node)
 {
+  assert(node);
+
   const SerdStringView result = {(const char*)(node + 1), node->length};
 
   return result;
 }
 
 SerdURIView
-serd_node_uri_view(const SerdNode* SERD_NONNULL node)
+serd_node_uri_view(const SerdNode* node)
 {
+  assert(node);
+
   return (node->type == SERD_URI) ? serd_parse_uri(serd_node_string(node))
                                   : SERD_URI_NULL;
 }
@@ -736,7 +756,9 @@ serd_node_uri_view(const SerdNode* SERD_NONNULL node)
 const SerdNode*
 serd_node_datatype(const SerdNode* const node)
 {
-  if (!node || !(node->flags & SERD_HAS_DATATYPE)) {
+  assert(node);
+
+  if (!(node->flags & SERD_HAS_DATATYPE)) {
     return NULL;
   }
 
@@ -748,7 +770,9 @@ serd_node_datatype(const SerdNode* const node)
 const SerdNode*
 serd_node_language(const SerdNode* const node)
 {
-  if (!node || !(node->flags & SERD_HAS_LANGUAGE)) {
+  assert(node);
+
+  if (!(node->flags & SERD_HAS_LANGUAGE)) {
     return NULL;
   }
 

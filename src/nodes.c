@@ -93,12 +93,16 @@ serd_nodes_free(SerdNodes* nodes)
 size_t
 serd_nodes_size(const SerdNodes* nodes)
 {
+  assert(nodes);
+
   return zix_hash_size(nodes->hash);
 }
 
 const SerdNode*
 serd_nodes_intern(SerdNodes* nodes, const SerdNode* node)
 {
+  assert(nodes);
+
   if (!node) {
     return NULL;
   }
@@ -120,6 +124,8 @@ serd_nodes_intern(SerdNodes* nodes, const SerdNode* node)
 const SerdNode*
 serd_nodes_get(const SerdNodes* const nodes, const SerdNode* const node)
 {
+  assert(nodes);
+
   if (!node) {
     return NULL;
   }
@@ -133,6 +139,8 @@ serd_nodes_get(const SerdNodes* const nodes, const SerdNode* const node)
 const SerdNode*
 serd_nodes_manage(SerdNodes* nodes, SerdNode* node)
 {
+  assert(nodes);
+
   if (!node) {
     return NULL;
   }
@@ -153,6 +161,8 @@ serd_nodes_manage(SerdNodes* nodes, SerdNode* node)
 void
 serd_nodes_deref(SerdNodes* const nodes, const SerdNode* const node)
 {
+  assert(nodes);
+
   const NodesSearchKey key   = {1, node};
   NodesEntry* const    entry = (NodesEntry*)zix_hash_find(nodes->hash, &key);
 

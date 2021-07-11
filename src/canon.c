@@ -23,6 +23,7 @@
 #include "exess/exess.h"
 #include "serd/serd.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -163,6 +164,8 @@ serd_canon_new(const SerdWorld* const world,
                const SerdSink* const  target,
                const SerdCanonFlags   flags)
 {
+  assert(target);
+
   SerdCanonData* const data = (SerdCanonData*)calloc(1, sizeof(SerdCanonData));
 
   data->world  = world;
