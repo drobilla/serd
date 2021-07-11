@@ -15,11 +15,13 @@ test_copy(void)
 {
   assert(!serd_statement_copy(NULL));
 
-  SerdNode* const f = serd_new_string(serd_string("file"));
-  SerdNode* const s = serd_new_uri(serd_string(NS_EG "s"));
-  SerdNode* const p = serd_new_uri(serd_string(NS_EG "p"));
-  SerdNode* const o = serd_new_uri(serd_string(NS_EG "o"));
-  SerdNode* const g = serd_new_uri(serd_string(NS_EG "g"));
+  SerdNodes* const nodes = serd_nodes_new();
+
+  const SerdNode* const f = serd_nodes_string(nodes, serd_string("file"));
+  const SerdNode* const s = serd_nodes_uri(nodes, serd_string(NS_EG "s"));
+  const SerdNode* const p = serd_nodes_uri(nodes, serd_string(NS_EG "p"));
+  const SerdNode* const o = serd_nodes_uri(nodes, serd_string(NS_EG "o"));
+  const SerdNode* const g = serd_nodes_uri(nodes, serd_string(NS_EG "g"));
 
   SerdCaret* const     caret     = serd_caret_new(f, 1, 1);
   SerdStatement* const statement = serd_statement_new(s, p, o, g, caret);
@@ -31,11 +33,7 @@ test_copy(void)
   serd_statement_free(copy);
   serd_caret_free(caret);
   serd_statement_free(statement);
-  serd_node_free(g);
-  serd_node_free(o);
-  serd_node_free(p);
-  serd_node_free(s);
-  serd_node_free(f);
+  serd_nodes_free(nodes);
 }
 
 static void
@@ -47,11 +45,13 @@ test_free(void)
 static void
 test_fields(void)
 {
-  SerdNode* const f = serd_new_string(serd_string("file"));
-  SerdNode* const s = serd_new_uri(serd_string(NS_EG "s"));
-  SerdNode* const p = serd_new_uri(serd_string(NS_EG "p"));
-  SerdNode* const o = serd_new_uri(serd_string(NS_EG "o"));
-  SerdNode* const g = serd_new_uri(serd_string(NS_EG "g"));
+  SerdNodes* const nodes = serd_nodes_new();
+
+  const SerdNode* const f = serd_nodes_string(nodes, serd_string("file"));
+  const SerdNode* const s = serd_nodes_uri(nodes, serd_string(NS_EG "s"));
+  const SerdNode* const p = serd_nodes_uri(nodes, serd_string(NS_EG "p"));
+  const SerdNode* const o = serd_nodes_uri(nodes, serd_string(NS_EG "o"));
+  const SerdNode* const g = serd_nodes_uri(nodes, serd_string(NS_EG "g"));
 
   SerdCaret* const     caret     = serd_caret_new(f, 1, 1);
   SerdStatement* const statement = serd_statement_new(s, p, o, g, caret);
@@ -99,11 +99,7 @@ test_fields(void)
 
   serd_statement_free(statement);
   serd_caret_free(caret);
-  serd_node_free(g);
-  serd_node_free(o);
-  serd_node_free(p);
-  serd_node_free(s);
-  serd_node_free(f);
+  serd_nodes_free(nodes);
 }
 
 int

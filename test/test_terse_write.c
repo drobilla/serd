@@ -32,17 +32,22 @@ test(void)
   SerdBuffer buffer = {NULL, 0};
   SerdWorld* world  = serd_world_new();
   SerdEnv*   env    = serd_env_new(serd_empty_string());
+  SerdNodes* nodes  = serd_nodes_new();
 
-  SerdNode* b1 = serd_new_token(SERD_BLANK, serd_string("b1"));
-  SerdNode* l1 = serd_new_token(SERD_BLANK, serd_string("l1"));
-  SerdNode* l2 = serd_new_token(SERD_BLANK, serd_string("l2"));
-  SerdNode* s1 = serd_new_string(serd_string("s1"));
-  SerdNode* s2 = serd_new_string(serd_string("s2"));
+  const SerdNode* b1 = serd_nodes_blank(nodes, serd_string("b1"));
+  const SerdNode* l1 = serd_nodes_blank(nodes, serd_string("l1"));
+  const SerdNode* l2 = serd_nodes_blank(nodes, serd_string("l2"));
+  const SerdNode* s1 = serd_nodes_string(nodes, serd_string("s1"));
+  const SerdNode* s2 = serd_nodes_string(nodes, serd_string("s2"));
 
-  SerdNode* rdf_first = serd_new_uri(serd_string(NS_RDF "first"));
-  SerdNode* rdf_value = serd_new_uri(serd_string(NS_RDF "value"));
-  SerdNode* rdf_rest  = serd_new_uri(serd_string(NS_RDF "rest"));
-  SerdNode* rdf_nil   = serd_new_uri(serd_string(NS_RDF "nil"));
+  const SerdNode* rdf_first =
+    serd_nodes_uri(nodes, serd_string(NS_RDF "first"));
+
+  const SerdNode* rdf_value =
+    serd_nodes_uri(nodes, serd_string(NS_RDF "value"));
+
+  const SerdNode* rdf_rest = serd_nodes_uri(nodes, serd_string(NS_RDF "rest"));
+  const SerdNode* rdf_nil  = serd_nodes_uri(nodes, serd_string(NS_RDF "nil"));
 
   serd_env_set_prefix(env, serd_string("rdf"), serd_string(NS_RDF));
 
@@ -83,15 +88,7 @@ test(void)
   serd_buffer_sink_finish(&buffer);
   serd_writer_free(writer);
   serd_byte_sink_free(byte_sink);
-  serd_node_free(rdf_nil);
-  serd_node_free(rdf_rest);
-  serd_node_free(rdf_value);
-  serd_node_free(rdf_first);
-  serd_node_free(s2);
-  serd_node_free(s1);
-  serd_node_free(l2);
-  serd_node_free(l1);
-  serd_node_free(b1);
+  serd_nodes_free(nodes);
   serd_env_free(env);
   serd_world_free(world);
   free(buffer.buf);
