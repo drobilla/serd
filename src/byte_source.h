@@ -69,7 +69,8 @@ serd_byte_source_peek(SerdByteSource* source)
 static inline SerdStatus
 serd_byte_source_advance(SerdByteSource* source)
 {
-  SerdStatus st = SERD_SUCCESS;
+  SerdStatus st      = SERD_SUCCESS;
+  const bool was_eof = source->eof;
 
   if (serd_byte_source_peek(source) == '\n') {
     ++source->cur.line;
@@ -78,27 +79,12 @@ serd_byte_source_advance(SerdByteSource* source)
     ++source->cur.col;
   }
 
-  const bool was_eof = source->eof;
   if (source->from_stream) {
-    source->eof = false;
-    if (source->page_size > 1) {
-      if (++source->read_head == source->page_size) {
-        st = serd_byte_source_page(source);
-      } else if (source->read_head == source->buf_size) {
-        source->eof = true;
-      }
-    } else {
-      if (!source->read_func(&source->read_byte, 1, 1, source->stream)) {
-        source->eof = true;
-        st =
-          source->error_func(source->stream) ? SERD_BAD_STREAM : SERD_FAILURE;
-      }
+    if (++source->read_head >= source->buf_size) {
+      st = serd_byte_source_page(source);
     }
   } else if (!source->eof) {
-    ++source->read_head; // Move to next character in string
-    if (source->read_buf[source->read_head] == '\0') {
-      source->eof = true;
-    }
+    source->eof = source->read_buf[++source->read_head] == '\0';
   }
 
   return (was_eof && source->eof) ? SERD_FAILURE : st;
