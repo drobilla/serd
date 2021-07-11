@@ -24,8 +24,9 @@
 int
 main(void)
 {
-  SerdNode* const  node  = serd_new_string(SERD_STRING("node"));
-  SerdCaret* const caret = serd_caret_new(node, 46, 2);
+  SerdNodes* const      nodes = serd_nodes_new();
+  const SerdNode* const node  = serd_nodes_string(nodes, SERD_STRING("node"));
+  SerdCaret* const      caret = serd_caret_new(node, 46, 2);
 
   assert(serd_caret_equals(caret, caret));
   assert(serd_caret_name(caret) == node);
@@ -37,7 +38,9 @@ main(void)
   assert(serd_caret_equals(caret, copy));
   assert(!serd_caret_copy(NULL));
 
-  SerdNode* const  other_node = serd_new_string(SERD_STRING("other"));
+  const SerdNode* const other_node =
+    serd_nodes_string(nodes, SERD_STRING("other"));
+
   SerdCaret* const other_file = serd_caret_new(other_node, 46, 2);
   SerdCaret* const other_line = serd_caret_new(node, 47, 2);
   SerdCaret* const other_col  = serd_caret_new(node, 46, 3);
@@ -51,10 +54,9 @@ main(void)
   serd_caret_free(other_col);
   serd_caret_free(other_line);
   serd_caret_free(other_file);
-  serd_node_free(other_node);
   serd_caret_free(copy);
   serd_caret_free(caret);
-  serd_node_free(node);
+  serd_nodes_free(nodes);
 
   return 0;
 }
