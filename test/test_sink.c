@@ -84,12 +84,14 @@ on_event(void* const handle, const SerdEvent* const event)
 static void
 test_callbacks(void)
 {
-  SerdNode* const base  = serd_new_uri(serd_string(NS_EG));
-  SerdNode* const name  = serd_new_string(serd_string("eg"));
-  SerdNode* const uri   = serd_new_uri(serd_string(NS_EG "uri"));
-  SerdNode* const blank = serd_new_token(SERD_BLANK, serd_string("b1"));
-  SerdEnv*        env   = serd_env_new(serd_node_string_view(base));
-  State           state = {0, 0, 0, 0, 0, SERD_SUCCESS};
+  SerdNodes* const nodes = serd_nodes_new();
+
+  const SerdNode* base  = serd_nodes_uri(nodes, serd_string(NS_EG));
+  const SerdNode* name  = serd_nodes_string(nodes, serd_string("eg"));
+  const SerdNode* uri   = serd_nodes_uri(nodes, serd_string(NS_EG "uri"));
+  const SerdNode* blank = serd_nodes_blank(nodes, serd_string("b1"));
+
+  SerdEnv* env = serd_env_new(serd_node_string_view(base));
 
   SerdStatement* const statement =
     serd_statement_new(base, uri, blank, NULL, NULL);
@@ -98,6 +100,8 @@ test_callbacks(void)
   const SerdPrefixEvent    prefix_event    = {SERD_PREFIX, name, uri};
   const SerdStatementEvent statement_event = {SERD_STATEMENT, 0U, statement};
   const SerdEndEvent       end_event       = {SERD_END, blank};
+
+  State state = {0, 0, 0, 0, 0, SERD_SUCCESS};
 
   // Call functions on a sink with no functions set
 
@@ -146,10 +150,7 @@ test_callbacks(void)
 
   serd_statement_free(statement);
   serd_env_free(env);
-  serd_node_free(blank);
-  serd_node_free(uri);
-  serd_node_free(name);
-  serd_node_free(base);
+  serd_nodes_free(nodes);
 }
 
 static void
