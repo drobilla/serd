@@ -28,7 +28,7 @@ serd_env_qualify_in_place(const SerdEnv*   env,
 */
 SerdStatus
 serd_env_expand_in_place(const SerdEnv*  env,
-                         const SerdNode* curie,
+                         SerdStringView  curie,
                          SerdStringView* uri_prefix,
                          SerdStringView* uri_suffix);
 

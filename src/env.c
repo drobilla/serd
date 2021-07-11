@@ -247,15 +247,13 @@ serd_env_qualify(const SerdEnv* const env, const SerdNode* const uri)
 
 SerdStatus
 serd_env_expand_in_place(const SerdEnv* const  env,
-                         const SerdNode* const curie,
+                         const SerdStringView  curie,
                          SerdStringView* const uri_prefix,
                          SerdStringView* const uri_suffix)
 {
-  const char* const str   = serd_node_string(curie);
-  const char* const colon = (const char*)memchr(str, ':', curie->length + 1);
-  if (curie->type != SERD_CURIE || !colon) {
-    return SERD_BAD_ARG;
-  }
+  const char* const str = curie.data;
+  const char* const colon =
+    str ? (const char*)memchr(str, ':', curie.length + 1) : NULL;
 
   const size_t            name_len = (size_t)(colon - str);
   const SerdPrefix* const prefix   = serd_env_find(env, str, name_len);
@@ -263,7 +261,7 @@ serd_env_expand_in_place(const SerdEnv* const  env,
     uri_prefix->data   = serd_node_string(prefix->uri);
     uri_prefix->length = prefix->uri ? prefix->uri->length : 0;
     uri_suffix->data   = colon + 1;
-    uri_suffix->length = curie->length - name_len - 1;
+    uri_suffix->length = curie.length - name_len - 1;
     return SERD_SUCCESS;
   }
   return SERD_BAD_CURIE;
@@ -276,7 +274,8 @@ expand_curie(const SerdEnv* const env, const SerdNode* const node)
 
   SerdStringView prefix;
   SerdStringView suffix;
-  if (serd_env_expand_in_place(env, node, &prefix, &suffix)) {
+  if (serd_env_expand_in_place(
+        env, serd_node_string_view(node), &prefix, &suffix)) {
     return NULL;
   }
 

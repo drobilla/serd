@@ -886,7 +886,8 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
     (writer->flags & (SERD_WRITE_UNQUALIFIED | SERD_WRITE_UNRESOLVED));
 
   if (!supports_abbrev(writer) || !fast) {
-    if ((st = serd_env_expand_in_place(writer->env, node, &prefix, &suffix))) {
+    const SerdStringView curie = serd_node_string_view(node);
+    if ((st = serd_env_expand_in_place(writer->env, curie, &prefix, &suffix))) {
       return w_err(writer, st, "undefined namespace prefix '%s'\n", node_str);
     }
   }
