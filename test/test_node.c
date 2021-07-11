@@ -413,10 +413,6 @@ test_node_equals(void)
   assert(serd_node_equals(lhs, lhs));
   assert(!serd_node_equals(lhs, rhs));
 
-  SerdNode* const qnode = serd_new_curie(serd_string("foo:bar"));
-  assert(!serd_node_equals(lhs, qnode));
-  serd_node_free(qnode);
-
   assert(!serd_node_copy(NULL));
 
   serd_node_free(lhs);

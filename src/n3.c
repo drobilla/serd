@@ -877,8 +877,7 @@ read_PrefixedName(SerdReader* const reader,
   }
 
   if ((st = push_byte(reader, dest, eat_byte_safe(reader, ':'))) ||
-      (st = read_PN_LOCAL(reader, dest, ate_dot)) > SERD_FAILURE ||
-      (reader->flags & SERD_READ_PREFIXED)) {
+      (st = read_PN_LOCAL(reader, dest, ate_dot)) > SERD_FAILURE) {
     return st;
   }
 
@@ -1003,7 +1002,7 @@ read_iri(SerdReader* const reader, SerdNode** const dest, bool* const ate_dot)
     return read_IRIREF(reader, dest);
   }
 
-  if (!(*dest = push_node(reader, SERD_CURIE, "", 0))) {
+  if (!(*dest = push_node(reader, SERD_LITERAL, "", 0))) {
     return SERD_ERR_OVERFLOW;
   }
 
@@ -1095,7 +1094,7 @@ read_verb(SerdReader* reader, SerdNode** dest)
   /* Either a qname, or "a".  Read the prefix first, and if it is in fact
      "a", produce that instead.
   */
-  if (!(*dest = push_node(reader, SERD_CURIE, "", 0))) {
+  if (!(*dest = push_node(reader, SERD_URI, "", 0))) {
     return SERD_ERR_OVERFLOW;
   }
 
@@ -1318,7 +1317,7 @@ read_object(SerdReader* const  reader,
     /* Either a boolean literal, or a qname.  Read the prefix first, and if
        it is in fact a "true" or "false" literal, produce that instead.
     */
-    if (!(o = push_node(reader, SERD_CURIE, "", 0))) {
+    if (!(o = push_node(reader, SERD_URI, "", 0))) {
       return SERD_ERR_OVERFLOW;
     }
 
@@ -1525,7 +1524,9 @@ read_subject(SerdReader* const reader,
     st = read_BLANK_NODE_LABEL(reader, dest, &ate_dot);
     break;
   default:
-    st = read_iri(reader, dest, &ate_dot);
+    if ((st = read_iri(reader, dest, &ate_dot))) {
+      return r_err(reader, st, "expected subject");
+    }
   }
 
   if (ate_dot) {

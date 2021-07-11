@@ -53,21 +53,13 @@ typedef enum {
   SERD_URI = 2,
 
   /**
-     CURIE, a shortened URI.
-
-     Value is an unquoted CURIE string relative to the current environment,
-     e.g. "rdf:type".  @see [CURIE Syntax 1.0](http://www.w3.org/TR/curie)
-  */
-  SERD_CURIE = 3,
-
-  /**
      A blank node.
 
      Value is a blank node ID without any syntactic prefix, like "id3", which
      is meaningful only within this serialisation.  @see [RDF 1.1
      Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
   */
-  SERD_BLANK = 4,
+  SERD_BLANK = 3,
 
   /**
      A variable node.
@@ -76,7 +68,7 @@ typedef enum {
      which is meaningful only within this serialisation.  @see [SPARQL 1.1
      Query Language](https://www.w3.org/TR/sparql11-query/#rVar)
   */
-  SERD_VARIABLE = 5,
+  SERD_VARIABLE = 4,
 } SerdNodeType;
 
 /// Node flags, which ORed together make a #SerdNodeFlags
@@ -156,11 +148,6 @@ serd_new_typed_literal(SerdStringView str, SerdStringView datatype_uri);
 SERD_API
 SerdNode* SERD_ALLOCATED
 serd_new_blank(SerdStringView string);
-
-/// Create a new CURIE node
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_curie(SerdStringView string);
 
 /// Create a new URI node
 SERD_API

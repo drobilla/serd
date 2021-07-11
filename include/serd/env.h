@@ -67,35 +67,50 @@ serd_env_set_prefix(SerdEnv* SERD_NONNULL env,
                     SerdStringView        uri);
 
 /**
-   Qualify `uri` into a CURIE if possible.
+   Qualify `uri` into a prefix and suffix (like a CURIE) if possible.
 
-   Returns null if `uri` can not be qualified (usually because no corresponding
-   prefix is defined).
+   @param env Environment with prefixes to use.
+
+   @param uri URI to qualify.
+
+   @param prefix On success, pointed to a prefix string slice, which is only
+   valid until the next time `env` is mutated.
+
+   @param suffix On success, pointed to a suffix string slice, which is only
+   valid until the next time `env` is mutated.
+
+   @return #SERD_SUCCESS, or #SERD_FAILURE if `uri` can not be qualified with
+   `env`.
 */
 SERD_API
-SerdNode* SERD_ALLOCATED
-serd_env_qualify(const SerdEnv* SERD_NULLABLE  env,
-                 const SerdNode* SERD_NULLABLE uri);
+SerdStatus
+serd_env_qualify(const SerdEnv* SERD_NULLABLE env,
+                 SerdStringView               uri,
+                 SerdStringView* SERD_NONNULL prefix,
+                 SerdStringView* SERD_NONNULL suffix);
 
 /**
-   Expand `node`, which must be a CURIE or URI, to a full URI.
+   Expand `curie` to an absolute URI if possible.
+
+   For example, if `env` has the prefix "rdf" set to
+   <http://www.w3.org/1999/02/22-rdf-syntax-ns#>, then calling this with curie
+   "rdf:type" will produce <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>.
 
    Returns null if `node` can not be expanded.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_env_expand(const SerdEnv* SERD_NULLABLE  env,
-                const SerdNode* SERD_NULLABLE node);
+serd_env_expand_curie(const SerdEnv* SERD_NULLABLE env, SerdStringView curie);
 
 /**
-   Expand `node`, which must be a CURIE or URI, to a full URI.
+   Expand `node` to an absolute URI if possible.
 
    Returns null if `node` can not be expanded.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_env_expand_node(const SerdEnv* SERD_NULLABLE env,
-                     const SerdNode* SERD_NONNULL node);
+serd_env_expand_node(const SerdEnv* SERD_NULLABLE  env,
+                     const SerdNode* SERD_NULLABLE node);
 
 /// Write all prefixes in `env` to `sink`
 SERD_API
