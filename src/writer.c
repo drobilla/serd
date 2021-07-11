@@ -753,7 +753,7 @@ is_name(const char* buf, const size_t len)
 {
   // TODO: This is more strict than it should be
   for (size_t i = 0; i < len; ++i) {
-    if (!(is_alpha(buf[i]) || is_digit(buf[i]))) {
+    if (!(is_alpha(buf[i]) || is_digit(buf[i]) || lname_must_escape(buf[i]))) {
       return false;
     }
   }
@@ -822,9 +822,11 @@ write_uri_node(SerdWriter* const     writer,
         serd_env_qualify_in_place(writer->env, node, &prefix, &suffix) &&
         is_name(serd_node_string(prefix), serd_node_length(prefix)) &&
         is_name(suffix.buf, suffix.len)) {
-      TRY(st, write_uri_from_node(writer, prefix));
+      TRY(st,
+          write_lname(
+            writer, serd_node_string(prefix), serd_node_length(prefix)));
       TRY(st, esink(":", 1, writer));
-      return ewrite_uri(writer, suffix.buf, suffix.len);
+      return write_lname(writer, suffix.buf, suffix.len);
     }
   }
 
@@ -838,34 +840,6 @@ write_uri_node(SerdWriter* const     writer,
   }
 
   return write_full_uri_node(writer, node);
-}
-
-SERD_WARN_UNUSED_RESULT static SerdStatus
-write_curie(SerdWriter* const writer, const SerdNode* const node)
-{
-  writer->last_sep = SEP_NONE;
-
-  SerdStringView prefix = {NULL, 0};
-  SerdStringView suffix = {NULL, 0};
-  SerdStatus     st     = SERD_SUCCESS;
-
-  if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
-    const SerdStringView curie = serd_node_string_view(node);
-    if ((st = serd_env_expand_in_place(writer->env, curie, &prefix, &suffix))) {
-      SERD_LOG_ERRORF(writer->world,
-                      st,
-                      "undefined namespace prefix in `%s'",
-                      serd_node_string(node));
-      return st;
-    }
-
-    TRY(st, esink("<", 1, writer));
-    TRY(st, ewrite_uri(writer, prefix.buf, prefix.len));
-    TRY(st, ewrite_uri(writer, suffix.buf, suffix.len));
-    return esink(">", 1, writer);
-  }
-
-  return write_lname(writer, serd_node_string(node), node->length);
 }
 
 SERD_WARN_UNUSED_RESULT static SerdStatus
@@ -933,9 +907,6 @@ write_node(SerdWriter* const        writer,
     break;
   case SERD_URI:
     st = write_uri_node(writer, node, field);
-    break;
-  case SERD_CURIE:
-    st = write_curie(writer, node);
     break;
   case SERD_BLANK:
     st = write_blank(writer, node, field, flags);

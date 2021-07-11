@@ -231,30 +231,6 @@ serd_env_qualify_in_place(const SerdEnv* const   env,
   return false;
 }
 
-SerdNode*
-serd_env_qualify(const SerdEnv* const env, const SerdNode* const uri)
-{
-  if (!env || !uri) {
-    return NULL;
-  }
-
-  const SerdNode* prefix = NULL;
-  SerdStringView  suffix = {NULL, 0};
-  if (serd_env_qualify_in_place(env, uri, &prefix, &suffix)) {
-    const size_t prefix_len = serd_node_length(prefix);
-    const size_t length     = prefix_len + 1 + suffix.len;
-    SerdNode*    node       = serd_node_malloc(length, 0, SERD_CURIE);
-
-    memcpy(serd_node_buffer(node), serd_node_string(prefix), prefix_len);
-    serd_node_buffer(node)[prefix_len] = ':';
-    memcpy(serd_node_buffer(node) + 1 + prefix_len, suffix.buf, suffix.len);
-    node->length = length;
-    return node;
-  }
-
-  return NULL;
-}
-
 SerdStatus
 serd_env_expand_in_place(const SerdEnv* const  env,
                          const SerdStringView  curie,
@@ -288,15 +264,16 @@ expand_uri(const SerdEnv* env, const SerdNode* node)
   return serd_new_resolved_uri(serd_node_string_view(node), env->base_uri);
 }
 
-static SerdNode*
-expand_curie(const SerdEnv* env, const SerdNode* node)
+SerdNode*
+serd_env_expand_curie(const SerdEnv* const env, const SerdStringView curie)
 {
-  assert(serd_node_type(node) == SERD_CURIE);
+  if (!env) {
+    return NULL;
+  }
 
   SerdStringView prefix;
   SerdStringView suffix;
-  if (serd_env_expand_in_place(
-        env, serd_node_string_view(node), &prefix, &suffix)) {
+  if (serd_env_expand_in_place(env, curie, &prefix, &suffix)) {
     return NULL;
   }
 
@@ -321,8 +298,6 @@ serd_env_expand(const SerdEnv* env, const SerdNode* node)
     break;
   case SERD_URI:
     return expand_uri(env, node);
-  case SERD_CURIE:
-    return expand_curie(env, node);
   case SERD_BLANK:
   case SERD_VARIABLE:
     break;
