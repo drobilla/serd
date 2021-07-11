@@ -277,12 +277,6 @@ serd_new_blank(const SerdStringView str)
   return serd_new_token(SERD_BLANK, str);
 }
 
-SerdNode*
-serd_new_curie(const SerdStringView str)
-{
-  return serd_new_token(SERD_CURIE, str);
-}
-
 ExessResult
 serd_node_get_value_as(const SerdNode* const node,
                        const ExessDatatype   value_type,
@@ -739,7 +733,7 @@ serd_node_datatype(const SerdNode* const node)
   }
 
   const SerdNode* const datatype = serd_node_meta_c(node);
-  assert(datatype->type == SERD_URI || datatype->type == SERD_CURIE);
+  assert(datatype->type == SERD_URI);
   return datatype;
 }
 
