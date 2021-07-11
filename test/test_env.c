@@ -59,20 +59,15 @@ test_comparison(void)
 static void
 test_null(void)
 {
-  SerdNode* const eg = serd_new_uri(serd_string(NS_EG));
-
   // "Copying" NULL returns null
   assert(!serd_env_copy(NULL));
 
   // Accessors are tolerant to a NULL env for convenience
   assert(!serd_env_base_uri(NULL));
-  assert(!serd_env_expand(NULL, NULL));
-  assert(!serd_env_qualify(NULL, eg));
+  assert(!serd_env_expand_node(NULL, NULL));
 
   // Only null is equal to null
   assert(serd_env_equals(NULL, NULL));
-
-  serd_node_free(eg);
 }
 
 static SerdStatus
@@ -150,7 +145,7 @@ test_expand_untyped_literal(void)
   SerdNode* const untyped = serd_new_string(serd_string("data"));
   SerdEnv* const  env     = serd_env_new(serd_empty_string());
 
-  assert(!serd_env_expand(env, untyped));
+  assert(!serd_env_expand_node(env, untyped));
 
   serd_env_free(env);
   serd_node_free(untyped);
@@ -164,7 +159,7 @@ test_expand_bad_uri_datatype(void)
   SerdNode* const typed = serd_new_typed_literal(serd_string("data"), type);
   SerdEnv* const  env   = serd_env_new(serd_empty_string());
 
-  assert(!serd_env_expand(env, typed));
+  assert(!serd_env_expand_node(env, typed));
 
   serd_env_free(env);
   serd_node_free(typed);
@@ -177,9 +172,9 @@ test_expand_uri(void)
 
   SerdEnv* const  env       = serd_env_new(base);
   SerdNode* const rel       = serd_new_uri(serd_string("rel"));
-  SerdNode* const rel_out   = serd_env_expand(env, rel);
+  SerdNode* const rel_out   = serd_env_expand_node(env, rel);
   SerdNode* const empty     = serd_new_uri(serd_empty_string());
-  SerdNode* const empty_out = serd_env_expand(env, empty);
+  SerdNode* const empty_out = serd_env_expand_node(env, empty);
 
   assert(!strcmp(serd_node_string(rel_out), "http://example.org/b/rel"));
   assert(!strcmp(serd_node_string(empty_out), "http://example.org/b/"));
@@ -198,7 +193,7 @@ test_expand_empty_uri_ref(void)
 
   SerdNode* const rel     = serd_new_uri(serd_string("rel"));
   SerdEnv* const  env     = serd_env_new(base);
-  SerdNode* const rel_out = serd_env_expand(env, rel);
+  SerdNode* const rel_out = serd_env_expand_node(env, rel);
 
   assert(!strcmp(serd_node_string(rel_out), "http://example.org/b/rel"));
   serd_node_free(rel_out);
@@ -213,7 +208,7 @@ test_expand_bad_uri(void)
   SerdNode* const bad_uri = serd_new_uri(serd_string("rel"));
   SerdEnv* const  env     = serd_env_new(serd_empty_string());
 
-  assert(!serd_env_expand(env, bad_uri));
+  assert(!serd_env_expand_node(env, bad_uri));
 
   serd_env_free(env);
   serd_node_free(bad_uri);
@@ -225,30 +220,31 @@ test_expand_curie(void)
   const SerdStringView name = serd_string("eg.1");
   const SerdStringView eg   = serd_string(NS_EG);
 
-  SerdNode* const curie = serd_new_curie(serd_string("eg.1:foo"));
-  SerdEnv* const  env   = serd_env_new(serd_empty_string());
+  SerdEnv* const env = serd_env_new(serd_empty_string());
 
   assert(!serd_env_set_prefix(env, name, eg));
 
-  SerdNode* const curie_out = serd_env_expand(env, curie);
-  assert(curie_out);
-  assert(!strcmp(serd_node_string(curie_out), "http://example.org/foo"));
-  serd_node_free(curie_out);
+  SerdNode* const expanded =
+    serd_env_expand_curie(env, serd_string("eg.1:foo"));
+
+  assert(expanded);
+  assert(!strcmp(serd_node_string(expanded), "http://example.org/foo"));
+  serd_node_free(expanded);
 
   serd_env_free(env);
-  serd_node_free(curie);
 }
 
 static void
 test_expand_bad_curie(void)
 {
-  SerdNode* const curie = serd_new_curie(serd_string("eg.1:foo"));
-  SerdEnv* const  env   = serd_env_new(serd_empty_string());
+  SerdEnv* const env = serd_env_new(serd_empty_string());
 
-  assert(!serd_env_expand(env, curie));
+  assert(!serd_env_expand_curie(NULL, serd_empty_string()));
+  assert(!serd_env_expand_curie(NULL, serd_string("what:ever")));
+  assert(!serd_env_expand_curie(env, serd_string("eg.1:foo")));
+  assert(!serd_env_expand_curie(env, serd_string("nocolon")));
 
   serd_env_free(env);
-  serd_node_free(curie);
 }
 
 static void
@@ -257,39 +253,10 @@ test_expand_blank(void)
   SerdNode* const blank = serd_new_blank(serd_string("b1"));
   SerdEnv* const  env   = serd_env_new(serd_empty_string());
 
-  assert(!serd_env_expand(env, blank));
+  assert(!serd_env_expand_node(env, blank));
 
   serd_env_free(env);
   serd_node_free(blank);
-}
-
-static void
-test_qualify(void)
-{
-  const SerdStringView eg = serd_string(NS_EG);
-
-  SerdNode* const name = serd_new_string(serd_string("eg"));
-  SerdNode* const c1   = serd_new_curie(serd_string("eg:foo"));
-  SerdNode* const u1   = serd_new_uri(serd_string("http://example.org/foo"));
-  SerdNode* const u2   = serd_new_uri(serd_string("http://drobilla.net/bar"));
-
-  SerdEnv* const env = serd_env_new(serd_empty_string());
-
-  assert(!serd_env_set_prefix(env, serd_node_string_view(name), eg));
-
-  assert(!serd_env_expand(env, name));
-
-  SerdNode* const u1_out = serd_env_qualify(env, u1);
-  assert(serd_node_equals(u1_out, c1));
-  serd_node_free(u1_out);
-
-  assert(!serd_env_qualify(env, u2));
-
-  serd_env_free(env);
-  serd_node_free(u2);
-  serd_node_free(u1);
-  serd_node_free(c1);
-  serd_node_free(name);
 }
 
 static void
@@ -344,7 +311,6 @@ main(void)
   test_expand_curie();
   test_expand_bad_curie();
   test_expand_blank();
-  test_qualify();
   test_equals();
   return 0;
 }

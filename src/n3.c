@@ -501,7 +501,7 @@ read_iri(SerdReader* const reader, SerdNode** const dest, bool* const ate_dot)
     return read_IRIREF(reader, dest);
   }
 
-  if (!(*dest = push_node(reader, SERD_CURIE, "", 0))) {
+  if (!(*dest = push_node(reader, SERD_LITERAL, "", 0))) {
     return SERD_ERR_OVERFLOW;
   }
 
@@ -555,7 +555,7 @@ read_verb(SerdReader* reader, SerdNode** dest)
   /* Either a qname, or "a".  Read the prefix first, and if it is in fact
      "a", produce that instead.
   */
-  if (!(*dest = push_node(reader, SERD_CURIE, "", 0))) {
+  if (!(*dest = push_node(reader, SERD_URI, "", 0))) {
     return SERD_ERR_OVERFLOW;
   }
 
@@ -661,7 +661,7 @@ read_named_object(SerdReader* const reader,
      Deal with this here by trying to read a prefixed node, then if it turns
      out to actually be "true" or "false", switch it to a boolean literal. */
 
-  if (!(*dest = push_node(reader, SERD_CURIE, "", 0))) {
+  if (!(*dest = push_node(reader, SERD_URI, "", 0))) {
     return SERD_ERR_OVERFLOW;
   }
 
@@ -922,7 +922,9 @@ read_subject(SerdReader* const reader,
     st = read_BLANK_NODE_LABEL(reader, dest, &ate_dot);
     break;
   default:
-    st = read_iri(reader, dest, &ate_dot);
+    if ((st = read_iri(reader, dest, &ate_dot))) {
+      return r_err(reader, st, "expected subject");
+    }
   }
 
   if (ate_dot) {

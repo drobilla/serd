@@ -267,7 +267,7 @@ test_write_empty_syntax(void)
 
   SerdNode* s = serd_new_uri(serd_string("http://example.org/s"));
   SerdNode* p = serd_new_uri(serd_string("http://example.org/p"));
-  SerdNode* o = serd_new_curie(serd_string("eg:o"));
+  SerdNode* o = serd_new_uri(serd_string("http://example.org/o"));
 
   SerdBuffer buffer = {NULL, 0};
 
@@ -382,6 +382,7 @@ test_write_bad_uri(void)
 
   const SerdStatus st =
     serd_sink_write(serd_writer_sink(writer), 0U, s, p, rel, NULL);
+
   assert(st);
   assert(st == SERD_ERR_BAD_ARG);
 

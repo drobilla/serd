@@ -856,24 +856,23 @@ write_uri_node(SerdWriter* const     writer,
                const SerdNode* const node,
                const SerdField       field)
 {
-  SerdStatus        st         = SERD_SUCCESS;
-  const char* const node_str   = serd_node_string(node);
-  const bool        has_scheme = serd_uri_string_has_scheme(node_str);
+  SerdStatus           st         = SERD_SUCCESS;
+  const SerdStringView string     = serd_node_string_view(node);
+  const bool           has_scheme = serd_uri_string_has_scheme(string.data);
 
   if (supports_abbrev(writer)) {
-    const SerdNode* prefix_node = NULL;
-    SerdStringView  suffix      = {NULL, 0};
-    if (field == SERD_PREDICATE && !strcmp(node_str, NS_RDF "type")) {
+    if (field == SERD_PREDICATE && !strcmp(string.data, NS_RDF "type")) {
       return esink("a", 1, writer);
     }
 
-    if (!strcmp(node_str, NS_RDF "nil")) {
+    if (!strcmp(string.data, NS_RDF "nil")) {
       return esink("()", 2, writer);
     }
 
+    SerdStringView prefix = {NULL, 0};
+    SerdStringView suffix = {NULL, 0};
     if (has_scheme && !(writer->flags & SERD_WRITE_UNQUALIFIED) &&
-        serd_env_qualify_in_place(writer->env, node, &prefix_node, &suffix)) {
-      const SerdStringView prefix = serd_node_string_view(prefix_node);
+        !serd_env_qualify(writer->env, string, &prefix, &suffix)) {
       TRY(st, write_lname(writer, prefix.data, prefix.length));
       TRY(st, esink(":", 1, writer));
       return write_lname(writer, suffix.data, suffix.length);
@@ -884,42 +883,11 @@ write_uri_node(SerdWriter* const     writer,
       !serd_env_base_uri(writer->env)) {
     return w_err(writer,
                  SERD_ERR_BAD_ARG,
-                 "URI reference <%s> in unsupported syntax",
-                 node_str);
+                 "syntax does not support URI reference <%s>",
+                 string.data);
   }
 
   return write_full_uri_node(writer, node);
-}
-
-SERD_NODISCARD static SerdStatus
-write_curie(SerdWriter* const writer, const SerdNode* const node)
-{
-  const char* const node_str = serd_node_string(node);
-  SerdStringView    prefix   = {NULL, 0};
-  SerdStringView    suffix   = {NULL, 0};
-  SerdStatus        st       = SERD_SUCCESS;
-
-  // In fast-and-loose Turtle/TriG mode CURIEs are simply passed through
-  const bool fast =
-    (writer->flags & (SERD_WRITE_UNQUALIFIED | SERD_WRITE_UNRESOLVED));
-
-  if (!supports_abbrev(writer) || !fast) {
-    const SerdStringView curie = serd_node_string_view(node);
-    if ((st = serd_env_expand_in_place(writer->env, curie, &prefix, &suffix))) {
-      return w_err(writer, st, "undefined namespace prefix '%s'", node_str);
-    }
-  }
-
-  if (!supports_abbrev(writer)) {
-    TRY(st, esink("<", 1, writer));
-    TRY(st, ewrite_uri(writer, prefix.data, prefix.length));
-    TRY(st, ewrite_uri(writer, suffix.data, suffix.length));
-    TRY(st, esink(">", 1, writer));
-  } else {
-    TRY(st, write_lname(writer, node_str, node->length));
-  }
-
-  return st;
 }
 
 SERD_NODISCARD static SerdStatus
@@ -988,9 +956,6 @@ write_node(SerdWriter* const        writer,
     break;
   case SERD_URI:
     st = write_uri_node(writer, node, field);
-    break;
-  case SERD_CURIE:
-    st = write_curie(writer, node);
     break;
   case SERD_BLANK:
     st = write_blank(writer, node, field, flags);
