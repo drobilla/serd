@@ -1497,6 +1497,7 @@ read_base(SerdReader* const reader, const bool sparql, const bool token)
   }
 
   serd_node_zero_pad(uri);
+  TRY(st, serd_env_set_base_uri(reader->env, serd_node_string_view(uri)));
   TRY(st, serd_sink_write_base(reader->sink, uri));
 
   read_ws_star(reader);
@@ -1543,6 +1544,11 @@ read_prefixID(SerdReader* const reader, const bool sparql, const bool token)
 
   serd_node_zero_pad(name);
   serd_node_zero_pad(uri);
+
+  TRY(st,
+      serd_env_set_prefix(
+        reader->env, serd_node_string_view(name), serd_node_string_view(uri)));
+
   st = serd_sink_write_prefix(reader->sink, name, uri);
 
   if (!sparql) {
