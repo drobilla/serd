@@ -183,6 +183,10 @@ test_turtle_overflow(void)
     "@base <http://example.org/ns/test> .\n"
     "<http://example.org/s> <http://example.org/p> <rel> .",
 
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+    "@base <http://example.org/ns/test> .\n"
+    "<http://example.org/s> <http://example.org/p> <rel> .",
+
     NULL,
   };
 

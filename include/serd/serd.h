@@ -569,21 +569,13 @@ typedef enum {
   SERD_URI = 2,
 
   /**
-     CURIE, a shortened URI.
-
-     Value is an unquoted CURIE string relative to the current environment,
-     e.g. "rdf:type".  @see [CURIE Syntax 1.0](http://www.w3.org/TR/curie)
-  */
-  SERD_CURIE = 3,
-
-  /**
      A blank node.
 
      Value is a blank node ID without any syntactic prefix, like "id3", which
      is meaningful only within this serialisation.  @see [RDF 1.1
      Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
   */
-  SERD_BLANK = 4,
+  SERD_BLANK = 3,
 
   /**
      A variable node.
@@ -592,7 +584,7 @@ typedef enum {
      which is meaningful only within this serialisation.  @see [SPARQL 1.1
      Query Language](https://www.w3.org/TR/sparql11-query/#rVar)
   */
-  SERD_VARIABLE = 5,
+  SERD_VARIABLE = 4,
 } SerdNodeType;
 
 /**
@@ -636,11 +628,6 @@ serd_new_typed_literal(SerdStringView str, SerdStringView datatype_uri);
 SERD_API
 SerdNode* SERD_ALLOCATED
 serd_new_blank(SerdStringView string);
-
-/// Create a new CURIE node
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_curie(SerdStringView string);
 
 /// Create a new URI node
 SERD_API
@@ -1492,25 +1479,50 @@ serd_env_set_prefix(SerdEnv* SERD_NONNULL env,
                     SerdStringView        uri);
 
 /**
-   Qualify `uri` into a CURIE if possible.
+   Qualify `uri` into a prefix and suffix (like a CURIE) if possible.
 
-   Returns null if `uri` can not be qualified (usually because no corresponding
-   prefix is defined).
+   @param env Environment with prefixes to use.
+
+   @param uri URI to qualify.
+
+   @param prefix On success, pointed to a prefix string slice, which is only
+   valid until the next time `env` is mutated.
+
+   @param suffix On success, pointed to a suffix string slice, which is only
+   valid until the next time `env` is mutated.
+
+   @return #SERD_SUCCESS, or #SERD_FAILURE if `uri` can not be qualified with
+   `env`.
 */
 SERD_API
-SerdNode* SERD_ALLOCATED
-serd_env_qualify(const SerdEnv* SERD_NULLABLE  env,
-                 const SerdNode* SERD_NULLABLE uri);
+SerdStatus
+serd_env_qualify(const SerdEnv* SERD_NULLABLE env,
+                 SerdStringView               uri,
+                 SerdStringView* SERD_NONNULL prefix,
+                 SerdStringView* SERD_NONNULL suffix);
 
 /**
-   Expand `node`, which must be a CURIE or URI, to a full URI.
+   Expand `curie` to an absolute URI if possible.
+
+   For example, if `env` has the prefix "rdf" set to
+   <http://www.w3.org/1999/02/22-rdf-syntax-ns#>, then calling this with curie
+   "rdf:type" will produce <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>.
 
    Returns null if `node` can not be expanded.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_env_expand(const SerdEnv* SERD_NULLABLE  env,
-                const SerdNode* SERD_NULLABLE node);
+serd_env_expand_curie(const SerdEnv* SERD_NULLABLE env, SerdStringView curie);
+
+/**
+   Expand `node` to an absolute URI if possible.
+
+   Returns null if `node` can not be expanded.
+*/
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_env_expand_node(const SerdEnv* SERD_NULLABLE  env,
+                     const SerdNode* SERD_NULLABLE node);
 
 /// Write all prefixes in `env` to `sink`
 SERD_API
@@ -1596,8 +1608,7 @@ typedef enum {
   SERD_READ_LAX          = 1U << 0U, ///< Tolerate invalid input where possible
   SERD_READ_VARIABLES    = 1U << 1U, ///< Support variable nodes
   SERD_READ_EXACT_BLANKS = 1U << 2U, ///< Allow clashes with generated blanks
-  SERD_READ_PREFIXED     = 1U << 3U, ///< Do not expand prefixed names
-  SERD_READ_RELATIVE     = 1U << 4U, ///< Do not expand relative URI references
+  SERD_READ_RELATIVE     = 1U << 3U, ///< Do not expand relative URI references
 } SerdReaderFlag;
 
 /// Bitwise OR of SerdReaderFlag values

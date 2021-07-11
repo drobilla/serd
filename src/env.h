@@ -6,15 +6,6 @@
 
 #include "serd/serd.h"
 
-#include <stdbool.h>
-
-/// Qualify `uri` into a CURIE if possible
-bool
-serd_env_qualify_in_place(const SerdEnv*   env,
-                          const SerdNode*  uri,
-                          const SerdNode** prefix,
-                          SerdStringView*  suffix);
-
 /**
    Expand `curie`.
 
