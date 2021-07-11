@@ -51,35 +51,6 @@ test_write_bad_event(void)
 }
 
 static void
-test_write_bad_prefix(void)
-{
-  SerdWorld*    world     = serd_world_new();
-  SerdNodes*    nodes     = serd_world_nodes(world);
-  SerdEnv*      env       = serd_env_new(SERD_EMPTY_STRING());
-  SerdBuffer    buffer    = {NULL, 0};
-  SerdByteSink* byte_sink = serd_byte_sink_new_buffer(&buffer);
-
-  SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0u, env, byte_sink);
-  assert(writer);
-
-  const SerdNode* name = serd_nodes_string(nodes, SERD_STRING("eg"));
-  const SerdNode* uri  = serd_nodes_uri(nodes, SERD_STRING("rel"));
-
-  assert(serd_sink_write_prefix(serd_writer_sink(writer), name, uri) ==
-         SERD_ERR_BAD_ARG);
-
-  char* const out = serd_buffer_sink_finish(&buffer);
-
-  assert(!strcmp(out, ""));
-  serd_free(out);
-
-  serd_writer_free(writer);
-  serd_byte_sink_free(byte_sink);
-  serd_env_free(env);
-  serd_world_free(world);
-}
-
-static void
 test_write_long_literal(void)
 {
   SerdWorld*    world     = serd_world_new();
@@ -319,7 +290,6 @@ int
 main(void)
 {
   test_write_bad_event();
-  test_write_bad_prefix();
   test_write_long_literal();
   test_writer_stack_overflow();
   test_strict_write();

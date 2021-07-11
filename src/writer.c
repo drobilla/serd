@@ -119,7 +119,7 @@ struct SerdWriterImpl {
   SerdSink        iface;
   SerdSyntax      syntax;
   SerdWriterFlags flags;
-  SerdEnv*        env;
+  const SerdEnv*  env;
   SerdNode*       root_node;
   SerdURIView     root_uri;
   WriteContext*   anon_stack;
@@ -1309,7 +1309,7 @@ SerdWriter*
 serd_writer_new(SerdWorld*      world,
                 SerdSyntax      syntax,
                 SerdWriterFlags flags,
-                SerdEnv*        env,
+                const SerdEnv*  env,
                 SerdByteSink*   byte_sink)
 {
   const WriteContext context = WRITE_CONTEXT_NULL;
@@ -1356,22 +1356,21 @@ serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
     return SERD_ERR_BAD_ARG;
   }
 
-  SerdStatus st =
-    serd_env_set_base_uri(writer->env, serd_node_string_view(uri));
+  SerdStatus st = SERD_SUCCESS;
 
-  if (!st) {
-    if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
-      if (ctx(writer, SERD_GRAPH) || ctx(writer, SERD_SUBJECT)) {
-        TRY(st, esink(" .\n\n", 4, writer));
-        reset_context(writer, true);
-      }
-      TRY(st, esink("@base <", 7, writer));
-      TRY(st, esink(serd_node_string(uri), uri->length, writer));
-      TRY(st, esink("> .\n", 4, writer));
+  if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
+    if (ctx(writer, SERD_GRAPH) || ctx(writer, SERD_SUBJECT)) {
+      TRY(st, esink(" .\n\n", 4, writer));
+      reset_context(writer, true);
     }
-    writer->indent = 0;
-    reset_context(writer, true);
+
+    TRY(st, esink("@base <", 7, writer));
+    TRY(st, esink(serd_node_string(uri), uri->length, writer));
+    TRY(st, esink("> .\n", 4, writer));
   }
+
+  writer->indent = 0;
+  reset_context(writer, true);
 
   return st;
 }
@@ -1400,26 +1399,23 @@ serd_writer_set_prefix(SerdWriter*     writer,
     return SERD_ERR_BAD_ARG;
   }
 
-  SerdStatus st = serd_env_set_prefix(
-    writer->env, serd_node_string_view(name), serd_node_string_view(uri));
+  SerdStatus st = SERD_SUCCESS;
 
-  if (!st) {
-    if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
-      if (ctx(writer, SERD_GRAPH) || ctx(writer, SERD_SUBJECT)) {
-        TRY(st, esink(" .\n\n", 4, writer));
-        reset_context(writer, true);
-      }
-
-      TRY(st, esink("@prefix ", 8, writer));
-      TRY(st, esink(serd_node_string(name), name->length, writer));
-      TRY(st, esink(": <", 3, writer));
-      TRY(st, write_uri_from_node(writer, uri));
-      TRY(st, esink("> .\n", 4, writer));
+  if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
+    if (ctx(writer, SERD_GRAPH) || ctx(writer, SERD_SUBJECT)) {
+      TRY(st, esink(" .\n\n", 4, writer));
+      reset_context(writer, true);
     }
 
-    writer->indent = 0;
-    reset_context(writer, true);
+    TRY(st, esink("@prefix ", 8, writer));
+    TRY(st, esink(serd_node_string(name), name->length, writer));
+    TRY(st, esink(": <", 3, writer));
+    TRY(st, write_uri_from_node(writer, uri));
+    TRY(st, esink("> .\n", 4, writer));
   }
+
+  writer->indent = 0;
+  reset_context(writer, true);
 
   return st;
 }
