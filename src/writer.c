@@ -862,7 +862,8 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
   SerdStatus     st     = SERD_SUCCESS;
 
   if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
-    if ((st = serd_env_expand_in_place(writer->env, node, &prefix, &suffix))) {
+    const SerdStringView curie = serd_node_string_view(node);
+    if ((st = serd_env_expand_in_place(writer->env, curie, &prefix, &suffix))) {
       return w_err(writer,
                    st,
                    "undefined namespace prefix in '%s'",
