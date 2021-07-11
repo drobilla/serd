@@ -7,6 +7,8 @@
 
 #include "serd/caret.h"
 #include "serd/node.h"
+#include "serd/nodes.h"
+#include "zix/allocator.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -15,23 +17,29 @@
 static int
 test_caret(void)
 {
-  SerdNode* const  node  = serd_node_new(NULL, serd_a_string("node"));
-  SerdCaret* const caret = serd_caret_new(NULL, node, 46, 2);
+  ZixAllocator* const allocator = zix_default_allocator();
+
+  SerdNodes* const      nodes = serd_nodes_new(allocator);
+  const SerdNode* const node  = serd_nodes_get(nodes, serd_a_string("node"));
+
+  SerdCaret* const caret = serd_caret_new(allocator, node, 46, 2);
 
   assert(serd_caret_equals(caret, caret));
   assert(serd_caret_document(caret) == node);
   assert(serd_caret_line(caret) == 46);
   assert(serd_caret_column(caret) == 2);
 
-  SerdCaret* const copy = serd_caret_copy(NULL, caret);
+  SerdCaret* const copy = serd_caret_copy(allocator, caret);
 
   assert(serd_caret_equals(caret, copy));
-  assert(!serd_caret_copy(NULL, NULL));
+  assert(!serd_caret_copy(allocator, NULL));
 
-  SerdNode* const  other_node = serd_node_new(NULL, serd_a_string("other"));
-  SerdCaret* const other_file = serd_caret_new(NULL, other_node, 46, 2);
-  SerdCaret* const other_line = serd_caret_new(NULL, node, 47, 2);
-  SerdCaret* const other_col  = serd_caret_new(NULL, node, 46, 3);
+  const SerdNode* const other_node =
+    serd_nodes_get(nodes, serd_a_string("other"));
+
+  SerdCaret* const other_file = serd_caret_new(allocator, other_node, 46, 2);
+  SerdCaret* const other_line = serd_caret_new(allocator, node, 47, 2);
+  SerdCaret* const other_col  = serd_caret_new(allocator, node, 46, 3);
 
   assert(!serd_caret_equals(caret, other_file));
   assert(!serd_caret_equals(caret, other_line));
@@ -39,13 +47,12 @@ test_caret(void)
   assert(!serd_caret_equals(caret, NULL));
   assert(!serd_caret_equals(NULL, caret));
 
-  serd_caret_free(NULL, other_col);
-  serd_caret_free(NULL, other_line);
-  serd_caret_free(NULL, other_file);
-  serd_node_free(NULL, other_node);
-  serd_caret_free(NULL, copy);
-  serd_caret_free(NULL, caret);
-  serd_node_free(NULL, node);
+  serd_caret_free(allocator, other_col);
+  serd_caret_free(allocator, other_line);
+  serd_caret_free(allocator, other_file);
+  serd_caret_free(allocator, copy);
+  serd_caret_free(allocator, caret);
+  serd_nodes_free(nodes);
 
   return 0;
 }

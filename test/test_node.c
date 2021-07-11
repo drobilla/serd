@@ -169,6 +169,7 @@ test_boolean(void)
   {
     SerdNode* const true_node =
       serd_node_new(NULL, serd_a_primitive(serd_bool(true)));
+
     assert(true_node);
     assert(!strcmp(serd_node_string(true_node), "true"));
     assert(serd_node_value(true_node).data.as_bool);
@@ -181,6 +182,7 @@ test_boolean(void)
   {
     SerdNode* const false_node =
       serd_node_new(NULL, serd_a_primitive(serd_bool(false)));
+
     assert(false_node);
     assert(!strcmp(serd_node_string(false_node), "false"));
     assert(!serd_node_value(false_node).data.as_bool);
@@ -275,8 +277,9 @@ test_double(void)
     "0.0E0", "-0.0E0", "1.2E0", "-2.3E0", "4.56789E6"};
 
   for (size_t i = 0; i < sizeof(test_values) / sizeof(double); ++i) {
-    SerdNode* node =
+    SerdNode* const node =
       serd_node_new(NULL, serd_a_primitive(serd_double(test_values[i])));
+
     const char* node_str = serd_node_string(node);
     assert(!strcmp(node_str, test_strings[i]));
 
@@ -347,8 +350,9 @@ test_float(void)
     "0.0E0", "-0.0E0", "1.5E0", "-2.5E0", "4.56789E6"};
 
   for (size_t i = 0; i < sizeof(test_values) / sizeof(float); ++i) {
-    SerdNode* node =
+    SerdNode* const node =
       serd_node_new(NULL, serd_a_primitive(serd_float(test_values[i])));
+
     const char* node_str = serd_node_string(node);
     assert(!strcmp(node_str, test_strings[i]));
 
@@ -650,6 +654,7 @@ static void
 test_node_from_string(void)
 {
   SerdNode* const hello = serd_node_new(NULL, serd_a_string("hello\""));
+
   assert(serd_node_length(hello) == 6);
   assert(!serd_node_flags(hello));
   assert(!strncmp(serd_node_string(hello), "hello\"", 6));
@@ -671,6 +676,7 @@ test_node_from_substring(void)
 {
   SerdNode* const a_b =
     serd_node_new(NULL, serd_a_string_view(zix_substring("a\"bc", 3)));
+
   assert(serd_node_length(a_b) == 3);
   assert(!serd_node_flags(a_b));
   assert(strlen(serd_node_string(a_b)) == 3);
@@ -689,6 +695,32 @@ check_copy_equals(const SerdNode* const node)
 }
 
 static void
+test_uri(void)
+{
+#define NS_EG "http://example.org/"
+
+  static const ZixStringView base = ZIX_STATIC_STRING(NS_EG "base/");
+  static const ZixStringView rel  = ZIX_STATIC_STRING("a/b");
+  static const ZixStringView abs  = ZIX_STATIC_STRING(NS_EG "base/a/b");
+
+  const SerdURIView base_uri = serd_parse_uri(base.data);
+  const SerdURIView rel_uri  = serd_parse_uri(rel.data);
+  const SerdURIView abs_uri  = serd_resolve_uri(rel_uri, base_uri);
+
+  SerdNode* const from_string = serd_node_new(NULL, serd_a_uri(abs));
+  SerdNode* const from_uri    = serd_node_new(NULL, serd_a_parsed_uri(abs_uri));
+
+  assert(from_string);
+  assert(from_uri);
+  assert(!strcmp(serd_node_string(from_string), serd_node_string(from_uri)));
+
+  serd_node_free(NULL, from_uri);
+  serd_node_free(NULL, from_string);
+
+#undef NS_EG
+}
+
+static void
 test_literal(void)
 {
   static const ZixStringView hello_str = ZIX_STATIC_STRING("hello");
@@ -704,6 +736,7 @@ test_literal(void)
 
   assert(
     !serd_node_new(NULL, serd_a_typed_literal(hello_str, zix_string("Type"))));
+
   assert(
     !serd_node_new(NULL, serd_a_typed_literal(hello_str, zix_string("de"))));
 
@@ -779,7 +812,7 @@ test_compare(void)
     NULL, serd_a_plain_literal(zix_string("angst"), zix_string("en")));
 
   SerdNode* hallo = serd_node_new(
-    NULL, serd_a_typed_literal(zix_string("Hallo"), zix_string("de")));
+    NULL, serd_a_plain_literal(zix_string("Hallo"), zix_string("de")));
 
   SerdNode* hello     = serd_node_new(NULL, serd_a_string("Hello"));
   SerdNode* universe  = serd_node_new(NULL, serd_a_string("Universe"));
@@ -847,6 +880,7 @@ main(void)
   test_node_equals();
   test_node_from_string();
   test_node_from_substring();
+  test_uri();
   test_literal();
   test_blank();
   test_compare();
