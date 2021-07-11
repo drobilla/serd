@@ -71,6 +71,15 @@ test_fields(void)
   assert(serd_statement_graph(statement) == g);
   assert(serd_statement_caret(statement) != caret);
   assert(serd_caret_equals(serd_statement_caret(statement), caret));
+  assert(serd_statement_matches(statement, s, p, o, g));
+  assert(serd_statement_matches(statement, NULL, p, o, g));
+  assert(serd_statement_matches(statement, s, NULL, o, g));
+  assert(serd_statement_matches(statement, s, p, NULL, g));
+  assert(serd_statement_matches(statement, s, p, o, NULL));
+  assert(!serd_statement_matches(statement, o, NULL, NULL, NULL));
+  assert(!serd_statement_matches(statement, NULL, o, NULL, NULL));
+  assert(!serd_statement_matches(statement, NULL, NULL, s, NULL));
+  assert(!serd_statement_matches(statement, NULL, NULL, NULL, s));
 
   SerdStatement* const diff_s = serd_statement_new(o, p, o, g, caret);
   assert(!serd_statement_equals(statement, diff_s));
