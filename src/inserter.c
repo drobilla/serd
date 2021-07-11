@@ -20,6 +20,7 @@
 
 #include "serd/serd.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -109,6 +110,8 @@ serd_inserter_on_event(SerdInserterData* const data,
 SerdSink*
 serd_inserter_new(SerdModel* const model, const SerdNode* const default_graph)
 {
+  assert(model);
+
   SerdInserterData* const data =
     (SerdInserterData*)calloc(1, sizeof(SerdInserterData));
 

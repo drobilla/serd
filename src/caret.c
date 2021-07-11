@@ -16,6 +16,7 @@
 
 #include "caret.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -59,17 +60,20 @@ serd_caret_equals(const SerdCaret* l, const SerdCaret* r)
 const SerdNode*
 serd_caret_name(const SerdCaret* caret)
 {
+  assert(caret);
   return caret->file;
 }
 
 unsigned
 serd_caret_line(const SerdCaret* caret)
 {
+  assert(caret);
   return caret->line;
 }
 
 unsigned
 serd_caret_column(const SerdCaret* caret)
 {
+  assert(caret);
   return caret->col;
 }

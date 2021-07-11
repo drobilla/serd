@@ -91,36 +91,42 @@ serd_statement_free(SerdStatement* const statement)
 const SerdNode*
 serd_statement_node(const SerdStatement* const statement, const SerdField field)
 {
+  assert(statement);
   return statement->nodes[field];
 }
 
 const SerdNode*
 serd_statement_subject(const SerdStatement* const statement)
 {
+  assert(statement);
   return statement->nodes[SERD_SUBJECT];
 }
 
 const SerdNode*
 serd_statement_predicate(const SerdStatement* const statement)
 {
+  assert(statement);
   return statement->nodes[SERD_PREDICATE];
 }
 
 const SerdNode*
 serd_statement_object(const SerdStatement* const statement)
 {
+  assert(statement);
   return statement->nodes[SERD_OBJECT];
 }
 
 const SerdNode*
 serd_statement_graph(const SerdStatement* const statement)
 {
+  assert(statement);
   return statement->nodes[SERD_GRAPH];
 }
 
 const SerdCaret*
 serd_statement_caret(const SerdStatement* const statement)
 {
+  assert(statement);
   return statement->caret;
 }
 
@@ -141,6 +147,8 @@ serd_statement_matches(const SerdStatement* const statement,
                        const SerdNode* const      object,
                        const SerdNode* const      graph)
 {
+  assert(statement);
+
   return (serd_node_pattern_match(statement->nodes[0], subject) &&
           serd_node_pattern_match(statement->nodes[1], predicate) &&
           serd_node_pattern_match(statement->nodes[2], object) &&

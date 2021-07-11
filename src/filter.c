@@ -16,6 +16,7 @@
 
 #include "serd/serd.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -70,6 +71,8 @@ serd_filter_new(const SerdSink* const target,
                 const SerdNode* const graph,
                 const bool            inclusive)
 {
+  assert(target);
+
   SerdFilterData* const data =
     (SerdFilterData*)calloc(1, sizeof(SerdFilterData));
 

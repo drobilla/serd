@@ -248,6 +248,8 @@ serd_write_range(const SerdCursor* const      range,
                  const SerdSink*              sink,
                  const SerdSerialisationFlags flags)
 {
+  assert(sink);
+
   SerdStatus st = SERD_SUCCESS;
 
   if (serd_cursor_is_end(range)) {
