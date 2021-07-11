@@ -8,6 +8,7 @@
 #include "serd/env.h"
 #include "serd/event.h"
 #include "serd/node.h"
+#include "serd/nodes.h"
 #include "serd/sink.h"
 #include "serd/status.h"
 #include "zix/string_view.h"
@@ -210,8 +211,9 @@ count_prefixes(void* handle, const SerdEvent* event)
 static void
 test_base_uri(void)
 {
-  SerdEnv* const  env = serd_env_new(NULL, zix_empty_string());
-  SerdNode* const eg  = serd_node_new(NULL, serd_a_uri_string(NS_EG));
+  SerdNodes* const      nodes = serd_nodes_new(NULL);
+  SerdEnv* const        env   = serd_env_new(NULL, zix_empty_string());
+  const SerdNode* const eg    = serd_nodes_get(nodes, serd_a_uri_string(NS_EG));
 
   // Test that invalid calls work as expected
   assert(!serd_env_base_uri(env));
@@ -230,8 +232,8 @@ test_base_uri(void)
   assert(!serd_env_set_base_uri(env, zix_empty_string()));
   assert(!serd_env_base_uri(env));
 
-  serd_node_free(NULL, eg);
   serd_env_free(env);
+  serd_nodes_free(nodes);
 }
 
 static void
@@ -271,13 +273,14 @@ test_set_prefix(void)
 static void
 test_expand_untyped_literal(void)
 {
-  SerdNode* const untyped = serd_node_new(NULL, serd_a_string("data"));
-  SerdEnv* const  env     = serd_env_new(NULL, zix_empty_string());
+  SerdNodes* const      nodes   = serd_nodes_new(NULL);
+  const SerdNode* const untyped = serd_nodes_get(nodes, serd_a_string("data"));
+  SerdEnv* const        env     = serd_env_new(NULL, zix_empty_string());
 
   assert(!serd_env_expand_node(env, untyped));
 
   serd_env_free(env);
-  serd_node_free(NULL, untyped);
+  serd_nodes_free(nodes);
 }
 
 static void
@@ -285,15 +288,17 @@ test_expand_bad_uri_datatype(void)
 {
   static const ZixStringView type = ZIX_STATIC_STRING("Type");
 
-  SerdNode* const typed =
-    serd_node_new(NULL, serd_a_typed_literal(zix_string("data"), type));
+  SerdNodes* const nodes = serd_nodes_new(NULL);
+
+  const SerdNode* const typed =
+    serd_nodes_get(nodes, serd_a_typed_literal(zix_string("data"), type));
 
   SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
 
   assert(!serd_env_expand_node(env, typed));
 
   serd_env_free(env);
-  serd_node_free(NULL, typed);
+  serd_nodes_free(nodes);
 }
 
 static void
@@ -301,20 +306,21 @@ test_expand_uri(void)
 {
   static const ZixStringView base = ZIX_STATIC_STRING("http://example.org/b/");
 
-  SerdEnv* const  env       = serd_env_new(NULL, base);
-  SerdNode* const rel       = serd_node_new(NULL, serd_a_uri_string("rel"));
+  SerdNodes* const      nodes = serd_nodes_new(NULL);
+  SerdEnv* const        env   = serd_env_new(NULL, base);
+  const SerdNode* const rel   = serd_nodes_get(nodes, serd_a_uri_string("rel"));
+  const SerdNode* const empty = serd_nodes_get(nodes, serd_a_uri_string(""));
+
   SerdNode* const rel_out   = serd_env_expand_node(env, rel);
-  SerdNode* const empty     = serd_node_new(NULL, serd_a_uri_string(""));
   SerdNode* const empty_out = serd_env_expand_node(env, empty);
 
   assert(!strcmp(serd_node_string(rel_out), "http://example.org/b/rel"));
   assert(!strcmp(serd_node_string(empty_out), "http://example.org/b/"));
 
   serd_node_free(NULL, empty_out);
-  serd_node_free(NULL, empty);
   serd_node_free(NULL, rel_out);
-  serd_node_free(NULL, rel);
   serd_env_free(env);
+  serd_nodes_free(nodes);
 }
 
 static void
@@ -322,27 +328,31 @@ test_expand_empty_uri_ref(void)
 {
   static const ZixStringView base = ZIX_STATIC_STRING("http://example.org/b/");
 
-  SerdNode* const rel     = serd_node_new(NULL, serd_a_uri_string("rel"));
-  SerdEnv* const  env     = serd_env_new(NULL, base);
-  SerdNode* const rel_out = serd_env_expand_node(env, rel);
+  SerdNodes* const      nodes = serd_nodes_new(NULL);
+  SerdEnv* const        env   = serd_env_new(NULL, base);
+  const SerdNode* const rel   = serd_nodes_get(nodes, serd_a_uri_string("rel"));
+  SerdNode* const       rel_out = serd_env_expand_node(env, rel);
 
   assert(!strcmp(serd_node_string(rel_out), "http://example.org/b/rel"));
   serd_node_free(NULL, rel_out);
 
   serd_env_free(env);
-  serd_node_free(NULL, rel);
+  serd_nodes_free(nodes);
 }
 
 static void
 test_expand_bad_uri(void)
 {
-  SerdNode* const bad_uri = serd_node_new(NULL, serd_a_uri_string("rel"));
-  SerdEnv* const  env     = serd_env_new(NULL, zix_empty_string());
+  SerdNodes* const nodes = serd_nodes_new(NULL);
+  SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
+
+  const SerdNode* const bad_uri =
+    serd_nodes_get(nodes, serd_a_uri_string("rel"));
 
   assert(!serd_env_expand_node(env, bad_uri));
 
   serd_env_free(env);
-  serd_node_free(NULL, bad_uri);
+  serd_nodes_free(nodes);
 }
 
 static void
@@ -384,13 +394,16 @@ test_expand_bad_curie(void)
 static void
 test_expand_blank(void)
 {
-  SerdNode* const blank = serd_node_new(NULL, serd_a_blank_string("b1"));
-  SerdEnv* const  env   = serd_env_new(NULL, zix_empty_string());
+  SerdNodes* const      nodes = serd_nodes_new(NULL);
+  const SerdNode* const blank =
+    serd_nodes_get(nodes, serd_a_blank(zix_string("b1")));
+
+  SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
 
   assert(!serd_env_expand_node(env, blank));
 
   serd_env_free(env);
-  serd_node_free(NULL, blank);
+  serd_nodes_free(nodes);
 }
 
 static void

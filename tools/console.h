@@ -72,9 +72,6 @@ serd_set_stream_utf8_mode(FILE* stream);
 SerdStatus
 serd_print_version(const char* program);
 
-SerdStatus
-serd_set_base_uri_from_path(SerdEnv* env, const char* path);
-
 SerdSyntax
 serd_choose_syntax(SerdTool*         tool,
                    SerdSyntaxOptions options,

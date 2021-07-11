@@ -8,6 +8,7 @@
 #include "serd/event.h"
 #include "serd/input_stream.h"
 #include "serd/node.h"
+#include "serd/nodes.h"
 #include "serd/output_stream.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
@@ -151,6 +152,7 @@ static void
 test_writer(const char* const path)
 {
   SerdWorld* world = serd_world_new(NULL);
+  SerdNodes* nodes = serd_world_nodes(world);
   SerdEnv*   env   = serd_env_new(NULL, zix_empty_string());
 
   SerdOutputStream output = serd_open_output_file(path);
@@ -160,7 +162,7 @@ test_writer(const char* const path)
 
   assert(writer);
 
-  SerdNode* lit = serd_node_new(NULL, serd_a_string("hello"));
+  const SerdNode* lit = serd_nodes_get(nodes, serd_a_string("hello"));
 
   const SerdSink* const iface = serd_writer_sink(writer);
   assert(serd_sink_write_base(iface, lit));
@@ -170,10 +172,13 @@ test_writer(const char* const path)
   static const uint8_t bad_buf[]    = {0xEF, 0xBF, 0xBD, 0};
   const ZixStringView  bad_buf_view = {(const char*)bad_buf, 3};
 
-  SerdNode* s = serd_node_new(NULL, serd_a_uri_string("http://example.org"));
-  SerdNode* p =
-    serd_node_new(NULL, serd_a_uri_string("http://example.org/pred"));
-  SerdNode* bad = serd_node_new(NULL, serd_a_string_view(bad_buf_view));
+  const SerdNode* s =
+    serd_nodes_get(nodes, serd_a_uri_string("http://example.org"));
+
+  const SerdNode* p =
+    serd_nodes_get(nodes, serd_a_uri_string("http://example.org/pred"));
+
+  const SerdNode* bad = serd_nodes_get(nodes, serd_a_string_view(bad_buf_view));
 
   // Write 3 invalid statements (should write nothing)
   const SerdNode* junk[][3] = {{s, bad, bad}, {bad, p, bad}, {s, bad, p}};
@@ -181,18 +186,16 @@ test_writer(const char* const path)
     assert(serd_sink_write(iface, 0, junk[i][0], junk[i][1], junk[i][2], NULL));
   }
 
-  serd_node_free(NULL, bad);
+  static const ZixStringView urn_Type = ZIX_STATIC_STRING("urn:Type");
+  static const ZixStringView en       = ZIX_STATIC_STRING("en");
 
-  const ZixStringView urn_Type = ZIX_STATIC_STRING("urn:Type");
-  const ZixStringView en       = ZIX_STATIC_STRING("en");
+  const SerdNode* const o = serd_nodes_get(nodes, serd_a_string("o"));
 
-  SerdNode* const o = serd_node_new(NULL, serd_a_string("o"));
+  const SerdNode* const t =
+    serd_nodes_get(nodes, serd_a_typed_literal(zix_string("t"), urn_Type));
 
-  SerdNode* const t =
-    serd_node_new(NULL, serd_a_typed_literal(zix_string("t"), urn_Type));
-
-  SerdNode* const l =
-    serd_node_new(NULL, serd_a_plain_literal(zix_string("l"), en));
+  const SerdNode* const l =
+    serd_nodes_get(nodes, serd_a_plain_literal(zix_string("l"), en));
 
   const SerdNode* good[][3] = {{s, p, o}, {s, p, t}, {s, p, l}};
 
@@ -207,43 +210,37 @@ test_writer(const char* const path)
   static const char* const bad_uri_str   = (const char*)bad_uri_buf;
 
   // Write statements with bad UTF-8 (should be replaced)
-  SerdNode* bad_uri      = serd_node_new(NULL, serd_a_uri_string(bad_uri_str));
-  SerdNode* bad_lit      = serd_node_new(NULL, serd_a_string(bad_lit_str));
-  SerdNode* bad_long_lit = serd_node_new(
-    NULL,
+
+  const SerdNode* bad_uri =
+    serd_nodes_get(nodes, serd_a_uri_string(bad_uri_str));
+  const SerdNode* bad_lit = serd_nodes_get(nodes, serd_a_string(bad_lit_str));
+  const SerdNode* bad_long_lit = serd_nodes_get(
+    nodes,
     serd_a_literal(
       zix_substring(bad_lit_str, 4U), SERD_IS_LONG, zix_empty_string()));
+
   assert(!serd_sink_write(iface, 0, s, p, bad_uri, 0));
   assert(!serd_sink_write(iface, 0, s, p, bad_lit, 0));
   assert(!serd_sink_write(iface, 0, s, p, bad_long_lit, 0));
-  serd_node_free(NULL, bad_long_lit);
-  serd_node_free(NULL, bad_lit);
-  serd_node_free(NULL, bad_uri);
 
   // Write 1 valid statement
-  SerdNode* const hello = serd_node_new(NULL, serd_a_string("hello"));
+  const SerdNode* const hello = serd_nodes_get(nodes, serd_a_string("hello"));
   assert(!serd_sink_write(iface, 0, s, p, hello, 0));
-  serd_node_free(NULL, hello);
 
   serd_writer_free(writer);
   serd_close_output(&output);
 
-  serd_node_free(NULL, lit);
-  serd_node_free(NULL, o);
-  serd_node_free(NULL, t);
-  serd_node_free(NULL, l);
-
   // Test buffer sink
-  SerdBuffer      buffer = {NULL, NULL, 0};
-  SerdNode* const base =
-    serd_node_new(NULL, serd_a_uri_string("http://example.org/base"));
+  SerdBuffer buffer = {NULL, NULL, 0};
+
+  const SerdNode* const base =
+    serd_nodes_get(nodes, serd_a_uri_string("http://example.org/base"));
 
   output = serd_open_output_buffer(&buffer);
   writer = serd_writer_new(world, SERD_TURTLE, 0, env, &output, 1U);
 
   serd_sink_write_base(serd_writer_sink(writer), base);
 
-  serd_node_free(NULL, base);
   serd_writer_free(writer);
   serd_close_output(&output);
 
@@ -251,9 +248,6 @@ test_writer(const char* const path)
   assert(out);
   assert(!strcmp(out, "@base <http://example.org/base> .\n"));
   zix_free(buffer.allocator, buffer.buf);
-
-  serd_node_free(NULL, p);
-  serd_node_free(NULL, s);
 
   serd_env_free(env);
   serd_world_free(world);

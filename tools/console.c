@@ -11,7 +11,6 @@
 #include "serd/version.h"
 #include "zix/allocator.h"
 #include "zix/attributes.h"
-#include "zix/filesystem.h"
 #include "zix/string_view.h"
 
 #ifdef _WIN32
@@ -162,39 +161,6 @@ serd_get_size_argument(OptionIter* const iter, size_t* const argument)
   }
 
   *argument = (size_t)size;
-  return SERD_SUCCESS;
-}
-
-SerdStatus
-serd_set_base_uri_from_path(SerdEnv* const env, const char* const path)
-{
-  const size_t path_len  = strlen(path);
-  char* const  real_path = zix_canonical_path(NULL, path);
-  if (!real_path) {
-    return SERD_BAD_ARG;
-  }
-
-  const size_t real_path_len = strlen(real_path);
-  SerdNode*    base_node     = NULL;
-  if (path[path_len - 1] == '/' || path[path_len - 1] == '\\') {
-    char* const base_path = (char*)calloc(real_path_len + 2, 1);
-
-    memcpy(base_path, real_path, real_path_len + 1);
-    base_path[real_path_len] = path[path_len - 1];
-
-    base_node = serd_node_new(
-      NULL, serd_a_file_uri(zix_string(base_path), zix_empty_string()));
-
-    free(base_path);
-  } else {
-    base_node = serd_node_new(
-      NULL, serd_a_file_uri(zix_string(real_path), zix_empty_string()));
-  }
-
-  serd_env_set_base_uri(env, serd_node_string_view(base_node));
-  serd_node_free(NULL, base_node);
-  zix_free(NULL, real_path);
-
   return SERD_SUCCESS;
 }
 
@@ -372,24 +338,29 @@ serd_create_env(ZixAllocator* const allocator,
                 const char* const   base_string,
                 const char* const   out_filename)
 {
-  const bool is_rebase = base_string && !strcmp(base_string, "rebase");
-  if (is_rebase && !out_filename) {
-    LOG_ERR(program, "rebase requires an output filename\n");
-    return NULL;
-  }
-
-  if (base_string && serd_uri_string_has_scheme(base_string)) {
+  if (serd_uri_string_has_scheme(base_string)) {
     return serd_env_new(allocator, zix_string(base_string));
   }
 
-  SerdEnv* const env = serd_env_new(allocator, zix_empty_string());
-  if (base_string && base_string[0]) {
-    const SerdStatus st = serd_set_base_uri_from_path(env, base_string);
-    if (st) {
-      LOG_ERRF(program, "invalid base URI \"%s\"\n", base_string);
-      serd_env_free(env);
+  const bool is_rebase = !strcmp(base_string, "rebase");
+  if (is_rebase) {
+    if (!out_filename) {
+      LOG_ERR(program, "rebase requires an output filename\n");
       return NULL;
     }
+
+    SerdEnv* const env = serd_env_new(allocator, zix_empty_string());
+    serd_env_set_base_path(env, zix_string(out_filename));
+    return env;
+  }
+
+  SerdEnv* const      env  = serd_env_new(allocator, zix_empty_string());
+  const ZixStringView base = zix_string(base_string);
+  const SerdStatus    st   = serd_env_set_base_path(env, base);
+  if (st) {
+    LOG_ERRF(program, "invalid base URI \"%s\"\n", base_string);
+    serd_env_free(env);
+    return NULL;
   }
 
   return env;
@@ -478,7 +449,7 @@ serd_read_inputs(SerdTool* const         tool,
     // Use the filename as the base URI if possible if user didn't override it
     const char* const in_path = inputs[i];
     if (!opts.base_uri[0] && !!strcmp(in_path, "-")) {
-      serd_set_base_uri_from_path(env, in_path);
+      serd_env_set_base_path(env, zix_string(in_path));
     }
 
     // Open the input stream

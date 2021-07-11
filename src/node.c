@@ -735,9 +735,10 @@ serd_node_copy(ZixAllocator* const allocator, const SerdNode* node)
 
   SERD_DISABLE_NULL_WARNINGS
   const size_t size = serd_node_total_size(node);
-  SerdNode*    copy =
-    (SerdNode*)zix_aligned_alloc(allocator, serd_node_align, size);
   SERD_RESTORE_WARNINGS
+
+  SerdNode* copy =
+    (SerdNode*)zix_aligned_alloc(allocator, serd_node_align, size);
 
   if (copy) {
     memcpy(copy, node, size);
