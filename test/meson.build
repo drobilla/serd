@@ -45,6 +45,7 @@ unit_tests = [
   'node',
   'overflow',
   'read_chunk',
+  'reader',
   'reader_writer',
   'sink',
   'statement',
