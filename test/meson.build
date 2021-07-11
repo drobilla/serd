@@ -125,6 +125,7 @@ unit_tests = [
   'free_null',
   'node',
   'overflow',
+  'reader',
   'reader_writer',
   'sink',
   'string',
