@@ -28,6 +28,7 @@
 #  include <windows.h>
 #endif
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -95,6 +96,8 @@ serd_free_aligned(void* const ptr)
 char*
 serd_canonical_path(const char* const path)
 {
+  assert(path);
+
 #ifdef _WIN32
   const DWORD size = GetFullPathName(path, 0, NULL, NULL);
   if (size == 0) {
