@@ -318,11 +318,6 @@ serd_reader_read_chunk(SerdReader* const reader)
     st = serd_byte_source_advance(&reader->source);
   }
 
-  if (peek_byte(reader) == 0) {
-    // Skip leading null byte, for reading from a null-delimited socket
-    st = skip_byte(reader, 0);
-  }
-
   return st ? st : read_statement(reader);
 }
 
