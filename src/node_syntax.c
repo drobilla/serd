@@ -9,6 +9,7 @@
 #include "serd/input_stream.h"
 #include "serd/node.h"
 #include "serd/node_syntax.h"
+#include "serd/nodes.h"
 #include "serd/output_stream.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
@@ -63,7 +64,8 @@ serd_node_from_syntax_in(const char* const str,
                     sink,
                     1024 + doc_len);
 
-  SerdNode* string_name = serd_new_string(serd_string("string"));
+  const SerdNode* string_name =
+    serd_nodes_string(serd_world_nodes(world), serd_string("string"));
 
   const char*     position = doc;
   SerdInputStream in       = serd_open_input_string(&position);
@@ -71,7 +73,6 @@ serd_node_from_syntax_in(const char* const str,
   serd_reader_read_document(reader);
   serd_reader_finish(reader);
   serd_close_input(&in);
-  serd_node_free(string_name);
   serd_reader_free(reader);
   serd_sink_free(sink);
   serd_world_free(world);
