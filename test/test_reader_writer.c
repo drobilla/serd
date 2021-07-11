@@ -183,6 +183,7 @@ test_writer(const char* const path)
   assert(fd);
 
   SerdWorld* world = serd_world_new();
+  SerdNodes* nodes = serd_world_nodes(world);
 
   SerdWriter* writer =
     serd_writer_new(world, SERD_TURTLE, 0, env, (SerdWriteFunc)fwrite, fd);
@@ -191,7 +192,7 @@ test_writer(const char* const path)
   serd_writer_chop_blank_prefix(writer, "tmp");
   serd_writer_chop_blank_prefix(writer, NULL);
 
-  SerdNode* lit = serd_new_string(SERD_STRING("hello"));
+  const SerdNode* lit = serd_nodes_string(nodes, SERD_STRING("hello"));
 
   const SerdSink* const iface = serd_writer_sink(writer);
   assert(serd_sink_write_base(iface, lit));
@@ -201,9 +202,11 @@ test_writer(const char* const path)
   static const uint8_t bad_buf[]    = {0xEF, 0xBF, 0xBD, 0};
   const SerdStringView bad_buf_view = {(const char*)bad_buf, 3};
 
-  SerdNode* s   = serd_new_uri(SERD_STRING("http://example.org"));
-  SerdNode* p   = serd_new_uri(SERD_STRING("http://example.org/pred"));
-  SerdNode* bad = serd_new_string(bad_buf_view);
+  const SerdNode* s = serd_nodes_uri(nodes, SERD_STRING("http://example.org"));
+  const SerdNode* p =
+    serd_nodes_uri(nodes, SERD_STRING("http://example.org/pred"));
+
+  const SerdNode* bad = serd_nodes_string(nodes, bad_buf_view);
 
   // Write 3 invalid statements (should write nothing)
   const SerdNode* junk[][3] = {{s, bad, bad}, {bad, p, bad}, {s, bad, p}};
@@ -211,14 +214,15 @@ test_writer(const char* const path)
     assert(serd_sink_write(iface, 0, junk[i][0], junk[i][1], junk[i][2], NULL));
   }
 
-  serd_node_free(bad);
-
   static const SerdStringView urn_Type = SERD_STRING("urn:Type");
   static const SerdStringView en       = SERD_STRING("en");
 
-  SerdNode* const o = serd_new_string(SERD_STRING("o"));
-  SerdNode* const t = serd_new_typed_literal(SERD_STRING("t"), urn_Type);
-  SerdNode* const l = serd_new_plain_literal(SERD_STRING("l"), en);
+  const SerdNode* const o = serd_nodes_string(nodes, SERD_STRING("o"));
+  const SerdNode* const t =
+    serd_nodes_typed_literal(nodes, SERD_STRING("t"), urn_Type);
+
+  const SerdNode* const l =
+    serd_nodes_plain_literal(nodes, SERD_STRING("l"), en);
 
   const SerdNode* good[][3] = {{s, p, o}, {s, p, t}, {s, p, l}};
 
@@ -233,43 +237,32 @@ test_writer(const char* const path)
   static const char* const bad_uri_str   = (const char*)bad_uri_buf;
 
   // Write statements with bad UTF-8 (should be replaced)
-  SerdNode* bad_lit = serd_new_string(SERD_STRING(bad_lit_str));
-  SerdNode* bad_uri = serd_new_uri(SERD_STRING(bad_uri_str));
+  const SerdNode* bad_lit = serd_nodes_string(nodes, SERD_STRING(bad_lit_str));
+  const SerdNode* bad_uri = serd_nodes_uri(nodes, SERD_STRING(bad_uri_str));
   assert(!serd_sink_write(iface, 0, s, p, bad_lit, 0));
   assert(!serd_sink_write(iface, 0, s, p, bad_uri, 0));
-  serd_node_free(bad_uri);
-  serd_node_free(bad_lit);
 
   // Write 1 valid statement
-  SerdNode* const hello = serd_new_string(SERD_STRING("hello"));
+  const SerdNode* const hello = serd_nodes_string(nodes, SERD_STRING("hello"));
   assert(!serd_sink_write(iface, 0, s, p, hello, 0));
-  serd_node_free(hello);
 
   serd_writer_free(writer);
-
-  serd_node_free(lit);
-  serd_node_free(o);
-  serd_node_free(t);
-  serd_node_free(l);
 
   // Test buffer sink
   SerdBuffer buffer = {NULL, 0};
   writer =
     serd_writer_new(world, SERD_TURTLE, 0, env, serd_buffer_sink, &buffer);
 
-  SerdNode* const base = serd_new_uri(SERD_STRING("http://example.org/base"));
+  const SerdNode* const base =
+    serd_nodes_uri(nodes, SERD_STRING("http://example.org/base"));
 
   serd_writer_set_base_uri(writer, base);
 
-  serd_node_free(base);
   serd_writer_free(writer);
   char* out = serd_buffer_sink_finish(&buffer);
 
   assert(!strcmp(out, "@base <http://example.org/base> .\n"));
   serd_free(out);
-
-  serd_node_free(p);
-  serd_node_free(s);
 
   serd_env_free(env);
   serd_world_free(world);
