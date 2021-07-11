@@ -84,7 +84,10 @@ test_prepare_error(const char* const path)
   SerdSink* const sink = serd_sink_new(&rt, test_sink, NULL);
   assert(sink);
 
-  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0, sink, 4096);
+  SerdEnv* const    env = serd_env_new(serd_empty_string());
+  SerdReader* const reader =
+    serd_reader_new(world, SERD_TURTLE, 0, env, sink, 4096);
+
   assert(reader);
 
   SerdByteSource* byte_source = serd_byte_source_new_function(
@@ -97,6 +100,7 @@ test_prepare_error(const char* const path)
 
   serd_byte_source_free(byte_source);
   serd_reader_free(reader);
+  serd_env_free(env);
   serd_sink_free(sink);
   serd_world_free(world);
   fclose(f);
@@ -110,7 +114,10 @@ test_read_string(void)
   SerdSink*  sink  = serd_sink_new(&rt, test_sink, NULL);
   assert(sink);
 
-  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0U, sink, 4096);
+  SerdEnv* const    env = serd_env_new(serd_empty_string());
+  SerdReader* const reader =
+    serd_reader_new(world, SERD_TURTLE, 0U, env, sink, 4096);
+
   assert(reader);
 
   SerdByteSource* byte_source =
@@ -142,6 +149,7 @@ test_read_string(void)
   assert(!serd_reader_finish(reader));
 
   serd_reader_free(reader);
+  serd_env_free(env);
   serd_byte_source_free(byte_source);
   serd_sink_free(sink);
   serd_world_free(world);
@@ -202,10 +210,12 @@ test_read_eof_by_page(const char* const path)
   fflush(f);
   fseek(f, 0L, SEEK_SET);
 
-  SerdWorld*  world   = serd_world_new();
-  ReaderTest  ignored = {0, 0, 0, 0};
-  SerdSink*   sink    = serd_sink_new(&ignored, test_sink, NULL);
-  SerdReader* reader  = serd_reader_new(world, SERD_TURTLE, 0U, sink, 4096);
+  SerdWorld* world   = serd_world_new();
+  ReaderTest ignored = {0, 0, 0, 0};
+  SerdSink*  sink    = serd_sink_new(&ignored, test_sink, NULL);
+  SerdEnv*   env     = serd_env_new(serd_empty_string());
+
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0U, env, sink, 4096);
 
   SerdByteSource* byte_source = serd_byte_source_new_function(
     (SerdReadFunc)fread, (SerdStreamErrorFunc)ferror, NULL, f, NULL, 4096);
@@ -218,6 +228,7 @@ test_read_eof_by_page(const char* const path)
 
   serd_byte_source_free(byte_source);
   serd_reader_free(reader);
+  serd_env_free(env);
   serd_sink_free(sink);
   serd_world_free(world);
   fclose(f);
@@ -227,10 +238,12 @@ test_read_eof_by_page(const char* const path)
 static void
 test_read_eof_by_byte(void)
 {
-  SerdWorld*  world   = serd_world_new();
-  ReaderTest  ignored = {0, 0, 0, 0};
-  SerdSink*   sink    = serd_sink_new(&ignored, test_sink, NULL);
-  SerdReader* reader  = serd_reader_new(world, SERD_TURTLE, 0U, sink, 4096);
+  SerdWorld* world   = serd_world_new();
+  ReaderTest ignored = {0, 0, 0, 0};
+  SerdSink*  sink    = serd_sink_new(&ignored, test_sink, NULL);
+  SerdEnv*   env     = serd_env_new(serd_empty_string());
+
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0U, env, sink, 4096);
 
   size_t          n_reads = 0U;
   SerdByteSource* byte_source =
@@ -250,6 +263,7 @@ test_read_eof_by_byte(void)
 
   serd_byte_source_free(byte_source);
   serd_reader_free(reader);
+  serd_env_free(env);
   serd_sink_free(sink);
   serd_world_free(world);
 }
@@ -277,7 +291,10 @@ test_read_chunks(const char* const path)
   SerdSink*  sink  = serd_sink_new(&rt, test_sink, NULL);
   assert(sink);
 
-  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0U, sink, 4096);
+  SerdEnv* const    env = serd_env_new(serd_empty_string());
+  SerdReader* const reader =
+    serd_reader_new(world, SERD_TURTLE, 0U, env, sink, 4096);
+
   assert(reader);
 
   SerdByteSource* byte_source = serd_byte_source_new_function(
@@ -346,6 +363,7 @@ test_read_chunks(const char* const path)
 
   serd_byte_source_free(byte_source);
   serd_reader_free(reader);
+  serd_env_free(env);
   serd_sink_free(sink);
   fclose(f);
   assert(!zix_remove(path));
