@@ -8,6 +8,7 @@
 #include "serd/env.h"
 #include "serd/event.h"
 #include "serd/node.h"
+#include "serd/nodes.h"
 #include "serd/sink.h"
 #include "serd/status.h"
 #include "zix/string_view.h"
@@ -208,8 +209,9 @@ count_prefixes(void* handle, const SerdEvent* event)
 static void
 test_base_uri(void)
 {
-  SerdEnv* const  env = serd_env_new(NULL, zix_empty_string());
-  SerdNode* const eg  = serd_node_new(NULL, serd_a_uri_string(NS_EG));
+  SerdNodes* const      nodes = serd_nodes_new(NULL);
+  SerdEnv* const        env   = serd_env_new(NULL, zix_empty_string());
+  const SerdNode* const eg    = serd_nodes_get(nodes, serd_a_uri_string(NS_EG));
 
   // Test that empty/unset base works as expected
   assert(!serd_env_base_uri_view(env).scheme.length);
@@ -230,8 +232,8 @@ test_base_uri(void)
   assert(!serd_env_set_base_uri(env, zix_empty_string()));
   assert(!serd_env_base_uri_view(env).scheme.length);
 
-  serd_node_free(NULL, eg);
   serd_env_free(env);
+  serd_nodes_free(nodes);
 }
 
 static void
@@ -312,12 +314,13 @@ test_qualify(void)
 {
   static const ZixStringView eg = ZIX_STATIC_STRING(NS_EG);
 
-  SerdNode* const name = serd_node_new(NULL, serd_a_string("eg"));
-  SerdNode* const c1   = serd_node_new(NULL, serd_a_curie_string("eg:foo"));
-  SerdNode* const u1 =
-    serd_node_new(NULL, serd_a_uri_string("http://example.org/foo"));
-  SerdNode* const u2 =
-    serd_node_new(NULL, serd_a_uri_string("http://drobilla.net/bar"));
+  SerdNodes* const nodes = serd_nodes_new(NULL);
+
+  const SerdNode* const name = serd_nodes_get(nodes, serd_a_string("eg"));
+  const SerdNode* const u1 =
+    serd_nodes_get(nodes, serd_a_uri_string("http://example.org/foo"));
+  const SerdNode* const u2 =
+    serd_nodes_get(nodes, serd_a_uri_string("http://drobilla.net/bar"));
 
   SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
 
@@ -335,10 +338,7 @@ test_qualify(void)
          SERD_FAILURE);
 
   serd_env_free(env);
-  serd_node_free(NULL, u2);
-  serd_node_free(NULL, u1);
-  serd_node_free(NULL, c1);
-  serd_node_free(NULL, name);
+  serd_nodes_free(nodes);
 }
 
 static void

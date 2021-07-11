@@ -14,6 +14,7 @@
 
 #include <assert.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #define NS_EG "http://example.org/"
 
@@ -79,12 +80,14 @@ test_new_failed_alloc(void)
 static void
 test_copy(void)
 {
-  assert(!serd_statement_copy(NULL, NULL));
+  SerdNodes* const nodes = serd_nodes_new(NULL);
 
-  SerdNode* const s = serd_node_new(NULL, serd_a_uri_string(NS_EG "s"));
-  SerdNode* const p = serd_node_new(NULL, serd_a_uri_string(NS_EG "p"));
-  SerdNode* const o = serd_node_new(NULL, serd_a_uri_string(NS_EG "o"));
-  SerdNode* const g = serd_node_new(NULL, serd_a_uri_string(NS_EG "g"));
+  const SerdNode* const s = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "s"));
+  const SerdNode* const p = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "p"));
+  const SerdNode* const o = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "o"));
+  const SerdNode* const g = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "g"));
+
+  assert(!serd_statement_copy(NULL, NULL));
 
   SerdStatement* const statement = serd_statement_new(NULL, s, p, o, g, NULL);
   SerdStatement* const copy      = serd_statement_copy(NULL, statement);
@@ -94,22 +97,19 @@ test_copy(void)
 
   serd_statement_free(NULL, copy);
   serd_statement_free(NULL, statement);
-  serd_node_free(NULL, g);
-  serd_node_free(NULL, o);
-  serd_node_free(NULL, p);
-  serd_node_free(NULL, s);
+  serd_nodes_free(nodes);
 }
 
 static void
 test_copy_with_caret(void)
 {
-  assert(!serd_statement_copy(NULL, NULL));
+  SerdNodes* const nodes = serd_nodes_new(NULL);
 
-  SerdNode* const f = serd_node_new(NULL, serd_a_string("file"));
-  SerdNode* const s = serd_node_new(NULL, serd_a_uri_string(NS_EG "s"));
-  SerdNode* const p = serd_node_new(NULL, serd_a_uri_string(NS_EG "p"));
-  SerdNode* const o = serd_node_new(NULL, serd_a_uri_string(NS_EG "o"));
-  SerdNode* const g = serd_node_new(NULL, serd_a_uri_string(NS_EG "g"));
+  const SerdNode* const f = serd_nodes_get(nodes, serd_a_string("file"));
+  const SerdNode* const s = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "s"));
+  const SerdNode* const p = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "p"));
+  const SerdNode* const o = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "o"));
+  const SerdNode* const g = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "g"));
 
   SerdCaret* const     caret     = serd_caret_new(NULL, f, 1, 1);
   SerdStatement* const statement = serd_statement_new(NULL, s, p, o, g, caret);
@@ -121,19 +121,17 @@ test_copy_with_caret(void)
   serd_statement_free(NULL, copy);
   serd_statement_free(NULL, statement);
   serd_caret_free(NULL, caret);
-  serd_node_free(NULL, g);
-  serd_node_free(NULL, o);
-  serd_node_free(NULL, p);
-  serd_node_free(NULL, s);
-  serd_node_free(NULL, f);
+  serd_nodes_free(nodes);
 }
 
 static void
 test_copy_failed_alloc(void)
 {
-  SerdNode* const u = serd_node_new(NULL, serd_a_uri_string(NS_EG "s"));
-  SerdNode* const doc =
-    serd_node_new(NULL, serd_a_uri_string(NS_EG "document"));
+  SerdNodes* const nodes = serd_nodes_new(NULL);
+
+  const SerdNode* const u = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "s"));
+  const SerdNode* const doc =
+    serd_nodes_get(nodes, serd_a_uri_string(NS_EG "doc"));
   SerdCaret* const caret = serd_caret_new(NULL, doc, 1, 79);
 
   SerdStatement* const statement =
@@ -155,8 +153,7 @@ test_copy_failed_alloc(void)
 
   serd_statement_free(NULL, statement);
   serd_caret_free(NULL, caret);
-  serd_node_free(NULL, doc);
-  serd_node_free(NULL, u);
+  serd_nodes_free(nodes);
 }
 
 static void
@@ -169,15 +166,20 @@ test_free(void)
 static void
 test_fields(void)
 {
-  SerdNode* const f = serd_node_new(NULL, serd_a_string("file"));
-  SerdNode* const s = serd_node_new(NULL, serd_a_uri_string(NS_EG "s"));
-  SerdNode* const p = serd_node_new(NULL, serd_a_uri_string(NS_EG "p"));
-  SerdNode* const o = serd_node_new(NULL, serd_a_uri_string(NS_EG "o"));
-  SerdNode* const g = serd_node_new(NULL, serd_a_uri_string(NS_EG "g"));
+  ZixAllocator* const allocator = zix_default_allocator();
 
-  SerdCaret* const caret = serd_caret_new(NULL, f, 1, 1);
+  SerdNodes* const nodes = serd_nodes_new(allocator);
 
-  SerdStatement* const statement = serd_statement_new(NULL, s, p, o, g, caret);
+  const SerdNode* const f = serd_nodes_get(nodes, serd_a_string("file"));
+  const SerdNode* const s = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "s"));
+  const SerdNode* const p = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "p"));
+  const SerdNode* const o = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "o"));
+  const SerdNode* const g = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "g"));
+
+  SerdCaret* const caret = serd_caret_new(allocator, f, 1, 1);
+
+  SerdStatement* const statement =
+    serd_statement_new(allocator, s, p, o, g, caret);
 
   assert(serd_statement_equals(statement, statement));
   assert(!serd_statement_equals(statement, NULL));
@@ -204,29 +206,75 @@ test_fields(void)
   assert(!serd_statement_matches(statement, NULL, NULL, s, NULL));
   assert(!serd_statement_matches(statement, NULL, NULL, NULL, s));
 
-  SerdStatement* const diff_s = serd_statement_new(NULL, o, p, o, g, caret);
+  SerdStatement* const diff_s =
+    serd_statement_new(allocator, o, p, o, g, caret);
   assert(!serd_statement_equals(statement, diff_s));
-  serd_statement_free(NULL, diff_s);
+  serd_statement_free(allocator, diff_s);
 
-  SerdStatement* const diff_p = serd_statement_new(NULL, s, o, o, g, caret);
+  SerdStatement* const diff_p =
+    serd_statement_new(allocator, s, o, o, g, caret);
   assert(!serd_statement_equals(statement, diff_p));
-  serd_statement_free(NULL, diff_p);
+  serd_statement_free(allocator, diff_p);
 
-  SerdStatement* const diff_o = serd_statement_new(NULL, s, p, s, g, caret);
+  SerdStatement* const diff_o =
+    serd_statement_new(allocator, s, p, s, g, caret);
   assert(!serd_statement_equals(statement, diff_o));
-  serd_statement_free(NULL, diff_o);
+  serd_statement_free(allocator, diff_o);
 
-  SerdStatement* const diff_g = serd_statement_new(NULL, s, p, o, s, caret);
+  SerdStatement* const diff_g =
+    serd_statement_new(allocator, s, p, o, s, caret);
   assert(!serd_statement_equals(statement, diff_g));
-  serd_statement_free(NULL, diff_g);
+  serd_statement_free(allocator, diff_g);
 
-  serd_statement_free(NULL, statement);
-  serd_caret_free(NULL, caret);
-  serd_node_free(NULL, g);
-  serd_node_free(NULL, o);
-  serd_node_free(NULL, p);
-  serd_node_free(NULL, s);
-  serd_node_free(NULL, f);
+  serd_statement_free(allocator, statement);
+  serd_caret_free(allocator, caret);
+  serd_nodes_free(nodes);
+}
+
+static void
+test_failed_alloc(void)
+{
+  SerdNodes* const nodes = serd_nodes_new(zix_default_allocator());
+
+  const SerdNode* const f = serd_nodes_get(nodes, serd_a_string("file"));
+  const SerdNode* const s = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "s"));
+  const SerdNode* const p = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "p"));
+  const SerdNode* const o = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "o"));
+  const SerdNode* const g = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "g"));
+
+  SerdCaret* const caret = serd_caret_new(zix_default_allocator(), f, 1, 1);
+
+  SerdFailingAllocator allocator = serd_failing_allocator();
+
+  // Successfully allocate a statement to count the number of allocations
+  SerdStatement* const statement =
+    serd_statement_new(&allocator.base, s, p, o, g, caret);
+  assert(statement);
+
+  // Test that each allocation failing is handled gracefully
+  const size_t n_new_allocs = allocator.n_allocations;
+  for (size_t i = 0U; i < n_new_allocs; ++i) {
+    allocator.n_remaining = i;
+    assert(!serd_statement_new(&allocator.base, s, p, o, g, caret));
+  }
+
+  // Successfully copy the statement to count the number of allocations
+  allocator.n_allocations   = 0;
+  allocator.n_remaining     = SIZE_MAX;
+  SerdStatement* const copy = serd_statement_copy(&allocator.base, statement);
+  assert(copy);
+
+  // Test that each allocation failing is handled gracefully
+  const size_t n_copy_allocs = allocator.n_allocations;
+  for (size_t i = 0U; i < n_copy_allocs; ++i) {
+    allocator.n_remaining = i;
+    assert(!serd_statement_copy(&allocator.base, statement));
+  }
+
+  serd_statement_free(&allocator.base, copy);
+  serd_statement_free(&allocator.base, statement);
+  serd_caret_free(zix_default_allocator(), caret);
+  serd_nodes_free(nodes);
 }
 
 int
@@ -237,8 +285,10 @@ main(void)
   test_copy();
   test_copy_with_caret();
   test_copy_failed_alloc();
+  test_copy_with_caret();
   test_free();
   test_fields();
+  test_failed_alloc();
 
   return 0;
 }
