@@ -243,6 +243,8 @@ serd_describe_range(const SerdCursor* const range,
                     const SerdSink*         sink,
                     const SerdDescribeFlags flags)
 {
+  assert(sink);
+
   SerdStatus st = SERD_SUCCESS;
 
   if (serd_cursor_is_end(range)) {
