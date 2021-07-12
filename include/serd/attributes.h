@@ -76,6 +76,9 @@
 /// A const function in the public API that is pure and only reads parameters
 #define SERD_CONST_API SERD_API SERD_CONST_FUNC
 
+/// A malloc function in the public API that returns allocated memory
+#define SERD_MALLOC_API SERD_API SERD_MALLOC_FUNC
+
 /**
    @}
 */

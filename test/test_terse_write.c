@@ -11,6 +11,7 @@
 #include "serd/stream.h"
 #include "serd/string_view.h"
 #include "serd/syntax.h"
+#include "serd/world.h"
 #include "serd/writer.h"
 
 #include <assert.h>
@@ -37,6 +38,7 @@ static int
 test(void)
 {
   SerdBuffer buffer = {NULL, 0};
+  SerdWorld* world  = serd_world_new();
   SerdEnv*   env    = serd_env_new(serd_empty_string());
 
   SerdNode* b1 = serd_new_blank(serd_string("b1"));
@@ -53,7 +55,7 @@ test(void)
   serd_env_set_prefix(env, serd_string("rdf"), serd_string(NS_RDF));
 
   SerdWriter* writer = serd_writer_new(
-    SERD_TURTLE, 0, env, (SerdWriteFunc)serd_buffer_sink, &buffer);
+    world, SERD_TURTLE, 0, env, (SerdWriteFunc)serd_buffer_sink, &buffer);
 
   const SerdSink* sink = serd_writer_sink(writer);
 
@@ -97,6 +99,7 @@ test(void)
   serd_node_free(l1);
   serd_node_free(b1);
   serd_env_free(env);
+  serd_world_free(world);
   free(buffer.buf);
 
   return 0;
