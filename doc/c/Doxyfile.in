@@ -30,6 +30,7 @@ PREDEFINED             = SERD_ALLOCATED \
                          SERD_CONST_FUNC= \
                          SERD_DEPRECATED_BY(x)= \
                          SERD_DISABLE_DEPRECATED \
+                         SERD_MALLOC_API= \
                          SERD_NONNULL= \
                          SERD_NULLABLE= \
                          SERD_PURE_API= \
