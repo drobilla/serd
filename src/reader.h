@@ -17,6 +17,7 @@
 #include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
+#include "serd/world.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -32,6 +33,7 @@ typedef struct {
 } ReadContext;
 
 struct SerdReaderImpl {
+  SerdWorld*      world;
   const SerdSink* sink;
   SerdErrorFunc   error_func;
   void*           error_handle;

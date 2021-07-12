@@ -28,6 +28,7 @@ PREDEFINED             = SERD_ALLOCATED \
                          SERD_API \
                          SERD_CONST_API= \
                          SERD_CONST_FUNC= \
+                         SERD_MALLOC_API= \
                          SERD_NONNULL= \
                          SERD_NULLABLE= \
                          SERD_PURE_API= \

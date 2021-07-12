@@ -5,12 +5,12 @@
 #define SERD_READER_H
 
 #include "serd/attributes.h"
-#include "serd/error.h"
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/syntax.h"
+#include "serd/world.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -29,7 +29,8 @@ typedef struct SerdReaderImpl SerdReader;
 
 /// Create a new RDF reader
 SERD_API SerdReader* SERD_ALLOCATED
-serd_reader_new(SerdSyntax                   syntax,
+serd_reader_new(SerdWorld* SERD_NONNULL      world,
+                SerdSyntax                   syntax,
                 const SerdSink* SERD_NONNULL sink,
                 size_t                       stack_size);
 
@@ -42,17 +43,6 @@ serd_reader_new(SerdSyntax                   syntax,
 */
 SERD_API void
 serd_reader_set_strict(SerdReader* SERD_NONNULL reader, bool strict);
-
-/**
-   Set a function to be called when errors occur during reading.
-
-   The `error_func` will be called with `handle` as its first argument.  If
-   no error function is set, errors are printed to stderr in GCC style.
-*/
-SERD_API void
-serd_reader_set_error_sink(SerdReader* SERD_NONNULL    reader,
-                           SerdErrorFunc SERD_NULLABLE error_func,
-                           void* SERD_NULLABLE         error_handle);
 
 /**
    Set a prefix to be added to all blank node identifiers.
