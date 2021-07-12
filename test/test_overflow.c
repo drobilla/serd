@@ -12,12 +12,13 @@ static const size_t min_stack_size = 4U * sizeof(size_t) + 256U;
 static const size_t max_stack_size = 1024U;
 
 static SerdStatus
-test_size(const char* const str,
+test_size(SerdWorld* const  world,
+          const char* const str,
           const SerdSyntax  syntax,
           const size_t      stack_size)
 {
   SerdSink*         sink   = serd_sink_new(NULL, NULL);
-  SerdReader* const reader = serd_reader_new(syntax, sink, stack_size);
+  SerdReader* const reader = serd_reader_new(world, syntax, sink, stack_size);
   assert(reader);
 
   serd_reader_start_string(reader, str);
@@ -29,15 +30,17 @@ test_size(const char* const str,
 }
 
 static void
-test_all_sizes(const char* const str, const SerdSyntax syntax)
+test_all_sizes(SerdWorld* const  world,
+               const char* const str,
+               const SerdSyntax  syntax)
 {
   // Ensure reading with the maximum stack size succeeds
-  SerdStatus st = test_size(str, syntax, max_stack_size);
+  SerdStatus st = test_size(world, str, syntax, max_stack_size);
   assert(!st);
 
   // Test with an increasingly smaller stack
   for (size_t size = max_stack_size; size > min_stack_size; --size) {
-    if ((st = test_size(str, syntax, size))) {
+    if ((st = test_size(world, str, syntax, size))) {
       assert(st == SERD_ERR_OVERFLOW);
     }
   }
@@ -53,9 +56,13 @@ test_ntriples_overflow(void)
     NULL,
   };
 
+  SerdWorld* const world = serd_world_new();
+
   for (const char* const* t = test_strings; *t; ++t) {
-    test_all_sizes(*t, SERD_NTRIPLES);
+    test_all_sizes(world, *t, SERD_NTRIPLES);
   }
+
+  serd_world_free(world);
 }
 
 static void
@@ -136,9 +143,13 @@ test_turtle_overflow(void)
     NULL,
   };
 
+  SerdWorld* const world = serd_world_new();
+
   for (const char* const* t = test_strings; *t; ++t) {
-    test_all_sizes(*t, SERD_TURTLE);
+    test_all_sizes(world, *t, SERD_TURTLE);
   }
+
+  serd_world_free(world);
 }
 
 int

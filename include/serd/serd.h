@@ -32,6 +32,8 @@
 
 #include "serd/sink.h"
 
+#include "serd/world.h"
+
 #include "serd/env.h"
 
 #include "serd/reader.h"
