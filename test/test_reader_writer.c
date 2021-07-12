@@ -5,7 +5,6 @@
 
 #include "serd/buffer.h"
 #include "serd/env.h"
-#include "serd/error.h"
 #include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/reader.h"
@@ -16,6 +15,7 @@
 #include "serd/stream.h"
 #include "serd/string_view.h"
 #include "serd/syntax.h"
+#include "serd/world.h"
 #include "serd/writer.h"
 
 #ifdef _WIN32
@@ -178,9 +178,10 @@ test_read_nquads_chunks(const char* const path)
 
   fseek(f, 0, SEEK_SET);
 
+  SerdWorld* const  world  = serd_world_new();
   ReaderTest* const rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
   SerdSink* const   sink   = serd_sink_new(rt, NULL);
-  SerdReader* const reader = serd_reader_new(SERD_NQUADS, sink, 4096);
+  SerdReader* const reader = serd_reader_new(world, SERD_NQUADS, sink, 4096);
 
   assert(reader);
   assert(sink);
@@ -239,6 +240,7 @@ test_read_nquads_chunks(const char* const path)
   serd_reader_free(reader);
   serd_sink_free(sink);
   free(rt);
+  serd_world_free(world);
   fclose(f);
   remove(path);
 }
@@ -260,9 +262,10 @@ test_read_turtle_chunks(const char* const path)
   fwrite(&null, sizeof(null), 1, f);
   fseek(f, 0, SEEK_SET);
 
-  ReaderTest* const rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
-  SerdSink* const   sink   = serd_sink_new(rt, NULL);
-  SerdReader* const reader = serd_reader_new(SERD_TURTLE, sink, 4096);
+  SerdWorld*  world  = serd_world_new();
+  ReaderTest* rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
+  SerdSink*   sink   = serd_sink_new(rt, NULL);
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
 
   assert(reader);
   assert(sink);
@@ -337,6 +340,7 @@ test_read_turtle_chunks(const char* const path)
   serd_reader_free(reader);
   serd_sink_free(sink);
   free(rt);
+  serd_world_free(world);
   fclose(f);
   remove(path);
 }
@@ -344,9 +348,10 @@ test_read_turtle_chunks(const char* const path)
 static void
 test_read_string(void)
 {
+  SerdWorld*  world  = serd_world_new();
   ReaderTest* rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
   SerdSink*   sink   = serd_sink_new(rt, NULL);
-  SerdReader* reader = serd_reader_new(SERD_TURTLE, sink, 4096);
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
 
   assert(reader);
   assert(sink);
@@ -372,6 +377,7 @@ test_read_string(void)
   serd_reader_free(reader);
   serd_sink_free(sink);
   free(rt);
+  serd_world_free(world);
 }
 
 static size_t
@@ -398,18 +404,11 @@ faulty_sink(const void* const buf,
   return nmemb;
 }
 
-static SerdStatus
-quiet_error_sink(void* const handle, const SerdError* const e)
-{
-  (void)handle;
-  (void)e;
-  return SERD_SUCCESS;
-}
-
 static void
 test_write_errors(void)
 {
-  ErrorContext ctx = {0U, 0U};
+  SerdWorld* const world = serd_world_new();
+  ErrorContext     ctx   = {0U, 0U};
 
   const size_t max_offsets[] = {0, 386, 1911, 2003, 386};
 
@@ -422,13 +421,10 @@ test_write_errors(void)
 
       SerdEnv* const    env = serd_env_new(serd_empty_string());
       SerdWriter* const writer =
-        serd_writer_new(syntax, 0U, env, faulty_sink, &ctx);
+        serd_writer_new(world, syntax, 0U, env, faulty_sink, &ctx);
 
-      const SerdSink* const sink   = serd_writer_sink(writer);
-      SerdReader* const     reader = serd_reader_new(SERD_TRIG, sink, 4096U);
-
-      serd_reader_set_error_sink(reader, quiet_error_sink, NULL);
-      serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
+      const SerdSink* const sink = serd_writer_sink(writer);
+      SerdReader* const reader = serd_reader_new(world, SERD_TRIG, sink, 4096U);
 
       SerdStatus st = serd_reader_start_string(reader, doc_string);
       assert(!st);
@@ -440,6 +436,8 @@ test_write_errors(void)
       serd_env_free(env);
     }
   }
+
+  serd_world_free(world);
 }
 
 static void
@@ -449,8 +447,9 @@ test_writer(const char* const path)
   SerdEnv* env = serd_env_new(serd_empty_string());
   assert(fd);
 
+  SerdWorld*  world  = serd_world_new();
   SerdWriter* writer = serd_writer_new(
-    SERD_TURTLE, SERD_WRITE_LAX, env, (SerdWriteFunc)fwrite, fd);
+    world, SERD_TURTLE, SERD_WRITE_LAX, env, (SerdWriteFunc)fwrite, fd);
   assert(writer);
 
   serd_writer_chop_blank_prefix(writer, "tmp");
@@ -519,7 +518,8 @@ test_writer(const char* const path)
 
   // Test buffer sink
   SerdBuffer buffer = {NULL, 0};
-  writer = serd_writer_new(SERD_TURTLE, 0, env, serd_buffer_sink, &buffer);
+  writer =
+    serd_writer_new(world, SERD_TURTLE, 0, env, serd_buffer_sink, &buffer);
 
   SerdNode* const base = serd_new_uri(serd_string("http://example.org/base"));
 
@@ -536,14 +536,16 @@ test_writer(const char* const path)
   serd_node_free(s);
 
   serd_env_free(env);
+  serd_world_free(world);
   fclose(fd);
 }
 
 static void
 test_reader(const char* path)
 {
-  ReaderTest      rt   = {0, 0, 0, 0};
-  SerdSink* const sink = serd_sink_new(&rt, NULL);
+  SerdWorld*      world = serd_world_new();
+  ReaderTest      rt    = {0, 0, 0, 0};
+  SerdSink* const sink  = serd_sink_new(&rt, NULL);
   assert(sink);
 
   serd_sink_set_base_func(sink, test_base_sink);
@@ -552,9 +554,9 @@ test_reader(const char* path)
   serd_sink_set_end_func(sink, test_end_sink);
 
   // Test that too little stack space fails gracefully
-  assert(!serd_reader_new(SERD_TURTLE, sink, 32));
+  assert(!serd_reader_new(world, SERD_TURTLE, sink, 32));
 
-  SerdReader* reader = serd_reader_new(SERD_TURTLE, sink, 4096);
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
   assert(reader);
 
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
@@ -616,6 +618,7 @@ test_reader(const char* path)
 
   serd_reader_free(reader);
   serd_sink_free(sink);
+  serd_world_free(world);
 }
 
 int
