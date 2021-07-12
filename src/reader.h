@@ -43,6 +43,7 @@ typedef struct {
 } ReadContext;
 
 struct SerdReaderImpl {
+  SerdWorld*      world;
   const SerdSink* sink;
   SerdErrorFunc   error_func;
   void*           error_handle;
