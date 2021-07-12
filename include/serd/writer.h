@@ -11,6 +11,7 @@
 #include "serd/node.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
+#include "serd/world.h"
 
 #include <stddef.h>
 
@@ -46,7 +47,8 @@ typedef uint32_t SerdWriterFlags;
 /// Create a new RDF writer
 SERD_API
 SerdWriter* SERD_ALLOCATED
-serd_writer_new(SerdSyntax                 syntax,
+serd_writer_new(SerdWorld* SERD_NONNULL    world,
+                SerdSyntax                 syntax,
                 SerdWriterFlags            flags,
                 SerdEnv* SERD_NONNULL      env,
                 SerdWriteFunc SERD_NONNULL ssink,
@@ -61,18 +63,6 @@ serd_writer_free(SerdWriter* SERD_NULLABLE writer);
 SERD_CONST_API
 const SerdSink* SERD_NONNULL
 serd_writer_sink(SerdWriter* SERD_NONNULL writer);
-
-/**
-   Set a function to be called when errors occur during writing.
-
-   The `error_func` will be called with `handle` as its first argument.  If
-   no error function is set, errors are printed to stderr.
-*/
-SERD_API
-void
-serd_writer_set_error_sink(SerdWriter* SERD_NONNULL   writer,
-                           SerdErrorFunc SERD_NONNULL error_func,
-                           void* SERD_NULLABLE        error_handle);
 
 /**
    Set a prefix to be removed from matching blank node identifiers.

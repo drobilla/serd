@@ -67,4 +67,8 @@
   SERD_API             \
   SERD_CONST_FUNC
 
+#define SERD_MALLOC_API \
+  SERD_API              \
+  SERD_MALLOC_FUNC
+
 #endif // SERD_ATTRIBUTES_H
