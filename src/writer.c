@@ -80,6 +80,7 @@ static const SepRule rules[] = {{NULL, 0, 0, 0, 0},
                                 {"\n", 1, 0, 1, 0}};
 
 struct SerdWriterImpl {
+  SerdWorld*      world;
   SerdSink        iface;
   SerdSyntax      syntax;
   SerdWriterFlags flags;
@@ -88,8 +89,6 @@ struct SerdWriterImpl {
   SerdURIView     root_uri;
   SerdStack       anon_stack;
   SerdByteSink    byte_sink;
-  SerdErrorFunc   error_func;
-  void*           error_handle;
   WriteContext    context;
   SerdNode*       list_subj;
   unsigned        list_depth;
@@ -136,8 +135,8 @@ w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
 
   va_list args;
   va_start(args, fmt);
-  const SerdError e = {st, "", 0, 0, fmt, &args};
-  serd_error(writer->error_func, writer->error_handle, &e);
+  const SerdError e = {st, NULL, 0, 0, fmt, &args};
+  serd_error(writer->world, &e);
   va_end(args);
 }
 
@@ -935,7 +934,8 @@ serd_writer_finish(SerdWriter* writer)
 }
 
 SerdWriter*
-serd_writer_new(SerdSyntax      syntax,
+serd_writer_new(SerdWorld*      world,
+                SerdSyntax      syntax,
                 SerdWriterFlags flags,
                 SerdEnv*        env,
                 SerdWriteFunc   ssink,
@@ -944,6 +944,7 @@ serd_writer_new(SerdSyntax      syntax,
   const WriteContext context = WRITE_CONTEXT_NULL;
   SerdWriter*        writer  = (SerdWriter*)calloc(1, sizeof(SerdWriter));
 
+  writer->world      = world;
   writer->syntax     = syntax;
   writer->flags      = flags;
   writer->env        = env;
@@ -963,15 +964,6 @@ serd_writer_new(SerdSyntax      syntax,
   writer->iface.end       = (SerdEndFunc)serd_writer_end_anon;
 
   return writer;
-}
-
-void
-serd_writer_set_error_sink(SerdWriter*   writer,
-                           SerdErrorFunc error_func,
-                           void*         error_handle)
-{
-  writer->error_func   = error_func;
-  writer->error_handle = error_handle;
 }
 
 void

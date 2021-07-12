@@ -5,9 +5,9 @@
 #define SERD_SRC_ATTRIBUTES_H
 
 #ifdef __GNUC__
-#  define SERD_MALLOC_FUNC __attribute__((malloc))
+#  define SERD_I_MALLOC_FUNC __attribute__((malloc))
 #else
-#  define SERD_MALLOC_FUNC
+#  define SERD_I_MALLOC_FUNC
 #endif
 
 #endif // SERD_SRC_ATTRIBUTES_H

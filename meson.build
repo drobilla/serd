@@ -76,6 +76,7 @@ sources = files(
   'src/syntax.c',
   'src/system.c',
   'src/uri.c',
+  'src/world.c',
   'src/writer.c',
 )
 
