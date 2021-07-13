@@ -7,33 +7,67 @@
 	rdf:type mf:Manifest ;
 	rdfs:comment "Serd lax syntax test cases" ;
 	mf:entries (
-		<#test-bad-string>
-		<#test-bad-uri>
-		<#test-bad-utf8>
+		<#test-bad-string-ttl>
+		<#test-bad-string-nt>
+		<#test-bad-uri-ttl>
+		<#test-bad-uri-nt>
+		<#test-bad-uri-nq>
+		<#test-bad-utf8-ttl>
+		<#test-bad-utf8-nt>
+		<#test-bad-utf8-nq>
 		<#test-lone-list>
 	) .
 
-<#test-bad-string>
+<#test-bad-string-ttl>
 	rdf:type rdft:TestTurtleNegativeSyntax ;
-	mf:name "test-bad-string" ;
+	mf:name "test-bad-string-ttl" ;
 	mf:action <test-bad-string.ttl> ;
-	mf:result <test-bad-string.nt> .
+	mf:result <test-bad-string-out.nt> .
 
-<#test-bad-uri>
+<#test-bad-string-nt>
+	rdf:type rdft:TestNTriplesNegativeSyntax ;
+	mf:name "test-bad-string-nt" ;
+	mf:action <test-bad-string.nt> ;
+	mf:result <test-bad-string-out.nt> .
+
+<#test-bad-uri-ttl>
 	rdf:type rdft:TestTurtleNegativeSyntax ;
-	mf:name "test-bad-uri" ;
+	mf:name "test-bad-uri-ttl" ;
 	mf:action <test-bad-uri.ttl> ;
-	mf:result <test-bad-uri.nt> .
+	mf:result <test-bad-uri-out.nt> .
 
-<#test-bad-utf8>
+<#test-bad-uri-nt>
+	rdf:type rdft:TestNTriplesNegativeSyntax ;
+	mf:name "test-bad-uri-nt" ;
+	mf:action <test-bad-uri.nt> ;
+	mf:result <test-bad-uri-out.nt> .
+
+<#test-bad-uri-nq>
+	rdf:type rdft:TestNQuadsNegativeSynqax ;
+	mf:name "test-bad-uri-nq" ;
+	mf:action <test-bad-uri.nq> ;
+	mf:result <test-bad-uri-nq-out.nq> .
+
+<#test-bad-utf8-ttl>
 	rdf:type rdft:TestTurtleNegativeSyntax ;
-	mf:name "test-bad-utf8" ;
+	mf:name "test-bad-utf8-ttl" ;
 	mf:action <test-bad-utf8.ttl> ;
-	mf:result <test-bad-utf8.nt> .
+	mf:result <test-bad-utf8-ttl-out.nt> .
+
+<#test-bad-utf8-nt>
+	rdf:type rdft:TestNTriplesNegativeSyntax ;
+	mf:name "test-bad-utf8-nt" ;
+	mf:action <test-bad-utf8.nt> ;
+	mf:result <test-bad-utf8-nt-out.nt> .
+
+<#test-bad-utf8-nq>
+	rdf:type rdft:TestNQuadsNegativeSynqax ;
+	mf:name "test-bad-utf8-nq" ;
+	mf:action <test-bad-utf8.nq> ;
+	mf:result <test-bad-utf8-nq-out.nq> .
 
 <#test-lone-list>
 	rdf:type rdft:TestTurtleNegativeSyntax ;
 	mf:name "test-lone-list" ;
 	mf:action <test-lone-list.ttl> ;
 	mf:result <test-lone-list.nt> .
-
