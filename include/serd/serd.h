@@ -199,6 +199,31 @@ typedef enum {
   SERD_ERR_OVERFLOW,   ///< Stack overflow
 } SerdStatus;
 
+/**
+   A status code with an associated byte count.
+
+   This is returned by functions which write to a buffer to inform the caller
+   about the size written, or in case of overflow, size required.
+*/
+typedef struct {
+  /**
+     Status code.
+
+     This reports the status of the operation as usual, and also dictates the
+     meaning of `count`.
+  */
+  SerdStatus status;
+
+  /**
+     Number of bytes written or required.
+
+     On success, this is the total number of bytes written.  On
+     #SERD_ERR_OVERFLOW, this is the number of bytes of output space that are
+     required for success.
+  */
+  size_t count;
+} SerdWriteResult;
+
 /// Return a string describing a status code
 SERD_CONST_API
 const char* SERD_NONNULL
@@ -220,22 +245,6 @@ serd_strerror(SerdStatus status);
 SERD_API
 size_t
 serd_strlen(const char* SERD_NONNULL str, SerdNodeFlags* SERD_NULLABLE flags);
-
-/**
-   Decode a base64 string.
-
-   This function can be used to decode a node created with serd_new_base64().
-
-   @param str Base64 string to decode.
-   @param len The length of `str`.
-   @param size Set to the size of the returned blob in bytes.
-   @return A newly allocated blob which must be freed with serd_free().
-*/
-SERD_API
-void* SERD_ALLOCATED
-serd_base64_decode(const char* SERD_NONNULL str,
-                   size_t                   len,
-                   size_t* SERD_NONNULL     size);
 
 /**
    @}
@@ -705,6 +714,39 @@ serd_get_float(const SerdNode* SERD_NONNULL node);
 SERD_API
 int64_t
 serd_get_integer(const SerdNode* SERD_NONNULL node);
+
+/**
+   Return the maximum size of a decoded base64 node in bytes.
+
+   This returns an upper bound on the number of bytes that would be decoded by
+   serd_get_base64().  This is calculated as a simple constant-time arithmetic
+   expression based on the length of the encoded string, so may be larger than
+   the actual size of the data due to things like additional whitespace.
+*/
+SERD_PURE_API
+size_t
+serd_get_base64_size(const SerdNode* SERD_NONNULL node);
+
+/**
+   Decode a base64 node.
+
+   This function can be used to decode a node created with serd_new_base64().
+
+   @param node A literal node which is an encoded base64 string.
+
+   @param buf_size The size of `buf` in bytes.
+
+   @param buf Buffer where decoded data will be written.
+
+   @return On success, #SERD_SUCCESS is returned along with the number of bytes
+   written.  If the output buffer is too small, then #SERD_ERR_OVERFLOW is
+   returned along with the number of bytes required for successful decoding.
+*/
+SERD_API
+SerdWriteResult
+serd_get_base64(const SerdNode* SERD_NONNULL node,
+                size_t                       buf_size,
+                void* SERD_NONNULL           buf);
 
 /// Return a deep copy of `node`
 SERD_API
