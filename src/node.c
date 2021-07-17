@@ -182,6 +182,13 @@ serd_node_zero_pad(SerdNode* node)
   }
 }
 
+static SerdWriteResult
+result(const SerdStatus status, const size_t count)
+{
+  const SerdWriteResult result = {status, count};
+  return result;
+}
+
 SerdNode*
 serd_new_simple_node(const SerdNodeType type, const SerdStringView str)
 {
@@ -370,6 +377,26 @@ serd_get_integer(const SerdNode* const node)
   const int64_t* const value   = exess_get_long(&variant);
 
   return value ? *value : 0;
+}
+
+size_t
+serd_get_base64_size(const SerdNode* SERD_NONNULL node)
+{
+  return exess_base64_decoded_size(serd_node_length(node));
+}
+
+SerdWriteResult
+serd_get_base64(const SerdNode* SERD_NONNULL node,
+                size_t                       buf_size,
+                void* SERD_NONNULL           buf)
+{
+  const size_t      max_size = serd_get_base64_size(node);
+  ExessBlob         blob     = {buf_size, buf};
+  const ExessResult r        = exess_read_base64(&blob, serd_node_string(node));
+
+  return r.status == EXESS_NO_SPACE ? result(SERD_ERR_OVERFLOW, max_size)
+         : r.status                 ? result(SERD_ERR_BAD_SYNTAX, 0u)
+                                    : result(SERD_SUCCESS, blob.size);
 }
 
 SerdNode*
