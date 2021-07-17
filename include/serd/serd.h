@@ -48,6 +48,7 @@
 #include "serd/string.h"
 #include "serd/string_view.h"
 #include "serd/syntax.h"
+#include "serd/write_result.h"
 
 /**
    @}

@@ -131,11 +131,11 @@ c_headers = files(
   'include/serd/syntax.h',
   'include/serd/uri.h',
   'include/serd/version.h',
+  'include/serd/write_result.h',
   'include/serd/writer.h',
 )
 
 sources = files(
-  'src/base64.c',
   'src/byte_source.c',
   'src/env.c',
   'src/n3.c',
