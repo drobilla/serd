@@ -5,6 +5,7 @@
 #define SERD_NODE_H
 
 #include "serd/attributes.h"
+#include "serd/stream_result.h"
 #include "serd/uri.h"
 #include "zix/attributes.h"
 #include "zix/string_view.h"
@@ -385,6 +386,37 @@ serd_get_float(const SerdNode* ZIX_NONNULL node);
 */
 SERD_API int64_t
 serd_get_integer(const SerdNode* ZIX_NONNULL node);
+
+/**
+   Return the maximum size of a decoded binary node in bytes.
+
+   This returns an upper bound on the number of bytes that the node would
+   decode to.  This is calculated as a simple constant-time arithmetic
+   expression based on the length of the encoded string, so may be larger than
+   the actual size of the data due to things like additional whitespace.
+*/
+SERD_PURE_API size_t
+serd_get_base64_size(const SerdNode* ZIX_NONNULL node);
+
+/**
+   Decode a base64 node.
+
+   This function can be used to decode a node created with serd_new_base64().
+
+   @param node A literal node which is an encoded base64 string.
+
+   @param buf_size The size of `buf` in bytes.
+
+   @param buf Buffer where decoded data will be written.
+
+   @return On success, #SERD_SUCCESS is returned along with the number of bytes
+   written.  If the output buffer is too small, then #SERD_NO_SPACE is returned
+   along with the number of bytes required for successful decoding.
+*/
+SERD_API SerdStreamResult
+serd_get_base64(const SerdNode* ZIX_NONNULL node,
+                size_t                      buf_size,
+                void* ZIX_NONNULL           buf);
 
 /**
    @}
