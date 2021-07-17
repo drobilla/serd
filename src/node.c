@@ -11,6 +11,8 @@
 #include "exess/exess.h"
 #include "serd/buffer.h"
 #include "serd/node.h"
+#include "serd/status.h"
+#include "serd/stream_result.h"
 #include "serd/string.h"
 #include "serd/uri.h"
 #include "zix/attributes.h"
@@ -173,6 +175,13 @@ serd_node_zero_pad(SerdNode* node)
   if (node->flags & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE)) {
     serd_node_zero_pad(serd_node_meta(node));
   }
+}
+
+static SerdStreamResult
+result(const SerdStatus status, const size_t count)
+{
+  const SerdStreamResult result = {status, count};
+  return result;
 }
 
 SerdNode*
@@ -395,6 +404,26 @@ serd_get_integer(const SerdNode* const node)
   serd_node_get_value_as(node, EXESS_LONG, sizeof(value), &value);
 
   return value;
+}
+
+size_t
+serd_get_base64_size(const SerdNode* const node)
+{
+  return exess_base64_decoded_size(serd_node_length(node));
+}
+
+SerdStreamResult
+serd_get_base64(const SerdNode* const node,
+                const size_t          buf_size,
+                void* const           buf)
+{
+  const size_t              max_size = serd_get_base64_size(node);
+  const ExessVariableResult r =
+    exess_read_base64(buf_size, buf, serd_node_string(node));
+
+  return r.status == EXESS_NO_SPACE ? result(SERD_NO_SPACE, max_size)
+         : r.status                 ? result(SERD_BAD_SYNTAX, 0U)
+                                    : result(SERD_SUCCESS, r.write_count);
 }
 
 SerdNode*

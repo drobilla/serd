@@ -135,6 +135,7 @@ c_headers = files(
   'include/serd/statement.h',
   'include/serd/status.h',
   'include/serd/stream.h',
+  'include/serd/stream_result.h',
   'include/serd/string.h',
   'include/serd/syntax.h',
   'include/serd/uri.h',
@@ -144,7 +145,6 @@ c_headers = files(
 )
 
 sources = files(
-  'src/base64.c',
   'src/byte_source.c',
   'src/env.c',
   'src/n3.c',
