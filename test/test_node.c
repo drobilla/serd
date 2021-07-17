@@ -5,6 +5,8 @@
 
 #include "serd/memory.h"
 #include "serd/node.h"
+#include "serd/status.h"
+#include "serd/stream_result.h"
 #include "serd/string.h"
 #include "serd/uri.h"
 #include "zix/string_view.h"
@@ -152,7 +154,7 @@ test_boolean(void)
 }
 
 static void
-test_blob_to_node(void)
+test_base64(void)
 {
   assert(!serd_new_base64(&SERD_URI_NULL, 0));
 
@@ -163,14 +165,16 @@ test_blob_to_node(void)
       data[i] = (uint8_t)((size + i) % 256);
     }
 
-    size_t      out_size = 0;
-    SerdNode*   blob     = serd_new_base64(data, size);
-    const char* blob_str = serd_node_string(blob);
-    uint8_t*    out =
-      (uint8_t*)serd_base64_decode(blob_str, serd_node_length(blob), &out_size);
+    SerdNode*    blob     = serd_new_base64(data, size);
+    const char*  blob_str = serd_node_string(blob);
+    const size_t max_size = serd_node_decoded_size(blob);
+    uint8_t*     out      = (uint8_t*)calloc(1, max_size);
 
+    const SerdStreamResult r = serd_node_decode(blob, max_size, out);
+    assert(r.status == SERD_SUCCESS);
+    assert(r.count == size);
+    assert(r.count <= max_size);
     assert(serd_node_length(blob) == strlen(blob_str));
-    assert(out_size == size);
 
     for (size_t i = 0; i < size; ++i) {
       assert(out[i] == data[i]);
@@ -184,44 +188,77 @@ test_blob_to_node(void)
     serd_free(out);
     free(data);
   }
-
-  // Test invalid base64 blob
-
-  SerdNode* const xsd_base64Binary =
-    serd_new_uri(zix_string(NS_XSD "base64Binary"));
-  SerdNode* const blob =
-    serd_new_typed_literal(zix_string("!nval!d$"), xsd_base64Binary);
-
-  const char* const blob_str = serd_node_string(blob);
-  size_t            out_size = 42;
-  uint8_t*          out =
-    (uint8_t*)serd_base64_decode(blob_str, serd_node_length(blob), &out_size);
-
-  assert(!out);
-  assert(out_size == 0);
-
-  serd_node_free(blob);
-  serd_node_free(xsd_base64Binary);
 }
 
 static void
-test_base64_decode(void)
+check_decode(const char* string, const char* datatype_uri, const char* expected)
 {
-  static const char* const decoded     = "test";
-  static const size_t      decoded_len = 4U;
+  SerdNode* const datatype = serd_new_uri(zix_string(datatype_uri));
+  SerdNode* const node = serd_new_typed_literal(zix_string(string), datatype);
 
-  // Test decoding clean base64
+  assert(node);
+
+  const size_t max_size = serd_node_decoded_size(node);
+  char* const  decoded  = (char*)calloc(1, max_size + 1);
+
+  const SerdStreamResult r = serd_node_decode(node, max_size, decoded);
+  assert(!r.status);
+  assert(r.count <= max_size);
+
+  assert(!strcmp(decoded, expected));
+  assert(strlen(decoded) <= max_size);
+
+  free(decoded);
+  serd_node_free(node);
+  serd_node_free(datatype);
+}
+
+static void
+test_decode(void)
+{
+  check_decode("666F6F626172", NS_XSD "hexBinary", "foobar");
+  check_decode("666F6F62", NS_XSD "hexBinary", "foob");
+
+  check_decode("Zm9vYmFy", NS_XSD "base64Binary", "foobar");
+  check_decode("Zm9vYg==", NS_XSD "base64Binary", "foob");
+  check_decode(" \f\n\r\t\vZm9v \f\n\r\t\v", NS_XSD "base64Binary", "foo");
+
+  char small[2] = {0};
+
   {
-    static const char* const encoded     = "dGVzdA==";
-    static const size_t      encoded_len = 8U;
+    SerdNode* const datatype = serd_new_uri(zix_string(NS_XSD "base64Binary"));
+    SerdNode* const node = serd_new_typed_literal(zix_string("Zm9v"), datatype);
 
-    size_t      size = 0U;
-    void* const data = serd_base64_decode(encoded, encoded_len, &size);
+    const SerdStreamResult r = serd_node_decode(node, sizeof(small), small);
 
-    assert(data);
-    assert(size == decoded_len);
-    assert(!strncmp((const char*)data, decoded, decoded_len));
-    serd_free(data);
+    assert(r.status == SERD_NO_SPACE);
+    serd_node_free(node);
+    serd_node_free(datatype);
+  }
+  {
+    SerdNode* const string = serd_new_string(zix_string("string"));
+
+    assert(serd_node_decoded_size(string) == 0U);
+
+    const SerdStreamResult r = serd_node_decode(string, sizeof(small), small);
+
+    assert(r.status == SERD_BAD_ARG);
+    assert(r.count == 0U);
+    serd_node_free(string);
+  }
+  {
+    SerdNode* const datatype = serd_new_uri(zix_string(NS_EG "Datatype"));
+    SerdNode* const unknown =
+      serd_new_typed_literal(zix_string("secret"), datatype);
+
+    assert(serd_node_decoded_size(unknown) == 0U);
+
+    const SerdStreamResult r = serd_node_decode(unknown, sizeof(small), small);
+
+    assert(r.status == SERD_BAD_ARG);
+    assert(r.count == 0U);
+    serd_node_free(unknown);
+    serd_node_free(datatype);
   }
 }
 
@@ -430,8 +467,8 @@ main(void)
   test_new_decimal();
   test_integer_to_node();
   test_boolean();
-  test_blob_to_node();
-  test_base64_decode();
+  test_base64();
+  test_decode();
   test_node_equals();
   test_node_from_string();
   test_node_from_substring();

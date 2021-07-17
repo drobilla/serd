@@ -11,6 +11,8 @@
 #include "exess/exess.h"
 #include "serd/buffer.h"
 #include "serd/node.h"
+#include "serd/status.h"
+#include "serd/stream_result.h"
 #include "serd/string.h"
 #include "serd/uri.h"
 #include "zix/attributes.h"
@@ -126,6 +128,13 @@ serd_node_set(SerdNode** const dst, const SerdNode* const src)
 }
 
 // Dynamic allocation
+
+static SerdStreamResult
+result(const SerdStatus status, const size_t count)
+{
+  const SerdStreamResult result = {status, count};
+  return result;
+}
 
 SerdNode*
 serd_new_expanded_uri(const ZixStringView prefix, const ZixStringView suffix)
@@ -582,4 +591,41 @@ serd_node_language(const SerdNode* const node)
 {
   assert(node);
   return (node->flags & SERD_HAS_LANGUAGE) ? node->meta : NULL;
+}
+
+size_t
+serd_node_decoded_size(const SerdNode* const node)
+{
+  const SerdNode* const datatype = serd_node_datatype(node);
+
+  return !datatype ? 0U
+         : !strcmp(serd_node_string(datatype), NS_XSD "hexBinary")
+           ? exess_hex_decoded_size(serd_node_length(node))
+         : !strcmp(serd_node_string(datatype), NS_XSD "base64Binary")
+           ? exess_base64_decoded_size(serd_node_length(node))
+           : 0U;
+}
+
+SerdStreamResult
+serd_node_decode(const SerdNode* const node,
+                 const size_t          buf_size,
+                 void* const           buf)
+{
+  const SerdNode* const datatype = serd_node_datatype(node);
+  if (!datatype) {
+    return result(SERD_BAD_ARG, 0U);
+  }
+
+  ExessVariableResult r = {EXESS_UNSUPPORTED, 0U, 0U};
+  if (!strcmp(serd_node_string(datatype), NS_XSD "hexBinary")) {
+    r = exess_read_hex(buf_size, buf, serd_node_string(node));
+  } else if (!strcmp(serd_node_string(datatype), NS_XSD "base64Binary")) {
+    r = exess_read_base64(buf_size, buf, serd_node_string(node));
+  } else {
+    return result(SERD_BAD_ARG, 0U);
+  }
+
+  return r.status == EXESS_NO_SPACE ? result(SERD_NO_SPACE, r.write_count)
+         : r.status                 ? result(SERD_BAD_SYNTAX, 0U)
+                                    : result(SERD_SUCCESS, r.write_count);
 }
