@@ -7,7 +7,6 @@
 #include "serd/attributes.h"
 #include "serd/caret.h"
 #include "serd/node.h"
-#include "zix/allocator.h"
 #include "zix/attributes.h"
 
 #include <stdbool.h>

@@ -7,7 +7,6 @@
 #include "serd/attributes.h"
 #include "serd/error.h"
 #include "serd/status.h"
-#include "zix/allocator.h"
 #include "zix/attributes.h"
 
 #include <stddef.h>

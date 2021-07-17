@@ -13,7 +13,6 @@
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "zix/attributes.h"
-#include "zix/string_view.h"
 
 #include <stdint.h>
 

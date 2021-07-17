@@ -5,7 +5,6 @@
 #define SERD_BUFFER_H
 
 #include "serd/attributes.h"
-#include "zix/allocator.h"
 #include "zix/attributes.h"
 
 #include <stddef.h>

@@ -7,6 +7,7 @@
 #include "serd/attributes.h"
 #include "serd/caret.h"
 #include "serd/status.h"
+#include "zix/attributes.h"
 
 #include <stdarg.h>
 

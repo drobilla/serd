@@ -492,3 +492,89 @@ serd_write_uri(const SerdURIView   uri,
   }
   return len;
 }
+
+static bool
+is_uri_path_char(const char c)
+{
+  if (is_alpha(c) || is_digit(c)) {
+    return true;
+  }
+
+  switch (c) {
+  // unreserved:
+  case '-':
+  case '.':
+  case '_':
+  case '~':
+  case ':':
+
+  case '@': // pchar
+  case '/': // separator
+
+  // sub-delimiters:
+  case '!':
+  case '$':
+  case '&':
+  case '\'':
+  case '(':
+  case ')':
+  case '*':
+  case '+':
+  case ',':
+  case ';':
+  case '=':
+    return true;
+  default:
+    return false;
+  }
+}
+
+static bool
+is_dir_sep(const char c)
+{
+#ifdef _WIN32
+  return c == '\\' || c == '/';
+#else
+  return c == '/';
+#endif
+}
+
+size_t
+serd_write_file_uri(const ZixStringView path,
+                    const ZixStringView hostname,
+                    const SerdWriteFunc sink,
+                    void* const         stream)
+{
+  const bool is_windows = is_windows_path(path.data);
+  size_t     len        = 0U;
+
+  if (is_dir_sep(path.data[0]) || is_windows) {
+    len += sink("file://", 1, strlen("file://"), stream);
+    if (hostname.length) {
+      len += sink(hostname.data, 1, hostname.length, stream);
+    }
+
+    if (is_windows) {
+      len += sink("/", 1, 1, stream);
+    }
+  }
+
+  for (size_t i = 0; i < path.length; ++i) {
+    if (path.data[i] == '%') {
+      len += sink("%%", 1, 2, stream);
+    } else if (is_uri_path_char(path.data[i])) {
+      len += sink(path.data + i, 1, 1, stream);
+#ifdef _WIN32
+    } else if (path.data[i] == '\\') {
+      len += sink("/", 1, 1, stream);
+#endif
+    } else {
+      char escape_str[10] = {'%', 0, 0, 0, 0, 0, 0, 0, 0, 0};
+      snprintf(
+        escape_str + 1, sizeof(escape_str) - 1, "%X", (unsigned)path.data[i]);
+      len += sink(escape_str, 1, 3, stream);
+    }
+  }
+
+  return len;
+}

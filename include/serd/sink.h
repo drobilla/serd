@@ -9,7 +9,6 @@
 #include "serd/node.h"
 #include "serd/statement.h"
 #include "serd/status.h"
-#include "zix/allocator.h"
 #include "zix/attributes.h"
 
 SERD_BEGIN_DECLS

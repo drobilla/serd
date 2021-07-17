@@ -21,7 +21,6 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -528,91 +527,13 @@ serd_new_resolved_uri(const ZixStringView string, const SerdURIView base)
   return result;
 }
 
-static bool
-is_uri_path_char(const char c)
-{
-  if (is_alpha(c) || is_digit(c)) {
-    return true;
-  }
-
-  switch (c) {
-  // unreserved:
-  case '-':
-  case '.':
-  case '_':
-  case '~':
-  case ':':
-
-  case '@': // pchar
-  case '/': // separator
-
-  // sub-delimiters:
-  case '!':
-  case '$':
-  case '&':
-  case '\'':
-  case '(':
-  case ')':
-  case '*':
-  case '+':
-  case ',':
-  case ';':
-  case '=':
-    return true;
-  default:
-    return false;
-  }
-}
-
-static bool
-is_dir_sep(const char c)
-{
-#ifdef _WIN32
-  return c == '\\' || c == '/';
-#else
-  return c == '/';
-#endif
-}
-
 SerdNode*
 serd_new_file_uri(const ZixStringView path, const ZixStringView hostname)
 {
-  const bool is_windows = is_windows_path(path.data);
-  size_t     uri_len    = 0;
-  char*      uri        = NULL;
+  SerdBuffer buffer = {NULL, 0U};
 
-  if (is_dir_sep(path.data[0]) || is_windows) {
-    uri_len = strlen("file://") + hostname.length + is_windows;
-    uri     = (char*)calloc(uri_len + 1, 1);
-
-    memcpy(uri, "file://", 7);
-
-    if (hostname.length) {
-      memcpy(uri + 7, hostname.data, hostname.length + 1);
-    }
-
-    if (is_windows) {
-      uri[7 + hostname.length] = '/';
-    }
-  }
-
-  SerdBuffer buffer = {uri, uri_len};
-  for (size_t i = 0; i < path.length; ++i) {
-    if (path.data[i] == '%') {
-      serd_buffer_sink("%%", 1, 2, &buffer);
-    } else if (is_uri_path_char(path.data[i])) {
-      serd_buffer_sink(path.data + i, 1, 1, &buffer);
-#ifdef _WIN32
-    } else if (path.data[i] == '\\') {
-      serd_buffer_sink("/", 1, 1, &buffer);
-#endif
-    } else {
-      char escape_str[10] = {'%', 0, 0, 0, 0, 0, 0, 0, 0, 0};
-      snprintf(
-        escape_str + 1, sizeof(escape_str) - 1, "%X", (unsigned)path.data[i]);
-      serd_buffer_sink(escape_str, 1, 3, &buffer);
-    }
-  }
+  serd_write_file_uri(path, hostname, serd_buffer_sink, &buffer);
+  serd_buffer_sink_finish(&buffer);
 
   const size_t      length = buffer.len;
   const char* const string = serd_buffer_sink_finish(&buffer);
