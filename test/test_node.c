@@ -5,7 +5,7 @@
 
 #include "serd/memory.h"
 #include "serd/node.h"
-#include "serd/string.h"
+#include "serd/status.h"
 #include "serd/string_view.h"
 #include "serd/uri.h"
 
@@ -322,7 +322,7 @@ test_get_integer(void)
 }
 
 static void
-test_blob_to_node(void)
+test_base64(void)
 {
   assert(!serd_new_base64(&SERD_URI_NULL, 0, NULL));
 
@@ -333,14 +333,16 @@ test_blob_to_node(void)
       data[i] = (uint8_t)((size + i) % 256);
     }
 
-    size_t      out_size = 0;
-    SerdNode*   blob     = serd_new_base64(data, size, NULL);
-    const char* blob_str = serd_node_string(blob);
-    uint8_t*    out =
-      (uint8_t*)serd_base64_decode(blob_str, serd_node_length(blob), &out_size);
+    SerdNode*    blob     = serd_new_base64(data, size, NULL);
+    const char*  blob_str = serd_node_string(blob);
+    const size_t max_size = serd_get_base64_size(blob);
+    uint8_t*     out      = (uint8_t*)calloc(1, max_size);
 
+    const SerdWriteResult r = serd_get_base64(blob, max_size, out);
+    assert(r.status == SERD_SUCCESS);
+    assert(r.count == size);
+    assert(r.count <= max_size);
     assert(serd_node_length(blob) == strlen(blob_str));
-    assert(out_size == size);
 
     for (size_t i = 0; i < size; ++i) {
       assert(out[i] == data[i]);
@@ -354,21 +356,47 @@ test_blob_to_node(void)
     serd_free(out);
     free(data);
   }
+}
 
-  // Test invalid base64 blob
+static void
+check_get_base64(const char* string,
+                 const char* datatype_uri,
+                 const char* expected)
+{
+  SerdNode* const node =
+    serd_new_typed_literal(serd_string(string), serd_string(datatype_uri));
 
-  SerdNode* const blob = serd_new_typed_literal(
-    serd_string("!nval!d$"), serd_string(NS_XSD "base64Binary"));
+  assert(node);
 
-  const char* const blob_str = serd_node_string(blob);
-  size_t            out_size = 42;
-  uint8_t*          out =
-    (uint8_t*)serd_base64_decode(blob_str, serd_node_length(blob), &out_size);
+  const size_t max_size = serd_get_base64_size(node);
+  char* const  decoded  = (char*)calloc(1, max_size + 1);
 
-  assert(!out);
-  assert(out_size == 0);
+  const SerdWriteResult r = serd_get_base64(node, max_size, decoded);
+  assert(!r.status);
+  assert(r.count <= max_size);
 
-  serd_node_free(blob);
+  assert(!strcmp(decoded, expected));
+  assert(strlen(decoded) <= max_size);
+
+  free(decoded);
+  serd_node_free(node);
+}
+
+static void
+test_get_base64(void)
+{
+  check_get_base64("Zm9vYmFy", NS_XSD "base64Binary", "foobar");
+  check_get_base64("Zm9vYg==", NS_XSD "base64Binary", "foob");
+  check_get_base64(" \f\n\r\t\vZm9v \f\n\r\t\v", NS_XSD "base64Binary", "foo");
+
+  SerdNode* const node = serd_new_typed_literal(
+    serd_string("Zm9v"), serd_string(NS_XSD "base64Binary"));
+
+  char                  small[2] = {0};
+  const SerdWriteResult r        = serd_get_base64(node, sizeof(small), small);
+
+  assert(r.status == SERD_ERR_OVERFLOW);
+  serd_node_free(node);
 }
 
 static void
@@ -505,7 +533,8 @@ main(void)
   test_get_float();
   test_integer();
   test_get_integer();
-  test_blob_to_node();
+  test_base64();
+  test_get_base64();
   test_node_equals();
   test_node_from_string();
   test_node_from_substring();
