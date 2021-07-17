@@ -7,9 +7,7 @@
 #include "serd/attributes.h"
 #include "serd/stream_result.h"
 #include "serd/uri.h"
-#include "zix/allocator.h"
 #include "zix/attributes.h"
-#include "zix/string_view.h"
 
 #include <stdbool.h>
 #include <stddef.h>

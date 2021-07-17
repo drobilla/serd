@@ -8,7 +8,6 @@
 #include "serd/caret.h"
 #include "serd/node.h"
 #include "serd/statement_view.h"
-#include "zix/allocator.h"
 #include "zix/attributes.h"
 
 #include <stdbool.h>

@@ -5,6 +5,7 @@
 #define SERD_MEMORY_H
 
 #include "serd/attributes.h"
+#include "zix/attributes.h"
 
 SERD_BEGIN_DECLS
 
