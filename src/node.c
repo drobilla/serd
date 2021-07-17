@@ -169,6 +169,13 @@ serd_node_zero_pad(SerdNode* node)
   }
 }
 
+static SerdWriteResult
+result(const SerdStatus status, const size_t count)
+{
+  const SerdWriteResult result = {status, count};
+  return result;
+}
+
 SerdNode*
 serd_new_token(const SerdNodeType type, const SerdStringView str)
 {
@@ -367,6 +374,26 @@ serd_get_integer(const SerdNode* const node)
   serd_node_get_value_as(node, EXESS_LONG, sizeof(value), &value);
 
   return value;
+}
+
+size_t
+serd_get_base64_size(const SerdNode* const node)
+{
+  return exess_base64_decoded_size(serd_node_length(node));
+}
+
+SerdWriteResult
+serd_get_base64(const SerdNode* const node,
+                const size_t          buf_size,
+                void* const           buf)
+{
+  const size_t              max_size = serd_get_base64_size(node);
+  const ExessVariableResult r =
+    exess_read_base64(buf_size, buf, serd_node_string(node));
+
+  return r.status == EXESS_NO_SPACE ? result(SERD_ERR_OVERFLOW, max_size)
+         : r.status                 ? result(SERD_ERR_BAD_SYNTAX, 0U)
+                                    : result(SERD_SUCCESS, r.write_count);
 }
 
 SerdNode*
