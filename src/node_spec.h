@@ -28,10 +28,10 @@
    allocate one.
 */
 typedef struct {
-  SerdNodeType   type;   ///< Type of this node
+  SerdNodeType   type;   ///< Basic type of this node
   SerdStringView string; ///< String contents of this node
-  SerdNodeFlags  flags;
-  SerdStringView meta;
+  SerdNodeFlags  flags;  ///< Additional node flags
+  SerdStringView meta;   ///< String contents of datatype or language node
 } NodeSpec;
 
 static inline NodeSpec

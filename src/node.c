@@ -605,6 +605,11 @@ serd_node_equals(const SerdNode* const a, const SerdNode* const b)
     return false;
   }
 
+  if ((a->flags & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE)) !=
+      (b->flags & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE))) {
+    return false;
+  }
+
   const size_t a_size = serd_node_total_size(a);
   return serd_node_total_size(b) == a_size && !memcmp(a, b, a_size);
 }
