@@ -1,5 +1,5 @@
 /*
-  Copyright 2012-2020 David Robillard <d@drobilla.net>
+  Copyright 2012-2021 David Robillard <d@drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -27,38 +27,80 @@ extern "C" {
 #endif
 
 /**
-   Return an initial empty digest value.
+   @addtogroup zix
+   @{
+   @name Digest
+   Functions to generate a short "digest" of data with minimal collisions.
+
+   These are good general-purpose hash functions for indexing arbitrary data,
+   but are not necessarily stable across platforms and should never be used for
+   cryptographic purposes.
+   @{
 */
-ZIX_CONST_API
-uint32_t
-zix_digest_start(void);
 
 /**
-   Update `hash` to include `buf`, a buffer of `len` bytes.
+   Return a 32-bit hash of a buffer.
 
    This can be used for any size or alignment.
 */
 ZIX_PURE_API
 uint32_t
-zix_digest_add(uint32_t hash, const void* buf, size_t len);
+zix_digest32(uint32_t seed, const void* buf, size_t len);
 
 /**
-   Update `hash` to include `buf`, a 64-bit aligned buffer of `len` bytes.
+   Return a 32-bit hash of an aligned buffer.
 
-   Both `buf` and `len` must be evenly divisible by 8 (64 bits).
+   Both the buffer and size must be aligned to 32 bits.  For data that fits
+   these requirements, this is equivalent to, but faster than, zix_digest32().
 */
 ZIX_PURE_API
 uint32_t
-zix_digest_add_64(uint32_t hash, const void* buf, size_t len);
+zix_digest32_aligned(uint32_t seed, const void* buf, size_t len);
 
 /**
-   Update `hash` to include `ptr`.
+   Return a 64-bit hash of a buffer.
 
-   This hashes the value of the pointer itself, and does not dereference `ptr`.
+   This can be used for any size or alignment.
 */
-ZIX_CONST_API
-uint32_t
-zix_digest_add_ptr(uint32_t hash, const void* ptr);
+ZIX_PURE_API
+uint64_t
+zix_digest64(uint64_t seed, const void* buf, size_t len);
+
+/**
+   Return a 64-bit hash of an aligned buffer.
+
+   Both the buffer and size must be aligned to 64 bits.  For data that fits
+   these requirements, this is equivalent to, but faster than, zix_digest64().
+*/
+ZIX_PURE_API
+uint64_t
+zix_digest64_aligned(uint64_t seed, const void* buf, size_t len);
+
+/**
+   Return a pointer-sized hash of a buffer.
+
+   This can be used for any size or alignment.
+
+   Internally, this simply dispatches to zix_digest32() or zix_digest64() as
+   appropriate.
+*/
+ZIX_PURE_API
+size_t
+zix_digest(size_t seed, const void* buf, size_t len);
+
+/**
+   Return a pointer-sized hash of an aligned buffer.
+
+   Both the buffer and size must be aligned to the pointer size.  For data that
+   fits these requirements, this is equivalent to, but faster than,
+   zix_digest().
+
+   Internally, this simply dispatches to zix_digest32_aligned() or
+   zix_digest64_aligned() as appropriate.
+*/
+ZIX_PURE_API
+size_t
+zix_digest_aligned(size_t seed, const void* buf, size_t len);
 
 #ifdef __cplusplus
 } /* extern "C" */
