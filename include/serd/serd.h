@@ -88,12 +88,11 @@ extern "C" {
    @{
 */
 
-/// Flags indicating certain string properties relevant to serialisation
+/// Flags that describe the details of a node
 typedef enum {
-  SERD_HAS_NEWLINE  = 1u << 0u, ///< Contains line breaks ('\\n' or '\\r')
-  SERD_HAS_QUOTE    = 1u << 1u, ///< Contains quotes ('"')
-  SERD_HAS_DATATYPE = 1u << 2u, ///< Literal node has datatype
-  SERD_HAS_LANGUAGE = 1u << 3u  ///< Literal node has language
+  SERD_IS_LONG      = 1u << 0u, ///< Literal node should be triple-quoted
+  SERD_HAS_DATATYPE = 1u << 1u, ///< Literal node has datatype
+  SERD_HAS_LANGUAGE = 1u << 2u  ///< Literal node has language
 } SerdNodeFlag;
 
 /// Bitwise OR of SerdNodeFlag values
@@ -254,17 +253,6 @@ serd_strerror(SerdStatus status);
    @defgroup serd_string String Utilities
    @{
 */
-
-/**
-   Measure a UTF-8 string.
-
-   @return Length of `str` in bytes.
-   @param str A null-terminated UTF-8 string.
-   @param flags (Output) Set to the applicable flags.
-*/
-SERD_API
-size_t
-serd_strlen(const char* SERD_NONNULL str, SerdNodeFlags* SERD_NULLABLE flags);
 
 /**
    Return `path` as a canonical absolute path.
@@ -615,10 +603,9 @@ typedef enum {
 /**
    Create a new "simple" node that is just a string.
 
-   This can be used to create blank, CURIE, or URI nodes from an already
-   measured string or slice of a buffer, which avoids a strlen compared to the
-   friendly constructors.  This may not be used for literals since those must
-   be measured to set the SERD_HAS_NEWLINE and SERD_HAS_QUOTE flags.
+   A "simple" node has no associated language or datatype.  This can be used to
+   efficiently create nodes from an already measured string or slice of a
+   buffer, which avoids a strlen compared to the friendly constructors.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
@@ -630,25 +617,31 @@ SerdNode* SERD_ALLOCATED
 serd_new_string(SerdStringView string);
 
 /**
-   Create a new plain literal node from `str` with `lang`.
+   Create a new literal node with optional datatype or language.
 
-   A plain literal has no datatype, but may have a language tag.  The `lang`
-   may be empty, in which case this is equivalent to `serd_new_string()`.
+   This can create more complex literals than serd_new_string() with an
+   associated datatype URI or language tag, as well as control whether a
+   literal should be written as a short or long (triple-quoted) string.
+
+   @param string The string value of the literal.
+
+   @param flags Flags to describe the literal and its metadata.  This must be a
+   valid combination of flags, in particular, at most one of #SERD_HAS_DATATYPE
+   and #SERD_HAS_LANGUAGE may be set.
+
+   @param meta The string value of the literal's metadata.  If
+   #SERD_HAS_DATATYPE is set, then this must be an absolute datatype URI.  If
+   #SERD_HAS_LANGUAGE is set, then this must be a language tag like "en-ca".
+   Otherwise, it is ignored.
+
+   @return A newly allocated literal node that must be freed with
+   serd_node_free(), or null if the arguments are invalid or allocation failed.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_plain_literal(SerdStringView str, SerdStringView lang);
-
-/**
-   Create a new typed literal node from `str`.
-
-   A typed literal has no language tag, but may have a datatype.  The
-   `datatype` may be NULL, in which case this is equivalent to
-   `serd_new_string()`.
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_typed_literal(SerdStringView str, SerdStringView datatype_uri);
+serd_new_literal(SerdStringView string,
+                 SerdNodeFlags  flags,
+                 SerdStringView meta);
 
 /// Create a new blank node
 SERD_API
@@ -990,31 +983,33 @@ const SerdNode* SERD_ALLOCATED
 serd_nodes_string(SerdNodes* SERD_NONNULL nodes, SerdStringView string);
 
 /**
-   Return a plain literal node with an optional language.
+   Make a literal node with optional datatype or language.
 
-   If the language is empty, then this is equivalent to serd_nodes_string().
+   This can create complex literals with an associated datatype URI or language
+   tag, and control whether a literal should be written as a short or long
+   (triple-quoted) string.
 
-   A new node will be added if an equivalent node is not already in the set.
+   @param nodes The node set to get this literal from.
+
+   @param string The string value of the literal.
+
+   @param flags Flags to describe the literal and its metadata.  Note that at
+   most one of #SERD_HAS_DATATYPE and #SERD_HAS_LANGUAGE may be set.
+
+   @param meta The string value of the literal's metadata.  If
+   #SERD_HAS_DATATYPE is set, then this must be an absolute datatype URI.  If
+   #SERD_HAS_LANGUAGE is set, then this must be an RFC 5646 language tag like
+   "en-ca".  Otherwise, it is ignored.
+
+   @return A newly allocated literal node that must be freed with
+   serd_node_free(), or null if the arguments are invalid or allocation failed.
 */
 SERD_API
 const SerdNode* SERD_ALLOCATED
-serd_nodes_plain_literal(SerdNodes* SERD_NONNULL nodes,
-                         SerdStringView          string,
-                         SerdStringView          language);
-
-/**
-   Return a typed literal node with an datatype URI.
-
-   If the datatype URI is empty, then this is equivalent to
-   serd_nodes_string().
-
-   A new node will be added if an equivalent node is not already in the set.
-*/
-SERD_API
-const SerdNode* SERD_ALLOCATED
-serd_nodes_typed_literal(SerdNodes* SERD_NONNULL nodes,
-                         SerdStringView          string,
-                         SerdStringView          datatype_uri);
+serd_nodes_literal(SerdNodes* SERD_NONNULL nodes,
+                   SerdStringView          string,
+                   SerdNodeFlags           flags,
+                   SerdStringView          meta);
 
 /**
    Make a URI node.

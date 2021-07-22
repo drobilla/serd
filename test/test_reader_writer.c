@@ -81,10 +81,10 @@ test_writer(const char* const path)
 
   const SerdNode* const o = serd_nodes_string(nodes, SERD_STRING("o"));
   const SerdNode* const t =
-    serd_nodes_typed_literal(nodes, SERD_STRING("t"), urn_Type);
+    serd_nodes_literal(nodes, SERD_STRING("t"), SERD_HAS_DATATYPE, urn_Type);
 
   const SerdNode* const l =
-    serd_nodes_plain_literal(nodes, SERD_STRING("l"), en);
+    serd_nodes_literal(nodes, SERD_STRING("l"), SERD_HAS_LANGUAGE, en);
 
   const SerdNode* good[][3] = {{s, p, o}, {s, p, t}, {s, p, l}};
 

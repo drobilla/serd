@@ -156,20 +156,13 @@ serd_nodes_string(SerdNodes* const nodes, const SerdStringView string)
   return serd_nodes_manage(nodes, serd_new_string(string));
 }
 
-const SerdNode*
-serd_nodes_plain_literal(SerdNodes* const     nodes,
-                         const SerdStringView string,
-                         const SerdStringView language)
+const SerdNode* SERD_ALLOCATED
+serd_nodes_literal(SerdNodes* const     nodes,
+                   const SerdStringView string,
+                   const SerdNodeFlags  flags,
+                   const SerdStringView meta)
 {
-  return serd_nodes_manage(nodes, serd_new_plain_literal(string, language));
-}
-
-const SerdNode*
-serd_nodes_typed_literal(SerdNodes* const     nodes,
-                         const SerdStringView string,
-                         const SerdStringView datatype_uri)
-{
-  return serd_nodes_manage(nodes, serd_new_typed_literal(string, datatype_uri));
+  return serd_nodes_manage(nodes, serd_new_literal(string, flags, meta));
 }
 
 const SerdNode*
