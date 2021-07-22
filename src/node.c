@@ -168,12 +168,8 @@ result(const SerdStatus status, const size_t count)
 }
 
 SerdNode*
-serd_new_simple_node(const SerdNodeType type, const SerdStringView str)
+serd_new_token(const SerdNodeType type, const SerdStringView str)
 {
-  if (type != SERD_BLANK && type != SERD_URI && type != SERD_VARIABLE) {
-    return NULL;
-  }
-
   SerdNodeFlags flags  = 0u;
   const size_t  length = str.buf ? str.len : 0u;
   SerdNode*     node   = serd_node_malloc(length, flags, type);
@@ -288,7 +284,7 @@ serd_new_literal(const SerdStringView string,
 SerdNode*
 serd_new_blank(const SerdStringView str)
 {
-  return serd_new_simple_node(SERD_BLANK, str);
+  return serd_new_token(SERD_BLANK, str);
 }
 
 ExessVariant
@@ -435,7 +431,7 @@ serd_node_compare(const SerdNode* const a, const SerdNode* const b)
 SerdNode*
 serd_new_uri(const SerdStringView str)
 {
-  return serd_new_simple_node(SERD_URI, str);
+  return serd_new_token(SERD_URI, str);
 }
 
 SerdNode*

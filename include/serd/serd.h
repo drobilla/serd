@@ -582,15 +582,20 @@ typedef enum {
 } SerdNodeType;
 
 /**
-   Create a new "simple" node that is just a string.
+   Create a new "token" node that is just a string.
 
-   A "simple" node has no associated language or datatype.  This can be used to
-   efficiently create nodes from an already measured string or slice of a
-   buffer, which avoids a strlen compared to the friendly constructors.
+   "Token" is just a shorthand used in this API to refer to a node that is not
+   a typed or tagged literal.  This can be used to create URIs, blank nodes,
+   variables, and simple string literals.
+
+   Note that string literals constructed with this function will have no flags
+   set, and so will be written as "short" literals (not triple-quoted).  To
+   construct long literals, use the more advanced serd_new_literal() with
+   #SERD_IS_LONG.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_simple_node(SerdNodeType type, SerdStringView string);
+serd_new_token(SerdNodeType type, SerdStringView string);
 
 /// Create a new plain literal string node from `str`
 SERD_API

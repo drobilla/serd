@@ -443,12 +443,6 @@ test_node_from_substring(void)
 }
 
 static void
-test_simple_node(void)
-{
-  assert(!serd_new_simple_node(SERD_LITERAL, SERD_STRING("Literal")));
-}
-
-static void
 check_copy_equals(const SerdNode* const node)
 {
   SerdNode* const copy = serd_node_copy(node);
@@ -595,7 +589,6 @@ main(void)
   test_node_equals();
   test_node_from_syntax();
   test_node_from_substring();
-  test_simple_node();
   test_literal();
   test_blank();
   test_compare();
