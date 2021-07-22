@@ -3,13 +3,8 @@
 
 #include "string_utils.h"
 
-#include "serd/node.h"
 #include "serd/status.h"
 #include "serd/string.h"
-
-#include <assert.h>
-#include <stddef.h>
-#include <string.h>
 
 const char*
 serd_strerror(const SerdStatus status)
@@ -60,48 +55,6 @@ serd_strerror(const SerdStatus status)
   }
 
   return "Unknown error";
-}
-
-static void
-serd_update_flags(const char c, SerdNodeFlags* const flags)
-{
-  if (c == '\r' || c == '\n') {
-    *flags |= SERD_HAS_NEWLINE;
-  } else if (c == '"') {
-    *flags |= SERD_HAS_QUOTE;
-  }
-}
-
-size_t
-serd_substrlen(const char* const    str,
-               const size_t         len,
-               SerdNodeFlags* const flags)
-{
-  assert(str);
-  assert(flags);
-
-  size_t i = 0;
-  *flags   = 0;
-  for (; i < len && str[i]; ++i) {
-    serd_update_flags(str[i], flags);
-  }
-
-  return i;
-}
-
-size_t
-serd_strlen(const char* const str, SerdNodeFlags* const flags)
-{
-  if (flags) {
-    size_t i = 0;
-    *flags   = 0;
-    for (; str[i]; ++i) {
-      serd_update_flags(str[i], flags);
-    }
-    return i;
-  }
-
-  return strlen(str);
 }
 
 int

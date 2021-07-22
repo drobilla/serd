@@ -103,10 +103,9 @@ typedef enum {
 
 /// Node flags, which ORed together make a #SerdNodeFlags
 typedef enum {
-  SERD_HAS_NEWLINE  = 1U << 0U, ///< Contains line breaks ('\\n' or '\\r')
-  SERD_HAS_QUOTE    = 1U << 1U, ///< Contains quotes ('"')
-  SERD_HAS_DATATYPE = 1U << 2U, ///< Literal node has datatype
-  SERD_HAS_LANGUAGE = 1U << 3U, ///< Literal node has language
+  SERD_IS_LONG      = 1U << 0U, ///< Literal node should be triple-quoted
+  SERD_HAS_DATATYPE = 1U << 1U, ///< Literal node has datatype
+  SERD_HAS_LANGUAGE = 1U << 2U, ///< Literal node has language
 } SerdNodeFlag;
 
 /// Bitwise OR of #SerdNodeFlag values
@@ -136,27 +135,32 @@ SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_string(ZixAllocator* ZIX_NULLABLE allocator, ZixStringView string);
 
 /**
-   Create a new plain literal node from `str` with `lang`.
+   Create a new literal node with optional datatype or language.
 
-   A plain literal has no datatype, but may have a language tag.  The `lang`
-   may be null, in which case this is equivalent to `serd_new_string()`.
+   This can create more complex literals than serd_new_string() with an
+   associated datatype URI or language tag, as well as control whether a
+   literal should be written as a short or long (triple-quoted) string.
+
+   @param allocator Allocator for the returned node.
+
+   @param string The string value of the literal.
+
+   @param flags Flags to describe the literal and its metadata.  This must be a
+   valid combination of flags, in particular, at most one of #SERD_HAS_DATATYPE
+   and #SERD_HAS_LANGUAGE may be set.
+
+   @param meta If #SERD_HAS_DATATYPE is set, then this must be an absolute
+   datatype URI.  If #SERD_HAS_LANGUAGE is set, then this must be a language
+   tag string like "en-ca".  Otherwise, it is ignored.
+
+   @return A newly allocated literal node that must be freed with
+   serd_node_free(), or null if the arguments are invalid or allocation failed.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_plain_literal(ZixAllocator* ZIX_NULLABLE   allocator,
-                       ZixStringView                str,
-                       const SerdNode* ZIX_NULLABLE lang);
-
-/**
-   Create a new typed literal node from `str`.
-
-   A typed literal has no language tag, but may have a datatype.  The
-   `datatype` may be NULL, in which case this is equivalent to
-   `serd_new_string()`.
-*/
-SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_typed_literal(ZixAllocator* ZIX_NULLABLE   allocator,
-                       ZixStringView                str,
-                       const SerdNode* ZIX_NULLABLE datatype_uri);
+serd_new_literal(ZixAllocator* ZIX_NULLABLE   allocator,
+                 ZixStringView                string,
+                 SerdNodeFlags                flags,
+                 const SerdNode* ZIX_NULLABLE meta);
 
 /**
    Create a new node from a blank node label.

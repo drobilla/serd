@@ -1,0 +1,4 @@
+<http://example.org/thing>
+	<http://example.org/label> """long
+
+""" .

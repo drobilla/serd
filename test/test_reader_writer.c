@@ -200,8 +200,13 @@ test_writer(const char* const path)
     assert(en);
 
     SerdNode* const o = serd_new_string(NULL, zix_string("o"));
-    SerdNode* const t = serd_new_typed_literal(NULL, zix_string("t"), urn_Type);
-    SerdNode* const l = serd_new_plain_literal(NULL, zix_string("l"), en);
+
+    SerdNode* const t =
+      serd_new_literal(NULL, zix_string("t"), SERD_HAS_DATATYPE, urn_Type);
+
+    SerdNode* const l =
+      serd_new_literal(NULL, zix_string("l"), SERD_HAS_LANGUAGE, en);
+
     assert(o);
     assert(t);
     assert(l);

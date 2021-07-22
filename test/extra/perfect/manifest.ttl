@@ -10,13 +10,11 @@
 		<#test-decimal>
 		<#test-delete-escape>
 		<#test-empty>
-		<#test-escapes>
 		<#test-exact-uri>
 		<#test-form-feed-escape>
 		<#test-integer>
 		<#test-lang>
 		<#test-list>
-		<#test-long-whitespace>
 		<#test-triple>
 		<#test-uri-escape>
 		<#test-uri-query>
@@ -48,12 +46,6 @@
 	mf:name "test-empty" ;
 	mf:result <test-empty.nt> .
 
-<#test-escapes>
-	a rdft:TestTurtleEval ;
-	mf:action <test-escapes.ttl> ;
-	mf:name "test-escapes" ;
-	mf:result <test-escapes.nt> .
-
 <#test-exact-uri>
 	a rdft:TestTurtleEval ;
 	mf:action <test-exact-uri.ttl> ;
@@ -83,12 +75,6 @@
 	mf:action <test-list.ttl> ;
 	mf:name "test-list" ;
 	mf:result <test-list.nt> .
-
-<#test-long-whitespace>
-	a rdft:TestTurtleEval ;
-	mf:action <test-long-whitespace.ttl> ;
-	mf:name "test-long-whitespace" ;
-	mf:result <test-long-whitespace.nt> .
 
 <#test-triple>
 	a rdft:TestTurtleEval ;
