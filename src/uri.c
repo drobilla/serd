@@ -47,22 +47,23 @@ serd_parse_file_uri(const char* const uri, char** const hostname)
   for (const char* s = path; *s; ++s) {
     if (*s == '%') {
       if (*(s + 1) == '%') {
-        serd_buffer_sink("%", 1, 1, &buffer);
+        serd_buffer_write("%", 1, 1, &buffer);
         ++s;
       } else if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
         const char code[3] = {*(s + 1), *(s + 2), 0};
         const char c       = (char)strtoul(code, NULL, 16);
-        serd_buffer_sink(&c, 1, 1, &buffer);
+        serd_buffer_write(&c, 1, 1, &buffer);
         s += 2;
       } else {
         s += 2; // Junk escape, ignore
       }
     } else {
-      serd_buffer_sink(s, 1, 1, &buffer);
+      serd_buffer_write(s, 1, 1, &buffer);
     }
   }
 
-  return serd_buffer_sink_finish(&buffer);
+  serd_buffer_close(&buffer);
+  return (char*)buffer.buf;
 }
 
 /// RFC3986: scheme ::= ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
