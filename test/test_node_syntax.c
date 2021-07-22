@@ -53,11 +53,12 @@ test_common(const SerdSyntax syntax)
   assert(test(syntax, serd_new_string(SERD_STRING("node")), "\"node\""));
 
   assert(test(syntax,
-              serd_new_plain_literal(SERD_STRING("hallo"), SERD_STRING("de")),
+              serd_new_literal(
+                SERD_STRING("hallo"), SERD_HAS_LANGUAGE, SERD_STRING("de")),
               "\"hallo\"@de"));
 
   assert(test(syntax,
-              serd_new_typed_literal(SERD_STRING("X"), datatype),
+              serd_new_literal(SERD_STRING("X"), SERD_HAS_DATATYPE, datatype),
               "\"X\"^^<http://example.org/Datatype>"));
 
   assert(test(syntax, serd_new_blank(SERD_STRING("blank")), "_:blank"));
