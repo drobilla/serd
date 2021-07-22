@@ -10,6 +10,7 @@ serd (1.1.1) unstable; urgency=medium
   * Bring read/write interface closer to C standard
   * Improve error handling
   * Make nodes opaque
+  * Preserve long or short quoting from input documents
   * Remove SERD_DISABLE_DEPRECATED and SERD_DEPRECATED_BY
   * Remove serd_uri_to_path()
   * Remove support for reading Turtle named inline nodes extension
