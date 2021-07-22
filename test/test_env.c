@@ -283,7 +283,7 @@ test_expand_bad_uri_datatype(void)
   static const ZixStringView type = ZIX_STATIC_STRING("Type");
 
   SerdNode* const typed =
-    serd_new_typed_literal(NULL, zix_string("data"), type);
+    serd_new_literal(NULL, zix_string("data"), SERD_HAS_DATATYPE, type);
 
   SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
 
