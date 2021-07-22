@@ -6,7 +6,6 @@
 #include "expect_string.h"
 
 #include <serd/node.h>
-#include <serd/node_flags.h>
 #include <serd/node_type.h>
 #include <serd/string.h>
 #include <serd/token_view.h>
@@ -223,11 +222,8 @@ static void
 test_node_from_string(void)
 {
   SerdNode node = serd_node_from_string(SERD_LITERAL, "hello\"");
-  assert(node.flags == SERD_HAS_QUOTE &&
-         expect_string_view(serd_node_string_view(&node), "hello\""));
-
-  assert(node.flags == SERD_HAS_QUOTE &&
-         expect_string_view(serd_node_string_view(&node), "hello\""));
+  assert(expect_string_view(serd_node_string_view(&node), "hello\""));
+  assert(expect_string_view(serd_node_string_view(&node), "hello\""));
 
   node = serd_node_from_string(SERD_URI, NULL);
   assert(serd_node_equals(&node, &SERD_NODE_NULL));
@@ -242,12 +238,10 @@ test_node_from_substring(void)
   assert(!empty.buf && !empty.n_bytes && !empty.flags && !empty.type);
 
   SerdNode a_b = serd_node_from_substring(SERD_LITERAL, "a\"bc", 3);
-  assert(a_b.n_bytes == 3 && a_b.flags == SERD_HAS_QUOTE &&
-         !strncmp(a_b.buf, "a\"b", 3));
+  assert(a_b.n_bytes == 3 && !a_b.flags && !strncmp(a_b.buf, "a\"b", 3));
 
   a_b = serd_node_from_substring(SERD_LITERAL, "a\"bc", 10);
-  assert(a_b.n_bytes == 4 && a_b.flags == SERD_HAS_QUOTE &&
-         !strncmp(a_b.buf, "a\"bc", 4));
+  assert(a_b.n_bytes == 4 && !a_b.flags && !strncmp(a_b.buf, "a\"bc", 4));
 
   SerdNode utf8 =
     serd_node_from_substring(SERD_LITERAL, (const char*)utf8_str, 5);

@@ -40,7 +40,7 @@ static const SerdNode SERD_NODE_NULL = {NULL, 0, 0, SERD_NOTHING};
 
    This measures, but does not copy, `str`.  No memory is allocated.
 */
-SERD_API SerdNode
+SERD_PURE_API SerdNode
 serd_node_from_string(SerdNodeType type, const char* ZIX_NULLABLE str);
 
 /**
@@ -49,7 +49,7 @@ serd_node_from_string(SerdNodeType type, const char* ZIX_NULLABLE str);
    This measures, but does not copy, `str`.  No memory is allocated.
    Note that the returned node may not be null terminated.
 */
-SERD_API SerdNode
+SERD_PURE_API SerdNode
 serd_node_from_substring(SerdNodeType             type,
                          const char* ZIX_NULLABLE str,
                          size_t                   len);

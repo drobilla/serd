@@ -2,14 +2,13 @@
 // SPDX-License-Identifier: ISC
 
 #include "base64.h"
-#include "string_utils.h"
+#include "macros.h"
 
 #include <serd/node.h>
 #include <serd/node_flags.h>
 #include <serd/node_type.h>
 #include <serd/status.h>
 #include <serd/stream_result.h>
-#include <serd/string.h>
 #include <serd/token_view.h>
 #include <serd/uri.h>
 #include <zix/allocator.h>
@@ -52,9 +51,8 @@ serd_node_from_string(const SerdNodeType type, const char* const str)
     return SERD_NODE_NULL;
   }
 
-  SerdNodeFlags  flags   = 0;
-  const size_t   n_bytes = serd_strlen(str, &flags);
-  const SerdNode ret     = {str, n_bytes, flags, type};
+  const size_t   n_bytes = strlen(str);
+  const SerdNode ret     = {str, n_bytes, 0U, type};
   return ret;
 }
 
@@ -67,9 +65,8 @@ serd_node_from_substring(const SerdNodeType type,
     return SERD_NODE_NULL;
   }
 
-  SerdNodeFlags  flags   = 0;
-  const size_t   n_bytes = serd_substrlen(str, len, &flags);
-  const SerdNode ret     = {str, n_bytes, flags, type};
+  const size_t   n_bytes = MIN(len, strlen(str));
+  const SerdNode ret     = {str, n_bytes, 0U, type};
   return ret;
 }
 
@@ -245,9 +242,7 @@ serd_node_new_blob(ZixAllocator* const allocator,
   char* const  str  = (char*)zix_calloc(allocator, len + 2, 1);
   SerdNode     node = {str, len, 0, SERD_LITERAL};
 
-  if (serd_base64_encode((uint8_t*)str, buf, size, wrap_lines)) {
-    node.flags |= SERD_HAS_NEWLINE;
-  }
+  serd_base64_encode((uint8_t*)str, buf, size, wrap_lines);
 
   return node;
 }

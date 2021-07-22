@@ -2,4 +2,5 @@
 
 eg:s
 	eg:p "eh?"@en-ca ,
-		"hä?"@de .
+		"hä?"@de ,
+		"""嗯?"""@zh .
