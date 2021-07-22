@@ -10,6 +10,7 @@ serd (1.0.1) unstable;
   * Bring read/write interface closer to C standard
   * Improve error handling
   * Make nodes opaque
+  * Preserve long or short quoting from input documents
   * Remove serd_uri_to_path()
   * Remove support for Turtle named inline nodes extension
   * Remove useless character counting from API
@@ -19,7 +20,7 @@ serd (1.0.1) unstable;
   * Use a fixed-size reader stack
   * Use char* for strings in public API
 
- -- David Robillard <d@drobilla.net>  Wed, 13 Jan 2021 13:37:55 +0000
+ -- David Robillard <d@drobilla.net>  Sat, 17 Jul 2021 18:19:48 +0000
 
 serd (0.30.11) unstable;
 

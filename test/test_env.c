@@ -164,8 +164,10 @@ test_expand_bad_uri_datatype(void)
 {
   static const SerdStringView type = SERD_STRING("Type");
 
-  SerdNode* const typed = serd_new_typed_literal(SERD_STRING("data"), type);
-  SerdEnv* const  env   = serd_env_new(SERD_EMPTY_STRING());
+  SerdNode* const typed =
+    serd_new_literal(SERD_STRING("data"), SERD_HAS_DATATYPE, type);
+
+  SerdEnv* const env = serd_env_new(SERD_EMPTY_STRING());
 
   assert(!serd_env_expand_node(env, typed));
 
