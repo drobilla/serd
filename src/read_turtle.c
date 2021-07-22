@@ -99,16 +99,9 @@ read_STRING_LITERAL_LONG(SerdReader* const  reader,
         break;
       }
 
-      if (q2 == '\\') {
-        if (!(st = push_byte(reader, ref, c))) {
-          st = read_string_escape(reader, ref);
-        }
-      } else {
-        ref->flags |= SERD_HAS_QUOTE;
-        if (!(st = push_byte(reader, ref, c))) {
-          st = read_character(reader, ref, (uint8_t)q2);
-        }
-      }
+      TRY(st, push_byte(reader, ref, c));
+      st = (q2 == '\\') ? read_string_escape(reader, ref)
+                        : read_character(reader, ref, (uint8_t)q2);
     } else if (c > 0) {
       if (!(st = skip_byte(reader, c))) {
         st = read_character(reader, ref, (uint8_t)c);
@@ -140,7 +133,10 @@ read_String(SerdReader* const reader, TokenHeader* const node)
     return SERD_SUCCESS;
   }
 
+  // Long string
   TRY(st, skip_byte(reader, q3));
+  node->flags |= SERD_IS_LONG;
+
   return read_STRING_LITERAL_LONG(reader, node, (uint8_t)q1);
 }
 

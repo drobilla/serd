@@ -26,6 +26,7 @@
 		<#test-double-ends-with-dot>
 		<#test-empty-path-base>
 		<#test-eof-at-page-end>
+		<#test-escapes>
 		<#test-false-ends-with-dot>
 		<#test-id>
 		<#test-integer-ends-with-dot>
@@ -34,7 +35,11 @@
 		<#test-local-name-ends-with-dot>
 		<#test-local-name-escapes>
 		<#test-local-name-percent>
+		<#test-long-backspace-escape>
+		<#test-long-delete-escape>
+		<#test-long-form-feed-escape>
 		<#test-long-utf8>
+		<#test-long-whitespace>
 		<#test-no-spaces>
 		<#test-non-curie-uri>
 		<#test-nq-syntax-all-rules>
@@ -190,6 +195,12 @@
 	mf:name "test-eof-at-page-end" ;
 	mf:result <test-eof-at-page-end.nt> .
 
+<#test-escapes>
+	a rdft:TestTurtleEval ;
+	mf:action <test-escapes.ttl> ;
+	mf:name "test-escapes" ;
+	mf:result <test-escapes.nt> .
+
 <#test-false-ends-with-dot>
 	a rdft:TestTurtleEval ;
 	mf:action <test-false-ends-with-dot.ttl> ;
@@ -238,11 +249,35 @@
 	mf:name "test-local-name-percent" ;
 	mf:result <test-local-name-percent.nt> .
 
+<#test-long-backspace-escape>
+	a rdft:TestTurtleEval ;
+	mf:action <test-long-backspace-escape.ttl> ;
+	mf:name "test-long-backspace-escape" ;
+	mf:result <test-long-backspace-escape.nt> .
+
+<#test-long-delete-escape>
+	a rdft:TestTurtleEval ;
+	mf:action <test-long-delete-escape.ttl> ;
+	mf:name "test-long-delete-escape" ;
+	mf:result <test-long-delete-escape.nt> .
+
+<#test-long-form-feed-escape>
+	a rdft:TestTurtleEval ;
+	mf:action <test-long-form-feed-escape.ttl> ;
+	mf:name "test-long-form-feed-escape" ;
+	mf:result <test-long-form-feed-escape.nt> .
+
 <#test-long-utf8>
 	a rdft:TestTurtleEval ;
 	mf:action <test-long-utf8.ttl> ;
 	mf:name "test-long-utf8" ;
 	mf:result <test-long-utf8.nt> .
+
+<#test-long-whitespace>
+	a rdft:TestTurtleEval ;
+	mf:action <test-long-whitespace.ttl> ;
+	mf:name "test-long-whitespace" ;
+	mf:result <test-long-whitespace.nt> .
 
 <#test-no-spaces>
 	a rdft:TestTurtleEval ;

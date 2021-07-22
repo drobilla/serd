@@ -5,7 +5,6 @@
 #define SERD_STRING_H
 
 #include <serd/attributes.h>
-#include <serd/node_flags.h>
 #include <serd/struct_literal.h>
 #include <zix/allocator.h>
 #include <zix/attributes.h>
@@ -58,16 +57,6 @@ serd_string_new(ZixAllocator* ZIX_NULLABLE allocator, ZixStringView contents);
 */
 SERD_PURE_API int
 serd_strcasecmp(const char* ZIX_NONNULL lhs, const char* ZIX_NONNULL rhs);
-
-/**
-   Measure a UTF-8 string.
-
-   @return Length of `str` in bytes.
-   @param str A null-terminated UTF-8 string.
-   @param flags (Output) Set to the applicable flags.
-*/
-SERD_API size_t
-serd_strlen(const char* ZIX_NONNULL str, SerdNodeFlags* ZIX_NULLABLE flags);
 
 /**
    Parse a string to a double.

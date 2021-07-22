@@ -330,7 +330,7 @@ test_write_long_literal(void)
   const SerdTokenView  p = {SERD_URI, zix_string(NS_EG "p")};
   const SerdObjectView o = {SERD_LITERAL,
                             zix_string("hello \"\"\"world\"\"\"!"),
-                            SERD_HAS_QUOTE,
+                            SERD_IS_LONG,
                             serd_no_token()};
 
   assert(!serd_sink_event(serd_writer_sink(writer),
@@ -512,8 +512,10 @@ check_strict_write(const SerdWriterFlags flags)
     SERD_URI, zix_string((const char*)bad_uri_buf), 0U, serd_no_token()};
   const SerdObjectView bad_short_lit = {
     SERD_LITERAL, zix_string((const char*)bad_short_buf), 0U, serd_no_token()};
-  const SerdObjectView bad_long_lit = {
-    SERD_LITERAL, zix_string((const char*)bad_long_buf), 0U, serd_no_token()};
+  const SerdObjectView bad_long_lit = {SERD_LITERAL,
+                                       zix_string((const char*)bad_long_buf),
+                                       SERD_IS_LONG,
+                                       serd_no_token()};
 
   const SerdTokenView s = {SERD_URI, zix_string(NS_EG "s")};
   const SerdTokenView p = {SERD_URI, zix_string(NS_EG "p")};

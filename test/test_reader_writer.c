@@ -168,7 +168,7 @@ static void
 test_write_errors(void)
 {
   // Syntax-keyed array of output document sizes
-  static const size_t max_offsets[] = {0, 452, 1976, 2068, 466};
+  static const size_t max_offsets[] = {0, 454, 1976, 2068, 468};
 
   static const SerdLimits limits = {1024, 256};
 
@@ -275,7 +275,7 @@ test_writer(const char* const path)
   const SerdObjectView bad_uri       = {SERD_URI, bad_uri_str, 0U, meta};
   const SerdObjectView bad_short_lit = {SERD_LITERAL, bad_short_str, 0U, meta};
   const SerdObjectView bad_long_lit  = {
-    SERD_LITERAL, bad_long_str, SERD_HAS_NEWLINE, meta};
+    SERD_LITERAL, bad_long_str, SERD_IS_LONG, meta};
   assert(!serd_sink_event(
     sink, serd_statement_event(0U, serd_triple_view(s, p, bad_uri))));
   assert(!serd_sink_event(

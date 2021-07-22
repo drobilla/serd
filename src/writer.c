@@ -1005,8 +1005,7 @@ write_literal(SerdWriter* const   writer,
     }
   }
 
-  if (supports_abbrev(writer) &&
-      (node_flags & (SERD_HAS_NEWLINE | SERD_HAS_QUOTE))) {
+  if (supports_abbrev(writer) && (node_flags & SERD_IS_LONG)) {
     TRY(st, esink(writer, 3, "\"\"\""));
     TRY(st, write_long_text(writer, string.data, string.length));
     st = esink(writer, 3, "\"\"\"");
