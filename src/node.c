@@ -36,9 +36,6 @@ typedef struct {
   size_t                    len;
 } SerdConstBuffer;
 
-static SerdNode*
-serd_new_from_uri(SerdURIView uri, SerdURIView base);
-
 static size_t
 string_sink(const void* const buf,
             const size_t      size,
@@ -449,39 +446,6 @@ serd_new_parsed_uri(const SerdURIView uri)
 
   serd_node_check_padding(node);
   return node;
-}
-
-static SerdNode*
-serd_new_from_uri(const SerdURIView uri, const SerdURIView base)
-{
-  const SerdURIView abs_uri    = serd_resolve_uri(uri, base);
-  const size_t      len        = serd_uri_string_length(abs_uri);
-  SerdNode*         node       = serd_node_malloc(len, 0, SERD_URI);
-  char*             ptr        = serd_node_buffer(node);
-  const size_t      actual_len = serd_write_uri(abs_uri, string_sink, &ptr);
-
-  assert(actual_len == len);
-
-  serd_node_buffer(node)[actual_len] = '\0';
-  node->length                       = actual_len;
-
-  serd_node_check_padding(node);
-  return node;
-}
-
-SerdNode*
-serd_new_resolved_uri(const SerdStringView string, const SerdURIView base)
-{
-  const SerdURIView uri    = serd_parse_uri(string.buf);
-  SerdNode* const   result = serd_new_from_uri(uri, base);
-
-  if (!serd_uri_string_has_scheme(serd_node_string(result))) {
-    serd_node_free(result);
-    return NULL;
-  }
-
-  serd_node_check_padding(result);
-  return result;
 }
 
 SerdNode*
