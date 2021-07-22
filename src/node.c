@@ -10,7 +10,6 @@
 #include "serd/buffer.h"
 #include "serd/node.h"
 #include "serd/status.h"
-#include "serd/string.h"
 #include "serd/uri.h"
 #include "serd/write_result.h"
 #include "zix/allocator.h"
@@ -211,94 +210,95 @@ serd_new_token(ZixAllocator* const allocator,
 SerdNode*
 serd_new_string(ZixAllocator* const allocator, const ZixStringView str)
 {
-  SerdNodeFlags flags  = 0;
-  const size_t  length = serd_substrlen(str.data, str.length, &flags);
-  SerdNode*     node = serd_node_malloc(allocator, length, flags, SERD_LITERAL);
+  SerdNodeFlags flags = 0U;
+  SerdNode* node = serd_node_malloc(allocator, str.length, flags, SERD_LITERAL);
 
   if (node) {
-    node->length = length;
-    memcpy(serd_node_buffer(node), str.data, str.length);
+    if (str.data && str.length) {
+      memcpy(serd_node_buffer(node), str.data, str.length);
+    }
+
+    node->length = str.length;
     serd_node_check_padding(node);
   }
 
   return node;
 }
 
-/// Internal pre-measured implementation of serd_new_plain_literal
-static SerdNode*
-serd_new_plain_literal_i(ZixAllocator* const allocator,
-                         const ZixStringView str,
-                         SerdNodeFlags       flags,
-                         const ZixStringView lang)
+ZIX_PURE_FUNC static bool
+is_langtag(const ZixStringView string)
 {
-  assert(str.length);
-  assert(lang.length);
+  // First character must be a letter
+  size_t i = 0;
+  if (!string.length || !is_alpha(string.data[i])) {
+    return false;
+  }
 
-  flags |= SERD_HAS_LANGUAGE;
+  // First component must be all letters
+  while (++i < string.length && string.data[i] && string.data[i] != '-') {
+    if (!is_alpha(string.data[i])) {
+      return false;
+    }
+  }
 
-  const size_t len       = serd_node_pad_length(str.length);
-  const size_t total_len = len + sizeof(SerdNode) + lang.length;
+  // Following components can have letters and digits
+  while (i < string.length && string.data[i] == '-') {
+    while (++i < string.length && string.data[i] && string.data[i] != '-') {
+      const char c = string.data[i];
+      if (!is_alpha(c) && !is_digit(c)) {
+        return false;
+      }
+    }
+  }
 
-  SerdNode* node = serd_node_malloc(allocator, total_len, flags, SERD_LITERAL);
-  memcpy(serd_node_buffer(node), str.data, str.length);
-  node->length = str.length;
-
-  SerdNode* lang_node = node + 1 + (len / sizeof(SerdNode));
-  lang_node->type     = SERD_LITERAL;
-  lang_node->length   = lang.length;
-  memcpy(serd_node_buffer(lang_node), lang.data, lang.length);
-  serd_node_check_padding(lang_node);
-
-  serd_node_check_padding(node);
-  return node;
+  return true;
 }
 
 SerdNode*
-serd_new_plain_literal(ZixAllocator* const allocator,
-                       const ZixStringView str,
-                       const ZixStringView lang)
+serd_new_literal(ZixAllocator* const allocator,
+                 const ZixStringView string,
+                 const SerdNodeFlags flags,
+                 const ZixStringView meta)
 {
-  if (!lang.length) {
-    return serd_new_string(allocator, str);
+  if (!(flags & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE))) {
+    SerdNode* node =
+      serd_node_malloc(allocator, string.length, flags, SERD_LITERAL);
+
+    memcpy(serd_node_buffer(node), string.data, string.length);
+    node->length = string.length;
+    serd_node_check_padding(node);
+    return node;
   }
 
-  SerdNodeFlags flags = 0;
-  serd_strlen(str.data, &flags);
-
-  return serd_new_plain_literal_i(allocator, str, flags, lang);
-}
-
-SerdNode*
-serd_new_typed_literal(ZixAllocator* const allocator,
-                       const ZixStringView str,
-                       const ZixStringView datatype_uri)
-{
-  if (!datatype_uri.length) {
-    return serd_new_string(allocator, str);
-  }
-
-  if (!strcmp(datatype_uri.data, NS_RDF "langString")) {
+  if ((flags & SERD_HAS_DATATYPE) && (flags & SERD_HAS_LANGUAGE)) {
     return NULL;
   }
 
-  SerdNodeFlags flags = 0U;
-  serd_strlen(str.data, &flags);
+  if (!meta.length) {
+    return NULL;
+  }
 
-  flags |= SERD_HAS_DATATYPE;
+  if (((flags & SERD_HAS_DATATYPE) &&
+       (!serd_uri_string_has_scheme(meta.data) ||
+        !strcmp(meta.data, NS_RDF "langString"))) ||
+      ((flags & SERD_HAS_LANGUAGE) && !is_langtag(meta))) {
+    return NULL;
+  }
 
-  const size_t len       = serd_node_pad_length(str.length);
-  const size_t total_len = len + sizeof(SerdNode) + datatype_uri.length;
+  const size_t len       = serd_node_pad_length(string.length);
+  const size_t meta_len  = serd_node_pad_length(meta.length);
+  const size_t meta_size = sizeof(SerdNode) + meta_len;
 
-  SerdNode* node = serd_node_malloc(allocator, total_len, flags, SERD_LITERAL);
-  memcpy(serd_node_buffer(node), str.data, str.length);
-  node->length = str.length;
+  SerdNode* node =
+    serd_node_malloc(allocator, len + meta_size, flags, SERD_LITERAL);
+  memcpy(serd_node_buffer(node), string.data, string.length);
+  node->length = string.length;
 
-  SerdNode* datatype_node = node + 1 + (len / sizeof(SerdNode));
-  datatype_node->length   = datatype_uri.length;
-  datatype_node->type     = SERD_URI;
-  memcpy(
-    serd_node_buffer(datatype_node), datatype_uri.data, datatype_uri.length);
-  serd_node_check_padding(datatype_node);
+  SerdNode* meta_node = node + 1U + (len / sizeof(SerdNode));
+  meta_node->length   = meta.length;
+  meta_node->type     = (flags & SERD_HAS_DATATYPE) ? SERD_URI : SERD_LITERAL;
+  memcpy(serd_node_buffer(meta_node), meta.data, meta.length);
+  serd_node_check_padding(meta_node);
 
   serd_node_check_padding(node);
   return node;
@@ -588,17 +588,6 @@ typedef size_t (*SerdWriteLiteralFunc)(const void* user_data,
                                        size_t      buf_size,
                                        char*       buf);
 
-SerdNode*
-serd_new_boolean(ZixAllocator* const allocator, bool b)
-{
-  static const ZixStringView true_string  = ZIX_STATIC_STRING("true");
-  static const ZixStringView false_string = ZIX_STATIC_STRING("false");
-
-  return serd_new_typed_literal(allocator,
-                                b ? true_string : false_string,
-                                serd_node_string_view(&serd_xsd_boolean.node));
-}
-
 static SerdNode*
 serd_new_custom_literal(ZixAllocator* const        allocator,
                         const void* const          user_data,
@@ -633,9 +622,10 @@ serd_new_double(ZixAllocator* const allocator, const double d)
   const ExessResult r = exess_write_double(d, sizeof(buf), buf);
 
   return r.status ? NULL
-                  : serd_new_typed_literal(allocator,
-                                           zix_substring(buf, r.count),
-                                           zix_string(EXESS_XSD_URI "double"));
+                  : serd_new_literal(allocator,
+                                     zix_substring(buf, r.count),
+                                     SERD_HAS_DATATYPE,
+                                     zix_string(EXESS_XSD_URI "double"));
 }
 
 SerdNode*
@@ -646,9 +636,19 @@ serd_new_float(ZixAllocator* const allocator, const float f)
   const ExessResult r = exess_write_float(f, sizeof(buf), buf);
 
   return r.status ? NULL
-                  : serd_new_typed_literal(allocator,
-                                           zix_substring(buf, r.count),
-                                           zix_string(EXESS_XSD_URI "float"));
+                  : serd_new_literal(allocator,
+                                     zix_substring(buf, r.count),
+                                     SERD_HAS_DATATYPE,
+                                     zix_string(EXESS_XSD_URI "float"));
+}
+
+SerdNode*
+serd_new_boolean(ZixAllocator* const allocator, bool b)
+{
+  return serd_new_literal(allocator,
+                          b ? zix_string("true") : zix_string("false"),
+                          SERD_HAS_DATATYPE,
+                          serd_node_string_view(&serd_xsd_boolean.node));
 }
 
 SerdNode*

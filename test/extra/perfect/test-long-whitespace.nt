@@ -1,2 +1,0 @@
-<http://example.org/eg#a> <http://example.org/eg#b> "\nthis \ris a 𕙸long\t\nliteralꯍ\n" .
-<http://example.org/eg#d> <http://example.org/eg#e> "\tThis ꯍis\r 𕙸another\n\none\n" .

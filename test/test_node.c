@@ -74,8 +74,8 @@ check_get_boolean(const char* string,
                   const char* datatype_uri,
                   const bool  expected)
 {
-  SerdNode* const node =
-    serd_new_typed_literal(NULL, zix_string(string), zix_string(datatype_uri));
+  SerdNode* const node = serd_new_literal(
+    NULL, zix_string(string), SERD_HAS_DATATYPE, zix_string(datatype_uri));
 
   assert(node);
   assert(serd_get_boolean(node) == expected);
@@ -161,8 +161,8 @@ check_get_double(const char*  string,
                  const char*  datatype_uri,
                  const double expected)
 {
-  SerdNode* const node =
-    serd_new_typed_literal(NULL, zix_string(string), zix_string(datatype_uri));
+  SerdNode* const node = serd_new_literal(
+    NULL, zix_string(string), SERD_HAS_DATATYPE, zix_string(datatype_uri));
 
   assert(node);
 
@@ -190,8 +190,8 @@ test_get_double(void)
   assert(isnan(serd_get_double(nan)));
   serd_node_free(NULL, nan);
 
-  SerdNode* const invalid = serd_new_typed_literal(
-    NULL, zix_string("!invalid"), zix_string(NS_XSD "long"));
+  SerdNode* const invalid = serd_new_literal(
+    NULL, zix_string("!invalid"), SERD_HAS_DATATYPE, zix_string(NS_XSD "long"));
 
   assert(isnan(serd_get_double(invalid)));
   serd_node_free(NULL, invalid);
@@ -234,8 +234,8 @@ check_get_float(const char* string,
                 const char* datatype_uri,
                 const float expected)
 {
-  SerdNode* const node =
-    serd_new_typed_literal(NULL, zix_string(string), zix_string(datatype_uri));
+  SerdNode* const node = serd_new_literal(
+    NULL, zix_string(string), SERD_HAS_DATATYPE, zix_string(datatype_uri));
 
   assert(node);
 
@@ -261,8 +261,8 @@ test_get_float(void)
   assert(isnan(serd_get_float(nan)));
   serd_node_free(NULL, nan);
 
-  SerdNode* const invalid = serd_new_typed_literal(
-    NULL, zix_string("!invalid"), zix_string(NS_XSD "long"));
+  SerdNode* const invalid = serd_new_literal(
+    NULL, zix_string("!invalid"), SERD_HAS_DATATYPE, zix_string(NS_XSD "long"));
 
   assert(isnan(serd_get_double(invalid)));
 
@@ -299,8 +299,8 @@ check_get_integer(const char*   string,
                   const char*   datatype_uri,
                   const int64_t expected)
 {
-  SerdNode* const node =
-    serd_new_typed_literal(NULL, zix_string(string), zix_string(datatype_uri));
+  SerdNode* const node = serd_new_literal(
+    NULL, zix_string(string), SERD_HAS_DATATYPE, zix_string(datatype_uri));
 
   assert(node);
   assert(serd_get_integer(node) == expected);
@@ -363,8 +363,8 @@ check_get_base64(const char* string,
                  const char* datatype_uri,
                  const char* expected)
 {
-  SerdNode* const node =
-    serd_new_typed_literal(NULL, zix_string(string), zix_string(datatype_uri));
+  SerdNode* const node = serd_new_literal(
+    NULL, zix_string(string), SERD_HAS_DATATYPE, zix_string(datatype_uri));
 
   assert(node);
 
@@ -389,8 +389,10 @@ test_get_base64(void)
   check_get_base64("Zm9vYg==", NS_XSD "base64Binary", "foob");
   check_get_base64(" \f\n\r\t\vZm9v \f\n\r\t\v", NS_XSD "base64Binary", "foo");
 
-  SerdNode* const node = serd_new_typed_literal(
-    NULL, zix_string("Zm9v"), zix_string(NS_XSD "base64Binary"));
+  SerdNode* const node = serd_new_literal(NULL,
+                                          zix_string("Zm9v"),
+                                          SERD_HAS_DATATYPE,
+                                          zix_string(NS_XSD "base64Binary"));
 
   char                  small[2] = {0};
   const SerdWriteResult r        = serd_get_base64(node, sizeof(small), small);
@@ -428,7 +430,7 @@ test_node_from_string(void)
 {
   SerdNode* const hello = serd_new_string(NULL, zix_string("hello\""));
   assert(serd_node_length(hello) == 6);
-  assert(serd_node_flags(hello) == SERD_HAS_QUOTE);
+  assert(!serd_node_flags(hello));
   assert(!strncmp(serd_node_string(hello), "hello\"", 6));
   assert(!strcmp(serd_node_string_view(hello).data, "hello\""));
   assert(serd_node_string_view(hello).length == 6);
@@ -447,7 +449,7 @@ test_node_from_substring(void)
 {
   SerdNode* const a_b = serd_new_string(NULL, zix_substring("a\"bc", 3));
   assert(serd_node_length(a_b) == 3);
-  assert(serd_node_flags(a_b) == SERD_HAS_QUOTE);
+  assert(!serd_node_flags(a_b));
   assert(strlen(serd_node_string(a_b)) == 3);
   assert(!strncmp(serd_node_string(a_b), "a\"b", 3));
   serd_node_free(NULL, a_b);
@@ -466,50 +468,66 @@ check_copy_equals(const SerdNode* const node)
 static void
 test_literal(void)
 {
+  static const ZixStringView hello_str = ZIX_STATIC_STRING("hello");
+  static const ZixStringView empty_str = ZIX_STATIC_STRING("");
+
+  assert(!serd_new_literal(NULL,
+                           hello_str,
+                           SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE,
+                           zix_string("whatever")));
+
+  assert(!serd_new_literal(NULL, hello_str, SERD_HAS_DATATYPE, empty_str));
+  assert(!serd_new_literal(NULL, hello_str, SERD_HAS_LANGUAGE, empty_str));
+
+  assert(
+    !serd_new_literal(NULL, hello_str, SERD_HAS_DATATYPE, zix_string("Type")));
+  assert(
+    !serd_new_literal(NULL, hello_str, SERD_HAS_DATATYPE, zix_string("de")));
+
+  assert(
+    !serd_new_literal(NULL, hello_str, SERD_HAS_LANGUAGE, zix_string("3n")));
+  assert(
+    !serd_new_literal(NULL, hello_str, SERD_HAS_LANGUAGE, zix_string("d3")));
+  assert(
+    !serd_new_literal(NULL, hello_str, SERD_HAS_LANGUAGE, zix_string("d3")));
+  assert(
+    !serd_new_literal(NULL, hello_str, SERD_HAS_LANGUAGE, zix_string("en-!")));
+
   SerdNode* hello2 = serd_new_string(NULL, zix_string("hello\""));
 
   assert(serd_node_length(hello2) == 6 &&
-         serd_node_flags(hello2) == SERD_HAS_QUOTE &&
          !strcmp(serd_node_string(hello2), "hello\""));
 
   check_copy_equals(hello2);
 
-  SerdNode* hello3 =
-    serd_new_plain_literal(NULL, zix_string("hello\""), zix_empty_string());
+  assert(!serd_new_literal(NULL,
+                           zix_string("plain"),
+                           SERD_HAS_DATATYPE,
+                           zix_string(NS_RDF "langString")));
 
-  assert(serd_node_equals(hello2, hello3));
-
-  SerdNode* hello4 =
-    serd_new_typed_literal(NULL, zix_string("hello\""), zix_empty_string());
-
-  assert(!serd_new_typed_literal(
-    NULL, zix_string("plain"), zix_string(NS_RDF "langString")));
-
-  assert(serd_node_equals(hello4, hello2));
-
-  serd_node_free(NULL, hello4);
-  serd_node_free(NULL, hello3);
   serd_node_free(NULL, hello2);
 
-  const char* lang_lit_str = "\"Hello\"@en";
+  const char* lang_lit_str = "\"Hello\"@en-ca";
   SerdNode*   sliced_lang_lit =
-    serd_new_plain_literal(NULL,
-                           zix_substring(lang_lit_str + 1, 5),
-                           zix_substring(lang_lit_str + 8, 2));
+    serd_new_literal(NULL,
+                     zix_substring(lang_lit_str + 1, 5),
+                     SERD_HAS_LANGUAGE,
+                     zix_substring(lang_lit_str + 8, 5));
 
   assert(!strcmp(serd_node_string(sliced_lang_lit), "Hello"));
 
   const SerdNode* const lang = serd_node_language(sliced_lang_lit);
   assert(lang);
-  assert(!strcmp(serd_node_string(lang), "en"));
+  assert(!strcmp(serd_node_string(lang), "en-ca"));
   check_copy_equals(sliced_lang_lit);
   serd_node_free(NULL, sliced_lang_lit);
 
   const char* type_lit_str = "\"Hallo\"^^<http://example.org/Greeting>";
   SerdNode*   sliced_type_lit =
-    serd_new_typed_literal(NULL,
-                           zix_substring(type_lit_str + 1, 5),
-                           zix_substring(type_lit_str + 10, 27));
+    serd_new_literal(NULL,
+                     zix_substring(type_lit_str + 1, 5),
+                     SERD_HAS_DATATYPE,
+                     zix_substring(type_lit_str + 10, 27));
 
   assert(!strcmp(serd_node_string(sliced_type_lit), "Hallo"));
 
@@ -517,11 +535,6 @@ test_literal(void)
   assert(datatype);
   assert(!strcmp(serd_node_string(datatype), "http://example.org/Greeting"));
   serd_node_free(NULL, sliced_type_lit);
-
-  SerdNode* const plain_lit =
-    serd_new_plain_literal(NULL, zix_string("Plain"), zix_empty_string());
-  assert(!strcmp(serd_node_string(plain_lit), "Plain"));
-  serd_node_free(NULL, plain_lit);
 }
 
 static void
@@ -540,17 +553,17 @@ test_compare(void)
   SerdNode* xsd_short =
     serd_new_uri(NULL, zix_string("http://www.w3.org/2001/XMLSchema#short"));
 
-  SerdNode* angst =
-    serd_new_plain_literal(NULL, zix_string("angst"), zix_empty_string());
+  SerdNode* angst = serd_new_string(NULL, zix_string("angst"));
 
-  SerdNode* angst_de =
-    serd_new_plain_literal(NULL, zix_string("angst"), zix_string("de"));
+  SerdNode* angst_de = serd_new_literal(
+    NULL, zix_string("angst"), SERD_HAS_LANGUAGE, zix_string("de"));
 
-  SerdNode* angst_en =
-    serd_new_plain_literal(NULL, zix_string("angst"), zix_string("en"));
+  assert(angst_de);
+  SerdNode* angst_en = serd_new_literal(
+    NULL, zix_string("angst"), SERD_HAS_LANGUAGE, zix_string("en"));
 
-  SerdNode* hallo =
-    serd_new_plain_literal(NULL, zix_string("Hallo"), zix_string("de"));
+  SerdNode* hallo = serd_new_literal(
+    NULL, zix_string("Hallo"), SERD_HAS_LANGUAGE, zix_string("de"));
 
   SerdNode* hello    = serd_new_string(NULL, zix_string("Hello"));
   SerdNode* universe = serd_new_string(NULL, zix_string("Universe"));
@@ -558,11 +571,16 @@ test_compare(void)
   SerdNode* blank    = serd_new_blank(NULL, zix_string("b1"));
   SerdNode* uri      = serd_new_uri(NULL, zix_string("http://example.org/"));
 
-  SerdNode* aardvark = serd_new_typed_literal(
-    NULL, zix_string("alex"), zix_string("http://example.org/Aardvark"));
+  SerdNode* aardvark =
+    serd_new_literal(NULL,
+                     zix_string("alex"),
+                     SERD_HAS_DATATYPE,
+                     zix_string("http://example.org/Aardvark"));
 
-  SerdNode* badger = serd_new_typed_literal(
-    NULL, zix_string("bobby"), zix_string("http://example.org/Badger"));
+  SerdNode* badger = serd_new_literal(NULL,
+                                      zix_string("bobby"),
+                                      SERD_HAS_DATATYPE,
+                                      zix_string("http://example.org/Badger"));
 
   // Types are ordered according to their SerdNodeType (more or less arbitrary)
   assert(serd_node_compare(integer, hello) < 0);

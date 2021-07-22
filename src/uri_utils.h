@@ -4,7 +4,10 @@
 #ifndef SERD_SRC_URI_UTILS_H
 #define SERD_SRC_URI_UTILS_H
 
+#include "string_utils.h"
+
 #include "serd/attributes.h"
+#include "serd/uri.h"
 #include "zix/string_view.h"
 
 #include <stdbool.h>
