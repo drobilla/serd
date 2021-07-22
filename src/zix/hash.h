@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2020 David Robillard <d@drobilla.net>
+  Copyright 2011-2021 David Robillard <d@drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -19,8 +19,8 @@
 
 #include "zix/common.h"
 
+#include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,98 +33,289 @@ extern "C" {
    @{
 */
 
+// ZIX_HASH_KEY_TYPE can be defined to make the API more type-safe
+#if defined(ZIX_HASH_KEY_TYPE)
+typedef ZIX_HASH_KEY_TYPE ZixHashKey;
+#else
+typedef void ZixHashKey;
+#endif
+
+// ZIX_HASH_RECORD_TYPE can be defined to make the API more type-safe
+#if defined(ZIX_HASH_RECORD_TYPE)
+typedef ZIX_HASH_RECORD_TYPE ZixHashRecord;
+#else
+typedef void ZixHashRecord;
+#endif
+
+// ZIX_HASH_SEARCH_DATA_TYPE can be defined to make the API more type-safe
+#if defined(ZIX_HASH_SEARCH_DATA_TYPE)
+typedef ZIX_HASH_SEARCH_DATA_TYPE ZixHashSearchData;
+#else
+typedef void ZixHashSearchData;
+#endif
+
+/**
+   A hash table.
+
+   This is an open addressing hash table that stores pointers to arbitrary user
+   data.  Internally, everything is stored in a single flat array that is
+   resized when necessary.
+
+   The single user-provided pointer that is stored in the table is called a
+   "record".  A record contains a "key", which is accessed via a user-provided
+   function.  This design supports storing large records (which may be
+   expensive to allocate/construct) without requiring an entire record to
+   search.  Simple atomic values can be stored by providing a trivial identity
+   function as a key function.
+
+   The table uses power of 2 sizes with a growth factor of 2, so that hash
+   values can be folded into an array index using bitwise AND as a fast modulo.
+   This means that only the necessary low bits of the hash value will be used,
+   so the hash function must be well-balanced within this range.  More or less
+   any good modern hash algorithm will be fine, but beware, for example, hash
+   functions that assume they are targeting a table with a prime size.
+
+   Since this doubles and halves in size, it may not be an optimal choice if
+   memory reuse is a priority.  A growth factor of 1.5 with fast range
+   reduction may be a better choice there, at the cost of requiring 128-bit
+   arithmetic on 64-bit platforms, and indexing operations being slightly more
+   expensive.
+*/
 typedef struct ZixHashImpl ZixHash;
 
-/**
-   Function for computing the hash of an element.
-*/
-typedef uint32_t (*ZixHashFunc)(const void* value);
+/// A full hash code for a key which is not folded down to the table size
+typedef size_t ZixHashCode;
 
 /**
-   Function to visit a hash element.
+   An iterator to an entry in a hash table.
+
+   This is really just an index, but should be considered opaque to the user
+   and only used via the provided API and equality comparison.
 */
-typedef void (*ZixHashVisitFunc)(void* value, void* user_data);
+typedef size_t ZixHashIter;
+
+/// User function for computing the hash of a key
+typedef ZixHashCode (*ZixHashFunc)(const ZixHashKey* key);
+
+/// User function for determining if two keys are truly equal
+typedef bool (*ZixKeyEqualFunc)(const ZixHashKey* a, const ZixHashKey* b);
+
+/// User function for determining if a key matches in a custom search
+typedef bool (*ZixKeyMatchFunc)(const ZixHashKey*        key,
+                                const ZixHashSearchData* user_data);
+
+/// User function for getting the key of a record
+typedef const ZixHashKey* (*ZixKeyFunc)(const ZixHashRecord* record);
+
+/**
+   A "plan" (position) to insert a record in a hash table.
+
+   This contains everything necessary to insert a record, except the record
+   itself.  It is exposed to split up insertion so that records only need to be
+   allocated if an existing record is not found, but the contents should be
+   considered opaque to the user.
+*/
+typedef struct {
+  ZixHashCode code;  ///< Hash code used to find this position
+  ZixHashIter index; ///< Index into hash table
+} ZixHashInsertPlan;
 
 /**
    Create a new hash table.
 
-   To minimize space overhead, unlike many hash tables this stores a single
-   value, not a key and a value.  Any size of value can be stored, but all the
-   values in the hash table must be the same size, and the values must be safe
-   to copy with memcpy.  To get key:value behaviour, simply insert a struct
-   with a key and value into the hash.
-
-   @param hash_func The hashing function.
-   @param equal_func A function to test value equality.
-   @param value_size The size of the values to be stored.
+   @param key_func A function to retrieve the key from a record.
+   @param hash_func The key hashing function.
+   @param equal_func A function to test keys for equality.
 */
 ZIX_API
 ZixHash*
-zix_hash_new(ZixHashFunc hash_func, ZixEqualFunc equal_func, size_t value_size);
+zix_hash_new(ZixKeyFunc      key_func,
+             ZixHashFunc     hash_func,
+             ZixKeyEqualFunc equal_func);
 
-/**
-   Free `hash`.
-*/
+/// Free `hash`
 ZIX_API
 void
 zix_hash_free(ZixHash* hash);
 
-/**
-   Return the number of elements in `hash`.
-*/
+/// Return an iterator to the first record in a hash, or the end if it is empty
+ZIX_PURE_API
+ZixHashIter
+zix_hash_begin(const ZixHash* hash);
+
+/// Return an iterator one past the last possible record in a hash
+ZIX_PURE_API
+ZixHashIter
+zix_hash_end(const ZixHash* hash);
+
+/// Return the record pointed to by an iterator
+ZIX_PURE_API
+ZixHashRecord*
+zix_hash_get(const ZixHash* hash, ZixHashIter i);
+
+/// Return an iterator that has been advanced to the next record in a hash
+ZIX_PURE_API
+ZixHashIter
+zix_hash_next(const ZixHash* hash, ZixHashIter i);
+
+/// Return the number of elements in a hash
 ZIX_PURE_API
 size_t
 zix_hash_size(const ZixHash* hash);
 
 /**
-   Insert an item into `hash`.
+   Find the best position to insert a record with the given key.
 
-   If no matching value is found, ZIX_STATUS_SUCCESS will be returned, and @p
-   inserted will be pointed to the copy of `value` made in the new hash node.
+   This searches the hash table and returns either the position of an existing
+   equivalent record, or the best available position to insert a new one.  The
+   difference can be determined with zix_hash_record_at().
 
-   If a matching value already exists, ZIX_STATUS_EXISTS will be returned, and
-   `inserted` will be pointed to the existing value.
+   If the returned position is not occupied, then it is valid to insert a
+   record with this key using zix_hash_insert_at() until the hash table is
+   modified (which invalidates the position).
+*/
+ZIX_API
+ZixHashInsertPlan
+zix_hash_plan_insert(const ZixHash* hash, const ZixHashKey* key);
+
+/**
+   Find the best position to insert a record with a custom search.
+
+   This is an advanced low-level version of zix_hash_plan_insert().  It allows
+   a precalculated hash code to be given, along with a custom search predicate.
+   These must be compatible with the functions that manage the hash table:
+   trivial usage would be to pass the equality function used by the hash and
+   the key to search for.
+
+   This is exposed to make it possible to avoid constructing a key at all when
+   potentially inserting.  For example, if keys are structures with a fixed
+   header and a variably-sized body, and you have a separate header and body
+   this can be used to find an insert position without having to allocate a
+   contiguous key.
+
+   Note that care must be taken when using this function: improper use can
+   corrupt the hash table.  The hash code given must be correct for the key to
+   be inserted, and the predicate must return true only if the key it is called
+   with (the first argument) matches the key to be inserted.
+*/
+ZIX_API
+ZixHashInsertPlan
+zix_hash_plan_insert_prehashed(const ZixHash*           hash,
+                               ZixHashCode              code,
+                               ZixKeyMatchFunc          predicate,
+                               const ZixHashSearchData* user_data);
+
+/**
+   Return the record at the given position, or null.
+
+   This is used to determine if a position returned from zix_hash_plan_insert()
+   can be used to insert a new record, or to access the existing matching
+   record.
+*/
+ZIX_PURE_API
+ZixHashRecord*
+zix_hash_record_at(const ZixHash* hash, ZixHashInsertPlan position);
+
+/**
+   Insert a record at a specific position.
+
+   The position must have been found with an earlier call to
+   zix_hash_plan_insert(), and no modifications must have been made to the hash
+   table since.
 
    @param hash The hash table.
-   @param value The value to be inserted.
-   @param inserted The copy of `value` in the hash table.
+
+   @param position The position for the new record.
+
+   @param record The record to insert which, on success, can now be considered
+   owned by the hash table.
+
+   @return ZIX_STATUS_SUCCESS, ZIX_STATUS_EXISTS if a record already exists at
+   this position, or ZIX_STATUS_NO_MEM if growing the hash table failed.
+*/
+ZIX_API
+ZixStatus
+zix_hash_insert_at(ZixHash*          hash,
+                   ZixHashInsertPlan position,
+                   ZixHashRecord*    record);
+
+/**
+   Insert a record.
+
+   This is a trivial wrapper for zix_hash_plan_insert() and
+   zix_hash_insert_at() that is more convenient when record construction is not
+   expensive.
+
+   @param hash The hash table.
+
+   @param record The record to insert which, on success, can now be considered
+   owned by the hash table.
+
    @return ZIX_STATUS_SUCCESS, ZIX_STATUS_EXISTS, or ZIX_STATUS_NO_MEM.
 */
 ZIX_API
 ZixStatus
-zix_hash_insert(ZixHash* hash, const void* value, void** inserted);
+zix_hash_insert(ZixHash* hash, ZixHashRecord* record);
 
 /**
-   Remove an item from `hash`.
+   Erase a record at a specific position.
+
+   @param hash The hash table to remove the record from.
+
+   @param i Iterator to the record to remove.  This must be a valid iterator
+   from an earlier call to zix_hash_find(), that is, the hash table must not
+   have been modified since.
+
+   @param removed Set to the removed record, or null.
+
+   @return ZIX_STATUS_SUCCES or ZIX_STATUS_BAD_ARG if `i` does not point at a
+   removable record.
+*/
+ZIX_API
+ZixStatus
+zix_hash_erase(ZixHash* hash, ZixHashIter i, ZixHashRecord** removed);
+
+/**
+   Remove a record.
 
    @param hash The hash table.
-   @param value The value to remove.
+   @param key The key of the record to remove.
+   @param removed Set to the removed record, or null.
    @return ZIX_STATUS_SUCCES or ZIX_STATUS_NOT_FOUND.
 */
 ZIX_API
 ZixStatus
-zix_hash_remove(ZixHash* hash, const void* value);
+zix_hash_remove(ZixHash* hash, const ZixHashKey* key, ZixHashRecord** removed);
 
 /**
-   Search for an item in `hash`.
+   Find the position of a record with a given key.
 
-   @param hash The hash table.
-   @param value The value to search for.
+   @param hash The hash table to search.
+
+   @param key The key of the desired record.
+
+   @return An iterator to the matching record, or the end iterator if no such
+   record exists.
 */
 ZIX_API
-void*
-zix_hash_find(const ZixHash* hash, const void* value);
+ZixHashIter
+zix_hash_find(const ZixHash* hash, const ZixHashKey* key);
 
 /**
-   Call `f` on each value in `hash`.
+   Find a record with a given key.
 
-   @param hash The hash table.
-   @param f The function to call on each value.
-   @param user_data The user_data parameter passed to `f`.
+   This is essentially the same as zix_hash_find(), but returns a pointer to
+   the record for convenience.
+
+   @param hash The hash table to search.
+
+   @param key The key of the desired record.
+
+   @return A pointer to the matching record, of null if no such record exists.
 */
 ZIX_API
-void
-zix_hash_foreach(ZixHash* hash, ZixHashVisitFunc f, void* user_data);
+ZixHashRecord*
+zix_hash_find_record(const ZixHash* hash, const ZixHashKey* key);
 
 /**
    @}
