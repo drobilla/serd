@@ -17,8 +17,6 @@
 #ifndef SERD_STRING_UTILS_H
 #define SERD_STRING_UTILS_H
 
-#include "serd/serd.h"
-
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -89,9 +87,6 @@ is_windows_path(const char* path)
   return is_alpha(path[0]) && (path[1] == ':' || path[1] == '|') &&
          (path[2] == '/' || path[2] == '\\');
 }
-
-size_t
-serd_substrlen(const char* str, size_t len, SerdNodeFlags* flags);
 
 static inline char
 serd_to_upper(const char c)

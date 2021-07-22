@@ -88,7 +88,7 @@ test_plain_literal(void)
 
   SerdNodes* const      nodes = serd_nodes_new();
   const SerdNode* const node =
-    serd_nodes_plain_literal(nodes, string, language);
+    serd_nodes_literal(nodes, string, SERD_HAS_LANGUAGE, language);
 
   assert(node);
   assert(serd_node_type(node) == SERD_LITERAL);
@@ -113,7 +113,7 @@ test_typed_literal(void)
 
   SerdNodes* const      nodes = serd_nodes_new();
   const SerdNode* const node =
-    serd_nodes_typed_literal(nodes, string, datatype);
+    serd_nodes_literal(nodes, string, SERD_HAS_DATATYPE, datatype);
 
   assert(node);
   assert(serd_node_type(node) == SERD_LITERAL);
