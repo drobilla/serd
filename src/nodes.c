@@ -14,10 +14,18 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "nodes.h"
+
 #include "node.h"
+#include "node_spec.h"
+#include "system.h"
+
+// Define the types used in the hash interface for more type safety
+#define ZIX_HASH_KEY_TYPE SerdNode
+#define ZIX_HASH_RECORD_TYPE NodesEntry
+#define ZIX_HASH_SEARCH_DATA_TYPE NodeSpec
 
 #include "serd/serd.h"
-#include "zix/common.h"
 #include "zix/digest.h"
 #include "zix/hash.h"
 
@@ -27,53 +35,155 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct {
-  size_t    refs;
-  SerdNode* node;
-} NodesEntry;
+#if ((defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112l) || \
+     (defined(__cplusplus) && __cplusplus >= 201103L))
+
+static_assert(sizeof(NodesEntryHead) == sizeof(SerdNode),
+              "NodesEntryHead must be the same size as SerdNode for alignment");
+
+#endif
+
+/*
+  The main goal here is to make getting an existing node as fast as possible,
+  so that this can be used as a convenient node cache with minimal performance
+  overhead.  Mainly this means striving to avoid allocation when potentially
+  inserting a new node.
+
+  This is achieved by generating a hash code from node components without
+  actually allocating that node, and using the low-level insertion interface of
+  ZixHash to do a custom search.  This way, an entry is only allocated when
+  necessary, and the hash table is only searched once.
+
+  The downside is that subtle and very bad things will happen if the hash
+  generated for the node does not match the actual hash of the node.  The
+  exessive number of assertions around this are there to provide some defense
+  against such mistakes.  Cave operatur.
+*/
+
+/**
+   The maximum size of a node that will be made statically on the stack.
+
+   This mostly applies to things like numeric literal nodes, where a small
+   maximum size is exploited to avoid allocation.  The largest static node
+   string is the longest xsd:decimal, which is 327 bytes.  We need a bit more
+   space than that here for the node header, padding, and datatype.
+*/
+#define MAX_STATIC_NODE_SIZE 384
 
 typedef struct {
-  size_t          refs;
-  const SerdNode* node;
-} NodesSearchKey;
+  SerdNode node;
+  char     body[MAX_STATIC_NODE_SIZE];
+} StaticNode;
 
 struct SerdNodesImpl {
   ZixHash* hash;
 };
 
-static uint32_t
-nodes_hash(const void* n)
-{
-  const SerdNode* node = ((const NodesEntry*)n)->node;
+static const StaticNode empty_static_node = {{0u, 0u, SERD_LITERAL}, {'\0'}};
 
-  return zix_digest_add(zix_digest_start(), node, serd_node_total_size(node));
+static const SerdNode*
+nodes_key(const NodesEntry* const entry)
+{
+  return &entry->node;
+}
+
+static ZixHashCode
+token_hash(const ZixHashCode    seed,
+           const SerdNodeType   type,
+           const SerdStringView string)
+{
+  const SerdNode node_header = {string.len, 0u, type};
+  ZixHashCode    h           = seed;
+
+  h = zix_digest_aligned(h, &node_header, sizeof(node_header));
+  h = zix_digest(h, string.buf, string.len);
+  return h;
+}
+
+static ZixHashCode
+spec_hash(const NodeSpec spec)
+{
+  ZixHashCode h = token_hash(0u, spec.type, spec.string);
+
+  if (spec.flags & SERD_HAS_DATATYPE) {
+    h = token_hash(h, SERD_URI, spec.meta);
+  } else if (spec.flags & SERD_HAS_LANGUAGE) {
+    h = token_hash(h, SERD_LITERAL, spec.meta);
+  }
+
+  return h;
+}
+
+static ZixHashCode
+nodes_hash(const SerdNode* const node)
+{
+  /* If you're thinking "I know, I'll make this faster by just hashing the
+     entire node in one call!", think harder.  Since zero bytes affect the hash
+     value, that would mean that the hash code for the node won't match the one
+     for the node spec, and the above-mentioned subtle and very bad things will
+     happen.  This function deliberately mirrors spec_hash() above to make it
+     relatively easy to see that the two will match.
+
+     It would be more elegant to construct a spec from the node and then hash
+     that with the exact same code used for searching, but there's currently no
+     use for that anywhere else and this way is a bit faster. */
+
+  ZixHashCode h = token_hash(0u, node->type, serd_node_string_view(node));
+
+  if (node->flags & SERD_HAS_DATATYPE) {
+    h = token_hash(h, SERD_URI, serd_node_string_view(serd_node_meta_c(node)));
+  } else if (node->flags & SERD_HAS_LANGUAGE) {
+    h = token_hash(
+      h, SERD_LITERAL, serd_node_string_view(serd_node_meta_c(node)));
+  }
+
+  return h;
 }
 
 static bool
-nodes_equal(const void* a, const void* b)
+node_equals_spec(const SerdNode* const node, const NodeSpec* const spec)
 {
-  const SerdNode* a_node = ((const NodesEntry*)a)->node;
-  const SerdNode* b_node = ((const NodesEntry*)b)->node;
-  const size_t    a_size = serd_node_total_size(a_node);
-  const size_t    b_size = serd_node_total_size(b_node);
-  return ((a_node == b_node) ||
-          (a_size == b_size && !memcmp(a_node, b_node, a_size)));
+  // Only datatype and language are relevant for equality
+  static const SerdNodeFlags flag_mask = SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE;
+
+  const SerdNodeFlags flags = spec->flags & flag_mask;
+
+  return serd_node_type(node) == spec->type &&
+         serd_node_length(node) == spec->string.len &&
+         (node->flags & flag_mask) == flags &&
+         !strcmp(serd_node_string(node), spec->string.buf) &&
+         (!flags ||
+          !strcmp(serd_node_string(serd_node_meta_c(node)), spec->meta.buf));
 }
 
-static void
-free_entry(void* value, void* user_data)
+static bool
+nodes_equal(const SerdNode* const a, const SerdNode* const b)
 {
-  (void)user_data;
+  const size_t a_size = serd_node_total_size(a);
+  const size_t b_size = serd_node_total_size(b);
+  return ((a == b) || (a_size == b_size && !memcmp(a, b, a_size)));
+}
 
-  NodesEntry* entry = (NodesEntry*)value;
-  serd_node_free(entry->node);
+static NodesEntry*
+new_entry(const size_t node_size)
+{
+  NodesEntry* const entry = (NodesEntry*)serd_calloc_aligned(
+    serd_node_align, sizeof(NodesEntryHead) + node_size);
+
+  if (entry) {
+    entry->head.refs = 1u;
+  }
+
+  return entry;
 }
 
 SerdNodes*
 serd_nodes_new(void)
 {
-  SerdNodes* nodes = (SerdNodes*)calloc(1, sizeof(SerdNodes));
-  nodes->hash      = zix_hash_new(nodes_hash, nodes_equal, sizeof(NodesEntry));
+  SerdNodes* const nodes = (SerdNodes*)calloc(1, sizeof(SerdNodes));
+
+  nodes->hash = zix_hash_new(nodes_key, nodes_hash, nodes_equal);
+
   return nodes;
 }
 
@@ -81,7 +191,12 @@ void
 serd_nodes_free(SerdNodes* nodes)
 {
   if (nodes) {
-    zix_hash_foreach(nodes->hash, free_entry, nodes);
+    for (ZixHashIter i = zix_hash_begin(nodes->hash);
+         i != zix_hash_end(nodes->hash);
+         i = zix_hash_next(nodes->hash, i)) {
+      serd_free_aligned(zix_hash_get(nodes->hash, i));
+    }
+
     zix_hash_free(nodes->hash);
     free(nodes);
   }
@@ -96,22 +211,27 @@ serd_nodes_size(const SerdNodes* nodes)
 const SerdNode*
 serd_nodes_intern(SerdNodes* nodes, const SerdNode* node)
 {
+  assert(nodes);
   if (!node) {
     return NULL;
   }
 
-  NodesSearchKey key      = {1, node};
-  NodesEntry*    inserted = NULL;
-
-  const ZixStatus st = zix_hash_insert(nodes->hash, &key, (void**)&inserted);
-  if (st == ZIX_STATUS_SUCCESS) {
-    inserted->node = serd_node_copy(node);
-  } else if (st == ZIX_STATUS_EXISTS) {
-    assert(serd_node_equals(inserted->node, node));
-    ++inserted->refs;
+  const ZixHashInsertPlan plan     = zix_hash_plan_insert(nodes->hash, node);
+  NodesEntry* const       existing = zix_hash_record_at(nodes->hash, plan);
+  if (existing) {
+    assert(serd_node_equals(&existing->node, node));
+    ++existing->head.refs;
+    return &existing->node;
   }
 
-  return inserted ? inserted->node : NULL;
+  const size_t      node_size = serd_node_total_size(node);
+  NodesEntry* const entry     = new_entry(node_size);
+
+  memcpy(&entry->node, node, node_size);
+
+  // Insert the entry (blissfully ignoring a failed hash size increase)
+  zix_hash_insert_at(nodes->hash, plan, entry);
+  return &entry->node;
 }
 
 const SerdNode*
@@ -121,72 +241,263 @@ serd_nodes_get(const SerdNodes* const nodes, const SerdNode* const node)
     return NULL;
   }
 
-  const NodesSearchKey key   = {1, node};
-  NodesEntry* const    entry = (NodesEntry*)zix_hash_find(nodes->hash, &key);
+  NodesEntry* const entry = zix_hash_find_record(nodes->hash, node);
 
-  return entry ? entry->node : NULL;
+  return entry ? &entry->node : NULL;
+}
+
+static const SerdNode*
+serd_nodes_manage_entry(SerdNodes* const nodes, NodesEntry* const entry)
+{
+  const SerdNode* const   node     = &entry->node;
+  const ZixHashInsertPlan plan     = zix_hash_plan_insert(nodes->hash, node);
+  NodesEntry* const       existing = zix_hash_record_at(nodes->hash, plan);
+  if (existing) {
+    assert(serd_node_equals(&existing->node, node));
+    assert(nodes_hash(&existing->node) == plan.code);
+    ++existing->head.refs;
+    serd_free_aligned(entry);
+    return &existing->node;
+  }
+
+  // Insert the entry (blissfully ignoring a failed hash size increase)
+  zix_hash_insert_at(nodes->hash, plan, entry);
+  assert(nodes_hash(&entry->node) == plan.code);
+  return &entry->node;
+}
+
+static const SerdNode*
+serd_nodes_token(SerdNodes* const     nodes,
+                 const SerdNodeType   type,
+                 const SerdStringView string)
+{
+  const NodeSpec          key  = token_spec(type, string);
+  const ZixHashCode       code = spec_hash(key);
+  const ZixHashInsertPlan plan =
+    zix_hash_plan_insert_prehashed(nodes->hash, code, node_equals_spec, &key);
+
+  NodesEntry* const existing = zix_hash_record_at(nodes->hash, plan);
+  if (existing) {
+    assert(nodes_hash(&existing->node) == code);
+    ++existing->head.refs;
+    return &existing->node;
+  }
+
+  const size_t      padded_length = serd_node_pad_length(string.len);
+  const size_t      node_size     = sizeof(SerdNode) + padded_length;
+  NodesEntry* const entry         = new_entry(node_size);
+  SerdNode* const   node          = entry ? &entry->node : NULL;
+
+  if (node) {
+    // Construct the token directly into the node in the new entry
+    const SerdWriteResult r =
+      serd_node_construct_token(node_size, &entry->node, type, string);
+
+    assert(!r.status); // Never fails with sufficient space
+    (void)r;
+
+    // Insert the entry (blissfully ignoring a failed hash size increase)
+    zix_hash_insert_at(nodes->hash, plan, entry);
+    assert(nodes_hash(node) == code);
+  }
+
+  return node;
 }
 
 const SerdNode*
-serd_nodes_manage(SerdNodes* nodes, SerdNode* node)
-{
-  if (!node) {
-    return NULL;
-  }
-
-  NodesSearchKey key      = {1, node};
-  NodesEntry*    inserted = NULL;
-
-  const ZixStatus st = zix_hash_insert(nodes->hash, &key, (void**)&inserted);
-  if (st == ZIX_STATUS_EXISTS) {
-    assert(serd_node_equals(inserted->node, node));
-    serd_node_free(node);
-    ++inserted->refs;
-  }
-
-  return inserted ? inserted->node : NULL;
-}
-
-/* TODO: Make these methods faster by being smarter internally and avoiding
-   unnecessary allocatio in cases where the node is already in the set. */
-
-const SerdNode*
-serd_nodes_string(SerdNodes* const nodes, const SerdStringView string)
-{
-  return serd_nodes_manage(nodes, serd_new_string(string));
-}
-
-const SerdNode* SERD_ALLOCATED
 serd_nodes_literal(SerdNodes* const     nodes,
                    const SerdStringView string,
                    const SerdNodeFlags  flags,
                    const SerdStringView meta)
 {
-  return serd_nodes_manage(nodes, serd_new_literal(string, flags, meta));
+  // Calculate a hash code for the literal without actually constructing it
+  const NodeSpec    spec = literal_spec(string, flags, meta);
+  const ZixHashCode code = spec_hash(spec);
+
+  // Find an insert position in the hash table
+  const ZixHashInsertPlan plan =
+    zix_hash_plan_insert_prehashed(nodes->hash, code, node_equals_spec, &spec);
+
+  // If we found an existing node, bump its reference count and return it
+  NodesEntry* const existing = zix_hash_record_at(nodes->hash, plan);
+  if (existing) {
+    assert(nodes_hash(&existing->node) == code);
+    ++existing->head.refs;
+    return &existing->node;
+  }
+
+  // We need to insert a new entry, so determine how much space the node needs
+  SerdWriteResult r = serd_node_construct_literal(0, NULL, string, flags, meta);
+  if (r.status != SERD_ERR_OVERFLOW) {
+    return NULL;
+  }
+
+  // Allocate a new entry with enough space for the node
+  NodesEntry* const entry = new_entry(r.count);
+  SerdNode* const   node  = entry ? &entry->node : NULL;
+
+  if (node) {
+    // Construct the literal directly into the node in the new entry
+    r = serd_node_construct_literal(r.count, node, string, flags, meta);
+    assert(!r.status);
+    (void)r;
+
+    // Insert the entry (blissfully ignoring a failed hash size increase)
+    zix_hash_insert_at(nodes->hash, plan, entry);
+    assert(nodes_hash(node) == code);
+  }
+
+  return node;
+}
+
+const SerdNode*
+serd_nodes_string(SerdNodes* const nodes, const SerdStringView string)
+{
+  return serd_nodes_token(nodes, SERD_LITERAL, string);
+}
+
+static const SerdNode*
+try_intern(SerdNodes* const      nodes,
+           const SerdWriteResult r,
+           const SerdNode* const node)
+{
+  return r.status ? NULL : serd_nodes_intern(nodes, node);
+}
+
+const SerdNode*
+serd_nodes_boolean(SerdNodes* const nodes, bool value)
+{
+  StaticNode key = empty_static_node;
+
+  return try_intern(
+    nodes, serd_node_construct_boolean(sizeof(key), &key, value), &key.node);
+}
+
+const SerdNode*
+serd_nodes_decimal(SerdNodes* const nodes, const double value)
+{
+  StaticNode key = empty_static_node;
+
+  return try_intern(
+    nodes, serd_node_construct_decimal(sizeof(key), &key, value), &key.node);
+}
+
+const SerdNode*
+serd_nodes_double(SerdNodes* const nodes, const double value)
+{
+  StaticNode key = empty_static_node;
+
+  return try_intern(
+    nodes, serd_node_construct_double(sizeof(key), &key, value), &key.node);
+}
+
+const SerdNode*
+serd_nodes_float(SerdNodes* const nodes, const float value)
+{
+  StaticNode key = empty_static_node;
+
+  return try_intern(
+    nodes, serd_node_construct_float(sizeof(key), &key, value), &key.node);
+}
+
+const SerdNode*
+serd_nodes_integer(SerdNodes* const     nodes,
+                   const int64_t        value,
+                   const SerdStringView datatype)
+{
+  StaticNode key = empty_static_node;
+
+  return try_intern(
+    nodes,
+    serd_node_construct_integer(sizeof(key), &key, value, datatype),
+    &key.node);
+}
+
+const SerdNode*
+serd_nodes_base64(SerdNodes* const     nodes,
+                  const void* const    value,
+                  const size_t         value_size,
+                  const SerdStringView datatype)
+{
+  assert(nodes);
+  assert(value);
+
+  /* We're more or less forced to allocate and construct an entry here, since
+     we need the base64 string to hash.  Though it would be possible to
+     calculate it in a streaming fashion, that would be a severe pessimisation
+     in the presumably common case of raw data not being cached, since it would
+     only need to be serialised again.  Keeping a tentative entry buffer around
+     when possible would probably be a better improvement if this ever becomes
+     a performance issue.  More ambitiously, adding support for binary nodes
+     like a Real Database(TM) would largely avoid this problem. */
+
+  // Determine how much space the node needs
+  SerdWriteResult r =
+    serd_node_construct_base64(0, NULL, value_size, value, datatype);
+
+  // Allocate a new entry to and construct the node into it
+  NodesEntry* const entry = new_entry(r.count);
+
+  r = serd_node_construct_base64(
+    r.count, &entry->node, value_size, value, datatype);
+
+  assert(!r.status);
+  (void)r;
+  return serd_nodes_manage_entry(nodes, entry);
 }
 
 const SerdNode*
 serd_nodes_uri(SerdNodes* const nodes, const SerdStringView string)
 {
-  return serd_nodes_manage(nodes, serd_new_uri(string));
+  return serd_nodes_token(nodes, SERD_URI, string);
+}
+
+const SerdNode*
+serd_nodes_parsed_uri(SerdNodes* const nodes, const SerdURIView uri)
+{
+  assert(nodes);
+
+  /* Computing a hash for the serialised URI here would be quite complex, so,
+     since this isn't expected to be a particularly hot case, we just allocate
+     a new entry and try to do a normal insertion. */
+
+  // Determine how much space the node needs
+  SerdWriteResult r = serd_node_construct_uri(0u, NULL, uri);
+  assert(r.status == SERD_ERR_OVERFLOW); // Currently no other errors
+
+  // Allocate a new entry to write the URI node into
+  NodesEntry* const entry = new_entry(r.count);
+
+  r = serd_node_construct_uri(r.count, &entry->node, uri);
+  assert(!r.status);
+  (void)r;
+
+  return serd_nodes_manage_entry(nodes, entry);
 }
 
 const SerdNode*
 serd_nodes_blank(SerdNodes* const nodes, const SerdStringView string)
 {
-  return serd_nodes_manage(nodes, serd_new_token(SERD_BLANK, string));
+  return serd_nodes_token(nodes, SERD_BLANK, string);
 }
 
 void
 serd_nodes_deref(SerdNodes* const nodes, const SerdNode* const node)
 {
-  const NodesSearchKey key   = {1, node};
-  NodesEntry* const    entry = (NodesEntry*)zix_hash_find(nodes->hash, &key);
+  if (!node) {
+    return;
+  }
 
-  if (entry && --entry->refs == 0) {
-    SerdNode* const intern_node = entry->node;
+  ZixHashIter i = zix_hash_find(nodes->hash, node);
+  if (i == zix_hash_end(nodes->hash)) {
+    return;
+  }
 
-    zix_hash_remove(nodes->hash, entry);
-    serd_node_free(intern_node);
+  NodesEntry* const entry = zix_hash_get(nodes->hash, i);
+  if (--entry->head.refs == 0u) {
+    NodesEntry* removed = NULL;
+    zix_hash_erase(nodes->hash, i, &removed);
+    assert(removed == entry);
+    serd_free_aligned(removed);
   }
 }

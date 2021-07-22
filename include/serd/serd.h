@@ -1205,18 +1205,6 @@ serd_nodes_intern(SerdNodes* SERD_NONNULL       nodes,
                   const SerdNode* SERD_NULLABLE node);
 
 /**
-   Manage `node`.
-
-   Like `serd_nodes_intern`, but takes ownership of `node`, freeing it and
-   returning a previously interned/managed equivalent node if necessary.
-
-   @return A node that is equivalent to `node`.
-*/
-SERD_API
-const SerdNode* SERD_ALLOCATED
-serd_nodes_manage(SerdNodes* SERD_NONNULL nodes, SerdNode* SERD_NULLABLE node);
-
-/**
    Make a string node.
 
    A new node will be added if an equivalent node is not already in the set.
@@ -1255,18 +1243,96 @@ serd_nodes_literal(SerdNodes* SERD_NONNULL nodes,
                    SerdStringView          meta);
 
 /**
-   Make a URI node.
+   Make a canonical xsd:boolean node.
 
-   A new node will be added if an equivalent node is not already in the set.
+   A new node will be constructed with serd_node_construct_boolean() if an
+   equivalent one is not already in the set.
+*/
+SERD_API
+const SerdNode* SERD_ALLOCATED
+serd_nodes_boolean(SerdNodes* SERD_NONNULL nodes, bool value);
+
+/**
+   Make a canonical xsd:decimal node.
+
+   A new node will be constructed with serd_node_construct_decimal() if an
+   equivalent one is not already in the set.
+*/
+SERD_API
+const SerdNode* SERD_ALLOCATED
+serd_nodes_decimal(SerdNodes* SERD_NONNULL nodes, double value);
+
+/**
+   Make a canonical xsd:double node.
+
+   A new node will be constructed with serd_node_construct_double() if an
+   equivalent one is not already in the set.
+*/
+SERD_API
+const SerdNode* SERD_ALLOCATED
+serd_nodes_double(SerdNodes* SERD_NONNULL nodes, double value);
+
+/**
+   Make a canonical xsd:float node.
+
+   A new node will be constructed with serd_node_construct_float() if an
+   equivalent one is not already in the set.
+*/
+SERD_API
+const SerdNode* SERD_ALLOCATED
+serd_nodes_float(SerdNodes* SERD_NONNULL nodes, float value);
+
+/**
+   Make a canonical xsd:integer node.
+
+   A new node will be constructed with serd_node_construct_integer() if an
+   equivalent one is not already in the set.
+*/
+SERD_API
+const SerdNode* SERD_ALLOCATED
+serd_nodes_integer(SerdNodes* SERD_NONNULL nodes,
+                   int64_t                 value,
+                   SerdStringView          datatype);
+
+/**
+   Make a canonical xsd:base64Binary node.
+
+   A new node will be constructed with serd_node_construct_base64() if an
+   equivalent one is not already in the set.
+*/
+
+SERD_API
+const SerdNode* SERD_ALLOCATED
+serd_nodes_base64(SerdNodes* SERD_NONNULL  nodes,
+                  const void* SERD_NONNULL value,
+                  size_t                   value_size,
+                  SerdStringView           datatype);
+
+/**
+   Make a URI node from a string.
+
+   A new node will be constructed with serd_node_construct_token() if an
+   equivalent one is not already in the set.
 */
 SERD_API
 const SerdNode* SERD_ALLOCATED
 serd_nodes_uri(SerdNodes* SERD_NONNULL nodes, SerdStringView string);
 
 /**
+   Make a URI node from a parsed URI.
+
+   A new node will be constructed with serd_node_construct_uri() if an
+   equivalent one is not already in the set.
+*/
+SERD_API
+const SerdNode* SERD_ALLOCATED
+serd_nodes_parsed_uri(SerdNodes* SERD_NONNULL nodes, SerdURIView uri);
+
+/**
    Make a blank node.
 
-   A new node will be added if an equivalent node is not already in the set.
+   A new node will be constructed with serd_node_construct_token() if an
+   equivalent one is not already in the set.
 */
 SERD_API
 const SerdNode* SERD_ALLOCATED
@@ -1281,8 +1347,8 @@ serd_nodes_blank(SerdNodes* SERD_NONNULL nodes, SerdStringView string);
 */
 SERD_API
 void
-serd_nodes_deref(SerdNodes* SERD_NONNULL      nodes,
-                 const SerdNode* SERD_NONNULL node);
+serd_nodes_deref(SerdNodes* SERD_NONNULL       nodes,
+                 const SerdNode* SERD_NULLABLE node);
 
 /**
    @}
