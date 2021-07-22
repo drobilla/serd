@@ -64,11 +64,17 @@ test_write_long_literal(void)
 
   const SerdNode* s =
     serd_nodes_uri(nodes, SERD_STRING("http://example.org/s"));
+
   const SerdNode* p =
     serd_nodes_uri(nodes, SERD_STRING("http://example.org/p"));
-  const SerdNode* o =
-    serd_nodes_string(nodes, SERD_STRING("hello \"\"\"world\"\"\"!"));
 
+  const SerdNode* o =
+    serd_nodes_literal(nodes,
+                       SERD_STRING("hello \"\"\"world\"\"\"!"),
+                       SERD_IS_LONG,
+                       SERD_EMPTY_STRING());
+
+  assert(serd_node_flags(o) & SERD_IS_LONG);
   assert(!serd_sink_write(serd_writer_sink(writer), 0, s, p, o, NULL));
 
   serd_writer_free(writer);

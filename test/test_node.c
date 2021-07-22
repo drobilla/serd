@@ -82,8 +82,8 @@ check_get_boolean(const char* string,
                   const char* datatype_uri,
                   const bool  expected)
 {
-  SerdNode* const node =
-    serd_new_typed_literal(SERD_STRING(string), SERD_STRING(datatype_uri));
+  SerdNode* const node = serd_new_literal(
+    SERD_STRING(string), SERD_HAS_DATATYPE, SERD_STRING(datatype_uri));
 
   assert(node);
   assert(serd_get_boolean(node) == expected);
@@ -169,8 +169,8 @@ check_get_double(const char*  string,
                  const char*  datatype_uri,
                  const double expected)
 {
-  SerdNode* const node =
-    serd_new_typed_literal(SERD_STRING(string), SERD_STRING(datatype_uri));
+  SerdNode* const node = serd_new_literal(
+    SERD_STRING(string), SERD_HAS_DATATYPE, SERD_STRING(datatype_uri));
 
   assert(node);
 
@@ -196,8 +196,8 @@ test_get_double(void)
   assert(isnan(serd_get_double(nan)));
   serd_node_free(nan);
 
-  SerdNode* const invalid =
-    serd_new_typed_literal(SERD_STRING("!invalid"), SERD_STRING(NS_XSD "long"));
+  SerdNode* const invalid = serd_new_literal(
+    SERD_STRING("!invalid"), SERD_HAS_DATATYPE, SERD_STRING(NS_XSD "long"));
 
   assert(isnan(serd_get_double(invalid)));
 
@@ -236,8 +236,8 @@ check_get_float(const char* string,
                 const char* datatype_uri,
                 const float expected)
 {
-  SerdNode* const node =
-    serd_new_typed_literal(SERD_STRING(string), SERD_STRING(datatype_uri));
+  SerdNode* const node = serd_new_literal(
+    SERD_STRING(string), SERD_HAS_DATATYPE, SERD_STRING(datatype_uri));
 
   assert(node);
 
@@ -263,8 +263,8 @@ test_get_float(void)
   assert(isnan(serd_get_float(nan)));
   serd_node_free(nan);
 
-  SerdNode* const invalid =
-    serd_new_typed_literal(SERD_STRING("!invalid"), SERD_STRING(NS_XSD "long"));
+  SerdNode* const invalid = serd_new_literal(
+    SERD_STRING("!invalid"), SERD_HAS_DATATYPE, SERD_STRING(NS_XSD "long"));
 
   assert(isnan(serd_get_double(invalid)));
 
@@ -301,8 +301,8 @@ check_get_integer(const char*   string,
                   const char*   datatype_uri,
                   const int64_t expected)
 {
-  SerdNode* const node =
-    serd_new_typed_literal(SERD_STRING(string), SERD_STRING(datatype_uri));
+  SerdNode* const node = serd_new_literal(
+    SERD_STRING(string), SERD_HAS_DATATYPE, SERD_STRING(datatype_uri));
 
   assert(node);
   assert(serd_get_integer(node) == expected);
@@ -365,8 +365,8 @@ check_get_base64(const char* string,
                  const char* datatype_uri,
                  const char* expected)
 {
-  SerdNode* const node =
-    serd_new_typed_literal(SERD_STRING(string), SERD_STRING(datatype_uri));
+  SerdNode* const node = serd_new_literal(
+    SERD_STRING(string), SERD_HAS_DATATYPE, SERD_STRING(datatype_uri));
 
   assert(node);
 
@@ -391,8 +391,8 @@ test_get_base64(void)
   check_get_base64("Zm9vYg==", NS_XSD "base64Binary", "foob");
   check_get_base64(" \f\n\r\t\vZm9v \f\n\r\t\v", NS_XSD "base64Binary", "foo");
 
-  SerdNode* const node = serd_new_typed_literal(
-    SERD_STRING("Zm9v"), SERD_STRING(NS_XSD "base64Binary"));
+  SerdNode* const node = serd_new_literal(
+    SERD_STRING("Zm9v"), SERD_HAS_DATATYPE, SERD_STRING(NS_XSD "base64Binary"));
 
   char                  small[2] = {0};
   const SerdWriteResult r        = serd_get_base64(node, sizeof(small), small);
@@ -426,7 +426,7 @@ test_node_from_syntax(void)
 {
   SerdNode* const hello = serd_new_string(SERD_STRING("hello\""));
   assert(serd_node_length(hello) == 6);
-  assert(serd_node_flags(hello) == SERD_HAS_QUOTE);
+  assert(!serd_node_flags(hello));
   assert(!strncmp(serd_node_string(hello), "hello\"", 6));
   serd_node_free(hello);
 }
@@ -436,7 +436,7 @@ test_node_from_substring(void)
 {
   SerdNode* const a_b = serd_new_string(SERD_SUBSTRING("a\"bc", 3));
   assert(serd_node_length(a_b) == 3);
-  assert(serd_node_flags(a_b) == SERD_HAS_QUOTE);
+  assert(!serd_node_flags(a_b));
   assert(strlen(serd_node_string(a_b)) == 3);
   assert(!strncmp(serd_node_string(a_b), "a\"b", 3));
   serd_node_free(a_b);
@@ -461,46 +461,54 @@ check_copy_equals(const SerdNode* const node)
 static void
 test_literal(void)
 {
+  static const SerdStringView hello_str = SERD_STRING("hello");
+  static const SerdStringView empty_str = SERD_EMPTY_STRING();
+
+  assert(!serd_new_literal(
+    hello_str, SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE, SERD_STRING("whatever")));
+
+  assert(!serd_new_literal(hello_str, SERD_HAS_DATATYPE, empty_str));
+  assert(!serd_new_literal(hello_str, SERD_HAS_LANGUAGE, empty_str));
+
+  assert(!serd_new_literal(hello_str, SERD_HAS_DATATYPE, SERD_STRING("Type")));
+  assert(!serd_new_literal(hello_str, SERD_HAS_DATATYPE, SERD_STRING("de")));
+
+  assert(!serd_new_literal(hello_str, SERD_HAS_LANGUAGE, SERD_STRING("3n")));
+  assert(!serd_new_literal(hello_str, SERD_HAS_LANGUAGE, SERD_STRING("d3")));
+  assert(!serd_new_literal(hello_str, SERD_HAS_LANGUAGE, SERD_STRING("d3")));
+  assert(!serd_new_literal(hello_str, SERD_HAS_LANGUAGE, SERD_STRING("en-!")));
+
   SerdNode* hello2 = serd_new_string(SERD_STRING("hello\""));
 
   assert(serd_node_length(hello2) == 6 &&
-         serd_node_flags(hello2) == SERD_HAS_QUOTE &&
          !strcmp(serd_node_string(hello2), "hello\""));
 
   check_copy_equals(hello2);
 
-  SerdNode* hello3 =
-    serd_new_plain_literal(SERD_STRING("hello\""), SERD_EMPTY_STRING());
+  assert(!serd_new_literal(
+    SERD_STRING("plain"), SERD_HAS_DATATYPE, SERD_STRING(NS_RDF "langString")));
 
-  assert(serd_node_equals(hello2, hello3));
-
-  SerdNode* hello4 =
-    serd_new_typed_literal(SERD_STRING("hello\""), SERD_EMPTY_STRING());
-
-  assert(!serd_new_typed_literal(SERD_STRING("plain"),
-                                 SERD_STRING(NS_RDF "langString")));
-
-  assert(serd_node_equals(hello4, hello2));
-
-  serd_node_free(hello4);
-  serd_node_free(hello3);
   serd_node_free(hello2);
 
-  const char* lang_lit_str    = "\"Hello\"@en";
-  SerdNode*   sliced_lang_lit = serd_new_plain_literal(
-    SERD_SUBSTRING(lang_lit_str + 1, 5), SERD_SUBSTRING(lang_lit_str + 8, 2));
+  const char* lang_lit_str = "\"Hello\"@en-ca";
+  SerdNode*   sliced_lang_lit =
+    serd_new_literal(SERD_SUBSTRING(lang_lit_str + 1, 5),
+                     SERD_HAS_LANGUAGE,
+                     SERD_SUBSTRING(lang_lit_str + 8, 5));
 
   assert(!strcmp(serd_node_string(sliced_lang_lit), "Hello"));
 
   const SerdNode* const lang = serd_node_language(sliced_lang_lit);
   assert(lang);
-  assert(!strcmp(serd_node_string(lang), "en"));
+  assert(!strcmp(serd_node_string(lang), "en-ca"));
   check_copy_equals(sliced_lang_lit);
   serd_node_free(sliced_lang_lit);
 
-  const char* type_lit_str    = "\"Hallo\"^^<http://example.org/Greeting>";
-  SerdNode*   sliced_type_lit = serd_new_typed_literal(
-    SERD_SUBSTRING(type_lit_str + 1, 5), SERD_SUBSTRING(type_lit_str + 10, 27));
+  const char* type_lit_str = "\"Hallo\"^^<http://example.org/Greeting>";
+  SerdNode*   sliced_type_lit =
+    serd_new_literal(SERD_SUBSTRING(type_lit_str + 1, 5),
+                     SERD_HAS_DATATYPE,
+                     SERD_SUBSTRING(type_lit_str + 10, 27));
 
   assert(!strcmp(serd_node_string(sliced_type_lit), "Hallo"));
 
@@ -508,11 +516,6 @@ test_literal(void)
   assert(datatype);
   assert(!strcmp(serd_node_string(datatype), "http://example.org/Greeting"));
   serd_node_free(sliced_type_lit);
-
-  SerdNode* const plain_lit =
-    serd_new_plain_literal(SERD_STRING("Plain"), SERD_EMPTY_STRING());
-  assert(!strcmp(serd_node_string(plain_lit), "Plain"));
-  serd_node_free(plain_lit);
 }
 
 static void
@@ -531,17 +534,17 @@ test_compare(void)
   SerdNode* xsd_short =
     serd_new_uri(SERD_STRING("http://www.w3.org/2001/XMLSchema#short"));
 
-  SerdNode* angst =
-    serd_new_plain_literal(SERD_STRING("angst"), SERD_EMPTY_STRING());
+  SerdNode* angst = serd_new_string(SERD_STRING("angst"));
 
-  SerdNode* angst_de =
-    serd_new_plain_literal(SERD_STRING("angst"), SERD_STRING("de"));
+  SerdNode* angst_de = serd_new_literal(
+    SERD_STRING("angst"), SERD_HAS_LANGUAGE, SERD_STRING("de"));
 
-  SerdNode* angst_en =
-    serd_new_plain_literal(SERD_STRING("angst"), SERD_STRING("en"));
+  assert(angst_de);
+  SerdNode* angst_en = serd_new_literal(
+    SERD_STRING("angst"), SERD_HAS_LANGUAGE, SERD_STRING("en"));
 
-  SerdNode* hallo =
-    serd_new_plain_literal(SERD_STRING("Hallo"), SERD_STRING("de"));
+  SerdNode* hallo = serd_new_literal(
+    SERD_STRING("Hallo"), SERD_HAS_LANGUAGE, SERD_STRING("de"));
 
   SerdNode* hello         = serd_new_string(SERD_STRING("Hello"));
   SerdNode* universe      = serd_new_string(SERD_STRING("Universe"));
