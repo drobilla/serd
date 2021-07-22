@@ -4,6 +4,7 @@
 Checks: >
   -*-magic-numbers,
   -bugprone-easily-swappable-parameters,
+  -bugprone-inc-dec-in-conditions,
   -bugprone-multi-level-implicit-pointer-conversion,
   -cert-err33-c,
   -clang-analyzer-optin.core.EnumCastOutOfRange,
