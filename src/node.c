@@ -12,7 +12,6 @@
 #include "serd/buffer.h"
 #include "serd/node.h"
 #include "serd/status.h"
-#include "serd/string.h"
 #include "serd/string_view.h"
 #include "serd/uri.h"
 
@@ -194,88 +193,92 @@ serd_new_token(const SerdNodeType type, const SerdStringView str)
 SerdNode*
 serd_new_string(const SerdStringView str)
 {
-  SerdNodeFlags flags  = 0;
-  const size_t  length = serd_substrlen(str.data, str.length, &flags);
-  SerdNode*     node   = serd_node_malloc(length, flags, SERD_LITERAL);
+  SerdNodeFlags flags = 0U;
+  SerdNode*     node  = serd_node_malloc(str.length, flags, SERD_LITERAL);
 
-  memcpy(serd_node_buffer(node), str.data, str.length);
-  node->length = length;
+  if (node) {
+    if (str.data && str.length) {
+      memcpy(serd_node_buffer(node), str.data, str.length);
+    }
 
-  serd_node_check_padding(node);
+    node->length = str.length;
+    serd_node_check_padding(node);
+  }
+
   return node;
 }
 
-/// Internal pre-measured implementation of serd_new_plain_literal
-static SerdNode*
-serd_new_plain_literal_i(const SerdStringView str,
-                         SerdNodeFlags        flags,
-                         const SerdStringView lang)
+SERD_PURE_FUNC static bool
+is_langtag(const SerdStringView string)
 {
-  assert(str.length);
-  assert(lang.length);
+  // First character must be a letter
+  size_t i = 0;
+  if (!string.length || !is_alpha(string.data[i])) {
+    return false;
+  }
 
-  flags |= SERD_HAS_LANGUAGE;
+  // First component must be all letters
+  while (++i < string.length && string.data[i] && string.data[i] != '-') {
+    if (!is_alpha(string.data[i])) {
+      return false;
+    }
+  }
 
-  const size_t len       = serd_node_pad_length(str.length);
-  const size_t total_len = len + sizeof(SerdNode) + lang.length;
+  // Following components can have letters and digits
+  while (i < string.length && string.data[i] == '-') {
+    while (++i < string.length && string.data[i] && string.data[i] != '-') {
+      const char c = string.data[i];
+      if (!is_alpha(c) && !is_digit(c)) {
+        return false;
+      }
+    }
+  }
 
-  SerdNode* node = serd_node_malloc(total_len, flags, SERD_LITERAL);
-  memcpy(serd_node_buffer(node), str.data, str.length);
-  node->length = str.length;
-
-  SerdNode* lang_node = node + 1 + (len / sizeof(SerdNode));
-  lang_node->type     = SERD_LITERAL;
-  lang_node->length   = lang.length;
-  memcpy(serd_node_buffer(lang_node), lang.data, lang.length);
-  serd_node_check_padding(lang_node);
-
-  serd_node_check_padding(node);
-  return node;
+  return true;
 }
 
 SerdNode*
-serd_new_plain_literal(const SerdStringView str, const SerdStringView lang)
+serd_new_literal(const SerdStringView string,
+                 const SerdNodeFlags  flags,
+                 const SerdStringView meta)
 {
-  if (!lang.length) {
-    return serd_new_string(str);
+  if (!(flags & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE))) {
+    SerdNode* node = serd_node_malloc(string.length, flags, SERD_LITERAL);
+
+    memcpy(serd_node_buffer(node), string.data, string.length);
+    node->length = string.length;
+    serd_node_check_padding(node);
+    return node;
   }
 
-  SerdNodeFlags flags = 0;
-  serd_strlen(str.data, &flags);
-
-  return serd_new_plain_literal_i(str, flags, lang);
-}
-
-SerdNode*
-serd_new_typed_literal(const SerdStringView str,
-                       const SerdStringView datatype_uri)
-{
-  if (!datatype_uri.length) {
-    return serd_new_string(str);
-  }
-
-  if (!strcmp(datatype_uri.data, NS_RDF "langString")) {
+  if ((flags & SERD_HAS_DATATYPE) && (flags & SERD_HAS_LANGUAGE)) {
     return NULL;
   }
 
-  SerdNodeFlags flags = 0U;
-  serd_strlen(str.data, &flags);
+  if (!meta.length) {
+    return NULL;
+  }
 
-  flags |= SERD_HAS_DATATYPE;
+  if (((flags & SERD_HAS_DATATYPE) &&
+       (!serd_uri_string_has_scheme(meta.data) ||
+        !strcmp(meta.data, NS_RDF "langString"))) ||
+      ((flags & SERD_HAS_LANGUAGE) && !is_langtag(meta))) {
+    return NULL;
+  }
 
-  const size_t len       = serd_node_pad_length(str.length);
-  const size_t total_len = len + sizeof(SerdNode) + datatype_uri.length;
+  const size_t len       = serd_node_pad_length(string.length);
+  const size_t meta_len  = serd_node_pad_length(meta.length);
+  const size_t meta_size = sizeof(SerdNode) + meta_len;
 
-  SerdNode* node = serd_node_malloc(total_len, flags, SERD_LITERAL);
-  memcpy(serd_node_buffer(node), str.data, str.length);
-  node->length = str.length;
+  SerdNode* node = serd_node_malloc(len + meta_size, flags, SERD_LITERAL);
+  memcpy(serd_node_buffer(node), string.data, string.length);
+  node->length = string.length;
 
-  SerdNode* datatype_node = node + 1 + (len / sizeof(SerdNode));
-  datatype_node->length   = datatype_uri.length;
-  datatype_node->type     = SERD_URI;
-  memcpy(
-    serd_node_buffer(datatype_node), datatype_uri.data, datatype_uri.length);
-  serd_node_check_padding(datatype_node);
+  SerdNode* meta_node = node + 1U + (len / sizeof(SerdNode));
+  meta_node->length   = meta.length;
+  meta_node->type     = (flags & SERD_HAS_DATATYPE) ? SERD_URI : SERD_LITERAL;
+  memcpy(serd_node_buffer(meta_node), meta.data, meta.length);
+  serd_node_check_padding(meta_node);
 
   serd_node_check_padding(node);
   return node;
@@ -534,8 +537,9 @@ serd_new_double(const double d)
   const ExessResult r = exess_write_double(d, sizeof(buf), buf);
 
   return r.status ? NULL
-                  : serd_new_typed_literal(serd_substring(buf, r.count),
-                                           serd_string(EXESS_XSD_URI "double"));
+                  : serd_new_literal(serd_substring(buf, r.count),
+                                     SERD_HAS_DATATYPE,
+                                     serd_string(EXESS_XSD_URI "double"));
 }
 
 SerdNode*
@@ -546,15 +550,17 @@ serd_new_float(const float f)
   const ExessResult r = exess_write_float(f, sizeof(buf), buf);
 
   return r.status ? NULL
-                  : serd_new_typed_literal(serd_substring(buf, r.count),
-                                           serd_string(EXESS_XSD_URI "float"));
+                  : serd_new_literal(serd_substring(buf, r.count),
+                                     SERD_HAS_DATATYPE,
+                                     serd_string(EXESS_XSD_URI "float"));
 }
 
 SerdNode*
 serd_new_boolean(bool b)
 {
-  return serd_new_typed_literal(b ? serd_string("true") : serd_string("false"),
-                                serd_node_string_view(&serd_xsd_boolean.node));
+  return serd_new_literal(b ? serd_string("true") : serd_string("false"),
+                          SERD_HAS_DATATYPE,
+                          serd_node_string_view(&serd_xsd_boolean.node));
 }
 
 SerdNode*
