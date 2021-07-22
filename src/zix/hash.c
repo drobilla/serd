@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2020 David Robillard <d@drobilla.net>
+  Copyright 2011-2021 David Robillard <d@drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -17,214 +17,329 @@
 #include "zix/hash.h"
 
 #include <assert.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
-
-/**
-   Primes, each slightly less than twice its predecessor, and as far away
-   from powers of two as possible.
-*/
-static const unsigned sizes[] = {
-  53,        97,        193,       389,       769,        1543,     3079,
-  6151,      12289,     24593,     49157,     98317,      196613,   393241,
-  786433,    1572869,   3145739,   6291469,   12582917,   25165843, 50331653,
-  100663319, 201326611, 402653189, 805306457, 1610612741, 0};
 
 typedef struct ZixHashEntry {
-  struct ZixHashEntry* next; ///< Next entry in bucket
-  uint32_t             hash; ///< Non-modulo hash value
-                             // Value follows here (access with zix_hash_value)
+  ZixHashCode    hash;  ///< Non-folded hash value
+  ZixHashRecord* value; ///< Pointer to user-owned record
 } ZixHashEntry;
 
 struct ZixHashImpl {
-  ZixHashFunc     hash_func;
-  ZixEqualFunc    equal_func;
-  ZixHashEntry**  buckets;
-  const unsigned* n_buckets;
-  size_t          value_size;
-  unsigned        count;
+  ZixKeyFunc      key_func;   ///< User-provided key accessor
+  ZixHashFunc     hash_func;  ///< User-provided hashing function
+  ZixKeyEqualFunc equal_func; ///< User-provided equality comparison function
+  size_t          count;      ///< Number of records stored in the table
+  size_t          mask;       ///< Bit mask for fast modulo (n_entries - 1)
+  size_t          n_entries;  ///< Power of two table size
+  ZixHashEntry*   entries;    ///< Pointer to dynamically allocated table
 };
 
-static inline void*
-zix_hash_value(ZixHashEntry* entry)
-{
-  return entry + 1;
-}
+static const size_t min_n_entries = 4u;
+static const size_t tombstone     = 0xDEADu;
 
 ZixHash*
-zix_hash_new(ZixHashFunc hash_func, ZixEqualFunc equal_func, size_t value_size)
+zix_hash_new(const ZixKeyFunc      key_func,
+             const ZixHashFunc     hash_func,
+             const ZixKeyEqualFunc equal_func)
 {
-  ZixHash* hash = (ZixHash*)malloc(sizeof(ZixHash));
-  if (hash) {
-    hash->hash_func  = hash_func;
-    hash->equal_func = equal_func;
-    hash->n_buckets  = &sizes[0];
-    hash->value_size = value_size;
-    hash->count      = 0;
-    if (!(hash->buckets =
-            (ZixHashEntry**)calloc(*hash->n_buckets, sizeof(ZixHashEntry*)))) {
-      free(hash);
-      return NULL;
-    }
+  ZixHash* const hash = (ZixHash*)malloc(sizeof(ZixHash));
+  if (!hash) {
+    return NULL;
   }
+
+  hash->key_func   = key_func;
+  hash->hash_func  = hash_func;
+  hash->equal_func = equal_func;
+  hash->count      = 0u;
+  hash->n_entries  = min_n_entries;
+  hash->mask       = hash->n_entries - 1u;
+
+  hash->entries = (ZixHashEntry*)calloc(hash->n_entries, sizeof(ZixHashEntry));
+  if (!hash->entries) {
+    free(hash);
+    return NULL;
+  }
+
   return hash;
 }
 
 void
-zix_hash_free(ZixHash* hash)
+zix_hash_free(ZixHash* const hash)
 {
-  if (!hash) {
-    return;
+  if (hash) {
+    free(hash->entries);
+    free(hash);
   }
+}
 
-  for (unsigned b = 0; b < *hash->n_buckets; ++b) {
-    ZixHashEntry* bucket = hash->buckets[b];
-    for (ZixHashEntry* e = bucket; e;) {
-      ZixHashEntry* next = e->next;
-      free(e);
-      e = next;
-    }
-  }
+ZixHashIter
+zix_hash_begin(const ZixHash* const hash)
+{
+  return hash->entries[0u].value ? 0u : zix_hash_next(hash, 0u);
+}
 
-  free(hash->buckets);
-  free(hash);
+ZixHashIter
+zix_hash_end(const ZixHash* const hash)
+{
+  return hash->n_entries;
+}
+
+ZixHashRecord*
+zix_hash_get(const ZixHash* hash, const ZixHashIter i)
+{
+  assert(i < hash->n_entries);
+
+  return hash->entries[i].value;
+}
+
+ZixHashIter
+zix_hash_next(const ZixHash* const hash, ZixHashIter i)
+{
+  do {
+    ++i;
+  } while (i < hash->n_entries && !hash->entries[i].value);
+
+  return i;
 }
 
 size_t
-zix_hash_size(const ZixHash* hash)
+zix_hash_size(const ZixHash* const hash)
 {
   return hash->count;
 }
 
-static inline void
-insert_entry(ZixHashEntry** bucket, ZixHashEntry* entry)
+static inline size_t
+fold_hash(const ZixHashCode h_nomod, const size_t mask)
 {
-  entry->next = *bucket;
-  *bucket     = entry;
+  return h_nomod & mask;
 }
 
-static inline ZixStatus
-rehash(ZixHash* hash, unsigned new_n_buckets)
+static inline bool
+is_tombstone(const ZixHashEntry* const entry)
 {
-  ZixHashEntry** new_buckets =
-    (ZixHashEntry**)calloc(new_n_buckets, sizeof(ZixHashEntry*));
-  if (!new_buckets) {
+  return !entry->value && entry->hash == tombstone;
+}
+
+static inline bool
+is_empty(const ZixHashEntry* const entry)
+{
+  return !entry->value && !entry->hash;
+}
+
+static inline bool
+is_match(const ZixHash* const hash,
+         const ZixHashCode    code,
+         const size_t         entry_index,
+         ZixKeyEqualFunc      predicate,
+         const void* const    user_data)
+{
+  const ZixHashEntry* const entry = &hash->entries[entry_index];
+
+  return entry->value && entry->hash == code &&
+         predicate(hash->key_func(entry->value), user_data);
+}
+
+static inline size_t
+next_index(const ZixHash* const hash, const size_t i)
+{
+  return (i == hash->mask) ? 0u : (i + 1u);
+}
+
+static inline ZixHashIter
+find_entry(const ZixHash* const    hash,
+           const ZixHashKey* const key,
+           const size_t            h,
+           const ZixHashCode       code)
+{
+  size_t i = h;
+
+  while (!is_match(hash, code, i, hash->equal_func, key) &&
+         !is_empty(&hash->entries[i])) {
+    i = next_index(hash, i);
+  }
+
+  return i;
+}
+
+static ZixStatus
+rehash(ZixHash* const hash, const size_t old_n_entries)
+{
+  ZixHashEntry* const old_entries   = hash->entries;
+  const size_t        new_n_entries = hash->n_entries;
+
+  // Replace the array in the hash first so we can use find_entry() normally
+  hash->entries = (ZixHashEntry*)calloc(new_n_entries, sizeof(ZixHashEntry));
+  if (!hash->entries) {
     return ZIX_STATUS_NO_MEM;
   }
 
-  const unsigned old_n_buckets = *hash->n_buckets;
-  for (unsigned b = 0; b < old_n_buckets; ++b) {
-    for (ZixHashEntry* e = hash->buckets[b]; e;) {
-      ZixHashEntry* const next = e->next;
-      const unsigned      h    = e->hash % new_n_buckets;
-      insert_entry(&new_buckets[h], e);
-      e = next;
+  // Reinsert every element into the new array
+  for (size_t i = 0u; i < old_n_entries; ++i) {
+    ZixHashEntry* const entry = &old_entries[i];
+
+    if (entry->value) {
+      assert(hash->mask == hash->n_entries - 1u);
+      const size_t new_h = fold_hash(entry->hash, hash->mask);
+      const size_t new_i = find_entry(hash, entry->value, new_h, entry->hash);
+
+      hash->entries[new_i] = *entry;
     }
   }
 
-  free(hash->buckets);
-  hash->buckets = new_buckets;
+  free(old_entries);
+  return ZIX_STATUS_SUCCESS;
+}
+
+static ZixStatus
+grow(ZixHash* const hash)
+{
+  const size_t old_n_entries = hash->n_entries;
+
+  hash->n_entries <<= 1u;
+  hash->mask = hash->n_entries - 1u;
+
+  return rehash(hash, old_n_entries);
+}
+
+static ZixStatus
+shrink(ZixHash* const hash)
+{
+  if (hash->n_entries > min_n_entries) {
+    const size_t old_n_entries = hash->n_entries;
+
+    hash->n_entries >>= 1u;
+    hash->mask = hash->n_entries - 1u;
+
+    return rehash(hash, old_n_entries);
+  }
 
   return ZIX_STATUS_SUCCESS;
 }
 
-static inline ZixHashEntry*
-find_entry(const ZixHash* hash,
-           const void*    key,
-           const unsigned h,
-           const unsigned h_nomod)
+ZixHashIter
+zix_hash_find(const ZixHash* const hash, const ZixHashKey* const key)
 {
-  for (ZixHashEntry* e = hash->buckets[h]; e; e = e->next) {
-    if (e->hash == h_nomod && hash->equal_func(zix_hash_value(e), key)) {
-      return e;
-    }
-  }
-  return NULL;
+  const ZixHashCode h_nomod = hash->hash_func(key);
+  const size_t      h       = fold_hash(h_nomod, hash->mask);
+  const ZixHashIter i       = find_entry(hash, key, h, h_nomod);
+
+  return is_empty(&hash->entries[i]) ? hash->n_entries : i;
 }
 
-void*
-zix_hash_find(const ZixHash* hash, const void* value)
+ZixHashRecord*
+zix_hash_find_record(const ZixHash* const hash, const ZixHashKey* const key)
 {
-  const unsigned      h_nomod = hash->hash_func(value);
-  const unsigned      h       = h_nomod % *hash->n_buckets;
-  ZixHashEntry* const entry   = find_entry(hash, value, h, h_nomod);
-  return entry ? zix_hash_value(entry) : 0;
+  const ZixHashCode h_nomod = hash->hash_func(key);
+  const size_t      h       = fold_hash(h_nomod, hash->mask);
+
+  return hash->entries[find_entry(hash, key, h, h_nomod)].value;
+}
+
+ZixHashInsertPlan
+zix_hash_plan_insert_prehashed(const ZixHash* const  hash,
+                               const ZixHashCode     code,
+                               const ZixKeyMatchFunc predicate,
+                               const void* const     user_data)
+{
+  // Calculate an ideal initial position
+  ZixHashInsertPlan pos = {code, fold_hash(code, hash->mask)};
+
+  // Search for a free position starting at the ideal one
+  size_t first_tombstone = SIZE_MAX;
+  while (!is_empty(&hash->entries[pos.index])) {
+    if (is_match(hash, code, pos.index, predicate, user_data)) {
+      return pos;
+    }
+
+    if (first_tombstone == SIZE_MAX &&
+        is_tombstone(&hash->entries[pos.index])) {
+      first_tombstone = pos.index; // Remember the first/best free index
+    }
+
+    pos.index = next_index(hash, pos.index);
+  }
+
+  // If we found a tombstone before an empty slot, place the new element there
+  pos.index = first_tombstone < SIZE_MAX ? first_tombstone : pos.index;
+  assert(!hash->entries[pos.index].value);
+
+  return pos;
+}
+
+ZixHashInsertPlan
+zix_hash_plan_insert(const ZixHash* const hash, const ZixHashKey* const key)
+{
+  return zix_hash_plan_insert_prehashed(
+    hash, hash->hash_func(key), hash->equal_func, key);
+}
+
+ZixHashRecord*
+zix_hash_record_at(const ZixHash* const hash, const ZixHashInsertPlan position)
+{
+  return hash->entries[position.index].value;
 }
 
 ZixStatus
-zix_hash_insert(ZixHash* hash, const void* value, void** inserted)
+zix_hash_insert_at(ZixHash* const          hash,
+                   const ZixHashInsertPlan position,
+                   ZixHashRecord* const    record)
 {
-  unsigned h_nomod = hash->hash_func(value);
-  unsigned h       = h_nomod % *hash->n_buckets;
-
-  ZixHashEntry* elem = find_entry(hash, value, h, h_nomod);
-  if (elem) {
-    assert(elem->hash == h_nomod);
-    if (inserted) {
-      *inserted = zix_hash_value(elem);
-    }
+  if (hash->entries[position.index].value) {
     return ZIX_STATUS_EXISTS;
   }
 
-  elem = (ZixHashEntry*)malloc(sizeof(ZixHashEntry) + hash->value_size);
-  if (!elem) {
-    return ZIX_STATUS_NO_MEM;
-  }
-  elem->next = NULL;
-  elem->hash = h_nomod;
-  memcpy(elem + 1, value, hash->value_size);
+  // Set entry to new value
+  ZixHashEntry* const entry = &hash->entries[position.index];
+  assert(!entry->value);
+  entry->hash  = position.code;
+  entry->value = record;
 
-  const unsigned next_n_buckets = *(hash->n_buckets + 1);
-  if (next_n_buckets != 0 && (hash->count + 1) >= next_n_buckets) {
-    if (!rehash(hash, next_n_buckets)) {
-      h = h_nomod % *(++hash->n_buckets);
-    }
+  // Update size and rehash if we exceeded the maximum load
+  const size_t max_load = hash->n_entries / 2u + hash->n_entries / 8u;
+  if (++hash->count >= max_load) {
+    return grow(hash);
   }
 
-  insert_entry(&hash->buckets[h], elem);
-  ++hash->count;
-  if (inserted) {
-    *inserted = zix_hash_value(elem);
-  }
   return ZIX_STATUS_SUCCESS;
 }
 
 ZixStatus
-zix_hash_remove(ZixHash* hash, const void* value)
+zix_hash_insert(ZixHash* const hash, ZixHashRecord* const record)
 {
-  const unsigned h_nomod = hash->hash_func(value);
-  const unsigned h       = h_nomod % *hash->n_buckets;
+  const ZixHashKey* const key      = hash->key_func(record);
+  const ZixHashInsertPlan position = zix_hash_plan_insert(hash, key);
 
-  ZixHashEntry** next_ptr = &hash->buckets[h];
-  for (ZixHashEntry* e = hash->buckets[h]; e; e = e->next) {
-    if (h_nomod == e->hash && hash->equal_func(zix_hash_value(e), value)) {
-      *next_ptr = e->next;
-      free(e);
-      --hash->count;
-      return ZIX_STATUS_SUCCESS;
-    }
-    next_ptr = &e->next;
-  }
-
-  if (hash->n_buckets != sizes) {
-    const unsigned prev_n_buckets = *(hash->n_buckets - 1);
-    if (hash->count - 1 <= prev_n_buckets) {
-      if (!rehash(hash, prev_n_buckets)) {
-        --hash->n_buckets;
-      }
-    }
-  }
-
-  return ZIX_STATUS_NOT_FOUND;
+  return zix_hash_insert_at(hash, position, record);
 }
 
-void
-zix_hash_foreach(ZixHash* hash, ZixHashVisitFunc f, void* user_data)
+ZixStatus
+zix_hash_erase(ZixHash* const        hash,
+               const ZixHashIter     i,
+               ZixHashRecord** const removed)
 {
-  for (unsigned b = 0; b < *hash->n_buckets; ++b) {
-    ZixHashEntry* bucket = hash->buckets[b];
-    for (ZixHashEntry* e = bucket; e; e = e->next) {
-      f(zix_hash_value(e), user_data);
-    }
+  // Replace entry with a tombstone
+  *removed               = hash->entries[i].value;
+  hash->entries[i].hash  = tombstone;
+  hash->entries[i].value = NULL;
+
+  // Decrease element count and rehash if necessary
+  --hash->count;
+  if (hash->count < hash->n_entries / 4u) {
+    return shrink(hash);
   }
+
+  return ZIX_STATUS_SUCCESS;
+}
+
+ZixStatus
+zix_hash_remove(ZixHash* const          hash,
+                const ZixHashKey* const key,
+                ZixHashRecord** const   removed)
+{
+  const ZixHashIter i = zix_hash_find(hash, key);
+
+  return i == hash->n_entries ? ZIX_STATUS_NOT_FOUND
+                              : zix_hash_erase(hash, i, removed);
 }
