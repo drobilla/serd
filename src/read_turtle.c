@@ -106,7 +106,6 @@ read_STRING_LITERAL_LONG(SerdReader* const reader,
         push_byte(reader, ref, c);
         st = read_string_escape(reader, ref);
       } else {
-        ref->flags |= SERD_HAS_QUOTE;
         if (!(st = push_byte(reader, ref, c))) {
           st = read_character(reader, ref, (uint8_t)q2);
         }
@@ -142,7 +141,10 @@ read_String(SerdReader* const reader, SerdNode* const node)
     return SERD_SUCCESS;
   }
 
+  // Long string
   skip_byte(reader, q3);
+  node->flags |= SERD_IS_LONG;
+
   return read_STRING_LITERAL_LONG(reader, node, (uint8_t)q1);
 }
 

@@ -179,17 +179,8 @@ read_IRI(SerdReader* const reader, SerdNode** const dest)
 SerdStatus
 read_character(SerdReader* const reader, SerdNode* const dest, const uint8_t c)
 {
-  if (!(c & 0x80)) {
-    if (c == 0xA || c == 0xD) {
-      dest->flags |= SERD_HAS_NEWLINE;
-    } else if (c == '"' || c == '\'') {
-      dest->flags |= SERD_HAS_QUOTE;
-    }
-
-    return push_byte(reader, dest, c);
-  }
-
-  return read_utf8_continuation(reader, dest, c);
+  return !(c & 0x80U) ? push_byte(reader, dest, c)
+                      : read_utf8_continuation(reader, dest, c);
 }
 
 SerdStatus
@@ -470,10 +461,8 @@ read_ECHAR(SerdReader* const reader, SerdNode* const dest)
   case 'b':
     return (st = skip_byte(reader, 'b')) ? st : push_byte(reader, dest, '\b');
   case 'n':
-    dest->flags |= SERD_HAS_NEWLINE;
     return (st = skip_byte(reader, 'n')) ? st : push_byte(reader, dest, '\n');
   case 'r':
-    dest->flags |= SERD_HAS_NEWLINE;
     return (st = skip_byte(reader, 'r')) ? st : push_byte(reader, dest, '\r');
   case 'f':
     return (st = skip_byte(reader, 'f')) ? st : push_byte(reader, dest, '\f');
