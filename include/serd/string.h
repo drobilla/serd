@@ -18,17 +18,6 @@ SERD_BEGIN_DECLS
 */
 
 /**
-   Measure a UTF-8 string.
-
-   @return Length of `str` in bytes.
-   @param str A null-terminated UTF-8 string.
-   @param flags (Output) Set to the applicable flags.
-*/
-SERD_API
-size_t
-serd_strlen(const char* SERD_NONNULL str, SerdNodeFlags* SERD_NULLABLE flags);
-
-/**
    Decode a base64 string.
 
    This function can be used to decode a node created with serd_new_base64().

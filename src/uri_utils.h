@@ -4,9 +4,11 @@
 #ifndef SERD_SRC_URI_UTILS_H
 #define SERD_SRC_URI_UTILS_H
 
-#include "serd/attributes.h"
-
 #include "string_utils.h"
+
+#include "serd/attributes.h"
+#include "serd/string_view.h"
+#include "serd/uri.h"
 
 #include <stdbool.h>
 #include <string.h>
