@@ -121,7 +121,7 @@ test_writer(const char* const path)
   // Test buffer sink
   SerdBuffer buffer = {NULL, 0};
   writer =
-    serd_writer_new(world, SERD_TURTLE, 0, env, serd_buffer_sink, &buffer);
+    serd_writer_new(world, SERD_TURTLE, 0, env, serd_buffer_write, &buffer);
 
   SerdNode* const base = serd_new_uri(serd_string("http://example.org/base"));
 
@@ -129,8 +129,9 @@ test_writer(const char* const path)
 
   serd_node_free(base);
   serd_writer_free(writer);
-  char* out = serd_buffer_sink_finish(&buffer);
+  serd_buffer_close(&buffer);
 
+  char* const out = (char*)buffer.buf;
   assert(!strcmp(out, "@base <http://example.org/base> .\n"));
   serd_free(out);
 
