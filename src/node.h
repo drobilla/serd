@@ -71,10 +71,6 @@ serd_node_total_size(const SerdNode* SERD_NULLABLE node);
 void
 serd_node_zero_pad(SerdNode* SERD_NONNULL node);
 
-/// Create a new URI from a string, resolved against a base URI
-SerdNode* SERD_ALLOCATED
-serd_new_resolved_uri(SerdStringView string, SerdURIView base_uri);
-
 ExessResult
 serd_node_get_value_as(const SerdNode* SERD_NONNULL node,
                        ExessDatatype                value_type,
