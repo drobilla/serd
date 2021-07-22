@@ -11,20 +11,8 @@
 #endif
 
 #include <assert.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-
-static void
-test_strlen(void)
-{
-  const uint8_t str[] = {'"', '5', 0xE2, 0x82, 0xAC, '"', '\n', 0};
-
-  SerdNodeFlags flags   = 0;
-  size_t        n_bytes = serd_strlen((const char*)str, &flags);
-  assert(n_bytes == 7 && flags == (SERD_HAS_QUOTE | SERD_HAS_NEWLINE));
-  assert(serd_strlen((const char*)str, NULL) == 7);
-}
 
 static void
 test_strerror(void)
@@ -65,7 +53,6 @@ main(int argc, char** argv)
 {
   (void)argc;
 
-  test_strlen();
   test_strerror();
   test_canonical_path(argv[0]);
 
