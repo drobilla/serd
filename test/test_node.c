@@ -122,7 +122,7 @@ test_decimal(void)
                                              "0.0000000001"};
 
   for (size_t i = 0; i < sizeof(test_values) / sizeof(double); ++i) {
-    SerdNode*   node     = serd_new_decimal(test_values[i], NULL);
+    SerdNode*   node     = serd_new_decimal(test_values[i]);
     const char* node_str = serd_node_string(node);
     assert(!strcmp(node_str, test_strings[i]));
 
@@ -276,12 +276,14 @@ test_get_float(void)
 static void
 test_integer(void)
 {
+  assert(!serd_new_integer(42, SERD_STRING("notauri")));
+
   const int64_t test_values[]  = {0, -0, -23, 23, -12340, 1000, -1000};
   const char*   test_strings[] = {
     "0", "0", "-23", "23", "-12340", "1000", "-1000"};
 
   for (size_t i = 0; i < sizeof(test_values) / sizeof(double); ++i) {
-    SerdNode*   node     = serd_new_integer(test_values[i], NULL);
+    SerdNode*   node = serd_new_integer(test_values[i], SERD_EMPTY_STRING());
     const char* node_str = serd_node_string(node);
     assert(!strcmp(node_str, test_strings[i]));
     const size_t len = strlen(node_str);
@@ -326,7 +328,8 @@ test_get_integer(void)
 static void
 test_base64(void)
 {
-  assert(!serd_new_base64(&SERD_URI_NULL, 0, NULL));
+  assert(!serd_new_base64(&SERD_URI_NULL, 1, SERD_STRING("notauri")));
+  assert(!serd_new_base64(&SERD_URI_NULL, 0, SERD_EMPTY_STRING()));
 
   // Test valid base64 blobs with a range of sizes
   for (size_t size = 1; size < 256; ++size) {
@@ -335,7 +338,7 @@ test_base64(void)
       data[i] = (uint8_t)((size + i) % 256);
     }
 
-    SerdNode*    blob     = serd_new_base64(data, size, NULL);
+    SerdNode*    blob     = serd_new_base64(data, size, SERD_EMPTY_STRING());
     const char*  blob_str = serd_node_string(blob);
     const size_t max_size = serd_get_base64_size(blob);
     uint8_t*     out      = (uint8_t*)calloc(1, max_size);
@@ -453,6 +456,28 @@ check_copy_equals(const SerdNode* const node)
 }
 
 static void
+test_new(void)
+{
+  assert(!serd_node_new(SERD_URI,
+                        SERD_STRING("http://example.org/"),
+                        SERD_HAS_DATATYPE,
+                        SERD_STRING("http://example.org/uris/cant/have/me")));
+
+  assert(!serd_node_new(SERD_URI,
+                        SERD_STRING("http://example.org/"),
+                        SERD_HAS_LANGUAGE,
+                        SERD_STRING("in-valid")));
+
+  assert(!serd_node_new(SERD_BLANK,
+                        SERD_STRING("b0"),
+                        SERD_HAS_DATATYPE,
+                        SERD_STRING("http://example.org/uris/cant/have/me")));
+
+  assert(!serd_node_new(
+    SERD_BLANK, SERD_STRING("b0"), SERD_HAS_LANGUAGE, SERD_STRING("in-valid")));
+}
+
+static void
 test_literal(void)
 {
   static const SerdStringView hello_str = SERD_STRING("hello");
@@ -515,7 +540,7 @@ test_literal(void)
 static void
 test_blank(void)
 {
-  SerdNode* blank = serd_new_blank(SERD_STRING("b0"));
+  SerdNode* blank = serd_new_token(SERD_BLANK, SERD_STRING("b0"));
   assert(serd_node_length(blank) == 2);
   assert(serd_node_flags(blank) == 0);
   assert(!strcmp(serd_node_string(blank), "b0"));
@@ -525,15 +550,14 @@ test_blank(void)
 static void
 test_compare(void)
 {
-  SerdNode* xsd_short =
-    serd_new_uri(SERD_STRING("http://www.w3.org/2001/XMLSchema#short"));
+  SerdNode* xsd_short = serd_new_token(
+    SERD_URI, SERD_STRING("http://www.w3.org/2001/XMLSchema#short"));
 
   SerdNode* angst = serd_new_string(SERD_STRING("angst"));
 
   SerdNode* angst_de = serd_new_literal(
     SERD_STRING("angst"), SERD_HAS_LANGUAGE, SERD_STRING("de"));
 
-  assert(angst_de);
   SerdNode* angst_en = serd_new_literal(
     SERD_STRING("angst"), SERD_HAS_LANGUAGE, SERD_STRING("en"));
 
@@ -542,10 +566,20 @@ test_compare(void)
 
   SerdNode* hello         = serd_new_string(SERD_STRING("Hello"));
   SerdNode* universe      = serd_new_string(SERD_STRING("Universe"));
-  SerdNode* integer       = serd_new_integer(4, NULL);
-  SerdNode* short_integer = serd_new_integer(4, xsd_short);
-  SerdNode* blank         = serd_new_blank(SERD_STRING("b1"));
-  SerdNode* uri           = serd_new_uri(SERD_STRING("http://example.org/"));
+  SerdNode* integer       = serd_new_integer(4, SERD_EMPTY_STRING());
+  SerdNode* short_integer = serd_new_integer(4, SERD_STRING(NS_XSD "short"));
+  SerdNode* blank         = serd_new_token(SERD_BLANK, SERD_STRING("b1"));
+
+  SerdNode* uri = serd_new_token(SERD_URI, SERD_STRING("http://example.org/"));
+
+  SerdNode* aardvark =
+    serd_new_literal(SERD_STRING("alex"),
+                     SERD_HAS_DATATYPE,
+                     SERD_STRING("http://example.org/Aardvark"));
+
+  SerdNode* badger = serd_new_literal(SERD_STRING("bobby"),
+                                      SERD_HAS_DATATYPE,
+                                      SERD_STRING("http://example.org/Badger"));
 
   // Types are ordered according to their SerdNodeType (more or less arbitrary)
   assert(serd_node_compare(hello, uri) < 0);
@@ -558,11 +592,14 @@ test_compare(void)
   assert(serd_node_compare(angst, angst_de) < 0);
   assert(serd_node_compare(angst_de, angst_en) < 0);
   assert(serd_node_compare(integer, short_integer) < 0);
+  assert(serd_node_compare(aardvark, badger) < 0);
 
   serd_node_free(uri);
   serd_node_free(blank);
   serd_node_free(short_integer);
   serd_node_free(integer);
+  serd_node_free(badger);
+  serd_node_free(aardvark);
   serd_node_free(universe);
   serd_node_free(hello);
   serd_node_free(hallo);
@@ -589,6 +626,7 @@ main(void)
   test_node_equals();
   test_node_from_syntax();
   test_node_from_substring();
+  test_new();
   test_literal();
   test_blank();
   test_compare();

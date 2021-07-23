@@ -272,7 +272,7 @@ serd_world_new(void)
   world->xsd_integer = serd_nodes_uri(nodes, xsd_integer);
   world->xsd_long    = serd_nodes_uri(nodes, xsd_long);
 
-  world->blank_node = serd_new_blank(SERD_STRING("b00000000000"));
+  world->blank_node = serd_new_token(SERD_BLANK, SERD_STRING("b00000000000"));
   world->nodes      = nodes;
 
   return world;

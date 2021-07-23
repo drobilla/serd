@@ -90,7 +90,7 @@ static void
 test_base_uri(void)
 {
   SerdEnv* const  env = serd_env_new(SERD_EMPTY_STRING());
-  SerdNode* const eg  = serd_new_uri(SERD_STRING(NS_EG));
+  SerdNode* const eg  = serd_new_token(SERD_URI, SERD_STRING(NS_EG));
 
   // Test that invalid calls work as expected
   assert(!serd_env_base_uri(env));
@@ -181,9 +181,9 @@ test_expand_uri(void)
   static const SerdStringView base = SERD_STRING("http://example.org/b/");
 
   SerdEnv* const  env       = serd_env_new(base);
-  SerdNode* const rel       = serd_new_uri(SERD_STRING("rel"));
+  SerdNode* const rel       = serd_new_token(SERD_URI, SERD_STRING("rel"));
   SerdNode* const rel_out   = serd_env_expand(env, rel);
-  SerdNode* const empty     = serd_new_uri(SERD_EMPTY_STRING());
+  SerdNode* const empty     = serd_new_token(SERD_URI, SERD_EMPTY_STRING());
   SerdNode* const empty_out = serd_env_expand(env, empty);
 
   assert(!strcmp(serd_node_string(rel_out), "http://example.org/b/rel"));
@@ -201,7 +201,7 @@ test_expand_empty_uri_ref(void)
 {
   static const SerdStringView base = SERD_STRING("http://example.org/b/");
 
-  SerdNode* const rel     = serd_new_uri(SERD_STRING("rel"));
+  SerdNode* const rel     = serd_new_token(SERD_URI, SERD_STRING("rel"));
   SerdEnv* const  env     = serd_env_new(base);
   SerdNode* const rel_out = serd_env_expand(env, rel);
 
@@ -215,7 +215,7 @@ test_expand_empty_uri_ref(void)
 static void
 test_expand_bad_uri(void)
 {
-  SerdNode* const bad_uri = serd_new_uri(SERD_STRING("rel"));
+  SerdNode* const bad_uri = serd_new_token(SERD_URI, SERD_STRING("rel"));
   SerdEnv* const  env     = serd_env_new(SERD_EMPTY_STRING());
 
   assert(!serd_env_expand(env, bad_uri));
@@ -260,7 +260,7 @@ test_expand_bad_curie(void)
 static void
 test_expand_blank(void)
 {
-  SerdNode* const blank = serd_new_blank(SERD_STRING("b1"));
+  SerdNode* const blank = serd_new_token(SERD_BLANK, SERD_STRING("b1"));
   SerdEnv* const  env   = serd_env_new(SERD_EMPTY_STRING());
 
   assert(!serd_env_expand(env, blank));

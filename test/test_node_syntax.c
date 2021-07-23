@@ -47,8 +47,8 @@ test_common(const SerdSyntax syntax)
   static const SerdStringView datatype =
     SERD_STRING("http://example.org/Datatype");
 
-  SerdNode* const num_type =
-    serd_new_uri(SERD_STRING("http://example.org/Decimal"));
+  static const SerdStringView num_type =
+    SERD_STRING("http://example.org/Decimal");
 
   assert(test(syntax, serd_new_string(SERD_STRING("node")), "\"node\""));
 
@@ -61,16 +61,14 @@ test_common(const SerdSyntax syntax)
               serd_new_literal(SERD_STRING("X"), SERD_HAS_DATATYPE, datatype),
               "\"X\"^^<http://example.org/Datatype>"));
 
-  assert(test(syntax, serd_new_blank(SERD_STRING("blank")), "_:blank"));
-  assert(test(syntax, serd_new_blank(SERD_STRING("b0")), "_:b0"));
+  assert(
+    test(syntax, serd_new_token(SERD_BLANK, SERD_STRING("blank")), "_:blank"));
+
+  assert(test(syntax, serd_new_token(SERD_BLANK, SERD_STRING("b0")), "_:b0"));
 
   assert(test(syntax,
-              serd_new_uri(SERD_STRING("http://example.org/")),
+              serd_new_token(SERD_URI, SERD_STRING("http://example.org/")),
               "<http://example.org/>"));
-
-  assert(test(syntax,
-              serd_new_decimal(1.25, num_type),
-              "\"1.25\"^^<http://example.org/Decimal>"));
 
   assert(test(syntax,
               serd_new_double(1.25),
@@ -86,10 +84,8 @@ test_common(const SerdSyntax syntax)
 
   assert(
     test(syntax,
-         serd_new_base64(data, sizeof(data), NULL),
+         serd_new_base64(data, sizeof(data), SERD_EMPTY_STRING()),
          "\"BAAAAAIAAAA=\"^^<http://www.w3.org/2001/XMLSchema#base64Binary>"));
-
-  serd_node_free(num_type);
 }
 
 static void
@@ -99,7 +95,7 @@ test_ntriples(void)
 
   {
     // No relative URIs in NTriples, so converting one fails without an env
-    SerdNode* const rel = serd_new_uri(SERD_STRING("rel/uri"));
+    SerdNode* const rel = serd_new_token(SERD_URI, SERD_STRING("rel/uri"));
     assert(!serd_node_to_syntax(rel, SERD_NTRIPLES, NULL));
     assert(!serd_node_from_syntax("<rel/uri>", SERD_NTRIPLES, NULL));
 
@@ -118,11 +114,11 @@ test_ntriples(void)
   }
 
   assert(test(SERD_NTRIPLES,
-              serd_new_decimal(1.25, NULL),
+              serd_new_decimal(1.25),
               "\"1.25\"^^<http://www.w3.org/2001/XMLSchema#decimal>"));
 
   assert(test(SERD_NTRIPLES,
-              serd_new_integer(1234, NULL),
+              serd_new_integer(1234, SERD_EMPTY_STRING()),
               "\"1234\"^^<http://www.w3.org/2001/XMLSchema#integer>"));
 
   assert(test(SERD_NTRIPLES,
@@ -137,10 +133,21 @@ test_ntriples(void)
 static void
 test_turtle(void)
 {
+  static const SerdStringView xsd_integer =
+    SERD_STRING("http://www.w3.org/2001/XMLSchema#integer");
+
   test_common(SERD_TURTLE);
-  test(SERD_TURTLE, serd_new_uri(SERD_STRING("rel/uri")), "<rel/uri>");
-  assert(test(SERD_TURTLE, serd_new_decimal(1.25, NULL), "1.25"));
-  assert(test(SERD_TURTLE, serd_new_integer(1234, NULL), "1234"));
+
+  test(
+    SERD_TURTLE, serd_new_token(SERD_URI, SERD_STRING("rel/uri")), "<rel/uri>");
+
+  assert(test(SERD_TURTLE, serd_new_decimal(1.25), "1.25"));
+
+  assert(
+    test(SERD_TURTLE, serd_new_integer(1234, SERD_EMPTY_STRING()), "1234"));
+
+  assert(test(SERD_TURTLE, serd_new_integer(1234, xsd_integer), "1234"));
+
   assert(test(SERD_TURTLE, serd_new_boolean(true), "true"));
   assert(test(SERD_TURTLE, serd_new_boolean(false), "false"));
 }

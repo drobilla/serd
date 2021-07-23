@@ -192,7 +192,7 @@ main(int argc, char** argv)
           return missing_arg(prog, 'I');
         }
 
-        base = serd_new_uri(SERD_STRING(argv[a]));
+        base = serd_new_token(SERD_URI, SERD_STRING(argv[a]));
         break;
       } else if (opt == 'c') {
         if (argv[a][o + 1] || ++a == argc) {
@@ -331,7 +331,7 @@ main(int argc, char** argv)
   }
 
   if (root_uri) {
-    SerdNode* const root = serd_new_uri(SERD_STRING(root_uri));
+    SerdNode* const root = serd_new_token(SERD_URI, SERD_STRING(root_uri));
     serd_writer_set_root_uri(writer, root);
     serd_node_free(root);
   }

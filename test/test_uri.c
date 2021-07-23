@@ -108,8 +108,7 @@ test_parse_uri(void)
   const SerdURIView base_uri  = serd_parse_uri(base.buf);
   const SerdURIView empty_uri = serd_parse_uri("");
 
-  SerdNode* const nil =
-    serd_new_parsed_uri(serd_resolve_uri(empty_uri, base_uri));
+  SerdNode* const nil = serd_new_uri(serd_resolve_uri(empty_uri, base_uri));
 
   assert(serd_node_type(nil) == SERD_URI);
   assert(!strcmp(serd_node_string(nil), base.buf));
@@ -162,9 +161,9 @@ check_rel_uri(const char*     uri_string,
   const bool        is_within =
     !root || serd_uri_is_within(uri, serd_node_uri_view(root));
 
-  SerdNode* const rel =
-    is_within ? serd_new_parsed_uri(serd_relative_uri(uri, base_uri))
-              : serd_new_uri(SERD_STRING(uri_string));
+  SerdNode* const rel = is_within
+                          ? serd_new_uri(serd_relative_uri(uri, base_uri))
+                          : serd_new_token(SERD_URI, SERD_STRING(uri_string));
 
   const int ret = strcmp(serd_node_string(rel), expected);
   serd_node_free(rel);
@@ -175,9 +174,10 @@ static void
 test_relative_uri(void)
 {
   SerdNode* const root =
-    serd_new_uri(SERD_STRING("http://example.org/a/b/ignored"));
+    serd_new_token(SERD_URI, SERD_STRING("http://example.org/a/b/ignored"));
 
-  SerdNode* const base = serd_new_uri(SERD_STRING("http://example.org/a/b/c/"));
+  SerdNode* const base =
+    serd_new_token(SERD_URI, SERD_STRING("http://example.org/a/b/c/"));
 
   check_rel_uri("http://example.org/a/b/c/foo", base, NULL, "foo");
   check_rel_uri("http://example.org/a/", base, NULL, "../../");
@@ -191,7 +191,7 @@ test_relative_uri(void)
     const SerdURIView ref  = serd_parse_uri("child");
     const SerdURIView abs  = serd_resolve_uri(ref, serd_node_uri_view(base));
     const SerdURIView rel  = serd_relative_uri(abs, serd_node_uri_view(root));
-    SerdNode* const   node = serd_new_parsed_uri(rel);
+    SerdNode* const   node = serd_new_uri(rel);
 
     assert(!strcmp(serd_node_string(node), "c/child"));
     serd_node_free(node);
@@ -223,7 +223,7 @@ test_uri_resolution(void)
   const SerdURIView rel_foo_uri  = serd_relative_uri(abs_foo_uri, base_uri);
   const SerdURIView resolved_uri = serd_resolve_uri(rel_foo_uri, base_uri);
 
-  SerdNode* const resolved = serd_new_parsed_uri(resolved_uri);
+  SerdNode* const resolved = serd_new_uri(resolved_uri);
   assert(!strcmp(serd_node_string(resolved), "http://example.org/a/b/c/foo"));
 
   serd_node_free(resolved);

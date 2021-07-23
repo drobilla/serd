@@ -141,7 +141,7 @@ serd_env_set_base_uri(SerdEnv* const env, const SerdStringView uri)
     serd_resolve_uri(serd_parse_uri(uri.buf), env->base_uri);
 
   // Replace the current base URI
-  env->base_uri_node = serd_new_parsed_uri(new_base_uri);
+  env->base_uri_node = serd_new_uri(new_base_uri);
   env->base_uri      = serd_node_uri_view(env->base_uri_node);
 
   serd_node_free(old_base_uri);
@@ -174,13 +174,13 @@ serd_env_add(SerdEnv* const       env,
   if (prefix) {
     if (strcmp(serd_node_string(prefix->uri), uri.buf)) {
       serd_node_free(prefix->uri);
-      prefix->uri = serd_new_uri(uri);
+      prefix->uri = serd_new_token(SERD_URI, uri);
     }
   } else {
     env->prefixes = (SerdPrefix*)realloc(
       env->prefixes, (++env->n_prefixes) * sizeof(SerdPrefix));
     env->prefixes[env->n_prefixes - 1].name = serd_new_string(name);
-    env->prefixes[env->n_prefixes - 1].uri  = serd_new_uri(uri);
+    env->prefixes[env->n_prefixes - 1].uri  = serd_new_token(SERD_URI, uri);
   }
 }
 
@@ -205,7 +205,7 @@ serd_env_set_prefix(SerdEnv* const       env,
   assert(abs_uri_view.scheme.len);
 
   // Serialise absolute URI to a new node
-  SerdNode* const abs_uri = serd_new_parsed_uri(abs_uri_view);
+  SerdNode* const abs_uri = serd_new_uri(abs_uri_view);
   assert(serd_uri_string_has_scheme(serd_node_string(abs_uri)));
 
   // Set prefix to resolved absolute URI
@@ -253,7 +253,7 @@ serd_env_expand_in_place(const SerdEnv* const  env,
   const size_t            name_len = (size_t)(colon - str);
   const SerdPrefix* const prefix   = serd_env_find(env, str, name_len);
   if (prefix) {
-    uri_prefix->buf = serd_node_string(prefix->uri);
+    uri_prefix->buf = prefix->uri ? serd_node_string(prefix->uri) : "";
     uri_prefix->len = prefix->uri ? prefix->uri->length : 0;
     uri_suffix->buf = colon + 1;
     uri_suffix->len = curie.len - name_len - 1;
@@ -277,15 +277,22 @@ serd_env_expand_curie(const SerdEnv* const env, const SerdStringView curie)
 
   const size_t len = prefix.len + suffix.len;
 
-  SerdNode* ret = serd_node_malloc(len, 0u, SERD_URI);
+  const size_t real_length = serd_node_pad_length(len);
+  const size_t node_size   = sizeof(SerdNode) + real_length;
+  SerdNode*    node        = serd_node_malloc(node_size);
 
-  char* const string = serd_node_buffer(ret);
-  assert(string);
-  assert(prefix.buf);
-  memcpy(string, prefix.buf, prefix.len);
-  memcpy(string + prefix.len, suffix.buf, suffix.len);
+  if (node) {
+    node->length = len;
+    node->flags  = 0u;
+    node->type   = SERD_URI;
 
-  return ret;
+    char* const string = (char*)(node + 1u);
+    assert(prefix.buf);
+    memcpy(string, prefix.buf, prefix.len);
+    memcpy(string + prefix.len, suffix.buf, suffix.len);
+  }
+
+  return node;
 }
 
 SerdNode*
@@ -298,7 +305,7 @@ serd_env_expand(const SerdEnv* env, const SerdNode* node)
   const SerdURIView uri     = serd_node_uri_view(node);
   const SerdURIView abs_uri = serd_resolve_uri(uri, env->base_uri);
 
-  return abs_uri.scheme.len ? serd_new_parsed_uri(abs_uri) : NULL;
+  return abs_uri.scheme.len ? serd_new_uri(abs_uri) : NULL;
 }
 
 void
