@@ -151,15 +151,17 @@ test_expand_bad_uri_datatype(void)
 {
   const SerdStringView type = serd_string("Type");
 
-  SerdNode* const typed =
-    serd_new_literal(serd_string("data"), SERD_HAS_DATATYPE, type);
+  SerdNodes* nodes = serd_nodes_new();
+
+  const SerdNode* const typed =
+    serd_nodes_literal(nodes, serd_string("data"), SERD_HAS_DATATYPE, type);
 
   SerdEnv* const env = serd_env_new(serd_empty_string());
 
   assert(!serd_env_expand_node(env, typed));
 
   serd_env_free(env);
-  serd_node_free(typed);
+  serd_nodes_free(nodes);
 }
 
 static void
