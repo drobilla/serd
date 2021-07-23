@@ -260,7 +260,7 @@ test_expand_bad_curie(void)
 static void
 test_expand_blank(void)
 {
-  SerdNode* const blank = serd_new_blank(SERD_STRING("b1"));
+  SerdNode* const blank = serd_new_token(SERD_BLANK, SERD_STRING("b1"));
   SerdEnv* const  env   = serd_env_new(SERD_EMPTY_STRING());
 
   assert(!serd_env_expand(env, blank));
