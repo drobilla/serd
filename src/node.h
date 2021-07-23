@@ -20,6 +20,7 @@
 #include "exess/exess.h"
 #include "serd/serd.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -32,6 +33,15 @@ struct SerdNodeImpl {
 
 static const size_t serd_node_align = 2 * sizeof(uint64_t);
 
+static inline size_t
+serd_node_pad_length(const size_t n_bytes)
+{
+  const size_t pad  = sizeof(SerdNode) - (n_bytes + 2) % sizeof(SerdNode);
+  const size_t size = n_bytes + 2 + pad;
+  assert(size % sizeof(SerdNode) == 0);
+  return size;
+}
+
 static inline char* SERD_NONNULL
 serd_node_buffer(SerdNode* SERD_NONNULL node)
 {
@@ -42,6 +52,19 @@ static inline const char* SERD_NONNULL
 serd_node_buffer_c(const SerdNode* SERD_NONNULL node)
 {
   return (const char*)(node + 1);
+}
+
+static inline SerdNode* SERD_NONNULL
+serd_node_meta(SerdNode* const SERD_NONNULL node)
+{
+  return node + 1 + (serd_node_pad_length(node->length) / sizeof(SerdNode));
+}
+
+static inline const SerdNode* SERD_NONNULL
+serd_node_meta_c(const SerdNode* const SERD_NONNULL node)
+{
+  assert(node->flags & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE));
+  return node + 1 + (serd_node_pad_length(node->length) / sizeof(SerdNode));
 }
 
 static inline const char* SERD_NONNULL
@@ -57,8 +80,17 @@ serd_node_pattern_match(const SerdNode* SERD_NULLABLE a,
   return !a || !b || serd_node_equals(a, b);
 }
 
+SERD_PURE_FUNC
+bool
+is_langtag(SerdStringView string);
+
+SERD_MALLOC_FUNC
 SerdNode* SERD_ALLOCATED
-serd_node_malloc(size_t length, SerdNodeFlags flags, SerdNodeType type);
+serd_node_malloc(size_t size);
+
+SERD_MALLOC_FUNC
+SerdNode* SERD_ALLOCATED
+serd_node_try_malloc(SerdWriteResult result);
 
 void
 serd_node_set(SerdNode* SERD_NULLABLE* SERD_NONNULL dst,
@@ -66,7 +98,7 @@ serd_node_set(SerdNode* SERD_NULLABLE* SERD_NONNULL dst,
 
 SERD_PURE_FUNC
 size_t
-serd_node_total_size(const SerdNode* SERD_NULLABLE node);
+serd_node_total_size(const SerdNode* SERD_NONNULL node);
 
 void
 serd_node_zero_pad(SerdNode* SERD_NONNULL node);
