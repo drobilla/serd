@@ -87,7 +87,7 @@ serd_world_new(void)
   world->xsd_decimal = serd_nodes_uri(nodes, xsd_decimal);
   world->xsd_integer = serd_nodes_uri(nodes, xsd_integer);
 
-  world->blank_node = serd_new_blank(SERD_STRING("b00000000000"));
+  world->blank_node = serd_new_token(SERD_BLANK, SERD_STRING("b00000000000"));
   world->nodes      = nodes;
 
   world->stderr_color = terminal_supports_color(stderr);
