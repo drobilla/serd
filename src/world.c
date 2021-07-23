@@ -22,15 +22,10 @@ serd_world_new(ZixAllocator* const allocator)
 {
   ZixAllocator* const actual = allocator ? allocator : zix_default_allocator();
 
-  SerdWorld* world = (SerdWorld*)zix_calloc(actual, 1, sizeof(SerdWorld));
-  SerdNode*  blank_node =
-    serd_node_new(actual, serd_a_blank_string("b00000000000"));
-
+  SerdWorld* const world = (SerdWorld*)zix_calloc(actual, 1, sizeof(SerdWorld));
   SerdNodes* const nodes = serd_nodes_new(actual);
-
-  if (!world || !blank_node || !nodes) {
+  if (!world || !nodes) {
     serd_nodes_free(nodes);
-    serd_node_free(actual, blank_node);
     zix_free(actual, world);
     return NULL;
   }
@@ -47,7 +42,6 @@ serd_world_new(ZixAllocator* const allocator)
   world->limits.writer_max_depth  = 128U;
   world->allocator                = actual;
   world->nodes                    = nodes;
-  world->blank_node               = blank_node;
 
   serd_log_init(&world->log);
 
@@ -59,10 +53,12 @@ serd_world_new(ZixAllocator* const allocator)
       !(world->xsd_decimal = serd_nodes_get(nodes, serd_a_uri(xsd_decimal))) ||
       !(world->xsd_integer = serd_nodes_get(nodes, serd_a_uri(xsd_integer)))) {
     serd_nodes_free(nodes);
-    serd_node_free(actual, blank_node);
     zix_free(actual, world);
     return NULL;
   }
+
+  serd_node_construct(
+    sizeof(world->blank), &world->blank, serd_a_blank_string("b00000000000"));
 
   return world;
 }
@@ -71,7 +67,6 @@ void
 serd_world_free(SerdWorld* const world)
 {
   if (world) {
-    serd_node_free(world->allocator, world->blank_node);
     serd_nodes_free(world->nodes);
     zix_free(world->allocator, world);
   }
@@ -84,13 +79,13 @@ serd_world_get_blank(SerdWorld* const world)
 
   assert(world);
 
-  char* buf = serd_node_buffer(world->blank_node);
+  char* buf = world->blank.string;
   memset(buf, 0, BLANK_CHARS + 1);
 
-  world->blank_node->length =
+  world->blank.node.length =
     (size_t)snprintf(buf, BLANK_CHARS + 1, "b%u", ++world->next_blank_id);
 
-  return world->blank_node;
+  return &world->blank.node;
 
 #undef BLANK_CHARS
 }

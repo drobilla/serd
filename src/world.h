@@ -5,6 +5,7 @@
 #define SERD_SRC_WORLD_H
 
 #include "log.h"
+#include "node.h"
 
 #include "serd/node.h"
 #include "serd/nodes.h"
@@ -25,9 +26,13 @@ struct SerdWorldImpl {
   const SerdNode* xsd_boolean;
   const SerdNode* xsd_decimal;
   const SerdNode* xsd_integer;
-  SerdNode*       blank_node;
   uint32_t        next_blank_id;
   uint32_t        next_document_id;
+
+  struct {
+    SerdNode node;
+    char     string[16];
+  } blank;
 };
 
 #endif // SERD_SRC_WORLD_H
