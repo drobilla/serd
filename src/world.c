@@ -69,6 +69,7 @@ serd_world_new(void)
   const SerdStringView xsd_decimal = serd_string(NS_XSD "decimal");
   const SerdStringView xsd_integer = serd_string(NS_XSD "integer");
 
+  world->nodes       = nodes;
   world->rdf_first   = serd_nodes_uri(nodes, rdf_first);
   world->rdf_nil     = serd_nodes_uri(nodes, rdf_nil);
   world->rdf_rest    = serd_nodes_uri(nodes, rdf_rest);
@@ -77,8 +78,10 @@ serd_world_new(void)
   world->xsd_decimal = serd_nodes_uri(nodes, xsd_decimal);
   world->xsd_integer = serd_nodes_uri(nodes, xsd_integer);
 
-  world->blank_node = serd_new_token(SERD_BLANK, serd_string("b00000000000"));
-  world->nodes      = nodes;
+  serd_node_construct_token(sizeof(world->blank),
+                            &world->blank,
+                            SERD_BLANK,
+                            serd_string("b00000000000"));
 
   world->stderr_color = terminal_supports_color(stderr);
 
@@ -89,7 +92,7 @@ void
 serd_world_free(SerdWorld* const world)
 {
   if (world) {
-    serd_node_free(world->blank_node);
+    serd_nodes_free(world->nodes);
     free(world);
   }
 }
@@ -101,13 +104,13 @@ serd_world_get_blank(SerdWorld* const world)
 
   assert(world);
 
-  char* buf = serd_node_buffer(world->blank_node);
+  char* buf = world->blank.string;
   memset(buf, 0, BLANK_CHARS + 1);
 
-  world->blank_node->length =
+  world->blank.node.length =
     (size_t)snprintf(buf, BLANK_CHARS + 1, "b%u", ++world->next_blank_id);
 
-  return world->blank_node;
+  return &world->blank.node;
 
 #undef BLANK_CHARS
 }
