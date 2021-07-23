@@ -4,6 +4,8 @@
 #ifndef SERD_SRC_WORLD_H
 #define SERD_SRC_WORLD_H
 
+#include "node.h"
+
 #include "serd/error.h"
 #include "serd/node.h"
 #include "serd/status.h"
@@ -20,7 +22,11 @@ struct SerdWorldImpl {
   void*         error_handle;
   uint32_t      next_blank_id;
   uint32_t      next_document_id;
-  SerdNode*     blank_node;
+
+  struct {
+    SerdNode node;
+    char     string[16];
+  } blank;
 };
 
 SerdStatus
