@@ -267,6 +267,7 @@ serd_world_new(void)
   const SerdStringView xsd_integer = SERD_STRING(NS_XSD "integer");
   const SerdStringView xsd_long    = SERD_STRING(NS_XSD "long");
 
+  world->nodes       = nodes;
   world->rdf_first   = serd_nodes_uri(nodes, rdf_first);
   world->rdf_nil     = serd_nodes_uri(nodes, rdf_nil);
   world->rdf_rest    = serd_nodes_uri(nodes, rdf_rest);
@@ -276,8 +277,10 @@ serd_world_new(void)
   world->xsd_integer = serd_nodes_uri(nodes, xsd_integer);
   world->xsd_long    = serd_nodes_uri(nodes, xsd_long);
 
-  world->blank_node = serd_new_token(SERD_BLANK, SERD_STRING("b00000000000"));
-  world->nodes      = nodes;
+  serd_node_construct_token(sizeof(world->blank),
+                            &world->blank,
+                            SERD_BLANK,
+                            SERD_STRING("b00000000000"));
 
   return world;
 }
@@ -286,7 +289,6 @@ void
 serd_world_free(SerdWorld* const world)
 {
   if (world) {
-    serd_node_free(world->blank_node);
     serd_nodes_free(world->nodes);
     free(world);
   }
@@ -301,13 +303,13 @@ serd_world_nodes(SerdWorld* const world)
 const SerdNode*
 serd_world_get_blank(SerdWorld* const world)
 {
-  char* buf = serd_node_buffer(world->blank_node);
+  char* buf = world->blank.string;
   memset(buf, 0, BLANK_CHARS + 1);
 
-  world->blank_node->length =
+  world->blank.node.length =
     (size_t)snprintf(buf, BLANK_CHARS + 1, "b%u", ++world->next_blank_id);
 
-  return world->blank_node;
+  return &world->blank.node;
 }
 
 void

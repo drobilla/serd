@@ -17,6 +17,7 @@
 #ifndef SERD_WORLD_H
 #define SERD_WORLD_H
 
+#include "node.h"
 #include "serd/serd.h"
 
 #include <stdarg.h>
@@ -27,7 +28,6 @@ struct SerdWorldImpl {
   SerdNodes*      nodes;
   SerdLogFunc     log_func;
   void*           log_handle;
-  SerdNode*       blank_node;
   const SerdNode* rdf_first;
   const SerdNode* rdf_nil;
   const SerdNode* rdf_rest;
@@ -36,7 +36,13 @@ struct SerdWorldImpl {
   const SerdNode* xsd_decimal;
   const SerdNode* xsd_integer;
   const SerdNode* xsd_long;
-  uint32_t        next_blank_id;
+
+  struct {
+    SerdNode node;
+    char     string[16];
+  } blank;
+
+  uint32_t next_blank_id;
 };
 
 /// Write a message to the log
