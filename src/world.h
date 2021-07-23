@@ -17,6 +17,7 @@
 #ifndef SERD_WORLD_H
 #define SERD_WORLD_H
 
+#include "node.h"
 #include "serd/serd.h"
 
 #include <stdbool.h>
@@ -26,7 +27,6 @@ struct SerdWorldImpl {
   SerdNodes*      nodes;
   SerdLogFunc     log_func;
   void*           log_handle;
-  SerdNode*       blank_node;
   const SerdNode* rdf_first;
   const SerdNode* rdf_nil;
   const SerdNode* rdf_rest;
@@ -34,7 +34,13 @@ struct SerdWorldImpl {
   const SerdNode* xsd_boolean;
   const SerdNode* xsd_decimal;
   const SerdNode* xsd_integer;
-  uint32_t        next_blank_id;
+
+  struct {
+    SerdNode node;
+    char     string[16];
+  } blank;
+
+  uint32_t next_blank_id;
 
   bool stderr_color;
 };
