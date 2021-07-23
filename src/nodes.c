@@ -174,7 +174,7 @@ serd_nodes_uri(SerdNodes* const nodes, const SerdStringView string)
 const SerdNode*
 serd_nodes_blank(SerdNodes* const nodes, const SerdStringView string)
 {
-  return serd_nodes_manage(nodes, serd_new_blank(string));
+  return serd_nodes_manage(nodes, serd_new_token(SERD_BLANK, string));
 }
 
 void
