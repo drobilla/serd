@@ -33,9 +33,9 @@ test(void)
   SerdWorld* world  = serd_world_new();
   SerdEnv*   env    = serd_env_new(serd_empty_string());
 
-  SerdNode* b1 = serd_new_blank(serd_string("b1"));
-  SerdNode* l1 = serd_new_blank(serd_string("l1"));
-  SerdNode* l2 = serd_new_blank(serd_string("l2"));
+  SerdNode* b1 = serd_new_token(SERD_BLANK, serd_string("b1"));
+  SerdNode* l1 = serd_new_token(SERD_BLANK, serd_string("l1"));
+  SerdNode* l2 = serd_new_token(SERD_BLANK, serd_string("l2"));
   SerdNode* s1 = serd_new_string(serd_string("s1"));
   SerdNode* s2 = serd_new_string(serd_string("s2"));
 
