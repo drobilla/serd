@@ -5,7 +5,7 @@ project('serd', ['c'],
         default_options: [
           'b_ndebug=if-release',
           'buildtype=release',
-          'c_std=c99',
+          'c_std=c11',
           'cpp_std=c++14',
           'default_library=shared',
           'warning_level=2',
