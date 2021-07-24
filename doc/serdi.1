@@ -6,7 +6,7 @@
 .Nd read, filter, transform, and write RDF data
 .Sh SYNOPSIS
 .Nm serdi
-.Op Fl Cabefhlmqtvx
+.Op Fl Caefhlmqtvx
 .Op Fl F Ar pattern | Fl G Ar pattern
 .Op Fl I Ar base
 .Op Fl V Ar checks
@@ -101,10 +101,6 @@ to suppress a few specific checks.
 .It Fl a
 Write ASCII output.
 If this is enabled, all non-ASCII characters will be escaped, even if the output syntax allows them to be written in UTF-8.
-.Pp
-.It Fl b
-Bulk output writing.
-If this is enabled, output will be written a page at a time, rather than a byte at a time.
 .Pp
 .It Fl c Ar prefix
 Chop

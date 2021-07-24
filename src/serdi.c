@@ -70,7 +70,6 @@ print_usage(const char* const name, const bool error)
   fprintf(os, "  -V CHECKS    Validate with checks matching CHECKS.\n");
   fprintf(os, "  -X CHECKS    Exclude validation checks matching CHECKS.\n");
   fprintf(os, "  -a           Write ASCII output if possible.\n");
-  fprintf(os, "  -b           Fast bulk output for large serialisations.\n");
   fprintf(os, "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n");
   fprintf(os, "  -e           Eat input one character at a time.\n");
   fprintf(os, "  -f           Fast and loose mode (possibly ugly output).\n");
@@ -218,7 +217,6 @@ main(int argc, char** argv)
   SerdReaderFlags reader_flags  = 0;
   SerdWriterFlags writer_flags  = 0;
   bool            bulk_read     = true;
-  bool            bulk_write    = false;
   bool            no_inline     = false;
   bool            osyntax_set   = false;
   bool            validate      = false;
@@ -246,8 +244,6 @@ main(int argc, char** argv)
         canonical = true;
       } else if (opt == 'a') {
         writer_flags |= SERD_WRITE_ASCII;
-      } else if (opt == 'b') {
-        bulk_write = true;
       } else if (opt == 'e') {
         bulk_read = false;
       } else if (opt == 'f') {
@@ -423,11 +419,10 @@ main(int argc, char** argv)
   const SerdSerialisationFlags serialisation_flags =
     no_inline ? SERD_NO_INLINE_OBJECTS : 0u;
 
-  const size_t        block_size = bulk_write ? 4096u : 1u;
   SerdByteSink* const byte_sink =
     out_filename
-      ? serd_byte_sink_new_filename(out_filename, block_size)
-      : serd_byte_sink_new_function((SerdWriteFunc)fwrite, stdout, block_size);
+      ? serd_byte_sink_new_filename(out_filename, SERD_PAGE_SIZE)
+      : serd_byte_sink_new_function((SerdWriteFunc)fwrite, stdout, 1u);
 
   if (!byte_sink) {
     perror("serdi: error opening output file");
