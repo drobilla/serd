@@ -6,7 +6,7 @@
 .Nd read, filter, transform, and write RDF data
 .Sh SYNOPSIS
 .Nm serdi
-.Op Fl Caefhlmqtvx
+.Op Fl Cafhlmqtvx
 .Op Fl F Ar pattern | Fl G Ar pattern
 .Op Fl I Ar base
 .Op Fl V Ar checks
@@ -108,11 +108,6 @@ Chop
 from matching blank node IDs.
 This is the inverse of
 .Fl p .
-.Pp
-.It Fl e
-Eat input one character at a time, rather than a page at a time which is the default.
-This is useful when reading from a pipe since output will be generated immediately as input arrives, rather than waiting until an entire page of input has arrived.
-With this option serdi uses one page less memory, but will likely be significantly slower.
 .Pp
 .It Fl f
 Fast and loose mode.

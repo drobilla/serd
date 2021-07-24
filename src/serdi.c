@@ -71,7 +71,6 @@ print_usage(const char* const name, const bool error)
   fprintf(os, "  -X CHECKS    Exclude validation checks matching CHECKS.\n");
   fprintf(os, "  -a           Write ASCII output if possible.\n");
   fprintf(os, "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n");
-  fprintf(os, "  -e           Eat input one character at a time.\n");
   fprintf(os, "  -f           Fast and loose mode (possibly ugly output).\n");
   fprintf(os, "  -h           Display this help and exit.\n");
   fprintf(os, "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads.\n");
@@ -162,8 +161,7 @@ read_file(SerdWorld* const      world,
           const SerdSink* const sink,
           const size_t          stack_size,
           const char* const     filename,
-          const char* const     add_prefix,
-          const bool            bulk_read)
+          const char* const     add_prefix)
 {
   syntax = syntax ? syntax : serd_guess_syntax(filename);
   syntax = syntax ? syntax : SERD_TRIG;
@@ -177,8 +175,7 @@ read_file(SerdWorld* const      world,
 
     serd_node_free(name);
   } else {
-    byte_source =
-      serd_byte_source_new_filename(filename, bulk_read ? SERD_PAGE_SIZE : 1u);
+    byte_source = serd_byte_source_new_filename(filename, SERD_PAGE_SIZE);
   }
 
   if (!byte_source) {
@@ -216,7 +213,6 @@ main(int argc, char** argv)
   SerdSyntax      output_syntax = SERD_SYNTAX_EMPTY;
   SerdReaderFlags reader_flags  = 0;
   SerdWriterFlags writer_flags  = 0;
-  bool            bulk_read     = true;
   bool            no_inline     = false;
   bool            osyntax_set   = false;
   bool            validate      = false;
@@ -244,8 +240,6 @@ main(int argc, char** argv)
         canonical = true;
       } else if (opt == 'a') {
         writer_flags |= SERD_WRITE_ASCII;
-      } else if (opt == 'e') {
-        bulk_read = false;
       } else if (opt == 'f') {
         no_inline = true;
         writer_flags |= (SERD_WRITE_UNQUALIFIED | SERD_WRITE_UNRESOLVED);
@@ -556,8 +550,7 @@ main(int argc, char** argv)
                         sink,
                         stack_size,
                         inputs[i],
-                        n_inputs > 1 ? prefix : add_prefix,
-                        bulk_read))) {
+                        n_inputs > 1 ? prefix : add_prefix))) {
       break;
     }
   }

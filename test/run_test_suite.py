@@ -224,7 +224,7 @@ def test_suite(
             self.n_failures = 0
 
     def run_tests(test_class, tests, expected_return, results):
-        thru_flags = [["-e"], ["-f"], ["-r", "http://example.org/"]]
+        thru_flags = [["-f"], ["-r", "http://example.org/"]]
         thru_options_iter = _option_combinations(thru_flags)
         if output_syntax is not None:
             osyntax = output_syntax
