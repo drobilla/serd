@@ -74,7 +74,7 @@ string_sink(const void* const buf,
 }
 
 static size_t
-serd_node_pad_size(const size_t n_bytes)
+serd_node_pad_length(const size_t n_bytes)
 {
   const size_t pad  = sizeof(SerdNode) - (n_bytes + 2) % sizeof(SerdNode);
   const size_t size = n_bytes + 2 + pad;
@@ -82,16 +82,16 @@ serd_node_pad_size(const size_t n_bytes)
   return size;
 }
 
-static SerdNode*
-serd_node_meta(SerdNode* const node)
-{
-  return node + 1 + (serd_node_pad_size(node->length) / sizeof(SerdNode));
-}
-
 static const SerdNode*
 serd_node_meta_c(const SerdNode* const node)
 {
-  return node + 1 + (serd_node_pad_size(node->length) / sizeof(SerdNode));
+  return node + 1 + (serd_node_pad_length(node->length) / sizeof(SerdNode));
+}
+
+static SerdNode*
+serd_node_meta(SerdNode* const node)
+{
+  return node + 1 + (serd_node_pad_length(node->length) / sizeof(SerdNode));
 }
 
 static const SerdNode*
@@ -106,10 +106,9 @@ serd_node_check_padding(const SerdNode* node)
   (void)node;
 #ifndef NDEBUG
   if (node) {
-    const size_t unpadded_size = node->length;
-    const size_t padded_size   = serd_node_pad_size(unpadded_size);
-    for (size_t i = 0; i < padded_size - unpadded_size; ++i) {
-      assert(serd_node_buffer_c(node)[unpadded_size + i] == '\0');
+    const size_t padded_length = serd_node_pad_length(node->length);
+    for (size_t i = 0; i < padded_length - node->length; ++i) {
+      assert(serd_node_buffer_c(node)[node->length + i] == '\0');
     }
 
     serd_node_check_padding(serd_node_maybe_get_meta_c(node));
@@ -120,7 +119,7 @@ serd_node_check_padding(const SerdNode* node)
 size_t
 serd_node_total_size(const SerdNode* const node)
 {
-  return node ? (sizeof(SerdNode) + serd_node_pad_size(node->length) +
+  return node ? (sizeof(SerdNode) + serd_node_pad_length(node->length) +
                  serd_node_total_size(serd_node_maybe_get_meta_c(node)))
               : 0;
 }
@@ -130,7 +129,7 @@ serd_node_malloc(const size_t        length,
                  const SerdNodeFlags flags,
                  const SerdNodeType  type)
 {
-  const size_t size = sizeof(SerdNode) + serd_node_pad_size(length);
+  const size_t size = sizeof(SerdNode) + serd_node_pad_length(length);
   SerdNode*    node = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
 
   node->length = 0;
@@ -170,11 +169,10 @@ serd_node_set(SerdNode** const dst, const SerdNode* const src)
 void
 serd_node_zero_pad(SerdNode* node)
 {
-  char*        buf         = serd_node_buffer(node);
-  const size_t size        = node->length;
-  const size_t padded_size = serd_node_pad_size(size);
+  char*        buf           = serd_node_buffer(node);
+  const size_t padded_length = serd_node_pad_length(node->length);
 
-  memset(buf + size, 0, padded_size - size);
+  memset(buf + node->length, 0, padded_length - node->length);
 
   if (node->flags & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE)) {
     serd_node_zero_pad(serd_node_meta(node));
@@ -237,7 +235,7 @@ serd_new_plain_literal_i(const SerdStringView str,
 
   flags |= SERD_HAS_LANGUAGE;
 
-  const size_t len       = serd_node_pad_size(str.len);
+  const size_t len       = serd_node_pad_length(str.len);
   const size_t total_len = len + sizeof(SerdNode) + lang.len;
 
   SerdNode* node = serd_node_malloc(total_len, flags, SERD_LITERAL);
@@ -284,7 +282,7 @@ serd_new_typed_literal(const SerdStringView str,
 
   flags |= SERD_HAS_DATATYPE;
 
-  const size_t len       = serd_node_pad_size(str.len);
+  const size_t len       = serd_node_pad_length(str.len);
   const size_t total_len = len + sizeof(SerdNode) + datatype_uri.len;
 
   SerdNode* node = serd_node_malloc(total_len, flags, SERD_LITERAL);
@@ -605,7 +603,7 @@ serd_new_custom_literal(const void* const          user_data,
   }
 
   const size_t datatype_size = serd_node_total_size(datatype);
-  const size_t total_size    = serd_node_pad_size(len + 1) + datatype_size;
+  const size_t total_size    = serd_node_pad_length(len) + datatype_size;
 
   SerdNode* const node = serd_node_malloc(
     total_size, datatype ? SERD_HAS_DATATYPE : 0u, SERD_LITERAL);
@@ -663,10 +661,8 @@ serd_new_decimal(const double d, const SerdNode* const datatype)
   assert(!r.status);
 
   // Allocate node with enough space for value and datatype URI
-  SerdNode* const node =
-    serd_node_malloc(serd_node_pad_size(r.count + 1) + type_size,
-                     SERD_HAS_DATATYPE,
-                     SERD_LITERAL);
+  SerdNode* const node = serd_node_malloc(
+    serd_node_pad_length(r.count) + type_size, SERD_HAS_DATATYPE, SERD_LITERAL);
 
   // Write string directly into node
   r = exess_write_decimal(d, r.count + 1, serd_node_buffer(node));
@@ -690,10 +686,8 @@ serd_new_integer(const int64_t i, const SerdNode* const datatype)
   assert(!r.status);
 
   // Allocate node with enough space for value and datatype URI
-  SerdNode* const node =
-    serd_node_malloc(serd_node_pad_size(r.count + 1) + type_size,
-                     SERD_HAS_DATATYPE,
-                     SERD_LITERAL);
+  SerdNode* const node = serd_node_malloc(
+    serd_node_pad_length(r.count) + type_size, SERD_HAS_DATATYPE, SERD_LITERAL);
 
   // Write string directly into node
   r = exess_write_long(i, r.count + 1, serd_node_buffer(node));
