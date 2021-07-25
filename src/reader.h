@@ -78,7 +78,7 @@ r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
 
 SerdNode*
 push_node_padded(SerdReader*  reader,
-                 size_t       maxlen,
+                 size_t       max_length,
                  SerdNodeType type,
                  const char*  str,
                  size_t       length);
@@ -91,7 +91,7 @@ push_node(SerdReader*  reader,
 
 SERD_PURE_FUNC
 size_t
-genid_size(const SerdReader* reader);
+genid_length(const SerdReader* reader);
 
 SERD_PURE_FUNC
 bool
