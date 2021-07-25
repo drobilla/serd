@@ -50,9 +50,9 @@ set_blank_id(SerdReader* const reader,
 }
 
 size_t
-genid_size(const SerdReader* const reader)
+genid_length(const SerdReader* const reader)
 {
-  return reader->bprefix_len + 1 + 10 + 1; // + "b" + UINT32_MAX + \0
+  return reader->bprefix_len + 10U; // + "b" + UINT32_MAX
 }
 
 bool
@@ -73,17 +73,19 @@ tolerate_status(const SerdReader* const reader, const SerdStatus status)
 SerdNode*
 blank_id(SerdReader* const reader)
 {
-  SerdNode* ref =
-    push_node_padded(reader, genid_size(reader), SERD_BLANK, "", 0);
+  SerdNode* const ref =
+    push_node_padded(reader, genid_length(reader), SERD_BLANK, "", 0);
+
   if (ref) {
-    set_blank_id(reader, ref, genid_size(reader));
+    set_blank_id(reader, ref, genid_length(reader) + 1U);
   }
+
   return ref;
 }
 
 SerdNode*
 push_node_padded(SerdReader* const  reader,
-                 const size_t       maxlen,
+                 const size_t       max_length,
                  const SerdNodeType type,
                  const char* const  str,
                  const size_t       length)
@@ -96,7 +98,7 @@ push_node_padded(SerdReader* const  reader,
   *terminator = 0;
 
   void* mem = serd_stack_push_aligned(
-    &reader->stack, sizeof(SerdNode) + maxlen + 1, sizeof(void*));
+    &reader->stack, sizeof(SerdNode) + max_length + 1U, sizeof(void*));
 
   if (!mem) {
     return NULL;

@@ -57,7 +57,7 @@ r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
 
 SerdNode*
 push_node_padded(SerdReader*  reader,
-                 size_t       maxlen,
+                 size_t       max_length,
                  SerdNodeType type,
                  const char*  str,
                  size_t       length);
@@ -72,7 +72,7 @@ SerdStatus
 push_node_termination(SerdReader* reader);
 
 ZIX_PURE_FUNC size_t
-genid_size(const SerdReader* reader);
+genid_length(const SerdReader* reader);
 
 ZIX_PURE_FUNC bool
 tolerate_status(const SerdReader* reader, SerdStatus status);

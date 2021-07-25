@@ -1278,7 +1278,8 @@ read_collection(SerdReader* const reader,
   /* The order of node allocation here is necessarily not in stack order,
      so we create two nodes and recycle them throughout. */
   SerdNode* n1 =
-    push_node_padded(reader, genid_size(reader), SERD_BLANK, "", 0);
+    push_node_padded(reader, genid_length(reader), SERD_BLANK, "", 0);
+
   SerdNode* node = n1;
   SerdNode* rest = 0;
 
@@ -1302,7 +1303,7 @@ read_collection(SerdReader* const reader,
         rest = blank_id(reader); // First pass, push
         assert(rest);            // Can't overflow since read_object() popped
       } else {
-        set_blank_id(reader, rest, genid_size(reader));
+        set_blank_id(reader, rest, genid_length(reader) + 1U);
       }
     }
 
