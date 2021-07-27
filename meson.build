@@ -92,6 +92,7 @@ sources = [
   'src/cursor.c',
   'src/describe.c',
   'src/env.c',
+  'src/filter.c',
   'src/inserter.c',
   'src/log.c',
   'src/model.c',
