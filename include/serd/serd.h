@@ -42,6 +42,7 @@
 
 #include "serd/canon.h"
 #include "serd/env.h"
+#include "serd/filter.h"
 
 #include "serd/node_syntax.h"
 
