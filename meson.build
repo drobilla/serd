@@ -74,6 +74,7 @@ sources = files(
   'src/canon.c',
   'src/caret.c',
   'src/env.c',
+  'src/filter.c',
   'src/log.c',
   'src/n3.c',
   'src/node.c',
