@@ -61,9 +61,12 @@ struct ZixBTreeNodeImpl {
   } data;
 };
 
-#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112l) || \
-  (defined(__cplusplus) && __cplusplus >= 201103L)
-static_assert(sizeof(ZixBTreeNode) == ZIX_BTREE_PAGE_SIZE, "");
+#if ((defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112l) || \
+     (defined(__cplusplus) && __cplusplus >= 201103L))
+static_assert(sizeof(ZixBTreeNode) <= ZIX_BTREE_PAGE_SIZE, "");
+static_assert(sizeof(ZixBTreeNode) >=
+                ZIX_BTREE_PAGE_SIZE - 2u * sizeof(ZixBTreeNode*),
+              "");
 #endif
 
 static ZixBTreeNode*
