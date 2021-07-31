@@ -5,6 +5,7 @@
 
 #include "node.h"
 #include "node_impl.h"
+#include "ntriples.h"
 #include "read_utf8.h"
 #include "reader.h"
 #include "stack.h"
@@ -21,32 +22,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-
-// Utilities
-
-static inline bool
-codepoint_in_range(const uint32_t c, const uint32_t min, const uint32_t max)
-{
-  return c >= min && c <= max;
-}
-
-bool
-is_PN_CHARS_BASE(const uint32_t c)
-{
-  return (codepoint_in_range(c, 'A', 'Z') || codepoint_in_range(c, 'a', 'z') ||
-          codepoint_in_range(c, 0x000C0U, 0x000D6U) ||
-          codepoint_in_range(c, 0x000D8U, 0x000F6U) ||
-          codepoint_in_range(c, 0x000F8U, 0x002FFU) ||
-          codepoint_in_range(c, 0x00370U, 0x0037DU) ||
-          codepoint_in_range(c, 0x0037FU, 0x01FFFU) ||
-          codepoint_in_range(c, 0x0200CU, 0x0200DU) ||
-          codepoint_in_range(c, 0x02070U, 0x0218FU) ||
-          codepoint_in_range(c, 0x02C00U, 0x02FEFU) ||
-          codepoint_in_range(c, 0x03001U, 0x0D7FFU) ||
-          codepoint_in_range(c, 0x0F900U, 0x0FDCFU) ||
-          codepoint_in_range(c, 0x0FDF0U, 0x0FFFDU) ||
-          codepoint_in_range(c, 0x10000U, 0xEFFFFU));
-}
 
 // Terminals
 
@@ -281,7 +256,7 @@ read_PN_CHARS_BASE(SerdReader* const reader, SerdNode* const dest)
 
   TRY(st, read_utf8_code_point(reader, dest, &code, (uint8_t)c));
 
-  if (!is_PN_CHARS_BASE(code)) {
+  if (!is_PN_CHARS_BASE((int)code)) {
     r_err(
       reader, SERD_BAD_SYNTAX, "U+%04X is not a valid name character", code);
     if (reader->strict) {
@@ -292,11 +267,6 @@ read_PN_CHARS_BASE(SerdReader* const reader, SerdNode* const dest)
   return st;
 }
 
-/**
-   Read an initial prefixed name character.
-
-   RDF 1.1 NTriples: [158s] PN_CHARS_U
-*/
 static SerdStatus
 read_PN_CHARS_U(SerdReader* const reader, SerdNode* const dest)
 {
@@ -328,7 +298,7 @@ read_PN_CHARS(SerdReader* const reader, SerdNode* const dest)
   uint32_t code = 0U;
   TRY(st, read_utf8_code_point(reader, dest, &code, (uint8_t)c));
 
-  if (!is_PN_CHARS_BASE(code) && code != 0xB7 &&
+  if (!is_PN_CHARS_BASE((int)code) && code != 0xB7 &&
       !(code >= 0x0300 && code <= 0x036F) &&
       !(code >= 0x203F && code <= 0x2040)) {
     return r_err(
