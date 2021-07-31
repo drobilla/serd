@@ -4,11 +4,13 @@
 #include "byte_source.h"
 #include "namespaces.h"
 #include "node_impl.h"
+#include "ntriples.h"
 #include "read_ntriples.h"
 #include "reader.h"
 #include "stack.h"
 #include "string_utils.h"
 #include "try.h"
+#include "turtle.h"
 
 #include "serd/event.h"
 #include "serd/node.h"
@@ -163,10 +165,9 @@ read_PN_LOCAL_ESC(SerdReader* const reader, SerdNode* const dest)
   skip_byte(reader, '\\');
 
   const int c = peek_byte(reader);
-  return ((c == '!') || in_range(c, '#', '/') || (c == ';') || (c == '=') ||
-          (c == '?') || (c == '@') || (c == '_') || (c == '~'))
-           ? push_byte(reader, dest, eat_byte_safe(reader, c))
-           : r_err(reader, SERD_BAD_SYNTAX, "invalid escape");
+
+  return is_PN_LOCAL_ESC(c) ? push_byte(reader, dest, eat_byte_safe(reader, c))
+                            : r_err(reader, SERD_BAD_SYNTAX, "invalid escape");
 }
 
 static SerdStatus
@@ -460,7 +461,7 @@ read_verb(SerdReader* const reader, SerdNode** const dest)
   SerdNode* node    = *dest;
   const int next    = peek_byte(reader);
   if (node->length == 1 && serd_node_string(node)[0] == 'a' && next != ':' &&
-      !is_PN_CHARS_BASE((uint32_t)next)) {
+      !is_PN_CHARS_BASE(next)) {
     serd_stack_pop_to(&reader->stack, orig_stack_size);
     return ((*dest = push_node(reader, SERD_URI, rdf_type)) ? SERD_SUCCESS
                                                             : SERD_BAD_STACK);
