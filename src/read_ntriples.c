@@ -6,6 +6,7 @@
 #include "byte_source.h"
 #include "caret.h"
 #include "node.h"
+#include "ntriples.h"
 #include "read_utf8.h"
 #include "reader.h"
 #include "stack.h"
@@ -440,7 +441,7 @@ read_PN_CHARS_BASE(SerdReader* const reader, SerdNode* const dest)
     return st;
   }
 
-  if (!is_PN_CHARS_BASE(code)) {
+  if (!is_PN_CHARS_BASE((int)code)) {
     r_err(reader,
           SERD_ERR_BAD_SYNTAX,
           "U+%04X is not a valid name character",
@@ -494,7 +495,7 @@ read_PN_CHARS(SerdReader* const reader, SerdNode* const dest)
     return st;
   }
 
-  if (!is_PN_CHARS_BASE(code) && code != 0xB7 &&
+  if (!is_PN_CHARS_BASE((int)code) && code != 0xB7 &&
       !(code >= 0x0300 && code <= 0x036F) &&
       !(code >= 0x203F && code <= 0x2040)) {
     return r_err(reader,
