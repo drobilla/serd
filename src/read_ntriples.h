@@ -22,32 +22,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-// Utilities
-
-static inline bool
-codepoint_in_range(const uint32_t c, const uint32_t min, const uint32_t max)
-{
-  return c >= min && c <= max;
-}
-
-static inline bool
-is_PN_CHARS_BASE(const uint32_t c)
-{
-  return (codepoint_in_range(c, 'A', 'Z') || codepoint_in_range(c, 'a', 'z') ||
-          codepoint_in_range(c, 0x000C0u, 0x000D6u) ||
-          codepoint_in_range(c, 0x000D8u, 0x000F6u) ||
-          codepoint_in_range(c, 0x000F8u, 0x002FFu) ||
-          codepoint_in_range(c, 0x00370u, 0x0037Du) ||
-          codepoint_in_range(c, 0x0037Fu, 0x01FFFu) ||
-          codepoint_in_range(c, 0x0200Cu, 0x0200Du) ||
-          codepoint_in_range(c, 0x02070u, 0x0218Fu) ||
-          codepoint_in_range(c, 0x02C00u, 0x02FEFu) ||
-          codepoint_in_range(c, 0x03001u, 0x0D7FFu) ||
-          codepoint_in_range(c, 0x0F900u, 0x0FDCFu) ||
-          codepoint_in_range(c, 0x0FDF0u, 0x0FFFDu) ||
-          codepoint_in_range(c, 0x10000u, 0xEFFFFu));
-}
-
 /**
    Read one (possibly multi-byte) character (possibly multi-byte).
 
