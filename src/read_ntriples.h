@@ -8,20 +8,11 @@
 #include "serd/node.h"
 #include "serd/reader.h"
 #include "serd/status.h"
-#include "zix/attributes.h"
 
 #include <stdbool.h>
 #include <stdint.h>
 
 // Utilities
-
-/**
-   Return true if the codepoint `c` is a valid PN_CHARS_BASE character.
-
-   RDF 1.1 NTriples: [157s] PN_CHARS_BASE
-*/
-ZIX_CONST_FUNC SERD_NODISCARD bool
-is_PN_CHARS_BASE(uint32_t c);
 
 /**
    Read one (possibly multi-byte) character.
