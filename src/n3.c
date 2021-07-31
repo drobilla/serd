@@ -658,6 +658,13 @@ read_anon(SerdReader* const reader,
   return eat_byte_check(reader, ']');
 }
 
+static bool
+node_has_string(const SerdNode* const node, const SerdStringView string)
+{
+  return node->length == string.len &&
+         !memcmp(serd_node_string(node), string.buf, string.len);
+}
+
 // Read a "named" object: a boolean literal or a prefixed name
 static SerdStatus
 read_named_object(SerdReader* const reader,
@@ -672,38 +679,33 @@ read_named_object(SerdReader* const reader,
      characters, so this is more tedious to deal with in a non-tokenizing
      parser like this one.
 
-     Deal with this here by first reading the prefix into a tentative node.  If
-     it turns out to be "true" or "false", switch it to a boolean literal after
-     the fact. */
+     Deal with this here by trying to read a prefixed node, then if it turns
+     out to actually be "true" or "false", switch it to a boolean literal. */
 
   if (!(*dest = push_node(reader, SERD_URI, "", 0))) {
     return SERD_ERR_OVERFLOW;
   }
 
-  const size_t    string_start_offset = reader->stack.size;
-  SerdNode* const node                = *dest;
-  SerdStatus      st                  = SERD_SUCCESS;
-  while (!(st = read_PN_CHARS_BASE(reader, node))) {
-  }
+  SerdNode*  node = *dest;
+  SerdStatus st   = SERD_SUCCESS;
 
-  if (st > SERD_FAILURE) {
-    return st;
-  }
+  // Attempt to read a prefixed name
+  st = read_PrefixedName(reader, node, true, ate_dot, reader->stack.size);
 
-  if ((node->length == 4 && !memcmp(serd_node_string(node), "true", 4)) ||
-      (node->length == 5 && !memcmp(serd_node_string(node), "false", 5))) {
-    node->flags |= SERD_HAS_DATATYPE;
-    node->type = SERD_LITERAL;
+  // Check if this is actually a special boolean node
+  if (st == SERD_FAILURE && (node_has_string(node, SERD_STRING("true")) ||
+                             node_has_string(node, SERD_STRING("false")))) {
+    node->flags = SERD_HAS_DATATYPE;
+    node->type  = SERD_LITERAL;
     return push_node(reader, SERD_URI, XSD_BOOLEAN, XSD_BOOLEAN_LEN)
              ? SERD_SUCCESS
              : SERD_ERR_OVERFLOW;
   }
 
-  if ((st = read_PN_PREFIX_tail(reader, node)) > SERD_FAILURE ||
-      (st = read_PrefixedName(
-         reader, node, false, ate_dot, string_start_offset))) {
-    st = (st > SERD_FAILURE) ? st : SERD_ERR_BAD_SYNTAX;
-    return r_err(reader, st, "expected prefixed name");
+  // Any other failure is a syntax error
+  if (st) {
+    st = st > SERD_FAILURE ? st : SERD_ERR_BAD_SYNTAX;
+    return r_err(reader, st, "expected prefixed name or boolean");
   }
 
   return SERD_SUCCESS;
