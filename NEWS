@@ -19,10 +19,11 @@ serd (1.0.1) unstable;
   * Rename SerdChunk to SerdStringView
   * Simplify streaming API and improve pretty printing
   * Simplify writer style options
+  * Support writing all escapes in Turtle and TriG prefixed names
   * Use a fixed-size reader stack
   * Use char* for strings in public API
 
- -- David Robillard <d@drobilla.net>  Sat, 17 Jul 2021 18:19:48 +0000
+ -- David Robillard <d@drobilla.net>  Sat, 31 Jul 2021 23:27:35 +0000
 
 serd (0.30.11) unstable;
 

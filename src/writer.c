@@ -23,6 +23,7 @@
 #include "string_utils.h"
 #include "system.h"
 #include "try.h"
+#include "turtle.h"
 #include "uri_utils.h"
 #include "world.h"
 
@@ -385,64 +386,97 @@ write_uri_from_node(SerdWriter* writer, const SerdNode* node)
   return ewrite_uri(writer, serd_node_string(node), node->length);
 }
 
-static bool
-lname_must_escape(const char c)
+SERD_WARN_UNUSED_RESULT static SerdStatus
+write_utf8_percent_escape(SerdWriter* const writer,
+                          const char* const utf8,
+                          const size_t      n_bytes)
 {
-  /* This arbitrary list of characters, most of which have nothing to do with
-     Turtle, must be handled as special cases here because the RDF and SPARQL
-     WGs are apparently intent on making the once elegant Turtle a baroque
-     and inconsistent mess, throwing elegance and extensibility completely
-     out the window for no good reason.
+  SerdStatus st        = SERD_SUCCESS;
+  char       escape[4] = {0, 0, 0, 0};
 
-     Note '-', '.', and '_' are also in PN_LOCAL_ESC, but are valid unescaped
-     in local names, so they are not escaped here. */
-
-  switch (c) {
-  case '\'':
-  case '!':
-  case '#':
-  case '$':
-  case '%':
-  case '&':
-  case '(':
-  case ')':
-  case '*':
-  case '+':
-  case ',':
-  case '/':
-  case ';':
-  case '=':
-  case '?':
-  case '@':
-  case '~':
-    return true;
-  default:
-    break;
+  for (size_t i = 0u; i < n_bytes; ++i) {
+    snprintf(escape, sizeof(escape), "%%%02X", (uint8_t)utf8[i]);
+    TRY(st, esink(escape, 3, writer));
   }
-  return false;
+
+  return st;
+}
+
+SERD_WARN_UNUSED_RESULT static SerdStatus
+write_PN_LOCAL_ESC(SerdWriter* const writer, const char c)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  if (!(st = esink("\\", 1, writer))) {
+    st = esink(&c, 1, writer);
+  }
+
+  return st;
+}
+
+SERD_WARN_UNUSED_RESULT static SerdStatus
+write_lname_escape(SerdWriter* writer, const char* const utf8, size_t n_bytes)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  if (is_PN_LOCAL_ESC(utf8[0])) {
+    st = write_PN_LOCAL_ESC(writer, utf8[0]);
+  } else {
+    st = write_utf8_percent_escape(writer, utf8, n_bytes);
+  }
+
+  return st;
 }
 
 SERD_WARN_UNUSED_RESULT static SerdStatus
 write_lname(SerdWriter* writer, const char* utf8, size_t n_bytes)
 {
   SerdStatus st = SERD_SUCCESS;
-  for (size_t i = 0; i < n_bytes; ++i) {
-    size_t j = i; // Index of next character that must be escaped
-    for (; j < n_bytes; ++j) {
-      if (lname_must_escape(utf8[j])) {
-        break;
-      }
+  if (!n_bytes) {
+    return st;
+  }
+
+  /* Thanks to the horribly complicated Turtle grammar for prefixed names,
+     making sure we never write an invalid character is tedious.  We need to
+     handle the first and last characters separately since they have different
+     sets of valid characters. */
+
+  // Write first character
+  size_t    first_size = 0u;
+  const int first = (int)parse_utf8_char((const uint8_t*)utf8, &first_size);
+  if (is_PN_CHARS_U(first) || first == ':' || is_digit(first)) {
+    st = esink(utf8, first_size, writer);
+  } else {
+    st = write_lname_escape(writer, utf8, first_size);
+  }
+
+  // Write middle characters
+  size_t i = first_size;
+  while (!st && i < n_bytes - 1u) {
+    size_t    c_size = 0u;
+    const int c      = (int)parse_utf8_char((const uint8_t*)utf8 + i, &c_size);
+    if (i + c_size >= n_bytes) {
+      break;
     }
 
-    // Bulk write all characters up to this special one
-    TRY(st, esink(&utf8[i], j - i, writer));
-    if ((i = j) == n_bytes) {
-      break; // Reached end
+    if (is_PN_CHARS(c) || c == '.' || c == ':') {
+      st = esink(&utf8[i], c_size, writer);
+    } else {
+      st = write_lname_escape(writer, &utf8[i], c_size);
     }
 
-    // Write escape
-    TRY(st, esink("\\", 1, writer));
-    TRY(st, esink(&utf8[i], 1, writer));
+    i += c_size;
+  }
+
+  // Write last character
+  if (!st && i < n_bytes) {
+    size_t    last_size = 0u;
+    const int last = (int)parse_utf8_char((const uint8_t*)utf8 + i, &last_size);
+    if (is_PN_CHARS(last) || last == ':') {
+      st = esink(&utf8[i], last_size, writer);
+    } else {
+      st = write_lname_escape(writer, &utf8[i], last_size);
+    }
   }
 
   return st;
@@ -748,20 +782,6 @@ write_literal(SerdWriter* const        writer,
   return st;
 }
 
-// Return true iff `buf` is a valid prefixed name prefix or suffix
-static bool
-is_name(const char* buf, const size_t len)
-{
-  // TODO: This is more strict than it should be
-  for (size_t i = 0; i < len; ++i) {
-    if (!(is_alpha(buf[i]) || is_digit(buf[i]) || lname_must_escape(buf[i]))) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 SERD_WARN_UNUSED_RESULT static SerdStatus
 write_full_uri_node(SerdWriter* const writer, const SerdNode* const node)
 {
@@ -820,9 +840,7 @@ write_uri_node(SerdWriter* const     writer,
     }
 
     if (has_scheme && !(writer->flags & SERD_WRITE_UNQUALIFIED) &&
-        serd_env_qualify_in_place(writer->env, node, &prefix, &suffix) &&
-        is_name(serd_node_string(prefix), serd_node_length(prefix)) &&
-        is_name(suffix.buf, suffix.len)) {
+        serd_env_qualify_in_place(writer->env, node, &prefix, &suffix)) {
       TRY(st,
           write_lname(
             writer, serd_node_string(prefix), serd_node_length(prefix)));
