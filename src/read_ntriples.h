@@ -14,14 +14,6 @@
 // Utilities
 
 /**
-   Return true if the codepoint `c` is a valid PN_CHARS_BASE character.
-
-   RDF 1.1 NTriples: [157s] PN_CHARS_BASE
-*/
-bool
-is_PN_CHARS_BASE(uint32_t c);
-
-/**
    Read one (possibly multi-byte) character.
 
    The caller must have already eaten the first byte, `c`.
