@@ -27,11 +27,43 @@ typedef struct SerdReaderImpl SerdReader;
 
 /// Reader options
 typedef enum {
-  SERD_READ_LAX          = 1U << 0U, ///< Tolerate invalid input where possible
-  SERD_READ_VARIABLES    = 1U << 1U, ///< Support variable nodes
-  SERD_READ_EXACT_BLANKS = 1U << 2U, ///< Allow clashes with generated blanks
-  SERD_READ_PREFIXED     = 1U << 3U, ///< Do not expand prefixed names
-  SERD_READ_RELATIVE     = 1U << 4U, ///< Do not expand relative URI references
+  /**
+     Tolerate invalid input where possible.
+
+     This will attempt to ignore invalid input and continue reading.  Invalid
+     Unicode characters will be replaced with the replacement character, and
+     various other syntactic problems will be ignored.  If there are more
+     severe problems, the reader will try to skip the statement and continue
+     parsing.  This should work reasonably well for line-based syntaxes like
+     NTriples and NQuads, but abbreviated Turtle or TriG may not recover.
+
+     Note that this flag should be used carefully, since it can result in data
+     loss.
+  */
+  SERD_READ_LAX = 1U << 0U,
+
+  /**
+     Support reading variable nodes.
+
+     As an extension, serd supports reading variables nodes with SPARQL-like
+     syntax, for example "?foo" or "$bar".  This can be used for storing
+     graph patterns and templates.
+  */
+  SERD_READ_VARIABLES = 1U << 1U,
+
+  /**
+     Read URIs and blank node labels exactly.
+
+     Normally, the reader expands all relative URIs, and may adjust blank node
+     labels to avoid clashing with generated ones.  This flag disables all of
+     this processing, so that URI references and blank nodes are passed to the
+     sink exactly as they are in the input.
+
+     Note that this does not apply to CURIEs, since serd deliberately does not
+     have a way to represent CURIE nodes.  A bad namespace prefix is considered
+     a syntax error.
+  */
+  SERD_READ_VERBATIM = 1U << 2U,
 } SerdReaderFlag;
 
 /// Bitwise OR of SerdReaderFlag values

@@ -246,7 +246,7 @@ read_STRING_LITERAL(SerdReader* const reader,
 static SerdStatus
 adjust_blank_id(SerdReader* const reader, char* const buf)
 {
-  if (!(reader->flags & SERD_READ_EXACT_BLANKS) &&
+  if (!(reader->flags & SERD_READ_VERBATIM) &&
       is_digit(buf[reader->bprefix_len + 1])) {
     const char tag = buf[reader->bprefix_len];
     if (tag == 'b') {
