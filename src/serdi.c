@@ -1,6 +1,7 @@
 // Copyright 2011-2022 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
+#include "console.h"
 #include "system.h"
 
 #include "serd/byte_sink.h"
@@ -19,14 +20,6 @@
 #include "serd/writer.h"
 #include "zix/allocator.h"
 #include "zix/filesystem.h"
-
-#ifdef _WIN32
-#  ifdef _MSC_VER
-#    define WIN32_LEAN_AND_MEAN 1
-#  endif
-#  include <fcntl.h>
-#  include <io.h>
-#endif
 
 #include <errno.h>
 #include <limits.h>
@@ -311,12 +304,10 @@ main(int argc, char** argv)
   SerdEnv* const   env =
     serd_env_new(base ? serd_node_string_view(base) : serd_empty_string());
 
-#ifdef _WIN32
-  _setmode(_fileno(stdin), _O_BINARY);
+  serd_set_stream_utf8_mode(stdin);
   if (!out_filename) {
-    _setmode(_fileno(stdout), _O_BINARY);
+    serd_set_stream_utf8_mode(stdout);
   }
-#endif
 
   const size_t        block_size = bulk_write ? 4096U : 1U;
   SerdByteSink* const byte_sink =
