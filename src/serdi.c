@@ -478,9 +478,7 @@ main(int argc, char** argv)
   }
 
   if (root_uri) {
-    SerdNode* const root = serd_new_uri(SERD_STRING(root_uri));
-    serd_writer_set_root_uri(writer, root);
-    serd_node_free(root);
+    serd_writer_set_root_uri(writer, SERD_STRING(root_uri));
   }
 
   serd_writer_chop_blank_prefix(writer, chop_prefix);
