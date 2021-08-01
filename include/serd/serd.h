@@ -2142,10 +2142,43 @@ typedef struct SerdReaderImpl SerdReader;
 
 /// Reader options
 typedef enum {
-  SERD_READ_LAX          = 1u << 0u, ///< Tolerate invalid input where possible
-  SERD_READ_VARIABLES    = 1u << 1u, ///< Support variable nodes
-  SERD_READ_EXACT_BLANKS = 1u << 2u, ///< Allow clashes with generated blanks
-  SERD_READ_RELATIVE     = 1u << 3u, ///< Do not expand relative URI references
+  /**
+     Tolerate invalid input where possible.
+
+     This will attempt to ignore invalid input and continue reading.  Invalid
+     Unicode characters will be replaced with the replacement character, and
+     various other syntactic problems will be ignored.  If there are more
+     severe problems, the reader will try to skip the statement and continue
+     parsing.  This should work reasonably well for line-based syntaxes like
+     NTriples and NQuads, but abbreviated Turtle or TriG may not recover.
+
+     Note that this flag should be used carefully, since it can result in data
+     loss.
+  */
+  SERD_READ_LAX = 1u << 0u,
+
+  /**
+     Support reading variable nodes.
+
+     As an extension, serd supports reading variables nodes with SPARQL-like
+     syntax, for example "?foo" or "$bar".  This can be used for storing
+     graph patterns and templates.
+  */
+  SERD_READ_VARIABLES = 1u << 1u,
+
+  /**
+     Read URIs and blank node labels exactly.
+
+     Normally, the reader expands all relative URIs, and may adjust blank node
+     labels to avoid clashing with generated ones.  This flag disables all of
+     this processing, so that URI references and blank nodes are passed to the
+     sink exactly as they are in the input.
+
+     Note that this does not apply to CURIEs, since serd deliberately does not
+     have a way to represent CURIE nodes.  A bad namespace prefix is considered
+     a syntax error.
+  */
+  SERD_READ_VERBATIM = 1u << 2u,
 } SerdReaderFlag;
 
 /// Bitwise OR of SerdReaderFlag values
@@ -2310,11 +2343,53 @@ typedef struct SerdWriterImpl SerdWriter;
    does not support abbreviation and is always ASCII.
 */
 typedef enum {
-  SERD_WRITE_ASCII       = 1u << 0u, ///< Escape all non-ASCII characters
-  SERD_WRITE_UNQUALIFIED = 1u << 1u, ///< Do not shorten URIs into CURIEs
-  SERD_WRITE_UNRESOLVED  = 1u << 2u, ///< Do not make URIs relative
-  SERD_WRITE_TERSE       = 1u << 3u, ///< Write terser output without newlines
-  SERD_WRITE_LAX         = 1u << 4u  ///< Tolerate lossy output
+  /**
+     Escape all non-ASCII characters.
+
+     Although all the supported syntaxes are UTF-8 by definition, this can be
+     used to escape all non-ASCII characters so that data will survive
+     transmission through ASCII-only channels.
+  */
+  SERD_WRITE_ASCII = 1u << 0u,
+
+  /**
+     Write expanded URIs instead of prefixed names.
+
+     This will avoid shortening URIs into CURIEs entirely, even if the output
+     syntax supports prefixed names.  This can be useful for making chunks of
+     syntax context-free.
+  */
+  SERD_WRITE_EXPANDED = 1u << 1u,
+
+  /**
+     Write URI references exactly as they are received.
+
+     Normally, the writer resolves URIs against the base URI, so it can
+     potentially writem them as relative URI references.  This flag disables
+     that, so URI nodes are written exactly as they are received.
+
+     When fed by a reader with #SERD_READ_VERBATIM enabled, this will write URI
+     references exactly as they are in the input.
+  */
+  SERD_WRITE_VERBATIM = 1u << 2u,
+
+  /**
+     Write terser output without newlines.
+
+     For Turtle and TriG, this enables a terser form of output which only has
+     newlines at the top level.  This can result in very long lines, but is
+     more compact and useful for making these abbreviated syntaxes line-based.
+  */
+  SERD_WRITE_TERSE = 1u << 3u,
+
+  /**
+     Tolerate lossy output.
+
+     This will tolerate input that can not be written without loss, in
+     particular invalid UTF-8 text.  Note that this flag should be used
+     carefully, since it can result in data loss.
+  */
+  SERD_WRITE_LAX = 1u << 4u
 } SerdWriterFlag;
 
 /// Bitwise OR of SerdWriterFlag values
