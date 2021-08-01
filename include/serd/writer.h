@@ -14,6 +14,7 @@
 #include <serd/uri.h>
 #include <serd/world.h>
 #include <zix/attributes.h>
+#include <zix/string_view.h>
 
 #include <stddef.h>
 
@@ -105,8 +106,7 @@ serd_writer_set_base_uri(SerdWriter* ZIX_NONNULL      writer,
    it defaults to the base URI, so no up-references will be created at all.
 */
 SERD_API SerdStatus
-serd_writer_set_root_uri(SerdWriter* ZIX_NONNULL      writer,
-                         const SerdNode* ZIX_NULLABLE uri);
+serd_writer_set_root_uri(SerdWriter* ZIX_NONNULL writer, ZixStringView uri);
 
 /**
    Set a namespace prefix (and emit directive if applicable).
