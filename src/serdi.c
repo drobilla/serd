@@ -17,22 +17,6 @@
 #define SERDI_ERRORF(fmt, ...) fprintf(stderr, "serdi: " fmt, __VA_ARGS__)
 
 static int
-print_version(void)
-{
-  printf("serdi %d.%d.%d <http://drobilla.net/software/serd>\n",
-         SERD_MAJOR_VERSION,
-         SERD_MINOR_VERSION,
-         SERD_MICRO_VERSION);
-
-  printf("Copyright 2011-2022 David Robillard <d@drobilla.net>.\n"
-         "License ISC: <https://spdx.org/licenses/ISC>.\n"
-         "This is free software; you are free to change and redistribute it."
-         "\nThere is NO WARRANTY, to the extent permitted by law.\n");
-
-  return 0;
-}
-
-static int
 print_usage(const char* const name, const bool error)
 {
   static const char* const description =
@@ -168,7 +152,7 @@ main(int argc, char** argv)
       } else if (opt == 't') {
         writer_flags |= SERD_WRITE_TERSE;
       } else if (opt == 'v') {
-        return print_version();
+        return serd_print_version(argv[0]);
       } else if (opt == 'x') {
         reader_flags |= SERD_READ_VARIABLES;
       } else if (argv[a][1] == 'I') {
