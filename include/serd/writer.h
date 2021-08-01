@@ -6,13 +6,13 @@
 
 #include "serd/attributes.h"
 #include "serd/env.h"
-#include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "zix/attributes.h"
+#include "zix/string_view.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -96,8 +96,7 @@ serd_writer_chop_blank_prefix(SerdWriter* ZIX_NONNULL  writer,
    it defaults to the base URI, so no up-references will be created at all.
 */
 SERD_API SerdStatus
-serd_writer_set_root_uri(SerdWriter* ZIX_NONNULL      writer,
-                         const SerdNode* ZIX_NULLABLE uri);
+serd_writer_set_root_uri(SerdWriter* ZIX_NONNULL writer, ZixStringView uri);
 
 /**
    Finish a write.
