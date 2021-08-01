@@ -13,7 +13,6 @@
 #include <serd/string.h>
 #include <serd/syntax.h>
 #include <serd/uri.h>
-#include <serd/version.h>
 #include <serd/world.h>
 #include <serd/writer.h>
 #include <zix/allocator.h>
@@ -29,22 +28,6 @@
 
 #define SERDI_ERROR(msg) fprintf(stderr, "serdi: " msg)
 #define SERDI_ERRORF(fmt, ...) fprintf(stderr, "serdi: " fmt, __VA_ARGS__)
-
-static int
-print_version(void)
-{
-  printf("serdi %d.%d.%d <http://drobilla.net/software/serd>\n",
-         SERD_MAJOR_VERSION,
-         SERD_MINOR_VERSION,
-         SERD_MICRO_VERSION);
-
-  printf("Copyright 2011-2023 David Robillard <d@drobilla.net>.\n"
-         "License ISC: <https://spdx.org/licenses/ISC>.\n"
-         "This is free software; you are free to change and redistribute it."
-         "\nThere is NO WARRANTY, to the extent permitted by law.\n");
-
-  return 0;
-}
 
 static int
 print_usage(const char* const name, const bool error)
@@ -150,11 +133,19 @@ main(int argc, char** argv)
     }
 
     if (!strcmp(argv[a], "--version")) {
-      return print_version();
+      return serd_print_version(argv[0]);
     }
 
     for (int o = 1; argv[a][o]; ++o) {
       const char opt = argv[a][o];
+
+      if (opt == 'h') {
+        return print_usage(prog, false);
+      }
+
+      if (opt == 'v') {
+        return serd_print_version(argv[0]);
+      }
 
       if (opt == 'a') {
         writer_flags |= SERD_WRITE_ESCAPED;
@@ -164,8 +155,6 @@ main(int argc, char** argv)
         bulk_read = false;
       } else if (opt == 'f') {
         writer_flags |= (SERD_WRITE_UNQUALIFIED | SERD_WRITE_UNRESOLVED);
-      } else if (opt == 'h') {
-        return print_usage(prog, false);
       } else if (opt == 'l') {
         reader_flags |= SERD_READ_LAX;
         writer_flags |= SERD_WRITE_LAX;
@@ -173,8 +162,6 @@ main(int argc, char** argv)
         quiet = true;
       } else if (opt == 't') {
         writer_flags |= SERD_WRITE_TERSE;
-      } else if (opt == 'v') {
-        return print_version();
       } else if (opt == 's') {
         from_string = true;
         break;
