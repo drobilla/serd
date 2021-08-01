@@ -188,7 +188,8 @@ pkg.generate(
 # Build serdi command line utility
 if get_option('utils')
 
-  serdi = executable('serdi', 'src/serdi.c',
+  serdi = executable('serdi',
+                     ['src/serdi.c', 'src/console.c'],
                      c_args: c_warnings + prog_args,
                      install: true,
                      dependencies: serd_dep)
