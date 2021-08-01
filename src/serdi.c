@@ -6,7 +6,6 @@
 #include <serd/env.h>
 #include <serd/error.h>
 #include <serd/node.h>
-#include <serd/node_type.h>
 #include <serd/reader.h>
 #include <serd/sink.h>
 #include <serd/status.h>
@@ -16,6 +15,7 @@
 #include <serd/version.h>
 #include <serd/world.h>
 #include <serd/writer.h>
+#include <zix/string_view.h>
 
 #ifdef _WIN32
 #  ifdef _MSC_VER
@@ -248,8 +248,10 @@ main(int argc, char** argv)
     serd_world_set_error_func(world, quiet_error_func, NULL);
   }
 
-  SerdNode root = serd_node_from_string(SERD_URI, root_uri);
-  serd_writer_set_root_uri(writer, &root);
+  if (root_uri) {
+    serd_writer_set_root_uri(writer, zix_string(root_uri));
+  }
+
   serd_writer_chop_blank_prefix(writer, chop_prefix);
   serd_reader_add_blank_prefix(reader, add_prefix);
 

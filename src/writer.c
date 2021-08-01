@@ -1333,20 +1333,19 @@ serd_writer_set_base_uri(SerdWriter* const writer, const SerdNode* const uri)
 }
 
 SerdStatus
-serd_writer_set_root_uri(SerdWriter* const writer, const SerdNode* const uri)
+serd_writer_set_root_uri(SerdWriter* const writer, const ZixStringView uri)
 {
   assert(writer);
 
   ZixAllocator* const allocator = serd_world_allocator(writer->world);
 
   serd_node_free(allocator, &writer->root_node);
+  writer->root_node = SERD_NODE_NULL;
+  writer->root_uri  = SERD_URI_NULL;
 
-  if (uri && uri->buf) {
-    writer->root_node = serd_node_copy(allocator, uri);
-    writer->root_uri  = serd_parse_uri(uri->buf);
-  } else {
-    writer->root_node = SERD_NODE_NULL;
-    writer->root_uri  = SERD_URI_NULL;
+  if (uri.length) {
+    writer->root_node = serd_node_new_uri_from_string(allocator, uri.data);
+    writer->root_uri  = serd_parse_uri(writer->root_node.buf);
   }
 
   return SERD_SUCCESS;
