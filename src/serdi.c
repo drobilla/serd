@@ -240,9 +240,7 @@ main(int argc, char** argv)
   }
 
   if (root_uri) {
-    SerdNode* const root = serd_new_uri(zix_string(root_uri));
-    serd_writer_set_root_uri(writer, root);
-    serd_node_free(root);
+    serd_writer_set_root_uri(writer, zix_string(root_uri));
   }
 
   serd_writer_chop_blank_prefix(writer, chop_prefix);

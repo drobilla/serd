@@ -1256,7 +1256,7 @@ serd_writer_set_base_uri(void* const handle, const SerdNode* const uri)
 }
 
 SerdStatus
-serd_writer_set_root_uri(SerdWriter* writer, const SerdNode* uri)
+serd_writer_set_root_uri(SerdWriter* const writer, const ZixStringView uri)
 {
   assert(writer);
 
@@ -1264,8 +1264,8 @@ serd_writer_set_root_uri(SerdWriter* writer, const SerdNode* uri)
   writer->root_node = NULL;
   writer->root_uri  = SERD_URI_NULL;
 
-  if (uri) {
-    writer->root_node = serd_node_copy(uri);
+  if (uri.length) {
+    writer->root_node = serd_new_uri(uri);
     writer->root_uri  = serd_node_uri_view(writer->root_node);
   }
 
