@@ -203,7 +203,8 @@ if get_option('utils')
     tool_link_args += ['-static']
   endif
 
-  serdi = executable('serdi', 'src/serdi.c',
+  serdi = executable('serdi',
+                     ['src/serdi.c', 'src/console.c'],
                      c_args: c_warnings + platform_args + prog_args,
                      link_args: tool_link_args,
                      install: true,
