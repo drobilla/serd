@@ -1,6 +1,7 @@
 // Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
+#include "console.h"
 #include "system.h"
 
 #include "serd/byte_source.h"
@@ -18,14 +19,6 @@
 #include "serd/writer.h"
 #include "zix/allocator.h"
 #include "zix/filesystem.h"
-
-#ifdef _WIN32
-#  ifdef _MSC_VER
-#    define WIN32_LEAN_AND_MEAN
-#  endif
-#  include <fcntl.h>
-#  include <io.h>
-#endif
 
 #include <errno.h>
 #include <limits.h>
@@ -270,10 +263,8 @@ main(int argc, char** argv)
     return print_usage(prog, true);
   }
 
-#ifdef _WIN32
-  _setmode(_fileno(stdin), _O_BINARY);
-  _setmode(_fileno(stdout), _O_BINARY);
-#endif
+  serd_set_stream_utf8_mode(stdin);
+  serd_set_stream_utf8_mode(stdout);
 
   char* const* const inputs   = argv + a;
   const int          n_inputs = argc - a;
