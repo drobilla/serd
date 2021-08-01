@@ -14,17 +14,10 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "console.h"
 #include "system.h"
 
 #include "serd/serd.h"
-
-#ifdef _WIN32
-#  ifdef _MSC_VER
-#    define WIN32_LEAN_AND_MEAN 1
-#  endif
-#  include <fcntl.h>
-#  include <io.h>
-#endif
 
 #include <errno.h>
 #include <limits.h>
@@ -405,12 +398,10 @@ main(int argc, char** argv)
   SerdEnv* const   env =
     serd_env_new(base ? serd_node_string_view(base) : SERD_EMPTY_STRING());
 
-#ifdef _WIN32
-  _setmode(_fileno(stdin), _O_BINARY);
+  serd_set_stream_utf8_mode(stdin);
   if (!out_filename) {
-    _setmode(_fileno(stdout), _O_BINARY);
+    serd_set_stream_utf8_mode(stdout);
   }
-#endif
 
   const SerdDescribeFlags describe_flags =
     no_inline ? SERD_NO_INLINE_OBJECTS : 0u;
