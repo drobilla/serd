@@ -367,7 +367,7 @@ read_IRIREF(SerdReader* const reader, SerdNode** const dest)
     return st;
   }
 
-  return (reader->flags & SERD_READ_RELATIVE)
+  return (reader->flags & SERD_READ_VERBATIM)
            ? SERD_SUCCESS
            : resolve_IRIREF(reader, *dest, string_start_offset);
 }

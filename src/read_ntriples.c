@@ -243,7 +243,7 @@ static bool
 avoid_blank_clashes(const SerdReader* const reader)
 {
   return (reader->syntax == SERD_TURTLE || reader->syntax == SERD_TRIG) &&
-         !(reader->flags & SERD_READ_EXACT_BLANKS);
+         !(reader->flags & SERD_READ_VERBATIM);
 }
 
 static SerdStatus
