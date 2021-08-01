@@ -2472,8 +2472,7 @@ serd_writer_set_base_uri(SerdWriter* SERD_NONNULL      writer,
 */
 SERD_API
 SerdStatus
-serd_writer_set_root_uri(SerdWriter* SERD_NONNULL      writer,
-                         const SerdNode* SERD_NULLABLE uri);
+serd_writer_set_root_uri(SerdWriter* SERD_NONNULL writer, SerdStringView uri);
 
 /**
    Finish a write.
