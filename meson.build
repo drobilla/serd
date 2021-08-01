@@ -229,7 +229,10 @@ if not get_option('tools').disabled()
 
   serdi = executable(
     'serdi',
-    files('src/serdi.c'),
+    files(
+      'src/console.c',
+      'src/serdi.c',
+    ),
     c_args: c_suppressions + platform_c_args,
     dependencies: [serd_dep, zix_dep],
     install: true,
