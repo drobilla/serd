@@ -380,12 +380,8 @@ main(int argc, char** argv)
   const SerdDescribeFlags describe_flags =
     no_inline ? SERD_NO_INLINE_OBJECTS : 0u;
 
-  const size_t        block_size = bulk_write ? 4096u : 1u;
   SerdByteSink* const byte_sink =
-    out_filename
-      ? serd_byte_sink_new_filename(out_filename, block_size)
-      : serd_byte_sink_new_function((SerdWriteFunc)fwrite, stdout, block_size);
-
+    serd_open_output(out_filename, bulk_write ? 4096u : 1u);
   if (!byte_sink) {
     perror("serdi: error opening output file");
     return 1;
