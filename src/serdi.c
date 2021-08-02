@@ -12,7 +12,6 @@
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/status.h"
-#include "serd/stream.h"
 #include "serd/string_view.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
@@ -247,9 +246,6 @@ main(int argc, char** argv)
   }
 
   serd_set_stream_utf8_mode(stdin);
-  if (!out_filename) {
-    serd_set_stream_utf8_mode(stdout);
-  }
 
   char* const* const inputs   = argv + a;
   const int          n_inputs = argc - a;
@@ -281,12 +277,7 @@ main(int argc, char** argv)
   SerdEnv* const   env =
     serd_env_new(base ? serd_node_string_view(base) : serd_empty_string());
 
-  SerdOutputStream out =
-    out_filename ? serd_open_output_file(out_filename)
-                 : serd_open_output_stream((SerdWriteFunc)fwrite,
-                                           (SerdStreamCloseFunc)fclose,
-                                           stdout);
-
+  SerdOutputStream out = serd_open_tool_output(out_filename);
   if (!out.stream) {
     perror("serdi: error opening output file");
     return 1;
