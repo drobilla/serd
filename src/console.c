@@ -76,6 +76,18 @@ serd_open_tool_input(const char* const filename)
   return serd_open_input_file(filename);
 }
 
+SerdOutputStream
+serd_open_tool_output(const char* const filename)
+{
+  if (!filename || !strcmp(filename, "-")) {
+    serd_set_stream_utf8_mode(stdout);
+    return serd_open_output_stream(
+      (SerdWriteFunc)fwrite, (SerdStreamCloseFunc)fclose, stdout);
+  }
+
+  return serd_open_output_file(filename);
+}
+
 SerdStatus
 serd_set_base_uri_from_path(SerdEnv* const env, const char* const path)
 {
