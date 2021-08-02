@@ -5,6 +5,7 @@
 #define SERD_TOOLS_CONSOLE_H
 
 #include <serd/input_stream.h>
+#include <serd/output_stream.h>
 #include <serd/reader.h>
 #include <serd/status.h>
 #include <serd/syntax.h>
@@ -29,5 +30,8 @@ serd_set_output_option(ZixStringView    name,
 
 SerdInputStream
 serd_open_tool_input(const char* filename);
+
+SerdOutputStream
+serd_open_tool_output(const char* filename);
 
 #endif // SERD_TOOLS_CONSOLE_H
