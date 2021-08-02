@@ -26,7 +26,7 @@ def log_error(message):
 
 def test_osyntax_options(osyntax):
     if osyntax.lower() == "ntriples" or osyntax.lower() == "nquads":
-        return ["-a"]
+        return ["-o", "ascii"]
 
     return []
 
@@ -80,7 +80,8 @@ def test_thru(
             "foo",
             "-w",
             thru_path,
-            "-a",
+            "-o",
+            "ascii",
             "-I",
             base_uri,
             out_path,
@@ -243,9 +244,10 @@ def test_suite(
             test_path = os.path.join(test_dir, test_name)
 
             command = command_prefix + [
-                "-a",
                 "-o",
                 osyntax,
+                "-o",
+                "ascii",
                 "-I",
                 test_uri,
                 test_path,
@@ -305,9 +307,10 @@ def test_suite(
 
                     model_command = command_prefix + [
                         "-m",
-                        "-a",
                         "-o",
                         osyntax,
+                        "-o",
+                        "ascii",
                         "-w",
                         out_filename,
                         "-I",
@@ -365,7 +368,7 @@ def test_suite(
         if test_class.startswith(ns_rdftest):
             expected = (
                 1
-                if "-l" not in command_prefix and "Negative" in test_class
+                if "lax" not in command_prefix and "Negative" in test_class
                 else 0
             )
             run_tests(test_class, instances, expected, results)
