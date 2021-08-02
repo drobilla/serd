@@ -6,6 +6,7 @@
 #include <serd/env.h>
 #include <serd/file_uri.h>
 #include <serd/input_stream.h>
+#include <serd/output_stream.h>
 #include <serd/reader.h>
 #include <serd/status.h>
 #include <serd/string.h>
@@ -168,4 +169,12 @@ serd_open_tool_input(const char* const filename)
 {
   return !strcmp(filename, "-") ? serd_open_input_standard()
                                 : serd_open_input_file(filename);
+}
+
+SerdOutputStream
+serd_open_tool_output(const char* const filename)
+{
+  return (!filename || !strcmp(filename, "-"))
+           ? serd_open_output_standard()
+           : serd_open_output_file(filename);
 }

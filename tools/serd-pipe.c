@@ -41,6 +41,7 @@ print_usage(const char* const name, const bool error)
     "  -c PREFIX    Chop PREFIX from matching blank node IDs\n"
     "  -h           Display this help and exit\n"
     "  -k BYTES     Reader and writer stack size\n"
+    "  -o FILENAME  Write output to FILENAME instead of stdout\n"
     "  -p PREFIX    Add PREFIX to blank node IDs\n"
     "  -q           Suppress all output except data\n"
     "  -r ROOT_URI  Keep relative URIs within ROOT_URI\n"
@@ -120,6 +121,7 @@ main(int argc, char** argv)
   const char*     input_string  = NULL;
   const char*     add_prefix    = "";
   const char*     chop_prefix   = NULL;
+  const char*     out_filename  = NULL;
   const char*     root_uri      = NULL;
   int             a             = 1;
   for (; a < argc && argv[a][0] == '-'; ++a) {
@@ -211,6 +213,13 @@ main(int argc, char** argv)
         }
         stack_size = (size_t)size;
         break;
+      } else if (opt == 'o') {
+        if (argv[a][o + 1] || ++a == argc) {
+          return missing_arg(argv[0], 'o');
+        }
+
+        out_filename = argv[a];
+        break;
       } else if (opt == 'p') {
         if (argv[a][o + 1] || ++a == argc) {
           return missing_arg(prog, 'p');
@@ -264,16 +273,20 @@ main(int argc, char** argv)
   const SerdLimits limits = {stack_size, stack_size};
   serd_world_set_limits(world, limits);
 
-  SerdEnv* const   env = serd_env_new(NULL, zix_empty_string());
-  SerdOutputStream out = serd_open_output_standard();
+  SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
 
-  SerdStatus st = SERD_SUCCESS;
   if (base_arg) { // Base URI given on command line
     if (serd_uri_string_has_scheme(base_arg)) {
       serd_env_set_base_uri(env, zix_string(base_arg));
     } else {
       serd_set_base_uri_from_path(env, base_arg);
     }
+  }
+
+  SerdOutputStream out = serd_open_tool_output(out_filename);
+  if (!out.stream) {
+    perror("serdi: error opening output file");
+    return 1;
   }
 
   SerdWriter* const writer =
@@ -289,6 +302,7 @@ main(int argc, char** argv)
 
   serd_writer_chop_blank_prefix(writer, chop_prefix);
 
+  SerdStatus st = SERD_SUCCESS;
   if (input_string) {
     const char*     position  = input_string;
     SerdInputStream string_in = serd_open_input_string(&position);
@@ -343,7 +357,7 @@ main(int argc, char** argv)
   serd_env_free(env);
   serd_world_free(world);
 
-  if (fclose(stdout)) {
+  if (serd_close_output(&out)) {
     perror("serd-pipe: write error");
     st = SERD_BAD_STREAM;
   }
