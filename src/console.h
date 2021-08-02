@@ -26,3 +26,6 @@ serd_print_version(const char* program);
 
 SerdByteSource*
 serd_open_input(const char* filename, size_t page_size);
+
+SerdByteSink*
+serd_open_output(const char* filename, size_t page_size);
