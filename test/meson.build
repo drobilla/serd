@@ -246,12 +246,12 @@ if is_variable('serdi')
          timeout: 240)
   endforeach
 
-  ### The terse suite needs to be run with -t
+  ### The terse suite needs to be run with -o terse
   test('terse', run_test_suite,
        args: script_args + ['--osyntax', 'turtle',
                             files('terse/manifest.ttl'),
                             serd_base + 'terse/',
-                            '--', '-t'],
+                            '--', '-o', 'terse'],
        env: test_env,
        suite: ['rdf', 'serd'],
        timeout: 240)
@@ -259,7 +259,7 @@ if is_variable('serdi')
   manifest = files('pattern' / 'manifest.ttl')
   base_uri = serd_base + 'pattern' + '/'
   test('pattern', run_test_suite,
-       args: script_args + [manifest, base_uri, '--', '-x'],
+       args: script_args + [manifest, base_uri, '--', '-i', 'variables'],
        env: test_env,
        suite: ['rdf', 'serd'],
        timeout: 240)
@@ -286,7 +286,8 @@ if is_variable('serdi')
 
   ### ... and once with lax parsing to tolerate them
   test('lax.lax', run_test_suite,
-       args: script_args + [lax_manifest, lax_base_uri, '--', '-l'],
+       args: script_args + [lax_manifest, lax_base_uri, '--',
+                            '-i', 'lax', '-o', 'lax'],
        env: test_env,
        is_parallel: false,
        suite: ['rdf', 'serd'],

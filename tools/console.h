@@ -24,6 +24,16 @@ serd_set_stream_utf8_mode(FILE* stream);
 int
 serd_print_version(const char* program);
 
+SerdStatus
+serd_set_input_option(SerdStringView   name,
+                      SerdSyntax*      syntax,
+                      SerdReaderFlags* flags);
+
+SerdStatus
+serd_set_output_option(SerdStringView   name,
+                       SerdSyntax*      syntax,
+                       SerdWriterFlags* flags);
+
 SerdByteSource*
 serd_open_input(const char* filename, size_t block_size);
 
