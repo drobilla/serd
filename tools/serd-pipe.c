@@ -11,7 +11,6 @@
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/status.h"
-#include "serd/stream.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "serd/writer.h"
@@ -259,7 +258,6 @@ main(int argc, char** argv)
   }
 
   serd_set_stream_utf8_mode(stdin);
-  serd_set_stream_utf8_mode(stdout);
 
   char* const* const inputs   = argv + a;
   const int          n_inputs = argc - a;
@@ -287,7 +285,6 @@ main(int argc, char** argv)
     zix_free(NULL, input_path);
   }
 
-  FILE* const      out_fd = stdout;
   SerdWorld* const world  = serd_world_new(NULL);
   const SerdLimits limits = {stack_size, MAX_DEPTH};
   serd_world_set_limits(world, limits);
@@ -295,10 +292,11 @@ main(int argc, char** argv)
   SerdEnv* const env =
     serd_env_new(NULL, base ? serd_node_string_view(base) : zix_empty_string());
 
-  SerdOutputStream out = serd_open_output_stream((SerdWriteFunc)fwrite,
-                                                 (SerdErrorFunc)ferror,
-                                                 (SerdCloseFunc)fclose,
-                                                 out_fd);
+  SerdOutputStream out = serd_open_tool_output("-");
+  if (!out.stream) {
+    perror("serdi: error opening output file");
+    return 1;
+  }
 
   SerdWriter* const writer = serd_writer_new(
     world, output_syntax, writer_flags, env, &out, bulk_write ? 4096U : 1U);
