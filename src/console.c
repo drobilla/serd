@@ -78,3 +78,21 @@ serd_open_output(const char* const filename, const size_t page_size)
 
   return serd_byte_sink_new_filename(filename, page_size);
 }
+
+SerdStatus
+serd_set_base_uri_from_path(SerdEnv* const env, const char* const path)
+{
+  char* const input_path = serd_canonical_path(path);
+  if (!input_path) {
+    return SERD_ERR_BAD_ARG;
+  }
+
+  SerdNode* const file_uri =
+    serd_new_file_uri(serd_string(input_path), serd_empty_string());
+
+  serd_env_set_base_uri(env, serd_node_string_view(file_uri));
+  serd_node_free(file_uri);
+  serd_free(input_path);
+
+  return SERD_SUCCESS;
+}
