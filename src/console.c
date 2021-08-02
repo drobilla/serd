@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: ISC
 
 #include "console.h"
+#include "system.h"
 
 #include "serd/serd.h"
 #include "zix/allocator.h"
@@ -14,6 +15,8 @@
 #  include <fcntl.h>
 #  include <io.h>
 #endif
+
+#include <string.h>
 
 void
 serd_set_stream_utf8_mode(FILE* const stream)
@@ -40,6 +43,30 @@ serd_print_version(const char* const program)
          "There is NO WARRANTY, to the extent permitted by law.\n");
 
   return 0;
+}
+
+SerdByteSource*
+serd_open_tool_input(const char* const filename, const size_t page_size)
+{
+  SerdByteSource* byte_source = NULL;
+  if (!strcmp(filename, "-")) {
+    serd_set_stream_utf8_mode(stdin);
+
+    SerdNode* name = serd_new_string(serd_string("stdin"));
+
+    byte_source = serd_byte_source_new_function(serd_file_read_byte,
+                                                (SerdStreamErrorFunc)ferror,
+                                                NULL,
+                                                stdin,
+                                                name,
+                                                page_size);
+
+    serd_node_free(name);
+  } else {
+    byte_source = serd_byte_source_new_filename(filename, page_size);
+  }
+
+  return byte_source;
 }
 
 SerdStatus

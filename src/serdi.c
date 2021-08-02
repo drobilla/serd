@@ -82,18 +82,8 @@ read_file(SerdWorld* const      world,
   syntax = syntax ? syntax : serd_guess_syntax(filename);
   syntax = syntax ? syntax : SERD_TRIG;
 
-  SerdByteSource* byte_source = NULL;
-  if (!strcmp(filename, "-")) {
-    SerdNode* name = serd_new_string(serd_string("stdin"));
-
-    byte_source = serd_byte_source_new_function(
-      serd_file_read_byte, (SerdStreamErrorFunc)ferror, NULL, stdin, name, 1);
-
-    serd_node_free(name);
-  } else {
-    byte_source =
-      serd_byte_source_new_filename(filename, bulk_read ? SERD_PAGE_SIZE : 1U);
-  }
+  SerdByteSource* byte_source =
+    serd_open_tool_input(filename, bulk_read ? SERD_PAGE_SIZE : 1U);
 
   if (!byte_source) {
     SERDI_ERRORF(
