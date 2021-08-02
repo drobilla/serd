@@ -12,7 +12,6 @@
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/status.h"
-#include "serd/stream.h"
 #include "serd/string_view.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
@@ -282,12 +281,8 @@ main(int argc, char** argv)
     serd_set_stream_utf8_mode(stdout);
   }
 
-  const size_t        block_size = bulk_write ? 4096U : 1U;
   SerdByteSink* const byte_sink =
-    out_filename
-      ? serd_byte_sink_new_filename(out_filename, block_size)
-      : serd_byte_sink_new_function((SerdWriteFunc)fwrite, stdout, block_size);
-
+    serd_open_output(out_filename, bulk_write ? 4096U : 1U);
   if (!byte_sink) {
     perror("serdi: error opening output file");
     return 1;
