@@ -194,6 +194,14 @@ test_base_uri(void)
   assert(expect_string_view(serd_env_base_uri_string(env), ""));
   assert(!serd_uri_has_scheme(serd_env_base_uri_view(env)));
 
+  // Set a valid base path
+  assert(!serd_env_set_base_path(env, zix_string("/d/f")));
+  assert(expect_string_view(serd_env_base_uri_string(env), "file:///d/f"));
+
+  // Reset the base path
+  assert(!serd_env_set_base_path(env, zix_empty_string()));
+  assert(expect_string_view(serd_env_base_uri_string(env), ""));
+
   serd_env_free(env);
 }
 

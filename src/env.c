@@ -4,6 +4,7 @@
 #include <serd/env.h>
 
 #include <serd/event.h>
+#include <serd/file_uri.h>
 #include <serd/sink.h>
 #include <serd/status.h>
 #include <serd/string.h>
@@ -11,6 +12,8 @@
 #include <serd/uri.h>
 #include <zix/allocator.h>
 #include <zix/attributes.h>
+#include <zix/filesystem.h>
+#include <zix/path.h>
 #include <zix/string_view.h>
 
 #include <assert.h>
@@ -136,6 +139,48 @@ serd_env_set_base_uri(SerdEnv* const env, const ZixStringView uri)
   env->base_uri        = serd_parse_uri(env->base_uri_string.data);
   zix_free(env->allocator, old_base_string.data);
   return SERD_SUCCESS;
+}
+
+static SerdString
+base_uri_from_path(const char* const path)
+{
+  static const ZixStringView host = ZIX_STATIC_STRING("");
+
+  SerdString base = {0, NULL};
+
+  if (zix_path_is_absolute(path)) {
+    char* const normal = zix_path_lexically_normal(NULL, path);
+
+    base = serd_file_uri_to_string(NULL, zix_string(normal), host);
+
+    zix_free(NULL, normal);
+  } else {
+    char* const cwd      = zix_current_path(NULL);
+    char* const absolute = zix_path_join(NULL, cwd, path);
+    char* const normal   = zix_path_lexically_normal(NULL, absolute);
+
+    base = serd_file_uri_to_string(NULL, zix_string(normal), host);
+
+    zix_free(NULL, normal);
+    zix_free(NULL, absolute);
+    zix_free(NULL, cwd);
+  }
+
+  return base;
+}
+
+SerdStatus
+serd_env_set_base_path(SerdEnv* const env, const ZixStringView path)
+{
+  SerdStatus st = SERD_SUCCESS;
+  if (path.length) {
+    SerdString file_uri = base_uri_from_path(path.data);
+    st = serd_env_set_base_uri(env, serd_string_view(file_uri));
+    zix_free(NULL, file_uri.data);
+  } else {
+    st = serd_env_set_base_uri(env, zix_empty_string());
+  }
+  return st;
 }
 
 ZIX_PURE_FUNC static SerdPrefix*

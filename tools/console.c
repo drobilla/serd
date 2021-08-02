@@ -6,14 +6,6 @@
 #include <serd/input_stream.h>
 #include <serd/version.h>
 
-#ifdef _WIN32
-#  ifdef _MSC_VER
-#    define WIN32_LEAN_AND_MEAN 1
-#  endif
-#  include <fcntl.h>
-#  include <io.h>
-#endif
-
 #include <stdio.h>
 #include <string.h>
 

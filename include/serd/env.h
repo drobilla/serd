@@ -53,6 +53,15 @@ SERD_API SerdStatus
 serd_env_set_base_uri(SerdEnv* ZIX_NONNULL env, ZixStringView uri);
 
 /**
+   Set the current base URI from a filesystem path.
+
+   @return #SERD_SUCCESS, #SERD_BAD_ARG if `uri` is relative but a base URI
+   isn't set, or #SERD_BAD_ALLOC.
+*/
+SERD_API SerdStatus
+serd_env_set_base_path(SerdEnv* ZIX_NONNULL env, ZixStringView path);
+
+/**
    Set a namespace prefix.
 
    If a prefix with the given name is already set, the old value is overridden.
