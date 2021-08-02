@@ -156,22 +156,22 @@ simple_command_tests = {
     'bad': [
       ['-B', 'nonuriorpath'],
       ['-B'],
+      ['-I', 'turtle'],
+      ['-I', 'unknown'],
+      ['-I'],
+      ['-O', 'unknown'],
+      ['-O'],
       ['-b', '-1'],
       ['-b', '1024junk'],
       ['-b', '9223372036854775807'],
       ['-b'],
       ['-c'],
-      ['-fi'],
-      ['-i', 'turtle'],
-      ['-i', 'unknown'],
-      ['-i'],
       ['-k', '-1'],
       ['-k', '1024junk'],
       ['-k', '9223372036854775807'],
       ['-k'],
-      ['-o', 'unknown'],
-      ['-o'],
       ['-p'],
+      ['-qi'],
       ['-r'],
       ['-s', '<foo> a <Bar> .'],
       ['-s'],
@@ -357,19 +357,19 @@ ns_w3 = 'http://www.w3.org/2013/'
 test_suites = {
   'nquads': [
     files('w3c/nquads/manifest.ttl'), ns_w3 + 'NQuadsTests/',
-    '--', '-a', '-i', 'NQuads',
+    '--', '-I', 'NQuads', '-O', 'ascii',
   ],
   'ntriples': [
     files('w3c/ntriples/manifest.ttl'), ns_w3 + 'NTriplesTests/',
-    '--', '-a', '-i', 'NTriples',
+    '--', '-I', 'NTriples', '-O', 'ascii',
   ],
   'trig': [
     files('w3c/trig/manifest.ttl'), ns_w3 + 'TriGTests/',
-    '--', '-a', '-i', 'TriG',
+    '--', '-I', 'TriG', '-O', 'ascii',
   ],
   'turtle': [
     files('w3c/turtle/manifest.ttl'), ns_w3 + 'TurtleTests/',
-    '--', '-a', '-i', 'Turtle',
+    '--', '-I', 'Turtle', '-O', 'ascii',
   ],
 
   'abbreviate': [
@@ -380,42 +380,42 @@ test_suites = {
   ],
   'bad_turtle': [
     files('extra/bad/manifest.ttl'), ns_serdtest + 'bad/',
-    '--', '-o', 'turtle',
+    '--', '-O', 'turtle',
   ],
   'big': [
     files('extra/big/manifest.ttl'), ns_serdtest + 'big/',
   ],
   'bytes': [
     files('extra/good/manifest.ttl'), ns_serdtest + 'good/',
-    '--', '-a', '-b', '1',
+    '--', '-b', '1', '-O', 'ascii',
   ],
   'canon': [
     files('extra/canon/manifest.ttl'), ns_serdtest + 'canon/',
-    '--', '-a', '-C',
+    '--', '-C', '-O', 'ascii',
   ],
   'fast': [
     files('extra/perfect/manifest.ttl'), ns_serdtest + 'perfect/',
-    '--', '-f',
+    '--', '-I', 'verbatim', '-O', 'verbatim',
   ],
   'full': [
     files('extra/full/manifest.ttl'), ns_serdtest + 'full/',
-    '--', '-f',
+    '--', '-O', 'expanded',
   ],
   'good': [
     files('extra/good/manifest.ttl'), ns_serdtest + 'good/',
-    '--', '-a',
+    '--', '-O', 'ascii',
   ],
   'lax_lax': [
     '--lax',
     files('extra/lax/manifest.ttl'), ns_serdtest + 'lax/',
-    '--', '-a', '-l',
+    '--', '-I', 'lax', '-O', 'ascii',
   ],
   'lax_strict': [
     files('extra/lax/manifest.ttl'), ns_serdtest + 'lax/',
   ],
   'pattern': [
     files('extra/pattern/manifest.ttl'), ns_serdtest + 'pattern/',
-    '--', '-x',
+    '--', '-I', 'variables',
   ],
   'perfect_forward': [
     files('extra/perfect/manifest.ttl'), ns_serdtest + 'perfect/',
@@ -438,7 +438,7 @@ test_suites = {
   ],
   'qualify': [
     files('extra/qualify/manifest.ttl'), ns_serdtest + 'qualify/',
-    '--', '-i', 'turtle', # Just for coverage
+    '--', '-I', 'turtle', # Just for coverage
   ],
   'root': [
     files('extra/root/manifest.ttl'), ns_serdtest + 'root/',
@@ -446,7 +446,7 @@ test_suites = {
   ],
   'terse': [
     files('extra/terse/manifest.ttl'), ns_serdtest + 'terse/',
-    '--', '-t',
+    '--', '-O', 'terse',
   ],
 }
 
