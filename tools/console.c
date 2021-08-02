@@ -45,6 +45,77 @@ serd_print_version(const char* const program)
   return 0;
 }
 
+SerdStatus
+serd_set_input_option(const SerdStringView   name,
+                      SerdSyntax* const      syntax,
+                      SerdReaderFlags* const flags)
+{
+  typedef struct {
+    const char*    name;
+    SerdReaderFlag flag;
+  } InputOption;
+
+  static const InputOption input_options[] = {
+    {"lax", SERD_READ_LAX},
+    {"variables", SERD_READ_VARIABLES},
+    {"verbatim", SERD_READ_VERBATIM},
+    {NULL, SERD_READ_LAX},
+  };
+
+  const SerdSyntax named_syntax = serd_syntax_by_name(name.buf);
+  if (!serd_strncasecmp(name.buf, "empty", name.len) ||
+      named_syntax != SERD_SYNTAX_EMPTY) {
+    *syntax = named_syntax;
+    return SERD_SUCCESS;
+  }
+
+  for (const InputOption* o = input_options; o->name; ++o) {
+    if (!serd_strncasecmp(o->name, name.buf, name.len)) {
+      *flags |= o->flag;
+      return SERD_SUCCESS;
+    }
+  }
+
+  //  SERDI_ERRORF("invalid input option `%s'\n", name.buf);
+  return SERD_FAILURE;
+}
+
+SerdStatus
+serd_set_output_option(const SerdStringView   name,
+                       SerdSyntax* const      syntax,
+                       SerdWriterFlags* const flags)
+{
+  typedef struct {
+    const char*    name;
+    SerdWriterFlag flag;
+  } OutputOption;
+
+  static const OutputOption output_options[] = {
+    {"ascii", SERD_WRITE_ASCII},
+    {"expanded", SERD_WRITE_EXPANDED},
+    {"verbatim", SERD_WRITE_VERBATIM},
+    {"terse", SERD_WRITE_TERSE},
+    {"lax", SERD_WRITE_LAX},
+    {NULL, SERD_WRITE_ASCII},
+  };
+
+  const SerdSyntax named_syntax = serd_syntax_by_name(name.buf);
+  if (!serd_strncasecmp(name.buf, "empty", name.len) ||
+      named_syntax != SERD_SYNTAX_EMPTY) {
+    *syntax = named_syntax;
+    return SERD_SUCCESS;
+  }
+
+  for (const OutputOption* o = output_options; o->name; ++o) {
+    if (!serd_strncasecmp(o->name, name.buf, name.len)) {
+      *flags |= o->flag;
+      return SERD_SUCCESS;
+    }
+  }
+
+  return SERD_FAILURE;
+}
+
 /// Wrapper for getc that is compatible with SerdReadFunc but faster than fread
 static size_t
 serd_file_read_byte(void* buf, size_t size, size_t nmemb, void* stream)

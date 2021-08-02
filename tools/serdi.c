@@ -49,23 +49,21 @@ print_usage(const char* const name, const bool error)
     "  -F PATTERN   Filter out statements that match PATTERN.\n"
     "  -G PATTERN   Only include statements matching PATTERN.\n"
     "  -I BASE_URI  Input base URI.\n"
-    "  -a           Write ASCII output if possible.\n"
     "  -b BYTES     I/O block size.\n"
     "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n"
     "  -f           Keep full URIs in input (don't qualify).\n"
     "  -h           Display this help and exit.\n"
-    "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads.\n"
+    "  -i SYNTAX    Input syntax (turtle/ntriples/trig/nquads),\n"
+    "               or flag (lax/variables/verbatim).\n"
     "  -k BYTES     Parser stack size.\n"
-    "  -l           Lax (non-strict) parsing.\n"
-    "  -o SYNTAX    Output syntax: empty/turtle/ntriples/nquads.\n"
+    "  -o SYNTAX    Output syntax (empty/turtle/ntriples/nquads),\n"
+    "               or flag (ascii/expanded/verbatim/terse/lax).\n"
     "  -p PREFIX    Add PREFIX to blank node IDs.\n"
     "  -q           Suppress all output except data.\n"
     "  -r ROOT_URI  Keep relative URIs within ROOT_URI.\n"
     "  -s STRING    Parse STRING as input.\n"
-    "  -t           Write terser output without newlines.\n"
     "  -v           Display version information and exit.\n"
-    "  -w FILENAME  Write output to FILENAME instead of stdout.\n"
-    "  -x           Support parsing variable nodes like \"?x\".\n";
+    "  -w FILENAME  Write output to FILENAME instead of stdout.\n";
 
   FILE* const os = error ? stderr : stdout;
   fprintf(os, "%s", error ? "\n" : "");
@@ -208,23 +206,14 @@ main(int argc, char** argv)
 
       if (opt == 'C') {
         canonical = true;
-      } else if (opt == 'a') {
-        writer_flags |= SERD_WRITE_ASCII;
       } else if (opt == 'f') {
         writer_flags |= (SERD_WRITE_EXPANDED | SERD_WRITE_VERBATIM);
       } else if (opt == 'h') {
         return print_usage(prog, false);
-      } else if (opt == 'l') {
-        reader_flags |= SERD_READ_LAX;
-        writer_flags |= SERD_WRITE_LAX;
       } else if (opt == 'q') {
         quiet = true;
-      } else if (opt == 't') {
-        writer_flags |= SERD_WRITE_TERSE;
       } else if (opt == 'v') {
         return serd_print_version(argv[0]);
-      } else if (opt == 'x') {
-        reader_flags |= SERD_READ_VARIABLES;
       } else if (argv[a][1] == 'F') {
         if (++a == argc) {
           return missing_arg(argv[0], 'F');
@@ -271,8 +260,9 @@ main(int argc, char** argv)
           return missing_arg(prog, 'i');
         }
 
-        if (!(input_syntax = serd_syntax_by_name(argv[a]))) {
-          return print_usage(prog, true);
+        if (serd_set_input_option(
+              serd_string(argv[a]), &input_syntax, &reader_flags)) {
+          return print_usage(argv[0], true);
         }
         break;
       } else if (opt == 'k') {
@@ -289,16 +279,18 @@ main(int argc, char** argv)
         stack_size = (size_t)size;
         break;
       } else if (opt == 'o') {
-        osyntax_set = true;
         if (argv[a][o + 1] || ++a == argc) {
           return missing_arg(prog, 'o');
         }
 
-        if (!strcmp(argv[a], "empty")) {
-          output_syntax = SERD_SYNTAX_EMPTY;
-        } else if (!(output_syntax = serd_syntax_by_name(argv[a]))) {
+        if (serd_set_output_option(
+              serd_string(argv[a]), &output_syntax, &writer_flags)) {
           return print_usage(argv[0], true);
         }
+
+        osyntax_set =
+          output_syntax != SERD_SYNTAX_EMPTY || !strcmp(argv[a], "empty");
+
         break;
       } else if (opt == 'p') {
         if (argv[a][o + 1] || ++a == argc) {

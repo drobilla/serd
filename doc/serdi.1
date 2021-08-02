@@ -8,7 +8,7 @@
 .Nd read, filter, and write RDF data
 .Sh SYNOPSIS
 .Nm serdi
-.Op Fl Cafhlqtvx
+.Op Fl Cfhqv
 .Op Fl F Ar pattern | Fl G Ar pattern
 .Op Fl I Ar base
 .Op Fl b Ar bytes
@@ -76,10 +76,6 @@ the URI of the file is automatically used as the base URI.
 This option can be used to override that,
 or to provide a base URI for input from stdin or a string.
 .Pp
-.It Fl a
-Write ASCII output.
-If this is enabled, all non-ASCII characters will be escaped, even if the output syntax allows them to be written in UTF-8.
-.Pp
 .It Fl b Ar bytes
 I/O block size.
 This is the number of bytes in a file that will be read or written at once.
@@ -107,14 +103,43 @@ Keep full URIs in input (don't qualify with namespace prefixes or make URIs rela
 Print the command line options.
 .Pp
 .It Fl i Ar syntax
-Read input as
-.Ar syntax .
-Case is ignored, valid values are:
+Set an input syntax option.
+May be given multiple times.
+The case-insensitive
+.Ar syntax
+can be either a syntax name or an input syntax option.
+The supported syntaxes are
 .Dq NQuads ,
 .Dq NTriples ,
 .Dq TriG ,
 and
 .Dq Turtle .
+.Pp
+The supported input options are:
+.Pp
+.Bl -tag -width "QvariablesQ" -compact -offset indent
+.It Dq lax
+Tolerate invalid input where possible.
+Warnings will be printed on syntax errors,
+but parsing will attempt to continue.
+Note that data may be lost when using this option!
+.Pp
+.It Dq variables
+Support parsing variable nodes.
+Variables can be written in SPARQL style, for example
+.Dq ?var
+or
+.Dq $var .
+.Pp
+.It Dq verbatim
+Normally, the reader expands all relative URIs,
+and may adjust blank node labels to avoid clashing with generated ones.
+This flag disables all of this processing,
+so that URI references and blank nodes are passed to the sink exactly as they are in the input.
+Note that this does not apply to CURIEs, since serd deliberately does not
+have a way to represent CURIE nodes.  A bad namespace prefix is considered
+a syntax error.
+.El
 .Pp
 .It Fl k Ar bytes
 Parser stack size.
@@ -124,24 +149,40 @@ If some data has very deep nesting or very large literal values,
 it may exceed the default amount of space,
 and this option can be used to increase it and allow the document to be parsed successfully.
 .Pp
-.It Fl l
-Lax (non-strict) parsing.
-If this is enabled, recoverable syntax errors will print a warning, but parsing will proceed starting at the next statement if possible.
-Note that data may be lost when using this option.
-.Pp
 .It Fl o Ar syntax
-Write output as
-.Ar syntax .
-Case is ignored, valid values are:
+Set an output syntax option.
+May be given multiple times.
+The case-insensitive
+.Ar syntax
+can be either a syntax name or an output syntax option.
+The supported syntaxes are
 .Dq empty ,
 .Dq NQuads ,
 .Dq NTriples ,
 .Dq TriG ,
 and
 .Dq Turtle .
-When
-.Dq empty
-is given, output is suppressed, so only errors will be printed.
+.Pp
+The supported output options are:
+.Pp
+.Bl -tag -width "QverbatimQ" -compact -offset indent
+.It Dq ascii
+Escape all non-ASCII characters.
+.Pp
+.It Dq expanded
+Write expanded URIs instead of prefixed names.
+.Pp
+.It Dq verbatim
+Write URI references exactly as they are in the input.
+This avoids resolving URIs and making them relative to the output base URI.
+.Pp
+.It Dq terse
+Write terser output without newlines.
+.Pp
+.It Dq lax
+Tolerate invalid UTF-8 by writing the replacement character when necessary.
+Note that data may be lost when using this option!
+.El
 .Pp
 .It Fl p Ar prefix
 Add
@@ -194,9 +235,6 @@ Parse
 .Ar string
 as input.
 .Pp
-.It Fl t
-Write terser output without newlines.
-.Pp
 .It Fl v
 Display version information and exit.
 .Pp
@@ -204,13 +242,6 @@ Display version information and exit.
 Write output to the given
 .Ar filename
 instead of stdout.
-.Pp
-.It Fl x
-Support parsing variable nodes.
-Variables can be written in SPARQL style, for example
-.Dq ?var
-or
-.Dq $var .
 .El
 .Sh EXIT STATUS
 .Nm
