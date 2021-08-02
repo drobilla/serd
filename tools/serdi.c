@@ -173,9 +173,6 @@ int
 main(int argc, char** argv)
 {
   const char* const prog = argv[0];
-  if (argc < 2) {
-    return print_usage(prog, true);
-  }
 
   SerdNode*       base          = NULL;
   SerdSyntax      input_syntax  = SERD_SYNTAX_EMPTY;
@@ -344,7 +341,7 @@ main(int argc, char** argv)
 
   if (a == argc && !input_string) {
     SERDI_ERROR("missing input\n");
-    return 1;
+    return print_usage(prog, true);
   }
 
   char* const* const inputs   = argv + a;
