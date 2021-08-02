@@ -344,19 +344,10 @@ main(int argc, char** argv)
 
   for (int i = 0; !st && i < n_inputs; ++i) {
     if (!base && !!strcmp(inputs[i], "-")) {
-      char* const input_path = zix_canonical_path(NULL, inputs[i]);
-      if (!input_path) {
-        LOG_ERRF("failed to resolve path %s\n", inputs[i]);
-        st = SERD_BAD_ARG;
+      if ((st = serd_set_base_uri_from_path(env, inputs[i]))) {
+        LOG_ERRF("failed to set base URI from path %s\n", inputs[i]);
         break;
       }
-
-      SerdNode* const file_uri =
-        serd_new_file_uri(NULL, zix_string(input_path), zix_empty_string());
-
-      serd_env_set_base_uri(env, serd_node_string_view(file_uri));
-      serd_node_free(NULL, file_uri);
-      zix_free(NULL, input_path);
     }
 
     if (n_inputs > 1) {
