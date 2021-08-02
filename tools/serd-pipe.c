@@ -5,20 +5,15 @@
 
 #include <serd/env.h>
 #include <serd/error.h>
-#include <serd/file_uri.h>
 #include <serd/input_stream.h>
 #include <serd/output_stream.h>
 #include <serd/reader.h>
 #include <serd/sink.h>
 #include <serd/status.h>
-#include <serd/string.h>
 #include <serd/syntax.h>
 #include <serd/uri.h>
 #include <serd/world.h>
 #include <serd/writer.h>
-#include <zix/allocator.h>
-#include <zix/filesystem.h>
-#include <zix/path.h>
 #include <zix/string_view.h>
 
 #include <errno.h>
@@ -77,34 +72,6 @@ quiet_error_func(void* const handle, const SerdError* const e)
   (void)handle;
   (void)e;
   return SERD_SUCCESS;
-}
-
-static SerdString
-base_uri_from_path(const char* const path)
-{
-  static const ZixStringView host = ZIX_STATIC_STRING("");
-
-  SerdString base = {0, NULL};
-
-  if (zix_path_is_absolute(path)) {
-    char* const normal = zix_path_lexically_normal(NULL, path);
-
-    base = serd_file_uri_to_string(NULL, zix_string(normal), host);
-
-    zix_free(NULL, normal);
-  } else {
-    char* const cwd      = zix_current_path(NULL);
-    char* const absolute = zix_path_join(NULL, cwd, path);
-    char* const normal   = zix_path_lexically_normal(NULL, absolute);
-
-    base = serd_file_uri_to_string(NULL, zix_string(normal), host);
-
-    zix_free(NULL, normal);
-    zix_free(NULL, absolute);
-    zix_free(NULL, cwd);
-  }
-
-  return base;
 }
 
 static SerdStatus
@@ -299,26 +266,22 @@ main(int argc, char** argv)
     output_syntax = input_has_graphs ? SERD_NQUADS : SERD_NTRIPLES;
   }
 
-  SerdString base = {0U, NULL};
-  if (base_arg) { // Base URI given on command line
-    if (serd_uri_string_has_scheme(base_arg)) {
-      base = serd_string_new(NULL, zix_string(base_arg));
-    } else {
-      base = base_uri_from_path(base_arg);
-    }
-  } else if (n_inputs == 1 &&
-             (output_syntax == SERD_NQUADS || output_syntax == SERD_NTRIPLES)) {
-    // Choose base URI from the single input path
-    base = base_uri_from_path(inputs[0]);
-  }
-
   SerdWorld* const world = serd_world_new(NULL);
 
   const SerdLimits limits = {stack_size, stack_size};
   serd_world_set_limits(world, limits);
 
-  SerdEnv* const   env = serd_env_new(NULL, serd_string_view(base));
+  SerdEnv* const   env = serd_env_new(NULL, zix_empty_string());
   SerdOutputStream out = serd_open_output_standard();
+
+  SerdStatus st = SERD_SUCCESS;
+  if (base_arg) { // Base URI given on command line
+    if (serd_uri_string_has_scheme(base_arg)) {
+      serd_env_set_base_uri(env, zix_string(base_arg));
+    } else {
+      serd_set_base_uri_from_path(env, base_arg);
+    }
+  }
 
   SerdWriter* const writer = serd_writer_new(
     world, output_syntax, writer_flags, env, &out, bulk_write ? 4096U : 1U);
@@ -333,7 +296,6 @@ main(int argc, char** argv)
 
   serd_writer_chop_blank_prefix(writer, chop_prefix);
 
-  SerdStatus st = SERD_SUCCESS;
   if (input_string) {
     const char*     position  = input_string;
     SerdInputStream string_in = serd_open_input_string(&position);
@@ -364,11 +326,7 @@ main(int argc, char** argv)
 
   for (int i = 0; !st && i < n_inputs; ++i) {
     if (!base_arg && !!strcmp(inputs[i], "-")) {
-      SerdString input_base = base_uri_from_path(inputs[i]);
-      serd_env_set_base_uri(env, serd_string_view(input_base));
-      zix_free(NULL, input_base.data);
-    } else {
-      serd_env_set_base_uri(env, zix_string(base.data));
+      serd_set_base_uri_from_path(env, inputs[i]);
     }
 
     if (n_inputs > 1) {
@@ -390,7 +348,6 @@ main(int argc, char** argv)
 
   serd_writer_free(writer);
   serd_env_free(env);
-  zix_free(NULL, base.data);
   serd_world_free(world);
 
   if (fclose(stdout)) {
