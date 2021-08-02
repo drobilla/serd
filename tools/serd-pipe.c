@@ -37,20 +37,18 @@ print_usage(const char* const name, const bool error)
     "Read and write RDF syntax.\n"
     "Use - for INPUT to read from standard input.\n\n"
     "  -B BASE_URI  Base URI.\n"
-    "  -a           Write ASCII output.\n"
+    "  -I SYNTAX    Input syntax (turtle/ntriples/trig/nquads),\n"
+    "               or flag (lax).\n"
+    "  -O SYNTAX    Output syntax (empty/turtle/ntriples/nquads),\n"
+    "               or flag (ascii/lax/terse/unresolved/unqualified).\n"
     "  -b BYTES     I/O block size.\n"
     "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n"
-    "  -f           Fast and loose URI pass-through.\n"
     "  -h           Display this help and exit.\n"
-    "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads.\n"
     "  -k BYTES     Parser stack size.\n"
-    "  -l           Lax (non-strict) parsing.\n"
-    "  -o SYNTAX    Output syntax: empty/turtle/ntriples/nquads.\n"
     "  -p PREFIX    Add PREFIX to blank node IDs.\n"
     "  -q           Suppress all output except data.\n"
     "  -r ROOT_URI  Keep relative URIs within ROOT_URI.\n"
     "  -s STRING    Parse STRING as input.\n"
-    "  -t           Write terser output without newlines.\n"
     "  -v           Display version information and exit.\n";
 
   FILE* const os = error ? stderr : stdout;
@@ -154,23 +152,38 @@ main(int argc, char** argv)
         return serd_print_version(argv[0]);
       }
 
-      if (opt == 'a') {
-        writer_flags |= SERD_WRITE_ASCII;
-      } else if (opt == 'f') {
-        writer_flags |= (SERD_WRITE_UNQUALIFIED | SERD_WRITE_UNRESOLVED);
-      } else if (opt == 'l') {
-        reader_flags |= SERD_READ_LAX;
-        writer_flags |= SERD_WRITE_LAX;
-      } else if (opt == 'q') {
+      if (opt == 'q') {
         quiet = true;
-      } else if (opt == 't') {
-        writer_flags |= SERD_WRITE_TERSE;
-      } else if (argv[a][1] == 'B') {
-        if (++a == argc) {
+      } else if (opt == 'B') {
+        if (argv[a][o + 1] || ++a == argc) {
           return missing_arg(prog, 'B');
         }
 
         base = serd_new_uri(NULL, zix_string(argv[a]));
+        break;
+      } else if (opt == 'I') {
+        if (argv[a][o + 1] || ++a == argc) {
+          return missing_arg(prog, 'I');
+        }
+
+        if (serd_set_input_option(
+              zix_string(argv[a]), &input_syntax, &reader_flags)) {
+          return print_usage(argv[0], true);
+        }
+        break;
+      } else if (opt == 'O') {
+        if (argv[a][o + 1] || ++a == argc) {
+          return missing_arg(prog, 'O');
+        }
+
+        if (serd_set_output_option(
+              zix_string(argv[a]), &output_syntax, &writer_flags)) {
+          return print_usage(argv[0], true);
+        }
+
+        osyntax_set =
+          output_syntax != SERD_SYNTAX_EMPTY || !strcmp(argv[a], "empty");
+
         break;
       } else if (opt == 'b') {
         if (argv[a][o + 1] || ++a == argc) {
@@ -192,15 +205,6 @@ main(int argc, char** argv)
 
         chop_prefix = argv[a];
         break;
-      } else if (opt == 'i') {
-        if (argv[a][o + 1] || ++a == argc) {
-          return missing_arg(prog, 'i');
-        }
-
-        if (!(input_syntax = serd_syntax_by_name(argv[a]))) {
-          return print_usage(prog, true);
-        }
-        break;
       } else if (opt == 'k') {
         if (argv[a][o + 1] || ++a == argc) {
           return missing_arg(prog, 'k');
@@ -213,18 +217,6 @@ main(int argc, char** argv)
           return 1;
         }
         stack_size = (size_t)size;
-        break;
-      } else if (opt == 'o') {
-        osyntax_set = true;
-        if (argv[a][o + 1] || ++a == argc) {
-          return missing_arg(prog, 'o');
-        }
-
-        if (!strcmp(argv[a], "empty")) {
-          output_syntax = SERD_SYNTAX_EMPTY;
-        } else if (!(output_syntax = serd_syntax_by_name(argv[a]))) {
-          return print_usage(argv[0], true);
-        }
         break;
       } else if (opt == 'p') {
         if (argv[a][o + 1] || ++a == argc) {
