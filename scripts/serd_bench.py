@@ -226,8 +226,8 @@ example:
     args = ap.parse_args(sys.argv[1:])
 
     progs = [
-        "serdi -b -i turtle -o turtle",
-        "serdi -m -b -i turtle -o turtle",
+        "serdi -i turtle -o turtle",
+        "serdi -m -i turtle -o turtle",
     ] + args.run
 
     min_n = int(args.max / 10)
