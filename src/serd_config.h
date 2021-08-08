@@ -35,9 +35,6 @@
 #ifndef SERD_SRC_SERD_CONFIG_H
 #define SERD_SRC_SERD_CONFIG_H
 
-// Define version unconditionally so a warning will catch a mismatch
-#define SERD_VERSION "1.1.1"
-
 #if !defined(SERD_NO_DEFAULT_CONFIG)
 
 // We need unistd.h to check _POSIX_VERSION
