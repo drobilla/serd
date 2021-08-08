@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: ISC
 
 #include "console.h"
-#include "system.h"
 
 #include "serd/serd.h"
 #include "zix/allocator.h"
@@ -16,6 +15,7 @@
 #  include <io.h>
 #endif
 
+#include <stdint.h>
 #include <string.h>
 
 void
@@ -45,8 +45,24 @@ serd_print_version(const char* const program)
   return 0;
 }
 
+/// Wrapper for getc that is compatible with SerdReadFunc but faster than fread
+static size_t
+serd_file_read_byte(void* buf, size_t size, size_t nmemb, void* stream)
+{
+  (void)size;
+  (void)nmemb;
+
+  const int c = getc((FILE*)stream);
+  if (c == EOF) {
+    *((uint8_t*)buf) = 0;
+    return 0;
+  }
+  *((uint8_t*)buf) = (uint8_t)c;
+  return 1;
+}
+
 SerdByteSource*
-serd_open_input(const char* const filename, const size_t page_size)
+serd_open_input(const char* const filename, const size_t block_size)
 {
   SerdByteSource* byte_source = NULL;
   if (!strcmp(filename, "-")) {
@@ -54,31 +70,26 @@ serd_open_input(const char* const filename, const size_t page_size)
 
     SerdNode* name = serd_new_string(serd_string("stdin"));
 
-    byte_source = serd_byte_source_new_function(serd_file_read_byte,
-                                                (SerdStreamErrorFunc)ferror,
-                                                NULL,
-                                                stdin,
-                                                name,
-                                                page_size);
+    byte_source = serd_byte_source_new_function(
+      serd_file_read_byte, (SerdStreamErrorFunc)ferror, NULL, stdin, name, 1);
 
     serd_node_free(name);
   } else {
-    byte_source = serd_byte_source_new_filename(filename, page_size);
+    byte_source = serd_byte_source_new_filename(filename, block_size);
   }
 
   return byte_source;
 }
 
 SerdByteSink*
-serd_open_output(const char* const filename, const size_t page_size)
+serd_open_output(const char* const filename, const size_t block_size)
 {
   if (!filename || !strcmp(filename, "-")) {
     serd_set_stream_utf8_mode(stdout);
-    return serd_byte_sink_new_function(
-      (SerdWriteFunc)fwrite, stdout, page_size);
+    return serd_byte_sink_new_function((SerdWriteFunc)fwrite, stdout, 1);
   }
 
-  return serd_byte_sink_new_filename(filename, page_size);
+  return serd_byte_sink_new_filename(filename, block_size);
 }
 
 SerdStatus

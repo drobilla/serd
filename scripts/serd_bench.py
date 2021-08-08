@@ -228,7 +228,7 @@ example:
 
     args = ap.parse_args(sys.argv[1:])
 
-    progs = ["serdi -b -f -i turtle -o turtle"] + args.run
+    progs = ["serdi -f -i turtle -o turtle"] + args.run
     min_n = int(args.max / 10)
     max_n = args.max
     step = min_n
