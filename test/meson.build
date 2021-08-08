@@ -86,6 +86,10 @@ if get_option('utils')
     ['-G', '?s ?p ?o . ?q ?r ?s .', '-s', ''],
     ['-G', 'bad_pattern', '-s', ''],
     ['-I'],
+    ['-b'],
+    ['-b', '-1'],
+    ['-b', '9223372036854775807'],
+    ['-b', '1024junk'],
     ['-c'],
     ['-i', 'unknown'],
     ['-i', 'turtle'],
@@ -201,12 +205,6 @@ if get_option('utils')
   # IO errors
 
   test('read_dir', serdi,
-       args: ['-e', meson.source_root()],
-       env: test_env,
-       should_fail: true,
-       suite: 'io_errors')
-
-  test('bulk_read_dir', serdi,
        args: [meson.source_root()],
        env: test_env,
        should_fail: true,
