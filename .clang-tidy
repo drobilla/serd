@@ -9,6 +9,7 @@ Checks: >
   -clang-diagnostic-unused-macros,
   -llvmlibc-*,
   -misc-include-cleaner,
+  -modernize-macro-to-enum,
   -readability-identifier-length,
 FormatStyle: file
 HeaderFilterRegex: '.*/serd/.*\.h'
