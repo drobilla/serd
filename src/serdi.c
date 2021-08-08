@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2020 David Robillard <d@drobilla.net>
+  Copyright 2011-2021 David Robillard <d@drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -14,7 +14,6 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include "serd_config.h"
 #include "system.h"
 
 #include "serd/serd.h"
@@ -47,11 +46,16 @@ typedef struct {
 static int
 print_version(void)
 {
-  printf("serdi " SERD_VERSION " <http://drobilla.net/software/serd>\n");
+  printf("serdi %d.%d.%d <http://drobilla.net/software/serd>\n",
+         SERD_MAJOR_VERSION,
+         SERD_MINOR_VERSION,
+         SERD_MICRO_VERSION);
+
   printf("Copyright 2011-2021 David Robillard <d@drobilla.net>.\n"
          "License: <http://www.opensource.org/licenses/isc>\n"
          "This is free software; you are free to change and redistribute it."
          "\nThere is NO WARRANTY, to the extent permitted by law.\n");
+
   return 0;
 }
 

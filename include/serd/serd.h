@@ -87,6 +87,29 @@ extern "C" {
    @{
 */
 
+/**
+   The major version number of the serd library.
+
+   Semver: Increments when incompatible API changes are made.
+*/
+#define SERD_MAJOR_VERSION 1
+
+/**
+   The minor version number of the serd library.
+
+   Semver: Increments when functionality is added in a backwards compatible
+   manner.
+*/
+#define SERD_MINOR_VERSION 0
+
+/**
+   The micro version number of the serd library.
+
+   Semver: Increments when changes are made that do not affect the API, such as
+   performance improvements or bug fixes.
+*/
+#define SERD_MICRO_VERSION 1
+
 /// Flags that describe the details of a node
 typedef enum {
   SERD_IS_LONG      = 1u << 0u, ///< Literal node should be triple-quoted
