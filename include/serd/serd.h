@@ -19,6 +19,7 @@
 */
 
 #include "serd/attributes.h"
+#include "serd/version.h"
 
 /**
    @}

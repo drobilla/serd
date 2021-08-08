@@ -12,7 +12,6 @@ Checks: >
   -hicpp-signed-bitwise,
   -llvm-header-guard,
   -misc-no-recursion,
-  -modernize-macro-to-enum,
 CheckOptions:
   - key:   readability-function-cognitive-complexity.IgnoreMacros
     value: 'true'
