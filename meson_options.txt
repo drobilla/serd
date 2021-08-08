@@ -7,5 +7,5 @@ option('strict', type: 'boolean', value: false, yield: true,
 option('tests', type: 'boolean', value: true, yield: true,
        description: 'Build tests')
 
-option('utils', type: 'boolean', value: true, yield: true,
-       description: 'Build command line utilities')
+option('tools', type: 'boolean', value: true, yield: true,
+       description: 'Build command line tools')
