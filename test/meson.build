@@ -156,6 +156,10 @@ simple_command_tests = {
     'bad': [
       ['-B', 'nonuriorpath'],
       ['-B'],
+      ['-b', '-1'],
+      ['-b', '1024junk'],
+      ['-b', '9223372036854775807'],
+      ['-b'],
       ['-c'],
       ['-fi'],
       ['-i', 'turtle'],
@@ -300,7 +304,7 @@ if is_variable('serdi')
 
   io_error_tests = {
     'read_dir_bulk': [serd_src_root],
-    'read_dir_bytes': ['-e', serd_src_root],
+    'read_dir_bytes': ['-b', '1', serd_src_root],
     'read_dir_uri': ['file://@0@/'.format(serd_src_root)],
   }
 
@@ -374,9 +378,9 @@ test_suites = {
   'big': [
     files('extra/big/manifest.ttl'), ns_serdtest + 'big/',
   ],
-  'bulk': [
+  'bytes': [
     files('extra/good/manifest.ttl'), ns_serdtest + 'good/',
-    '--', '-a', '-b',
+    '--', '-a', '-b', '1',
   ],
   'fast': [
     files('extra/perfect/manifest.ttl'), ns_serdtest + 'perfect/',
