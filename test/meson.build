@@ -49,7 +49,7 @@ if autoship.found()
   test('autoship', autoship, args: ['test', serd_src_root], suite: 'data')
 endif
 
-if get_option('utils')
+if is_variable('serdi')
 
   if wrapper != ''
     script_args = ['--wrapper', wrapper, '--serdi', serdi.full_path()]
