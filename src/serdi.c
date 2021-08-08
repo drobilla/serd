@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: ISC
 
 #include "console.h"
-#include "system.h"
 
 #include "serd/env.h"
 #include "serd/input_stream.h"
@@ -37,9 +36,8 @@ print_usage(const char* const name, const bool error)
     "Use - for INPUT to read from standard input.\n\n"
     "  -B BASE_URI  Base URI.\n"
     "  -a           Write ASCII output.\n"
-    "  -b           Write output in blocks for performance.\n"
+    "  -b BYTES     I/O block size.\n"
     "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n"
-    "  -e           Eat input one character at a time.\n"
     "  -f           Fast and loose URI pass-through.\n"
     "  -h           Display this help and exit.\n"
     "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads.\n"
@@ -78,7 +76,7 @@ read_file(SerdWorld* const      world,
           const size_t          stack_size,
           const char* const     filename,
           const char* const     add_prefix,
-          const bool            bulk_read)
+          const size_t          block_size)
 {
   syntax = syntax ? syntax : serd_guess_syntax(filename);
   syntax = syntax ? syntax : SERD_TRIG;
@@ -96,8 +94,7 @@ read_file(SerdWorld* const      world,
 
   serd_reader_add_blank_prefix(reader, add_prefix);
 
-  SerdStatus st =
-    serd_reader_start(reader, &in, NULL, bulk_read ? SERD_PAGE_SIZE : 1U);
+  SerdStatus st = serd_reader_start(reader, &in, NULL, block_size);
 
   st = st ? st : serd_reader_read_document(reader);
 
@@ -117,10 +114,9 @@ main(int argc, char** argv)
   SerdSyntax      output_syntax = SERD_SYNTAX_EMPTY;
   SerdReaderFlags reader_flags  = 0;
   SerdWriterFlags writer_flags  = 0;
-  bool            bulk_read     = true;
-  bool            bulk_write    = false;
   bool            osyntax_set   = false;
   bool            quiet         = false;
+  size_t          block_size    = 4096U;
   size_t          stack_size    = 1048576U;
   const char*     input_string  = NULL;
   const char*     add_prefix    = "";
@@ -138,10 +134,6 @@ main(int argc, char** argv)
 
       if (opt == 'a') {
         writer_flags |= SERD_WRITE_ASCII;
-      } else if (opt == 'b') {
-        bulk_write = true;
-      } else if (opt == 'e') {
-        bulk_read = false;
       } else if (opt == 'f') {
         writer_flags |= (SERD_WRITE_EXPANDED | SERD_WRITE_VERBATIM);
       } else if (opt == 'h') {
@@ -163,6 +155,19 @@ main(int argc, char** argv)
         }
 
         base = serd_new_uri(serd_string(argv[a]));
+        break;
+      } else if (opt == 'b') {
+        if (argv[a][o + 1] || ++a == argc) {
+          return missing_arg(prog, 'b');
+        }
+
+        char*      endptr = NULL;
+        const long size   = strtol(argv[a], &endptr, 10);
+        if (size < 1 || size == LONG_MAX || *endptr != '\0') {
+          SERDI_ERRORF("invalid block size `%s'\n", argv[a]);
+          return 1;
+        }
+        block_size = (size_t)size;
         break;
       } else if (opt == 'c') {
         if (argv[a][o + 1] || ++a == argc) {
@@ -283,12 +288,8 @@ main(int argc, char** argv)
     return 1;
   }
 
-  SerdWriter* const writer = serd_writer_new(world,
-                                             output_syntax,
-                                             writer_flags,
-                                             env,
-                                             &out,
-                                             bulk_write ? SERD_PAGE_SIZE : 1);
+  SerdWriter* const writer =
+    serd_writer_new(world, output_syntax, writer_flags, env, &out, block_size);
 
   if (quiet) {
     serd_set_log_func(world, serd_quiet_log_func, NULL);
@@ -351,7 +352,7 @@ main(int argc, char** argv)
                         stack_size,
                         inputs[i],
                         n_inputs > 1 ? prefix : add_prefix,
-                        bulk_read))) {
+                        block_size))) {
       break;
     }
   }
