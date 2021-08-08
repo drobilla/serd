@@ -40,6 +40,10 @@
 		<#test-list-in-blank>
 		<#test-list-subject>
 		<#test-list>
+		<#test-long-string-one-quote>
+		<#test-long-string-two-quotes>
+		<#test-long-string-one-single-quote>
+		<#test-long-string-two-single-quotes>
 		<#test-long-string>
 		<#test-several-eaten-dots>
 		<#test-no-spaces>
@@ -240,6 +244,30 @@
 	mf:name "test-list" ;
 	mf:action <test-list.ttl> ;
 	mf:result <test-list.nt> .
+
+<#test-long-string-one-quote>
+	rdf:type rdft:TestTurtleEval ;
+	mf:name "test-long-string-one-quote" ;
+	mf:action <test-long-string-one-quote.ttl> ;
+	mf:result <test-long-string-one-quote.nt> .
+
+<#test-long-string-two-quotes>
+	rdf:type rdft:TestTurtleEval ;
+	mf:name "test-long-string-two-quotes" ;
+	mf:action <test-long-string-two-quotes.ttl> ;
+	mf:result <test-long-string-two-quotes.nt> .
+
+<#test-long-string-one-single-quote>
+	rdf:type rdft:TestTurtleEval ;
+	mf:name "test-long-string-one-single-quote" ;
+	mf:action <test-long-string-one-single-quote.ttl> ;
+	mf:result <test-long-string-one-single-quote.nt> .
+
+<#test-long-string-two-single-quotes>
+	rdf:type rdft:TestTurtleEval ;
+	mf:name "test-long-string-two-single-quotes" ;
+	mf:action <test-long-string-two-single-quotes.ttl> ;
+	mf:result <test-long-string-two-single-quotes.nt> .
 
 <#test-long-string>
 	rdf:type rdft:TestTurtleEval ;

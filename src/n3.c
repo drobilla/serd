@@ -366,16 +366,32 @@ read_STRING_LITERAL_LONG(SerdReader* const    reader,
         return r_err(reader, st, "invalid escape `\\%c'\n", peek_byte(reader));
       }
     } else if (c == q) {
+      // Eat this quote and as many immediately following quotes as possible
       eat_byte_safe(reader, q);
-      const int q2 = eat_byte_safe(reader, peek_byte(reader));
-      const int q3 = peek_byte(reader);
-      if (q2 == q && q3 == q) { // End of string
-        eat_byte_safe(reader, q3);
+      size_t n_consecutive_quotes = 1;
+      while (peek_byte(reader) == q && n_consecutive_quotes <= 5) {
+        eat_byte_safe(reader, q);
+        ++n_consecutive_quotes;
+      }
+
+      if (n_consecutive_quotes == 3) {
+        // Simple end of string
         break;
       }
-      *flags |= SERD_HAS_QUOTE;
-      push_byte(reader, ref, c);
-      st = read_character(reader, ref, flags, (uint8_t)q2);
+
+      if (n_consecutive_quotes > 3) {
+        // End of string that itself ends with a few quotes
+        *flags |= SERD_HAS_QUOTE;
+        for (size_t i = 0; i < n_consecutive_quotes - 3; ++i) {
+          push_byte(reader, ref, q);
+        }
+        break;
+      }
+
+      // Not enough to be the end, these are just quotes in the string
+      for (size_t i = 0; i < n_consecutive_quotes; ++i) {
+        push_byte(reader, ref, q);
+      }
     } else if (c == EOF) {
       return r_err(reader, SERD_ERR_BAD_SYNTAX, "end of file in long string\n");
     } else {
