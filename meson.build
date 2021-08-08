@@ -196,19 +196,8 @@ pkg.generate(
   description: 'A lightweight library for working with RDF')
 
 # Build serdi command line utility
-if get_option('utils')
-
-  tool_link_args = []
-  if get_option('static')
-    tool_link_args += ['-static']
-  endif
-
-  serdi = executable('serdi',
-                     ['src/serdi.c', 'src/console.c'],
-                     c_args: c_warnings + platform_args + prog_args,
-                     link_args: tool_link_args,
-                     install: true,
-                     dependencies: serd_dep)
+if get_option('tools')
+  subdir('tools')
 
   if not get_option('docs').disabled()
     install_man('doc/serdi.1')
@@ -228,14 +217,14 @@ endif
 
 if not meson.is_subproject() and meson.version().version_compare('>=0.53.0')
   summary('Tests', get_option('tests'), bool_yn: true)
-  summary('Utilities', get_option('utils'), bool_yn: true)
+  summary('Tools', get_option('tools'), bool_yn: true)
 
   summary('Install prefix', get_option('prefix'))
 
   summary('Headers', get_option('prefix') / get_option('includedir'))
   summary('Libraries', get_option('prefix') / get_option('libdir'))
 
-  if get_option('utils')
+  if get_option('tools')
     summary('Executables', get_option('prefix') / get_option('bindir'))
     summary('Man pages', get_option('prefix') / get_option('mandir'))
   endif
