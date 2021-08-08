@@ -3,6 +3,7 @@
 
 Checks: >
   *,
+  -*-macro-to-enum,
   -altera-*,
   -llvmlibc-*,
   -readability-identifier-length,
