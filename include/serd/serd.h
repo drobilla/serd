@@ -16,6 +16,7 @@
 #include "serd/attributes.h"
 #include "serd/statement.h"
 #include "serd/syntax.h"
+#include "serd/version.h"
 
 #include "serd/buffer.h"
 #include "serd/memory.h"
