@@ -11,9 +11,11 @@ project('serd', ['c'],
           'c_std=c99',
         ])
 
+serd_major_version = meson.project_version().split('.')[0]
+serd_minor_version = meson.project_version().split('.')[1]
+serd_micro_version = meson.project_version().split('.')[2]
 serd_src_root = meson.current_source_dir()
-major_version = meson.project_version().split('.')[0]
-version_suffix = '-@0@'.format(major_version)
+version_suffix = '-@0@'.format(serd_major_version)
 versioned_name = 'serd' + version_suffix
 
 #######################
@@ -103,6 +105,9 @@ libserd = library(
   sources,
   c_args: c_suppressions + extra_c_args + platform_args + [
     '-DSERD_INTERNAL',
+    '-DSERD_MAJOR_VERSION=@0@'.format(serd_major_version),
+    '-DSERD_MICRO_VERSION=@0@'.format(serd_micro_version),
+    '-DSERD_MINOR_VERSION=@0@'.format(serd_minor_version),
     '-DSERD_VERSION="@0@"'.format(meson.project_version()),
   ],
   dependencies: [exess_dep, m_dep],
