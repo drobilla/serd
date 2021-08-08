@@ -47,6 +47,18 @@ serd_byte_source_page(SerdByteSource* const source)
   return SERD_SUCCESS;
 }
 
+static void
+serd_byte_source_init_buffer(SerdByteSource* const source)
+{
+  if (source->page_size > 1) {
+    source->file_buf = (uint8_t*)serd_allocate_buffer(source->page_size);
+    source->read_buf = source->file_buf;
+    memset(source->file_buf, '\0', source->page_size);
+  } else {
+    source->read_buf = &source->read_byte;
+  }
+}
+
 SerdByteSource*
 serd_byte_source_new_function(const SerdReadFunc        read_func,
                               const SerdStreamErrorFunc error_func,
@@ -79,13 +91,7 @@ serd_byte_source_new_function(const SerdReadFunc        read_func,
   source->caret.line     = 1U;
   source->caret.col      = 1U;
 
-  if (page_size > 1) {
-    source->file_buf = (uint8_t*)serd_allocate_buffer(page_size);
-    source->read_buf = source->file_buf;
-    memset(source->file_buf, '\0', page_size);
-  } else {
-    source->read_buf = &source->read_byte;
-  }
+  serd_byte_source_init_buffer(source);
 
   return source;
 }
@@ -132,13 +138,7 @@ serd_byte_source_new_filename(const char* const path, const size_t page_size)
   source->caret.line     = 1U;
   source->caret.col      = 1U;
 
-  if (page_size > 1) {
-    source->file_buf = (uint8_t*)serd_allocate_buffer(page_size);
-    source->read_buf = source->file_buf;
-    memset(source->file_buf, '\0', page_size);
-  } else {
-    source->read_buf = &source->read_byte;
-  }
+  serd_byte_source_init_buffer(source);
 
 #if USE_POSIX_FADVISE && USE_FILENO
   (void)posix_fadvise(fileno(fd), 0, 0, POSIX_FADV_SEQUENTIAL);
