@@ -10,9 +10,11 @@ project('serd', ['c'],
           'warning_level=2',
         ])
 
+serd_major_version = meson.project_version().split('.')[0]
+serd_minor_version = meson.project_version().split('.')[1]
+serd_micro_version = meson.project_version().split('.')[2]
 serd_src_root = meson.current_source_dir()
-major_version = meson.project_version().split('.')[0]
-version_suffix = '-@0@'.format(major_version)
+version_suffix = '-@0@'.format(serd_major_version)
 versioned_name = 'serd' + version_suffix
 
 # Load build tools
@@ -149,6 +151,11 @@ else
     '-DZIX_API=',
   ]
 endif
+
+# Define version constants to trigger a warning if those in the code don't mwatch
+library_args += ['-DSERD_MAJOR_VERSION=@0@'.format(serd_major_version),
+                 '-DSERD_MINOR_VERSION=@0@'.format(serd_minor_version),
+                 '-DSERD_MICRO_VERSION=@0@'.format(serd_micro_version)]
 
 exess_dep = dependency('exess-0',
                        version: '>= 0.0.1',
