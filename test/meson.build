@@ -110,6 +110,10 @@ if not get_option('tools').disabled()
     ['/no/such/file'],
     ['ftp://unsupported.org'],
     ['-I'],
+    ['-b'],
+    ['-b', '-1'],
+    ['-b', '9223372036854775807'],
+    ['-b', '1024junk'],
     ['-c'],
     ['-i', 'unknown'],
     ['-i', 'turtle'],
@@ -215,12 +219,6 @@ if not get_option('tools').disabled()
   # IO errors
 
   test('read_dir', serdi,
-       args: ['-e', serd_src_root],
-       env: test_env,
-       should_fail: true,
-       suite: 'io_errors')
-
-  test('bulk_read_dir', serdi,
        args: [serd_src_root],
        env: test_env,
        should_fail: true,
