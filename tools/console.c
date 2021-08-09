@@ -155,7 +155,8 @@ serd_open_output(const char* const filename, const size_t block_size)
 {
   if (!filename || !strcmp(filename, "-")) {
     serd_set_stream_utf8_mode(stdout);
-    return serd_byte_sink_new_function((SerdWriteFunc)fwrite, stdout, 1);
+    return serd_byte_sink_new_function(
+      (SerdWriteFunc)fwrite, (SerdStreamCloseFunc)fclose, stdout, 1);
   }
 
   return serd_byte_sink_new_filename(filename, block_size);

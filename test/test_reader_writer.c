@@ -29,8 +29,8 @@ test_writer(const char* const path)
 
   SerdWorld* world = serd_world_new();
 
-  SerdByteSink* byte_sink =
-    serd_byte_sink_new_function((SerdWriteFunc)fwrite, fd, 1);
+  SerdByteSink* byte_sink = serd_byte_sink_new_function(
+    (SerdWriteFunc)fwrite, (SerdStreamCloseFunc)fclose, fd, 1);
 
   SerdWriter* writer =
     serd_writer_new(world, SERD_TURTLE, SERD_WRITE_LAX, env, byte_sink);
@@ -128,7 +128,6 @@ test_writer(const char* const path)
 
   serd_env_free(env);
   serd_world_free(world);
-  fclose(fd);
 }
 
 static void
