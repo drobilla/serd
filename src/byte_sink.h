@@ -22,19 +22,13 @@
 #include <stddef.h>
 #include <string.h>
 
-typedef enum {
-  TO_BUFFER,   ///< Writing to a user-provided buffer
-  TO_FILENAME, ///< Writing to a file we opened
-  TO_FUNCTION, ///< Writing to a user-provided function
-} SerdByteSinkType;
-
 struct SerdByteSinkImpl {
-  SerdWriteFunc    write_func; ///< User sink for TO_FUNCTION
-  void*            stream;     ///< User data for write_func
-  char*            buf;        ///< Local buffer iff block_size > 1
-  size_t           size;       ///< Bytes written so far in this chunk
-  size_t           block_size; ///< Size of chunks to write
-  SerdByteSinkType type;       ///< Type of output
+  SerdWriteFunc       write_func; ///< User sink for TO_FUNCTION
+  SerdStreamCloseFunc close_func; ///< Optional function to close stream
+  void*               stream;     ///< User data for write_func
+  char*               buf;        ///< Local buffer iff block_size > 1
+  size_t              size;       ///< Bytes written so far in this chunk
+  size_t              block_size; ///< Size of chunks to write
 };
 
 static inline size_t

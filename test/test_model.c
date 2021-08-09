@@ -1060,16 +1060,18 @@ test_write_flat_range(SerdWorld* world, const unsigned n_quads)
   serd_cursor_free(all);
 
   serd_writer_finish(writer);
-  const char* str      = serd_buffer_sink_finish(&buffer);
-  const char* expected = "<urn:s>\n"
-                         "	<urn:p> _:b1 ,\n"
-                         "		_:b2 .\n"
-                         "\n"
-                         "_:b1\n"
-                         "	<urn:p> <urn:o> .\n"
-                         "\n"
-                         "_:b2\n"
-                         "	<urn:p> <urn:o> .\n";
+  serd_byte_sink_close(out);
+
+  const char* const        str      = (const char*)buffer.buf;
+  static const char* const expected = "<urn:s>\n"
+                                      "\t<urn:p> _:b1 ,\n"
+                                      "\t\t_:b2 .\n"
+                                      "\n"
+                                      "_:b1\n"
+                                      "\t<urn:p> <urn:o> .\n"
+                                      "\n"
+                                      "_:b2\n"
+                                      "\t<urn:p> <urn:o> .\n";
 
   assert(!strcmp(str, expected));
 
@@ -1124,7 +1126,9 @@ test_write_bad_list(SerdWorld* world, const unsigned n_quads)
   serd_cursor_free(all);
 
   serd_writer_finish(writer);
-  const char* str      = serd_buffer_sink_finish(&buffer);
+  serd_byte_sink_close(out);
+
+  const char* str      = (const char*)buffer.buf;
   const char* expected = "<urn:s>\n"
                          "	<urn:p> (\n"
                          "		\"a\"\n"
@@ -1186,7 +1190,8 @@ test_write_infinite_list(SerdWorld* world, const unsigned n_quads)
   serd_cursor_free(all);
 
   serd_writer_finish(writer);
-  const char* str      = serd_buffer_sink_finish(&buffer);
+  serd_byte_sink_close(out);
+  const char* str      = (const char*)buffer.buf;
   const char* expected = "<urn:s>\n"
                          "	<urn:p> _:l1 .\n"
                          "\n"
@@ -1263,7 +1268,8 @@ test_write_error_in_list_subject(SerdWorld* world, const unsigned n_quads)
   for (size_t max_successes = 0; max_successes < 18; ++max_successes) {
     FailingWriteFuncState state = {0, max_successes};
     SerdByteSink*         out =
-      serd_byte_sink_new_function(failing_write_func, &state, 1);
+      serd_byte_sink_new_function(failing_write_func, NULL, &state, 1);
+
     SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, out);
 
     const SerdSink* const sink = serd_writer_sink(writer);
@@ -1318,7 +1324,8 @@ test_write_error_in_list_object(SerdWorld* world, const unsigned n_quads)
   for (size_t max_successes = 0; max_successes < 21; ++max_successes) {
     FailingWriteFuncState state = {0, max_successes};
     SerdByteSink*         out =
-      serd_byte_sink_new_function(failing_write_func, &state, 1);
+      serd_byte_sink_new_function(failing_write_func, NULL, &state, 1);
+
     SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, out);
 
     const SerdSink* const sink = serd_writer_sink(writer);

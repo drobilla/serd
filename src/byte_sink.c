@@ -30,33 +30,39 @@
 #  include <fcntl.h>
 #endif
 
+static int
+close_buffer(void* const stream)
+{
+  serd_buffer_sink("", 1, 1, stream); // Write null terminator
+
+  return 0;
+}
+
 SerdByteSink*
 serd_byte_sink_new_buffer(SerdBuffer* const buffer)
 {
   assert(buffer);
 
-  SerdByteSink* sink = (SerdByteSink*)calloc(1, sizeof(SerdByteSink));
-
-  sink->write_func = serd_buffer_sink;
-  sink->stream     = buffer;
-  sink->block_size = 1;
-  sink->type       = TO_BUFFER;
-
-  return sink;
+  return serd_byte_sink_new_function(
+    serd_buffer_sink, close_buffer, buffer, 1u);
 }
 
-static SerdByteSink*
-serd_byte_sink_new_internal(const SerdWriteFunc    write_func,
-                            void* const            stream,
-                            const size_t           block_size,
-                            const SerdByteSinkType type)
+SerdByteSink*
+serd_byte_sink_new_function(const SerdWriteFunc       write_func,
+                            const SerdStreamCloseFunc close_func,
+                            void* const               stream,
+                            const size_t              block_size)
 {
+  if (!block_size) {
+    return NULL;
+  }
+
   SerdByteSink* sink = (SerdByteSink*)calloc(1, sizeof(SerdByteSink));
 
   sink->write_func = write_func;
+  sink->close_func = close_func;
   sink->stream     = stream;
   sink->block_size = block_size;
-  sink->type       = type;
 
   if (block_size > 1) {
     sink->buf = (char*)serd_allocate_buffer(block_size);
@@ -83,20 +89,8 @@ serd_byte_sink_new_filename(const char* const path, const size_t block_size)
   posix_fadvise(fileno(file), 0, 0, POSIX_FADV_SEQUENTIAL);
 #endif
 
-  return serd_byte_sink_new_internal(
-    (SerdWriteFunc)fwrite, file, block_size, TO_FILENAME);
-}
-
-SerdByteSink*
-serd_byte_sink_new_function(const SerdWriteFunc write_func,
-                            void* const         stream,
-                            const size_t        block_size)
-{
-  assert(write_func);
-
-  return block_size ? serd_byte_sink_new_internal(
-                        write_func, stream, block_size, TO_FUNCTION)
-                    : NULL;
+  return serd_byte_sink_new_function(
+    (SerdWriteFunc)fwrite, (SerdStreamCloseFunc)fclose, file, block_size);
 }
 
 void
@@ -104,7 +98,7 @@ serd_byte_sink_flush(SerdByteSink* sink)
 {
   assert(sink);
 
-  if (sink->block_size > 1 && sink->size > 0) {
+  if (sink->stream && sink->block_size > 1 && sink->size > 0) {
     sink->write_func(sink->buf, 1, sink->size, sink->stream);
     sink->size = 0;
   }
@@ -117,12 +111,13 @@ serd_byte_sink_close(SerdByteSink* sink)
 
   serd_byte_sink_flush(sink);
 
-  if (sink->type == TO_FILENAME && sink->stream) {
-    const int st = fclose((FILE*)sink->stream);
+  if (sink->stream && sink->close_func) {
+    const int st = sink->close_func(sink->stream);
     sink->stream = NULL;
     return st ? SERD_ERR_UNKNOWN : SERD_SUCCESS;
   }
 
+  sink->stream = NULL;
   return SERD_SUCCESS;
 }
 
