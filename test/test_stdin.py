@@ -21,6 +21,8 @@ command = shlex.split(args.wrapper) + [
     args.serdi,
     "-I",
     "http://example.org",
+    "-i",
+    "ntriples",
     "-",
 ]
 
