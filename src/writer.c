@@ -886,7 +886,8 @@ write_blank(SerdWriter* const        writer,
       return write_sep(writer, flags, SEP_LIST_BEGIN);
     }
 
-    if (field == SERD_SUBJECT && (flags & SERD_EMPTY_S)) {
+    if ((field == SERD_SUBJECT && (flags & SERD_EMPTY_S)) ||
+        (field == SERD_GRAPH && (flags & SERD_EMPTY_G))) {
       writer->last_sep = SEP_NONE; // Treat "[]" like a node
       return esink("[]", 2, writer);
     }

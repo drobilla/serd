@@ -10,6 +10,7 @@ serd (1.1.1) unstable; urgency=medium
   * Bring read/write interface closer to C standard
   * Improve error handling
   * Make nodes opaque
+  * Preserve anonymous graph syntax in TriG
   * Preserve long or short quoting from input documents
   * Remove SERD_DISABLE_DEPRECATED and SERD_DEPRECATED_BY
   * Remove serd_uri_to_path()
@@ -22,7 +23,7 @@ serd (1.1.1) unstable; urgency=medium
   * Use a fixed-size reader stack
   * Use char* for strings in public API
 
- -- David Robillard <d@drobilla.net>  Wed, 13 Jul 2022 21:43:56 +0000
+ -- David Robillard <d@drobilla.net>  Wed, 13 Jul 2022 21:55:50 +0000
 
 serd (0.31.0) unstable; urgency=medium
 

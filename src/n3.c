@@ -1193,6 +1193,7 @@ read_block(SerdReader* const reader, ReadContext* const ctx)
     }
 
     ctx->graph = token;
+    (*ctx->flags) |= (s_type == '[' ? SERD_EMPTY_G : 0U);
     return read_wrappedGraph(reader, ctx);
   }
 
