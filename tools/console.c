@@ -8,6 +8,7 @@
 #include <serd/input_stream.h>
 #include <serd/status.h>
 #include <serd/string.h>
+#include <serd/syntax.h>
 #include <serd/version.h>
 #include <zix/allocator.h>
 #include <zix/filesystem.h>
@@ -71,6 +72,25 @@ serd_set_base_uri_from_path(SerdEnv* const env, const char* const path)
   serd_env_set_base_uri(env, serd_string_view(file_uri));
   zix_free(NULL, file_uri.data);
   return SERD_SUCCESS;
+}
+
+SerdSyntax
+serd_choose_syntax(const SerdSyntax requested, const char* const filename)
+{
+  if (requested) {
+    return requested;
+  }
+
+  const SerdSyntax guessed = serd_guess_syntax(filename);
+  if (guessed != SERD_SYNTAX_EMPTY) {
+    return guessed;
+  }
+
+  fprintf(stderr,
+          "warning: unable to determine syntax of \"%s\", trying TriG\n",
+          filename);
+
+  return SERD_TRIG;
 }
 
 SerdInputStream
