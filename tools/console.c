@@ -64,6 +64,25 @@ serd_set_base_uri_from_path(SerdEnv* const env, const char* const path)
   return SERD_SUCCESS;
 }
 
+SerdSyntax
+serd_choose_syntax(const SerdSyntax requested, const char* const filename)
+{
+  if (requested) {
+    return requested;
+  }
+
+  const SerdSyntax guessed = serd_guess_syntax(filename);
+  if (guessed != SERD_SYNTAX_EMPTY) {
+    return guessed;
+  }
+
+  fprintf(stderr,
+          "warning: unable to determine syntax of \"%s\", trying TriG\n",
+          filename);
+
+  return SERD_TRIG;
+}
+
 /// Wrapper for getc that is compatible with SerdReadFunc but faster than fread
 static size_t
 serd_file_read_byte(void* buf, size_t size, size_t nmemb, void* stream)
