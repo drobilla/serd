@@ -34,6 +34,11 @@ serd_set_output_option(SerdStringView   name,
                        SerdSyntax*      syntax,
                        SerdWriterFlags* flags);
 
+SerdSyntax
+serd_choose_input_syntax(SerdWorld*  world,
+                         SerdSyntax  requested,
+                         const char* filename);
+
 SerdByteSource*
 serd_open_input(const char* filename, size_t block_size);
 

@@ -134,7 +134,7 @@ parse_filter(SerdWorld* const      world,
 
 static SerdStatus
 read_file(SerdWorld* const      world,
-          SerdSyntax            syntax,
+          const SerdSyntax      syntax,
           const SerdReaderFlags flags,
           SerdEnv* const        env,
           const SerdSink* const sink,
@@ -143,9 +143,6 @@ read_file(SerdWorld* const      world,
           const char* const     add_prefix,
           const size_t          block_size)
 {
-  syntax = syntax ? syntax : serd_guess_syntax(filename);
-  syntax = syntax ? syntax : SERD_TRIG;
-
   SerdByteSource* byte_source = serd_open_input(filename, block_size);
 
   if (!byte_source) {
@@ -486,15 +483,16 @@ main(int argc, char** argv)
       snprintf(prefix, prefix_len, "f%d%s", i, add_prefix);
     }
 
-    if ((st = read_file(world,
-                        input_syntax,
-                        reader_flags,
-                        env,
-                        sink,
-                        stack_size,
-                        inputs[i],
-                        n_inputs > 1 ? prefix : add_prefix,
-                        block_size))) {
+    if ((st =
+           read_file(world,
+                     serd_choose_input_syntax(world, input_syntax, inputs[i]),
+                     reader_flags,
+                     env,
+                     sink,
+                     stack_size,
+                     inputs[i],
+                     n_inputs > 1 ? prefix : add_prefix,
+                     block_size))) {
       break;
     }
   }
