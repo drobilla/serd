@@ -11,6 +11,7 @@
 #include "serd/status.h"
 #include "serd/string_view.h"
 #include "serd/syntax.h"
+#include "serd/world.h"
 #include "serd/writer.h"
 
 #include <stdio.h>
@@ -30,6 +31,11 @@ SerdStatus
 serd_set_output_option(SerdStringView   name,
                        SerdSyntax*      syntax,
                        SerdWriterFlags* flags);
+
+SerdSyntax
+serd_choose_syntax(SerdWorld*  world,
+                   SerdSyntax  requested,
+                   const char* filename);
 
 SerdInputStream
 serd_open_tool_input(const char* filename);
