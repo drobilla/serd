@@ -527,7 +527,7 @@ main(int argc, char** argv)
   serd_node_free(base);
   serd_world_free(world);
 
-  if (serd_byte_sink_close(byte_sink) || (!out_filename && fclose(stdout))) {
+  if (serd_byte_sink_close(byte_sink)) {
     perror("serdi: write error");
     st = SERD_ERR_UNKNOWN;
   }
