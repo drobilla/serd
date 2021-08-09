@@ -1743,12 +1743,13 @@ typedef enum {
 /// Flags indicating inline abbreviation information for a statement
 typedef enum {
   SERD_EMPTY_S = 1u << 0u, ///< Empty blank node subject
-  SERD_ANON_S  = 1u << 1u, ///< Start of anonymous subject
-  SERD_ANON_O  = 1u << 2u, ///< Start of anonymous object
-  SERD_LIST_S  = 1u << 3u, ///< Start of list subject
-  SERD_LIST_O  = 1u << 4u, ///< Start of list object
-  SERD_TERSE_S = 1u << 5u, ///< Start of terse subject
-  SERD_TERSE_O = 1u << 6u  ///< Start of terse object
+  SERD_EMPTY_G = 1u << 1u, ///< Empty blank node graph
+  SERD_ANON_S  = 1u << 2u, ///< Start of anonymous subject
+  SERD_ANON_O  = 1u << 3u, ///< Start of anonymous object
+  SERD_LIST_S  = 1u << 4u, ///< Start of list subject
+  SERD_LIST_O  = 1u << 5u, ///< Start of list object
+  SERD_TERSE_S = 1u << 6u, ///< Start of terse subject
+  SERD_TERSE_O = 1u << 7u  ///< Start of terse object
 } SerdStatementFlag;
 
 /// Bitwise OR of SerdStatementFlag values
