@@ -29,6 +29,8 @@ typedef struct SerdByteSinkImpl SerdByteSink;
    Create a new byte sink that writes to a buffer.
 
    The `buffer` is owned by the caller, but will be expanded as necessary.
+   Note that the string in the buffer will not be null terminated until the
+   byte sink is closed.
 
    @param buffer Buffer to write output to.
 */
@@ -62,9 +64,10 @@ serd_byte_sink_new_filename(const char* SERD_NONNULL path, size_t block_size);
 */
 SERD_API
 SerdByteSink* SERD_ALLOCATED
-serd_byte_sink_new_function(SerdWriteFunc SERD_NONNULL write_func,
-                            void* SERD_NULLABLE        stream,
-                            size_t                     block_size);
+serd_byte_sink_new_function(SerdWriteFunc SERD_NONNULL        write_func,
+                            SerdStreamCloseFunc SERD_NULLABLE close_func,
+                            void* SERD_NULLABLE               stream,
+                            size_t                            block_size);
 
 /// Flush any pending output in `sink` to the underlying write function
 SERD_API
