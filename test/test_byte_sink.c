@@ -26,7 +26,7 @@ main(void)
 {
   assert(!serd_byte_sink_new_filename("file.ttl", 0));
   assert(!serd_byte_sink_new_filename("/does/not/exist.ttl", 1));
-  assert(!serd_byte_sink_new_function((SerdWriteFunc)fwrite, NULL, 0));
+  assert(!serd_byte_sink_new_function((SerdWriteFunc)fwrite, NULL, NULL, 0));
 
   return 0;
 }
