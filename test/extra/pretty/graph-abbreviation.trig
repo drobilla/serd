@@ -64,3 +64,8 @@
 	:m
 		a :OtherThing .
 }
+
+[] {
+	:n
+		a :AnonGraph .
+}
