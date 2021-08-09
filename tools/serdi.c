@@ -38,33 +38,36 @@ typedef struct {
 static int
 print_usage(const char* const name, const bool error)
 {
+  static const char* const description =
+    "Read and write RDF syntax.\n"
+    "Use - for INPUT to read from standard input.\n\n"
+    "  -C           Convert literals to canonical form.\n"
+    "  -F PATTERN   Filter out statements that match PATTERN.\n"
+    "  -G PATTERN   Only include statements matching PATTERN.\n"
+    "  -I BASE_URI  Input base URI.\n"
+    "  -a           Write ASCII output if possible.\n"
+    "  -b BYTES     I/O block size.\n"
+    "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n"
+    "  -f           Fast and loose mode (possibly ugly output).\n"
+    "  -h           Display this help and exit.\n"
+    "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads.\n"
+    "  -k BYTES     Parser stack size.\n"
+    "  -l           Lax (non-strict) parsing.\n"
+    "  -m           Build a model in memory before writing.\n"
+    "  -o SYNTAX    Output syntax: empty/turtle/ntriples/nquads.\n"
+    "  -p PREFIX    Add PREFIX to blank node IDs.\n"
+    "  -q           Suppress all output except data.\n"
+    "  -r ROOT_URI  Keep relative URIs within ROOT_URI.\n"
+    "  -s STRING    Parse STRING as input.\n"
+    "  -t           Write terser output without newlines.\n"
+    "  -v           Display version information and exit.\n"
+    "  -w FILENAME  Write output to FILENAME instead of stdout.\n"
+    "  -x           Support parsing variable nodes like `?x'.\n";
+
   FILE* const os = error ? stderr : stdout;
   fprintf(os, "%s", error ? "\n" : "");
   fprintf(os, "Usage: %s [OPTION]... INPUT...\n", name);
-  fprintf(os, "Read and write RDF syntax.\n");
-  fprintf(os, "Use - for INPUT to read from standard input.\n\n");
-  fprintf(os, "  -C           Convert literals to canonical form.\n");
-  fprintf(os, "  -F PATTERN   Filter out statements that match PATTERN.\n");
-  fprintf(os, "  -G PATTERN   Only include statements matching PATTERN.\n");
-  fprintf(os, "  -I BASE_URI  Input base URI.\n");
-  fprintf(os, "  -a           Write ASCII output if possible.\n");
-  fprintf(os, "  -b BYTES     I/O block size.\n");
-  fprintf(os, "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n");
-  fprintf(os, "  -f           Fast and loose mode (possibly ugly output).\n");
-  fprintf(os, "  -h           Display this help and exit.\n");
-  fprintf(os, "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads.\n");
-  fprintf(os, "  -k BYTES     Parser stack size.\n");
-  fprintf(os, "  -l           Lax (non-strict) parsing.\n");
-  fprintf(os, "  -m           Build a model in memory before writing.\n");
-  fprintf(os, "  -o SYNTAX    Output syntax: empty/turtle/ntriples/nquads.\n");
-  fprintf(os, "  -p PREFIX    Add PREFIX to blank node IDs.\n");
-  fprintf(os, "  -q           Suppress all output except data.\n");
-  fprintf(os, "  -r ROOT_URI  Keep relative URIs within ROOT_URI.\n");
-  fprintf(os, "  -s STRING    Parse STRING as input.\n");
-  fprintf(os, "  -t           Write terser output without newlines.\n");
-  fprintf(os, "  -v           Display version information and exit.\n");
-  fprintf(os, "  -w FILENAME  Write output to FILENAME instead of stdout.\n");
-  fprintf(os, "  -x           Support parsing variable nodes like `?x'.\n");
+  fprintf(os, "%s", description);
   return error ? 1 : 0;
 }
 
