@@ -8,6 +8,7 @@
 #include "serd/input_stream.h"
 #include "serd/output_stream.h"
 #include "serd/status.h"
+#include "serd/syntax.h"
 
 #include <stdio.h>
 
@@ -19,6 +20,9 @@ serd_print_version(const char* program);
 
 SerdStatus
 serd_set_base_uri_from_path(SerdEnv* env, const char* path);
+
+SerdSyntax
+serd_choose_syntax(SerdSyntax requested, const char* filename);
 
 SerdInputStream
 serd_open_tool_input(const char* filename);
