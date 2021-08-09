@@ -908,7 +908,8 @@ write_blank(SerdWriter* const             writer,
     }
 
     if ((field == SERD_SUBJECT && (flags & SERD_EMPTY_S)) ||
-        (field == SERD_OBJECT && (flags & SERD_EMPTY_O))) {
+        (field == SERD_OBJECT && (flags & SERD_EMPTY_O)) ||
+        (field == SERD_GRAPH && (flags & SERD_EMPTY_G))) {
       return esink("[]", 2, writer);
     }
   }
