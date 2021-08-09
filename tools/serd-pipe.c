@@ -79,7 +79,7 @@ quiet_error_func(void* const handle, const SerdError* const e)
 
 static SerdStatus
 read_file(SerdWorld* const      world,
-          SerdSyntax            syntax,
+          const SerdSyntax      syntax,
           const SerdReaderFlags flags,
           const SerdSink* const sink,
           const size_t          stack_size,
@@ -87,9 +87,6 @@ read_file(SerdWorld* const      world,
           const char* const     add_prefix,
           const bool            bulk_read)
 {
-  syntax = syntax ? syntax : serd_guess_syntax(filename);
-  syntax = syntax ? syntax : SERD_TRIG;
-
   SerdInputStream in = serd_open_tool_input(filename);
   if (!in.stream) {
     LOG_ERRF(
@@ -353,7 +350,7 @@ main(int argc, char** argv)
     }
 
     if ((st = read_file(world,
-                        input_syntax,
+                        serd_choose_syntax(input_syntax, inputs[i]),
                         reader_flags,
                         serd_writer_sink(writer),
                         stack_size,
