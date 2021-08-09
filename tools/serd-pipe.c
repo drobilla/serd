@@ -68,7 +68,7 @@ missing_arg(const char* const name, const char opt)
 
 static SerdStatus
 read_file(SerdWorld* const      world,
-          SerdSyntax            syntax,
+          const SerdSyntax      syntax,
           const SerdReaderFlags flags,
           SerdEnv* const        env,
           const SerdSink* const sink,
@@ -77,9 +77,6 @@ read_file(SerdWorld* const      world,
           const char* const     add_prefix,
           const size_t          block_size)
 {
-  syntax = syntax ? syntax : serd_guess_syntax(filename);
-  syntax = syntax ? syntax : SERD_TRIG;
-
   SerdInputStream in = serd_open_tool_input(filename);
   if (!in.stream) {
     SERDI_ERRORF(
@@ -346,7 +343,7 @@ main(int argc, char** argv)
     }
 
     if ((st = read_file(world,
-                        input_syntax,
+                        serd_choose_syntax(world, input_syntax, inputs[i]),
                         reader_flags,
                         env,
                         sink,
