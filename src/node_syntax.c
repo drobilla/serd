@@ -100,8 +100,12 @@ serd_node_to_syntax_in(const SerdNode* const node,
   SerdWriter* const   writer = serd_writer_new(world, syntax, 0, env, out);
 
   char* result = NULL;
-  if (!serd_writer_write_node(writer, node) && !serd_writer_finish(writer)) {
-    result = serd_buffer_sink_finish(&buffer);
+  if (!serd_writer_write_node(writer, node) && !serd_writer_finish(writer) &&
+      !serd_byte_sink_close(out)) {
+    result = (char*)buffer.buf;
+  } else {
+    serd_byte_sink_close(out);
+    free(buffer.buf);
   }
 
   serd_writer_free(writer);
