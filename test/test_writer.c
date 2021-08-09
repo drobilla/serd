@@ -40,7 +40,9 @@ test_write_bad_event(void)
   assert(serd_sink_write_event(serd_writer_sink(writer), &event) ==
          SERD_ERR_BAD_ARG);
 
-  char* const out = serd_buffer_sink_finish(&buffer);
+  assert(!serd_byte_sink_close(byte_sink));
+
+  char* const out = (char*)buffer.buf;
 
   assert(!strcmp(out, ""));
   serd_free(out);
@@ -109,10 +111,11 @@ null_sink(const void* const buf,
 static void
 test_writer_stack_overflow(void)
 {
-  SerdWorld*    world     = serd_world_new();
-  SerdNodes*    nodes     = serd_world_nodes(world);
-  SerdEnv*      env       = serd_env_new(SERD_EMPTY_STRING());
-  SerdByteSink* byte_sink = serd_byte_sink_new_function(null_sink, NULL, 1u);
+  SerdWorld*    world = serd_world_new();
+  SerdNodes*    nodes = serd_world_nodes(world);
+  SerdEnv*      env   = serd_env_new(SERD_EMPTY_STRING());
+  SerdByteSink* byte_sink =
+    serd_byte_sink_new_function(null_sink, NULL, NULL, 1u);
 
   SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0u, env, byte_sink);
 
@@ -165,8 +168,8 @@ test_strict_write(void)
 
   SerdEnv* env = serd_env_new(SERD_EMPTY_STRING());
 
-  SerdByteSink* byte_sink =
-    serd_byte_sink_new_function((SerdWriteFunc)fwrite, fd, 1);
+  SerdByteSink* byte_sink = serd_byte_sink_new_function(
+    (SerdWriteFunc)fwrite, (SerdStreamCloseFunc)fclose, fd, 1);
 
   SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, byte_sink);
   assert(writer);
@@ -190,7 +193,6 @@ test_strict_write(void)
   serd_writer_free(writer);
   serd_byte_sink_free(byte_sink);
   serd_env_free(env);
-  fclose(fd);
   serd_world_free(world);
 }
 
@@ -230,7 +232,8 @@ test_write_error(void)
 
   // Test with setting errno
 
-  SerdByteSink* byte_sink = serd_byte_sink_new_function(faulty_sink, NULL, 1);
+  SerdByteSink* byte_sink =
+    serd_byte_sink_new_function(faulty_sink, NULL, NULL, 1);
 
   SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0u, env, byte_sink);
   assert(writer);
@@ -242,7 +245,7 @@ test_write_error(void)
   serd_byte_sink_free(byte_sink);
 
   // Test without setting errno
-  byte_sink = serd_byte_sink_new_function(faulty_sink, world, 1);
+  byte_sink = serd_byte_sink_new_function(faulty_sink, NULL, world, 1);
   writer    = serd_writer_new(world, SERD_TURTLE, 0u, env, byte_sink);
 
   assert(writer);
@@ -282,8 +285,9 @@ test_write_empty_syntax(void)
   assert(writer);
 
   assert(!serd_sink_write(serd_writer_sink(writer), 0u, s, p, o, NULL));
+  assert(!serd_byte_sink_close(byte_sink));
 
-  char* out = serd_buffer_sink_finish(&buffer);
+  char* const out = (char*)buffer.buf;
 
   assert(strlen(out) == 0);
   serd_free(out);
@@ -323,7 +327,8 @@ test_write_bad_uri(void)
   assert(st);
   assert(st == SERD_ERR_BAD_ARG);
 
-  serd_free(serd_buffer_sink_finish(&buffer));
+  serd_byte_sink_close(byte_sink);
+  serd_free(buffer.buf);
   serd_writer_free(writer);
   serd_byte_sink_free(byte_sink);
   serd_env_free(env);
