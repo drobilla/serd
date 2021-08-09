@@ -127,6 +127,28 @@ serd_set_output_option(const SerdStringView   name,
   return SERD_FAILURE;
 }
 
+SerdSyntax
+serd_choose_input_syntax(SerdWorld* const  world,
+                         const SerdSyntax  requested,
+                         const char* const filename)
+{
+  if (requested) {
+    return requested;
+  }
+
+  const SerdSyntax guessed = serd_guess_syntax(filename);
+  if (guessed != SERD_SYNTAX_EMPTY) {
+    return guessed;
+  }
+
+  serd_logf(world,
+            SERD_LOG_LEVEL_WARNING,
+            "unable to determine syntax of \"%s\", trying TriG",
+            filename);
+
+  return SERD_TRIG;
+}
+
 /// Wrapper for getc that is compatible with SerdReadFunc but faster than fread
 static size_t
 serd_file_read_byte(void* buf, size_t size, size_t nmemb, void* stream)
