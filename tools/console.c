@@ -4,6 +4,7 @@
 #include "console.h"
 
 #include <serd/input_stream.h>
+#include <serd/syntax.h>
 #include <serd/version.h>
 
 #include <stdio.h>
@@ -18,6 +19,25 @@ serd_print_version(const char* const program)
          SERD_MINOR_VERSION,
          SERD_MICRO_VERSION);
   return 0;
+}
+
+SerdSyntax
+serd_choose_syntax(const SerdSyntax requested, const char* const filename)
+{
+  if (requested) {
+    return requested;
+  }
+
+  const SerdSyntax guessed = serd_guess_syntax(filename);
+  if (guessed != SERD_SYNTAX_EMPTY) {
+    return guessed;
+  }
+
+  fprintf(stderr,
+          "warning: unable to determine syntax of \"%s\", trying TriG\n",
+          filename);
+
+  return SERD_TRIG;
 }
 
 SerdInputStream
