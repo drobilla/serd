@@ -1,0 +1,4 @@
+_:B1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> _:B2 .
+_:B2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> _:b1 .
+_:c3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> _:C3 .
+_:f0b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> _:f0B3 .

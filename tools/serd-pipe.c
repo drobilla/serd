@@ -38,15 +38,13 @@ print_usage(const char* const name, const bool error)
     "Use - for INPUT to read from standard input.\n\n"
     "  -B BASE_URI  Base URI.\n"
     "  -I SYNTAX    Input syntax (nquads/ntriples/trig/turtle),\n"
-    "               or flag (generated/lax/variables).\n"
+    "               or flag (generated/global/lax/variables).\n"
     "  -O SYNTAX    Output syntax (empty/nquads/ntriples/trig/turtle),\n"
     "               or flag (ascii/expanded/lax/terse/verbatim).\n"
     "  -b BYTES     I/O block size.\n"
-    "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n"
     "  -h           Display this help and exit.\n"
     "  -k BYTES     Parser stack size.\n"
     "  -o FILENAME  Write output to FILENAME instead of stdout.\n"
-    "  -p PREFIX    Add PREFIX to blank node IDs.\n"
     "  -q           Suppress all output except data.\n"
     "  -r ROOT_URI  Keep relative URIs within ROOT_URI.\n"
     "  -s STRING    Parse STRING as input.\n"
@@ -81,7 +79,6 @@ read_file(SerdWorld* const      world,
           const SerdSink* const sink,
           const size_t          stack_size,
           const char* const     filename,
-          const char* const     add_prefix,
           const size_t          block_size)
 {
   SerdInputStream in = serd_open_tool_input(filename);
@@ -97,10 +94,7 @@ read_file(SerdWorld* const      world,
   serd_world_set_limits(world, limits);
 
   SerdReader* reader = serd_reader_new(world, syntax, flags, sink);
-
-  serd_reader_add_blank_prefix(reader, add_prefix);
-
-  SerdStatus st = serd_reader_start(reader, &in, NULL, block_size);
+  SerdStatus  st     = serd_reader_start(reader, &in, NULL, block_size);
 
   st = st ? st : serd_reader_read_document(reader);
 
@@ -125,8 +119,6 @@ main(int argc, char** argv)
   size_t          block_size    = 4096U;
   size_t          stack_size    = 524288U;
   const char*     input_string  = NULL;
-  const char*     add_prefix    = "";
-  const char*     chop_prefix   = NULL;
   const char*     out_filename  = NULL;
   const char*     root_uri      = NULL;
   int             a             = 1;
@@ -200,13 +192,6 @@ main(int argc, char** argv)
         }
         block_size = (size_t)size;
         break;
-      } else if (opt == 'c') {
-        if (argv[a][o + 1] || ++a == argc) {
-          return missing_arg(prog, 'c');
-        }
-
-        chop_prefix = argv[a];
-        break;
       } else if (opt == 'k') {
         if (argv[a][o + 1] || ++a == argc) {
           return missing_arg(prog, 'k');
@@ -226,13 +211,6 @@ main(int argc, char** argv)
         }
 
         out_filename = argv[a];
-        break;
-      } else if (opt == 'p') {
-        if (argv[a][o + 1] || ++a == argc) {
-          return missing_arg(prog, 'p');
-        }
-
-        add_prefix = argv[a];
         break;
       } else if (opt == 'r') {
         if (argv[a][o + 1] || ++a == argc) {
@@ -312,10 +290,7 @@ main(int argc, char** argv)
     serd_writer_set_root_uri(writer, zix_string(root_uri));
   }
 
-  serd_writer_chop_blank_prefix(writer, chop_prefix);
-
-  SerdStatus st         = SERD_SUCCESS;
-  SerdNode*  input_name = NULL;
+  SerdStatus st = SERD_SUCCESS;
   if (input_string) {
     const char*     position  = input_string;
     SerdInputStream string_in = serd_open_input_string(&position);
@@ -326,8 +301,6 @@ main(int argc, char** argv)
                       reader_flags,
                       serd_writer_sink(writer));
 
-    serd_reader_add_blank_prefix(reader, add_prefix);
-
     if (!(st = serd_reader_start(reader, &string_in, NULL, 1U))) {
       st = serd_reader_read_document(reader);
     }
@@ -336,11 +309,8 @@ main(int argc, char** argv)
     serd_close_input(&string_in);
   }
 
-  size_t prefix_len = 0;
-  char*  prefix     = NULL;
-  if (n_inputs > 1) {
-    prefix_len = 8 + strlen(add_prefix);
-    prefix     = (char*)calloc(1, prefix_len);
+  if (n_inputs == 1) {
+    reader_flags |= SERD_READ_GLOBAL;
   }
 
   for (int i = 0; !st && i < n_inputs; ++i) {
@@ -351,25 +321,18 @@ main(int argc, char** argv)
       }
     }
 
-    if (n_inputs > 1) {
-      snprintf(prefix, prefix_len, "f%d%s", i, add_prefix);
-    }
-
     if ((st = read_file(world,
                         serd_choose_syntax(input_syntax, inputs[i]),
                         reader_flags,
                         serd_writer_sink(writer),
                         stack_size,
                         inputs[i],
-                        n_inputs > 1 ? prefix : add_prefix,
                         block_size))) {
       break;
     }
   }
-  free(prefix);
 
   serd_writer_free(writer);
-  serd_node_free(NULL, input_name);
   serd_env_free(env);
   serd_node_free(NULL, base);
   serd_world_free(world);
