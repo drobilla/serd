@@ -16,11 +16,11 @@
 #include "string_utils.h"
 #include "world.h"
 
+#include "exess/exess.h"
 #include "serd/input_stream.h"
 
 #include <assert.h>
 #include <stdarg.h>
-#include <stdio.h>
 #include <string.h>
 
 static SerdStatus
@@ -65,12 +65,16 @@ set_blank_id(SerdReader* const reader,
              SerdNode* const   node,
              const size_t      buf_size)
 {
-  char* const       buf = (char*)(node + 1);
-  const char* const prefix =
-    reader->bprefix ? (const char*)reader->bprefix : "";
+  const uint32_t id  = reader->next_id++;
+  char* const    buf = serd_node_buffer(node);
+  size_t         i   = reader->bprefix_len;
 
-  node->length =
-    (size_t)snprintf(buf, buf_size, "%sb%u", prefix, reader->next_id++);
+  memcpy(buf, reader->bprefix, reader->bprefix_len);
+  buf[i++] = 'b';
+
+  i += exess_write_uint(id, buf_size - i, buf + i).count;
+
+  node->length = i;
 }
 
 size_t
@@ -202,6 +206,16 @@ serd_reader_read_document(SerdReader* const reader)
     return SERD_BAD_CALL;
   }
 
+  if (!(reader->flags & SERD_READ_GLOBAL)) {
+    const uint32_t id = ++reader->world->next_document_id;
+
+    reader->bprefix[0]  = 'f';
+    reader->bprefix_len = 1U;
+    reader->bprefix_len +=
+      exess_write_uint(id, sizeof(reader->bprefix) - 1U, reader->bprefix + 1U)
+        .count;
+  }
+
   if (reader->syntax != SERD_SYNTAX_EMPTY && !reader->source->prepared) {
     SerdStatus st = serd_reader_prepare(reader);
     if (st) {
@@ -269,6 +283,12 @@ serd_reader_new(SerdWorld* const      world,
   assert(me->rdf_rest);
   assert(me->rdf_nil);
 
+  if (!(flags & SERD_READ_GLOBAL)) {
+    me->bprefix[0]  = 'f';
+    me->bprefix[1]  = '0';
+    me->bprefix_len = 2U;
+  }
+
   return me;
 }
 
@@ -284,26 +304,7 @@ serd_reader_free(SerdReader* const reader)
   }
 
   serd_stack_free(reader->world->allocator, &reader->stack);
-  serd_wfree(reader->world, reader->bprefix);
   serd_wfree(reader->world, reader);
-}
-
-void
-serd_reader_add_blank_prefix(SerdReader* const reader, const char* const prefix)
-{
-  assert(reader);
-
-  serd_wfree(reader->world, reader->bprefix);
-  reader->bprefix_len = 0;
-  reader->bprefix     = NULL;
-
-  const size_t prefix_len = prefix ? strlen(prefix) : 0;
-  if (prefix_len) {
-    reader->bprefix_len = prefix_len;
-    reader->bprefix =
-      (char*)serd_wmalloc(reader->world, reader->bprefix_len + 1);
-    memcpy(reader->bprefix, prefix, reader->bprefix_len + 1);
-  }
 }
 
 static SerdStatus

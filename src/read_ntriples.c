@@ -312,13 +312,17 @@ adjust_blank_id(SerdReader* const reader, char* const buf)
     const char tag = buf[reader->bprefix_len];
     if (tag == 'b') {
       // Presumably generated ID like b123 in the input, adjust to B123
-      buf[reader->bprefix_len] = 'B';
-      reader->seen_genid       = true;
-    } else if (tag == 'B' && reader->seen_genid) {
+      buf[reader->bprefix_len]   = 'B';
+      reader->seen_primary_genid = true;
+    } else if (tag == 'B') {
+      reader->seen_secondary_genid = true;
+    }
+
+    if (reader->seen_primary_genid && reader->seen_secondary_genid) {
       // We've seen both b123 and B123 styles, abort due to possible clashes
       return r_err(reader,
                    SERD_BAD_LABEL,
-                   "found both 'b' and 'B' blank IDs, prefix required");
+                   "blank nodes in document clash with generated ones");
     }
   }
 
@@ -341,10 +345,8 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
     return r_err(reader, SERD_BAD_SYNTAX, "expected blank node label");
   }
 
-  if (!(*dest = push_node(reader,
-                          SERD_BLANK,
-                          reader->bprefix ? reader->bprefix : "",
-                          reader->bprefix_len))) {
+  if (!(*dest = push_node(
+          reader, SERD_BLANK, reader->bprefix, reader->bprefix_len))) {
     return SERD_BAD_STACK;
   }
 

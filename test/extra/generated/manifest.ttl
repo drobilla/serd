@@ -1,0 +1,16 @@
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdft: <http://www.w3.org/ns/rdftest#> .
+
+<>
+	a mf:Manifest ;
+	rdfs:comment "Serd generated blank node ID test suite" ;
+	mf:entries (
+		<#test-doc-and-gen-ids>
+	) .
+
+<#test-doc-and-gen-ids>
+	a rdft:TestTurtleEval ;
+	mf:action <test-doc-and-gen-ids.ttl> ;
+	mf:name "test-doc-and-gen-ids" ;
+	mf:result <test-doc-and-gen-ids.nt> .
