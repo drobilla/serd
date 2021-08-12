@@ -12,11 +12,9 @@
 .Op Fl F Ar pattern | Fl G Ar pattern
 .Op Fl I Ar base
 .Op Fl b Ar bytes
-.Op Fl c Ar prefix
 .Op Fl i Ar syntax
 .Op Fl k Ar bytes
 .Op Fl o Ar syntax
-.Op Fl p Ar prefix
 .Op Fl r Ar root
 .Op Fl s Ar string
 .Op Fl w Ar filename
@@ -81,20 +79,6 @@ I/O block size.
 This is the number of bytes in a file that will be read or written at once.
 The default is 4096, which should perform well in most cases.
 Note that this only applies to files, standard input and output are always processed one byte at a time.
-.Pp
-.It Fl c Ar prefix
-Chop
-.Ar prefix
-from matching blank node IDs.
-This is typically used to revert the effects of
-.Fl p .
-For example, with
-.Ar prefix
-.Dq doc01 ,
-the blank node
-.Li _:doc01b42
-will be emitted as
-.Li _:b42 .
 .Pp
 .It Fl f
 Keep full URIs in input (don't qualify with namespace prefixes or make URIs relative).
@@ -183,21 +167,6 @@ Write terser output without newlines.
 Tolerate invalid UTF-8 by writing the replacement character when necessary.
 Note that data may be lost when using this option!
 .El
-.Pp
-.It Fl p Ar prefix
-Add
-.Ar prefix
-to blank node IDs.
-This can be used to avoid clashes between blank node IDs in input documents.
-The effects can be reversed in a later run with
-.Fl c .
-For example, with
-.Ar prefix
-.Dq doc01 ,
-the blank node
-.Li _:b42
-will be emitted as
-.Li _:doc01b42 .
 .Pp
 .It Fl q
 Suppress all output except data.
