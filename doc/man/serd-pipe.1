@@ -13,10 +13,8 @@
 .Op Fl I Ar syntax
 .Op Fl O Ar syntax
 .Op Fl b Ar bytes
-.Op Fl c Ar prefix
 .Op Fl k Ar bytes
 .Op Fl o Ar filename
-.Op Fl p Ar prefix
 .Op Fl r Ar root
 .Op Fl s Ar string
 .Op Ar input ...
@@ -93,6 +91,16 @@ are adjusted to avoid clashes.
 This option disables that,
 so such labels are read as-is.
 Note that this may corrupt the output by merging distinct blank nodes!
+.It Cm global
+Assume a clean global namespace for blank nodes.
+Normally,
+a prefix like
+.Ql f1
+is added to blank node labels,
+to prevent clashes when reading multiple files.
+This option disables that,
+so labels are read without any added prefix.
+Note that this may corrupt the output by merging distinct blank nodes!
 .It Cm lax
 Tolerate invalid input where possible.
 Warnings are printed for syntax errors,
@@ -142,23 +150,6 @@ I/O block size.
 This is the number of bytes in a file that will be read or written at once.
 The default is 4096, which should perform well in most cases.
 Note that this only applies to files, standard input and output are always processed one byte at a time.
-.It Fl c Ar prefix
-Chop
-.Ar prefix
-from matching blank node IDs.
-This is typically used to revert the effects of
-.Fl p .
-For example, with
-.Ar prefix
-.Dq doc01 ,
-the blank node
-.Li _:doc01b42
-will be emitted as
-.Li _:b42 .
-.It Fl e
-Eat input one character at a time, rather than a page at a time which is the default.
-This is useful when reading from a pipe since output will be generated immediately as input arrives, rather than waiting until an entire page of input has arrived.
-With this option one less page of memory is used, but likely with a performance penalty.
 .It Fl f
 Fast and loose URI mode:
 preserve full URIs (without qualifying or making relative),
@@ -175,20 +166,6 @@ or decreased to reduce memory requirements and startup time.
 Write output to the given
 .Ar filename
 instead of stdout.
-.It Fl p Ar prefix
-Add
-.Ar prefix
-to blank node IDs.
-This can be used to avoid clashes between blank node IDs in input documents.
-The effects can be reversed in a later run with
-.Fl c .
-For example, with
-.Ar prefix
-.Dq doc01 ,
-the blank node
-.Li _:b42
-will be emitted as
-.Li _:doc01b42 .
 .It Fl q
 Suppress all output except data.
 .It Fl r Ar root

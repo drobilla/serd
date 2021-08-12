@@ -3,7 +3,6 @@
 
 Checks: >
   -*-magic-numbers,
-  -bugprone-easily-swappable-parameters,
   -bugprone-inc-dec-in-conditions,
   -cert-err33-c,
   -concurrency-mt-unsafe,
@@ -14,4 +13,4 @@ CheckOptions:
   - key:   readability-function-cognitive-complexity.IgnoreMacros
     value: 'true'
   - key:   readability-function-cognitive-complexity.Threshold
-    value: '134'
+    value: '118'

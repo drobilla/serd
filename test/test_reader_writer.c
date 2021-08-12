@@ -168,7 +168,7 @@ static void
 test_write_errors(void)
 {
   // Syntax-keyed array of output document sizes
-  static const size_t max_offsets[] = {0, 450, 1920, 2012, 464};
+  static const size_t max_offsets[] = {0, 452, 1976, 2068, 466};
 
   static const SerdLimits limits = {1024, 256};
 
@@ -185,6 +185,7 @@ test_write_errors(void)
 
     // Check write error at every offset in the output
     for (size_t o = 0; o < max_offsets[s]; ++o) {
+      serd_world_reset_counters(world);
       check_write_error_offset(world, syntax, 1, o, SERD_BAD_WRITE);
       check_write_error_offset(world, syntax, 512, o, SERD_BAD_WRITE);
     }
@@ -207,9 +208,6 @@ test_writer(const char* const path)
     serd_writer_new(world, SERD_TURTLE, SERD_WRITE_LAX, env, &output, 1U);
 
   assert(writer);
-
-  serd_writer_chop_blank_prefix(writer, "tmp");
-  serd_writer_chop_blank_prefix(writer, NULL);
 
   const SerdSink* const sink = serd_writer_sink(writer);
 
@@ -318,17 +316,6 @@ test_reader(const char* const path)
 
   assert(serd_reader_read_chunk(reader) == SERD_BAD_CALL);
   assert(serd_reader_read_document(reader) == SERD_BAD_CALL);
-
-  serd_reader_add_blank_prefix(reader, "tmp");
-
-#if defined(__GNUC__)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wnonnull"
-#endif
-  serd_reader_add_blank_prefix(reader, NULL);
-#if defined(__GNUC__)
-#  pragma GCC diagnostic pop
-#endif
 
   SerdInputStream in = serd_open_input_file(path);
   assert(!serd_reader_start(reader, &in, zix_empty_string(), 4096));
