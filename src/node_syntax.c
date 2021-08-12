@@ -58,7 +58,7 @@ serd_node_from_syntax_in(const char* const str,
   SerdReader* const reader =
     serd_reader_new(world,
                     syntax,
-                    SERD_READ_VERBATIM | SERD_READ_GENERATED,
+                    SERD_READ_RELATIVE | SERD_READ_GLOBAL | SERD_READ_GENERATED,
                     env,
                     sink,
                     1024 + doc_len);

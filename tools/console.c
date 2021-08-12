@@ -58,7 +58,8 @@ serd_set_input_option(const SerdStringView   name,
   static const InputOption input_options[] = {
     {"lax", SERD_READ_LAX},
     {"variables", SERD_READ_VARIABLES},
-    {"verbatim", SERD_READ_VERBATIM},
+    {"relative", SERD_READ_RELATIVE},
+    {"global", SERD_READ_GLOBAL},
     {"generated", SERD_READ_GENERATED},
     {NULL, SERD_READ_LAX},
   };

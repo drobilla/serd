@@ -395,7 +395,7 @@ test_suites = {
   ],
   'fast': [
     files('extra/perfect/manifest.ttl'), ns_serdtest + 'perfect/',
-    '--', '-I', 'verbatim', '-O', 'verbatim',
+    '--', '-I', 'global', '-I', 'relative', '-O', 'verbatim',
   ],
   'full': [
     files('extra/full/manifest.ttl'), ns_serdtest + 'full/',
