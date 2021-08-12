@@ -243,13 +243,15 @@ read_STRING_LITERAL(SerdReader* const reader,
 static SerdStatus
 adjust_blank_id(SerdReader* const reader, char* const buf)
 {
-  if (!(reader->flags & SERD_READ_VERBATIM) &&
+  if (!(reader->flags & SERD_READ_GENERATED) &&
       is_digit(buf[reader->bprefix_len + 1])) {
     const char tag = buf[reader->bprefix_len];
     if (tag == 'b') {
-      buf[reader->bprefix_len] = 'B'; // Prevent clash
+      // Presumably generated ID like b123 in the input, adjust to B123
+      buf[reader->bprefix_len] = 'B';
       reader->seen_genid       = true;
     } else if (tag == 'B' && reader->seen_genid) {
+      // We've seen both b123 and B123 styles, abort due to possible clashes
       return r_err(reader,
                    SERD_ERR_ID_CLASH,
                    "found both `b' and `B' blank IDs, prefix required");
