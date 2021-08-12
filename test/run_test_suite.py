@@ -211,8 +211,6 @@ def test_suite(
         command_prefix + ["-I", base_uri], manifest_path
     )
 
-    os.makedirs(out_test_dir, exist_ok=True)
-
     asserter = ""
     if os.getenv("USER") == "drobilla":
         asserter = "http://drobilla.net/drobilla#me"
@@ -396,11 +394,6 @@ def main():
     parser.add_argument("--syntax", default=None, help="input syntax")
     parser.add_argument("--osyntax", default=None, help="output syntax")
     parser.add_argument("--wrapper", default="", help="executable wrapper")
-
-    parser.add_argument(
-        "-o", "--out-dir", default=None, help="output directory"
-    )
-
     parser.add_argument("manifest", help="test suite manifest.ttl file")
     parser.add_argument("base_uri", help="base URI for tests")
 
@@ -409,22 +402,21 @@ def main():
     )
 
     args = parser.parse_args(sys.argv[1:])
-    if args.out_dir is None:
-        suite_name = os.path.basename(os.path.dirname(args.manifest))
-        args.out_dir = os.path.join('test', suite_name)
+
     command_prefix = (
         shlex.split(args.wrapper) + [args.serdi] + args.serdi_option
     )
 
-    return test_suite(
-        args.manifest,
-        args.base_uri,
-        args.report,
-        args.syntax,
-        args.osyntax,
-        command_prefix,
-        args.out_dir,
-    )
+    with tempfile.TemporaryDirectory() as test_out_dir:
+        return test_suite(
+            args.manifest,
+            args.base_uri,
+            args.report,
+            args.syntax,
+            args.osyntax,
+            command_prefix,
+            test_out_dir,
+        )
 
 
 if __name__ == "__main__":
