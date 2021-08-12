@@ -427,7 +427,7 @@ test_suites = {
   'prefix_add': [
     '--reverse',
     files('extra/prefix/manifest.ttl'), ns_serdtest + 'prefix/',
-    '--', '-p', 'test',
+    '--', '-p', 'test', '-I', 'generated',
   ],
   'prefix_remove': [
     files('extra/prefix/manifest.ttl'), ns_serdtest + 'prefix/',

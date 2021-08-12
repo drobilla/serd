@@ -55,8 +55,13 @@ serd_node_from_syntax_in(const char* const str,
   SerdWorld* const world  = serd_world_new();
   SerdSink* const  sink   = serd_sink_new(&object, on_node_string_event, NULL);
 
-  SerdReader* const reader = serd_reader_new(
-    world, syntax, SERD_READ_VERBATIM, env, sink, 1024 + doc_len);
+  SerdReader* const reader =
+    serd_reader_new(world,
+                    syntax,
+                    SERD_READ_VERBATIM | SERD_READ_GENERATED,
+                    env,
+                    sink,
+                    1024 + doc_len);
 
   SerdNode* string_name = serd_new_string(serd_string("string"));
 

@@ -113,6 +113,14 @@ so that URI references and blank nodes are passed to the sink exactly as they ar
 Note that this does not apply to CURIEs, since serd deliberately does not
 have a way to represent CURIE nodes.
 A bad namespace prefix is considered a syntax error.
+.It Cm generated
+Read seemingly generated blank node labels exactly without adjusting them.
+Normally, blank node labels like
+.Li b123
+are adapted to avoid potential clashes with generated ones.
+This flag disables that,
+so such labels will be passed through exactly as they are in the input.
+Note that this may corrupt the output by merging distinct blank nodes.
 .El
 .It Fl O Ar syntax
 Set an output syntax or option.
