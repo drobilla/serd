@@ -1,20 +1,22 @@
 /* Generic page style */
 
-/* Smaller sizes: 0.236em 0.271em 0.382em 0.438em 0.618em 0.708em */
-/* Larger sizes:  1.146em 1.618em 1.854em 2.618em 3em     4.236em */
+/*
+  Smaller sizes: 0.236em 0.271em 0.382em 0.438em 0.618em 0.708em
+  Larger sizes:  1.146em 1.618em 1.854em 2.618em 3em     4.236em
+*/
 
 html {
   margin: 0 1.618em;
+  background: #FFF;
+  color: #000;
 }
 
 body {
-  background: #FFF;
-  color: #222;
   font-style: normal;
   line-height: 1.618em;
   margin: 0 auto auto;
   padding: 0;
-  max-width: 80em;
+  max-width: 60em;
   font-family: "SF Pro Text", Verdana, "DejaVu Sans", sans-serif;
   text-rendering: optimizeLegibility;
 }
@@ -109,10 +111,6 @@ dd:blank {
 
 /* Color links on screens */
 @media screen {
-  body {
-    color: #222;
-  }
-
   a {
     color: #546E00;
   }
@@ -159,7 +157,7 @@ td.head-vol {
 }
 
 div.Pp {
-  margin: 1ex 0ex;
+  margin: 1ex 0;
 }
 
 a.permalink {
@@ -188,4 +186,66 @@ table.Nm tbody tr {
 
 code.Nm, code.Fl, code.Cm, code.Ic, code.In, code.Fd, code.Fn, code.Cd {
   font-weight: bold;
+  color: #444;
+}
+
+code.Ev {
+  font-weight: bold;
+  color: #444;
+}
+
+code.Li {
+  color: #333;
+}
+
+var.Ar {
+  font-style: italic;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  html {
+    background: #222;
+    color: #DDD;
+  }
+
+  a {
+    color: #B4C342;
+  }
+
+  a.permalink {
+    color: #DDD;
+  }
+
+  h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
+    color: #DDD;
+  }
+
+  h1 a:link, h2 a:link, h3 a:link, h4 a:link, h5 a:link, h6 a:link {
+    color: #DDD;
+  }
+
+  h1 a:visited, h2 a:visited, h3 a:visited, h4 a:visited, h5 a:visited, h6 a:visited {
+    color: #DDD;
+  }
+
+  code.Nm, code.Fl, code.Cm, code.Ic, code.In, code.Fd, code.Fn, code.Cd {
+    color: #AAA;
+  }
+
+  code.Ev {
+    color: #AAA;
+  }
+
+  code.Li {
+    color: #CCC;
+  }
+}
+
+/* Hard black for dark mode on mobile (since it's likely to be an OLED screen) */
+@media only screen and (hover: none) and (pointer: coarse) and (prefers-color-scheme: dark) {
+  html {
+    background: #000;
+    color: #CCC;
+  }
 }
