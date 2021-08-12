@@ -59,6 +59,7 @@ serd_set_input_option(const SerdStringView   name,
     {"lax", SERD_READ_LAX},
     {"variables", SERD_READ_VARIABLES},
     {"verbatim", SERD_READ_VERBATIM},
+    {"generated", SERD_READ_GENERATED},
     {NULL, SERD_READ_LAX},
   };
 
