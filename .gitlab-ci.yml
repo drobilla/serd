@@ -48,7 +48,9 @@ x64_dbg:
     - mkdir -p build/doc/
     - cp doc/*.svg build/doc/
     - cp doc/mandoc.css build/doc/
-    - mandoc -Thtml -Werror -O style=mandoc.css doc/serdi.1 > build/doc/serdi.html
+    - mandoc -Thtml -Wwarning -O style=mandoc.css,man=%N.html doc/serd-filter.1 > build/doc/serd-filter.html
+    - mandoc -Thtml -Wwarning -O style=mandoc.css,man=%N.html doc/serd-pipe.1 > build/doc/serd-pipe.html
+    - mandoc -Thtml -Wwarning -O style=mandoc.css,man=%N.html doc/serd-sort.1 > build/doc/serd-sort.html
   artifacts:
     paths:
       - build/doc
@@ -167,7 +169,9 @@ pages:
     - mv build/meson-logs/coveragereport/ public/coverage
     - mv build/doc/c/html/ public/c/html/
     - mv build/doc/c/singlehtml/ public/c/singlehtml/
-    - mv build/doc/serdi.html public/man/serdi.html
+    - mv build/doc/serd-filter.html public/man/serd-filter.html
+    - mv build/doc/serd-pipe.html public/man/serd-pipe.html
+    - mv build/doc/serd-sort.html public/man/serd-sort.html
     - mv build/doc/mandoc.css public/man/mandoc.css
   dependencies:
     - x64_dbg
