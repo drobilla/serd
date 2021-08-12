@@ -64,6 +64,21 @@ typedef enum {
      a syntax error.
   */
   SERD_READ_VERBATIM = 1U << 2U,
+
+  /**
+     Read generated blank node labels exactly without adjusting them.
+
+     Normally, the reader will adapt blank node labels in the input that clash
+     with its scheme for generating new ones, for example mapping "_:b123" to
+     "_:B123".  This flag disables that, so that blank node labels are passed
+     to the sink exactly as they are in the input.
+
+     Note that this flag should be used carefully, since it can result in data
+     corruption.  Specifically, if the input is a syntax like Turtle with
+     anonymous nodes, the generated IDs for those nodes may clash with IDs from
+     the input document.
+  */
+  SERD_READ_GENERATED = 1U << 3U,
 } SerdReaderFlag;
 
 /// Bitwise OR of SerdReaderFlag values
