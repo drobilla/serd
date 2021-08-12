@@ -939,11 +939,11 @@ read_turtle_directive(SerdReader* const reader)
 static SerdStatus
 read_sparql_directive(SerdReader* const reader, const SerdNode* const token)
 {
-  if (!tokcmp(token, "base", 4)) {
+  if (token_equals(token, "base", 4)) {
     return read_turtle_base(reader, true, false);
   }
 
-  if (!tokcmp(token, "prefix", 6)) {
+  if (token_equals(token, "prefix", 6)) {
     return read_turtle_prefixID(reader, true, false);
   }
 

@@ -71,8 +71,8 @@ push_node(SerdReader*  reader,
           const char*  str,
           size_t       length);
 
-ZIX_PURE_FUNC int
-tokcmp(const SerdNode* node, const char* tok, size_t n);
+ZIX_PURE_FUNC bool
+token_equals(const SerdNode* node, const char* tok, size_t n);
 
 ZIX_PURE_FUNC size_t
 genid_length(const SerdReader* reader);
