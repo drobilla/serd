@@ -283,6 +283,18 @@ char* SERD_NULLABLE
 serd_canonical_path(const char* SERD_NONNULL path);
 
 /**
+   Compare two strings ignoring case.
+
+   @return Less than, equal to, or greater than zero if `s1` is less than,
+   equal to, or greater than `s2`, respectively.
+*/
+SERD_PURE_API
+int
+serd_strncasecmp(const char* SERD_NONNULL s1,
+                 const char* SERD_NONNULL s2,
+                 size_t                   n);
+
+/**
    @}
    @defgroup serd_io_functions I/O Function Types
 
