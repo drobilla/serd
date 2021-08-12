@@ -54,6 +54,20 @@ typedef enum {
   SERD_READ_VARIABLES = 1U << 1U,
 
   /**
+     Read blank node labels without adding a prefix unique to the document.
+
+     Normally, the reader adds a prefix like "f1", "f2", and so on, to blank
+     node labels, to separate the namespaces from separate input documents.
+     This flag disables that, so that blank node labels will be read without
+     any prefix added.
+
+     Note that this flag should be used carefully, since it can result in data
+     corruption.  Specifically, if data from separate documents parsed with
+     this flag is combined, the IDs from each document may clash.
+  */
+  SERD_READ_GLOBAL = 1U << 2U,
+
+  /**
      Read generated blank node labels exactly without adjusting them.
 
      Normally, the reader will adapt blank node labels in the input that clash
@@ -66,7 +80,7 @@ typedef enum {
      anonymous nodes, the generated IDs for those nodes may clash with IDs from
      the input document.
   */
-  SERD_READ_GENERATED = 1U << 2U,
+  SERD_READ_GENERATED = 1U << 3U,
 } SerdReaderFlag;
 
 /// Bitwise OR of SerdReaderFlag values
@@ -78,19 +92,6 @@ serd_reader_new(SerdWorld* ZIX_NONNULL      world,
                 SerdSyntax                  syntax,
                 SerdReaderFlags             flags,
                 const SerdSink* ZIX_NONNULL sink);
-
-/**
-   Set a prefix to be added to all blank node identifiers.
-
-   This is useful when multiple files are to be parsed into the same output (a
-   model or a file).  Since Serd preserves blank node IDs, this could cause
-   conflicts where two non-equivalent blank nodes are merged, resulting in
-   corrupt data.  By setting a unique blank node prefix for each parsed file,
-   this can be avoided, while preserving blank node names.
-*/
-SERD_API void
-serd_reader_add_blank_prefix(SerdReader* ZIX_NONNULL  reader,
-                             const char* ZIX_NULLABLE prefix);
 
 /**
    Prepare to read some input.

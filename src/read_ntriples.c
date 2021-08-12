@@ -289,10 +289,8 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
     return r_err(reader, SERD_BAD_SYNTAX, "expected blank node label");
   }
 
-  if (!(*dest = push_node(reader,
-                          SERD_BLANK,
-                          reader->bprefix ? reader->bprefix : "",
-                          reader->bprefix_len))) {
+  if (!(*dest = push_node(
+          reader, SERD_BLANK, reader->bprefix, reader->bprefix_len))) {
     return SERD_BAD_STACK;
   }
 
