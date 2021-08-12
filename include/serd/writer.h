@@ -116,17 +116,6 @@ serd_file_sink(const void* SERD_NONNULL buf,
                void* SERD_NONNULL       stream);
 
 /**
-   Set a prefix to be removed from matching blank node identifiers.
-
-   This is the counterpart to serd_reader_add_blank_prefix() which can be used
-   to "undo" added prefixes.
-*/
-SERD_API
-void
-serd_writer_chop_blank_prefix(SerdWriter* SERD_NONNULL  writer,
-                              const char* SERD_NULLABLE prefix);
-
-/**
    Set the current output base URI, and emit a directive if applicable.
 
    Note this function can be safely casted to SerdBaseSink.
