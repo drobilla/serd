@@ -287,10 +287,8 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
     return st;
   }
 
-  if (!(*dest = push_node(reader,
-                          SERD_BLANK,
-                          reader->bprefix ? reader->bprefix : "",
-                          reader->bprefix_len))) {
+  if (!(*dest = push_node(
+          reader, SERD_BLANK, reader->bprefix, reader->bprefix_len))) {
     return SERD_ERR_OVERFLOW;
   }
 

@@ -22,7 +22,7 @@
 #include <stdio.h>
 
 static const size_t min_stack_size = 4 * sizeof(size_t) + 230u;
-static const size_t max_stack_size = 1024u;
+static const size_t max_stack_size = 2048u;
 
 static SerdStatus
 test_size(SerdWorld* const      world,
