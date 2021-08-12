@@ -148,12 +148,21 @@ push_node(SerdReader* const  reader,
   return push_node_padded(reader, length, type, str, length);
 }
 
-int
-tokcmp(const SerdNode* const node, const char* const tok, const size_t n)
+bool
+token_equals(const SerdNode* const node, const char* const tok, const size_t n)
 {
-  return ((!node || node->length != n)
-            ? -1
-            : serd_strncasecmp(serd_node_string(node), tok, n));
+  if (node->length != n) {
+    return false;
+  }
+
+  const char* const node_string = serd_node_string(node);
+  for (size_t i = 0U; i < n; ++i) {
+    if (serd_to_upper(node_string[i]) != serd_to_upper(tok[i])) {
+      return false;
+    }
+  }
+
+  return tok[n] == '\0';
 }
 
 SerdStatus
