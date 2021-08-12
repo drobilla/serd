@@ -2091,18 +2091,27 @@ typedef enum {
   SERD_READ_VARIABLES = 1U << 1U,
 
   /**
-     Read URIs and blank node labels exactly.
+     Read relative URI references exactly without resolving them.
 
-     Normally, the reader expands all relative URIs, and may adjust blank node
-     labels to avoid clashing with generated ones.  This flag disables all of
-     this processing, so that URI references and blank nodes are passed to the
-     sink exactly as they are in the input.
-
-     Note that this does not apply to CURIEs, since serd deliberately does not
-     have a way to represent CURIE nodes.  A bad namespace prefix is considered
-     a syntax error.
+     Normally, the reader expands all relative URIs against the base URI.  This
+     flag disables that, so that URI references are passed to the sink exactly
+     as they are in the input.
   */
-  SERD_READ_VERBATIM = 1U << 2U,
+  SERD_READ_RELATIVE = 1U << 2U,
+
+  /**
+     Read blank node labels without adding a prefix unique to the document.
+
+     Normally, the reader adds a prefix like "f1", "f2", and so on, to blank
+     node labels, to separate the namespaces from separate input documents.
+     This flag disables that, so that blank node labels will be read without
+     any prefix added.
+
+     Note that this flag should be used carefully, since it can result in data
+     corruption.  Specifically, if data from separate documents parsed with
+     this flag is combined, the IDs from each document may clash.
+  */
+  SERD_READ_GLOBAL = 1U << 3U,
 
   /**
      Read generated blank node labels exactly without adjusting them.
@@ -2117,7 +2126,7 @@ typedef enum {
      anonymous nodes, the generated IDs for those nodes may clash with IDs from
      the input document.
   */
-  SERD_READ_GENERATED = 1U << 3U,
+  SERD_READ_GENERATED = 1U << 4U,
 } SerdReaderFlag;
 
 /// Bitwise OR of SerdReaderFlag values
@@ -2311,7 +2320,7 @@ typedef enum {
      potentially writem them as relative URI references.  This flag disables
      that, so URI nodes are written exactly as they are received.
 
-     When fed by a reader with #SERD_READ_VERBATIM enabled, this will write URI
+     When fed by a reader with #SERD_READ_RELATIVE enabled, this will write URI
      references exactly as they are in the input.
   */
   SERD_WRITE_VERBATIM = 1U << 2U,
