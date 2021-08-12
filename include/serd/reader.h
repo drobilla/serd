@@ -103,19 +103,6 @@ serd_reader_new(SerdWorld* SERD_NONNULL      world,
                 size_t                       stack_size);
 
 /**
-   Set a prefix to be added to all blank node identifiers.
-
-   This is useful when multiple files are to be parsed into the same output (a
-   model or a file).  Since Serd preserves blank node IDs, this could cause
-   conflicts where two non-equivalent blank nodes are merged, resulting in
-   corrupt data.  By setting a unique blank node prefix for each parsed file,
-   this can be avoided, while preserving blank node names.
-*/
-SERD_API void
-serd_reader_add_blank_prefix(SerdReader* SERD_NONNULL  reader,
-                             const char* SERD_NULLABLE prefix);
-
-/**
    Prepare to read some input.
 
    This sets up the reader to read from the given input, but will not read any

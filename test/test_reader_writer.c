@@ -54,9 +54,6 @@ test_writer(const char* const path)
 
   assert(writer);
 
-  serd_writer_chop_blank_prefix(writer, "tmp");
-  serd_writer_chop_blank_prefix(writer, NULL);
-
   SerdNode* lit = serd_new_string(serd_string("hello"));
 
   const SerdSink* const iface = serd_writer_sink(writer);
@@ -165,17 +162,6 @@ test_reader(const char* path)
 
   assert(serd_reader_read_chunk(reader) == SERD_ERR_BAD_CALL);
   assert(serd_reader_read_document(reader) == SERD_ERR_BAD_CALL);
-
-  serd_reader_add_blank_prefix(reader, "tmp");
-
-#if defined(__GNUC__)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wnonnull"
-#endif
-  serd_reader_add_blank_prefix(reader, NULL);
-#if defined(__GNUC__)
-#  pragma GCC diagnostic pop
-#endif
 
   SerdInputStream in = serd_open_input_file(path);
   assert(!serd_reader_start(reader, &in, NULL, 4096));

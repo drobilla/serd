@@ -14,6 +14,7 @@
 #include "stack.h"
 #include "statement.h"
 #include "system.h"
+#include "world.h"
 
 #include <assert.h>
 #include <stdarg.h>
@@ -65,11 +66,10 @@ set_blank_id(SerdReader* const reader,
              SerdNode* const   node,
              const size_t      buf_size)
 {
-  char*       buf    = (char*)(node + 1);
-  const char* prefix = reader->bprefix ? (const char*)reader->bprefix : "";
+  char* const buf = (char*)(node + 1);
 
-  node->length =
-    (size_t)snprintf(buf, buf_size, "%sb%u", prefix, reader->next_id++);
+  node->length = (size_t)snprintf(
+    buf, buf_size, "%sb%u", reader->bprefix, reader->next_id++);
 }
 
 size_t
@@ -196,6 +196,13 @@ serd_reader_read_document(SerdReader* const reader)
     return SERD_ERR_BAD_CALL;
   }
 
+  if (!(reader->flags & SERD_READ_GLOBAL)) {
+    reader->bprefix_len = (size_t)snprintf(reader->bprefix,
+                                           sizeof(reader->bprefix),
+                                           "f%u",
+                                           ++reader->world->next_document_id);
+  }
+
   if (reader->syntax != SERD_SYNTAX_EMPTY && !reader->source->prepared) {
     SerdStatus st = serd_reader_prepare(reader);
     if (st) {
@@ -258,6 +265,12 @@ serd_reader_new(SerdWorld* const      world,
   assert(me->rdf_rest);
   assert(me->rdf_nil);
 
+  if (!(flags & SERD_READ_GLOBAL)) {
+    me->bprefix[0]  = 'f';
+    me->bprefix[1]  = '0';
+    me->bprefix_len = 2;
+  }
+
   return me;
 }
 
@@ -271,25 +284,7 @@ serd_reader_free(SerdReader* const reader)
   serd_reader_finish(reader);
 
   serd_free_aligned(reader->stack.buf);
-  free(reader->bprefix);
   free(reader);
-}
-
-void
-serd_reader_add_blank_prefix(SerdReader* const reader, const char* const prefix)
-{
-  assert(reader);
-
-  free(reader->bprefix);
-  reader->bprefix_len = 0;
-  reader->bprefix     = NULL;
-
-  const size_t prefix_len = prefix ? strlen(prefix) : 0;
-  if (prefix_len) {
-    reader->bprefix_len = prefix_len;
-    reader->bprefix     = (char*)malloc(reader->bprefix_len + 1);
-    memcpy(reader->bprefix, prefix, reader->bprefix_len + 1);
-  }
 }
 
 static SerdStatus

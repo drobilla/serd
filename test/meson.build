@@ -165,12 +165,10 @@ simple_command_tests = {
       ['-b', '1024junk'],
       ['-b', '9223372036854775807'],
       ['-b'],
-      ['-c'],
       ['-k', '-1'],
       ['-k', '1024junk'],
       ['-k', '9223372036854775807'],
       ['-k'],
-      ['-p'],
       ['-qi'],
       ['-r'],
       ['-s', '<foo> a <Bar> .'],
@@ -395,7 +393,7 @@ test_suites = {
   ],
   'fast': [
     files('extra/perfect/manifest.ttl'), ns_serdtest + 'perfect/',
-    '--', '-I', 'global', '-I', 'relative', '-O', 'verbatim',
+    '--', '-I', 'relative', '-I', 'global', '-O', 'verbatim',
   ],
   'full': [
     files('extra/full/manifest.ttl'), ns_serdtest + 'full/',
@@ -423,15 +421,6 @@ test_suites = {
   'perfect_reverse': [
     '--reverse',
     files('extra/perfect/manifest.ttl'), ns_serdtest + 'perfect/',
-  ],
-  'prefix_add': [
-    '--reverse',
-    files('extra/prefix/manifest.ttl'), ns_serdtest + 'prefix/',
-    '--', '-p', 'test', '-I', 'generated',
-  ],
-  'prefix_remove': [
-    files('extra/prefix/manifest.ttl'), ns_serdtest + 'prefix/',
-    '--', '-c', 'test',
   ],
   'pretty': [
     files('extra/pretty/manifest.ttl'), ns_serdtest + 'pretty/',
