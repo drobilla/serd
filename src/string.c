@@ -1,8 +1,11 @@
-// Copyright 2011-2020 David Robillard <d@drobilla.net>
+// Copyright 2011-2021 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
+
+#include "string_utils.h"
 
 #include "serd/memory.h"
 #include "serd/status.h"
+#include "serd/string.h"
 
 #include <stdlib.h>
 
@@ -51,4 +54,16 @@ serd_strerror(const SerdStatus status)
   }
 
   return "Unknown error";
+}
+
+int
+serd_strncasecmp(const char* s1, const char* s2, size_t n)
+{
+  for (; n > 0 && *s2; s1++, s2++, --n) {
+    if (serd_to_lower(*s1) != serd_to_lower(*s2)) {
+      return (*s1 < *s2) ? -1 : +1;
+    }
+  }
+
+  return 0;
 }

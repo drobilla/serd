@@ -81,18 +81,6 @@ serd_to_lower(const char c)
   return (char)((c >= 'A' && c <= 'Z') ? c + 32 : c);
 }
 
-static inline int
-serd_strncasecmp(const char* s1, const char* s2, size_t n)
-{
-  for (; n > 0 && *s2; s1++, s2++, --n) {
-    if (serd_to_lower(*s1) != serd_to_lower(*s2)) {
-      return (*s1 < *s2) ? -1 : +1;
-    }
-  }
-
-  return 0;
-}
-
 static inline uint32_t
 utf8_num_bytes(const uint8_t leading)
 {

@@ -22,6 +22,7 @@
 #include "serd/sink.h"
 #include "serd/statement.h"
 #include "serd/status.h"
+#include "serd/string.h"
 #include "serd/string_view.h"
 #include "serd/syntax.h"
 #include "serd/uri.h"
