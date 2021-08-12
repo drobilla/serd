@@ -10,12 +10,14 @@
 #include "zix/allocator.h"
 
 #include <stdarg.h>
+#include <stdint.h>
 
 struct SerdWorldImpl {
   SerdLimits    limits;
   ZixAllocator* allocator;
   SerdLogFunc   error_func;
   void*         error_handle;
+  uint32_t      next_document_id;
 };
 
 SerdStatus

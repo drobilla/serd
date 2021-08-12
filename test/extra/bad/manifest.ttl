@@ -92,7 +92,8 @@
 		<#bad-graph-blank-label>
 		<#bad-graph-subject>
 		<#bad-hex-digit>
-		<#bad-id-clash>
+		<#bad-id-clash-doc-first>
+		<#bad-id-clash-gen-first>
 		<#bad-implied>
 		<#bad-implies>
 		<#bad-is-of-keywords>
@@ -563,10 +564,15 @@
 	mf:action <bad-hex-digit.ttl> ;
 	mf:name "bad-hex-digit" .
 
-<#bad-id-clash>
+<#bad-id-clash-doc-first>
 	a rdft:TestTurtleNegativeSyntax ;
-	mf:action <bad-id-clash.ttl> ;
-	mf:name "bad-id-clash" .
+	mf:action <bad-id-clash-doc-first.ttl> ;
+	mf:name "bad-id-clash-doc-first" .
+
+<#bad-id-clash-gen-first>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-id-clash-gen-first.ttl> ;
+	mf:name "bad-id-clash-gen-first" .
 
 <#bad-implied>
 	a rdft:TestTurtleNegativeSyntax ;
