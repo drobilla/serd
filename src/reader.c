@@ -13,10 +13,10 @@
 #include "read_turtle.h"
 #include "stack.h"
 #include "statement.h"
-#include "string_utils.h"
 #include "world.h"
 
 #include "serd/input_stream.h"
+#include "serd/string.h"
 
 #include <assert.h>
 #include <stdarg.h>

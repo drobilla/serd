@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: ISC
 
 #include "read_utf8.h"
-#include "reader.h"
 
+#include "reader.h"
 #include "string_utils.h"
 
 #include <stdio.h>

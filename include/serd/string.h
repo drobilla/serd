@@ -44,6 +44,17 @@ serd_base64_decode(const char* ZIX_NONNULL str,
                    size_t* ZIX_NONNULL     size);
 
 /**
+   Compare two strings ignoring case.
+
+   @return Less than, equal to, or greater than zero if `s1` is less than,
+   equal to, or greater than `s2`, respectively, ignoring case.
+*/
+SERD_PURE_API int
+serd_strncasecmp(const char* ZIX_NONNULL s1,
+                 const char* ZIX_NONNULL s2,
+                 size_t                  n);
+
+/**
    @}
 */
 
