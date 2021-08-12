@@ -4,16 +4,13 @@
 
 <>
 	a mf:Manifest ;
-	rdfs:comment "Serd blank node prefixing test suite" ;
+	rdfs:comment "Serd generated blank node ID test suite" ;
 	mf:entries (
-		<#remove-prefixes>
+		<#test-doc-and-gen-ids>
 	) .
 
-<#remove-prefixes>
+<#test-doc-and-gen-ids>
 	a rdft:TestTurtleEval ;
-	mf:action <remove-prefixes.ttl> ;
-	mf:name "remove-prefixes" ;
-	mf:result <remove-prefixes.nt> .
-
-rdft:Test
-	rdfs:subClassOf mf:ManifestEntry .
+	mf:action <test-doc-and-gen-ids.ttl> ;
+	mf:name "test-doc-and-gen-ids" ;
+	mf:result <test-doc-and-gen-ids.nt> .

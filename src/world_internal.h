@@ -9,6 +9,10 @@
 #include <serd/world.h>
 
 #include <stdarg.h>
+#include <stdint.h>
+
+uint32_t
+serd_world_next_document_id(SerdWorld* world);
 
 SerdStatus
 serd_world_error(const SerdWorld* world, const SerdError* e);

@@ -126,8 +126,6 @@ struct SerdWriterImpl {
   SerdStack       stack;
   SerdBlockDumper output;
   WriteContext*   context;
-  char*           bprefix;
-  size_t          bprefix_len;
   Sep             last_sep;
   int             indent;
 };
@@ -1063,17 +1061,7 @@ write_blank(SerdWriter* const    writer,
   }
 
   TRY(st, esink(writer, 2, "_:"));
-  if (writer->bprefix &&
-      !strncmp(label.data, writer->bprefix, writer->bprefix_len)) {
-    TRY(st,
-        esink(writer,
-              label.length - writer->bprefix_len,
-              label.data + writer->bprefix_len));
-  } else {
-    TRY(st, esink(writer, label.length, label.data));
-  }
-
-  return st;
+  return esink(writer, label.length, label.data);
 }
 
 ZIX_NODISCARD static SerdStatus
@@ -1534,26 +1522,6 @@ serd_writer_new(SerdWorld* const              world,
   return writer;
 }
 
-void
-serd_writer_chop_blank_prefix(SerdWriter* const writer,
-                              const char* const prefix)
-{
-  assert(writer);
-
-  ZixAllocator* const allocator = serd_world_allocator(writer->world);
-
-  zix_free(allocator, writer->bprefix);
-  writer->bprefix_len = 0;
-  writer->bprefix     = NULL;
-
-  const size_t prefix_len = prefix ? strlen(prefix) : 0;
-  if (prefix_len) {
-    writer->bprefix_len = prefix_len;
-    writer->bprefix     = (char*)zix_malloc(allocator, writer->bprefix_len + 1);
-    memcpy(writer->bprefix, prefix, writer->bprefix_len + 1);
-  }
-}
-
 ZIX_NODISCARD static SerdStatus
 write_base(SerdWriter* const writer, const ZixStringView uri)
 {
@@ -1643,7 +1611,6 @@ serd_writer_free(SerdWriter* const writer)
   serd_writer_finish(writer);
   serd_stack_free(allocator, &writer->stack);
   serd_block_dumper_close(&writer->output);
-  zix_free(allocator, writer->bprefix);
   zix_free(allocator, writer->root_uri_string);
   zix_free(allocator, writer);
 }

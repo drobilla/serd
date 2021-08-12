@@ -4,15 +4,24 @@
 #include "world_impl.h" // IWYU pragma: keep
 #include "world_internal.h"
 
+#include <serd/attributes.h>
 #include <serd/caret_view.h>
 #include <serd/error.h>
 #include <serd/status.h>
 #include <serd/world.h>
 #include <zix/allocator.h>
+#include <zix/attributes.h>
 
 #include <assert.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
+
+uint32_t
+serd_world_next_document_id(SerdWorld* const world)
+{
+  return ++world->next_document_id;
+}
 
 SerdStatus
 serd_world_error(const SerdWorld* const world, const SerdError* const e)
@@ -72,6 +81,13 @@ serd_world_free(SerdWorld* const world)
   if (world) {
     zix_free(world->allocator, world);
   }
+}
+
+SERD_API SerdStatus
+serd_world_reset_counters(SerdWorld* ZIX_NONNULL world)
+{
+  world->next_document_id = 0;
+  return SERD_SUCCESS;
 }
 
 SerdLimits

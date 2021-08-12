@@ -47,6 +47,20 @@ SERD_PURE_API ZixAllocator* ZIX_NONNULL
 serd_world_allocator(const SerdWorld* ZIX_NONNULL world);
 
 /**
+   Reset the document counter used for automatic blank node generation.
+
+   Unless #SERD_READ_GLOBAL is set, the reader will automatically add prefixes
+   like "f1b7", "f2b12", and so on to generated blank node labels to avoid
+   collision.  This function resets these counters so the numbering starts from
+   the beginning again.
+
+   Note that calling this between reads is necessary for repeated parsing of
+   the same document to produce the same output.
+*/
+SERD_API SerdStatus
+serd_world_reset_counters(SerdWorld* ZIX_NONNULL world);
+
+/**
    Return the current resource limits.
 
    These determine how much memory is allocated for reading and writing (where

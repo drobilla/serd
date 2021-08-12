@@ -104,11 +104,16 @@ serd_reader_set_blank_id(SerdReader* const  reader,
                          TokenHeader* const node,
                          const size_t       buf_size)
 {
-  char* const       buf    = (char*)(node + 1);
-  const char* const prefix = reader->bprefix ? reader->bprefix : "";
+  const uint32_t id  = reader->next_id++;
+  char* const    buf = (char*)(node + 1U);
+  size_t         i   = reader->bprefix_len;
 
-  node->length =
-    (uint32_t)snprintf(buf, buf_size, "%sb%u", prefix, reader->next_id++);
+  memcpy(buf, reader->bprefix, reader->bprefix_len);
+  buf[i++] = 'b';
+
+  const int rc = snprintf(buf + i, buf_size - i, "%u", id);
+  assert(rc > 0);
+  node->length = (uint32_t)i + (uint32_t)rc;
 }
 
 size_t
@@ -321,6 +326,15 @@ serd_reader_read_document(SerdReader* const reader)
     return st;
   }
 
+  if (!(reader->flags & SERD_READ_GLOBAL)) {
+    const uint32_t id   = serd_world_next_document_id(reader->world);
+    char* const    buf  = reader->bprefix;
+    const size_t   size = sizeof(reader->bprefix);
+    const int      rc   = snprintf(buf, size - 1U, "f%u", id);
+    assert(rc > 0);
+    reader->bprefix_len = (size_t)rc;
+  }
+
   while (st <= SERD_FAILURE && !reader->source->eof) {
     st = read_syntax_chunk(reader);
     if (st > SERD_FAILURE && !reader->strict) {
@@ -381,6 +395,12 @@ serd_reader_new(SerdWorld* const      world,
   assert(me->rdf_nil);
   assert(me->rdf_type);
 
+  if (!(flags & SERD_READ_GLOBAL)) {
+    me->bprefix[0]  = 'f';
+    me->bprefix[1]  = '0';
+    me->bprefix_len = 2U;
+  }
+
   return me;
 }
 
@@ -397,28 +417,8 @@ serd_reader_free(SerdReader* const reader)
     serd_reader_finish(reader);
   }
 
-  serd_stack_free(allocator, &reader->stack);
-  zix_free(allocator, reader->bprefix);
+  serd_stack_free(serd_world_allocator(reader->world), &reader->stack);
   zix_free(allocator, reader);
-}
-
-void
-serd_reader_add_blank_prefix(SerdReader* const reader, const char* const prefix)
-{
-  assert(reader);
-
-  ZixAllocator* const allocator = serd_world_allocator(reader->world);
-
-  zix_free(allocator, reader->bprefix);
-  reader->bprefix_len = 0;
-  reader->bprefix     = NULL;
-
-  const size_t prefix_len = prefix ? strlen(prefix) : 0;
-  if (prefix_len) {
-    reader->bprefix_len = prefix_len;
-    reader->bprefix     = (char*)zix_malloc(allocator, reader->bprefix_len + 1);
-    memcpy(reader->bprefix, prefix, reader->bprefix_len + 1);
-  }
 }
 
 SerdStatus
