@@ -1,0 +1,14 @@
+base_uri = 'http://www.w3.org/2013/NQuadsTests/'
+
+args = [
+  '--syntax', 'NQuads',
+  files('manifest.ttl'),
+  base_uri
+]
+
+test('NQuads',
+     run_test_suite,
+     args: script_args + args,
+     env: test_env,
+     suite: ['suite', 'w3c'],
+     timeout: 240)

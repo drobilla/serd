@@ -229,89 +229,18 @@ if is_variable('serdi')
        should_fail: true,
        suite: 'io_errors')
 
-  # RDF test suites
+  # RDF-driven test suites from the W3C
+  subdir('NQuadsTests')
+  subdir('NTriplesTests')
+  subdir('TriGTests')
+  subdir('TurtleTests')
 
-  ## Serd-specific test suites
-
-  serd_suites = ['good', 'bad']
-  serd_base = 'http://drobilla.net/sw/serd/test/'
-
-  ### Run basic suites with no special arguments
-  foreach name : serd_suites
-    manifest = files(name / 'manifest.ttl')
-    base_uri = serd_base + name + '/'
-    test(name, run_test_suite,
-         args: script_args + [manifest, base_uri],
-         env: test_env,
-         suite: ['rdf', 'serd'],
-         timeout: 240)
-  endforeach
-
-  ### The terse suite needs to be run with -o terse
-  test('terse', run_test_suite,
-       args: script_args + ['--osyntax', 'turtle',
-                            files('terse/manifest.ttl'),
-                            serd_base + 'terse/',
-                            '--', '-o', 'terse'],
-       env: test_env,
-       suite: ['rdf', 'serd'],
-       timeout: 240)
-
-  manifest = files('pattern' / 'manifest.ttl')
-  base_uri = serd_base + 'pattern' + '/'
-  test('pattern', run_test_suite,
-       args: script_args + [manifest, base_uri, '--', '-i', 'variables'],
-       env: test_env,
-       suite: ['rdf', 'serd'],
-       timeout: 240)
-
-  manifest = files('canon' / 'manifest.ttl')
-  base_uri = serd_base + 'canon' + '/'
-  test('canon', run_test_suite,
-       args: script_args + [manifest, base_uri, '--', '-C'],
-       env: test_env,
-       suite: ['rdf', 'serd'],
-       timeout: 240)
-
-  ### The lax suite is special because it is run twice...
-  lax_manifest = files('lax/manifest.ttl')
-  lax_base_uri = serd_base + name + '/'
-
-  ### ... once with strict parsing to test the hard errors
-  test('lax.strict', run_test_suite,
-       args: script_args + [lax_manifest, lax_base_uri],
-       env: test_env,
-       is_parallel: false,
-       suite: ['rdf', 'serd'],
-       timeout: 240)
-
-  ### ... and once with lax parsing to tolerate them
-  test('lax.lax', run_test_suite,
-       args: script_args + [lax_manifest, lax_base_uri, '--',
-                            '-i', 'lax', '-o', 'lax'],
-       env: test_env,
-       is_parallel: false,
-       suite: ['rdf', 'serd'],
-       timeout: 240)
-
-  ## Standard W3C test suites
-
-  w3c_suites = ['Turtle', 'NTriples', 'NQuads', 'TriG']
-  w3c_base = 'http://www.w3.org/2013/'
-
-  foreach syntax : w3c_suites
-
-    manifest = files(syntax + 'Tests' / 'manifest.ttl')
-    base_uri = w3c_base + syntax + 'Tests/'
-
-    args = ['--syntax', syntax, manifest, base_uri]
-
-    test(syntax, run_test_suite,
-         args: script_args + args,
-         env: test_env,
-         suite: ['rdf', 'w3c'],
-         timeout: 240)
-
-  endforeach
+  # Extra RDF-driven test suites for serd
+  subdir('bad')
+  subdir('canon')
+  subdir('good')
+  subdir('lax')
+  subdir('pattern')
+  subdir('terse')
 
 endif

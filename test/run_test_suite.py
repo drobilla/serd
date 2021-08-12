@@ -201,6 +201,7 @@ def test_suite(
     input_syntax,
     output_syntax,
     command_prefix,
+    out_test_dir,
 ):
     """Run all tests in a test suite manifest."""
 
@@ -209,9 +210,6 @@ def test_suite(
     model, instances = serd_test_util.load_rdf(
         command_prefix + ["-I", base_uri], manifest_path
     )
-
-    top_dir = os.path.commonpath([os.getcwd(), os.path.abspath(test_dir)])
-    out_test_dir = os.path.relpath(test_dir, top_dir)
 
     os.makedirs(out_test_dir, exist_ok=True)
 
@@ -398,13 +396,22 @@ def main():
     parser.add_argument("--syntax", default=None, help="input syntax")
     parser.add_argument("--osyntax", default=None, help="output syntax")
     parser.add_argument("--wrapper", default="", help="executable wrapper")
+
+    parser.add_argument(
+        "-o", "--out-dir", default=None, help="output directory"
+    )
+
     parser.add_argument("manifest", help="test suite manifest.ttl file")
     parser.add_argument("base_uri", help="base URI for tests")
+
     parser.add_argument(
         "serdi_option", nargs=argparse.REMAINDER, help="option for serdi"
     )
 
     args = parser.parse_args(sys.argv[1:])
+    if args.out_dir is None:
+        suite_name = os.path.basename(os.path.dirname(args.manifest))
+        args.out_dir = os.path.join('test', suite_name)
     command_prefix = (
         shlex.split(args.wrapper) + [args.serdi] + args.serdi_option
     )
@@ -416,6 +423,7 @@ def main():
         args.syntax,
         args.osyntax,
         command_prefix,
+        args.out_dir,
     )
 
 
