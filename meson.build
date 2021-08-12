@@ -185,12 +185,14 @@ pkg.generate(
   version: meson.project_version(),
   description: 'A lightweight library for working with RDF')
 
-# Build serdi command line utility
+# Build command line tools
 if get_option('tools')
   subdir('tools')
 
   if not get_option('docs').disabled()
-    install_man('doc/serdi.1')
+    install_man('doc/serd-filter.1')
+    install_man('doc/serd-pipe.1')
+    install_man('doc/serd-sort.1')
   endif
 endif
 

@@ -19,7 +19,7 @@ command = shlex.split(args.wrapper) + [
     "-B",
     "http://example.org",
     "-I",
-    "ntriples",
+    "turtle",
     "-",
 ]
 

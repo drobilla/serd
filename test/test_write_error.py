@@ -10,12 +10,12 @@ import os
 
 parser = argparse.ArgumentParser(description=__doc__)
 
-parser.add_argument("--serdi", default="./serdi", help="path to serdi")
+parser.add_argument("--tool", default="tools/serdi", help="executable")
 parser.add_argument("--wrapper", default="", help="executable wrapper")
 parser.add_argument("input", help="valid input file")
 
 args = parser.parse_args(sys.argv[1:])
-command = shlex.split(args.wrapper) + [args.serdi, args.input]
+command = shlex.split(args.wrapper) + [args.tool, args.input]
 
 if os.path.exists("/dev/full"):
 

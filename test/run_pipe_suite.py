@@ -41,7 +41,14 @@ def test_thru(
     osyntax,
     command_prefix,
 ):
-    """Test lossless round-tripping through two different syntaxes."""
+    """Test rewriting a file in the input syntax.
+
+    This rewrites a source test file in the original fancy syntax, then
+    rewrites that output again in the simple syntax used for test output
+    (NTriples or NQuads).  Checking the final output against the expected test
+    output tests that piping the file through serd with pretty-printing was
+    lossless.
+    """
 
     assert isyntax is not None
     assert osyntax is not None
@@ -54,87 +61,51 @@ def test_thru(
         command_prefix
         + [f for sublist in flags for f in sublist]
         + [
-            "-i",
+            "-B",
+            base_uri,
+            "-I",
+            isyntax,
+            "-O",
             isyntax,
             "-o",
-            isyntax,
-            "-w",
             out_path,
-            "-I",
-            base_uri,
             path,
         ]
     )
+
+    subprocess.run(out_cmd, check=True)
 
     thru_cmd = (
         command_prefix
         + test_osyntax_options(osyntax)
         + [
-            "-i",
-            isyntax,
-            "-o",
-            osyntax,
-            "-w",
-            thru_path,
-            "-o",
-            "ascii",
-            "-I",
+            "-B",
             base_uri,
+            "-I",
+            isyntax,
+            "-O",
+            "ascii",
+            "-O",
+            osyntax,
+            "-o",
+            thru_path,
             out_path,
         ]
     )
 
-    subprocess.run(out_cmd, check=True)
     subprocess.run(thru_cmd, check=True)
 
-    with open(thru_path, "wb") as out:
-        subprocess.run(thru_cmd, check=True, stdout=out)
+    if serd_test_util.file_equals(check_path, thru_path):
+        return 0
 
-    if not _file_equals(check_path, thru_path):
-        log_error(
-            "Round-tripped output {} does not match {}\n".format(
-                check_path, thru_path
-            )
-        )
-        return 1
-
-    return 0
+    log_error("Rewritten {} differs from {}\n".format(thru_path, check_path))
+    return 1
 
 
 def _uri_path(uri):
     path = urllib.parse.urlparse(uri).path
     drive = os.path.splitdrive(path[1:])[0]
     return path if not drive else path[1:]
-
-
-def _test_input_syntax(test_class):
-    """Return the output syntax use for a given test class."""
-
-    if "NTriples" in test_class:
-        return "NTriples"
-
-    if "Turtle" in test_class:
-        return "Turtle"
-
-    if "NQuads" in test_class:
-        return "NQuads"
-
-    if "Trig" in test_class:
-        return "Trig"
-
-    raise Exception("Unknown test class <{}>".format(test_class))
-
-
-def _test_output_syntax(test_class):
-    """Return the output syntax use for a given test class."""
-
-    if "NTriples" in test_class or "Turtle" in test_class:
-        return "NTriples"
-
-    if "NQuads" in test_class or "Trig" in test_class:
-        return "NQuads"
-
-    raise Exception("Unknown test class <{}>".format(test_class))
 
 
 def _option_combinations(options):
@@ -145,49 +116,6 @@ def _option_combinations(options):
         combinations += list(itertools.combinations(options, count))
 
     return itertools.cycle(combinations)
-
-
-def _show_diff(from_lines, to_lines, from_filename, to_filename):
-    same = True
-    for line in difflib.unified_diff(
-        from_lines,
-        to_lines,
-        fromfile=os.path.abspath(from_filename),
-        tofile=os.path.abspath(to_filename),
-    ):
-        sys.stderr.write(line)
-        same = False
-
-    return same
-
-
-def _file_equals(patha, pathb):
-
-    for path in (patha, pathb):
-        if not os.access(path, os.F_OK):
-            log_error("missing file {}\n".format(path))
-            return False
-
-    with open(patha, "r", encoding="utf-8") as fa:
-        with open(pathb, "r", encoding="utf-8") as fb:
-            return _show_diff(fa.readlines(), fb.readlines(), patha, pathb)
-
-
-def _file_lines_equal(patha, pathb, subst_from="", subst_to=""):
-    import io
-
-    for path in (patha, pathb):
-        if not os.access(path, os.F_OK):
-            sys.stderr.write("error: missing file %s" % path)
-            return False
-
-    la = sorted(set(io.open(patha, encoding="utf-8").readlines()))
-    lb = sorted(set(io.open(pathb, encoding="utf-8").readlines()))
-    if la != lb:
-        _show_diff(la, lb, patha, pathb)
-        return False
-
-    return True
 
 
 def test_suite(
@@ -204,7 +132,7 @@ def test_suite(
     mf = "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#"
     test_dir = os.path.dirname(manifest_path)
     model, instances = serd_test_util.load_rdf(
-        command_prefix + ["-I", base_uri], manifest_path
+        command_prefix + ["-B", base_uri], manifest_path
     )
 
     asserter = ""
@@ -217,17 +145,21 @@ def test_suite(
             self.n_failures = 0
 
     def run_tests(test_class, tests, expected_return, results):
-        thru_flags = [["-f"], ["-b", "1"], ["-r", "http://example.org/"]]
+        thru_flags = [
+            ["-R", "http://example.org/"],
+            ["-b", "1"],
+            ["-b", "16384"],
+        ]
         thru_options_iter = _option_combinations(thru_flags)
         if output_syntax is not None:
             osyntax = output_syntax
         else:
-            osyntax = _test_output_syntax(test_class)
+            osyntax = serd_test_util.test_output_syntax(test_class)
 
         if input_syntax is not None:
             isyntax = input_syntax
         else:
-            isyntax = _test_input_syntax(test_class)
+            isyntax = serd_test_util.test_input_syntax(test_class)
 
         for test in sorted(tests):
             test_uri = model[test][mf + "action"][0]
@@ -236,11 +168,11 @@ def test_suite(
             test_path = os.path.join(test_dir, test_name)
 
             command = command_prefix + [
-                "-o",
+                "-O",
                 osyntax,
-                "-o",
+                "-O",
                 "ascii",
-                "-I",
+                "-B",
                 test_uri,
                 test_path,
             ]
@@ -272,7 +204,7 @@ def test_suite(
                     check_filename = os.path.basename(_uri_path(check_uri))
                     check_path = os.path.join(test_dir, check_filename)
 
-                    if not _file_equals(check_path, out_filename):
+                    if not serd_test_util.file_equals(check_path, out_filename):
                         results.n_failures += 1
                         log_error(
                             "Output {} does not match {}\n".format(
@@ -291,32 +223,6 @@ def test_suite(
                         osyntax,
                         command_prefix,
                     )
-
-                    # Run model test for positive test (must succeed)
-                    out_filename = os.path.join(
-                        out_test_dir, test_name + ".model.out"
-                    )
-
-                    model_command = command_prefix + [
-                        "-m",
-                        "-o",
-                        osyntax,
-                        "-o",
-                        "ascii",
-                        "-w",
-                        out_filename,
-                        "-I",
-                        test_uri,
-                        test_path,
-                    ]
-
-                    proc = subprocess.run(model_command, check=True)
-
-                    if proc.returncode == 0 and (
-                        (mf + "result") in model[test]
-                    ):
-                        if not _file_lines_equal(check_path, out_filename):
-                            results.n_failures += 1
 
             else:  # Negative test
                 with open(out_filename, "w") as stdout:
@@ -386,7 +292,7 @@ def main():
     )
 
     parser.add_argument("--report", help="path to write result report to")
-    parser.add_argument("--serdi", default="serdi", help="path to serdi")
+    parser.add_argument("--tool", default="serdi", help="path to serdi")
     parser.add_argument("--syntax", default=None, help="input syntax")
     parser.add_argument("--osyntax", default=None, help="output syntax")
     parser.add_argument("--wrapper", default="", help="executable wrapper")
@@ -394,14 +300,11 @@ def main():
     parser.add_argument("base_uri", help="base URI for tests")
 
     parser.add_argument(
-        "serdi_option", nargs=argparse.REMAINDER, help="option for serdi"
+        "tool_option", nargs=argparse.REMAINDER, help="option to pass to tool"
     )
 
     args = parser.parse_args(sys.argv[1:])
-
-    command_prefix = (
-        shlex.split(args.wrapper) + [args.serdi] + args.serdi_option
-    )
+    command_prefix = shlex.split(args.wrapper) + [args.tool] + args.tool_option
 
     with tempfile.TemporaryDirectory() as test_out_dir:
         return test_suite(
