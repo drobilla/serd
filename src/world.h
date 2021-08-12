@@ -13,6 +13,7 @@ struct SerdWorldImpl {
   SerdLogFunc log_func;
   void*       log_handle;
   uint32_t    next_blank_id;
+  uint32_t    next_document_id;
   SerdNode*   blank_node;
 
   bool stderr_color;

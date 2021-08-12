@@ -35,7 +35,7 @@ struct SerdReaderImpl {
   SerdSyntax      syntax;
   SerdReaderFlags flags;
   unsigned        next_id;
-  char*           bprefix;
+  char            bprefix[24];
   size_t          bprefix_len;
   bool            strict; ///< True iff strict parsing
   bool            seen_genid;
