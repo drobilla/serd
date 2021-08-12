@@ -14,8 +14,6 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include "string_utils.h"
-
 #include "serd/serd.h"
 
 #include <assert.h>
