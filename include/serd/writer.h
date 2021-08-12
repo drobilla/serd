@@ -103,16 +103,6 @@ SERD_CONST_API const SerdSink* ZIX_NONNULL
 serd_writer_sink(SerdWriter* ZIX_NONNULL writer);
 
 /**
-   Set a prefix to be removed from matching blank node identifiers.
-
-   This is the counterpart to serd_reader_add_blank_prefix() which can be used
-   to "undo" added prefixes.
-*/
-SERD_API void
-serd_writer_chop_blank_prefix(SerdWriter* ZIX_NONNULL  writer,
-                              const char* ZIX_NULLABLE prefix);
-
-/**
    Set the current root URI.
 
    The root URI should be a prefix of the base URI.  The path of the root URI
