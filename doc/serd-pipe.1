@@ -105,14 +105,11 @@ Variables can be written in SPARQL style, for example
 .Li ?var
 or
 .Li $var .
-.It Cm verbatim
-Normally, the reader expands all relative URIs,
-and may adjust blank node labels to avoid clashing with generated ones.
-This flag disables all of this processing,
-so that URI references and blank nodes are passed to the sink exactly as they are in the input.
-Note that this does not apply to CURIEs, since serd deliberately does not
-have a way to represent CURIE nodes.
-A bad namespace prefix is considered a syntax error.
+.It Cm relative
+Read relative URI references exactly without resolving them.
+Normally, all relative URIs are expanded against the base URI when reading.
+This flag disables that,
+so URI references will be passed through exactly as they are in the input.
 .It Cm generated
 Read seemingly generated blank node labels exactly without adjusting them.
 Normally, blank node labels like
@@ -120,6 +117,17 @@ Normally, blank node labels like
 are adapted to avoid potential clashes with generated ones.
 This flag disables that,
 so such labels will be passed through exactly as they are in the input.
+Note that this may corrupt the output by merging distinct blank nodes.
+.It Cm global
+Assume a clean global namespace for blank node labels,
+and do not automatically add prefixes.
+Normally,
+a prefix like
+.Li f1
+is added to blank node labels when reading multiple files,
+to prevent labels in different files from clashing.
+This option disables that,
+so blank node labels will be passed through without any added prefix.
 Note that this may corrupt the output by merging distinct blank nodes.
 .El
 .It Fl O Ar syntax
