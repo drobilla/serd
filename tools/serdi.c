@@ -46,7 +46,6 @@ print_usage(const char* const name, const bool error)
     "  -G PATTERN   Only include statements matching PATTERN.\n"
     "  -I BASE_URI  Input base URI.\n"
     "  -b BYTES     I/O block size.\n"
-    "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n"
     "  -f           Fast and loose mode (possibly ugly output).\n"
     "  -h           Display this help and exit.\n"
     "  -i SYNTAX    Input syntax (turtle/ntriples/trig/nquads),\n"
@@ -55,7 +54,6 @@ print_usage(const char* const name, const bool error)
     "  -m           Build a model in memory before writing.\n"
     "  -o SYNTAX    Output syntax (empty/turtle/ntriples/nquads),\n"
     "               or flag (ascii/expanded/verbatim/terse/lax).\n"
-    "  -p PREFIX    Add PREFIX to blank node IDs.\n"
     "  -q           Suppress all output except data.\n"
     "  -r ROOT_URI  Keep relative URIs within ROOT_URI.\n"
     "  -s STRING    Parse STRING as input.\n"
@@ -140,7 +138,6 @@ read_file(SerdWorld* const      world,
           const SerdSink* const sink,
           const size_t          stack_size,
           const char* const     filename,
-          const char* const     add_prefix,
           const size_t          block_size)
 {
   SerdByteSource* byte_source = serd_open_input(filename, block_size);
@@ -154,8 +151,6 @@ read_file(SerdWorld* const      world,
 
   SerdReader* reader =
     serd_reader_new(world, syntax, flags, env, sink, stack_size);
-
-  serd_reader_add_blank_prefix(reader, add_prefix);
 
   SerdStatus st = serd_reader_start(reader, byte_source);
 
@@ -187,8 +182,6 @@ main(int argc, char** argv)
   const char*     input_string  = NULL;
   const char*     in_pattern    = NULL;
   const char*     out_pattern   = NULL;
-  const char*     add_prefix    = "";
-  const char*     chop_prefix   = NULL;
   const char*     root_uri      = NULL;
   const char*     out_filename  = NULL;
   int             a             = 1;
@@ -247,13 +240,6 @@ main(int argc, char** argv)
         }
         block_size = (size_t)size;
         break;
-      } else if (opt == 'c') {
-        if (argv[a][o + 1] || ++a == argc) {
-          return missing_arg(prog, 'c');
-        }
-
-        chop_prefix = argv[a];
-        break;
       } else if (opt == 'i') {
         if (argv[a][o + 1] || ++a == argc) {
           return missing_arg(prog, 'i');
@@ -290,13 +276,6 @@ main(int argc, char** argv)
         osyntax_set =
           output_syntax != SERD_SYNTAX_EMPTY || !strcmp(argv[a], "empty");
 
-        break;
-      } else if (opt == 'p') {
-        if (argv[a][o + 1] || ++a == argc) {
-          return missing_arg(prog, 'p');
-        }
-
-        add_prefix = argv[a];
         break;
       } else if (opt == 'r') {
         if (argv[a][o + 1] || ++a == argc) {
@@ -439,8 +418,6 @@ main(int argc, char** argv)
     serd_writer_set_root_uri(writer, SERD_STRING(root_uri));
   }
 
-  serd_writer_chop_blank_prefix(writer, chop_prefix);
-
   SerdStatus st = SERD_SUCCESS;
   if (input_string) {
     SerdByteSource* const byte_source =
@@ -454,8 +431,6 @@ main(int argc, char** argv)
                       sink,
                       stack_size);
 
-    serd_reader_add_blank_prefix(reader, add_prefix);
-
     if (!(st = serd_reader_start(reader, byte_source))) {
       st = serd_reader_read_document(reader);
     }
@@ -464,11 +439,8 @@ main(int argc, char** argv)
     serd_byte_source_free(byte_source);
   }
 
-  size_t prefix_len = 0;
-  char*  prefix     = NULL;
-  if (n_inputs > 1) {
-    prefix_len = 8 + strlen(add_prefix);
-    prefix     = (char*)calloc(1, prefix_len);
+  if (n_inputs == 1) {
+    reader_flags |= SERD_READ_GLOBAL;
   }
 
   for (int i = 0; !st && i < n_inputs; ++i) {
@@ -479,10 +451,6 @@ main(int argc, char** argv)
       }
     }
 
-    if (n_inputs > 1) {
-      snprintf(prefix, prefix_len, "f%d%s", i, add_prefix);
-    }
-
     if ((st =
            read_file(world,
                      serd_choose_input_syntax(world, input_syntax, inputs[i]),
@@ -491,12 +459,10 @@ main(int argc, char** argv)
                      sink,
                      stack_size,
                      inputs[i],
-                     n_inputs > 1 ? prefix : add_prefix,
                      block_size))) {
       break;
     }
   }
-  free(prefix);
 
   if (st <= SERD_FAILURE && use_model) {
     const SerdSink* writer_sink = serd_writer_sink(writer);
