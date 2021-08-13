@@ -1050,7 +1050,11 @@ test_write_flat_range(SerdWorld* world, const unsigned n_quads)
   SerdWriter*   writer = serd_writer_new(world, SERD_TURTLE, 0, env, out);
 
   SerdCursor* all = serd_model_begin(model);
-  serd_describe_range(all, serd_writer_sink(writer), SERD_NO_INLINE_OBJECTS);
+  while (!serd_cursor_is_end(all)) {
+    serd_sink_write_statement(
+      serd_writer_sink(writer), 0u, serd_cursor_get(all));
+    serd_cursor_advance(all);
+  }
   serd_cursor_free(all);
 
   serd_writer_finish(writer);
