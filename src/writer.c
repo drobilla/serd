@@ -841,7 +841,7 @@ write_uri_node(SerdWriter* const     writer,
   const char*          node_str   = serd_node_string(node);
   const bool           has_scheme = serd_uri_string_has_scheme(node_str);
   if (supports_abbrev(writer)) {
-    if (field == SERD_PREDICATE &&
+    if (!(writer->flags & SERD_WRITE_RDF_TYPE) && field == SERD_PREDICATE &&
         serd_node_equals(node, writer->world->rdf_type)) {
       return esink("a", 1, writer);
     }
