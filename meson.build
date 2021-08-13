@@ -135,6 +135,7 @@ c_headers = files(
   'include/serd/input_stream.h',
   'include/serd/memory.h',
   'include/serd/node.h',
+  'include/serd/output_stream.h',
   'include/serd/reader.h',
   'include/serd/serd.h',
   'include/serd/sink.h',
@@ -151,12 +152,14 @@ c_headers = files(
 )
 
 sources = files(
+  'src/block_dumper.c',
   'src/buffer.c',
   'src/byte_source.c',
   'src/caret.c',
   'src/env.c',
   'src/input_stream.c',
   'src/node.c',
+  'src/output_stream.c',
   'src/read_nquads.c',
   'src/read_ntriples.c',
   'src/read_trig.c',

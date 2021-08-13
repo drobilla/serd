@@ -24,24 +24,6 @@ SERD_BEGIN_DECLS
 */
 
 /**
-   Function to detect I/O stream errors.
-
-   Identical semantics to `ferror`.
-
-   @return Non-zero if `stream` has encountered an error.
-*/
-typedef int (*SerdStreamErrorFunc)(void* ZIX_NONNULL stream);
-
-/**
-   Function to close an I/O stream.
-
-   Identical semantics to `fclose`.
-
-   @return Non-zero if `stream` has encountered an error.
-*/
-typedef int (*SerdStreamCloseFunc)(void* ZIX_NONNULL stream);
-
-/**
    Function for reading input bytes from a stream.
 
    This has identical semantics to `fread`, but may set `errno` for more
@@ -62,7 +44,7 @@ typedef size_t (*SerdReadFunc)(void* ZIX_NONNULL buf,
    Function for writing output bytes to a stream.
 
    This has identical semantics to `fwrite`, but may set `errno` for more
-   informative error reporting than supported by #SerdStreamErrorFunc.
+   informative error reporting than supported by #SerdErrorFunc.
 
    @param buf Input buffer.
    @param size Size of a single element of data in bytes (always 1).

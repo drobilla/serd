@@ -9,10 +9,10 @@
 #include "serd/input_stream.h"
 #include "serd/memory.h"
 #include "serd/node.h"
+#include "serd/output_stream.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/status.h"
-#include "serd/stream.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "serd/writer.h"
@@ -95,6 +95,16 @@ faulty_sink(const void* const buf,
 }
 
 static void
+test_output_stream(void)
+{
+  SerdOutputStream output = serd_open_output_file("/does/not/exist");
+  assert(!output.stream);
+  assert(!output.write);
+  assert(!output.error);
+  assert(!output.close);
+}
+
+static void
 test_write_errors(void)
 {
   SerdWorld* const world = serd_world_new();
@@ -109,9 +119,12 @@ test_write_errors(void)
       ctx.n_written    = 0;
       ctx.error_offset = o;
 
-      SerdEnv* const    env = serd_env_new(zix_empty_string());
+      SerdEnv* const   env = serd_env_new(zix_empty_string());
+      SerdOutputStream out =
+        serd_open_output_stream(faulty_sink, NULL, NULL, &ctx);
+
       SerdWriter* const writer =
-        serd_writer_new(world, syntax, 0U, env, faulty_sink, &ctx);
+        serd_writer_new(world, syntax, 0U, env, &out, 1U);
 
       const SerdSink* const sink = serd_writer_sink(writer);
       SerdReader* const reader   = serd_reader_new(world, SERD_TRIG, 0U, sink);
@@ -137,14 +150,14 @@ test_write_errors(void)
 static void
 test_writer(const char* const path)
 {
-  FILE*    fd  = fopen(path, "wb");
-  SerdEnv* env = serd_env_new(zix_empty_string());
-  assert(fd);
-
   SerdWorld* world = serd_world_new();
+  SerdEnv*   env   = serd_env_new(zix_empty_string());
 
-  SerdWriter* writer = serd_writer_new(
-    world, SERD_TURTLE, SERD_WRITE_LAX, env, (SerdWriteFunc)fwrite, fd);
+  SerdOutputStream output = serd_open_output_file(path);
+
+  SerdWriter* writer =
+    serd_writer_new(world, SERD_TURTLE, SERD_WRITE_LAX, env, &output, 1U);
+
   assert(writer);
 
   serd_writer_chop_blank_prefix(writer, "tmp");
@@ -205,6 +218,7 @@ test_writer(const char* const path)
   serd_node_free(hello);
 
   serd_writer_free(writer);
+  serd_close_output(&output);
 
   serd_node_free(lit);
   serd_node_free(o);
@@ -212,19 +226,20 @@ test_writer(const char* const path)
   serd_node_free(l);
 
   // Test buffer sink
-  SerdBuffer buffer = {NULL, 0};
-  writer =
-    serd_writer_new(world, SERD_TURTLE, 0, env, serd_buffer_write, &buffer);
+  SerdBuffer      buffer = {NULL, 0};
+  SerdNode* const base   = serd_new_uri(zix_string("http://example.org/base"));
 
-  SerdNode* const base = serd_new_uri(zix_string("http://example.org/base"));
+  output = serd_open_output_buffer(&buffer);
+  writer = serd_writer_new(world, SERD_TURTLE, 0, env, &output, 1U);
 
   serd_sink_write_base(serd_writer_sink(writer), base);
 
   serd_node_free(base);
   serd_writer_free(writer);
-  serd_buffer_close(&buffer);
+  serd_close_output(&output);
 
   char* const out = (char*)buffer.buf;
+  assert(out);
   assert(!strcmp(out, "@base <http://example.org/base> .\n"));
   serd_free(out);
 
@@ -233,7 +248,6 @@ test_writer(const char* const path)
 
   serd_env_free(env);
   serd_world_free(world);
-  fclose(fd);
 }
 
 static void
@@ -295,6 +309,7 @@ main(void)
   assert(dir);
   assert(path);
 
+  test_output_stream();
   test_write_errors();
   test_writer(path);
   test_reader(path);
