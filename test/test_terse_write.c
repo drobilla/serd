@@ -29,7 +29,7 @@ static void
 check_output(SerdWriter* writer, SerdBuffer* buffer, const char* expected)
 {
   serd_writer_finish(writer);
-  serd_buffer_sink_finish(buffer);
+  serd_buffer_close(buffer);
 
   const char* output = (const char*)buffer->buf;
 
@@ -98,7 +98,6 @@ test(void)
   serd_sink_write(sink, 0, l2, rdf_rest, rdf_nil, NULL);
   check_output(writer, &buffer, "[]\n\trdf:value ( \"s1\" \"s2\" ) .\n");
 
-  serd_buffer_sink_finish(&buffer);
   serd_writer_free(writer);
   serd_byte_sink_free(byte_sink);
   serd_nodes_free(nodes);
