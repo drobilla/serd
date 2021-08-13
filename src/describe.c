@@ -201,7 +201,7 @@ write_range_statement(const SerdSink* const             sink,
       // First write inline list subject, which this statement will follow
       if (zix_hash_insert(list_subjects, subject) != ZIX_STATUS_EXISTS) {
         st = write_list(
-          sink, model, list_subjects, 2, SERD_LIST_S, subject, graph);
+          sink, model, list_subjects, 2, flags | SERD_LIST_S, subject, graph);
       }
     }
   }
@@ -223,9 +223,12 @@ write_range_statement(const SerdSink* const             sink,
     serd_cursor_free(iter);
 
   } else if (object_style == LIST_O) { // Write list object like "( ... )"
-    flags |= SERD_LIST_O;
-    if (!(st = serd_sink_write_statement(sink, flags, statement))) {
-      st = write_list(sink, model, list_subjects, depth + 1, 0, object, graph);
+    if (!(st =
+            serd_sink_write_statement(sink, flags | SERD_LIST_O, statement))) {
+      flags = flags & ~((unsigned)SERD_LIST_S);
+
+      st =
+        write_list(sink, model, list_subjects, depth + 1, flags, object, graph);
     }
 
   } else {

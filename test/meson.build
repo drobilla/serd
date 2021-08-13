@@ -3,6 +3,7 @@
 
 run_filter_suite = find_program('run_filter_suite.py')
 run_pipe_suite = find_program('run_pipe_suite.py')
+run_pretty_suite = find_program('run_pretty_suite.py')
 run_sort_suite = find_program('run_sort_suite.py')
 
 wrapper = meson.get_external_property('exe_wrapper', '')
@@ -454,6 +455,7 @@ if is_variable('serd_pipe') and is_variable('serd_sort')
   subdir('good')
   subdir('lax')
   subdir('pattern')
+  subdir('pretty')
   subdir('terse')
 
 endif
