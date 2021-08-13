@@ -21,6 +21,7 @@
 		<#list-subject-with-list-extras>
 		<#list-subject>
 		<#many-objects>
+		<#named-graph>
 		<#nested-list-object-with-empty-lists>
 		<#nested-list-object>
 		<#nested-list-subject>
@@ -96,6 +97,11 @@
 	mf:action <many-objects.ttl> ;
 	mf:name "many-objects" .
 
+<#named-graph>
+	a serd:TestTrigPrint ;
+	mf:action <named-graph.trig> ;
+	mf:name "named-graph" .
+
 <#nested-list-object>
 	a serd:TestTurtlePrint ;
 	mf:action <nested-list-object.ttl> ;
@@ -110,6 +116,12 @@
 	a serd:TestTurtlePrint ;
 	mf:action <nested-list-subject.ttl> ;
 	mf:name "nested-list-subject" .
+
+serd:TestTrigPrint
+	a rdfs:Class ;
+	rdfs:comment "Tests that a TriG document pretty-prints exactly as written." ;
+	rdfs:label "TriG Pretty-Printing" ;
+	rdfs:subClassOf rdft:Test .
 
 serd:TestTurtlePrint
 	a rdfs:Class ;
