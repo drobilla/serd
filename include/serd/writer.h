@@ -6,14 +6,15 @@
 
 #include "serd/attributes.h"
 #include "serd/env.h"
+#include "serd/output_stream.h"
 #include "serd/sink.h"
 #include "serd/status.h"
-#include "serd/stream.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "zix/attributes.h"
 #include "zix/string_view.h"
 
+#include <stddef.h>
 #include <stdint.h>
 
 SERD_BEGIN_DECLS
@@ -38,9 +39,8 @@ typedef enum {
   SERD_WRITE_ASCII       = 1U << 0U, ///< Escape all non-ASCII characters
   SERD_WRITE_UNQUALIFIED = 1U << 1U, ///< Do not shorten URIs into CURIEs
   SERD_WRITE_UNRESOLVED  = 1U << 2U, ///< Do not make URIs relative
-  SERD_WRITE_BULK        = 1U << 3U, ///< Write output in pages
-  SERD_WRITE_LAX         = 1U << 4U, ///< Tolerate lossy output
-  SERD_WRITE_TERSE       = 1U << 5U, ///< Write terser output without newlines
+  SERD_WRITE_LAX         = 1U << 3U, ///< Tolerate lossy output
+  SERD_WRITE_TERSE       = 1U << 4U, ///< Write terser output without newlines
 } SerdWriterFlag;
 
 /// Bitwise OR of #SerdWriterFlag values
@@ -48,12 +48,12 @@ typedef uint32_t SerdWriterFlags;
 
 /// Create a new RDF writer
 SERD_API SerdWriter* ZIX_ALLOCATED
-serd_writer_new(SerdWorld* ZIX_NONNULL    world,
-                SerdSyntax                syntax,
-                SerdWriterFlags           flags,
-                SerdEnv* ZIX_NONNULL      env,
-                SerdWriteFunc ZIX_NONNULL ssink,
-                void* ZIX_NULLABLE        stream);
+serd_writer_new(SerdWorld* ZIX_NONNULL        world,
+                SerdSyntax                    syntax,
+                SerdWriterFlags               flags,
+                SerdEnv* ZIX_NONNULL          env,
+                SerdOutputStream* ZIX_NONNULL output,
+                size_t                        block_size);
 
 /// Free `writer`
 SERD_API void

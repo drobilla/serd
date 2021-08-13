@@ -17,8 +17,8 @@ SERD_BEGIN_DECLS
 
    The #SerdBuffer type represents a writable area of memory with a known size.
 
-   A #SerdWriteFunc function is provided which enable writing output to a
-   memory buffer (as `fwrite` does for files).
+   #SerdWriteFunc and #SerdCloseFunc functions are provided which enable
+   writing output to a memory buffer (as `fwrite` and `fclose` do for files).
 
    @{
 */

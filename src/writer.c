@@ -1,13 +1,12 @@
 // Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "byte_sink.h"
+#include "block_dumper.h"
 #include "env.h"
 #include "namespaces.h"
 #include "node.h"
 #include "sink.h"
 #include "string_utils.h"
-#include "system.h"
 #include "try.h"
 #include "turtle.h"
 #include "uri_utils.h"
@@ -19,10 +18,10 @@
 #include "serd/event.h"
 #include "serd/field.h"
 #include "serd/node.h"
+#include "serd/output_stream.h"
 #include "serd/sink.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
-#include "serd/stream.h"
 #include "serd/syntax.h"
 #include "serd/uri.h"
 #include "serd/world.h"
@@ -138,7 +137,7 @@ struct SerdWriterImpl {
   WriteContext*   anon_stack;
   size_t          max_depth;
   size_t          anon_stack_size;
-  SerdByteSink    byte_sink;
+  SerdBlockDumper output;
   WriteContext    context;
   char*           bprefix;
   size_t          bprefix_len;
@@ -259,7 +258,8 @@ pop_context(SerdWriter* writer)
 SERD_NODISCARD static size_t
 sink(const void* buf, size_t len, SerdWriter* writer)
 {
-  const size_t written = serd_byte_sink_write(buf, len, &writer->byte_sink);
+  const size_t written = serd_block_dumper_write(buf, 1, len, &writer->output);
+
   if (written != len) {
     if (errno) {
       w_err(writer, SERD_BAD_WRITE, "write error (%s)", strerror(errno));
@@ -1346,7 +1346,7 @@ serd_writer_finish(SerdWriter* writer)
   assert(writer);
 
   const SerdStatus st0 = terminate_context(writer);
-  const SerdStatus st1 = serd_byte_sink_flush(&writer->byte_sink);
+  const SerdStatus st1 = serd_block_dumper_flush(&writer->output);
 
   free_anon_stack(writer);
   reset_context(writer, RESET_GRAPH | RESET_INDENT);
@@ -1355,16 +1355,21 @@ serd_writer_finish(SerdWriter* writer)
 }
 
 SerdWriter*
-serd_writer_new(SerdWorld*      world,
-                SerdSyntax      syntax,
-                SerdWriterFlags flags,
-                SerdEnv*        env,
-                SerdWriteFunc   ssink,
-                void*           stream)
+serd_writer_new(SerdWorld*        world,
+                SerdSyntax        syntax,
+                SerdWriterFlags   flags,
+                SerdEnv*          env,
+                SerdOutputStream* output,
+                size_t            block_size)
 {
   assert(world);
   assert(env);
-  assert(ssink);
+  assert(output);
+
+  SerdBlockDumper dumper = {NULL, NULL, 0U, 0U};
+  if (serd_block_dumper_open(&dumper, output, block_size)) {
+    return NULL;
+  }
 
   const size_t       max_depth = world->limits.writer_max_depth;
   const WriteContext context   = WRITE_CONTEXT_NULL;
@@ -1376,9 +1381,8 @@ serd_writer_new(SerdWorld*      world,
   writer->env       = env;
   writer->root_node = NULL;
   writer->root_uri  = SERD_URI_NULL;
+  writer->output    = dumper;
   writer->context   = context;
-  writer->byte_sink = serd_byte_sink_new(
-    ssink, stream, (flags & SERD_WRITE_BULK) ? SERD_PAGE_SIZE : 1);
 
   if (max_depth) {
     writer->max_depth  = max_depth;
@@ -1497,9 +1501,9 @@ serd_writer_free(SerdWriter* writer)
   SERD_RESTORE_WARNINGS
   free_context(&writer->context);
   free_anon_stack(writer);
+  serd_block_dumper_close(&writer->output);
   free(writer->anon_stack);
   free(writer->bprefix);
-  serd_byte_sink_free(&writer->byte_sink);
   serd_node_free(writer->root_node);
   free(writer);
 }
