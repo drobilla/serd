@@ -553,9 +553,7 @@ serd_model_find(const SerdModel* const model,
 
   const SerdCursor cursor = serd_model_search(model, s, p, o, g);
 
-  return zix_btree_iter_is_end(cursor.iter)
-           ? NULL
-           : serd_cursor_copy(model->allocator, &cursor);
+  return serd_cursor_copy(model->allocator, &cursor);
 }
 
 const SerdNode*
