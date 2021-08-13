@@ -199,12 +199,6 @@ typedef struct {
    @}
 */
 
-/// A mutable buffer in memory
-typedef struct {
-  void* SERD_NULLABLE buf; ///< Buffer
-  size_t              len; ///< Size of buffer in bytes
-} SerdBuffer;
-
 /**
    Free memory allocated by Serd.
 
@@ -2387,6 +2381,52 @@ serd_reader_free(SerdReader* SERD_NULLABLE reader);
 
 /**
    @}
+   @defgroup serd_buffer Buffer
+
+   The #SerdBuffer type represents a writable area of memory with a known size.
+   An implementation of #SerdWriteFunc, #SerdStreamErrorFunc, and
+   #SerdStreamCloseFunc are provided which allow output to be written to a
+   buffer in memory instead of to a file as with `fwrite`, `ferror`, and
+   `fclose`.
+
+   @{
+*/
+
+/// A mutable buffer in memory
+typedef struct {
+  void* SERD_NULLABLE buf; ///< Buffer
+  size_t              len; ///< Size of buffer in bytes
+} SerdBuffer;
+
+/**
+   A function for writing to a buffer, resizing it if necessary.
+
+   This function can be used as a #SerdWriteFunc to write to a #SerdBuffer
+   which is resized as necessary with realloc().  The `stream` parameter must
+   point to an initialized #SerdBuffer.
+
+   Note that when writing a string, the string in the buffer will not be
+   null-terminated until serd_buffer_close() is called.
+*/
+SERD_API
+size_t
+serd_buffer_write(const void* SERD_NONNULL buf,
+                  size_t                   size,
+                  size_t                   nmemb,
+                  void* SERD_NONNULL       stream);
+
+/**
+   Close the buffer for writing.
+
+   This writes a terminating null byte, so the contents of the buffer are safe
+   to read as a string after this call.
+*/
+SERD_API
+int
+serd_buffer_close(void* SERD_NONNULL stream);
+
+/**
+   @}
    @defgroup serd_byte_sink Byte Sink
    @{
 */
@@ -2554,31 +2594,6 @@ serd_writer_free(SerdWriter* SERD_NULLABLE writer);
 SERD_CONST_API
 const SerdSink* SERD_NONNULL
 serd_writer_sink(SerdWriter* SERD_NONNULL writer);
-
-/**
-   A convenience sink function for writing to a string.
-
-   This function can be used as a SerdSink to write to a SerdBuffer which is
-   resized as necessary with realloc().  The `stream` parameter must point to
-   an initialized SerdBuffer.  When the write is finished, the string should be
-   retrieved with serd_buffer_sink_finish().
-*/
-SERD_API
-size_t
-serd_buffer_sink(const void* SERD_NONNULL buf,
-                 size_t                   size,
-                 size_t                   nmemb,
-                 void* SERD_NONNULL       stream);
-
-/**
-   Finish writing to a buffer with serd_buffer_sink().
-
-   The returned string is the result of the serialisation, which is null
-   terminated (by this function) and owned by the caller.
-*/
-SERD_API
-char* SERD_NONNULL
-serd_buffer_sink_finish(SerdBuffer* SERD_NONNULL stream);
 
 /**
    Set the current output base URI, and emit a directive if applicable.
