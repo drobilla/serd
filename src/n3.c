@@ -864,11 +864,11 @@ read_collection(SerdReader* const reader,
     return SERD_ERR_OVERFLOW;
   }
 
-  if (ctx.subject) {
-    // subject predicate _:head
+  if (ctx.subject) { // Reading a collection object
     *ctx.flags |= (end ? 0 : SERD_LIST_O);
     TRY(st, emit_statement(reader, ctx, *dest));
-  } else {
+    *ctx.flags &= ~((unsigned)SERD_LIST_O);
+  } else { // Reading a collection subject
     *ctx.flags |= (end ? 0 : SERD_LIST_S);
   }
 
