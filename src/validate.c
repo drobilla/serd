@@ -423,7 +423,8 @@ check_bound(SerdValidator* const       ctx,
   SerdCursor* const b =
     serd_model_find(ctx->model, restriction, bound_property, 0, 0);
 
-  if (!b) {
+  if (serd_cursor_is_end(b)) {
+    serd_cursor_free(b);
     return SERD_SUCCESS;
   }
 
@@ -628,7 +629,8 @@ literal_is_valid(SerdValidator* const       ctx,
     SerdCursor* const i_first =
       serd_model_find(ctx->model, head, ctx->uris.rdf_first, 0, 0);
 
-    if (!i_first) {
+    if (serd_cursor_is_end(i_first)) {
+      serd_cursor_free(i_first);
       break;
     }
 
