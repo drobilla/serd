@@ -284,33 +284,22 @@ serd_describe_range(const SerdCursor* const range,
                     const SerdSink*         sink,
                     const SerdDescribeFlags flags)
 {
+  if (serd_cursor_is_end(range)) {
+    return SERD_SUCCESS;
+  }
+
   assert(sink);
 
-  SerdStatus st = SERD_SUCCESS;
+  SerdStatus     st   = SERD_SUCCESS;
+  SerdCursor     copy = *range;
+  ZixHash* const list_subjects =
+    zix_hash_new(NULL, identity, ptr_hash, ptr_equals);
 
-  if (serd_cursor_is_end(range)) {
-    return st;
-  }
+  DescribeContext ctx = {range->model, sink, list_subjects, flags};
 
-  SerdCursor copy = *range;
+  st = write_pretty_range(&ctx, 0, &copy, NULL, (flags & SERD_NO_TYPE_FIRST));
 
-  if (flags & SERD_NO_INLINE_OBJECTS) {
-    const SerdStatement* statement = NULL;
-    while (!st && (statement = serd_cursor_get(&copy))) {
-      if (!(st = serd_sink_write_statement(sink, 0, statement))) {
-        st = serd_cursor_advance(&copy);
-      }
-    }
-  } else {
-    DescribeContext ctx = {range->model,
-                           sink,
-                           zix_hash_new(NULL, identity, ptr_hash, ptr_equals),
-                           flags};
-
-    st = write_pretty_range(&ctx, 0, &copy, NULL, (flags & SERD_NO_TYPE_FIRST));
-
-    zix_hash_free(ctx.list_subjects);
-  }
+  zix_hash_free(list_subjects);
 
   return st;
 }
