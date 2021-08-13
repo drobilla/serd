@@ -33,7 +33,7 @@ serd_cursor_copy(const SerdCursor* SERD_NULLABLE cursor);
 /// Return the statement pointed to by `cursor`
 SERD_API
 const SerdStatement* SERD_NULLABLE
-serd_cursor_get(const SerdCursor* SERD_NONNULL cursor);
+serd_cursor_get(const SerdCursor* SERD_NULLABLE cursor);
 
 /**
    Increment cursor to point to the next statement.

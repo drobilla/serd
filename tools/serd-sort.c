@@ -180,7 +180,8 @@ print_usage(const char* const name, const bool error)
     "  -c COLLATION  An optional \"G\" then the letters \"SPO\" in any order.\n"
     "  -h            Display this help and exit.\n"
     "  -k BYTES      Parser stack size.\n"
-    "  -o FILENAME   Write output to FILENAME instead of stdout.\n";
+    "  -o FILENAME   Write output to FILENAME instead of stdout.\n"
+    "  -t            Do not write type as \"a\" before other properties.\n";
 
   FILE* const os = error ? stderr : stdout;
   fprintf(os, "%s", error ? "\n" : "");
@@ -224,6 +225,11 @@ parse_option(OptionIter* const iter, Options* const opts)
 
   case 's':
     return serd_get_argument(iter, &opts->input_string);
+
+  case 't':
+    opts->common.output.flags |= SERD_WRITE_RDF_TYPE;
+    opts->flags |= SERD_NO_TYPE_FIRST;
+    return serd_option_iter_advance(iter);
 
   default:
     break;

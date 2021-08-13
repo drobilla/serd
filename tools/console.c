@@ -213,6 +213,7 @@ serd_set_output_option(const SerdStringView   name,
     {"verbatim", SERD_WRITE_VERBATIM},
     {"terse", SERD_WRITE_TERSE},
     {"lax", SERD_WRITE_LAX},
+    {"rdf_type", SERD_WRITE_RDF_TYPE},
     {NULL, SERD_WRITE_ASCII},
   };
 

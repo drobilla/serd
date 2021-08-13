@@ -31,15 +31,17 @@ collations = [
 ]
 
 
-def check(test_dir, command_prefix, out_dir, input_path, name):
+def check(test_dir, command_prefix, out_dir, input_path, name, flags=None):
     """Sort a single input in the named order and check the output.
 
-    The expected output is assumed to exist at test_dir/NAME.nq.
+    The expected output is assumed to exist at test_dir/NAME.untyped.nq.
     """
 
     output_path = os.path.join(out_dir, name + ".nq")
     result_path = os.path.join(test_dir, name + ".nq")
-    options = [] if name == "pretty" else ["-c", name]
+    options = flags if flags is not None else []
+    if name not in ["pretty", "untyped"]:
+        options += ["-c", name]
 
     # Randomly add irrelevant options just to cover them
     if random.choice([True, False]):
@@ -74,9 +76,17 @@ def run_tests(test_dir, command_prefix, out_dir):
     input_trig = os.path.join(test_dir, "input.trig")
 
     n_failures = 0
+
+    # Test all the basic collations, and "pretty" with type first
     for name in collations:
         if not check(test_dir, command_prefix, out_dir, input_trig, name):
             n_failures += 1
+
+    # Test "pretty" without type first
+    if not check(
+        test_dir, command_prefix, out_dir, input_trig, "untyped", ["-t"]
+    ):
+        n_failures += 1
 
     return n_failures
 
