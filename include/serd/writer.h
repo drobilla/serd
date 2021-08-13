@@ -79,6 +79,13 @@ typedef enum {
      carefully, since it can result in data loss.
   */
   SERD_WRITE_LAX = 1U << 4U,
+
+  /**
+     Write rdf:type as a normal predicate.
+
+     This disables the special "a" syntax in Turtle and TriG.
+  */
+  SERD_WRITE_RDF_TYPE = 1U << 5U,
 } SerdWriterFlag;
 
 /// Bitwise OR of SerdWriterFlag values

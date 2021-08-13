@@ -136,11 +136,10 @@ serd_cursor_copy(const SerdCursor* const cursor)
 const SerdStatement*
 serd_cursor_get(const SerdCursor* const cursor)
 {
-  assert(cursor);
-
-  return ((!zix_btree_iter_is_end(cursor->iter) && check_version(cursor))
-            ? (const SerdStatement*)zix_btree_get(cursor->iter)
-            : NULL);
+  return (
+    (cursor && !zix_btree_iter_is_end(cursor->iter) && check_version(cursor))
+      ? (const SerdStatement*)zix_btree_get(cursor->iter)
+      : NULL);
 }
 
 SerdStatus
