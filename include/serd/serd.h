@@ -238,10 +238,29 @@ typedef enum {
   SERD_ERR_INVALID,    ///< Invalid data
 } SerdStatus;
 
-/// A status code with an associated byte count
+/**
+   A status code with an associated byte count.
+
+   This is returned by functions which write to a buffer to inform the caller
+   about the size written, or in case of overflow, size required.
+*/
 typedef struct {
-  SerdStatus status; ///< Status code
-  size_t     count;  ///< Number of bytes written (or required)
+  /**
+     Status code.
+
+     This reports the status of the operation as usual, and also dictates the
+     meaning of `count`.
+  */
+  SerdStatus status;
+
+  /**
+     Number of bytes written or required.
+
+     On success, this is the total number of bytes written.  On
+     #SERD_ERR_OVERFLOW, this is the number of bytes of output space that are
+     required for success.
+  */
+  size_t count; ///< Number of bytes written or required
 } SerdWriteResult;
 
 /// Return a string describing a status code
@@ -290,7 +309,7 @@ serd_strncasecmp(const char* SERD_NONNULL s1,
    Source function for raw string input.
 
    Identical semantics to `fread`, but may set errno for more informative error
-   reporting than supported by SerdStreamErrorFunc.
+   reporting than supported by #SerdStreamErrorFunc.
 
    @param buf Output buffer.
    @param size Size of a single element of data in bytes (always 1).
@@ -307,7 +326,7 @@ typedef size_t (*SerdReadFunc)(void* SERD_NONNULL buf,
    Sink function for raw string output.
 
    Identical semantics to `fwrite`, but may set errno for more informative
-   error reporting than supported by SerdStreamErrorFunc.
+   error reporting than supported by #SerdStreamErrorFunc.
 
    @param buf Input buffer.
    @param size Size of a single element of data in bytes (always 1).
@@ -346,7 +365,7 @@ typedef int (*SerdStreamCloseFunc)(void* SERD_NONNULL stream);
 
 /// Syntax supported by serd
 typedef enum {
-  SERD_SYNTAX_EMPTY = 0, ///< Empty syntax (suppress input or output)
+  SERD_SYNTAX_EMPTY = 0, ///< Empty syntax
   SERD_TURTLE       = 1, ///< Terse triples http://www.w3.org/TR/turtle
   SERD_NTRIPLES     = 2, ///< Flat triples http://www.w3.org/TR/n-triples/
   SERD_NQUADS       = 3, ///< Flat quads http://www.w3.org/TR/n-quads/
@@ -381,7 +400,7 @@ serd_guess_syntax(const char* SERD_NONNULL filename);
 /**
    Return whether a syntax can represent multiple graphs.
 
-   @return True for SERD_NQUADS and SERD_TRIG, false otherwise.
+   @return True for #SERD_NQUADS and #SERD_TRIG, false otherwise.
 */
 SERD_CONST_API
 bool
