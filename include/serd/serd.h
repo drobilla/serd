@@ -2420,7 +2420,14 @@ typedef enum {
      particular invalid UTF-8 text.  Note that this flag should be used
      carefully, since it can result in data loss.
   */
-  SERD_WRITE_LAX = 1u << 4u
+  SERD_WRITE_LAX = 1u << 4u,
+
+  /**
+     Write rdf:type as a normal predicate.
+
+     This disables the special "a" syntax in Turtle and TriG.
+  */
+  SERD_WRITE_RDF_TYPE = 1u << 5u
 } SerdWriterFlag;
 
 /// Bitwise OR of SerdWriterFlag values
@@ -2526,7 +2533,7 @@ serd_cursor_copy(const SerdCursor* SERD_NULLABLE cursor);
 /// Return the statement pointed to by `cursor`
 SERD_API
 const SerdStatement* SERD_NULLABLE
-serd_cursor_get(const SerdCursor* SERD_NONNULL cursor);
+serd_cursor_get(const SerdCursor* SERD_NULLABLE cursor);
 
 /**
    Increment cursor to point to the next statement.
@@ -2568,7 +2575,8 @@ serd_cursor_free(SerdCursor* SERD_NULLABLE cursor);
 
 /// Flags that control the style of a model serialisation
 typedef enum {
-  SERD_NO_INLINE_OBJECTS = 1u << 0u ///< Disable object inlining
+  SERD_NO_INLINE_OBJECTS = 1u << 0u, ///< Disable object inlining
+  SERD_NO_TYPE_FIRST     = 1u << 1u  ///< Disable writing rdf:type ("a") first
 } SerdDescribeFlag;
 
 /// Bitwise OR of SerdDescribeFlag values
