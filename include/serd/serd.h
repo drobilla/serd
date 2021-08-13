@@ -24,7 +24,7 @@
 #include "serd/stream.h"
 #include "serd/string_view.h"
 
-#include "serd/byte_sink.h"
+#include "serd/output_stream.h"
 
 #include "serd/log.h"
 #include "serd/uri.h"
