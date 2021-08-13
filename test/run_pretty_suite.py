@@ -56,7 +56,7 @@ def test_suite(
             self.n_tests = 0
             self.n_failures = 0
 
-    def run_test(entry, results):
+    def run_test(entry, syntax, results):
         """Run a single test entry from the manifest."""
 
         input_uri = model[entry][mf + "action"][0]
@@ -68,7 +68,7 @@ def test_suite(
             "-B",
             base_uri,
             "-O",
-            "turtle",
+            syntax,
             "-o",
             output_path,
             input_path,
@@ -95,9 +95,12 @@ def test_suite(
     # Run all test types in the test suite
     results = Results()
     for klass, instances in instances.items():
-        if klass == "http://drobilla.net/ns/serd#TestTurtlePrint":
+        if klass == "http://drobilla.net/ns/serd#TestTrigPrint":
             for entry in instances:
-                run_test(entry, results)
+                run_test(entry, "TriG", results)
+        elif klass == "http://drobilla.net/ns/serd#TestTurtlePrint":
+            for entry in instances:
+                run_test(entry, "Turtle", results)
 
     # Print result summary
     if results.n_failures > 0:
