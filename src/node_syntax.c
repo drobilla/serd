@@ -4,12 +4,12 @@
 #include "writer.h"
 
 #include "serd/buffer.h"
-#include "serd/byte_sink.h"
 #include "serd/byte_source.h"
 #include "serd/env.h"
 #include "serd/event.h"
 #include "serd/node.h"
 #include "serd/node_syntax.h"
+#include "serd/output_stream.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
@@ -99,22 +99,22 @@ serd_node_to_syntax_in(const SerdNode* const node,
                        const SerdSyntax      syntax,
                        const SerdEnv* const  env)
 {
-  SerdWorld* const    world  = serd_world_new();
-  SerdBuffer          buffer = {NULL, 0};
-  SerdByteSink* const out    = serd_byte_sink_new_buffer(&buffer);
-  SerdWriter* const   writer = serd_writer_new(world, syntax, 0, env, out);
+  SerdWorld* const  world  = serd_world_new();
+  SerdBuffer        buffer = {NULL, 0};
+  SerdOutputStream  out    = serd_open_output_buffer(&buffer);
+  SerdWriter* const writer = serd_writer_new(world, syntax, 0, env, &out, 1);
 
   char* result = NULL;
   if (!serd_writer_write_node(writer, node) && !serd_writer_finish(writer) &&
-      !serd_byte_sink_close(out)) {
+      !serd_close_output(&out)) {
     result = (char*)buffer.buf;
   } else {
-    serd_byte_sink_close(out);
+    serd_close_output(&out);
     free(buffer.buf);
   }
 
   serd_writer_free(writer);
-  serd_byte_sink_free(out);
+  serd_close_output(&out);
   serd_world_free(world);
 
   return result;

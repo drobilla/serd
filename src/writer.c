@@ -3,7 +3,7 @@
 
 #include "writer.h"
 
-#include "byte_sink.h"
+#include "block_dumper.h"
 #include "env.h"
 #include "node.h"
 #include "sink.h"
@@ -15,10 +15,10 @@
 #include "world.h"
 
 #include "serd/attributes.h"
-#include "serd/byte_sink.h"
 #include "serd/env.h"
 #include "serd/event.h"
 #include "serd/log.h"
+#include "serd/output_stream.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
 #include "serd/string_view.h"
@@ -125,7 +125,7 @@ struct SerdWriterImpl {
   SerdURIView     root_uri;
   WriteContext*   anon_stack;
   size_t          anon_stack_size;
-  SerdByteSink*   byte_sink;
+  SerdBlockDumper output;
   WriteContext    context;
   Sep             last_sep;
   int             indent;
@@ -251,7 +251,8 @@ ctx(SerdWriter* writer, const SerdField field)
 SERD_WARN_UNUSED_RESULT static size_t
 sink(const void* buf, size_t len, SerdWriter* writer)
 {
-  const size_t written = serd_byte_sink_write(buf, len, writer->byte_sink);
+  const size_t written = serd_block_dumper_write(buf, 1, len, &writer->output);
+
   if (written != len) {
     if (errno) {
       char message[1024] = {0};
@@ -1306,6 +1307,9 @@ serd_writer_finish(SerdWriter* writer)
   }
 
   free_context(writer);
+
+  serd_block_dumper_flush(&writer->output);
+
   writer->indent  = 0;
   writer->context = WRITE_CONTEXT_NULL;
   writer->empty   = true;
@@ -1313,15 +1317,21 @@ serd_writer_finish(SerdWriter* writer)
 }
 
 SerdWriter*
-serd_writer_new(SerdWorld*      world,
-                SerdSyntax      syntax,
-                SerdWriterFlags flags,
-                const SerdEnv*  env,
-                SerdByteSink*   byte_sink)
+serd_writer_new(SerdWorld*        world,
+                SerdSyntax        syntax,
+                SerdWriterFlags   flags,
+                const SerdEnv*    env,
+                SerdOutputStream* output,
+                size_t            block_size)
 {
   assert(world);
   assert(env);
-  assert(byte_sink);
+  assert(output);
+
+  SerdBlockDumper dumper = {NULL, NULL, 0U, 0U};
+  if (serd_block_dumper_open(&dumper, output, block_size)) {
+    return NULL;
+  }
 
   const WriteContext context = WRITE_CONTEXT_NULL;
   SerdWriter*        writer  = (SerdWriter*)calloc(1, sizeof(SerdWriter));
@@ -1332,7 +1342,7 @@ serd_writer_new(SerdWorld*      world,
   writer->env       = env;
   writer->root_node = NULL;
   writer->root_uri  = SERD_URI_NULL;
-  writer->byte_sink = byte_sink;
+  writer->output    = dumper;
   writer->context   = context;
   writer->empty     = true;
 
@@ -1426,6 +1436,7 @@ serd_writer_free(SerdWriter* writer)
   }
 
   serd_writer_finish(writer);
+  serd_block_dumper_close(&writer->output);
   free(writer->anon_stack);
   serd_node_free(writer->root_node);
   free(writer);

@@ -85,6 +85,7 @@ c_headers = files(
   'include/serd/node.h',
   'include/serd/node_syntax.h',
   'include/serd/nodes.h',
+  'include/serd/output_stream.h',
   'include/serd/range.h',
   'include/serd/reader.h',
   'include/serd/serd.h',
@@ -102,8 +103,8 @@ c_headers = files(
 )
 
 sources = files(
+  'src/block_dumper.c',
   'src/buffer.c',
-  'src/byte_sink.c',
   'src/byte_source.c',
   'src/canon.c',
   'src/caret.c',
@@ -119,6 +120,7 @@ sources = files(
   'src/node.c',
   'src/node_syntax.c',
   'src/nodes.c',
+  'src/output_stream.c',
   'src/read_nquads.c',
   'src/read_ntriples.c',
   'src/read_utf8.c',

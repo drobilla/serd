@@ -34,7 +34,8 @@ serd_tool_setup(SerdTool* const   tool,
 {
   // Open the output first, since if that fails we have nothing to do
   const char* const out_path = options.out_filename;
-  if (!(tool->out = serd_open_output(out_path, options.block_size))) {
+
+  if (!((tool->out = serd_open_output(out_path)).stream)) {
     fprintf(stderr,
             "%s: failed to open output file (%s)\n",
             program,
@@ -52,7 +53,8 @@ serd_tool_setup(SerdTool* const   tool,
             tool->world, options.output, options.out_filename, SERD_NQUADS),
           options.output.flags,
           tool->env,
-          tool->out))) {
+          &tool->out,
+          options.block_size))) {
     fprintf(stderr, "%s: failed to set up writing environment\n", program);
     return SERD_ERR_INTERNAL;
   }
@@ -61,21 +63,21 @@ serd_tool_setup(SerdTool* const   tool,
 }
 
 SerdStatus
-serd_tool_cleanup(const SerdTool tool)
+serd_tool_cleanup(SerdTool tool)
 {
   SerdStatus st = SERD_SUCCESS;
-  if (tool.out) {
+
+  serd_writer_free(tool.writer);
+
+  if (tool.out.stream) {
     // Close the output stream explicitly to check if there were any errors
-    if (serd_byte_sink_close(tool.out)) {
+    if ((st = serd_close_output(&tool.out))) {
       perror("write error");
-      st = SERD_ERR_BAD_WRITE;
     }
   }
 
-  serd_writer_free(tool.writer);
   serd_env_free(tool.env);
   serd_world_free(tool.world);
-  serd_byte_sink_free(tool.out);
   return st;
 }
 
@@ -374,16 +376,16 @@ serd_open_input(const char* const filename, const size_t block_size)
   return byte_source;
 }
 
-SerdByteSink*
-serd_open_output(const char* const filename, const size_t block_size)
+SerdOutputStream
+serd_open_output(const char* const filename)
 {
   if (!filename || !strcmp(filename, "-")) {
     serd_set_stream_utf8_mode(stdout);
-    return serd_byte_sink_new_function(
-      (SerdWriteFunc)fwrite, (SerdStreamCloseFunc)fclose, stdout, 1);
+    return serd_open_output_stream(
+      (SerdWriteFunc)fwrite, (SerdStreamCloseFunc)fclose, stdout);
   }
 
-  return serd_byte_sink_new_filename(filename, block_size);
+  return serd_open_output_file(filename);
 }
 
 SerdStatus

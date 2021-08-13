@@ -6,10 +6,10 @@
 
 #include "serd/attributes.h"
 #include "serd/buffer.h"
-#include "serd/byte_sink.h"
 #include "serd/env.h"
 #include "serd/log.h"
 #include "serd/node.h"
+#include "serd/output_stream.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
@@ -94,11 +94,12 @@ typedef uint32_t SerdWriterFlags;
 /// Create a new RDF writer
 SERD_API
 SerdWriter* SERD_ALLOCATED
-serd_writer_new(SerdWorld* SERD_NONNULL     world,
-                SerdSyntax                  syntax,
-                SerdWriterFlags             flags,
-                const SerdEnv* SERD_NONNULL env,
-                SerdByteSink* SERD_NONNULL  byte_sink);
+serd_writer_new(SerdWorld* SERD_NONNULL        world,
+                SerdSyntax                     syntax,
+                SerdWriterFlags                flags,
+                const SerdEnv* SERD_NONNULL    env,
+                SerdOutputStream* SERD_NONNULL output,
+                size_t                         block_size);
 
 /// Free `writer`
 SERD_API
