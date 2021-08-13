@@ -1,7 +1,7 @@
 // Copyright 2011-2021 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "serd/serd.h"
+#include "serd/buffer.h"
 
 #include <assert.h>
 #include <stddef.h>

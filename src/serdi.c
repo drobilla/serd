@@ -8,6 +8,7 @@
 #include "serd/env.h"
 #include "serd/log.h"
 #include "serd/node.h"
+#include "serd/output_stream.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/status.h"
@@ -270,8 +271,11 @@ main(int argc, char** argv)
   SerdEnv* const   env =
     serd_env_new(base ? serd_node_string_view(base) : serd_empty_string());
 
-  SerdWriter* const writer = serd_writer_new(
-    world, output_syntax, writer_flags, env, (SerdWriteFunc)fwrite, out_fd);
+  SerdOutputStream out = serd_open_output_stream(
+    (SerdWriteFunc)fwrite, (SerdStreamCloseFunc)fclose, out_fd);
+
+  SerdWriter* const writer =
+    serd_writer_new(world, output_syntax, writer_flags, env, &out, 1);
 
   if (quiet) {
     serd_set_log_func(world, serd_quiet_log_func, NULL);
