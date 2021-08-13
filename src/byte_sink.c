@@ -30,21 +30,13 @@
 #  include <fcntl.h>
 #endif
 
-static int
-close_buffer(void* const stream)
-{
-  serd_buffer_sink("", 1, 1, stream); // Write null terminator
-
-  return 0;
-}
-
 SerdByteSink*
 serd_byte_sink_new_buffer(SerdBuffer* const buffer)
 {
   assert(buffer);
 
   return serd_byte_sink_new_function(
-    serd_buffer_sink, close_buffer, buffer, 1u);
+    serd_buffer_write, serd_buffer_close, buffer, 1u);
 }
 
 SerdByteSink*

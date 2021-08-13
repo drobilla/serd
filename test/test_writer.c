@@ -83,14 +83,15 @@ test_write_long_literal(void)
   serd_writer_free(writer);
   serd_byte_sink_free(byte_sink);
   serd_env_free(env);
+  serd_buffer_close(&buffer);
 
-  char* out = serd_buffer_sink_finish(&buffer);
+  char* out = (char*)buffer.buf;
 
   static const char* const expected =
     "<http://example.org/s>\n"
     "\t<http://example.org/p> \"\"\"hello \"\"\\\"world\"\"\\\"!\"\"\" .\n";
 
-  assert(!strcmp((char*)out, expected));
+  assert(!strcmp(out, expected));
   serd_free(out);
 
   serd_world_free(world);
@@ -369,10 +370,11 @@ check_pname_escape(const char* const lname, const char* const expected)
   serd_writer_free(writer);
   serd_byte_sink_free(byte_sink);
   serd_env_free(env);
+  serd_buffer_close(&buffer);
 
-  char* out = serd_buffer_sink_finish(&buffer);
+  char* out = (char*)buffer.buf;
 
-  assert(!strcmp((char*)out, expected));
+  assert(!strcmp(out, expected));
   serd_free(out);
 
   free(uri);

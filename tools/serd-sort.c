@@ -95,6 +95,8 @@ run(const Options opts)
                                    opts.n_inputs,
                                    opts.inputs,
                                    inserter))) {
+    serd_sink_free(inserter);
+    serd_model_free(model);
     serd_tool_cleanup(app);
     return st;
   }
@@ -126,6 +128,9 @@ run(const Options opts)
   if (!st) {
     st = serd_writer_finish(app.writer);
   }
+
+  serd_sink_free(inserter);
+  serd_model_free(model);
 
   const SerdStatus cst = serd_tool_cleanup(app);
   return st ? st : cst;
