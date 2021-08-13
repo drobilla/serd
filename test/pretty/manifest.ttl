@@ -1,0 +1,121 @@
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdft: <http://www.w3.org/ns/rdftest#> .
+@prefix serd: <http://drobilla.net/ns/serd#> .
+
+<>
+	a mf:Manifest ;
+	rdfs:comment "Serd pretty-printing test cases" ;
+	mf:entries (
+		<#anonymous-in-list-object>
+		<#anonymous-object>
+		<#anonymous-subject-and-object>
+		<#anonymous-subject>
+		<#empty-anonymous-object>
+		<#empty-list-object>
+		<#empty-list-subject-and-object>
+		<#empty-list-subject>
+		<#list-in-object>
+		<#list-object>
+		<#list-subject-with-extras>
+		<#list-subject-with-list-extras>
+		<#list-subject>
+		<#many-objects>
+		<#nested-list-object-with-empty-lists>
+		<#nested-list-object>
+		<#nested-list-subject>
+	) .
+
+<#anonymous-in-list-object>
+	a serd:TestTurtlePrint ;
+	mf:action <anonymous-in-list-object.ttl> ;
+	mf:name "anonymous-in-list-object" .
+
+<#anonymous-object>
+	a serd:TestTurtlePrint ;
+	mf:action <anonymous-object.ttl> ;
+	mf:name "anonymous-object" .
+
+<#anonymous-subject>
+	a serd:TestTurtlePrint ;
+	mf:action <anonymous-subject.ttl> ;
+	mf:name "anonymous-subject" .
+
+<#anonymous-subject-and-object>
+	a serd:TestTurtlePrint ;
+	mf:action <anonymous-subject-and-object.ttl> ;
+	mf:name "anonymous-subject-and-object" .
+
+<#empty-anonymous-object>
+	a serd:TestTurtlePrint ;
+	mf:action <empty-anonymous-object.ttl> ;
+	mf:name "empty-anonymous-object" .
+
+<#empty-list-object>
+	a serd:TestTurtlePrint ;
+	mf:action <empty-list-object.ttl> ;
+	mf:name "empty-list-object" .
+
+<#empty-list-subject>
+	a serd:TestTurtlePrint ;
+	mf:action <empty-list-subject.ttl> ;
+	mf:name "empty-list-subject" .
+
+<#empty-list-subject-and-object>
+	a serd:TestTurtlePrint ;
+	mf:action <empty-list-subject-and-object.ttl> ;
+	mf:name "empty-list-subject-and-object" .
+
+<#list-in-object>
+	a serd:TestTurtlePrint ;
+	mf:action <list-in-object.ttl> ;
+	mf:name "list-in-object" .
+
+<#list-object>
+	a serd:TestTurtlePrint ;
+	mf:action <list-object.ttl> ;
+	mf:name "list-object" .
+
+<#list-subject>
+	a serd:TestTurtlePrint ;
+	mf:action <list-subject.ttl> ;
+	mf:name "list-subject" .
+
+<#list-subject-with-extras>
+	a serd:TestTurtlePrint ;
+	mf:action <list-subject-with-extras.ttl> ;
+	mf:name "list-subject-with-extras" .
+
+<#list-subject-with-list-extras>
+	a serd:TestTurtlePrint ;
+	mf:action <list-subject-with-list-extras.ttl> ;
+	mf:name "list-subject-with-list-extras" .
+
+<#many-objects>
+	a serd:TestTurtlePrint ;
+	mf:action <many-objects.ttl> ;
+	mf:name "many-objects" .
+
+<#nested-list-object>
+	a serd:TestTurtlePrint ;
+	mf:action <nested-list-object.ttl> ;
+	mf:name "nested-list-object" .
+
+<#nested-list-object-with-empty-lists>
+	a serd:TestTurtlePrint ;
+	mf:action <nested-list-object-with-empty-lists.ttl> ;
+	mf:name "nested-list-object-with-empty-lists" .
+
+<#nested-list-subject>
+	a serd:TestTurtlePrint ;
+	mf:action <nested-list-subject.ttl> ;
+	mf:name "nested-list-subject" .
+
+serd:TestTurtlePrint
+	a rdfs:Class ;
+	rdfs:comment "Tests that a Turtle document pretty-prints exactly as written." ;
+	rdfs:label "Turtle Pretty-Printing" ;
+	rdfs:subClassOf rdft:Test .
+
+rdft:Test
+	rdfs:subClassOf mf:ManifestEntry .

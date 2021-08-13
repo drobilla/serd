@@ -1052,6 +1052,11 @@ write_list_statement(SerdWriter* const        writer,
   SerdStatus st     = SERD_SUCCESS;
   bool       is_end = false;
 
+  if (serd_node_equals(predicate, writer->world->rdf_first) &&
+      serd_node_equals(object, writer->world->rdf_nil)) {
+    return esink("()", 2, writer);
+  }
+
   TRY(st, write_list_obj(writer, flags, predicate, object, &is_end));
   if (is_end) {
     pop_context(writer);
