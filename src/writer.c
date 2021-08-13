@@ -113,7 +113,7 @@ static const SepRule rules[] = {
   {"(", 1, +1, SEP_NONE, SEP_NONE, SEP_NONE},
   {"", 0, +0, SEP_ALL, SEP_NONE, SEP_NONE},
   {")", 1, -1, SEP_NONE, SEP_NONE, SEP_NONE},
-  {"{", 1, +1, SEP_ALL, SEP_NONE, SEP_NONE},
+  {"{", 1, +1, SEP_ALL, SEP_NONE, SEP_ALL},
   {"}", 1, -1, SEP_NONE, SEP_NONE, SEP_ALL},
 };
 
@@ -699,14 +699,14 @@ write_sep(SerdWriter* writer, const SerdStatementFlags flags, Sep sep)
 }
 
 static void
-reset_context(SerdWriter* writer, bool graph)
+reset_context(SerdWriter* writer, const bool including_graph)
 {
   // Free any lingering contexts in case there was an error
   while (writer->anon_stack_size > 0) {
     pop_context(writer);
   }
 
-  if (graph && writer->context.graph) {
+  if (including_graph && writer->context.graph) {
     memset(writer->context.graph, 0, sizeof(SerdNode));
   }
 
@@ -720,8 +720,11 @@ reset_context(SerdWriter* writer, bool graph)
 
   writer->anon_stack_size         = 0;
   writer->context.indented_object = false;
-  writer->indent                  = 0;
   writer->empty                   = false;
+
+  if (including_graph) {
+    writer->indent = 0;
+  }
 }
 
 static bool
@@ -1117,7 +1120,9 @@ write_turtle_trig_statement(SerdWriter* const        writer,
     }
 
     // Write new subject
-    TRY(st, write_top_level_sep(writer));
+    if (!ctx(writer, SERD_GRAPH)) {
+      TRY(st, write_top_level_sep(writer));
+    }
     reset_context(writer, false);
     serd_node_set(&writer->context.subject, subject);
     TRY(st, write_node(writer, subject, SERD_SUBJECT, flags));
