@@ -728,6 +728,7 @@ reset_context(SerdWriter* writer, bool graph)
 
   writer->anon_stack_size         = 0;
   writer->context.indented_object = false;
+  writer->indent                  = 0;
   writer->empty                   = false;
 }
 
@@ -1361,7 +1362,6 @@ serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
     TRY(st, esink("> .\n", 4, writer));
   }
 
-  writer->indent = 0;
   reset_context(writer, true);
 
   return st;
@@ -1408,9 +1408,7 @@ serd_writer_set_prefix(SerdWriter*     writer,
     TRY(st, esink("> .\n", 4, writer));
   }
 
-  writer->indent = 0;
   reset_context(writer, true);
-
   return st;
 }
 
