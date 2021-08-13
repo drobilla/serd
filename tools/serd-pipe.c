@@ -26,7 +26,7 @@ typedef struct {
 static SerdStatus
 run(const Options opts)
 {
-  SerdTool app = {NULL, NULL, NULL, NULL};
+  SerdTool app = {{NULL, NULL, NULL}, NULL, NULL, NULL};
 
   // Set up the writing environment
   SerdStatus st = SERD_SUCCESS;
@@ -70,10 +70,12 @@ run(const Options opts)
       (st = serd_read_inputs(
          app.world, opts.common, app.env, opts.n_inputs, opts.inputs, sink)) ||
       (st = serd_writer_finish(app.writer))) {
+    serd_sink_free(canon);
     serd_tool_cleanup(app);
     return st;
   }
 
+  serd_sink_free(canon);
   return serd_tool_cleanup(app);
 }
 

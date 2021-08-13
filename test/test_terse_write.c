@@ -16,7 +16,7 @@ static void
 check_output(SerdWriter* writer, SerdBuffer* buffer, const char* expected)
 {
   serd_writer_finish(writer);
-  serd_buffer_sink_finish(buffer);
+  serd_buffer_close(buffer);
 
   const char* output = (const char*)buffer->buf;
 
@@ -51,9 +51,9 @@ test(void)
 
   serd_env_set_prefix(env, serd_string("rdf"), serd_string(NS_RDF));
 
-  SerdByteSink* const byte_sink = serd_byte_sink_new_buffer(&buffer);
-  SerdWriter* const   writer =
-    serd_writer_new(world, SERD_TURTLE, 0, env, byte_sink);
+  SerdOutputStream  output = serd_open_output_buffer(&buffer);
+  SerdWriter* const writer =
+    serd_writer_new(world, SERD_TURTLE, 0, env, &output, 1);
 
   const SerdSink* const sink = serd_writer_sink(writer);
 
@@ -85,9 +85,8 @@ test(void)
   serd_sink_write(sink, 0, l2, rdf_rest, rdf_nil, NULL);
   check_output(writer, &buffer, "[]\n\trdf:value ( \"s1\" \"s2\" ) .\n");
 
-  serd_buffer_sink_finish(&buffer);
   serd_writer_free(writer);
-  serd_byte_sink_free(byte_sink);
+  serd_close_output(&output);
   serd_nodes_free(nodes);
   serd_env_free(env);
   serd_world_free(world);

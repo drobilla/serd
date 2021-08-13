@@ -34,10 +34,10 @@ typedef struct {
 
 // Common "global" state of a command-line tool that writes data
 typedef struct {
-  SerdByteSink* out;
-  SerdWorld*    world;
-  SerdEnv*      env;
-  SerdWriter*   writer;
+  SerdOutputStream out;
+  SerdWorld*       world;
+  SerdEnv*         env;
+  SerdWriter*      writer;
 } SerdTool;
 
 static inline bool
@@ -109,8 +109,8 @@ serd_choose_syntax(SerdWorld*        world,
 SerdByteSource*
 serd_open_input(const char* filename, size_t block_size);
 
-SerdByteSink*
-serd_open_output(const char* filename, size_t block_size);
+SerdOutputStream
+serd_open_output(const char* filename);
 
 SerdStatus
 serd_set_base_uri_from_path(SerdEnv* env, const char* path);
