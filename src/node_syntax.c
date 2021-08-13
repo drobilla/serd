@@ -9,6 +9,7 @@
 #include "serd/event.h"
 #include "serd/node.h"
 #include "serd/node_syntax.h"
+#include "serd/output_stream.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
@@ -95,16 +96,20 @@ serd_node_to_syntax_in(const SerdNode* const node,
 {
   SerdWorld* const  world  = serd_world_new();
   SerdBuffer        buffer = {NULL, 0};
-  SerdWriter* const writer =
-    serd_writer_new(world, syntax, 0, env, serd_buffer_write, &buffer);
+  SerdOutputStream  out    = serd_open_output_buffer(&buffer);
+  SerdWriter* const writer = serd_writer_new(world, syntax, 0, env, &out, 1);
 
   char* result = NULL;
   if (!serd_writer_write_node(writer, node) && !serd_writer_finish(writer) &&
-      !serd_buffer_close(&buffer)) {
+      !serd_close_output(&out)) {
     result = (char*)buffer.buf;
+  } else {
+    serd_close_output(&out);
+    free(buffer.buf);
   }
 
   serd_writer_free(writer);
+  serd_close_output(&out);
   serd_world_free(world);
 
   return result;
