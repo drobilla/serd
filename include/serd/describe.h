@@ -18,8 +18,7 @@ SERD_BEGIN_DECLS
 
 /// Flags that control the style of a model description
 typedef enum {
-  SERD_NO_INLINE_OBJECTS = 1U << 0U, ///< Disable object inlining
-  SERD_NO_TYPE_FIRST     = 1U << 1U, ///< Disable writing rdf:type ("a") first
+  SERD_NO_TYPE_FIRST = 1U << 0U, ///< Disable writing rdf:type ("a") first
 } SerdDescribeFlag;
 
 /// Bitwise OR of SerdDescribeFlag values
