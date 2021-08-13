@@ -2594,8 +2594,7 @@ serd_cursor_free(SerdCursor* SERD_NULLABLE cursor);
 
 /// Flags that control the style of a model serialisation
 typedef enum {
-  SERD_NO_INLINE_OBJECTS = 1u << 0u, ///< Disable object inlining
-  SERD_NO_TYPE_FIRST     = 1u << 1u  ///< Disable writing rdf:type ("a") first
+  SERD_NO_TYPE_FIRST = 1u << 0u ///< Disable writing rdf:type ("a") first
 } SerdDescribeFlag;
 
 /// Bitwise OR of SerdDescribeFlag values
