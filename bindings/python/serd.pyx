@@ -116,6 +116,17 @@ cdef extern from "serd.h":
 
     void serd_byte_source_free(SerdByteSource* source);
 
+    # Buffer
+
+    size_t serd_buffer_write(const void* buf,
+                             size_t      size,
+                             size_t      nmemb,
+                             void*       stream);
+
+    int serd_buffer_error(void* const stream);
+    int serd_buffer_close(void* const stream);
+
+
     # Byte sink
 
     ctypedef struct SerdByteSink
@@ -415,13 +426,6 @@ cdef extern from "serd.h":
 
     void            serd_writer_free(SerdWriter* writer);
     const SerdSink* serd_writer_sink(SerdWriter* writer);
-
-    size_t serd_buffer_sink(const void* buf,
-                            size_t      size,
-                            size_t      nmemb,
-                            void*       stream);
-
-    char* serd_buffer_sink_finish(SerdBuffer* stream);
 
     SerdStatus serd_writer_set_base_uri(SerdWriter*     writer,
                                         const SerdNode* uri);
@@ -1468,7 +1472,8 @@ cdef class StringSink(ByteSink):
     def output(self) -> str:
         """Finish writing to this string sink and return the output."""
         self.flush()
-        return _fromcstr(serd_buffer_sink_finish(&self._buffer))
+        self.close()
+        return _fromcstr(<char*>self._buffer.buf)
 
 
 cdef class Writer:
