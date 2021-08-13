@@ -1430,31 +1430,3 @@ serd_writer_sink(SerdWriter* writer)
   assert(writer);
   return &writer->iface;
 }
-
-size_t
-serd_buffer_sink(const void* const buf,
-                 const size_t      size,
-                 const size_t      nmemb,
-                 void* const       stream)
-{
-  assert(buf);
-  assert(size == 1);
-  assert(stream);
-
-  (void)size;
-
-  SerdBuffer* buffer = (SerdBuffer*)stream;
-  buffer->buf        = (char*)realloc(buffer->buf, buffer->len + nmemb);
-  memcpy((uint8_t*)buffer->buf + buffer->len, buf, nmemb);
-  buffer->len += nmemb;
-  return nmemb;
-}
-
-char*
-serd_buffer_sink_finish(SerdBuffer* const stream)
-{
-  assert(stream);
-
-  serd_buffer_sink("", 1, 1, stream);
-  return (char*)stream->buf;
-}

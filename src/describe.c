@@ -29,6 +29,7 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 typedef enum { NAMED, ANON_S, ANON_O, LIST_S, LIST_O } NodeStyle;
 

@@ -121,7 +121,7 @@ test_writer(const char* const path)
 
   serd_writer_free(writer);
   serd_byte_sink_free(byte_sink);
-  char* out = serd_buffer_sink_finish(&buffer);
+  char* out = (char*)buffer.buf;
 
   assert(!strcmp(out, "@base <http://example.org/base> .\n"));
   serd_free(out);
