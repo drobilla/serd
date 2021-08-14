@@ -24,7 +24,6 @@ int
 main(void)
 {
   serd_free(NULL);
-  serd_byte_source_free(NULL);
   serd_node_free(NULL);
   serd_world_free(NULL);
   serd_env_free(NULL);
