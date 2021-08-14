@@ -2343,78 +2343,74 @@ serd_buffer_close(void* SERD_NONNULL stream);
 
 /**
    @}
-   @defgroup serd_byte_sink Byte Sink
+   @defgroup serd_output_stream Output Streams
+
+   An output stream is used for writing output as a raw stream of bytes.  It is
+   compatible with standard C `FILE` streams, but allows different functions to
+   be provided for things like writing to a buffer or a socket.
+
    @{
 */
 
-/// A sink for bytes that receives text output
-typedef struct SerdByteSinkImpl SerdByteSink;
+/// An output stream that receives bytes
+typedef struct {
+  void* SERD_NULLABLE               stream; ///< Opaque parameter for functions
+  SerdWriteFunc SERD_NULLABLE       write;  ///< Write bytes to output
+  SerdStreamCloseFunc SERD_NULLABLE close;  ///< Close output
+} SerdOutputStream;
 
 /**
-   Create a new byte sink that writes to a buffer.
+   Open a stream that writes to a provided function.
 
-   The `buffer` is owned by the caller, but will be expanded as necessary.
-   Note that the string in the buffer will not be null terminated until the
-   byte sink is closed.
+   @param write_func Function to write output.
+   @param close_func Function to close the stream after writing is done.
+   @param stream Opaque stream parameter for write_func and close_func.
 
-   @param buffer Buffer to write output to.
+   @return An opened output stream, or all zeros on error.
 */
 SERD_API
-SerdByteSink* SERD_ALLOCATED
-serd_byte_sink_new_buffer(SerdBuffer* SERD_NONNULL buffer);
+SerdOutputStream
+serd_open_output_stream(SerdWriteFunc SERD_NONNULL        write_func,
+                        SerdStreamCloseFunc SERD_NULLABLE close_func,
+                        void* SERD_NULLABLE               stream);
+
+/**
+   Open a stream that writes to a buffer.
+
+   The `buffer` is owned by the caller, but will be expanded using `realloc` as
+   necessary.  Note that the string in the buffer will not be null terminated
+   until the stream is closed.
+
+   @param buffer Buffer to write output to.
+   @return An opened output stream, or all zeros on error.
+*/
+SERD_API
+SerdOutputStream
+serd_open_output_buffer(SerdBuffer* SERD_NONNULL buffer);
 
 /**
    Create a new byte sink that writes to a file.
 
-   An arbitrary `FILE*` can be used via serd_byte_sink_new_function() as well,
-   this is just a convenience function that opens the file properly and sets
-   flags for optimized I/O if possible.
+   An arbitrary `FILE*` can be used with serd_open_output_stream() as well,
+   this convenience function opens the file properly for readingn with serd,
+   and sets flags for optimized I/O if possible.
 
    @param path Path of file to open and write to.
-   @param block_size Number of bytes to write per call.
 */
 SERD_API
-SerdByteSink* SERD_ALLOCATED
-serd_byte_sink_new_filename(const char* SERD_NONNULL path, size_t block_size);
+SerdOutputStream
+serd_open_output_file(const char* SERD_NONNULL path);
 
 /**
-   Create a new byte sink that writes to a user-specified function.
+   Close an output stream.
 
-   The `stream` will be passed to the `write_func`, which is compatible with
-   the standard C `fwrite` if `stream` is a `FILE*`.
-
-   @param write_func Stream write function, like `fwrite`.
-   @param close_func Stream close function, like `fclose`.
-   @param stream Context parameter passed to `sink`.
-   @param block_size Number of bytes to write per call.
-*/
-SERD_API
-SerdByteSink* SERD_ALLOCATED
-serd_byte_sink_new_function(SerdWriteFunc SERD_NONNULL        write_func,
-                            SerdStreamCloseFunc SERD_NULLABLE close_func,
-                            void* SERD_NULLABLE               stream,
-                            size_t                            block_size);
-
-/// Flush any pending output in `sink` to the underlying write function
-SERD_API
-void
-serd_byte_sink_flush(SerdByteSink* SERD_NONNULL sink);
-
-/**
-   Close `sink`, including the underlying file if necessary.
-
-   If `sink` was created with serd_byte_sink_new_filename(), then the file is
-   closed.  If there was an error, then SERD_ERR_UNKNOWN is returned and
-   `errno` is set.
+   This will call the close function, and reset the stream internally so that
+   no further writes can be made.  For convenience, this is safe to call on
+   NULL, and safe to call several times on the same output.
 */
 SERD_API
 SerdStatus
-serd_byte_sink_close(SerdByteSink* SERD_NONNULL sink);
-
-/// Free `sink`, flushing and closing first if necessary
-SERD_API
-void
-serd_byte_sink_free(SerdByteSink* SERD_NULLABLE sink);
+serd_close_output(SerdOutputStream* SERD_NULLABLE output);
 
 /**
    @}
@@ -2495,11 +2491,12 @@ typedef uint32_t SerdWriterFlags;
 /// Create a new RDF writer
 SERD_API
 SerdWriter* SERD_ALLOCATED
-serd_writer_new(SerdWorld* SERD_NONNULL     world,
-                SerdSyntax                  syntax,
-                SerdWriterFlags             flags,
-                const SerdEnv* SERD_NONNULL env,
-                SerdByteSink* SERD_NONNULL  byte_sink);
+serd_writer_new(SerdWorld* SERD_NONNULL        world,
+                SerdSyntax                     syntax,
+                SerdWriterFlags                flags,
+                const SerdEnv* SERD_NONNULL    env,
+                SerdOutputStream* SERD_NONNULL output,
+                size_t                         block_size);
 
 /// Free `writer`
 SERD_API

@@ -86,8 +86,8 @@ c_header_files = files(c_headers)
 c_header = files('include/serd/serd.h')
 
 sources = [
+  'src/block_dumper.c',
   'src/buffer.c',
-  'src/byte_sink.c',
   'src/byte_source.c',
   'src/canon.c',
   'src/caret.c',
@@ -102,6 +102,7 @@ sources = [
   'src/node.c',
   'src/node_syntax.c',
   'src/nodes.c',
+  'src/output_stream.c',
   'src/read_nquads.c',
   'src/read_ntriples.c',
   'src/read_utf8.c',
