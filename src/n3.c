@@ -14,7 +14,6 @@
 #include "turtle.h"
 
 #include "serd/attributes.h"
-#include "serd/byte_source.h"
 #include "serd/caret.h"
 #include "serd/env.h"
 #include "serd/node.h"
