@@ -4,8 +4,8 @@
 #include "console.h"
 #include "system.h"
 
-#include "serd/byte_source.h"
 #include "serd/env.h"
+#include "serd/input_stream.h"
 #include "serd/log.h"
 #include "serd/node.h"
 #include "serd/output_stream.h"
@@ -83,10 +83,8 @@ read_file(SerdWorld* const      world,
   syntax = syntax ? syntax : serd_guess_syntax(filename);
   syntax = syntax ? syntax : SERD_TRIG;
 
-  SerdByteSource* byte_source =
-    serd_open_tool_input(filename, bulk_read ? SERD_PAGE_SIZE : 1U);
-
-  if (!byte_source) {
+  SerdInputStream in = serd_open_tool_input(filename);
+  if (!in.stream) {
     SERDI_ERRORF(
       "failed to open input file `%s' (%s)\n", filename, strerror(errno));
 
@@ -98,12 +96,13 @@ read_file(SerdWorld* const      world,
 
   serd_reader_add_blank_prefix(reader, add_prefix);
 
-  SerdStatus st = serd_reader_start(reader, byte_source);
+  SerdStatus st =
+    serd_reader_start(reader, &in, NULL, bulk_read ? SERD_PAGE_SIZE : 1U);
 
   st = st ? st : serd_reader_read_document(reader);
 
   serd_reader_free(reader);
-  serd_byte_source_free(byte_source);
+  serd_close_input(&in);
 
   return st;
 }
@@ -290,8 +289,8 @@ main(int argc, char** argv)
   SerdStatus st         = SERD_SUCCESS;
   SerdNode*  input_name = NULL;
   if (input_string) {
-    SerdByteSource* const byte_source =
-      serd_byte_source_new_string(input_string, NULL);
+    const char*     position  = input_string;
+    SerdInputStream string_in = serd_open_input_string(&position);
 
     SerdReader* const reader =
       serd_reader_new(world,
@@ -303,12 +302,12 @@ main(int argc, char** argv)
 
     serd_reader_add_blank_prefix(reader, add_prefix);
 
-    if (!(st = serd_reader_start(reader, byte_source))) {
+    if (!(st = serd_reader_start(reader, &string_in, NULL, 1U))) {
       st = serd_reader_read_document(reader);
     }
 
     serd_reader_free(reader);
-    serd_byte_source_free(byte_source);
+    serd_close_input(&string_in);
   }
 
   size_t prefix_len = 0;

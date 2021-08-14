@@ -3,7 +3,6 @@
 
 Checks: >
   -*-magic-numbers,
-  -android-cloexec-fopen,
   -bugprone-easily-swappable-parameters,
   -cert-err33-c,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,

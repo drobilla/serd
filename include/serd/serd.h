@@ -24,6 +24,7 @@
 #include "serd/stream.h"
 #include "serd/string_view.h"
 
+#include "serd/input_stream.h"
 #include "serd/output_stream.h"
 
 #include "serd/log.h"
@@ -31,7 +32,6 @@
 
 #include "serd/node.h"
 
-#include "serd/byte_source.h"
 #include "serd/caret.h"
 #include "serd/event.h"
 #include "serd/string.h"

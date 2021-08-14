@@ -3,6 +3,7 @@
 
 #include "reader.h"
 
+#include "serd/input_stream.h"
 #include "serd/log.h"
 
 #include "byte_source.h"
@@ -309,14 +310,17 @@ skip_bom(SerdReader* const me)
 }
 
 SerdStatus
-serd_reader_start(SerdReader* const reader, SerdByteSource* const byte_source)
+serd_reader_start(SerdReader* const      reader,
+                  SerdInputStream* const input,
+                  const SerdNode* const  input_name,
+                  const size_t           block_size)
 {
   assert(reader);
-  assert(byte_source);
+  assert(input);
 
   serd_reader_finish(reader);
 
-  reader->source = byte_source;
+  reader->source = serd_byte_source_new_input(input, input_name, block_size);
 
   return reader->source ? SERD_SUCCESS : SERD_ERR_BAD_ARG;
 }
@@ -357,6 +361,7 @@ serd_reader_finish(SerdReader* const reader)
 {
   assert(reader);
 
+  serd_byte_source_free(reader->source);
   reader->source = NULL;
   return SERD_SUCCESS;
 }
