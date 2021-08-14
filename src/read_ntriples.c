@@ -15,7 +15,6 @@
 #include "try.h"
 #include "uri_utils.h"
 
-#include "serd/byte_source.h"
 #include "serd/caret.h"
 #include "serd/sink.h"
 #include "serd/statement.h"

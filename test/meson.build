@@ -41,7 +41,6 @@ subdir('headers')
 ##############
 
 unit_tests = [
-  'byte_source',
   'caret',
   'cursor',
   'env',

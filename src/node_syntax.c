@@ -4,11 +4,12 @@
 #include "writer.h"
 
 #include "serd/buffer.h"
-#include "serd/byte_source.h"
 #include "serd/env.h"
 #include "serd/event.h"
+#include "serd/input_stream.h"
 #include "serd/node.h"
 #include "serd/node_syntax.h"
+#include "serd/nodes.h"
 #include "serd/output_stream.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
@@ -55,8 +56,7 @@ serd_node_from_syntax_in(const char* const str,
   SerdWorld* const world  = serd_world_new();
   SerdSink* const  sink   = serd_sink_new(&object, on_node_string_event, NULL);
 
-  SerdByteSource* const source = serd_byte_source_new_string(doc, NULL);
-  SerdReader* const     reader =
+  SerdReader* const reader =
     serd_reader_new(world,
                     syntax,
                     SERD_READ_RELATIVE | SERD_READ_GLOBAL | SERD_READ_GENERATED,
@@ -64,11 +64,16 @@ serd_node_from_syntax_in(const char* const str,
                     sink,
                     1024 + doc_len);
 
-  serd_reader_start(reader, source);
+  const SerdNode* string_name =
+    serd_nodes_string(serd_world_nodes(world), serd_string("string"));
+
+  const char*     position = doc;
+  SerdInputStream in       = serd_open_input_string(&position);
+  serd_reader_start(reader, &in, string_name, 1);
   serd_reader_read_document(reader);
   serd_reader_finish(reader);
+  serd_close_input(&in);
   serd_reader_free(reader);
-  serd_byte_source_free(source);
   serd_sink_free(sink);
   serd_world_free(world);
   free(doc);

@@ -51,18 +51,19 @@ run(const Options opts)
   }
 
   if (opts.input_string) {
-    SerdByteSource* const in =
-      serd_byte_source_new_string(opts.input_string, NULL);
+    const char*     position = opts.input_string;
+    SerdInputStream in       = serd_open_input_string(&position);
 
     st = serd_read_source(
       app.world,
       opts.common,
       app.env,
       serd_choose_syntax(app.world, opts.common.input, NULL, SERD_TRIG),
-      in,
+      &in,
+      "string",
       sink);
 
-    serd_byte_source_free(in);
+    serd_close_input(&in);
   }
 
   // Read all the inputs, which drives the writer to emit the output

@@ -62,11 +62,11 @@ SerdOutputStream
 serd_open_output_buffer(SerdBuffer* SERD_NONNULL buffer);
 
 /**
-   Create a new byte sink that writes to a file.
+   Open a stream that writes to a file.
 
    An arbitrary `FILE*` can be used with serd_open_output_stream() as well,
-   this convenience function opens the file properly for readingn with serd,
-   and sets flags for optimized I/O if possible.
+   this convenience function opens the file properly for writing with serd, and
+   sets flags for optimized I/O if possible.
 
    @param path Path of file to open and write to.
 */
