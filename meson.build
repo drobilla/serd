@@ -96,6 +96,7 @@ sources = [
   'src/describe.c',
   'src/env.c',
   'src/filter.c',
+  'src/input_stream.c',
   'src/inserter.c',
   'src/model.c',
   'src/n3.c',

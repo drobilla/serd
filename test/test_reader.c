@@ -71,15 +71,17 @@ test_prepare_error(void)
 
   assert(reader);
 
-  SerdByteSource* byte_source = serd_byte_source_new_function(
-    prepare_test_read, prepare_test_error, NULL, f, NULL, 1);
+  SerdInputStream in =
+    serd_open_input_stream(prepare_test_read, prepare_test_error, NULL, f);
 
-  SerdStatus st = serd_reader_start(reader, byte_source);
+  assert(serd_reader_start(reader, &in, NULL, 0) == SERD_ERR_BAD_ARG);
+
+  SerdStatus st = serd_reader_start(reader, &in, NULL, 1);
   assert(!st);
 
   assert(serd_reader_read_document(reader) == SERD_ERR_UNKNOWN);
 
-  serd_byte_source_free(byte_source);
+  serd_close_input(&in);
   serd_reader_free(reader);
   serd_env_free(env);
   serd_sink_free(sink);
@@ -101,34 +103,38 @@ test_read_string(void)
 
   assert(reader);
 
-  SerdByteSource* byte_source =
-    serd_byte_source_new_string("<http://example.org/s> <http://example.org/p> "
-                                "<http://example.org/o> .",
-                                NULL);
+  static const char* const string1 =
+    "<http://example.org/s> <http://example.org/p> "
+    "<http://example.org/o> .";
+
+  const char*     position = string1;
+  SerdInputStream in       = serd_open_input_string(&position);
 
   // Test reading a string that ends exactly at the end of input (no newline)
-  assert(!serd_reader_start(reader, byte_source));
+  assert(!serd_reader_start(reader, &in, NULL, 1));
   assert(!serd_reader_read_document(reader));
   assert(n_statements == 1);
   assert(!serd_reader_finish(reader));
+  assert(!serd_close_input(&in));
 
-  // Test reading the same but as a chunk
-  serd_byte_source_free(byte_source);
+  static const char* const string2 =
+    "<http://example.org/s> <http://example.org/p> "
+    "<http://example.org/o> , _:blank .";
+
+  // Test reading a chunk
   n_statements = 0;
-  byte_source =
-    serd_byte_source_new_string("<http://example.org/s> <http://example.org/p> "
-                                "<http://example.org/o> , _:blank .",
-                                NULL);
+  position     = string2;
+  in           = serd_open_input_string(&position);
 
-  assert(!serd_reader_start(reader, byte_source));
+  assert(!serd_reader_start(reader, &in, NULL, 1));
   assert(!serd_reader_read_chunk(reader));
   assert(n_statements == 2);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(!serd_reader_finish(reader));
+  assert(!serd_close_input(&in));
 
   serd_reader_free(reader);
   serd_env_free(env);
-  serd_byte_source_free(byte_source);
   serd_sink_free(sink);
   serd_world_free(world);
 }
@@ -195,16 +201,16 @@ test_read_eof_by_page(void)
 
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0u, env, sink, 4096);
 
-  SerdByteSource* byte_source = serd_byte_source_new_function(
-    (SerdReadFunc)fread, (SerdStreamErrorFunc)ferror, NULL, temp, NULL, 4096);
+  SerdInputStream in = serd_open_input_stream(
+    (SerdReadFunc)fread, (SerdStreamErrorFunc)ferror, NULL, temp);
 
-  assert(serd_reader_start(reader, byte_source) == SERD_SUCCESS);
+  assert(serd_reader_start(reader, &in, NULL, 4096) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(!serd_reader_finish(reader));
+  assert(!serd_close_input(&in));
 
-  serd_byte_source_free(byte_source);
   serd_reader_free(reader);
   serd_env_free(env);
   serd_sink_free(sink);
@@ -224,22 +230,20 @@ test_read_eof_by_byte(void)
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0u, env, sink, 4096);
 
   size_t          n_reads = 0u;
-  SerdByteSource* byte_source =
-    serd_byte_source_new_function((SerdReadFunc)eof_test_read,
-                                  (SerdStreamErrorFunc)eof_test_error,
-                                  NULL,
-                                  &n_reads,
-                                  NULL,
-                                  1);
+  SerdInputStream in =
+    serd_open_input_stream((SerdReadFunc)eof_test_read,
+                           (SerdStreamErrorFunc)eof_test_error,
+                           NULL,
+                           &n_reads);
 
-  assert(serd_reader_start(reader, byte_source) == SERD_SUCCESS);
+  assert(serd_reader_start(reader, &in, NULL, 1) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(!serd_reader_finish(reader));
+  assert(!serd_close_input(&in));
 
-  serd_byte_source_free(byte_source);
   serd_reader_free(reader);
   serd_env_free(env);
   serd_sink_free(sink);
@@ -263,10 +267,10 @@ test_read_chunks(void)
 
   assert(reader);
 
-  SerdByteSource* byte_source = serd_byte_source_new_function(
-    (SerdReadFunc)fread, (SerdStreamErrorFunc)ferror, NULL, f, NULL, 1);
+  SerdInputStream in = serd_open_input_stream(
+    (SerdReadFunc)fread, (SerdStreamErrorFunc)ferror, NULL, f);
 
-  SerdStatus st = serd_reader_start(reader, byte_source);
+  SerdStatus st = serd_reader_start(reader, &in, NULL, 1);
   assert(st == SERD_SUCCESS);
 
   // Write two statement separated by null characters
@@ -307,7 +311,7 @@ test_read_chunks(void)
   assert(st == SERD_FAILURE);
   assert(n_statements == 2);
 
-  serd_byte_source_free(byte_source);
+  assert(!serd_close_input(&in));
   serd_reader_free(reader);
   serd_env_free(env);
   serd_sink_free(sink);
@@ -352,16 +356,17 @@ test_read_empty(void)
 
   assert(reader);
 
-  SerdByteSource* byte_source = serd_byte_source_new_function(
-    empty_test_read, empty_test_error, NULL, f, NULL, 1);
+  SerdInputStream in =
+    serd_open_input_stream(empty_test_read, empty_test_error, NULL, f);
 
-  SerdStatus st = serd_reader_start(reader, byte_source);
+  SerdStatus st = serd_reader_start(reader, &in, NULL, 1);
   assert(!st);
 
   assert(serd_reader_read_document(reader) == SERD_SUCCESS);
   assert(n_statements == 0);
+  assert(!serd_reader_finish(reader));
+  assert(!serd_close_input(&in));
 
-  serd_byte_source_free(byte_source);
   serd_reader_free(reader);
   serd_env_free(env);
   serd_sink_free(sink);
@@ -400,17 +405,22 @@ test_error_cursor(void)
   assert(sink);
   assert(reader);
 
-  SerdByteSource* byte_source =
-    serd_byte_source_new_string("<http://example.org/s> <http://example.org/p> "
-                                "<http://example.org/o> .",
-                                NULL);
+  static const char* const string =
+    "<http://example.org/s> <http://example.org/p> "
+    "<http://example.org/o> .";
 
-  SerdStatus st = serd_reader_start(reader, byte_source);
+  SerdNode* const string_name = serd_new_string(SERD_STRING("string"));
+  const char*     position    = string;
+  SerdInputStream in          = serd_open_input_string(&position);
+
+  SerdStatus st = serd_reader_start(reader, &in, string_name, 1);
   assert(!st);
   assert(serd_reader_read_document(reader) == SERD_SUCCESS);
+  assert(!serd_reader_finish(reader));
   assert(called);
+  assert(!serd_close_input(&in));
 
-  serd_byte_source_free(byte_source);
+  serd_node_free(string_name);
   serd_reader_free(reader);
   serd_env_free(env);
   serd_sink_free(sink);

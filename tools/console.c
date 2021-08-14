@@ -40,7 +40,7 @@ serd_tool_setup(SerdTool* const   tool,
   // Open the output first, since if that fails we have nothing to do
   const char* const out_path = options.out_filename;
 
-  if (!((tool->out = serd_open_output(out_path)).stream)) {
+  if (!((tool->out = serd_open_tool_output(out_path)).stream)) {
     fprintf(stderr,
             "%s: failed to open output file (%s)\n",
             program,
@@ -354,28 +354,22 @@ serd_file_read_byte(void* buf, size_t size, size_t nmemb, void* stream)
   return 1;
 }
 
-SerdByteSource*
-serd_open_input(const char* const filename, const size_t block_size)
+SerdInputStream
+serd_open_tool_input(const char* const filename)
 {
-  SerdByteSource* byte_source = NULL;
   if (!strcmp(filename, "-")) {
+    const SerdInputStream in = serd_open_input_stream(
+      serd_file_read_byte, (SerdStreamErrorFunc)ferror, NULL, stdin);
+
     serd_set_stream_utf8_mode(stdin);
-
-    SerdNode* name = serd_new_string(SERD_STRING("stdin"));
-
-    byte_source = serd_byte_source_new_function(
-      serd_file_read_byte, (SerdStreamErrorFunc)ferror, NULL, stdin, name, 1);
-
-    serd_node_free(name);
-  } else {
-    byte_source = serd_byte_source_new_filename(filename, block_size);
+    return in;
   }
 
-  return byte_source;
+  return serd_open_input_file(filename);
 }
 
 SerdOutputStream
-serd_open_output(const char* const filename)
+serd_open_tool_output(const char* const filename)
 {
   if (!filename || !strcmp(filename, "-")) {
     serd_set_stream_utf8_mode(stdout);
@@ -424,13 +418,16 @@ serd_read_source(SerdWorld* const        world,
                  const SerdCommonOptions opts,
                  SerdEnv* const          env,
                  const SerdSyntax        syntax,
-                 SerdByteSource* const   in,
+                 SerdInputStream* const  in,
+                 const char* const       name,
                  const SerdSink* const   sink)
 {
   SerdReader* const reader = serd_reader_new(
     world, syntax, opts.input.flags, env, sink, opts.stack_size);
 
-  SerdStatus st = serd_reader_start(reader, in);
+  SerdNode* const name_node = serd_new_string(SERD_STRING(name));
+  SerdStatus st = serd_reader_start(reader, in, name_node, opts.block_size);
+  serd_node_free(name_node);
   if (!st) {
     st = serd_reader_read_document(reader);
   }
@@ -457,8 +454,8 @@ serd_read_inputs(SerdWorld* const        world,
     }
 
     // Open the input stream
-    SerdByteSource* const in = serd_open_input(in_path, opts.block_size);
-    if (!in) {
+    SerdInputStream in = serd_open_tool_input(in_path);
+    if (!in.stream) {
       return SERD_ERR_BAD_ARG;
     }
 
@@ -468,10 +465,11 @@ serd_read_inputs(SerdWorld* const        world,
       opts,
       env,
       serd_choose_syntax(world, opts.input, in_path, SERD_TRIG),
-      in,
+      &in,
+      !strcmp(in_path, "-") ? "stdin" : in_path,
       sink);
 
-    serd_byte_source_free(in);
+    serd_close_input(&in);
   }
 
   return st;
