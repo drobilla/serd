@@ -43,11 +43,10 @@ test_writer(const char* const path)
   SerdWorld* world = serd_world_new();
   SerdNodes* nodes = serd_world_nodes(world);
 
-  SerdByteSink* byte_sink = serd_byte_sink_new_function(
-    (SerdWriteFunc)fwrite, (SerdStreamCloseFunc)fclose, fd, 1);
+  SerdOutputStream output = serd_open_output_file(path);
 
   SerdWriter* writer =
-    serd_writer_new(world, SERD_TURTLE, SERD_WRITE_LAX, env, byte_sink);
+    serd_writer_new(world, SERD_TURTLE, SERD_WRITE_LAX, env, &output, 1);
 
   assert(writer);
 
@@ -106,13 +105,13 @@ test_writer(const char* const path)
   assert(!serd_sink_write(iface, 0, s, p, hello, 0));
 
   serd_writer_free(writer);
-  serd_byte_sink_free(byte_sink);
+  serd_close_output(&output);
 
   // Test buffer sink
   SerdBuffer buffer = {NULL, 0};
 
-  byte_sink = serd_byte_sink_new_buffer(&buffer);
-  writer    = serd_writer_new(world, SERD_TURTLE, 0, env, byte_sink);
+  output = serd_open_output_buffer(&buffer);
+  writer = serd_writer_new(world, SERD_TURTLE, 0, env, &output, 1);
 
   const SerdNode* const base =
     serd_nodes_uri(nodes, SERD_STRING("http://example.org/base"));
@@ -120,9 +119,10 @@ test_writer(const char* const path)
   serd_writer_set_base_uri(writer, base);
 
   serd_writer_free(writer);
-  serd_byte_sink_free(byte_sink);
+  serd_close_output(&output);
   char* out = (char*)buffer.buf;
 
+  assert(out);
   assert(!strcmp(out, "@base <http://example.org/base> .\n"));
   serd_free(out);
 
