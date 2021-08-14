@@ -8,7 +8,6 @@ run_sort_suite = find_program('run_sort_suite.py')
 wrapper = meson.get_cross_property('exe_wrapper', '')
 
 unit_tests = [
-  'byte_source',
   'caret',
   'cursor',
   'env',
