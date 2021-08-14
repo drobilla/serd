@@ -83,6 +83,7 @@ sources = files(
   'src/describe.c',
   'src/env.c',
   'src/filter.c',
+  'src/input_stream.c',
   'src/inserter.c',
   'src/log.c',
   'src/model.c',

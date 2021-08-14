@@ -106,11 +106,11 @@ serd_choose_syntax(SerdWorld*        world,
                    const char*       filename,
                    SerdSyntax        fallback);
 
-SerdByteSource*
-serd_open_input(const char* filename, size_t block_size);
+SerdInputStream
+serd_open_tool_input(const char* filename);
 
 SerdOutputStream
-serd_open_output(const char* filename);
+serd_open_tool_output(const char* filename);
 
 SerdStatus
 serd_set_base_uri_from_path(SerdEnv* env, const char* path);
@@ -120,7 +120,8 @@ serd_read_source(SerdWorld*        world,
                  SerdCommonOptions opts,
                  SerdEnv*          env,
                  SerdSyntax        syntax,
-                 SerdByteSource*   in,
+                 SerdInputStream*  in,
+                 const char*       name,
                  const SerdSink*   sink);
 
 SerdStatus
