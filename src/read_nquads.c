@@ -11,7 +11,6 @@
 #include "stack.h"
 #include "statement.h"
 
-#include "serd/byte_source.h"
 #include "serd/caret.h"
 #include "serd/node.h"
 #include "serd/sink.h"

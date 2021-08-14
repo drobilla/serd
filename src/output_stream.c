@@ -54,7 +54,7 @@ serd_open_output_file(const char* const path)
   }
 
 #if USE_POSIX_FADVISE && USE_FILENO
-  posix_fadvise(fileno(file), 0, 0, POSIX_FADV_SEQUENTIAL);
+  (void)posix_fadvise(fileno(file), 0, 0, POSIX_FADV_SEQUENTIAL);
 #endif
 
   return serd_open_output_stream(

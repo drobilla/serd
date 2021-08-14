@@ -5,8 +5,8 @@
 #define SERD_READER_H
 
 #include "serd/attributes.h"
-#include "serd/byte_source.h"
 #include "serd/env.h"
+#include "serd/input_stream.h"
 #include "serd/sink.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
@@ -103,11 +103,24 @@ serd_reader_new(SerdWorld* SERD_NONNULL      world,
                 const SerdSink* SERD_NONNULL sink,
                 size_t                       stack_size);
 
-/// Prepare to read from a byte source
+/**
+   Prepare to read some input.
+
+   This sets up the reader to read from the given input, but will not read any
+   bytes from it.  This should be followed by serd_reader_read_chunk() or
+   serd_reader_read_document() to actually read the input.
+
+   @param reader The reader.
+   @param input An opened input stream to read from.
+   @param input_name The name of the input stream for error messages.
+   @param block_size The number of bytes to read from the stream at once.
+*/
 SERD_API
 SerdStatus
-serd_reader_start(SerdReader* SERD_NONNULL     reader,
-                  SerdByteSource* SERD_NONNULL byte_source);
+serd_reader_start(SerdReader* SERD_NONNULL      reader,
+                  SerdInputStream* SERD_NONNULL input,
+                  const SerdNode* SERD_NULLABLE input_name,
+                  size_t                        block_size);
 
 /**
    Read a single "chunk" of data during an incremental read.

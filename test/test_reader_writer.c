@@ -4,9 +4,9 @@
 #undef NDEBUG
 
 #include "serd/buffer.h"
-#include "serd/byte_source.h"
 #include "serd/env.h"
 #include "serd/event.h"
+#include "serd/input_stream.h"
 #include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/nodes.h"
@@ -155,12 +155,12 @@ test_reader(const char* path)
   assert(serd_reader_read_chunk(reader) == SERD_ERR_BAD_CALL);
   assert(serd_reader_read_document(reader) == SERD_ERR_BAD_CALL);
 
-  SerdByteSource* byte_source = serd_byte_source_new_filename(path, 4096);
-  assert(!serd_reader_start(reader, byte_source));
+  SerdInputStream in = serd_open_input_file(path);
+  assert(!serd_reader_start(reader, &in, NULL, 4096));
   assert(!serd_reader_read_document(reader));
   assert(rt.n_statement == 6);
   assert(!serd_reader_finish(reader));
-  serd_byte_source_free(byte_source);
+  serd_close_input(&in);
 
   serd_reader_free(reader);
   serd_env_free(env);

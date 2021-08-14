@@ -4,12 +4,13 @@
 #include "console.h"
 
 #include "serd/attributes.h"
-#include "serd/byte_source.h"
 #include "serd/env.h"
 #include "serd/event.h"
 #include "serd/filter.h"
+#include "serd/input_stream.h"
 #include "serd/log.h"
 #include "serd/node.h"
+#include "serd/nodes.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
@@ -67,10 +68,10 @@ on_pattern_event(void* const handle, const SerdEvent* const event)
 
 // Parse a pattern from some input and return a new filter for it
 static SerdSink*
-parse_pattern(SerdWorld* const      world,
-              const SerdSink* const sink,
-              SerdByteSource* const byte_source,
-              const bool            inclusive)
+parse_pattern(SerdWorld* const       world,
+              const SerdSink* const  sink,
+              SerdInputStream* const in,
+              const bool             inclusive)
 {
   SerdEnv* const env     = serd_env_new(serd_empty_string());
   FilterPattern  pat     = {NULL, NULL, NULL, NULL};
@@ -78,11 +79,15 @@ parse_pattern(SerdWorld* const      world,
   SerdReader*    reader  = serd_reader_new(
     world, SERD_NQUADS, SERD_READ_VARIABLES, env, in_sink, 4096);
 
-  SerdStatus st = serd_reader_start(reader, byte_source);
+  const SerdNode* pattern_name =
+    serd_nodes_string(serd_world_nodes(world), serd_string("pattern"));
+
+  SerdStatus st = serd_reader_start(reader, in, pattern_name, 1);
   if (!st) {
     st = serd_reader_read_document(reader);
   }
 
+  serd_close_input(in);
   serd_reader_free(reader);
   serd_env_free(env);
   serd_sink_free(in_sink);
@@ -136,23 +141,28 @@ run(Options opts)
   const SerdSink* const target = serd_writer_sink(app.writer);
 
   // Open the pattern input (either a string or filename)
-  SerdByteSource* const pattern =
-    opts.pattern ? serd_byte_source_new_string(opts.pattern, NULL)
-    : opts.pattern_file
-      ? serd_byte_source_new_filename(opts.pattern_file, opts.common.block_size)
-      : NULL;
-  if (!pattern) {
+  SerdInputStream pattern  = {NULL, NULL, NULL, NULL};
+  const char*     position = opts.pattern;
+  if (opts.pattern) {
+    pattern = serd_open_input_string(&position);
+  } else if (opts.pattern_file) {
+    pattern = serd_open_input_file(opts.pattern_file);
+  }
+
+  if (!pattern.stream) {
     log_error(app.world, "failed to open pattern");
     return SERD_ERR_UNKNOWN;
   }
 
   // Set up the output pipeline: filter -> writer
   SerdSink* const filter =
-    parse_pattern(app.world, target, pattern, !opts.invert);
+    parse_pattern(app.world, target, &pattern, !opts.invert);
   if (!filter) {
     log_error(app.world, "failed to set up filter");
     return SERD_ERR_UNKNOWN;
   }
+
+  serd_close_input(&pattern);
 
   // Read all the inputs, which drives the writer to emit the output
   if (!(st = serd_read_inputs(app.world,
@@ -169,7 +179,6 @@ run(Options opts)
   }
 
   serd_sink_free(filter);
-  serd_byte_source_free(pattern);
 
   const SerdStatus cst = serd_tool_cleanup(app);
   return st ? st : cst;
