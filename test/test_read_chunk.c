@@ -94,23 +94,23 @@ main(void)
   SerdWorld* world = serd_world_new();
   SerdSink*  sink  = serd_sink_new(NULL, on_event, NULL);
 
-  SerdByteSource* byte_source =
-    serd_byte_source_new_string("@prefix eg: <http://example.org/> .\n"
-                                "@base <http://example.org/base> .\n"
-                                "eg:s1 eg:p1 eg:o1 ;\n"
-                                "      eg:p2 eg:o2 ,\n"
-                                "            eg:o3 .\n"
-                                "eg:s2 eg:p1 eg:o1 ;\n"
-                                "      eg:p2 eg:o2 .\n"
-                                "eg:s3 eg:p1 eg:o1 .\n"
-                                "eg:s4 eg:p1 [ eg:p3 eg:o1 ] .\n",
-                                NULL);
+  static const char* const string = "@prefix eg: <http://example.org/> .\n"
+                                    "@base <http://example.org/base> .\n"
+                                    "eg:s1 eg:p1 eg:o1 ;\n"
+                                    "      eg:p2 eg:o2 ,\n"
+                                    "            eg:o3 .\n"
+                                    "eg:s2 eg:p1 eg:o1 ;\n"
+                                    "      eg:p2 eg:o2 .\n"
+                                    "eg:s3 eg:p1 eg:o1 .\n"
+                                    "eg:s4 eg:p1 [ eg:p3 eg:o1 ] .\n";
 
   SerdEnv*    env    = serd_env_new(SERD_EMPTY_STRING());
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0, env, sink, 4096);
   assert(reader);
 
-  assert(!serd_reader_start(reader, byte_source));
+  const char*     position = string;
+  SerdInputStream in       = serd_open_input_string(&position);
+  assert(!serd_reader_start(reader, &in, NULL, 1));
 
   assert(!serd_reader_read_chunk(reader) && n_prefix == 1);
   assert(!serd_reader_read_chunk(reader) && n_base == 1);
@@ -123,9 +123,9 @@ main(void)
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(!serd_reader_finish(reader));
 
+  serd_close_input(&in);
   serd_reader_free(reader);
   serd_env_free(env);
-  serd_byte_source_free(byte_source);
   serd_sink_free(sink);
   serd_world_free(world);
 

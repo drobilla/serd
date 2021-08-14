@@ -2183,67 +2183,77 @@ serd_node_to_syntax(const SerdNode* SERD_NONNULL node,
 
 /**
    @}
-   @defgroup serd_byte_source Byte Source
+   @defgroup serd_input_stream Input Streams
+
+   An input stream is used for reading input as a raw stream of bytes.  It is
+   compatible with standard C `FILE` streams, but allows different functions to
+   be provided for things like reading from a buffer or a socket.
+
    @{
 */
 
-/// A source for bytes that provides text input
-typedef struct SerdByteSourceImpl SerdByteSource;
+/// An input stream that produces bytes
+typedef struct {
+  void* SERD_NULLABLE               stream; ///< Opaque parameter for functions
+  SerdReadFunc SERD_NULLABLE        read;   ///< Read bytes to input
+  SerdStreamErrorFunc SERD_NONNULL  error;  ///< Stream error accessor
+  SerdStreamCloseFunc SERD_NULLABLE close;  ///< Close input
+} SerdInputStream;
 
 /**
-   Create a new byte source that reads from a string.
+   Open a stream that reads from a provided function.
 
-   @param string Null-terminated UTF-8 string to read from.
-   @param name Optional name of stream for error messages (string or URI).
+   @param read_func Function to read input.
+   @param error_func Function used to detect errors.
+   @param close_func Function to close the stream after reading is done.
+   @param stream Opaque stream parameter for functions.
+
+   @return An opened input stream, or all zeros on error.
 */
-SERD_API
-SerdByteSource* SERD_ALLOCATED
-serd_byte_source_new_string(const char* SERD_NONNULL      string,
-                            const SerdNode* SERD_NULLABLE name);
+SERD_CONST_API
+SerdInputStream
+serd_open_input_stream(SerdReadFunc SERD_NONNULL         read_func,
+                       SerdStreamErrorFunc SERD_NONNULL  error_func,
+                       SerdStreamCloseFunc SERD_NULLABLE close_func,
+                       void* SERD_NULLABLE               stream);
 
 /**
-   Create a new byte source that reads from a file.
+   Open a stream that reads from a string.
 
-   An arbitrary `FILE*` can be used via serd_byte_source_new_function() as
-   well, this is just a convenience function that opens the file properly, sets
-   flags for optimized I/O if possible, and automatically sets the name of the
-   source to the file path.
+   The string pointer that position points to must remain valid until the
+   stream is closed.  This pointer serves as the internal stream state and will
+   be mutated as the stream is used.
+
+   @param position Pointer to a valid string pointer for use as stream state.
+   @return An opened input stream, or all zeros on error.
+*/
+SERD_CONST_API
+SerdInputStream
+serd_open_input_string(const char* SERD_NONNULL* SERD_NONNULL position);
+
+/**
+   Open a stream that reads from a file.
+
+   An arbitrary `FILE*` can be used with serd_open_input_stream() as well, this
+   convenience function opens the file properly for reading with serd, and sets
+   flags for optimized I/O if possible.
 
    @param path Path of file to open and read from.
-   @param page_size Number of bytes to read per call.
 */
 SERD_API
-SerdByteSource* SERD_ALLOCATED
-serd_byte_source_new_filename(const char* SERD_NONNULL path, size_t page_size);
+SerdInputStream
+serd_open_input_file(const char* SERD_NONNULL path);
 
 /**
-   Create a new byte source that reads from a user-specified function
+   Close an input stream.
 
-   The `stream` will be passed to the `read_func`, which is compatible with the
-   standard C `fread` if `stream` is a `FILE*`.  Note that the reader only ever
-   reads individual bytes at a time, that is, the `size` parameter will always
-   be 1 (but `nmemb` may be higher).
-
-   @param read_func Stream read function, like `fread`.
-   @param error_func Stream error function, like `ferror`.
-   @param close_func Stream close function, like `fclose`.
-   @param stream Context parameter passed to `read_func` and `error_func`.
-   @param name Optional name of stream for error messages (string or URI).
-   @param page_size Number of bytes to read per call.
+   This will call the close function, and reset the stream internally so that
+   no further reads can be made.  For convenience, this is safe to call on
+   NULL, and safe to call several times on the same input.
 */
 SERD_API
-SerdByteSource* SERD_ALLOCATED
-serd_byte_source_new_function(SerdReadFunc SERD_NONNULL         read_func,
-                              SerdStreamErrorFunc SERD_NONNULL  error_func,
-                              SerdStreamCloseFunc SERD_NULLABLE close_func,
-                              void* SERD_NULLABLE               stream,
-                              const SerdNode* SERD_NULLABLE     name,
-                              size_t                            page_size);
-
-/// Free `source`
-SERD_API
-void
-serd_byte_source_free(SerdByteSource* SERD_NULLABLE source);
+SerdStatus
+serd_close_input(SerdInputStream* SERD_NULLABLE input);
 
 /**
    @}
@@ -2332,11 +2342,24 @@ serd_reader_new(SerdWorld* SERD_NONNULL      world,
                 const SerdSink* SERD_NONNULL sink,
                 size_t                       stack_size);
 
-/// Prepare to read from a byte source
+/**
+   Prepare to read some input.
+
+   This sets up the reader to read from the given input, but will not read any
+   bytes from it.  This should be followed by serd_reader_read_chunk() or
+   serd_reader_read_document() to actually read the input.
+
+   @param reader The reader.
+   @param input An opened input stream to read from.
+   @param input_name The name of the input stream for error messages.
+   @param block_size The number of bytes to read from the stream at once.
+*/
 SERD_API
 SerdStatus
-serd_reader_start(SerdReader* SERD_NONNULL     reader,
-                  SerdByteSource* SERD_NONNULL byte_source);
+serd_reader_start(SerdReader* SERD_NONNULL      reader,
+                  SerdInputStream* SERD_NONNULL input,
+                  const SerdNode* SERD_NULLABLE input_name,
+                  size_t                        block_size);
 
 /**
    Read a single "chunk" of data during an incremental read.
@@ -2473,11 +2496,11 @@ SerdOutputStream
 serd_open_output_buffer(SerdBuffer* SERD_NONNULL buffer);
 
 /**
-   Create a new byte sink that writes to a file.
+   Open a stream that writes to a file.
 
    An arbitrary `FILE*` can be used with serd_open_output_stream() as well,
-   this convenience function opens the file properly for readingn with serd,
-   and sets flags for optimized I/O if possible.
+   this convenience function opens the file properly for writing with serd, and
+   sets flags for optimized I/O if possible.
 
    @param path Path of file to open and write to.
 */
