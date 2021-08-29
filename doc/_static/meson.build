@@ -1,4 +1,5 @@
 resource_filenames = [
+  'diagram.css',
   'model_pipeline.svg',
   'serd.svg',
   'writer_pipeline.svg',
