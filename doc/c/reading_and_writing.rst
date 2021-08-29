@@ -40,7 +40,7 @@ Namespace prefixes can also be defined for any vocabularies used:
 
 We now have an environment set up for our document,
 but still need to specify where to write it.
-This is done by creating a :struct:`SerdByteSink`,
+This is done by creating a :struct:`SerdOutputStream`,
 which is a generic interface that can be set up to write to a file,
 a buffer in memory,
 or a custom function that can be used to write output anywhere.
@@ -107,11 +107,8 @@ so if the reader and writer are no longer required they can simply be destroyed:
 
 Note that it is important to free the reader first in this case,
 since finishing the read may push events to the writer.
-Finally, closing the byte sink will flush and close the output file,
+Finally, closing the output with :func:`serd_close_output` will flush and close the output file,
 so it is ready to be read again later.
-Similar to the reader and writer,
-this can be done explicitly with :func:`serd_byte_sink_close`,
-or implicitly with :func:`serd_byte_sink_free` if the byte sink is no longer needed:
 
 .. literalinclude:: overview.c
    :start-after: begin byte-sink-free
@@ -139,7 +136,7 @@ only the sink is different:
 Writing a Model
 ---------------
 
-A model, or parts of a model, can be written by writing the desired range with :func:`serd_write_range`:
+A model, or parts of a model, can be written by writing the desired range with :func:`serd_describe_range`:
 
 .. literalinclude:: overview.c
    :start-after: begin write-range
@@ -148,5 +145,5 @@ A model, or parts of a model, can be written by writing the desired range with :
 
 By default,
 this writes the range in chunks suited to pretty-printing with anonymous blank nodes (like "[ ... ]" in Turtle or TriG).
-The flag :enumerator:`SERD_NO_INLINE_OBJECTS` can be given to instead write the range in a simple SPO order,
-which can be useful in other situations because it is faster and emits statements in strictly increasing order.
+Any rdf:type properties (written "a" in Turtle or TriG) will be written before any other properties of their subject.
+This can be disabled by passing the flag :enumerator:`SERD_NO_TYPE_FIRST`.
