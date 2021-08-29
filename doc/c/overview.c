@@ -341,11 +341,11 @@ reading_writing(void)
   // end env-set-prefix
 
   // begin byte-sink-new
-  SerdByteSink* out = serd_byte_sink_new_filename("/tmp/eg.ttl", 4096);
+  SerdOutputStream out = serd_open_output_file("/tmp/eg.ttl");
   // end byte-sink-new
 
   // begin writer-new
-  SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, out);
+  SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, &out, 4096);
   // end writer-new
 
   // begin reader-new
@@ -370,7 +370,7 @@ reading_writing(void)
   // end reader-writer-free
 
   // begin byte-sink-free
-  serd_byte_sink_free(out);
+  serd_close_output(&out);
   // end byte-sink-free
 
   // begin inserter-new
@@ -389,7 +389,7 @@ reading_writing(void)
   // end model-reader-new
 
   // begin write-range
-  serd_write_range(serd_model_begin(model), serd_writer_sink(writer), 0);
+  serd_describe_range(serd_model_begin(model), serd_writer_sink(writer), 0);
   // end write-range
 
   // begin canon-new

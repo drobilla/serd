@@ -8,6 +8,7 @@ release = "@SERD_VERSION@"
 # General configuration
 
 exclude_patterns = ["xml"]
+extensions = ['sphinxcontrib.imagesvg']
 language = "en"
 nitpicky = True
 pygments_style = "friendly"

@@ -21,8 +21,9 @@ Data
    All data is expressed in statements.
 
 Streams
-   Serd is designed around the concept of streaming data.
-   Objects stream data to each other via :doc:`api/serd_sink`,
+   Serd is designed around the concept of data streams,
+   which allow components to send data to each other in a general way.
+   Data is streamed via :doc:`api/serd_sink`,
    which is an abstract interface that receives :doc:`api/serd_event`.
    An event is essentially a statement,
    but there are a few additional event types that reflect context changes and support pretty-printing.
@@ -55,7 +56,7 @@ Storage
 
    Data can be loaded into a model via an :doc:`api/serd_inserter`,
    which is a sink that inserts incoming statements into a model.
-   Data in a model can be written out by calling :func:`serd_write_range` on the desired range of statements.
+   Data in a model can be written out by calling :func:`serd_describe_range` on the desired range of statements.
 
 The sink interface acts as a generic connection which can be used to build custom data processing pipelines.
 For example,
