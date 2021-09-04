@@ -86,6 +86,15 @@ typedef enum {
      This disables the special "a" syntax in Turtle and TriG.
   */
   SERD_WRITE_RDF_TYPE = 1U << 5U,
+
+  /**
+     Suppress writing directives that describe the context.
+
+     This writes data as usual, but suppresses writing `prefix` directives in
+     Turtle and TriG.  The resulting output is a fragment of a document with
+     implicit context, so it will only be readable in a suitable enviromnent.
+  */
+  SERD_WRITE_CONTEXTUAL = 1U << 6U,
 } SerdWriterFlag;
 
 /// Bitwise OR of SerdWriterFlag values
