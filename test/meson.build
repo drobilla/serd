@@ -275,6 +275,15 @@ if is_variable('serd_pipe')
        env: test_env,
        should_fail: true,
        suite: ['tools', 'pipe', 'output'])
+
+  # Write options
+
+  test('contextual',
+       files('test_contextual.py'),
+       args: pipe_test_script_args + files('../serd.ttl'),
+       env: test_env,
+       suite: ['tools', 'pipe', 'output'])
+
 endif
 
 # Test specifics for serd-sort

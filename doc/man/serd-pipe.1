@@ -175,13 +175,21 @@ can be
 .Cm Turtle ,
 or one of the following options:
 .Pp
-.Bl -tag -width "QverbatimQ" -compact -offset indent
+.Bl -tag -width "QcontextualQ" -compact -offset indent
 .It Cm ascii
 Escape all non-ASCII characters.
 Normally, text is written in UTF-8.
 This flag will escape non-ASCII characters in text as Unicode code points like
 .Li \eU00B7 or
 .Li \eU0001F600 .
+.Pp
+.It Cm contextual
+Suppress writing directives that describe the context.
+Normally when writing Turtle or Trig,
+a document will have a header that defines all the prefixes used in the input.
+This flag will disable writing those directives,
+so the output is document fragment with an implicit context.
+This can be useful for writing output intended for humans.
 .Pp
 .It Cm expanded
 Write expanded URIs instead of prefixed names.
