@@ -1403,6 +1403,10 @@ serd_writer_set_prefix(SerdWriter*     writer,
       reset_context(writer, true);
     }
 
+    if (writer->flags & SERD_WRITE_CONTEXTUAL) {
+      return st;
+    }
+
     TRY(st, esink("@prefix ", 8, writer));
     TRY(st, esink(serd_node_string(name), name->length, writer));
     TRY(st, esink(": <", 3, writer));
