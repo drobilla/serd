@@ -55,12 +55,18 @@ serd_filter_on_event(void* const handle, const SerdEvent* const event)
                                                 data->object,
                                                 data->graph);
 
-    if (data->inclusive != matches) {
-      return SERD_SUCCESS;
+    if (data->inclusive == matches) {
+      // Emit statement with reset flags to avoid confusing the writer
+      SerdEvent out_event       = *event;
+      out_event.statement.flags = 0u;
+      return serd_sink_write_event(data->target, &out_event);
     }
+
+    return SERD_SUCCESS; // Skip statement
   }
 
-  return serd_sink_write_event(data->target, event);
+  return event->type == SERD_END ? SERD_SUCCESS
+                                 : serd_sink_write_event(data->target, event);
 }
 
 SerdSink*
