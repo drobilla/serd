@@ -90,32 +90,6 @@ cdef extern from "serd.h":
                                   const char* str,
                                   size_t      len);
 
-    # Byte Source
-
-    ctypedef struct SerdByteSource
-
-    ctypedef int (*SerdStreamErrorFunc)(void* stream);
-
-    ctypedef size_t (*SerdReadFunc)(void*  buf,
-                                    size_t size,
-                                    size_t nmemb,
-                                    void*  stream);
-
-    SerdByteSource* serd_byte_source_new_string(const char*     string,
-                                                const SerdNode* name);
-
-    SerdByteSource* serd_byte_source_new_filename(const char* path,
-                                                  size_t      block_size);
-
-    SerdByteSource* serd_byte_source_new_function(
-        SerdReadFunc        read_func,
-        SerdStreamErrorFunc error_func,
-        void*               stream,
-        const SerdNode*     name,
-        size_t              block_size);
-
-    void serd_byte_source_free(SerdByteSource* source);
-
     # Buffer
 
     size_t serd_buffer_write(const void* buf,
@@ -126,28 +100,21 @@ cdef extern from "serd.h":
     int serd_buffer_error(void* const stream);
     int serd_buffer_close(void* const stream);
 
+    # I/O Function Types
 
-    # Byte sink
-
-    ctypedef struct SerdByteSink
+    ctypedef size_t (*SerdReadFunc)(void*  buf,
+                                    size_t size,
+                                    size_t nmemb,
+                                    void*  stream);
 
     ctypedef size_t (*SerdWriteFunc)(const void* buf,
                                      size_t      size,
                                      size_t      nmemb,
                                      void*       stream);
 
-    SerdByteSink* serd_byte_sink_new_buffer(SerdBuffer* buffer);
+    ctypedef int (*SerdStreamErrorFunc)(void* stream);
 
-    SerdByteSink* serd_byte_sink_new_filename(const char* path,
-                                              size_t      block_size);
-
-    SerdByteSink* serd_byte_sink_new_function(SerdWriteFunc write_func,
-                                              void*         stream,
-                                              size_t        block_size);
-
-    void serd_byte_sink_flush(SerdByteSink* sink);
-    void serd_byte_sink_close(SerdByteSink* sink);
-    void serd_byte_sink_free(SerdByteSink* sink);
+    ctypedef int (*SerdStreamCloseFunc)(void* stream);
 
     # Syntax Utilities
 
@@ -400,6 +367,25 @@ cdef extern from "serd.h":
                               const SerdNode* object,
                               const SerdNode* graph);
 
+    # Input Streams
+
+    ctypedef struct SerdInputStream:
+        void*               stream;
+        SerdReadFunc        read;
+        SerdStreamErrorFunc error;
+        SerdStreamCloseFunc close;
+
+    SerdInputStream serd_open_input_stream(SerdReadFunc        read_func,
+                                           SerdStreamErrorFunc error_func,
+                                           SerdStreamCloseFunc close_func,
+                                           void*               stream);
+
+    SerdInputStream serd_open_input_string(const char** position);
+
+    SerdInputStream serd_open_input_file(const char* path);
+
+    SerdStatus serd_close_input(SerdInputStream* input);
+
     # Reader
 
     SerdReader* serd_reader_new(SerdWorld*      world,
@@ -409,20 +395,42 @@ cdef extern from "serd.h":
                                 const SerdSink* sink,
                                 size_t          stack_size);
 
-    SerdStatus serd_reader_start(SerdReader* reader, SerdByteSource* byte_source);
+    SerdStatus serd_reader_start(SerdReader*      reader,
+                                 SerdInputStream* input,
+                                 const SerdNode*  input_name,
+                                 size_t           block_size);
+
     SerdStatus serd_reader_read_chunk(SerdReader* reader);
     SerdStatus serd_reader_read_document(SerdReader* reader);
     SerdStatus serd_reader_finish(SerdReader* reader);
 
     void serd_reader_free(SerdReader* reader);
 
+    # Output Streams
+
+    ctypedef struct SerdOutputStream:
+        void*               stream;
+        SerdWriteFunc       write;
+        SerdStreamCloseFunc close;
+
+    SerdOutputStream serd_open_output_stream(SerdWriteFunc         write_func,
+                                             SerdStreamCloseFunc  close_func,
+                                             void*                stream);
+
+    SerdOutputStream serd_open_output_buffer(SerdBuffer* buffer);
+
+    SerdOutputStream serd_open_output_file(const char* path);
+
+    SerdStatus serd_close_output(SerdOutputStream* output);
+
     # Writer
 
-    SerdWriter* serd_writer_new(SerdWorld*      world,
-                                SerdSyntax      syntax,
-                                SerdWriterFlags flags,
-                                SerdEnv*        env,
-                                SerdByteSink*   byte_sink);
+    SerdWriter* serd_writer_new(SerdWorld*        world,
+                                SerdSyntax        syntax,
+                                SerdWriterFlags   flags,
+                                SerdEnv*          env,
+                                SerdOutputStream* output,
+                                size_t            block_size);
 
     void            serd_writer_free(SerdWriter* writer);
     const SerdSink* serd_writer_sink(SerdWriter* writer);
@@ -1317,7 +1325,7 @@ cdef class Reader:
     """
 
     cdef SerdReader*   _ptr
-    cdef __ByteSource  _byte_source
+    # cdef __ByteSource  _byte_source
     cdef _SinkBase     _sink
     cdef object        _callback
 
@@ -1394,20 +1402,30 @@ cdef class Reader:
         return ReadContext(self, source)
 
 
-cdef class __ByteSource:
+cdef class __InputStream:
     """A source for bytes that provides text input."""
-    cdef SerdByteSource* _ptr
+    cdef SerdInputStream _stream
 
     def __dealloc__(self):
-        serd_byte_source_free(self._ptr)
-        self._ptr = NULL
+        serd_close_input(&_stream)
 
 
-cdef class FileSource(__ByteSource):
-    """A byte source for text input that reads from a file."""
-    def __init__(self, filename: str, block_size: int = 4096):
+cdef class StringInput(__InputStream):
+    cdef const char* _position;
+
+    """A byte source for text input that reads from a string."""
+    def __init__(self, string: str):
         super().__init__()
-        self._ptr = serd_byte_source_new_filename(_tocstr(filename), block_size)
+
+        self._position = str;
+        self._stream   = serd_open_input_string(&self._position)
+
+
+cdef class FileInput(__InputStream):
+    """A byte source for text input that reads from a file."""
+    def __init__(self, filename: str):
+        super().__init__()
+        self._stream = serd_open_input_file(filename)
 
 
 cdef class StringSource(__ByteSource):
@@ -1421,59 +1439,59 @@ cdef class StringSource(__ByteSource):
                                                 _unwrap_node(name))
 
 
-cdef class ByteSink:
-    """A sink for bytes that receives text output."""
-    cdef SerdByteSink* _ptr
+# cdef class ByteSink:
+#     """A sink for bytes that receives text output."""
+#     cdef SerdByteSink* _ptr
 
-    def __dealloc__(self):
-        serd_byte_sink_free(self._ptr)
-        self._ptr = NULL
+#     def __dealloc__(self):
+#         serd_byte_sink_free(self._ptr)
+#         self._ptr = NULL
 
-    def flush(self) -> None:
-        """Flush any pending output to the underlying stream."""
-        serd_byte_sink_flush(self._ptr)
+#     def flush(self) -> None:
+#         """Flush any pending output to the underlying stream."""
+#         serd_byte_sink_flush(self._ptr)
 
-    def close(self) -> None:
-        """Close sink, including the underlying file if necessary."""
-        serd_byte_sink_close(self._ptr)
-
-
-cdef class FileSink(ByteSink):
-    """A sink for bytes that writes text output to a file."""
-
-    def __init__(self,
-                 filename: str,
-                 block_size: int = 4096):
-        super().__init__()
-
-        self._ptr = serd_byte_sink_new_filename(_tocstr(filename),
-                                                block_size)
-
-        if self._ptr is NULL:
-            raise OSError(errno, strerror(errno), filename)
+#     def close(self) -> None:
+#         """Close sink, including the underlying file if necessary."""
+#         serd_byte_sink_close(self._ptr)
 
 
-cdef class StringSink(ByteSink):
-    cdef SerdBuffer _buffer
+# cdef class FileSink(ByteSink):
+#     """A sink for bytes that writes text output to a file."""
 
-    def __dealloc__(self):
-        serd_free(self._buffer.buf)
-        self._buffer.buf = NULL
-        self._buffer.len = 0;
-        # super().__dealloc__(self)
+#     def __init__(self,
+#                  filename: str,
+#                  block_size: int = 4096):
+#         super().__init__()
 
-    def __init__(self):
-        super().__init__()
+#         self._ptr = serd_byte_sink_new_filename(_tocstr(filename),
+#                                                 block_size)
 
-        self._buffer.buf = NULL
-        self._buffer.len = 0;
-        self._ptr = serd_byte_sink_new_buffer(&self._buffer)
+#         if self._ptr is NULL:
+#             raise OSError(errno, strerror(errno), filename)
 
-    def output(self) -> str:
-        """Finish writing to this string sink and return the output."""
-        self.flush()
-        self.close()
-        return _fromcstr(<char*>self._buffer.buf)
+
+# cdef class StringSink(ByteSink):
+#     cdef SerdBuffer _buffer
+
+#     def __dealloc__(self):
+#         serd_free(self._buffer.buf)
+#         self._buffer.buf = NULL
+#         self._buffer.len = 0;
+#         # super().__dealloc__(self)
+
+#     def __init__(self):
+#         super().__init__()
+
+#         self._buffer.buf = NULL
+#         self._buffer.len = 0;
+#         self._ptr = serd_byte_sink_new_buffer(&self._buffer)
+
+#     def output(self) -> str:
+#         """Finish writing to this string sink and return the output."""
+#         self.flush()
+#         self.close()
+#         return _fromcstr(<char*>self._buffer.buf)
 
 
 cdef class Writer:
