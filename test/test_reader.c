@@ -224,8 +224,8 @@ test_read_eof_by_page(const char* const path)
 
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0U, env, sink, 4096);
 
-  SerdInputStream in = serd_open_input_stream(
-    (SerdReadFunc)fread, (SerdStreamErrorFunc)ferror, NULL, f);
+  SerdInputStream in =
+    serd_open_input_stream((SerdReadFunc)fread, (SerdErrorFunc)ferror, NULL, f);
 
   assert(serd_reader_start(reader, &in, NULL, 4096) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
@@ -253,11 +253,8 @@ test_read_eof_by_byte(void)
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0U, env, sink, 4096);
 
   size_t          n_reads = 0U;
-  SerdInputStream in =
-    serd_open_input_stream((SerdReadFunc)eof_test_read,
-                           (SerdStreamErrorFunc)eof_test_error,
-                           NULL,
-                           &n_reads);
+  SerdInputStream in      = serd_open_input_stream(
+    (SerdReadFunc)eof_test_read, (SerdErrorFunc)eof_test_error, NULL, &n_reads);
 
   assert(serd_reader_start(reader, &in, NULL, 1) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
@@ -302,8 +299,8 @@ test_read_chunks(const char* const path)
 
   assert(reader);
 
-  SerdInputStream in = serd_open_input_stream(
-    (SerdReadFunc)fread, (SerdStreamErrorFunc)ferror, NULL, f);
+  SerdInputStream in =
+    serd_open_input_stream((SerdReadFunc)fread, (SerdErrorFunc)ferror, NULL, f);
 
   SerdStatus st = serd_reader_start(reader, &in, NULL, 1);
   assert(st == SERD_SUCCESS);
@@ -394,8 +391,8 @@ test_read_empty(const char* const path)
   FILE* const f = fopen(path, "w+b");
   assert(f);
 
-  SerdInputStream in = serd_open_input_stream(
-    (SerdReadFunc)fread, (SerdStreamErrorFunc)ferror, NULL, f);
+  SerdInputStream in =
+    serd_open_input_stream((SerdReadFunc)fread, (SerdErrorFunc)ferror, NULL, f);
 
   SerdStatus st = serd_reader_start(reader, &in, NULL, 1);
   assert(!st);

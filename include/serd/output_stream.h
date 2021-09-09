@@ -27,9 +27,9 @@ SERD_BEGIN_DECLS
    Output from serd is UTF-8 encoded text.
 */
 typedef struct {
-  void* SERD_NULLABLE               stream; ///< Opaque parameter for functions
-  SerdWriteFunc SERD_NULLABLE       write;  ///< Write bytes to output
-  SerdStreamCloseFunc SERD_NULLABLE close;  ///< Close output
+  void* SERD_NULLABLE         stream; ///< Opaque parameter for functions
+  SerdWriteFunc SERD_NULLABLE write;  ///< Write bytes to output
+  SerdCloseFunc SERD_NULLABLE close;  ///< Close output
 } SerdOutputStream;
 
 /**
@@ -43,9 +43,9 @@ typedef struct {
 */
 SERD_CONST_API
 SerdOutputStream
-serd_open_output_stream(SerdWriteFunc SERD_NONNULL        write_func,
-                        SerdStreamCloseFunc SERD_NULLABLE close_func,
-                        void* SERD_NULLABLE               stream);
+serd_open_output_stream(SerdWriteFunc SERD_NONNULL  write_func,
+                        SerdCloseFunc SERD_NULLABLE close_func,
+                        void* SERD_NULLABLE         stream);
 
 /**
    Open a stream that writes to a buffer.

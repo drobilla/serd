@@ -24,10 +24,10 @@ SERD_BEGIN_DECLS
 
 /// An input stream that produces bytes
 typedef struct {
-  void* SERD_NULLABLE               stream; ///< Opaque parameter for functions
-  SerdReadFunc SERD_NONNULL         read;   ///< Read bytes from input
-  SerdStreamErrorFunc SERD_NULLABLE error;  ///< Stream error accessor
-  SerdStreamCloseFunc SERD_NULLABLE close;  ///< Close input
+  void* SERD_NULLABLE         stream; ///< Opaque parameter for functions
+  SerdReadFunc SERD_NONNULL   read;   ///< Read bytes from input
+  SerdErrorFunc SERD_NULLABLE error;  ///< Stream error accessor
+  SerdCloseFunc SERD_NULLABLE close;  ///< Close input
 } SerdInputStream;
 
 /**
@@ -42,10 +42,10 @@ typedef struct {
 */
 SERD_CONST_API
 SerdInputStream
-serd_open_input_stream(SerdReadFunc SERD_NONNULL         read_func,
-                       SerdStreamErrorFunc SERD_NONNULL  error_func,
-                       SerdStreamCloseFunc SERD_NULLABLE close_func,
-                       void* SERD_NULLABLE               stream);
+serd_open_input_stream(SerdReadFunc SERD_NONNULL   read_func,
+                       SerdErrorFunc SERD_NONNULL  error_func,
+                       SerdCloseFunc SERD_NULLABLE close_func,
+                       void* SERD_NULLABLE         stream);
 
 /**
    Open a stream that reads from a string.
