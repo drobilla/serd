@@ -153,8 +153,8 @@ test_reader(const char* path)
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0U, env, sink, 4096);
   assert(reader);
 
-  assert(serd_reader_read_chunk(reader) == SERD_ERR_BAD_CALL);
-  assert(serd_reader_read_document(reader) == SERD_ERR_BAD_CALL);
+  assert(serd_reader_read_chunk(reader) == SERD_BAD_CALL);
+  assert(serd_reader_read_document(reader) == SERD_BAD_CALL);
 
   SerdInputStream in = serd_open_input_file(path);
   assert(!serd_reader_start(reader, &in, NULL, 4096));

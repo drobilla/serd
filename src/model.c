@@ -103,7 +103,7 @@ serd_model_drop_index(SerdModel* const model, const SerdStatementOrder order)
   }
 
   if (order == model->default_order) {
-    return SERD_ERR_BAD_CALL;
+    return SERD_BAD_CALL;
   }
 
   zix_btree_free(model->indices[order], NULL, NULL);
@@ -626,7 +626,7 @@ serd_model_add_with_caret(SerdModel* const       model,
 
   SerdStatement* const statement = serd_statement_new(s, p, o, g, NULL);
   if (!statement) {
-    return SERD_ERR_UNKNOWN;
+    return SERD_BAD_ALLOC;
   }
 
   statement->caret = serd_model_intern_caret(model, caret);
