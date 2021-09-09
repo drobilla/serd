@@ -27,8 +27,9 @@
 #include <string.h>
 
 typedef struct {
-  const SerdNode* name;
-  const SerdNode* uri;
+  const SerdNode* name;     ///< String name of this prefix or term
+  const SerdNode* uri;      ///< URI for this prefix or term
+  const SerdNode* datatype; ///< Datatype for this term, or null
 } SerdEnvEntry;
 
 struct SerdEnvImpl {
@@ -161,9 +162,9 @@ serd_env_find(const SerdEnv* const env,
               const size_t         name_len)
 {
   for (size_t i = 0; i < env->n_entries; ++i) {
-    const SerdNode* const entry_name = env->entries[i].name;
-    if (entry_name->length == name_len) {
-      if (!memcmp(serd_node_string(entry_name), name, name_len)) {
+    const SerdNode* const prefix_name = env->entries[i].name;
+    if (prefix_name->length == name_len) {
+      if (!memcmp(serd_node_string(prefix_name), name, name_len)) {
         return &env->entries[i];
       }
     }
@@ -174,8 +175,11 @@ serd_env_find(const SerdEnv* const env,
 static void
 serd_env_add(SerdEnv* const        env,
              const SerdStringView  name,
-             const SerdNode* const uri)
+             const SerdNode* const uri,
+             const SerdNode* const datatype)
 {
+  (void)datatype; // FIXME
+
   SerdEnvEntry* const entry = serd_env_find(env, name.buf, name.len);
   if (entry) {
     if (strcmp(serd_node_string(entry->uri), serd_node_string(uri))) {
@@ -201,7 +205,7 @@ serd_env_set_prefix(SerdEnv* const       env,
 
   if (serd_uri_string_has_scheme(uri.buf)) {
     // Set prefix to absolute URI
-    serd_env_add(env, name, serd_nodes_uri(env->nodes, uri));
+    serd_env_add(env, name, serd_nodes_uri(env->nodes, uri), NULL);
     return SERD_SUCCESS;
   }
 
@@ -221,7 +225,7 @@ serd_env_set_prefix(SerdEnv* const       env,
   assert(serd_uri_string_has_scheme(serd_node_string(abs_uri)));
 
   // Set prefix to resolved absolute URI
-  serd_env_add(env, name, abs_uri);
+  serd_env_add(env, name, abs_uri, NULL);
   return SERD_SUCCESS;
 }
 
@@ -273,6 +277,43 @@ serd_env_expand_in_place(const SerdEnv* const  env,
 
   return SERD_ERR_BAD_CURIE;
 }
+
+#if 0
+SerdStatus
+serd_env_expand_term_in_place(const SerdEnv*   env,
+                              const SerdNode*  term,
+                              SerdStringView*  uri_prefix,
+                              SerdStringView*  uri_suffix,
+                              const SerdNode** datatype)
+{
+  const char* const str   = serd_node_get_string(term);
+  const char* const colon = (const char*)memchr(str, ':', term->n_bytes + 1);
+
+  SerdEnvEntry* prefix = NULL;
+  if (colon) {
+    const size_t prefix_len = (size_t)(colon - str);
+    if ((prefix = serd_env_find(env, str, prefix_len))) {
+      uri_prefix->buf = serd_node_get_string(prefix->uri);
+      uri_prefix->len = prefix->uri ? prefix->uri->n_bytes : 0;
+      uri_suffix->buf = colon + 1;
+      uri_suffix->len = term->n_bytes - prefix_len - 1;
+    } else {
+      return SERD_ERR_NOT_FOUND;
+    }
+  } else {
+    if ((prefix = serd_env_find(env, str, term->n_bytes))) {
+      uri_prefix->buf = serd_node_get_string(prefix->uri);
+      uri_prefix->len = prefix->uri ? prefix->uri->n_bytes : 0;
+      uri_suffix->buf = NULL;
+      uri_suffix->len = 0;
+    }
+  }
+
+  *datatype = prefix->datatype;
+
+  return SERD_FAILURE;
+}
+#endif
 
 SerdNode*
 serd_env_expand_curie(const SerdEnv* const env, const SerdStringView curie)

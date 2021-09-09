@@ -40,6 +40,17 @@ serd_env_expand_in_place(const SerdEnv*  env,
                          SerdStringView* uri_prefix,
                          SerdStringView* uri_suffix);
 
+/**
+   Expand `term`.
+*/
+SERD_API
+SerdStatus
+serd_env_expand_term_in_place(const SerdEnv*   env,
+                              const SerdNode*  term,
+                              SerdStringView*  uri_prefix,
+                              SerdStringView*  uri_suffix,
+                              const SerdNode** datatype);
+
 SERD_CONST_FUNC
 SerdURIView
 serd_env_base_uri_view(const SerdEnv* env);

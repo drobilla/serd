@@ -2039,6 +2039,22 @@ serd_env_set_prefix(SerdEnv* SERD_NONNULL env,
                     SerdStringView        uri);
 
 /**
+   Set a term.
+
+   A "term" is a local shorthand for a URI, for example "Class" could be
+   defined to mean <http://www.w3.org/1999/02/22-rdf-syntax-ns#Class>.  A term
+   can also have an associated datatype, which means that the term is a
+   predicate where untagged string values should be interpreted as the
+   associated datatype.
+*/
+SERD_API
+SerdStatus
+serd_env_define_term(SerdEnv* SERD_NONNULL env,
+                     SerdStringView        name,
+                     SerdStringView        uri,
+                     SerdStringView        value_datatype);
+
+/**
    Expand `node`, which must be a CURIE or URI, to a full URI.
 
    Returns null if `node` can not be expanded.
