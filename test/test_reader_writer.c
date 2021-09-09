@@ -126,7 +126,7 @@ test_write_errors(void)
       SerdStatus st = serd_reader_start(reader, &in, NULL, 1);
       assert(!st);
       st = serd_reader_read_document(reader);
-      assert(st == SERD_ERR_BAD_WRITE);
+      assert(st == SERD_BAD_WRITE);
 
       serd_reader_free(reader);
       serd_writer_free(writer);
@@ -248,8 +248,8 @@ test_reader(const char* path)
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0U, env, sink, 4096);
   assert(reader);
 
-  assert(serd_reader_read_chunk(reader) == SERD_ERR_BAD_CALL);
-  assert(serd_reader_read_document(reader) == SERD_ERR_BAD_CALL);
+  assert(serd_reader_read_chunk(reader) == SERD_BAD_CALL);
+  assert(serd_reader_read_document(reader) == SERD_BAD_CALL);
 
   SerdInputStream in = serd_open_input_file(path);
   assert(!serd_reader_start(reader, &in, NULL, 4096));
