@@ -78,7 +78,7 @@ on_event(void* const handle, const SerdEvent* const event)
     return on_end(handle, event->end.node);
   }
 
-  return SERD_ERR_BAD_ARG;
+  return SERD_BAD_ARG;
 }
 
 static void
@@ -144,7 +144,7 @@ test_callbacks(void)
   assert(serd_node_equals(state.last_end, blank));
 
   const SerdEvent junk = {(SerdEventType)42};
-  assert(serd_sink_write_event(sink, &junk) == SERD_ERR_BAD_ARG);
+  assert(serd_sink_write_event(sink, &junk) == SERD_BAD_ARG);
 
   serd_sink_free(sink);
 

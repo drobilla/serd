@@ -77,9 +77,9 @@ tolerate_status(const SerdReader* const reader, const SerdStatus status)
     return true;
   }
 
-  if (status == SERD_ERR_INTERNAL || status == SERD_ERR_OVERFLOW ||
-      status == SERD_ERR_BAD_WRITE || status == SERD_ERR_NO_DATA ||
-      status == SERD_ERR_BAD_CALL || status == SERD_ERR_BAD_CURSOR) {
+  if (status == SERD_BAD_STACK || status == SERD_BAD_WRITE ||
+      status == SERD_NO_DATA || status == SERD_BAD_CALL ||
+      status == SERD_BAD_CURSOR) {
     return false;
   }
 
@@ -148,7 +148,7 @@ emit_statement_at(SerdReader* const reader,
                   SerdCaret* const  caret)
 {
   if (reader->stack.size + (2 * sizeof(SerdNode)) > reader->stack.buf_size) {
-    return SERD_ERR_OVERFLOW;
+    return SERD_BAD_STACK;
   }
 
   /* Zero the pad of the object node on the top of the stack.  Lower nodes
@@ -185,7 +185,7 @@ serd_reader_read_document(SerdReader* const reader)
   assert(reader);
 
   if (!reader->source) {
-    return SERD_ERR_BAD_CALL;
+    return SERD_BAD_CALL;
   }
 
   if (!(reader->flags & SERD_READ_GLOBAL)) {
@@ -288,8 +288,8 @@ skip_bom(SerdReader* const me)
         serd_byte_source_advance(me->source) ||
         serd_byte_source_peek(me->source) != 0xBF ||
         serd_byte_source_advance(me->source)) {
-      r_err(me, SERD_ERR_BAD_SYNTAX, "corrupt byte order mark");
-      return SERD_ERR_BAD_SYNTAX;
+      r_err(me, SERD_BAD_SYNTAX, "corrupt byte order mark");
+      return SERD_BAD_SYNTAX;
     }
   }
 
@@ -309,7 +309,7 @@ serd_reader_start(SerdReader* const      reader,
 
   reader->source = serd_byte_source_new_input(input, input_name, block_size);
 
-  return reader->source ? SERD_SUCCESS : SERD_ERR_BAD_ARG;
+  return reader->source ? SERD_SUCCESS : SERD_BAD_ARG;
 }
 
 static SerdStatus
@@ -331,7 +331,7 @@ serd_reader_read_chunk(SerdReader* const reader)
 
   SerdStatus st = SERD_SUCCESS;
   if (!reader->source) {
-    return SERD_ERR_BAD_CALL;
+    return SERD_BAD_CALL;
   }
 
   if (!reader->source->prepared) {

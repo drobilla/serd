@@ -86,7 +86,7 @@ test_base_uri(void)
 
   // Try setting a relative prefix with no base URI
   assert(serd_env_set_prefix(env, serd_string("eg.3"), serd_string("rel")) ==
-         SERD_ERR_BAD_ARG);
+         SERD_BAD_ARG);
 
   // Set a valid base URI
   assert(!serd_env_set_base_uri(env, serd_node_string_view(eg)));
@@ -115,7 +115,7 @@ test_set_prefix(void)
   assert(!serd_env_set_prefix(env, name1, eg));
 
   // Test setting a prefix from a relative URI
-  assert(serd_env_set_prefix(env, name2, rel) == SERD_ERR_BAD_ARG);
+  assert(serd_env_set_prefix(env, name2, rel) == SERD_BAD_ARG);
   assert(!serd_env_set_base_uri(env, base));
   assert(!serd_env_set_prefix(env, name2, rel));
 
