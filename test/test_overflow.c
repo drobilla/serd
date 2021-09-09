@@ -54,11 +54,11 @@ test_all_sizes(SerdWorld* const      world,
   // Test with an increasingly smaller stack
   for (size_t size = max_stack_size; size > min_stack_size; --size) {
     if ((st = test_size(world, str, syntax, flags, size))) {
-      assert(st == SERD_ERR_OVERFLOW);
+      assert(st == SERD_BAD_STACK);
     }
   }
 
-  assert(st == SERD_ERR_OVERFLOW);
+  assert(st == SERD_BAD_STACK);
 }
 
 static void

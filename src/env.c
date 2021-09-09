@@ -198,7 +198,7 @@ serd_env_set_prefix(SerdEnv* const       env,
   }
 
   if (!env->base_uri_node) {
-    return SERD_ERR_BAD_ARG;
+    return SERD_BAD_ARG;
   }
 
   // Resolve potentially relative URI reference to an absolute URI
@@ -252,13 +252,13 @@ serd_env_expand_in_place(const SerdEnv* const  env,
   const char* const colon =
     str ? (const char*)memchr(str, ':', curie.len + 1) : NULL;
   if (!colon) {
-    return SERD_ERR_BAD_ARG;
+    return SERD_BAD_ARG;
   }
 
   const size_t            name_len = (size_t)(colon - str);
   const SerdPrefix* const prefix   = serd_env_find(env, str, name_len);
   if (!prefix || !prefix->uri) {
-    return SERD_ERR_BAD_CURIE;
+    return SERD_BAD_CURIE;
   }
 
   uri_prefix->buf = prefix->uri ? serd_node_string(prefix->uri) : "";

@@ -135,5 +135,5 @@ serd_close_input(SerdInputStream* const input)
     input->stream = NULL;
   }
 
-  return ret ? SERD_ERR_UNKNOWN : SERD_SUCCESS;
+  return ret ? SERD_BAD_READ : SERD_SUCCESS;
 }

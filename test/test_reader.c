@@ -94,12 +94,12 @@ test_prepare_error(const char* const path)
   SerdInputStream in =
     serd_open_input_stream(prepare_test_read, prepare_test_error, NULL, f);
 
-  assert(serd_reader_start(reader, &in, NULL, 0) == SERD_ERR_BAD_ARG);
+  assert(serd_reader_start(reader, &in, NULL, 0) == SERD_BAD_ARG);
 
   SerdStatus st = serd_reader_start(reader, &in, NULL, 1);
   assert(!st);
 
-  assert(serd_reader_read_document(reader) == SERD_ERR_UNKNOWN);
+  assert(serd_reader_read_document(reader) == SERD_BAD_READ);
 
   serd_close_input(&in);
   serd_reader_free(reader);

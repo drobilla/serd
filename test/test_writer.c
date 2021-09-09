@@ -52,7 +52,7 @@ test_write_bad_event(void)
 
   const SerdEvent event = {(SerdEventType)42};
   assert(serd_sink_write_event(serd_writer_sink(writer), &event) ==
-         SERD_ERR_BAD_ARG);
+         SERD_BAD_ARG);
 
   assert(!serd_close_output(&output));
 
@@ -157,12 +157,12 @@ test_writer_stack_overflow(void)
     o  = next_o;
 
     if (st) {
-      assert(st == SERD_ERR_OVERFLOW);
+      assert(st == SERD_BAD_STACK);
       break;
     }
   }
 
-  assert(st == SERD_ERR_OVERFLOW);
+  assert(st == SERD_BAD_STACK);
 
   serd_writer_free(writer);
   serd_close_output(&output);
@@ -198,8 +198,8 @@ test_strict_write(void)
   const SerdNode* bad_lit = serd_nodes_string(nodes, bad_view);
   const SerdNode* bad_uri = serd_nodes_uri(nodes, bad_view);
 
-  assert(serd_sink_write(sink, 0, s, p, bad_lit, 0) == SERD_ERR_BAD_TEXT);
-  assert(serd_sink_write(sink, 0, s, p, bad_uri, 0) == SERD_ERR_BAD_TEXT);
+  assert(serd_sink_write(sink, 0, s, p, bad_lit, 0) == SERD_BAD_TEXT);
+  assert(serd_sink_write(sink, 0, s, p, bad_uri, 0) == SERD_BAD_TEXT);
 
   serd_writer_free(writer);
   serd_close_output(&output);
@@ -249,7 +249,7 @@ test_write_error(void)
   assert(writer);
 
   SerdStatus st = serd_sink_write(serd_writer_sink(writer), 0U, s, p, o, NULL);
-  assert(st == SERD_ERR_BAD_WRITE);
+  assert(st == SERD_BAD_WRITE);
 
   serd_writer_free(writer);
   serd_close_output(&output);
@@ -261,7 +261,7 @@ test_write_error(void)
   assert(writer);
 
   assert(serd_sink_write(serd_writer_sink(writer), 0U, s, p, o, NULL) ==
-         SERD_ERR_BAD_WRITE);
+         SERD_BAD_WRITE);
 
   serd_writer_free(writer);
   serd_close_output(&output);
@@ -336,7 +336,7 @@ test_write_bad_uri(void)
     serd_sink_write(serd_writer_sink(writer), 0U, s, p, rel, NULL);
 
   assert(st);
-  assert(st == SERD_ERR_BAD_ARG);
+  assert(st == SERD_BAD_ARG);
 
   serd_close_output(&output);
   serd_free(buffer.buf);

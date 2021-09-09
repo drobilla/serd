@@ -148,7 +148,7 @@ serd_canon_on_statement(SerdCanonData* const       data,
                  exess_strerror(r.status));
 
     if (!lax) {
-      return SERD_ERR_BAD_DATA;
+      return SERD_BAD_LITERAL;
     }
   }
 

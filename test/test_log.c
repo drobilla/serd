@@ -39,7 +39,7 @@ test_bad_arg(void)
 
   serd_set_log_func(world, custom_log_func, &called);
 
-  assert(serd_logf(world, SERD_LOG_LEVEL_ERROR, "%s", "") == SERD_ERR_BAD_ARG);
+  assert(serd_logf(world, SERD_LOG_LEVEL_ERROR, "%s", "") == SERD_BAD_ARG);
 
   serd_world_free(world);
 }

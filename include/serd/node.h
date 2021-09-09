@@ -99,9 +99,8 @@ typedef struct {
   /**
      Number of bytes written or required.
 
-     On success, this is the total number of bytes written.  On
-     #SERD_ERR_OVERFLOW, this is the number of bytes of output space that are
-     required for success.
+     On success, this is the total number of bytes written.  On #SERD_OVERFLOW,
+     this is the number of bytes of output space that are required for success.
   */
   size_t count;
 } SerdWriteResult;
@@ -149,8 +148,8 @@ typedef struct {
    Otherwise, it is ignored.
 
    @return A result with a `status` and a `count` of bytes written.  If the
-   buffer is too small for the node, then `status` will be #SERD_ERR_OVERFLOW,
-   and `count` will be set to the number of bytes required to successfully
+   buffer is too small for the node, then `status` will be #SERD_OVERFLOW, and
+   `count` will be set to the number of bytes required to successfully
    construct the node.
 */
 SERD_API
@@ -579,8 +578,8 @@ serd_get_base64_size(const SerdNode* SERD_NONNULL node);
    @param buf Buffer where decoded data will be written.
 
    @return On success, #SERD_SUCCESS is returned along with the number of bytes
-   written.  If the output buffer is too small, then #SERD_ERR_OVERFLOW is
-   returned along with the number of bytes required for successful decoding.
+   written.  If the output buffer is too small, then #SERD_OVERFLOW is returned
+   along with the number of bytes required for successful decoding.
 */
 SERD_API
 SerdWriteResult

@@ -399,7 +399,7 @@ test_get_base64(void)
   char                  small[2] = {0};
   const SerdWriteResult r        = serd_get_base64(node, sizeof(small), small);
 
-  assert(r.status == SERD_ERR_OVERFLOW);
+  assert(r.status == SERD_OVERFLOW);
   serd_node_free(node);
 }
 

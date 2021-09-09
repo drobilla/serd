@@ -16,24 +16,29 @@ SERD_BEGIN_DECLS
 
 /// Return status code
 typedef enum {
-  SERD_SUCCESS,        ///< No error
-  SERD_FAILURE,        ///< Non-fatal failure
-  SERD_ERR_UNKNOWN,    ///< Unknown error
-  SERD_ERR_BAD_SYNTAX, ///< Invalid syntax
-  SERD_ERR_BAD_ARG,    ///< Invalid argument
-  SERD_ERR_BAD_CURSOR, ///< Use of invalidated cursor
-  SERD_ERR_NOT_FOUND,  ///< Not found
-  SERD_ERR_ID_CLASH,   ///< Encountered clashing blank node IDs
-  SERD_ERR_BAD_CURIE,  ///< Invalid CURIE or unknown namespace prefix
-  SERD_ERR_INTERNAL,   ///< Unexpected internal error
-  SERD_ERR_OVERFLOW,   ///< Stack overflow
-  SERD_ERR_BAD_TEXT,   ///< Invalid text encoding
-  SERD_ERR_BAD_WRITE,  ///< Error writing to file/stream
-  SERD_ERR_NO_DATA,    ///< Unexpected end of input
-  SERD_ERR_BAD_CALL,   ///< Invalid call
-  SERD_ERR_BAD_URI,    ///< Invalid or unresolved URI
-  SERD_ERR_BAD_DATA,   ///< Invalid data
-  SERD_ERR_BAD_INDEX,  ///< No optimal model index available
+  SERD_SUCCESS,       ///< Success
+  SERD_FAILURE,       ///< Non-fatal failure
+  SERD_UNKNOWN_ERROR, ///< Unknown error
+  SERD_NO_DATA,       ///< Missing input
+  SERD_OVERFLOW,      ///< Insufficient space
+
+  SERD_BAD_ALLOC,   ///< Memory allocation failed
+  SERD_BAD_ARG,     ///< Invalid argument
+  SERD_BAD_CALL,    ///< Invalid call
+  SERD_BAD_CURIE,   ///< Invalid CURIE or unknown namespace prefix
+  SERD_BAD_CURSOR,  ///< Use of invalidated cursor
+  SERD_BAD_EVENT,   ///< Invalid event in stream
+  SERD_BAD_INDEX,   ///< No optimal model index available
+  SERD_BAD_LABEL,   ///< Encountered clashing blank node label
+  SERD_BAD_LITERAL, ///< Invalid literal
+  SERD_BAD_PATTERN, ///< Invalid statement pattern
+  SERD_BAD_READ,    ///< Error reading from file
+  SERD_BAD_STACK,   ///< Stack overflow
+  SERD_BAD_SYNTAX,  ///< Invalid syntax
+  SERD_BAD_TEXT,    ///< Invalid text encoding
+  SERD_BAD_URI,     ///< Invalid or unresolved URI
+  SERD_BAD_WRITE,   ///< Error writing to file
+  SERD_BAD_DATA,    ///< Invalid data
 } SerdStatus;
 
 /// Return a string describing a status code

@@ -14,12 +14,16 @@ test_strerror(void)
 {
   const char* msg = serd_strerror(SERD_SUCCESS);
   assert(!strcmp(msg, "Success"));
-  for (int i = SERD_FAILURE; i <= SERD_ERR_BAD_INDEX; ++i) {
+
+  for (int i = SERD_FAILURE; i <= SERD_BAD_DATA; ++i) {
     msg = serd_strerror((SerdStatus)i);
     assert(strcmp(msg, "Success"));
   }
 
   msg = serd_strerror((SerdStatus)-1);
+  assert(!strcmp(msg, "Unknown error"));
+
+  msg = serd_strerror((SerdStatus)1000000);
   assert(!strcmp(msg, "Unknown error"));
 }
 

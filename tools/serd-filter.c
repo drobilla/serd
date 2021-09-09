@@ -53,7 +53,7 @@ on_pattern_event(void* const handle, const SerdEvent* const event)
   if (event->type == SERD_STATEMENT) {
     FilterPattern* const pat = (FilterPattern*)handle;
     if (pat->s) {
-      return SERD_ERR_BAD_DATA;
+      return SERD_BAD_PATTERN;
     }
 
     const SerdStatement* const statement = event->statement.statement;
@@ -151,7 +151,7 @@ run(Options opts)
 
   if (!pattern.stream) {
     log_error(app.world, "failed to open pattern");
-    return SERD_ERR_UNKNOWN;
+    return SERD_UNKNOWN_ERROR;
   }
 
   // Set up the output pipeline: filter -> writer
@@ -159,7 +159,7 @@ run(Options opts)
     parse_pattern(app.world, target, &pattern, !opts.invert);
   if (!filter) {
     log_error(app.world, "failed to set up filter");
-    return SERD_ERR_UNKNOWN;
+    return SERD_UNKNOWN_ERROR;
   }
 
   serd_close_input(&pattern);
@@ -247,7 +247,7 @@ parse_option(OptionIter* const iter, Options* const opts)
   }
 
   ARG_ERRORF("invalid option -- '%c'\n", opt);
-  return SERD_ERR_BAD_ARG;
+  return SERD_BAD_ARG;
 
 #undef ARG_ERRORF
 }
