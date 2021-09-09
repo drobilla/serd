@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2020 David Robillard <d@drobilla.net>
+  Copyright 2011-2021 David Robillard <d@drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -29,12 +29,12 @@
 typedef struct {
   const SerdNode* name;
   const SerdNode* uri;
-} SerdPrefix;
+} SerdEnvEntry;
 
 struct SerdEnvImpl {
   SerdNodes*      nodes;
-  SerdPrefix*     prefixes;
-  size_t          n_prefixes;
+  SerdEnvEntry*   entries;
+  size_t          n_entries;
   const SerdNode* base_uri_node;
   SerdURIView     base_uri;
 };
@@ -62,16 +62,17 @@ serd_env_copy(const SerdEnv* const env)
 
   SerdEnv* copy = (SerdEnv*)calloc(1, sizeof(struct SerdEnvImpl));
   if (copy) {
-    copy->nodes      = serd_nodes_new();
-    copy->n_prefixes = env->n_prefixes;
+    copy->nodes     = serd_nodes_new();
+    copy->n_entries = env->n_entries;
 
-    copy->prefixes = (SerdPrefix*)malloc(copy->n_prefixes * sizeof(SerdPrefix));
-    for (size_t i = 0; i < copy->n_prefixes; ++i) {
-      copy->prefixes[i].name =
-        serd_nodes_intern(copy->nodes, env->prefixes[i].name);
+    copy->entries =
+      (SerdEnvEntry*)malloc(copy->n_entries * sizeof(SerdEnvEntry));
+    for (size_t i = 0; i < copy->n_entries; ++i) {
+      copy->entries[i].name =
+        serd_nodes_intern(copy->nodes, env->entries[i].name);
 
-      copy->prefixes[i].uri =
-        serd_nodes_intern(copy->nodes, env->prefixes[i].uri);
+      copy->entries[i].uri =
+        serd_nodes_intern(copy->nodes, env->entries[i].uri);
     }
 
     const SerdNode* const base = serd_env_base_uri(env);
@@ -87,7 +88,7 @@ void
 serd_env_free(SerdEnv* const env)
 {
   if (env) {
-    free(env->prefixes);
+    free(env->entries);
     serd_nodes_free(env->nodes);
     free(env);
   }
@@ -100,14 +101,14 @@ serd_env_equals(const SerdEnv* const a, const SerdEnv* const b)
     return !a == !b;
   }
 
-  if (a->n_prefixes != b->n_prefixes ||
+  if (a->n_entries != b->n_entries ||
       !serd_node_equals(a->base_uri_node, b->base_uri_node)) {
     return false;
   }
 
-  for (size_t i = 0; i < a->n_prefixes; ++i) {
-    if (!serd_node_equals(a->prefixes[i].name, b->prefixes[i].name) ||
-        !serd_node_equals(a->prefixes[i].uri, b->prefixes[i].uri)) {
+  for (size_t i = 0; i < a->n_entries; ++i) {
+    if (!serd_node_equals(a->entries[i].name, b->entries[i].name) ||
+        !serd_node_equals(a->entries[i].uri, b->entries[i].uri)) {
       return false;
     }
   }
@@ -154,16 +155,16 @@ serd_env_set_base_uri(SerdEnv* const env, const SerdStringView uri)
 }
 
 SERD_PURE_FUNC
-static SerdPrefix*
+static SerdEnvEntry*
 serd_env_find(const SerdEnv* const env,
               const char* const    name,
               const size_t         name_len)
 {
-  for (size_t i = 0; i < env->n_prefixes; ++i) {
-    const SerdNode* const prefix_name = env->prefixes[i].name;
-    if (prefix_name->length == name_len) {
-      if (!memcmp(serd_node_string(prefix_name), name, name_len)) {
-        return &env->prefixes[i];
+  for (size_t i = 0; i < env->n_entries; ++i) {
+    const SerdNode* const entry_name = env->entries[i].name;
+    if (entry_name->length == name_len) {
+      if (!memcmp(serd_node_string(entry_name), name, name_len)) {
+        return &env->entries[i];
       }
     }
   }
@@ -175,20 +176,19 @@ serd_env_add(SerdEnv* const        env,
              const SerdStringView  name,
              const SerdNode* const uri)
 {
-  SerdPrefix* const prefix = serd_env_find(env, name.buf, name.len);
-  if (prefix) {
-    if (strcmp(serd_node_string(prefix->uri), serd_node_string(uri))) {
-      serd_nodes_deref(env->nodes, prefix->uri);
-      prefix->uri = uri;
+  SerdEnvEntry* const entry = serd_env_find(env, name.buf, name.len);
+  if (entry) {
+    if (strcmp(serd_node_string(entry->uri), serd_node_string(uri))) {
+      serd_nodes_deref(env->nodes, entry->uri);
+      entry->uri = uri;
     }
   } else {
-    env->prefixes = (SerdPrefix*)realloc(
-      env->prefixes, (++env->n_prefixes) * sizeof(SerdPrefix));
+    env->entries = (SerdEnvEntry*)realloc(
+      env->entries, (++env->n_entries) * sizeof(SerdEnvEntry));
 
-    env->prefixes[env->n_prefixes - 1].name =
-      serd_nodes_string(env->nodes, name);
+    env->entries[env->n_entries - 1].name = serd_nodes_string(env->nodes, name);
 
-    env->prefixes[env->n_prefixes - 1].uri = uri;
+    env->entries[env->n_entries - 1].uri = uri;
   }
 }
 
@@ -231,14 +231,14 @@ serd_env_qualify_in_place(const SerdEnv* const   env,
                           const SerdNode** const prefix,
                           SerdStringView* const  suffix)
 {
-  for (size_t i = 0; i < env->n_prefixes; ++i) {
-    const SerdNode* const prefix_uri = env->prefixes[i].uri;
+  for (size_t i = 0; i < env->n_entries; ++i) {
+    const SerdNode* const prefix_uri = env->entries[i].uri;
     if (uri->length >= prefix_uri->length) {
       const char* prefix_str = serd_node_string(prefix_uri);
       const char* uri_str    = serd_node_string(uri);
 
       if (!strncmp(uri_str, prefix_str, prefix_uri->length)) {
-        *prefix     = env->prefixes[i].name;
+        *prefix     = env->entries[i].name;
         suffix->buf = uri_str + prefix_uri->length;
         suffix->len = uri->length - prefix_uri->length;
         return true;
@@ -261,8 +261,8 @@ serd_env_expand_in_place(const SerdEnv* const  env,
     return SERD_ERR_BAD_ARG;
   }
 
-  const size_t            name_len = (size_t)(colon - str);
-  const SerdPrefix* const prefix   = serd_env_find(env, str, name_len);
+  const size_t              name_len = (size_t)(colon - str);
+  const SerdEnvEntry* const prefix   = serd_env_find(env, str, name_len);
   if (prefix) {
     uri_prefix->buf = prefix->uri ? serd_node_string(prefix->uri) : "";
     uri_prefix->len = prefix->uri ? prefix->uri->length : 0;
@@ -331,7 +331,7 @@ serd_env_write_prefixes(const SerdEnv* const env, const SerdSink* const sink)
   assert(env);
   assert(sink);
 
-  for (size_t i = 0; i < env->n_prefixes; ++i) {
-    serd_sink_write_prefix(sink, env->prefixes[i].name, env->prefixes[i].uri);
+  for (size_t i = 0; i < env->n_entries; ++i) {
+    serd_sink_write_prefix(sink, env->entries[i].name, env->entries[i].uri);
   }
 }
