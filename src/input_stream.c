@@ -54,10 +54,10 @@ serd_string_close(void* const stream)
 }
 
 SerdInputStream
-serd_open_input_stream(SerdReadFunc SERD_NONNULL         read_func,
-                       SerdStreamErrorFunc SERD_NONNULL  error_func,
-                       SerdStreamCloseFunc SERD_NULLABLE close_func,
-                       void* const                       stream)
+serd_open_input_stream(SerdReadFunc SERD_NONNULL   read_func,
+                       SerdErrorFunc SERD_NONNULL  error_func,
+                       SerdCloseFunc SERD_NULLABLE close_func,
+                       void* const                 stream)
 {
   assert(read_func);
   assert(error_func);
@@ -116,8 +116,8 @@ serd_open_input_file(const char* const path)
 
   input.stream = file;
   input.read   = (SerdReadFunc)fread;
-  input.error  = (SerdStreamErrorFunc)ferror;
-  input.close  = (SerdStreamCloseFunc)fclose;
+  input.error  = (SerdErrorFunc)ferror;
+  input.close  = (SerdCloseFunc)fclose;
 
   return input;
 }

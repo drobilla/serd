@@ -19,9 +19,9 @@
 #endif
 
 SerdOutputStream
-serd_open_output_stream(SerdWriteFunc const       write_func,
-                        SerdStreamCloseFunc const close_func,
-                        void* const               stream)
+serd_open_output_stream(SerdWriteFunc const write_func,
+                        SerdCloseFunc const close_func,
+                        void* const         stream)
 {
   assert(write_func);
 
@@ -58,7 +58,7 @@ serd_open_output_file(const char* const path)
 #endif
 
   return serd_open_output_stream(
-    (SerdWriteFunc)fwrite, (SerdStreamCloseFunc)fclose, file);
+    (SerdWriteFunc)fwrite, (SerdCloseFunc)fclose, file);
 }
 
 SerdStatus
