@@ -45,7 +45,7 @@ serd_tool_setup(SerdTool* const   tool,
             "%s: failed to open output file (%s)\n",
             program,
             strerror(errno));
-    return SERD_ERR_UNKNOWN;
+    return SERD_UNKNOWN_ERROR;
   }
 
   // We have something to write to, so build the writing environment
@@ -61,7 +61,7 @@ serd_tool_setup(SerdTool* const   tool,
           &tool->out,
           options.block_size))) {
     fprintf(stderr, "%s: failed to set up writing environment\n", program);
-    return SERD_ERR_INTERNAL;
+    return SERD_UNKNOWN_ERROR;
   }
 
   return SERD_SUCCESS;
@@ -121,7 +121,7 @@ serd_get_argument(OptionIter* const iter, const char** const argument)
   if (iter->argv[iter->a][iter->f] || (iter->a + 1) == iter->argc) {
     fprintf(
       stderr, "%s: option requires an argument -- %c\n", iter->argv[0], flag);
-    return SERD_ERR_BAD_ARG;
+    return SERD_BAD_ARG;
   }
 
   *argument = iter->argv[++iter->a];
@@ -142,7 +142,7 @@ serd_get_size_argument(OptionIter* const iter, size_t* const argument)
   char*      endptr = NULL;
   const long size   = strtol(string, &endptr, 10);
   if (size <= 0 || size == LONG_MAX || *endptr != '\0') {
-    return SERD_ERR_BAD_ARG;
+    return SERD_BAD_ARG;
   }
 
   *argument = (size_t)size;
@@ -182,7 +182,7 @@ serd_set_input_option(const SerdStringView   name,
     }
   }
 
-  return SERD_ERR_BAD_ARG;
+  return SERD_BAD_ARG;
 }
 
 SerdStatus
@@ -239,7 +239,7 @@ serd_set_output_option(const SerdStringView   name,
     }
   }
 
-  return SERD_ERR_BAD_ARG;
+  return SERD_BAD_ARG;
 }
 
 SerdStatus
@@ -385,12 +385,12 @@ serd_set_base_uri_from_path(SerdEnv* const env, const char* const path)
 {
   const size_t path_len = path ? strlen(path) : 0u;
   if (!path_len) {
-    return SERD_ERR_BAD_ARG;
+    return SERD_BAD_ARG;
   }
 
   char* const real_path = serd_canonical_path(path);
   if (!real_path) {
-    return SERD_ERR_BAD_ARG;
+    return SERD_BAD_ARG;
   }
 
   const size_t real_path_len = strlen(real_path);
@@ -456,7 +456,7 @@ serd_read_inputs(SerdWorld* const        world,
     // Open the input stream
     SerdInputStream in = serd_open_tool_input(in_path);
     if (!in.stream) {
-      return SERD_ERR_BAD_ARG;
+      return SERD_BAD_ARG;
     }
 
     // Read the entire file
