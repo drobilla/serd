@@ -202,7 +202,7 @@ test_read_eof_by_page(void)
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0u, env, sink, 4096);
 
   SerdInputStream in = serd_open_input_stream(
-    (SerdReadFunc)fread, (SerdStreamErrorFunc)ferror, NULL, temp);
+    (SerdReadFunc)fread, (SerdErrorFunc)ferror, NULL, temp);
 
   assert(serd_reader_start(reader, &in, NULL, 4096) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
@@ -230,11 +230,8 @@ test_read_eof_by_byte(void)
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0u, env, sink, 4096);
 
   size_t          n_reads = 0u;
-  SerdInputStream in =
-    serd_open_input_stream((SerdReadFunc)eof_test_read,
-                           (SerdStreamErrorFunc)eof_test_error,
-                           NULL,
-                           &n_reads);
+  SerdInputStream in      = serd_open_input_stream(
+    (SerdReadFunc)eof_test_read, (SerdErrorFunc)eof_test_error, NULL, &n_reads);
 
   assert(serd_reader_start(reader, &in, NULL, 1) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
@@ -267,8 +264,8 @@ test_read_chunks(void)
 
   assert(reader);
 
-  SerdInputStream in = serd_open_input_stream(
-    (SerdReadFunc)fread, (SerdStreamErrorFunc)ferror, NULL, f);
+  SerdInputStream in =
+    serd_open_input_stream((SerdReadFunc)fread, (SerdErrorFunc)ferror, NULL, f);
 
   SerdStatus st = serd_reader_start(reader, &in, NULL, 1);
   assert(st == SERD_SUCCESS);

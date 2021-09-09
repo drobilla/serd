@@ -343,22 +343,25 @@ typedef size_t (*SerdWriteFunc)(const void* SERD_NONNULL buf,
                                 void* SERD_NONNULL       stream);
 
 /**
-   Function to detect I/O stream errors.
+   Function for detecting I/O stream errors.
 
-   Identical semantics to `ferror`.
+   This has identical semantics to `ferror`.
 
    @return Non-zero if `stream` has encountered an error.
 */
-typedef int (*SerdStreamErrorFunc)(void* SERD_NONNULL stream);
+typedef int (*SerdErrorFunc)(void* SERD_NONNULL stream);
 
 /**
-   Function to close an I/O stream.
+   Function for closing an I/O stream.
 
-   Identical semantics to `fclose`.
+   This has identical semantics to `fclose`.  Note that when writing, this may
+   flush the stream which can cause errors, including errors caused by previous
+   writes that appeared successful at the time.  Therefore it is necessary to
+   check the return value of this function to properly detect write errors.
 
    @return Non-zero if `stream` has encountered an error.
 */
-typedef int (*SerdStreamCloseFunc)(void* SERD_NONNULL stream);
+typedef int (*SerdCloseFunc)(void* SERD_NONNULL stream);
 
 /**
    @}
@@ -2113,10 +2116,10 @@ serd_node_to_syntax(const SerdNode* SERD_NONNULL node,
 
 /// An input stream that produces bytes
 typedef struct {
-  void* SERD_NULLABLE               stream; ///< Opaque parameter for functions
-  SerdReadFunc SERD_NULLABLE        read;   ///< Read bytes to input
-  SerdStreamErrorFunc SERD_NONNULL  error;  ///< Stream error accessor
-  SerdStreamCloseFunc SERD_NULLABLE close;  ///< Close input
+  void* SERD_NULLABLE         stream; ///< Opaque parameter for functions
+  SerdReadFunc SERD_NULLABLE  read;   ///< Read bytes to input
+  SerdErrorFunc SERD_NONNULL  error;  ///< Stream error accessor
+  SerdCloseFunc SERD_NULLABLE close;  ///< Close input
 } SerdInputStream;
 
 /**
@@ -2131,10 +2134,10 @@ typedef struct {
 */
 SERD_API
 SerdInputStream
-serd_open_input_stream(SerdReadFunc SERD_NONNULL         read_func,
-                       SerdStreamErrorFunc SERD_NONNULL  error_func,
-                       SerdStreamCloseFunc SERD_NULLABLE close_func,
-                       void* SERD_NULLABLE               stream);
+serd_open_input_stream(SerdReadFunc SERD_NONNULL   read_func,
+                       SerdErrorFunc SERD_NONNULL  error_func,
+                       SerdCloseFunc SERD_NULLABLE close_func,
+                       void* SERD_NULLABLE         stream);
 
 /**
    Open a stream that reads from a string.
@@ -2326,8 +2329,8 @@ serd_reader_free(SerdReader* SERD_NULLABLE reader);
    @defgroup serd_buffer Buffer
 
    The #SerdBuffer type represents a writable area of memory with a known size.
-   An implementation of #SerdWriteFunc, #SerdStreamErrorFunc, and
-   #SerdStreamCloseFunc are provided which allow output to be written to a
+   An implementation of #SerdWriteFunc, #SerdErrorFunc, and
+   #SerdCloseFunc are provided which allow output to be written to a
    buffer in memory instead of to a file as with `fwrite`, `ferror`, and
    `fclose`.
 
@@ -2380,9 +2383,9 @@ serd_buffer_close(void* SERD_NONNULL stream);
 
 /// An output stream that receives bytes
 typedef struct {
-  void* SERD_NULLABLE               stream; ///< Opaque parameter for functions
-  SerdWriteFunc SERD_NULLABLE       write;  ///< Write bytes to output
-  SerdStreamCloseFunc SERD_NULLABLE close;  ///< Close output
+  void* SERD_NULLABLE         stream; ///< Opaque parameter for functions
+  SerdWriteFunc SERD_NULLABLE write;  ///< Write bytes to output
+  SerdCloseFunc SERD_NULLABLE close;  ///< Close output
 } SerdOutputStream;
 
 /**
@@ -2396,9 +2399,9 @@ typedef struct {
 */
 SERD_API
 SerdOutputStream
-serd_open_output_stream(SerdWriteFunc SERD_NONNULL        write_func,
-                        SerdStreamCloseFunc SERD_NULLABLE close_func,
-                        void* SERD_NULLABLE               stream);
+serd_open_output_stream(SerdWriteFunc SERD_NONNULL  write_func,
+                        SerdCloseFunc SERD_NULLABLE close_func,
+                        void* SERD_NULLABLE         stream);
 
 /**
    Open a stream that writes to a buffer.
