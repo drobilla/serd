@@ -12,7 +12,7 @@ serd_block_dumper_open(SerdBlockDumper* const  dumper,
                        const size_t            block_size)
 {
   if (!block_size) {
-    return SERD_ERR_BAD_ARG;
+    return SERD_BAD_ARG;
   }
 
   dumper->out        = output;
@@ -25,7 +25,7 @@ serd_block_dumper_open(SerdBlockDumper* const  dumper,
   }
 
   dumper->buf = (char*)serd_allocate_buffer(block_size);
-  return dumper->buf ? SERD_SUCCESS : SERD_ERR_INTERNAL;
+  return dumper->buf ? SERD_SUCCESS : SERD_BAD_ALLOC;
 }
 
 void

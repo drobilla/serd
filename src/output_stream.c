@@ -75,5 +75,5 @@ serd_close_output(SerdOutputStream* const output)
     output->stream = NULL;
   }
 
-  return ret ? SERD_ERR_UNKNOWN : SERD_SUCCESS;
+  return ret ? SERD_BAD_WRITE : SERD_SUCCESS;
 }

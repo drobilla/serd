@@ -13,8 +13,8 @@
 /**
    Expand `curie`.
 
-   Errors: SERD_ERR_BAD_ARG if `curie` is not valid, or SERD_ERR_BAD_CURIE if
-   prefix is not defined in `env`.
+   Errors: SERD_BAD_ARG if `curie` is not valid, or SERD_BAD_CURIE if prefix is
+   not defined in `env`.
 */
 SerdStatus
 serd_env_expand_in_place(const SerdEnv*  env,

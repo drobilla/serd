@@ -122,7 +122,7 @@ serd_vxlogf(const SerdWorld* const    world,
     const int r            = vsnprintf(message, sizeof(message), fmt, args);
 
     return (r <= 0 || (size_t)r >= sizeof(message))
-             ? SERD_ERR_BAD_ARG
+             ? SERD_BAD_ARG
              : world->log_func(world->log_handle,
                                level,
                                n_fields,

@@ -146,7 +146,7 @@ SerdStatus
 serd_cursor_scan_next(SerdCursor* const cursor)
 {
   if (zix_btree_iter_is_end(cursor->iter) || !check_version(cursor)) {
-    return SERD_ERR_BAD_CURSOR;
+    return SERD_BAD_CURSOR;
   }
 
   switch (cursor->strategy.mode) {
@@ -176,7 +176,7 @@ serd_cursor_advance(SerdCursor* const cursor)
   assert(cursor);
 
   if (zix_btree_iter_is_end(cursor->iter) || !check_version(cursor)) {
-    return SERD_ERR_BAD_CURSOR;
+    return SERD_BAD_CURSOR;
   }
 
   const ZixStatus zst = zix_btree_iter_increment(&cursor->iter);

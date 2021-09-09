@@ -32,12 +32,12 @@ SerdStatus
 read_LANGTAG(SerdReader* const reader)
 {
   if (!is_alpha(peek_byte(reader))) {
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected A-Z or a-z");
+    return r_err(reader, SERD_BAD_SYNTAX, "expected A-Z or a-z");
   }
 
   SerdNode* const node = push_node(reader, SERD_LITERAL, "", 0);
   if (!node) {
-    return SERD_ERR_OVERFLOW;
+    return SERD_BAD_STACK;
   }
 
   // First component must be all letters
@@ -69,7 +69,7 @@ SerdStatus
 read_EOL(SerdReader* const reader)
 {
   if (!is_EOL(peek_byte(reader))) {
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected a line ending");
+    return r_err(reader, SERD_BAD_SYNTAX, "expected a line ending");
   }
 
   while (is_EOL(peek_byte(reader))) {
@@ -84,10 +84,8 @@ read_IRI_scheme(SerdReader* const reader, SerdNode* const dest)
 {
   int c = peek_byte(reader);
   if (!is_alpha(c)) {
-    return r_err(reader,
-                 SERD_ERR_BAD_SYNTAX,
-                 "'%c' is not a valid first IRI character",
-                 c);
+    return r_err(
+      reader, SERD_BAD_SYNTAX, "'%c' is not a valid first IRI character", c);
   }
 
   SerdStatus st = SERD_SUCCESS;
@@ -99,12 +97,12 @@ read_IRI_scheme(SerdReader* const reader, SerdNode* const dest)
     st = is_uri_scheme_char(c)
            ? push_byte(reader, dest, eat_byte_safe(reader, c))
            : r_err(reader,
-                   SERD_ERR_BAD_SYNTAX,
+                   SERD_BAD_SYNTAX,
                    "U+%04X is not a valid IRI scheme character",
                    (unsigned)c);
   }
 
-  return st ? st : SERD_ERR_BAD_SYNTAX;
+  return st ? st : SERD_BAD_SYNTAX;
 }
 
 SerdStatus
@@ -117,7 +115,7 @@ read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
     const int c = eat_byte(reader);
     switch (c) {
     case EOF:
-      return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file");
+      return r_err(reader, SERD_BAD_SYNTAX, "unexpected end of file");
 
     case ' ':
     case '"':
@@ -128,7 +126,7 @@ read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
     case '|':
     case '}':
       return r_err(
-        reader, SERD_ERR_BAD_SYNTAX, "'%c' is not a valid IRI character", c);
+        reader, SERD_BAD_SYNTAX, "'%c' is not a valid IRI character", c);
 
     case '>':
       return SERD_SUCCESS;
@@ -139,10 +137,8 @@ read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
       }
 
       if (!code || code == ' ' || code == '<' || code == '>') {
-        return r_err(reader,
-                     SERD_ERR_BAD_SYNTAX,
-                     "U+%04X is not a valid IRI character",
-                     code);
+        return r_err(
+          reader, SERD_BAD_SYNTAX, "U+%04X is not a valid IRI character", code);
       }
 
       break;
@@ -150,7 +146,7 @@ read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
     default:
       if (c <= 0x20) {
         st = r_err(reader,
-                   SERD_ERR_BAD_SYNTAX,
+                   SERD_BAD_SYNTAX,
                    "control character U+%04X is not a valid IRI character",
                    (uint32_t)c);
 
@@ -182,7 +178,7 @@ read_IRI(SerdReader* const reader, SerdNode** const dest)
   eat_byte(reader);
 
   if (!(*dest = push_node(reader, SERD_URI, "", 0))) {
-    return SERD_ERR_OVERFLOW;
+    return SERD_BAD_STACK;
   }
 
   SerdStatus st = SERD_SUCCESS;
@@ -214,10 +210,10 @@ read_STRING_LITERAL(SerdReader* const reader,
     uint32_t  code = 0;
     switch (c) {
     case EOF:
-      return r_err(reader, SERD_ERR_BAD_SYNTAX, "end of file in short string");
+      return r_err(reader, SERD_BAD_SYNTAX, "end of file in short string");
     case '\n':
     case '\r':
-      return r_err(reader, SERD_ERR_BAD_SYNTAX, "line end in short string");
+      return r_err(reader, SERD_BAD_SYNTAX, "line end in short string");
     case '\\':
       eat_byte_safe(reader, c);
       if ((st = read_ECHAR(reader, ref)) &&
@@ -255,7 +251,7 @@ adjust_blank_id(SerdReader* const reader, char* const buf)
     } else if (tag == 'B' && reader->seen_genid) {
       // We've seen both b123 and B123 styles, abort due to possible clashes
       return r_err(reader,
-                   SERD_ERR_ID_CLASH,
+                   SERD_BAD_LABEL,
                    "found both `b' and `B' blank IDs, prefix required");
     }
   }
@@ -278,7 +274,7 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
 
   if (!(*dest = push_node(
           reader, SERD_BLANK, reader->bprefix, reader->bprefix_len))) {
-    return SERD_ERR_OVERFLOW;
+    return SERD_BAD_STACK;
   }
 
   // Read first: (PN_CHARS_U | [0-9])
@@ -365,7 +361,7 @@ read_UCHAR(SerdReader* const reader,
     length = 4;
     break;
   default:
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected 'U' or 'u'");
+    return r_err(reader, SERD_BAD_SYNTAX, "expected 'U' or 'u'");
   }
   eat_byte_safe(reader, b);
 
@@ -373,7 +369,7 @@ read_UCHAR(SerdReader* const reader,
   uint8_t buf[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
   for (unsigned i = 0; i < length; ++i) {
     if (!(buf[i] = read_HEX(reader))) {
-      return SERD_ERR_BAD_SYNTAX;
+      return SERD_BAD_SYNTAX;
     }
   }
 
@@ -385,7 +381,7 @@ read_UCHAR(SerdReader* const reader,
   if (!size) {
     *code_point = 0xFFFD;
     return (reader->strict
-              ? r_err(reader, SERD_ERR_BAD_SYNTAX, "U+%X is out of range", code)
+              ? r_err(reader, SERD_BAD_SYNTAX, "U+%X is out of range", code)
               : push_bytes(reader, node, replacement_char, 3));
   }
 
@@ -419,7 +415,7 @@ read_ECHAR(SerdReader* const reader, SerdNode* const dest)
   case '\'':
     return push_byte(reader, dest, eat_byte_safe(reader, c));
   default:
-    return SERD_ERR_BAD_SYNTAX;
+    return SERD_BAD_SYNTAX;
   }
 }
 
@@ -444,12 +440,10 @@ read_PN_CHARS_BASE(SerdReader* const reader, SerdNode* const dest)
   }
 
   if (!is_PN_CHARS_BASE((int)code)) {
-    r_err(reader,
-          SERD_ERR_BAD_SYNTAX,
-          "U+%04X is not a valid name character",
-          code);
+    r_err(
+      reader, SERD_BAD_SYNTAX, "U+%04X is not a valid name character", code);
     if (reader->strict) {
-      return SERD_ERR_BAD_SYNTAX;
+      return SERD_BAD_SYNTAX;
     }
   }
 
@@ -481,7 +475,7 @@ read_PN_CHARS(SerdReader* const reader, SerdNode* const dest)
   SerdStatus st = SERD_SUCCESS;
 
   if (c == EOF) {
-    return SERD_ERR_NO_DATA;
+    return SERD_NO_DATA;
   }
 
   if (is_alpha(c) || is_digit(c) || c == '_' || c == '-') {
@@ -500,10 +494,8 @@ read_PN_CHARS(SerdReader* const reader, SerdNode* const dest)
   if (!is_PN_CHARS_BASE((int)code) && code != 0xB7 &&
       !(code >= 0x0300 && code <= 0x036F) &&
       !(code >= 0x203F && code <= 0x2040)) {
-    return r_err(reader,
-                 SERD_ERR_BAD_SYNTAX,
-                 "U+%04X is not a valid name character",
-                 code);
+    return r_err(
+      reader, SERD_BAD_SYNTAX, "U+%04X is not a valid name character", code);
   }
 
   return st;
@@ -518,7 +510,7 @@ read_HEX(SerdReader* const reader)
     return (uint8_t)eat_byte_safe(reader, c);
   }
 
-  r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid hexadecimal digit `%c'", c);
+  r_err(reader, SERD_BAD_SYNTAX, "invalid hexadecimal digit `%c'", c);
   return 0;
 }
 
@@ -548,12 +540,11 @@ read_Var(SerdReader* const reader, SerdNode** const dest)
   assert(peek_byte(reader) == '$' || peek_byte(reader) == '?');
 
   if (!(reader->flags & SERD_READ_VARIABLES)) {
-    return r_err(
-      reader, SERD_ERR_BAD_SYNTAX, "syntax does not support variables");
+    return r_err(reader, SERD_BAD_SYNTAX, "syntax does not support variables");
   }
 
   if (!(*dest = push_node(reader, SERD_VARIABLE, "", 0))) {
-    return SERD_ERR_OVERFLOW;
+    return SERD_BAD_STACK;
   }
 
   serd_byte_source_advance(reader->source);
@@ -584,7 +575,7 @@ read_literal(SerdReader* const reader, SerdNode** const dest)
   SerdStatus st = SERD_SUCCESS;
 
   if (!(*dest = push_node(reader, SERD_LITERAL, "", 0))) {
-    return SERD_ERR_OVERFLOW;
+    return SERD_BAD_STACK;
   }
 
   eat_byte_safe(reader, '"');
@@ -631,7 +622,7 @@ read_nt_subject(SerdReader* const reader, SerdNode** const dest)
     break;
   }
 
-  return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected '<' or '_'");
+  return r_err(reader, SERD_BAD_SYNTAX, "expected '<' or '_'");
 }
 
 /// [4] predicate
@@ -664,7 +655,7 @@ read_nt_object(SerdReader* const reader,
     return read_BLANK_NODE_LABEL(reader, dest, ate_dot);
 
   default:
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected '<', '_', or '\"'");
+    return r_err(reader, SERD_BAD_SYNTAX, "expected '<', '_', or '\"'");
   }
 }
 

@@ -31,7 +31,7 @@ serd_byte_source_page(SerdByteSource* const source)
     buf[n_read] = '\0';
     if (n_read == 0) {
       source->eof = true;
-      return (source->in->error(source->in->stream) ? SERD_ERR_UNKNOWN
+      return (source->in->error(source->in->stream) ? SERD_BAD_READ
                                                     : SERD_FAILURE);
     }
   }
