@@ -186,7 +186,7 @@ serd_cursor_advance(SerdCursor* const cursor)
   assert(cursor);
 
   if (zix_btree_iter_is_end(cursor->iter) || !check_version(cursor)) {
-    return SERD_ERR_BAD_CURSOR;
+    return SERD_BAD_CURSOR;
   }
 
   const ZixStatus zst = zix_btree_iter_increment(&cursor->iter);
