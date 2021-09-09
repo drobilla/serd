@@ -336,13 +336,14 @@ serd_env_expand_term_in_place(const SerdEnv*   env,
     uri_suffix->buf = colon + 1;
     uri_suffix->len = term->length - prefix_len - 1;
 
-  } else {
-    if ((entry = serd_env_find(env, str, term->length))) {
-      uri_prefix->buf = serd_node_string(entry->uri);
-      uri_prefix->len = entry->uri ? entry->uri->length : 0;
-      uri_suffix->buf = NULL;
-      uri_suffix->len = 0;
-    }
+    return SERD_SUCCESS;
+  }
+
+  if ((entry = serd_env_find(env, str, term->length))) {
+    uri_prefix->buf = serd_node_string(entry->uri);
+    uri_prefix->len = entry->uri ? entry->uri->length : 0;
+    uri_suffix->buf = NULL;
+    uri_suffix->len = 0;
   }
 
   if (datatype) {

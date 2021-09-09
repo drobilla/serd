@@ -247,11 +247,11 @@ read_uri(SerdReader* const reader, SerdNode** dest)
     return st;
   }
 
-  SerdStringView prefix = {NULL, 0};
-  SerdStringView suffix = {NULL, 0};
-  SerdNode*      node   = *dest;
+  /* SerdStringView prefix = {NULL, 0}; */
+  /* SerdStringView suffix = {NULL, 0}; */
+  SerdNode* node = *dest;
 
-  // fprintf(stderr, "EXPAND %s\n", serd_node_string(node));
+  /* fprintf(stderr, "EXPAND %s\n", serd_node_string(node)); */
 
   node->type = SERD_URI;
   if (!(st = expand_term(reader, node, dest, NULL))) {
@@ -476,9 +476,43 @@ read_array(SerdReader* const reader, ReadContext ctx, SerdNode** dest)
   SerdNode* vref = 0;
   while (!st) {
     if ((st = read_value(reader, ctx, &vref))) {
+      /* fprintf(stderr, "ARRAY VALUE ERR %s\n", serd_strerror(st)); */
       return st;
     }
     emit_statement(reader, ctx, vref);
+    skip_ws(reader);
+    if (peek_byte(reader) == ',') {
+      read_sep(reader, ',');
+    } else {
+      break;
+    }
+  }
+
+  return st ? st : read_sep(reader, ']');
+}
+
+static SerdStatus
+read_uri_array(SerdReader* const reader, ReadContext ctx, SerdNode** dest)
+{
+  (void)dest; // FIXME
+
+  SerdStatus st;
+  if ((st = read_sep(reader, '['))) {
+    return st;
+  } else if (peek_byte(reader) == ']') {
+    read_sep(reader, ']');
+    return SERD_SUCCESS;
+  }
+
+  SerdNode* vref = 0;
+  while (!st) {
+    if ((st = read_uri(reader, &vref))) {
+      /* fprintf(stderr, "ARRAY VALUE ERR %s\n", serd_strerror(st)); */
+      return st;
+    }
+    /* fprintf(stderr, "ARRAY VALUE %s\n", serd_node_string(vref)); */
+    st = emit_statement(reader, ctx, vref);
+    assert(!st);
     skip_ws(reader);
     if (peek_byte(reader) == ',') {
       read_sep(reader, ',');
@@ -506,7 +540,11 @@ read_list(SerdReader* const reader, ReadContext ctx)
   }
 
   // subject predicate _:head
-  *dest = blank_id(reader);
+
+  if (!(*dest = blank_id(reader))) {
+    return SERD_ERR_OVERFLOW;
+  }
+
   emit_statement(reader, ctx, *dest);
 
   /* The order of node allocation here is necessarily not in stack order,
@@ -692,6 +730,33 @@ start_object(SerdReader* const reader, ReadContext ctx, SerdNode* node)
 }
 
 static SerdStatus
+read_node_type(SerdReader* const reader,
+               ReadContext       ctx,
+               SerdNode* const   node_id)
+{
+  (void)ctx;
+  (void)node_id;
+
+  skip_ws(reader);
+
+  /* fprintf(stderr, "READ NODE TYPE\n"); */
+  if (peek_byte(reader) == '[') {
+    ctx.subject   = node_id;
+    ctx.predicate = reader->rdf_type;
+    read_uri_array(reader, ctx, NULL);
+  } else {
+    SerdNode* value = NULL;
+    read_uri(reader, &value);
+
+    ctx.subject   = node_id;
+    ctx.predicate = reader->rdf_type;
+    maybe_emit_statement(reader, ctx, value, NULL, NULL);
+  }
+
+  return SERD_ERR_INTERNAL;
+}
+
+static SerdStatus
 read_node_object(SerdReader* const reader, ReadContext ctx)
 {
   SerdStatus st;
@@ -699,8 +764,12 @@ read_node_object(SerdReader* const reader, ReadContext ctx)
     return st;
   }
 
-  SerdNode* id =
-    push_node_padded(reader, genid_length(reader), SERD_BLANK, "", 0);
+  SerdNode* id = blank_id(reader);
+  //    push_node_padded(reader, genid_length(reader), SERD_BLANK, "", 0);
+
+  if (!id) {
+    return SERD_ERR_OVERFLOW;
+  }
 
   SerdNode* key        = NULL;
   SerdNode* value      = NULL;
@@ -723,14 +792,16 @@ read_node_object(SerdReader* const reader, ReadContext ctx)
     /* "@index"; */
 
     const char* key_str = serd_node_string(key);
-    // fprintf(stderr, "KEY: %s\n", key_str);
+    /* fprintf(stderr, "KEY: %s\n", key_str); */
     if (!strcmp(key_str, "@list")) {
-      read_list(reader, ctx);
+      st = read_list(reader, ctx);
     } else if (!strcmp(key_str, "@value")) {
       is_literal = true;
       if ((st = read_string(reader, &value))) {
         return pop_err(reader, st, key);
       }
+    } else if (!strcmp(key_str, "@type")) {
+      st = read_node_type(reader, ctx, id);
     } else if (is_literal) {
       if (!strcmp(key_str, "@type")) {
         if ((st = read_uri(reader, &datatype))) {

@@ -48,6 +48,7 @@ struct SerdReaderImpl {
   const SerdSink* sink;
   SerdLogFunc     log_func;
   void*           error_handle;
+  SerdNode*       rdf_type;
   SerdNode*       rdf_first;
   SerdNode*       rdf_rest;
   SerdNode*       rdf_nil;

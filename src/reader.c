@@ -278,11 +278,13 @@ serd_reader_new(SerdWorld* const      world,
   // Reserve a bit of space at the end of the stack to zero pad nodes
   me->stack.buf_size -= serd_node_align;
 
+  me->rdf_type  = push_node(me, SERD_URI, NS_RDF "type", 47);
   me->rdf_first = push_node(me, SERD_URI, NS_RDF "first", 48);
   me->rdf_rest  = push_node(me, SERD_URI, NS_RDF "rest", 47);
   me->rdf_nil   = push_node(me, SERD_URI, NS_RDF "nil", 46);
 
   // The initial stack size check should cover this
+  assert(me->rdf_type);
   assert(me->rdf_first);
   assert(me->rdf_rest);
   assert(me->rdf_nil);
