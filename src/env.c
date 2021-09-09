@@ -346,7 +346,7 @@ serd_env_expand_term_in_place(const SerdEnv*   env,
     uri_suffix->len = 0;
   }
 
-  if (datatype) {
+  if (datatype && entry) {
     *datatype = entry->datatype;
   }
 

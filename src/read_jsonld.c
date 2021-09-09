@@ -757,9 +757,22 @@ read_node_type(SerdReader* const reader,
 }
 
 static SerdStatus
+read_graph(SerdReader* const reader, const ReadContext ctx)
+{
+  SerdStatus st = SERD_SUCCESS;
+  if ((st = read_sep(reader, '['))) {
+    return st;
+  }
+
+  while (!(st = read_node_object(reader, ctx))) {}
+
+  return st;
+}
+
+static SerdStatus
 read_node_object(SerdReader* const reader, ReadContext ctx)
 {
-  SerdStatus st;
+  SerdStatus st = SERD_SUCCESS;
   if ((st = read_sep(reader, '{'))) {
     return st;
   }
@@ -795,6 +808,8 @@ read_node_object(SerdReader* const reader, ReadContext ctx)
     /* fprintf(stderr, "KEY: %s\n", key_str); */
     if (!strcmp(key_str, "@list")) {
       st = read_list(reader, ctx);
+    } else if (!strcmp(key_str, "@graph")) {
+      st = read_graph(reader, ctx);
     } else if (!strcmp(key_str, "@value")) {
       is_literal = true;
       if ((st = read_string(reader, &value))) {
