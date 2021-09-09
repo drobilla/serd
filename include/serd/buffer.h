@@ -15,10 +15,9 @@ SERD_BEGIN_DECLS
    @ingroup serd
 
    The #SerdBuffer type represents a writable area of memory with a known size.
-   An implementation of #SerdWriteFunc, #SerdStreamErrorFunc, and
-   #SerdStreamCloseFunc are provided which allow output to be written to a
-   buffer in memory instead of to a file as with `fwrite`, `ferror`, and
-   `fclose`.
+   An implementation of #SerdWriteFunc, #SerdErrorFunc, and #SerdCloseFunc are
+   provided which allow output to be written to a buffer in memory instead of
+   to a file as with `fwrite`, `ferror`, and `fclose`.
 
    @{
 */
