@@ -127,7 +127,7 @@ serd_canon_on_statement(SerdCanonData* const       data,
     }
 
     serd_world_logf_internal(data->world,
-                             SERD_ERR_INVALID,
+                             SERD_BAD_LITERAL,
                              lax ? SERD_LOG_LEVEL_WARNING
                                  : SERD_LOG_LEVEL_ERROR,
                              statement->caret ? &caret : NULL,
@@ -135,7 +135,7 @@ serd_canon_on_statement(SerdCanonData* const       data,
                              exess_strerror(r.status));
 
     if (!lax) {
-      return SERD_ERR_INVALID;
+      return SERD_BAD_LITERAL;
     }
   }
 

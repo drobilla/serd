@@ -157,8 +157,7 @@ eat_byte_check(SerdReader* reader, const int byte)
 {
   const int c = peek_byte(reader);
   if (c != byte) {
-    return r_err(
-      reader, SERD_ERR_BAD_SYNTAX, "expected `%c', not `%c'", byte, c);
+    return r_err(reader, SERD_BAD_SYNTAX, "expected `%c', not `%c'", byte, c);
   }
 
   eat_byte_safe(reader, byte);
@@ -186,7 +185,7 @@ push_byte(SerdReader* reader, SerdNode* node, const int c)
   SERD_STACK_ASSERT_TOP(reader, node);
 
   if (reader->stack.size + 1 > reader->stack.buf_size) {
-    return SERD_ERR_OVERFLOW;
+    return SERD_BAD_STACK;
   }
 
   ((uint8_t*)reader->stack.buf)[reader->stack.size - 1] = (uint8_t)c;
@@ -206,7 +205,7 @@ push_bytes(SerdReader* reader, SerdNode* ref, const uint8_t* bytes, size_t len)
     }
   }
 
-  return has_space ? SERD_SUCCESS : SERD_ERR_OVERFLOW;
+  return has_space ? SERD_SUCCESS : SERD_BAD_STACK;
 }
 
 #endif // SERD_READER_H

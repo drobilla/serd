@@ -40,7 +40,7 @@ can_insert(SerdWorld* const world, const SerdNode* const node)
     case SERD_URI:
       if (!serd_uri_string_has_scheme(serd_node_string(node))) {
         SERD_LOG_ERRORF(world,
-                        SERD_ERR_BAD_ARG,
+                        SERD_BAD_ARG,
                         "attempt to insert relative URI <%s> into model",
                         serd_node_string(node));
         return false;
@@ -69,7 +69,7 @@ serd_inserter_on_statement(SerdInserterData* const    data,
   // Check that every node is expanded so it is context-free
   for (unsigned i = 0; i < 4; ++i) {
     if (!can_insert(world, serd_statement_node(statement, (SerdField)i))) {
-      return SERD_ERR_BAD_ARG;
+      return SERD_BAD_ARG;
     }
   }
 

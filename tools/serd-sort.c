@@ -160,7 +160,7 @@ parse_statement_order(const char* const string, SerdStatementOrder* const order)
     }
   }
 
-  return SERD_ERR_BAD_ARG;
+  return SERD_BAD_ARG;
 }
 
 static int
@@ -235,7 +235,7 @@ parse_option(OptionIter* const iter, Options* const opts)
   }
 
   ARG_ERRORF("invalid option -- '%c'\n", opt);
-  return SERD_ERR_BAD_ARG;
+  return SERD_BAD_ARG;
 
 #undef ARG_ERRORF
 }

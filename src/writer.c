@@ -179,7 +179,7 @@ push_context(SerdWriter* const        writer,
              const SerdNode* const    p)
 {
   if (writer->anon_stack_size >= anon_stack_capacity) {
-    return SERD_ERR_OVERFLOW;
+    return SERD_BAD_STACK;
   }
 
   const WriteContext new_context = {type,
@@ -247,10 +247,10 @@ sink(const void* buf, size_t len, SerdWriter* writer)
       serd_system_strerror(errno, message, sizeof(message));
 
       SERD_LOG_ERRORF(
-        writer->world, SERD_ERR_BAD_WRITE, "write error (%s)", message);
+        writer->world, SERD_BAD_WRITE, "write error (%s)", message);
     } else {
       SERD_LOG_ERRORF(writer->world,
-                      SERD_ERR_BAD_WRITE,
+                      SERD_BAD_WRITE,
                       "unknown write error, %zu / %zu bytes written",
                       written,
                       len);
@@ -263,7 +263,7 @@ sink(const void* buf, size_t len, SerdWriter* writer)
 SERD_WARN_UNUSED_RESULT static SerdStatus
 esink(const void* buf, size_t len, SerdWriter* writer)
 {
-  return sink(buf, len, writer) == len ? SERD_SUCCESS : SERD_ERR_BAD_WRITE;
+  return sink(buf, len, writer) == len ? SERD_SUCCESS : SERD_BAD_WRITE;
 }
 
 // Write a single character as a Unicode escape
@@ -279,8 +279,8 @@ write_character(SerdWriter*    writer,
   switch (*size) {
   case 0:
     SERD_LOG_ERRORF(
-      writer->world, SERD_ERR_BAD_ARG, "invalid UTF-8 start: %X", utf8[0]);
-    *st = SERD_ERR_BAD_TEXT;
+      writer->world, SERD_BAD_ARG, "invalid UTF-8 start: %X", utf8[0]);
+    *st = SERD_BAD_TEXT;
     return 0;
   case 1:
     snprintf(escape, sizeof(escape), "\\u%04X", utf8[0]);
@@ -339,7 +339,7 @@ write_uri(SerdWriter* writer, const char* utf8, size_t n_bytes, SerdStatus* st)
     const size_t n_bulk = sink(&utf8[i], j - i, writer);
     len += n_bulk;
     if (n_bulk != j - i) {
-      *st = SERD_ERR_BAD_WRITE;
+      *st = SERD_BAD_WRITE;
       return len;
     }
 
@@ -374,7 +374,7 @@ ewrite_uri(SerdWriter* writer, const char* utf8, size_t n_bytes)
   SerdStatus st = SERD_SUCCESS;
   write_uri(writer, utf8, n_bytes, &st);
 
-  return (st == SERD_ERR_BAD_WRITE || !(writer->flags & SERD_WRITE_LAX))
+  return (st == SERD_BAD_WRITE || !(writer->flags & SERD_WRITE_LAX))
            ? st
            : SERD_SUCCESS;
 }
@@ -855,10 +855,10 @@ write_uri_node(SerdWriter* const     writer,
   if (!has_scheme && !supports_uriref(writer) &&
       !serd_env_base_uri(writer->env)) {
     SERD_LOG_ERRORF(writer->world,
-                    SERD_ERR_BAD_ARG,
+                    SERD_BAD_ARG,
                     "syntax does not support URI reference <%s>",
                     node_str);
-    return SERD_ERR_BAD_ARG;
+    return SERD_BAD_ARG;
   }
 
   return write_full_uri_node(writer, node);
@@ -1205,7 +1205,7 @@ serd_writer_write_statement(SerdWriter* const          writer,
       ((flags & SERD_ANON_O) && (flags & SERD_LIST_O)) ||  // Nonsense
       ((flags & SERD_ANON_S) && (flags & SERD_TERSE_S)) || // Unsupported
       ((flags & SERD_ANON_O) && (flags & SERD_TERSE_O))) { // Unsupported
-    return SERD_ERR_BAD_ARG;
+    return SERD_BAD_ARG;
   }
 
   switch (writer->syntax) {
@@ -1239,7 +1239,7 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
 
   if (writer->anon_stack_size == 0) {
     return SERD_LOG_ERRORF(writer->world,
-                           SERD_ERR_UNKNOWN,
+                           SERD_BAD_EVENT,
                            "unexpected end of anonymous node `%s'",
                            serd_node_string(node));
   }
@@ -1272,7 +1272,7 @@ serd_writer_on_event(SerdWriter* writer, const SerdEvent* event)
     return serd_writer_end_anon(writer, event->end.node);
   }
 
-  return SERD_ERR_BAD_ARG;
+  return SERD_BAD_ARG;
 }
 
 SerdStatus
@@ -1355,7 +1355,7 @@ serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
   assert(writer);
 
   if (uri->type != SERD_URI) {
-    return SERD_ERR_BAD_ARG;
+    return SERD_BAD_ARG;
   }
 
   SerdStatus st = SERD_SUCCESS;
@@ -1399,7 +1399,7 @@ serd_writer_set_prefix(SerdWriter*     writer,
                        const SerdNode* uri)
 {
   if (name->type != SERD_LITERAL || uri->type != SERD_URI) {
-    return SERD_ERR_BAD_ARG;
+    return SERD_BAD_ARG;
   }
 
   SerdStatus st = SERD_SUCCESS;

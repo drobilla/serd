@@ -101,7 +101,7 @@ serd_model_drop_index(SerdModel* const model, const SerdStatementOrder order)
   }
 
   if (order == model->default_order) {
-    return SERD_ERR_BAD_CALL;
+    return SERD_BAD_CALL;
   }
 
   zix_btree_free(model->indices[order], NULL);
@@ -177,7 +177,7 @@ log_bad_index(const SerdModel* const   model,
   };
 
   serd_world_logf_internal(model->world,
-                           SERD_ERR_BAD_INDEX,
+                           SERD_BAD_INDEX,
                            SERD_LOG_LEVEL_WARNING,
                            NULL,
                            "%s index (%s) for (%s %s %s%s) query",
@@ -623,7 +623,7 @@ serd_model_add_with_caret(SerdModel* const       model,
 
   SerdStatement* const statement = serd_statement_new(s, p, o, g, NULL);
   if (!statement) {
-    return SERD_ERR_UNKNOWN;
+    return SERD_BAD_ALLOC;
   }
 
   statement->caret = serd_model_intern_caret(model, caret);

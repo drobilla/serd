@@ -91,7 +91,7 @@ check_version(const SerdCursor* const cursor)
 {
   if (cursor->version != cursor->model->version) {
     SERD_LOG_ERROR(cursor->model->world,
-                   SERD_ERR_BAD_CURSOR,
+                   SERD_BAD_CURSOR,
                    "attempt to use invalidated cursor");
     return false;
   }
@@ -187,7 +187,7 @@ serd_cursor_advance(SerdCursor* const cursor)
   assert(cursor);
 
   if (zix_btree_iter_is_end(cursor->iter) || !check_version(cursor)) {
-    return SERD_ERR_BAD_CURSOR;
+    return SERD_BAD_CURSOR;
   }
 
   const ZixStatus zst = zix_btree_iter_increment(&cursor->iter);

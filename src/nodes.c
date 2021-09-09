@@ -332,7 +332,7 @@ serd_nodes_literal(SerdNodes* const     nodes,
 
   // We need to insert a new entry, so determine how much space the node needs
   SerdWriteResult r = serd_node_construct_literal(0, NULL, string, flags, meta);
-  if (r.status != SERD_ERR_OVERFLOW) {
+  if (r.status != SERD_OVERFLOW) {
     return NULL;
   }
 
@@ -467,7 +467,7 @@ serd_nodes_parsed_uri(SerdNodes* const nodes, const SerdURIView uri)
 
   // Determine how much space the node needs
   SerdWriteResult r = serd_node_construct_uri(0u, NULL, uri);
-  assert(r.status == SERD_ERR_OVERFLOW); // Currently no other errors
+  assert(r.status == SERD_OVERFLOW); // Currently no other errors
 
   // Allocate a new entry to write the URI node into
   NodesEntry* const entry = new_entry(r.count);

@@ -85,7 +85,7 @@ on_event(void* handle, const SerdEvent* event)
     return on_end(handle, event->end.node);
   }
 
-  return SERD_ERR_BAD_ARG;
+  return SERD_BAD_ARG;
 }
 
 int

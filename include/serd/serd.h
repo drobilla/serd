@@ -218,24 +218,28 @@ serd_free(void* SERD_NULLABLE ptr);
 
 /// Return status code
 typedef enum {
-  SERD_SUCCESS,        ///< No error
-  SERD_FAILURE,        ///< Non-fatal failure
-  SERD_ERR_UNKNOWN,    ///< Unknown error
-  SERD_ERR_BAD_SYNTAX, ///< Invalid syntax
-  SERD_ERR_BAD_ARG,    ///< Invalid argument
-  SERD_ERR_BAD_CURSOR, ///< Use of invalidated cursor
-  SERD_ERR_NOT_FOUND,  ///< Not found
-  SERD_ERR_ID_CLASH,   ///< Encountered clashing blank node IDs
-  SERD_ERR_BAD_CURIE,  ///< Invalid CURIE or unknown namespace prefix
-  SERD_ERR_INTERNAL,   ///< Unexpected internal error
-  SERD_ERR_OVERFLOW,   ///< Stack overflow
-  SERD_ERR_BAD_TEXT,   ///< Invalid text encoding
-  SERD_ERR_BAD_WRITE,  ///< Error writing to file/stream
-  SERD_ERR_NO_DATA,    ///< Unexpected end of input
-  SERD_ERR_BAD_CALL,   ///< Invalid call
-  SERD_ERR_BAD_URI,    ///< Invalid or unresolved URI
-  SERD_ERR_BAD_INDEX,  ///< No optimal model index available
-  SERD_ERR_INVALID,    ///< Invalid data
+  SERD_SUCCESS,       ///< Success
+  SERD_FAILURE,       ///< Non-fatal failure
+  SERD_UNKNOWN_ERROR, ///< Unknown error
+  SERD_NO_DATA,       ///< Missing input
+  SERD_OVERFLOW,      ///< Insufficient space
+
+  SERD_BAD_ALLOC,   ///< Memory allocation failed
+  SERD_BAD_ARG,     ///< Invalid argument
+  SERD_BAD_CALL,    ///< Invalid call
+  SERD_BAD_CURIE,   ///< Invalid CURIE or unknown namespace prefix
+  SERD_BAD_CURSOR,  ///< Use of invalidated cursor
+  SERD_BAD_EVENT,   ///< Invalid event in stream
+  SERD_BAD_INDEX,   ///< No optimal model index available
+  SERD_BAD_LABEL,   ///< Encountered clashing blank node label
+  SERD_BAD_LITERAL, ///< Invalid literal
+  SERD_BAD_PATTERN, ///< Invalid statement pattern
+  SERD_BAD_READ,    ///< Error reading from file
+  SERD_BAD_STACK,   ///< Stack overflow
+  SERD_BAD_SYNTAX,  ///< Invalid syntax
+  SERD_BAD_TEXT,    ///< Invalid text encoding
+  SERD_BAD_URI,     ///< Invalid or unresolved URI
+  SERD_BAD_WRITE,   ///< Error writing to file
 } SerdStatus;
 
 /**
@@ -256,9 +260,8 @@ typedef struct {
   /**
      Number of bytes written or required.
 
-     On success, this is the total number of bytes written.  On
-     #SERD_ERR_OVERFLOW, this is the number of bytes of output space that are
-     required for success.
+     On success, this is the total number of bytes written.  On #SERD_OVERFLOW,
+     this is the number of bytes of output space that are required for success.
   */
   size_t count;
 } SerdWriteResult;
@@ -675,8 +678,8 @@ typedef enum {
    Otherwise, it is ignored.
 
    @return A result with a `status` and a `count` of bytes written.  If the
-   buffer is too small for the node, then `status` will be #SERD_ERR_OVERFLOW,
-   and `count` will be set to the number of bytes required to successfully
+   buffer is too small for the node, then `status` will be #SERD_OVERFLOW, and
+   `count` will be set to the number of bytes required to successfully
    construct the node.
 */
 SERD_API
@@ -1108,8 +1111,8 @@ serd_get_base64_size(const SerdNode* SERD_NONNULL node);
    @param buf Buffer where decoded data will be written.
 
    @return On success, #SERD_SUCCESS is returned along with the number of bytes
-   written.  If the output buffer is too small, then #SERD_ERR_OVERFLOW is
-   returned along with the number of bytes required for successful decoding.
+   written.  If the output buffer is too small, then #SERD_OVERFLOW is returned
+   along with the number of bytes required for successful decoding.
 */
 SERD_API
 SerdWriteResult

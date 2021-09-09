@@ -81,9 +81,8 @@ serd_node_malloc(const size_t size)
 SerdNode*
 serd_node_try_malloc(const SerdWriteResult r)
 {
-  return (r.status && r.status != SERD_ERR_OVERFLOW)
-           ? NULL
-           : serd_node_malloc(r.count);
+  return (r.status && r.status != SERD_OVERFLOW) ? NULL
+                                                 : serd_node_malloc(r.count);
 }
 
 void
@@ -141,7 +140,7 @@ serd_node_construct_simple(const size_t         buf_size,
 {
   const size_t total_size = sizeof(SerdNode) + serd_node_pad_length(string.len);
   if (!buf || total_size > buf_size) {
-    return result(SERD_ERR_OVERFLOW, total_size);
+    return result(SERD_OVERFLOW, total_size);
   }
 
   SerdNode* const node = (SerdNode*)buf;
@@ -209,18 +208,18 @@ serd_node_construct_literal(const size_t         buf_size,
   }
 
   if ((flags & SERD_HAS_DATATYPE) && (flags & SERD_HAS_LANGUAGE)) {
-    return result(SERD_ERR_BAD_ARG, 0);
+    return result(SERD_BAD_ARG, 0);
   }
 
   if (!meta.len) {
-    return result(SERD_ERR_BAD_ARG, 0);
+    return result(SERD_BAD_ARG, 0);
   }
 
   if (((flags & SERD_HAS_DATATYPE) &&
        (!serd_uri_string_has_scheme(meta.buf) ||
         !strcmp(meta.buf, NS_RDF "langString"))) ||
       ((flags & SERD_HAS_LANGUAGE) && !is_langtag(meta))) {
-    return result(SERD_ERR_BAD_ARG, 0);
+    return result(SERD_BAD_ARG, 0);
   }
 
   const size_t padded_length = serd_node_pad_length(string.len);
@@ -228,7 +227,7 @@ serd_node_construct_literal(const size_t         buf_size,
   const size_t meta_size  = sizeof(SerdNode) + serd_node_pad_length(meta.len);
   const size_t total_size = sizeof(SerdNode) + padded_length + meta_size;
   if (!buf || total_size > buf_size) {
-    return result(SERD_ERR_OVERFLOW, total_size);
+    return result(SERD_OVERFLOW, total_size);
   }
 
   SerdNode* const node = (SerdNode*)buf;
@@ -259,7 +258,7 @@ serd_node_construct(const size_t         buf_size,
   return ((type == SERD_LITERAL)
             ? serd_node_construct_literal(buf_size, buf, string, flags, meta)
           : (meta.len > 0u)
-            ? result(SERD_ERR_BAD_ARG, 0)
+            ? result(SERD_BAD_ARG, 0)
             : serd_node_construct_token(buf_size, buf, type, string));
 }
 
@@ -338,7 +337,7 @@ serd_node_construct_integer(const size_t         buf_size,
                             const SerdStringView datatype)
 {
   if (datatype.len && !serd_uri_string_has_scheme(datatype.buf)) {
-    return result(SERD_ERR_BAD_ARG, 0);
+    return result(SERD_BAD_ARG, 0);
   }
 
   char              temp[24] = {0};
@@ -366,7 +365,7 @@ serd_node_construct_base64(const size_t         buf_size,
   // Verify argument sanity
   if (!value || !value_size ||
       (datatype.len && !serd_uri_string_has_scheme(datatype.buf))) {
-    return result(SERD_ERR_BAD_ARG, 0);
+    return result(SERD_BAD_ARG, 0);
   }
 
   // Determine the type to use (default to xsd:base64Binary)
@@ -381,7 +380,7 @@ serd_node_construct_base64(const size_t         buf_size,
   const size_t padded_length = serd_node_pad_length(r.count);
   const size_t total_size    = sizeof(SerdNode) + padded_length + type_size;
   if (!buf || total_size > buf_size) {
-    return result(SERD_ERR_OVERFLOW, total_size);
+    return result(SERD_OVERFLOW, total_size);
   }
 
   SerdNode* const node = (SerdNode*)buf;
@@ -425,7 +424,7 @@ serd_node_construct_uri(const size_t      buf_size,
   const size_t length        = serd_uri_string_length(uri);
   const size_t required_size = sizeof(SerdNode) + serd_node_pad_length(length);
   if (!buf || buf_size < required_size) {
-    return result(SERD_ERR_OVERFLOW, required_size);
+    return result(SERD_OVERFLOW, required_size);
   }
 
   // Write node header
@@ -451,7 +450,7 @@ serd_node_new(const SerdNodeType   type,
               const SerdStringView meta)
 {
   SerdWriteResult r = serd_node_construct(0, NULL, type, string, flags, meta);
-  if (r.status != SERD_ERR_OVERFLOW) {
+  if (r.status != SERD_OVERFLOW) {
     return NULL;
   }
 
@@ -575,8 +574,8 @@ serd_get_base64(const SerdNode* const node,
   ExessBlob         blob     = {buf_size, buf};
   const ExessResult r        = exess_read_base64(&blob, serd_node_string(node));
 
-  return r.status == EXESS_NO_SPACE ? result(SERD_ERR_OVERFLOW, max_size)
-         : r.status                 ? result(SERD_ERR_BAD_SYNTAX, 0u)
+  return r.status == EXESS_NO_SPACE ? result(SERD_OVERFLOW, max_size)
+         : r.status                 ? result(SERD_BAD_SYNTAX, 0u)
                                     : result(SERD_SUCCESS, blob.size);
 }
 
@@ -708,7 +707,7 @@ serd_node_construct_file_uri(const size_t         buf_size,
   }
 
   if (!buf || count > buf_size) {
-    return result(SERD_ERR_OVERFLOW, count);
+    return result(SERD_OVERFLOW, count);
   }
 
   node->length = length;
