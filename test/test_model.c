@@ -164,7 +164,7 @@ test_read(SerdWorld*      world,
   }
 
   // Attempt to increment past end
-  assert(serd_cursor_advance(cursor) == SERD_ERR_BAD_CURSOR);
+  assert(serd_cursor_advance(cursor) == SERD_BAD_CURSOR);
   serd_cursor_free(cursor);
 
   const SerdStringView s = SERD_STRING("hello");
@@ -453,7 +453,7 @@ test_add_with_iterator(SerdWorld* world, const unsigned n_quads)
 
   // Check that iterator has been invalidated
   assert(!serd_cursor_get(iter));
-  assert(serd_cursor_advance(iter) == SERD_ERR_BAD_CURSOR);
+  assert(serd_cursor_advance(iter) == SERD_BAD_CURSOR);
 
   serd_cursor_free(iter);
   serd_model_free(model);
@@ -543,7 +543,7 @@ test_remove_index(SerdWorld* world, const unsigned n_quads)
   const SerdNode* const o2    = uri(world, 3);
 
   // Try to remove default and non-existent indices
-  assert(serd_model_drop_index(model, SERD_ORDER_SPO) == SERD_ERR_BAD_CALL);
+  assert(serd_model_drop_index(model, SERD_ORDER_SPO) == SERD_BAD_CALL);
   assert(serd_model_drop_index(model, SERD_ORDER_PSO) == SERD_FAILURE);
 
   // Add a couple of statements so that dropping an index isn't trivial
@@ -578,7 +578,7 @@ test_inserter(SerdWorld* world, const unsigned n_quads)
 
   serd_set_log_func(world, expected_error, NULL);
 
-  assert(serd_sink_write(inserter, 0, s, p, rel, NULL) == SERD_ERR_BAD_ARG);
+  assert(serd_sink_write(inserter, 0, s, p, rel, NULL) == SERD_BAD_DATA);
 
   serd_sink_free(inserter);
   serd_model_free(model);
@@ -612,7 +612,7 @@ test_erase_with_iterator(SerdWorld* world, const unsigned n_quads)
 
   // Check that other iterator has been invalidated
   assert(!serd_cursor_get(iter2));
-  assert(serd_cursor_advance(iter2) == SERD_ERR_BAD_CURSOR);
+  assert(serd_cursor_advance(iter2) == SERD_BAD_CURSOR);
 
   // Check that erasing the end iterator does nothing
   SerdCursor* const end = serd_cursor_copy(serd_model_end(model));
@@ -1290,7 +1290,7 @@ test_write_error_in_list_subject(SerdWorld* world, const unsigned n_quads)
     const SerdStatus      st   = serd_describe_range(all, sink, 0);
     serd_cursor_free(all);
 
-    assert(st == SERD_ERR_BAD_WRITE);
+    assert(st == SERD_BAD_WRITE);
 
     serd_writer_free(writer);
     serd_close_output(&out);
@@ -1346,7 +1346,7 @@ test_write_error_in_list_object(SerdWorld* world, const unsigned n_quads)
     const SerdStatus      st   = serd_describe_range(all, sink, 0);
     serd_cursor_free(all);
 
-    assert(st == SERD_ERR_BAD_WRITE);
+    assert(st == SERD_BAD_WRITE);
 
     serd_writer_free(writer);
     serd_close_output(&out);
