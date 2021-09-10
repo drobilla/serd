@@ -44,7 +44,7 @@ test(void)
 {
   SerdBuffer buffer = {NULL, 0};
   SerdWorld* world  = serd_world_new();
-  SerdEnv*   env    = serd_env_new(SERD_EMPTY_STRING());
+  SerdEnv*   env    = serd_env_new(world, SERD_EMPTY_STRING());
   SerdNodes* nodes  = serd_nodes_new();
 
   const SerdNode* b1 = serd_nodes_blank(nodes, SERD_STRING("b1"));

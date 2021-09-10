@@ -24,10 +24,13 @@
 #include <stdlib.h>
 
 SerdSink*
-serd_sink_new(void* const   handle,
-              SerdEventFunc event_func,
-              SerdFreeFunc  free_handle)
+serd_sink_new(const SerdWorld* const world,
+              void* const            handle,
+              SerdEventFunc          event_func,
+              SerdFreeFunc           free_handle)
 {
+  (void)world;
+
   SerdSink* sink = (SerdSink*)calloc(1, sizeof(SerdSink));
 
   sink->handle      = handle;

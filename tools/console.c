@@ -50,8 +50,8 @@ serd_tool_setup(SerdTool* const   tool,
 
   // We have something to write to, so build the writing environment
   if (!(tool->world = serd_world_new()) ||
-      !(tool->env =
-          serd_create_env(program, options.base_uri, options.out_filename)) ||
+      !(tool->env = serd_create_env(
+          tool->world, program, options.base_uri, options.out_filename)) ||
       !(tool->writer = serd_writer_new(
           tool->world,
           serd_choose_syntax(
@@ -291,7 +291,8 @@ serd_parse_common_option(OptionIter* const iter, SerdCommonOptions* const opts)
 }
 
 SerdEnv*
-serd_create_env(const char* const program,
+serd_create_env(SerdWorld* const  world,
+                const char* const program,
                 const char* const base_string,
                 const char* const out_filename)
 {
@@ -302,10 +303,10 @@ serd_create_env(const char* const program,
   }
 
   if (base_string && serd_uri_string_has_scheme(base_string)) {
-    return serd_env_new(SERD_STRING(base_string));
+    return serd_env_new(world, SERD_STRING(base_string));
   }
 
-  SerdEnv* const env = serd_env_new(SERD_EMPTY_STRING());
+  SerdEnv* const env = serd_env_new(world, SERD_EMPTY_STRING());
   serd_set_base_uri_from_path(env, is_rebase ? out_filename : base_string);
   return env;
 }
