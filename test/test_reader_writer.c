@@ -36,11 +36,11 @@ count_statements(void* handle, const SerdEvent* event)
 static void
 test_writer(const char* const path)
 {
-  FILE*    fd  = fopen(path, "wb");
-  SerdEnv* env = serd_env_new(SERD_EMPTY_STRING());
+  FILE*      fd    = fopen(path, "wb");
+  SerdWorld* world = serd_world_new();
+  SerdEnv*   env   = serd_env_new(world, SERD_EMPTY_STRING());
   assert(fd);
 
-  SerdWorld* world = serd_world_new();
   SerdNodes* nodes = serd_world_nodes(world);
 
   SerdOutputStream output = serd_open_output_file(path);
@@ -133,12 +133,15 @@ test_writer(const char* const path)
 static void
 test_reader(const char* path)
 {
-  SerdWorld*      world        = serd_world_new();
-  size_t          n_statements = 0;
-  SerdSink* const sink = serd_sink_new(&n_statements, count_statements, NULL);
+  SerdWorld* world        = serd_world_new();
+  size_t     n_statements = 0;
+
+  SerdSink* const sink =
+    serd_sink_new(world, &n_statements, count_statements, NULL);
+
   assert(sink);
 
-  SerdEnv* const env = serd_env_new(SERD_EMPTY_STRING());
+  SerdEnv* const env = serd_env_new(world, SERD_EMPTY_STRING());
   assert(env);
 
   // Test that too little stack space fails gracefully

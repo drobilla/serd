@@ -1918,15 +1918,17 @@ typedef void (*SerdFreeFunc)(void* SERD_NULLABLE ptr);
 /**
    Create a new sink.
 
+   @param world The world the new sink will be a part of.
    @param handle Opaque handle that will be passed to sink functions.
    @param event_func Function that will be called for every event.
    @param free_handle Free function to call on handle in serd_sink_free().
 */
 SERD_API
 SerdSink* SERD_ALLOCATED
-serd_sink_new(void* SERD_NULLABLE         handle,
-              SerdEventFunc SERD_NULLABLE event_func,
-              SerdFreeFunc SERD_NULLABLE  free_handle);
+serd_sink_new(const SerdWorld* SERD_NONNULL world,
+              void* SERD_NULLABLE           handle,
+              SerdEventFunc SERD_NULLABLE   event_func,
+              SerdFreeFunc SERD_NULLABLE    free_handle);
 
 /// Free `sink`
 SERD_API
@@ -1997,9 +1999,9 @@ typedef uint32_t SerdCanonFlags;
 */
 SERD_API
 SerdSink* SERD_ALLOCATED
-serd_canon_new(const SerdWorld* SERD_NULLABLE world,
-               const SerdSink* SERD_NONNULL   target,
-               SerdCanonFlags                 flags);
+serd_canon_new(const SerdWorld* SERD_NONNULL world,
+               const SerdSink* SERD_NONNULL  target,
+               SerdCanonFlags                flags);
 
 /**
    @}
@@ -2012,6 +2014,8 @@ serd_canon_new(const SerdWorld* SERD_NULLABLE world,
 
    The returned sink acts like `target` in all respects, except that some
    statements may be dropped.
+
+   @param world The world the new sink will be a part of.
 
    @param target The target sink to pass the filtered data to.
 
@@ -2029,7 +2033,8 @@ serd_canon_new(const SerdWorld* SERD_NULLABLE world,
 */
 SERD_API
 SerdSink* SERD_ALLOCATED
-serd_filter_new(const SerdSink* SERD_NONNULL  target,
+serd_filter_new(const SerdWorld* SERD_NONNULL world,
+                const SerdSink* SERD_NONNULL  target,
                 const SerdNode* SERD_NULLABLE subject,
                 const SerdNode* SERD_NULLABLE predicate,
                 const SerdNode* SERD_NULLABLE object,
@@ -2048,7 +2053,7 @@ typedef struct SerdEnvImpl SerdEnv;
 /// Create a new environment
 SERD_API
 SerdEnv* SERD_ALLOCATED
-serd_env_new(SerdStringView base_uri);
+serd_env_new(SerdWorld* SERD_NONNULL world, SerdStringView base_uri);
 
 /// Copy an environment
 SERD_API
