@@ -49,7 +49,7 @@ serd_tool_setup(SerdTool* const   tool,
   }
 
   // We have something to write to, so build the writing environment
-  if (!(tool->world = serd_world_new()) ||
+  if (!(tool->world = serd_world_new(NULL)) ||
       !(tool->env = serd_create_env(
           tool->world, program, options.base_uri, options.out_filename)) ||
       !(tool->writer = serd_writer_new(
@@ -390,7 +390,7 @@ serd_set_base_uri_from_path(SerdEnv* const env, const char* const path)
     return SERD_BAD_ARG;
   }
 
-  char* const real_path = serd_canonical_path(path);
+  char* const real_path = serd_canonical_path(NULL, path);
   if (!real_path) {
     return SERD_BAD_ARG;
   }
@@ -399,18 +399,25 @@ serd_set_base_uri_from_path(SerdEnv* const env, const char* const path)
   SerdNode*    base_node     = NULL;
   if (path[path_len - 1] == '/') {
     char* const base_path = (char*)calloc(real_path_len + 2, 1);
+    if (!base_path) {
+      return SERD_BAD_ALLOC;
+    }
+
     memcpy(base_path, real_path, real_path_len);
     base_path[real_path_len] = path[path_len - 1];
 
-    base_node = serd_new_file_uri(SERD_STRING(base_path), SERD_EMPTY_STRING());
+    base_node =
+      serd_new_file_uri(NULL, SERD_STRING(base_path), SERD_EMPTY_STRING());
+
     free(base_path);
   } else {
-    base_node = serd_new_file_uri(SERD_STRING(real_path), SERD_EMPTY_STRING());
+    base_node =
+      serd_new_file_uri(NULL, SERD_STRING(real_path), SERD_EMPTY_STRING());
   }
 
   serd_env_set_base_uri(env, serd_node_string_view(base_node));
-  serd_node_free(base_node);
-  serd_free(real_path);
+  serd_node_free(NULL, base_node);
+  serd_free(NULL, real_path);
 
   return SERD_SUCCESS;
 }
@@ -427,9 +434,9 @@ serd_read_source(SerdWorld* const        world,
   SerdReader* const reader = serd_reader_new(
     world, syntax, opts.input.flags, env, sink, opts.stack_size);
 
-  SerdNode* const name_node = serd_new_string(SERD_STRING(name));
+  SerdNode* const name_node = serd_new_string(NULL, SERD_STRING(name));
   SerdStatus st = serd_reader_start(reader, in, name_node, opts.block_size);
-  serd_node_free(name_node);
+  serd_node_free(NULL, name_node);
   if (!st) {
     st = serd_reader_read_document(reader);
   }

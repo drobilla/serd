@@ -95,7 +95,9 @@ zix_btree_new(ZixComparator cmp, const void* cmp_data);
 */
 ZIX_API
 void
-zix_btree_free(ZixBTree* t, ZixDestroyFunc destroy);
+zix_btree_free(ZixBTree*      t,
+               ZixDestroyFunc destroy,
+               const void*    destroy_user_data);
 
 /**
    Clear everything from `t`, leaving it empty.
@@ -105,7 +107,9 @@ zix_btree_free(ZixBTree* t, ZixDestroyFunc destroy);
 */
 ZIX_API
 void
-zix_btree_clear(ZixBTree* t, ZixDestroyFunc destroy);
+zix_btree_clear(ZixBTree*      t,
+                ZixDestroyFunc destroy,
+                const void*    destroy_user_data);
 
 /// Return the number of elements in `t`
 ZIX_PURE_API

@@ -44,6 +44,8 @@ struct SerdWorldImpl {
 
   uint32_t next_blank_id;
   uint32_t next_document_id;
+
+  const SerdAllocator* allocator;
 };
 
 /// Write a message to the log

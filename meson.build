@@ -98,6 +98,7 @@ sources = [
   'src/filter.c',
   'src/input_stream.c',
   'src/inserter.c',
+  'src/memory.c',
   'src/model.c',
   'src/n3.c',
   'src/node.c',

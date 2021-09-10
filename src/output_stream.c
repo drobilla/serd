@@ -38,7 +38,7 @@ serd_open_output_stream(SerdWriteFunc const write_func,
 }
 
 SerdOutputStream
-serd_open_output_buffer(SerdBuffer* const buffer)
+serd_open_output_buffer(SerdDynamicBuffer* const buffer)
 {
   assert(buffer);
 

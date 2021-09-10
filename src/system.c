@@ -19,17 +19,23 @@
 
 #include "system.h"
 
-#include "serd/serd.h"
+#include "memory.h"
 #include "serd_config.h"
+
+#include "serd/serd.h"
 
 #ifdef _WIN32
 #  define WIN32_LEAN_AND_MEAN 1
 #  include <malloc.h>
 #  include <windows.h>
+#else
+#  include <limits.h>
+#  ifndef PATH_MAX
+#    include <unistd.h>
+#  endif
 #endif
 
 #include <assert.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -47,72 +53,53 @@ serd_system_strerror(const int errnum, char* const buf, const size_t buflen)
 #endif
 }
 
-void*
-serd_malloc_aligned(const size_t alignment, const size_t size)
-{
-#if defined(_WIN32)
-  return _aligned_malloc(size, alignment);
-#elif USE_POSIX_MEMALIGN
-  void*     ptr = NULL;
-  const int ret = posix_memalign(&ptr, alignment, size);
-  return ret ? NULL : ptr;
-#else
-  (void)alignment;
-  return malloc(size);
-#endif
-}
-
-void*
-serd_calloc_aligned(const size_t alignment, const size_t size)
-{
-#if defined(_WIN32) || defined(USE_POSIX_MEMALIGN)
-  void* const ptr = serd_malloc_aligned(alignment, size);
-  if (ptr) {
-    memset(ptr, 0, size);
-  }
-  return ptr;
-#else
-  (void)alignment;
-  return calloc(1, size);
-#endif
-}
-
-void*
-serd_allocate_buffer(const size_t size)
-{
-  return serd_malloc_aligned(SERD_PAGE_SIZE, size);
-}
-
-void
-serd_free_aligned(void* const ptr)
-{
-#ifdef _WIN32
-  _aligned_free(ptr);
-#else
-  free(ptr);
-#endif
-}
-
 char*
-serd_canonical_path(const char* const path)
+serd_canonical_path(const SerdAllocator* const allocator,
+                    const char* const          path)
 {
   assert(path);
 
-#ifdef _WIN32
+#if defined(_WIN32)
+  // Microsoft got this one right: measure, allocate, resolve
   const DWORD size = GetFullPathName(path, 0, NULL, NULL);
   if (size == 0) {
     return NULL;
   }
 
-  char* const out = (char*)calloc(size, 1);
-  const DWORD ret = GetFullPathName(path, MAX_PATH, out, NULL);
-  if (ret == 0 || ret >= size) {
-    free(out);
-    return NULL;
+  char* const out = (char*)serd_acalloc(allocator, size, 1);
+  if (out) {
+    const DWORD ret = GetFullPathName(path, MAX_PATH, out, NULL);
+    if (ret == 0 || ret >= size) {
+      serd_afree(allocator, out);
+      return NULL;
+    }
   }
 
   return out;
+
+#elif defined(PATH_MAX)
+  // Some POSIX systems have a static PATH_MAX so we can resolve on the stack
+  char  result[PATH_MAX] = {0};
+  char* resolved_path    = realpath(path, result);
+  if (!resolved_path) {
+    return NULL;
+  }
+
+  const size_t len = strlen(resolved_path);
+  char* const  out = (char*)serd_acalloc(allocator, len + 1, 1);
+  if (out) {
+    memcpy(out, resolved_path, len + 1);
+  }
+  return out;
+
 #else
-  return path ? realpath(path, NULL) : NULL;
+  // Others don't so we have to query PATH_MAX at runtime to allocate the result
+  long path_max = pathconf(path, _PC_PATH_MAX);
+  if (path_max <= 0) {
+    path_max = SERD_PAGE_SIZE;
+  }
+
+  char* const out = (char*)serd_acalloc(allocator, path_max, 1);
+  return out ? realpath(path, out) : NULL;
 #endif
 }

@@ -115,13 +115,15 @@ zix_btree_new(const ZixComparator cmp, const void* const cmp_data)
 }
 
 static void
-zix_btree_free_children(ZixBTree* const     t,
-                        ZixBTreeNode* const n,
-                        ZixDestroyFunc      destroy)
+zix_btree_free_children(ZixBTree* const      t,
+                        ZixBTreeNode* const  n,
+                        const ZixDestroyFunc destroy,
+                        const void* const    destroy_user_data)
 {
   if (!n->is_leaf) {
     for (ZixShort i = 0; i < n->n_vals + 1u; ++i) {
-      zix_btree_free_children(t, zix_btree_child(n, i), destroy);
+      zix_btree_free_children(
+        t, zix_btree_child(n, i), destroy, destroy_user_data);
       free(zix_btree_child(n, i));
     }
   }
@@ -129,30 +131,34 @@ zix_btree_free_children(ZixBTree* const     t,
   if (destroy) {
     if (n->is_leaf) {
       for (ZixShort i = 0u; i < n->n_vals; ++i) {
-        destroy(n->data.leaf.vals[i]);
+        destroy(n->data.leaf.vals[i], destroy_user_data);
       }
     } else {
       for (ZixShort i = 0u; i < n->n_vals; ++i) {
-        destroy(n->data.inode.vals[i]);
+        destroy(n->data.inode.vals[i], destroy_user_data);
       }
     }
   }
 }
 
 void
-zix_btree_free(ZixBTree* const t, ZixDestroyFunc destroy)
+zix_btree_free(ZixBTree* const      t,
+               const ZixDestroyFunc destroy,
+               const void* const    destroy_user_data)
 {
   if (t) {
-    zix_btree_clear(t, destroy);
+    zix_btree_clear(t, destroy, destroy_user_data);
     free(t->root);
     free(t);
   }
 }
 
 void
-zix_btree_clear(ZixBTree* const t, ZixDestroyFunc destroy)
+zix_btree_clear(ZixBTree* const t,
+                ZixDestroyFunc  destroy,
+                const void*     destroy_user_data)
 {
-  zix_btree_free_children(t, t->root, destroy);
+  zix_btree_free_children(t, t->root, destroy, destroy_user_data);
 
   memset(t->root, 0, sizeof(ZixBTreeNode));
   t->root->is_leaf = true;

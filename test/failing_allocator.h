@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2020 David Robillard <d@drobilla.net>
+  Copyright 2021 David Robillard <d@drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -14,19 +14,20 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#ifndef SERD_SINK_H
-#define SERD_SINK_H
+#ifndef SERD_FAILING_ALLOCATOR_H
+#define SERD_FAILING_ALLOCATOR_H
 
 #include "serd/serd.h"
 
-/**
-   An interface that receives a stream of RDF data.
-*/
-struct SerdSinkImpl {
-  const SerdWorld* world;
-  void*            handle;
-  SerdFreeFunc     free_handle;
-  SerdEventFunc    on_event;
-};
+#include <stddef.h>
 
-#endif // SERD_SINK_H
+/// An allocator that fails after some number of successes for testing
+typedef struct {
+  size_t n_allocations; ///< The number of allocations that have been attempted
+  size_t n_remaining;   ///< The number of remaining successful allocations
+} SerdFailingAllocatorState;
+
+SerdAllocator
+serd_failing_allocator(SerdFailingAllocatorState* state);
+
+#endif // SERD_FAILING_ALLOCATOR_H

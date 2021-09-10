@@ -26,7 +26,7 @@
 static void
 test_default_log(void)
 {
-  SerdWorld* const world = serd_world_new();
+  SerdWorld* const world = serd_world_new(NULL);
 
   for (unsigned i = 0; i <= SERD_LOG_LEVEL_DEBUG; ++i) {
     const SerdLogLevel level = (SerdLogLevel)i;
@@ -54,7 +54,7 @@ test_log(void* const handle, const SerdLogEntry* const entry)
 static void
 test_custom_log(void)
 {
-  SerdWorld* const world  = serd_world_new();
+  SerdWorld* const world  = serd_world_new(NULL);
   bool             called = false;
 
   serd_world_set_log_func(world, test_log, &called);
@@ -70,7 +70,7 @@ test_custom_log(void)
 static void
 test_filename_only(void)
 {
-  SerdWorld* const world = serd_world_new();
+  SerdWorld* const world = serd_world_new(NULL);
 
   const SerdLogField fields[2] = {{"TEST_KEY", "TEST VALUE"},
                                   {"SERD_FILE", "somename"}};

@@ -16,6 +16,9 @@
 
 #include "serd/serd.h"
 
+#include "memory.h"
+#include "sink.h"
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -33,13 +36,15 @@ static void
 free_data(void* const handle)
 {
   if (handle) {
-    SerdFilterData* data = (SerdFilterData*)handle;
+    SerdFilterData* const      data      = (SerdFilterData*)handle;
+    const SerdWorld* const     world     = data->target->world;
+    const SerdAllocator* const allocator = serd_world_allocator(world);
 
-    serd_node_free(data->subject);
-    serd_node_free(data->predicate);
-    serd_node_free(data->object);
-    serd_node_free(data->graph);
-    free(data);
+    serd_node_free(allocator, data->subject);
+    serd_node_free(allocator, data->predicate);
+    serd_node_free(allocator, data->object);
+    serd_node_free(allocator, data->graph);
+    serd_wfree(data->target->world, data);
   }
 }
 
@@ -80,27 +85,45 @@ serd_filter_new(const SerdWorld* const world,
 {
   assert(world);
   assert(target);
+  assert(target->world == world);
 
-  SerdFilterData* const data =
-    (SerdFilterData*)calloc(1, sizeof(SerdFilterData));
+  const SerdAllocator* const allocator = serd_world_allocator(world);
+  SerdFilterData* const      data =
+    (SerdFilterData*)serd_wcalloc(world, 1, sizeof(SerdFilterData));
+
+  if (!data) {
+    return NULL;
+  }
 
   data->target    = target;
   data->inclusive = inclusive;
 
   if (subject && serd_node_type(subject) != SERD_VARIABLE) {
-    data->subject = serd_node_copy(subject);
+    if (!(data->subject = serd_node_copy(allocator, subject))) {
+      free_data(data);
+      return NULL;
+    }
   }
 
   if (predicate && serd_node_type(predicate) != SERD_VARIABLE) {
-    data->predicate = serd_node_copy(predicate);
+    if (!(data->predicate = serd_node_copy(allocator, predicate))) {
+      free_data(data);
+      return NULL;
+    }
   }
 
   if (object && serd_node_type(object) != SERD_VARIABLE) {
-    data->object = serd_node_copy(object);
+    if (!(data->object = serd_node_copy(allocator, object))) {
+      free_data(data);
+      return NULL;
+    }
   }
 
   if (graph && serd_node_type(graph) != SERD_VARIABLE) {
-    data->graph = serd_node_copy(graph);
+    if (!(data->graph = serd_node_copy(allocator, graph))) {
+      free_data(data);
+      return NULL;
+    }
   }
 
   return serd_sink_new(world, data, serd_filter_on_event, free_data);

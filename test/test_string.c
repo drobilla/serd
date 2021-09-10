@@ -48,7 +48,7 @@ test_strerror(void)
 static void
 test_canonical_path(const char* const path)
 {
-  char* const canonical = serd_canonical_path(path);
+  char* const canonical = serd_canonical_path(NULL, path);
 
   assert(canonical);
   assert(!strstr(canonical, "../"));
@@ -62,7 +62,7 @@ test_canonical_path(const char* const path)
   assert(canonical[0] == '/');
 #endif
 
-  serd_free(canonical);
+  serd_free(NULL, canonical);
 }
 
 int

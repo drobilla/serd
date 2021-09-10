@@ -15,6 +15,7 @@
 */
 
 #include "caret.h"
+#include "memory.h"
 #include "namespaces.h"
 #include "node.h"
 #include "statement.h"
@@ -35,9 +36,10 @@ typedef struct {
 } SerdCanonData;
 
 static ExessResult
-make_canonical(SerdNode** const                   out,
-               const SerdNode* const SERD_NONNULL node,
-               const SerdNode* const SERD_NONNULL datatype)
+make_canonical(const SerdAllocator* const SERD_NONNULL allocator,
+               SerdNode** const                        out,
+               const SerdNode* const SERD_NONNULL      node,
+               const SerdNode* const SERD_NONNULL      datatype)
 {
   *out = NULL;
 
@@ -46,7 +48,7 @@ make_canonical(SerdNode** const                   out,
   ExessResult r            = {EXESS_SUCCESS, 0};
 
   if (!strcmp(datatype_uri, NS_RDF "langString")) {
-    *out = serd_new_string(serd_node_string_view(node));
+    *out = serd_new_string(NULL, serd_node_string_view(node));
     return r;
   }
 
@@ -76,7 +78,11 @@ make_canonical(SerdNode** const                   out,
   const size_t len              = serd_node_pad_length(r.count);
   const size_t total_len        = sizeof(SerdNode) + len + datatype_size;
 
-  SerdNode* const result = serd_node_malloc(total_len);
+  SerdNode* const result = serd_node_malloc(allocator, total_len);
+  if (!result) {
+    r.status = EXESS_NO_SPACE;
+    return r;
+  }
 
   result->flags = SERD_HAS_DATATYPE;
   result->type  = SERD_LITERAL;
@@ -114,7 +120,9 @@ serd_canon_on_statement(SerdCanonData* const       data,
   }
 
   SerdNode*   normo = NULL;
-  ExessResult r     = make_canonical(&normo, object, datatype);
+  ExessResult r =
+    make_canonical(data->world->allocator, &normo, object, datatype);
+
   if (r.status) {
     SerdCaret  caret = {NULL, 0u, 0u};
     const bool lax   = (data->flags & SERD_CANON_LAX);
@@ -149,7 +157,7 @@ serd_canon_on_statement(SerdCanonData* const       data,
                                         statement->nodes[1],
                                         normo,
                                         statement->nodes[3]);
-  serd_node_free(normo);
+  serd_node_free(data->world->allocator, normo);
   return st;
 }
 
@@ -167,9 +175,15 @@ serd_canon_new(const SerdWorld* const world,
                const SerdSink* const  target,
                const SerdCanonFlags   flags)
 {
+  assert(world);
   assert(target);
 
-  SerdCanonData* const data = (SerdCanonData*)calloc(1, sizeof(SerdCanonData));
+  SerdCanonData* const data =
+    (SerdCanonData*)serd_wcalloc(world, 1, sizeof(SerdCanonData));
+
+  if (!data) {
+    return NULL;
+  }
 
   data->world  = world;
   data->target = target;

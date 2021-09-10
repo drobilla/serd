@@ -1,5 +1,5 @@
 /*
-  Copyright 2019-2020 David Robillard <d@drobilla.net>
+  Copyright 2019-2021 David Robillard <d@drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -15,6 +15,8 @@
 */
 
 #undef NDEBUG
+
+#include "failing_allocator.h"
 
 #include "serd/serd.h"
 
@@ -95,10 +97,35 @@ on_event(void* const handle, const SerdEvent* const event)
 }
 
 static void
+test_failed_alloc(void)
+{
+  SerdFailingAllocatorState state     = {0u, SIZE_MAX};
+  SerdAllocator             allocator = serd_failing_allocator(&state);
+
+  SerdWorld* const world          = serd_world_new(&allocator);
+  const size_t     n_world_allocs = state.n_allocations;
+
+  // Successfully allocate a sink to count the number of allocations
+  SerdSink* const sink = serd_sink_new(world, NULL, NULL, NULL);
+  assert(sink);
+
+  // Test that each allocation failing is handled gracefully
+  const size_t n_new_allocs = state.n_allocations - n_world_allocs;
+  for (size_t i = 0; i < n_new_allocs; ++i) {
+    state.n_remaining = i;
+    assert(!serd_sink_new(world, NULL, NULL, NULL));
+  }
+
+  serd_sink_free(sink);
+  serd_world_free(world);
+}
+
+static void
 test_callbacks(void)
 {
-  SerdWorld* const world = serd_world_new();
-  SerdNodes* const nodes = serd_nodes_new();
+  SerdWorld* const           world     = serd_world_new(NULL);
+  const SerdAllocator* const allocator = serd_world_allocator(world);
+  SerdNodes* const           nodes     = serd_nodes_new(allocator);
 
   const SerdNode* base  = serd_nodes_uri(nodes, SERD_STRING(NS_EG));
   const SerdNode* name  = serd_nodes_string(nodes, SERD_STRING("eg"));
@@ -108,7 +135,7 @@ test_callbacks(void)
   SerdEnv* env = serd_env_new(world, serd_node_string_view(base));
 
   SerdStatement* const statement =
-    serd_statement_new(base, uri, blank, NULL, NULL);
+    serd_statement_new(allocator, base, uri, blank, NULL, NULL);
 
   State state = {0, 0, 0, 0, 0, SERD_SUCCESS};
 
@@ -162,7 +189,7 @@ test_callbacks(void)
 
   serd_sink_free(sink);
 
-  serd_statement_free(statement);
+  serd_statement_free(allocator, statement);
   serd_env_free(env);
   serd_nodes_free(nodes);
   serd_world_free(world);
@@ -174,7 +201,7 @@ test_free(void)
   // Free of null should (as always) not crash
   serd_sink_free(NULL);
 
-  SerdWorld* const world = serd_world_new();
+  SerdWorld* const world = serd_world_new(NULL);
 
   // Set up a sink with dynamically allocated data and a free function
   uintptr_t* data = (uintptr_t*)calloc(1, sizeof(uintptr_t));
@@ -189,6 +216,7 @@ test_free(void)
 int
 main(void)
 {
+  test_failed_alloc();
   test_callbacks();
   test_free();
   return 0;

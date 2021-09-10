@@ -23,6 +23,7 @@
 #include <string.h>
 
 typedef struct {
+  const SerdAllocator* SERD_NONNULL allocator; ///< Buffer allocator
   SerdOutputStream* SERD_NONNULL out;  ///< Output stream to ultimately write to
   char* SERD_ALLOCATED           buf;  ///< Local buffer iff block_size > 1
   size_t                         size; ///< Bytes written so far in this block
@@ -36,7 +37,8 @@ typedef struct {
    calling serd_block_dumper_close().
 */
 SerdStatus
-serd_block_dumper_open(SerdBlockDumper* SERD_NONNULL  dumper,
+serd_block_dumper_open(const SerdWorld* SERD_NONNULL  world,
+                       SerdBlockDumper* SERD_NONNULL  dumper,
                        SerdOutputStream* SERD_NONNULL output,
                        size_t                         block_size);
 

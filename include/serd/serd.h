@@ -198,7 +198,51 @@ typedef struct {
 
 /**
    @}
+   @defgroup serd_memory Memory Management
+   @{
 */
+
+typedef void SerdAllocatorHandle;
+
+typedef void* SERD_ALLOCATED (*SerdAllocatorMallocFunc)(
+  SerdAllocatorHandle* SERD_NULLABLE handle,
+  size_t                             size);
+
+typedef void (*SerdAllocatorFreeFunc)(SerdAllocatorHandle* SERD_NULLABLE handle,
+                                      void* SERD_NULLABLE                ptr);
+
+typedef void* SERD_ALLOCATED (*SerdAllocatorAlignedAllocFunc)(
+  SerdAllocatorHandle* SERD_NULLABLE handle,
+  size_t                             alignment,
+  size_t                             size);
+
+typedef void (*SerdAllocatorAlignedFreeFunc)(SerdAllocatorHandle* SERD_NULLABLE
+                                                                 handle,
+                                             void* SERD_NULLABLE ptr);
+
+typedef void* SERD_ALLOCATED (*SerdAllocatorCallocFunc)(
+  SerdAllocatorHandle* SERD_NULLABLE handle,
+  size_t                             nmemb,
+  size_t                             size);
+
+typedef void* SERD_ALLOCATED (*SerdAllocatorReallocFunc)(
+  SerdAllocatorHandle* SERD_NULLABLE handle,
+  void* SERD_NULLABLE                ptr,
+  size_t                             size);
+
+typedef struct {
+  SerdAllocatorHandle* SERD_NULLABLE         handle;
+  SerdAllocatorMallocFunc SERD_NONNULL       malloc;
+  SerdAllocatorCallocFunc SERD_NONNULL       calloc;
+  SerdAllocatorReallocFunc SERD_NONNULL      realloc;
+  SerdAllocatorFreeFunc SERD_NONNULL         free;
+  SerdAllocatorAlignedAllocFunc SERD_NONNULL aligned_alloc;
+  SerdAllocatorAlignedFreeFunc SERD_NONNULL  aligned_free;
+} SerdAllocator;
+
+SERD_API
+const SerdAllocator* SERD_NONNULL
+serd_default_allocator(void);
 
 /**
    Free memory allocated by Serd.
@@ -206,12 +250,16 @@ typedef struct {
    This function exists because some systems require memory allocated by a
    library to be freed by code in the same library.  It is otherwise equivalent
    to the standard C free() function.
+
+   This may be used to free memory allocated using serd_default_allocator().
 */
 SERD_API
 void
-serd_free(void* SERD_NULLABLE ptr);
+serd_free(const SerdAllocator* SERD_NULLABLE allocator,
+          void* SERD_NULLABLE                ptr);
 
 /**
+   @}
    @defgroup serd_status Status Codes
    @{
 */
@@ -284,11 +332,13 @@ serd_strerror(SerdStatus status);
    directory separators.  Null is returned on error, including if the path does
    not exist.
 
-   @return A new string that must be freed with serd_free(), or null.
+   @return A newly allocated string that must be freed with serd_free() using
+   the world allocator, or null.
 */
 SERD_API
-char* SERD_NULLABLE
-serd_canonical_path(const char* SERD_NONNULL path);
+char* SERD_ALLOCATED
+serd_canonical_path(const SerdAllocator* SERD_NULLABLE allocator,
+                    const char* SERD_NONNULL           path);
 
 /**
    Compare two strings ignoring case.
@@ -463,13 +513,16 @@ serd_parse_uri(const char* SERD_NONNULL string);
 
    The returned path and `*hostname` must be freed with serd_free().
 
+   @param allocator Allocator for the returned string.
    @param uri A file URI.
    @param hostname If non-NULL, set to the hostname, if present.
-   @return A filesystem path.
+
+   @return A newly allocated path string that must be freed with serd_free().
 */
 SERD_API
 char* SERD_NULLABLE
-serd_parse_file_uri(const char* SERD_NONNULL uri,
+serd_parse_file_uri(const SerdAllocator* SERD_NULLABLE allocator,
+                    const char* SERD_NONNULL           uri,
                     char* SERD_NONNULL* SERD_NULLABLE hostname);
 
 /**
@@ -857,7 +910,8 @@ serd_node_construct_base64(size_t                   buf_size,
    @defgroup serd_node_allocation Dynamic Allocation
 
    This is a convenient higher-level node construction API which allocates
-   nodes on the heap.  The returned nodes must be freed with serd_node_free().
+   nodes with an allocator.  The returned nodes must be freed with
+   serd_node_free() using the same allocator.
 
    Note that in most cases it is better to use a #SerdNodes instead of managing
    individual node allocations.
@@ -876,10 +930,11 @@ serd_node_construct_base64(size_t                   buf_size,
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_node_new(SerdNodeType   type,
-              SerdStringView string,
-              SerdNodeFlags  flags,
-              SerdStringView meta);
+serd_node_new(const SerdAllocator* SERD_NULLABLE allocator,
+              SerdNodeType                       type,
+              SerdStringView                     string,
+              SerdNodeFlags                      flags,
+              SerdStringView                     meta);
 
 /**
    Create a new simple "token" node.
@@ -892,7 +947,9 @@ serd_node_new(SerdNodeType   type,
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_token(SerdNodeType type, SerdStringView string);
+serd_new_token(const SerdAllocator* SERD_NULLABLE allocator,
+               SerdNodeType                       type,
+               SerdStringView                     string);
 
 /**
    Create a new string literal node.
@@ -905,7 +962,8 @@ serd_new_token(SerdNodeType type, SerdStringView string);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_string(SerdStringView string);
+serd_new_string(const SerdAllocator* SERD_NULLABLE allocator,
+                SerdStringView                     string);
 
 /**
    Create a new URI node from a string.
@@ -918,7 +976,8 @@ serd_new_string(SerdStringView string);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_uri(SerdStringView string);
+serd_new_uri(const SerdAllocator* SERD_NULLABLE allocator,
+             SerdStringView                     string);
 
 /**
    Create a new URI node from a parsed URI.
@@ -931,7 +990,8 @@ serd_new_uri(SerdStringView string);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_parsed_uri(SerdURIView uri);
+serd_new_parsed_uri(const SerdAllocator* SERD_NULLABLE allocator,
+                    SerdURIView                        uri);
 
 /**
    Create a new file URI node from a path and optional hostname.
@@ -944,7 +1004,9 @@ serd_new_parsed_uri(SerdURIView uri);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_file_uri(SerdStringView path, SerdStringView hostname);
+serd_new_file_uri(const SerdAllocator* SERD_NULLABLE allocator,
+                  SerdStringView                     path,
+                  SerdStringView                     hostname);
 
 /**
    Create a new literal node.
@@ -957,9 +1019,10 @@ serd_new_file_uri(SerdStringView path, SerdStringView hostname);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_literal(SerdStringView string,
-                 SerdNodeFlags  flags,
-                 SerdStringView meta);
+serd_new_literal(const SerdAllocator* SERD_NULLABLE allocator,
+                 SerdStringView                     string,
+                 SerdNodeFlags                      flags,
+                 SerdStringView                     meta);
 
 /**
    Create a new canonical xsd:boolean node.
@@ -972,7 +1035,7 @@ serd_new_literal(SerdStringView string,
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_boolean(bool b);
+serd_new_boolean(const SerdAllocator* SERD_NULLABLE allocator, bool b);
 
 /**
    Create a new canonical xsd:decimal literal.
@@ -985,7 +1048,7 @@ serd_new_boolean(bool b);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_decimal(double d);
+serd_new_decimal(const SerdAllocator* SERD_NULLABLE allocator, double d);
 
 /**
    Create a new canonical xsd:double literal.
@@ -998,7 +1061,7 @@ serd_new_decimal(double d);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_double(double d);
+serd_new_double(const SerdAllocator* SERD_NULLABLE allocator, double d);
 
 /**
    Create a new canonical xsd:float literal.
@@ -1011,7 +1074,7 @@ serd_new_double(double d);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_float(float f);
+serd_new_float(const SerdAllocator* SERD_NULLABLE allocator, float f);
 
 /**
    Create a new canonical xsd:integer literal.
@@ -1024,7 +1087,9 @@ serd_new_float(float f);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_integer(int64_t i, SerdStringView datatype);
+serd_new_integer(const SerdAllocator* SERD_NULLABLE allocator,
+                 int64_t                            i,
+                 SerdStringView                     datatype);
 
 /**
    Create a new canonical xsd:base64Binary literal.
@@ -1037,9 +1102,10 @@ serd_new_integer(int64_t i, SerdStringView datatype);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_base64(const void* SERD_NONNULL buf,
-                size_t                   size,
-                SerdStringView           datatype);
+serd_new_base64(const SerdAllocator* SERD_NULLABLE allocator,
+                const void* SERD_NONNULL           buf,
+                size_t                             size,
+                SerdStringView                     datatype);
 
 /**
    @}
@@ -1126,12 +1192,14 @@ serd_get_base64(const SerdNode* SERD_NONNULL node,
 /// Return a deep copy of `node`
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_node_copy(const SerdNode* SERD_NULLABLE node);
+serd_node_copy(const SerdAllocator* SERD_NULLABLE allocator,
+               const SerdNode* SERD_NULLABLE      node);
 
 /// Free any data owned by `node`
 SERD_API
 void
-serd_node_free(SerdNode* SERD_NULLABLE node);
+serd_node_free(const SerdAllocator* SERD_NULLABLE allocator,
+               SerdNode* SERD_NULLABLE            node);
 
 /// Return the type of a node (SERD_URI, SERD_BLANK, or SERD_LITERAL)
 SERD_PURE_API
@@ -1221,7 +1289,7 @@ typedef struct SerdNodesImpl SerdNodes;
 /// Create a new node set
 SERD_API
 SerdNodes* SERD_ALLOCATED
-serd_nodes_new(void);
+serd_nodes_new(const SerdAllocator* SERD_NULLABLE allocator);
 
 /**
    Free `nodes` and all nodes that are stored in it.
@@ -1288,9 +1356,6 @@ serd_nodes_string(SerdNodes* SERD_NONNULL nodes, SerdStringView string);
    #SERD_HAS_DATATYPE is set, then this must be an absolute datatype URI.  If
    #SERD_HAS_LANGUAGE is set, then this must be an RFC 5646 language tag like
    "en-ca".  Otherwise, it is ignored.
-
-   @return A newly allocated literal node that must be freed with
-   serd_node_free(), or null if the arguments are invalid or allocation failed.
 */
 SERD_API
 const SerdNode* SERD_ALLOCATED
@@ -1424,6 +1489,7 @@ typedef struct SerdCaretImpl SerdCaret;
    valid.  That is, serd_caret_name() will return exactly the pointer
    `name`, not a copy.
 
+   @param allocator Allocator to use for caret memory.
    @param name The name of the document or stream (usually a file URI)
    @param line The line number in the document (1-based)
    @param col The column number in the document (1-based)
@@ -1431,17 +1497,22 @@ typedef struct SerdCaretImpl SerdCaret;
 */
 SERD_API
 SerdCaret* SERD_ALLOCATED
-serd_caret_new(const SerdNode* SERD_NONNULL name, unsigned line, unsigned col);
+serd_caret_new(const SerdAllocator* SERD_NONNULL allocator, // FIXME: NULLABLE
+               const SerdNode* SERD_NONNULL      name,
+               unsigned                          line,
+               unsigned                          col);
 
 /// Return a copy of `caret`
 SERD_API
 SerdCaret* SERD_ALLOCATED
-serd_caret_copy(const SerdCaret* SERD_NULLABLE caret);
+serd_caret_copy(const SerdAllocator* SERD_NONNULL allocator,
+                const SerdCaret* SERD_NULLABLE    caret);
 
 /// Free `caret`
 SERD_API
 void
-serd_caret_free(SerdCaret* SERD_NULLABLE caret);
+serd_caret_free(const SerdAllocator* SERD_NULLABLE allocator,
+                SerdCaret* SERD_NULLABLE           caret);
 
 /// Return true iff `lhs` is equal to `rhs`
 SERD_PURE_API
@@ -1494,6 +1565,7 @@ typedef enum {
    statements in models, this is the lifetime of the model.  For user-created
    statements, the simplest way to handle this is to use `SerdNodes`.
 
+   @param allocator Allocator to use for statement memory.
    @param s The subject
    @param p The predicate ("key")
    @param o The object ("value")
@@ -1503,21 +1575,24 @@ typedef enum {
 */
 SERD_API
 SerdStatement* SERD_ALLOCATED
-serd_statement_new(const SerdNode* SERD_NONNULL   s,
-                   const SerdNode* SERD_NONNULL   p,
-                   const SerdNode* SERD_NONNULL   o,
-                   const SerdNode* SERD_NULLABLE  g,
-                   const SerdCaret* SERD_NULLABLE caret);
+serd_statement_new(const SerdAllocator* SERD_NONNULL allocator,
+                   const SerdNode* SERD_NONNULL      s,
+                   const SerdNode* SERD_NONNULL      p,
+                   const SerdNode* SERD_NONNULL      o,
+                   const SerdNode* SERD_NULLABLE     g,
+                   const SerdCaret* SERD_NULLABLE    caret);
 
 /// Return a copy of `statement`
 SERD_API
 SerdStatement* SERD_ALLOCATED
-serd_statement_copy(const SerdStatement* SERD_NULLABLE statement);
+serd_statement_copy(const SerdAllocator* SERD_NULLABLE allocator,
+                    const SerdStatement* SERD_NULLABLE statement);
 
 /// Free `statement`
 SERD_API
 void
-serd_statement_free(SerdStatement* SERD_NULLABLE statement);
+serd_statement_free(const SerdAllocator* SERD_NULLABLE allocator,
+                    SerdStatement* SERD_NULLABLE       statement);
 
 /// Return the given node of the statement
 SERD_PURE_API
@@ -1592,12 +1667,16 @@ typedef struct SerdWorldImpl SerdWorld;
 */
 SERD_MALLOC_API
 SerdWorld* SERD_ALLOCATED
-serd_world_new(void);
+serd_world_new(const SerdAllocator* SERD_NULLABLE allocator);
 
 /// Free `world`
 SERD_API
 void
 serd_world_free(SerdWorld* SERD_NULLABLE world);
+
+SERD_PURE_API
+const SerdAllocator* SERD_NONNULL
+serd_world_allocator(const SerdWorld* SERD_NONNULL world);
 
 /**
    Return the nodes cache in `world`.
@@ -2079,11 +2158,12 @@ serd_env_write_prefixes(const SerdEnv* SERD_NONNULL  env,
    @param env Environment of `str`.  This must define any abbreviations needed
    to parse the string.
 
-   @return A newly allocated node that must be freed with serd_node_free().
+   @return A newly allocated node that must be freed with serd_node_free()
+   using the world allocator.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_node_from_syntax(SerdWorld* SERD_NULLABLE world,
+serd_node_from_syntax(SerdWorld* SERD_NONNULL  world,
                       const char* SERD_NONNULL str,
                       SerdSyntax               syntax,
                       SerdEnv* SERD_NULLABLE   env);
@@ -2094,6 +2174,8 @@ serd_node_from_syntax(SerdWorld* SERD_NULLABLE world,
    The returned string represents that node as if written as an object in the
    given syntax, without any extra quoting or punctuation.
 
+   @param world The world.
+
    @param node Node to write as a string.
 
    @param syntax Syntax to use.  Should be either SERD_TURTLE or SERD_NTRIPLES
@@ -2103,11 +2185,12 @@ serd_node_from_syntax(SerdWorld* SERD_NULLABLE world,
    @param env Environment for the output string.  This can be used to
    abbreviate things nicely by setting namespace prefixes.
 
-   @return A newly allocated string that must be freed with serd_free().
+   @return A newly allocated string that must be freed with serd_free() using
+   the world allocator.
 */
 SERD_API
 char* SERD_ALLOCATED
-serd_node_to_syntax(SerdWorld* SERD_NULLABLE     world,
+serd_node_to_syntax(SerdWorld* SERD_NONNULL      world,
                     const SerdNode* SERD_NONNULL node,
                     SerdSyntax                   syntax,
                     const SerdEnv* SERD_NULLABLE env);
@@ -2352,12 +2435,19 @@ typedef struct {
   size_t              len; ///< Size of buffer in bytes
 } SerdBuffer;
 
+/// A dynamically resizable mutable buffer in memory
+typedef struct {
+  const SerdAllocator* SERD_NULLABLE allocator; ///< Allocator for buf
+  void* SERD_NULLABLE                buf;       ///< Buffer
+  size_t                             len;       ///< Size of buffer in bytes
+} SerdDynamicBuffer;
+
 /**
    A function for writing to a buffer, resizing it if necessary.
 
-   This function can be used as a #SerdWriteFunc to write to a #SerdBuffer
-   which is resized as necessary with realloc().  The `stream` parameter must
-   point to an initialized #SerdBuffer.
+   This function can be used as a #SerdWriteFunc to write to a
+   #SerdDynamicBuffer which is reallocated as necessary.  The `stream`
+   parameter must point to an initialized #SerdDynamicBuffer.
 
    Note that when writing a string, the string in the buffer will not be
    null-terminated until serd_buffer_close() is called.
@@ -2415,16 +2505,16 @@ serd_open_output_stream(SerdWriteFunc SERD_NONNULL  write_func,
 /**
    Open a stream that writes to a buffer.
 
-   The `buffer` is owned by the caller, but will be expanded using `realloc` as
-   necessary.  Note that the string in the buffer will not be null terminated
-   until the stream is closed.
+   The `buffer` is owned by the caller, but will be reallocated using the
+   buffer's allocator as necessary.  Note that the string in the buffer will
+   not be null terminated until the stream is closed.
 
    @param buffer Buffer to write output to.
    @return An opened output stream, or all zeros on error.
 */
 SERD_API
 SerdOutputStream
-serd_open_output_buffer(SerdBuffer* SERD_NONNULL buffer);
+serd_open_output_buffer(SerdDynamicBuffer* SERD_NONNULL buffer);
 
 /**
    Open a stream that writes to a file.

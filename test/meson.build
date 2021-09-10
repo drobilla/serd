@@ -11,6 +11,7 @@ unit_tests = [
   'caret',
   'cursor',
   'env',
+  'filter',
   'free_null',
   'log',
   'model',
@@ -40,7 +41,7 @@ endif
 foreach unit : unit_tests
   test(unit,
        executable('test_@0@'.format(unit),
-                  'test_@0@.c'.format(unit),
+                  files('test_@0@.c'.format(unit), 'failing_allocator.c'),
                   c_args: c_warnings + prog_args,
                   dependencies: serd_dep),
        env: test_env,

@@ -16,13 +16,15 @@
 
 #undef NDEBUG
 
+#include "failing_allocator.h"
+
+#include "serd/serd.h"
+
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "serd/serd.h"
 
 #define WILDCARD_NODE NULL
 
@@ -147,7 +149,9 @@ test_read(SerdWorld*      world,
           const SerdNode* g,
           const unsigned  n_quads)
 {
-  SerdNodes* const nodes = serd_nodes_new();
+  const SerdAllocator* const allocator = serd_default_allocator();
+
+  SerdNodes* const nodes = serd_nodes_new(allocator);
 
   SerdCursor*          cursor = serd_model_begin(model);
   const SerdStatement* prev   = NULL;
@@ -334,6 +338,33 @@ ignore_index_error(void* handle, const SerdLogEntry* entry)
   }
 
   return SERD_SUCCESS;
+}
+
+static int
+test_failed_new_alloc(SerdWorld* ignored_world, const unsigned n_quads)
+{
+  (void)ignored_world;
+  (void)n_quads;
+
+  SerdFailingAllocatorState state          = {0u, SIZE_MAX};
+  SerdAllocator             allocator      = serd_failing_allocator(&state);
+  SerdWorld* const          world          = serd_world_new(&allocator);
+  const size_t              n_world_allocs = state.n_allocations;
+
+  // Successfully allocate a model to count the number of allocations
+  SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0u);
+  assert(model);
+
+  // Test that each allocation failing is handled gracefully
+  const size_t n_new_allocs = state.n_allocations - n_world_allocs;
+  for (size_t i = 0; i < n_new_allocs; ++i) {
+    state.n_remaining = i;
+    assert(!serd_model_new(world, SERD_ORDER_SPO, 0u));
+  }
+
+  serd_model_free(model);
+  serd_world_free(world);
+  return 0;
 }
 
 static int
@@ -556,7 +587,9 @@ test_inserter(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdNodes* const nodes    = serd_nodes_new();
+  const SerdAllocator* const allocator = serd_default_allocator();
+
+  SerdNodes* const nodes    = serd_nodes_new(allocator);
   SerdModel*       model    = serd_model_new(world, SERD_ORDER_SPO, 0u);
   SerdSink*        inserter = serd_inserter_new(model, NULL);
 
@@ -622,7 +655,9 @@ test_add_erase(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdNodes* const nodes = serd_nodes_new();
+  const SerdAllocator* const allocator = serd_default_allocator();
+
+  SerdNodes* const nodes = serd_nodes_new(allocator);
   SerdModel* const model = serd_model_new(world, SERD_ORDER_SPO, 0u);
 
   // Add (s p "hello")
@@ -659,7 +694,9 @@ test_add_bad_statement(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdNodes* const nodes = serd_nodes_new();
+  const SerdAllocator* const allocator = serd_world_allocator(world);
+
+  SerdNodes* const nodes = serd_nodes_new(allocator);
   const SerdNode*  s     = serd_nodes_uri(nodes, SERD_STRING("urn:s"));
   const SerdNode*  p     = serd_nodes_uri(nodes, SERD_STRING("urn:p"));
   const SerdNode*  o     = serd_nodes_uri(nodes, SERD_STRING("urn:o"));
@@ -667,7 +704,7 @@ test_add_bad_statement(SerdWorld* world, const unsigned n_quads)
   const SerdNode* f =
     serd_nodes_uri(nodes, SERD_STRING("file:///tmp/file.ttl"));
 
-  SerdCaret* caret = serd_caret_new(f, 16, 18);
+  SerdCaret* caret = serd_caret_new(allocator, f, 16, 18);
   SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0u);
 
   assert(!serd_model_add_with_caret(model, s, p, o, NULL, caret));
@@ -691,7 +728,7 @@ test_add_bad_statement(SerdWorld* world, const unsigned n_quads)
 
   serd_cursor_free(begin);
   serd_model_free(model);
-  serd_caret_free(caret);
+  serd_caret_free(allocator, caret);
   serd_nodes_free(nodes);
   return 0;
 }
@@ -701,7 +738,7 @@ test_add_with_caret(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdNodes* const nodes = serd_nodes_new();
+  SerdNodes* const nodes = serd_nodes_new(serd_world_allocator(world));
   const SerdNode*  lit   = serd_nodes_string(nodes, SERD_STRING("string"));
   const SerdNode*  uri   = serd_nodes_uri(nodes, SERD_STRING("urn:uri"));
   const SerdNode*  blank = serd_nodes_blank(nodes, SERD_STRING("b1"));
@@ -1031,7 +1068,7 @@ test_write_flat_range(SerdWorld* world, const unsigned n_quads)
   (void)n_quads;
 
   SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, SERD_STORE_GRAPHS);
-  SerdNodes* nodes = serd_nodes_new();
+  SerdNodes* nodes = serd_nodes_new(serd_world_allocator(world));
 
   const SerdNode* s  = serd_nodes_uri(nodes, SERD_STRING("urn:s"));
   const SerdNode* p  = serd_nodes_uri(nodes, SERD_STRING("urn:p"));
@@ -1044,9 +1081,9 @@ test_write_flat_range(SerdWorld* world, const unsigned n_quads)
   serd_model_add(model, s, p, b2, NULL);
   serd_model_add(model, b2, p, o, NULL);
 
-  SerdBuffer       buffer = {NULL, 0};
-  SerdEnv*         env    = serd_env_new(world, SERD_EMPTY_STRING());
-  SerdOutputStream out    = serd_open_output_buffer(&buffer);
+  SerdDynamicBuffer buffer = {NULL, NULL, 0};
+  SerdEnv*          env    = serd_env_new(world, SERD_EMPTY_STRING());
+  SerdOutputStream  out    = serd_open_output_buffer(&buffer);
 
   SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, &out, 1);
   assert(writer);
@@ -1074,7 +1111,7 @@ test_write_flat_range(SerdWorld* world, const unsigned n_quads)
 
   assert(!strcmp(str, expected));
 
-  serd_free(buffer.buf);
+  serd_free(NULL, buffer.buf);
   serd_writer_free(writer);
   serd_model_free(model);
   serd_env_free(env);
@@ -1088,7 +1125,7 @@ test_write_bad_list(SerdWorld* world, const unsigned n_quads)
   (void)n_quads;
 
   SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, SERD_STORE_GRAPHS);
-  SerdNodes* nodes = serd_nodes_new();
+  SerdNodes* nodes = serd_nodes_new(serd_world_allocator(world));
 
   serd_model_add_index(model, SERD_ORDER_OPS);
 
@@ -1114,9 +1151,9 @@ test_write_bad_list(SerdWorld* world, const unsigned n_quads)
   serd_model_add(model, list2, prest, norest, NULL);
   serd_model_add(model, norest, pfirst, val2, NULL);
 
-  SerdBuffer       buffer = {NULL, 0};
-  SerdEnv*         env    = serd_env_new(world, SERD_EMPTY_STRING());
-  SerdOutputStream out    = serd_open_output_buffer(&buffer);
+  SerdDynamicBuffer buffer = {NULL, NULL, 0};
+  SerdEnv*          env    = serd_env_new(world, SERD_EMPTY_STRING());
+  SerdOutputStream  out    = serd_open_output_buffer(&buffer);
 
   SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, &out, 1);
   assert(writer);
@@ -1139,7 +1176,7 @@ test_write_bad_list(SerdWorld* world, const unsigned n_quads)
 
   assert(!strcmp(str, expected));
 
-  free(buffer.buf);
+  serd_free(NULL, buffer.buf);
   serd_writer_free(writer);
   serd_close_output(&out);
   serd_model_free(model);
@@ -1154,7 +1191,7 @@ test_write_infinite_list(SerdWorld* world, const unsigned n_quads)
   (void)n_quads;
 
   SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, SERD_STORE_GRAPHS);
-  SerdNodes* nodes = serd_nodes_new();
+  SerdNodes* nodes = serd_nodes_new(serd_world_allocator(world));
 
   serd_model_add_index(model, SERD_ORDER_OPS);
 
@@ -1175,9 +1212,9 @@ test_write_infinite_list(SerdWorld* world, const unsigned n_quads)
   serd_model_add(model, list2, pfirst, val2, NULL);
   serd_model_add(model, list2, prest, list1, NULL);
 
-  SerdBuffer       buffer = {NULL, 0};
-  SerdEnv*         env    = serd_env_new(world, SERD_EMPTY_STRING());
-  SerdOutputStream out    = serd_open_output_buffer(&buffer);
+  SerdDynamicBuffer buffer = {NULL, NULL, 0};
+  SerdEnv*          env    = serd_env_new(world, SERD_EMPTY_STRING());
+  SerdOutputStream  out    = serd_open_output_buffer(&buffer);
 
   SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, &out, 1);
   assert(writer);
@@ -1206,7 +1243,7 @@ test_write_infinite_list(SerdWorld* world, const unsigned n_quads)
 
   assert(!strcmp(str, expected));
 
-  free(buffer.buf);
+  serd_free(NULL, buffer.buf);
   serd_writer_free(writer);
   serd_close_output(&out);
   serd_model_free(model);
@@ -1242,7 +1279,7 @@ test_write_error_in_list_subject(SerdWorld* world, const unsigned n_quads)
   serd_world_set_log_func(world, expected_error, NULL);
 
   SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0u);
-  SerdNodes* nodes = serd_nodes_new();
+  SerdNodes* nodes = serd_nodes_new(serd_world_allocator(world));
 
   serd_model_add_index(model, SERD_ORDER_OPS);
 
@@ -1299,7 +1336,7 @@ test_write_error_in_list_object(SerdWorld* world, const unsigned n_quads)
   serd_world_set_log_func(world, expected_error, NULL);
 
   SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0u);
-  SerdNodes* nodes = serd_nodes_new();
+  SerdNodes* nodes = serd_nodes_new(serd_world_allocator(world));
 
   serd_model_add_index(model, SERD_ORDER_OPS);
 
@@ -1356,7 +1393,8 @@ main(void)
 
   typedef int (*TestFunc)(SerdWorld*, unsigned);
 
-  const TestFunc tests[] = {test_free_null,
+  const TestFunc tests[] = {test_failed_new_alloc,
+                            test_free_null,
                             test_get_world,
                             test_get_default_order,
                             test_get_flags,
@@ -1390,7 +1428,7 @@ main(void)
                             test_write_error_in_list_object,
                             NULL};
 
-  SerdWorld* world = serd_world_new();
+  SerdWorld* world = serd_world_new(NULL);
   int        ret   = 0;
 
   for (const TestFunc* t = tests; *t; ++t) {

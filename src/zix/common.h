@@ -124,7 +124,7 @@ typedef int (*ZixComparator)(const void* a,
 typedef bool (*ZixEqualFunc)(const void* a, const void* b);
 
 /// Function to destroy an element
-typedef void (*ZixDestroyFunc)(void* ptr);
+typedef void (*ZixDestroyFunc)(void* ptr, const void* user_data);
 
 /**
    @}

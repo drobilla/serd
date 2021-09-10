@@ -91,7 +91,7 @@ on_event(void* handle, const SerdEvent* event)
 int
 main(void)
 {
-  SerdWorld* world = serd_world_new();
+  SerdWorld* world = serd_world_new(NULL);
   SerdSink*  sink  = serd_sink_new(world, NULL, on_event, NULL);
 
   static const char* const string = "@prefix eg: <http://example.org/> .\n"
