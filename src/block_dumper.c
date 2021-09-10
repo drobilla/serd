@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: ISC
 
 #include "block_dumper.h"
+
+#include "memory.h"
 #include "system.h"
 
 #include "serd/serd.h"
@@ -9,7 +11,8 @@
 #include <stddef.h>
 
 SerdStatus
-serd_block_dumper_open(SerdBlockDumper* const  dumper,
+serd_block_dumper_open(const SerdWorld* const  world,
+                       SerdBlockDumper* const  dumper,
                        SerdOutputStream* const output,
                        const size_t            block_size)
 {
@@ -26,7 +29,7 @@ serd_block_dumper_open(SerdBlockDumper* const  dumper,
     return SERD_SUCCESS;
   }
 
-  dumper->buf = (char*)serd_allocate_buffer(block_size);
+  dumper->buf = (char*)serd_waligned_alloc(world, SERD_PAGE_SIZE, block_size);
   return dumper->buf ? SERD_SUCCESS : SERD_BAD_ALLOC;
 }
 
@@ -42,5 +45,5 @@ serd_block_dumper_flush(SerdBlockDumper* const dumper)
 void
 serd_block_dumper_close(SerdBlockDumper* const dumper)
 {
-  serd_free_aligned(dumper->buf);
+  serd_aaligned_free(dumper->allocator, dumper->buf);
 }

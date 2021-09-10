@@ -1,7 +1,9 @@
-// Copyright 2019-2020 David Robillard <d@drobilla.net>
+// Copyright 2019-2021 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #undef NDEBUG
+
+#include "failing_allocator.h"
 
 #include "serd/serd.h"
 
@@ -82,19 +84,44 @@ on_event(void* const handle, const SerdEvent* const event)
 }
 
 static void
+test_failed_alloc(void)
+{
+  SerdFailingAllocator allocator = serd_failing_allocator();
+
+  SerdWorld* const world          = serd_world_new(&allocator.base);
+  const size_t     n_world_allocs = allocator.n_allocations;
+
+  // Successfully allocate a sink to count the number of allocations
+  SerdSink* const sink = serd_sink_new(world, NULL, NULL, NULL);
+  assert(sink);
+
+  // Test that each allocation failing is handled gracefully
+  const size_t n_new_allocs = allocator.n_allocations - n_world_allocs;
+  for (size_t i = 0; i < n_new_allocs; ++i) {
+    allocator.n_remaining = i;
+    assert(!serd_sink_new(world, NULL, NULL, NULL));
+  }
+
+  serd_sink_free(sink);
+  serd_world_free(world);
+}
+
+static void
 test_callbacks(void)
 {
-  SerdNodes* const nodes = serd_nodes_new();
+  SerdWorld* const     world     = serd_world_new(NULL);
+  SerdAllocator* const allocator = serd_world_allocator(world);
+  SerdNodes* const     nodes     = serd_nodes_new(allocator);
 
   const SerdNode* base  = serd_nodes_uri(nodes, serd_string(NS_EG));
   const SerdNode* name  = serd_nodes_string(nodes, serd_string("eg"));
   const SerdNode* uri   = serd_nodes_uri(nodes, serd_string(NS_EG "uri"));
   const SerdNode* blank = serd_nodes_blank(nodes, serd_string("b1"));
 
-  SerdEnv* env = serd_env_new(serd_node_string_view(base));
+  SerdEnv* env = serd_env_new(world, serd_node_string_view(base));
 
   SerdStatement* const statement =
-    serd_statement_new(base, uri, blank, NULL, NULL);
+    serd_statement_new(allocator, base, uri, blank, NULL, NULL);
 
   const SerdBaseEvent      base_event      = {SERD_BASE, uri};
   const SerdPrefixEvent    prefix_event    = {SERD_PREFIX, name, uri};
@@ -105,7 +132,7 @@ test_callbacks(void)
 
   // Call functions on a sink with no functions set
 
-  SerdSink* null_sink = serd_sink_new(&state, NULL, NULL);
+  SerdSink* null_sink = serd_sink_new(world, &state, NULL, NULL);
 
   assert(!serd_sink_write_base(null_sink, base));
   assert(!serd_sink_write_prefix(null_sink, name, uri));
@@ -128,7 +155,7 @@ test_callbacks(void)
 
   // Try again with a sink that has the event handler set
 
-  SerdSink* sink = serd_sink_new(&state, on_event, NULL);
+  SerdSink* sink = serd_sink_new(world, &state, on_event, NULL);
 
   assert(!serd_sink_write_base(sink, base));
   assert(serd_node_equals(state.last_base, base));
@@ -148,9 +175,10 @@ test_callbacks(void)
 
   serd_sink_free(sink);
 
-  serd_statement_free(statement);
+  serd_statement_free(allocator, statement);
   serd_env_free(env);
   serd_nodes_free(nodes);
+  serd_world_free(world);
 }
 
 static void
@@ -159,17 +187,22 @@ test_free(void)
   // Free of null should (as always) not crash
   serd_sink_free(NULL);
 
+  SerdWorld* const world = serd_world_new(NULL);
+
   // Set up a sink with dynamically allocated data and a free function
   uintptr_t* data = (uintptr_t*)calloc(1, sizeof(uintptr_t));
-  SerdSink*  sink = serd_sink_new(data, NULL, free);
+  SerdSink*  sink = serd_sink_new(world, data, NULL, free);
 
   // Free the sink, which should free the data (rely on valgrind or sanitizers)
   serd_sink_free(sink);
+
+  serd_world_free(world);
 }
 
 int
 main(void)
 {
+  test_failed_alloc();
   test_callbacks();
   test_free();
   return 0;

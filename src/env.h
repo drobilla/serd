@@ -19,6 +19,10 @@ serd_env_expand_in_place(const SerdEnv*  env,
                          SerdStringView* uri_suffix);
 
 SERD_PURE_FUNC
+SerdWorld*
+serd_env_world(const SerdEnv* env);
+
+SERD_PURE_FUNC
 SerdURIView
 serd_env_base_uri_view(const SerdEnv* env);
 

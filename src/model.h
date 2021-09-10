@@ -12,6 +12,7 @@
 #include <stddef.h>
 
 struct SerdModelImpl {
+  SerdAllocator*     allocator;     ///< Allocator for everything in this model
   SerdWorld*         world;         ///< World this model is a part of
   SerdNodes*         nodes;         ///< Interned nodes in this model
   ZixBTree*          indices[12];   ///< Trees of SerdStatement pointers

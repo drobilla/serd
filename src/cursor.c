@@ -3,6 +3,7 @@
 
 #include "cursor.h"
 
+#include "memory.h"
 #include "model.h"
 #include "node.h"
 #include "statement.h"
@@ -13,7 +14,6 @@
 
 #include <assert.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <string.h>
 
 static inline bool
@@ -120,14 +120,19 @@ serd_cursor_make(const SerdModel* const model,
 }
 
 SerdCursor*
-serd_cursor_copy(const SerdCursor* const cursor)
+serd_cursor_copy(SerdAllocator* const allocator, const SerdCursor* const cursor)
 {
   if (!cursor) {
     return NULL;
   }
 
-  SerdCursor* const copy = (SerdCursor* const)malloc(sizeof(SerdCursor));
-  memcpy(copy, cursor, sizeof(SerdCursor));
+  SerdCursor* const copy =
+    (SerdCursor* const)serd_amalloc(allocator, sizeof(SerdCursor));
+
+  if (copy) {
+    memcpy(copy, cursor, sizeof(SerdCursor));
+  }
+
   return copy;
 }
 
@@ -211,5 +216,7 @@ serd_cursor_equals(const SerdCursor* const lhs, const SerdCursor* const rhs)
 void
 serd_cursor_free(SerdCursor* const cursor)
 {
-  free(cursor);
+  if (cursor) {
+    serd_afree(cursor->model->allocator, cursor);
+  }
 }

@@ -15,5 +15,6 @@ Checks: >
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -cppcoreguidelines-avoid-non-const-global-variables,
   -hicpp-signed-bitwise,
+  -llvm-header-guard,
   -readability-function-cognitive-complexity,
 InheritParentConfig: true

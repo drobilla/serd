@@ -39,6 +39,7 @@ if is_variable('cc')
         '-Wno-cast-qual',
         '-Wno-format-nonliteral',
         '-Wno-inline',
+        '-Wno-null-dereference', # ARM32
         '-Wno-padded',
         '-Wno-strict-overflow',
         '-Wno-switch-default',
