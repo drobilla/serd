@@ -40,8 +40,10 @@ struct SerdEnvImpl {
 };
 
 SerdEnv*
-serd_env_new(const SerdStringView base_uri)
+serd_env_new(const SerdWorld* const world, const SerdStringView base_uri)
 {
+  assert(world);
+
   SerdEnv* env = (SerdEnv*)calloc(1, sizeof(struct SerdEnvImpl));
 
   env->nodes = serd_nodes_new();

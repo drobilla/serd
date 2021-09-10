@@ -35,7 +35,8 @@ on_node_string_event(void* const handle, const SerdEvent* const event)
 }
 
 static SerdNode*
-serd_node_from_syntax_in(const char* const str,
+serd_node_from_syntax_in(SerdWorld* const  world,
+                         const char* const str,
                          const SerdSyntax  syntax,
                          SerdEnv* const    env)
 {
@@ -50,9 +51,9 @@ serd_node_from_syntax_in(const char* const str,
 
   snprintf(doc, doc_len + 1, "%s %s .", prelude, str);
 
-  SerdNode*        object = NULL;
-  SerdWorld* const world  = serd_world_new();
-  SerdSink* const  sink   = serd_sink_new(&object, on_node_string_event, NULL);
+  SerdNode*       object = NULL;
+  SerdSink* const sink =
+    serd_sink_new(world, &object, on_node_string_event, NULL);
 
   SerdReader* const reader =
     serd_reader_new(world,
@@ -73,36 +74,36 @@ serd_node_from_syntax_in(const char* const str,
   serd_close_input(&in);
   serd_reader_free(reader);
   serd_sink_free(sink);
-  serd_world_free(world);
   free(doc);
 
   return object;
 }
 
 SerdNode*
-serd_node_from_syntax(const char* const str,
+serd_node_from_syntax(SerdWorld* const  world,
+                      const char* const str,
                       const SerdSyntax  syntax,
                       SerdEnv* const    env)
 {
   assert(str);
 
   if (env) {
-    return serd_node_from_syntax_in(str, syntax, env);
+    return serd_node_from_syntax_in(world, str, syntax, env);
   }
 
-  SerdEnv* const  temp_env = serd_env_new(SERD_EMPTY_STRING());
-  SerdNode* const node     = serd_node_from_syntax_in(str, syntax, temp_env);
+  SerdEnv* const  temp_env = serd_env_new(world, SERD_EMPTY_STRING());
+  SerdNode* const node = serd_node_from_syntax_in(world, str, syntax, temp_env);
 
   serd_env_free(temp_env);
   return node;
 }
 
 static char*
-serd_node_to_syntax_in(const SerdNode* const node,
+serd_node_to_syntax_in(SerdWorld* const      world,
+                       const SerdNode* const node,
                        const SerdSyntax      syntax,
                        const SerdEnv* const  env)
 {
-  SerdWorld* const  world  = serd_world_new();
   SerdBuffer        buffer = {NULL, 0};
   SerdOutputStream  out    = serd_open_output_buffer(&buffer);
   SerdWriter* const writer = serd_writer_new(world, syntax, 0, env, &out, 1);
@@ -118,24 +119,24 @@ serd_node_to_syntax_in(const SerdNode* const node,
 
   serd_writer_free(writer);
   serd_close_output(&out);
-  serd_world_free(world);
 
   return result;
 }
 
 char*
-serd_node_to_syntax(const SerdNode* const node,
+serd_node_to_syntax(SerdWorld* const      world,
+                    const SerdNode* const node,
                     const SerdSyntax      syntax,
                     const SerdEnv* const  env)
 {
   assert(node);
 
   if (env) {
-    return serd_node_to_syntax_in(node, syntax, env);
+    return serd_node_to_syntax_in(world, node, syntax, env);
   }
 
-  SerdEnv* const temp_env = serd_env_new(SERD_EMPTY_STRING());
-  char* const    string   = serd_node_to_syntax_in(node, syntax, temp_env);
+  SerdEnv* const temp_env = serd_env_new(world, SERD_EMPTY_STRING());
+  char* const    string = serd_node_to_syntax_in(world, node, syntax, temp_env);
 
   serd_env_free(temp_env);
   return string;

@@ -62,10 +62,12 @@ test_prepare_error(void)
   size_t           n_statements = 0;
   FILE* const      f            = tmpfile();
 
-  SerdSink* const sink = serd_sink_new(&n_statements, count_statements, NULL);
+  SerdSink* const sink =
+    serd_sink_new(world, &n_statements, count_statements, NULL);
+
   assert(sink);
 
-  SerdEnv* const    env = serd_env_new(SERD_EMPTY_STRING());
+  SerdEnv* const    env = serd_env_new(world, SERD_EMPTY_STRING());
   SerdReader* const reader =
     serd_reader_new(world, SERD_TURTLE, 0, env, sink, 4096);
 
@@ -94,10 +96,10 @@ test_read_string(void)
   SerdWorld* world        = serd_world_new();
   size_t     n_statements = 0;
 
-  SerdSink* sink = serd_sink_new(&n_statements, count_statements, NULL);
+  SerdSink* sink = serd_sink_new(world, &n_statements, count_statements, NULL);
   assert(sink);
 
-  SerdEnv* const    env = serd_env_new(SERD_EMPTY_STRING());
+  SerdEnv* const    env = serd_env_new(world, SERD_EMPTY_STRING());
   SerdReader* const reader =
     serd_reader_new(world, SERD_TURTLE, 0, env, sink, 4096);
 
@@ -196,8 +198,8 @@ test_read_eof_by_page(void)
 
   SerdWorld* world   = serd_world_new();
   size_t     ignored = 0u;
-  SerdSink*  sink    = serd_sink_new(&ignored, count_statements, NULL);
-  SerdEnv*   env     = serd_env_new(SERD_EMPTY_STRING());
+  SerdSink*  sink    = serd_sink_new(world, &ignored, count_statements, NULL);
+  SerdEnv*   env     = serd_env_new(world, SERD_EMPTY_STRING());
 
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0u, env, sink, 4096);
 
@@ -224,8 +226,8 @@ test_read_eof_by_byte(void)
 {
   SerdWorld* world   = serd_world_new();
   size_t     ignored = 0u;
-  SerdSink*  sink    = serd_sink_new(&ignored, count_statements, NULL);
-  SerdEnv*   env     = serd_env_new(SERD_EMPTY_STRING());
+  SerdSink*  sink    = serd_sink_new(world, &ignored, count_statements, NULL);
+  SerdEnv*   env     = serd_env_new(world, SERD_EMPTY_STRING());
 
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0u, env, sink, 4096);
 
@@ -255,10 +257,12 @@ test_read_chunks(void)
   FILE* const       f            = tmpfile();
   static const char null         = 0;
 
-  SerdSink* const sink = serd_sink_new(&n_statements, count_statements, NULL);
+  SerdSink* const sink =
+    serd_sink_new(world, &n_statements, count_statements, NULL);
+
   assert(sink);
 
-  SerdEnv* const    env = serd_env_new(SERD_EMPTY_STRING());
+  SerdEnv* const    env = serd_env_new(world, SERD_EMPTY_STRING());
   SerdReader* const reader =
     serd_reader_new(world, SERD_TURTLE, 0u, env, sink, 4096);
 
@@ -344,10 +348,11 @@ test_read_empty(void)
   size_t           n_statements = 0;
   FILE* const      f            = tmpfile();
 
-  SerdSink* const sink = serd_sink_new(&n_statements, count_statements, NULL);
+  SerdSink* const sink =
+    serd_sink_new(world, &n_statements, count_statements, NULL);
   assert(sink);
 
-  SerdEnv* const    env = serd_env_new(SERD_EMPTY_STRING());
+  SerdEnv* const    env = serd_env_new(world, SERD_EMPTY_STRING());
   SerdReader* const reader =
     serd_reader_new(world, SERD_SYNTAX_EMPTY, 0, env, sink, 4096);
 
@@ -394,8 +399,8 @@ test_error_cursor(void)
 {
   SerdWorld*        world  = serd_world_new();
   bool              called = false;
-  SerdSink*         sink   = serd_sink_new(&called, check_cursor, NULL);
-  SerdEnv* const    env    = serd_env_new(SERD_EMPTY_STRING());
+  SerdSink*         sink   = serd_sink_new(world, &called, check_cursor, NULL);
+  SerdEnv* const    env    = serd_env_new(world, SERD_EMPTY_STRING());
   SerdReader* const reader =
     serd_reader_new(world, SERD_TURTLE, 0, env, sink, 4096);
 

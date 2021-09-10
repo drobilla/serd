@@ -109,9 +109,10 @@ SerdStatus
 serd_parse_common_option(OptionIter* iter, SerdCommonOptions* opts);
 
 SerdEnv*
-serd_create_env(const char* program,
-                const char* base_string,
-                const char* out_filename);
+serd_create_env(const SerdWorld* world,
+                const char*      program,
+                const char*      base_string,
+                const char*      out_filename);
 
 SerdSyntax
 serd_choose_syntax(SerdWorld*        world,
