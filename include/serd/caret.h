@@ -26,6 +26,7 @@ typedef struct SerdCaretImpl SerdCaret;
    valid.  That is, serd_caret_name() will return exactly the pointer
    `name`, not a copy.
 
+   @param allocator Allocator to use for caret memory.
    @param name The name of the document or stream (usually a file URI)
    @param line The line number in the document (1-based)
    @param col The column number in the document (1-based)
@@ -33,17 +34,22 @@ typedef struct SerdCaretImpl SerdCaret;
 */
 SERD_API
 SerdCaret* SERD_ALLOCATED
-serd_caret_new(const SerdNode* SERD_NONNULL name, unsigned line, unsigned col);
+serd_caret_new(SerdAllocator* SERD_NULLABLE allocator,
+               const SerdNode* SERD_NONNULL name,
+               unsigned                     line,
+               unsigned                     col);
 
 /// Return a copy of `caret`
 SERD_API
 SerdCaret* SERD_ALLOCATED
-serd_caret_copy(const SerdCaret* SERD_NULLABLE caret);
+serd_caret_copy(SerdAllocator* SERD_NULLABLE   allocator,
+                const SerdCaret* SERD_NULLABLE caret);
 
 /// Free `caret`
 SERD_API
 void
-serd_caret_free(SerdCaret* SERD_NULLABLE caret);
+serd_caret_free(SerdAllocator* SERD_NULLABLE allocator,
+                SerdCaret* SERD_NULLABLE     caret);
 
 /// Return true iff `lhs` is equal to `rhs`
 SERD_PURE_API

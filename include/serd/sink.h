@@ -8,6 +8,7 @@
 #include "serd/event.h"
 #include "serd/node.h"
 #include "serd/statement.h"
+#include "serd/world.h"
 
 SERD_BEGIN_DECLS
 
@@ -63,15 +64,17 @@ typedef void (*SerdFreeFunc)(void* SERD_NULLABLE ptr);
 /**
    Create a new sink.
 
+   @param world The world to create the sink in.
    @param handle Opaque handle that will be passed to sink functions.
    @param event_func Function that will be called for every event.
    @param free_handle Free function to call on handle in serd_sink_free().
 */
 SERD_API
 SerdSink* SERD_ALLOCATED
-serd_sink_new(void* SERD_NULLABLE         handle,
-              SerdEventFunc SERD_NULLABLE event_func,
-              SerdFreeFunc SERD_NULLABLE  free_handle);
+serd_sink_new(const SerdWorld* SERD_NONNULL world,
+              void* SERD_NULLABLE           handle,
+              SerdEventFunc SERD_NULLABLE   event_func,
+              SerdFreeFunc SERD_NULLABLE    free_handle);
 
 /// Free `sink`
 SERD_API

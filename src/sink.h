@@ -6,14 +6,16 @@
 
 #include "serd/event.h"
 #include "serd/sink.h"
+#include "serd/world.h"
 
 /**
    An interface that receives a stream of RDF data.
 */
 struct SerdSinkImpl {
-  void*         handle;
-  SerdFreeFunc  free_handle;
-  SerdEventFunc on_event;
+  const SerdWorld* world;
+  void*            handle;
+  SerdFreeFunc     free_handle;
+  SerdEventFunc    on_event;
 };
 
 #endif // SERD_SRC_SINK_H

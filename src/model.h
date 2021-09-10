@@ -7,6 +7,7 @@
 #include "cursor.h"
 
 #include "serd/cursor.h"
+#include "serd/memory.h"
 #include "serd/model.h"
 #include "serd/nodes.h"
 #include "serd/world.h"
@@ -15,6 +16,7 @@
 #include <stddef.h>
 
 struct SerdModelImpl {
+  SerdAllocator*     allocator;     ///< Allocator for everything in this model
   SerdWorld*         world;         ///< World this model is a part of
   SerdNodes*         nodes;         ///< Interned nodes in this model
   ZixBTree*          indices[12];   ///< Trees of SerdStatement pointers

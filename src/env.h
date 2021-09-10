@@ -9,6 +9,7 @@
 #include "serd/status.h"
 #include "serd/string_view.h"
 #include "serd/uri.h"
+#include "serd/world.h"
 
 /**
    Expand `curie`.
@@ -21,6 +22,10 @@ serd_env_expand_in_place(const SerdEnv*  env,
                          SerdStringView  curie,
                          SerdStringView* uri_prefix,
                          SerdStringView* uri_suffix);
+
+SERD_PURE_FUNC
+SerdWorld*
+serd_env_world(const SerdEnv* env);
 
 SERD_PURE_FUNC
 SerdURIView

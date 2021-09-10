@@ -5,6 +5,7 @@
 
 #include "block_dumper.h"
 #include "env.h"
+#include "memory.h"
 #include "node.h"
 #include "sink.h"
 #include "string_utils.h"
@@ -18,6 +19,7 @@
 #include "serd/env.h"
 #include "serd/event.h"
 #include "serd/log.h"
+#include "serd/memory.h"
 #include "serd/output_stream.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
@@ -32,7 +34,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #ifndef _MSC_VER
@@ -173,9 +174,9 @@ supports_uriref(const SerdWriter* writer)
 static SerdStatus
 free_context(SerdWriter* writer)
 {
-  serd_node_free(writer->context.graph);
-  serd_node_free(writer->context.subject);
-  serd_node_free(writer->context.predicate);
+  serd_node_free(writer->world->allocator, writer->context.graph);
+  serd_node_free(writer->world->allocator, writer->context.subject);
+  serd_node_free(writer->world->allocator, writer->context.predicate);
   return SERD_SUCCESS;
 }
 
@@ -193,9 +194,9 @@ push_context(SerdWriter* const        writer,
 
   const WriteContext new_context = {type,
                                     flags,
-                                    serd_node_copy(g),
-                                    serd_node_copy(s),
-                                    serd_node_copy(p),
+                                    serd_node_copy(writer->world->allocator, g),
+                                    serd_node_copy(writer->world->allocator, s),
+                                    serd_node_copy(writer->world->allocator, p),
                                     false};
 
   writer->anon_stack[writer->anon_stack_size++] = writer->context;
@@ -948,8 +949,9 @@ write_pred(SerdWriter* writer, SerdStatementFlags flags, const SerdNode* pred)
   SerdStatus st = SERD_SUCCESS;
   TRY(st, write_node(writer, pred, SERD_PREDICATE, flags));
   TRY(st, write_sep(writer, flags, SEP_P_O));
-  serd_node_set(&writer->context.predicate, pred);
-  return st;
+
+  return serd_node_set(
+    writer->world->allocator, &writer->context.predicate, pred);
 }
 
 SERD_WARN_UNUSED_RESULT static SerdStatus
@@ -1025,12 +1027,10 @@ update_abbreviation_context(SerdWriter* const        writer,
   SerdStatus st = SERD_SUCCESS;
 
   // Push context for list or anonymous subject if necessary
-  if (!st) {
-    if (flags & SERD_ANON_S) {
-      st = push_context(writer, CTX_BLANK, flags, graph, subject, predicate);
-    } else if (flags & SERD_LIST_S) {
-      st = push_context(writer, CTX_LIST, flags, graph, subject, NULL);
-    }
+  if (flags & SERD_ANON_S) {
+    st = push_context(writer, CTX_BLANK, flags, graph, subject, predicate);
+  } else if (flags & SERD_LIST_S) {
+    st = push_context(writer, CTX_LIST, flags, graph, subject, NULL);
   }
 
   // Push context for list or anonymous object if necessary
@@ -1045,9 +1045,10 @@ update_abbreviation_context(SerdWriter* const        writer,
   // Update current context to this statement if this isn't a new context
   if (!st) {
     if (!(flags & (SERD_ANON_S | SERD_LIST_S | SERD_ANON_O | SERD_LIST_O))) {
-      serd_node_set(&writer->context.graph, graph);
-      serd_node_set(&writer->context.subject, subject);
-      serd_node_set(&writer->context.predicate, predicate);
+      SerdAllocator* const allocator = writer->world->allocator;
+      TRY(st, serd_node_set(allocator, &writer->context.graph, graph));
+      TRY(st, serd_node_set(allocator, &writer->context.subject, subject));
+      TRY(st, serd_node_set(allocator, &writer->context.predicate, predicate));
     }
   }
 
@@ -1123,11 +1124,16 @@ write_turtle_trig_statement(SerdWriter* const        writer,
     }
 
     // Write new subject
+
     if (!ctx(writer, SERD_GRAPH)) {
       TRY(st, write_top_level_sep(writer));
     }
+
     reset_context(writer, false);
-    serd_node_set(&writer->context.subject, subject);
+    TRY(st,
+        serd_node_set(
+          writer->world->allocator, &writer->context.subject, subject));
+
     TRY(st, write_node(writer, subject, SERD_SUBJECT, flags));
 
     // Write appropriate S,P separator based on the context
@@ -1184,7 +1190,7 @@ write_trig_statement(SerdWriter* const        writer,
     if (graph) {
       TRY(st, write_node(writer, graph, SERD_GRAPH, flags));
       TRY(st, write_sep(writer, flags, SEP_GRAPH_BEGIN));
-      serd_node_set(&writer->context.graph, graph);
+      serd_node_set(writer->world->allocator, &writer->context.graph, graph);
     }
   }
 
@@ -1324,13 +1330,18 @@ serd_writer_new(SerdWorld*        world,
   assert(env);
   assert(output);
 
-  SerdBlockDumper dumper = {NULL, NULL, 0U, 0U};
-  if (serd_block_dumper_open(&dumper, output, block_size)) {
+  SerdBlockDumper dumper = {world->allocator, NULL, NULL, 0U, 0U};
+  if (serd_block_dumper_open(world, &dumper, output, block_size)) {
     return NULL;
   }
 
   const WriteContext context = WRITE_CONTEXT_NULL;
-  SerdWriter*        writer  = (SerdWriter*)calloc(1, sizeof(SerdWriter));
+
+  SerdWriter* writer = (SerdWriter*)serd_wcalloc(world, 1, sizeof(SerdWriter));
+  if (!writer) {
+    serd_block_dumper_close(&dumper);
+    return NULL;
+  }
 
   writer->world     = world;
   writer->syntax    = syntax;
@@ -1342,9 +1353,15 @@ serd_writer_new(SerdWorld*        world,
   writer->context   = context;
   writer->empty     = true;
 
-  writer->anon_stack =
-    (WriteContext*)calloc(anon_stack_capacity, sizeof(WriteContext));
+  writer->anon_stack = (WriteContext*)serd_wcalloc(
+    world, anon_stack_capacity, sizeof(WriteContext));
 
+  if (!writer->anon_stack) {
+    serd_wfree(world, writer);
+    return NULL;
+  }
+
+  writer->iface.world    = world;
   writer->iface.handle   = writer;
   writer->iface.on_event = (SerdEventFunc)serd_writer_on_event;
 
@@ -1383,12 +1400,12 @@ serd_writer_set_root_uri(SerdWriter* writer, const SerdStringView uri)
 {
   assert(writer);
 
-  serd_node_free(writer->root_node);
+  serd_node_free(writer->world->allocator, writer->root_node);
   writer->root_node = NULL;
   writer->root_uri  = SERD_URI_NULL;
 
   if (uri.len) {
-    writer->root_node = serd_new_uri(uri);
+    writer->root_node = serd_new_uri(writer->world->allocator, uri);
     writer->root_uri  = serd_node_uri_view(writer->root_node);
   }
 
@@ -1436,9 +1453,9 @@ serd_writer_free(SerdWriter* writer)
 
   serd_writer_finish(writer);
   serd_block_dumper_close(&writer->output);
-  free(writer->anon_stack);
-  serd_node_free(writer->root_node);
-  free(writer);
+  serd_wfree(writer->world, writer->anon_stack);
+  serd_node_free(writer->world->allocator, writer->root_node);
+  serd_wfree(writer->world, writer);
 }
 
 const SerdSink*

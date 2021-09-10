@@ -5,10 +5,12 @@
 #define SERD_ENV_H
 
 #include "serd/attributes.h"
+#include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/status.h"
 #include "serd/string_view.h"
+#include "serd/world.h"
 
 #include <stdbool.h>
 
@@ -26,12 +28,13 @@ typedef struct SerdEnvImpl SerdEnv;
 /// Create a new environment
 SERD_API
 SerdEnv* SERD_ALLOCATED
-serd_env_new(SerdStringView base_uri);
+serd_env_new(SerdWorld* SERD_NONNULL world, SerdStringView base_uri);
 
 /// Copy an environment
 SERD_API
 SerdEnv* SERD_ALLOCATED
-serd_env_copy(const SerdEnv* SERD_NULLABLE env);
+serd_env_copy(SerdAllocator* SERD_NULLABLE allocator,
+              const SerdEnv* SERD_NULLABLE env);
 
 /// Return true iff `a` is equal to `b`
 SERD_PURE_API

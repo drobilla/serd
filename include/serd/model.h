@@ -77,7 +77,8 @@ serd_model_new(SerdWorld* SERD_NONNULL world,
 /// Return a deep copy of `model`
 SERD_API
 SerdModel* SERD_ALLOCATED
-serd_model_copy(const SerdModel* SERD_NONNULL model);
+serd_model_copy(SerdAllocator* SERD_NULLABLE  allocator,
+                const SerdModel* SERD_NONNULL model);
 
 /// Return true iff `a` is equal to `b`, ignoring statement cursor metadata
 SERD_API

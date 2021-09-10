@@ -78,8 +78,8 @@ on_event(void* handle, const SerdEvent* event)
 int
 main(void)
 {
-  SerdWorld* world = serd_world_new();
-  SerdSink*  sink  = serd_sink_new(NULL, on_event, NULL);
+  SerdWorld* world = serd_world_new(NULL);
+  SerdSink*  sink  = serd_sink_new(world, NULL, on_event, NULL);
 
   static const char* const string = "@prefix eg: <http://example.org/> .\n"
                                     "@base <http://example.org/base> .\n"
@@ -91,7 +91,7 @@ main(void)
                                     "eg:s3 eg:p1 eg:o1 .\n"
                                     "eg:s4 eg:p1 [ eg:p3 eg:o1 ] .\n";
 
-  SerdEnv*    env    = serd_env_new(serd_empty_string());
+  SerdEnv*    env    = serd_env_new(world, serd_empty_string());
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0, env, sink, 4096);
   assert(reader);
 

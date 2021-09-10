@@ -18,14 +18,14 @@ test_size(SerdWorld* const      world,
           const SerdReaderFlags flags,
           const size_t          stack_size)
 {
-  SerdSink*         sink = serd_sink_new(NULL, NULL, NULL);
-  SerdEnv* const    env  = serd_env_new(serd_empty_string());
+  SerdSink*         sink = serd_sink_new(world, NULL, NULL, NULL);
+  SerdEnv* const    env  = serd_env_new(world, serd_empty_string());
   SerdReader* const reader =
     serd_reader_new(world, syntax, flags, env, sink, stack_size);
 
   assert(reader);
 
-  SerdNode*       string_name = serd_new_string(serd_string("string"));
+  SerdNode*       string_name = serd_new_string(NULL, serd_string("string"));
   const char*     position    = str;
   SerdInputStream in          = serd_open_input_string(&position);
   serd_reader_start(reader, &in, string_name, 1);
@@ -33,7 +33,7 @@ test_size(SerdWorld* const      world,
   const SerdStatus st = serd_reader_read_document(reader);
 
   serd_close_input(&in);
-  serd_node_free(string_name);
+  serd_node_free(NULL, string_name);
   serd_reader_free(reader);
   serd_env_free(env);
   serd_sink_free(sink);
@@ -72,7 +72,7 @@ test_ntriples_overflow(void)
     NULL,
   };
 
-  SerdWorld* const world = serd_world_new();
+  SerdWorld* const world = serd_world_new(NULL);
 
   for (const char* const* t = test_strings; *t; ++t) {
     test_all_sizes(world, *t, SERD_NTRIPLES, 0U);
@@ -198,7 +198,7 @@ test_turtle_overflow(void)
     NULL,
   };
 
-  SerdWorld* const world = serd_world_new();
+  SerdWorld* const world = serd_world_new(NULL);
 
   for (const char* const* t = test_strings; *t; ++t) {
     test_all_sizes(world, *t, SERD_TURTLE, SERD_READ_VARIABLES);

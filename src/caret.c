@@ -3,7 +3,10 @@
 
 #include "caret.h"
 
+#include "memory.h"
+
 #include "serd/caret.h"
+#include "serd/memory.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -11,34 +14,46 @@
 #include <string.h>
 
 SerdCaret*
-serd_caret_new(const SerdNode* name, unsigned line, unsigned col)
+serd_caret_new(SerdAllocator* const  allocator,
+               const SerdNode* const name,
+               const unsigned        line,
+               const unsigned        col)
 {
   assert(name);
 
-  SerdCaret* caret = (SerdCaret*)malloc(sizeof(SerdCaret));
+  SerdCaret* const caret =
+    (SerdCaret*)serd_amalloc(allocator, sizeof(SerdCaret));
 
-  caret->file = name;
-  caret->line = line;
-  caret->col  = col;
+  if (caret) {
+    caret->file = name;
+    caret->line = line;
+    caret->col  = col;
+  }
+
   return caret;
 }
 
 SerdCaret*
-serd_caret_copy(const SerdCaret* caret)
+serd_caret_copy(SerdAllocator* const allocator, const SerdCaret* caret)
 {
   if (!caret) {
     return NULL;
   }
 
-  SerdCaret* copy = (SerdCaret*)malloc(sizeof(SerdCaret));
-  memcpy(copy, caret, sizeof(SerdCaret));
+  SerdCaret* const copy =
+    (SerdCaret*)serd_amalloc(allocator, sizeof(SerdCaret));
+
+  if (copy) {
+    memcpy(copy, caret, sizeof(SerdCaret));
+  }
+
   return copy;
 }
 
 void
-serd_caret_free(SerdCaret* caret)
+serd_caret_free(SerdAllocator* const allocator, SerdCaret* caret)
 {
-  free(caret);
+  serd_afree(allocator, caret);
 }
 
 bool

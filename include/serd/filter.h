@@ -7,6 +7,7 @@
 #include "serd/attributes.h"
 #include "serd/node.h"
 #include "serd/sink.h"
+#include "serd/world.h"
 
 #include <stdbool.h>
 
@@ -42,7 +43,8 @@ SERD_BEGIN_DECLS
 */
 SERD_API
 SerdSink* SERD_ALLOCATED
-serd_filter_new(const SerdSink* SERD_NONNULL  target,
+serd_filter_new(const SerdWorld* SERD_NONNULL world,
+                const SerdSink* SERD_NONNULL  target,
                 const SerdNode* SERD_NULLABLE subject,
                 const SerdNode* SERD_NULLABLE predicate,
                 const SerdNode* SERD_NULLABLE object,

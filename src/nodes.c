@@ -3,26 +3,27 @@
 
 #include "nodes.h"
 
+#include "memory.h"
 #include "node.h"
 #include "node_spec.h"
-#include "system.h"
 
 // Define the types used in the hash interface for more type safety
 #define ZIX_HASH_KEY_TYPE SerdNode
 #define ZIX_HASH_RECORD_TYPE NodesEntry
 #define ZIX_HASH_SEARCH_DATA_TYPE NodeSpec
 
+#include "serd/memory.h"
 #include "serd/nodes.h"
 #include "serd/status.h"
 #include "serd/string_view.h"
 #include "serd/uri.h"
+#include "zix/allocator.h"
 #include "zix/digest.h"
 #include "zix/hash.h"
 
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #if ((defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112l) || \
@@ -66,7 +67,8 @@ typedef struct {
 } StaticNode;
 
 struct SerdNodesImpl {
-  ZixHash* hash;
+  SerdAllocator* allocator;
+  ZixHash*       hash;
 };
 
 static const StaticNode empty_static_node = {{0U, 0U, SERD_LITERAL}, {'\0'}};
@@ -175,10 +177,10 @@ nodes_equal(const SerdNode* const a, const SerdNode* const b)
 }
 
 static NodesEntry*
-new_entry(const size_t node_size)
+new_entry(SerdAllocator* const allocator, const size_t node_size)
 {
-  NodesEntry* const entry = (NodesEntry*)serd_calloc_aligned(
-    serd_node_align, sizeof(NodesEntryHead) + node_size);
+  NodesEntry* const entry = (NodesEntry*)serd_aaligned_calloc(
+    allocator, serd_node_align, sizeof(NodesEntryHead) + node_size);
 
   if (entry) {
     entry->head.refs = 1U;
@@ -188,11 +190,20 @@ new_entry(const size_t node_size)
 }
 
 SerdNodes*
-serd_nodes_new(void)
+serd_nodes_new(SerdAllocator* const allocator)
 {
-  SerdNodes* const nodes = (SerdNodes*)calloc(1, sizeof(SerdNodes));
+  SerdNodes* const nodes =
+    (SerdNodes*)serd_acalloc(allocator, 1, sizeof(SerdNodes));
 
-  nodes->hash = zix_hash_new(NULL, nodes_key, nodes_hash, nodes_equal);
+  if (nodes) {
+    nodes->allocator = allocator;
+
+    if (!(nodes->hash = zix_hash_new(
+            (ZixAllocator*)allocator, nodes_key, nodes_hash, nodes_equal))) {
+      serd_afree(allocator, nodes);
+      return NULL;
+    }
+  }
 
   return nodes;
 }
@@ -204,11 +215,11 @@ serd_nodes_free(SerdNodes* nodes)
     for (ZixHashIter i = zix_hash_begin(nodes->hash);
          i != zix_hash_end(nodes->hash);
          i = zix_hash_next(nodes->hash, i)) {
-      serd_free_aligned(zix_hash_get(nodes->hash, i));
+      serd_aaligned_free(nodes->allocator, zix_hash_get(nodes->hash, i));
     }
 
     zix_hash_free(nodes->hash);
-    free(nodes);
+    serd_afree(nodes->allocator, nodes);
   }
 }
 
@@ -237,7 +248,10 @@ serd_nodes_intern(SerdNodes* nodes, const SerdNode* node)
   }
 
   const size_t      node_size = serd_node_total_size(node);
-  NodesEntry* const entry     = new_entry(node_size);
+  NodesEntry* const entry     = new_entry(nodes->allocator, node_size);
+  if (!entry) {
+    return NULL;
+  }
 
   memcpy(&entry->node, node, node_size);
 
@@ -263,6 +277,10 @@ serd_nodes_get(const SerdNodes* const nodes, const SerdNode* const node)
 static const SerdNode*
 serd_nodes_manage_entry(SerdNodes* const nodes, NodesEntry* const entry)
 {
+  if (!entry) {
+    return NULL;
+  }
+
   const SerdNode* const   node     = &entry->node;
   const ZixHashInsertPlan plan     = zix_hash_plan_insert(nodes->hash, node);
   NodesEntry* const       existing = zix_hash_record_at(nodes->hash, plan);
@@ -270,12 +288,16 @@ serd_nodes_manage_entry(SerdNodes* const nodes, NodesEntry* const entry)
     assert(serd_node_equals(&existing->node, node));
     assert(nodes_hash(&existing->node) == plan.code);
     ++existing->head.refs;
-    serd_free_aligned(entry);
+    serd_aaligned_free(nodes->allocator, entry);
     return &existing->node;
   }
 
-  // Insert the entry (blissfully ignoring a failed hash size increase)
-  zix_hash_insert_at(nodes->hash, plan, entry);
+  // Insert the entry (or fail and free it on a failed hash size increase)
+  if (zix_hash_insert_at(nodes->hash, plan, entry)) {
+    serd_aaligned_free(nodes->allocator, entry);
+    return NULL;
+  }
+
   assert(nodes_hash(&entry->node) == plan.code);
   return &entry->node;
 }
@@ -299,21 +321,26 @@ serd_nodes_token(SerdNodes* const     nodes,
 
   const size_t      padded_length = serd_node_pad_length(string.len);
   const size_t      node_size     = sizeof(SerdNode) + padded_length;
-  NodesEntry* const entry         = new_entry(node_size);
+  NodesEntry* const entry         = new_entry(nodes->allocator, node_size);
   SerdNode* const   node          = entry ? &entry->node : NULL;
-
-  if (node) {
-    // Construct the token directly into the node in the new entry
-    const SerdWriteResult r =
-      serd_node_construct_token(node_size, &entry->node, type, string);
-
-    assert(!r.status); // Never fails with sufficient space
-    (void)r;
-
-    // Insert the entry (blissfully ignoring a failed hash size increase)
-    zix_hash_insert_at(nodes->hash, plan, entry);
-    assert(nodes_hash(node) == code);
+  if (!node) {
+    return NULL;
   }
+
+  // Construct the token directly into the node in the new entry
+  const SerdWriteResult r =
+    serd_node_construct_token(node_size, &entry->node, type, string);
+
+  assert(!r.status); // Never fails with sufficient space
+  (void)r;
+
+  // Insert the entry (blissfully ignoring a failed hash size increase)
+  if (zix_hash_insert_at(nodes->hash, plan, entry)) {
+    serd_aaligned_free(nodes->allocator, entry);
+    return NULL;
+  }
+
+  assert(nodes_hash(node) == code);
 
   return node;
 }
@@ -347,7 +374,7 @@ serd_nodes_literal(SerdNodes* const     nodes,
   }
 
   // Allocate a new entry with enough space for the node
-  NodesEntry* const entry = new_entry(r.count);
+  NodesEntry* const entry = new_entry(nodes->allocator, r.count);
   SerdNode* const   node  = entry ? &entry->node : NULL;
 
   if (node) {
@@ -450,13 +477,15 @@ serd_nodes_base64(SerdNodes* const     nodes,
     serd_node_construct_base64(0, NULL, value_size, value, datatype);
 
   // Allocate a new entry to and construct the node into it
-  NodesEntry* const entry = new_entry(r.count);
+  NodesEntry* const entry = new_entry(nodes->allocator, r.count);
+  if (entry) {
+    r = serd_node_construct_base64(
+      r.count, &entry->node, value_size, value, datatype);
 
-  r = serd_node_construct_base64(
-    r.count, &entry->node, value_size, value, datatype);
+    assert(!r.status);
+    (void)r;
+  }
 
-  assert(!r.status);
-  (void)r;
   return serd_nodes_manage_entry(nodes, entry);
 }
 
@@ -480,11 +509,12 @@ serd_nodes_parsed_uri(SerdNodes* const nodes, const SerdURIView uri)
   assert(r.status == SERD_OVERFLOW); // Currently no other errors
 
   // Allocate a new entry to write the URI node into
-  NodesEntry* const entry = new_entry(r.count);
-
-  r = serd_node_construct_uri(r.count, &entry->node, uri);
-  assert(!r.status);
-  (void)r;
+  NodesEntry* const entry = new_entry(nodes->allocator, r.count);
+  if (entry) {
+    r = serd_node_construct_uri(r.count, &entry->node, uri);
+    assert(!r.status);
+    (void)r;
+  }
 
   return serd_nodes_manage_entry(nodes, entry);
 }
@@ -505,7 +535,7 @@ serd_nodes_file_uri(SerdNodes* const     nodes,
   assert(r.status == SERD_OVERFLOW); // Currently no other errors
 
   // Allocate a new entry to write the URI node into
-  NodesEntry* const entry = new_entry(r.count);
+  NodesEntry* const entry = new_entry(nodes->allocator, r.count);
   if (entry) {
     r = serd_node_construct_file_uri(r.count, &entry->node, path, hostname);
     assert(!r.status);
@@ -538,6 +568,6 @@ serd_nodes_deref(SerdNodes* const nodes, const SerdNode* const node)
     NodesEntry* removed = NULL;
     zix_hash_erase(nodes->hash, i, &removed);
     assert(removed == entry);
-    serd_free_aligned(removed);
+    serd_aaligned_free(nodes->allocator, removed);
   }
 }

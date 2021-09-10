@@ -1,7 +1,9 @@
-// Copyright 2011-2020 David Robillard <d@drobilla.net>
+// Copyright 2011-2021 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #undef NDEBUG
+
+#include "failing_allocator.h"
 
 #include "serd/serd.h"
 
@@ -9,6 +11,35 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+
+static void
+test_file_uri_failed_alloc(void)
+{
+  static const char* const string = "file://host/path/spacey%20dir/100%%.ttl";
+
+  SerdFailingAllocator allocator = serd_failing_allocator();
+
+  // Successfully parse a URI to count the number of allocations
+  char* hostname = NULL;
+  char* path     = serd_parse_file_uri(&allocator.base, string, &hostname);
+
+  assert(!strcmp(path, "/path/spacey dir/100%.ttl"));
+  assert(!strcmp(hostname, "host"));
+  serd_free(&allocator.base, path);
+  serd_free(&allocator.base, hostname);
+
+  // Test that each allocation failing is handled gracefully
+  const size_t n_allocs = allocator.n_allocations;
+  for (size_t i = 0; i < n_allocs; ++i) {
+    allocator.n_remaining = i;
+
+    path = serd_parse_file_uri(&allocator.base, string, &hostname);
+    assert(!path || !hostname);
+
+    serd_free(&allocator.base, path);
+    serd_free(&allocator.base, hostname);
+  }
+}
 
 static void
 test_uri_string_has_scheme(void)
@@ -41,20 +72,23 @@ test_file_uri(const char* const hostname,
     expected_path = path;
   }
 
-  SerdNode* node =
-    serd_new_file_uri(serd_string(path), serd_optional_string(hostname));
+  SerdNodes* const nodes = serd_nodes_new(NULL);
+
+  const SerdNode* node = serd_nodes_file_uri(
+    nodes, serd_string(path), serd_optional_string(hostname));
 
   const char* node_str     = serd_node_string(node);
   char*       out_hostname = NULL;
-  char*       out_path     = serd_parse_file_uri(node_str, &out_hostname);
+  char* const out_path     = serd_parse_file_uri(NULL, node_str, &out_hostname);
+
   assert(!strcmp(node_str, expected_uri));
   assert((hostname && out_hostname) || (!hostname && !out_hostname));
   assert(!hostname || !strcmp(hostname, out_hostname));
   assert(!strcmp(out_path, expected_path));
 
-  serd_free(out_path);
-  serd_free(out_hostname);
-  serd_node_free(node);
+  serd_free(NULL, out_path);
+  serd_free(NULL, out_hostname);
+  serd_nodes_free(nodes);
 }
 
 static void
@@ -67,22 +101,22 @@ test_uri_parsing(void)
   test_file_uri(NULL, "a/relative <path>", "a/relative%20%3Cpath%3E", NULL);
 
   // Missing trailing '/' after authority
-  assert(!serd_parse_file_uri("file://truncated", NULL));
+  assert(!serd_parse_file_uri(NULL, "file://truncated", NULL));
 
   // Check that NULL hostname doesn't crash
-  char* out_path = serd_parse_file_uri("file://me/path", NULL);
+  char* out_path = serd_parse_file_uri(NULL, "file://me/path", NULL);
   assert(!strcmp(out_path, "/path"));
-  serd_free(out_path);
+  serd_free(NULL, out_path);
 
   // Invalid first escape character
-  out_path = serd_parse_file_uri("file:///foo/%0Xbar", NULL);
+  out_path = serd_parse_file_uri(NULL, "file:///foo/%0Xbar", NULL);
   assert(!strcmp(out_path, "/foo/bar"));
-  serd_free(out_path);
+  serd_free(NULL, out_path);
 
   // Invalid second escape character
-  out_path = serd_parse_file_uri("file:///foo/%X0bar", NULL);
+  out_path = serd_parse_file_uri(NULL, "file:///foo/%X0bar", NULL);
   assert(!strcmp(out_path, "/foo/bar"));
-  serd_free(out_path);
+  serd_free(NULL, out_path);
 }
 
 static void
@@ -94,12 +128,12 @@ test_parse_uri(void)
   const SerdURIView empty_uri = serd_parse_uri("");
 
   SerdNode* const nil =
-    serd_new_parsed_uri(serd_resolve_uri(empty_uri, base_uri));
+    serd_new_parsed_uri(NULL, serd_resolve_uri(empty_uri, base_uri));
 
   assert(serd_node_type(nil) == SERD_URI);
   assert(!strcmp(serd_node_string(nil), base.buf));
 
-  serd_node_free(nil);
+  serd_node_free(NULL, nil);
 }
 
 static void
@@ -148,11 +182,11 @@ check_rel_uri(const char*     uri_string,
     !root || serd_uri_is_within(uri, serd_node_uri_view(root));
 
   SerdNode* const rel =
-    is_within ? serd_new_parsed_uri(serd_relative_uri(uri, base_uri))
-              : serd_new_uri(serd_string(uri_string));
+    is_within ? serd_new_parsed_uri(NULL, serd_relative_uri(uri, base_uri))
+              : serd_new_uri(NULL, serd_string(uri_string));
 
   const int ret = strcmp(serd_node_string(rel), expected);
-  serd_node_free(rel);
+  serd_node_free(NULL, rel);
   assert(!ret);
 }
 
@@ -160,9 +194,10 @@ static void
 test_relative_uri(void)
 {
   SerdNode* const root =
-    serd_new_uri(serd_string("http://example.org/a/b/ignored"));
+    serd_new_uri(NULL, serd_string("http://example.org/a/b/ignored"));
 
-  SerdNode* const base = serd_new_uri(serd_string("http://example.org/a/b/c/"));
+  SerdNode* const base =
+    serd_new_uri(NULL, serd_string("http://example.org/a/b/c/"));
 
   check_rel_uri("http://example.org/a/b/c/foo", base, NULL, "foo");
   check_rel_uri("http://example.org/a/", base, NULL, "../../");
@@ -176,10 +211,10 @@ test_relative_uri(void)
     const SerdURIView ref  = serd_parse_uri("child");
     const SerdURIView abs  = serd_resolve_uri(ref, serd_node_uri_view(base));
     const SerdURIView rel  = serd_relative_uri(abs, serd_node_uri_view(root));
-    SerdNode* const   node = serd_new_parsed_uri(rel);
+    SerdNode* const   node = serd_new_parsed_uri(NULL, rel);
 
     assert(!strcmp(serd_node_string(node), "c/child"));
-    serd_node_free(node);
+    serd_node_free(NULL, node);
   }
   {
     // Check failure when path_prefix is not available for use
@@ -191,8 +226,8 @@ test_relative_uri(void)
     assert(!memcmp(&upref, &SERD_URI_NULL, sizeof(ref)));
   }
 
-  serd_node_free(base);
-  serd_node_free(root);
+  serd_node_free(NULL, base);
+  serd_node_free(NULL, root);
 }
 
 static void
@@ -206,15 +241,16 @@ test_uri_resolution(void)
   const SerdURIView rel_foo_uri  = serd_relative_uri(abs_foo_uri, base_uri);
   const SerdURIView resolved_uri = serd_resolve_uri(rel_foo_uri, base_uri);
 
-  SerdNode* const resolved = serd_new_parsed_uri(resolved_uri);
+  SerdNode* const resolved = serd_new_parsed_uri(NULL, resolved_uri);
   assert(!strcmp(serd_node_string(resolved), "http://example.org/a/b/c/foo"));
 
-  serd_node_free(resolved);
+  serd_node_free(NULL, resolved);
 }
 
 int
 main(void)
 {
+  test_file_uri_failed_alloc();
   test_uri_string_has_scheme();
   test_uri_parsing();
   test_parse_uri();

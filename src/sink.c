@@ -3,6 +3,7 @@
 
 #include "sink.h"
 
+#include "memory.h"
 #include "statement.h"
 
 #include "serd/node.h"
@@ -14,15 +15,21 @@
 #include <stdlib.h>
 
 SerdSink*
-serd_sink_new(void* const   handle,
-              SerdEventFunc event_func,
-              SerdFreeFunc  free_handle)
+serd_sink_new(const SerdWorld* const world,
+              void* const            handle,
+              SerdEventFunc          event_func,
+              SerdFreeFunc           free_handle)
 {
-  SerdSink* sink = (SerdSink*)calloc(1, sizeof(SerdSink));
+  assert(world);
 
-  sink->handle      = handle;
-  sink->on_event    = event_func;
-  sink->free_handle = free_handle;
+  SerdSink* sink = (SerdSink*)serd_wcalloc(world, 1, sizeof(SerdSink));
+
+  if (sink) {
+    sink->world       = world;
+    sink->handle      = handle;
+    sink->on_event    = event_func;
+    sink->free_handle = free_handle;
+  }
 
   return sink;
 }
@@ -35,7 +42,7 @@ serd_sink_free(SerdSink* sink)
       sink->free_handle(sink->handle);
     }
 
-    free(sink);
+    serd_wfree(sink->world, sink);
   }
 }
 

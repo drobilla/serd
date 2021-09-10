@@ -27,8 +27,9 @@ SERD_BEGIN_DECLS
    @return A new string that must be freed with serd_free(), or null.
 */
 SERD_API
-char* SERD_NULLABLE
-serd_canonical_path(const char* SERD_NONNULL path);
+char* SERD_ALLOCATED
+serd_canonical_path(SerdAllocator* SERD_NULLABLE allocator,
+                    const char* SERD_NONNULL     path);
 
 /**
    Compare two strings ignoring case.
