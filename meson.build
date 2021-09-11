@@ -118,9 +118,6 @@ sources = [
   'src/uri.c',
   'src/world.c',
   'src/writer.c',
-  'src/zix/btree.c',
-  'src/zix/digest.c',
-  'src/zix/hash.c',
 ]
 
 # System libraries
@@ -161,7 +158,7 @@ else
     '-DEXESS_STATIC',
     '-DSERD_INTERNAL',
     '-DSERD_STATIC',
-    '-DZIX_API=',
+    '-DZIX_STATIC',
   ]
 endif
 
@@ -169,6 +166,10 @@ endif
 library_args += ['-DSERD_MAJOR_VERSION=@0@'.format(serd_major_version),
                  '-DSERD_MINOR_VERSION=@0@'.format(serd_minor_version),
                  '-DSERD_MICRO_VERSION=@0@'.format(serd_micro_version)]
+
+zix_dep = dependency('zix-0',
+                     version: '>= 0.0.1',
+                     fallback: ['zix', 'zix_dep'])
 
 exess_dep = dependency('exess-0',
                        version: '>= 0.0.1',
@@ -181,7 +182,7 @@ libserd = build_target(
   version: meson.project_version(),
   include_directories: include_directories('include', 'src'),
   c_args: c_warnings + platform_args + library_args,
-  dependencies: [exess_dep, m_dep],
+  dependencies: [exess_dep, m_dep, zix_dep],
   gnu_symbol_visibility: 'hidden',
   install: true,
   target_type: library_type)

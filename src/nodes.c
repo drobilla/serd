@@ -202,7 +202,7 @@ serd_nodes_new(void)
 {
   SerdNodes* const nodes = (SerdNodes*)calloc(1, sizeof(SerdNodes));
 
-  nodes->hash = zix_hash_new(nodes_key, nodes_hash, nodes_equal);
+  nodes->hash = zix_hash_new(NULL, nodes_key, nodes_hash, nodes_equal);
 
   return nodes;
 }
