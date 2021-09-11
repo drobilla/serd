@@ -73,7 +73,7 @@ serd_model_add_index(SerdModel* const model, const SerdStatementOrder order)
   const unsigned* const ordering   = orderings[order];
   const ZixComparator   comparator = serd_model_index_comparator(model, order);
 
-  model->indices[order] = zix_btree_new(comparator, ordering);
+  model->indices[order] = zix_btree_new(NULL, comparator, ordering);
 
   ZixStatus zst = model->indices[order] ? ZIX_STATUS_SUCCESS : ZIX_STATUS_ERROR;
 
@@ -103,7 +103,7 @@ serd_model_drop_index(SerdModel* const model, const SerdStatementOrder order)
     return SERD_BAD_CALL;
   }
 
-  zix_btree_free(model->indices[order], NULL);
+  zix_btree_free(model->indices[order], NULL, NULL);
   model->indices[order] = NULL;
   return SERD_SUCCESS;
 }
@@ -246,6 +246,13 @@ serd_model_drop_statement(SerdModel* const     model,
   serd_statement_free(statement);
 }
 
+static void
+destroy_tree_statement(void* ptr, const void* user_data)
+{
+  (void)user_data;
+  serd_statement_free((SerdStatement*)ptr);
+}
+
 void
 serd_model_free(SerdModel* const model)
 {
@@ -255,11 +262,11 @@ serd_model_free(SerdModel* const model)
 
   // Free all statements (which are owned by the default index)
   ZixBTree* const default_index = model->indices[model->default_order];
-  zix_btree_clear(default_index, (ZixDestroyFunc)serd_statement_free);
+  zix_btree_clear(default_index, destroy_tree_statement, NULL);
 
   // Free indices themselves
   for (unsigned i = 0u; i < N_STATEMENT_ORDERS; ++i) {
-    zix_btree_free(model->indices[i], NULL);
+    zix_btree_free(model->indices[i], NULL, NULL);
   }
 
   serd_nodes_free(model->nodes);
