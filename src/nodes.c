@@ -186,7 +186,10 @@ serd_nodes_new(const SerdAllocator* const allocator)
   if (nodes) {
     nodes->allocator = allocator;
 
-    if (!(nodes->hash = zix_hash_new(nodes_key, nodes_hash, nodes_equal))) {
+    if (!(nodes->hash = zix_hash_new((const ZixAllocator*)allocator,
+                                     nodes_key,
+                                     nodes_hash,
+                                     nodes_equal))) {
       serd_afree(allocator, nodes);
       return NULL;
     }

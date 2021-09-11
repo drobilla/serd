@@ -74,7 +74,8 @@ serd_model_add_index(SerdModel* const model, const SerdStatementOrder order)
   const unsigned* const ordering   = orderings[order];
   const ZixComparator   comparator = serd_model_index_comparator(model, order);
 
-  model->indices[order] = zix_btree_new(comparator, ordering);
+  model->indices[order] = zix_btree_new(
+    (const ZixAllocator*)model->world->allocator, comparator, ordering);
 
   ZixStatus zst = model->indices[order] ? ZIX_STATUS_SUCCESS : ZIX_STATUS_ERROR;
 

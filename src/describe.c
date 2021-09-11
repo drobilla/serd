@@ -295,10 +295,16 @@ serd_describe_range(const SerdCursor* const range,
 
   assert(sink);
 
-  SerdStatus      st            = SERD_SUCCESS;
-  SerdCursor      copy          = *range;
-  ZixHash* const  list_subjects = zix_hash_new(identity, ptr_hash, ptr_equals);
-  DescribeContext ctx           = {range->model, sink, list_subjects, flags};
+  SerdStatus st   = SERD_SUCCESS;
+  SerdCursor copy = *range;
+
+  ZixHash* const list_subjects =
+    zix_hash_new((const ZixAllocator*)range->model->world->allocator,
+                 identity,
+                 ptr_hash,
+                 ptr_equals);
+
+  DescribeContext ctx = {range->model, sink, list_subjects, flags};
 
   st = write_pretty_range(&ctx, 0, &copy, NULL, (flags & SERD_NO_TYPE_FIRST));
 
