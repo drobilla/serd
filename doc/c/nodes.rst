@@ -14,7 +14,7 @@ Literals are essentially strings,
 but may have a datatype or a language tag.
 URIs are used to identify resources,
 as are blank nodes,
-except blank nodes have identifiers with a limited scope and may be written anonymously.
+except blank nodes only have labels with a limited scope and may be written anonymously.
 
 Serd also has a type for variable nodes,
 which are used for some features but not present in RDF data.

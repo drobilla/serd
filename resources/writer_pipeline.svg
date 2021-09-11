@@ -29,10 +29,6 @@
       }
     }
   </style>
-  <defs>
-    <link href="_static/diagram.css" type="text/css" rel="stylesheet" 
-          xmlns="http://www.w3.org/1999/xhtml"/>
-  </defs>
   <symbol id="a" overflow="visible">
     <path d="M7.422 0l1.844-7.266H8.219L6.89-1.359 5.234-7.266h-1L2.625-1.359 1.25-7.266H.219L2.079 0h1.015l1.625-5.969L6.406 0zm0 0"/>
   </symbol>

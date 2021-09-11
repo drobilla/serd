@@ -66,7 +66,7 @@ statements(void)
   SerdNode* object = serd_new_string(SERD_STRING("David"));
 
   SerdStatement* statement =
-    serd_statement_new(subject, predicate, object, NULL, NULL);
+    serd_statement_new(NULL, subject, predicate, object, NULL, NULL);
   // end statement-new
 }
 
@@ -77,7 +77,7 @@ statements_accessing_fields(void)
   SerdNode* sp = serd_new_uri(SERD_STRING("http://example.org/p"));
   SerdNode* so = serd_new_uri(SERD_STRING("http://example.org/o"));
 
-  SerdStatement* statement = serd_statement_new(ss, sp, so, NULL, NULL);
+  SerdStatement* statement = serd_statement_new(NULL, ss, sp, so, NULL, NULL);
 
   // begin get-subject
   const SerdNode* s = serd_statement_node(statement, SERD_SUBJECT);
@@ -101,8 +101,8 @@ statements_comparison(void)
   SerdNode* sp = serd_new_uri(SERD_STRING("http://example.org/p"));
   SerdNode* so = serd_new_uri(SERD_STRING("http://example.org/o"));
 
-  SerdStatement* statement1 = serd_statement_new(ss, sp, so, NULL, NULL);
-  SerdStatement* statement2 = serd_statement_new(ss, sp, so, NULL, NULL);
+  SerdStatement* statement1 = serd_statement_new(NULL, ss, sp, so, NULL, NULL);
+  SerdStatement* statement2 = serd_statement_new(NULL, ss, sp, so, NULL, NULL);
 
   // begin statement-equals
   if (serd_statement_equals(statement1, statement2)) {
@@ -129,11 +129,11 @@ statements_lifetime(void)
   SerdStatement* statement = NULL;
 
   // begin statement-copy
-  SerdStatement* copy = serd_statement_copy(statement);
+  SerdStatement* copy = serd_statement_copy(NULL, statement);
   // end statement-copy
 
   // begin statement-free
-  serd_statement_free(copy);
+  serd_statement_free(NULL, copy);
   // end statement-free
 }
 
@@ -141,7 +141,7 @@ static void
 world(void)
 {
   // begin world-new
-  SerdWorld* world = serd_world_new();
+  SerdWorld* world = serd_world_new(NULL);
   // end world-new
 
   // begin get-blank
@@ -152,7 +152,7 @@ world(void)
 static void
 model(void)
 {
-  SerdWorld* world = serd_world_new();
+  SerdWorld* world = serd_world_new(NULL);
 
   // begin model-new
   SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0u);
@@ -324,13 +324,13 @@ model(void)
 static void
 reading_writing(void)
 {
-  SerdWorld* world = serd_world_new();
+  SerdWorld* world = serd_world_new(NULL);
 
   // begin env-new
   SerdStringView host     = SERD_EMPTY_STRING();
   SerdStringView out_path = SERD_STRING("/some/file.ttl");
   SerdNode*      base     = serd_new_file_uri(out_path, host);
-  SerdEnv*       env      = serd_env_new(serd_node_string_view(base));
+  SerdEnv*       env      = serd_env_new(world, serd_node_string_view(base));
   // end env-new
 
   // begin env-set-prefix
@@ -399,7 +399,8 @@ reading_writing(void)
   SerdNode* rdf_type = NULL;
 
   // begin filter-new
-  SerdSink* filter = serd_filter_new(inserter, // Target
+  SerdSink* filter = serd_filter_new(NULL,     // Custom allocator
+                                     inserter, // Target
                                      NULL,     // Subject
                                      rdf_type, // Predicate
                                      NULL,     // Object

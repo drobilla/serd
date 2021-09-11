@@ -1,6 +1,5 @@
-########
 Overview
-########
+========
 
 .. default-domain:: c
 .. highlight:: c
@@ -12,7 +11,7 @@ The serd API is declared in ``serd.h``:
    #include <serd/serd.h>
 
 An instance of serd is represented by a :doc:`api/serd_world`,
-is used to manage "global" facilities like logging.
+which manages "global" facilities like memory allocation and logging.
 The rest of the API can be broadly grouped into four categories:
 
 Data
@@ -21,20 +20,20 @@ Data
    All data is expressed in statements.
 
 Streams
-   Serd is designed around the concept of data streams,
-   which allow components to send data to each other in a general way.
+   Components communicate by sending and receiving streams of data.
    Data is streamed via :doc:`api/serd_sink`,
    which is an abstract interface that receives :doc:`api/serd_event`.
-   An event is essentially a statement,
-   but there are a few additional event types that reflect context changes and support pretty-printing.
+   The most fundamental event is a statement event,
+   the few additional types describe context that is used to support things like pretty-printing.
 
-   Some objects act as a sink and send data to some other sink,
-   which allow them to be inserted in a data `pipeline` to process the data as it streams through.
+   Some components both send and receive data,
+   which allow them to be inserted in a `pipeline` to process the data as it streams through.
    For example,
    a :doc:`api/serd_canon` converts literals to canonical form,
    and a :doc:`api/serd_filter` filters statements that match (or do not match) some pattern.
 
-   An event stream may not contain all the information necessary to exactly reproduce an input document.
+   An event stream describes changes to data and its context,
+   but does not store the context.
    For that, an associated :doc:`api/serd_env` is maintained.
    This stores the active base URI and namespace prefixes which can,
    for example,
@@ -75,7 +74,7 @@ for example to set additional namespace prefixes to further abbreviate the docum
 
 Similarly, a document could be loaded into a model with canonical literals using a pipeline like:
 
-.. imagesvg:: ../_static/model_pipeline.svg
+   .. imagesvg:: ../_static/model_pipeline.svg
 
 Many other useful pipelines can be built from the objects included in serd,
 and applications can implement custom sinks if those are not sufficient.

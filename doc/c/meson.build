@@ -9,7 +9,9 @@ configure_file(copy: true,
                input: files('../summary.rst'),
                output: 'summary.rst')
 
-configure_file(copy: true, input: files('overview.c'), output: 'overview.c')
+configure_file(copy: true,
+               input: files('overview.c'),
+               output: 'overview.c')
 
 executable('overview', files('overview.c'), dependencies: [serd_dep])
 
@@ -37,7 +39,8 @@ docs = custom_target(
   'singlehtml C documentation for serd',
   command: [sphinx_build, '-M', 'singlehtml',
             meson.current_build_dir(), meson.current_build_dir(),
-            '-E', '-q', '-t', 'singlehtml'],
+            '-E', '-q', '-t', 'singlehtml',
+            '-v', '-v', '-T'],
   input: [c_rst_files, c_serd_rst, c_index_xml],
   output: 'singlehtml',
   build_by_default: true,
