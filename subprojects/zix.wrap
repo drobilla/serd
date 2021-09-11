@@ -1,0 +1,5 @@
+[wrap-git]
+url = https://gitlab.com/drobilla/zix.git
+push-url = git@gitlab.com:drobilla/zix.git
+revision = main
+depth = 1

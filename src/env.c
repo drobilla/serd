@@ -44,6 +44,7 @@ SerdEnv*
 serd_env_new(SerdWorld* const world, const SerdStringView base_uri)
 {
   assert(world);
+  (void)world;
 
   SerdEnv* env = (SerdEnv*)calloc(1, sizeof(struct SerdEnvImpl));
 
