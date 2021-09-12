@@ -1754,6 +1754,7 @@ serd_validator_new(SerdWorld* const world)
 {
   assert(world);
 
+  // FIXME
   SerdValidator* const validator =
     (SerdValidator*)calloc(1, sizeof(SerdValidator));
 
@@ -1820,6 +1821,7 @@ serd_validator_new(SerdWorld* const world)
 void
 serd_validator_free(SerdValidator* const validator)
 {
+  // FIXME
   free(validator);
 }
 

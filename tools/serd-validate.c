@@ -197,7 +197,7 @@ build_env(SerdWorld* const world, Options opts)
 
   if (!opts.base_uri_string && n_inputs == 1) {
     // Choose base URI from the single input path
-    char* const input_path = serd_canonical_path(inputs[0]);
+    char* const input_path = serd_canonical_path(NULL, inputs[0]);
 
     SerdNode* base =
       input_path
@@ -210,7 +210,7 @@ build_env(SerdWorld* const world, Options opts)
     SerdEnv* const env = serd_env_new(
       world, base ? serd_node_string_view(base) : SERD_EMPTY_STRING());
 
-    serd_free(input_path);
+    serd_free(NULL, input_path);
     serd_node_free(NULL, base);
     return env;
   }
