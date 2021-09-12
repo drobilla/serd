@@ -199,9 +199,10 @@ build_env(SerdWorld* const world, Options opts)
     // Choose base URI from the single input path
     char* const input_path = serd_canonical_path(inputs[0]);
 
-    SerdNode* base = input_path ? serd_new_file_uri(SERD_STRING(input_path),
-                                                    SERD_EMPTY_STRING())
-                                : NULL;
+    SerdNode* base =
+      input_path
+        ? serd_new_file_uri(NULL, SERD_STRING(input_path), SERD_EMPTY_STRING())
+        : NULL;
     if (!base) {
       SERDI_ERRORF("unable to determine base URI from path %s\n", inputs[0]);
     }
@@ -210,7 +211,7 @@ build_env(SerdWorld* const world, Options opts)
       world, base ? serd_node_string_view(base) : SERD_EMPTY_STRING());
 
     serd_free(input_path);
-    serd_node_free(base);
+    serd_node_free(NULL, base);
     return env;
   }
 
