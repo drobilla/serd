@@ -84,6 +84,7 @@ foreach unit : unit_tests
 endforeach
 
 serd_ttl = files('../serd.ttl')[0]
+small_ttl = files('../test/TurtleTests/turtle-syntax-number-01.ttl')[0]
 common_script_options = []
 if wrapper != ''
   common_script_options = ['--wrapper', wrapper]
@@ -266,6 +267,12 @@ if is_variable('serd_pipe')
   test('write_error',
        files('test_write_error.py'),
        args: pipe_test_script_args + [serd_ttl],
+       env: test_env,
+       suite: ['tools', 'pipe', 'output'])
+
+  test('deferred_write_error',
+       files('test_deferred_write_error.py'),
+       args: pipe_test_script_args + [small_ttl],
        env: test_env,
        suite: ['tools', 'pipe', 'output'])
 

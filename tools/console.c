@@ -376,8 +376,10 @@ serd_open_tool_output(const char* const filename)
 {
   if (!filename || !strcmp(filename, "-")) {
     serd_set_stream_utf8_mode(stdout);
-    return serd_open_output_stream(
-      (SerdWriteFunc)fwrite, (SerdCloseFunc)fclose, stdout);
+    return serd_open_output_stream((SerdWriteFunc)fwrite,
+                                   (SerdErrorFunc)ferror,
+                                   (SerdCloseFunc)fclose,
+                                   stdout);
   }
 
   return serd_open_output_file(filename);

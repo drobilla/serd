@@ -28,15 +28,16 @@ SERD_BEGIN_DECLS
 */
 typedef struct {
   void* SERD_NULLABLE         stream; ///< Opaque parameter for functions
-  SerdWriteFunc SERD_NULLABLE write;  ///< Write bytes to output
+  SerdWriteFunc SERD_NONNULL  write;  ///< Write bytes to output
+  SerdErrorFunc SERD_NULLABLE error;  ///< Stream error accessor
   SerdCloseFunc SERD_NULLABLE close;  ///< Close output
 } SerdOutputStream;
 
 /**
    Open a stream that writes to a provided function.
 
-
    @param write_func Function to write bytes to the stream.
+   @param error_func Function to detect errors in the stream.
    @param close_func Function to close the stream.
    @param stream Stream parameter passed to `write_func` and `close_func`.
    @return An opened output stream, or all zeros on error.
@@ -44,6 +45,7 @@ typedef struct {
 SERD_CONST_API
 SerdOutputStream
 serd_open_output_stream(SerdWriteFunc SERD_NONNULL  write_func,
+                        SerdErrorFunc SERD_NULLABLE error_func,
                         SerdCloseFunc SERD_NULLABLE close_func,
                         void* SERD_NULLABLE         stream);
 
@@ -79,7 +81,8 @@ serd_open_output_file(const char* SERD_NONNULL path);
 
    This will call the close function, and reset the stream internally so that
    no further writes can be made.  For convenience, this is safe to call on
-   NULL, and safe to call several times on the same output.
+   NULL, and safe to call several times on the same output.  Failure is
+   returned in both of those cases.
 */
 SERD_API
 SerdStatus

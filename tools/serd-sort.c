@@ -56,7 +56,7 @@ input_has_graphs(const Options opts)
 static SerdStatus
 run(const Options opts)
 {
-  SerdTool app = {{NULL, NULL, NULL}, NULL, NULL, NULL};
+  SerdTool app = {{NULL, NULL, NULL, NULL}, NULL, NULL, NULL};
 
   // Set up the writing environment
   SerdStatus st = SERD_SUCCESS;
