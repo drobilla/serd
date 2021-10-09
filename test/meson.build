@@ -246,6 +246,7 @@ if is_variable('serd_pipe')
   pipe_script_args = common_script_args + ['--tool', serd_pipe]
   serd_ttl = files('../serd.ttl')[0]
   bad_input_file = files('extra/bad/bad-lang.ttl')
+  small_ttl = files('w3c/turtle/turtle-syntax-number-01.ttl')
 
   test('serd_ttl', serd_pipe, args: [serd_ttl], env: test_env, suite: 'data')
 
@@ -416,6 +417,23 @@ if is_variable('serd_pipe')
       suite: 'io',
     )
   endif
+
+  test(
+    'deferred_write_error',
+    files('test_write_error.py'),
+    args: pipe_script_args + [small_ttl, '--', '-b', '1024'],
+    env: test_env,
+    suite: ['tools', 'pipe', 'output'],
+  )
+
+  test(
+    'missing_output',
+    serd_pipe,
+    args: ['-o', '/does/not/exist.ttl', serd_src_root / 'serd.ttl'],
+    env: test_env,
+    should_fail: true,
+    suite: ['tools', 'pipe', 'output'],
+  )
 
   # Write options
 
