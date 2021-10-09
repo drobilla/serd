@@ -137,6 +137,9 @@ if host_machine.system() != 'windows'
   ]
 endif
 
+# Programs used by the build
+mandoc = find_program('mandoc', required: false)
+
 # Determine library type and the flags needed to build it
 library_name = versioned_name
 if get_option('default_library') == 'both'
@@ -212,12 +215,6 @@ pkg.generate(
 # Build command line tools
 if get_option('tools')
   subdir('tools')
-
-  if not get_option('docs').disabled()
-    install_man('doc/serd-filter.1')
-    install_man('doc/serd-pipe.1')
-    install_man('doc/serd-sort.1')
-  endif
 endif
 
 # Install header to a versioned include directory
