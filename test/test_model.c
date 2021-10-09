@@ -1266,7 +1266,7 @@ test_write_error_in_list_subject(SerdWorld* world, const unsigned n_quads)
   for (size_t max_successes = 0; max_successes < 18; ++max_successes) {
     FailingWriteFuncState state = {0, max_successes};
     SerdOutputStream      out =
-      serd_open_output_stream(failing_write_func, NULL, &state);
+      serd_open_output_stream(failing_write_func, NULL, NULL, &state);
 
     SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, &out, 1);
 
@@ -1322,7 +1322,7 @@ test_write_error_in_list_object(SerdWorld* world, const unsigned n_quads)
   for (size_t max_successes = 0; max_successes < 21; ++max_successes) {
     FailingWriteFuncState state = {0, max_successes};
     SerdOutputStream      out =
-      serd_open_output_stream(failing_write_func, NULL, &state);
+      serd_open_output_stream(failing_write_func, NULL, NULL, &state);
 
     SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, &out, 1);
 
