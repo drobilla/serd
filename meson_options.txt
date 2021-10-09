@@ -1,6 +1,12 @@
 option('docs', type: 'feature', value: 'auto', yield: true,
        description: 'Build documentation')
 
+option('man', type: 'feature', value: 'enabled', yield: true,
+       description: 'Install man pages')
+
+option('man_html', type: 'feature', value: 'auto', yield: true,
+       description: 'Build HTML man pages')
+
 option('strict', type: 'boolean', value: false, yield: true,
        description: 'Enable ultra-strict warnings')
 
