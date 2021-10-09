@@ -126,10 +126,12 @@ null_sink(const void* const buf,
 static void
 test_writer_stack_overflow(void)
 {
-  SerdWorld*       world  = serd_world_new();
-  SerdNodes*       nodes  = serd_world_nodes(world);
-  SerdEnv*         env    = serd_env_new(SERD_EMPTY_STRING());
-  SerdOutputStream output = serd_open_output_stream(null_sink, NULL, NULL);
+  SerdWorld* world = serd_world_new();
+  SerdNodes* nodes = serd_world_nodes(world);
+  SerdEnv*   env   = serd_env_new(SERD_EMPTY_STRING());
+
+  SerdOutputStream output =
+    serd_open_output_stream(null_sink, NULL, NULL, NULL);
 
   SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0u, env, &output, 1);
 
@@ -244,7 +246,8 @@ test_write_error(void)
 
   // Test with setting errno
 
-  SerdOutputStream output = serd_open_output_stream(faulty_sink, NULL, NULL);
+  SerdOutputStream output =
+    serd_open_output_stream(faulty_sink, NULL, NULL, NULL);
 
   SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0u, env, &output, 1);
   assert(writer);
@@ -256,7 +259,7 @@ test_write_error(void)
   serd_close_output(&output);
 
   // Test without setting errno
-  output = serd_open_output_stream(faulty_sink, NULL, world);
+  output = serd_open_output_stream(faulty_sink, NULL, NULL, world);
   writer = serd_writer_new(world, SERD_TURTLE, 0u, env, &output, 1);
 
   assert(writer);
