@@ -129,7 +129,7 @@ log_error(SerdWorld* const world, const char* const fmt, ...)
 static SerdStatus
 run(Options opts)
 {
-  SerdTool app = {{NULL, NULL, NULL}, NULL, NULL, NULL};
+  SerdTool app = {{NULL, NULL, NULL, NULL}, NULL, NULL, NULL};
 
   // Set up the writing environment
   SerdStatus st = SERD_SUCCESS;

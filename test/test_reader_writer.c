@@ -111,7 +111,8 @@ test_write_errors(void)
       ctx.error_offset = o;
 
       SerdEnv* const   env = serd_env_new(serd_empty_string());
-      SerdOutputStream out = serd_open_output_stream(faulty_sink, NULL, &ctx);
+      SerdOutputStream out =
+        serd_open_output_stream(faulty_sink, NULL, NULL, &ctx);
 
       SerdWriter* const writer =
         serd_writer_new(world, syntax, 0U, env, &out, 1);
