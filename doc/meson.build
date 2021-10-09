@@ -16,3 +16,4 @@ if not meson.is_subproject() and meson.version().version_compare('>=0.53.0')
   summary('Documentation', build_docs, bool_yn: true)
 endif
 
+subdir('man')
