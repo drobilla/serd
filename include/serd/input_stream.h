@@ -25,8 +25,8 @@ SERD_BEGIN_DECLS
 /// An input stream that produces bytes
 typedef struct {
   void* SERD_NULLABLE         stream; ///< Opaque parameter for functions
-  SerdReadFunc SERD_NULLABLE  read;   ///< Read bytes to input
-  SerdErrorFunc SERD_NONNULL  error;  ///< Stream error accessor
+  SerdReadFunc SERD_NONNULL   read;   ///< Read bytes from input
+  SerdErrorFunc SERD_NULLABLE error;  ///< Stream error accessor
   SerdCloseFunc SERD_NULLABLE close;  ///< Close input
 } SerdInputStream;
 
