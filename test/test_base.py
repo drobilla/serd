@@ -19,18 +19,19 @@ command = shlex.split(args.wrapper) + [
     "-B",
     "http://example.org",
     "-I",
-    "ntriples",
+    "turtle",
     "-",
 ]
 
-DOCUMENT = "<{0}s> <{0}p> <{0}o> .".format("http://example.org/")
+IN_DOCUMENT = "<s> <p> <o> ."
+OUT_DOCUMENT = "<{0}s> <{0}p> <{0}o> .".format("http://example.org/")
 
 with tempfile.TemporaryFile() as out:
     proc = subprocess.run(
         command,
         check=False,
         encoding="utf-8",
-        input=DOCUMENT,
+        input=IN_DOCUMENT,
         stdout=out,
         stderr=subprocess.PIPE,
     )
@@ -42,4 +43,4 @@ with tempfile.TemporaryFile() as out:
     lines = out.readlines()
 
     assert len(lines) == 1
-    assert lines[0].decode("utf-8").strip() == DOCUMENT
+    assert lines[0].decode("utf-8").strip() == OUT_DOCUMENT
