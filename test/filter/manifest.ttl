@@ -1,0 +1,48 @@
+@prefix checks: <http://drobilla.net/ns/serd/checks#> .
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdft: <http://www.w3.org/ns/rdftest#> .
+@prefix serd: <http://drobilla.net/ns/serd#> .
+
+rdft:Test
+	rdfs:subClassOf mf:ManifestEntry .
+
+serd:patternFile
+	a rdf:Property ;
+	rdfs:label "pattern file" .
+
+serd:TestFilterPositive
+	a rdfs:Class ;
+	rdfs:label "Positive Filtering" ;
+	rdfs:subClassOf rdft:Test .
+
+<>
+	a mf:Manifest ;
+	rdfs:comment "Serd filter test cases" ;
+	mf:entries (
+		<#s1>
+		<#p1>
+		<#o1>
+	) .
+
+<#s1>
+	a serd:TestFilterPositive ;
+	serd:patternFile <s1.pattern.nt> ;
+	mf:name "s1" ;
+	mf:action <input.ttl> ;
+	mf:result <s1.result.nt> .
+
+<#p1>
+	a serd:TestFilterPositive ;
+	serd:patternFile <p1.pattern.nt> ;
+	mf:name "p1" ;
+	mf:action <input.ttl> ;
+	mf:result <p1.result.nt> .
+
+<#o1>
+	a serd:TestFilterPositive ;
+	serd:patternFile <o1.pattern.nt> ;
+	mf:name "o1" ;
+	mf:action <input.ttl> ;
+	mf:result <o1.result.nt> .

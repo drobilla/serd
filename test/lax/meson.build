@@ -4,8 +4,8 @@ base_uri = 'http://drobilla.net/sw/serd/test/lax/'
 
 # ... once with strict parsing to test the hard errors
 test('lax.strict',
-     run_test_suite,
-     args: script_args + [files('manifest.ttl'), base_uri],
+     run_pipe_suite,
+     args: pipe_test_script_args + [files('manifest.ttl'), base_uri],
      env: test_env,
      is_parallel: false,
      suite: ['suite', 'extra'],
@@ -13,14 +13,13 @@ test('lax.strict',
 
 # ... and once with lax parsing to tolerate them
 test('lax.lax',
-     run_test_suite,
-     args: script_args + [
+     run_pipe_suite,
+     args: pipe_test_script_args + [
        files('manifest.ttl'),
        base_uri,
        '--',
-       '-i',
-       'lax',
-     ],
+       '-I', 'lax',
+       '-O', 'lax'],
      env: test_env,
      is_parallel: false,
      suite: ['suite', 'extra'],
