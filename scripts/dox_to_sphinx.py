@@ -252,6 +252,9 @@ def dox_to_rst(index, lang, node):
     if node.tag == "emphasis":
         return "*%s*" % plain_text(node)
 
+    if node.tag == "linebreak":
+        return "\n\n"
+
     if node.tag == "lsquo":
         return "‘"
 
@@ -283,7 +286,7 @@ def dox_to_rst(index, lang, node):
             name = item.find("parameternamelist/parametername")
             description = item.find("parameterdescription")
             assert len(description) == 1
-            markup += "\n\n:param %s:%s" % (
+            markup += "\n\n:param %s: %s" % (
                 name.text,
                 field_value(dox_to_rst(index, lang, description[0])),
             )
@@ -310,7 +313,7 @@ def dox_to_rst(index, lang, node):
         assert len(node) == 1
 
         if node.get("kind") == "return":
-            return "\n:returns:" + field_value(
+            return "\n:returns: " + field_value(
                 dox_to_rst(index, lang, node[0])
             )
 
@@ -321,6 +324,9 @@ def dox_to_rst(index, lang, node):
 
     if node.tag == "ulink":
         return "`%s <%s>`_" % (node.text, node.get("url"))
+
+    if node.tag == "verbatim":
+        return "``%s``" % plain_text(node)
 
     raise RuntimeError("Unknown documentation command: %s" % node.tag)
 
@@ -592,9 +598,8 @@ def emit_groups(index, lang, output_dir, force):
 
             # Emit symbols in sorted order
             for name, symbol in child_symbols.items():
-                rst.write("\n")
+                rst.write("\n\n")
                 rst.write(document_markup(index, lang, symbol))
-                rst.write("\n")
 
 
 def run(index_xml_path, output_dir, language, force):
