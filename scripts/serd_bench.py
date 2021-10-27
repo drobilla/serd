@@ -22,7 +22,7 @@ class WorkingDirectory:
         os.chdir(self.working_dir)
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exc_type, value, traceback):
         sys.stderr.write("Leaving directory `%s'\n" % self.working_dir)
         os.chdir(self.original_dir)
 
@@ -34,9 +34,9 @@ def filename(n):
 
 def gen(sp2b_dir, n_min, n_max, step):
     "Generate files with n_min ... n_max statements if they are not present"
-    with WorkingDirectory(sp2b_dir) as dir:
+    with WorkingDirectory(sp2b_dir) as directory:
         for n in range(n_min, n_max + step, step):
-            out_path = os.path.join(dir.original_dir, "build", filename(n))
+            out_path = os.path.join(directory.original_dir, "build", filename(n))
             if not os.path.exists(out_path):
                 subprocess.call(["./sp2b_gen", "-t", str(n), out_path])
 
