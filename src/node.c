@@ -16,9 +16,9 @@
 
 #include "node.h"
 
+#include "memory.h"
 #include "namespaces.h"
 #include "string_utils.h"
-#include "system.h"
 
 #include "exess/exess.h"
 #include "serd/serd.h"
@@ -81,39 +81,46 @@ serd_node_total_size(const SerdNode* const node)
 }
 
 SerdNode*
-serd_node_malloc(const size_t size)
+serd_node_malloc(SerdAllocator* const allocator, const size_t size)
 {
-  SerdNode* const node =
-    (SerdNode*)serd_calloc_aligned(serd_node_align, serd_node_pad_size(size));
+  SerdNode* const node = (SerdNode*)serd_aaligned_calloc(
+    allocator, serd_node_align, serd_node_pad_size(size));
 
   assert((uintptr_t)node % serd_node_align == 0);
   return node;
 }
 
 SerdNode*
-serd_node_try_malloc(const SerdWriteResult r)
+serd_node_try_malloc(SerdAllocator* const allocator, const SerdWriteResult r)
 {
-  return (r.status && r.status != SERD_OVERFLOW) ? NULL
-                                                 : serd_node_malloc(r.count);
+  return (r.status && r.status != SERD_OVERFLOW)
+           ? NULL
+           : serd_node_malloc(allocator, r.count);
 }
 
-void
-serd_node_set(SerdNode** const dst, const SerdNode* const src)
+SerdStatus
+serd_node_set(SerdAllocator* const  allocator,
+              SerdNode** const      dst,
+              const SerdNode* const src)
 {
   if (!src) {
-    serd_free_aligned(*dst);
+    serd_aaligned_free(allocator, *dst);
     *dst = NULL;
-    return;
+    return SERD_SUCCESS;
   }
 
   const size_t size = serd_node_total_size(src);
   if (!*dst || serd_node_total_size(*dst) < size) {
-    serd_free_aligned(*dst);
-    *dst = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
+    serd_aaligned_free(allocator, *dst);
+    if (!(*dst = (SerdNode*)serd_aaligned_calloc(
+            allocator, serd_node_align, size))) {
+      return SERD_BAD_ALLOC;
+    }
   }
 
   assert(*dst);
   memcpy(*dst, src, size);
+  return SERD_SUCCESS;
 }
 
 /**
@@ -457,7 +464,8 @@ serd_node_construct_uri(const size_t      buf_size,
 }
 
 SerdNode*
-serd_node_new(const SerdNodeType   type,
+serd_node_new(SerdAllocator* const allocator,
+              const SerdNodeType   type,
               const SerdStringView string,
               const SerdNodeFlags  flags,
               const SerdStringView meta)
@@ -469,7 +477,8 @@ serd_node_new(const SerdNodeType   type,
 
   assert(r.count % sizeof(SerdNode) == 0);
 
-  SerdNode* const node = serd_node_malloc(sizeof(SerdNode) + r.count + 1);
+  SerdNode* const node =
+    serd_node_malloc(allocator, sizeof(SerdNode) + r.count + 1);
 
   if (node) {
     r = serd_node_construct(r.count, node, type, string, flags, meta);
@@ -480,23 +489,26 @@ serd_node_new(const SerdNodeType   type,
 }
 
 SerdNode*
-serd_new_token(const SerdNodeType type, const SerdStringView string)
+serd_new_token(SerdAllocator* const allocator,
+               const SerdNodeType   type,
+               const SerdStringView string)
 {
-  return serd_node_new(type, string, 0u, SERD_EMPTY_STRING());
+  return serd_node_new(allocator, type, string, 0u, SERD_EMPTY_STRING());
 }
 
 SerdNode*
-serd_new_string(const SerdStringView str)
+serd_new_string(SerdAllocator* const allocator, const SerdStringView str)
 {
-  return serd_node_new(SERD_LITERAL, str, 0u, SERD_EMPTY_STRING());
+  return serd_node_new(allocator, SERD_LITERAL, str, 0u, SERD_EMPTY_STRING());
 }
 
 SerdNode*
-serd_new_literal(const SerdStringView str,
+serd_new_literal(SerdAllocator* const allocator,
+                 const SerdStringView str,
                  const SerdNodeFlags  flags,
                  const SerdStringView meta)
 {
-  return serd_node_new(SERD_LITERAL, str, flags, meta);
+  return serd_node_new(allocator, SERD_LITERAL, str, flags, meta);
 }
 
 ExessResult
@@ -607,16 +619,20 @@ serd_get_base64(const SerdNode* const node,
 }
 
 SerdNode*
-serd_node_copy(const SerdNode* node)
+serd_node_copy(SerdAllocator* const allocator, const SerdNode* node)
 {
   if (!node) {
     return NULL;
   }
 
   const size_t size = serd_node_total_size(node);
-  SerdNode*    copy = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
+  SerdNode*    copy =
+    (SerdNode*)serd_aaligned_alloc(allocator, serd_node_align, size);
 
-  memcpy(copy, node, size);
+  if (copy) {
+    memcpy(copy, node, size);
+  }
+
   return copy;
 }
 
@@ -677,16 +693,16 @@ serd_node_compare(const SerdNode* const a, const SerdNode* const b)
 }
 
 SerdNode*
-serd_new_uri(const SerdStringView string)
+serd_new_uri(SerdAllocator* const allocator, const SerdStringView string)
 {
-  return serd_new_token(SERD_URI, string);
+  return serd_new_token(allocator, SERD_URI, string);
 }
 
 SerdNode*
-serd_new_parsed_uri(const SerdURIView uri)
+serd_new_parsed_uri(SerdAllocator* const allocator, const SerdURIView uri)
 {
   SerdWriteResult r    = serd_node_construct_uri(0u, NULL, uri);
-  SerdNode* const node = serd_node_try_malloc(r);
+  SerdNode* const node = serd_node_try_malloc(allocator, r);
 
   if (node) {
     r = serd_node_construct_uri(r.count, node, uri);
@@ -758,114 +774,121 @@ serd_node_construct_file_uri(const size_t         buf_size,
 }
 
 SerdNode*
-serd_new_file_uri(const SerdStringView path, const SerdStringView hostname)
+serd_new_file_uri(SerdAllocator* const allocator,
+                  const SerdStringView path,
+                  const SerdStringView hostname)
 {
   SerdWriteResult r    = serd_node_construct_file_uri(0, NULL, path, hostname);
-  SerdNode* const node = serd_node_try_malloc(r);
+  SerdNode* const node = serd_node_try_malloc(allocator, r);
 
   if (node) {
     r = serd_node_construct_file_uri(r.count, node, path, hostname);
     MUST_SUCCEED(r.status);
     assert(serd_node_length(node) == strlen(serd_node_string(node)));
+    serd_node_check_padding(node);
   }
 
-  serd_node_check_padding(node);
   return node;
 }
 
 SerdNode*
-serd_new_double(const double d)
+serd_new_double(SerdAllocator* const allocator, const double d)
 {
   SerdWriteResult r    = serd_node_construct_double(0, NULL, d);
-  SerdNode* const node = serd_node_try_malloc(r);
+  SerdNode* const node = serd_node_try_malloc(allocator, r);
 
   if (node) {
     r = serd_node_construct_double(r.count, node, d);
     MUST_SUCCEED(r.status);
     assert(serd_node_length(node) == strlen(serd_node_string(node)));
+    serd_node_check_padding(node);
   }
 
-  serd_node_check_padding(node);
   return node;
 }
 
 SerdNode*
-serd_new_float(const float f)
+serd_new_float(SerdAllocator* const allocator, const float f)
 {
   SerdWriteResult r    = serd_node_construct_float(0, NULL, f);
-  SerdNode* const node = serd_node_try_malloc(r);
+  SerdNode* const node = serd_node_try_malloc(allocator, r);
 
   if (node) {
     r = serd_node_construct_float(r.count, node, f);
     MUST_SUCCEED(r.status);
     assert(serd_node_length(node) == strlen(serd_node_string(node)));
+    serd_node_check_padding(node);
   }
 
-  serd_node_check_padding(node);
   return node;
 }
 
 SerdNode*
-serd_new_boolean(bool b)
+serd_new_boolean(SerdAllocator* const allocator, bool b)
 {
   SerdWriteResult r    = serd_node_construct_boolean(0, NULL, b);
-  SerdNode* const node = serd_node_try_malloc(r);
+  SerdNode* const node = serd_node_try_malloc(allocator, r);
 
   if (node) {
     r = serd_node_construct_boolean(r.count, node, b);
     MUST_SUCCEED(r.status);
     assert(serd_node_length(node) == strlen(serd_node_string(node)));
+    serd_node_check_padding(node);
   }
 
-  serd_node_check_padding(node);
   return node;
 }
 
 SerdNode*
-serd_new_decimal(const double d)
+serd_new_decimal(SerdAllocator* const allocator, const double d)
 {
   SerdWriteResult r    = serd_node_construct_decimal(0, NULL, d);
-  SerdNode* const node = serd_node_try_malloc(r);
+  SerdNode* const node = serd_node_try_malloc(allocator, r);
 
   if (node) {
     r = serd_node_construct_decimal(r.count, node, d);
     MUST_SUCCEED(r.status);
     assert(serd_node_length(node) == strlen(serd_node_string(node)));
+    serd_node_check_padding(node);
   }
 
-  serd_node_check_padding(node);
   return node;
 }
 
 SerdNode*
-serd_new_integer(const int64_t i, const SerdStringView datatype)
+serd_new_integer(SerdAllocator* const allocator,
+                 const int64_t        i,
+                 const SerdStringView datatype)
 {
   SerdWriteResult r    = serd_node_construct_integer(0, NULL, i, datatype);
-  SerdNode* const node = serd_node_try_malloc(r);
+  SerdNode* const node = serd_node_try_malloc(allocator, r);
 
   if (node) {
     r = serd_node_construct_integer(r.count, node, i, datatype);
     MUST_SUCCEED(r.status);
     assert(serd_node_length(node) == strlen(serd_node_string(node)));
+    serd_node_check_padding(node);
   }
 
-  serd_node_check_padding(node);
   return node;
 }
 
 SerdNode*
-serd_new_base64(const void* buf, size_t size, const SerdStringView datatype)
+serd_new_base64(SerdAllocator* const allocator,
+                const void*          buf,
+                size_t               size,
+                const SerdStringView datatype)
 {
   SerdWriteResult r = serd_node_construct_base64(0, NULL, size, buf, datatype);
-  SerdNode* const node = serd_node_try_malloc(r);
+  SerdNode* const node = serd_node_try_malloc(allocator, r);
 
   if (node) {
     r = serd_node_construct_base64(r.count, node, size, buf, datatype);
     MUST_SUCCEED(r.status);
     assert(serd_node_length(node) == strlen(serd_node_string(node)));
+    serd_node_check_padding(node);
   }
 
-  serd_node_check_padding(node);
   return node;
 }
 
@@ -947,9 +970,9 @@ serd_node_flags(const SerdNode* const node)
 }
 
 void
-serd_node_free(SerdNode* const node)
+serd_node_free(SerdAllocator* const allocator, SerdNode* const node)
 {
-  serd_free_aligned(node);
+  serd_aaligned_free(allocator, node);
 }
 
 #undef MUST_SUCCEED

@@ -13,6 +13,7 @@ Checks: >
   -clang-analyzer-valist.Uninitialized,
   -cppcoreguidelines-avoid-non-const-global-variables,
   -hicpp-signed-bitwise,
+  -llvm-header-guard,
   -llvmlibc-*,
   -readability-function-cognitive-complexity,
 WarningsAsErrors: '*'

@@ -14,6 +14,7 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "memory.h"
 #include "string_utils.h"
 
 #include "serd/serd.h"
@@ -22,9 +23,9 @@
 #include <stdlib.h>
 
 void
-serd_free(void* const ptr)
+serd_free(SerdAllocator* const allocator, void* const ptr)
 {
-  free(ptr);
+  serd_afree(allocator, ptr);
 }
 
 const char*
