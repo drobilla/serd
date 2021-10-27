@@ -14,6 +14,7 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "memory.h"
 #include "model.h"
 #include "statement.h"
 
@@ -24,8 +25,8 @@
 #include <stdlib.h>
 
 typedef struct {
-  SerdModel*      model;
-  const SerdNode* default_graph;
+  SerdModel* model;
+  SerdNode*  default_graph;
 } SerdInserterData;
 
 static bool
@@ -107,19 +108,38 @@ serd_inserter_on_event(SerdInserterData* const data,
   return SERD_SUCCESS;
 }
 
+static SerdInserterData*
+serd_inserter_data_new(SerdModel* const      model,
+                       const SerdNode* const default_graph)
+{
+  SerdInserterData* const data =
+    (SerdInserterData*)serd_wcalloc(model->world, 1, sizeof(SerdInserterData));
+
+  if (data) {
+    data->model         = model;
+    data->default_graph = serd_node_copy(model->allocator, default_graph);
+  }
+
+  return data;
+}
+
+static void
+serd_inserter_data_free(SerdInserterData* const data)
+{
+  serd_node_free(data->model->allocator, data->default_graph);
+  serd_wfree(data->model->world, data);
+}
+
 SerdSink*
 serd_inserter_new(SerdModel* const model, const SerdNode* const default_graph)
 {
   assert(model);
 
-  SerdInserterData* const data =
-    (SerdInserterData*)calloc(1, sizeof(SerdInserterData));
+  SerdEventFunc           func = (SerdEventFunc)serd_inserter_on_event;
+  SerdInserterData* const data = serd_inserter_data_new(model, default_graph);
 
-  data->model         = model;
-  data->default_graph = serd_node_copy(default_graph);
-
-  SerdSink* const sink = serd_sink_new(
-    model->world, data, (SerdEventFunc)serd_inserter_on_event, free);
-
-  return sink;
+  return data
+           ? serd_sink_new(
+               model->world, data, func, (SerdFreeFunc)serd_inserter_data_free)
+           : NULL;
 }

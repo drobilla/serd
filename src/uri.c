@@ -14,6 +14,7 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "memory.h"
 #include "string_utils.h"
 #include "uri_utils.h"
 
@@ -26,7 +27,9 @@
 #include <string.h>
 
 char*
-serd_parse_file_uri(const char* const uri, char** const hostname)
+serd_parse_file_uri(SerdAllocator* const allocator,
+                    const char* const    uri,
+                    char** const         hostname)
 {
   assert(uri);
 
@@ -46,7 +49,10 @@ serd_parse_file_uri(const char* const uri, char** const hostname)
 
       if (hostname) {
         const size_t len = (size_t)(path - auth);
-        *hostname        = (char*)calloc(len + 1, 1);
+        if (!(*hostname = (char*)serd_acalloc(allocator, len + 1, 1))) {
+          return NULL;
+        }
+
         memcpy(*hostname, auth, len);
       }
     }
@@ -56,26 +62,39 @@ serd_parse_file_uri(const char* const uri, char** const hostname)
     ++path;
   }
 
-  SerdBuffer buffer = {NULL, 0};
+  SerdBuffer buffer = {allocator, NULL, 0};
   for (const char* s = path; *s; ++s) {
     if (*s == '%') {
       if (*(s + 1) == '%') {
-        serd_buffer_write("%", 1, 1, &buffer);
+        if (serd_buffer_write("%", 1, 1, &buffer) != 1) {
+          serd_afree(allocator, buffer.buf);
+          return NULL;
+        }
+
         ++s;
       } else if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
         const char code[3] = {*(s + 1), *(s + 2), 0};
         const char c       = (char)strtoul(code, NULL, 16);
-        serd_buffer_write(&c, 1, 1, &buffer);
+        if (serd_buffer_write(&c, 1, 1, &buffer) != 1) {
+          serd_afree(allocator, buffer.buf);
+          return NULL;
+        }
+
         s += 2;
       } else {
         s += 2; // Junk escape, ignore
       }
-    } else {
-      serd_buffer_write(s, 1, 1, &buffer);
+    } else if (serd_buffer_write(s, 1, 1, &buffer) != 1) {
+      serd_afree(allocator, buffer.buf);
+      return NULL;
     }
   }
 
-  serd_buffer_close(&buffer);
+  if (serd_buffer_close(&buffer)) {
+    serd_afree(allocator, buffer.buf);
+    return NULL;
+  }
+
   return (char*)buffer.buf;
 }
 

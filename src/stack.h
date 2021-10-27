@@ -17,7 +17,9 @@
 #ifndef SERD_STACK_H
 #define SERD_STACK_H
 
-#include "system.h"
+#include "memory.h"
+
+#include "serd/serd.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -38,12 +40,12 @@ typedef struct {
 #define SERD_STACK_BOTTOM sizeof(void*)
 
 static inline SerdStack
-serd_stack_new(size_t size, size_t align)
+serd_stack_new(SerdAllocator* const allocator, size_t size, size_t align)
 {
   const size_t aligned_size = (size + (align - 1)) / align * align;
 
   SerdStack stack;
-  stack.buf      = (char*)serd_calloc_aligned(align, aligned_size);
+  stack.buf      = (char*)serd_aaligned_calloc(allocator, align, aligned_size);
   stack.buf_size = size;
   stack.size     = SERD_STACK_BOTTOM;
   return stack;
@@ -62,9 +64,9 @@ serd_stack_is_empty(const SerdStack* stack)
 }
 
 static inline void
-serd_stack_free(SerdStack* stack)
+serd_stack_free(SerdAllocator* const allocator, SerdStack* stack)
 {
-  serd_free_aligned(stack->buf);
+  serd_aaligned_free(allocator, stack->buf);
   stack->buf      = NULL;
   stack->buf_size = 0;
   stack->size     = 0;

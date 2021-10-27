@@ -36,8 +36,8 @@ count_statements(void* handle, const SerdEvent* event)
 static void
 test_writer(const char* const path)
 {
+  SerdWorld* world = serd_world_new(NULL);
   FILE*      fd    = fopen(path, "wb");
-  SerdWorld* world = serd_world_new();
   SerdEnv*   env   = serd_env_new(world, SERD_EMPTY_STRING());
   assert(fd);
 
@@ -108,7 +108,7 @@ test_writer(const char* const path)
   serd_close_output(&output);
 
   // Test buffer sink
-  SerdBuffer buffer = {NULL, 0};
+  SerdBuffer buffer = {NULL, NULL, 0};
 
   output = serd_open_output_buffer(&buffer);
   writer = serd_writer_new(world, SERD_TURTLE, 0, env, &output, 1);
@@ -124,7 +124,7 @@ test_writer(const char* const path)
 
   assert(out);
   assert(!strcmp(out, "@base <http://example.org/base> .\n"));
-  serd_free(out);
+  serd_free(NULL, buffer.buf);
 
   serd_env_free(env);
   serd_world_free(world);
@@ -133,7 +133,7 @@ test_writer(const char* const path)
 static void
 test_reader(const char* path)
 {
-  SerdWorld* world        = serd_world_new();
+  SerdWorld* world        = serd_world_new(NULL);
   size_t     n_statements = 0;
 
   SerdSink* const sink =

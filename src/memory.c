@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2020 David Robillard <d@drobilla.net>
+  Copyright 2011-2021 David Robillard <d@drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -14,19 +14,17 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#ifndef SERD_SINK_H
-#define SERD_SINK_H
+#include "memory.h"
 
 #include "serd/serd.h"
+#include "zix/allocator.h"
 
-/**
-   An interface that receives a stream of RDF data.
-*/
-struct SerdSinkImpl {
-  const SerdWorld* world;
-  void*            handle;
-  SerdFreeFunc     free_handle;
-  SerdEventFunc    on_event;
-};
+SerdAllocator*
+serd_default_allocator(void)
+{
+  /* Note that SerdAllocator is intentionally the same as ZixAllocator.  It
+     only exists to avoid exposing the zix API in the public serd API, which
+     I'm not sure would be appropriate. */
 
-#endif // SERD_SINK_H
+  return (SerdAllocator*)zix_default_allocator();
+}

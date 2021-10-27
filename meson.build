@@ -42,6 +42,7 @@ if get_option('strict')
       '-Wno-float-conversion', # MinGW
       '-Wno-format-nonliteral',
       '-Wno-inline',
+      '-Wno-null-dereference', # ARM32
       '-Wno-padded',
       '-Wno-strict-overflow',
       '-Wno-switch-default',
@@ -99,6 +100,7 @@ sources = [
   'src/input_stream.c',
   'src/inserter.c',
   'src/log.c',
+  'src/memory.c',
   'src/model.c',
   'src/n3.c',
   'src/node.c',
