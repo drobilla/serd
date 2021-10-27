@@ -43,6 +43,8 @@ struct SerdWorldImpl {
   uint32_t next_blank_id;
   uint32_t next_document_id;
 
+  SerdAllocator* allocator;
+
   bool stderr_color;
 };
 

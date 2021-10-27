@@ -20,7 +20,6 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #define NS_RDF "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -42,10 +41,10 @@ check_output(SerdWriter* writer, SerdBuffer* buffer, const char* expected)
 static int
 test(void)
 {
-  SerdBuffer buffer = {NULL, 0};
-  SerdWorld* world  = serd_world_new();
+  SerdWorld* world  = serd_world_new(NULL);
+  SerdBuffer buffer = {NULL, NULL, 0};
   SerdEnv*   env    = serd_env_new(world, SERD_EMPTY_STRING());
-  SerdNodes* nodes  = serd_nodes_new();
+  SerdNodes* nodes  = serd_nodes_new(serd_world_allocator(world));
 
   const SerdNode* b1 = serd_nodes_blank(nodes, SERD_STRING("b1"));
   const SerdNode* l1 = serd_nodes_blank(nodes, SERD_STRING("l1"));
@@ -100,10 +99,10 @@ test(void)
 
   serd_writer_free(writer);
   serd_close_output(&output);
+  serd_free(NULL, buffer.buf);
   serd_nodes_free(nodes);
   serd_env_free(env);
   serd_world_free(world);
-  free(buffer.buf);
 
   return 0;
 }

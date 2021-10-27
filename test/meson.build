@@ -8,9 +8,11 @@ run_sort_suite = find_program('run_sort_suite.py')
 wrapper = meson.get_cross_property('exe_wrapper', '')
 
 unit_tests = [
+  'canon',
   'caret',
   'cursor',
   'env',
+  'filter',
   'free_null',
   'log',
   'model',
@@ -40,7 +42,7 @@ endif
 foreach unit : unit_tests
   test(unit,
        executable('test_@0@'.format(unit),
-                  'test_@0@.c'.format(unit),
+                  files('test_@0@.c'.format(unit), 'failing_allocator.c'),
                   c_args: c_warnings + platform_args + prog_args,
                   dependencies: serd_dep),
        env: test_env,
