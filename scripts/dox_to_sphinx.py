@@ -51,7 +51,7 @@ def load_index(index_path):
         compound_id = compound.get("refid")
         compound_kind = compound.get("kind")
         compound_name = compound.find("name").text
-        if compound_kind in ["dir", "file", "page"]:
+        if compound_kind in ["dir", "file", "friend", "page"]:
             continue
 
         # Add record for compound (compounds appear only once in the index)
@@ -68,8 +68,11 @@ def load_index(index_path):
         )
 
         for child in compound.findall("member"):
+            if child.get("kind") in ["friend"]:
+                continue
+
             if child.get("refid") in index:
-                assert compound_kind == "group"
+                assert compound_kind in ["group", "namespace"]
                 continue
 
             # Everything has a kind and a name
@@ -110,16 +113,22 @@ def resolve_index(index, root):
             assert "parent" not in child or child["parent"] == parent_id
             child["parent"] = parent_id
 
-        else:
-            if parent["kind"] in ["class", "struct", "union"]:
-                assert "parent" not in child or child["parent"] == parent_id
-                child["parent"] = parent_id
+        elif child["kind"] == "namespace":
+            assert child["kind"] == "namespace"
+            child["parent"] = parent_id
+            parent["children"] += [child_id]
+
+        elif parent["kind"] in ["class", "struct", "union"]:
+            assert "parent" not in child or child["parent"] == parent_id
+            child["parent"] = parent_id
 
         if child_id not in parent["children"]:
             parent["children"] += [child_id]
 
     compound = root.find("compounddef")
     compound_kind = compound.get("kind")
+
+    namespaces = {}
 
     if compound_kind == "group":
         for subgroup in compound.findall("innergroup"):
@@ -128,6 +137,10 @@ def resolve_index(index, root):
         for klass in compound.findall("innerclass"):
             add_child(index, compound.get("id"), klass.get("refid"))
 
+    elif compound_kind == "namespace":
+        for child in compound.findall("innernamespace"):
+            add_child(index, compound.get("id"), child.get("refid"))
+
     for section in compound.findall("sectiondef"):
         if section.get("kind").startswith("private"):
             for member in section.findall("memberdef"):
@@ -135,6 +148,9 @@ def resolve_index(index, root):
                     del index[member.get("id")]
         else:
             for member in section.findall("memberdef"):
+                if member.get("kind") in ["friend"]:
+                    continue
+
                 member_id = member.get("id")
                 add_child(index, compound.get("id"), member_id)
 
@@ -256,7 +272,7 @@ def dox_to_rst(index, lang, node):
     def field_value(markup):
         """Return a value for a field as a single line or indented block."""
         if "\n" in markup.strip():
-            return "\n" + indent(markup, 1)
+            return "\n\n" + indent(markup.strip(), 1)
 
         return " " + markup.strip()
 
@@ -299,7 +315,7 @@ def dox_to_rst(index, lang, node):
             assert len(description) == 1
             markup += "\n\n:param %s: %s" % (
                 name.text,
-                field_value(dox_to_rst(index, lang, description[0])),
+                field_value(dox_to_rst(index, lang, description[0])).strip(),
             )
 
         return markup + "\n"
@@ -345,7 +361,7 @@ def dox_to_rst(index, lang, node):
 def description_markup(index, lang, node):
     """Return the markup for a brief or detailed description."""
 
-    assert node.tag == "briefdescription" or node.tag == "detaileddescription"
+    assert node.tag in ["briefdescription", "detaileddescription"]
     assert not (node.tag == "briefdescription" and len(node) > 1)
     assert len(node.text.strip()) == 0
 
@@ -389,6 +405,9 @@ def plain_text(node):
     because it parses things itself to generate links.
     """
 
+    if node is None:
+        return ""
+
     if node.tag == "sp":
         markup = " "
     elif node.text is not None:
@@ -421,35 +440,72 @@ def read_definition_doc(index, lang, root):
     if compound.find("title") is not None:
         compound_record["title"] = compound.find("title").text.strip()
 
+    if compound.get("kind") in ["class", "struct"]:
+        name = compound_record["name"]
+        prefix = ""
+        if "::" in name:
+            sep = name.find("::")
+            prefix = name[0 : sep + 2]
+
+        compound_record["supers"] = []
+        for base in compound.findall("basecompoundref"):
+            prot = base.get("prot")
+            compound_record["supers"] += [
+                "{} {}".format(prot, base.text.replace(prefix, ""))
+            ]
+
+    # Read list of all members
+    # scopes = {}
+    # print("LIST OF ALL MEMBERS:")
+    # if compound.find("listofallmembers") is not None:
+    #     for member in compound.find("listofallmembers"):
+    #         scopes[member.get("refid")] = member.find("scope").text
+
+    # print("COMPOUND NAME: %s" % compound_record["name"])
+    # if len(scopes):
+    #     print("SCOPES: %s" % scopes)
+
     # Set documentation for all children
     for section in compound.findall("sectiondef"):
         if section.get("kind").startswith("private"):
             continue
 
+        # templateparamlist = compound.find("templateparamlist")
+        # if templateparamlist is not None:
+        #     for tparam in templateparamlist.findall("param"):
+        #         if tparam.find("declname") is not None:
+        #             print("TEMPLATE PARAM: %s : %s" % (tparam.find("type").text, tparam.find("declname").text))
+
         for member in section.findall("memberdef"):
+            if member.get("id") not in index:
+                continue
+
             kind = member.get("kind")
             record = index[member.get("id")]
             set_descriptions(index, lang, member, record)
             set_template_params(member, record)
 
             if compound.get("kind") in ["class", "struct", "union"]:
-                assert kind in ["function", "typedef", "variable"]
+                # assert kind in ["function", "typedef", "variable"]
                 record["type"] = plain_text(member.find("type"))
 
             if kind == "define":
-                if member.find('param') is not None:
+                if member.find("param") is not None:
                     param_names = []
-                    for param in member.findall('param'):
-                        defname = param.find('defname')
-                        param_names += [defname.text] if defname is not None else []
+                    for param in member.findall("param"):
+                        defname = param.find("defname")
+                        param_names += (
+                            [defname.text] if defname is not None else []
+                        )
 
-                    record["prototype"] = "%s(%s)" % (record["name"], ', '.join(param_names))
+                    record["prototype"] = "%s(%s)" % (
+                        record["name"],
+                        ", ".join(param_names),
+                    )
 
             elif kind == "enum":
                 for value in member.findall("enumvalue"):
-                    set_descriptions(
-                        index, lang, value, index[value.get("id")]
-                    )
+                    set_descriptions(index, lang, value, index[value.get("id")])
 
             elif kind == "function":
                 record["prototype"] = "%s %s%s" % (
@@ -481,7 +537,11 @@ def read_definition_doc(index, lang, root):
                         )
 
             elif kind == "variable":
-                record["definition"] = member.find("definition").text
+                # record["definition"] = member.find("definition").text
+                record["definition"] = "%s %s" % (
+                    plain_text(member.find("type")),
+                    plain_text(member.find("name")),
+                )
 
 
 def declaration_string(record):
@@ -499,7 +559,11 @@ def declaration_string(record):
     if "template_params" in record:
         result = "template <%s> " % record["template_params"]
 
-    if kind == "define" and "prototype" in record:
+    if kind in ["class", "struct"]:
+        result += local_name(record["name"])
+        if len(record["supers"]):
+            result += " : " + ",".join(record["supers"])
+    elif kind == "define" and "prototype" in record:
         result += record["prototype"]
     elif kind == "function":
         result += record["prototype"]
@@ -526,6 +590,12 @@ def document_markup(index, lang, record):
     name = record["name"]
     markup = ""
 
+    if (
+        len(record["briefdescription"].strip()) == 0
+        and len(record["detaileddescription"].strip()) == 0
+    ):
+        return markup
+
     if name != local_name(name):
         markup += ".. cpp:namespace:: %s\n\n" % name[0 : name.rindex("::")]
 
@@ -546,20 +616,35 @@ def document_markup(index, lang, record):
     child_indent = 0 if kind == "namespace" else 1
 
     # Write inline children if applicable
-    markup += "\n" if "children" in record else ""
+    markup += "\n"
     for child_id in record.get("children", []):
         child_record = index[child_id]
         child_role = sphinx_role(child_record, lang)
+
+        if (
+            len(child_record["briefdescription"]) == 0
+            and len(child_record["detaileddescription"]) == 0
+        ):
+            continue
 
         child_header = ".. %s:: %s\n\n" % (
             child_role,
             declaration_string(child_record),
         )
 
-        markup += "\n"
         markup += indent(child_header, child_indent)
-        markup += indent(child_record["briefdescription"], child_indent + 1)
-        markup += indent(child_record["detaileddescription"], child_indent + 1)
+
+        if len(child_record["briefdescription"]) > 0:
+            markup += (
+                indent(child_record["briefdescription"], child_indent + 1)
+                + "\n\n"
+            )
+
+        if len(child_record["detaileddescription"]) > 0:
+            markup += (
+                indent(child_record["detaileddescription"], child_indent + 1)
+                + "\n\n"
+            )
 
     return markup
 
@@ -574,23 +659,34 @@ def emit_groups(index, lang, output_dir, force):
     """Write a description file for every group documented in the index."""
 
     for record in index.values():
-        if record["kind"] != "group":
+        if record["kind"] not in ["group", "namespace"]:
             continue
 
         name = record["name"]
+        if "::" in name:
+            continue
+
         filename = os.path.join(output_dir, "%s.rst" % name)
         if not force and os.path.exists(filename):
             raise FileExistsError("File already exists: '%s'" % filename)
 
         with open(filename, "w") as rst:
-            rst.write(heading(record["title"], 1))
+            if "title" not in record:
+                print("warning: No title for %s" % filename)
+                rst.write(heading(name, 1))
+            else:
+                rst.write(heading(record["title"], 1))
+
+            if record["kind"] == "namespace":
+                name = record["name"]
+                rst.write(".. cpp:namespace:: %s\n\n" % name)
 
             # Get all child group and symbol names
             child_groups = {}
             child_symbols = {}
             for child_id in record["children"]:
                 child = index[child_id]
-                if child["kind"] == "group":
+                if child["kind"] in ["group", "namespace"]:
                     child_groups[child["name"]] = child
                 else:
                     child_symbols[child["name"]] = child
