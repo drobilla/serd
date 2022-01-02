@@ -5,6 +5,7 @@
 
 #include "serd/serd.h"
 
+#include <assert.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -93,6 +94,8 @@ serd_set_log_func(SerdWorld* const  world,
                   const SerdLogFunc log_func,
                   void* const       handle)
 {
+  assert(world);
+
   world->log_func   = log_func;
   world->log_handle = handle;
 }
@@ -105,6 +108,9 @@ serd_vxlogf(const SerdWorld* const    world,
             const char* const         fmt,
             va_list                   args)
 {
+  assert(world);
+  assert(fmt);
+
   if (world->log_func) {
     char      message[512] = {0};
     const int r            = vsnprintf(message, sizeof(message), fmt, args);
@@ -158,6 +164,9 @@ serd_xlogf(const SerdWorld* const    world,
            const char* const         fmt,
            ...)
 {
+  assert(world);
+  assert(fmt);
+
   va_list args;
   va_start(args, fmt);
 
@@ -173,6 +182,9 @@ serd_vlogf(const SerdWorld* const world,
            const char* const      fmt,
            va_list                args)
 {
+  assert(world);
+  assert(fmt);
+
   return serd_vxlogf(world, level, 0U, NULL, fmt, args);
 }
 
@@ -182,6 +194,9 @@ serd_logf(const SerdWorld* const world,
           const char* const      fmt,
           ...)
 {
+  assert(world);
+  assert(fmt);
+
   va_list args;
   va_start(args, fmt);
 
@@ -198,6 +213,9 @@ serd_vlogf_at(const SerdWorld* SERD_NONNULL world,
               const char* SERD_NONNULL      fmt,
               va_list                       args)
 {
+  assert(world);
+  assert(fmt);
+
   if (!caret) {
     return serd_vxlogf(world, level, 0U, NULL, fmt, args);
   }
@@ -223,6 +241,9 @@ serd_logf_at(const SerdWorld* SERD_NONNULL world,
              const char* SERD_NONNULL      fmt,
              ...)
 {
+  assert(world);
+  assert(fmt);
+
   va_list args;
   va_start(args, fmt);
 
