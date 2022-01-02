@@ -183,6 +183,18 @@ const SerdNode* SERD_ALLOCATED
 serd_nodes_integer(SerdNodes* SERD_NONNULL nodes, int64_t value);
 
 /**
+   Make a canonical xsd:hexBinary node.
+
+   A new node will be constructed with serd_node_construct_hex() if an
+   equivalent one is not already in the set.
+*/
+SERD_API
+const SerdNode* SERD_ALLOCATED
+serd_nodes_hex(SerdNodes* SERD_NONNULL  nodes,
+               const void* SERD_NONNULL value,
+               size_t                   value_size);
+
+/**
    Make a canonical xsd:base64Binary node.
 
    A new node will be constructed with serd_node_construct_base64() if an

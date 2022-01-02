@@ -30,22 +30,6 @@ serd_strncasecmp(const char* SERD_NONNULL s1,
                  size_t                   n);
 
 /**
-   Decode a base64 string.
-
-   This function can be used to decode a node created with serd_new_base64().
-
-   @param str Base64 string to decode.
-   @param len The length of `str`.
-   @param size Set to the size of the returned blob in bytes.
-   @return A newly allocated blob which must be freed with serd_free().
-*/
-SERD_API
-void* SERD_ALLOCATED
-serd_base64_decode(const char* SERD_NONNULL str,
-                   size_t                   len,
-                   size_t* SERD_NONNULL     size);
-
-/**
    @}
 */
 

@@ -270,6 +270,17 @@ SerdWriteResult
 serd_node_construct_integer(size_t              buf_size,
                             void* SERD_NULLABLE buf,
                             int64_t             value);
+/**
+   Construct a canonical xsd:hexBinary literal.
+
+   The constructed node will be an xsd:hexBinary literal like "534D", with
+   datatype xsd:hexBinary.
+*/
+SerdWriteResult
+serd_node_construct_hex(size_t                   buf_size,
+                        void* SERD_NULLABLE      buf,
+                        size_t                   value_size,
+                        const void* SERD_NONNULL value);
 
 /**
    Construct a canonical xsd:base64Binary literal.
@@ -439,6 +450,21 @@ SerdNode* SERD_ALLOCATED
 serd_new_integer(SerdAllocator* SERD_NULLABLE allocator, int64_t i);
 
 /**
+   Create a new canonical xsd:hexBinary literal.
+
+   This is a wrapper for serd_node_construct_hex() that allocates a new
+   node on the heap.
+
+   @return A newly allocated node that must be freed with serd_node_free(), or
+   null.
+*/
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_new_hex(SerdAllocator* SERD_NULLABLE allocator,
+             const void* SERD_NONNULL     buf,
+             size_t                       size);
+
+/**
    Create a new canonical xsd:base64Binary literal.
 
    This is a wrapper for serd_node_construct_base64() that allocates a new
@@ -493,23 +519,28 @@ serd_node_value_as(const SerdNode* SERD_NONNULL node,
                    bool                         lossy);
 
 /**
-   Return the maximum size of a decoded base64 node in bytes.
+   Return the maximum size of a decoded hex or base64 binary node in bytes.
 
    This returns an upper bound on the number of bytes that would be decoded by
-   serd_get_base64().  This is calculated as a simple constant-time arithmetic
+   serd_node_decode().  This is calculated as a simple constant-time arithmetic
    expression based on the length of the encoded string, so may be larger than
    the actual size of the data due to things like additional whitespace.
+
+   @return The size of the decoded hex or base64 blob `node`, or zero if it
+   does not have datatype <http://www.w3.org/2001/XMLSchema#hexBinary> or
+   <http://www.w3.org/2001/XMLSchema#base64Binary>.
 */
 SERD_PURE_API
 size_t
-serd_get_base64_size(const SerdNode* SERD_NONNULL node);
+serd_node_decoded_size(const SerdNode* SERD_NONNULL node);
 
 /**
-   Decode a base64 node.
+   Decode a binary (base64 or hex) node.
 
-   This function can be used to decode a node created with serd_new_base64().
+   This function can be used to decode a node created with serd_new_base64() or
+   serd_new_hex() and retrieve the original unencoded binary data.
 
-   @param node A literal node which is an encoded base64 string.
+   @param node A literal node which is an encoded base64 or hex string.
 
    @param buf_size The size of `buf` in bytes.
 
@@ -521,9 +552,9 @@ serd_get_base64_size(const SerdNode* SERD_NONNULL node);
 */
 SERD_API
 SerdWriteResult
-serd_get_base64(const SerdNode* SERD_NONNULL node,
-                size_t                       buf_size,
-                void* SERD_NONNULL           buf);
+serd_node_decode(const SerdNode* SERD_NONNULL node,
+                 size_t                       buf_size,
+                 void* SERD_NONNULL           buf);
 
 /// Return a deep copy of `node`
 SERD_API

@@ -441,6 +441,43 @@ test_get_integer(void)
 }
 
 static void
+test_hex(void)
+{
+  assert(!serd_new_hex(NULL, &SERD_URI_NULL, 0));
+
+  // Test valid hex blobs with a range of sizes
+  for (size_t size = 1; size < 256; ++size) {
+    uint8_t* const data = (uint8_t*)malloc(size);
+    for (size_t i = 0; i < size; ++i) {
+      data[i] = (uint8_t)((size + i) % 256);
+    }
+
+    SerdNode*    blob     = serd_new_hex(NULL, data, size);
+    const char*  blob_str = serd_node_string(blob);
+    const size_t max_size = serd_node_decoded_size(blob);
+    uint8_t*     out      = (uint8_t*)calloc(1, max_size);
+
+    const SerdWriteResult r = serd_node_decode(blob, max_size, out);
+    assert(r.status == SERD_SUCCESS);
+    assert(r.count == size);
+    assert(r.count <= max_size);
+    assert(serd_node_length(blob) == strlen(blob_str));
+
+    for (size_t i = 0; i < size; ++i) {
+      assert(out[i] == data[i]);
+    }
+
+    const SerdNode* const datatype = serd_node_datatype(blob);
+    assert(datatype);
+    assert(!strcmp(serd_node_string(datatype), NS_XSD "hexBinary"));
+
+    serd_node_free(NULL, blob);
+    free(out);
+    free(data);
+  }
+}
+
+static void
 test_base64(void)
 {
   assert(!serd_new_base64(NULL, &SERD_URI_NULL, 0));
@@ -454,10 +491,10 @@ test_base64(void)
 
     SerdNode*    blob     = serd_new_base64(NULL, data, size);
     const char*  blob_str = serd_node_string(blob);
-    const size_t max_size = serd_get_base64_size(blob);
+    const size_t max_size = serd_node_decoded_size(blob);
     uint8_t*     out      = (uint8_t*)calloc(1, max_size);
 
-    const SerdWriteResult r = serd_get_base64(blob, max_size, out);
+    const SerdWriteResult r = serd_node_decode(blob, max_size, out);
     assert(r.status == SERD_SUCCESS);
     assert(r.count == size);
     assert(r.count <= max_size);
@@ -478,19 +515,17 @@ test_base64(void)
 }
 
 static void
-check_get_base64(const char* string,
-                 const char* datatype_uri,
-                 const char* expected)
+check_decode(const char* string, const char* datatype_uri, const char* expected)
 {
   SerdNode* const node = serd_new_literal(
     NULL, serd_string(string), SERD_HAS_DATATYPE, serd_string(datatype_uri));
 
   assert(node);
 
-  const size_t max_size = serd_get_base64_size(node);
+  const size_t max_size = serd_node_decoded_size(node);
   char* const  decoded  = (char*)calloc(1, max_size + 1);
 
-  const SerdWriteResult r = serd_get_base64(node, max_size, decoded);
+  const SerdWriteResult r = serd_node_decode(node, max_size, decoded);
   assert(!r.status);
   assert(r.count <= max_size);
 
@@ -502,22 +537,55 @@ check_get_base64(const char* string,
 }
 
 static void
-test_get_base64(void)
+test_decode(void)
 {
-  check_get_base64("Zm9vYmFy", NS_XSD "base64Binary", "foobar");
-  check_get_base64("Zm9vYg==", NS_XSD "base64Binary", "foob");
-  check_get_base64(" \f\n\r\t\vZm9v \f\n\r\t\v", NS_XSD "base64Binary", "foo");
+  check_decode("666F6F626172", NS_XSD "hexBinary", "foobar");
+  check_decode("666F6F62", NS_XSD "hexBinary", "foob");
 
-  SerdNode* const node = serd_new_literal(NULL,
-                                          serd_string("Zm9v"),
-                                          SERD_HAS_DATATYPE,
-                                          serd_string(NS_XSD "base64Binary"));
+  check_decode("Zm9vYmFy", NS_XSD "base64Binary", "foobar");
+  check_decode("Zm9vYg==", NS_XSD "base64Binary", "foob");
+  check_decode(" \f\n\r\t\vZm9v \f\n\r\t\v", NS_XSD "base64Binary", "foo");
 
-  char                  small[2] = {0};
-  const SerdWriteResult r        = serd_get_base64(node, sizeof(small), small);
+  char small[2] = {0};
 
-  assert(r.status == SERD_OVERFLOW);
-  serd_node_free(NULL, node);
+  {
+    SerdNode* const node = serd_new_literal(NULL,
+                                            serd_string("Zm9v"),
+                                            SERD_HAS_DATATYPE,
+                                            serd_string(NS_XSD "base64Binary"));
+
+    const SerdWriteResult r = serd_node_decode(node, sizeof(small), small);
+
+    assert(r.status == SERD_OVERFLOW);
+    serd_node_free(NULL, node);
+  }
+  {
+    SerdNode* const string =
+      serd_new_token(NULL, SERD_LITERAL, serd_string("string"));
+
+    assert(serd_node_decoded_size(string) == 0U);
+
+    const SerdWriteResult r = serd_node_decode(string, sizeof(small), small);
+
+    assert(r.status == SERD_BAD_ARG);
+    assert(r.count == 0U);
+    serd_node_free(NULL, string);
+  }
+  {
+    SerdNode* const unknown =
+      serd_new_literal(NULL,
+                       serd_string("secret"),
+                       SERD_HAS_DATATYPE,
+                       serd_string("http://example.org/Datatype"));
+
+    assert(serd_node_decoded_size(unknown) == 0U);
+
+    const SerdWriteResult r = serd_node_decode(unknown, sizeof(small), small);
+
+    assert(r.status == SERD_BAD_ARG);
+    assert(r.count == 0U);
+    serd_node_free(NULL, unknown);
+  }
 }
 
 static void
@@ -780,8 +848,9 @@ main(void)
   test_get_float();
   test_integer();
   test_get_integer();
+  test_hex();
   test_base64();
-  test_get_base64();
+  test_decode();
   test_node_equals();
   test_node_from_syntax();
   test_node_from_substring();

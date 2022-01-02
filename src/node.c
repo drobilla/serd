@@ -437,26 +437,26 @@ serd_node_construct_integer(const size_t  buf_size,
                                      serd_string(NS_XSD "integer"));
 }
 
-SerdWriteResult
-serd_node_construct_base64(const size_t      buf_size,
-                           void* const       buf,
-                           const size_t      value_size,
-                           const void* const value)
+static SerdWriteResult
+serd_node_construct_binary(
+  const size_t         buf_size,
+  void* const          buf,
+  const size_t         value_size,
+  const void* const    value,
+  const SerdStringView datatype_uri,
+  ExessResult (*write_func)(size_t, const void*, size_t, char*))
 {
-  const SerdStringView xsd_base64Binary = serd_string(NS_XSD "base64Binary");
-
   // Verify argument sanity
   if (!value || !value_size) {
     return result(SERD_BAD_ARG, 0);
   }
 
-  // Determine the type to use (default to xsd:base64Binary)
-  const SerdStringView type        = xsd_base64Binary;
-  const size_t         type_length = serd_node_pad_length(type.len);
-  const size_t         type_size   = sizeof(SerdNode) + type_length;
+  // Find the size required for the datatype
+  const size_t type_length = serd_node_pad_length(datatype_uri.len);
+  const size_t type_size   = sizeof(SerdNode) + type_length;
 
   // Find the length of the encoded string (just an O(1) arithmetic expression)
-  ExessResult r = exess_write_base64(value_size, value, 0, NULL);
+  ExessResult r = write_func(value_size, value, 0, NULL);
 
   // Check that the provided buffer is large enough
   const size_t padded_length = serd_node_pad_length(r.count);
@@ -470,8 +470,8 @@ serd_node_construct_base64(const size_t      buf_size,
   node->flags          = SERD_HAS_DATATYPE;
   node->type           = SERD_LITERAL;
 
-  // Write the encoded base64 into the node body
-  r = exess_write_base64(
+  // Write the encoded string into the node body
+  r = write_func(
     value_size, value, total_size - sizeof(SerdNode), serd_node_buffer(node));
 
   MUST_SUCCEED(r.status);
@@ -479,12 +479,40 @@ serd_node_construct_base64(const size_t      buf_size,
 
   // Append datatype
   SerdNode* meta_node = node + 1 + (padded_length / sizeof(SerdNode));
-  meta_node->length   = type.len;
+  meta_node->length   = datatype_uri.len;
   meta_node->flags    = 0U;
   meta_node->type     = SERD_URI;
-  memcpy(serd_node_buffer(meta_node), type.buf, type.len);
+  memcpy(serd_node_buffer(meta_node), datatype_uri.buf, datatype_uri.len);
 
   return result(SERD_SUCCESS, total_size);
+}
+
+SerdWriteResult
+serd_node_construct_hex(const size_t      buf_size,
+                        void* const       buf,
+                        const size_t      value_size,
+                        const void* const value)
+{
+  return serd_node_construct_binary(buf_size,
+                                    buf,
+                                    value_size,
+                                    value,
+                                    serd_string(NS_XSD "hexBinary"),
+                                    exess_write_hex);
+}
+
+SerdWriteResult
+serd_node_construct_base64(const size_t      buf_size,
+                           void* const       buf,
+                           const size_t      value_size,
+                           const void* const value)
+{
+  return serd_node_construct_binary(buf_size,
+                                    buf,
+                                    value_size,
+                                    value,
+                                    serd_string(NS_XSD "base64Binary"),
+                                    exess_write_base64);
 }
 
 static size_t
@@ -640,21 +668,45 @@ serd_node_value_as(const SerdNode* const node,
 }
 
 size_t
-serd_get_base64_size(const SerdNode* const node)
+serd_node_decoded_size(const SerdNode* const node)
 {
-  return exess_base64_decoded_size(serd_node_length(node));
+  const SerdNode* const datatype = serd_node_datatype(node);
+  if (!datatype) {
+    return 0U;
+  }
+
+  if (!strcmp(serd_node_string(datatype), NS_XSD "hexBinary")) {
+    return exess_hex_decoded_size(serd_node_length(node));
+  }
+
+  if (!strcmp(serd_node_string(datatype), NS_XSD "base64Binary")) {
+    return exess_base64_decoded_size(serd_node_length(node));
+  }
+
+  return 0U;
 }
 
 SerdWriteResult
-serd_get_base64(const SerdNode* const node,
-                const size_t          buf_size,
-                void* const           buf)
+serd_node_decode(const SerdNode* const node,
+                 const size_t          buf_size,
+                 void* const           buf)
 {
-  const size_t              max_size = serd_get_base64_size(node);
-  const ExessVariableResult r =
-    exess_read_base64(buf_size, buf, serd_node_string(node));
+  const SerdNode* const datatype = serd_node_datatype(node);
+  if (!datatype) {
+    return result(SERD_BAD_ARG, 0U);
+  }
 
-  return r.status == EXESS_NO_SPACE ? result(SERD_OVERFLOW, max_size)
+  ExessVariableResult r = {EXESS_UNSUPPORTED, 0U, 0U};
+
+  if (!strcmp(serd_node_string(datatype), NS_XSD "hexBinary")) {
+    r = exess_read_hex(buf_size, buf, serd_node_string(node));
+  } else if (!strcmp(serd_node_string(datatype), NS_XSD "base64Binary")) {
+    r = exess_read_base64(buf_size, buf, serd_node_string(node));
+  } else {
+    return result(SERD_BAD_ARG, 0U);
+  }
+
+  return r.status == EXESS_NO_SPACE ? result(SERD_OVERFLOW, r.write_count)
          : r.status                 ? result(SERD_BAD_SYNTAX, 0U)
                                     : result(SERD_SUCCESS, r.write_count);
 }
@@ -885,6 +937,22 @@ serd_new_base64(SerdAllocator* const allocator, const void* buf, size_t size)
 
   if (node) {
     r = serd_node_construct_base64(r.count, node, size, buf);
+    MUST_SUCCEED(r.status);
+    assert(serd_node_length(node) == strlen(serd_node_string(node)));
+    serd_node_check_padding(node);
+  }
+
+  return node;
+}
+
+SerdNode*
+serd_new_hex(SerdAllocator* const allocator, const void* buf, size_t size)
+{
+  SerdWriteResult r    = serd_node_construct_hex(0, NULL, size, buf);
+  SerdNode* const node = serd_node_try_malloc(allocator, r);
+
+  if (node) {
+    r = serd_node_construct_hex(r.count, node, size, buf);
     MUST_SUCCEED(r.status);
     assert(serd_node_length(node) == strlen(serd_node_string(node)));
     serd_node_check_padding(node);
