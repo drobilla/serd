@@ -442,9 +442,9 @@ serd_nodes_integer(SerdNodes* const nodes, const int64_t value)
 }
 
 const SerdNode*
-serd_nodes_base64(SerdNodes* const  nodes,
-                  const void* const value,
-                  const size_t      value_size)
+serd_nodes_hex(SerdNodes* const  nodes,
+               const void* const value,
+               const size_t      value_size)
 {
   assert(nodes);
   assert(value);
@@ -457,6 +457,31 @@ serd_nodes_base64(SerdNodes* const  nodes,
      when possible would probably be a better improvement if this ever becomes
      a performance issue.  More ambitiously, adding support for binary nodes
      like a Real Database(TM) would largely avoid this problem. */
+
+  // Determine how much space the node needs
+  SerdWriteResult r = serd_node_construct_hex(0, NULL, value_size, value);
+
+  // Allocate a new entry to and construct the node into it
+  NodesEntry* const entry = new_entry(nodes->allocator, r.count);
+  if (entry) {
+    r = serd_node_construct_hex(r.count, &entry->node, value_size, value);
+
+    assert(!r.status);
+    (void)r;
+  }
+
+  return serd_nodes_manage_entry(nodes, entry);
+}
+
+const SerdNode*
+serd_nodes_base64(SerdNodes* const  nodes,
+                  const void* const value,
+                  const size_t      value_size)
+{
+  assert(nodes);
+  assert(value);
+
+  // Same situation as for hex above
 
   // Determine how much space the node needs
   SerdWriteResult r = serd_node_construct_base64(0, NULL, value_size, value);
