@@ -9,6 +9,7 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 static void
@@ -74,7 +75,7 @@ check(SerdWorld* const      world,
 static void
 test_common(SerdWorld* const world, const SerdSyntax syntax)
 {
-  static const int data[] = {4, 2};
+  static const uint8_t data[] = {19U, 17U, 13U, 7U};
 
   const SerdStringView datatype = serd_string("http://example.org/Datatype");
 
@@ -126,11 +127,16 @@ test_common(SerdWorld* const world, const SerdSyntax syntax)
                serd_nodes_value(nodes, serd_float(1.25f)),
                "\"1.25E0\"^^<http://www.w3.org/2001/XMLSchema#float>"));
 
+  assert(check(world,
+               syntax,
+               serd_nodes_hex(nodes, data, sizeof(data)),
+               "\"13110D07\"^^<http://www.w3.org/2001/XMLSchema#hexBinary>"));
+
   assert(
     check(world,
           syntax,
           serd_nodes_base64(nodes, data, sizeof(data)),
-          "\"BAAAAAIAAAA=\"^^<http://www.w3.org/2001/XMLSchema#base64Binary>"));
+          "\"ExENBw==\"^^<http://www.w3.org/2001/XMLSchema#base64Binary>"));
 
   serd_nodes_free(nodes);
 }
