@@ -64,6 +64,8 @@ serd_model_pattern_comparator(const SerdModel* const   model,
 SerdStatus
 serd_model_add_index(SerdModel* const model, const SerdStatementOrder order)
 {
+  assert(model);
+
   if (model->indices[order]) {
     return SERD_FAILURE;
   }
@@ -91,6 +93,8 @@ serd_model_add_index(SerdModel* const model, const SerdStatementOrder order)
 SerdStatus
 serd_model_drop_index(SerdModel* const model, const SerdStatementOrder order)
 {
+  assert(model);
+
   if (!model->indices[order]) {
     return SERD_FAILURE;
   }
@@ -109,6 +113,8 @@ serd_model_new(SerdWorld* const         world,
                const SerdStatementOrder default_order,
                const SerdModelFlags     flags)
 {
+  assert(world);
+
   SerdModel* model = (SerdModel*)calloc(1, sizeof(struct SerdModelImpl));
 
   model->world         = world;
@@ -131,6 +137,8 @@ serd_model_new(SerdWorld* const         world,
 SerdModel*
 serd_model_copy(const SerdModel* const model)
 {
+  assert(model);
+
   SerdModel* copy =
     serd_model_new(model->world, model->default_order, model->flags);
 
@@ -261,36 +269,42 @@ serd_model_free(SerdModel* const model)
 SerdWorld*
 serd_model_world(SerdModel* const model)
 {
+  assert(model);
   return model->world;
 }
 
 const SerdNodes*
 serd_model_nodes(const SerdModel* const model)
 {
+  assert(model);
   return model->nodes;
 }
 
 SerdStatementOrder
 serd_model_default_order(const SerdModel* const model)
 {
+  assert(model);
   return model->default_order;
 }
 
 SerdModelFlags
 serd_model_flags(const SerdModel* const model)
 {
+  assert(model);
   return model->flags;
 }
 
 size_t
 serd_model_size(const SerdModel* const model)
 {
+  assert(model);
   return zix_btree_size(model->indices[model->default_order]);
 }
 
 bool
 serd_model_empty(const SerdModel* const model)
 {
+  assert(model);
   return serd_model_size(model) == 0;
 }
 
@@ -298,6 +312,8 @@ SerdCursor*
 serd_model_begin_ordered(const SerdModel* const   model,
                          const SerdStatementOrder order)
 {
+  assert(model);
+
   const SerdCursor cursor = make_begin_cursor(model, order);
 
   return serd_cursor_copy(&cursor);
@@ -306,12 +322,14 @@ serd_model_begin_ordered(const SerdModel* const   model,
 SerdCursor*
 serd_model_begin(const SerdModel* const model)
 {
+  assert(model);
   return serd_model_begin_ordered(model, model->default_order);
 }
 
 const SerdCursor*
 serd_model_end(const SerdModel* const model)
 {
+  assert(model);
   return &model->end;
 }
 
@@ -495,6 +513,8 @@ serd_model_find(const SerdModel* const model,
                 const SerdNode* const  o,
                 const SerdNode* const  g)
 {
+  assert(model);
+
   const SerdCursor cursor = serd_model_search(model, s, p, o, g);
 
   return zix_btree_iter_is_end(cursor.iter) ? NULL : serd_cursor_copy(&cursor);
@@ -507,6 +527,8 @@ serd_model_get(const SerdModel* const model,
                const SerdNode* const  o,
                const SerdNode* const  g)
 {
+  assert(model);
+
   const SerdStatement* const statement =
     serd_model_get_statement(model, s, p, o, g);
 
@@ -525,6 +547,8 @@ serd_model_get_statement(const SerdModel* const model,
                          const SerdNode* const  o,
                          const SerdNode* const  g)
 {
+  assert(model);
+
   if ((bool)s + (bool)p + (bool)o != 2 &&
       (bool)s + (bool)p + (bool)o + (bool)g != 3) {
     return NULL;
@@ -542,6 +566,8 @@ serd_model_count(const SerdModel* const model,
                  const SerdNode* const  o,
                  const SerdNode* const  g)
 {
+  assert(model);
+
   SerdCursor i     = serd_model_search(model, s, p, o, g);
   size_t     count = 0;
 
@@ -559,6 +585,8 @@ serd_model_ask(const SerdModel* const model,
                const SerdNode* const  o,
                const SerdNode* const  g)
 {
+  assert(model);
+
   const SerdCursor c = serd_model_search(model, s, p, o, g);
 
   return !serd_cursor_is_end(&c);
@@ -587,6 +615,8 @@ serd_model_add_with_caret(SerdModel* const       model,
                           const SerdNode* const  g,
                           const SerdCaret* const caret)
 {
+  assert(model);
+
   SerdStatement* const statement = serd_statement_new(s, p, o, g, NULL);
   if (!statement) {
     return SERD_ERR_UNKNOWN;
@@ -663,6 +693,9 @@ serd_model_insert_statements(SerdModel* const model, SerdCursor* const range)
 SerdStatus
 serd_model_erase(SerdModel* const model, SerdCursor* const cursor)
 {
+  assert(model);
+  assert(cursor);
+
   const SerdStatement* statement = serd_cursor_get(cursor);
   SerdStatement*       removed   = NULL;
   ZixStatus            zst       = ZIX_STATUS_SUCCESS;
@@ -706,6 +739,9 @@ serd_model_erase(SerdModel* const model, SerdCursor* const cursor)
 SerdStatus
 serd_model_erase_statements(SerdModel* const model, SerdCursor* const range)
 {
+  assert(model);
+  assert(range);
+
   SerdStatus st = SERD_SUCCESS;
 
   while (!st && !serd_cursor_is_end(range)) {
@@ -718,6 +754,8 @@ serd_model_erase_statements(SerdModel* const model, SerdCursor* const range)
 SerdStatus
 serd_model_clear(SerdModel* const model)
 {
+  assert(model);
+
   SerdCursor i = make_begin_cursor(model, model->default_order);
 
   while (!serd_cursor_is_end(&i)) {
