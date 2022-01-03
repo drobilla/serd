@@ -116,12 +116,12 @@ test_common(SerdWorld* const world, const SerdSyntax syntax)
 
   assert(check(world,
                syntax,
-               serd_new_double(NULL, 1.25),
+               serd_new_value(NULL, serd_double(1.25)),
                "\"1.25E0\"^^<http://www.w3.org/2001/XMLSchema#double>"));
 
   assert(check(world,
                syntax,
-               serd_new_float(NULL, 1.25),
+               serd_new_value(NULL, serd_float(1.25f)),
                "\"1.25E0\"^^<http://www.w3.org/2001/XMLSchema#float>"));
 
   assert(
@@ -172,12 +172,12 @@ test_ntriples(void)
 
   assert(check(world,
                SERD_NTRIPLES,
-               serd_new_boolean(NULL, true),
+               serd_new_value(NULL, serd_bool(true)),
                "\"true\"^^<http://www.w3.org/2001/XMLSchema#boolean>"));
 
   assert(check(world,
                SERD_NTRIPLES,
-               serd_new_boolean(NULL, false),
+               serd_new_value(NULL, serd_bool(false)),
                "\"false\"^^<http://www.w3.org/2001/XMLSchema#boolean>"));
 
   serd_world_free(world);
@@ -198,8 +198,11 @@ test_turtle(void)
   assert(check(world, SERD_TURTLE, serd_new_decimal(NULL, 1.25), "1.25"));
   assert(check(world, SERD_TURTLE, serd_new_integer(NULL, 1234), "1234"));
 
-  assert(check(world, SERD_TURTLE, serd_new_boolean(NULL, true), "true"));
-  assert(check(world, SERD_TURTLE, serd_new_boolean(NULL, false), "false"));
+  assert(
+    check(world, SERD_TURTLE, serd_new_value(NULL, serd_bool(true)), "true"));
+
+  assert(
+    check(world, SERD_TURTLE, serd_new_value(NULL, serd_bool(false)), "false"));
 
   serd_world_free(world);
 }

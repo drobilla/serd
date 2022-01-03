@@ -12,9 +12,9 @@
 #include "serd/status.h"
 #include "serd/string_view.h"
 #include "serd/uri.h"
+#include "serd/value.h"
 
 #include <assert.h>
-#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -28,6 +28,21 @@
 #define NS_XSD "http://www.w3.org/2001/XMLSchema#"
 
 static const SerdNodeFlags meta_mask = (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE);
+
+static const ExessDatatype value_type_datatypes[] = {
+  EXESS_NOTHING,
+  EXESS_BOOLEAN,
+  EXESS_DOUBLE,
+  EXESS_FLOAT,
+  EXESS_LONG,
+  EXESS_INT,
+  EXESS_SHORT,
+  EXESS_BYTE,
+  EXESS_ULONG,
+  EXESS_UINT,
+  EXESS_USHORT,
+  EXESS_UBYTE,
+};
 
 // Round size up to an even multiple of the node alignment
 static size_t
@@ -274,21 +289,122 @@ serd_node_construct(const size_t         buf_size,
             : serd_node_construct_token(buf_size, buf, type, string));
 }
 
-SerdWriteResult
-serd_node_construct_boolean(const size_t buf_size,
-                            void* const  buf,
-                            const bool   value)
+static ExessDatatype
+value_type_datatype(const SerdValueType value_type)
 {
-  char temp[EXESS_MAX_BOOLEAN_LENGTH + 1] = {0};
+  return (value_type > SERD_UBYTE) ? EXESS_NOTHING
+                                   : value_type_datatypes[value_type];
+}
 
-  const ExessResult r = exess_write_boolean(value, sizeof(temp), temp);
+static const char*
+value_type_uri(const SerdValueType value_type)
+{
+  return exess_datatype_uri(value_type_datatype(value_type));
+}
+
+static inline SerdValueType
+datatype_value_type(const ExessDatatype datatype)
+{
+  switch (datatype) {
+  case EXESS_NOTHING:
+    return SERD_NOTHING;
+  case EXESS_BOOLEAN:
+    return SERD_BOOL;
+  case EXESS_DECIMAL:
+  case EXESS_DOUBLE:
+    return SERD_DOUBLE;
+  case EXESS_FLOAT:
+    return SERD_FLOAT;
+  case EXESS_INTEGER:
+  case EXESS_NON_POSITIVE_INTEGER:
+  case EXESS_NEGATIVE_INTEGER:
+  case EXESS_LONG:
+    return SERD_LONG;
+  case EXESS_INT:
+    return SERD_INT;
+  case EXESS_SHORT:
+    return SERD_SHORT;
+  case EXESS_BYTE:
+    return SERD_BYTE;
+  case EXESS_NON_NEGATIVE_INTEGER:
+  case EXESS_ULONG:
+    return SERD_ULONG;
+  case EXESS_UINT:
+    return SERD_UINT;
+  case EXESS_USHORT:
+    return SERD_USHORT;
+  case EXESS_UBYTE:
+    return SERD_UBYTE;
+  case EXESS_POSITIVE_INTEGER:
+    return SERD_ULONG;
+
+  case EXESS_DURATION:
+  case EXESS_DATETIME:
+  case EXESS_TIME:
+  case EXESS_DATE:
+  case EXESS_HEX:
+  case EXESS_BASE64:
+    break;
+  }
+
+  return SERD_NOTHING;
+}
+
+SerdWriteResult
+serd_node_construct_value(const size_t    buf_size,
+                          void* const     buf,
+                          const SerdValue value)
+{
+  char        temp[EXESS_MAX_DOUBLE_LENGTH + 1] = {0};
+  ExessResult r                                 = {EXESS_UNSUPPORTED, 0U};
+  switch (value.type) {
+  case SERD_NOTHING:
+    return result(SERD_BAD_ARG, 0U);
+  case SERD_BOOL:
+    r = exess_write_boolean(value.data.as_bool, sizeof(temp), temp);
+    break;
+  case SERD_DOUBLE:
+    r = exess_write_double(value.data.as_double, sizeof(temp), temp);
+    break;
+  case SERD_FLOAT:
+    r = exess_write_float(value.data.as_float, sizeof(temp), temp);
+    break;
+  case SERD_LONG:
+    r = exess_write_long(value.data.as_long, sizeof(temp), temp);
+    break;
+  case SERD_INT:
+    r = exess_write_int(value.data.as_int, sizeof(temp), temp);
+    break;
+  case SERD_SHORT:
+    r = exess_write_short(value.data.as_short, sizeof(temp), temp);
+    break;
+  case SERD_BYTE:
+    r = exess_write_byte(value.data.as_byte, sizeof(temp), temp);
+    break;
+  case SERD_ULONG:
+    r = exess_write_ulong(value.data.as_ulong, sizeof(temp), temp);
+    break;
+  case SERD_UINT:
+    r = exess_write_uint(value.data.as_uint, sizeof(temp), temp);
+    break;
+  case SERD_USHORT:
+    r = exess_write_ushort(value.data.as_ushort, sizeof(temp), temp);
+    break;
+  case SERD_UBYTE:
+    r = exess_write_ubyte(value.data.as_ubyte, sizeof(temp), temp);
+    break;
+  }
+
   MUST_SUCCEED(r.status); // The only error is buffer overrun
+
+  const char* const datatype_uri = value_type_uri(value.type);
+  assert(datatype_uri);
 
   return serd_node_construct_literal(buf_size,
                                      buf,
                                      serd_substring(temp, r.count),
                                      SERD_HAS_DATATYPE,
-                                     serd_string(EXESS_XSD_URI "boolean"));
+                                     serd_string(datatype_uri));
 }
 
 SerdWriteResult
@@ -306,40 +422,6 @@ serd_node_construct_decimal(const size_t buf_size,
                                      serd_substring(temp, r.count),
                                      SERD_HAS_DATATYPE,
                                      serd_string(EXESS_XSD_URI "decimal"));
-}
-
-SerdWriteResult
-serd_node_construct_double(const size_t buf_size,
-                           void* const  buf,
-                           const double value)
-{
-  char temp[EXESS_MAX_DOUBLE_LENGTH + 1] = {0};
-
-  const ExessResult r = exess_write_double(value, sizeof(temp), temp);
-  MUST_SUCCEED(r.status); // The only error is buffer overrun
-
-  return serd_node_construct_literal(buf_size,
-                                     buf,
-                                     serd_substring(temp, r.count),
-                                     SERD_HAS_DATATYPE,
-                                     serd_string(EXESS_XSD_URI "double"));
-}
-
-SerdWriteResult
-serd_node_construct_float(const size_t buf_size,
-                          void* const  buf,
-                          const float  value)
-{
-  char temp[EXESS_MAX_FLOAT_LENGTH + 1] = {0};
-
-  const ExessResult r = exess_write_float(value, sizeof(temp), temp);
-  MUST_SUCCEED(r.status); // The only error is buffer overrun
-
-  return serd_node_construct_literal(buf_size,
-                                     buf,
-                                     serd_substring(temp, r.count),
-                                     SERD_HAS_DATATYPE,
-                                     serd_string(EXESS_XSD_URI "float"));
 }
 
 SerdWriteResult
@@ -495,91 +577,69 @@ serd_new_literal(SerdAllocator* const allocator,
   return serd_node_new(allocator, SERD_LITERAL, str, flags, meta);
 }
 
-ExessResult
-serd_node_get_value_as(const SerdNode* const node,
-                       const ExessDatatype   value_type,
-                       const size_t          value_size,
-                       void* const           value)
+SerdValue
+serd_node_value(const SerdNode* const node)
 {
+  assert(node);
+
   const SerdNode* const datatype_node = serd_node_datatype(node);
 
-  const ExessDatatype node_type =
+  const ExessDatatype datatype =
     datatype_node ? exess_datatype_from_uri(serd_node_string(datatype_node))
                   : EXESS_NOTHING;
 
-  if (node_type == EXESS_NOTHING ||
-      (node_type == EXESS_HEX && value_type == EXESS_BASE64) ||
-      (node_type == EXESS_BASE64 && value_type == EXESS_HEX)) {
-    // Try to read the large or untyped node string directly into the result
-    const ExessVariableResult vr =
-      exess_read_value(value_type, value_size, value, serd_node_string(node));
-
-    const ExessResult r = {vr.status, vr.write_count};
-    return r;
+  const SerdValueType value_type = datatype_value_type(datatype);
+  if (value_type == SERD_NOTHING) {
+    return serd_nothing();
   }
 
-  // Read the (smallish) value from the node
-  ExessValue                node_value = {false};
-  const ExessVariableResult vr         = exess_read_value(
-    node_type, sizeof(node_value), &node_value, serd_node_string(node));
+  ExessValue                value = {false};
+  const ExessVariableResult vr =
+    exess_read_value(datatype, sizeof(value), &value, serd_node_string(node));
 
   if (vr.status) {
-    const ExessResult r = {vr.status, 0U};
-    return r;
+    return serd_nothing();
   }
 
-  // Coerce value to the desired type if possible
-  return exess_value_coerce(EXESS_REDUCE_PRECISION,
-                            node_type,
-                            vr.write_count,
-                            &node_value,
-                            value_type,
-                            value_size,
-                            value);
+  SerdValue result = {value_type, {false}};
+  memcpy(&result.data, &value, vr.write_count);
+
+  return result;
 }
 
-bool
-serd_get_boolean(const SerdNode* const node)
+SerdValue
+serd_node_value_as(const SerdNode* const node,
+                   const SerdValueType   type,
+                   const bool            lossy)
 {
-  assert(node);
+  // Get the value as it is
+  const SerdValue value = serd_node_value(node);
+  if (!value.type || value.type == type) {
+    return value;
+  }
 
-  bool value = false;
-  serd_node_get_value_as(node, EXESS_BOOLEAN, sizeof(value), &value);
+  const ExessCoercions coercions =
+    lossy ? (EXESS_REDUCE_PRECISION | EXESS_ROUND | EXESS_TRUNCATE)
+          : EXESS_LOSSLESS;
 
-  return value;
-}
+  const ExessDatatype node_datatype = value_type_datatype(value.type);
+  const ExessDatatype datatype      = value_type_datatype(type);
+  SerdValue           result        = {type, {false}};
 
-double
-serd_get_double(const SerdNode* const node)
-{
-  assert(node);
+  // Coerce to the desired type
+  const ExessResult r = exess_value_coerce(coercions,
+                                           node_datatype,
+                                           exess_value_size(node_datatype),
+                                           &value.data,
+                                           datatype,
+                                           exess_value_size(datatype),
+                                           &result.data);
 
-  double value = (double)NAN; // NOLINT(google-readability-casting)
-  serd_node_get_value_as(node, EXESS_DOUBLE, sizeof(value), &value);
+  if (r.status) {
+    result.type = SERD_NOTHING;
+  }
 
-  return value;
-}
-
-float
-serd_get_float(const SerdNode* const node)
-{
-  assert(node);
-
-  float value = (float)NAN; // NOLINT(google-readability-casting)
-  serd_node_get_value_as(node, EXESS_FLOAT, sizeof(value), &value);
-
-  return value;
-}
-
-int64_t
-serd_get_integer(const SerdNode* const node)
-{
-  assert(node);
-
-  int64_t value = 0;
-  serd_node_get_value_as(node, EXESS_LONG, sizeof(value), &value);
-
-  return value;
+  return result;
 }
 
 size_t
@@ -773,45 +833,13 @@ serd_new_file_uri(SerdAllocator* const allocator,
 }
 
 SerdNode*
-serd_new_double(SerdAllocator* const allocator, const double d)
+serd_new_value(SerdAllocator* const allocator, const SerdValue value)
 {
-  SerdWriteResult r    = serd_node_construct_double(0, NULL, d);
+  SerdWriteResult r    = serd_node_construct_value(0, NULL, value);
   SerdNode* const node = serd_node_try_malloc(allocator, r);
 
   if (node) {
-    r = serd_node_construct_double(r.count, node, d);
-    MUST_SUCCEED(r.status);
-    assert(serd_node_length(node) == strlen(serd_node_string(node)));
-    serd_node_check_padding(node);
-  }
-
-  return node;
-}
-
-SerdNode*
-serd_new_float(SerdAllocator* const allocator, const float f)
-{
-  SerdWriteResult r    = serd_node_construct_float(0, NULL, f);
-  SerdNode* const node = serd_node_try_malloc(allocator, r);
-
-  if (node) {
-    r = serd_node_construct_float(r.count, node, f);
-    MUST_SUCCEED(r.status);
-    assert(serd_node_length(node) == strlen(serd_node_string(node)));
-    serd_node_check_padding(node);
-  }
-
-  return node;
-}
-
-SerdNode*
-serd_new_boolean(SerdAllocator* const allocator, bool b)
-{
-  SerdWriteResult r    = serd_node_construct_boolean(0, NULL, b);
-  SerdNode* const node = serd_node_try_malloc(allocator, r);
-
-  if (node) {
-    r = serd_node_construct_boolean(r.count, node, b);
+    r = serd_node_construct_value(r.count, node, value);
     MUST_SUCCEED(r.status);
     assert(serd_node_length(node) == strlen(serd_node_string(node)));
     serd_node_check_padding(node);

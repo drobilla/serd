@@ -29,6 +29,7 @@
 
 #include "serd/log.h"
 #include "serd/uri.h"
+#include "serd/value.h"
 
 #include "serd/node.h"
 
