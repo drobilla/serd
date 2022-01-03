@@ -1411,6 +1411,27 @@ serd_nodes_intern(SerdNodes* SERD_NONNULL       nodes,
                   const SerdNode* SERD_NULLABLE node);
 
 /**
+   Make a simple "token" node.
+
+   "Token" is just a shorthand used in this API to refer to a node that is not
+   a typed or tagged literal, that is, a node that is just one string.  This
+   can be used to make URIs, blank nodes, variables, and simple string
+   literals.
+
+   Note that string literals constructed with this function will have no flags
+   set, and so will be written as "short" literals (not triple-quoted).  To
+   construct long literals, use the more advanced serd_nodes_literal() with the
+   #SERD_IS_LONG flag.
+
+   A new node will be added if an equivalent node is not already in the set.
+*/
+SERD_API
+const SerdNode* SERD_ALLOCATED
+serd_nodes_token(SerdNodes* SERD_NONNULL nodes,
+                 SerdNodeType            type,
+                 SerdStringView          string);
+
+/**
    Make a string node.
 
    A new node will be added if an equivalent node is not already in the set.
