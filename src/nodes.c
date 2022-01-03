@@ -442,23 +442,18 @@ serd_nodes_float(SerdNodes* const nodes, const float value)
 }
 
 const SerdNode*
-serd_nodes_integer(SerdNodes* const     nodes,
-                   const int64_t        value,
-                   const SerdStringView datatype)
+serd_nodes_integer(SerdNodes* const nodes, const int64_t value)
 {
   StaticNode key = empty_static_node;
 
   return try_intern(
-    nodes,
-    serd_node_construct_integer(sizeof(key), &key, value, datatype),
-    &key.node);
+    nodes, serd_node_construct_integer(sizeof(key), &key, value), &key.node);
 }
 
 const SerdNode*
-serd_nodes_base64(SerdNodes* const     nodes,
-                  const void* const    value,
-                  const size_t         value_size,
-                  const SerdStringView datatype)
+serd_nodes_base64(SerdNodes* const  nodes,
+                  const void* const value,
+                  const size_t      value_size)
 {
   assert(nodes);
   assert(value);
@@ -473,14 +468,12 @@ serd_nodes_base64(SerdNodes* const     nodes,
      like a Real Database(TM) would largely avoid this problem. */
 
   // Determine how much space the node needs
-  SerdWriteResult r =
-    serd_node_construct_base64(0, NULL, value_size, value, datatype);
+  SerdWriteResult r = serd_node_construct_base64(0, NULL, value_size, value);
 
   // Allocate a new entry to and construct the node into it
   NodesEntry* const entry = new_entry(nodes->allocator, r.count);
   if (entry) {
-    r = serd_node_construct_base64(
-      r.count, &entry->node, value_size, value, datatype);
+    r = serd_node_construct_base64(r.count, &entry->node, value_size, value);
 
     assert(!r.status);
     (void)r;

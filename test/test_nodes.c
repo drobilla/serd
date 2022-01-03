@@ -308,11 +308,8 @@ test_integer(void)
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
-  const SerdNode* const a =
-    serd_nodes_integer(nodes, -1234567890, serd_empty_string());
-
-  const SerdNode* const b =
-    serd_nodes_integer(nodes, -1234567890, serd_empty_string());
+  const SerdNode* const a = serd_nodes_integer(nodes, -1234567890);
+  const SerdNode* const b = serd_nodes_integer(nodes, -1234567890);
 
   assert(a == b);
   assert(!strcmp(serd_node_string(a), "-1234567890"));
@@ -335,11 +332,8 @@ test_base64(void)
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
-  const SerdNode* const a =
-    serd_nodes_base64(nodes, &data, sizeof(data), serd_empty_string());
-
-  const SerdNode* const b =
-    serd_nodes_base64(nodes, &data, sizeof(data), serd_empty_string());
+  const SerdNode* const a = serd_nodes_base64(nodes, &data, sizeof(data));
+  const SerdNode* const b = serd_nodes_base64(nodes, &data, sizeof(data));
 
   assert(a == b);
   assert(!strcmp(serd_node_string(a), "Zm9vYmFy"));
@@ -349,18 +343,6 @@ test_base64(void)
   const SerdNode* const default_datatype = serd_node_datatype(a);
   assert(default_datatype);
   assert(!strcmp(serd_node_string(default_datatype), NS_XSD "base64Binary"));
-
-  const SerdStringView user_datatype =
-    serd_string("http://example.org/UserDatatype");
-
-  const SerdNode* const custom =
-    serd_nodes_base64(nodes, &data, sizeof(data), user_datatype);
-  assert(custom);
-  assert(!strcmp(serd_node_string(custom), "Zm9vYmFy"));
-
-  const SerdNode* const custom_datatype = serd_node_datatype(custom);
-  assert(custom_datatype);
-  assert(!strcmp(serd_node_string(custom_datatype), user_datatype.buf));
 
   serd_nodes_free(nodes);
 }
