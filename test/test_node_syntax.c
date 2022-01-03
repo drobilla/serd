@@ -92,9 +92,6 @@ test_common(SerdWorld* const world, const SerdSyntax syntax)
   static const SerdStringView datatype =
     SERD_STRING("http://example.org/Datatype");
 
-  static const SerdStringView num_type =
-    SERD_STRING("http://example.org/Decimal");
-
   assert(check(
     world, syntax, serd_new_string(NULL, SERD_STRING("node")), "\"node\""));
 
@@ -141,15 +138,10 @@ test_common(SerdWorld* const world, const SerdSyntax syntax)
                serd_new_float(NULL, 1.25),
                "\"1.25E0\"^^<http://www.w3.org/2001/XMLSchema#float>"));
 
-  assert(check(world,
-               syntax,
-               serd_new_integer(NULL, 1234, num_type),
-               "\"1234\"^^<http://example.org/Decimal>"));
-
   assert(
     check(world,
           syntax,
-          serd_new_base64(NULL, data, sizeof(data), SERD_EMPTY_STRING()),
+          serd_new_base64(NULL, data, sizeof(data)),
           "\"BAAAAAIAAAA=\"^^<http://www.w3.org/2001/XMLSchema#base64Binary>"));
 }
 
@@ -189,7 +181,7 @@ test_ntriples(void)
 
   assert(check(world,
                SERD_NTRIPLES,
-               serd_new_integer(NULL, 1234, SERD_EMPTY_STRING()),
+               serd_new_integer(NULL, 1234),
                "\"1234\"^^<http://www.w3.org/2001/XMLSchema#integer>"));
 
   assert(check(world,
@@ -208,9 +200,6 @@ test_ntriples(void)
 static void
 test_turtle(void)
 {
-  static const SerdStringView xsd_integer =
-    SERD_STRING("http://www.w3.org/2001/XMLSchema#integer");
-
   SerdWorld* const world = serd_world_new(NULL);
 
   test_common(world, SERD_TURTLE);
@@ -221,14 +210,7 @@ test_turtle(void)
         "<rel/uri>");
 
   assert(check(world, SERD_TURTLE, serd_new_decimal(NULL, 1.25), "1.25"));
-
-  assert(check(world,
-               SERD_TURTLE,
-               serd_new_integer(NULL, 1234, SERD_EMPTY_STRING()),
-               "1234"));
-
-  assert(check(
-    world, SERD_TURTLE, serd_new_integer(NULL, 1234, xsd_integer), "1234"));
+  assert(check(world, SERD_TURTLE, serd_new_integer(NULL, 1234), "1234"));
 
   assert(check(world, SERD_TURTLE, serd_new_boolean(NULL, true), "true"));
   assert(check(world, SERD_TURTLE, serd_new_boolean(NULL, false), "false"));

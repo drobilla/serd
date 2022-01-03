@@ -1300,9 +1300,9 @@ test_write_error_in_list_subject(SerdWorld* world, const unsigned n_quads)
   const SerdNode* o  = serd_nodes_uri(nodes, SERD_STRING("urn:o"));
   const SerdNode* l1 = serd_nodes_blank(nodes, SERD_STRING("l1"));
 
-  const SerdNode* one = serd_nodes_integer(nodes, 1, SERD_EMPTY_STRING());
+  const SerdNode* one = serd_nodes_integer(nodes, 1);
   const SerdNode* l2  = serd_nodes_blank(nodes, SERD_STRING("l2"));
-  const SerdNode* two = serd_nodes_integer(nodes, 2, SERD_EMPTY_STRING());
+  const SerdNode* two = serd_nodes_integer(nodes, 2);
 
   const SerdNode* rdf_first = serd_nodes_uri(nodes, SERD_STRING(RDF_FIRST));
   const SerdNode* rdf_rest  = serd_nodes_uri(nodes, SERD_STRING(RDF_REST));
@@ -1356,9 +1356,9 @@ test_write_error_in_list_object(SerdWorld* world, const unsigned n_quads)
   const SerdNode* p  = serd_nodes_uri(nodes, SERD_STRING("urn:p"));
   const SerdNode* l1 = serd_nodes_blank(nodes, SERD_STRING("l1"));
 
-  const SerdNode* one = serd_nodes_integer(nodes, 1, SERD_EMPTY_STRING());
+  const SerdNode* one = serd_nodes_integer(nodes, 1);
   const SerdNode* l2  = serd_nodes_blank(nodes, SERD_STRING("l2"));
-  const SerdNode* two = serd_nodes_integer(nodes, 2, SERD_EMPTY_STRING());
+  const SerdNode* two = serd_nodes_integer(nodes, 2);
 
   const SerdNode* rdf_first = serd_nodes_uri(nodes, SERD_STRING(RDF_FIRST));
   const SerdNode* rdf_rest  = serd_nodes_uri(nodes, SERD_STRING(RDF_REST));
