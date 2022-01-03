@@ -6,6 +6,7 @@
 
 #include "serd/attributes.h"
 #include "serd/uri.h"
+#include "serd/value.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -229,18 +230,15 @@ serd_node_construct_literal(size_t              buf_size,
                             SerdStringView      meta);
 
 /**
-   Construct a canonical xsd:boolean literal.
+   Construct a canonical literal for a primitive value.
 
-   The constructed node will be either "true" or "false", with datatype
-   xsd:boolean.
-
-   This is a convenience wrapper for serd_node_construct_literal() that
-   constructs a node directly from a `bool`.
+   The constructed node will be a typed literal in canonical form for the xsd
+   datatype corresponding to the value.
 */
 SerdWriteResult
-serd_node_construct_boolean(size_t              buf_size,
-                            void* SERD_NULLABLE buf,
-                            bool                value);
+serd_node_construct_value(size_t              buf_size,
+                          void* SERD_NULLABLE buf,
+                          SerdValue           value);
 
 /**
    Construct a canonical xsd:decimal literal.
@@ -259,38 +257,6 @@ SerdWriteResult
 serd_node_construct_decimal(size_t              buf_size,
                             void* SERD_NULLABLE buf,
                             double              value);
-
-/**
-   Construct a canonical xsd:double literal.
-
-   The constructed node will be an xsd:double literal, like "1.23E45", with
-   datatype xsd:double.  A canonical xsd:double is always in scientific
-   notation.
-
-   This is a convenience wrapper for serd_node_construct_literal() that
-   constructs a node directly from a `double`.
-*/
-SerdWriteResult
-serd_node_construct_double(size_t              buf_size,
-                           void* SERD_NULLABLE buf,
-                           double              value);
-
-/**
-   Construct a canonical xsd:float literal.
-
-   The constructed node will be an xsd:float literal, like "1.23E45", with
-   datatype xsd:float.  A canonical xsd:float is always in scientific notation.
-
-   Uses identical formatting to serd_node_construct_double(), except with at
-   most 9 significant digits (under 14 characters total).
-
-   This is a convenience wrapper for serd_node_construct_literal() that
-   constructs a node directly from a `float`.
-*/
-SerdWriteResult
-serd_node_construct_float(size_t              buf_size,
-                          void* SERD_NULLABLE buf,
-                          float               value);
 
 /**
    Construct a canonical xsd:integer literal.
@@ -434,17 +400,17 @@ serd_new_literal(SerdAllocator* SERD_NULLABLE allocator,
                  SerdStringView               meta);
 
 /**
-   Create a new canonical xsd:boolean node.
+   Create a new canonical value node.
 
-   This is a wrapper for serd_node_construct_boolean() that allocates a new
-   node on the heap.
+   This is a wrapper for serd_node_construct_value() that allocates a new node
+   on the heap.
 
    @return A newly allocated node that must be freed with serd_node_free(), or
    null.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_boolean(SerdAllocator* SERD_NULLABLE allocator, bool b);
+serd_new_value(SerdAllocator* SERD_NULLABLE allocator, SerdValue value);
 
 /**
    Create a new canonical xsd:decimal literal.
@@ -458,32 +424,6 @@ serd_new_boolean(SerdAllocator* SERD_NULLABLE allocator, bool b);
 SERD_API
 SerdNode* SERD_ALLOCATED
 serd_new_decimal(SerdAllocator* SERD_NULLABLE allocator, double d);
-
-/**
-   Create a new canonical xsd:double literal.
-
-   This is a wrapper for serd_node_construct_double() that allocates a new
-   node on the heap.
-
-   @return A newly allocated node that must be freed with serd_node_free(), or
-   null.
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_double(SerdAllocator* SERD_NULLABLE allocator, double d);
-
-/**
-   Create a new canonical xsd:float literal.
-
-   This is a wrapper for serd_node_construct_float() that allocates a new
-   node on the heap.
-
-   @return A newly allocated node that must be freed with serd_node_free(), or
-   null.
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_float(SerdAllocator* SERD_NULLABLE allocator, float f);
 
 /**
    Create a new canonical xsd:integer literal.
@@ -518,49 +458,39 @@ serd_new_base64(SerdAllocator* SERD_NULLABLE allocator,
 */
 
 /**
-   Return the value of `node` as a boolean.
+   Return the primitive value of a literal node.
 
-   This will work for booleans, and numbers of any datatype if they are 0 or
-   1.
+   This will return a typed numeric value if the node can be read as one, or
+   nothing otherwise.
 
-   @return The value of `node` as a `bool`, or `false` on error.
+   @return The primitive value of `node`, if possible and supported.
 */
 SERD_API
-bool
-serd_get_boolean(const SerdNode* SERD_NONNULL node);
+SerdValue
+serd_node_value(const SerdNode* SERD_NONNULL node);
 
 /**
-   Return the value of `node` as a double.
+   Return the primitive value of a node as a specific type of number.
 
-   This will coerce numbers of any datatype to double, if the value fits.
+   This is like serd_node_value(), but will coerce the value of the node to the
+   requested type if possible.
 
-   @return The value of `node` as a `double`, or NaN on error.
+   @param node The node to interpret as a number.
+
+   @param type The desired numeric datatype of the result.
+
+   @param lossy Whether lossy conversions can be used.  If this is false, then
+   this function only succeeds if the value could be converted back to the
+   original datatype of the node without loss.  Otherwise, precision may be
+   reduced or values may be truncated to fit the result.
+
+   @return The value of `node` as a #SerdValue, or nothing.
 */
 SERD_API
-double
-serd_get_double(const SerdNode* SERD_NONNULL node);
-
-/**
-   Return the value of `node` as a float.
-
-   This will coerce numbers of any datatype to float, if the value fits.
-
-   @return The value of `node` as a `float`, or NaN on error.
-*/
-SERD_API
-float
-serd_get_float(const SerdNode* SERD_NONNULL node);
-
-/**
-   Return the value of `node` as a long (signed 64-bit integer).
-
-   This will coerce numbers of any datatype to long, if the value fits.
-
-   @return The value of `node` as a `int64_t`, or 0 on error.
-*/
-SERD_API
-int64_t
-serd_get_integer(const SerdNode* SERD_NONNULL node);
+SerdValue
+serd_node_value_as(const SerdNode* SERD_NONNULL node,
+                   SerdValueType                type,
+                   bool                         lossy);
 
 /**
    Return the maximum size of a decoded base64 node in bytes.

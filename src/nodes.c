@@ -17,6 +17,7 @@
 #include "serd/status.h"
 #include "serd/string_view.h"
 #include "serd/uri.h"
+#include "serd/value.h"
 #include "zix/allocator.h"
 #include "zix/digest.h"
 #include "zix/hash.h"
@@ -406,12 +407,12 @@ try_intern(SerdNodes* const      nodes,
 }
 
 const SerdNode*
-serd_nodes_boolean(SerdNodes* const nodes, bool value)
+serd_nodes_value(SerdNodes* const nodes, const SerdValue value)
 {
   StaticNode key = empty_static_node;
 
   return try_intern(
-    nodes, serd_node_construct_boolean(sizeof(key), &key, value), &key.node);
+    nodes, serd_node_construct_value(sizeof(key), &key, value), &key.node);
 }
 
 const SerdNode*
@@ -421,24 +422,6 @@ serd_nodes_decimal(SerdNodes* const nodes, const double value)
 
   return try_intern(
     nodes, serd_node_construct_decimal(sizeof(key), &key, value), &key.node);
-}
-
-const SerdNode*
-serd_nodes_double(SerdNodes* const nodes, const double value)
-{
-  StaticNode key = empty_static_node;
-
-  return try_intern(
-    nodes, serd_node_construct_double(sizeof(key), &key, value), &key.node);
-}
-
-const SerdNode*
-serd_nodes_float(SerdNodes* const nodes, const float value)
-{
-  StaticNode key = empty_static_node;
-
-  return try_intern(
-    nodes, serd_node_construct_float(sizeof(key), &key, value), &key.node);
 }
 
 const SerdNode*
