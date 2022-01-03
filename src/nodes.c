@@ -311,7 +311,7 @@ serd_nodes_manage_entry(SerdNodes* const nodes, NodesEntry* const entry)
   return &entry->node;
 }
 
-static const SerdNode*
+const SerdNode*
 serd_nodes_token(SerdNodes* const     nodes,
                  const SerdNodeType   type,
                  const SerdStringView string)
