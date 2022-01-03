@@ -219,10 +219,10 @@ test_boolean(void)
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
-  const SerdNode* const false1 = serd_nodes_boolean(nodes, false);
-  const SerdNode* const false2 = serd_nodes_boolean(nodes, false);
-  const SerdNode* const true1  = serd_nodes_boolean(nodes, true);
-  const SerdNode* const true2  = serd_nodes_boolean(nodes, true);
+  const SerdNode* const false1 = serd_nodes_value(nodes, serd_bool(false));
+  const SerdNode* const false2 = serd_nodes_value(nodes, serd_bool(false));
+  const SerdNode* const true1  = serd_nodes_value(nodes, serd_bool(true));
+  const SerdNode* const true2  = serd_nodes_value(nodes, serd_bool(true));
 
   assert(false1 == false2);
   assert(true1 == true2);
@@ -272,8 +272,8 @@ test_double(void)
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
-  const SerdNode* const a = serd_nodes_double(nodes, -1.2E3);
-  const SerdNode* const b = serd_nodes_double(nodes, -1.2E3);
+  const SerdNode* const a = serd_nodes_value(nodes, serd_double(-1.2E3));
+  const SerdNode* const b = serd_nodes_value(nodes, serd_double(-1.2E3));
 
   assert(a == b);
   assert(!strcmp(serd_node_string(a), "-1.2E3"));
@@ -290,8 +290,8 @@ test_float(void)
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
-  const SerdNode* const a = serd_nodes_float(nodes, -1.2E3f);
-  const SerdNode* const b = serd_nodes_float(nodes, -1.2E3f);
+  const SerdNode* const a = serd_nodes_value(nodes, serd_float(-1.2E3f));
+  const SerdNode* const b = serd_nodes_value(nodes, serd_float(-1.2E3f));
 
   assert(a == b);
   assert(!strcmp(serd_node_string(a), "-1.2E3"));
