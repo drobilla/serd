@@ -207,8 +207,7 @@ test_get_double(void)
   assert(isnan(serd_get_double(invalid)));
   serd_node_free(NULL, invalid);
 
-  SerdNode* const base64 =
-    serd_new_base64(NULL, blob, sizeof(blob), SERD_EMPTY_STRING());
+  SerdNode* const base64 = serd_new_base64(NULL, blob, sizeof(blob));
 
   assert(isnan(serd_get_double(base64)));
   serd_node_free(NULL, base64);
@@ -288,15 +287,12 @@ test_get_float(void)
 static void
 test_integer(void)
 {
-  assert(!serd_new_integer(NULL, 42, SERD_STRING("notauri")));
-
   const int64_t test_values[]  = {0, -0, -23, 23, -12340, 1000, -1000};
   const char*   test_strings[] = {
     "0", "0", "-23", "23", "-12340", "1000", "-1000"};
 
   for (size_t i = 0; i < sizeof(test_values) / sizeof(double); ++i) {
-    SerdNode* node =
-      serd_new_integer(NULL, test_values[i], SERD_EMPTY_STRING());
+    SerdNode*   node     = serd_new_integer(NULL, test_values[i]);
     const char* node_str = serd_node_string(node);
     assert(!strcmp(node_str, test_strings[i]));
     const size_t len = strlen(node_str);
@@ -341,8 +337,7 @@ test_get_integer(void)
 static void
 test_base64(void)
 {
-  assert(!serd_new_base64(NULL, &SERD_URI_NULL, 1, SERD_STRING("notauri")));
-  assert(!serd_new_base64(NULL, &SERD_URI_NULL, 0, SERD_EMPTY_STRING()));
+  assert(!serd_new_base64(NULL, &SERD_URI_NULL, 0));
 
   // Test valid base64 blobs with a range of sizes
   for (size_t size = 1; size < 256; ++size) {
@@ -351,7 +346,7 @@ test_base64(void)
       data[i] = (uint8_t)((size + i) % 256);
     }
 
-    SerdNode*    blob = serd_new_base64(NULL, data, size, SERD_EMPTY_STRING());
+    SerdNode*    blob     = serd_new_base64(NULL, data, size);
     const char*  blob_str = serd_node_string(blob);
     const size_t max_size = serd_get_base64_size(blob);
     uint8_t*     out      = (uint8_t*)calloc(1, max_size);
@@ -599,10 +594,8 @@ test_compare(void)
 
   SerdNode* hello    = serd_new_string(NULL, SERD_STRING("Hello"));
   SerdNode* universe = serd_new_string(NULL, SERD_STRING("Universe"));
-  SerdNode* integer  = serd_new_integer(NULL, 4, SERD_EMPTY_STRING());
-  SerdNode* short_integer =
-    serd_new_integer(NULL, 4, SERD_STRING(NS_XSD "short"));
-  SerdNode* blank = serd_new_token(NULL, SERD_BLANK, SERD_STRING("b1"));
+  SerdNode* integer  = serd_new_integer(NULL, 4);
+  SerdNode* blank    = serd_new_token(NULL, SERD_BLANK, SERD_STRING("b1"));
 
   SerdNode* uri = serd_new_uri(NULL, SERD_STRING("http://example.org/"));
 
@@ -627,12 +620,10 @@ test_compare(void)
   // If literal strings are the same, languages or datatypes are compared
   assert(serd_node_compare(angst, angst_de) < 0);
   assert(serd_node_compare(angst_de, angst_en) < 0);
-  assert(serd_node_compare(integer, short_integer) < 0);
   assert(serd_node_compare(aardvark, badger) < 0);
 
   serd_node_free(NULL, uri);
   serd_node_free(NULL, blank);
-  serd_node_free(NULL, short_integer);
   serd_node_free(NULL, integer);
   serd_node_free(NULL, badger);
   serd_node_free(NULL, aardvark);
