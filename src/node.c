@@ -337,44 +337,36 @@ serd_node_construct_float(const size_t buf_size,
 }
 
 SerdWriteResult
-serd_node_construct_integer(const size_t         buf_size,
-                            void* const          buf,
-                            const int64_t        value,
-                            const SerdStringView datatype)
+serd_node_construct_integer(const size_t  buf_size,
+                            void* const   buf,
+                            const int64_t value)
 {
-  if (datatype.len && !serd_uri_string_has_scheme(datatype.buf)) {
-    return result(SERD_BAD_ARG, 0);
-  }
-
   char              temp[24] = {0};
   const ExessResult r        = exess_write_long(value, sizeof(temp), temp);
   MUST_SUCCEED(r.status); // The only error is buffer overrun
 
-  return serd_node_construct_literal(
-    buf_size,
-    buf,
-    serd_substring(temp, r.count),
-    SERD_HAS_DATATYPE,
-    datatype.len ? datatype : serd_string(NS_XSD "integer"));
+  return serd_node_construct_literal(buf_size,
+                                     buf,
+                                     serd_substring(temp, r.count),
+                                     SERD_HAS_DATATYPE,
+                                     serd_string(NS_XSD "integer"));
 }
 
 SerdWriteResult
-serd_node_construct_base64(const size_t         buf_size,
-                           void* const          buf,
-                           const size_t         value_size,
-                           const void* const    value,
-                           const SerdStringView datatype)
+serd_node_construct_base64(const size_t      buf_size,
+                           void* const       buf,
+                           const size_t      value_size,
+                           const void* const value)
 {
   const SerdStringView xsd_base64Binary = serd_string(NS_XSD "base64Binary");
 
   // Verify argument sanity
-  if (!value || !value_size ||
-      (datatype.len && !serd_uri_string_has_scheme(datatype.buf))) {
+  if (!value || !value_size) {
     return result(SERD_BAD_ARG, 0);
   }
 
   // Determine the type to use (default to xsd:base64Binary)
-  const SerdStringView type        = datatype.len ? datatype : xsd_base64Binary;
+  const SerdStringView type        = xsd_base64Binary;
   const size_t         type_length = serd_node_pad_length(type.len);
   const size_t         type_size   = sizeof(SerdNode) + type_length;
 
@@ -842,15 +834,13 @@ serd_new_decimal(SerdAllocator* const allocator, const double d)
 }
 
 SerdNode*
-serd_new_integer(SerdAllocator* const allocator,
-                 const int64_t        i,
-                 const SerdStringView datatype)
+serd_new_integer(SerdAllocator* const allocator, const int64_t i)
 {
-  SerdWriteResult r    = serd_node_construct_integer(0, NULL, i, datatype);
+  SerdWriteResult r    = serd_node_construct_integer(0, NULL, i);
   SerdNode* const node = serd_node_try_malloc(allocator, r);
 
   if (node) {
-    r = serd_node_construct_integer(r.count, node, i, datatype);
+    r = serd_node_construct_integer(r.count, node, i);
     MUST_SUCCEED(r.status);
     assert(serd_node_length(node) == strlen(serd_node_string(node)));
     serd_node_check_padding(node);
@@ -860,16 +850,13 @@ serd_new_integer(SerdAllocator* const allocator,
 }
 
 SerdNode*
-serd_new_base64(SerdAllocator* const allocator,
-                const void*          buf,
-                size_t               size,
-                const SerdStringView datatype)
+serd_new_base64(SerdAllocator* const allocator, const void* buf, size_t size)
 {
-  SerdWriteResult r = serd_node_construct_base64(0, NULL, size, buf, datatype);
+  SerdWriteResult r    = serd_node_construct_base64(0, NULL, size, buf);
   SerdNode* const node = serd_node_try_malloc(allocator, r);
 
   if (node) {
-    r = serd_node_construct_base64(r.count, node, size, buf, datatype);
+    r = serd_node_construct_base64(r.count, node, size, buf);
     MUST_SUCCEED(r.status);
     assert(serd_node_length(node) == strlen(serd_node_string(node)));
     serd_node_check_padding(node);

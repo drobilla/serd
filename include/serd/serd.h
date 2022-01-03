@@ -948,8 +948,7 @@ serd_node_construct_float(size_t              buf_size,
 SerdWriteResult
 serd_node_construct_integer(size_t              buf_size,
                             void* SERD_NULLABLE buf,
-                            int64_t             value,
-                            SerdStringView      datatype);
+                            int64_t             value);
 
 /**
    Construct a canonical xsd:base64Binary literal.
@@ -961,8 +960,7 @@ SerdWriteResult
 serd_node_construct_base64(size_t                   buf_size,
                            void* SERD_NULLABLE      buf,
                            size_t                   value_size,
-                           const void* SERD_NONNULL value,
-                           SerdStringView           datatype);
+                           const void* SERD_NONNULL value);
 
 /**
    @}
@@ -1143,9 +1141,7 @@ serd_new_float(SerdAllocator* SERD_NULLABLE allocator, float f);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_integer(SerdAllocator* SERD_NULLABLE allocator,
-                 int64_t                      i,
-                 SerdStringView               datatype);
+serd_new_integer(SerdAllocator* SERD_NULLABLE allocator, int64_t i);
 
 /**
    Create a new canonical xsd:base64Binary literal.
@@ -1160,8 +1156,7 @@ SERD_API
 SerdNode* SERD_ALLOCATED
 serd_new_base64(SerdAllocator* SERD_NULLABLE allocator,
                 const void* SERD_NONNULL     buf,
-                size_t                       size,
-                SerdStringView               datatype);
+                size_t                       size);
 
 /**
    @}
@@ -1521,9 +1516,7 @@ serd_nodes_float(SerdNodes* SERD_NONNULL nodes, float value);
 */
 SERD_API
 const SerdNode* SERD_ALLOCATED
-serd_nodes_integer(SerdNodes* SERD_NONNULL nodes,
-                   int64_t                 value,
-                   SerdStringView          datatype);
+serd_nodes_integer(SerdNodes* SERD_NONNULL nodes, int64_t value);
 
 /**
    Make a canonical xsd:base64Binary node.
@@ -1535,8 +1528,7 @@ SERD_API
 const SerdNode* SERD_ALLOCATED
 serd_nodes_base64(SerdNodes* SERD_NONNULL  nodes,
                   const void* SERD_NONNULL value,
-                  size_t                   value_size,
-                  SerdStringView           datatype);
+                  size_t                   value_size);
 
 /**
    Make a blank node.
