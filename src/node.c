@@ -634,26 +634,28 @@ serd_new_decimal(const double d, const SerdNode* const datatype)
 }
 
 SerdNode*
-serd_new_integer(const int64_t i, const SerdNode* const datatype)
+serd_new_integer(const int64_t i)
 {
   // Use given datatype, or xsd:integer as a default if it is null
-  const SerdNode* type      = datatype ? datatype : &serd_xsd_integer.node;
-  const size_t    type_size = serd_node_total_size(type);
+  const SerdNode* datatype      = &serd_xsd_integer.node;
+  const size_t    datatype_size = serd_node_total_size(datatype);
 
   // Measure integer string to know how much space the node will need
   ExessResult r = exess_write_long(i, 0, NULL);
   assert(!r.status);
 
   // Allocate node with enough space for value and datatype URI
-  SerdNode* const node = serd_node_malloc(
-    serd_node_pad_length(r.count) + type_size, SERD_HAS_DATATYPE, SERD_LITERAL);
+  SerdNode* const node =
+    serd_node_malloc(serd_node_pad_length(r.count) + datatype_size,
+                     SERD_HAS_DATATYPE,
+                     SERD_LITERAL);
 
   // Write string directly into node
   r = exess_write_long(i, r.count + 1U, serd_node_buffer(node));
   assert(!r.status);
 
   node->length = r.count;
-  memcpy(serd_node_meta(node), type, type_size);
+  memcpy(serd_node_meta(node), datatype, datatype_size);
   serd_node_check_padding(node);
   return node;
 }
@@ -672,13 +674,13 @@ write_base64_literal(const void* const user_data,
 }
 
 SerdNode*
-serd_new_base64(const void* buf, size_t size, const SerdNode* datatype)
+serd_new_base64(const void* buf, size_t size)
 {
   const size_t    len  = exess_write_base64(size, buf, 0, NULL).count;
-  const SerdNode* type = datatype ? datatype : &serd_xsd_base64Binary.node;
   SerdConstBuffer blob = {buf, size};
 
-  return serd_new_custom_literal(&blob, len, write_base64_literal, type);
+  return serd_new_custom_literal(
+    &blob, len, write_base64_literal, &serd_xsd_base64Binary.node);
 }
 
 SerdNodeType

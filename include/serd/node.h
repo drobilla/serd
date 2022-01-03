@@ -224,10 +224,9 @@ serd_new_float(float f);
    xsd:integer.
 
    @param i Integer value of literal.
-   @param datatype Datatype of node, or NULL for xsd:integer.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_integer(int64_t i, const SerdNode* ZIX_NULLABLE datatype);
+serd_new_integer(int64_t i);
 
 /**
    Create a new canonical xsd:base64Binary literal.
@@ -237,12 +236,9 @@ serd_new_integer(int64_t i, const SerdNode* ZIX_NULLABLE datatype);
 
    @param buf Raw binary data to encode in node.
    @param size Size of `buf` in bytes.
-   @param datatype Datatype of node, or null for xsd:base64Binary.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_base64(const void* ZIX_NONNULL      buf,
-                size_t                       size,
-                const SerdNode* ZIX_NULLABLE datatype);
+serd_new_base64(const void* ZIX_NONNULL buf, size_t size);
 
 /// Return a deep copy of `node`
 SERD_API SerdNode* ZIX_ALLOCATED

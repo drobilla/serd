@@ -197,7 +197,7 @@ test_get_double(void)
   assert(isnan(serd_get_double(invalid)));
   serd_node_free(invalid);
 
-  SerdNode* const base64 = serd_new_base64(blob, sizeof(blob), NULL);
+  SerdNode* const base64 = serd_new_base64(blob, sizeof(blob));
 
   assert(isnan(serd_get_double(base64)));
   serd_node_free(base64);
@@ -280,7 +280,7 @@ test_integer(void)
     "0", "0", "-23", "23", "-12340", "1000", "-1000"};
 
   for (size_t i = 0; i < sizeof(test_values) / sizeof(double); ++i) {
-    SerdNode*   node     = serd_new_integer(test_values[i], NULL);
+    SerdNode*   node     = serd_new_integer(test_values[i]);
     const char* node_str = serd_node_string(node);
     assert(!strcmp(node_str, test_strings[i]));
     const size_t len = strlen(node_str);
@@ -325,7 +325,7 @@ test_get_integer(void)
 static void
 test_base64(void)
 {
-  assert(!serd_new_base64(&SERD_URI_NULL, 0, NULL));
+  assert(!serd_new_base64(&SERD_URI_NULL, 0));
 
   // Test valid base64 blobs with a range of sizes
   for (size_t size = 1; size < 256; ++size) {
@@ -334,7 +334,7 @@ test_base64(void)
       data[i] = (uint8_t)((size + i) % 256);
     }
 
-    SerdNode*    blob     = serd_new_base64(data, size, NULL);
+    SerdNode*    blob     = serd_new_base64(data, size);
     const char*  blob_str = serd_node_string(blob);
     const size_t max_size = serd_get_base64_size(blob);
     uint8_t*     out      = (uint8_t*)calloc(1, max_size);
@@ -549,12 +549,11 @@ test_compare(void)
   SerdNode* hallo =
     serd_new_plain_literal(zix_string("Hallo"), zix_string("de"));
 
-  SerdNode* hello     = serd_new_string(zix_string("Hello"));
-  SerdNode* universe  = serd_new_string(zix_string("Universe"));
-  SerdNode* integer   = serd_new_integer(4, NULL);
-  SerdNode* short_int = serd_new_integer(4, xsd_short);
-  SerdNode* blank     = serd_new_blank(zix_string("b1"));
-  SerdNode* uri       = serd_new_uri(zix_string("http://example.org/"));
+  SerdNode* hello    = serd_new_string(zix_string("Hello"));
+  SerdNode* universe = serd_new_string(zix_string("Universe"));
+  SerdNode* integer  = serd_new_integer(4);
+  SerdNode* blank    = serd_new_blank(zix_string("b1"));
+  SerdNode* uri      = serd_new_uri(zix_string("http://example.org/"));
 
   SerdNode* aardvark = serd_new_typed_literal(
     zix_string("alex"), zix_string("http://example.org/Aardvark"));
@@ -572,12 +571,10 @@ test_compare(void)
   // If literal strings are the same, languages or datatypes are compared
   assert(serd_node_compare(angst, angst_de) < 0);
   assert(serd_node_compare(angst_de, angst_en) < 0);
-  assert(serd_node_compare(integer, short_int) < 0);
   assert(serd_node_compare(aardvark, badger) < 0);
 
   serd_node_free(uri);
   serd_node_free(blank);
-  serd_node_free(short_int);
   serd_node_free(integer);
   serd_node_free(badger);
   serd_node_free(aardvark);
