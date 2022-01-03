@@ -144,9 +144,6 @@ serd_nodes_file_uri(SerdNodes* SERD_NONNULL nodes,
    #SERD_HAS_DATATYPE is set, then this must be an absolute datatype URI.  If
    #SERD_HAS_LANGUAGE is set, then this must be an RFC 5646 language tag like
    "en-ca".  Otherwise, it is ignored.
-
-   @return A newly allocated literal node that must be freed with
-   serd_node_free(), or null if the arguments are invalid or allocation failed.
 */
 SERD_API
 const SerdNode* SERD_ALLOCATED
@@ -156,14 +153,14 @@ serd_nodes_literal(SerdNodes* SERD_NONNULL nodes,
                    SerdStringView          meta);
 
 /**
-   Make a canonical xsd:boolean node.
+   Make a canonical value node.
 
-   A new node will be constructed with serd_node_construct_boolean() if an
+   A new node will be constructed with serd_node_construct_value() if an
    equivalent one is not already in the set.
 */
 SERD_API
 const SerdNode* SERD_ALLOCATED
-serd_nodes_boolean(SerdNodes* SERD_NONNULL nodes, bool value);
+serd_nodes_value(SerdNodes* SERD_NONNULL nodes, SerdValue value);
 
 /**
    Make a canonical xsd:decimal node.
@@ -174,26 +171,6 @@ serd_nodes_boolean(SerdNodes* SERD_NONNULL nodes, bool value);
 SERD_API
 const SerdNode* SERD_ALLOCATED
 serd_nodes_decimal(SerdNodes* SERD_NONNULL nodes, double value);
-
-/**
-   Make a canonical xsd:double node.
-
-   A new node will be constructed with serd_node_construct_double() if an
-   equivalent one is not already in the set.
-*/
-SERD_API
-const SerdNode* SERD_ALLOCATED
-serd_nodes_double(SerdNodes* SERD_NONNULL nodes, double value);
-
-/**
-   Make a canonical xsd:float node.
-
-   A new node will be constructed with serd_node_construct_float() if an
-   equivalent one is not already in the set.
-*/
-SERD_API
-const SerdNode* SERD_ALLOCATED
-serd_nodes_float(SerdNodes* SERD_NONNULL nodes, float value);
 
 /**
    Make a canonical xsd:integer node.
