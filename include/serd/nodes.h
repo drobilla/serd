@@ -187,9 +187,7 @@ serd_nodes_float(SerdNodes* SERD_NONNULL nodes, float value);
    equivalent one is not already in the set.
 */
 SERD_API const SerdNode* SERD_ALLOCATED
-serd_nodes_integer(SerdNodes* SERD_NONNULL nodes,
-                   int64_t                 value,
-                   SerdStringView          datatype);
+serd_nodes_integer(SerdNodes* SERD_NONNULL nodes, int64_t value);
 
 /**
    Make a canonical xsd:base64Binary node.
@@ -200,8 +198,7 @@ serd_nodes_integer(SerdNodes* SERD_NONNULL nodes,
 SERD_API const SerdNode* SERD_ALLOCATED
 serd_nodes_base64(SerdNodes* SERD_NONNULL  nodes,
                   const void* SERD_NONNULL value,
-                  size_t                   value_size,
-                  SerdStringView           datatype);
+                  size_t                   value_size);
 
 /**
    Make a blank node.
