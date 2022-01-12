@@ -85,12 +85,14 @@ test_file_uri(const char* const hostname,
     expected_path = path;
   }
 
-  SerdNode* node =
-    serd_new_file_uri(NULL, SERD_STRING(path), SERD_OPTIONAL_STRING(hostname));
+  SerdNodes* const nodes = serd_nodes_new(NULL);
+
+  const SerdNode* node = serd_nodes_file_uri(
+    nodes, SERD_STRING(path), SERD_OPTIONAL_STRING(hostname));
 
   const char* node_str     = serd_node_string(node);
   char*       out_hostname = NULL;
-  char*       out_path     = serd_parse_file_uri(NULL, node_str, &out_hostname);
+  char* const out_path     = serd_parse_file_uri(NULL, node_str, &out_hostname);
 
   assert(!strcmp(node_str, expected_uri));
   assert((hostname && out_hostname) || (!hostname && !out_hostname));
@@ -99,7 +101,7 @@ test_file_uri(const char* const hostname,
 
   serd_free(NULL, out_path);
   serd_free(NULL, out_hostname);
-  serd_node_free(NULL, node);
+  serd_nodes_free(nodes);
 }
 
 static void
