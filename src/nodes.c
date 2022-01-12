@@ -504,6 +504,32 @@ serd_nodes_parsed_uri(SerdNodes* const nodes, const SerdURIView uri)
 }
 
 const SerdNode*
+serd_nodes_file_uri(SerdNodes* const     nodes,
+                    const SerdStringView path,
+                    const SerdStringView hostname)
+{
+  assert(nodes);
+
+  /* Computing a hash for the serialised URI here would be quite complex, so,
+     since this isn't expected to be a particularly hot case, we just allocate
+     a new entry and try to do a normal insertion. */
+
+  // Determine how much space the node needs
+  SerdWriteResult r = serd_node_construct_file_uri(0u, NULL, path, hostname);
+  assert(r.status == SERD_OVERFLOW); // Currently no other errors
+
+  // Allocate a new entry to write the URI node into
+  NodesEntry* const entry = new_entry(nodes->allocator, r.count);
+  if (entry) {
+    r = serd_node_construct_file_uri(r.count, &entry->node, path, hostname);
+    assert(!r.status);
+    (void)r;
+  }
+
+  return serd_nodes_manage_entry(nodes, entry);
+}
+
+const SerdNode*
 serd_nodes_blank(SerdNodes* const nodes, const SerdStringView string)
 {
   return serd_nodes_token(nodes, SERD_BLANK, string);

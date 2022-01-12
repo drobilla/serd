@@ -1461,6 +1461,18 @@ const SerdNode* SERD_ALLOCATED
 serd_nodes_parsed_uri(SerdNodes* SERD_NONNULL nodes, SerdURIView uri);
 
 /**
+   Make a file URI node from a path and optional hostname.
+
+   A new node will be constructed with serd_node_construct_file_uri() if an
+   equivalent one is not already in the set.
+*/
+SERD_API
+const SerdNode* SERD_ALLOCATED
+serd_nodes_file_uri(SerdNodes* SERD_NONNULL nodes,
+                    SerdStringView          path,
+                    SerdStringView          hostname);
+
+/**
    Make a literal node with optional datatype or language.
 
    This can create complex literals with an associated datatype URI or language
