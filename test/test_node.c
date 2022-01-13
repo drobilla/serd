@@ -609,6 +609,28 @@ test_new(void)
 }
 
 static void
+test_uri(void)
+{
+  static const SerdStringView base = SERD_STRING("http://example.org/base/");
+  static const SerdStringView rel  = SERD_STRING("a/b");
+  static const SerdStringView abs  = SERD_STRING("http://example.org/base/a/b");
+
+  const SerdURIView base_uri = serd_parse_uri(base.buf);
+  const SerdURIView rel_uri  = serd_parse_uri(rel.buf);
+  const SerdURIView abs_uri  = serd_resolve_uri(rel_uri, base_uri);
+
+  SerdNode* const from_string = serd_new_uri(NULL, abs);
+  SerdNode* const from_uri    = serd_new_parsed_uri(NULL, abs_uri);
+
+  assert(from_string);
+  assert(from_uri);
+  assert(!strcmp(serd_node_string(from_string), serd_node_string(from_uri)));
+
+  serd_node_free(NULL, from_uri);
+  serd_node_free(NULL, from_string);
+}
+
+static void
 test_literal(void)
 {
   static const SerdStringView hello_str = SERD_STRING("hello");
@@ -773,6 +795,7 @@ main(void)
   test_node_from_syntax();
   test_node_from_substring();
   test_new();
+  test_uri();
   test_literal();
   test_blank();
   test_compare();
