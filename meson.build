@@ -105,6 +105,12 @@ sources = [
 # System libraries
 m_dep = cc.find_library('m', required: false)
 
+# System defines needed to expose platform APIs
+platform_args = []
+if host_machine.system() != 'windows'
+  platform_args += ['-D_POSIX_C_SOURCE=200809L']
+endif
+
 # Determine library type and the flags needed to build it
 library_name = versioned_name
 if get_option('default_library') == 'both'
@@ -136,7 +142,7 @@ libserd = build_target(
   sources,
   version: meson.project_version(),
   include_directories: include_directories(['include']),
-  c_args: c_warnings + library_args,
+  c_args: c_warnings + platform_args + library_args,
   dependencies: m_dep,
   gnu_symbol_visibility: 'hidden',
   install: true,
@@ -163,7 +169,7 @@ if get_option('utils')
   endif
 
   serdi = executable('serdi', 'src/serdi.c',
-                     c_args: c_warnings + prog_args,
+                     c_args: c_warnings + platform_args + prog_args,
                      link_args: tool_link_args,
                      install: true,
                      dependencies: serd_dep)
