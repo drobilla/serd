@@ -7,8 +7,6 @@ Checks: >
   -bugprone-easily-swappable-parameters,
   -bugprone-reserved-identifier,
   -bugprone-suspicious-string-compare,
-  -cert-dcl37-c,
-  -cert-dcl51-cpp,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -concurrency-mt-unsafe,
   -google-readability-todo,
