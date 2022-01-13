@@ -31,6 +31,8 @@ test_size(SerdWorld* const      world,
           const SerdReaderFlags flags,
           const size_t          stack_size)
 {
+  SerdNodes* const nodes = serd_world_nodes(world);
+
   SerdSink*         sink = serd_sink_new(world, NULL, NULL, NULL);
   SerdEnv* const    env  = serd_env_new(world, SERD_EMPTY_STRING());
   SerdReader* const reader =
@@ -38,7 +40,7 @@ test_size(SerdWorld* const      world,
 
   assert(reader);
 
-  SerdNode*       string_name = serd_new_string(NULL, SERD_STRING("string"));
+  const SerdNode* string_name = serd_nodes_string(nodes, SERD_STRING("string"));
   const char*     position    = str;
   SerdInputStream in          = serd_open_input_string(&position);
   serd_reader_start(reader, &in, string_name, 1);
@@ -46,7 +48,6 @@ test_size(SerdWorld* const      world,
   const SerdStatus st = serd_reader_read_document(reader);
 
   serd_close_input(&in);
-  serd_node_free(NULL, string_name);
   serd_reader_free(reader);
   serd_env_free(env);
   serd_sink_free(sink);
