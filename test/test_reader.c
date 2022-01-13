@@ -509,7 +509,8 @@ check_cursor(void* handle, const SerdEvent* event)
 static void
 test_error_cursor(void)
 {
-  SerdWorld*        world  = serd_world_new(NULL);
+  SerdWorld* const  world  = serd_world_new(NULL);
+  SerdNodes* const  nodes  = serd_world_nodes(world);
   bool              called = false;
   SerdSink*         sink   = serd_sink_new(world, &called, check_cursor, NULL);
   SerdEnv* const    env    = serd_env_new(world, serd_empty_string());
@@ -523,9 +524,11 @@ test_error_cursor(void)
     "<http://example.org/s> <http://example.org/p> "
     "<http://example.org/o> .";
 
-  SerdNode* const string_name = serd_new_string(NULL, serd_string("string"));
-  const char*     position    = string;
-  SerdInputStream in          = serd_open_input_string(&position);
+  const SerdNode* const string_name =
+    serd_nodes_string(nodes, serd_string("string"));
+
+  const char*     position = string;
+  SerdInputStream in       = serd_open_input_string(&position);
 
   SerdStatus st = serd_reader_start(reader, &in, string_name, 1);
   assert(!st);
@@ -534,7 +537,6 @@ test_error_cursor(void)
   assert(called);
   assert(!serd_close_input(&in));
 
-  serd_node_free(NULL, string_name);
   serd_reader_free(reader);
   serd_env_free(env);
   serd_sink_free(sink);
