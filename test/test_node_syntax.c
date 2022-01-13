@@ -16,7 +16,8 @@ test_failed_alloc(void)
 {
   SerdFailingAllocator allocator = serd_failing_allocator();
 
-  SerdNode* const node = serd_new_string(&allocator.base, serd_string("node"));
+  SerdNode* const node =
+    serd_new_token(&allocator.base, SERD_LITERAL, serd_string("node"));
 
   // Successfully convert a node to count the number of allocations
 
@@ -41,8 +42,8 @@ test_failed_alloc(void)
 
     assert(!s || !c);
 
-    serd_free(&allocator.base, s);
     serd_node_free(&allocator.base, c);
+    serd_free(&allocator.base, s);
   }
 
   serd_node_free(&allocator.base, copy);
@@ -51,10 +52,10 @@ test_failed_alloc(void)
 }
 
 static bool
-check(SerdWorld* const  world,
-      const SerdSyntax  syntax,
-      SerdNode* const   node,
-      const char* const expected)
+check(SerdWorld* const      world,
+      const SerdSyntax      syntax,
+      const SerdNode* const node,
+      const char* const     expected)
 {
   SerdEnv* const env =
     serd_env_new(world, serd_string("http://example.org/base/"));
@@ -66,7 +67,6 @@ check(SerdWorld* const  world,
 
   serd_node_free(serd_world_allocator(world), copy);
   serd_free(serd_world_allocator(world), str);
-  serd_node_free(NULL, node);
   serd_env_free(env);
   return success;
 }
@@ -78,69 +78,74 @@ test_common(SerdWorld* const world, const SerdSyntax syntax)
 
   const SerdStringView datatype = serd_string("http://example.org/Datatype");
 
+  SerdNodes* const nodes = serd_nodes_new(NULL);
+
   assert(check(
-    world, syntax, serd_new_string(NULL, serd_string("node")), "\"node\""));
+    world, syntax, serd_nodes_string(nodes, serd_string("node")), "\"node\""));
 
   assert(
     check(world,
           syntax,
-          serd_new_literal(
-            NULL, serd_string("hallo"), SERD_HAS_LANGUAGE, serd_string("de")),
+          serd_nodes_literal(
+            nodes, serd_string("hallo"), SERD_HAS_LANGUAGE, serd_string("de")),
           "\"hallo\"@de"));
 
-  assert(
-    check(world,
-          syntax,
-          serd_new_literal(NULL, serd_string("X"), SERD_HAS_DATATYPE, datatype),
-          "\"X\"^^<http://example.org/Datatype>"));
+  assert(check(
+    world,
+    syntax,
+    serd_nodes_literal(nodes, serd_string("X"), SERD_HAS_DATATYPE, datatype),
+    "\"X\"^^<http://example.org/Datatype>"));
 
   assert(check(world,
                syntax,
-               serd_new_token(NULL, SERD_BLANK, serd_string("blank")),
+               serd_nodes_token(nodes, SERD_BLANK, serd_string("blank")),
                "_:blank"));
 
   assert(check(world,
                syntax,
-               serd_new_token(NULL, SERD_BLANK, serd_string("b0")),
+               serd_nodes_token(nodes, SERD_BLANK, serd_string("b0")),
                "_:b0"));
 
   assert(check(world,
                syntax,
-               serd_new_token(NULL, SERD_BLANK, serd_string("named1")),
+               serd_nodes_token(nodes, SERD_BLANK, serd_string("named1")),
                "_:named1"));
 
   assert(check(world,
                syntax,
-               serd_new_uri(NULL, serd_string("http://example.org/")),
+               serd_nodes_uri(nodes, serd_string("http://example.org/")),
                "<http://example.org/>"));
 
   assert(check(world,
                syntax,
-               serd_new_value(NULL, serd_double(1.25)),
+               serd_nodes_value(nodes, serd_double(1.25)),
                "\"1.25E0\"^^<http://www.w3.org/2001/XMLSchema#double>"));
 
   assert(check(world,
                syntax,
-               serd_new_value(NULL, serd_float(1.25f)),
+               serd_nodes_value(nodes, serd_float(1.25f)),
                "\"1.25E0\"^^<http://www.w3.org/2001/XMLSchema#float>"));
 
   assert(
     check(world,
           syntax,
-          serd_new_base64(NULL, data, sizeof(data)),
+          serd_nodes_base64(nodes, data, sizeof(data)),
           "\"BAAAAAIAAAA=\"^^<http://www.w3.org/2001/XMLSchema#base64Binary>"));
+
+  serd_nodes_free(nodes);
 }
 
 static void
 test_ntriples(void)
 {
   SerdWorld* const world = serd_world_new(NULL);
+  SerdNodes* const nodes = serd_nodes_new(NULL);
 
   test_common(world, SERD_NTRIPLES);
 
   {
     // No relative URIs in NTriples, so converting one fails without an env
-    SerdNode* const rel = serd_new_uri(NULL, serd_string("rel/uri"));
+    const SerdNode* const rel = serd_nodes_uri(nodes, serd_string("rel/uri"));
     assert(!serd_node_to_syntax(NULL, rel, SERD_NTRIPLES, NULL));
     assert(!serd_node_from_syntax(NULL, "<rel/uri>", SERD_NTRIPLES, NULL));
 
@@ -157,29 +162,29 @@ test_ntriples(void)
     serd_node_free(serd_world_allocator(world), copy);
     serd_env_free(env);
     serd_free(serd_world_allocator(world), str);
-    serd_node_free(NULL, rel);
   }
 
   assert(check(world,
                SERD_NTRIPLES,
-               serd_new_decimal(NULL, 1.25),
+               serd_nodes_decimal(nodes, 1.25),
                "\"1.25\"^^<http://www.w3.org/2001/XMLSchema#decimal>"));
 
   assert(check(world,
                SERD_NTRIPLES,
-               serd_new_integer(NULL, 1234),
+               serd_nodes_integer(nodes, 1234),
                "\"1234\"^^<http://www.w3.org/2001/XMLSchema#integer>"));
 
   assert(check(world,
                SERD_NTRIPLES,
-               serd_new_value(NULL, serd_bool(true)),
+               serd_nodes_value(nodes, serd_bool(true)),
                "\"true\"^^<http://www.w3.org/2001/XMLSchema#boolean>"));
 
   assert(check(world,
                SERD_NTRIPLES,
-               serd_new_value(NULL, serd_bool(false)),
+               serd_nodes_value(nodes, serd_bool(false)),
                "\"false\"^^<http://www.w3.org/2001/XMLSchema#boolean>"));
 
+  serd_nodes_free(nodes);
   serd_world_free(world);
 }
 
@@ -187,22 +192,24 @@ static void
 test_turtle(void)
 {
   SerdWorld* const world = serd_world_new(NULL);
+  SerdNodes* const nodes = serd_world_nodes(world);
 
   test_common(world, SERD_TURTLE);
 
   check(world,
         SERD_TURTLE,
-        serd_new_uri(NULL, serd_string("rel/uri")),
+        serd_nodes_uri(nodes, serd_string("rel/uri")),
         "<rel/uri>");
 
-  assert(check(world, SERD_TURTLE, serd_new_decimal(NULL, 1.25), "1.25"));
-  assert(check(world, SERD_TURTLE, serd_new_integer(NULL, 1234), "1234"));
+  assert(check(world, SERD_TURTLE, serd_nodes_decimal(nodes, 1.25), "1.25"));
 
-  assert(
-    check(world, SERD_TURTLE, serd_new_value(NULL, serd_bool(true)), "true"));
+  assert(check(world, SERD_TURTLE, serd_nodes_integer(nodes, 1234), "1234"));
 
-  assert(
-    check(world, SERD_TURTLE, serd_new_value(NULL, serd_bool(false)), "false"));
+  assert(check(
+    world, SERD_TURTLE, serd_nodes_value(nodes, serd_bool(true)), "true"));
+
+  assert(check(
+    world, SERD_TURTLE, serd_nodes_value(nodes, serd_bool(false)), "false"));
 
   serd_world_free(world);
 }
