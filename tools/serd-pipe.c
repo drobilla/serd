@@ -168,7 +168,8 @@ parse_option(OptionIter* const iter, Options* const opts)
 int
 main(const int argc, char* const* const argv)
 {
-  char* const default_input[] = {"-"};
+  char  default_input[]  = "-";
+  char* default_inputs[] = {default_input};
 
   Options opts = {{"",
                    NULL,
@@ -197,7 +198,7 @@ main(const int argc, char* const* const argv)
   opts.n_inputs = argc - iter.a;
   if (opts.n_inputs + (bool)opts.input_string == 0) {
     opts.n_inputs = 1;
-    opts.inputs   = default_input;
+    opts.inputs   = default_inputs;
   }
 
   // Don't add prefixes to blank node labels if there is only one input
