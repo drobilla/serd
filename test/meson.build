@@ -80,9 +80,7 @@ if is_variable('serd_pipe')
   # Basic invalid arguments
 
   bad_args = [
-    ['-B', 'nonuriorpath'],
     ['-B'],
-    ['-I', 'turtle'],
     ['-I', 'unknown'],
     ['-I'],
     ['-O', 'unknown'],
@@ -110,12 +108,6 @@ if is_variable('serd_pipe')
          should_fail: true,
          suite: ['tools', 'pipe', 'options'])
   endforeach
-
-  test('none',
-       tool,
-       env: test_env,
-       should_fail: true,
-       suite: ['tools', 'pipe', 'options'])
 
   test('remote',
        tool,
@@ -286,12 +278,6 @@ if is_variable('serd_sort')
          suite: ['tools', 'sort', 'options'])
   endforeach
 
-  test('none',
-       tool,
-       env: test_env,
-       should_fail: true,
-       suite: ['tools', 'sort', 'options'])
-
   # IO errors
 
   test('read_dir',
@@ -342,7 +328,6 @@ if is_variable('serd_filter')
   bad_args = [
     ['-f', '/no/such/file.nt', '-'],
     ['-z'],
-    ['?s ?p ?o .'],
   ]
 
   foreach args : bad_args
@@ -379,13 +364,6 @@ if is_variable('serd_filter')
        suite: ['tools', 'filter', 'output'])
 
   # Different input sources
-
-  test('missing_input',
-       tool,
-       args: ['?s ?p ?o .', '/does/not/exist.ttl'],
-       env: test_env,
-       should_fail: true,
-       suite: ['tools', 'filter', 'input'])
 
   test('filter_dir',
        tool,
