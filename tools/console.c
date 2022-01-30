@@ -297,18 +297,28 @@ serd_create_env(SerdWorld* const  world,
                 const char* const base_string,
                 const char* const out_filename)
 {
-  const bool is_rebase = base_string && !strcmp(base_string, "rebase");
-  if (is_rebase && !out_filename) {
-    fprintf(stderr, "%s: rebase requires an output filename\n", program);
-    return NULL;
+  if (!base_string) {
+    return serd_env_new(world, SERD_EMPTY_STRING());
   }
 
-  if (base_string && serd_uri_string_has_scheme(base_string)) {
+  if (serd_uri_string_has_scheme(base_string)) {
     return serd_env_new(world, SERD_STRING(base_string));
   }
 
+  const bool is_rebase = !strcmp(base_string, "rebase");
+  if (is_rebase) {
+    if (!out_filename) {
+      fprintf(stderr, "%s: rebase requires an output filename\n", program);
+      return NULL;
+    }
+
+    SerdEnv* const env = serd_env_new(world, SERD_EMPTY_STRING());
+    serd_env_set_base_path(env, SERD_STRING(out_filename));
+    return env;
+  }
+
   SerdEnv* const env = serd_env_new(world, SERD_EMPTY_STRING());
-  serd_set_base_uri_from_path(env, is_rebase ? out_filename : base_string);
+  serd_env_set_base_path(env, SERD_STRING(base_string));
   return env;
 }
 
@@ -384,43 +394,6 @@ serd_open_tool_output(const char* const filename)
 }
 
 SerdStatus
-serd_set_base_uri_from_path(SerdEnv* const env, const char* const path)
-{
-  const size_t path_len = path ? strlen(path) : 0u;
-  if (!path_len) {
-    return SERD_BAD_ARG;
-  }
-
-  char* const real_path = serd_canonical_path(NULL, path);
-  if (!real_path) {
-    return SERD_BAD_ARG;
-  }
-
-  const size_t real_path_len = strlen(real_path);
-  SerdNode*    base_node     = NULL;
-  if (path[path_len - 1] == '/' || path[path_len - 1] == '\\') {
-    char* const base_path = (char*)calloc(real_path_len + 2, 1);
-
-    memcpy(base_path, real_path, real_path_len);
-    base_path[real_path_len] = path[path_len - 1];
-
-    base_node =
-      serd_new_file_uri(NULL, SERD_STRING(base_path), SERD_EMPTY_STRING());
-
-    free(base_path);
-  } else {
-    base_node =
-      serd_new_file_uri(NULL, SERD_STRING(real_path), SERD_EMPTY_STRING());
-  }
-
-  serd_env_set_base_uri(env, serd_node_string_view(base_node));
-  serd_node_free(NULL, base_node);
-  serd_free(NULL, real_path);
-
-  return SERD_SUCCESS;
-}
-
-SerdStatus
 serd_read_source(SerdWorld* const        world,
                  const SerdCommonOptions opts,
                  SerdEnv* const          env,
@@ -457,7 +430,7 @@ serd_read_inputs(SerdWorld* const        world,
     // Use the filename as the base URI if possible if user didn't override it
     const char* const in_path = inputs[i];
     if (!opts.base_uri[0] && strcmp(in_path, "-")) {
-      serd_set_base_uri_from_path(env, in_path);
+      serd_env_set_base_path(env, SERD_STRING(in_path));
     }
 
     // Open the input stream
