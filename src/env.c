@@ -189,6 +189,46 @@ serd_env_set_base_uri(SerdEnv* const env, const SerdStringView uri)
   return SERD_SUCCESS;
 }
 
+SerdStatus
+serd_env_set_base_path(SerdEnv* const env, const SerdStringView path)
+{
+  assert(env);
+
+  if (!path.buf || !path.len) {
+    return serd_env_set_base_uri(env, SERD_EMPTY_STRING());
+  }
+
+  char* const real_path = serd_canonical_path(NULL, path.buf);
+  if (!real_path) {
+    return SERD_BAD_ARG;
+  }
+
+  const size_t real_path_len = strlen(real_path);
+  SerdNode*    base_node     = NULL;
+  const char   path_last     = path.buf[path.len - 1];
+  if (path_last == '/' || path_last == '\\') {
+    char* const base_path =
+      (char*)serd_wcalloc(env->world, real_path_len + 2, 1);
+
+    memcpy(base_path, real_path, real_path_len);
+    base_path[real_path_len] = path_last;
+
+    base_node =
+      serd_new_file_uri(NULL, SERD_STRING(base_path), SERD_EMPTY_STRING());
+
+    serd_wfree(env->world, base_path);
+  } else {
+    base_node =
+      serd_new_file_uri(NULL, SERD_STRING(real_path), SERD_EMPTY_STRING());
+  }
+
+  serd_env_set_base_uri(env, serd_node_string_view(base_node));
+  serd_node_free(NULL, base_node);
+  serd_free(NULL, real_path);
+
+  return SERD_SUCCESS;
+}
+
 SERD_PURE_FUNC
 static SerdPrefix*
 serd_env_find(const SerdEnv* const env,
