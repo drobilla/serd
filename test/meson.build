@@ -159,6 +159,12 @@ if is_variable('serd_pipe')
        should_fail: true,
        suite: ['tools', 'pipe', 'options'])
 
+  test('good_rebase',
+       tool,
+       args: ['-B', 'rebase', '-o', 'serd_rebased.ttl', serd_ttl],
+       env: test_env,
+       suite: ['tools', 'pipe', 'options'])
+
   test('bad_rebase',
        tool,
        args: ['-B', 'rebase', serd_ttl],

@@ -10,6 +10,8 @@
 
 #include "serd/node.h"
 #include "serd/nodes.h"
+#include "zix/allocator.h"
+#include "zix/filesystem.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -174,6 +176,46 @@ serd_env_set_base_uri(SerdEnv* const env, const SerdStringView uri)
   }
 
   serd_nodes_deref(env->nodes, old_base_uri);
+  return SERD_SUCCESS;
+}
+
+SerdStatus
+serd_env_set_base_path(SerdEnv* const env, const SerdStringView path)
+{
+  assert(env);
+
+  if (!path.buf || !path.len) {
+    return serd_env_set_base_uri(env, serd_empty_string());
+  }
+
+  char* const real_path = zix_canonical_path(NULL, path.buf);
+  if (!real_path) {
+    return SERD_BAD_ARG;
+  }
+
+  const size_t real_path_len = strlen(real_path);
+  SerdNode*    base_node     = NULL;
+  const char   path_last     = path.buf[path.len - 1];
+  if (path_last == '/' || path_last == '\\') {
+    char* const base_path =
+      (char*)serd_wcalloc(env->world, real_path_len + 2, 1);
+
+    memcpy(base_path, real_path, real_path_len + 1);
+    base_path[real_path_len] = path_last;
+
+    base_node =
+      serd_new_file_uri(NULL, serd_string(base_path), serd_empty_string());
+
+    serd_wfree(env->world, base_path);
+  } else {
+    base_node =
+      serd_new_file_uri(NULL, serd_string(real_path), serd_empty_string());
+  }
+
+  serd_env_set_base_uri(env, serd_node_string_view(base_node));
+  serd_node_free(NULL, base_node);
+  zix_free(NULL, real_path);
+
   return SERD_SUCCESS;
 }
 
