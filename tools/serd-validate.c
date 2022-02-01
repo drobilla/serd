@@ -14,11 +14,12 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include "console.h"
+/* #include "console.h" */
 
 #include "serd/serd.h"
 
 #include <inttypes.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,16 +32,16 @@
 /* Application (after parsing command-line arguments) */
 
 typedef struct {
-  const char*       base_uri_string;
-  const char*       out_filename;
-  char* const*      inputs;
-  intptr_t          n_inputs;
-  SerdSyntaxOptions input_options;
-  size_t            block_size;
-  size_t            stack_size;
-  bool              checks_given;
-  bool              verbose;
-  bool              quiet;
+  const char*  base_uri_string;
+  const char*  out_filename;
+  char* const* inputs;
+  intptr_t     n_inputs;
+  /* SerdSyntaxOptions input_options; */
+  size_t block_size;
+  size_t stack_size;
+  bool   checks_given;
+  bool   verbose;
+  bool   quiet;
 } Options;
 
 typedef struct {
@@ -68,16 +69,16 @@ read_file(SerdWorld* const      world,
     }
   }
 
-  const SerdSyntax syntax =
-    serd_choose_syntax(world, opts.input_options, filename, SERD_TRIG);
+  const SerdSyntax syntax = SERD_TURTLE;
+  /* serd_choose_syntax(world, opts.input_options, filename, SERD_TRIG); */
 
   SerdReader* const reader = serd_reader_new(
-    world, syntax, opts.input_options.flags, env, sink, opts.stack_size);
+    world, syntax, 0u /*opts.input_options.flags*/, env, sink, opts.stack_size);
 
   const SerdNode* const name =
     serd_nodes_string(serd_world_nodes(world), SERD_STRING(filename));
 
-  SerdInputStream in = serd_open_tool_input(filename);
+  SerdInputStream in = serd_open_input_file(filename);
   if (!in.stream) {
     st = SERD_UNKNOWN_ERROR;
   } else if (!(st = serd_reader_start(reader, &in, name, opts.block_size))) {
@@ -230,6 +231,84 @@ run(Tool* tool, Options opts, int argc, char** argv)
 
 /* Command-line interface (before setting up serd) */
 
+// Iterator over command-line options with support for BSD-style flag merging
+typedef struct {
+  char* const* argv; ///< Complete argument vector (from main)
+  int          argc; ///< Total number of arguments (from main)
+  int          a;    ///< Argument index (index into argv)
+  int          f;    ///< Flag index (offset in argv[arg])
+} OptionIter;
+
+static inline bool
+serd_option_iter_is_end(const OptionIter iter)
+{
+  return iter.a >= iter.argc || iter.argv[iter.a][0] != '-' ||
+         !iter.argv[iter.a][iter.f];
+}
+
+static inline SerdStatus
+serd_option_iter_advance(OptionIter* const iter)
+{
+  if (!iter->argv[iter->a][++iter->f]) {
+    ++iter->a;
+    iter->f = 1;
+  }
+
+  return SERD_SUCCESS;
+}
+
+static SerdStatus
+serd_get_argument(OptionIter* const iter, const char** const argument)
+{
+  const char flag = iter->argv[iter->a][iter->f++];
+
+  if (iter->argv[iter->a][iter->f] || (iter->a + 1) == iter->argc) {
+    fprintf(
+      stderr, "%s: option requires an argument -- %c\n", iter->argv[0], flag);
+    return SERD_BAD_ARG;
+  }
+
+  *argument = iter->argv[++iter->a];
+  ++iter->a;
+  iter->f = 1;
+  return SERD_SUCCESS;
+}
+
+static SerdStatus
+serd_get_size_argument(OptionIter* const iter, size_t* const argument)
+{
+  SerdStatus  st     = SERD_SUCCESS;
+  const char* string = NULL;
+  if ((st = serd_get_argument(iter, &string))) {
+    return st;
+  }
+
+  char*      endptr = NULL;
+  const long size   = strtol(string, &endptr, 10);
+  if (size <= 0 || size == LONG_MAX || *endptr != '\0') {
+    return SERD_BAD_ARG;
+  }
+
+  *argument = (size_t)size;
+  return SERD_SUCCESS;
+}
+
+static SerdStatus
+print_version(void)
+{
+  printf("serd-validate %d.%d.%d <http://drobilla.net/software/serd>\n",
+         SERD_MAJOR_VERSION,
+         SERD_MINOR_VERSION,
+         SERD_MICRO_VERSION);
+
+  printf("Copyright 2011-2022 David Robillard <d@drobilla.net>.\n"
+         "License: <http://www.opensource.org/licenses/isc>\n"
+         "This is free software; you are free to change and redistribute it.\n"
+         "There is NO WARRANTY, to the extent permitted by law.\n");
+
+  return SERD_FAILURE;
+}
+
 static SerdStatus
 print_usage(const char* const name, const bool error)
 {
@@ -269,11 +348,11 @@ parse_option(Tool* const tool, OptionIter* const iter, Options* const opts)
     }
     return st;
 
-  case 'I':
-    return serd_parse_input_argument(iter, &opts->input_options);
+    /* case 'I': */
+    /*   return serd_parse_input_argument(iter, &opts->input_options); */
 
   case 'V':
-    return serd_print_version("serd-validate");
+    return print_version();
 
   case 'W':
     opts->checks_given = true;
@@ -335,7 +414,7 @@ main(int argc, char** argv)
                   NULL,
                   NULL,
                   0,
-                  {SERD_SYNTAX_EMPTY, 0u, false},
+                  //                  {SERD_SYNTAX_EMPTY, 0u, false},
                   4096u,
                   4194304u,
                   false,

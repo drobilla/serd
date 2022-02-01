@@ -2043,7 +2043,6 @@ serd_logf_at(const SerdWorld* SERD_NONNULL  world,
 
 /**
    @}
-   @}
    @defgroup serd_streaming Data Streaming
    @{
 */
