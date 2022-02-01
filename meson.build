@@ -179,7 +179,7 @@ else
     '-DREREX_STATIC',
     '-DSERD_INTERNAL',
     '-DSERD_STATIC',
-    '-DZIX_API=',
+    '-DZIX_STATIC',
   ]
 endif
 
