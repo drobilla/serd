@@ -90,6 +90,7 @@ gcc_common_warnings = [
   '-Wvector-operation-performance',
   '-Wvla',
   '-Wwrite-strings',
+  '-pedantic',
 ]
 
 gcc_c_warnings = [

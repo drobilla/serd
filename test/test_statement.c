@@ -35,9 +35,9 @@ test_invalid_new(void)
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
-  const SerdNode* const s = serd_nodes_string(nodes, SERD_STRING("s"));
-  const SerdNode* const u = serd_nodes_uri(nodes, SERD_STRING(NS_EG "u"));
-  const SerdNode* const b = serd_nodes_blank(nodes, SERD_STRING(NS_EG "b"));
+  const SerdNode* const s = serd_nodes_string(nodes, serd_string("s"));
+  const SerdNode* const u = serd_nodes_uri(nodes, serd_string(NS_EG "u"));
+  const SerdNode* const b = serd_nodes_blank(nodes, serd_string(NS_EG "b"));
 
   // S, P, and G may not be strings (must be resources)
   assert(!serd_statement_new(allocator, s, u, u, u, NULL));
@@ -61,10 +61,10 @@ test_copy(void)
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
-  const SerdNode* const s = serd_nodes_uri(nodes, SERD_STRING(NS_EG "s"));
-  const SerdNode* const p = serd_nodes_uri(nodes, SERD_STRING(NS_EG "p"));
-  const SerdNode* const o = serd_nodes_uri(nodes, SERD_STRING(NS_EG "o"));
-  const SerdNode* const g = serd_nodes_uri(nodes, SERD_STRING(NS_EG "g"));
+  const SerdNode* const s = serd_nodes_uri(nodes, serd_string(NS_EG "s"));
+  const SerdNode* const p = serd_nodes_uri(nodes, serd_string(NS_EG "p"));
+  const SerdNode* const o = serd_nodes_uri(nodes, serd_string(NS_EG "o"));
+  const SerdNode* const g = serd_nodes_uri(nodes, serd_string(NS_EG "g"));
 
   SerdStatement* const statement =
     serd_statement_new(allocator, s, p, o, g, NULL);
@@ -89,11 +89,11 @@ test_copy_with_caret(void)
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
-  const SerdNode* const f = serd_nodes_string(nodes, SERD_STRING("file"));
-  const SerdNode* const s = serd_nodes_uri(nodes, SERD_STRING(NS_EG "s"));
-  const SerdNode* const p = serd_nodes_uri(nodes, SERD_STRING(NS_EG "p"));
-  const SerdNode* const o = serd_nodes_uri(nodes, SERD_STRING(NS_EG "o"));
-  const SerdNode* const g = serd_nodes_uri(nodes, SERD_STRING(NS_EG "g"));
+  const SerdNode* const f = serd_nodes_string(nodes, serd_string("file"));
+  const SerdNode* const s = serd_nodes_uri(nodes, serd_string(NS_EG "s"));
+  const SerdNode* const p = serd_nodes_uri(nodes, serd_string(NS_EG "p"));
+  const SerdNode* const o = serd_nodes_uri(nodes, serd_string(NS_EG "o"));
+  const SerdNode* const g = serd_nodes_uri(nodes, serd_string(NS_EG "g"));
 
   SerdCaret* const caret = serd_caret_new(allocator, f, 1, 1);
 
@@ -125,11 +125,11 @@ test_fields(void)
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
-  const SerdNode* const f = serd_nodes_string(nodes, SERD_STRING("file"));
-  const SerdNode* const s = serd_nodes_uri(nodes, SERD_STRING(NS_EG "s"));
-  const SerdNode* const p = serd_nodes_uri(nodes, SERD_STRING(NS_EG "p"));
-  const SerdNode* const o = serd_nodes_uri(nodes, SERD_STRING(NS_EG "o"));
-  const SerdNode* const g = serd_nodes_uri(nodes, SERD_STRING(NS_EG "g"));
+  const SerdNode* const f = serd_nodes_string(nodes, serd_string("file"));
+  const SerdNode* const s = serd_nodes_uri(nodes, serd_string(NS_EG "s"));
+  const SerdNode* const p = serd_nodes_uri(nodes, serd_string(NS_EG "p"));
+  const SerdNode* const o = serd_nodes_uri(nodes, serd_string(NS_EG "o"));
+  const SerdNode* const g = serd_nodes_uri(nodes, serd_string(NS_EG "g"));
 
   SerdCaret* const caret = serd_caret_new(allocator, f, 1, 1);
 
@@ -191,11 +191,11 @@ test_failed_alloc(void)
 {
   SerdNodes* const nodes = serd_nodes_new(serd_default_allocator());
 
-  const SerdNode* const f = serd_nodes_string(nodes, SERD_STRING("file"));
-  const SerdNode* const s = serd_nodes_uri(nodes, SERD_STRING(NS_EG "s"));
-  const SerdNode* const p = serd_nodes_uri(nodes, SERD_STRING(NS_EG "p"));
-  const SerdNode* const o = serd_nodes_uri(nodes, SERD_STRING(NS_EG "o"));
-  const SerdNode* const g = serd_nodes_uri(nodes, SERD_STRING(NS_EG "g"));
+  const SerdNode* const f = serd_nodes_string(nodes, serd_string("file"));
+  const SerdNode* const s = serd_nodes_uri(nodes, serd_string(NS_EG "s"));
+  const SerdNode* const p = serd_nodes_uri(nodes, serd_string(NS_EG "p"));
+  const SerdNode* const o = serd_nodes_uri(nodes, serd_string(NS_EG "o"));
+  const SerdNode* const g = serd_nodes_uri(nodes, serd_string(NS_EG "g"));
 
   SerdCaret* const caret = serd_caret_new(serd_default_allocator(), f, 1, 1);
 

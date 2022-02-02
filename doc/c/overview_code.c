@@ -35,22 +35,22 @@
 static void
 string_views(void)
 {
-  static const char* const string_pointer = "some string";
+  const char* const string_pointer = "some string";
 
   // begin make-empty-string
-  SerdStringView empty = SERD_EMPTY_STRING();
+  SerdStringView empty = serd_empty_string();
   // end make-empty-string
 
   // begin make-static-string
-  SerdStringView hello = SERD_STRING("hello");
+  SerdStringView hello = serd_string("hello");
   // end make-static-string
 
   // begin measure-string
-  SerdStringView view = SERD_STRING(string_pointer);
+  SerdStringView view = serd_string(string_pointer);
   // end measure-string
 
   // begin make-string-view
-  SerdStringView slice = SERD_SUBSTRING(string_pointer, 4);
+  SerdStringView slice = serd_substring(string_pointer, 4);
   // end make-string-view
 }
 
@@ -62,9 +62,9 @@ statements(void)
   // begin statement-new
   SerdStatement* statement = serd_statement_new(
     NULL,
-    serd_nodes_uri(nodes, SERD_STRING("http://example.org/drobilla")),
-    serd_nodes_uri(nodes, SERD_STRING("http://example.org/firstName")),
-    serd_nodes_string(nodes, SERD_STRING("David")),
+    serd_nodes_uri(nodes, serd_string("http://example.org/drobilla")),
+    serd_nodes_uri(nodes, serd_string("http://example.org/firstName")),
+    serd_nodes_string(nodes, serd_string("David")),
     NULL,
     NULL);
   // end statement-new
@@ -76,9 +76,9 @@ statements(void)
 static void
 statements_accessing_fields(void)
 {
-  SerdNode* ss = serd_new_uri(NULL, SERD_STRING("http://example.org/s"));
-  SerdNode* sp = serd_new_uri(NULL, SERD_STRING("http://example.org/p"));
-  SerdNode* so = serd_new_uri(NULL, SERD_STRING("http://example.org/o"));
+  SerdNode* ss = serd_new_uri(NULL, serd_string("http://example.org/s"));
+  SerdNode* sp = serd_new_uri(NULL, serd_string("http://example.org/p"));
+  SerdNode* so = serd_new_uri(NULL, serd_string("http://example.org/o"));
 
   SerdStatement* statement = serd_statement_new(NULL, ss, sp, so, NULL, NULL);
 
@@ -100,9 +100,9 @@ statements_accessing_fields(void)
 static void
 statements_comparison(void)
 {
-  SerdNode* ss = serd_new_uri(NULL, SERD_STRING("http://example.org/s"));
-  SerdNode* sp = serd_new_uri(NULL, SERD_STRING("http://example.org/p"));
-  SerdNode* so = serd_new_uri(NULL, SERD_STRING("http://example.org/o"));
+  SerdNode* ss = serd_new_uri(NULL, serd_string("http://example.org/s"));
+  SerdNode* sp = serd_new_uri(NULL, serd_string("http://example.org/p"));
+  SerdNode* so = serd_new_uri(NULL, serd_string("http://example.org/o"));
 
   SerdStatement* statement1 = serd_statement_new(NULL, ss, sp, so, NULL, NULL);
   SerdStatement* statement2 = serd_statement_new(NULL, ss, sp, so, NULL, NULL);
@@ -117,7 +117,7 @@ statements_comparison(void)
 
   // begin statement-matches
   SerdNode* eg_name =
-    serd_new_uri(NULL, SERD_STRING("http://example.org/name"));
+    serd_new_uri(NULL, serd_string("http://example.org/name"));
 
   if (serd_statement_matches(statement, NULL, eg_name, NULL, NULL)) {
     printf("%s has name %s\n",
@@ -193,9 +193,9 @@ model(void)
 
   serd_model_add(
     model,
-    serd_nodes_uri(nodes, SERD_STRING("http://example.org/thing")), // S
-    serd_nodes_uri(nodes, SERD_STRING("http://example.org/name")),  // P
-    serd_nodes_string(nodes, SERD_STRING("Thing")),                 // O
+    serd_nodes_uri(nodes, serd_string("http://example.org/thing")), // S
+    serd_nodes_uri(nodes, serd_string("http://example.org/name")),  // P
+    serd_nodes_string(nodes, serd_string("Thing")),                 // O
     NULL);                                                          // G
   // end model-add
 
@@ -264,7 +264,7 @@ model(void)
 
   // begin model-ask
   const SerdNode* rdf_type = serd_nodes_uri(
-    nodes, SERD_STRING("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"));
+    nodes, serd_string("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"));
 
   if (serd_model_ask(model, NULL, rdf_type, NULL, NULL)) {
     printf("Model contains a type statement\n");
@@ -272,8 +272,8 @@ model(void)
   // end model-ask
 
   // Add a statement so that the searching examples below work
-  SerdNode* inst = serd_new_uri(NULL, SERD_STRING("http://example.org/i"));
-  SerdNode* type = serd_new_uri(NULL, SERD_STRING("http://example.org/T"));
+  SerdNode* inst = serd_new_uri(NULL, serd_string("http://example.org/i"));
+  SerdNode* type = serd_new_uri(NULL, serd_string("http://example.org/T"));
   serd_model_add(model, inst, rdf_type, type, NULL);
 
   // begin model-find
@@ -347,8 +347,8 @@ reading_writing(void)
   SerdWorld* world = serd_world_new(NULL);
 
   // begin env-new
-  SerdStringView host = SERD_EMPTY_STRING();
-  SerdStringView path = SERD_STRING("/some/file.ttl");
+  SerdStringView host = serd_empty_string();
+  SerdStringView path = serd_string("/some/file.ttl");
   SerdNode*      base = serd_new_file_uri(NULL, path, host);
   SerdEnv*       env  = serd_env_new(world, serd_node_string_view(base));
   // end env-new
@@ -356,8 +356,8 @@ reading_writing(void)
   // begin env-set-prefix
   serd_env_set_prefix(
     env,
-    SERD_STRING("rdf"),
-    SERD_STRING("http://www.w3.org/1999/02/22-rdf-syntax-ns#"));
+    serd_string("rdf"),
+    serd_string("http://www.w3.org/1999/02/22-rdf-syntax-ns#"));
   // end env-set-prefix
 
   // begin byte-sink-new

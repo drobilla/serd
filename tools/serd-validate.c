@@ -60,7 +60,7 @@ read_file(SerdWorld* const      world,
 {
   SerdStatus st = SERD_SUCCESS;
   if (!opts.base_uri_string && strcmp(filename, "-")) {
-    if ((st = serd_env_set_base_path(env, SERD_STRING(filename)))) {
+    if ((st = serd_env_set_base_path(env, serd_string(filename)))) {
       serd_logf(world,
                 SERD_LOG_LEVEL_ERROR,
                 "failed to determine base URI from path %s",
@@ -76,7 +76,7 @@ read_file(SerdWorld* const      world,
     world, syntax, 0u /*opts.input_options.flags*/, env, sink, opts.stack_size);
 
   const SerdNode* const name =
-    serd_nodes_string(serd_world_nodes(world), SERD_STRING(filename));
+    serd_nodes_string(serd_world_nodes(world), serd_string(filename));
 
   SerdInputStream in = serd_open_input_file(filename);
   if (!in.stream) {
@@ -102,9 +102,9 @@ get_schemas_model(const Options    opts,
                   SerdWorld* const world,
                   SerdModel* const model)
 {
-  static const SerdStringView s_rdf_type     = SERD_STRING(NS_RDF "type");
-  static const SerdStringView s_owl_Ontology = SERD_STRING(NS_OWL "Ontology");
-  static const SerdStringView s_rdfs_seeAlso = SERD_STRING(NS_RDFS "seeAlso");
+  const SerdStringView s_rdf_type     = serd_string(NS_RDF "type");
+  const SerdStringView s_owl_Ontology = serd_string(NS_OWL "Ontology");
+  const SerdStringView s_rdfs_seeAlso = serd_string(NS_RDFS "seeAlso");
 
   SerdNodes* const nodes = serd_world_nodes(world);
   SerdModel* const schemas_model =
@@ -156,10 +156,10 @@ run(Tool* tool, Options opts, int argc, char** argv)
   SerdModel* const model = tool->model;
 
   const SerdNode* const schema_graph =
-    serd_nodes_uri(nodes, SERD_STRING("http://drobilla.net/sw/serd#schemas"));
+    serd_nodes_uri(nodes, serd_string("http://drobilla.net/sw/serd#schemas"));
 
   const SerdNode* const data_graph =
-    serd_nodes_uri(nodes, SERD_STRING("http://drobilla.net/sw/serd#data"));
+    serd_nodes_uri(nodes, serd_string("http://drobilla.net/sw/serd#data"));
 
   serd_model_add_index(model, SERD_ORDER_GSPO);
   serd_model_add_index(model, SERD_ORDER_POS);
@@ -344,7 +344,7 @@ parse_option(Tool* const tool, OptionIter* const iter, Options* const opts)
   case 'B':
     if (!(st = serd_get_argument(iter, &argument))) {
       opts->base_uri_string = argument;
-      st = serd_env_set_base_uri(tool->env, SERD_STRING(argument));
+      st = serd_env_set_base_uri(tool->env, serd_string(argument));
     }
     return st;
 
@@ -422,7 +422,7 @@ main(int argc, char** argv)
                   false};
 
   SerdWorld* const     world     = serd_world_new(NULL);
-  SerdEnv* const       env       = serd_env_new(world, SERD_EMPTY_STRING());
+  SerdEnv* const       env       = serd_env_new(world, serd_empty_string());
   const SerdModelFlags flags     = SERD_STORE_GRAPHS | SERD_STORE_CARETS;
   SerdModel* const     model     = serd_model_new(world, SERD_ORDER_SPO, flags);
   SerdValidator* const validator = serd_validator_new(world);
@@ -454,7 +454,7 @@ main(int argc, char** argv)
   }
 
   if (!opts.base_uri_string && opts.n_inputs == 1) {
-    st = serd_env_set_base_path(env, SERD_STRING(opts.inputs[0]));
+    st = serd_env_set_base_path(env, serd_string(opts.inputs[0]));
   }
 
   if (!st) {

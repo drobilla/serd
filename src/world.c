@@ -86,13 +86,13 @@ serd_world_new(SerdAllocator* const allocator)
     return NULL;
   }
 
-  static const SerdStringView rdf_first   = SERD_STRING(NS_RDF "first");
-  static const SerdStringView rdf_nil     = SERD_STRING(NS_RDF "nil");
-  static const SerdStringView rdf_rest    = SERD_STRING(NS_RDF "rest");
-  static const SerdStringView rdf_type    = SERD_STRING(NS_RDF "type");
-  static const SerdStringView xsd_boolean = SERD_STRING(NS_XSD "boolean");
-  static const SerdStringView xsd_decimal = SERD_STRING(NS_XSD "decimal");
-  static const SerdStringView xsd_integer = SERD_STRING(NS_XSD "integer");
+  const SerdStringView rdf_first   = serd_string(NS_RDF "first");
+  const SerdStringView rdf_nil     = serd_string(NS_RDF "nil");
+  const SerdStringView rdf_rest    = serd_string(NS_RDF "rest");
+  const SerdStringView rdf_type    = serd_string(NS_RDF "type");
+  const SerdStringView xsd_boolean = serd_string(NS_XSD "boolean");
+  const SerdStringView xsd_decimal = serd_string(NS_XSD "decimal");
+  const SerdStringView xsd_integer = serd_string(NS_XSD "integer");
 
   world->allocator = actual;
   world->nodes     = nodes;
@@ -112,7 +112,7 @@ serd_world_new(SerdAllocator* const allocator)
   serd_node_construct_token(sizeof(world->blank),
                             &world->blank,
                             SERD_BLANK,
-                            SERD_STRING("b00000000000"));
+                            serd_string("b00000000000"));
 
   world->stderr_color = terminal_supports_color(stderr);
 

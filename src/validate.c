@@ -175,7 +175,7 @@ typedef struct {
 static NodeQuote
 format_node(const SerdValidator* const ctx, const SerdNode* const node)
 {
-  const SerdStringView empty     = SERD_EMPTY_STRING();
+  const SerdStringView empty     = serd_empty_string();
   NodeQuote            q         = {empty, empty, empty};
   SerdStringView       prefix    = empty;
   SerdStringView       suffix    = empty;
@@ -183,27 +183,27 @@ format_node(const SerdValidator* const ctx, const SerdNode* const node)
 
   switch (serd_node_type(node)) {
   case SERD_LITERAL:
-    q.prefix = SERD_STRING("\"");
+    q.prefix = serd_string("\"");
     q.string = node_view;
-    q.suffix = SERD_STRING("\"");
+    q.suffix = serd_string("\"");
     break;
   case SERD_URI:
     if (!serd_env_qualify(ctx->env, node_view, &prefix, &suffix)) {
       q.prefix = prefix;
-      q.string = SERD_STRING(":");
+      q.string = serd_string(":");
       q.suffix = suffix;
     } else {
-      q.prefix = SERD_STRING("<");
+      q.prefix = serd_string("<");
       q.string = node_view;
-      q.suffix = SERD_STRING(">");
+      q.suffix = serd_string(">");
     }
     break;
   case SERD_BLANK:
-    q.prefix = SERD_STRING("_:");
+    q.prefix = serd_string("_:");
     q.string = node_view;
     break;
   case SERD_VARIABLE:
-    q.prefix = SERD_STRING("?");
+    q.prefix = serd_string("?");
     q.string = node_view;
     break;
   }
@@ -1765,7 +1765,7 @@ serd_validator_new(SerdWorld* const world)
 
 #define URI(prefix, suffix)           \
   validator->uris.prefix##_##suffix = \
-    serd_nodes_uri(nodes, SERD_STRING(NS_##prefix #suffix))
+    serd_nodes_uri(nodes, serd_string(NS_##prefix #suffix))
 
   URI(owl, Class);
   URI(owl, DatatypeProperty);

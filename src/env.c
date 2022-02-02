@@ -195,7 +195,7 @@ serd_env_set_base_path(SerdEnv* const env, const SerdStringView path)
   assert(env);
 
   if (!path.buf || !path.len) {
-    return serd_env_set_base_uri(env, SERD_EMPTY_STRING());
+    return serd_env_set_base_uri(env, serd_empty_string());
   }
 
   char* const real_path = serd_canonical_path(NULL, path.buf);
@@ -214,12 +214,12 @@ serd_env_set_base_path(SerdEnv* const env, const SerdStringView path)
     base_path[real_path_len] = path_last;
 
     base_node =
-      serd_new_file_uri(NULL, SERD_STRING(base_path), SERD_EMPTY_STRING());
+      serd_new_file_uri(NULL, serd_string(base_path), serd_empty_string());
 
     serd_wfree(env->world, base_path);
   } else {
     base_node =
-      serd_new_file_uri(NULL, SERD_STRING(real_path), SERD_EMPTY_STRING());
+      serd_new_file_uri(NULL, serd_string(real_path), serd_empty_string());
   }
 
   serd_env_set_base_uri(env, serd_node_string_view(base_node));
@@ -377,8 +377,8 @@ serd_env_expand_curie(const SerdEnv* const env, const SerdStringView curie)
     return NULL;
   }
 
-  SerdStringView prefix = SERD_EMPTY_STRING();
-  SerdStringView suffix = SERD_EMPTY_STRING();
+  SerdStringView prefix = serd_empty_string();
+  SerdStringView suffix = serd_empty_string();
   SerdStatus     st = serd_env_expand_in_place(env, curie, &prefix, &suffix);
   if (st || !prefix.buf || !suffix.buf) {
     return NULL;
