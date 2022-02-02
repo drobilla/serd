@@ -635,7 +635,7 @@ make_uri(URI uri)
 inline Node
 make_file_uri(StringView path)
 {
-  return Node{serd_new_file_uri(nullptr, path, SERD_EMPTY_STRING())};
+  return Node{serd_new_file_uri(nullptr, path, serd_empty_string())};
 }
 
 /// Create a new file URI node from a filesystem path on some host
@@ -1582,7 +1582,7 @@ class Env : public EnvWrapper<SerdEnv>
 {
 public:
   explicit Env(World& world)
-    : EnvWrapper{serd_env_new(world.cobj(), SERD_EMPTY_STRING())}
+    : EnvWrapper{serd_env_new(world.cobj(), serd_empty_string())}
   {}
 
   explicit Env(World& world, const NodeView& base)

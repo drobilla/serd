@@ -37,7 +37,7 @@ typedef struct {
 static inline NodeSpec
 token_spec(const SerdNodeType type, const SerdStringView string)
 {
-  NodeSpec spec = {type, string, 0u, SERD_EMPTY_STRING()};
+  NodeSpec spec = {type, string, 0u, serd_empty_string()};
   return spec;
 }
 

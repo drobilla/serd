@@ -408,9 +408,9 @@ serd_node_construct_value(const size_t    buf_size,
 
   return serd_node_construct_literal(buf_size,
                                      buf,
-                                     SERD_SUBSTRING(temp, r.count),
+                                     serd_substring(temp, r.count),
                                      SERD_HAS_DATATYPE,
-                                     SERD_OPTIONAL_STRING(datatype_uri));
+                                     serd_string(datatype_uri));
 }
 
 SerdWriteResult
@@ -425,9 +425,9 @@ serd_node_construct_decimal(const size_t buf_size,
 
   return serd_node_construct_literal(buf_size,
                                      buf,
-                                     SERD_SUBSTRING(temp, r.count),
+                                     serd_substring(temp, r.count),
                                      SERD_HAS_DATATYPE,
-                                     SERD_STRING(EXESS_XSD_URI "decimal"));
+                                     serd_string(EXESS_XSD_URI "decimal"));
 }
 
 SerdWriteResult
@@ -441,9 +441,9 @@ serd_node_construct_integer(const size_t  buf_size,
 
   return serd_node_construct_literal(buf_size,
                                      buf,
-                                     SERD_SUBSTRING(temp, r.count),
+                                     serd_substring(temp, r.count),
                                      SERD_HAS_DATATYPE,
-                                     SERD_STRING(NS_XSD "integer"));
+                                     serd_string(NS_XSD "integer"));
 }
 
 static SerdWriteResult
@@ -506,7 +506,7 @@ serd_node_construct_hex(const size_t      buf_size,
                                     buf,
                                     value_size,
                                     value,
-                                    SERD_STRING(NS_XSD "hexBinary"),
+                                    serd_string(NS_XSD "hexBinary"),
                                     exess_write_hex);
 }
 
@@ -520,7 +520,7 @@ serd_node_construct_base64(const size_t      buf_size,
                                     buf,
                                     value_size,
                                     value,
-                                    SERD_STRING(NS_XSD "base64Binary"),
+                                    serd_string(NS_XSD "base64Binary"),
                                     exess_write_base64);
 }
 
@@ -593,13 +593,13 @@ serd_new_token(SerdAllocator* const allocator,
                const SerdNodeType   type,
                const SerdStringView string)
 {
-  return serd_node_new(allocator, type, string, 0u, SERD_EMPTY_STRING());
+  return serd_node_new(allocator, type, string, 0u, serd_empty_string());
 }
 
 SerdNode*
 serd_new_string(SerdAllocator* const allocator, const SerdStringView str)
 {
-  return serd_node_new(allocator, SERD_LITERAL, str, 0u, SERD_EMPTY_STRING());
+  return serd_node_new(allocator, SERD_LITERAL, str, 0u, serd_empty_string());
 }
 
 SerdNode*

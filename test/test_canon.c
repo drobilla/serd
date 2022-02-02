@@ -61,11 +61,11 @@ test_new_failed_alloc(void)
 static void
 test_write_failed_alloc(void)
 {
-  static const SerdStringView s_string = SERD_STRING("http://example.org/s");
-  static const SerdStringView p_string = SERD_STRING("http://example.org/p");
-  static const SerdStringView o_string = SERD_STRING("012.340");
-  static const SerdStringView xsd_float =
-    SERD_STRING("http://www.w3.org/2001/XMLSchema#float");
+  const SerdStringView s_string = serd_string("http://example.org/s");
+  const SerdStringView p_string = serd_string("http://example.org/p");
+  const SerdStringView o_string = serd_string("012.340");
+  const SerdStringView xsd_float =
+    serd_string("http://www.w3.org/2001/XMLSchema#float");
 
   SerdFailingAllocator allocator = serd_failing_allocator();
 

@@ -105,7 +105,7 @@ serd_node_from_syntax(SerdAllocator* const allocator,
     return NULL;
   }
 
-  SerdEnv* const temp_env = serd_env_new(temp_world, SERD_EMPTY_STRING());
+  SerdEnv* const temp_env = serd_env_new(temp_world, serd_empty_string());
   if (!temp_env) {
     serd_world_free(temp_world);
     return NULL;
@@ -167,7 +167,7 @@ serd_node_to_syntax(SerdAllocator* const  allocator,
     return NULL;
   }
 
-  SerdEnv* const temp_env = serd_env_new(temp_world, SERD_EMPTY_STRING());
+  SerdEnv* const temp_env = serd_env_new(temp_world, serd_empty_string());
   if (!temp_env) {
     serd_world_free(temp_world);
     return NULL;

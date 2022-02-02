@@ -134,7 +134,7 @@ serd_vxlogf(const SerdWorld* const    world,
                                level,
                                n_fields,
                                fields,
-                               SERD_SUBSTRING(message, (size_t)r));
+                               serd_substring(message, (size_t)r));
   }
 
   // Print input file and position prefix if available

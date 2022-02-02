@@ -81,7 +81,7 @@ parse_pattern(SerdWorld* const       world,
               const bool             inclusive)
 {
   SerdAllocator* const allocator = serd_world_allocator(world);
-  SerdEnv* const       env       = serd_env_new(world, SERD_EMPTY_STRING());
+  SerdEnv* const       env       = serd_env_new(world, serd_empty_string());
   PatternEventContext  ctx       = {allocator, {NULL, NULL, NULL, NULL}};
 
   SerdSink*   in_sink = serd_sink_new(world, &ctx, on_pattern_event, NULL);
@@ -89,7 +89,7 @@ parse_pattern(SerdWorld* const       world,
     world, SERD_NQUADS, SERD_READ_VARIABLES, env, in_sink, 4096);
 
   const SerdNode* pattern_name =
-    serd_nodes_string(serd_world_nodes(world), SERD_STRING("pattern"));
+    serd_nodes_string(serd_world_nodes(world), serd_string("pattern"));
 
   SerdStatus st = serd_reader_start(reader, in, pattern_name, 1);
   if (!st) {

@@ -26,10 +26,10 @@
 static void
 test_new_failed_alloc(void)
 {
-  static const SerdStringView s_string = SERD_STRING("http://example.org/s");
-  static const SerdStringView p_string = SERD_STRING("http://example.org/p");
-  static const SerdStringView o_string = SERD_STRING("http://example.org/o");
-  static const SerdStringView g_string = SERD_STRING("http://example.org/g");
+  const SerdStringView s_string = serd_string("http://example.org/s");
+  const SerdStringView p_string = serd_string("http://example.org/p");
+  const SerdStringView o_string = serd_string("http://example.org/o");
+  const SerdStringView g_string = serd_string("http://example.org/g");
 
   SerdFailingAllocator allocator = serd_failing_allocator();
 

@@ -193,7 +193,7 @@ serd_parse_input_argument(OptionIter* const        iter,
 
   if (!(st = serd_get_argument(iter, &argument))) {
     if ((st = serd_set_input_option(
-           SERD_STRING(argument), &options->syntax, &options->flags))) {
+           serd_string(argument), &options->syntax, &options->flags))) {
       fprintf(stderr, "%s: unknown option \"%s\"\n", iter->argv[0], argument);
     } else if (!strcmp(argument, "empty") || options->syntax) {
       options->overridden = true;
@@ -250,7 +250,7 @@ serd_parse_output_argument(OptionIter* const        iter,
 
   if (!(st = serd_get_argument(iter, &argument))) {
     if ((st = serd_set_output_option(
-           SERD_STRING(argument), &options->syntax, &options->flags))) {
+           serd_string(argument), &options->syntax, &options->flags))) {
       fprintf(stderr, "%s: unknown option \"%s\"\n", iter->argv[0], argument);
     } else if (!strcmp(argument, "empty") || options->syntax) {
       options->overridden = true;
@@ -303,13 +303,14 @@ serd_create_env(SerdWorld* const  world,
   }
 
   if (base_string && serd_uri_string_has_scheme(base_string)) {
-    return serd_env_new(world, SERD_STRING(base_string));
+    return serd_env_new(world, serd_string(base_string));
   }
 
-  SerdEnv* const env = serd_env_new(world, SERD_EMPTY_STRING());
+  SerdEnv* const env = serd_env_new(world, serd_empty_string());
 
-  serd_env_set_base_path(
-    env, is_rebase ? SERD_STRING(out_filename) : SERD_STRING(base_string));
+  serd_env_set_base_path(env,
+                         is_rebase ? serd_string(out_filename)
+                                   : serd_optional_string(base_string));
 
   return env;
 }
@@ -397,7 +398,7 @@ serd_read_source(SerdWorld* const        world,
   SerdReader* const reader = serd_reader_new(
     world, syntax, opts.input.flags, env, sink, opts.stack_size);
 
-  SerdNode* const name_node = serd_new_string(NULL, SERD_STRING(name));
+  SerdNode* const name_node = serd_new_string(NULL, serd_string(name));
   SerdStatus st = serd_reader_start(reader, in, name_node, opts.block_size);
   serd_node_free(NULL, name_node);
   if (!st) {
@@ -422,7 +423,7 @@ serd_read_inputs(SerdWorld* const        world,
     // Use the filename as the base URI if possible if user didn't override it
     const char* const in_path = inputs[i];
     if (!opts.base_uri[0] && strcmp(in_path, "-")) {
-      serd_env_set_base_path(env, SERD_STRING(in_path));
+      serd_env_set_base_path(env, serd_string(in_path));
     }
 
     // Open the input stream
