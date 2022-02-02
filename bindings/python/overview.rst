@@ -141,10 +141,6 @@ Convenience Constructors
    An `xsd:double <https://www.w3.org/TR/xmlschema-2/#double>`_,
    like "1.2345E2".
 
-:func:`serd.float`
-   An `xsd:float <https://www.w3.org/TR/xmlschema-2/#float>`_,
-   like "1.2345E2".
-
 :func:`serd.integer`
    An `xsd:integer <https://www.w3.org/TR/xmlschema-2/#integer>`_,
    like "1234567".
