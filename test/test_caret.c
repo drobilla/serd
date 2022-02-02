@@ -30,7 +30,7 @@ test_caret(void)
   SerdAllocator* const allocator = serd_default_allocator();
 
   SerdNodes* const      nodes = serd_nodes_new(allocator);
-  const SerdNode* const node  = serd_nodes_string(nodes, SERD_STRING("node"));
+  const SerdNode* const node  = serd_nodes_string(nodes, serd_string("node"));
   SerdCaret* const      caret = serd_caret_new(allocator, node, 46, 2);
 
   assert(serd_caret_equals(caret, caret));
@@ -44,7 +44,7 @@ test_caret(void)
   assert(!serd_caret_copy(allocator, NULL));
 
   const SerdNode* const other_node =
-    serd_nodes_string(nodes, SERD_STRING("other"));
+    serd_nodes_string(nodes, serd_string("other"));
 
   SerdCaret* const other_file = serd_caret_new(allocator, other_node, 46, 2);
   SerdCaret* const other_line = serd_caret_new(allocator, node, 47, 2);
@@ -72,7 +72,7 @@ test_failed_alloc(void)
   char node_buf[32];
 
   assert(!serd_node_construct_token(
-            sizeof(node_buf), node_buf, SERD_LITERAL, SERD_STRING("node"))
+            sizeof(node_buf), node_buf, SERD_LITERAL, serd_string("node"))
             .status);
 
   const SerdNode*      node      = (const SerdNode*)node_buf;

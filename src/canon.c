@@ -117,7 +117,7 @@ build_tagged(SerdAllocator* const SERD_NONNULL  allocator,
   *out = serd_new_literal(allocator,
                           serd_node_string_view(node),
                           serd_node_flags(node),
-                          SERD_SUBSTRING(canonical_lang, lang_len));
+                          serd_substring(canonical_lang, lang_len));
 
   const ExessResult r = {EXESS_SUCCESS, node_len};
   return r;

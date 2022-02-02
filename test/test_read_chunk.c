@@ -104,7 +104,7 @@ main(void)
                                     "eg:s3 eg:p1 eg:o1 .\n"
                                     "eg:s4 eg:p1 [ eg:p3 eg:o1 ] .\n";
 
-  SerdEnv*    env    = serd_env_new(world, SERD_EMPTY_STRING());
+  SerdEnv*    env    = serd_env_new(world, serd_empty_string());
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0, env, sink, 4096);
   assert(reader);
 

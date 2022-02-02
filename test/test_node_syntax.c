@@ -31,7 +31,7 @@ test_failed_alloc(void)
   SerdFailingAllocator allocator = serd_failing_allocator();
 
   SerdNode* const node =
-    serd_new_token(&allocator.base, SERD_LITERAL, SERD_STRING("node"));
+    serd_new_token(&allocator.base, SERD_LITERAL, serd_string("node"));
 
   // Successfully convert a node to count the number of allocations
 
@@ -72,7 +72,7 @@ check(SerdWorld* const      world,
       const char* const     expected)
 {
   SerdEnv* const env =
-    serd_env_new(world, SERD_STRING("http://example.org/base/"));
+    serd_env_new(world, serd_string("http://example.org/base/"));
 
   char* const     str  = serd_node_to_syntax(NULL, node, syntax, env);
   SerdNode* const copy = serd_node_from_syntax(NULL, str, syntax, env);
@@ -90,45 +90,44 @@ test_common(SerdWorld* const world, const SerdSyntax syntax)
 {
   static const uint8_t data[] = {19u, 17u, 13u, 7u};
 
-  static const SerdStringView datatype =
-    SERD_STRING("http://example.org/Datatype");
+  const SerdStringView datatype = serd_string("http://example.org/Datatype");
 
   SerdNodes* const nodes = serd_nodes_new(NULL);
 
   assert(check(
-    world, syntax, serd_nodes_string(nodes, SERD_STRING("node")), "\"node\""));
+    world, syntax, serd_nodes_string(nodes, serd_string("node")), "\"node\""));
 
   assert(
     check(world,
           syntax,
           serd_nodes_literal(
-            nodes, SERD_STRING("hallo"), SERD_HAS_LANGUAGE, SERD_STRING("de")),
+            nodes, serd_string("hallo"), SERD_HAS_LANGUAGE, serd_string("de")),
           "\"hallo\"@de"));
 
   assert(check(
     world,
     syntax,
-    serd_nodes_literal(nodes, SERD_STRING("X"), SERD_HAS_DATATYPE, datatype),
+    serd_nodes_literal(nodes, serd_string("X"), SERD_HAS_DATATYPE, datatype),
     "\"X\"^^<http://example.org/Datatype>"));
 
   assert(check(world,
                syntax,
-               serd_nodes_token(nodes, SERD_BLANK, SERD_STRING("blank")),
+               serd_nodes_token(nodes, SERD_BLANK, serd_string("blank")),
                "_:blank"));
 
   assert(check(world,
                syntax,
-               serd_nodes_token(nodes, SERD_BLANK, SERD_STRING("b0")),
+               serd_nodes_token(nodes, SERD_BLANK, serd_string("b0")),
                "_:b0"));
 
   assert(check(world,
                syntax,
-               serd_nodes_token(nodes, SERD_BLANK, SERD_STRING("named1")),
+               serd_nodes_token(nodes, SERD_BLANK, serd_string("named1")),
                "_:named1"));
 
   assert(check(world,
                syntax,
-               serd_nodes_uri(nodes, SERD_STRING("http://example.org/")),
+               serd_nodes_uri(nodes, serd_string("http://example.org/")),
                "<http://example.org/>"));
 
   assert(check(world,
@@ -165,13 +164,13 @@ test_ntriples(void)
 
   {
     // No relative URIs in NTriples, so converting one fails without an env
-    const SerdNode* const rel = serd_nodes_uri(nodes, SERD_STRING("rel/uri"));
+    const SerdNode* const rel = serd_nodes_uri(nodes, serd_string("rel/uri"));
     assert(!serd_node_to_syntax(NULL, rel, SERD_NTRIPLES, NULL));
     assert(!serd_node_from_syntax(NULL, "<rel/uri>", SERD_NTRIPLES, NULL));
 
     // If a relative URI can be expanded then all's well
     SerdEnv* const env =
-      serd_env_new(world, SERD_STRING("http://example.org/base/"));
+      serd_env_new(world, serd_string("http://example.org/base/"));
     char* const str = serd_node_to_syntax(NULL, rel, SERD_NTRIPLES, env);
     assert(!strcmp(str, "<http://example.org/base/rel/uri>"));
 
@@ -218,7 +217,7 @@ test_turtle(void)
 
   check(world,
         SERD_TURTLE,
-        serd_nodes_uri(nodes, SERD_STRING("rel/uri")),
+        serd_nodes_uri(nodes, serd_string("rel/uri")),
         "<rel/uri>");
 
   assert(check(world, SERD_TURTLE, serd_nodes_decimal(nodes, 1.25), "1.25"));

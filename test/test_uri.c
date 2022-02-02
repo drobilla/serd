@@ -88,7 +88,7 @@ test_file_uri(const char* const hostname,
   SerdNodes* const nodes = serd_nodes_new(NULL);
 
   const SerdNode* node = serd_nodes_file_uri(
-    nodes, SERD_STRING(path), SERD_OPTIONAL_STRING(hostname));
+    nodes, serd_string(path), serd_optional_string(hostname));
 
   const char* node_str     = serd_node_string(node);
   char*       out_hostname = NULL;
@@ -135,7 +135,7 @@ test_uri_parsing(void)
 static void
 test_parse_uri(void)
 {
-  static const SerdStringView base = SERD_STRING("http://example.org/a/b/c/");
+  const SerdStringView base = serd_string("http://example.org/a/b/c/");
 
   const SerdURIView base_uri  = serd_parse_uri(base.buf);
   const SerdURIView empty_uri = serd_parse_uri("");
@@ -200,7 +200,7 @@ check_rel_uri(const char*     uri_string,
 
   const SerdNode* const rel =
     is_within ? serd_nodes_parsed_uri(nodes, serd_relative_uri(uri, base_uri))
-              : serd_nodes_uri(nodes, SERD_STRING(uri_string));
+              : serd_nodes_uri(nodes, serd_string(uri_string));
 
   const int ret = strcmp(serd_node_string(rel), expected);
   assert(!ret);
@@ -214,10 +214,10 @@ test_relative_uri(void)
   SerdNodes* const nodes = serd_nodes_new(NULL);
 
   const SerdNode* const root =
-    serd_nodes_uri(nodes, SERD_STRING("http://example.org/a/b/ignored"));
+    serd_nodes_uri(nodes, serd_string("http://example.org/a/b/ignored"));
 
   const SerdNode* const base =
-    serd_nodes_uri(nodes, SERD_STRING("http://example.org/a/b/c/"));
+    serd_nodes_uri(nodes, serd_string("http://example.org/a/b/c/"));
 
   check_rel_uri("http://example.org/a/b/c/foo", base, NULL, "foo");
   check_rel_uri("http://example.org/a/", base, NULL, "../../");
@@ -251,10 +251,8 @@ test_relative_uri(void)
 static void
 test_uri_resolution(void)
 {
-  static const SerdStringView base = SERD_STRING("http://example.org/a/b/c/");
-
-  static const SerdStringView base_foo =
-    SERD_STRING("http://example.org/a/b/c/foo");
+  const SerdStringView base     = serd_string("http://example.org/a/b/c/");
+  const SerdStringView base_foo = serd_string("http://example.org/a/b/c/foo");
 
   const SerdURIView base_uri     = serd_parse_uri(base.buf);
   const SerdURIView abs_foo_uri  = serd_parse_uri(base_foo.buf);

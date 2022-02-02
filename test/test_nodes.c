@@ -50,7 +50,7 @@ test_intern_failed_alloc(void)
 {
   SerdFailingAllocator allocator = serd_failing_allocator();
 
-  SerdNode* const node = serd_new_string(&allocator.base, SERD_STRING("node"));
+  SerdNode* const node = serd_new_string(&allocator.base, serd_string("node"));
 
   // Successfully intern a node to count the number of allocations
   SerdNodes*      nodes     = serd_nodes_new(&allocator.base);
@@ -84,7 +84,7 @@ test_intern(void)
   SerdAllocator* const allocator = serd_default_allocator();
 
   SerdNodes* nodes = serd_nodes_new(allocator);
-  SerdNode*  node  = serd_new_string(NULL, SERD_STRING("node"));
+  SerdNode*  node  = serd_new_string(NULL, serd_string("node"));
 
   assert(serd_nodes_size(nodes) == 0u);
   assert(!serd_nodes_intern(nodes, NULL));
@@ -105,7 +105,7 @@ test_intern(void)
 static void
 test_string(void)
 {
-  static const SerdStringView string = SERD_STRING("string");
+  const SerdStringView string = serd_string("string");
 
   SerdAllocator* const allocator = serd_default_allocator();
 
@@ -130,19 +130,19 @@ test_invalid_literal(void)
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
   assert(!serd_nodes_literal(nodes,
-                             SERD_STRING("double meta"),
+                             serd_string("double meta"),
                              SERD_HAS_LANGUAGE | SERD_HAS_DATATYPE,
-                             SERD_STRING("What am I?")));
+                             serd_string("What am I?")));
 
   assert(!serd_nodes_literal(nodes,
-                             SERD_STRING("empty language"),
+                             serd_string("empty language"),
                              SERD_HAS_LANGUAGE,
-                             SERD_EMPTY_STRING()));
+                             serd_empty_string()));
 
   assert(!serd_nodes_literal(nodes,
-                             SERD_STRING("empty datatype"),
+                             serd_string("empty datatype"),
                              SERD_HAS_DATATYPE,
-                             SERD_EMPTY_STRING()));
+                             serd_empty_string()));
 
   serd_nodes_free(nodes);
 }
@@ -150,8 +150,8 @@ test_invalid_literal(void)
 static void
 test_plain_literal(void)
 {
-  static const SerdStringView string   = SERD_STRING("string");
-  static const SerdStringView language = SERD_STRING("en");
+  const SerdStringView string   = serd_string("string");
+  const SerdStringView language = serd_string("en");
 
   SerdAllocator* const allocator = serd_default_allocator();
 
@@ -177,7 +177,7 @@ test_plain_literal(void)
   assert(alias == node);
 
   const SerdNode* const other =
-    serd_nodes_literal(nodes, string, SERD_HAS_LANGUAGE, SERD_STRING("de"));
+    serd_nodes_literal(nodes, string, SERD_HAS_LANGUAGE, serd_string("de"));
 
   assert(other != node);
 
@@ -195,8 +195,8 @@ test_plain_literal(void)
 static void
 test_typed_literal(void)
 {
-  static const SerdStringView string   = SERD_STRING("string");
-  static const SerdStringView datatype = SERD_STRING("http://example.org/Type");
+  const SerdStringView string   = serd_string("string");
+  const SerdStringView datatype = serd_string("http://example.org/Type");
 
   SerdAllocator* const allocator = serd_default_allocator();
 
@@ -363,7 +363,7 @@ test_base64(void)
 static void
 test_uri(void)
 {
-  static const SerdStringView string = SERD_STRING("http://example.org/");
+  const SerdStringView string = serd_string("http://example.org/");
 
   SerdAllocator* const allocator = serd_default_allocator();
 
@@ -383,7 +383,7 @@ test_uri(void)
 static void
 test_parsed_uri(void)
 {
-  static const SerdStringView string = SERD_STRING("http://example.org/");
+  const SerdStringView string = serd_string("http://example.org/");
 
   SerdAllocator* const allocator = serd_default_allocator();
 
@@ -413,7 +413,7 @@ test_parsed_uri(void)
 static void
 test_blank(void)
 {
-  static const SerdStringView string = SERD_STRING("b42");
+  const SerdStringView string = serd_string("b42");
 
   SerdAllocator* const allocator = serd_default_allocator();
 
@@ -436,8 +436,8 @@ test_deref(void)
   SerdAllocator* const allocator = serd_default_allocator();
 
   SerdNodes*      nodes    = serd_nodes_new(allocator);
-  const SerdNode* original = serd_nodes_string(nodes, SERD_STRING("node"));
-  const SerdNode* another  = serd_nodes_string(nodes, SERD_STRING("node"));
+  const SerdNode* original = serd_nodes_string(nodes, serd_string("node"));
+  const SerdNode* another  = serd_nodes_string(nodes, serd_string("node"));
 
   assert(original == another);
 
@@ -452,17 +452,17 @@ test_deref(void)
   /* Intern some other irrelevant node first to (hopefully) avoid the allocator
      just giving us back the same piece of memory. */
 
-  const SerdNode* other = serd_nodes_string(nodes, SERD_STRING("XXXX"));
+  const SerdNode* other = serd_nodes_string(nodes, serd_string("XXXX"));
   assert(!strcmp(serd_node_string(other), "XXXX"));
 
   // Intern a new equivalent node to the original and check that it's really new
-  const SerdNode* imposter = serd_nodes_string(nodes, SERD_STRING("node"));
+  const SerdNode* imposter = serd_nodes_string(nodes, serd_string("node"));
   assert(imposter != original);
   assert(serd_node_length(imposter) == 4);
   assert(!strcmp(serd_node_string(imposter), "node"));
 
   // Check that dereferencing some random unknown node doesn't crash
-  SerdNode* unmanaged = serd_new_string(NULL, SERD_STRING("unmanaged"));
+  SerdNode* unmanaged = serd_new_string(NULL, serd_string("unmanaged"));
   serd_nodes_deref(nodes, unmanaged);
   serd_node_free(NULL, unmanaged);
 
@@ -478,7 +478,7 @@ test_get(void)
   SerdAllocator* const allocator = serd_default_allocator();
 
   SerdNodes* nodes = serd_nodes_new(allocator);
-  SerdNode*  node  = serd_new_string(NULL, SERD_STRING("node"));
+  SerdNode*  node  = serd_new_string(NULL, serd_string("node"));
 
   assert(!serd_nodes_get(nodes, NULL));
   assert(!serd_nodes_get(nodes, node));

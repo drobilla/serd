@@ -692,8 +692,8 @@ read_named_object(SerdReader* const reader,
   st = read_PrefixedName(reader, node, true, ate_dot, reader->stack.size);
 
   // Check if this is actually a special boolean node
-  if (st == SERD_FAILURE && (node_has_string(node, SERD_STRING("true")) ||
-                             node_has_string(node, SERD_STRING("false")))) {
+  if (st == SERD_FAILURE && (node_has_string(node, serd_string("true")) ||
+                             node_has_string(node, serd_string("false")))) {
     node->flags = SERD_HAS_DATATYPE;
     node->type  = SERD_LITERAL;
     return push_node(reader, SERD_URI, XSD_BOOLEAN, XSD_BOOLEAN_LEN)
