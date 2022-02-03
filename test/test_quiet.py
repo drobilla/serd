@@ -15,7 +15,9 @@ parser.add_argument("input", help="invalid input file")
 
 args = parser.parse_args(sys.argv[1:])
 command = shlex.split(args.wrapper) + [args.tool, "-q", args.input]
-proc = subprocess.run(command, check=False, capture_output=True)
+proc = subprocess.run(
+    command, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+)
 
 assert proc.returncode != 0
 assert args.wrapper or len(proc.stderr) == 0

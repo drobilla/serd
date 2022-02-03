@@ -40,7 +40,8 @@ def check_pattern(syntax, pattern, result):
     with tempfile.TemporaryFile() as out:
         proc = subprocess.run(
             command,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             check=False,
             encoding="utf-8",
             input=DOCUMENTS[syntax],

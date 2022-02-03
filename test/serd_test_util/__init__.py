@@ -80,7 +80,9 @@ def load_rdf(command_prefix, filename):
     instances = {}
 
     cmd = command_prefix + [filename]
-    proc = subprocess.run(cmd, capture_output=True, check=True)
+    proc = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True
+    )
     for line in proc.stdout.splitlines():
         matches = re.match(
             r"<([^ ]*)> <([^ ]*)> <([^ ]*)> \.", line.decode("utf-8")

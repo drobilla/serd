@@ -48,7 +48,10 @@ def check(test_dir, command_prefix, out_dir, input_path, name, flags=None):
 
     command = command_prefix + options + ["-o", output_path, input_path]
 
-    proc = subprocess.run(command, capture_output=True, check=False)
+    proc = subprocess.run(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False
+    )
+
     if proc.returncode != 0:
         cmd_string = " ".join(shlex.quote(c) for c in command)
         serd_test_util.error("Unexpected failure: {}".format(cmd_string))
