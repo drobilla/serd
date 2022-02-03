@@ -252,7 +252,7 @@ py_dep = disabler()
 if not get_option('bindings_py').disabled()
   pymod = import('python')
   py = pymod.find_installation('python3')
-  py_dep = py.dependency(required: get_option('bindings_py'))
+  py_dep = py.dependency(required: get_option('bindings_py').enabled())
   if py_dep.found() and cython.found()
     subdir('bindings/python')
   endif
