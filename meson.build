@@ -148,7 +148,7 @@ if host_machine.system() != 'windows'
 endif
 
 # Programs used by the build
-cython = find_program('cython3', required: get_option('bindings_py'))
+cython = find_program('cython', required: get_option('bindings_py').enabled())
 doxygen = find_program('doxygen', required: get_option('docs'))
 mandoc = find_program('mandoc', required: false)
 sphinx_build = find_program(
