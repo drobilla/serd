@@ -55,6 +55,12 @@ if get_option('strict')
       '-Wno-unsuffixed-float-constants',
       '-Wno-unused-const-variable',
     ]
+    if host_machine.system() == 'windows'
+      c_warnings += [
+        '-Wno-format', # MinGW
+        '-Wno-suggest-attribute=format', # MinGW
+      ]
+    endif
   elif cc.get_id() == 'msvc'
     c_suppressions += [
       '/wd4061',  # enumerator in switch is not explicitly handled
