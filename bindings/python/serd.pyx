@@ -1256,7 +1256,7 @@ def decimal(
     return Node._manage(serd_new_decimal(NULL, d))
 
 
-def double(d: double) -> Node:
+def double(d: float) -> Node:
     return Node._manage(serd_new_value(NULL, _value(d)))
 
 
