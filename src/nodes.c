@@ -98,9 +98,9 @@ serd_nodes_entry_aligned_alloc(SerdAllocator* const allocator,
   SerdAllocator* const real = ((SerdNodesEntryAllocator*)allocator)->real;
 
   void* const ptr =
-    real->aligned_alloc(real, alignment, sizeof(NodesEntryHead) + size);
+    real->aligned_alloc(real, alignment, serd_node_align + size);
 
-  return ptr ? (((uint8_t*)ptr) + sizeof(NodesEntryHead)) : NULL;
+  return ptr ? (((uint8_t*)ptr) + serd_node_align) : NULL;
 }
 
 static void
@@ -109,7 +109,7 @@ serd_nodes_entry_aligned_free(SerdAllocator* const allocator, void* const ptr)
   SerdAllocator* const real = ((SerdNodesEntryAllocator*)allocator)->real;
 
   if (ptr) {
-    real->aligned_free(real, (((uint8_t*)ptr) - sizeof(NodesEntryHead)));
+    real->aligned_free(real, (((uint8_t*)ptr) - serd_node_align));
   }
 }
 
