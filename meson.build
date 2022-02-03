@@ -149,7 +149,7 @@ endif
 
 # Programs used by the build
 cython = find_program('cython', required: get_option('bindings_py').enabled())
-doxygen = find_program('doxygen', required: get_option('docs'))
+doxygen = find_program('doxygen', required: get_option('docs').enabled())
 mandoc = find_program('mandoc', required: false)
 sphinx_build = find_program(
   'sphinx-build',
