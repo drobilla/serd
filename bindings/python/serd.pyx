@@ -53,13 +53,13 @@ cdef extern from "serd.h":
     ctypedef struct SerdAllocator
 
     ctypedef struct SerdStringView:
-        const char* buf;
-        size_t      len;
+        const char* buf
+        size_t      len
 
     ctypedef struct SerdBuffer:
-        SerdAllocator* allocator;
-        void*          buf;
-        size_t         len;
+        SerdAllocator* allocator
+        void*          buf
+        size_t         len
 
     ctypedef struct SerdURIView:
         SerdStringView scheme
@@ -83,8 +83,8 @@ cdef extern from "serd.h":
         uint8_t  as_ubyte
 
     ctypedef struct SerdValue:
-        SerdValueType type;
-        SerdValueData data;
+        SerdValueType type
+        SerdValueData data
 
     ctypedef enum SerdReaderFlag : pass
     ctypedef uint32_t SerdReaderFlags
@@ -92,178 +92,178 @@ cdef extern from "serd.h":
     ctypedef enum SerdWriterFlag : pass
     ctypedef uint32_t SerdWriterFlags
 
-    void serd_free(SerdAllocator* allocator, void* ptr);
+    void serd_free(SerdAllocator* allocator, void* ptr)
 
     # String Utilities
 
-    const char* serd_strerror(SerdStatus status);
+    const char* serd_strerror(SerdStatus status)
 
     # Base64
 
-    size_t serd_base64_encoded_length(size_t size, bint wrap_lines);
-    size_t serd_base64_decoded_size(size_t len);
+    size_t serd_base64_encoded_length(size_t size, bint wrap_lines)
+    size_t serd_base64_decoded_size(size_t len)
 
     bint serd_base64_encode(char*       str,
                             const void* buf,
                             size_t      size,
-                            bint        wrap_lines);
+                            bint        wrap_lines)
 
     SerdStatus serd_base64_decode(void*       buf,
                                   size_t*     size,
                                   const char* str,
-                                  size_t      len);
+                                  size_t      len)
 
     # Buffer
 
     size_t serd_buffer_write(const void* buf,
                              size_t      size,
                              size_t      nmemb,
-                             void*       stream);
+                             void*       stream)
 
-    int serd_buffer_error(void* const stream);
-    int serd_buffer_close(void* const stream);
+    int serd_buffer_error(void* const stream)
+    int serd_buffer_close(void* const stream)
 
     # I/O Function Types
 
     ctypedef size_t (*SerdReadFunc)(void*  buf,
                                     size_t size,
                                     size_t nmemb,
-                                    void*  stream);
+                                    void*  stream)
 
     ctypedef size_t (*SerdWriteFunc)(const void* buf,
                                      size_t      size,
                                      size_t      nmemb,
-                                     void*       stream);
+                                     void*       stream)
 
-    ctypedef int (*SerdStreamErrorFunc)(void* stream);
+    ctypedef int (*SerdStreamErrorFunc)(void* stream)
 
-    ctypedef int (*SerdStreamCloseFunc)(void* stream);
+    ctypedef int (*SerdStreamCloseFunc)(void* stream)
 
     # Syntax Utilities
 
-    SerdSyntax serd_syntax_by_name(const char* name);
-    SerdSyntax serd_guess_syntax(const char* filename);
-    bint       serd_syntax_has_graphs(SerdSyntax syntax);
+    SerdSyntax serd_syntax_by_name(const char* name)
+    SerdSyntax serd_guess_syntax(const char* filename)
+    bint       serd_syntax_has_graphs(SerdSyntax syntax)
 
     # URI
 
-    char*      serd_parse_file_uri(const char* uri, char** hostname);
-    bint       serd_uri_string_has_scheme(const char* utf8);
-    SerdStatus serd_parse_uri(const char* utf8, SerdURIView* out);
+    char*      serd_parse_file_uri(const char* uri, char** hostname)
+    bint       serd_uri_string_has_scheme(const char* utf8)
+    SerdStatus serd_parse_uri(const char* utf8, SerdURIView* out)
 
-    SerdURIView serd_resolve_uri(SerdURIView r, SerdURIView base);
+    SerdURIView serd_resolve_uri(SerdURIView r, SerdURIView base)
 
-    size_t serd_write_uri(SerdURIView uri, SerdWriteFunc sink, void* stream);
+    size_t serd_write_uri(SerdURIView uri, SerdWriteFunc sink, void* stream)
 
     # Node
 
     SerdNode* serd_node_from_syntax(SerdAllocator* allocator,
                                     const char* str,
                                     SerdSyntax  syntax,
-                                    SerdEnv*    env);
+                                    SerdEnv*    env)
 
     char* serd_node_to_syntax(SerdAllocator* allocator,
                               const SerdNode* node,
                               SerdSyntax      syntax,
-                              const SerdEnv*  env);
+                              const SerdEnv*  env)
 
-    SerdNode* serd_new_token(SerdAllocator* allocator, SerdNodeType type, SerdStringView string);
-    SerdNode* serd_new_string(SerdAllocator* allocator, SerdStringView string);
-    SerdNode* serd_new_uri(SerdAllocator* allocator, SerdURIView uri);
-    SerdNode* serd_new_file_uri(SerdAllocator* allocator, SerdStringView path, SerdStringView hostname);
+    SerdNode* serd_new_token(SerdAllocator* allocator, SerdNodeType type, SerdStringView string)
+    SerdNode* serd_new_string(SerdAllocator* allocator, SerdStringView string)
+    SerdNode* serd_new_uri(SerdAllocator* allocator, SerdURIView uri)
+    SerdNode* serd_new_file_uri(SerdAllocator* allocator, SerdStringView path, SerdStringView hostname)
 
     SerdNode* serd_new_literal(SerdAllocator* allocator,
                                SerdStringView string,
                                SerdNodeFlags  flags,
-                               SerdStringView meta);
+                               SerdStringView meta)
 
-    SerdNode* serd_new_value(SerdAllocator* allocator, SerdValue value);
-    SerdNode* serd_new_decimal(SerdAllocator* allocator, double d);
-    SerdNode* serd_new_integer(SerdAllocator* allocator, int64_t i);
-    SerdNode* serd_new_base64(SerdAllocator* allocator, const void* buf, size_t size);
+    SerdNode* serd_new_value(SerdAllocator* allocator, SerdValue value)
+    SerdNode* serd_new_decimal(SerdAllocator* allocator, double d)
+    SerdNode* serd_new_integer(SerdAllocator* allocator, int64_t i)
+    SerdNode* serd_new_base64(SerdAllocator* allocator, const void* buf, size_t size)
 
-    bint            serd_get_boolean(const SerdNode* node);
-    double          serd_get_double(const SerdNode* node);
-    float           serd_get_float(const SerdNode* node);
-    int64_t         serd_get_integer(const SerdNode* node);
-    SerdNode*       serd_node_copy(SerdAllocator* allocator, const SerdNode* node);
-    void            serd_node_free(SerdAllocator* allocator, SerdNode* node);
-    SerdNodeType    serd_node_type(const SerdNode* node);
-    const char*     serd_node_string(const SerdNode* node);
-    size_t          serd_node_length(const SerdNode* node);
-    SerdStringView  serd_node_string_view(const SerdNode* node);
-    SerdURIView     serd_node_uri_view(const SerdNode* node);
-    const SerdNode* serd_node_datatype(const SerdNode* node);
-    const SerdNode* serd_node_language(const SerdNode* node);
-    bint            serd_node_equals(const SerdNode* a, const SerdNode* b);
-    int             serd_node_compare(const SerdNode* a, const SerdNode* b);
+    bint            serd_get_boolean(const SerdNode* node)
+    double          serd_get_double(const SerdNode* node)
+    float           serd_get_float(const SerdNode* node)
+    int64_t         serd_get_integer(const SerdNode* node)
+    SerdNode*       serd_node_copy(SerdAllocator* allocator, const SerdNode* node)
+    void            serd_node_free(SerdAllocator* allocator, SerdNode* node)
+    SerdNodeType    serd_node_type(const SerdNode* node)
+    const char*     serd_node_string(const SerdNode* node)
+    size_t          serd_node_length(const SerdNode* node)
+    SerdStringView  serd_node_string_view(const SerdNode* node)
+    SerdURIView     serd_node_uri_view(const SerdNode* node)
+    const SerdNode* serd_node_datatype(const SerdNode* node)
+    const SerdNode* serd_node_language(const SerdNode* node)
+    bint            serd_node_equals(const SerdNode* a, const SerdNode* b)
+    int             serd_node_compare(const SerdNode* a, const SerdNode* b)
 
     # Event
 
     ctypedef enum SerdEventType: pass
 
     ctypedef struct SerdBaseEvent:
-        SerdEventType   type;
-        const SerdNode* uri;
+        SerdEventType   type
+        const SerdNode* uri
 
     ctypedef struct SerdPrefixEvent:
-        SerdEventType   type;
-        const SerdNode* name;
-        const SerdNode* uri;
+        SerdEventType   type
+        const SerdNode* name
+        const SerdNode* uri
 
     ctypedef struct SerdStatementEvent:
-        SerdEventType        type;
-        SerdStatementFlags   flags;
-        const SerdStatement* statement;
+        SerdEventType        type
+        SerdStatementFlags   flags
+        const SerdStatement* statement
 
     ctypedef struct SerdEndEvent:
-        SerdEventType   type;
-        const SerdNode* node;
+        SerdEventType   type
+        const SerdNode* node
 
     ctypedef union SerdEvent:
-        SerdEventType      type;
-        SerdBaseEvent      base;
-        SerdPrefixEvent    prefix;
-        SerdStatementEvent statement;
-        SerdEndEvent       end;
+        SerdEventType      type
+        SerdBaseEvent      base
+        SerdPrefixEvent    prefix
+        SerdStatementEvent statement
+        SerdEndEvent       end
 
-    ctypedef SerdStatus (*SerdEventFunc)(void* handle, const SerdEvent* event);
+    ctypedef SerdStatus (*SerdEventFunc)(void* handle, const SerdEvent* event)
 
     # World
 
-    SerdWorld*      serd_world_new(SerdAllocator* allocator);
-    void            serd_world_free(SerdWorld* world);
-    SerdNodes*      serd_world_nodes(SerdWorld* world);
-    const SerdNode* serd_world_get_blank(SerdWorld* world);
+    SerdWorld*      serd_world_new(SerdAllocator* allocator)
+    void            serd_world_free(SerdWorld* world)
+    SerdNodes*      serd_world_nodes(SerdWorld* world)
+    const SerdNode* serd_world_get_blank(SerdWorld* world)
 
-    SerdAllocator* serd_world_allocator(const SerdWorld* world);
+    SerdAllocator* serd_world_allocator(const SerdWorld* world)
 
     # TODO: logging
 
     ctypedef enum SerdLogLevel: pass
 
     cdef struct SerdLogField:
-        const char* key;
-        const char* value;
+        const char* key
+        const char* value
 
     cdef struct SerdLogEntry:
-        const char*         domain;
-        const SerdLogField* fields;
-        const char*         fmt;
-        va_list*            args;
-        SerdLogLevel        level;
-        size_t              n_fields;
+        const char*         domain
+        const SerdLogField* fields
+        const char*         fmt
+        va_list*            args
+        SerdLogLevel        level
+        size_t              n_fields
 
-    ctypedef SerdStatus (*SerdLogFunc)(void* handle, const SerdLogEntry* entry);
+    ctypedef SerdStatus (*SerdLogFunc)(void* handle, const SerdLogEntry* entry)
 
-    # SerdStatus serd_quiet_error_func(void* handle, const SerdLogEntry* entry);
+    # SerdStatus serd_quiet_error_func(void* handle, const SerdLogEntry* entry)
 
     # const char* serd_log_entry_get_field(const SerdLogEntry* entry,
-    #                                      const char*         key);
+    #                                      const char*         key)
 
     void serd_world_set_log_func(SerdWorld*  world,
                                  SerdLogFunc log_func,
-                                 void*       handle);
+                                 void*       handle)
 
     # SerdStatus serd_world_vlogf(const SerdWorld*    world,
     #                             const char*         domain,
@@ -271,7 +271,7 @@ cdef extern from "serd.h":
     #                             size_t              n_fields,
     #                             const SerdLogField* fields,
     #                             const char*         fmt,
-    #                             va_list             args);
+    #                             va_list             args)
 
     SerdStatus serd_world_logf(const SerdWorld*    world,
                                const char*         domain,
@@ -279,29 +279,29 @@ cdef extern from "serd.h":
                                size_t              n_fields,
                                const SerdLogField* fields,
                                const char*         fmt,
-                               ...);
+                               ...)
 
     # Environment
 
-    SerdEnv*        serd_env_new(const SerdWorld* world, const SerdStringView base_uri);
-    SerdEnv*        serd_env_copy(SerdAllocator* allocator, const SerdEnv* env);
-    bint            serd_env_equals(const SerdEnv* a, const SerdEnv* b);
-    void            serd_env_free(SerdEnv* env);
+    SerdEnv*        serd_env_new(const SerdWorld* world, const SerdStringView base_uri)
+    SerdEnv*        serd_env_copy(SerdAllocator* allocator, const SerdEnv* env)
+    bint            serd_env_equals(const SerdEnv* a, const SerdEnv* b)
+    void            serd_env_free(SerdEnv* env)
     const SerdNode* serd_env_base_uri(SerdEnv* env)
-    SerdStatus      serd_env_set_base_uri(SerdEnv* env, SerdStringView uri);
+    SerdStatus      serd_env_set_base_uri(SerdEnv* env, SerdStringView uri)
 
     SerdStatus serd_env_set_prefix(SerdEnv*       env,
                                    SerdStringView name,
-                                   SerdStringView uri);
+                                   SerdStringView uri)
 
-    SerdNode* serd_env_expand_node(const SerdEnv* env, const SerdNode* node);
+    SerdNode* serd_env_expand_node(const SerdEnv* env, const SerdNode* node)
 
-    void serd_env_write_prefixes(const SerdEnv* env, const SerdSink* sink);
+    void serd_env_write_prefixes(const SerdEnv* env, const SerdSink* sink)
 
     # Inserter
 
     SerdSink* serd_inserter_new(SerdModel*      model,
-                                const SerdNode* default_graph);
+                                const SerdNode* default_graph)
 
     # Statement
 
@@ -310,116 +310,116 @@ cdef extern from "serd.h":
                                       const SerdNode*  p,
                                       const SerdNode*  o,
                                       const SerdNode*  g,
-                                      const SerdCaret* caret);
+                                      const SerdCaret* caret)
 
     SerdStatement* serd_statement_copy(SerdAllocator*       allocator,
-                                       const SerdStatement* statement);
+                                       const SerdStatement* statement)
 
     void serd_statement_free(SerdAllocator* allocator,
-                             SerdStatement* statement);
+                             SerdStatement* statement)
 
     const SerdNode* serd_statement_node(const SerdStatement* statement,
-                                            SerdField field);
+                                            SerdField field)
 
-    const SerdNode* serd_statement_subject(const SerdStatement* statement);
-    const SerdNode* serd_statement_predicate(const SerdStatement* statement);
-    const SerdNode* serd_statement_object(const SerdStatement* statement);
-    const SerdNode* serd_statement_graph(const SerdStatement* statement);
+    const SerdNode* serd_statement_subject(const SerdStatement* statement)
+    const SerdNode* serd_statement_predicate(const SerdStatement* statement)
+    const SerdNode* serd_statement_object(const SerdStatement* statement)
+    const SerdNode* serd_statement_graph(const SerdStatement* statement)
 
-    const SerdCaret* serd_statement_caret(const SerdStatement* statement);
+    const SerdCaret* serd_statement_caret(const SerdStatement* statement)
 
-    bint serd_statement_equals(const SerdStatement* a, const SerdStatement* b);
+    bint serd_statement_equals(const SerdStatement* a, const SerdStatement* b)
 
     bint serd_statement_matches(const SerdStatement* statement,
                                 const SerdNode*      subject,
                                 const SerdNode*      predicate,
                                 const SerdNode*      object,
-                                const SerdNode*      graph);
+                                const SerdNode*      graph)
 
     # Iter
 
     SerdCursor* serd_cursor_copy(SerdAllocator*    allocator,
-                                 const SerdCursor* cursor);
+                                 const SerdCursor* cursor)
 
-    const SerdStatement* serd_cursor_get(const SerdCursor* cursor);
+    const SerdStatement* serd_cursor_get(const SerdCursor* cursor)
 
-    SerdStatus serd_cursor_advance(SerdCursor* cursor);
-    bint serd_cursor_is_end(const SerdCursor* lhs);
-    bint serd_cursor_equals(const SerdCursor* lhs, const SerdCursor* rhs);
-    void serd_cursor_free(SerdCursor* cursor);
+    SerdStatus serd_cursor_advance(SerdCursor* cursor)
+    bint serd_cursor_is_end(const SerdCursor* lhs)
+    bint serd_cursor_equals(const SerdCursor* lhs, const SerdCursor* rhs)
+    void serd_cursor_free(SerdCursor* cursor)
 
     # Range
 
     SerdStatus serd_describe_range(const SerdCursor*      range,
                                    const SerdSink*        sink,
-                                   SerdDescribeFlags flags);
+                                   SerdDescribeFlags flags)
 
 
     # Sink
 
-    ctypedef void (*SerdFreeFunc)(void* ptr);
+    ctypedef void (*SerdFreeFunc)(void* ptr)
 
     SerdSink* serd_sink_new(const SerdWorld* world,
                             void*            handle,
                             SerdEventFunc    event_func,
-                            SerdFreeFunc     free_handle);
+                            SerdFreeFunc     free_handle)
 
-    void serd_sink_free(SerdSink* sink);
+    void serd_sink_free(SerdSink* sink)
 
     SerdStatus serd_sink_set_event_func(SerdSink*     sink,
-                                        SerdEventFunc event_func);
+                                        SerdEventFunc event_func)
 
     SerdStatus serd_sink_write_event(const SerdSink*  sink,
-                                     const SerdEvent* event);
+                                     const SerdEvent* event)
 
     SerdStatus serd_sink_write_base(const SerdSink* sink,
-                                    const SerdNode* uri);
+                                    const SerdNode* uri)
 
     SerdStatus serd_sink_write_prefix(const SerdSink* sink,
                                       const SerdNode* name,
-                                      const SerdNode* uri);
+                                      const SerdNode* uri)
 
     SerdStatus serd_sink_write_statement(const SerdSink*      sink,
                                          SerdStatementFlags   flags,
-                                         const SerdStatement* statement);
+                                         const SerdStatement* statement)
 
     SerdStatus serd_sink_write(const SerdSink*    sink,
                                SerdStatementFlags flags,
                                const SerdNode*    subject,
                                const SerdNode*    predicate,
                                const SerdNode*    object,
-                               const SerdNode*    graph);
+                               const SerdNode*    graph)
 
-    SerdStatus serd_sink_write_end(const SerdSink* sink, const SerdNode* node);
+    SerdStatus serd_sink_write_end(const SerdSink* sink, const SerdNode* node)
 
     # Stream Processing
 
-    SerdSink* serd_canon_new(const SerdSink* target);
+    SerdSink* serd_canon_new(const SerdSink* target)
 
     SerdSink* serd_filter_new(const SerdSink* target,
                               const SerdNode* subject,
                               const SerdNode* predicate,
                               const SerdNode* object,
-                              const SerdNode* graph);
+                              const SerdNode* graph)
 
     # Input Streams
 
     ctypedef struct SerdInputStream:
-        void*               stream;
-        SerdReadFunc        read;
-        SerdStreamErrorFunc error;
-        SerdStreamCloseFunc close;
+        void*               stream
+        SerdReadFunc        read
+        SerdStreamErrorFunc error
+        SerdStreamCloseFunc close
 
     SerdInputStream serd_open_input_stream(SerdReadFunc        read_func,
                                            SerdStreamErrorFunc error_func,
                                            SerdStreamCloseFunc close_func,
-                                           void*               stream);
+                                           void*               stream)
 
-    SerdInputStream serd_open_input_string(const char** position);
+    SerdInputStream serd_open_input_string(const char** position)
 
-    SerdInputStream serd_open_input_file(const char* path);
+    SerdInputStream serd_open_input_file(const char* path)
 
-    SerdStatus serd_close_input(SerdInputStream* input);
+    SerdStatus serd_close_input(SerdInputStream* input)
 
     # Reader
 
@@ -428,35 +428,35 @@ cdef extern from "serd.h":
                                 SerdReaderFlags flags,
                                 SerdEnv*        env,
                                 const SerdSink* sink,
-                                size_t          stack_size);
+                                size_t          stack_size)
 
     SerdStatus serd_reader_start(SerdReader*      reader,
                                  SerdInputStream* input,
                                  const SerdNode*  input_name,
-                                 size_t           block_size);
+                                 size_t           block_size)
 
-    SerdStatus serd_reader_read_chunk(SerdReader* reader);
-    SerdStatus serd_reader_read_document(SerdReader* reader);
-    SerdStatus serd_reader_finish(SerdReader* reader);
+    SerdStatus serd_reader_read_chunk(SerdReader* reader)
+    SerdStatus serd_reader_read_document(SerdReader* reader)
+    SerdStatus serd_reader_finish(SerdReader* reader)
 
-    void serd_reader_free(SerdReader* reader);
+    void serd_reader_free(SerdReader* reader)
 
     # Output Streams
 
     ctypedef struct SerdOutputStream:
-        void*               stream;
-        SerdWriteFunc       write;
-        SerdStreamCloseFunc close;
+        void*               stream
+        SerdWriteFunc       write
+        SerdStreamCloseFunc close
 
     SerdOutputStream serd_open_output_stream(SerdWriteFunc        write_func,
                                              SerdStreamCloseFunc  close_func,
-                                             void*                stream);
+                                             void*                stream)
 
-    SerdOutputStream serd_open_output_buffer(SerdBuffer* buffer);
+    SerdOutputStream serd_open_output_buffer(SerdBuffer* buffer)
 
-    SerdOutputStream serd_open_output_file(const char* path);
+    SerdOutputStream serd_open_output_file(const char* path)
 
-    SerdStatus serd_close_output(SerdOutputStream* output);
+    SerdStatus serd_close_output(SerdOutputStream* output)
 
     # Writer
 
@@ -465,91 +465,91 @@ cdef extern from "serd.h":
                                 SerdWriterFlags   flags,
                                 SerdEnv*          env,
                                 SerdOutputStream* output,
-                                size_t            block_size);
+                                size_t            block_size)
 
-    void            serd_writer_free(SerdWriter* writer);
-    const SerdSink* serd_writer_sink(SerdWriter* writer);
+    void            serd_writer_free(SerdWriter* writer)
+    const SerdSink* serd_writer_sink(SerdWriter* writer)
 
     SerdStatus serd_writer_set_base_uri(SerdWriter*     writer,
-                                        const SerdNode* uri);
+                                        const SerdNode* uri)
 
     SerdStatus serd_writer_set_root_uri(SerdWriter*     writer,
-                                        SerdStringView uri);
+                                        SerdStringView uri)
 
-    SerdStatus serd_writer_finish(SerdWriter* writer);
+    SerdStatus serd_writer_finish(SerdWriter* writer)
 
     # Model
 
     SerdModel* serd_model_new(SerdWorld*         world,
                               SerdStatementOrder default_order,
-                              SerdModelFlags     flags);
+                              SerdModelFlags     flags)
 
-    SerdModel*        serd_model_copy(SerdAllocator* allocator, const SerdModel* model);
-    bint              serd_model_equals(const SerdModel* a, const SerdModel* b);
-    void              serd_model_free(SerdModel* model);
-    SerdWorld*        serd_model_world(SerdModel* model);
-    SerdStatementOrder serd_model_default_order(const SerdModel* model);
-    SerdModelFlags    serd_model_flags(const SerdModel* model);
-    size_t            serd_model_size(const SerdModel* model);
-    bint              serd_model_empty(const SerdModel* model);
-    SerdCursor*       serd_model_begin(const SerdModel* model);
-    const SerdCursor* serd_model_end(const SerdModel* model);
+    SerdModel*        serd_model_copy(SerdAllocator* allocator, const SerdModel* model)
+    bint              serd_model_equals(const SerdModel* a, const SerdModel* b)
+    void              serd_model_free(SerdModel* model)
+    SerdWorld*        serd_model_world(SerdModel* model)
+    SerdStatementOrder serd_model_default_order(const SerdModel* model)
+    SerdModelFlags    serd_model_flags(const SerdModel* model)
+    size_t            serd_model_size(const SerdModel* model)
+    bint              serd_model_empty(const SerdModel* model)
+    SerdCursor*       serd_model_begin(const SerdModel* model)
+    const SerdCursor* serd_model_end(const SerdModel* model)
     SerdCursor*       serd_model_begin_ordered(const SerdModel* model,
-                                               SerdStatementOrder order);
+                                               SerdStatementOrder order)
 
-    SerdStatus serd_model_add_index(SerdModel* model, SerdStatementOrder order);
+    SerdStatus serd_model_add_index(SerdModel* model, SerdStatementOrder order)
 
-    SerdStatus serd_model_drop_index(SerdModel* model, SerdStatementOrder order);
+    SerdStatus serd_model_drop_index(SerdModel* model, SerdStatementOrder order)
 
     SerdCursor* serd_model_ordered(const SerdModel*         model,
-                                   const SerdStatementOrder order);
+                                   const SerdStatementOrder order)
 
     SerdCursor* serd_model_find(const SerdModel* model,
                                 const SerdNode*  s,
                                 const SerdNode*  p,
                                 const SerdNode*  o,
-                                const SerdNode*  g);
+                                const SerdNode*  g)
 
     const SerdNode* serd_model_get(const SerdModel* model,
                                    const SerdNode*  s,
                                    const SerdNode*  p,
                                    const SerdNode*  o,
-                                   const SerdNode*  g);
+                                   const SerdNode*  g)
 
     const SerdStatement* serd_model_get_statement(const SerdModel* model,
                                                   const SerdNode*  s,
                                                   const SerdNode*  p,
                                                   const SerdNode*  o,
-                                                  const SerdNode*  g);
+                                                  const SerdNode*  g)
 
     bint serd_model_ask(const SerdModel* model,
                         const SerdNode*  s,
                         const SerdNode*  p,
                         const SerdNode*  o,
-                        const SerdNode*  g);
+                        const SerdNode*  g)
 
     size_t serd_model_count(const SerdModel* model,
                             const SerdNode*  s,
                             const SerdNode*  p,
                             const SerdNode*  o,
-                            const SerdNode*  g);
+                            const SerdNode*  g)
 
     SerdStatus serd_model_add(SerdModel*      model,
                               const SerdNode* s,
                               const SerdNode* p,
                               const SerdNode* o,
-                              const SerdNode* g);
+                              const SerdNode* g)
 
     SerdStatus serd_model_insert(SerdModel*           model,
-                                 const SerdStatement* statement);
+                                 const SerdStatement* statement)
 
-    SerdStatus serd_model_insert_statements(SerdModel* model, SerdCursor* range);
+    SerdStatus serd_model_insert_statements(SerdModel* model, SerdCursor* range)
 
-    SerdStatus serd_model_insert_statements(SerdModel* model, SerdCursor* cursor);
-    SerdStatus serd_model_erase(SerdModel* model, SerdCursor* cursor);
-    SerdStatus serd_model_erase_statements(SerdModel* model, SerdCursor* cursor);
-    SerdStatus serd_model_clear(SerdModel* model);
-    SerdStatus serd_validate(const SerdModel* model);
+    SerdStatus serd_model_insert_statements(SerdModel* model, SerdCursor* cursor)
+    SerdStatus serd_model_erase(SerdModel* model, SerdCursor* cursor)
+    SerdStatus serd_model_erase_statements(SerdModel* model, SerdCursor* cursor)
+    SerdStatus serd_model_clear(SerdModel* model)
+    SerdStatus serd_validate(const SerdModel* model)
 
 
     # Caret
@@ -557,18 +557,18 @@ cdef extern from "serd.h":
     SerdCaret* serd_caret_new(SerdAllocator*  allocator,
                               const SerdNode* name,
                               unsigned        line,
-                              unsigned        col);
+                              unsigned        col)
 
     SerdCaret* serd_caret_copy(SerdAllocator* allocator,
-                               const SerdCaret* caret);
+                               const SerdCaret* caret)
 
-    void serd_caret_free(SerdAllocator* allocator, SerdCaret* caret);
+    void serd_caret_free(SerdAllocator* allocator, SerdCaret* caret)
 
-    bint serd_caret_equals(const SerdCaret* lhs, const SerdCaret* rhs);
+    bint serd_caret_equals(const SerdCaret* lhs, const SerdCaret* rhs)
 
-    const SerdNode* serd_caret_name(const SerdCaret* caret);
-    unsigned        serd_caret_line(const SerdCaret* caret);
-    unsigned        serd_caret_column(const SerdCaret* caret);
+    const SerdNode* serd_caret_name(const SerdCaret* caret)
+    unsigned        serd_caret_line(const SerdCaret* caret)
+    unsigned        serd_caret_column(const SerdCaret* caret)
 
 
 cdef SerdValue _value(v):
@@ -913,7 +913,8 @@ def syntax_has_graphs(syntax: Syntax) -> bool:
 # World
 
 
-@cython.no_gc
+# FIXME
+# @cython.no_gc
 cdef class World:
     """Global library state."""
 
@@ -1086,7 +1087,7 @@ cdef class Node:
                                              <SerdNodeFlags>2, # SERD_HAS_DATATYPE
                                              _string_view("http://www.w3.org/2001/XMLSchema#integer"))
             else:
-                self._ptr = serd_new_integer(NULL, v);
+                self._ptr = serd_new_integer(NULL, v)
         else:
             self._ptr = serd_new_value(NULL, _value(v))
 
@@ -2229,7 +2230,7 @@ cdef class Caret:
         cdef SerdCaret* copy = serd_caret_new(NULL,
                                               name_node._ptr,
                                               serd_caret_line(ptr),
-                                              serd_caret_column(ptr));
+                                              serd_caret_column(ptr))
 
         cdef Caret wrapper = Caret.__new__(Caret)
         wrapper._ptr = copy
