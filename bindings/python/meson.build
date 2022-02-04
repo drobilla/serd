@@ -18,10 +18,18 @@ configure_file(copy: true, input: files('../../include/serd/serd.h'), output: 's
 
 serd_pyx = configure_file(copy: true, input: files('serd.pyx'), output: 'serd.pyx')
 
+cython_args = ['-3', '--fast-fail', '-Wextra']
+if get_option('werror')
+  cython_args += ['-Werror']
+endif
+if get_option('buildtype') == 'debug'
+  cython_args += ['--gdb']
+endif
+
 # Generate extension module C source code with cython
 cython_serd_c = custom_target(
   'serd.c cython extension',
-  command: [cython, '-3', '--fast-fail', '-Wextra', '@INPUT0@', '-o', '@OUTPUT@'],
+  command: [cython] + cython_args + ['@INPUT0@', '-o', '@OUTPUT@'],
   input: serd_pyx,
   output: 'serd.c',
   install: true,
