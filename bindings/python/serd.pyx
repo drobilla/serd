@@ -1612,6 +1612,7 @@ cdef class Writer:
     """Streaming writer that emits text as it receives events."""
 
     cdef SerdWriter* _ptr
+    cdef World _world
 
     def __init__(self,
                  world: World,
@@ -1620,6 +1621,7 @@ cdef class Writer:
                  env: Env,
                  output_stream: OutputStream,
                  block_size: int = 1):
+        self._world = world
         self._ptr = serd_writer_new(
             world._ptr,
             syntax,
@@ -1863,7 +1865,7 @@ cdef class Model:
         matches were found.
         """
 
-        return Cursor._wrap(
+        return Cursor._manage(
             serd_model_find(
                 self._ptr,
                 _unwrap_node(subject),
