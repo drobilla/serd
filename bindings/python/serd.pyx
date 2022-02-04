@@ -919,7 +919,6 @@ def syntax_has_graphs(syntax: Syntax) -> bool:
 
 
 # FIXME
-# @cython.no_gc
 cdef class World:
     """Global library state."""
 
@@ -1500,6 +1499,7 @@ cdef class InputStream:
 
     def __dealloc__(self):
         serd_close_input(&self._stream)
+        self._stream.stream = NULL
 
 
 cdef class StringInput(InputStream):
@@ -1587,28 +1587,40 @@ cdef class OutputStream:
 
     cdef SerdOutputStream _stream
 
-    def close(self):
-        serd_close_output(&self._stream)
-
     def __dealloc__(self):
         self.close()
+
+    def close(self):
+        serd_close_output(&self._stream)
+        self._stream.stream = NULL
 
 
 cdef class StringOutput(OutputStream):
     cdef SerdBuffer _buffer
+    cdef str        _output
 
     """An output stream that writes to a string."""
     def __init__(self):
         super().__init__()
 
         self._stream = serd_open_output_buffer(&self._buffer)
+        self._output = None
+
+    def __cinit__(self):
+        self._buffer.allocator = NULL
+        self._buffer.buf = NULL
+        self._buffer.len = 0
 
     def close(self):
-        super().close()
+        if self._output is None:
+            super().close()
+            self._output = _fromcstr(<const char*>self._buffer.buf)
+            serd_free(self._buffer.allocator, self._buffer.buf)
+            self._buffer.buf = NULL
+            self._buffer.len = 0
 
     def output(self) -> str:
-        return _fromcstr(<const char*>self._buffer.buf)
-
+        return self._output
 
 
 cdef class FileOutput(OutputStream):
