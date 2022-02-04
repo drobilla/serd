@@ -42,7 +42,7 @@ x64_dbg:
   <<: *build_definition
   image: lv2plugin/debian-x64
   script:
-    - meson setup build -Dc_std=c11 -Dbuildtype=debug -Ddocs=enabled -Dstrict=true -Dwerror=true -Db_coverage=true
+    - meson setup build -Dc_std=c11 -Dbuildtype=debug -Ddocs=enabled -Dstrict=true -Dwerror=true -Db_coverage=true -Dbindings_py=enabled
     - ninja -C build test
     - ninja -C build coverage-html
     - mkdir -p build/doc/
@@ -60,7 +60,7 @@ x64_rel:
   <<: *build_definition
   image: lv2plugin/debian-x64
   script:
-    - meson setup build -Dc_std=c11 -Dbuildtype=release -Ddocs=disabled -Dstrict=true -Dwerror=true
+    - meson setup build -Dc_std=c11 -Dbuildtype=release -Ddocs=disabled -Dstrict=true -Dwerror=true -Dbindings_py=enabled
     - ninja -C build test
 
 

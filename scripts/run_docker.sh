@@ -30,13 +30,13 @@ docker run -t --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-arm64 ninja -C buil
 
 # x64_dbg
 sudo rm -r build
-docker run -t --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-x64 meson setup build -Dbuildtype=debug -Ddocs=enabled -Dstrict=true -Dwerror=true -Db_coverage=true
+docker run -t --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-x64 meson setup build -Dbuildtype=debug -Ddocs=enabled -Dstrict=true -Dwerror=true -Db_coverage=true -Dbindings_py=enabled
 docker run -t --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-x64 ninja -C build test
 docker run -t --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-x64 ninja -C build coverage-html
 
 # x64_rel
 sudo rm -r build
-docker run -t --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-x64 meson setup build -Dbuildtype=release -Ddocs=enabled -Dstrict=true -Dwerror=true
+docker run -t --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-x64 meson setup build -Dbuildtype=release -Ddocs=enabled -Dstrict=true -Dwerror=true -Dbindings_py=enabled
 docker run -t --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-x64 ninja -C build test
 
 # x64_sanitize
