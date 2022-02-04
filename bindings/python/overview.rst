@@ -324,7 +324,7 @@ for creating statements:
 >>> model.insert((eg.s, eg.p, eg.o2))
 >>> model.insert((eg.t, eg.p, eg.o3))
 
-.. testsetup:: model_manual
+.. testsetup::
 
    import serd
    eg = serd.Namespace("http://example.org/")
@@ -336,20 +336,24 @@ for creating statements:
 
 Iterating over the model yields every statement:
 
->>> for s in model: print(s)
-<http://example.org/s> <http://example.org/p> <http://example.org/o1>
-<http://example.org/s> <http://example.org/p> <http://example.org/o2>
-<http://example.org/t> <http://example.org/p> <http://example.org/o3>
+.. doctest::
+
+   >>> for s in model: print(s)
+   <http://example.org/s> <http://example.org/p> <http://example.org/o1>
+   <http://example.org/s> <http://example.org/p> <http://example.org/o2>
+   <http://example.org/t> <http://example.org/p> <http://example.org/o3>
 
 Familiar Pythonic collection operations work as you would expect:
 
->>> print(len(model))
-3
->>> print((eg.s, eg.p, eg.o4) in model)
-False
->>> model += (eg.s, eg.p, eg.o4)
->>> print((eg.s, eg.p, eg.o4) in model)
-True
+.. doctest::
+
+   >>> print(len(model))
+   3
+   >>> print((eg.s, eg.p, eg.o4) in model)
+   False
+   >>> model += (eg.s, eg.p, eg.o4)
+   >>> print((eg.s, eg.p, eg.o4) in model)
+   True
 
 Pattern Matching
 ----------------
@@ -357,26 +361,32 @@ Pattern Matching
 The :meth:`~serd.Model.ask` method can be used to check if a statement is in a
 model:
 
->>> print(model.ask(eg.s, eg.p, eg.o1))
-True
->>> print(model.ask(eg.s, eg.p, eg.s))
-False
+.. doctest::
+
+   >>> print(model.ask(eg.s, eg.p, eg.o1))
+   True
+   >>> print(model.ask(eg.s, eg.p, eg.s))
+   False
 
 This method is more powerful than the ``in`` statement because it also does
 pattern matching.  To check for a pattern, use `None` as a wildcard:
 
->>> print(model.ask(eg.s, None, None))
-True
->>> print(model.ask(eg.unknown, None, None))
-False
+.. doctest::
+
+   >>> print(model.ask(eg.s, None, None))
+   True
+   >>> print(model.ask(eg.unknown, None, None))
+   False
 
 The :meth:`~serd.Model.count` method works similarly, but instead returns the
 number of statements that match the pattern:
 
->>> print(model.count(eg.s, None, None))
-3
->>> print(model.count(eg.unknown, None, None))
-0
+.. doctest::
+
+   >>> print(model.count(eg.s, None, None))
+   3
+   >>> print(model.count(eg.unknown, None, None))
+   0
 
 Getting Values
 --------------
@@ -387,8 +397,10 @@ first search for a statement and then get the node from it.  The
 get a value, specify a triple pattern where exactly one field is ``None``.  If
 a statement matches, then the node that "fills" the wildcard will be returned:
 
->>> print(model.get(eg.t, eg.p, None))
-http://example.org/o3
+.. doctest::
+
+   >>> print(model.get(eg.t, eg.p, None))
+   http://example.org/o3
 
 If multiple statements match the pattern, then the matching node from an
 arbitrary statement is returned.  It is an error to specify more than one
@@ -397,27 +409,33 @@ wildcard, excluding the graph.
 Erasing Statements
 ------------------
 
->>> model2 = model.copy()
->>> for s in model2: print(s)
-<http://example.org/s> <http://example.org/p> <http://example.org/o1>
-<http://example.org/s> <http://example.org/p> <http://example.org/o2>
-<http://example.org/s> <http://example.org/p> <http://example.org/o4>
-<http://example.org/t> <http://example.org/p> <http://example.org/o3>
+.. doctest::
+
+   >>> model2 = model.copy()
+   >>> for s in model2: print(s)
+   <http://example.org/s> <http://example.org/p> <http://example.org/o1>
+   <http://example.org/s> <http://example.org/p> <http://example.org/o2>
+   <http://example.org/s> <http://example.org/p> <http://example.org/o4>
+   <http://example.org/t> <http://example.org/p> <http://example.org/o3>
 
 Individual statements can be erased by value, again with tuple syntax supported
 for convenience:
 
->>> model2.erase((eg.s, eg.p, eg.o1))
->>> for s in model2: print(s)
-<http://example.org/s> <http://example.org/p> <http://example.org/o2>
-<http://example.org/s> <http://example.org/p> <http://example.org/o4>
-<http://example.org/t> <http://example.org/p> <http://example.org/o3>
+.. doctest::
+
+   >>> model2.erase((eg.s, eg.p, eg.o1))
+   >>> for s in model2: print(s)
+   <http://example.org/s> <http://example.org/p> <http://example.org/o2>
+   <http://example.org/s> <http://example.org/p> <http://example.org/o4>
+   <http://example.org/t> <http://example.org/p> <http://example.org/o3>
 
 Many statements can be erased at once by erasing a range:
 
->>> model2.erase_statements(model2.find(eg.s, None, None))
->>> for s in model2: print(s)
-<http://example.org/t> <http://example.org/p> <http://example.org/o3>
+.. doctest::
+
+   >>> model2.erase_statements(model2.find(eg.s, None, None))
+   >>> for s in model2: print(s)
+   <http://example.org/t> <http://example.org/p> <http://example.org/o3>
 
 Saving Documents
 ----------------
@@ -433,12 +451,12 @@ A model can be saved to a file with the :meth:`~serd.World.dump` method:
    >>> world.dump(model, "out.ttl")
    >>> print(open("out.ttl", "r").read())
    <http://example.org/s>
-    <http://example.org/p> <http://example.org/o1> ,
-        <http://example.org/o2> ,
-        <http://example.org/o4> .
+     <http://example.org/p> <http://example.org/o1> ,
+       <http://example.org/o2> ,
+       <http://example.org/o4> .
    <BLANKLINE>
    <http://example.org/t>
-    <http://example.org/p> <http://example.org/o3> .
+   <http://example.org/p> <http://example.org/o3> .
    <BLANKLINE>
 
 Similarly, a model can be written as a string with the :meth:`serd.World.dumps`
@@ -459,9 +477,11 @@ the standard Python ``json`` module.
 
 A model can be loaded from a file with the :meth:`~serd.World.load` method:
 
->>> model3 = world.load("out.ttl")
->>> print(model3 == model)
-True
+.. doctest::
+
+   >>> model3 = world.load("out.ttl")
+   >>> print(model3 == model)
+   True
 
 By default, the syntax type is determined by the file extension,
 and statements are stored in (S, P, O) order,
@@ -471,10 +491,12 @@ See the method documentation for how to control things more precisely.
 Similarly, a model can be loaded from a string with the
 :meth:`~serd.World.loads` method:
 
->>> ttl = "<{}> <{}> <{}> .".format(eg.s, eg.p, eg.o)
->>> model4 = world.loads(ttl)
->>> for s in model4: print(s)
-<http://example.org/s> <http://example.org/p> <http://example.org/o>
+.. doctest::
+
+   >>> ttl = "<{}> <{}> <{}> .".format(eg.s, eg.p, eg.o)
+   >>> model4 = world.loads(ttl)
+   >>> for s in model4: print(s)
+   <http://example.org/s> <http://example.org/p> <http://example.org/o>
 
 File Caret
 ----------
@@ -484,12 +506,14 @@ When data is loaded from a file into a model with the flag
 which describes the file name, line, and column where the statement originated.
 The caret points to the start of the object node in the statement:
 
->>> model5 = world.load("out.ttl", model_flags=serd.ModelFlags.STORE_CARETS)
->>> for s in model5: print(s.caret())
-out.ttl:2:24
-out.ttl:3:2
-out.ttl:4:2
-out.ttl:7:24
+.. doctest::
+
+   >>> model5 = world.load("out.ttl", model_flags=serd.ModelFlags.STORE_CARETS)
+   >>> for s in model5: print(s.caret())
+   out.ttl:2:24
+   out.ttl:3:2
+   out.ttl:4:2
+   out.ttl:7:24
 
 Streaming Data
 ==============
@@ -549,7 +573,7 @@ For more advanced use cases that keep track of state, the sink can be a custom
    print(sink.events[0])
 
    # FIXME: caret
- 
+
 .. testoutput::
 
    serd.Event.statement(serd.Statement(serd.uri("http://example.org/s"), serd.uri("http://example.org/p"), serd.uri("http://example.org/o1"), serd.Caret(serd.string("input"), 2, 24)))
@@ -629,12 +653,12 @@ Writing Files
    :options: +NORMALIZE_WHITESPACE
 
    <http://example.org/newSubject>
-    <http://example.org/p> <http://example.org/o> .
+     <http://example.org/p> <http://example.org/o> .
 
    <http://example.org/s>
-    <http://example.org/p> <http://example.org/o1> ,
-        <http://example.org/o2> ,
-        <http://example.org/o4> .
+     <http://example.org/p> <http://example.org/o1> ,
+       <http://example.org/o2> ,
+       <http://example.org/o4> .
 
    <http://example.org/t>
-    <http://example.org/p> <http://example.org/o3> .
+     <http://example.org/p> <http://example.org/o3> .
