@@ -1284,15 +1284,6 @@ cdef class Env:
 
     cdef SerdEnv* _ptr
 
-    @staticmethod
-    cdef Env _manage(SerdEnv* ptr):
-        if ptr is NULL:
-            return None
-
-        cdef Env wrapper = Env.__new__(Node)
-        wrapper._ptr = ptr
-        return wrapper
-
     def __init__(self, world: World, arg=None):
         assert world is not None
         assert type(world) == World
