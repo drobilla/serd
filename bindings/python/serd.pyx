@@ -135,9 +135,9 @@ cdef extern from "serd.h":
                                      size_t      nmemb,
                                      void*       stream)
 
-    ctypedef int (*SerdStreamErrorFunc)(void* stream)
+    ctypedef int (*SerdErrorFunc)(void* stream)
 
-    ctypedef int (*SerdStreamCloseFunc)(void* stream)
+    ctypedef int (*SerdCloseFunc)(void* stream)
 
     # Syntax Utilities
 
@@ -405,15 +405,15 @@ cdef extern from "serd.h":
     # Input Streams
 
     ctypedef struct SerdInputStream:
-        void*               stream
-        SerdReadFunc        read
-        SerdStreamErrorFunc error
-        SerdStreamCloseFunc close
+        void*         stream
+        SerdReadFunc  read
+        SerdErrorFunc error
+        SerdCloseFunc close
 
-    SerdInputStream serd_open_input_stream(SerdReadFunc        read_func,
-                                           SerdStreamErrorFunc error_func,
-                                           SerdStreamCloseFunc close_func,
-                                           void*               stream)
+    SerdInputStream serd_open_input_stream(SerdReadFunc  read_func,
+                                           SerdErrorFunc error_func,
+                                           SerdCloseFunc close_func,
+                                           void*         stream)
 
     SerdInputStream serd_open_input_string(const char** position)
 
@@ -444,13 +444,14 @@ cdef extern from "serd.h":
     # Output Streams
 
     ctypedef struct SerdOutputStream:
-        void*               stream
-        SerdWriteFunc       write
-        SerdStreamCloseFunc close
+        void*         stream
+        SerdWriteFunc write
+        SerdErrorFunc error
+        SerdCloseFunc close
 
-    SerdOutputStream serd_open_output_stream(SerdWriteFunc        write_func,
-                                             SerdStreamCloseFunc  close_func,
-                                             void*                stream)
+    SerdOutputStream serd_open_output_stream(SerdWriteFunc write_func,
+                                             SerdCloseFunc close_func,
+                                             void*         stream)
 
     SerdOutputStream serd_open_output_buffer(SerdBuffer* buffer)
 
