@@ -1291,10 +1291,13 @@ cdef class Env:
     """Lexical environment for abbreviating and expanding URIs."""
 
     cdef SerdEnv* _ptr
+    cdef World _world
 
     def __init__(self, world: World, arg=None):
         assert world is not None
         assert type(world) == World
+
+        self._world = world;
 
         if arg is None:
             self._ptr = serd_env_new(world._ptr, _empty_string)
@@ -1503,7 +1506,7 @@ cdef class StringInput(InputStream):
     """A byte source for text input that reads from a string."""
 
     cdef const char* _position
-    cdef bytes _bytes
+    cdef bytes       _bytes
 
     def __init__(self, string: str):
         super().__init__()
