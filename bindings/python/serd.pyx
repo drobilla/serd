@@ -1778,9 +1778,12 @@ cdef class Model:
 
     def inserter(self, env: Env, default_graph: Node = None) -> Sink:
         """Return a sink that will insert into this model when written to."""
-        return Sink._manage(serd_inserter_new(
+        sink = Sink._manage(serd_inserter_new(
             self._ptr, _unwrap_node(default_graph)
         ))
+
+        sink._parent = self
+        return sink
 
     def insert(self, arg) -> None:
         """Insert a statement into this model."""
@@ -2426,6 +2429,7 @@ cdef class SinkView(_SinkBase):
 
 cdef class Sink(_SinkBase):
     cdef SerdSink* _ptr
+    cdef object    _parent
     cdef Env       _env
     cdef object    _func
 
@@ -2441,12 +2445,14 @@ cdef class Sink(_SinkBase):
 
     def __init__(self: Sink, world: World, func: callable = None):
         if func is not None:
+            self._parent = world
             self._env = Env(world)
             self._func = func
             self._ptr = serd_sink_new(world._ptr, <void*>self, Sink._c_on_event, NULL)
             self._cptr = self._ptr
             # TODO: get_env?
         else:
+            self._parent = world
             self._env = Env(world)
             self._func = None
             self._ptr = serd_sink_new(world._ptr, <void*>self, Sink._c_on_event, NULL)
