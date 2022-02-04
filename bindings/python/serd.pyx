@@ -599,6 +599,10 @@ cdef SerdValue _value(v):
 cdef SerdStringView _empty_string = SerdStringView("", 0)
 
 
+class _WrapSentinel:
+    pass
+
+
 class Status(enum.IntEnum):
     """Return status code."""
 
@@ -1041,7 +1045,7 @@ cdef class Node:
         if ptr is NULL:
             return None
 
-        cdef Node wrapper = Node.__new__(Node)
+        cdef Node wrapper = Node.__new__(Node, _WrapSentinel())
         wrapper._ptr = ptr
         return wrapper
 
@@ -1050,11 +1054,11 @@ cdef class Node:
         if ptr is NULL:
             return None
 
-        cdef SerdNode* copy    = serd_node_copy(NULL, ptr)
+        cdef SerdNode* copy = serd_node_copy(NULL, ptr)
         if not copy:
             return None
 
-        cdef Node wrapper = Node.__new__(Node)
+        cdef Node wrapper = Node.__new__(Node, _WrapSentinel())
         wrapper._ptr = copy
         return wrapper
 
@@ -1074,7 +1078,11 @@ cdef class Node:
                                                   Syntax.TURTLE,
                                                   cenv))
 
-    def __init__(self, v):
+    def __cinit__(self, v):
+        if isinstance(v, _WrapSentinel):
+            self._ptr = NULL
+            return # Call from _wrap or _manage via __new__
+
         if isinstance(v, str):
             value_view = _string_view(v)
             self._ptr = serd_new_string(NULL, value_view)
