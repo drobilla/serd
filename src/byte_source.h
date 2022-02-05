@@ -17,8 +17,6 @@
 #ifndef SERD_BYTE_SOURCE_H
 #define SERD_BYTE_SOURCE_H
 
-#include "caret.h"
-
 #include "serd/serd.h"
 
 #include <assert.h>
@@ -74,10 +72,10 @@ serd_byte_source_advance(SerdByteSource* source)
     break;
   case '\n':
     ++source->caret.line;
-    source->caret.col = 0;
+    source->caret.column = 0;
     break;
   default:
-    ++source->caret.col;
+    ++source->caret.column;
   }
 
   if (++source->read_head >= source->buf_size) {

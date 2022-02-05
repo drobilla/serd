@@ -14,9 +14,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include "caret.h"
-
 #include "memory.h"
+
+#include "serd/serd.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -27,7 +27,7 @@ SerdCaret*
 serd_caret_new(SerdAllocator* const  allocator,
                const SerdNode* const name,
                const unsigned        line,
-               const unsigned        col)
+               const unsigned        column)
 {
   assert(name);
 
@@ -35,9 +35,9 @@ serd_caret_new(SerdAllocator* const  allocator,
     (SerdCaret*)serd_amalloc(allocator, sizeof(SerdCaret));
 
   if (caret) {
-    caret->file = name;
-    caret->line = line;
-    caret->col  = col;
+    caret->file   = name;
+    caret->line   = line;
+    caret->column = column;
   }
 
   return caret;
@@ -70,7 +70,7 @@ bool
 serd_caret_equals(const SerdCaret* l, const SerdCaret* r)
 {
   return (l == r || (l && r && serd_node_equals(l->file, r->file) &&
-                     l->line == r->line && l->col == r->col));
+                     l->line == r->line && l->column == r->column));
 }
 
 const SerdNode*
@@ -92,5 +92,5 @@ unsigned
 serd_caret_column(const SerdCaret* caret)
 {
   assert(caret);
-  return caret->col;
+  return caret->column;
 }

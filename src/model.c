@@ -16,7 +16,6 @@
 
 #include "model.h"
 
-#include "caret.h"
 #include "compare.h"
 #include "cursor.h"
 #include "memory.h"
@@ -647,9 +646,9 @@ serd_model_intern_caret(SerdModel* const model, const SerdCaret* const caret)
     (SerdCaret*)serd_acalloc(model->allocator, 1, sizeof(SerdCaret));
 
   if (copy) {
-    copy->file = serd_nodes_intern(model->nodes, caret->file);
-    copy->line = caret->line;
-    copy->col  = caret->col;
+    copy->file   = serd_nodes_intern(model->nodes, caret->file);
+    copy->line   = caret->line;
+    copy->column = caret->column;
   }
 
   return copy;

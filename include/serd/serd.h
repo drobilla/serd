@@ -1632,8 +1632,17 @@ serd_nodes_deref(SerdNodes* SERD_NONNULL       nodes,
    @{
 */
 
-/// The origin of a statement in a text document
-typedef struct SerdCaretImpl SerdCaret;
+/**
+   A position in a text document.
+
+   This is used internally for things like reader error reporting, and can also
+   be stored with statements to record their origin.
+*/
+typedef struct {
+  const SerdNode* SERD_NULLABLE file;   ///< Document identifier/name
+  unsigned                      line;   ///< 1-based line number
+  unsigned                      column; ///< 1-based column number
+} SerdCaret;
 
 /**
    Create a new caret.
@@ -1646,7 +1655,7 @@ typedef struct SerdCaretImpl SerdCaret;
    @param allocator Allocator to use for caret memory.
    @param name The name of the document or stream (usually a file URI)
    @param line The line number in the document (1-based)
-   @param col The column number in the document (1-based)
+   @param column The column number in the document (1-based)
    @return A new caret that must be freed with serd_caret_free()
 */
 SERD_API
@@ -1654,7 +1663,7 @@ SerdCaret* SERD_ALLOCATED
 serd_caret_new(SerdAllocator* SERD_NULLABLE allocator,
                const SerdNode* SERD_NONNULL name,
                unsigned                     line,
-               unsigned                     col);
+               unsigned                     column);
 
 /// Return a copy of `caret`
 SERD_API

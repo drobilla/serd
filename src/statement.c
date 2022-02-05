@@ -16,7 +16,6 @@
 
 #include "statement.h"
 
-#include "caret.h"
 #include "memory.h"
 #include "node.h"
 

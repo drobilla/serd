@@ -15,7 +15,6 @@
 */
 
 #include "byte_source.h"
-#include "caret.h"
 #include "env.h"
 #include "namespaces.h"
 #include "node.h"
@@ -768,7 +767,7 @@ read_object(SerdReader* const  reader,
     break;
   case '\"':
   case '\'':
-    ++orig_caret.col;
+    ++orig_caret.column;
     st = read_literal(reader, &o, ate_dot);
     break;
   default:
