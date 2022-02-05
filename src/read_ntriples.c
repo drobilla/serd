@@ -4,7 +4,6 @@
 #include "read_ntriples.h"
 
 #include "byte_source.h"
-#include "caret.h"
 #include "node.h"
 #include "ntriples.h"
 #include "read_utf8.h"

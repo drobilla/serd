@@ -4,7 +4,6 @@
 #include "read_nquads.h"
 
 #include "byte_source.h"
-#include "caret.h"
 #include "read_ntriples.h"
 #include "reader.h"
 #include "stack.h"

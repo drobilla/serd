@@ -4,8 +4,6 @@
 #ifndef SERD_SRC_BYTE_SOURCE_H
 #define SERD_SRC_BYTE_SOURCE_H
 
-#include "caret.h" // IWYU pragma: keep
-
 #include "serd/caret.h"
 #include "serd/input_stream.h"
 #include "serd/node.h"
@@ -72,9 +70,9 @@ serd_byte_source_advance_past(SerdByteSource* const source, const int current)
 
   if (current == '\n') {
     ++source->caret.line;
-    source->caret.col = 0;
+    source->caret.column = 0;
   } else {
-    ++source->caret.col;
+    ++source->caret.column;
   }
 
   SerdStatus st = SERD_SUCCESS;

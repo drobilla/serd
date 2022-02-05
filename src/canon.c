@@ -1,7 +1,6 @@
 // Copyright 2019-2022 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "caret.h" // IWYU pragma: keep
 #include "memory.h"
 #include "namespaces.h"
 #include "node.h"
@@ -148,9 +147,9 @@ serd_canon_on_statement(SerdCanonData* const       data,
 
     if (statement->caret) {
       // Adjust column to point at the error within the literal
-      caret.document = statement->caret->document;
-      caret.line     = statement->caret->line;
-      caret.col      = statement->caret->col + 1 + (unsigned)r.count;
+      caret.file   = statement->caret->file;
+      caret.line   = statement->caret->line;
+      caret.column = statement->caret->column + 1 + (unsigned)r.count;
     }
 
     serd_logf_at(data->world,
