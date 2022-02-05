@@ -1,9 +1,8 @@
 // Copyright 2018-2020 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "caret.h"
-
 #include "serd/caret.h"
+#include "serd/node.h"
 #include "zix/allocator.h"
 
 #include <assert.h>
@@ -24,7 +23,7 @@ serd_caret_new(ZixAllocator* const   allocator,
   if (caret) {
     caret->document = document;
     caret->line     = line;
-    caret->col      = column;
+    caret->column   = column;
   }
 
   return caret;
@@ -56,14 +55,13 @@ bool
 serd_caret_equals(const SerdCaret* const l, const SerdCaret* const r)
 {
   return (l == r || (l && r && serd_node_equals(l->document, r->document) &&
-                     l->line == r->line && l->col == r->col));
+                     l->line == r->line && l->column == r->column));
 }
 
 const SerdNode*
 serd_caret_document(const SerdCaret* const caret)
 {
   assert(caret);
-  assert(caret->document);
 
   return caret->document;
 }
@@ -79,5 +77,5 @@ unsigned
 serd_caret_column(const SerdCaret* const caret)
 {
   assert(caret);
-  return caret->col;
+  return caret->column;
 }

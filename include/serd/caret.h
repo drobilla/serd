@@ -6,6 +6,10 @@
 
 #include "serd/attributes.h"
 #include "serd/node.h"
+#include "zix/allocator.h"
+#include "zix/attributes.h"
+
+#include <stdbool.h>
 
 SERD_BEGIN_DECLS
 
@@ -15,8 +19,17 @@ SERD_BEGIN_DECLS
    @{
 */
 
-/// The origin of a statement in a text document
-typedef struct SerdCaretImpl SerdCaret;
+/**
+   A position in a text document.
+
+   This is used internally for things like reader error reporting, and can also
+   be stored with statements to record their origin.
+*/
+typedef struct {
+  const SerdNode* ZIX_NULLABLE document; ///< Document URI or name
+  unsigned                     line;     ///< 1-based line number
+  unsigned                     column;   ///< 1-based column number
+} SerdCaret;
 
 /**
    Create a new caret.
@@ -64,7 +77,7 @@ serd_caret_equals(const SerdCaret* ZIX_NULLABLE lhs,
    statements that originate from streams.
 */
 SERD_PURE_API
-const SerdNode* ZIX_NONNULL
+const SerdNode* ZIX_NULLABLE
 serd_caret_document(const SerdCaret* ZIX_NONNULL caret);
 
 /// Return the one-relative line number in the document

@@ -762,7 +762,7 @@ read_object(SerdReader* const  reader,
     break;
   case '\"':
   case '\'':
-    ++orig_caret.col;
+    ++orig_caret.column;
     st = read_literal(reader, &o, ate_dot);
     break;
   default:

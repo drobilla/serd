@@ -85,7 +85,7 @@ serd_byte_source_new_input(ZixAllocator* const    allocator,
   source->buf_size       = block_size;
   source->caret.document = source->name;
   source->caret.line     = 1U;
-  source->caret.col      = 1U;
+  source->caret.column   = 1U;
 
   serd_byte_source_init_buffer(allocator, source);
   if (block_size > 1 && !source->block) {

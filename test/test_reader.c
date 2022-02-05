@@ -499,7 +499,9 @@ check_cursor(void* handle, const SerdEvent* event)
       serd_statement_caret(event->statement.statement);
     assert(caret);
 
-    assert(!strcmp(serd_node_string(serd_caret_document(caret)), "string"));
+    const SerdNode* const document = serd_caret_document(caret);
+    assert(document);
+    assert(!strcmp(serd_node_string(document), "string"));
     assert(serd_caret_line(caret) == 1);
     assert(serd_caret_column(caret) == 47);
   }

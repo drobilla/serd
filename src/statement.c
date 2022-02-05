@@ -3,7 +3,6 @@
 
 #include "statement.h"
 
-#include "caret.h"
 #include "node.h"
 
 #include "serd/statement.h"
