@@ -229,8 +229,8 @@ serd_vlogf_at(const SerdWorld* ZIX_NONNULL world,
 
   char line[24];
   char col[24];
-  snprintf(line, sizeof(line), "%u", serd_caret_line(caret));
-  snprintf(col, sizeof(col), "%u", serd_caret_column(caret));
+  snprintf(line, sizeof(line), "%u", caret->line);
+  snprintf(col, sizeof(col), "%u", caret->column);
 
   const SerdLogField fields[] = {
     {"SERD_FILE", serd_node_string(document)},

@@ -79,18 +79,18 @@ serd_byte_source_init(ZixAllocator* const    allocator,
     return SERD_BAD_ALLOC;
   }
 
-  source->in           = input;
-  source->read_buf     = NULL;
-  source->read_head    = 0U;
-  source->block_size   = (uint32_t)block_size;
-  source->buf_size     = (uint32_t)block_size;
-  source->caret.file   = source_name;
-  source->caret.line   = 1U;
-  source->caret.column = 1U;
-  source->name         = source_name;
-  source->block        = NULL;
-  source->read_byte    = 0U;
-  source->prepared     = false;
+  source->in             = input;
+  source->read_buf       = NULL;
+  source->read_head      = 0U;
+  source->block_size     = (uint32_t)block_size;
+  source->buf_size       = (uint32_t)block_size;
+  source->caret.document = source_name;
+  source->caret.line     = 1U;
+  source->caret.column   = 1U;
+  source->name           = source_name;
+  source->block          = NULL;
+  source->read_byte      = 0U;
+  source->prepared       = false;
 
   if (serd_byte_source_init_buffer(allocator, source)) {
     serd_node_free(allocator, source_name);

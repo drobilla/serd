@@ -649,9 +649,9 @@ serd_model_intern_caret(SerdModel* const model, const SerdCaret* const caret)
     (SerdCaret*)zix_calloc(model->allocator, 1, sizeof(SerdCaret));
 
   if (copy) {
-    copy->file   = serd_nodes_intern(model->nodes, caret->file);
-    copy->line   = caret->line;
-    copy->column = caret->column;
+    copy->document = serd_nodes_intern(model->nodes, caret->document);
+    copy->line     = caret->line;
+    copy->column   = caret->column;
   }
 
   return copy;

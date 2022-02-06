@@ -26,9 +26,9 @@ SERD_BEGIN_DECLS
    be stored with statements to record their origin.
 */
 typedef struct {
-  const SerdNode* ZIX_NULLABLE file;   ///< Document identifier/name
-  unsigned                     line;   ///< 1-based line number
-  unsigned                     column; ///< 1-based column number
+  const SerdNode* ZIX_NULLABLE document; ///< Document identifier/name
+  unsigned                     line;     ///< 1-based line number
+  unsigned                     column;   ///< 1-based column number
 } SerdCaret;
 
 /**

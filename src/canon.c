@@ -147,9 +147,9 @@ serd_canon_on_statement(SerdCanonData* const       data,
 
     if (statement->caret) {
       // Adjust column to point at the error within the literal
-      caret.file   = statement->caret->file;
-      caret.line   = statement->caret->line;
-      caret.column = statement->caret->column + 1 + (unsigned)r.count;
+      caret.document = statement->caret->document;
+      caret.line     = statement->caret->line;
+      caret.column   = statement->caret->column + 1 + (unsigned)r.count;
     }
 
     serd_logf_at(data->world,
