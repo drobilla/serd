@@ -34,7 +34,7 @@ test_caret(void)
   SerdCaret* const      caret = serd_caret_new(allocator, node, 46, 2);
 
   assert(serd_caret_equals(caret, caret));
-  assert(serd_caret_name(caret) == node);
+  assert(serd_caret_document(caret) == node);
   assert(serd_caret_line(caret) == 46);
   assert(serd_caret_column(caret) == 2);
 

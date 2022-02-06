@@ -269,8 +269,8 @@ serd_model_drop_statement(SerdModel* const     model,
     }
   }
 
-  if (statement->caret && serd_caret_name(statement->caret)) {
-    serd_nodes_deref(model->nodes, serd_caret_name(statement->caret));
+  if (statement->caret && statement->caret->document) {
+    serd_nodes_deref(model->nodes, statement->caret->document);
   }
 
   serd_statement_free(model->allocator, statement);
@@ -646,9 +646,9 @@ serd_model_intern_caret(SerdModel* const model, const SerdCaret* const caret)
     (SerdCaret*)serd_acalloc(model->allocator, 1, sizeof(SerdCaret));
 
   if (copy) {
-    copy->file   = serd_nodes_intern(model->nodes, caret->file);
-    copy->line   = caret->line;
-    copy->column = caret->column;
+    copy->document = serd_nodes_intern(model->nodes, caret->document);
+    copy->line     = caret->line;
+    copy->column   = caret->column;
   }
 
   return copy;

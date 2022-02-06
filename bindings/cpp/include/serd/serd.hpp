@@ -872,8 +872,11 @@ public:
     : CaretHandle<CObj>{caret.cobj()}
   {}
 
-  /// @copydoc serd_caret_name
-  NodeView name() const { return NodeView(serd_caret_name(this->cobj())); }
+  /// @copydoc serd_caret_document
+  NodeView document() const
+  {
+    return NodeView(serd_caret_document(this->cobj()));
+  }
 
   /// @copydoc serd_caret_line
   unsigned line() const { return serd_caret_line(this->cobj()); }

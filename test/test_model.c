@@ -729,7 +729,7 @@ test_add_bad_statement(SerdWorld* world, const unsigned n_quads)
 
   const SerdCaret* statement_caret = serd_statement_caret(statement);
   assert(statement_caret);
-  assert(serd_node_equals(serd_caret_name(statement_caret), f));
+  assert(serd_node_equals(serd_caret_document(statement_caret), f));
   assert(serd_caret_line(statement_caret) == 16);
   assert(serd_caret_column(statement_caret) == 18);
 

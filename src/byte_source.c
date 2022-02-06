@@ -93,13 +93,13 @@ serd_byte_source_new_input(SerdAllocator* const   allocator,
     return NULL;
   }
 
-  source->name         = source_name;
-  source->in           = input;
-  source->block_size   = block_size;
-  source->buf_size     = block_size;
-  source->caret.file   = source->name;
-  source->caret.line   = 1u;
-  source->caret.column = 1u;
+  source->name           = source_name;
+  source->in             = input;
+  source->block_size     = block_size;
+  source->buf_size       = block_size;
+  source->caret.document = source->name;
+  source->caret.line     = 1u;
+  source->caret.column   = 1u;
 
   serd_byte_source_init_buffer(allocator, source);
   if (block_size > 1 && !source->block) {

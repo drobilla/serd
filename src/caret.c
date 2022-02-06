@@ -25,19 +25,19 @@
 
 SerdCaret*
 serd_caret_new(SerdAllocator* const  allocator,
-               const SerdNode* const name,
+               const SerdNode* const document,
                const unsigned        line,
                const unsigned        column)
 {
-  assert(name);
+  assert(document);
 
   SerdCaret* const caret =
     (SerdCaret*)serd_amalloc(allocator, sizeof(SerdCaret));
 
   if (caret) {
-    caret->file   = name;
-    caret->line   = line;
-    caret->column = column;
+    caret->document = document;
+    caret->line     = line;
+    caret->column   = column;
   }
 
   return caret;
@@ -69,16 +69,16 @@ serd_caret_free(SerdAllocator* const allocator, SerdCaret* caret)
 bool
 serd_caret_equals(const SerdCaret* l, const SerdCaret* r)
 {
-  return (l == r || (l && r && serd_node_equals(l->file, r->file) &&
+  return (l == r || (l && r && serd_node_equals(l->document, r->document) &&
                      l->line == r->line && l->column == r->column));
 }
 
 const SerdNode*
-serd_caret_name(const SerdCaret* caret)
+serd_caret_document(const SerdCaret* caret)
 {
   assert(caret);
-  assert(caret->file);
-  return caret->file;
+  assert(caret->document);
+  return caret->document;
 }
 
 unsigned

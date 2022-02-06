@@ -567,7 +567,7 @@ cdef extern from "serd.h":
 
     bint serd_caret_equals(const SerdCaret* lhs, const SerdCaret* rhs)
 
-    const SerdNode* serd_caret_name(const SerdCaret* caret)
+    const SerdNode* serd_caret_document(const SerdCaret* caret)
     unsigned        serd_caret_line(const SerdCaret* caret)
     unsigned        serd_caret_column(const SerdCaret* caret)
 
@@ -2245,7 +2245,7 @@ cdef class Caret:
         if ptr is NULL:
             return None
 
-        name_node = Node._wrap(serd_caret_name(ptr))
+        name_node = Node._wrap(serd_caret_document(ptr))
 
         cdef SerdCaret* copy = serd_caret_new(NULL,
                                               name_node._ptr,

@@ -1639,18 +1639,18 @@ serd_nodes_deref(SerdNodes* SERD_NONNULL       nodes,
    be stored with statements to record their origin.
 */
 typedef struct {
-  const SerdNode* SERD_NULLABLE file;   ///< Document identifier/name
-  unsigned                      line;   ///< 1-based line number
-  unsigned                      column; ///< 1-based column number
+  const SerdNode* SERD_NULLABLE document; ///< Document identifier/name
+  unsigned                      line;     ///< 1-based line number
+  unsigned                      column;   ///< 1-based column number
 } SerdCaret;
 
 /**
    Create a new caret.
 
-   Note that, to minimise model overhead, the caret does not own the name
-   node, so `name` must have a longer lifetime than the caret for it to be
-   valid.  That is, serd_caret_name() will return exactly the pointer
-   `name`, not a copy.
+   Note that, to minimise model overhead, the caret does not own the name node,
+   so `name` must have a longer lifetime than the caret for it to be valid.
+   That is, serd_caret_document() will return exactly the pointer `name`, not a
+   copy.
 
    @param allocator Allocator to use for caret memory.
    @param name The name of the document or stream (usually a file URI)
@@ -1684,14 +1684,14 @@ serd_caret_equals(const SerdCaret* SERD_NULLABLE lhs,
                   const SerdCaret* SERD_NULLABLE rhs);
 
 /**
-   Return the document name.
+   Return the document identifier or name.
 
    This is typically a file URI, but may be a descriptive string node for
    statements that originate from streams.
 */
 SERD_PURE_API
 const SerdNode* SERD_NONNULL
-serd_caret_name(const SerdCaret* SERD_NONNULL caret);
+serd_caret_document(const SerdCaret* SERD_NONNULL caret);
 
 /// Return the one-relative line number in the document
 SERD_PURE_API
