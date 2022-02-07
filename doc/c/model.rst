@@ -198,6 +198,14 @@ The similar :func:`serd_model_get_statement` instead returns the matching statem
    :end-before: end model-get-statement
    :dedent: 2
 
+If the model has :enumerator:`SERD_STORE_CARETS` enabled,
+then carets from the originating documents of each statement are available via :func:`serd_model_statement_caret`:
+
+.. literalinclude:: overview_code.c
+   :start-after: begin model-get-caret
+   :end-before: end model-get-caret
+   :dedent: 2
+
 Erasing Statements
 ------------------
 

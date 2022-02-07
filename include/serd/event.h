@@ -5,6 +5,7 @@
 #define SERD_EVENT_H
 
 #include "serd/attributes.h"
+#include "serd/caret.h"
 #include "serd/node.h"
 #include "serd/statement.h"
 
@@ -30,8 +31,9 @@ typedef enum {
    Emitted whenever the base URI changes.
 */
 typedef struct {
-  SerdEventType               type; ///< #SERD_BASE
-  const SerdNode* ZIX_NONNULL uri;  ///< Base URI
+  SerdEventType               type;  ///< #SERD_BASE
+  SerdCaret                   caret; ///< Optional position in document
+  const SerdNode* ZIX_NONNULL uri;   ///< Base URI
 } SerdBaseEvent;
 
 /**
@@ -40,9 +42,10 @@ typedef struct {
    Emitted whenever a prefix is defined.
 */
 typedef struct {
-  SerdEventType               type; ///< #SERD_PREFIX
-  const SerdNode* ZIX_NONNULL name; ///< Prefix name
-  const SerdNode* ZIX_NONNULL uri;  ///< Namespace URI
+  SerdEventType               type;  ///< #SERD_PREFIX
+  SerdCaret                   caret; ///< Optional position in document
+  const SerdNode* ZIX_NONNULL name;  ///< Prefix name
+  const SerdNode* ZIX_NONNULL uri;   ///< Namespace URI
 } SerdPrefixEvent;
 
 /**
@@ -52,6 +55,7 @@ typedef struct {
 */
 typedef struct {
   SerdEventType                    type;      ///< #SERD_STATEMENT
+  SerdCaret                        caret;     ///< Optional position in document
   SerdStatementFlags               flags;     ///< Flags for pretty-printing
   const SerdStatement* ZIX_NONNULL statement; ///< Statement
 } SerdStatementEvent;
@@ -64,8 +68,9 @@ typedef struct {
    write a delimiter.
 */
 typedef struct {
-  SerdEventType               type; ///< #SERD_END
-  const SerdNode* ZIX_NONNULL node; ///< Anonymous node that is finished
+  SerdEventType               type;  ///< #SERD_END
+  SerdCaret                   caret; ///< Optional position in document
+  const SerdNode* ZIX_NONNULL node;  ///< Anonymous node that is finished
 } SerdEndEvent;
 
 /**

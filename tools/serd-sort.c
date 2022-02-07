@@ -3,6 +3,7 @@
 
 #include "console.h"
 
+#include "serd/caret.h"
 #include "serd/cursor.h"
 #include "serd/env.h"
 #include "serd/inserter.h"
@@ -111,7 +112,9 @@ run(const Options opts)
     for (const SerdStatement* statement = NULL;
          !st && (statement = serd_cursor_get(cursor));
          serd_cursor_advance(cursor)) {
-      st = serd_sink_write_statement(target, 0U, statement);
+      const SerdCaret caret = serd_model_statement_caret(model, statement);
+
+      st = serd_sink_write_statement(target, &caret, 0U, statement);
     }
 
     serd_cursor_free(NULL, cursor);

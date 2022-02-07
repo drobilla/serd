@@ -6,7 +6,6 @@
 
 #include <stdint.h>
 
-#include "serd/caret.h"
 #include "serd/node.h"
 
 SERD_BEGIN_DECLS
@@ -56,17 +55,15 @@ typedef struct SerdStatementImpl SerdStatement;
    @param p The predicate ("key")
    @param o The object ("value")
    @param g The graph ("context")
-   @param caret Optional caret at the origin of this statement
    @return A new statement that must be freed with serd_statement_free()
 */
 SERD_API
 SerdStatement* ZIX_ALLOCATED
-serd_statement_new(ZixAllocator* ZIX_NULLABLE    allocator,
-                   const SerdNode* ZIX_NONNULL   s,
-                   const SerdNode* ZIX_NONNULL   p,
-                   const SerdNode* ZIX_NONNULL   o,
-                   const SerdNode* ZIX_NULLABLE  g,
-                   const SerdCaret* ZIX_NULLABLE caret);
+serd_statement_new(ZixAllocator* ZIX_NULLABLE   allocator,
+                   const SerdNode* ZIX_NONNULL  s,
+                   const SerdNode* ZIX_NONNULL  p,
+                   const SerdNode* ZIX_NONNULL  o,
+                   const SerdNode* ZIX_NULLABLE g);
 
 /// Return a copy of `statement`
 SERD_API
@@ -105,11 +102,6 @@ serd_statement_object(const SerdStatement* ZIX_NONNULL statement);
 SERD_PURE_API
 const SerdNode* ZIX_NULLABLE
 serd_statement_graph(const SerdStatement* ZIX_NONNULL statement);
-
-/// Return the source location where the statement originated, or NULL
-SERD_PURE_API
-const SerdCaret* ZIX_NULLABLE
-serd_statement_caret(const SerdStatement* ZIX_NONNULL statement);
 
 /**
    Return true iff `a` is equal to `b`, ignoring statement caret metadata.

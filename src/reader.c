@@ -167,7 +167,7 @@ emit_statement_at(SerdReader* const reader,
                                    caret};
 
   const SerdStatus st =
-    serd_sink_write_statement(reader->sink, *ctx.flags, &statement);
+    serd_sink_write_statement(reader->sink, caret, *ctx.flags, &statement);
 
   *ctx.flags = 0;
   return st;

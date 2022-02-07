@@ -467,7 +467,7 @@ serd_env_write_prefixes(const SerdEnv* const env, const SerdSink* const sink)
   for (size_t i = 0; !st && i < env->n_prefixes; ++i) {
     const SerdPrefix* const prefix = &env->prefixes[i];
 
-    st = serd_sink_write_prefix(sink, prefix->name, prefix->uri);
+    st = serd_sink_write_prefix(sink, NULL, prefix->name, prefix->uri);
   }
 
   return st;

@@ -62,31 +62,39 @@ test(void)
   const SerdSink* const sink = serd_writer_sink(writer);
 
   // Simple lone list
-  serd_sink_write(sink, SERD_TERSE_S | SERD_LIST_S, l1, rdf_first, s1, NULL);
-  serd_sink_write(sink, 0, l1, rdf_rest, l2, NULL);
-  serd_sink_write(sink, 0, l2, rdf_first, s2, NULL);
-  serd_sink_write(sink, 0, l2, rdf_rest, rdf_nil, NULL);
+  serd_sink_write(
+    sink, NULL, SERD_TERSE_S | SERD_LIST_S, l1, rdf_first, s1, NULL);
+
+  serd_sink_write(sink, NULL, 0, l1, rdf_rest, l2, NULL);
+  serd_sink_write(sink, NULL, 0, l2, rdf_first, s2, NULL);
+  serd_sink_write(sink, NULL, 0, l2, rdf_rest, rdf_nil, NULL);
   check_output(writer, &buffer, "( \"s1\" \"s2\" ) .\n");
 
   // Nested terse lists
   serd_sink_write(sink,
+                  NULL,
                   SERD_TERSE_S | SERD_LIST_S | SERD_TERSE_O | SERD_LIST_O,
                   l1,
                   rdf_first,
                   l2,
                   NULL);
-  serd_sink_write(sink, 0, l2, rdf_first, s1, NULL);
-  serd_sink_write(sink, 0, l1, rdf_rest, rdf_nil, NULL);
-  serd_sink_write(sink, 0, l2, rdf_rest, rdf_nil, NULL);
+  serd_sink_write(sink, NULL, 0, l2, rdf_first, s1, NULL);
+  serd_sink_write(sink, NULL, 0, l1, rdf_rest, rdf_nil, NULL);
+  serd_sink_write(sink, NULL, 0, l2, rdf_rest, rdf_nil, NULL);
   check_output(writer, &buffer, "( ( \"s1\" ) ) .\n");
 
   // List as object
-  serd_sink_write(
-    sink, SERD_EMPTY_S | SERD_LIST_O | SERD_TERSE_O, b1, rdf_value, l1, NULL);
-  serd_sink_write(sink, 0, l1, rdf_first, s1, NULL);
-  serd_sink_write(sink, 0, l1, rdf_rest, l2, NULL);
-  serd_sink_write(sink, 0, l2, rdf_first, s2, NULL);
-  serd_sink_write(sink, 0, l2, rdf_rest, rdf_nil, NULL);
+  serd_sink_write(sink,
+                  NULL,
+                  SERD_EMPTY_S | SERD_LIST_O | SERD_TERSE_O,
+                  b1,
+                  rdf_value,
+                  l1,
+                  NULL);
+  serd_sink_write(sink, NULL, 0, l1, rdf_first, s1, NULL);
+  serd_sink_write(sink, NULL, 0, l1, rdf_rest, l2, NULL);
+  serd_sink_write(sink, NULL, 0, l2, rdf_first, s2, NULL);
+  serd_sink_write(sink, NULL, 0, l2, rdf_rest, rdf_nil, NULL);
   check_output(writer, &buffer, "[]\n\trdf:value ( \"s1\" \"s2\" ) .\n");
 
   serd_writer_free(writer);

@@ -645,7 +645,7 @@ read_anon(SerdReader* const reader,
   }
 
   if (!(subject && empty)) {
-    TRY(st, serd_sink_write_end(reader->sink, *dest));
+    TRY(st, serd_sink_write_end(reader->sink, NULL, *dest));
   }
 
   return eat_byte_check(reader, ']');
@@ -1017,7 +1017,7 @@ read_base(SerdReader* const reader, const bool sparql, const bool token)
 
   serd_node_zero_pad(uri);
   TRY(st, serd_env_set_base_uri(reader->env, serd_node_string_view(uri)));
-  TRY(st, serd_sink_write_base(reader->sink, uri));
+  TRY(st, serd_sink_write_base(reader->sink, NULL, uri));
 
   read_ws_star(reader);
   if (!sparql) {
@@ -1068,7 +1068,7 @@ read_prefixID(SerdReader* const reader, const bool sparql, const bool token)
       serd_env_set_prefix(
         reader->env, serd_node_string_view(name), serd_node_string_view(uri)));
 
-  st = serd_sink_write_prefix(reader->sink, name, uri);
+  st = serd_sink_write_prefix(reader->sink, NULL, name, uri);
 
   if (!sparql) {
     read_ws_star(reader);

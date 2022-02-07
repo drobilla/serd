@@ -6,6 +6,7 @@
 #include "memory.h"
 #include "statement.h"
 
+#include "serd/caret.h"
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
@@ -13,6 +14,8 @@
 
 #include <assert.h>
 #include <stdlib.h>
+
+static const SerdCaret null_caret = {NULL, 0U, 0U};
 
 SerdSink*
 serd_sink_new(const SerdWorld* const world,
@@ -56,27 +59,31 @@ serd_sink_write_event(const SerdSink* sink, const SerdEvent* event)
 }
 
 SerdStatus
-serd_sink_write_base(const SerdSink* sink, const SerdNode* uri)
+serd_sink_write_base(const SerdSink*  sink,
+                     const SerdCaret* caret,
+                     const SerdNode*  uri)
 {
   assert(sink);
   assert(uri);
 
-  const SerdBaseEvent ev = {SERD_BASE, uri};
+  const SerdBaseEvent ev = {SERD_BASE, caret ? *caret : null_caret, uri};
 
   return sink->on_event ? sink->on_event(sink->handle, (const SerdEvent*)&ev)
                         : SERD_SUCCESS;
 }
 
 SerdStatus
-serd_sink_write_prefix(const SerdSink* sink,
-                       const SerdNode* name,
-                       const SerdNode* uri)
+serd_sink_write_prefix(const SerdSink*  sink,
+                       const SerdCaret* caret,
+                       const SerdNode*  name,
+                       const SerdNode*  uri)
 {
   assert(sink);
   assert(name);
   assert(uri);
 
-  const SerdPrefixEvent ev = {SERD_PREFIX, name, uri};
+  const SerdPrefixEvent ev = {
+    SERD_PREFIX, caret ? *caret : null_caret, name, uri};
 
   return sink->on_event ? sink->on_event(sink->handle, (const SerdEvent*)&ev)
                         : SERD_SUCCESS;
@@ -84,21 +91,29 @@ serd_sink_write_prefix(const SerdSink* sink,
 
 SerdStatus
 serd_sink_write_statement(const SerdSink*          sink,
+                          const SerdCaret*         caret,
                           const SerdStatementFlags flags,
                           const SerdStatement*     statement)
 {
   assert(sink);
   assert(statement);
 
-  const SerdStatementEvent statement_ev = {SERD_STATEMENT, flags, statement};
-  SerdEvent                ev           = {SERD_STATEMENT};
-  ev.statement                          = statement_ev;
+  const SerdStatementEvent statement_ev = {
+    SERD_STATEMENT,
+    (caret && caret->document) ? *caret : null_caret,
+    flags,
+    statement};
+
+  SerdEvent ev = {SERD_STATEMENT};
+
+  ev.statement = statement_ev;
 
   return sink->on_event ? sink->on_event(sink->handle, &ev) : SERD_SUCCESS;
 }
 
 SerdStatus
 serd_sink_write(const SerdSink*          sink,
+                const SerdCaret*         caret,
                 const SerdStatementFlags flags,
                 const SerdNode*          subject,
                 const SerdNode*          predicate,
@@ -111,16 +126,18 @@ serd_sink_write(const SerdSink*          sink,
   assert(object);
 
   const SerdStatement statement = {{subject, predicate, object, graph}, NULL};
-  return serd_sink_write_statement(sink, flags, &statement);
+  return serd_sink_write_statement(sink, caret, flags, &statement);
 }
 
 SerdStatus
-serd_sink_write_end(const SerdSink* sink, const SerdNode* node)
+serd_sink_write_end(const SerdSink*  sink,
+                    const SerdCaret* caret,
+                    const SerdNode*  node)
 {
   assert(sink);
   assert(node);
 
-  const SerdEndEvent ev = {SERD_END, node};
+  const SerdEndEvent ev = {SERD_END, caret ? *caret : null_caret, node};
 
   return sink->on_event ? sink->on_event(sink->handle, (const SerdEvent*)&ev)
                         : SERD_SUCCESS;

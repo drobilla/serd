@@ -88,8 +88,7 @@ serd_inserter_on_statement(SerdInserterData* const    data,
   const SerdCaret* const caret =
     (data->model->flags & SERD_STORE_CARETS) ? statement->caret : NULL;
 
-  const SerdStatus st =
-    serd_model_add_with_caret(data->model, s, p, o, g, caret);
+  const SerdStatus st = serd_model_add_from(data->model, s, p, o, g, caret);
 
   return st > SERD_FAILURE ? st : SERD_SUCCESS;
 }

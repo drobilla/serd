@@ -142,17 +142,17 @@ write_list(const DescribeContext* const ctx,
 
     if (!rs) {
       // Terminate malformed list with missing rdf:rest
-      return serd_sink_write(sink, 0, object, rdf_rest, rdf_nil, graph);
+      return serd_sink_write(sink, NULL, 0, object, rdf_rest, rdf_nil, graph);
     }
 
     // Terminate if the next node has no rdf:first
     const SerdNode* const next = serd_statement_object(rs);
     if (!(fs = serd_model_get_statement(model, next, rdf_first, NULL, graph))) {
-      return serd_sink_write(sink, 0, object, rdf_rest, rdf_nil, graph);
+      return serd_sink_write(sink, NULL, 0, object, rdf_rest, rdf_nil, graph);
     }
 
     // Write rdf:next statement and move to the next node
-    st     = serd_sink_write_statement(sink, 0, rs);
+    st     = serd_sink_write_statement(sink, NULL, 0, rs);
     object = next;
     flags  = 0U;
   }
@@ -261,7 +261,8 @@ write_range_statement(const DescribeContext* const     ctx,
      ((object_style == LIST_O) * (SerdStatementFlags)SERD_LIST_O));
 
   // Finally write this statement
-  if ((st = serd_sink_write_statement(sink, statement_flags, statement))) {
+  if ((st =
+         serd_sink_write_statement(sink, NULL, statement_flags, statement))) {
     return st;
   }
 
@@ -271,7 +272,7 @@ write_range_statement(const DescribeContext* const     ctx,
       serd_model_find(ctx->allocator, model, object, NULL, NULL, NULL);
 
     if (!(st = write_pretty_range(ctx, depth + 1, iter, last_subject, false))) {
-      st = serd_sink_write_end(sink, object);
+      st = serd_sink_write_end(sink, NULL, object);
     }
 
     serd_cursor_free(ctx->allocator, iter);

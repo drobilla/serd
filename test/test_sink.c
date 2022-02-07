@@ -111,6 +111,8 @@ test_failed_alloc(void)
 static void
 test_callbacks(void)
 {
+  static const SerdCaret caret = {NULL, 0U, 0U};
+
   SerdWorld* const    world     = serd_world_new(NULL);
   ZixAllocator* const allocator = serd_world_allocator(world);
   SerdNodes* const    nodes     = serd_nodes_new(allocator);
@@ -124,12 +126,14 @@ test_callbacks(void)
   SerdEnv* env = serd_env_new(world, serd_node_string_view(base));
 
   SerdStatement* const statement =
-    serd_statement_new(allocator, base, uri, blank, NULL, NULL);
+    serd_statement_new(allocator, base, uri, blank, NULL);
 
-  const SerdBaseEvent      base_event      = {SERD_BASE, uri};
-  const SerdPrefixEvent    prefix_event    = {SERD_PREFIX, name, uri};
-  const SerdStatementEvent statement_event = {SERD_STATEMENT, 0U, statement};
-  const SerdEndEvent       end_event       = {SERD_END, blank};
+  const SerdBaseEvent      base_event      = {SERD_BASE, caret, uri};
+  const SerdPrefixEvent    prefix_event    = {SERD_PREFIX, caret, name, uri};
+  const SerdStatementEvent statement_event = {
+    SERD_STATEMENT, caret, 0U, statement};
+
+  const SerdEndEvent end_event = {SERD_END, caret, blank};
 
   State state = {0, 0, 0, 0, 0, SERD_SUCCESS};
 
@@ -137,11 +141,11 @@ test_callbacks(void)
 
   SerdSink* null_sink = serd_sink_new(world, &state, NULL, NULL);
 
-  assert(!serd_sink_write_base(null_sink, base));
-  assert(!serd_sink_write_prefix(null_sink, name, uri));
-  assert(!serd_sink_write_statement(null_sink, 0, statement));
-  assert(!serd_sink_write(null_sink, 0, base, uri, blank, NULL));
-  assert(!serd_sink_write_end(null_sink, blank));
+  assert(!serd_sink_write_base(null_sink, NULL, base));
+  assert(!serd_sink_write_prefix(null_sink, NULL, name, uri));
+  assert(!serd_sink_write_statement(null_sink, NULL, 0, statement));
+  assert(!serd_sink_write(null_sink, NULL, 0, base, uri, blank, NULL));
+  assert(!serd_sink_write_end(null_sink, NULL, blank));
 
   SerdEvent event = {SERD_BASE};
 
@@ -160,17 +164,17 @@ test_callbacks(void)
 
   SerdSink* sink = serd_sink_new(world, &state, on_event, NULL);
 
-  assert(!serd_sink_write_base(sink, base));
+  assert(!serd_sink_write_base(sink, NULL, base));
   assert(serd_node_equals(state.last_base, base));
 
-  assert(!serd_sink_write_prefix(sink, name, uri));
+  assert(!serd_sink_write_prefix(sink, NULL, name, uri));
   assert(serd_node_equals(state.last_name, name));
   assert(serd_node_equals(state.last_namespace, uri));
 
-  assert(!serd_sink_write_statement(sink, 0, statement));
+  assert(!serd_sink_write_statement(sink, NULL, 0, statement));
   assert(serd_statement_equals(state.last_statement, statement));
 
-  assert(!serd_sink_write_end(sink, blank));
+  assert(!serd_sink_write_end(sink, NULL, blank));
   assert(serd_node_equals(state.last_end, blank));
 
   const SerdEvent junk = {(SerdEventType)42};

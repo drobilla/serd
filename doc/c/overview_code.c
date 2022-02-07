@@ -53,7 +53,6 @@ statements(void)
     serd_nodes_get(nodes, serd_a_uri_string("http://example.org/drobilla")),
     serd_nodes_get(nodes, serd_a_uri_string("http://example.org/firstName")),
     serd_nodes_get(nodes, serd_a_string("David")),
-    NULL,
     NULL);
   // end statement-new
 
@@ -73,7 +72,7 @@ statements_accessing_fields(void)
   SerdNode* so =
     serd_node_new(NULL, serd_a_uri_string(("http://example.org/o")));
 
-  SerdStatement* statement = serd_statement_new(NULL, ss, sp, so, NULL, NULL);
+  SerdStatement* statement = serd_statement_new(NULL, ss, sp, so, NULL);
 
   // begin get-subject
   const SerdNode* s = serd_statement_node(statement, SERD_SUBJECT);
@@ -84,10 +83,6 @@ statements_accessing_fields(void)
   const SerdNode* o = serd_statement_object(statement);
   const SerdNode* g = serd_statement_graph(statement);
   // end get-pog
-
-  // begin get-caret
-  const SerdCaret* c = serd_statement_caret(statement);
-  // end get-caret
 }
 
 static void
@@ -99,8 +94,8 @@ statements_comparison(void)
 
   SerdNode* so = serd_node_new(NULL, serd_a_uri_string("http://example.org/o"));
 
-  SerdStatement* statement1 = serd_statement_new(NULL, ss, sp, so, NULL, NULL);
-  SerdStatement* statement2 = serd_statement_new(NULL, ss, sp, so, NULL, NULL);
+  SerdStatement* statement1 = serd_statement_new(NULL, ss, sp, so, NULL);
+  SerdStatement* statement2 = serd_statement_new(NULL, ss, sp, so, NULL);
 
   // begin statement-equals
   if (serd_statement_equals(statement1, statement2)) {
@@ -326,6 +321,12 @@ model(void)
            serd_node_string(serd_statement_object(ts)));
   }
   // end model-get-statement
+
+  assert(statement);
+
+  // begin model-get-caret
+  const SerdCaret c = serd_model_statement_caret(model, statement);
+  // end model-get-caret
 
   // begin model-erase
   SerdCursor* some_type =

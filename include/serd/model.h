@@ -5,6 +5,7 @@
 #define SERD_MODEL_H
 
 #include "serd/attributes.h"
+#include "serd/caret.h"
 #include "serd/cursor.h"
 #include "serd/world.h"
 
@@ -227,6 +228,18 @@ serd_model_get_statement(const SerdModel* ZIX_NONNULL model,
                          const SerdNode* ZIX_NULLABLE o,
                          const SerdNode* ZIX_NULLABLE g);
 
+/**
+   Return the caret stored for a statement in the model if possible.
+
+   If the statement has no caret, or if the model does not support storing
+   carets, then the returned structure is all-zero.  Callers should check if
+   the `document` is null before using the caret.
+*/
+SERD_API
+SerdCaret
+serd_model_statement_caret(const SerdModel* ZIX_NONNULL     model,
+                           const SerdStatement* ZIX_NONNULL statement);
+
 /// Return true iff a statement exists
 SERD_API
 bool
@@ -265,12 +278,12 @@ serd_model_add(SerdModel* ZIX_NONNULL       model,
 */
 SERD_API
 SerdStatus
-serd_model_add_with_caret(SerdModel* ZIX_NONNULL        model,
-                          const SerdNode* ZIX_NONNULL   s,
-                          const SerdNode* ZIX_NONNULL   p,
-                          const SerdNode* ZIX_NONNULL   o,
-                          const SerdNode* ZIX_NULLABLE  g,
-                          const SerdCaret* ZIX_NULLABLE caret);
+serd_model_add_from(SerdModel* ZIX_NONNULL        model,
+                    const SerdNode* ZIX_NONNULL   s,
+                    const SerdNode* ZIX_NONNULL   p,
+                    const SerdNode* ZIX_NONNULL   o,
+                    const SerdNode* ZIX_NULLABLE  g,
+                    const SerdCaret* ZIX_NULLABLE caret);
 
 /**
    Add a statement to a model.

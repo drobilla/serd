@@ -69,13 +69,6 @@ Alternatively, an accessor function is provided for each field:
 
 Every statement has a subject, predicate, and object,
 but the graph may be null.
-The cursor may also be null (as it would be in this case),
-but if available it can be accessed with :func:`serd_statement_caret`:
-
-.. literalinclude:: overview_code.c
-   :start-after: begin get-caret
-   :end-before: end get-caret
-   :dedent: 2
 
 Comparison
 ----------
