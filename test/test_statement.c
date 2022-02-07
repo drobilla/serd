@@ -32,12 +32,12 @@ test_new(void)
     serd_nodes_get(nodes, serd_a_blank(zix_string(NS_EG "b")));
 
   // S, P, and G may not be strings (must be resources)
-  assert(!serd_statement_new(allocator, s, u, u, u, NULL));
-  assert(!serd_statement_new(allocator, u, s, u, u, NULL));
-  assert(!serd_statement_new(allocator, u, u, u, s, NULL));
+  assert(!serd_statement_new(allocator, s, u, u, u));
+  assert(!serd_statement_new(allocator, u, s, u, u));
+  assert(!serd_statement_new(allocator, u, u, u, s));
 
   // P may not be a blank node
-  assert(!serd_statement_new(allocator, u, b, u, u, NULL));
+  assert(!serd_statement_new(allocator, u, b, u, u));
 
   serd_nodes_free(nodes);
 }
@@ -61,8 +61,7 @@ test_copy(void)
 
   const SerdNode* const g = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "g"));
 
-  SerdStatement* const statement =
-    serd_statement_new(allocator, s, p, o, g, NULL);
+  SerdStatement* const statement = serd_statement_new(allocator, s, p, o, g);
 
   SerdStatement* const copy = serd_statement_copy(allocator, statement);
 
@@ -96,13 +95,13 @@ test_copy_with_caret(void)
 
   SerdCaret* const caret = serd_caret_new(allocator, f, 1, 1);
 
-  SerdStatement* const statement =
-    serd_statement_new(allocator, s, p, o, g, caret);
+  SerdStatement* const statement = serd_statement_new(allocator, s, p, o, g);
 
   SerdStatement* const copy = serd_statement_copy(allocator, statement);
 
   assert(serd_statement_equals(copy, statement));
-  assert(serd_caret_equals(serd_statement_caret(copy), caret));
+  // FIXME
+  /* assert(serd_caret_equals(serd_statement_caret(copy), caret)); */
 
   serd_statement_free(allocator, copy);
   serd_caret_free(allocator, caret);
@@ -124,20 +123,12 @@ test_fields(void)
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
-  const SerdNode* const f = serd_nodes_get(nodes, serd_a_string("file"));
-
   const SerdNode* const s = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "s"));
-
   const SerdNode* const p = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "p"));
-
   const SerdNode* const o = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "o"));
-
   const SerdNode* const g = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "g"));
 
-  SerdCaret* const caret = serd_caret_new(allocator, f, 1, 1);
-
-  SerdStatement* const statement =
-    serd_statement_new(allocator, s, p, o, g, caret);
+  SerdStatement* const statement = serd_statement_new(allocator, s, p, o, g);
 
   assert(serd_statement_equals(statement, statement));
   assert(!serd_statement_equals(statement, NULL));
@@ -152,8 +143,6 @@ test_fields(void)
   assert(serd_statement_predicate(statement) == p);
   assert(serd_statement_object(statement) == o);
   assert(serd_statement_graph(statement) == g);
-  assert(serd_statement_caret(statement) != caret);
-  assert(serd_caret_equals(serd_statement_caret(statement), caret));
   assert(serd_statement_matches(statement, s, p, o, g));
   assert(serd_statement_matches(statement, NULL, p, o, g));
   assert(serd_statement_matches(statement, s, NULL, o, g));
@@ -164,28 +153,23 @@ test_fields(void)
   assert(!serd_statement_matches(statement, NULL, NULL, s, NULL));
   assert(!serd_statement_matches(statement, NULL, NULL, NULL, s));
 
-  SerdStatement* const diff_s =
-    serd_statement_new(allocator, o, p, o, g, caret);
+  SerdStatement* const diff_s = serd_statement_new(allocator, o, p, o, g);
   assert(!serd_statement_equals(statement, diff_s));
   serd_statement_free(allocator, diff_s);
 
-  SerdStatement* const diff_p =
-    serd_statement_new(allocator, s, o, o, g, caret);
+  SerdStatement* const diff_p = serd_statement_new(allocator, s, o, o, g);
   assert(!serd_statement_equals(statement, diff_p));
   serd_statement_free(allocator, diff_p);
 
-  SerdStatement* const diff_o =
-    serd_statement_new(allocator, s, p, s, g, caret);
+  SerdStatement* const diff_o = serd_statement_new(allocator, s, p, s, g);
   assert(!serd_statement_equals(statement, diff_o));
   serd_statement_free(allocator, diff_o);
 
-  SerdStatement* const diff_g =
-    serd_statement_new(allocator, s, p, o, s, caret);
+  SerdStatement* const diff_g = serd_statement_new(allocator, s, p, o, s);
   assert(!serd_statement_equals(statement, diff_g));
   serd_statement_free(allocator, diff_g);
 
   serd_statement_free(allocator, statement);
-  serd_caret_free(allocator, caret);
   serd_nodes_free(nodes);
 }
 
@@ -206,14 +190,14 @@ test_failed_alloc(void)
 
   // Successfully allocate a statement to count the number of allocations
   SerdStatement* const statement =
-    serd_statement_new(&allocator.base, s, p, o, g, caret);
+    serd_statement_new(&allocator.base, s, p, o, g);
   assert(statement);
 
   // Test that each allocation failing is handled gracefully
   const size_t n_new_allocs = allocator.n_allocations;
   for (size_t i = 0U; i < n_new_allocs; ++i) {
     allocator.n_remaining = i;
-    assert(!serd_statement_new(&allocator.base, s, p, o, g, caret));
+    assert(!serd_statement_new(&allocator.base, s, p, o, g));
   }
 
   // Successfully copy the statement to count the number of allocations

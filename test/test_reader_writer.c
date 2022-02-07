@@ -154,9 +154,9 @@ test_writer(const char* const path)
   const SerdNode* lit = serd_nodes_get(nodes, serd_a_string("hello"));
 
   const SerdSink* const iface = serd_writer_sink(writer);
-  assert(serd_sink_write_base(iface, lit));
-  assert(serd_sink_write_prefix(iface, lit, lit));
-  assert(serd_sink_write_end(iface, lit));
+  assert(serd_sink_write_base(iface, NULL, lit));
+  assert(serd_sink_write_prefix(iface, NULL, lit, lit));
+  assert(serd_sink_write_end(iface, NULL, lit));
 
   static const uint8_t bad_buf[]    = {0xEF, 0xBF, 0xBD, 0};
   const ZixStringView  bad_buf_view = {(const char*)bad_buf, 3};
@@ -172,7 +172,8 @@ test_writer(const char* const path)
   // Write 3 invalid statements (should write nothing)
   const SerdNode* junk[][3] = {{s, bad, bad}, {bad, p, bad}, {s, bad, p}};
   for (size_t i = 0; i < sizeof(junk) / (sizeof(SerdNode*) * 3); ++i) {
-    assert(serd_sink_write(iface, 0, junk[i][0], junk[i][1], junk[i][2], NULL));
+    assert(serd_sink_write(
+      iface, NULL, 0, junk[i][0], junk[i][1], junk[i][2], NULL));
   }
 
   const ZixStringView   urn_Type = zix_string("urn:Type");
@@ -188,8 +189,8 @@ test_writer(const char* const path)
   const SerdNode* good[][3] = {{s, p, o}, {s, p, t}, {s, p, l}};
 
   for (size_t i = 0; i < sizeof(good) / (sizeof(SerdNode*) * 3); ++i) {
-    assert(
-      !serd_sink_write(iface, 0, good[i][0], good[i][1], good[i][2], NULL));
+    assert(!serd_sink_write(
+      iface, NULL, 0, good[i][0], good[i][1], good[i][2], NULL));
   }
 
   static const uint8_t     bad_str_buf[] = {0xFF, 0x90, 'h', 'i', 0};
@@ -206,13 +207,13 @@ test_writer(const char* const path)
   const SerdNode* bad_uri =
     serd_nodes_get(nodes, serd_a_uri_string(bad_uri_str));
 
-  assert(!serd_sink_write(iface, 0, s, p, bad_lit, 0));
-  assert(!serd_sink_write(iface, 0, s, p, bad_long_lit, 0));
-  assert(!serd_sink_write(iface, 0, s, p, bad_uri, 0));
+  assert(!serd_sink_write(iface, NULL, 0, s, p, bad_lit, 0));
+  assert(!serd_sink_write(iface, NULL, 0, s, p, bad_long_lit, 0));
+  assert(!serd_sink_write(iface, NULL, 0, s, p, bad_uri, 0));
 
   // Write 1 valid statement
   const SerdNode* const hello = serd_nodes_get(nodes, serd_a_string("hello"));
-  assert(!serd_sink_write(iface, 0, s, p, hello, 0));
+  assert(!serd_sink_write(iface, NULL, 0, s, p, hello, 0));
 
   serd_writer_free(writer);
   serd_close_output(&output);
@@ -226,7 +227,7 @@ test_writer(const char* const path)
   output = serd_open_output_buffer(&buffer);
   writer = serd_writer_new(world, SERD_TURTLE, 0, env, &output, 1);
 
-  serd_sink_write_base(serd_writer_sink(writer), base);
+  serd_sink_write_base(serd_writer_sink(writer), NULL, base);
 
   serd_writer_free(writer);
   serd_close_output(&output);

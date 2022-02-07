@@ -34,12 +34,11 @@ serd_statement_is_valid(const SerdNode* const subject,
 }
 
 SerdStatement*
-serd_statement_new(ZixAllocator* const    allocator,
-                   const SerdNode* const  s,
-                   const SerdNode* const  p,
-                   const SerdNode* const  o,
-                   const SerdNode* const  g,
-                   const SerdCaret* const caret)
+serd_statement_new(ZixAllocator* const   allocator,
+                   const SerdNode* const s,
+                   const SerdNode* const p,
+                   const SerdNode* const o,
+                   const SerdNode* const g)
 {
   assert(s);
   assert(p);
@@ -58,13 +57,6 @@ serd_statement_new(ZixAllocator* const    allocator,
     statement->nodes[2] = o;
     statement->nodes[3] = g;
     statement->caret    = NULL;
-
-    if (caret) {
-      if (!(statement->caret = serd_caret_copy(allocator, caret))) {
-        zix_free(allocator, statement);
-        return NULL;
-      }
-    }
   }
 
   return statement;
@@ -141,13 +133,6 @@ serd_statement_graph(const SerdStatement* const statement)
 {
   assert(statement);
   return statement->nodes[SERD_GRAPH];
-}
-
-const SerdCaret*
-serd_statement_caret(const SerdStatement* const statement)
-{
-  assert(statement);
-  return statement->caret;
 }
 
 bool

@@ -601,7 +601,7 @@ test_inserter(SerdWorld* world, const unsigned n_quads)
 
   serd_set_log_func(world, expected_error, NULL);
 
-  assert(serd_sink_write(inserter, 0, s, p, rel, NULL) == SERD_BAD_DATA);
+  assert(serd_sink_write(inserter, NULL, 0, s, p, rel, NULL) == SERD_BAD_DATA);
 
   serd_sink_free(inserter);
   serd_model_free(model);
@@ -719,11 +719,13 @@ test_add_bad_statement(SerdWorld* world, const unsigned n_quads)
   assert(serd_node_equals(serd_statement_object(statement), o));
   assert(!serd_statement_graph(statement));
 
-  const SerdCaret* statement_caret = serd_statement_caret(statement);
-  assert(statement_caret);
-  assert(serd_node_equals(serd_caret_document(statement_caret), f));
-  assert(serd_caret_line(statement_caret) == 16);
-  assert(serd_caret_column(statement_caret) == 18);
+  const SerdCaret statement_caret =
+    serd_model_statement_caret(model, statement);
+
+  assert(statement_caret.document);
+  assert(serd_node_equals(statement_caret.document, f));
+  assert(statement_caret.line == 16);
+  assert(statement_caret.column == 18);
 
   assert(!serd_model_erase(model, begin));
 
@@ -1095,7 +1097,8 @@ test_write_flat_range(SerdWorld* world, const unsigned n_quads)
   SerdCursor* all = serd_model_begin(NULL, model);
   for (const SerdStatement* t = NULL; (t = serd_cursor_get(all));
        serd_cursor_advance(all)) {
-    serd_sink_write_statement(serd_writer_sink(writer), 0U, t);
+    const SerdCaret caret = serd_model_statement_caret(model, t);
+    serd_sink_write_statement(serd_writer_sink(writer), &caret, 0U, t);
   }
   serd_cursor_free(NULL, all);
 

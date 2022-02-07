@@ -494,13 +494,12 @@ check_cursor(void* handle, const SerdEvent* event)
   bool* const called = (bool*)handle;
 
   if (event->type == SERD_STATEMENT) {
-    const SerdCaret* const caret =
-      serd_statement_caret(event->statement.statement);
-    assert(caret);
+    assert(event->statement.caret.document);
+    assert(
+      !strcmp(serd_node_string(event->statement.caret.document), "string"));
 
-    assert(!strcmp(serd_node_string(serd_caret_document(caret)), "string"));
-    assert(serd_caret_line(caret) == 1);
-    assert(serd_caret_column(caret) == 47);
+    assert(event->statement.caret.line == 1);
+    assert(event->statement.caret.column == 47);
   }
 
   *called = true;

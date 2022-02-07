@@ -209,6 +209,11 @@ serd_model_get_statement(const SerdModel* ZIX_NONNULL model,
                          const SerdNode* ZIX_NULLABLE o,
                          const SerdNode* ZIX_NULLABLE g);
 
+/// Return the document origin of a statement if available
+SERD_API SerdCaret
+serd_model_statement_caret(const SerdModel* ZIX_NONNULL     model,
+                           const SerdStatement* ZIX_NONNULL statement);
+
 /// Return true iff a statement exists
 SERD_API bool
 serd_model_ask(const SerdModel* ZIX_NONNULL model,
