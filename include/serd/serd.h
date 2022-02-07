@@ -1733,7 +1733,6 @@ typedef enum {
    @param p The predicate ("key")
    @param o The object ("value")
    @param g The graph ("context")
-   @param caret Optional caret at the origin of this statement
    @return A new statement that must be freed with serd_statement_free()
 */
 SERD_API
@@ -1742,8 +1741,7 @@ serd_statement_new(SerdAllocator* SERD_NULLABLE   allocator,
                    const SerdNode* SERD_NONNULL   s,
                    const SerdNode* SERD_NONNULL   p,
                    const SerdNode* SERD_NONNULL   o,
-                   const SerdNode* SERD_NULLABLE  g,
-                   const SerdCaret* SERD_NULLABLE caret);
+                   const SerdNode* SERD_NULLABLE  g);
 
 /// Return a copy of `statement`
 SERD_API
@@ -1782,11 +1780,6 @@ serd_statement_object(const SerdStatement* SERD_NONNULL statement);
 SERD_PURE_API
 const SerdNode* SERD_NULLABLE
 serd_statement_graph(const SerdStatement* SERD_NONNULL statement);
-
-/// Return the source location where the statement originated, or NULL
-SERD_PURE_API
-const SerdCaret* SERD_NULLABLE
-serd_statement_caret(const SerdStatement* SERD_NONNULL statement);
 
 /**
    Return true iff `a` is equal to `b`, ignoring statement caret metadata.
@@ -2095,8 +2088,9 @@ typedef uint32_t SerdStatementFlags;
    Emitted whenever the base URI changes.
 */
 typedef struct {
-  SerdEventType                type; ///< #SERD_BASE
-  const SerdNode* SERD_NONNULL uri;  ///< Base URI
+  SerdEventType                type;  ///< #SERD_BASE
+  SerdCaret                    caret; ///< Optional position in document
+  const SerdNode* SERD_NONNULL uri;   ///< Base URI
 } SerdBaseEvent;
 
 /**
@@ -2105,9 +2099,10 @@ typedef struct {
    Emitted whenever a prefix is defined.
 */
 typedef struct {
-  SerdEventType                type; ///< #SERD_PREFIX
-  const SerdNode* SERD_NONNULL name; ///< Prefix name
-  const SerdNode* SERD_NONNULL uri;  ///< Namespace URI
+  SerdEventType                type;  ///< #SERD_PREFIX
+  SerdCaret                    caret; ///< Optional position in document
+  const SerdNode* SERD_NONNULL name;  ///< Prefix name
+  const SerdNode* SERD_NONNULL uri;   ///< Namespace URI
 } SerdPrefixEvent;
 
 /**
@@ -2116,8 +2111,9 @@ typedef struct {
    Emitted for every statement.
 */
 typedef struct {
-  SerdEventType                     type;      ///< #SERD_STATEMENT
-  SerdStatementFlags                flags;     ///< Flags for pretty-printing
+  SerdEventType                     type;  ///< #SERD_STATEMENT
+  SerdCaret                         caret; ///< Optional position in document
+  SerdStatementFlags                flags; ///< Flags for pretty-printing
   const SerdStatement* SERD_NONNULL statement; ///< Statement
 } SerdStatementEvent;
 
@@ -2129,8 +2125,9 @@ typedef struct {
    write a delimiter.
 */
 typedef struct {
-  SerdEventType                type; ///< #SERD_END
-  const SerdNode* SERD_NONNULL node; ///< Anonymous node that is finished
+  SerdEventType                type;  ///< #SERD_END
+  SerdCaret                    caret; ///< Optional position in document
+  const SerdNode* SERD_NONNULL node;  ///< Anonymous node that is finished
 } SerdEndEvent;
 
 /**
@@ -2194,38 +2191,43 @@ serd_sink_write_event(const SerdSink* SERD_NONNULL  sink,
 /// Set the base URI
 SERD_API
 SerdStatus
-serd_sink_write_base(const SerdSink* SERD_NONNULL sink,
-                     const SerdNode* SERD_NONNULL uri);
+serd_sink_write_base(const SerdSink* SERD_NONNULL   sink,
+                     const SerdCaret* SERD_NULLABLE caret,
+                     const SerdNode* SERD_NONNULL   uri);
 
 /// Set a namespace prefix
 SERD_API
 SerdStatus
-serd_sink_write_prefix(const SerdSink* SERD_NONNULL sink,
-                       const SerdNode* SERD_NONNULL name,
-                       const SerdNode* SERD_NONNULL uri);
+serd_sink_write_prefix(const SerdSink* SERD_NONNULL   sink,
+                       const SerdCaret* SERD_NULLABLE caret,
+                       const SerdNode* SERD_NONNULL   name,
+                       const SerdNode* SERD_NONNULL   uri);
 
 /// Write a statement
 SERD_API
 SerdStatus
 serd_sink_write_statement(const SerdSink* SERD_NONNULL      sink,
+                          const SerdCaret* SERD_NULLABLE    caret,
                           SerdStatementFlags                flags,
                           const SerdStatement* SERD_NONNULL statement);
 
 /// Write a statement from individual nodes
 SERD_API
 SerdStatus
-serd_sink_write(const SerdSink* SERD_NONNULL  sink,
-                SerdStatementFlags            flags,
-                const SerdNode* SERD_NONNULL  subject,
-                const SerdNode* SERD_NONNULL  predicate,
-                const SerdNode* SERD_NONNULL  object,
-                const SerdNode* SERD_NULLABLE graph);
+serd_sink_write(const SerdSink* SERD_NONNULL   sink,
+                const SerdCaret* SERD_NULLABLE caret,
+                SerdStatementFlags             flags,
+                const SerdNode* SERD_NONNULL   subject,
+                const SerdNode* SERD_NONNULL   predicate,
+                const SerdNode* SERD_NONNULL   object,
+                const SerdNode* SERD_NULLABLE  graph);
 
 /// Mark the end of an anonymous node
 SERD_API
 SerdStatus
-serd_sink_write_end(const SerdSink* SERD_NONNULL sink,
-                    const SerdNode* SERD_NONNULL node);
+serd_sink_write_end(const SerdSink* SERD_NONNULL   sink,
+                    const SerdCaret* SERD_NULLABLE caret,
+                    const SerdNode* SERD_NONNULL   node);
 
 /**
    @}
@@ -3240,6 +3242,11 @@ serd_model_get_statement(const SerdModel* SERD_NONNULL model,
                          const SerdNode* SERD_NULLABLE p,
                          const SerdNode* SERD_NULLABLE o,
                          const SerdNode* SERD_NULLABLE g);
+
+SERD_API
+SerdCaret
+serd_model_statement_caret(const SerdModel* SERD_NONNULL     model,
+                           const SerdStatement* SERD_NONNULL statement);
 
 /// Return true iff a statement exists
 SERD_API

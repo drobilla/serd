@@ -134,7 +134,7 @@ serd_canon_on_statement(SerdCanonData* const       data,
   const SerdNode* const datatype  = serd_node_datatype(object);
   const SerdNode* const language  = serd_node_language(object);
   if (!datatype && !language) {
-    return serd_sink_write_statement(data->target, flags, statement);
+    return serd_sink_write_statement(data->target, NULL, flags, statement);
   }
 
   SerdNode*         normo = NULL;
@@ -165,10 +165,11 @@ serd_canon_on_statement(SerdCanonData* const       data,
   }
 
   if (!normo) {
-    return serd_sink_write_statement(data->target, flags, statement);
+    return serd_sink_write_statement(data->target, NULL, flags, statement);
   }
 
   const SerdStatus st = serd_sink_write(data->target,
+                                        statement->caret,
                                         flags,
                                         statement->nodes[0],
                                         statement->nodes[1],

@@ -82,14 +82,14 @@ test_write_failed_alloc(void)
 
   // Successfully write statement to count the number of allocations
   assert(canon);
-  assert(!serd_sink_write(canon, 0u, s, p, o, NULL));
+  assert(!serd_sink_write(canon, NULL, 0u, s, p, o, NULL));
 
   // Test that each allocation failing is handled gracefully
   const size_t n_new_allocs = allocator.n_allocations - n_setup_allocs;
   for (size_t i = 0; i < n_new_allocs; ++i) {
     allocator.n_remaining = i;
 
-    const SerdStatus st = serd_sink_write(canon, 0u, s, p, o, NULL);
+    const SerdStatus st = serd_sink_write(canon, NULL, 0u, s, p, o, NULL);
     assert(st == SERD_BAD_ALLOC);
   }
 

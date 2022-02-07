@@ -111,7 +111,9 @@ run(const Options opts)
     for (const SerdStatement* statement = NULL;
          !st && (statement = serd_cursor_get(cursor));
          serd_cursor_advance(cursor)) {
-      st = serd_sink_write_statement(target, 0u, statement);
+      const SerdCaret caret = serd_model_statement_caret(model, statement);
+
+      st = serd_sink_write_statement(target, &caret, 0u, statement);
     }
 
     serd_cursor_free(cursor);

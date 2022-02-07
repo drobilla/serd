@@ -99,8 +99,8 @@ test_write_failed_alloc(void)
   const SerdSink* sink = serd_writer_sink(writer);
   assert(writer);
   assert(sink);
-  assert(!serd_sink_write(sink, 0u, s, p1, o, NULL));
-  assert(!serd_sink_write(sink, 0u, s, p2, o, NULL));
+  assert(!serd_sink_write(sink, NULL, 0u, s, p1, o, NULL));
+  assert(!serd_sink_write(sink, NULL, 0u, s, p2, o, NULL));
   const size_t n_new_allocs = allocator.n_allocations - n_setup_allocs;
 
   serd_writer_free(writer);
@@ -112,8 +112,8 @@ test_write_failed_alloc(void)
     if ((writer = serd_writer_new(world, SERD_TURTLE, 0u, env, &output, 1))) {
       sink = serd_writer_sink(writer);
 
-      const SerdStatus st1 = serd_sink_write(sink, 0u, s, p1, o, NULL);
-      const SerdStatus st2 = serd_sink_write(sink, 0u, s, p2, o, NULL);
+      const SerdStatus st1 = serd_sink_write(sink, NULL, 0u, s, p1, o, NULL);
+      const SerdStatus st2 = serd_sink_write(sink, NULL, 0u, s, p2, o, NULL);
 
       assert(st1 == SERD_BAD_ALLOC || st1 == SERD_BAD_WRITE ||
              st2 == SERD_BAD_ALLOC || st2 == SERD_BAD_WRITE);
@@ -183,7 +183,7 @@ test_write_long_literal(void)
                        serd_empty_string());
 
   assert(serd_node_flags(o) & SERD_IS_LONG);
-  assert(!serd_sink_write(serd_writer_sink(writer), 0, s, p, o, NULL));
+  assert(!serd_sink_write(serd_writer_sink(writer), NULL, 0, s, p, o, NULL));
 
   serd_writer_free(writer);
   serd_close_output(&output);
@@ -236,7 +236,7 @@ test_writer_stack_overflow(void)
 
   const SerdNode* o = serd_nodes_blank(nodes, serd_string("blank"));
 
-  SerdStatus st = serd_sink_write(sink, SERD_ANON_O, s, p, o, NULL);
+  SerdStatus st = serd_sink_write(sink, NULL, SERD_ANON_O, s, p, o, NULL);
   assert(!st);
 
   // Repeatedly write nested anonymous objects until the writer stack overflows
@@ -246,7 +246,7 @@ test_writer_stack_overflow(void)
 
     const SerdNode* next_o = serd_nodes_blank(nodes, serd_string(buf));
 
-    st = serd_sink_write(sink, SERD_ANON_O, o, p, next_o, NULL);
+    st = serd_sink_write(sink, NULL, SERD_ANON_O, o, p, next_o, NULL);
 
     o = next_o;
 
@@ -292,8 +292,8 @@ test_strict_write(void)
   const SerdNode* bad_lit = serd_nodes_string(nodes, bad_view);
   const SerdNode* bad_uri = serd_nodes_uri(nodes, bad_view);
 
-  assert(serd_sink_write(sink, 0, s, p, bad_lit, 0) == SERD_BAD_TEXT);
-  assert(serd_sink_write(sink, 0, s, p, bad_uri, 0) == SERD_BAD_TEXT);
+  assert(serd_sink_write(sink, NULL, 0, s, p, bad_lit, 0) == SERD_BAD_TEXT);
+  assert(serd_sink_write(sink, NULL, 0, s, p, bad_uri, 0) == SERD_BAD_TEXT);
 
   serd_writer_free(writer);
   serd_close_output(&output);
@@ -343,7 +343,9 @@ test_write_error(void)
   SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0u, env, &output, 1);
   assert(writer);
 
-  SerdStatus st = serd_sink_write(serd_writer_sink(writer), 0u, s, p, o, NULL);
+  SerdStatus st =
+    serd_sink_write(serd_writer_sink(writer), NULL, 0u, s, p, o, NULL);
+
   assert(st == SERD_BAD_WRITE);
 
   serd_writer_free(writer);
@@ -355,7 +357,7 @@ test_write_error(void)
 
   assert(writer);
 
-  assert(serd_sink_write(serd_writer_sink(writer), 0u, s, p, o, NULL) ==
+  assert(serd_sink_write(serd_writer_sink(writer), NULL, 0u, s, p, o, NULL) ==
          SERD_BAD_WRITE);
 
   serd_writer_free(writer);
@@ -389,7 +391,7 @@ test_write_empty_syntax(void)
 
   assert(writer);
 
-  assert(!serd_sink_write(serd_writer_sink(writer), 0u, s, p, o, NULL));
+  assert(!serd_sink_write(serd_writer_sink(writer), NULL, 0u, s, p, o, NULL));
   assert(!serd_close_output(&output));
 
   char* const out = (char*)buffer.buf;
@@ -428,7 +430,7 @@ test_write_bad_uri(void)
   assert(writer);
 
   const SerdStatus st =
-    serd_sink_write(serd_writer_sink(writer), 0u, s, p, rel, NULL);
+    serd_sink_write(serd_writer_sink(writer), NULL, 0u, s, p, rel, NULL);
 
   assert(st);
   assert(st == SERD_BAD_ARG);
@@ -470,7 +472,7 @@ check_pname_escape(const char* const lname, const char* const expected)
 
   const SerdNode* node = serd_nodes_uri(nodes, serd_string(uri));
 
-  assert(!serd_sink_write(serd_writer_sink(writer), 0, s, p, node, NULL));
+  assert(!serd_sink_write(serd_writer_sink(writer), NULL, 0, s, p, node, NULL));
 
   serd_writer_free(writer);
   serd_close_output(&output);

@@ -65,7 +65,6 @@ statements(void)
     serd_nodes_uri(nodes, serd_string("http://example.org/drobilla")),
     serd_nodes_uri(nodes, serd_string("http://example.org/firstName")),
     serd_nodes_string(nodes, serd_string("David")),
-    NULL,
     NULL);
   // end statement-new
 
@@ -80,7 +79,7 @@ statements_accessing_fields(void)
   SerdNode* sp = serd_new_uri(NULL, serd_string("http://example.org/p"));
   SerdNode* so = serd_new_uri(NULL, serd_string("http://example.org/o"));
 
-  SerdStatement* statement = serd_statement_new(NULL, ss, sp, so, NULL, NULL);
+  SerdStatement* statement = serd_statement_new(NULL, ss, sp, so, NULL);
 
   // begin get-subject
   const SerdNode* s = serd_statement_node(statement, SERD_SUBJECT);
@@ -104,8 +103,8 @@ statements_comparison(void)
   SerdNode* sp = serd_new_uri(NULL, serd_string("http://example.org/p"));
   SerdNode* so = serd_new_uri(NULL, serd_string("http://example.org/o"));
 
-  SerdStatement* statement1 = serd_statement_new(NULL, ss, sp, so, NULL, NULL);
-  SerdStatement* statement2 = serd_statement_new(NULL, ss, sp, so, NULL, NULL);
+  SerdStatement* statement1 = serd_statement_new(NULL, ss, sp, so, NULL);
+  SerdStatement* statement2 = serd_statement_new(NULL, ss, sp, so, NULL);
 
   // begin statement-equals
   if (serd_statement_equals(statement1, statement2)) {
