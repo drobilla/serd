@@ -23,8 +23,13 @@
 
 struct SerdStatementImpl {
   const SerdNode* nodes[4];
-  SerdCaret*      caret;
+  SerdCaret       caret;
 };
+
+/* typedef struct { */
+/*   SerdStatement statement; */
+/*   SerdCaret     caret; */
+/* } SerdModelStatement; */
 
 SERD_PURE_FUNC
 bool

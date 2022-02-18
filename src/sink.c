@@ -134,7 +134,9 @@ serd_sink_write(const SerdSink*          sink,
   assert(predicate);
   assert(object);
 
-  const SerdStatement statement = {{subject, predicate, object, graph}, NULL};
+  const SerdStatement statement = {{subject, predicate, object, graph},
+                                   {NULL, 0u, 0u}};
+
   return serd_sink_write_statement(sink, caret, flags, &statement);
 }
 

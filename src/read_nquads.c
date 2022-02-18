@@ -76,7 +76,7 @@ read_statement(SerdReader* const reader)
 
   serd_node_zero_pad(ctx.object);
   const SerdStatement statement = {
-    {ctx.subject, ctx.predicate, ctx.object, ctx.graph}, &orig_caret};
+    {ctx.subject, ctx.predicate, ctx.object, ctx.graph}, orig_caret};
 
   return serd_sink_write_statement(
     reader->sink, &orig_caret, *ctx.flags, &statement);

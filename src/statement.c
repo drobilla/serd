@@ -68,7 +68,6 @@ serd_statement_new(SerdAllocator* const  allocator,
     statement->nodes[1] = p;
     statement->nodes[2] = o;
     statement->nodes[3] = g;
-    statement->caret    = NULL;
   }
 
   return statement;
@@ -87,16 +86,6 @@ serd_statement_copy(SerdAllocator* const       allocator,
 
   if (copy) {
     memcpy(copy, statement, sizeof(SerdStatement));
-
-    if (statement->caret) {
-      if (!(copy->caret =
-              (SerdCaret*)serd_amalloc(allocator, sizeof(SerdCaret)))) {
-        serd_afree(allocator, copy);
-        return NULL;
-      }
-
-      memcpy(copy->caret, statement->caret, sizeof(SerdCaret));
-    }
   }
 
   return copy;
@@ -106,10 +95,7 @@ void
 serd_statement_free(SerdAllocator* const allocator,
                     SerdStatement* const statement)
 {
-  if (statement) {
-    serd_afree(allocator, statement->caret);
-    serd_afree(allocator, statement);
-  }
+  serd_afree(allocator, statement);
 }
 
 const SerdNode*
