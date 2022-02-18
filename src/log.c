@@ -158,8 +158,14 @@ serd_vxlogf(const SerdWorld* const    world,
 
   // Format and print the message itself
   vfprintf(stderr, fmt, args);
-  fprintf(stderr, "\n");
 
+  // Print clang-tidy style check suffix
+  const char* const check = get_log_field(n_fields, fields, "SERD_CHECK");
+  if (check) {
+    fprintf(stderr, " [%s]", check);
+  }
+
+  fprintf(stderr, "\n");
   return SERD_SUCCESS;
 }
 
@@ -223,7 +229,7 @@ serd_vlogf_at(const SerdWorld* SERD_NONNULL world,
   assert(world);
   assert(fmt);
 
-  if (!caret) {
+  if (!caret || !caret->document) {
     return serd_vxlogf(world, level, 0u, NULL, fmt, args);
   }
 
