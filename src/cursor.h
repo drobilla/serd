@@ -17,8 +17,6 @@
 #ifndef SERD_CURSOR_H
 #define SERD_CURSOR_H
 
-#include "statement.h"
-
 #include "serd/serd.h"
 #include "zix/btree.h"
 
@@ -69,15 +67,15 @@ static const unsigned orderings[N_STATEMENT_ORDERS][4] = {
 SerdCursor
 serd_cursor_make(const SerdModel* model,
                  ZixBTreeIter     iter,
-                 const SerdQuad   pattern,
+                 const SerdNode*  pattern[4],
                  ScanStrategy     strategy);
 
 SerdStatus
 serd_cursor_scan_next(SerdCursor* cursor);
 
 bool
-serd_iter_in_range(ZixBTreeIter   iter,
-                   const SerdQuad pattern,
-                   ScanStrategy   strategy);
+serd_iter_in_range(ZixBTreeIter          iter,
+                   const SerdNode* const pattern[4],
+                   ScanStrategy          strategy);
 
 #endif // SERD_CURSOR_H

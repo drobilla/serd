@@ -29,8 +29,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-static const SerdQuad everything_pattern = {0, 0, 0, 0};
-
 /// A 3-bit signature for a triple pattern used as a table index
 typedef enum {
   SERD_SIGNATURE_XXX, // 000 (???)
@@ -118,6 +116,8 @@ serd_model_new_with_allocator(SerdAllocator* const     allocator,
                               const SerdStatementOrder default_order,
                               const SerdModelFlags     flags)
 {
+  static const SerdNode* everything_pattern[4] = {0, 0, 0, 0};
+
   assert(world);
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
@@ -219,6 +219,8 @@ log_bad_index(const SerdModel* const   model,
 static SerdCursor
 make_begin_cursor(const SerdModel* const model, const SerdStatementOrder order)
 {
+  static const SerdNode* everything_pattern[4] = {0, 0, 0, 0};
+
   if (!model->indices[order]) {
     log_bad_index(model, "missing", order, false, false, false, false);
     return model->end;
@@ -505,10 +507,10 @@ serd_model_search(const SerdModel* const model,
                   const SerdNode* const  g)
 {
   // Build a pattern of interned nodes
-  const SerdQuad pattern = {serd_nodes_get(model->nodes, s),
-                            serd_nodes_get(model->nodes, p),
-                            serd_nodes_get(model->nodes, o),
-                            serd_nodes_get(model->nodes, g)};
+  const SerdNode* pattern[4] = {serd_nodes_get(model->nodes, s),
+                                serd_nodes_get(model->nodes, p),
+                                serd_nodes_get(model->nodes, o),
+                                serd_nodes_get(model->nodes, g)};
 
   // If some node isn't in the model at all, no need to search for statements
   const int n_given = !!s + !!p + !!o + !!g;

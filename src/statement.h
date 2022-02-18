@@ -21,11 +21,9 @@
 
 #include <stdbool.h>
 
-typedef const SerdNode* SerdQuad[4];
-
 struct SerdStatementImpl {
-  SerdQuad   nodes;
-  SerdCaret* caret;
+  const SerdNode* nodes[4];
+  SerdCaret*      caret;
 };
 
 SERD_PURE_FUNC

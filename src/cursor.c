@@ -19,6 +19,7 @@
 #include "memory.h"
 #include "model.h"
 #include "node.h"
+#include "statement.h"
 
 #include "serd/serd.h"
 #include "zix/btree.h"
@@ -30,16 +31,16 @@
 
 static inline bool
 statement_matches_quad(const SerdStatement* const statement,
-                       const SerdQuad             quad)
+                       const SerdNode*            quad[4])
 {
   return serd_statement_matches(statement, quad[0], quad[1], quad[2], quad[3]);
 }
 
 SERD_PURE_FUNC
 bool
-serd_iter_in_range(const ZixBTreeIter iter,
-                   const SerdQuad     pattern,
-                   const ScanStrategy strategy)
+serd_iter_in_range(const ZixBTreeIter    iter,
+                   const SerdNode* const pattern[4],
+                   const ScanStrategy    strategy)
 {
   const SerdStatement* const statement =
     (const SerdStatement*)zix_btree_get(iter);
@@ -101,7 +102,7 @@ check_version(const SerdCursor* const cursor)
 SerdCursor
 serd_cursor_make(const SerdModel* const model,
                  const ZixBTreeIter     iter,
-                 const SerdQuad         pattern,
+                 const SerdNode*        pattern[4],
                  const ScanStrategy     strategy)
 {
   SerdCursor cursor = {model,
