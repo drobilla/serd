@@ -12,7 +12,7 @@
 
 struct SerdStatementImpl {
   const SerdNode* ZIX_NULLABLE nodes[4];
-  SerdCaret* ZIX_NULLABLE      caret;
+  SerdCaret                    caret;
 };
 
 ZIX_PURE_FUNC bool

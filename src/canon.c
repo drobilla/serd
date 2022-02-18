@@ -125,6 +125,7 @@ build_tagged(ZixAllocator* const ZIX_NONNULL   allocator,
 
 static SerdStatus
 serd_canon_on_statement(SerdCanonData* const       data,
+                        const SerdCaret* const     caret,
                         const SerdStatementFlags   flags,
                         const SerdStatement* const statement)
 {
@@ -142,19 +143,19 @@ serd_canon_on_statement(SerdCanonData* const       data,
                               : build_tagged(allocator, &normo, object, language);
 
   if (r.status) {
-    SerdCaret  caret = {NULL, 0U, 0U};
-    const bool lax   = (data->flags & SERD_CANON_LAX);
+    SerdCaret  log_caret = {NULL, 0U, 0U};
+    const bool lax       = (data->flags & SERD_CANON_LAX);
 
-    if (statement->caret) {
+    if (caret) {
       // Adjust column to point at the error within the literal
-      caret.document = statement->caret->document;
-      caret.line     = statement->caret->line;
-      caret.column   = statement->caret->column + 1 + (unsigned)r.count;
+      log_caret.document = caret->document;
+      log_caret.line     = caret->line;
+      log_caret.column   = caret->column + 1 + (unsigned)r.count;
     }
 
     serd_logf_at(data->world,
                  lax ? SERD_LOG_LEVEL_WARNING : SERD_LOG_LEVEL_ERROR,
-                 statement->caret ? &caret : NULL,
+                 &log_caret,
                  "invalid literal (%s)",
                  exess_strerror(r.status));
 
@@ -168,7 +169,7 @@ serd_canon_on_statement(SerdCanonData* const       data,
   }
 
   const SerdStatus st = serd_sink_write(data->target,
-                                        statement->caret,
+                                        caret,
                                         flags,
                                         statement->nodes[0],
                                         statement->nodes[1],
@@ -182,8 +183,10 @@ static SerdStatus
 serd_canon_on_event(SerdCanonData* const data, const SerdEvent* const event)
 {
   return (event->type == SERD_STATEMENT)
-           ? serd_canon_on_statement(
-               data, event->statement.flags, event->statement.statement)
+           ? serd_canon_on_statement(data,
+                                     &event->statement.caret,
+                                     event->statement.flags,
+                                     event->statement.statement)
            : serd_sink_write_event(data->target, event);
 }
 

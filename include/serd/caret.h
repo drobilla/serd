@@ -72,7 +72,7 @@ serd_caret_equals(const SerdCaret* ZIX_NULLABLE lhs,
    This is typically a file URI, but may be a descriptive string node for
    statements that originate from streams.
 */
-SERD_PURE_API const SerdNode* ZIX_NONNULL
+SERD_PURE_API const SerdNode* ZIX_NULLABLE
 serd_caret_document(const SerdCaret* ZIX_NONNULL caret);
 
 /// Return the one-relative line number in the document

@@ -3,7 +3,6 @@
 
 #include "memory.h"
 #include "model.h"
-#include "statement.h"
 
 #include "serd/caret.h"
 #include "serd/event.h"
@@ -63,6 +62,7 @@ can_insert(SerdWorld* const world, const SerdNode* const node)
 
 static SerdStatus
 serd_inserter_on_statement(SerdInserterData* const    data,
+                           const SerdCaret* const     caret,
                            const SerdStatementFlags   flags,
                            const SerdStatement* const statement)
 {
@@ -92,11 +92,16 @@ serd_inserter_on_statement(SerdInserterData* const    data,
     serd_statement_graph(statement) ? serd_statement_graph(statement)
                                     : data->default_graph);
 
-  const SerdCaret* const caret =
-    (data->model->flags & SERD_STORE_CARETS) ? statement->caret : NULL;
+  /* if (data->model->flags & SERD_STORE_CARETS) { */
+  /* } */
 
-  const SerdStatus st =
-    serd_model_add_with_caret(data->model, s, p, o, g, caret);
+  const SerdStatus st = serd_model_add_with_caret(
+    data->model,
+    s,
+    p,
+    o,
+    g,
+    (data->model->flags & SERD_STORE_CARETS) ? caret : NULL);
 
   return st > SERD_FAILURE ? st : SERD_SUCCESS;
 }
@@ -107,7 +112,10 @@ serd_inserter_on_event(SerdInserterData* const data,
 {
   if (event->type == SERD_STATEMENT) {
     return serd_inserter_on_statement(
-      data, event->statement.flags, event->statement.statement);
+      data,
+      event->statement.caret.document ? &event->statement.caret : NULL,
+      event->statement.flags,
+      event->statement.statement);
   }
 
   return SERD_SUCCESS;

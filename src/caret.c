@@ -62,7 +62,6 @@ const SerdNode*
 serd_caret_document(const SerdCaret* const caret)
 {
   assert(caret);
-  assert(caret->document);
 
   return caret->document;
 }
