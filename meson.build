@@ -182,6 +182,7 @@ sources = files(
   'src/sink.c',
   'src/statement.c',
   'src/statement.c',
+  'src/statements.c',
   'src/string.c',
   'src/syntax.c',
   'src/system.c',
