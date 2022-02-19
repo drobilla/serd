@@ -156,13 +156,10 @@ serd_env_set_base_uri(SerdEnv* const env, const ZixStringView uri)
   assert(env);
 
   if (!uri.length) {
-    serd_nodes_deref(env->nodes, env->base_uri_node);
     env->base_uri_node = NULL;
     env->base_uri      = SERD_URI_NULL;
     return SERD_SUCCESS;
   }
-
-  const SerdNode* const old_base_uri = env->base_uri_node;
 
   // Resolve the new base against the current base in case it is relative
   const SerdURIView new_base_uri =
@@ -176,7 +173,6 @@ serd_env_set_base_uri(SerdEnv* const env, const ZixStringView uri)
     return SERD_BAD_ALLOC;
   }
 
-  serd_nodes_deref(env->nodes, old_base_uri);
   return SERD_SUCCESS;
 }
 
@@ -259,7 +255,6 @@ serd_env_add(SerdEnv* const        env,
   SerdPrefix* const prefix = serd_env_find(env, name.data, name.length);
   if (prefix) {
     if (!!strcmp(serd_node_string(prefix->uri), serd_node_string(uri))) {
-      serd_nodes_deref(env->nodes, prefix->uri);
       prefix->uri = uri;
     }
   } else {
@@ -336,7 +331,8 @@ serd_env_unset_prefix(SerdEnv* const env, const ZixStringView name)
   }
 
   // Drop prefix's URI node and clear if it's the only one
-  serd_nodes_deref(env->nodes, prefix->uri);
+  // FIXME
+  //serd_nodes_drop(env->nodes, prefix->uri);
   if (env->n_prefixes == 1U) {
     serd_wfree(env->world, env->prefixes);
     env->prefixes   = NULL;

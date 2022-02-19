@@ -68,15 +68,14 @@ SERD_API const SerdNode* ZIX_ALLOCATED
 serd_nodes_get(SerdNodes* ZIX_NONNULL nodes, SerdNodeArgs args);
 
 /**
-   Dereference `node`.
+   Drop `node` from the set and free its memory.
 
-   Decrements the reference count of `node`, and frees the internally stored
-   equivalent node if this was the last reference.  Does nothing if no node
-   equivalent to `node` is stored in `nodes`.
+   After this call, `node` is no longer valid.  Care must be taken by the
+   caller to ensure that no pointers to the node still exist.
 */
-SERD_API void
-serd_nodes_deref(SerdNodes* ZIX_NONNULL       nodes,
-                 const SerdNode* ZIX_NULLABLE node);
+SERD_API SerdStatus
+serd_nodes_drop(SerdNodes* ZIX_NONNULL       nodes,
+                const SerdNode* ZIX_NULLABLE node);
 
 /**
    @}
