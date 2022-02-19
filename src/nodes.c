@@ -1,35 +1,25 @@
 // Copyright 2011-2022 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "nodes.h"
-
 #include "node.h"
 #include "node_spec.h"
 
 // Define the types used in the hash interface for more type safety
 #define ZIX_HASH_KEY_TYPE SerdNode
-#define ZIX_HASH_RECORD_TYPE NodesEntry
+#define ZIX_HASH_RECORD_TYPE SerdNode
 #define ZIX_HASH_SEARCH_DATA_TYPE NodeSpec
 
+#include "serd/node.h"
 #include "serd/nodes.h"
+#include "serd/status.h"
 #include "zix/allocator.h"
-#include "zix/attributes.h"
 #include "zix/digest.h"
 #include "zix/hash.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <string.h>
-
-#if ((defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112l) || \
-     (defined(__cplusplus) && __cplusplus >= 201103L))
-
-static_assert(sizeof(NodesEntryHead) == sizeof(SerdNode),
-              "NodesEntryHead must be the same size as SerdNode for alignment");
-
-#endif
 
 /*
   The main goal here is to make getting an existing node as fast as possible,
@@ -39,7 +29,7 @@ static_assert(sizeof(NodesEntryHead) == sizeof(SerdNode),
 
   This is achieved by generating a hash code from node components without
   actually allocating that node, and using the low-level insertion interface of
-  ZixHash to do a custom search.  This way, an entry is only allocated when
+  ZixHash to do a custom search.  This way, a record is only allocated when
   necessary, and the hash table is only searched once.
 
   The downside is that subtle and very bad things will happen if the hash
@@ -63,73 +53,17 @@ typedef struct {
   char     body[MAX_STATIC_NODE_SIZE];
 } StaticNode;
 
-/**
-   Allocator for allocating entries in the node hash table.
-
-   This allocator implements only the methods used by the serd_node_*
-   constructors, and transparently increases the allocation size so there is
-   room for an extra NodesEntryHead at the start.  This allows the serd_node_*
-   constructors to be re-used here, even though the table stores entries (nodes
-   with an extra header) rather than node pointers directly.
-*/
-typedef struct {
-  ZixAllocator  base; ///< Implementation of ZixAllocator (base "class")
-  ZixAllocator* real; ///< Underlying "real" memory allocator
-} SerdNodesEntryAllocator;
-
-ZIX_MALLOC_FUNC
-static void*
-serd_nodes_entry_aligned_alloc(ZixAllocator* const allocator,
-                               const size_t        alignment,
-                               const size_t        size)
-{
-  ZixAllocator* const real = ((SerdNodesEntryAllocator*)allocator)->real;
-
-  void* const ptr =
-    real->aligned_alloc(real, alignment, serd_node_align + size);
-
-  return ptr ? (((uint8_t*)ptr) + serd_node_align) : NULL;
-}
-
-static void
-serd_nodes_entry_aligned_free(ZixAllocator* const allocator, void* const ptr)
-{
-  ZixAllocator* const real = ((SerdNodesEntryAllocator*)allocator)->real;
-
-  if (ptr) {
-    real->aligned_free(real, (((uint8_t*)ptr) - serd_node_align));
-  }
-}
-
-static SerdNodesEntryAllocator
-serd_nodes_entry_allocator(ZixAllocator* const real)
-{
-  const SerdNodesEntryAllocator entry_allocator = {
-    {
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      serd_nodes_entry_aligned_alloc,
-      serd_nodes_entry_aligned_free,
-    },
-    real ? real : zix_default_allocator(),
-  };
-
-  return entry_allocator;
-}
-
 struct SerdNodesImpl {
-  SerdNodesEntryAllocator allocator;
-  ZixHash*                hash;
+  ZixAllocator* allocator;
+  ZixHash*      hash;
 };
 
 static const StaticNode empty_static_node = {{0U, 0U, SERD_LITERAL}, {'\0'}};
 
 static const SerdNode*
-nodes_key(const NodesEntry* const entry)
+nodes_key(const SerdNode* const record)
 {
-  return &entry->node;
+  return record;
 }
 
 static ZixHashCode
@@ -229,12 +163,6 @@ nodes_equal(const SerdNode* const a, const SerdNode* const b)
   return true;
 }
 
-static void
-free_entry(SerdNodes* const nodes, NodesEntry* const entry)
-{
-  zix_aligned_free(&nodes->allocator.base, &entry->node);
-}
-
 SerdNodes*
 serd_nodes_new(ZixAllocator* const allocator)
 {
@@ -242,7 +170,7 @@ serd_nodes_new(ZixAllocator* const allocator)
     (SerdNodes*)zix_calloc(allocator, 1, sizeof(SerdNodes));
 
   if (nodes) {
-    nodes->allocator = serd_nodes_entry_allocator(allocator);
+    nodes->allocator = allocator;
 
     if (!(nodes->hash =
             zix_hash_new(allocator, nodes_key, nodes_hash, nodes_equal))) {
@@ -261,11 +189,12 @@ serd_nodes_free(SerdNodes* nodes)
     for (ZixHashIter i = zix_hash_begin(nodes->hash);
          i != zix_hash_end(nodes->hash);
          i = zix_hash_next(nodes->hash, i)) {
-      free_entry(nodes, (NodesEntry*)zix_hash_get(nodes->hash, i));
+      SerdNode* const node = zix_hash_get(nodes->hash, i);
+      serd_node_free(nodes->allocator, node);
     }
 
     zix_hash_free(nodes->hash);
-    zix_free(nodes->allocator.real, nodes);
+    zix_free(nodes->allocator, nodes);
   }
 }
 
@@ -286,25 +215,20 @@ serd_nodes_intern(SerdNodes* nodes, const SerdNode* node)
   }
 
   const ZixHashInsertPlan plan     = zix_hash_plan_insert(nodes->hash, node);
-  NodesEntry* const       existing = zix_hash_record_at(nodes->hash, plan);
+  SerdNode* const         existing = zix_hash_record_at(nodes->hash, plan);
   if (existing) {
-    assert(serd_node_equals(&existing->node, node));
-    ++existing->head.refs;
-    return &existing->node;
+    assert(serd_node_equals(existing, node));
+    return existing;
   }
 
-  SerdNode* const new_node = serd_node_copy(&nodes->allocator.base, node);
+  SerdNode* const new_node = serd_node_copy(nodes->allocator, node);
   if (!new_node) {
     return NULL;
   }
 
-  NodesEntry* const entry = (NodesEntry*)(new_node - 1U);
-
-  entry->head.refs = 1U;
-
-  // Insert the entry (blissfully ignoring a failed hash size increase)
-  zix_hash_insert_at(nodes->hash, plan, entry);
-  return &entry->node;
+  // Insert the record (blissfully ignoring a failed hash size increase)
+  zix_hash_insert_at(nodes->hash, plan, new_node);
+  return new_node;
 }
 
 const SerdNode*
@@ -312,69 +236,45 @@ serd_nodes_existing(const SerdNodes* const nodes, const SerdNode* const node)
 {
   assert(nodes);
 
-  if (!node) {
-    return NULL;
-  }
-
-  NodesEntry* const entry = zix_hash_find_record(nodes->hash, node);
-
-  return entry ? &entry->node : NULL;
+  return node ? zix_hash_find_record(nodes->hash, node) : NULL;
 }
 
 static const SerdNode*
-serd_nodes_manage_entry_at(SerdNodes* const        nodes,
-                           NodesEntry* const       entry,
-                           const ZixHashInsertPlan plan)
+serd_nodes_manage_node_at(SerdNodes* const        nodes,
+                          SerdNode* const         node,
+                          const ZixHashInsertPlan plan)
 {
   assert(nodes);
-  assert(entry);
 
-  entry->head.refs = 1U;
-
-  // Insert the entry (blissfully ignoring a failed hash size increase)
-  if (zix_hash_insert_at(nodes->hash, plan, entry)) {
-    free_entry(nodes, entry);
+  // Insert the record (blissfully ignoring a failed hash size increase)
+  if (!node || zix_hash_insert_at(nodes->hash, plan, node)) {
+    serd_node_free(nodes->allocator, node);
     return NULL;
   }
 
-  return &entry->node;
+  return node;
 }
 
 static const SerdNode*
-serd_nodes_manage_entry_node_at(SerdNodes* const        nodes,
-                                SerdNode* const         node,
-                                const ZixHashInsertPlan plan)
+serd_nodes_manage_node(SerdNodes* const nodes, SerdNode* const node)
 {
   if (!node) {
     return NULL;
   }
 
-  NodesEntry* const entry = (NodesEntry*)(node - 1U);
-
-  return serd_nodes_manage_entry_at(nodes, entry, plan);
-}
-
-static const SerdNode*
-serd_nodes_manage_entry_node(SerdNodes* const nodes, SerdNode* const node)
-{
-  if (!node) {
-    return NULL;
-  }
-
-  NodesEntry* const       entry    = (NodesEntry*)(node - 1U);
+  // Find the insert position for this node
   const ZixHashInsertPlan plan     = zix_hash_plan_insert(nodes->hash, node);
-  NodesEntry* const       existing = zix_hash_record_at(nodes->hash, plan);
+  SerdNode* const         existing = zix_hash_record_at(nodes->hash, plan);
   if (existing) {
-    assert(serd_node_equals(&existing->node, node));
-    assert(nodes_hash(&existing->node) == plan.code);
-    ++existing->head.refs;
-    free_entry(nodes, entry);
-    return &existing->node;
+    assert(serd_node_equals(existing, node));
+    assert(nodes_hash(existing) == plan.code);
+    serd_node_free(nodes->allocator, node);
+    return existing;
   }
 
-  assert(nodes_hash(&entry->node) == plan.code);
+  assert(nodes_hash(node) == plan.code);
 
-  return serd_nodes_manage_entry_at(nodes, entry, plan);
+  return serd_nodes_manage_node_at(nodes, node, plan);
 }
 
 static const SerdNode*
@@ -391,18 +291,17 @@ serd_nodes_token(SerdNodes* const    nodes,
     zix_hash_plan_insert_prehashed(nodes->hash, code, node_equals_spec, &key);
 
   // If we found an existing node, bump its reference count and return it
-  NodesEntry* const existing = zix_hash_record_at(nodes->hash, plan);
+  SerdNode* const existing = zix_hash_record_at(nodes->hash, plan);
   if (existing) {
-    assert(nodes_hash(&existing->node) == code);
-    ++existing->head.refs;
-    return &existing->node;
+    assert(nodes_hash(existing) == code);
+    return existing;
   }
 
   // Otherwise, allocate and manage a new one
-  ZixAllocator* const alloc = &nodes->allocator.base;
+  ZixAllocator* const alloc = nodes->allocator;
   SerdNode* const     node  = serd_node_new(alloc, serd_a_token(type, string));
 
-  return serd_nodes_manage_entry_node_at(nodes, node, plan);
+  return serd_nodes_manage_node_at(nodes, node, plan);
 }
 
 static const SerdNode*
@@ -420,19 +319,18 @@ serd_nodes_literal(SerdNodes* const    nodes,
     zix_hash_plan_insert_prehashed(nodes->hash, code, node_equals_spec, &spec);
 
   // If we found an existing node, bump its reference count and return it
-  NodesEntry* const existing = zix_hash_record_at(nodes->hash, plan);
+  SerdNode* const existing = zix_hash_record_at(nodes->hash, plan);
   if (existing) {
-    assert(nodes_hash(&existing->node) == code);
-    ++existing->head.refs;
-    return &existing->node;
+    assert(nodes_hash(existing) == code);
+    return existing;
   }
 
   // Otherwise, allocate and manage a new one
-  ZixAllocator* const alloc = &nodes->allocator.base;
+  ZixAllocator* const alloc = nodes->allocator;
   SerdNode* const     node =
     serd_node_new(alloc, serd_a_literal(string, flags, meta));
 
-  return serd_nodes_manage_entry_node_at(nodes, node, plan);
+  return serd_nodes_manage_node_at(nodes, node, plan);
 }
 
 static const SerdNode*
@@ -480,27 +378,37 @@ serd_nodes_get(SerdNodes* const nodes, const SerdNodeArgs args)
     break;
   }
 
-  return serd_nodes_manage_entry_node(
-    nodes, serd_node_new(&nodes->allocator.base, args));
+  /* We're more or less forced to allocate and construct an entry here, since
+     we need the base64 string to hash.  Though it would be possible to
+     calculate it in a streaming fashion, that would be a severe pessimisation
+     in the presumably common case of raw data not being cached, since it would
+     only need to be serialised again.  Keeping a tentative entry buffer around
+     when possible would probably be a better improvement if this ever becomes
+     a performance issue.  More ambitiously, adding support for binary nodes
+     like a Real Database(TM) would largely avoid this problem. */
+
+  return serd_nodes_manage_node(nodes, serd_node_new(nodes->allocator, args));
 }
 
-void
-serd_nodes_deref(SerdNodes* const nodes, const SerdNode* const node)
+SerdStatus
+serd_nodes_drop(SerdNodes* const nodes, const SerdNode* const node)
 {
   if (!node) {
-    return;
+    return SERD_FAILURE;
   }
 
   ZixHashIter i = zix_hash_find(nodes->hash, node);
   if (i == zix_hash_end(nodes->hash)) {
-    return;
+    return SERD_FAILURE;
   }
 
-  NodesEntry* const entry = zix_hash_get(nodes->hash, i);
-  if (--entry->head.refs == 0U) {
-    NodesEntry* removed = NULL;
-    zix_hash_erase(nodes->hash, i, &removed);
-    assert(removed == entry);
-    free_entry(nodes, removed);
-  }
+  SerdNode* const entry   = zix_hash_get(nodes->hash, i);
+  SerdNode*       removed = NULL;
+  zix_hash_erase(nodes->hash, i, &removed);
+
+  assert(removed == entry);
+  (void)entry;
+
+  serd_node_free(nodes->allocator, removed);
+  return SERD_SUCCESS;
 }

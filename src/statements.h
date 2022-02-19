@@ -8,6 +8,8 @@
 #include "system.h"
 
 #include "serd/serd.h"
+#include "zix/allocator.h"
+#include "zix/attributes.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -16,7 +18,7 @@
   ((SERD_PAGE_SIZE - 2 * sizeof(uintptr_t)) / sizeof(SerdStatement))
 
 typedef struct SerdStatementPage {
-  struct SerdStatementPage* SERD_NULLABLE next; ///< Next page in the list
+  struct SerdStatementPage* ZIX_NULLABLE next; ///< Next page in the list
   size_t count; ///< Number of statements in this page
 
   SerdStatement statements[SERD_N_PAGE_STATEMENTS];
@@ -37,25 +39,25 @@ typedef size_t SerdStatementsFlags;
    append-only log of added statements, but only in memory.
 */
 typedef struct {
-  SerdAllocator* SERD_NONNULL      allocator; ///< Page allocator
-  SerdStatementsFlags              flags;     ///< Configuration flags
-  SerdStatementPage* SERD_NULLABLE head;      ///< First page of statements
+  ZixAllocator* ZIX_NONNULL       allocator; ///< Page allocator
+  SerdStatementsFlags             flags;     ///< Configuration flags
+  SerdStatementPage* ZIX_NULLABLE head;      ///< First page of statements
 } SerdStatements;
 
 void
-serd_statements_construct(SerdStatements* SERD_NONNULL statements,
-                          SerdAllocator* SERD_NONNULL  allocator,
-                          SerdStatementsFlags          flags);
+serd_statements_construct(SerdStatements* ZIX_NONNULL statements,
+                          ZixAllocator* ZIX_NONNULL   allocator,
+                          SerdStatementsFlags         flags);
 
 void
-serd_statements_destroy(SerdStatements* SERD_NONNULL statements);
+serd_statements_destroy(SerdStatements* ZIX_NONNULL statements);
 
-SerdStatement* SERD_ALLOCATED
-serd_statements_append(SerdStatements* SERD_NONNULL   statements,
-                       const SerdNode* SERD_NONNULL   s,
-                       const SerdNode* SERD_NONNULL   p,
-                       const SerdNode* SERD_NONNULL   o,
-                       const SerdNode* SERD_NULLABLE  g,
-                       const SerdCaret* SERD_NULLABLE caret);
+SerdStatement* ZIX_ALLOCATED
+serd_statements_append(SerdStatements* ZIX_NONNULL   statements,
+                       const SerdNode* ZIX_NONNULL   s,
+                       const SerdNode* ZIX_NONNULL   p,
+                       const SerdNode* ZIX_NONNULL   o,
+                       const SerdNode* ZIX_NULLABLE  g,
+                       const SerdCaret* ZIX_NULLABLE caret);
 
 #endif // STATEMENTS_H

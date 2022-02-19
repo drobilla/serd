@@ -3,14 +3,12 @@
 
 #include "statements.h"
 
-#include "memory.h"
-
 #include <assert.h>
 #include <string.h>
 
 void
 serd_statements_construct(SerdStatements* const     statements,
-                          SerdAllocator* const      allocator,
+                          ZixAllocator* const       allocator,
                           const SerdStatementsFlags flags)
 {
   assert(allocator);
@@ -26,7 +24,7 @@ serd_statements_destroy(SerdStatements* const statements)
   while (statements->head) {
     SerdStatementPage* const next = statements->head->next;
 
-    serd_afree(statements->allocator, statements->head);
+    zix_free(statements->allocator, statements->head);
     statements->head = next;
   }
 
@@ -43,7 +41,7 @@ serd_statements_append(SerdStatements* const  statements,
 {
   // Allocate a new head page if necessary
   if (!statements->head || statements->head->count >= SERD_N_PAGE_STATEMENTS) {
-    SerdStatementPage* const new_head = (SerdStatementPage*)serd_acalloc(
+    SerdStatementPage* const new_head = (SerdStatementPage*)zix_calloc(
       statements->allocator, 1, sizeof(SerdStatementPage));
 
     new_head->next   = statements->head;
