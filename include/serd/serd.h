@@ -1615,16 +1615,15 @@ const SerdNode* SERD_ALLOCATED
 serd_nodes_blank(SerdNodes* SERD_NONNULL nodes, SerdStringView string);
 
 /**
-   Dereference `node`.
+   Drop `node` from the set and free its memory.
 
-   Decrements the reference count of `node`, and frees the internally stored
-   equivalent node if this was the last reference.  Does nothing if no node
-   equivalent to `node` is stored in `nodes`.
+   After this call, `node` is no longer valid.  Care must be taken by the
+   caller to ensure that no pointers to the node still exist.
 */
 SERD_API
-void
-serd_nodes_deref(SerdNodes* SERD_NONNULL       nodes,
-                 const SerdNode* SERD_NULLABLE node);
+SerdStatus
+serd_nodes_drop(SerdNodes* SERD_NONNULL       nodes,
+                const SerdNode* SERD_NULLABLE node);
 
 /**
    @}
@@ -1737,11 +1736,11 @@ typedef enum {
 */
 SERD_API
 SerdStatement* SERD_ALLOCATED
-serd_statement_new(SerdAllocator* SERD_NULLABLE   allocator,
-                   const SerdNode* SERD_NONNULL   s,
-                   const SerdNode* SERD_NONNULL   p,
-                   const SerdNode* SERD_NONNULL   o,
-                   const SerdNode* SERD_NULLABLE  g);
+serd_statement_new(SerdAllocator* SERD_NULLABLE  allocator,
+                   const SerdNode* SERD_NONNULL  s,
+                   const SerdNode* SERD_NONNULL  p,
+                   const SerdNode* SERD_NONNULL  o,
+                   const SerdNode* SERD_NULLABLE g);
 
 /// Return a copy of `statement`
 SERD_API
@@ -3243,7 +3242,7 @@ serd_model_get_statement(const SerdModel* SERD_NONNULL model,
                          const SerdNode* SERD_NULLABLE o,
                          const SerdNode* SERD_NULLABLE g);
 
-SERD_API
+SERD_PURE_API // FIXME
 SerdCaret
 serd_model_statement_caret(const SerdModel* SERD_NONNULL     model,
                            const SerdStatement* SERD_NONNULL statement);

@@ -264,25 +264,6 @@ serd_model_equals(const SerdModel* const a, const SerdModel* const b)
   return serd_cursor_is_end(&ia) && serd_cursor_is_end(&ib);
 }
 
-static void
-serd_model_drop_statement(SerdModel* const     model,
-                          SerdStatement* const statement)
-{
-  assert(statement);
-
-  if (model->flags & SERD_STORE_CARETS) {
-    const SerdCaret caret = serd_model_statement_caret(model, statement);
-
-    serd_nodes_deref(model->nodes, caret.document);
-  }
-
-  for (unsigned i = 0u; i < 4; ++i) {
-    if (statement->nodes[i]) {
-      serd_nodes_deref(model->nodes, statement->nodes[i]);
-    }
-  }
-}
-
 void
 serd_model_free(SerdModel* const model)
 {
@@ -672,9 +653,6 @@ serd_model_add_with_caret(SerdModel* const       model,
   SerdStatement* const statement =
     serd_statements_append(&model->statements, s, p, o, g, caret);
 
-  /* SerdStatement* const statement = */
-  /*   serd_statement_new(model->allocator, s, p, o, g); */
-
   if (!statement) {
     return SERD_BAD_ALLOC;
   }
@@ -693,12 +671,8 @@ serd_model_add_with_caret(SerdModel* const       model,
   }
 
   ++model->version;
-  if (added) {
-    return SERD_SUCCESS;
-  }
 
-  serd_model_drop_statement(model, statement);
-  return SERD_FAILURE;
+  return added ? SERD_SUCCESS : SERD_FAILURE;
 }
 
 SerdStatus
@@ -786,7 +760,6 @@ serd_model_erase(SerdModel* const model, SerdCursor* const cursor)
   }
   serd_cursor_scan_next(cursor);
 
-  serd_model_drop_statement(model, removed);
   cursor->version = ++model->version;
 
   (void)zst;

@@ -166,7 +166,7 @@ serd_env_set_base_uri(SerdEnv* const env, const SerdStringView uri)
   assert(env);
 
   if (!uri.len) {
-    serd_nodes_deref(env->nodes, env->base_uri_node);
+    serd_nodes_drop(env->nodes, env->base_uri_node);
     env->base_uri_node = NULL;
     env->base_uri      = SERD_URI_NULL;
     return SERD_SUCCESS;
@@ -185,7 +185,7 @@ serd_env_set_base_uri(SerdEnv* const env, const SerdStringView uri)
     return SERD_BAD_ALLOC;
   }
 
-  serd_nodes_deref(env->nodes, old_base_uri);
+  serd_nodes_drop(env->nodes, old_base_uri);
   return SERD_SUCCESS;
 }
 
@@ -255,7 +255,7 @@ serd_env_add(SerdEnv* const        env,
   SerdPrefix* const prefix = serd_env_find(env, name.buf, name.len);
   if (prefix) {
     if (!!strcmp(serd_node_string(prefix->uri), serd_node_string(uri))) {
-      serd_nodes_deref(env->nodes, prefix->uri);
+      serd_nodes_drop(env->nodes, prefix->uri);
       prefix->uri = uri;
     }
   } else {

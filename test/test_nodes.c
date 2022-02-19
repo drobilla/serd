@@ -431,44 +431,34 @@ test_blank(void)
 }
 
 static void
-test_deref(void)
+test_drop(void)
 {
   SerdAllocator* const allocator = serd_default_allocator();
 
-  SerdNodes*      nodes    = serd_nodes_new(allocator);
-  const SerdNode* original = serd_nodes_string(nodes, serd_string("node"));
-  const SerdNode* another  = serd_nodes_string(nodes, serd_string("node"));
+  SerdNodes* const nodes = serd_nodes_new(allocator);
 
-  assert(original == another);
+  const SerdNode* const node1 = serd_nodes_string(nodes, serd_string("node1"));
+  assert(serd_nodes_size(nodes) == 1);
 
-  // Dereference the original and ensure the other reference kept it alive
-  serd_nodes_deref(nodes, original);
-  assert(serd_node_length(another) == 4);
-  assert(!strcmp(serd_node_string(another), "node"));
+  const SerdNode* const node2 = serd_nodes_string(nodes, serd_string("node2"));
+  assert(serd_nodes_size(nodes) == 2);
 
-  // Drop the other/final reference (freeing the node)
-  serd_nodes_deref(nodes, another);
+  const SerdNode* const node3 = serd_nodes_string(nodes, serd_string("node3"));
+  assert(serd_nodes_size(nodes) == 3);
 
-  /* Intern some other irrelevant node first to (hopefully) avoid the allocator
-     just giving us back the same piece of memory. */
+  assert(serd_nodes_drop(nodes, node3) == SERD_SUCCESS);
+  assert(serd_nodes_size(nodes) == 2);
 
-  const SerdNode* other = serd_nodes_string(nodes, serd_string("XXXX"));
-  assert(!strcmp(serd_node_string(other), "XXXX"));
+  assert(serd_nodes_drop(nodes, node2) == SERD_SUCCESS);
+  assert(serd_nodes_size(nodes) == 1);
 
-  // Intern a new equivalent node to the original and check that it's really new
-  const SerdNode* imposter = serd_nodes_string(nodes, serd_string("node"));
-  assert(imposter != original);
-  assert(serd_node_length(imposter) == 4);
-  assert(!strcmp(serd_node_string(imposter), "node"));
+  assert(serd_nodes_drop(nodes, node1) == SERD_SUCCESS);
+  assert(serd_nodes_size(nodes) == 0);
 
-  // Check that dereferencing some random unknown node doesn't crash
-  SerdNode* unmanaged = serd_new_string(NULL, serd_string("unmanaged"));
-  serd_nodes_deref(nodes, unmanaged);
-  serd_node_free(NULL, unmanaged);
+  SerdNode* const external = serd_new_string(NULL, serd_string("external"));
+  assert(serd_nodes_drop(nodes, external) == SERD_FAILURE);
+  serd_node_free(NULL, external);
 
-  serd_nodes_deref(nodes, NULL);
-  serd_nodes_deref(nodes, imposter);
-  serd_nodes_deref(nodes, other);
   serd_nodes_free(nodes);
 }
 
@@ -510,7 +500,7 @@ main(void)
   test_uri();
   test_parsed_uri();
   test_blank();
-  test_deref();
+  test_drop();
   test_get();
   return 0;
 }
