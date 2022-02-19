@@ -18,6 +18,7 @@
 #define SERD_MODEL_H
 
 #include "cursor.h"
+#include "statements.h"
 
 #include "serd/serd.h"
 #include "zix/btree.h"
@@ -28,6 +29,7 @@ struct SerdModelImpl {
   SerdAllocator*     allocator;     ///< Allocator for everything in this model
   SerdWorld*         world;         ///< World this model is a part of
   SerdNodes*         nodes;         ///< Interned nodes in this model
+  SerdStatements     statements;    ///< Interned statements in this model
   ZixBTree*          indices[12];   ///< Trees of SerdStatement pointers
   SerdCursor         end;           ///< End cursor (always the same)
   size_t             version;       ///< Version incremented on every change

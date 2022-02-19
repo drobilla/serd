@@ -20,6 +20,7 @@
 #include "cursor.h"
 #include "memory.h"
 #include "statement.h"
+#include "statements.h"
 
 #include "zix/allocator.h"
 #include "zix/btree.h"
@@ -140,6 +141,8 @@ serd_model_new_with_allocator(SerdAllocator* const     allocator,
   model->nodes         = nodes;
   model->default_order = default_order;
   model->flags         = flags;
+
+  serd_statements_construct(&model->statements, allocator, flags);
 
   if (serd_model_add_index(model, default_order)) {
     serd_nodes_free(nodes);
@@ -267,30 +270,17 @@ serd_model_drop_statement(SerdModel* const     model,
 {
   assert(statement);
 
+  if (model->flags & SERD_STORE_CARETS) {
+    const SerdCaret caret = serd_model_statement_caret(model, statement);
+
+    serd_nodes_deref(model->nodes, caret.document);
+  }
+
   for (unsigned i = 0u; i < 4; ++i) {
     if (statement->nodes[i]) {
       serd_nodes_deref(model->nodes, statement->nodes[i]);
     }
   }
-
-  // FIXME: ?
-  /* if (statement->caret && statement->caret->document) { */
-  /*   serd_nodes_deref(model->nodes, statement->caret->document); */
-  /* } */
-
-  serd_statement_free(model->allocator, statement);
-}
-
-typedef struct {
-  SerdAllocator* allocator;
-} DestroyContext;
-
-static void
-destroy_tree_statement(void* ptr, const void* user_data)
-{
-  const DestroyContext* const ctx = (const DestroyContext*)user_data;
-
-  serd_statement_free(ctx->allocator, (SerdStatement*)ptr);
 }
 
 void
@@ -300,16 +290,15 @@ serd_model_free(SerdModel* const model)
     return;
   }
 
-  // Free all statements (which are owned by the default index)
-  ZixBTree* const      default_index = model->indices[model->default_order];
-  const DestroyContext ctx           = {model->allocator};
-  zix_btree_clear(default_index, destroy_tree_statement, &ctx);
-
-  // Free indices themselves
+  // Free index trees (which point to statements and nodes)
   for (unsigned i = 0u; i < N_STATEMENT_ORDERS; ++i) {
     zix_btree_free(model->indices[i], NULL, NULL);
   }
 
+  // Free all statements (which point to nodes)
+  serd_statements_destroy(&model->statements);
+
+  // Free all nodes and finally the model itself
   serd_nodes_free(model->nodes);
   serd_wfree(model->world, model);
 }
@@ -672,9 +661,19 @@ serd_model_add_with_caret(SerdModel* const       model,
                           const SerdCaret* const caret)
 {
   assert(model);
+  assert(s);
+  assert(p);
+  assert(o);
+
+  if (!serd_statement_is_valid(s, p, o, g)) {
+    return SERD_BAD_ARG;
+  }
 
   SerdStatement* const statement =
-    serd_statement_new(model->allocator, s, p, o, g);
+    serd_statements_append(&model->statements, s, p, o, g, caret);
+
+  /* SerdStatement* const statement = */
+  /*   serd_statement_new(model->allocator, s, p, o, g); */
 
   if (!statement) {
     return SERD_BAD_ALLOC;
