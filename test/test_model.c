@@ -1012,13 +1012,11 @@ test_remove_graph(SerdWorld* world, const unsigned n_quads)
 
   // Ensure only the other graph is left
   Quad pat = {0, 0, 0, graph42};
-  /* fprintf(stderr, "GRAPH: %s\n", serd_node_string(graph42)); */
   for (iter = serd_model_begin(model);
        !serd_cursor_equals(iter, serd_model_end(model));
        serd_cursor_advance(iter)) {
     const SerdStatement* const s = serd_cursor_get(iter);
     assert(s);
-    /* fprintf(stderr, "STATEMENT GRAPH: %s\n", serd_node_string(pat[3])); */
     assert(serd_statement_matches(s, pat[0], pat[1], pat[2], pat[3]));
   }
   serd_cursor_free(iter);
