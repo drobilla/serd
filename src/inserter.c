@@ -95,7 +95,7 @@ serd_inserter_on_statement(SerdInserterData* const    data,
   /* if (data->model->flags & SERD_STORE_CARETS) { */
   /* } */
 
-  const SerdStatus st = serd_model_add_with_caret(
+  const SerdStatus st = serd_model_add_from(
     data->model,
     s,
     p,

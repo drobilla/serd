@@ -248,12 +248,12 @@ serd_model_add(SerdModel* ZIX_NONNULL       model,
    This function fails if there are any active iterators on `model`.
 */
 SERD_API SerdStatus
-serd_model_add_with_caret(SerdModel* ZIX_NONNULL        model,
-                          const SerdNode* ZIX_NONNULL   s,
-                          const SerdNode* ZIX_NONNULL   p,
-                          const SerdNode* ZIX_NONNULL   o,
-                          const SerdNode* ZIX_NULLABLE  g,
-                          const SerdCaret* ZIX_NULLABLE caret);
+serd_model_add_from(SerdModel* ZIX_NONNULL        model,
+                    const SerdNode* ZIX_NONNULL   s,
+                    const SerdNode* ZIX_NONNULL   p,
+                    const SerdNode* ZIX_NONNULL   o,
+                    const SerdNode* ZIX_NULLABLE  g,
+                    const SerdCaret* ZIX_NULLABLE caret);
 
 /**
    Add a statement to a model.
