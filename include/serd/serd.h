@@ -3264,7 +3264,7 @@ serd_model_add(SerdModel* SERD_NONNULL       model,
                const SerdNode* SERD_NULLABLE g);
 
 /**
-   Add a statement to a model from nodes with a caret
+   Add a statement to a model from nodes with a document origin.
 
    This function fails if there are any active iterators on `model`.
 */
