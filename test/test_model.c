@@ -751,7 +751,7 @@ test_add_bad_statement(SerdWorld* world, const unsigned n_quads)
 }
 
 static int
-test_add_with_caret(SerdWorld* world, const unsigned n_quads)
+test_add_from(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
@@ -1427,7 +1427,7 @@ main(void)
                             test_erase_with_iterator,
                             test_add_erase,
                             test_add_bad_statement,
-                            test_add_with_caret,
+                            test_add_from,
                             test_erase_all,
                             test_clear,
                             test_copy,

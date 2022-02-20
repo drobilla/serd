@@ -3357,6 +3357,47 @@ SerdStatus
 serd_model_clear(SerdModel* SERD_NONNULL model);
 
 /**
+   @defgroup serd_transaction Transactions
+   @{
+*/
+
+/// An atomic transaction of operations on a model
+typedef struct SerdTransactionImpl SerdTransaction;
+
+SERD_API
+SerdTransaction* SERD_ALLOCATED
+serd_transaction_new(SerdModel* SERD_NONNULL model);
+
+SERD_API
+SerdStatus
+serd_transaction_insert(SerdTransaction* SERD_NONNULL  transaction,
+                        const SerdNode* SERD_NONNULL   s,
+                        const SerdNode* SERD_NONNULL   p,
+                        const SerdNode* SERD_NONNULL   o,
+                        const SerdNode* SERD_NULLABLE  g,
+                        const SerdCaret* SERD_NULLABLE caret);
+
+SERD_API
+SerdStatus
+serd_transaction_erase(SerdTransaction* SERD_NONNULL transaction,
+                       const SerdNode* SERD_NONNULL  s,
+                       const SerdNode* SERD_NONNULL  p,
+                       const SerdNode* SERD_NONNULL  o,
+                       const SerdNode* SERD_NULLABLE g);
+
+SERD_API
+SerdStatus
+serd_transaction_commit(SerdTransaction* SERD_NONNULL transaction);
+
+SERD_API
+SerdStatus
+serd_transaction_abort(SerdTransaction* SERD_NONNULL transaction);
+
+/**
+   @}
+*/
+
+/**
    @}
    @defgroup serd_inserter Inserter
    @{
