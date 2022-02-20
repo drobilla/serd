@@ -71,13 +71,20 @@ if build_machine.system() == 'windows' and host_machine.system() == 'windows'
                                     'subprojects' / 'zix')]
 endif
 
+test_args = c_suppressions + platform_args
+if get_option('strict') and cc.get_id() == 'msvc'
+  test_args += [
+    '/wd4738', # storing 32-bit float result in memory, possible loss of performance
+  ]
+endif
+
 foreach unit : unit_tests
   test(
     unit,
     executable(
       'test_@0@'.format(unit),
       files('test_@0@.c'.format(unit), 'failing_allocator.c'),
-      c_args: c_suppressions + platform_args,
+      c_args: test_args,
       dependencies: [serd_dep, zix_dep],
     ),
     env: test_env,
