@@ -133,6 +133,7 @@ sources = files(
   'src/string.c',
   'src/syntax.c',
   'src/system.c',
+  'src/transaction.c',
   'src/uri.c',
   'src/value.c',
   'src/world.c',
