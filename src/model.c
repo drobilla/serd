@@ -634,12 +634,12 @@ serd_model_intern_caret(SerdModel* const model, const SerdCaret* const caret)
 }
 
 SerdStatus
-serd_model_add_with_caret(SerdModel* const       model,
-                          const SerdNode* const  s,
-                          const SerdNode* const  p,
-                          const SerdNode* const  o,
-                          const SerdNode* const  g,
-                          const SerdCaret* const caret)
+serd_model_add_from(SerdModel* const       model,
+                    const SerdNode* const  s,
+                    const SerdNode* const  p,
+                    const SerdNode* const  o,
+                    const SerdNode* const  g,
+                    const SerdCaret* const caret)
 {
   assert(model);
   assert(s);
@@ -682,12 +682,12 @@ serd_model_add(SerdModel* const      model,
                const SerdNode* const o,
                const SerdNode* const g)
 {
-  return serd_model_add_with_caret(model,
-                                   serd_nodes_intern(model->nodes, s),
-                                   serd_nodes_intern(model->nodes, p),
-                                   serd_nodes_intern(model->nodes, o),
-                                   serd_nodes_intern(model->nodes, g),
-                                   NULL);
+  return serd_model_add_from(model,
+                             serd_nodes_intern(model->nodes, s),
+                             serd_nodes_intern(model->nodes, p),
+                             serd_nodes_intern(model->nodes, o),
+                             serd_nodes_intern(model->nodes, g),
+                             NULL);
 }
 
 SerdStatus
@@ -695,7 +695,7 @@ serd_model_insert(SerdModel* const model, const SerdStatement* const statement)
 {
   SerdNodes* const nodes = model->nodes;
 
-  return serd_model_add_with_caret(
+  return serd_model_add_from(
     model,
     serd_nodes_intern(nodes, serd_statement_subject(statement)),
     serd_nodes_intern(nodes, serd_statement_predicate(statement)),

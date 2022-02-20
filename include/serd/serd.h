@@ -3285,12 +3285,12 @@ serd_model_add(SerdModel* SERD_NONNULL       model,
 */
 SERD_API
 SerdStatus
-serd_model_add_with_caret(SerdModel* SERD_NONNULL        model,
-                          const SerdNode* SERD_NONNULL   s,
-                          const SerdNode* SERD_NONNULL   p,
-                          const SerdNode* SERD_NONNULL   o,
-                          const SerdNode* SERD_NULLABLE  g,
-                          const SerdCaret* SERD_NULLABLE caret);
+serd_model_add_from(SerdModel* SERD_NONNULL        model,
+                    const SerdNode* SERD_NONNULL   s,
+                    const SerdNode* SERD_NONNULL   p,
+                    const SerdNode* SERD_NONNULL   o,
+                    const SerdNode* SERD_NULLABLE  g,
+                    const SerdCaret* SERD_NULLABLE caret);
 
 /**
    Add a statement to a model.

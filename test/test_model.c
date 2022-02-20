@@ -722,7 +722,7 @@ test_add_bad_statement(SerdWorld* world, const unsigned n_quads)
   SerdCaret* caret = serd_caret_new(allocator, f, 16, 18);
   SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0u);
 
-  assert(!serd_model_add_with_caret(model, s, p, o, NULL, caret));
+  assert(!serd_model_add_from(model, s, p, o, NULL, caret));
 
   SerdCursor* const    begin     = serd_model_begin(model);
   const SerdStatement* statement = serd_cursor_get(begin);
