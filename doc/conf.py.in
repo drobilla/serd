@@ -36,6 +36,7 @@ _opaque = [
     "SerdReaderImpl",
     "SerdSinkImpl",
     "SerdStatementImpl",
+    "SerdTransactionImpl",
     "SerdWorldImpl",
     "SerdWriterImpl",
     "ZixAllocator",
