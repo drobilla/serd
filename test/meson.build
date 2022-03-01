@@ -1,4 +1,18 @@
+# Copyright 2020-2022 David Robillard <d@drobilla.net>
+# SPDX-License-Identifier: CC0-1.0 OR ISC
+
 autoship = find_program('autoship', required: false)
+reuse = find_program('reuse', required: false)
+
+# Check project metadata
+if autoship.found()
+  test('autoship', autoship, args: ['test', serd_src_root], suite: 'data')
+endif
+
+# Check licensing metadata
+if reuse.found()
+  test('REUSE', reuse, args: ['--root', serd_src_root, 'lint'], suite: 'data')
+endif
 
 run_filter_suite = find_program('run_filter_suite.py')
 run_pipe_suite = find_program('run_pipe_suite.py')
@@ -55,10 +69,6 @@ foreach unit : unit_tests
        env: test_env,
        suite: 'unit')
 endforeach
-
-if autoship.found()
-  test('autoship', autoship, args: ['test', serd_src_root], suite: 'data')
-endif
 
 serd_ttl = files('../serd.ttl')[0]
 small_ttl = files('../test/TurtleTests/turtle-syntax-number-01.ttl')[0]

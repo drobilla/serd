@@ -1,3 +1,6 @@
+# Copyright 2020-2022 David Robillard <d@drobilla.net>
+# SPDX-License-Identifier: CC0-1.0 OR ISC
+
 tool_c_args = c_warnings + platform_args + prog_args
 tool_link_args = []
 

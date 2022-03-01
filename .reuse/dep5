@@ -1,0 +1,20 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: serd
+Upstream-Contact: David Robillard <d@drobilla.net>
+Source: https://gitlab.com/drobilla/serd
+
+Files: .clang-format **/.clang* .clant.json .includes.imp meson_options.txt test/bad/* test/sort/* test/filter/* subprojects/*.wrap test/canon/* test/good/* doc/*.in .git* test/lax/* test/multifile/* test/pattern/* test/pretty/* test/*.py test/terse/*
+Copyright: 2022 David Robillard <d@drobilla.net>
+License: CC0-1.0 OR ISC
+
+Files: *.md AUTHORS INSTALL NEWS resources/* doc/*.1 doc/*.svg doc/*.css serd.ttl scripts/*
+Copyright: 2022 David Robillard <d@drobilla.net>
+License: ISC
+
+Files: doc/*.rst
+Copyright: 2022 David Robillard <d@drobilla.net>
+License: ISC
+
+Files: test/NQuadsTests/* test/NTriplesTests/* test/TriGTests/* test/TurtleTests/*
+Copyright: 2010 World Wide Web Consortium, (MIT, ERCIM, Keio, Beihang) and others.
+License: BSD-3-Clause

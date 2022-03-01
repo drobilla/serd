@@ -1,3 +1,6 @@
+# Copyright 2020-2022 David Robillard <d@drobilla.net>
+# SPDX-License-Identifier: CC0-1.0 OR ISC
+
 project('serd', ['c'],
         version: '1.0.1',
         license: 'ISC',
