@@ -39,6 +39,11 @@ sudo rm -r build
 docker run -t --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-x64 meson setup build -Dbuildtype=release -Ddocs=enabled -Dstrict=true -Dwerror=true -Dbindings_cpp=enabled -Dbindings_py=enabled
 docker run -t --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-x64 ninja -C build test
 
+# x64_static
+sudo rm -r build
+docker run -t --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-x64 meson setup build -Dc_std=c11 -Dbuildtype=release -Ddefault_library=static -Dexess:default_library=static -Dzix:default_library=static -Dstatic=true -Ddocs=disabled -Dstrict=true -Dwerror=true -Dbindings_cpp=enabled -Dbindings_py=enabled
+docker run -t --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-x64 ninja -C build test
+
 # x64_sanitize
 sudo rm -r build
 docker run -t --tmpfs /tmp -v $PWD:/workdir -e CC="clang" -e CXX="clang++" -e CFLAGS="-fno-sanitize-recover=all -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=implicit-conversion -fsanitize=local-bounds -fsanitize=nullability" -e CXXFLAGS="-fno-sanitize-recover=all -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=implicit-conversion -fsanitize=local-bounds -fsanitize=nullability" -e LDFLAGS="-fno-sanitize-recover=all -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=implicit-conversion -fsanitize=local-bounds -fsanitize=nullability" lv2plugin/debian-x64-clang meson setup build -Db_lundef=false -Dbuildtype=plain -Ddocs=disabled -Dstrict=true -Dwerror=true -Dbindings_cpp=enabled
