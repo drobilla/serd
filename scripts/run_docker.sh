@@ -51,20 +51,20 @@ docker run -t --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-x64-clang ninja -C 
 
 # mingw32_dbg
 sudo rm -r build
-docker run -t --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-mingw32 meson setup build --cross-file=/usr/share/meson/cross/i686-w64-mingw32.ini -Dbuildtype=debug -Ddocs=disabled -Dstrict=true -Dwerror=true -Dbindings_cpp=enabled
-docker run -t -e MESON_TESTTHREADS=1 -e WINEPATH="Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\8.3-win32;Z:\\workdir\\build\\subprojects\\exess" --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-mingw32 ninja -C build test
+docker run -t --tmpfs /tmp -v $PWD:/workdir -e WINEPATH="Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\10-win32;Z:\\workdir\\build\\subprojects\\exess;Z:\\workdir\\build\\subprojects\\zix;Z:\\workdir\\build" lv2plugin/debian-mingw32 meson setup build --cross-file=/usr/share/meson/cross/i686-w64-mingw32.ini -D c_args="-static-libgcc" -D c_link_args="-static-libgcc" -D cpp_args="-static-libgcc" -D cpp_link_args="-static-libgcc" -Dbuildtype=debug -Ddocs=disabled -Dstrict=true -Dwerror=true
+docker run -t --tmpfs /tmp -v $PWD:/workdir -e WINEPATH="Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\10-win32;Z:\\workdir\\build\\subprojects\\exess;Z:\\workdir\\build\\subprojects\\zix;Z:\\workdir\\build" lv2plugin/debian-mingw32 meson test -C build
 
 # mingw32_rel
 sudo rm -r build
-docker run -t --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-mingw32 meson setup build --cross-file=/usr/share/meson/cross/i686-w64-mingw32.ini -Dbuildtype=release -Ddocs=disabled -Dstrict=true -Dwerror=true -Dbindings_cpp=enabled
-docker run -t -e MESON_TESTTHREADS=1 -e WINEPATH="Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\8.3-win32;Z:\\workdir\\build\\subprojects\\exess" --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-mingw32 ninja -C build test
+docker run -t --tmpfs /tmp -v $PWD:/workdir -e WINEPATH="Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\10-win32;Z:\\workdir\\build\\subprojects\\exess;Z:\\workdir\\build\\subprojects\\zix;Z:\\workdir\\build" lv2plugin/debian-mingw32 meson setup build --cross-file=/usr/share/meson/cross/i686-w64-mingw32.ini -D c_args="-static-libgcc" -D c_link_args="-static-libgcc" -D cpp_args="-static-libgcc" -D cpp_link_args="-static-libgcc" -Dbuildtype=release -Ddocs=disabled -Dstrict=true -Dwerror=true
+docker run -t --tmpfs /tmp -v $PWD:/workdir -e WINEPATH="Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\10-win32;Z:\\workdir\\build\\subprojects\\exess;Z:\\workdir\\build\\subprojects\\zix;Z:\\workdir\\build" lv2plugin/debian-mingw32 meson test -C build
 
 # mingw64_dbg
 sudo rm -r build
-docker run -t --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-mingw64 meson setup build --cross-file=/usr/share/meson/cross/x86_64-w64-mingw32.ini -Dbuildtype=debug -Ddocs=disabled -Dstrict=true -Dwerror=true -Dbindings_cpp=enabled
-docker run -t -e MESON_TESTTHREADS=1 -e WINEPATH="Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\8.3-win32;Z:\\workdir\\build\\subprojects\\exess" --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-mingw64 ninja -C build test
+docker run -t --tmpfs /tmp -v $PWD:/workdir -e WINEPATH="Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\10-win32;Z:\\workdir\\build\\subprojects\\exess;Z:\\workdir\\build\\subprojects\\zix;Z:\\workdir\\build" lv2plugin/debian-mingw64 meson setup build --cross-file=/usr/share/meson/cross/x86_64-w64-mingw32.ini -D c_args="-static-libgcc" -D c_link_args="-static-libgcc" -D cpp_args="-static-libgcc" -D cpp_link_args="-static-libgcc" -Dbuildtype=debug -Ddocs=disabled -Dstrict=true -Dwerror=true
+docker run -t --tmpfs /tmp -v $PWD:/workdir -e WINEPATH="Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\10-win32;Z:\\workdir\\build\\subprojects\\exess;Z:\\workdir\\build\\subprojects\\zix;Z:\\workdir\\build" lv2plugin/debian-mingw64 meson test -C build
 
 # mingw64_rel
 sudo rm -r build
-docker run -t --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-mingw64 meson setup build --cross-file=/usr/share/meson/cross/x86_64-w64-mingw32.ini -Dbuildtype=release -Ddocs=disabled -Dstrict=true -Dwerror=true -Dbindings_cpp=enabled
-docker run -t -e MESON_TESTTHREADS=1 -e WINEPATH="Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\8.3-win32;Z:\\workdir\\build\\subprojects\\exess" --tmpfs /tmp -v $PWD:/workdir lv2plugin/debian-mingw64 ninja -C build test
+docker run -t --tmpfs /tmp -v $PWD:/workdir -e WINEPATH="Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\10-win32;Z:\\workdir\\build\\subprojects\\exess;Z:\\workdir\\build\\subprojects\\zix;Z:\\workdir\\build" lv2plugin/debian-mingw64 meson setup build --cross-file=/usr/share/meson/cross/x86_64-w64-mingw32.ini -D c_args="-static-libgcc" -D c_link_args="-static-libgcc" -D c_args="-static-libgcc" -D cpp_args="-static-libgcc" -D cpp_link_args="-static-libgcc" -Dbuildtype=release -Ddocs=disabled -Dstrict=true -Dwerror=true
+docker run -t --tmpfs /tmp -v $PWD:/workdir -e WINEPATH="Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\10-win32;Z:\\workdir\\build\\subprojects\\exess;Z:\\workdir\\build\\subprojects\\zix;Z:\\workdir\\build" lv2plugin/debian-mingw64 meson test -C build
