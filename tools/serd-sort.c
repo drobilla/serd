@@ -105,7 +105,7 @@ run(const Options opts)
   if (opts.collation) {
     SerdCursor* const cursor = serd_model_begin_ordered(model, opts.order);
 
-    serd_env_write_prefixes(app.env, target);
+    st = serd_env_write_prefixes(app.env, target);
 
     for (const SerdStatement* statement = NULL;
          !st && (statement = serd_cursor_get(cursor));
@@ -117,9 +117,9 @@ run(const Options opts)
   } else {
     SerdCursor* const cursor = serd_model_begin(model);
 
-    serd_env_write_prefixes(app.env, target);
-
-    st = serd_describe_range(cursor, target, opts.flags);
+    if (!(st = serd_env_write_prefixes(app.env, target))) {
+      st = serd_describe_range(cursor, target, opts.flags);
+    }
 
     serd_cursor_free(cursor);
   }

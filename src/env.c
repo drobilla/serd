@@ -414,13 +414,19 @@ serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
   return expanded;
 }
 
-void
+SerdStatus
 serd_env_write_prefixes(const SerdEnv* const env, const SerdSink* const sink)
 {
   assert(env);
   assert(sink);
 
-  for (size_t i = 0; i < env->n_prefixes; ++i) {
-    serd_sink_write_prefix(sink, env->prefixes[i].name, env->prefixes[i].uri);
+  SerdStatus st = SERD_SUCCESS;
+
+  for (size_t i = 0; !st && i < env->n_prefixes; ++i) {
+    const SerdPrefix* const prefix = &env->prefixes[i];
+
+    st = serd_sink_write_prefix(sink, prefix->name, prefix->uri);
   }
+
+  return st;
 }
