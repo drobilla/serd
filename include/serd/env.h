@@ -128,7 +128,7 @@ serd_env_expand_node(const SerdEnv* SERD_NULLABLE  env,
 
 /// Write all prefixes in `env` to `sink`
 SERD_API
-void
+SerdStatus
 serd_env_write_prefixes(const SerdEnv* SERD_NONNULL  env,
                         const SerdSink* SERD_NONNULL sink);
 
