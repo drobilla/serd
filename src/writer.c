@@ -84,37 +84,41 @@ typedef enum {
 
 typedef uint32_t SepMask; ///< Bitfield of separator flags
 
-#define SEP_ALL ((SepMask)-1)
-#define M(s) (1U << (s))
-
 typedef struct {
-  const char* str;             ///< Sep string
-  size_t      len;             ///< Length of sep string
-  int         indent;          ///< Indent delta
-  SepMask     pre_space_after; ///< Leading space if after given seps
-  SepMask     pre_line_after;  ///< Leading newline if after given seps
-  SepMask     post_line_after; ///< Trailing newline if after given seps
+  const char token;           ///< Sep string
+  int        indent;          ///< Indent delta
+  SepMask    pre_space_after; ///< Leading space if after given seps
+  SepMask    pre_line_after;  ///< Leading newline if after given seps
+  SepMask    post_line_after; ///< Trailing newline if after given seps
 } SepRule;
 
+#define NEVER ((SepMask)0)
+#define EVERY ((SepMask)-1)
+#define M(s) (1U << (s))
+
 static const SepRule rules[] = {
-  {"", 0, +0, SEP_NONE, SEP_NONE, SEP_NONE},
-  {".\n", 2, -1, SEP_ALL, SEP_NONE, SEP_NONE},
-  {";", 1, +0, SEP_ALL, SEP_NONE, SEP_ALL},
-  {",", 1, +0, SEP_ALL, SEP_NONE, ~(M(SEP_ANON_END) | M(SEP_LIST_END))},
-  {"", 0, +1, SEP_NONE, SEP_NONE, SEP_ALL},
-  {" ", 1, +0, SEP_NONE, SEP_NONE, SEP_NONE},
-  {"[", 1, +1, M(SEP_END_O), M(SEP_TLIST_BEGIN) | M(SEP_TLIST_SEP), SEP_NONE},
-  {"", 0, +0, SEP_NONE, SEP_ALL, SEP_NONE},
-  {"]", 1, -1, SEP_NONE, ~M(SEP_ANON_BEGIN), SEP_NONE},
-  {"(", 1, +1, M(SEP_END_O), SEP_NONE, SEP_ALL},
-  {"", 0, +0, SEP_NONE, SEP_ALL, SEP_NONE},
-  {")", 1, -1, SEP_NONE, SEP_ALL, SEP_NONE},
-  {"(", 1, +1, SEP_NONE, SEP_NONE, SEP_NONE},
-  {"", 0, +0, SEP_ALL, SEP_NONE, SEP_NONE},
-  {")", 1, -1, SEP_NONE, SEP_NONE, SEP_NONE},
-  {"{", 1, +1, SEP_ALL, SEP_NONE, SEP_ALL},
-  {"}", 1, -1, SEP_NONE, SEP_NONE, SEP_ALL},
+  {0x0, +0, NEVER, NEVER, NEVER},
+  {'.', -1, EVERY, NEVER, NEVER},
+  {';', +0, EVERY, NEVER, EVERY},
+  {',', +0, EVERY, NEVER, ~(M(SEP_ANON_END) | M(SEP_LIST_END))},
+  {0x0, +1, NEVER, NEVER, EVERY},
+  {' ', +0, NEVER, NEVER, NEVER},
+  {'[', +1, M(SEP_END_O), M(SEP_TLIST_BEGIN) | M(SEP_TLIST_SEP), NEVER},
+  {0x0, +0, NEVER, EVERY, NEVER},
+  {']', -1, NEVER, ~M(SEP_ANON_BEGIN), NEVER},
+  {'(', +1, M(SEP_END_O), NEVER, EVERY},
+  {0x0, +0, NEVER, EVERY, NEVER},
+  {')', -1, NEVER, EVERY, NEVER},
+  {'(', +1, NEVER, NEVER, NEVER},
+  {0x0, +0, EVERY, NEVER, NEVER},
+  {')', -1, NEVER, NEVER, NEVER},
+  {'{', +1, EVERY, NEVER, EVERY},
+  {'}', -1, NEVER, NEVER, EVERY},
 };
+
+#undef M
+#undef EVERY
+#undef NEVER
 
 struct SerdWriterImpl {
   SerdWorld*      world;
@@ -675,12 +679,9 @@ write_sep(SerdWriter* writer, const SerdStatementFlags flags, Sep sep)
   }
 
   // Adjust indent, but tolerate if it would become negative
-  if ((rule->pre_line_after & (1U << writer->last_sep)) ||
-      (rule->post_line_after & (1U << writer->last_sep))) {
-    writer->indent = ((rule->indent >= 0 || writer->indent >= -rule->indent)
-                        ? writer->indent + rule->indent
-                        : 0);
-  }
+  writer->indent = ((rule->indent >= 0 || writer->indent >= -rule->indent)
+                      ? writer->indent + rule->indent
+                      : 0);
 
   // Write newline or space before separator if necessary
   if (rule->pre_line_after & (1U << writer->last_sep)) {
@@ -690,20 +691,21 @@ write_sep(SerdWriter* writer, const SerdStatementFlags flags, Sep sep)
   }
 
   // Write actual separator string
-  TRY(st, esink(rule->str, rule->len, writer));
+  if (rule->token) {
+    TRY(st, esink(&rule->token, 1, writer));
+  }
 
   // Write newline after separator if necessary
   if (rule->post_line_after & (1U << writer->last_sep)) {
     TRY(st, write_newline(writer, terse));
-    writer->last_sep = SEP_NONE;
-  } else {
-    writer->last_sep = sep;
   }
 
   if (sep == SEP_END_S) {
-    writer->indent = 0;
+    writer->indent = writer->context.graph ? 1 : 0;
+    TRY(st, esink("\n", 1, writer));
   }
 
+  writer->last_sep = sep;
   return st;
 }
 
@@ -1112,7 +1114,10 @@ write_turtle_trig_statement(SerdWriter* const        writer,
       // Abbreviate S
       end_object_indent(writer);
 
-      const Sep sep = ctx(writer, SERD_PREDICATE) ? SEP_END_P : SEP_S_P;
+      const Sep sep = ctx(writer, SERD_PREDICATE)             ? SEP_END_P
+                      : (writer->context.flags & SERD_ANON_O) ? SEP_ANON_S_P
+                                                              : SEP_S_P;
+
       TRY(st, write_sep(writer, writer->context.flags, sep));
       TRY(st, write_pred(writer, writer->context.flags, predicate));
     }
@@ -1128,7 +1133,7 @@ write_turtle_trig_statement(SerdWriter* const        writer,
 
     // Write new subject
 
-    if (!ctx(writer, SERD_GRAPH)) {
+    if (writer->last_sep != SEP_GRAPH_BEGIN) {
       TRY(st, write_top_level_sep(writer));
     }
 
