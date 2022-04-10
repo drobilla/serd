@@ -9,7 +9,7 @@
 #include <assert.h>
 #include <stddef.h>
 
-static const size_t min_stack_size = 198U;
+static const size_t min_stack_size = 244U;
 static const size_t max_stack_size = 1024U;
 
 static SerdStatus

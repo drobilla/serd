@@ -41,6 +41,7 @@ struct SerdReaderImpl {
   TokenHeader*    rdf_first;
   TokenHeader*    rdf_rest;
   TokenHeader*    rdf_nil;
+  TokenHeader*    rdf_type;
   SerdByteSource  source;
   SerdStack       stack;
   SerdSyntax      syntax;

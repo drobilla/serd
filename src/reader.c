@@ -346,7 +346,7 @@ serd_reader_new(SerdWorld* const      world,
   ZixAllocator* const allocator  = serd_world_allocator(world);
   const SerdLimits    limits     = serd_world_limits(world);
   const size_t        stack_size = limits.reader_stack_size;
-  if (stack_size < 198U) {
+  if (stack_size < 244U) {
     return NULL;
   }
 
@@ -374,11 +374,13 @@ serd_reader_new(SerdWorld* const      world,
   me->rdf_first = push_node(me, SERD_URI, serd_symbols[RDF_FIRST]);
   me->rdf_rest  = push_node(me, SERD_URI, serd_symbols[RDF_REST]);
   me->rdf_nil   = push_node(me, SERD_URI, serd_symbols[RDF_NIL]);
+  me->rdf_type  = push_node(me, SERD_URI, serd_symbols[RDF_TYPE]);
 
   // The initial stack size check should cover this
   assert(me->rdf_first);
   assert(me->rdf_rest);
   assert(me->rdf_nil);
+  assert(me->rdf_type);
 
   return me;
 }
