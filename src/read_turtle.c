@@ -454,8 +454,9 @@ read_verb(SerdReader* const reader, TokenHeader** const dest)
     const char* const str = (const char*)(node + 1U);
     const size_t      len = node->length;
     if (len == 1 && str[0] == 'a') {
-      node = push_node(reader, SERD_URI, serd_symbols[RDF_TYPE]);
-      st   = node ? SERD_SUCCESS : SERD_BAD_STACK;
+      serd_stack_pop_to(&reader->stack, orig_stack_size);
+      node = reader->rdf_type;
+      st   = SERD_SUCCESS;
     } else {
       st = SERD_BAD_SYNTAX;
     }
