@@ -277,11 +277,13 @@ serd_reader_new(SerdWorld* const      world,
   me->rdf_first = push_node(me, SERD_URI, NS_RDF "first", 48);
   me->rdf_rest  = push_node(me, SERD_URI, NS_RDF "rest", 47);
   me->rdf_nil   = push_node(me, SERD_URI, NS_RDF "nil", 46);
+  me->rdf_type  = push_node(me, SERD_URI, NS_RDF "type", 47);
 
   // The initial stack size check should cover this
   assert(me->rdf_first);
   assert(me->rdf_rest);
   assert(me->rdf_nil);
+  assert(me->rdf_type);
 
   if (!(flags & SERD_READ_GLOBAL)) {
     me->bprefix[0]  = 'f';

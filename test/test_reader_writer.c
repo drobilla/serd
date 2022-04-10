@@ -287,7 +287,7 @@ test_reader(const char* path)
   SerdSink* const  sink  = serd_sink_new(NULL, &rt, test_sink, NULL);
   assert(sink);
 
-  const SerdLimits limits = {512, 4};
+  const SerdLimits limits = {1024, 4};
   serd_world_set_limits(world, limits);
 
   // Test that too little stack space fails gracefully
