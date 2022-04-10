@@ -450,8 +450,6 @@ read_literal(SerdReader* const reader,
 static SerdStatus
 read_verb(SerdReader* reader, SerdNode** const dest)
 {
-  static const ZixStringView rdf_type = ZIX_STATIC_STRING(NS_RDF "type");
-
   const size_t orig_stack_size = reader->stack.size;
   const int    first           = peek_byte(reader);
 
@@ -479,8 +477,8 @@ read_verb(SerdReader* reader, SerdNode** const dest)
   if (node->length == 1 && serd_node_string(node)[0] == 'a' && next != ':' &&
       !is_PN_CHARS_BASE(next)) {
     serd_stack_pop_to(&reader->stack, orig_stack_size);
-    return ((*dest = push_node(reader, SERD_URI, rdf_type)) ? SERD_SUCCESS
-                                                            : SERD_BAD_STACK);
+    *dest = reader->rdf_type;
+    return SERD_SUCCESS;
   }
 
   if ((st = read_PrefixedName(reader, *dest, false, &ate_dot)) || ate_dot) {

@@ -259,6 +259,7 @@ serd_reader_new(SerdWorld* const      world,
   static const ZixStringView rdf_first = ZIX_STATIC_STRING(NS_RDF "first");
   static const ZixStringView rdf_rest  = ZIX_STATIC_STRING(NS_RDF "rest");
   static const ZixStringView rdf_nil   = ZIX_STATIC_STRING(NS_RDF "nil");
+  static const ZixStringView rdf_type  = ZIX_STATIC_STRING(NS_RDF "type");
 
   assert(world);
   assert(sink);
@@ -292,11 +293,13 @@ serd_reader_new(SerdWorld* const      world,
   me->rdf_first = push_node(me, SERD_URI, rdf_first);
   me->rdf_rest  = push_node(me, SERD_URI, rdf_rest);
   me->rdf_nil   = push_node(me, SERD_URI, rdf_nil);
+  me->rdf_type  = push_node(me, SERD_URI, rdf_type);
 
   // The initial stack size check should cover this
   assert(me->rdf_first);
   assert(me->rdf_rest);
   assert(me->rdf_nil);
+  assert(me->rdf_type);
 
   if (!(flags & SERD_READ_GLOBAL)) {
     me->bprefix[0]  = 'f';
