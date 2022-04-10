@@ -217,7 +217,7 @@ test_read_string(void)
   SerdSink*  sink  = serd_sink_new(NULL, &rt, test_sink, NULL);
   assert(sink);
 
-  const SerdLimits limits = {512, 1};
+  const SerdLimits limits = {1024, 1};
   serd_world_set_limits(world, limits);
 
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0U, sink);
