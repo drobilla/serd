@@ -475,9 +475,8 @@ read_verb(SerdReader* reader, SerdNode** const dest)
   if (node->length == 1 && serd_node_string(node)[0] == 'a' && next != ':' &&
       !is_PN_CHARS_BASE(next)) {
     serd_stack_pop_to(&reader->stack, orig_stack_size);
-    return ((*dest = push_node(reader, SERD_URI, NS_RDF "type", 47))
-              ? SERD_SUCCESS
-              : SERD_BAD_STACK);
+    *dest = reader->rdf_type;
+    return SERD_SUCCESS;
   }
 
   if ((st = read_PrefixedName(reader, *dest, false, &ate_dot)) || ate_dot) {

@@ -212,7 +212,7 @@ test_prepare_error(const char* const path)
 static void
 test_read_string(void)
 {
-  static const SerdLimits limits = {512, 1};
+  static const SerdLimits limits = {1024, 1};
 
   SerdWorld* const world = serd_world_new(NULL);
   serd_world_set_limits(world, limits);
