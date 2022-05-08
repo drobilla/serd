@@ -1572,7 +1572,7 @@ read_wrappedGraph(SerdReader* const reader, ReadContext* const ctx)
         reader, SERD_ERR_BAD_SYNTAX, "missing predicate object list\n");
     }
 
-    pop_node(reader, ctx->subject);
+    ctx->subject = pop_node(reader, ctx->subject);
     read_ws_star(reader);
     if (peek_byte(reader) == '.') {
       eat_byte_safe(reader, '.');
@@ -1606,6 +1606,10 @@ tokcmp(SerdReader* const reader,
 SerdStatus
 read_n3_statement(SerdReader* const reader)
 {
+#ifndef NDEBUG
+  const size_t orig_stack_size = reader->stack.size;
+#endif
+
   SerdStatementFlags flags   = 0;
   ReadContext        ctx     = {0, 0, 0, 0, 0, 0, &flags};
   bool               ate_dot = false;
@@ -1646,6 +1650,7 @@ read_n3_statement(SerdReader* const reader)
     } else if (!tokcmp(reader, ctx.subject, "prefix", 6)) {
       st = read_prefixID(reader, true, false);
     } else if (!tokcmp(reader, ctx.subject, "graph", 5)) {
+      ctx.subject = pop_node(reader, ctx.subject);
       read_ws_star(reader);
       TRY(st, read_labelOrSubject(reader, &ctx.graph));
       read_ws_star(reader);
@@ -1678,8 +1683,15 @@ read_n3_statement(SerdReader* const reader)
       st = (eat_byte_check(reader, '.') == '.') ? SERD_SUCCESS
                                                 : SERD_ERR_BAD_SYNTAX;
     }
+
+    ctx.subject = pop_node(reader, ctx.subject);
     break;
   }
+
+#ifndef NDEBUG
+  assert(reader->stack.size == orig_stack_size);
+#endif
+
   return st;
 }
 

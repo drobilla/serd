@@ -1,3 +1,9 @@
+serd (0.30.13) unstable;
+
+  * Fix memory consumption when reading documents
+
+ -- David Robillard <d@drobilla.net>  Fri, 10 Jun 2022 13:00:11 +0000
+
 serd (0.30.12) stable;
 
   * Fix warnings and build issues with clang 13 and VS 2019

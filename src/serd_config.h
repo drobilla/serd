@@ -1,5 +1,5 @@
 /*
-  Copyright 2021 David Robillard <d@drobilla.net>
+  Copyright 2021-2022 David Robillard <d@drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -29,7 +29,7 @@
 #define SERD_CONFIG_H
 
 // Define version unconditionally so a warning will catch a mismatch
-#define SERD_VERSION "0.30.12"
+#define SERD_VERSION "0.30.13"
 
 #if !defined(SERD_NO_DEFAULT_CONFIG)
 
