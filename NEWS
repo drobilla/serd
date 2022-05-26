@@ -1,10 +1,12 @@
-serd (0.30.11) unstable;
+serd (0.30.12) stable;
 
+  * Fix warnings and build issues with clang 13 and VS 2019
   * Fix writing long literals with triple quotes
+  * Improve documentation style
   * Support combining several BSD-style command line flags in serdi
   * Write statements with invalid URI characters in lax mode
 
- -- David Robillard <d@drobilla.net>  Mon, 12 Apr 2021 01:15:27 +0000
+ -- David Robillard <d@drobilla.net>  Thu, 26 May 2022 22:47:35 +0000
 
 serd (0.30.10) stable;
 
