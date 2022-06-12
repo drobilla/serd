@@ -1,7 +1,7 @@
 # Project information
 
 project = "Serd"
-copyright = "2020, David Robillard"
+copyright = "2022, David Robillard"
 author = "David Robillard"
 release = "@SERD_VERSION@"
 
