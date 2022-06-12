@@ -54,6 +54,17 @@ Documentation
  * [API reference (paginated)](https://drobilla.gitlab.io/serd/c/html)
  * [`serdi` man page](https://drobilla.gitlab.io/serd/man/serdi.html)
 
+Versioning
+----------
+
+Serd uses strict [semantic versioning](http://semver.org/), which reflects the
+ABI of the C library.  The shared library name, include directory, and
+pkg-config file are all suffixed with the major version number to allow for
+parallel installation of several major versions (which distribution packages
+should preserve).  To build against serd, use the pkg-config package `serd-0`:
+
+    pkg-config pkg-config --cflags --libs serd-0
+
  -- David Robillard <d@drobilla.net>
 
 [Turtle]: https://www.w3.org/TR/turtle/
