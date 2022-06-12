@@ -15,8 +15,8 @@
 	doap:name "Serd" ;
 	doap:homepage <https://drobilla.net/software/serd> ;
 	doap:license <http://opensource.org/licenses/isc> ;
-	doap:shortdesc "A high-performance RDF reader/writer" ;
-	doap:description "Serd is a lightweight high-performance C library for reading and writing RDF in the Turtle, NTriples, TriG, and NQuads syntaxes." ;
+	doap:shortdesc "Lightweight C library for working with RDF data" ;
+	doap:description "Serd is a lightweight C library for working with RDF data.  Serd can be used by high-performance or resource-limited applications to read or write Turtle, TriG, NTriples, and NQuads.  The included `serdi` tool can be used to efficiently process RDF documents in scripts or on the command-line." ;
 	doap:created "2011-09-28"^^xsd:date ;
 	doap:programming-language "C" ;
 	doap:implements <http://www.w3.org/TR/n-quads/> ,

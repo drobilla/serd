@@ -1,5 +1,5 @@
 PROJECT_NAME           = Serd
-PROJECT_BRIEF          = "A lightweight library for RDF storage and serialisation"
+PROJECT_BRIEF          = "A lightweight C library for working with RDF data"
 
 QUIET                  = YES
 WARN_AS_ERROR          = NO
