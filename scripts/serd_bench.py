@@ -81,7 +81,9 @@ def plot(in_file, out_filename, x_label, y_label, y_max=None):
     matplotlib.use("agg")
     import matplotlib.pyplot as plt
 
-    fig_height = 4.0
+    plt.rcParams.update({'font.size': 7})
+
+    fig_height = 1.8
     dashes = get_dashes()
     markers = itertools.cycle(["o", "s", "v", "D", "*", "p", "P", "h", "X"])
 
@@ -115,8 +117,8 @@ def plot(in_file, out_filename, x_label, y_label, y_max=None):
             linewidth=1.0,
         )
 
-    plt.legend()
-    plt.savefig(out_filename, bbox_inches="tight", pad_inches=0.025)
+    plt.legend(labelspacing=0.25)
+    plt.savefig(out_filename, bbox_inches="tight", pad_inches=0.125)
     plt.close()
     sys.stderr.write("wrote {}\n".format(out_filename))
 
