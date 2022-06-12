@@ -18,7 +18,7 @@ body {
   padding: 0;
   max-width: 60em;
   font-family: "SF Pro Text", Verdana, "DejaVu Sans", sans-serif;
-  text-rendering: optimizeLegibility;
+  text-rendering: optimizelegibility;
 }
 
 h1 {
@@ -52,12 +52,15 @@ h1 a:visited, h2 a:visited, h3 a:visited, h4 a:visited, h5 a:visited, h6 a:visit
 pre, tt, code {
   overflow: auto;
   font-family: "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace, fixed;
+  hyphens: none;
+  white-space: nowrap;
+
+  /* stylelint-disable property-no-vendor-prefix */
   -epub-hyphens: none;
   -moz-hyphens: none;
   -ms-hyphens: none;
   -webkit-hyphens: none;
-  hyphens: none;
-  white-space: nowrap;
+  /* stylelint-enable property-no-vendor-prefix */
 }
 
 ul, ol, dl {
@@ -137,6 +140,8 @@ dd:blank {
 
 /* Mandoc specific style */
 
+/* stylelint-disable selector-class-pattern */
+
 table.head {
   font-size: 0.708em;
   margin: 0.438em 0 1.854em;
@@ -203,6 +208,8 @@ var.Ar {
   font-style: italic;
 }
 
+/* stylelint-enable selector-class-pattern */
+
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
   html {
@@ -230,6 +237,8 @@ var.Ar {
     color: #DDD;
   }
 
+  /* stylelint-disable selector-class-pattern */
+
   code.Nm, code.Fl, code.Cm, code.Ic, code.In, code.Fd, code.Fn, code.Cd {
     color: #AAA;
   }
@@ -241,6 +250,8 @@ var.Ar {
   code.Li {
     color: #CCC;
   }
+
+  /* stylelint-enable selector-class-pattern */
 }
 
 /* Hard black for dark mode on mobile (since it's likely to be an OLED screen) */
