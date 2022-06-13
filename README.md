@@ -50,8 +50,9 @@ constant amount of memory (a single page) for all input sizes.
 Documentation
 -------------
 
- * [API reference (single page)](https://drobilla.gitlab.io/serd/c/singlehtml)
- * [API reference (paginated)](https://drobilla.gitlab.io/serd/c/html)
+ * [Installation instructions](INSTALL.md)
+ * [Single-page API reference](https://drobilla.gitlab.io/serd/c/singlehtml)
+ * [Paginated API reference](https://drobilla.gitlab.io/serd/c/html)
  * [`serdi` man page](https://drobilla.gitlab.io/serd/man/serdi.html)
 
 Versioning
