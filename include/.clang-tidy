@@ -1,6 +1,7 @@
 Checks: >
   *,
   -*-uppercase-literal-suffix,
+  -altera-struct-pack-align,
   -clang-diagnostic-unused-macros,
   -llvmlibc-*,
 WarningsAsErrors: '*'
