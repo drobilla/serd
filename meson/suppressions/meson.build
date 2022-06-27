@@ -29,6 +29,12 @@ if is_variable('cc')
         '-Wno-sign-conversion',
       ]
 
+      if host_machine.system() == 'freebsd'
+        c_suppressions += [
+          '-Wno-c11-extensions',
+        ]
+      endif
+
     elif cc.get_id() == 'gcc'
       c_suppressions += [
         '-Wno-cast-align',

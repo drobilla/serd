@@ -80,6 +80,21 @@ x64_sanitize:
     LDFLAGS: "-fno-sanitize-recover=all -fsanitize=address -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=unsigned-integer-overflow -fsanitize=implicit-conversion -fsanitize=local-bounds -fsanitize=nullability"
 
 
+freebsd_dbg:
+  <<: *build_definition
+  tags: [freebsd,meson]
+  script:
+    - meson setup build -Dbuildtype=debug -Dstrict=true -Dwerror=true
+    - ninja -C build test
+
+freebsd_rel:
+  <<: *build_definition
+  tags: [freebsd,meson]
+  script:
+    - meson setup build -Dbuildtype=release -Dstrict=true -Dwerror=true
+    - ninja -C build test
+
+
 mingw32_dbg:
   <<: *build_definition
   image: lv2plugin/debian-mingw32

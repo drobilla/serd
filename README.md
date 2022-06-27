@@ -15,8 +15,8 @@ Features
    [ISC license][].
 
  * **Portable and Dependency-Free:** Serd has no external dependencies other
-   than the C standard library.  It is known to compile with GCC, Clang, and
-   MSVC (as C++), and is tested on GNU/Linux, MacOS, and Windows.
+   than the C standard library.  It is known to compile with Clang, GCC, and
+   MSVC, and is tested on GNU/Linux, FreeBSD, MacOS, and Windows.
 
  * **Small:** Serd is implemented in a few thousand lines of C.  When optimized,
    it compiles to well under 100 KiB.
