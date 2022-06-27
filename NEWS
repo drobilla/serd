@@ -1,9 +1,10 @@
 serd (0.30.13) unstable;
 
   * Fix memory consumption when reading documents
+  * Switch to Meson build system
   * Update README and project metadata
 
- -- David Robillard <d@drobilla.net>  Sun, 12 Jun 2022 23:37:20 +0000
+ -- David Robillard <d@drobilla.net>  Sun, 12 Jun 2022 23:37:46 +0000
 
 serd (0.30.12) stable;
 

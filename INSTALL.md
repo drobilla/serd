@@ -1,66 +1,70 @@
 Installation Instructions
 =========================
 
-Basic Installation
-------------------
+Prerequisites
+-------------
 
-Building this software requires only Python.  To install with default options:
+To build from source, you will need:
 
-    ./waf configure
-    ./waf
-    ./waf install # or sudo ./waf install
+ * A relatively modern C compiler (GCC, Clang, and MSVC are known to work).
 
-Configuration Options
----------------------
+ * [Meson](http://mesonbuild.com/), which depends on
+   [Python](http://python.org/).
 
-All supported options can be viewed using the command:
+This is a brief overview of building this project with meson.  See the meson
+documentation for more detailed information.
 
-    ./waf --help
+Configuration
+-------------
 
-Most options only need to be passed during the configure stage, for example:
+The build is configured with the `setup` command, which creates a new build
+directory with the given name:
 
-    ./waf configure --prefix=/usr
-    ./waf
-    ./waf install
+    meson setup build
 
-Compiler Configuration
-----------------------
+Some environment variables are read during `setup` and stored with the
+configuration:
 
-Several standard environment variables can be used to control how compilers are
-invoked:
+  * `CC`: Path to C compiler.
+  * `CFLAGS`: C compiler options.
+  * `LDFLAGS`: Linker options.
 
- * CC:        Path to C compiler
- * CFLAGS:    C compiler options
- * CXX:       Path to C++ compiler
- * CXXFLAGS:  C++ compiler options
- * CPPFLAGS:  C preprocessor options
- * LINKFLAGS: Linker options
+However, it is better to use meson options for configuration.  All options can
+be inspected with the `configure` command from within the build directory:
 
-Library Versioning
-------------------
+    cd build
+    meson configure
 
-This library uses semantic versioning <http://semver.org/>.
+Options can be set by passing C-style "define" options to `configure`:
 
-Several major versions can be installed in parallel.  The shared library name,
-include directory, and pkg-config file are suffixed with the major version
-number.  For example, a library named "foo" at version 1.x.y might install:
+    meson configure -Dc_args="-march=native" -Dprefix="/opt/mypackage/"
 
-    /usr/include/foo-1/foo/foo.h
-    /usr/lib/foo-1.so.1.x.y
-    /usr/lib/pkgconfig/foo-1.pc
+Building
+--------
 
-Dependencies can check for the package "foo-1" with pkg-config.
+From within a configured build directory, everything can be built with the
+`compile` command:
 
-Packaging
----------
+    meson compile
 
-Everything can be installed to a specific root directory by passing a --destdir
-option to the install stage (or setting the DESTDIR environment variable),
-which adds a prefix to all install paths.  For example:
+Similarly, tests can be run with the `test` command:
 
-    ./waf configure --prefix=/usr
-    ./waf
-    ./waf install --destdir=/tmp/package
+    meson test
 
-Packages should allow parallel installation of several major versions.  For
-example, the above would be packaged as "foo-1".
+Meson can also generate a project for several popular IDEs, see the `backend`
+option for details.
+
+Installation
+------------
+
+A compiled project can be installed with the `install` command:
+
+    meson install
+
+You may need to acquire root permissions to install to a system-wide prefix.
+For packaging, the installation may be staged to a directory using the
+`DESTDIR` environment variable or the `--destdir` option:
+
+    DESTDIR=/tmp/mypackage/ meson install
+
+    meson install --destdir=/tmp/mypackage/

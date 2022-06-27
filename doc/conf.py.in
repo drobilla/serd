@@ -1,6 +1,6 @@
 # Project information
 
-project = "Serd"
+project = "@SERD_TITLE@"
 copyright = "2022, David Robillard"
 author = "David Robillard"
 release = "@SERD_VERSION@"
@@ -47,9 +47,10 @@ nitpick_ignore = list(map(lambda x: ("c:identifier", x), _opaque))
 
 # HTML output
 
-html_static_path = ["_static"]
 html_copy_source = False
-html_short_title = "Serd"
+html_short_title = "@SERD_TITLE@"
+html_static_path = ["@SERD_SRCDIR@/doc/_static"]
+html_theme = "sphinx_lv2_theme"
 
 if have_lv2_theme:
     html_theme = "sphinx_lv2_theme"

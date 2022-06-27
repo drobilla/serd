@@ -1,0 +1,17 @@
+option('docs', type: 'feature', value: 'auto', yield: true,
+       description: 'Build documentation')
+
+option('static', type: 'boolean', value: false, yield: true,
+       description: 'Statically link executables')
+
+option('strict', type: 'boolean', value: false, yield: true,
+       description: 'Enable ultra-strict warnings')
+
+option('tests', type: 'feature', value: 'auto', yield: true,
+       description: 'Build tests')
+
+option('title', type: 'string', value: 'Serd',
+       description: 'Project title')
+
+option('tools', type: 'feature', value: 'auto', yield: true,
+       description: 'Build command line utilities')
