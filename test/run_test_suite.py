@@ -50,6 +50,7 @@ def log_error(message):
 def test_thru(
     base_uri,
     path,
+    check_lines,
     check_path,
     out_test_dir,
     flags,
@@ -75,7 +76,7 @@ def test_thru(
             "-o",
             isyntax,
             "-p",
-            "foo",
+            "serd_test",
             path,
             base_uri,
         ]
@@ -87,7 +88,7 @@ def test_thru(
         "-o",
         osyntax,
         "-c",
-        "foo",
+        "serd_test",
         out_path,
         base_uri,
     ]
@@ -95,15 +96,17 @@ def test_thru(
     with open(out_path, "wb") as out:
         subprocess.run(out_cmd, check=True, stdout=out)
 
-    with open(thru_path, "wb") as out:
-        subprocess.run(thru_cmd, check=True, stdout=out)
+    proc = subprocess.run(
+        thru_cmd, check=True, capture_output=True, encoding="utf-8"
+    )
 
-    if not _file_equals(check_path, thru_path):
-        log_error(
-            "Round-tripped output {} does not match {}\n".format(
-                check_path, thru_path
-            )
-        )
+    if not _lines_equal(
+        check_lines,
+        proc.stdout.splitlines(True),
+        check_path,
+        thru_path,
+    ):
+        log_error("Corrupted round-trip output {}\n".format(thru_cmd))
         return 1
 
     return 0
@@ -186,7 +189,7 @@ def _option_combinations(options):
     return itertools.cycle(combinations)
 
 
-def _show_diff(from_lines, to_lines, from_filename, to_filename):
+def _lines_equal(from_lines, to_lines, from_filename, to_filename):
     same = True
     for line in difflib.unified_diff(
         from_lines,
@@ -198,18 +201,6 @@ def _show_diff(from_lines, to_lines, from_filename, to_filename):
         same = False
 
     return same
-
-
-def _file_equals(patha, pathb):
-
-    for path in (patha, pathb):
-        if not os.access(path, os.F_OK):
-            log_error("missing file {}\n".format(path))
-            return False
-
-    with open(patha, "r", encoding="utf-8") as fa:
-        with open(pathb, "r", encoding="utf-8") as fb:
-            return _show_diff(fa.readlines(), fb.readlines(), patha, pathb)
 
 
 def test_suite(
@@ -262,10 +253,8 @@ def test_suite(
             results.n_tests += 1
 
             if expected_return == 0:  # Positive test
-
-                # Run strict test
-                with open(out_filename, "w") as stdout:
-                    proc = subprocess.run(command, check=False, stdout=stdout)
+                with tempfile.TemporaryFile("w+", encoding="utf-8") as out:
+                    proc = subprocess.run(command, check=False, stdout=out)
                     if proc.returncode == 0:
                         passed = True
                     else:
@@ -276,64 +265,75 @@ def test_suite(
                             )
                         )
 
-                if proc.returncode == 0 and mf + "result" in model[test]:
+                    if proc.returncode == 0 and mf + "result" in model[test]:
+                        # Check output against expected output from test suite
+                        check_uri = model[test][mf + "result"][0]
+                        check_filename = os.path.basename(_uri_path(check_uri))
+                        check_path = os.path.join(test_dir, check_filename)
 
-                    # Check output against expected output from test suite
-                    check_uri = model[test][mf + "result"][0]
-                    check_filename = os.path.basename(_uri_path(check_uri))
-                    check_path = os.path.join(test_dir, check_filename)
+                        with open(check_path, "r", encoding="utf-8") as check:
+                            check_lines = check.readlines()
 
-                    if not _file_equals(check_path, out_filename):
-                        results.n_failures += 1
-                        log_error(
-                            "Output {} does not match {}\n".format(
-                                out_filename, check_path
+                            out.seek(0)
+                            if not _lines_equal(
+                                check_lines,
+                                out.readlines(),
+                                check_path,
+                                out_filename,
+                            ):
+                                results.n_failures += 1
+                                log_error(
+                                    "Output {} does not match {}\n".format(
+                                        out_filename, check_path
+                                    )
+                                )
+
+                            # Run round-trip test
+                            check.seek(0)
+                            results.n_failures += test_thru(
+                                test_uri,
+                                test_path,
+                                check_lines,
+                                check_path,
+                                out_test_dir,
+                                list(next(thru_options_iter)),
+                                isyntax,
+                                osyntax,
+                                command_prefix,
                             )
-                        )
-
-                    # Run round-trip tests
-                    results.n_failures += test_thru(
-                        test_uri,
-                        test_path,
-                        check_path,
-                        out_test_dir,
-                        list(next(thru_options_iter)),
-                        isyntax,
-                        osyntax,
-                        command_prefix,
-                    )
 
             else:  # Negative test
-                with open(out_filename, "w") as stdout:
-                    with tempfile.TemporaryFile() as stderr:
-                        proc = subprocess.run(
-                            command, check=False, stdout=stdout, stderr=stderr
+                with tempfile.TemporaryFile() as stderr:
+                    proc = subprocess.run(
+                        command,
+                        check=False,
+                        stdout=subprocess.DEVNULL,
+                        stderr=stderr,
+                    )
+
+                    if proc.returncode != 0:
+                        passed = True
+                    else:
+                        results.n_failures += 1
+                        log_error(
+                            "Unexpected success of command: {}\n".format(
+                                command_string
+                            )
                         )
 
-                        if proc.returncode != 0:
-                            passed = True
-                        else:
-                            results.n_failures += 1
-                            log_error(
-                                "Unexpected success of command: {}\n".format(
-                                    command_string
-                                )
+                    # Check that an error message was printed
+                    stderr.seek(0, 2)  # Seek to end
+                    if stderr.tell() == 0:  # Empty
+                        results.n_failures += 1
+                        log_error(
+                            "No error message printed by: {}\n".format(
+                                command_string
                             )
-
-                        # Check that an error message was printed
-                        stderr.seek(0, 2)  # Seek to end
-                        if stderr.tell() == 0:  # Empty
-                            results.n_failures += 1
-                            log_error(
-                                "No error message printed by command: {}\n".format(
-                                    command_string
-                                )
-                            )
-                            result = 1
+                        )
 
             # Write test report entry
             if report_filename:
-                with open(report_filename, "a") as report:
+                with open(report_filename, "a", encoding="utf-8") as report:
                     report.write(earl_assertion(test, passed, asserter))
 
     # Run all test types in the test suite
