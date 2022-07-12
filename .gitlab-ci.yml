@@ -45,6 +45,7 @@ x64_dbg:
     - ninja -C build coverage-html
     - mkdir -p build/doc/
     - cp doc/*.svg build/doc/
+  coverage: '/ *lines\.*: \d+\.\d+.*/'
   artifacts:
     paths:
       - build/doc
