@@ -5,12 +5,8 @@ Checks: >
   -*-magic-numbers,
   -bugprone-easily-swappable-parameters,
   -cert-err33-c,
-  -clang-analyzer-valist.Uninitialized,
-  -clang-diagnostic-unused-function,
-  -hicpp-multiway-paths-covered,
+  -concurrency-mt-unsafe,
   -hicpp-signed-bitwise,
   -llvm-header-guard,
-  -misc-no-recursion,
-  -modernize-macro-to-enum,
   -readability-function-cognitive-complexity,
 InheritParentConfig: true
