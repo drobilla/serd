@@ -2,13 +2,19 @@
 # SPDX-License-Identifier: 0BSD OR ISC
 
 Checks: >
+  *,
   -*-magic-numbers,
-  -android-cloexec-fopen,
+  -*-uppercase-literal-suffix,
+  -altera-*,
   -bugprone-easily-swappable-parameters,
+  -bugprone-suspicious-string-compare,
   -cert-err33-c,
-  -hicpp-multiway-paths-covered,
+  -concurrency-mt-unsafe,
   -hicpp-signed-bitwise,
   -llvm-header-guard,
-  -misc-no-recursion,
+  -llvmlibc-*,
   -readability-function-cognitive-complexity,
-InheritParentConfig: true
+  -readability-identifier-length,
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*'
+FormatStyle: file
