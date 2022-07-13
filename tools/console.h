@@ -1,6 +1,9 @@
 // Copyright 2021 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
+#ifndef SERD_TOOLS_CONSOLE_H
+#define SERD_TOOLS_CONSOLE_H
+
 #include "serd/env.h"
 #include "serd/input_stream.h"
 #include "serd/output_stream.h"
@@ -22,3 +25,5 @@ serd_open_tool_output(const char* filename);
 
 SerdStatus
 serd_set_base_uri_from_path(SerdEnv* env, const char* path);
+
+#endif // SERD_TOOLS_CONSOLE_H
