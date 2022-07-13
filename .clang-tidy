@@ -6,6 +6,7 @@ Checks: >
   -*-macro-to-enum,
   -altera-*,
   -bugprone-assignment-in-if-condition,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -clang-diagnostic-unused-macros,
   -llvmlibc-*,
   -misc-include-cleaner,

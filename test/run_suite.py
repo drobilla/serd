@@ -154,7 +154,7 @@ def main():
     parser.add_argument("--lax", action="store_true", help="tolerate errors")
     parser.add_argument("--report", help="path to write result report to")
     parser.add_argument("--reverse", action="store_true", help="reverse test")
-    parser.add_argument("--serdi", default="serdi", help="path to serdi")
+    parser.add_argument("--serdi", default="tools/serdi", help="path to serdi")
     parser.add_argument("--wrapper", default="", help="executable wrapper")
     parser.add_argument("manifest", help="test suite manifest.ttl file")
     parser.add_argument("base_uri", help="base URI for tests")
