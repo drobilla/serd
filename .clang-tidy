@@ -5,6 +5,7 @@ Checks: >
   *,
   -altera-*,
   -bugprone-assignment-in-if-condition,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -llvmlibc-*,
   -misc-include-cleaner,
   -readability-avoid-nested-conditional-operator,

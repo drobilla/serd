@@ -7,7 +7,6 @@ Checks: >
   -bugprone-assert-side-effect,
   -bugprone-easily-swappable-parameters,
   -cert-err33-c,
-  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -concurrency-mt-unsafe,
   -hicpp-signed-bitwise,
 CheckOptions:
