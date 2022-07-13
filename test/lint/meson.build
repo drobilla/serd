@@ -36,7 +36,7 @@ simple_scripts = files(simple_script_paths)
 python_script_paths = simple_script_paths + plot_script_paths
 python_scripts = plot_scripts + simple_scripts
 
-all_sources = sources + unit_test_sources + files('../../src/serdi.c')
+all_sources = sources + unit_test_sources + files('../../tools/serdi.c')
 
 # Check licensing metadata
 reuse = find_program('reuse', required: false)
