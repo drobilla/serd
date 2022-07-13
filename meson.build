@@ -60,16 +60,17 @@ sources = files(
 )
 
 # Set appropriate arguments for building against the library type
+serd_extra_c_args = []
 subdir('meson/library')
 if get_option('default_library') == 'static'
-  add_project_arguments(['-DSERD_STATIC'], language: ['c'])
+  serd_extra_c_args = ['-DSERD_STATIC']
 endif
 
 # Build shared and/or static library
 libserd = library(
   meson.project_name() + library_suffix,
   sources,
-  c_args: c_suppressions + [
+  c_args: c_suppressions + serd_extra_c_args + [
     '-DSERD_INTERNAL',
     '-DSERD_VERSION="@0@"'.format(meson.project_version()),
   ],
@@ -81,6 +82,7 @@ libserd = library(
 
 # Declare dependency for internal meson dependants
 serd_dep = declare_dependency(
+  compile_args: serd_extra_c_args,
   include_directories: include_dirs,
   link_with: libserd,
 )
@@ -89,6 +91,7 @@ serd_dep = declare_dependency(
 pkg.generate(
   libserd,
   description: 'A lightweight library for working with RDF',
+  extra_cflags: serd_extra_c_args,
   filebase: versioned_name,
   name: get_option('title'),
   subdirs: [versioned_name],
