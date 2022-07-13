@@ -222,24 +222,7 @@ install_headers(c_headers, subdir: versioned_name / 'serd')
 
 # Build serdi command line utility
 if not get_option('tools').disabled()
-  tool_link_args = []
-  if get_option('static')
-    tool_link_args += ['-static']
-  endif
-
-  serdi = executable(
-    'serdi',
-    files(
-      'src/console.c',
-      'src/serdi.c',
-    ),
-    c_args: c_suppressions + platform_c_args,
-    dependencies: [serd_dep, zix_dep],
-    install: true,
-    link_args: tool_link_args,
-  )
-
-  meson.override_find_program('serdi', serdi)
+  subdir('tools')
 endif
 
 # Display top-level summary (before subdirectories to appear first)
