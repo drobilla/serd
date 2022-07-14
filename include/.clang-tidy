@@ -4,6 +4,7 @@ Checks: >
   -altera-struct-pack-align,
   -clang-diagnostic-unused-macros,
   -llvmlibc-*,
+  -readability-identifier-length,
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
 FormatStyle: file
