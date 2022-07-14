@@ -171,5 +171,5 @@ if is_variable('cc')
   endif
 
   all_c_warnings = cc.get_supported_arguments(all_c_warnings)
-  add_project_arguments(all_c_warnings, language: ['c'])
+  add_global_arguments(all_c_warnings, language: ['c'])
 endif
