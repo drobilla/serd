@@ -20,6 +20,7 @@ if is_variable('cc')
         '-Wno-cast-align',
         '-Wno-cast-qual',
         '-Wno-conversion',
+        '-Wno-declaration-after-statement',
         '-Wno-double-promotion',
         '-Wno-format-nonliteral',
         '-Wno-nullability-extension',

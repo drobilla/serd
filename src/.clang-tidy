@@ -9,6 +9,7 @@ Checks: >
   -bugprone-suspicious-string-compare,
   -cert-dcl37-c,
   -cert-dcl51-cpp,
+  -cert-err33-c,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -concurrency-mt-unsafe,
   -google-readability-todo,
@@ -18,6 +19,7 @@ Checks: >
   -llvmlibc-*,
   -misc-no-recursion,
   -readability-function-cognitive-complexity,
+  -readability-identifier-length,
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
 FormatStyle: file
