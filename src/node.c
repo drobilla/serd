@@ -138,19 +138,6 @@ result(const SerdStatus status, const size_t count)
 }
 
 SerdNode*
-serd_new_expanded_uri(const ZixStringView prefix, const ZixStringView suffix)
-{
-  const size_t    length = prefix.length + suffix.length;
-  SerdNode* const node   = serd_node_malloc(length, 0, SERD_URI);
-  char* const     buffer = serd_node_buffer(node);
-
-  memcpy(buffer, prefix.data, prefix.length);
-  memcpy(buffer + prefix.length, suffix.data, suffix.length);
-  node->length = length;
-  return node;
-}
-
-SerdNode*
 serd_new_token(const SerdNodeType type, const ZixStringView str)
 {
   SerdNodeFlags flags  = 0U;
@@ -456,21 +443,6 @@ serd_new_parsed_uri(const SerdURIView uri)
   node->length                       = actual_len;
 
   return node;
-}
-
-SerdNode*
-serd_new_resolved_uri(const ZixStringView string, const SerdURIView base)
-{
-  const SerdURIView uri     = serd_parse_uri(string.data);
-  const SerdURIView abs_uri = serd_resolve_uri(uri, base);
-  SerdNode* const   result  = serd_new_parsed_uri(abs_uri);
-
-  if (!serd_uri_string_has_scheme(serd_node_string(result))) {
-    serd_node_free(result);
-    return NULL;
-  }
-
-  return result;
 }
 
 static bool
