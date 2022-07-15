@@ -160,15 +160,11 @@ serd_env_set_prefix(SerdEnv* const      env,
 }
 
 bool
-serd_env_qualify(const SerdEnv* const   env,
-                 const SerdNode* const  uri,
-                 const SerdNode** const prefix,
-                 ZixStringView* const   suffix)
+serd_env_qualify_in_place(const SerdEnv* const   env,
+                          const SerdNode* const  uri,
+                          const SerdNode** const prefix,
+                          ZixStringView* const   suffix)
 {
-  if (!env) {
-    return false;
-  }
-
   const size_t uri_len = serd_node_length(uri);
 
   for (size_t i = 0; i < env->n_prefixes; ++i) {
@@ -189,16 +185,28 @@ serd_env_qualify(const SerdEnv* const   env,
   return false;
 }
 
-SerdStatus
-serd_env_expand(const SerdEnv* const  env,
-                const SerdNode* const curie,
-                ZixStringView* const  uri_prefix,
-                ZixStringView* const  uri_suffix)
+SerdNode*
+serd_env_qualify(const SerdEnv* const env, const SerdNode* const uri)
 {
-  if (!env || !curie) {
-    return SERD_BAD_CURIE;
+  if (!env || !uri) {
+    return NULL;
   }
 
+  const SerdNode* prefix = NULL;
+  ZixStringView   suffix = {NULL, 0};
+  if (serd_env_qualify_in_place(env, uri, &prefix, &suffix)) {
+    return serd_new_qualified_curie(serd_node_string_view(prefix), suffix);
+  }
+
+  return NULL;
+}
+
+SerdStatus
+serd_env_expand_in_place(const SerdEnv* const  env,
+                         const SerdNode* const curie,
+                         ZixStringView* const  uri_prefix,
+                         ZixStringView* const  uri_suffix)
+{
   const char* const str       = serd_node_string(curie);
   const size_t      curie_len = serd_node_length(curie);
   const char* const colon     = (const char*)memchr(str, ':', curie_len + 1);
@@ -221,7 +229,7 @@ serd_env_expand(const SerdEnv* const  env,
 SerdNode*
 serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
 {
-  if (!env) {
+  if (!env || !node) {
     return NULL;
   }
 
@@ -233,7 +241,7 @@ serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
   case SERD_CURIE: {
     ZixStringView prefix;
     ZixStringView suffix;
-    if (serd_env_expand(env, node, &prefix, &suffix)) {
+    if (serd_env_expand_in_place(env, node, &prefix, &suffix)) {
       return NULL;
     }
 

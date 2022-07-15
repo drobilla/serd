@@ -183,6 +183,20 @@ result(const SerdStatus status, const size_t count)
 }
 
 SerdNode*
+serd_new_qualified_curie(const ZixStringView prefix, const ZixStringView suffix)
+{
+  const size_t    length = prefix.length + 1U + suffix.length;
+  SerdNode* const node   = serd_node_malloc(length, 0, SERD_CURIE);
+  char* const     buffer = serd_node_buffer(node);
+  size_t          i      = prefix.length;
+  memcpy(buffer, prefix.data, prefix.length);
+  buffer[i++] = ':';
+  memcpy(buffer + i, suffix.data, suffix.length);
+  node->length = length;
+  return node;
+}
+
+SerdNode*
 serd_new_expanded_uri(const ZixStringView prefix, const ZixStringView suffix)
 {
   const size_t    length = prefix.length + suffix.length;

@@ -11,8 +11,6 @@
 #include "zix/attributes.h"
 #include "zix/string_view.h"
 
-#include <stdbool.h>
-
 SERD_BEGIN_DECLS
 
 /**
@@ -52,33 +50,24 @@ serd_env_set_prefix(SerdEnv* ZIX_NONNULL env,
                     ZixStringView        name,
                     ZixStringView        uri);
 
-/// Qualify `uri` into a CURIE if possible
-SERD_API bool
-serd_env_qualify(const SerdEnv* ZIX_NULLABLE               env,
-                 const SerdNode* ZIX_NONNULL               uri,
-                 const SerdNode* ZIX_NULLABLE* ZIX_NONNULL prefix,
-                 ZixStringView* ZIX_NONNULL                suffix);
-
 /**
-   Expand `curie`.
+   Qualify `uri` into a CURIE if possible.
 
-   Errors: SERD_BAD_ARG if `curie` is not valid, or SERD_BAD_CURIE if prefix is
-   not defined in `env`.
+   Returns null if `uri` can not be qualified (usually because no corresponding
+   prefix is defined).
 */
-SERD_API SerdStatus
-serd_env_expand(const SerdEnv* ZIX_NULLABLE  env,
-                const SerdNode* ZIX_NULLABLE curie,
-                ZixStringView* ZIX_NONNULL   uri_prefix,
-                ZixStringView* ZIX_NONNULL   uri_suffix);
+SERD_API SerdNode* ZIX_ALLOCATED
+serd_env_qualify(const SerdEnv* ZIX_NULLABLE  env,
+                 const SerdNode* ZIX_NULLABLE uri);
 
 /**
-   Expand `node`, which must be a CURIE or URI, to a full URI.
+   Expand `node` to an absolute URI if possible.
 
    Returns null if `node` can not be expanded.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_env_expand_node(const SerdEnv* ZIX_NULLABLE env,
-                     const SerdNode* ZIX_NONNULL node);
+serd_env_expand_node(const SerdEnv* ZIX_NULLABLE  env,
+                     const SerdNode* ZIX_NULLABLE node);
 
 /// Write all prefixes in `env` to `sink`
 SERD_API SerdStatus

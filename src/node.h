@@ -37,6 +37,10 @@ serd_node_zero_pad(SerdNode* ZIX_NONNULL node);
 
 /// Create a new URI from a prefix and suffix (expanded from a CURIE)
 SerdNode* ZIX_ALLOCATED
+serd_new_qualified_curie(ZixStringView prefix, ZixStringView suffix);
+
+/// Create a new URI from a prefix and suffix (expanded from a CURIE)
+SerdNode* ZIX_ALLOCATED
 serd_new_expanded_uri(ZixStringView prefix, ZixStringView suffix);
 
 /// Create a new URI from a string, resolved against a base URI
