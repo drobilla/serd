@@ -1,3 +1,10 @@
+serd (0.30.15) unstable;
+
+  * Add SERD_STATIC to pkg-config Cflags for static-only builds
+  * Fix spelling mistake in serdi man page
+
+ -- David Robillard <d@drobilla.net>  Fri, 15 Jul 2022 11:37:13 +0000
+
 serd (0.30.14) stable;
 
   * Fix memory consumption when reading documents
