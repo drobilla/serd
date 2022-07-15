@@ -170,6 +170,15 @@ if not get_option('tools').disabled()
        should_fail: true,
        suite: ['serdi', 'input'])
 
+  # Output
+
+  test('empty', files('test_empty.py'),
+       args: script_args + [serd_ttl],
+       env: test_env,
+       suite: 'output')
+
+  # FIXME: Old base URI argument?
+
   # IO errors
 
   test('read_dir', serdi,

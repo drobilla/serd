@@ -795,9 +795,8 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
   SerdStringView prefix = {NULL, 0};
   SerdStringView suffix = {NULL, 0};
   SerdStatus     st     = SERD_SUCCESS;
-  switch (writer->syntax) {
-  case SERD_NTRIPLES:
-  case SERD_NQUADS:
+
+  if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
     if ((st = serd_env_expand(writer->env, node, &prefix, &suffix))) {
       serd_world_errorf(writer->world,
                         st,
@@ -805,18 +804,14 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
                         serd_node_string(node));
       return st;
     }
+
     TRY(st, esink("<", 1, writer));
     TRY(st, ewrite_uri(writer, prefix.buf, prefix.len));
     TRY(st, ewrite_uri(writer, suffix.buf, suffix.len));
-    TRY(st, esink(">", 1, writer));
-    break;
-  case SERD_TURTLE:
-  case SERD_TRIG:
-    TRY(st, write_lname(writer, serd_node_string(node), node->length));
-    break;
+    return esink(">", 1, writer);
   }
 
-  return st;
+  return write_lname(writer, serd_node_string(node), node->length);
 }
 
 SERD_WARN_UNUSED_RESULT static SerdStatus
@@ -924,6 +919,10 @@ serd_writer_write_statement(SerdWriter* const          writer,
 {
   assert(!((flags & SERD_ANON_S) && (flags & SERD_LIST_S)));
   assert(!((flags & SERD_ANON_O) && (flags & SERD_LIST_O)));
+
+  if (writer->syntax == SERD_SYNTAX_EMPTY) {
+    return SERD_SUCCESS;
+  }
 
   SerdStatus            st        = SERD_SUCCESS;
   const SerdNode* const subject   = serd_statement_subject(statement);
@@ -1067,7 +1066,7 @@ serd_writer_write_statement(SerdWriter* const          writer,
 SERD_WARN_UNUSED_RESULT static SerdStatus
 serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
 {
-  if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
+  if (writer->syntax != SERD_TURTLE && writer->syntax != SERD_TRIG) {
     return SERD_SUCCESS;
   }
 
