@@ -76,16 +76,6 @@ extern "C" {
    @{
 */
 
-/// Flags that describe the details of a node
-typedef enum {
-  SERD_IS_LONG      = 1U << 0U, ///< Literal node should be triple-quoted
-  SERD_HAS_DATATYPE = 1U << 1U, ///< Literal node has datatype
-  SERD_HAS_LANGUAGE = 1U << 2U, ///< Literal node has language
-} SerdNodeFlag;
-
-/// Bitwise OR of SerdNodeFlag values
-typedef uint32_t SerdNodeFlags;
-
 /**
    @defgroup serd_string_view String View
    @{
@@ -597,6 +587,16 @@ typedef enum {
   */
   SERD_VARIABLE = 4,
 } SerdNodeType;
+
+/// Flags that describe the details of a node
+typedef enum {
+  SERD_IS_LONG      = 1U << 0U, ///< Literal node should be triple-quoted
+  SERD_HAS_DATATYPE = 1U << 1U, ///< Literal node has datatype
+  SERD_HAS_LANGUAGE = 1U << 2U, ///< Literal node has language
+} SerdNodeFlag;
+
+/// Bitwise OR of SerdNodeFlag values
+typedef uint32_t SerdNodeFlags;
 
 /**
    @defgroup serd_node_construction Construction
