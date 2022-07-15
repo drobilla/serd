@@ -209,17 +209,13 @@ def test_suite(
     report_filename,
     input_syntax,
     command_prefix,
+    out_test_dir,
 ):
     """Run all tests in a test suite manifest."""
 
     mf = "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#"
     test_dir = os.path.dirname(manifest_path)
     model, instances = _load_rdf(manifest_path, base_uri, command_prefix)
-
-    top_dir = os.path.commonpath([os.getcwd(), os.path.abspath(test_dir)])
-    out_test_dir = os.path.relpath(test_dir, top_dir)
-
-    os.makedirs(out_test_dir, exist_ok=True)
 
     asserter = ""
     if os.getenv("USER") == "drobilla":
@@ -383,13 +379,15 @@ def main():
         shlex.split(args.wrapper) + [args.serdi] + args.serdi_option
     )
 
-    return test_suite(
-        args.manifest,
-        args.base_uri,
-        args.report,
-        args.syntax,
-        command_prefix,
-    )
+    with tempfile.TemporaryDirectory() as test_out_dir:
+        return test_suite(
+            args.manifest,
+            args.base_uri,
+            args.report,
+            args.syntax,
+            command_prefix,
+            test_out_dir,
+        )
 
 
 if __name__ == "__main__":
