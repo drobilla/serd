@@ -195,6 +195,8 @@ typedef enum {
   SERD_ERR_BAD_CURIE,  ///< Invalid CURIE or unknown namespace prefix
   SERD_ERR_INTERNAL,   ///< Unexpected internal error
   SERD_ERR_OVERFLOW,   ///< Stack overflow
+  SERD_ERR_BAD_TEXT,   ///< Invalid text encoding
+  SERD_ERR_BAD_WRITE,  ///< Error writing to file/stream
 } SerdStatus;
 
 /**
@@ -1455,7 +1457,8 @@ typedef enum {
   SERD_WRITE_ASCII       = 1U << 0U, ///< Escape all non-ASCII characters
   SERD_WRITE_UNQUALIFIED = 1U << 1U, ///< Do not shorten URIs into CURIEs
   SERD_WRITE_UNRESOLVED  = 1U << 2U, ///< Do not make URIs relative
-  SERD_WRITE_TERSE       = 1U << 3U  ///< Write terser output without newlines
+  SERD_WRITE_TERSE       = 1U << 3U, ///< Write terser output without newlines
+  SERD_WRITE_STRICT      = 1U << 4U  ///< Abort with error on lossy output
 } SerdWriterFlag;
 
 /// Bitwise OR of SerdWriterFlag values
