@@ -36,6 +36,17 @@ subdir('meson/suppressions')
 
 m_dep = cc.find_library('m', required: false)
 
+##########################
+# Platform Configuration #
+##########################
+
+platform_args = []
+if host_machine.system() in ['gnu', 'linux']
+  platform_args += [
+    '-D_POSIX_C_SOURCE=200809L',
+  ]
+endif
+
 ###########
 # Library #
 ###########
@@ -70,7 +81,7 @@ endif
 libserd = library(
   meson.project_name() + library_suffix,
   sources,
-  c_args: c_suppressions + extra_c_args + [
+  c_args: c_suppressions + extra_c_args + platform_args + [
     '-DSERD_INTERNAL',
     '-DSERD_VERSION="@0@"'.format(meson.project_version()),
   ],
@@ -116,7 +127,7 @@ if not get_option('tools').disabled()
   serdi = executable(
     'serdi',
     files('src/serdi.c'),
-    c_args: c_suppressions,
+    c_args: c_suppressions + platform_args,
     dependencies: serd_dep,
     install: true,
     link_args: tool_link_args,

@@ -14,8 +14,6 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#define _POSIX_C_SOURCE 200809L /* for fileno and posix_fadvise */
-
 #include "serd_config.h"
 #include "string_utils.h"
 
