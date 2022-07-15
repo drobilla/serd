@@ -341,17 +341,20 @@ serd_byte_sink_free(SerdByteSink* SERD_NULLABLE sink);
 
 /// Syntax supported by serd
 typedef enum {
-  SERD_TURTLE   = 1U, ///< Terse triples http://www.w3.org/TR/turtle
-  SERD_NTRIPLES = 2U, ///< Line-based triples http://www.w3.org/TR/n-triples/
-  SERD_NQUADS   = 3U, ///< Line-based quads http://www.w3.org/TR/n-quads/
-  SERD_TRIG     = 4U, ///< Terse quads http://www.w3.org/TR/trig/
+  SERD_SYNTAX_EMPTY = 0U, ///< Empty syntax
+  SERD_TURTLE       = 1U, ///< Terse triples http://www.w3.org/TR/turtle
+  SERD_NTRIPLES     = 2U, ///< Flat triples http://www.w3.org/TR/n-triples/
+  SERD_NQUADS       = 3U, ///< Flat quads http://www.w3.org/TR/n-quads/
+  SERD_TRIG         = 4U, ///< Terse quads http://www.w3.org/TR/trig/
 } SerdSyntax;
 
 /**
    Get a syntax by name.
 
-   Case-insensitive, supports "Turtle", "NTriples", "NQuads", and "TriG".  Zero
-   is returned if the name is not recognized.
+   Case-insensitive, supports "Turtle", "NTriples", "NQuads", and "TriG".
+
+   @return The syntax with the given name, or the empty syntax if the name is
+   unknown.
 */
 SERD_PURE_API
 SerdSyntax
@@ -360,8 +363,11 @@ serd_syntax_by_name(const char* SERD_NONNULL name);
 /**
    Guess a syntax from a filename.
 
-   This uses the file extension to guess the syntax of a file.  Zero is
-   returned if the extension is not recognized.
+   This uses the file extension to guess the syntax of a file, for example a
+   filename that ends with ".ttl" will be considered Turtle.
+
+   @return The likely syntax of the given file, or the empty syntax if the
+   extension is unknown.
 */
 SERD_PURE_API
 SerdSyntax
