@@ -95,25 +95,28 @@ print_version(void)
 static int
 print_usage(const char* const name, const bool error)
 {
+  static const char* const description =
+    "Read and write RDF syntax.\n"
+    "Use - for INPUT to read from standard input.\n\n"
+    "  -a           Write ASCII output if possible.\n"
+    "  -b           Fast bulk output for large serialisations.\n"
+    "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n"
+    "  -e           Eat input one character at a time.\n"
+    "  -f           Keep full URIs in input (don't qualify).\n"
+    "  -h           Display this help and exit.\n"
+    "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads.\n"
+    "  -l           Lax (non-strict) parsing.\n"
+    "  -o SYNTAX    Output syntax: turtle/ntriples/nquads.\n"
+    "  -p PREFIX    Add PREFIX to blank node IDs.\n"
+    "  -q           Suppress all output except data.\n"
+    "  -r ROOT_URI  Keep relative URIs within ROOT_URI.\n"
+    "  -s INPUT     Parse INPUT as string (terminates options).\n"
+    "  -v           Display version information and exit.\n";
+
   FILE* const os = error ? stderr : stdout;
   fprintf(os, "%s", error ? "\n" : "");
   fprintf(os, "Usage: %s [OPTION]... INPUT [BASE_URI]\n", name);
-  fprintf(os, "Read and write RDF syntax.\n");
-  fprintf(os, "Use - for INPUT to read from standard input.\n\n");
-  fprintf(os, "  -a           Write ASCII output if possible.\n");
-  fprintf(os, "  -b           Fast bulk output for large serialisations.\n");
-  fprintf(os, "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n");
-  fprintf(os, "  -e           Eat input one character at a time.\n");
-  fprintf(os, "  -f           Keep full URIs in input (don't qualify).\n");
-  fprintf(os, "  -h           Display this help and exit.\n");
-  fprintf(os, "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads.\n");
-  fprintf(os, "  -l           Lax (non-strict) parsing.\n");
-  fprintf(os, "  -o SYNTAX    Output syntax: turtle/ntriples/nquads.\n");
-  fprintf(os, "  -p PREFIX    Add PREFIX to blank node IDs.\n");
-  fprintf(os, "  -q           Suppress all output except data.\n");
-  fprintf(os, "  -r ROOT_URI  Keep relative URIs within ROOT_URI.\n");
-  fprintf(os, "  -s INPUT     Parse INPUT as string (terminates options).\n");
-  fprintf(os, "  -v           Display version information and exit.\n");
+  fprintf(os, "%s", description);
   return error ? 1 : 0;
 }
 
