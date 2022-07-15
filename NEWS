@@ -6,6 +6,7 @@ serd (1.1.1) unstable; urgency=medium
   * Add support for writing terse collections
   * Add support for xsd:float and xsd:double literals
   * Bring read/write interface closer to C standard
+  * Improve error handling
   * Make nodes opaque
   * Remove SERD_DISABLE_DEPRECATED and SERD_DEPRECATED_BY
   * Remove serd_uri_to_path()
