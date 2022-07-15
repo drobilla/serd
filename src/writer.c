@@ -853,7 +853,7 @@ write_uri_node(SerdWriter* const     writer,
     }
 
     if (has_scheme && !(writer->flags & SERD_WRITE_UNQUALIFIED) &&
-        serd_env_qualify(writer->env, node, &prefix, &suffix) &&
+        serd_env_qualify_in_place(writer->env, node, &prefix, &suffix) &&
         is_name(serd_node_string(prefix), serd_node_length(prefix)) &&
         is_name(suffix.data, suffix.length)) {
       TRY(st, write_uri_from_node(writer, prefix));
@@ -886,7 +886,7 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
     (writer->flags & (SERD_WRITE_UNQUALIFIED | SERD_WRITE_UNRESOLVED));
 
   if (!supports_abbrev(writer) || !fast) {
-    if ((st = serd_env_expand(writer->env, node, &prefix, &suffix))) {
+    if ((st = serd_env_expand_in_place(writer->env, node, &prefix, &suffix))) {
       return w_err(writer, st, "undefined namespace prefix '%s'\n", node_str);
     }
   }
