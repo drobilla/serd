@@ -29,7 +29,7 @@
 #define SERD_CONFIG_H
 
 // Define version unconditionally so a warning will catch a mismatch
-#define SERD_VERSION "0.30.14"
+#define SERD_VERSION "0.30.15"
 
 #if !defined(SERD_NO_DEFAULT_CONFIG)
 
