@@ -121,25 +121,44 @@ serd_strncasecmp(const char* s1, const char* s2, size_t n)
 }
 
 static inline uint32_t
-utf8_num_bytes(const uint8_t c)
+utf8_num_bytes(const uint8_t leading)
 {
-  if ((c & 0x80) == 0) { // Starts with `0'
-    return 1;
-  }
+  static const uint8_t lengths[32] = {
+    1u, // 00000xxx
+    1u, // 00001xxx
+    1u, // 00010xxx
+    1u, // 00011xxx
+    1u, // 00100xxx
+    1u, // 00101xxx
+    1u, // 00110xxx
+    1u, // 00111xxx
+    1u, // 01000xxx
+    1u, // 01001xxx
+    1u, // 01010xxx
+    1u, // 01011xxx
+    1u, // 01100xxx
+    1u, // 01101xxx
+    1u, // 01110xxx
+    1u, // 01111xxx
+    0u, // 10000xxx
+    0u, // 10001xxx
+    0u, // 10010xxx
+    0u, // 10011xxx
+    0u, // 10100xxx
+    0u, // 10101xxx
+    0u, // 10110xxx
+    0u, // 10111xxx
+    2u, // 11000xxx
+    2u, // 11001xxx
+    2u, // 11010xxx
+    2u, // 11011xxx
+    3u, // 11100xxx
+    3u, // 11101xxx
+    4u, // 11110xxx
+    0u  // 11111xxx
+  };
 
-  if ((c & 0xE0) == 0xC0) { // Starts with `110'
-    return 2;
-  }
-
-  if ((c & 0xF0) == 0xE0) { // Starts with `1110'
-    return 3;
-  }
-
-  if ((c & 0xF8) == 0xF0) { // Starts with `11110'
-    return 4;
-  }
-
-  return 0;
+  return lengths[leading >> 3u];
 }
 
 /// Return the code point of a UTF-8 character with known length
@@ -148,8 +167,7 @@ parse_counted_utf8_char(const uint8_t* utf8, size_t size)
 {
   uint32_t c = utf8[0] & ((1u << (8u - size)) - 1u);
   for (size_t i = 1; i < size; ++i) {
-    const uint8_t in = utf8[i] & 0x3Fu;
-    c                = (c << 6) | in;
+    c = (c << 6) | (utf8[i] & 0x3Fu);
   }
   return c;
 }
