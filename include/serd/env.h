@@ -10,8 +10,6 @@
 #include "serd/status.h"
 #include "serd/string_view.h"
 
-#include <stdbool.h>
-
 SERD_BEGIN_DECLS
 
 /**
@@ -56,26 +54,26 @@ serd_env_set_prefix(SerdEnv* SERD_NONNULL env,
                     SerdStringView        name,
                     SerdStringView        uri);
 
-/// Qualify `uri` into a CURIE if possible
-SERD_API
-bool
-serd_env_qualify(const SerdEnv* SERD_NULLABLE                env,
-                 const SerdNode* SERD_NONNULL                uri,
-                 const SerdNode* SERD_NULLABLE* SERD_NONNULL prefix,
-                 SerdStringView* SERD_NONNULL                suffix);
-
 /**
-   Expand `curie`.
+   Qualify `uri` into a CURIE if possible.
 
-   Errors: SERD_ERR_BAD_ARG if `curie` is not valid, or SERD_ERR_BAD_CURIE if
-   prefix is not defined in `env`.
+   Returns null if `uri` can not be qualified (usually because no corresponding
+   prefix is defined).
 */
 SERD_API
-SerdStatus
+SerdNode* SERD_ALLOCATED
+serd_env_qualify(const SerdEnv* SERD_NULLABLE  env,
+                 const SerdNode* SERD_NULLABLE uri);
+
+/**
+   Expand `node`, which must be a CURIE or URI, to a full URI.
+
+   Returns null if `node` can not be expanded.
+*/
+SERD_API
+SerdNode* SERD_ALLOCATED
 serd_env_expand(const SerdEnv* SERD_NULLABLE  env,
-                const SerdNode* SERD_NULLABLE curie,
-                SerdStringView* SERD_NONNULL  uri_prefix,
-                SerdStringView* SERD_NONNULL  uri_suffix);
+                const SerdNode* SERD_NULLABLE node);
 
 /**
    Expand `node`, which must be a CURIE or URI, to a full URI.
