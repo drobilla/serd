@@ -182,9 +182,6 @@ int
 main(int argc, char** argv)
 {
   const char* const prog = argv[0];
-  if (argc < 2) {
-    return print_usage(prog, true);
-  }
 
   FILE*          in_fd         = NULL;
   SerdSyntax     input_syntax  = (SerdSyntax)0;
@@ -279,7 +276,7 @@ main(int argc, char** argv)
 
   if (a == argc) {
     SERDI_ERROR("missing input\n");
-    return 1;
+    return print_usage(prog, true);
   }
 
 #ifdef _WIN32
