@@ -6,9 +6,7 @@
 
 #include "exess/exess.h"
 #include "serd/node.h"
-#include "serd/uri.h"
 #include "zix/attributes.h"
-#include "zix/string_view.h"
 
 #include <stddef.h>
 
@@ -35,14 +33,6 @@ serd_node_set_header(SerdNode* ZIX_NONNULL node,
 void
 serd_node_set(SerdNode* ZIX_NONNULL* ZIX_NONNULL dst,
               const SerdNode* ZIX_NONNULL        src);
-
-/// Create a new URI from a prefix and suffix (expanded from a CURIE)
-SerdNode* ZIX_ALLOCATED
-serd_new_expanded_uri(ZixStringView prefix, ZixStringView suffix);
-
-/// Create a new URI from a string, resolved against a base URI
-SerdNode* ZIX_ALLOCATED
-serd_new_resolved_uri(ZixStringView string, SerdURIView base_uri);
 
 /// Retrieve the value of a node as a particular binary datatype if possible
 ExessResult

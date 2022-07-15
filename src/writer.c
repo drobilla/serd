@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: ISC
 
 #include "byte_sink.h"
-#include "env.h"
 #include "node.h"
 #include "serd_internal.h"
 #include "sink.h"
@@ -678,18 +677,18 @@ reset_context(SerdWriter* writer, const unsigned flags)
 static const char*
 get_xsd_name(const SerdEnv* const env, const SerdNode* const datatype)
 {
-  const char* const datatype_str = serd_node_string(datatype);
+  const ZixStringView datatype_str = serd_node_string_view(datatype);
 
   if (serd_node_type(datatype) == SERD_URI &&
-      (!strncmp(datatype_str, NS_XSD, sizeof(NS_XSD) - 1))) {
-    return datatype_str + sizeof(NS_XSD) - 1U;
+      (!strncmp(datatype_str.data, NS_XSD, sizeof(NS_XSD) - 1))) {
+    return datatype_str.data + sizeof(NS_XSD) - 1U;
   }
 
   if (serd_node_type(datatype) == SERD_CURIE) {
     ZixStringView prefix;
     ZixStringView suffix;
     // We can be a bit lazy/presumptive here due to grammar limitations
-    if (!serd_env_expand(env, datatype, &prefix, &suffix)) {
+    if (!serd_env_expand(env, datatype_str, &prefix, &suffix)) {
       if (!strcmp((const char*)prefix.data, NS_XSD)) {
         return (const char*)suffix.data;
       }
@@ -759,26 +758,26 @@ write_uri_node(SerdWriter* const writer,
                const SerdNode*   node,
                const Field       field)
 {
-  SerdStatus        st         = SERD_SUCCESS;
-  const SerdNode*   prefix     = NULL;
-  ZixStringView     suffix     = {NULL, 0};
-  const char* const node_str   = serd_node_string(node);
-  const bool        has_scheme = serd_uri_string_has_scheme(node_str);
+  SerdStatus          st         = SERD_SUCCESS;
+  const ZixStringView string     = serd_node_string_view(node);
+  const bool          has_scheme = serd_uri_string_has_scheme(string.data);
 
   if (supports_abbrev(writer)) {
-    if (field == FIELD_PREDICATE && !strcmp(node_str, NS_RDF "type")) {
+    if (field == FIELD_PREDICATE && !strcmp(string.data, NS_RDF "type")) {
       return esink("a", 1, writer);
     }
 
-    if (!strcmp(node_str, NS_RDF "nil")) {
+    if (!strcmp(string.data, NS_RDF "nil")) {
       return esink("()", 2, writer);
     }
 
+    ZixStringView prefix = {NULL, 0};
+    ZixStringView suffix = {NULL, 0};
     if (has_scheme && !(writer->flags & SERD_WRITE_UNQUALIFIED) &&
-        serd_env_qualify(writer->env, node, &prefix, &suffix) &&
-        is_name(serd_node_string(prefix), serd_node_length(prefix)) &&
+        !serd_env_qualify(writer->env, string, &prefix, &suffix) &&
+        is_name(prefix.data, prefix.length) &&
         is_name(suffix.data, suffix.length)) {
-      TRY(st, write_uri_from_node(writer, prefix));
+      TRY(st, write_lname(writer, prefix.data, prefix.length));
       TRY(st, esink(":", 1, writer));
       return ewrite_uri(writer, suffix.data, suffix.length);
     }
@@ -786,19 +785,19 @@ write_uri_node(SerdWriter* const writer,
 
   if (!has_scheme &&
       (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) &&
-      !serd_env_base_uri(writer->env)) {
+      !serd_env_base_uri_view(writer->env).scheme.length) {
     return w_err(writer,
                  SERD_BAD_ARG,
                  "syntax does not support URI reference <%s>\n",
-                 node_str);
+                 string.data);
   }
 
   TRY(st, esink("<", 1, writer));
 
   if (!(writer->flags & SERD_WRITE_UNRESOLVED) &&
-      serd_env_base_uri(writer->env)) {
+      serd_env_base_uri_string(writer->env).length) {
     const SerdURIView  base_uri = serd_env_base_uri_view(writer->env);
-    SerdURIView        uri      = serd_parse_uri(node_str);
+    SerdURIView        uri      = serd_parse_uri(string.data);
     SerdURIView        abs_uri  = serd_resolve_uri(uri, base_uri);
     bool               rooted   = uri_is_under(&base_uri, &writer->root_uri);
     const SerdURIView* root     = rooted ? &writer->root_uri : &base_uri;
@@ -830,7 +829,8 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
     (writer->flags & (SERD_WRITE_UNQUALIFIED | SERD_WRITE_UNRESOLVED));
 
   if (!supports_abbrev(writer) || !fast) {
-    if ((st = serd_env_expand(writer->env, node, &prefix, &suffix))) {
+    const ZixStringView curie = serd_node_string_view(node);
+    if ((st = serd_env_expand(writer->env, curie, &prefix, &suffix))) {
       return w_err(writer, st, "undefined namespace prefix '%s'\n", node_str);
     }
   }
@@ -1255,7 +1255,8 @@ serd_writer_set_base_uri(SerdWriter* const writer, const SerdNode* const uri)
     return SERD_BAD_ARG;
   }
 
-  if (serd_node_equals(serd_env_base_uri(writer->env), uri)) {
+  if (zix_string_view_equals(serd_env_base_uri_string(writer->env),
+                             serd_node_string_view(uri))) {
     return SERD_SUCCESS;
   }
 
