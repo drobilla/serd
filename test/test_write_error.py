@@ -3,7 +3,7 @@
 # Copyright 2022 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: ISC
 
-"""Test errors writing to a file."""
+"""Test errors when writing to a file."""
 
 import argparse
 import sys
@@ -13,12 +13,12 @@ import os
 
 parser = argparse.ArgumentParser(description=__doc__)
 
-parser.add_argument("--serdi", default="./serdi", help="path to serdi")
+parser.add_argument("--tool", default="tools/serd-pipe", help="executable")
 parser.add_argument("--wrapper", default="", help="executable wrapper")
 parser.add_argument("input", help="valid input file")
 
 args = parser.parse_args(sys.argv[1:])
-command = shlex.split(args.wrapper) + [args.serdi, args.input]
+command = shlex.split(args.wrapper) + [args.tool, args.input]
 
 if os.path.exists("/dev/full"):
 

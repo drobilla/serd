@@ -1,7 +1,9 @@
 # Copyright 2020-2022 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
-run_test_suite = files('run_test_suite.py')
+run_filter_suite = find_program('run_filter_suite.py')
+run_pipe_suite = find_program('run_pipe_suite.py')
+run_sort_suite = find_program('run_sort_suite.py')
 
 wrapper = meson.get_external_property('exe_wrapper', '')
 
@@ -82,188 +84,364 @@ foreach unit : unit_tests
   )
 endforeach
 
-################
-# System Tests #
-################
+serd_ttl = files('../serd.ttl')[0]
+common_script_options = []
+if wrapper != ''
+  common_script_options = ['--wrapper', wrapper]
+endif
 
-if not get_option('tools').disabled()
-  if wrapper != ''
-    script_args = ['--wrapper', wrapper, '--serdi', serdi.full_path()]
-  else
-    script_args = ['--serdi', serdi.full_path()]
-  endif
+# Test serd-pipe as the main entry point to the common tool code
+if is_variable('serd_pipe')
+  tool = serd_pipe
+  pipe_test_script_args = common_script_options + ['--tool', serd_pipe]
 
-  serd_ttl = files('../serd.ttl')[0]
-
-  test('serd.ttl', serdi, args: [serd_ttl], env: test_env, suite: 'data')
-
-  # Command line options
+  # Basic valid arguments
 
   good_args = [
-    ['-v'],
+    ['-V'],
     ['-h'],
-    ['-k', '512', '-s', '<urn:eg:s> a <urn:eg:T> .'],
   ]
 
   foreach args : good_args
-    test(args[0], serdi, args: args, env: test_env, suite: ['serdi', 'options'])
+    test(args[0],
+         tool,
+         args: args,
+         env: test_env,
+         suite: ['tools', 'pipe', 'options'])
   endforeach
 
+  # Basic invalid arguments
+
   bad_args = [
-    ['/no/such/file'],
-    ['ftp://unsupported.org'],
-    ['-F', '', '-G', ''],
-    ['-F'],
-    ['-F', '?s ?p ?o . ?q ?r ?s .', '-s', ''],
-    ['-F', '?s ?p ?o .\n?q ?r ?s .\n', '-s', ''],
-    ['-F', 'bad_pattern', '-s', ''],
-    ['-G'],
-    ['-G', '?s ?p ?o . ?q ?r ?s .', '-s', ''],
-    ['-G', 'bad_pattern', '-s', ''],
+    ['-B', 'nonuriorpath'],
+    ['-B'],
+    ['-I', 'unknown'],
     ['-I'],
-    ['-b'],
+    ['-O', 'unknown'],
+    ['-O'],
     ['-b', '-1'],
-    ['-b', '9223372036854775807'],
     ['-b', '1024junk'],
-    ['-c'],
-    ['-i', 'unknown'],
-    ['-i', 'turtle'],
-    ['-i'],
-    ['-fi'],
-    ['-k'],
+    ['-b', '9223372036854775807'],
+    ['-b'],
     ['-k', '-1'],
-    ['-k', '9223372036854775807'],
     ['-k', '1024junk'],
-    ['-o', 'unknown'],
+    ['-k', '9223372036854775807'],
+    ['-k'],
     ['-o'],
-    ['-p'],
-    ['-r'],
-    ['-s'],
-    ['-w'],
-    ['-z'],
     ['-s', '<foo> a <Bar> .'],
+    ['-s'],
+    ['-z'],
+    ['/no/such/file'],
   ]
 
   foreach args : bad_args
-    name = ' '.join(args).underscorify()
-    test(name, serdi,
+    test(' '.join(args),
+         tool,
          args: args,
          env: test_env,
          should_fail: true,
-         suite: ['serdi', 'options'])
+         suite: ['tools', 'pipe', 'options'])
   endforeach
 
-  test('ansi_clicolor_force',
-       serdi,
-       args: files('bad/bad-lang.ttl'),
-       env: test_env + ['CLICOLOR_FORCE=1'],
-       should_fail: true)
-
-  test('ansi_clicolor_off',
-       serdi,
-       args: files('bad/bad-lang.ttl'),
-       env: test_env + ['CLICOLOR=0'],
-       should_fail: true)
-
-  test('ansi_no_color',
-       serdi,
-       args: files('bad/bad-lang.ttl'),
-       env: test_env + ['NO_COLOR=1'],
-       should_fail: true)
-
-  test('none',
-       serdi,
+  test('remote',
+       tool,
+       args: ['ftp://unsupported.org'],
        env: test_env,
        should_fail: true,
-       suite: ['serdi', 'options'])
+       suite: ['tools', 'pipe', 'options'])
 
-  test('quiet', files('test_quiet.py'),
-       args: script_args + files('bad/bad-base.ttl'),
+  test('bad_rebase',
+       tool,
+       args: ['-B', 'rebase', serd_ttl],
        env: test_env,
-       suite: ['serdi', 'options'])
+       should_fail: true,
+       suite: ['tools', 'pipe', 'options'])
 
-  test('filter', files('test_filter.py'),
-       args: script_args,
+  test('base',
+       files('test_base.py'),
+       args: pipe_test_script_args,
        env: test_env,
-       suite: ['serdi', 'options'])
+       suite: ['tools', 'pipe', 'options'])
 
-  test('grep', files('test_grep.py'),
-       args: script_args,
+  test('dir_base',
+       tool,
+       args: ['-B', serd_src_root / '', serd_ttl],
        env: test_env,
-       suite: ['serdi', 'options'])
+       suite: ['tools', 'pipe', 'options'])
 
-  # Inputs
+  # Smoke test common handling code for environment color configuration
 
-  test('stdin', files('test_stdin.py'),
-       args: script_args,
+  test('CLICOLOR_FORCE',
+       tool,
+       args: files('bad/bad-lang.ttl'),
+       env: test_env + ['CLICOLOR_FORCE=1'],
+       should_fail: true,
+       suite: ['color'])
+
+  test('CLICOLOR',
+       tool,
+       args: files('bad/bad-lang.ttl'),
+       env: test_env + ['CLICOLOR=0'],
+       should_fail: true,
+       suite: ['color'])
+
+  test('NO_COLOR',
+       tool,
+       args: files('bad/bad-lang.ttl'),
+       env: test_env + ['NO_COLOR=1'],
+       should_fail: true,
+       suite: ['color'])
+
+  # Different input sources
+
+  test('stdin',
+       files('test_stdin.py'),
+       args: pipe_test_script_args,
        env: test_env,
-       suite: ['serdi', 'input'])
+       suite: ['tools', 'pipe', 'input'])
 
-  test('multiple', files('test_multifile.py'),
-       args: script_args + [meson.current_source_dir() / 'multifile'],
+  test('multifile',
+       files('test_multifile.py'),
+       args: pipe_test_script_args + [meson.current_source_dir() / 'multifile'],
        env: test_env,
-       suite: ['serdi', 'input'])
+       suite: ['tools', 'pipe', 'input'])
 
-  test('string', serdi,
+  test('serd.ttl',
+       tool,
+       args: [serd_ttl],
+       env: test_env,
+       suite: ['tools', 'pipe', 'input'])
+
+  test('good_string',
+       tool,
+       args: ['-I', 'turtle', '-s', '[] a [] .'],
+       env: test_env,
+       suite: ['tools', 'pipe', 'input'])
+
+  test('baseless_string',
+       tool,
        args: ['-s', '<foo> a <Bar> .'],
        env: test_env,
        should_fail: true,
-       suite: ['serdi', 'input'])
+       suite: ['tools', 'pipe', 'input'])
 
-  test('missing', serdi,
-       args: ['-i', 'turtle'],
+  test('unknown_type',
+       tool,
+       args: files('../README.md'),
        env: test_env,
        should_fail: true,
-       suite: ['serdi', 'input'])
+       suite: ['tools', 'pipe', 'input'])
 
-  test('no_such_file', serdi,
-       args: ['no_such_file'],
+  # Suppressed output
+
+  test('empty',
+       files('test_empty.py'),
+       args: pipe_test_script_args + files('../serd.ttl'),
        env: test_env,
-       should_fail: true,
-       suite: ['serdi', 'input'])
+       suite: ['tools', 'pipe', 'output'])
 
-  test('remote', serdi,
-       args: ['ftp://example.org/unsupported.ttl'],
+  test('quiet',
+       files('test_quiet.py'),
+       args: pipe_test_script_args + files('bad/bad-base.ttl'),
        env: test_env,
-       should_fail: true,
-       suite: ['serdi', 'input'])
-
-  # Output
-
-  test('empty', files('test_empty.py'),
-       args: script_args + [serd_ttl],
-       env: test_env,
-       suite: 'output')
-
-  # FIXME: Old base URI argument?
+       suite: ['tools', 'pipe', 'output'])
 
   # IO errors
 
-  test('read_dir', serdi,
+  test('read_dir',
+       tool,
        args: [serd_src_root],
        env: test_env,
        should_fail: true,
-       suite: 'io_errors')
+       suite: ['tools', 'pipe', 'input'])
 
   if host_machine.system() == 'linux'
-    test('unreadable', serdi,
+    test('unreadable',
+         tool,
          args: ['/sys/bus/pci/rescan'],
          env: test_env,
          should_fail: true,
-         suite: 'io_errors')
+         suite: ['tools', 'pipe', 'input'])
   endif
 
-  test('write_error', files('test_write_error.py'),
-       args: script_args + [serd_ttl],
+  test('write_error',
+       files('test_write_error.py'),
+       args: pipe_test_script_args + [serd_ttl],
        env: test_env,
-       suite: 'io_errors')
+       suite: ['tools', 'pipe', 'output'])
 
-  test('write_bad_file', serdi,
-       args: ['-w', '/does/not/exist.ttl', serd_src_root / 'serd.ttl'],
+  test('missing_output',
+       tool,
+       args: ['-o', '/does/not/exist.ttl', serd_src_root / 'serd.ttl'],
        env: test_env,
        should_fail: true,
-       suite: 'io_errors')
+       suite: ['tools', 'pipe', 'output'])
+endif
 
+# Test specifics for serd-sort
+if is_variable('serd_sort')
+  tool = serd_sort
+  sort_test_script_args = common_script_options + ['--tool', serd_sort]
+
+  # Basic valid arguments
+
+  good_args = [
+    ['-V'],
+    ['-h'],
+  ]
+
+  foreach args : good_args
+    test(args[0],
+         tool,
+         args: args,
+         env: test_env,
+         suite: ['tools', 'sort', 'options'])
+  endforeach
+
+  # Basic invalid arguments
+
+  bad_args = [
+    ['-c', 'CHAOS', '-'],
+    ['-o'],
+    ['-s'],
+    ['-z', '-'],
+    ['-z', '-'],
+    ['/no/such/file'],
+  ]
+
+  foreach args : bad_args
+    test(' '.join(args),
+         tool,
+         args: args,
+         env: test_env,
+         should_fail: true,
+         suite: ['tools', 'sort', 'options'])
+  endforeach
+
+  # IO errors
+
+  test('read_dir',
+       tool,
+       args: [serd_src_root],
+       env: test_env,
+       should_fail: true,
+       suite: ['tools', 'sort', 'input'])
+
+  test('missing_output',
+       tool,
+       args: ['-o', '/does/not/exist.ttl', serd_src_root / 'serd.ttl'],
+       env: test_env,
+       should_fail: true,
+       suite: ['tools', 'sort', 'output'])
+
+  # Different input sources
+
+  test('stdin',
+       files('test_stdin.py'),
+       args: sort_test_script_args,
+       env: test_env,
+       suite: ['tools', 'sort', 'input'])
+
+  # Collation test suite
+
+  test('sort',
+       files('test_sort.py'),
+       args: sort_test_script_args + files('sort/input.trig'),
+       env: test_env,
+       suite: ['tools', 'sort'])
+
+endif
+
+# Test specifics for serd-filter
+if is_variable('serd_filter')
+  tool = serd_filter
+  filter_test_script_args = common_script_options + ['--tool', serd_filter]
+
+  # Basic valid arguments
+
+  good_args = [
+    ['-V'],
+    ['-h'],
+  ]
+
+  foreach args : good_args
+    test(args[0],
+         tool,
+         args: args,
+         env: test_env,
+         suite: ['tools', 'filter', 'options'])
+  endforeach
+
+  # Basic invalid arguments
+
+  bad_args = [
+    ['-f', '/no/such/file.nt', '-'],
+    ['-z'],
+  ]
+
+  foreach args : bad_args
+    test(' '.join(args),
+         tool,
+         args: args,
+         env: test_env,
+         should_fail: true,
+         suite: ['tools', 'filter', 'options'])
+  endforeach
+
+  test('garbage_pattern',
+       tool,
+       args: ['junk', serd_ttl],
+       env: test_env,
+       should_fail: true,
+       suite: ['tools', 'filter', 'options'])
+
+  test('multiple_patterns',
+       tool,
+       args: ['?s ?p ?o .\n?t ?u ?v .\n',
+              serd_src_root / 'serd.ttl'],
+       env: test_env,
+       should_fail: true,
+       suite: ['tools', 'filter', 'output'])
+
+  test('missing_output',
+       tool,
+       args: ['-o', '/does/not/exist.ttl',
+              '?s ?p ?o .',
+              serd_src_root / 'serd.ttl'],
+       env: test_env,
+       should_fail: true,
+       suite: ['tools', 'filter', 'output'])
+
+  # Different input sources
+
+  test('filter_dir',
+       tool,
+       args: ['?s ?p ?o .', serd_src_root],
+       env: test_env,
+       should_fail: true,
+       suite: ['tools', 'filter', 'input'])
+
+  # Filtering
+
+  test('filter',
+       files('test_filter.py'),
+       args: filter_test_script_args,
+       env: test_env,
+       suite: ['tools'])
+
+  test('grep',
+       files('test_grep.py'),
+       args: filter_test_script_args,
+       env: test_env,
+       suite: ['tools'])
+
+  # RDF-driven test suite
+  subdir('filter')
+
+endif
+
+# Run RDF-driven test suites using serd-pipe and serd-sort
+if is_variable('serd_pipe') and is_variable('serd_sort')
   # RDF-driven test suites from the W3C
   subdir('NQuadsTests')
   subdir('NTriplesTests')

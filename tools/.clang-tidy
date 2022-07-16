@@ -7,13 +7,11 @@ Checks: >
   -*-uppercase-literal-suffix,
   -altera-*,
   -bugprone-easily-swappable-parameters,
-  -bugprone-suspicious-string-compare,
   -cert-err33-c,
   -concurrency-mt-unsafe,
   -hicpp-signed-bitwise,
   -llvm-header-guard,
   -llvmlibc-*,
-  -readability-function-cognitive-complexity,
   -readability-identifier-length,
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'

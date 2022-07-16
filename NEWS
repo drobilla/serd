@@ -19,13 +19,14 @@ serd (1.1.1) unstable; urgency=medium
   * Remove support for Turtle named inline nodes extension
   * Remove useless character counting from API
   * Rename SerdChunk to SerdStringView
+  * Replace serdi with more fine-grained tools
   * Simplify streaming API and improve pretty printing
   * Simplify writer style options
   * Support writing all escapes in Turtle and TriG prefixed names
   * Use a fixed-size reader stack
   * Use char* for strings in public API
 
- -- David Robillard <d@drobilla.net>  Wed, 13 Jul 2022 21:55:50 +0000
+ -- David Robillard <d@drobilla.net>  Wed, 13 Jul 2022 23:12:23 +0000
 
 serd (0.31.0) unstable; urgency=medium
 

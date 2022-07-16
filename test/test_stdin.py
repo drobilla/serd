@@ -3,7 +3,7 @@
 # Copyright 2022 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: ISC
 
-"""Test reading from stdin with serdi."""
+"""Test reading from stdin with serd-pipe."""
 
 import argparse
 import sys
@@ -13,17 +13,16 @@ import tempfile
 
 parser = argparse.ArgumentParser(description=__doc__)
 
-parser.add_argument("--serdi", default="./serdi", help="path to serdi")
+parser.add_argument("--tool", default="tools/serd-pipe", help="executable")
 parser.add_argument("--wrapper", default="", help="executable wrapper")
 
 args = parser.parse_args(sys.argv[1:])
 command = shlex.split(args.wrapper) + [
-    args.serdi,
-    "-I",
+    args.tool,
+    "-B",
     "http://example.org",
-    "-i",
+    "-I",
     "ntriples",
-    "-",
 ]
 
 DOCUMENT = "<{0}s> <{0}p> <{0}o> .".format("http://example.org/")
