@@ -46,7 +46,7 @@ def gen(sp2b_dir, n_min, n_max, step):
 
 def write_header(results, progs):
     "Write the header line for TSV output"
-    results.write("n\tserdi_stream\tserdi_model")
+    results.write("n\tserd-pipe\tserd-sort")
     for prog in progs[2:]:
         results.write("\t" + os.path.basename(prog.split()[0]))
     results.write("\n")
@@ -130,9 +130,9 @@ def run(progs, n_min, n_max, step):
     "Benchmark each program with n_min ... n_max statements"
     with WorkingDirectory("build"):
         results = {
-            "time": open("serdi-time.txt", "w"),
-            "throughput": open("serdi-throughput.txt", "w"),
-            "memory": open("serdi-memory.txt", "w"),
+            "time": open("serd-time.txt", "w"),
+            "throughput": open("serd-throughput.txt", "w"),
+            "memory": open("serd-memory.txt", "w"),
         }
 
         # Write TSV header for all output files
@@ -174,20 +174,20 @@ def plot_results():
     "Plot all benchmark results"
     with WorkingDirectory("build"):
         plot(
-            open("serdi-time.txt", "r"),
-            "serdi-time.svg",
+            open("serd-time.txt", "r"),
+            "serd-time.svg",
             "Statements",
             "Time (s)",
         )
         plot(
-            open("serdi-throughput.txt", "r"),
-            "serdi-throughput.svg",
+            open("serd-throughput.txt", "r"),
+            "serd-throughput.svg",
             "Statements",
             "Statements / s",
         )
         plot(
-            open("serdi-memory.txt", "r"),
-            "serdi-memory.svg",
+            open("serd-memory.txt", "r"),
+            "serd-memory.svg",
             "Statements",
             "Bytes",
         )
@@ -231,8 +231,8 @@ example:
     args = ap.parse_args(sys.argv[1:])
 
     progs = [
-        "serdi -i turtle -o turtle",
-        "serdi -m -i turtle -o turtle",
+        "serd-pipe -I turtle -O turtle",
+        "serd-sort -I turtle -O turtle",
     ] + args.run
 
     min_n = int(args.max / 10)
