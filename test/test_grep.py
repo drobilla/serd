@@ -24,7 +24,7 @@ DOCUMENTS = {
 
 parser = argparse.ArgumentParser(description=__doc__)
 
-parser.add_argument("--serdi", default="./serdi", help="path to serdi")
+parser.add_argument("--tool", default="tools/serd-filter", help="executable")
 parser.add_argument("--wrapper", default="", help="executable wrapper")
 
 args = parser.parse_args(sys.argv[1:])
@@ -32,21 +32,21 @@ args = parser.parse_args(sys.argv[1:])
 
 def check_pattern(syntax, pattern, result):
     command = shlex.split(args.wrapper) + [
-        args.serdi,
-        "-i",
+        args.tool,
+        "-I",
         syntax,
-        "-G",
         pattern,
-        "-s",
-        DOCUMENTS[syntax],
+        "-",
     ]
 
     with tempfile.TemporaryFile() as out:
         proc = subprocess.run(
             command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             check=False,
             encoding="utf-8",
-            capture_output=True,
+            input=DOCUMENTS[syntax],
         )
 
         assert proc.returncode == 0

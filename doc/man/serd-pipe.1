@@ -1,0 +1,354 @@
+.\" # Copyright 2021-2022 David Robillard <d@drobilla.net>
+.\" # SPDX-License-Identifier: ISC
+.Dd July 15, 2022
+.Dt SERD-PIPE 1
+.Os Serd
+.Sh NAME
+.Nm serd-pipe
+.Nd read and write RDF data
+.Sh SYNOPSIS
+.Nm serd-pipe
+.Op Fl ChV
+.Op Fl B Ar base
+.Op Fl I Ar syntax
+.Op Fl O Ar syntax
+.Op Fl R Ar root
+.Op Fl b Ar bytes
+.Op Fl k Ar bytes
+.Op Fl o Ar filename
+.Op Fl s Ar string
+.Op Ar input ...
+.Sh DESCRIPTION
+.Nm
+is a fast command-line utility for streaming RDF data.
+It reads one or more files and writes the data again,
+possibly in a different form.
+.Pp
+.Nm
+writes statements immediately as they are read,
+so it uses little memory and is suitable for use in pipelines and with huge files.
+Typical uses include checking syntax,
+converting to another syntax,
+pretty-printing,
+merging files,
+expanding URIs,
+and so on.
+.Pp
+By default,
+syntaxes are guessed from file extensions where possible,
+making use with filenames most convenient.
+For example,
+most common tasks can be accomplished with simple commands like:
+.Pp
+.Dl $ serd-pipe -o pretty.ttl input.nt
+.Pp
+The
+.Ar input
+operands are processed in command-line order.
+If
+.Ar input
+is
+.Ar -
+or absent,
+.Nm
+reads from standard input.
+Similarly,
+.Ar output
+defaults to standard output.
+If syntax isn't given and can't be determined from filenames,
+then input is read as TriG and output is written as NQuads
+(which will function properly with Turtle and NTriples, respectively).
+.Pp
+The options are as follows:
+.Pp
+.Bl -tag -compact -width 3n
+.It Fl B Ar base
+Base URI, path, or
+.Cm rebase
+to use the output path.
+This is used to resolve any relative URI references in the input.
+.Pp
+If the input is a file,
+its URI is used as the base by default.
+This causes relative references to be written just as they are in the input.
+For example,
+.Li <file.ttl>
+will be written as
+.Li <file.ttl> .
+Note that this may not be desired if the output is in a different directory where,
+for example,
+the desired output may be something like
+.Li <subdir/file.ttl> .
+.Pp
+The special
+.Cm rebase
+argument will instead use the output filename set by the
+.Fl o
+option.
+This will write references relative to the output file,
+so that parsing it will produce the same absolute URIs as the original input.
+.Pp
+Generally, the default is best when copying data along with other bundled files,
+while
+.Cm rebase
+is best for writing data in a new location which still refers to the original paths.
+.Pp
+These options are intended to make the most common tasks as simple as possible.
+An arbitrary base URI can also be given explicitly.
+.Pp
+.It Fl C
+Convert literals to canonical form.
+Literals with supported XSD datatypes will be parsed and rewritten canonically.
+Invalid literals will cause an error.
+All numeric datatypes are supported, as well as
+.Vt duration ,
+.Vt datetime ,
+.Vt time ,
+.Vt hexBinary ,
+and
+.Vt base64Binary .
+.Pp
+.It Fl I Ar syntax
+Set an input syntax or option.
+May be given multiple times.
+The case-insensitive
+.Ar syntax
+can be
+.Cm NQuads ,
+.Cm NTriples ,
+.Cm TriG ,
+.Cm Turtle ,
+or one of the following options:
+.Pp
+.Bl -tag -width "QvariablesQ" -compact -offset indent
+.It Cm lax
+Tolerate invalid input where possible.
+Warnings will be printed for syntax errors,
+but parsing will attempt to continue.
+Note that data may be lost when using this option!
+.Pp
+.It Cm variables
+Support parsing variable nodes.
+Variables can be written in SPARQL style, for example
+.Li ?name
+or
+.Li $name .
+.Pp
+.It Cm relative
+Read relative URI references exactly without resolving them.
+Normally, all relative URIs are expanded against the base URI when reading.
+This flag disables that,
+so URI references will be passed through exactly as they are in the input.
+.Pp
+.It Cm global
+Assume a clean global namespace for blank node labels,
+and do not automatically add prefixes.
+Normally,
+a prefix like
+.Li f1
+is added to blank node labels when reading multiple files,
+to prevent labels in different files from clashing.
+This option disables that,
+so blank node labels will be passed through without any added prefix.
+Note that this may corrupt the output by merging distinct blank nodes.
+.Pp
+.It Cm generated
+Read seemingly generated blank node labels exactly without adjusting them.
+Normally, blank node labels like
+.Li b123
+are adapted to avoid potential clashes with generated ones.
+This flag disables that,
+so such labels will be passed through exactly as they are in the input.
+Note that this may corrupt the output by merging distinct blank nodes.
+.El
+.Pp
+.It Fl O Ar syntax
+Set an output syntax or option.
+May be given multiple times.
+The case-insensitive
+.Ar syntax
+can be
+.Cm empty ,
+.Cm NQuads ,
+.Cm NTriples ,
+.Cm TriG ,
+.Cm Turtle ,
+or one of the following options:
+.Pp
+.Bl -tag -width "QverbatimQ" -compact -offset indent
+.It Cm ascii
+Escape all non-ASCII characters.
+Normally, text is written in UTF-8.
+This flag will escape non-ASCII characters in text as Unicode code points like
+.Li \eU00B7 or
+.Li \eU0001F600 .
+.Pp
+.It Cm expanded
+Write expanded URIs instead of prefixed names.
+.Pp
+.It Cm verbatim
+Write URI references exactly as they are in the input.
+This avoids resolving URIs and making them relative to the output base URI.
+.Pp
+.It Cm terse
+Write terser output without newlines.
+This can be useful for writing a line-based description of suitably structured data.
+.Pp
+.It Cm lax
+Tolerate invalid UTF-8 by writing the replacement character when necessary.
+Note that data may be lost when using this option!
+.El
+.Pp
+The
+.Cm empty
+syntax suppresses the output,
+so that only warnings and errors will be printed.
+.Pp
+.It Fl R Ar root
+Keep relative URIs within a
+.Ar root
+URI.
+This will avoid creating any relative URI references with leading path segments like
+.Pa ../
+that enter a parent of
+.Ar root .
+.Pp
+For example,
+if
+.Pa /home/you/file.ttl
+is written to the file
+.Pa /home/me/output.ttl
+using
+.Fl B Cm rebase ,
+then it will be written as
+.Li <../you/file.ttl> .
+Setting
+.Fl R Pa /home/me/
+would prevent references from
+.Dq escaping
+like this,
+so the above would instead be written as
+.Li <file:///home/you/file.ttl> .
+.Pp
+This is useful for making relocatable
+.Dq bundles
+of resources,
+since it can keep all relative references within the bundle,
+while still allowing up-references to be used.
+.Pp
+.It Fl V
+Display version information and exit.
+.Pp
+.It Fl b Ar bytes
+I/O block size.
+This is the number of bytes in a file that will be read or written at once.
+The default is 4096, which should perform well in most cases.
+Note that this only applies to files, standard input and output are always processed one byte at a time.
+.Pp
+.It Fl h
+Print the command line options.
+.Pp
+.It Fl k Ar bytes
+Parser stack size.
+For performance and security reasons, parsing is performed with a fixed-size stack.
+This option sets a hard limit on the total amount of space used for parsing.
+The default is 1 megabyte, which should be more than enough for most data.
+This option can be used to reduce memory consumption,
+or to enable parsing documents with extremely deep nesting or extremely large literal values.
+.Pp
+.It Fl o Ar filename
+Write output to the given
+.Ar filename
+instead of stdout.
+.Pp
+.It Fl s Ar string
+Parse
+.Ar string
+as input.
+.El
+.Sh ENVIRONMENT
+Error messages and warnings are printed in color by default if the output is a terminal.
+This can be controlled by common environment variables:
+.Pp
+.Bl -tag -compact -width 14n
+.It Ev NO_COLOR
+If present (regardless of value), color is disabled.
+.It Ev CLICOLOR
+If set to 0, color is disabled.
+.It Ev CLICOLOR_FORCE
+If set to anything other than 0, color is forced on.
+.El
+.Pp
+See
+.Lk http://no-color.org/
+and
+.Lk https://bixense.com/clicolors/
+for details.
+.Sh EXIT STATUS
+.Nm
+exits with a status of 0, or non-zero if an error occured.
+.Sh EXAMPLES
+To print an NTriples file as Turtle:
+.Pp
+.Dl $ serd-pipe -O turtle input.nt
+.Pp
+To print only errors and discard the output:
+.Pp
+.Dl $ serd-pipe -O empty input.ttl
+.Pp
+To pretty-print a file:
+.Pp
+.Dl $ serd-pipe -o pretty.ttl input.ttl
+.Pp
+To expand all prefixed names into full URIs:
+.Pp
+.Dl $ serd-pipe -O expanded -o expanded.ttl input.ttl
+.Pp
+To merge two files:
+.Pp
+.Dl $ serd-pipe -o merged.ttl header.ttl body.ttl
+.Sh SEE ALSO
+.Bl -item -compact
+.It
+.Xr serd-filter 1
+.It
+.Xr serd-sort 1
+.It
+.Lk http://drobilla.net/software/serd/
+.El
+.Sh STANDARDS
+.Bl -item -compact
+.It
+.Rs
+.%A W3C
+.%T RDF 1.1 NQuads
+.%D February 2014
+.Re
+.Lk https://www.w3.org/TR/n-quads/
+.It
+.Rs
+.%A W3C
+.%D February 2014
+.%T RDF 1.1 NTriples
+.Re
+.Lk https://www.w3.org/TR/n-triples/
+.It
+.Rs
+.%A W3C
+.%T RDF 1.1 TriG
+.%D February 2014
+.Re
+.Lk https://www.w3.org/TR/trig/
+.It
+.Rs
+.%A W3C
+.%D February 2014
+.%T RDF 1.1 Turtle
+.Re
+.Lk https://www.w3.org/TR/turtle/
+.El
+.Sh AUTHORS
+.Nm
+is a part of serd, by
+.An David Robillard
+.Mt d@drobilla.net .

@@ -50,6 +50,9 @@ test_common(const SerdSyntax syntax)
 
   assert(test(syntax, serd_new_token(SERD_BLANK, serd_string("b0")), "_:b0"));
 
+  assert(test(
+    syntax, serd_new_token(SERD_BLANK, serd_string("named1")), "_:named1"));
+
   assert(test(syntax,
               serd_new_uri(serd_string("http://example.org/")),
               "<http://example.org/>"));

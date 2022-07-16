@@ -10,8 +10,15 @@ args = [
 ]
 
 test('NTriples',
-     run_test_suite,
-     args: script_args + args,
+     run_pipe_suite,
+     args: pipe_test_script_args + args,
      env: test_env,
-     suite: ['suite', 'w3c'],
+     suite: ['suite', 'w3c', 'pipe'],
+     timeout: 240)
+
+test('NTriples',
+     run_sort_suite,
+     args: sort_test_script_args + args,
+     env: test_env,
+     suite: ['suite', 'w3c', 'sort'],
      timeout: 240)

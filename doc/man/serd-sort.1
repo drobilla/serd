@@ -1,0 +1,186 @@
+.\" # Copyright 2021-2022 David Robillard <d@drobilla.net>
+.\" # SPDX-License-Identifier: ISC
+.Dd July 15, 2022
+.Dt SERD-SORT 1
+.Os Serd
+.Sh NAME
+.Nm serd-sort
+.Nd reorder RDF statements
+.Sh SYNOPSIS
+.Nm serd-sort
+.Op Fl htV
+.Op Fl B Ar base
+.Op Fl I Ar syntax
+.Op Fl O Ar syntax
+.Op Fl b Ar bytes
+.Op Fl c Ar collation
+.Op Fl k Ar bytes
+.Op Fl o Ar filename
+.Op Ar input ...
+.Sh DESCRIPTION
+.Nm
+reorders statements in RDF data by loading everything into memory then rewriting it.
+By default,
+a
+.Dq pretty
+ordering is used which is ideal for pretty-printing Turtle or TriG.
+The
+.Fl c
+option can be used to request a specific ordering,
+which is mainly useful when emitting a line-based syntax like NTriples or NQuads in a pipeline.
+.Pp
+Input and output arguments work the same way as with
+.Xr serd-pipe 1 .
+.Pp
+The options are as follows:
+.Pp
+.Bl -tag -compact -width 3n
+.It Fl B Ar base
+Base URI, path, or
+.Cm rebase
+to use the output path.
+See
+.Xr serd-pipe 1
+for details.
+.Pp
+.It Fl I Ar syntax
+Input syntax or option:
+.Cm NQuads ,
+.Cm NTriples ,
+.Cm TriG ,
+.Cm Turtle ,
+.Cm lax ,
+.Cm variables ,
+.Cm relative ,
+or
+.Cm labels .
+See
+.Xr serd-pipe 1
+for details.
+.Pp
+.It Fl O Ar syntax
+Output syntax or option:
+.Cm empty ,
+.Cm NQuads ,
+.Cm NTriples ,
+.Cm TriG ,
+.Cm Turtle ,
+.Cm ascii ,
+.Cm expanded ,
+.Cm verbatim ,
+.Cm terse ,
+or
+.Cm lax .
+See
+.Xr serd-pipe 1
+for details.
+.Pp
+.It Fl V
+Display version information and exit.
+.Pp
+.It Fl b Ar bytes
+I/O block size.
+See
+.Xr serd-pipe 1
+for details.
+.Pp
+.It Fl c Ar collation
+A specific collation (statement ordering) to use.
+This can be any ordering of the characters
+.Dq SPO ,
+which stand for the subject, predicate, and object of statements.
+Optionally,
+.Dq G
+can be added as the first character,
+which will sort graph-first.
+Concretely, the valid values are:
+.Cm SPO ,
+.Cm SOP ,
+.Cm OPS ,
+.Cm OSP ,
+.Cm PSO ,
+.Cm POS ,
+.Cm GSPO ,
+.Cm GSOP ,
+.Cm GOPS ,
+.Cm GOSP ,
+.Cm GPSO ,
+and
+.Cm GPOS .
+.Pp
+.It Fl h
+Print the command line options.
+.Pp
+.It Fl k Ar bytes
+Parser stack size.
+See
+.Xr serd-pipe 1
+for details.
+.Pp
+.It Fl o Ar filename
+Write output to the given
+.Ar filename
+instead of stdout.
+.Pp
+.It Fl t
+Do not write type as
+.Dq a
+before other properties.
+Instead, rdf:type will be written in order like any other property.
+.El
+.Sh EXIT STATUS
+.Nm
+exits with a status of 0, or non-zero if an error occured.
+.Sh EXAMPLES
+To pretty-print a file:
+.Pp
+.Dl $ serd-sort -o pretty.ttl input.ttl
+.Pp
+To print statements ordered by predicate, subject, then object:
+.Pp
+.Dl $ serd-sort -c PSO input.ttl
+.Sh SEE ALSO
+.Bl -item -compact
+.It
+.Xr serd-pipe 1
+.It
+.Xr serd-filter 1
+.It
+.Lk http://drobilla.net/software/serd/
+.El
+.Sh STANDARDS
+.Bl -item -compact
+.It
+.Rs
+.%A W3C
+.%T RDF 1.1 NQuads
+.%D February 2014
+.Re
+.Lk https://www.w3.org/TR/n-quads/
+.It
+.Rs
+.%A W3C
+.%D February 2014
+.%T RDF 1.1 NTriples
+.Re
+.Lk https://www.w3.org/TR/n-triples/
+.It
+.Rs
+.%A W3C
+.%T RDF 1.1 TriG
+.%D February 2014
+.Re
+.Lk https://www.w3.org/TR/trig/
+.It
+.Rs
+.%A W3C
+.%D February 2014
+.%T RDF 1.1 Turtle
+.Re
+.Lk https://www.w3.org/TR/turtle/
+.El
+.Sh AUTHORS
+.Nm
+is a part of serd, by
+.An David Robillard
+.Mt d@drobilla.net .
