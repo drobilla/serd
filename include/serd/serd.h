@@ -230,6 +230,7 @@ typedef enum {
   SERD_ERR_NO_DATA,    ///< Unexpected end of input
   SERD_ERR_BAD_CALL,   ///< Invalid call
   SERD_ERR_BAD_URI,    ///< Invalid or unresolved URI
+  SERD_ERR_BAD_DATA,   ///< Invalid data
 } SerdStatus;
 
 /**
@@ -1763,6 +1764,32 @@ SERD_API
 SerdStatus
 serd_sink_write_end(const SerdSink* SERD_NONNULL sink,
                     const SerdNode* SERD_NONNULL node);
+
+/**
+   @}
+   @defgroup serd_canon Canon
+   @{
+*/
+
+/// Flags that control canonical node transformation
+typedef enum {
+  SERD_CANON_LAX = 1U << 0U, ///< Tolerate and pass through invalid input
+} SerdCanonFlag;
+
+/// Bitwise OR of SerdCanonFlag values
+typedef uint32_t SerdCanonFlags;
+
+/**
+   Return a new sink that transforms literals to canonical form where possible.
+
+   The returned sink acts like `target` in all respects, except literal nodes
+   in statements may be modified from the original.
+*/
+SERD_API
+SerdSink* SERD_ALLOCATED
+serd_canon_new(const SerdWorld* SERD_NULLABLE world,
+               const SerdSink* SERD_NONNULL   target,
+               SerdCanonFlags                 flags);
 
 /**
    @}
