@@ -8,7 +8,7 @@
 .Nd read and write RDF syntax
 .Sh SYNOPSIS
 .Nm serdi
-.Op Fl afhlqtvx
+.Op Fl Cafhlqtvx
 .Op Fl I Ar base
 .Op Fl b Ar bytes
 .Op Fl c Ar prefix
@@ -38,6 +38,18 @@ or transform URIs and blank node IDs.
 The options are as follows:
 .Pp
 .Bl -tag -compact -width 3n
+.It Fl C
+Convert literals to canonical form.
+Literals with supported XSD datatypes will be parsed and rewritten canonically.
+All numeric datatypes are supported, as well as
+.Vt boolean ,
+.Vt duration ,
+.Vt datetime ,
+.Vt time ,
+.Vt hexBinary ,
+and
+.Vt base64Binary .
+.Pp
 .It Fl I Ar base
 Input base URI.
 Relative URI references in the input will be resolved against this.

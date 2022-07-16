@@ -47,7 +47,7 @@ is_xdigit(const int c)
 }
 
 static inline bool
-is_space(const char c)
+is_space(const int c)
 {
   switch (c) {
   case ' ':
@@ -76,16 +76,16 @@ is_windows_path(const char* path)
 }
 
 static inline char
-serd_to_upper(const char c)
+serd_to_lower(const char c)
 {
-  return (char)((c >= 'a' && c <= 'z') ? c - 32 : c);
+  return (char)((c >= 'A' && c <= 'Z') ? c + 32 : c);
 }
 
 static inline int
 serd_strncasecmp(const char* s1, const char* s2, size_t n)
 {
   for (; n > 0 && *s2; s1++, s2++, --n) {
-    if (serd_to_upper(*s1) != serd_to_upper(*s2)) {
+    if (serd_to_lower(*s1) != serd_to_lower(*s2)) {
       return (*s1 < *s2) ? -1 : +1;
     }
   }

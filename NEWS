@@ -4,6 +4,7 @@ serd (1.1.1) unstable; urgency=medium
   * Add SerdWorld for shared library state
   * Add extensible logging API
   * Add option for writing terse output without newlines
+  * Add support for converting literals to canonical form
   * Add support for parsing variables
   * Add support for writing terse collections
   * Add support for xsd:float and xsd:double literals
