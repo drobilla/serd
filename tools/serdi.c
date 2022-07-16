@@ -21,6 +21,7 @@ print_usage(const char* const name, const bool error)
   static const char* const description =
     "Read and write RDF syntax.\n"
     "Use - for INPUT to read from standard input.\n\n"
+    "  -C           Convert literals to canonical form.\n"
     "  -I BASE_URI  Input base URI.\n"
     "  -a           Write ASCII output if possible.\n"
     "  -b BYTES     I/O block size.\n"
@@ -103,6 +104,7 @@ main(int argc, char** argv)
   SerdReaderFlags reader_flags  = 0;
   SerdWriterFlags writer_flags  = 0;
   bool            osyntax_set   = false;
+  bool            canonical     = false;
   bool            quiet         = false;
   size_t          block_size    = 4096U;
   size_t          stack_size    = 4194304U;
@@ -120,7 +122,9 @@ main(int argc, char** argv)
     for (int o = 1; argv[a][o]; ++o) {
       const char opt = argv[a][o];
 
-      if (opt == 'a') {
+      if (opt == 'C') {
+        canonical = true;
+      } else if (opt == 'a') {
         writer_flags |= SERD_WRITE_ASCII;
       } else if (opt == 'f') {
         writer_flags |= (SERD_WRITE_EXPANDED | SERD_WRITE_VERBATIM);
@@ -282,6 +286,13 @@ main(int argc, char** argv)
   SerdWriter* const writer =
     serd_writer_new(world, output_syntax, writer_flags, env, byte_sink);
 
+  const SerdSink* sink = serd_writer_sink(writer);
+
+  SerdSink* canon = NULL;
+  if (canonical) {
+    sink = canon = serd_canon_new(world, sink, reader_flags);
+  }
+
   if (quiet) {
     serd_set_log_func(world, serd_quiet_log_func, NULL);
   }
@@ -303,7 +314,7 @@ main(int argc, char** argv)
                       input_syntax ? input_syntax : SERD_TRIG,
                       reader_flags,
                       env,
-                      serd_writer_sink(writer),
+                      sink,
                       stack_size);
 
     serd_reader_add_blank_prefix(reader, add_prefix);
@@ -339,7 +350,7 @@ main(int argc, char** argv)
                         input_syntax,
                         reader_flags,
                         env,
-                        serd_writer_sink(writer),
+                        sink,
                         stack_size,
                         inputs[i],
                         n_inputs > 1 ? prefix : add_prefix,
@@ -349,6 +360,7 @@ main(int argc, char** argv)
   }
   free(prefix);
 
+  serd_sink_free(canon);
   serd_writer_free(writer);
   serd_node_free(input_name);
   serd_env_free(env);
