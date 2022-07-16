@@ -40,6 +40,7 @@
 
 #include "serd/world.h"
 
+#include "serd/canon.h"
 #include "serd/env.h"
 
 #include "serd/node_syntax.h"

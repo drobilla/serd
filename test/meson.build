@@ -389,6 +389,10 @@ test_suites = {
     files('extra/good/manifest.ttl'), ns_serdtest + 'good/',
     '--', '-a', '-b', '1',
   ],
+  'canon': [
+    files('extra/canon/manifest.ttl'), ns_serdtest + 'canon/',
+    '--', '-a', '-C',
+  ],
   'fast': [
     files('extra/perfect/manifest.ttl'), ns_serdtest + 'perfect/',
     '--', '-f',

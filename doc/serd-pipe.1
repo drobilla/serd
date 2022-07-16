@@ -8,7 +8,7 @@
 .Nd read and write RDF data
 .Sh SYNOPSIS
 .Nm serd-pipe
-.Op Fl afhlqtvx
+.Op Fl Cafhlqtvx
 .Op Fl B Ar base
 .Op Fl b Ar bytes
 .Op Fl c Ar prefix
@@ -70,6 +70,18 @@ When the input is a file,
 the URI of the file is automatically used as the base URI.
 This option can be used to override that,
 or to provide a base URI for input from stdin or a string.
+.It Fl C
+Convert literals to canonical form.
+Literals with supported XSD datatypes will be parsed and rewritten canonically.
+Invalid literals will cause an error.
+All numeric datatypes are supported, as well as
+.Vt boolean ,
+.Vt duration ,
+.Vt datetime ,
+.Vt time ,
+.Vt hexBinary ,
+and
+.Vt base64Binary .
 .It Fl a
 Write ASCII output.
 If this is enabled, all non-ASCII characters will be escaped, even if the output syntax allows them to be written in UTF-8.
