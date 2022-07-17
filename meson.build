@@ -102,7 +102,7 @@ serd_dep = declare_dependency(
 # Generage pkg-config file for external dependants
 pkg.generate(
   libserd,
-  description: 'A lightweight library for working with RDF',
+  description: 'Lightweight C library for working with RDF data',
   extra_cflags: extra_c_args,
   filebase: versioned_name,
   name: get_option('title'),
