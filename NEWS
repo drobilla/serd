@@ -1,11 +1,11 @@
-serd (0.30.15) unstable;
+serd (0.30.15) unstable; urgency=medium
 
   * Add SERD_STATIC to pkg-config Cflags for static-only builds
   * Fix spelling mistake in serdi man page
 
  -- David Robillard <d@drobilla.net>  Fri, 15 Jul 2022 11:37:13 +0000
 
-serd (0.30.14) stable;
+serd (0.30.14) stable; urgency=medium
 
   * Fix memory consumption when reading documents
   * Switch to Meson build system
@@ -13,7 +13,7 @@ serd (0.30.14) stable;
 
  -- David Robillard <d@drobilla.net>  Sun, 10 Jul 2022 16:58:43 +0000
 
-serd (0.30.12) stable;
+serd (0.30.12) stable; urgency=medium
 
   * Fix warnings and build issues with clang 13 and VS 2019
   * Fix writing long literals with triple quotes
@@ -23,7 +23,7 @@ serd (0.30.12) stable;
 
  -- David Robillard <d@drobilla.net>  Thu, 26 May 2022 22:47:35 +0000
 
-serd (0.30.10) stable;
+serd (0.30.10) stable; urgency=medium
 
   * Add fallback configuration if documentation theme is unavailable
   * Fix SERD_DISABLE_DEPRECATED
@@ -32,7 +32,7 @@ serd (0.30.10) stable;
 
  -- David Robillard <d@drobilla.net>  Wed, 20 Jan 2021 15:55:35 +0000
 
-serd (0.30.8) stable;
+serd (0.30.8) stable; urgency=medium
 
   * Deprecate serd_uri_to_path()
   * Don't install API man pages
@@ -46,7 +46,7 @@ serd (0.30.8) stable;
 
  -- David Robillard <d@drobilla.net>  Thu, 07 Jan 2021 21:19:36 +0000
 
-serd (0.30.6) stable;
+serd (0.30.6) stable; urgency=medium
 
   * Fix various minor warnings and other code quality issues
   * Improve reader error handling
@@ -55,7 +55,7 @@ serd (0.30.6) stable;
 
  -- David Robillard <d@drobilla.net>  Sun, 27 Sep 2020 10:51:38 +0000
 
-serd (0.30.4) stable;
+serd (0.30.4) stable; urgency=medium
 
   * Fix EOF handling while reading in bulk or from strings
   * Fix lax handling of string errors
@@ -63,7 +63,7 @@ serd (0.30.4) stable;
 
  -- David Robillard <d@drobilla.net>  Sun, 26 Apr 2020 16:04:05 +0000
 
-serd (0.30.2) stable;
+serd (0.30.2) stable; urgency=medium
 
   * Fix GCC 4 build
   * Fix colliding blank nodes when parsing TriG
@@ -76,7 +76,7 @@ serd (0.30.2) stable;
 
  -- David Robillard <d@drobilla.net>  Sun, 20 Oct 2019 22:28:01 +0000
 
-serd (0.30.0) stable;
+serd (0.30.0) stable; urgency=medium
 
   * Add NTriples test suite
   * Add basic error tolerant parsing for line-based formats
@@ -98,7 +98,7 @@ serd (0.30.0) stable;
 
  -- David Robillard <d@drobilla.net>  Sun, 22 Jul 2018 18:34:09 +0000
 
-serd (0.28.0) stable;
+serd (0.28.0) stable; urgency=medium
 
   * Add serd_node_from_substring()
   * Add support for reading from a user provided callback
@@ -109,14 +109,14 @@ serd (0.28.0) stable;
 
  -- David Robillard <d@drobilla.net>  Fri, 21 Jul 2017 06:28:47 +0000
 
-serd (0.26.0) stable;
+serd (0.26.0) stable; urgency=medium
 
   * Add support for TriG and NQuads
   * Add support for braindead SPARQL PREFIX and BASE directives
 
  -- David Robillard <d@drobilla.net>  Tue, 10 Jan 2017 01:10:35 +0000
 
-serd (0.24.0) stable;
+serd (0.24.0) stable; urgency=medium
 
   * Add serd_node_new_relative_uri()
   * Fix construction and comparison of URIs with UTF-8 characters
@@ -129,7 +129,7 @@ serd (0.24.0) stable;
 
  -- David Robillard <d@drobilla.net>  Tue, 20 Sep 2016 02:21:47 +0000
 
-serd (0.22.0) stable;
+serd (0.22.0) stable; urgency=medium
 
   * Add serd_reader_set_strict() and -l (lax) option to serdi to tolerate
     parsing URIs with escaped characters
@@ -146,7 +146,7 @@ serd (0.22.0) stable;
 
  -- David Robillard <d@drobilla.net>  Thu, 08 Oct 2015 19:34:18 +0000
 
-serd (0.20.0) stable;
+serd (0.20.0) stable; urgency=medium
 
   * Add -lm to pkg-config libs
   * Correctly handle posix_memalign failure
@@ -160,7 +160,7 @@ serd (0.20.0) stable;
 
  -- David Robillard <d@drobilla.net>  Fri, 08 Aug 2014 22:02:54 +0000
 
-serd (0.18.2) stable;
+serd (0.18.2) stable; urgency=medium
 
   * Disable timestamps in HTML documentation for reproducible build
   * Fix bug that caused "a" abbreviation in non-predicate position
@@ -171,7 +171,7 @@ serd (0.18.2) stable;
 
  -- David Robillard <d@drobilla.net>  Sun, 23 Dec 2012 02:32:15 +0000
 
-serd (0.18.0) stable;
+serd (0.18.0) stable; urgency=medium
 
   * Add -e option to serdi to use incremental reading
   * Add -q option to serdi to suppress all non-data output, e.g. errors
@@ -189,7 +189,7 @@ serd (0.18.0) stable;
 
  -- David Robillard <d@drobilla.net>  Thu, 23 Aug 2012 04:18:34 +0000
 
-serd (0.14.0) stable;
+serd (0.14.0) stable; urgency=medium
 
   * Add SerdBulkSink for writing bulk output and corresponding serdi -B option
   * Add serd_chunk_sink for easy writing to a string
@@ -234,7 +234,7 @@ serd (0.14.0) stable;
 
  -- David Robillard <d@drobilla.net>  Tue, 17 Apr 2012 22:23:53 +0000
 
-serd (0.5.0) stable;
+serd (0.5.0) stable; urgency=medium
 
   * Add ability to build static library
   * Add serd_env_set_prefix_from_strings for convenience
@@ -246,14 +246,14 @@ serd (0.5.0) stable;
 
  -- David Robillard <d@drobilla.net>  Thu, 29 Sep 2011 04:00:00 +0000
 
-serd (0.4.2) stable;
+serd (0.4.2) stable; urgency=medium
 
   * Fix build system Python 3 compatibility
   * Fix compilation issues on some systems
 
  -- David Robillard <d@drobilla.net>  Wed, 25 May 2011 23:00:00 +0000
 
-serd (0.4.0) stable;
+serd (0.4.0) stable; urgency=medium
 
   * Initial release
 
