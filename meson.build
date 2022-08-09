@@ -133,6 +133,8 @@ if not get_option('tools').disabled()
     link_args: tool_link_args,
   )
 
+  meson.override_find_program('serdi', serdi)
+
   if not get_option('docs').disabled()
     install_man(files('doc/serdi.1'))
   endif
