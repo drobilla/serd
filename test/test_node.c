@@ -107,18 +107,22 @@ test_double_to_node(void)
 static void
 test_integer_to_node(void)
 {
-  const long int_test_nums[] = {0, -0, -23, 23, -12340, 1000, -1000};
+#define N_TEST_NUMS 7U
 
-  const char* int_test_strs[] = {
+  const long int_test_nums[N_TEST_NUMS] = {0, -0, -23, 23, -12340, 1000, -1000};
+
+  const char* int_test_strs[N_TEST_NUMS] = {
     "0", "0", "-23", "23", "-12340", "1000", "-1000"};
 
-  for (size_t i = 0; i < sizeof(int_test_nums) / sizeof(double); ++i) {
+  for (size_t i = 0; i < N_TEST_NUMS; ++i) {
     SerdNode node = serd_node_new_integer(int_test_nums[i]);
     assert(!strcmp((const char*)node.buf, (const char*)int_test_strs[i]));
     const size_t len = strlen((const char*)node.buf);
     assert(node.n_bytes == len && node.n_chars == len);
     serd_node_free(&node);
   }
+
+#undef N_TEST_NUMS
 }
 
 static void
