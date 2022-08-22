@@ -1,7 +1,6 @@
 # Copyright 2021-2022 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: CC0-1.0 OR ISC
 
-autoship = find_program('autoship', required: false)
 run_test_suite = files('run_test_suite.py')
 
 wrapper = meson.get_external_property('exe_wrapper', '')
@@ -10,8 +9,11 @@ wrapper = meson.get_external_property('exe_wrapper', '')
 # Project Metadata #
 ####################
 
-if autoship.found()
-  test('autoship', autoship, args: ['test', serd_src_root], suite: 'data')
+if get_option('strict') and not meson.is_subproject()
+  autoship = find_program('autoship', required: false)
+  if autoship.found()
+    test('autoship', autoship, args: ['test', serd_src_root], suite: 'data')
+  endif
 endif
 
 ##############
