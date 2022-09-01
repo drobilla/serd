@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# Copyright 2018-2022 David Robillard <d@drobilla.net>
+# SPDX-License-Identifier: ISC
+
 import argparse
 import csv
 import itertools

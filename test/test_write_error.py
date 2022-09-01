@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# Copyright 2022 David Robillard <d@drobilla.net>
+# SPDX-License-Identifier: ISC
+
 """Test errors writing to a file."""
 
 import argparse

@@ -1,3 +1,6 @@
+# Copyright 2020-2022 David Robillard <d@drobilla.net>
+# SPDX-License-Identifier: CC0-1.0 OR ISC
+
 config = configuration_data()
 config.set('SERD_VERSION', meson.project_version())
 config.set('SERD_SRCDIR', serd_src_root)
