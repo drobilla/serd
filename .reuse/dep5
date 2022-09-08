@@ -16,12 +16,12 @@ License: BSD-3-Clause OR ISC
 Files: AUTHORS NEWS serd.ttl
 Copyright: 2011-2022 David Robillard <d@drobilla.net>
 Comment: Contributed to the Commons as a representation of simple facts
-License: CC0-1.0 OR ISC
+License: 0BSD OR ISC
 
 Files: doc/.stylelintrc.json
 Copyright: 2022 David Robillard <d@drobilla.net>
 Comment: Contributed to the Commons as a tool configuration
-License: CC0-1.0 OR ISC
+License: 0BSD OR ISC
 
 Files: doc/_static/serd.svg doc/serdi-*.svg doc/serdi-*.txt
 Copyright: 2011-2022 David Robillard <d@drobilla.net>
