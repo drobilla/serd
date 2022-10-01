@@ -3,7 +3,6 @@
 
 Checks: >
   *,
-  -*-uppercase-literal-suffix,
   -altera-*,
   -llvmlibc-*,
   -readability-identifier-length,

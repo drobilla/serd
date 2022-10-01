@@ -145,7 +145,7 @@ choose_style(const SerdSyntax input_syntax,
              const bool       bulk_write,
              const bool       full_uris)
 {
-  unsigned output_style = 0u;
+  unsigned output_style = 0U;
   if (output_syntax == SERD_NTRIPLES || ascii) {
     output_style |= SERD_STYLE_ASCII;
   } else if (output_syntax == SERD_TURTLE) {

@@ -111,50 +111,50 @@ static inline uint32_t
 utf8_num_bytes(const uint8_t leading)
 {
   static const uint8_t lengths[32] = {
-    1u, // 00000xxx
-    1u, // 00001xxx
-    1u, // 00010xxx
-    1u, // 00011xxx
-    1u, // 00100xxx
-    1u, // 00101xxx
-    1u, // 00110xxx
-    1u, // 00111xxx
-    1u, // 01000xxx
-    1u, // 01001xxx
-    1u, // 01010xxx
-    1u, // 01011xxx
-    1u, // 01100xxx
-    1u, // 01101xxx
-    1u, // 01110xxx
-    1u, // 01111xxx
-    0u, // 10000xxx
-    0u, // 10001xxx
-    0u, // 10010xxx
-    0u, // 10011xxx
-    0u, // 10100xxx
-    0u, // 10101xxx
-    0u, // 10110xxx
-    0u, // 10111xxx
-    2u, // 11000xxx
-    2u, // 11001xxx
-    2u, // 11010xxx
-    2u, // 11011xxx
-    3u, // 11100xxx
-    3u, // 11101xxx
-    4u, // 11110xxx
-    0u  // 11111xxx
+    1U, // 00000xxx
+    1U, // 00001xxx
+    1U, // 00010xxx
+    1U, // 00011xxx
+    1U, // 00100xxx
+    1U, // 00101xxx
+    1U, // 00110xxx
+    1U, // 00111xxx
+    1U, // 01000xxx
+    1U, // 01001xxx
+    1U, // 01010xxx
+    1U, // 01011xxx
+    1U, // 01100xxx
+    1U, // 01101xxx
+    1U, // 01110xxx
+    1U, // 01111xxx
+    0U, // 10000xxx
+    0U, // 10001xxx
+    0U, // 10010xxx
+    0U, // 10011xxx
+    0U, // 10100xxx
+    0U, // 10101xxx
+    0U, // 10110xxx
+    0U, // 10111xxx
+    2U, // 11000xxx
+    2U, // 11001xxx
+    2U, // 11010xxx
+    2U, // 11011xxx
+    3U, // 11100xxx
+    3U, // 11101xxx
+    4U, // 11110xxx
+    0U  // 11111xxx
   };
 
-  return lengths[leading >> 3u];
+  return lengths[leading >> 3U];
 }
 
 /// Return the code point of a UTF-8 character with known length
 static inline uint32_t
 parse_counted_utf8_char(const uint8_t* utf8, size_t size)
 {
-  uint32_t c = utf8[0] & ((1u << (8u - size)) - 1u);
+  uint32_t c = utf8[0] & ((1U << (8U - size)) - 1U);
   for (size_t i = 1; i < size; ++i) {
-    c = (c << 6) | (utf8[i] & 0x3Fu);
+    c = (c << 6) | (utf8[i] & 0x3FU);
   }
   return c;
 }
@@ -171,7 +171,7 @@ parse_utf8_char(const uint8_t* utf8, size_t* size)
     return parse_counted_utf8_char(utf8, *size);
   default:
     *size = 0;
-    return 0u;
+    return 0U;
   }
 }
 

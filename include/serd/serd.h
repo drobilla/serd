@@ -83,8 +83,8 @@ typedef enum {
 
 /// Flags indicating certain string properties relevant to serialisation
 typedef enum {
-  SERD_HAS_NEWLINE = 1u << 0u, ///< Contains line breaks ('\\n' or '\\r')
-  SERD_HAS_QUOTE   = 1u << 1u  ///< Contains quotes ('"')
+  SERD_HAS_NEWLINE = 1U << 0U, ///< Contains line breaks ('\\n' or '\\r')
+  SERD_HAS_QUOTE   = 1U << 1U  ///< Contains quotes ('"')
 } SerdNodeFlag;
 
 /// Bitwise OR of SerdNodeFlag values
@@ -543,14 +543,14 @@ serd_node_free(SerdNode* SERD_NULLABLE node);
 
 /// Flags indicating inline abbreviation information for a statement
 typedef enum {
-  SERD_EMPTY_S      = 1u << 1u, ///< Empty blank node subject
-  SERD_EMPTY_O      = 1u << 2u, ///< Empty blank node object
-  SERD_ANON_S_BEGIN = 1u << 3u, ///< Start of anonymous subject
-  SERD_ANON_O_BEGIN = 1u << 4u, ///< Start of anonymous object
-  SERD_ANON_CONT    = 1u << 5u, ///< Continuation of anonymous node
-  SERD_LIST_S_BEGIN = 1u << 6u, ///< Start of list subject
-  SERD_LIST_O_BEGIN = 1u << 7u, ///< Start of list object
-  SERD_LIST_CONT    = 1u << 8u  ///< Continuation of list
+  SERD_EMPTY_S      = 1U << 1U, ///< Empty blank node subject
+  SERD_EMPTY_O      = 1U << 2U, ///< Empty blank node object
+  SERD_ANON_S_BEGIN = 1U << 3U, ///< Start of anonymous subject
+  SERD_ANON_O_BEGIN = 1U << 4U, ///< Start of anonymous object
+  SERD_ANON_CONT    = 1U << 5U, ///< Continuation of anonymous node
+  SERD_LIST_S_BEGIN = 1U << 6U, ///< Start of list subject
+  SERD_LIST_O_BEGIN = 1U << 7U, ///< Start of list object
+  SERD_LIST_CONT    = 1U << 8U  ///< Continuation of list
 } SerdStatementFlag;
 
 /// Bitwise OR of SerdStatementFlag values
@@ -878,11 +878,11 @@ typedef struct SerdWriterImpl SerdWriter;
    does not support abbreviation and is always ASCII.
 */
 typedef enum {
-  SERD_STYLE_ABBREVIATED = 1u << 0u, ///< Abbreviate triples when possible.
-  SERD_STYLE_ASCII       = 1u << 1u, ///< Escape all non-ASCII characters.
-  SERD_STYLE_RESOLVED    = 1u << 2u, ///< Resolve URIs against base URI.
-  SERD_STYLE_CURIED      = 1u << 3u, ///< Shorten URIs into CURIEs.
-  SERD_STYLE_BULK        = 1u << 4u, ///< Write output in pages.
+  SERD_STYLE_ABBREVIATED = 1U << 0U, ///< Abbreviate triples when possible.
+  SERD_STYLE_ASCII       = 1U << 1U, ///< Escape all non-ASCII characters.
+  SERD_STYLE_RESOLVED    = 1U << 2U, ///< Resolve URIs against base URI.
+  SERD_STYLE_CURIED      = 1U << 3U, ///< Shorten URIs into CURIEs.
+  SERD_STYLE_BULK        = 1U << 4U, ///< Write output in pages.
 } SerdStyle;
 
 /// Create a new RDF writer
