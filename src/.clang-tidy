@@ -3,9 +3,7 @@
 
 Checks: >
   -*-magic-numbers,
-  -bugprone-branch-clone,
   -bugprone-easily-swappable-parameters,
-  -bugprone-reserved-identifier,
   -bugprone-suspicious-string-compare,
   -cert-err33-c,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
