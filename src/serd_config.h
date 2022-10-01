@@ -12,8 +12,8 @@
   include-what-you-use will catch any mistakes.
 */
 
-#ifndef SERD_CONFIG_H
-#define SERD_CONFIG_H
+#ifndef SERD_SRC_SERD_CONFIG_H
+#define SERD_SRC_SERD_CONFIG_H
 
 // Define version unconditionally so a warning will catch a mismatch
 #define SERD_VERSION "1.1.1"
@@ -82,4 +82,4 @@
 #  define USE_POSIX_MEMALIGN 0
 #endif
 
-#endif // SERD_CONFIG_H
+#endif // SERD_SRC_SERD_CONFIG_H
