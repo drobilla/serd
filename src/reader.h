@@ -1,8 +1,8 @@
 // Copyright 2011-2020 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#ifndef SERD_READER_H
-#define SERD_READER_H
+#ifndef SERD_SRC_READER_H
+#define SERD_SRC_READER_H
 
 #include "byte_source.h"
 #include "stack.h"
@@ -180,4 +180,4 @@ push_bytes(SerdReader* reader, Ref ref, const uint8_t* bytes, unsigned len)
   }
 }
 
-#endif // SERD_READER_H
+#endif // SERD_SRC_READER_H
