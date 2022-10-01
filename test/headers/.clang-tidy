@@ -1,10 +1,10 @@
 # Copyright 2020-2022 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
+
 Checks: >
   *,
   -*-uppercase-literal-suffix,
-  -altera-struct-pack-align,
-  -clang-diagnostic-unused-macros,
+  -altera-*,
   -llvmlibc-*,
   -readability-identifier-length,
 WarningsAsErrors: '*'
