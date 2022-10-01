@@ -22,7 +22,7 @@ typedef enum {
   FIELD_SUBJECT,
   FIELD_PREDICATE,
   FIELD_OBJECT,
-  FIELD_GRAPH
+  FIELD_GRAPH,
 } Field;
 
 typedef struct {
@@ -50,7 +50,7 @@ typedef enum {
   SEP_GRAPH_BEGIN, ///< Start of graph ('{')
   SEP_GRAPH_END,   ///< End of graph ('}')
   SEP_URI_BEGIN,   ///< URI start quote ('<')
-  SEP_URI_END      ///< URI end quote ('>')
+  SEP_URI_END,     ///< URI end quote ('>')
 } Sep;
 
 typedef struct {
