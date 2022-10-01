@@ -323,7 +323,7 @@ serd_node_new_decimal(const double d, const unsigned frac_digits)
     for (; i < frac_digits - 1 && !(frac % 10); ++i, --s, frac /= 10) {
     }
 
-    node.n_bytes = node.n_chars = (size_t)(s - buf) + 1u;
+    node.n_bytes = node.n_chars = (size_t)(s - buf) + 1U;
 
     // Write digits from last trailing zero to decimal point
     for (; i < frac_digits; ++i) {
@@ -350,7 +350,7 @@ serd_node_new_integer(const int64_t i)
     ++s;
   }
 
-  node.n_bytes = node.n_chars = (size_t)(s - buf) + 1u;
+  node.n_bytes = node.n_chars = (size_t)(s - buf) + 1U;
 
   // Write integer part (right to left)
   do {

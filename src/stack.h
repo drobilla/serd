@@ -100,7 +100,7 @@ serd_stack_pop_aligned(SerdStack* stack, size_t n_bytes)
   const uint8_t pad = stack->buf[stack->size - 1];
 
   // Pop padding and pad count
-  serd_stack_pop(stack, pad + 1u);
+  serd_stack_pop(stack, pad + 1U);
 }
 
 #endif // SERD_STACK_H
