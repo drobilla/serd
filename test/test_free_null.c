@@ -17,6 +17,7 @@ main(void)
   serd_sink_free(NULL);
   serd_reader_free(NULL);
   serd_writer_free(NULL);
+  serd_caret_free(NULL);
 
   return 0;
 }

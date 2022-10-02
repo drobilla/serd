@@ -38,6 +38,7 @@ subdir('headers')
 ##############
 
 unit_tests = [
+  'caret',
   'env',
   'free_null',
   'node',
