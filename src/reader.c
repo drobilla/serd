@@ -13,6 +13,7 @@
 #include "serd/stream.h"
 #include "serd/uri.h"
 
+#include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -145,6 +146,8 @@ emit_statement(SerdReader* const reader,
 SerdStatus
 serd_reader_read_document(SerdReader* const reader)
 {
+  assert(reader);
+
   if (!reader->source.prepared) {
     SerdStatus st = serd_reader_prepare(reader);
     if (st) {
@@ -162,6 +165,9 @@ serd_reader_new(SerdWorld* const      world,
                 const SerdReaderFlags flags,
                 const SerdSink* const sink)
 {
+  assert(world);
+  assert(sink);
+
   const size_t stack_size = world->limits.reader_stack_size;
   if (stack_size < 3 * sizeof(SerdNode) + 192 + serd_node_align) {
     return NULL;
@@ -208,6 +214,8 @@ serd_reader_free(SerdReader* const reader)
 void
 serd_reader_add_blank_prefix(SerdReader* const reader, const char* const prefix)
 {
+  assert(reader);
+
   free(reader->bprefix);
   reader->bprefix_len = 0;
   reader->bprefix     = NULL;
@@ -245,6 +253,8 @@ serd_reader_start_stream(SerdReader* const         reader,
                          const char* const         name,
                          const size_t              page_size)
 {
+  assert(reader);
+
   return serd_byte_source_open_source(
     &reader->source, read_func, error_func, NULL, stream, name, page_size);
 }
@@ -296,6 +306,8 @@ serd_reader_prepare(SerdReader* const reader)
 SerdStatus
 serd_reader_read_chunk(SerdReader* const reader)
 {
+  assert(reader);
+
   SerdStatus st = SERD_SUCCESS;
   if (!reader->source.prepared) {
     st = serd_reader_prepare(reader);
@@ -316,5 +328,7 @@ serd_reader_read_chunk(SerdReader* const reader)
 SerdStatus
 serd_reader_finish(SerdReader* const reader)
 {
+  assert(reader);
+
   return serd_byte_source_close(&reader->source);
 }

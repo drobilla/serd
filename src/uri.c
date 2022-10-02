@@ -9,6 +9,7 @@
 #include "serd/string_view.h"
 #include "serd/uri.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -18,6 +19,8 @@
 char*
 serd_parse_file_uri(const char* const uri, char** const hostname)
 {
+  assert(uri);
+
   const char* path = uri;
   if (hostname) {
     *hostname = NULL;
@@ -71,6 +74,8 @@ serd_parse_file_uri(const char* const uri, char** const hostname)
 bool
 serd_uri_string_has_scheme(const char* const string)
 {
+  assert(string);
+
   if (is_alpha(string[0])) {
     for (size_t i = 1; string[i]; ++i) {
       if (!is_uri_scheme_char(string[i])) {
@@ -89,6 +94,8 @@ serd_uri_string_has_scheme(const char* const string)
 SerdURIView
 serd_parse_uri(const char* const string)
 {
+  assert(string);
+
   SerdURIView result = SERD_URI_NULL;
   const char* ptr    = string;
 
@@ -440,6 +447,9 @@ serd_write_uri(const SerdURIView   uri,
                const SerdWriteFunc sink,
                void* const         stream)
 {
+  assert(sink);
+  assert(stream);
+
   size_t len = 0;
 
   if (uri.scheme.data) {
