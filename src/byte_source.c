@@ -5,8 +5,6 @@
 
 #include "system.h"
 
-#include "serd/serd.h"
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>

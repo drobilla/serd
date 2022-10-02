@@ -3,7 +3,10 @@
 
 #undef NDEBUG
 
-#include "serd/serd.h"
+#include "serd/memory.h"
+#include "serd/node.h"
+#include "serd/string_view.h"
+#include "serd/uri.h"
 
 #include <assert.h>
 #include <stdbool.h>

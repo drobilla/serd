@@ -3,7 +3,9 @@
 
 #undef NDEBUG
 
-#include "serd/serd.h"
+#include "serd/memory.h"
+#include "serd/node.h"
+#include "serd/string.h"
 
 #include <assert.h>
 #include <float.h>

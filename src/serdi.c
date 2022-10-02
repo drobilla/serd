@@ -4,7 +4,16 @@
 #include "serd_config.h"
 #include "string_utils.h"
 
-#include "serd/serd.h"
+#include "serd/attributes.h"
+#include "serd/env.h"
+#include "serd/error.h"
+#include "serd/node.h"
+#include "serd/reader.h"
+#include "serd/sink.h"
+#include "serd/status.h"
+#include "serd/syntax.h"
+#include "serd/uri.h"
+#include "serd/writer.h"
 
 #ifdef _WIN32
 #  ifdef _MSC_VER

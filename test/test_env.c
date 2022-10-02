@@ -3,7 +3,10 @@
 
 #undef NDEBUG
 
-#include "serd/serd.h"
+#include "serd/env.h"
+#include "serd/node.h"
+#include "serd/status.h"
+#include "serd/string_view.h"
 
 #include <assert.h>
 #include <string.h>

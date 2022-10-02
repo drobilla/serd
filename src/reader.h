@@ -4,11 +4,17 @@
 #ifndef SERD_SRC_READER_H
 #define SERD_SRC_READER_H
 
-#include "attributes.h"
 #include "byte_source.h"
 #include "stack.h"
 
-#include "serd/serd.h"
+#include "serd/attributes.h"
+#include "serd/error.h"
+#include "serd/node.h"
+#include "serd/reader.h"
+#include "serd/sink.h"
+#include "serd/statement.h"
+#include "serd/status.h"
+#include "serd/syntax.h"
 
 #include <assert.h>
 #include <stdbool.h>
