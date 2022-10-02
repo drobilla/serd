@@ -15,6 +15,7 @@
 #  include <fcntl.h>
 #endif
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -54,6 +55,9 @@ serd_byte_source_new_function(const SerdReadFunc        read_func,
                               const SerdNode* const     name,
                               const size_t              page_size)
 {
+  assert(read_func);
+  assert(error_func);
+
   if (!page_size) {
     return NULL;
   }
@@ -101,6 +105,8 @@ is_directory(const char* const path)
 SerdByteSource*
 serd_byte_source_new_filename(const char* const path, const size_t page_size)
 {
+  assert(path);
+
   if (page_size == 0 || is_directory(path)) {
     return NULL;
   }
@@ -145,6 +151,8 @@ SerdByteSource*
 serd_byte_source_new_string(const char* const     string,
                             const SerdNode* const name)
 {
+  assert(string);
+
   SerdByteSource* source = (SerdByteSource*)calloc(1, sizeof(SerdByteSource));
 
   source->page_size = 1U;
