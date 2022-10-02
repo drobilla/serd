@@ -21,6 +21,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -140,7 +141,9 @@ test_write_errors(void)
       serd_reader_set_error_sink(reader, quiet_error_sink, NULL);
       serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
 
-      const SerdStatus st = serd_reader_read_string(reader, doc_string);
+      SerdStatus st = serd_reader_start_string(reader, doc_string);
+      assert(!st);
+      st = serd_reader_read_document(reader);
       assert(st == SERD_BAD_WRITE);
 
       serd_reader_free(reader);
@@ -273,14 +276,15 @@ test_writer(const char* const path)
 static void
 test_reader(const char* path)
 {
-  ReaderTest* rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
+  ReaderTest  rt     = {0};
   SerdReader* reader = serd_reader_new(
-    SERD_TURTLE, 0U, rt, free, NULL, NULL, test_statement_sink, NULL);
+    SERD_TURTLE, 0U, &rt, NULL, NULL, NULL, test_statement_sink, NULL);
 
   assert(reader);
-  assert(serd_reader_handle(reader) == rt);
+  assert(serd_reader_handle(reader) == &rt);
 
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
+  assert(serd_reader_read_document(reader) == SERD_FAILURE);
 
   serd_reader_add_blank_prefix(reader, "tmp");
 
@@ -293,15 +297,14 @@ test_reader(const char* path)
 #  pragma GCC diagnostic pop
 #endif
 
-  assert(serd_reader_read_file(reader, "http://notafile"));
-  assert(serd_reader_read_file(reader, "file:///better/not/exist"));
-  assert(serd_reader_read_file(reader, "file://"));
+  assert(serd_reader_start_file(reader, "http://notafile", false));
+  assert(serd_reader_start_file(reader, "file://invalid", false));
+  assert(serd_reader_start_file(reader, "file:///nonexistant", false));
 
-  const SerdStatus st = serd_reader_read_file(reader, path);
-  assert(!st);
-  assert(rt->n_statement == 13);
-
-  assert(serd_reader_read_string(reader, "This isn't Turtle at all."));
+  assert(!serd_reader_start_file(reader, path, true));
+  assert(!serd_reader_read_document(reader));
+  assert(rt.n_statement == 13);
+  assert(!serd_reader_finish(reader));
 
   serd_reader_free(reader);
 }

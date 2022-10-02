@@ -13,8 +13,8 @@
 #include "zix/attributes.h"
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 
 SERD_BEGIN_DECLS
 
@@ -75,38 +75,30 @@ SERD_API void
 serd_reader_add_blank_prefix(SerdReader* ZIX_NONNULL  reader,
                              const char* ZIX_NULLABLE prefix);
 
-/// Read a file at a given `uri`
+/// Prepare to read from the file at a local file `uri`
 SERD_API SerdStatus
-serd_reader_read_file(SerdReader* ZIX_NONNULL reader,
-                      const char* ZIX_NONNULL uri);
+serd_reader_start_file(SerdReader* ZIX_NONNULL reader,
+                       const char* ZIX_NONNULL uri,
+                       bool                    bulk);
 
 /**
-   Start an incremental read from a file handle.
-
-   Iff `bulk` is true, `file` will be read a page at a time.  This is more
-   efficient, but uses a page of memory and means that an entire page of input
-   must be ready before any callbacks will fire.  To react as soon as input
-   arrives, set `bulk` to false.
-*/
-SERD_API SerdStatus
-serd_reader_start_stream(SerdReader* ZIX_NONNULL  reader,
-                         FILE* ZIX_NONNULL        file,
-                         const char* ZIX_NULLABLE name,
-                         bool                     bulk);
-
-/**
-   Start an incremental read from a user-specified source.
+   Prepare to read from a stream.
 
    The `read_func` is guaranteed to only be called for `page_size` elements
    with size 1 (i.e. `page_size` bytes).
 */
 SERD_API SerdStatus
-serd_reader_start_source_stream(SerdReader* ZIX_NONNULL   reader,
-                                SerdReadFunc ZIX_NONNULL  read_func,
-                                SerdErrorFunc ZIX_NONNULL error_func,
-                                void* ZIX_UNSPECIFIED     stream,
-                                const char* ZIX_NULLABLE  name,
-                                size_t                    page_size);
+serd_reader_start_stream(SerdReader* ZIX_NONNULL   reader,
+                         SerdReadFunc ZIX_NONNULL  read_func,
+                         SerdErrorFunc ZIX_NONNULL error_func,
+                         void* ZIX_UNSPECIFIED     stream,
+                         const char* ZIX_NULLABLE  name,
+                         size_t                    page_size);
+
+/// Prepare to read from a string
+SERD_API SerdStatus
+serd_reader_start_string(SerdReader* ZIX_NONNULL reader,
+                         const char* ZIX_NONNULL utf8);
 
 /**
    Read a single "chunk" of data during an incremental read.
@@ -119,29 +111,23 @@ serd_reader_start_source_stream(SerdReader* ZIX_NONNULL   reader,
 SERD_API SerdStatus
 serd_reader_read_chunk(SerdReader* ZIX_NONNULL reader);
 
-/// Finish an incremental read from a file handle
-SERD_API SerdStatus
-serd_reader_end_stream(SerdReader* ZIX_NONNULL reader);
+/**
+   Read a complete document from the source.
 
-/// Read `file`
+   This function will continue pulling from the source until a complete
+   document has been read.  Note that this may block when used with streams,
+   for incremental reading use serd_reader_read_chunk().
+*/
 SERD_API SerdStatus
-serd_reader_read_file_handle(SerdReader* ZIX_NONNULL  reader,
-                             FILE* ZIX_NONNULL        file,
-                             const char* ZIX_NULLABLE name);
+serd_reader_read_document(SerdReader* ZIX_NONNULL reader);
 
-/// Read a user-specified byte source
-SERD_API SerdStatus
-serd_reader_read_source(SerdReader* ZIX_NONNULL   reader,
-                        SerdReadFunc ZIX_NONNULL  source,
-                        SerdErrorFunc ZIX_NONNULL error,
-                        void* ZIX_UNSPECIFIED     stream,
-                        const char* ZIX_NULLABLE  name,
-                        size_t                    page_size);
+/**
+   Finish reading from the source.
 
-/// Read `utf8`
+   This should be called before starting to read from another source.
+*/
 SERD_API SerdStatus
-serd_reader_read_string(SerdReader* ZIX_NONNULL reader,
-                        const char* ZIX_NONNULL utf8);
+serd_reader_finish(SerdReader* ZIX_NONNULL reader);
 
 /**
    Skip over bytes in the input until a specific byte is encountered.
@@ -155,7 +141,11 @@ serd_reader_read_string(SerdReader* ZIX_NONNULL reader,
 SERD_API SerdStatus
 serd_reader_skip_until_byte(SerdReader* ZIX_NONNULL reader, uint8_t byte);
 
-/// Free `reader`
+/**
+   Free `reader`.
+
+   The reader will be finished via `serd_reader_finish()` if necessary.
+*/
 SERD_API void
 serd_reader_free(SerdReader* ZIX_NULLABLE reader);
 
