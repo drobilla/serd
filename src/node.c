@@ -6,7 +6,11 @@
 #include "base64.h"
 #include "string_utils.h"
 
-#include "serd/serd.h"
+#include "serd/buffer.h"
+#include "serd/node.h"
+#include "serd/string.h"
+#include "serd/string_view.h"
+#include "serd/uri.h"
 
 #include <float.h>
 #include <math.h>

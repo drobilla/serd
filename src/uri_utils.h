@@ -4,7 +4,7 @@
 #ifndef SERD_SRC_URI_UTILS_H
 #define SERD_SRC_URI_UTILS_H
 
-#include "serd/serd.h"
+#include "serd/attributes.h"
 
 #include "string_utils.h"
 

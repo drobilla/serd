@@ -9,6 +9,10 @@
 
 #include "serd_internal.h"
 
+#include "serd/memory.h"
+#include "serd/stream.h"
+#include "serd/uri.h"
+
 #include <errno.h>
 #include <stdarg.h>
 #include <stdint.h>

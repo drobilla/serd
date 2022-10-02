@@ -3,7 +3,9 @@
 
 #undef NDEBUG
 
-#include "serd/serd.h"
+#include "serd/memory.h"
+#include "serd/node.h"
+#include "serd/uri.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -40,8 +42,7 @@ test_uri_parsing(void)
   test_file_uri(NULL, "a/relative <path>", "a/relative%20%3Cpath%3E", NULL);
 
 #ifdef _WIN32
-  test_file_uri(
-    NULL, "C:\\My 100%", "file:///C:/My%20100%%", "C:/My 100%");
+  test_file_uri(NULL, "C:\\My 100%", "file:///C:/My%20100%%", "C:/My 100%");
 
   test_file_uri(
     NULL, "\\drive\\relative", "file:///drive/relative", "/drive/relative");
