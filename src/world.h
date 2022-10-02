@@ -18,6 +18,9 @@ struct SerdWorldImpl {
   SerdLogFunc   error_func;
   void*         error_handle;
   uint32_t      next_document_id;
+  uint32_t      next_blank_id;
+
+  uint64_t blank_buf[6U];
 };
 
 SerdStatus
