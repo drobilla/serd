@@ -3,6 +3,7 @@
 
 #include "serd_config.h"
 #include "string_utils.h"
+#include "system.h"
 
 #include "serd/attributes.h"
 #include "serd/env.h"
@@ -13,7 +14,6 @@
 #include "serd/stream.h"
 #include "serd/string_view.h"
 #include "serd/syntax.h"
-#include "serd/uri.h"
 #include "serd/writer.h"
 
 #ifdef _WIN32
@@ -24,14 +24,8 @@
 #  include <io.h>
 #endif
 
-#if USE_POSIX_FADVISE && USE_FILENO
-#  include <fcntl.h>
-#endif
-
-#include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #define SERDI_ERROR(msg) fprintf(stderr, "serdi: " msg)
@@ -132,23 +126,6 @@ quiet_error_sink(void* const handle, const SerdError* const e)
   return SERD_SUCCESS;
 }
 
-static FILE*
-serd_fopen(const char* const path, const char* const mode)
-{
-  FILE* fd = fopen(path, mode);
-  if (!fd) {
-    SERDI_ERRORF("failed to open file %s (%s)\n", path, strerror(errno));
-    return NULL;
-  }
-
-#if USE_POSIX_FADVISE && USE_FILENO
-  (void)posix_fadvise(
-    fileno(fd), 0, 0, POSIX_FADV_SEQUENTIAL | POSIX_FADV_NOREUSE);
-#endif
-
-  return fd;
-}
-
 static SerdWriterFlags
 choose_style(const SerdSyntax input_syntax,
              const SerdSyntax output_syntax,
@@ -184,25 +161,23 @@ main(int argc, char** argv)
 {
   const char* const prog = argv[0];
 
-  FILE*       in_fd         = NULL;
   SerdSyntax  input_syntax  = (SerdSyntax)0;
   SerdSyntax  output_syntax = (SerdSyntax)0;
-  bool        from_file     = true;
+  bool        from_string   = false;
+  bool        from_stdin    = false;
   bool        ascii         = false;
   bool        bulk_read     = true;
   bool        bulk_write    = false;
   bool        full_uris     = false;
   bool        lax           = false;
   bool        quiet         = false;
-  const char* in_name       = NULL;
   const char* add_prefix    = NULL;
   const char* chop_prefix   = NULL;
   const char* root_uri      = NULL;
   int         a             = 1;
-  for (; a < argc && from_file && argv[a][0] == '-'; ++a) {
+  for (; a < argc && !from_string && argv[a][0] == '-'; ++a) {
     if (argv[a][1] == '\0') {
-      in_name = (const char*)"(stdin)";
-      in_fd   = stdin;
+      from_stdin = true;
       break;
     }
 
@@ -226,8 +201,7 @@ main(int argc, char** argv)
       } else if (opt == 'v') {
         return print_version();
       } else if (opt == 's') {
-        in_name   = "(string)";
-        from_file = false;
+        from_string = true;
         break;
       } else if (opt == 'c') {
         if (argv[a][o + 1] || ++a == argc) {
@@ -285,22 +259,9 @@ main(int argc, char** argv)
   _setmode(_fileno(stdout), _O_BINARY);
 #endif
 
-  char*       input_path = NULL;
-  const char* input      = (const char*)argv[a++];
-  if (from_file) {
-    in_name = in_name ? in_name : input;
-    if (!in_fd) {
-      if (!strncmp(input, "file:", 5)) {
-        input_path = serd_parse_file_uri(input, NULL);
-        input      = input_path;
-      }
-      if (!input || !(in_fd = serd_fopen(input, "rb"))) {
-        return 1;
-      }
-    }
-  }
+  const char* input = argv[a++];
 
-  if (!input_syntax && !(input_syntax = guess_syntax(in_name))) {
+  if (!input_syntax && !(input_syntax = guess_syntax(input))) {
     input_syntax = SERD_TRIG;
   }
 
@@ -317,7 +278,7 @@ main(int argc, char** argv)
   SerdNode* base = NULL;
   if (a < argc) { // Base URI given on command line
     base = serd_new_uri(serd_string((const char*)argv[a]));
-  } else if (from_file && in_fd != stdin) { // Use input file URI
+  } else if (!from_string && !from_stdin) { // Use input file URI
     base = serd_new_file_uri(serd_string(input), serd_empty_string());
   }
 
@@ -347,30 +308,31 @@ main(int argc, char** argv)
   serd_reader_add_blank_prefix(reader, add_prefix);
 
   SerdStatus st = SERD_SUCCESS;
-  if (!from_file) {
-    st = serd_reader_read_string(reader, input);
-  } else if (bulk_read) {
-    st = serd_reader_read_file_handle(reader, in_fd, in_name);
+  if (from_string) {
+    st = serd_reader_start_string(reader, input);
+  } else if (from_stdin) {
+    st = serd_reader_start_stream(reader,
+                                  serd_file_read_byte,
+                                  (SerdStreamErrorFunc)ferror,
+                                  stdin,
+                                  "(stdin)",
+                                  1);
   } else {
-    st = serd_reader_start_stream(reader, in_fd, in_name, false);
-    while (!st) {
-      st = serd_reader_read_chunk(reader);
-    }
-    serd_reader_end_stream(reader);
+    st = serd_reader_start_file(reader, input, bulk_read);
   }
 
+  if (!st) {
+    st = serd_reader_read_document(reader);
+  }
+
+  serd_reader_finish(reader);
   serd_reader_free(reader);
   serd_writer_finish(writer);
   serd_writer_free(writer);
   serd_env_free(env);
   serd_node_free(base);
-  free(input_path);
 
-  if (from_file) {
-    fclose(in_fd);
-  }
-
-  if (fclose(out_fd)) {
+  if (fclose(stdout)) {
     perror("serdi: write error");
     st = SERD_ERR_UNKNOWN;
   }

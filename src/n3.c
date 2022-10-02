@@ -1698,8 +1698,9 @@ read_nquadsDoc(SerdReader* const reader)
     }
 
     if (peek_byte(reader) == '@') {
-      return r_err(
+      r_err(
         reader, SERD_ERR_BAD_SYNTAX, "syntax does not support directives\n");
+      return SERD_ERR_BAD_SYNTAX;
     }
 
     // subject predicate object
