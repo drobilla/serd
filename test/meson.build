@@ -134,6 +134,7 @@ unit_tests = [
   'syntax',
   'terse_write',
   'uri',
+  'world',
   'writer',
 ]
 

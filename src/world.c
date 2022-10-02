@@ -4,14 +4,16 @@
 #include "world.h"
 
 #include "caret.h"
+#include "node.h"
 
 #include "serd/node.h"
 #include "zix/allocator.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
 
 SerdStatus
 serd_world_error(const SerdWorld* const world, const SerdError* const e)
@@ -54,13 +56,19 @@ serd_world_new(ZixAllocator* const allocator)
 {
   ZixAllocator* const actual = allocator ? allocator : zix_default_allocator();
 
-  SerdWorld* world = (SerdWorld*)zix_calloc(actual, 1, sizeof(SerdWorld));
+  SerdWorld* world      = (SerdWorld*)zix_calloc(actual, 1, sizeof(SerdWorld));
+  SerdNode*  blank_node = serd_new_blank(actual, zix_string("b00000000000"));
 
-  if (world) {
-    world->limits.reader_stack_size = 1048576U;
-    world->limits.writer_max_depth  = 128U;
-    world->allocator                = actual;
+  if (!world || !blank_node) {
+    serd_node_free(actual, blank_node);
+    zix_free(actual, world);
+    return NULL;
   }
+
+  world->limits.reader_stack_size = 1048576U;
+  world->limits.writer_max_depth  = 128U;
+  world->allocator                = actual;
+  world->blank_node               = blank_node;
 
   return world;
 }
@@ -68,7 +76,28 @@ serd_world_new(ZixAllocator* const allocator)
 void
 serd_world_free(SerdWorld* const world)
 {
-  free(world);
+  if (world) {
+    serd_node_free(world->allocator, world->blank_node);
+    zix_free(world->allocator, world);
+  }
+}
+
+const SerdNode*
+serd_world_get_blank(SerdWorld* const world)
+{
+#define BLANK_CHARS 12
+
+  assert(world);
+
+  char* buf = serd_node_buffer(world->blank_node);
+  memset(buf, 0, BLANK_CHARS + 1);
+
+  world->blank_node->length =
+    (size_t)snprintf(buf, BLANK_CHARS + 1, "b%u", ++world->next_blank_id);
+
+  return world->blank_node;
+
+#undef BLANK_CHARS
 }
 
 SerdLimits
