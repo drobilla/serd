@@ -8,7 +8,11 @@
 #include "try.h"
 #include "uri_utils.h"
 
-#include "serd/serd.h"
+#include "serd/node.h"
+#include "serd/reader.h"
+#include "serd/statement.h"
+#include "serd/status.h"
+#include "serd/syntax.h"
 
 #include <assert.h>
 #include <stdbool.h>

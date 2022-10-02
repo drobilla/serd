@@ -3,7 +3,11 @@
 
 #undef NDEBUG
 
-#include "serd/serd.h"
+#include "serd/env.h"
+#include "serd/memory.h"
+#include "serd/node.h"
+#include "serd/reader.h"
+#include "serd/writer.h"
 
 #include <stddef.h>
 

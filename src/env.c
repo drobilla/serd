@@ -1,7 +1,7 @@
 // Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "serd/serd.h"
+#include "serd/env.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -197,7 +197,7 @@ serd_env_qualify(const SerdEnv* const  env,
     if (uri->n_bytes >= prefix_uri->n_bytes) {
       if (!strncmp(uri->buf, prefix_uri->buf, prefix_uri->n_bytes)) {
         *prefix     = env->prefixes[i].name;
-        suffix->buf = uri->buf + prefix_uri->n_bytes;
+        suffix->buf = (const char*)uri->buf + prefix_uri->n_bytes;
         suffix->len = uri->n_bytes - prefix_uri->n_bytes;
         return true;
       }
@@ -229,7 +229,7 @@ serd_env_expand(const SerdEnv* const  env,
   const size_t            name_len = (size_t)(colon - curie->buf);
   const SerdPrefix* const prefix   = serd_env_find(env, curie->buf, name_len);
   if (prefix) {
-    uri_prefix->buf = prefix->uri.buf;
+    uri_prefix->buf = (const char*)prefix->uri.buf;
     uri_prefix->len = prefix->uri.n_bytes;
     uri_suffix->buf = colon + 1;
     uri_suffix->len = curie->n_bytes - name_len - 1;

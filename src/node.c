@@ -6,7 +6,10 @@
 #include "base64.h"
 #include "string_utils.h"
 
-#include "serd/serd.h"
+#include "serd/buffer.h"
+#include "serd/node.h"
+#include "serd/string.h"
+#include "serd/uri.h"
 
 #include <assert.h>
 #include <float.h>

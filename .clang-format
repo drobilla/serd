@@ -23,6 +23,7 @@ KeepEmptyLinesAtTheStartOfBlocks: false
 SpacesInContainerLiterals: false
 AttributeMacros:
   - SERD_ALLOCATED
+  - SERD_ALWAYS_INLINE_FUNC
   - SERD_API
   - SERD_CONST_FINC
   - SERD_FALLTHROUGH
