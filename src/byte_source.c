@@ -8,6 +8,7 @@
 #include "serd/node.h"
 #include "serd/string_view.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -46,7 +47,10 @@ serd_byte_source_open_source(SerdByteSource* const     source,
                              const SerdNode* const     name,
                              const size_t              page_size)
 {
+  assert(read_func);
+  assert(error_func);
   assert(page_size > 0);
+
   memset(source, '\0', sizeof(*source));
   source->read_func      = read_func;
   source->error_func     = error_func;
