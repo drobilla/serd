@@ -5,14 +5,18 @@
 #define SERD_SRC_WORLD_H
 
 #include "serd/error.h"
+#include "serd/node.h"
 #include "serd/status.h"
 #include "serd/world.h"
 
+#include <stdint.h>
 #include <stdio.h>
 
 struct SerdWorldImpl {
   SerdErrorFunc error_func;
   void*         error_handle;
+  uint32_t      next_blank_id;
+  SerdNode*     blank_node;
 };
 
 /// Open a file configured for fast sequential reading
