@@ -5,17 +5,21 @@
 #define SERD_SRC_WORLD_H
 
 #include "serd/error.h"
+#include "serd/node.h"
 #include "serd/status.h"
 #include "serd/world.h"
 #include "zix/allocator.h"
 
 #include <stdarg.h>
+#include <stdint.h>
 
 struct SerdWorldImpl {
   SerdLimits    limits;
   ZixAllocator* allocator;
   SerdLogFunc   error_func;
   void*         error_handle;
+  uint32_t      next_blank_id;
+  SerdNode*     blank_node;
 };
 
 SerdStatus
