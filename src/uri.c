@@ -4,7 +4,11 @@
 #include "string_utils.h"
 #include "uri_utils.h"
 
-#include "serd/serd.h"
+#include "serd/buffer.h"
+#include "serd/status.h"
+#include "serd/stream.h"
+#include "serd/string_view.h"
+#include "serd/uri.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -267,7 +271,7 @@ serd_uri_resolve(const SerdURIView* const r,
     return;
   }
 
-  t->path_base.buf = NULL;
+  t->path_base.buf = "";
   t->path_base.len = 0;
   if (r->scheme.len) {
     *t = *r;
