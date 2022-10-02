@@ -4,10 +4,13 @@
 #include "reader.h"
 
 #include "byte_source.h"
+#include "serd_internal.h"
 #include "stack.h"
 #include "system.h"
 
-#include "serd_internal.h"
+#include "serd/memory.h"
+#include "serd/stream.h"
+#include "serd/uri.h"
 
 #include <assert.h>
 #include <errno.h>

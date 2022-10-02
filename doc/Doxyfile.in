@@ -24,10 +24,13 @@ SHOW_FILES             = NO
 
 MACRO_EXPANSION        = YES
 PREDEFINED             = SERD_ALLOCATED \
+                         SERD_ALWAYS_INLINE_FUNC= \
                          SERD_API \
+                         SERD_CONST_API= \
                          SERD_CONST_FUNC= \
                          SERD_NONNULL= \
                          SERD_NULLABLE= \
+                         SERD_PURE_API= \
                          SERD_PURE_FUNC= \
                          SERD_UNSPECIFIED=
 
