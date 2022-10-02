@@ -6,6 +6,7 @@
 
 #include "serd/attributes.h"
 #include "serd/error.h"
+#include "serd/node.h"
 #include "serd/status.h"
 #include "zix/allocator.h"
 #include "zix/attributes.h"
@@ -66,6 +67,15 @@ serd_world_limits(const SerdWorld* ZIX_NONNULL world);
 */
 SERD_API SerdStatus
 serd_world_set_limits(SerdWorld* ZIX_NONNULL world, SerdLimits limits);
+
+/**
+   Return a unique blank node.
+
+   The returned node is valid only until the next time serd_world_get_blank()
+   is called or the world is destroyed.
+*/
+SERD_API const SerdNode* ZIX_NONNULL
+serd_world_get_blank(SerdWorld* ZIX_NONNULL world);
 
 /**
    Set a function to be called when errors occur.
