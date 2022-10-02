@@ -3,7 +3,17 @@
 
 #undef NDEBUG
 
-#include "serd/serd.h"
+#include "serd/buffer.h"
+#include "serd/env.h"
+#include "serd/error.h"
+#include "serd/memory.h"
+#include "serd/node.h"
+#include "serd/reader.h"
+#include "serd/sink.h"
+#include "serd/statement.h"
+#include "serd/status.h"
+#include "serd/syntax.h"
+#include "serd/writer.h"
 
 #ifdef _WIN32
 #  include <windows.h>

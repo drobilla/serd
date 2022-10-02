@@ -3,7 +3,10 @@
 
 #include "string_utils.h"
 
-#include "serd/serd.h"
+#include "serd/memory.h"
+#include "serd/node.h"
+#include "serd/status.h"
+#include "serd/string.h"
 
 #include <assert.h>
 #include <math.h>

@@ -4,7 +4,7 @@
 #ifndef SERD_SRC_SERD_INTERNAL_H
 #define SERD_SRC_SERD_INTERNAL_H
 
-#include "serd/serd.h"
+#include "serd/error.h"
 
 #include <stdio.h>
 

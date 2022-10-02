@@ -102,7 +102,23 @@ endif
 include_dirs = include_directories('include')
 
 c_headers = files(
+  'include/serd/attributes.h',
+  'include/serd/buffer.h',
+  'include/serd/env.h',
+  'include/serd/error.h',
+  'include/serd/memory.h',
+  'include/serd/node.h',
+  'include/serd/reader.h',
   'include/serd/serd.h',
+  'include/serd/sink.h',
+  'include/serd/statement.h',
+  'include/serd/status.h',
+  'include/serd/stream.h',
+  'include/serd/string.h',
+  'include/serd/string_view.h',
+  'include/serd/syntax.h',
+  'include/serd/uri.h',
+  'include/serd/writer.h',
 )
 
 sources = files(

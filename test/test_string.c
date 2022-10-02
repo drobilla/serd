@@ -3,7 +3,10 @@
 
 #undef NDEBUG
 
-#include "serd/serd.h"
+#include "serd/attributes.h"
+#include "serd/node.h"
+#include "serd/status.h"
+#include "serd/string.h"
 
 #include <assert.h>
 #include <stdint.h>
@@ -49,7 +52,7 @@ test_strerror(void)
   assert(!strcmp(msg, "Unknown error"));
 }
 
-int
+SERD_PURE_FUNC int
 main(void)
 {
   test_strlen();
