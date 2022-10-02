@@ -13,6 +13,13 @@ SERD_BEGIN_DECLS
 /**
    @defgroup serd_buffer Dynamic Memory Buffers
    @ingroup serd
+
+   The #SerdBuffer type represents a writable area of memory with a known size.
+   An implementation of #SerdWriteFunc, #SerdStreamErrorFunc, and
+   #SerdStreamCloseFunc are provided which allow output to be written to a
+   buffer in memory instead of to a file as with `fwrite`, `ferror`, and
+   `fclose`.
+
    @{
 */
 
@@ -23,29 +30,31 @@ typedef struct {
 } SerdBuffer;
 
 /**
-   A convenience sink function for writing to a string.
+   A function for writing to a buffer, resizing it if necessary.
 
-   This function can be used as a SerdSink to write to a SerdBuffer which is
-   resized as necessary with realloc().  The `stream` parameter must point to
-   an initialized SerdBuffer.  When the write is finished, the string should be
-   retrieved with serd_buffer_sink_finish().
+   This function can be used as a #SerdWriteFunc to write to a #SerdBuffer
+   which is resized as necessary with realloc().  The `stream` parameter must
+   point to an initialized #SerdBuffer.
+
+   Note that when writing a string, the string in the buffer will not be
+   null-terminated until serd_buffer_close() is called.
 */
 SERD_API
 size_t
-serd_buffer_sink(const void* SERD_NONNULL buf,
-                 size_t                   size,
-                 size_t                   nmemb,
-                 void* SERD_NONNULL       stream);
+serd_buffer_write(const void* SERD_NONNULL buf,
+                  size_t                   size,
+                  size_t                   nmemb,
+                  void* SERD_NONNULL       stream);
 
 /**
-   Finish writing to a buffer with serd_buffer_sink().
+   Close the buffer for writing.
 
-   The returned string is the result of the serialisation, which is null
-   terminated (by this function) and owned by the caller.
+   This writes a terminating null byte, so the contents of the buffer are safe
+   to read as a string after this call.
 */
 SERD_API
-char* SERD_NONNULL
-serd_buffer_sink_finish(SerdBuffer* SERD_NONNULL stream);
+int
+serd_buffer_close(void* SERD_NONNULL stream);
 
 /**
    @}

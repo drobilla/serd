@@ -23,7 +23,7 @@
 static int
 close_buffer(void* const stream)
 {
-  serd_buffer_sink("", 1, 1, stream); // Write null terminator
+  serd_buffer_write("", 1, 1, stream); // Write null terminator
 
   return 0;
 }
@@ -34,7 +34,7 @@ serd_byte_sink_new_buffer(SerdBuffer* const buffer)
   assert(buffer);
 
   return serd_byte_sink_new_function(
-    serd_buffer_sink, close_buffer, buffer, 1U);
+    serd_buffer_write, close_buffer, buffer, 1U);
 }
 
 SerdByteSink*
