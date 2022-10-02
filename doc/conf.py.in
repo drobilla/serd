@@ -86,10 +86,10 @@ if have_lv2_theme:
     if tags.has("singlehtml"):
         html_theme_options.update(
             {
-                "body_max_width": "64em",
-                "body_min_width": "64em",
+                "body_max_width": "60em",
+                "body_min_width": "60em",
                 "nosidebar": False,
-                "sidebar_width": "12em",
+                "sidebar_width": "16em",
             }
         )
 
