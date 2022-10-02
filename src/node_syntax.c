@@ -19,6 +19,7 @@
 #include "serd/world.h"
 #include "serd/writer.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,6 +40,8 @@ serd_node_from_syntax_in(const char* const str,
                          const SerdSyntax  syntax,
                          SerdEnv* const    env)
 {
+  assert(str);
+
   static const char* const prelude =
     "_:s <http://www.w3.org/2000/01/rdf-schema#object>";
 
@@ -73,6 +76,8 @@ serd_node_from_syntax(const char* const str,
                       const SerdSyntax  syntax,
                       SerdEnv* const    env)
 {
+  assert(str);
+
   if (env) {
     return serd_node_from_syntax_in(str, syntax, env);
   }
@@ -111,6 +116,8 @@ serd_node_to_syntax(const SerdNode* const node,
                     const SerdSyntax      syntax,
                     const SerdEnv* const  env)
 {
+  assert(node);
+
   if (env) {
     return serd_node_to_syntax_in(node, syntax, env);
   }

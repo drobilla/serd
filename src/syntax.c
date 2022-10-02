@@ -5,6 +5,7 @@
 
 #include "serd/syntax.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -25,17 +26,22 @@ static const Syntax syntaxes[] = {
 SerdSyntax
 serd_syntax_by_name(const char* const name)
 {
+  assert(name);
+
   for (const Syntax* s = syntaxes; s->name; ++s) {
     if (!serd_strncasecmp(s->name, name, strlen(name))) {
       return s->syntax;
     }
   }
+
   return SERD_SYNTAX_EMPTY;
 }
 
 SerdSyntax
 serd_guess_syntax(const char* const filename)
 {
+  assert(filename);
+
   const char* ext = strrchr(filename, '.');
   if (ext) {
     for (const Syntax* s = syntaxes; s->name; ++s) {

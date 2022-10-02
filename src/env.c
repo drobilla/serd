@@ -118,6 +118,8 @@ serd_env_base_uri(const SerdEnv* const env)
 SerdStatus
 serd_env_set_base_uri(SerdEnv* const env, const SerdStringView uri)
 {
+  assert(env);
+
   if (!uri.len) {
     serd_node_free(env->base_uri_node);
     env->base_uri_node = NULL;
@@ -180,6 +182,8 @@ serd_env_set_prefix(SerdEnv* const       env,
                     const SerdStringView name,
                     const SerdStringView uri)
 {
+  assert(env);
+
   if (serd_uri_string_has_scheme(uri.buf)) {
     // Set prefix to absolute URI
     serd_env_add(env, name, uri);
@@ -306,6 +310,9 @@ serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
 void
 serd_env_write_prefixes(const SerdEnv* const env, const SerdSink* const sink)
 {
+  assert(env);
+  assert(sink);
+
   for (size_t i = 0; i < env->n_prefixes; ++i) {
     serd_sink_write_prefix(sink, env->prefixes[i].name, env->prefixes[i].uri);
   }
