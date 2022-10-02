@@ -196,7 +196,8 @@ test_read_nquads_chunks(const char* const path)
   serd_sink_set_statement_func(sink, test_statement_sink);
   serd_sink_set_end_func(sink, test_end_sink);
 
-  SerdStatus st = serd_reader_start_stream(reader, f, NULL, false);
+  SerdStatus st = serd_reader_start_stream(
+    reader, (SerdReadFunc)fread, (SerdStreamErrorFunc)ferror, f, NULL, 1);
   assert(st == SERD_SUCCESS);
 
   // Read first statement
@@ -277,7 +278,8 @@ test_read_turtle_chunks(const char* const path)
   serd_sink_set_statement_func(sink, test_statement_sink);
   serd_sink_set_end_func(sink, test_end_sink);
 
-  SerdStatus st = serd_reader_start_stream(reader, f, NULL, false);
+  SerdStatus st = serd_reader_start_stream(
+    reader, (SerdReadFunc)fread, (SerdStreamErrorFunc)ferror, f, NULL, 1);
   assert(st == SERD_SUCCESS);
 
   // Read base
@@ -361,16 +363,17 @@ test_read_string(void)
   serd_sink_set_end_func(sink, test_end_sink);
 
   // Test reading a string that ends exactly at the end of input (no newline)
-  const SerdStatus st =
-    serd_reader_read_string(reader,
-                            "<http://example.org/s> <http://example.org/p> "
-                            "<http://example.org/o> .");
+  assert(
+    !serd_reader_start_string(reader,
+                              "<http://example.org/s> <http://example.org/p> "
+                              "<http://example.org/o> ."));
 
-  assert(!st);
+  assert(!serd_reader_read_document(reader));
   assert(rt->n_base == 0);
   assert(rt->n_prefix == 0);
   assert(rt->n_statement == 1);
   assert(rt->n_end == 0);
+  assert(!serd_reader_finish(reader));
 
   serd_reader_free(reader);
   serd_sink_free(sink);
@@ -435,7 +438,9 @@ test_write_errors(void)
       serd_reader_set_error_sink(reader, quiet_error_sink, NULL);
       serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
 
-      const SerdStatus st = serd_reader_read_string(reader, doc_string);
+      SerdStatus st = serd_reader_start_string(reader, doc_string);
+      assert(!st);
+      st = serd_reader_read_document(reader);
       assert(st == SERD_BAD_WRITE);
 
       serd_reader_free(reader);
@@ -537,8 +542,8 @@ test_writer(const char* const path)
 static void
 test_reader(const char* path)
 {
-  ReaderTest*     rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
-  SerdSink* const sink   = serd_sink_new(rt, NULL);
+  ReaderTest      rt     = {0, 0, 0, 0, NULL};
+  SerdSink* const sink   = serd_sink_new(&rt, NULL);
   SerdReader*     reader = serd_reader_new(SERD_TURTLE, sink);
   assert(sink);
   assert(reader);
@@ -549,6 +554,7 @@ test_reader(const char* path)
   serd_sink_set_end_func(sink, test_end_sink);
 
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
+  assert(serd_reader_read_document(reader) == SERD_FAILURE);
 
   SerdNode* g = serd_new_uri(serd_string("http://example.org/"));
   serd_reader_set_default_graph(reader, g);
@@ -565,43 +571,44 @@ test_reader(const char* path)
 
   serd_node_free(g);
 
-  assert(serd_reader_read_file(reader, "http://notafile"));
-  assert(serd_reader_read_file(reader, "file:///better/not/exist"));
-  assert(serd_reader_read_file(reader, "file://"));
+  assert(serd_reader_start_file(reader, "http://notafile", false));
+  assert(serd_reader_start_file(reader, "file://invalid", false));
+  assert(serd_reader_start_file(reader, "file:///nonexistant", false));
 
-  const SerdStatus st = serd_reader_read_file(reader, path);
-  assert(!st);
-  assert(rt->n_base == 0);
-  assert(rt->n_prefix == 0);
-  assert(rt->n_statement == 6);
-  assert(rt->n_end == 0);
-  assert(rt->graph && serd_node_string(rt->graph) &&
-         !strcmp(serd_node_string(rt->graph), "http://example.org/"));
-
-  assert(serd_reader_read_string(reader, "This isn't Turtle at all."));
+  assert(!serd_reader_start_file(reader, path, true));
+  assert(!serd_reader_read_document(reader));
+  assert(rt.n_base == 0);
+  assert(rt.n_prefix == 0);
+  assert(rt.n_statement == 6);
+  assert(rt.n_end == 0);
+  assert(rt.graph && serd_node_string(rt.graph) &&
+         !strcmp(serd_node_string(rt.graph), "http://example.org/"));
+  serd_reader_finish(reader);
 
   // A read of a big page hits EOF then fails to read chunks immediately
   {
     FILE* const in = fopen(path, "rb");
-    serd_reader_start_stream(reader, in, "test", true);
+
+    serd_reader_start_stream(
+      reader, (SerdReadFunc)fread, (SerdStreamErrorFunc)ferror, in, NULL, 4096);
 
     assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
     assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
     assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
 
-    serd_reader_end_stream(reader);
+    serd_reader_finish(reader);
     fclose(in);
   }
 
   // A byte-wise reader that hits EOF once then continues (like a socket)
   {
     size_t n_reads = 0;
-    serd_reader_start_source_stream(reader,
-                                    (SerdReadFunc)eof_test_read,
-                                    (SerdStreamErrorFunc)eof_test_error,
-                                    &n_reads,
-                                    NULL,
-                                    1);
+    serd_reader_start_stream(reader,
+                             (SerdReadFunc)eof_test_read,
+                             (SerdStreamErrorFunc)eof_test_error,
+                             &n_reads,
+                             NULL,
+                             1);
 
     assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
     assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
@@ -611,7 +618,6 @@ test_reader(const char* path)
 
   serd_reader_free(reader);
   serd_sink_free(sink);
-  free(rt);
 }
 
 int
