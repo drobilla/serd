@@ -10,6 +10,8 @@
 #include "serd/status.h"
 #include "serd/stream.h"
 
+#include <assert.h>
+
 #if USE_POSIX_FADVISE && USE_FILENO
 #  include <fcntl.h>
 #endif
@@ -21,6 +23,8 @@
 SerdByteSink*
 serd_byte_sink_new_buffer(SerdBuffer* const buffer)
 {
+  assert(buffer);
+
   SerdByteSink* sink = (SerdByteSink*)calloc(1, sizeof(SerdByteSink));
 
   sink->write_func = serd_buffer_sink;
@@ -54,6 +58,8 @@ serd_byte_sink_new_internal(const SerdWriteFunc    write_func,
 SerdByteSink*
 serd_byte_sink_new_filename(const char* const path, const size_t block_size)
 {
+  assert(path);
+
   if (!block_size) {
     return NULL;
   }
@@ -76,6 +82,8 @@ serd_byte_sink_new_function(const SerdWriteFunc write_func,
                             void* const         stream,
                             const size_t        block_size)
 {
+  assert(write_func);
+
   return block_size ? serd_byte_sink_new_internal(
                         write_func, stream, block_size, TO_FUNCTION)
                     : NULL;
@@ -84,6 +92,8 @@ serd_byte_sink_new_function(const SerdWriteFunc write_func,
 void
 serd_byte_sink_flush(SerdByteSink* sink)
 {
+  assert(sink);
+
   if (sink->block_size > 1 && sink->size > 0) {
     sink->write_func(sink->buf, 1, sink->size, sink->stream);
     sink->size = 0;
@@ -93,6 +103,8 @@ serd_byte_sink_flush(SerdByteSink* sink)
 SerdStatus
 serd_byte_sink_close(SerdByteSink* sink)
 {
+  assert(sink);
+
   serd_byte_sink_flush(sink);
 
   if (sink->type == TO_FILENAME && sink->stream) {

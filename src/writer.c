@@ -1288,6 +1288,8 @@ serd_writer_write_node(SerdWriter* writer, const SerdNode* node)
 SerdStatus
 serd_writer_finish(SerdWriter* writer)
 {
+  assert(writer);
+
   SerdStatus st = SERD_SUCCESS;
   if (ctx(writer, SERD_SUBJECT)) {
     st = write_sep(writer, writer->context.flags, SEP_END_S);
@@ -1316,6 +1318,10 @@ serd_writer_new(SerdWorld*      world,
                 const SerdEnv*  env,
                 SerdByteSink*   byte_sink)
 {
+  assert(world);
+  assert(env);
+  assert(byte_sink);
+
   const WriteContext context = WRITE_CONTEXT_NULL;
   SerdWriter*        writer  = (SerdWriter*)calloc(1, sizeof(SerdWriter));
 
@@ -1341,6 +1347,8 @@ serd_writer_new(SerdWorld*      world,
 void
 serd_writer_chop_blank_prefix(SerdWriter* writer, const char* prefix)
 {
+  assert(writer);
+
   free(writer->bprefix);
   writer->bprefix_len = 0;
   writer->bprefix     = NULL;
@@ -1356,6 +1364,8 @@ serd_writer_chop_blank_prefix(SerdWriter* writer, const char* prefix)
 SerdStatus
 serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 {
+  assert(writer);
+
   if (uri->type != SERD_URI) {
     return SERD_ERR_BAD_ARG;
   }
@@ -1381,6 +1391,8 @@ serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 SerdStatus
 serd_writer_set_root_uri(SerdWriter* writer, const SerdNode* uri)
 {
+  assert(writer);
+
   serd_node_free(writer->root_node);
   writer->root_node = NULL;
   writer->root_uri  = SERD_URI_NULL;
@@ -1438,6 +1450,7 @@ serd_writer_free(SerdWriter* writer)
 const SerdSink*
 serd_writer_sink(SerdWriter* writer)
 {
+  assert(writer);
   return &writer->iface;
 }
 
@@ -1447,7 +1460,10 @@ serd_buffer_sink(const void* const buf,
                  const size_t      nmemb,
                  void* const       stream)
 {
+  assert(buf);
   assert(size == 1);
+  assert(stream);
+
   (void)size;
 
   SerdBuffer* buffer = (SerdBuffer*)stream;
@@ -1460,6 +1476,8 @@ serd_buffer_sink(const void* const buf,
 char*
 serd_buffer_sink_finish(SerdBuffer* const stream)
 {
+  assert(stream);
+
   serd_buffer_sink("", 1, 1, stream);
   return (char*)stream->buf;
 }

@@ -535,6 +535,8 @@ serd_node_get_value_as(const SerdNode* const node,
 bool
 serd_get_boolean(const SerdNode* const node)
 {
+  assert(node);
+
   bool value = false;
   serd_node_get_value_as(node, EXESS_BOOLEAN, sizeof(value), &value);
 
@@ -544,6 +546,8 @@ serd_get_boolean(const SerdNode* const node)
 double
 serd_get_double(const SerdNode* const node)
 {
+  assert(node);
+
   double value = (double)NAN; // NOLINT(google-readability-casting)
   serd_node_get_value_as(node, EXESS_DOUBLE, sizeof(value), &value);
 
@@ -553,6 +557,8 @@ serd_get_double(const SerdNode* const node)
 float
 serd_get_float(const SerdNode* const node)
 {
+  assert(node);
+
   float value = (float)NAN; // NOLINT(google-readability-casting)
   serd_node_get_value_as(node, EXESS_FLOAT, sizeof(value), &value);
 
@@ -562,6 +568,8 @@ serd_get_float(const SerdNode* const node)
 int64_t
 serd_get_integer(const SerdNode* const node)
 {
+  assert(node);
+
   int64_t value = 0;
   serd_node_get_value_as(node, EXESS_LONG, sizeof(value), &value);
 
@@ -851,24 +859,32 @@ serd_new_base64(const void* buf, size_t size, const SerdStringView datatype)
 SerdNodeType
 serd_node_type(const SerdNode* const node)
 {
+  assert(node);
+
   return node->type;
 }
 
 const char*
 serd_node_string(const SerdNode* const node)
 {
+  assert(node);
+
   return (const char*)(node + 1);
 }
 
 size_t
 serd_node_length(const SerdNode* const node)
 {
+  assert(node);
+
   return node->length;
 }
 
 SerdStringView
 serd_node_string_view(const SerdNode* const node)
 {
+  assert(node);
+
   const SerdStringView r = {(const char*)(node + 1), node->length};
 
   return r;
@@ -878,6 +894,8 @@ SERD_PURE_FUNC
 SerdURIView
 serd_node_uri_view(const SerdNode* const node)
 {
+  assert(node);
+
   return (node->type == SERD_URI) ? serd_parse_uri(serd_node_string(node))
                                   : SERD_URI_NULL;
 }
@@ -885,7 +903,9 @@ serd_node_uri_view(const SerdNode* const node)
 const SerdNode*
 serd_node_datatype(const SerdNode* const node)
 {
-  if (!node || !(node->flags & SERD_HAS_DATATYPE)) {
+  assert(node);
+
+  if (!(node->flags & SERD_HAS_DATATYPE)) {
     return NULL;
   }
 
@@ -897,7 +917,9 @@ serd_node_datatype(const SerdNode* const node)
 const SerdNode*
 serd_node_language(const SerdNode* const node)
 {
-  if (!node || !(node->flags & SERD_HAS_LANGUAGE)) {
+  assert(node);
+
+  if (!(node->flags & SERD_HAS_LANGUAGE)) {
     return NULL;
   }
 

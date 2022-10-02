@@ -14,6 +14,7 @@
 #  include <unistd.h>
 #endif
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -79,6 +80,8 @@ serd_world_free(SerdWorld* const world)
 const SerdNode*
 serd_world_get_blank(SerdWorld* const world)
 {
+  assert(world);
+
   char* buf = serd_node_buffer(world->blank_node);
   memset(buf, 0, BLANK_CHARS + 1);
 
