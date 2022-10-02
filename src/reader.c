@@ -8,7 +8,16 @@
 #include "stack.h"
 #include "system.h"
 
-#include <serd/serd.h>
+#include <serd/error.h>
+#include <serd/memory.h>
+#include <serd/node.h>
+#include <serd/reader.h>
+#include <serd/sink.h>
+#include <serd/statement_flags.h>
+#include <serd/status.h>
+#include <serd/stream.h>
+#include <serd/syntax.h>
+#include <serd/uri.h>
 
 #include <assert.h>
 #include <errno.h>

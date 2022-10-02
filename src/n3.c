@@ -6,7 +6,11 @@
 #include "string_utils.h"
 #include "try.h"
 
-#include <serd/serd.h>
+#include <serd/node.h>
+#include <serd/reader.h>
+#include <serd/statement_flags.h>
+#include <serd/status.h>
+#include <serd/syntax.h>
 
 #include <assert.h>
 #include <stdbool.h>

@@ -5,7 +5,8 @@
 
 #include "system.h"
 
-#include <serd/serd.h>
+#include <serd/status.h>
+#include <serd/stream.h>
 
 #include <assert.h>
 #include <stdbool.h>
