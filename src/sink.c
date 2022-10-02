@@ -42,12 +42,18 @@ serd_sink_free(SerdSink* sink)
 SerdStatus
 serd_sink_write_event(const SerdSink* sink, const SerdEvent* event)
 {
+  assert(sink);
+  assert(event);
+
   return sink->on_event ? sink->on_event(sink->handle, event) : SERD_SUCCESS;
 }
 
 SerdStatus
 serd_sink_write_base(const SerdSink* sink, const SerdNode* uri)
 {
+  assert(sink);
+  assert(uri);
+
   const SerdBaseEvent ev = {SERD_BASE, uri};
 
   return sink->on_event ? sink->on_event(sink->handle, (const SerdEvent*)&ev)
@@ -59,6 +65,10 @@ serd_sink_write_prefix(const SerdSink* sink,
                        const SerdNode* name,
                        const SerdNode* uri)
 {
+  assert(sink);
+  assert(name);
+  assert(uri);
+
   const SerdPrefixEvent ev = {SERD_PREFIX, name, uri};
 
   return sink->on_event ? sink->on_event(sink->handle, (const SerdEvent*)&ev)
@@ -70,6 +80,9 @@ serd_sink_write_statement(const SerdSink*          sink,
                           const SerdStatementFlags flags,
                           const SerdStatement*     statement)
 {
+  assert(sink);
+  assert(statement);
+
   const SerdStatementEvent statement_ev = {SERD_STATEMENT, flags, statement};
   SerdEvent                ev           = {SERD_STATEMENT};
   ev.statement                          = statement_ev;
@@ -97,6 +110,9 @@ serd_sink_write(const SerdSink*          sink,
 SerdStatus
 serd_sink_write_end(const SerdSink* sink, const SerdNode* node)
 {
+  assert(sink);
+  assert(node);
+
   const SerdEndEvent ev = {SERD_END, node};
 
   return sink->on_event ? sink->on_event(sink->handle, (const SerdEvent*)&ev)

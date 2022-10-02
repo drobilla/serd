@@ -1339,6 +1339,8 @@ serd_writer_on_event(SerdWriter* writer, const SerdEvent* event)
 SerdStatus
 serd_writer_finish(SerdWriter* writer)
 {
+  assert(writer);
+
   const SerdStatus st0 = terminate_context(writer);
   const SerdStatus st1 = serd_byte_sink_flush(&writer->byte_sink);
 
@@ -1356,6 +1358,10 @@ serd_writer_new(SerdWorld*      world,
                 SerdWriteFunc   ssink,
                 void*           stream)
 {
+  assert(world);
+  assert(env);
+  assert(ssink);
+
   const size_t       max_depth = world->limits.writer_max_depth;
   const WriteContext context   = WRITE_CONTEXT_NULL;
   SerdWriter*        writer    = (SerdWriter*)calloc(1, sizeof(SerdWriter));
@@ -1384,6 +1390,8 @@ serd_writer_new(SerdWorld*      world,
 void
 serd_writer_chop_blank_prefix(SerdWriter* writer, const char* prefix)
 {
+  assert(writer);
+
   free(writer->bprefix);
   writer->bprefix_len = 0;
   writer->bprefix     = NULL;
@@ -1399,6 +1407,8 @@ serd_writer_chop_blank_prefix(SerdWriter* writer, const char* prefix)
 SERD_NODISCARD static SerdStatus
 serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 {
+  assert(writer);
+
   SERD_DISABLE_NULL_WARNINGS
 
   if (uri && serd_node_type(uri) != SERD_URI) {
@@ -1432,6 +1442,8 @@ serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 SerdStatus
 serd_writer_set_root_uri(SerdWriter* writer, const SerdNode* uri)
 {
+  assert(writer);
+
   serd_node_free(writer->root_node);
   writer->root_node = NULL;
   writer->root_uri  = SERD_URI_NULL;
@@ -1491,6 +1503,7 @@ serd_writer_free(SerdWriter* writer)
 const SerdSink*
 serd_writer_sink(SerdWriter* writer)
 {
+  assert(writer);
   return &writer->iface;
 }
 

@@ -5,6 +5,7 @@
 
 #include "serd/caret.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +15,8 @@ serd_caret_new(const SerdNode* const document,
                const unsigned        line,
                const unsigned        column)
 {
+  assert(document);
+
   SerdCaret* caret = (SerdCaret*)malloc(sizeof(SerdCaret));
 
   if (caret) {
@@ -53,17 +56,22 @@ serd_caret_equals(const SerdCaret* const l, const SerdCaret* const r)
 const SerdNode*
 serd_caret_document(const SerdCaret* const caret)
 {
+  assert(caret);
+  assert(caret->document);
+
   return caret->document;
 }
 
 unsigned
 serd_caret_line(const SerdCaret* const caret)
 {
+  assert(caret);
   return caret->line;
 }
 
 unsigned
 serd_caret_column(const SerdCaret* const caret)
 {
+  assert(caret);
   return caret->col;
 }
