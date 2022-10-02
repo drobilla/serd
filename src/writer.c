@@ -1,7 +1,6 @@
 // Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "attributes.h"
 #include "byte_sink.h"
 #include "serd_internal.h"
 #include "stack.h"
@@ -9,7 +8,18 @@
 #include "try.h"
 #include "uri_utils.h"
 
-#include "serd/serd.h"
+#include "serd/attributes.h"
+#include "serd/buffer.h"
+#include "serd/env.h"
+#include "serd/error.h"
+#include "serd/node.h"
+#include "serd/statement.h"
+#include "serd/status.h"
+#include "serd/stream.h"
+#include "serd/string_view.h"
+#include "serd/syntax.h"
+#include "serd/uri.h"
+#include "serd/writer.h"
 
 #include <stdarg.h>
 #include <stdbool.h>

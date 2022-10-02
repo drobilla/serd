@@ -4,7 +4,7 @@
 #ifndef SERD_SRC_SYSTEM_H
 #define SERD_SRC_SYSTEM_H
 
-#include "attributes.h"
+#include "serd/attributes.h"
 
 #include <stdio.h>
 
