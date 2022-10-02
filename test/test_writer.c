@@ -70,8 +70,9 @@ test_write_long_literal(void)
   serd_writer_free(writer);
   serd_byte_sink_free(byte_sink);
   serd_env_free(env);
+  serd_buffer_close(&buffer);
 
-  char* out = serd_buffer_sink_finish(&buffer);
+  char* const out = (char*)buffer.buf;
 
   static const char* const expected =
     "<http://example.org/s>\n"
@@ -356,8 +357,9 @@ check_pname_escape(const char* const lname, const char* const expected)
   serd_writer_free(writer);
   serd_byte_sink_free(byte_sink);
   serd_env_free(env);
+  serd_buffer_close(&buffer);
 
-  char* out = serd_buffer_sink_finish(&buffer);
+  char* const out = (char*)buffer.buf;
   assert(!strcmp((char*)out, expected));
   serd_free(out);
 
