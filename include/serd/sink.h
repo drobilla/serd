@@ -14,7 +14,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_sink Sink
-   @ingroup serd
+   @ingroup serd_streaming
    @{
 */
 

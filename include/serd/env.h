@@ -18,7 +18,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_env Environment
-   @ingroup serd
+   @ingroup serd_streaming
    @{
 */
 

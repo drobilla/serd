@@ -13,7 +13,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_output_stream Output Streams
-   @ingroup serd
+   @ingroup serd_reading_writing
    @{
 */
 

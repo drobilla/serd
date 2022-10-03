@@ -14,7 +14,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_nodes Nodes
-   @ingroup serd
+   @ingroup serd_storage
    @{
 */
 

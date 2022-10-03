@@ -18,7 +18,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_reader Reader
-   @ingroup serd
+   @ingroup serd_reading_writing
    @{
 */
 

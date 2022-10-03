@@ -16,7 +16,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_uri URI
-   @ingroup serd
+   @ingroup serd_data
    @{
 */
 
