@@ -15,7 +15,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_filter Filter
-   @ingroup serd
+   @ingroup serd_streaming
    @{
 */
 

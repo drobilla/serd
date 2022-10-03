@@ -13,7 +13,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_buffer Dynamic Memory Buffers
-   @ingroup serd
+   @ingroup serd_memory
 
    The #SerdBuffer type represents a writable area of memory with a known size.
    An implementation of #SerdWriteFunc, #SerdErrorFunc, and #SerdCloseFunc are

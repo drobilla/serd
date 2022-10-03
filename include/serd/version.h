@@ -10,7 +10,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_version Version
-   @ingroup serd
+   @ingroup serd_library
 
    Serd uses a single [semantic version number](https://semver.org) which
    reflects changes to the C library ABI.

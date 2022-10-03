@@ -12,7 +12,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_range Range
-   @ingroup serd
+   @ingroup serd_storage
    @{
 */
 

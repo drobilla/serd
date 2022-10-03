@@ -10,7 +10,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_status Status Codes
-   @ingroup serd
+   @ingroup serd_errors
    @{
 */
 

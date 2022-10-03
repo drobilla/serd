@@ -13,7 +13,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_string_view String View
-   @ingroup serd
+   @ingroup serd_utilities
    @{
 */
 

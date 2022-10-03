@@ -11,8 +11,8 @@
 SERD_BEGIN_DECLS
 
 /**
-   @defgroup serd_memory Memory Management
-   @ingroup serd
+   @defgroup serd_allocator Allocator
+   @ingroup serd_memory
    @{
 */
 
