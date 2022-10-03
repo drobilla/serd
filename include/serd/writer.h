@@ -20,7 +20,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_writer Writer
-   @ingroup serd
+   @ingroup serd_reading_writing
    @{
 */
 

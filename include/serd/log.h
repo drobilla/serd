@@ -14,7 +14,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_logging Logging
-   @ingroup serd
+   @ingroup serd_errors
    @{
 */
 

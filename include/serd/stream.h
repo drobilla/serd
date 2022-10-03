@@ -12,7 +12,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_stream Byte Stream Interface
-   @ingroup serd
+   @ingroup serd_reading_writing
 
    These types define the interface for byte streams (generalized files) which
    can be provided to read and write to any custom source or sink.  It is

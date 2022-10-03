@@ -4,6 +4,12 @@
 #ifndef SERD_ATTRIBUTES_H
 #define SERD_ATTRIBUTES_H
 
+/**
+   @defgroup serd_attributes Attributes
+   @ingroup serd_library
+   @{
+*/
+
 #ifdef __cplusplus
 #  ifdef __GNUC__
 
@@ -67,16 +73,23 @@
 #  define SERD_ALLOCATED
 #endif
 
+/// A pure function in the public API that only reads memory
 #define SERD_PURE_API \
   SERD_API            \
   SERD_PURE_FUNC
 
+/// A const function in the public API that is pure and only reads parameters
 #define SERD_CONST_API \
   SERD_API             \
   SERD_CONST_FUNC
 
+/// A malloc function in the public API that returns allocated memory
 #define SERD_MALLOC_API \
   SERD_API              \
   SERD_MALLOC_FUNC
+
+/**
+   @}
+*/
 
 #endif // SERD_ATTRIBUTES_H
