@@ -91,10 +91,6 @@ serd_node_pattern_match(const SerdNode* SERD_NULLABLE a,
   return !a || !b || serd_node_equals(a, b);
 }
 
-SERD_PURE_FUNC
-bool
-is_langtag(SerdStringView string);
-
 SERD_MALLOC_FUNC
 SerdNode* SERD_ALLOCATED
 serd_node_malloc(SerdAllocator* SERD_NULLABLE allocator, size_t size);

@@ -49,8 +49,8 @@ serd_nodes_size(const SerdNodes* SERD_NONNULL nodes);
 */
 SERD_API
 const SerdNode* SERD_NULLABLE
-serd_nodes_get(const SerdNodes* SERD_NONNULL nodes,
-               const SerdNode* SERD_NULLABLE node);
+serd_nodes_existing(const SerdNodes* SERD_NONNULL nodes,
+                    const SerdNode* SERD_NULLABLE node);
 
 /**
    Intern `node`.
@@ -65,156 +65,13 @@ serd_nodes_intern(SerdNodes* SERD_NONNULL       nodes,
                   const SerdNode* SERD_NULLABLE node);
 
 /**
-   Make a simple "token" node.
-
-   "Token" is just a shorthand used in this API to refer to a node that is not
-   a typed or tagged literal, that is, a node that is just one string.  This
-   can be used to make URIs, blank nodes, variables, and simple string
-   literals.
-
-   Note that string literals constructed with this function will have no flags
-   set, and so will be written as "short" literals (not triple-quoted).  To
-   construct long literals, use the more advanced serd_nodes_literal() with the
-   #SERD_IS_LONG flag.
+   Make a node of any type.
 
    A new node will be added if an equivalent node is not already in the set.
 */
 SERD_API
 const SerdNode* SERD_ALLOCATED
-serd_nodes_token(SerdNodes* SERD_NONNULL nodes,
-                 SerdNodeType            type,
-                 SerdStringView          string);
-
-/**
-   Make a string node.
-
-   A new node will be added if an equivalent node is not already in the set.
-*/
-SERD_API
-const SerdNode* SERD_ALLOCATED
-serd_nodes_string(SerdNodes* SERD_NONNULL nodes, SerdStringView string);
-
-/**
-   Make a URI node from a string.
-
-   A new node will be constructed with serd_node_construct_token() if an
-   equivalent one is not already in the set.
-*/
-SERD_API
-const SerdNode* SERD_ALLOCATED
-serd_nodes_uri(SerdNodes* SERD_NONNULL nodes, SerdStringView string);
-
-/**
-   Make a URI node from a parsed URI.
-
-   A new node will be constructed with serd_node_construct_uri() if an
-   equivalent one is not already in the set.
-*/
-SERD_API
-const SerdNode* SERD_ALLOCATED
-serd_nodes_parsed_uri(SerdNodes* SERD_NONNULL nodes, SerdURIView uri);
-
-/**
-   Make a file URI node from a path and optional hostname.
-
-   A new node will be constructed with serd_node_construct_file_uri() if an
-   equivalent one is not already in the set.
-*/
-SERD_API
-const SerdNode* SERD_ALLOCATED
-serd_nodes_file_uri(SerdNodes* SERD_NONNULL nodes,
-                    SerdStringView          path,
-                    SerdStringView          hostname);
-
-/**
-   Make a literal node with optional datatype or language.
-
-   This can create complex literals with an associated datatype URI or language
-   tag, and control whether a literal should be written as a short or long
-   (triple-quoted) string.
-
-   @param nodes The node set to get this literal from.
-
-   @param string The string value of the literal.
-
-   @param flags Flags to describe the literal and its metadata.  Note that at
-   most one of #SERD_HAS_DATATYPE and #SERD_HAS_LANGUAGE may be set.
-
-   @param meta The string value of the literal's metadata.  If
-   #SERD_HAS_DATATYPE is set, then this must be an absolute datatype URI.  If
-   #SERD_HAS_LANGUAGE is set, then this must be an RFC 5646 language tag like
-   "en-ca".  Otherwise, it is ignored.
-*/
-SERD_API
-const SerdNode* SERD_ALLOCATED
-serd_nodes_literal(SerdNodes* SERD_NONNULL nodes,
-                   SerdStringView          string,
-                   SerdNodeFlags           flags,
-                   SerdStringView          meta);
-
-/**
-   Make a canonical value node.
-
-   A new node will be constructed with serd_node_construct_value() if an
-   equivalent one is not already in the set.
-*/
-SERD_API
-const SerdNode* SERD_ALLOCATED
-serd_nodes_value(SerdNodes* SERD_NONNULL nodes, SerdValue value);
-
-/**
-   Make a canonical xsd:decimal node.
-
-   A new node will be constructed with serd_node_construct_decimal() if an
-   equivalent one is not already in the set.
-*/
-SERD_API
-const SerdNode* SERD_ALLOCATED
-serd_nodes_decimal(SerdNodes* SERD_NONNULL nodes, double value);
-
-/**
-   Make a canonical xsd:integer node.
-
-   A new node will be constructed with serd_node_construct_integer() if an
-   equivalent one is not already in the set.
-*/
-SERD_API
-const SerdNode* SERD_ALLOCATED
-serd_nodes_integer(SerdNodes* SERD_NONNULL nodes, int64_t value);
-
-/**
-   Make a canonical xsd:hexBinary node.
-
-   A new node will be constructed with serd_node_construct_hex() if an
-   equivalent one is not already in the set.
-*/
-SERD_API
-const SerdNode* SERD_ALLOCATED
-serd_nodes_hex(SerdNodes* SERD_NONNULL  nodes,
-               const void* SERD_NONNULL value,
-               size_t                   value_size);
-
-/**
-   Make a canonical xsd:base64Binary node.
-
-   A new node will be constructed with serd_node_construct_base64() if an
-   equivalent one is not already in the set.
-*/
-SERD_API
-const SerdNode* SERD_ALLOCATED
-serd_nodes_base64(SerdNodes* SERD_NONNULL  nodes,
-                  const void* SERD_NONNULL value,
-                  size_t                   value_size);
-
-/**
-   Make a blank node.
-
-   A new node will be constructed with serd_node_construct_token() if an
-   equivalent one is not already in the set.
-*/
-SERD_API
-const SerdNode* SERD_ALLOCATED
-serd_nodes_blank(SerdNodes* SERD_NONNULL nodes, SerdStringView string);
+serd_nodes_get(SerdNodes* SERD_NONNULL nodes, SerdNodeArgs args);
 
 /**
    Dereference `node`.

@@ -69,15 +69,16 @@ test_write_failed_alloc(void)
   SerdOutputStream output = serd_open_output_buffer(&buffer);
 
   const SerdNode* s =
-    serd_nodes_uri(nodes, serd_string("http://example.org/s"));
+    serd_nodes_get(nodes, serd_as_uri_string("http://example.org/s"));
 
   const SerdNode* p1 =
-    serd_nodes_uri(nodes, serd_string("http://example.org/p"));
+    serd_nodes_get(nodes, serd_as_uri_string("http://example.org/p"));
 
-  const SerdNode* p2 = serd_nodes_uri(
-    nodes, serd_string("http://example.org/dramatically/longer/predicate"));
+  const SerdNode* p2 = serd_nodes_get(
+    nodes,
+    serd_as_uri_string("http://example.org/dramatically/longer/predicate"));
 
-  const SerdNode* o = serd_nodes_blank(nodes, serd_string("o"));
+  const SerdNode* o = serd_nodes_get(nodes, serd_as_blank(serd_string("o")));
 
   const size_t n_setup_allocs = allocator.n_allocations;
 
@@ -158,16 +159,16 @@ test_write_long_literal(void)
   assert(writer);
 
   const SerdNode* s =
-    serd_nodes_uri(nodes, serd_string("http://example.org/s"));
+    serd_nodes_get(nodes, serd_as_uri_string("http://example.org/s"));
 
   const SerdNode* p =
-    serd_nodes_uri(nodes, serd_string("http://example.org/p"));
+    serd_nodes_get(nodes, serd_as_uri_string("http://example.org/p"));
 
   const SerdNode* o =
-    serd_nodes_literal(nodes,
-                       serd_string("hello \"\"\"world\"\"\"!"),
-                       SERD_IS_LONG,
-                       serd_empty_string());
+    serd_nodes_get(nodes,
+                   serd_as_literal(serd_string("hello \"\"\"world\"\"\"!"),
+                                   SERD_IS_LONG,
+                                   serd_empty_string()));
 
   assert(serd_node_flags(o) & SERD_IS_LONG);
   assert(!serd_sink_write(serd_writer_sink(writer), 0, s, p, o, NULL));
@@ -216,12 +217,13 @@ test_writer_stack_overflow(void)
   const SerdSink* sink = serd_writer_sink(writer);
 
   const SerdNode* const s =
-    serd_nodes_uri(nodes, serd_string("http://example.org/s"));
+    serd_nodes_get(nodes, serd_as_uri_string("http://example.org/s"));
 
   const SerdNode* const p =
-    serd_nodes_uri(nodes, serd_string("http://example.org/p"));
+    serd_nodes_get(nodes, serd_as_uri_string("http://example.org/p"));
 
-  const SerdNode* o = serd_nodes_blank(nodes, serd_string("blank"));
+  const SerdNode* o =
+    serd_nodes_get(nodes, serd_as_blank(serd_string("blank")));
 
   SerdStatus st = serd_sink_write(sink, SERD_ANON_O, s, p, o, NULL);
   assert(!st);
@@ -231,7 +233,8 @@ test_writer_stack_overflow(void)
     char buf[1024];
     snprintf(buf, sizeof(buf), "b%u", i);
 
-    const SerdNode* next_o = serd_nodes_blank(nodes, serd_string(buf));
+    const SerdNode* next_o =
+      serd_nodes_get(nodes, serd_as_blank(serd_string(buf)));
 
     st = serd_sink_write(sink, SERD_ANON_O, o, p, next_o, NULL);
     o  = next_o;
@@ -270,13 +273,15 @@ test_strict_write(void)
   const SerdStringView bad_view  = {(const char*)bad_str, 4};
 
   const SerdNode* s =
-    serd_nodes_uri(nodes, serd_string("http://example.org/s"));
+    serd_nodes_get(nodes, serd_as_uri_string("http://example.org/s"));
 
   const SerdNode* p =
-    serd_nodes_uri(nodes, serd_string("http://example.org/s"));
+    serd_nodes_get(nodes, serd_as_uri_string("http://example.org/s"));
 
-  const SerdNode* bad_lit = serd_nodes_string(nodes, bad_view);
-  const SerdNode* bad_uri = serd_nodes_uri(nodes, bad_view);
+  const SerdNode* bad_lit =
+    serd_nodes_get(nodes, serd_as_string_view(bad_view));
+
+  const SerdNode* bad_uri = serd_nodes_get(nodes, serd_as_uri(bad_view));
 
   assert(serd_sink_write(sink, 0, s, p, bad_lit, 0) == SERD_BAD_TEXT);
   assert(serd_sink_write(sink, 0, s, p, bad_uri, 0) == SERD_BAD_TEXT);
@@ -313,13 +318,13 @@ test_write_error(void)
   SerdEnv*   env   = serd_env_new(world, serd_empty_string());
 
   const SerdNode* s =
-    serd_nodes_uri(nodes, serd_string("http://example.org/s"));
+    serd_nodes_get(nodes, serd_as_uri_string("http://example.org/s"));
 
   const SerdNode* p =
-    serd_nodes_uri(nodes, serd_string("http://example.org/p"));
+    serd_nodes_get(nodes, serd_as_uri_string("http://example.org/p"));
 
   const SerdNode* o =
-    serd_nodes_uri(nodes, serd_string("http://example.org/o"));
+    serd_nodes_get(nodes, serd_as_uri_string("http://example.org/o"));
 
   // Test with setting errno
 
@@ -359,13 +364,13 @@ test_write_empty_syntax(void)
   SerdEnv*   env   = serd_env_new(world, serd_empty_string());
 
   const SerdNode* s =
-    serd_nodes_uri(nodes, serd_string("http://example.org/s"));
+    serd_nodes_get(nodes, serd_as_uri_string("http://example.org/s"));
 
   const SerdNode* p =
-    serd_nodes_uri(nodes, serd_string("http://example.org/p"));
+    serd_nodes_get(nodes, serd_as_uri_string("http://example.org/p"));
 
   const SerdNode* o =
-    serd_nodes_uri(nodes, serd_string("http://example.org/o"));
+    serd_nodes_get(nodes, serd_as_uri_string("http://example.org/o"));
 
   SerdBuffer       buffer = {NULL, NULL, 0};
   SerdOutputStream output = serd_open_output_buffer(&buffer);
@@ -398,12 +403,12 @@ test_write_bad_uri(void)
   SerdEnv*   env   = serd_env_new(world, serd_empty_string());
 
   const SerdNode* s =
-    serd_nodes_uri(nodes, serd_string("http://example.org/s"));
+    serd_nodes_get(nodes, serd_as_uri_string("http://example.org/s"));
 
   const SerdNode* p =
-    serd_nodes_uri(nodes, serd_string("http://example.org/p"));
+    serd_nodes_get(nodes, serd_as_uri_string("http://example.org/p"));
 
-  const SerdNode* rel = serd_nodes_uri(nodes, serd_string("rel"));
+  const SerdNode* rel = serd_nodes_get(nodes, serd_as_uri_string("rel"));
 
   SerdBuffer       buffer = {NULL, NULL, 0};
   SerdOutputStream output = serd_open_output_buffer(&buffer);
@@ -445,16 +450,16 @@ check_pname_escape(const char* const lname, const char* const expected)
   serd_env_set_prefix(env, serd_string("eg"), serd_string(prefix));
 
   const SerdNode* s =
-    serd_nodes_uri(nodes, serd_string("http://example.org/s"));
+    serd_nodes_get(nodes, serd_as_uri_string("http://example.org/s"));
 
   const SerdNode* p =
-    serd_nodes_uri(nodes, serd_string("http://example.org/p"));
+    serd_nodes_get(nodes, serd_as_uri_string("http://example.org/p"));
 
   char* const uri = (char*)calloc(1, prefix_len + strlen(lname) + 1);
   memcpy(uri, prefix, prefix_len + 1);
   memcpy(uri + prefix_len, lname, strlen(lname) + 1);
 
-  const SerdNode* node = serd_nodes_uri(nodes, serd_string(uri));
+  const SerdNode* node = serd_nodes_get(nodes, serd_as_uri_string(uri));
 
   assert(!serd_sink_write(serd_writer_sink(writer), 0, s, p, node, NULL));
 

@@ -22,10 +22,10 @@ test_new_failed_alloc(void)
 
   SerdWorld* const      world = serd_world_new(&allocator.base);
   SerdNodes* const      nodes = serd_nodes_new(&allocator.base);
-  const SerdNode* const s     = serd_nodes_uri(nodes, s_string);
-  const SerdNode* const p     = serd_nodes_uri(nodes, p_string);
-  const SerdNode* const o     = serd_nodes_uri(nodes, o_string);
-  const SerdNode* const g     = serd_nodes_uri(nodes, g_string);
+  const SerdNode* const s     = serd_nodes_get(nodes, serd_as_uri(s_string));
+  const SerdNode* const p     = serd_nodes_get(nodes, serd_as_uri(p_string));
+  const SerdNode* const o     = serd_nodes_get(nodes, serd_as_uri(o_string));
+  const SerdNode* const g     = serd_nodes_get(nodes, serd_as_uri(g_string));
 
   SerdSink*    target         = serd_sink_new(world, NULL, NULL, NULL);
   const size_t n_setup_allocs = allocator.n_allocations;

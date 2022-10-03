@@ -67,7 +67,7 @@ serd_byte_source_new_input(SerdAllocator* const   allocator,
 
   SerdNode* const source_name =
     name ? serd_node_copy(allocator, name)
-         : serd_new_string(allocator, serd_string("input"));
+         : serd_node_new(allocator, serd_as_string("input"));
 
   if (!source_name) {
     return NULL;

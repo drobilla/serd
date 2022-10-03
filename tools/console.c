@@ -395,7 +395,8 @@ serd_read_source(SerdWorld* const        world,
   SerdReader* const reader = serd_reader_new(
     world, syntax, opts.input.flags, env, sink, opts.stack_size);
 
-  SerdNode* const name_node = serd_new_string(NULL, serd_string(name));
+  SerdNode* const name_node = serd_node_new(NULL, serd_as_string(name));
+
   SerdStatus st = serd_reader_start(reader, in, name_node, opts.block_size);
   serd_node_free(NULL, name_node);
   if (!st) {

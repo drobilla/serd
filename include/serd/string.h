@@ -46,7 +46,7 @@ serd_strncasecmp(const char* SERD_NONNULL s1,
 /**
    Decode a base64 string.
 
-   This function can be used to decode a node created with serd_new_base64().
+   This function can be used to decode a node created with serd_as_base64().
 
    @param str Base64 string to decode.
    @param len The length of `str`.

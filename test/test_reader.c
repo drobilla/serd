@@ -466,7 +466,7 @@ test_error_cursor(void)
     "<http://example.org/o> .";
 
   const SerdNode* const string_name =
-    serd_nodes_string(nodes, serd_string("string"));
+    serd_nodes_get(nodes, serd_as_string("string"));
 
   const char*     position = string;
   SerdInputStream in       = serd_open_input_string(&position);
