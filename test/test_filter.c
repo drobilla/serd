@@ -13,19 +13,20 @@
 static void
 test_new_failed_alloc(void)
 {
-  const SerdStringView s_string = serd_string("http://example.org/s");
-  const SerdStringView p_string = serd_string("http://example.org/p");
-  const SerdStringView o_string = serd_string("http://example.org/o");
-  const SerdStringView g_string = serd_string("http://example.org/g");
+  const SerdNodeArgs s_args = serd_a_uri_string("http://example.org/s");
+  const SerdNodeArgs p_args = serd_a_uri_string("http://example.org/p");
+  const SerdNodeArgs o_args = serd_a_uri_string("http://example.org/o");
+  const SerdNodeArgs g_args = serd_a_uri_string("http://example.org/g");
 
   SerdFailingAllocator allocator = serd_failing_allocator();
 
-  SerdWorld* const      world = serd_world_new(&allocator.base);
-  SerdNodes* const      nodes = serd_nodes_new(&allocator.base);
-  const SerdNode* const s     = serd_nodes_uri(nodes, s_string);
-  const SerdNode* const p     = serd_nodes_uri(nodes, p_string);
-  const SerdNode* const o     = serd_nodes_uri(nodes, o_string);
-  const SerdNode* const g     = serd_nodes_uri(nodes, g_string);
+  SerdWorld* const world = serd_world_new(&allocator.base);
+  SerdNodes* const nodes = serd_nodes_new(&allocator.base);
+
+  const SerdNode* const s = serd_nodes_get(nodes, s_args);
+  const SerdNode* const p = serd_nodes_get(nodes, p_args);
+  const SerdNode* const o = serd_nodes_get(nodes, o_args);
+  const SerdNode* const g = serd_nodes_get(nodes, g_args);
 
   SerdSink*    target         = serd_sink_new(world, NULL, NULL, NULL);
   const size_t n_setup_allocs = allocator.n_allocations;

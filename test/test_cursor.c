@@ -36,11 +36,13 @@ test_comparison(void)
   serd_model_add_index(model, SERD_ORDER_OPS);
 
   const SerdNode* const a =
-    serd_nodes_uri(nodes, serd_string("http://example.org/a"));
+    serd_nodes_get(nodes, serd_a_uri_string("http://example.org/a"));
+
   const SerdNode* const b =
-    serd_nodes_uri(nodes, serd_string("http://example.org/b"));
+    serd_nodes_get(nodes, serd_a_uri_string("http://example.org/b"));
+
   const SerdNode* const c =
-    serd_nodes_uri(nodes, serd_string("http://example.org/c"));
+    serd_nodes_get(nodes, serd_a_uri_string("http://example.org/c"));
 
   // Add a single statement
   assert(!serd_model_add(model, a, b, c, NULL));

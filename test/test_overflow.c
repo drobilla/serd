@@ -27,7 +27,7 @@ test_size(SerdWorld* const      world,
 
   assert(reader);
 
-  const SerdNode* string_name = serd_nodes_string(nodes, serd_string("string"));
+  const SerdNode* string_name = serd_nodes_get(nodes, serd_a_string("string"));
   const char*     position    = str;
   SerdInputStream in          = serd_open_input_string(&position);
   serd_reader_start(reader, &in, string_name, 1);

@@ -92,7 +92,7 @@ parse_pattern(SerdWorld* const       world,
     world, SERD_NQUADS, SERD_READ_VARIABLES, env, in_sink, 4096);
 
   const SerdNode* pattern_name =
-    serd_nodes_string(serd_world_nodes(world), serd_string("pattern"));
+    serd_nodes_get(serd_world_nodes(world), serd_a_string("pattern"));
 
   SerdStatus st = serd_reader_start(reader, in, pattern_name, 1);
   if (!st) {
