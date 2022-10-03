@@ -12,7 +12,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_node_syntax Node Syntax
-   @ingroup serd
+   @ingroup serd_reading_writing
    @{
 */
 

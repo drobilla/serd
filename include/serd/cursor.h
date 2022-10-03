@@ -13,7 +13,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_cursor Cursor
-   @ingroup serd
+   @ingroup serd_storage
    @{
 */
 

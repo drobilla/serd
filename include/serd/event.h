@@ -12,7 +12,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_event Events
-   @ingroup serd
+   @ingroup serd_streaming
    @{
 */
 

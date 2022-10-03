@@ -13,7 +13,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_input_stream Input Streams
-   @ingroup serd
+   @ingroup serd_reading_writing
 
    An input stream is used for reading input as a raw stream of bytes.  It is
    compatible with standard C `FILE` streams, but allows different functions to

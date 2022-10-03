@@ -13,7 +13,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_node_value Values
-   @ingroup serd
+   @ingroup serd_data
 
    Serd supports reading and writing machine-native numbers, called "values",
    in a standards-conformant and portable way.  The value structure is used in

@@ -15,7 +15,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_model Model
-   @ingroup serd
+   @ingroup serd_storage
    @{
 */
 

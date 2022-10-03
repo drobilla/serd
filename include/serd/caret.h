@@ -11,7 +11,7 @@ SERD_BEGIN_DECLS
 
 /**
    @defgroup serd_caret Caret
-   @ingroup serd
+   @ingroup serd_data
    @{
 */
 
