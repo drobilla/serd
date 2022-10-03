@@ -37,7 +37,7 @@ test_intern_failed_alloc(void)
 {
   SerdFailingAllocator allocator = serd_failing_allocator();
 
-  SerdNode* const node = serd_new_string(&allocator.base, serd_string("node"));
+  SerdNode* const node = serd_node_new(&allocator.base, serd_a_string("node"));
 
   // Successfully intern a node to count the number of allocations
   SerdNodes*      nodes     = serd_nodes_new(&allocator.base);
@@ -71,7 +71,7 @@ test_intern(void)
   SerdAllocator* const allocator = serd_default_allocator();
 
   SerdNodes* nodes = serd_nodes_new(allocator);
-  SerdNode*  node  = serd_new_string(NULL, serd_string("node"));
+  SerdNode*  node  = serd_node_new(NULL, serd_a_string("node"));
 
   assert(serd_nodes_size(nodes) == 0U);
   assert(!serd_nodes_intern(nodes, NULL));
@@ -97,7 +97,8 @@ test_string(void)
   SerdAllocator* const allocator = serd_default_allocator();
 
   SerdNodes* const      nodes = serd_nodes_new(allocator);
-  const SerdNode* const node  = serd_nodes_string(nodes, string);
+  const SerdNode* const node =
+    serd_nodes_get(nodes, serd_a_string_view(string));
 
   assert(node);
   assert(serd_node_type(node) == SERD_LITERAL);
@@ -116,20 +117,20 @@ test_invalid_literal(void)
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
-  assert(!serd_nodes_literal(nodes,
-                             serd_string("double meta"),
-                             SERD_HAS_LANGUAGE | SERD_HAS_DATATYPE,
-                             serd_string("What am I?")));
+  assert(!serd_nodes_get(nodes,
+                         serd_a_literal(serd_string("double meta"),
+                                        SERD_HAS_LANGUAGE | SERD_HAS_DATATYPE,
+                                        serd_string("What am I?"))));
 
-  assert(!serd_nodes_literal(nodes,
-                             serd_string("empty language"),
-                             SERD_HAS_LANGUAGE,
-                             serd_empty_string()));
+  assert(!serd_nodes_get(nodes,
+                         serd_a_literal(serd_string("empty language"),
+                                        SERD_HAS_LANGUAGE,
+                                        serd_empty_string())));
 
-  assert(!serd_nodes_literal(nodes,
-                             serd_string("empty datatype"),
-                             SERD_HAS_DATATYPE,
-                             serd_empty_string()));
+  assert(!serd_nodes_get(nodes,
+                         serd_a_literal(serd_string("empty datatype"),
+                                        SERD_HAS_DATATYPE,
+                                        serd_empty_string())));
 
   serd_nodes_free(nodes);
 }
@@ -144,7 +145,7 @@ test_plain_literal(void)
 
   SerdNodes* const      nodes = serd_nodes_new(allocator);
   const SerdNode* const node =
-    serd_nodes_literal(nodes, string, SERD_HAS_LANGUAGE, language);
+    serd_nodes_get(nodes, serd_a_plain_literal(string, language));
 
   assert(node);
   assert(serd_node_type(node) == SERD_LITERAL);
@@ -159,12 +160,12 @@ test_plain_literal(void)
   assert(!strcmp(serd_node_string(node), string.buf));
 
   const SerdNode* const alias =
-    serd_nodes_literal(nodes, string, SERD_HAS_LANGUAGE, language);
+    serd_nodes_get(nodes, serd_a_plain_literal(string, language));
 
   assert(alias == node);
 
   const SerdNode* const other =
-    serd_nodes_literal(nodes, string, SERD_HAS_LANGUAGE, serd_string("de"));
+    serd_nodes_get(nodes, serd_a_plain_literal(string, serd_string("de")));
 
   assert(other != node);
 
@@ -189,7 +190,7 @@ test_typed_literal(void)
 
   SerdNodes* const      nodes = serd_nodes_new(allocator);
   const SerdNode* const node =
-    serd_nodes_literal(nodes, string, SERD_HAS_DATATYPE, datatype);
+    serd_nodes_get(nodes, serd_a_typed_literal(string, datatype));
 
   assert(node);
   assert(serd_node_type(node) == SERD_LITERAL);
@@ -205,7 +206,7 @@ test_typed_literal(void)
   assert(!strcmp(serd_node_string(node), string.buf));
 
   const SerdNode* const alias =
-    serd_nodes_literal(nodes, string, SERD_HAS_DATATYPE, datatype);
+    serd_nodes_get(nodes, serd_a_typed_literal(string, datatype));
 
   assert(alias == node);
 
@@ -219,10 +220,17 @@ test_boolean(void)
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
-  const SerdNode* const false1 = serd_nodes_value(nodes, serd_bool(false));
-  const SerdNode* const false2 = serd_nodes_value(nodes, serd_bool(false));
-  const SerdNode* const true1  = serd_nodes_value(nodes, serd_bool(true));
-  const SerdNode* const true2  = serd_nodes_value(nodes, serd_bool(true));
+  const SerdNode* const false1 =
+    serd_nodes_get(nodes, serd_a_primitive(serd_bool(false)));
+
+  const SerdNode* const false2 =
+    serd_nodes_get(nodes, serd_a_primitive(serd_bool(false)));
+
+  const SerdNode* const true1 =
+    serd_nodes_get(nodes, serd_a_primitive(serd_bool(true)));
+
+  const SerdNode* const true2 =
+    serd_nodes_get(nodes, serd_a_primitive(serd_bool(true)));
 
   assert(false1 == false2);
   assert(true1 == true2);
@@ -248,10 +256,10 @@ static void
 test_decimal(void)
 {
   SerdAllocator* const allocator = serd_default_allocator();
+  SerdNodes* const     nodes     = serd_nodes_new(allocator);
 
-  SerdNodes* const      nodes = serd_nodes_new(allocator);
-  const SerdNode* const a     = serd_nodes_decimal(nodes, -12.3456789);
-  const SerdNode* const b     = serd_nodes_decimal(nodes, -12.3456789);
+  const SerdNode* const a = serd_nodes_get(nodes, serd_a_decimal(-12.3456789));
+  const SerdNode* const b = serd_nodes_get(nodes, serd_a_decimal(-12.3456789));
 
   assert(a == b);
   assert(!strcmp(serd_node_string(a), "-12.3456789"));
@@ -272,8 +280,11 @@ test_double(void)
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
-  const SerdNode* const a = serd_nodes_value(nodes, serd_double(-1.2E3));
-  const SerdNode* const b = serd_nodes_value(nodes, serd_double(-1.2E3));
+  const SerdNode* const a =
+    serd_nodes_get(nodes, serd_a_primitive(serd_double(-1.2E3)));
+
+  const SerdNode* const b =
+    serd_nodes_get(nodes, serd_a_primitive(serd_double(-1.2E3)));
 
   assert(a == b);
   assert(!strcmp(serd_node_string(a), "-1.2E3"));
@@ -290,8 +301,11 @@ test_float(void)
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
-  const SerdNode* const a = serd_nodes_value(nodes, serd_float(-1.2E3f));
-  const SerdNode* const b = serd_nodes_value(nodes, serd_float(-1.2E3f));
+  const SerdNode* const a =
+    serd_nodes_get(nodes, serd_a_primitive(serd_float(-1.2E3f)));
+
+  const SerdNode* const b =
+    serd_nodes_get(nodes, serd_a_primitive(serd_float(-1.2E3f)));
 
   assert(a == b);
   assert(!strcmp(serd_node_string(a), "-1.2E3"));
@@ -305,11 +319,10 @@ static void
 test_integer(void)
 {
   SerdAllocator* const allocator = serd_default_allocator();
+  SerdNodes* const     nodes     = serd_nodes_new(allocator);
 
-  SerdNodes* const nodes = serd_nodes_new(allocator);
-
-  const SerdNode* const a = serd_nodes_integer(nodes, -1234567890);
-  const SerdNode* const b = serd_nodes_integer(nodes, -1234567890);
+  const SerdNode* const a = serd_nodes_get(nodes, serd_a_integer(-1234567890));
+  const SerdNode* const b = serd_nodes_get(nodes, serd_a_integer(-1234567890));
 
   assert(a == b);
   assert(!strcmp(serd_node_string(a), "-1234567890"));
@@ -332,8 +345,11 @@ test_base64(void)
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
-  const SerdNode* const a = serd_nodes_base64(nodes, &data, sizeof(data));
-  const SerdNode* const b = serd_nodes_base64(nodes, &data, sizeof(data));
+  const SerdNode* const a =
+    serd_nodes_get(nodes, serd_a_base64(sizeof(data), &data));
+
+  const SerdNode* const b =
+    serd_nodes_get(nodes, serd_a_base64(sizeof(data), &data));
 
   assert(a == b);
   assert(!strcmp(serd_node_string(a), "Zm9vYmFy"));
@@ -353,9 +369,9 @@ test_uri(void)
   const SerdStringView string = serd_string("http://example.org/");
 
   SerdAllocator* const allocator = serd_default_allocator();
+  SerdNodes* const     nodes     = serd_nodes_new(allocator);
 
-  SerdNodes* const      nodes = serd_nodes_new(allocator);
-  const SerdNode* const node  = serd_nodes_uri(nodes, string);
+  const SerdNode* const node = serd_nodes_get(nodes, serd_a_uri(string));
 
   assert(node);
   assert(serd_node_type(node) == SERD_URI);
@@ -376,7 +392,7 @@ test_parsed_uri(void)
 
   SerdNodes* const      nodes = serd_nodes_new(allocator);
   const SerdURIView     uri   = serd_parse_uri(string.buf);
-  const SerdNode* const node  = serd_nodes_parsed_uri(nodes, uri);
+  const SerdNode* const node  = serd_nodes_get(nodes, serd_a_parsed_uri(uri));
 
   assert(node);
   assert(serd_node_type(node) == SERD_URI);
@@ -386,11 +402,12 @@ test_parsed_uri(void)
   assert(serd_node_length(node) == string.len);
   assert(!strcmp(serd_node_string(node), string.buf));
 
-  const SerdNode* const alias = serd_nodes_parsed_uri(nodes, uri);
+  const SerdNode* const alias = serd_nodes_get(nodes, serd_a_parsed_uri(uri));
+
   assert(alias == node);
 
-  const SerdNode* const other =
-    serd_nodes_parsed_uri(nodes, serd_parse_uri("http://example.org/x"));
+  const SerdNode* const other = serd_nodes_get(
+    nodes, serd_a_parsed_uri(serd_parse_uri("http://example.org/x")));
 
   assert(other != node);
 
@@ -405,7 +422,7 @@ test_blank(void)
   SerdAllocator* const allocator = serd_default_allocator();
 
   SerdNodes* const      nodes = serd_nodes_new(allocator);
-  const SerdNode* const node  = serd_nodes_blank(nodes, string);
+  const SerdNode* const node  = serd_nodes_get(nodes, serd_a_blank(string));
 
   assert(node);
   assert(serd_node_type(node) == SERD_BLANK);
@@ -421,10 +438,10 @@ static void
 test_deref(void)
 {
   SerdAllocator* const allocator = serd_default_allocator();
+  SerdNodes*           nodes     = serd_nodes_new(allocator);
 
-  SerdNodes*      nodes    = serd_nodes_new(allocator);
-  const SerdNode* original = serd_nodes_string(nodes, serd_string("node"));
-  const SerdNode* another  = serd_nodes_string(nodes, serd_string("node"));
+  const SerdNode* original = serd_nodes_get(nodes, serd_a_string("node"));
+  const SerdNode* another  = serd_nodes_get(nodes, serd_a_string("node"));
 
   assert(original == another);
 
@@ -439,17 +456,17 @@ test_deref(void)
   /* Intern some other irrelevant node first to (hopefully) avoid the allocator
      just giving us back the same piece of memory. */
 
-  const SerdNode* other = serd_nodes_string(nodes, serd_string("XXXX"));
+  const SerdNode* other = serd_nodes_get(nodes, serd_a_string("XXXX"));
   assert(!strcmp(serd_node_string(other), "XXXX"));
 
   // Intern a new equivalent node to the original and check that it's really new
-  const SerdNode* imposter = serd_nodes_string(nodes, serd_string("node"));
+  const SerdNode* imposter = serd_nodes_get(nodes, serd_a_string("node"));
   assert(imposter != original);
   assert(serd_node_length(imposter) == 4);
   assert(!strcmp(serd_node_string(imposter), "node"));
 
   // Check that dereferencing some random unknown node doesn't crash
-  SerdNode* unmanaged = serd_new_string(NULL, serd_string("unmanaged"));
+  SerdNode* unmanaged = serd_node_new(NULL, serd_a_string("unmanaged"));
   serd_nodes_deref(nodes, unmanaged);
   serd_node_free(NULL, unmanaged);
 
@@ -465,14 +482,14 @@ test_get(void)
   SerdAllocator* const allocator = serd_default_allocator();
 
   SerdNodes* nodes = serd_nodes_new(allocator);
-  SerdNode*  node  = serd_new_string(NULL, serd_string("node"));
+  SerdNode*  node  = serd_node_new(NULL, serd_a_string("node"));
 
-  assert(!serd_nodes_get(nodes, NULL));
-  assert(!serd_nodes_get(nodes, node));
+  assert(!serd_nodes_existing(nodes, NULL));
+  assert(!serd_nodes_existing(nodes, node));
 
   const SerdNode* interned1 = serd_nodes_intern(nodes, node);
   assert(serd_node_equals(node, interned1));
-  assert(serd_nodes_get(nodes, node) == interned1);
+  assert(serd_nodes_existing(nodes, node) == interned1);
 
   serd_node_free(NULL, node);
   serd_nodes_free(nodes);

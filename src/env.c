@@ -169,7 +169,8 @@ serd_env_set_base_uri(SerdEnv* const env, const SerdStringView uri)
     serd_resolve_uri(serd_parse_uri(uri.buf), env->base_uri);
 
   // Replace the current base URI
-  if ((env->base_uri_node = serd_nodes_parsed_uri(env->nodes, new_base_uri))) {
+  if ((env->base_uri_node =
+         serd_nodes_get(env->nodes, serd_a_parsed_uri(new_base_uri)))) {
     env->base_uri = serd_node_uri_view(env->base_uri_node);
   } else {
     return SERD_BAD_ALLOC;
@@ -203,13 +204,13 @@ serd_env_set_base_path(SerdEnv* const env, const SerdStringView path)
     memcpy(base_path, real_path, real_path_len + 1);
     base_path[real_path_len] = path_last;
 
-    base_node =
-      serd_new_file_uri(NULL, serd_string(base_path), serd_empty_string());
+    base_node = serd_node_new(
+      NULL, serd_a_file_uri(serd_string(base_path), serd_empty_string()));
 
     serd_wfree(env->world, base_path);
   } else {
-    base_node =
-      serd_new_file_uri(NULL, serd_string(real_path), serd_empty_string());
+    base_node = serd_node_new(
+      NULL, serd_a_file_uri(serd_string(real_path), serd_empty_string()));
   }
 
   serd_env_set_base_uri(env, serd_node_string_view(base_node));
@@ -248,7 +249,9 @@ serd_env_add(SerdEnv* const        env,
       prefix->uri = uri;
     }
   } else {
-    const SerdNode* const name_node = serd_nodes_string(env->nodes, name);
+    const SerdNode* const name_node =
+      serd_nodes_get(env->nodes, serd_a_string_view(name));
+
     if (!name_node) {
       return SERD_BAD_ALLOC;
     }
@@ -278,7 +281,7 @@ serd_env_set_prefix(SerdEnv* const       env,
 
   if (serd_uri_string_has_scheme(uri.buf)) {
     // Set prefix to absolute URI
-    const SerdNode* const abs_uri = serd_nodes_uri(env->nodes, uri);
+    const SerdNode* const abs_uri = serd_nodes_get(env->nodes, serd_a_uri(uri));
     if (!abs_uri) {
       return SERD_BAD_ALLOC;
     }
@@ -297,7 +300,7 @@ serd_env_set_prefix(SerdEnv* const       env,
 
   // Serialise absolute URI to a new node
   const SerdNode* const abs_uri =
-    serd_nodes_parsed_uri(env->nodes, abs_uri_view);
+    serd_nodes_get(env->nodes, serd_a_parsed_uri(abs_uri_view));
 
   if (!abs_uri) {
     return SERD_BAD_ALLOC;
@@ -405,10 +408,12 @@ serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
     return NULL;
   }
 
-  const SerdWriteResult r  = serd_node_construct_uri(0U, NULL, abs_uri);
+  const SerdWriteResult r =
+    serd_node_construct(0U, NULL, serd_a_parsed_uri(abs_uri));
+
   SerdNode* const expanded = serd_node_try_malloc(env->world->allocator, r);
   if (expanded) {
-    serd_node_construct_uri(r.count, expanded, abs_uri);
+    serd_node_construct(r.count, expanded, serd_a_parsed_uri(abs_uri));
   }
 
   return expanded;

@@ -46,7 +46,8 @@ build_typed(SerdAllocator* const SERD_NONNULL  allocator,
   ExessResult r            = {EXESS_SUCCESS, 0};
 
   if (!strcmp(datatype_uri, NS_RDF "langString")) {
-    *out = serd_new_string(allocator, serd_node_string_view(node));
+    *out =
+      serd_node_new(allocator, serd_a_string_view(serd_node_string_view(node)));
     return r;
   }
 
@@ -112,10 +113,11 @@ build_tagged(SerdAllocator* const SERD_NONNULL  allocator,
   }
 
   // Make a new literal that is otherwise identical
-  *out = serd_new_literal(allocator,
-                          serd_node_string_view(node),
-                          serd_node_flags(node),
-                          serd_substring(canonical_lang, lang_len));
+  *out =
+    serd_node_new(allocator,
+                  serd_a_literal(serd_node_string_view(node),
+                                 serd_node_flags(node),
+                                 serd_substring(canonical_lang, lang_len)));
 
   const ExessResult r = {EXESS_SUCCESS, node_len};
   return r;

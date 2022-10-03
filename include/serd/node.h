@@ -28,32 +28,40 @@ SERD_BEGIN_DECLS
 /**
    An RDF node.
 
-   A node is a single contiguous chunk of data, but the representation is
-   opaque to the public.
+   A node in memory is a single contiguous chunk of data, but the
+   representation is opaque and may only be accessed through the API.
 */
 typedef struct SerdNodeImpl SerdNode;
 
 /**
    Type of a node.
 
-   An abstract RDF node can be either a resource or a literal.  This type is
-   more precise to preserve syntactic differences and support additional
-   features.
+   Note that this set of types is both more precise than, and extended from,
+   the possible types of an abstract RDF node.  Not all types can occur in all
+   contexts, for example, a Turtle document can't contain a variable node.
+
+   The string value of a node never contains quoting or other type indicators.
+   For example, the blank node `_:id3` and the plain literal `"id3"` from a
+   Turtle document would both have the same string, "id3", returned by
+   #serd_node_string.
 */
 typedef enum {
   /**
      Literal value.
 
-     A literal optionally has either a language, or a datatype (not both).
+     A literal is a string that optionally has either a language, or a datatype
+     (but never both).  Literals can only occur as the object of a statement,
+     never the subject or predicate.
   */
   SERD_LITERAL = 1,
 
   /**
-     URI (absolute or relative).
+     Universal Resource Identifier (URI).
 
-     Value is an unquoted URI string, which is either a relative reference
-     with respect to the current base URI (e.g. "foo/bar"), or an absolute
-     URI (e.g. "http://example.org/foo").
+     A URI (more pedantically, a URI reference) is either a relative reference
+     with respect to some base URI, like "foo/bar", or an absolute URI with a
+     scheme, like "http://example.org/foo".
+
      @see [RFC3986](http://tools.ietf.org/html/rfc3986)
   */
   SERD_URI = 2,
@@ -61,8 +69,11 @@ typedef enum {
   /**
      A blank node.
 
-     Value is a blank node ID without any syntactic prefix, like "id3", which
-     is meaningful only within this serialisation.  @see [RDF 1.1
+     A blank node is a resource that has no URI.  The identifier of a blank
+     node is local to its context (a document, for example), and so unlike
+     URIs, blank nodes can't be used to link data across sources.
+
+     @see [RDF 1.1
      Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
   */
   SERD_BLANK = 3,
@@ -70,9 +81,13 @@ typedef enum {
   /**
      A variable node.
 
-     Value is a variable name without any syntactic prefix, like "name",
-     which is meaningful only within this serialisation.  @see [SPARQL 1.1
-     Query Language](https://www.w3.org/TR/sparql11-query/#rVar)
+     A variable's identity is, like blank nodes, local to its context.
+     Variables are typically used in interfaces for querying, rather than
+     present in data (there is no concept of a variable in RDF or its standard
+     syntaxes).
+
+     @see [SPARQL 1.1 Query
+     Language](https://www.w3.org/TR/sparql11-query/#rVar)
   */
   SERD_VARIABLE = 4,
 } SerdNodeType;
@@ -84,8 +99,314 @@ typedef enum {
   SERD_HAS_LANGUAGE = 1U << 2U, ///< Literal node has language
 } SerdNodeFlag;
 
-/// Bitwise OR of SerdNodeFlag values
+/// Bitwise OR of #SerdNodeFlag values
 typedef uint32_t SerdNodeFlags;
+
+/**
+   @}
+   @defgroup serd_node_construction_arguments Arguments
+
+   A unified representation of the arguments needed to specify any node.
+
+   Since there are several types of node, and a node can be constructed in
+   memory in several ways, the API for specifying node arguments is separate
+   from the APIs for actually creating nodes.  This prevents a combinatorial
+   API explosion by allowing functions that create or access nodes to have a
+   single parameter that describes the node.
+
+   Arguments constructors like #serd_a_file_uri return a temporary view of
+   their arguments, which can be passed (usually inline) to node construction
+   functions like #serd_node_new, #serd_node_construct, or #serd_nodes_get.
+
+   @{
+*/
+
+/// The type of a #SerdNodeArgs
+typedef enum {
+  SERD_NODE_ARGS_TOKEN,      ///< A token @see #serd_a_token
+  SERD_NODE_ARGS_PARSED_URI, ///< A parsed URI @see #serd_a_parsed_uri
+  SERD_NODE_ARGS_FILE_URI,   ///< A file URI @see #serd_a_file_uri
+  SERD_NODE_ARGS_LITERAL,    ///< A literal @see #serd_a_literal
+  SERD_NODE_ARGS_PRIMITIVE,  ///< A "native" primitive @see #serd_a_primitive
+  SERD_NODE_ARGS_DECIMAL,    ///< A decimal number @see #serd_a_decimal
+  SERD_NODE_ARGS_INTEGER,    ///< An integer number @see #serd_a_integer
+  SERD_NODE_ARGS_HEX,        ///< A hex-encoded blob @see #serd_a_hex
+  SERD_NODE_ARGS_BASE64,     ///< A base64-encoded blob @see #serd_a_base64
+} SerdNodeArgsType;
+
+typedef struct {
+  SerdNodeType   type;
+  SerdStringView string;
+} SerdNodeTokenArgs;
+
+typedef struct {
+  SerdURIView uri;
+} SerdNodeParsedURIArgs;
+
+typedef struct {
+  SerdStringView path;
+  SerdStringView hostname;
+} SerdNodeFileURIArgs;
+
+typedef struct {
+  SerdStringView string;
+  SerdNodeFlags  flags;
+  SerdStringView meta;
+} SerdNodeLiteralArgs;
+
+typedef struct {
+  SerdValue value;
+} SerdNodePrimitiveArgs;
+
+typedef struct {
+  double value;
+} SerdNodeDecimalArgs;
+
+typedef struct {
+  int64_t value;
+} SerdNodeIntegerArgs;
+
+typedef struct {
+  size_t                   size;
+  const void* SERD_NONNULL data;
+} SerdNodeBlobArgs;
+
+/// The data of a #SerdNodeArgs
+typedef union {
+  SerdNodeTokenArgs     as_token;
+  SerdNodeParsedURIArgs as_parsed_uri;
+  SerdNodeFileURIArgs   as_file_uri;
+  SerdNodeLiteralArgs   as_literal;
+  SerdNodePrimitiveArgs as_primitive;
+  SerdNodeDecimalArgs   as_decimal;
+  SerdNodeIntegerArgs   as_integer;
+  SerdNodeBlobArgs      as_blob;
+} SerdNodeArgsData;
+
+/// Arguments for constructing a node
+typedef struct {
+  SerdNodeArgsType type;
+  SerdNodeArgsData data;
+} SerdNodeArgs;
+
+/**
+   A simple "token" node.
+
+   "Token" is just a shorthand used in this API to refer to a node that is not
+   a typed or tagged literal, that is, a node that is just one string.  This
+   can be used to create URIs, blank nodes, variables, and simple string
+   literals.
+
+   Note that string literals constructed with this function will have no flags
+   set, and so will be written as "short" literals (not triple-quoted).  To
+   construct long literals, use the more advanced serd_a_literal() with the
+   #SERD_IS_LONG flag.
+*/
+SERD_CONST_API
+SerdNodeArgs
+serd_a_token(SerdNodeType type, SerdStringView string);
+
+/**
+   A URI node from a parsed URI.
+
+   This is similar to serd_a_token(), but will write a parsed URI into the new
+   node.  This can be used to resolve a relative URI reference or expand a
+   prefixed name directly into a node without needing to allocate the URI
+   string separately.
+*/
+SERD_CONST_API
+SerdNodeArgs
+serd_a_parsed_uri(SerdURIView uri);
+
+/**
+   A file URI node from a path and optional hostname.
+
+   This is similar to serd_a_token(), but will create a new file URI from a
+   file path and optional hostname, performing any necessary escaping.
+*/
+SERD_CONST_API
+SerdNodeArgs
+serd_a_file_uri(SerdStringView path, SerdStringView hostname);
+
+/**
+   A literal node with an optional datatype or language.
+
+   Either a datatype (which must be an absolute URI) or a language (which must
+   be an RFC5646 language tag) may be given, but not both.
+
+   This is the most general literal constructor, which can be used to construct
+   any literal node.
+
+   @param string The string body of the node.
+
+   @param flags Flags that describe the details of the node.
+
+   @param meta The string value of the literal's metadata.  If
+   #SERD_HAS_DATATYPE is set, then this must be an absolute datatype URI.  If
+   #SERD_HAS_LANGUAGE is set, then this must be a language tag like "en-ca".
+   Otherwise, it is ignored.
+*/
+SERD_CONST_API
+SerdNodeArgs
+serd_a_literal(SerdStringView string, SerdNodeFlags flags, SerdStringView meta);
+
+/**
+   A simple string literal node from a string view.
+
+   This is a trivial wrapper for serd_a_token().
+*/
+SERD_CONST_FUNC
+static inline SerdNodeArgs
+serd_a_string_view(SerdStringView string)
+{
+  return serd_a_token(SERD_LITERAL, string);
+}
+
+/**
+   A simple string literal node from a C string.
+
+   This is a trivial wrapper for serd_a_token().
+*/
+SERD_CONST_FUNC
+static inline SerdNodeArgs
+serd_a_string(const char* SERD_NONNULL string)
+{
+  return serd_a_string_view(serd_string(string));
+}
+
+/**
+   A blank node.
+
+   This is a trivial wrapper for serd_a_token().
+*/
+SERD_CONST_FUNC
+static inline SerdNodeArgs
+serd_a_blank(SerdStringView name)
+{
+  return serd_a_token(SERD_BLANK, name);
+}
+
+/**
+   A URI node from a string view.
+
+   This is a trivial wrapper for serd_a_token() that passes `SERD_URI` for
+   the type.
+*/
+SERD_CONST_FUNC
+static inline SerdNodeArgs
+serd_a_uri(SerdStringView uri)
+{
+  return serd_a_token(SERD_URI, uri);
+}
+
+/**
+   A URI node from a string.
+
+   This is a trivial wrapper for serd_a_token() that passes `SERD_URI` for
+   the type.
+*/
+SERD_CONST_FUNC
+static inline SerdNodeArgs
+serd_a_uri_string(const char* SERD_NONNULL uri)
+{
+  return serd_a_uri(serd_string(uri));
+}
+
+/**
+   A literal node with a datatype.
+
+   @param string The string body of the node.
+   @param datatype The absolute URI of the datatype.
+ */
+SERD_CONST_FUNC
+static inline SerdNodeArgs
+serd_a_typed_literal(const SerdStringView string, const SerdStringView datatype)
+{
+  return serd_a_literal(string, SERD_HAS_DATATYPE, datatype);
+}
+
+/**
+   A literal node with a language.
+
+   @param string The string body of the node.
+   @param language A language tag like "en-ca".
+ */
+SERD_CONST_FUNC
+static inline SerdNodeArgs
+serd_a_plain_literal(const SerdStringView string, const SerdStringView language)
+{
+  return serd_a_literal(string, SERD_HAS_LANGUAGE, language);
+}
+
+/**
+   A canonical literal for a primitive value.
+
+   The constructed node will be a typed literal in canonical form for the xsd
+   datatype corresponding to the value.
+*/
+SERD_CONST_API
+SerdNodeArgs
+serd_a_primitive(SerdValue value);
+
+/**
+   A canonical xsd:decimal literal.
+
+   The constructed node will be an xsd:decimal literal, like "12.34", with
+   datatype xsd:decimal.
+
+   The node will always contain a '.', start with a digit, and end with a digit
+   (a leading and/or trailing '0' will be added if necessary), for example,
+   "1.0".  It will never be in scientific notation.
+*/
+SERD_CONST_API
+SerdNodeArgs
+serd_a_decimal(double value);
+
+/**
+   A canonical xsd:integer literal.
+
+   The constructed node will be an xsd:integer literal like "1234", with
+   datatype xsd:integer.
+*/
+SERD_CONST_API
+SerdNodeArgs
+serd_a_integer(int64_t value);
+
+/**
+   A canonical xsd:hexBinary literal.
+
+   The constructed node will be an xsd:hexBinary literal like "534D", with
+   datatype xsd:hexBinary.
+*/
+SERD_CONST_API
+SerdNodeArgs
+serd_a_hex(size_t size, const void* SERD_NONNULL data);
+
+/**
+   A canonical xsd:base64Binary literal.
+
+   The constructed node will be an xsd:base64Binary literal like "Zm9vYmFy",
+   with datatype xsd:base64Binary.
+*/
+SERD_CONST_API
+SerdNodeArgs
+serd_a_base64(size_t size, const void* SERD_NONNULL data);
+
+/**
+   @}
+   @defgroup serd_node_construction Construction
+
+   This is the low-level node construction API, which can be used to construct
+   nodes into existing buffers.  Advanced applications can use this to
+   specially manage node memory, for example by allocating nodes on the stack,
+   or with a special allocator.
+
+   Note that nodes are "plain old data", so there is no need to destroy a
+   constructed node, and nodes may be trivially copied, for example with
+   memcpy().
+
+   @{
+*/
 
 /**
    A status code with an associated byte count.
@@ -112,161 +433,11 @@ typedef struct {
 } SerdWriteResult;
 
 /**
-   @}
-   @defgroup serd_node_construction Construction
-
-   This is the low-level node construction API, which can be used to construct
-   nodes into existing buffers.  Advanced applications can use this to
-   specially manage node memory, for example by allocating nodes on the stack,
-   or with a special allocator.
-
-   Note that nodes are "plain old data", so there is no need to destroy a
-   constructed node, and nodes may be trivially copied, for example with
-   memcpy().
-
-   @{
-*/
-
-/**
-   Construct a simple "token" node.
-
-   "Token" is just a shorthand used in this API to refer to a node that is not
-   a typed or tagged literal, that is, a node that is just one string.  This
-   can be used to create URIs, blank nodes, variables, and simple string
-   literals.
-
-   Note that string literals constructed with this function will have no flags
-   set, and so will be written as "short" literals (not triple-quoted).  To
-   construct long literals, use the more advanced serd_construct_literal() with
-   the #SERD_IS_LONG flag.
-
-   See the serd_node_construct() documentation for details on buffer usage and
-   the return value.
-*/
-SERD_API
-SerdWriteResult
-serd_node_construct_token(size_t              buf_size,
-                          void* SERD_NULLABLE buf,
-                          SerdNodeType        type,
-                          SerdStringView      string);
-
-/**
-   Construct a URI node from a parsed URI.
-
-   This is similar to serd_node_construct_token(), but will write a parsed URI
-   into the new node.  This can be used to resolve a relative URI reference or
-   expand a CURIE directly into a node without needing to allocate the URI
-   string separately.
-*/
-SerdWriteResult
-serd_node_construct_uri(size_t              buf_size,
-                        void* SERD_NULLABLE buf,
-                        SerdURIView         uri);
-
-/**
-   Construct a file URI node from a path and optional hostname.
-
-   This is similar to serd_node_construct_token(), but will create a new file
-   URI from a file path and optional hostname, performing any necessary
-   escaping.
-*/
-SerdWriteResult
-serd_node_construct_file_uri(size_t              buf_size,
-                             void* SERD_NULLABLE buf,
-                             SerdStringView      path,
-                             SerdStringView      hostname);
-
-/**
-   Construct a literal node with an optional datatype or language.
-
-   Either a datatype (which must be an absolute URI) or a language (which must
-   be an RFC5646 language tag) may be given, but not both.
-
-   This is the most general literal constructor, which can be used to construct
-   any literal node.  This works like serd_node_construct(), see its
-   documentation for details.
-*/
-SERD_API
-SerdWriteResult
-serd_node_construct_literal(size_t              buf_size,
-                            void* SERD_NULLABLE buf,
-                            SerdStringView      string,
-                            SerdNodeFlags       flags,
-                            SerdStringView      meta);
-
-/**
-   Construct a canonical literal for a primitive value.
-
-   The constructed node will be a typed literal in canonical form for the xsd
-   datatype corresponding to the value.
-*/
-SerdWriteResult
-serd_node_construct_value(size_t              buf_size,
-                          void* SERD_NULLABLE buf,
-                          SerdValue           value);
-
-/**
-   Construct a canonical xsd:decimal literal.
-
-   The constructed node will be an xsd:decimal literal, like "12.34", with
-   datatype xsd:decimal.
-
-   The node will always contain a '.', start with a digit, and end with a digit
-   (a leading and/or trailing '0' will be added if necessary), for example,
-   "1.0".  It will never be in scientific notation.
-
-   This is a convenience wrapper for serd_node_construct_literal() that
-   constructs a node directly from a `double`.
-*/
-SerdWriteResult
-serd_node_construct_decimal(size_t              buf_size,
-                            void* SERD_NULLABLE buf,
-                            double              value);
-
-/**
-   Construct a canonical xsd:integer literal.
-
-   The constructed node will be an xsd:integer literal like "1234", with the
-   given datatype, or datatype xsd:integer if none is given.  It is the
-   caller's responsibility to ensure that the value is within the range of the
-   given datatype.
-*/
-SerdWriteResult
-serd_node_construct_integer(size_t              buf_size,
-                            void* SERD_NULLABLE buf,
-                            int64_t             value);
-/**
-   Construct a canonical xsd:hexBinary literal.
-
-   The constructed node will be an xsd:hexBinary literal like "534D", with
-   datatype xsd:hexBinary.
-*/
-SerdWriteResult
-serd_node_construct_hex(size_t                   buf_size,
-                        void* SERD_NULLABLE      buf,
-                        size_t                   value_size,
-                        const void* SERD_NONNULL value);
-
-/**
-   Construct a canonical xsd:base64Binary literal.
-
-   The constructed node will be an xsd:base64Binary literal like "Zm9vYmFy",
-   with datatype xsd:base64Binary.
-*/
-SerdWriteResult
-serd_node_construct_base64(size_t                   buf_size,
-                           void* SERD_NULLABLE      buf,
-                           size_t                   value_size,
-                           const void* SERD_NONNULL value);
-
-/**
    Construct a node into an existing buffer.
 
-   This is the universal node constructor which can construct any node.  An
-   error will be returned if the parameters do not make sense.  In particular,
-   #SERD_HAS_DATATYPE or #SERD_HAS_LANGUAGE (but not both) may only be given if
-   `type` is #SERD_LITERAL, and `meta` must be syntactically valid based on
-   that flag.
+   This is the universal node constructor which can construct any node.  The
+   type of node is specified in a #SerdNodeArgs tagged union, to avoid API
+   bloat and allow this function to be used with data-based dispatch.
 
    This function may also be used to determine the size of buffer required by
    passing a null buffer with zero size.
@@ -275,16 +446,7 @@ serd_node_construct_base64(size_t                   buf_size,
 
    @param buf Buffer where the node will be written, or null to only measure.
 
-   @param type The type of the node to construct.
-
-   @param string The string body of the node.
-
-   @param flags Flags that describe the details of the node.
-
-   @param meta The string value of the literal's metadata.  If
-   #SERD_HAS_DATATYPE is set, then this must be an absolute datatype URI.  If
-   #SERD_HAS_LANGUAGE is set, then this must be a language tag like "en-ca".
-   Otherwise, it is ignored.
+   @param args Arguments describing the node to construct.
 
    @return A result with a `status` and a `count` of bytes written.  If the
    buffer is too small for the node, then `status` will be #SERD_OVERFLOW, and
@@ -295,10 +457,7 @@ SERD_API
 SerdWriteResult
 serd_node_construct(size_t              buf_size,
                     void* SERD_NULLABLE buf,
-                    SerdNodeType        type,
-                    SerdStringView      string,
-                    SerdNodeFlags       flags,
-                    SerdStringView      meta);
+                    SerdNodeArgs        args);
 
 /**
    @}
@@ -315,21 +474,16 @@ serd_node_construct(size_t              buf_size,
 */
 
 /**
-   Create a new node of any type.
+   Create a new node.
 
-   This is a wrapper for serd_node_construct() that allocates a new node on the
-   heap.
+   This allocates and constructs a new node of any type.
 
    @return A newly allocated node that must be freed with serd_node_free(), or
    null.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_node_new(SerdAllocator* SERD_NULLABLE allocator,
-              SerdNodeType                 type,
-              SerdStringView               string,
-              SerdNodeFlags                flags,
-              SerdStringView               meta);
+serd_node_new(SerdAllocator* SERD_NULLABLE allocator, SerdNodeArgs args);
 
 /// Return a deep copy of `node`
 SERD_API
@@ -342,160 +496,6 @@ SERD_API
 void
 serd_node_free(SerdAllocator* SERD_NULLABLE allocator,
                SerdNode* SERD_NULLABLE      node);
-
-/**
-   Create a new simple "token" node.
-
-   This is a wrapper for serd_node_construct_token() that allocates a new node
-   on the heap.
-
-   @return A newly allocated node that must be freed with serd_node_free(), or
-   null.
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_token(SerdAllocator* SERD_NULLABLE allocator,
-               SerdNodeType                 type,
-               SerdStringView               string);
-
-/**
-   Create a new string literal node.
-
-   This is a trivial wrapper for serd_new_token() that passes `SERD_LITERAL`
-   for the type.
-
-   @return A newly allocated node that must be freed with serd_node_free(), or
-   null.
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_string(SerdAllocator* SERD_NULLABLE allocator, SerdStringView string);
-
-/**
-   Create a new URI node from a string.
-
-   This is a wrapper for serd_node_construct_uri() that allocates a new
-   node on the heap.
-
-   @return A newly allocated node that must be freed with serd_node_free(), or
-   null.
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_uri(SerdAllocator* SERD_NULLABLE allocator, SerdStringView string);
-
-/**
-   Create a new URI node from a parsed URI.
-
-   This is a wrapper for serd_node_construct_uri() that allocates a new
-   node on the heap.
-
-   @return A newly allocated node that must be freed with serd_node_free(), or
-   null.
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_parsed_uri(SerdAllocator* SERD_NULLABLE allocator, SerdURIView uri);
-
-/**
-   Create a new file URI node from a path and optional hostname.
-
-   This is a wrapper for serd_node_construct_file_uri() that allocates a new
-   node on the heap.
-
-   @return A newly allocated node that must be freed with serd_node_free(), or
-   null.
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_file_uri(SerdAllocator* SERD_NULLABLE allocator,
-                  SerdStringView               path,
-                  SerdStringView               hostname);
-
-/**
-   Create a new literal node.
-
-   This is a wrapper for serd_node_construct_literal() that allocates a new
-   node on the heap.
-
-   @return A newly allocated node that must be freed with serd_node_free(), or
-   null.
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_literal(SerdAllocator* SERD_NULLABLE allocator,
-                 SerdStringView               string,
-                 SerdNodeFlags                flags,
-                 SerdStringView               meta);
-
-/**
-   Create a new canonical value node.
-
-   This is a wrapper for serd_node_construct_value() that allocates a new node
-   on the heap.
-
-   @return A newly allocated node that must be freed with serd_node_free(), or
-   null.
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_value(SerdAllocator* SERD_NULLABLE allocator, SerdValue value);
-
-/**
-   Create a new canonical xsd:decimal literal.
-
-   This is a wrapper for serd_node_construct_decimal() that allocates a new
-   node on the heap.
-
-   @return A newly allocated node that must be freed with serd_node_free(), or
-   null.
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_decimal(SerdAllocator* SERD_NULLABLE allocator, double d);
-
-/**
-   Create a new canonical xsd:integer literal.
-
-   This is a wrapper for serd_node_construct_integer() that allocates a new
-   node on the heap.
-
-   @return A newly allocated node that must be freed with serd_node_free(), or
-   null.
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_integer(SerdAllocator* SERD_NULLABLE allocator, int64_t i);
-
-/**
-   Create a new canonical xsd:hexBinary literal.
-
-   This is a wrapper for serd_node_construct_hex() that allocates a new
-   node on the heap.
-
-   @return A newly allocated node that must be freed with serd_node_free(), or
-   null.
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_hex(SerdAllocator* SERD_NULLABLE allocator,
-             const void* SERD_NONNULL     buf,
-             size_t                       size);
-
-/**
-   Create a new canonical xsd:base64Binary literal.
-
-   This is a wrapper for serd_node_construct_base64() that allocates a new
-   node on the heap.
-
-   @return A newly allocated node that must be freed with serd_node_free(), or
-   null.
-*/
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_base64(SerdAllocator* SERD_NULLABLE allocator,
-                const void* SERD_NONNULL     buf,
-                size_t                       size);
 
 /**
    @}
@@ -624,8 +624,8 @@ serd_node_decoded_size(const SerdNode* SERD_NONNULL node);
 /**
    Decode a binary (base64 or hex) node.
 
-   This function can be used to decode a node created with serd_new_base64() or
-   serd_new_hex() and retrieve the original unencoded binary data.
+   This function can be used to decode a node created with serd_a_base64() or
+   serd_a_hex() and retrieve the original unencoded binary data.
 
    @param node A literal node which is an encoded base64 or hex string.
 

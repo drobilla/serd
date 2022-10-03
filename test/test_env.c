@@ -218,7 +218,7 @@ test_base_uri(void)
   SerdWorld* const      world = serd_world_new(NULL);
   SerdNodes* const      nodes = serd_world_nodes(world);
   SerdEnv* const        env   = serd_env_new(world, serd_empty_string());
-  const SerdNode* const eg    = serd_nodes_uri(nodes, serd_string(NS_EG));
+  const SerdNode* const eg    = serd_nodes_get(nodes, serd_a_uri_string(NS_EG));
 
   // Test that invalid calls work as expected
   assert(!serd_env_base_uri(env));
@@ -282,8 +282,9 @@ test_expand_untyped_literal(void)
 {
   SerdWorld* const      world   = serd_world_new(NULL);
   SerdNodes* const      nodes   = serd_world_nodes(world);
-  const SerdNode* const untyped = serd_nodes_string(nodes, serd_string("data"));
-  SerdEnv* const        env     = serd_env_new(world, serd_empty_string());
+  const SerdNode* const untyped = serd_nodes_get(nodes, serd_a_string("data"));
+
+  SerdEnv* const env = serd_env_new(world, serd_empty_string());
 
   assert(!serd_env_expand_node(env, untyped));
 
@@ -300,7 +301,7 @@ test_expand_bad_uri_datatype(void)
   SerdNodes* nodes = serd_nodes_new(serd_world_allocator(world));
 
   const SerdNode* const typed =
-    serd_nodes_literal(nodes, serd_string("data"), SERD_HAS_DATATYPE, type);
+    serd_nodes_get(nodes, serd_a_typed_literal(serd_string("data"), type));
 
   SerdEnv* const env = serd_env_new(world, serd_empty_string());
 
@@ -316,13 +317,15 @@ test_expand_uri(void)
 {
   const SerdStringView base = serd_string("http://example.org/b/");
 
-  SerdWorld* const      world     = serd_world_new(NULL);
-  SerdNodes* const      nodes     = serd_world_nodes(world);
-  SerdEnv* const        env       = serd_env_new(world, base);
-  const SerdNode* const rel       = serd_nodes_uri(nodes, serd_string("rel"));
-  SerdNode* const       rel_out   = serd_env_expand_node(env, rel);
-  const SerdNode* const empty     = serd_nodes_uri(nodes, serd_empty_string());
-  SerdNode* const       empty_out = serd_env_expand_node(env, empty);
+  SerdWorld* const world = serd_world_new(NULL);
+  SerdNodes* const nodes = serd_world_nodes(world);
+  SerdEnv* const   env   = serd_env_new(world, base);
+
+  const SerdNode* const rel   = serd_nodes_get(nodes, serd_a_uri_string("rel"));
+  const SerdNode* const empty = serd_nodes_get(nodes, serd_a_uri_string(""));
+
+  SerdNode* const rel_out   = serd_env_expand_node(env, rel);
+  SerdNode* const empty_out = serd_env_expand_node(env, empty);
 
   assert(!strcmp(serd_node_string(rel_out), "http://example.org/b/rel"));
   assert(!strcmp(serd_node_string(empty_out), "http://example.org/b/"));
@@ -338,10 +341,11 @@ test_expand_empty_uri_ref(void)
 {
   const SerdStringView base = serd_string("http://example.org/b/");
 
-  SerdWorld* const      world   = serd_world_new(NULL);
-  SerdNodes* const      nodes   = serd_world_nodes(world);
-  const SerdNode* const rel     = serd_nodes_uri(nodes, serd_string("rel"));
-  SerdEnv* const        env     = serd_env_new(world, base);
+  SerdWorld* const world = serd_world_new(NULL);
+  SerdNodes* const nodes = serd_world_nodes(world);
+  SerdEnv* const   env   = serd_env_new(world, base);
+
+  const SerdNode* const rel = serd_nodes_get(nodes, serd_a_uri_string("rel"));
   SerdNode* const       rel_out = serd_env_expand_node(env, rel);
 
   assert(!strcmp(serd_node_string(rel_out), "http://example.org/b/rel"));
@@ -354,10 +358,12 @@ test_expand_empty_uri_ref(void)
 static void
 test_expand_bad_uri(void)
 {
-  SerdWorld* const      world   = serd_world_new(NULL);
-  SerdNodes* const      nodes   = serd_world_nodes(world);
-  const SerdNode* const bad_uri = serd_nodes_uri(nodes, serd_string("rel"));
-  SerdEnv* const        env     = serd_env_new(world, serd_empty_string());
+  SerdWorld* const world = serd_world_new(NULL);
+  SerdNodes* const nodes = serd_world_nodes(world);
+  SerdEnv* const   env   = serd_env_new(world, serd_empty_string());
+
+  const SerdNode* const bad_uri =
+    serd_nodes_get(nodes, serd_a_uri_string("rel"));
 
   assert(!serd_env_expand_node(env, bad_uri));
 
@@ -408,7 +414,7 @@ test_expand_blank(void)
   SerdWorld* const      world = serd_world_new(NULL);
   SerdNodes* const      nodes = serd_world_nodes(world);
   const SerdNode* const blank =
-    serd_nodes_token(nodes, SERD_BLANK, serd_string("b1"));
+    serd_nodes_get(nodes, serd_a_blank(serd_string("b1")));
 
   SerdEnv* const env = serd_env_new(world, serd_empty_string());
 

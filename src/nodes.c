@@ -16,8 +16,6 @@
 #include "serd/memory.h"
 #include "serd/nodes.h"
 #include "serd/string_view.h"
-#include "serd/uri.h"
-#include "serd/value.h"
 #include "zix/allocator.h"
 #include "zix/digest.h"
 #include "zix/hash.h"
@@ -312,7 +310,7 @@ serd_nodes_intern(SerdNodes* nodes, const SerdNode* node)
 }
 
 const SerdNode*
-serd_nodes_get(const SerdNodes* const nodes, const SerdNode* const node)
+serd_nodes_existing(const SerdNodes* const nodes, const SerdNode* const node)
 {
   assert(nodes);
 
@@ -381,7 +379,7 @@ serd_nodes_manage_entry_node(SerdNodes* const nodes, SerdNode* const node)
   return serd_nodes_manage_entry_at(nodes, entry, plan);
 }
 
-const SerdNode*
+static const SerdNode*
 serd_nodes_token(SerdNodes* const     nodes,
                  const SerdNodeType   type,
                  const SerdStringView string)
@@ -404,12 +402,12 @@ serd_nodes_token(SerdNodes* const     nodes,
 
   // Otherwise, allocate and manage a new one
   SerdAllocator* const alloc = &nodes->allocator.base;
-  SerdNode* const      node  = serd_new_token(alloc, type, string);
+  SerdNode* const      node  = serd_node_new(alloc, serd_a_token(type, string));
 
   return serd_nodes_manage_entry_node_at(nodes, node, plan);
 }
 
-const SerdNode*
+static const SerdNode*
 serd_nodes_literal(SerdNodes* const     nodes,
                    const SerdStringView string,
                    const SerdNodeFlags  flags,
@@ -433,15 +431,10 @@ serd_nodes_literal(SerdNodes* const     nodes,
 
   // Otherwise, allocate and manage a new one
   SerdAllocator* const alloc = &nodes->allocator.base;
-  SerdNode* const      node  = serd_new_literal(alloc, string, flags, meta);
+  SerdNode* const      node =
+    serd_node_new(alloc, serd_a_literal(string, flags, meta));
 
   return serd_nodes_manage_entry_node_at(nodes, node, plan);
-}
-
-const SerdNode*
-serd_nodes_string(SerdNodes* const nodes, const SerdStringView string)
-{
-  return serd_nodes_token(nodes, SERD_LITERAL, string);
 }
 
 static const SerdNode*
@@ -453,111 +446,44 @@ try_intern(SerdNodes* const      nodes,
 }
 
 const SerdNode*
-serd_nodes_value(SerdNodes* const nodes, const SerdValue value)
+serd_nodes_get(SerdNodes* const nodes, const SerdNodeArgs args)
 {
   StaticNode key = empty_static_node;
 
-  return try_intern(
-    nodes, serd_node_construct_value(sizeof(key), &key, value), &key.node);
-}
+  /* Some types here are cleverly hashed without allocating a node, but others
+     simply allocate a new node and attempt to manage it.  It would be possible
+     to calculate an in-place hash for some of them, but this is quite
+     complicated and error-prone, so more difficult edge cases aren't yet
+     implemented. */
 
-const SerdNode*
-serd_nodes_decimal(SerdNodes* const nodes, const double value)
-{
-  StaticNode key = empty_static_node;
+  switch (args.type) {
+  case SERD_NODE_ARGS_TOKEN:
+    return serd_nodes_token(
+      nodes, args.data.as_token.type, args.data.as_token.string);
 
-  return try_intern(
-    nodes, serd_node_construct_decimal(sizeof(key), &key, value), &key.node);
-}
+  case SERD_NODE_ARGS_PARSED_URI:
+  case SERD_NODE_ARGS_FILE_URI:
+    break;
 
-const SerdNode*
-serd_nodes_integer(SerdNodes* const nodes, const int64_t value)
-{
-  StaticNode key = empty_static_node;
+  case SERD_NODE_ARGS_LITERAL:
+    return serd_nodes_literal(nodes,
+                              args.data.as_literal.string,
+                              args.data.as_literal.flags,
+                              args.data.as_literal.meta);
 
-  return try_intern(
-    nodes, serd_node_construct_integer(sizeof(key), &key, value), &key.node);
-}
+  case SERD_NODE_ARGS_PRIMITIVE:
+  case SERD_NODE_ARGS_DECIMAL:
+  case SERD_NODE_ARGS_INTEGER:
+    return try_intern(
+      nodes, serd_node_construct(sizeof(key), &key, args), &key.node);
 
-const SerdNode*
-serd_nodes_hex(SerdNodes* const  nodes,
-               const void* const value,
-               const size_t      value_size)
-{
-  assert(nodes);
-  assert(value);
+  case SERD_NODE_ARGS_HEX:
+  case SERD_NODE_ARGS_BASE64:
+    break;
+  }
 
-  /* We're more or less forced to allocate and construct an entry here, since
-     we need the base64 string to hash.  Though it would be possible to
-     calculate it in a streaming fashion, that would be a severe pessimisation
-     in the presumably common case of raw data not being cached, since it would
-     only need to be serialised again.  Keeping a tentative entry buffer around
-     when possible would probably be a better improvement if this ever becomes
-     a performance issue.  More ambitiously, adding support for binary nodes
-     like a Real Database(TM) would largely avoid this problem. */
-
-  SerdAllocator* const alloc = &nodes->allocator.base;
-  SerdNode* const      node  = serd_new_hex(alloc, value, value_size);
-
-  return serd_nodes_manage_entry_node(nodes, node);
-}
-
-const SerdNode*
-serd_nodes_base64(SerdNodes* const  nodes,
-                  const void* const value,
-                  const size_t      value_size)
-{
-  assert(nodes);
-  assert(value);
-
-  // Same situation as for hex above
-
-  SerdAllocator* const alloc = &nodes->allocator.base;
-  SerdNode* const      node  = serd_new_base64(alloc, value, value_size);
-
-  return serd_nodes_manage_entry_node(nodes, node);
-}
-
-const SerdNode*
-serd_nodes_uri(SerdNodes* const nodes, const SerdStringView string)
-{
-  return serd_nodes_token(nodes, SERD_URI, string);
-}
-
-const SerdNode*
-serd_nodes_parsed_uri(SerdNodes* const nodes, const SerdURIView uri)
-{
-  assert(nodes);
-
-  /* Computing a hash for the serialised URI here would be quite complex, so,
-     since this isn't expected to be a particularly hot case, we just allocate
-     a new entry and try to do a normal insertion. */
-
-  SerdAllocator* const alloc = &nodes->allocator.base;
-  SerdNode* const      node  = serd_new_parsed_uri(alloc, uri);
-
-  return serd_nodes_manage_entry_node(nodes, node);
-}
-
-const SerdNode*
-serd_nodes_file_uri(SerdNodes* const     nodes,
-                    const SerdStringView path,
-                    const SerdStringView hostname)
-{
-  assert(nodes);
-
-  // Same situation here, not worth doing an in-place hash
-
-  SerdAllocator* const alloc = &nodes->allocator.base;
-  SerdNode* const      node  = serd_new_file_uri(alloc, path, hostname);
-
-  return serd_nodes_manage_entry_node(nodes, node);
-}
-
-const SerdNode*
-serd_nodes_blank(SerdNodes* const nodes, const SerdStringView string)
-{
-  return serd_nodes_token(nodes, SERD_BLANK, string);
+  return serd_nodes_manage_entry_node(
+    nodes, serd_node_new(&nodes->allocator.base, args));
 }
 
 void

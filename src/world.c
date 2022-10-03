@@ -86,22 +86,21 @@ serd_world_new(SerdAllocator* const allocator)
   world->allocator = actual;
   world->nodes     = nodes;
 
-  if (!(world->rdf_first = serd_nodes_uri(nodes, rdf_first)) ||
-      !(world->rdf_nil = serd_nodes_uri(nodes, rdf_nil)) ||
-      !(world->rdf_rest = serd_nodes_uri(nodes, rdf_rest)) ||
-      !(world->rdf_type = serd_nodes_uri(nodes, rdf_type)) ||
-      !(world->xsd_boolean = serd_nodes_uri(nodes, xsd_boolean)) ||
-      !(world->xsd_decimal = serd_nodes_uri(nodes, xsd_decimal)) ||
-      !(world->xsd_integer = serd_nodes_uri(nodes, xsd_integer))) {
+  if (!(world->rdf_first = serd_nodes_get(nodes, serd_a_uri(rdf_first))) ||
+      !(world->rdf_nil = serd_nodes_get(nodes, serd_a_uri(rdf_nil))) ||
+      !(world->rdf_rest = serd_nodes_get(nodes, serd_a_uri(rdf_rest))) ||
+      !(world->rdf_type = serd_nodes_get(nodes, serd_a_uri(rdf_type))) ||
+      !(world->xsd_boolean = serd_nodes_get(nodes, serd_a_uri(xsd_boolean))) ||
+      !(world->xsd_decimal = serd_nodes_get(nodes, serd_a_uri(xsd_decimal))) ||
+      !(world->xsd_integer = serd_nodes_get(nodes, serd_a_uri(xsd_integer)))) {
     serd_nodes_free(nodes);
     serd_afree(actual, world);
     return NULL;
   }
 
-  serd_node_construct_token(sizeof(world->blank),
-                            &world->blank,
-                            SERD_BLANK,
-                            serd_string("b00000000000"));
+  serd_node_construct(sizeof(world->blank),
+                      &world->blank,
+                      serd_a_blank(serd_string("b00000000000")));
 
   world->stderr_color = terminal_supports_color(stderr);
 

@@ -78,7 +78,8 @@ static void
 test_caret(void)
 {
   SerdWorld* const world = serd_world_new(NULL);
-  SerdNode* const  name  = serd_new_string(NULL, serd_string("filename"));
+
+  SerdNode* const  name  = serd_node_new(NULL, serd_a_string("filename"));
   SerdCaret* const caret = serd_caret_new(NULL, name, 46, 2);
 
   serd_logf_at(world, SERD_LOG_LEVEL_NOTICE, caret, "is just ahead of me");
