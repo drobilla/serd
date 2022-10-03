@@ -44,6 +44,96 @@ static const ExessDatatype value_type_datatypes[] = {
   EXESS_UBYTE,
 };
 
+// Argument constructors
+
+SerdNodeArgs
+serd_a_token(const SerdNodeType type, const SerdStringView string)
+{
+  const SerdNodeArgs args = {SERD_NODE_ARGS_TOKEN, {{type, string}}};
+  return args;
+}
+
+SerdNodeArgs
+serd_a_parsed_uri(const SerdURIView uri)
+{
+  SerdNodeArgs args;
+  args.type                   = SERD_NODE_ARGS_PARSED_URI;
+  args.data.as_parsed_uri.uri = uri;
+  return args;
+}
+
+SerdNodeArgs
+serd_a_file_uri(const SerdStringView path, const SerdStringView hostname)
+{
+  SerdNodeArgs args;
+  args.type                      = SERD_NODE_ARGS_FILE_URI;
+  args.data.as_file_uri.path     = path;
+  args.data.as_file_uri.hostname = hostname;
+  return args;
+}
+
+SerdNodeArgs
+serd_a_literal(const SerdStringView string,
+               const SerdNodeFlags  flags,
+               const SerdStringView meta)
+{
+  SerdNodeArgs args;
+  args.type                   = SERD_NODE_ARGS_LITERAL;
+  args.data.as_literal.string = string;
+  args.data.as_literal.flags  = flags;
+  args.data.as_literal.meta   = meta;
+  return args;
+}
+
+SerdNodeArgs
+serd_a_primitive(const SerdValue value)
+{
+  SerdNodeArgs args;
+  args.type                    = SERD_NODE_ARGS_PRIMITIVE;
+  args.data.as_primitive.value = value;
+  return args;
+}
+
+SerdNodeArgs
+serd_a_decimal(const double value)
+{
+  SerdNodeArgs args;
+  args.type                  = SERD_NODE_ARGS_DECIMAL;
+  args.data.as_decimal.value = value;
+  return args;
+}
+
+SerdNodeArgs
+serd_a_integer(const int64_t value)
+{
+  SerdNodeArgs args;
+  args.type                  = SERD_NODE_ARGS_INTEGER;
+  args.data.as_integer.value = value;
+  return args;
+}
+
+SerdNodeArgs
+serd_a_hex(const size_t size, const void* const data)
+{
+  SerdNodeArgs args;
+  args.type              = SERD_NODE_ARGS_HEX;
+  args.data.as_blob.size = size;
+  args.data.as_blob.data = data;
+  return args;
+}
+
+SerdNodeArgs
+serd_a_base64(size_t size, const void* const data)
+{
+  SerdNodeArgs args;
+  args.type              = SERD_NODE_ARGS_BASE64;
+  args.data.as_blob.size = size;
+  args.data.as_blob.data = data;
+  return args;
+}
+
+// Node functions
+
 // Round size up to an even multiple of the node alignment
 static size_t
 serd_node_pad_size(const size_t size)
@@ -184,16 +274,7 @@ serd_node_construct_simple(const size_t         buf_size,
   return result(SERD_SUCCESS, total_size);
 }
 
-SerdWriteResult
-serd_node_construct_token(const size_t         buf_size,
-                          void* const          buf,
-                          const SerdNodeType   type,
-                          const SerdStringView string)
-{
-  return serd_node_construct_simple(buf_size, buf, type, 0U, string);
-}
-
-bool
+SERD_PURE_FUNC static bool
 is_langtag(const SerdStringView string)
 {
   // First character must be a letter
@@ -222,7 +303,7 @@ is_langtag(const SerdStringView string)
   return true;
 }
 
-SerdWriteResult
+static SerdWriteResult
 serd_node_construct_literal(const size_t         buf_size,
                             void* const          buf,
                             const SerdStringView string,
@@ -249,44 +330,31 @@ serd_node_construct_literal(const size_t         buf_size,
     return result(SERD_BAD_ARG, 0);
   }
 
-  const size_t padded_length = serd_node_pad_length(string.length);
-
+  // Calculate total node size
+  const size_t padded_len = serd_node_pad_length(string.length);
   const size_t meta_size = sizeof(SerdNode) + serd_node_pad_length(meta.length);
-  const size_t total_size = sizeof(SerdNode) + padded_length + meta_size;
+  const size_t total_size = sizeof(SerdNode) + padded_len + meta_size;
   if (!buf || total_size > buf_size) {
     return result(SERD_OVERFLOW, total_size);
   }
 
+  // Write node header
   SerdNode* const node = (SerdNode*)buf;
+  node->length         = string.length;
+  node->flags          = flags;
+  node->type           = SERD_LITERAL;
 
-  node->length = string.length;
-  node->flags  = flags;
-  node->type   = SERD_LITERAL;
-
+  // Copy string to node body
   memcpy(serd_node_buffer(node), string.data, string.length);
 
-  SerdNode* meta_node = node + 1 + (padded_length / sizeof(SerdNode));
+  // Append datatype or language
+  SerdNode* meta_node = node + 1 + (padded_len / sizeof(SerdNode));
   meta_node->type     = (flags & SERD_HAS_DATATYPE) ? SERD_URI : SERD_LITERAL;
   meta_node->length   = meta.length;
   memcpy(serd_node_buffer(meta_node), meta.data, meta.length);
 
   serd_node_zero_pad(node);
   return result(SERD_SUCCESS, total_size);
-}
-
-SerdWriteResult
-serd_node_construct(const size_t         buf_size,
-                    void* const          buf,
-                    const SerdNodeType   type,
-                    const SerdStringView string,
-                    const SerdNodeFlags  flags,
-                    const SerdStringView meta)
-{
-  return ((type == SERD_LITERAL)
-            ? serd_node_construct_literal(buf_size, buf, string, flags, meta)
-          : (meta.length > 0U)
-            ? result(SERD_BAD_ARG, 0)
-            : serd_node_construct_token(buf_size, buf, type, string));
 }
 
 static ExessDatatype
@@ -350,7 +418,7 @@ datatype_value_type(const ExessDatatype datatype)
   return SERD_NOTHING;
 }
 
-SerdWriteResult
+static SerdWriteResult
 serd_node_construct_value(const size_t    buf_size,
                           void* const     buf,
                           const SerdValue value)
@@ -407,7 +475,7 @@ serd_node_construct_value(const size_t    buf_size,
                                      serd_string(datatype_uri));
 }
 
-SerdWriteResult
+static SerdWriteResult
 serd_node_construct_decimal(const size_t buf_size,
                             void* const  buf,
                             const double value)
@@ -424,7 +492,7 @@ serd_node_construct_decimal(const size_t buf_size,
                                      serd_string(EXESS_XSD_URI "decimal"));
 }
 
-SerdWriteResult
+static SerdWriteResult
 serd_node_construct_integer(const size_t  buf_size,
                             void* const   buf,
                             const int64_t value)
@@ -468,6 +536,7 @@ serd_node_construct_binary(
     return result(SERD_OVERFLOW, total_size);
   }
 
+  // Write node header
   SerdNode* const node = (SerdNode*)buf;
   node->length         = r.count;
   node->flags          = SERD_HAS_DATATYPE;
@@ -490,34 +559,6 @@ serd_node_construct_binary(
   return result(SERD_SUCCESS, total_size);
 }
 
-SerdWriteResult
-serd_node_construct_hex(const size_t      buf_size,
-                        void* const       buf,
-                        const size_t      value_size,
-                        const void* const value)
-{
-  return serd_node_construct_binary(buf_size,
-                                    buf,
-                                    value_size,
-                                    value,
-                                    serd_string(NS_XSD "hexBinary"),
-                                    exess_write_hex);
-}
-
-SerdWriteResult
-serd_node_construct_base64(const size_t      buf_size,
-                           void* const       buf,
-                           const size_t      value_size,
-                           const void* const value)
-{
-  return serd_node_construct_binary(buf_size,
-                                    buf,
-                                    value_size,
-                                    value,
-                                    serd_string(NS_XSD "base64Binary"),
-                                    exess_write_base64);
-}
-
 static size_t
 string_sink(const void* const buf,
             const size_t      size,
@@ -530,7 +571,7 @@ string_sink(const void* const buf,
   return nmemb;
 }
 
-SerdWriteResult
+static SerdWriteResult
 serd_node_construct_uri(const size_t      buf_size,
                         void* const       buf,
                         const SerdURIView uri)
@@ -558,13 +599,9 @@ serd_node_construct_uri(const size_t      buf_size,
 }
 
 SerdNode*
-serd_node_new(SerdAllocator* const allocator,
-              const SerdNodeType   type,
-              const SerdStringView string,
-              const SerdNodeFlags  flags,
-              const SerdStringView meta)
+serd_node_new(SerdAllocator* const allocator, const SerdNodeArgs args)
 {
-  SerdWriteResult r = serd_node_construct(0, NULL, type, string, flags, meta);
+  SerdWriteResult r = serd_node_construct(0, NULL, args);
   if (r.status != SERD_OVERFLOW) {
     return NULL;
   }
@@ -575,34 +612,11 @@ serd_node_new(SerdAllocator* const allocator,
     serd_node_malloc(allocator, sizeof(SerdNode) + r.count + 1);
 
   if (node) {
-    r = serd_node_construct(r.count, node, type, string, flags, meta);
+    r = serd_node_construct(r.count, node, args);
     MUST_SUCCEED(r.status); // Any error should have been reported above
   }
 
   return node;
-}
-
-SerdNode*
-serd_new_token(SerdAllocator* const allocator,
-               const SerdNodeType   type,
-               const SerdStringView string)
-{
-  return serd_node_new(allocator, type, string, 0U, serd_empty_string());
-}
-
-SerdNode*
-serd_new_string(SerdAllocator* const allocator, const SerdStringView str)
-{
-  return serd_node_new(allocator, SERD_LITERAL, str, 0U, serd_empty_string());
-}
-
-SerdNode*
-serd_new_literal(SerdAllocator* const allocator,
-                 const SerdStringView str,
-                 const SerdNodeFlags  flags,
-                 const SerdStringView meta)
-{
-  return serd_node_new(allocator, SERD_LITERAL, str, flags, meta);
 }
 
 SerdValue
@@ -788,26 +802,6 @@ serd_node_compare(const SerdNode* const a, const SerdNode* const b)
   return strcmp(serd_node_string_i(ma), serd_node_string_i(mb));
 }
 
-SerdNode*
-serd_new_uri(SerdAllocator* const allocator, const SerdStringView string)
-{
-  return serd_new_token(allocator, SERD_URI, string);
-}
-
-SerdNode*
-serd_new_parsed_uri(SerdAllocator* const allocator, const SerdURIView uri)
-{
-  SerdWriteResult r    = serd_node_construct_uri(0U, NULL, uri);
-  SerdNode* const node = serd_node_try_malloc(allocator, r);
-
-  if (node) {
-    r = serd_node_construct_uri(r.count, node, uri);
-    MUST_SUCCEED(r.status);
-  }
-
-  return node;
-}
-
 typedef struct {
   char*  buf;
   size_t len;
@@ -831,7 +825,7 @@ construct_write(const void* const buf,
   return n_bytes;
 }
 
-SerdWriteResult
+static SerdWriteResult
 serd_node_construct_file_uri(const size_t         buf_size,
                              void* const          buf,
                              const SerdStringView path,
@@ -866,102 +860,62 @@ serd_node_construct_file_uri(const size_t         buf_size,
   return result(SERD_SUCCESS, count);
 }
 
-SerdNode*
-serd_new_file_uri(SerdAllocator* const allocator,
-                  const SerdStringView path,
-                  const SerdStringView hostname)
+SerdWriteResult
+serd_node_construct(const size_t       buf_size,
+                    void* const        buf,
+                    const SerdNodeArgs args)
 {
-  SerdWriteResult r    = serd_node_construct_file_uri(0, NULL, path, hostname);
-  SerdNode* const node = serd_node_try_malloc(allocator, r);
+  switch (args.type) {
+  case SERD_NODE_ARGS_TOKEN:
+    return serd_node_construct_simple(
+      buf_size, buf, args.data.as_token.type, 0U, args.data.as_token.string);
 
-  if (node) {
-    r = serd_node_construct_file_uri(r.count, node, path, hostname);
-    MUST_SUCCEED(r.status);
-    assert(serd_node_length(node) == strlen(serd_node_string(node)));
-    serd_node_check_padding(node);
+  case SERD_NODE_ARGS_PARSED_URI:
+    return serd_node_construct_uri(buf_size, buf, args.data.as_parsed_uri.uri);
+
+  case SERD_NODE_ARGS_FILE_URI:
+    return serd_node_construct_file_uri(buf_size,
+                                        buf,
+                                        args.data.as_file_uri.path,
+                                        args.data.as_file_uri.hostname);
+
+  case SERD_NODE_ARGS_LITERAL:
+    return serd_node_construct_literal(buf_size,
+                                       buf,
+                                       args.data.as_literal.string,
+                                       args.data.as_literal.flags,
+                                       args.data.as_literal.meta);
+
+  case SERD_NODE_ARGS_PRIMITIVE:
+    return serd_node_construct_value(
+      buf_size, buf, args.data.as_primitive.value);
+
+  case SERD_NODE_ARGS_DECIMAL:
+    return serd_node_construct_decimal(
+      buf_size, buf, args.data.as_decimal.value);
+
+  case SERD_NODE_ARGS_INTEGER:
+    return serd_node_construct_integer(
+      buf_size, buf, args.data.as_integer.value);
+
+  case SERD_NODE_ARGS_HEX:
+    return serd_node_construct_binary(buf_size,
+                                      buf,
+                                      args.data.as_blob.size,
+                                      args.data.as_blob.data,
+                                      serd_string(NS_XSD "hexBinary"),
+                                      exess_write_hex);
+
+  case SERD_NODE_ARGS_BASE64:
+    return serd_node_construct_binary(buf_size,
+                                      buf,
+                                      args.data.as_blob.size,
+                                      args.data.as_blob.data,
+                                      serd_string(NS_XSD "base64Binary"),
+                                      exess_write_base64);
   }
 
-  return node;
-}
-
-SerdNode*
-serd_new_value(SerdAllocator* const allocator, const SerdValue value)
-{
-  SerdWriteResult r    = serd_node_construct_value(0, NULL, value);
-  SerdNode* const node = serd_node_try_malloc(allocator, r);
-
-  if (node) {
-    r = serd_node_construct_value(r.count, node, value);
-    MUST_SUCCEED(r.status);
-    assert(serd_node_length(node) == strlen(serd_node_string(node)));
-    serd_node_check_padding(node);
-  }
-
-  return node;
-}
-
-SerdNode*
-serd_new_decimal(SerdAllocator* const allocator, const double d)
-{
-  SerdWriteResult r    = serd_node_construct_decimal(0, NULL, d);
-  SerdNode* const node = serd_node_try_malloc(allocator, r);
-
-  if (node) {
-    r = serd_node_construct_decimal(r.count, node, d);
-    MUST_SUCCEED(r.status);
-    assert(serd_node_length(node) == strlen(serd_node_string(node)));
-    serd_node_check_padding(node);
-  }
-
-  return node;
-}
-
-SerdNode*
-serd_new_integer(SerdAllocator* const allocator, const int64_t i)
-{
-  SerdWriteResult r    = serd_node_construct_integer(0, NULL, i);
-  SerdNode* const node = serd_node_try_malloc(allocator, r);
-
-  if (node) {
-    r = serd_node_construct_integer(r.count, node, i);
-    MUST_SUCCEED(r.status);
-    assert(serd_node_length(node) == strlen(serd_node_string(node)));
-    serd_node_check_padding(node);
-  }
-
-  return node;
-}
-
-SerdNode*
-serd_new_base64(SerdAllocator* const allocator, const void* buf, size_t size)
-{
-  SerdWriteResult r    = serd_node_construct_base64(0, NULL, size, buf);
-  SerdNode* const node = serd_node_try_malloc(allocator, r);
-
-  if (node) {
-    r = serd_node_construct_base64(r.count, node, size, buf);
-    MUST_SUCCEED(r.status);
-    assert(serd_node_length(node) == strlen(serd_node_string(node)));
-    serd_node_check_padding(node);
-  }
-
-  return node;
-}
-
-SerdNode*
-serd_new_hex(SerdAllocator* const allocator, const void* buf, size_t size)
-{
-  SerdWriteResult r    = serd_node_construct_hex(0, NULL, size, buf);
-  SerdNode* const node = serd_node_try_malloc(allocator, r);
-
-  if (node) {
-    r = serd_node_construct_hex(r.count, node, size, buf);
-    MUST_SUCCEED(r.status);
-    assert(serd_node_length(node) == strlen(serd_node_string(node)));
-    serd_node_check_padding(node);
-  }
-
-  return node;
+  return result(SERD_BAD_ARG, 0U);
 }
 
 SerdNodeType

@@ -55,13 +55,13 @@ test_write_failed_alloc(void)
     serd_string("http://www.w3.org/2001/XMLSchema#float");
 
   SerdFailingAllocator allocator = serd_failing_allocator();
+  SerdWorld* const     world     = serd_world_new(&allocator.base);
+  SerdNodes* const     nodes     = serd_nodes_new(&allocator.base);
 
-  SerdWorld* const      world = serd_world_new(&allocator.base);
-  SerdNodes* const      nodes = serd_nodes_new(&allocator.base);
-  const SerdNode* const s     = serd_nodes_uri(nodes, s_string);
-  const SerdNode* const p     = serd_nodes_uri(nodes, p_string);
+  const SerdNode* const s = serd_nodes_get(nodes, serd_a_uri(s_string));
+  const SerdNode* const p = serd_nodes_get(nodes, serd_a_uri(p_string));
   const SerdNode* const o =
-    serd_nodes_literal(nodes, o_string, SERD_HAS_DATATYPE, xsd_float);
+    serd_nodes_get(nodes, serd_a_typed_literal(o_string, xsd_float));
 
   SerdSink*    target         = serd_sink_new(world, NULL, ignore_event, NULL);
   SerdSink*    canon          = serd_canon_new(world, target, 0U);

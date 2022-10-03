@@ -506,10 +506,10 @@ serd_model_search(const SerdModel* const model,
                   const SerdNode* const  g)
 {
   // Build a pattern of interned nodes
-  const SerdNode* pattern[4] = {serd_nodes_get(model->nodes, s),
-                                serd_nodes_get(model->nodes, p),
-                                serd_nodes_get(model->nodes, o),
-                                serd_nodes_get(model->nodes, g)};
+  const SerdNode* pattern[4] = {serd_nodes_existing(model->nodes, s),
+                                serd_nodes_existing(model->nodes, p),
+                                serd_nodes_existing(model->nodes, o),
+                                serd_nodes_existing(model->nodes, g)};
 
   // If some node isn't in the model at all, no need to search for statements
   const int n_given = !!s + !!p + !!o + !!g;
