@@ -618,7 +618,7 @@ serd_node_new(SerdAllocator* const allocator, const SerdNodeArgs args)
 }
 
 SerdValue
-serd_get_value(const SerdNode* const node)
+serd_node_value(const SerdNode* const node)
 {
   assert(node);
 
@@ -648,12 +648,12 @@ serd_get_value(const SerdNode* const node)
 }
 
 SerdValue
-serd_get_value_as(const SerdNode* const node,
-                  const SerdValueType   type,
-                  const bool            lossy)
+serd_node_value_as(const SerdNode* const node,
+                   const SerdValueType   type,
+                   const bool            lossy)
 {
   // Get the value as it is
-  const SerdValue value = serd_get_value(node);
+  const SerdValue value = serd_node_value(node);
   if (!value.type || value.type == type) {
     return value;
   }
@@ -683,7 +683,7 @@ serd_get_value_as(const SerdNode* const node,
 }
 
 size_t
-serd_get_blob_size(const SerdNode* const node)
+serd_node_decoded_size(const SerdNode* const node)
 {
   const SerdNode* const datatype = serd_node_datatype(node);
   if (!datatype) {
@@ -702,9 +702,9 @@ serd_get_blob_size(const SerdNode* const node)
 }
 
 SerdWriteResult
-serd_get_blob(const SerdNode* const node,
-              const size_t          buf_size,
-              void* const           buf)
+serd_node_decode(const SerdNode* const node,
+                 const size_t          buf_size,
+                 void* const           buf)
 {
   const SerdNode* const datatype = serd_node_datatype(node);
   if (!datatype) {

@@ -20,20 +20,24 @@ SERD_BEGIN_DECLS
    @{
 */
 
-/// A syntactic RDF node
+/**
+   @defgroup serd_node_types Types
+   @{
+*/
+
+/**
+   An RDF node.
+
+   A node is represented as a single contiguous chunk of data that contains no
+   pointers.  The memory is, however, opaque and of unknown size to the public.
+*/
 typedef struct SerdNodeImpl SerdNode;
 
 /**
    Type of a node.
 
-   An RDF node, in the abstract sense, can be either a resource, literal, or a
-   blank.  This type is more precise, because syntactically there are two ways
-   to refer to a resource (by URI or CURIE).  Serd also has support for
-   variable nodes to support some features, which are not RDF nodes.
-
-   There are also two ways to refer to a blank node in syntax (by ID or
-   anonymously), but this is handled by statement flags rather than distinct
-   node types.
+   An abstract RDF node can be either a resource, literal, or a blank.  This
+   may also be a named variable, which allows patterns to be represented.
 */
 typedef enum {
   /**
@@ -107,6 +111,7 @@ typedef struct {
 } SerdWriteResult;
 
 /**
+   @}
    @defgroup serd_node_construction Construction
 
    This is the low-level node construction API, which can be used to construct
@@ -423,6 +428,11 @@ serd_as_base64(size_t size, const void* SERD_NONNULL data);
    @param buf Buffer where the node will be written, or null to only measure.
 
    @param args Arguments describing the node to construct.
+
+   @return A result with a `status` and a `count` of bytes written.  If the
+   buffer is too small for the node, then `status` will be #SERD_OVERFLOW, and
+   `count` will be set to the number of bytes required to successfully
+   construct the node.
 */
 SERD_API
 SerdWriteResult
@@ -456,82 +466,6 @@ SERD_API
 SerdNode* SERD_ALLOCATED
 serd_node_new(SerdAllocator* SERD_NULLABLE allocator, SerdNodeArgs args);
 
-/**
-   @}
-*/
-
-/**
-   Return the primitive value of `node`.
-
-   This will return a typed value if the node can be read as one, or a value
-   with type #SERD_NOTHING otherwise.
-
-   @return The value of `node` as a #SerdValue, if possible.
-*/
-SERD_API
-SerdValue
-serd_get_value(const SerdNode* SERD_NONNULL node);
-
-/**
-   Return the value of `node` as a specific type of number.
-
-   This is like serd_get_number(), but will coerce the value of the node to the
-   requrested type if possible.
-
-   @param node The node to interpret as a number.
-
-   @param type The desired numeric datatype of the result.
-
-   @param lossy Whether lossy conversions can be used.  If this is false, then
-   this function only succeeds if the value could be converted back to the
-   original datatype of the node without loss.  Otherwise, precision may be
-   reduced or values may be truncated to fit the result.
-
-   @return The value of `node` as a #SerdValue, or nothing.
-*/
-SERD_API
-SerdValue
-serd_get_value_as(const SerdNode* SERD_NONNULL node,
-                  SerdValueType                type,
-                  bool                         lossy);
-
-/**
-   Return the maximum size of a decoded hex or base64 binary node in bytes.
-
-   This returns an upper bound on the number of bytes that would be decoded by
-   serd_get_blob().  This is calculated as a simple constant-time arithmetic
-   expression based on the length of the encoded string, so may be larger than
-   the actual size of the data due to things like additional whitespace.
-
-   @return The size of the decoded hex or base64 blob `node`, or zero if it
-   does not have datatype <http://www.w3.org/2001/XMLSchema#hexBinary> or
-   <http://www.w3.org/2001/XMLSchema#base64Binary>.
-*/
-SERD_PURE_API
-size_t
-serd_get_blob_size(const SerdNode* SERD_NONNULL node);
-
-/**
-   Decode a base64 node.
-
-   This function can be used to decode a node created with serd_as_base64().
-
-   @param node A literal node which is an encoded base64 string.
-
-   @param buf_size The size of `buf` in bytes.
-
-   @param buf Buffer where decoded data will be written.
-
-   @return On success, #SERD_SUCCESS is returned along with the number of bytes
-   written.  If the output buffer is too small, then #SERD_OVERFLOW is returned
-   along with the number of bytes required for successful decoding.
-*/
-SERD_API
-SerdWriteResult
-serd_get_blob(const SerdNode* SERD_NONNULL node,
-              size_t                       buf_size,
-              void* SERD_NONNULL           buf);
-
 /// Return a deep copy of `node`
 SERD_API
 SerdNode* SERD_ALLOCATED
@@ -544,20 +478,31 @@ void
 serd_node_free(SerdAllocator* SERD_NULLABLE allocator,
                SerdNode* SERD_NULLABLE      node);
 
-/// Return the type of a node (SERD_URI, SERD_BLANK, or SERD_LITERAL)
+/**
+   @}
+   @defgroup serd_node_accessors Accessors
+   @{
+*/
+
+/// Return the type (URI, literal, blank, or variable) of the node
 SERD_PURE_API
 SerdNodeType
 serd_node_type(const SerdNode* SERD_NONNULL node);
-
-/// Return the node's string
-SERD_CONST_API
-const char* SERD_NONNULL
-serd_node_string(const SerdNode* SERD_NONNULL node);
 
 /// Return the length of the node's string in bytes (excluding terminator)
 SERD_PURE_API
 size_t
 serd_node_length(const SerdNode* SERD_NULLABLE node);
+
+/// Return the flags (string properties) of a node
+SERD_PURE_API
+SerdNodeFlags
+serd_node_flags(const SerdNode* SERD_NONNULL node);
+
+/// Return the node's string
+SERD_CONST_API
+const char* SERD_NONNULL
+serd_node_string(const SerdNode* SERD_NONNULL node);
 
 /**
    Return a view of the string in a node.
@@ -584,11 +529,6 @@ SERD_PURE_API
 SerdURIView
 serd_node_uri_view(const SerdNode* SERD_NONNULL node);
 
-/// Return the flags (string properties) of a node
-SERD_PURE_API
-SerdNodeFlags
-serd_node_flags(const SerdNode* SERD_NONNULL node);
-
 /// Return the datatype of the literal node, if present
 SERD_PURE_API
 const SerdNode* SERD_NULLABLE
@@ -598,6 +538,85 @@ serd_node_datatype(const SerdNode* SERD_NONNULL node);
 SERD_PURE_API
 const SerdNode* SERD_NULLABLE
 serd_node_language(const SerdNode* SERD_NONNULL node);
+
+/**
+   Return the primitive value of `node`.
+
+   This will return a typed value if the node can be read as one, or a value
+   with type #SERD_NOTHING otherwise.
+
+   @return The value of `node` as a #SerdValue, if possible.
+*/
+SERD_API
+SerdValue
+serd_node_value(const SerdNode* SERD_NONNULL node);
+
+/**
+   Return the value of `node` as a specific type of number.
+
+   This is like serd_get_number(), but will coerce the value of the node to the
+   requrested type if possible.
+
+   @param node The node to interpret as a number.
+
+   @param type The desired numeric datatype of the result.
+
+   @param lossy Whether lossy conversions can be used.  If this is false, then
+   this function only succeeds if the value could be converted back to the
+   original datatype of the node without loss.  Otherwise, precision may be
+   reduced or values may be truncated to fit the result.
+
+   @return The value of `node` as a #SerdValue, or nothing.
+*/
+SERD_API
+SerdValue
+serd_node_value_as(const SerdNode* SERD_NONNULL node,
+                   SerdValueType                type,
+                   bool                         lossy);
+
+/**
+   Return the maximum size of a decoded hex or base64 binary node in bytes.
+
+   This returns an upper bound on the number of bytes that would be decoded by
+   serd_node_decode().  This is calculated as a simple constant-time arithmetic
+   expression based on the length of the encoded string, so may be larger than
+   the actual size of the data due to things like additional whitespace.
+
+   @return The size of the decoded hex or base64 blob `node`, or zero if it
+   does not have datatype <http://www.w3.org/2001/XMLSchema#hexBinary> or
+   <http://www.w3.org/2001/XMLSchema#base64Binary>.
+*/
+SERD_PURE_API
+size_t
+serd_node_decoded_size(const SerdNode* SERD_NONNULL node);
+
+/**
+   Decode a binary (base64 or hex) node.
+
+   This function can be used to decode a node created with serd_as_base64() or
+   serd_as_hex() and retrieve the original unencoded binary data.
+
+   @param node A literal node which is an encoded base64 or hex string.
+
+   @param buf_size The size of `buf` in bytes.
+
+   @param buf Buffer where decoded data will be written.
+
+   @return On success, #SERD_SUCCESS is returned along with the number of bytes
+   written.  If the output buffer is too small, then #SERD_OVERFLOW is returned
+   along with the number of bytes required for successful decoding.
+*/
+SERD_API
+SerdWriteResult
+serd_node_decode(const SerdNode* SERD_NONNULL node,
+                 size_t                       buf_size,
+                 void* SERD_NONNULL           buf);
+
+/**
+   @}
+   @defgroup serd_node_operators Operators
+   @{
+*/
 
 /// Return true iff `a` is equal to `b`
 SERD_PURE_API
@@ -621,6 +640,7 @@ serd_node_compare(const SerdNode* SERD_NONNULL a,
                   const SerdNode* SERD_NONNULL b);
 
 /**
+   @}
    @}
 */
 
