@@ -21,6 +21,11 @@ SERD_BEGIN_DECLS
 */
 
 /**
+   @defgroup serd_node_types Types
+   @{
+*/
+
+/**
    An RDF node.
 
    A node is a single contiguous chunk of data, but the representation is
@@ -107,6 +112,7 @@ typedef struct {
 } SerdWriteResult;
 
 /**
+   @}
    @defgroup serd_node_construction Construction
 
    This is the low-level node construction API, which can be used to construct
@@ -120,47 +126,6 @@ typedef struct {
 
    @{
 */
-
-/**
-   Construct a node into an existing buffer.
-
-   This is the universal node constructor which can construct any node.  An
-   error will be returned if the parameters do not make sense.  In particular,
-   #SERD_HAS_DATATYPE or #SERD_HAS_LANGUAGE (but not both) may only be given if
-   `type` is #SERD_LITERAL, and `meta` must be syntactically valid based on
-   that flag.
-
-   This function may also be used to determine the size of buffer required by
-   passing a null buffer with zero size.
-
-   @param buf_size The size of `buf` in bytes, or zero to only measure.
-
-   @param buf Buffer where the node will be written, or null to only measure.
-
-   @param type The type of the node to construct.
-
-   @param string The string body of the node.
-
-   @param flags Flags that describe the details of the node.
-
-   @param meta The string value of the literal's metadata.  If
-   #SERD_HAS_DATATYPE is set, then this must be an absolute datatype URI.  If
-   #SERD_HAS_LANGUAGE is set, then this must be a language tag like "en-ca".
-   Otherwise, it is ignored.
-
-   @return A result with a `status` and a `count` of bytes written.  If the
-   buffer is too small for the node, then `status` will be #SERD_OVERFLOW, and
-   `count` will be set to the number of bytes required to successfully
-   construct the node.
-*/
-SERD_API
-SerdWriteResult
-serd_node_construct(size_t              buf_size,
-                    void* SERD_NULLABLE buf,
-                    SerdNodeType        type,
-                    SerdStringView      string,
-                    SerdNodeFlags       flags,
-                    SerdStringView      meta);
 
 /**
    Construct a simple "token" node.
@@ -295,6 +260,47 @@ serd_node_construct_base64(size_t                   buf_size,
                            const void* SERD_NONNULL value);
 
 /**
+   Construct a node into an existing buffer.
+
+   This is the universal node constructor which can construct any node.  An
+   error will be returned if the parameters do not make sense.  In particular,
+   #SERD_HAS_DATATYPE or #SERD_HAS_LANGUAGE (but not both) may only be given if
+   `type` is #SERD_LITERAL, and `meta` must be syntactically valid based on
+   that flag.
+
+   This function may also be used to determine the size of buffer required by
+   passing a null buffer with zero size.
+
+   @param buf_size The size of `buf` in bytes, or zero to only measure.
+
+   @param buf Buffer where the node will be written, or null to only measure.
+
+   @param type The type of the node to construct.
+
+   @param string The string body of the node.
+
+   @param flags Flags that describe the details of the node.
+
+   @param meta The string value of the literal's metadata.  If
+   #SERD_HAS_DATATYPE is set, then this must be an absolute datatype URI.  If
+   #SERD_HAS_LANGUAGE is set, then this must be a language tag like "en-ca".
+   Otherwise, it is ignored.
+
+   @return A result with a `status` and a `count` of bytes written.  If the
+   buffer is too small for the node, then `status` will be #SERD_OVERFLOW, and
+   `count` will be set to the number of bytes required to successfully
+   construct the node.
+*/
+SERD_API
+SerdWriteResult
+serd_node_construct(size_t              buf_size,
+                    void* SERD_NULLABLE buf,
+                    SerdNodeType        type,
+                    SerdStringView      string,
+                    SerdNodeFlags       flags,
+                    SerdStringView      meta);
+
+/**
    @}
    @defgroup serd_node_allocation Dynamic Allocation
 
@@ -324,6 +330,18 @@ serd_node_new(SerdAllocator* SERD_NULLABLE allocator,
               SerdStringView               string,
               SerdNodeFlags                flags,
               SerdStringView               meta);
+
+/// Return a deep copy of `node`
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_node_copy(SerdAllocator* SERD_NULLABLE  allocator,
+               const SerdNode* SERD_NULLABLE node);
+
+/// Free any data owned by `node`
+SERD_API
+void
+serd_node_free(SerdAllocator* SERD_NULLABLE allocator,
+               SerdNode* SERD_NULLABLE      node);
 
 /**
    Create a new simple "token" node.
@@ -481,7 +499,76 @@ serd_new_base64(SerdAllocator* SERD_NULLABLE allocator,
 
 /**
    @}
+   @defgroup serd_node_accessors Accessors
+   @{
 */
+
+/// Return the type of a node
+SERD_PURE_API
+SerdNodeType
+serd_node_type(const SerdNode* SERD_NONNULL node);
+
+/// Return the length of a node's string in bytes, excluding the terminator
+SERD_PURE_API
+size_t
+serd_node_length(const SerdNode* SERD_NULLABLE node);
+
+/// Return the additional flags of a node
+SERD_PURE_API
+SerdNodeFlags
+serd_node_flags(const SerdNode* SERD_NONNULL node);
+
+/// Return the string contents of a node
+SERD_CONST_API
+const char* SERD_NONNULL
+serd_node_string(const SerdNode* SERD_NONNULL node);
+
+/**
+   Return a view of the string in a node.
+
+   This is a convenience wrapper for serd_node_string() and serd_node_length()
+   that can be used to get both in a single call.
+*/
+SERD_PURE_API
+SerdStringView
+serd_node_string_view(const SerdNode* SERD_NONNULL node);
+
+/**
+   Return a parsed view of the URI in a node.
+
+   It is best to check the node type before calling this function, though it is
+   safe to call on non-URI nodes.  In that case, it will return a null view
+   with all fields zero.
+
+   Note that this parses the URI string contained in the node, so it is a good
+   idea to keep the value if you will be using it several times in the same
+   scope.
+*/
+SERD_PURE_API
+SerdURIView
+serd_node_uri_view(const SerdNode* SERD_NONNULL node);
+
+/**
+   Return the optional datatype of a literal node.
+
+   The datatype, if present, is always a URI, typically something like
+   <http://www.w3.org/2001/XMLSchema#boolean>.
+*/
+SERD_PURE_API
+const SerdNode* SERD_NULLABLE
+serd_node_datatype(const SerdNode* SERD_NONNULL node);
+
+/**
+   Return the optional language tag of a literal node.
+
+   The language tag, if present, is a well-formed BCP 47 (RFC 4647) language
+   tag like "en-ca".  Note that these must be handled case-insensitively, for
+   example, the common form "en-CA" is valid, but lowercase is considered
+   canonical here.
+*/
+SERD_PURE_API
+const SerdNode* SERD_NULLABLE
+serd_node_language(const SerdNode* SERD_NONNULL node);
 
 /**
    Return the primitive value of a literal node.
@@ -556,84 +643,11 @@ serd_node_decode(const SerdNode* SERD_NONNULL node,
                  size_t                       buf_size,
                  void* SERD_NONNULL           buf);
 
-/// Return a deep copy of `node`
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_node_copy(SerdAllocator* SERD_NULLABLE  allocator,
-               const SerdNode* SERD_NULLABLE node);
-
-/// Free any data owned by `node`
-SERD_API
-void
-serd_node_free(SerdAllocator* SERD_NULLABLE allocator,
-               SerdNode* SERD_NULLABLE      node);
-
-/// Return the type of a node
-SERD_PURE_API
-SerdNodeType
-serd_node_type(const SerdNode* SERD_NONNULL node);
-
-/// Return the string contents of a node
-SERD_CONST_API
-const char* SERD_NONNULL
-serd_node_string(const SerdNode* SERD_NONNULL node);
-
-/// Return the length of the node's string in bytes (excluding terminator)
-SERD_PURE_API
-size_t
-serd_node_length(const SerdNode* SERD_NULLABLE node);
-
 /**
-   Return a view of the string in a node.
-
-   This is a convenience wrapper for serd_node_string() and serd_node_length()
-   that can be used to get both in a single call.
+   @}
+   @defgroup serd_node_operators Operators
+   @{
 */
-SERD_PURE_API
-SerdStringView
-serd_node_string_view(const SerdNode* SERD_NONNULL node);
-
-/**
-   Return a parsed view of the URI in a node.
-
-   It is best to check the node type before calling this function, though it is
-   safe to call on non-URI nodes.  In that case, it will return a null view
-   with all fields zero.
-
-   Note that this parses the URI string contained in the node, so it is a good
-   idea to keep the value if you will be using it several times in the same
-   scope.
-*/
-SERD_PURE_API
-SerdURIView
-serd_node_uri_view(const SerdNode* SERD_NONNULL node);
-
-/// Return the additional flags of a node
-SERD_PURE_API
-SerdNodeFlags
-serd_node_flags(const SerdNode* SERD_NONNULL node);
-
-/**
-   Return the optional datatype of a literal node.
-
-   The datatype, if present, is always a URI, typically something like
-   <http://www.w3.org/2001/XMLSchema#boolean>.
-*/
-SERD_PURE_API
-const SerdNode* SERD_NULLABLE
-serd_node_datatype(const SerdNode* SERD_NONNULL node);
-
-/**
-   Return the optional language tag of a literal node.
-
-   The language tag, if present, is a well-formed BCP 47 (RFC 4647) language
-   tag like "en-ca".  Note that these must be handled case-insensitively, for
-   example, the common form "en-CA" is valid, but lowercase is considered
-   canonical here.
-*/
-SERD_PURE_API
-const SerdNode* SERD_NULLABLE
-serd_node_language(const SerdNode* SERD_NONNULL node);
 
 /**
    Return true iff `a` is equal to `b`.
@@ -663,6 +677,7 @@ serd_node_compare(const SerdNode* SERD_NONNULL a,
                   const SerdNode* SERD_NONNULL b);
 
 /**
+   @}
    @}
 */
 
