@@ -122,47 +122,6 @@ typedef struct {
 */
 
 /**
-   Construct a node into an existing buffer.
-
-   This is the universal node constructor which can construct any node.  An
-   error will be returned if the parameters do not make sense.  In particular,
-   #SERD_HAS_DATATYPE or #SERD_HAS_LANGUAGE (but not both) may only be given if
-   `type` is #SERD_LITERAL, and `meta` must be syntactically valid based on
-   that flag.
-
-   This function may also be used to determine the size of buffer required by
-   passing a null buffer with zero size.
-
-   @param buf_size The size of `buf` in bytes, or zero to only measure.
-
-   @param buf Buffer where the node will be written, or null to only measure.
-
-   @param type The type of the node to construct.
-
-   @param string The string body of the node.
-
-   @param flags Flags that describe the details of the node.
-
-   @param meta The string value of the literal's metadata.  If
-   #SERD_HAS_DATATYPE is set, then this must be an absolute datatype URI.  If
-   #SERD_HAS_LANGUAGE is set, then this must be a language tag like "en-ca".
-   Otherwise, it is ignored.
-
-   @return A result with a `status` and a `count` of bytes written.  If the
-   buffer is too small for the node, then `status` will be #SERD_OVERFLOW, and
-   `count` will be set to the number of bytes required to successfully
-   construct the node.
-*/
-SERD_API
-SerdWriteResult
-serd_node_construct(size_t              buf_size,
-                    void* SERD_NULLABLE buf,
-                    SerdNodeType        type,
-                    SerdStringView      string,
-                    SerdNodeFlags       flags,
-                    SerdStringView      meta);
-
-/**
    Construct a simple "token" node.
 
    "Token" is just a shorthand used in this API to refer to a node that is not
@@ -293,6 +252,47 @@ serd_node_construct_base64(size_t                   buf_size,
                            void* SERD_NULLABLE      buf,
                            size_t                   value_size,
                            const void* SERD_NONNULL value);
+
+/**
+   Construct a node into an existing buffer.
+
+   This is the universal node constructor which can construct any node.  An
+   error will be returned if the parameters do not make sense.  In particular,
+   #SERD_HAS_DATATYPE or #SERD_HAS_LANGUAGE (but not both) may only be given if
+   `type` is #SERD_LITERAL, and `meta` must be syntactically valid based on
+   that flag.
+
+   This function may also be used to determine the size of buffer required by
+   passing a null buffer with zero size.
+
+   @param buf_size The size of `buf` in bytes, or zero to only measure.
+
+   @param buf Buffer where the node will be written, or null to only measure.
+
+   @param type The type of the node to construct.
+
+   @param string The string body of the node.
+
+   @param flags Flags that describe the details of the node.
+
+   @param meta The string value of the literal's metadata.  If
+   #SERD_HAS_DATATYPE is set, then this must be an absolute datatype URI.  If
+   #SERD_HAS_LANGUAGE is set, then this must be a language tag like "en-ca".
+   Otherwise, it is ignored.
+
+   @return A result with a `status` and a `count` of bytes written.  If the
+   buffer is too small for the node, then `status` will be #SERD_OVERFLOW, and
+   `count` will be set to the number of bytes required to successfully
+   construct the node.
+*/
+SERD_API
+SerdWriteResult
+serd_node_construct(size_t              buf_size,
+                    void* SERD_NULLABLE buf,
+                    SerdNodeType        type,
+                    SerdStringView      string,
+                    SerdNodeFlags       flags,
+                    SerdStringView      meta);
 
 /**
    @}
