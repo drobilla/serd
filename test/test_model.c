@@ -1037,7 +1037,7 @@ test_write_flat_range(SerdWorld* world, const unsigned n_quads)
   serd_model_add(model, b2, p, o, NULL);
 
   SerdBuffer       buffer = {NULL, 0};
-  SerdEnv*         env    = serd_env_new(serd_empty_string());
+  SerdEnv*         env    = serd_env_new(world, serd_empty_string());
   SerdOutputStream out    = serd_open_output_buffer(&buffer);
 
   SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, &out, 1);
@@ -1108,7 +1108,7 @@ test_write_bad_list(SerdWorld* world, const unsigned n_quads)
   serd_model_add(model, norest, pfirst, val2, NULL);
 
   SerdBuffer       buffer = {NULL, 0};
-  SerdEnv*         env    = serd_env_new(serd_empty_string());
+  SerdEnv*         env    = serd_env_new(world, serd_empty_string());
   SerdOutputStream out    = serd_open_output_buffer(&buffer);
 
   SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, &out, 1);
@@ -1170,7 +1170,7 @@ test_write_infinite_list(SerdWorld* world, const unsigned n_quads)
   serd_model_add(model, list2, prest, list1, NULL);
 
   SerdBuffer       buffer = {NULL, 0};
-  SerdEnv*         env    = serd_env_new(serd_empty_string());
+  SerdEnv*         env    = serd_env_new(world, serd_empty_string());
   SerdOutputStream out    = serd_open_output_buffer(&buffer);
 
   SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, &out, 1);
@@ -1260,7 +1260,7 @@ test_write_error_in_list_subject(SerdWorld* world, const unsigned n_quads)
   serd_model_add(model, l2, rdf_rest, rdf_nil, NULL);
   serd_model_add(model, l1, p, o, NULL);
 
-  SerdEnv* env = serd_env_new(serd_empty_string());
+  SerdEnv* env = serd_env_new(world, serd_empty_string());
 
   for (size_t max_successes = 0; max_successes < 18; ++max_successes) {
     FailingWriteFuncState state = {0, max_successes};
@@ -1316,7 +1316,7 @@ test_write_error_in_list_object(SerdWorld* world, const unsigned n_quads)
   serd_model_add(model, l2, rdf_first, two, NULL);
   serd_model_add(model, l2, rdf_rest, rdf_nil, NULL);
 
-  SerdEnv* env = serd_env_new(serd_empty_string());
+  SerdEnv* env = serd_env_new(world, serd_empty_string());
 
   for (size_t max_successes = 0; max_successes < 21; ++max_successes) {
     FailingWriteFuncState state = {0, max_successes};

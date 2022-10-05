@@ -18,8 +18,8 @@ test_size(SerdWorld* const      world,
           const SerdReaderFlags flags,
           const size_t          stack_size)
 {
-  SerdSink*         sink = serd_sink_new(NULL, NULL, NULL);
-  SerdEnv* const    env  = serd_env_new(serd_empty_string());
+  SerdSink*         sink = serd_sink_new(world, NULL, NULL, NULL);
+  SerdEnv* const    env  = serd_env_new(world, serd_empty_string());
   SerdReader* const reader =
     serd_reader_new(world, syntax, flags, env, sink, stack_size);
 

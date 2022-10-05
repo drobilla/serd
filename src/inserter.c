@@ -116,8 +116,8 @@ serd_inserter_new(SerdModel* const model, const SerdNode* const default_graph)
   data->model         = model;
   data->default_graph = serd_node_copy(default_graph);
 
-  SerdSink* const sink =
-    serd_sink_new(data, (SerdEventFunc)serd_inserter_on_event, free);
+  SerdSink* const sink = serd_sink_new(
+    model->world, data, (SerdEventFunc)serd_inserter_on_event, free);
 
   return sink;
 }
