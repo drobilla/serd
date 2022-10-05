@@ -188,5 +188,5 @@ serd_canon_new(const SerdWorld* const world,
   data->target = target;
   data->flags  = flags;
 
-  return serd_sink_new(data, (SerdEventFunc)serd_canon_on_event, free);
+  return serd_sink_new(world, data, (SerdEventFunc)serd_canon_on_event, free);
 }

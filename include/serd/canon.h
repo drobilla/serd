@@ -34,9 +34,9 @@ typedef uint32_t SerdCanonFlags;
 */
 SERD_API
 SerdSink* SERD_ALLOCATED
-serd_canon_new(const SerdWorld* SERD_NULLABLE world,
-               const SerdSink* SERD_NONNULL   target,
-               SerdCanonFlags                 flags);
+serd_canon_new(const SerdWorld* SERD_NONNULL world,
+               const SerdSink* SERD_NONNULL  target,
+               SerdCanonFlags                flags);
 
 /**
    @}

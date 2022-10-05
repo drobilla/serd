@@ -61,13 +61,15 @@ serd_filter_on_event(void* const handle, const SerdEvent* const event)
 }
 
 SerdSink*
-serd_filter_new(const SerdSink* const target,
-                const SerdNode* const subject,
-                const SerdNode* const predicate,
-                const SerdNode* const object,
-                const SerdNode* const graph,
-                const bool            inclusive)
+serd_filter_new(const SerdWorld* const world,
+                const SerdSink* const  target,
+                const SerdNode* const  subject,
+                const SerdNode* const  predicate,
+                const SerdNode* const  object,
+                const SerdNode* const  graph,
+                const bool             inclusive)
 {
+  assert(world);
   assert(target);
 
   SerdFilterData* const data =
@@ -92,5 +94,5 @@ serd_filter_new(const SerdSink* const target,
     data->graph = serd_node_copy(graph);
   }
 
-  return serd_sink_new(data, serd_filter_on_event, free_data);
+  return serd_sink_new(world, data, serd_filter_on_event, free_data);
 }

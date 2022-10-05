@@ -31,7 +31,7 @@ test(void)
 {
   SerdBuffer buffer = {NULL, 0};
   SerdWorld* world  = serd_world_new();
-  SerdEnv*   env    = serd_env_new(serd_empty_string());
+  SerdEnv*   env    = serd_env_new(world, serd_empty_string());
   SerdNodes* nodes  = serd_nodes_new();
 
   const SerdNode* b1 = serd_nodes_blank(nodes, serd_string("b1"));

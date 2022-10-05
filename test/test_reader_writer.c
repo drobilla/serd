@@ -47,7 +47,7 @@ test_writer(const char* const path)
 {
   SerdWorld* world = serd_world_new();
   SerdNodes* nodes = serd_world_nodes(world);
-  SerdEnv*   env   = serd_env_new(serd_empty_string());
+  SerdEnv*   env   = serd_env_new(world, serd_empty_string());
 
   SerdOutputStream output = serd_open_output_file(path);
 
@@ -141,10 +141,10 @@ test_reader(const char* path)
 {
   SerdWorld*      world = serd_world_new();
   ReaderTest      rt    = {0};
-  SerdSink* const sink  = serd_sink_new(&rt, test_sink, NULL);
+  SerdSink* const sink  = serd_sink_new(world, &rt, test_sink, NULL);
   assert(sink);
 
-  SerdEnv* const env = serd_env_new(serd_empty_string());
+  SerdEnv* const env = serd_env_new(world, serd_empty_string());
   assert(env);
 
   // Test that too little stack space fails gracefully

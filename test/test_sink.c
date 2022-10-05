@@ -84,6 +84,7 @@ on_event(void* const handle, const SerdEvent* const event)
 static void
 test_callbacks(void)
 {
+  SerdWorld* const world = serd_world_new();
   SerdNodes* const nodes = serd_nodes_new();
 
   const SerdNode* base  = serd_nodes_uri(nodes, serd_string(NS_EG));
@@ -91,7 +92,7 @@ test_callbacks(void)
   const SerdNode* uri   = serd_nodes_uri(nodes, serd_string(NS_EG "uri"));
   const SerdNode* blank = serd_nodes_blank(nodes, serd_string("b1"));
 
-  SerdEnv* env = serd_env_new(serd_node_string_view(base));
+  SerdEnv* env = serd_env_new(world, serd_node_string_view(base));
 
   SerdStatement* const statement =
     serd_statement_new(base, uri, blank, NULL, NULL);
@@ -105,7 +106,7 @@ test_callbacks(void)
 
   // Call functions on a sink with no functions set
 
-  SerdSink* null_sink = serd_sink_new(&state, NULL, NULL);
+  SerdSink* null_sink = serd_sink_new(world, &state, NULL, NULL);
 
   assert(!serd_sink_write_base(null_sink, base));
   assert(!serd_sink_write_prefix(null_sink, name, uri));
@@ -128,7 +129,7 @@ test_callbacks(void)
 
   // Try again with a sink that has the event handler set
 
-  SerdSink* sink = serd_sink_new(&state, on_event, NULL);
+  SerdSink* sink = serd_sink_new(world, &state, on_event, NULL);
 
   assert(!serd_sink_write_base(sink, base));
   assert(serd_node_equals(state.last_base, base));
@@ -151,6 +152,7 @@ test_callbacks(void)
   serd_statement_free(statement);
   serd_env_free(env);
   serd_nodes_free(nodes);
+  serd_world_free(world);
 }
 
 static void
@@ -160,11 +162,13 @@ test_free(void)
   serd_sink_free(NULL);
 
   // Set up a sink with dynamically allocated data and a free function
-  uintptr_t* data = (uintptr_t*)calloc(1, sizeof(uintptr_t));
-  SerdSink*  sink = serd_sink_new(data, NULL, free);
+  SerdWorld* world = serd_world_new();
+  uintptr_t* data  = (uintptr_t*)calloc(1, sizeof(uintptr_t));
+  SerdSink*  sink  = serd_sink_new(world, data, NULL, free);
 
   // Free the sink, which should free the data (rely on valgrind or sanitizers)
   serd_sink_free(sink);
+  serd_world_free(world);
 }
 
 int

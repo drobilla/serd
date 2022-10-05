@@ -21,6 +21,7 @@ typedef struct {
 } SerdPrefix;
 
 struct SerdEnvImpl {
+  SerdWorld*      world;
   SerdNodes*      nodes;
   SerdPrefix*     prefixes;
   size_t          n_prefixes;
@@ -29,10 +30,11 @@ struct SerdEnvImpl {
 };
 
 SerdEnv*
-serd_env_new(const SerdStringView base_uri)
+serd_env_new(SerdWorld* const world, const SerdStringView base_uri)
 {
   SerdEnv* env = (SerdEnv*)calloc(1, sizeof(struct SerdEnvImpl));
 
+  env->world = world;
   env->nodes = serd_nodes_new();
 
   if (env && base_uri.len) {
