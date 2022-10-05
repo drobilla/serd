@@ -1,6 +1,7 @@
 // Copyright 2011-2021 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
+#include "memory.h"
 #include "string_utils.h"
 
 #include "serd/memory.h"
@@ -10,9 +11,9 @@
 #include <stdlib.h>
 
 void
-serd_free(void* const ptr)
+serd_free(SerdAllocator* const allocator, void* const ptr)
 {
-  free(ptr);
+  serd_afree(allocator, ptr);
 }
 
 const char*

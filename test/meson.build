@@ -41,9 +41,11 @@ subdir('headers')
 ##############
 
 unit_tests = [
+  'canon',
   'caret',
   'cursor',
   'env',
+  'filter',
   'free_null',
   'log',
   'model',
@@ -74,7 +76,7 @@ foreach unit : unit_tests
     unit,
     executable(
       'test_@0@'.format(unit),
-      files('test_@0@.c'.format(unit)),
+      files('test_@0@.c'.format(unit), 'failing_allocator.c'),
       c_args: c_suppressions + platform_args,
       dependencies: [serd_dep, zix_dep],
     ),

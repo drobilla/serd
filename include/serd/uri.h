@@ -5,6 +5,7 @@
 #define SERD_URI_H
 
 #include "serd/attributes.h"
+#include "serd/memory.h"
 #include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/string_view.h"
@@ -64,13 +65,16 @@ serd_parse_uri(const char* SERD_NONNULL string);
 
    The returned path and `*hostname` must be freed with serd_free().
 
+   @param allocator Allocator for the returned string.
    @param uri A file URI.
    @param hostname If non-NULL, set to the hostname, if present.
-   @return A filesystem path.
+
+   @return A newly allocated path string that must be freed with serd_free().
 */
 SERD_API
 char* SERD_NULLABLE
-serd_parse_file_uri(const char* SERD_NONNULL          uri,
+serd_parse_file_uri(SerdAllocator* SERD_NULLABLE      allocator,
+                    const char* SERD_NONNULL          uri,
                     char* SERD_NONNULL* SERD_NULLABLE hostname);
 
 /**

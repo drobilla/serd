@@ -3,6 +3,8 @@
 
 #undef NDEBUG
 
+#include "failing_allocator.h"
+
 #include "serd/serd.h"
 
 #include <assert.h>
@@ -10,9 +12,28 @@
 #include <string.h>
 
 static void
+test_new_failed_alloc(void)
+{
+  SerdFailingAllocator allocator = serd_failing_allocator();
+
+  // Successfully allocate a world to count the number of allocations
+  SerdWorld* const world = serd_world_new(&allocator.base);
+  assert(world);
+
+  // Test that each allocation failing is handled gracefully
+  const size_t n_new_allocs = allocator.n_allocations;
+  for (size_t i = 0; i < n_new_allocs; ++i) {
+    allocator.n_remaining = i;
+    assert(!serd_world_new(&allocator.base));
+  }
+
+  serd_world_free(world);
+}
+
+static void
 test_get_blank(void)
 {
-  SerdWorld* world = serd_world_new();
+  SerdWorld* world = serd_world_new(NULL);
   char       expected[12];
 
   for (unsigned i = 0; i < 32; ++i) {
@@ -28,7 +49,7 @@ test_get_blank(void)
 static void
 test_nodes(void)
 {
-  SerdWorld* const world = serd_world_new();
+  SerdWorld* const world = serd_world_new(NULL);
   SerdNodes* const nodes = serd_world_nodes(world);
 
   assert(serd_nodes_size(nodes) > 0U);
@@ -39,6 +60,7 @@ test_nodes(void)
 int
 main(void)
 {
+  test_new_failed_alloc();
   test_get_blank();
   test_nodes();
 

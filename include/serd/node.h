@@ -324,7 +324,11 @@ serd_node_construct_base64(size_t                   buf_size,
    @defgroup serd_node_allocation Dynamic Allocation
 
    This is a convenient higher-level node construction API which allocates
-   nodes on the heap.  The returned nodes must be freed with serd_node_free().
+   nodes with an allocator.  The returned nodes must be freed with
+   serd_node_free() using the same allocator.
+
+   Note that in most cases it is better to use a #SerdNodes instead of managing
+   individual node allocations.
 
    @{
 */
@@ -340,10 +344,11 @@ serd_node_construct_base64(size_t                   buf_size,
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_node_new(SerdNodeType   type,
-              SerdStringView string,
-              SerdNodeFlags  flags,
-              SerdStringView meta);
+serd_node_new(SerdAllocator* SERD_NULLABLE allocator,
+              SerdNodeType                 type,
+              SerdStringView               string,
+              SerdNodeFlags                flags,
+              SerdStringView               meta);
 
 /**
    Create a new simple "token" node.
@@ -356,7 +361,9 @@ serd_node_new(SerdNodeType   type,
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_token(SerdNodeType type, SerdStringView string);
+serd_new_token(SerdAllocator* SERD_NULLABLE allocator,
+               SerdNodeType                 type,
+               SerdStringView               string);
 
 /**
    Create a new string literal node.
@@ -369,7 +376,7 @@ serd_new_token(SerdNodeType type, SerdStringView string);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_string(SerdStringView string);
+serd_new_string(SerdAllocator* SERD_NULLABLE allocator, SerdStringView string);
 
 /**
    Create a new URI node from a string.
@@ -382,7 +389,7 @@ serd_new_string(SerdStringView string);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_uri(SerdStringView string);
+serd_new_uri(SerdAllocator* SERD_NULLABLE allocator, SerdStringView string);
 
 /**
    Create a new URI node from a parsed URI.
@@ -395,7 +402,7 @@ serd_new_uri(SerdStringView string);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_parsed_uri(SerdURIView uri);
+serd_new_parsed_uri(SerdAllocator* SERD_NULLABLE allocator, SerdURIView uri);
 
 /**
    Create a new file URI node from a path and optional hostname.
@@ -408,7 +415,9 @@ serd_new_parsed_uri(SerdURIView uri);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_file_uri(SerdStringView path, SerdStringView hostname);
+serd_new_file_uri(SerdAllocator* SERD_NULLABLE allocator,
+                  SerdStringView               path,
+                  SerdStringView               hostname);
 
 /**
    Create a new literal node.
@@ -421,9 +430,10 @@ serd_new_file_uri(SerdStringView path, SerdStringView hostname);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_literal(SerdStringView string,
-                 SerdNodeFlags  flags,
-                 SerdStringView meta);
+serd_new_literal(SerdAllocator* SERD_NULLABLE allocator,
+                 SerdStringView               string,
+                 SerdNodeFlags                flags,
+                 SerdStringView               meta);
 
 /**
    Create a new canonical xsd:boolean node.
@@ -436,7 +446,7 @@ serd_new_literal(SerdStringView string,
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_boolean(bool b);
+serd_new_boolean(SerdAllocator* SERD_NULLABLE allocator, bool b);
 
 /**
    Create a new canonical xsd:decimal literal.
@@ -449,7 +459,7 @@ serd_new_boolean(bool b);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_decimal(double d);
+serd_new_decimal(SerdAllocator* SERD_NULLABLE allocator, double d);
 
 /**
    Create a new canonical xsd:double literal.
@@ -462,7 +472,7 @@ serd_new_decimal(double d);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_double(double d);
+serd_new_double(SerdAllocator* SERD_NULLABLE allocator, double d);
 
 /**
    Create a new canonical xsd:float literal.
@@ -475,7 +485,7 @@ serd_new_double(double d);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_float(float f);
+serd_new_float(SerdAllocator* SERD_NULLABLE allocator, float f);
 
 /**
    Create a new canonical xsd:integer literal.
@@ -488,7 +498,9 @@ serd_new_float(float f);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_integer(int64_t i, SerdStringView datatype);
+serd_new_integer(SerdAllocator* SERD_NULLABLE allocator,
+                 int64_t                      i,
+                 SerdStringView               datatype);
 
 /**
    Create a new canonical xsd:base64Binary literal.
@@ -501,9 +513,10 @@ serd_new_integer(int64_t i, SerdStringView datatype);
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_base64(const void* SERD_NONNULL buf,
-                size_t                   size,
-                SerdStringView           datatype);
+serd_new_base64(SerdAllocator* SERD_NULLABLE allocator,
+                const void* SERD_NONNULL     buf,
+                size_t                       size,
+                SerdStringView               datatype);
 
 /**
    @}
@@ -590,12 +603,14 @@ serd_get_base64(const SerdNode* SERD_NONNULL node,
 /// Return a deep copy of `node`
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_node_copy(const SerdNode* SERD_NULLABLE node);
+serd_node_copy(SerdAllocator* SERD_NULLABLE  allocator,
+               const SerdNode* SERD_NULLABLE node);
 
 /// Free any data owned by `node`
 SERD_API
 void
-serd_node_free(SerdNode* SERD_NULLABLE node);
+serd_node_free(SerdAllocator* SERD_NULLABLE allocator,
+               SerdNode* SERD_NULLABLE      node);
 
 /// Return the type of a node
 SERD_PURE_API

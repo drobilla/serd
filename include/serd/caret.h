@@ -26,6 +26,7 @@ typedef struct SerdCaretImpl SerdCaret;
    valid.  That is, serd_caret_document() will return exactly the pointer
    `document`, not a copy.
 
+   @param allocator Allocator to use for caret memory.
    @param document The document or the caret refers to (usually a file URI)
    @param line The line number in the document (1-based)
    @param column The column number in the document (1-based)
@@ -33,19 +34,22 @@ typedef struct SerdCaretImpl SerdCaret;
 */
 SERD_API
 SerdCaret* SERD_ALLOCATED
-serd_caret_new(const SerdNode* SERD_NONNULL document,
+serd_caret_new(SerdAllocator* SERD_NULLABLE allocator,
+               const SerdNode* SERD_NONNULL document,
                unsigned                     line,
                unsigned                     column);
 
 /// Return a copy of `caret`
 SERD_API
 SerdCaret* SERD_ALLOCATED
-serd_caret_copy(const SerdCaret* SERD_NULLABLE caret);
+serd_caret_copy(SerdAllocator* SERD_NULLABLE   allocator,
+                const SerdCaret* SERD_NULLABLE caret);
 
 /// Free `caret`
 SERD_API
 void
-serd_caret_free(SerdCaret* SERD_NULLABLE caret);
+serd_caret_free(SerdAllocator* SERD_NULLABLE allocator,
+                SerdCaret* SERD_NULLABLE     caret);
 
 /// Return true iff `lhs` is equal to `rhs`
 SERD_PURE_API

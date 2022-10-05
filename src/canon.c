@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: ISC
 
 #include "caret.h" // IWYU pragma: keep
+#include "memory.h"
 #include "namespaces.h"
 #include "node.h"
 #include "statement.h" // IWYU pragma: keep
@@ -13,6 +14,7 @@
 #include "serd/caret.h"
 #include "serd/event.h"
 #include "serd/log.h"
+#include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
@@ -32,7 +34,8 @@ typedef struct {
 } SerdCanonData;
 
 static ExessResult
-build_typed(SerdNode** const                   out,
+build_typed(SerdAllocator* const SERD_NONNULL  allocator,
+            SerdNode** const                   out,
             const SerdNode* const SERD_NONNULL node,
             const SerdNode* const SERD_NONNULL datatype)
 {
@@ -43,7 +46,7 @@ build_typed(SerdNode** const                   out,
   ExessResult r            = {EXESS_SUCCESS, 0};
 
   if (!strcmp(datatype_uri, NS_RDF "langString")) {
-    *out = serd_new_string(serd_node_string_view(node));
+    *out = serd_new_string(allocator, serd_node_string_view(node));
     return r;
   }
 
@@ -62,7 +65,11 @@ build_typed(SerdNode** const                   out,
   const size_t    datatype_size    = serd_node_total_size(datatype);
   const size_t    len              = serd_node_pad_length(r.count);
   const size_t    total_len        = sizeof(SerdNode) + len + datatype_size;
-  SerdNode* const result           = serd_node_malloc(total_len);
+  SerdNode* const result           = serd_node_malloc(allocator, total_len);
+  if (!result) {
+    r.status = EXESS_NO_SPACE;
+    return r;
+  }
 
   result->length = r.count;
   result->flags  = SERD_HAS_DATATYPE;
@@ -83,7 +90,8 @@ build_typed(SerdNode** const                   out,
 }
 
 static ExessResult
-build_tagged(SerdNode** const                   out,
+build_tagged(SerdAllocator* const SERD_NONNULL  allocator,
+             SerdNode** const                   out,
              const SerdNode* const SERD_NONNULL node,
              const SerdNode* const SERD_NONNULL language)
 {
@@ -104,7 +112,8 @@ build_tagged(SerdNode** const                   out,
   }
 
   // Make a new literal that is otherwise identical
-  *out = serd_new_literal(serd_node_string_view(node),
+  *out = serd_new_literal(allocator,
+                          serd_node_string_view(node),
                           serd_node_flags(node),
                           serd_substring(canonical_lang, lang_len));
 
@@ -119,16 +128,18 @@ serd_canon_on_statement(SerdCanonData* const       data,
                         const SerdStatementFlags   flags,
                         const SerdStatement* const statement)
 {
-  const SerdNode* const object   = serd_statement_object(statement);
-  const SerdNode* const datatype = serd_node_datatype(object);
-  const SerdNode* const language = serd_node_language(object);
+  SerdAllocator* const  allocator = serd_world_allocator(data->world);
+  const SerdNode* const object    = serd_statement_object(statement);
+  const SerdNode* const datatype  = serd_node_datatype(object);
+  const SerdNode* const language  = serd_node_language(object);
   if (!datatype && !language) {
     return serd_sink_write_statement(data->target, flags, statement);
   }
 
   SerdNode*         normo = NULL;
-  const ExessResult r     = datatype ? build_typed(&normo, object, datatype)
-                                     : build_tagged(&normo, object, language);
+  const ExessResult r     = datatype
+                              ? build_typed(allocator, &normo, object, datatype)
+                              : build_tagged(allocator, &normo, object, language);
 
   if (r.status) {
     SerdCaret  caret = {NULL, 0U, 0U};
@@ -148,7 +159,7 @@ serd_canon_on_statement(SerdCanonData* const       data,
                  exess_strerror(r.status));
 
     if (!lax) {
-      return SERD_BAD_LITERAL;
+      return r.status == EXESS_NO_SPACE ? SERD_BAD_ALLOC : SERD_BAD_LITERAL;
     }
   }
 
@@ -162,7 +173,7 @@ serd_canon_on_statement(SerdCanonData* const       data,
                                         statement->nodes[1],
                                         normo,
                                         statement->nodes[3]);
-  serd_node_free(normo);
+  serd_node_free(allocator, normo);
   return st;
 }
 
@@ -180,13 +191,26 @@ serd_canon_new(const SerdWorld* const world,
                const SerdSink* const  target,
                const SerdCanonFlags   flags)
 {
+  assert(world);
   assert(target);
 
-  SerdCanonData* const data = (SerdCanonData*)calloc(1, sizeof(SerdCanonData));
+  SerdCanonData* const data =
+    (SerdCanonData*)serd_wcalloc(world, 1, sizeof(SerdCanonData));
+
+  if (!data) {
+    return NULL;
+  }
 
   data->world  = world;
   data->target = target;
   data->flags  = flags;
 
-  return serd_sink_new(world, data, (SerdEventFunc)serd_canon_on_event, free);
+  SerdSink* const sink =
+    serd_sink_new(world, data, (SerdEventFunc)serd_canon_on_event, free);
+
+  if (!sink) {
+    serd_wfree(world, data);
+  }
+
+  return sink;
 }

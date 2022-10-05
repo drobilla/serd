@@ -117,6 +117,7 @@ sources = files(
   'src/input_stream.c',
   'src/inserter.c',
   'src/log.c',
+  'src/memory.c',
   'src/model.c',
   'src/n3.c',
   'src/node.c',

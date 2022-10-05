@@ -5,13 +5,17 @@
 #define SERD_SRC_BLOCK_DUMPER_H
 
 #include "serd/attributes.h"
+#include "serd/memory.h"
 #include "serd/output_stream.h"
 #include "serd/status.h"
+#include "serd/world.h"
 
 #include <stddef.h>
 #include <string.h>
 
 typedef struct {
+  SerdAllocator* SERD_NONNULL allocator; ///< Buffer allocator
+
   SerdOutputStream* SERD_ALLOCATED out;        ///< Output stream to write to
   char* SERD_ALLOCATED             buf;        ///< Local buffer if needed
   size_t                           size;       ///< Bytes pending for this block
@@ -25,7 +29,8 @@ typedef struct {
    calling serd_block_dumper_close().
 */
 SerdStatus
-serd_block_dumper_open(SerdBlockDumper* SERD_NONNULL  dumper,
+serd_block_dumper_open(const SerdWorld* SERD_NONNULL  world,
+                       SerdBlockDumper* SERD_NONNULL  dumper,
                        SerdOutputStream* SERD_NONNULL output,
                        size_t                         block_size);
 

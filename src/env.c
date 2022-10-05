@@ -4,15 +4,15 @@
 #include "serd/env.h"
 
 #include "env.h"
+#include "memory.h"
 #include "node.h"
+#include "world.h"
 
 #include "serd/node.h"
 #include "serd/nodes.h"
 
 #include <assert.h>
 #include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 typedef struct {
@@ -32,15 +32,23 @@ struct SerdEnvImpl {
 SerdEnv*
 serd_env_new(SerdWorld* const world, const SerdStringView base_uri)
 {
-  SerdEnv* env = (SerdEnv*)calloc(1, sizeof(struct SerdEnvImpl));
+  assert(world);
 
-  env->world = world;
-  env->nodes = serd_nodes_new();
+  SerdEnv* env = (SerdEnv*)serd_wcalloc(world, 1, sizeof(struct SerdEnvImpl));
 
-  if (env && base_uri.len) {
-    if (serd_env_set_base_uri(env, base_uri)) {
-      free(env);
+  if (env) {
+    env->world = world;
+    if (!(env->nodes = serd_nodes_new(world->allocator))) {
+      serd_wfree(world, env);
       return NULL;
+    }
+
+    if (base_uri.len) {
+      if (serd_env_set_base_uri(env, base_uri)) {
+        serd_nodes_free(env->nodes);
+        serd_wfree(world, env);
+        return NULL;
+      }
     }
   }
 
@@ -48,18 +56,31 @@ serd_env_new(SerdWorld* const world, const SerdStringView base_uri)
 }
 
 SerdEnv*
-serd_env_copy(const SerdEnv* const env)
+serd_env_copy(SerdAllocator* const allocator, const SerdEnv* const env)
 {
   if (!env) {
     return NULL;
   }
 
-  SerdEnv* copy = (SerdEnv*)calloc(1, sizeof(struct SerdEnvImpl));
+  SerdEnv* copy =
+    (SerdEnv*)serd_acalloc(allocator, 1, sizeof(struct SerdEnvImpl));
+
   if (copy) {
-    copy->nodes      = serd_nodes_new();
+    copy->world      = env->world;
     copy->n_prefixes = env->n_prefixes;
 
-    copy->prefixes = (SerdPrefix*)malloc(copy->n_prefixes * sizeof(SerdPrefix));
+    if (!(copy->nodes = serd_nodes_new(allocator))) {
+      serd_wfree(env->world, copy);
+      return NULL;
+    }
+
+    if (!(copy->prefixes = (SerdPrefix*)serd_amalloc(
+            allocator, copy->n_prefixes * sizeof(SerdPrefix)))) {
+      serd_nodes_free(copy->nodes);
+      serd_wfree(env->world, copy);
+      return NULL;
+    }
+
     for (size_t i = 0; i < copy->n_prefixes; ++i) {
       copy->prefixes[i].name =
         serd_nodes_intern(copy->nodes, env->prefixes[i].name);
@@ -81,9 +102,9 @@ void
 serd_env_free(SerdEnv* const env)
 {
   if (env) {
-    free(env->prefixes);
+    serd_wfree(env->world, env->prefixes);
     serd_nodes_free(env->nodes);
-    free(env);
+    serd_wfree(env->world, env);
   }
 }
 
@@ -107,6 +128,12 @@ serd_env_equals(const SerdEnv* const a, const SerdEnv* const b)
   }
 
   return true;
+}
+
+SerdWorld*
+serd_env_world(const SerdEnv* const env)
+{
+  return env->world;
 }
 
 SerdURIView
@@ -140,8 +167,11 @@ serd_env_set_base_uri(SerdEnv* const env, const SerdStringView uri)
     serd_resolve_uri(serd_parse_uri(uri.buf), env->base_uri);
 
   // Replace the current base URI
-  env->base_uri_node = serd_nodes_parsed_uri(env->nodes, new_base_uri);
-  env->base_uri      = serd_node_uri_view(env->base_uri_node);
+  if ((env->base_uri_node = serd_nodes_parsed_uri(env->nodes, new_base_uri))) {
+    env->base_uri = serd_node_uri_view(env->base_uri_node);
+  } else {
+    return SERD_BAD_ALLOC;
+  }
 
   serd_nodes_deref(env->nodes, old_base_uri);
   return SERD_SUCCESS;
@@ -164,7 +194,7 @@ serd_env_find(const SerdEnv* const env,
   return NULL;
 }
 
-static void
+static SerdStatus
 serd_env_add(SerdEnv* const        env,
              const SerdStringView  name,
              const SerdNode* const uri)
@@ -176,14 +206,25 @@ serd_env_add(SerdEnv* const        env,
       prefix->uri = uri;
     }
   } else {
-    env->prefixes = (SerdPrefix*)realloc(
-      env->prefixes, (++env->n_prefixes) * sizeof(SerdPrefix));
+    const SerdNode* const name_node = serd_nodes_string(env->nodes, name);
+    if (!name_node) {
+      return SERD_BAD_ALLOC;
+    }
 
-    env->prefixes[env->n_prefixes - 1].name =
-      serd_nodes_string(env->nodes, name);
+    SerdPrefix* const new_prefixes = (SerdPrefix*)serd_wrealloc(
+      env->world, env->prefixes, (env->n_prefixes + 1) * sizeof(SerdPrefix));
 
-    env->prefixes[env->n_prefixes - 1].uri = uri;
+    if (!new_prefixes) {
+      return SERD_BAD_ALLOC;
+    }
+
+    new_prefixes[env->n_prefixes].name = name_node;
+    new_prefixes[env->n_prefixes].uri  = uri;
+    env->prefixes                      = new_prefixes;
+    ++env->n_prefixes;
   }
+
+  return SERD_SUCCESS;
 }
 
 SerdStatus
@@ -195,8 +236,12 @@ serd_env_set_prefix(SerdEnv* const       env,
 
   if (serd_uri_string_has_scheme(uri.buf)) {
     // Set prefix to absolute URI
-    serd_env_add(env, name, serd_nodes_uri(env->nodes, uri));
-    return SERD_SUCCESS;
+    const SerdNode* const abs_uri = serd_nodes_uri(env->nodes, uri);
+    if (!abs_uri) {
+      return SERD_BAD_ALLOC;
+    }
+
+    return serd_env_add(env, name, abs_uri);
   }
 
   if (!env->base_uri_node) {
@@ -212,11 +257,14 @@ serd_env_set_prefix(SerdEnv* const       env,
   const SerdNode* const abs_uri =
     serd_nodes_parsed_uri(env->nodes, abs_uri_view);
 
+  if (!abs_uri) {
+    return SERD_BAD_ALLOC;
+  }
+
   assert(serd_uri_string_has_scheme(serd_node_string(abs_uri)));
 
   // Set prefix to resolved absolute URI
-  serd_env_add(env, name, abs_uri);
-  return SERD_SUCCESS;
+  return serd_env_add(env, name, abs_uri);
 }
 
 SerdStatus
@@ -285,7 +333,9 @@ serd_env_expand_curie(const SerdEnv* const env, const SerdStringView curie)
   }
 
   const size_t len = prefix.len + suffix.len;
-  SerdNode*    ret = serd_node_malloc(sizeof(SerdNode) + len + 1U);
+  SerdNode*    ret =
+    serd_node_malloc(env->world->allocator, sizeof(SerdNode) + len + 1);
+
   if (ret) {
     ret->length = len;
     ret->flags  = 0U;
@@ -313,8 +363,8 @@ serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
     return NULL;
   }
 
-  const SerdWriteResult r        = serd_node_construct_uri(0U, NULL, abs_uri);
-  SerdNode* const       expanded = serd_node_try_malloc(r);
+  const SerdWriteResult r  = serd_node_construct_uri(0U, NULL, abs_uri);
+  SerdNode* const expanded = serd_node_try_malloc(env->world->allocator, r);
   if (expanded) {
     serd_node_construct_uri(r.count, expanded, abs_uri);
   }

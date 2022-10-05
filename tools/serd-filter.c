@@ -9,6 +9,7 @@
 #include "serd/filter.h"
 #include "serd/input_stream.h"
 #include "serd/log.h"
+#include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/nodes.h"
 #include "serd/reader.h"
@@ -46,21 +47,30 @@ typedef struct {
   SerdNode* g;
 } FilterPattern;
 
+// Context for the pattern event callback
+typedef struct {
+  SerdAllocator* allocator;
+  FilterPattern  pattern;
+} PatternEventContext;
+
 // Handler for events read from a pattern
 static SerdStatus
 on_pattern_event(void* const handle, const SerdEvent* const event)
 {
+  PatternEventContext* const ctx       = (PatternEventContext*)handle;
+  SerdAllocator* const       allocator = ctx->allocator;
+
   if (event->type == SERD_STATEMENT) {
-    FilterPattern* const pat = (FilterPattern*)handle;
+    FilterPattern* const pat = &ctx->pattern;
     if (pat->s) {
       return SERD_BAD_PATTERN;
     }
 
     const SerdStatement* const statement = event->statement.statement;
-    pat->s = serd_node_copy(serd_statement_subject(statement));
-    pat->p = serd_node_copy(serd_statement_predicate(statement));
-    pat->o = serd_node_copy(serd_statement_object(statement));
-    pat->g = serd_node_copy(serd_statement_graph(statement));
+    pat->s = serd_node_copy(allocator, serd_statement_subject(statement));
+    pat->p = serd_node_copy(allocator, serd_statement_predicate(statement));
+    pat->o = serd_node_copy(allocator, serd_statement_object(statement));
+    pat->g = serd_node_copy(allocator, serd_statement_graph(statement));
   }
 
   return SERD_SUCCESS;
@@ -73,10 +83,12 @@ parse_pattern(SerdWorld* const       world,
               SerdInputStream* const in,
               const bool             inclusive)
 {
-  SerdEnv* const env     = serd_env_new(world, serd_empty_string());
-  FilterPattern  pat     = {NULL, NULL, NULL, NULL};
-  SerdSink*      in_sink = serd_sink_new(world, &pat, on_pattern_event, NULL);
-  SerdReader*    reader  = serd_reader_new(
+  SerdAllocator* const allocator = serd_world_allocator(world);
+  SerdEnv* const       env       = serd_env_new(world, serd_empty_string());
+  PatternEventContext  ctx       = {allocator, {NULL, NULL, NULL, NULL}};
+
+  SerdSink*   in_sink = serd_sink_new(world, &ctx, on_pattern_event, NULL);
+  SerdReader* reader  = serd_reader_new(
     world, SERD_NQUADS, SERD_READ_VARIABLES, env, in_sink, 4096);
 
   const SerdNode* pattern_name =
@@ -100,13 +112,18 @@ parse_pattern(SerdWorld* const       world,
     return NULL;
   }
 
-  SerdSink* filter =
-    serd_filter_new(world, sink, pat.s, pat.p, pat.o, pat.g, inclusive);
+  SerdSink* filter = serd_filter_new(world,
+                                     sink,
+                                     ctx.pattern.s,
+                                     ctx.pattern.p,
+                                     ctx.pattern.o,
+                                     ctx.pattern.g,
+                                     inclusive);
 
-  serd_node_free(pat.s);
-  serd_node_free(pat.p);
-  serd_node_free(pat.o);
-  serd_node_free(pat.g);
+  serd_node_free(allocator, ctx.pattern.s);
+  serd_node_free(allocator, ctx.pattern.p);
+  serd_node_free(allocator, ctx.pattern.o);
+  serd_node_free(allocator, ctx.pattern.g);
   return filter;
 }
 
