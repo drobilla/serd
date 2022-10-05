@@ -22,6 +22,7 @@
 #include <stddef.h>
 
 static const SerdNode* const everything_pattern[4] = {NULL, NULL, NULL, NULL};
+static const SerdCaret       null_caret            = {NULL, 0U, 0U};
 
 /// A 3-bit signature for a triple pattern used as a table index
 typedef enum {
@@ -258,10 +259,6 @@ serd_model_drop_statement(SerdModel* const     model,
     if (statement->nodes[i]) {
       serd_nodes_deref(model->nodes, statement->nodes[i]);
     }
-  }
-
-  if (statement->caret && serd_caret_document(statement->caret)) {
-    serd_nodes_deref(model->nodes, serd_caret_document(statement->caret));
   }
 
   serd_statement_free(model->allocator, statement);
@@ -603,9 +600,7 @@ serd_model_statement_caret(const SerdModel* const     model,
 {
   (void)model;
 
-  static const SerdCaret null_caret = {NULL, 0U, 0U};
-
-  return statement->caret ? *statement->caret : null_caret;
+  return statement->caret.document ? statement->caret : null_caret;
 }
 
 size_t
@@ -641,23 +636,18 @@ serd_model_ask(const SerdModel* const model,
   return !serd_cursor_is_end(&c);
 }
 
-static SerdCaret*
+static SerdCaret
 serd_model_intern_caret(SerdModel* const model, const SerdCaret* const caret)
 {
+  SerdCaret result = {NULL, 0U, 0U};
   if (!caret) {
-    return NULL;
+    return result;
   }
 
-  SerdCaret* const copy =
-    (SerdCaret*)zix_calloc(model->allocator, 1, sizeof(SerdCaret));
-
-  if (copy) {
-    copy->document = serd_nodes_intern(model->nodes, caret->document);
-    copy->line     = caret->line;
-    copy->column   = caret->column;
-  }
-
-  return copy;
+  result.document = serd_nodes_intern(model->nodes, caret->document);
+  result.line     = caret->line;
+  result.column   = caret->column;
+  return result;
 }
 
 SerdStatus
@@ -725,7 +715,7 @@ serd_model_insert(SerdModel* const model, const SerdStatement* const statement)
     serd_nodes_intern(nodes, serd_statement_predicate(statement)),
     serd_nodes_intern(nodes, serd_statement_object(statement)),
     serd_nodes_intern(nodes, serd_statement_graph(statement)),
-    statement->caret);
+    &statement->caret);
 }
 
 SerdStatus

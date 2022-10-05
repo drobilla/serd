@@ -35,7 +35,7 @@ serd_statement_is_valid(const SerdNode* const subject,
 }
 
 SerdStatement*
-serd_statement_new(ZixAllocator* const    allocator,
+serd_statement_new(ZixAllocator* const   allocator,
                    const SerdNode* const s,
                    const SerdNode* const p,
                    const SerdNode* const o,
@@ -57,7 +57,6 @@ serd_statement_new(ZixAllocator* const    allocator,
     statement->nodes[1] = p;
     statement->nodes[2] = o;
     statement->nodes[3] = g;
-    statement->caret    = NULL;
   }
 
   return statement;
@@ -76,16 +75,6 @@ serd_statement_copy(ZixAllocator* const        allocator,
 
   if (copy) {
     memcpy(copy, statement, sizeof(SerdStatement));
-
-    if (statement->caret) {
-      if (!(copy->caret =
-              (SerdCaret*)zix_malloc(allocator, sizeof(SerdCaret)))) {
-        zix_free(allocator, copy);
-        return NULL;
-      }
-
-      memcpy(copy->caret, statement->caret, sizeof(SerdCaret));
-    }
   }
 
   return copy;
@@ -95,10 +84,7 @@ void
 serd_statement_free(ZixAllocator* const  allocator,
                     SerdStatement* const statement)
 {
-  if (statement) {
-    zix_free(allocator, statement->caret);
-    zix_free(allocator, statement);
-  }
+  zix_free(allocator, statement);
 }
 
 const SerdNode*

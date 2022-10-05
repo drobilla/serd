@@ -12,7 +12,7 @@
 
 struct SerdStatementImpl {
   const SerdNode* nodes[4];
-  SerdCaret*      caret;
+  SerdCaret       caret;
 };
 
 ZIX_PURE_FUNC
