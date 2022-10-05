@@ -3,6 +3,8 @@
 
 #undef NDEBUG
 
+#include "failing_allocator.h"
+
 #include "serd/serd.h"
 #include "zix/allocator.h"
 #include "zix/filesystem.h"
@@ -47,6 +49,81 @@ test_sink(void* handle, const SerdEvent* event)
   return SERD_SUCCESS;
 }
 
+static void
+test_new_failed_alloc(void)
+{
+  SerdFailingAllocator allocator = serd_failing_allocator();
+
+  SerdWorld* world   = serd_world_new(&allocator.base);
+  size_t     ignored = 0U;
+  SerdSink*  sink    = serd_sink_new(world, &ignored, test_sink, NULL);
+  SerdEnv*   env     = serd_env_new(world, serd_empty_string());
+
+  // Successfully allocate a reader to count the number of allocations
+  const size_t n_world_allocs = allocator.n_allocations;
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0U, env, sink, 4096);
+  assert(reader);
+
+  // Test that each allocation failing is handled gracefully
+  const size_t n_new_allocs = allocator.n_allocations - n_world_allocs;
+  for (size_t i = 0; i < n_new_allocs; ++i) {
+    allocator.n_remaining = i;
+    assert(!serd_reader_new(world, SERD_TURTLE, 0U, env, sink, 4096));
+  }
+
+  serd_reader_free(reader);
+  serd_env_free(env);
+  serd_sink_free(sink);
+  serd_world_free(world);
+}
+
+static void
+test_start_failed_alloc(const char* const path)
+{
+  SerdFailingAllocator allocator = serd_failing_allocator();
+
+  FILE* const f = fopen(path, "w+b");
+  assert(f);
+
+  fprintf(f, "_:s <http://example.org/p> _:o .\n");
+  fflush(f);
+  fseek(f, 0L, SEEK_SET);
+
+  SerdWorld*  world   = serd_world_new(&allocator.base);
+  size_t      ignored = 0U;
+  SerdSink*   sink    = serd_sink_new(world, &ignored, test_sink, NULL);
+  SerdEnv*    env     = serd_env_new(world, serd_empty_string());
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0U, env, sink, 4096);
+
+  assert(reader);
+
+  SerdInputStream in =
+    serd_open_input_stream((SerdReadFunc)fread, (SerdErrorFunc)ferror, NULL, f);
+
+  // Successfully start a new read to count the number of allocations
+  const size_t n_setup_allocs = allocator.n_allocations;
+  assert(serd_reader_start(reader, &in, NULL, 4096) == SERD_SUCCESS);
+
+  // Test that each allocation failing is handled gracefully
+  const size_t n_new_allocs = allocator.n_allocations - n_setup_allocs;
+  assert(!serd_reader_finish(reader));
+  for (size_t i = 0; i < n_new_allocs; ++i) {
+    allocator.n_remaining = i;
+
+    in = serd_open_input_stream(
+      (SerdReadFunc)fread, (SerdErrorFunc)ferror, NULL, f);
+
+    SerdStatus st = serd_reader_start(reader, &in, NULL, 4096);
+    assert(st == SERD_BAD_ALLOC);
+  }
+
+  serd_reader_free(reader);
+  serd_env_free(env);
+  serd_sink_free(sink);
+  serd_world_free(world);
+  fclose(f);
+}
+
 SERD_PURE_FUNC static size_t
 prepare_test_read(void* buf, size_t size, size_t nmemb, void* stream)
 {
@@ -71,7 +148,7 @@ prepare_test_error(void* stream)
 static void
 test_prepare_error(const char* const path)
 {
-  SerdWorld* const world = serd_world_new();
+  SerdWorld* const world = serd_world_new(NULL);
   ReaderTest       rt    = {0, 0, 0, 0};
 
   FILE* const f = fopen(path, "w+b");
@@ -111,7 +188,7 @@ test_prepare_error(const char* const path)
 static void
 test_read_string(void)
 {
-  SerdWorld* world = serd_world_new();
+  SerdWorld* world = serd_world_new(NULL);
   ReaderTest rt    = {0, 0, 0, 0};
   SerdSink*  sink  = serd_sink_new(world, &rt, test_sink, NULL);
   assert(sink);
@@ -216,7 +293,7 @@ test_read_eof_by_page(const char* const path)
   fflush(f);
   fseek(f, 0L, SEEK_SET);
 
-  SerdWorld* world   = serd_world_new();
+  SerdWorld* world   = serd_world_new(NULL);
   ReaderTest ignored = {0, 0, 0, 0};
   SerdSink*  sink    = serd_sink_new(world, &ignored, test_sink, NULL);
   SerdEnv*   env     = serd_env_new(world, serd_empty_string());
@@ -244,7 +321,7 @@ test_read_eof_by_page(const char* const path)
 static void
 test_read_eof_by_byte(void)
 {
-  SerdWorld* world   = serd_world_new();
+  SerdWorld* world   = serd_world_new(NULL);
   ReaderTest ignored = {0, 0, 0, 0};
   SerdSink*  sink    = serd_sink_new(world, &ignored, test_sink, NULL);
   SerdEnv*   env     = serd_env_new(world, serd_empty_string());
@@ -287,7 +364,7 @@ test_read_chunks(const char* const path)
   fwrite(&null, sizeof(null), 1, f);
   fseek(f, 0, SEEK_SET);
 
-  SerdWorld* world = serd_world_new();
+  SerdWorld* world = serd_world_new(NULL);
   ReaderTest rt    = {0, 0, 0, 0};
   SerdSink*  sink  = serd_sink_new(world, &rt, test_sink, NULL);
   assert(sink);
@@ -375,7 +452,7 @@ test_read_chunks(const char* const path)
 static void
 test_read_empty(const char* const path)
 {
-  SerdWorld* const world = serd_world_new();
+  SerdWorld* const world = serd_world_new(NULL);
   ReaderTest       rt    = {0, 0, 0, 0};
 
   SerdSink* const sink = serd_sink_new(world, &rt, test_sink, NULL);
@@ -431,7 +508,7 @@ check_cursor(void* handle, const SerdEvent* event)
 static void
 test_error_cursor(void)
 {
-  SerdWorld*        world  = serd_world_new();
+  SerdWorld*        world  = serd_world_new(NULL);
   bool              called = false;
   SerdSink*         sink   = serd_sink_new(world, &called, check_cursor, NULL);
   SerdEnv* const    env    = serd_env_new(world, serd_empty_string());
@@ -445,7 +522,7 @@ test_error_cursor(void)
     "<http://example.org/s> <http://example.org/p> "
     "<http://example.org/o> .";
 
-  SerdNode* const string_name = serd_new_string(serd_string("string"));
+  SerdNode* const string_name = serd_new_string(NULL, serd_string("string"));
   const char*     position    = string;
   SerdInputStream in          = serd_open_input_string(&position);
 
@@ -456,7 +533,7 @@ test_error_cursor(void)
   assert(called);
   assert(!serd_close_input(&in));
 
-  serd_node_free(string_name);
+  serd_node_free(NULL, string_name);
   serd_reader_free(reader);
   serd_env_free(env);
   serd_sink_free(sink);
@@ -471,6 +548,8 @@ main(void)
   char* const dir          = zix_create_temporary_directory(NULL, path_pattern);
   char* const path         = zix_path_join(NULL, dir, "serd_test_reader.ttl");
 
+  test_new_failed_alloc();
+  test_start_failed_alloc(path);
   test_prepare_error(path);
   test_read_string();
   test_read_eof_by_page(path);

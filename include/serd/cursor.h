@@ -27,7 +27,8 @@ typedef struct SerdCursorImpl SerdCursor;
 
 /// Return a new copy of `cursor`
 SERD_API SerdCursor* SERD_ALLOCATED
-serd_cursor_copy(const SerdCursor* SERD_NULLABLE cursor);
+serd_cursor_copy(SerdAllocator* SERD_NULLABLE    allocator,
+                 const SerdCursor* SERD_NULLABLE cursor);
 
 /// Return the statement pointed to by `cursor`
 SERD_API const SerdStatement* SERD_NULLABLE

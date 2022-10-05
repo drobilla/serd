@@ -3,6 +3,7 @@
 
 #include "world.h"
 
+#include "memory.h"
 #include "namespaces.h"
 #include "node.h"
 #include "serd_config.h"
@@ -56,10 +57,23 @@ terminal_supports_color(FILE* const stream)
 }
 
 SerdWorld*
-serd_world_new(void)
+serd_world_new(SerdAllocator* const allocator)
 {
-  SerdWorld* world = (SerdWorld*)calloc(1, sizeof(SerdWorld));
-  SerdNodes* nodes = serd_nodes_new();
+  SerdAllocator* const actual =
+    allocator ? allocator : serd_default_allocator();
+
+  SerdWorld* const world =
+    (SerdWorld*)serd_acalloc(actual, 1, sizeof(SerdWorld));
+
+  if (!world) {
+    return NULL;
+  }
+
+  SerdNodes* const nodes = serd_nodes_new(actual);
+  if (!nodes) {
+    serd_afree(actual, world);
+    return NULL;
+  }
 
   const SerdStringView rdf_first   = serd_string(NS_RDF "first");
   const SerdStringView rdf_nil     = serd_string(NS_RDF "nil");
@@ -69,14 +83,20 @@ serd_world_new(void)
   const SerdStringView xsd_decimal = serd_string(NS_XSD "decimal");
   const SerdStringView xsd_integer = serd_string(NS_XSD "integer");
 
-  world->nodes       = nodes;
-  world->rdf_first   = serd_nodes_uri(nodes, rdf_first);
-  world->rdf_nil     = serd_nodes_uri(nodes, rdf_nil);
-  world->rdf_rest    = serd_nodes_uri(nodes, rdf_rest);
-  world->rdf_type    = serd_nodes_uri(nodes, rdf_type);
-  world->xsd_boolean = serd_nodes_uri(nodes, xsd_boolean);
-  world->xsd_decimal = serd_nodes_uri(nodes, xsd_decimal);
-  world->xsd_integer = serd_nodes_uri(nodes, xsd_integer);
+  world->allocator = actual;
+  world->nodes     = nodes;
+
+  if (!(world->rdf_first = serd_nodes_uri(nodes, rdf_first)) ||
+      !(world->rdf_nil = serd_nodes_uri(nodes, rdf_nil)) ||
+      !(world->rdf_rest = serd_nodes_uri(nodes, rdf_rest)) ||
+      !(world->rdf_type = serd_nodes_uri(nodes, rdf_type)) ||
+      !(world->xsd_boolean = serd_nodes_uri(nodes, xsd_boolean)) ||
+      !(world->xsd_decimal = serd_nodes_uri(nodes, xsd_decimal)) ||
+      !(world->xsd_integer = serd_nodes_uri(nodes, xsd_integer))) {
+    serd_nodes_free(nodes);
+    serd_afree(actual, world);
+    return NULL;
+  }
 
   serd_node_construct_token(sizeof(world->blank),
                             &world->blank,
@@ -93,7 +113,7 @@ serd_world_free(SerdWorld* const world)
 {
   if (world) {
     serd_nodes_free(world->nodes);
-    free(world);
+    serd_afree(world->allocator, world);
   }
 }
 
@@ -113,6 +133,14 @@ serd_world_get_blank(SerdWorld* const world)
   return &world->blank.node;
 
 #undef BLANK_CHARS
+}
+
+SerdAllocator*
+serd_world_allocator(const SerdWorld* const world)
+{
+  assert(world);
+  assert(world->allocator);
+  return world->allocator;
 }
 
 SerdNodes*

@@ -3,8 +3,11 @@
 
 #undef NDEBUG
 
+#include "failing_allocator.h"
+
 #include "serd/memory.h"
 #include "serd/node.h"
+#include "serd/nodes.h"
 #include "serd/string_view.h"
 #include "serd/uri.h"
 
@@ -12,6 +15,35 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+
+static void
+test_file_uri_failed_alloc(void)
+{
+  static const char* const string = "file://host/path/spacey%20dir/100%%.ttl";
+
+  SerdFailingAllocator allocator = serd_failing_allocator();
+
+  // Successfully parse a URI to count the number of allocations
+  char* hostname = NULL;
+  char* path     = serd_parse_file_uri(&allocator.base, string, &hostname);
+
+  assert(!strcmp(path, "/path/spacey dir/100%.ttl"));
+  assert(!strcmp(hostname, "host"));
+  serd_free(&allocator.base, path);
+  serd_free(&allocator.base, hostname);
+
+  // Test that each allocation failing is handled gracefully
+  const size_t n_allocs = allocator.n_allocations;
+  for (size_t i = 0; i < n_allocs; ++i) {
+    allocator.n_remaining = i;
+
+    path = serd_parse_file_uri(&allocator.base, string, &hostname);
+    assert(!path || !hostname);
+
+    serd_free(&allocator.base, path);
+    serd_free(&allocator.base, hostname);
+  }
+}
 
 static void
 test_uri_string_has_scheme(void)
@@ -44,19 +76,23 @@ test_file_uri(const char* const hostname,
     expected_path = path;
   }
 
-  SerdNode* node = serd_new_file_uri(serd_string(path), serd_string(hostname));
+  SerdNodes* const nodes = serd_nodes_new(NULL);
+
+  const SerdNode* node =
+    serd_nodes_file_uri(nodes, serd_string(path), serd_string(hostname));
 
   const char* node_str     = serd_node_string(node);
   char*       out_hostname = NULL;
-  char*       out_path     = serd_parse_file_uri(node_str, &out_hostname);
+  char* const out_path     = serd_parse_file_uri(NULL, node_str, &out_hostname);
+
   assert(!strcmp(node_str, expected_uri));
   assert((hostname && out_hostname) || (!hostname && !out_hostname));
   assert(!hostname || !strcmp(hostname, out_hostname));
   assert(!strcmp(out_path, expected_path));
 
-  serd_free(out_path);
-  serd_free(out_hostname);
-  serd_node_free(node);
+  serd_free(NULL, out_path);
+  serd_free(NULL, out_hostname);
+  serd_nodes_free(nodes);
 }
 
 static void
@@ -107,22 +143,22 @@ test_uri_parsing(void)
 #endif
 
   // Missing trailing '/' after authority
-  assert(!serd_parse_file_uri("file://truncated", NULL));
+  assert(!serd_parse_file_uri(NULL, "file://truncated", NULL));
 
   // Check that NULL hostname doesn't crash
-  char* out_path = serd_parse_file_uri("file://me/path", NULL);
+  char* out_path = serd_parse_file_uri(NULL, "file://me/path", NULL);
   assert(!strcmp(out_path, "/path"));
-  serd_free(out_path);
+  serd_free(NULL, out_path);
 
   // Invalid first escape character
-  out_path = serd_parse_file_uri("file:///foo/%0Xbar", NULL);
+  out_path = serd_parse_file_uri(NULL, "file:///foo/%0Xbar", NULL);
   assert(!strcmp(out_path, "/foo/bar"));
-  serd_free(out_path);
+  serd_free(NULL, out_path);
 
   // Invalid second escape character
-  out_path = serd_parse_file_uri("file:///foo/%X0bar", NULL);
+  out_path = serd_parse_file_uri(NULL, "file:///foo/%X0bar", NULL);
   assert(!strcmp(out_path, "/foo/bar"));
-  serd_free(out_path);
+  serd_free(NULL, out_path);
 }
 
 static void
@@ -134,12 +170,12 @@ test_parse_uri(void)
   const SerdURIView empty_uri = serd_parse_uri("");
 
   SerdNode* const nil =
-    serd_new_parsed_uri(serd_resolve_uri(empty_uri, base_uri));
+    serd_new_parsed_uri(NULL, serd_resolve_uri(empty_uri, base_uri));
 
   assert(serd_node_type(nil) == SERD_URI);
   assert(!strcmp(serd_node_string(nil), base.data));
 
-  serd_node_free(nil);
+  serd_node_free(NULL, nil);
 }
 
 static void
@@ -194,22 +230,22 @@ check_relative_uri(const char* const uri_string,
   assert(base_string);
   assert(expected_string);
 
-  SerdNode* const   uri_node  = serd_new_uri(serd_string(uri_string));
+  SerdNode* const   uri_node  = serd_new_uri(NULL, serd_string(uri_string));
   const SerdURIView uri       = serd_node_uri_view(uri_node);
-  SerdNode* const   base_node = serd_new_uri(serd_string(base_string));
+  SerdNode* const   base_node = serd_new_uri(NULL, serd_string(base_string));
   const SerdURIView base      = serd_node_uri_view(base_node);
 
   SerdNode* result_node = NULL;
   if (!root_string) {
-    result_node = serd_new_parsed_uri(serd_relative_uri(uri, base));
+    result_node = serd_new_parsed_uri(NULL, serd_relative_uri(uri, base));
   } else {
-    SerdNode* const   root_node = serd_new_uri(serd_string(root_string));
+    SerdNode* const   root_node = serd_new_uri(NULL, serd_string(root_string));
     const SerdURIView root      = serd_node_uri_view(root_node);
 
     result_node = serd_uri_is_within(uri, root)
-                    ? serd_new_parsed_uri(serd_relative_uri(uri, base))
-                    : serd_new_uri(serd_string(uri_string));
-    serd_node_free(root_node);
+                    ? serd_new_parsed_uri(NULL, serd_relative_uri(uri, base))
+                    : serd_new_uri(NULL, serd_string(uri_string));
+    serd_node_free(NULL, root_node);
   }
 
   assert(!strcmp(serd_node_string(result_node), expected_string));
@@ -223,9 +259,9 @@ check_relative_uri(const char* const uri_string,
   assert(chunk_equals(&result.query, &expected.query));
   assert(chunk_equals(&result.fragment, &expected.fragment));
 
-  serd_node_free(result_node);
-  serd_node_free(base_node);
-  serd_node_free(uri_node);
+  serd_node_free(NULL, result_node);
+  serd_node_free(NULL, base_node);
+  serd_node_free(NULL, uri_node);
 }
 
 static void
@@ -334,15 +370,16 @@ test_uri_resolution(void)
   const SerdURIView rel_foo_uri  = serd_relative_uri(abs_foo_uri, base_uri);
   const SerdURIView resolved_uri = serd_resolve_uri(rel_foo_uri, base_uri);
 
-  SerdNode* const resolved = serd_new_parsed_uri(resolved_uri);
+  SerdNode* const resolved = serd_new_parsed_uri(NULL, resolved_uri);
   assert(!strcmp(serd_node_string(resolved), "http://example.org/a/b/c/foo"));
 
-  serd_node_free(resolved);
+  serd_node_free(NULL, resolved);
 }
 
 int
 main(void)
 {
+  test_file_uri_failed_alloc();
   test_uri_string_has_scheme();
   test_uri_parsing();
   test_parse_uri();

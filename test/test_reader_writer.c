@@ -45,9 +45,9 @@ test_sink(void* handle, const SerdEvent* event)
 static void
 test_writer(const char* const path)
 {
-  SerdWorld* world = serd_world_new();
-  SerdEnv*   env   = serd_env_new(world, serd_empty_string());
+  SerdWorld* world = serd_world_new(NULL);
   SerdNodes* nodes = serd_world_nodes(world);
+  SerdEnv*   env   = serd_env_new(world, serd_empty_string());
 
   SerdOutputStream output = serd_open_output_file(path);
 
@@ -114,8 +114,7 @@ test_writer(const char* const path)
   serd_close_output(&output);
 
   // Test buffer sink
-
-  SerdBuffer buffer = {NULL, 0};
+  SerdBuffer buffer = {NULL, NULL, 0};
 
   const SerdNode* const base =
     serd_nodes_uri(nodes, serd_string("http://example.org/base"));
@@ -131,7 +130,7 @@ test_writer(const char* const path)
   char* const out = (char*)buffer.buf;
   assert(out);
   assert(!strcmp(out, "@base <http://example.org/base> .\n"));
-  serd_free(out);
+  serd_free(NULL, buffer.buf);
 
   serd_env_free(env);
   serd_world_free(world);
@@ -140,7 +139,7 @@ test_writer(const char* const path)
 static void
 test_reader(const char* path)
 {
-  SerdWorld*      world = serd_world_new();
+  SerdWorld*      world = serd_world_new(NULL);
   ReaderTest      rt    = {0};
   SerdSink* const sink  = serd_sink_new(world, &rt, test_sink, NULL);
   assert(sink);

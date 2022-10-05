@@ -4,8 +4,10 @@
 #include "statement.h"
 
 #include "caret.h"
+#include "memory.h"
 #include "node.h"
 
+#include "serd/memory.h"
 #include "serd/statement.h"
 
 #include <assert.h>
@@ -16,7 +18,7 @@
 static bool
 is_resource(const SerdNode* const node)
 {
-  const SerdNodeType type = node ? serd_node_type(node) : (SerdNodeType)0;
+  const SerdNodeType type = serd_node_type(node);
   return type == SERD_URI || type == SERD_BLANK || type == SERD_VARIABLE;
 }
 
@@ -26,13 +28,16 @@ serd_statement_is_valid(const SerdNode* const subject,
                         const SerdNode* const object,
                         const SerdNode* const graph)
 {
-  return is_resource(subject) && is_resource(predicate) && object &&
+  (void)object;
+
+  return is_resource(subject) && is_resource(predicate) &&
          serd_node_type(predicate) != SERD_BLANK &&
          (!graph || is_resource(graph));
 }
 
 SerdStatement*
-serd_statement_new(const SerdNode* const  s,
+serd_statement_new(SerdAllocator* const   allocator,
+                   const SerdNode* const  s,
                    const SerdNode* const  p,
                    const SerdNode* const  o,
                    const SerdNode* const  g,
@@ -46,39 +51,62 @@ serd_statement_new(const SerdNode* const  s,
     return NULL;
   }
 
-  SerdStatement* statement = (SerdStatement*)malloc(sizeof(SerdStatement));
+  SerdStatement* statement =
+    (SerdStatement*)serd_amalloc(allocator, sizeof(SerdStatement));
+
   if (statement) {
     statement->nodes[0] = s;
     statement->nodes[1] = p;
     statement->nodes[2] = o;
     statement->nodes[3] = g;
-    statement->caret    = serd_caret_copy(caret);
+    statement->caret    = NULL;
+
+    if (caret) {
+      if (!(statement->caret = serd_caret_copy(allocator, caret))) {
+        serd_afree(allocator, statement);
+        return NULL;
+      }
+    }
   }
+
   return statement;
 }
 
 SerdStatement*
-serd_statement_copy(const SerdStatement* const statement)
+serd_statement_copy(SerdAllocator* const       allocator,
+                    const SerdStatement* const statement)
 {
   if (!statement) {
     return NULL;
   }
 
-  SerdStatement* copy = (SerdStatement*)malloc(sizeof(SerdStatement));
-  memcpy(copy, statement, sizeof(SerdStatement));
-  if (statement->caret) {
-    copy->caret = (SerdCaret*)malloc(sizeof(SerdCaret));
-    memcpy(copy->caret, statement->caret, sizeof(SerdCaret));
+  SerdStatement* copy =
+    (SerdStatement*)serd_amalloc(allocator, sizeof(SerdStatement));
+
+  if (copy) {
+    memcpy(copy, statement, sizeof(SerdStatement));
+
+    if (statement->caret) {
+      if (!(copy->caret =
+              (SerdCaret*)serd_amalloc(allocator, sizeof(SerdCaret)))) {
+        serd_afree(allocator, copy);
+        return NULL;
+      }
+
+      memcpy(copy->caret, statement->caret, sizeof(SerdCaret));
+    }
   }
+
   return copy;
 }
 
 void
-serd_statement_free(SerdStatement* const statement)
+serd_statement_free(SerdAllocator* const allocator,
+                    SerdStatement* const statement)
 {
   if (statement) {
-    free(statement->caret);
-    free(statement);
+    serd_afree(allocator, statement->caret);
+    serd_afree(allocator, statement);
   }
 }
 

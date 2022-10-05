@@ -11,12 +11,12 @@
 static void
 test_copy(void)
 {
-  assert(!serd_cursor_copy(NULL));
+  assert(!serd_cursor_copy(NULL, NULL));
 
-  SerdWorld* const  world = serd_world_new();
+  SerdWorld* const  world = serd_world_new(NULL);
   SerdModel* const  model = serd_model_new(world, SERD_ORDER_SPO, 0U);
   SerdCursor* const begin = serd_model_begin(model);
-  SerdCursor* const copy  = serd_cursor_copy(begin);
+  SerdCursor* const copy  = serd_cursor_copy(NULL, begin);
 
   assert(serd_cursor_equals(copy, begin));
 
@@ -29,7 +29,7 @@ test_copy(void)
 static void
 test_comparison(void)
 {
-  SerdWorld* const world = serd_world_new();
+  SerdWorld* const world = serd_world_new(NULL);
   SerdNodes* const nodes = serd_world_nodes(world);
   SerdModel* const model = serd_model_new(world, SERD_ORDER_SPO, 0U);
 
