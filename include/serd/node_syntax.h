@@ -24,6 +24,8 @@ SERD_BEGIN_DECLS
    serd_node_to_syntax().  These two functions, when used with #SERD_TURTLE,
    can be used to round-trip any node to a string and back.
 
+   @param world The world to create sinks in.
+
    @param str String representation of a node.
 
    @param syntax Syntax to use.  Should be either SERD_TURTLE or SERD_NTRIPLES
@@ -36,7 +38,8 @@ SERD_BEGIN_DECLS
    @return A newly allocated node that must be freed with serd_node_free().
 */
 SERD_API SerdNode* SERD_ALLOCATED
-serd_node_from_syntax(const char* SERD_NONNULL str,
+serd_node_from_syntax(SerdWorld* SERD_NONNULL  world,
+                      const char* SERD_NONNULL str,
                       SerdSyntax               syntax,
                       SerdEnv* SERD_NULLABLE   env);
 
@@ -45,6 +48,8 @@ serd_node_from_syntax(const char* SERD_NONNULL str,
 
    The returned string represents that node as if written as an object in the
    given syntax, without any extra quoting or punctuation.
+
+   @param world The world to create sinks in.
 
    @param node Node to write as a string.
 
@@ -58,7 +63,8 @@ serd_node_from_syntax(const char* SERD_NONNULL str,
    @return A newly allocated string that must be freed with serd_free().
 */
 SERD_API char* SERD_ALLOCATED
-serd_node_to_syntax(const SerdNode* SERD_NONNULL node,
+serd_node_to_syntax(SerdWorld* SERD_NONNULL      world,
+                    const SerdNode* SERD_NONNULL node,
                     SerdSyntax                   syntax,
                     const SerdEnv* SERD_NULLABLE env);
 

@@ -73,9 +73,9 @@ parse_pattern(SerdWorld* const       world,
               SerdInputStream* const in,
               const bool             inclusive)
 {
-  SerdEnv* const env     = serd_env_new(serd_empty_string());
+  SerdEnv* const env     = serd_env_new(world, serd_empty_string());
   FilterPattern  pat     = {NULL, NULL, NULL, NULL};
-  SerdSink*      in_sink = serd_sink_new(&pat, on_pattern_event, NULL);
+  SerdSink*      in_sink = serd_sink_new(world, &pat, on_pattern_event, NULL);
   SerdReader*    reader  = serd_reader_new(
     world, SERD_NQUADS, SERD_READ_VARIABLES, env, in_sink, 4096);
 
@@ -101,7 +101,7 @@ parse_pattern(SerdWorld* const       world,
   }
 
   SerdSink* filter =
-    serd_filter_new(sink, pat.s, pat.p, pat.o, pat.g, inclusive);
+    serd_filter_new(world, sink, pat.s, pat.p, pat.o, pat.g, inclusive);
 
   serd_node_free(pat.s);
   serd_node_free(pat.p);

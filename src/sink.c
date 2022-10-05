@@ -14,12 +14,16 @@
 #include <stdlib.h>
 
 SerdSink*
-serd_sink_new(void* const   handle,
-              SerdEventFunc event_func,
-              SerdFreeFunc  free_handle)
+serd_sink_new(const SerdWorld* const world,
+              void* const            handle,
+              SerdEventFunc          event_func,
+              SerdFreeFunc           free_handle)
 {
+  assert(world);
+
   SerdSink* sink = (SerdSink*)calloc(1, sizeof(SerdSink));
 
+  sink->world       = world;
   sink->handle      = handle;
   sink->on_event    = event_func;
   sink->free_handle = free_handle;
