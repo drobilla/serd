@@ -6,7 +6,9 @@
 
 #include "exess/exess.h"
 #include "serd/attributes.h"
+#include "serd/memory.h"
 #include "serd/node.h"
+#include "serd/status.h"
 #include "serd/string_view.h"
 
 #include <assert.h>
@@ -89,13 +91,15 @@ SERD_PURE_FUNC bool
 is_langtag(SerdStringView string);
 
 SERD_MALLOC_FUNC SerdNode* SERD_ALLOCATED
-serd_node_malloc(size_t size);
+serd_node_malloc(SerdAllocator* SERD_NULLABLE allocator, size_t size);
 
 SERD_MALLOC_FUNC SerdNode* SERD_ALLOCATED
-serd_node_try_malloc(SerdWriteResult result);
+serd_node_try_malloc(SerdAllocator* SERD_NULLABLE allocator,
+                     SerdWriteResult              result);
 
-void
-serd_node_set(SerdNode* SERD_NULLABLE* SERD_NONNULL dst,
+SerdStatus
+serd_node_set(SerdAllocator* SERD_NULLABLE          allocator,
+              SerdNode* SERD_NULLABLE* SERD_NONNULL dst,
               const SerdNode* SERD_NULLABLE         src);
 
 SERD_PURE_FUNC size_t

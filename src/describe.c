@@ -18,6 +18,7 @@
 #include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/world.h"
+#include "zix/allocator.h"
 #include "zix/digest.h"
 #include "zix/hash.h"
 #include "zix/status.h"
@@ -290,16 +291,18 @@ serd_describe_range(const SerdCursor* const range,
 
   assert(sink);
 
-  SerdStatus     st   = SERD_SUCCESS;
-  SerdCursor     copy = *range;
-  ZixHash* const list_subjects =
-    zix_hash_new(NULL, identity, ptr_hash, ptr_equals);
+  SerdCursor copy = *range;
 
-  DescribeContext ctx = {range->model, sink, list_subjects, flags};
+  ZixHash* const list_subjects = zix_hash_new(
+    (ZixAllocator*)range->model->allocator, identity, ptr_hash, ptr_equals);
 
-  st = write_pretty_range(&ctx, 0, &copy, NULL, (flags & SERD_NO_TYPE_FIRST));
+  SerdStatus st = SERD_BAD_ALLOC;
+  if (list_subjects) {
+    DescribeContext ctx = {range->model, sink, list_subjects, flags};
+
+    st = write_pretty_range(&ctx, 0, &copy, NULL, (flags & SERD_NO_TYPE_FIRST));
+  }
 
   zix_hash_free(list_subjects);
-
   return st;
 }

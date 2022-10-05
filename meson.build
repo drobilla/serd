@@ -96,13 +96,6 @@ else
     platform_c_args += ['-DHAVE_POSIX_FADVISE']
   endif
   if cc.links(
-    template.format('stdlib.h',
-                    'void* mem=NULL; posix_memalign(&mem, 8U, 8U);'),
-    args: system_c_args,
-    name: 'posix_memalign')
-    platform_c_args += ['-DHAVE_POSIX_MEMALIGN']
-  endif
-  if cc.links(
     template.format('string.h',
                     'char buf[128]; return strerror_r(0, &buf, sizeof(buf));'),
     args: system_c_args,
@@ -177,6 +170,7 @@ sources = files(
   'src/input_stream.c',
   'src/inserter.c',
   'src/log.c',
+  'src/memory.c',
   'src/model.c',
   'src/n3.c',
   'src/node.c',

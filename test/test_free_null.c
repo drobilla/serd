@@ -21,8 +21,8 @@
 int
 main(void)
 {
-  serd_free(NULL);
-  serd_node_free(NULL);
+  serd_free(NULL, NULL);
+  serd_node_free(NULL, NULL);
   serd_world_free(NULL);
   serd_env_free(NULL);
   serd_sink_free(NULL);
@@ -30,9 +30,9 @@ main(void)
   serd_writer_free(NULL);
   serd_nodes_free(NULL);
   serd_model_free(NULL);
-  serd_statement_free(NULL);
+  serd_statement_free(NULL, NULL);
   serd_cursor_free(NULL);
-  serd_caret_free(NULL);
+  serd_caret_free(NULL, NULL);
 
   return 0;
 }

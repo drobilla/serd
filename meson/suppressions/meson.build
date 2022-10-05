@@ -34,6 +34,7 @@ if is_variable('cc')
       c_suppressions += [
         '-Wno-format-nonliteral',
         '-Wno-inline',
+        '-Wno-null-dereference', # ARM32
         '-Wno-padded',
         '-Wno-switch-default',
         '-Wno-unsuffixed-float-constants',

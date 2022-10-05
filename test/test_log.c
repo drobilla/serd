@@ -34,7 +34,7 @@ custom_log_func(void* const               handle,
 static void
 test_bad_arg(void)
 {
-  SerdWorld* const world  = serd_world_new();
+  SerdWorld* const world  = serd_world_new(NULL);
   bool             called = false;
 
   serd_set_log_func(world, custom_log_func, &called);
@@ -47,7 +47,7 @@ test_bad_arg(void)
 static void
 test_default_log(void)
 {
-  SerdWorld* const world = serd_world_new();
+  SerdWorld* const world = serd_world_new(NULL);
 
   for (unsigned i = 0; i <= SERD_LOG_LEVEL_DEBUG; ++i) {
     const SerdLogLevel level = (SerdLogLevel)i;
@@ -61,7 +61,7 @@ test_default_log(void)
 static void
 test_custom_log(void)
 {
-  SerdWorld* const world  = serd_world_new();
+  SerdWorld* const world  = serd_world_new(NULL);
   bool             called = false;
 
   serd_set_log_func(world, custom_log_func, &called);
@@ -77,22 +77,22 @@ test_custom_log(void)
 static void
 test_caret(void)
 {
-  SerdWorld* const world = serd_world_new();
-  SerdNode* const  name  = serd_new_string(serd_string("filename"));
-  SerdCaret* const caret = serd_caret_new(name, 46, 2);
+  SerdWorld* const world = serd_world_new(NULL);
+  SerdNode* const  name  = serd_new_string(NULL, serd_string("filename"));
+  SerdCaret* const caret = serd_caret_new(NULL, name, 46, 2);
 
   serd_logf_at(world, SERD_LOG_LEVEL_NOTICE, caret, "is just ahead of me");
   serd_logf_at(world, SERD_LOG_LEVEL_NOTICE, NULL, "isn't");
 
-  serd_caret_free(caret);
-  serd_node_free(name);
+  serd_caret_free(NULL, caret);
+  serd_node_free(NULL, name);
   serd_world_free(world);
 }
 
 static void
 test_filename_only(void)
 {
-  SerdWorld* const world = serd_world_new();
+  SerdWorld* const world = serd_world_new(NULL);
 
   const SerdLogField fields[3] = {{"TEST_KEY", "TEST VALUE"},
                                   {"SERD_FILE", "somename"},

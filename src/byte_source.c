@@ -3,6 +3,7 @@
 
 #include "byte_source.h"
 
+#include "memory.h"
 #include "system.h"
 
 #include "serd/node.h"
@@ -11,7 +12,6 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 SerdStatus
@@ -40,33 +40,48 @@ serd_byte_source_page(SerdByteSource* const source)
 }
 
 static void
-serd_byte_source_init_buffer(SerdByteSource* const source)
+serd_byte_source_init_buffer(SerdAllocator* const  allocator,
+                             SerdByteSource* const source)
 {
   if (source->block_size > 1) {
-    source->block    = (uint8_t*)serd_allocate_buffer(source->block_size);
-    source->read_buf = source->block;
-    memset(source->block, '\0', source->block_size);
+    source->block = (uint8_t*)serd_aaligned_alloc(
+      allocator, SERD_PAGE_SIZE, source->block_size);
+
+    if ((source->read_buf = source->block)) {
+      memset(source->block, '\0', source->block_size);
+    }
   } else {
     source->read_buf = &source->read_byte;
   }
 }
 
 SerdByteSource*
-serd_byte_source_new_input(SerdInputStream* const input,
+serd_byte_source_new_input(SerdAllocator* const   allocator,
+                           SerdInputStream* const input,
                            const SerdNode* const  name,
                            const size_t           block_size)
 {
   assert(input);
+  assert(block_size);
+  assert(input->stream);
 
-  if (!block_size || !input->stream) {
+  SerdNode* const source_name =
+    name ? serd_node_copy(allocator, name)
+         : serd_new_string(allocator, serd_string("input"));
+
+  if (!source_name) {
     return NULL;
   }
 
-  SerdByteSource* source = (SerdByteSource*)calloc(1, sizeof(SerdByteSource));
+  SerdByteSource* source =
+    (SerdByteSource*)serd_acalloc(allocator, 1, sizeof(SerdByteSource));
 
-  source->name =
-    name ? serd_node_copy(name) : serd_new_string(serd_string("input"));
+  if (!source) {
+    serd_node_free(allocator, source_name);
+    return NULL;
+  }
 
+  source->name           = source_name;
   source->in             = input;
   source->block_size     = block_size;
   source->buf_size       = block_size;
@@ -74,21 +89,27 @@ serd_byte_source_new_input(SerdInputStream* const input,
   source->caret.line     = 1U;
   source->caret.col      = 1U;
 
-  serd_byte_source_init_buffer(source);
+  serd_byte_source_init_buffer(allocator, source);
+  if (block_size > 1 && !source->block) {
+    serd_node_free(allocator, source_name);
+    serd_afree(allocator, source);
+    return NULL;
+  }
 
   return source;
 }
 
 void
-serd_byte_source_free(SerdByteSource* const source)
+serd_byte_source_free(SerdAllocator* const  allocator,
+                      SerdByteSource* const source)
 {
   if (source) {
     if (source->block_size > 1) {
-      serd_free_aligned(source->block);
+      serd_aaligned_free(allocator, source->block);
     }
 
-    serd_node_free(source->name);
-    free(source);
+    serd_node_free(allocator, source->name);
+    serd_afree(allocator, source);
   }
 }
 
