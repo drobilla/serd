@@ -7,6 +7,13 @@
 #include "statement.h"
 #include "statements.h"
 
+#include "serd/caret.h"
+#include "serd/cursor.h"
+#include "serd/memory.h"
+#include "serd/model.h"
+#include "serd/node.h"
+#include "serd/statement.h"
+#include "serd/status.h"
 #include "serd/transaction.h"
 
 #include <assert.h>
@@ -105,10 +112,11 @@ serd_transaction_erase(SerdTransaction* const transaction,
                        const SerdNode* const  o,
                        const SerdNode* const  g)
 {
-  SerdModel* const  model  = transaction->model;
-  SerdCursor* const cursor = serd_model_find(model, s, p, o, g);
+  SerdAllocator* const allocator = transaction->model->allocator;
+  SerdModel* const     model     = transaction->model;
+  SerdCursor* const    cursor = serd_model_find(allocator, model, s, p, o, g);
   if (serd_cursor_is_end(cursor)) {
-    serd_cursor_free(cursor);
+    serd_cursor_free(allocator, cursor);
     return SERD_FAILURE;
   }
 
@@ -127,7 +135,7 @@ serd_transaction_free(SerdTransaction* const transaction)
     case SERD_INSERT_STATEMENT:
       break;
     case SERD_ERASE_STATEMENT:
-      serd_cursor_free(op->data.cursor);
+      serd_cursor_free(transaction->model->allocator, op->data.cursor);
       break;
     }
   }
