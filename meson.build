@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: 0BSD OR ISC
 
 project('serd', ['c'],
-        version: '0.30.16',
+        version: '0.30.17',
         license: 'ISC',
         meson_version: '>= 0.56.0',
         default_options: [
@@ -109,6 +109,9 @@ pkg.generate(
   subdirs: [versioned_name],
   version: meson.project_version(),
 )
+
+# Override pkg-config dependency for internal meson dependants
+meson.override_dependency(versioned_name, serd_dep)
 
 # Install header to a versioned include directory
 install_headers(c_headers, subdir: versioned_name / 'serd')
