@@ -923,11 +923,10 @@ class StatementWrapper;
 
 /// Extra data managed by mutable (user created) Statement
 struct StatementData {
-  Node            _subject;
-  Node            _predicate;
-  Node            _object;
-  Optional<Node>  _graph;
-  Optional<Caret> _caret;
+  Node           _subject;
+  Node           _predicate;
+  Node           _object;
+  Optional<Node> _graph;
 };
 
 /// Statement wrapper
@@ -973,12 +972,6 @@ public:
   Optional<NodeView> graph() const
   {
     return NodeView{serd_statement_graph(this->cobj())};
-  }
-
-  /// @copydoc serd_statement_caret
-  Optional<CaretView> caret() const
-  {
-    return CaretView{serd_statement_caret(this->cobj())};
   }
 
   /// @copydoc serd_statement_matches
@@ -1040,50 +1033,21 @@ public:
             const NodeView& p,
             const NodeView& o,
             const NodeView& g)
-    : StatementData{Node{s}, Node{p}, Node{o}, Node{g}, {}}
+    : StatementData{Node{s}, Node{p}, Node{o}, Node{g}}
     , StatementWrapper{serd_statement_new(nullptr,
                                           _subject.cobj(),
                                           _predicate.cobj(),
                                           _object.cobj(),
-                                          _graph.cobj(),
-                                          nullptr)}
-  {}
-
-  Statement(const NodeView&  s,
-            const NodeView&  p,
-            const NodeView&  o,
-            const NodeView&  g,
-            const CaretView& caret)
-    : StatementData{Node{s}, Node{p}, Node{o}, Node{g}, Caret{caret}}
-    , StatementWrapper{serd_statement_new(nullptr,
-                                          _subject.cobj(),
-                                          _predicate.cobj(),
-                                          _object.cobj(),
-                                          _graph.cobj(),
-                                          _caret.cobj())}
+                                          _graph.cobj())}
   {}
 
   Statement(const NodeView& s, const NodeView& p, const NodeView& o)
-    : StatementData{Node{s}, Node{p}, Node{o}, {}, {}}
+    : StatementData{Node{s}, Node{p}, Node{o}, {}}
     , StatementWrapper{serd_statement_new(nullptr,
                                           _subject.cobj(),
                                           _predicate.cobj(),
                                           _object.cobj(),
-                                          nullptr,
                                           nullptr)}
-  {}
-
-  Statement(const NodeView&  s,
-            const NodeView&  p,
-            const NodeView&  o,
-            const CaretView& caret)
-    : StatementData{Node{s}, Node{p}, Node{o}, {}, Caret{caret}}
-    , StatementWrapper{serd_statement_new(nullptr,
-                                          _subject.cobj(),
-                                          _predicate.cobj(),
-                                          _object.cobj(),
-                                          nullptr,
-                                          _caret.cobj())}
   {}
 
   explicit Statement(const StatementView& statement)
@@ -1091,9 +1055,7 @@ public:
                     Node{statement.predicate()},
                     Node{statement.object()},
                     statement.graph() ? Node{*statement.graph()}
-                                      : Optional<Node>{},
-                    statement.caret() ? Caret{*statement.caret()}
-                                      : Optional<Caret>{}}
+                                      : Optional<Node>{}}
     , StatementWrapper{statement}
   {}
 };
@@ -1356,33 +1318,40 @@ class SinkWrapper : public SinkHandle<CPtr>
 {
 public:
   /// @copydoc serd_sink_write_base
-  Status base(const NodeView& uri) const
+  Status base(const NodeView& uri, Optional<CaretView> caret = {}) const
   {
-    return static_cast<Status>(serd_sink_write_base(this->cobj(), uri.cobj()));
+    return static_cast<Status>(
+      serd_sink_write_base(this->cobj(), caret.cobj(), uri.cobj()));
   }
 
   /// @copydoc serd_sink_write_prefix
-  Status prefix(NodeView name, const NodeView& uri) const
+  Status prefix(NodeView            name,
+                const NodeView&     uri,
+                Optional<CaretView> caret = {}) const
   {
-    return static_cast<Status>(
-      serd_sink_write_prefix(this->cobj(), name.cobj(), uri.cobj()));
+    return static_cast<Status>(serd_sink_write_prefix(
+      this->cobj(), caret.cobj(), name.cobj(), uri.cobj()));
   }
 
   /// @copydoc serd_sink_write_statement
-  Status statement(StatementFlags flags, StatementView statement) const
+  Status statement(StatementFlags      flags,
+                   StatementView       statement,
+                   Optional<CaretView> caret = {}) const
   {
-    return static_cast<Status>(
-      serd_sink_write_statement(this->cobj(), flags, statement.cobj()));
+    return static_cast<Status>(serd_sink_write_statement(
+      this->cobj(), caret.cobj(), flags, statement.cobj()));
   }
 
   /// @copydoc serd_sink_write
-  Status write(StatementFlags     flags,
-               const NodeView&    subject,
-               const NodeView&    predicate,
-               const NodeView&    object,
-               Optional<NodeView> graph = {}) const
+  Status write(StatementFlags      flags,
+               const NodeView&     subject,
+               const NodeView&     predicate,
+               const NodeView&     object,
+               Optional<NodeView>  graph = {},
+               Optional<CaretView> caret = {}) const
   {
     return static_cast<Status>(serd_sink_write(this->cobj(),
+                                               caret.cobj(),
                                                flags,
                                                subject.cobj(),
                                                predicate.cobj(),
@@ -1391,9 +1360,10 @@ public:
   }
 
   /// @copydoc serd_sink_write_end
-  Status end(const NodeView& node) const
+  Status end(const NodeView& node, Optional<CaretView> caret = {}) const
   {
-    return static_cast<Status>(serd_sink_write_end(this->cobj(), node.cobj()));
+    return static_cast<Status>(
+      serd_sink_write_end(this->cobj(), caret.cobj(), node.cobj()));
   }
 
 protected:
@@ -2159,11 +2129,27 @@ public:
     return static_cast<Status>(serd_model_insert(cobj(), s.cobj()));
   }
 
+  /// @copydoc serd_model_add_from
+  Status insert(StatementView s, const CaretView& caret)
+  {
+    return static_cast<Status>(serd_model_insert(cobj(), s.cobj()));
+  }
+
   /// @copydoc serd_model_add
   Status insert(const NodeView&    s,
                 const NodeView&    p,
                 const NodeView&    o,
                 Optional<NodeView> g = {})
+  {
+    return static_cast<Status>(
+      serd_model_add(cobj(), s.cobj(), p.cobj(), o.cobj(), g.cobj()));
+  }
+
+  /// @copydoc serd_model_add_from
+  Status insert_from(const NodeView&    s,
+                     const NodeView&    p,
+                     const NodeView&    o,
+                     Optional<NodeView> g = {})
   {
     return static_cast<Status>(
       serd_model_add(cobj(), s.cobj(), p.cobj(), o.cobj(), g.cobj()));

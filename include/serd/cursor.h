@@ -5,6 +5,7 @@
 #define SERD_CURSOR_H
 
 #include "serd/attributes.h"
+#include "serd/caret.h"
 #include "serd/statement.h"
 
 #include <stdbool.h>
@@ -35,6 +36,17 @@ serd_cursor_copy(ZixAllocator* ZIX_NULLABLE     allocator,
 SERD_API
 const SerdStatement* ZIX_NULLABLE
 serd_cursor_get(const SerdCursor* ZIX_NULLABLE cursor);
+
+/**
+   Return the origin of the statement pointed to by `cursor`.
+
+   If the cursor is not pointing at a statement with a caret, then the returned
+   structure is all-zero.  Callers should check if the `document` is null
+   before using the caret.
+*/
+SERD_API
+const SerdCaret*
+serd_cursor_get_caret(const SerdCursor* SERD_NULLABLE cursor);
 
 /**
    Increment cursor to point to the next statement.

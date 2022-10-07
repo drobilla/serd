@@ -687,13 +687,12 @@ serd_model_insert(SerdModel* const model, const SerdStatement* const statement)
 {
   SerdNodes* const nodes = model->nodes;
 
-  return serd_model_add_from(
+  return serd_model_add(
     model,
     serd_nodes_intern(nodes, serd_statement_subject(statement)),
     serd_nodes_intern(nodes, serd_statement_predicate(statement)),
     serd_nodes_intern(nodes, serd_statement_object(statement)),
-    serd_nodes_intern(nodes, serd_statement_graph(statement)),
-    &statement->caret);
+    serd_nodes_intern(nodes, serd_statement_graph(statement)));
 }
 
 SerdStatus
@@ -703,7 +702,14 @@ serd_model_insert_statements(SerdModel* const model, SerdCursor* const range)
   SerdStatus           st        = SERD_SUCCESS;
 
   while (!st && statement) {
-    if (!(st = serd_model_insert(model, statement))) {
+    if (!(st = serd_model_add_from(
+            model,
+            serd_nodes_intern(model->nodes, serd_statement_subject(statement)),
+            serd_nodes_intern(model->nodes,
+                              serd_statement_predicate(statement)),
+            serd_nodes_intern(model->nodes, serd_statement_object(statement)),
+            serd_nodes_intern(model->nodes, serd_statement_graph(statement)),
+            serd_cursor_get_caret(range)))) {
       st = serd_cursor_advance(range);
     }
 

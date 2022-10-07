@@ -77,8 +77,8 @@ test_operators()
 
   model.insert(serd::Statement{serd::make_uri("http://example.org/s"),
                                serd::make_uri("http://example.org/p"),
-                               serd::make_uri("http://example.org/o"),
-                               serd::Caret{serd::make_uri("test.ttl"), 1, 1}});
+                               serd::make_uri("http://example.org/o")},
+               serd::Caret{serd::make_uri("test.ttl"), 1, 1});
 
   serd::Sink sink{world};
   serd::Env  env{world};
@@ -89,7 +89,7 @@ test_operators()
   st |= test_copy_move(serd::Statement{*model.begin()});
   st |=
     test_copy_move(serd::Caret{serd::make_uri("http://example.org/doc"), 1, 2});
-  st |= test_copy_move(model.begin()->caret());
+  //  st |= test_copy_move(model.begin()->caret());
   st |= test_copy_move(serd::Env{world});
   st |= test_move_only(
     serd::Reader{world, serd::Syntax::Turtle, {}, env, sink, 4096});
@@ -623,11 +623,10 @@ test_env()
 static int
 test_statement()
 {
-  const auto s   = serd::make_uri("http://example.org/s");
-  const auto p   = serd::make_uri("http://example.org/p");
-  const auto o   = serd::make_uri("http://example.org/o");
-  const auto g   = serd::make_uri("http://example.org/g");
-  const auto cur = serd::Caret{serd::make_string("test"), 42, 53};
+  const auto s = serd::make_uri("http://example.org/s");
+  const auto p = serd::make_uri("http://example.org/p");
+  const auto o = serd::make_uri("http://example.org/o");
+  const auto g = serd::make_uri("http://example.org/g");
 
   const auto t_statement = serd::Statement{s, p, o};
 
@@ -635,14 +634,12 @@ test_statement()
   assert(t_statement.predicate() == p);
   assert(t_statement.object() == o);
   assert(!t_statement.graph());
-  assert(!t_statement.caret());
 
-  const auto q_statement = serd::Statement{s, p, o, g, cur};
+  const auto q_statement = serd::Statement{s, p, o, g};
   assert(q_statement.subject() == s);
   assert(q_statement.predicate() == p);
   assert(q_statement.object() == o);
   assert(q_statement.graph() == g);
-  assert(q_statement.caret() == cur);
 
   assert(q_statement.node(serd::Field::subject) == s);
   assert(q_statement.node(serd::Field::predicate) == p);
