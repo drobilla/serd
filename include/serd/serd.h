@@ -159,7 +159,7 @@ serd_strlen(const uint8_t* SERD_NONNULL  str,
 */
 SERD_API
 double
-serd_strtod(const char* SERD_NONNULL str,
+serd_strtod(const char* SERD_NONNULL          str,
             char* SERD_NONNULL* SERD_NULLABLE endptr);
 
 /**
@@ -268,7 +268,7 @@ serd_uri_to_path(const uint8_t* SERD_NONNULL uri);
 */
 SERD_API
 uint8_t* SERD_NULLABLE
-serd_file_uri_parse(const uint8_t* SERD_NONNULL uri,
+serd_file_uri_parse(const uint8_t* SERD_NONNULL          uri,
                     uint8_t* SERD_NONNULL* SERD_NULLABLE hostname);
 
 /// Return true iff `utf8` starts with a valid URI scheme
