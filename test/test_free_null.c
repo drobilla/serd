@@ -3,6 +3,7 @@
 
 #undef NDEBUG
 
+#include "serd/caret.h"
 #include "serd/env.h"
 #include "serd/node.h"
 #include "serd/nodes.h"
@@ -23,6 +24,7 @@ main(void)
   serd_reader_free(NULL);
   serd_writer_free(NULL);
   serd_nodes_free(NULL);
+  serd_caret_free(NULL, NULL);
 
   return 0;
 }
