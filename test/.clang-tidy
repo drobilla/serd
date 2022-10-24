@@ -1,10 +1,8 @@
 # Copyright 2020-2022 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
+
 Checks: >
-  *,
   -*-magic-numbers,
-  -*-uppercase-literal-suffix,
-  -altera-*,
   -android-cloexec-fopen,
   -bugprone-easily-swappable-parameters,
   -cert-err33-c,
@@ -13,9 +11,5 @@ Checks: >
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -cppcoreguidelines-avoid-non-const-global-variables,
   -hicpp-signed-bitwise,
-  -llvmlibc-*,
   -readability-function-cognitive-complexity,
-  -readability-identifier-length,
-WarningsAsErrors: '*'
-HeaderFilterRegex: '.*'
-FormatStyle: file
+InheritParentConfig: true
