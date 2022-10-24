@@ -57,6 +57,7 @@
    @{
 */
 
+#include "serd/caret.h"
 #include "serd/node.h"
 #include "serd/statement.h"
 #include "serd/uri.h"

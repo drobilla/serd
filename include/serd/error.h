@@ -5,6 +5,7 @@
 #define SERD_ERROR_H
 
 #include "serd/attributes.h"
+#include "serd/caret.h"
 #include "serd/status.h"
 
 #include <stdarg.h>
@@ -19,12 +20,10 @@ SERD_BEGIN_DECLS
 
 /// An error description
 typedef struct {
-  SerdStatus                status;   ///< Error code
-  const char* SERD_NULLABLE filename; ///< File with error
-  unsigned                  line;     ///< Line in file with error or 0
-  unsigned                  col;      ///< Column in file with error
-  const char* SERD_NONNULL  fmt;      ///< Printf-style format string
-  va_list* SERD_NONNULL     args;     ///< Arguments for fmt
+  SerdStatus                     status; ///< Error code
+  const SerdCaret* SERD_NULLABLE caret;  ///< File origin of error
+  const char* SERD_NONNULL       fmt;    ///< Printf-style format string
+  va_list* SERD_NONNULL          args;   ///< Arguments for fmt
 } SerdError;
 
 /**

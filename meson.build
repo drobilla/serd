@@ -120,6 +120,7 @@ include_dirs = include_directories('include')
 c_headers = files(
   'include/serd/attributes.h',
   'include/serd/buffer.h',
+  'include/serd/caret.h',
   'include/serd/env.h',
   'include/serd/error.h',
   'include/serd/memory.h',
@@ -142,6 +143,7 @@ c_headers = files(
 
 sources = files(
   'src/byte_source.c',
+  'src/caret.c',
   'src/env.c',
   'src/n3.c',
   'src/node.c',

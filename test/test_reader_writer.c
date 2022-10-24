@@ -370,7 +370,8 @@ test_read_string(void)
   assert(
     !serd_reader_start_string(reader,
                               "<http://example.org/s> <http://example.org/p> "
-                              "<http://example.org/o> ."));
+                              "<http://example.org/o> .",
+                              NULL));
 
   assert(!serd_reader_read_document(reader));
   assert(rt->n_base == 0);
@@ -433,7 +434,7 @@ test_write_errors(void)
       const SerdSink* const sink = serd_writer_sink(writer);
       SerdReader* const reader = serd_reader_new(world, SERD_TRIG, sink, 4096U);
 
-      SerdStatus st = serd_reader_start_string(reader, doc_string);
+      SerdStatus st = serd_reader_start_string(reader, doc_string, NULL);
       assert(!st);
       st = serd_reader_read_document(reader);
       assert(st == SERD_BAD_WRITE);
