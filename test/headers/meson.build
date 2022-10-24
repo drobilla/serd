@@ -14,6 +14,10 @@ if get_option('strict')
       '-Wno-padded',
       '-Wno-unused-const-variable',
     ]
+  elif cc.get_id() == 'msvc'
+    header_c_suppressions += [
+      '/wd4820', # padding added after construct
+    ]
   endif
 endif
 
