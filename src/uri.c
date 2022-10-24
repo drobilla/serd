@@ -17,7 +17,7 @@ serd_uri_to_path(const uint8_t* uri)
 {
   const uint8_t* path = uri;
   if (!is_windows_path(uri) && serd_uri_string_has_scheme(uri)) {
-    if (strncmp((const char*)uri, "file:", 5)) {
+    if (!!strncmp((const char*)uri, "file:", 5)) {
       fprintf(stderr, "Non-file URI `%s'\n", uri);
       return NULL;
     }

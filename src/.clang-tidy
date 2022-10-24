@@ -4,7 +4,6 @@
 Checks: >
   -*-magic-numbers,
   -bugprone-easily-swappable-parameters,
-  -bugprone-suspicious-string-compare,
   -cert-err33-c,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -concurrency-mt-unsafe,
