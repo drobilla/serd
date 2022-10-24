@@ -12,6 +12,8 @@
 #include <zix/attributes.h>
 #include <zix/string_view.h>
 
+#include <stdbool.h>
+
 SERD_BEGIN_DECLS
 
 /**
@@ -62,6 +64,10 @@ serd_no_statement(void)
                              serd_no_object(),
                              serd_no_token());
 }
+
+/// Return whether two statement views refer to equal statements
+SERD_PURE_API bool
+serd_statement_view_equals(SerdStatementView lhs, SerdStatementView rhs);
 
 /**
    @}

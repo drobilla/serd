@@ -1,0 +1,51 @@
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdft: <http://www.w3.org/ns/rdftest#> .
+
+<>
+	a mf:Manifest ;
+	rdfs:comment "Serd syntactic (non-model) pretty-printing test cases" ;
+	mf:entries (
+		<#anonymous-comma>
+		<#base-after-statement>
+		<#inline-blank-subject>
+		<#inline-blanks-and-lists>
+		<#prefix-after-statement>
+		<#repeated-directives>
+	) .
+
+<#anonymous-comma>
+	a rdft:TestTurtleEval ;
+	mf:action <anonymous-comma.ttl> ;
+	mf:name "anonymous-comma" ;
+	mf:result <anonymous-comma.ttl> .
+
+<#base-after-statement>
+	a rdft:TestTurtleEval ;
+	mf:action <base-after-statement.ttl> ;
+	mf:name "base-after-statement" ;
+	mf:result <base-after-statement.ttl> .
+
+<#inline-blank-subject>
+	a rdft:TestTurtleEval ;
+	mf:action <inline-blank-subject.ttl> ;
+	mf:name "inline-blank-subject" ;
+	mf:result <inline-blank-subject.ttl> .
+
+<#inline-blanks-and-lists>
+	a rdft:TestTurtleEval ;
+	mf:action <inline-blanks-and-lists.ttl> ;
+	mf:name "inline-blanks-and-lists" ;
+	mf:result <inline-blanks-and-lists.ttl> .
+
+<#prefix-after-statement>
+	a rdft:TestTurtleEval ;
+	mf:action <prefix-after-statement.ttl> ;
+	mf:name "prefix-after-statement" ;
+	mf:result <prefix-after-statement.ttl> .
+
+<#repeated-directives>
+	a rdft:TestTurtleEval ;
+	mf:action <repeated-directives-in.ttl> ;
+	mf:name "repeated-directives" ;
+	mf:result <repeated-directives-out.ttl> .

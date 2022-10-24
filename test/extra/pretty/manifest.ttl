@@ -7,20 +7,16 @@
 	rdfs:comment "Serd pretty-printing test suite" ;
 	mf:entries (
 		<#abbreviation>
-		<#anonymous-comma>
 		<#anonymous-in-list-object>
 		<#anonymous-object>
 		<#anonymous-subject>
 		<#anonymous-subject-and-object>
-		<#base-after-statement>
 		<#datatypes>
 		<#empty-anonymous-object>
 		<#empty-list-object>
 		<#empty-list-subject>
 		<#empty-list-subject-and-object>
 		<#graph-abbreviation>
-		<#inline-blank-subject>
-		<#inline-blanks-and-lists>
 		<#inline-list-subject>
 		<#langtags>
 		<#list-in-object>
@@ -36,9 +32,7 @@
 		<#named-graph>
 		<#nested-list-object>
 		<#nested-list-object-with-empty-lists>
-		<#prefix-after-statement>
 		<#relative-uris>
-		<#repeated-directives>
 		<#repeated-statements>
 		<#short-string-escapes>
 		<#uri-escapes>
@@ -50,12 +44,6 @@
 	mf:action <abbreviation.ttl> ;
 	mf:name "abbreviation" ;
 	mf:result <abbreviation.ttl> .
-
-<#anonymous-comma>
-	a rdft:TestTurtleEval ;
-	mf:action <anonymous-comma.ttl> ;
-	mf:name "anonymous-comma" ;
-	mf:result <anonymous-comma.ttl> .
 
 <#anonymous-in-list-object>
 	a rdft:TestTurtleEval ;
@@ -80,12 +68,6 @@
 	mf:action <anonymous-subject-and-object.ttl> ;
 	mf:name "anonymous-subject-and-object" ;
 	mf:result <anonymous-subject-and-object.ttl> .
-
-<#base-after-statement>
-	a rdft:TestTurtleEval ;
-	mf:action <base-after-statement.ttl> ;
-	mf:name "base-after-statement" ;
-	mf:result <base-after-statement.ttl> .
 
 <#datatypes>
 	a rdft:TestTurtleEval ;
@@ -122,18 +104,6 @@
 	mf:action <graph-abbreviation.trig> ;
 	mf:name "graph-abbreviation" ;
 	mf:result <graph-abbreviation.trig> .
-
-<#inline-blank-subject>
-	a rdft:TestTurtleEval ;
-	mf:action <inline-blank-subject.ttl> ;
-	mf:name "inline-blank-subject" ;
-	mf:result <inline-blank-subject.ttl> .
-
-<#inline-blanks-and-lists>
-	a rdft:TestTurtleEval ;
-	mf:action <inline-blanks-and-lists.ttl> ;
-	mf:name "inline-blanks-and-lists" ;
-	mf:result <inline-blanks-and-lists.ttl> .
 
 <#inline-list-subject>
 	a rdft:TestTurtleEval ;
@@ -231,23 +201,11 @@
 	mf:name "nested-list-subject" ;
 	mf:result <nested-list-subject.ttl> .
 
-<#prefix-after-statement>
-	a rdft:TestTurtleEval ;
-	mf:action <prefix-after-statement.ttl> ;
-	mf:name "prefix-after-statement" ;
-	mf:result <prefix-after-statement.ttl> .
-
 <#relative-uris>
 	a rdft:TestTurtleEval ;
 	mf:action <relative-uris.ttl> ;
 	mf:name "relative-uris" ;
 	mf:result <relative-uris.ttl> .
-
-<#repeated-directives>
-	a rdft:TestTurtleEval ;
-	mf:action <repeated-directives-in.ttl> ;
-	mf:name "repeated-directives" ;
-	mf:result <repeated-directives-out.ttl> .
 
 <#repeated-statements>
 	a rdft:TestTurtleEval ;

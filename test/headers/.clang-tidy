@@ -9,7 +9,7 @@ CheckOptions:
   - key:   readability-function-cognitive-complexity.Threshold
     value: '1'
   - key:   readability-identifier-length.IgnoredParameterNames
-    value: '^(id|r|t|v)$'
+    value: '^(id|s|p|o|g|r|t|v)$'
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
 FormatStyle: file

@@ -30,12 +30,15 @@ subdir('headers')
 unit_test_names = [
   'binary',
   'canon',
+  'cursor',
+  'describe',
   'env',
   'field',
   'file_uri',
   'filter',
   'free_null',
   'handler',
+  'model',
   'nodes',
   'object_view',
   'overflow',
@@ -180,6 +183,18 @@ simple_command_tests = {
       ['-h'],
       ['-k', '1024', '-B', '.', '-s', '<>a<>.'],
       ['-k', '1024', '-s', '<go:>a<go:> .'],
+    ],
+  },
+  'sort': {
+    'bad': [
+      ['-c', 'CHAOS'],
+      ['-c'],
+      ['-z'],
+      ['/no/such/file'],
+    ],
+    'good': [
+      ['-V'],
+      ['-h'],
     ],
   },
 }
@@ -406,7 +421,7 @@ if is_variable('serd_filter')
   # Command line options
 
   test(
-    'garbage_pattern',
+    'bad_pattern',
     tool,
     args: ['junk', serd_ttl],
     env: test_env,
@@ -452,6 +467,34 @@ if is_variable('serd_filter')
   )
 
   subdir('extra/filter')
+endif
+
+# Tests specific to serd-sort
+if is_variable('serd_sort')
+  sort_script_args = common_script_args + ['--tool', serd_sort]
+
+  test(
+    'stdin',
+    files('test_stdin.py'),
+    args: sort_script_args,
+    env: test_env,
+    suite: ['tools', 'sort', 'input'],
+  )
+  test(
+    'missing_output',
+    serd_sort,
+    args: ['-o', '/does/not/exist.ttl', serd_ttl],
+    env: test_env,
+    should_fail: true,
+    suite: ['tools', 'sort', 'output'],
+  )
+  test(
+    'sort',
+    files('test_sort.py'),
+    args: sort_script_args + files('sort/input.trig'),
+    env: test_env,
+    suite: ['tools', 'sort'],
+  )
 endif
 
 ###########################
@@ -669,6 +712,10 @@ test_suites += {
     '--',
     ['-k', '1024'],
   ],
+  'syntactic': [
+    files('extra/syntactic/manifest.ttl'),
+    ns_serdtest + 'syntactic/',
+  ],
   'qualify': [
     files('extra/qualify/manifest.ttl'),
     ns_serdtest + 'qualify/',
@@ -695,7 +742,39 @@ if is_variable('serd_pipe')
       run_suite,
       args: pipe_script_args + args,
       env: test_env,
-      suite: ['suite'],
+      suite: ['suite', 'pipe'],
+      timeout: 240,
+    )
+  endforeach
+endif
+
+# Run model test suites using serd-sort
+if is_variable('serd_sort')
+  ignored_sort_suites = [
+    'absolute', # Uses base directive
+    'baseless', # Tests a streaming feature
+    'big', # Passes but takes forever
+    'canon', # Tests a serd-pipe option
+    'canon_lax', # Tests a serd-pipe option
+    'expanded', # Repeated statements in output
+    'prefixless', # Tests a streaming feature
+    'root', # Tests a serd-pipe option
+    'syntactic', # Streaming-only by definition
+    'verbatim', # Model doesn't store CURIEs
+  ]
+
+  foreach name, args : test_suites
+    if name in ignored_sort_suites
+      continue
+    endif
+
+    args = test_suites[name]
+    test(
+      name,
+      run_suite,
+      args: sort_script_args + ['--unique'] + args,
+      env: test_env,
+      suite: ['suite', 'sort'],
       timeout: 240,
     )
   endforeach

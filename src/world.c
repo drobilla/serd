@@ -65,7 +65,7 @@ serd_world_set_log_func(SerdWorld* const  world,
 {
   assert(world);
 
-  world->log.func   = log_func;
+  world->log.func   = log_func ? log_func : serd_default_log_func;
   world->log.handle = handle;
 }
 
