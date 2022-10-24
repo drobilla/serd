@@ -21,7 +21,7 @@ test_size(SerdWorld* const  world,
   SerdReader* const reader = serd_reader_new(world, syntax, sink, stack_size);
   assert(reader);
 
-  serd_reader_start_string(reader, str);
+  serd_reader_start_string(reader, str, NULL);
   const SerdStatus st = serd_reader_read_document(reader);
   serd_reader_free(reader);
   serd_sink_free(sink);

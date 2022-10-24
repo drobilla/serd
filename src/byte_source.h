@@ -4,7 +4,11 @@
 #ifndef SERD_SRC_BYTE_SOURCE_H
 #define SERD_SRC_BYTE_SOURCE_H
 
+#include "caret.h" // IWYU pragma: keep
+
 #include "serd/attributes.h"
+#include "serd/caret.h"
+#include "serd/node.h"
 #include "serd/status.h"
 #include "serd/stream.h"
 
@@ -16,19 +20,14 @@
 typedef int (*SerdStreamCloseFunc)(void*);
 
 typedef struct {
-  const char* filename;
-  unsigned    line;
-  unsigned    col;
-} Cursor;
-
-typedef struct {
   SerdReadFunc        read_func;   ///< Read function (e.g. fread)
   SerdStreamErrorFunc error_func;  ///< Error function (e.g. ferror)
   SerdStreamCloseFunc close_func;  ///< Function for closing stream
   void*               stream;      ///< Stream (e.g. FILE)
   size_t              page_size;   ///< Number of bytes to read at a time
   size_t              buf_size;    ///< Number of bytes in file_buf
-  Cursor              cur;         ///< Cursor for error reporting
+  SerdNode*           name;        ///< Name of stream (referenced by cur)
+  SerdCaret           caret;       ///< Caret for error reporting
   uint8_t*            file_buf;    ///< Buffer iff reading pages from a file
   const uint8_t*      read_buf;    ///< Pointer to file_buf or read_byte
   size_t              read_head;   ///< Offset into read_buf
@@ -39,7 +38,9 @@ typedef struct {
 } SerdByteSource;
 
 SerdStatus
-serd_byte_source_open_string(SerdByteSource* source, const char* utf8);
+serd_byte_source_open_string(SerdByteSource* source,
+                             const char*     utf8,
+                             const SerdNode* name);
 
 SerdStatus
 serd_byte_source_open_source(SerdByteSource*     source,
@@ -47,7 +48,7 @@ serd_byte_source_open_source(SerdByteSource*     source,
                              SerdStreamErrorFunc error_func,
                              SerdStreamCloseFunc close_func,
                              void*               stream,
-                             const char*         name,
+                             const SerdNode*     name,
                              size_t              page_size);
 
 SerdStatus
@@ -74,11 +75,11 @@ serd_byte_source_advance(SerdByteSource* source)
 
   switch (serd_byte_source_peek(source)) {
   case '\n':
-    ++source->cur.line;
-    source->cur.col = 0;
+    ++source->caret.line;
+    source->caret.col = 0;
     break;
   default:
-    ++source->cur.col;
+    ++source->caret.col;
   }
 
   const bool was_eof = source->eof;

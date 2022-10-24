@@ -249,7 +249,8 @@ test_read_string(void)
   assert(
     !serd_reader_start_string(reader,
                               "<http://example.org/s> <http://example.org/p> "
-                              "<http://example.org/o> ."));
+                              "<http://example.org/o> .",
+                              NULL));
 
   assert(!serd_reader_read_document(reader));
   assert(rt->n_base == 0);
