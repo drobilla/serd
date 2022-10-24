@@ -290,6 +290,8 @@ test_reader(const char* path)
   assert(reader);
   assert(serd_reader_get_handle(reader) == rt);
 
+  assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
+
   SerdNode g = serd_node_from_string(SERD_URI, USTR("http://example.org/"));
   serd_reader_set_default_graph(reader, &g);
   serd_reader_add_blank_prefix(reader, USTR("tmp"));
