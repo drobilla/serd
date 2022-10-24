@@ -141,6 +141,7 @@ subdir('headers')
 
 unit_tests = [
   'canon',
+  'caret',
   'env',
   'filter',
   'free_null',
