@@ -8,6 +8,7 @@ Checks: >
   -hicpp-signed-bitwise,
   -llvm-header-guard,
   -misc-no-recursion,
+  -performance-no-int-to-ptr,
 CheckOptions:
   - key:   readability-function-cognitive-complexity.IgnoreMacros
     value: 'true'

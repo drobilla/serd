@@ -10,8 +10,6 @@
 #include <stdint.h>
 #include <string.h>
 
-enum { MAX_VALUE_SIZE = 8U };
-
 SerdValue
 serd_no_value(void)
 {
@@ -158,7 +156,7 @@ serd_parse_value(const SerdObjectView node)
     return serd_no_value();
   }
 
-  EXESS_ALIGN uint8_t       value[MAX_VALUE_SIZE] = {0};
+  EXESS_ALIGN uint8_t       value[32U] = {0};
   const ExessVariableResult vr =
     exess_read_value(datatype, node.string.data, sizeof(value), &value);
 

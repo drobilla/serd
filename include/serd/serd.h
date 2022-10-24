@@ -68,6 +68,7 @@
 #include <serd/node_type.h>
 #include <serd/object_view.h>
 #include <serd/token_view.h>
+#include <serd/tuple.h>
 #include <serd/uri.h>
 #include <serd/value.h>
 
@@ -105,6 +106,11 @@
    @{
 */
 
+#include <serd/cursor.h>
+#include <serd/describe.h>
+#include <serd/inserter.h>
+#include <serd/model.h>
+#include <serd/model_caret.h>
 #include <serd/nodes.h>
 #include <serd/strings.h>
 

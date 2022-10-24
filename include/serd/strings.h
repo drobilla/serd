@@ -5,10 +5,14 @@
 #define SERD_STRINGS_H
 
 #include <serd/attributes.h>
+#include <serd/caret_view.h>
+#include <serd/model_caret.h>
 #include <serd/node_id.h>
 #include <serd/nodes.h>
 #include <serd/object_view.h>
+#include <serd/statement_view.h>
 #include <serd/token_view.h>
+#include <serd/tuple.h>
 #include <zix/allocator.h>
 #include <zix/attributes.h>
 
@@ -91,6 +95,31 @@ serd_strings_object(SerdStrings* ZIX_NONNULL strings, SerdNodeID id);
 */
 SERD_PURE_API SerdLiteralView
 serd_strings_literal(SerdStrings* ZIX_NONNULL strings, SerdNodeID id);
+
+/**
+   Return a view of a stored statement.
+
+   @param strings Node strings to search.
+   @param tuple Tuple of node IDs repesenting a statement.
+
+   @return A view of the given nodes, possibly empty views with type
+   #SERD_NOTHING if a node isn't found.
+*/
+SERD_PURE_API SerdStatementView
+serd_strings_statement(SerdStrings* ZIX_NONNULL strings, SerdTuple tuple);
+
+/**
+   Return a caret for the document origin of a stored statement.
+
+   @param strings Node strings to search.
+
+   @param caret Caret for a statement in a model.  If this has a zero document
+   ID, it's considered unset, and an empty (all-zero) view is returned.
+
+   @return A view of the caret, or an empty view.
+*/
+SERD_PURE_API SerdCaretView
+serd_strings_caret(SerdStrings* ZIX_NONNULL strings, SerdModelCaret caret);
 
 /**
    @}

@@ -15,6 +15,7 @@ simple_script_paths = [
   '../test_log_level.py',
   '../test_multifile.py',
   '../test_patterns.py',
+  '../test_sort.py',
   '../test_stdin.py',
   '../test_write_error.py',
 ]

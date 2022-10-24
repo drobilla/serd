@@ -58,6 +58,14 @@ test_parse_value(void)
                      SERD_HAS_DATATYPE,
                      serd_token_view(SERD_URI, zix_empty_string())));
   assert(!empty_datatype.type);
+
+  const SerdValue bad_value = serd_parse_value(
+    serd_object_view(SERD_LITERAL,
+                     zix_string("9223372036854775808"),
+                     SERD_HAS_DATATYPE,
+                     serd_token_view(SERD_URI, zix_string(NS_XSD "integer"))));
+  assert(bad_value.type == SERD_NO_VALUE);
+  assert(!bad_value.data.as_bool);
 }
 
 static void

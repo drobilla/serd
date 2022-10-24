@@ -96,6 +96,8 @@ elif cc.get_id() == 'msvc'
   if warning_level == 'everything'
     c_suppressions += [
       '/wd4061', # enumerator in switch is not explicitly handled
+      '/wd4114', # same type qualifier used more than once
+      '/wd4305', # truncation to smaller type
       '/wd4514', # unreferenced inline function has been removed
       '/wd4710', # function not inlined
       '/wd4711', # function selected for automatic inline expansion
@@ -227,6 +229,8 @@ c_headers = files(
   'include/serd/buffer.h',
   'include/serd/canon.h',
   'include/serd/caret_view.h',
+  'include/serd/cursor.h',
+  'include/serd/describe.h',
   'include/serd/env.h',
   'include/serd/event.h',
   'include/serd/field.h',
@@ -234,8 +238,11 @@ c_headers = files(
   'include/serd/filter.h',
   'include/serd/handler.h',
   'include/serd/input_stream.h',
+  'include/serd/inserter.h',
   'include/serd/literal_view.h',
   'include/serd/log.h',
+  'include/serd/model.h',
+  'include/serd/model_caret.h',
   'include/serd/node_args.h',
   'include/serd/node_flags.h',
   'include/serd/node_id.h',
@@ -257,6 +264,7 @@ c_headers = files(
   'include/serd/syntax.h',
   'include/serd/tee.h',
   'include/serd/token_view.h',
+  'include/serd/tuple.h',
   'include/serd/uri.h',
   'include/serd/value.h',
   'include/serd/version.h',
@@ -269,6 +277,10 @@ sources = files(
   'src/block_dumper.c',
   'src/byte_source.c',
   'src/canon.c',
+  'src/carets.c',
+  'src/compare.c',
+  'src/cursor.c',
+  'src/describe.c',
   'src/env.c',
   'src/event.c',
   'src/field.c',
@@ -276,7 +288,9 @@ sources = files(
   'src/filter.c',
   'src/handler.c',
   'src/input_stream.c',
+  'src/inserter.c',
   'src/log.c',
+  'src/model.c',
   'src/node.c',
   'src/nodes.c',
   'src/object_view.c',
@@ -288,6 +302,8 @@ sources = files(
   'src/read_utf8.c',
   'src/reader.c',
   'src/sink.c',
+  'src/statement.c',
+  'src/statement_view.c',
   'src/stream_stdio.c',
   'src/string.c',
   'src/string_pair_view.c',

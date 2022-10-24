@@ -11,4 +11,4 @@ CheckOptions:
   - key:   readability-function-cognitive-complexity.IgnoreMacros
     value: 'true'
   - key:   readability-function-cognitive-complexity.Threshold
-    value: '9'
+    value: '18'

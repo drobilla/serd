@@ -1,9 +1,9 @@
 @base <http://example.org/a/> .
 
-<s>
-	<p> <o> .
+<s1>
+	<p1> <o1> .
 
 @base <http://example.org/b/> .
 
-<s>
-	<p> <o> .
+<s2>
+	<p2> <o2> .
