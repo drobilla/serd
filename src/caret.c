@@ -1,0 +1,69 @@
+// Copyright 2018-2020 David Robillard <d@drobilla.net>
+// SPDX-License-Identifier: ISC
+
+#include "caret.h"
+
+#include "serd/caret.h"
+
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+
+SerdCaret*
+serd_caret_new(const SerdNode* const document,
+               const unsigned        line,
+               const unsigned        column)
+{
+  SerdCaret* caret = (SerdCaret*)malloc(sizeof(SerdCaret));
+
+  if (caret) {
+    caret->document = document;
+    caret->line     = line;
+    caret->col      = column;
+  }
+
+  return caret;
+}
+
+SerdCaret*
+serd_caret_copy(const SerdCaret* const caret)
+{
+  if (!caret) {
+    return NULL;
+  }
+
+  SerdCaret* copy = (SerdCaret*)malloc(sizeof(SerdCaret));
+  memcpy(copy, caret, sizeof(SerdCaret));
+  return copy;
+}
+
+void
+serd_caret_free(SerdCaret* const caret)
+{
+  free(caret);
+}
+
+bool
+serd_caret_equals(const SerdCaret* const l, const SerdCaret* const r)
+{
+  return (l == r || (l && r && serd_node_equals(l->document, r->document) &&
+                     l->line == r->line && l->col == r->col));
+}
+
+const SerdNode*
+serd_caret_document(const SerdCaret* const caret)
+{
+  return caret->document;
+}
+
+unsigned
+serd_caret_line(const SerdCaret* const caret)
+{
+  return caret->line;
+}
+
+unsigned
+serd_caret_column(const SerdCaret* const caret)
+{
+  return caret->col;
+}
