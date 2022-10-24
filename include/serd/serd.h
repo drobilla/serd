@@ -78,13 +78,13 @@ typedef enum {
   SERD_TURTLE   = 1, ///< Terse triples http://www.w3.org/TR/turtle
   SERD_NTRIPLES = 2, ///< Line-based triples http://www.w3.org/TR/n-triples/
   SERD_NQUADS   = 3, ///< Line-based quads http://www.w3.org/TR/n-quads/
-  SERD_TRIG     = 4  ///< Terse quads http://www.w3.org/TR/trig/
+  SERD_TRIG     = 4, ///< Terse quads http://www.w3.org/TR/trig/
 } SerdSyntax;
 
 /// Flags indicating certain string properties relevant to serialisation
 typedef enum {
   SERD_HAS_NEWLINE = 1U << 0U, ///< Contains line breaks ('\\n' or '\\r')
-  SERD_HAS_QUOTE   = 1U << 1U  ///< Contains quotes ('"')
+  SERD_HAS_QUOTE   = 1U << 1U, ///< Contains quotes ('"')
 } SerdNodeFlag;
 
 /// Bitwise OR of SerdNodeFlag values
@@ -122,7 +122,7 @@ typedef enum {
   SERD_ERR_NOT_FOUND,  ///< Not found
   SERD_ERR_ID_CLASH,   ///< Encountered clashing blank node IDs
   SERD_ERR_BAD_CURIE,  ///< Invalid CURIE (e.g. prefix does not exist)
-  SERD_ERR_INTERNAL    ///< Unexpected internal error (should not happen)
+  SERD_ERR_INTERNAL,   ///< Unexpected internal error (should not happen)
 } SerdStatus;
 
 /// Return a string describing a status code
@@ -371,7 +371,7 @@ typedef enum {
      is meaningful only within this serialisation.  @see [RDF 1.1
      Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
   */
-  SERD_BLANK = 4
+  SERD_BLANK = 4,
 } SerdType;
 
 /// A syntactic RDF node
@@ -550,7 +550,7 @@ typedef enum {
   SERD_ANON_CONT    = 1U << 5U, ///< Continuation of anonymous node
   SERD_LIST_S_BEGIN = 1U << 6U, ///< Start of list subject
   SERD_LIST_O_BEGIN = 1U << 7U, ///< Start of list object
-  SERD_LIST_CONT    = 1U << 8U  ///< Continuation of list
+  SERD_LIST_CONT    = 1U << 8U, ///< Continuation of list
 } SerdStatementFlag;
 
 /// Bitwise OR of SerdStatementFlag values
