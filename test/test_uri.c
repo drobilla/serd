@@ -81,16 +81,62 @@ static void
 test_uri_parsing(void)
 {
   test_file_uri(NULL, "C:/My 100%", true, "file:///C:/My%20100%%", NULL);
-  test_file_uri("ahost",
-                "C:\\Pointless Space",
-                true,
-                "file://ahost/C:/Pointless%20Space",
-                "C:/Pointless Space");
   test_file_uri(NULL, "/foo/bar", true, "file:///foo/bar", NULL);
   test_file_uri("bhost", "/foo/bar", true, "file://bhost/foo/bar", NULL);
   test_file_uri(NULL, "a/relative path", false, "a/relative path", NULL);
   test_file_uri(
     NULL, "a/relative <path>", true, "a/relative%20%3Cpath%3E", NULL);
+
+#ifdef _WIN32
+  test_file_uri(
+    NULL, "C:\\My 100%", true, "file:///C:/My%20100%%", "C:/My 100%");
+
+  test_file_uri(NULL,
+                "\\drive\\relative",
+                true,
+                "file:///drive/relative",
+                "/drive/relative");
+
+  test_file_uri(NULL,
+                "C:\\Program Files\\Serd",
+                true,
+                "file:///C:/Program%20Files/Serd",
+                "C:/Program Files/Serd");
+
+  test_file_uri("ahost",
+                "C:\\Pointless Space",
+                true,
+                "file://ahost/C:/Pointless%20Space",
+                "C:/Pointless Space");
+#else
+  /* What happens with Windows paths on other platforms is a bit weird, but
+     more or less unavoidable.  It doesn't work to interpret backslashes as
+     path separators on any other platform. */
+
+  test_file_uri("ahost",
+                "C:\\Pointless Space",
+                true,
+                "file://ahost/C:%5CPointless%20Space",
+                "/C:\\Pointless Space");
+
+  test_file_uri(NULL,
+                "\\drive\\relative",
+                true,
+                "%5Cdrive%5Crelative",
+                "\\drive\\relative");
+
+  test_file_uri(NULL,
+                "C:\\Program Files\\Serd",
+                true,
+                "file:///C:%5CProgram%20Files%5CSerd",
+                "/C:\\Program Files\\Serd");
+
+  test_file_uri("ahost",
+                "C:\\Pointless Space",
+                true,
+                "file://ahost/C:%5CPointless%20Space",
+                "/C:\\Pointless Space");
+#endif
 
   // Test tolerance of parsing junk URI escapes
 

@@ -1,11 +1,12 @@
 serd (0.30.17) unstable; urgency=medium
 
+  * Add Windows path separator support to serd_node_new_file_uri()
   * Fix crash when trying to read chunks without starting
   * Fix hang when skipping an error at EOF when lax parsing
   * Override pkg-config dependency within meson
   * Test header for warnings more strictly
 
- -- David Robillard <d@drobilla.net>  Mon, 24 Oct 2022 02:07:19 +0000
+ -- David Robillard <d@drobilla.net>  Mon, 14 Nov 2022 21:06:21 +0000
 
 serd (0.30.16) stable; urgency=medium
 
