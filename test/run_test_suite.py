@@ -159,11 +159,11 @@ def _load_rdf(filename, base_uri, command_prefix):
     instances = {}
 
     cmd = command_prefix + [filename, base_uri]
-    proc = subprocess.run(cmd, capture_output=True, check=True)
+    proc = subprocess.run(
+        cmd, capture_output=True, encoding="utf-8", check=True
+    )
     for line in proc.stdout.splitlines():
-        matches = re.match(
-            r"<([^ ]*)> <([^ ]*)> <([^ ]*)> \.", line.decode("utf-8")
-        )
+        matches = re.match(r"<([^ ]*)> <([^ ]*)> <([^ ]*)> \.", line)
         if matches:
             s, p, o = (matches.group(1), matches.group(2), matches.group(3))
             if s not in model:
@@ -398,7 +398,7 @@ if __name__ == "__main__":
         sys.exit(main())
     except subprocess.CalledProcessError as e:
         if e.stderr is not None:
-            sys.stderr.write(e.stderr.decode("utf-8"))
+            sys.stderr.write(e.stderr)
 
         sys.stderr.write("error: %s\n" % e)
         sys.exit(e.returncode)
