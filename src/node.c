@@ -192,7 +192,7 @@ serd_node_new_file_uri(const uint8_t* const path,
   size_t       uri_len      = 0;
   uint8_t*     uri          = NULL;
 
-  if (is_dir_sep(path[0]) || is_windows) {
+  if (is_dir_sep((char)path[0]) || is_windows) {
     uri_len = strlen("file://") + hostname_len + is_windows;
     uri     = (uint8_t*)calloc(uri_len + 1, 1);
 
