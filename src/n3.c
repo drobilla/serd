@@ -403,7 +403,7 @@ read_STRING_LITERAL(SerdReader* const    reader,
       break;
     default:
       if (c == q) {
-        eat_byte_check(reader, q);
+        eat_byte_safe(reader, c);
         return SERD_SUCCESS;
       }
 
