@@ -132,7 +132,8 @@ serd_fopen(const char* const path, const char* const mode)
   }
 
 #if USE_POSIX_FADVISE && USE_FILENO
-  posix_fadvise(fileno(fd), 0, 0, POSIX_FADV_SEQUENTIAL | POSIX_FADV_NOREUSE);
+  (void)posix_fadvise(
+    fileno(fd), 0, 0, POSIX_FADV_SEQUENTIAL | POSIX_FADV_NOREUSE);
 #endif
 
   return fd;
