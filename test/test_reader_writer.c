@@ -15,19 +15,43 @@
 #define USTR(s) ((const uint8_t*)(s))
 
 typedef struct {
-  int             n_statements;
+  int             n_base;
+  int             n_prefix;
+  int             n_statement;
+  int             n_end;
   const SerdNode* graph;
 } ReaderTest;
 
 static SerdStatus
-test_sink(void*              handle,
-          SerdStatementFlags flags,
-          const SerdNode*    graph,
-          const SerdNode*    subject,
-          const SerdNode*    predicate,
-          const SerdNode*    object,
-          const SerdNode*    object_datatype,
-          const SerdNode*    object_lang)
+test_base_sink(void* handle, const SerdNode* uri)
+{
+  (void)uri;
+
+  ReaderTest* rt = (ReaderTest*)handle;
+  ++rt->n_base;
+  return SERD_SUCCESS;
+}
+
+static SerdStatus
+test_prefix_sink(void* handle, const SerdNode* name, const SerdNode* uri)
+{
+  (void)name;
+  (void)uri;
+
+  ReaderTest* rt = (ReaderTest*)handle;
+  ++rt->n_prefix;
+  return SERD_SUCCESS;
+}
+
+static SerdStatus
+test_statement_sink(void*              handle,
+                    SerdStatementFlags flags,
+                    const SerdNode*    graph,
+                    const SerdNode*    subject,
+                    const SerdNode*    predicate,
+                    const SerdNode*    object,
+                    const SerdNode*    object_datatype,
+                    const SerdNode*    object_lang)
 {
   (void)flags;
   (void)subject;
@@ -37,8 +61,18 @@ test_sink(void*              handle,
   (void)object_lang;
 
   ReaderTest* rt = (ReaderTest*)handle;
-  ++rt->n_statements;
+  ++rt->n_statement;
   rt->graph = graph;
+  return SERD_SUCCESS;
+}
+
+static SerdStatus
+test_end_sink(void* handle, const SerdNode* node)
+{
+  (void)node;
+
+  ReaderTest* rt = (ReaderTest*)handle;
+  ++rt->n_end;
   return SERD_SUCCESS;
 }
 
@@ -89,11 +123,16 @@ eof_test_error(void* stream)
 static void
 test_read_chunks(void)
 {
-  ReaderTest* const rt   = (ReaderTest*)calloc(1, sizeof(ReaderTest));
-  FILE* const       f    = tmpfile();
-  static const char null = 0;
-  SerdReader* const reader =
-    serd_reader_new(SERD_TURTLE, rt, free, NULL, NULL, test_sink, NULL);
+  ReaderTest* const rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
+  FILE* const       f      = tmpfile();
+  static const char null   = 0;
+  SerdReader* const reader = serd_reader_new(SERD_TURTLE,
+                                             rt,
+                                             free,
+                                             test_base_sink,
+                                             test_prefix_sink,
+                                             test_statement_sink,
+                                             test_end_sink);
 
   assert(reader);
   assert(serd_reader_get_handle(reader) == rt);
@@ -103,42 +142,72 @@ test_read_chunks(void)
   assert(st == SERD_SUCCESS);
 
   // Write two statement separated by null characters
+  fprintf(f, "@base <http://example.org/base/> .\n");
   fprintf(f, "@prefix eg: <http://example.org/> .\n");
-  fprintf(f, "eg:s eg:p eg:o1 .\n");
+  fprintf(f, "eg:s eg:p1 eg:o1 ;\n");
+  fprintf(f, "     eg:p2 eg:o2 .\n");
   fwrite(&null, sizeof(null), 1, f);
-  fprintf(f, "eg:s eg:p eg:o2 .\n");
+  fprintf(f, "eg:s eg:p [ eg:sp eg:so ] .\n");
   fwrite(&null, sizeof(null), 1, f);
   fseek(f, 0, SEEK_SET);
+
+  // Read base
+  st = serd_reader_read_chunk(reader);
+  assert(st == SERD_SUCCESS);
+  assert(rt->n_base == 1);
+  assert(rt->n_prefix == 0);
+  assert(rt->n_statement == 0);
+  assert(rt->n_end == 0);
 
   // Read prefix
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_SUCCESS);
-  assert(rt->n_statements == 0);
+  assert(rt->n_base == 1);
+  assert(rt->n_prefix == 1);
+  assert(rt->n_statement == 0);
+  assert(rt->n_end == 0);
 
-  // Read first statement
+  // Read first two statements
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_SUCCESS);
-  assert(rt->n_statements == 1);
+  assert(rt->n_base == 1);
+  assert(rt->n_prefix == 1);
+  assert(rt->n_statement == 2);
+  assert(rt->n_end == 0);
 
   // Read terminator
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_FAILURE);
-  assert(rt->n_statements == 1);
+  assert(rt->n_base == 1);
+  assert(rt->n_prefix == 1);
+  assert(rt->n_statement == 2);
+  assert(rt->n_end == 0);
 
-  // Read second statement (after null terminator)
+  // Read statements after null terminator
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_SUCCESS);
-  assert(rt->n_statements == 2);
+  assert(rt->n_base == 1);
+  assert(rt->n_prefix == 1);
+  assert(rt->n_statement == 4);
+  assert(rt->n_end == 1);
 
   // Read terminator
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_FAILURE);
-  assert(rt->n_statements == 2);
+  assert(rt->n_base == 1);
+  assert(rt->n_prefix == 1);
+  assert(rt->n_statement == 4);
+  assert(rt->n_end == 1);
 
   // EOF
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_FAILURE);
-  assert(rt->n_statements == 2);
+  assert(rt->n_base == 1);
+  assert(rt->n_prefix == 1);
+  assert(rt->n_statement == 4);
+  assert(rt->n_end == 1);
+
+  assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
 
   serd_reader_free(reader);
   fclose(f);
@@ -147,9 +216,14 @@ test_read_chunks(void)
 static void
 test_read_string(void)
 {
-  ReaderTest* rt = (ReaderTest*)calloc(1, sizeof(ReaderTest));
-  SerdReader* reader =
-    serd_reader_new(SERD_TURTLE, rt, free, NULL, NULL, test_sink, NULL);
+  ReaderTest* rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
+  SerdReader* reader = serd_reader_new(SERD_TURTLE,
+                                       rt,
+                                       free,
+                                       test_base_sink,
+                                       test_prefix_sink,
+                                       test_statement_sink,
+                                       test_end_sink);
 
   assert(reader);
   assert(serd_reader_get_handle(reader) == rt);
@@ -161,7 +235,10 @@ test_read_string(void)
          "<http://example.org/o> ."));
 
   assert(!st);
-  assert(rt->n_statements == 1);
+  assert(rt->n_base == 0);
+  assert(rt->n_prefix == 0);
+  assert(rt->n_statement == 1);
+  assert(rt->n_end == 0);
 
   serd_reader_free(reader);
 }
@@ -284,9 +361,15 @@ test_writer(const char* const path)
 static void
 test_reader(const char* path)
 {
-  ReaderTest* rt = (ReaderTest*)calloc(1, sizeof(ReaderTest));
-  SerdReader* reader =
-    serd_reader_new(SERD_TURTLE, rt, free, NULL, NULL, test_sink, NULL);
+  ReaderTest* rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
+  SerdReader* reader = serd_reader_new(SERD_TURTLE,
+                                       rt,
+                                       free,
+                                       test_base_sink,
+                                       test_prefix_sink,
+                                       test_statement_sink,
+                                       test_end_sink);
+
   assert(reader);
   assert(serd_reader_get_handle(reader) == rt);
 
@@ -311,7 +394,10 @@ test_reader(const char* path)
 
   const SerdStatus st = serd_reader_read_file(reader, USTR(path));
   assert(!st);
-  assert(rt->n_statements == 13);
+  assert(rt->n_base == 0);
+  assert(rt->n_prefix == 0);
+  assert(rt->n_statement == 13);
+  assert(rt->n_end == 0);
   assert(rt->graph && rt->graph->buf &&
          !strcmp((const char*)rt->graph->buf, "http://example.org/"));
 

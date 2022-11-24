@@ -41,7 +41,6 @@ unit_tests = [
   'env',
   'free_null',
   'node',
-  'read_chunk',
   'reader_writer',
   'string',
   'uri',
