@@ -45,32 +45,36 @@ test_file_uri(const char* hostname,
 static void
 test_uri_to_path(void)
 {
-  const uint8_t* uri = (const uint8_t*)"file:///home/user/foo.ttl";
-  assert(!strcmp((const char*)serd_uri_to_path(uri), "/home/user/foo.ttl"));
+  assert(!strcmp(
+    (const char*)serd_uri_to_path((const uint8_t*)"file:///home/user/foo.ttl"),
+    "/home/user/foo.ttl"));
 
-  uri = (const uint8_t*)"file://localhost/home/user/foo.ttl";
-  assert(!strcmp((const char*)serd_uri_to_path(uri), "/home/user/foo.ttl"));
+  assert(!strcmp((const char*)serd_uri_to_path(
+                   (const uint8_t*)"file://localhost/home/user/foo.ttl"),
+                 "/home/user/foo.ttl"));
 
-  uri = (const uint8_t*)"file:illegal/file/uri";
-  assert(!serd_uri_to_path(uri));
+  assert(!serd_uri_to_path((const uint8_t*)"file:illegal/file/uri"));
 
-  uri = (const uint8_t*)"file:///c:/awful/system";
-  assert(!strcmp((const char*)serd_uri_to_path(uri), "c:/awful/system"));
+  assert(!strcmp(
+    (const char*)serd_uri_to_path((const uint8_t*)"file:///c:/awful/system"),
+    "c:/awful/system"));
 
-  uri = (const uint8_t*)"file:///c:awful/system";
-  assert(!strcmp((const char*)serd_uri_to_path(uri), "/c:awful/system"));
+  assert(!strcmp(
+    (const char*)serd_uri_to_path((const uint8_t*)"file:///c:awful/system"),
+    "/c:awful/system"));
 
-  uri = (const uint8_t*)"file:///0/1";
-  assert(!strcmp((const char*)serd_uri_to_path(uri), "/0/1"));
+  assert(!strcmp((const char*)serd_uri_to_path((const uint8_t*)"file:///0/1"),
+                 "/0/1"));
 
-  uri = (const uint8_t*)"C:\\Windows\\Sucks";
-  assert(!strcmp((const char*)serd_uri_to_path(uri), "C:\\Windows\\Sucks"));
+  assert(
+    !strcmp((const char*)serd_uri_to_path((const uint8_t*)"C:\\Windows\\Sucks"),
+            "C:\\Windows\\Sucks"));
 
-  uri = (const uint8_t*)"C|/Windows/Sucks";
-  assert(!strcmp((const char*)serd_uri_to_path(uri), "C|/Windows/Sucks"));
+  assert(
+    !strcmp((const char*)serd_uri_to_path((const uint8_t*)"C|/Windows/Sucks"),
+            "C|/Windows/Sucks"));
 
-  uri = (const uint8_t*)"http://example.org/path";
-  assert(!serd_uri_to_path(uri));
+  assert(!serd_uri_to_path((const uint8_t*)"http://example.org/path"));
 }
 
 #if defined(__GNUC__)
