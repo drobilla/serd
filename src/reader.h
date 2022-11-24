@@ -120,16 +120,25 @@ peek_byte(SerdReader* reader)
   return source->eof ? EOF : (int)source->read_buf[source->read_head];
 }
 
-static inline int
+static inline SerdStatus
+skip_byte(SerdReader* reader, const int byte)
+{
+  (void)byte;
+
+  assert(peek_byte(reader) == byte);
+
+  return serd_byte_source_advance(&reader->source);
+}
+
+static inline int SERD_NODISCARD
 eat_byte_safe(SerdReader* reader, const int byte)
 {
   (void)byte;
 
-  const int c = peek_byte(reader);
-  assert(c == byte);
+  assert(peek_byte(reader) == byte);
 
   serd_byte_source_advance(&reader->source);
-  return c;
+  return byte;
 }
 
 static inline int SERD_NODISCARD

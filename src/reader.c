@@ -294,8 +294,8 @@ static SerdStatus
 skip_bom(SerdReader* const me)
 {
   if (serd_byte_source_peek(&me->source) == 0xEF) {
-    serd_byte_source_advance(&me->source);
-    if (serd_byte_source_peek(&me->source) != 0xBB ||
+    if (serd_byte_source_advance(&me->source) ||
+        serd_byte_source_peek(&me->source) != 0xBB ||
         serd_byte_source_advance(&me->source) ||
         serd_byte_source_peek(&me->source) != 0xBF ||
         serd_byte_source_advance(&me->source)) {
@@ -360,7 +360,7 @@ serd_reader_read_chunk(SerdReader* const reader)
 
   if (peek_byte(reader) == 0) {
     // Skip leading null byte, for reading from a null-delimited socket
-    eat_byte_safe(reader, 0);
+    st = skip_byte(reader, 0);
   }
 
   return st ? st : read_statement(reader);
