@@ -943,12 +943,15 @@ read_literal(SerdReader* const    reader,
     break;
   case '^':
     eat_byte_safe(reader, '^');
-    eat_byte_check(reader, '^');
+    if (!eat_byte_check(reader, '^')) {
+      return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected `^'\n");
+    }
+
     if ((st = read_iri(reader, datatype, ate_dot))) {
       *datatype = pop_node(reader, *datatype);
       *lang     = pop_node(reader, *lang);
       *dest     = pop_node(reader, *dest);
-      return r_err(reader, st, "bad literal\n");
+      return r_err(reader, st, "bad datatype\n");
     }
     break;
   }

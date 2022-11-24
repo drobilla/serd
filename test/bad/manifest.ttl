@@ -28,6 +28,7 @@
 		<#bad-char-in-local>
 		<#bad-char-in-prefix>
 		<#bad-char-in-uri>
+		<#bad-datatype-syntax>
 		<#bad-datatype>
 		<#bad-dot-after-subject>
 		<#bad-dot-in-collection>
@@ -184,6 +185,11 @@
 	rdf:type rdft:TestTurtleNegativeSyntax ;
 	mf:name "bad-char-in-uri" ;
 	mf:action <bad-char-in-uri.ttl> .
+
+<#bad-datatype-syntax>
+	rdf:type rdft:TestTurtleNegativeSyntax ;
+	mf:name "bad-datatype-syntax" ;
+	mf:action <bad-datatype-syntax.ttl> .
 
 <#bad-datatype>
 	rdf:type rdft:TestTurtleNegativeSyntax ;
