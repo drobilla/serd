@@ -25,8 +25,11 @@ SerdEnv*
 serd_env_new(const SerdNode* const base_uri)
 {
   SerdEnv* env = (SerdEnv*)calloc(1, sizeof(struct SerdEnvImpl));
-  if (env && base_uri) {
-    serd_env_set_base_uri(env, base_uri);
+  if (env && base_uri && base_uri->type != SERD_NOTHING) {
+    if (serd_env_set_base_uri(env, base_uri)) {
+      free(env);
+      return NULL;
+    }
   }
 
   return env;

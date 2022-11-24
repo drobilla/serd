@@ -64,6 +64,8 @@ test_env(void)
   const SerdNode lit = serd_node_from_string(SERD_LITERAL, USTR("hello"));
   assert(serd_env_set_prefix(env, &b, &lit));
 
+  assert(!serd_env_new(&lit));
+
   const SerdNode blank  = serd_node_from_string(SERD_BLANK, USTR("b1"));
   const SerdNode xblank = serd_env_expand_node(env, &blank);
   assert(serd_node_equals(&xblank, &SERD_NODE_NULL));

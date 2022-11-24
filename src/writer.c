@@ -1010,23 +1010,24 @@ serd_writer_chop_blank_prefix(SerdWriter* writer, const uint8_t* prefix)
 SerdStatus
 serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 {
-  if (!serd_env_set_base_uri(writer->env, uri)) {
-    serd_env_get_base_uri(writer->env, &writer->base_uri);
-
-    if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
-      if (writer->context.graph.type || writer->context.subject.type) {
-        sink(" .\n\n", 4, writer);
-        reset_context(writer, true);
-      }
-      sink("@base <", 7, writer);
-      sink(uri->buf, uri->n_bytes, writer);
-      sink("> .\n", 4, writer);
-    }
-    writer->indent = 0;
-    return reset_context(writer, true);
+  const SerdStatus st = serd_env_set_base_uri(writer->env, uri);
+  if (st) {
+    return st;
   }
 
-  return SERD_ERR_UNKNOWN;
+  serd_env_get_base_uri(writer->env, &writer->base_uri);
+
+  if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
+    if (writer->context.graph.type || writer->context.subject.type) {
+      sink(" .\n\n", 4, writer);
+      reset_context(writer, true);
+    }
+    sink("@base <", 7, writer);
+    sink(uri->buf, uri->n_bytes, writer);
+    sink("> .\n", 4, writer);
+  }
+  writer->indent = 0;
+  return reset_context(writer, true);
 }
 
 SerdStatus
