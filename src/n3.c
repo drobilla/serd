@@ -997,7 +997,9 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
                       bool* const       ate_dot)
 {
   eat_byte_safe(reader, '_');
-  eat_byte_check(reader, ':');
+  if (!eat_byte_check(reader, ':')) {
+    return SERD_ERR_BAD_SYNTAX;
+  }
 
   const Ref ref = *dest =
     push_node(reader,

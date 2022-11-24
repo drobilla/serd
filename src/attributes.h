@@ -10,4 +10,10 @@
 #  define SERD_MALLOC_FUNC
 #endif
 
+#ifdef __GNUC__
+#  define SERD_NODISCARD __attribute__((warn_unused_result))
+#else
+#  define SERD_NODISCARD
+#endif
+
 #endif // SERD_ATTRIBUTES_H

@@ -24,6 +24,7 @@
 		<#bad-14>
 		<#bad-base>
 		<#bad-blank>
+		<#bad-blank-syntax>
 		<#bad-bom>
 		<#bad-char-in-local>
 		<#bad-char-in-prefix>
@@ -165,6 +166,11 @@
 	rdf:type rdft:TestTurtleNegativeSyntax ;
 	mf:name "bad-blank" ;
 	mf:action <bad-blank.ttl> .
+
+<#bad-blank-syntax>
+	rdf:type rdft:TestTurtleNegativeSyntax ;
+	mf:name "bad-blank-syntax" ;
+	mf:action <bad-blank-syntax.ttl> .
 
 <#bad-bom>
 	rdf:type rdft:TestTurtleNegativeSyntax ;

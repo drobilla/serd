@@ -4,6 +4,7 @@
 #ifndef SERD_READER_H
 #define SERD_READER_H
 
+#include "attributes.h"
 #include "byte_source.h"
 #include "stack.h"
 
@@ -131,7 +132,7 @@ eat_byte_safe(SerdReader* reader, const int byte)
   return c;
 }
 
-static inline int
+static inline int SERD_NODISCARD
 eat_byte_check(SerdReader* reader, const int byte)
 {
   const int c = peek_byte(reader);
