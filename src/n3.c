@@ -384,7 +384,7 @@ read_STRING_LITERAL(SerdReader* const    reader,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  while (!(st && reader->strict)) {
+  while (!st || !reader->strict) {
     const int c    = peek_byte(reader);
     uint32_t  code = 0;
     switch (c) {
@@ -405,15 +405,14 @@ read_STRING_LITERAL(SerdReader* const    reader,
       if (c == q) {
         eat_byte_check(reader, q);
         return SERD_SUCCESS;
-      } else {
-        st =
-          read_character(reader, ref, flags, (uint8_t)eat_byte_safe(reader, c));
       }
+
+      st =
+        read_character(reader, ref, flags, (uint8_t)eat_byte_safe(reader, c));
     }
   }
 
-  return st ? st
-            : (eat_byte_check(reader, q) ? SERD_SUCCESS : SERD_ERR_BAD_SYNTAX);
+  return eat_byte_check(reader, q) ? SERD_SUCCESS : SERD_ERR_BAD_SYNTAX;
 }
 
 static SerdStatus
