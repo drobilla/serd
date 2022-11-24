@@ -269,8 +269,8 @@ test_writer(const char* const path)
   writer = serd_writer_new(
     SERD_TURTLE, (SerdStyle)0, env, NULL, serd_file_sink, empty);
 
-  // FIXME: error handling
-  serd_writer_write_statement(writer, 0, NULL, &s, &p, &nothing, NULL, NULL);
+  assert(!serd_writer_write_statement(
+    writer, 0, NULL, &s, &p, &nothing, NULL, NULL));
 
   assert((size_t)ftell(empty) == strlen("<>\n\t<http://example.org/pred> "));
 
