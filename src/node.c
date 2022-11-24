@@ -224,13 +224,13 @@ serd_node_new_file_uri(const uint8_t* const path,
     }
   }
 
-  serd_chunk_sink_finish(&chunk);
+  const uint8_t* const string = serd_chunk_sink_finish(&chunk);
 
-  if (out) {
-    serd_uri_parse(chunk.buf, out);
+  if (string && out) {
+    serd_uri_parse(string, out);
   }
 
-  return serd_node_from_substring(SERD_URI, chunk.buf, chunk.len);
+  return serd_node_from_substring(SERD_URI, string, chunk.len);
 }
 
 SerdNode
