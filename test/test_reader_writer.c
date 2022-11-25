@@ -443,12 +443,32 @@ test_reader(const char* path)
 int
 main(void)
 {
+#ifdef _WIN32
+  char         tmp[MAX_PATH] = {0};
+  const size_t tmp_len       = (size_t)GetTempPath(sizeof(tmp), tmp);
+#else
+  const char* const env_tmp = getenv("TMPDIR");
+  const char* const tmp     = env_tmp ? env_tmp : "/tmp";
+  const size_t      tmp_len = strlen(tmp);
+#endif
+
+  const char* const name     = "serd_test_reader_writer.ttl";
+  const size_t      name_len = strlen(name);
+  const size_t      path_len = tmp_len + 1 + name_len;
+  char* const       path     = (char*)calloc(path_len + 1, 1);
+
+  memcpy(path, tmp, tmp_len + 1);
+  path[tmp_len] = '/';
+  memcpy(path + tmp_len + 1, name, name_len + 1);
+
   test_read_chunks();
   test_read_string();
 
-  const char* const path = "serd_test.ttl";
   test_writer(path);
   test_reader(path);
+
+  assert(!remove(path));
+  free(path);
 
   printf("Success\n");
   return 0;
