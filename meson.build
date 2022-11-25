@@ -8,6 +8,7 @@ project('serd', ['c'],
         default_options: [
           'b_ndebug=if-release',
           'buildtype=release',
+          'warning_level=3',
           'c_std=c99',
         ])
 

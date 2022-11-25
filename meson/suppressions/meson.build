@@ -60,15 +60,24 @@ if is_variable('cc')
         '/wd4061', # enumerator in switch is not explicitly handled
         '/wd4365', # signed/unsigned mismatch
         '/wd4514', # unreferenced inline function has been removed
-        '/wd4706', # assignment within conditional expression
         '/wd4710', # function not inlined
         '/wd4711', # function selected for automatic inline expansion
         '/wd4800', # implicit conversion from int to bool
         '/wd4820', # padding added after construct
-        '/wd4996', # POSIX name for this item is deprecated
         '/wd5045', # will insert Spectre mitigation for memory load
       ]
     endif
+  endif
+
+  if cc.get_id() == 'clang'
+    c_suppressions += [
+      '-Wno-nullability-extension',
+    ]
+  elif cc.get_id() == 'msvc'
+    c_suppressions += [
+      '/wd4706', # assignment within conditional expression
+      '/wd4996', # POSIX name for this item is deprecated
+    ]
   endif
 
   c_suppressions = cc.get_supported_arguments(c_suppressions)

@@ -6,7 +6,6 @@ header_c_suppressions = []
 if get_option('strict')
   if cc.get_id() == 'clang'
     header_c_suppressions += [
-      '-Wno-nullability-extension',
       '-Wno-padded',
     ]
   elif cc.get_id() == 'gcc'
@@ -19,6 +18,12 @@ if get_option('strict')
       '/wd4820', # padding added after construct
     ]
   endif
+endif
+
+if cc.get_id() == 'clang'
+  header_c_suppressions += [
+    '-Wno-nullability-extension',
+  ]
 endif
 
 test(
