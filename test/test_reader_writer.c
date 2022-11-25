@@ -5,6 +5,10 @@
 
 #include "serd/serd.h"
 
+#ifdef _WIN32
+#  include <windows.h>
+#endif
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -121,11 +125,23 @@ eof_test_error(void* stream)
 }
 
 static void
-test_read_chunks(void)
+test_read_chunks(const char* const path)
 {
+  static const char null = 0;
+
+  FILE* const f = fopen(path, "w+b");
+
+  // Write two statements separated by null characters
+  fprintf(f, "@base <http://example.org/base/> .\n");
+  fprintf(f, "@prefix eg: <http://example.org/> .\n");
+  fprintf(f, "eg:s eg:p1 eg:o1 ;\n");
+  fprintf(f, "     eg:p2 eg:o2 .\n");
+  fwrite(&null, sizeof(null), 1, f);
+  fprintf(f, "eg:s eg:p [ eg:sp eg:so ] .\n");
+  fwrite(&null, sizeof(null), 1, f);
+  fseek(f, 0, SEEK_SET);
+
   ReaderTest* const rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
-  FILE* const       f      = tmpfile();
-  static const char null   = 0;
   SerdReader* const reader = serd_reader_new(SERD_TURTLE,
                                              rt,
                                              free,
@@ -140,16 +156,6 @@ test_read_chunks(void)
 
   SerdStatus st = serd_reader_start_stream(reader, f, NULL, false);
   assert(st == SERD_SUCCESS);
-
-  // Write two statement separated by null characters
-  fprintf(f, "@base <http://example.org/base/> .\n");
-  fprintf(f, "@prefix eg: <http://example.org/> .\n");
-  fprintf(f, "eg:s eg:p1 eg:o1 ;\n");
-  fprintf(f, "     eg:p2 eg:o2 .\n");
-  fwrite(&null, sizeof(null), 1, f);
-  fprintf(f, "eg:s eg:p [ eg:sp eg:so ] .\n");
-  fwrite(&null, sizeof(null), 1, f);
-  fseek(f, 0, SEEK_SET);
 
   // Read base
   st = serd_reader_read_chunk(reader);
@@ -211,6 +217,7 @@ test_read_chunks(void)
 
   serd_reader_free(reader);
   fclose(f);
+  remove(path);
 }
 
 static void
@@ -340,19 +347,24 @@ test_writer(const char* const path)
   serd_free(out);
 
   // Test writing empty node
-  SerdNode    nothing = serd_node_from_string(SERD_NOTHING, USTR(""));
-  FILE* const empty   = tmpfile();
+  SerdNode nothing = serd_node_from_string(SERD_NOTHING, USTR(""));
 
-  writer = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_file_sink, empty);
+  chunk.buf = NULL;
+  chunk.len = 0;
+  writer    = serd_writer_new(
+    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
 
   assert(!serd_writer_write_statement(
     writer, 0, NULL, &s, &p, &nothing, NULL, NULL));
 
-  assert((size_t)ftell(empty) == strlen("<>\n\t<http://example.org/pred> "));
+  assert(
+    !strncmp((const char*)chunk.buf, "<>\n\t<http://example.org/pred> ", 30));
 
   serd_writer_free(writer);
-  fclose(empty);
+  out = serd_chunk_sink_finish(&chunk);
+
+  assert(!strcmp((const char*)out, "<>\n\t<http://example.org/pred>  .\n\n"));
+  serd_free(out);
 
   serd_env_free(env);
   fclose(fd);
@@ -405,20 +417,15 @@ test_reader(const char* path)
 
   // A read of a big page hits EOF then fails to read chunks immediately
   {
-    FILE* temp = tmpfile();
-    assert(temp);
-    fprintf(temp, "_:s <http://example.org/p> _:o .\n");
-    fflush(temp);
-    fseek(temp, 0L, SEEK_SET);
-
-    serd_reader_start_stream(reader, temp, NULL, true);
+    FILE* const in = fopen(path, "rb");
+    serd_reader_start_stream(reader, in, (const uint8_t*)"test", true);
 
     assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
     assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
     assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
 
     serd_reader_end_stream(reader);
-    fclose(temp);
+    fclose(in);
   }
 
   // A byte-wise reader that hits EOF once then continues (like a socket)
@@ -461,7 +468,7 @@ main(void)
   path[tmp_len] = '/';
   memcpy(path + tmp_len + 1, name, name_len + 1);
 
-  test_read_chunks();
+  test_read_chunks(path);
   test_read_string();
 
   test_writer(path);
