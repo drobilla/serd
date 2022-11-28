@@ -47,8 +47,15 @@ If this is enabled, output will be written a page at a time, rather than a byte 
 Chop
 .Ar prefix
 from matching blank node IDs.
-This is the inverse of
+This is typically used to revert the effects of
 .Fl p .
+For example, with
+.Ar prefix
+.Dq doc01 ,
+the blank node
+.Li _:doc01b42
+will be emitted as
+.Li _:b42 .
 .Pp
 .It Fl e
 Eat input one character at a time, rather than a page at a time which is the default.
@@ -89,6 +96,15 @@ Add
 .Ar prefix
 to blank node IDs.
 This can be used to avoid clashes between blank node IDs in input documents.
+The effects can be reversed in a later run with
+.Fl c .
+For example, with
+.Ar prefix
+.Dq doc01 ,
+the blank node
+.Li _:b42
+will be emitted as
+.Li _:doc01b42 .
 .Pp
 .It Fl q
 Suppress all output except data.
@@ -98,9 +114,28 @@ Keep relative URIs within a
 .Ar root
 URI.
 This will avoid creating any relative URI references with leading path segments like
-.Dq ../
+.Pa ../
 that enter a parent of
 .Ar root .
+.Pp
+For example,
+if
+.Pa /home/you/file.ttl
+is written to the file
+.Pa /home/me/output.ttl
+using the destination's base URI,
+then it could be written as
+.Li <../you/file.ttl> .
+Setting
+.Fl r Li file:///home/me/
+would prevent references from
+.Dq escaping
+like this,
+so the above would instead be written as
+.Li <file:///home/you/file.ttl> ,
+since it can't be expressed relative to the root URI.
+.Pp
+This is useful for keeping relative references within some directory.
 .Pp
 .It Fl s Ar string
 Parse

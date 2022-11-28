@@ -5,10 +5,11 @@ serd (0.30.17) unstable; urgency=medium
   * Fix hang when skipping an error at EOF when lax parsing
   * Gracefully handle bad characters in Turtle blank node syntax
   * Gracefully handle bad characters in Turtle datatype syntax
+  * Improve serdi man page
   * Override pkg-config dependency within meson
   * Test header for warnings more strictly
 
- -- David Robillard <d@drobilla.net>  Thu, 24 Nov 2022 21:05:52 +0000
+ -- David Robillard <d@drobilla.net>  Mon, 28 Nov 2022 18:45:50 +0000
 
 serd (0.30.16) stable; urgency=medium
 
