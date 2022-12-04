@@ -7,9 +7,10 @@ serd (0.30.17) unstable; urgency=medium
   * Gracefully handle bad characters in Turtle datatype syntax
   * Improve serdi man page
   * Override pkg-config dependency within meson
+  * Replace duplicated dox_to_sphinx script with sphinxygen dependency
   * Test header for warnings more strictly
 
- -- David Robillard <d@drobilla.net>  Mon, 28 Nov 2022 18:45:50 +0000
+ -- David Robillard <d@drobilla.net>  Sun, 04 Dec 2022 18:33:52 +0000
 
 serd (0.30.16) stable; urgency=medium
 
