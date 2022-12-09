@@ -8,6 +8,7 @@
 #include "byte_source.h"
 #include "namespaces.h"
 #include "node.h"
+#include "read_nquads.h"
 #include "read_ntriples.h"
 #include "stack.h"
 #include "statement.h"
