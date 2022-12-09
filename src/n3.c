@@ -29,12 +29,6 @@
 #include <stdio.h>
 #include <string.h>
 
-static bool
-fancy_syntax(const SerdReader* const reader)
-{
-  return reader->syntax == SERD_TURTLE || reader->syntax == SERD_TRIG;
-}
-
 static SerdStatus
 read_collection(SerdReader* reader, ReadContext ctx, SerdNode** dest);
 
@@ -147,11 +141,6 @@ read_String(SerdReader* const reader, SerdNode* const node)
 
   if (q3 != q1) { // Empty short string ("" or '')
     return SERD_SUCCESS;
-  }
-
-  if (!fancy_syntax(reader)) {
-    return r_err(
-      reader, SERD_ERR_BAD_SYNTAX, "syntax does not support long literals");
   }
 
   skip_byte(reader, q3);
@@ -379,10 +368,6 @@ resolve_IRIREF(SerdReader* const reader,
 static SerdStatus
 read_IRIREF(SerdReader* const reader, SerdNode** const dest)
 {
-  if (!fancy_syntax(reader)) {
-    return read_IRI(reader, dest);
-  }
-
   SerdStatus st = SERD_SUCCESS;
   if ((st = eat_byte_check(reader, '<'))) {
     return st;
@@ -700,19 +685,6 @@ read_object(SerdReader* const  reader,
   bool       simple = (ctx->subject != 0);
   SerdNode*  o      = 0;
   const int  c      = peek_byte(reader);
-  if (!fancy_syntax(reader)) {
-    switch (c) {
-    case '"':
-    case '$':
-    case ':':
-    case '<':
-    case '?':
-    case '_':
-      break;
-    default:
-      return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected: ':', '<', or '_'");
-    }
-  }
 
   switch (c) {
   case EOF:
@@ -792,11 +764,9 @@ read_object(SerdReader* const  reader,
   }
   }
 
+  ctx->object = o;
   if (!ret && emit && simple && o) {
     ret = emit_statement(reader, *ctx, o);
-  } else if (!ret && !emit) {
-    ctx->object = o;
-    return SERD_SUCCESS;
   }
 
   serd_stack_pop_to(&reader->stack, orig_stack_size);
@@ -1275,71 +1245,4 @@ read_turtleTrigDoc(SerdReader* const reader)
   }
 
   return SERD_SUCCESS;
-}
-
-SerdStatus
-read_nquadsDoc(SerdReader* const reader)
-{
-  SerdStatus st = SERD_SUCCESS;
-  while (!st && !reader->source->eof) {
-    const size_t orig_stack_size = reader->stack.size;
-
-    SerdStatementFlags flags   = 0;
-    ReadContext        ctx     = {0, 0, 0, 0, &flags};
-    bool               ate_dot = false;
-    int                s_type  = 0;
-    read_ws_star(reader);
-    if (peek_byte(reader) == EOF) {
-      break;
-    }
-
-    if (peek_byte(reader) == '@') {
-      r_err(reader, SERD_ERR_BAD_SYNTAX, "syntax does not support directives");
-      return SERD_ERR_BAD_SYNTAX;
-    }
-
-    if ((st = read_subject(reader, ctx, &ctx.subject, &s_type)) ||
-        !read_ws_star(reader)) {
-      return st;
-    }
-
-    switch (peek_byte(reader)) {
-    case '$':
-    case '?':
-      st = read_Var(reader, &ctx.predicate);
-      break;
-    case '<':
-      st = read_IRIREF(reader, &ctx.predicate);
-      break;
-    }
-
-    if (st || !read_ws_star(reader) ||
-        (st = read_object(reader, &ctx, false, &ate_dot))) {
-      return st;
-    }
-
-    if (!ate_dot) { // graphLabel?
-      read_ws_star(reader);
-      switch (peek_byte(reader)) {
-      case '.':
-        break;
-      case '?':
-        TRY(st, read_Var(reader, &ctx.graph));
-        break;
-      case '_':
-        TRY(st, read_BLANK_NODE_LABEL(reader, &ctx.graph, &ate_dot));
-        break;
-      default:
-        TRY(st, read_IRIREF(reader, &ctx.graph));
-      }
-
-      // Terminating '.'
-      read_ws_star(reader);
-      TRY(st, eat_byte_check(reader, '.'));
-    }
-
-    st = emit_statement(reader, ctx, ctx.object);
-    serd_stack_pop_to(&reader->stack, orig_stack_size);
-  }
-  return st;
 }

@@ -169,18 +169,24 @@ read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
   return tolerate_status(reader, st) ? SERD_SUCCESS : st;
 }
 
-SerdStatus
+/**
+   Read an absolute IRI.
+
+   This is a stricter subset of [8] IRIREF in the NTriples grammar, since a
+   scheme is required.  Handling this in the parser results in better error
+   messages.
+*/
+static SerdStatus
 read_IRI(SerdReader* const reader, SerdNode** const dest)
 {
-  SerdStatus st = SERD_SUCCESS;
-  if ((st = eat_byte_check(reader, '<'))) {
-    return st;
-  }
+  assert(peek_byte(reader) == '<');
+  eat_byte(reader);
 
   if (!(*dest = push_node(reader, SERD_URI, "", 0))) {
     return SERD_ERR_OVERFLOW;
   }
 
+  SerdStatus st = SERD_SUCCESS;
   if ((st = read_IRI_scheme(reader, *dest))) {
     return r_err(reader, st, "expected IRI scheme");
   }
