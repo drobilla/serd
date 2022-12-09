@@ -4,13 +4,10 @@
 #include "node.h"
 
 #include "namespaces.h"
-#include "static_nodes.h"
 #include "string_utils.h"
 #include "system.h"
 
 #include "exess/exess.h"
-#include "serd/attributes.h"
-#include "serd/buffer.h"
 #include "serd/node.h"
 #include "serd/status.h"
 #include "serd/string_view.h"
@@ -20,55 +17,24 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
-typedef struct {
-  const void* SERD_NULLABLE buf;
-  size_t                    len;
-} SerdConstBuffer;
+#ifndef NDEBUG
+#  define MUST_SUCCEED(status) assert(!(status))
+#else
+#  define MUST_SUCCEED(status) ((void)(status))
+#endif
 
 static const SerdNodeFlags meta_mask = (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE);
 
+// Round size up to an even multiple of the node alignment
 static size_t
-string_sink(const void* const buf,
-            const size_t      size,
-            const size_t      nmemb,
-            void* const       stream)
+serd_node_pad_size(const size_t size)
 {
-  char** ptr = (char**)stream;
-  memcpy(*ptr, buf, size * nmemb);
-  *ptr += size * nmemb;
-  return nmemb;
-}
+  const size_t n_trailing = size % serd_node_align;
+  const size_t n_pad      = n_trailing ? (serd_node_align - n_trailing) : 0U;
 
-SERD_PURE_FUNC
-static size_t
-serd_node_pad_length(const size_t n_bytes)
-{
-  const size_t pad  = sizeof(SerdNode) - (n_bytes + 2) % sizeof(SerdNode);
-  const size_t size = n_bytes + 2 + pad;
-  assert(size % sizeof(SerdNode) == 0);
-  return size;
-}
-
-static const SerdNode*
-serd_node_meta_c(const SerdNode* const node)
-{
-  return node + 1 + (serd_node_pad_length(node->length) / sizeof(SerdNode));
-}
-
-static SerdNode*
-serd_node_meta(SerdNode* const node)
-{
-  return node + 1 + (serd_node_pad_length(node->length) / sizeof(SerdNode));
-}
-
-SERD_PURE_FUNC
-static const SerdNode*
-serd_node_maybe_get_meta_c(const SerdNode* const node)
-{
-  return (node->flags & meta_mask) ? serd_node_meta_c(node) : NULL;
+  return size + n_pad;
 }
 
 static void
@@ -82,7 +48,8 @@ serd_node_check_padding(const SerdNode* node)
       assert(serd_node_buffer_c(node)[node->length + i] == '\0');
     }
 
-    serd_node_check_padding(serd_node_maybe_get_meta_c(node));
+    serd_node_check_padding(serd_node_datatype(node));
+    serd_node_check_padding(serd_node_language(node));
   }
 #endif
 }
@@ -90,25 +57,35 @@ serd_node_check_padding(const SerdNode* node)
 size_t
 serd_node_total_size(const SerdNode* const node)
 {
-  return node ? (sizeof(SerdNode) + serd_node_pad_length(node->length) +
-                 serd_node_total_size(serd_node_maybe_get_meta_c(node)))
-              : 0;
+  const size_t real_length = serd_node_pad_length(node->length);
+  const size_t base_size   = sizeof(SerdNode) + real_length;
+
+  if (!(node->flags & meta_mask)) {
+    return base_size;
+  }
+
+  const SerdNode* const meta             = serd_node_meta_c(node);
+  const size_t          meta_real_length = serd_node_pad_length(meta->length);
+
+  return base_size + sizeof(SerdNode) + meta_real_length;
 }
 
 SerdNode*
-serd_node_malloc(const size_t        length,
-                 const SerdNodeFlags flags,
-                 const SerdNodeType  type)
+serd_node_malloc(const size_t size)
 {
-  const size_t size = sizeof(SerdNode) + serd_node_pad_length(length);
-  SerdNode*    node = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
-
-  node->length = 0;
-  node->flags  = flags;
-  node->type   = type;
+  SerdNode* const node =
+    (SerdNode*)serd_calloc_aligned(serd_node_align, serd_node_pad_size(size));
 
   assert((uintptr_t)node % serd_node_align == 0);
   return node;
+}
+
+SerdNode*
+serd_node_try_malloc(const SerdWriteResult r)
+{
+  return (r.status && r.status != SERD_ERR_OVERFLOW)
+           ? NULL
+           : serd_node_malloc(r.count);
 }
 
 void
@@ -157,46 +134,42 @@ result(const SerdStatus status, const size_t count)
   return result;
 }
 
-SerdNode*
-serd_new_token(const SerdNodeType type, const SerdStringView str)
+static SerdWriteResult
+serd_node_construct_simple(const size_t         buf_size,
+                           void* const          buf,
+                           const SerdNodeType   type,
+                           const SerdNodeFlags  flags,
+                           const SerdStringView string)
 {
-  SerdNodeFlags flags  = 0U;
-  const size_t  length = str.buf ? str.len : 0U;
-  SerdNode*     node   = serd_node_malloc(length, flags, type);
-
-  if (node) {
-    if (str.buf) {
-      memcpy(serd_node_buffer(node), str.buf, length);
-    }
-
-    node->length = length;
+  const size_t total_size = sizeof(SerdNode) + serd_node_pad_length(string.len);
+  if (!buf || total_size > buf_size) {
+    return result(SERD_ERR_OVERFLOW, total_size);
   }
 
-  serd_node_check_padding(node);
+  SerdNode* const node = (SerdNode*)buf;
 
-  return node;
-}
+  node->length = string.len;
+  node->flags  = flags;
+  node->type   = type;
 
-SerdNode*
-serd_new_string(const SerdStringView str)
-{
-  SerdNodeFlags flags = 0U;
-  SerdNode*     node  = serd_node_malloc(str.len, flags, SERD_LITERAL);
-
-  if (node) {
-    if (str.buf && str.len) {
-      memcpy(serd_node_buffer(node), str.buf, str.len);
-    }
-
-    node->length = str.len;
-    serd_node_check_padding(node);
+  if (string.buf) {
+    memcpy(serd_node_buffer(node), string.buf, string.len);
   }
 
-  return node;
+  serd_node_zero_pad(node);
+  return result(SERD_SUCCESS, total_size);
 }
 
-SERD_PURE_FUNC
-static bool
+SerdWriteResult
+serd_node_construct_token(const size_t         buf_size,
+                          void* const          buf,
+                          const SerdNodeType   type,
+                          const SerdStringView string)
+{
+  return serd_node_construct_simple(buf_size, buf, type, 0U, string);
+}
+
+bool
 is_langtag(const SerdStringView string)
 {
   // First character must be a letter
@@ -225,57 +198,295 @@ is_langtag(const SerdStringView string)
   return true;
 }
 
-SerdNode*
-serd_new_literal(const SerdStringView string,
-                 const SerdNodeFlags  flags,
-                 const SerdStringView meta)
+SerdWriteResult
+serd_node_construct_literal(const size_t         buf_size,
+                            void* const          buf,
+                            const SerdStringView string,
+                            const SerdNodeFlags  flags,
+                            const SerdStringView meta)
 {
   if (!(flags & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE))) {
-    SerdNode* node = serd_node_malloc(string.len, flags, SERD_LITERAL);
-
-    memcpy(serd_node_buffer(node), string.buf, string.len);
-    node->length = string.len;
-    serd_node_check_padding(node);
-    return node;
+    return serd_node_construct_simple(
+      buf_size, buf, SERD_LITERAL, flags, string);
   }
 
   if ((flags & SERD_HAS_DATATYPE) && (flags & SERD_HAS_LANGUAGE)) {
-    return NULL;
+    return result(SERD_ERR_BAD_ARG, 0);
   }
 
   if (!meta.len) {
-    return NULL;
+    return result(SERD_ERR_BAD_ARG, 0);
   }
 
   if (((flags & SERD_HAS_DATATYPE) &&
        (!serd_uri_string_has_scheme(meta.buf) ||
         !strcmp(meta.buf, NS_RDF "langString"))) ||
       ((flags & SERD_HAS_LANGUAGE) && !is_langtag(meta))) {
+    return result(SERD_ERR_BAD_ARG, 0);
+  }
+
+  const size_t padded_length = serd_node_pad_length(string.len);
+
+  const size_t meta_size  = sizeof(SerdNode) + serd_node_pad_length(meta.len);
+  const size_t total_size = sizeof(SerdNode) + padded_length + meta_size;
+  if (!buf || total_size > buf_size) {
+    return result(SERD_ERR_OVERFLOW, total_size);
+  }
+
+  SerdNode* const node = (SerdNode*)buf;
+
+  node->length = string.len;
+  node->flags  = flags;
+  node->type   = SERD_LITERAL;
+
+  memcpy(serd_node_buffer(node), string.buf, string.len);
+
+  SerdNode* meta_node = node + 1 + (padded_length / sizeof(SerdNode));
+  meta_node->type     = (flags & SERD_HAS_DATATYPE) ? SERD_URI : SERD_LITERAL;
+  meta_node->length   = meta.len;
+  memcpy(serd_node_buffer(meta_node), meta.buf, meta.len);
+
+  serd_node_zero_pad(node);
+  return result(SERD_SUCCESS, total_size);
+}
+
+SerdWriteResult
+serd_node_construct(const size_t         buf_size,
+                    void* const          buf,
+                    const SerdNodeType   type,
+                    const SerdStringView string,
+                    const SerdNodeFlags  flags,
+                    const SerdStringView meta)
+{
+  return ((type == SERD_LITERAL)
+            ? serd_node_construct_literal(buf_size, buf, string, flags, meta)
+          : (meta.len > 0U)
+            ? result(SERD_ERR_BAD_ARG, 0)
+            : serd_node_construct_token(buf_size, buf, type, string));
+}
+
+SerdWriteResult
+serd_node_construct_boolean(const size_t buf_size,
+                            void* const  buf,
+                            const bool   value)
+{
+  char temp[EXESS_MAX_BOOLEAN_LENGTH + 1] = {0};
+
+  const ExessResult r = exess_write_boolean(value, sizeof(temp), temp);
+  MUST_SUCCEED(r.status); // The only error is buffer overrun
+
+  return serd_node_construct_literal(buf_size,
+                                     buf,
+                                     serd_substring(temp, r.count),
+                                     SERD_HAS_DATATYPE,
+                                     serd_string(EXESS_XSD_URI "boolean"));
+}
+
+SerdWriteResult
+serd_node_construct_decimal(const size_t buf_size,
+                            void* const  buf,
+                            const double value)
+{
+  char temp[EXESS_MAX_DECIMAL_LENGTH + 1] = {0};
+
+  const ExessResult r = exess_write_decimal(value, sizeof(temp), temp);
+  MUST_SUCCEED(r.status); // The only error is buffer overrun
+
+  return serd_node_construct_literal(buf_size,
+                                     buf,
+                                     serd_substring(temp, r.count),
+                                     SERD_HAS_DATATYPE,
+                                     serd_string(EXESS_XSD_URI "decimal"));
+}
+
+SerdWriteResult
+serd_node_construct_double(const size_t buf_size,
+                           void* const  buf,
+                           const double value)
+{
+  char temp[EXESS_MAX_DOUBLE_LENGTH + 1] = {0};
+
+  const ExessResult r = exess_write_double(value, sizeof(temp), temp);
+  MUST_SUCCEED(r.status); // The only error is buffer overrun
+
+  return serd_node_construct_literal(buf_size,
+                                     buf,
+                                     serd_substring(temp, r.count),
+                                     SERD_HAS_DATATYPE,
+                                     serd_string(EXESS_XSD_URI "double"));
+}
+
+SerdWriteResult
+serd_node_construct_float(const size_t buf_size,
+                          void* const  buf,
+                          const float  value)
+{
+  char temp[EXESS_MAX_FLOAT_LENGTH + 1] = {0};
+
+  const ExessResult r = exess_write_float(value, sizeof(temp), temp);
+  MUST_SUCCEED(r.status); // The only error is buffer overrun
+
+  return serd_node_construct_literal(buf_size,
+                                     buf,
+                                     serd_substring(temp, r.count),
+                                     SERD_HAS_DATATYPE,
+                                     serd_string(EXESS_XSD_URI "float"));
+}
+
+SerdWriteResult
+serd_node_construct_integer(const size_t         buf_size,
+                            void* const          buf,
+                            const int64_t        value,
+                            const SerdStringView datatype)
+{
+  if (datatype.len && !serd_uri_string_has_scheme(datatype.buf)) {
+    return result(SERD_ERR_BAD_ARG, 0);
+  }
+
+  char              temp[24] = {0};
+  const ExessResult r        = exess_write_long(value, sizeof(temp), temp);
+  MUST_SUCCEED(r.status); // The only error is buffer overrun
+
+  return serd_node_construct_literal(
+    buf_size,
+    buf,
+    serd_substring(temp, r.count),
+    SERD_HAS_DATATYPE,
+    datatype.len ? datatype : serd_string(NS_XSD "integer"));
+}
+
+SerdWriteResult
+serd_node_construct_base64(const size_t         buf_size,
+                           void* const          buf,
+                           const size_t         value_size,
+                           const void* const    value,
+                           const SerdStringView datatype)
+{
+  const SerdStringView xsd_base64Binary = serd_string(NS_XSD "base64Binary");
+
+  // Verify argument sanity
+  if (!value || !value_size ||
+      (datatype.len && !serd_uri_string_has_scheme(datatype.buf))) {
+    return result(SERD_ERR_BAD_ARG, 0);
+  }
+
+  // Determine the type to use (default to xsd:base64Binary)
+  const SerdStringView type        = datatype.len ? datatype : xsd_base64Binary;
+  const size_t         type_length = serd_node_pad_length(type.len);
+  const size_t         type_size   = sizeof(SerdNode) + type_length;
+
+  // Find the length of the encoded string (just an O(1) arithmetic expression)
+  ExessResult r = exess_write_base64(value_size, value, 0, NULL);
+
+  // Check that the provided buffer is large enough
+  const size_t padded_length = serd_node_pad_length(r.count);
+  const size_t total_size    = sizeof(SerdNode) + padded_length + type_size;
+  if (!buf || total_size > buf_size) {
+    return result(SERD_ERR_OVERFLOW, total_size);
+  }
+
+  SerdNode* const node = (SerdNode*)buf;
+  node->length         = r.count;
+  node->flags          = SERD_HAS_DATATYPE;
+  node->type           = SERD_LITERAL;
+
+  // Write the encoded base64 into the node body
+  r = exess_write_base64(
+    value_size, value, total_size - sizeof(SerdNode), serd_node_buffer(node));
+
+  MUST_SUCCEED(r.status);
+  (void)r;
+
+  // Append datatype
+  SerdNode* meta_node = node + 1 + (padded_length / sizeof(SerdNode));
+  meta_node->length   = type.len;
+  meta_node->flags    = 0U;
+  meta_node->type     = SERD_URI;
+  memcpy(serd_node_buffer(meta_node), type.buf, type.len);
+
+  return result(SERD_SUCCESS, total_size);
+}
+
+static size_t
+string_sink(const void* const buf,
+            const size_t      size,
+            const size_t      nmemb,
+            void* const       stream)
+{
+  char** ptr = (char**)stream;
+  memcpy(*ptr, buf, size * nmemb);
+  *ptr += size * nmemb;
+  return nmemb;
+}
+
+SerdWriteResult
+serd_node_construct_uri(const size_t      buf_size,
+                        void* const       buf,
+                        const SerdURIView uri)
+{
+  const size_t length        = serd_uri_string_length(uri);
+  const size_t required_size = sizeof(SerdNode) + serd_node_pad_length(length);
+  if (!buf || buf_size < required_size) {
+    return result(SERD_ERR_OVERFLOW, required_size);
+  }
+
+  // Write node header
+  SerdNode* const node = (SerdNode*)buf;
+  node->length         = length;
+  node->flags          = 0U;
+  node->type           = SERD_URI;
+
+  // Serialise URI to node body
+  char*        ptr           = serd_node_buffer(node);
+  const size_t actual_length = serd_write_uri(uri, string_sink, &ptr);
+  assert(actual_length == length);
+
+  serd_node_buffer(node)[actual_length] = '\0';
+  serd_node_check_padding(node);
+  return result(SERD_SUCCESS, required_size);
+}
+
+SerdNode*
+serd_node_new(const SerdNodeType   type,
+              const SerdStringView string,
+              const SerdNodeFlags  flags,
+              const SerdStringView meta)
+{
+  SerdWriteResult r = serd_node_construct(0, NULL, type, string, flags, meta);
+  if (r.status != SERD_ERR_OVERFLOW) {
     return NULL;
   }
 
-  const size_t len       = serd_node_pad_length(string.len);
-  const size_t meta_len  = serd_node_pad_length(meta.len);
-  const size_t meta_size = sizeof(SerdNode) + meta_len;
+  assert(r.count % sizeof(SerdNode) == 0);
 
-  SerdNode* node = serd_node_malloc(len + meta_size, flags, SERD_LITERAL);
-  memcpy(serd_node_buffer(node), string.buf, string.len);
-  node->length = string.len;
+  SerdNode* const node = serd_node_malloc(sizeof(SerdNode) + r.count + 1U);
 
-  SerdNode* meta_node = node + 1U + (len / sizeof(SerdNode));
-  meta_node->length   = meta.len;
-  meta_node->type     = (flags & SERD_HAS_DATATYPE) ? SERD_URI : SERD_LITERAL;
-  memcpy(serd_node_buffer(meta_node), meta.buf, meta.len);
-  serd_node_check_padding(meta_node);
+  if (node) {
+    r = serd_node_construct(r.count, node, type, string, flags, meta);
+    MUST_SUCCEED(r.status); // Any error should have been reported above
+  }
 
-  serd_node_check_padding(node);
   return node;
 }
 
 SerdNode*
-serd_new_blank(const SerdStringView str)
+serd_new_token(const SerdNodeType type, const SerdStringView string)
 {
-  return serd_new_token(SERD_BLANK, str);
+  return serd_node_new(type, string, 0U, serd_empty_string());
+}
+
+SerdNode*
+serd_new_string(const SerdStringView str)
+{
+  return serd_node_new(SERD_LITERAL, str, 0U, serd_empty_string());
+}
+
+SerdNode*
+serd_new_literal(const SerdStringView str,
+                 const SerdNodeFlags  flags,
+                 const SerdStringView meta)
+{
+  return serd_node_new(SERD_LITERAL, str, flags, meta);
 }
 
 ExessResult
@@ -448,69 +659,93 @@ serd_node_compare(const SerdNode* const a, const SerdNode* const b)
 }
 
 SerdNode*
-serd_new_uri(const SerdStringView str)
+serd_new_uri(const SerdStringView string)
 {
-  return serd_new_token(SERD_URI, str);
+  return serd_new_token(SERD_URI, string);
 }
 
 SerdNode*
 serd_new_parsed_uri(const SerdURIView uri)
 {
-  const size_t    len        = serd_uri_string_length(uri);
-  SerdNode* const node       = serd_node_malloc(len, 0, SERD_URI);
-  char*           ptr        = serd_node_buffer(node);
-  const size_t    actual_len = serd_write_uri(uri, string_sink, &ptr);
+  SerdWriteResult r    = serd_node_construct_uri(0U, NULL, uri);
+  SerdNode* const node = serd_node_try_malloc(r);
 
-  assert(actual_len == len);
+  if (node) {
+    r = serd_node_construct_uri(r.count, node, uri);
+    MUST_SUCCEED(r.status);
+  }
 
-  serd_node_buffer(node)[actual_len] = '\0';
-  node->length                       = actual_len;
-
-  serd_node_check_padding(node);
   return node;
+}
+
+typedef struct {
+  char*  buf;
+  size_t len;
+  size_t offset;
+} ConstructWriteHead;
+
+static size_t
+construct_write(const void* const buf,
+                const size_t      size,
+                const size_t      nmemb,
+                void* const       stream)
+{
+  const size_t              n_bytes = size * nmemb;
+  ConstructWriteHead* const head    = (ConstructWriteHead*)stream;
+
+  if (head->buf && head->offset + n_bytes <= head->len) {
+    memcpy(head->buf + head->offset, buf, n_bytes);
+  }
+
+  head->offset += n_bytes;
+  return n_bytes;
+}
+
+SerdWriteResult
+serd_node_construct_file_uri(const size_t         buf_size,
+                             void* const          buf,
+                             const SerdStringView path,
+                             const SerdStringView hostname)
+{
+  SerdNode* const    node  = (SerdNode*)buf;
+  ConstructWriteHead head  = {(char*)buf, buf_size, 0U};
+  size_t             count = 0U;
+
+  // Write node header
+  SerdNode header = {0U, 0U, SERD_URI};
+  count += construct_write(&header, sizeof(header), 1, &head);
+
+  // Write URI string node body
+  const size_t length =
+    serd_write_file_uri(path, hostname, construct_write, &head);
+
+  // Terminate string and pad with at least 1 additional null byte
+  const size_t padded_length = serd_node_pad_length(length);
+  count += length;
+  for (size_t p = 0U; p < padded_length - length; ++p) {
+    count += construct_write("", 1, 1, &head);
+  }
+
+  if (!buf || count > buf_size) {
+    return result(SERD_ERR_OVERFLOW, count);
+  }
+
+  node->length = length;
+  assert(node->length == strlen(serd_node_string(node)));
+
+  return result(SERD_SUCCESS, count);
 }
 
 SerdNode*
 serd_new_file_uri(const SerdStringView path, const SerdStringView hostname)
 {
-  SerdBuffer buffer = {NULL, 0U};
+  SerdWriteResult r    = serd_node_construct_file_uri(0, NULL, path, hostname);
+  SerdNode* const node = serd_node_try_malloc(r);
 
-  serd_write_file_uri(path, hostname, serd_buffer_sink, &buffer);
-  serd_buffer_sink_finish(&buffer);
-
-  const size_t      length = buffer.len;
-  const char* const string = serd_buffer_sink_finish(&buffer);
-  SerdNode* const   node   = serd_new_string(serd_substring(string, length));
-
-  free(buffer.buf);
-  serd_node_check_padding(node);
-  return node;
-}
-
-typedef size_t (*SerdWriteLiteralFunc)(const void* user_data,
-                                       size_t      buf_size,
-                                       char*       buf);
-
-static SerdNode*
-serd_new_custom_literal(const void* const          user_data,
-                        const size_t               len,
-                        const SerdWriteLiteralFunc write,
-                        const SerdNode* const      datatype)
-{
-  if (len == 0 || !write) {
-    return NULL;
-  }
-
-  const size_t datatype_size = serd_node_total_size(datatype);
-  const size_t total_size    = serd_node_pad_length(len) + datatype_size;
-
-  SerdNode* const node = serd_node_malloc(
-    total_size, datatype ? SERD_HAS_DATATYPE : 0U, SERD_LITERAL);
-
-  node->length = write(user_data, len + 1, serd_node_buffer(node));
-
-  if (datatype) {
-    memcpy(serd_node_meta(node), datatype, datatype_size);
+  if (node) {
+    r = serd_node_construct_file_uri(r.count, node, path, hostname);
+    MUST_SUCCEED(r.status);
+    assert(serd_node_length(node) == strlen(serd_node_string(node)));
   }
 
   serd_node_check_padding(node);
@@ -520,107 +755,97 @@ serd_new_custom_literal(const void* const          user_data,
 SerdNode*
 serd_new_double(const double d)
 {
-  char buf[EXESS_MAX_DOUBLE_LENGTH + 1] = {0};
+  SerdWriteResult r    = serd_node_construct_double(0, NULL, d);
+  SerdNode* const node = serd_node_try_malloc(r);
 
-  const ExessResult r = exess_write_double(d, sizeof(buf), buf);
+  if (node) {
+    r = serd_node_construct_double(r.count, node, d);
+    MUST_SUCCEED(r.status);
+    assert(serd_node_length(node) == strlen(serd_node_string(node)));
+  }
 
-  return r.status ? NULL
-                  : serd_new_literal(serd_substring(buf, r.count),
-                                     SERD_HAS_DATATYPE,
-                                     serd_string(EXESS_XSD_URI "double"));
+  serd_node_check_padding(node);
+  return node;
 }
 
 SerdNode*
 serd_new_float(const float f)
 {
-  char buf[EXESS_MAX_FLOAT_LENGTH + 1] = {0};
+  SerdWriteResult r    = serd_node_construct_float(0, NULL, f);
+  SerdNode* const node = serd_node_try_malloc(r);
 
-  const ExessResult r = exess_write_float(f, sizeof(buf), buf);
+  if (node) {
+    r = serd_node_construct_float(r.count, node, f);
+    MUST_SUCCEED(r.status);
+    assert(serd_node_length(node) == strlen(serd_node_string(node)));
+  }
 
-  return r.status ? NULL
-                  : serd_new_literal(serd_substring(buf, r.count),
-                                     SERD_HAS_DATATYPE,
-                                     serd_string(EXESS_XSD_URI "float"));
+  serd_node_check_padding(node);
+  return node;
 }
 
 SerdNode*
 serd_new_boolean(bool b)
 {
-  return serd_new_literal(b ? serd_string("true") : serd_string("false"),
-                          SERD_HAS_DATATYPE,
-                          serd_node_string_view(&serd_xsd_boolean.node));
-}
+  SerdWriteResult r    = serd_node_construct_boolean(0, NULL, b);
+  SerdNode* const node = serd_node_try_malloc(r);
 
-SerdNode*
-serd_new_decimal(const double d, const SerdNode* const datatype)
-{
-  // Use given datatype, or xsd:decimal as a default if it is null
-  const SerdNode* type      = datatype ? datatype : &serd_xsd_decimal.node;
-  const size_t    type_size = serd_node_total_size(type);
+  if (node) {
+    r = serd_node_construct_boolean(r.count, node, b);
+    MUST_SUCCEED(r.status);
+    assert(serd_node_length(node) == strlen(serd_node_string(node)));
+  }
 
-  // Measure integer string to know how much space the node will need
-  ExessResult r = exess_write_decimal(d, 0, NULL);
-  assert(!r.status);
-
-  // Allocate node with enough space for value and datatype URI
-  SerdNode* const node = serd_node_malloc(
-    serd_node_pad_length(r.count) + type_size, SERD_HAS_DATATYPE, SERD_LITERAL);
-
-  // Write string directly into node
-  r = exess_write_decimal(d, r.count + 1, serd_node_buffer(node));
-  assert(!r.status);
-
-  node->length = r.count;
-  memcpy(serd_node_meta(node), type, type_size);
   serd_node_check_padding(node);
   return node;
 }
 
 SerdNode*
-serd_new_integer(const int64_t i, const SerdNode* const datatype)
+serd_new_decimal(const double d)
 {
-  // Use given datatype, or xsd:integer as a default if it is null
-  const SerdNode* type      = datatype ? datatype : &serd_xsd_integer.node;
-  const size_t    type_size = serd_node_total_size(type);
+  SerdWriteResult r    = serd_node_construct_decimal(0, NULL, d);
+  SerdNode* const node = serd_node_try_malloc(r);
 
-  // Measure integer string to know how much space the node will need
-  ExessResult r = exess_write_long(i, 0, NULL);
-  assert(!r.status);
+  if (node) {
+    r = serd_node_construct_decimal(r.count, node, d);
+    MUST_SUCCEED(r.status);
+    assert(serd_node_length(node) == strlen(serd_node_string(node)));
+  }
 
-  // Allocate node with enough space for value and datatype URI
-  SerdNode* const node = serd_node_malloc(
-    serd_node_pad_length(r.count) + type_size, SERD_HAS_DATATYPE, SERD_LITERAL);
-
-  // Write string directly into node
-  r = exess_write_long(i, r.count + 1U, serd_node_buffer(node));
-  assert(!r.status);
-
-  node->length = r.count;
-  memcpy(serd_node_meta(node), type, type_size);
   serd_node_check_padding(node);
   return node;
 }
 
-static size_t
-write_base64_literal(const void* const user_data,
-                     const size_t      buf_size,
-                     char* const       buf)
+SerdNode*
+serd_new_integer(const int64_t i, const SerdStringView datatype)
 {
-  const SerdConstBuffer blob = *(const SerdConstBuffer*)user_data;
+  SerdWriteResult r    = serd_node_construct_integer(0, NULL, i, datatype);
+  SerdNode* const node = serd_node_try_malloc(r);
 
-  const ExessResult r = exess_write_base64(blob.len, blob.buf, buf_size, buf);
+  if (node) {
+    r = serd_node_construct_integer(r.count, node, i, datatype);
+    MUST_SUCCEED(r.status);
+    assert(serd_node_length(node) == strlen(serd_node_string(node)));
+  }
 
-  return r.status ? 0 : r.count;
+  serd_node_check_padding(node);
+  return node;
 }
 
 SerdNode*
-serd_new_base64(const void* buf, size_t size, const SerdNode* datatype)
+serd_new_base64(const void* buf, size_t size, const SerdStringView datatype)
 {
-  const size_t    len  = exess_write_base64(size, buf, 0, NULL).count;
-  const SerdNode* type = datatype ? datatype : &serd_xsd_base64Binary.node;
-  SerdConstBuffer blob = {buf, size};
+  SerdWriteResult r = serd_node_construct_base64(0, NULL, size, buf, datatype);
+  SerdNode* const node = serd_node_try_malloc(r);
 
-  return serd_new_custom_literal(&blob, len, write_base64_literal, type);
+  if (node) {
+    r = serd_node_construct_base64(r.count, node, size, buf, datatype);
+    MUST_SUCCEED(r.status);
+    assert(serd_node_length(node) == strlen(serd_node_string(node)));
+  }
+
+  serd_node_check_padding(node);
+  return node;
 }
 
 SerdNodeType
@@ -692,3 +917,5 @@ serd_node_free(SerdNode* const node)
 {
   serd_free_aligned(node);
 }
+
+#undef MUST_SUCCEED

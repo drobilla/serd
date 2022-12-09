@@ -107,41 +107,318 @@ typedef struct {
 } SerdWriteResult;
 
 /**
-   Create a new "token" node that is just a string.
+   @defgroup serd_node_construction Construction
 
-   "Token" is just a shorthand used in this API to refer to a node that is not
-   a typed or tagged literal.  This can be used to create URIs, blank nodes,
-   CURIEs, and simple string literals.
+   This is the low-level node construction API, which can be used to construct
+   nodes into existing buffers.  Advanced applications can use this to
+   specially manage node memory, for example by allocating nodes on the stack,
+   or with a special allocator.
+
+   Note that nodes are "plain old data", so there is no need to destroy a
+   constructed node, and nodes may be trivially copied, for example with
+   memcpy().
+
+   @{
 */
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_token(SerdNodeType type, SerdStringView string);
-
-/// Create a new plain literal string node from `str`
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_string(SerdStringView string);
 
 /**
-   Create a new literal node with optional datatype or language.
+   Construct a node into an existing buffer.
 
-   This can create more complex literals than serd_new_string() with an
-   associated datatype URI or language tag, as well as control whether a
-   literal should be written as a short or long (triple-quoted) string.
+   This is the universal node constructor which can construct any node.  An
+   error will be returned if the parameters do not make sense.  In particular,
+   #SERD_HAS_DATATYPE or #SERD_HAS_LANGUAGE (but not both) may only be given if
+   `type` is #SERD_LITERAL, and `meta` must be syntactically valid based on
+   that flag.
 
-   @param string The string value of the literal.
+   This function may also be used to determine the size of buffer required by
+   passing a null buffer with zero size.
 
-   @param flags Flags to describe the literal and its metadata.  This must be a
-   valid combination of flags, in particular, at most one of #SERD_HAS_DATATYPE
-   and #SERD_HAS_LANGUAGE may be set.
+   @param buf_size The size of `buf` in bytes, or zero to only measure.
+
+   @param buf Buffer where the node will be written, or null to only measure.
+
+   @param type The type of the node to construct.
+
+   @param string The string body of the node.
+
+   @param flags Flags that describe the details of the node.
 
    @param meta The string value of the literal's metadata.  If
    #SERD_HAS_DATATYPE is set, then this must be an absolute datatype URI.  If
    #SERD_HAS_LANGUAGE is set, then this must be a language tag like "en-ca".
    Otherwise, it is ignored.
 
-   @return A newly allocated literal node that must be freed with
-   serd_node_free(), or null if the arguments are invalid or allocation failed.
+   @return A result with a `status` and a `count` of bytes written.  If the
+   buffer is too small for the node, then `status` will be #SERD_ERR_OVERFLOW,
+   and `count` will be set to the number of bytes required to successfully
+   construct the node.
+*/
+SERD_API
+SerdWriteResult
+serd_node_construct(size_t              buf_size,
+                    void* SERD_NULLABLE buf,
+                    SerdNodeType        type,
+                    SerdStringView      string,
+                    SerdNodeFlags       flags,
+                    SerdStringView      meta);
+
+/**
+   Construct a simple "token" node.
+
+   "Token" is just a shorthand used in this API to refer to a node that is not
+   a typed or tagged literal, that is, a node that is just one string.  This
+   can be used to create URIs, blank nodes, variables, and simple string
+   literals.
+
+   Note that string literals constructed with this function will have no flags
+   set, and so will be written as "short" literals (not triple-quoted).  To
+   construct long literals, use the more advanced serd_construct_literal() with
+   the #SERD_IS_LONG flag.
+
+   See the serd_node_construct() documentation for details on buffer usage and
+   the return value.
+*/
+SERD_API
+SerdWriteResult
+serd_node_construct_token(size_t              buf_size,
+                          void* SERD_NULLABLE buf,
+                          SerdNodeType        type,
+                          SerdStringView      string);
+
+/**
+   Construct a URI node from a parsed URI.
+
+   This is similar to serd_node_construct_token(), but will write a parsed URI
+   into the new node.  This can be used to resolve a relative URI reference or
+   expand a CURIE directly into a node without needing to allocate the URI
+   string separately.
+*/
+SerdWriteResult
+serd_node_construct_uri(size_t              buf_size,
+                        void* SERD_NULLABLE buf,
+                        SerdURIView         uri);
+
+/**
+   Construct a file URI node from a path and optional hostname.
+
+   This is similar to serd_node_construct_token(), but will create a new file
+   URI from a file path and optional hostname, performing any necessary
+   escaping.
+*/
+SerdWriteResult
+serd_node_construct_file_uri(size_t              buf_size,
+                             void* SERD_NULLABLE buf,
+                             SerdStringView      path,
+                             SerdStringView      hostname);
+
+/**
+   Construct a literal node with an optional datatype or language.
+
+   Either a datatype (which must be an absolute URI) or a language (which must
+   be an RFC5646 language tag) may be given, but not both.
+
+   This is the most general literal constructor, which can be used to construct
+   any literal node.  This works like serd_node_construct(), see its
+   documentation for details.
+*/
+SERD_API
+SerdWriteResult
+serd_node_construct_literal(size_t              buf_size,
+                            void* SERD_NULLABLE buf,
+                            SerdStringView      string,
+                            SerdNodeFlags       flags,
+                            SerdStringView      meta);
+
+/**
+   Construct a canonical xsd:boolean literal.
+
+   The constructed node will be either "true" or "false", with datatype
+   xsd:boolean.
+
+   This is a convenience wrapper for serd_node_construct_literal() that
+   constructs a node directly from a `bool`.
+*/
+SerdWriteResult
+serd_node_construct_boolean(size_t              buf_size,
+                            void* SERD_NULLABLE buf,
+                            bool                value);
+
+/**
+   Construct a canonical xsd:decimal literal.
+
+   The constructed node will be an xsd:decimal literal, like "12.34", with
+   datatype xsd:decimal.
+
+   The node will always contain a '.', start with a digit, and end with a digit
+   (a leading and/or trailing '0' will be added if necessary), for example,
+   "1.0".  It will never be in scientific notation.
+
+   This is a convenience wrapper for serd_node_construct_literal() that
+   constructs a node directly from a `double`.
+*/
+SerdWriteResult
+serd_node_construct_decimal(size_t              buf_size,
+                            void* SERD_NULLABLE buf,
+                            double              value);
+
+/**
+   Construct a canonical xsd:double literal.
+
+   The constructed node will be an xsd:double literal, like "1.23E45", with
+   datatype xsd:double.  A canonical xsd:double is always in scientific
+   notation.
+
+   This is a convenience wrapper for serd_node_construct_literal() that
+   constructs a node directly from a `double`.
+*/
+SerdWriteResult
+serd_node_construct_double(size_t              buf_size,
+                           void* SERD_NULLABLE buf,
+                           double              value);
+
+/**
+   Construct a canonical xsd:float literal.
+
+   The constructed node will be an xsd:float literal, like "1.23E45", with
+   datatype xsd:float.  A canonical xsd:float is always in scientific notation.
+
+   Uses identical formatting to serd_node_construct_double(), except with at
+   most 9 significant digits (under 14 characters total).
+
+   This is a convenience wrapper for serd_node_construct_literal() that
+   constructs a node directly from a `float`.
+*/
+SerdWriteResult
+serd_node_construct_float(size_t              buf_size,
+                          void* SERD_NULLABLE buf,
+                          float               value);
+
+/**
+   Construct a canonical xsd:integer literal.
+
+   The constructed node will be an xsd:integer literal like "1234", with the
+   given datatype, or datatype xsd:integer if none is given.  It is the
+   caller's responsibility to ensure that the value is within the range of the
+   given datatype.
+*/
+SerdWriteResult
+serd_node_construct_integer(size_t              buf_size,
+                            void* SERD_NULLABLE buf,
+                            int64_t             value,
+                            SerdStringView      datatype);
+
+/**
+   Construct a canonical xsd:base64Binary literal.
+
+   The constructed node will be an xsd:base64Binary literal like "Zm9vYmFy",
+   with datatype xsd:base64Binary.
+*/
+SerdWriteResult
+serd_node_construct_base64(size_t                   buf_size,
+                           void* SERD_NULLABLE      buf,
+                           size_t                   value_size,
+                           const void* SERD_NONNULL value,
+                           SerdStringView           datatype);
+
+/**
+   @}
+   @defgroup serd_node_allocation Dynamic Allocation
+
+   This is a convenient higher-level node construction API which allocates
+   nodes on the heap.  The returned nodes must be freed with serd_node_free().
+
+   @{
+*/
+
+/**
+   Create a new node of any type.
+
+   This is a wrapper for serd_node_construct() that allocates a new node on the
+   heap.
+
+   @return A newly allocated node that must be freed with serd_node_free(), or
+   null.
+*/
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_node_new(SerdNodeType   type,
+              SerdStringView string,
+              SerdNodeFlags  flags,
+              SerdStringView meta);
+
+/**
+   Create a new simple "token" node.
+
+   This is a wrapper for serd_node_construct_token() that allocates a new node
+   on the heap.
+
+   @return A newly allocated node that must be freed with serd_node_free(), or
+   null.
+*/
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_new_token(SerdNodeType type, SerdStringView string);
+
+/**
+   Create a new string literal node.
+
+   This is a trivial wrapper for serd_new_token() that passes `SERD_LITERAL`
+   for the type.
+
+   @return A newly allocated node that must be freed with serd_node_free(), or
+   null.
+*/
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_new_string(SerdStringView string);
+
+/**
+   Create a new URI node from a string.
+
+   This is a wrapper for serd_node_construct_uri() that allocates a new
+   node on the heap.
+
+   @return A newly allocated node that must be freed with serd_node_free(), or
+   null.
+*/
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_new_uri(SerdStringView string);
+
+/**
+   Create a new URI node from a parsed URI.
+
+   This is a wrapper for serd_node_construct_uri() that allocates a new
+   node on the heap.
+
+   @return A newly allocated node that must be freed with serd_node_free(), or
+   null.
+*/
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_new_parsed_uri(SerdURIView uri);
+
+/**
+   Create a new file URI node from a path and optional hostname.
+
+   This is a wrapper for serd_node_construct_file_uri() that allocates a new
+   node on the heap.
+
+   @return A newly allocated node that must be freed with serd_node_free(), or
+   null.
+*/
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_new_file_uri(SerdStringView path, SerdStringView hostname);
+
+/**
+   Create a new literal node.
+
+   This is a wrapper for serd_node_construct_literal() that allocates a new
+   node on the heap.
+
+   @return A newly allocated node that must be freed with serd_node_free(), or
+   null.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
@@ -149,34 +426,15 @@ serd_new_literal(SerdStringView string,
                  SerdNodeFlags  flags,
                  SerdStringView meta);
 
-/// Create a new blank node
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_blank(SerdStringView string);
-
-/// Create a new URI node
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_uri(SerdStringView string);
-
-/// Create a new URI from a URI view
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_parsed_uri(SerdURIView uri);
-
 /**
-   Create a new file URI node from a file system path and optional hostname.
+   Create a new canonical xsd:boolean node.
 
-   Backslashes in Windows paths will be converted, and other characters will be
-   percent encoded as necessary.
+   This is a wrapper for serd_node_construct_boolean() that allocates a new
+   node on the heap.
 
-   If `path` is relative, `hostname` is ignored.
+   @return A newly allocated node that must be freed with serd_node_free(), or
+   null.
 */
-SERD_API
-SerdNode* SERD_ALLOCATED
-serd_new_file_uri(SerdStringView path, SerdStringView hostname);
-
-/// Create a new node by serialising `b` into an xsd:boolean string
 SERD_API
 SerdNode* SERD_ALLOCATED
 serd_new_boolean(bool b);
@@ -184,29 +442,24 @@ serd_new_boolean(bool b);
 /**
    Create a new canonical xsd:decimal literal.
 
-   The resulting node will always contain a '.', start with a digit, and end
-   with a digit (a leading and/or trailing '0' will be added if necessary), for
-   example, "1.0".  It will never be in scientific notation.
+   This is a wrapper for serd_node_construct_decimal() that allocates a new
+   node on the heap.
 
-   @param d The value for the new node.
-   @param datatype Datatype of node, or NULL for xsd:decimal.
+   @return A newly allocated node that must be freed with serd_node_free(), or
+   null.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_decimal(double d, const SerdNode* SERD_NULLABLE datatype);
+serd_new_decimal(double d);
 
 /**
    Create a new canonical xsd:double literal.
 
-   The returned node will always be in scientific notation, like "1.23E4",
-   except for NaN and negative/positive infinity, which are "NaN", "-INF", and
-   "INF", respectively.
+   This is a wrapper for serd_node_construct_double() that allocates a new
+   node on the heap.
 
-   Uses the shortest possible representation that precisely describes `d`,
-   which has at most 17 significant digits (under 24 characters total).
-
-   @param d Double value to write.
-   @return A literal node with datatype xsd:double.
+   @return A newly allocated node that must be freed with serd_node_free(), or
+   null.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
@@ -215,11 +468,11 @@ serd_new_double(double d);
 /**
    Create a new canonical xsd:float literal.
 
-   Uses identical formatting to serd_new_double(), except with at most 9
-   significant digits (under 14 characters total).
+   This is a wrapper for serd_node_construct_float() that allocates a new
+   node on the heap.
 
-   @param f Float value of literal.
-   @return A literal node with datatype xsd:float.
+   @return A newly allocated node that must be freed with serd_node_free(), or
+   null.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
@@ -228,28 +481,34 @@ serd_new_float(float f);
 /**
    Create a new canonical xsd:integer literal.
 
-   @param i Integer value of literal.
-   @param datatype Datatype of node, or NULL for xsd:integer.
+   This is a wrapper for serd_node_construct_integer() that allocates a new
+   node on the heap.
+
+   @return A newly allocated node that must be freed with serd_node_free(), or
+   null.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_integer(int64_t i, const SerdNode* SERD_NULLABLE datatype);
+serd_new_integer(int64_t i, SerdStringView datatype);
 
 /**
    Create a new canonical xsd:base64Binary literal.
 
-   This function can be used to make a node out of arbitrary binary data, which
-   can be decoded using serd_base64_decode().
+   This is a wrapper for serd_node_construct_base64() that allocates a new
+   node on the heap.
 
-   @param buf Raw binary data to encode in node.
-   @param size Size of `buf` in bytes.
-   @param datatype Datatype of node, or null for xsd:base64Binary.
+   @return A newly allocated node that must be freed with serd_node_free(), or
+   null.
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_new_base64(const void* SERD_NONNULL      buf,
-                size_t                        size,
-                const SerdNode* SERD_NULLABLE datatype);
+serd_new_base64(const void* SERD_NONNULL buf,
+                size_t                   size,
+                SerdStringView           datatype);
+
+/**
+   @}
+*/
 
 /**
    Return the value of `node` as a boolean.

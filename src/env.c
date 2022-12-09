@@ -249,7 +249,7 @@ serd_env_expand_in_place(const SerdEnv* const  env,
     return SERD_ERR_BAD_CURIE;
   }
 
-  uri_prefix->buf = serd_node_string(prefix->uri);
+  uri_prefix->buf = prefix->uri ? serd_node_string(prefix->uri) : "";
   uri_prefix->len = prefix->uri ? prefix->uri->length : 0;
   uri_suffix->buf = colon + 1;
   uri_suffix->len = curie.len - name_len - 1;
@@ -270,20 +270,24 @@ serd_env_expand_curie(const SerdEnv* const env, const SerdStringView curie)
     return NULL;
   }
 
-  const size_t    len = prefix.len + suffix.len;
-  SerdNode* const ret = serd_node_malloc(len, 0U, SERD_URI);
-  if (!ret) {
-    return NULL;
+  const size_t len = prefix.len + suffix.len;
+
+  const size_t real_length = serd_node_pad_length(len);
+  const size_t node_size   = sizeof(SerdNode) + real_length;
+  SerdNode*    node        = serd_node_malloc(node_size);
+
+  if (node) {
+    node->length = len;
+    node->flags  = 0U;
+    node->type   = SERD_URI;
+
+    char* const string = (char*)(node + 1U);
+    assert(prefix.buf);
+    memcpy(string, prefix.buf, prefix.len);
+    memcpy(string + prefix.len, suffix.buf, suffix.len);
   }
 
-  char* const string = serd_node_buffer(ret);
-  assert(string);
-  assert(prefix.buf);
-
-  memcpy(string, prefix.buf, prefix.len);
-  memcpy(string + prefix.len, suffix.buf, suffix.len);
-
-  return ret;
+  return node;
 }
 
 SerdNode*
