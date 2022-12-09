@@ -6,6 +6,7 @@
 	a mf:Manifest ;
 	rdfs:comment "Serd lax parsing test suite" ;
 	mf:entries (
+		<#test-bad-string-nq>
 		<#test-bad-string-nt>
 		<#test-bad-string-ttl>
 		<#test-bad-uri-nq>
@@ -17,6 +18,12 @@
 		<#test-lone-list>
 		<#test-out-of-range-unicode>
 	) .
+
+<#test-bad-string-nq>
+	a rdft:TestNQuadsNegativeSyntax ;
+	mf:action <test-bad-string.nq> ;
+	mf:name "test-bad-string-nq" ;
+	mf:result <test-bad-string-out.nq> .
 
 <#test-bad-string-nt>
 	a rdft:TestNTriplesNegativeSyntax ;
