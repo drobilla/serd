@@ -856,6 +856,19 @@ SerdStatus
 serd_reader_read_string(SerdReader* SERD_NONNULL    reader,
                         const uint8_t* SERD_NONNULL utf8);
 
+/**
+   Skip over bytes in the input until a specific byte is encountered.
+
+   Typically used for recording from errors in a line-based syntax by skipping
+   ahead to the next newline.
+
+   @return #SERD_SUCCESS if the given byte was reached, or #SERD_FAILURE if the
+   end of input is reached.
+*/
+SERD_API
+SerdStatus
+serd_reader_skip_until_byte(SerdReader* SERD_NONNULL reader, uint8_t byte);
+
 /// Free `reader`
 SERD_API
 void

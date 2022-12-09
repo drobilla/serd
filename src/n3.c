@@ -1672,12 +1672,17 @@ read_n3_statement(SerdReader* const reader)
   return st;
 }
 
-static void
-skip_until(SerdReader* const reader, const uint8_t byte)
+SerdStatus
+serd_reader_skip_until_byte(SerdReader* const reader, const uint8_t byte)
 {
-  for (int c = 0; (c = peek_byte(reader)) && c != byte && c != EOF;) {
+  int c = peek_byte(reader);
+
+  while (c != byte && c != EOF) {
     skip_byte(reader, c);
+    c = peek_byte(reader);
   }
+
+  return c == EOF ? SERD_FAILURE : SERD_SUCCESS;
 }
 
 SerdStatus
@@ -1689,7 +1694,7 @@ read_turtleTrigDoc(SerdReader* const reader)
       if (reader->strict) {
         return st;
       }
-      skip_until(reader, '\n');
+      serd_reader_skip_until_byte(reader, '\n');
     }
   }
 
