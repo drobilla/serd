@@ -14,7 +14,7 @@ static void
 test_new(void)
 {
   SerdNode* const u = serd_new_uri(serd_string(NS_EG "s"));
-  SerdNode* const b = serd_new_blank(serd_string("b0"));
+  SerdNode* const b = serd_new_token(SERD_BLANK, serd_string("b0"));
   SerdNode* const l = serd_new_string(serd_string("str"));
 
   assert(!serd_statement_new(u, b, u, NULL, NULL));

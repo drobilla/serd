@@ -87,7 +87,7 @@ test_callbacks(void)
   SerdNode* const base  = serd_new_uri(serd_string(NS_EG));
   SerdNode* const name  = serd_new_string(serd_string("eg"));
   SerdNode* const uri   = serd_new_uri(serd_string(NS_EG "uri"));
-  SerdNode* const blank = serd_new_blank(serd_string("b1"));
+  SerdNode* const blank = serd_new_token(SERD_BLANK, serd_string("b1"));
   SerdEnv*        env   = serd_env_new(serd_node_string_view(base));
   State           state = {0, 0, 0, 0, 0, SERD_SUCCESS};
 

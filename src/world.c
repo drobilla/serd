@@ -58,7 +58,7 @@ serd_world_new(void)
 {
   SerdWorld* world = (SerdWorld*)calloc(1, sizeof(SerdWorld));
 
-  world->blank_node = serd_new_blank(serd_string("b00000000000"));
+  world->blank_node = serd_new_token(SERD_BLANK, serd_string("b00000000000"));
 
   world->stderr_color = terminal_supports_color(stderr);
 

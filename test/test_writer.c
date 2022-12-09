@@ -111,7 +111,7 @@ test_writer_cleanup(void)
 
   SerdNode* s = serd_new_uri(serd_string("http://example.org/s"));
   SerdNode* p = serd_new_uri(serd_string("http://example.org/p"));
-  SerdNode* o = serd_new_blank(serd_string("start"));
+  SerdNode* o = serd_new_token(SERD_BLANK, serd_string("start"));
 
   st = serd_sink_write(sink, SERD_ANON_O, s, p, o, NULL);
   assert(!st);
@@ -121,7 +121,7 @@ test_writer_cleanup(void)
     char buf[12] = {0};
     snprintf(buf, sizeof(buf), "b%u", i);
 
-    SerdNode* next_o = serd_new_blank(serd_string(buf));
+    SerdNode* next_o = serd_new_token(SERD_BLANK, serd_string(buf));
 
     st = serd_sink_write(sink, SERD_ANON_O, o, p, next_o, NULL);
 
@@ -231,7 +231,7 @@ test_writer_stack_overflow(void)
   SerdNode* const s = serd_new_uri(serd_string("http://example.org/s"));
   SerdNode* const p = serd_new_uri(serd_string("http://example.org/p"));
 
-  SerdNode*  o  = serd_new_blank(serd_string("blank"));
+  SerdNode*  o  = serd_new_token(SERD_BLANK, serd_string("blank"));
   SerdStatus st = serd_sink_write(sink, SERD_ANON_O, s, p, o, NULL);
   assert(!st);
 
@@ -240,7 +240,7 @@ test_writer_stack_overflow(void)
     char buf[1024];
     snprintf(buf, sizeof(buf), "b%u", i);
 
-    SerdNode* next_o = serd_new_blank(serd_string(buf));
+    SerdNode* next_o = serd_new_token(SERD_BLANK, serd_string(buf));
 
     st = serd_sink_write(sink, SERD_ANON_O, o, p, next_o, NULL);
 
