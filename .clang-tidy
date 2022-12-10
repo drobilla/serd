@@ -6,6 +6,7 @@ Checks: >
   -altera-*,
   -llvmlibc-*,
   -readability-identifier-length,
-WarningsAsErrors: '*'
-HeaderFilterRegex: '.*'
+  -clang-diagnostic-unused-macros,
 FormatStyle: file
+HeaderFilterRegex: '.*/serd/.*\.h'
+WarningsAsErrors: '*'

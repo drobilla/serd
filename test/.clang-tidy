@@ -6,11 +6,9 @@ Checks: >
   -android-cloexec-fopen,
   -bugprone-easily-swappable-parameters,
   -cert-err33-c,
-  -clang-analyzer-nullability.NullabilityBase,
   -clang-analyzer-nullability.NullableDereferenced,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -concurrency-mt-unsafe,
-  -cppcoreguidelines-avoid-non-const-global-variables,
   -hicpp-signed-bitwise,
   -readability-function-cognitive-complexity,
 InheritParentConfig: true

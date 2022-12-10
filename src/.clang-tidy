@@ -6,6 +6,8 @@ Checks: >
   -bugprone-easily-swappable-parameters,
   -cert-err33-c,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
+  -clang-analyzer-valist.Uninitialized,
+  -clang-diagnostic-unused-function,
   -concurrency-mt-unsafe,
   -google-readability-todo,
   -hicpp-multiway-paths-covered,
