@@ -2,6 +2,8 @@ serd (0.31.0) unstable; urgency=medium
 
   * Add Windows path separator support to serd_node_new_file_uri()
   * Add serd_reader_skip_until_byte() to public API
+  * Avoid creating test files in the current directory
+  * Clean up code
   * Fix crash when trying to read chunks without starting
   * Fix hang when skipping an error at EOF when lax parsing
   * Gracefully handle bad characters in Turtle blank node syntax
@@ -11,7 +13,7 @@ serd (0.31.0) unstable; urgency=medium
   * Replace duplicated dox_to_sphinx script with sphinxygen dependency
   * Test header for warnings more strictly
 
- -- David Robillard <d@drobilla.net>  Fri, 09 Dec 2022 14:53:37 +0000
+ -- David Robillard <d@drobilla.net>  Sun, 11 Dec 2022 16:36:39 +0000
 
 serd (0.30.16) stable; urgency=medium
 
