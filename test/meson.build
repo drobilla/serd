@@ -153,7 +153,7 @@ foreach unit : unit_tests
     executable(
       'test_@0@'.format(unit),
       files('test_@0@.c'.format(unit)),
-      c_args: c_suppressions,
+      c_args: c_suppressions + platform_c_args,
       dependencies: [serd_dep, zix_dep],
     ),
     env: test_env,

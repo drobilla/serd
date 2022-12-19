@@ -14,18 +14,16 @@
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "serd/writer.h"
+#include "zix/allocator.h"
+#include "zix/filesystem.h"
+#include "zix/path.h"
 #include "zix/string_view.h"
-
-#ifdef _WIN32
-#  include <windows.h>
-#endif
 
 #include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 typedef struct {
@@ -289,31 +287,28 @@ test_reader(const char* path)
 int
 main(void)
 {
-#ifdef _WIN32
-  char         tmp[MAX_PATH] = {0};
-  const size_t tmp_len       = (size_t)GetTempPath(sizeof(tmp), tmp);
-#else
-  const char* const env_tmp = getenv("TMPDIR");
-  const char* const tmp     = env_tmp ? env_tmp : "/tmp";
-  const size_t      tmp_len = strlen(tmp);
-#endif
+  char* const temp         = zix_temp_directory_path(NULL);
+  char* const path_pattern = zix_path_join(NULL, temp, "serdXXXXXX");
+  char* const dir          = zix_create_temporary_directory(NULL, path_pattern);
+  char* const path         = zix_path_join(NULL, dir, "serd_test_reader.ttl");
 
-  const char* const ttl_name     = "serd_test_reader_writer.ttl";
-  const size_t      ttl_name_len = strlen(ttl_name);
-  const size_t      path_len     = tmp_len + 1 + ttl_name_len;
-  char* const       path         = (char*)calloc(path_len + 1, 1);
-
-  memcpy(path, tmp, tmp_len + 1);
-  path[tmp_len] = '/';
-  memcpy(path + tmp_len + 1, ttl_name, ttl_name_len + 1);
+  assert(temp);
+  assert(path_pattern);
+  assert(dir);
+  assert(path);
 
   test_write_errors();
 
   test_writer(path);
   test_reader(path);
 
-  assert(!remove(path));
-  free(path);
+  assert(!zix_remove(path));
+  assert(!zix_remove(dir));
+
+  zix_free(NULL, path);
+  zix_free(NULL, dir);
+  zix_free(NULL, path_pattern);
+  zix_free(NULL, temp);
 
   printf("Success\n");
   return 0;
