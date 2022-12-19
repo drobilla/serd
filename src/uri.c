@@ -1,14 +1,13 @@
 // Copyright 2011-2020 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "memory.h"
 #include "string_utils.h"
 #include "uri_utils.h"
 
 #include "serd/buffer.h"
-#include "serd/memory.h"
 #include "serd/stream.h"
 #include "serd/uri.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -18,9 +17,9 @@
 #include <string.h>
 
 char*
-serd_parse_file_uri(SerdAllocator* const allocator,
-                    const char* const    uri,
-                    char** const         hostname)
+serd_parse_file_uri(ZixAllocator* const allocator,
+                    const char* const   uri,
+                    char** const        hostname)
 {
   assert(uri);
 
@@ -40,7 +39,7 @@ serd_parse_file_uri(SerdAllocator* const allocator,
 
       if (hostname) {
         const size_t len = (size_t)(path - auth);
-        if (!(*hostname = (char*)serd_acalloc(allocator, len + 1, 1))) {
+        if (!(*hostname = (char*)zix_calloc(allocator, len + 1, 1))) {
           return NULL;
         }
 
@@ -58,7 +57,7 @@ serd_parse_file_uri(SerdAllocator* const allocator,
     if (*s == '%') {
       if (*(s + 1) == '%') {
         if (serd_buffer_write("%", 1, 1, &buffer) != 1) {
-          serd_afree(allocator, buffer.buf);
+          zix_free(allocator, buffer.buf);
           return NULL;
         }
 
@@ -67,7 +66,7 @@ serd_parse_file_uri(SerdAllocator* const allocator,
         const char code[3] = {*(s + 1), *(s + 2), 0};
         const char c       = (char)strtoul(code, NULL, 16);
         if (serd_buffer_write(&c, 1, 1, &buffer) != 1) {
-          serd_afree(allocator, buffer.buf);
+          zix_free(allocator, buffer.buf);
           return NULL;
         }
 
@@ -76,13 +75,13 @@ serd_parse_file_uri(SerdAllocator* const allocator,
         s += 2; // Junk escape, ignore
       }
     } else if (serd_buffer_write(s, 1, 1, &buffer) != 1) {
-      serd_afree(allocator, buffer.buf);
+      zix_free(allocator, buffer.buf);
       return NULL;
     }
   }
 
   if (serd_buffer_close(&buffer)) {
-    serd_afree(allocator, buffer.buf);
+    zix_free(allocator, buffer.buf);
     return NULL;
   }
 

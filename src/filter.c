@@ -3,13 +3,13 @@
 
 #include "serd/filter.h"
 
-#include "serd/event.h"
-#include "serd/memory.h"
-#include "serd/statement.h"
-#include "serd/status.h"
-
 #include "memory.h"
 #include "sink.h"
+
+#include "serd/event.h"
+#include "serd/statement.h"
+#include "serd/status.h"
+#include "zix/allocator.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -30,7 +30,7 @@ free_data(void* const handle)
   if (handle) {
     SerdFilterData* const  data      = (SerdFilterData*)handle;
     const SerdWorld* const world     = data->target->world;
-    SerdAllocator* const   allocator = serd_world_allocator(world);
+    ZixAllocator* const    allocator = serd_world_allocator(world);
 
     serd_node_free(allocator, data->subject);
     serd_node_free(allocator, data->predicate);
@@ -79,7 +79,7 @@ serd_filter_new(const SerdWorld* const world,
   assert(target);
   assert(target->world == world);
 
-  SerdAllocator* const  allocator = serd_world_allocator(world);
+  ZixAllocator* const   allocator = serd_world_allocator(world);
   SerdFilterData* const data =
     (SerdFilterData*)serd_wcalloc(world, 1, sizeof(SerdFilterData));
 

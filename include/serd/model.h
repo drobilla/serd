@@ -77,7 +77,7 @@ serd_model_new(SerdWorld* SERD_NONNULL world,
 /// Return a deep copy of `model`
 SERD_API
 SerdModel* SERD_ALLOCATED
-serd_model_copy(SerdAllocator* SERD_NULLABLE  allocator,
+serd_model_copy(ZixAllocator* SERD_NULLABLE   allocator,
                 const SerdModel* SERD_NONNULL model);
 
 /// Return true iff `a` is equal to `b`, ignoring statement cursor metadata
@@ -150,7 +150,7 @@ serd_model_empty(const SerdModel* SERD_NONNULL model);
 */
 SERD_API
 SerdCursor* SERD_ALLOCATED
-serd_model_begin(SerdAllocator* SERD_NULLABLE  allocator,
+serd_model_begin(ZixAllocator* SERD_NULLABLE   allocator,
                  const SerdModel* SERD_NONNULL model);
 
 /**
@@ -172,7 +172,7 @@ serd_model_end(const SerdModel* SERD_NONNULL model);
 */
 SERD_API
 SerdCursor* SERD_ALLOCATED
-serd_model_begin_ordered(SerdAllocator* SERD_NULLABLE  allocator,
+serd_model_begin_ordered(ZixAllocator* SERD_NULLABLE   allocator,
                          const SerdModel* SERD_NONNULL model,
                          SerdStatementOrder            order);
 
@@ -189,7 +189,7 @@ serd_model_begin_ordered(SerdAllocator* SERD_NULLABLE  allocator,
 */
 SERD_API
 SerdCursor* SERD_NULLABLE
-serd_model_find(SerdAllocator* SERD_NULLABLE  allocator,
+serd_model_find(ZixAllocator* SERD_NULLABLE   allocator,
                 const SerdModel* SERD_NONNULL model,
                 const SerdNode* SERD_NULLABLE s,
                 const SerdNode* SERD_NULLABLE p,

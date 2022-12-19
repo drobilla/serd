@@ -29,7 +29,7 @@ typedef struct SerdWorldImpl SerdWorld;
 */
 SERD_MALLOC_API
 SerdWorld* SERD_ALLOCATED
-serd_world_new(SerdAllocator* SERD_NULLABLE allocator);
+serd_world_new(ZixAllocator* SERD_NULLABLE allocator);
 
 /// Free `world`
 SERD_API
@@ -38,7 +38,7 @@ serd_world_free(SerdWorld* SERD_NULLABLE world);
 
 /// Return the allocator used by `world`
 SERD_PURE_API
-SerdAllocator* SERD_NONNULL
+ZixAllocator* SERD_NONNULL
 serd_world_allocator(const SerdWorld* SERD_NONNULL world);
 
 /**

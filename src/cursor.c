@@ -3,15 +3,14 @@
 
 #include "cursor.h"
 
-#include "memory.h"
 #include "model.h"
 #include "node.h"
 #include "statement.h"
 
 #include "serd/attributes.h"
 #include "serd/log.h"
-#include "serd/memory.h"
 #include "serd/statement.h"
+#include "zix/allocator.h"
 #include "zix/btree.h"
 #include "zix/status.h"
 
@@ -123,14 +122,14 @@ serd_cursor_make(const SerdModel* const model,
 }
 
 SerdCursor*
-serd_cursor_copy(SerdAllocator* const allocator, const SerdCursor* const cursor)
+serd_cursor_copy(ZixAllocator* const allocator, const SerdCursor* const cursor)
 {
   if (!cursor) {
     return NULL;
   }
 
   SerdCursor* const copy =
-    (SerdCursor* const)serd_amalloc(allocator, sizeof(SerdCursor));
+    (SerdCursor* const)zix_malloc(allocator, sizeof(SerdCursor));
 
   if (copy) {
     memcpy(copy, cursor, sizeof(SerdCursor));
@@ -219,7 +218,7 @@ serd_cursor_equals(const SerdCursor* const lhs, const SerdCursor* const rhs)
 }
 
 void
-serd_cursor_free(SerdAllocator* const allocator, SerdCursor* const cursor)
+serd_cursor_free(ZixAllocator* const allocator, SerdCursor* const cursor)
 {
-  serd_afree(allocator, cursor);
+  zix_free(allocator, cursor);
 }

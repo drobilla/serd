@@ -28,7 +28,7 @@ typedef struct SerdCursorImpl SerdCursor;
 /// Return a new copy of `cursor`
 SERD_API
 SerdCursor* SERD_ALLOCATED
-serd_cursor_copy(SerdAllocator* SERD_NULLABLE    allocator,
+serd_cursor_copy(ZixAllocator* SERD_NULLABLE     allocator,
                  const SerdCursor* SERD_NULLABLE cursor);
 
 /// Return the statement pointed to by `cursor`
@@ -74,8 +74,8 @@ serd_cursor_equals(const SerdCursor* SERD_NULLABLE lhs,
 /// Free `cursor`
 SERD_API
 void
-serd_cursor_free(SerdAllocator* SERD_NULLABLE allocator,
-                 SerdCursor* SERD_NULLABLE    cursor);
+serd_cursor_free(ZixAllocator* SERD_NULLABLE allocator,
+                 SerdCursor* SERD_NULLABLE   cursor);
 
 /**
    @}

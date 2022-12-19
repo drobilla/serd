@@ -5,10 +5,10 @@
 
 #include "failing_allocator.h"
 
-#include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/nodes.h"
 #include "serd/uri.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -29,8 +29,8 @@ test_file_uri_failed_alloc(void)
 
   assert(!strcmp(path, "/path/spacey dir/100%.ttl"));
   assert(!strcmp(hostname, "host"));
-  serd_free(&allocator.base, path);
-  serd_free(&allocator.base, hostname);
+  zix_free(&allocator.base, path);
+  zix_free(&allocator.base, hostname);
 
   // Test that each allocation failing is handled gracefully
   const size_t n_allocs = allocator.n_allocations;
@@ -40,8 +40,8 @@ test_file_uri_failed_alloc(void)
     path = serd_parse_file_uri(&allocator.base, string, &hostname);
     assert(!path || !hostname);
 
-    serd_free(&allocator.base, path);
-    serd_free(&allocator.base, hostname);
+    zix_free(&allocator.base, path);
+    zix_free(&allocator.base, hostname);
   }
 }
 
@@ -90,8 +90,8 @@ test_file_uri(const char* const hostname,
   assert(!hostname || !strcmp(hostname, out_hostname));
   assert(!strcmp(out_path, expected_path));
 
-  serd_free(NULL, out_path);
-  serd_free(NULL, out_hostname);
+  zix_free(NULL, out_path);
+  zix_free(NULL, out_hostname);
   serd_nodes_free(nodes);
 }
 
@@ -148,17 +148,17 @@ test_uri_parsing(void)
   // Check that NULL hostname doesn't crash
   char* out_path = serd_parse_file_uri(NULL, "file://me/path", NULL);
   assert(!strcmp(out_path, "/path"));
-  serd_free(NULL, out_path);
+  zix_free(NULL, out_path);
 
   // Invalid first escape character
   out_path = serd_parse_file_uri(NULL, "file:///foo/%0Xbar", NULL);
   assert(!strcmp(out_path, "/foo/bar"));
-  serd_free(NULL, out_path);
+  zix_free(NULL, out_path);
 
   // Invalid second escape character
   out_path = serd_parse_file_uri(NULL, "file:///foo/%X0bar", NULL);
   assert(!strcmp(out_path, "/foo/bar"));
-  serd_free(NULL, out_path);
+  zix_free(NULL, out_path);
 }
 
 static void

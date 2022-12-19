@@ -24,7 +24,7 @@ typedef struct SerdNodesImpl SerdNodes;
 /// Create a new node set
 SERD_API
 SerdNodes* SERD_ALLOCATED
-serd_nodes_new(SerdAllocator* SERD_NULLABLE allocator);
+serd_nodes_new(ZixAllocator* SERD_NULLABLE allocator);
 
 /**
    Free `nodes` and all nodes that are stored in it.

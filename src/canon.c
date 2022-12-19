@@ -14,12 +14,12 @@
 #include "serd/caret.h"
 #include "serd/event.h"
 #include "serd/log.h"
-#include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/world.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -34,7 +34,7 @@ typedef struct {
 } SerdCanonData;
 
 static ExessResult
-build_typed(SerdAllocator* const SERD_NONNULL  allocator,
+build_typed(ZixAllocator* const SERD_NONNULL   allocator,
             SerdNode** const                   out,
             const SerdNode* const SERD_NONNULL node,
             const SerdNode* const SERD_NONNULL datatype)
@@ -91,7 +91,7 @@ build_typed(SerdAllocator* const SERD_NONNULL  allocator,
 }
 
 static ExessResult
-build_tagged(SerdAllocator* const SERD_NONNULL  allocator,
+build_tagged(ZixAllocator* const SERD_NONNULL   allocator,
              SerdNode** const                   out,
              const SerdNode* const SERD_NONNULL node,
              const SerdNode* const SERD_NONNULL language)
@@ -129,7 +129,7 @@ serd_canon_on_statement(SerdCanonData* const       data,
                         const SerdStatementFlags   flags,
                         const SerdStatement* const statement)
 {
-  SerdAllocator* const  allocator = serd_world_allocator(data->world);
+  ZixAllocator* const   allocator = serd_world_allocator(data->world);
   const SerdNode* const object    = serd_statement_object(statement);
   const SerdNode* const datatype  = serd_node_datatype(object);
   const SerdNode* const language  = serd_node_language(object);

@@ -6,6 +6,7 @@
 #include "failing_allocator.h"
 
 #include "serd/serd.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -44,11 +45,11 @@ test_failed_alloc(void)
     assert(!s || !c);
 
     serd_node_free(&allocator.base, c);
-    serd_free(&allocator.base, s);
+    zix_free(&allocator.base, s);
   }
 
   serd_node_free(&allocator.base, copy);
-  serd_free(&allocator.base, str);
+  zix_free(&allocator.base, str);
   serd_node_free(&allocator.base, node);
 }
 
@@ -67,7 +68,7 @@ check(SerdWorld* const      world,
   const bool success = !strcmp(str, expected) && serd_node_equals(copy, node);
 
   serd_node_free(serd_world_allocator(world), copy);
-  serd_free(serd_world_allocator(world), str);
+  zix_free(serd_world_allocator(world), str);
   serd_env_free(env);
   return success;
 }
@@ -168,7 +169,7 @@ test_ntriples(void)
 
     serd_node_free(serd_world_allocator(world), copy);
     serd_env_free(env);
-    serd_free(serd_world_allocator(world), str);
+    zix_free(serd_world_allocator(world), str);
   }
 
   assert(check(world,

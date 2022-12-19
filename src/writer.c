@@ -19,13 +19,13 @@
 #include "serd/env.h"
 #include "serd/event.h"
 #include "serd/log.h"
-#include "serd/memory.h"
 #include "serd/output_stream.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
 #include "serd/syntax.h"
 #include "serd/uri.h"
 #include "serd/world.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -1050,7 +1050,7 @@ update_abbreviation_context(SerdWriter* const        writer,
   // Update current context to this statement if this isn't a new context
   if (!st) {
     if (!(flags & (SERD_ANON_S | SERD_LIST_S | SERD_ANON_O | SERD_LIST_O))) {
-      SerdAllocator* const allocator = writer->world->allocator;
+      ZixAllocator* const allocator = writer->world->allocator;
       TRY(st, serd_node_set(allocator, &writer->context.graph, graph));
       TRY(st, serd_node_set(allocator, &writer->context.subject, subject));
       TRY(st, serd_node_set(allocator, &writer->context.predicate, predicate));
@@ -1409,7 +1409,7 @@ serd_writer_set_root_uri(SerdWriter* writer, const ZixStringView uri)
 {
   assert(writer);
 
-  SerdAllocator* const allocator = writer->world->allocator;
+  ZixAllocator* const allocator = writer->world->allocator;
 
   serd_node_free(allocator, writer->root_node);
   writer->root_node = NULL;

@@ -5,9 +5,9 @@
 #define SERD_URI_H
 
 #include "serd/attributes.h"
-#include "serd/memory.h"
 #include "serd/status.h"
 #include "serd/stream.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <stdbool.h>
@@ -63,17 +63,18 @@ serd_parse_uri(const char* SERD_NONNULL string);
 /**
    Get the unescaped path and hostname from a file URI.
 
-   The returned path and `*hostname` must be freed with serd_free().
+   Both the returned path and `*hostname` must be freed with zix_free() using
+   the same allocator.
 
    @param allocator Allocator for the returned string.
    @param uri A file URI.
-   @param hostname If non-NULL, set to the hostname, if present.
+   @param hostname If non-NULL, set to the newly allocated hostname, if present.
 
-   @return A newly allocated path string that must be freed with serd_free().
+   @return A newly allocated path string.
 */
 SERD_API
 char* SERD_NULLABLE
-serd_parse_file_uri(SerdAllocator* SERD_NULLABLE      allocator,
+serd_parse_file_uri(ZixAllocator* SERD_NULLABLE       allocator,
                     const char* SERD_NONNULL          uri,
                     char* SERD_NONNULL* SERD_NULLABLE hostname);
 

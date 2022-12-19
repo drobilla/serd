@@ -5,11 +5,11 @@
 #define SERD_ENV_H
 
 #include "serd/attributes.h"
-#include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/status.h"
 #include "serd/world.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <stdbool.h>
@@ -33,7 +33,7 @@ serd_env_new(SerdWorld* SERD_NONNULL world, ZixStringView base_uri);
 /// Copy an environment
 SERD_API
 SerdEnv* SERD_ALLOCATED
-serd_env_copy(SerdAllocator* SERD_NULLABLE allocator,
+serd_env_copy(ZixAllocator* SERD_NULLABLE  allocator,
               const SerdEnv* SERD_NULLABLE env);
 
 /// Return true iff `a` is equal to `b`

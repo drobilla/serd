@@ -483,19 +483,19 @@ serd_node_construct(size_t              buf_size,
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_node_new(SerdAllocator* SERD_NULLABLE allocator, SerdNodeArgs args);
+serd_node_new(ZixAllocator* SERD_NULLABLE allocator, SerdNodeArgs args);
 
 /// Return a deep copy of `node`
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_node_copy(SerdAllocator* SERD_NULLABLE  allocator,
+serd_node_copy(ZixAllocator* SERD_NULLABLE   allocator,
                const SerdNode* SERD_NULLABLE node);
 
 /// Free any data owned by `node`
 SERD_API
 void
-serd_node_free(SerdAllocator* SERD_NULLABLE allocator,
-               SerdNode* SERD_NULLABLE      node);
+serd_node_free(ZixAllocator* SERD_NULLABLE allocator,
+               SerdNode* SERD_NULLABLE     node);
 
 /**
    @}

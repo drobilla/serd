@@ -34,7 +34,7 @@ typedef struct SerdCaretImpl SerdCaret;
 */
 SERD_API
 SerdCaret* SERD_ALLOCATED
-serd_caret_new(SerdAllocator* SERD_NULLABLE allocator,
+serd_caret_new(ZixAllocator* SERD_NULLABLE  allocator,
                const SerdNode* SERD_NONNULL document,
                unsigned                     line,
                unsigned                     column);
@@ -42,14 +42,14 @@ serd_caret_new(SerdAllocator* SERD_NULLABLE allocator,
 /// Return a copy of `caret`
 SERD_API
 SerdCaret* SERD_ALLOCATED
-serd_caret_copy(SerdAllocator* SERD_NULLABLE   allocator,
+serd_caret_copy(ZixAllocator* SERD_NULLABLE    allocator,
                 const SerdCaret* SERD_NULLABLE caret);
 
 /// Free `caret`
 SERD_API
 void
-serd_caret_free(SerdAllocator* SERD_NULLABLE allocator,
-                SerdCaret* SERD_NULLABLE     caret);
+serd_caret_free(ZixAllocator* SERD_NULLABLE allocator,
+                SerdCaret* SERD_NULLABLE    caret);
 
 /// Return true iff `lhs` is equal to `rhs`
 SERD_PURE_API

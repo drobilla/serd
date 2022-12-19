@@ -4,11 +4,10 @@
 #include "statement.h"
 
 #include "caret.h"
-#include "memory.h"
 #include "node.h"
 
-#include "serd/memory.h"
 #include "serd/statement.h"
+#include "zix/allocator.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -37,7 +36,7 @@ serd_statement_is_valid(const SerdNode* const subject,
 }
 
 SerdStatement*
-serd_statement_new(SerdAllocator* const   allocator,
+serd_statement_new(ZixAllocator* const    allocator,
                    const SerdNode* const  s,
                    const SerdNode* const  p,
                    const SerdNode* const  o,
@@ -53,7 +52,7 @@ serd_statement_new(SerdAllocator* const   allocator,
   }
 
   SerdStatement* statement =
-    (SerdStatement*)serd_amalloc(allocator, sizeof(SerdStatement));
+    (SerdStatement*)zix_malloc(allocator, sizeof(SerdStatement));
 
   if (statement) {
     statement->nodes[0] = s;
@@ -64,7 +63,7 @@ serd_statement_new(SerdAllocator* const   allocator,
 
     if (caret) {
       if (!(statement->caret = serd_caret_copy(allocator, caret))) {
-        serd_afree(allocator, statement);
+        zix_free(allocator, statement);
         return NULL;
       }
     }
@@ -74,7 +73,7 @@ serd_statement_new(SerdAllocator* const   allocator,
 }
 
 SerdStatement*
-serd_statement_copy(SerdAllocator* const       allocator,
+serd_statement_copy(ZixAllocator* const        allocator,
                     const SerdStatement* const statement)
 {
   if (!statement) {
@@ -82,15 +81,15 @@ serd_statement_copy(SerdAllocator* const       allocator,
   }
 
   SerdStatement* copy =
-    (SerdStatement*)serd_amalloc(allocator, sizeof(SerdStatement));
+    (SerdStatement*)zix_malloc(allocator, sizeof(SerdStatement));
 
   if (copy) {
     memcpy(copy, statement, sizeof(SerdStatement));
 
     if (statement->caret) {
       if (!(copy->caret =
-              (SerdCaret*)serd_amalloc(allocator, sizeof(SerdCaret)))) {
-        serd_afree(allocator, copy);
+              (SerdCaret*)zix_malloc(allocator, sizeof(SerdCaret)))) {
+        zix_free(allocator, copy);
         return NULL;
       }
 
@@ -102,12 +101,12 @@ serd_statement_copy(SerdAllocator* const       allocator,
 }
 
 void
-serd_statement_free(SerdAllocator* const allocator,
+serd_statement_free(ZixAllocator* const  allocator,
                     SerdStatement* const statement)
 {
   if (statement) {
-    serd_afree(allocator, statement->caret);
-    serd_afree(allocator, statement);
+    zix_free(allocator, statement->caret);
+    zix_free(allocator, statement);
   }
 }
 

@@ -11,7 +11,6 @@
 
 #include "serd/attributes.h"
 #include "serd/cursor.h"
-#include "serd/memory.h"
 #include "serd/model.h"
 #include "serd/node.h"
 #include "serd/range.h"
@@ -31,7 +30,7 @@
 typedef enum { NAMED, ANON_S, ANON_O, LIST_S, LIST_O } NodeStyle;
 
 typedef struct {
-  SerdAllocator*    allocator;     // Allocator for auxiliary structures
+  ZixAllocator*     allocator;     // Allocator for auxiliary structures
   const SerdModel*  model;         // Model to read from
   const SerdSink*   sink;          // Sink to write description to
   ZixHash*          list_subjects; // Nodes written in the current list or null
@@ -286,7 +285,7 @@ write_range_statement(const DescribeContext* const      ctx,
 }
 
 SerdStatus
-serd_describe_range(SerdAllocator* const    allocator,
+serd_describe_range(ZixAllocator* const     allocator,
                     const SerdCursor* const range,
                     const SerdSink*         sink,
                     const SerdDescribeFlags flags)
@@ -300,7 +299,7 @@ serd_describe_range(SerdAllocator* const    allocator,
   SerdCursor copy = *range;
 
   ZixHash* const list_subjects =
-    zix_hash_new((ZixAllocator*)allocator, identity, ptr_hash, ptr_equals);
+    zix_hash_new(allocator, identity, ptr_hash, ptr_equals);
 
   SerdStatus st = SERD_BAD_ALLOC;
   if (list_subjects) {

@@ -4,15 +4,15 @@
 #ifndef SERD_TEST_FAILING_ALLOCATOR_H
 #define SERD_TEST_FAILING_ALLOCATOR_H
 
-#include "serd/serd.h"
+#include "zix/allocator.h"
 
 #include <stddef.h>
 
 /// An allocator that fails after some number of successes for testing
 typedef struct {
-  SerdAllocator base;          ///< Base allocator instance
-  size_t        n_allocations; ///< Number of attempted allocations
-  size_t        n_remaining;   ///< Number of remaining successful allocations
+  ZixAllocator base;          ///< Base allocator instance
+  size_t       n_allocations; ///< Number of attempted allocations
+  size_t       n_remaining;   ///< Number of remaining successful allocations
 } SerdFailingAllocator;
 
 SerdFailingAllocator

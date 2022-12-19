@@ -1,9 +1,8 @@
 // Copyright 2011-2021 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "memory.h"
-
 #include "serd/buffer.h"
+#include "zix/allocator.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -22,7 +21,7 @@ serd_buffer_write(const void* const buf,
   const size_t      n_bytes = size * nmemb;
 
   char* const new_buf =
-    (char*)serd_arealloc(buffer->allocator, buffer->buf, buffer->len + n_bytes);
+    (char*)zix_realloc(buffer->allocator, buffer->buf, buffer->len + n_bytes);
 
   if (new_buf) {
     memcpy(new_buf + buffer->len, buf, n_bytes);

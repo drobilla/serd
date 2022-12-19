@@ -43,5 +43,5 @@ serd_block_dumper_flush(SerdBlockDumper* const dumper)
 void
 serd_block_dumper_close(SerdBlockDumper* const dumper)
 {
-  serd_aaligned_free(dumper->allocator, dumper->buf);
+  zix_aligned_free(dumper->allocator, dumper->buf);
 }

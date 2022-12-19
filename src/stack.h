@@ -25,14 +25,19 @@ typedef struct {
 #define SERD_STACK_BOTTOM sizeof(void*)
 
 static inline SerdStack
-serd_stack_new(SerdAllocator* const allocator, size_t size, size_t align)
+serd_stack_new(ZixAllocator* const allocator, size_t size, size_t align)
 {
   const size_t aligned_size = (size + (align - 1)) / align * align;
 
   SerdStack stack;
-  stack.buf      = (char*)serd_aaligned_calloc(allocator, align, aligned_size);
+  stack.buf      = (char*)zix_aligned_alloc(allocator, align, aligned_size);
   stack.buf_size = size;
   stack.size     = SERD_STACK_BOTTOM;
+
+  if (stack.buf) {
+    memset(stack.buf, 0, size);
+  }
+
   return stack;
 }
 
@@ -49,9 +54,9 @@ serd_stack_is_empty(const SerdStack* stack)
 }
 
 static inline void
-serd_stack_free(SerdAllocator* const allocator, SerdStack* stack)
+serd_stack_free(ZixAllocator* const allocator, SerdStack* stack)
 {
-  serd_aaligned_free(allocator, stack->buf);
+  zix_aligned_free(allocator, stack->buf);
   stack->buf      = NULL;
   stack->buf_size = 0;
   stack->size     = 0;

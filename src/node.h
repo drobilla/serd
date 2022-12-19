@@ -5,9 +5,9 @@
 #define SERD_SRC_NODE_H
 
 #include "serd/attributes.h"
-#include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/status.h"
+#include "zix/allocator.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -92,15 +92,15 @@ serd_node_pattern_match(const SerdNode* SERD_NULLABLE a,
 
 SERD_MALLOC_FUNC
 SerdNode* SERD_ALLOCATED
-serd_node_malloc(SerdAllocator* SERD_NULLABLE allocator, size_t size);
+serd_node_malloc(ZixAllocator* SERD_NULLABLE allocator, size_t size);
 
 SERD_MALLOC_FUNC
 SerdNode* SERD_ALLOCATED
-serd_node_try_malloc(SerdAllocator* SERD_NULLABLE allocator,
-                     SerdWriteResult              result);
+serd_node_try_malloc(ZixAllocator* SERD_NULLABLE allocator,
+                     SerdWriteResult             result);
 
 SerdStatus
-serd_node_set(SerdAllocator* SERD_NULLABLE          allocator,
+serd_node_set(ZixAllocator* SERD_NULLABLE           allocator,
               SerdNode* SERD_NULLABLE* SERD_NONNULL dst,
               const SerdNode* SERD_NULLABLE         src);
 

@@ -6,6 +6,7 @@
 #include "failing_allocator.h"
 
 #include "serd/serd.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -17,7 +18,7 @@
 static void
 test_invalid_new(void)
 {
-  SerdAllocator* const allocator = serd_default_allocator();
+  ZixAllocator* const allocator = zix_default_allocator();
 
   assert(!serd_statement_copy(allocator, NULL));
 
@@ -46,7 +47,7 @@ test_copy(void)
 {
   assert(!serd_statement_copy(NULL, NULL));
 
-  SerdAllocator* const allocator = serd_default_allocator();
+  ZixAllocator* const allocator = zix_default_allocator();
 
   assert(!serd_statement_copy(allocator, NULL));
 
@@ -77,7 +78,7 @@ test_copy_with_caret(void)
 {
   assert(!serd_statement_copy(NULL, NULL));
 
-  SerdAllocator* const allocator = serd_default_allocator();
+  ZixAllocator* const allocator = zix_default_allocator();
 
   assert(!serd_statement_copy(allocator, NULL));
 
@@ -112,14 +113,14 @@ test_copy_with_caret(void)
 static void
 test_free(void)
 {
-  serd_statement_free(serd_default_allocator(), NULL);
+  serd_statement_free(zix_default_allocator(), NULL);
   serd_statement_free(NULL, NULL);
 }
 
 static void
 test_fields(void)
 {
-  SerdAllocator* const allocator = serd_default_allocator();
+  ZixAllocator* const allocator = zix_default_allocator();
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
@@ -191,7 +192,7 @@ test_fields(void)
 static void
 test_failed_alloc(void)
 {
-  SerdNodes* const nodes = serd_nodes_new(serd_default_allocator());
+  SerdNodes* const nodes = serd_nodes_new(zix_default_allocator());
 
   const SerdNode* const f = serd_nodes_get(nodes, serd_a_string("file"));
   const SerdNode* const s = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "s"));
@@ -199,7 +200,7 @@ test_failed_alloc(void)
   const SerdNode* const o = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "o"));
   const SerdNode* const g = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "g"));
 
-  SerdCaret* const caret = serd_caret_new(serd_default_allocator(), f, 1, 1);
+  SerdCaret* const caret = serd_caret_new(zix_default_allocator(), f, 1, 1);
 
   SerdFailingAllocator allocator = serd_failing_allocator();
 
@@ -230,7 +231,7 @@ test_failed_alloc(void)
 
   serd_statement_free(&allocator.base, copy);
   serd_statement_free(&allocator.base, statement);
-  serd_caret_free(serd_default_allocator(), caret);
+  serd_caret_free(zix_default_allocator(), caret);
   serd_nodes_free(nodes);
 }
 

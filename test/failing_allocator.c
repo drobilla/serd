@@ -24,65 +24,65 @@ attempt(SerdFailingAllocator* const allocator)
 
 SERD_MALLOC_FUNC
 static void*
-serd_failing_malloc(SerdAllocator* const allocator, const size_t size)
+serd_failing_malloc(ZixAllocator* const allocator, const size_t size)
 {
   SerdFailingAllocator* const state = (SerdFailingAllocator*)allocator;
-  SerdAllocator* const        base  = serd_default_allocator();
+  ZixAllocator* const         base  = zix_default_allocator();
 
   return attempt(state) ? base->malloc(base, size) : NULL;
 }
 
 SERD_MALLOC_FUNC
 static void*
-serd_failing_calloc(SerdAllocator* const allocator,
-                    const size_t         nmemb,
-                    const size_t         size)
+serd_failing_calloc(ZixAllocator* const allocator,
+                    const size_t        nmemb,
+                    const size_t        size)
 {
   SerdFailingAllocator* const state = (SerdFailingAllocator*)allocator;
-  SerdAllocator* const        base  = serd_default_allocator();
+  ZixAllocator* const         base  = zix_default_allocator();
 
   return attempt(state) ? base->calloc(base, nmemb, size) : NULL;
 }
 
 static void*
-serd_failing_realloc(SerdAllocator* const allocator,
-                     void* const          ptr,
-                     const size_t         size)
+serd_failing_realloc(ZixAllocator* const allocator,
+                     void* const         ptr,
+                     const size_t        size)
 {
   SerdFailingAllocator* const state = (SerdFailingAllocator*)allocator;
-  SerdAllocator* const        base  = serd_default_allocator();
+  ZixAllocator* const         base  = zix_default_allocator();
 
   return attempt(state) ? base->realloc(base, ptr, size) : NULL;
 }
 
 static void
-serd_failing_free(SerdAllocator* const allocator, void* const ptr)
+serd_failing_free(ZixAllocator* const allocator, void* const ptr)
 {
   (void)allocator;
 
-  SerdAllocator* const base = serd_default_allocator();
+  ZixAllocator* const base = zix_default_allocator();
 
   base->free(base, ptr);
 }
 
 SERD_MALLOC_FUNC
 static void*
-serd_failing_aligned_alloc(SerdAllocator* const allocator,
-                           const size_t         alignment,
-                           const size_t         size)
+serd_failing_aligned_alloc(ZixAllocator* const allocator,
+                           const size_t        alignment,
+                           const size_t        size)
 {
   SerdFailingAllocator* const state = (SerdFailingAllocator*)allocator;
-  SerdAllocator* const        base  = serd_default_allocator();
+  ZixAllocator* const         base  = zix_default_allocator();
 
   return attempt(state) ? base->aligned_alloc(base, alignment, size) : NULL;
 }
 
 static void
-serd_failing_aligned_free(SerdAllocator* const allocator, void* const ptr)
+serd_failing_aligned_free(ZixAllocator* const allocator, void* const ptr)
 {
   (void)allocator;
 
-  SerdAllocator* const base = serd_default_allocator();
+  ZixAllocator* const base = zix_default_allocator();
 
   base->aligned_free(base, ptr);
 }

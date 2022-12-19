@@ -6,6 +6,7 @@
 #include "failing_allocator.h"
 
 #include "serd/serd.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -70,7 +71,7 @@ test_intern_failed_alloc(void)
 static void
 test_intern(void)
 {
-  SerdAllocator* const allocator = serd_default_allocator();
+  ZixAllocator* const allocator = zix_default_allocator();
 
   SerdNodes* nodes = serd_nodes_new(allocator);
   SerdNode*  node  = serd_node_new(NULL, serd_a_string("node"));
@@ -96,7 +97,7 @@ test_string(void)
 {
   const ZixStringView string = zix_string("string");
 
-  SerdAllocator* const allocator = serd_default_allocator();
+  ZixAllocator* const allocator = zix_default_allocator();
 
   SerdNodes* const      nodes = serd_nodes_new(allocator);
   const SerdNode* const node =
@@ -115,7 +116,7 @@ test_string(void)
 static void
 test_invalid_literal(void)
 {
-  SerdAllocator* const allocator = serd_default_allocator();
+  ZixAllocator* const allocator = zix_default_allocator();
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
@@ -143,7 +144,7 @@ test_plain_literal(void)
   const ZixStringView string   = zix_string("string");
   const ZixStringView language = zix_string("en");
 
-  SerdAllocator* const allocator = serd_default_allocator();
+  ZixAllocator* const allocator = zix_default_allocator();
 
   SerdNodes* const      nodes = serd_nodes_new(allocator);
   const SerdNode* const node =
@@ -188,7 +189,7 @@ test_typed_literal(void)
   const ZixStringView string   = zix_string("string");
   const ZixStringView datatype = zix_string("http://example.org/Type");
 
-  SerdAllocator* const allocator = serd_default_allocator();
+  ZixAllocator* const allocator = zix_default_allocator();
 
   SerdNodes* const      nodes = serd_nodes_new(allocator);
   const SerdNode* const node =
@@ -218,7 +219,7 @@ test_typed_literal(void)
 static void
 test_boolean(void)
 {
-  SerdAllocator* const allocator = serd_default_allocator();
+  ZixAllocator* const allocator = zix_default_allocator();
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
@@ -257,8 +258,8 @@ test_boolean(void)
 static void
 test_decimal(void)
 {
-  SerdAllocator* const allocator = serd_default_allocator();
-  SerdNodes* const     nodes     = serd_nodes_new(allocator);
+  ZixAllocator* const allocator = zix_default_allocator();
+  SerdNodes* const    nodes     = serd_nodes_new(allocator);
 
   const SerdNode* const a = serd_nodes_get(nodes, serd_a_decimal(-12.3456789));
   const SerdNode* const b = serd_nodes_get(nodes, serd_a_decimal(-12.3456789));
@@ -278,7 +279,7 @@ test_decimal(void)
 static void
 test_double(void)
 {
-  SerdAllocator* const allocator = serd_default_allocator();
+  ZixAllocator* const allocator = zix_default_allocator();
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
@@ -299,7 +300,7 @@ test_double(void)
 static void
 test_float(void)
 {
-  SerdAllocator* const allocator = serd_default_allocator();
+  ZixAllocator* const allocator = zix_default_allocator();
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
@@ -320,8 +321,8 @@ test_float(void)
 static void
 test_integer(void)
 {
-  SerdAllocator* const allocator = serd_default_allocator();
-  SerdNodes* const     nodes     = serd_nodes_new(allocator);
+  ZixAllocator* const allocator = zix_default_allocator();
+  SerdNodes* const    nodes     = serd_nodes_new(allocator);
 
   const SerdNode* const a = serd_nodes_get(nodes, serd_a_integer(-1234567890));
   const SerdNode* const b = serd_nodes_get(nodes, serd_a_integer(-1234567890));
@@ -343,7 +344,7 @@ test_base64(void)
 {
   static const char data[] = {'f', 'o', 'o', 'b', 'a', 'r'};
 
-  SerdAllocator* const allocator = serd_default_allocator();
+  ZixAllocator* const allocator = zix_default_allocator();
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
@@ -370,8 +371,8 @@ test_uri(void)
 {
   const ZixStringView string = zix_string("http://example.org/");
 
-  SerdAllocator* const allocator = serd_default_allocator();
-  SerdNodes* const     nodes     = serd_nodes_new(allocator);
+  ZixAllocator* const allocator = zix_default_allocator();
+  SerdNodes* const    nodes     = serd_nodes_new(allocator);
 
   const SerdNode* const node = serd_nodes_get(nodes, serd_a_uri(string));
 
@@ -390,7 +391,7 @@ test_parsed_uri(void)
 {
   const ZixStringView string = zix_string("http://example.org/");
 
-  SerdAllocator* const allocator = serd_default_allocator();
+  ZixAllocator* const allocator = zix_default_allocator();
 
   SerdNodes* const      nodes = serd_nodes_new(allocator);
   const SerdURIView     uri   = serd_parse_uri(string.data);
@@ -421,7 +422,7 @@ test_blank(void)
 {
   const ZixStringView string = zix_string("b42");
 
-  SerdAllocator* const allocator = serd_default_allocator();
+  ZixAllocator* const allocator = zix_default_allocator();
 
   SerdNodes* const      nodes = serd_nodes_new(allocator);
   const SerdNode* const node  = serd_nodes_get(nodes, serd_a_blank(string));
@@ -439,8 +440,8 @@ test_blank(void)
 static void
 test_deref(void)
 {
-  SerdAllocator* const allocator = serd_default_allocator();
-  SerdNodes*           nodes     = serd_nodes_new(allocator);
+  ZixAllocator* const allocator = zix_default_allocator();
+  SerdNodes*          nodes     = serd_nodes_new(allocator);
 
   const SerdNode* original = serd_nodes_get(nodes, serd_a_string("node"));
   const SerdNode* another  = serd_nodes_get(nodes, serd_a_string("node"));
@@ -481,7 +482,7 @@ test_deref(void)
 static void
 test_get(void)
 {
-  SerdAllocator* const allocator = serd_default_allocator();
+  ZixAllocator* const allocator = zix_default_allocator();
 
   SerdNodes* nodes = serd_nodes_new(allocator);
   SerdNode*  node  = serd_node_new(NULL, serd_a_string("node"));

@@ -3,7 +3,6 @@
 
 #include "nodes.h"
 
-#include "memory.h"
 #include "node.h"
 #include "node_spec.h"
 
@@ -13,7 +12,6 @@
 #define ZIX_HASH_SEARCH_DATA_TYPE NodeSpec
 
 #include "serd/attributes.h"
-#include "serd/memory.h"
 #include "serd/nodes.h"
 #include "zix/allocator.h"
 #include "zix/digest.h"
@@ -75,17 +73,17 @@ typedef struct {
    with an extra header) rather than node pointers directly.
 */
 typedef struct {
-  SerdAllocator  base; ///< Implementation of SerdAllocator (base "class")
-  SerdAllocator* real; ///< Underlying "real" memory allocator
+  ZixAllocator  base; ///< Implementation of ZixAllocator (base "class")
+  ZixAllocator* real; ///< Underlying "real" memory allocator
 } SerdNodesEntryAllocator;
 
 SERD_MALLOC_FUNC
 static void*
-serd_nodes_entry_aligned_alloc(SerdAllocator* const allocator,
-                               const size_t         alignment,
-                               const size_t         size)
+serd_nodes_entry_aligned_alloc(ZixAllocator* const allocator,
+                               const size_t        alignment,
+                               const size_t        size)
 {
-  SerdAllocator* const real = ((SerdNodesEntryAllocator*)allocator)->real;
+  ZixAllocator* const real = ((SerdNodesEntryAllocator*)allocator)->real;
 
   void* const ptr =
     real->aligned_alloc(real, alignment, serd_node_align + size);
@@ -94,9 +92,9 @@ serd_nodes_entry_aligned_alloc(SerdAllocator* const allocator,
 }
 
 static void
-serd_nodes_entry_aligned_free(SerdAllocator* const allocator, void* const ptr)
+serd_nodes_entry_aligned_free(ZixAllocator* const allocator, void* const ptr)
 {
-  SerdAllocator* const real = ((SerdNodesEntryAllocator*)allocator)->real;
+  ZixAllocator* const real = ((SerdNodesEntryAllocator*)allocator)->real;
 
   if (ptr) {
     real->aligned_free(real, (((uint8_t*)ptr) - serd_node_align));
@@ -104,7 +102,7 @@ serd_nodes_entry_aligned_free(SerdAllocator* const allocator, void* const ptr)
 }
 
 static SerdNodesEntryAllocator
-serd_nodes_entry_allocator(SerdAllocator* const real)
+serd_nodes_entry_allocator(ZixAllocator* const real)
 {
   const SerdNodesEntryAllocator entry_allocator = {
     {
@@ -115,7 +113,7 @@ serd_nodes_entry_allocator(SerdAllocator* const real)
       serd_nodes_entry_aligned_alloc,
       serd_nodes_entry_aligned_free,
     },
-    real ? real : serd_default_allocator(),
+    real ? real : zix_default_allocator(),
   };
 
   return entry_allocator;
@@ -234,21 +232,21 @@ nodes_equal(const SerdNode* const a, const SerdNode* const b)
 static void
 free_entry(SerdNodes* const nodes, NodesEntry* const entry)
 {
-  serd_aaligned_free(&nodes->allocator.base, &entry->node);
+  zix_aligned_free(&nodes->allocator.base, &entry->node);
 }
 
 SerdNodes*
-serd_nodes_new(SerdAllocator* const allocator)
+serd_nodes_new(ZixAllocator* const allocator)
 {
   SerdNodes* const nodes =
-    (SerdNodes*)serd_acalloc(allocator, 1, sizeof(SerdNodes));
+    (SerdNodes*)zix_calloc(allocator, 1, sizeof(SerdNodes));
 
   if (nodes) {
     nodes->allocator = serd_nodes_entry_allocator(allocator);
 
-    if (!(nodes->hash = zix_hash_new(
-            (ZixAllocator*)allocator, nodes_key, nodes_hash, nodes_equal))) {
-      serd_afree(allocator, nodes);
+    if (!(nodes->hash =
+            zix_hash_new(allocator, nodes_key, nodes_hash, nodes_equal))) {
+      zix_free(allocator, nodes);
       return NULL;
     }
   }
@@ -267,7 +265,7 @@ serd_nodes_free(SerdNodes* nodes)
     }
 
     zix_hash_free(nodes->hash);
-    serd_afree(nodes->allocator.real, nodes);
+    zix_free(nodes->allocator.real, nodes);
   }
 }
 
@@ -401,8 +399,8 @@ serd_nodes_token(SerdNodes* const    nodes,
   }
 
   // Otherwise, allocate and manage a new one
-  SerdAllocator* const alloc = &nodes->allocator.base;
-  SerdNode* const      node  = serd_node_new(alloc, serd_a_token(type, string));
+  ZixAllocator* const alloc = &nodes->allocator.base;
+  SerdNode* const     node  = serd_node_new(alloc, serd_a_token(type, string));
 
   return serd_nodes_manage_entry_node_at(nodes, node, plan);
 }
@@ -430,8 +428,8 @@ serd_nodes_literal(SerdNodes* const    nodes,
   }
 
   // Otherwise, allocate and manage a new one
-  SerdAllocator* const alloc = &nodes->allocator.base;
-  SerdNode* const      node =
+  ZixAllocator* const alloc = &nodes->allocator.base;
+  SerdNode* const     node =
     serd_node_new(alloc, serd_a_literal(string, flags, meta));
 
   return serd_nodes_manage_entry_node_at(nodes, node, plan);

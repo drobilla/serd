@@ -4,6 +4,7 @@
 #undef NDEBUG
 
 #include "serd/serd.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -90,7 +91,7 @@ test(void)
 
   serd_writer_free(writer);
   serd_close_output(&output);
-  serd_free(NULL, buffer.buf);
+  zix_free(NULL, buffer.buf);
   serd_nodes_free(nodes);
   serd_env_free(env);
   serd_world_free(world);

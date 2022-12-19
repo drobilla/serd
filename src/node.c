@@ -3,7 +3,6 @@
 
 #include "node.h"
 
-#include "memory.h"
 #include "namespaces.h"
 #include "string_utils.h"
 
@@ -176,17 +175,21 @@ serd_node_total_size(const SerdNode* const node)
 }
 
 SerdNode*
-serd_node_malloc(SerdAllocator* const allocator, const size_t size)
+serd_node_malloc(ZixAllocator* const allocator, const size_t size)
 {
-  SerdNode* const node = (SerdNode*)serd_aaligned_calloc(
+  SerdNode* const node = (SerdNode*)zix_aligned_alloc(
     allocator, serd_node_align, serd_node_pad_size(size));
+
+  if (node) {
+    memset(node, 0, size);
+  }
 
   assert((uintptr_t)node % serd_node_align == 0);
   return node;
 }
 
 SerdNode*
-serd_node_try_malloc(SerdAllocator* const allocator, const SerdWriteResult r)
+serd_node_try_malloc(ZixAllocator* const allocator, const SerdWriteResult r)
 {
   return (r.status && r.status != SERD_OVERFLOW)
            ? NULL
@@ -194,21 +197,20 @@ serd_node_try_malloc(SerdAllocator* const allocator, const SerdWriteResult r)
 }
 
 SerdStatus
-serd_node_set(SerdAllocator* const  allocator,
+serd_node_set(ZixAllocator* const   allocator,
               SerdNode** const      dst,
               const SerdNode* const src)
 {
   if (!src) {
-    serd_aaligned_free(allocator, *dst);
+    zix_aligned_free(allocator, *dst);
     *dst = NULL;
     return SERD_SUCCESS;
   }
 
   const size_t size = serd_node_total_size(src);
   if (!*dst || serd_node_total_size(*dst) < size) {
-    serd_aaligned_free(allocator, *dst);
-    if (!(*dst = (SerdNode*)serd_aaligned_calloc(
-            allocator, serd_node_align, size))) {
+    zix_aligned_free(allocator, *dst);
+    if (!(*dst = serd_node_malloc(allocator, size))) {
       return SERD_BAD_ALLOC;
     }
   }
@@ -599,7 +601,7 @@ serd_node_construct_uri(const size_t      buf_size,
 }
 
 SerdNode*
-serd_node_new(SerdAllocator* const allocator, const SerdNodeArgs args)
+serd_node_new(ZixAllocator* const allocator, const SerdNodeArgs args)
 {
   SerdWriteResult r = serd_node_construct(0, NULL, args);
   if (r.status != SERD_OVERFLOW) {
@@ -729,7 +731,7 @@ serd_node_decode(const SerdNode* const node,
 }
 
 SerdNode*
-serd_node_copy(SerdAllocator* const allocator, const SerdNode* node)
+serd_node_copy(ZixAllocator* const allocator, const SerdNode* node)
 {
   if (!node) {
     return NULL;
@@ -737,7 +739,7 @@ serd_node_copy(SerdAllocator* const allocator, const SerdNode* node)
 
   const size_t size = serd_node_total_size(node);
   SerdNode*    copy =
-    (SerdNode*)serd_aaligned_alloc(allocator, serd_node_align, size);
+    (SerdNode*)zix_aligned_alloc(allocator, serd_node_align, size);
 
   if (copy) {
     memcpy(copy, node, size);
@@ -997,9 +999,9 @@ serd_node_flags(const SerdNode* const node)
 }
 
 void
-serd_node_free(SerdAllocator* const allocator, SerdNode* const node)
+serd_node_free(ZixAllocator* const allocator, SerdNode* const node)
 {
-  serd_aaligned_free(allocator, node);
+  zix_aligned_free(allocator, node);
 }
 
 #undef MUST_SUCCEED

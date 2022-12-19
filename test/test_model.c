@@ -6,6 +6,7 @@
 #include "failing_allocator.h"
 
 #include "serd/serd.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -138,8 +139,8 @@ test_read(SerdWorld*      world,
           const SerdNode* g,
           const unsigned  n_quads)
 {
-  SerdAllocator* const allocator = serd_default_allocator();
-  SerdNodes* const     nodes     = serd_nodes_new(allocator);
+  ZixAllocator* const allocator = zix_default_allocator();
+  SerdNodes* const    nodes     = serd_nodes_new(allocator);
 
   SerdCursor*          cursor = serd_model_begin(NULL, model);
   const SerdStatement* prev   = NULL;
@@ -585,10 +586,10 @@ test_inserter(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdAllocator* const allocator = serd_default_allocator();
-  SerdNodes* const     nodes     = serd_nodes_new(allocator);
-  SerdModel* const     model     = serd_model_new(world, SERD_ORDER_SPO, 0U);
-  SerdSink* const      inserter  = serd_inserter_new(model, NULL);
+  ZixAllocator* const allocator = zix_default_allocator();
+  SerdNodes* const    nodes     = serd_nodes_new(allocator);
+  SerdModel* const    model     = serd_model_new(world, SERD_ORDER_SPO, 0U);
+  SerdSink* const     inserter  = serd_inserter_new(model, NULL);
 
   const SerdNode* const s =
     serd_nodes_get(nodes, serd_a_uri_string("http://example.org/s"));
@@ -654,7 +655,7 @@ test_add_erase(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdAllocator* const allocator = serd_default_allocator();
+  ZixAllocator* const allocator = zix_default_allocator();
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
   SerdModel* const model = serd_model_new(world, SERD_ORDER_SPO, 0U);
@@ -694,8 +695,8 @@ test_add_bad_statement(SerdWorld* world, const unsigned n_quads)
 {
   (void)n_quads;
 
-  SerdAllocator* const allocator = serd_world_allocator(world);
-  SerdNodes* const     nodes     = serd_nodes_new(allocator);
+  ZixAllocator* const allocator = serd_world_allocator(world);
+  SerdNodes* const    nodes     = serd_nodes_new(allocator);
 
   const SerdNode* s = serd_nodes_get(nodes, serd_a_uri_string("urn:s"));
   const SerdNode* p = serd_nodes_get(nodes, serd_a_uri_string("urn:p"));
@@ -1115,7 +1116,7 @@ test_write_flat_range(SerdWorld* world, const unsigned n_quads)
   assert(str);
   assert(!strcmp(str, expected));
 
-  serd_free(NULL, buffer.buf);
+  zix_free(NULL, buffer.buf);
   serd_writer_free(writer);
   serd_model_free(model);
   serd_env_free(env);
@@ -1189,7 +1190,7 @@ test_write_bad_list(SerdWorld* world, const unsigned n_quads)
   assert(str);
   assert(!strcmp(str, expected));
 
-  serd_free(NULL, buffer.buf);
+  zix_free(NULL, buffer.buf);
   serd_writer_free(writer);
   serd_close_output(&out);
   serd_model_free(model);
@@ -1259,7 +1260,7 @@ test_write_infinite_list(SerdWorld* world, const unsigned n_quads)
   assert(str);
   assert(!strcmp(str, expected));
 
-  serd_free(NULL, buffer.buf);
+  zix_free(NULL, buffer.buf);
   serd_writer_free(writer);
   serd_close_output(&out);
   serd_model_free(model);
