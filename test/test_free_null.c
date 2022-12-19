@@ -31,7 +31,7 @@ main(void)
   serd_nodes_free(NULL);
   serd_model_free(NULL);
   serd_statement_free(NULL, NULL);
-  serd_cursor_free(NULL);
+  serd_cursor_free(NULL, NULL);
   serd_caret_free(NULL, NULL);
 
   return 0;

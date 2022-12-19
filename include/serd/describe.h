@@ -38,7 +38,8 @@ typedef uint32_t SerdDescribeFlags;
    ugly output for Turtle or Trig.
 */
 SERD_API SerdStatus
-serd_describe_range(const SerdCursor* SERD_NULLABLE range,
+serd_describe_range(SerdAllocator* SERD_NULLABLE    allocator,
+                    const SerdCursor* SERD_NULLABLE range,
                     const SerdSink* SERD_NONNULL    sink,
                     SerdDescribeFlags               flags);
 
