@@ -77,8 +77,7 @@ serd_model_add_index(SerdModel* const model, const SerdStatementOrder order)
   const ZixBTreeCompareFunc comparator =
     serd_model_index_comparator(model, order);
 
-  model->indices[order] =
-    zix_btree_new((ZixAllocator*)model->allocator, comparator, ordering);
+  model->indices[order] = zix_btree_new(model->allocator, comparator, ordering);
 
   if (!model->indices[order]) {
     return SERD_BAD_ALLOC;
@@ -117,7 +116,7 @@ serd_model_drop_index(SerdModel* const model, const SerdStatementOrder order)
 }
 
 static SerdModel*
-serd_model_new_with_allocator(SerdAllocator* const     allocator,
+serd_model_new_with_allocator(ZixAllocator* const      allocator,
                               SerdWorld* const         world,
                               const SerdStatementOrder default_order,
                               const SerdModelFlags     flags)
@@ -130,7 +129,7 @@ serd_model_new_with_allocator(SerdAllocator* const     allocator,
   }
 
   SerdModel* model =
-    (SerdModel*)serd_acalloc(allocator, 1, sizeof(struct SerdModelImpl));
+    (SerdModel*)zix_calloc(allocator, 1, sizeof(struct SerdModelImpl));
 
   if (!model) {
     serd_nodes_free(nodes);
@@ -220,7 +219,7 @@ make_begin_cursor(const SerdModel* const model, const SerdStatementOrder order)
 }
 
 SerdModel*
-serd_model_copy(SerdAllocator* const allocator, const SerdModel* const model)
+serd_model_copy(ZixAllocator* const allocator, const SerdModel* const model)
 {
   assert(model);
 
@@ -280,7 +279,7 @@ serd_model_drop_statement(SerdModel* const     model,
 }
 
 typedef struct {
-  SerdAllocator* allocator;
+  ZixAllocator* allocator;
 } DestroyContext;
 
 static void
@@ -355,7 +354,7 @@ serd_model_empty(const SerdModel* const model)
 }
 
 SerdCursor*
-serd_model_begin_ordered(SerdAllocator* const     allocator,
+serd_model_begin_ordered(ZixAllocator* const      allocator,
                          const SerdModel* const   model,
                          const SerdStatementOrder order)
 {
@@ -367,7 +366,7 @@ serd_model_begin_ordered(SerdAllocator* const     allocator,
 }
 
 SerdCursor*
-serd_model_begin(SerdAllocator* const allocator, const SerdModel* const model)
+serd_model_begin(ZixAllocator* const allocator, const SerdModel* const model)
 {
   assert(model);
   return serd_model_begin_ordered(allocator, model, model->default_order);
@@ -551,7 +550,7 @@ serd_model_search(const SerdModel* const model,
 }
 
 SerdCursor*
-serd_model_find(SerdAllocator* const   allocator,
+serd_model_find(ZixAllocator* const    allocator,
                 const SerdModel* const model,
                 const SerdNode* const  s,
                 const SerdNode* const  p,
@@ -647,7 +646,7 @@ serd_model_intern_caret(SerdModel* const model, const SerdCaret* const caret)
   }
 
   SerdCaret* const copy =
-    (SerdCaret*)serd_acalloc(model->allocator, 1, sizeof(SerdCaret));
+    (SerdCaret*)zix_calloc(model->allocator, 1, sizeof(SerdCaret));
 
   if (copy) {
     copy->document = serd_nodes_intern(model->nodes, caret->document);

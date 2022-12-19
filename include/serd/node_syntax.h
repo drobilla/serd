@@ -40,10 +40,10 @@ SERD_BEGIN_DECLS
    using the world allocator.
 */
 SERD_API SerdNode* SERD_ALLOCATED
-serd_node_from_syntax(SerdAllocator* SERD_NULLABLE allocator,
-                      const char* SERD_NONNULL     str,
-                      SerdSyntax                   syntax,
-                      SerdEnv* SERD_NULLABLE       env);
+serd_node_from_syntax(ZixAllocator* SERD_NULLABLE allocator,
+                      const char* SERD_NONNULL    str,
+                      SerdSyntax                  syntax,
+                      SerdEnv* SERD_NULLABLE      env);
 
 /**
    Return a string representation of `node` in `syntax`.
@@ -63,11 +63,11 @@ serd_node_from_syntax(SerdAllocator* SERD_NULLABLE allocator,
    @param env Environment for the output string.  This can be used to
    abbreviate things nicely by setting namespace prefixes.
 
-   @return A newly allocated string that must be freed with serd_free() using
-   the world allocator.
+   @return A newly allocated string that must be freed with zix_free() using
+   the same `allocator`.
 */
 SERD_API char* SERD_ALLOCATED
-serd_node_to_syntax(SerdAllocator* SERD_NULLABLE allocator,
+serd_node_to_syntax(ZixAllocator* SERD_NULLABLE  allocator,
                     const SerdNode* SERD_NONNULL node,
                     SerdSyntax                   syntax,
                     const SerdEnv* SERD_NULLABLE env);

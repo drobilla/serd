@@ -58,14 +58,14 @@ serd_env_new(SerdWorld* const world, const ZixStringView base_uri)
 }
 
 SerdEnv*
-serd_env_copy(SerdAllocator* const allocator, const SerdEnv* const env)
+serd_env_copy(ZixAllocator* const allocator, const SerdEnv* const env)
 {
   if (!env) {
     return NULL;
   }
 
   SerdEnv* copy =
-    (SerdEnv*)serd_acalloc(allocator, 1, sizeof(struct SerdEnvImpl));
+    (SerdEnv*)zix_calloc(allocator, 1, sizeof(struct SerdEnvImpl));
 
   if (copy) {
     copy->world      = env->world;
@@ -76,7 +76,7 @@ serd_env_copy(SerdAllocator* const allocator, const SerdEnv* const env)
       return NULL;
     }
 
-    if (!(copy->prefixes = (SerdPrefix*)serd_amalloc(
+    if (!(copy->prefixes = (SerdPrefix*)zix_malloc(
             allocator, copy->n_prefixes * sizeof(SerdPrefix)))) {
       serd_nodes_free(copy->nodes);
       serd_wfree(env->world, copy);

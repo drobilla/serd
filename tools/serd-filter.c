@@ -9,7 +9,6 @@
 #include "serd/filter.h"
 #include "serd/input_stream.h"
 #include "serd/log.h"
-#include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/nodes.h"
 #include "serd/reader.h"
@@ -19,6 +18,7 @@
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "serd/writer.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <stdarg.h>
@@ -49,8 +49,8 @@ typedef struct {
 
 // Context for the pattern event callback
 typedef struct {
-  SerdAllocator* allocator;
-  FilterPattern  pattern;
+  ZixAllocator* allocator;
+  FilterPattern pattern;
 } PatternEventContext;
 
 // Handler for events read from a pattern
@@ -58,7 +58,7 @@ static SerdStatus
 on_pattern_event(void* const handle, const SerdEvent* const event)
 {
   PatternEventContext* const ctx       = (PatternEventContext*)handle;
-  SerdAllocator* const       allocator = ctx->allocator;
+  ZixAllocator* const        allocator = ctx->allocator;
 
   if (event->type == SERD_STATEMENT) {
     FilterPattern* const pat = &ctx->pattern;
@@ -83,9 +83,9 @@ parse_pattern(SerdWorld* const       world,
               SerdInputStream* const in,
               const bool             inclusive)
 {
-  SerdAllocator* const allocator = serd_world_allocator(world);
-  SerdEnv* const       env       = serd_env_new(world, zix_empty_string());
-  PatternEventContext  ctx       = {allocator, {NULL, NULL, NULL, NULL}};
+  ZixAllocator* const allocator = serd_world_allocator(world);
+  SerdEnv* const      env       = serd_env_new(world, zix_empty_string());
+  PatternEventContext ctx       = {allocator, {NULL, NULL, NULL, NULL}};
 
   SerdSink*   in_sink = serd_sink_new(world, &ctx, on_pattern_event, NULL);
   SerdReader* reader  = serd_reader_new(

@@ -3,7 +3,6 @@
 
 #include "world.h"
 
-#include "memory.h"
 #include "namespaces.h"
 #include "node.h"
 #include "serd_config.h"
@@ -57,13 +56,11 @@ terminal_supports_color(FILE* const stream)
 }
 
 SerdWorld*
-serd_world_new(SerdAllocator* const allocator)
+serd_world_new(ZixAllocator* const allocator)
 {
-  SerdAllocator* const actual =
-    allocator ? allocator : serd_default_allocator();
+  ZixAllocator* const actual = allocator ? allocator : zix_default_allocator();
 
-  SerdWorld* const world =
-    (SerdWorld*)serd_acalloc(actual, 1, sizeof(SerdWorld));
+  SerdWorld* const world = (SerdWorld*)zix_calloc(actual, 1, sizeof(SerdWorld));
 
   if (!world) {
     return NULL;
@@ -71,7 +68,7 @@ serd_world_new(SerdAllocator* const allocator)
 
   SerdNodes* const nodes = serd_nodes_new(actual);
   if (!nodes) {
-    serd_afree(actual, world);
+    zix_free(actual, world);
     return NULL;
   }
 
@@ -94,7 +91,7 @@ serd_world_new(SerdAllocator* const allocator)
       !(world->xsd_decimal = serd_nodes_get(nodes, serd_a_uri(xsd_decimal))) ||
       !(world->xsd_integer = serd_nodes_get(nodes, serd_a_uri(xsd_integer)))) {
     serd_nodes_free(nodes);
-    serd_afree(actual, world);
+    zix_free(actual, world);
     return NULL;
   }
 
@@ -112,7 +109,7 @@ serd_world_free(SerdWorld* const world)
 {
   if (world) {
     serd_nodes_free(world->nodes);
-    serd_afree(world->allocator, world);
+    zix_free(world->allocator, world);
   }
 }
 
@@ -134,7 +131,7 @@ serd_world_get_blank(SerdWorld* const world)
 #undef BLANK_CHARS
 }
 
-SerdAllocator*
+ZixAllocator*
 serd_world_allocator(const SerdWorld* const world)
 {
   assert(world);

@@ -6,6 +6,7 @@
 #include "failing_allocator.h"
 
 #include "serd/serd.h"
+#include "zix/allocator.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -14,7 +15,7 @@
 static int
 test_caret(void)
 {
-  SerdAllocator* const allocator = serd_default_allocator();
+  ZixAllocator* const allocator = zix_default_allocator();
 
   SerdNodes* const      nodes = serd_nodes_new(allocator);
   const SerdNode* const node  = serd_nodes_get(nodes, serd_a_string("node"));

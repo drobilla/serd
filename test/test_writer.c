@@ -8,7 +8,6 @@
 #include "serd/buffer.h"
 #include "serd/env.h"
 #include "serd/event.h"
-#include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/nodes.h"
 #include "serd/output_stream.h"
@@ -18,6 +17,7 @@
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "serd/writer.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -125,7 +125,7 @@ test_write_failed_alloc(void)
   serd_close_output(&output);
   serd_env_free(env);
   serd_buffer_close(&buffer);
-  serd_free(NULL, buffer.buf);
+  zix_free(NULL, buffer.buf);
 
   serd_world_free(world);
 }
@@ -150,7 +150,7 @@ test_write_bad_event(void)
   char* const out = (char*)buffer.buf;
   assert(out);
   assert(!strcmp(out, ""));
-  serd_free(NULL, buffer.buf);
+  zix_free(NULL, buffer.buf);
 
   serd_writer_free(writer);
   serd_env_free(env);
@@ -196,7 +196,7 @@ test_write_long_literal(void)
     "\t<http://example.org/p> \"\"\"hello \"\"\\\"world\"\"\\\"!\"\"\" .\n";
 
   assert(!strcmp(out, expected));
-  serd_free(NULL, buffer.buf);
+  zix_free(NULL, buffer.buf);
 
   serd_world_free(world);
 }
@@ -427,7 +427,7 @@ test_write_empty_syntax(void)
   char* const out = (char*)buffer.buf;
   assert(out);
   assert(strlen(out) == 0);
-  serd_free(NULL, buffer.buf);
+  zix_free(NULL, buffer.buf);
 
   serd_writer_free(writer);
   serd_close_output(&output);
@@ -474,7 +474,7 @@ check_pname_escape(const char* const lname, const char* const expected)
 
   char* const out = (char*)buffer.buf;
   assert(!strcmp(out, expected));
-  serd_free(NULL, buffer.buf);
+  zix_free(NULL, buffer.buf);
 
   serd_world_free(world);
 }
@@ -540,7 +540,7 @@ test_write_bad_uri(void)
   assert(st == SERD_BAD_ARG);
 
   serd_close_output(&output);
-  serd_free(NULL, buffer.buf);
+  zix_free(NULL, buffer.buf);
   serd_writer_free(writer);
   serd_close_output(&output);
   serd_env_free(env);

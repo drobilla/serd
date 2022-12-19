@@ -3,9 +3,6 @@
 
 #include "reader.h"
 
-#include "serd/input_stream.h"
-#include "serd/log.h"
-
 #include "byte_source.h"
 #include "memory.h"
 #include "namespaces.h"
@@ -15,6 +12,9 @@
 #include "stack.h"
 #include "statement.h"
 #include "world.h"
+
+#include "serd/input_stream.h"
+#include "serd/log.h"
 
 #include <assert.h>
 #include <stdarg.h>
@@ -298,7 +298,7 @@ serd_reader_free(SerdReader* const reader)
 
   serd_reader_finish(reader);
 
-  serd_aaligned_free(reader->world->allocator, reader->stack.buf);
+  serd_stack_free(reader->world->allocator, &reader->stack);
   serd_wfree(reader->world, reader);
 }
 

@@ -5,7 +5,7 @@
 #define SERD_BUFFER_H
 
 #include "serd/attributes.h"
-#include "serd/memory.h"
+#include "zix/allocator.h"
 
 #include <stddef.h>
 
@@ -25,9 +25,9 @@ SERD_BEGIN_DECLS
 
 /// A dynamically resizable mutable buffer in memory
 typedef struct {
-  SerdAllocator* SERD_NULLABLE allocator; ///< Allocator for buf
-  void* SERD_NULLABLE          buf;       ///< Buffer
-  size_t                       len;       ///< Size of buffer in bytes
+  ZixAllocator* SERD_NULLABLE allocator; ///< Allocator for buf
+  void* SERD_NULLABLE         buf;       ///< Buffer
+  size_t                      len;       ///< Size of buffer in bytes
 } SerdBuffer;
 
 /**
