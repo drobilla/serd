@@ -15,6 +15,7 @@
 #include "serd/stream_result.h"
 #include "serd/string.h"
 #include "serd/uri.h"
+#include "serd/value.h"
 #include "zix/attributes.h"
 #include "zix/string_view.h"
 
@@ -45,9 +46,61 @@ typedef struct StaticNode {
 DEFINE_XSD_NODE(base64Binary)
 DEFINE_XSD_NODE(boolean)
 DEFINE_XSD_NODE(decimal)
+DEFINE_XSD_NODE(double)
+DEFINE_XSD_NODE(float)
 DEFINE_XSD_NODE(integer)
 
 static const SerdNodeFlags meta_mask = (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE);
+
+static const ExessDatatype value_type_datatypes[] = {
+  EXESS_NOTHING,
+  EXESS_BOOLEAN,
+  EXESS_DOUBLE,
+  EXESS_FLOAT,
+  EXESS_LONG,
+  EXESS_INT,
+  EXESS_SHORT,
+  EXESS_BYTE,
+  EXESS_ULONG,
+  EXESS_UINT,
+  EXESS_USHORT,
+  EXESS_UBYTE,
+};
+
+static const SerdValueType datatype_value_types[] = {
+  SERD_NOTHING, ///< EXESS_NOTHING
+  SERD_BOOL,    ///< EXESS_BOOLEAN
+  SERD_DOUBLE,  ///< EXESS_DECIMAL
+  SERD_DOUBLE,  ///< EXESS_DOUBLE
+  SERD_FLOAT,   ///< EXESS_FLOAT
+  SERD_LONG,    ///< EXESS_INTEGER
+  SERD_LONG,    ///< EXESS_NON_POSITIVE_INTEGER
+  SERD_LONG,    ///< EXESS_NEGATIVE_INTEGER
+  SERD_LONG,    ///< EXESS_LONG
+  SERD_INT,     ///< EXESS_INT
+  SERD_SHORT,   ///< EXESS_SHORT
+  SERD_BYTE,    ///< EXESS_BYTE
+  SERD_ULONG,   ///< EXESS_NON_NEGATIVE_INTEGER
+  SERD_ULONG,   ///< EXESS_ULONG
+  SERD_UINT,    ///< EXESS_UINT
+  SERD_USHORT,  ///< EXESS_USHORT
+  SERD_UBYTE,   ///< EXESS_UBYTE
+  SERD_ULONG,   ///< EXESS_POSITIVE_INTEGER
+};
+
+static ExessDatatype
+value_type_datatype(const SerdValueType value_type)
+{
+  return (value_type > SERD_UBYTE) ? EXESS_NOTHING
+                                   : value_type_datatypes[value_type];
+}
+
+static inline SerdValueType
+datatype_value_type(const ExessDatatype datatype)
+{
+  return (datatype > EXESS_POSITIVE_INTEGER) ? SERD_NOTHING
+                                             : datatype_value_types[datatype];
+}
 
 static size_t
 string_sink(const void* const buf, const size_t len, void* const stream)
@@ -388,6 +441,30 @@ serd_new_custom_literal(const void* const          user_data,
 }
 
 SerdNode*
+serd_new_double(const double d)
+{
+  char buf[EXESS_MAX_DOUBLE_LENGTH + 1] = {0};
+
+  const ExessResult r = exess_write_double(d, sizeof(buf), buf);
+
+  return r.status ? NULL
+                  : serd_new_typed_literal(zix_substring(buf, r.count),
+                                           &serd_xsd_double.node);
+}
+
+SerdNode*
+serd_new_float(const float f)
+{
+  char buf[EXESS_MAX_FLOAT_LENGTH + 1] = {0};
+
+  const ExessResult r = exess_write_float(f, sizeof(buf), buf);
+
+  return r.status ? NULL
+                  : serd_new_typed_literal(zix_substring(buf, r.count),
+                                           &serd_xsd_float.node);
+}
+
+SerdNode*
 serd_new_decimal(const double d)
 {
   // Measure integer string to know how much space the node will need
@@ -591,6 +668,68 @@ serd_node_language(const SerdNode* const node)
 {
   assert(node);
   return (node->flags & SERD_HAS_LANGUAGE) ? node->meta : NULL;
+}
+
+SerdValue
+serd_node_value(const SerdNode* const node)
+{
+  assert(node);
+
+  const SerdNode* const datatype_node = serd_node_datatype(node);
+
+  const ExessDatatype datatype =
+    datatype_node ? exess_datatype_from_uri(serd_node_string(datatype_node))
+                  : EXESS_NOTHING;
+
+  const SerdValueType value_type = datatype_value_type(datatype);
+  if (value_type == SERD_NOTHING) {
+    return serd_nothing();
+  }
+
+  ExessValue                value = {false};
+  const ExessVariableResult vr =
+    exess_read_value(datatype, sizeof(value), &value, serd_node_string(node));
+
+  if (vr.status) {
+    return serd_nothing();
+  }
+
+  SerdValue result = {value_type, {false}};
+  memcpy(&result.data, &value, vr.write_count);
+
+  return result;
+}
+
+SerdValue
+serd_node_value_as(const SerdNode* const node,
+                   const SerdValueType   type,
+                   const bool            lossy)
+{
+  // Get the value as it is
+  const SerdValue value = serd_node_value(node);
+  if (!value.type || value.type == type) {
+    return value;
+  }
+
+  const ExessCoercions coercions =
+    lossy ? (EXESS_REDUCE_PRECISION | EXESS_ROUND | EXESS_TRUNCATE)
+          : EXESS_LOSSLESS;
+
+  const ExessDatatype node_datatype = value_type_datatype(value.type);
+  const ExessDatatype datatype      = value_type_datatype(type);
+  SerdValueData       data          = {false};
+
+  // Coerce to the desired type
+  const ExessResult r = exess_value_coerce(coercions,
+                                           node_datatype,
+                                           exess_value_size(node_datatype),
+                                           &value.data,
+                                           datatype,
+                                           exess_value_size(datatype),
+                                           &data);
+
+  const SerdValue result = {r.status ? SERD_NOTHING : type, data};
+  return result;
 }
 
 size_t
