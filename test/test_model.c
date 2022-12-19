@@ -6,6 +6,7 @@
 #include "failing_allocator.h"
 
 #include "serd/serd.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -69,19 +70,19 @@ generate(SerdWorld*      world,
   const SerdNode* hello = serd_nodes_get(nodes, serd_a_string("hello"));
 
   const SerdNode* hello_gb = serd_nodes_get(
-    nodes, serd_a_plain_literal(serd_string("hello"), serd_string("en-gb")));
+    nodes, serd_a_plain_literal(zix_string("hello"), zix_string("en-gb")));
 
   const SerdNode* hello_us = serd_nodes_get(
-    nodes, serd_a_plain_literal(serd_string("hello"), serd_string("en-us")));
+    nodes, serd_a_plain_literal(zix_string("hello"), zix_string("en-us")));
 
   const SerdNode* hello_t4 =
     serd_nodes_get(nodes,
-                   serd_a_typed_literal(serd_string("hello"),
+                   serd_a_typed_literal(zix_string("hello"),
                                         serd_node_string_view(uri(world, 4))));
 
   const SerdNode* hello_t5 =
     serd_nodes_get(nodes,
-                   serd_a_typed_literal(serd_string("hello"),
+                   serd_a_typed_literal(zix_string("hello"),
                                         serd_node_string_view(uri(world, 5))));
 
   assert(!serd_model_add(model, uri(world, 98), uri(world, 4), hello, graph));
@@ -108,10 +109,10 @@ generate(SerdWorld*      world,
   // (14 6 "bonjour"@fr) and (14 6 "salut"@fr)
 
   const SerdNode* const bonjour = serd_nodes_get(
-    nodes, serd_a_plain_literal(serd_string("bonjour"), serd_string("fr")));
+    nodes, serd_a_plain_literal(zix_string("bonjour"), zix_string("fr")));
 
   const SerdNode* const salut = serd_nodes_get(
-    nodes, serd_a_plain_literal(serd_string("salut"), serd_string("fr")));
+    nodes, serd_a_plain_literal(zix_string("salut"), zix_string("fr")));
 
   assert(!serd_model_add(model, uri(world, 14), uri(world, 6), bonjour, graph));
   assert(!serd_model_add(model, uri(world, 14), uri(world, 6), salut, graph));
@@ -121,7 +122,7 @@ generate(SerdWorld*      world,
 
   // Add a blank node subject
   const SerdNode* ablank =
-    serd_nodes_get(nodes, serd_a_blank(serd_string("ablank")));
+    serd_nodes_get(nodes, serd_a_blank(zix_string("ablank")));
 
   assert(!serd_model_add(model, ablank, uri(world, 6), salut, graph));
 
@@ -158,7 +159,7 @@ test_read(SerdWorld*      world,
   assert(serd_cursor_advance(cursor) == SERD_BAD_CURSOR);
   serd_cursor_free(NULL, cursor);
 
-  const SerdStringView s = serd_string("hello");
+  const ZixStringView s = zix_string("hello");
 
   const SerdNode* plain_hello = serd_nodes_get(nodes, serd_a_string_view(s));
 
@@ -169,10 +170,10 @@ test_read(SerdWorld*      world,
     nodes, serd_a_typed_literal(s, serd_node_string_view(uri(world, 5))));
 
   const SerdNode* gb_hello =
-    serd_nodes_get(nodes, serd_a_plain_literal(s, serd_string("en-gb")));
+    serd_nodes_get(nodes, serd_a_plain_literal(s, zix_string("en-gb")));
 
   const SerdNode* us_hello =
-    serd_nodes_get(nodes, serd_a_plain_literal(s, serd_string("en-us")));
+    serd_nodes_get(nodes, serd_a_plain_literal(s, zix_string("en-us")));
 
 #define NUM_PATTERNS 18
 
@@ -244,7 +245,7 @@ test_read(SerdWorld*      world,
   // Query blank node subject
 
   const SerdNode* ablank =
-    serd_nodes_get(nodes, serd_a_blank(serd_string("ablank")));
+    serd_nodes_get(nodes, serd_a_blank(zix_string("ablank")));
 
   Quad        pat         = {ablank, 0, 0};
   int         num_results = 0;
@@ -307,14 +308,14 @@ expected_error(void* const               handle,
                const SerdLogLevel        level,
                const size_t              n_fields,
                const SerdLogField* const fields,
-               const SerdStringView      message)
+               const ZixStringView       message)
 {
   (void)level;
   (void)n_fields;
   (void)fields;
   (void)handle;
 
-  fprintf(stderr, "expected: %s\n", message.buf);
+  fprintf(stderr, "expected: %s\n", message.data);
   return SERD_SUCCESS;
 }
 
@@ -324,14 +325,14 @@ ignore_only_index_error(void* const               handle,
                         const SerdLogLevel        level,
                         const size_t              n_fields,
                         const SerdLogField* const fields,
-                        const SerdStringView      message)
+                        const ZixStringView       message)
 {
   (void)handle;
   (void)level;
   (void)n_fields;
   (void)fields;
 
-  const bool is_index_error = strstr(message.buf, "index");
+  const bool is_index_error = strstr(message.data, "index");
 
   assert(is_index_error);
 
@@ -741,8 +742,7 @@ test_add_with_caret(SerdWorld* world, const unsigned n_quads)
   const SerdNode*  lit   = serd_nodes_get(nodes, serd_a_string("string"));
   const SerdNode*  uri   = serd_nodes_get(nodes, serd_a_uri_string("urn:uri"));
 
-  const SerdNode* blank =
-    serd_nodes_get(nodes, serd_a_blank(serd_string("b1")));
+  const SerdNode* blank = serd_nodes_get(nodes, serd_a_blank(zix_string("b1")));
 
   SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0U);
 
@@ -1075,8 +1075,8 @@ test_write_flat_range(SerdWorld* world, const unsigned n_quads)
 
   const SerdNode* s  = serd_nodes_get(nodes, serd_a_uri_string("urn:s"));
   const SerdNode* p  = serd_nodes_get(nodes, serd_a_uri_string("urn:p"));
-  const SerdNode* b1 = serd_nodes_get(nodes, serd_a_blank(serd_string("b1")));
-  const SerdNode* b2 = serd_nodes_get(nodes, serd_a_blank(serd_string("b2")));
+  const SerdNode* b1 = serd_nodes_get(nodes, serd_a_blank(zix_string("b1")));
+  const SerdNode* b2 = serd_nodes_get(nodes, serd_a_blank(zix_string("b2")));
   const SerdNode* o  = serd_nodes_get(nodes, serd_a_uri_string("urn:o"));
 
   serd_model_add(model, s, p, b1, NULL);
@@ -1085,7 +1085,7 @@ test_write_flat_range(SerdWorld* world, const unsigned n_quads)
   serd_model_add(model, b2, p, o, NULL);
 
   SerdBuffer       buffer = {NULL, NULL, 0};
-  SerdEnv*         env    = serd_env_new(world, serd_empty_string());
+  SerdEnv*         env    = serd_env_new(world, zix_empty_string());
   SerdOutputStream out    = serd_open_output_buffer(&buffer);
 
   SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, &out, 1);
@@ -1136,17 +1136,15 @@ test_write_bad_list(SerdWorld* world, const unsigned n_quads)
   const SerdNode* s = serd_nodes_get(nodes, serd_a_uri_string("urn:s"));
   const SerdNode* p = serd_nodes_get(nodes, serd_a_uri_string("urn:p"));
 
-  const SerdNode* list1 =
-    serd_nodes_get(nodes, serd_a_blank(serd_string("l1")));
+  const SerdNode* list1 = serd_nodes_get(nodes, serd_a_blank(zix_string("l1")));
 
-  const SerdNode* list2 =
-    serd_nodes_get(nodes, serd_a_blank(serd_string("l2")));
+  const SerdNode* list2 = serd_nodes_get(nodes, serd_a_blank(zix_string("l2")));
 
   const SerdNode* nofirst =
-    serd_nodes_get(nodes, serd_a_blank(serd_string("nof")));
+    serd_nodes_get(nodes, serd_a_blank(zix_string("nof")));
 
   const SerdNode* norest =
-    serd_nodes_get(nodes, serd_a_blank(serd_string("nor")));
+    serd_nodes_get(nodes, serd_a_blank(zix_string("nor")));
 
   const SerdNode* pfirst = serd_nodes_get(nodes, serd_a_uri_string(RDF_FIRST));
   const SerdNode* prest  = serd_nodes_get(nodes, serd_a_uri_string(RDF_REST));
@@ -1166,7 +1164,7 @@ test_write_bad_list(SerdWorld* world, const unsigned n_quads)
   serd_model_add(model, norest, pfirst, val2, NULL);
 
   SerdBuffer       buffer = {NULL, NULL, 0};
-  SerdEnv*         env    = serd_env_new(world, serd_empty_string());
+  SerdEnv*         env    = serd_env_new(world, zix_empty_string());
   SerdOutputStream out    = serd_open_output_buffer(&buffer);
 
   SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, &out, 1);
@@ -1213,11 +1211,9 @@ test_write_infinite_list(SerdWorld* world, const unsigned n_quads)
   const SerdNode* s = serd_nodes_get(nodes, serd_a_uri_string("urn:s"));
   const SerdNode* p = serd_nodes_get(nodes, serd_a_uri_string("urn:p"));
 
-  const SerdNode* list1 =
-    serd_nodes_get(nodes, serd_a_blank(serd_string("l1")));
+  const SerdNode* list1 = serd_nodes_get(nodes, serd_a_blank(zix_string("l1")));
 
-  const SerdNode* list2 =
-    serd_nodes_get(nodes, serd_a_blank(serd_string("l2")));
+  const SerdNode* list2 = serd_nodes_get(nodes, serd_a_blank(zix_string("l2")));
 
   const SerdNode* pfirst = serd_nodes_get(nodes, serd_a_uri_string(RDF_FIRST));
   const SerdNode* prest  = serd_nodes_get(nodes, serd_a_uri_string(RDF_REST));
@@ -1232,7 +1228,7 @@ test_write_infinite_list(SerdWorld* world, const unsigned n_quads)
   serd_model_add(model, list2, prest, list1, NULL);
 
   SerdBuffer       buffer = {NULL, NULL, 0};
-  SerdEnv*         env    = serd_env_new(world, serd_empty_string());
+  SerdEnv*         env    = serd_env_new(world, zix_empty_string());
   SerdOutputStream out    = serd_open_output_buffer(&buffer);
 
   SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, &out, 1);
@@ -1240,8 +1236,8 @@ test_write_infinite_list(SerdWorld* world, const unsigned n_quads)
 
   serd_env_set_prefix(
     env,
-    serd_string("rdf"),
-    serd_string("http://www.w3.org/1999/02/22-rdf-syntax-ns#"));
+    zix_string("rdf"),
+    zix_string("http://www.w3.org/1999/02/22-rdf-syntax-ns#"));
 
   SerdCursor* all = serd_model_begin(NULL, model);
   serd_describe_range(NULL, all, serd_writer_sink(writer), 0);
@@ -1305,9 +1301,9 @@ test_write_error_in_list_subject(SerdWorld* world, const unsigned n_quads)
 
   const SerdNode* p   = serd_nodes_get(nodes, serd_a_uri_string("urn:p"));
   const SerdNode* o   = serd_nodes_get(nodes, serd_a_uri_string("urn:o"));
-  const SerdNode* l1  = serd_nodes_get(nodes, serd_a_blank(serd_string("l1")));
+  const SerdNode* l1  = serd_nodes_get(nodes, serd_a_blank(zix_string("l1")));
   const SerdNode* one = serd_nodes_get(nodes, serd_a_integer(1));
-  const SerdNode* l2  = serd_nodes_get(nodes, serd_a_blank(serd_string("l2")));
+  const SerdNode* l2  = serd_nodes_get(nodes, serd_a_blank(zix_string("l2")));
   const SerdNode* two = serd_nodes_get(nodes, serd_a_integer(2));
 
   const SerdNode* rdf_first =
@@ -1323,7 +1319,7 @@ test_write_error_in_list_subject(SerdWorld* world, const unsigned n_quads)
   serd_model_add(model, l2, rdf_rest, rdf_nil, NULL);
   serd_model_add(model, l1, p, o, NULL);
 
-  SerdEnv* env = serd_env_new(world, serd_empty_string());
+  SerdEnv* env = serd_env_new(world, zix_empty_string());
 
   for (size_t max_successes = 0; max_successes < 18; ++max_successes) {
     FailingWriteFuncState state = {0, max_successes};
@@ -1363,9 +1359,9 @@ test_write_error_in_list_object(SerdWorld* world, const unsigned n_quads)
 
   const SerdNode* s   = serd_nodes_get(nodes, serd_a_uri_string("urn:s"));
   const SerdNode* p   = serd_nodes_get(nodes, serd_a_uri_string("urn:p"));
-  const SerdNode* l1  = serd_nodes_get(nodes, serd_a_blank(serd_string("l1")));
+  const SerdNode* l1  = serd_nodes_get(nodes, serd_a_blank(zix_string("l1")));
   const SerdNode* one = serd_nodes_get(nodes, serd_a_integer(1));
-  const SerdNode* l2  = serd_nodes_get(nodes, serd_a_blank(serd_string("l2")));
+  const SerdNode* l2  = serd_nodes_get(nodes, serd_a_blank(zix_string("l2")));
   const SerdNode* two = serd_nodes_get(nodes, serd_a_integer(2));
 
   const SerdNode* rdf_first =
@@ -1381,7 +1377,7 @@ test_write_error_in_list_object(SerdWorld* world, const unsigned n_quads)
   serd_model_add(model, l2, rdf_first, two, NULL);
   serd_model_add(model, l2, rdf_rest, rdf_nil, NULL);
 
-  SerdEnv* env = serd_env_new(world, serd_empty_string());
+  SerdEnv* env = serd_env_new(world, zix_empty_string());
 
   for (size_t max_successes = 0; max_successes < 21; ++max_successes) {
     FailingWriteFuncState state = {0, max_successes};

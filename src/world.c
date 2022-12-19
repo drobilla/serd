@@ -9,8 +9,8 @@
 #include "serd_config.h"
 
 #include "serd/node.h"
-#include "serd/string_view.h"
 #include "serd/world.h"
+#include "zix/string_view.h"
 
 #if USE_FILENO && USE_ISATTY
 #  include <unistd.h>
@@ -75,13 +75,13 @@ serd_world_new(SerdAllocator* const allocator)
     return NULL;
   }
 
-  const SerdStringView rdf_first   = serd_string(NS_RDF "first");
-  const SerdStringView rdf_nil     = serd_string(NS_RDF "nil");
-  const SerdStringView rdf_rest    = serd_string(NS_RDF "rest");
-  const SerdStringView rdf_type    = serd_string(NS_RDF "type");
-  const SerdStringView xsd_boolean = serd_string(NS_XSD "boolean");
-  const SerdStringView xsd_decimal = serd_string(NS_XSD "decimal");
-  const SerdStringView xsd_integer = serd_string(NS_XSD "integer");
+  const ZixStringView rdf_first   = zix_string(NS_RDF "first");
+  const ZixStringView rdf_nil     = zix_string(NS_RDF "nil");
+  const ZixStringView rdf_rest    = zix_string(NS_RDF "rest");
+  const ZixStringView rdf_type    = zix_string(NS_RDF "type");
+  const ZixStringView xsd_boolean = zix_string(NS_XSD "boolean");
+  const ZixStringView xsd_decimal = zix_string(NS_XSD "decimal");
+  const ZixStringView xsd_integer = zix_string(NS_XSD "integer");
 
   world->allocator = actual;
   world->nodes     = nodes;
@@ -100,7 +100,7 @@ serd_world_new(SerdAllocator* const allocator)
 
   serd_node_construct(sizeof(world->blank),
                       &world->blank,
-                      serd_a_blank(serd_string("b00000000000")));
+                      serd_a_blank(zix_string("b00000000000")));
 
   world->stderr_color = terminal_supports_color(stderr);
 

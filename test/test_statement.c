@@ -6,6 +6,7 @@
 #include "failing_allocator.h"
 
 #include "serd/serd.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -27,7 +28,7 @@ test_invalid_new(void)
   const SerdNode* const u = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "u"));
 
   const SerdNode* const b =
-    serd_nodes_get(nodes, serd_a_blank(serd_string(NS_EG "b")));
+    serd_nodes_get(nodes, serd_a_blank(zix_string(NS_EG "b")));
 
   // S, P, and G may not be strings (must be resources)
   assert(!serd_statement_new(allocator, s, u, u, u, NULL));

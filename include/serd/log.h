@@ -66,7 +66,7 @@ typedef SerdStatus (*SerdLogFunc)(void* SERD_NULLABLE               handle,
                                   SerdLogLevel                      level,
                                   size_t                            n_fields,
                                   const SerdLogField* SERD_NULLABLE fields,
-                                  SerdStringView                    message);
+                                  ZixStringView                     message);
 
 /// A #SerdLogFunc that does nothing (for suppressing log output)
 SERD_CONST_API
@@ -75,7 +75,7 @@ serd_quiet_log_func(void* SERD_NULLABLE               handle,
                     SerdLogLevel                      level,
                     size_t                            n_fields,
                     const SerdLogField* SERD_NULLABLE fields,
-                    SerdStringView                    message);
+                    ZixStringView                     message);
 
 /**
    Set a function to be called with log messages (typically errors).

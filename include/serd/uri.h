@@ -8,7 +8,7 @@
 #include "serd/memory.h"
 #include "serd/status.h"
 #include "serd/stream.h"
-#include "serd/string_view.h"
+#include "zix/string_view.h"
 
 #include <stdbool.h>
 
@@ -39,12 +39,12 @@ SERD_BEGIN_DECLS
    number of up-references ("../") that must be prepended to the path.
 */
 typedef struct {
-  SerdStringView scheme;      ///< Scheme
-  SerdStringView authority;   ///< Authority
-  SerdStringView path_prefix; ///< Path prefix for relative/resolved paths
-  SerdStringView path;        ///< Path suffix
-  SerdStringView query;       ///< Query
-  SerdStringView fragment;    ///< Fragment
+  ZixStringView scheme;      ///< Scheme
+  ZixStringView authority;   ///< Authority
+  ZixStringView path_prefix; ///< Path prefix for relative/resolved paths
+  ZixStringView path;        ///< Path suffix
+  ZixStringView query;       ///< Query
+  ZixStringView fragment;    ///< Fragment
 } SerdURIView;
 
 static const SerdURIView SERD_URI_NULL =
@@ -180,8 +180,8 @@ serd_write_uri(SerdURIView                uri,
 */
 SERD_API
 size_t
-serd_write_file_uri(SerdStringView             path,
-                    SerdStringView             hostname,
+serd_write_file_uri(ZixStringView              path,
+                    ZixStringView              hostname,
                     SerdWriteFunc SERD_NONNULL sink,
                     void* SERD_NONNULL         stream);
 

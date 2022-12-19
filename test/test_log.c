@@ -4,6 +4,7 @@
 #undef NDEBUG
 
 #include "serd/serd.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -14,7 +15,7 @@ custom_log_func(void* const               handle,
                 const SerdLogLevel        level,
                 const size_t              n_fields,
                 const SerdLogField* const fields,
-                const SerdStringView      message)
+                const ZixStringView       message)
 {
   (void)message;
 
@@ -24,8 +25,8 @@ custom_log_func(void* const               handle,
   assert(n_fields == 1);
   assert(!strcmp(fields[0].key, "TEST_KEY"));
   assert(!strcmp(fields[0].value, "TEST VALUE"));
-  assert(!strcmp(message.buf, "test message 42"));
-  assert(message.len == strlen("test message 42"));
+  assert(!strcmp(message.data, "test message 42"));
+  assert(message.length == strlen("test message 42"));
 
   *called = true;
   return SERD_SUCCESS;

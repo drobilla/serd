@@ -7,9 +7,9 @@
 #include "serd/attributes.h"
 #include "serd/env.h"
 #include "serd/status.h"
-#include "serd/string_view.h"
 #include "serd/uri.h"
 #include "serd/world.h"
+#include "zix/string_view.h"
 
 /**
    Expand `curie`.
@@ -18,10 +18,10 @@
    not defined in `env`.
 */
 SerdStatus
-serd_env_expand_in_place(const SerdEnv*  env,
-                         SerdStringView  curie,
-                         SerdStringView* uri_prefix,
-                         SerdStringView* uri_suffix);
+serd_env_expand_in_place(const SerdEnv* env,
+                         ZixStringView  curie,
+                         ZixStringView* uri_prefix,
+                         ZixStringView* uri_suffix);
 
 SERD_PURE_FUNC
 SerdWorld*

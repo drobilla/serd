@@ -4,7 +4,9 @@
 #undef NDEBUG
 
 #include "failing_allocator.h"
+
 #include "serd/serd.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -92,7 +94,7 @@ test_intern(void)
 static void
 test_string(void)
 {
-  const SerdStringView string = serd_string("string");
+  const ZixStringView string = zix_string("string");
 
   SerdAllocator* const allocator = serd_default_allocator();
 
@@ -104,8 +106,8 @@ test_string(void)
   assert(serd_node_type(node) == SERD_LITERAL);
   assert(!serd_node_datatype(node));
   assert(!serd_node_language(node));
-  assert(serd_node_length(node) == string.len);
-  assert(!strcmp(serd_node_string(node), string.buf));
+  assert(serd_node_length(node) == string.length);
+  assert(!strcmp(serd_node_string(node), string.data));
 
   serd_nodes_free(nodes);
 }
@@ -118,19 +120,19 @@ test_invalid_literal(void)
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
   assert(!serd_nodes_get(nodes,
-                         serd_a_literal(serd_string("double meta"),
+                         serd_a_literal(zix_string("double meta"),
                                         SERD_HAS_LANGUAGE | SERD_HAS_DATATYPE,
-                                        serd_string("What am I?"))));
+                                        zix_string("What am I?"))));
 
   assert(!serd_nodes_get(nodes,
-                         serd_a_literal(serd_string("empty language"),
+                         serd_a_literal(zix_string("empty language"),
                                         SERD_HAS_LANGUAGE,
-                                        serd_empty_string())));
+                                        zix_empty_string())));
 
   assert(!serd_nodes_get(nodes,
-                         serd_a_literal(serd_string("empty datatype"),
+                         serd_a_literal(zix_string("empty datatype"),
                                         SERD_HAS_DATATYPE,
-                                        serd_empty_string())));
+                                        zix_empty_string())));
 
   serd_nodes_free(nodes);
 }
@@ -138,8 +140,8 @@ test_invalid_literal(void)
 static void
 test_plain_literal(void)
 {
-  const SerdStringView string   = serd_string("string");
-  const SerdStringView language = serd_string("en");
+  const ZixStringView string   = zix_string("string");
+  const ZixStringView language = zix_string("en");
 
   SerdAllocator* const allocator = serd_default_allocator();
 
@@ -154,10 +156,10 @@ test_plain_literal(void)
   const SerdNode* const language_node = serd_node_language(node);
   assert(language_node);
   assert(serd_node_type(language_node) == SERD_LITERAL);
-  assert(serd_node_length(language_node) == language.len);
-  assert(!strcmp(serd_node_string(language_node), language.buf));
-  assert(serd_node_length(node) == string.len);
-  assert(!strcmp(serd_node_string(node), string.buf));
+  assert(serd_node_length(language_node) == language.length);
+  assert(!strcmp(serd_node_string(language_node), language.data));
+  assert(serd_node_length(node) == string.length);
+  assert(!strcmp(serd_node_string(node), string.data));
 
   const SerdNode* const alias =
     serd_nodes_get(nodes, serd_a_plain_literal(string, language));
@@ -165,7 +167,7 @@ test_plain_literal(void)
   assert(alias == node);
 
   const SerdNode* const other =
-    serd_nodes_get(nodes, serd_a_plain_literal(string, serd_string("de")));
+    serd_nodes_get(nodes, serd_a_plain_literal(string, zix_string("de")));
 
   assert(other != node);
 
@@ -174,8 +176,8 @@ test_plain_literal(void)
   assert(serd_node_type(other_language_node) == SERD_LITERAL);
   assert(serd_node_length(other_language_node) == 2);
   assert(!strcmp(serd_node_string(other_language_node), "de"));
-  assert(serd_node_length(other) == string.len);
-  assert(!strcmp(serd_node_string(other), string.buf));
+  assert(serd_node_length(other) == string.length);
+  assert(!strcmp(serd_node_string(other), string.data));
 
   serd_nodes_free(nodes);
 }
@@ -183,8 +185,8 @@ test_plain_literal(void)
 static void
 test_typed_literal(void)
 {
-  const SerdStringView string   = serd_string("string");
-  const SerdStringView datatype = serd_string("http://example.org/Type");
+  const ZixStringView string   = zix_string("string");
+  const ZixStringView datatype = zix_string("http://example.org/Type");
 
   SerdAllocator* const allocator = serd_default_allocator();
 
@@ -200,10 +202,10 @@ test_typed_literal(void)
   assert(datatype_node);
 
   assert(serd_node_type(datatype_node) == SERD_URI);
-  assert(serd_node_length(datatype_node) == datatype.len);
-  assert(!strcmp(serd_node_string(datatype_node), datatype.buf));
-  assert(serd_node_length(node) == string.len);
-  assert(!strcmp(serd_node_string(node), string.buf));
+  assert(serd_node_length(datatype_node) == datatype.length);
+  assert(!strcmp(serd_node_string(datatype_node), datatype.data));
+  assert(serd_node_length(node) == string.length);
+  assert(!strcmp(serd_node_string(node), string.data));
 
   const SerdNode* const alias =
     serd_nodes_get(nodes, serd_a_typed_literal(string, datatype));
@@ -366,7 +368,7 @@ test_base64(void)
 static void
 test_uri(void)
 {
-  const SerdStringView string = serd_string("http://example.org/");
+  const ZixStringView string = zix_string("http://example.org/");
 
   SerdAllocator* const allocator = serd_default_allocator();
   SerdNodes* const     nodes     = serd_nodes_new(allocator);
@@ -377,8 +379,8 @@ test_uri(void)
   assert(serd_node_type(node) == SERD_URI);
   assert(!serd_node_datatype(node));
   assert(!serd_node_language(node));
-  assert(serd_node_length(node) == string.len);
-  assert(!strcmp(serd_node_string(node), string.buf));
+  assert(serd_node_length(node) == string.length);
+  assert(!strcmp(serd_node_string(node), string.data));
 
   serd_nodes_free(nodes);
 }
@@ -386,12 +388,12 @@ test_uri(void)
 static void
 test_parsed_uri(void)
 {
-  const SerdStringView string = serd_string("http://example.org/");
+  const ZixStringView string = zix_string("http://example.org/");
 
   SerdAllocator* const allocator = serd_default_allocator();
 
   SerdNodes* const      nodes = serd_nodes_new(allocator);
-  const SerdURIView     uri   = serd_parse_uri(string.buf);
+  const SerdURIView     uri   = serd_parse_uri(string.data);
   const SerdNode* const node  = serd_nodes_get(nodes, serd_a_parsed_uri(uri));
 
   assert(node);
@@ -399,8 +401,8 @@ test_parsed_uri(void)
   assert(!serd_node_flags(node));
   assert(!serd_node_datatype(node));
   assert(!serd_node_language(node));
-  assert(serd_node_length(node) == string.len);
-  assert(!strcmp(serd_node_string(node), string.buf));
+  assert(serd_node_length(node) == string.length);
+  assert(!strcmp(serd_node_string(node), string.data));
 
   const SerdNode* const alias = serd_nodes_get(nodes, serd_a_parsed_uri(uri));
 
@@ -417,7 +419,7 @@ test_parsed_uri(void)
 static void
 test_blank(void)
 {
-  const SerdStringView string = serd_string("b42");
+  const ZixStringView string = zix_string("b42");
 
   SerdAllocator* const allocator = serd_default_allocator();
 
@@ -428,8 +430,8 @@ test_blank(void)
   assert(serd_node_type(node) == SERD_BLANK);
   assert(!serd_node_datatype(node));
   assert(!serd_node_language(node));
-  assert(serd_node_length(node) == string.len);
-  assert(!strcmp(serd_node_string(node), string.buf));
+  assert(serd_node_length(node) == string.length);
+  assert(!strcmp(serd_node_string(node), string.data));
 
   serd_nodes_free(nodes);
 }

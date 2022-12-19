@@ -7,10 +7,10 @@
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/status.h"
-#include "serd/string_view.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "serd/writer.h"
+#include "zix/string_view.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -86,7 +86,7 @@ SerdStatus
 serd_get_size_argument(OptionIter* iter, size_t* argument);
 
 SerdStatus
-serd_set_input_option(SerdStringView   name,
+serd_set_input_option(ZixStringView    name,
                       SerdSyntax*      syntax,
                       SerdReaderFlags* flags);
 
@@ -94,7 +94,7 @@ SerdStatus
 serd_parse_input_argument(OptionIter* iter, SerdSyntaxOptions* options);
 
 SerdStatus
-serd_set_output_option(SerdStringView   name,
+serd_set_output_option(ZixStringView    name,
                        SerdSyntax*      syntax,
                        SerdWriterFlags* flags);
 

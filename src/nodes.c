@@ -15,10 +15,10 @@
 #include "serd/attributes.h"
 #include "serd/memory.h"
 #include "serd/nodes.h"
-#include "serd/string_view.h"
 #include "zix/allocator.h"
 #include "zix/digest.h"
 #include "zix/hash.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -135,15 +135,15 @@ nodes_key(const NodesEntry* const entry)
 }
 
 static ZixHashCode
-token_hash(const ZixHashCode    seed,
-           const SerdNodeType   type,
-           const SerdStringView string)
+token_hash(const ZixHashCode   seed,
+           const SerdNodeType  type,
+           const ZixStringView string)
 {
-  const SerdNode node_header = {string.len, 0U, type};
+  const SerdNode node_header = {string.length, 0U, type};
   ZixHashCode    h           = seed;
 
   h = zix_digest_aligned(h, &node_header, sizeof(node_header));
-  h = zix_digest(h, string.buf, string.len);
+  h = zix_digest(h, string.data, string.length);
   return h;
 }
 
@@ -196,11 +196,11 @@ node_equals_spec(const SerdNode* const node, const NodeSpec* const spec)
   const SerdNodeFlags flags = spec->flags & flag_mask;
 
   return serd_node_type(node) == spec->type &&
-         serd_node_length(node) == spec->string.len &&
+         serd_node_length(node) == spec->string.length &&
          (node->flags & flag_mask) == flags &&
-         !strcmp(serd_node_string_i(node), spec->string.buf) &&
+         !strcmp(serd_node_string_i(node), spec->string.data) &&
          (!flags ||
-          !strcmp(serd_node_string_i(serd_node_meta_c(node)), spec->meta.buf));
+          !strcmp(serd_node_string_i(serd_node_meta_c(node)), spec->meta.data));
 }
 
 static bool
@@ -380,9 +380,9 @@ serd_nodes_manage_entry_node(SerdNodes* const nodes, SerdNode* const node)
 }
 
 static const SerdNode*
-serd_nodes_token(SerdNodes* const     nodes,
-                 const SerdNodeType   type,
-                 const SerdStringView string)
+serd_nodes_token(SerdNodes* const    nodes,
+                 const SerdNodeType  type,
+                 const ZixStringView string)
 {
   // Calculate a hash code for the token without actually constructing it
   const NodeSpec    key  = token_spec(type, string);
@@ -408,10 +408,10 @@ serd_nodes_token(SerdNodes* const     nodes,
 }
 
 static const SerdNode*
-serd_nodes_literal(SerdNodes* const     nodes,
-                   const SerdStringView string,
-                   const SerdNodeFlags  flags,
-                   const SerdStringView meta)
+serd_nodes_literal(SerdNodes* const    nodes,
+                   const ZixStringView string,
+                   const SerdNodeFlags flags,
+                   const ZixStringView meta)
 {
   // Calculate a hash code for the literal without actually constructing it
   const NodeSpec    spec = literal_spec(string, flags, meta);

@@ -6,6 +6,7 @@
 #include "failing_allocator.h"
 
 #include "serd/serd.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -58,7 +59,7 @@ check(SerdWorld* const      world,
       const char* const     expected)
 {
   SerdEnv* const env =
-    serd_env_new(world, serd_string("http://example.org/base/"));
+    serd_env_new(world, zix_string("http://example.org/base/"));
 
   char* const     str  = serd_node_to_syntax(NULL, node, syntax, env);
   SerdNode* const copy = serd_node_from_syntax(NULL, str, syntax, env);
@@ -76,39 +77,39 @@ test_common(SerdWorld* const world, const SerdSyntax syntax)
 {
   static const uint8_t data[] = {19U, 17U, 13U, 7U};
 
-  const SerdStringView datatype = serd_string("http://example.org/Datatype");
+  const ZixStringView datatype = zix_string("http://example.org/Datatype");
 
   SerdNodes* const nodes = serd_nodes_new(NULL);
 
   assert(check(
     world, syntax, serd_nodes_get(nodes, serd_a_string("node")), "\"node\""));
 
-  assert(check(
-    world,
-    syntax,
-    serd_nodes_get(
-      nodes, serd_a_plain_literal(serd_string("hallo"), serd_string("de"))),
-    "\"hallo\"@de"));
+  assert(
+    check(world,
+          syntax,
+          serd_nodes_get(
+            nodes, serd_a_plain_literal(zix_string("hallo"), zix_string("de"))),
+          "\"hallo\"@de"));
 
   assert(check(
     world,
     syntax,
-    serd_nodes_get(nodes, serd_a_typed_literal(serd_string("X"), datatype)),
+    serd_nodes_get(nodes, serd_a_typed_literal(zix_string("X"), datatype)),
     "\"X\"^^<http://example.org/Datatype>"));
 
   assert(check(world,
                syntax,
-               serd_nodes_get(nodes, serd_a_blank(serd_string("blank"))),
+               serd_nodes_get(nodes, serd_a_blank(zix_string("blank"))),
                "_:blank"));
 
   assert(check(world,
                syntax,
-               serd_nodes_get(nodes, serd_a_blank(serd_string("b0"))),
+               serd_nodes_get(nodes, serd_a_blank(zix_string("b0"))),
                "_:b0"));
 
   assert(check(world,
                syntax,
-               serd_nodes_get(nodes, serd_a_blank(serd_string("named1"))),
+               serd_nodes_get(nodes, serd_a_blank(zix_string("named1"))),
                "_:named1"));
 
   assert(check(world,
@@ -157,7 +158,7 @@ test_ntriples(void)
 
     // If a relative URI can be expanded then all's well
     SerdEnv* const env =
-      serd_env_new(world, serd_string("http://example.org/base/"));
+      serd_env_new(world, zix_string("http://example.org/base/"));
     char* const str = serd_node_to_syntax(NULL, rel, SERD_NTRIPLES, env);
     assert(!strcmp(str, "<http://example.org/base/rel/uri>"));
 

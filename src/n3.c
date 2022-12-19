@@ -22,9 +22,9 @@
 #include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/string.h"
-#include "serd/string_view.h"
 #include "serd/syntax.h"
 #include "serd/uri.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -316,13 +316,13 @@ resolve_IRIREF(SerdReader* const reader,
 {
   // If the URI is already absolute, we don't need to do anything
   SerdURIView uri = serd_parse_uri(serd_node_string(dest));
-  if (uri.scheme.len) {
+  if (uri.scheme.length) {
     return SERD_SUCCESS;
   }
 
   // Resolve relative URI reference to a full URI
   uri = serd_resolve_uri(uri, serd_env_base_uri_view(reader->env));
-  if (!uri.scheme.len) {
+  if (!uri.scheme.length) {
     return r_err(reader,
                  SERD_BAD_SYNTAX,
                  "failed to resolve relative URI reference <%s>",
@@ -393,9 +393,9 @@ read_PrefixedName(SerdReader* const reader,
   }
 
   // Expand to absolute URI
-  const SerdStringView curie = serd_node_string_view(dest);
-  SerdStringView       prefix;
-  SerdStringView       suffix;
+  const ZixStringView curie = serd_node_string_view(dest);
+  ZixStringView       prefix;
+  ZixStringView       suffix;
   if ((st = serd_env_expand_in_place(reader->env, curie, &prefix, &suffix))) {
     return r_err(
       reader, st, "failed to expand URI \"%s\"", serd_node_string(dest));
@@ -403,8 +403,10 @@ read_PrefixedName(SerdReader* const reader,
 
   // Push a new temporary node for constructing the full URI
   SerdNode* const temp = push_node(reader, SERD_URI, "", 0);
-  if ((st = push_bytes(reader, temp, (const uint8_t*)prefix.buf, prefix.len)) ||
-      (st = push_bytes(reader, temp, (const uint8_t*)suffix.buf, suffix.len))) {
+  if ((st = push_bytes(
+         reader, temp, (const uint8_t*)prefix.data, prefix.length)) ||
+      (st = push_bytes(
+         reader, temp, (const uint8_t*)suffix.data, suffix.length))) {
     return st;
   }
 
@@ -650,10 +652,10 @@ read_anon(SerdReader* const reader,
 }
 
 static bool
-node_has_string(const SerdNode* const node, const SerdStringView string)
+node_has_string(const SerdNode* const node, const ZixStringView string)
 {
-  return node->length == string.len &&
-         !memcmp(serd_node_string(node), string.buf, string.len);
+  return node->length == string.length &&
+         !memcmp(serd_node_string(node), string.data, string.length);
 }
 
 // Read a "named" object: a boolean literal or a prefixed name
@@ -684,8 +686,8 @@ read_named_object(SerdReader* const reader,
   st = read_PrefixedName(reader, node, true, ate_dot, reader->stack.size);
 
   // Check if this is actually a special boolean node
-  if (st == SERD_FAILURE && (node_has_string(node, serd_string("true")) ||
-                             node_has_string(node, serd_string("false")))) {
+  if (st == SERD_FAILURE && (node_has_string(node, zix_string("true")) ||
+                             node_has_string(node, zix_string("false")))) {
     node->flags = SERD_HAS_DATATYPE;
     node->type  = SERD_LITERAL;
     return push_node(reader, SERD_URI, XSD_BOOLEAN, XSD_BOOLEAN_LEN)

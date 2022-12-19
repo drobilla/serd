@@ -9,8 +9,8 @@
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/status.h"
-#include "serd/string_view.h"
 #include "serd/world.h"
+#include "zix/string_view.h"
 
 #include <stdbool.h>
 
@@ -28,7 +28,7 @@ typedef struct SerdEnvImpl SerdEnv;
 /// Create a new environment
 SERD_API
 SerdEnv* SERD_ALLOCATED
-serd_env_new(SerdWorld* SERD_NONNULL world, SerdStringView base_uri);
+serd_env_new(SerdWorld* SERD_NONNULL world, ZixStringView base_uri);
 
 /// Copy an environment
 SERD_API
@@ -54,7 +54,7 @@ serd_env_base_uri(const SerdEnv* SERD_NULLABLE env);
 /// Set the current base URI
 SERD_API
 SerdStatus
-serd_env_set_base_uri(SerdEnv* SERD_NONNULL env, SerdStringView uri);
+serd_env_set_base_uri(SerdEnv* SERD_NONNULL env, ZixStringView uri);
 
 /**
    Set the current base URI to a filesystem path.
@@ -65,7 +65,7 @@ serd_env_set_base_uri(SerdEnv* SERD_NONNULL env, SerdStringView uri);
 */
 SERD_API
 SerdStatus
-serd_env_set_base_path(SerdEnv* SERD_NONNULL env, SerdStringView path);
+serd_env_set_base_path(SerdEnv* SERD_NONNULL env, ZixStringView path);
 
 /**
    Set a namespace prefix.
@@ -77,8 +77,8 @@ serd_env_set_base_path(SerdEnv* SERD_NONNULL env, SerdStringView path);
 SERD_API
 SerdStatus
 serd_env_set_prefix(SerdEnv* SERD_NONNULL env,
-                    SerdStringView        name,
-                    SerdStringView        uri);
+                    ZixStringView         name,
+                    ZixStringView         uri);
 
 /**
    Qualify `uri` into a prefix and suffix (like a CURIE) if possible.
@@ -99,9 +99,9 @@ serd_env_set_prefix(SerdEnv* SERD_NONNULL env,
 SERD_API
 SerdStatus
 serd_env_qualify(const SerdEnv* SERD_NULLABLE env,
-                 SerdStringView               uri,
-                 SerdStringView* SERD_NONNULL prefix,
-                 SerdStringView* SERD_NONNULL suffix);
+                 ZixStringView                uri,
+                 ZixStringView* SERD_NONNULL  prefix,
+                 ZixStringView* SERD_NONNULL  suffix);
 
 /**
    Expand `curie` to an absolute URI if possible.
@@ -114,7 +114,7 @@ serd_env_qualify(const SerdEnv* SERD_NULLABLE env,
 */
 SERD_API
 SerdNode* SERD_ALLOCATED
-serd_env_expand_curie(const SerdEnv* SERD_NULLABLE env, SerdStringView curie);
+serd_env_expand_curie(const SerdEnv* SERD_NULLABLE env, ZixStringView curie);
 
 /**
    Expand `node` to an absolute URI if possible.

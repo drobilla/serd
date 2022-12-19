@@ -4,6 +4,7 @@
 #undef NDEBUG
 
 #include "serd/serd.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -30,12 +31,12 @@ test(void)
 {
   SerdWorld* world  = serd_world_new(NULL);
   SerdBuffer buffer = {NULL, NULL, 0};
-  SerdEnv*   env    = serd_env_new(world, serd_empty_string());
+  SerdEnv*   env    = serd_env_new(world, zix_empty_string());
   SerdNodes* nodes  = serd_nodes_new(serd_world_allocator(world));
 
-  const SerdNode* b1 = serd_nodes_get(nodes, serd_a_blank(serd_string("b1")));
-  const SerdNode* l1 = serd_nodes_get(nodes, serd_a_blank(serd_string("l1")));
-  const SerdNode* l2 = serd_nodes_get(nodes, serd_a_blank(serd_string("l2")));
+  const SerdNode* b1 = serd_nodes_get(nodes, serd_a_blank(zix_string("b1")));
+  const SerdNode* l1 = serd_nodes_get(nodes, serd_a_blank(zix_string("l1")));
+  const SerdNode* l2 = serd_nodes_get(nodes, serd_a_blank(zix_string("l2")));
   const SerdNode* s1 = serd_nodes_get(nodes, serd_a_string("s1"));
   const SerdNode* s2 = serd_nodes_get(nodes, serd_a_string("s2"));
 
@@ -51,7 +52,7 @@ test(void)
   const SerdNode* rdf_nil =
     serd_nodes_get(nodes, serd_a_uri_string(NS_RDF "nil"));
 
-  serd_env_set_prefix(env, serd_string("rdf"), serd_string(NS_RDF));
+  serd_env_set_prefix(env, zix_string("rdf"), zix_string(NS_RDF));
 
   SerdOutputStream  output = serd_open_output_buffer(&buffer);
   SerdWriter* const writer =

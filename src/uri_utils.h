@@ -7,32 +7,32 @@
 #include "string_utils.h"
 
 #include "serd/attributes.h"
-#include "serd/string_view.h"
 #include "serd/uri.h"
+#include "zix/string_view.h"
 
 #include <stdbool.h>
 #include <string.h>
 
 static inline bool
-slice_equals(const SerdStringView* a, const SerdStringView* b)
+slice_equals(const ZixStringView* a, const ZixStringView* b)
 {
-  return a->len == b->len && !strncmp(a->buf, b->buf, a->len);
+  return a->length == b->length && !strncmp(a->data, b->data, a->length);
 }
 
 static inline size_t
 uri_path_len(const SerdURIView* uri)
 {
-  return uri->path_prefix.len + uri->path.len;
+  return uri->path_prefix.length + uri->path.length;
 }
 
 static inline char
 uri_path_at(const SerdURIView* uri, size_t i)
 {
-  if (i < uri->path_prefix.len) {
-    return uri->path_prefix.buf[i];
+  if (i < uri->path_prefix.length) {
+    return uri->path_prefix.data[i];
   }
 
-  return uri->path.buf[i - uri->path_prefix.len];
+  return uri->path.data[i - uri->path_prefix.length];
 }
 
 /**
@@ -43,7 +43,7 @@ static inline SERD_PURE_FUNC
 size_t
 uri_rooted_index(const SerdURIView* uri, const SerdURIView* root)
 {
-  if (!root || !root->scheme.len ||
+  if (!root || !root->scheme.length ||
       !slice_equals(&root->scheme, &uri->scheme) ||
       !slice_equals(&root->authority, &uri->authority)) {
     return 0;
@@ -75,7 +75,7 @@ static inline SERD_PURE_FUNC
 bool
 uri_is_related(const SerdURIView* uri, const SerdURIView* root)
 {
-  return root && root->scheme.len &&
+  return root && root->scheme.length &&
          slice_equals(&root->scheme, &uri->scheme) &&
          slice_equals(&root->authority, &uri->authority);
 }
@@ -86,7 +86,7 @@ bool
 uri_is_under(const SerdURIView* uri, const SerdURIView* root)
 {
   const size_t index = uri_rooted_index(uri, root);
-  return index > 0 && uri->path.len > index;
+  return index > 0 && uri->path.length > index;
 }
 
 static inline bool

@@ -23,10 +23,10 @@
 #include "serd/output_stream.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
-#include "serd/string_view.h"
 #include "serd/syntax.h"
 #include "serd/uri.h"
 #include "serd/world.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -837,12 +837,12 @@ write_uri_node(SerdWriter* const     writer,
                const SerdNode* const node,
                const SerdField       field)
 {
-  SerdStatus           st         = SERD_SUCCESS;
-  SerdStringView       prefix     = {NULL, 0};
-  SerdStringView       suffix     = {NULL, 0};
-  const SerdStringView node_view  = serd_node_string_view(node);
-  const char*          node_str   = serd_node_string(node);
-  const bool           has_scheme = serd_uri_string_has_scheme(node_str);
+  SerdStatus          st         = SERD_SUCCESS;
+  ZixStringView       prefix     = {NULL, 0};
+  ZixStringView       suffix     = {NULL, 0};
+  const ZixStringView node_view  = serd_node_string_view(node);
+  const char*         node_str   = serd_node_string(node);
+  const bool          has_scheme = serd_uri_string_has_scheme(node_str);
   if (supports_abbrev(writer)) {
     if (!(writer->flags & SERD_WRITE_RDF_TYPE) && field == SERD_PREDICATE &&
         serd_node_equals(node, writer->world->rdf_type)) {
@@ -855,9 +855,9 @@ write_uri_node(SerdWriter* const     writer,
 
     if (has_scheme && !(writer->flags & SERD_WRITE_EXPANDED) &&
         !serd_env_qualify(writer->env, node_view, &prefix, &suffix)) {
-      TRY(st, write_lname(writer, prefix.buf, prefix.len));
+      TRY(st, write_lname(writer, prefix.data, prefix.length));
       TRY(st, esink(":", 1, writer));
-      return write_lname(writer, suffix.buf, suffix.len);
+      return write_lname(writer, suffix.data, suffix.length);
     }
   }
 
@@ -1405,7 +1405,7 @@ serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 }
 
 SerdStatus
-serd_writer_set_root_uri(SerdWriter* writer, const SerdStringView uri)
+serd_writer_set_root_uri(SerdWriter* writer, const ZixStringView uri)
 {
   assert(writer);
 
@@ -1415,7 +1415,7 @@ serd_writer_set_root_uri(SerdWriter* writer, const SerdStringView uri)
   writer->root_node = NULL;
   writer->root_uri  = SERD_URI_NULL;
 
-  if (uri.len) {
+  if (uri.length) {
     writer->root_node = serd_node_new(allocator, serd_a_uri(uri));
     writer->root_uri  = serd_node_uri_view(writer->root_node);
   }
