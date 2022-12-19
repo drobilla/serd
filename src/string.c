@@ -3,13 +3,11 @@
 
 #include "string_utils.h"
 
-#include "exess/exess.h"
 #include "serd/node.h"
 #include "serd/status.h"
 #include "serd/string.h"
 
 #include <assert.h>
-#include <math.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -120,18 +118,4 @@ serd_strcasecmp(const char* s1, const char* s2)
   const char c1 = serd_to_upper(*s1);
   const char c2 = serd_to_upper(*s2);
   return (c1 == c2) ? 0 : (c1 < c2) ? -1 : +1;
-}
-
-double
-serd_strtod(const char* const str, const char** const end)
-{
-  assert(str);
-
-  double            value = (double)NAN;
-  const ExessResult r     = exess_read_double(&value, str);
-  if (end) {
-    *end = str + r.count;
-  }
-
-  return r.status ? (double)NAN : value;
 }

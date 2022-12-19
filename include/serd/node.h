@@ -7,6 +7,7 @@
 #include "serd/attributes.h"
 #include "serd/stream_result.h"
 #include "serd/uri.h"
+#include "serd/value.h"
 #include "zix/allocator.h"
 #include "zix/attributes.h"
 #include "zix/string_view.h"
@@ -214,6 +215,36 @@ SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_decimal(ZixAllocator* ZIX_NULLABLE allocator, double d);
 
 /**
+   Create a new canonical xsd:double literal.
+
+   The node will be in scientific notation, like "1.23E4", except for NaN and
+   negative/positive infinity, which are "NaN", "-INF", and "INF",
+   respectively.
+
+   Uses the shortest possible representation that precisely describes the
+   value, which has at most 17 significant digits (under 24 characters total).
+
+   @param allocator Allocator for the returned node.
+   @param d Double value to write.
+   @return A literal node with datatype xsd:double.
+*/
+SERD_API SerdNode* ZIX_ALLOCATED
+serd_new_double(ZixAllocator* ZIX_NULLABLE allocator, double d);
+
+/**
+   Create a new canonical xsd:float literal.
+
+   Uses identical formatting to serd_new_double(), except with at most 9
+   significant digits (under 14 characters total).
+
+   @param allocator Allocator for the returned node.
+   @param f Float value of literal.
+   @return A literal node with datatype xsd:float.
+*/
+SERD_API SerdNode* ZIX_ALLOCATED
+serd_new_float(ZixAllocator* ZIX_NULLABLE allocator, float f);
+
+/**
    Create a new canonical xsd:integer literal.
 
    The node will be an xsd:integer literal like "1234", with datatype
@@ -339,6 +370,39 @@ serd_node_datatype(const SerdNode* ZIX_NONNULL node);
 */
 SERD_PURE_API const SerdNode* ZIX_NULLABLE
 serd_node_language(const SerdNode* ZIX_NONNULL node);
+
+/**
+   Return the primitive value of a literal node.
+
+   This will return a typed numeric value if the node can be read as one, or
+   nothing otherwise.
+
+   @return The primitive value of `node`, if possible and supported.
+*/
+SERD_API SerdValue
+serd_node_value(const SerdNode* ZIX_NONNULL node);
+
+/**
+   Return the primitive value of a node as a specific type of number.
+
+   This is like serd_node_value(), but will coerce the value of the node to the
+   requested type if possible.
+
+   @param node The node to interpret as a number.
+
+   @param type The desired numeric datatype of the result.
+
+   @param lossy Whether lossy conversions can be used.  If this is false, then
+   this function only succeeds if the value could be converted back to the
+   original datatype of the node without loss.  Otherwise, precision may be
+   reduced or values may be truncated to fit the result.
+
+   @return The value of `node` as a #SerdValue, or nothing.
+*/
+SERD_API SerdValue
+serd_node_value_as(const SerdNode* ZIX_NONNULL node,
+                   SerdValueType               type,
+                   bool                        lossy);
 
 /**
    Return the maximum size of a decoded binary node in bytes.
