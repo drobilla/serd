@@ -144,10 +144,14 @@ serd_model_empty(const SerdModel* SERD_NONNULL model);
 
    The returned cursor will advance over every statement in the model's default
    order.
+
+   @param allocator The allocator used for the returned cursor.
+   @param model The model that the returned cursor points to.
 */
 SERD_API
 SerdCursor* SERD_ALLOCATED
-serd_model_begin(const SerdModel* SERD_NONNULL model);
+serd_model_begin(SerdAllocator* SERD_NULLABLE  allocator,
+                 const SerdModel* SERD_NONNULL model);
 
 /**
    Return a cursor past the end of the model.
@@ -159,20 +163,34 @@ SERD_CONST_API
 const SerdCursor* SERD_NONNULL
 serd_model_end(const SerdModel* SERD_NONNULL model);
 
-/// Return a cursor over all statements in the model in a specific order
+/**
+   Return a cursor over all statements in the model in a specific order.
+
+   @param allocator The allocator used for the returned cursor.
+   @param model The model that the returned cursor points to.
+   @param order The statement order that the returned cursor advances through.
+*/
 SERD_API
 SerdCursor* SERD_ALLOCATED
-serd_model_begin_ordered(const SerdModel* SERD_NONNULL model,
+serd_model_begin_ordered(SerdAllocator* SERD_NULLABLE  allocator,
+                         const SerdModel* SERD_NONNULL model,
                          SerdStatementOrder            order);
 
 /**
    Search for statements that match a pattern.
 
-   @return An iterator to the first match, or NULL if no matches found.
+   @param allocator The allocator used for the returned cursor.
+   @param model The model to search in.
+   @param s The subject to match, or null.
+   @param p The predicate to match, or null.
+   @param o The object to match, or null.
+   @param g The graph to match, or null.
+   @return A cursor pointing at the first match, or the end.
 */
 SERD_API
-SerdCursor* SERD_ALLOCATED
-serd_model_find(const SerdModel* SERD_NONNULL model,
+SerdCursor* SERD_NULLABLE
+serd_model_find(SerdAllocator* SERD_NULLABLE  allocator,
+                const SerdModel* SERD_NONNULL model,
                 const SerdNode* SERD_NULLABLE s,
                 const SerdNode* SERD_NULLABLE p,
                 const SerdNode* SERD_NULLABLE o,

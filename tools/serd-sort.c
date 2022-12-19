@@ -103,7 +103,8 @@ run(const Options opts)
   // Write the model to the output
   const SerdSink* const target = serd_writer_sink(app.writer);
   if (opts.collation) {
-    SerdCursor* const cursor = serd_model_begin_ordered(model, opts.order);
+    SerdCursor* const cursor =
+      serd_model_begin_ordered(NULL, model, opts.order);
 
     st = serd_env_write_prefixes(app.env, target);
 
@@ -113,15 +114,15 @@ run(const Options opts)
       st = serd_sink_write_statement(target, 0U, statement);
     }
 
-    serd_cursor_free(cursor);
+    serd_cursor_free(NULL, cursor);
   } else {
-    SerdCursor* const cursor = serd_model_begin(model);
+    SerdCursor* const cursor = serd_model_begin(NULL, model);
 
     if (!(st = serd_env_write_prefixes(app.env, target))) {
-      st = serd_describe_range(cursor, target, opts.flags);
+      st = serd_describe_range(NULL, cursor, target, opts.flags);
     }
 
-    serd_cursor_free(cursor);
+    serd_cursor_free(NULL, cursor);
   }
 
   if (!st) {

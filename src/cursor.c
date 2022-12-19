@@ -179,7 +179,9 @@ serd_cursor_scan_next(SerdCursor* const cursor)
 SerdStatus
 serd_cursor_advance(SerdCursor* const cursor)
 {
-  assert(cursor);
+  if (!cursor) {
+    return SERD_FAILURE;
+  }
 
   if (zix_btree_iter_is_end(cursor->iter) || !check_version(cursor)) {
     return SERD_BAD_CURSOR;
@@ -217,9 +219,7 @@ serd_cursor_equals(const SerdCursor* const lhs, const SerdCursor* const rhs)
 }
 
 void
-serd_cursor_free(SerdCursor* const cursor)
+serd_cursor_free(SerdAllocator* const allocator, SerdCursor* const cursor)
 {
-  if (cursor) {
-    serd_afree(cursor->model->allocator, cursor);
-  }
+  serd_afree(allocator, cursor);
 }

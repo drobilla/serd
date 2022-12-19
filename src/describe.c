@@ -11,6 +11,7 @@
 
 #include "serd/attributes.h"
 #include "serd/cursor.h"
+#include "serd/memory.h"
 #include "serd/model.h"
 #include "serd/node.h"
 #include "serd/range.h"
@@ -30,6 +31,7 @@
 typedef enum { NAMED, ANON_S, ANON_O, LIST_S, LIST_O } NodeStyle;
 
 typedef struct {
+  SerdAllocator*    allocator;     // Allocator for auxiliary structures
   const SerdModel*  model;         // Model to read from
   const SerdSink*   sink;          // Sink to write description to
   ZixHash*          list_subjects; // Nodes written in the current list or null
@@ -186,15 +188,17 @@ write_subject_types(const DescribeContext* const ctx,
                     const SerdNode* const        subject,
                     const SerdNode* const        graph)
 {
-  SerdStatus        st = SERD_SUCCESS;
-  SerdCursor* const t  = serd_model_find(
-    ctx->model, subject, ctx->model->world->rdf_type, NULL, graph);
+  SerdCursor* const t = serd_model_find(ctx->allocator,
+                                        ctx->model,
+                                        subject,
+                                        ctx->model->world->rdf_type,
+                                        NULL,
+                                        graph);
 
-  if (t) {
-    st = write_pretty_range(ctx, depth + 1, t, subject, true);
-  }
+  const SerdStatus st =
+    t ? write_pretty_range(ctx, depth + 1, t, subject, true) : SERD_SUCCESS;
 
-  serd_cursor_free(t);
+  serd_cursor_free(ctx->allocator, t);
   return st;
 }
 
@@ -264,13 +268,14 @@ write_range_statement(const DescribeContext* const      ctx,
 
   if (object_style == ANON_O) {
     // Follow an anonymous object with its description like "[ ... ]"
-    SerdCursor* const iter = serd_model_find(model, object, NULL, NULL, NULL);
+    SerdCursor* const iter =
+      serd_model_find(ctx->allocator, model, object, NULL, NULL, NULL);
 
     if (!(st = write_pretty_range(ctx, depth + 1, iter, last_subject, false))) {
       st = serd_sink_write_end(sink, object);
     }
 
-    serd_cursor_free(iter);
+    serd_cursor_free(ctx->allocator, iter);
 
   } else if (object_style == LIST_O) {
     // Follow a list object with its description like "( ... )"
@@ -281,7 +286,8 @@ write_range_statement(const DescribeContext* const      ctx,
 }
 
 SerdStatus
-serd_describe_range(const SerdCursor* const range,
+serd_describe_range(SerdAllocator* const    allocator,
+                    const SerdCursor* const range,
                     const SerdSink*         sink,
                     const SerdDescribeFlags flags)
 {
@@ -293,12 +299,12 @@ serd_describe_range(const SerdCursor* const range,
 
   SerdCursor copy = *range;
 
-  ZixHash* const list_subjects = zix_hash_new(
-    (ZixAllocator*)range->model->allocator, identity, ptr_hash, ptr_equals);
+  ZixHash* const list_subjects =
+    zix_hash_new((ZixAllocator*)allocator, identity, ptr_hash, ptr_equals);
 
   SerdStatus st = SERD_BAD_ALLOC;
   if (list_subjects) {
-    DescribeContext ctx = {range->model, sink, list_subjects, flags};
+    DescribeContext ctx = {allocator, range->model, sink, list_subjects, flags};
 
     st = write_pretty_range(&ctx, 0, &copy, NULL, (flags & SERD_NO_TYPE_FIRST));
   }

@@ -39,13 +39,19 @@ serd_cursor_get(const SerdCursor* SERD_NULLABLE cursor);
 /**
    Increment cursor to point to the next statement.
 
+   Null is treated like an end cursor.
+
    @return Failure if `cursor` was already at the end.
 */
 SERD_API
 SerdStatus
-serd_cursor_advance(SerdCursor* SERD_NONNULL cursor);
+serd_cursor_advance(SerdCursor* SERD_NULLABLE cursor);
 
-/// Return true if the cursor has reached its end
+/**
+   Return true if the cursor has reached its end.
+
+   Null is treated like an end cursor.
+*/
 SERD_PURE_API
 bool
 serd_cursor_is_end(const SerdCursor* SERD_NULLABLE cursor);
@@ -57,6 +63,8 @@ serd_cursor_is_end(const SerdCursor* SERD_NULLABLE cursor);
    index in the same model, or are both the end of the same model.  Note that
    two cursors can point to the same statement but not be equivalent, since
    they may have reached the statement via different indices.
+
+   Null is treated like an end cursor.
 */
 SERD_PURE_API
 bool
@@ -66,7 +74,8 @@ serd_cursor_equals(const SerdCursor* SERD_NULLABLE lhs,
 /// Free `cursor`
 SERD_API
 void
-serd_cursor_free(SerdCursor* SERD_NULLABLE cursor);
+serd_cursor_free(SerdAllocator* SERD_NULLABLE allocator,
+                 SerdCursor* SERD_NULLABLE    cursor);
 
 /**
    @}
