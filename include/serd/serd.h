@@ -12,14 +12,17 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#if defined(_WIN32) && !defined(SERD_STATIC) && defined(SERD_INTERNAL)
-#  define SERD_API __declspec(dllexport)
-#elif defined(_WIN32) && !defined(SERD_STATIC)
-#  define SERD_API __declspec(dllimport)
-#elif defined(__GNUC__)
-#  define SERD_API __attribute__((visibility("default")))
-#else
-#  define SERD_API
+// SERD_API must be used to decorate things in the public API
+#ifndef SERD_API
+#  if defined(_WIN32) && !defined(SERD_STATIC) && defined(SERD_INTERNAL)
+#    define SERD_API __declspec(dllexport)
+#  elif defined(_WIN32) && !defined(SERD_STATIC)
+#    define SERD_API __declspec(dllimport)
+#  elif defined(__GNUC__)
+#    define SERD_API __attribute__((visibility("default")))
+#  else
+#    define SERD_API
+#  endif
 #endif
 
 #ifdef __GNUC__
