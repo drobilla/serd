@@ -10,6 +10,9 @@
 #include "serd/stream.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
+#include "zix/allocator.h"
+#include "zix/filesystem.h"
+#include "zix/path.h"
 
 #ifdef _WIN32
 #  include <windows.h>
@@ -17,7 +20,6 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 typedef struct {
@@ -154,6 +156,7 @@ test_read_eof_by_page(const char* const path)
   serd_sink_free(sink);
   serd_world_free(world);
   fclose(f);
+  assert(!zix_remove(path));
 }
 
 // A byte-wise reader hits EOF once then continues (like a socket)
@@ -268,7 +271,7 @@ test_read_nquads_chunks(const char* const path)
   serd_sink_free(sink);
   serd_world_free(world);
   fclose(f);
-  remove(path);
+  assert(!zix_remove(path));
 }
 
 static void
@@ -364,42 +367,30 @@ test_read_turtle_chunks(const char* const path)
   serd_sink_free(sink);
   serd_world_free(world);
   fclose(f);
-  remove(path);
+  assert(!zix_remove(path));
 }
 
 int
 main(void)
 {
-#ifdef _WIN32
-  char         tmp[MAX_PATH] = {0};
-  const size_t tmp_len       = (size_t)GetTempPath(sizeof(tmp), tmp);
-#else
-  const char* const env_tmp = getenv("TMPDIR");
-  const char* const tmp     = env_tmp ? env_tmp : "/tmp";
-  const size_t      tmp_len = strlen(tmp);
-#endif
+  char* const temp         = zix_temp_directory_path(NULL);
+  char* const path_pattern = zix_path_join(NULL, temp, "serdXXXXXX");
+  char* const dir          = zix_create_temporary_directory(NULL, path_pattern);
+  char* const ttl_path     = zix_path_join(NULL, dir, "serd_test_reader.ttl");
+  char* const nq_path      = zix_path_join(NULL, dir, "serd_test_reader.nq");
 
-  const char* const ttl_name     = "serd_test_reader.ttl";
-  const char* const nq_name      = "serd_test_reader.nq";
-  const size_t      ttl_name_len = strlen(ttl_name);
-  const size_t      nq_name_len  = strlen(nq_name);
-  const size_t      path_len     = tmp_len + 1 + ttl_name_len;
-  char* const       path         = (char*)calloc(path_len + 1, 1);
-
-  memcpy(path, tmp, tmp_len + 1);
-  path[tmp_len] = '/';
-
-  memcpy(path + tmp_len + 1, nq_name, nq_name_len + 1);
-  test_read_nquads_chunks(path);
-
-  memcpy(path + tmp_len + 1, ttl_name, ttl_name_len + 1);
-  test_read_turtle_chunks(path);
-
+  test_read_nquads_chunks(nq_path);
+  test_read_turtle_chunks(ttl_path);
   test_read_string();
-  test_read_eof_by_page(path);
+  test_read_eof_by_page(ttl_path);
   test_read_eof_by_byte();
-  assert(!remove(path));
 
-  free(path);
+  assert(!zix_remove(dir));
+
+  zix_free(NULL, nq_path);
+  zix_free(NULL, ttl_path);
+  zix_free(NULL, dir);
+  zix_free(NULL, path_pattern);
+  zix_free(NULL, temp);
   return 0;
 }
