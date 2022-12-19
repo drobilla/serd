@@ -8,6 +8,11 @@ Checks: >
   -clang-diagnostic-unused-macros,
   -llvmlibc-*,
   -readability-identifier-length,
+CheckOptions:
+  - key:   hicpp-uppercase-literal-suffix.NewSuffixes
+    value: 'L;U;UL;ULL'
+  - key:   readability-uppercase-literal-suffix.NewSuffixes
+    value: 'L;U;UL;ULL'
 FormatStyle: file
 HeaderFilterRegex: '.*/serd/.*\.h'
 WarningsAsErrors: '*'
