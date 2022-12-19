@@ -138,10 +138,9 @@ test_read(SerdWorld*      world,
           const unsigned  n_quads)
 {
   SerdAllocator* const allocator = serd_default_allocator();
+  SerdNodes* const     nodes     = serd_nodes_new(allocator);
 
-  SerdNodes* const nodes = serd_nodes_new(allocator);
-
-  SerdCursor*          cursor = serd_model_begin(model);
+  SerdCursor*          cursor = serd_model_begin(NULL, model);
   const SerdStatement* prev   = NULL;
   for (; !serd_cursor_equals(cursor, serd_model_end(model));
        serd_cursor_advance(cursor)) {
@@ -157,7 +156,7 @@ test_read(SerdWorld*      world,
 
   // Attempt to increment past end
   assert(serd_cursor_advance(cursor) == SERD_BAD_CURSOR);
-  serd_cursor_free(cursor);
+  serd_cursor_free(NULL, cursor);
 
   const SerdStringView s = serd_string("hello");
 
@@ -226,8 +225,9 @@ test_read(SerdWorld*      world,
     QueryTest test = patterns[i];
     Quad      pat  = {test.query[0], test.query[1], test.query[2], g};
 
-    SerdCursor* range = serd_model_find(model, pat[0], pat[1], pat[2], pat[3]);
-    int         num_results = 0;
+    SerdCursor* range =
+      serd_model_find(NULL, model, pat[0], pat[1], pat[2], pat[3]);
+    int num_results = 0;
     for (; !serd_cursor_is_end(range); serd_cursor_advance(range)) {
       ++num_results;
 
@@ -236,7 +236,7 @@ test_read(SerdWorld*      world,
       assert(serd_statement_matches(first, pat[0], pat[1], pat[2], pat[3]));
     }
 
-    serd_cursor_free(range);
+    serd_cursor_free(NULL, range);
 
     assert(num_results == test.expected_num_results);
   }
@@ -248,19 +248,21 @@ test_read(SerdWorld*      world,
 
   Quad        pat         = {ablank, 0, 0};
   int         num_results = 0;
-  SerdCursor* range = serd_model_find(model, pat[0], pat[1], pat[2], pat[3]);
+  SerdCursor* range =
+    serd_model_find(NULL, model, pat[0], pat[1], pat[2], pat[3]);
+
   for (; !serd_cursor_is_end(range); serd_cursor_advance(range)) {
     ++num_results;
     const SerdStatement* statement = serd_cursor_get(range);
     assert(serd_statement_matches(statement, pat[0], pat[1], pat[2], pat[3]));
   }
-  serd_cursor_free(range);
+  serd_cursor_free(NULL, range);
 
   assert(num_results == 2);
 
   // Test nested queries
   const SerdNode* last_subject = 0;
-  range                        = serd_model_find(model, NULL, NULL, NULL, NULL);
+  range = serd_model_find(NULL, model, NULL, NULL, NULL, NULL);
   for (; !serd_cursor_is_end(range); serd_cursor_advance(range)) {
     const SerdStatement* statement = serd_cursor_get(range);
     const SerdNode*      subject   = serd_statement_subject(statement);
@@ -270,7 +272,7 @@ test_read(SerdWorld*      world,
 
     Quad              subpat = {subject, 0, 0};
     SerdCursor* const subrange =
-      serd_model_find(model, subpat[0], subpat[1], subpat[2], subpat[3]);
+      serd_model_find(NULL, model, subpat[0], subpat[1], subpat[2], subpat[3]);
 
     assert(subrange);
 
@@ -286,7 +288,7 @@ test_read(SerdWorld*      world,
 
       ++num_sub_results;
     }
-    serd_cursor_free(subrange);
+    serd_cursor_free(NULL, subrange);
     assert(num_sub_results == N_OBJECTS_PER);
 
     uint64_t count = serd_model_count(model, subject, 0, 0, 0);
@@ -294,7 +296,7 @@ test_read(SerdWorld*      world,
 
     last_subject = subject;
   }
-  serd_cursor_free(range);
+  serd_cursor_free(NULL, range);
 
   serd_nodes_free(nodes);
   return 0;
@@ -418,13 +420,13 @@ test_all_begin(SerdWorld* world, const unsigned n_quads)
   (void)n_quads;
 
   SerdModel*  model = serd_model_new(world, SERD_ORDER_SPO, 0U);
-  SerdCursor* begin = serd_model_begin(model);
-  SerdCursor* first = serd_model_find(model, NULL, NULL, NULL, NULL);
+  SerdCursor* begin = serd_model_begin(NULL, model);
+  SerdCursor* first = serd_model_find(NULL, model, NULL, NULL, NULL, NULL);
 
   assert(serd_cursor_equals(begin, first));
 
-  serd_cursor_free(first);
-  serd_cursor_free(begin);
+  serd_cursor_free(NULL, first);
+  serd_cursor_free(NULL, begin);
   serd_model_free(model);
   return 0;
 }
@@ -439,14 +441,14 @@ test_begin_ordered(SerdWorld* world, const unsigned n_quads)
   assert(
     !serd_model_add(model, uri(world, 1), uri(world, 2), uri(world, 3), 0));
 
-  SerdCursor* i = serd_model_begin_ordered(model, SERD_ORDER_SPO);
+  SerdCursor* i = serd_model_begin_ordered(NULL, model, SERD_ORDER_SPO);
   assert(i);
   assert(!serd_cursor_is_end(i));
-  serd_cursor_free(i);
+  serd_cursor_free(NULL, i);
 
-  i = serd_model_begin_ordered(model, SERD_ORDER_POS);
+  i = serd_model_begin_ordered(NULL, model, SERD_ORDER_POS);
   assert(serd_cursor_is_end(i));
-  serd_cursor_free(i);
+  serd_cursor_free(NULL, i);
 
   serd_model_free(model);
   return 0;
@@ -464,7 +466,7 @@ test_add_with_iterator(SerdWorld* world, const unsigned n_quads)
     !serd_model_add(model, uri(world, 1), uri(world, 2), uri(world, 3), 0));
 
   // Add a statement with an active iterator
-  SerdCursor* iter = serd_model_begin(model);
+  SerdCursor* iter = serd_model_begin(NULL, model);
   assert(
     !serd_model_add(model, uri(world, 1), uri(world, 2), uri(world, 4), 0));
 
@@ -472,7 +474,7 @@ test_add_with_iterator(SerdWorld* world, const unsigned n_quads)
   assert(!serd_cursor_get(iter));
   assert(serd_cursor_advance(iter) == SERD_BAD_CURSOR);
 
-  serd_cursor_free(iter);
+  serd_cursor_free(NULL, iter);
   serd_model_free(model);
   return 0;
 }
@@ -498,11 +500,11 @@ test_add_remove_nodes(SerdWorld* world, const unsigned n_quads)
   assert(serd_nodes_size(serd_model_nodes(model)) == 3);
 
   // Remove one statement to leave 2 nodes
-  SerdCursor* const begin = serd_model_begin(model);
+  SerdCursor* const begin = serd_model_begin(NULL, model);
   assert(!serd_model_erase(model, begin));
   assert(serd_model_size(model) == 1);
   assert(serd_nodes_size(serd_model_nodes(model)) == 2);
-  serd_cursor_free(begin);
+  serd_cursor_free(NULL, begin);
 
   // Clear the last statement to leave 0 nodes
   assert(!serd_model_clear(model));
@@ -536,12 +538,12 @@ test_add_index(SerdWorld* world, const unsigned n_quads)
 
   // Count statements via the new index
   size_t      count = 0U;
-  SerdCursor* cur   = serd_model_find(model, NULL, p, NULL, NULL);
+  SerdCursor* cur   = serd_model_find(NULL, model, NULL, p, NULL, NULL);
   while (!serd_cursor_is_end(cur)) {
     ++count;
     serd_cursor_advance(cur);
   }
-  serd_cursor_free(cur);
+  serd_cursor_free(NULL, cur);
 
   serd_model_free(model);
   assert(count == 2);
@@ -582,10 +584,9 @@ test_inserter(SerdWorld* world, const unsigned n_quads)
   (void)n_quads;
 
   SerdAllocator* const allocator = serd_default_allocator();
-
-  SerdNodes* const nodes    = serd_nodes_new(allocator);
-  SerdModel*       model    = serd_model_new(world, SERD_ORDER_SPO, 0U);
-  SerdSink*        inserter = serd_inserter_new(model, NULL);
+  SerdNodes* const     nodes     = serd_nodes_new(allocator);
+  SerdModel* const     model     = serd_model_new(world, SERD_ORDER_SPO, 0U);
+  SerdSink* const      inserter  = serd_inserter_new(model, NULL);
 
   const SerdNode* const s =
     serd_nodes_get(nodes, serd_a_uri_string("http://example.org/s"));
@@ -619,8 +620,8 @@ test_erase_with_iterator(SerdWorld* world, const unsigned n_quads)
     !serd_model_add(model, uri(world, 4), uri(world, 5), uri(world, 6), 0));
 
   // Erase a statement with an active iterator
-  SerdCursor* iter1 = serd_model_begin(model);
-  SerdCursor* iter2 = serd_model_begin(model);
+  SerdCursor* iter1 = serd_model_begin(NULL, model);
+  SerdCursor* iter2 = serd_model_begin(NULL, model);
   assert(!serd_model_erase(model, iter1));
 
   // Check that erased iterator points to the next statement
@@ -639,9 +640,9 @@ test_erase_with_iterator(SerdWorld* world, const unsigned n_quads)
 
   assert(serd_model_erase(model, end) == SERD_FAILURE);
 
-  serd_cursor_free(end);
-  serd_cursor_free(iter2);
-  serd_cursor_free(iter1);
+  serd_cursor_free(NULL, end);
+  serd_cursor_free(NULL, iter2);
+  serd_cursor_free(NULL, iter1);
   serd_model_free(model);
   return 0;
 }
@@ -670,15 +671,16 @@ test_add_erase(SerdWorld* world, const unsigned n_quads)
   assert(serd_model_ask(model, s, p, hi, NULL));
 
   // Erase (s p "hi")
-  SerdCursor* iter = serd_model_find(model, s, p, hi, NULL);
+  SerdCursor* iter = serd_model_find(NULL, model, s, p, hi, NULL);
+  assert(iter);
   assert(!serd_model_erase(model, iter));
   assert(serd_model_size(model) == 1);
-  serd_cursor_free(iter);
+  serd_cursor_free(NULL, iter);
 
   // Check that erased statement can not be found
-  SerdCursor* empty = serd_model_find(model, s, p, hi, NULL);
+  SerdCursor* empty = serd_model_find(NULL, model, s, p, hi, NULL);
   assert(serd_cursor_is_end(empty));
-  serd_cursor_free(empty);
+  serd_cursor_free(NULL, empty);
 
   serd_model_free(model);
   serd_nodes_free(nodes);
@@ -705,7 +707,7 @@ test_add_bad_statement(SerdWorld* world, const unsigned n_quads)
 
   assert(!serd_model_add_with_caret(model, s, p, o, NULL, caret));
 
-  SerdCursor* const    begin     = serd_model_begin(model);
+  SerdCursor* const    begin     = serd_model_begin(NULL, model);
   const SerdStatement* statement = serd_cursor_get(begin);
   assert(statement);
 
@@ -722,7 +724,7 @@ test_add_bad_statement(SerdWorld* world, const unsigned n_quads)
 
   assert(!serd_model_erase(model, begin));
 
-  serd_cursor_free(begin);
+  serd_cursor_free(NULL, begin);
   serd_model_free(model);
   serd_caret_free(allocator, caret);
   serd_nodes_free(nodes);
@@ -759,14 +761,14 @@ test_erase_all(SerdWorld* world, const unsigned n_quads)
   serd_model_add_index(model, SERD_ORDER_OSP);
   generate(world, model, n_quads, NULL);
 
-  SerdCursor* iter = serd_model_begin(model);
+  SerdCursor* iter = serd_model_begin(NULL, model);
   while (!serd_cursor_equals(iter, serd_model_end(model))) {
     assert(!serd_model_erase(model, iter));
   }
 
   assert(serd_model_empty(model));
 
-  serd_cursor_free(iter);
+  serd_cursor_free(NULL, iter);
   serd_model_free(model);
   return 0;
 }
@@ -840,10 +842,10 @@ test_find_past_end(SerdWorld* world, const unsigned n_quads)
   assert(serd_model_ask(model, s, p, o, 0));
 
   const SerdNode* huge  = uri(world, 999);
-  SerdCursor*     range = serd_model_find(model, huge, huge, huge, 0);
+  SerdCursor*     range = serd_model_find(NULL, model, huge, huge, huge, 0);
   assert(serd_cursor_is_end(range));
 
-  serd_cursor_free(range);
+  serd_cursor_free(NULL, range);
   serd_model_free(model);
   return 0;
 }
@@ -922,8 +924,8 @@ test_range(SerdWorld* world, const unsigned n_quads)
   SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0U);
   generate(world, model, n_quads, NULL);
 
-  SerdCursor* range1 = serd_model_begin(model);
-  SerdCursor* range2 = serd_model_begin(model);
+  SerdCursor* range1 = serd_model_begin(NULL, model);
+  SerdCursor* range2 = serd_model_begin(NULL, model);
 
   assert(!serd_cursor_is_end(range1));
   assert(serd_cursor_is_end(NULL));
@@ -936,8 +938,8 @@ test_range(SerdWorld* world, const unsigned n_quads)
   assert(!serd_cursor_advance(range2));
   assert(!serd_cursor_equals(range1, range2));
 
-  serd_cursor_free(range2);
-  serd_cursor_free(range1);
+  serd_cursor_free(NULL, range2);
+  serd_cursor_free(NULL, range1);
   serd_model_free(model);
 
   return 0;
@@ -989,27 +991,30 @@ test_remove_graph(SerdWorld* world, const unsigned n_quads)
   generate(world, model, 1, graph42);
   generate(world, model, 1, graph43);
 
-  // Remove one graph via range
-  SerdCursor* range = serd_model_find(model, NULL, NULL, NULL, graph43);
-  SerdStatus  st    = serd_model_erase_statements(model, range);
+  // Find the start of graph43
+  SerdCursor* range = serd_model_find(NULL, model, NULL, NULL, NULL, graph43);
+  assert(range);
+
+  // Remove the entire range of statements in the graph
+  SerdStatus st = serd_model_erase_statements(model, range);
   assert(!st);
-  serd_cursor_free(range);
+  serd_cursor_free(NULL, range);
 
   // Erase the first tuple (an element in the default graph)
-  SerdCursor* iter = serd_model_begin(model);
+  SerdCursor* iter = serd_model_begin(NULL, model);
   assert(!serd_model_erase(model, iter));
-  serd_cursor_free(iter);
+  serd_cursor_free(NULL, iter);
 
   // Ensure only the other graph is left
   Quad pat = {0, 0, 0, graph42};
-  for (iter = serd_model_begin(model);
+  for (iter = serd_model_begin(NULL, model);
        !serd_cursor_equals(iter, serd_model_end(model));
        serd_cursor_advance(iter)) {
     const SerdStatement* const s = serd_cursor_get(iter);
     assert(s);
     assert(serd_statement_matches(s, pat[0], pat[1], pat[2], pat[3]));
   }
-  serd_cursor_free(iter);
+  serd_cursor_free(NULL, iter);
 
   serd_model_free(model);
   return 0;
@@ -1085,12 +1090,12 @@ test_write_flat_range(SerdWorld* world, const unsigned n_quads)
   SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, &out, 1);
   assert(writer);
 
-  SerdCursor* all = serd_model_begin(model);
+  SerdCursor* all = serd_model_begin(NULL, model);
   for (const SerdStatement* t = NULL; (t = serd_cursor_get(all));
        serd_cursor_advance(all)) {
     serd_sink_write_statement(serd_writer_sink(writer), 0U, t);
   }
-  serd_cursor_free(all);
+  serd_cursor_free(NULL, all);
 
   serd_writer_finish(writer);
   serd_close_output(&out);
@@ -1166,9 +1171,9 @@ test_write_bad_list(SerdWorld* world, const unsigned n_quads)
   SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, &out, 1);
   assert(writer);
 
-  SerdCursor* all = serd_model_begin(model);
-  serd_describe_range(all, serd_writer_sink(writer), 0);
-  serd_cursor_free(all);
+  SerdCursor* all = serd_model_begin(NULL, model);
+  serd_describe_range(NULL, all, serd_writer_sink(writer), 0);
+  serd_cursor_free(NULL, all);
 
   serd_writer_finish(writer);
   serd_close_output(&out);
@@ -1237,9 +1242,9 @@ test_write_infinite_list(SerdWorld* world, const unsigned n_quads)
     serd_string("rdf"),
     serd_string("http://www.w3.org/1999/02/22-rdf-syntax-ns#"));
 
-  SerdCursor* all = serd_model_begin(model);
-  serd_describe_range(all, serd_writer_sink(writer), 0);
-  serd_cursor_free(all);
+  SerdCursor* all = serd_model_begin(NULL, model);
+  serd_describe_range(NULL, all, serd_writer_sink(writer), 0);
+  serd_cursor_free(NULL, all);
 
   serd_writer_finish(writer);
   serd_close_output(&out);
@@ -1327,9 +1332,9 @@ test_write_error_in_list_subject(SerdWorld* world, const unsigned n_quads)
     SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, &out, 1);
 
     const SerdSink* const sink = serd_writer_sink(writer);
-    SerdCursor* const     all  = serd_model_begin(model);
-    const SerdStatus      st   = serd_describe_range(all, sink, 0);
-    serd_cursor_free(all);
+    SerdCursor* const     all  = serd_model_begin(NULL, model);
+    const SerdStatus      st   = serd_describe_range(NULL, all, sink, 0);
+    serd_cursor_free(NULL, all);
 
     assert(st == SERD_BAD_WRITE);
 
@@ -1385,9 +1390,9 @@ test_write_error_in_list_object(SerdWorld* world, const unsigned n_quads)
     SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, &out, 1);
 
     const SerdSink* const sink = serd_writer_sink(writer);
-    SerdCursor* const     all  = serd_model_begin(model);
-    const SerdStatus      st   = serd_describe_range(all, sink, 0);
-    serd_cursor_free(all);
+    SerdCursor* const     all  = serd_model_begin(NULL, model);
+    const SerdStatus      st   = serd_describe_range(NULL, all, sink, 0);
+    serd_cursor_free(NULL, all);
 
     assert(st == SERD_BAD_WRITE);
 

@@ -15,13 +15,13 @@ test_copy(void)
 
   SerdWorld* const  world = serd_world_new(NULL);
   SerdModel* const  model = serd_model_new(world, SERD_ORDER_SPO, 0U);
-  SerdCursor* const begin = serd_model_begin(model);
+  SerdCursor* const begin = serd_model_begin(NULL, model);
   SerdCursor* const copy  = serd_cursor_copy(NULL, begin);
 
   assert(serd_cursor_equals(copy, begin));
 
-  serd_cursor_free(copy);
-  serd_cursor_free(begin);
+  serd_cursor_free(NULL, copy);
+  serd_cursor_free(NULL, begin);
   serd_model_free(model);
   serd_world_free(world);
 }
@@ -48,11 +48,14 @@ test_comparison(void)
   assert(!serd_model_add(model, a, b, c, NULL));
 
   // Make cursors that point to the statement but via different patterns
-  SerdCursor* const c1 = serd_model_find(model, a, NULL, NULL, NULL);
-  SerdCursor* const c2 = serd_model_find(model, a, b, NULL, NULL);
-  SerdCursor* const c3 = serd_model_find(model, NULL, b, c, NULL);
+  SerdCursor* const c1 = serd_model_find(NULL, model, a, NULL, NULL, NULL);
+  SerdCursor* const c2 = serd_model_find(NULL, model, a, b, NULL, NULL);
+  SerdCursor* const c3 = serd_model_find(NULL, model, NULL, b, c, NULL);
 
   // Ensure that they refer to the same statement but are not equal
+  assert(c1);
+  assert(c2);
+  assert(c3);
   assert(serd_cursor_get(c1) == serd_cursor_get(c2));
   assert(serd_cursor_get(c2) == serd_cursor_get(c3));
   assert(!serd_cursor_equals(c1, c2));
@@ -60,21 +63,22 @@ test_comparison(void)
   assert(!serd_cursor_equals(c1, c3));
 
   // Check that none are equal to begin (which has a different mode) or end
-  SerdCursor* const begin = serd_model_begin(model);
+  SerdCursor* const begin = serd_model_begin(NULL, model);
   assert(!serd_cursor_equals(c1, begin));
   assert(!serd_cursor_equals(c2, begin));
   assert(!serd_cursor_equals(c3, begin));
   assert(!serd_cursor_equals(c1, serd_model_end(model)));
   assert(!serd_cursor_equals(c2, serd_model_end(model)));
   assert(!serd_cursor_equals(c3, serd_model_end(model)));
-  serd_cursor_free(begin);
+  serd_cursor_free(NULL, begin);
 
   // Check that a cursor that points to it via the same pattern is equal
-  SerdCursor* const c4 = serd_model_find(model, a, b, NULL, NULL);
+  SerdCursor* const c4 = serd_model_find(NULL, model, a, b, NULL, NULL);
+  assert(c4);
   assert(serd_cursor_get(c4) == serd_cursor_get(c1));
   assert(serd_cursor_equals(c4, c2));
   assert(!serd_cursor_equals(c4, c3));
-  serd_cursor_free(c4);
+  serd_cursor_free(NULL, c4);
 
   // Advance everything to the end
   assert(serd_cursor_advance(c1) == SERD_FAILURE);
@@ -86,9 +90,9 @@ test_comparison(void)
   assert(serd_cursor_equals(c1, serd_model_end(model)));
   assert(serd_cursor_equals(c2, serd_model_end(model)));
 
-  serd_cursor_free(c3);
-  serd_cursor_free(c2);
-  serd_cursor_free(c1);
+  serd_cursor_free(NULL, c3);
+  serd_cursor_free(NULL, c2);
+  serd_cursor_free(NULL, c1);
   serd_model_free(model);
   serd_world_free(world);
 }
@@ -96,6 +100,8 @@ test_comparison(void)
 int
 main(void)
 {
+  assert(serd_cursor_advance(NULL) == SERD_FAILURE);
+
   test_copy();
   test_comparison();
 

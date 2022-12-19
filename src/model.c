@@ -168,23 +168,6 @@ serd_model_new(SerdWorld* const         world,
     serd_world_allocator(world), world, default_order, flags);
 }
 
-SerdModel*
-serd_model_copy(SerdAllocator* const allocator, const SerdModel* const model)
-{
-  assert(model);
-
-  SerdModel* copy = serd_model_new_with_allocator(
-    allocator, model->world, model->default_order, model->flags);
-
-  SerdCursor* cursor = serd_model_begin(model);
-  serd_model_insert_statements(copy, cursor);
-  serd_cursor_free(cursor);
-
-  assert(serd_model_size(model) == serd_model_size(copy));
-  assert(serd_nodes_size(model->nodes) == serd_nodes_size(copy->nodes));
-  return copy;
-}
-
 static void
 log_bad_index(const SerdModel* const   model,
               const char* const        description,
@@ -234,6 +217,22 @@ make_begin_cursor(const SerdModel* const model, const SerdStatementOrder order)
                           zix_btree_begin(model->indices[order]),
                           everything_pattern,
                           strategy);
+}
+
+SerdModel*
+serd_model_copy(SerdAllocator* const allocator, const SerdModel* const model)
+{
+  assert(model);
+
+  SerdModel* copy = serd_model_new_with_allocator(
+    allocator, model->world, model->default_order, model->flags);
+
+  SerdCursor cursor = make_begin_cursor(model, model->default_order);
+  serd_model_insert_statements(copy, &cursor);
+
+  assert(serd_model_size(model) == serd_model_size(copy));
+  assert(serd_nodes_size(model->nodes) == serd_nodes_size(copy->nodes));
+  return copy;
 }
 
 bool
@@ -356,21 +355,22 @@ serd_model_empty(const SerdModel* const model)
 }
 
 SerdCursor*
-serd_model_begin_ordered(const SerdModel* const   model,
+serd_model_begin_ordered(SerdAllocator* const     allocator,
+                         const SerdModel* const   model,
                          const SerdStatementOrder order)
 {
   assert(model);
 
   const SerdCursor cursor = make_begin_cursor(model, order);
 
-  return serd_cursor_copy(model->allocator, &cursor);
+  return serd_cursor_copy(allocator, &cursor);
 }
 
 SerdCursor*
-serd_model_begin(const SerdModel* const model)
+serd_model_begin(SerdAllocator* const allocator, const SerdModel* const model)
 {
   assert(model);
-  return serd_model_begin_ordered(model, model->default_order);
+  return serd_model_begin_ordered(allocator, model, model->default_order);
 }
 
 const SerdCursor*
@@ -551,7 +551,8 @@ serd_model_search(const SerdModel* const model,
 }
 
 SerdCursor*
-serd_model_find(const SerdModel* const model,
+serd_model_find(SerdAllocator* const   allocator,
+                const SerdModel* const model,
                 const SerdNode* const  s,
                 const SerdNode* const  p,
                 const SerdNode* const  o,
@@ -563,7 +564,7 @@ serd_model_find(const SerdModel* const model,
 
   return zix_btree_iter_is_end(cursor.iter)
            ? NULL
-           : serd_cursor_copy(model->allocator, &cursor);
+           : serd_cursor_copy(allocator, &cursor);
 }
 
 const SerdNode*
