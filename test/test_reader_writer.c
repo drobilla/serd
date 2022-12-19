@@ -14,13 +14,13 @@
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/status.h"
-#include "serd/string_view.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "serd/writer.h"
 #include "zix/allocator.h"
 #include "zix/filesystem.h"
 #include "zix/path.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdint.h>
@@ -47,7 +47,7 @@ test_writer(const char* const path)
 {
   SerdWorld* world = serd_world_new(NULL);
   SerdNodes* nodes = serd_world_nodes(world);
-  SerdEnv*   env   = serd_env_new(world, serd_empty_string());
+  SerdEnv*   env   = serd_env_new(world, zix_empty_string());
 
   SerdOutputStream output = serd_open_output_file(path);
 
@@ -64,7 +64,7 @@ test_writer(const char* const path)
   assert(serd_sink_write_end(iface, lit));
 
   static const uint8_t bad_buf[]    = {0xEF, 0xBF, 0xBD, 0};
-  const SerdStringView bad_buf_view = {(const char*)bad_buf, 3};
+  const ZixStringView  bad_buf_view = {(const char*)bad_buf, 3};
 
   const SerdNode* s =
     serd_nodes_get(nodes, serd_a_uri_string("http://example.org"));
@@ -80,15 +80,15 @@ test_writer(const char* const path)
     assert(serd_sink_write(iface, 0, junk[i][0], junk[i][1], junk[i][2], NULL));
   }
 
-  const SerdStringView  urn_Type = serd_string("urn:Type");
-  const SerdStringView  en       = serd_string("en");
+  const ZixStringView   urn_Type = zix_string("urn:Type");
+  const ZixStringView   en       = zix_string("en");
   const SerdNode* const o        = serd_nodes_get(nodes, serd_a_string("o"));
 
   const SerdNode* const t =
-    serd_nodes_get(nodes, serd_a_typed_literal(serd_string("t"), urn_Type));
+    serd_nodes_get(nodes, serd_a_typed_literal(zix_string("t"), urn_Type));
 
   const SerdNode* const l =
-    serd_nodes_get(nodes, serd_a_plain_literal(serd_string("l"), en));
+    serd_nodes_get(nodes, serd_a_plain_literal(zix_string("l"), en));
 
   const SerdNode* good[][3] = {{s, p, o}, {s, p, t}, {s, p, l}};
 
@@ -149,7 +149,7 @@ test_reader(const char* path)
   SerdSink* const sink  = serd_sink_new(world, &rt, test_sink, NULL);
   assert(sink);
 
-  SerdEnv* const env = serd_env_new(world, serd_empty_string());
+  SerdEnv* const env = serd_env_new(world, zix_empty_string());
   assert(env);
 
   // Test that too little stack space fails gracefully

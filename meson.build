@@ -148,7 +148,6 @@ c_headers = files(
   'include/serd/status.h',
   'include/serd/stream.h',
   'include/serd/string.h',
-  'include/serd/string_view.h',
   'include/serd/syntax.h',
   'include/serd/uri.h',
   'include/serd/value.h',
@@ -222,6 +221,7 @@ libserd = library(
 # Declare dependency for internal meson dependants
 serd_dep = declare_dependency(
   compile_args: extra_c_args,
+  dependencies: [zix_dep],
   include_directories: include_dirs,
   link_with: libserd,
 )
@@ -233,6 +233,7 @@ pkg.generate(
   extra_cflags: extra_c_args,
   filebase: versioned_name,
   name: get_option('title'),
+  requires: ['zix-0'],
   subdirs: [versioned_name],
   version: meson.project_version(),
 )

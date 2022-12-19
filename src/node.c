@@ -10,9 +10,9 @@
 #include "exess/exess.h"
 #include "serd/node.h"
 #include "serd/status.h"
-#include "serd/string_view.h"
 #include "serd/uri.h"
 #include "serd/value.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -47,7 +47,7 @@ static const ExessDatatype value_type_datatypes[] = {
 // Argument constructors
 
 SerdNodeArgs
-serd_a_token(const SerdNodeType type, const SerdStringView string)
+serd_a_token(const SerdNodeType type, const ZixStringView string)
 {
   const SerdNodeArgs args = {SERD_NODE_ARGS_TOKEN, {{type, string}}};
   return args;
@@ -63,7 +63,7 @@ serd_a_parsed_uri(const SerdURIView uri)
 }
 
 SerdNodeArgs
-serd_a_file_uri(const SerdStringView path, const SerdStringView hostname)
+serd_a_file_uri(const ZixStringView path, const ZixStringView hostname)
 {
   SerdNodeArgs args;
   args.type                      = SERD_NODE_ARGS_FILE_URI;
@@ -73,9 +73,9 @@ serd_a_file_uri(const SerdStringView path, const SerdStringView hostname)
 }
 
 SerdNodeArgs
-serd_a_literal(const SerdStringView string,
-               const SerdNodeFlags  flags,
-               const SerdStringView meta)
+serd_a_literal(const ZixStringView string,
+               const SerdNodeFlags flags,
+               const ZixStringView meta)
 {
   SerdNodeArgs args;
   args.type                   = SERD_NODE_ARGS_LITERAL;
@@ -248,14 +248,15 @@ result(const SerdStatus status, const size_t count)
 }
 
 static SerdWriteResult
-serd_node_construct_simple(const size_t         buf_size,
-                           void* const          buf,
-                           const SerdNodeType   type,
-                           const SerdNodeFlags  flags,
-                           const SerdStringView string)
+serd_node_construct_simple(const size_t        buf_size,
+                           void* const         buf,
+                           const SerdNodeType  type,
+                           const SerdNodeFlags flags,
+                           const ZixStringView string)
 {
   const size_t total_size =
     sizeof(SerdNode) + serd_node_pad_length(string.length);
+
   if (!buf || total_size > buf_size) {
     return result(SERD_OVERFLOW, total_size);
   }
@@ -275,7 +276,7 @@ serd_node_construct_simple(const size_t         buf_size,
 }
 
 SERD_PURE_FUNC static bool
-is_langtag(const SerdStringView string)
+is_langtag(const ZixStringView string)
 {
   // First character must be a letter
   size_t i = 0;
@@ -304,11 +305,11 @@ is_langtag(const SerdStringView string)
 }
 
 static SerdWriteResult
-serd_node_construct_literal(const size_t         buf_size,
-                            void* const          buf,
-                            const SerdStringView string,
-                            const SerdNodeFlags  flags,
-                            const SerdStringView meta)
+serd_node_construct_literal(const size_t        buf_size,
+                            void* const         buf,
+                            const ZixStringView string,
+                            const SerdNodeFlags flags,
+                            const ZixStringView meta)
 {
   if (!(flags & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE))) {
     return serd_node_construct_simple(
@@ -470,9 +471,9 @@ serd_node_construct_value(const size_t    buf_size,
 
   return serd_node_construct_literal(buf_size,
                                      buf,
-                                     serd_substring(temp, r.count),
+                                     zix_substring(temp, r.count),
                                      SERD_HAS_DATATYPE,
-                                     serd_string(datatype_uri));
+                                     zix_string(datatype_uri));
 }
 
 static SerdWriteResult
@@ -487,9 +488,9 @@ serd_node_construct_decimal(const size_t buf_size,
 
   return serd_node_construct_literal(buf_size,
                                      buf,
-                                     serd_substring(temp, r.count),
+                                     zix_substring(temp, r.count),
                                      SERD_HAS_DATATYPE,
-                                     serd_string(EXESS_XSD_URI "decimal"));
+                                     zix_string(EXESS_XSD_URI "decimal"));
 }
 
 static SerdWriteResult
@@ -503,18 +504,18 @@ serd_node_construct_integer(const size_t  buf_size,
 
   return serd_node_construct_literal(buf_size,
                                      buf,
-                                     serd_substring(temp, r.count),
+                                     zix_substring(temp, r.count),
                                      SERD_HAS_DATATYPE,
-                                     serd_string(NS_XSD "integer"));
+                                     zix_string(NS_XSD "integer"));
 }
 
 static SerdWriteResult
 serd_node_construct_binary(
-  const size_t         buf_size,
-  void* const          buf,
-  const size_t         value_size,
-  const void* const    value,
-  const SerdStringView datatype_uri,
+  const size_t        buf_size,
+  void* const         buf,
+  const size_t        value_size,
+  const void* const   value,
+  const ZixStringView datatype_uri,
   ExessResult (*write_func)(size_t, const void*, size_t, char*))
 {
   // Verify argument sanity
@@ -826,10 +827,10 @@ construct_write(const void* const buf,
 }
 
 static SerdWriteResult
-serd_node_construct_file_uri(const size_t         buf_size,
-                             void* const          buf,
-                             const SerdStringView path,
-                             const SerdStringView hostname)
+serd_node_construct_file_uri(const size_t        buf_size,
+                             void* const         buf,
+                             const ZixStringView path,
+                             const ZixStringView hostname)
 {
   SerdNode* const    node  = (SerdNode*)buf;
   ConstructWriteHead head  = {(char*)buf, buf_size, 0U};
@@ -903,7 +904,7 @@ serd_node_construct(const size_t       buf_size,
                                       buf,
                                       args.data.as_blob.size,
                                       args.data.as_blob.data,
-                                      serd_string(NS_XSD "hexBinary"),
+                                      zix_string(NS_XSD "hexBinary"),
                                       exess_write_hex);
 
   case SERD_NODE_ARGS_BASE64:
@@ -911,7 +912,7 @@ serd_node_construct(const size_t       buf_size,
                                       buf,
                                       args.data.as_blob.size,
                                       args.data.as_blob.data,
-                                      serd_string(NS_XSD "base64Binary"),
+                                      zix_string(NS_XSD "base64Binary"),
                                       exess_write_base64);
   }
 
@@ -942,12 +943,12 @@ serd_node_length(const SerdNode* const node)
   return node->length;
 }
 
-SerdStringView
+ZixStringView
 serd_node_string_view(const SerdNode* const node)
 {
   assert(node);
 
-  const SerdStringView r = {(const char*)(node + 1), node->length};
+  const ZixStringView r = {(const char*)(node + 1), node->length};
 
   return r;
 }

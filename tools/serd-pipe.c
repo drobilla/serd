@@ -9,9 +9,9 @@
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/status.h"
-#include "serd/string_view.h"
 #include "serd/syntax.h"
 #include "serd/writer.h"
+#include "zix/string_view.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -47,7 +47,7 @@ run(const Options opts)
     serd_set_log_func(app.world, serd_quiet_log_func, NULL);
   }
 
-  serd_writer_set_root_uri(app.writer, serd_string(opts.root_uri));
+  serd_writer_set_root_uri(app.writer, zix_string(opts.root_uri));
 
   // Set up the output pipeline: [canon] -> writer
   const SerdSink* const target = serd_writer_sink(app.writer);

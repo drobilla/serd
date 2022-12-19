@@ -4,7 +4,9 @@
 #undef NDEBUG
 
 #include "failing_allocator.h"
+
 #include "serd/serd.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -92,7 +94,7 @@ test_intern(void)
 static void
 test_string(void)
 {
-  const SerdStringView string = serd_string("string");
+  const ZixStringView string = zix_string("string");
 
   SerdAllocator* const allocator = serd_default_allocator();
 
@@ -109,7 +111,7 @@ test_string(void)
   assert(!strcmp(serd_node_string(node), string.data));
 
   const SerdNode* const long_node = serd_nodes_get(
-    nodes, serd_a_literal(string, SERD_IS_LONG, serd_empty_string()));
+    nodes, serd_a_literal(string, SERD_IS_LONG, zix_empty_string()));
 
   assert(long_node);
   assert(long_node != node);
@@ -131,19 +133,19 @@ test_invalid_literal(void)
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
   assert(!serd_nodes_get(nodes,
-                         serd_a_literal(serd_string("double meta"),
+                         serd_a_literal(zix_string("double meta"),
                                         SERD_HAS_LANGUAGE | SERD_HAS_DATATYPE,
-                                        serd_string("What am I?"))));
+                                        zix_string("What am I?"))));
 
   assert(!serd_nodes_get(nodes,
-                         serd_a_literal(serd_string("empty language"),
+                         serd_a_literal(zix_string("empty language"),
                                         SERD_HAS_LANGUAGE,
-                                        serd_empty_string())));
+                                        zix_empty_string())));
 
   assert(!serd_nodes_get(nodes,
-                         serd_a_literal(serd_string("empty datatype"),
+                         serd_a_literal(zix_string("empty datatype"),
                                         SERD_HAS_DATATYPE,
-                                        serd_empty_string())));
+                                        zix_empty_string())));
 
   serd_nodes_free(nodes);
 }
@@ -151,8 +153,8 @@ test_invalid_literal(void)
 static void
 test_plain_literal(void)
 {
-  const SerdStringView string   = serd_string("string");
-  const SerdStringView language = serd_string("en");
+  const ZixStringView string   = zix_string("string");
+  const ZixStringView language = zix_string("en");
 
   SerdAllocator* const allocator = serd_default_allocator();
 
@@ -185,7 +187,7 @@ test_plain_literal(void)
   assert(long_version != node);
 
   const SerdNode* const other =
-    serd_nodes_get(nodes, serd_a_plain_literal(string, serd_string("de")));
+    serd_nodes_get(nodes, serd_a_plain_literal(string, zix_string("de")));
 
   assert(other != node);
 
@@ -204,8 +206,8 @@ test_plain_literal(void)
 static void
 test_typed_literal(void)
 {
-  const SerdStringView string   = serd_string("string");
-  const SerdStringView datatype = serd_string("http://example.org/Type");
+  const ZixStringView string   = zix_string("string");
+  const ZixStringView datatype = zix_string("http://example.org/Type");
 
   SerdAllocator* const allocator = serd_default_allocator();
 
@@ -389,7 +391,7 @@ test_base64(void)
 static void
 test_uri(void)
 {
-  const SerdStringView string = serd_string("http://example.org/");
+  const ZixStringView string = zix_string("http://example.org/");
 
   SerdAllocator* const allocator = serd_default_allocator();
   SerdNodes* const     nodes     = serd_nodes_new(allocator);
@@ -410,7 +412,7 @@ test_uri(void)
 static void
 test_parsed_uri(void)
 {
-  const SerdStringView string = serd_string("http://example.org/");
+  const ZixStringView string = zix_string("http://example.org/");
 
   SerdAllocator* const allocator = serd_default_allocator();
 
@@ -443,17 +445,17 @@ test_file_uri(void)
 {
   SerdAllocator* const allocator = serd_default_allocator();
 
-  const SerdStringView local_string  = serd_string("file:///d/f.txt");
-  const SerdStringView local_path    = serd_string("/d/f.txt");
-  const SerdStringView remote_host   = serd_string("server");
-  const SerdStringView remote_string = serd_string("file://server/d/f.txt");
+  const ZixStringView local_string  = zix_string("file:///d/f.txt");
+  const ZixStringView local_path    = zix_string("/d/f.txt");
+  const ZixStringView remote_host   = zix_string("server");
+  const ZixStringView remote_string = zix_string("file://server/d/f.txt");
 
   SerdNodes* const nodes = serd_nodes_new(allocator);
 
   const SerdNode* const local_uri =
     serd_nodes_get(nodes, serd_a_uri(local_string));
   const SerdNode* const local_file_uri =
-    serd_nodes_get(nodes, serd_a_file_uri(local_path, serd_empty_string()));
+    serd_nodes_get(nodes, serd_a_file_uri(local_path, zix_empty_string()));
 
   assert(local_uri);
   assert(local_file_uri);
@@ -486,7 +488,7 @@ test_file_uri(void)
 static void
 test_blank(void)
 {
-  const SerdStringView string = serd_string("b42");
+  const ZixStringView string = zix_string("b42");
 
   SerdAllocator* const allocator = serd_default_allocator();
 

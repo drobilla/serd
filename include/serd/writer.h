@@ -128,7 +128,7 @@ serd_writer_sink(SerdWriter* SERD_NONNULL writer);
    it defaults to the base URI, so no up-references will be created at all.
 */
 SERD_API SerdStatus
-serd_writer_set_root_uri(SerdWriter* SERD_NONNULL writer, SerdStringView uri);
+serd_writer_set_root_uri(SerdWriter* SERD_NONNULL writer, ZixStringView uri);
 
 /**
    Finish a write.

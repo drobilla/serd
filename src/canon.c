@@ -19,8 +19,8 @@
 #include "serd/sink.h"
 #include "serd/statement.h"
 #include "serd/status.h"
-#include "serd/string_view.h"
 #include "serd/world.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -113,11 +113,10 @@ build_tagged(SerdAllocator* const SERD_NONNULL  allocator,
   }
 
   // Make a new literal that is otherwise identical
-  *out =
-    serd_node_new(allocator,
-                  serd_a_literal(serd_node_string_view(node),
-                                 serd_node_flags(node),
-                                 serd_substring(canonical_lang, lang_len)));
+  *out = serd_node_new(allocator,
+                       serd_a_literal(serd_node_string_view(node),
+                                      serd_node_flags(node),
+                                      zix_substring(canonical_lang, lang_len)));
 
   const ExessResult r = {EXESS_SUCCESS, node_len};
   return r;

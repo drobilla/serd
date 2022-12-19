@@ -24,10 +24,10 @@
 #include "serd/sink.h"
 #include "serd/statement.h"
 #include "serd/status.h"
-#include "serd/string_view.h"
 #include "serd/syntax.h"
 #include "serd/uri.h"
 #include "serd/world.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -860,9 +860,9 @@ write_uri_node(SerdWriter* const     writer,
                const SerdNode* const node,
                const SerdField       field)
 {
-  SerdStatus           st         = SERD_SUCCESS;
-  const SerdStringView string     = serd_node_string_view(node);
-  const bool           has_scheme = serd_uri_string_has_scheme(string.data);
+  SerdStatus          st         = SERD_SUCCESS;
+  const ZixStringView string     = serd_node_string_view(node);
+  const bool          has_scheme = serd_uri_string_has_scheme(string.data);
 
   if (supports_abbrev(writer)) {
     if (!(writer->flags & SERD_WRITE_LONGHAND) && field == SERD_PREDICATE &&
@@ -874,8 +874,8 @@ write_uri_node(SerdWriter* const     writer,
       return esink("()", 2, writer);
     }
 
-    SerdStringView prefix = {NULL, 0};
-    SerdStringView suffix = {NULL, 0};
+    ZixStringView prefix = {NULL, 0};
+    ZixStringView suffix = {NULL, 0};
     if (has_scheme && !(writer->flags & SERD_WRITE_EXPANDED) &&
         !serd_env_qualify(writer->env, string, &prefix, &suffix)) {
       TRY(st, write_lname(writer, prefix.data, prefix.length));
@@ -1412,8 +1412,8 @@ serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
     return SERD_BAD_ARG;
   }
 
-  const SerdStringView uri_string =
-    uri ? serd_node_string_view(uri) : serd_empty_string();
+  const ZixStringView uri_string =
+    uri ? serd_node_string_view(uri) : zix_empty_string();
 
   if ((writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) && uri) {
     TRY(st, terminate_context(writer));
@@ -1428,7 +1428,7 @@ serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 }
 
 SerdStatus
-serd_writer_set_root_uri(SerdWriter* writer, const SerdStringView uri)
+serd_writer_set_root_uri(SerdWriter* writer, const ZixStringView uri)
 {
   assert(writer);
 

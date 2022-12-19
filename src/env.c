@@ -32,7 +32,7 @@ struct SerdEnvImpl {
 };
 
 SerdEnv*
-serd_env_new(SerdWorld* const world, const SerdStringView base_uri)
+serd_env_new(SerdWorld* const world, const ZixStringView base_uri)
 {
   assert(world);
 
@@ -151,7 +151,7 @@ serd_env_base_uri(const SerdEnv* const env)
 }
 
 SerdStatus
-serd_env_set_base_uri(SerdEnv* const env, const SerdStringView uri)
+serd_env_set_base_uri(SerdEnv* const env, const ZixStringView uri)
 {
   assert(env);
 
@@ -181,12 +181,12 @@ serd_env_set_base_uri(SerdEnv* const env, const SerdStringView uri)
 }
 
 SerdStatus
-serd_env_set_base_path(SerdEnv* const env, const SerdStringView path)
+serd_env_set_base_path(SerdEnv* const env, const ZixStringView path)
 {
   assert(env);
 
   if (!path.data || !path.length) {
-    return serd_env_set_base_uri(env, serd_empty_string());
+    return serd_env_set_base_uri(env, zix_empty_string());
   }
 
   char* const real_path = zix_canonical_path(NULL, path.data);
@@ -205,12 +205,12 @@ serd_env_set_base_path(SerdEnv* const env, const SerdStringView path)
     base_path[real_path_len] = path_last;
 
     base_node = serd_node_new(
-      NULL, serd_a_file_uri(serd_string(base_path), serd_empty_string()));
+      NULL, serd_a_file_uri(zix_string(base_path), zix_empty_string()));
 
     serd_wfree(env->world, base_path);
   } else {
     base_node = serd_node_new(
-      NULL, serd_a_file_uri(serd_string(real_path), serd_empty_string()));
+      NULL, serd_a_file_uri(zix_string(real_path), zix_empty_string()));
   }
 
   serd_env_set_base_uri(env, serd_node_string_view(base_node));
@@ -220,8 +220,8 @@ serd_env_set_base_path(SerdEnv* const env, const SerdStringView path)
   return SERD_SUCCESS;
 }
 
-SerdStringView
-serd_env_find_prefix(const SerdEnv* const env, const SerdStringView name)
+ZixStringView
+serd_env_find_prefix(const SerdEnv* const env, const ZixStringView name)
 {
   for (size_t i = 0; i < env->n_prefixes; ++i) {
     const SerdNode* const prefix_name = env->prefixes[i].name;
@@ -232,7 +232,7 @@ serd_env_find_prefix(const SerdEnv* const env, const SerdStringView name)
     }
   }
 
-  return serd_empty_string();
+  return zix_empty_string();
 }
 
 SERD_PURE_FUNC static SerdPrefix*
@@ -253,7 +253,7 @@ serd_env_find(const SerdEnv* const env,
 
 static SerdStatus
 serd_env_add(SerdEnv* const        env,
-             const SerdStringView  name,
+             const ZixStringView   name,
              const SerdNode* const uri)
 {
   SerdPrefix* const prefix = serd_env_find(env, name.data, name.length);
@@ -287,9 +287,9 @@ serd_env_add(SerdEnv* const        env,
 }
 
 SerdStatus
-serd_env_set_prefix(SerdEnv* const       env,
-                    const SerdStringView name,
-                    const SerdStringView uri)
+serd_env_set_prefix(SerdEnv* const      env,
+                    const ZixStringView name,
+                    const ZixStringView uri)
 {
   assert(env);
 
@@ -327,10 +327,10 @@ serd_env_set_prefix(SerdEnv* const       env,
 }
 
 SerdStatus
-serd_env_qualify(const SerdEnv* const  env,
-                 const SerdStringView  uri,
-                 SerdStringView* const prefix,
-                 SerdStringView* const suffix)
+serd_env_qualify(const SerdEnv* const env,
+                 const ZixStringView  uri,
+                 ZixStringView* const prefix,
+                 ZixStringView* const suffix)
 {
   for (size_t i = 0; i < env->n_prefixes; ++i) {
     const SerdNode* const prefix_uri     = env->prefixes[i].uri;
@@ -352,10 +352,10 @@ serd_env_qualify(const SerdEnv* const  env,
 }
 
 SerdStatus
-serd_env_expand_in_place(const SerdEnv* const  env,
-                         const SerdStringView  curie,
-                         SerdStringView* const uri_prefix,
-                         SerdStringView* const uri_suffix)
+serd_env_expand_in_place(const SerdEnv* const env,
+                         const ZixStringView  curie,
+                         ZixStringView* const uri_prefix,
+                         ZixStringView* const uri_suffix)
 {
   const char* const str = curie.data;
   const char* const colon =
@@ -378,15 +378,15 @@ serd_env_expand_in_place(const SerdEnv* const  env,
 }
 
 SerdNode*
-serd_env_expand_curie(const SerdEnv* const env, const SerdStringView curie)
+serd_env_expand_curie(const SerdEnv* const env, const ZixStringView curie)
 {
   if (!env) {
     return NULL;
   }
 
-  SerdStringView prefix = serd_empty_string();
-  SerdStringView suffix = serd_empty_string();
-  SerdStatus     st = serd_env_expand_in_place(env, curie, &prefix, &suffix);
+  ZixStringView prefix = zix_empty_string();
+  ZixStringView suffix = zix_empty_string();
+  SerdStatus    st     = serd_env_expand_in_place(env, curie, &prefix, &suffix);
   if (st || !prefix.data || !suffix.data) {
     return NULL;
   }

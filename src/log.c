@@ -8,8 +8,8 @@
 #include "serd/log.h"
 #include "serd/node.h"
 #include "serd/status.h"
-#include "serd/string_view.h"
 #include "serd/world.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdarg.h>
@@ -71,7 +71,7 @@ serd_quiet_log_func(void* const               handle,
                     const SerdLogLevel        level,
                     const size_t              n_fields,
                     const SerdLogField* const fields,
-                    const SerdStringView      message)
+                    const ZixStringView       message)
 {
   (void)handle;
   (void)level;
@@ -127,7 +127,7 @@ serd_vxlogf(const SerdWorld* const    world,
                                level,
                                n_fields,
                                fields,
-                               serd_substring(message, (size_t)r));
+                               zix_substring(message, (size_t)r));
   }
 
   // Print input file and position prefix if available

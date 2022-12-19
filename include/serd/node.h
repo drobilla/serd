@@ -135,8 +135,8 @@ typedef enum {
 } SerdNodeArgsType;
 
 typedef struct {
-  SerdNodeType   type;
-  SerdStringView string;
+  SerdNodeType  type;
+  ZixStringView string;
 } SerdNodeTokenArgs;
 
 typedef struct {
@@ -144,14 +144,14 @@ typedef struct {
 } SerdNodeParsedURIArgs;
 
 typedef struct {
-  SerdStringView path;
-  SerdStringView hostname;
+  ZixStringView path;
+  ZixStringView hostname;
 } SerdNodeFileURIArgs;
 
 typedef struct {
-  SerdStringView string;
-  SerdNodeFlags  flags;
-  SerdStringView meta;
+  ZixStringView string;
+  SerdNodeFlags flags;
+  ZixStringView meta;
 } SerdNodeLiteralArgs;
 
 typedef struct {
@@ -203,7 +203,7 @@ typedef struct {
    #SERD_IS_LONG flag.
 */
 SERD_CONST_API SerdNodeArgs
-serd_a_token(SerdNodeType type, SerdStringView string);
+serd_a_token(SerdNodeType type, ZixStringView string);
 
 /**
    A URI node from a parsed URI.
@@ -223,7 +223,7 @@ serd_a_parsed_uri(SerdURIView uri);
    file path and optional hostname, performing any necessary escaping.
 */
 SERD_CONST_API SerdNodeArgs
-serd_a_file_uri(SerdStringView path, SerdStringView hostname);
+serd_a_file_uri(ZixStringView path, ZixStringView hostname);
 
 /**
    A literal node with an optional datatype or language.
@@ -244,7 +244,7 @@ serd_a_file_uri(SerdStringView path, SerdStringView hostname);
    Otherwise, it is ignored.
 */
 SERD_CONST_API SerdNodeArgs
-serd_a_literal(SerdStringView string, SerdNodeFlags flags, SerdStringView meta);
+serd_a_literal(ZixStringView string, SerdNodeFlags flags, ZixStringView meta);
 
 /**
    A simple string literal node from a string view.
@@ -252,7 +252,7 @@ serd_a_literal(SerdStringView string, SerdNodeFlags flags, SerdStringView meta);
    This is a trivial wrapper for serd_a_token().
 */
 SERD_CONST_FUNC static inline SerdNodeArgs
-serd_a_string_view(SerdStringView string)
+serd_a_string_view(ZixStringView string)
 {
   return serd_a_token(SERD_LITERAL, string);
 }
@@ -265,7 +265,7 @@ serd_a_string_view(SerdStringView string)
 SERD_CONST_FUNC static inline SerdNodeArgs
 serd_a_string(const char* SERD_NONNULL string)
 {
-  return serd_a_string_view(serd_string(string));
+  return serd_a_string_view(zix_string(string));
 }
 
 /**
@@ -274,7 +274,7 @@ serd_a_string(const char* SERD_NONNULL string)
    This is a trivial wrapper for serd_a_token().
 */
 SERD_CONST_FUNC static inline SerdNodeArgs
-serd_a_blank(SerdStringView name)
+serd_a_blank(ZixStringView name)
 {
   return serd_a_token(SERD_BLANK, name);
 }
@@ -286,7 +286,7 @@ serd_a_blank(SerdStringView name)
    the type.
 */
 SERD_CONST_FUNC static inline SerdNodeArgs
-serd_a_uri(SerdStringView uri)
+serd_a_uri(ZixStringView uri)
 {
   return serd_a_token(SERD_URI, uri);
 }
@@ -300,7 +300,7 @@ serd_a_uri(SerdStringView uri)
 SERD_CONST_FUNC static inline SerdNodeArgs
 serd_a_uri_string(const char* SERD_NONNULL uri)
 {
-  return serd_a_uri(serd_string(uri));
+  return serd_a_uri(zix_string(uri));
 }
 
 /**
@@ -310,7 +310,7 @@ serd_a_uri_string(const char* SERD_NONNULL uri)
    @param datatype The absolute URI of the datatype.
  */
 SERD_CONST_FUNC static inline SerdNodeArgs
-serd_a_typed_literal(const SerdStringView string, const SerdStringView datatype)
+serd_a_typed_literal(const ZixStringView string, const ZixStringView datatype)
 {
   return serd_a_literal(string, SERD_HAS_DATATYPE, datatype);
 }
@@ -322,7 +322,7 @@ serd_a_typed_literal(const SerdStringView string, const SerdStringView datatype)
    @param language A language tag like "en-ca".
  */
 SERD_CONST_FUNC static inline SerdNodeArgs
-serd_a_plain_literal(const SerdStringView string, const SerdStringView language)
+serd_a_plain_literal(const ZixStringView string, const ZixStringView language)
 {
   return serd_a_literal(string, SERD_HAS_LANGUAGE, language);
 }
@@ -505,7 +505,7 @@ serd_node_string(const SerdNode* SERD_NONNULL node);
    This is a convenience wrapper for serd_node_string() and serd_node_length()
    that can be used to get both in a single call.
 */
-SERD_PURE_API SerdStringView
+SERD_PURE_API ZixStringView
 serd_node_string_view(const SerdNode* SERD_NONNULL node);
 
 /**

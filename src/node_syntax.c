@@ -17,10 +17,10 @@
 #include "serd/sink.h"
 #include "serd/statement.h"
 #include "serd/status.h"
-#include "serd/string_view.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "serd/writer.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -107,7 +107,7 @@ serd_node_from_syntax(SerdAllocator* const allocator,
     return NULL;
   }
 
-  SerdEnv* const temp_env = serd_env_new(temp_world, serd_empty_string());
+  SerdEnv* const temp_env = serd_env_new(temp_world, zix_empty_string());
   if (!temp_env) {
     serd_world_free(temp_world);
     return NULL;
@@ -169,7 +169,7 @@ serd_node_to_syntax(SerdAllocator* const  allocator,
     return NULL;
   }
 
-  SerdEnv* const temp_env = serd_env_new(temp_world, serd_empty_string());
+  SerdEnv* const temp_env = serd_env_new(temp_world, zix_empty_string());
   if (!temp_env) {
     serd_world_free(temp_world);
     return NULL;
