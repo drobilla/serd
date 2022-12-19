@@ -9,7 +9,6 @@
 #include "serd/env.h"
 #include "serd/event.h"
 #include "serd/input_stream.h"
-#include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/node_syntax.h"
 #include "serd/output_stream.h"
@@ -20,6 +19,7 @@
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "serd/writer.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -27,8 +27,8 @@
 #include <string.h>
 
 typedef struct {
-  SerdAllocator* allocator;
-  SerdNode*      object;
+  ZixAllocator* allocator;
+  SerdNode*     object;
 } NodeSyntaxContext;
 
 static SerdStatus
@@ -91,10 +91,10 @@ serd_node_from_syntax_in(SerdWorld* const  world,
 }
 
 SerdNode*
-serd_node_from_syntax(SerdAllocator* const allocator,
-                      const char* const    str,
-                      const SerdSyntax     syntax,
-                      SerdEnv* const       env)
+serd_node_from_syntax(ZixAllocator* const allocator,
+                      const char* const   str,
+                      const SerdSyntax    syntax,
+                      SerdEnv* const      env)
 {
   assert(str);
 
@@ -153,7 +153,7 @@ serd_node_to_syntax_in(SerdWorld* const      world,
 }
 
 char*
-serd_node_to_syntax(SerdAllocator* const  allocator,
+serd_node_to_syntax(ZixAllocator* const   allocator,
                     const SerdNode* const node,
                     const SerdSyntax      syntax,
                     const SerdEnv* const  env)

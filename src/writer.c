@@ -19,7 +19,6 @@
 #include "serd/env.h"
 #include "serd/event.h"
 #include "serd/log.h"
-#include "serd/memory.h"
 #include "serd/output_stream.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
@@ -27,6 +26,7 @@
 #include "serd/syntax.h"
 #include "serd/uri.h"
 #include "serd/world.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -1432,7 +1432,7 @@ serd_writer_set_root_uri(SerdWriter* writer, const ZixStringView uri)
 {
   assert(writer);
 
-  SerdAllocator* const allocator = writer->world->allocator;
+  ZixAllocator* const allocator = writer->world->allocator;
 
   serd_node_free(allocator, writer->root_node);
   writer->root_node = NULL;

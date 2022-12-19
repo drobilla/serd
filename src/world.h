@@ -7,9 +7,9 @@
 #include "node.h"
 
 #include "serd/log.h"
-#include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/nodes.h"
+#include "zix/allocator.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -34,7 +34,7 @@ struct SerdWorldImpl {
   uint32_t next_blank_id;
   uint32_t next_document_id;
 
-  SerdAllocator* allocator;
+  ZixAllocator* allocator;
 
   bool stderr_color;
 };

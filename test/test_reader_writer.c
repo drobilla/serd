@@ -7,7 +7,6 @@
 #include "serd/env.h"
 #include "serd/event.h"
 #include "serd/input_stream.h"
-#include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/nodes.h"
 #include "serd/output_stream.h"
@@ -135,7 +134,7 @@ test_writer(const char* const path)
   char* const out = (char*)buffer.buf;
   assert(out);
   assert(!strcmp(out, "@base <http://example.org/base> .\n"));
-  serd_free(NULL, buffer.buf);
+  zix_free(NULL, buffer.buf);
 
   serd_env_free(env);
   serd_world_free(world);

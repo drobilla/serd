@@ -6,6 +6,7 @@
 #include "failing_allocator.h"
 
 #include "serd/serd.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -110,9 +111,9 @@ test_failed_alloc(void)
 static void
 test_callbacks(void)
 {
-  SerdWorld* const     world     = serd_world_new(NULL);
-  SerdAllocator* const allocator = serd_world_allocator(world);
-  SerdNodes* const     nodes     = serd_nodes_new(allocator);
+  SerdWorld* const    world     = serd_world_new(NULL);
+  ZixAllocator* const allocator = serd_world_allocator(world);
+  SerdNodes* const    nodes     = serd_nodes_new(allocator);
 
   const SerdNode* base = serd_nodes_get(nodes, serd_a_uri_string(NS_EG));
   const SerdNode* name = serd_nodes_get(nodes, serd_a_string("eg"));

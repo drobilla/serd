@@ -6,7 +6,6 @@
 #include "serd/caret.h"
 #include "serd/cursor.h"
 #include "serd/env.h"
-#include "serd/memory.h"
 #include "serd/model.h"
 #include "serd/node.h"
 #include "serd/nodes.h"
@@ -21,7 +20,6 @@
 int
 main(void)
 {
-  serd_free(NULL, NULL);
   serd_node_free(NULL, NULL);
   serd_world_free(NULL);
   serd_env_free(NULL);

@@ -63,7 +63,7 @@ typedef struct SerdStatementImpl SerdStatement;
    @return A new statement that must be freed with serd_statement_free()
 */
 SERD_API SerdStatement* SERD_ALLOCATED
-serd_statement_new(SerdAllocator* SERD_NULLABLE   allocator,
+serd_statement_new(ZixAllocator* SERD_NULLABLE    allocator,
                    const SerdNode* SERD_NONNULL   s,
                    const SerdNode* SERD_NONNULL   p,
                    const SerdNode* SERD_NONNULL   o,
@@ -72,12 +72,12 @@ serd_statement_new(SerdAllocator* SERD_NULLABLE   allocator,
 
 /// Return a copy of `statement`
 SERD_API SerdStatement* SERD_ALLOCATED
-serd_statement_copy(SerdAllocator* SERD_NULLABLE       allocator,
+serd_statement_copy(ZixAllocator* SERD_NULLABLE        allocator,
                     const SerdStatement* SERD_NULLABLE statement);
 
 /// Free `statement`
 SERD_API void
-serd_statement_free(SerdAllocator* SERD_NULLABLE allocator,
+serd_statement_free(ZixAllocator* SERD_NULLABLE  allocator,
                     SerdStatement* SERD_NULLABLE statement);
 
 /// Return the given node of the statement

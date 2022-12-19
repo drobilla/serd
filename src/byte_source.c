@@ -3,7 +3,6 @@
 
 #include "byte_source.h"
 
-#include "memory.h"
 #include "system.h"
 
 #include "serd/node.h"
@@ -39,11 +38,11 @@ serd_byte_source_page(SerdByteSource* const source)
 }
 
 static void
-serd_byte_source_init_buffer(SerdAllocator* const  allocator,
+serd_byte_source_init_buffer(ZixAllocator* const   allocator,
                              SerdByteSource* const source)
 {
   if (source->block_size > 1) {
-    source->block = (uint8_t*)serd_aaligned_alloc(
+    source->block = (uint8_t*)zix_aligned_alloc(
       allocator, SERD_PAGE_SIZE, source->block_size);
 
     if ((source->read_buf = source->block)) {
@@ -55,7 +54,7 @@ serd_byte_source_init_buffer(SerdAllocator* const  allocator,
 }
 
 SerdByteSource*
-serd_byte_source_new_input(SerdAllocator* const   allocator,
+serd_byte_source_new_input(ZixAllocator* const    allocator,
                            SerdInputStream* const input,
                            const SerdNode* const  name,
                            const size_t           block_size)
@@ -73,7 +72,7 @@ serd_byte_source_new_input(SerdAllocator* const   allocator,
   }
 
   SerdByteSource* source =
-    (SerdByteSource*)serd_acalloc(allocator, 1, sizeof(SerdByteSource));
+    (SerdByteSource*)zix_calloc(allocator, 1, sizeof(SerdByteSource));
 
   if (!source) {
     serd_node_free(allocator, source_name);
@@ -91,7 +90,7 @@ serd_byte_source_new_input(SerdAllocator* const   allocator,
   serd_byte_source_init_buffer(allocator, source);
   if (block_size > 1 && !source->block) {
     serd_node_free(allocator, source_name);
-    serd_afree(allocator, source);
+    zix_free(allocator, source);
     return NULL;
   }
 
@@ -99,16 +98,16 @@ serd_byte_source_new_input(SerdAllocator* const   allocator,
 }
 
 void
-serd_byte_source_free(SerdAllocator* const  allocator,
+serd_byte_source_free(ZixAllocator* const   allocator,
                       SerdByteSource* const source)
 {
   if (source) {
     if (source->block_size > 1) {
-      serd_aaligned_free(allocator, source->block);
+      zix_aligned_free(allocator, source->block);
     }
 
     serd_node_free(allocator, source->name);
-    serd_afree(allocator, source);
+    zix_free(allocator, source);
   }
 }
 

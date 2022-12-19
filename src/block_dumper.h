@@ -5,16 +5,16 @@
 #define SERD_SRC_BLOCK_DUMPER_H
 
 #include "serd/attributes.h"
-#include "serd/memory.h"
 #include "serd/output_stream.h"
 #include "serd/status.h"
 #include "serd/world.h"
+#include "zix/allocator.h"
 
 #include <stddef.h>
 #include <string.h>
 
 typedef struct {
-  SerdAllocator* SERD_NONNULL allocator; ///< Buffer allocator
+  ZixAllocator* SERD_NONNULL allocator; ///< Buffer allocator
 
   SerdOutputStream* SERD_ALLOCATED out;        ///< Output stream to write to
   char* SERD_ALLOCATED             buf;        ///< Local buffer if needed
