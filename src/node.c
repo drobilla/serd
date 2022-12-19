@@ -17,6 +17,7 @@
 #include "zix/string_view.h"
 
 #include <assert.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -43,6 +44,8 @@ typedef struct StaticNode {
 DEFINE_XSD_NODE(base64Binary)
 DEFINE_XSD_NODE(boolean)
 DEFINE_XSD_NODE(decimal)
+DEFINE_XSD_NODE(double)
+DEFINE_XSD_NODE(float)
 DEFINE_XSD_NODE(integer)
 
 static const SerdNodeFlags meta_mask = (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE);
@@ -243,6 +246,93 @@ SerdNode*
 serd_new_curie(const ZixStringView str)
 {
   return serd_new_token(SERD_CURIE, str);
+}
+
+ExessResult
+serd_node_get_value_as(const SerdNode* const node,
+                       const ExessDatatype   value_type,
+                       const size_t          value_size,
+                       void* const           value)
+{
+  const SerdNode* const datatype_node = serd_node_datatype(node);
+
+  const ExessDatatype node_type =
+    datatype_node ? exess_datatype_from_uri(serd_node_string(datatype_node))
+                  : EXESS_NOTHING;
+
+  if (node_type == EXESS_NOTHING ||
+      (node_type == EXESS_HEX && value_type == EXESS_BASE64) ||
+      (node_type == EXESS_BASE64 && value_type == EXESS_HEX)) {
+    // Try to read the large or untyped node string directly into the result
+    const ExessVariableResult vr =
+      exess_read_value(value_type, value_size, value, serd_node_string(node));
+
+    const ExessResult r = {vr.status, vr.write_count};
+    return r;
+  }
+
+  // Read the (smallish) value from the node
+  ExessValue                node_value = {false};
+  const ExessVariableResult vr         = exess_read_value(
+    node_type, sizeof(node_value), &node_value, serd_node_string(node));
+
+  if (vr.status) {
+    const ExessResult r = {vr.status, 0U};
+    return r;
+  }
+
+  // Coerce value to the desired type if possible
+  return exess_value_coerce(EXESS_REDUCE_PRECISION,
+                            node_type,
+                            vr.write_count,
+                            &node_value,
+                            value_type,
+                            value_size,
+                            value);
+}
+
+bool
+serd_get_boolean(const SerdNode* const node)
+{
+  assert(node);
+
+  bool value = false;
+  serd_node_get_value_as(node, EXESS_BOOLEAN, sizeof(value), &value);
+
+  return value;
+}
+
+double
+serd_get_double(const SerdNode* const node)
+{
+  assert(node);
+
+  double value = (double)NAN; // NOLINT(google-readability-casting)
+  serd_node_get_value_as(node, EXESS_DOUBLE, sizeof(value), &value);
+
+  return value;
+}
+
+float
+serd_get_float(const SerdNode* const node)
+{
+  assert(node);
+
+  float value = (float)NAN; // NOLINT(google-readability-casting)
+  serd_node_get_value_as(node, EXESS_FLOAT, sizeof(value), &value);
+
+  return value;
+}
+
+int64_t
+serd_get_integer(const SerdNode* const node)
+{
+  assert(node);
+
+  int64_t value = 0;
+  serd_node_get_value_as(node, EXESS_LONG, sizeof(value), &value);
+
+  return value;
 }
 
 SerdNode*
@@ -446,6 +536,30 @@ serd_new_custom_literal(const void* const          user_data,
   node->meta   = datatype;
   node->length = write(user_data, len + 1, serd_node_buffer(node));
   return node;
+}
+
+SerdNode*
+serd_new_double(const double d)
+{
+  char buf[EXESS_MAX_DOUBLE_LENGTH + 1] = {0};
+
+  const ExessResult r = exess_write_double(d, sizeof(buf), buf);
+
+  return r.status ? NULL
+                  : serd_new_typed_literal(zix_substring(buf, r.count),
+                                           &serd_xsd_double.node);
+}
+
+SerdNode*
+serd_new_float(const float f)
+{
+  char buf[EXESS_MAX_FLOAT_LENGTH + 1] = {0};
+
+  const ExessResult r = exess_write_float(f, sizeof(buf), buf);
+
+  return r.status ? NULL
+                  : serd_new_typed_literal(zix_substring(buf, r.count),
+                                           &serd_xsd_float.node);
 }
 
 SerdNode*

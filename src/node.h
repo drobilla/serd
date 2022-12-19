@@ -4,6 +4,7 @@
 #ifndef SERD_SRC_NODE_H
 #define SERD_SRC_NODE_H
 
+#include "exess/exess.h"
 #include "serd/node.h"
 #include "serd/uri.h"
 #include "zix/attributes.h"
@@ -42,5 +43,12 @@ serd_new_expanded_uri(ZixStringView prefix, ZixStringView suffix);
 /// Create a new URI from a string, resolved against a base URI
 SerdNode* ZIX_ALLOCATED
 serd_new_resolved_uri(ZixStringView string, SerdURIView base_uri);
+
+/// Retrieve the value of a node as a particular binary datatype if possible
+ExessResult
+serd_node_get_value_as(const SerdNode* ZIX_NONNULL node,
+                       ExessDatatype               value_type,
+                       size_t                      value_size,
+                       void* ZIX_NONNULL           value);
 
 #endif // SERD_SRC_NODE_H

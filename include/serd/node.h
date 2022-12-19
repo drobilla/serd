@@ -190,6 +190,34 @@ SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_decimal(double d);
 
 /**
+   Create a new canonical xsd:double literal.
+
+   The node will be in scientific notation, like "1.23E4", except for NaN and
+   negative/positive infinity, which are "NaN", "-INF", and "INF",
+   respectively.
+
+   Uses the shortest possible representation that precisely describes the
+   value, which has at most 17 significant digits (under 24 characters total).
+
+   @param d Double value to write.
+   @return A literal node with datatype xsd:double.
+*/
+SERD_API SerdNode* ZIX_ALLOCATED
+serd_new_double(double d);
+
+/**
+   Create a new canonical xsd:float literal.
+
+   Uses identical formatting to serd_new_double(), except with at most 9
+   significant digits (under 14 characters total).
+
+   @param f Float value of literal.
+   @return A literal node with datatype xsd:float.
+*/
+SERD_API SerdNode* ZIX_ALLOCATED
+serd_new_float(float f);
+
+/**
    Create a new canonical xsd:integer literal.
 
    The node will be an xsd:integer literal like "1234", with datatype
@@ -316,6 +344,47 @@ serd_node_datatype(const SerdNode* ZIX_NONNULL node);
 */
 SERD_PURE_API const SerdNode* ZIX_NULLABLE
 serd_node_language(const SerdNode* ZIX_NONNULL node);
+
+/**
+   Return the value of `node` as a boolean.
+
+   This will work for booleans, and numbers of any datatype if they are 0 or
+   1.
+
+   @return The value of `node` as a `bool`, or `false` on error.
+*/
+SERD_API bool
+serd_get_boolean(const SerdNode* ZIX_NONNULL node);
+
+/**
+   Return the value of `node` as a double.
+
+   This will coerce numbers of any datatype to double, if the value fits.
+
+   @return The value of `node` as a `double`, or NaN on error.
+*/
+SERD_API double
+serd_get_double(const SerdNode* ZIX_NONNULL node);
+
+/**
+   Return the value of `node` as a float.
+
+   This will coerce numbers of any datatype to float, if the value fits.
+
+   @return The value of `node` as a `float`, or NaN on error.
+*/
+SERD_API float
+serd_get_float(const SerdNode* ZIX_NONNULL node);
+
+/**
+   Return the value of `node` as a long (signed 64-bit integer).
+
+   This will coerce numbers of any datatype to long, if the value fits.
+
+   @return The value of `node` as a `int64_t`, or 0 on error.
+*/
+SERD_API int64_t
+serd_get_integer(const SerdNode* ZIX_NONNULL node);
 
 /**
    @}
