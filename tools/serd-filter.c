@@ -16,10 +16,10 @@
 #include "serd/sink.h"
 #include "serd/statement.h"
 #include "serd/status.h"
-#include "serd/string_view.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "serd/writer.h"
+#include "zix/string_view.h"
 
 #include <stdarg.h>
 #include <stdbool.h>
@@ -84,7 +84,7 @@ parse_pattern(SerdWorld* const       world,
               const bool             inclusive)
 {
   SerdAllocator* const allocator = serd_world_allocator(world);
-  SerdEnv* const       env       = serd_env_new(world, serd_empty_string());
+  SerdEnv* const       env       = serd_env_new(world, zix_empty_string());
   PatternEventContext  ctx       = {allocator, {NULL, NULL, NULL, NULL}};
 
   SerdSink*   in_sink = serd_sink_new(world, &ctx, on_pattern_event, NULL);

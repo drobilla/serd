@@ -8,8 +8,8 @@
 #include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/nodes.h"
-#include "serd/string_view.h"
 #include "serd/uri.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -79,7 +79,7 @@ test_file_uri(const char* const hostname,
   SerdNodes* const nodes = serd_nodes_new(NULL);
 
   const SerdNode* node = serd_nodes_get(
-    nodes, serd_a_file_uri(serd_string(path), serd_string(hostname)));
+    nodes, serd_a_file_uri(zix_string(path), zix_string(hostname)));
 
   const char* node_str     = serd_node_string(node);
   char*       out_hostname = NULL;
@@ -164,7 +164,7 @@ test_uri_parsing(void)
 static void
 test_parse_uri(void)
 {
-  const SerdStringView base = serd_string("http://example.org/a/b/c/");
+  const ZixStringView base = zix_string("http://example.org/a/b/c/");
 
   const SerdURIView base_uri  = serd_parse_uri(base.data);
   const SerdURIView empty_uri = serd_parse_uri("");
@@ -215,7 +215,7 @@ test_is_within(void)
 }
 
 static inline bool
-chunk_equals(const SerdStringView* a, const SerdStringView* b)
+chunk_equals(const ZixStringView* a, const ZixStringView* b)
 {
   return (!a->length && !b->length && !a->data && !b->data) ||
          (a->length && b->length && a->data && b->data &&
@@ -366,8 +366,8 @@ test_relative_uri(void)
 static void
 test_uri_resolution(void)
 {
-  const SerdStringView base     = serd_string("http://example.org/a/b/c/");
-  const SerdStringView base_foo = serd_string("http://example.org/a/b/c/foo");
+  const ZixStringView base     = zix_string("http://example.org/a/b/c/");
+  const ZixStringView base_foo = zix_string("http://example.org/a/b/c/foo");
 
   const SerdURIView base_uri     = serd_parse_uri(base.data);
   const SerdURIView abs_foo_uri  = serd_parse_uri(base_foo.data);

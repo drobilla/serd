@@ -4,6 +4,7 @@
 #undef NDEBUG
 
 #include "serd/serd.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -21,7 +22,7 @@ test_size(SerdWorld* const      world,
   SerdNodes* const nodes = serd_world_nodes(world);
 
   SerdSink*         sink = serd_sink_new(world, NULL, NULL, NULL);
-  SerdEnv* const    env  = serd_env_new(world, serd_empty_string());
+  SerdEnv* const    env  = serd_env_new(world, zix_empty_string());
   SerdReader* const reader =
     serd_reader_new(world, syntax, flags, env, sink, stack_size);
 

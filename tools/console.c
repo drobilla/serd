@@ -161,7 +161,7 @@ serd_get_size_argument(OptionIter* const iter, size_t* const argument)
 }
 
 SerdStatus
-serd_set_input_option(const SerdStringView   name,
+serd_set_input_option(const ZixStringView    name,
                       SerdSyntax* const      syntax,
                       SerdReaderFlags* const flags)
 {
@@ -206,7 +206,7 @@ serd_parse_input_argument(OptionIter* const        iter,
 
   if (!(st = serd_get_argument(iter, &argument))) {
     if ((st = serd_set_input_option(
-           serd_string(argument), &options->syntax, &options->flags))) {
+           zix_string(argument), &options->syntax, &options->flags))) {
       fprintf(stderr, "%s: unknown option \"%s\"\n", iter->argv[0], argument);
     } else if (!strcmp(argument, "empty") || options->syntax) {
       options->overridden = true;
@@ -217,7 +217,7 @@ serd_parse_input_argument(OptionIter* const        iter,
 }
 
 SerdStatus
-serd_set_output_option(const SerdStringView   name,
+serd_set_output_option(const ZixStringView    name,
                        SerdSyntax* const      syntax,
                        SerdWriterFlags* const flags)
 {
@@ -263,7 +263,7 @@ serd_parse_output_argument(OptionIter* const        iter,
 
   if (!(st = serd_get_argument(iter, &argument))) {
     if ((st = serd_set_output_option(
-           serd_string(argument), &options->syntax, &options->flags))) {
+           zix_string(argument), &options->syntax, &options->flags))) {
       fprintf(stderr, "%s: unknown option \"%s\"\n", iter->argv[0], argument);
     } else if (!strcmp(argument, "empty") || options->syntax) {
       options->overridden = true;
@@ -310,7 +310,7 @@ serd_create_env(SerdWorld* const  world,
                 const char* const out_filename)
 {
   if (serd_uri_string_has_scheme(base_string)) {
-    return serd_env_new(world, serd_string(base_string));
+    return serd_env_new(world, zix_string(base_string));
   }
 
   const bool is_rebase = !strcmp(base_string, "rebase");
@@ -320,14 +320,14 @@ serd_create_env(SerdWorld* const  world,
       return NULL;
     }
 
-    SerdEnv* const env = serd_env_new(world, serd_empty_string());
-    serd_env_set_base_path(env, serd_string(out_filename));
+    SerdEnv* const env = serd_env_new(world, zix_empty_string());
+    serd_env_set_base_path(env, zix_string(out_filename));
     return env;
   }
 
-  SerdEnv* const       env  = serd_env_new(world, serd_empty_string());
-  const SerdStringView base = serd_string(base_string);
-  const SerdStatus     st   = serd_env_set_base_path(env, base);
+  SerdEnv* const      env  = serd_env_new(world, zix_empty_string());
+  const ZixStringView base = zix_string(base_string);
+  const SerdStatus    st   = serd_env_set_base_path(env, base);
   if (st) {
     fprintf(stderr, "%s: invalid base URI \"%s\"\n", program, base_string);
     serd_env_free(env);
@@ -447,7 +447,7 @@ serd_read_inputs(SerdWorld* const        world,
     // Use the filename as the base URI if possible if user didn't override it
     const char* const in_path = inputs[i];
     if (!opts.base_uri[0] && !!strcmp(in_path, "-")) {
-      serd_env_set_base_path(env, serd_string(in_path));
+      serd_env_set_base_path(env, zix_string(in_path));
     }
 
     // Open the input stream

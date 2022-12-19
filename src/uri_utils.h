@@ -7,8 +7,8 @@
 #include "string_utils.h"
 
 #include "serd/attributes.h"
-#include "serd/string_view.h"
 #include "serd/uri.h"
+#include "zix/string_view.h"
 
 #include <stdbool.h>
 #include <string.h>
@@ -19,7 +19,7 @@ typedef struct {
 } SlashIndexes;
 
 static inline bool
-slice_equals(const SerdStringView* a, const SerdStringView* b)
+slice_equals(const ZixStringView* a, const ZixStringView* b)
 {
   return a->length == b->length && !strncmp(a->data, b->data, a->length);
 }

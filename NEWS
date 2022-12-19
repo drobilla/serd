@@ -19,7 +19,7 @@ serd (1.1.1) unstable; urgency=medium
   * Remove serd_uri_to_path()
   * Remove support for reading Turtle named inline nodes extension
   * Remove useless character counting from API
-  * Rename SerdChunk to SerdStringView
+  * Replace SerdChunk with ZixStringView
   * Replace serdi with more focused tools
   * Simplify statement flags
   * Simplify writer style options and write UTF-8 by default
@@ -27,7 +27,7 @@ serd (1.1.1) unstable; urgency=medium
   * Use a fixed-size reader stack
   * Use char* for strings in public API
 
- -- David Robillard <d@drobilla.net>  Wed, 13 Jul 2022 23:12:23 +0000
+ -- David Robillard <d@drobilla.net>  Mon, 19 Dec 2022 20:54:56 +0000
 
 serd (0.31.3) unstable; urgency=medium
 

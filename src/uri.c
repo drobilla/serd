@@ -8,8 +8,8 @@
 #include "serd/buffer.h"
 #include "serd/memory.h"
 #include "serd/stream.h"
-#include "serd/string_view.h"
 #include "serd/uri.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -261,7 +261,7 @@ remove_dot_segments(const char* const path, const size_t len, size_t* const up)
 
 /// Merge `base` and `path` in-place
 static void
-merge(SerdStringView* const base, SerdStringView* const path)
+merge(ZixStringView* const base, ZixStringView* const path)
 {
   size_t      up    = 0;
   const char* begin = remove_dot_segments(path->data, path->length, &up);
@@ -559,10 +559,10 @@ is_dir_sep(const char c)
 }
 
 size_t
-serd_write_file_uri(const SerdStringView path,
-                    const SerdStringView hostname,
-                    const SerdWriteFunc  sink,
-                    void* const          stream)
+serd_write_file_uri(const ZixStringView path,
+                    const ZixStringView hostname,
+                    const SerdWriteFunc sink,
+                    void* const         stream)
 {
   const bool is_windows = is_windows_path(path.data);
   size_t     len        = 0U;

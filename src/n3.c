@@ -22,9 +22,9 @@
 #include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/string.h"
-#include "serd/string_view.h"
 #include "serd/syntax.h"
 #include "serd/uri.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -391,8 +391,8 @@ read_PrefixedName(SerdReader* const reader,
   skip_byte(reader, ':');
 
   // Search environment for the prefix URI
-  const SerdStringView prefix     = serd_node_string_view(dest);
-  const SerdStringView prefix_uri = serd_env_find_prefix(reader->env, prefix);
+  const ZixStringView prefix     = serd_node_string_view(dest);
+  const ZixStringView prefix_uri = serd_env_find_prefix(reader->env, prefix);
   if (!prefix_uri.length) {
     return r_err(reader, st, "unknown prefix \"%s\"", prefix.data);
   }
@@ -637,7 +637,7 @@ read_anon(SerdReader* const reader,
 }
 
 static bool
-node_has_string(const SerdNode* const node, const SerdStringView string)
+node_has_string(const SerdNode* const node, const ZixStringView string)
 {
   return node->length == string.length &&
          !memcmp(serd_node_string(node), string.data, string.length);
@@ -649,10 +649,10 @@ read_named_object(SerdReader* const reader,
                   SerdNode** const  dest,
                   bool* const       ate_dot)
 {
-  static const char* const    XSD_BOOLEAN     = NS_XSD "boolean";
-  static const size_t         XSD_BOOLEAN_LEN = 40;
-  static const SerdStringView true_string     = {"true", 4U};
-  static const SerdStringView false_string    = {"false", 5U};
+  static const char* const   XSD_BOOLEAN     = NS_XSD "boolean";
+  static const size_t        XSD_BOOLEAN_LEN = 40;
+  static const ZixStringView true_string     = {"true", 4U};
+  static const ZixStringView false_string    = {"false", 5U};
 
   /* This function deals with nodes that start with some letters.  Unlike
      everything else, the cases here aren't nicely distinguished by leading

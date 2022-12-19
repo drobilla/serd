@@ -6,6 +6,7 @@
 #include "failing_allocator.h"
 
 #include "serd/serd.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -117,8 +118,7 @@ test_callbacks(void)
   const SerdNode* name = serd_nodes_get(nodes, serd_a_string("eg"));
   const SerdNode* uri  = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "uri"));
 
-  const SerdNode* blank =
-    serd_nodes_get(nodes, serd_a_blank(serd_string("b1")));
+  const SerdNode* blank = serd_nodes_get(nodes, serd_a_blank(zix_string("b1")));
 
   SerdEnv* env = serd_env_new(world, serd_node_string_view(base));
 

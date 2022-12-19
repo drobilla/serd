@@ -5,7 +5,7 @@
 #define SERD_SRC_NODE_SPEC_H
 
 #include "serd/node.h"
-#include "serd/string_view.h"
+#include "zix/string_view.h"
 
 /**
    A lightweight "specification" of a node.
@@ -16,23 +16,23 @@
    allocate one.
 */
 typedef struct {
-  SerdNodeType   type;   ///< Basic type of this node
-  SerdStringView string; ///< String contents of this node
-  SerdNodeFlags  flags;  ///< Additional node flags
-  SerdStringView meta;   ///< String contents of datatype or language node
+  SerdNodeType  type;   ///< Basic type of this node
+  ZixStringView string; ///< String contents of this node
+  SerdNodeFlags flags;  ///< Additional node flags
+  ZixStringView meta;   ///< String contents of datatype or language node
 } NodeSpec;
 
 static inline NodeSpec
-token_spec(const SerdNodeType type, const SerdStringView string)
+token_spec(const SerdNodeType type, const ZixStringView string)
 {
-  NodeSpec spec = {type, string, 0U, serd_empty_string()};
+  NodeSpec spec = {type, string, 0U, zix_empty_string()};
   return spec;
 }
 
 static inline NodeSpec
-literal_spec(const SerdStringView string,
-             const SerdNodeFlags  flags,
-             const SerdStringView meta)
+literal_spec(const ZixStringView string,
+             const SerdNodeFlags flags,
+             const ZixStringView meta)
 {
   NodeSpec spec = {SERD_LITERAL, string, flags, meta};
   return spec;
