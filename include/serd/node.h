@@ -170,6 +170,36 @@ SerdNode* SERD_ALLOCATED
 serd_new_decimal(double d, const SerdNode* SERD_NULLABLE datatype);
 
 /**
+   Create a new canonical xsd:double literal.
+
+   The returned node will always be in scientific notation, like "1.23E4",
+   except for NaN and negative/positive infinity, which are "NaN", "-INF", and
+   "INF", respectively.
+
+   Uses the shortest possible representation that precisely describes `d`,
+   which has at most 17 significant digits (under 24 characters total).
+
+   @param d Double value to write.
+   @return A literal node with datatype xsd:double.
+*/
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_new_double(double d);
+
+/**
+   Create a new canonical xsd:float literal.
+
+   Uses identical formatting to serd_new_double(), except with at most 9
+   significant digits (under 14 characters total).
+
+   @param f Float value of literal.
+   @return A literal node with datatype xsd:float.
+*/
+SERD_API
+SerdNode* SERD_ALLOCATED
+serd_new_float(float f);
+
+/**
    Create a new canonical xsd:integer literal.
 
    @param i Integer value of literal.
@@ -194,6 +224,51 @@ SerdNode* SERD_ALLOCATED
 serd_new_base64(const void* SERD_NONNULL      buf,
                 size_t                        size,
                 const SerdNode* SERD_NULLABLE datatype);
+
+/**
+   Return the value of `node` as a boolean.
+
+   This will work for booleans, and numbers of any datatype if they are 0 or
+   1.
+
+   @return The value of `node` as a `bool`, or `false` on error.
+*/
+SERD_API
+bool
+serd_get_boolean(const SerdNode* SERD_NONNULL node);
+
+/**
+   Return the value of `node` as a double.
+
+   This will coerce numbers of any datatype to double, if the value fits.
+
+   @return The value of `node` as a `double`, or NaN on error.
+*/
+SERD_API
+double
+serd_get_double(const SerdNode* SERD_NONNULL node);
+
+/**
+   Return the value of `node` as a float.
+
+   This will coerce numbers of any datatype to float, if the value fits.
+
+   @return The value of `node` as a `float`, or NaN on error.
+*/
+SERD_API
+float
+serd_get_float(const SerdNode* SERD_NONNULL node);
+
+/**
+   Return the value of `node` as a long (signed 64-bit integer).
+
+   This will coerce numbers of any datatype to long, if the value fits.
+
+   @return The value of `node` as a `int64_t`, or 0 on error.
+*/
+SERD_API
+int64_t
+serd_get_integer(const SerdNode* SERD_NONNULL node);
 
 /// Return a deep copy of `node`
 SERD_API

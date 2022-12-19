@@ -29,18 +29,6 @@ size_t
 serd_strlen(const char* SERD_NONNULL str, SerdNodeFlags* SERD_NULLABLE flags);
 
 /**
-   Parse a string to a double.
-
-   The API of this function is identical to the standard C strtod function,
-   except this function is locale-independent and always matches the lexical
-   format used in the Turtle grammar (the decimal point is always ".").
-*/
-SERD_API
-double
-serd_strtod(const char* SERD_NONNULL                str,
-            const char* SERD_NONNULL* SERD_NULLABLE endptr);
-
-/**
    Decode a base64 string.
 
    This function can be used to decode a node created with serd_new_base64().
