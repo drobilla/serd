@@ -10,6 +10,7 @@
 #include "serd/status.h"
 #include "serd/string_view.h"
 #include "serd/uri.h"
+#include "zix/attributes.h"
 
 #include <stdbool.h>
 
@@ -25,22 +26,22 @@ SERD_BEGIN_DECLS
 typedef struct SerdEnvImpl SerdEnv;
 
 /// Create a new environment
-SERD_API SerdEnv* SERD_ALLOCATED
-serd_env_new(const SerdNode* SERD_NULLABLE base_uri);
+SERD_API SerdEnv* ZIX_ALLOCATED
+serd_env_new(const SerdNode* ZIX_NULLABLE base_uri);
 
 /// Free `env`
 SERD_API void
-serd_env_free(SerdEnv* SERD_NULLABLE env);
+serd_env_free(SerdEnv* ZIX_NULLABLE env);
 
 /// Get the current base URI
-SERD_API const SerdNode* SERD_NONNULL
-serd_env_base_uri(const SerdEnv* SERD_NONNULL env,
-                  SerdURIView* SERD_NULLABLE  out);
+SERD_API const SerdNode* ZIX_NONNULL
+serd_env_base_uri(const SerdEnv* ZIX_NONNULL env,
+                  SerdURIView* ZIX_NULLABLE  out);
 
 /// Set the current base URI
 SERD_API SerdStatus
-serd_env_set_base_uri(SerdEnv* SERD_NONNULL         env,
-                      const SerdNode* SERD_NULLABLE uri);
+serd_env_set_base_uri(SerdEnv* ZIX_NONNULL         env,
+                      const SerdNode* ZIX_NULLABLE uri);
 
 /**
    Set a namespace prefix.
@@ -50,22 +51,22 @@ serd_env_set_base_uri(SerdEnv* SERD_NONNULL         env,
    expand to "http://www.w3.org/2001/XMLSchema#decimal".
 */
 SERD_API SerdStatus
-serd_env_set_prefix(SerdEnv* SERD_NONNULL        env,
-                    const SerdNode* SERD_NONNULL name,
-                    const SerdNode* SERD_NONNULL uri);
+serd_env_set_prefix(SerdEnv* ZIX_NONNULL        env,
+                    const SerdNode* ZIX_NONNULL name,
+                    const SerdNode* ZIX_NONNULL uri);
 
 /// Set a namespace prefix
 SERD_API SerdStatus
-serd_env_set_prefix_from_strings(SerdEnv* SERD_NONNULL    env,
-                                 const char* SERD_NONNULL name,
-                                 const char* SERD_NONNULL uri);
+serd_env_set_prefix_from_strings(SerdEnv* ZIX_NONNULL    env,
+                                 const char* ZIX_NONNULL name,
+                                 const char* ZIX_NONNULL uri);
 
 /// Qualify `uri` into a CURIE if possible
 SERD_API bool
-serd_env_qualify(const SerdEnv* SERD_NULLABLE env,
-                 const SerdNode* SERD_NONNULL uri,
-                 SerdNode* SERD_NONNULL       prefix,
-                 SerdStringView* SERD_NONNULL suffix);
+serd_env_qualify(const SerdEnv* ZIX_NULLABLE env,
+                 const SerdNode* ZIX_NONNULL uri,
+                 SerdNode* ZIX_NONNULL       prefix,
+                 SerdStringView* ZIX_NONNULL suffix);
 
 /**
    Expand `curie`.
@@ -74,10 +75,10 @@ serd_env_qualify(const SerdEnv* SERD_NULLABLE env,
    not defined in `env`.
 */
 SERD_API SerdStatus
-serd_env_expand(const SerdEnv* SERD_NULLABLE env,
-                const SerdNode* SERD_NONNULL curie,
-                SerdStringView* SERD_NONNULL uri_prefix,
-                SerdStringView* SERD_NONNULL uri_suffix);
+serd_env_expand(const SerdEnv* ZIX_NULLABLE env,
+                const SerdNode* ZIX_NONNULL curie,
+                SerdStringView* ZIX_NONNULL uri_prefix,
+                SerdStringView* ZIX_NONNULL uri_suffix);
 
 /**
    Expand `node`, which must be a CURIE or URI, to a full URI.
@@ -85,14 +86,14 @@ serd_env_expand(const SerdEnv* SERD_NULLABLE env,
    Returns null if `node` can not be expanded.
 */
 SERD_API SerdNode
-serd_env_expand_node(const SerdEnv* SERD_NULLABLE env,
-                     const SerdNode* SERD_NONNULL node);
+serd_env_expand_node(const SerdEnv* ZIX_NULLABLE env,
+                     const SerdNode* ZIX_NONNULL node);
 
 /// Call `func` for each prefix defined in `env`
 SERD_API void
-serd_env_foreach(const SerdEnv* SERD_NONNULL env,
-                 SerdPrefixFunc SERD_NONNULL func,
-                 void* SERD_UNSPECIFIED      handle);
+serd_env_foreach(const SerdEnv* ZIX_NONNULL env,
+                 SerdPrefixFunc ZIX_NONNULL func,
+                 void* ZIX_UNSPECIFIED      handle);
 
 /**
    @}

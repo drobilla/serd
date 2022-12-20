@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: ISC
 
 #include "serd/env.h"
+#include "zix/attributes.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -93,7 +94,7 @@ serd_env_set_base_uri(SerdEnv* const env, const SerdNode* const uri)
   return SERD_SUCCESS;
 }
 
-SERD_PURE_FUNC static SerdPrefix*
+ZIX_PURE_FUNC static SerdPrefix*
 serd_env_find(const SerdEnv* const env,
               const char* const    name,
               const size_t         name_len)

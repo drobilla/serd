@@ -88,7 +88,7 @@ serd_to_upper(const char c)
   return (char)((c >= 'a' && c <= 'z') ? c - 32 : c);
 }
 
-SERD_PURE_FUNC static inline int
+ZIX_PURE_FUNC static inline int
 serd_strcasecmp(const char* s1, const char* s2)
 {
   while (*s1 && *s2) {

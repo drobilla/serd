@@ -5,6 +5,7 @@
 #define SERD_BUFFER_H
 
 #include "serd/attributes.h"
+#include "zix/attributes.h"
 
 #include <stddef.h>
 
@@ -21,8 +22,8 @@ SERD_BEGIN_DECLS
 
 /// A mutable buffer in memory
 typedef struct {
-  void* SERD_NULLABLE buf; ///< Buffer
-  size_t              len; ///< Size of buffer in bytes
+  void* ZIX_NULLABLE buf; ///< Buffer
+  size_t             len; ///< Size of buffer in bytes
 } SerdBuffer;
 
 /**
@@ -34,9 +35,9 @@ typedef struct {
    should be retrieved with serd_buffer_sink_finish().
 */
 SERD_API size_t
-serd_buffer_sink(const void* SERD_NONNULL buf,
-                 size_t                   len,
-                 void* SERD_UNSPECIFIED   stream);
+serd_buffer_sink(const void* ZIX_NONNULL buf,
+                 size_t                  len,
+                 void* ZIX_UNSPECIFIED   stream);
 
 /**
    Finish writing to a buffer with serd_buffer_sink().
@@ -44,8 +45,8 @@ serd_buffer_sink(const void* SERD_NONNULL buf,
    The returned string is the result of the serialisation, which is null
    terminated (by this function) and owned by the caller.
 */
-SERD_API char* SERD_NONNULL
-serd_buffer_sink_finish(SerdBuffer* SERD_NONNULL stream);
+SERD_API char* ZIX_NONNULL
+serd_buffer_sink_finish(SerdBuffer* ZIX_NONNULL stream);
 
 /**
    @}

@@ -5,6 +5,7 @@
 #define SERD_MEMORY_H
 
 #include "serd/attributes.h"
+#include "zix/attributes.h"
 
 SERD_BEGIN_DECLS
 
@@ -22,7 +23,7 @@ SERD_BEGIN_DECLS
    to the standard C free() function.
 */
 SERD_API void
-serd_free(void* SERD_NULLABLE ptr);
+serd_free(void* ZIX_NULLABLE ptr);
 
 /**
    @}
