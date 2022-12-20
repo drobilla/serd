@@ -4,7 +4,7 @@
 #ifndef SERD_SRC_SYSTEM_H
 #define SERD_SRC_SYSTEM_H
 
-#include "serd/attributes.h"
+#include "zix/attributes.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -16,15 +16,15 @@ int
 serd_system_strerror(int errnum, char* buf, size_t buflen);
 
 /// Allocate a buffer aligned to `alignment` bytes
-SERD_MALLOC_FUNC void*
+ZIX_MALLOC_FUNC void*
 serd_malloc_aligned(size_t alignment, size_t size);
 
 /// Allocate a zeroed buffer aligned to `alignment` bytes
-SERD_MALLOC_FUNC void*
+ZIX_MALLOC_FUNC void*
 serd_calloc_aligned(size_t alignment, size_t size);
 
 /// Allocate an aligned buffer for I/O
-SERD_MALLOC_FUNC void*
+ZIX_MALLOC_FUNC void*
 serd_allocate_buffer(size_t size);
 
 /// Free a buffer allocated with an aligned allocation function

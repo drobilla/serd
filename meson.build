@@ -115,6 +115,7 @@ exess_dep = dependency(
 zix_dep = dependency(
   'zix-0',
   fallback: ['zix', 'zix_dep'],
+  include_type: 'system',
   version: '>= 0.3.3',
 )
 
@@ -231,7 +232,7 @@ if not get_option('tools').disabled()
     'serdi',
     files('src/serdi.c'),
     c_args: c_suppressions + platform_c_args,
-    dependencies: serd_dep,
+    dependencies: [serd_dep, zix_dep],
     install: true,
     link_args: tool_link_args,
   )

@@ -6,6 +6,7 @@
 
 #include "serd/attributes.h"
 #include "serd/node.h"
+#include "zix/attributes.h"
 
 #include <stddef.h>
 
@@ -25,7 +26,7 @@ SERD_BEGIN_DECLS
    @param flags (Output) Set to the applicable flags.
 */
 SERD_API size_t
-serd_strlen(const char* SERD_NONNULL str, SerdNodeFlags* SERD_NULLABLE flags);
+serd_strlen(const char* ZIX_NONNULL str, SerdNodeFlags* ZIX_NULLABLE flags);
 
 /**
    Decode a base64 string.
@@ -37,10 +38,10 @@ serd_strlen(const char* SERD_NONNULL str, SerdNodeFlags* SERD_NULLABLE flags);
    @param size Set to the size of the returned blob in bytes.
    @return A newly allocated blob which must be freed with serd_free().
 */
-SERD_API void* SERD_ALLOCATED
-serd_base64_decode(const char* SERD_NONNULL str,
-                   size_t                   len,
-                   size_t* SERD_NONNULL     size);
+SERD_API void* ZIX_ALLOCATED
+serd_base64_decode(const char* ZIX_NONNULL str,
+                   size_t                  len,
+                   size_t* ZIX_NONNULL     size);
 
 /**
    @}

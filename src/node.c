@@ -8,7 +8,6 @@
 #include "system.h"
 
 #include "exess/exess.h"
-#include "serd/attributes.h"
 #include "serd/buffer.h"
 #include "serd/node.h"
 #include "serd/status.h"
@@ -16,6 +15,7 @@
 #include "serd/string_view.h"
 #include "serd/uri.h"
 #include "serd/write_result.h"
+#include "zix/attributes.h"
 
 #include <assert.h>
 #include <math.h>
@@ -26,8 +26,8 @@
 #include <string.h>
 
 typedef struct {
-  const void* SERD_NULLABLE buf;
-  size_t                    len;
+  const void* ZIX_NULLABLE buf;
+  size_t                   len;
 } SerdConstBuffer;
 
 #define NS_XSD "http://www.w3.org/2001/XMLSchema#"
@@ -63,7 +63,7 @@ string_sink(const void* const buf,
   return nmemb;
 }
 
-SERD_PURE_FUNC static size_t
+ZIX_PURE_FUNC static size_t
 serd_node_pad_length(const size_t n_bytes)
 {
   const size_t pad  = sizeof(SerdNode) - (n_bytes + 2) % sizeof(SerdNode);
@@ -84,7 +84,7 @@ serd_node_meta(SerdNode* const node)
   return node + 1 + (serd_node_pad_length(node->length) / sizeof(SerdNode));
 }
 
-SERD_PURE_FUNC static const SerdNode*
+ZIX_PURE_FUNC static const SerdNode*
 serd_node_maybe_get_meta_c(const SerdNode* const node)
 {
   return (node->flags & meta_mask) ? serd_node_meta_c(node) : NULL;
@@ -106,7 +106,7 @@ serd_node_check_padding(const SerdNode* node)
 #endif
 }
 
-static SERD_PURE_FUNC size_t
+static ZIX_PURE_FUNC size_t
 serd_node_total_size(const SerdNode* const node)
 {
   return node ? (sizeof(SerdNode) + serd_node_pad_length(node->length) +
@@ -791,7 +791,7 @@ serd_node_string_view(const SerdNode* const node)
   return r;
 }
 
-SERD_PURE_FUNC SerdURIView
+ZIX_PURE_FUNC SerdURIView
 serd_node_uri_view(const SerdNode* const node)
 {
   assert(node);

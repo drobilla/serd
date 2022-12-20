@@ -7,6 +7,9 @@
 #include "serd/attributes.h"
 #include "serd/stream.h"
 #include "serd/string_view.h"
+#include "zix/allocator.h"
+#include "zix/attributes.h"
+#include "zix/string_view.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -58,17 +61,17 @@ static const SerdURIView SERD_URI_NULL =
    @param hostname If non-NULL, set to the hostname, if present.
    @return A newly-allocated filesystem path.
 */
-SERD_API char* SERD_ALLOCATED
-serd_parse_file_uri(const char* SERD_NONNULL          uri,
-                    char* SERD_NONNULL* SERD_NULLABLE hostname);
+SERD_API char* ZIX_ALLOCATED
+serd_parse_file_uri(const char* ZIX_NONNULL         uri,
+                    char* ZIX_NONNULL* ZIX_NULLABLE hostname);
 
 /// Return true iff `string` starts with a valid URI scheme
 SERD_PURE_API bool
-serd_uri_string_has_scheme(const char* SERD_NONNULL string);
+serd_uri_string_has_scheme(const char* ZIX_NONNULL string);
 
 /// Parse `string` and return a URI view that points into it
 SERD_PURE_API SerdURIView
-serd_parse_uri(const char* SERD_NONNULL string);
+serd_parse_uri(const char* ZIX_NONNULL string);
 
 /**
    Return reference `r` resolved against `base`.
@@ -146,9 +149,9 @@ serd_uri_string_length(SerdURIView uri);
    `serd_uri_string_length(uri)` on error.
 */
 SERD_API size_t
-serd_write_uri(SerdURIView                uri,
-               SerdWriteFunc SERD_NONNULL sink,
-               void* SERD_NONNULL         stream);
+serd_write_uri(SerdURIView               uri,
+               SerdWriteFunc ZIX_NONNULL sink,
+               void* ZIX_NONNULL         stream);
 
 /**
    @}

@@ -5,10 +5,10 @@
 #define SERD_SRC_NODE_H
 
 #include "exess/exess.h"
-#include "serd/attributes.h"
 #include "serd/node.h"
 #include "serd/string_view.h"
 #include "serd/uri.h"
+#include "zix/attributes.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -22,49 +22,49 @@ struct SerdNodeImpl {
 
 static const size_t serd_node_align = 2 * sizeof(uint64_t);
 
-static inline char* SERD_NONNULL
-serd_node_buffer(SerdNode* SERD_NONNULL node)
+static inline char* ZIX_NONNULL
+serd_node_buffer(SerdNode* ZIX_NONNULL node)
 {
   return (char*)(node + 1);
 }
 
-static inline const char* SERD_NONNULL
-serd_node_buffer_c(const SerdNode* SERD_NONNULL node)
+static inline const char* ZIX_NONNULL
+serd_node_buffer_c(const SerdNode* ZIX_NONNULL node)
 {
   return (const char*)(node + 1);
 }
 
-static inline const char* SERD_NONNULL
-serd_node_string_i(const SerdNode* const SERD_NONNULL node)
+static inline const char* ZIX_NONNULL
+serd_node_string_i(const SerdNode* const ZIX_NONNULL node)
 {
   return (const char*)(node + 1);
 }
 
 static inline bool
-serd_node_pattern_match(const SerdNode* SERD_NULLABLE a,
-                        const SerdNode* SERD_NULLABLE b)
+serd_node_pattern_match(const SerdNode* ZIX_NULLABLE a,
+                        const SerdNode* ZIX_NULLABLE b)
 {
   return !a || !b || serd_node_equals(a, b);
 }
 
-SerdNode* SERD_ALLOCATED
+SerdNode* ZIX_ALLOCATED
 serd_node_malloc(size_t length, SerdNodeFlags flags, SerdNodeType type);
 
 void
-serd_node_set(SerdNode* SERD_NONNULL* SERD_NONNULL dst,
-              const SerdNode* SERD_NONNULL         src);
+serd_node_set(SerdNode* ZIX_NONNULL* ZIX_NONNULL dst,
+              const SerdNode* ZIX_NONNULL        src);
 
 void
-serd_node_zero_pad(SerdNode* SERD_NONNULL node);
+serd_node_zero_pad(SerdNode* ZIX_NONNULL node);
 
 /// Create a new URI from a string, resolved against a base URI
-SerdNode* SERD_ALLOCATED
+SerdNode* ZIX_ALLOCATED
 serd_new_resolved_uri(SerdStringView string, SerdURIView base_uri);
 
 ExessResult
-serd_node_get_value_as(const SerdNode* SERD_NONNULL node,
-                       ExessDatatype                value_type,
-                       size_t                       value_size,
-                       void* SERD_NONNULL           value);
+serd_node_get_value_as(const SerdNode* ZIX_NONNULL node,
+                       ExessDatatype               value_type,
+                       size_t                      value_size,
+                       void* ZIX_NONNULL           value);
 
 #endif // SERD_SRC_NODE_H

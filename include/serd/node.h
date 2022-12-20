@@ -8,6 +8,9 @@
 #include "serd/string_view.h"
 #include "serd/uri.h"
 #include "serd/write_result.h"
+#include "zix/allocator.h"
+#include "zix/attributes.h"
+#include "zix/string_view.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -106,13 +109,13 @@ typedef uint32_t SerdNodeFlags;
    A "token" is a node that isn't a typed or tagged literal.  This can be used
    to create URIs, blank nodes, CURIEs, and simple string literals.
 */
-SERD_API SerdNode* SERD_ALLOCATED
+SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_token(SerdNodeType type, SerdStringView string);
 
 /**
    Create a new string literal node.
 */
-SERD_API SerdNode* SERD_ALLOCATED
+SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_string(SerdStringView string);
 
 /**
@@ -121,7 +124,7 @@ serd_new_string(SerdStringView string);
    A plain literal has no datatype, but may have a language tag.  The `lang`
    may be empty, in which case this is equivalent to `serd_new_string()`.
 */
-SERD_API SerdNode* SERD_ALLOCATED
+SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_plain_literal(SerdStringView str, SerdStringView lang);
 
 /**
@@ -131,29 +134,29 @@ serd_new_plain_literal(SerdStringView str, SerdStringView lang);
    `datatype` may be NULL, in which case this is equivalent to
    `serd_new_string()`.
 */
-SERD_API SerdNode* SERD_ALLOCATED
+SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_typed_literal(SerdStringView str, SerdStringView datatype_uri);
 
 /**
    Create a new node from a blank node label.
 */
-SERD_API SerdNode* SERD_ALLOCATED
+SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_blank(SerdStringView string);
 
 /// Create a new CURIE node
-SERD_API SerdNode* SERD_ALLOCATED
+SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_curie(SerdStringView string);
 
 /**
    Create a new URI node from a parsed URI.
 */
-SERD_API SerdNode* SERD_ALLOCATED
+SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_parsed_uri(SerdURIView uri);
 
 /**
    Create a new URI node from a string.
 */
-SERD_API SerdNode* SERD_ALLOCATED
+SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_uri(SerdStringView string);
 
 /**
@@ -164,13 +167,13 @@ serd_new_uri(SerdStringView string);
 
    If `path` is relative, `hostname` is ignored.
 */
-SERD_API SerdNode* SERD_ALLOCATED
+SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_file_uri(SerdStringView path, SerdStringView hostname);
 
 /**
    Create a new canonical xsd:boolean node.
 */
-SERD_API SerdNode* SERD_ALLOCATED
+SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_boolean(bool b);
 
 /**
@@ -186,8 +189,8 @@ serd_new_boolean(bool b);
    @param d The value for the new node.
    @param datatype Datatype of node, or NULL for xsd:decimal.
 */
-SERD_API SerdNode* SERD_ALLOCATED
-serd_new_decimal(double d, const SerdNode* SERD_NULLABLE datatype);
+SERD_API SerdNode* ZIX_ALLOCATED
+serd_new_decimal(double d, const SerdNode* ZIX_NULLABLE datatype);
 
 /**
    Create a new canonical xsd:double literal.
@@ -202,7 +205,7 @@ serd_new_decimal(double d, const SerdNode* SERD_NULLABLE datatype);
    @param d Double value to write.
    @return A literal node with datatype xsd:double.
 */
-SERD_API SerdNode* SERD_ALLOCATED
+SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_double(double d);
 
 /**
@@ -214,7 +217,7 @@ serd_new_double(double d);
    @param f Float value of literal.
    @return A literal node with datatype xsd:float.
 */
-SERD_API SerdNode* SERD_ALLOCATED
+SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_float(float f);
 
 /**
@@ -226,8 +229,8 @@ serd_new_float(float f);
    @param i Integer value of literal.
    @param datatype Datatype of node, or NULL for xsd:integer.
 */
-SERD_API SerdNode* SERD_ALLOCATED
-serd_new_integer(int64_t i, const SerdNode* SERD_NULLABLE datatype);
+SERD_API SerdNode* ZIX_ALLOCATED
+serd_new_integer(int64_t i, const SerdNode* ZIX_NULLABLE datatype);
 
 /**
    Create a new canonical xsd:base64Binary literal.
@@ -239,20 +242,20 @@ serd_new_integer(int64_t i, const SerdNode* SERD_NULLABLE datatype);
    @param size Size of `buf` in bytes.
    @param datatype Datatype of node, or null for xsd:base64Binary.
 */
-SERD_API SerdNode* SERD_ALLOCATED
-serd_new_base64(const void* SERD_NONNULL      buf,
-                size_t                        size,
-                const SerdNode* SERD_NULLABLE datatype);
+SERD_API SerdNode* ZIX_ALLOCATED
+serd_new_base64(const void* ZIX_NONNULL      buf,
+                size_t                       size,
+                const SerdNode* ZIX_NULLABLE datatype);
 
 /// Return a deep copy of `node`
-SERD_API SerdNode* SERD_ALLOCATED
-serd_node_copy(const SerdNode* SERD_NULLABLE node);
+SERD_API SerdNode* ZIX_ALLOCATED
+serd_node_copy(const SerdNode* ZIX_NULLABLE node);
 
 /**
    Free any data owned by `node`.
 */
 SERD_API void
-serd_node_free(SerdNode* SERD_NULLABLE node);
+serd_node_free(SerdNode* ZIX_NULLABLE node);
 
 /**
    @}
@@ -262,19 +265,19 @@ serd_node_free(SerdNode* SERD_NULLABLE node);
 
 /// Return the type of a node
 SERD_PURE_API SerdNodeType
-serd_node_type(const SerdNode* SERD_NONNULL node);
+serd_node_type(const SerdNode* ZIX_NONNULL node);
 
 /// Return the length of a node's string in bytes, excluding the terminator
 SERD_PURE_API size_t
-serd_node_length(const SerdNode* SERD_NULLABLE node);
+serd_node_length(const SerdNode* ZIX_NULLABLE node);
 
 /// Return the additional flags of a node
 SERD_PURE_API SerdNodeFlags
-serd_node_flags(const SerdNode* SERD_NONNULL node);
+serd_node_flags(const SerdNode* ZIX_NONNULL node);
 
 /// Return the string contents of a node
-SERD_CONST_API const char* SERD_NONNULL
-serd_node_string(const SerdNode* SERD_NONNULL node);
+SERD_CONST_API const char* ZIX_NONNULL
+serd_node_string(const SerdNode* ZIX_NONNULL node);
 
 /**
    Return a view of the string in a node.
@@ -283,7 +286,7 @@ serd_node_string(const SerdNode* SERD_NONNULL node);
    that can be used to get both in a single call.
 */
 SERD_PURE_API SerdStringView
-serd_node_string_view(const SerdNode* SERD_NONNULL node);
+serd_node_string_view(const SerdNode* ZIX_NONNULL node);
 
 /**
    Return a parsed view of the URI in a node.
@@ -297,7 +300,7 @@ serd_node_string_view(const SerdNode* SERD_NONNULL node);
    scope.
 */
 SERD_PURE_API SerdURIView
-serd_node_uri_view(const SerdNode* SERD_NONNULL node);
+serd_node_uri_view(const SerdNode* ZIX_NONNULL node);
 
 /**
    Return the optional datatype of a literal node.
@@ -305,8 +308,8 @@ serd_node_uri_view(const SerdNode* SERD_NONNULL node);
    The datatype, if present, is always a URI, typically something like
    <http://www.w3.org/2001/XMLSchema#boolean>.
 */
-SERD_PURE_API const SerdNode* SERD_NULLABLE
-serd_node_datatype(const SerdNode* SERD_NONNULL node);
+SERD_PURE_API const SerdNode* ZIX_NULLABLE
+serd_node_datatype(const SerdNode* ZIX_NONNULL node);
 
 /**
    Return the optional language tag of a literal node.
@@ -316,8 +319,8 @@ serd_node_datatype(const SerdNode* SERD_NONNULL node);
    example, the common form "en-CA" is valid, but lowercase is considered
    canonical here.
 */
-SERD_PURE_API const SerdNode* SERD_NULLABLE
-serd_node_language(const SerdNode* SERD_NONNULL node);
+SERD_PURE_API const SerdNode* ZIX_NULLABLE
+serd_node_language(const SerdNode* ZIX_NONNULL node);
 
 /**
    Return the value of `node` as a boolean.
@@ -328,7 +331,7 @@ serd_node_language(const SerdNode* SERD_NONNULL node);
    @return The value of `node` as a `bool`, or `false` on error.
 */
 SERD_API bool
-serd_get_boolean(const SerdNode* SERD_NONNULL node);
+serd_get_boolean(const SerdNode* ZIX_NONNULL node);
 
 /**
    Return the value of `node` as a double.
@@ -338,7 +341,7 @@ serd_get_boolean(const SerdNode* SERD_NONNULL node);
    @return The value of `node` as a `double`, or NaN on error.
 */
 SERD_API double
-serd_get_double(const SerdNode* SERD_NONNULL node);
+serd_get_double(const SerdNode* ZIX_NONNULL node);
 
 /**
    Return the value of `node` as a float.
@@ -348,7 +351,7 @@ serd_get_double(const SerdNode* SERD_NONNULL node);
    @return The value of `node` as a `float`, or NaN on error.
 */
 SERD_API float
-serd_get_float(const SerdNode* SERD_NONNULL node);
+serd_get_float(const SerdNode* ZIX_NONNULL node);
 
 /**
    Return the value of `node` as a long (signed 64-bit integer).
@@ -358,7 +361,7 @@ serd_get_float(const SerdNode* SERD_NONNULL node);
    @return The value of `node` as a `int64_t`, or 0 on error.
 */
 SERD_API int64_t
-serd_get_integer(const SerdNode* SERD_NONNULL node);
+serd_get_integer(const SerdNode* ZIX_NONNULL node);
 
 /**
    Return the maximum size of a decoded binary node in bytes.
@@ -369,7 +372,7 @@ serd_get_integer(const SerdNode* SERD_NONNULL node);
    the actual size of the data due to things like additional whitespace.
 */
 SERD_PURE_API size_t
-serd_get_base64_size(const SerdNode* SERD_NONNULL node);
+serd_get_base64_size(const SerdNode* ZIX_NONNULL node);
 
 /**
    Decode a base64 node.
@@ -387,9 +390,9 @@ serd_get_base64_size(const SerdNode* SERD_NONNULL node);
    along with the number of bytes required for successful decoding.
 */
 SERD_API SerdWriteResult
-serd_get_base64(const SerdNode* SERD_NONNULL node,
-                size_t                       buf_size,
-                void* SERD_NONNULL           buf);
+serd_get_base64(const SerdNode* ZIX_NONNULL node,
+                size_t                      buf_size,
+                void* ZIX_NONNULL           buf);
 
 /**
    @}
@@ -406,8 +409,8 @@ serd_get_base64(const SerdNode* SERD_NONNULL node,
    @return True if `a` and `b` point to equal nodes, or are both null.
 */
 SERD_PURE_API bool
-serd_node_equals(const SerdNode* SERD_NULLABLE a,
-                 const SerdNode* SERD_NULLABLE b);
+serd_node_equals(const SerdNode* ZIX_NULLABLE a,
+                 const SerdNode* ZIX_NULLABLE b);
 
 /**
    Compare two nodes.
@@ -419,8 +422,7 @@ serd_node_equals(const SerdNode* SERD_NULLABLE a,
    datatype, if present.
 */
 SERD_PURE_API int
-serd_node_compare(const SerdNode* SERD_NONNULL a,
-                  const SerdNode* SERD_NONNULL b);
+serd_node_compare(const SerdNode* ZIX_NONNULL a, const SerdNode* ZIX_NONNULL b);
 
 /**
    @}

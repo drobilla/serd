@@ -7,6 +7,8 @@
 #include "serd/attributes.h"
 #include "serd/error.h"
 #include "serd/status.h"
+#include "zix/allocator.h"
+#include "zix/attributes.h"
 
 #include <stddef.h>
 
@@ -33,12 +35,12 @@ typedef struct {
    It is safe to use multiple worlds in one process, though no objects can be
    shared between worlds.
 */
-SERD_MALLOC_API SerdWorld* SERD_ALLOCATED
+SERD_MALLOC_API SerdWorld* ZIX_ALLOCATED
 serd_world_new(void);
 
 /// Free `world`
 SERD_API void
-serd_world_free(SerdWorld* SERD_NULLABLE world);
+serd_world_free(SerdWorld* ZIX_NULLABLE world);
 
 /**
    Return the current resource limits.
@@ -49,7 +51,7 @@ serd_world_free(SerdWorld* SERD_NULLABLE world);
    most data.
 */
 SERD_API SerdLimits
-serd_world_limits(const SerdWorld* SERD_NONNULL world);
+serd_world_limits(const SerdWorld* ZIX_NONNULL world);
 
 /**
    Set the current resource limits.
@@ -59,7 +61,7 @@ serd_world_limits(const SerdWorld* SERD_NONNULL world);
    other function like serd_reader_new() that uses the current limits.
 */
 SERD_API SerdStatus
-serd_world_set_limits(SerdWorld* SERD_NONNULL world, SerdLimits limits);
+serd_world_set_limits(SerdWorld* ZIX_NONNULL world, SerdLimits limits);
 
 /**
    Set a function to be called when errors occur.
@@ -68,9 +70,9 @@ serd_world_set_limits(SerdWorld* SERD_NONNULL world, SerdLimits limits);
    no error function is set, errors are printed to stderr.
 */
 SERD_API void
-serd_world_set_error_func(SerdWorld* SERD_NONNULL     world,
-                          SerdErrorFunc SERD_NULLABLE error_func,
-                          void* SERD_NULLABLE         handle);
+serd_world_set_error_func(SerdWorld* ZIX_NONNULL     world,
+                          SerdErrorFunc ZIX_NULLABLE error_func,
+                          void* ZIX_NULLABLE         handle);
 
 /**
    @}
