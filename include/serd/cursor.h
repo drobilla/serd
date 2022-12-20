@@ -45,8 +45,8 @@ serd_cursor_get(const SerdCursor* ZIX_NULLABLE cursor);
    before using the caret.
 */
 SERD_API
-const SerdCaret*
-serd_cursor_get_caret(const SerdCursor* SERD_NULLABLE cursor);
+const SerdCaret* ZIX_NULLABLE
+serd_cursor_get_caret(const SerdCursor* ZIX_NULLABLE cursor);
 
 /**
    Increment cursor to point to the next statement.

@@ -9,7 +9,6 @@
 
 #include "serd/caret.h"
 #include "serd/cursor.h"
-#include "serd/memory.h"
 #include "serd/model.h"
 #include "serd/node.h"
 #include "serd/statement.h"
@@ -41,8 +40,8 @@ struct SerdTransactionImpl {
 SerdTransaction*
 serd_transaction_new(SerdModel* const model)
 {
-  SerdTransaction* const transaction = (SerdTransaction*)serd_acalloc(
-    model->allocator, 1, sizeof(SerdTransaction));
+  SerdTransaction* const transaction =
+    (SerdTransaction*)zix_calloc(model->allocator, 1, sizeof(SerdTransaction));
 
   if (transaction) {
     transaction->model = model;
@@ -55,7 +54,7 @@ static SerdStatus
 push_operation(SerdTransaction* const transaction, const SerdOperation op)
 {
   SerdModel*           model          = transaction->model;
-  SerdOperation* const new_operations = (SerdOperation*)serd_arealloc(
+  SerdOperation* const new_operations = (SerdOperation*)zix_realloc(
     model->allocator, transaction->operations, transaction->count + 1);
 
   if (!new_operations) {
@@ -112,9 +111,9 @@ serd_transaction_erase(SerdTransaction* const transaction,
                        const SerdNode* const  o,
                        const SerdNode* const  g)
 {
-  SerdAllocator* const allocator = transaction->model->allocator;
-  SerdModel* const     model     = transaction->model;
-  SerdCursor* const    cursor = serd_model_find(allocator, model, s, p, o, g);
+  ZixAllocator* const allocator = transaction->model->allocator;
+  SerdModel* const    model     = transaction->model;
+  SerdCursor* const   cursor    = serd_model_find(allocator, model, s, p, o, g);
   if (serd_cursor_is_end(cursor)) {
     serd_cursor_free(allocator, cursor);
     return SERD_FAILURE;
@@ -140,8 +139,8 @@ serd_transaction_free(SerdTransaction* const transaction)
     }
   }
 
-  serd_afree(transaction->model->allocator, transaction->operations);
-  serd_afree(transaction->model->allocator, transaction);
+  zix_free(transaction->model->allocator, transaction->operations);
+  zix_free(transaction->model->allocator, transaction);
 }
 
 SerdStatus

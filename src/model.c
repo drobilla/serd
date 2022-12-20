@@ -709,7 +709,8 @@ serd_model_insert_statements(SerdModel* const model, SerdCursor* const range)
                               serd_statement_predicate(statement)),
             serd_nodes_intern(model->nodes, serd_statement_object(statement)),
             serd_nodes_intern(model->nodes, serd_statement_graph(statement)),
-            serd_cursor_get_caret(range)))) {
+            NULL
+            /*serd_cursor_get_caret(range)*/))) {
       st = serd_cursor_advance(range);
     }
 
