@@ -12,6 +12,8 @@
 #include "serd/stream.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
+#include "zix/attributes.h"
+#include "zix/string_view.h"
 
 #include <stdint.h>
 
@@ -46,21 +48,21 @@ typedef enum {
 typedef uint32_t SerdWriterFlags;
 
 /// Create a new RDF writer
-SERD_API SerdWriter* SERD_ALLOCATED
-serd_writer_new(SerdWorld* SERD_NONNULL    world,
-                SerdSyntax                 syntax,
-                SerdWriterFlags            flags,
-                SerdEnv* SERD_NONNULL      env,
-                SerdWriteFunc SERD_NONNULL ssink,
-                void* SERD_NULLABLE        stream);
+SERD_API SerdWriter* ZIX_ALLOCATED
+serd_writer_new(SerdWorld* ZIX_NONNULL    world,
+                SerdSyntax                syntax,
+                SerdWriterFlags           flags,
+                SerdEnv* ZIX_NONNULL      env,
+                SerdWriteFunc ZIX_NONNULL ssink,
+                void* ZIX_NULLABLE        stream);
 
 /// Free `writer`
 SERD_API void
-serd_writer_free(SerdWriter* SERD_NULLABLE writer);
+serd_writer_free(SerdWriter* ZIX_NULLABLE writer);
 
 /// Return a sink interface that emits statements via `writer`
-SERD_CONST_API const SerdSink* SERD_NONNULL
-serd_writer_sink(SerdWriter* SERD_NONNULL writer);
+SERD_CONST_API const SerdSink* ZIX_NONNULL
+serd_writer_sink(SerdWriter* ZIX_NONNULL writer);
 
 /**
    Set a prefix to be removed from matching blank node identifiers.
@@ -69,8 +71,8 @@ serd_writer_sink(SerdWriter* SERD_NONNULL writer);
    to "undo" added prefixes.
 */
 SERD_API void
-serd_writer_chop_blank_prefix(SerdWriter* SERD_NONNULL  writer,
-                              const char* SERD_NULLABLE prefix);
+serd_writer_chop_blank_prefix(SerdWriter* ZIX_NONNULL  writer,
+                              const char* ZIX_NULLABLE prefix);
 
 /**
    Set the current root URI.
@@ -83,8 +85,8 @@ serd_writer_chop_blank_prefix(SerdWriter* SERD_NONNULL  writer,
    it defaults to the base URI, so no up-references will be created at all.
 */
 SERD_API SerdStatus
-serd_writer_set_root_uri(SerdWriter* SERD_NONNULL      writer,
-                         const SerdNode* SERD_NULLABLE uri);
+serd_writer_set_root_uri(SerdWriter* ZIX_NONNULL      writer,
+                         const SerdNode* ZIX_NULLABLE uri);
 
 /**
    Finish a write.
@@ -93,7 +95,7 @@ serd_writer_set_root_uri(SerdWriter* SERD_NONNULL      writer,
    that the output is a complete document.
 */
 SERD_API SerdStatus
-serd_writer_finish(SerdWriter* SERD_NONNULL writer);
+serd_writer_finish(SerdWriter* ZIX_NONNULL writer);
 
 /**
    @}

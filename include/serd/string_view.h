@@ -24,12 +24,12 @@ SERD_BEGIN_DECLS
    of strings in-place and to avoid redundant string measurement.
 */
 typedef struct {
-  const char* SERD_NONNULL data;   ///< Start of string
-  size_t                   length; ///< Length of string in bytes
+  const char* ZIX_NONNULL data;   ///< Start of string
+  size_t                  length; ///< Length of string in bytes
 } SerdStringView;
 
 /// Return a view of an empty string
-SERD_ALWAYS_INLINE_FUNC SERD_CONST_FUNC static inline SerdStringView
+ZIX_ALWAYS_INLINE_FUNC ZIX_CONST_FUNC static inline SerdStringView
 serd_empty_string(void)
 {
   const SerdStringView view = {"", 0U};
@@ -49,8 +49,8 @@ serd_empty_string(void)
    @param len Length of the substring in bytes, not including the trailing null
    terminator if present.
 */
-SERD_ALWAYS_INLINE_FUNC SERD_CONST_FUNC static inline SerdStringView
-serd_substring(const char* const SERD_NONNULL str, const size_t len)
+ZIX_ALWAYS_INLINE_FUNC ZIX_CONST_FUNC static inline SerdStringView
+serd_substring(const char* const ZIX_NONNULL str, const size_t len)
 {
   const SerdStringView view = {str, len};
   return view;
@@ -63,9 +63,9 @@ serd_substring(const char* const SERD_NONNULL str, const size_t len)
 
    @param str Pointer to the start of a null-terminated C string, or null.
 */
-SERD_ALWAYS_INLINE_FUNC SERD_PURE_FUNC static inline SerdStringView
+ZIX_ALWAYS_INLINE_FUNC ZIX_PURE_FUNC static inline SerdStringView
 // NOLINTNEXTLINE(clang-diagnostic-unused-function)
-serd_string(const char* const SERD_NULLABLE str)
+serd_string(const char* const ZIX_NULLABLE str)
 {
   return str ? serd_substring(str, strlen(str)) : serd_empty_string();
 }

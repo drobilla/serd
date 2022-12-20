@@ -5,6 +5,7 @@
 #define SERD_CARET_VIEW_H
 
 #include "serd/node.h"
+#include "zix/attributes.h"
 
 SERD_BEGIN_DECLS
 
@@ -14,9 +15,9 @@ SERD_BEGIN_DECLS
 */
 
 typedef struct {
-  const SerdNode* SERD_NULLABLE document;
-  unsigned                      line;
-  unsigned                      column;
+  const SerdNode* ZIX_NULLABLE document;
+  unsigned                     line;
+  unsigned                     column;
 } SerdCaretView;
 
 /**

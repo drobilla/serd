@@ -22,16 +22,15 @@ IndentPPDirectives: AfterHash
 KeepEmptyLinesAtTheStartOfBlocks: false
 SpacesInContainerLiterals: false
 AttributeMacros:
-  - SERD_ALLOCATED
-  - SERD_ALWAYS_INLINE_FUNC
   - SERD_API
   - SERD_CONST_API
-  - SERD_CONST_FUNC
   - SERD_FALLTHROUGH
   - SERD_MALLOC_API
-  - SERD_MALLOC_FUNC
   - SERD_PURE_API
-  - SERD_PURE_FUNC
+  - ZIX_ALWAYS_INLINE_FUNC
+  - ZIX_CONST_FUNC
+  - ZIX_MALLOC_FUNC
+  - ZIX_PURE_FUNC
 StatementMacros:
   - SERD_LOG_FUNC
   - SERD_DISABLE_NULL_WARNINGS

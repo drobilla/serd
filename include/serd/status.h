@@ -5,6 +5,7 @@
 #define SERD_STATUS_H
 
 #include "serd/attributes.h"
+#include "zix/attributes.h"
 
 SERD_BEGIN_DECLS
 
@@ -41,7 +42,7 @@ typedef enum {
 } SerdStatus;
 
 /// Return a string describing a status code
-SERD_CONST_API const char* SERD_NONNULL
+SERD_CONST_API const char* ZIX_NONNULL
 serd_strerror(SerdStatus status);
 
 /**

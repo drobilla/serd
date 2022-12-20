@@ -20,10 +20,10 @@ SERD_BEGIN_DECLS
 
 /// An error description
 typedef struct {
-  SerdStatus                     status; ///< Error code
-  const SerdCaret* SERD_NULLABLE caret;  ///< File origin of error
-  const char* SERD_NONNULL       fmt;    ///< Printf-style format string
-  va_list* SERD_NONNULL          args;   ///< Arguments for fmt
+  SerdStatus                    status; ///< Error code
+  const SerdCaret* ZIX_NULLABLE caret;  ///< File origin of error
+  const char* ZIX_NONNULL       fmt;    ///< Printf-style format string
+  va_list* ZIX_NONNULL          args;   ///< Arguments for fmt
 } SerdError;
 
 /**
@@ -32,8 +32,8 @@ typedef struct {
    @param handle Handle for user data.
    @param error Error description.
 */
-typedef SerdStatus (*SerdErrorFunc)(void* SERD_NULLABLE           handle,
-                                    const SerdError* SERD_NONNULL error);
+typedef SerdStatus (*SerdErrorFunc)(void* ZIX_NULLABLE           handle,
+                                    const SerdError* ZIX_NONNULL error);
 
 /**
    @}

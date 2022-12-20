@@ -22,7 +22,7 @@ SERD_BEGIN_DECLS
    to the standard C free() function.
 */
 SERD_API void
-serd_free(void* SERD_NULLABLE ptr);
+serd_free(void* ZIX_NULLABLE ptr);
 
 /**
    @}

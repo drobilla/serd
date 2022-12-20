@@ -16,11 +16,11 @@ SERD_BEGIN_DECLS
 */
 
 typedef struct {
-  const SerdNode* SERD_NONNULL  subject;
-  const SerdNode* SERD_NONNULL  predicate;
-  const SerdNode* SERD_NONNULL  object;
-  const SerdNode* SERD_NULLABLE graph;
-  SerdCaretView                 caret;
+  const SerdNode* ZIX_NONNULL  subject;
+  const SerdNode* ZIX_NONNULL  predicate;
+  const SerdNode* ZIX_NONNULL  object;
+  const SerdNode* ZIX_NULLABLE graph;
+  SerdCaretView                caret;
 } SerdStatementView;
 
 /**
