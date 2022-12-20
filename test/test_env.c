@@ -11,6 +11,8 @@
 #include "serd/nodes.h"
 #include "serd/sink.h"
 #include "serd/status.h"
+#include "serd/world.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -303,6 +305,64 @@ test_set_prefix(void)
 }
 
 static void
+test_unset_prefix(void)
+{
+  static const ZixStringView name1 = ZIX_STATIC_STRING("name1");
+  static const ZixStringView uri1  = ZIX_STATIC_STRING(NS_EG "uri1");
+  static const ZixStringView name2 = ZIX_STATIC_STRING("name2");
+  static const ZixStringView uri2  = ZIX_STATIC_STRING(NS_EG "uri2");
+  static const ZixStringView name3 = ZIX_STATIC_STRING("name3");
+  const ZixStringView        uri3  = uri2;
+  static const ZixStringView base  = ZIX_STATIC_STRING(NS_EG "b/");
+
+  SerdWorld* const    world = serd_world_new(NULL);
+  ZixAllocator* const alloc = serd_world_allocator(world);
+  SerdEnv* const      env   = serd_env_new(alloc, base);
+  size_t              count = 0;
+  SerdSink* const     sink = serd_sink_new(alloc, &count, count_prefixes, NULL);
+
+  // Test "successfully" unsetting an unknown prefix
+  assert(!serd_env_unset_prefix(env, zix_string("unknown")));
+
+  // Set three initial prefixes
+  assert(!serd_env_set_prefix(env, name1, uri1));
+  assert(!serd_env_set_prefix(env, name2, uri2));
+  assert(!serd_env_set_prefix(env, name3, uri3));
+  serd_env_describe(env, sink);
+  assert(count == 3U);
+
+  // Unset the middle one
+  assert(!serd_env_unset_prefix(env, name2));
+  count = 0;
+  serd_env_describe(env, sink);
+  assert(count == 2U);
+
+  // Unset the last one
+  assert(!serd_env_unset_prefix(env, name3));
+  count = 0;
+  serd_env_describe(env, sink);
+  assert(count == 1U);
+
+  // Unset the first (and final) one
+  assert(!serd_env_unset_prefix(env, name1));
+  count = 0;
+  serd_env_describe(env, sink);
+  assert(count == 0U);
+
+  // Test re-adding to an empty env (and a different unsetting order)
+  assert(!serd_env_set_prefix(env, name1, uri1));
+  assert(!serd_env_set_prefix(env, name2, uri2));
+  assert(!serd_env_set_prefix(env, name3, uri3));
+  assert(!serd_env_unset_prefix(env, name1));
+  assert(!serd_env_unset_prefix(env, name2));
+  assert(!serd_env_unset_prefix(env, name3));
+
+  serd_sink_free(sink);
+  serd_env_free(env);
+  serd_world_free(world);
+}
+
+static void
 test_expand_curie(void)
 {
   static const ZixStringView name  = ZIX_STATIC_STRING("eg.1");
@@ -412,6 +472,7 @@ main(void)
   test_null();
   test_base_uri();
   test_set_prefix();
+  test_unset_prefix();
   test_expand_curie();
   test_expand_bad_curie();
   test_qualify();

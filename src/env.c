@@ -356,6 +356,43 @@ serd_env_set_prefix(SerdEnv* const      env,
 }
 
 SerdStatus
+serd_env_unset_prefix(SerdEnv* const env, const ZixStringView name)
+{
+  // Find matching prefix
+  SerdPrefix* const prefix = serd_env_find(env, name.data, name.length);
+  if (!prefix) {
+    return SERD_SUCCESS;
+  }
+
+  // Drop prefix's URI node and clear if it's the only one
+  serd_nodes_deref(env->nodes, prefix->uri);
+  if (env->n_prefixes == 1U) {
+    zix_free(env->allocator, env->prefixes);
+    env->prefixes   = NULL;
+    env->n_prefixes = 0U;
+    return SERD_SUCCESS;
+  }
+
+  // Replace the prefix entry with the last one (if applicable)
+  const size_t index          = (size_t)(prefix - env->prefixes);
+  const size_t new_n_prefixes = env->n_prefixes - 1U;
+  if (index < new_n_prefixes) {
+    env->prefixes[index] = env->prefixes[new_n_prefixes];
+  }
+
+  // Shrink prefixes array
+  SerdPrefix* const new_prefixes = (SerdPrefix*)zix_realloc(
+    env->allocator, env->prefixes, new_n_prefixes * sizeof(SerdPrefix));
+
+  if (new_prefixes) {
+    env->prefixes   = new_prefixes;
+    env->n_prefixes = new_n_prefixes;
+  }
+
+  return new_prefixes ? SERD_SUCCESS : SERD_BAD_ALLOC;
+}
+
+SerdStatus
 serd_env_qualify(const SerdEnv* const env,
                  const ZixStringView  uri,
                  ZixStringView* const prefix,
