@@ -7,14 +7,15 @@
 
 #include "serd/node.h"
 #include "serd/statement.h"
+#include "zix/attributes.h"
 
 #include <assert.h>
 
 /// Compare a mandatory node with a node pattern
-SERD_PURE_FUNC
+ZIX_PURE_FUNC
 static inline int
-serd_node_wildcard_compare(const SerdNode* SERD_NONNULL  a,
-                           const SerdNode* SERD_NULLABLE b)
+serd_node_wildcard_compare(const SerdNode* ZIX_NONNULL  a,
+                           const SerdNode* ZIX_NULLABLE b)
 {
   assert(a);
   return b ? serd_node_compare(a, b) : 0;
@@ -22,8 +23,8 @@ serd_node_wildcard_compare(const SerdNode* SERD_NONNULL  a,
 
 /// Compare an optional graph node with a node pattern
 static inline int
-serd_node_graph_compare(const SerdNode* SERD_NULLABLE a,
-                        const SerdNode* SERD_NULLABLE b)
+serd_node_graph_compare(const SerdNode* ZIX_NULLABLE a,
+                        const SerdNode* ZIX_NULLABLE b)
 {
   if (a == b) {
     return 0;

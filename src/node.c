@@ -275,7 +275,7 @@ serd_node_construct_simple(const size_t        buf_size,
   return result(SERD_SUCCESS, total_size);
 }
 
-SERD_PURE_FUNC
+ZIX_PURE_FUNC
 static bool
 is_langtag(const ZixStringView string)
 {
@@ -954,7 +954,7 @@ serd_node_string_view(const SerdNode* const node)
   return r;
 }
 
-SERD_PURE_FUNC
+ZIX_PURE_FUNC
 SerdURIView
 serd_node_uri_view(const SerdNode* const node)
 {

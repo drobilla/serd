@@ -27,14 +27,14 @@ typedef struct SerdCursorImpl SerdCursor;
 
 /// Return a new copy of `cursor`
 SERD_API
-SerdCursor* SERD_ALLOCATED
-serd_cursor_copy(ZixAllocator* SERD_NULLABLE     allocator,
-                 const SerdCursor* SERD_NULLABLE cursor);
+SerdCursor* ZIX_ALLOCATED
+serd_cursor_copy(ZixAllocator* ZIX_NULLABLE     allocator,
+                 const SerdCursor* ZIX_NULLABLE cursor);
 
 /// Return the statement pointed to by `cursor`
 SERD_API
-const SerdStatement* SERD_NULLABLE
-serd_cursor_get(const SerdCursor* SERD_NULLABLE cursor);
+const SerdStatement* ZIX_NULLABLE
+serd_cursor_get(const SerdCursor* ZIX_NULLABLE cursor);
 
 /**
    Increment cursor to point to the next statement.
@@ -45,7 +45,7 @@ serd_cursor_get(const SerdCursor* SERD_NULLABLE cursor);
 */
 SERD_API
 SerdStatus
-serd_cursor_advance(SerdCursor* SERD_NULLABLE cursor);
+serd_cursor_advance(SerdCursor* ZIX_NULLABLE cursor);
 
 /**
    Return true if the cursor has reached its end.
@@ -54,7 +54,7 @@ serd_cursor_advance(SerdCursor* SERD_NULLABLE cursor);
 */
 SERD_PURE_API
 bool
-serd_cursor_is_end(const SerdCursor* SERD_NULLABLE cursor);
+serd_cursor_is_end(const SerdCursor* ZIX_NULLABLE cursor);
 
 /**
    Return true iff `lhs` equals `rhs`.
@@ -68,14 +68,14 @@ serd_cursor_is_end(const SerdCursor* SERD_NULLABLE cursor);
 */
 SERD_PURE_API
 bool
-serd_cursor_equals(const SerdCursor* SERD_NULLABLE lhs,
-                   const SerdCursor* SERD_NULLABLE rhs);
+serd_cursor_equals(const SerdCursor* ZIX_NULLABLE lhs,
+                   const SerdCursor* ZIX_NULLABLE rhs);
 
 /// Free `cursor`
 SERD_API
 void
-serd_cursor_free(ZixAllocator* SERD_NULLABLE allocator,
-                 SerdCursor* SERD_NULLABLE   cursor);
+serd_cursor_free(ZixAllocator* ZIX_NULLABLE allocator,
+                 SerdCursor* ZIX_NULLABLE   cursor);
 
 /**
    @}

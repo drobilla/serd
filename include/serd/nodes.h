@@ -23,8 +23,8 @@ typedef struct SerdNodesImpl SerdNodes;
 
 /// Create a new node set
 SERD_API
-SerdNodes* SERD_ALLOCATED
-serd_nodes_new(ZixAllocator* SERD_NULLABLE allocator);
+SerdNodes* ZIX_ALLOCATED
+serd_nodes_new(ZixAllocator* ZIX_NULLABLE allocator);
 
 /**
    Free `nodes` and all nodes that are stored in it.
@@ -34,12 +34,12 @@ serd_nodes_new(ZixAllocator* SERD_NULLABLE allocator);
 */
 SERD_API
 void
-serd_nodes_free(SerdNodes* SERD_NULLABLE nodes);
+serd_nodes_free(SerdNodes* ZIX_NULLABLE nodes);
 
 /// Return the number of interned nodes
 SERD_PURE_API
 size_t
-serd_nodes_size(const SerdNodes* SERD_NONNULL nodes);
+serd_nodes_size(const SerdNodes* ZIX_NONNULL nodes);
 
 /**
    Return the existing interned copy of a node if it exists.
@@ -48,9 +48,9 @@ serd_nodes_size(const SerdNodes* SERD_NONNULL nodes);
    has not been interned.
 */
 SERD_API
-const SerdNode* SERD_NULLABLE
-serd_nodes_existing(const SerdNodes* SERD_NONNULL nodes,
-                    const SerdNode* SERD_NULLABLE node);
+const SerdNode* ZIX_NULLABLE
+serd_nodes_existing(const SerdNodes* ZIX_NONNULL nodes,
+                    const SerdNode* ZIX_NULLABLE node);
 
 /**
    Intern `node`.
@@ -60,9 +60,9 @@ serd_nodes_existing(const SerdNodes* SERD_NONNULL nodes,
    @return A node that is different than, but equivalent to, `node`.
 */
 SERD_API
-const SerdNode* SERD_ALLOCATED
-serd_nodes_intern(SerdNodes* SERD_NONNULL       nodes,
-                  const SerdNode* SERD_NULLABLE node);
+const SerdNode* ZIX_ALLOCATED
+serd_nodes_intern(SerdNodes* ZIX_NONNULL       nodes,
+                  const SerdNode* ZIX_NULLABLE node);
 
 /**
    Make a node of any type.
@@ -70,8 +70,8 @@ serd_nodes_intern(SerdNodes* SERD_NONNULL       nodes,
    A new node will be added if an equivalent node is not already in the set.
 */
 SERD_API
-const SerdNode* SERD_ALLOCATED
-serd_nodes_get(SerdNodes* SERD_NONNULL nodes, SerdNodeArgs args);
+const SerdNode* ZIX_ALLOCATED
+serd_nodes_get(SerdNodes* ZIX_NONNULL nodes, SerdNodeArgs args);
 
 /**
    Dereference `node`.
@@ -82,8 +82,8 @@ serd_nodes_get(SerdNodes* SERD_NONNULL nodes, SerdNodeArgs args);
 */
 SERD_API
 void
-serd_nodes_deref(SerdNodes* SERD_NONNULL       nodes,
-                 const SerdNode* SERD_NULLABLE node);
+serd_nodes_deref(SerdNodes* ZIX_NONNULL       nodes,
+                 const SerdNode* ZIX_NULLABLE node);
 
 /**
    @}

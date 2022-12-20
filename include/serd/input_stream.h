@@ -24,10 +24,10 @@ SERD_BEGIN_DECLS
 
 /// An input stream that produces bytes
 typedef struct {
-  void* SERD_NULLABLE         stream; ///< Opaque parameter for functions
-  SerdReadFunc SERD_NONNULL   read;   ///< Read bytes from input
-  SerdErrorFunc SERD_NULLABLE error;  ///< Stream error accessor
-  SerdCloseFunc SERD_NULLABLE close;  ///< Close input
+  void* ZIX_NULLABLE         stream; ///< Opaque parameter for functions
+  SerdReadFunc ZIX_NONNULL   read;   ///< Read bytes from input
+  SerdErrorFunc ZIX_NULLABLE error;  ///< Stream error accessor
+  SerdCloseFunc ZIX_NULLABLE close;  ///< Close input
 } SerdInputStream;
 
 /**
@@ -42,10 +42,10 @@ typedef struct {
 */
 SERD_CONST_API
 SerdInputStream
-serd_open_input_stream(SerdReadFunc SERD_NONNULL   read_func,
-                       SerdErrorFunc SERD_NONNULL  error_func,
-                       SerdCloseFunc SERD_NULLABLE close_func,
-                       void* SERD_NULLABLE         stream);
+serd_open_input_stream(SerdReadFunc ZIX_NONNULL   read_func,
+                       SerdErrorFunc ZIX_NONNULL  error_func,
+                       SerdCloseFunc ZIX_NULLABLE close_func,
+                       void* ZIX_NULLABLE         stream);
 
 /**
    Open a stream that reads from a string.
@@ -59,7 +59,7 @@ serd_open_input_stream(SerdReadFunc SERD_NONNULL   read_func,
 */
 SERD_CONST_API
 SerdInputStream
-serd_open_input_string(const char* SERD_NONNULL* SERD_NONNULL position);
+serd_open_input_string(const char* ZIX_NONNULL* ZIX_NONNULL position);
 
 /**
    Open a stream that reads from a file.
@@ -72,7 +72,7 @@ serd_open_input_string(const char* SERD_NONNULL* SERD_NONNULL position);
 */
 SERD_API
 SerdInputStream
-serd_open_input_file(const char* SERD_NONNULL path);
+serd_open_input_file(const char* ZIX_NONNULL path);
 
 /**
    Close an input stream.
@@ -83,7 +83,7 @@ serd_open_input_file(const char* SERD_NONNULL path);
 */
 SERD_API
 SerdStatus
-serd_close_input(SerdInputStream* SERD_NULLABLE input);
+serd_close_input(SerdInputStream* ZIX_NULLABLE input);
 
 /**
    @}

@@ -8,6 +8,7 @@
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/world.h"
+#include "zix/attributes.h"
 
 #include <stdbool.h>
 
@@ -42,14 +43,14 @@ SERD_BEGIN_DECLS
    are passed through.
 */
 SERD_API
-SerdSink* SERD_ALLOCATED
-serd_filter_new(const SerdWorld* SERD_NONNULL world,
-                const SerdSink* SERD_NONNULL  target,
-                const SerdNode* SERD_NULLABLE subject,
-                const SerdNode* SERD_NULLABLE predicate,
-                const SerdNode* SERD_NULLABLE object,
-                const SerdNode* SERD_NULLABLE graph,
-                bool                          inclusive);
+SerdSink* ZIX_ALLOCATED
+serd_filter_new(const SerdWorld* ZIX_NONNULL world,
+                const SerdSink* ZIX_NONNULL  target,
+                const SerdNode* ZIX_NULLABLE subject,
+                const SerdNode* ZIX_NULLABLE predicate,
+                const SerdNode* ZIX_NULLABLE object,
+                const SerdNode* ZIX_NULLABLE graph,
+                bool                         inclusive);
 
 /**
    @}

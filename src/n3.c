@@ -13,7 +13,6 @@
 #include "try.h"
 #include "turtle.h"
 
-#include "serd/attributes.h"
 #include "serd/caret.h"
 #include "serd/env.h"
 #include "serd/node.h"
@@ -24,6 +23,7 @@
 #include "serd/string.h"
 #include "serd/syntax.h"
 #include "serd/uri.h"
+#include "zix/attributes.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -296,10 +296,10 @@ typedef struct {
 } WriteNodeContext;
 
 static size_t
-write_to_stack(const void* const SERD_NONNULL buf,
-               const size_t                   size,
-               const size_t                   nmemb,
-               void* const SERD_NONNULL       stream)
+write_to_stack(const void* const ZIX_NONNULL buf,
+               const size_t                  size,
+               const size_t                  nmemb,
+               void* const ZIX_NONNULL       stream)
 {
   WriteNodeContext* const ctx  = (WriteNodeContext*)stream;
   const uint8_t* const    utf8 = (const uint8_t*)buf;

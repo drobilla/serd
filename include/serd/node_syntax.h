@@ -40,11 +40,11 @@ SERD_BEGIN_DECLS
    using the world allocator.
 */
 SERD_API
-SerdNode* SERD_ALLOCATED
-serd_node_from_syntax(ZixAllocator* SERD_NULLABLE allocator,
-                      const char* SERD_NONNULL    str,
-                      SerdSyntax                  syntax,
-                      SerdEnv* SERD_NULLABLE      env);
+SerdNode* ZIX_ALLOCATED
+serd_node_from_syntax(ZixAllocator* ZIX_NULLABLE allocator,
+                      const char* ZIX_NONNULL    str,
+                      SerdSyntax                 syntax,
+                      SerdEnv* ZIX_NULLABLE      env);
 
 /**
    Return a string representation of `node` in `syntax`.
@@ -68,11 +68,11 @@ serd_node_from_syntax(ZixAllocator* SERD_NULLABLE allocator,
    the same `allocator`.
 */
 SERD_API
-char* SERD_ALLOCATED
-serd_node_to_syntax(ZixAllocator* SERD_NULLABLE  allocator,
-                    const SerdNode* SERD_NONNULL node,
-                    SerdSyntax                   syntax,
-                    const SerdEnv* SERD_NULLABLE env);
+char* ZIX_ALLOCATED
+serd_node_to_syntax(ZixAllocator* ZIX_NULLABLE  allocator,
+                    const SerdNode* ZIX_NONNULL node,
+                    SerdSyntax                  syntax,
+                    const SerdEnv* ZIX_NULLABLE env);
 
 /**
    @}

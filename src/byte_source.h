@@ -6,12 +6,12 @@
 
 #include "caret.h" // IWYU pragma: keep
 
-#include "serd/attributes.h"
 #include "serd/caret.h"
 #include "serd/input_stream.h"
 #include "serd/node.h"
 #include "serd/status.h"
 #include "zix/allocator.h"
+#include "zix/attributes.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -47,7 +47,7 @@ serd_byte_source_prepare(SerdByteSource* source);
 SerdStatus
 serd_byte_source_page(SerdByteSource* source);
 
-SERD_PURE_FUNC
+ZIX_PURE_FUNC
 static inline uint8_t
 serd_byte_source_peek(SerdByteSource* source)
 {

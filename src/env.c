@@ -220,7 +220,7 @@ serd_env_set_base_path(SerdEnv* const env, const ZixStringView path)
   return SERD_SUCCESS;
 }
 
-SERD_PURE_FUNC
+ZIX_PURE_FUNC
 static SerdPrefix*
 serd_env_find(const SerdEnv* const env,
               const char* const    name,

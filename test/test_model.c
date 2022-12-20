@@ -7,6 +7,7 @@
 
 #include "serd/serd.h"
 #include "zix/allocator.h"
+#include "zix/attributes.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -320,7 +321,7 @@ expected_error(void* const               handle,
   return SERD_SUCCESS;
 }
 
-SERD_PURE_FUNC
+ZIX_PURE_FUNC
 static SerdStatus
 ignore_only_index_error(void* const               handle,
                         const SerdLogLevel        level,

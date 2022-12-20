@@ -3,8 +3,8 @@
 
 #undef NDEBUG
 
-#include "serd/attributes.h"
 #include "serd/status.h"
+#include "zix/attributes.h"
 
 #include <assert.h>
 #include <string.h>
@@ -27,7 +27,7 @@ test_strerror(void)
   assert(!strcmp(msg, "Unknown error"));
 }
 
-SERD_PURE_FUNC
+ZIX_PURE_FUNC
 int
 main(void)
 {

@@ -28,18 +28,18 @@ typedef struct SerdWorldImpl SerdWorld;
    shared between worlds.
 */
 SERD_MALLOC_API
-SerdWorld* SERD_ALLOCATED
-serd_world_new(ZixAllocator* SERD_NULLABLE allocator);
+SerdWorld* ZIX_ALLOCATED
+serd_world_new(ZixAllocator* ZIX_NULLABLE allocator);
 
 /// Free `world`
 SERD_API
 void
-serd_world_free(SerdWorld* SERD_NULLABLE world);
+serd_world_free(SerdWorld* ZIX_NULLABLE world);
 
 /// Return the allocator used by `world`
 SERD_PURE_API
-ZixAllocator* SERD_NONNULL
-serd_world_allocator(const SerdWorld* SERD_NONNULL world);
+ZixAllocator* ZIX_NONNULL
+serd_world_allocator(const SerdWorld* ZIX_NONNULL world);
 
 /**
    Return the nodes cache in `world`.
@@ -49,8 +49,8 @@ serd_world_allocator(const SerdWorld* SERD_NONNULL world);
    additional nodes which will be freed when the world is freed.
 */
 SERD_PURE_API
-SerdNodes* SERD_NONNULL
-serd_world_nodes(SerdWorld* SERD_NONNULL world);
+SerdNodes* ZIX_NONNULL
+serd_world_nodes(SerdWorld* ZIX_NONNULL world);
 
 /**
    Return a unique blank node.
@@ -59,8 +59,8 @@ serd_world_nodes(SerdWorld* SERD_NONNULL world);
    is called or the world is destroyed.
 */
 SERD_API
-const SerdNode* SERD_NONNULL
-serd_world_get_blank(SerdWorld* SERD_NONNULL world);
+const SerdNode* ZIX_NONNULL
+serd_world_get_blank(SerdWorld* ZIX_NONNULL world);
 
 /**
    @}

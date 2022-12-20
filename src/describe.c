@@ -9,7 +9,6 @@
 #define ZIX_HASH_KEY_TYPE const SerdNode
 #define ZIX_HASH_RECORD_TYPE const SerdNode
 
-#include "serd/attributes.h"
 #include "serd/cursor.h"
 #include "serd/model.h"
 #include "serd/node.h"
@@ -19,6 +18,7 @@
 #include "serd/status.h"
 #include "serd/world.h"
 #include "zix/allocator.h"
+#include "zix/attributes.h"
 #include "zix/digest.h"
 #include "zix/hash.h"
 #include "zix/status.h"
@@ -208,12 +208,12 @@ types_first_for_subject(const DescribeContext* const ctx, const NodeStyle style)
 }
 
 static SerdStatus
-write_range_statement(const DescribeContext* const      ctx,
-                      const unsigned                    depth,
-                      SerdStatementFlags                statement_flags,
-                      const SerdStatement* SERD_NONNULL statement,
-                      const SerdNode* SERD_NULLABLE     last_subject,
-                      const bool                        write_types)
+write_range_statement(const DescribeContext* const     ctx,
+                      const unsigned                   depth,
+                      SerdStatementFlags               statement_flags,
+                      const SerdStatement* ZIX_NONNULL statement,
+                      const SerdNode* ZIX_NULLABLE     last_subject,
+                      const bool                       write_types)
 {
   const SerdModel* const model         = ctx->model;
   const SerdSink* const  sink          = ctx->sink;

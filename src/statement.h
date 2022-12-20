@@ -4,9 +4,9 @@
 #ifndef SERD_SRC_STATEMENT_H
 #define SERD_SRC_STATEMENT_H
 
-#include "serd/attributes.h"
 #include "serd/caret.h"
 #include "serd/node.h"
+#include "zix/attributes.h"
 
 #include <stdbool.h>
 
@@ -15,7 +15,7 @@ struct SerdStatementImpl {
   SerdCaret*      caret;
 };
 
-SERD_PURE_FUNC
+ZIX_PURE_FUNC
 bool
 serd_statement_is_valid(const SerdNode* subject,
                         const SerdNode* predicate,

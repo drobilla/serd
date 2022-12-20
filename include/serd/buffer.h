@@ -6,6 +6,7 @@
 
 #include "serd/attributes.h"
 #include "zix/allocator.h"
+#include "zix/attributes.h"
 
 #include <stddef.h>
 
@@ -25,9 +26,9 @@ SERD_BEGIN_DECLS
 
 /// A dynamically resizable mutable buffer in memory
 typedef struct {
-  ZixAllocator* SERD_NULLABLE allocator; ///< Allocator for buf
-  void* SERD_NULLABLE         buf;       ///< Buffer
-  size_t                      len;       ///< Size of buffer in bytes
+  ZixAllocator* ZIX_NULLABLE allocator; ///< Allocator for buf
+  void* ZIX_NULLABLE         buf;       ///< Buffer
+  size_t                     len;       ///< Size of buffer in bytes
 } SerdBuffer;
 
 /**
@@ -42,10 +43,10 @@ typedef struct {
 */
 SERD_API
 size_t
-serd_buffer_write(const void* SERD_NONNULL buf,
-                  size_t                   size,
-                  size_t                   nmemb,
-                  void* SERD_NONNULL       stream);
+serd_buffer_write(const void* ZIX_NONNULL buf,
+                  size_t                  size,
+                  size_t                  nmemb,
+                  void* ZIX_NONNULL       stream);
 
 /**
    Close the buffer for writing.
@@ -55,7 +56,7 @@ serd_buffer_write(const void* SERD_NONNULL buf,
 */
 SERD_API
 int
-serd_buffer_close(void* SERD_NONNULL stream);
+serd_buffer_close(void* ZIX_NONNULL stream);
 
 /**
    @}

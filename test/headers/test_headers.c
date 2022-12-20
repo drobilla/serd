@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: ISC
 
 #include "serd/serd.h" // IWYU pragma: keep
+#include "zix/attributes.h"
 
-SERD_CONST_FUNC
+ZIX_CONST_FUNC
 int
 main(void)
 {

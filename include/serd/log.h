@@ -46,8 +46,8 @@ typedef enum {
    - SERD_CHECK - The check/warning/etc that triggered this message (string)
 */
 typedef struct {
-  const char* SERD_NONNULL key;   ///< Field name
-  const char* SERD_NONNULL value; ///< Field value
+  const char* ZIX_NONNULL key;   ///< Field name
+  const char* ZIX_NONNULL value; ///< Field value
 } SerdLogField;
 
 /**
@@ -62,20 +62,20 @@ typedef struct {
    @param fields An array of `n_fields` extra log fields.
    @param message Log message.
 */
-typedef SerdStatus (*SerdLogFunc)(void* SERD_NULLABLE               handle,
-                                  SerdLogLevel                      level,
-                                  size_t                            n_fields,
-                                  const SerdLogField* SERD_NULLABLE fields,
-                                  ZixStringView                     message);
+typedef SerdStatus (*SerdLogFunc)(void* ZIX_NULLABLE               handle,
+                                  SerdLogLevel                     level,
+                                  size_t                           n_fields,
+                                  const SerdLogField* ZIX_NULLABLE fields,
+                                  ZixStringView                    message);
 
 /// A #SerdLogFunc that does nothing (for suppressing log output)
 SERD_CONST_API
 SerdStatus
-serd_quiet_log_func(void* SERD_NULLABLE               handle,
-                    SerdLogLevel                      level,
-                    size_t                            n_fields,
-                    const SerdLogField* SERD_NULLABLE fields,
-                    ZixStringView                     message);
+serd_quiet_log_func(void* ZIX_NULLABLE               handle,
+                    SerdLogLevel                     level,
+                    size_t                           n_fields,
+                    const SerdLogField* ZIX_NULLABLE fields,
+                    ZixStringView                    message);
 
 /**
    Set a function to be called with log messages (typically errors).
@@ -93,9 +93,9 @@ serd_quiet_log_func(void* SERD_NULLABLE               handle,
 */
 SERD_API
 void
-serd_set_log_func(SerdWorld* SERD_NONNULL   world,
-                  SerdLogFunc SERD_NULLABLE log_func,
-                  void* SERD_NULLABLE       handle);
+serd_set_log_func(SerdWorld* ZIX_NONNULL   world,
+                  SerdLogFunc ZIX_NULLABLE log_func,
+                  void* ZIX_NULLABLE       handle);
 
 /**
    Write a message to the log with a `va_list`.
@@ -123,12 +123,12 @@ serd_set_log_func(SerdWorld* SERD_NONNULL   world,
 SERD_API
 SERD_LOG_FUNC(5, 0)
 SerdStatus
-serd_vxlogf(const SerdWorld* SERD_NONNULL     world,
-            SerdLogLevel                      level,
-            size_t                            n_fields,
-            const SerdLogField* SERD_NULLABLE fields,
-            const char* SERD_NONNULL          fmt,
-            va_list                           args);
+serd_vxlogf(const SerdWorld* ZIX_NONNULL     world,
+            SerdLogLevel                     level,
+            size_t                           n_fields,
+            const SerdLogField* ZIX_NULLABLE fields,
+            const char* ZIX_NONNULL          fmt,
+            va_list                          args);
 
 /**
    Write a message to the log with extra fields.
@@ -139,11 +139,11 @@ serd_vxlogf(const SerdWorld* SERD_NONNULL     world,
 SERD_API
 SERD_LOG_FUNC(5, 6)
 SerdStatus
-serd_xlogf(const SerdWorld* SERD_NONNULL     world,
-           SerdLogLevel                      level,
-           size_t                            n_fields,
-           const SerdLogField* SERD_NULLABLE fields,
-           const char* SERD_NONNULL          fmt,
+serd_xlogf(const SerdWorld* ZIX_NONNULL     world,
+           SerdLogLevel                     level,
+           size_t                           n_fields,
+           const SerdLogField* ZIX_NULLABLE fields,
+           const char* ZIX_NONNULL          fmt,
            ...);
 
 /**
@@ -154,10 +154,10 @@ serd_xlogf(const SerdWorld* SERD_NONNULL     world,
 SERD_API
 SERD_LOG_FUNC(3, 0)
 SerdStatus
-serd_vlogf(const SerdWorld* SERD_NONNULL world,
-           SerdLogLevel                  level,
-           const char* SERD_NONNULL      fmt,
-           va_list                       args);
+serd_vlogf(const SerdWorld* ZIX_NONNULL world,
+           SerdLogLevel                 level,
+           const char* ZIX_NONNULL      fmt,
+           va_list                      args);
 
 /**
    Write a simple message to the log.
@@ -168,9 +168,9 @@ serd_vlogf(const SerdWorld* SERD_NONNULL world,
 SERD_API
 SERD_LOG_FUNC(3, 4)
 SerdStatus
-serd_logf(const SerdWorld* SERD_NONNULL world,
-          SerdLogLevel                  level,
-          const char* SERD_NONNULL      fmt,
+serd_logf(const SerdWorld* ZIX_NONNULL world,
+          SerdLogLevel                 level,
+          const char* ZIX_NONNULL      fmt,
           ...);
 
 /**
@@ -183,11 +183,11 @@ serd_logf(const SerdWorld* SERD_NONNULL world,
 SERD_API
 SERD_LOG_FUNC(4, 0)
 SerdStatus
-serd_vlogf_at(const SerdWorld* SERD_NONNULL  world,
-              SerdLogLevel                   level,
-              const SerdCaret* SERD_NULLABLE caret,
-              const char* SERD_NONNULL       fmt,
-              va_list                        args);
+serd_vlogf_at(const SerdWorld* ZIX_NONNULL  world,
+              SerdLogLevel                  level,
+              const SerdCaret* ZIX_NULLABLE caret,
+              const char* ZIX_NONNULL       fmt,
+              va_list                       args);
 
 /**
    Write a message to the log with a caret position.
@@ -198,10 +198,10 @@ serd_vlogf_at(const SerdWorld* SERD_NONNULL  world,
 SERD_API
 SERD_LOG_FUNC(4, 5)
 SerdStatus
-serd_logf_at(const SerdWorld* SERD_NONNULL  world,
-             SerdLogLevel                   level,
-             const SerdCaret* SERD_NULLABLE caret,
-             const char* SERD_NONNULL       fmt,
+serd_logf_at(const SerdWorld* ZIX_NONNULL  world,
+             SerdLogLevel                  level,
+             const SerdCaret* ZIX_NULLABLE caret,
+             const char* ZIX_NONNULL       fmt,
              ...);
 
 /**

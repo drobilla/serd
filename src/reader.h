@@ -18,6 +18,7 @@
 #include "serd/status.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
+#include "zix/attributes.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -71,11 +72,11 @@ push_node(SerdReader*  reader,
           const char*  str,
           size_t       length);
 
-SERD_PURE_FUNC
+ZIX_PURE_FUNC
 size_t
 genid_length(const SerdReader* reader);
 
-SERD_PURE_FUNC
+ZIX_PURE_FUNC
 bool
 tolerate_status(const SerdReader* reader, SerdStatus status);
 

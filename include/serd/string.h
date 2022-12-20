@@ -25,9 +25,9 @@ SERD_BEGIN_DECLS
 */
 SERD_PURE_API
 int
-serd_strncasecmp(const char* SERD_NONNULL s1,
-                 const char* SERD_NONNULL s2,
-                 size_t                   n);
+serd_strncasecmp(const char* ZIX_NONNULL s1,
+                 const char* ZIX_NONNULL s2,
+                 size_t                  n);
 
 /**
    @}

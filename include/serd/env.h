@@ -10,6 +10,7 @@
 #include "serd/status.h"
 #include "serd/world.h"
 #include "zix/allocator.h"
+#include "zix/attributes.h"
 #include "zix/string_view.h"
 
 #include <stdbool.h>
@@ -27,34 +28,34 @@ typedef struct SerdEnvImpl SerdEnv;
 
 /// Create a new environment
 SERD_API
-SerdEnv* SERD_ALLOCATED
-serd_env_new(SerdWorld* SERD_NONNULL world, ZixStringView base_uri);
+SerdEnv* ZIX_ALLOCATED
+serd_env_new(SerdWorld* ZIX_NONNULL world, ZixStringView base_uri);
 
 /// Copy an environment
 SERD_API
-SerdEnv* SERD_ALLOCATED
-serd_env_copy(ZixAllocator* SERD_NULLABLE  allocator,
-              const SerdEnv* SERD_NULLABLE env);
+SerdEnv* ZIX_ALLOCATED
+serd_env_copy(ZixAllocator* ZIX_NULLABLE  allocator,
+              const SerdEnv* ZIX_NULLABLE env);
 
 /// Return true iff `a` is equal to `b`
 SERD_PURE_API
 bool
-serd_env_equals(const SerdEnv* SERD_NULLABLE a, const SerdEnv* SERD_NULLABLE b);
+serd_env_equals(const SerdEnv* ZIX_NULLABLE a, const SerdEnv* ZIX_NULLABLE b);
 
 /// Free `env`
 SERD_API
 void
-serd_env_free(SerdEnv* SERD_NULLABLE env);
+serd_env_free(SerdEnv* ZIX_NULLABLE env);
 
 /// Get the current base URI
 SERD_PURE_API
-const SerdNode* SERD_NULLABLE
-serd_env_base_uri(const SerdEnv* SERD_NULLABLE env);
+const SerdNode* ZIX_NULLABLE
+serd_env_base_uri(const SerdEnv* ZIX_NULLABLE env);
 
 /// Set the current base URI
 SERD_API
 SerdStatus
-serd_env_set_base_uri(SerdEnv* SERD_NONNULL env, ZixStringView uri);
+serd_env_set_base_uri(SerdEnv* ZIX_NONNULL env, ZixStringView uri);
 
 /**
    Set the current base URI to a filesystem path.
@@ -65,7 +66,7 @@ serd_env_set_base_uri(SerdEnv* SERD_NONNULL env, ZixStringView uri);
 */
 SERD_API
 SerdStatus
-serd_env_set_base_path(SerdEnv* SERD_NONNULL env, ZixStringView path);
+serd_env_set_base_path(SerdEnv* ZIX_NONNULL env, ZixStringView path);
 
 /**
    Set a namespace prefix.
@@ -76,9 +77,9 @@ serd_env_set_base_path(SerdEnv* SERD_NONNULL env, ZixStringView path);
 */
 SERD_API
 SerdStatus
-serd_env_set_prefix(SerdEnv* SERD_NONNULL env,
-                    ZixStringView         name,
-                    ZixStringView         uri);
+serd_env_set_prefix(SerdEnv* ZIX_NONNULL env,
+                    ZixStringView        name,
+                    ZixStringView        uri);
 
 /**
    Qualify `uri` into a prefix and suffix (like a CURIE) if possible.
@@ -98,10 +99,10 @@ serd_env_set_prefix(SerdEnv* SERD_NONNULL env,
 */
 SERD_API
 SerdStatus
-serd_env_qualify(const SerdEnv* SERD_NULLABLE env,
-                 ZixStringView                uri,
-                 ZixStringView* SERD_NONNULL  prefix,
-                 ZixStringView* SERD_NONNULL  suffix);
+serd_env_qualify(const SerdEnv* ZIX_NULLABLE env,
+                 ZixStringView               uri,
+                 ZixStringView* ZIX_NONNULL  prefix,
+                 ZixStringView* ZIX_NONNULL  suffix);
 
 /**
    Expand `curie` to an absolute URI if possible.
@@ -113,8 +114,8 @@ serd_env_qualify(const SerdEnv* SERD_NULLABLE env,
    Returns null if `node` can not be expanded.
 */
 SERD_API
-SerdNode* SERD_ALLOCATED
-serd_env_expand_curie(const SerdEnv* SERD_NULLABLE env, ZixStringView curie);
+SerdNode* ZIX_ALLOCATED
+serd_env_expand_curie(const SerdEnv* ZIX_NULLABLE env, ZixStringView curie);
 
 /**
    Expand `node` to an absolute URI if possible.
@@ -122,15 +123,15 @@ serd_env_expand_curie(const SerdEnv* SERD_NULLABLE env, ZixStringView curie);
    Returns null if `node` can not be expanded.
 */
 SERD_API
-SerdNode* SERD_ALLOCATED
-serd_env_expand_node(const SerdEnv* SERD_NULLABLE  env,
-                     const SerdNode* SERD_NULLABLE node);
+SerdNode* ZIX_ALLOCATED
+serd_env_expand_node(const SerdEnv* ZIX_NULLABLE  env,
+                     const SerdNode* ZIX_NULLABLE node);
 
 /// Write all prefixes in `env` to `sink`
 SERD_API
 SerdStatus
-serd_env_write_prefixes(const SerdEnv* SERD_NONNULL  env,
-                        const SerdSink* SERD_NONNULL sink);
+serd_env_write_prefixes(const SerdEnv* ZIX_NONNULL  env,
+                        const SerdSink* ZIX_NONNULL sink);
 
 /**
    @}

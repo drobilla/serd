@@ -7,6 +7,7 @@
 
 #include "serd/serd.h"
 #include "zix/allocator.h"
+#include "zix/attributes.h"
 #include "zix/filesystem.h"
 #include "zix/path.h"
 #include "zix/string_view.h"
@@ -125,7 +126,7 @@ test_start_failed_alloc(const char* const path)
   fclose(f);
 }
 
-SERD_PURE_FUNC
+ZIX_PURE_FUNC
 static size_t
 prepare_test_read(void* buf, size_t size, size_t nmemb, void* stream)
 {

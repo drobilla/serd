@@ -33,29 +33,29 @@ typedef struct SerdCaretImpl SerdCaret;
    @return A new caret that must be freed with serd_caret_free()
 */
 SERD_API
-SerdCaret* SERD_ALLOCATED
-serd_caret_new(ZixAllocator* SERD_NULLABLE  allocator,
-               const SerdNode* SERD_NONNULL document,
-               unsigned                     line,
-               unsigned                     column);
+SerdCaret* ZIX_ALLOCATED
+serd_caret_new(ZixAllocator* ZIX_NULLABLE  allocator,
+               const SerdNode* ZIX_NONNULL document,
+               unsigned                    line,
+               unsigned                    column);
 
 /// Return a copy of `caret`
 SERD_API
-SerdCaret* SERD_ALLOCATED
-serd_caret_copy(ZixAllocator* SERD_NULLABLE    allocator,
-                const SerdCaret* SERD_NULLABLE caret);
+SerdCaret* ZIX_ALLOCATED
+serd_caret_copy(ZixAllocator* ZIX_NULLABLE    allocator,
+                const SerdCaret* ZIX_NULLABLE caret);
 
 /// Free `caret`
 SERD_API
 void
-serd_caret_free(ZixAllocator* SERD_NULLABLE allocator,
-                SerdCaret* SERD_NULLABLE    caret);
+serd_caret_free(ZixAllocator* ZIX_NULLABLE allocator,
+                SerdCaret* ZIX_NULLABLE    caret);
 
 /// Return true iff `lhs` is equal to `rhs`
 SERD_PURE_API
 bool
-serd_caret_equals(const SerdCaret* SERD_NULLABLE lhs,
-                  const SerdCaret* SERD_NULLABLE rhs);
+serd_caret_equals(const SerdCaret* ZIX_NULLABLE lhs,
+                  const SerdCaret* ZIX_NULLABLE rhs);
 
 /**
    Return the document URI or name.
@@ -64,18 +64,18 @@ serd_caret_equals(const SerdCaret* SERD_NULLABLE lhs,
    statements that originate from streams.
 */
 SERD_PURE_API
-const SerdNode* SERD_NONNULL
-serd_caret_document(const SerdCaret* SERD_NONNULL caret);
+const SerdNode* ZIX_NONNULL
+serd_caret_document(const SerdCaret* ZIX_NONNULL caret);
 
 /// Return the one-relative line number in the document
 SERD_PURE_API
 unsigned
-serd_caret_line(const SerdCaret* SERD_NONNULL caret);
+serd_caret_line(const SerdCaret* ZIX_NONNULL caret);
 
 /// Return the zero-relative column number in the line
 SERD_PURE_API
 unsigned
-serd_caret_column(const SerdCaret* SERD_NONNULL caret);
+serd_caret_column(const SerdCaret* ZIX_NONNULL caret);
 
 /**
    @}

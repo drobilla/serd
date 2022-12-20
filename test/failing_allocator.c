@@ -3,7 +3,7 @@
 
 #include "failing_allocator.h"
 
-#include "serd/serd.h"
+#include "zix/attributes.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -22,7 +22,7 @@ attempt(SerdFailingAllocator* const allocator)
   return true;
 }
 
-SERD_MALLOC_FUNC
+ZIX_MALLOC_FUNC
 static void*
 serd_failing_malloc(ZixAllocator* const allocator, const size_t size)
 {
@@ -32,7 +32,7 @@ serd_failing_malloc(ZixAllocator* const allocator, const size_t size)
   return attempt(state) ? base->malloc(base, size) : NULL;
 }
 
-SERD_MALLOC_FUNC
+ZIX_MALLOC_FUNC
 static void*
 serd_failing_calloc(ZixAllocator* const allocator,
                     const size_t        nmemb,
@@ -65,7 +65,7 @@ serd_failing_free(ZixAllocator* const allocator, void* const ptr)
   base->free(base, ptr);
 }
 
-SERD_MALLOC_FUNC
+ZIX_MALLOC_FUNC
 static void*
 serd_failing_aligned_alloc(ZixAllocator* const allocator,
                            const size_t        alignment,
@@ -87,7 +87,7 @@ serd_failing_aligned_free(ZixAllocator* const allocator, void* const ptr)
   base->aligned_free(base, ptr);
 }
 
-SERD_CONST_FUNC
+ZIX_CONST_FUNC
 SerdFailingAllocator
 serd_failing_allocator(void)
 {

@@ -3,12 +3,12 @@
 
 #include "world.h"
 
-#include "serd/attributes.h"
 #include "serd/caret.h"
 #include "serd/log.h"
 #include "serd/node.h"
 #include "serd/status.h"
 #include "serd/world.h"
+#include "zix/attributes.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -213,11 +213,11 @@ serd_logf(const SerdWorld* const world,
 }
 
 SerdStatus
-serd_vlogf_at(const SerdWorld* SERD_NONNULL world,
-              SerdLogLevel                  level,
-              const SerdCaret*              caret,
-              const char* SERD_NONNULL      fmt,
-              va_list                       args)
+serd_vlogf_at(const SerdWorld* ZIX_NONNULL world,
+              SerdLogLevel                 level,
+              const SerdCaret*             caret,
+              const char* ZIX_NONNULL      fmt,
+              va_list                      args)
 {
   assert(world);
   assert(fmt);
@@ -242,10 +242,10 @@ serd_vlogf_at(const SerdWorld* SERD_NONNULL world,
 }
 
 SerdStatus
-serd_logf_at(const SerdWorld* SERD_NONNULL world,
-             SerdLogLevel                  level,
-             const SerdCaret*              caret,
-             const char* SERD_NONNULL      fmt,
+serd_logf_at(const SerdWorld* ZIX_NONNULL world,
+             SerdLogLevel                 level,
+             const SerdCaret*             caret,
+             const char* ZIX_NONNULL      fmt,
              ...)
 {
   assert(world);

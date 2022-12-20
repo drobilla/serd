@@ -60,56 +60,56 @@ typedef struct SerdStatementImpl SerdStatement;
    @return A new statement that must be freed with serd_statement_free()
 */
 SERD_API
-SerdStatement* SERD_ALLOCATED
-serd_statement_new(ZixAllocator* SERD_NULLABLE    allocator,
-                   const SerdNode* SERD_NONNULL   s,
-                   const SerdNode* SERD_NONNULL   p,
-                   const SerdNode* SERD_NONNULL   o,
-                   const SerdNode* SERD_NULLABLE  g,
-                   const SerdCaret* SERD_NULLABLE caret);
+SerdStatement* ZIX_ALLOCATED
+serd_statement_new(ZixAllocator* ZIX_NULLABLE    allocator,
+                   const SerdNode* ZIX_NONNULL   s,
+                   const SerdNode* ZIX_NONNULL   p,
+                   const SerdNode* ZIX_NONNULL   o,
+                   const SerdNode* ZIX_NULLABLE  g,
+                   const SerdCaret* ZIX_NULLABLE caret);
 
 /// Return a copy of `statement`
 SERD_API
-SerdStatement* SERD_ALLOCATED
-serd_statement_copy(ZixAllocator* SERD_NULLABLE        allocator,
-                    const SerdStatement* SERD_NULLABLE statement);
+SerdStatement* ZIX_ALLOCATED
+serd_statement_copy(ZixAllocator* ZIX_NULLABLE        allocator,
+                    const SerdStatement* ZIX_NULLABLE statement);
 
 /// Free `statement`
 SERD_API
 void
-serd_statement_free(ZixAllocator* SERD_NULLABLE  allocator,
-                    SerdStatement* SERD_NULLABLE statement);
+serd_statement_free(ZixAllocator* ZIX_NULLABLE  allocator,
+                    SerdStatement* ZIX_NULLABLE statement);
 
 /// Return the given node of the statement
 SERD_PURE_API
-const SerdNode* SERD_NULLABLE
-serd_statement_node(const SerdStatement* SERD_NONNULL statement,
-                    SerdField                         field);
+const SerdNode* ZIX_NULLABLE
+serd_statement_node(const SerdStatement* ZIX_NONNULL statement,
+                    SerdField                        field);
 
 /// Return the subject of the statement
 SERD_PURE_API
-const SerdNode* SERD_NONNULL
-serd_statement_subject(const SerdStatement* SERD_NONNULL statement);
+const SerdNode* ZIX_NONNULL
+serd_statement_subject(const SerdStatement* ZIX_NONNULL statement);
 
 /// Return the predicate of the statement
 SERD_PURE_API
-const SerdNode* SERD_NONNULL
-serd_statement_predicate(const SerdStatement* SERD_NONNULL statement);
+const SerdNode* ZIX_NONNULL
+serd_statement_predicate(const SerdStatement* ZIX_NONNULL statement);
 
 /// Return the object of the statement
 SERD_PURE_API
-const SerdNode* SERD_NONNULL
-serd_statement_object(const SerdStatement* SERD_NONNULL statement);
+const SerdNode* ZIX_NONNULL
+serd_statement_object(const SerdStatement* ZIX_NONNULL statement);
 
 /// Return the graph of the statement
 SERD_PURE_API
-const SerdNode* SERD_NULLABLE
-serd_statement_graph(const SerdStatement* SERD_NONNULL statement);
+const SerdNode* ZIX_NULLABLE
+serd_statement_graph(const SerdStatement* ZIX_NONNULL statement);
 
 /// Return the source location where the statement originated, or NULL
 SERD_PURE_API
-const SerdCaret* SERD_NULLABLE
-serd_statement_caret(const SerdStatement* SERD_NONNULL statement);
+const SerdCaret* ZIX_NULLABLE
+serd_statement_caret(const SerdStatement* ZIX_NONNULL statement);
 
 /**
    Return true iff `a` is equal to `b`, ignoring statement caret metadata.
@@ -119,8 +119,8 @@ serd_statement_caret(const SerdStatement* SERD_NONNULL statement);
 */
 SERD_PURE_API
 bool
-serd_statement_equals(const SerdStatement* SERD_NULLABLE a,
-                      const SerdStatement* SERD_NULLABLE b);
+serd_statement_equals(const SerdStatement* ZIX_NULLABLE a,
+                      const SerdStatement* ZIX_NULLABLE b);
 
 /**
    Return true iff the statement matches the given pattern.
@@ -130,11 +130,12 @@ serd_statement_equals(const SerdStatement* SERD_NULLABLE a,
 */
 SERD_PURE_API
 bool
-serd_statement_matches(const SerdStatement* SERD_NONNULL statement,
-                       const SerdNode* SERD_NULLABLE     subject,
-                       const SerdNode* SERD_NULLABLE     predicate,
-                       const SerdNode* SERD_NULLABLE     object,
-                       const SerdNode* SERD_NULLABLE     graph);
+serd_statement_matches(const SerdStatement* ZIX_NONNULL statement,
+                       const SerdNode* ZIX_NULLABLE     subject,
+                       const SerdNode* ZIX_NULLABLE     predicate,
+                       const SerdNode* ZIX_NULLABLE     object,
+                       const SerdNode* ZIX_NULLABLE     graph);
+
 /**
    @}
 */

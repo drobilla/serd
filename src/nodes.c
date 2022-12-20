@@ -11,9 +11,9 @@
 #define ZIX_HASH_RECORD_TYPE NodesEntry
 #define ZIX_HASH_SEARCH_DATA_TYPE NodeSpec
 
-#include "serd/attributes.h"
 #include "serd/nodes.h"
 #include "zix/allocator.h"
+#include "zix/attributes.h"
 #include "zix/digest.h"
 #include "zix/hash.h"
 #include "zix/string_view.h"
@@ -77,7 +77,7 @@ typedef struct {
   ZixAllocator* real; ///< Underlying "real" memory allocator
 } SerdNodesEntryAllocator;
 
-SERD_MALLOC_FUNC
+ZIX_MALLOC_FUNC
 static void*
 serd_nodes_entry_aligned_alloc(ZixAllocator* const allocator,
                                const size_t        alignment,

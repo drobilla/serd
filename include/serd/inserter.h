@@ -30,9 +30,9 @@ SERD_BEGIN_DECLS
    @return A newly allocated sink which must be freed with serd_sink_free().
 */
 SERD_API
-SerdSink* SERD_ALLOCATED
-serd_inserter_new(SerdModel* SERD_NONNULL       model,
-                  const SerdNode* SERD_NULLABLE default_graph);
+SerdSink* ZIX_ALLOCATED
+serd_inserter_new(SerdModel* ZIX_NONNULL       model,
+                  const SerdNode* ZIX_NULLABLE default_graph);
 
 /**
    @}

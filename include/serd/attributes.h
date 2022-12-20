@@ -4,6 +4,8 @@
 #ifndef SERD_ATTRIBUTES_H
 #define SERD_ATTRIBUTES_H
 
+#include "zix/attributes.h"
+
 /**
    @defgroup serd_attributes Attributes
    @ingroup serd_library
@@ -31,6 +33,7 @@
 #  define SERD_END_DECLS
 #endif
 
+// Symbols in the public API
 #if defined(_WIN32) && !defined(SERD_STATIC) && defined(SERD_INTERNAL)
 #  define SERD_API __declspec(dllexport)
 #elif defined(_WIN32) && !defined(SERD_STATIC)
@@ -41,20 +44,14 @@
 #  define SERD_API
 #endif
 
+/// A function that returns a value which shouldn't be ignored
 #ifdef __GNUC__
-#  define SERD_ALWAYS_INLINE_FUNC __attribute__((always_inline))
-#  define SERD_CONST_FUNC __attribute__((const))
-#  define SERD_MALLOC_FUNC __attribute__((malloc))
-#  define SERD_PURE_FUNC __attribute__((pure))
 #  define SERD_NODISCARD __attribute__((warn_unused_result))
 #else
-#  define SERD_ALWAYS_INLINE_FUNC
-#  define SERD_CONST_FUNC
-#  define SERD_MALLOC_FUNC
-#  define SERD_PURE_FUNC
 #  define SERD_NODISCARD
 #endif
 
+/// A function that takes a printf-style format string and arguments
 #if defined(__MINGW32__)
 #  define SERD_LOG_FUNC(fmt, a) __attribute__((format(gnu_printf, fmt, a)))
 #elif defined(__GNUC__)
@@ -63,30 +60,20 @@
 #  define SERD_LOG_FUNC(fmt, a)
 #endif
 
-#if defined(__clang__) && __clang_major__ >= 7
-#  define SERD_NONNULL _Nonnull
-#  define SERD_NULLABLE _Nullable
-#  define SERD_ALLOCATED _Null_unspecified
-#else
-#  define SERD_NONNULL
-#  define SERD_NULLABLE
-#  define SERD_ALLOCATED
-#endif
-
 /// A pure function in the public API that only reads memory
 #define SERD_PURE_API \
   SERD_API            \
-  SERD_PURE_FUNC
+  ZIX_PURE_FUNC
 
 /// A const function in the public API that is pure and only reads parameters
 #define SERD_CONST_API \
   SERD_API             \
-  SERD_CONST_FUNC
+  ZIX_CONST_FUNC
 
 /// A malloc function in the public API that returns allocated memory
 #define SERD_MALLOC_API \
   SERD_API              \
-  SERD_MALLOC_FUNC
+  ZIX_MALLOC_FUNC
 
 /**
    @}

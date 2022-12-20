@@ -7,10 +7,10 @@
 #include "node.h"
 #include "statement.h"
 
-#include "serd/attributes.h"
 #include "serd/log.h"
 #include "serd/statement.h"
 #include "zix/allocator.h"
+#include "zix/attributes.h"
 #include "zix/btree.h"
 #include "zix/status.h"
 
@@ -25,7 +25,7 @@ statement_matches_quad(const SerdStatement* const statement,
   return serd_statement_matches(statement, quad[0], quad[1], quad[2], quad[3]);
 }
 
-SERD_PURE_FUNC
+ZIX_PURE_FUNC
 bool
 serd_iter_in_range(const ZixBTreeIter    iter,
                    const SerdNode* const pattern[4],
