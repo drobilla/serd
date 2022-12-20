@@ -1,4 +1,4 @@
-# Copyright 2020-2024 David Robillard <d@drobilla.net>
+# Copyright 2020-2025 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
 ---
@@ -6,18 +6,20 @@ AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: true
 AlignEscapedNewlines: Left
 AttributeMacros:
-  - SERD_ALLOCATED
   - SERD_API
   - SERD_CONST_API
-  - SERD_CONST_FUNC
   - SERD_FALLTHROUGH
-  - SERD_MALLOC_FUNC
-  - SERD_NODISCARD
-  - SERD_NONNULL
-  - SERD_NULLABLE
   - SERD_PURE_API
-  - SERD_PURE_FUNC
-  - SERD_UNSPECIFIED
+  - ZIX_ALLOCATED
+  - ZIX_ALWAYS_INLINE_FUNC
+  - ZIX_CONST_FUNC
+  - ZIX_LOG_FUNC=
+  - ZIX_MALLOC_FUNC
+  - ZIX_NODISCARD
+  - ZIX_NONNULL
+  - ZIX_NULLABLE
+  - ZIX_PURE_FUNC
+  - ZIX_UNSPECIFIED
 BasedOnStyle: Mozilla
 BraceWrapping:
   AfterClass: true
@@ -35,7 +37,5 @@ IndentPPDirectives: AfterHash
 KeepEmptyLinesAtTheStartOfBlocks: false
 SpacesInContainerLiterals: false
 StatementMacros:
-  - SERD_LOG_FUNC
-  - SERD_RESTORE_WARNINGS
   - _Pragma
 ...

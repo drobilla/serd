@@ -127,6 +127,7 @@ if not meson.is_subproject()
         '--error-exitcode=1',
         '--project=' + compdb_path,
         '--suppressions-list=' + suppress_path,
+        '-DZIX_LOG_FUNC=',
         '-q',
       ],
       env: test_env,

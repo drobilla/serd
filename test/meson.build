@@ -49,7 +49,7 @@ foreach name : unit_test_names
       'test_@0@'.format(name),
       source,
       c_args: c_suppressions,
-      dependencies: serd_dep,
+      dependencies: [serd_dep, zix_dep],
       implicit_include_directories: false,
     ),
     env: test_env,

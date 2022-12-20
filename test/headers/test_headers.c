@@ -3,7 +3,9 @@
 
 #include <serd/serd.h> // IWYU pragma: keep
 
-SERD_CONST_FUNC int
+#include <zix/attributes.h>
+
+ZIX_CONST_FUNC int
 main(void)
 {
   return 0;
