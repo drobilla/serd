@@ -6,6 +6,7 @@
 
 #include "serd/attributes.h"
 #include "serd/uri.h"
+#include "zix/attributes.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -90,10 +91,10 @@ typedef uint32_t SerdNodeFlags;
 
 /// A syntactic RDF node
 typedef struct {
-  const char* SERD_NULLABLE buf;     ///< Value string
-  size_t                    n_bytes; ///< Size in bytes (excluding null)
-  SerdNodeFlags             flags;   ///< Node flags (string properties)
-  SerdNodeType              type;    ///< Node type
+  const char* ZIX_NULLABLE buf;     ///< Value string
+  size_t                   n_bytes; ///< Size in bytes (excluding null)
+  SerdNodeFlags            flags;   ///< Node flags (string properties)
+  SerdNodeType             type;    ///< Node type
 } SerdNode;
 
 static const SerdNode SERD_NODE_NULL = {NULL, 0, 0, SERD_NOTHING};
@@ -104,7 +105,7 @@ static const SerdNode SERD_NODE_NULL = {NULL, 0, 0, SERD_NOTHING};
    This measures, but does not copy, `str`.  No memory is allocated.
 */
 SERD_API SerdNode
-serd_node_from_string(SerdNodeType type, const char* SERD_NULLABLE str);
+serd_node_from_string(SerdNodeType type, const char* ZIX_NULLABLE str);
 
 /**
    Make a (shallow) node from a prefix of `str`.
@@ -113,21 +114,21 @@ serd_node_from_string(SerdNodeType type, const char* SERD_NULLABLE str);
    Note that the returned node may not be null terminated.
 */
 SERD_API SerdNode
-serd_node_from_substring(SerdNodeType              type,
-                         const char* SERD_NULLABLE str,
-                         size_t                    len);
+serd_node_from_substring(SerdNodeType             type,
+                         const char* ZIX_NULLABLE str,
+                         size_t                   len);
 
 /// Simple wrapper for serd_node_new_uri() to resolve a URI node
 SERD_API SerdNode
-serd_node_new_uri_from_node(const SerdNode* SERD_NONNULL     uri_node,
-                            const SerdURIView* SERD_NULLABLE base,
-                            SerdURIView* SERD_NULLABLE       out);
+serd_node_new_uri_from_node(const SerdNode* ZIX_NONNULL     uri_node,
+                            const SerdURIView* ZIX_NULLABLE base,
+                            SerdURIView* ZIX_NULLABLE       out);
 
 /// Simple wrapper for serd_node_new_uri() to resolve a URI string
 SERD_API SerdNode
-serd_node_new_uri_from_string(const char* SERD_NULLABLE        str,
-                              const SerdURIView* SERD_NULLABLE base,
-                              SerdURIView* SERD_NULLABLE       out);
+serd_node_new_uri_from_string(const char* ZIX_NULLABLE        str,
+                              const SerdURIView* ZIX_NULLABLE base,
+                              SerdURIView* ZIX_NULLABLE       out);
 
 /**
    Create a new file URI node from a file system path and optional hostname.
@@ -139,9 +140,9 @@ serd_node_new_uri_from_string(const char* SERD_NULLABLE        str,
    If `out` is not NULL, it will be set to the parsed URI.
 */
 SERD_API SerdNode
-serd_node_new_file_uri(const char* SERD_NONNULL   path,
-                       const char* SERD_NULLABLE  hostname,
-                       SerdURIView* SERD_NULLABLE out);
+serd_node_new_file_uri(const char* ZIX_NONNULL   path,
+                       const char* ZIX_NULLABLE  hostname,
+                       SerdURIView* ZIX_NULLABLE out);
 
 /**
    Create a new node by serialising `uri` into a new string.
@@ -154,9 +155,9 @@ serd_node_new_file_uri(const char* SERD_NONNULL   path,
    memory owned by the new returned node).
 */
 SERD_API SerdNode
-serd_node_new_uri(const SerdURIView* SERD_NONNULL  uri,
-                  const SerdURIView* SERD_NULLABLE base,
-                  SerdURIView* SERD_NULLABLE       out);
+serd_node_new_uri(const SerdURIView* ZIX_NONNULL  uri,
+                  const SerdURIView* ZIX_NULLABLE base,
+                  SerdURIView* ZIX_NULLABLE       out);
 
 /**
    Create a new node by serialising `d` into an xsd:decimal string.
@@ -191,7 +192,7 @@ serd_node_new_integer(int64_t i);
    @param wrap_lines Wrap lines at 76 characters to conform to RFC 2045.
 */
 SERD_API SerdNode
-serd_node_new_blob(const void* SERD_NONNULL buf, size_t size, bool wrap_lines);
+serd_node_new_blob(const void* ZIX_NONNULL buf, size_t size, bool wrap_lines);
 
 /**
    Make a deep copy of `node`.
@@ -199,13 +200,12 @@ serd_node_new_blob(const void* SERD_NONNULL buf, size_t size, bool wrap_lines);
    @return a node that the caller must free with serd_node_free().
 */
 SERD_API SerdNode
-serd_node_copy(const SerdNode* SERD_NULLABLE node);
+serd_node_copy(const SerdNode* ZIX_NULLABLE node);
 
 /// Return true iff `a` is equal to `b`
 SERD_PURE_API
 bool
-serd_node_equals(const SerdNode* SERD_NONNULL a,
-                 const SerdNode* SERD_NONNULL b);
+serd_node_equals(const SerdNode* ZIX_NONNULL a, const SerdNode* ZIX_NONNULL b);
 
 /**
    Free any data owned by `node`.
@@ -214,7 +214,7 @@ serd_node_equals(const SerdNode* SERD_NONNULL a,
    for nodes created internally by serd), it will not be freed.
 */
 SERD_API void
-serd_node_free(SerdNode* SERD_NULLABLE node);
+serd_node_free(SerdNode* ZIX_NULLABLE node);
 
 /**
    @}

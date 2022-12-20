@@ -6,6 +6,7 @@
 
 #include "serd/attributes.h"
 #include "serd/status.h"
+#include "zix/attributes.h"
 
 #include <stdarg.h>
 
@@ -19,12 +20,12 @@ SERD_BEGIN_DECLS
 
 /// An error description
 typedef struct {
-  SerdStatus                status;   ///< Error code
-  const char* SERD_NULLABLE filename; ///< File with error
-  unsigned                  line;     ///< Line in file with error or 0
-  unsigned                  col;      ///< Column in file with error
-  const char* SERD_NONNULL  fmt;      ///< Printf-style format string
-  va_list* SERD_NONNULL     args;     ///< Arguments for fmt
+  SerdStatus               status;   ///< Error code
+  const char* ZIX_NULLABLE filename; ///< File with error
+  unsigned                 line;     ///< Line in file with error or 0
+  unsigned                 col;      ///< Column in file with error
+  const char* ZIX_NONNULL  fmt;      ///< Printf-style format string
+  va_list* ZIX_NONNULL     args;     ///< Arguments for fmt
 } SerdError;
 
 /**
@@ -33,8 +34,8 @@ typedef struct {
    @param handle Handle for user data.
    @param error Error description.
 */
-typedef SerdStatus (*SerdLogFunc)(void* SERD_UNSPECIFIED        handle,
-                                  const SerdError* SERD_NONNULL error);
+typedef SerdStatus (*SerdLogFunc)(void* ZIX_UNSPECIFIED        handle,
+                                  const SerdError* ZIX_NONNULL error);
 
 /**
    @}

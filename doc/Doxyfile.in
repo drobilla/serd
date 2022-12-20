@@ -23,16 +23,18 @@ XML_PROGRAMLISTING     = NO
 SHOW_FILES             = NO
 
 MACRO_EXPANSION        = YES
-PREDEFINED             = SERD_ALLOCATED \
-                         SERD_ALWAYS_INLINE_FUNC= \
-                         SERD_API \
-                         SERD_CONST_API= \
-                         SERD_CONST_FUNC= \
-                         SERD_NONNULL= \
-                         SERD_NULLABLE= \
-                         SERD_PURE_API= \
-                         SERD_PURE_FUNC= \
-                         SERD_UNSPECIFIED=
+PREDEFINED             = SERD_API \
+                         SERD_CONST_API \
+                         SERD_PURE_API \
+                         ZIX_ALLOCATED= \
+                         ZIX_ALWAYS_INLINE_FUNC= \
+                         ZIX_CONST_FUNC= \
+                         ZIX_MALLOC_FUNC= \
+                         ZIX_NODISCARD= \
+                         ZIX_NONNULL= \
+                         ZIX_NULLABLE= \
+                         ZIX_PURE_FUNC= \
+                         ZIX_UNSPECIFIED=
 
 RECURSIVE              = YES
 STRIP_FROM_PATH        = @SERD_SRCDIR@

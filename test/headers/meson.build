@@ -37,7 +37,7 @@ test(
     'test_headers',
     files('test_headers.c'),
     c_args: header_c_suppressions,
-    dependencies: serd_dep,
+    dependencies: [serd_dep, zix_dep],
   ),
   suite: 'unit',
 )
