@@ -80,6 +80,17 @@ serd_env_set_prefix(SerdEnv* ZIX_NONNULL env,
                     ZixStringView        uri);
 
 /**
+   Unset a namespace prefix.
+
+   If a prefix with the given name is set, removes it.  Otherwise, successfully
+   does nothing.
+
+   @return #SERD_SUCCESS if the prefix isn't set, or an error.
+*/
+SERD_API SerdStatus
+serd_env_unset_prefix(SerdEnv* ZIX_NONNULL env, ZixStringView name);
+
+/**
    Return a view of the current base URI string.
 
    @return A view of an absolute base URI, or the empty string.
