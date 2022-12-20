@@ -82,6 +82,19 @@ serd_env_set_prefix(SerdEnv* ZIX_NONNULL env,
                     ZixStringView        uri);
 
 /**
+   Unset a namespace prefix.
+
+   This removes the namespace prefix with the given name, if present.  No such
+   prefix being found is not considered an error, that is, the call is
+   successful as long as the prefix is not set in the env upon return.
+
+   @return #SERD_SUCCESS if the prefix was removed or not present, or an error.
+*/
+SERD_API
+SerdStatus
+serd_env_unset_prefix(SerdEnv* ZIX_NONNULL env, ZixStringView name);
+
+/**
    Qualify `uri` into a prefix and suffix (like a CURIE) if possible.
 
    @param env Environment with prefixes to use.
