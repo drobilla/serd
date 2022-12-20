@@ -4,9 +4,9 @@
 #ifndef SERD_SRC_BYTE_SOURCE_H
 #define SERD_SRC_BYTE_SOURCE_H
 
-#include "serd/attributes.h"
 #include "serd/status.h"
 #include "serd/stream.h"
+#include "zix/attributes.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -59,7 +59,7 @@ serd_byte_source_prepare(SerdByteSource* source);
 SerdStatus
 serd_byte_source_page(SerdByteSource* source);
 
-static inline SERD_PURE_FUNC uint8_t
+static inline ZIX_PURE_FUNC uint8_t
 serd_byte_source_peek(SerdByteSource* source)
 {
   assert(source->prepared);

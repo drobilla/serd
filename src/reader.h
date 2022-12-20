@@ -15,6 +15,7 @@
 #include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
+#include "zix/attributes.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -70,7 +71,7 @@ struct SerdReaderImpl {
 #endif
 };
 
-SERD_LOG_FUNC(3, 4)
+ZIX_LOG_FUNC(3, 4)
 SerdStatus
 r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
 
@@ -87,7 +88,7 @@ push_node(SerdReader*  reader,
           const char*  str,
           size_t       n_bytes);
 
-SERD_PURE_FUNC size_t
+ZIX_PURE_FUNC size_t
 genid_size(const SerdReader* reader);
 
 Ref

@@ -49,7 +49,7 @@ uri_path_at(const SerdURIView* uri, const size_t i)
    slash is the last in the root, then the URI is a child of the root,
    otherwise it may merely share some leading path components).
 */
-static inline SERD_PURE_FUNC SlashIndexes
+static inline ZIX_PURE_FUNC SlashIndexes
 uri_rooted_index(const SerdURIView* uri, const SerdURIView* root)
 {
   SlashIndexes indexes = {SIZE_MAX, SIZE_MAX};
@@ -87,7 +87,7 @@ uri_rooted_index(const SerdURIView* uri, const SerdURIView* root)
 }
 
 /** Return true iff `uri` shares path components with `root` */
-static inline SERD_PURE_FUNC bool
+static inline ZIX_PURE_FUNC bool
 uri_is_related(const SerdURIView* uri, const SerdURIView* root)
 {
   return root && root->scheme.length &&
@@ -96,7 +96,7 @@ uri_is_related(const SerdURIView* uri, const SerdURIView* root)
 }
 
 /** Return true iff `uri` is within the base of `root` */
-static inline SERD_PURE_FUNC bool
+static inline ZIX_PURE_FUNC bool
 uri_is_under(const SerdURIView* uri, const SerdURIView* root)
 {
   const SlashIndexes indexes = uri_rooted_index(uri, root);

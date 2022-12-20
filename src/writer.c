@@ -21,6 +21,7 @@
 #include "serd/syntax.h"
 #include "serd/uri.h"
 #include "serd/writer.h"
+#include "zix/attributes.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -184,7 +185,7 @@ free_context(WriteContext* const ctx)
   return SERD_SUCCESS;
 }
 
-SERD_LOG_FUNC(3, 4)
+ZIX_LOG_FUNC(3, 4)
 static SerdStatus
 w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
 {

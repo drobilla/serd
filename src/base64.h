@@ -4,7 +4,7 @@
 #ifndef SERD_SRC_BASE64_H
 #define SERD_SRC_BASE64_H
 
-#include "serd/attributes.h"
+#include "zix/attributes.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -17,7 +17,7 @@
    @param wrap_lines Wrap lines at 76 characters to conform to RFC 2045.
    @return The length of the base64 encoding, excluding null terminator.
 */
-SERD_CONST_FUNC size_t
+ZIX_CONST_FUNC size_t
 serd_base64_get_length(size_t size, bool wrap_lines);
 
 /**

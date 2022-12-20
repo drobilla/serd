@@ -3,8 +3,8 @@
 
 #undef NDEBUG
 
-#include "serd/attributes.h"
 #include "serd/syntax.h"
+#include "zix/attributes.h"
 
 #include <assert.h>
 
@@ -50,7 +50,7 @@ test_syntax_has_graphs(void)
   assert(serd_syntax_has_graphs(SERD_TRIG));
 }
 
-SERD_PURE_FUNC int
+ZIX_PURE_FUNC int
 main(void)
 {
   test_syntax_by_name();
