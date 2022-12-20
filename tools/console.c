@@ -27,8 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-ZIX_PURE_FUNC
-bool
+ZIX_PURE_FUNC bool
 serd_option_iter_is_end(const OptionIter iter)
 {
   return iter.a >= iter.argc || iter.argv[iter.a][0] != '-' ||

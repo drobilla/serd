@@ -27,10 +27,10 @@ SERD_BEGIN_DECLS
    Output from serd is UTF-8 encoded text.
 */
 typedef struct {
-  void* SERD_NULLABLE         stream; ///< Opaque parameter for functions
-  SerdWriteFunc SERD_NONNULL  write;  ///< Write bytes to output
-  SerdErrorFunc SERD_NULLABLE error;  ///< Stream error accessor
-  SerdCloseFunc SERD_NULLABLE close;  ///< Close output
+  void* ZIX_NULLABLE         stream; ///< Opaque parameter for functions
+  SerdWriteFunc ZIX_NONNULL  write;  ///< Write bytes to output
+  SerdErrorFunc ZIX_NULLABLE error;  ///< Stream error accessor
+  SerdCloseFunc ZIX_NULLABLE close;  ///< Close output
 } SerdOutputStream;
 
 /**
@@ -43,10 +43,10 @@ typedef struct {
    @return An opened output stream, or all zeros on error.
 */
 SERD_CONST_API SerdOutputStream
-serd_open_output_stream(SerdWriteFunc SERD_NONNULL  write_func,
-                        SerdErrorFunc SERD_NULLABLE error_func,
-                        SerdCloseFunc SERD_NULLABLE close_func,
-                        void* SERD_NULLABLE         stream);
+serd_open_output_stream(SerdWriteFunc ZIX_NONNULL  write_func,
+                        SerdErrorFunc ZIX_NULLABLE error_func,
+                        SerdCloseFunc ZIX_NULLABLE close_func,
+                        void* ZIX_NULLABLE         stream);
 
 /**
    Open a stream that writes to a buffer.
@@ -59,7 +59,7 @@ serd_open_output_stream(SerdWriteFunc SERD_NONNULL  write_func,
    @return An opened output stream, or all zeros on error.
 */
 SERD_CONST_API SerdOutputStream
-serd_open_output_buffer(SerdBuffer* SERD_NONNULL buffer);
+serd_open_output_buffer(SerdBuffer* ZIX_NONNULL buffer);
 
 /**
    Open a stream that writes to a file.
@@ -71,7 +71,7 @@ serd_open_output_buffer(SerdBuffer* SERD_NONNULL buffer);
    @param path Path of file to open and write to.
 */
 SERD_API SerdOutputStream
-serd_open_output_file(const char* SERD_NONNULL path);
+serd_open_output_file(const char* ZIX_NONNULL path);
 
 /**
    Close an output stream.
@@ -82,7 +82,7 @@ serd_open_output_file(const char* SERD_NONNULL path);
    returned in both of those cases.
 */
 SERD_API SerdStatus
-serd_close_output(SerdOutputStream* SERD_NULLABLE output);
+serd_close_output(SerdOutputStream* ZIX_NULLABLE output);
 
 /**
    @}

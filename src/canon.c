@@ -9,7 +9,6 @@
 #include "string_utils.h"
 
 #include "exess/exess.h"
-#include "serd/attributes.h"
 #include "serd/canon.h"
 #include "serd/caret.h"
 #include "serd/event.h"
@@ -20,6 +19,7 @@
 #include "serd/status.h"
 #include "serd/world.h"
 #include "zix/allocator.h"
+#include "zix/attributes.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -34,10 +34,10 @@ typedef struct {
 } SerdCanonData;
 
 static ExessResult
-build_typed(ZixAllocator* const SERD_NONNULL   allocator,
-            SerdNode** const                   out,
-            const SerdNode* const SERD_NONNULL node,
-            const SerdNode* const SERD_NONNULL datatype)
+build_typed(ZixAllocator* const ZIX_NONNULL   allocator,
+            SerdNode** const                  out,
+            const SerdNode* const ZIX_NONNULL node,
+            const SerdNode* const ZIX_NONNULL datatype)
 {
   *out = NULL;
 
@@ -91,10 +91,10 @@ build_typed(ZixAllocator* const SERD_NONNULL   allocator,
 }
 
 static ExessResult
-build_tagged(ZixAllocator* const SERD_NONNULL   allocator,
-             SerdNode** const                   out,
-             const SerdNode* const SERD_NONNULL node,
-             const SerdNode* const SERD_NONNULL language)
+build_tagged(ZixAllocator* const ZIX_NONNULL   allocator,
+             SerdNode** const                  out,
+             const SerdNode* const ZIX_NONNULL node,
+             const SerdNode* const ZIX_NONNULL language)
 {
 #define MAX_LANG_LEN 48 // RFC5646 requires 35, RFC4646 recommends 42
 

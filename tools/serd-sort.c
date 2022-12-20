@@ -3,7 +3,6 @@
 
 #include "console.h"
 
-#include "serd/attributes.h"
 #include "serd/cursor.h"
 #include "serd/describe.h"
 #include "serd/env.h"
@@ -15,6 +14,7 @@
 #include "serd/status.h"
 #include "serd/syntax.h"
 #include "serd/writer.h"
+#include "zix/attributes.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -33,7 +33,7 @@ typedef struct {
   SerdDescribeFlags  flags;
 } Options;
 
-SERD_PURE_FUNC static bool
+ZIX_PURE_FUNC static bool
 input_has_graphs(const Options opts)
 {
   if (opts.common.input.syntax) {

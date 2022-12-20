@@ -5,6 +5,7 @@
 #define SERD_SYNTAX_H
 
 #include "serd/attributes.h"
+#include "zix/attributes.h"
 
 #include <stdbool.h>
 
@@ -34,7 +35,7 @@ typedef enum {
    unknown.
 */
 SERD_PURE_API SerdSyntax
-serd_syntax_by_name(const char* SERD_NONNULL name);
+serd_syntax_by_name(const char* ZIX_NONNULL name);
 
 /**
    Guess a syntax from a filename.
@@ -43,7 +44,7 @@ serd_syntax_by_name(const char* SERD_NONNULL name);
    returned if the extension is not recognized.
 */
 SERD_PURE_API SerdSyntax
-serd_guess_syntax(const char* SERD_NONNULL filename);
+serd_guess_syntax(const char* ZIX_NONNULL filename);
 
 /**
    Return whether a syntax can represent multiple graphs in one document.

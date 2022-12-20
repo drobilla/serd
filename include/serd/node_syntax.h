@@ -39,11 +39,11 @@ SERD_BEGIN_DECLS
    @return A newly allocated node that must be freed with serd_node_free()
    using the world allocator.
 */
-SERD_API SerdNode* SERD_ALLOCATED
-serd_node_from_syntax(ZixAllocator* SERD_NULLABLE allocator,
-                      const char* SERD_NONNULL    str,
-                      SerdSyntax                  syntax,
-                      SerdEnv* SERD_NULLABLE      env);
+SERD_API SerdNode* ZIX_ALLOCATED
+serd_node_from_syntax(ZixAllocator* ZIX_NULLABLE allocator,
+                      const char* ZIX_NONNULL    str,
+                      SerdSyntax                 syntax,
+                      SerdEnv* ZIX_NULLABLE      env);
 
 /**
    Return a string representation of `node` in `syntax`.
@@ -66,11 +66,11 @@ serd_node_from_syntax(ZixAllocator* SERD_NULLABLE allocator,
    @return A newly allocated string that must be freed with zix_free() using
    the same `allocator`.
 */
-SERD_API char* SERD_ALLOCATED
-serd_node_to_syntax(ZixAllocator* SERD_NULLABLE  allocator,
-                    const SerdNode* SERD_NONNULL node,
-                    SerdSyntax                   syntax,
-                    const SerdEnv* SERD_NULLABLE env);
+SERD_API char* ZIX_ALLOCATED
+serd_node_to_syntax(ZixAllocator* ZIX_NULLABLE  allocator,
+                    const SerdNode* ZIX_NONNULL node,
+                    SerdSyntax                  syntax,
+                    const SerdEnv* ZIX_NULLABLE env);
 
 /**
    @}

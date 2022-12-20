@@ -101,21 +101,21 @@ typedef enum {
 typedef uint32_t SerdWriterFlags;
 
 /// Create a new RDF writer
-SERD_API SerdWriter* SERD_ALLOCATED
-serd_writer_new(SerdWorld* SERD_NONNULL        world,
-                SerdSyntax                     syntax,
-                SerdWriterFlags                flags,
-                const SerdEnv* SERD_NONNULL    env,
-                SerdOutputStream* SERD_NONNULL output,
-                size_t                         block_size);
+SERD_API SerdWriter* ZIX_ALLOCATED
+serd_writer_new(SerdWorld* ZIX_NONNULL        world,
+                SerdSyntax                    syntax,
+                SerdWriterFlags               flags,
+                const SerdEnv* ZIX_NONNULL    env,
+                SerdOutputStream* ZIX_NONNULL output,
+                size_t                        block_size);
 
 /// Free `writer`
 SERD_API void
-serd_writer_free(SerdWriter* SERD_NULLABLE writer);
+serd_writer_free(SerdWriter* ZIX_NULLABLE writer);
 
 /// Return a sink interface that emits statements via `writer`
-SERD_CONST_API const SerdSink* SERD_NONNULL
-serd_writer_sink(SerdWriter* SERD_NONNULL writer);
+SERD_CONST_API const SerdSink* ZIX_NONNULL
+serd_writer_sink(SerdWriter* ZIX_NONNULL writer);
 
 /**
    Set the current root URI.
@@ -128,7 +128,7 @@ serd_writer_sink(SerdWriter* SERD_NONNULL writer);
    it defaults to the base URI, so no up-references will be created at all.
 */
 SERD_API SerdStatus
-serd_writer_set_root_uri(SerdWriter* SERD_NONNULL writer, ZixStringView uri);
+serd_writer_set_root_uri(SerdWriter* ZIX_NONNULL writer, ZixStringView uri);
 
 /**
    Finish a write.
@@ -137,7 +137,7 @@ serd_writer_set_root_uri(SerdWriter* SERD_NONNULL writer, ZixStringView uri);
    that the output is a complete document.
 */
 SERD_API SerdStatus
-serd_writer_finish(SerdWriter* SERD_NONNULL writer);
+serd_writer_finish(SerdWriter* ZIX_NONNULL writer);
 
 /**
    @}
