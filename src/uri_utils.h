@@ -4,8 +4,8 @@
 #ifndef SERD_SRC_URI_UTILS_H
 #define SERD_SRC_URI_UTILS_H
 
-#include <serd/attributes.h>
 #include <serd/uri.h>
+#include <zix/attributes.h>
 
 #include <assert.h>
 #include <stdbool.h>
@@ -49,7 +49,7 @@ uri_path_at(const SerdURIView* const uri, const size_t i)
    slash is the last in the root, then the URI is a child of the root,
    otherwise it may merely share some leading path components).
 */
-static inline SERD_PURE_FUNC SlashIndexes
+static inline ZIX_PURE_FUNC SlashIndexes
 uri_rooted_index(const SerdURIView* const uri, const SerdURIView* const root)
 {
   assert(root);
@@ -89,7 +89,7 @@ uri_rooted_index(const SerdURIView* const uri, const SerdURIView* const root)
 }
 
 /// Return true iff `uri` is within the base of `root`
-static inline SERD_PURE_FUNC bool
+static inline ZIX_PURE_FUNC bool
 uri_is_under(const SerdURIView* const uri, const SerdURIView* const root)
 {
   const SlashIndexes indexes = uri_rooted_index(uri, root);

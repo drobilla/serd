@@ -5,10 +5,10 @@
 
 #include "expect_string.h"
 
-#include <serd/attributes.h>
 #include <serd/node.h>
 #include <serd/status.h>
 #include <serd/string.h>
+#include <zix/attributes.h>
 
 #include <assert.h>
 #include <stdint.h>
@@ -60,7 +60,7 @@ test_strerror(void)
   assert(expect_string(msg, "Unknown error"));
 }
 
-SERD_PURE_FUNC int
+ZIX_PURE_FUNC int
 main(void)
 {
   test_expect_string();

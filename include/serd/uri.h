@@ -6,6 +6,7 @@
 
 #include <serd/attributes.h>
 #include <serd/stream.h>
+#include <zix/attributes.h>
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -26,8 +27,8 @@ SERD_BEGIN_DECLS
    URI has the corresponding delimiter).
 */
 typedef struct {
-  const char* SERD_NULLABLE data;   ///< Start of string, or null
-  size_t                    length; ///< Length of string in bytes
+  const char* ZIX_NULLABLE data;   ///< Start of string, or null
+  size_t                   length; ///< Length of string in bytes
 } SerdURIComponent;
 
 /**
@@ -69,13 +70,13 @@ static const SerdURIView SERD_URI_NULL =
    @param hostname If non-NULL, set to the hostname, if present.
    @return A newly-allocated filesystem path.
 */
-SERD_API char* SERD_ALLOCATED
-serd_parse_file_uri(const char* SERD_NONNULL              uri,
-                    char* SERD_UNSPECIFIED* SERD_NULLABLE hostname);
+SERD_API char* ZIX_ALLOCATED
+serd_parse_file_uri(const char* ZIX_NONNULL             uri,
+                    char* ZIX_UNSPECIFIED* ZIX_NULLABLE hostname);
 
 /// Return true iff `string` starts with a valid URI scheme
 SERD_PURE_API bool
-serd_uri_string_has_scheme(const char* SERD_NULLABLE string);
+serd_uri_string_has_scheme(const char* ZIX_NULLABLE string);
 
 /// Return true iff `uri` has a URI scheme (is "absolute")
 SERD_CONST_API bool
@@ -83,7 +84,7 @@ serd_uri_has_scheme(SerdURIView uri);
 
 /// Parse `string` and return a URI view that points into it
 SERD_PURE_API SerdURIView
-serd_parse_uri(const char* SERD_NULLABLE string);
+serd_parse_uri(const char* ZIX_NULLABLE string);
 
 /**
    Return reference `r` resolved against `base`.
@@ -159,9 +160,9 @@ serd_uri_string_length(SerdURIView uri);
    `serd_uri_string_length(uri)` on error.
 */
 SERD_API size_t
-serd_write_uri(SerdURIView                uri,
-               SerdWriteFunc SERD_NONNULL sink,
-               void* SERD_UNSPECIFIED     stream);
+serd_write_uri(SerdURIView               uri,
+               SerdWriteFunc ZIX_NONNULL sink,
+               void* ZIX_UNSPECIFIED     stream);
 
 /**
    @}

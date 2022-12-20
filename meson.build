@@ -312,7 +312,7 @@ if not get_option('tools').disabled()
     'serdi',
     files('src/serdi.c'),
     c_args: c_suppressions + platform_c_args,
-    dependencies: serd_dep,
+    dependencies: [serd_dep, zix_dep],
     implicit_include_directories: false,
     install: true,
     link_args: tool_link_args,
