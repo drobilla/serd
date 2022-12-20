@@ -9,6 +9,7 @@
 #include "serd/node.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
+#include "zix/attributes.h"
 
 SERD_BEGIN_DECLS
 
@@ -23,24 +24,24 @@ SERD_BEGIN_DECLS
 
    Called whenever the base URI of the serialisation changes.
 */
-typedef SerdStatus (*SerdBaseFunc)(void* SERD_NULLABLE          handle,
-                                   const SerdNode* SERD_NONNULL uri);
+typedef SerdStatus (*SerdBaseFunc)(void* ZIX_UNSPECIFIED       handle,
+                                   const SerdNode* ZIX_NONNULL uri);
 
 /**
    Sink function for namespace definitions.
 
    Called whenever a prefix is defined in the serialisation.
 */
-typedef SerdStatus (*SerdPrefixFunc)(void* SERD_NULLABLE          handle,
-                                     const SerdNode* SERD_NONNULL name,
-                                     const SerdNode* SERD_NONNULL uri);
+typedef SerdStatus (*SerdPrefixFunc)(void* ZIX_UNSPECIFIED       handle,
+                                     const SerdNode* ZIX_NONNULL name,
+                                     const SerdNode* ZIX_NONNULL uri);
 
 /**
    Sink function for statements.
 
    Called for every RDF statement in the serialisation.
 */
-typedef SerdStatus (*SerdStatementFunc)(void* SERD_NULLABLE     handle,
+typedef SerdStatus (*SerdStatementFunc)(void* ZIX_UNSPECIFIED   handle,
                                         SerdStatementEventFlags flags,
                                         SerdStatementView       statement);
 
@@ -51,14 +52,14 @@ typedef SerdStatus (*SerdStatementFunc)(void* SERD_NULLABLE     handle,
    will no longer be referred to by any future statements (so the anonymous
    node is finished).
 */
-typedef SerdStatus (*SerdEndFunc)(void* SERD_NULLABLE          handle,
-                                  const SerdNode* SERD_NONNULL node);
+typedef SerdStatus (*SerdEndFunc)(void* ZIX_UNSPECIFIED       handle,
+                                  const SerdNode* ZIX_NONNULL node);
 
 /// An interface that receives a stream of RDF data
 typedef struct SerdSinkImpl SerdSink;
 
 /// Function to free an opaque handle
-typedef void (*SerdFreeFunc)(void* SERD_NULLABLE ptr);
+typedef void (*SerdFreeFunc)(void* ZIX_NULLABLE ptr);
 
 /**
    Create a new sink.
@@ -67,50 +68,50 @@ typedef void (*SerdFreeFunc)(void* SERD_NULLABLE ptr);
    @param event_func Function that will be called for every event.
    @param free_handle Free function to call on handle in serd_sink_free().
 */
-SERD_API SerdSink* SERD_ALLOCATED
-serd_sink_new(void* SERD_NULLABLE         handle,
-              SerdEventFunc SERD_NULLABLE event_func,
-              SerdFreeFunc SERD_NULLABLE  free_handle);
+SERD_API SerdSink* ZIX_ALLOCATED
+serd_sink_new(void* ZIX_UNSPECIFIED      handle,
+              SerdEventFunc ZIX_NULLABLE event_func,
+              SerdFreeFunc ZIX_NULLABLE  free_handle);
 
 /// Free `sink`
 SERD_API void
-serd_sink_free(SerdSink* SERD_NULLABLE sink);
+serd_sink_free(SerdSink* ZIX_NULLABLE sink);
 
 /// Send an event to the sink
 SERD_API SerdStatus
-serd_sink_write_event(const SerdSink* SERD_NONNULL  sink,
-                      const SerdEvent* SERD_NONNULL event);
+serd_sink_write_event(const SerdSink* ZIX_NONNULL  sink,
+                      const SerdEvent* ZIX_NONNULL event);
 
 /// Set the base URI
 SERD_API SerdStatus
-serd_sink_write_base(const SerdSink* SERD_NONNULL sink,
-                     const SerdNode* SERD_NONNULL uri);
+serd_sink_write_base(const SerdSink* ZIX_NONNULL sink,
+                     const SerdNode* ZIX_NONNULL uri);
 
 /// Set a namespace prefix
 SERD_API SerdStatus
-serd_sink_write_prefix(const SerdSink* SERD_NONNULL sink,
-                       const SerdNode* SERD_NONNULL name,
-                       const SerdNode* SERD_NONNULL uri);
+serd_sink_write_prefix(const SerdSink* ZIX_NONNULL sink,
+                       const SerdNode* ZIX_NONNULL name,
+                       const SerdNode* ZIX_NONNULL uri);
 
 /// Write a statement
 SERD_API SerdStatus
-serd_sink_write_statement(const SerdSink* SERD_NONNULL sink,
-                          SerdStatementEventFlags      flags,
-                          SerdStatementView            statement);
+serd_sink_write_statement(const SerdSink* ZIX_NONNULL sink,
+                          SerdStatementEventFlags     flags,
+                          SerdStatementView           statement);
 
 /// Write a statement from individual nodes
 SERD_API SerdStatus
-serd_sink_write(const SerdSink* SERD_NONNULL  sink,
-                SerdStatementEventFlags       flags,
-                const SerdNode* SERD_NONNULL  subject,
-                const SerdNode* SERD_NONNULL  predicate,
-                const SerdNode* SERD_NONNULL  object,
-                const SerdNode* SERD_NULLABLE graph);
+serd_sink_write(const SerdSink* ZIX_NONNULL  sink,
+                SerdStatementEventFlags      flags,
+                const SerdNode* ZIX_NONNULL  subject,
+                const SerdNode* ZIX_NONNULL  predicate,
+                const SerdNode* ZIX_NONNULL  object,
+                const SerdNode* ZIX_NULLABLE graph);
 
 /// Mark the end of an anonymous node
 SERD_API SerdStatus
-serd_sink_write_end(const SerdSink* SERD_NONNULL sink,
-                    const SerdNode* SERD_NONNULL node);
+serd_sink_write_end(const SerdSink* ZIX_NONNULL sink,
+                    const SerdNode* ZIX_NONNULL node);
 
 /**
    @}

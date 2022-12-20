@@ -6,6 +6,7 @@
 
 #include "serd/attributes.h"
 #include "serd/node.h"
+#include "zix/attributes.h"
 
 SERD_BEGIN_DECLS
 
@@ -17,10 +18,10 @@ SERD_BEGIN_DECLS
 
 /// A view of a statement
 typedef struct {
-  const SerdNode* SERD_NONNULL  subject;
-  const SerdNode* SERD_NONNULL  predicate;
-  const SerdNode* SERD_NONNULL  object;
-  const SerdNode* SERD_NULLABLE graph;
+  const SerdNode* ZIX_NONNULL  subject;
+  const SerdNode* ZIX_NONNULL  predicate;
+  const SerdNode* ZIX_NONNULL  object;
+  const SerdNode* ZIX_NULLABLE graph;
 } SerdStatementView;
 
 /**

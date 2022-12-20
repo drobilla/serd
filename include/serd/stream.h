@@ -5,6 +5,7 @@
 #define SERD_STREAM_H
 
 #include "serd/attributes.h"
+#include "zix/attributes.h"
 
 #include <stddef.h>
 
@@ -29,7 +30,7 @@ SERD_BEGIN_DECLS
 
    @return Non-zero if `stream` has encountered an error.
 */
-typedef int (*SerdStreamErrorFunc)(void* SERD_NONNULL stream);
+typedef int (*SerdStreamErrorFunc)(void* ZIX_NONNULL stream);
 
 /**
    Function for reading input bytes from a stream.
@@ -43,10 +44,10 @@ typedef int (*SerdStreamErrorFunc)(void* SERD_NONNULL stream);
    @param stream Stream to read from (FILE* for fread).
    @return Number of elements (bytes) read, which is short on error.
 */
-typedef size_t (*SerdReadFunc)(void* SERD_NONNULL buf,
-                               size_t             size,
-                               size_t             nmemb,
-                               void* SERD_NONNULL stream);
+typedef size_t (*SerdReadFunc)(void* ZIX_NONNULL buf,
+                               size_t            size,
+                               size_t            nmemb,
+                               void* ZIX_NONNULL stream);
 
 /**
    Function for writing output bytes to a stream.
@@ -60,10 +61,10 @@ typedef size_t (*SerdReadFunc)(void* SERD_NONNULL buf,
    @param stream Stream to write to (FILE* for fread).
    @return Number of elements (bytes) written, which is short on error.
 */
-typedef size_t (*SerdWriteFunc)(const void* SERD_NONNULL buf,
-                                size_t                   size,
-                                size_t                   nmemb,
-                                void* SERD_NONNULL       stream);
+typedef size_t (*SerdWriteFunc)(const void* ZIX_NONNULL buf,
+                                size_t                  size,
+                                size_t                  nmemb,
+                                void* ZIX_NONNULL       stream);
 
 /**
    @}
