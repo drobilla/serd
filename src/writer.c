@@ -642,7 +642,7 @@ write_curie(SerdWriter* const        writer,
   case SERD_NTRIPLES:
   case SERD_NQUADS:
     if ((st = serd_env_expand(writer->env, node, &prefix, &suffix))) {
-      w_err(writer, st, "undefined namespace prefix `%s'\n", node->buf);
+      w_err(writer, st, "undefined namespace prefix '%s'\n", node->buf);
       return false;
     }
     write_sep(writer, SEP_URI_BEGIN);

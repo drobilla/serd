@@ -36,13 +36,13 @@ serd_uri_string_length(const SerdURI* const uri)
     len += (field).len + (n_delims); \
   }
 
-  ADD_LEN(uri->path, 1)      // + possible leading `/'
-  ADD_LEN(uri->scheme, 1)    // + trailing `:'
-  ADD_LEN(uri->authority, 2) // + leading `//'
-  ADD_LEN(uri->query, 1)     // + leading `?'
-  ADD_LEN(uri->fragment, 1)  // + leading `#'
+  ADD_LEN(uri->path, 1)      // + possible leading '/'
+  ADD_LEN(uri->scheme, 1)    // + trailing ':'
+  ADD_LEN(uri->authority, 2) // + leading '//'
+  ADD_LEN(uri->query, 1)     // + leading '?'
+  ADD_LEN(uri->fragment, 1)  // + leading '#'
 
-  return len + 2; // + 2 for authority `//'
+  return len + 2; // + 2 for authority '//'
 }
 
 static size_t

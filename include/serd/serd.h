@@ -478,8 +478,8 @@ serd_node_new_relative_uri(const SerdURI* SERD_NONNULL  uri,
 /**
    Create a new node by serialising `d` into an xsd:decimal string.
 
-   The resulting node will always contain a `.', start with a digit, and end
-   with a digit (i.e. will have a leading and/or trailing `0' if necessary).
+   The resulting node will always contain a '.', start with a digit, and end
+   with a digit (i.e. will have a leading and/or trailing '0' if necessary).
    It will never be in scientific notation.  A maximum of `frac_digits` digits
    will be written after the decimal point, but trailing zeros will
    automatically be omitted (except one if `d` is a round integer).

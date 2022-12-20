@@ -49,7 +49,7 @@ get_syntax(const char* const name)
     }
   }
 
-  SERDI_ERRORF("unknown syntax `%s'\n", name);
+  SERDI_ERRORF("unknown syntax '%s'\n", name);
   return (SerdSyntax)0;
 }
 

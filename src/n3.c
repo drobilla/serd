@@ -54,7 +54,7 @@ read_HEX(SerdReader* const reader)
     return (uint8_t)eat_byte_safe(reader, c);
   }
 
-  r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid hexadecimal digit `%c'\n", c);
+  r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid hexadecimal digit '%c'\n", c);
   return 0;
 }
 
@@ -340,7 +340,7 @@ read_STRING_LITERAL_LONG(SerdReader* const    reader,
       uint32_t code = 0;
       if ((st = read_ECHAR(reader, ref, flags)) &&
           (st = read_UCHAR(reader, ref, &code))) {
-        return r_err(reader, st, "invalid escape `\\%c'\n", peek_byte(reader));
+        return r_err(reader, st, "invalid escape '\\%c'\n", peek_byte(reader));
       }
     } else if (c == q) {
       skip_byte(reader, q);
@@ -388,7 +388,7 @@ read_STRING_LITERAL(SerdReader* const    reader,
       skip_byte(reader, c);
       if ((st = read_ECHAR(reader, ref, flags)) &&
           (st = read_UCHAR(reader, ref, &code))) {
-        return r_err(reader, st, "invalid escape `\\%c'\n", peek_byte(reader));
+        return r_err(reader, st, "invalid escape '\\%c'\n", peek_byte(reader));
       }
       break;
     default:
@@ -629,7 +629,7 @@ read_PN_PREFIX_tail(SerdReader* const reader, const Ref dest)
 
   const SerdNode* const n = deref(reader, dest);
   if (n->buf[n->n_bytes - 1] == '.' && read_PN_CHARS(reader, dest)) {
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "prefix ends with `.'\n");
+    return r_err(reader, SERD_ERR_BAD_SYNTAX, "prefix ends with '.'\n");
   }
 
   return SERD_SUCCESS;
@@ -650,7 +650,7 @@ read_LANGTAG(SerdReader* const reader, Ref* const dest)
 {
   int c = peek_byte(reader);
   if (!is_alpha(c)) {
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected `%c'\n", c);
+    return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected '%c'\n", c);
   }
 
   *dest = push_node(reader, SERD_LITERAL, "", 0);
@@ -676,7 +676,7 @@ read_IRIREF_scheme(SerdReader* const reader, const Ref dest)
 {
   int c = peek_byte(reader);
   if (!is_alpha(c)) {
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "bad IRI scheme start `%c'\n", c);
+    return r_err(reader, SERD_ERR_BAD_SYNTAX, "bad IRI scheme start '%c'\n", c);
   }
 
   while ((c = peek_byte(reader)) != EOF) {
@@ -724,7 +724,7 @@ read_IRIREF(SerdReader* const reader, Ref* const dest)
     case '<':
       *dest = pop_node(reader, *dest);
       return r_err(
-        reader, SERD_ERR_BAD_SYNTAX, "invalid IRI character `%c'\n", c);
+        reader, SERD_ERR_BAD_SYNTAX, "invalid IRI character '%c'\n", c);
 
     case '>':
       return SERD_SUCCESS;
@@ -757,7 +757,7 @@ read_IRIREF(SerdReader* const reader, Ref* const dest)
     case '}':
       *dest = pop_node(reader, *dest);
       return r_err(
-        reader, SERD_ERR_BAD_SYNTAX, "invalid IRI character `%c'\n", c);
+        reader, SERD_ERR_BAD_SYNTAX, "invalid IRI character '%c'\n", c);
 
     default:
       if (c <= 0x20) {
@@ -844,7 +844,7 @@ read_number(SerdReader* const reader,
   }
   if ((c = peek_byte(reader)) == '.') {
     has_decimal = true;
-    // decimal case 2 (e.g. '.0' or `-.0' or `+.0')
+    // decimal case 2 (e.g. '.0' or '-.0' or '+.0')
     push_byte(reader, *dest, eat_byte_safe(reader, c));
     TRY(st, read_0_9(reader, *dest, true));
   } else {
@@ -931,7 +931,7 @@ read_literal(SerdReader* const    reader,
   case '^':
     skip_byte(reader, '^');
     if (!eat_byte_check(reader, '^')) {
-      return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected `^'\n");
+      return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected '^'\n");
     }
 
     if ((st = read_iri(reader, datatype, ate_dot))) {
@@ -1027,7 +1027,7 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
         *dest = pop_node(reader, *dest);
         return r_err(reader,
                      SERD_ERR_ID_CLASH,
-                     "found both `b' and `B' blank IDs, prefix required\n");
+                     "found both 'b' and 'B' blank IDs, prefix required\n");
       }
     }
   }
@@ -1039,7 +1039,7 @@ static Ref
 read_blankName(SerdReader* const reader)
 {
   if (skip_byte(reader, '=') || eat_byte_check(reader, '=') != '=') {
-    r_err(reader, SERD_ERR_BAD_SYNTAX, "expected `='\n");
+    r_err(reader, SERD_ERR_BAD_SYNTAX, "expected '='\n");
     return 0;
   }
 
@@ -1089,7 +1089,7 @@ read_anon(SerdReader* const reader,
     bool ate_dot_in_list = false;
     read_predicateObjectList(reader, ctx, &ate_dot_in_list);
     if (ate_dot_in_list) {
-      return r_err(reader, SERD_ERR_BAD_SYNTAX, "`.' inside blank\n");
+      return r_err(reader, SERD_ERR_BAD_SYNTAX, "'.' inside blank\n");
     }
 
     read_ws_star(reader);
@@ -1383,7 +1383,7 @@ read_subject(SerdReader* const reader,
 
   if (ate_dot) {
     pop_node(reader, *dest);
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "subject ends with `.'\n");
+    return r_err(reader, SERD_ERR_BAD_SYNTAX, "subject ends with '.'\n");
   }
 
   return st;
@@ -1560,7 +1560,7 @@ read_wrappedGraph(SerdReader* const reader, ReadContext* const ctx)
   skip_byte(reader, '}');
   read_ws_star(reader);
   if (peek_byte(reader) == '.') {
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "graph followed by `.'\n");
+    return r_err(reader, SERD_ERR_BAD_SYNTAX, "graph followed by '.'\n");
   }
 
   return SERD_SUCCESS;

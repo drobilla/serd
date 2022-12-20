@@ -18,7 +18,7 @@ serd_uri_to_path(const uint8_t* uri)
   const uint8_t* path = uri;
   if (!is_windows_path(uri) && serd_uri_string_has_scheme(uri)) {
     if (!!strncmp((const char*)uri, "file:", 5)) {
-      fprintf(stderr, "Non-file URI `%s'\n", uri);
+      fprintf(stderr, "Non-file URI '%s'\n", uri);
       return NULL;
     }
 
@@ -27,7 +27,7 @@ serd_uri_to_path(const uint8_t* uri)
     } else if (!strncmp((const char*)uri, "file://", 7)) {
       path = uri + 7;
     } else {
-      fprintf(stderr, "Invalid file URI `%s'\n", uri);
+      fprintf(stderr, "Invalid file URI '%s'\n", uri);
       return NULL;
     }
 
@@ -485,7 +485,7 @@ serd_uri_serialise_relative(const SerdURI* const uri,
   }
 
   if (uri->fragment.buf) {
-    // Note uri->fragment.buf includes the leading `#'
+    // Note uri->fragment.buf includes the leading '#'
     len += sink(uri->fragment.buf, uri->fragment.len, stream);
   }
 
