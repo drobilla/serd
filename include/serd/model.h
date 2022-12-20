@@ -68,24 +68,24 @@ typedef uint32_t SerdModelFlags;
 
    @param flags Options that control what data is stored in the model.
 */
-SERD_API SerdModel* SERD_ALLOCATED
-serd_model_new(SerdWorld* SERD_NONNULL world,
-               SerdStatementOrder      default_order,
-               SerdModelFlags          flags);
+SERD_API SerdModel* ZIX_ALLOCATED
+serd_model_new(SerdWorld* ZIX_NONNULL world,
+               SerdStatementOrder     default_order,
+               SerdModelFlags         flags);
 
 /// Return a deep copy of `model`
-SERD_API SerdModel* SERD_ALLOCATED
-serd_model_copy(ZixAllocator* SERD_NULLABLE   allocator,
-                const SerdModel* SERD_NONNULL model);
+SERD_API SerdModel* ZIX_ALLOCATED
+serd_model_copy(ZixAllocator* ZIX_NULLABLE   allocator,
+                const SerdModel* ZIX_NONNULL model);
 
 /// Return true iff `a` is equal to `b`, ignoring statement cursor metadata
 SERD_API bool
-serd_model_equals(const SerdModel* SERD_NULLABLE a,
-                  const SerdModel* SERD_NULLABLE b);
+serd_model_equals(const SerdModel* ZIX_NULLABLE a,
+                  const SerdModel* ZIX_NULLABLE b);
 
 /// Close and free `model`
 SERD_API void
-serd_model_free(SerdModel* SERD_NULLABLE model);
+serd_model_free(SerdModel* ZIX_NULLABLE model);
 
 /**
    Add an index for a particular statement order to the model.
@@ -93,7 +93,7 @@ serd_model_free(SerdModel* SERD_NULLABLE model);
    @return Failure if this index already exists.
 */
 SERD_API SerdStatus
-serd_model_add_index(SerdModel* SERD_NONNULL model, SerdStatementOrder order);
+serd_model_add_index(SerdModel* ZIX_NONNULL model, SerdStatementOrder order);
 
 /**
    Add an index for a particular statement order to the model.
@@ -101,31 +101,31 @@ serd_model_add_index(SerdModel* SERD_NONNULL model, SerdStatementOrder order);
    @return Failure if this index does not exist.
 */
 SERD_API SerdStatus
-serd_model_drop_index(SerdModel* SERD_NONNULL model, SerdStatementOrder order);
+serd_model_drop_index(SerdModel* ZIX_NONNULL model, SerdStatementOrder order);
 
 /// Get the world associated with `model`
-SERD_PURE_API SerdWorld* SERD_NONNULL
-serd_model_world(SerdModel* SERD_NONNULL model);
+SERD_PURE_API SerdWorld* ZIX_NONNULL
+serd_model_world(SerdModel* ZIX_NONNULL model);
 
 /// Get all nodes interned in `model`
-SERD_PURE_API const SerdNodes* SERD_NONNULL
-serd_model_nodes(const SerdModel* SERD_NONNULL model);
+SERD_PURE_API const SerdNodes* ZIX_NONNULL
+serd_model_nodes(const SerdModel* ZIX_NONNULL model);
 
 /// Get the default statement order of `model`
 SERD_PURE_API SerdStatementOrder
-serd_model_default_order(const SerdModel* SERD_NONNULL model);
+serd_model_default_order(const SerdModel* ZIX_NONNULL model);
 
 /// Get the flags enabled on `model`
 SERD_PURE_API SerdModelFlags
-serd_model_flags(const SerdModel* SERD_NONNULL model);
+serd_model_flags(const SerdModel* ZIX_NONNULL model);
 
 /// Return the number of statements stored in `model`
 SERD_PURE_API size_t
-serd_model_size(const SerdModel* SERD_NONNULL model);
+serd_model_size(const SerdModel* ZIX_NONNULL model);
 
 /// Return true iff there are no statements stored in `model`
 SERD_PURE_API bool
-serd_model_empty(const SerdModel* SERD_NONNULL model);
+serd_model_empty(const SerdModel* ZIX_NONNULL model);
 
 /**
    Return a cursor at the start of every statement in the model.
@@ -136,9 +136,9 @@ serd_model_empty(const SerdModel* SERD_NONNULL model);
    @param allocator The allocator used for the returned cursor.
    @param model The model that the returned cursor points to.
 */
-SERD_API SerdCursor* SERD_ALLOCATED
-serd_model_begin(ZixAllocator* SERD_NULLABLE   allocator,
-                 const SerdModel* SERD_NONNULL model);
+SERD_API SerdCursor* ZIX_ALLOCATED
+serd_model_begin(ZixAllocator* ZIX_NULLABLE   allocator,
+                 const SerdModel* ZIX_NONNULL model);
 
 /**
    Return a cursor past the end of the model.
@@ -146,8 +146,8 @@ serd_model_begin(ZixAllocator* SERD_NULLABLE   allocator,
    This returns the "universal" end cursor, which is equivalent to any cursor
    for this model that has reached its end.
 */
-SERD_CONST_API const SerdCursor* SERD_NONNULL
-serd_model_end(const SerdModel* SERD_NONNULL model);
+SERD_CONST_API const SerdCursor* ZIX_NONNULL
+serd_model_end(const SerdModel* ZIX_NONNULL model);
 
 /**
    Return a cursor over all statements in the model in a specific order.
@@ -156,10 +156,10 @@ serd_model_end(const SerdModel* SERD_NONNULL model);
    @param model The model that the returned cursor points to.
    @param order The statement order that the returned cursor advances through.
 */
-SERD_API SerdCursor* SERD_ALLOCATED
-serd_model_begin_ordered(ZixAllocator* SERD_NULLABLE   allocator,
-                         const SerdModel* SERD_NONNULL model,
-                         SerdStatementOrder            order);
+SERD_API SerdCursor* ZIX_ALLOCATED
+serd_model_begin_ordered(ZixAllocator* ZIX_NULLABLE   allocator,
+                         const SerdModel* ZIX_NONNULL model,
+                         SerdStatementOrder           order);
 
 /**
    Search for statements that match a pattern.
@@ -172,13 +172,13 @@ serd_model_begin_ordered(ZixAllocator* SERD_NULLABLE   allocator,
    @param g The graph to match, or null.
    @return A cursor pointing at the first match, or the end.
 */
-SERD_API SerdCursor* SERD_NULLABLE
-serd_model_find(ZixAllocator* SERD_NULLABLE   allocator,
-                const SerdModel* SERD_NONNULL model,
-                const SerdNode* SERD_NULLABLE s,
-                const SerdNode* SERD_NULLABLE p,
-                const SerdNode* SERD_NULLABLE o,
-                const SerdNode* SERD_NULLABLE g);
+SERD_API SerdCursor* ZIX_NULLABLE
+serd_model_find(ZixAllocator* ZIX_NULLABLE   allocator,
+                const SerdModel* ZIX_NONNULL model,
+                const SerdNode* ZIX_NULLABLE s,
+                const SerdNode* ZIX_NULLABLE p,
+                const SerdNode* ZIX_NULLABLE o,
+                const SerdNode* ZIX_NULLABLE g);
 
 /**
    Search for a single node that matches a pattern.
@@ -188,12 +188,12 @@ serd_model_find(ZixAllocator* SERD_NULLABLE   allocator,
 
    @return The first matching node, or NULL if no matches are found.
 */
-SERD_API const SerdNode* SERD_NULLABLE
-serd_model_get(const SerdModel* SERD_NONNULL model,
-               const SerdNode* SERD_NULLABLE s,
-               const SerdNode* SERD_NULLABLE p,
-               const SerdNode* SERD_NULLABLE o,
-               const SerdNode* SERD_NULLABLE g);
+SERD_API const SerdNode* ZIX_NULLABLE
+serd_model_get(const SerdModel* ZIX_NONNULL model,
+               const SerdNode* ZIX_NULLABLE s,
+               const SerdNode* ZIX_NULLABLE p,
+               const SerdNode* ZIX_NULLABLE o,
+               const SerdNode* ZIX_NULLABLE g);
 
 /**
    Search for a single statement that matches a pattern.
@@ -202,28 +202,28 @@ serd_model_get(const SerdModel* SERD_NONNULL model,
 
    @return The first matching statement, or NULL if none are found.
 */
-SERD_API const SerdStatement* SERD_NULLABLE
-serd_model_get_statement(const SerdModel* SERD_NONNULL model,
-                         const SerdNode* SERD_NULLABLE s,
-                         const SerdNode* SERD_NULLABLE p,
-                         const SerdNode* SERD_NULLABLE o,
-                         const SerdNode* SERD_NULLABLE g);
+SERD_API const SerdStatement* ZIX_NULLABLE
+serd_model_get_statement(const SerdModel* ZIX_NONNULL model,
+                         const SerdNode* ZIX_NULLABLE s,
+                         const SerdNode* ZIX_NULLABLE p,
+                         const SerdNode* ZIX_NULLABLE o,
+                         const SerdNode* ZIX_NULLABLE g);
 
 /// Return true iff a statement exists
 SERD_API bool
-serd_model_ask(const SerdModel* SERD_NONNULL model,
-               const SerdNode* SERD_NULLABLE s,
-               const SerdNode* SERD_NULLABLE p,
-               const SerdNode* SERD_NULLABLE o,
-               const SerdNode* SERD_NULLABLE g);
+serd_model_ask(const SerdModel* ZIX_NONNULL model,
+               const SerdNode* ZIX_NULLABLE s,
+               const SerdNode* ZIX_NULLABLE p,
+               const SerdNode* ZIX_NULLABLE o,
+               const SerdNode* ZIX_NULLABLE g);
 
 /// Return the number of matching statements
 SERD_API size_t
-serd_model_count(const SerdModel* SERD_NONNULL model,
-                 const SerdNode* SERD_NULLABLE s,
-                 const SerdNode* SERD_NULLABLE p,
-                 const SerdNode* SERD_NULLABLE o,
-                 const SerdNode* SERD_NULLABLE g);
+serd_model_count(const SerdModel* ZIX_NONNULL model,
+                 const SerdNode* ZIX_NULLABLE s,
+                 const SerdNode* ZIX_NULLABLE p,
+                 const SerdNode* ZIX_NULLABLE o,
+                 const SerdNode* ZIX_NULLABLE g);
 
 /**
    Add a statement to a model from nodes.
@@ -231,11 +231,11 @@ serd_model_count(const SerdModel* SERD_NONNULL model,
    This function fails if there are any active iterators on `model`.
 */
 SERD_API SerdStatus
-serd_model_add(SerdModel* SERD_NONNULL       model,
-               const SerdNode* SERD_NONNULL  s,
-               const SerdNode* SERD_NONNULL  p,
-               const SerdNode* SERD_NONNULL  o,
-               const SerdNode* SERD_NULLABLE g);
+serd_model_add(SerdModel* ZIX_NONNULL       model,
+               const SerdNode* ZIX_NONNULL  s,
+               const SerdNode* ZIX_NONNULL  p,
+               const SerdNode* ZIX_NONNULL  o,
+               const SerdNode* ZIX_NULLABLE g);
 
 /**
    Add a statement to a model from nodes with a document origin.
@@ -243,12 +243,12 @@ serd_model_add(SerdModel* SERD_NONNULL       model,
    This function fails if there are any active iterators on `model`.
 */
 SERD_API SerdStatus
-serd_model_add_with_caret(SerdModel* SERD_NONNULL        model,
-                          const SerdNode* SERD_NONNULL   s,
-                          const SerdNode* SERD_NONNULL   p,
-                          const SerdNode* SERD_NONNULL   o,
-                          const SerdNode* SERD_NULLABLE  g,
-                          const SerdCaret* SERD_NULLABLE caret);
+serd_model_add_with_caret(SerdModel* ZIX_NONNULL        model,
+                          const SerdNode* ZIX_NONNULL   s,
+                          const SerdNode* ZIX_NONNULL   p,
+                          const SerdNode* ZIX_NONNULL   o,
+                          const SerdNode* ZIX_NULLABLE  g,
+                          const SerdCaret* ZIX_NULLABLE caret);
 
 /**
    Add a statement to a model.
@@ -257,8 +257,8 @@ serd_model_add_with_caret(SerdModel* SERD_NONNULL        model,
    If statement is null, then SERD_FAILURE is returned.
 */
 SERD_API SerdStatus
-serd_model_insert(SerdModel* SERD_NONNULL           model,
-                  const SerdStatement* SERD_NONNULL statement);
+serd_model_insert(SerdModel* ZIX_NONNULL           model,
+                  const SerdStatement* ZIX_NONNULL statement);
 
 /**
    Add a range of statements to a model.
@@ -266,8 +266,8 @@ serd_model_insert(SerdModel* SERD_NONNULL           model,
    This function fails if there are any active iterators on `model`.
 */
 SERD_API SerdStatus
-serd_model_insert_statements(SerdModel* SERD_NONNULL  model,
-                             SerdCursor* SERD_NONNULL range);
+serd_model_insert_statements(SerdModel* ZIX_NONNULL  model,
+                             SerdCursor* ZIX_NONNULL range);
 
 /**
    Remove a statement from a model via an iterator.
@@ -280,8 +280,7 @@ serd_model_insert_statements(SerdModel* SERD_NONNULL  model,
    advanced to the next statement on return.
 */
 SERD_API SerdStatus
-serd_model_erase(SerdModel* SERD_NONNULL  model,
-                 SerdCursor* SERD_NONNULL cursor);
+serd_model_erase(SerdModel* ZIX_NONNULL model, SerdCursor* ZIX_NONNULL cursor);
 
 /**
    Remove a range of statements from a model.
@@ -296,8 +295,8 @@ serd_model_erase(SerdModel* SERD_NONNULL  model,
    @param range Range to erase, which will be empty on return.
 */
 SERD_API SerdStatus
-serd_model_erase_statements(SerdModel* SERD_NONNULL  model,
-                            SerdCursor* SERD_NONNULL range);
+serd_model_erase_statements(SerdModel* ZIX_NONNULL  model,
+                            SerdCursor* ZIX_NONNULL range);
 
 /**
    Remove everything from a model.
@@ -307,7 +306,7 @@ serd_model_erase_statements(SerdModel* SERD_NONNULL  model,
    @param model The model to clear.
 */
 SERD_API SerdStatus
-serd_model_clear(SerdModel* SERD_NONNULL model);
+serd_model_clear(SerdModel* ZIX_NONNULL model);
 
 /**
    @}

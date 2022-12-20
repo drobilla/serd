@@ -32,10 +32,10 @@ typedef uint32_t SerdCanonFlags;
    The returned sink acts like `target` in all respects, except literal nodes
    in statements may be modified from the original.
 */
-SERD_API SerdSink* SERD_ALLOCATED
-serd_canon_new(const SerdWorld* SERD_NONNULL world,
-               const SerdSink* SERD_NONNULL  target,
-               SerdCanonFlags                flags);
+SERD_API SerdSink* ZIX_ALLOCATED
+serd_canon_new(const SerdWorld* ZIX_NONNULL world,
+               const SerdSink* ZIX_NONNULL  target,
+               SerdCanonFlags               flags);
 
 /**
    @}

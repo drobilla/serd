@@ -4,21 +4,21 @@
 #ifndef SERD_SRC_STATEMENT_H
 #define SERD_SRC_STATEMENT_H
 
-#include "serd/attributes.h"
 #include "serd/caret.h"
 #include "serd/node.h"
+#include "zix/attributes.h"
 
 #include <stdbool.h>
 
 struct SerdStatementImpl {
-  const SerdNode* SERD_NULLABLE nodes[4];
-  SerdCaret* SERD_NULLABLE      caret;
+  const SerdNode* ZIX_NULLABLE nodes[4];
+  SerdCaret* ZIX_NULLABLE      caret;
 };
 
-SERD_PURE_FUNC bool
-serd_statement_is_valid(const SerdNode* SERD_NULLABLE subject,
-                        const SerdNode* SERD_NULLABLE predicate,
-                        const SerdNode* SERD_NULLABLE object,
-                        const SerdNode* SERD_NULLABLE graph);
+ZIX_PURE_FUNC bool
+serd_statement_is_valid(const SerdNode* ZIX_NULLABLE subject,
+                        const SerdNode* ZIX_NULLABLE predicate,
+                        const SerdNode* ZIX_NULLABLE object,
+                        const SerdNode* ZIX_NULLABLE graph);
 
 #endif // SERD_SRC_STATEMENT_H

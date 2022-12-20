@@ -34,10 +34,10 @@ SERD_BEGIN_DECLS
    @param stream Stream to read from (FILE* for fread).
    @return Number of elements (bytes) read, which is short on error.
 */
-typedef size_t (*SerdReadFunc)(void* SERD_NONNULL buf,
-                               size_t             size,
-                               size_t             nmemb,
-                               void* SERD_NONNULL stream);
+typedef size_t (*SerdReadFunc)(void* ZIX_NONNULL buf,
+                               size_t            size,
+                               size_t            nmemb,
+                               void* ZIX_NONNULL stream);
 
 /**
    Function for writing output bytes to a stream.
@@ -51,10 +51,10 @@ typedef size_t (*SerdReadFunc)(void* SERD_NONNULL buf,
    @param stream Stream to write to (FILE* for fread).
    @return Number of elements (bytes) written, which is short on error.
 */
-typedef size_t (*SerdWriteFunc)(const void* SERD_NONNULL buf,
-                                size_t                   size,
-                                size_t                   nmemb,
-                                void* SERD_NONNULL       stream);
+typedef size_t (*SerdWriteFunc)(const void* ZIX_NONNULL buf,
+                                size_t                  size,
+                                size_t                  nmemb,
+                                void* ZIX_NONNULL       stream);
 
 /**
    Function for detecting I/O stream errors.
@@ -63,7 +63,7 @@ typedef size_t (*SerdWriteFunc)(const void* SERD_NONNULL buf,
 
    @return Non-zero if `stream` has encountered an error.
 */
-typedef int (*SerdErrorFunc)(void* SERD_NONNULL stream);
+typedef int (*SerdErrorFunc)(void* ZIX_NONNULL stream);
 
 /**
    Function for closing an I/O stream.
@@ -75,7 +75,7 @@ typedef int (*SerdErrorFunc)(void* SERD_NONNULL stream);
 
    @return Non-zero if `stream` has encountered an error.
 */
-typedef int (*SerdCloseFunc)(void* SERD_NONNULL stream);
+typedef int (*SerdCloseFunc)(void* ZIX_NONNULL stream);
 
 /**
    @}

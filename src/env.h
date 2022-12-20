@@ -4,11 +4,11 @@
 #ifndef SERD_SRC_ENV_H
 #define SERD_SRC_ENV_H
 
-#include "serd/attributes.h"
 #include "serd/env.h"
 #include "serd/status.h"
 #include "serd/uri.h"
 #include "serd/world.h"
+#include "zix/attributes.h"
 #include "zix/string_view.h"
 
 /**
@@ -16,7 +16,7 @@
 
    If no such prefix is known, returns an empty string view.
 */
-SERD_PURE_FUNC ZixStringView
+ZIX_PURE_FUNC ZixStringView
 serd_env_find_prefix(const SerdEnv* env, ZixStringView name);
 
 /**
@@ -31,10 +31,10 @@ serd_env_expand_in_place(const SerdEnv* env,
                          ZixStringView* uri_prefix,
                          ZixStringView* uri_suffix);
 
-SERD_PURE_FUNC SerdWorld*
+ZIX_PURE_FUNC SerdWorld*
 serd_env_world(const SerdEnv* env);
 
-SERD_PURE_FUNC SerdURIView
+ZIX_PURE_FUNC SerdURIView
 serd_env_base_uri_view(const SerdEnv* env);
 
 #endif // SERD_SRC_ENV_H

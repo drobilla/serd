@@ -27,16 +27,16 @@ typedef struct SerdWorldImpl SerdWorld;
    It is safe to use multiple worlds in one process, though no objects can be
    shared between worlds.
 */
-SERD_MALLOC_API SerdWorld* SERD_ALLOCATED
-serd_world_new(ZixAllocator* SERD_NULLABLE allocator);
+SERD_MALLOC_API SerdWorld* ZIX_ALLOCATED
+serd_world_new(ZixAllocator* ZIX_NULLABLE allocator);
 
 /// Free `world`
 SERD_API void
-serd_world_free(SerdWorld* SERD_NULLABLE world);
+serd_world_free(SerdWorld* ZIX_NULLABLE world);
 
 /// Return the allocator used by `world`
-SERD_PURE_API ZixAllocator* SERD_NONNULL
-serd_world_allocator(const SerdWorld* SERD_NONNULL world);
+SERD_PURE_API ZixAllocator* ZIX_NONNULL
+serd_world_allocator(const SerdWorld* ZIX_NONNULL world);
 
 /**
    Return the nodes cache in `world`.
@@ -45,8 +45,8 @@ serd_world_allocator(const SerdWorld* SERD_NONNULL world);
    frequently by the implementation.  For convenience, it may be used to store
    additional nodes which will be freed when the world is freed.
 */
-SERD_PURE_API SerdNodes* SERD_NONNULL
-serd_world_nodes(SerdWorld* SERD_NONNULL world);
+SERD_PURE_API SerdNodes* ZIX_NONNULL
+serd_world_nodes(SerdWorld* ZIX_NONNULL world);
 
 /**
    Return a unique blank node.
@@ -54,8 +54,8 @@ serd_world_nodes(SerdWorld* SERD_NONNULL world);
    The returned node is valid only until the next time serd_world_get_blank()
    is called or the world is destroyed.
 */
-SERD_API const SerdNode* SERD_NONNULL
-serd_world_get_blank(SerdWorld* SERD_NONNULL world);
+SERD_API const SerdNode* ZIX_NONNULL
+serd_world_get_blank(SerdWorld* ZIX_NONNULL world);
 
 /**
    @}

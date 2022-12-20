@@ -30,8 +30,8 @@ typedef enum {
    Emitted whenever the base URI changes.
 */
 typedef struct {
-  SerdEventType                type; ///< #SERD_BASE
-  const SerdNode* SERD_NONNULL uri;  ///< Base URI
+  SerdEventType               type; ///< #SERD_BASE
+  const SerdNode* ZIX_NONNULL uri;  ///< Base URI
 } SerdBaseEvent;
 
 /**
@@ -40,9 +40,9 @@ typedef struct {
    Emitted whenever a prefix is defined.
 */
 typedef struct {
-  SerdEventType                type; ///< #SERD_PREFIX
-  const SerdNode* SERD_NONNULL name; ///< Prefix name
-  const SerdNode* SERD_NONNULL uri;  ///< Namespace URI
+  SerdEventType               type; ///< #SERD_PREFIX
+  const SerdNode* ZIX_NONNULL name; ///< Prefix name
+  const SerdNode* ZIX_NONNULL uri;  ///< Namespace URI
 } SerdPrefixEvent;
 
 /**
@@ -51,9 +51,9 @@ typedef struct {
    Emitted for every statement.
 */
 typedef struct {
-  SerdEventType                     type;      ///< #SERD_STATEMENT
-  SerdStatementFlags                flags;     ///< Flags for pretty-printing
-  const SerdStatement* SERD_NONNULL statement; ///< Statement
+  SerdEventType                    type;      ///< #SERD_STATEMENT
+  SerdStatementFlags               flags;     ///< Flags for pretty-printing
+  const SerdStatement* ZIX_NONNULL statement; ///< Statement
 } SerdStatementEvent;
 
 /**
@@ -64,8 +64,8 @@ typedef struct {
    write a delimiter.
 */
 typedef struct {
-  SerdEventType                type; ///< #SERD_END
-  const SerdNode* SERD_NONNULL node; ///< Anonymous node that is finished
+  SerdEventType               type; ///< #SERD_END
+  const SerdNode* ZIX_NONNULL node; ///< Anonymous node that is finished
 } SerdEndEvent;
 
 /**
@@ -86,8 +86,8 @@ typedef union {
 } SerdEvent;
 
 /// Function for handling events
-typedef SerdStatus (*SerdEventFunc)(void* SERD_NULLABLE           handle,
-                                    const SerdEvent* SERD_NONNULL event);
+typedef SerdStatus (*SerdEventFunc)(void* ZIX_NULLABLE           handle,
+                                    const SerdEvent* ZIX_NONNULL event);
 
 /**
    @}
