@@ -7,7 +7,6 @@
 #include "byte_source.h"
 #include "stack.h"
 
-#include "serd/attributes.h"
 #include "serd/error.h"
 #include "serd/node.h"
 #include "serd/reader.h"
@@ -15,6 +14,7 @@
 #include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
+#include "zix/attributes.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -70,7 +70,7 @@ struct SerdReaderImpl {
 #endif
 };
 
-SERD_LOG_FUNC(3, 4)
+ZIX_LOG_FUNC(3, 4)
 SerdStatus
 r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
 
@@ -87,7 +87,7 @@ push_node(SerdReader*  reader,
           const char*  str,
           size_t       n_bytes);
 
-SERD_PURE_FUNC size_t
+ZIX_PURE_FUNC size_t
 genid_size(const SerdReader* reader);
 
 Ref
@@ -135,7 +135,7 @@ skip_byte(SerdReader* reader, const int byte)
   return serd_byte_source_advance(&reader->source);
 }
 
-static inline int SERD_NODISCARD
+static inline int ZIX_NODISCARD
 eat_byte_safe(SerdReader* reader, const int byte)
 {
   (void)byte;
@@ -146,7 +146,7 @@ eat_byte_safe(SerdReader* reader, const int byte)
   return byte;
 }
 
-static inline int SERD_NODISCARD
+static inline int ZIX_NODISCARD
 eat_byte_check(SerdReader* reader, const int byte)
 {
   const int c = peek_byte(reader);

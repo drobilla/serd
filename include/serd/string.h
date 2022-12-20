@@ -6,6 +6,7 @@
 
 #include "serd/attributes.h"
 #include "serd/node.h"
+#include "zix/attributes.h"
 
 #include <stddef.h>
 
@@ -25,7 +26,7 @@ SERD_BEGIN_DECLS
    @param flags (Output) Set to the applicable flags.
 */
 SERD_API size_t
-serd_strlen(const char* SERD_NONNULL str, SerdNodeFlags* SERD_NULLABLE flags);
+serd_strlen(const char* ZIX_NONNULL str, SerdNodeFlags* ZIX_NULLABLE flags);
 
 /**
    Parse a string to a double.
@@ -35,8 +36,8 @@ serd_strlen(const char* SERD_NONNULL str, SerdNodeFlags* SERD_NULLABLE flags);
    format used in the Turtle grammar (the decimal point is always ".").
 */
 SERD_API double
-serd_strtod(const char* SERD_NONNULL              str,
-            char* SERD_UNSPECIFIED* SERD_NULLABLE endptr);
+serd_strtod(const char* ZIX_NONNULL             str,
+            char* ZIX_UNSPECIFIED* ZIX_NULLABLE endptr);
 
 /**
    Decode a base64 string.
@@ -49,10 +50,10 @@ serd_strtod(const char* SERD_NONNULL              str,
    @param size Set to the size of the returned blob in bytes.
    @return A newly allocated blob which must be freed with serd_free().
 */
-SERD_API void* SERD_ALLOCATED
-serd_base64_decode(const char* SERD_NONNULL str,
-                   size_t                   len,
-                   size_t* SERD_NONNULL     size);
+SERD_API void* ZIX_ALLOCATED
+serd_base64_decode(const char* ZIX_NONNULL str,
+                   size_t                  len,
+                   size_t* ZIX_NONNULL     size);
 
 /**
    @}

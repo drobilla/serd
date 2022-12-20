@@ -5,6 +5,7 @@
 #define SERD_STRING_VIEW_H
 
 #include "serd/attributes.h"
+#include "zix/attributes.h"
 
 #include <stddef.h>
 
@@ -23,8 +24,8 @@ SERD_BEGIN_DECLS
    of strings in-place and to avoid redundant string measurement.
 */
 typedef struct {
-  const char* SERD_NONNULL data;   ///< Start of string
-  size_t                   length; ///< Length of string in bytes
+  const char* ZIX_NONNULL data;   ///< Start of string
+  size_t                  length; ///< Length of string in bytes
 } SerdStringView;
 
 /**
