@@ -19,9 +19,23 @@
 #include <stddef.h>
 
 typedef enum {
-  SERD_INSERT_STATEMENT,
-  SERD_ERASE_STATEMENT,
+  SERD_INSERT_STATEMENT      = 0x5D0,
+  SERD_INSERT_STATEMENT_FROM = 0x5D1,
+  SERD_ERASE_STATEMENT       = 0x5D2,
 } SerdOperationType;
+
+typedef struct {
+  struct SerdStatementImpl statement;
+} SerdInsertStatementOperationData;
+
+typedef struct {
+  struct SerdStatementImpl statement;
+  SerdCaret                caret;
+} SerdInsertStatementFromOperationData;
+
+typedef struct {
+  SerdCursor* cursor;
+} SerdEraseStatementOperationData;
 
 typedef struct {
   SerdOperationType type;
@@ -132,6 +146,8 @@ serd_transaction_free(SerdTransaction* const transaction)
     const SerdOperation* const op = &transaction->operations[i];
     switch (op->type) {
     case SERD_INSERT_STATEMENT:
+      break;
+    case SERD_INSERT_STATEMENT_FROM:
       break;
     case SERD_ERASE_STATEMENT:
       serd_cursor_free(transaction->model->allocator, op->data.cursor);
