@@ -96,6 +96,7 @@
 #include "serd/model.h"
 #include "serd/nodes.h"
 #include "serd/range.h"
+#include "serd/transaction.h"
 
 /**
    @}

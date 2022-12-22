@@ -95,6 +95,7 @@ c_headers = files(
   'include/serd/stream.h',
   'include/serd/string.h',
   'include/serd/syntax.h',
+  'include/serd/transaction.h',
   'include/serd/uri.h',
   'include/serd/value.h',
   'include/serd/version.h',
