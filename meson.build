@@ -48,6 +48,16 @@ if host_machine.system() in ['gnu', 'linux']
   ]
 endif
 
+# Use versioned name everywhere to support parallel major version installations
+if host_machine.system() == 'windows'
+  if get_option('default_library') == 'both'
+    error('default_library=both is not supported on Windows')
+  endif
+  soversion = ''
+else
+  soversion = meson.project_version().split('.')[0]
+endif
+
 ###########
 # Library #
 ###########
@@ -73,14 +83,13 @@ sources = files(
 
 # Set appropriate arguments for building against the library type
 extra_c_args = []
-subdir('meson/library')
 if get_option('default_library') == 'static'
   extra_c_args = ['-DSERD_STATIC']
 endif
 
 # Build shared and/or static library
 libserd = library(
-  meson.project_name() + library_suffix,
+  versioned_name,
   sources,
   c_args: c_suppressions + extra_c_args + platform_args + [
     '-DSERD_INTERNAL',
@@ -90,6 +99,7 @@ libserd = library(
   gnu_symbol_visibility: 'hidden',
   include_directories: include_dirs,
   install: true,
+  soversion: soversion,
   version: meson.project_version(),
 )
 
