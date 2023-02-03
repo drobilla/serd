@@ -4,9 +4,10 @@
 Checks: >
   *,
   -altera-*,
+  -bugprone-assignment-in-if-condition,
+  -clang-diagnostic-unused-macros,
   -llvmlibc-*,
   -readability-identifier-length,
-  -clang-diagnostic-unused-macros,
 FormatStyle: file
 HeaderFilterRegex: '.*/serd/.*\.h'
 WarningsAsErrors: '*'
