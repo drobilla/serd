@@ -176,6 +176,7 @@ serd_set_input_option(const ZixStringView    name,
     {"global", SERD_READ_GLOBAL},
     {"generated", SERD_READ_GENERATED},
     {"ordered", SERD_READ_ORDERED},
+    {"decoded", SERD_READ_DECODED},
     {NULL, SERD_READ_LAX},
   };
 
@@ -228,6 +229,7 @@ serd_set_output_option(const ZixStringView    name,
   static const OutputOption output_options[] = {
     {"ascii", SERD_WRITE_ASCII},
     {"contextual", SERD_WRITE_CONTEXTUAL},
+    {"escapes", SERD_WRITE_ESCAPES},
     {"expanded", SERD_WRITE_EXPANDED},
     {"lax", SERD_WRITE_LAX},
     {"longhand", SERD_WRITE_LONGHAND},

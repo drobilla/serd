@@ -41,6 +41,7 @@ def run_eval_test(command, in_path, good_path, out_path, getlines):
     """Run a positive eval test and return whether the output matches."""
 
     command = command + ["-o", out_path, in_path]
+    print(shlex.join(command))
     subprocess.check_call(command, encoding="utf-8")
 
     with open(good_path, "r", encoding="utf-8") as good:
