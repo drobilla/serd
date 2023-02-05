@@ -19,14 +19,12 @@ if is_variable('cc')
       c_suppressions += [
         '-Wno-cast-align',
         '-Wno-cast-qual',
-        '-Wno-conversion',
         '-Wno-declaration-after-statement',
         '-Wno-double-promotion',
         '-Wno-format-nonliteral',
         '-Wno-nullability-extension',
         '-Wno-nullable-to-nonnull-conversion',
         '-Wno-padded',
-        '-Wno-reserved-id-macro',
         '-Wno-sign-conversion',
       ]
 
