@@ -275,6 +275,7 @@ serd_set_input_option(const ZixStringView    name,
     {"global", SERD_READ_GLOBAL},
     {"relative", SERD_READ_RELATIVE},
     {"prefixed", SERD_READ_PREFIXED},
+    {"decoded", SERD_READ_DECODED},
     {NULL, SERD_READ_LAX},
   };
 
@@ -332,6 +333,7 @@ serd_set_output_option(const ZixStringView    name,
     {"lax", SERD_WRITE_LAX},
     {"contextual", SERD_WRITE_CONTEXTUAL},
     {"longhand", SERD_WRITE_LONGHAND},
+    {"encoded", SERD_WRITE_ENCODED},
     {NULL, SERD_WRITE_ESCAPED},
   };
 

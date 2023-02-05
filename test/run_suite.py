@@ -82,8 +82,13 @@ def run_entry(args, entry, command, out_dir, suite_dir):
     in_path = util.file_path(suite_dir, entry[NS_MF + "action"][0])
     command = command + ["-B", args.base_uri + os.path.basename(in_path)]
 
-    negative = "Negative" in entry[NS_RDF + "type"][0]
-    if negative and not args.lax:
+    if "Negative" in entry[NS_RDF + "type"][0]:
+        if args.reverse:
+            return True
+
+        if args.lax:
+            return run_positive_test(command, in_path)
+
         return run_negative_test(command, in_path)
 
     if NS_MF + "result" not in entry:
