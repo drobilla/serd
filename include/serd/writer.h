@@ -85,13 +85,24 @@ typedef enum {
   SERD_WRITE_ESCAPED = 1U << 5U,
 
   /**
+     Write extended URI characters with percent-encoded UTF-8 bytes.
+
+     Normally, characters in URIs are written as-is.  This flag enables
+     additional percent-encoding, so that multi-byte and special characters
+     will be written with percent-encoding. URIs in the output will be
+     ASCII-compatible as a result.  This encoding can be reversed with
+     #SERD_READ_DECODED.
+  */
+  SERD_WRITE_ENCODED = 1U << 6U,
+
+  /**
      Write rdf:type and numeric literals generically.
 
      This disables the special Turtle/TriG "a" syntax, and unquoted writing of
      xsd:boolean, xsd:integer, and xsd:decimal literals.  Implied by
      #SERD_NTRIPLES and #SERD_NQUADS.
   */
-  SERD_WRITE_LONGHAND = 1U << 6U,
+  SERD_WRITE_LONGHAND = 1U << 7U,
 
   /**
      Write only absolute URIs.
@@ -99,7 +110,7 @@ typedef enum {
      This will refuse to write any relative URI reference that couldn't be
      resolved.  Implied by #SERD_NTRIPLES and #SERD_NQUADS.
   */
-  SERD_WRITE_ABSOLUTE = 1U << 7U,
+  SERD_WRITE_ABSOLUTE = 1U << 8U,
 
   /**
      Write expanded URIs instead of prefixed names.
@@ -108,7 +119,7 @@ typedef enum {
      into full URIs before writing.  Implied by #SERD_NTRIPLES and
      #SERD_NQUADS.
   */
-  SERD_WRITE_EXPANDED = 1U << 8U,
+  SERD_WRITE_EXPANDED = 1U << 9U,
 
   /**
      Write URI references and CURIEs exactly as in the input.
@@ -119,7 +130,7 @@ typedef enum {
      bypasses some error checking, so CURIEs with unknown prefixes can be
      written.
   */
-  SERD_WRITE_VERBATIM = 1U << 9U,
+  SERD_WRITE_VERBATIM = 1U << 10U,
 } SerdWriterFlag;
 
 /// Bitwise OR of #SerdWriterFlag values

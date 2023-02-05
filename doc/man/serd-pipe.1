@@ -1,6 +1,6 @@
 .\" Copyright 2011-2025 David Robillard <d@drobilla.net>
 .\" SPDX-License-Identifier: ISC
-.Dd February 11, 2025
+.Dd August 21, 2025
 .Dt SERD-PIPE 1
 .Os
 .Sh NAME
@@ -98,6 +98,18 @@ can be
 .Cm Turtle ,
 or an option:
 .Bl -tag -width 3n
+.It Cm decoded
+Decode unreserved URI characters.
+Normally, percent-encoded octets in URIs are read as-is.
+This option enables decoding them as UTF-8 so,
+for example,
+.Ql %7E
+is read as
+.Ql ~ .
+Reserved characters aren't decoded, but their encoding is normalized.
+The
+.Cm encoded
+writer option does the opposite.
 .It Cm generated
 Read seemingly generated blank node labels exactly.
 Normally, blank node labels formatted like generated ones,
@@ -160,6 +172,15 @@ Normally, these are preserved in Turtle or TriG.
 This option disables that,
 so the output has an implicit base URI.
 Note that this may corrupt data that contains relative URIs references and base URI changes!
+.It Cm encoded
+Write extended URI characters as percent-encoded UTF-8 bytes.
+Normally, all URI characters are written as-is.
+With this option,
+multi-byte and special characters are written with percent-encoding,
+so URIs in the output are ASCII-compatible.
+The
+.Cm decoded
+reader option does the opposite.
 .It Cm escaped
 Escape additional characters like in the Turtle test suite outputs,
 for compatibility with older NTriples readers.

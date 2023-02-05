@@ -1,4 +1,4 @@
-// Copyright 2011-2021 David Robillard <d@drobilla.net>
+// Copyright 2011-2025 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #include "read_ntriples.h"
@@ -100,6 +100,75 @@ read_IRI_scheme(SerdReader* const reader, TokenHeader* const dest)
   return st;
 }
 
+static SerdStatus
+read_hex_byte(SerdReader* const reader, uint8_t digits[2])
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  for (unsigned i = 0U; i < 2U; ++i) {
+    TRY(st, read_HEX(reader, &digits[i]));
+  }
+
+  return SERD_SUCCESS;
+}
+
+static uint8_t
+hex_byte_value(const uint8_t c0, const uint8_t c1)
+{
+  return (uint8_t)((hex_digit_value(c0) << 4U) | hex_digit_value(c1));
+}
+
+static uint8_t
+hex_digit(const uint8_t c)
+{
+  return (uint8_t)((c >= 'a' && c <= 'z') ? (c - 32) : c);
+}
+
+/// RFC3986 S2.1: pct-encoded = "%" HEXDIG HEXDIG
+static SerdStatus
+read_pct_encoded(SerdReader* const reader, TokenHeader* const node)
+{
+  SerdStatus st     = SERD_SUCCESS;
+  uint8_t    hex[9] = {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U};
+
+  // Read first percent-encoded byte
+  TRY(st, read_hex_byte(reader, hex));
+
+  // Parse the leading byte and get the encoded size from it
+  uint8_t        byte = hex_byte_value(hex[0], hex[1]);
+  const uint32_t size = utf8_num_bytes(byte);
+  if (!size) {
+    return r_err(reader, SERD_BAD_TEXT, "bad UTF-8 leading byte");
+  }
+
+  // Avoid decoding any single byte characters except unreserved
+  if (size == 1U && byte != '-' && byte != '.' && byte != '_' && byte != '~' &&
+      !is_alpha(byte) && !is_digit(byte)) {
+    const uint8_t str[] = {'%', hex_digit(hex[0]), hex_digit(hex[1])};
+    return push_bytes(reader, node, str, sizeof(str));
+  }
+
+  // Push the leading byte to the node
+  TRY(st, push_byte(reader, node, byte));
+
+  // Read remaining hex-encoded bytes
+  for (unsigned i = 1; i < size; ++i) {
+    const unsigned offset = 2U * i;
+    uint8_t* const digits = hex + offset;
+    TRY(st, eat_byte_check(reader, '%'));
+    TRY(st, read_hex_byte(reader, digits));
+
+    byte = hex_byte_value(digits[0], digits[1]);
+    if (!is_utf8_continuation(byte)) {
+      return r_err(reader, SERD_BAD_TEXT, "bad UTF-8 continuation byte");
+    }
+
+    TRY(st, push_byte(reader, node, byte));
+  }
+
+  return st;
+}
+
 SerdStatus
 read_IRIREF_suffix(SerdReader* const reader, TokenHeader* const node)
 {
@@ -114,6 +183,8 @@ read_IRIREF_suffix(SerdReader* const reader, TokenHeader* const node)
       st = push_node_termination(reader);
     } else if (c >= 0x80) {
       st = read_utf8_continuation(reader, node, &code, (uint8_t)c);
+    } else if (c == '%' && (reader->flags & SERD_READ_DECODED)) {
+      st = read_pct_encoded(reader, node);
     } else if (c == '\\') {
       TRY(st, read_UCHAR(reader, node, &code));
       if (code == '%' || !is_IRIREF((int)code)) {

@@ -251,6 +251,7 @@ serd_set_input_option(const ZixStringView    name,
   } InputOption;
 
   static const InputOption input_options[] = {
+    {"decoded", SERD_READ_DECODED},
     {"lax", SERD_READ_LAX},
     {"variables", SERD_READ_VARIABLES},
     {"generated", SERD_READ_GENERATED},
@@ -311,6 +312,7 @@ serd_set_output_option(const ZixStringView    name,
     {"baseless", SERD_WRITE_BASELESS},
     {"prefixless", SERD_WRITE_PREFIXLESS},
     {"escaped", SERD_WRITE_ESCAPED},
+    {"encoded", SERD_WRITE_ENCODED},
     {"longhand", SERD_WRITE_LONGHAND},
     {"absolute", SERD_WRITE_ABSOLUTE},
     {"expanded", SERD_WRITE_EXPANDED},

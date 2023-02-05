@@ -173,6 +173,12 @@ test_turtle_overflow(void)
     test_all_sizes(world, *t, SERD_TURTLE, SERD_READ_VARIABLES);
   }
 
+  test_all_sizes(world,
+                 "<http://example.org/s> <http://example.org/p> "
+                 "<http://example.org/ob%20ject%20%E2%9C%89%20%F0%9F%98%90> .",
+                 SERD_TURTLE,
+                 SERD_READ_DECODED);
+
   serd_world_free(world);
 }
 

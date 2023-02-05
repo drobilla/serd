@@ -440,6 +440,12 @@ test_suites += {
     ['-b', '1'],
     ['-k', '16384'],
   ],
+  'decode': [
+    files('extra/decode/manifest.ttl'),
+    ns_serdtest + 'decode/',
+    '--',
+    ['-I', 'decoded'],
+  ],
   'eof': [
     files('extra/eof/manifest.ttl'),
     ns_serdtest + 'eof/',
@@ -451,6 +457,19 @@ test_suites += {
     '--',
     ['-I', 'lax'],
     ['-k', '1024'],
+  ],
+  'encode_forward': [
+    files('extra/encode/manifest.ttl'),
+    ns_serdtest + 'encode/',
+    '--',
+    ['-O', 'encoded'],
+  ],
+  'encode_reverse': [
+    '--reverse',
+    files('extra/encode/manifest.ttl'),
+    ns_serdtest + 'encode/',
+    '--',
+    ['-I', 'decoded'],
   ],
   'fast': [
     files('extra/perfect/manifest.ttl'),

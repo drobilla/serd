@@ -392,6 +392,26 @@ write_UCHAR(SerdWriter* const writer, const uint8_t* const utf8)
   return vr;
 }
 
+ZIX_NODISCARD static VariableResult
+write_percent_encoded_bytes(SerdWriter* const    writer,
+                            const size_t         size,
+                            const uint8_t* const data)
+{
+  static const char hex_chars[] = "0123456789ABCDEF";
+
+  VariableResult result = {SERD_SUCCESS, 0U, 0U};
+
+  for (size_t i = 0U; !result.status && i < size; ++i) {
+    const uint8_t c        = data[i];
+    const char    escape[] = {'%', hex_chars[c >> 4U], hex_chars[c & 0x0FU]};
+
+    ++result.read_count;
+    result = vsink(writer, result, sizeof(escape), escape);
+  }
+
+  return result;
+}
+
 static VariableResult
 write_text_character(SerdWriter* const writer, const uint8_t* const utf8)
 {
@@ -417,8 +437,13 @@ static VariableResult
 write_uri_character(SerdWriter* const writer, const uint8_t* const utf8)
 {
   const uint8_t c = utf8[0];
-  if (!(c & 0x80U) || (writer->flags & SERD_WRITE_ESCAPED)) {
+
+  if ((writer->flags & SERD_WRITE_ESCAPED)) {
     return write_UCHAR(writer, utf8);
+  }
+
+  if (!(c & 0x80U) || (writer->flags & SERD_WRITE_ENCODED)) {
+    return write_percent_encoded_bytes(writer, 1U, utf8);
   }
 
   VariableResult result = {SERD_BAD_TEXT, 0U, 0U};
@@ -492,21 +517,6 @@ ewrite_uri(SerdWriter* const writer, const ZixStringView string)
 }
 
 ZIX_NODISCARD static SerdStatus
-write_utf8_percent_escape(SerdWriter* const writer,
-                          const char* const utf8,
-                          const size_t      n_bytes)
-{
-  SerdStatus st = SERD_SUCCESS;
-
-  for (size_t i = 0U; i < n_bytes; ++i) {
-    TRY(st, esink(writer, 1, "%"));
-    TRY(st, write_hex_byte(writer, (uint8_t)utf8[i]));
-  }
-
-  return st;
-}
-
-ZIX_NODISCARD static SerdStatus
 write_PN_LOCAL_ESC(SerdWriter* const writer, const char c)
 {
   const char buf[2] = {'\\', c};
@@ -521,7 +531,8 @@ write_lname_escape(SerdWriter* const writer,
 {
   return is_PN_LOCAL_ESC(utf8[0])
            ? write_PN_LOCAL_ESC(writer, utf8[0])
-           : write_utf8_percent_escape(writer, utf8, n_bytes);
+           : write_percent_encoded_bytes(writer, n_bytes, (const uint8_t*)utf8)
+               .status;
 }
 
 ZIX_NODISCARD static SerdStatus
