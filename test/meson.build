@@ -388,7 +388,7 @@ test_suites = {
     ns_serdtest + 'lax/',
     '--',
     '-l',
-    ['-k', '1024'],
+    ['-k', '4096'],
   ],
   'lax_strict': [
     files('extra/lax/manifest.ttl'),
