@@ -34,14 +34,14 @@ is_digit(const int c)
   return in_range(c, '0', '9');
 }
 
-/* RFC2234: HEXDIG ::= DIGIT / "A" / "B" / "C" / "D" / "E" / "F" */
+/** RFC2234: HEXDIG ::= DIGIT / "A" / "B" / "C" / "D" / "E" / "F" */
 static inline bool
 is_hexdig(const int c)
 {
   return is_digit(c) || in_range(c, 'A', 'F');
 }
 
-/* Turtle / JSON / C: XDIGIT ::= DIGIT / A-F / a-f */
+/** Turtle / JSON / C: XDIGIT ::= DIGIT / A-F / a-f */
 static inline bool
 is_xdigit(const int c)
 {
