@@ -200,10 +200,14 @@ test_writer(const char* const path)
   // Write statements with bad UTF-8 (should be replaced)
 
   const SerdNode* bad_lit = serd_nodes_get(nodes, serd_a_string(bad_lit_str));
+  const SerdNode* bad_long_lit = serd_nodes_get(
+    nodes,
+    serd_a_literal(zix_string(bad_lit_str), SERD_IS_LONG, zix_empty_string()));
   const SerdNode* bad_uri =
     serd_nodes_get(nodes, serd_a_uri_string(bad_uri_str));
 
   assert(!serd_sink_write(iface, 0, s, p, bad_lit, 0));
+  assert(!serd_sink_write(iface, 0, s, p, bad_long_lit, 0));
   assert(!serd_sink_write(iface, 0, s, p, bad_uri, 0));
 
   // Write 1 valid statement
@@ -258,7 +262,7 @@ test_reader(const char* path)
   SerdInputStream in = serd_open_input_file(path);
   assert(!serd_reader_start(reader, &in, NULL, 4096));
   assert(!serd_reader_read_document(reader));
-  assert(rt.n_statement == 6);
+  assert(rt.n_statement == 7);
   assert(!serd_reader_finish(reader));
   serd_close_input(&in);
 
