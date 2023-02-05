@@ -152,9 +152,8 @@ read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
         }
       }
 
-      st = ((uint8_t)c & 0x80)
-             ? read_utf8_continuation(reader, node, (uint8_t)c)
-             : push_byte(reader, node, c);
+      st = (c < 0x80) ? push_byte(reader, node, c)
+                      : read_utf8_continuation(reader, node, (uint8_t)c);
     }
   }
 

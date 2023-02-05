@@ -9,21 +9,10 @@
 #include <stdio.h>
 
 static SerdStatus
-skip_invalid_utf8(SerdReader* const reader)
-{
-  for (int b = peek_byte(reader); b != EOF && ((uint8_t)b & 0x80);) {
-    skip_byte(reader, b);
-    b = peek_byte(reader);
-  }
-
-  return reader->strict ? SERD_BAD_SYNTAX : SERD_FAILURE;
-}
-
-static SerdStatus
 bad_char(SerdReader* const reader, const char* const fmt, const uint8_t c)
 {
   r_err(reader, SERD_BAD_SYNTAX, fmt, c);
-  return skip_invalid_utf8(reader);
+  return reader->strict ? SERD_BAD_SYNTAX : SERD_FAILURE;
 }
 
 static SerdStatus
@@ -46,7 +35,7 @@ read_utf8_continuation_bytes(SerdReader* const reader,
     }
 
     const uint8_t byte = (uint8_t)b;
-    if (!(byte & 0x80U)) {
+    if (!is_utf8_continuation(byte)) {
       return bad_char(reader, "0x%X is not a UTF-8 continuation byte", byte);
     }
 
