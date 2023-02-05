@@ -1,0 +1,46 @@
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdft: <http://www.w3.org/ns/rdftest#> .
+
+<>
+	a mf:Manifest ;
+	rdfs:comment "Serd URI decoding test cases" ;
+	mf:entries (
+		<#bad-hex-byte>
+		<#bad-utf8-continuation-byte>
+		<#bad-utf8-leading-byte>
+		<#bad-utf8-missing-second-byte>
+		<#bad-utf8-missing-second-percent>
+		<#extended-iri-chars>
+	) .
+
+<#bad-hex-byte>
+	a rdft:TestNTriplesNegativeSyntax ;
+	mf:action <bad-hex-byte.nt> ;
+	mf:name "bad-hex-byte" .
+
+<#bad-utf8-continuation-byte>
+	a rdft:TestNTriplesNegativeSyntax ;
+	mf:action <bad-utf8-continuation-byte.nt> ;
+	mf:name "bad-utf8-continuation-byte" .
+
+<#bad-utf8-leading-byte>
+	a rdft:TestNTriplesNegativeSyntax ;
+	mf:action <bad-utf8-leading-byte.nt> ;
+	mf:name "bad-utf8-leading-byte" .
+
+<#bad-utf8-missing-second-byte>
+	a rdft:TestNTriplesNegativeSyntax ;
+	mf:action <bad-utf8-missing-second-byte.nt> ;
+	mf:name "bad-utf8-missing-second-byte" .
+
+<#bad-utf8-missing-second-percent>
+	a rdft:TestNTriplesNegativeSyntax ;
+	mf:action <bad-utf8-missing-second-percent.nt> ;
+	mf:name "bad-utf8-missing-second-percent" .
+
+<#extended-iri-chars>
+	a rdft:TestTurtleEval ;
+	mf:action <extended-iri-chars-encoded.nt> ;
+	mf:name "extended-iri-chars" ;
+	mf:result <extended-iri-chars.nt> .

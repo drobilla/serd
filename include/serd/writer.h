@@ -99,6 +99,17 @@ typedef enum {
      This disables the special "a" syntax in Turtle and TriG.
   */
   SERD_WRITE_LONGHAND = 1U << 6U,
+
+  /**
+     Write extended IRI characters with percent-encoded UTF-8 bytes.
+
+     Normally, all characters in IRIs are written as-is.  This flag enables
+     additional percent-encoding, so that multi-byte and special characters
+     will be written with percent-encoding. URIs in the output will be
+     ASCII-compatible as a result.  This encoding can be reversed with
+     #SERD_READ_DECODED.
+  */
+  SERD_WRITE_ENCODED = 1U << 7U,
 } SerdWriterFlag;
 
 /// Bitwise OR of #SerdWriterFlag values

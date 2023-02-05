@@ -315,6 +315,26 @@ write_UCHAR(SerdWriter* const writer, const uint8_t* const utf8)
   return vr;
 }
 
+ZIX_NODISCARD static VariableResult
+write_percent_encoded_bytes(SerdWriter* const    writer,
+                            const size_t         size,
+                            const uint8_t* const data)
+{
+  static const char hex_chars[] = "0123456789ABCDEF";
+
+  VariableResult result = {SERD_SUCCESS, 0U, 0U};
+
+  for (size_t i = 0U; !result.status && i < size; ++i) {
+    const uint8_t c        = data[i];
+    const char    escape[] = {'%', hex_chars[c >> 4U], hex_chars[c & 0x0FU]};
+
+    ++result.read_count;
+    result = add_wresult(result, wsink(escape, sizeof(escape), writer));
+  }
+
+  return result;
+}
+
 static VariableResult
 write_text_character(SerdWriter* const writer, const uint8_t* const utf8)
 {
@@ -341,7 +361,11 @@ write_uri_character(SerdWriter* const writer, const uint8_t* const utf8)
 {
   const uint8_t c = utf8[0];
 
-  if ((c & 0x80U) && !(writer->flags & SERD_WRITE_ESCAPED)) {
+  if ((writer->flags & SERD_WRITE_ESCAPED)) {
+    return write_UCHAR(writer, utf8);
+  }
+
+  if (((c & 0x80U) && !(writer->flags & SERD_WRITE_ENCODED))) {
     VariableResult result = {SERD_SUCCESS, 0U, 0U};
 
     // Parse the leading byte to get the UTF-8 encoding size
@@ -355,7 +379,7 @@ write_uri_character(SerdWriter* const writer, const uint8_t* const utf8)
     return result;
   }
 
-  return write_UCHAR(writer, utf8);
+  return write_percent_encoded_bytes(writer, 1U, utf8);
 }
 
 static bool
@@ -427,21 +451,6 @@ write_uri_from_node(SerdWriter* writer, const SerdNode* node)
 }
 
 ZIX_NODISCARD static SerdStatus
-write_utf8_percent_escape(SerdWriter* const writer,
-                          const char* const utf8,
-                          const size_t      n_bytes)
-{
-  SerdStatus st = SERD_SUCCESS;
-
-  for (size_t i = 0U; i < n_bytes; ++i) {
-    TRY(st, esink("%", 1, writer));
-    TRY(st, write_hex_byte(writer, (uint8_t)utf8[i]));
-  }
-
-  return st;
-}
-
-ZIX_NODISCARD static SerdStatus
 write_PN_LOCAL_ESC(SerdWriter* const writer, const char c)
 {
   const char buf[2] = {'\\', c};
@@ -454,7 +463,8 @@ write_lname_escape(SerdWriter* writer, const char* const utf8, size_t n_bytes)
 {
   return is_PN_LOCAL_ESC(utf8[0])
            ? write_PN_LOCAL_ESC(writer, utf8[0])
-           : write_utf8_percent_escape(writer, utf8, n_bytes);
+           : write_percent_encoded_bytes(writer, n_bytes, (const uint8_t*)utf8)
+               .status;
 }
 
 ZIX_NODISCARD static SerdStatus
@@ -595,7 +605,8 @@ write_short_text(SerdWriter* writer, const char* utf8, size_t n_bytes)
 
     // Try to write character as a special short escape (newline and friends)
     const char in = utf8[i];
-    if (!(vr.status = write_short_string_escape(writer, in))) {
+    vr.status     = write_short_string_escape(writer, in);
+    if (!vr.status) {
       vr.read_count = 1U;
     } else if (vr.status == SERD_FAILURE) {
       // No special escape for this character, write full Unicode escape
@@ -1503,10 +1514,13 @@ serd_writer_set_base_uri(SerdWriter* const writer, const SerdNode* const uri)
 
   if (uri && (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG)) {
     TRY(st, terminate_context(writer));
-    TRY(st, esink("@base <", 7, writer));
-    TRY(st, esink(uri_string.data, uri_string.length, writer));
-    TRY(st, esink(">", 1, writer));
-    TRY(st, write_sep(writer, writer->context.flags, SEP_END_DIRECT));
+
+    if (!(writer->flags & SERD_WRITE_CONTEXTUAL)) {
+      TRY(st, esink("@base <", 7, writer));
+      TRY(st, esink(uri_string.data, uri_string.length, writer));
+      TRY(st, esink(">", 1, writer));
+      TRY(st, write_sep(writer, writer->context.flags, SEP_END_DIRECT));
+    }
   }
 
   SERD_RESTORE_WARNINGS

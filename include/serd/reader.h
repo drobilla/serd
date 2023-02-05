@@ -111,6 +111,15 @@ typedef enum {
      the lookup and expansion overhead.
   */
   SERD_READ_PREFIXED = 1U << 5U,
+
+  /**
+     Read URIs with unreserved characters percent-decoded where possible.
+
+     Normally, percent-encoded octets in URIs are passed through as plain text.
+     This flags enables decoding them, so that unreserved but percent-encoded
+     characters like "%7E" will be decoded to UTF-8 characters like "~".
+  */
+  SERD_READ_DECODED = 1U << 6U,
 } SerdReaderFlag;
 
 /// Bitwise OR of SerdReaderFlag values
