@@ -14,5 +14,6 @@ Checks: >
   -hicpp-signed-bitwise,
   -llvm-header-guard,
   -misc-no-recursion,
+  -modernize-macro-to-enum,
   -readability-function-cognitive-complexity,
 InheritParentConfig: true

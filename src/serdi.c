@@ -8,7 +8,7 @@
 
 #ifdef _WIN32
 #  ifdef _MSC_VER
-#    define WIN32_LEAN_AND_MEAN 1
+#    define WIN32_LEAN_AND_MEAN
 #  endif
 #  include <fcntl.h>
 #  include <io.h>

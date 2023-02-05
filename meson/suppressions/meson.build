@@ -36,6 +36,14 @@ if is_variable('cc')
         ]
       endif
 
+      if host_machine.system() == 'windows'
+        c_suppressions += [
+          '-Wno-deprecated-declarations',
+          '-Wno-nonportable-system-include-path',
+          '-Wno-unused-macros',
+        ]
+      endif
+
     elif cc.get_id() == 'gcc'
       c_suppressions += [
         '-Wno-cast-align',

@@ -130,7 +130,7 @@ w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
      add a Cursor parameter so the source can notify the writer of the
      statement origin for better error reporting. */
 
-  va_list args;
+  va_list args; // NOLINT(cppcoreguidelines-init-variables)
   va_start(args, fmt);
   const SerdError e = {st, (const uint8_t*)"", 0, 0, fmt, &args};
   serd_error(writer->error_sink, writer->error_handle, &e);

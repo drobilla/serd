@@ -19,7 +19,7 @@
 SerdStatus
 r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
 {
-  va_list args;
+  va_list args; // NOLINT(cppcoreguidelines-init-variables)
   va_start(args, fmt);
   const Cursor* const cur = &reader->source.cur;
   const SerdError     e = {st, cur->filename, cur->line, cur->col, fmt, &args};
