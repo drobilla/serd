@@ -1,0 +1,2 @@
+<http://example.org/s> <http://example.org/p> "\\\r\n\t" .
+<http://example.org/s> <http://example.org/p> <http://example.org/\u005C> .

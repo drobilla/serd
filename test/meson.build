@@ -579,19 +579,25 @@ test_suites = {
     ns_w3 + 'TriGTests/',
     '--',
     ['-I', 'TriG'],
-    ['-O', 'ascii'],
+    ['-O', 'escapes'],
   ],
   'turtle': [
     files('w3c/turtle/manifest.ttl'),
     ns_w3 + 'TurtleTests/',
     '--',
     ['-I', 'Turtle'],
-    ['-O', 'ascii'],
+    ['-O', 'escapes'],
   ],
 
   'abbreviate': [
     files('extra/abbreviate/manifest.ttl'),
     ns_serdtest + 'abbreviate/',
+  ],
+  'ascii': [
+    files('extra/ascii/manifest.ttl'),
+    ns_serdtest + 'ascii/',
+    '--',
+    ['-O', 'ascii'],
   ],
   'bad': [
     files('extra/bad/manifest.ttl'),
@@ -611,15 +617,32 @@ test_suites = {
     files('extra/good/manifest.ttl'),
     ns_serdtest + 'good/',
     '--',
+    ['-O', 'escapes'],
     ['-b', '1'],
-    ['-O', 'ascii'],
   ],
   'canon': [
     files('extra/canon/manifest.ttl'),
     ns_serdtest + 'canon/',
     '--',
     '-C',
+    ['-O', 'escapes'],
+  ],
+  'decode_forward': [
+    files('extra/decode/manifest.ttl'),
+    ns_serdtest + 'decode/',
+    '--',
+    ['-I', 'decoded'],
+  ],
+  'decode_reverse': [
+    '--reverse',
+    files('extra/decode/manifest.ttl'),
+    ns_serdtest + 'decode/',
+    '--',
     ['-O', 'ascii'],
+  ],
+  'encode': [
+    files('extra/encode/manifest.ttl'),
+    ns_serdtest + 'encode/',
   ],
   'fast': [
     files('extra/perfect/manifest.ttl'),
@@ -639,7 +662,7 @@ test_suites = {
     files('extra/good/manifest.ttl'),
     ns_serdtest + 'good/',
     '--',
-    ['-O', 'ascii'],
+    ['-O', 'escapes'],
   ],
   'lax_lax': [
     '--lax',
@@ -647,7 +670,7 @@ test_suites = {
     ns_serdtest + 'lax/',
     '--',
     ['-I', 'lax'],
-    ['-O', 'ascii'],
+    ['-O', 'escapes'],
   ],
   'lax_strict': [
     files('extra/lax/manifest.ttl'),

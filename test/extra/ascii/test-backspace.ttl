@@ -1,0 +1,5 @@
+<http://example.org/s> <http://example.org/p> "\u0008" .
+<http://example.org/s> <http://example.org/p> "" .
+<http://example.org/s> <http://example.org/p> """
+
+""" .

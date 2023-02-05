@@ -101,6 +101,15 @@ typedef enum {
      from documents when the statements are sorted, such as in a model.
   */
   SERD_READ_ORDERED = 1U << 5U,
+
+  /**
+     Read URIs with percent-encoded UTF-8 characters decoded.
+
+     Normally, percent-encoded octets in URIs are treated as plain text and
+     preserved.  This flags enables UTF-8 decoding of URIs, so octet escapes
+     like "%7E" in URIs will be decoded to UTF-8 characters like "~".
+  */
+  SERD_READ_DECODED = 1U << 6U,
 } SerdReaderFlag;
 
 /// Bitwise OR of SerdReaderFlag values

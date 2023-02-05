@@ -216,8 +216,7 @@ test_writer(const char* const path)
   const SerdNode* bad_lit = serd_nodes_get(nodes, serd_a_string(bad_lit_str));
   const SerdNode* bad_long_lit = serd_nodes_get(
     nodes,
-    serd_a_literal(
-      zix_substring(bad_lit_str, 4U), SERD_IS_LONG, zix_empty_string()));
+    serd_a_literal(zix_string(bad_lit_str), SERD_IS_LONG, zix_empty_string()));
 
   assert(!serd_sink_write(iface, 0, s, p, bad_uri, 0));
   assert(!serd_sink_write(iface, 0, s, p, bad_lit, 0));

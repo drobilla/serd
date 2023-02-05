@@ -98,7 +98,7 @@ print_usage(const char* const name, const bool error)
     "  -B BASE_URI  Base URI or path for resolving relative references.\n"
     "  -C           Convert literals to canonical form.\n"
     "  -I SYNTAX    Input syntax turtle/ntriples/trig/nquads, or option\n"
-    "               lax/variables/relative/global/generated.\n"
+    "               lax/decoded/variables/relative/global/generated.\n"
     "  -O SYNTAX    Output syntax empty/turtle/ntriples/nquads, or option\n"
     "               ascii/contextual/expanded/verbatim/terse/lax.\n"
     "  -R ROOT_URI  Keep relative URIs within ROOT_URI.\n"

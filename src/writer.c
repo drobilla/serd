@@ -307,13 +307,42 @@ write_UCHAR(SerdWriter* const writer, const uint8_t* const utf8)
   return vr;
 }
 
+SERD_NODISCARD static VariableResult
+write_percent_encoded_bytes(SerdWriter* const    writer,
+                            const size_t         size,
+                            const uint8_t* const data)
+{
+  static const char hex_chars[] = "0123456789ABCDEF";
+
+  VariableResult result    = {SERD_SUCCESS, 0U, 0U};
+  char           escape[4] = {'%', 0, 0, 0};
+
+  for (size_t i = 0U; !result.status && i < size; ++i) {
+    const uint8_t byte = data[i];
+    escape[1]          = hex_chars[byte >> 4U];
+    escape[2]          = hex_chars[byte & 0x0FU];
+
+    const SerdWriteResult r = wsink(escape, 3U, writer);
+    if (r.status || r.count != 3U) {
+      result.status = SERD_BAD_WRITE;
+    } else {
+      result.write_count += r.count;
+    }
+
+    ++result.read_count;
+  }
+
+  return result;
+}
+
 static VariableResult
 write_text_character(SerdWriter* const writer, const uint8_t* const utf8)
 {
   VariableResult result = {SERD_SUCCESS, 0U, 0U};
   const uint8_t  c      = utf8[0];
 
-  if ((writer->flags & SERD_WRITE_ASCII) || c < 0x20U || c == 0x7FU) {
+  if ((writer->flags & (SERD_WRITE_ASCII | SERD_WRITE_ESCAPES)) || c < 0x20U ||
+      c == 0x7FU) {
     // Write ASCII-compatible UCHAR escape like "\u1234"
     return write_UCHAR(writer, utf8);
   }
@@ -333,6 +362,17 @@ write_uri_character(SerdWriter* const writer, const uint8_t* const utf8)
 {
   const uint8_t c = utf8[0];
 
+  if ((writer->flags & SERD_WRITE_ESCAPES)) {
+    return write_UCHAR(writer, utf8);
+  }
+
+  if (c == '%') {
+    // Avoid encoding '%' itself
+    const SerdWriteResult wr     = wsink("%25", 3U, writer);
+    const VariableResult  result = {wr.status, 1U, wr.count};
+    return result;
+  }
+
   if ((c & 0x80U) && !(writer->flags & SERD_WRITE_ASCII)) {
     VariableResult result = {SERD_SUCCESS, 0U, 0U};
 
@@ -347,7 +387,7 @@ write_uri_character(SerdWriter* const writer, const uint8_t* const utf8)
     return result;
   }
 
-  return write_UCHAR(writer, utf8);
+  return write_percent_encoded_bytes(writer, 1U, utf8);
 }
 
 static bool
@@ -356,6 +396,7 @@ uri_must_escape(const uint8_t c)
   switch (c) {
   case ' ':
   case '"':
+    //  case '%':
   case '<':
   case '>':
   case '\\':
@@ -436,27 +477,6 @@ write_uri_from_node(SerdWriter* writer, const SerdNode* node)
 }
 
 SERD_NODISCARD static SerdStatus
-write_utf8_percent_escape(SerdWriter* const writer,
-                          const char* const utf8,
-                          const size_t      n_bytes)
-{
-  static const char hex_chars[] = "0123456789ABCDEF";
-
-  SerdStatus st        = SERD_SUCCESS;
-  char       escape[4] = {'%', 0, 0, 0};
-
-  for (size_t i = 0U; i < n_bytes; ++i) {
-    const uint8_t byte = (uint8_t)utf8[i];
-    escape[1]          = hex_chars[byte >> 4U];
-    escape[2]          = hex_chars[byte & 0x0FU];
-
-    TRY(st, esink(escape, 3, writer));
-  }
-
-  return st;
-}
-
-SERD_NODISCARD static SerdStatus
 write_PN_LOCAL_ESC(SerdWriter* const writer, const char c)
 {
   const char buf[2] = {'\\', c};
@@ -469,7 +489,8 @@ write_lname_escape(SerdWriter* writer, const char* const utf8, size_t n_bytes)
 {
   return is_PN_LOCAL_ESC(utf8[0])
            ? write_PN_LOCAL_ESC(writer, utf8[0])
-           : write_utf8_percent_escape(writer, utf8, n_bytes);
+           : write_percent_encoded_bytes(writer, n_bytes, (const uint8_t*)utf8)
+               .status;
 }
 
 SERD_NODISCARD static SerdStatus
@@ -556,14 +577,16 @@ write_short_string_escape(SerdWriter* const writer, const char c)
   case '\r':
     return esink("\\r", 2, writer);
   case '\t':
-    return esink("\\t", 2, writer);
+    return (writer->flags & SERD_WRITE_ESCAPES) ? esink("\\t", 2, writer)
+                                                : esink("\t", 1, writer);
   case '"':
     return esink("\\\"", 2, writer);
   default:
     break;
   }
 
-  if (writer->syntax == SERD_TURTLE) {
+  if (!(writer->flags & SERD_WRITE_ESCAPES)) {
+    // These are written with UCHAR in pre-NTriples test cases format
     switch (c) {
     case '\b':
       return esink("\\b", 2, writer);
@@ -598,7 +621,8 @@ write_short_text(SerdWriter* writer, const char* utf8, size_t n_bytes)
 
     // Try to write character as a special short escape (newline and friends)
     const char in = utf8[i];
-    if (!(vr.status = write_short_string_escape(writer, in))) {
+    vr.status     = write_short_string_escape(writer, in);
+    if (!vr.status) {
       vr.read_count = 1U;
     } else if (vr.status == SERD_FAILURE) {
       // No special escape for this character, write full Unicode escape
@@ -1490,11 +1514,14 @@ serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 
   if (uri && (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG)) {
     TRY(st, terminate_context(writer));
-    TRY(st, esink("@base <", 7, writer));
-    TRY(st, esink(uri_string.data, uri_string.length, writer));
-    TRY(st, esink(">", 1, writer));
-    writer->last_sep = SEP_NODE;
-    TRY(st, write_sep(writer, writer->context.flags, SEP_END_DIRECT));
+
+    if (!(writer->flags & SERD_WRITE_CONTEXTUAL)) {
+      TRY(st, esink("@base <", 7, writer));
+      TRY(st, esink(uri_string.data, uri_string.length, writer));
+      TRY(st, esink(">", 1, writer));
+      writer->last_sep = SEP_NODE;
+      TRY(st, write_sep(writer, writer->context.flags, SEP_END_DIRECT));
+    }
   }
 
   SERD_RESTORE_WARNINGS

@@ -108,6 +108,67 @@ read_IRI_scheme(SerdReader* const reader, SerdNode* const dest)
   return st ? st : SERD_BAD_SYNTAX;
 }
 
+static SerdStatus
+read_hex_byte(SerdReader* const reader, uint8_t digits[const 2])
+{
+  for (unsigned i = 0U; i < 2U; ++i) {
+    if (!(digits[i] = read_HEX(reader))) {
+      return SERD_BAD_SYNTAX;
+    }
+  }
+
+  return SERD_SUCCESS;
+}
+
+static uint8_t
+hex_byte_value(const uint8_t c0, const uint8_t c1)
+{
+  return (uint8_t)((hex_digit_value(c0) << 4U) | hex_digit_value(c1));
+}
+
+/// RFC3986 S2.1: pct-encoded = "%" HEXDIG HEXDIG
+static SerdStatus
+read_pct_encoded(SerdReader* const reader, SerdNode* const node)
+{
+  SerdStatus st     = SERD_SUCCESS;
+  uint8_t    hex[9] = {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U};
+
+  // Read first percent-encoded byte
+  TRY(st, read_hex_byte(reader, hex));
+
+  // Parse the leading byte and get the encoded size from it
+  uint8_t        byte = hex_byte_value(hex[0], hex[1]);
+  const uint32_t size = utf8_num_bytes(byte);
+  if (!size) {
+    return SERD_BAD_TEXT;
+  }
+
+  // Avoid decoding '%' itself
+  if (byte == '%') {
+    return push_bytes(reader, node, (const uint8_t*)"%25", 3);
+  }
+
+  // Push the leading byte to the node
+  TRY(st, push_byte(reader, node, byte));
+
+  // Read remaining hex-encoded bytes
+  for (unsigned i = 1; i < size; ++i) {
+    const unsigned offset = 2U * i;
+    uint8_t* const digits = hex + offset;
+    TRY(st, eat_byte_check(reader, '%'));
+    TRY(st, read_hex_byte(reader, digits));
+
+    byte = hex_byte_value(digits[0], digits[1]);
+    if (!is_utf8_continuation(byte)) {
+      return SERD_BAD_TEXT;
+    }
+
+    TRY(st, push_byte(reader, node, byte));
+  }
+
+  return st;
+}
+
 SerdStatus
 read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
 {
@@ -130,6 +191,11 @@ read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
 
     case '>':
       return SERD_SUCCESS;
+
+    case '%':
+      st = (reader->flags & SERD_READ_DECODED) ? read_pct_encoded(reader, node)
+                                               : push_byte(reader, node, c);
+      break;
 
     case '\\':
       if (!(st = read_UCHAR(reader, node, &code)) &&

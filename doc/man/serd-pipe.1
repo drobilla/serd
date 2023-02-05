@@ -147,6 +147,11 @@ Note that this may corrupt the output by merging distinct blank nodes.
 Generate blank node labels with suffixes left-padded with zeros.
 This generates IDs like "_:b0000000123" that sort in numerical order,
 which can be useful to preserve statement ordering.
+.It Cm decoded
+Read URIs with percent-encoded UTF-8 characters decoded.
+Normally, percent-encoded octets in URIs are preserved as plain text.
+This flag enables interpreting them as UTF-8,
+decoding escapes like "%7E" to characters like "~" where possible.
 .El
 .It Fl O Ar syntax
 Set an output syntax or option.
@@ -163,13 +168,32 @@ or an option:
 .Bl -tag -width 3n
 .It Cm ascii
 Escape all non-ASCII characters.
+Normally, text is written in UTF-8.
+This flag will escape additional non-printable-ASCII characters in string literals like
+.Li \eU00B7
+or
+.Li \eU0001F600 ,
+and in URIs like
+.Li %B7
+or
+.Li %F0%9F%98%80 .
+.It Cm escapes
+Escape all non-ASCII characters with
+.Dq U
+escapes.
+This works like
+.Cm ascii ,
+except percent-encoding will not be used in URIs
+(matching the format used in the Turtle test suite).
 .It Cm contextual
 Suppress writing directives that describe the context.
-Normally when writing Turtle or Trig,
-a document will have a header that defines all the prefixes used in the input.
-This flag will disable writing those directives,
-so the output is document fragment with an implicit context.
-This can be useful for writing output intended for humans.
+This can be used to suppress the header of
+.Li prefix
+and
+.Li base
+directives,
+making the output depend on an implied context.
+Note that this option may produce incomprehensible output if prefixes change while writing!
 .It Cm expanded
 Write expanded URIs instead of prefixed names.
 .It Cm lax

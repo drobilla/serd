@@ -42,6 +42,10 @@ typedef enum {
      Although all the supported syntaxes are UTF-8 by definition, this can be
      used to escape all non-ASCII characters so that data will survive
      transmission through ASCII-only channels.
+
+     Non-printable-ASCII characters will be written as "U" escapes like
+     "\u007F" in string literals, and as hex-encoded UTF-8 bytes like "%07F" in
+     URIs.
   */
   SERD_WRITE_ASCII = 1U << 0U,
 
@@ -96,6 +100,18 @@ typedef enum {
      This disables the special "a" syntax in Turtle and TriG.
   */
   SERD_WRITE_LONGHAND = 1U << 6U,
+
+  /**
+     Escape additional characters in RDF Test Cases format.
+
+     This writes "extended" characters as printable ASCII, using "U" escapes in
+     URIs instead of hex-encoding (escapes like "\u007F" instead of "%7F").
+     This is the format used by the outputs in the Turtle test suite (which
+     predates RDF 1.1 NTriples).  This style makes NTriples output
+     non-canonical, so it generally shouldn't be used except for compatibility
+     purposes.  See <https://www.w3.org/TR/rdf-testcases/>.
+  */
+  SERD_WRITE_ESCAPES = 1U << 7U,
 } SerdWriterFlag;
 
 /// Bitwise OR of #SerdWriterFlag values
