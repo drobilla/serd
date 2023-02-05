@@ -12,12 +12,13 @@ serd (1.1.1) unstable; urgency=medium
   * Replace SerdChunk with ZixStringView
   * Simplify statement flags
   * Simplify writer style options and write UTF-8 by default
+  * Strengthen handling of corrupt UTF-8 input
   * Strictly parse percent-encoding in file URIs
   * Support writing all escapes in Turtle and TriG prefixed names
   * Use a fixed-size reader stack
   * Use char* for strings in public API
 
- -- David Robillard <d@drobilla.net>  Tue, 30 Jan 2024 14:42:01 +0000
+ -- David Robillard <d@drobilla.net>  Tue, 30 Jan 2024 14:42:20 +0000
 
 serd (0.32.3) unstable; urgency=medium
 
