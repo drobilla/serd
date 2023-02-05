@@ -111,6 +111,11 @@ can be
 .Cm Turtle ,
 or an option:
 .Bl -tag -width 3n
+.It Cm decoded
+Read URIs with unreserved characters percent-decoded where possible.
+Normally, percent-encoded octets in URIs are passed through as plain text.
+This flags enables decoding them,
+so that unreserved but percent-encoded characters like "%7E" will be decoded to UTF-8 characters like "~".
 .It Cm generated
 Read seemingly generated blank node labels exactly.
 Normally, blank node labels like
@@ -163,6 +168,15 @@ a document will have a header that defines all the prefixes used in the input.
 This flag will disable writing those directives,
 so the output is document fragment with an implicit context.
 This can be useful for writing output intended for humans.
+.It Cm encoded
+Write extended IRI characters with percent-encoded UTF-8 bytes.
+Normally, all characters in IRIs are written as-is.
+This flag enables additional percent-encoding,
+so that multi-byte and special characters will be written with percent-encoding.
+URIs in the output will be ASCII-compatible as a result.
+This encoding can be reversed with the
+.Cm decoded
+reader flag.
 .It Cm escaped
 Escape additional characters like in the Turtle test suite outputs,
 for compatibility with older NTriples readers.

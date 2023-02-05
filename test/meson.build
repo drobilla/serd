@@ -536,6 +536,25 @@ test_suites = {
     '-C',
     ['-O', 'escaped'],
   ],
+  'decode': [
+    files('extra/decode/manifest.ttl'),
+    ns_serdtest + 'decode/',
+    '--',
+    ['-I', 'decoded'],
+  ],
+  'encode_forward': [
+    files('extra/encode/manifest.ttl'),
+    ns_serdtest + 'encode/',
+    '--',
+    ['-O', 'encoded'],
+  ],
+  'encode_reverse': [
+    '--reverse',
+    files('extra/encode/manifest.ttl'),
+    ns_serdtest + 'encode/',
+    '--',
+    ['-I', 'decoded'],
+  ],
   'expanded': [
     files('extra/expanded/manifest.ttl'),
     ns_serdtest + 'expanded/',

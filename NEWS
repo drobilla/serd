@@ -2,6 +2,7 @@ serd (1.1.1) unstable; urgency=medium
 
   * Add SerdBuffer for mutable buffers to keep SerdChunk const-correct
   * Add SerdWorld for shared library state
+  * Add support for URI hex encoding and decoding
   * Add support for converting literals to canonical form
   * Add support for parsing variables
   * Add support for writing terse output with minimal newlines
@@ -27,7 +28,7 @@ serd (1.1.1) unstable; urgency=medium
   * Use char* for strings in public API
   * Write canonical NTriples 1.1 by default
 
- -- David Robillard <d@drobilla.net>  Mon, 05 Feb 2024 19:48:46 +0000
+ -- David Robillard <d@drobilla.net>  Sun, 10 Mar 2024 19:45:46 +0000
 
 serd (0.32.3) unstable; urgency=medium
 

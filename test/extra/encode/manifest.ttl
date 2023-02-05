@@ -1,0 +1,17 @@
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdft: <http://www.w3.org/ns/rdftest#> .
+
+<>
+	a mf:Manifest ;
+	rdfs:comment "Serd URI encoding test cases (reversible decoding)" ;
+	mf:entries (
+		<#extended-iri-chars>
+	) .
+
+<#extended-iri-chars>
+	a rdft:TestTurtleEval ;
+	mf:action <extended-iri-chars.nt> ;
+	mf:name "extended-iri-chars" ;
+	mf:result <extended-iri-chars-encoded.nt> .
