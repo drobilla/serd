@@ -18,21 +18,9 @@ enum {
 static const uint8_t replacement_char[] = {0xEFU, 0xBFU, 0xBDU};
 
 static SerdStatus
-skip_invalid_utf8(SerdReader* const reader)
-{
-  for (int b = peek_byte(reader); b > 0 && ((uint8_t)b & 0x80);) {
-    skip_byte(reader, b);
-    b = peek_byte(reader);
-  }
-
-  return reader->strict ? SERD_BAD_TEXT : SERD_FAILURE;
-}
-
-static SerdStatus
 bad_byte(SerdReader* const reader, const char* const kind, const uint8_t c)
 {
-  r_err(reader, SERD_BAD_TEXT, "bad %s byte 0x%X", kind, c);
-  return skip_invalid_utf8(reader);
+  return r_err(reader, SERD_BAD_TEXT, "bad %s byte 0x%X", kind, c);
 }
 
 static SerdStatus
@@ -41,8 +29,7 @@ read_utf8_continuation_bytes(SerdReader* const reader,
                              uint8_t* const    size,
                              const uint8_t     lead)
 {
-  *size = utf8_num_bytes(lead);
-  if (*size < 1) {
+  if (!(*size = utf8_num_bytes(lead))) {
     return bad_byte(reader, "UTF-8 leading", lead);
   }
 
@@ -54,7 +41,7 @@ read_utf8_continuation_bytes(SerdReader* const reader,
     }
 
     const uint8_t byte = (uint8_t)b;
-    if (!(byte & 0x80U)) {
+    if (!is_utf8_continuation(byte)) {
       return bad_byte(reader, "UTF-8 continuation", byte);
     }
 

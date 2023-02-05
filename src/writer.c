@@ -380,7 +380,7 @@ write_uri_text(SerdWriter* const writer,
     if (!size) {
       // Corrupt input, write percent-encoded bytes and scan to next start
       char escape[4] = {0, 0, 0, 0};
-      for (; i < n_bytes && (utf8[i] & 0x80); ++i) {
+      for (; i < n_bytes && !is_utf8_leading((uint8_t)utf8[i]); ++i) {
         snprintf(escape, sizeof(escape), "%%%02X", (uint8_t)utf8[i]);
         len += sink(escape, 3, writer);
       }
@@ -549,7 +549,7 @@ write_text(SerdWriter* const writer,
     } else {
       // Corrupt input, write replacement character and scan to the next start
       st = esink(replacement_char, sizeof(replacement_char), writer);
-      for (; i < n_bytes && ((uint8_t)utf8[i] & 0x80U); ++i) {
+      for (; i < n_bytes && !is_utf8_leading((uint8_t)utf8[i]); ++i) {
       }
     }
   }
