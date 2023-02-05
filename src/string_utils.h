@@ -48,6 +48,26 @@ is_xdigit(const int c)
   return is_hexdig(c) || in_range(c, 'a', 'f');
 }
 
+/** UTF-8: Leading bytes start with 0, or two to four 1s followed by a 0 */
+static inline bool
+is_utf8_leading(const uint8_t c)
+{
+  static const uint8_t m1 = 0x80U; // 10000000
+  static const uint8_t m2 = 0xC0U; // 11000000
+  static const uint8_t m3 = 0xE0U; // 11100000
+  static const uint8_t m4 = 0xF0U; // 11110000
+  static const uint8_t m5 = 0xF8U; // 11111000
+
+  return (c & m1) == 0U || (c & m3) == m2 || (c & m4) == m3 || (c & m5) == m4;
+}
+
+/** UTF-8: Continuation bytes start with 10 */
+static inline bool
+is_utf8_continuation(const uint8_t c)
+{
+  return (c & 0xC0U) == 0x80U;
+}
+
 static inline bool
 is_space(const char c)
 {
