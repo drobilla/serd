@@ -31,6 +31,15 @@ typedef struct SerdReaderImpl SerdReader;
 /// Reader options
 typedef enum {
   /**
+     Read URIs with unreserved characters percent-decoded where possible.
+
+     Normally, percent-encoded octets in URIs are passed through as plain text.
+     This flags enables decoding them, so that unreserved but percent-encoded
+     characters like "%7E" will be decoded to UTF-8 characters like "~".
+  */
+  SERD_READ_DECODED = 1U << 0U,
+
+  /**
      Tolerate invalid input where possible.
 
      This will attempt to ignore invalid input and continue reading.  Invalid
