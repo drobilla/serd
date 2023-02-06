@@ -5,6 +5,7 @@
 #include "uri_utils.h"
 
 #include "serd/buffer.h"
+#include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/uri.h"
 #include "zix/string_view.h"
@@ -16,10 +17,36 @@
 #include <stdlib.h>
 #include <string.h>
 
+static SerdStatus
+write_file_uri_char(const char c, void* const stream)
+{
+  return (serd_buffer_sink(&c, 1, stream) == 1) ? SERD_SUCCESS : SERD_BAD_ALLOC;
+}
+
+static char*
+parse_hostname(const char* const authority, char** const hostname)
+{
+  char* const path = strchr(authority, '/');
+  if (!path) {
+    return NULL;
+  }
+
+  if (hostname) {
+    const size_t len = (size_t)(path - authority);
+    if ((*hostname = (char*)calloc(len + 1, 1))) {
+      memcpy(*hostname, authority, len);
+    }
+  }
+
+  return path;
+}
+
 char*
 serd_parse_file_uri(const char* const uri, char** const hostname)
 {
   assert(uri);
+
+  SerdStatus st = SERD_SUCCESS;
 
   const char* path = uri;
   if (hostname) {
@@ -30,16 +57,8 @@ serd_parse_file_uri(const char* const uri, char** const hostname)
     const char* auth = uri + 7;
     if (*auth == '/') { // No hostname
       path = auth;
-    } else { // Has hostname
-      if (!(path = strchr(auth, '/'))) {
-        return NULL;
-      }
-
-      if (hostname) {
-        const size_t len = (size_t)(path - auth);
-        *hostname        = (char*)calloc(len + 1, 1);
-        memcpy(*hostname, auth, len);
-      }
+    } else if (!(path = parse_hostname(auth, hostname))) {
+      return NULL;
     }
   }
 
@@ -54,14 +73,19 @@ serd_parse_file_uri(const char* const uri, char** const hostname)
         const uint8_t hi = hex_digit_value((const uint8_t)s[1]);
         const uint8_t lo = hex_digit_value((const uint8_t)s[2]);
         const char    c  = (char)((hi << 4U) | lo);
-        serd_buffer_sink(&c, 1, &buffer);
+
+        st = write_file_uri_char(c, &buffer);
         s += 2;
       } else {
-        free(buffer.buf);
-        return NULL; // Invalid percent-encoding
+        st = SERD_BAD_SYNTAX;
       }
     } else {
-      serd_buffer_sink(s, 1, &buffer);
+      st = write_file_uri_char(*s, &buffer);
+    }
+
+    if (st) {
+      free(buffer.buf);
+      return NULL;
     }
   }
 
@@ -87,6 +111,24 @@ serd_uri_string_has_scheme(const char* const string)
   return false;
 }
 
+static inline bool
+is_uri_authority_char(const char c)
+{
+  return c && c != '/' && c != '?' && c != '#';
+}
+
+static inline bool
+is_uri_path_char(const char c)
+{
+  return c && c != '?' && c != '#';
+}
+
+static inline bool
+is_uri_query_char(const char c)
+{
+  return c && c != '#';
+}
+
 SerdURIView
 serd_parse_uri(const char* const string)
 {
@@ -96,112 +138,65 @@ serd_parse_uri(const char* const string)
   const char* ptr    = string;
 
   /* See http://tools.ietf.org/html/rfc3986#section-3
-     URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
-  */
+     URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ] */
 
   /* S3.1: scheme ::= ALPHA *( ALPHA / DIGIT / "+" / "-" / "." ) */
   if (is_alpha(*ptr)) {
     for (char c = *++ptr; true; c = *++ptr) {
-      switch (c) {
-      case '\0':
-      case '/':
-      case '?':
-      case '#':
-        ptr = string;
-        goto path; // Relative URI (starts with path by definition)
-      case ':':
+      if (c == ':') {
         result.scheme.data   = string;
-        result.scheme.length = (size_t)((ptr++) - string);
-        goto maybe_authority; // URI with scheme
-      case '+':
-      case '-':
-      case '.':
-        continue;
-      default:
-        if (is_alpha(c) || is_digit(c)) {
-          continue;
-        }
+        result.scheme.length = (size_t)(ptr++ - string);
+        break;
+      }
+
+      if (!is_uri_scheme_char(c)) {
+        ptr = string;
+        break;
       }
     }
   }
 
-  /* S3.2: The authority component is preceded by a double slash ("//")
-     and is terminated by the next slash ("/"), question mark ("?"),
-     or number sign ("#") character, or by the end of the URI.
-  */
-maybe_authority:
+  /* S3.2: The authority component is preceded by "//" and is terminated by the
+     next '/', '?', or '#', or by the end of the URI. */
   if (*ptr == '/' && *(ptr + 1) == '/') {
     ptr += 2;
     result.authority.data = ptr;
-    for (char c = 0; (c = *ptr) != '\0'; ++ptr) {
-      switch (c) {
-      case '/':
-        goto path;
-      case '?':
-        goto query;
-      case '#':
-        goto fragment;
-      default:
-        ++result.authority.length;
-      }
+    while (is_uri_authority_char(*ptr)) {
+      ++result.authority.length;
+      ++ptr;
     }
   }
 
-  /* RFC3986 S3.3: The path is terminated by the first question mark ("?")
-     or number sign ("#") character, or by the end of the URI.
-  */
-path:
-  switch (*ptr) {
-  case '?':
-    goto query;
-  case '#':
-    goto fragment;
-  case '\0':
-    goto end;
-  default:
-    break;
-  }
-  result.path.data   = ptr;
-  result.path.length = 0;
-  for (char c = 0; (c = *ptr) != '\0'; ++ptr) {
-    switch (c) {
-    case '?':
-      goto query;
-    case '#':
-      goto fragment;
-    default:
+  /* S3.3: The path is terminated by the first '?' or '#', or by the end of the
+     URI. */
+  if (is_uri_path_char(*ptr)) {
+    result.path.data   = ptr++;
+    result.path.length = 1U;
+    while (is_uri_path_char(*ptr)) {
       ++result.path.length;
+      ++ptr;
     }
   }
 
-  /* RFC3986 S3.4: The query component is indicated by the first question
-     mark ("?") character and terminated by a number sign ("#") character
-     or by the end of the URI.
-  */
-query:
+  /* S3.4: The query component is indicated by the first '?' and terminated by
+     a '#' or by the end of the URI. */
   if (*ptr == '?') {
     result.query.data = ++ptr;
-    for (char c = 0; (c = *ptr) != '\0'; ++ptr) {
-      if (c == '#') {
-        goto fragment;
-      }
+    while (is_uri_query_char(*ptr)) {
       ++result.query.length;
+      ++ptr;
     }
   }
 
-  /* RFC3986 S3.5: A fragment identifier component is indicated by the
-     presence of a number sign ("#") character and terminated by the end
-     of the URI.
-  */
-fragment:
+  /* S3.5: A fragment identifier component is indicated by the presence of a
+     '#' and terminated by the end of the URI. */
   if (*ptr == '#') {
     result.fragment.data = ptr;
-    while (*ptr++ != '\0') {
+    while (*ptr++) {
       ++result.fragment.length;
     }
   }
 
-end:
   return result;
 }
 
@@ -488,7 +483,7 @@ serd_write_uri(const SerdURIView uri, SerdWriteFunc sink, void* const stream)
 }
 
 static bool
-is_uri_path_char(const char c)
+is_unescaped_uri_path_char(const char c)
 {
   return is_alpha(c) || is_digit(c) || strchr("!$&\'()*+,-./:;=@_~", c);
 }
@@ -527,7 +522,7 @@ serd_write_file_uri(const ZixStringView path,
   }
 
   for (size_t i = 0; i < path.length; ++i) {
-    if (is_uri_path_char(path.data[i])) {
+    if (is_unescaped_uri_path_char(path.data[i])) {
       len += sink(path.data + i, 1, stream);
 #ifdef _WIN32
     } else if (path.data[i] == '\\') {
