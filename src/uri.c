@@ -5,6 +5,7 @@
 #include "uri_utils.h"
 
 #include "serd/buffer.h"
+#include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/uri.h"
 #include "zix/allocator.h"
@@ -16,12 +17,43 @@
 #include <stdlib.h>
 #include <string.h>
 
+static SerdStatus
+write_file_uri_char(const char c, void* const stream)
+{
+  return (serd_buffer_write(&c, 1, 1, stream) == 1) ? SERD_SUCCESS
+                                                    : SERD_BAD_ALLOC;
+}
+
+static char*
+parse_hostname(ZixAllocator* const allocator,
+               const char* const   authority,
+               char** const        hostname)
+{
+  char* const path = strchr(authority, '/');
+  if (!path) {
+    return NULL;
+  }
+
+  if (hostname) {
+    const size_t len = (size_t)(path - authority);
+    if (!(*hostname = (char*)zix_calloc(allocator, len + 1, 1))) {
+      return NULL;
+    }
+
+    memcpy(*hostname, authority, len);
+  }
+
+  return path;
+}
+
 char*
 serd_parse_file_uri(ZixAllocator* const allocator,
                     const char* const   uri,
                     char** const        hostname)
 {
   assert(uri);
+
+  SerdStatus st = SERD_SUCCESS;
 
   const char* path = uri;
   if (hostname) {
@@ -32,19 +64,8 @@ serd_parse_file_uri(ZixAllocator* const allocator,
     const char* auth = uri + 7;
     if (*auth == '/') { // No hostname
       path = auth;
-    } else { // Has hostname
-      if (!(path = strchr(auth, '/'))) {
-        return NULL;
-      }
-
-      if (hostname) {
-        const size_t len = (size_t)(path - auth);
-        if (!(*hostname = (char*)zix_calloc(allocator, len + 1, 1))) {
-          return NULL;
-        }
-
-        memcpy(*hostname, auth, len);
-      }
+    } else if (!(path = parse_hostname(allocator, auth, hostname))) {
+      return NULL;
     }
   }
 
@@ -53,34 +74,25 @@ serd_parse_file_uri(ZixAllocator* const allocator,
   }
 
   SerdBuffer buffer = {allocator, NULL, 0};
-  for (const char* s = path; *s; ++s) {
-    if (*s == '%') {
-      if (*(s + 1) == '%') {
-        if (serd_buffer_write("%", 1, 1, &buffer) != 1) {
-          zix_free(allocator, buffer.buf);
-          return NULL;
-        }
-
+  for (const char* s = path; !st && *s; ++s) {
+    if (*s != '%') {
+      st = write_file_uri_char(*s, &buffer);
+    } else if (*(s + 1) == '%') {
+      if (!(st = write_file_uri_char('%', &buffer))) {
         ++s;
-      } else if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
-        const char code[3] = {*(s + 1), *(s + 2), 0};
-        const char c       = (char)strtoul(code, NULL, 16);
-        if (serd_buffer_write(&c, 1, 1, &buffer) != 1) {
-          zix_free(allocator, buffer.buf);
-          return NULL;
-        }
-
-        s += 2;
-      } else {
-        s += 2; // Junk escape, ignore
       }
-    } else if (serd_buffer_write(s, 1, 1, &buffer) != 1) {
-      zix_free(allocator, buffer.buf);
-      return NULL;
+    } else if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
+      const char code[3] = {*(s + 1), *(s + 2), 0};
+      const char c       = (char)strtoul(code, NULL, 16);
+      if (!(st = write_file_uri_char(c, &buffer))) {
+        s += 2;
+      }
+    } else {
+      s += 2; // Junk escape, ignore
     }
   }
 
-  if (serd_buffer_close(&buffer)) {
+  if (st || serd_buffer_close(&buffer)) {
     zix_free(allocator, buffer.buf);
     return NULL;
   }
@@ -109,6 +121,24 @@ serd_uri_string_has_scheme(const char* const string)
   return false; // String doesn't start with a scheme
 }
 
+static inline bool
+is_uri_authority_char(const char c)
+{
+  return c && c != '/' && c != '?' && c != '#';
+}
+
+static inline bool
+is_uri_path_char(const char c)
+{
+  return c && c != '?' && c != '#';
+}
+
+static inline bool
+is_uri_query_char(const char c)
+{
+  return c && c != '#';
+}
+
 SerdURIView
 serd_parse_uri(const char* const string)
 {
@@ -118,112 +148,65 @@ serd_parse_uri(const char* const string)
   const char* ptr    = string;
 
   /* See http://tools.ietf.org/html/rfc3986#section-3
-     URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
-  */
+     URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ] */
 
   /* S3.1: scheme ::= ALPHA *( ALPHA / DIGIT / "+" / "-" / "." ) */
   if (is_alpha(*ptr)) {
     for (char c = *++ptr; true; c = *++ptr) {
-      switch (c) {
-      case '\0':
-      case '/':
-      case '?':
-      case '#':
-        ptr = string;
-        goto path; // Relative URI (starts with path by definition)
-      case ':':
+      if (c == ':') {
         result.scheme.data   = string;
-        result.scheme.length = (size_t)((ptr++) - string);
-        goto maybe_authority; // URI with scheme
-      case '+':
-      case '-':
-      case '.':
-        continue;
-      default:
-        if (is_alpha(c) || is_digit(c)) {
-          continue;
-        }
+        result.scheme.length = (size_t)(ptr++ - string);
+        break;
+      }
+
+      if (!is_uri_scheme_char(c)) {
+        ptr = string;
+        break;
       }
     }
   }
 
-  /* S3.2: The authority component is preceded by a double slash ("//")
-     and is terminated by the next slash ("/"), question mark ("?"),
-     or number sign ("#") character, or by the end of the URI.
-  */
-maybe_authority:
+  /* S3.2: The authority component is preceded by "//" and is terminated by the
+     next '/', '?', or '#', or by the end of the URI. */
   if (*ptr == '/' && *(ptr + 1) == '/') {
     ptr += 2;
     result.authority.data = ptr;
-    for (char c = 0; (c = *ptr) != '\0'; ++ptr) {
-      switch (c) {
-      case '/':
-        goto path;
-      case '?':
-        goto query;
-      case '#':
-        goto fragment;
-      default:
-        ++result.authority.length;
-      }
+    while (is_uri_authority_char(*ptr)) {
+      ++result.authority.length;
+      ++ptr;
     }
   }
 
-  /* RFC3986 S3.3: The path is terminated by the first question mark ("?")
-     or number sign ("#") character, or by the end of the URI.
-  */
-path:
-  switch (*ptr) {
-  case '?':
-    goto query;
-  case '#':
-    goto fragment;
-  case '\0':
-    goto end;
-  default:
-    break;
-  }
-  result.path.data   = ptr;
-  result.path.length = 0;
-  for (char c = 0; (c = *ptr) != '\0'; ++ptr) {
-    switch (c) {
-    case '?':
-      goto query;
-    case '#':
-      goto fragment;
-    default:
+  /* S3.3: The path is terminated by the first '?' or '#', or by the end of the
+     URI. */
+  if (is_uri_path_char(*ptr)) {
+    result.path.data   = ptr++;
+    result.path.length = 1U;
+    while (is_uri_path_char(*ptr)) {
       ++result.path.length;
+      ++ptr;
     }
   }
 
-  /* RFC3986 S3.4: The query component is indicated by the first question
-     mark ("?") character and terminated by a number sign ("#") character
-     or by the end of the URI.
-  */
-query:
+  /* S3.4: The query component is indicated by the first '?' and terminated by
+     a '#' or by the end of the URI. */
   if (*ptr == '?') {
     result.query.data = ++ptr;
-    for (char c = 0; (c = *ptr) != '\0'; ++ptr) {
-      if (c == '#') {
-        goto fragment;
-      }
+    while (is_uri_query_char(*ptr)) {
       ++result.query.length;
+      ++ptr;
     }
   }
 
-  /* RFC3986 S3.5: A fragment identifier component is indicated by the
-     presence of a number sign ("#") character and terminated by the end
-     of the URI.
-  */
-fragment:
+  /* S3.5: A fragment identifier component is indicated by the presence of a
+     '#' and terminated by the end of the URI. */
   if (*ptr == '#') {
     result.fragment.data = ptr;
-    while (*ptr++ != '\0') {
+    while (*ptr++) {
       ++result.fragment.length;
     }
   }
 
-end:
   return result;
 }
 
@@ -512,7 +495,7 @@ serd_write_uri(const SerdURIView   uri,
 }
 
 static bool
-is_uri_path_char(const char c)
+is_unescaped_uri_path_char(const char c)
 {
   if (is_alpha(c) || is_digit(c)) {
     return true;
@@ -580,7 +563,7 @@ serd_write_file_uri(const ZixStringView path,
   for (size_t i = 0; i < path.length; ++i) {
     if (path.data[i] == '%') {
       len += sink("%%", 1, 2, stream);
-    } else if (is_uri_path_char(path.data[i])) {
+    } else if (is_unescaped_uri_path_char(path.data[i])) {
       len += sink(path.data + i, 1, 1, stream);
 #ifdef _WIN32
     } else if (path.data[i] == '\\') {

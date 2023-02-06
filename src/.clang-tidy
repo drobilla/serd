@@ -12,6 +12,5 @@ Checks: >
   -llvm-header-guard,
   -misc-no-recursion,
   -modernize-macro-to-enum,
-  -readability-function-cognitive-complexity,
   -readability-suspicious-call-argument,
 InheritParentConfig: true
