@@ -46,9 +46,26 @@ serd_uri_has_scheme(const SerdURIView uri)
   return !!uri.scheme.length;
 }
 
+static const char*
+append_until(const char              end_chars[static 4],
+             const char*             ptr,
+             SerdURIComponent* const dest)
+{
+  while (*ptr != end_chars[0] && *ptr != end_chars[1] && *ptr != end_chars[2] &&
+         *ptr != end_chars[3]) {
+    ++dest->length;
+    ++ptr;
+  }
+
+  return ptr;
+}
+
 SerdURIView
 serd_parse_uri(const char* const string)
 {
+  //                           Auth Path Query
+  static const char ends[6] = {'/', '?', '#', 0, 0, 0};
+
   SerdURIView result = serd_empty_uri();
   const char* ptr    = string;
   if (!ptr) {
@@ -56,102 +73,56 @@ serd_parse_uri(const char* const string)
   }
 
   /* See http://tools.ietf.org/html/rfc3986#section-3
-     URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
-  */
+     URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ] */
 
   /* S3.1: scheme ::= ALPHA *( ALPHA / DIGIT / "+" / "-" / "." ) */
   if (is_alpha(*ptr)) {
     for (char c = *++ptr; true; c = *++ptr) {
       if (c == ':') {
         result.scheme.data   = string;
-        result.scheme.length = (size_t)((ptr++) - string);
-        goto maybe_authority; // URI with scheme
+        result.scheme.length = (size_t)(ptr++ - string);
+        break;
       }
 
       if (!is_scheme(c)) {
         ptr = string;
-        goto path; // Relative URI (starts with path by definition)
+        break;
       }
     }
   }
 
-  /* S3.2: The authority component is preceded by a double slash ("//")
-     and is terminated by the next slash ("/"), question mark ("?"),
-     or number sign ("#") character, or by the end of the URI.
-  */
-maybe_authority:
+  /* S3.2: The authority component is preceded by "//" and is terminated by the
+     next '/', '?', or '#', or by the end of the URI. */
   if (*ptr == '/' && *(ptr + 1) == '/') {
     ptr += 2;
     result.authority.data = ptr;
-    for (char c = 0; (c = *ptr) != '\0'; ++ptr) {
-      switch (c) {
-      case '/':
-        goto path;
-      case '?':
-        goto query;
-      case '#':
-        goto fragment;
-      default:
-        ++result.authority.length;
-      }
-    }
+    ptr                   = append_until(ends, ptr, &result.authority);
   }
 
-  /* RFC3986 S3.3: The path is terminated by the first question mark ("?")
-     or number sign ("#") character, or by the end of the URI.
-  */
-path:
-  switch (*ptr) {
-  case '?':
-    goto query;
-  case '#':
-    goto fragment;
-  case '\0':
-    goto end;
-  default:
-    break;
-  }
-  result.path.data   = ptr;
-  result.path.length = 0;
-  for (char c = 0; (c = *ptr) != '\0'; ++ptr) {
-    switch (c) {
-    case '?':
-      goto query;
-    case '#':
-      goto fragment;
-    default:
-      ++result.path.length;
-    }
+  /* S3.3: The path is terminated by the first '?' or '#', or by the end of the
+     URI. */
+  if (*ptr && *ptr != '?' && *ptr != '#') {
+    result.path.data   = ptr++;
+    result.path.length = 1U;
+    ptr                = append_until(&ends[1], ptr, &result.path);
   }
 
-  /* RFC3986 S3.4: The query component is indicated by the first question
-     mark ("?") character and terminated by a number sign ("#") character
-     or by the end of the URI.
-  */
-query:
+  /* S3.4: The query component is indicated by the first '?' and terminated by
+     a '#' or by the end of the URI. */
   if (*ptr == '?') {
     result.query.data = ++ptr;
-    for (char c = 0; (c = *ptr) != '\0'; ++ptr) {
-      if (c == '#') {
-        goto fragment;
-      }
-      ++result.query.length;
-    }
+    ptr               = append_until(&ends[2], ptr, &result.query);
   }
 
-  /* RFC3986 S3.5: A fragment identifier component is indicated by the
-     presence of a number sign ("#") character and terminated by the end
-     of the URI.
-  */
-fragment:
+  /* S3.5: A fragment identifier component is indicated by the presence of a
+     '#' and terminated by the end of the URI. */
   if (*ptr == '#') {
     result.fragment.data = ptr;
-    while (*ptr++ != '\0') {
+    while (*ptr++) {
       ++result.fragment.length;
     }
   }
 
-end:
   return result;
 }
 

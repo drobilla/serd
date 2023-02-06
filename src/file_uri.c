@@ -5,6 +5,7 @@
 
 #include <serd/buffer.h>
 #include <serd/file_uri.h>
+#include <serd/status.h>
 #include <serd/stream.h>
 #include <serd/string.h>
 #include <zix/allocator.h>
@@ -16,12 +17,39 @@
 #include <stdio.h>
 #include <string.h>
 
+static SerdStatus
+write_file_uri_char(const char c, void* const stream)
+{
+  return (serd_buffer_sink(&c, 1, stream) == 1) ? SERD_SUCCESS : SERD_BAD_ALLOC;
+}
+
+static char*
+parse_hostname(ZixAllocator* const allocator,
+               const char* const   authority,
+               char** const        hostname)
+{
+  char* const path = strchr(authority, '/');
+
+  if (path && hostname) {
+    const size_t len = (size_t)(path - authority);
+    if (!(*hostname = (char*)zix_calloc(allocator, len + 1, 1))) {
+      return NULL;
+    }
+
+    memcpy(*hostname, authority, len);
+  }
+
+  return path;
+}
+
 char*
 serd_parse_file_uri(ZixAllocator* const allocator,
                     const char* const   uri,
                     char** const        hostname)
 {
   assert(uri);
+
+  SerdStatus st = SERD_SUCCESS;
 
   const char* path = uri;
   if (hostname) {
@@ -32,19 +60,8 @@ serd_parse_file_uri(ZixAllocator* const allocator,
     const char* auth = uri + 7;
     if (*auth == '/') { // No hostname
       path = auth;
-    } else { // Has hostname
-      if (!(path = strchr(auth, '/'))) {
-        return NULL;
-      }
-
-      if (hostname) {
-        const size_t len = (size_t)(path - auth);
-        if (!(*hostname = (char*)zix_calloc(allocator, len + 1, 1))) {
-          return NULL;
-        }
-
-        memcpy(*hostname, auth, len);
-      }
+    } else if (!(path = parse_hostname(allocator, auth, hostname))) {
+      return NULL;
     }
   }
 
@@ -53,25 +70,25 @@ serd_parse_file_uri(ZixAllocator* const allocator,
   }
 
   SerdBuffer buffer = {allocator, NULL, 0};
-  for (const char* s = path; *s; ++s) {
+  for (const char* s = path; !st && *s; ++s) {
     if (*s == '%') {
       if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
         const uint8_t hi = hex_digit_value((const uint8_t)s[1]);
         const uint8_t lo = hex_digit_value((const uint8_t)s[2]);
         const char    c  = (char)((hi << 4U) | lo);
-        if (serd_buffer_sink(&c, 1, &buffer) < 1U) {
-          zix_free(buffer.allocator, buffer.buf);
-          return NULL; // Allocation failed
-        }
 
+        st = write_file_uri_char(c, &buffer);
         s += 2;
       } else {
-        zix_free(buffer.allocator, buffer.buf);
-        return NULL; // Invalid percent-encoding
+        st = SERD_BAD_SYNTAX;
       }
-    } else if (serd_buffer_sink(s, 1, &buffer) < 1U) {
+    } else {
+      st = write_file_uri_char(*s, &buffer);
+    }
+
+    if (st) {
       zix_free(buffer.allocator, buffer.buf);
-      return NULL; // Allocation failed
+      return NULL;
     }
   }
 
@@ -84,7 +101,7 @@ serd_parse_file_uri(ZixAllocator* const allocator,
 }
 
 static bool
-is_uri_path_char(const char c)
+is_unescaped_uri_path_char(const char c)
 {
   return is_alpha(c) || is_digit(c) || strchr("!$&\'()*+,-./:;=@_~", c);
 }
@@ -122,7 +139,7 @@ serd_write_file_uri(const ZixStringView path,
   }
 
   for (size_t i = 0; i < path.length; ++i) {
-    if (is_uri_path_char(path.data[i])) {
+    if (is_unescaped_uri_path_char(path.data[i])) {
       len += sink(path.data + i, 1, stream);
 #ifdef _WIN32
     } else if (path.data[i] == '\\') {
