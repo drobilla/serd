@@ -1,4 +1,4 @@
-// Copyright 2011-2022 David Robillard <d@drobilla.net>
+// Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #include "serd_config.h"
@@ -72,7 +72,7 @@ static int
 print_version(void)
 {
   printf("serdi " SERD_VERSION " <http://drobilla.net/software/serd>\n");
-  printf("Copyright 2011-2022 David Robillard <d@drobilla.net>.\n"
+  printf("Copyright 2011-2023 David Robillard <d@drobilla.net>.\n"
          "License ISC: <https://spdx.org/licenses/ISC>.\n"
          "This is free software; you are free to change and redistribute it."
          "\nThere is NO WARRANTY, to the extent permitted by law.\n");
