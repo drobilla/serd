@@ -10,6 +10,7 @@ Checks: >
   -llvmlibc-*,
   -misc-include-cleaner,
   -modernize-macro-to-enum,
+  -readability-function-cognitive-complexity,
   -readability-identifier-length,
 CheckOptions:
   - key:   hicpp-uppercase-literal-suffix.NewSuffixes
