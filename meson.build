@@ -10,6 +10,7 @@ project('serd', ['c'],
           'buildtype=release',
           'warning_level=3',
           'c_std=c99',
+          'c_winlibs=[]',
         ])
 
 serd_src_root = meson.current_source_dir()
