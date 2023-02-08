@@ -1,6 +1,9 @@
 # Copyright 2021-2022 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
+option('checks', type: 'feature', value: 'enabled', yield: true,
+       description: 'Check for platform-specific features')
+
 option('docs', type: 'feature', value: 'auto', yield: true,
        description: 'Build documentation')
 

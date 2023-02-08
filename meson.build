@@ -42,13 +42,6 @@ m_dep = cc.find_library('m', required: false)
 # Platform Configuration #
 ##########################
 
-platform_args = []
-if host_machine.system() in ['gnu', 'linux']
-  platform_args += [
-    '-D_POSIX_C_SOURCE=200809L',
-  ]
-endif
-
 # Use versioned name everywhere to support parallel major version installations
 if host_machine.system() == 'windows'
   if get_option('default_library') == 'both'
@@ -57,6 +50,49 @@ if host_machine.system() == 'windows'
   soversion = ''
 else
   soversion = meson.project_version().split('.')[0]
+endif
+
+# Request POSIX APIs from standard headers if necessary
+system_c_args = []
+if host_machine.system() in ['cygwin', 'gnu', 'linux']
+  system_c_args += ['-D_POSIX_C_SOURCE=200809L']
+endif
+
+# Build platform-specific configuration arguments
+platform_c_args = []
+if get_option('checks').disabled()
+  # Generic build without platform-specific features
+  platform_c_args += ['-DSERD_NO_DEFAULT_CONFIG']
+elif get_option('checks').auto()
+  # Statically detect configuration from the build environment
+  platform_c_args += system_c_args
+else
+  # Only use the features detected by the build system
+  platform_c_args += ['-DSERD_NO_DEFAULT_CONFIG'] + system_c_args
+
+  # Define HAVE_SOMETHING symbols for all detected features
+  template = '#include <@0@>\nint main(void) { @1@; }'
+  if cc.links(
+    template.format('stdio.h',
+                    'return fileno(stdin);'),
+    args: system_c_args,
+    name: 'fileno')
+    platform_c_args += ['-DHAVE_FILENO']
+  endif
+  if cc.links(
+    template.format('fcntl.h',
+                    'posix_fadvise(0, 0, 4096, POSIX_FADV_SEQUENTIAL))'),
+    args: system_c_args,
+    name: 'posix_fadvise')
+    platform_c_args += ['-DHAVE_POSIX_FADVISE']
+  endif
+  if cc.links(
+    template.format('stdlib.h',
+                    'void* mem=NULL; posix_memalign(&mem, 8U, 8U);'),
+    args: system_c_args,
+    name: 'posix_memalign')
+    platform_c_args += ['-DHAVE_POSIX_MEMALIGN']
+  endif
 endif
 
 ###########
@@ -92,10 +128,10 @@ endif
 libserd = library(
   versioned_name,
   sources,
-  c_args: c_suppressions + extra_c_args + platform_args + [
+  c_args: [
     '-DSERD_INTERNAL',
     '-DSERD_VERSION="@0@"'.format(meson.project_version()),
-  ],
+  ] + c_suppressions + extra_c_args + platform_c_args,
   dependencies: m_dep,
   gnu_symbol_visibility: 'hidden',
   include_directories: include_dirs,
@@ -142,7 +178,7 @@ if not get_option('tools').disabled()
   serdi = executable(
     'serdi',
     files('src/serdi.c'),
-    c_args: c_suppressions + platform_args,
+    c_args: c_suppressions + platform_c_args,
     dependencies: serd_dep,
     install: true,
     link_args: tool_link_args,

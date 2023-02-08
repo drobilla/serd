@@ -5,6 +5,7 @@ serd (0.31.0) unstable; urgency=medium
   * Allow SERD_API to be defined by the user
   * Avoid creating test files in the current directory
   * Avoid using ASCII grave as a quote
+  * Check for POSIX features with the build system
   * Clean up code
   * Fix crash when trying to read chunks without starting
   * Fix hang when skipping an error at EOF when lax parsing
@@ -15,7 +16,7 @@ serd (0.31.0) unstable; urgency=medium
   * Replace duplicated dox_to_sphinx script with sphinxygen dependency
   * Test header for warnings more strictly
 
- -- David Robillard <d@drobilla.net>  Tue, 20 Dec 2022 12:31:33 +0000
+ -- David Robillard <d@drobilla.net>  Tue, 07 Feb 2023 23:34:12 +0000
 
 serd (0.30.16) stable; urgency=medium
 
