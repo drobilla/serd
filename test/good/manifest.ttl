@@ -7,10 +7,7 @@
 	rdf:type mf:Manifest ;
 	rdfs:comment "Serd good syntax test cases" ;
 	mf:entries (
-		<#test-14>
 		<#base>
-		<#rdf-schema>
-		<#rdfs-namespace>
 		<#test-14>
 		<#test-15>
 		<#test-16>
@@ -55,11 +52,6 @@
 		<#test-utf8-uri>
 		<#UTF-8>
 	) .
-
-<#test-14>
-	rdf:type rdft:TestTurtleEval ;
-	mf:name "test-14" ;
-	mf:action <test-14.ttl> .
 
 <#base>
 	rdf:type rdft:TestTurtleEval ;
