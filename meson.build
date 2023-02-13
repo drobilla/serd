@@ -81,7 +81,7 @@ else
   endif
   if cc.links(
     template.format('fcntl.h',
-                    'posix_fadvise(0, 0, 4096, POSIX_FADV_SEQUENTIAL))'),
+                    'posix_fadvise(0, 0, 4096, POSIX_FADV_SEQUENTIAL)'),
     args: system_c_args,
     name: 'posix_fadvise')
     platform_c_args += ['-DHAVE_POSIX_FADVISE']
