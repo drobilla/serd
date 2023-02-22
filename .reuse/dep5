@@ -9,7 +9,7 @@ Comment: Standard test suites from the W3C (only required for testing)
 License: BSD-3-Clause
 
 Files: test/bad/* test/good/* test/lax/*
-Copyright: 2011-2021 David Robillard <d@drobilla.net>
+Copyright: 2011-2023 David Robillard <d@drobilla.net>
 Comment: Extra tests for serd (potential contributions to the W3C suites)
 License: BSD-3-Clause OR ISC
 
