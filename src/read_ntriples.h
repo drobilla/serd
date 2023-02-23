@@ -95,14 +95,6 @@ SerdStatus
 read_PN_CHARS_BASE(SerdReader* reader, SerdNode* dest);
 
 /**
-   Read an initial prefixed name character.
-
-   RDF 1.1 NTriples: [158s] PN_CHARS_U
-*/
-SerdStatus
-read_PN_CHARS_U(SerdReader* reader, SerdNode* dest);
-
-/**
    Read any prefixed name character.
 
    RDF 1.1 NTriples: [160s] PN_CHARS
@@ -117,16 +109,6 @@ read_PN_CHARS(SerdReader* reader, SerdNode* dest);
 */
 uint8_t
 read_HEX(SerdReader* reader);
-
-/**
-   Read a variable name, starting after the '?' or '$'.
-
-   This is an extension that serd uses in certain contexts to support patterns.
-
-   Restricted version of SPARQL 1.1: [166] VARNAME
-*/
-SerdStatus
-read_VARNAME(SerdReader* reader, SerdNode** dest);
 
 // Nonterminals
 
