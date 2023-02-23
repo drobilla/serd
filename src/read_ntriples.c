@@ -25,6 +25,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/**
+   Read an initial prefixed name character.
+
+   RDF 1.1 NTriples: [158s] PN_CHARS_U
+*/
+static SerdStatus
+read_PN_CHARS_U(SerdReader* reader, SerdNode* dest);
+
 // Terminals
 
 /// [144s] LANGTAG
@@ -574,7 +582,14 @@ read_HEX(SerdReader* const reader)
   return 0;
 }
 
-SerdStatus
+/**
+   Read a variable name, starting after the '?' or '$'.
+
+   This is an extension that serd uses in certain contexts to support patterns.
+
+   Restricted version of SPARQL 1.1: [166] VARNAME
+*/
+static SerdStatus
 read_VARNAME(SerdReader* const reader, SerdNode** const dest)
 {
   // Simplified from SPARQL: VARNAME ::= (PN_CHARS_U | [0-9])+
