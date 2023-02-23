@@ -11,9 +11,6 @@
 #include <stddef.h>
 #include <string.h>
 
-/** An offset to start the stack at. Note 0 is reserved for NULL. */
-#define SERD_STACK_BOTTOM sizeof(void*)
-
 /** A dynamic stack in memory. */
 typedef struct {
   char*  buf;      ///< Stack memory
@@ -32,7 +29,7 @@ serd_stack_new(ZixAllocator* const allocator, size_t size, size_t align)
   SerdStack stack;
   stack.buf      = (char*)zix_aligned_alloc(allocator, align, aligned_size);
   stack.buf_size = size;
-  stack.size     = SERD_STACK_BOTTOM;
+  stack.size     = align; // 0 is reserved for null
 
   if (stack.buf) {
     memset(stack.buf, 0, size);
