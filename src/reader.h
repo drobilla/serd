@@ -7,6 +7,7 @@
 #include "byte_source.h"
 #include "node.h"
 #include "stack.h"
+#include "try.h"
 
 #include "serd/attributes.h"
 #include "serd/caret.h"
@@ -158,9 +159,7 @@ eat_string(SerdReader* reader, const char* str, unsigned n)
   SerdStatus st = SERD_SUCCESS;
 
   for (unsigned i = 0; i < n; ++i) {
-    if ((st = eat_byte_check(reader, str[i]))) {
-      return st;
-    }
+    TRY(st, eat_byte_check(reader, str[i]));
   }
 
   return st;
