@@ -10,6 +10,7 @@
 #include "reader.h"
 #include "stack.h"
 #include "statement.h"
+#include "try.h"
 
 #include "serd/caret.h"
 #include "serd/node.h"
@@ -54,14 +55,9 @@ read_statement(SerdReader* const reader)
     if (peek_byte(reader) == '.') {
       eat_byte(reader);
     } else {
-      if ((st = read_graphLabel(reader, &ctx.graph))) {
-        return st;
-      }
-
+      TRY(st, read_graphLabel(reader, &ctx.graph));
       skip_horizontal_whitespace(reader);
-      if ((st = eat_byte_check(reader, '.'))) {
-        return st;
-      }
+      TRY(st, eat_byte_check(reader, '.'));
     }
   }
 

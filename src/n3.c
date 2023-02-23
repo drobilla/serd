@@ -356,9 +356,7 @@ static SerdStatus
 read_IRIREF(SerdReader* const reader, SerdNode** const dest)
 {
   SerdStatus st = SERD_SUCCESS;
-  if ((st = eat_byte_check(reader, '<'))) {
-    return st;
-  }
+  TRY(st, eat_byte_check(reader, '<'));
 
   if (!(*dest = push_node(reader, SERD_URI, "", 0))) {
     return SERD_BAD_STACK;
@@ -929,9 +927,7 @@ read_subject(SerdReader* const reader,
     st = read_BLANK_NODE_LABEL(reader, dest, &ate_dot);
     break;
   default:
-    if ((st = read_iri(reader, dest, &ate_dot))) {
-      return st;
-    }
+    TRY(st, read_iri(reader, dest, &ate_dot));
   }
 
   if (ate_dot) {
@@ -951,9 +947,7 @@ read_labelOrSubject(SerdReader* const reader, SerdNode** const dest)
   case '[':
     skip_byte(reader, '[');
     read_ws_star(reader);
-    if ((st = eat_byte_check(reader, ']'))) {
-      return st;
-    }
+    TRY(st, eat_byte_check(reader, ']'));
     *dest = blank_id(reader);
     return *dest ? SERD_SUCCESS : SERD_BAD_STACK;
   case '_':
@@ -1036,11 +1030,9 @@ read_prefixID(SerdReader* const reader, const bool sparql, const bool token)
 
   TRY_FAILING(st, read_PN_PREFIX(reader, name));
 
-  if ((st = eat_byte_check(reader, ':'))) {
-    return st;
-  }
-
+  TRY(st, eat_byte_check(reader, ':'));
   read_ws_star(reader);
+
   SerdNode* uri = NULL;
   TRY(st, read_IRIREF(reader, &uri));
 
@@ -1068,11 +1060,9 @@ static SerdStatus
 read_wrappedGraph(SerdReader* const reader, ReadContext* const ctx)
 {
   SerdStatus st = SERD_SUCCESS;
-  if ((st = eat_byte_check(reader, '{'))) {
-    return st;
-  }
-
+  TRY(st, eat_byte_check(reader, '{'));
   read_ws_star(reader);
+
   while (peek_byte(reader) != '}') {
     const size_t orig_stack_size = reader->stack.size;
     bool         ate_dot         = false;

@@ -198,9 +198,7 @@ read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
       break;
 
     case '\\':
-      if ((st = read_UCHAR(reader, node, &code))) {
-        return st;
-      }
+      TRY(st, read_UCHAR(reader, node, &code));
 
       if (!code || code == ' ' || code == '<' || code == '>') {
         return r_err(
@@ -503,9 +501,7 @@ read_PN_CHARS_BASE(SerdReader* const reader, SerdNode* const dest)
     return SERD_FAILURE;
   }
 
-  if ((st = read_utf8_code_point(reader, dest, &code, (uint8_t)c))) {
-    return st;
-  }
+  TRY(st, read_utf8_code_point(reader, dest, &code, (uint8_t)c));
 
   if (!is_PN_CHARS_BASE((int)code)) {
     r_err(
@@ -555,9 +551,7 @@ read_PN_CHARS(SerdReader* const reader, SerdNode* const dest)
   }
 
   uint32_t code = 0U;
-  if ((st = read_utf8_code_point(reader, dest, &code, (uint8_t)c))) {
-    return st;
-  }
+  TRY(st, read_utf8_code_point(reader, dest, &code, (uint8_t)c));
 
   if (!is_PN_CHARS_BASE((int)code) && code != 0xB7 &&
       !(code >= 0x0300 && code <= 0x036F) &&
@@ -654,23 +648,20 @@ read_literal(SerdReader* const reader, SerdNode** const dest)
   }
 
   skip_byte(reader, '"');
-  if ((st = read_STRING_LITERAL(reader, *dest, '"'))) {
-    return st;
-  }
+  TRY(st, read_STRING_LITERAL(reader, *dest, '"'));
 
   SerdNode* datatype = NULL;
   switch (peek_byte(reader)) {
   case '@':
     skip_byte(reader, '@');
-    (*dest)->flags |= SERD_HAS_LANGUAGE;
     TRY(st, read_LANGTAG(reader));
+    (*dest)->flags |= SERD_HAS_LANGUAGE;
     break;
   case '^':
     skip_byte(reader, '^');
-    if (!(st = eat_byte_check(reader, '^'))) {
-      (*dest)->flags |= SERD_HAS_DATATYPE;
-      TRY(st, read_IRI(reader, &datatype));
-    }
+    TRY(st, eat_byte_check(reader, '^'));
+    TRY(st, read_IRI(reader, &datatype));
+    (*dest)->flags |= SERD_HAS_DATATYPE;
     break;
   }
 
