@@ -32,6 +32,14 @@
 #include <stdio.h>
 #include <string.h>
 
+/// Like TRY() but tolerates SERD_FAILURE
+#define TRY_LAX(st, exp)                 \
+  do {                                   \
+    if (((st) = (exp)) > SERD_FAILURE) { \
+      return (st);                       \
+    }                                    \
+  } while (0)
+
 static SerdStatus
 read_collection(SerdReader* reader, ReadContext ctx, SerdNode** dest);
 
@@ -379,7 +387,7 @@ read_PrefixedName(SerdReader* const reader,
 {
   SerdStatus st = SERD_SUCCESS;
   if (read_prefix) {
-    TRY_FAILING(st, read_PN_PREFIX(reader, dest));
+    TRY_LAX(st, read_PN_PREFIX(reader, dest));
   }
 
   if (peek_byte(reader) != ':') {
@@ -560,10 +568,9 @@ read_verb(SerdReader* reader, SerdNode** dest)
   }
 
   const size_t string_start_offset = reader->stack.size;
-  SerdStatus   st                  = read_PN_PREFIX(reader, *dest);
-  if (st > SERD_FAILURE) {
-    return st;
-  }
+  SerdStatus   st                  = SERD_SUCCESS;
+
+  TRY_LAX(st, read_PN_PREFIX(reader, *dest));
 
   bool      ate_dot = false;
   SerdNode* node    = *dest;
@@ -1024,8 +1031,7 @@ read_prefixID(SerdReader* const reader, const bool sparql, const bool token)
     return SERD_BAD_STACK;
   }
 
-  TRY_FAILING(st, read_PN_PREFIX(reader, name));
-
+  TRY_LAX(st, read_PN_PREFIX(reader, name));
   TRY(st, eat_byte_check(reader, ':'));
   read_ws_star(reader);
 
@@ -1147,9 +1153,7 @@ read_block(SerdReader* const reader, ReadContext* const ctx)
   // Try to read a subject, though it may actually be a directive or graph name
   SerdNode* token  = NULL;
   int       s_type = 0;
-  if ((st = read_subject(reader, *ctx, &token, &s_type)) > SERD_FAILURE) {
-    return st;
-  }
+  TRY_LAX(st, read_subject(reader, *ctx, &token, &s_type));
 
   // Try to interpret as a SPARQL "PREFIX" or "BASE" directive
   if (st && (st = read_sparql_directive(reader, ctx, token)) != SERD_FAILURE) {
@@ -1175,9 +1179,7 @@ read_block(SerdReader* const reader, ReadContext* const ctx)
   // Our token is really a subject, read some triples
   bool ate_dot = false;
   ctx->subject = token;
-  if ((st = read_triples(reader, *ctx, &ate_dot)) > SERD_FAILURE) {
-    return st;
-  }
+  TRY_LAX(st, read_triples(reader, *ctx, &ate_dot));
 
   // "Failure" is only allowed for anonymous subjects like "[ ... ] ."
   if (st && s_type != '[') {
