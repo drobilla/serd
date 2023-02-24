@@ -103,48 +103,31 @@ read_IRIREF_suffix(SerdReader* const reader, TokenHeader* const node)
 
   while (st <= SERD_FAILURE) {
     const int c = eat_byte(reader);
-    switch (c) {
-    case EOF:
-      return r_err_eof(reader, SERD_BAD_SYNTAX);
-
-    case ' ':
-    case '"':
-    case '<':
-    case '^':
-    case '`':
-    case '{':
-    case '|':
-    case '}':
-      return r_err_char(reader, "IRI", c);
-
-    case '>':
+    if (c == '>') {
       return push_node_termination(reader);
+    }
 
-    case '\\':
-      TRY(st, read_UCHAR(reader, node, &code));
-
-      if (!code || code == ' ' || code == '<' || code == '>') {
-        return r_err(
-          reader, SERD_BAD_SYNTAX, "bad %s character U+%04X", "IRI", code);
+    if (c >= 0x80) {
+      st = read_utf8_continuation(reader, node, (uint8_t)c);
+    } else if (c == '\\') {
+      if (!(st = read_UCHAR(reader, node, &code)) &&
+          (code == ' ' || code == '<' || code == '>')) {
+        st = r_err_char(reader, "IRI", (int)code);
       }
-
-      break;
-
-    default:
-      if (c <= 0x20) {
-        st = r_err_char(reader, "IRI", c);
-        if (reader->strict) {
-          return st;
-        }
+    } else if (c > 0x20 && c != '"' && c != '<' && c != '^' && c != '`' &&
+               c != '{' && c != '|' && c != '}') {
+      st = push_byte(reader, node, c);
+    } else if (c < 0) {
+      st = r_err_eof(reader, SERD_BAD_SYNTAX);
+    } else {
+      st = r_err_char(reader, "IRI", c);
+      if (!reader->strict) {
+        st = push_byte(reader, node, c);
       }
-
-      st = ((uint8_t)c & 0x80)
-             ? read_utf8_continuation(reader, node, (uint8_t)c)
-             : push_byte(reader, node, c);
     }
   }
 
-  return tolerate_status(reader, st) ? SERD_SUCCESS : st;
+  return st;
 }
 
 /**
