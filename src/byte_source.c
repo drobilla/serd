@@ -127,3 +127,19 @@ serd_byte_source_prepare(SerdByteSource* const source)
 
   return serd_byte_source_advance(source);
 }
+
+SerdStatus
+serd_byte_source_skip_bom(SerdByteSource* const source)
+{
+  if (serd_byte_source_peek(source) == 0xEF) {
+    if (serd_byte_source_advance(source) ||
+        serd_byte_source_peek(source) != 0xBB ||
+        serd_byte_source_advance(source) ||
+        serd_byte_source_peek(source) != 0xBF ||
+        serd_byte_source_advance(source)) {
+      return SERD_BAD_SYNTAX;
+    }
+  }
+
+  return SERD_SUCCESS;
+}
