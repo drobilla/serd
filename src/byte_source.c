@@ -142,3 +142,28 @@ serd_byte_source_close(ZixAllocator* const   allocator,
   memset(source, '\0', sizeof(*source));
   return st;
 }
+
+static SerdStatus
+peek_check(SerdByteSource* const source, const uint8_t byte)
+{
+  return serd_byte_source_peek(source) == byte ? SERD_SUCCESS : SERD_BAD_SYNTAX;
+}
+
+SerdStatus
+serd_byte_source_skip_bom(SerdByteSource* const source)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  if (serd_byte_source_peek(source) == 0xEF) {
+    if (!(st = serd_byte_source_advance(source)) &&
+        !(st = peek_check(source, 0xBB)) &&
+        !(st = serd_byte_source_advance(source)) &&
+        !(st = peek_check(source, 0xBF))) {
+      st = serd_byte_source_advance(source);
+    } else {
+      st = st > SERD_FAILURE ? st : SERD_BAD_SYNTAX;
+    }
+  }
+
+  return st;
+}
