@@ -45,6 +45,9 @@ serd_byte_source_prepare(SerdByteSource* source);
 SerdStatus
 serd_byte_source_page(SerdByteSource* source);
 
+SerdStatus
+serd_byte_source_skip_bom(SerdByteSource* source);
+
 ZIX_PURE_FUNC static inline uint8_t
 serd_byte_source_peek(SerdByteSource* source)
 {
