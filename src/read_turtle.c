@@ -332,19 +332,15 @@ resolve_IRIREF(SerdReader* const reader,
 }
 
 SERD_NODISCARD static SerdStatus
-read_IRIREF(SerdReader* const reader, SerdNode** const dest)
+read_IRI(SerdReader* const reader, SerdNode** const dest)
 {
   SerdStatus st = SERD_SUCCESS;
-  TRY(st, eat_byte_check(reader, '<'));
 
-  if (!(*dest = push_node_head(reader, SERD_URI))) {
-    return SERD_BAD_STACK;
-  }
+  const size_t node_start_offset = reader->stack.size;
 
-  const size_t string_start_offset = reader->stack.size;
+  TRY(st, read_IRIREF(reader, dest));
 
-  TRY(st, read_IRIREF_suffix(reader, *dest));
-  TRY(st, push_node_tail(reader));
+  const size_t string_start_offset = node_start_offset + sizeof(SerdNode);
 
   return st ? st
          : (reader->flags & SERD_READ_RELATIVE)
@@ -486,7 +482,7 @@ read_turtle_iri(SerdReader* const reader,
                 bool* const       ate_dot)
 {
   if (peek_byte(reader) == '<') {
-    return read_IRIREF(reader, dest);
+    return read_IRI(reader, dest);
   }
 
   if (!(*dest = push_node_head(reader, SERD_CURIE))) {
@@ -542,7 +538,7 @@ read_verb(SerdReader* reader, SerdNode** const dest)
   case '?':
     return read_Var(reader, dest);
   case '<':
-    return read_IRIREF(reader, dest);
+    return read_IRI(reader, dest);
   }
 
   /* Either a qname, or "a".  Read the prefix first, and if it is in fact
@@ -706,7 +702,7 @@ read_object(SerdReader* const  reader,
     } else if (c == '_') {
       st = read_BLANK_NODE_LABEL(reader, &o, ate_dot);
     } else if (c == '<') {
-      st = read_IRIREF(reader, &o);
+      st = read_IRI(reader, &o);
     } else if (c == ':') {
       st = read_turtle_iri(reader, &o, ate_dot);
     } else if (c == '+' || c == '-' || c == '.' || is_digit(c)) {
@@ -936,7 +932,7 @@ read_turtle_base(SerdReader* const reader, const bool sparql, const bool token)
   TRY(st, read_turtle_ws_star(reader));
 
   SerdNode* uri = NULL;
-  TRY(st, read_IRIREF(reader, &uri));
+  TRY(st, read_IRI(reader, &uri));
 
   if (reader->stack.size + sizeof(SerdNode) > reader->stack.buf_size) {
     return SERD_BAD_STACK;
@@ -981,7 +977,7 @@ read_turtle_prefixID(SerdReader* const reader,
 
   // Read URI node
   SerdNode* uri = NULL;
-  TRY(st, read_IRIREF(reader, &uri));
+  TRY(st, read_IRI(reader, &uri));
 
   st = serd_sink_write_prefix(reader->sink, name, uri);
 
