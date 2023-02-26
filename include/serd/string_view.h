@@ -24,8 +24,8 @@ SERD_BEGIN_DECLS
    of strings in-place and to avoid redundant string measurement.
 */
 typedef struct {
-  const char* SERD_NONNULL buf; ///< Start of string
-  size_t                   len; ///< Length of string in bytes
+  const char* SERD_NONNULL data;   ///< Start of string
+  size_t                   length; ///< Length of string in bytes
 } SerdStringView;
 
 /// Return a view of an empty string
