@@ -115,8 +115,8 @@ serd_uri_parse(const char* const utf8, SerdURIView* const out)
         ptr = utf8;
         goto path; // Relative URI (starts with path by definition)
       case ':':
-        out->scheme.buf = utf8;
-        out->scheme.len = (size_t)((ptr++) - utf8);
+        out->scheme.data   = utf8;
+        out->scheme.length = (size_t)((ptr++) - utf8);
         goto maybe_authority; // URI with scheme
       case '+':
       case '-':
@@ -137,7 +137,7 @@ serd_uri_parse(const char* const utf8, SerdURIView* const out)
 maybe_authority:
   if (*ptr == '/' && *(ptr + 1) == '/') {
     ptr += 2;
-    out->authority.buf = ptr;
+    out->authority.data = ptr;
     for (char c = 0; (c = *ptr) != '\0'; ++ptr) {
       switch (c) {
       case '/':
@@ -147,7 +147,7 @@ maybe_authority:
       case '#':
         goto fragment;
       default:
-        ++out->authority.len;
+        ++out->authority.length;
       }
     }
   }
@@ -166,8 +166,8 @@ path:
   default:
     break;
   }
-  out->path.buf = ptr;
-  out->path.len = 0;
+  out->path.data   = ptr;
+  out->path.length = 0;
   for (char c = 0; (c = *ptr) != '\0'; ++ptr) {
     switch (c) {
     case '?':
@@ -175,7 +175,7 @@ path:
     case '#':
       goto fragment;
     default:
-      ++out->path.len;
+      ++out->path.length;
     }
   }
 
@@ -185,12 +185,12 @@ path:
   */
 query:
   if (*ptr == '?') {
-    out->query.buf = ++ptr;
+    out->query.data = ++ptr;
     for (char c = 0; (c = *ptr) != '\0'; ++ptr) {
       if (c == '#') {
         goto fragment;
       }
-      ++out->query.len;
+      ++out->query.length;
     }
   }
 
@@ -200,9 +200,9 @@ query:
   */
 fragment:
   if (*ptr == '#') {
-    out->fragment.buf = ptr;
+    out->fragment.data = ptr;
     while (*ptr++ != '\0') {
-      ++out->fragment.len;
+      ++out->fragment.length;
     }
   }
 
@@ -246,26 +246,26 @@ static void
 merge(SerdStringView* const base, SerdStringView* const path)
 {
   size_t      up    = 0;
-  const char* begin = remove_dot_segments(path->buf, path->len, &up);
-  const char* end   = path->buf + path->len;
+  const char* begin = remove_dot_segments(path->data, path->length, &up);
+  const char* end   = path->data + path->length;
 
-  if (base->len) {
+  if (base->length) {
     // Find the up'th last slash
-    const char* base_last = (base->buf + base->len - 1);
+    const char* base_last = (base->data + base->length - 1);
     ++up;
     do {
       if (*base_last == '/') {
         --up;
       }
-    } while (up > 0 && (--base_last > base->buf));
+    } while (up > 0 && (--base_last > base->data));
 
     // Set path prefix
-    base->len = (size_t)(base_last - base->buf + 1);
+    base->length = (size_t)(base_last - base->data + 1);
   }
 
   // Set path suffix
-  path->buf = begin;
-  path->len = (size_t)(end - begin);
+  path->data   = begin;
+  path->length = (size_t)(end - begin);
 }
 
 /// See http://tools.ietf.org/html/rfc3986#section-5.2.2
@@ -278,31 +278,31 @@ serd_uri_resolve(const SerdURIView* const r,
   assert(base);
   assert(t);
 
-  if (!base->scheme.len) {
+  if (!base->scheme.length) {
     *t = *r; // Don't resolve against non-absolute URIs
     return;
   }
 
-  t->path_base.buf = "";
-  t->path_base.len = 0;
-  if (r->scheme.len) {
+  t->path_base.data   = "";
+  t->path_base.length = 0;
+  if (r->scheme.length) {
     *t = *r;
   } else {
-    if (r->authority.len) {
+    if (r->authority.length) {
       t->authority = r->authority;
       t->path      = r->path;
       t->query     = r->query;
     } else {
       t->path = r->path;
-      if (!r->path.len) {
+      if (!r->path.length) {
         t->path_base = base->path;
-        if (r->query.len) {
+        if (r->query.length) {
           t->query = r->query;
         } else {
           t->query = base->query;
         }
       } else {
-        if (r->path.buf[0] != '/') {
+        if (r->path.data[0] != '/') {
           t->path_base = base->path;
         }
         merge(&t->path_base, &t->path);
@@ -325,16 +325,16 @@ write_path_tail(SerdSink                 sink,
   SERD_DISABLE_NULL_WARNINGS
 
   size_t len = 0;
-  if (i < uri->path_base.len) {
-    len += sink(uri->path_base.buf + i, uri->path_base.len - i, stream);
+  if (i < uri->path_base.length) {
+    len += sink(uri->path_base.data + i, uri->path_base.length - i, stream);
   }
 
-  if (uri->path.buf) {
-    if (i < uri->path_base.len) {
-      len += sink(uri->path.buf, uri->path.len, stream);
+  if (uri->path.data) {
+    if (i < uri->path_base.length) {
+      len += sink(uri->path.data, uri->path.length, stream);
     } else {
-      const size_t j = (i - uri->path_base.len);
-      len += sink(uri->path.buf + j, uri->path.len - j, stream);
+      const size_t j = (i - uri->path_base.length);
+      len += sink(uri->path.data + j, uri->path.length - j, stream);
     }
   }
 
@@ -388,9 +388,9 @@ write_rel_path(SerdSink                 sink,
 static uint8_t
 serd_uri_path_starts_without_slash(const SerdURIView* uri)
 {
-  return ((uri->path_base.len || uri->path.len) &&
-          ((!uri->path_base.len || uri->path_base.buf[0] != '/') &&
-           (!uri->path.len || uri->path.buf[0] != '/')));
+  return ((uri->path_base.length || uri->path.length) &&
+          ((!uri->path_base.length || uri->path_base.data[0] != '/') &&
+           (!uri->path.length || uri->path.data[0] != '/')));
 }
 
 /// See http://tools.ietf.org/html/rfc3986#section-5.3
@@ -414,18 +414,18 @@ serd_uri_serialise_relative(const SerdURIView* const uri,
 
   SERD_DISABLE_NULL_WARNINGS
 
-  if (!relative || (!len && base->query.buf)) {
-    if (uri->scheme.buf) {
-      len += sink(uri->scheme.buf, uri->scheme.len, stream);
+  if (!relative || (!len && base->query.data)) {
+    if (uri->scheme.data) {
+      len += sink(uri->scheme.data, uri->scheme.length, stream);
       len += sink(":", 1, stream);
     }
-    if (uri->authority.buf) {
+    if (uri->authority.data) {
       len += sink("//", 2, stream);
-      len += sink(uri->authority.buf, uri->authority.len, stream);
+      len += sink(uri->authority.data, uri->authority.length, stream);
 
       const bool authority_ends_with_slash =
-        (uri->authority.len > 0 &&
-         uri->authority.buf[uri->authority.len - 1] == '/');
+        (uri->authority.length > 0 &&
+         uri->authority.data[uri->authority.length - 1] == '/');
 
       if (!authority_ends_with_slash &&
           serd_uri_path_starts_without_slash(uri)) {
@@ -437,14 +437,14 @@ serd_uri_serialise_relative(const SerdURIView* const uri,
     len += write_path_tail(sink, stream, uri, 0);
   }
 
-  if (uri->query.buf) {
+  if (uri->query.data) {
     len += sink("?", 1, stream);
-    len += sink(uri->query.buf, uri->query.len, stream);
+    len += sink(uri->query.data, uri->query.length, stream);
   }
 
-  if (uri->fragment.buf) {
-    // Note uri->fragment.buf includes the leading '#'
-    len += sink(uri->fragment.buf, uri->fragment.len, stream);
+  if (uri->fragment.data) {
+    // Note uri->fragment.data includes the leading '#'
+    len += sink(uri->fragment.data, uri->fragment.length, stream);
   }
 
   SERD_RESTORE_WARNINGS

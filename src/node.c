@@ -32,11 +32,11 @@
 static size_t
 serd_uri_string_length(const SerdURIView* const uri)
 {
-  size_t len = uri->path_base.len;
+  size_t len = uri->path_base.length;
 
-#define ADD_LEN(field, n_delims)     \
-  if ((field).len) {                 \
-    len += (field).len + (n_delims); \
+#define ADD_LEN(field, n_delims)        \
+  if ((field).length) {                 \
+    len += (field).length + (n_delims); \
   }
 
   ADD_LEN(uri->path, 1)      // + possible leading '/'

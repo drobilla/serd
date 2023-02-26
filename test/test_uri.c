@@ -161,9 +161,9 @@ test_uri_from_string(void)
 static inline bool
 chunk_equals(const SerdStringView* a, const SerdStringView* b)
 {
-  return (!a->len && !b->len && !a->buf && !b->buf) ||
-         (a->len && b->len && a->buf && b->buf &&
-          !strncmp((const char*)a->buf, (const char*)b->buf, a->len));
+  return (!a->length && !b->length && !a->data && !b->data) ||
+         (a->length && b->length && a->data && b->data &&
+          !strncmp((const char*)a->data, (const char*)b->data, a->length));
 }
 
 static void
