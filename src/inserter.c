@@ -47,6 +47,10 @@ can_insert(SerdWorld* const world, const SerdNode* const node)
       break;
 
     case SERD_CURIE:
+      serd_logf(world,
+                SERD_LOG_LEVEL_ERROR,
+                "attempt to insert CURIE %s into model",
+                serd_node_string(node));
       return false;
 
     case SERD_BLANK:

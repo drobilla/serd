@@ -188,6 +188,13 @@ main(const int argc, char* const* const argv)
     }
   }
 
+  // Enable direct CURIE transmission for lax streams where supported
+  if ((opts.common.input.flags & SERD_READ_LAX) &&
+      opts.common.output.syntax != SERD_NTRIPLES &&
+      opts.common.output.syntax != SERD_NQUADS) {
+    opts.common.input.flags |= SERD_READ_CURIES;
+  }
+
   // Every argument past the last option is an input
   opts.inputs   = argv + iter.a;
   opts.n_inputs = argc - iter.a;

@@ -279,7 +279,7 @@ example:
 
     serd_opts = "-I turtle -I verbatim -O turtle -O verbatim -O expanded"
     progs = [
-        "tools/serd-pipe " + serd_opts,
+        "tools/serd-pipe -I lax " + serd_opts,
         "tools/serd-sort " + serd_opts,
     ] + args.run
 

@@ -55,13 +55,33 @@ typedef enum {
   SERD_READ_VARIABLES = 1U << 1U,
 
   /**
+     Read prefixed name (CURIE) references exactly without expanding them.
+
+     Normally, the reader expands all prefixed names to full URIs based on the
+     prefixes in the current environment, and considers failure to expand a
+     syntax error.  This flag disables that expansion so prefixed names will be
+     emitted directly as CURIE nodes.
+
+     Note that these nodes rely on some context which can change over time, and
+     may even be undefined initially, so this flag should be used with caution.
+     Most applications should leave it off and avoid using CURIE nodes
+     entirely, because they are error-prone compared to working with complete
+     URIs.  However, it can be useful for error-tolerance, or in constrained or
+     high-performance streaming contexts.  For example, to re-indent a Turtle
+     file and ignore any possibly undefined prefixed names, this flag can be
+     used to disable expansion, which also boosts performance since it avoids
+     the lookup and expansion overhead.
+  */
+  SERD_READ_CURIES = 1U << 2U,
+
+  /**
      Read relative URI references exactly without resolving them.
 
      Normally, the reader expands all relative URIs against the base URI.  This
      flag disables that, so that URI references are passed to the sink exactly
      as they are in the input.
   */
-  SERD_READ_RELATIVE = 1U << 2U,
+  SERD_READ_RELATIVE = 1U << 3U,
 
   /**
      Read blank node labels without adding a prefix unique to the document.
@@ -75,7 +95,7 @@ typedef enum {
      corruption.  Specifically, if data from separate documents parsed with
      this flag is combined, the IDs from each document may clash.
   */
-  SERD_READ_GLOBAL = 1U << 3U,
+  SERD_READ_GLOBAL = 1U << 4U,
 
   /**
      Read generated blank node labels exactly without adjusting them.
@@ -90,7 +110,7 @@ typedef enum {
      anonymous nodes, the generated IDs for those nodes may clash with IDs from
      the input document.
   */
-  SERD_READ_GENERATED = 1U << 4U,
+  SERD_READ_GENERATED = 1U << 5U,
 
   /**
      Generate blank node labels with suffixes left-padded with zeros.
@@ -100,7 +120,7 @@ typedef enum {
      nodes).  In particular, this can be used to preserve blank node ordering
      from documents when the statements are sorted, such as in a model.
   */
-  SERD_READ_ORDERED = 1U << 5U,
+  SERD_READ_ORDERED = 1U << 6U,
 
   /**
      Read URIs with percent-encoded UTF-8 characters decoded.
@@ -109,7 +129,7 @@ typedef enum {
      preserved.  This flags enables UTF-8 decoding of URIs, so octet escapes
      like "%7E" in URIs will be decoded to UTF-8 characters like "~".
   */
-  SERD_READ_DECODED = 1U << 6U,
+  SERD_READ_DECODED = 1U << 7U,
 } SerdReaderFlag;
 
 /// Bitwise OR of SerdReaderFlag values

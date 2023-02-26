@@ -393,18 +393,23 @@ read_PrefixedName(SerdReader* const reader,
 
   skip_byte(reader, ':');
 
-  // Search environment for the prefix URI
-  const ZixStringView prefix     = serd_node_string_view(dest);
-  const ZixStringView prefix_uri = serd_env_find_prefix(reader->env, prefix);
-  if (!prefix_uri.length) {
-    return r_err(reader, st, "unknown prefix \"%s\"", prefix.data);
+  if ((reader->flags & SERD_READ_CURIES)) {
+    dest->type = SERD_CURIE;
+  } else {
+    // Search environment for the prefix URI
+    const ZixStringView name = serd_node_string_view(dest);
+    const ZixStringView uri  = serd_env_find_prefix(reader->env, name);
+    if (!uri.length) {
+      return r_err(reader, st, "unknown prefix \"%s\"", name.data);
+    }
+
+    // Pop back to the start of the string and replace it
+    serd_stack_pop_to(&reader->stack, string_start_offset);
+    dest->length = 0U;
+    dest->type   = SERD_URI;
+    push_bytes(reader, dest, (const uint8_t*)uri.data, uri.length);
   }
 
-  // Pop back to the start of the string
-  serd_stack_pop_to(&reader->stack, string_start_offset);
-  dest->length = 0U;
-  dest->type   = SERD_URI;
-  push_bytes(reader, dest, (const uint8_t*)prefix_uri.data, prefix_uri.length);
   if ((st = read_PN_LOCAL(reader, dest, ate_dot)) > SERD_FAILURE) {
     return st;
   }
