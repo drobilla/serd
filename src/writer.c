@@ -763,8 +763,8 @@ get_xsd_name(const SerdEnv* const env, const SerdNode* const datatype)
     SerdStringView suffix = {NULL, 0};
     // We can be a bit lazy/presumptive here due to grammar limitations
     if (!serd_env_expand(env, datatype, &prefix, &suffix)) {
-      if (!strcmp(prefix.buf, NS_XSD)) {
-        return suffix.buf;
+      if (!strcmp(prefix.data, NS_XSD)) {
+        return suffix.data;
       }
     }
   }
@@ -826,7 +826,7 @@ write_uri_node(SerdWriter* const writer, const SerdNode* const node)
         serd_env_qualify(writer->env, node, &prefix, &suffix)) {
       TRY(st, write_lname(writer, prefix.buf, prefix.n_bytes));
       TRY(st, esink(":", 1, writer));
-      return write_lname(writer, suffix.buf, suffix.len);
+      return write_lname(writer, suffix.data, suffix.length);
     }
   }
 
@@ -861,8 +861,8 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
 
   if (!supports_abbrev(writer)) {
     TRY(st, esink("<", 1, writer));
-    TRY(st, ewrite_uri(writer, prefix.buf, prefix.len));
-    TRY(st, ewrite_uri(writer, suffix.buf, suffix.len));
+    TRY(st, ewrite_uri(writer, prefix.data, prefix.length));
+    TRY(st, ewrite_uri(writer, suffix.data, suffix.length));
     TRY(st, esink(">", 1, writer));
   } else {
     TRY(st, write_lname(writer, node->buf, node->n_bytes));
