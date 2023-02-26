@@ -966,6 +966,29 @@ write_uri_node(SerdWriter* const     writer,
 }
 
 SERD_NODISCARD static SerdStatus
+write_curie_node(SerdWriter* const writer, const SerdNode* const node)
+{
+  writer->last_sep = SEP_NONE;
+
+  const ZixStringView curie = serd_node_string_view(node);
+  if (supports_abbrev(writer)) {
+    return write_lname(writer, curie.data, curie.length);
+  }
+
+  ZixStringView prefix = {NULL, 0};
+  ZixStringView suffix = {NULL, 0};
+  SerdStatus    st     = SERD_SUCCESS;
+  if ((st = serd_env_expand_in_place(writer->env, curie, &prefix, &suffix))) {
+    return w_err(writer, st, "unknown namespace prefix in '%s'", curie.data);
+  }
+
+  TRY(st, esink("<", 1, writer));
+  TRY(st, ewrite_uri(writer, prefix.data, prefix.length));
+  TRY(st, ewrite_uri(writer, suffix.data, suffix.length));
+  return esink(">", 1, writer);
+}
+
+SERD_NODISCARD static SerdStatus
 write_blank(SerdWriter* const        writer,
             const SerdNode*          node,
             const SerdField          field,
@@ -1023,6 +1046,9 @@ write_node(SerdWriter* const        writer,
     break;
   case SERD_URI:
     st = write_uri_node(writer, node, field);
+    break;
+  case SERD_CURIE:
+    st = write_curie_node(writer, node);
     break;
   case SERD_BLANK:
     st = write_blank(writer, node, field, flags);

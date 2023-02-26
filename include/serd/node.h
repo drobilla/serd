@@ -67,6 +67,14 @@ typedef enum {
   SERD_URI = 2,
 
   /**
+     CURIE, a shortened URI.
+
+     Value is an unquoted CURIE string relative to the current environment,
+     e.g. "rdf:type".  @see [CURIE Syntax 1.0](http://www.w3.org/TR/curie)
+  */
+  SERD_CURIE = 3,
+
+  /**
      A blank node.
 
      A blank node is a resource that has no URI.  The identifier of a blank
@@ -76,7 +84,7 @@ typedef enum {
      @see [RDF 1.1
      Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
   */
-  SERD_BLANK = 3,
+  SERD_BLANK = 4,
 
   /**
      A variable node.
@@ -89,7 +97,7 @@ typedef enum {
      @see [SPARQL 1.1 Query
      Language](https://www.w3.org/TR/sparql11-query/#rVar)
   */
-  SERD_VARIABLE = 4,
+  SERD_VARIABLE = 5,
 } SerdNodeType;
 
 /// Node flags, which ORed together make a #SerdNodeFlags
