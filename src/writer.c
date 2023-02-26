@@ -698,10 +698,10 @@ write_uri_node(SerdWriter* const writer,
     if (has_scheme && (writer->flags & SERD_WRITE_CURIED) &&
         serd_env_qualify(writer->env, node, &prefix, &suffix) &&
         is_name(prefix.buf, prefix.n_bytes) &&
-        is_name(suffix.buf, suffix.len)) {
+        is_name(suffix.data, suffix.length)) {
       write_uri(writer, prefix.buf, prefix.n_bytes);
       TRY(st, esink(":", 1, writer));
-      write_uri(writer, suffix.buf, suffix.len);
+      write_uri(writer, suffix.data, suffix.length);
       return SERD_SUCCESS;
     }
   }
@@ -758,8 +758,8 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
 
   if (!supports_abbrev(writer)) {
     TRY(st, esink("<", 1, writer));
-    write_uri(writer, prefix.buf, prefix.len);
-    write_uri(writer, suffix.buf, suffix.len);
+    write_uri(writer, prefix.data, prefix.length);
+    write_uri(writer, suffix.data, suffix.length);
     TRY(st, esink(">", 1, writer));
   } else {
     write_lname(writer, node->buf, node->n_bytes);
