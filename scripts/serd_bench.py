@@ -251,7 +251,7 @@ example:
     args = ap.parse_args(sys.argv[1:])
 
     progs = [
-        "tools/serd-pipe -I turtle -I verbatim -O turtle -O verbatim -O expanded"
+        "tools/serd-pipe -I turtle -I verbatim -I lax -O turtle -O verbatim -O expanded"
         "tools/serd-sort -I turtle -I verbatim -O turtle -O verbatim -O expanded"
     ] + args.run
     min_n = int(args.max / 10)
