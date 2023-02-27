@@ -119,39 +119,26 @@ read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
 
   while (st <= SERD_FAILURE) {
     const int c = eat_byte(reader);
-    switch (c) {
-    case ' ':
-    case '"':
-    case '<':
-    case '^':
-    case '`':
-    case '{':
-    case '|':
-    case '}':
-      return char_err(reader, "IRI", (uint32_t)c);
-
-    case '>':
+    if (c == '>') {
       return SERD_SUCCESS;
+    }
 
-    case '\\':
+    if (c >= 0x80) {
+      st = read_utf8_continuation(reader, node, (uint8_t)c);
+    } else if (c == '\\') {
       if (!(st = read_UCHAR(reader, node, &code)) &&
           (code == ' ' || code == '<' || code == '>')) {
-        return char_err(reader, "IRI", code);
+        st = char_err(reader, "IRI", code);
       }
-      break;
-
-    default:
-      if (c >= 0x80) {
-        st = read_utf8_continuation(reader, node, (uint8_t)c);
-      } else if (c > 0x20) {
+    } else if (c > 0x20 && c != '"' && c != '<' && c != '^' && c != '`' &&
+               c != '{' && c != '|' && c != '}') {
+      st = push_byte(reader, node, c);
+    } else if (c < 0) {
+      st = r_err(reader, SERD_BAD_SYNTAX, "unexpected end of file");
+    } else {
+      st = char_err(reader, "IRI", (uint32_t)c);
+      if (!reader->strict) {
         st = push_byte(reader, node, c);
-      } else if (c < 0) {
-        st = r_err(reader, SERD_BAD_SYNTAX, "unexpected end of file");
-      } else {
-        st = char_err(reader, "IRI", (uint32_t)c);
-        if (!reader->strict) {
-          st = push_byte(reader, node, c);
-        }
       }
     }
   }
