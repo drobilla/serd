@@ -98,7 +98,7 @@ serd_strcasecmp(const char* s1, const char* s2)
   return (c1 == c2) ? 0 : (c1 < c2) ? -1 : +1;
 }
 
-static inline uint32_t
+static inline uint8_t
 utf8_num_bytes(const uint8_t leading)
 {
   return ((leading & 0x80U) == 0x00U)   ? 1U  // Starts with `0'
@@ -108,7 +108,7 @@ utf8_num_bytes(const uint8_t leading)
                                         : 0U; // Invalid
 }
 
-static inline unsigned
+static inline uint8_t
 utf8_num_bytes_for_codepoint(const uint32_t code)
 {
   return (code < 0x00000080)   ? 1U
@@ -120,12 +120,12 @@ utf8_num_bytes_for_codepoint(const uint32_t code)
 
 /// Return the code point of a UTF-8 character with known length
 static inline uint32_t
-parse_counted_utf8_char(const uint8_t* const utf8, const size_t size)
+parse_counted_utf8_char(const uint8_t* const utf8, const uint8_t size)
 {
   uint32_t c = utf8[0] & ((1U << (8U - size)) - 1U);
 
   for (size_t i = 1; i < size; ++i) {
-    c = (c << 6) | (utf8[i] & 0x3FU);
+    c = (c << 6U) | (utf8[i] & 0x3FU);
   }
 
   return c;
@@ -133,7 +133,7 @@ parse_counted_utf8_char(const uint8_t* const utf8, const size_t size)
 
 /// Parse a UTF-8 character, set *size to the length, and return the code point
 static inline uint32_t
-parse_utf8_char(const uint8_t* const utf8, size_t* const size)
+parse_utf8_char(const uint8_t* const utf8, uint8_t* const size)
 {
   switch (*size = utf8_num_bytes(utf8[0])) {
   case 1:

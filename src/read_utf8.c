@@ -8,6 +8,8 @@
 
 #include <stdio.h>
 
+#define MAX_UTF8_BYTES 4U
+
 static SerdStatus
 skip_invalid_utf8(SerdReader* const reader)
 {
@@ -28,8 +30,8 @@ bad_char(SerdReader* const reader, const char* const fmt, const uint8_t c)
 
 static SerdStatus
 read_utf8_continuation_bytes(SerdReader* const reader,
-                             uint8_t           bytes[4],
-                             uint32_t* const   size,
+                             uint8_t           bytes[MAX_UTF8_BYTES],
+                             uint8_t* const    size,
                              const uint8_t     lead)
 {
   *size = utf8_num_bytes(lead);
@@ -39,7 +41,7 @@ read_utf8_continuation_bytes(SerdReader* const reader,
 
   bytes[0] = lead;
 
-  for (uint32_t i = 1U; i < *size; ++i) {
+  for (uint8_t i = 1U; i < *size; ++i) {
     const int b = peek_byte(reader);
     if (b == EOF) {
       return r_err(reader, SERD_NO_DATA, "unexpected end of input");
@@ -62,8 +64,8 @@ read_utf8_continuation(SerdReader* const reader,
                        SerdNode* const   dest,
                        const uint8_t     lead)
 {
-  uint32_t size     = 0;
-  uint8_t  bytes[8] = {lead, 0U, 0U, 0U, 0U, 0U, 0U, 0U};
+  uint8_t size                  = 0;
+  uint8_t bytes[MAX_UTF8_BYTES] = {lead, 0U, 0U, 0U};
 
   SerdStatus st = read_utf8_continuation_bytes(reader, bytes, &size, lead);
   if (st) {
@@ -79,8 +81,8 @@ read_utf8_code_point(SerdReader* const reader,
                      uint32_t* const   code,
                      const uint8_t     lead)
 {
-  uint32_t size     = 0U;
-  uint8_t  bytes[8] = {lead, 0U, 0U, 0U, 0U, 0U, 0U, 0U};
+  uint8_t size                  = 0U;
+  uint8_t bytes[MAX_UTF8_BYTES] = {lead, 0U, 0U, 0U};
 
   *code = 0U;
 

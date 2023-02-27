@@ -273,7 +273,7 @@ esink(const void* buf, size_t len, SerdWriter* writer)
 static size_t
 write_character(SerdWriter*    writer,
                 const uint8_t* utf8,
-                size_t*        size,
+                uint8_t*       size,
                 SerdStatus*    st)
 {
   char           escape[11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -335,7 +335,7 @@ write_uri(SerdWriter* writer, const char* utf8, size_t n_bytes, SerdStatus* st)
     }
 
     // Write UTF-8 character
-    size_t size = 0;
+    uint8_t size = 0;
     len += write_character(writer, (const uint8_t*)utf8 + i, &size, st);
     i += size;
     if (*st && !(writer->flags & SERD_WRITE_LAX)) {
@@ -525,7 +525,7 @@ write_text(SerdWriter* writer,
 
     if (escape_len == 0) {
       // No special escape for this character, write full Unicode escape
-      size_t size = 0;
+      uint8_t size = 0;
       write_character(writer, (const uint8_t*)utf8 + i - 1, &size, &st);
       if (st && !(writer->flags & SERD_WRITE_LAX)) {
         return st;
@@ -537,7 +537,7 @@ write_text(SerdWriter* writer,
         for (; i < n_bytes && (utf8[i] & 0x80); ++i) {
         }
       } else {
-        i += size - 1;
+        i += size - 1U;
       }
     }
   }
