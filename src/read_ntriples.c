@@ -155,7 +155,9 @@ read_pct_encoded(SerdReader* const reader, SerdNode* const node)
     TRY(st, eat_byte_check(reader, '%'));
     TRY(st, read_hex_byte(reader, digits));
 
-    byte = (uint8_t)strtoul((const char*)hex + offset, &endptr, 16);
+    const uint8_t hi = hex_digit_value(digits[0]);
+    const uint8_t lo = hex_digit_value(digits[1]);
+    byte             = (uint8_t)((hi << 4U) | lo);
     if (!is_utf8_continuation(byte)) {
       return SERD_BAD_TEXT;
     }
@@ -434,18 +436,18 @@ read_UCHAR(SerdReader* const reader,
   TRY(st, skip_byte(reader, b));
 
   // Read character code point in hex
-  uint8_t buf[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-  for (unsigned i = 0; i < length; ++i) {
+  uint8_t  buf[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  uint32_t code   = 0U;
+  for (unsigned i = 0U; i < length; ++i) {
     if (!(buf[i] = read_HEX(reader))) {
       return SERD_BAD_SYNTAX;
     }
+
+    code = (code << (i ? 4U : 0U)) | hex_digit_value(buf[i]);
   }
 
-  // Parse code point from buf, then reuse buf to write the UTF-8
-  char*          endptr = NULL;
-  const uint32_t code   = (uint32_t)strtoul((const char*)buf, &endptr, 16);
-  const unsigned size   = utf8_from_codepoint(buf, code);
-
+  // Encode code point as UTF-8 (reusing buf)
+  const unsigned size = utf8_from_codepoint(buf, code);
   if (!size) {
     *code_point = 0xFFFD;
     return (reader->strict
