@@ -179,6 +179,13 @@ read_pct_encoded(SerdReader* const reader, SerdNode* const node)
 }
 
 static SerdStatus
+r_iri_char_err(SerdReader* const reader, const uint32_t code)
+{
+  return r_err(
+    reader, SERD_BAD_SYNTAX, "U+%04X is not a valid IRI character", code);
+}
+
+static SerdStatus
 read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
 {
   SerdStatus st   = SERD_SUCCESS;
@@ -188,50 +195,28 @@ read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
     const int c = peek_byte(reader);
     skip_byte(reader, c);
 
-    switch (c) {
-    case ' ':
-    case '"':
-    case '<':
-    case '^':
-    case '`':
-    case '{':
-    case '|':
-    case '}':
-      return r_err(
-        reader, SERD_BAD_SYNTAX, "'%c' is not a valid IRI character", c);
-
-    case '>':
+    if (c == '>') {
       return SERD_SUCCESS;
+    }
 
-    case '%':
-      st = (reader->flags & SERD_READ_DECODED) ? read_pct_encoded(reader, node)
-                                               : push_byte(reader, node, c);
-      break;
-
-    case '\\':
+    if (c >= 0x80) {
+      st = read_utf8_continuation(reader, node, (uint8_t)c);
+    } else if (c == '%' && (reader->flags & SERD_READ_DECODED)) {
+      st = read_pct_encoded(reader, node);
+    } else if (c == '\\') {
       if (!(st = read_UCHAR(reader, node, &code)) &&
           (code == ' ' || code == '<' || code == '>')) {
-        return r_err(
-          reader, SERD_BAD_SYNTAX, "U+%04X is not a valid IRI character", code);
+        st = r_iri_char_err(reader, code);
       }
-      break;
-
-    default:
-      if (c >= 0x80) {
-        st = read_utf8_continuation(reader, node, (uint8_t)c);
-      } else if (c > 0x20) {
+    } else if (c > 0x20 && c != '"' && c != '<' && c != '^' && c != '`' &&
+               c != '{' && c != '|' && c != '}') {
+      st = push_byte(reader, node, c);
+    } else if (c < 0) {
+      st = r_err(reader, SERD_BAD_SYNTAX, "unexpected end of file");
+    } else {
+      st = r_iri_char_err(reader, (uint32_t)c);
+      if (!reader->strict) {
         st = push_byte(reader, node, c);
-      } else if (c < 0) {
-        st = r_err(reader, SERD_BAD_SYNTAX, "unexpected end of file");
-      } else {
-        st = r_err(reader,
-                   SERD_BAD_SYNTAX,
-                   "control character U+%04X is not a valid IRI character",
-                   (uint32_t)c);
-
-        if (!reader->strict) {
-          st = push_byte(reader, node, c);
-        }
       }
     }
   }
