@@ -13,8 +13,8 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 static SerdStatus
@@ -81,9 +81,10 @@ serd_parse_file_uri(ZixAllocator* const allocator,
       if (!(st = write_file_uri_char('%', &buffer))) {
         ++s;
       }
-    } else if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
-      const char code[3] = {*(s + 1), *(s + 2), 0};
-      const char c       = (char)strtoul(code, NULL, 16);
+    } else if (is_hexdig(s[1]) && is_hexdig(s[2])) {
+      const uint8_t hi = hex_digit_value((uint8_t)s[1]);
+      const uint8_t lo = hex_digit_value((uint8_t)s[2]);
+      const char    c  = (char)((hi << 4U) | lo);
       if (!(st = write_file_uri_char(c, &buffer))) {
         s += 2;
       }

@@ -95,6 +95,12 @@ is_windows_path(const char* path)
          (path[2] == '/' || path[2] == '\\');
 }
 
+static inline uint8_t
+hex_digit_value(const uint8_t c)
+{
+  return (uint8_t)((c > '9') ? ((c & ~0x20) - 'A' + 10) : (c - '0'));
+}
+
 static inline char
 serd_to_lower(const char c)
 {
