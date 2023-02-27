@@ -293,8 +293,10 @@ write_UCHAR(SerdWriter* const writer, const uint8_t* const utf8)
 {
   VariableResult result     = {SERD_SUCCESS, 0U, 0U};
   char           escape[11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  const uint32_t c          = parse_utf8_char(utf8, &result.read_count);
+  uint8_t        c_size     = 0U;
+  const uint32_t c          = parse_utf8_char(utf8, &c_size);
 
+  result.read_count = c_size;
   if (result.read_count == 0U) {
     result.status =
       w_err(writer, SERD_BAD_TEXT, "invalid UTF-8 start: %X", utf8[0]);
@@ -516,7 +518,7 @@ write_lname(SerdWriter* writer, const char* utf8, const size_t n_bytes)
      sets of valid characters. */
 
   // Write first character
-  size_t    first_size = 0U;
+  uint8_t   first_size = 0U;
   const int first = (int)parse_utf8_char((const uint8_t*)utf8, &first_size);
   if (is_PN_CHARS_U(first) || first == ':' || is_digit(first)) {
     TRY(st, esink(utf8, first_size, writer));
@@ -527,7 +529,7 @@ write_lname(SerdWriter* writer, const char* utf8, const size_t n_bytes)
   // Write middle characters
   size_t i = first_size;
   while (i < n_bytes - 1U) {
-    size_t    c_size = 0U;
+    uint8_t   c_size = 0U;
     const int c      = (int)parse_utf8_char((const uint8_t*)utf8 + i, &c_size);
     if (i + c_size >= n_bytes) {
       break;
@@ -544,7 +546,7 @@ write_lname(SerdWriter* writer, const char* utf8, const size_t n_bytes)
 
   // Write last character
   if (i < n_bytes) {
-    size_t    last_size = 0U;
+    uint8_t   last_size = 0U;
     const int last = (int)parse_utf8_char((const uint8_t*)utf8 + i, &last_size);
     if (is_PN_CHARS(last) || last == ':') {
       st = esink(&utf8[i], last_size, writer);
