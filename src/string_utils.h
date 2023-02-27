@@ -151,7 +151,7 @@ parse_utf8_char(const uint8_t* const utf8, uint8_t* const size)
   case 4:
     return parse_counted_utf8_char(utf8, *size);
   default:
-    *size = 0;
+    *size = 0U;
     return 0U;
   }
 }

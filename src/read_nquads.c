@@ -5,7 +5,6 @@
 
 #include "byte_source.h"
 #include "caret.h"
-#include "node.h"
 #include "read_ntriples.h"
 #include "reader.h"
 #include "stack.h"
@@ -45,7 +44,7 @@ read_statement(SerdReader* const reader)
   }
 
   // Preserve the caret for error reporting and read object
-  SerdCaret orig_caret = reader->source->caret;
+  SerdCaret orig_caret = reader->source.caret;
   if ((st = read_nt_object(reader, &ctx.object, &ate_dot)) ||
       (st = skip_horizontal_whitespace(reader))) {
     return st;
@@ -53,7 +52,7 @@ read_statement(SerdReader* const reader)
 
   if (!ate_dot) {
     if (peek_byte(reader) == '.') {
-      eat_byte(reader);
+      skip_byte(reader, '.');
     } else {
       TRY(st, read_graphLabel(reader, &ctx.graph));
       skip_horizontal_whitespace(reader);
@@ -61,7 +60,6 @@ read_statement(SerdReader* const reader)
     }
   }
 
-  serd_node_zero_pad(ctx.object);
   const SerdStatement statement = {
     {ctx.subject, ctx.predicate, ctx.object, ctx.graph}, &orig_caret};
 
@@ -118,7 +116,6 @@ read_nquadsDoc(SerdReader* const reader)
   for (st = SERD_SUCCESS; !st;) {
     st = read_line(reader);
     serd_stack_pop_to(&reader->stack, orig_stack_size);
-
     if (st > SERD_FAILURE && !reader->strict && tolerate_status(reader, st)) {
       serd_reader_skip_until_byte(reader, '\n');
       st = SERD_SUCCESS;
