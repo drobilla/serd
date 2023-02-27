@@ -526,33 +526,18 @@ write_lname(SerdWriter* writer, const char* utf8, const size_t n_bytes)
     TRY(st, write_lname_escape(writer, utf8, first_size));
   }
 
-  // Write middle characters
-  size_t i = first_size;
-  while (i < n_bytes - 1U) {
+  // Write middle and last characters
+  for (size_t i = first_size; i < n_bytes;) {
     uint8_t   c_size = 0U;
     const int c      = (int)parse_utf8_char((const uint8_t*)utf8 + i, &c_size);
-    if (i + c_size >= n_bytes) {
-      break;
-    }
 
-    if (is_PN_CHARS(c) || c == '.' || c == ':') {
+    if (is_PN_CHARS(c) || c == ':' || (c == '.' && (i + 1U < n_bytes))) {
       TRY(st, esink(&utf8[i], c_size, writer));
     } else {
       TRY(st, write_lname_escape(writer, &utf8[i], c_size));
     }
 
     i += c_size;
-  }
-
-  // Write last character
-  if (i < n_bytes) {
-    uint8_t   last_size = 0U;
-    const int last = (int)parse_utf8_char((const uint8_t*)utf8 + i, &last_size);
-    if (is_PN_CHARS(last) || last == ':') {
-      st = esink(&utf8[i], last_size, writer);
-    } else {
-      st = write_lname_escape(writer, &utf8[i], last_size);
-    }
   }
 
   return st;
