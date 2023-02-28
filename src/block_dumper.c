@@ -4,7 +4,6 @@
 #include "block_dumper.h"
 
 #include "memory.h"
-#include "system.h"
 #include "warnings.h"
 
 #include "zix/allocator.h"

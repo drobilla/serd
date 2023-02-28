@@ -67,13 +67,6 @@
 #    endif
 #  endif
 
-// POSIX.1-2001: strerror_r()
-#  ifndef HAVE_STRERROR_R
-#    if defined(_POSIX_VERSION) && _POSIX_VERSION >= 200112L
-#      define HAVE_STRERROR_R
-#    endif
-#  endif
-
 #endif // !defined(SERD_NO_DEFAULT_CONFIG)
 
 /*
@@ -94,12 +87,6 @@
 #  define USE_POSIX_FADVISE 1
 #else
 #  define USE_POSIX_FADVISE 0
-#endif
-
-#ifdef HAVE_STRERROR_R
-#  define USE_STRERROR_R 1
-#else
-#  define USE_STRERROR_R 0
 #endif
 
 #endif // SERD_SRC_SERD_CONFIG_H

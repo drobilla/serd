@@ -83,10 +83,6 @@ else
       'fcntl.h',
       'posix_fadvise(0, 0, 4096, POSIX_FADV_SEQUENTIAL);',
     ],
-    'strerror_r': [
-      'string.h',
-      'char buf[128]; return strerror_r(0, &buf, sizeof(buf));',
-    ],
   }
 
   # Define HAVE_SOMETHING symbols for all detected features
@@ -166,7 +162,6 @@ sources = files(
   'src/statement.c',
   'src/string.c',
   'src/syntax.c',
-  'src/system.c',
   'src/uri.c',
   'src/world.c',
   'src/writer.c',

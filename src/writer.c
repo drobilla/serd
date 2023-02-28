@@ -8,7 +8,6 @@
 #include "node.h"
 #include "sink.h"
 #include "string_utils.h"
-#include "system.h"
 #include "try.h"
 #include "turtle.h"
 #include "uri_utils.h"
@@ -26,11 +25,11 @@
 #include "serd/syntax.h"
 #include "serd/uri.h"
 #include "serd/world.h"
+#include "serd/write_result.h"
 #include "serd/writer.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
-#include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -258,54 +257,51 @@ pop_context(SerdWriter* writer)
   writer->context = writer->anon_stack[--writer->anon_stack_size];
 }
 
-SERD_NODISCARD static size_t
-sink(const void* buf, size_t len, SerdWriter* writer)
+SERD_NODISCARD static inline SerdWriteResult
+wsink(const void* buf, size_t len, SerdWriter* writer)
 {
-  const size_t written = serd_block_dumper_write(buf, 1, len, &writer->output);
-
-  if (written != len) {
-    if (errno) {
-      char message[1024] = {0};
-      serd_system_strerror(errno, message, sizeof(message));
-
-      w_err(writer, SERD_BAD_WRITE, "write error (%s)\n", message);
-    } else {
-      w_err(writer, SERD_BAD_WRITE, "write error\n");
-    }
-  }
-
-  return written;
+  return serd_block_dumper_write(&writer->output, buf, len);
 }
 
 SERD_NODISCARD static inline SerdStatus
 esink(const void* buf, size_t len, SerdWriter* writer)
 {
-  return sink(buf, len, writer) == len ? SERD_SUCCESS : SERD_BAD_WRITE;
+  return serd_block_dumper_write(&writer->output, buf, len).status;
+}
+
+SERD_NODISCARD static inline VariableResult
+add_wresult(const VariableResult vr, const SerdWriteResult wr)
+{
+  const VariableResult r = {
+    wr.status, vr.read_count, vr.write_count + wr.count};
+  return r;
 }
 
 static VariableResult
 write_UCHAR(SerdWriter* const writer, const uint8_t* const utf8)
 {
-  VariableResult result     = {SERD_SUCCESS, 0U, 0U};
   char           escape[11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   uint8_t        c_size     = 0U;
   const uint32_t c          = parse_utf8_char(utf8, &c_size);
 
-  result.read_count = c_size;
-  if (result.read_count == 0U) {
-    result.status =
-      w_err(writer, SERD_BAD_TEXT, "invalid UTF-8 start: %X", utf8[0]);
+  SerdWriteResult wr = {SERD_SUCCESS, 0U};
+  if (c_size == 0U) {
+    wr = wsink(replacement_char, sizeof(replacement_char), writer);
+    if (!wr.status) {
+      wr.status = w_err(writer, SERD_BAD_TEXT, "bad UTF-8 start: %X", utf8[0]);
+    }
   } else if (c <= 0xFFFF) {
     // Write short (4 digit) escape
     snprintf(escape, sizeof(escape), "\\u%04X", c);
-    result.write_count = sink(escape, 6, writer);
+    wr = wsink(escape, 6, writer);
   } else {
     // Write long (8 digit) escape
     snprintf(escape, sizeof(escape), "\\U%08X", c);
-    result.write_count = sink(escape, 10, writer);
+    wr = wsink(escape, 10, writer);
   }
 
-  return result;
+  const VariableResult vr = {wr.status, c_size, wr.count};
+  return vr;
 }
 
 static VariableResult
@@ -326,30 +322,23 @@ write_text_character(SerdWriter* const writer, const uint8_t* const utf8)
   }
 
   // Write the UTF-8 encoding directly to the output
-  result.write_count = sink(utf8, result.read_count, writer);
-  if (result.write_count != result.read_count) {
-    result.status = SERD_BAD_WRITE;
-  }
-
-  return result;
+  return add_wresult(result, wsink(utf8, result.read_count, writer));
 }
 
 static VariableResult
 write_uri_character(SerdWriter* const writer, const uint8_t* const utf8)
 {
-  VariableResult result = {SERD_SUCCESS, 0U, 0U};
-  const uint8_t  c      = utf8[0];
+  const uint8_t c = utf8[0];
 
   if ((c & 0x80U) && !(writer->flags & SERD_WRITE_ASCII)) {
+    VariableResult result = {SERD_SUCCESS, 0U, 0U};
+
     // Parse the leading byte to get the UTF-8 encoding size
     if (!(result.read_count = utf8_num_bytes(c))) {
       result.status = SERD_BAD_TEXT;
     } else {
       // Write the UTF-8 encoding directly to the output
-      result.write_count = sink(utf8, result.read_count, writer);
-      if (result.write_count != result.read_count) {
-        result.status = SERD_BAD_WRITE;
-      }
+      result = add_wresult(result, wsink(utf8, result.read_count, writer));
     }
 
     return result;
@@ -415,10 +404,11 @@ write_uri(SerdWriter* writer, const char* utf8, const size_t n_bytes)
 
     if (r.read_count == 0) {
       // Corrupt input, write percent-encoded bytes and scan to next start
-      char escape[4] = {0, 0, 0, 0};
-      for (; i < n_bytes && !is_utf8_leading((uint8_t)utf8[i]); ++i) {
+      for (char escape[4] = {0, 0, 0, 0};
+           !result.status && i < n_bytes && !is_utf8_leading((uint8_t)utf8[i]);
+           ++i) {
         snprintf(escape, sizeof(escape), "%%%02X", (uint8_t)utf8[i]);
-        result.write_count += sink(escape, 3, writer);
+        result = add_wresult(result, wsink(escape, 3, writer));
       }
     }
   }
@@ -515,7 +505,7 @@ write_lname(SerdWriter* writer, const char* utf8, const size_t n_bytes)
   return st;
 }
 
-SERD_NODISCARD static size_t
+SERD_NODISCARD static SerdStatus
 write_long_string_escape(SerdWriter* const writer,
                          const size_t      n_consecutive_quotes,
                          const bool        is_last,
@@ -523,46 +513,46 @@ write_long_string_escape(SerdWriter* const writer,
 {
   switch (c) {
   case '\\':
-    return sink("\\\\", 2, writer);
+    return esink("\\\\", 2, writer);
 
   case '\b':
-    return sink("\\b", 2, writer);
+    return esink("\\b", 2, writer);
 
   case '\n':
   case '\r':
   case '\t':
   case '\f':
-    return sink(&c, 1, writer); // Write character as-is
+    return esink(&c, 1, writer); // Write character as-is
 
   case '\"':
     if (n_consecutive_quotes >= 3 || is_last) {
       // Two quotes in a row, or quote at string end, escape
-      return sink("\\\"", 2, writer);
+      return esink("\\\"", 2, writer);
     }
 
-    return sink(&c, 1, writer);
+    return esink(&c, 1, writer);
 
   default:
     break;
   }
 
-  return 0;
+  return SERD_FAILURE;
 }
 
-SERD_NODISCARD static size_t
+SERD_NODISCARD static SerdStatus
 write_short_string_escape(SerdWriter* const writer, const char c)
 {
   switch (c) {
   case '\\':
-    return sink("\\\\", 2, writer);
+    return esink("\\\\", 2, writer);
   case '\n':
-    return sink("\\n", 2, writer);
+    return esink("\\n", 2, writer);
   case '\r':
-    return sink("\\r", 2, writer);
+    return esink("\\r", 2, writer);
   case '\t':
-    return sink("\\t", 2, writer);
+    return esink("\\t", 2, writer);
   case '"':
-    return sink("\\\"", 2, writer);
+    return esink("\\\"", 2, writer);
   default:
     break;
   }
@@ -570,15 +560,15 @@ write_short_string_escape(SerdWriter* const writer, const char c)
   if (writer->syntax == SERD_TURTLE) {
     switch (c) {
     case '\b':
-      return sink("\\b", 2, writer);
+      return esink("\\b", 2, writer);
     case '\f':
-      return sink("\\f", 2, writer);
+      return esink("\\f", 2, writer);
     default:
       break;
     }
   }
 
-  return 0;
+  return SERD_FAILURE;
 }
 
 SERD_NODISCARD static bool
@@ -590,7 +580,8 @@ text_must_escape(const uint8_t c)
 SERD_NODISCARD static SerdStatus
 write_short_text(SerdWriter* writer, const char* utf8, size_t n_bytes)
 {
-  VariableResult vr = {SERD_SUCCESS, 0U, 0U};
+  const bool     lax = (writer->flags & SERD_WRITE_LAX);
+  VariableResult vr  = {SERD_SUCCESS, 0U, 0U};
   for (size_t i = 0; !vr.status && i < n_bytes;) {
     // Write leading chunk as a single fast bulk write
     const size_t j = next_text_index(utf8, i, n_bytes, text_must_escape);
@@ -600,21 +591,19 @@ write_short_text(SerdWriter* writer, const char* utf8, size_t n_bytes)
     }
 
     // Try to write character as a special short escape (newline and friends)
-    const char   in         = utf8[i];
-    const size_t escape_len = write_short_string_escape(writer, in);
-
-    if (!escape_len) {
+    const char in = utf8[i];
+    if (!(vr.status = write_short_string_escape(writer, in))) {
+      vr.read_count = 1U;
+    } else if (vr.status == SERD_FAILURE) {
       // No special escape for this character, write full Unicode escape
       vr = write_text_character(writer, (const uint8_t*)utf8 + i);
-      i += vr.read_count;
+    }
 
-      if (!vr.read_count && (writer->flags & SERD_WRITE_LAX)) {
-        // Corrupt input, write replacement char and scan to the next start
-        vr.status = esink(replacement_char, sizeof(replacement_char), writer);
-        i += next_text_index(utf8, i, n_bytes, is_utf8_leading);
-      }
+    if (!vr.read_count) {
+      i         = next_text_index(utf8, i + 1U, n_bytes, is_utf8_leading);
+      vr.status = lax ? SERD_SUCCESS : vr.status;
     } else {
-      ++i;
+      i += vr.read_count;
     }
   }
 
@@ -624,6 +613,7 @@ write_short_text(SerdWriter* writer, const char* utf8, size_t n_bytes)
 SERD_NODISCARD static SerdStatus
 write_long_text(SerdWriter* writer, const char* utf8, size_t n_bytes)
 {
+  const bool     lax      = (writer->flags & SERD_WRITE_LAX);
   size_t         n_quotes = 0;
   VariableResult vr       = {SERD_SUCCESS, 0U, 0U};
   for (size_t i = 0; !vr.status && i < n_bytes;) {
@@ -638,24 +628,23 @@ write_long_text(SerdWriter* writer, const char* utf8, size_t n_bytes)
       break; // Reached end
     }
 
-    // Try to write character as a special long escape (newline and friends)
-    const char in = utf8[i];
-    n_quotes      = (in == '\"') ? (n_quotes + 1U) : 0;
-    const size_t escape_len =
-      write_long_string_escape(writer, n_quotes, i + 1U == n_bytes, in);
+    const bool last = i + 1U == n_bytes;
+    n_quotes        = (utf8[i] == '\"') ? (n_quotes + 1U) : 0U;
 
-    if (!escape_len) {
+    // Try to write character as a special long escape (newline and friends)
+    vr.status = write_long_string_escape(writer, n_quotes, last, utf8[i]);
+    if (!vr.status) {
+      vr.read_count = 1U;
+    } else if (vr.status == SERD_FAILURE) {
       // No special escape for this character, write full Unicode escape
       vr = write_UCHAR(writer, (const uint8_t*)utf8 + i);
-      i += vr.read_count;
+    }
 
-      if (!vr.read_count && (writer->flags & SERD_WRITE_LAX)) {
-        // Corrupt input, write replacement char and scan to the next start
-        vr.status = esink(replacement_char, sizeof(replacement_char), writer);
-        i += next_text_index(utf8, i, n_bytes, is_utf8_leading);
-      }
+    if (!vr.read_count) {
+      i         = next_text_index(utf8, i + 1U, n_bytes, is_utf8_leading);
+      vr.status = lax ? SERD_SUCCESS : vr.status;
     } else {
-      ++i;
+      i += vr.read_count;
     }
   }
 
