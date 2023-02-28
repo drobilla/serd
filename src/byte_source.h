@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+/// The partially inlinable source interface used by the reader
 typedef struct {
   SerdInputStream* in;         ///< Input stream to read from
   size_t           block_size; ///< Number of bytes to read at a time
