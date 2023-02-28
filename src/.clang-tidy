@@ -8,7 +8,6 @@ Checks: >
   -bugprone-multi-level-implicit-pointer-conversion,
   -cert-err33-c,
   -clang-analyzer-optin.core.EnumCastOutOfRange,
-  -concurrency-mt-unsafe,
   -hicpp-multiway-paths-covered,
   -hicpp-signed-bitwise,
   -llvm-header-guard,
