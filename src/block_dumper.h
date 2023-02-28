@@ -8,6 +8,7 @@
 
 #include "serd/output_stream.h"
 #include "serd/status.h"
+#include "serd/stream_result.h"
 #include "serd/world.h"
 #include "zix/allocator.h"
 #include "zix/attributes.h"
@@ -58,40 +59,43 @@ serd_block_dumper_close(SerdBlockDumper* ZIX_NONNULL dumper);
    This works like any other SerdWriteFunc, but will append to an internal
    buffer and only actually write to the output when a whole block is ready.
 */
-static inline size_t
-serd_block_dumper_write(const void* ZIX_NONNULL            buf,
-                        const size_t                       size,
-                        const size_t                       nmemb,
-                        SerdBlockDumper* ZIX_NONNULL const dumper)
+static inline SerdStreamResult
+serd_block_dumper_write(SerdBlockDumper* ZIX_NONNULL const dumper,
+                        const void* ZIX_NONNULL            buf,
+                        const size_t                       size)
 {
+  SerdStreamResult              result     = {SERD_SUCCESS, 0U};
+  const size_t                  block_size = dumper->block_size;
+  const SerdOutputStream* const out        = dumper->out;
+
   SERD_DISABLE_NULL_WARNINGS
 
-  if (dumper->block_size == 1) {
-    return dumper->out->write(buf, size, nmemb, dumper->out->stream);
+  if (block_size == 1) {
+    result.count  = out->write(buf, 1U, size, out->stream);
+    result.status = result.count == size ? SERD_SUCCESS : SERD_BAD_WRITE;
+    return result;
   }
 
-  size_t       len      = size * nmemb;
-  const size_t orig_len = len;
-  while (len) {
-    const size_t space = dumper->block_size - dumper->size;
-    const size_t n     = space < len ? space : len;
+  while (!result.status && result.count < size) {
+    const size_t unwritten = size - result.count;
+    const size_t space     = block_size - dumper->size;
+    const size_t n         = space < unwritten ? space : unwritten;
 
     // Write as much as possible into the remaining buffer space
-    memcpy(dumper->buf + dumper->size, buf, n);
+    memcpy(dumper->buf + dumper->size, (const char*)buf + result.count, n);
     dumper->size += n;
-    buf = (const char*)buf + n;
-    len -= n;
+    result.count += n;
 
     // Flush block if buffer is full
-    if (dumper->size == dumper->block_size) {
-      dumper->out->write(
-        dumper->buf, 1, dumper->block_size, dumper->out->stream);
-      dumper->size = 0;
+    if (dumper->size == block_size) {
+      const size_t n_out = out->write(dumper->buf, 1, block_size, out->stream);
+      result.status = (n_out != block_size) ? SERD_BAD_WRITE : SERD_SUCCESS;
+      dumper->size  = 0;
     }
   }
 
   SERD_RESTORE_WARNINGS
-  return orig_len;
+  return result;
 }
 
 #endif // SERD_SRC_DUMPER_H
