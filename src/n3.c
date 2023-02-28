@@ -1,4 +1,4 @@
-// Copyright 2011-2020 David Robillard <d@drobilla.net>
+// Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #include "byte_source.h"
@@ -323,6 +323,21 @@ eat_delim(SerdReader* const reader, const uint8_t delim)
   return false;
 }
 
+static SerdStatus
+read_string_escape(SerdReader* const    reader,
+                   const Ref            ref,
+                   SerdNodeFlags* const flags)
+{
+  SerdStatus st   = SERD_SUCCESS;
+  uint32_t   code = 0;
+  if ((st = read_ECHAR(reader, ref, flags)) &&
+      (st = read_UCHAR(reader, ref, &code))) {
+    return r_err(reader, st, "invalid escape '\\%c'\n", peek_byte(reader));
+  }
+
+  return st;
+}
+
 // STRING_LITERAL_LONG_QUOTE and STRING_LITERAL_LONG_SINGLE_QUOTE
 // Initial triple quotes are already eaten by caller
 static SerdStatus
@@ -337,11 +352,7 @@ read_STRING_LITERAL_LONG(SerdReader* const    reader,
     const int c = peek_byte(reader);
     if (c == '\\') {
       skip_byte(reader, c);
-      uint32_t code = 0;
-      if ((st = read_ECHAR(reader, ref, flags)) &&
-          (st = read_UCHAR(reader, ref, &code))) {
-        return r_err(reader, st, "invalid escape '\\%c'\n", peek_byte(reader));
-      }
+      st = read_string_escape(reader, ref, flags);
     } else if (c == q) {
       skip_byte(reader, q);
       const int q2 = eat_byte_safe(reader, peek_byte(reader));
@@ -375,8 +386,7 @@ read_STRING_LITERAL(SerdReader* const    reader,
   SerdStatus st = SERD_SUCCESS;
 
   while (!st || !reader->strict) {
-    const int c    = peek_byte(reader);
-    uint32_t  code = 0;
+    const int c = peek_byte(reader);
     switch (c) {
     case EOF:
       return r_err(
@@ -386,9 +396,8 @@ read_STRING_LITERAL(SerdReader* const    reader,
       return r_err(reader, SERD_ERR_BAD_SYNTAX, "line end in short string\n");
     case '\\':
       skip_byte(reader, c);
-      if ((st = read_ECHAR(reader, ref, flags)) &&
-          (st = read_UCHAR(reader, ref, &code))) {
-        return r_err(reader, st, "invalid escape '\\%c'\n", peek_byte(reader));
+      if ((st = read_string_escape(reader, ref, flags))) {
+        return st;
       }
       break;
     default:
