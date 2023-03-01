@@ -10,6 +10,7 @@ serd (0.31.0) unstable; urgency=medium
   * Fix crash when trying to read chunks without starting
   * Fix hang when skipping an error at EOF when lax parsing
   * Fix incorrect parsing of strange quote escape patterns
+  * Fix possible hang when writing nested Turtle lists
   * Gracefully handle bad characters in Turtle blank node syntax
   * Gracefully handle bad characters in Turtle datatype syntax
   * Improve serdi man page
@@ -17,7 +18,7 @@ serd (0.31.0) unstable; urgency=medium
   * Replace duplicated dox_to_sphinx script with sphinxygen dependency
   * Test header for warnings more strictly
 
- -- David Robillard <d@drobilla.net>  Wed, 01 Mar 2023 00:36:43 +0000
+ -- David Robillard <d@drobilla.net>  Wed, 01 Mar 2023 03:38:47 +0000
 
 serd (0.30.16) stable; urgency=medium
 

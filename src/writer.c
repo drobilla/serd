@@ -1,4 +1,4 @@
-// Copyright 2011-2020 David Robillard <d@drobilla.net>
+// Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #include "byte_sink.h"
@@ -119,6 +119,14 @@ static bool
 supports_uriref(const SerdWriter* writer)
 {
   return writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG;
+}
+
+static void
+deindent(SerdWriter* writer)
+{
+  if (writer->indent) {
+    --writer->indent;
+  }
 }
 
 static void
@@ -766,7 +774,7 @@ write_list_obj(SerdWriter*        writer,
                const SerdNode*    lang)
 {
   if (!strcmp((const char*)object->buf, NS_RDF "nil")) {
-    --writer->indent;
+    deindent(writer);
     write_sep(writer, SEP_LIST_END);
     return true;
   }
@@ -856,7 +864,7 @@ serd_writer_write_statement(SerdWriter*        writer,
       write_sep(writer, SEP_END_O);
       write_node(writer, object, datatype, lang, FIELD_OBJECT, flags);
       if (!(flags & SERD_ANON_O_BEGIN)) {
-        --writer->indent;
+        deindent(writer);
       }
     } else {
       // Abbreviate S
@@ -868,8 +876,7 @@ serd_writer_write_statement(SerdWriter*        writer,
   } else {
     // No abbreviation
     if (writer->context.subject.type) {
-      assert(writer->indent > 0);
-      --writer->indent;
+      deindent(writer);
       if (serd_stack_is_empty(&writer->anon_stack)) {
         write_sep(writer, SEP_END_S);
       }
@@ -926,7 +933,7 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
     return SERD_ERR_UNKNOWN;
   }
 
-  --writer->indent;
+  deindent(writer);
   write_sep(writer, SEP_ANON_END);
   free_context(writer);
   writer->context = *anon_stack_top(writer);
