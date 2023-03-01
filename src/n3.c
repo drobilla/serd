@@ -361,9 +361,15 @@ read_STRING_LITERAL_LONG(SerdReader* const    reader,
         skip_byte(reader, q3);
         break;
       }
-      *flags |= SERD_HAS_QUOTE;
-      push_byte(reader, ref, c);
-      st = read_character(reader, ref, flags, (uint8_t)q2);
+
+      if (q2 == '\\') {
+        push_byte(reader, ref, c);
+        st = read_string_escape(reader, ref, flags);
+      } else {
+        *flags |= SERD_HAS_QUOTE;
+        push_byte(reader, ref, c);
+        st = read_character(reader, ref, flags, (uint8_t)q2);
+      }
     } else if (c == EOF) {
       return r_err(reader, SERD_ERR_BAD_SYNTAX, "end of file in long string\n");
     } else {

@@ -45,6 +45,7 @@
 		<#test-out-of-range-unicode>
 		<#test-prefix>
 		<#test-pretty>
+		<#test-quote-escapes>
 		<#test-rel>
 		<#test-semi-dot>
 		<#test-uri-escape>
@@ -280,6 +281,12 @@
 	mf:name "test-pretty" ;
 	mf:action <test-pretty.ttl> ;
 	mf:result <test-pretty.nt> .
+
+<#test-quote-escapes>
+	rdf:type rdft:TestTurtleEval ;
+	mf:name "test-quote-escapes" ;
+	mf:action <test-quote-escapes.ttl> ;
+	mf:result <test-quote-escapes.nt> .
 
 <#test-rel>
 	rdf:type rdft:TestTurtleEval ;
