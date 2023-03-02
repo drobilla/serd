@@ -1,4 +1,4 @@
-// Copyright 2011-2020 David Robillard <d@drobilla.net>
+// Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #undef NDEBUG
@@ -363,7 +363,7 @@ test_writer(const char* const path)
   serd_writer_free(writer);
   out = serd_chunk_sink_finish(&chunk);
 
-  assert(!strcmp((const char*)out, "<>\n\t<http://example.org/pred>  .\n\n"));
+  assert(!strcmp((const char*)out, "<>\n\t<http://example.org/pred>  .\n"));
   serd_free(out);
 
   serd_env_free(env);

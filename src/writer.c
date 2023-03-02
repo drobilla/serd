@@ -62,7 +62,7 @@ typedef struct {
 } SepRule;
 
 static const SepRule rules[] = {{NULL, 0, 0, 0, 0},
-                                {" .\n\n", 4, 0, 0, 0},
+                                {" .\n", 3, 0, 0, 0},
                                 {" ;", 2, 0, 1, 1},
                                 {" ,", 2, 0, 1, 0},
                                 {NULL, 0, 0, 1, 0},
@@ -73,7 +73,7 @@ static const SepRule rules[] = {{NULL, 0, 0, 0, 0},
                                 {NULL, 0, 0, 1, 0},
                                 {")", 1, 1, 0, 0},
                                 {" {", 2, 0, 1, 1},
-                                {" }", 2, 0, 1, 1},
+                                {"}\n", 2, 0, 0, 0},
                                 {"<", 1, 0, 0, 0},
                                 {">", 1, 0, 0, 0},
                                 {"\n", 1, 0, 1, 0}};
@@ -459,7 +459,8 @@ write_sep(SerdWriter* writer, const Sep sep)
   if ((writer->last_sep && rule->space_after_sep) ||
       (!writer->last_sep && rule->space_after_node)) {
     write_newline(writer);
-  } else if (writer->last_sep && rule->space_after_node) {
+  } else if (writer->last_sep && writer->last_sep != SEP_GRAPH_BEGIN &&
+             rule->space_after_node) {
     sink(" ", 1, writer);
   }
 
@@ -837,6 +838,7 @@ serd_writer_write_statement(SerdWriter*        writer,
 
     reset_context(writer, true);
     if (graph) {
+      write_newline(writer);
       TRY(write_node(writer, graph, datatype, lang, FIELD_GRAPH, flags));
       ++writer->indent;
       write_sep(writer, SEP_GRAPH_BEGIN);
@@ -885,6 +887,10 @@ serd_writer_write_statement(SerdWriter*        writer,
     }
 
     if (!(flags & SERD_ANON_CONT)) {
+      if (writer->last_sep == SEP_END_S) {
+        write_newline(writer);
+      }
+
       write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags);
       ++writer->indent;
       write_sep(writer, SEP_S_P);
