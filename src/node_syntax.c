@@ -53,7 +53,7 @@ serd_node_from_syntax_in(const char* const str,
 
   SerdByteSource* const source = serd_byte_source_new_string(doc, NULL);
   SerdReader* const     reader = serd_reader_new(
-    world, syntax, SERD_READ_EXACT_BLANKS, env, sink, 1024 + doc_len);
+    world, syntax, SERD_READ_VERBATIM, env, sink, 1024 + doc_len);
 
   serd_reader_start(reader, source);
   serd_reader_read_document(reader);

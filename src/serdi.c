@@ -170,7 +170,7 @@ main(int argc, char** argv)
       } else if (opt == 'e') {
         bulk_read = false;
       } else if (opt == 'f') {
-        writer_flags |= (SERD_WRITE_UNQUALIFIED | SERD_WRITE_UNRESOLVED);
+        writer_flags |= (SERD_WRITE_EXPANDED | SERD_WRITE_VERBATIM);
       } else if (opt == 'h') {
         return print_usage(prog, false);
       } else if (opt == 'l') {
