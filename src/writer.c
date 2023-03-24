@@ -825,10 +825,10 @@ write_literal(SerdWriter* const        writer,
 SERD_NODISCARD static SerdStatus
 write_full_uri_node(SerdWriter* const writer, const SerdNode* const node)
 {
-  SerdStatus st               = SERD_SUCCESS;
-  const bool resolve_disabled = writer->flags & SERD_WRITE_UNRESOLVED;
+  SerdStatus st       = SERD_SUCCESS;
+  const bool verbatim = (writer->flags & SERD_WRITE_VERBATIM);
 
-  if (resolve_disabled || !serd_env_base_uri(writer->env)) {
+  if (verbatim || !serd_env_base_uri(writer->env)) {
     // Resolution disabled or we have no base URI, simply write the node
     TRY(st, esink("<", 1, writer));
     TRY(st, write_uri_from_node(writer, node));
@@ -879,7 +879,7 @@ write_uri_node(SerdWriter* const     writer,
 
     SerdStringView prefix = {NULL, 0};
     SerdStringView suffix = {NULL, 0};
-    if (has_scheme && !(writer->flags & SERD_WRITE_UNQUALIFIED) &&
+    if (has_scheme && !(writer->flags & SERD_WRITE_EXPANDED) &&
         !serd_env_qualify(writer->env, string, &prefix, &suffix)) {
       TRY(st, write_lname(writer, prefix.data, prefix.length));
       TRY(st, esink(":", 1, writer));
