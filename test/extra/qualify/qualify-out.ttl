@@ -3,8 +3,11 @@
 eg:s
 	eg:p eg:o .
 
-<http://example.org/a-subject>
-	<http://example.org/a-predicate> <http://example.org/a-object> .
+eg:a-subject
+	eg:a-predicate eg:a-object .
+
+eg:special-\!\#\$\%\&\'\(\)\*\+\,-.\/\;\=\?\@_\~-chars
+	eg:p eg:o .
 
 ()
 	<http://www.w3.org/2000/01/rdf-schema#label> "nil" .

@@ -21,6 +21,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define NS_EG "http://example.org/"
@@ -561,6 +562,79 @@ test_writer_stack_overflow(void)
   serd_world_free(world);
 }
 
+static void
+check_pname_escape(const char* const lname, const char* const expected)
+{
+  SerdWorld*       world  = serd_world_new(NULL);
+  SerdEnv*         env    = serd_env_new(NULL, zix_empty_string());
+  SerdBuffer       buffer = {NULL, NULL, 0};
+  SerdOutputStream output = serd_open_output_buffer(&buffer);
+
+  SerdWriter* writer =
+    serd_writer_new(world, SERD_TURTLE, 0U, env, &output, 1U);
+  assert(writer);
+
+  static const char* const prefix     = NS_EG;
+  const size_t             prefix_len = strlen(prefix);
+
+  serd_env_set_prefix(env, zix_string("eg"), zix_string(prefix));
+
+  SerdNode* s = serd_new_uri(NULL, zix_string("http://example.org/s"));
+  SerdNode* p = serd_new_uri(NULL, zix_string("http://example.org/p"));
+
+  char* const uri = (char*)calloc(1, prefix_len + strlen(lname) + 1);
+  memcpy(uri, prefix, prefix_len + 1);
+  memcpy(uri + prefix_len, lname, strlen(lname) + 1);
+
+  SerdNode* node = serd_new_uri(NULL, zix_string(uri));
+  assert(!serd_sink_write(serd_writer_sink(writer), 0, s, p, node, NULL));
+  serd_node_free(NULL, node);
+
+  free(uri);
+  serd_node_free(NULL, p);
+  serd_node_free(NULL, s);
+  serd_writer_free(writer);
+  serd_close_output(&output);
+
+  char* const out = (char*)buffer.buf;
+  assert(!strcmp(out, expected));
+  zix_free(buffer.allocator, buffer.buf);
+
+  serd_env_free(env);
+  serd_world_free(world);
+}
+
+static void
+test_write_pname_escapes(void)
+{
+  // Check that '.' is escaped only at the start and end
+  check_pname_escape(".xyz", "eg:s\n\teg:p eg:\\.xyz .\n");
+  check_pname_escape("w.yz", "eg:s\n\teg:p eg:w.yz .\n");
+  check_pname_escape("wx.z", "eg:s\n\teg:p eg:wx.z .\n");
+  check_pname_escape("wxy.", "eg:s\n\teg:p eg:wxy\\. .\n");
+
+  // Check that ':' is not escaped anywhere
+  check_pname_escape(":xyz", "eg:s\n\teg:p eg::xyz .\n");
+  check_pname_escape("w:yz", "eg:s\n\teg:p eg:w:yz .\n");
+  check_pname_escape("wx:z", "eg:s\n\teg:p eg:wx:z .\n");
+  check_pname_escape("wxy:", "eg:s\n\teg:p eg:wxy: .\n");
+
+  // Check that special characters like '~' are escaped everywhere
+  check_pname_escape("~xyz", "eg:s\n\teg:p eg:\\~xyz .\n");
+  check_pname_escape("w~yz", "eg:s\n\teg:p eg:w\\~yz .\n");
+  check_pname_escape("wx~z", "eg:s\n\teg:p eg:wx\\~z .\n");
+  check_pname_escape("wxy~", "eg:s\n\teg:p eg:wxy\\~ .\n");
+
+  // Check that out of range multi-byte characters are escaped everywhere
+  static const char first_escape[] = {(char)0xC3U, (char)0xB7U, 'y', 'z', 0};
+  static const char mid_escape[]   = {'w', (char)0xC3U, (char)0xB7U, 'z', 0};
+  static const char last_escape[]  = {'w', 'x', (char)0xC3U, (char)0xB7U, 0};
+
+  check_pname_escape((const char*)first_escape, "eg:s\n\teg:p eg:%C3%B7yz .\n");
+  check_pname_escape((const char*)mid_escape, "eg:s\n\teg:p eg:w%C3%B7z .\n");
+  check_pname_escape((const char*)last_escape, "eg:s\n\teg:p eg:wx%C3%B7 .\n");
+}
+
 int
 main(void)
 {
@@ -577,6 +651,7 @@ main(void)
   test_write_error();
   test_write_empty_syntax();
   test_writer_stack_overflow();
+  test_write_pname_escapes();
 
   return 0;
 }
