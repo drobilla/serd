@@ -8,7 +8,6 @@
 #include "string_utils.h"
 
 #include <stdbool.h>
-#include <string.h>
 
 static inline bool
 is_PN_CHARS_U(const int c)
@@ -26,7 +25,10 @@ is_PN_CHARS(const int c)
 static inline bool
 is_PN_LOCAL_ESC(const int c)
 {
-  return strchr("!#$%&\'()*+,-./;=?@_~", c) != NULL;
+  return c == '!' || c == '#' || c == '$' || c == '%' || c == '&' ||
+         c == '\'' || c == '(' || c == ')' || c == '*' || c == '+' ||
+         c == ',' || c == '-' || c == '.' || c == '/' || c == ';' || c == '=' ||
+         c == '?' || c == '@' || c == '\\' || c == '_' || c == '~';
 }
 
 #endif // SERD_SRC_TURTLE_H
