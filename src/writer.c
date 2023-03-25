@@ -9,6 +9,7 @@
 #include "system.h"
 #include "token_header.h"
 #include "try.h"
+#include "turtle.h"
 #include "uri_utils.h"
 #include "world_internal.h"
 
@@ -457,46 +458,81 @@ ewrite_uri(SerdWriter* const writer, const ZixStringView string)
            : SERD_SUCCESS;
 }
 
-static bool
-lname_must_escape(const char c)
+ZIX_NODISCARD static SerdStatus
+write_utf8_percent_escape(SerdWriter* const writer,
+                          const char* const utf8,
+                          const size_t      n_bytes)
 {
-  /* Most of these characters have nothing to do with Turtle, but were taken
-     from SPARQL and mashed into the Turtle grammar (despite not being used)
-     with RDF 1.1.  So now Turtle is a mess because the SPARQL grammar is
-     poorly designed and didn't use a leading character to distinguish things
-     like path patterns like it should have.
+  static const char hex_chars[] = "0123456789ABCDEF";
 
-     Note that '-', '.', and '_' are also in PN_LOCAL_ESC, but are valid
-     unescaped in local names, so they are not escaped here. */
+  SerdStatus st        = SERD_SUCCESS;
+  char       escape[4] = {'%', 0, 0, 0};
 
-  return (c == '!') || (c == '/') || (c == ';') || (c == '=') || (c == '?') ||
-         (c == '@') || (c == '~') || in_range(c, '#', ',');
+  for (size_t i = 0U; i < n_bytes; ++i) {
+    const uint8_t byte = (uint8_t)utf8[i];
+    escape[1]          = hex_chars[byte >> 4U];
+    escape[2]          = hex_chars[byte & 0x0FU];
+
+    TRY(st, esink(escape, 3, writer));
+  }
+
+  return st;
+}
+
+ZIX_NODISCARD static SerdStatus
+write_PN_LOCAL_ESC(SerdWriter* const writer, const char c)
+{
+  const char buf[2] = {'\\', c};
+
+  return esink(buf, sizeof(buf), writer);
+}
+
+ZIX_NODISCARD static SerdStatus
+write_lname_escape(SerdWriter* const writer,
+                   const char* const utf8,
+                   const size_t      n_bytes)
+{
+  return is_PN_LOCAL_ESC(utf8[0])
+           ? write_PN_LOCAL_ESC(writer, utf8[0])
+           : write_utf8_percent_escape(writer, utf8, n_bytes);
 }
 
 ZIX_NODISCARD static SerdStatus
 write_lname(SerdWriter* const writer, const ZixStringView string)
 {
-  const char* const utf8    = string.data;
-  const size_t      n_bytes = string.length;
-  SerdStatus        st      = SERD_SUCCESS;
+  const uint8_t* const utf8    = (const uint8_t*)string.data;
+  const size_t         n_bytes = string.length;
+  SerdStatus           st      = SERD_SUCCESS;
+  if (!n_bytes) {
+    return st;
+  }
 
-  for (size_t i = 0; i < n_bytes; ++i) {
-    size_t j = i; // Index of next character that must be escaped
-    for (; j < n_bytes; ++j) {
-      if (lname_must_escape(utf8[j])) {
-        break;
-      }
+  /* Thanks to the horribly complicated Turtle grammar for prefixed names,
+     making sure we never write an invalid character is tedious.  We need to
+     handle the first and last characters separately since they have different
+     sets of valid characters. */
+
+  // Write first character
+  uint8_t   first_size = 0U;
+  const int first      = (int)parse_utf8_char(utf8, &first_size);
+  if (is_PN_CHARS_U(first) || first == ':' || is_digit(first)) {
+    TRY(st, esink(utf8, first_size, writer));
+  } else {
+    TRY(st, write_lname_escape(writer, string.data, first_size));
+  }
+
+  // Write middle and last characters
+  for (size_t i = first_size; i < n_bytes;) {
+    uint8_t   c_size = 0U;
+    const int c      = (int)parse_utf8_char(utf8 + i, &c_size);
+
+    if (is_PN_CHARS(c) || c == ':' || (c == '.' && (i + 1U < n_bytes))) {
+      TRY(st, esink(&utf8[i], c_size, writer));
+    } else {
+      TRY(st, write_lname_escape(writer, &string.data[i], c_size));
     }
 
-    // Bulk write all characters up to this special one
-    TRY(st, esink(&utf8[i], j - i, writer));
-    if ((i = j) == n_bytes) {
-      break; // Reached end
-    }
-
-    // Write escape
-    TRY(st, esink("\\", 1, writer));
-    TRY(st, esink(&utf8[i], 1, writer));
+    i += c_size;
   }
 
   return st;
@@ -771,20 +807,6 @@ token_equals_symbol(const SerdTokenView token, const SerdSymbol symbol)
   return zix_string_view_equals(token.string, serd_symbols[symbol]);
 }
 
-// Return true iff `buf` is a valid prefixed name prefix or suffix
-static bool
-is_name(const char* const buf, const size_t len)
-{
-  // TODO: This is more strict than it should be
-  for (size_t i = 0; i < len; ++i) {
-    if (!(is_alpha(buf[i]) || is_digit(buf[i]))) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 static SerdStatus
 write_IRIREF(SerdWriter* const writer, const ZixStringView string)
 {
@@ -830,12 +852,10 @@ write_uri(SerdWriter* const writer, const ZixStringView string)
 
     SerdStringPairView pair = {{"", 0}, {"", 0}};
     if (has_scheme && !(writer->flags & SERD_WRITE_UNQUALIFIED) &&
-        !serd_env_qualify(writer->env, string, &pair) &&
-        is_name(pair.prefix.data, pair.prefix.length) &&
-        is_name(pair.suffix.data, pair.suffix.length)) {
+        !serd_env_qualify(writer->env, string, &pair)) {
       TRY(st, write_lname(writer, pair.prefix));
       TRY(st, esink(":", 1, writer));
-      return ewrite_uri(writer, pair.suffix);
+      return write_lname(writer, pair.suffix);
     }
   }
 
