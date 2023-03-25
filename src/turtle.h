@@ -26,7 +26,7 @@ static inline bool
 is_PN_LOCAL_ESC(const int c)
 {
   return in_range(c, '#', '/') || (c == '!') || (c == ';') || (c == '=') ||
-         (c == '?') || (c == '@') || (c == '_') || (c == '~');
+         (c == '?') || (c == '@') || (c == '\\') || (c == '_') || (c == '~');
 }
 
 #endif // SERD_SRC_TURTLE_H
