@@ -7,7 +7,6 @@ Checks: >
   -cert-err33-c,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -concurrency-mt-unsafe,
-  -google-readability-todo,
   -hicpp-multiway-paths-covered,
   -hicpp-signed-bitwise,
   -llvm-header-guard,
