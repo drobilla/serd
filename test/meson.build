@@ -1,4 +1,4 @@
-# Copyright 2020-2022 David Robillard <d@drobilla.net>
+# Copyright 2020-2023 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
 run_test_suite = files('run_test_suite.py')
@@ -178,7 +178,7 @@ if not get_option('tools').disabled()
 
   ### The lax suite is special because it is run twice...
   lax_manifest = files('lax/manifest.ttl')
-  lax_base_uri = serd_base + name + '/'
+  lax_base_uri = serd_base + 'lax/'
 
   ### ... once with strict parsing to test the hard errors
   test('lax.strict', run_test_suite,
