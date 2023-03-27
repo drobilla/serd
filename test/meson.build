@@ -16,6 +16,7 @@ simple_scripts = files(
   '../scripts/check_formatting.py',
   'run_suite.py',
   'serd_test_util/__init__.py',
+  'test_base.py',
   'test_empty.py',
   'test_quiet.py',
   'test_stdin.py',
@@ -149,6 +150,8 @@ endif
 simple_command_tests = {
   'serdi': {
     'bad': [
+      ['-B', 'nonuriorpath'],
+      ['-B'],
       ['-c'],
       ['-fi'],
       ['-i', 'turtle'],
@@ -197,6 +200,14 @@ if is_variable('serdi')
   endforeach
 
   test('none', serdi, env: test_env, should_fail: true, suite: cmd_suite)
+
+  test(
+    'base',
+    files('test_base.py'),
+    args: script_args,
+    env: test_env,
+    suite: cmd_suite,
+  )
 
   test(
     'quiet',
