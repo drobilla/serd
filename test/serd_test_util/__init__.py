@@ -148,14 +148,14 @@ def earl_assertion(test, passed, asserter):
     )
 
 
-def load_rdf(filename, base_uri, command_prefix):
+def load_rdf(command_prefix, filename):
     """Load an RDF file as dictionaries via serd-pipe (only supports URIs)."""
 
     rdf_type = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
     model = {}
     instances = {}
 
-    cmd = command_prefix + [filename, base_uri]
+    cmd = command_prefix + [filename]
     proc = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True
     )
