@@ -10,7 +10,7 @@
 import serd_test_util as util
 
 args = util.wrapper_args(__doc__)
-command = [args.serdi, "-i", "ntriples", "-", "http://example.org"]
+command = [args.serdi, "-i", "ntriples", "-B", "http://example.org", "-"]
 
 DOCUMENT = "<{0}s> <{0}p> <{0}o> .".format("http://example.org/")
 
