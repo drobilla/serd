@@ -6,6 +6,7 @@
 
 #include "serd/attributes.h"
 #include "serd/byte_source.h"
+#include "serd/env.h"
 #include "serd/sink.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
@@ -39,6 +40,7 @@ SERD_API SerdReader* SERD_ALLOCATED
 serd_reader_new(SerdWorld* SERD_NONNULL      world,
                 SerdSyntax                   syntax,
                 SerdReaderFlags              flags,
+                SerdEnv* SERD_NONNULL        env,
                 const SerdSink* SERD_NONNULL sink,
                 size_t                       stack_size);
 
