@@ -35,6 +35,7 @@ print_usage(const char* const name, const bool error)
   static const char* const description =
     "Read and write RDF syntax.\n"
     "Use - for INPUT to read from standard input.\n\n"
+    "  -B BASE_URI  Base URI\n"
     "  -a           Write ASCII output\n"
     "  -b           Write output in blocks for performance\n"
     "  -c PREFIX    Chop PREFIX from matching blank node IDs\n"
@@ -54,7 +55,7 @@ print_usage(const char* const name, const bool error)
 
   FILE* const os = error ? stderr : stdout;
   fprintf(os, "%s", error ? "\n" : "");
-  fprintf(os, "Usage: %s [OPTION]... INPUT [BASE_URI]\n", name);
+  fprintf(os, "Usage: %s [OPTION]... INPUT\n", name);
   fprintf(os, "%s", description);
   return error ? 1 : 0;
 }
@@ -107,6 +108,7 @@ main(int argc, char** argv)
 {
   const char* const prog = argv[0];
 
+  const char*     base_arg      = NULL;
   SerdSyntax      input_syntax  = SERD_SYNTAX_EMPTY;
   SerdSyntax      output_syntax = SERD_SYNTAX_EMPTY;
   SerdReaderFlags reader_flags  = 0U;
@@ -164,6 +166,13 @@ main(int argc, char** argv)
         writer_flags |= SERD_WRITE_TERSE;
       } else if (opt == 's') {
         from_string = true;
+        break;
+      } else if (argv[a][1] == 'B') {
+        if (++a == argc) {
+          return missing_arg(prog, 'B');
+        }
+
+        base_arg = argv[a];
         break;
       } else if (opt == 'c') {
         if (argv[a][o + 1] || ++a == argc) {
@@ -247,11 +256,11 @@ main(int argc, char** argv)
   }
 
   SerdString base = {0, NULL};
-  if (a < argc) { // Base URI given on command line
-    if (serd_uri_string_has_scheme(argv[a])) {
-      base = serd_string_new(NULL, zix_string(argv[a]));
+  if (base_arg) { // Base URI given on command line
+    if (serd_uri_string_has_scheme(base_arg)) {
+      base = serd_string_new(NULL, zix_string(base_arg));
     } else {
-      base = base_uri_from_path(argv[a]);
+      base = base_uri_from_path(base_arg);
     }
   } else if (!from_string && !from_stdin) { // Use input file URI
     base = base_uri_from_path(input);

@@ -128,6 +128,8 @@ endif
 simple_command_tests = {
   'pipe': {
     'bad': [
+      ['-B', 'nonuriorpath'],
+      ['-B'],
       ['-c'],
       ['-cx'],
       ['-fi'],
@@ -153,7 +155,7 @@ simple_command_tests = {
       ['--help'],
       ['--version'],
       ['-h'],
-      ['-s', '<>a<>.', '.'],
+      ['-B', '.', '-s', '<>a<>.'],
       ['-s', '<go:>a<go:> .'],
       ['-v'],
     ],
@@ -186,6 +188,18 @@ if is_variable('serd_pipe')
   endforeach
 
   test('none', serd_pipe, env: test_env, should_fail: true, suite: cmd_suite)
+
+  # Base URI options
+
+  test(
+    'base',
+    files('test_base.py'),
+    args: pipe_script_args,
+    env: test_env,
+    suite: cmd_suite,
+  )
+
+  # Log
 
   test(
     'quiet',
