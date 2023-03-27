@@ -71,6 +71,25 @@ def uri_path(uri):
     return path if not drive else path[1:]
 
 
+def file_path(suite_dir, uri):
+    """Return a relative path to a file in a test suite."""
+
+    return os.path.relpath(os.path.join(suite_dir, os.path.basename(uri)))
+
+
+def syntax_from_path(path):
+    """Return the serd syntax name corresponding to a file path."""
+
+    extensions = {
+        ".ttl": "turtle",
+        ".nt": "ntriples",
+        ".trig": "trig",
+        ".nq": "nquads",
+    }
+
+    return extensions[os.path.splitext(path)[1]]
+
+
 def earl_assertion(test, passed, asserter):
     """Return a Turtle description of an assertion for the test report."""
 

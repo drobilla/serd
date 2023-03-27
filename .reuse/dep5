@@ -8,7 +8,7 @@ Copyright: 2010 World Wide Web Consortium, (MIT, ERCIM, Keio, Beihang) and other
 Comment: Standard test suites from the W3C (only required for testing)
 License: BSD-3-Clause
 
-Files: test/bad/* test/good/* test/lax/*
+Files: test/bad/* test/good/* test/lax/* test/pretty/*
 Copyright: 2011-2023 David Robillard <d@drobilla.net>
 Comment: Extra tests for serd (potential contributions to the W3C suites)
 License: BSD-3-Clause OR ISC

@@ -1,6 +1,7 @@
 # Copyright 2020-2023 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
+run_suite = find_program('run_suite.py')
 run_test_suite = files('run_test_suite.py')
 
 wrapper = meson.get_external_property('exe_wrapper', '')
@@ -64,13 +65,13 @@ endforeach
 # System Tests #
 ################
 
-if not get_option('tools').disabled()
-  if wrapper != ''
-    script_args = ['--wrapper', wrapper, '--serdi', serdi.full_path()]
-  else
-    script_args = ['--serdi', serdi.full_path()]
-  endif
+common_script_args = []
+if wrapper != ''
+  common_script_args += ['--wrapper', wrapper]
+endif
 
+if not get_option('tools').disabled()
+  script_args = common_script_args + ['--serdi', serdi]
   serd_ttl = files('../serd.ttl')[0]
 
   test('serd.ttl', serdi, args: [serd_ttl], suite: 'data')
@@ -158,18 +159,41 @@ if not get_option('tools').disabled()
   test('write_error', files('test_write_error.py'),
        args: script_args + [serd_ttl],
        suite: 'io_errors')
+endif
 
-  # RDF test suites
+###########################
+# Data-Driven Test Suites #
+###########################
+
+ns_serdtest = 'http://drobilla.net/sw/serd/test/'
+ns_w3 = 'http://www.w3.org/2013/'
+
+test_suites = {
+  'pretty': [
+    files('pretty/manifest.ttl'), ns_serdtest + 'pretty/'
+  ],
+}
+
+if not get_option('tools').disabled()
+  script_args = common_script_args + ['--serdi', serdi]
+
+  foreach name, args : test_suites
+    test(
+      name, run_suite,
+      args: script_args + args,
+      suite: ['rdf'],
+      timeout: 240,
+    )
+  endforeach
 
   ## Serd-specific test suites
 
   serd_suites = ['good', 'bad']
-  serd_base = 'http://drobilla.net/sw/serd/test/'
 
   ### Run all suites with no special arguments
   foreach name : serd_suites
     manifest = files(name / 'manifest.ttl')
-    base_uri = serd_base + name + '/'
+    base_uri = ns_serdtest + name + '/'
     test(name, run_test_suite,
          args: script_args + [manifest, base_uri],
          suite: ['rdf', 'serd'],
@@ -178,7 +202,7 @@ if not get_option('tools').disabled()
 
   ### The lax suite is special because it is run twice...
   lax_manifest = files('lax/manifest.ttl')
-  lax_base_uri = serd_base + 'lax/'
+  lax_base_uri = ns_serdtest + 'lax/'
 
   ### ... once with strict parsing to test the hard errors
   test('lax.strict', run_test_suite,
@@ -197,11 +221,10 @@ if not get_option('tools').disabled()
   ## Standard W3C test suites
 
   w3c_suites = ['Turtle', 'NTriples', 'NQuads', 'TriG']
-  w3c_base = 'http://www.w3.org/2013/'
 
   foreach syntax : w3c_suites
     manifest = files(syntax + 'Tests' / 'manifest.ttl')
-    base_uri = w3c_base + syntax + 'Tests/'
+    base_uri = ns_w3 + syntax + 'Tests/'
 
     args = ['--syntax', syntax, manifest, base_uri]
     if syntax == 'TriG'

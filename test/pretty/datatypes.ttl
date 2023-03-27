@@ -1,0 +1,15 @@
+@prefix eg: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+eg:s
+	eg:p -1.2 ,
+		"-3."^^xsd:decimal ,
+		-4 ,
+		0 ,
+		1 ,
+		2.3 ,
+		"4."^^xsd:decimal ,
+		false ,
+		true ,
+		"x"^^eg:datatype ,
+		"y"^^<http://пример.испытание> .

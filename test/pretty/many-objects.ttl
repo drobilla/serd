@@ -1,0 +1,9 @@
+@prefix eg: <http://example.org/> .
+
+eg:s
+	eg:p1 "apple" ,
+		"banana" ,
+		"cherry" ;
+	eg:p2 "asparagus" ,
+		"beet" ,
+		"carrot" .

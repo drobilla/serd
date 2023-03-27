@@ -44,7 +44,6 @@
 		<#test-num>
 		<#test-out-of-range-unicode>
 		<#test-prefix>
-		<#test-pretty>
 		<#test-quote-escapes>
 		<#test-rel>
 		<#test-semi-dot>
@@ -275,12 +274,6 @@
 	mf:name "test-prefix" ;
 	mf:action <test-prefix.ttl> ;
 	mf:result <test-prefix.nt> .
-
-<#test-pretty>
-	rdf:type rdft:TestTurtleEval ;
-	mf:name "test-pretty" ;
-	mf:action <test-pretty.ttl> ;
-	mf:result <test-pretty.nt> .
 
 <#test-quote-escapes>
 	rdf:type rdft:TestTurtleEval ;
