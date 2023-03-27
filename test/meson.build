@@ -28,6 +28,7 @@ simple_script_paths = [
   '../scripts/check_formatting.py',
   'serd_test_util/__init__.py',
   'run_suite.py',
+  'test_base.py',
   'test_empty.py',
   'test_quiet.py',
   'test_stdin.py',
@@ -174,6 +175,8 @@ endif
 simple_command_tests = {
   'pipe': {
     'bad': [
+      ['-B', 'nonuriorpath'],
+      ['-B'],
       ['-c'],
       ['-cx'],
       ['-fi'],
@@ -231,6 +234,18 @@ if is_variable('serd_pipe')
   endforeach
 
   test('none', serd_pipe, env: test_env, should_fail: true, suite: cmd_suite)
+
+  # Base URI options
+
+  test(
+    'base',
+    files('test_base.py'),
+    args: pipe_script_args,
+    env: test_env,
+    suite: cmd_suite,
+  )
+
+  # Log
 
   test(
     'quiet',
