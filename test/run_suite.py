@@ -37,11 +37,11 @@ TEST_TYPES = [
 ]
 
 
-def run_eval_test(base_uri, command, in_path, good_path, out_path):
+def run_eval_test(command, in_path, good_path, out_path):
     """Run a positive eval test and return whether the output matches."""
 
     syntax = util.syntax_from_path(out_path)
-    command = command + ["-o", syntax, in_path, base_uri]
+    command = command + ["-o", syntax, in_path]
 
     with subprocess.Popen(command, stdout=PIPE, encoding="utf-8") as proc:
         out = list(proc.stdout)
@@ -50,21 +50,21 @@ def run_eval_test(base_uri, command, in_path, good_path, out_path):
         return util.lines_equal(list(good), out, good_path, out_path)
 
 
-def run_positive_test(base_uri, command, in_path):
+def run_positive_test(command, in_path):
     """Run a positive syntax test and ensure no errors occur."""
 
-    command = command + [in_path, base_uri]
+    command = command + [in_path]
     subprocess.check_call(command, encoding="utf-8", stdout=DEVNULL)
     return True
 
 
-def run_negative_test(base_uri, command, in_path):
+def run_negative_test(command, in_path):
     """Run a negative syntax test and return whether the error was detected."""
 
     if not os.path.exists(in_path):
         raise RuntimeError("Input file missing: " + in_path)
 
-    command = command + [in_path, base_uri]
+    command = command + [in_path]
     proc = subprocess.run(command, check=False, stderr=PIPE, stdout=DEVNULL)
 
     if proc.returncode == 0:
@@ -82,21 +82,21 @@ def run_entry(args, entry, command, out_dir, suite_dir):
     """Run a single test entry from the manifest."""
 
     in_path = util.file_path(suite_dir, entry[NS_MF + "action"][0])
-    base = args.base_uri + os.path.basename(in_path)
+    command = command + ["-B", args.base_uri + os.path.basename(in_path)]
 
     negative = "Negative" in entry[NS_RDF + "type"][0]
     if negative and not args.lax:
-        return run_negative_test(base, command, in_path)
+        return run_negative_test(command, in_path)
 
     if NS_MF + "result" not in entry:
-        return run_positive_test(base, command, in_path)
+        return run_positive_test(command, in_path)
 
     good_path = util.file_path(suite_dir, entry[NS_MF + "result"][0])
     if args.reverse:
         in_path, good_path = good_path, in_path
 
     out_path = os.path.join(out_dir, os.path.basename(good_path))
-    return run_eval_test(base, command, in_path, good_path, out_path)
+    return run_eval_test(command, in_path, good_path, out_path)
 
 
 def run_suite(args, command, out_dir):
@@ -104,7 +104,9 @@ def run_suite(args, command, out_dir):
 
     # Load manifest model
     top = os.path.dirname(args.manifest)
-    model, instances = util.load_rdf(args.manifest, args.base_uri, command)
+    model, instances = util.load_rdf(
+        command + ["-B", args.base_uri], args.manifest
+    )
 
     # Run all the listed tests that have known types
     command = command + args.arg
