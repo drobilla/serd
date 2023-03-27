@@ -11,6 +11,7 @@
 
 #include "serd/attributes.h"
 #include "serd/caret.h"
+#include "serd/env.h"
 #include "serd/node.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
@@ -40,6 +41,7 @@ struct SerdReaderImpl {
   SerdNode*       rdf_rest;
   SerdNode*       rdf_nil;
   SerdByteSource* source;
+  SerdEnv*        env;
   SerdStack       stack;
   SerdSyntax      syntax;
   SerdReaderFlags flags;

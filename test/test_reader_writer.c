@@ -126,7 +126,8 @@ test_write_errors(void)
         serd_writer_new(world, syntax, 0U, env, &out, 1U);
 
       const SerdSink* const sink = serd_writer_sink(writer);
-      SerdReader* const reader   = serd_reader_new(world, SERD_TRIG, 0U, sink);
+      SerdReader* const     reader =
+        serd_reader_new(world, SERD_TRIG, 0U, env, sink);
 
       const char*     position = doc_string;
       SerdInputStream in       = serd_open_input_string(&position);
@@ -266,16 +267,19 @@ test_reader(const char* path)
   SerdSink* const  sink  = serd_sink_new(NULL, &rt, test_sink, NULL);
   assert(sink);
 
+  SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
+  assert(env);
+
   // Test that too little stack space fails gracefully
   const SerdLimits old_limits = serd_world_limits(world);
   SerdLimits       limits     = old_limits;
   limits.reader_stack_size    = 32U;
   serd_world_set_limits(world, limits);
-  assert(!serd_reader_new(world, SERD_TURTLE, 0U, sink));
+  assert(!serd_reader_new(world, SERD_TURTLE, 0U, env, sink));
 
   // Restore limits and successfully create reader
   serd_world_set_limits(world, old_limits);
-  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0U, sink);
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0U, env, sink);
   assert(reader);
 
   assert(serd_reader_read_chunk(reader) == SERD_BAD_CALL);
@@ -289,6 +293,7 @@ test_reader(const char* path)
   serd_close_input(&in);
 
   serd_reader_free(reader);
+  serd_env_free(env);
   serd_sink_free(sink);
   serd_world_free(world);
 }

@@ -5,6 +5,7 @@
 #define SERD_READER_H
 
 #include "serd/attributes.h"
+#include "serd/env.h"
 #include "serd/input_stream.h"
 #include "serd/node.h"
 #include "serd/sink.h"
@@ -91,6 +92,7 @@ SERD_API SerdReader* ZIX_ALLOCATED
 serd_reader_new(SerdWorld* ZIX_NONNULL      world,
                 SerdSyntax                  syntax,
                 SerdReaderFlags             flags,
+                SerdEnv* ZIX_NONNULL        env,
                 const SerdSink* ZIX_NONNULL sink);
 
 /**
