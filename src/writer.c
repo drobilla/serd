@@ -132,7 +132,7 @@ struct SerdWriterImpl {
   SerdSink        iface;
   SerdSyntax      syntax;
   SerdWriterFlags flags;
-  SerdEnv*        env;
+  const SerdEnv*  env;
   SerdNode*       root_node;
   SerdURIView     root_uri;
   WriteContext*   anon_stack;
@@ -1376,7 +1376,7 @@ SerdWriter*
 serd_writer_new(SerdWorld*      world,
                 SerdSyntax      syntax,
                 SerdWriterFlags flags,
-                SerdEnv*        env,
+                const SerdEnv*  env,
                 SerdWriteFunc   ssink,
                 void*           stream)
 {
@@ -1420,19 +1420,14 @@ serd_writer_chop_blank_prefix(SerdWriter* writer, const char* prefix)
 SERD_NODISCARD static SerdStatus
 serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 {
+  SerdStatus st = SERD_SUCCESS;
+
   if (uri && serd_node_type(uri) != SERD_URI) {
     return SERD_ERR_BAD_ARG;
   }
 
-  if (serd_node_equals(serd_env_base_uri(writer->env), uri)) {
-    return SERD_SUCCESS;
-  }
-
   const SerdStringView uri_string =
     uri ? serd_node_string_view(uri) : serd_empty_string();
-
-  SerdStatus st = SERD_SUCCESS;
-  TRY(st, serd_env_set_base_uri(writer->env, uri_string));
 
   if ((writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) && uri) {
     TRY(st, terminate_context(writer));
@@ -1468,16 +1463,16 @@ serd_writer_set_prefix(SerdWriter*     writer,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  TRY(st,
-      serd_env_set_prefix(
-        writer->env, serd_node_string_view(name), serd_node_string_view(uri)));
+  if (name->type != SERD_LITERAL || uri->type != SERD_URI) {
+    return SERD_ERR_BAD_ARG;
+  }
 
   if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
     TRY(st, terminate_context(writer));
     TRY(st, esink("@prefix ", 8, writer));
     TRY(st, esink(serd_node_string(name), name->length, writer));
     TRY(st, esink(": <", 3, writer));
-    TRY(st, ewrite_uri(writer, serd_node_string(uri), uri->length));
+    TRY(st, write_uri_from_node(writer, uri));
     TRY(st, esink(">", 1, writer));
     writer->last_sep = SEP_NODE;
     TRY(st, write_sep(writer, writer->context.flags, SEP_END_DIRECT));
