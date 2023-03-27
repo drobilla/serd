@@ -9,6 +9,7 @@ simple_script_paths = [
   '../../scripts/check_formatting.py',
   '../run_suite.py',
   '../serd_test_util/__init__.py',
+  '../test_base.py',
   '../test_empty.py',
   '../test_quiet.py',
   '../test_stdin.py',
