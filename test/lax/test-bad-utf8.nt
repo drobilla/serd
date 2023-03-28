@@ -1,6 +1,6 @@
-<http://example.org/thing> <http://example.org/comment> "Impossible bytes: \uFFFD \uFFFD" .
-<http://example.org/thing> <http://example.org/comment> "2 continuation bytes: \uFFFD" .
-<http://example.org/thing> <http://example.org/comment> "Missing continuation: \uFFFD" .
-<http://example.org/thing> <http://example.org/comment> "Impossible bytes: \uFFFD \uFFFD" .
-<http://example.org/thing> <http://example.org/comment> "2 continuation bytes: \uFFFD" .
-<http://example.org/thing> <http://example.org/comment> "Missing continuation: \uFFFD" .
+<http://example.org/s> <http://example.org/p> "Impossible bytes: \uFFFD \uFFFD" .
+<http://example.org/s> <http://example.org/p> "2 continuation bytes: \uFFFD" .
+<http://example.org/s> <http://example.org/p> "Missing continuation: \uFFFD" .
+<http://example.org/s> <http://example.org/p> "Impossible bytes: \uFFFD \uFFFD" .
+<http://example.org/s> <http://example.org/p> "2 continuation bytes: \uFFFD" .
+<http://example.org/s> <http://example.org/p> "Missing continuation: \uFFFD" .
