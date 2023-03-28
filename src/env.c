@@ -1,4 +1,4 @@
-// Copyright 2011-2020 David Robillard <d@drobilla.net>
+// Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #include "serd/serd.h"
@@ -65,7 +65,7 @@ serd_env_get_base_uri(const SerdEnv* const env, SerdURI* const out)
 SerdStatus
 serd_env_set_base_uri(SerdEnv* const env, const SerdNode* const uri)
 {
-  if (!env || (uri && uri->type != SERD_URI)) {
+  if (uri && uri->type != SERD_URI) {
     return SERD_ERR_BAD_ARG;
   }
 
