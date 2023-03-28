@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
-# Copyright 2022 David Robillard <d@drobilla.net>
+# Copyright 2022-2023 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: ISC
 
 """Test reading from stdin with serdi."""
+
+# pylint: disable=consider-using-f-string
 
 import argparse
 import sys

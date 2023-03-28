@@ -5,6 +5,9 @@
 
 """Utilities for data-driven tests."""
 
+# pylint: disable=consider-using-f-string
+# pylint: disable=invalid-name
+
 import datetime
 import difflib
 import os
@@ -45,20 +48,21 @@ def error(message):
 
     sys.stderr.write("error: ")
     sys.stderr.write(message)
+    sys.stderr.write("\n")
 
 
 def print_result_summary(results):
     """Print test result summary to stdout or stderr as appropriate."""
 
     if results.n_tests <= 0:
-        error("No tests found\n")
+        error("No tests found")
         return -1
 
     failed, total = (results.n_failures, results.n_tests)
     if failed == 0:
         sys.stdout.write("All {} tests passed\n".format(total))
     else:
-        error("{}/{} tests failed\n".format(failed, total))
+        error("{}/{} tests failed".format(failed, total))
 
     return failed
 

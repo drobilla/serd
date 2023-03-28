@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2022 David Robillard <d@drobilla.net>
+# Copyright 2022-2023 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: ISC
 
 """Test errors writing to a file."""
@@ -21,8 +21,7 @@ args = parser.parse_args(sys.argv[1:])
 command = shlex.split(args.wrapper) + [args.serdi, args.input]
 
 if os.path.exists("/dev/full"):
-
-    with open("/dev/full", "w") as out:
+    with open("/dev/full", "w", encoding="utf-8") as out:
         proc = subprocess.run(
             command, check=False, stdout=out, stderr=subprocess.PIPE
         )

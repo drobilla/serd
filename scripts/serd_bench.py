@@ -1,16 +1,27 @@
 #!/usr/bin/env python
 
-# Copyright 2018-2022 David Robillard <d@drobilla.net>
+# Copyright 2018-2023 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: ISC
+
+""""Benchmark RDF reading and writing commands."""
+
+# pylint: disable=consider-using-f-string
+# pylint: disable=consider-using-with
+# pylint: disable=import-outside-toplevel
+# pylint: disable=invalid-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-locals
+# pylint: disable=unspecified-encoding
 
 import argparse
 import csv
 import itertools
 import math
-import matplotlib
 import os
 import subprocess
 import sys
+
+import matplotlib
 
 
 class WorkingDirectory:
@@ -30,16 +41,18 @@ class WorkingDirectory:
         os.chdir(self.original_dir)
 
 
-def filename(n):
+def filename(num):
     "Filename for a generated file with n statements"
-    return "gen%d.ttl" % n
+    return "gen%d.ttl" % num
 
 
 def gen(sp2b_dir, n_min, n_max, step):
     "Generate files with n_min ... n_max statements if they are not present"
     with WorkingDirectory(sp2b_dir) as directory:
         for n in range(n_min, n_max + step, step):
-            out_path = os.path.join(directory.original_dir, "build", filename(n))
+            out_path = os.path.join(
+                directory.original_dir, "build", filename(n)
+            )
             if not os.path.exists(out_path):
                 subprocess.call(["./sp2b_gen", "-t", str(n), out_path])
 
@@ -84,7 +97,7 @@ def plot(in_file, out_filename, x_label, y_label, y_max=None):
     matplotlib.use("agg")
     import matplotlib.pyplot as plt
 
-    plt.rcParams.update({'font.size': 7})
+    plt.rcParams.update({"font.size": 7})
 
     fig_height = 1.8
     dashes = get_dashes()
@@ -92,7 +105,7 @@ def plot(in_file, out_filename, x_label, y_label, y_max=None):
 
     reader = csv.reader(in_file, delimiter="\t")
     header = next(reader)
-    cols = [x for x in zip(*list(reader))]
+    cols = list(zip(*list(reader)))
 
     plt.clf()
     fig = plt.figure(figsize=(fig_height * math.sqrt(2), fig_height))
@@ -194,7 +207,7 @@ def plot_results():
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(
         usage="%(prog)s [OPTION]... SP2B_DIR",
-        description="Benchmark RDF reading and writing commands\n",
+        description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 example:

@@ -28,6 +28,32 @@ if get_option('strict')
   endif
 endif
 
+###########
+# Scripts #
+###########
+
+python_scripts = files(
+  '../scripts/serd_bench.py',
+  'run_suite.py',
+  'run_test_suite.py',
+  'serd_test_util/__init__.py',
+  'test_quiet.py',
+  'test_stdin.py',
+  'test_write_error.py',
+)
+
+if get_option('strict')
+  # Check script formatting
+  black = find_program('black', required: false)
+  if black.found()
+    black_opts = ['--check', '-q', '-l', '79']
+    foreach script : python_scripts
+      name = '@0@'.format(script)
+      test(name, black, args: black_opts + [script], suite: 'scripts')
+    endforeach
+  endif
+endif
+
 ###################
 # Header Warnings #
 ###################

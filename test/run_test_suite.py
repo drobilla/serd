@@ -5,8 +5,11 @@
 
 """Run an RDF test suite with serdi."""
 
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-locals
+# pylint: disable=too-many-statements
+
 import argparse
-import difflib
 import itertools
 import os
 import shlex
@@ -14,7 +17,10 @@ import subprocess
 import sys
 import tempfile
 
-import serd_test_util
+import serd_test_util as util
+
+NS_MF = "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#"
+NS_RDFT = "http://www.w3.org/ns/rdftest#"
 
 
 def test_thru(
@@ -37,40 +43,35 @@ def test_thru(
     out_path = os.path.join(out_test_dir, test_name + ".pass")
     thru_path = os.path.join(out_test_dir, test_name + ".thru")
 
+    out_opts = itertools.chain(
+        ["-i", isyntax],
+        ["-o", isyntax],
+        ["-p", "serd_test"],
+    )
+
     out_cmd = (
         command_prefix
         + [f for sublist in flags for f in sublist]
-        + [
-            "-i",
-            isyntax,
-            "-o",
-            isyntax,
-            "-p",
-            "serd_test",
-            path,
-            base_uri,
-        ]
+        + list(out_opts)
+        + [path, base_uri]
     )
-
-    thru_cmd = command_prefix + [
-        "-i",
-        isyntax,
-        "-o",
-        osyntax,
-        "-c",
-        "serd_test",
-        out_path,
-        base_uri,
-    ]
 
     with open(out_path, "wb") as out:
         subprocess.run(out_cmd, check=True, stdout=out)
+
+    thru_opts = itertools.chain(
+        ["-c", "serd_test"],
+        ["-i", isyntax],
+        ["-o", osyntax],
+    )
+
+    thru_cmd = command_prefix + list(thru_opts) + [out_path, base_uri]
 
     proc = subprocess.run(
         thru_cmd, check=True, capture_output=True, encoding="utf-8"
     )
 
-    return serd_test_util.lines_equal(
+    return util.lines_equal(
         check_lines,
         proc.stdout.splitlines(True),
         check_path,
@@ -93,7 +94,7 @@ def _test_input_syntax(test_class):
     if "Trig" in test_class:
         return "Trig"
 
-    raise Exception("Unknown test class <{}>".format(test_class))
+    raise RuntimeError("Unknown test class: " + test_class)
 
 
 def _test_output_syntax(test_class):
@@ -105,7 +106,7 @@ def _test_output_syntax(test_class):
     if "NQuads" in test_class or "Trig" in test_class:
         return "NQuads"
 
-    raise Exception("Unknown test class <{}>".format(test_class))
+    raise RuntimeError("Unknown test class: " + test_class)
 
 
 def _option_combinations(options):
@@ -118,7 +119,7 @@ def _option_combinations(options):
     return itertools.cycle(combinations)
 
 
-def test_suite(
+def run_suite(
     manifest_path,
     base_uri,
     report_filename,
@@ -128,11 +129,8 @@ def test_suite(
 ):
     """Run all tests in a test suite manifest."""
 
-    mf = "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#"
     test_dir = os.path.dirname(manifest_path)
-    model, instances = serd_test_util.load_rdf(
-        manifest_path, base_uri, command_prefix
-    )
+    model, instances = util.load_rdf(manifest_path, base_uri, command_prefix)
 
     asserter = ""
     if os.getenv("USER") == "drobilla":
@@ -149,8 +147,8 @@ def test_suite(
             isyntax = _test_input_syntax(test_class)
 
         for test in sorted(tests):
-            test_uri = model[test][mf + "action"][0]
-            test_uri_path = serd_test_util.uri_path(test_uri)
+            test_uri = model[test][NS_MF + "action"][0]
+            test_uri_path = util.uri_path(test_uri)
             test_name = os.path.basename(test_uri_path)
             test_path = os.path.join(test_dir, test_name)
 
@@ -158,27 +156,22 @@ def test_suite(
             command_string = " ".join(shlex.quote(c) for c in command)
             out_filename = os.path.join(out_test_dir, test_name + ".out")
 
-            results.n_tests += 1
-
             if expected_return == 0:  # Positive test
                 with tempfile.TemporaryFile("w+", encoding="utf-8") as out:
                     proc = subprocess.run(command, check=False, stdout=out)
-                    if proc.returncode == 0:
-                        results.test_passed()
-                        passed = True
-                    else:
-                        results.test_failed()
-                        serd_test_util.error(
-                            "Unexpected failure of command: {}\n".format(
-                                command_string
-                            )
-                        )
+                    passed = proc.returncode == 0
+                    results.check(
+                        passed, "Unexpected failure: " + command_string
+                    )
 
-                    if proc.returncode == 0 and mf + "result" in model[test]:
+                    if (
+                        proc.returncode == 0
+                        and NS_MF + "result" in model[test]
+                    ):
                         # Check output against expected output from test suite
-                        check_uri = model[test][mf + "result"][0]
+                        check_uri = model[test][NS_MF + "result"][0]
                         check_filename = os.path.basename(
-                            serd_test_util.uri_path(check_uri)
+                            util.uri_path(check_uri)
                         )
                         check_path = os.path.join(test_dir, check_filename)
 
@@ -186,18 +179,14 @@ def test_suite(
                             check_lines = check.readlines()
 
                             out.seek(0)
-                            if not serd_test_util.lines_equal(
-                                check_lines,
-                                out.readlines(),
-                                check_path,
-                                out_filename,
-                            ):
-                                results.test_failed()
-                                serd_test_util.error(
-                                    "Output {} does not match {}\n".format(
-                                        out_filename, check_path
-                                    )
+                            results.check(
+                                util.lines_equal(
+                                    check_lines,
+                                    list(out),
+                                    check_path,
+                                    out_filename,
                                 )
+                            )
 
                             # Run round-trip test
                             check.seek(0)
@@ -213,9 +202,7 @@ def test_suite(
                                     osyntax,
                                     command_prefix,
                                 ),
-                                "Corrupted round-trip of {}\n".format(
-                                    test_uri
-                                ),
+                                "Corrupted round-trip: " + test_uri,
                             )
 
             else:  # Negative test
@@ -227,38 +214,27 @@ def test_suite(
                         stderr=stderr,
                     )
 
-                    if proc.returncode != 0:
-                        passed = True
-                    else:
-                        results.n_failures += 1
-                        serd_test_util.error(
-                            "Unexpected success of command: {}\n".format(
-                                command_string
-                            )
-                        )
+                    passed = proc.returncode != 0
+                    results.check(
+                        passed, "Unexpected success: " + command_string
+                    )
 
                     # Check that an error message was printed
                     stderr.seek(0, 2)  # Seek to end
-                    if stderr.tell() == 0:  # Empty
-                        results.n_failures += 1
-                        serd_test_util.error(
-                            "No error message printed by: {}\n".format(
-                                command_string
-                            )
-                        )
+                    results.check(
+                        stderr.tell() > 0,
+                        "No error message printed: " + command_string,
+                    )
 
             # Write test report entry
             if report_filename:
                 with open(report_filename, "a", encoding="utf-8") as report:
-                    report.write(
-                        serd_test_util.earl_assertion(test, passed, asserter)
-                    )
+                    report.write(util.earl_assertion(test, passed, asserter))
 
     # Run all test types in the test suite
-    results = serd_test_util.Results()
-    ns_rdftest = "http://www.w3.org/ns/rdftest#"
+    results = util.Results()
     for test_class, instances in instances.items():
-        if test_class.startswith(ns_rdftest):
+        if test_class.startswith(NS_RDFT):
             expected = (
                 1
                 if "-l" not in command_prefix and "Negative" in test_class
@@ -266,7 +242,7 @@ def test_suite(
             )
             run_tests(test_class, instances, expected, results)
 
-    return serd_test_util.print_result_summary(results)
+    return util.print_result_summary(results)
 
 
 def main():
@@ -294,7 +270,7 @@ def main():
     )
 
     with tempfile.TemporaryDirectory() as test_out_dir:
-        return test_suite(
+        return run_suite(
             args.manifest,
             args.base_uri,
             args.report,
@@ -311,5 +287,7 @@ if __name__ == "__main__":
         if e.stderr is not None:
             sys.stderr.write(e.stderr)
 
-        sys.stderr.write("error: %s\n" % e)
+        sys.stderr.write("error: ")
+        sys.stderr.write(str(e))
+        sys.stderr.write("\n")
         sys.exit(e.returncode)
