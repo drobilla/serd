@@ -52,8 +52,6 @@ typedef enum {
   SEP_LIST_END,    ///< End of list (')')
   SEP_GRAPH_BEGIN, ///< Start of graph ('{')
   SEP_GRAPH_END,   ///< End of graph ('}')
-  SEP_URI_BEGIN,   ///< URI start quote ('<')
-  SEP_URI_END,     ///< URI end quote ('>')
 } Sep;
 
 typedef struct {
@@ -79,10 +77,7 @@ static const SepRule rules[] = {{NULL, 0, 0, 0, 0},
                                 {NULL, 0, 0, 1, 0},
                                 {")", 1, 1, 0, 0},
                                 {" {", 2, 0, 1, 1},
-                                {"}\n", 2, 0, 0, 0},
-                                {"<", 1, 0, 0, 0},
-                                {">", 1, 0, 0, 0},
-                                {"\n", 1, 0, 1, 0}};
+                                {"}\n", 2, 0, 0, 0}};
 
 struct SerdWriterImpl {
   SerdSyntax    syntax;
@@ -628,7 +623,7 @@ write_uri_node(SerdWriter* const        writer,
     return false;
   }
 
-  write_sep(writer, SEP_URI_BEGIN);
+  sink("<", 1, writer);
   if (writer->style & SERD_STYLE_RESOLVED) {
     SerdURI in_base_uri;
     SerdURI uri;
@@ -648,8 +643,8 @@ write_uri_node(SerdWriter* const        writer,
   } else {
     write_uri(writer, node->buf, node->n_bytes);
   }
+  sink(">", 1, writer);
 
-  write_sep(writer, SEP_URI_END);
   if (is_inline_start(writer, field, flags)) {
     sink(" ;", 2, writer);
     write_newline(writer);
@@ -675,10 +670,10 @@ write_curie(SerdWriter* const        writer,
       w_err(writer, st, "undefined namespace prefix '%s'\n", node->buf);
       return false;
     }
-    write_sep(writer, SEP_URI_BEGIN);
+    sink("<", 1, writer);
     write_uri(writer, prefix.buf, prefix.len);
     write_uri(writer, suffix.buf, suffix.len);
-    write_sep(writer, SEP_URI_END);
+    sink(">", 1, writer);
     break;
   case SERD_TURTLE:
   case SERD_TRIG:
