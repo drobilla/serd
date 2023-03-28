@@ -1,4 +1,4 @@
-// Copyright 2011-2020 David Robillard <d@drobilla.net>
+// Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #include "node.h"
@@ -173,11 +173,11 @@ is_uri_path_char(const uint8_t c)
 static bool
 is_dir_sep(const char c)
 {
-  #ifdef _WIN32
+#ifdef _WIN32
   return c == '\\' || c == '/';
-  #else
+#else
   return c == '/';
-  #endif
+#endif
 }
 
 SerdNode

@@ -1,4 +1,4 @@
-# Copyright 2020-2021 David Robillard <d@drobilla.net>
+# Copyright 2020-2023 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
 ---
@@ -21,8 +21,18 @@ IndentCaseLabels: false
 IndentPPDirectives: AfterHash
 KeepEmptyLinesAtTheStartOfBlocks: false
 SpacesInContainerLiterals: false
-StatementMacros:
+AttributeMacros:
+  - SERD_ALLOCATED
   - SERD_API
+  - SERD_CONST_FINC
+  - SERD_FALLTHROUGH
+  - SERD_MALLOC_FUNC
+  - SERD_NODISCARD
+  - SERD_NONNULL
+  - SERD_NULLABLE
+  - SERD_PURE_FUNC
+StatementMacros:
   - SERD_DEPRECATED_BY
+  - SERD_LOG_FUNC
   - _Pragma
 ...

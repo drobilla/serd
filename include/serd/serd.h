@@ -1,4 +1,4 @@
-// Copyright 2011-2021 David Robillard <d@drobilla.net>
+// Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 /// @file serd.h API for Serd, a lightweight RDF syntax library
@@ -43,13 +43,8 @@
 #  define SERD_ALLOCATED
 #endif
 
-#define SERD_PURE_API \
-  SERD_API            \
-  SERD_PURE_FUNC
-
-#define SERD_CONST_API \
-  SERD_API             \
-  SERD_CONST_FUNC
+#define SERD_PURE_API SERD_API SERD_PURE_FUNC
+#define SERD_CONST_API SERD_API SERD_CONST_FUNC
 
 #ifndef SERD_DISABLE_DEPRECATED
 #  if defined(__clang__) && __clang_major__ >= 7
@@ -106,8 +101,7 @@ typedef struct {
    library to be freed by code in the same library.  It is otherwise equivalent
    to the standard C free() function.
 */
-SERD_API
-void
+SERD_API void
 serd_free(void* SERD_NULLABLE ptr);
 
 /**
@@ -147,8 +141,7 @@ serd_strerror(SerdStatus status);
    @param n_bytes (Output) Set to the size of `str` in bytes (except NULL).
    @param flags (Output) Set to the applicable flags.
 */
-SERD_API
-size_t
+SERD_API size_t
 serd_strlen(const uint8_t* SERD_NONNULL  str,
             size_t* SERD_NULLABLE        n_bytes,
             SerdNodeFlags* SERD_NULLABLE flags);
@@ -160,8 +153,7 @@ serd_strlen(const uint8_t* SERD_NONNULL  str,
    except this function is locale-independent and always matches the lexical
    format used in the Turtle grammar (the decimal point is always ".").
 */
-SERD_API
-double
+SERD_API double
 serd_strtod(const char* SERD_NONNULL          str,
             char* SERD_NONNULL* SERD_NULLABLE endptr);
 
@@ -176,8 +168,7 @@ serd_strtod(const char* SERD_NONNULL          str,
    @param size Set to the size of the returned blob in bytes.
    @return A newly allocated blob which must be freed with serd_free().
 */
-SERD_API
-void* SERD_ALLOCATED
+SERD_API void* SERD_ALLOCATED
 serd_base64_decode(const uint8_t* SERD_NONNULL str,
                    size_t                      len,
                    size_t* SERD_NONNULL        size);
@@ -253,9 +244,8 @@ static const SerdURI SERD_URI_NULL =
    encoding and other issues are not handled, to properly convert a file URI to
    a path, use serd_file_uri_parse().
 */
-SERD_API
 SERD_DEPRECATED_BY("serd_file_uri_parse")
-const uint8_t* SERD_NULLABLE
+SERD_API const uint8_t* SERD_NULLABLE
 serd_uri_to_path(const uint8_t* SERD_NONNULL uri);
 
 #endif
@@ -269,8 +259,7 @@ serd_uri_to_path(const uint8_t* SERD_NONNULL uri);
    @param hostname If non-NULL, set to the hostname, if present.
    @return The path component of the URI.
 */
-SERD_API
-uint8_t* SERD_NULLABLE
+SERD_API uint8_t* SERD_NULLABLE
 serd_file_uri_parse(const uint8_t* SERD_NONNULL          uri,
                     uint8_t* SERD_NONNULL* SERD_NULLABLE hostname);
 
@@ -280,8 +269,7 @@ bool
 serd_uri_string_has_scheme(const uint8_t* SERD_NULLABLE utf8);
 
 /// Parse `utf8`, writing result to `out`
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_uri_parse(const uint8_t* SERD_NONNULL utf8, SerdURI* SERD_NONNULL out);
 
 /**
@@ -289,15 +277,13 @@ serd_uri_parse(const uint8_t* SERD_NONNULL utf8, SerdURI* SERD_NONNULL out);
 
    @see [RFC3986 5.2.2](http://tools.ietf.org/html/rfc3986#section-5.2.2)
 */
-SERD_API
-void
+SERD_API void
 serd_uri_resolve(const SerdURI* SERD_NONNULL r,
                  const SerdURI* SERD_NONNULL base,
                  SerdURI* SERD_NONNULL       t);
 
 /// Serialise `uri` with a series of calls to `sink`
-SERD_API
-size_t
+SERD_API size_t
 serd_uri_serialise(const SerdURI* SERD_NONNULL uri,
                    SerdSink SERD_NONNULL       sink,
                    void* SERD_NONNULL          stream);
@@ -309,8 +295,7 @@ serd_uri_serialise(const SerdURI* SERD_NONNULL uri,
    `root`.  The optional `root` parameter must be a prefix of `base` and can be
    used keep up-references ("../") within a certain namespace.
 */
-SERD_API
-size_t
+SERD_API size_t
 serd_uri_serialise_relative(const SerdURI* SERD_NONNULL  uri,
                             const SerdURI* SERD_NULLABLE base,
                             const SerdURI* SERD_NULLABLE root,
@@ -393,8 +378,7 @@ static const SerdNode SERD_NODE_NULL = {NULL, 0, 0, 0, SERD_NOTHING};
 
    This measures, but does not copy, `str`.  No memory is allocated.
 */
-SERD_API
-SerdNode
+SERD_API SerdNode
 serd_node_from_string(SerdType type, const uint8_t* SERD_NULLABLE str);
 
 /**
@@ -403,22 +387,19 @@ serd_node_from_string(SerdType type, const uint8_t* SERD_NULLABLE str);
    This measures, but does not copy, `str`.  No memory is allocated.
    Note that the returned node may not be null terminated.
 */
-SERD_API
-SerdNode
+SERD_API SerdNode
 serd_node_from_substring(SerdType                     type,
                          const uint8_t* SERD_NULLABLE str,
                          size_t                       len);
 
 /// Simple wrapper for serd_node_new_uri() to resolve a URI node
-SERD_API
-SerdNode
+SERD_API SerdNode
 serd_node_new_uri_from_node(const SerdNode* SERD_NONNULL uri_node,
                             const SerdURI* SERD_NULLABLE base,
                             SerdURI* SERD_NULLABLE       out);
 
 /// Simple wrapper for serd_node_new_uri() to resolve a URI string
-SERD_API
-SerdNode
+SERD_API SerdNode
 serd_node_new_uri_from_string(const uint8_t* SERD_NULLABLE str,
                               const SerdURI* SERD_NULLABLE base,
                               SerdURI* SERD_NULLABLE       out);
@@ -433,8 +414,7 @@ serd_node_new_uri_from_string(const uint8_t* SERD_NULLABLE str,
    If `path` is relative, `hostname` is ignored.
    If `out` is not NULL, it will be set to the parsed URI.
 */
-SERD_API
-SerdNode
+SERD_API SerdNode
 serd_node_new_file_uri(const uint8_t* SERD_NONNULL  path,
                        const uint8_t* SERD_NULLABLE hostname,
                        SerdURI* SERD_NULLABLE       out,
@@ -450,8 +430,7 @@ serd_node_new_file_uri(const uint8_t* SERD_NONNULL  path,
    @param out Set to the parsing of the new URI (i.e. points only to
    memory owned by the new returned node).
 */
-SERD_API
-SerdNode
+SERD_API SerdNode
 serd_node_new_uri(const SerdURI* SERD_NONNULL  uri,
                   const SerdURI* SERD_NULLABLE base,
                   SerdURI* SERD_NULLABLE       out);
@@ -468,8 +447,7 @@ serd_node_new_uri(const SerdURI* SERD_NONNULL  uri,
    @param out Set to the parsing of the new URI (i.e. points only to
    memory owned by the new returned node).
 */
-SERD_API
-SerdNode
+SERD_API SerdNode
 serd_node_new_relative_uri(const SerdURI* SERD_NONNULL  uri,
                            const SerdURI* SERD_NULLABLE base,
                            const SerdURI* SERD_NULLABLE root,
@@ -490,13 +468,11 @@ serd_node_new_relative_uri(const SerdURI* SERD_NONNULL  uri,
    @param d The value for the new node.
    @param frac_digits The maximum number of digits after the decimal place.
 */
-SERD_API
-SerdNode
+SERD_API SerdNode
 serd_node_new_decimal(double d, unsigned frac_digits);
 
 /// Create a new node by serialising `i` into an xsd:integer string
-SERD_API
-SerdNode
+SERD_API SerdNode
 serd_node_new_integer(int64_t i);
 
 /**
@@ -509,8 +485,7 @@ serd_node_new_integer(int64_t i);
    @param size Size of `buf`.
    @param wrap_lines Wrap lines at 76 characters to conform to RFC 2045.
 */
-SERD_API
-SerdNode
+SERD_API SerdNode
 serd_node_new_blob(const void* SERD_NONNULL buf, size_t size, bool wrap_lines);
 
 /**
@@ -518,8 +493,7 @@ serd_node_new_blob(const void* SERD_NONNULL buf, size_t size, bool wrap_lines);
 
    @return a node that the caller must free with serd_node_free().
 */
-SERD_API
-SerdNode
+SERD_API SerdNode
 serd_node_copy(const SerdNode* SERD_NULLABLE node);
 
 /// Return true iff `a` is equal to `b`
@@ -534,8 +508,7 @@ serd_node_equals(const SerdNode* SERD_NONNULL a,
    Note that if `node` is itself dynamically allocated (which is not the case
    for nodes created internally by serd), it will not be freed.
 */
-SERD_API
-void
+SERD_API void
 serd_node_free(SerdNode* SERD_NULLABLE node);
 
 /**
@@ -630,24 +603,20 @@ typedef SerdStatus (*SerdEndSink)(void* SERD_NULLABLE          handle,
 typedef struct SerdEnvImpl SerdEnv;
 
 /// Create a new environment
-SERD_API
-SerdEnv* SERD_ALLOCATED
+SERD_API SerdEnv* SERD_ALLOCATED
 serd_env_new(const SerdNode* SERD_NULLABLE base_uri);
 
 /// Free `env`
-SERD_API
-void
+SERD_API void
 serd_env_free(SerdEnv* SERD_NULLABLE env);
 
 /// Get the current base URI
-SERD_API
-const SerdNode* SERD_NONNULL
+SERD_API const SerdNode* SERD_NONNULL
 serd_env_get_base_uri(const SerdEnv* SERD_NONNULL env,
                       SerdURI* SERD_NULLABLE      out);
 
 /// Set the current base URI
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_env_set_base_uri(SerdEnv* SERD_NONNULL         env,
                       const SerdNode* SERD_NULLABLE uri);
 
@@ -658,22 +627,19 @@ serd_env_set_base_uri(SerdEnv* SERD_NONNULL         env,
    prefix "xsd" set to "http://www.w3.org/2001/XMLSchema#", "xsd:decimal" will
    expand to "http://www.w3.org/2001/XMLSchema#decimal".
 */
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_env_set_prefix(SerdEnv* SERD_NONNULL        env,
                     const SerdNode* SERD_NONNULL name,
                     const SerdNode* SERD_NONNULL uri);
 
 /// Set a namespace prefix
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_env_set_prefix_from_strings(SerdEnv* SERD_NONNULL       env,
                                  const uint8_t* SERD_NONNULL name,
                                  const uint8_t* SERD_NONNULL uri);
 
 /// Qualify `uri` into a CURIE if possible
-SERD_API
-bool
+SERD_API bool
 serd_env_qualify(const SerdEnv* SERD_NULLABLE env,
                  const SerdNode* SERD_NONNULL uri,
                  SerdNode* SERD_NONNULL       prefix,
@@ -685,8 +651,7 @@ serd_env_qualify(const SerdEnv* SERD_NULLABLE env,
    Errors: SERD_ERR_BAD_ARG if `curie` is not valid, or SERD_ERR_BAD_CURIE if
    prefix is not defined in `env`.
 */
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_env_expand(const SerdEnv* SERD_NULLABLE env,
                 const SerdNode* SERD_NONNULL curie,
                 SerdChunk* SERD_NONNULL      uri_prefix,
@@ -697,14 +662,12 @@ serd_env_expand(const SerdEnv* SERD_NULLABLE env,
 
    Returns null if `node` can not be expanded.
 */
-SERD_API
-SerdNode
+SERD_API SerdNode
 serd_env_expand_node(const SerdEnv* SERD_NULLABLE env,
                      const SerdNode* SERD_NONNULL node);
 
 /// Call `func` for each prefix defined in `env`
-SERD_API
-void
+SERD_API void
 serd_env_foreach(const SerdEnv* SERD_NONNULL env,
                  SerdPrefixSink SERD_NONNULL func,
                  void* SERD_NULLABLE         handle);
@@ -719,8 +682,7 @@ serd_env_foreach(const SerdEnv* SERD_NONNULL env,
 typedef struct SerdReaderImpl SerdReader;
 
 /// Create a new RDF reader
-SERD_API
-SerdReader* SERD_ALLOCATED
+SERD_API SerdReader* SERD_ALLOCATED
 serd_reader_new(SerdSyntax          syntax,
                 void* SERD_NULLABLE handle,
                 void (*SERD_NULLABLE free_handle)(void* SERD_NULLABLE),
@@ -736,8 +698,7 @@ serd_reader_new(SerdSyntax          syntax,
    invalid characters.  Setting strict will fail when parsing such files.  An
    error is printed for invalid input in either case.
 */
-SERD_API
-void
+SERD_API void
 serd_reader_set_strict(SerdReader* SERD_NONNULL reader, bool strict);
 
 /**
@@ -746,8 +707,7 @@ serd_reader_set_strict(SerdReader* SERD_NONNULL reader, bool strict);
    The `error_sink` will be called with `handle` as its first argument.  If
    no error function is set, errors are printed to stderr in GCC style.
 */
-SERD_API
-void
+SERD_API void
 serd_reader_set_error_sink(SerdReader* SERD_NONNULL    reader,
                            SerdErrorSink SERD_NULLABLE error_sink,
                            void* SERD_NULLABLE         error_handle);
@@ -766,8 +726,7 @@ serd_reader_get_handle(const SerdReader* SERD_NONNULL reader);
    corrupt data.  By setting a unique blank node prefix for each parsed file,
    this can be avoided, while preserving blank node names.
 */
-SERD_API
-void
+SERD_API void
 serd_reader_add_blank_prefix(SerdReader* SERD_NONNULL     reader,
                              const uint8_t* SERD_NULLABLE prefix);
 
@@ -778,14 +737,12 @@ serd_reader_add_blank_prefix(SerdReader* SERD_NONNULL     reader,
    node for any statements that are not in a named graph (which is currently
    all of them since Serd currently does not support any graph syntaxes).
 */
-SERD_API
-void
+SERD_API void
 serd_reader_set_default_graph(SerdReader* SERD_NONNULL      reader,
                               const SerdNode* SERD_NULLABLE graph);
 
 /// Read a file at a given `uri`
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_reader_read_file(SerdReader* SERD_NONNULL    reader,
                       const uint8_t* SERD_NONNULL uri);
 
@@ -797,8 +754,7 @@ serd_reader_read_file(SerdReader* SERD_NONNULL    reader,
    must be ready before any callbacks will fire.  To react as soon as input
    arrives, set `bulk` to false.
 */
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_reader_start_stream(SerdReader* SERD_NONNULL     reader,
                          FILE* SERD_NONNULL           file,
                          const uint8_t* SERD_NULLABLE name,
@@ -810,8 +766,7 @@ serd_reader_start_stream(SerdReader* SERD_NONNULL     reader,
    The `read_func` is guaranteed to only be called for `page_size` elements
    with size 1 (i.e. `page_size` bytes).
 */
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_reader_start_source_stream(SerdReader* SERD_NONNULL         reader,
                                 SerdSource SERD_NONNULL          read_func,
                                 SerdStreamErrorFunc SERD_NONNULL error_func,
@@ -827,25 +782,21 @@ serd_reader_start_source_stream(SerdReader* SERD_NONNULL         reader,
    until a '.' is encountered.  This is particularly useful for reading
    directly from a pipe or socket.
 */
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_reader_read_chunk(SerdReader* SERD_NONNULL reader);
 
 /// Finish an incremental read from a file handle
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_reader_end_stream(SerdReader* SERD_NONNULL reader);
 
 /// Read `file`
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_reader_read_file_handle(SerdReader* SERD_NONNULL     reader,
                              FILE* SERD_NONNULL           file,
                              const uint8_t* SERD_NULLABLE name);
 
 /// Read a user-specified byte source
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_reader_read_source(SerdReader* SERD_NONNULL         reader,
                         SerdSource SERD_NONNULL          source,
                         SerdStreamErrorFunc SERD_NONNULL error,
@@ -854,8 +805,7 @@ serd_reader_read_source(SerdReader* SERD_NONNULL         reader,
                         size_t                           page_size);
 
 /// Read `utf8`
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_reader_read_string(SerdReader* SERD_NONNULL    reader,
                         const uint8_t* SERD_NONNULL utf8);
 
@@ -868,13 +818,11 @@ serd_reader_read_string(SerdReader* SERD_NONNULL    reader,
    @return #SERD_SUCCESS if the given byte was reached, or #SERD_FAILURE if the
    end of input is reached.
 */
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_reader_skip_until_byte(SerdReader* SERD_NONNULL reader, uint8_t byte);
 
 /// Free `reader`
-SERD_API
-void
+SERD_API void
 serd_reader_free(SerdReader* SERD_NULLABLE reader);
 
 /**
@@ -902,8 +850,7 @@ typedef enum {
 } SerdStyle;
 
 /// Create a new RDF writer
-SERD_API
-SerdWriter* SERD_ALLOCATED
+SERD_API SerdWriter* SERD_ALLOCATED
 serd_writer_new(SerdSyntax                   syntax,
                 SerdStyle                    style,
                 SerdEnv* SERD_NONNULL        env,
@@ -912,8 +859,7 @@ serd_writer_new(SerdSyntax                   syntax,
                 void* SERD_NULLABLE          stream);
 
 /// Free `writer`
-SERD_API
-void
+SERD_API void
 serd_writer_free(SerdWriter* SERD_NULLABLE writer);
 
 /// Return the env used by `writer`
@@ -927,8 +873,7 @@ serd_writer_get_env(SerdWriter* SERD_NONNULL writer);
    This function can be used as a SerdSink when writing to a FILE*.  The
    `stream` parameter must be a FILE* opened for writing.
 */
-SERD_API
-size_t
+SERD_API size_t
 serd_file_sink(const void* SERD_NONNULL buf,
                size_t                   len,
                void* SERD_NONNULL       stream);
@@ -941,8 +886,7 @@ serd_file_sink(const void* SERD_NONNULL buf,
    an initialized SerdChunk.  When the write is finished, the string should be
    retrieved with serd_chunk_sink_finish().
 */
-SERD_API
-size_t
+SERD_API size_t
 serd_chunk_sink(const void* SERD_NONNULL buf,
                 size_t                   len,
                 void* SERD_NONNULL       stream);
@@ -953,8 +897,7 @@ serd_chunk_sink(const void* SERD_NONNULL buf,
    The returned string is the result of the serialisation, which is null
    terminated (by this function) and owned by the caller.
 */
-SERD_API
-uint8_t* SERD_NULLABLE
+SERD_API uint8_t* SERD_NULLABLE
 serd_chunk_sink_finish(SerdChunk* SERD_NONNULL stream);
 
 /**
@@ -963,8 +906,7 @@ serd_chunk_sink_finish(SerdChunk* SERD_NONNULL stream);
    The `error_sink` will be called with `handle` as its first argument.  If
    no error function is set, errors are printed to stderr.
 */
-SERD_API
-void
+SERD_API void
 serd_writer_set_error_sink(SerdWriter* SERD_NONNULL   writer,
                            SerdErrorSink SERD_NONNULL error_sink,
                            void* SERD_NULLABLE        error_handle);
@@ -975,8 +917,7 @@ serd_writer_set_error_sink(SerdWriter* SERD_NONNULL   writer,
    This is the counterpart to serd_reader_add_blank_prefix() which can be used
    to "undo" added prefixes.
 */
-SERD_API
-void
+SERD_API void
 serd_writer_chop_blank_prefix(SerdWriter* SERD_NONNULL     writer,
                               const uint8_t* SERD_NULLABLE prefix);
 
@@ -985,8 +926,7 @@ serd_writer_chop_blank_prefix(SerdWriter* SERD_NONNULL     writer,
 
    Note this function can be safely casted to SerdBaseSink.
 */
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_writer_set_base_uri(SerdWriter* SERD_NONNULL      writer,
                          const SerdNode* SERD_NULLABLE uri);
 
@@ -1000,8 +940,7 @@ serd_writer_set_base_uri(SerdWriter* SERD_NONNULL      writer,
    written non-relatively as <file:///foo>.  If the root is not explicitly set,
    it defaults to the base URI, so no up-references will be created at all.
 */
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_writer_set_root_uri(SerdWriter* SERD_NONNULL      writer,
                          const SerdNode* SERD_NULLABLE uri);
 
@@ -1010,8 +949,7 @@ serd_writer_set_root_uri(SerdWriter* SERD_NONNULL      writer,
 
    Note this function can be safely casted to SerdPrefixSink.
 */
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_writer_set_prefix(SerdWriter* SERD_NONNULL     writer,
                        const SerdNode* SERD_NONNULL name,
                        const SerdNode* SERD_NONNULL uri);
@@ -1021,8 +959,7 @@ serd_writer_set_prefix(SerdWriter* SERD_NONNULL     writer,
 
    Note this function can be safely casted to SerdStatementSink.
 */
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_writer_write_statement(SerdWriter* SERD_NONNULL      writer,
                             SerdStatementFlags            flags,
                             const SerdNode* SERD_NULLABLE graph,
@@ -1037,8 +974,7 @@ serd_writer_write_statement(SerdWriter* SERD_NONNULL      writer,
 
    Note this function can be safely casted to SerdEndSink.
 */
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_writer_end_anon(SerdWriter* SERD_NONNULL      writer,
                      const SerdNode* SERD_NULLABLE node);
 
@@ -1048,8 +984,7 @@ serd_writer_end_anon(SerdWriter* SERD_NONNULL      writer,
    This flushes any pending output, for example terminating punctuation, so
    that the output is a complete document.
 */
-SERD_API
-SerdStatus
+SERD_API SerdStatus
 serd_writer_finish(SerdWriter* SERD_NONNULL writer);
 
 /**
