@@ -1135,7 +1135,7 @@ read_object(SerdReader* const  reader,
   const size_t orig_stack_size = reader->stack.size;
 #endif
 
-  SerdStatus ret = SERD_FAILURE;
+  SerdStatus st = SERD_FAILURE;
 
   bool      simple   = (ctx->subject != 0);
   SerdNode* node     = NULL;
@@ -1161,18 +1161,18 @@ read_object(SerdReader* const  reader,
     return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected object\n");
   case '[':
     simple = false;
-    ret    = read_anon(reader, *ctx, false, &o);
+    st     = read_anon(reader, *ctx, false, &o);
     break;
   case '(':
     simple = false;
-    ret    = read_collection(reader, *ctx, &o);
+    st     = read_collection(reader, *ctx, &o);
     break;
   case '_':
-    ret = read_BLANK_NODE_LABEL(reader, &o, ate_dot);
+    st = read_BLANK_NODE_LABEL(reader, &o, ate_dot);
     break;
   case '<':
   case ':':
-    ret = read_iri(reader, &o, ate_dot);
+    st = read_iri(reader, &o, ate_dot);
     break;
   case '+':
   case '-':
@@ -1187,11 +1187,11 @@ read_object(SerdReader* const  reader,
   case '7':
   case '8':
   case '9':
-    ret = read_number(reader, &o, &datatype, ate_dot);
+    st = read_number(reader, &o, &datatype, ate_dot);
     break;
   case '\"':
   case '\'':
-    ret = read_literal(reader, &o, &datatype, &lang, &flags, ate_dot);
+    st = read_literal(reader, &o, &datatype, &lang, &flags, ate_dot);
     break;
   default:
     /* Either a boolean literal, or a qname.  Read the prefix first, and if
@@ -1205,25 +1205,25 @@ read_object(SerdReader* const  reader,
         (node->n_bytes == 5 && !memcmp(node->buf, "false", 5))) {
       node->type = SERD_LITERAL;
       datatype   = push_node(reader, SERD_URI, XSD_BOOLEAN, XSD_BOOLEAN_LEN);
-      ret        = SERD_SUCCESS;
+      st         = SERD_SUCCESS;
     } else if (read_PN_PREFIX_tail(reader, o) > SERD_FAILURE) {
-      ret = SERD_ERR_BAD_SYNTAX;
+      st = SERD_ERR_BAD_SYNTAX;
     } else {
-      if ((ret = read_PrefixedName(reader, o, false, ate_dot))) {
-        ret = ret > SERD_FAILURE ? ret : SERD_ERR_BAD_SYNTAX;
+      if ((st = read_PrefixedName(reader, o, false, ate_dot))) {
+        st = st > SERD_FAILURE ? st : SERD_ERR_BAD_SYNTAX;
         pop_node(reader, o);
-        return r_err(reader, ret, "expected prefixed name\n");
+        return r_err(reader, st, "expected prefixed name\n");
       }
     }
   }
 
-  if (!ret && simple && o) {
+  if (!st && simple && o) {
     deref(reader, o)->flags = flags;
   }
 
-  if (!ret && emit && simple) {
-    ret = emit_statement(reader, *ctx, o, datatype, lang);
-  } else if (!ret && !emit) {
+  if (!st && emit && simple) {
+    st = emit_statement(reader, *ctx, o, datatype, lang);
+  } else if (!st && !emit) {
     ctx->object   = o;
     ctx->datatype = datatype;
     ctx->lang     = lang;
@@ -1236,7 +1236,7 @@ read_object(SerdReader* const  reader,
 #ifndef NDEBUG
   assert(reader->stack.size == orig_stack_size);
 #endif
-  return ret;
+  return st;
 }
 
 static SerdStatus
