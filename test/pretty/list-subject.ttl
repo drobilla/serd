@@ -1,0 +1,7 @@
+@prefix eg: <http://example.org/> .
+
+(
+	"apple"
+	"banana"
+	"cherry"
+) a eg:ExampleList .

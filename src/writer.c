@@ -43,6 +43,7 @@ typedef enum {
   SEP_S_P,         ///< Between a subject and predicate (whitespace)
   SEP_P_O,         ///< Between a predicate and object (whitespace)
   SEP_ANON_BEGIN,  ///< Start of anonymous node ('[')
+  SEP_ANON_S_P,    ///< Between anonymous subject and predicate (whitespace)
   SEP_ANON_END,    ///< End of anonymous node (']')
   SEP_LIST_BEGIN,  ///< Start of list ('(')
   SEP_LIST_SEP,    ///< List separator (whitespace)
@@ -68,6 +69,7 @@ static const SepRule rules[] = {{NULL, 0, 0, 0, 0},
                                 {NULL, 0, 0, 1, 0},
                                 {" ", 1, 0, 0, 0},
                                 {"[", 1, 0, 1, 1},
+                                {NULL, 0, 0, 0, 0},
                                 {"]", 1, 1, 0, 0},
                                 {"(", 1, 0, 0, 0},
                                 {NULL, 0, 0, 1, 0},
@@ -692,7 +694,6 @@ write_blank(SerdWriter* const        writer,
       assert(writer->list_depth == 0);
       copy_node(&writer->list_subj, node);
       ++writer->list_depth;
-      ++writer->indent;
       return write_sep(writer, SEP_LIST_BEGIN);
     }
 
@@ -892,8 +893,13 @@ serd_writer_write_statement(SerdWriter*        writer,
       }
 
       write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags);
-      ++writer->indent;
-      write_sep(writer, SEP_S_P);
+      if ((flags & SERD_ANON_S_BEGIN)) {
+        write_sep(writer, SEP_ANON_S_P);
+      } else {
+        ++writer->indent;
+        write_sep(writer, SEP_S_P);
+      }
+
     } else {
       ++writer->indent;
     }

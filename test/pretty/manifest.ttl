@@ -19,9 +19,13 @@
 		<#empty-list-subject-and-object>
 		<#ext-named-blank>
 		<#graph-abbreviation>
+		<#inline-blank-subject>
+		<#inline-blanks-and-lists>
+		<#inline-list-subject>
 		<#langtags>
 		<#list-in-object>
 		<#list-object>
+		<#list-subject>
 		<#local-name-escapes>
 		<#long-string-escapes>
 		<#long-string-quotes>
@@ -30,6 +34,7 @@
 		<#nested-list-object>
 		<#short-string-escapes>
 		<#uri-escapes>
+		<#nested-list-subject>
 	) .
 
 <#abbreviation>
@@ -104,6 +109,24 @@
 	mf:name "graph-abbreviation" ;
 	mf:result <graph-abbreviation.trig> .
 
+<#inline-blank-subject>
+	a rdft:TestTurtleEval ;
+	mf:action <inline-blank-subject.ttl> ;
+	mf:name "inline-blank-subject" ;
+	mf:result <inline-blank-subject.ttl> .
+
+<#inline-blanks-and-lists>
+	a rdft:TestTurtleEval ;
+	mf:action <inline-blanks-and-lists.ttl> ;
+	mf:name "inline-blanks-and-lists" ;
+	mf:result <inline-blanks-and-lists.ttl> .
+
+<#inline-list-subject>
+	a rdft:TestTurtleEval ;
+	mf:action <inline-list-subject.ttl> ;
+	mf:name "inline-list-subject" ;
+	mf:result <inline-list-subject.ttl> .
+
 <#langtags>
 	a rdft:TestTurtleEval ;
 	mf:action <langtags.ttl> ;
@@ -121,6 +144,12 @@
 	mf:action <list-object.ttl> ;
 	mf:name "list-object" ;
 	mf:result <list-object.ttl> .
+
+<#list-subject>
+	a rdft:TestTurtleEval ;
+	mf:action <list-subject.ttl> ;
+	mf:name "list-subject" ;
+	mf:result <list-subject.ttl> .
 
 <#local-name-escapes>
 	a rdft:TestTurtleEval ;
@@ -157,6 +186,12 @@
 	mf:action <nested-list-object.ttl> ;
 	mf:name "nested-list-object" ;
 	mf:result <nested-list-object.ttl> .
+
+<#nested-list-subject>
+	a rdft:TestTurtleEval ;
+	mf:action <nested-list-subject.ttl> ;
+	mf:name "nested-list-subject" ;
+	mf:result <nested-list-subject.ttl> .
 
 <#short-string-escapes>
 	a rdft:TestTurtleEval ;
