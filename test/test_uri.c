@@ -1,4 +1,4 @@
-// Copyright 2011-2020 David Robillard <d@drobilla.net>
+// Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #undef NDEBUG
@@ -14,11 +14,32 @@
 #define USTR(s) ((const uint8_t*)(s))
 
 static void
-test_file_uri(const char* hostname,
-              const char* path,
-              bool        escape,
-              const char* expected_uri,
-              const char* expected_path)
+test_uri_string_has_scheme(void)
+{
+  assert(!serd_uri_string_has_scheme(USTR("relative")));
+  assert(!serd_uri_string_has_scheme(USTR("http")));
+  assert(!serd_uri_string_has_scheme(USTR("5nostartdigit")));
+  assert(!serd_uri_string_has_scheme(USTR("+nostartplus")));
+  assert(!serd_uri_string_has_scheme(USTR("-nostartminus")));
+  assert(!serd_uri_string_has_scheme(USTR(".nostartdot")));
+  assert(!serd_uri_string_has_scheme(USTR(":missing")));
+  assert(!serd_uri_string_has_scheme(USTR("a/slash/is/not/a/scheme/char")));
+
+  assert(serd_uri_string_has_scheme(USTR("http://example.org/")));
+  assert(serd_uri_string_has_scheme(USTR("https://example.org/")));
+  assert(serd_uri_string_has_scheme(USTR("allapha:path")));
+  assert(serd_uri_string_has_scheme(USTR("w1thd1g1t5:path")));
+  assert(serd_uri_string_has_scheme(USTR("with.dot:path")));
+  assert(serd_uri_string_has_scheme(USTR("with+plus:path")));
+  assert(serd_uri_string_has_scheme(USTR("with-minus:path")));
+}
+
+static void
+test_file_uri(const char* const hostname,
+              const char* const path,
+              const bool        escape,
+              const char* const expected_uri,
+              const char*       expected_path)
 {
   if (!expected_path) {
     expected_path = path;
@@ -30,6 +51,7 @@ test_file_uri(const char* hostname,
   uint8_t* out_path     = serd_file_uri_parse(node.buf, &out_hostname);
   assert(!strcmp((const char*)node.buf, expected_uri));
   assert((hostname && out_hostname) || (!hostname && !out_hostname));
+  assert(!hostname || !strcmp(hostname, (const char*)out_hostname));
   assert(!strcmp((const char*)out_path, (const char*)expected_path));
 
   serd_free(out_path);
@@ -213,6 +235,7 @@ int
 main(void)
 {
   test_uri_to_path();
+  test_uri_string_has_scheme();
   test_uri_parsing();
   test_uri_from_string();
   test_relative_uri();
