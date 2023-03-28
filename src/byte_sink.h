@@ -1,8 +1,8 @@
-// Copyright 2011-2020 David Robillard <d@drobilla.net>
+// Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#ifndef SERD_BYTE_SINK_H
-#define SERD_BYTE_SINK_H
+#ifndef SERD_SRC_BYTE_SINK_H
+#define SERD_SRC_BYTE_SINK_H
 
 #include "serd_internal.h"
 #include "system.h"
@@ -82,4 +82,4 @@ serd_byte_sink_write(const void* buf, size_t len, SerdByteSink* bsink)
   return orig_len;
 }
 
-#endif // SERD_BYTE_SINK_H
+#endif // SERD_SRC_BYTE_SINK_H

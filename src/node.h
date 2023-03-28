@@ -1,8 +1,8 @@
-// Copyright 2011-2020 David Robillard <d@drobilla.net>
+// Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#ifndef SERD_NODE_H
-#define SERD_NODE_H
+#ifndef SERD_SRC_NODE_H
+#define SERD_SRC_NODE_H
 
 #include "serd/serd.h"
 
@@ -32,4 +32,4 @@ serd_node_malloc(size_t n_bytes, SerdNodeFlags flags, SerdType type);
 void
 serd_node_set(SerdNode** dst, const SerdNode* src);
 
-#endif // SERD_NODE_H
+#endif // SERD_SRC_NODE_H

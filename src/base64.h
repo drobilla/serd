@@ -1,8 +1,8 @@
-// Copyright 2011-2020 David Robillard <d@drobilla.net>
+// Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#ifndef SERD_BASE64_H
-#define SERD_BASE64_H
+#ifndef SERD_SRC_BASE64_H
+#define SERD_SRC_BASE64_H
 
 #include "serd/serd.h"
 
@@ -32,4 +32,4 @@ serd_base64_get_length(size_t size, bool wrap_lines);
 bool
 serd_base64_encode(uint8_t* str, const void* buf, size_t size, bool wrap_lines);
 
-#endif // SERD_BASE64_H
+#endif // SERD_SRC_BASE64_H

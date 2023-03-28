@@ -1,8 +1,8 @@
-// Copyright 2011-2020 David Robillard <d@drobilla.net>
+// Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#ifndef SERD_BYTE_SOURCE_H
-#define SERD_BYTE_SOURCE_H
+#ifndef SERD_SRC_BYTE_SOURCE_H
+#define SERD_SRC_BYTE_SOURCE_H
 
 #include "serd/serd.h"
 
@@ -104,4 +104,4 @@ serd_byte_source_advance(SerdByteSource* source)
   return (was_eof && source->eof) ? SERD_FAILURE : st;
 }
 
-#endif // SERD_BYTE_SOURCE_H
+#endif // SERD_SRC_BYTE_SOURCE_H

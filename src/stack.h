@@ -1,8 +1,8 @@
-// Copyright 2011-2020 David Robillard <d@drobilla.net>
+// Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#ifndef SERD_STACK_H
-#define SERD_STACK_H
+#ifndef SERD_SRC_STACK_H
+#define SERD_SRC_STACK_H
 
 #include <assert.h>
 #include <stdbool.h>
@@ -103,4 +103,4 @@ serd_stack_pop_aligned(SerdStack* stack, size_t n_bytes)
   serd_stack_pop(stack, pad + 1U);
 }
 
-#endif // SERD_STACK_H
+#endif // SERD_SRC_STACK_H
