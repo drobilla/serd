@@ -110,42 +110,11 @@ serd_strncasecmp(const char* s1, const char* s2, size_t n)
 static inline uint32_t
 utf8_num_bytes(const uint8_t leading)
 {
-  static const uint8_t lengths[32] = {
-    1U, // 00000xxx
-    1U, // 00001xxx
-    1U, // 00010xxx
-    1U, // 00011xxx
-    1U, // 00100xxx
-    1U, // 00101xxx
-    1U, // 00110xxx
-    1U, // 00111xxx
-    1U, // 01000xxx
-    1U, // 01001xxx
-    1U, // 01010xxx
-    1U, // 01011xxx
-    1U, // 01100xxx
-    1U, // 01101xxx
-    1U, // 01110xxx
-    1U, // 01111xxx
-    0U, // 10000xxx
-    0U, // 10001xxx
-    0U, // 10010xxx
-    0U, // 10011xxx
-    0U, // 10100xxx
-    0U, // 10101xxx
-    0U, // 10110xxx
-    0U, // 10111xxx
-    2U, // 11000xxx
-    2U, // 11001xxx
-    2U, // 11010xxx
-    2U, // 11011xxx
-    3U, // 11100xxx
-    3U, // 11101xxx
-    4U, // 11110xxx
-    0U  // 11111xxx
-  };
-
-  return lengths[leading >> 3U];
+  return ((leading & 0x80U) == 0x00U)   ? 1U  // Starts with `0'
+         : ((leading & 0xE0U) == 0xC0U) ? 2U  // Starts with `110'
+         : ((leading & 0xF0U) == 0xE0U) ? 3U  // Starts with `1110'
+         : ((leading & 0xF8U) == 0xF0U) ? 4U  // Starts with `11110'
+                                        : 0U; // Invalid
 }
 
 /// Return the code point of a UTF-8 character with known length
