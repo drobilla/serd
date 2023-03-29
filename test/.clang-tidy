@@ -5,6 +5,7 @@ Checks: >
   -*-magic-numbers,
   -android-cloexec-fopen,
   -bugprone-easily-swappable-parameters,
+  -bugprone-reserved-identifier,
   -cert-err33-c,
   -clang-analyzer-nullability.NullableDereferenced,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
