@@ -4,7 +4,7 @@
 <>
 	rdfs:label "base node" .
 
-<http://example.org/top/root/>
+<../>
 	rdfs:label "root node" .
 
 <s>
@@ -13,7 +13,7 @@
 <../s>
 	rdfs:label "within root" .
 
-<../../s>
+<http://example.org/top/s>
 	rdfs:label "outside root" .
 
 <http://example.com/s>

@@ -265,12 +265,8 @@ test_relative_uri(void)
 
   // Related base
 
-  /* Expected:
   check_relative_uri(
     "http://example.org/a/b", "http://example.org/", NULL, "a/b");
-  Actual: */
-  check_relative_uri(
-    "http://example.org/a/b", "http://example.org/", NULL, "/a/b");
 
   check_relative_uri(
     "http://example.org/a/b", "http://example.org/a/", NULL, "b");
@@ -286,10 +282,7 @@ test_relative_uri(void)
 
   check_relative_uri("http://example.org/", "http://example.org/", NULL, "");
 
-  /* Expected:
   check_relative_uri("http://example.org/", "http://example.org/a", NULL, "");
-  Actual: */
-  check_relative_uri("http://example.org/", "http://example.org/a", NULL, "/");
 
   check_relative_uri(
     "http://example.org/", "http://example.org/a/", NULL, "../");
@@ -337,10 +330,7 @@ test_relative_uri(void)
   check_relative_uri("http://example.org/a/",
                      "http://example.org/a/",
                      "http://example.org/a/",
-                     /* Expected:
                      "");
-                     Actual: */
-                     "http://example.org/a/");
 
   check_relative_uri("http://example.org/a/b",
                      "http://example.org/a/b/c",
@@ -350,10 +340,7 @@ test_relative_uri(void)
   check_relative_uri("http://example.org/a",
                      "http://example.org/a/b/c",
                      "http://example.org/a/b",
-                     /* Expected:
                      "http://example.org/a");
-                     Actual: */
-                     "../../a");
 }
 
 int

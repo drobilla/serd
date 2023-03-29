@@ -32,6 +32,7 @@
 		<#many-objects>
 		<#named-graph>
 		<#nested-list-object>
+		<#relative-uris>
 		<#short-string-escapes>
 		<#uri-escapes>
 		<#nested-list-subject>
@@ -192,6 +193,12 @@
 	mf:action <nested-list-subject.ttl> ;
 	mf:name "nested-list-subject" ;
 	mf:result <nested-list-subject.ttl> .
+
+<#relative-uris>
+	a rdft:TestTurtleEval ;
+	mf:action <relative-uris.ttl> ;
+	mf:name "relative-uris" ;
+	mf:result <relative-uris.ttl> .
 
 <#short-string-escapes>
 	a rdft:TestTurtleEval ;

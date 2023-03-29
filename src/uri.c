@@ -1,4 +1,4 @@
-// Copyright 2011-2020 David Robillard <d@drobilla.net>
+// Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #include "string_utils.h"
@@ -428,10 +428,6 @@ write_rel_path(SerdSink             sink,
     len += sink("../", 3, stream);
   }
 
-  if (last_shared_sep == 0 && up == 0) {
-    len += sink("/", 1, stream);
-  }
-
   // Write suffix
   return len + write_path_tail(sink, stream, uri, last_shared_sep + 1);
 }
@@ -468,8 +464,12 @@ serd_uri_serialise_relative(const SerdURI* const uri,
     if (uri->authority.buf) {
       len += sink("//", 2, stream);
       len += sink(uri->authority.buf, uri->authority.len, stream);
-      if (uri->authority.len > 0 &&
-          uri->authority.buf[uri->authority.len - 1] != '/' &&
+
+      const bool authority_ends_with_slash =
+        (uri->authority.len > 0 &&
+         uri->authority.buf[uri->authority.len - 1] == '/');
+
+      if (!authority_ends_with_slash &&
           serd_uri_path_starts_without_slash(uri)) {
         // Special case: ensure path begins with a slash
         // https://tools.ietf.org/html/rfc3986#section-3.2

@@ -1,7 +1,7 @@
 @base <http://example.org/top/> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
-<http://example.org/top/>
+<>
 	rdfs:label "base node" .
 
 <root/>
@@ -10,7 +10,7 @@
 <root/s>
 	rdfs:label "within root" .
 
-<s>
+<http://example.org/top/s>
 	rdfs:label "within base" .
 
 <http://example.org/other/s>

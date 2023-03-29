@@ -12,6 +12,11 @@
 #include <stdint.h>
 #include <string.h>
 
+typedef struct {
+  size_t shared;
+  size_t root;
+} SlashIndexes;
+
 static inline bool
 chunk_equals(const SerdChunk* a, const SerdChunk* b)
 {
@@ -33,51 +38,64 @@ uri_path_at(const SerdURI* uri, size_t i)
 }
 
 /**
-   Return the index of the first differing character after the last root slash,
-   or zero if `uri` is not under `root`.
+   Return the index of the last slash shared with the root, or `SIZE_MAX`.
+
+   The index of the next slash found in the root is also returned, so the two
+   can be compared to determine if the URI is within the root (if the shared
+   slash is the last in the root, then the URI is a child of the root,
+   otherwise it may merely share some leading path components).
 */
-static inline SERD_PURE_FUNC size_t
+static inline SERD_PURE_FUNC SlashIndexes
 uri_rooted_index(const SerdURI* uri, const SerdURI* root)
 {
+  SlashIndexes indexes = {SIZE_MAX, SIZE_MAX};
+
   if (!root || !root->scheme.len ||
       !chunk_equals(&root->scheme, &uri->scheme) ||
       !chunk_equals(&root->authority, &uri->authority)) {
-    return 0;
+    return indexes;
   }
 
-  bool         differ          = false;
-  const size_t path_len        = uri_path_len(uri);
-  const size_t root_len        = uri_path_len(root);
-  size_t       last_root_slash = 0;
-  for (size_t i = 0; i < path_len && i < root_len; ++i) {
+  const size_t path_len = uri_path_len(uri);
+  const size_t root_len = uri_path_len(root);
+  const size_t min_len  = path_len < root_len ? path_len : root_len;
+  for (size_t i = 0; i < min_len; ++i) {
     const uint8_t u = uri_path_at(uri, i);
     const uint8_t r = uri_path_at(root, i);
 
-    differ = differ || u != r;
-    if (r == '/') {
-      last_root_slash = i;
-      if (differ) {
-        return 0;
+    if (u == r) {
+      if (u == '/') {
+        indexes.root = indexes.shared = i;
       }
+    } else {
+      for (size_t j = i; j < root_len; ++j) {
+        if (uri_path_at(root, j) == '/') {
+          indexes.root = j;
+          break;
+        }
+      }
+
+      return indexes;
     }
   }
 
-  return last_root_slash + 1;
+  return indexes;
 }
 
 /** Return true iff `uri` shares path components with `root` */
 static inline SERD_PURE_FUNC bool
 uri_is_related(const SerdURI* uri, const SerdURI* root)
 {
-  return uri_rooted_index(uri, root) > 0;
+  return uri_rooted_index(uri, root).shared != SIZE_MAX;
 }
 
 /** Return true iff `uri` is within the base of `root` */
 static inline SERD_PURE_FUNC bool
 uri_is_under(const SerdURI* uri, const SerdURI* root)
 {
-  const size_t index = uri_rooted_index(uri, root);
-  return index > 0 && uri->path.len > index;
+  const SlashIndexes indexes = uri_rooted_index(uri, root);
+  return indexes.shared && indexes.shared != SIZE_MAX &&
+         indexes.shared == indexes.root;
 }
 
 static inline bool
