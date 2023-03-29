@@ -1,0 +1,10 @@
+@prefix eg: <http://example.org/> .
+
+eg:s
+	eg:p eg:o .
+
+<http://example.org/a-subject>
+	<http://example.org/a-predicate> <http://example.org/a-object> .
+
+()
+	<http://www.w3.org/2000/01/rdf-schema#label> "nil" .

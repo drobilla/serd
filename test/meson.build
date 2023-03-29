@@ -195,8 +195,19 @@ ns_serdtest = 'http://drobilla.net/sw/serd/test/'
 ns_w3 = 'http://www.w3.org/2013/'
 
 test_suites = {
+  'prefix.remove': [
+    files('prefix/manifest.ttl'), ns_serdtest + 'prefix/',
+    '--', '-c', 'test',
+  ],
   'pretty': [
-    files('pretty/manifest.ttl'), ns_serdtest + 'pretty/'
+    files('pretty/manifest.ttl'), ns_serdtest + 'pretty/',
+  ],
+  'qualify': [
+    files('qualify/manifest.ttl'), ns_serdtest + 'qualify/',
+  ],
+  'root': [
+    files('root/manifest.ttl'), ns_serdtest + 'root/',
+    '--', '-r', 'http://example.org/top/root/',
   ],
 }
 
@@ -226,6 +237,17 @@ if not get_option('tools').disabled()
          timeout: 240)
   endforeach
 
+  test('good.bulk', run_test_suite,
+       args: script_args + [
+         files('good/manifest.ttl'),
+         ns_serdtest + 'good/',
+         '--',
+         '-b'
+       ],
+       is_parallel: false,
+       suite: ['rdf', 'serd'],
+       timeout: 240)
+
   ### The lax suite is special because it is run twice...
   lax_manifest = files('lax/manifest.ttl')
   lax_base_uri = ns_serdtest + 'lax/'
@@ -252,7 +274,7 @@ if not get_option('tools').disabled()
     manifest = files(syntax + 'Tests' / 'manifest.ttl')
     base_uri = ns_w3 + syntax + 'Tests/'
 
-    args = ['--syntax', syntax, manifest, base_uri]
+    args = [manifest, base_uri]
     if syntax == 'TriG'
       args += ['--', '-a']
     endif
