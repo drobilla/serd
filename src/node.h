@@ -6,6 +6,8 @@
 
 #include "serd/attributes.h"
 #include "serd/node.h"
+#include "serd/string_view.h"
+#include "serd/uri.h"
 
 #include <stddef.h>
 
@@ -33,5 +35,9 @@ serd_node_malloc(size_t length, SerdNodeFlags flags, SerdNodeType type);
 void
 serd_node_set(SerdNode* SERD_NULLABLE* SERD_NONNULL dst,
               const SerdNode* SERD_NULLABLE         src);
+
+/// Create a new URI from a string, resolved against a base URI
+SerdNode* SERD_ALLOCATED
+serd_new_resolved_uri(SerdStringView string, SerdURIView base_uri);
 
 #endif // SERD_SRC_NODE_H

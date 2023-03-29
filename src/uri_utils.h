@@ -25,17 +25,17 @@ slice_equals(const SerdStringView* a, const SerdStringView* b)
 static inline size_t
 uri_path_len(const SerdURIView* uri)
 {
-  return uri->path_base.length + uri->path.length;
+  return uri->path_prefix.length + uri->path.length;
 }
 
 static inline char
 uri_path_at(const SerdURIView* uri, size_t i)
 {
-  if (i < uri->path_base.length) {
-    return uri->path_base.data[i];
+  if (i < uri->path_prefix.length) {
+    return uri->path_prefix.data[i];
   }
 
-  return uri->path.data[i - uri->path_base.length];
+  return uri->path.data[i - uri->path_prefix.length];
 }
 
 /**
@@ -87,7 +87,9 @@ uri_rooted_index(const SerdURIView* uri, const SerdURIView* root)
 static inline SERD_PURE_FUNC bool
 uri_is_related(const SerdURIView* uri, const SerdURIView* root)
 {
-  return uri_rooted_index(uri, root).shared != SIZE_MAX;
+  return root && root->scheme.length &&
+         slice_equals(&root->scheme, &uri->scheme) &&
+         slice_equals(&root->authority, &uri->authority);
 }
 
 /** Return true iff `uri` is within the base of `root` */
