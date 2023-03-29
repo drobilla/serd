@@ -47,7 +47,7 @@ test_file_uri(const char* const hostname,
   SerdNode*   node         = serd_new_file_uri(path, hostname, 0);
   const char* node_str     = serd_node_string(node);
   char*       out_hostname = NULL;
-  char*       out_path     = serd_file_uri_parse(node_str, &out_hostname);
+  char*       out_path     = serd_parse_file_uri(node_str, &out_hostname);
   assert(!strcmp(node_str, expected_uri));
   assert((hostname && out_hostname) || (!hostname && !out_hostname));
   assert(!hostname || !strcmp(hostname, out_hostname));
@@ -105,26 +105,74 @@ test_uri_parsing(void)
                 "/C:\\Pointless Space");
 #endif
 
-  // Test tolerance of parsing junk URI escapes
+  // Missing trailing '/' after authority
+  assert(!serd_parse_file_uri("file://truncated", NULL));
 
-  char* out_path = serd_file_uri_parse("file:///foo/%0Xbar", NULL);
+  // Check that NULL hostname doesn't crash
+  char* out_path = serd_parse_file_uri("file://me/path", NULL);
+  assert(!strcmp(out_path, "/path"));
+  serd_free(out_path);
+
+  // Invalid first escape character
+  out_path = serd_parse_file_uri("file:///foo/%0Xbar", NULL);
+  assert(!strcmp(out_path, "/foo/bar"));
+  serd_free(out_path);
+
+  // Invalid second escape character
+  out_path = serd_parse_file_uri("file:///foo/%X0bar", NULL);
   assert(!strcmp(out_path, "/foo/bar"));
   serd_free(out_path);
 }
 
 static void
-test_uri_from_string(void)
+test_parse_uri(void)
 {
-  assert(!serd_new_uri_from_string("", NULL, NULL));
+  const SerdStringView base = serd_string("http://example.org/a/b/c/");
 
-  SerdURIView base_uri;
-  SerdNode*   base =
-    serd_new_uri_from_string("http://example.org/", NULL, &base_uri);
-  SerdNode* nil = serd_new_uri_from_string("", &base_uri, NULL);
+  const SerdURIView base_uri  = serd_parse_uri(base.data);
+  const SerdURIView empty_uri = serd_parse_uri("");
+
+  SerdNode* const nil =
+    serd_new_parsed_uri(serd_resolve_uri(empty_uri, base_uri));
+
   assert(serd_node_type(nil) == SERD_URI);
-  assert(!strcmp(serd_node_string(nil), serd_node_string(base)));
+  assert(!strcmp(serd_node_string(nil), base.data));
+
   serd_node_free(nil);
-  serd_node_free(base);
+}
+
+static void
+check_is_within(const char* const uri_string,
+                const char* const base_uri_string,
+                const bool        expected)
+{
+  const SerdURIView uri      = serd_parse_uri(uri_string);
+  const SerdURIView base_uri = serd_parse_uri(base_uri_string);
+
+  assert(serd_uri_is_within(uri, base_uri) == expected);
+}
+
+static void
+test_is_within(void)
+{
+  static const char* const base = "http://example.org/base/";
+
+  check_is_within("http://example.org/base/", base, true);
+  check_is_within("http://example.org/base/kid?q", base, true);
+  check_is_within("http://example.org/base/kid", base, true);
+  check_is_within("http://example.org/base/kid#f", base, true);
+  check_is_within("http://example.org/base/kid?q#f", base, true);
+  check_is_within("http://example.org/base/kid/grandkid", base, true);
+
+  check_is_within("http://example.org/base", base, false);
+  check_is_within("http://example.org/based", base, false);
+  check_is_within("http://example.org/bose", base, false);
+  check_is_within("http://example.org/", base, false);
+  check_is_within("http://other.org/base", base, false);
+  check_is_within("ftp://other.org/base", base, false);
+  check_is_within("base", base, false);
+
+  check_is_within("http://example.org/", "rel", false);
 }
 
 static inline bool
@@ -145,31 +193,32 @@ check_relative_uri(const char* const uri_string,
   assert(base_string);
   assert(expected_string);
 
-  SerdURIView uri    = SERD_URI_NULL;
-  SerdURIView base   = SERD_URI_NULL;
-  SerdURIView result = SERD_URI_NULL;
-
-  SerdNode* uri_node  = serd_new_uri_from_string(uri_string, NULL, &uri);
-  SerdNode* base_node = serd_new_uri_from_string(base_string, NULL, &base);
+  SerdNode* const   uri_node  = serd_new_uri(uri_string);
+  const SerdURIView uri       = serd_node_uri_view(uri_node);
+  SerdNode* const   base_node = serd_new_uri(base_string);
+  const SerdURIView base      = serd_node_uri_view(base_node);
 
   SerdNode* result_node = NULL;
-  if (root_string) {
-    SerdURIView root      = SERD_URI_NULL;
-    SerdNode*   root_node = serd_new_uri_from_string(root_string, NULL, &root);
-
-    result_node = serd_new_relative_uri(&uri, &base, &root, &result);
-    serd_node_free(root_node);
+  if (!root_string) {
+    result_node = serd_new_parsed_uri(serd_relative_uri(uri, base));
   } else {
-    result_node = serd_new_relative_uri(&uri, &base, NULL, &result);
+    SerdNode* const   root_node = serd_new_uri(root_string);
+    const SerdURIView root      = serd_node_uri_view(root_node);
+
+    result_node = serd_uri_is_within(uri, root)
+                    ? serd_new_parsed_uri(serd_relative_uri(uri, base))
+                    : serd_new_uri(uri_string);
+
+    serd_node_free(root_node);
   }
 
   assert(!strcmp(serd_node_string(result_node), expected_string));
 
-  SerdURIView expected = SERD_URI_NULL;
-  assert(!serd_uri_parse(expected_string, &expected));
+  const SerdURIView result   = serd_node_uri_view(result_node);
+  const SerdURIView expected = serd_parse_uri(expected_string);
   assert(chunk_equals(&result.scheme, &expected.scheme));
   assert(chunk_equals(&result.authority, &expected.authority));
-  assert(chunk_equals(&result.path_base, &expected.path_base));
+  assert(chunk_equals(&result.path_prefix, &expected.path_prefix));
   assert(chunk_equals(&result.path, &expected.path));
   assert(chunk_equals(&result.query, &expected.query));
   assert(chunk_equals(&result.fragment, &expected.fragment));
@@ -274,13 +323,68 @@ test_relative_uri(void)
                      "http://example.org/a");
 }
 
+static void
+check_uri_string(const SerdURIView uri, const char* const expected)
+{
+  SerdNode* const node = serd_new_parsed_uri(uri);
+  assert(!strcmp(serd_node_string(node), expected));
+  serd_node_free(node);
+}
+
+static void
+test_uri_resolution(void)
+{
+  const SerdStringView top   = serd_string("http://example.org/t/");
+  const SerdStringView base  = serd_string("http://example.org/t/b/");
+  const SerdStringView sub   = serd_string("http://example.org/t/b/s");
+  const SerdStringView deep  = serd_string("http://example.org/t/b/s/d");
+  const SerdStringView other = serd_string("http://example.org/o");
+
+  const SerdURIView top_uri          = serd_parse_uri(top.data);
+  const SerdURIView base_uri         = serd_parse_uri(base.data);
+  const SerdURIView sub_uri          = serd_parse_uri(sub.data);
+  const SerdURIView deep_uri         = serd_parse_uri(deep.data);
+  const SerdURIView other_uri        = serd_parse_uri(other.data);
+  const SerdURIView rel_sub_uri      = serd_relative_uri(sub_uri, base_uri);
+  const SerdURIView resolved_sub_uri = serd_resolve_uri(rel_sub_uri, base_uri);
+
+  check_uri_string(top_uri, top.data);
+  check_uri_string(base_uri, base.data);
+  check_uri_string(sub_uri, sub.data);
+  check_uri_string(deep_uri, deep.data);
+  check_uri_string(other_uri, other.data);
+  check_uri_string(rel_sub_uri, "s");
+  check_uri_string(resolved_sub_uri, sub.data);
+
+  // Failure to resolve because up-reference escapes path prefix
+  const SerdURIView up_uri = serd_relative_uri(resolved_sub_uri, deep_uri);
+  assert(!up_uri.scheme.data);
+  assert(!up_uri.scheme.length);
+  assert(!up_uri.authority.data);
+  assert(!up_uri.authority.length);
+  assert(!up_uri.path_prefix.data);
+  assert(!up_uri.path_prefix.length);
+  assert(!up_uri.path.data);
+  assert(!up_uri.path.length);
+  assert(!up_uri.query.data);
+  assert(!up_uri.query.length);
+  assert(!up_uri.fragment.data);
+  assert(!up_uri.fragment.length);
+
+  // Shared path prefix is within URI path prefix
+  const SerdURIView prefix_uri = serd_relative_uri(resolved_sub_uri, other_uri);
+  check_uri_string(prefix_uri, "t/b/s");
+}
+
 int
 main(void)
 {
   test_uri_string_has_scheme();
   test_uri_parsing();
-  test_uri_from_string();
+  test_parse_uri();
+  test_is_within();
   test_relative_uri();
+  test_uri_resolution();
 
   printf("Success\n");
   return 0;
