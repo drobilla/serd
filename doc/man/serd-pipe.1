@@ -17,11 +17,11 @@
 .Op Fl p Ar prefix
 .Op Fl r Ar root
 .Op Fl s Ar string
-.Ar input
+.Op Ar input ...
 .Sh DESCRIPTION
 .Nm
 is a fast command-line utility for streaming and processing RDF data.
-It reads an RDF document and writes the data to stdout,
+It reads one or more RDF documents and writes the data to stdout,
 possibly transformed and/or in a different syntax.
 By default,
 the input syntax is guessed from the file extension,
