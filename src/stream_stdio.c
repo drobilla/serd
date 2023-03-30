@@ -23,7 +23,6 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <stdint.h>
 #include <stdio.h>
 
 // IWYU pragma: no_include <features.h>
@@ -115,33 +114,11 @@ serd_open_input_file(const char* const path)
   return serd_open_input_stream(serd_fread_wrapper, serd_fclose_wrapper, file);
 }
 
-/// Faster fread-compatible wrapper for reading single bytes
-static SerdStreamResult
-serd_file_read_byte(void* const stream, const size_t len, void* const buf)
-{
-  assert(len == 1U);
-  (void)len;
-
-  SerdStreamResult r = {SERD_SUCCESS, 0U};
-
-  const int c = getc((FILE*)stream);
-  if (c == EOF) {
-    *((uint8_t*)buf) = 0;
-    r.status         = SERD_NO_DATA;
-  } else {
-    *((uint8_t*)buf) = (uint8_t)c;
-    r.count          = 1U;
-  }
-
-  return r;
-}
-
 SerdInputStream
 serd_open_input_standard(void)
 {
   serd_set_stream_utf8_mode(stdin);
-  return serd_open_input_stream(
-    serd_file_read_byte, serd_fclose_wrapper, stdin);
+  return serd_open_input_stream(serd_fread_wrapper, serd_fclose_wrapper, stdin);
 }
 
 /* Output */

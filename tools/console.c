@@ -3,6 +3,7 @@
 
 #include "console.h"
 
+#include <serd/input_stream.h>
 #include <serd/version.h>
 
 #ifdef _WIN32
@@ -13,15 +14,8 @@
 #  include <io.h>
 #endif
 
-void
-serd_set_stream_utf8_mode(FILE* const stream)
-{
-#ifdef _WIN32
-  _setmode(_fileno(stream), _O_BINARY);
-#else
-  (void)stream;
-#endif
-}
+#include <stdio.h>
+#include <string.h>
 
 int
 serd_print_version(const char* const program)
@@ -32,4 +26,11 @@ serd_print_version(const char* const program)
          SERD_MINOR_VERSION,
          SERD_MICRO_VERSION);
   return 0;
+}
+
+SerdInputStream
+serd_open_tool_input(const char* const filename)
+{
+  return !strcmp(filename, "-") ? serd_open_input_standard()
+                                : serd_open_input_file(filename);
 }
