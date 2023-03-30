@@ -17,11 +17,11 @@ dev:
   stage: build
   image: lv2plugin/debian-x64
   script:
-    - meson setup build -Db_coverage=true -Dbuildtype=debug -Dc_std=c11 -Ddocs=enabled -Dlint=true -Dprefix=/ -Dwarning_level=3 -Dwerror=true
+    - meson setup build -Db_coverage=true -Dbuildtype=debug -Dc_std=c11 -Ddocs=enabled -Dprefix=/ -Dwarning_level=3 -Dwerror=true
     - ninja -C build test
     - ninja -C build coverage-html
     - DESTDIR=$(pwd)/build/dest meson install -C build
-    - meson configure -Dbuildtype=release -Db_coverage=false -Dlint=false build
+    - meson configure -Dbuildtype=release -Db_coverage=false build
     - ninja -C build test
   coverage: '/ *lines\.*: \d+\.\d+.*/'
   artifacts:
