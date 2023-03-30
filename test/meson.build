@@ -30,6 +30,7 @@ simple_script_paths = [
   'run_suite.py',
   'test_base.py',
   'test_empty.py',
+  'test_multifile.py',
   'test_quiet.py',
   'test_stdin.py',
   'test_write_error.py',
@@ -282,6 +283,13 @@ if is_variable('serd_pipe')
     'stdin',
     files('test_stdin.py'),
     args: pipe_script_args,
+    env: test_env,
+    suite: input_suite,
+  )
+  test(
+    'multifile',
+    files('test_multifile.py'),
+    args: pipe_script_args + [meson.current_source_dir() / 'multifile'],
     env: test_env,
     suite: input_suite,
   )
