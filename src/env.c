@@ -128,6 +128,7 @@ serd_env_set_base_uri(SerdEnv* const env, const ZixStringView uri)
 
   if (zix_string_view_equals(serd_string_view(new_base_string),
                              serd_string_view(env->base_uri_string))) {
+    zix_free(env->allocator, new_base_string.data);
     return SERD_NO_CHANGE;
   }
 

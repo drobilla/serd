@@ -11,6 +11,7 @@ simple_script_paths = [
   '../serd_test_util/__init__.py',
   '../test_base.py',
   '../test_empty.py',
+  '../test_multifile.py',
   '../test_quiet.py',
   '../test_stdin.py',
   '../test_write_error.py',
@@ -88,7 +89,10 @@ if pylint.found()
     required: false,
   )
 
-  pylint_args = ['--disable', 'bad-option-value'] + simple_scripts
+  pylint_args = [
+    '--disable', 'bad-option-value',
+    '--disable', 'duplicate-code',
+  ] + simple_scripts
   if plot_py.found()
     pylint_args += plot_scripts
   endif

@@ -239,6 +239,13 @@ if is_variable('serd_pipe')
     env: test_env,
     suite: input_suite,
   )
+  test(
+    'multifile',
+    files('test_multifile.py'),
+    args: pipe_script_args + [meson.current_source_dir() / 'multifile'],
+    env: test_env,
+    suite: input_suite,
+  )
 
   # Output
 
