@@ -9,13 +9,17 @@
 #include "serd/node.h"
 #include "serd/output_stream.h"
 #include "serd/reader.h"
+#include "serd/sink.h"
 #include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "serd/writer.h"
+#include "zix/allocator.h"
+#include "zix/filesystem.h"
 #include "zix/string_view.h"
 
+#include <errno.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -26,6 +30,7 @@
 #define LOG_ERRF(fmt, ...) fprintf(stderr, "serd-pipe: " fmt, __VA_ARGS__)
 
 #define MAX_DEPTH 128U
+#define SERD_PAGE_SIZE 4096U
 
 static int
 print_usage(const char* const name, const bool error)
@@ -53,7 +58,7 @@ print_usage(const char* const name, const bool error)
 
   FILE* const os = error ? stderr : stdout;
   fprintf(os, "%s", error ? "\n" : "");
-  fprintf(os, "Usage: %s [OPTION]... INPUT\n", name);
+  fprintf(os, "Usage: %s [OPTION]... INPUT...\n", name);
   fprintf(os, "%s", description);
   return error ? 1 : 0;
 }
@@ -73,6 +78,46 @@ quiet_error_func(void* const handle, const SerdError* const e)
   return SERD_SUCCESS;
 }
 
+static SerdStatus
+read_file(SerdWorld* const      world,
+          SerdSyntax            syntax,
+          const SerdReaderFlags flags,
+          const SerdSink* const sink,
+          const size_t          stack_size,
+          const char* const     filename,
+          const char* const     add_prefix,
+          const bool            bulk_read)
+{
+  syntax = syntax ? syntax : serd_guess_syntax(filename);
+  syntax = syntax ? syntax : SERD_TRIG;
+
+  SerdInputStream in = serd_open_tool_input(filename);
+  if (!in.stream) {
+    LOG_ERRF(
+      "failed to open input file `%s' (%s)\n", filename, strerror(errno));
+
+    return SERD_BAD_STREAM;
+  }
+
+  SerdLimits limits        = serd_world_limits(world);
+  limits.reader_stack_size = stack_size;
+  serd_world_set_limits(world, limits);
+
+  SerdReader* reader = serd_reader_new(world, syntax, flags, sink);
+
+  serd_reader_add_blank_prefix(reader, add_prefix);
+
+  SerdStatus st =
+    serd_reader_start(reader, &in, NULL, bulk_read ? SERD_PAGE_SIZE : 1U);
+
+  st = st ? st : serd_reader_read_document(reader);
+
+  serd_reader_free(reader);
+  serd_close_input(&in);
+
+  return st;
+}
+
 int
 main(int argc, char** argv)
 {
@@ -83,20 +128,18 @@ main(int argc, char** argv)
   SerdSyntax      output_syntax = SERD_SYNTAX_EMPTY;
   SerdReaderFlags reader_flags  = 0U;
   SerdWriterFlags writer_flags  = 0U;
-  bool            from_stdin    = false;
   bool            bulk_read     = true;
   bool            bulk_write    = false;
   bool            osyntax_set   = false;
   bool            quiet         = false;
   size_t          stack_size    = 524288U;
   const char*     input_string  = NULL;
-  const char*     add_prefix    = NULL;
+  const char*     add_prefix    = "";
   const char*     chop_prefix   = NULL;
   const char*     root_uri      = NULL;
   int             a             = 1;
   for (; a < argc && argv[a][0] == '-'; ++a) {
     if (argv[a][1] == '\0') {
-      from_stdin = true;
       break;
     }
 
@@ -218,24 +261,38 @@ main(int argc, char** argv)
   serd_set_stream_utf8_mode(stdin);
   serd_set_stream_utf8_mode(stdout);
 
-  const char* input = argv[a++];
+  char* const* const inputs   = argv + a;
+  const int          n_inputs = argc - a;
 
-  if ((!input_syntax && !input) || !(input_syntax = serd_guess_syntax(input))) {
-    input_syntax = SERD_TRIG;
+  bool input_has_graphs = serd_syntax_has_graphs(input_syntax);
+  for (int i = a; i < argc; ++i) {
+    if (serd_syntax_has_graphs(serd_guess_syntax(argv[i]))) {
+      input_has_graphs = true;
+      break;
+    }
   }
 
-  const bool input_has_graphs = serd_syntax_has_graphs(input_syntax);
   if (!output_syntax && !osyntax_set) {
     output_syntax = input_has_graphs ? SERD_NQUADS : SERD_NTRIPLES;
   }
 
-  if (!base && input) { // Use input file URI
-    base = serd_new_file_uri(NULL, zix_string(input), zix_empty_string());
+  if (!base && n_inputs == 1 &&
+      (output_syntax == SERD_NQUADS || output_syntax == SERD_NTRIPLES)) {
+    // Choose base URI from the single input path
+    char* const input_path = zix_canonical_path(NULL, inputs[0]);
+    if (!input_path || !(base = serd_new_file_uri(
+                           NULL, zix_string(input_path), zix_empty_string()))) {
+      LOG_ERRF("unable to determine base URI from path %s\n", inputs[0]);
+    }
+    zix_free(NULL, input_path);
   }
 
   FILE* const      out_fd = stdout;
   SerdWorld* const world  = serd_world_new(NULL);
-  SerdEnv* const   env =
+  const SerdLimits limits = {stack_size, MAX_DEPTH};
+  serd_world_set_limits(world, limits);
+
+  SerdEnv* const env =
     serd_env_new(NULL, base ? serd_node_string_view(base) : zix_empty_string());
 
   SerdOutputStream out = serd_open_output_stream((SerdWriteFunc)fwrite,
@@ -246,12 +303,6 @@ main(int argc, char** argv)
   SerdWriter* const writer = serd_writer_new(
     world, output_syntax, writer_flags, env, &out, bulk_write ? 4096U : 1U);
 
-  const SerdLimits limits = {stack_size, MAX_DEPTH};
-  serd_world_set_limits(world, limits);
-
-  SerdReader* const reader = serd_reader_new(
-    world, input_syntax, reader_flags, serd_writer_sink(writer));
-
   if (quiet) {
     serd_world_set_error_func(world, quiet_error_func, NULL);
   }
@@ -261,34 +312,70 @@ main(int argc, char** argv)
   }
 
   serd_writer_chop_blank_prefix(writer, chop_prefix);
-  serd_reader_add_blank_prefix(reader, add_prefix);
 
-  SerdStatus      st         = SERD_SUCCESS;
-  SerdNode*       input_name = NULL;
-  const char*     position   = NULL;
-  SerdInputStream in         = {NULL, NULL, NULL, NULL};
-  size_t          block_size = 1U;
+  SerdStatus st         = SERD_SUCCESS;
+  SerdNode*  input_name = NULL;
   if (input_string) {
-    position   = input_string;
-    in         = serd_open_input_string(&position);
-    input_name = serd_new_string(NULL, zix_string("string"));
-  } else if (from_stdin) {
-    in = serd_open_input_stream(
-      (SerdReadFunc)fread, (SerdErrorFunc)ferror, (SerdCloseFunc)fclose, stdin);
-    input_name = serd_new_string(NULL, zix_string("stdin"));
-  } else {
-    block_size = bulk_read ? 4096U : 1U;
-    in         = serd_open_input_file(input);
-    input_name = serd_new_string(NULL, zix_string(input));
+    const char*     position  = input_string;
+    SerdInputStream string_in = serd_open_input_string(&position);
+
+    SerdReader* const reader =
+      serd_reader_new(world,
+                      input_syntax ? input_syntax : SERD_TRIG,
+                      reader_flags,
+                      serd_writer_sink(writer));
+
+    serd_reader_add_blank_prefix(reader, add_prefix);
+
+    if (!(st = serd_reader_start(reader, &string_in, NULL, 1U))) {
+      st = serd_reader_read_document(reader);
+    }
+
+    serd_reader_free(reader);
+    serd_close_input(&string_in);
   }
 
-  if (!(st = serd_reader_start(reader, &in, input_name, block_size))) {
-    st = serd_reader_read_document(reader);
+  size_t prefix_len = 0;
+  char*  prefix     = NULL;
+  if (n_inputs > 1) {
+    prefix_len = 8 + strlen(add_prefix);
+    prefix     = (char*)calloc(1, prefix_len);
   }
 
-  serd_reader_finish(reader);
-  serd_reader_free(reader);
-  serd_writer_finish(writer);
+  for (int i = 0; !st && i < n_inputs; ++i) {
+    if (!base && !!strcmp(inputs[i], "-")) {
+      char* const input_path = zix_canonical_path(NULL, inputs[i]);
+      if (!input_path) {
+        LOG_ERRF("failed to resolve path %s\n", inputs[i]);
+        st = SERD_BAD_ARG;
+        break;
+      }
+
+      SerdNode* const file_uri =
+        serd_new_file_uri(NULL, zix_string(input_path), zix_empty_string());
+
+      serd_env_set_base_uri(env, serd_node_string_view(file_uri));
+      serd_node_free(NULL, file_uri);
+      zix_free(NULL, input_path);
+    }
+
+    if (n_inputs > 1) {
+      snprintf(prefix, prefix_len, "f%d%s", i, add_prefix);
+    }
+
+    if ((st = read_file(world,
+                        input_syntax,
+                        reader_flags,
+                        serd_writer_sink(writer),
+                        stack_size,
+                        inputs[i],
+                        n_inputs > 1 ? prefix : add_prefix,
+                        bulk_read))) {
+      break;
+    }
+  }
+  free(prefix);
+
   serd_writer_free(writer);
   serd_node_free(NULL, input_name);
   serd_env_free(env);

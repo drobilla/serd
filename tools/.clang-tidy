@@ -5,6 +5,7 @@ Checks: >
   -*-magic-numbers,
   -bugprone-easily-swappable-parameters,
   -cert-err33-c,
+  -concurrency-mt-unsafe,
   -hicpp-signed-bitwise,
   -llvm-header-guard,
 InheritParentConfig: true
@@ -12,4 +13,4 @@ CheckOptions:
   - key:   readability-function-cognitive-complexity.IgnoreMacros
     value: 'true'
   - key:   readability-function-cognitive-complexity.Threshold
-    value: '110'
+    value: '128'
