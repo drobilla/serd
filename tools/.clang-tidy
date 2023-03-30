@@ -5,6 +5,7 @@ Checks: >
   -*-magic-numbers,
   -bugprone-easily-swappable-parameters,
   -cert-err33-c,
+  -concurrency-mt-unsafe,
   -hicpp-signed-bitwise,
   -llvm-header-guard,
   -readability-function-cognitive-complexity,
