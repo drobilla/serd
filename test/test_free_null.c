@@ -4,11 +4,14 @@
 #undef NDEBUG
 
 #include "serd/caret.h"
+#include "serd/cursor.h"
 #include "serd/env.h"
+#include "serd/model.h"
 #include "serd/node.h"
 #include "serd/nodes.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
+#include "serd/statement.h"
 #include "serd/world.h"
 #include "serd/writer.h"
 
@@ -25,6 +28,9 @@ main(void)
   serd_writer_free(NULL);
   serd_nodes_free(NULL);
   serd_caret_free(NULL, NULL);
+  serd_model_free(NULL);
+  serd_statement_free(NULL, NULL);
+  serd_cursor_free(NULL, NULL);
 
   return 0;
 }

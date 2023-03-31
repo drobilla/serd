@@ -4,6 +4,7 @@
 #ifndef SERD_SRC_WORLD_IMPL_H
 #define SERD_SRC_WORLD_IMPL_H
 
+#include "log.h"
 #include "node_impl.h"
 
 #include "serd/world.h"

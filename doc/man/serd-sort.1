@@ -1,41 +1,33 @@
 .\" # Copyright 2021-2022 David Robillard <d@drobilla.net>
 .\" # SPDX-License-Identifier: ISC
 .Dd July 15, 2022
-.Dt SERD-FILTER 1
+.Dt SERD-SORT 1
 .Os Serd
 .Sh NAME
-.Nm serd-filter
-.Nd print RDF statements that match a pattern
+.Nm serd-sort
+.Nd reorder RDF statements
 .Sh SYNOPSIS
-.Nm serd-filter
-.Op Fl hVv
+.Nm serd-sort
+.Op Fl htV
 .Op Fl B Ar base
 .Op Fl I Ar syntax
 .Op Fl O Ar syntax
 .Op Fl b Ar bytes
-.Op Fl f Ar pattern_file
+.Op Fl c Ar collation
 .Op Fl k Ar bytes
 .Op Fl o Ar filename
-.Ar pattern
 .Op Ar input ...
 .Sh DESCRIPTION
 .Nm
-filters statements in RDF data.
-Its interface is similar to
-.Xr grep 1 ,
-except patterns are structural:
-instead of matching characters within a line,
-.Nm
-matches nodes within a statement.
-Only those statements from the input that match the pattern
-(or do not match the pattern, if
-.Fl v
-is given) are written.
-.Pp
-Patterns are written in NTriples or NQuads with an extension that allows variables written like
-.Li ?this
-or
-.Li $that .
+reorders statements in RDF data by loading everything into memory then rewriting it.
+By default,
+a
+.Dq pretty
+ordering is used which is ideal for pretty-printing Turtle or TriG.
+The
+.Fl c
+option can be used to request a specific ordering,
+which is mainly useful when emitting a line-based syntax like NTriples or NQuads in a pipeline.
 .Pp
 Input and output arguments work the same way as with
 .Xr serd-pipe 1 .
@@ -93,10 +85,29 @@ See
 .Xr serd-pipe 1
 for details.
 .Pp
-.It Fl f Ar pattern_file
-Load pattern from
-.Ar pattern_file
-instead of the first positional argument.
+.It Fl c Ar collation
+A specific collation (statement ordering) to use.
+This can be any ordering of the characters
+.Dq SPO ,
+which stand for the subject, predicate, and object of statements.
+Optionally,
+.Dq G
+can be added as the first character,
+which will sort graph-first.
+Concretely, the valid values are:
+.Cm SPO ,
+.Cm SOP ,
+.Cm OPS ,
+.Cm OSP ,
+.Cm PSO ,
+.Cm POS ,
+.Cm GSPO ,
+.Cm GSOP ,
+.Cm GOPS ,
+.Cm GOSP ,
+.Cm GPSO ,
+and
+.Cm GPOS .
 .Pp
 .It Fl h
 Print the command line options.
@@ -112,28 +123,29 @@ Write output to the given
 .Ar filename
 instead of stdout.
 .Pp
-.It Fl v
-Invert filter to only emit statements that do
-.Em not
-match the pattern.
+.It Fl t
+Do not write type as
+.Dq a
+before other properties.
+Instead, rdf:type will be written in order like any other property.
 .El
 .Sh EXIT STATUS
 .Nm
 exits with a status of 0, or non-zero if an error occured.
 .Sh EXAMPLES
-To print all type statements:
+To pretty-print a file:
 .Pp
-.Dl $ serd-filter '?subject a ?type .' input.ttl
+.Dl $ serd-sort -o pretty.ttl input.ttl
 .Pp
-To print every statement about http://example.org/subject:
+To print statements ordered by predicate, subject, then object:
 .Pp
-.Dl $ serd-filter '<http://example.org/subject> ?p ?o .' input.ttl
+.Dl $ serd-sort -c PSO input.ttl
 .Sh SEE ALSO
 .Bl -item -compact
 .It
 .Xr serd-pipe 1
 .It
-.Xr serd-sort 1
+.Xr serd-filter 1
 .It
 .Lk http://drobilla.net/software/serd/
 .El

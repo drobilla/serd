@@ -37,7 +37,7 @@ TEST_TYPES = [
 ]
 
 
-def run_eval_test(command, in_path, good_path, out_path):
+def run_eval_test(command, in_path, good_path, out_path, getlines):
     """Run a positive eval test and return whether the output matches."""
 
     command = command + ["-o", out_path, in_path]
@@ -45,7 +45,9 @@ def run_eval_test(command, in_path, good_path, out_path):
 
     with open(good_path, "r", encoding="utf-8") as good:
         with open(out_path, "r", encoding="utf-8") as out:
-            return util.lines_equal(list(good), list(out), good_path, out_path)
+            return util.lines_equal(
+                getlines(good), getlines(out), good_path, out_path
+            )
 
 
 def run_positive_test(command, in_path):
@@ -98,8 +100,13 @@ def run_entry(args, entry, command, out_dir, suite_dir):
     if args.reverse:
         in_path, good_path = good_path, in_path
 
-    out_path = os.path.join(out_dir, os.path.basename(good_path))
-    return run_eval_test(command, in_path, good_path, out_path)
+    return run_eval_test(
+        command,
+        in_path,
+        good_path,
+        os.path.join(out_dir, os.path.basename(good_path)),
+        lambda f: sorted(set(f)) if args.unique else list(f),
+    )
 
 
 def run_suite(args, command, out_dir):
@@ -159,6 +166,7 @@ def main():
     parser.add_argument("--report", help="path to write result report to")
     parser.add_argument("--reverse", action="store_true", help="reverse test")
     parser.add_argument("--tool", default="tools/serd-pipe", help="executable")
+    parser.add_argument("--unique", action="store_true", help="sort lines")
     parser.add_argument("--wrapper", default="", help="executable wrapper")
     parser.add_argument("manifest", help="test suite manifest.ttl file")
     parser.add_argument("base_uri", help="base URI for tests")
