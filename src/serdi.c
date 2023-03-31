@@ -65,7 +65,7 @@ print_usage(const char* const name, const bool error)
     "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads.\n"
     "  -k BYTES     Parser stack size.\n"
     "  -l           Lax (non-strict) parsing.\n"
-    "  -o SYNTAX    Output syntax: turtle/ntriples/nquads.\n"
+    "  -o SYNTAX    Output syntax: empty/turtle/ntriples/nquads.\n"
     "  -p PREFIX    Add PREFIX to blank node IDs.\n"
     "  -q           Suppress all output except data.\n"
     "  -r ROOT_URI  Keep relative URIs within ROOT_URI.\n"
@@ -100,13 +100,14 @@ main(int argc, char** argv)
 {
   const char* const prog = argv[0];
 
-  SerdSyntax      input_syntax  = (SerdSyntax)0;
-  SerdSyntax      output_syntax = (SerdSyntax)0;
+  SerdSyntax      input_syntax  = SERD_SYNTAX_EMPTY;
+  SerdSyntax      output_syntax = SERD_SYNTAX_EMPTY;
   SerdWriterFlags writer_flags  = 0;
   bool            from_string   = false;
   bool            from_stdin    = false;
   bool            bulk_read     = true;
   bool            lax           = false;
+  bool            osyntax_set   = false;
   bool            quiet         = false;
   size_t          stack_size    = 1048576U;
   const char*     add_prefix    = NULL;
@@ -182,12 +183,15 @@ main(int argc, char** argv)
         stack_size = (size_t)size;
         break;
       } else if (opt == 'o') {
+        osyntax_set = true;
         if (argv[a][o + 1] || ++a == argc) {
           return missing_arg(prog, 'o');
         }
 
-        if (!(output_syntax = serd_syntax_by_name(argv[a]))) {
-          return print_usage(prog, true);
+        if (!strcmp(argv[a], "empty")) {
+          output_syntax = SERD_SYNTAX_EMPTY;
+        } else if (!(output_syntax = serd_syntax_by_name(argv[a]))) {
+          return print_usage(argv[0], true);
         }
         break;
       } else if (opt == 'p') {
@@ -228,7 +232,7 @@ main(int argc, char** argv)
   }
 
   const bool input_has_graphs = serd_syntax_has_graphs(input_syntax);
-  if (!output_syntax) {
+  if (!output_syntax && !osyntax_set) {
     output_syntax = input_has_graphs ? SERD_NQUADS : SERD_NTRIPLES;
   }
 

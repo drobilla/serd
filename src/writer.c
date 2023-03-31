@@ -1004,6 +1004,10 @@ serd_writer_write_statement(SerdWriter* const          writer,
   assert(!((flags & SERD_ANON_O) && (flags & SERD_LIST_O)));
   assert(!((flags & SERD_EMPTY_O) && (flags & SERD_LIST_O)));
 
+  if (writer->syntax == SERD_SYNTAX_EMPTY) {
+    return SERD_SUCCESS;
+  }
+
   SerdStatus            st        = SERD_SUCCESS;
   const SerdNode* const subject   = serd_statement_subject(statement);
   const SerdNode* const predicate = serd_statement_predicate(statement);
@@ -1162,7 +1166,7 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
 {
   SerdStatus st = SERD_SUCCESS;
 
-  if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
+  if (writer->syntax != SERD_TURTLE && writer->syntax != SERD_TRIG) {
     return SERD_SUCCESS;
   }
 
