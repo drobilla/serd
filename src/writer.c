@@ -1056,6 +1056,10 @@ serd_writer_write_statement(SerdWriter* const        writer,
 
   SerdStatus st = SERD_SUCCESS;
 
+  if (writer->syntax == SERD_SYNTAX_EMPTY) {
+    return SERD_SUCCESS;
+  }
+
   // Refuse to write incoherent statements
   if (!is_resource(subject) || !is_resource(predicate) ||
       object->type == SERD_NOTHING || !object->buf ||
@@ -1194,7 +1198,7 @@ serd_writer_end_anon(SerdWriter* const writer, const SerdNode* const node)
 
   SerdStatus st = SERD_SUCCESS;
 
-  if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
+  if (writer->syntax != SERD_TURTLE && writer->syntax != SERD_TRIG) {
     return SERD_SUCCESS;
   }
 
