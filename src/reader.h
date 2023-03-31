@@ -51,6 +51,9 @@ struct SerdReaderImpl {
   bool            seen_genid;
 };
 
+SerdStatus
+skip_horizontal_whitespace(SerdReader* reader);
+
 ZIX_LOG_FUNC(3, 4)
 SerdStatus
 r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
@@ -113,7 +116,20 @@ skip_byte(SerdReader* reader, const int byte)
 
   assert(peek_byte(reader) == byte);
 
-  return serd_byte_source_advance(&reader->source);
+  const SerdStatus st = serd_byte_source_advance(&reader->source);
+  return st > SERD_FAILURE ? st : SERD_SUCCESS;
+}
+
+static inline int
+eat_byte(SerdReader* const reader)
+{
+  const int c = peek_byte(reader);
+
+  if (c != EOF) {
+    serd_byte_source_advance(&reader->source);
+  }
+
+  return c;
 }
 
 static inline int ZIX_NODISCARD
