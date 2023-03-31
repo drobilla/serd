@@ -3,14 +3,14 @@
 # Copyright 2022-2023 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: ISC
 
-"""Test reading from stdin with serdi."""
+"""Test reading from stdin with serd-pipe."""
 
 # pylint: disable=consider-using-f-string
 
 import serd_test_util as util
 
 args = util.wrapper_args(__doc__)
-command = [args.serdi, "-i", "ntriples", "-", "http://example.org"]
+command = [args.tool, "-i", "ntriples", "-", "http://example.org"]
 
 DOC = "<{0}s> <{0}p> <{0}o> .".format("http://example.org/")
 

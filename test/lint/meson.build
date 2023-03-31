@@ -36,7 +36,7 @@ simple_scripts = files(simple_script_paths)
 python_script_paths = simple_script_paths + plot_script_paths
 python_scripts = plot_scripts + simple_scripts
 
-all_sources = sources + unit_test_sources + files('../../tools/serdi.c')
+all_sources = sources + unit_test_sources + files('../../tools/serd-pipe.c')
 
 # Check licensing metadata
 reuse = find_program('reuse', required: false)
@@ -95,13 +95,13 @@ if pylint.found()
   test('pylint', pylint, args: pylint_args, suite: 'scripts')
 endif
 
-# Check Turtle formatting with serdi
-if is_variable('serdi')
+# Check Turtle formatting with serd-pipe
+if is_variable('serd_pipe')
   foreach ttl_file_path : ttl_metadata_file_paths
     test(
       ttl_file_path.substring(3).underscorify(),
       check_formatting_py,
-      args: [files(ttl_file_path), serdi, '-o', 'turtle'],
+      args: [files(ttl_file_path), serd_pipe, '-o', 'turtle'],
       env: test_env,
       suite: 'data',
     )
