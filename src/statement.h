@@ -4,6 +4,8 @@
 #ifndef SERD_SRC_STATEMENT_H
 #define SERD_SRC_STATEMENT_H
 
+#include "statement_impl.h"
+
 #include "serd/attributes.h"
 #include "serd/caret.h"
 #include "serd/field.h"
@@ -16,11 +18,6 @@
 
 /// A subject, predicate, and object, with optional graph context
 typedef struct SerdStatementImpl SerdStatement;
-
-struct SerdStatementImpl {
-  const SerdNode* ZIX_NULLABLE nodes[4];
-  SerdCaret* ZIX_NULLABLE      caret;
-};
 
 /**
    Create a new statement.

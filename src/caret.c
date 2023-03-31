@@ -4,7 +4,9 @@
 #include "caret_impl.h" // IWYU pragma: keep
 
 #include "serd/caret.h"
+#include "serd/caret_view.h"
 #include "serd/node.h"
+#include "serd/token_view.h"
 #include "zix/allocator.h"
 
 #include <assert.h>
@@ -50,6 +52,23 @@ void
 serd_caret_free(ZixAllocator* const allocator, SerdCaret* const caret)
 {
   zix_free(allocator, caret);
+}
+
+SerdCaretView
+serd_caret_caret_view(const SerdCaret* const caret)
+{
+  SerdTokenView document = {{"", 0U}, SERD_LITERAL};
+  if (!caret) {
+    const SerdCaretView view = {document, 0U, 0U};
+    return view;
+  }
+
+  if (caret->document) {
+    document = serd_node_token_view(caret->document);
+  }
+
+  const SerdCaretView view = {document, caret->line, caret->col};
+  return view;
 }
 
 bool

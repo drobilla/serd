@@ -1,0 +1,13 @@
+_:b2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> "1"^^<http://www.w3.org/2001/XMLSchema#integer> <http://example.org/graph1> .
+_:b3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> "2"^^<http://www.w3.org/2001/XMLSchema#integer> <http://example.org/graph1> .
+<http://example.org/s> <http://example.org/literal> "s1" <http://example.org/graph1> .
+_:b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/Anonymous> <http://example.org/graph1> .
+<http://example.org/s> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/Subject> <http://example.org/graph1> .
+_:b1 <http://example.org/with> <http://example.org/aProperty> <http://example.org/graph1> .
+_:b1 <http://example.org/with> <http://example.org/orAnother> <http://example.org/graph1> .
+_:b3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> <http://www.w3.org/1999/02/22-rdf-syntax-ns#nil> <http://example.org/graph1> .
+<http://example.org/s> <http://example.org/blank> _:b1 <http://example.org/graph1> .
+<http://example.org/s> <http://example.org/list> _:b2 <http://example.org/graph1> .
+_:b2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> _:b3 <http://example.org/graph1> .
+<http://example.org/a> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/OtherSubject> <http://example.org/graph2> .
+<http://example.org/a> <http://example.org/b> <http://example.org/c> <http://example.org/graph2> .

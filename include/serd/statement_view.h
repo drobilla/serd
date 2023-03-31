@@ -5,7 +5,6 @@
 #define SERD_STATEMENT_VIEW_H
 
 #include "serd/attributes.h"
-#include "serd/caret_view.h"
 #include "serd/node.h"
 #include "serd/object_view.h"
 #include "serd/token_view.h"
@@ -24,7 +23,6 @@ typedef struct {
   SerdTokenView  predicate;
   SerdObjectView object;
   SerdTokenView  graph;
-  SerdCaretView  caret;
 } SerdStatementView;
 
 SERD_CONST_API SerdStatementView
@@ -33,11 +31,13 @@ serd_statement_view(SerdTokenView  subject,
                     SerdObjectView object,
                     SerdTokenView  graph);
 
-SERD_CONST_API SerdStatementView
+SERD_PURE_API SerdStatementView
 serd_statement_view_nodes(const SerdNode* ZIX_NONNULL  subject,
                           const SerdNode* ZIX_NONNULL  predicate,
                           const SerdNode* ZIX_NONNULL  object,
                           const SerdNode* ZIX_NULLABLE graph);
+SERD_PURE_API bool
+serd_statement_view_equals(SerdStatementView lhs, SerdStatementView rhs);
 
 /**
    @}

@@ -274,7 +274,7 @@ test_boolean(void)
   assert(!strcmp(serd_node_string(true1), "true"));
   assert(serd_node_length(false1) == strlen(serd_node_string(false1)));
   assert(serd_node_length(true1) == strlen(serd_node_string(true1)));
-  assert(serd_nodes_size(nodes) == 2);
+  assert(serd_nodes_size(nodes) == 3); // false, true, and xsd:boolean
 
   const SerdNode* const true_datatype = serd_node_datatype(true1);
   assert(true_datatype);
@@ -299,7 +299,7 @@ test_decimal(void)
   assert(a == b);
   assert(!strcmp(serd_node_string(a), "-12.3456789"));
   assert(serd_node_length(a) == strlen(serd_node_string(a)));
-  assert(serd_nodes_size(nodes) == 1);
+  assert(serd_nodes_size(nodes) == 2); // the number, and xsd:decimal
 
   const SerdNode* const default_datatype = serd_node_datatype(a);
   assert(default_datatype);
@@ -324,7 +324,7 @@ test_double(void)
   assert(a == b);
   assert(!strcmp(serd_node_string(a), "-1.2E3"));
   assert(serd_node_length(a) == strlen(serd_node_string(a)));
-  assert(serd_nodes_size(nodes) == 1);
+  assert(serd_nodes_size(nodes) == 2); // the number, and xsd:double
 
   serd_nodes_free(nodes);
 }
@@ -345,7 +345,7 @@ test_float(void)
   assert(a == b);
   assert(!strcmp(serd_node_string(a), "-1.2E3"));
   assert(serd_node_length(a) == strlen(serd_node_string(a)));
-  assert(serd_nodes_size(nodes) == 1);
+  assert(serd_nodes_size(nodes) == 2); // the number, and xsd:float
 
   serd_nodes_free(nodes);
 }
@@ -362,7 +362,7 @@ test_integer(void)
   assert(a == b);
   assert(!strcmp(serd_node_string(a), "-1234567890"));
   assert(serd_node_length(a) == strlen(serd_node_string(a)));
-  assert(serd_nodes_size(nodes) == 1);
+  assert(serd_nodes_size(nodes) == 2); // the number, and xsd:integer
 
   const SerdNode* const default_datatype = serd_node_datatype(a);
   assert(default_datatype);
@@ -389,7 +389,7 @@ test_base64(void)
   assert(a == b);
   assert(!strcmp(serd_node_string(a), "Zm9vYmFy"));
   assert(serd_node_length(a) == strlen(serd_node_string(a)));
-  assert(serd_nodes_size(nodes) == 1);
+  assert(serd_nodes_size(nodes) == 2); // the value, and xsd:base64Binary
 
   const SerdNode* const default_datatype = serd_node_datatype(a);
   assert(default_datatype);

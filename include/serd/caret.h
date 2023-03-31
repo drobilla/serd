@@ -1,10 +1,11 @@
-// Copyright 2011-2022 David Robillard <d@drobilla.net>
+// Copyright 2011-2024 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #ifndef SERD_CARET_H
 #define SERD_CARET_H
 
 #include "serd/attributes.h"
+#include "serd/caret_view.h"
 #include "serd/node.h"
 #include "zix/allocator.h"
 #include "zix/attributes.h"
@@ -51,6 +52,9 @@ serd_caret_copy(ZixAllocator* ZIX_NULLABLE    allocator,
 SERD_API void
 serd_caret_free(ZixAllocator* ZIX_NULLABLE allocator,
                 SerdCaret* ZIX_NULLABLE    caret);
+
+SERD_API SerdCaretView
+serd_caret_caret_view(const SerdCaret* ZIX_NULLABLE caret);
 
 /// Return true iff `lhs` is equal to `rhs`
 SERD_PURE_API bool

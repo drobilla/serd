@@ -32,6 +32,8 @@ typedef enum {
   SERD_BAD_CALL,   ///< Bad function call
   SERD_BAD_ARG,    ///< Bad function argument
   SERD_BAD_EVENT,  ///< Corrupt event in stream
+  SERD_BAD_CURSOR, ///< Use of invalidated cursor
+  SERD_BAD_INDEX,  ///< No suitable model index available
 
   SERD_BAD_SYNTAX = 32, ///< Invalid syntax
 

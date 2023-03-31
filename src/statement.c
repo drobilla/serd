@@ -1,9 +1,8 @@
-// Copyright 2011-2020 David Robillard <d@drobilla.net>
+// Copyright 2011-2024 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #include "statement.h"
 
-#include "caret_impl.h"
 #include "match.h"
 #include "node_internal.h"
 #include "warnings.h"
@@ -13,7 +12,6 @@
 #include "serd/node.h"
 #include "serd/statement_view.h"
 #include "zix/allocator.h"
-#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -109,14 +107,15 @@ serd_statement_statement_view(const SerdStatement* const statement)
     serd_node_token_view(p),
     serd_node_object_view(o),
     serd_node_graph_view(g),
-    {{ZIX_STATIC_STRING(""), SERD_LITERAL}, 0U, 0U},
   };
 
+#ifdef SERD_FIXME
   if (statement->caret) {
     view.caret.document = serd_node_token_view(statement->caret->document);
     view.caret.line     = statement->caret->line;
     view.caret.column   = statement->caret->col;
   }
+#endif
 
   return view;
 }
