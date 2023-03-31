@@ -1,4 +1,4 @@
-# Copyright 2020-2022 David Robillard <d@drobilla.net>
+# Copyright 2020-2023 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
 docdir = get_option('datadir') / 'doc'
@@ -42,13 +42,13 @@ endif
 if mandoc.found()
   configure_file(input: mandoc_css, output: '@PLAINNAME@', copy: true)
 
-  serdi_html = custom_target(
-    'serdi.html',
+  serd_pipe_html = custom_target(
+    'serd-pipe.html',
     build_by_default: true,
     capture: true,
     command: [mandoc, '-Thtml', '-Werror', '-O', 'style=mandoc.css', '@INPUT@'],
-    input: files('serdi.1'),
-    output: 'serdi.html',
+    input: files('serd-pipe.1'),
+    output: 'serd-pipe.html',
   )
 endif
 

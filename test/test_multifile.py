@@ -17,7 +17,7 @@ testdir = args.input
 in1_path = os.path.join(testdir, "input1.ttl")
 in2_path = os.path.join(testdir, "input2.trig")
 check_path = os.path.join(testdir, "output.nq")
-command = shlex.split(args.wrapper) + [args.serdi, in1_path, in2_path]
+command = shlex.split(args.wrapper) + [args.tool, in1_path, in2_path]
 
 
 with tempfile.TemporaryFile(mode="w+", encoding="utf-8") as out:

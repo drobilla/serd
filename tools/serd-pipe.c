@@ -25,8 +25,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define SERDI_ERROR(msg) fprintf(stderr, "serdi: " msg)
-#define SERDI_ERRORF(fmt, ...) fprintf(stderr, "serdi: " fmt, __VA_ARGS__)
+#define SERDI_ERROR(msg) fprintf(stderr, "serd-pipe: " msg)
+#define SERDI_ERRORF(fmt, ...) fprintf(stderr, "serd-pipe: " fmt, __VA_ARGS__)
 
 static int
 print_usage(const char* const name, const bool error)
@@ -284,7 +284,7 @@ main(int argc, char** argv)
 
   SerdOutputStream out = serd_open_tool_output(out_filename);
   if (!out.stream) {
-    perror("serdi: error opening output file");
+    perror("serd-pipe: error opening output file");
     return 1;
   }
 
@@ -365,7 +365,7 @@ main(int argc, char** argv)
   serd_world_free(world);
 
   if (serd_close_output(&out)) {
-    perror("serdi: write error");
+    perror("serd-pipe: write error");
     st = SERD_ERR_UNKNOWN;
   }
 
