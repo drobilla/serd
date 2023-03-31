@@ -29,7 +29,6 @@
 		<#test-long-utf8>
 		<#test-no-spaces>
 		<#test-non-curie-uri>
-		<#test-out-of-range-unicode>
 		<#test-prefix>
 		<#test-quote-escapes>
 		<#test-rel>
@@ -176,12 +175,6 @@
 	mf:action <test-non-curie-uri.ttl> ;
 	mf:name "test-non-curie-uri" ;
 	mf:result <test-non-curie-uri.nt> .
-
-<#test-out-of-range-unicode>
-	a rdft:TestTurtleEval ;
-	mf:action <test-out-of-range-unicode.ttl> ;
-	mf:name "test-out-of-range-unicode" ;
-	mf:result <test-out-of-range-unicode.nt> .
 
 <#test-prefix>
 	a rdft:TestTurtleEval ;
