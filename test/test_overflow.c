@@ -57,6 +57,9 @@ test_ntriples_overflow(void)
 {
   static const char* const test_strings[] = {
     "<http://example.org/s> <http://example.org/p> <http://example.org/o> .",
+    "<http://example.org/s> <http://example.org/p> \"literal\" .",
+    "<http://example.org/s> <http://example.org/p> _:blank .",
+    "<http://example.org/s> <http://example.org/p> \"\"@en .",
     NULL,
   };
 
