@@ -50,6 +50,11 @@
 #include "serd/reader.h"
 #include "serd/writer.h"
 
+#include "serd/cursor.h"
+#include "serd/describe.h"
+#include "serd/inserter.h"
+#include "serd/model.h"
+
 // IWYU pragma: end_exports
 
 /**

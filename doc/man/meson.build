@@ -13,6 +13,7 @@ if not get_option('tools').disabled()
   if not get_option('man').disabled()
     install_man('serd-filter.1')
     install_man('serd-pipe.1')
+    install_man('serd-sort.1')
   endif
 
   # Build/install HTML man pages if mandoc is present
@@ -38,6 +39,7 @@ if not get_option('tools').disabled()
     page_names = [
       'serd-filter',
       'serd-pipe',
+      'serd-sort',
     ]
 
     foreach name : page_names
