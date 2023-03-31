@@ -20,7 +20,7 @@ static const Syntax syntaxes[] = {
   {"ntriples", ".nt", SERD_NTRIPLES},
   {"nquads", ".nq", SERD_NQUADS},
   {"trig", ".trig", SERD_TRIG},
-  {NULL, NULL, (SerdSyntax)0},
+  {NULL, NULL, SERD_SYNTAX_EMPTY},
 };
 
 SerdSyntax
@@ -34,7 +34,7 @@ serd_syntax_by_name(const char* const name)
     }
   }
 
-  return (SerdSyntax)0;
+  return SERD_SYNTAX_EMPTY;
 }
 
 SerdSyntax
@@ -51,7 +51,7 @@ serd_guess_syntax(const char* const filename)
     }
   }
 
-  return (SerdSyntax)0;
+  return SERD_SYNTAX_EMPTY;
 }
 
 bool

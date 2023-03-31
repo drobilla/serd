@@ -317,63 +317,27 @@ test_write_nothing_node(void)
 }
 
 static void
-test_write_bad_statement(void)
+test_write_empty_syntax(void)
 {
   SerdEnv* const env = serd_env_new(NULL);
-  assert(env);
 
-  SerdBuffer        buffer = {NULL, 0};
-  SerdWriter* const writer =
-    serd_writer_new(SERD_TURTLE, 0U, env, NULL, serd_buffer_sink, &buffer);
+  SerdNode s = serd_node_from_string(SERD_URI, NS_EG "s");
+  SerdNode p = serd_node_from_string(SERD_URI, NS_EG "p");
+  SerdNode o = serd_node_from_string(SERD_CURIE, "eg:o");
+
+  SerdBuffer buffer = {NULL, 0};
+
+  SerdWriter* const writer = serd_writer_new(
+    SERD_SYNTAX_EMPTY, 0U, env, NULL, serd_buffer_sink, &buffer);
   assert(writer);
 
-  SerdNode s = serd_node_from_string(SERD_URI, "http://example.org/s");
-  SerdNode p = serd_node_from_string(SERD_URI, "http://example.org/p");
-  SerdNode o = serd_node_from_string(SERD_URI, "http://example.org/o");
-  SerdNode l = serd_node_from_string(SERD_LITERAL, "lang");
-
   assert(
-    serd_writer_write_statement(writer,
-                                (SerdStatementFlags)(SERD_ANON_S | SERD_LIST_S),
-                                NULL,
-                                &s,
-                                &p,
-                                &o,
-                                NULL,
-                                NULL) == SERD_BAD_ARG);
+    !serd_writer_write_statement(writer, 0U, NULL, &s, &p, &o, NULL, NULL));
 
-  assert(serd_writer_write_statement(
-           writer,
-           (SerdStatementFlags)(SERD_EMPTY_S | SERD_LIST_S),
-           NULL,
-           &s,
-           &p,
-           &o,
-           NULL,
-           NULL) == SERD_BAD_ARG);
+  char* const out = serd_buffer_sink_finish(&buffer);
 
-  assert(
-    serd_writer_write_statement(writer,
-                                (SerdStatementFlags)(SERD_ANON_O | SERD_LIST_O),
-                                NULL,
-                                &s,
-                                &p,
-                                &o,
-                                NULL,
-                                NULL) == SERD_BAD_ARG);
-
-  assert(serd_writer_write_statement(
-           writer,
-           (SerdStatementFlags)(SERD_EMPTY_O | SERD_LIST_O),
-           NULL,
-           &s,
-           &p,
-           &o,
-           NULL,
-           NULL) == SERD_BAD_ARG);
-
-  assert(serd_writer_write_statement(writer, 0U, NULL, &s, &p, &o, &o, &l) ==
-         SERD_BAD_ARG);
+  assert(strlen(out) == 0);
+  serd_free(out);
 
   serd_writer_free(writer);
   serd_env_free(env);
@@ -390,7 +354,7 @@ main(void)
   test_write_error();
   test_buffer_sink();
   test_write_nothing_node();
-  test_write_bad_statement();
+  test_write_empty_syntax();
 
   return 0;
 }

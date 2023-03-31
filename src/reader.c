@@ -192,8 +192,9 @@ emit_statement(SerdReader* const reader,
 static SerdStatus
 read_doc(SerdReader* const reader)
 {
-  return ((reader->syntax == SERD_NQUADS) ? read_nquadsDoc(reader)
-                                          : read_turtleTrigDoc(reader));
+  return (reader->syntax == SERD_SYNTAX_EMPTY) ? SERD_SUCCESS
+         : (reader->syntax == SERD_NQUADS)     ? read_nquadsDoc(reader)
+                                               : read_turtleTrigDoc(reader);
 }
 
 SerdReader*
@@ -379,6 +380,10 @@ SerdStatus
 serd_reader_read_chunk(SerdReader* const reader)
 {
   assert(reader);
+
+  if (reader->syntax == SERD_SYNTAX_EMPTY) {
+    return SERD_FAILURE;
+  }
 
   SerdStatus st = SERD_SUCCESS;
   if (!reader->source.prepared) {

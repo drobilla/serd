@@ -133,6 +133,15 @@ if is_variable('serdi')
 
   test('stdin', files('test_stdin.py'), args: script_args, suite: input_suite)
 
+  # Output
+
+  test(
+    'empty',
+    files('test_empty.py'),
+    args: script_args + [serd_ttl],
+    suite: 'output',
+  )
+
   # IO errors
 
   io_error_tests = {

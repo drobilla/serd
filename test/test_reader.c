@@ -404,6 +404,59 @@ test_read_turtle_chunks(const char* const path)
   assert(!remove(path));
 }
 
+static size_t
+empty_test_read(void* buf, size_t size, size_t nmemb, void* stream)
+{
+  (void)buf;
+  (void)size;
+  (void)nmemb;
+
+  bool* const called = (bool*)stream;
+
+  *called = true;
+
+  return 0;
+}
+
+static int
+empty_test_error(void* stream)
+{
+  (void)stream;
+  return 0;
+}
+
+/// Test that reading SERD_SYNTAX_EMPTY "succeeds" without reading any input
+static void
+test_read_empty(void)
+{
+  ReaderTest        rt     = {0, 0, 0, 0};
+  SerdReader* const reader = serd_reader_new(SERD_SYNTAX_EMPTY,
+                                             &rt,
+                                             NULL,
+                                             base_sink,
+                                             prefix_sink,
+                                             statement_sink,
+                                             end_sink);
+
+  assert(reader);
+  assert(!empty_test_error(NULL));
+
+  bool called = false;
+  assert(!empty_test_read(NULL, 0U, 0U, &called));
+  assert(called == true);
+  called = false;
+
+  SerdStatus st = serd_reader_start_source_stream(
+    reader, empty_test_read, empty_test_error, &called, NULL, 1);
+  assert(st == SERD_SUCCESS);
+
+  assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
+  assert(rt.n_statement == 0);
+  assert(!called);
+
+  serd_reader_free(reader);
+}
+
 int
 main(void)
 {
@@ -434,6 +487,7 @@ main(void)
   test_read_turtle_chunks(path);
 
   test_null_callbacks();
+  test_read_empty();
   test_read_string();
   test_read_eof_file(path);
   test_read_eof_by_byte();

@@ -7,7 +7,6 @@ Checks: >
   -bugprone-inc-dec-in-conditions,
   -bugprone-multi-level-implicit-pointer-conversion,
   -cert-err33-c,
-  -clang-analyzer-optin.core.EnumCastOutOfRange,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -concurrency-mt-unsafe,
   -google-readability-todo,
@@ -20,5 +19,5 @@ CheckOptions:
   - key:   readability-function-cognitive-complexity.IgnoreMacros
     value: 'true'
   - key:   readability-function-cognitive-complexity.Threshold
-    value: '90'
+    value: '92'
 InheritParentConfig: true

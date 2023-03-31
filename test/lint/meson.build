@@ -1,4 +1,4 @@
-# Copyright 2020-2023 David Robillard <d@drobilla.net>
+# Copyright 2020-2025 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
 plot_script_paths = [
@@ -7,8 +7,9 @@ plot_script_paths = [
 
 simple_script_paths = [
   '../../scripts/check_formatting.py',
-  '../serd_test_util/__init__.py',
   '../run_suite.py',
+  '../serd_test_util/__init__.py',
+  '../test_empty.py',
   '../test_quiet.py',
   '../test_stdin.py',
   '../test_write_error.py',
