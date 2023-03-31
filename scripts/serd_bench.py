@@ -171,9 +171,9 @@ def run(progs, n_min, n_max, step):
     "Benchmark each program with n_min ... n_max statements"
     with WorkingDirectory("build"):
         results = {
-            "time": open("serdi-time.txt", "w"),
-            "throughput": open("serdi-throughput.txt", "w"),
-            "memory": open("serdi-memory.txt", "w"),
+            "time": open("serd-time.txt", "w"),
+            "throughput": open("serd-throughput.txt", "w"),
+            "memory": open("serd-memory.txt", "w"),
         }
 
         # Write TSV header for all output files
@@ -205,7 +205,7 @@ def run(progs, n_min, n_max, step):
                 f.write("\t".join(rows[name]) + "\n")
 
         for name, f in results.items():
-            tsv_filename = "serdi-%s.txt" % name
+            tsv_filename = "serd-pipe-%s.txt" % name
             sys.stderr.write("wrote %s\n" % tsv_filename)
 
 
@@ -213,20 +213,20 @@ def plot_results():
     "Plot all benchmark results"
     with WorkingDirectory("build"):
         plot(
-            open("serdi-time.txt", "r"),
-            "serdi-time.svg",
+            open("serd-time.txt", "r"),
+            "serd-time.svg",
             "Statements",
             "Time (s)",
         )
         plot(
-            open("serdi-throughput.txt", "r"),
-            "serdi-throughput.svg",
+            open("serd-throughput.txt", "r"),
+            "serd-throughput.svg",
             "Statements",
             "Statements / s",
         )
         plot(
-            open("serdi-memory.txt", "r"),
-            "serdi-memory.svg",
+            open("serd-memory.txt", "r"),
+            "serd-memory.svg",
             "Statements",
             "Bytes",
         )
@@ -271,7 +271,7 @@ example:
 
     args = ap.parse_args(sys.argv[1:])
 
-    progs = ["serdi -b -f -i turtle -o turtle"] + args.run
+    progs = ["serd-pipe -b -f -i turtle -o turtle"] + args.run
     min_n = int(args.max / args.steps)
     max_n = args.max
     step = min_n
