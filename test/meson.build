@@ -16,6 +16,7 @@ simple_script_paths = [
   '../scripts/check_formatting.py',
   'serd_test_util/__init__.py',
   'run_suite.py',
+  'test_empty.py',
   'test_quiet.py',
   'test_stdin.py',
   'test_write_error.py',
@@ -232,6 +233,15 @@ if is_variable('serdi')
   endforeach
 
   test('stdin', files('test_stdin.py'), args: script_args, suite: input_suite)
+
+  # Output
+
+  test(
+    'empty',
+    files('test_empty.py'),
+    args: script_args + [serd_ttl],
+    suite: 'output',
+  )
 
   # IO errors
 

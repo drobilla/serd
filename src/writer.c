@@ -963,6 +963,10 @@ serd_writer_write_statement(SerdWriter*        writer,
 
   SerdStatus st = SERD_SUCCESS;
 
+  if (writer->syntax == SERD_SYNTAX_EMPTY) {
+    return SERD_SUCCESS;
+  }
+
   if (!is_resource(subject) || !is_resource(predicate) || !object->buf ||
       ((flags & SERD_ANON_S) && (flags & SERD_LIST_S)) ||   // Nonsense
       ((flags & SERD_EMPTY_S) && (flags & SERD_LIST_S)) ||  // Nonsense
@@ -1124,7 +1128,7 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
 
   SerdStatus st = SERD_SUCCESS;
 
-  if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
+  if (writer->syntax != SERD_TURTLE && writer->syntax != SERD_TRIG) {
     return SERD_SUCCESS;
   }
 

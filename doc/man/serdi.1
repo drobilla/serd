@@ -70,6 +70,7 @@ Case is ignored, valid values are:
 .Dq NQuads ,
 .Dq NTriples ,
 .Dq TriG ,
+and
 .Dq Turtle .
 .It Fl l
 Lax (non-strict) parsing.
@@ -79,10 +80,16 @@ Note that data may be lost when using this option.
 Write output as
 .Ar syntax .
 Case is ignored, valid values are:
+.Dq empty ,
 .Dq NQuads ,
 .Dq NTriples ,
 .Dq TriG ,
+and
 .Dq Turtle .
+The
+.Cm empty
+syntax suppresses the output,
+so that only warnings and errors will be printed.
 .It Fl p Ar prefix
 Add
 .Ar prefix
@@ -146,10 +153,10 @@ exits with a status of 0, or non-zero if an error occurred.
 .Pa file.ttl
 >
 .Pa out.ttl
-.It Print any errors:
-.Nm Pa file.ttl
->
-.Pa /dev/null
+.It Print only errors and discard the output:
+.Nm Fl O
+.Ar empty
+.Pa input.ttl
 .El
 .Sh SEE ALSO
 .Bl -item -compact

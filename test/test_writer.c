@@ -249,13 +249,40 @@ test_write_error(void)
 
   SerdNode u = serd_node_from_string(SERD_URI, NS_EG "u");
 
-  writer = serd_writer_new(
-    SERD_TURTLE, (SerdWriterFlags)0, env, NULL, error_sink, NULL);
+  writer = serd_writer_new(SERD_TURTLE, 0U, env, NULL, error_sink, NULL);
   assert(writer);
   st = serd_writer_write_statement(writer, 0U, NULL, &u, &u, &u, NULL, NULL);
   assert(st == SERD_BAD_WRITE);
   serd_writer_free(writer);
 
+  serd_env_free(env);
+}
+
+static void
+test_write_empty_syntax(void)
+{
+  SerdEnv* env = serd_env_new(NULL);
+
+  SerdNode s = serd_node_from_string(SERD_URI, NS_EG "s");
+  SerdNode p = serd_node_from_string(SERD_URI, NS_EG "p");
+  SerdNode o = serd_node_from_string(SERD_CURIE, "eg:o");
+
+  SerdBuffer buffer = {NULL, 0};
+
+  SerdWriter* writer = serd_writer_new(
+    SERD_SYNTAX_EMPTY, 0U, env, NULL, serd_buffer_sink, &buffer);
+
+  assert(writer);
+
+  assert(
+    !serd_writer_write_statement(writer, 0U, NULL, &s, &p, &o, NULL, NULL));
+
+  char* out = serd_buffer_sink_finish(&buffer);
+
+  assert(strlen(out) == 0);
+  serd_free(out);
+
+  serd_writer_free(writer);
   serd_env_free(env);
 }
 
@@ -268,6 +295,7 @@ main(void)
   test_write_bad_anon_stack();
   test_strict_write();
   test_write_error();
+  test_write_empty_syntax();
 
   return 0;
 }
