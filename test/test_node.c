@@ -200,8 +200,9 @@ test_base64_decode(void)
 static void
 test_node_equals(void)
 {
-  const uint8_t replacement_char_str[] = {0xEF, 0xBF, 0xBD, 0};
-  SerdNode      lhs =
+  static const uint8_t replacement_char_str[] = {0xEF, 0xBF, 0xBD, 0};
+
+  SerdNode lhs =
     serd_node_from_string(SERD_LITERAL, (const char*)replacement_char_str);
   SerdNode rhs = serd_node_from_string(SERD_LITERAL, "123");
   assert(!serd_node_equals(&lhs, &rhs));

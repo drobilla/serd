@@ -4,6 +4,7 @@
 #include "reader.h"
 
 #include "byte_source.h"
+#include "read_ntriples.h"
 #include "stack.h"
 #include "symbols.h"
 #include "system.h"
@@ -59,6 +60,29 @@ r_err_char(const SerdReader* const reader, const char* const kind, const int c)
          : (c == '\'' || c >= 0x80)
            ? r_err(reader, st, "bad %s character U+%04X", kind, (uint32_t)c)
            : r_err(reader, st, "bad %s character '%c'", kind, c);
+}
+
+SerdStatus
+skip_horizontal_whitespace(SerdReader* const reader)
+{
+  while (peek_byte(reader) == '\t' || peek_byte(reader) == ' ') {
+    eat_byte(reader);
+  }
+
+  return SERD_SUCCESS;
+}
+
+SerdStatus
+serd_reader_skip_until_byte(SerdReader* const reader, const uint8_t byte)
+{
+  int c = peek_byte(reader);
+
+  while (c != byte && c != EOF) {
+    skip_byte(reader, c);
+    c = peek_byte(reader);
+  }
+
+  return c == EOF ? SERD_FAILURE : SERD_SUCCESS;
 }
 
 void
@@ -219,6 +243,9 @@ emit_statement(const SerdReader* const  reader,
                const TokenHeader* const object,
                const TokenHeader* const meta)
 {
+  assert(ctx.subject);
+  assert(ctx.predicate);
+
   const SerdObjectView object_view = {
     object->type,
     {(const char*)(object + 1U), object->length},
@@ -242,20 +269,27 @@ serd_reader_read_document(SerdReader* const reader)
 {
   assert(reader);
 
-  if (reader->syntax == SERD_SYNTAX_EMPTY) {
-    return SERD_SUCCESS;
-  }
-
-  if (!reader->source.prepared) {
+  if (reader->syntax != SERD_SYNTAX_EMPTY && !reader->source.prepared) {
     const SerdStatus st = serd_reader_prepare(reader);
     if (st) {
       return st;
     }
   }
 
-  return (reader->syntax == SERD_SYNTAX_EMPTY) ? SERD_SUCCESS
-         : (reader->syntax == SERD_NQUADS)     ? read_nquadsDoc(reader)
-                                               : read_turtleTrigDoc(reader);
+  switch (reader->syntax) {
+  case SERD_SYNTAX_EMPTY:
+    break;
+  case SERD_TURTLE:
+    return read_turtleTrigDoc(reader);
+  case SERD_NTRIPLES:
+    return read_ntriplesDoc(reader);
+  case SERD_NQUADS:
+    return read_nquadsDoc(reader);
+  case SERD_TRIG:
+    return read_turtleTrigDoc(reader);
+  }
+
+  return SERD_SUCCESS;
 }
 
 SerdReader*
@@ -432,11 +466,6 @@ serd_reader_read_chunk(SerdReader* const reader)
     st = serd_reader_prepare(reader);
   } else if (reader->source.eof) {
     st = serd_byte_source_advance(&reader->source);
-  }
-
-  if (peek_byte(reader) == 0) {
-    // Skip leading null byte, for reading from a null-delimited socket
-    st = skip_byte(reader, 0);
   }
 
   return st                                ? st
