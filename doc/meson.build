@@ -25,34 +25,4 @@ if build_docs
   subdir('c')
 endif
 
-#############
-# Man Pages #
-#############
-
-mandoc = find_program('mandoc', required: false)
-mandoc_css = files('mandoc.css')
-
-if get_option('lint')
-  stylelint = find_program('stylelint', required: false)
-  if stylelint.found()
-    test('stylelint', stylelint, args: [mandoc_css], suite: 'data')
-  endif
-endif
-
-if mandoc.found()
-  configure_file(input: mandoc_css, output: '@PLAINNAME@', copy: true)
-
-  serd_pipe_html = custom_target(
-    'serd-pipe.html',
-    build_by_default: true,
-    capture: true,
-    command: [mandoc, '-Thtml', '-Werror', '-O', 'style=mandoc.css', '@INPUT@'],
-    input: files('serd-pipe.1'),
-    output: 'serd-pipe.html',
-  )
-endif
-
-if not meson.is_subproject()
-  summary('HTML man pages', build_docs, bool_yn: true)
-  summary('Reference documentation', build_docs, bool_yn: true)
-endif
+subdir('man')

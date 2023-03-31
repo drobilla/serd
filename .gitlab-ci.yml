@@ -17,7 +17,7 @@ dev:
   stage: build
   image: lv2plugin/debian-x64
   script:
-    - meson setup build -Dc_std=c11 -Dbuildtype=debug -Ddocs=enabled -Dwarning_level=3 -Dwerror=true -Db_coverage=true -Dlint=true
+    - meson setup build -Dc_std=c11 -Dbuildtype=debug -Ddocs=enabled -Dwarning_level=3 -Dwerror=true -Db_coverage=true -Dlint=true -Dman_html=enabled
     - ninja -C build test
     - ninja -C build coverage-html
     - mkdir -p build/doc/
@@ -152,8 +152,7 @@ pages:
     - mv build/meson-logs/coveragereport/ public/coverage
     - mv build/doc/c/html/ public/c/html/
     - mv build/doc/c/singlehtml/ public/c/singlehtml/
-    - mv build/doc/serd-pipe.html public/man/serd-pipe.html
-    - mv build/doc/mandoc.css public/man/mandoc.css
+    - mv build/doc/man/ public/man/
   needs:
     - dev
   artifacts:

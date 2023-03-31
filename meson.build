@@ -243,10 +243,6 @@ install_headers(c_headers, subdir: versioned_name / 'serd')
 # Build serd-pipe command line utility
 if not get_option('tools').disabled()
   subdir('tools')
-
-  if not get_option('docs').disabled()
-    install_man(files('doc/serd-pipe.1'))
-  endif
 endif
 
 ###########
