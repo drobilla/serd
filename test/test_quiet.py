@@ -11,7 +11,7 @@ import subprocess
 import serd_test_util as util
 
 args = util.wrapper_args(__doc__, True)
-command = shlex.split(args.wrapper) + [args.serdi, "-q", args.input]
+command = shlex.split(args.wrapper) + [args.tool, "-q", args.input]
 proc = subprocess.run(
     command,
     encoding="utf-8",

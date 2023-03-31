@@ -13,7 +13,7 @@ import os
 import serd_test_util as util
 
 args = util.wrapper_args(__doc__, True)
-command = shlex.split(args.wrapper) + [args.serdi, args.input]
+command = shlex.split(args.wrapper) + [args.tool, args.input]
 
 if os.path.exists("/dev/full"):
     with open("/dev/full", "w", encoding="utf-8") as out:
