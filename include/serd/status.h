@@ -40,6 +40,8 @@ typedef enum {
   SERD_BAD_DATA,    ///< Invalid data
   SERD_BAD_LITERAL, ///< Invalid literal
   SERD_BAD_PATTERN, ///< Invalid statement pattern
+  SERD_BAD_CURSOR,  ///< Use of invalidated cursor
+  SERD_BAD_INDEX,   ///< No suitable model index available
 } SerdStatus;
 
 /// Return a string describing a status code

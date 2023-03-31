@@ -79,6 +79,8 @@ if is_variable('cc')
     if warning_level == 'everything'
       c_suppressions += [
         '/wd4061', # enumerator in switch is not explicitly handled
+        '/wd4114', # same type qualifier used more than once
+        '/wd4305', # truncation to smaller type
         '/wd4514', # unreferenced inline function has been removed
         '/wd4710', # function not inlined
         '/wd4711', # function selected for automatic inline expansion

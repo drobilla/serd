@@ -250,17 +250,7 @@ main(int argc, char** argv)
   char  default_input[]  = "-";
   char* default_inputs[] = {default_input};
 
-  Options opts = {{"",
-                   NULL,
-                   4096U,
-                   1048576U,
-                   {SERD_SYNTAX_EMPTY, 0U, false},
-                   {SERD_NQUADS, 0U, false}},
-                  NULL,
-                  NULL,
-                  NULL,
-                  0U,
-                  false};
+  Options opts = {serd_default_options(), NULL, NULL, NULL, 0U, false};
 
   // Parse all command line options (which must precede inputs)
   SerdStatus st   = SERD_SUCCESS;

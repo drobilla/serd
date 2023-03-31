@@ -6,6 +6,7 @@
 
 #include "serd/env.h"
 #include "serd/input_stream.h"
+#include "serd/log.h"
 #include "serd/output_stream.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
@@ -43,6 +44,7 @@ typedef struct {
   size_t            stack_size;
   SerdSyntaxOptions input;
   SerdSyntaxOptions output;
+  SerdLogLevel      log_level;
 } SerdCommonOptions;
 
 // Common "global" state of a command-line tool that writes data
@@ -59,6 +61,9 @@ serd_option_iter_is_end(OptionIter iter);
 
 SerdStatus
 serd_option_iter_advance(OptionIter* iter);
+
+SerdCommonOptions
+serd_default_options(void);
 
 SerdStatus
 serd_tool_setup(SerdTool* tool, const char* program, SerdCommonOptions options);

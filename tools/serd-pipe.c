@@ -106,8 +106,8 @@ print_usage(const char* const name, const bool error)
     "  -b BYTES     I/O block size.\n"
     "  -h           Display this help and exit.\n"
     "  -k BYTES     Parser stack size.\n"
+    "  -l LEVEL     Maximum log level: 0 to 7, or emerg to debug.\n"
     "  -o FILENAME  Write output to FILENAME instead of stdout.\n"
-    "  -q           Suppress warning and error output.\n"
     "  -s STRING    Parse STRING as input.\n";
 
   FILE* const os = error ? stderr : stdout;
@@ -177,18 +177,7 @@ main(const int argc, char* const* const argv)
   char  default_input[]  = {'-', '\0'};
   char* default_inputs[] = {default_input};
 
-  Options opts = {{"",
-                   NULL,
-                   4096U,
-                   1048576U,
-                   {SERD_SYNTAX_EMPTY, 0U, false},
-                   {SERD_SYNTAX_EMPTY, 0U, false}},
-                  "",
-                  NULL,
-                  NULL,
-                  0U,
-                  false,
-                  false};
+  Options opts = {serd_default_options(), "", NULL, NULL, 0U, false, false};
 
   // Parse all command line options (which must precede inputs)
   SerdStatus st   = SERD_SUCCESS;

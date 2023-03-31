@@ -96,7 +96,7 @@ tolerate_status(const SerdReader* const reader, const SerdStatus status)
 
   if (status == SERD_BAD_STREAM || status == SERD_BAD_STACK ||
       status == SERD_BAD_WRITE || status == SERD_NO_DATA ||
-      status == SERD_BAD_CALL) {
+      status == SERD_BAD_CALL || status == SERD_BAD_CURSOR) {
     return false;
   }
 
