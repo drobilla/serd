@@ -23,7 +23,7 @@ Copyright: 2022 David Robillard <d@drobilla.net>
 Comment: Contributed to the Commons as a tool configuration
 License: 0BSD OR ISC
 
-Files: doc/_static/serd.svg doc/serdi-*.svg doc/serdi-*.txt
-Copyright: 2011-2022 David Robillard <d@drobilla.net>
+Files: doc/_static/serd*.svg doc/serd*.svg doc/serd*.txt
+Copyright: 2011-2023 David Robillard <d@drobilla.net>
 Comment: Documentation
 License: ISC

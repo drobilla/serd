@@ -57,7 +57,7 @@ def wrapper_args(description, with_input=False):
     """Return the command line arguments for a wrapped test."""
 
     parser = argparse.ArgumentParser(description)
-    parser.add_argument("--serdi", default="tools/serdi", help="executable")
+    parser.add_argument("--tool", default="tools/serd-pipe", help="executable")
     parser.add_argument("--wrapper", default="", help="executable wrapper")
     if with_input:
         parser.add_argument("input", help="input file")
@@ -149,7 +149,7 @@ def earl_assertion(test, passed, asserter):
 
 
 def load_rdf(filename, base_uri, command_prefix):
-    """Load an RDF file as dictionaries via serdi (only supports URIs)."""
+    """Load an RDF file as dictionaries via serd-pipe (only supports URIs)."""
 
     rdf_type = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
     model = {}
