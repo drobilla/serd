@@ -5,19 +5,14 @@
 
 """Test errors writing to a file."""
 
-import argparse
 import sys
 import shlex
 import subprocess
 import os
 
-parser = argparse.ArgumentParser(description=__doc__)
+import serd_test_util as util
 
-parser.add_argument("--serdi", default="./serdi", help="path to serdi")
-parser.add_argument("--wrapper", default="", help="executable wrapper")
-parser.add_argument("input", help="valid input file")
-
-args = parser.parse_args(sys.argv[1:])
+args = util.wrapper_args(__doc__, True)
 command = shlex.split(args.wrapper) + [args.serdi, args.input]
 
 if os.path.exists("/dev/full"):
