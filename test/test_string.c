@@ -14,7 +14,7 @@ test_strerror(void)
 {
   const char* msg = serd_strerror(SERD_SUCCESS);
   assert(!strcmp(msg, "Success"));
-  for (int i = SERD_FAILURE; i <= SERD_ERR_BAD_DATA; ++i) {
+  for (int i = SERD_FAILURE; i <= SERD_ERR_BAD_INDEX; ++i) {
     msg = serd_strerror((SerdStatus)i);
     assert(strcmp(msg, "Success"));
   }

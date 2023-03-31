@@ -23,6 +23,7 @@ simple_scripts = files(
   'test_multifile.py',
   'test_patterns.py',
   'test_quiet.py',
+  'test_sort.py',
   'test_stdin.py',
   'test_write_error.py',
 )
@@ -107,9 +108,11 @@ subdir('headers')
 
 unit_tests = [
   'caret',
+  'cursor',
   'env',
   'free_null',
   'log',
+  'model',
   'node',
   'node_syntax',
   'nodes',
@@ -202,6 +205,18 @@ simple_command_tests = {
       ['-V'],
       ['-h'],
       ['-k', '512', '-s', '<go:>a<go:> .'],
+    ],
+  },
+  'sort': {
+    'bad': [
+      ['-c', 'CHAOS'],
+      ['-c'],
+      ['-z'],
+      ['/no/such/file'],
+    ],
+    'good': [
+      ['-V'],
+      ['-h'],
     ],
   },
 }
@@ -410,7 +425,7 @@ if is_variable('serd_filter')
   # Command line options
 
   test(
-    'garbage_pattern',
+    'bad_pattern',
     tool,
     args: ['junk', serd_ttl],
     env: test_env,
@@ -456,6 +471,34 @@ if is_variable('serd_filter')
   )
 
   subdir('extra/filter')
+endif
+
+# Tests specific to serd-sort
+if is_variable('serd_sort')
+  sort_script_args = common_script_args + ['--tool', serd_sort]
+
+  test(
+    'stdin',
+    files('test_stdin.py'),
+    args: sort_script_args,
+    env: test_env,
+    suite: ['tools', 'sort', 'input'],
+  )
+  test(
+    'missing_output',
+    serd_sort,
+    args: ['-o', '/does/not/exist.ttl', serd_ttl],
+    env: test_env,
+    should_fail: true,
+    suite: ['tools', 'sort', 'output'],
+  )
+  test(
+    'sort',
+    files('test_sort.py'),
+    args: sort_script_args + files('sort/input.trig'),
+    env: test_env,
+    suite: ['tools', 'sort'],
+  )
 endif
 
 ###########################
@@ -570,7 +613,36 @@ if is_variable('serd_pipe')
       run_suite,
       args: pipe_script_args + args,
       env: test_env,
-      suite: ['suite'],
+      suite: ['suite', 'pipe'],
+      timeout: 240,
+    )
+  endforeach
+endif
+
+# Run model test suites using serd-sort
+if is_variable('serd_sort')
+  sort_suite_names = [
+    'nquads',
+    'ntriples',
+    'trig',
+    'turtle',
+
+    'good',
+    'pattern',
+    'perfect_forward',
+    'perfect_reverse',
+    'qualify',
+    'terse',
+  ]
+
+  foreach name : sort_suite_names
+    args = test_suites[name]
+    test(
+      name,
+      run_suite,
+      args: sort_script_args + ['--unique'] + args,
+      env: test_env,
+      suite: ['suite', 'sort'],
       timeout: 240,
     )
   endforeach

@@ -87,7 +87,7 @@ tolerate_status(const SerdReader* const reader, const SerdStatus status)
 
   if (status == SERD_ERR_INTERNAL || status == SERD_ERR_OVERFLOW ||
       status == SERD_ERR_BAD_WRITE || status == SERD_ERR_NO_DATA ||
-      status == SERD_ERR_BAD_CALL) {
+      status == SERD_ERR_BAD_CALL || status == SERD_ERR_BAD_CURSOR) {
     return false;
   }
 
