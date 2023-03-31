@@ -96,6 +96,10 @@
    @{
 */
 
+#include "serd/cursor.h"
+#include "serd/describe.h"
+#include "serd/inserter.h"
+#include "serd/model.h"
 #include "serd/nodes.h"
 
 /**

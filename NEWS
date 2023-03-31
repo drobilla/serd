@@ -4,6 +4,7 @@ serd (1.1.1) unstable; urgency=medium
   * Add SerdWorld for shared library state
   * Add extensible logging API
   * Add filtering of statements by a triple or quad pattern
+  * Add model for storing statements in memory
   * Add support for URI hex encoding and decoding
   * Add support for converting literals to canonical form
   * Add support for parsing variables

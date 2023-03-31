@@ -275,6 +275,8 @@ serd_nodes_intern(SerdNodes* nodes, const SerdNode* node)
     return NULL;
   }
 
+  const SerdNode* const new_meta = serd_nodes_intern(nodes, node->meta);
+
   SERD_DISABLE_NULL_WARNINGS
   const ZixHashInsertPlan plan     = zix_hash_plan_insert(nodes->hash, node);
   NodesEntry* const       existing = zix_hash_record_at(nodes->hash, plan);
@@ -292,6 +294,7 @@ serd_nodes_intern(SerdNodes* nodes, const SerdNode* node)
 
   NodesEntry* const entry = node_entry(new_node);
 
+  new_node->meta   = new_meta;
   entry->head.refs = 1U;
 
   // Insert the entry (blissfully ignoring a failed hash size increase)
@@ -367,6 +370,9 @@ serd_nodes_manage_entry_node(SerdNodes* const nodes, SerdNode* const node)
     free_entry(nodes, entry);
     return &existing->node;
   }
+
+  const SerdNode* const new_meta = serd_nodes_intern(nodes, node->meta);
+  node->meta                     = new_meta;
 
   assert(nodes_hash(&entry->node) == plan.code);
 

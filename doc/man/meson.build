@@ -34,6 +34,7 @@ if not get_option('tools').disabled()
 
     install_man(files('serd-filter.1'))
     install_man(files('serd-pipe.1'))
+    install_man(files('serd-sort.1'))
   endif
 
   # Build/install HTML man pages if mandoc is present
@@ -58,6 +59,7 @@ if not get_option('tools').disabled()
     page_names = [
       'serd-filter',
       'serd-pipe',
+      'serd-sort',
     ]
 
     html_mandir = docdir / versioned_name / 'man'
