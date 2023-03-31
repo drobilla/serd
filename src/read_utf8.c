@@ -9,6 +9,7 @@
 #include <serd/reader.h>
 #include <serd/status.h>
 
+#include <stdint.h>
 #include <stdio.h>
 
 enum {
