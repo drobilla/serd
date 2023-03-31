@@ -22,8 +22,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define SERDI_ERROR(msg) fprintf(stderr, "serdi: " msg)
-#define SERDI_ERRORF(fmt, ...) fprintf(stderr, "serdi: " fmt, __VA_ARGS__)
+#define LOG_ERR(msg) fprintf(stderr, "serd-pipe: " msg)
+#define LOG_ERRF(fmt, ...) fprintf(stderr, "serd-pipe: " fmt, __VA_ARGS__)
 
 #define MAX_DEPTH 128U
 
@@ -60,7 +60,7 @@ print_usage(const char* const name, const bool error)
 static int
 missing_arg(const char* const name, const char opt)
 {
-  SERDI_ERRORF("option requires an argument -- '%c'\n", opt);
+  LOG_ERRF("option requires an argument -- '%c'\n", opt);
   return print_usage(name, true);
 }
 
@@ -159,7 +159,7 @@ main(int argc, char** argv)
         char*      endptr = NULL;
         const long size   = strtol(argv[a], &endptr, 10);
         if (size <= 0 || size == LONG_MAX || *endptr != '\0') {
-          SERDI_ERRORF("invalid stack size '%s'\n", argv[a]);
+          LOG_ERRF("invalid stack size '%s'\n", argv[a]);
           return 1;
         }
         stack_size = (size_t)size;
@@ -191,14 +191,14 @@ main(int argc, char** argv)
         root_uri = argv[a];
         break;
       } else {
-        SERDI_ERRORF("invalid option -- '%s'\n", argv[a] + 1);
+        LOG_ERRF("invalid option -- '%s'\n", argv[a] + 1);
         return print_usage(prog, true);
       }
     }
   }
 
   if (a == argc) {
-    SERDI_ERROR("missing input\n");
+    LOG_ERR("missing input\n");
     return print_usage(prog, true);
   }
 
@@ -286,7 +286,7 @@ main(int argc, char** argv)
   serd_world_free(world);
 
   if (fclose(stdout)) {
-    perror("serdi: write error");
+    perror("serd-pipe: write error");
     st = SERD_BAD_STREAM;
   }
 

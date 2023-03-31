@@ -10,6 +10,7 @@ serd (1.1.1) unstable; urgency=medium
   * Remove support for reading Turtle named inline nodes extension
   * Remove useless character counting from API
   * Replace SerdChunk with ZixStringView
+  * Replace serdi with more focused tools
   * Simplify statement flags
   * Simplify writer style options and write UTF-8 by default
   * Strengthen handling of corrupt UTF-8 input

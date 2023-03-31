@@ -110,12 +110,12 @@ if get_option('lint')
     test('pylint', pylint, args: pylint_args, suite: 'scripts')
   endif
 
-  # Check Turtle formatting with serdi
+  # Check Turtle formatting with serd-pipe
   foreach ttl_file_path : ttl_metadata_file_paths
     test(
       ttl_file_path.underscorify(),
       check_formatting_py,
-      args: [files(ttl_file_path), serdi, '-o', 'turtle'],
+      args: [files(ttl_file_path), serd_pipe, '-o', 'turtle'],
       env: test_env,
       suite: 'data',
     )
@@ -172,7 +172,7 @@ if wrapper != ''
 endif
 
 simple_command_tests = {
-  'serdi': {
+  'pipe': {
     'bad': [
       ['-c'],
       ['-cx'],
@@ -205,23 +205,23 @@ simple_command_tests = {
   },
 }
 
-if is_variable('serdi')
-  script_args = common_script_args + ['--serdi', serdi]
+if is_variable('serd_pipe')
+  pipe_script_args = common_script_args + ['--tool', serd_pipe]
   serd_ttl = files('../serd.ttl')[0]
   bad_input_file = files('extra/bad/bad-base.ttl')
   text_input_file = files('extra/bad/README.md')
 
-  test('serd_ttl', serdi, args: [serd_ttl], env: test_env, suite: 'data')
+  test('serd_ttl', serd_pipe, args: [serd_ttl], env: test_env, suite: 'data')
 
   # Command line options
 
-  cmd_suite = ['serdi', 'options']
+  cmd_suite = ['tools', 'pipe', 'options']
 
-  foreach kind, cases : simple_command_tests['serdi']
+  foreach kind, cases : simple_command_tests['pipe']
     foreach args : cases
       test(
         ' '.join(args).substring(1).underscorify(),
-        serdi,
+        serd_pipe,
         args: args,
         env: test_env,
         should_fail: kind == 'bad',
@@ -230,19 +230,19 @@ if is_variable('serdi')
     endforeach
   endforeach
 
-  test('none', serdi, env: test_env, should_fail: true, suite: cmd_suite)
+  test('none', serd_pipe, env: test_env, should_fail: true, suite: cmd_suite)
 
   test(
     'quiet',
     files('test_quiet.py'),
-    args: script_args + [bad_input_file],
+    args: pipe_script_args + [bad_input_file],
     env: test_env,
     suite: cmd_suite,
   )
 
   # Inputs
 
-  input_suite = ['serdi', 'input']
+  input_suite = ['tools', 'pipe', 'input']
 
   bad_input_tests = {
     'string': ['-s', '<foo> a <Bar> .'],
@@ -254,7 +254,7 @@ if is_variable('serdi')
   foreach name, args : bad_input_tests
     test(
       name,
-      serdi,
+      serd_pipe,
       args: args,
       env: test_env,
       should_fail: true,
@@ -265,7 +265,7 @@ if is_variable('serdi')
   test(
     'stdin',
     files('test_stdin.py'),
-    args: script_args,
+    args: pipe_script_args,
     env: test_env,
     suite: input_suite,
   )
@@ -275,7 +275,7 @@ if is_variable('serdi')
   test(
     'empty',
     files('test_empty.py'),
-    args: script_args + [serd_ttl],
+    args: pipe_script_args + [serd_ttl],
     env: test_env,
     suite: 'output',
   )
@@ -289,13 +289,20 @@ if is_variable('serdi')
   }
 
   foreach name, args : io_error_tests
-    test(name, serdi, args: args, env: test_env, should_fail: true, suite: 'io')
+    test(
+      name,
+      serd_pipe,
+      args: args,
+      env: test_env,
+      should_fail: true,
+      suite: 'io',
+    )
   endforeach
 
   test(
     'write_error',
     files('test_write_error.py'),
-    args: script_args + [serd_ttl],
+    args: pipe_script_args + [serd_ttl],
     env: test_env,
     suite: 'io',
   )
@@ -303,7 +310,7 @@ if is_variable('serdi')
   if host_machine.system() == 'linux'
     test(
       'unreadable',
-      serdi,
+      serd_pipe,
       args: ['/sys/bus/pci/rescan'],
       env: test_env,
       should_fail: true,
@@ -476,15 +483,15 @@ test_suites = {
   ],
 }
 
-# Run every test suite with serdi
-if is_variable('serdi')
-  script_args = common_script_args + ['--serdi', serdi]
+# Run every test suite with serd-pipe
+if is_variable('serd_pipe')
+  script_args = common_script_args + ['--tool', serd_pipe]
 
   foreach name, args : test_suites
     test(
       name,
       run_suite,
-      args: script_args + args,
+      args: pipe_script_args + args,
       env: test_env,
       suite: ['suite'],
       timeout: 240,

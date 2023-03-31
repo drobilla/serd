@@ -220,7 +220,7 @@ install_headers(c_headers, subdir: versioned_name / 'serd')
 # Tools #
 #########
 
-# Build serdi command line utility
+# Build serd-pipe command line utility
 if not get_option('tools').disabled()
   subdir('tools')
 endif
