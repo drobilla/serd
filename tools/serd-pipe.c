@@ -109,9 +109,8 @@ print_usage(const char* const name, const bool error)
     "  -b BYTES   I/O block size.\n"
     "  -h         Display this help and exit.\n"
     "  -k BYTES   Parser stack size.\n"
-    "  -l LEVEL   Maximum log level emerg/alert/crit/err/warn/note/info.\n"
+    "  -l LEVEL   Maximum log level: 0 to 7, or emerg to debug.\n"
     "  -o FILE    Write output to FILE instead of stdout.\n"
-    "  -q         Suppress warning and error output.\n"
     "  -s STRING  Parse STRING as input.\n";
 
   FILE* const os = error ? stderr : stdout;

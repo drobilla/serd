@@ -77,8 +77,8 @@ def gen(sp2b_dir, n_min, n_max, step):
 
 def write_header(results, progs):
     "Write the header line for TSV output"
-    results.write("n")
-    for prog in progs:
+    results.write("n\tserd-pipe\tserd-sort")
+    for prog in progs[2:]:
         results.write("\t" + os.path.basename(prog.split()[0]))
     results.write("\n")
 
@@ -192,13 +192,18 @@ def run(progs, n_min, n_max, step):
                 cmd = "/usr/bin/time -v " + prog + " " + filename(n)
                 with open(filename(n) + ".out", "w") as out:
                     sys.stderr.write(cmd + "\n")
-                    proc = subprocess.Popen(
-                        cmd.split(), stdout=out, stderr=subprocess.PIPE
+                    proc = subprocess.run(
+                        cmd.split(),
+                        check=True,
+                        stdout=out,
+                        stderr=subprocess.PIPE,
                     )
 
-                    time, memory = parse_time(proc.communicate()[1].decode())
+                    time, memory = parse_time(proc.stderr.decode())
                     rows["time"] += ["%.07f" % time]
-                    rows["throughput"] += ["%d" % (n / time)]
+                    rows["throughput"] += (
+                        ["%d" % (n / time)] if time > 0.0 else ["0"]
+                    )
                     rows["memory"] += [str(memory)]
 
             # Write rows to output files
@@ -275,7 +280,12 @@ example:
     serd_opts = (
         "-I lax -I relative -I prefixed -I turtle -O turtle -O verbatim"
     )
-    progs = ["tools/serd-pipe " + serd_opts] + args.run
+
+    progs = [
+        "tools/serd-pipe " + serd_opts,
+        "tools/serd-sort " + serd_opts,
+    ] + args.run
+
     min_n = int(args.max / args.steps)
     max_n = args.max
     step = min_n

@@ -54,6 +54,10 @@ serd_strerror(const SerdStatus status)
     return "Invalid literal";
   case SERD_BAD_PATTERN:
     return "Invalid statement pattern";
+  case SERD_BAD_CURSOR:
+    return "Invalid cursor";
+  case SERD_BAD_INDEX:
+    return "No suitable model index available";
   }
 
   return "Unknown error";

@@ -13,5 +13,5 @@ CheckOptions:
   - key:   readability-function-cognitive-complexity.IgnoreMacros
     value: 'true'
   - key:   readability-function-cognitive-complexity.Threshold
-    value: '19'
+    value: '25'
 InheritParentConfig: true

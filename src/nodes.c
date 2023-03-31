@@ -279,6 +279,8 @@ serd_nodes_intern(SerdNodes* nodes, const SerdNode* node)
     return NULL;
   }
 
+  const SerdNode* const new_meta = serd_nodes_intern(nodes, node->meta);
+
   SERD_DISABLE_NULL_WARNINGS
   const ZixHashInsertPlan plan     = zix_hash_plan_insert(nodes->hash, node);
   NodesEntry* const       existing = zix_hash_record_at(nodes->hash, plan);
@@ -293,6 +295,8 @@ serd_nodes_intern(SerdNodes* nodes, const SerdNode* node)
   if (!new_node) {
     return NULL;
   }
+
+  new_node->meta = new_meta;
 
   NodesEntry* const entry = (NodesEntry*)(new_node - 1U);
 
@@ -371,6 +375,9 @@ serd_nodes_manage_entry_node(SerdNodes* const nodes, SerdNode* const node)
     free_entry(nodes, entry);
     return &existing->node;
   }
+
+  const SerdNode* const new_meta = serd_nodes_intern(nodes, node->meta);
+  node->meta                     = new_meta;
 
   assert(nodes_hash(&entry->node) == plan.code);
 

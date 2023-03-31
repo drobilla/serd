@@ -8,7 +8,7 @@ Copyright: 2010 World Wide Web Consortium, (MIT, ERCIM, Keio, Beihang) and other
 Comment: Standard test suites from the W3C
 License: BSD-3-Clause
 
-Files: test/extra/* test/multifile/*
+Files: test/extra/* test/multifile/* test/sort/*
 Copyright: 2011-2024 David Robillard <d@drobilla.net>
 Comment: Extra test suites for serd
 License: BSD-3-Clause OR ISC

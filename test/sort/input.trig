@@ -1,0 +1,22 @@
+@prefix eg: <http://example.org/> .
+
+eg:graph1 {
+	eg:s
+		a eg:Subject ;
+		eg:blank [
+			a eg:Anonymous ;
+			eg:with eg:aProperty ,
+				eg:orAnother
+			] ;
+		eg:list (
+			1
+			2
+		) ;
+		eg:literal "s1" .
+}
+
+eg:graph2 {
+	eg:a
+		a eg:OtherSubject ;
+		eg:b eg:c .
+}

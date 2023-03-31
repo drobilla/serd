@@ -28,7 +28,9 @@ except ModuleNotFoundError:
 _opaque = [
     "FILE",
     "SerdCaretImpl",
+    "SerdCursorImpl",
     "SerdEnvImpl",
+    "SerdModelImpl",
     "SerdNodeImpl",
     "SerdNodesImpl",
     "SerdReaderImpl",
