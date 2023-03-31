@@ -8,10 +8,12 @@
 # pylint: disable=consider-using-f-string
 # pylint: disable=invalid-name
 
+import argparse
 import datetime
 import difflib
 import os
 import re
+import shlex
 import subprocess
 import sys
 import urllib.parse
@@ -49,6 +51,33 @@ def error(message):
     sys.stderr.write("error: ")
     sys.stderr.write(message)
     sys.stderr.write("\n")
+
+
+def wrapper_args(description, with_input=False):
+    """Return the command line arguments for a wrapped test."""
+
+    parser = argparse.ArgumentParser(description)
+    parser.add_argument("--serdi", default="./serdi", help="serdi executable")
+    parser.add_argument("--wrapper", default="", help="executable wrapper")
+    if with_input:
+        parser.add_argument("input", help="input file")
+
+    return parser.parse_args(sys.argv[1:])
+
+
+def command_output(wrapper, command, stdin=None):
+    """Run a command and check that stdout matches the expected output."""
+
+    proc = subprocess.run(
+        shlex.split(wrapper) + command,
+        capture_output=True,
+        check=True,
+        encoding="utf-8",
+        input=stdin,
+    )
+
+    assert wrapper or not proc.stderr
+    return proc.stdout
 
 
 def print_result_summary(results):
