@@ -27,7 +27,9 @@ except ModuleNotFoundError:
 # Ignore everything opaque or external for nitpicky mode
 _opaque = [
     "FILE",
+    "SerdCursorImpl",
     "SerdEnvImpl",
+    "SerdModelImpl",
     "SerdNodeImpl",
     "SerdNodesImpl",
     "SerdReaderImpl",
