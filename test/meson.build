@@ -152,7 +152,7 @@ if wrapper != ''
 endif
 
 simple_command_tests = {
-  'serdi': {
+  'serd-pipe': {
     'bad': [
       ['-B', 'nonuriorpath'],
       ['-B'],
@@ -186,22 +186,22 @@ simple_command_tests = {
   },
 }
 
-if is_variable('serdi')
-  script_args = common_script_args + ['--serdi', serdi]
+if is_variable('serd_pipe')
+  pipe_script_args = common_script_args + ['--tool', serd_pipe]
   serd_ttl = files('../serd.ttl')[0]
   bad_input_file = files('extra/bad/bad-lang.ttl')
 
-  test('serd_ttl', serdi, args: [serd_ttl], env: test_env, suite: 'data')
+  test('serd_ttl', serd_pipe, args: [serd_ttl], env: test_env, suite: 'data')
 
   # Command line options
 
-  cmd_suite = ['serdi', 'options']
+  cmd_suite = ['tools', 'pipe', 'options']
 
-  foreach kind, cases : simple_command_tests['serdi']
+  foreach kind, cases : simple_command_tests['serd-pipe']
     foreach args : cases
       test(
         ' '.join(args).substring(1).underscorify(),
-        serdi,
+        serd_pipe,
         args: args,
         env: test_env,
         should_fail: kind == 'bad',
@@ -210,12 +210,12 @@ if is_variable('serdi')
     endforeach
   endforeach
 
-  test('none', serdi, env: test_env, should_fail: true, suite: cmd_suite)
+  test('none', serd_pipe, env: test_env, should_fail: true, suite: cmd_suite)
 
   test(
     'base',
     files('test_base.py'),
-    args: script_args,
+    args: pipe_script_args,
     env: test_env,
     suite: cmd_suite,
   )
@@ -225,13 +225,13 @@ if is_variable('serdi')
   test(
     'quiet',
     files('test_quiet.py'),
-    args: script_args + [bad_input_file],
+    args: pipe_script_args + [bad_input_file],
     env: test_env,
     suite: 'log',
   )
   test(
     'CLICOLOR_FORCE',
-    serdi,
+    serd_pipe,
     args: bad_input_file,
     env: test_env + ['CLICOLOR_FORCE=1'],
     should_fail: true,
@@ -239,7 +239,7 @@ if is_variable('serdi')
   )
   test(
     'CLICOLOR',
-    serdi,
+    serd_pipe,
     args: bad_input_file,
     env: test_env + ['CLICOLOR=0'],
     should_fail: true,
@@ -247,7 +247,7 @@ if is_variable('serdi')
   )
   test(
     'NO_COLOR',
-    serdi,
+    serd_pipe,
     args: bad_input_file,
     env: test_env + ['NO_COLOR=1'],
     should_fail: true,
@@ -256,7 +256,7 @@ if is_variable('serdi')
 
   # Inputs
 
-  input_suite = ['serdi', 'input']
+  input_suite = ['tools', 'pipe', 'input']
 
   bad_input_tests = {
     'string': ['-s', '<foo> a <Bar> .'],
@@ -267,7 +267,7 @@ if is_variable('serdi')
   foreach name, args : bad_input_tests
     test(
       name,
-      serdi,
+      serd_pipe,
       args: args,
       env: test_env,
       should_fail: true,
@@ -278,14 +278,14 @@ if is_variable('serdi')
   test(
     'stdin',
     files('test_stdin.py'),
-    args: script_args,
+    args: pipe_script_args,
     env: test_env,
     suite: input_suite,
   )
   test(
     'multifile',
     files('test_multifile.py'),
-    args: script_args + [meson.current_source_dir() / 'multifile'],
+    args: pipe_script_args + [meson.current_source_dir() / 'multifile'],
     env: test_env,
     suite: input_suite,
   )
@@ -295,7 +295,7 @@ if is_variable('serdi')
   test(
     'empty',
     files('test_empty.py'),
-    args: script_args + [serd_ttl],
+    args: pipe_script_args + [serd_ttl],
     env: test_env,
     suite: 'output',
   )
@@ -309,19 +309,26 @@ if is_variable('serdi')
   }
 
   foreach name, args : io_error_tests
-    test(name, serdi, args: args, env: test_env, should_fail: true, suite: 'io')
+    test(
+      name,
+      serd_pipe,
+      args: args,
+      env: test_env,
+      should_fail: true,
+      suite: 'io',
+    )
   endforeach
 
   test(
     'write_error',
     files('test_write_error.py'),
-    args: script_args + [serd_ttl],
+    args: pipe_script_args + [serd_ttl],
     env: test_env,
     suite: 'io',
   )
   test(
     'missing_output',
-    serdi,
+    serd_pipe,
     args: ['-w', '/does/not/exist.ttl', serd_ttl],
     env: test_env,
     should_fail: true,
@@ -331,7 +338,7 @@ if is_variable('serdi')
   if host_machine.system() == 'linux'
     test(
       'unreadable',
-      serdi,
+      serd_pipe,
       args: ['/sys/bus/pci/rescan'],
       env: test_env,
       should_fail: true,
@@ -439,15 +446,15 @@ test_suites = {
   ],
 }
 
-# Run every test suite with serdi
-if is_variable('serdi')
-  script_args = common_script_args + ['--serdi', serdi]
+# Run every test suite with serd-pipe
+if is_variable('serd_pipe')
+  script_args = common_script_args + ['--tool', serd_pipe]
 
   foreach name, args : test_suites
     test(
       name,
       run_suite,
-      args: script_args + args,
+      args: pipe_script_args + args,
       env: test_env,
       suite: ['suite'],
       timeout: 240,
