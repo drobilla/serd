@@ -7,37 +7,15 @@
 
 # pylint: disable=consider-using-f-string
 
-import argparse
-import sys
-import shlex
-import subprocess
-import tempfile
+import serd_test_util as util
 
-parser = argparse.ArgumentParser(description=__doc__)
-
-parser.add_argument("--serdi", default="./serdi", help="path to serdi")
-parser.add_argument("--wrapper", default="", help="executable wrapper")
-
-args = parser.parse_args(sys.argv[1:])
-command = shlex.split(args.wrapper) + [args.serdi, "-"]
+args = util.wrapper_args(__doc__)
+command = [args.serdi, "-i", "ntriples", "-", "http://example.org"]
 
 DOCUMENT = "<{0}s> <{0}p> <{0}o> .".format("http://example.org/")
 
-with tempfile.TemporaryFile() as out:
-    proc = subprocess.run(
-        command,
-        check=False,
-        encoding="utf-8",
-        input=DOCUMENT,
-        stdout=out,
-        stderr=subprocess.PIPE,
-    )
+stdout = util.command_output(args.wrapper, command, DOCUMENT)
+lines = stdout.splitlines(True)
 
-    assert proc.returncode == 0
-    assert args.wrapper or len(proc.stderr) == 0
-
-    out.seek(0)
-    lines = out.readlines()
-
-    assert len(lines) == 1
-    assert lines[0].decode("utf-8").strip() == DOCUMENT
+assert len(lines) == 1
+assert lines[0].strip() == DOCUMENT
