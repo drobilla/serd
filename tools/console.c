@@ -230,6 +230,7 @@ serd_set_output_option(const SerdStringView   name,
 
   static const OutputOption output_options[] = {
     {"ascii", SERD_WRITE_ASCII},
+    {"contextual", SERD_WRITE_CONTEXTUAL},
     {"expanded", SERD_WRITE_EXPANDED},
     {"lax", SERD_WRITE_LAX},
     {"longhand", SERD_WRITE_LONGHAND},

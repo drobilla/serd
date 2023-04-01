@@ -196,7 +196,7 @@ print_usage(const char* const name, const bool error)
     "  -I SYNTAX        Input syntax turtle/ntriples/trig/nquads, or option\n"
     "                   lax/variables/relative/global/generated.\n"
     "  -O SYNTAX        Output syntax empty/turtle/ntriples/nquads, or option\n"
-    "                   ascii/expanded/verbatim/terse/lax.\n"
+    "                   ascii/contextual/expanded/verbatim/terse/lax.\n"
     "  -V               Display version information and exit.\n"
     "  -f PATTERN_FILE  Read pattern from PATTERN_FILE instead.\n"
     "  -h               Display this help and exit.\n"
