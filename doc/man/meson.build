@@ -11,6 +11,7 @@ endif
 if not get_option('tools').disabled()
   # Install tool man pages
   if not get_option('man').disabled()
+    install_man('serd-filter.1')
     install_man('serd-pipe.1')
   endif
 
@@ -35,6 +36,7 @@ if not get_option('tools').disabled()
     ]
 
     page_names = [
+      'serd-filter',
       'serd-pipe',
     ]
 
