@@ -900,7 +900,8 @@ write_uri_node(SerdWriter* const     writer,
   if (supports_abbrev(writer)) {
     const SerdNode* prefix_node = NULL;
     ZixStringView   suffix      = {NULL, 0};
-    if (field == SERD_PREDICATE && !strcmp(node_str, NS_RDF "type")) {
+    if (!(writer->flags & SERD_WRITE_LONGHAND) && field == SERD_PREDICATE &&
+        !strcmp(node_str, NS_RDF "type")) {
       return esink("a", 1, writer);
     }
 
