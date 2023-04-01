@@ -441,6 +441,14 @@ test_suites = {
   'lax_strict': [
     files('extra/lax/manifest.ttl'), ns_serdtest + 'lax/',
   ],
+  'longhand_forward': [
+    files('extra/longhand/manifest.ttl'), ns_serdtest + 'longhand/',
+    '--', '-O', 'longhand',
+  ],
+  'longhand_reverse': [
+    '--reverse',
+    files('extra/longhand/manifest.ttl'), ns_serdtest + 'longhand/',
+  ],
   'pattern': [
     files('extra/pattern/manifest.ttl'), ns_serdtest + 'pattern/',
     '--', '-I', 'variables',
