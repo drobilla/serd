@@ -121,6 +121,13 @@ or an option:
 .Bl -tag -width 3n
 .It Cm ascii
 Escape all non-ASCII characters.
+.It Cm contextual
+Suppress writing directives that describe the context.
+Normally when writing Turtle or Trig,
+a document will have a header that defines all the prefixes used in the input.
+This flag will disable writing those directives,
+so the output is document fragment with an implicit context.
+This can be useful for writing output intended for humans.
 .It Cm expanded
 Write expanded URIs instead of prefixed names.
 .It Cm lax

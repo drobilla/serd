@@ -1456,6 +1456,10 @@ serd_writer_set_prefix(SerdWriter* const     writer,
 
   if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
     TRY(st, terminate_context(writer));
+    if (writer->flags & SERD_WRITE_CONTEXTUAL) {
+      return st;
+    }
+
     TRY(st, esink("@prefix ", 8, writer));
     TRY(st, esink(name_string.data, name_string.length, writer));
     TRY(st, esink(": <", 3, writer));

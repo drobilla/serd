@@ -134,6 +134,7 @@ serd_set_output_option(const ZixStringView    name,
     {"verbatim", SERD_WRITE_VERBATIM},
     {"terse", SERD_WRITE_TERSE},
     {"lax", SERD_WRITE_LAX},
+    {"contextual", SERD_WRITE_CONTEXTUAL},
     {NULL, SERD_WRITE_ASCII},
   };
 
