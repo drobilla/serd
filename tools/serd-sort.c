@@ -171,7 +171,7 @@ print_usage(const char* const name, const bool error)
     "  -I SYNTAX     Input syntax turtle/ntriples/trig/nquads, or option\n"
     "                lax/variables/relative/global/generated.\n"
     "  -O SYNTAX     Output syntax empty/turtle/ntriples/nquads, or option\n"
-    "                ascii/expanded/verbatim/terse/lax.\n"
+    "                ascii/contextual/expanded/verbatim/terse/lax.\n"
     "  -V            Display version information and exit.\n"
     "  -b BYTES      I/O block size.\n"
     "  -c COLLATION  An optional \"G\" then the letters \"SPO\" in any order.\n"
