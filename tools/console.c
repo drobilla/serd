@@ -137,6 +137,7 @@ serd_set_output_option(const ZixStringView    name,
     {"terse", SERD_WRITE_TERSE},
     {"lax", SERD_WRITE_LAX},
     {"contextual", SERD_WRITE_CONTEXTUAL},
+    {"longhand", SERD_WRITE_LONGHAND},
     {NULL, SERD_WRITE_ASCII},
   };
 
