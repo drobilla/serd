@@ -89,6 +89,13 @@ typedef enum {
      implicit context, so it will only be readable in a suitable enviromnent.
   */
   SERD_WRITE_CONTEXTUAL = 1U << 5U,
+
+  /**
+     Write rdf:type as a normal predicate.
+
+     This disables the special "a" syntax in Turtle and TriG.
+  */
+  SERD_WRITE_LONGHAND = 1U << 6U,
 } SerdWriterFlag;
 
 /// Bitwise OR of #SerdWriterFlag values

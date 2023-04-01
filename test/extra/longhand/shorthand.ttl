@@ -1,0 +1,13 @@
+@prefix eg: <http://example.org/eg#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+[]
+	a eg:Node ;
+	eg:with [
+		a eg:NodeChild ;
+		eg:having (
+			[
+				a eg:ListItem
+			]
+		)
+	] .
