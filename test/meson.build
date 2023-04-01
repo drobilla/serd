@@ -257,6 +257,14 @@ if is_variable('serd_pipe')
   cmd_suite = ['tools', 'pipe', 'options']
 
   test(
+    'good_rebase',
+    serd_pipe,
+    args: ['-B', 'rebase', '-o', 'serd_rebased.ttl', serd_ttl],
+    env: test_env,
+    suite: cmd_suite,
+  )
+
+  test(
     'bad_rebase',
     serd_pipe,
     args: ['-B', 'rebase', serd_ttl],
