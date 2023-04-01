@@ -80,6 +80,15 @@ typedef enum {
      carefully, since it can result in data loss.
   */
   SERD_WRITE_LAX = 1U << 4U,
+
+  /**
+     Suppress writing directives that describe the context.
+
+     This writes data as usual, but suppresses writing `prefix` directives in
+     Turtle and TriG.  The resulting output is a fragment of a document with
+     implicit context, so it will only be readable in a suitable enviromnent.
+  */
+  SERD_WRITE_CONTEXTUAL = 1U << 5U,
 } SerdWriterFlag;
 
 /// Bitwise OR of #SerdWriterFlag values

@@ -17,6 +17,7 @@ simple_script_paths = [
   'serd_test_util/__init__.py',
   'run_suite.py',
   'test_base.py',
+  'test_contextual.py',
   'test_empty.py',
   'test_multifile.py',
   'test_quiet.py',
@@ -350,6 +351,16 @@ if is_variable('serd_pipe')
       suite: 'io',
     )
   endif
+
+  # Write options
+
+  test(
+    'contextual',
+    files('test_contextual.py'),
+    args: pipe_script_args + files('../serd.ttl'),
+    env: test_env,
+    suite: ['tools', 'pipe', 'output'],
+  )
 endif
 
 ###########################
