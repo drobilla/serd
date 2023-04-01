@@ -40,7 +40,7 @@ print_usage(const char* const name, const bool error)
     "  -I SYNTAX    Input syntax (turtle/ntriples/trig/nquads),\n"
     "               or flag (generated/global/lax/variables).\n"
     "  -O SYNTAX    Output syntax (empty/turtle/ntriples/nquads),\n"
-    "               or flag (ascii/expanded/lax/terse/verbatim).\n"
+    "               or flag (ascii/contextual/expanded/lax/terse/verbatim).\n"
     "  -b BYTES     I/O block size.\n"
     "  -h           Display this help and exit.\n"
     "  -k BYTES     Parser stack size.\n"
