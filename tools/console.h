@@ -114,9 +114,6 @@ SerdOutputStream
 serd_open_tool_output(const char* filename);
 
 SerdStatus
-serd_set_base_uri_from_path(SerdEnv* env, const char* path);
-
-SerdStatus
 serd_read_source(SerdWorld*        world,
                  SerdCommonOptions opts,
                  SerdEnv*          env,
