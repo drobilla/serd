@@ -195,6 +195,11 @@ ns_serdtest = 'http://drobilla.net/sw/serd/test/'
 ns_w3 = 'http://www.w3.org/2013/'
 
 test_suites = {
+  'prefix.add': [
+    '--reverse',
+    files('prefix/manifest.ttl'), ns_serdtest + 'prefix/',
+    '--', '-p', 'test',
+  ],
   'prefix.remove': [
     files('prefix/manifest.ttl'), ns_serdtest + 'prefix/',
     '--', '-c', 'test',

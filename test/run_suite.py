@@ -49,18 +49,21 @@ def run_eval_test(base_uri, command, in_path, good_path, out_path):
         return util.lines_equal(list(good), out, good_path, out_path)
 
 
-def run_entry(entry, base_uri, command_prefix, out_dir, suite_dir):
+def run_entry(args, entry, command, out_dir, suite_dir):
     """Run a single test entry from the manifest."""
 
     in_path = util.file_path(suite_dir, entry[NS_MF + "action"][0])
-    base = base_uri + os.path.basename(in_path)
+    base = args.base_uri + os.path.basename(in_path)
 
     good_path = in_path
     if NS_MF + "result" in entry:
         good_path = util.file_path(suite_dir, entry[NS_MF + "result"][0])
 
+    if args.reverse:
+        in_path, good_path = good_path, in_path
+
     out_path = os.path.join(out_dir, os.path.basename(good_path))
-    return run_eval_test(base, command_prefix, in_path, good_path, out_path)
+    return run_eval_test(base, command, in_path, good_path, out_path)
 
 
 def run_suite(args, command, out_dir):
@@ -87,9 +90,7 @@ def run_suite(args, command, out_dir):
                 if check and NS_MF + "result" not in entry:
                     raise RuntimeError("Eval test missing result: " + instance)
 
-                results.check(
-                    run_entry(entry, args.base_uri, command, out_dir, top)
-                )
+                results.check(run_entry(args, entry, command, out_dir, top))
 
             except subprocess.CalledProcessError as exception:
                 if exception.stderr is not None:
@@ -108,6 +109,7 @@ def main():
         description=__doc__,
     )
 
+    parser.add_argument("--reverse", action="store_true", help="reverse test")
     parser.add_argument("--serdi", default="serdi", help="path to serdi")
     parser.add_argument("--wrapper", default="", help="executable wrapper")
     parser.add_argument("manifest", help="test suite manifest.ttl file")
