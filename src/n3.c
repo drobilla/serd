@@ -1644,6 +1644,9 @@ read_n3_statement(SerdReader* const reader)
       pop_node(reader, ctx.graph);
       ctx.graph = 0;
       read_ws_star(reader);
+    } else if (!tokcmp(reader, ctx.subject, "true", 4) ||
+               !tokcmp(reader, ctx.subject, "false", 5)) {
+      return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected subject\n");
     } else if (read_ws_star(reader) && peek_byte(reader) == '{') {
       if (s_type == '(' || (s_type == '[' && !*ctx.flags)) {
         return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid graph name\n");
