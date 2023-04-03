@@ -15,7 +15,7 @@
 @prefix rdft:   <http://www.w3.org/ns/rdftest#> .
 
 <>  rdf:type mf:Manifest ;
-    mf:name "TriG tests" ;
+    rdfs:label "TriG tests" ;
     mf:entries
     (
     # TriG specific tests
@@ -231,6 +231,8 @@
     <#trig-syntax-bad-base-01>
     <#trig-syntax-bad-base-02>
     <#trig-syntax-bad-base-03>
+    <#trig-syntax-bad-bnode-01>
+    <#trig-syntax-bad-bnode-02>
     <#trig-syntax-bad-struct-02>
     <#trig-syntax-bad-struct-03>
     <#trig-syntax-bad-struct-04>
@@ -1839,6 +1841,18 @@
    mf:action    <trig-syntax-bad-base-03.trig> ;
    .
 
+<#trig-syntax-bad-bnode-01> rdf:type rdft:TestNTriplesNegativeSyntax ;
+   mf:name      "trig-syntax-bad-bnode-01" ;
+   rdfs:comment "Colon in bnode label not allowed (negative test)" ;
+   mf:action    <trig-syntax-bad-bnode-01.trig> ;
+   .
+
+<#trig-syntax-bad-bnode-02> rdf:type rdft:TestNTriplesNegativeSyntax ;
+   mf:name      "trig-syntax-bad-bnode-02" ;
+   rdfs:comment "Colon in bnode label not allowed (negative test)" ;
+   mf:action    <trig-syntax-bad-bnode-02.trig> ;
+   .
+
 <#trig-syntax-bad-struct-02> rdf:type rdft:TestTrigNegativeSyntax ;
    mf:name    "trig-syntax-bad-struct-02" ;
    rdfs:comment "Turtle is not N3 (negative test)" ;
@@ -1918,91 +1932,91 @@
 
 <#trig-syntax-bad-n3-extras-01> rdf:type rdft:TestTrigNegativeSyntax ;
    mf:name    "trig-syntax-bad-n3-extras-01" ;
-   rdfs:comment "{} fomulae not in Turtle (negative test)" ;
+   rdfs:comment "{} fomulae not in TriG (negative test)" ;
    rdft:approval rdft:Approved ;
    mf:action    <trig-syntax-bad-n3-extras-01.trig> ;
    .
 
 <#trig-syntax-bad-n3-extras-02> rdf:type rdft:TestTrigNegativeSyntax ;
    mf:name    "trig-syntax-bad-n3-extras-02" ;
-   rdfs:comment "= is not Turtle (negative test)" ;
+   rdfs:comment "= is not TriG (negative test)" ;
    rdft:approval rdft:Approved ;
    mf:action    <trig-syntax-bad-n3-extras-02.trig> ;
    .
 
 <#trig-syntax-bad-n3-extras-03> rdf:type rdft:TestTrigNegativeSyntax ;
    mf:name    "trig-syntax-bad-n3-extras-03" ;
-   rdfs:comment "N3 paths not in Turtle (negative test)" ;
+   rdfs:comment "N3 paths not in TriG (negative test)" ;
    rdft:approval rdft:Approved ;
    mf:action    <trig-syntax-bad-n3-extras-03.trig> ;
    .
 
 <#trig-syntax-bad-n3-extras-04> rdf:type rdft:TestTrigNegativeSyntax ;
    mf:name    "trig-syntax-bad-n3-extras-04" ;
-   rdfs:comment "N3 paths not in Turtle (negative test)" ;
+   rdfs:comment "N3 paths not in TriG (negative test)" ;
    rdft:approval rdft:Approved ;
    mf:action    <trig-syntax-bad-n3-extras-04.trig> ;
    .
 
 <#trig-syntax-bad-n3-extras-05> rdf:type rdft:TestTrigNegativeSyntax ;
    mf:name    "trig-syntax-bad-n3-extras-05" ;
-   rdfs:comment "N3 is...of not in Turtle (negative test)" ;
+   rdfs:comment "N3 is...of not in TriG (negative test)" ;
    rdft:approval rdft:Approved ;
    mf:action    <trig-syntax-bad-n3-extras-05.trig> ;
    .
 
 <#trig-syntax-bad-n3-extras-06> rdf:type rdft:TestTrigNegativeSyntax ;
    mf:name    "trig-syntax-bad-n3-extras-06" ;
-   rdfs:comment "N3 paths not in Turtle (negative test)" ;
+   rdfs:comment "N3 paths not in TriG (negative test)" ;
    rdft:approval rdft:Approved ;
    mf:action    <trig-syntax-bad-n3-extras-06.trig> ;
    .
 
 <#trig-syntax-bad-n3-extras-07> rdf:type rdft:TestTrigNegativeSyntax ;
    mf:name    "trig-syntax-bad-n3-extras-07" ;
-   rdfs:comment "@keywords is not Turtle (negative test)" ;
+   rdfs:comment "@keywords is not TriG (negative test)" ;
    rdft:approval rdft:Approved ;
    mf:action    <trig-syntax-bad-n3-extras-07.trig> ;
    .
 
 <#trig-syntax-bad-n3-extras-08> rdf:type rdft:TestTrigNegativeSyntax ;
    mf:name    "trig-syntax-bad-n3-extras-08" ;
-   rdfs:comment "@keywords is not Turtle (negative test)" ;
+   rdfs:comment "@keywords is not TriG (negative test)" ;
    rdft:approval rdft:Approved ;
    mf:action    <trig-syntax-bad-n3-extras-08.trig> ;
    .
 
 <#trig-syntax-bad-n3-extras-09> rdf:type rdft:TestTrigNegativeSyntax ;
    mf:name    "trig-syntax-bad-n3-extras-09" ;
-   rdfs:comment "=> is not Turtle (negative test)" ;
+   rdfs:comment "=> is not TriG (negative test)" ;
    rdft:approval rdft:Approved ;
    mf:action    <trig-syntax-bad-n3-extras-09.trig> ;
    .
 
 <#trig-syntax-bad-n3-extras-10> rdf:type rdft:TestTrigNegativeSyntax ;
    mf:name    "trig-syntax-bad-n3-extras-10" ;
-   rdfs:comment "<= is not Turtle (negative test)" ;
+   rdfs:comment "<= is not TriG (negative test)" ;
    rdft:approval rdft:Approved ;
    mf:action    <trig-syntax-bad-n3-extras-10.trig> ;
    .
 
 <#trig-syntax-bad-n3-extras-11> rdf:type rdft:TestTrigNegativeSyntax ;
    mf:name    "trig-syntax-bad-n3-extras-11" ;
-   rdfs:comment "@forSome is not Turtle (negative test)" ;
+   rdfs:comment "@forSome is not TriG (negative test)" ;
    rdft:approval rdft:Approved ;
    mf:action    <trig-syntax-bad-n3-extras-11.trig> ;
    .
 
 <#trig-syntax-bad-n3-extras-12> rdf:type rdft:TestTrigNegativeSyntax ;
    mf:name    "trig-syntax-bad-n3-extras-12" ;
-   rdfs:comment "@forAll is not Turtle (negative test)" ;
+   rdfs:comment "@forAll is not TriG (negative test)" ;
    rdft:approval rdft:Approved ;
    mf:action    <trig-syntax-bad-n3-extras-12.trig> ;
    .
 
 <#trig-syntax-bad-n3-extras-13> rdf:type rdft:TestTrigNegativeSyntax ;
    mf:name    "trig-syntax-bad-n3-extras-13" ;
-   rdfs:comment "@keywords is not Turtle (negative test)" ;
+   rdfs:comment "@keywords is not TriG (negative test)" ;
    rdft:approval rdft:Approved ;
    mf:action    <trig-syntax-bad-n3-extras-13.trig> ;
    .
