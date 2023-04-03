@@ -214,6 +214,9 @@ test_suites = {
   'bad': [
     files('extra/bad/manifest.ttl'), ns_serdtest + 'bad/',
   ],
+  'big': [
+    files('extra/big/manifest.ttl'), ns_serdtest + 'big/',
+  ],
   'bulk': [
     files('extra/good/manifest.ttl'), ns_serdtest + 'good/',
     '--', '-b',

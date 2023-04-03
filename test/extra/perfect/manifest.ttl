@@ -6,9 +6,6 @@
 	a mf:Manifest ;
 	rdfs:comment "Serd perfect (reversible) test suite" ;
 	mf:entries (
-		<#test-10000-objects>
-		<#test-10000-predicates>
-		<#test-10000-subjects>
 		<#test-backspace-escape>
 		<#test-decimal>
 		<#test-delete-escape>
@@ -26,24 +23,6 @@
 		<#test-utf8>
 		<#test-utf8-uri>
 	) .
-
-<#test-10000-objects>
-	a rdft:TestTurtleEval ;
-	mf:action <test-10000-objects.ttl> ;
-	mf:name "test-10000-objects" ;
-	mf:result <test-10000-objects.nt> .
-
-<#test-10000-predicates>
-	a rdft:TestTurtleEval ;
-	mf:action <test-10000-predicates.ttl> ;
-	mf:name "test-10000-predicates" ;
-	mf:result <test-10000-predicates.nt> .
-
-<#test-10000-subjects>
-	a rdft:TestTurtleEval ;
-	mf:action <test-10000-subjects.ttl> ;
-	mf:name "test-10000-subjects" ;
-	mf:result <test-10000-subjects.nt> .
 
 <#test-backspace-escape>
 	a rdft:TestTurtleEval ;
