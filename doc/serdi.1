@@ -33,16 +33,13 @@ pretty-print documents,
 or transform URIs and blank node IDs.
 .Pp
 The options are as follows:
-.Pp
-.Bl -tag -compact -width 3n
+.Bl -tag -width 3n
 .It Fl a
 Write ASCII output.
 If this is enabled, all non-ASCII characters will be escaped, even if the output syntax allows them to be written in UTF-8.
-.Pp
 .It Fl b
 Bulk output writing.
 If this is enabled, output will be written a page at a time, rather than a byte at a time.
-.Pp
 .It Fl c Ar prefix
 Chop
 .Ar prefix
@@ -56,18 +53,14 @@ the blank node
 .Li _:doc01b42
 will be emitted as
 .Li _:b42 .
-.Pp
 .It Fl e
 Eat input one character at a time, rather than a page at a time which is the default.
 This is useful when reading from a pipe since output will be generated immediately as input arrives, rather than waiting until an entire page of input has arrived.
 With this option serdi uses one page less memory, but will likely be significantly slower.
-.Pp
 .It Fl f
 Keep full URIs in input (don't qualify with namespace prefixes or make URIs relative).
-.Pp
 .It Fl h
 Print the command line options.
-.Pp
 .It Fl i Ar syntax
 Read input as
 .Ar syntax .
@@ -76,12 +69,10 @@ Case is ignored, valid values are:
 .Dq NTriples ,
 .Dq TriG ,
 .Dq Turtle .
-.Pp
 .It Fl l
 Lax (non-strict) parsing.
 If this is enabled, recoverable syntax errors will print a warning, but parsing will proceed starting at the next statement if possible.
 Note that data may be lost when using this option.
-.Pp
 .It Fl o Ar syntax
 Write output as
 .Ar syntax .
@@ -90,7 +81,6 @@ Case is ignored, valid values are:
 .Dq NTriples ,
 .Dq TriG ,
 .Dq Turtle .
-.Pp
 .It Fl p Ar prefix
 Add
 .Ar prefix
@@ -105,10 +95,8 @@ the blank node
 .Li _:b42
 will be emitted as
 .Li _:doc01b42 .
-.Pp
 .It Fl q
 Suppress all output except data.
-.Pp
 .It Fl r Ar root
 Keep relative URIs within a
 .Ar root
@@ -136,12 +124,10 @@ so the above would instead be written as
 since it can't be expressed relative to the root URI.
 .Pp
 This is useful for keeping relative references within some directory.
-.Pp
 .It Fl s Ar string
 Parse
 .Ar string
 input instead of a file (terminates options).
-.Pp
 .It Fl v
 Display version information and exit.
 .El
@@ -149,13 +135,18 @@ Display version information and exit.
 .Nm
 exits with a status of 0, or non-zero if an error occurred.
 .Sh EXAMPLES
-To pretty-print a document:
-.Pp
-.Dl $ serdi -o turtle file.ttl > out.ttl
-.Pp
-To print any errors:
-.Pp
-.Dl $ serdi file.ttl > /dev/null
+.Bl -tag -width 3n
+.It Pretty-print a document:
+.Nm Fl o
+.Ar turtle
+.Pa file.ttl
+>
+.Pa out.ttl
+.It Print any errors:
+.Nm Pa file.ttl
+>
+.Pa /dev/null
+.El
 .Sh SEE ALSO
 .Bl -item -compact
 .It
