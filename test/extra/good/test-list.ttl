@@ -1,4 +1,0 @@
-@prefix eg: <http://example.org/eg#> .
-
-()
-	a eg:List .

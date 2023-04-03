@@ -1,8 +1,0 @@
-@prefix eg: <http://example.org/eg#> .
-
-eg:s
-	eg:p """This is a
-long string
-with
-        tabs
-and spaces.""" .
