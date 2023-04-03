@@ -3,22 +3,33 @@
 
 docdir = get_option('datadir') / 'doc'
 
-doxygen = find_program('doxygen', required: get_option('docs'))
-sphinxygen = find_program('sphinxygen', required: false)
-sphinx_build = find_program('sphinx-build', required: get_option('docs'))
-mandoc = find_program('mandoc', required: false)
+#############
+# Reference #
+#############
 
-if not sphinxygen.found()
-  subproject('sphinxygen')
-  sphinxygen = find_program('sphinxygen', required: get_option('docs'))
+doxygen = find_program('doxygen', required: get_option('docs'))
+sphinx_build = find_program('sphinx-build', required: get_option('docs'))
+
+if doxygen.found() and sphinx_build.found()
+  sphinxygen = find_program('sphinxygen', required: false)
+  if not sphinxygen.found()
+    subproject('sphinxygen')
+    sphinxygen = find_program('sphinxygen', required: get_option('docs'))
+  endif
+else
+  sphinxygen = disabler()
 endif
 
 build_docs = doxygen.found() and sphinxygen.found() and sphinx_build.found()
-
 if build_docs
   subdir('c')
 endif
 
+#############
+# Man Pages #
+#############
+
+mandoc = find_program('mandoc', required: false)
 mandoc_css = files('mandoc.css')
 
 if not get_option('tests').disabled()
@@ -42,5 +53,6 @@ if mandoc.found()
 endif
 
 if not meson.is_subproject()
-  summary('API Documentation', build_docs, bool_yn: true)
+  summary('HTML man pages', build_docs, bool_yn: true)
+  summary('Reference documentation', build_docs, bool_yn: true)
 endif
