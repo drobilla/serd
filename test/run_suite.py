@@ -47,7 +47,7 @@ def run_eval_test(base_uri, command, in_path, good_path, out_path):
         command, check=True, encoding="utf-8", stderr=DEVNULL, stdout=PIPE
     )
 
-    out = [l + "\n" for l in proc.stdout.split("\n")][:-1]
+    out = [line + "\n" for line in proc.stdout.split("\n")][:-1]
     with open(good_path, "r", encoding="utf-8") as good:
         return util.lines_equal(list(good), out, good_path, out_path)
 

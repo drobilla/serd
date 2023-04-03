@@ -46,6 +46,12 @@ if get_option('lint')
       test(name, black, args: black_opts + [script], suite: 'scripts')
     endforeach
   endif
+
+  # Check scripts for errors with flake8
+  flake8 = find_program('flake8', required: false)
+  if flake8.found()
+    test('flake8', flake8, args: python_scripts, suite: 'scripts')
+  endif
 endif
 
 ###################

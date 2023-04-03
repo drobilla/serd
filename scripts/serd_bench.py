@@ -69,10 +69,11 @@ def parse_time(report):
     "Return user time and max RSS from a /usr/bin/time -v report"
     time = memory = None
     for line in report.split("\n"):
+        after_colon = line.find(":") + 1
         if line.startswith("\tUser time"):
-            time = float(line[line.find(":") + 1 :])
+            time = float(line[after_colon:])
         elif line.startswith("\tMaximum resident set"):
-            memory = float(line[line.find(":") + 1 :]) * 1024
+            memory = float(line[after_colon:]) * 1024
 
     return (time, memory)
 
