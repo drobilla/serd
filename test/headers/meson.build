@@ -1,9 +1,9 @@
-# Copyright 2020-2022 David Robillard <d@drobilla.net>
+# Copyright 2020-2023 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
 header_c_suppressions = []
 
-if get_option('strict')
+if get_option('warning_level') == 'everything'
   if cc.get_id() == 'clang'
     header_c_suppressions += [
       '-Wno-padded',

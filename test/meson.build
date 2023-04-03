@@ -5,11 +5,20 @@ run_suite = find_program('run_suite.py')
 
 wrapper = meson.get_external_property('exe_wrapper', '')
 
-####################
-# Project Metadata #
-####################
+########################
+# Scripts and Metadata #
+########################
 
-if get_option('strict')
+python_scripts = files(
+  '../scripts/serd_bench.py',
+  'run_suite.py',
+  'serd_test_util/__init__.py',
+  'test_quiet.py',
+  'test_stdin.py',
+  'test_write_error.py',
+)
+
+if get_option('lint')
   # Check release metadata
   if not meson.is_subproject()
     autoship = find_program('autoship', required: false)
@@ -28,22 +37,7 @@ if get_option('strict')
       suite: 'data',
     )
   endif
-endif
 
-###########
-# Scripts #
-###########
-
-python_scripts = files(
-  '../scripts/serd_bench.py',
-  'run_suite.py',
-  'serd_test_util/__init__.py',
-  'test_quiet.py',
-  'test_stdin.py',
-  'test_write_error.py',
-)
-
-if get_option('strict')
   # Check script formatting
   black = find_program('black', required: false)
   if black.found()

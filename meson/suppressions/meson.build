@@ -11,10 +11,12 @@
 # C #
 #####
 
+warning_level = get_option('warning_level')
+
 if is_variable('cc')
   c_suppressions = []
 
-  if get_option('strict')
+  if warning_level == 'everything'
     if cc.get_id() == 'clang'
       c_suppressions += [
         '-Wno-cast-align',
@@ -26,12 +28,6 @@ if is_variable('cc')
         '-Wno-nullable-to-nonnull-conversion',
         '-Wno-padded',
       ]
-
-      if host_machine.system() == 'freebsd'
-        c_suppressions += [
-          '-Wno-c11-extensions',
-        ]
-      endif
 
       if host_machine.system() == 'windows'
         c_suppressions += [
@@ -78,8 +74,17 @@ if is_variable('cc')
     ]
   elif cc.get_id() == 'msvc'
     c_suppressions += [
+      '/experimental:external',
+      '/external:W0',
+      '/external:anglebrackets',
       '/wd4706', # assignment within conditional expression
       '/wd4996', # POSIX name for this item is deprecated
+    ]
+  endif
+
+  if host_machine.system() == 'freebsd' and warning_level in ['3', 'everything']
+    c_suppressions += [
+      '-Wno-c11-extensions',
     ]
   endif
 
