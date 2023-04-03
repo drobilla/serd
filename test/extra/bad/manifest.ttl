@@ -6,6 +6,7 @@
 	a mf:Manifest ;
 	rdfs:comment "Serd bad (negative) test suite" ;
 	mf:entries (
+		<#bad-a-object>
 		<#bad-a-subject>
 		<#bad-base>
 		<#bad-blank>
@@ -43,6 +44,8 @@
 		<#bad-equivalence>
 		<#bad-escape>
 		<#bad-ext-namedblank-op>
+		<#bad-false-predicate>
+		<#bad-false-subject>
 		<#bad-forAll>
 		<#bad-forSome>
 		<#bad-graph-blank-label>
@@ -76,12 +79,19 @@
 		<#bad-semicolon-after-subject>
 		<#bad-string>
 		<#bad-subject>
+		<#bad-true-predicate>
+		<#bad-true-subject>
 		<#bad-uri-escape>
 		<#bad-uri-scheme>
 		<#bad-uri-scheme-start>
 		<#bad-uri-truncated>
 		<#bad-verb>
 	) .
+
+<#bad-a-object>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-a-object.ttl> ;
+	mf:name "bad-a-object" .
 
 <#bad-a-subject>
 	a rdft:TestTurtleNegativeSyntax ;
@@ -268,6 +278,16 @@
 	mf:action <bad-ext-namedblank-op.ttl> ;
 	mf:name "bad-ext-namedblank-op" .
 
+<#bad-false-predicate>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-false-predicate.ttl> ;
+	mf:name "bad-false-predicate" .
+
+<#bad-false-subject>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-false-subject.ttl> ;
+	mf:name "bad-false-subject" .
+
 <#bad-forAll>
 	a rdft:TestTurtleNegativeSyntax ;
 	mf:action <bad-forAll.ttl> ;
@@ -432,6 +452,16 @@
 	a rdft:TestTurtleNegativeSyntax ;
 	mf:action <bad-subject.ttl> ;
 	mf:name "bad-subject" .
+
+<#bad-true-predicate>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-true-predicate.ttl> ;
+	mf:name "bad-true-predicate" .
+
+<#bad-true-subject>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-true-subject.ttl> ;
+	mf:name "bad-true-subject" .
 
 <#bad-uri-escape>
 	a rdft:TestTurtleNegativeSyntax ;

@@ -58,7 +58,9 @@ Eat input one character at a time, rather than a page at a time which is the def
 This is useful when reading from a pipe since output will be generated immediately as input arrives, rather than waiting until an entire page of input has arrived.
 With this option serdi uses one page less memory, but will likely be significantly slower.
 .It Fl f
-Keep full URIs in input (don't qualify with namespace prefixes or make URIs relative).
+Fast and loose URI mode:
+preserve full URIs (without qualifying or making relative),
+and pass prefixed names through as-is.
 .It Fl h
 Print the command line options.
 .It Fl i Ar syntax

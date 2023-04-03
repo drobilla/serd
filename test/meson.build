@@ -239,7 +239,7 @@ test_suites = {
   ],
   'trig': [
     files('w3c/trig/manifest.ttl'), ns_w3 + 'TriGTests/',
-    '--', '-a', '-f', '-i', 'TriG',
+    '--', '-a', '-i', 'TriG',
   ],
   'turtle': [
     files('w3c/turtle/manifest.ttl'), ns_w3 + 'TurtleTests/',
@@ -252,12 +252,20 @@ test_suites = {
   'bad': [
     files('extra/bad/manifest.ttl'), ns_serdtest + 'bad/',
   ],
+  'bad_turtle': [
+    files('extra/bad/manifest.ttl'), ns_serdtest + 'bad/',
+    '--', '-o', 'turtle',
+  ],
   'big': [
     files('extra/big/manifest.ttl'), ns_serdtest + 'big/',
   ],
   'bulk': [
     files('extra/good/manifest.ttl'), ns_serdtest + 'good/',
     '--', '-b',
+  ],
+  'fast': [
+    files('extra/good/manifest.ttl'), ns_serdtest + 'good/',
+    '--', '-f',
   ],
   'full': [
     files('extra/full/manifest.ttl'), ns_serdtest + 'full/',

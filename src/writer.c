@@ -677,19 +677,22 @@ write_curie(SerdWriter* const        writer,
   SerdChunk  suffix = {NULL, 0};
   SerdStatus st     = SERD_SUCCESS;
 
-  switch (writer->syntax) {
-  case SERD_NTRIPLES:
-  case SERD_NQUADS:
+  // In fast-and-loose Turtle/TriG mode CURIEs are simply passed through
+  const bool fast =
+    !(writer->style & (SERD_STYLE_CURIED | SERD_STYLE_RESOLVED));
+
+  if (!supports_abbrev(writer) || !fast) {
     if ((st = serd_env_expand(writer->env, node, &prefix, &suffix))) {
       return w_err(writer, st, "undefined namespace prefix '%s'\n", node->buf);
     }
+  }
+
+  if (!supports_abbrev(writer)) {
     TRY(st, esink("<", 1, writer));
     write_uri(writer, prefix.buf, prefix.len);
     write_uri(writer, suffix.buf, suffix.len);
     TRY(st, esink(">", 1, writer));
-    break;
-  case SERD_TURTLE:
-  case SERD_TRIG:
+  } else {
     if (is_inline_start(writer, field, flags)) {
       ++writer->indent;
       TRY(st, write_sep(writer, SEP_ANON_BEGIN));
@@ -702,7 +705,7 @@ write_curie(SerdWriter* const        writer,
     }
   }
 
-  return SERD_SUCCESS;
+  return st;
 }
 
 SERD_NODISCARD static SerdStatus

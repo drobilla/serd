@@ -89,7 +89,7 @@ print_usage(const char* const name, const bool error)
     "  -b           Write output in blocks for performance.\n"
     "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n"
     "  -e           Eat input one character at a time.\n"
-    "  -f           Keep full URIs in input (don't qualify).\n"
+    "  -f           Fast and loose URI pass-through.\n"
     "  -h           Display this help and exit.\n"
     "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads.\n"
     "  -l           Lax (non-strict) parsing.\n"
