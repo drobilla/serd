@@ -1,1 +1,4 @@
-() a <http://example.org/List> .
+@prefix eg: <http://example.org/eg#> .
+
+()
+	a eg:List .

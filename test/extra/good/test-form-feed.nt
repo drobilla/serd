@@ -1,2 +1,2 @@
-<http://example.org/thing> <http://example.org/label> "\u000C" .
-<http://example.org/thing> <http://example.org/label> "\u000C" .
+<http://example.org/eg#s> <http://example.org/eg#p> "\u000C" .
+<http://example.org/eg#s> <http://example.org/eg#p> "\u000C" .

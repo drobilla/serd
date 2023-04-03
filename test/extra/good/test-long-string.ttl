@@ -1,6 +1,7 @@
-@prefix : <http://example.org/> .
+@prefix eg: <http://example.org/eg#> .
 
-:thing :greeting """This is a
+eg:s
+	eg:p """This is a
 long string
 with
         tabs
