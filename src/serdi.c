@@ -85,8 +85,8 @@ print_usage(const char* const name, const bool error)
   static const char* const description =
     "Read and write RDF syntax.\n"
     "Use - for INPUT to read from standard input.\n\n"
-    "  -a           Write ASCII output if possible.\n"
-    "  -b           Fast bulk output for large serialisations.\n"
+    "  -a           Write ASCII output.\n"
+    "  -b           Write output in blocks for performance.\n"
     "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n"
     "  -e           Eat input one character at a time.\n"
     "  -f           Keep full URIs in input (don't qualify).\n"
