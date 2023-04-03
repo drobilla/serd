@@ -47,7 +47,7 @@ if get_option('lint')
   if black.found()
     black_opts = ['--check', '-q', '-l', '79']
     foreach script : python_scripts
-      name = '@0@'.format(script)
+      name = '@0@'.format(script).underscorify()
       test(name, black, args: black_opts + [script], suite: 'scripts')
     endforeach
   endif
@@ -147,7 +147,7 @@ if is_variable('serdi')
   serd_ttl = files('../serd.ttl')[0]
   bad_input_file = files('extra/bad/bad-base.ttl')
 
-  test('serd.ttl', serdi, args: [serd_ttl], suite: 'data')
+  test('serd_ttl', serdi, args: [serd_ttl], suite: 'data')
 
   # Command line options
 
@@ -255,27 +255,27 @@ test_suites = {
   'good': [
     files('extra/good/manifest.ttl'), ns_serdtest + 'good/',
   ],
-  'lax.lax': [
+  'lax_lax': [
     '--lax',
     files('extra/lax/manifest.ttl'), ns_serdtest + 'lax/',
     '--', '-l',
   ],
-  'lax.strict': [
+  'lax_strict': [
     files('extra/lax/manifest.ttl'), ns_serdtest + 'lax/',
   ],
-  'perfect.forward': [
+  'perfect_forward': [
     files('extra/perfect/manifest.ttl'), ns_serdtest + 'perfect/',
   ],
-  'perfect.reverse': [
+  'perfect_reverse': [
     '--reverse',
     files('extra/perfect/manifest.ttl'), ns_serdtest + 'perfect/',
   ],
-  'prefix.add': [
+  'prefix_add': [
     '--reverse',
     files('extra/prefix/manifest.ttl'), ns_serdtest + 'prefix/',
     '--', '-p', 'test',
   ],
-  'prefix.remove': [
+  'prefix_remove': [
     files('extra/prefix/manifest.ttl'), ns_serdtest + 'prefix/',
     '--', '-c', 'test',
   ],
