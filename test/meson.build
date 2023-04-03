@@ -106,7 +106,7 @@ simple_command_tests = {
     ],
     'good': [
       ['-h'],
-      ['-s', '<urn:eg:s> a <urn:eg:T> .'],
+      ['-s', '<go:>a<go:> .'],
       ['-v'],
     ],
   },
@@ -126,7 +126,7 @@ if is_variable('serdi')
   foreach kind, cases : simple_command_tests['serdi']
     foreach args : cases
       test(
-        ' '.join(args).underscorify(),
+        ' '.join(args).substring(1).underscorify(),
         serdi,
         args: args,
         should_fail: kind == 'bad',
