@@ -236,64 +236,26 @@ remove_dot_segments(const uint8_t* const path,
                     const size_t         len,
                     size_t* const        up)
 {
-  const uint8_t*       begin = path;
-  const uint8_t* const end   = path + len;
-
   *up = 0;
-  while (begin < end) {
-    switch (begin[0]) {
-    case '.':
-      switch (begin[1]) {
-      case '/':
-        begin += 2; // Chop leading "./"
-        break;
-      case '.':
-        switch (begin[2]) {
-        case '\0':
-          ++*up;
-          begin += 2; // Chop input ".."
-          break;
-        case '/':
-          ++*up;
-          begin += 3; // Chop leading "../"
-          break;
-        default:
-          return begin;
-        }
-        break;
-      case '\0':
-        return ++begin; // Chop input "."
-      default:
-        return begin;
-      }
-      break;
 
-    case '/':
-      switch (begin[1]) {
-      case '.':
-        switch (begin[2]) {
-        case '/':
-          begin += 2; // Leading "/./" => "/"
-          break;
-        case '.':
-          switch (begin[3]) {
-          case '/':
-            ++*up;
-            begin += 3; // Leading "/../" => "/"
-          }
-          break;
-        default:
-          return begin;
-        }
-      }
-      return begin;
-
-    default:
-      return begin; // Finished chopping dot components
+  for (size_t i = 0; i < len;) {
+    const char* const p = (char*)path + i;
+    if (!strcmp(p, ".")) {
+      ++i; // Chop input "."
+    } else if (!strcmp(p, "..")) {
+      ++*up;
+      i += 2; // Chop input ".."
+    } else if (!strncmp(p, "./", 2) || !strncmp(p, "/./", 3)) {
+      i += 2; // Chop leading "./", or replace leading "/./" with "/"
+    } else if (!strncmp(p, "../", 3) || !strncmp(p, "/../", 4)) {
+      ++*up;
+      i += 3; // Chop leading "../", or replace "/../" with "/"
+    } else {
+      return (uint8_t*)p;
     }
   }
 
-  return begin;
+  return path + len;
 }
 
 /// Merge `base` and `path` in-place
