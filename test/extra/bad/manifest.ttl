@@ -228,6 +228,11 @@
 	mf:action <bad-eof-in-string.ttl> ;
 	mf:name "bad-eof-in-string" .
 
+<#bad-eof-in-text-character>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-eof-in-text-character.ttl> ;
+	mf:name "bad-eof-in-text-character" .
+
 <#bad-eof-in-triple-quote>
 	a rdft:TestTurtleNegativeSyntax ;
 	mf:action <bad-eof-in-triple-quote.ttl> ;
@@ -237,6 +242,11 @@
 	a rdft:TestTurtleNegativeSyntax ;
 	mf:action <bad-eof-in-uri.ttl> ;
 	mf:name "bad-eof-in-uri" .
+
+<#bad-eof-in-uri-character>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-eof-in-uri-character.ttl> ;
+	mf:name "bad-eof-in-uri-character" .
 
 <#bad-eof-in-uri-scheme>
 	a rdft:TestNTriplesNegativeSyntax ;
