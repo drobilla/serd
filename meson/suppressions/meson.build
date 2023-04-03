@@ -1,4 +1,4 @@
-# Copyright 2020-2022 David Robillard <d@drobilla.net>
+# Copyright 2020-2023 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
 # Project-specific warning suppressions.
@@ -25,7 +25,6 @@ if is_variable('cc')
         '-Wno-nullability-extension',
         '-Wno-nullable-to-nonnull-conversion',
         '-Wno-padded',
-        '-Wno-sign-conversion',
       ]
 
       if host_machine.system() == 'freebsd'
@@ -49,7 +48,6 @@ if is_variable('cc')
         '-Wno-format-nonliteral',
         '-Wno-inline',
         '-Wno-padded',
-        '-Wno-sign-conversion',
         '-Wno-switch-default',
         '-Wno-unsuffixed-float-constants',
         '-Wno-unused-const-variable',
@@ -64,7 +62,6 @@ if is_variable('cc')
     elif cc.get_id() == 'msvc'
       c_suppressions += [
         '/wd4061', # enumerator in switch is not explicitly handled
-        '/wd4365', # signed/unsigned mismatch
         '/wd4514', # unreferenced inline function has been removed
         '/wd4710', # function not inlined
         '/wd4711', # function selected for automatic inline expansion

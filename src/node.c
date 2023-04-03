@@ -350,7 +350,7 @@ serd_node_new_decimal(const double d, const unsigned frac_digits)
 SerdNode
 serd_node_new_integer(const int64_t i)
 {
-  uint64_t       abs_i  = (i < 0) ? -i : i;
+  uint64_t       abs_i  = (uint64_t)((i < 0) ? -i : i);
   const unsigned digits = serd_digits((double)abs_i);
   char*          buf    = (char*)calloc(digits + 2, 1);
   SerdNode       node   = {(const uint8_t*)buf, 0, 0, 0, SERD_LITERAL};
