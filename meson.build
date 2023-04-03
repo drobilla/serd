@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: 0BSD OR ISC
 
 project('serd', ['c'],
-        version: '0.31.0',
+        version: '0.31.1',
         license: 'ISC',
         meson_version: '>= 0.56.0',
         default_options: [

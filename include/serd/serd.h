@@ -120,6 +120,7 @@ typedef enum {
   SERD_ERR_ID_CLASH,   ///< Encountered clashing blank node IDs
   SERD_ERR_BAD_CURIE,  ///< Invalid CURIE (e.g. prefix does not exist)
   SERD_ERR_INTERNAL,   ///< Unexpected internal error (should not happen)
+  SERD_ERR_BAD_WRITE,  ///< Error writing to file/stream
 } SerdStatus;
 
 /// Return a string describing a status code

@@ -1,4 +1,4 @@
-serd (0.31.0) unstable; urgency=medium
+serd (0.31.1) unstable; urgency=medium
 
   * Add Windows path separator support to serd_node_new_file_uri()
   * Add serd_reader_skip_until_byte() to public API
@@ -17,11 +17,12 @@ serd (0.31.0) unstable; urgency=medium
   * Gracefully handle bad characters in Turtle datatype syntax
   * Improve TriG pretty-printing and remove trailing newlines
   * Improve serdi man page
+  * Improve writer error handling
   * Override pkg-config dependency within meson
   * Replace duplicated dox_to_sphinx script with sphinxygen dependency
   * Test header for warnings more strictly
 
- -- David Robillard <d@drobilla.net>  Wed, 29 Mar 2023 23:55:55 +0000
+ -- David Robillard <d@drobilla.net>  Mon, 03 Apr 2023 12:50:04 +0000
 
 serd (0.30.16) stable; urgency=medium
 
