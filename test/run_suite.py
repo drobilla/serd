@@ -15,13 +15,16 @@ import tempfile
 import serd_test_util as util
 
 NS_MF = "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#"
+NS_RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 NS_RDFT = "http://www.w3.org/ns/rdftest#"
 
 DEVNULL = subprocess.DEVNULL
 PIPE = subprocess.PIPE
 
 TEST_TYPES = [
+    NS_RDFT + "TestNQuadsNegativeSyntax",
     NS_RDFT + "TestNQuadsPositiveSyntax",
+    NS_RDFT + "TestNTriplesNegativeSyntax",
     NS_RDFT + "TestNTriplesPositiveSyntax",
     NS_RDFT + "TestTrigEval",
     NS_RDFT + "TestTrigNegativeEval",
@@ -49,16 +52,48 @@ def run_eval_test(base_uri, command, in_path, good_path, out_path):
         return util.lines_equal(list(good), out, good_path, out_path)
 
 
+def run_positive_test(base_uri, command, in_path):
+    """Run a positive syntax test and ensure no errors occur."""
+
+    command = command + [in_path, base_uri]
+    subprocess.check_call(command, encoding="utf-8", stdout=DEVNULL)
+    return True
+
+
+def run_negative_test(base_uri, command, in_path):
+    """Run a negative syntax test and return whether the error was detected."""
+
+    if not os.path.exists(in_path):
+        raise RuntimeError("Input file missing: " + in_path)
+
+    command = command + [in_path, base_uri]
+    proc = subprocess.run(command, check=False, stderr=PIPE, stdout=DEVNULL)
+
+    if proc.returncode == 0:
+        util.error("Unexpected successful return: " + in_path)
+        return False
+
+    if len(proc.stderr) == 0:
+        util.error("Command failed with no error output: " + in_path)
+        return False
+
+    return True
+
+
 def run_entry(args, entry, command, out_dir, suite_dir):
     """Run a single test entry from the manifest."""
 
     in_path = util.file_path(suite_dir, entry[NS_MF + "action"][0])
     base = args.base_uri + os.path.basename(in_path)
 
-    good_path = in_path
-    if NS_MF + "result" in entry:
-        good_path = util.file_path(suite_dir, entry[NS_MF + "result"][0])
+    negative = "Negative" in entry[NS_RDF + "type"][0]
+    if negative and not args.lax:
+        return run_negative_test(base, command, in_path)
 
+    if NS_MF + "result" not in entry:
+        return run_positive_test(base, command, in_path)
+
+    good_path = util.file_path(suite_dir, entry[NS_MF + "result"][0])
     if args.reverse:
         in_path, good_path = good_path, in_path
 
@@ -109,6 +144,7 @@ def main():
         description=__doc__,
     )
 
+    parser.add_argument("--lax", action="store_true", help="tolerate errors")
     parser.add_argument("--reverse", action="store_true", help="reverse test")
     parser.add_argument("--serdi", default="serdi", help="path to serdi")
     parser.add_argument("--wrapper", default="", help="executable wrapper")

@@ -195,6 +195,14 @@ ns_serdtest = 'http://drobilla.net/sw/serd/test/'
 ns_w3 = 'http://www.w3.org/2013/'
 
 test_suites = {
+  'lax.lax': [
+    '--lax',
+    files('lax/manifest.ttl'), ns_serdtest + 'lax/',
+    '--', '-l',
+  ],
+  'lax.strict': [
+    files('lax/manifest.ttl'), ns_serdtest + 'lax/',
+  ],
   'prefix.add': [
     '--reverse',
     files('prefix/manifest.ttl'), ns_serdtest + 'prefix/',
@@ -249,24 +257,6 @@ if not get_option('tools').disabled()
          '--',
          '-b'
        ],
-       is_parallel: false,
-       suite: ['rdf', 'serd'],
-       timeout: 240)
-
-  ### The lax suite is special because it is run twice...
-  lax_manifest = files('lax/manifest.ttl')
-  lax_base_uri = ns_serdtest + 'lax/'
-
-  ### ... once with strict parsing to test the hard errors
-  test('lax.strict', run_test_suite,
-       args: script_args + [lax_manifest, lax_base_uri],
-       is_parallel: false,
-       suite: ['rdf', 'serd'],
-       timeout: 240)
-
-  ### ... and once with lax parsing to tolerate them
-  test('lax.lax', run_test_suite,
-       args: script_args + [lax_manifest, lax_base_uri, '--', '-l'],
        is_parallel: false,
        suite: ['rdf', 'serd'],
        timeout: 240)
