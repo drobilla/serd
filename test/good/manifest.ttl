@@ -7,7 +7,6 @@
 	rdf:type mf:Manifest ;
 	rdfs:comment "Serd good syntax test cases" ;
 	mf:entries (
-		<#base>
 		<#test-14>
 		<#test-15>
 		<#test-16>
@@ -17,6 +16,7 @@
 		<#test-backspace>
 		<#test-base-nopath>
 		<#test-base-query>
+		<#test-base>
 		<#test-blank-cont>
 		<#test-blank-in-list>
 		<#test-blank-node-statement>
@@ -50,14 +50,14 @@
 		<#test-uri-escape>
 		<#test-uri>
 		<#test-utf8-uri>
-		<#UTF-8>
+		<#test-utf8>
 	) .
 
 <#base>
 	rdf:type rdft:TestTurtleEval ;
-	mf:name "base" ;
-	mf:action <base.ttl> ;
-	mf:result <base.nt> .
+	mf:name "test-base" ;
+	mf:action <test-base.ttl> ;
+	mf:result <test-base.nt> .
 
 <#test-14>
 	rdf:type rdft:TestTurtleEval ;
@@ -311,9 +311,9 @@
 	mf:action <test-utf8-uri.ttl> ;
 	mf:result <test-utf8-uri.nt> .
 
-<#UTF-8>
+<#test-utf8>
 	rdf:type rdft:TestTurtleEval ;
-	mf:name "UTF-8" ;
-	mf:action <UTF-8.ttl> ;
-	mf:result <UTF-8.nt> .
+	mf:name "test-utf8" ;
+	mf:action <test-utf8.ttl> ;
+	mf:result <test-utf8.nt> .
 

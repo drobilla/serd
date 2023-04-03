@@ -1,6 +1,7 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
-<> rdfs:comment """
+<http://example.org/s1>
+	rdfs:comment """
 UTF-8 encoded sample plain-text file
 ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
 
@@ -213,7 +214,9 @@ Box drawing alignment tests:                                          █
   ╚══╩══╝  └──┴──┘  ╰──┴──╯  ╰──┴──╯  ┗━━┻━━┛  ▗▄▖▛▀▜   └╌╌┘ ╎ ┗╍╍┛ ┋  ▁▂▃▄▅▆▇█
                                                ▝▀▘▙▄▟
 """ .
-<> rdfs:comment """
+
+<http://example.org/s2>
+	rdfs:comment """
   Two byte Unicode escape: \u00E0
   Largest Unicode escape in Turtle: \U0010FFFF
 """ .
