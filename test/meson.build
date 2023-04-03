@@ -188,22 +188,23 @@ ns_serdtest = 'http://drobilla.net/sw/serd/test/'
 ns_w3 = 'http://www.w3.org/2013/'
 
 test_suites = {
-  'NQuads': [
-    files('w3c/NQuadsTests/manifest.ttl'), ns_w3 + 'NQuadsTests/',
+  'nquads': [
+    files('w3c/nquads/manifest.ttl'), ns_w3 + 'NQuadsTests/',
     '--', '-a', '-i', 'NQuads',
   ],
-  'NTriples': [
-    files('w3c/NTriplesTests/manifest.ttl'), ns_w3 + 'NTriplesTests/',
+  'ntriples': [
+    files('w3c/ntriples/manifest.ttl'), ns_w3 + 'NTriplesTests/',
     '--', '-a', '-i', 'NTriples',
   ],
-  'TriG': [
-    files('w3c/TriGTests/manifest.ttl'), ns_w3 + 'TriGTests/',
+  'trig': [
+    files('w3c/trig/manifest.ttl'), ns_w3 + 'TriGTests/',
     '--', '-a', '-f', '-i', 'TriG',
   ],
-  'Turtle': [
-    files('w3c/TurtleTests/manifest.ttl'), ns_w3 + 'TurtleTests/',
+  'turtle': [
+    files('w3c/turtle/manifest.ttl'), ns_w3 + 'TurtleTests/',
     '--', '-a', '-i', 'Turtle',
   ],
+
   'abbreviate': [
     files('extra/abbreviate/manifest.ttl'), ns_serdtest + 'abbreviate/',
   ],

@@ -22,8 +22,9 @@ serd (0.31.1) unstable; urgency=medium
   * Override pkg-config dependency within meson
   * Replace duplicated dox_to_sphinx script with sphinxygen dependency
   * Test header for warnings more strictly
+  * Update standard test suites
 
- -- David Robillard <d@drobilla.net>  Mon, 03 Apr 2023 12:54:58 +0000
+ -- David Robillard <d@drobilla.net>  Mon, 03 Apr 2023 12:55:38 +0000
 
 serd (0.30.16) stable; urgency=medium
 
