@@ -195,6 +195,10 @@ ns_serdtest = 'http://drobilla.net/sw/serd/test/'
 ns_w3 = 'http://www.w3.org/2013/'
 
 test_suites = {
+  'full': [
+    files('full/manifest.ttl'), ns_serdtest + 'full/',
+    '--', '-f',
+  ],
   'lax.lax': [
     '--lax',
     files('lax/manifest.ttl'), ns_serdtest + 'lax/',
