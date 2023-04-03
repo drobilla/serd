@@ -211,6 +211,9 @@ test_suites = {
     files('w3c/TurtleTests/manifest.ttl'), ns_w3 + 'TurtleTests/',
     '--', '-a', '-i', 'Turtle',
   ],
+  'abbreviate': [
+    files('extra/abbreviate/manifest.ttl'), ns_serdtest + 'abbreviate/',
+  ],
   'bad': [
     files('extra/bad/manifest.ttl'), ns_serdtest + 'bad/',
   ],
