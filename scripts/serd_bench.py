@@ -115,24 +115,27 @@ def plot(in_file, out_filename, x_label, y_label, y_max=None):
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
 
-    if y_max is not None:
-        ax.set_ylim([0.0, y_max])
-
     ax.grid(linewidth=0.25, linestyle=":", color="0", dashes=[0.2, 1.6])
     ax.ticklabel_format(style="sci", scilimits=(4, 0), useMathText=True)
     ax.tick_params(axis="both", width=0.75)
 
     x = list(map(float, cols[0]))
+    actual_y_max = 0.0
     for i, y in enumerate(cols[1::]):
+        y_floats = list(map(float, y))
+        actual_y_max = max(actual_y_max, max(y_floats))
         ax.plot(
             x,
-            list(map(float, y)),
+            y_floats,
             label=header[i + 1],
             marker=next(markers),
             dashes=next(dashes),
             markersize=3.0,
             linewidth=1.0,
         )
+
+    y_max = actual_y_max if y_max is None else y_max
+    ax.set_ylim([0.0, y_max])
 
     plt.legend(labelspacing=0.25)
     plt.savefig(out_filename, bbox_inches="tight", pad_inches=0.125)
