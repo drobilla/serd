@@ -43,11 +43,9 @@ def run_eval_test(base_uri, command, in_path, good_path, out_path):
     syntax = util.syntax_from_path(out_path)
     command = command + ["-o", syntax, in_path, base_uri]
 
-    proc = subprocess.run(
-        command, check=True, encoding="utf-8", stderr=DEVNULL, stdout=PIPE
-    )
+    with subprocess.Popen(command, stdout=PIPE, encoding="utf-8") as proc:
+        out = list(proc.stdout)
 
-    out = [line + "\n" for line in proc.stdout.split("\n")][:-1]
     with open(good_path, "r", encoding="utf-8") as good:
         return util.lines_equal(list(good), out, good_path, out_path)
 
