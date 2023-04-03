@@ -4,7 +4,7 @@
 
 <>
 	a mf:Manifest ;
-	rdfs:comment "Serd lax syntax test cases" ;
+	rdfs:comment "Serd lax parsing test suite" ;
 	mf:entries (
 		<#test-bad-string>
 		<#test-bad-uri>

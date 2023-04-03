@@ -6,6 +6,7 @@ serd (0.31.1) unstable; urgency=medium
   * Avoid creating test files in the current directory
   * Avoid using ASCII grave as a quote
   * Check for POSIX features with the build system
+  * Clean up and improve test suite
   * Clean up code
   * Fix crash when trying to read chunks without starting
   * Fix hang when skipping an error at EOF when lax parsing
@@ -22,7 +23,7 @@ serd (0.31.1) unstable; urgency=medium
   * Replace duplicated dox_to_sphinx script with sphinxygen dependency
   * Test header for warnings more strictly
 
- -- David Robillard <d@drobilla.net>  Mon, 03 Apr 2023 12:50:04 +0000
+ -- David Robillard <d@drobilla.net>  Mon, 03 Apr 2023 12:54:58 +0000
 
 serd (0.30.16) stable; urgency=medium
 
