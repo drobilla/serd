@@ -84,7 +84,7 @@ mingw32:
   image: lv2plugin/debian-mingw32
   script:
     - meson setup build --cross-file=/usr/share/meson/cross/i686-w64-mingw32.ini -Dc_std=c11 -Dbuildtype=debug -Ddocs=disabled -Dstrict=true -Dwerror=true
-    - ninja -C build
+    - ninja -C build test
     - meson configure -Dbuildtype=release build
     - ninja -C build test
   variables:

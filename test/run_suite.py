@@ -119,13 +119,21 @@ def run_suite(args, command, out_dir):
         if klass not in TEST_TYPES:
             raise RuntimeError("Unknown manifest entry type: " + klass)
 
-        for instance in instances:
+        for uri in instances:
             try:
-                entry = model[instance]
+                entry = model[uri]
                 if check and NS_MF + "result" not in entry:
-                    raise RuntimeError("Eval test missing result: " + instance)
+                    raise RuntimeError("Eval test missing result: " + uri)
 
-                results.check(run_entry(args, entry, command, out_dir, top))
+                # Run test and record result
+                passed = run_entry(args, entry, command, out_dir, top)
+                results.check(passed)
+
+                # Write test report entry
+                if args.report:
+                    with open(args.report, "a", encoding="utf-8") as report:
+                        text = util.earl_assertion(uri, passed, args.asserter)
+                        report.write(text)
 
             except subprocess.CalledProcessError as exception:
                 if exception.stderr is not None:
@@ -144,7 +152,9 @@ def main():
         description=__doc__,
     )
 
+    parser.add_argument("--asserter", help="asserter URI for test report")
     parser.add_argument("--lax", action="store_true", help="tolerate errors")
+    parser.add_argument("--report", help="path to write result report to")
     parser.add_argument("--reverse", action="store_true", help="reverse test")
     parser.add_argument("--serdi", default="serdi", help="path to serdi")
     parser.add_argument("--wrapper", default="", help="executable wrapper")
