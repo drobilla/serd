@@ -1,10 +1,9 @@
 @prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix rdft: <http://www.w3.org/ns/rdftest#> .
 
 <>
-	rdf:type mf:Manifest ;
+	a mf:Manifest ;
 	rdfs:comment "Serd lax syntax test cases" ;
 	mf:entries (
 		<#test-bad-string>
@@ -13,20 +12,19 @@
 	) .
 
 <#test-bad-string>
-	rdf:type rdft:TestTurtleNegativeSyntax ;
-	mf:name "test-bad-string" ;
+	a rdft:TestTurtleNegativeSyntax ;
 	mf:action <test-bad-string.ttl> ;
+	mf:name "test-bad-string" ;
 	mf:result <test-bad-string.nt> .
 
 <#test-bad-uri>
-	rdf:type rdft:TestTurtleNegativeSyntax ;
-	mf:name "test-bad-uri" ;
+	a rdft:TestTurtleNegativeSyntax ;
 	mf:action <test-bad-uri.ttl> ;
+	mf:name "test-bad-uri" ;
 	mf:result <test-bad-uri.nt> .
 
 <#test-bad-utf8>
-	rdf:type rdft:TestTurtleNegativeSyntax ;
-	mf:name "test-bad-utf8" ;
+	a rdft:TestTurtleNegativeSyntax ;
 	mf:action <test-bad-utf8.ttl> ;
+	mf:name "test-bad-utf8" ;
 	mf:result <test-bad-utf8.nt> .
-

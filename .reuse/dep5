@@ -3,14 +3,14 @@ Upstream-Name: serd
 Upstream-Contact: David Robillard <d@drobilla.net>
 Source: https://gitlab.com/drobilla/serd
 
-Files: test/NQuadsTests/*.nq test/NQuadsTests/README test/NQuadsTests/manifest.ttl test/NTriplesTests/*.nt test/NTriplesTests/README test/NTriplesTests/manifest.ttl test/TriGTests/*.nq test/TriGTests/*.trig test/TriGTests/README test/TriGTests/manifest.ttl test/TurtleTests/*.nt test/TurtleTests/*.ttl test/TurtleTests/README
+Files: test/w3c/*
 Copyright: 2010 World Wide Web Consortium, (MIT, ERCIM, Keio, Beihang) and others.
-Comment: Standard test suites from the W3C (only required for testing)
+Comment: Standard test suites from the W3C
 License: BSD-3-Clause
 
-Files: test/bad/* test/full/* test/good/* test/lax/* test/qualify/* test/root/* test/prefix/* test/pretty/*
+Files: test/extra/*
 Copyright: 2011-2023 David Robillard <d@drobilla.net>
-Comment: Extra tests for serd (potential contributions to the W3C suites)
+Comment: Extra test suites for serd
 License: BSD-3-Clause OR ISC
 
 Files: AUTHORS NEWS serd.ttl

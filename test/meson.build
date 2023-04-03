@@ -122,6 +122,7 @@ simple_command_tests = {
 if is_variable('serdi')
   script_args = common_script_args + ['--serdi', serdi]
   serd_ttl = files('../serd.ttl')[0]
+  bad_input_file = files('extra/bad/bad-base.ttl')
 
   test('serd.ttl', serdi, args: [serd_ttl], suite: 'data')
 
@@ -146,7 +147,7 @@ if is_variable('serdi')
   test(
     'quiet',
     files('test_quiet.py'),
-    args: script_args + files('bad/bad-base.ttl'),
+    args: script_args + [bad_input_file],
     suite: cmd_suite,
   )
 
@@ -195,61 +196,61 @@ ns_w3 = 'http://www.w3.org/2013/'
 
 test_suites = {
   'NQuads': [
-    files('NQuadsTests/manifest.ttl'), ns_w3 + 'NQuadsTests/',
+    files('w3c/NQuadsTests/manifest.ttl'), ns_w3 + 'NQuadsTests/',
     '--', '-a', '-i', 'NQuads',
   ],
   'NTriples': [
-    files('NTriplesTests/manifest.ttl'), ns_w3 + 'NTriplesTests/',
+    files('w3c/NTriplesTests/manifest.ttl'), ns_w3 + 'NTriplesTests/',
     '--', '-a', '-i', 'NTriples',
   ],
   'TriG': [
-    files('TriGTests/manifest.ttl'), ns_w3 + 'TriGTests/',
+    files('w3c/TriGTests/manifest.ttl'), ns_w3 + 'TriGTests/',
     '--', '-a', '-f', '-i', 'TriG',
   ],
   'Turtle': [
-    files('TurtleTests/manifest.ttl'), ns_w3 + 'TurtleTests/',
+    files('w3c/TurtleTests/manifest.ttl'), ns_w3 + 'TurtleTests/',
     '--', '-a', '-i', 'Turtle',
   ],
   'bad': [
-    files('bad/manifest.ttl'), ns_serdtest + 'bad/',
+    files('extra/bad/manifest.ttl'), ns_serdtest + 'bad/',
   ],
   'bulk': [
-    files('good/manifest.ttl'), ns_serdtest + 'good/',
+    files('extra/good/manifest.ttl'), ns_serdtest + 'good/',
     '--', '-b',
   ],
   'full': [
-    files('full/manifest.ttl'), ns_serdtest + 'full/',
+    files('extra/full/manifest.ttl'), ns_serdtest + 'full/',
     '--', '-f',
   ],
   'good': [
-    files('good/manifest.ttl'), ns_serdtest + 'good/',
+    files('extra/good/manifest.ttl'), ns_serdtest + 'good/',
   ],
   'lax.lax': [
     '--lax',
-    files('lax/manifest.ttl'), ns_serdtest + 'lax/',
+    files('extra/lax/manifest.ttl'), ns_serdtest + 'lax/',
     '--', '-l',
   ],
   'lax.strict': [
-    files('lax/manifest.ttl'), ns_serdtest + 'lax/',
+    files('extra/lax/manifest.ttl'), ns_serdtest + 'lax/',
   ],
   'prefix.add': [
     '--reverse',
-    files('prefix/manifest.ttl'), ns_serdtest + 'prefix/',
+    files('extra/prefix/manifest.ttl'), ns_serdtest + 'prefix/',
     '--', '-p', 'test',
   ],
   'prefix.remove': [
-    files('prefix/manifest.ttl'), ns_serdtest + 'prefix/',
+    files('extra/prefix/manifest.ttl'), ns_serdtest + 'prefix/',
     '--', '-c', 'test',
   ],
   'pretty': [
-    files('pretty/manifest.ttl'), ns_serdtest + 'pretty/',
+    files('extra/pretty/manifest.ttl'), ns_serdtest + 'pretty/',
   ],
   'qualify': [
-    files('qualify/manifest.ttl'), ns_serdtest + 'qualify/',
+    files('extra/qualify/manifest.ttl'), ns_serdtest + 'qualify/',
     '--', '-i', 'turtle', # Just for coverage
   ],
   'root': [
-    files('root/manifest.ttl'), ns_serdtest + 'root/',
+    files('extra/root/manifest.ttl'), ns_serdtest + 'root/',
     '--', '-r', 'http://example.org/top/root/',
   ],
 }
