@@ -13,6 +13,7 @@ plot_scripts = files(
 )
 
 simple_scripts = files(
+  '../scripts/check_formatting.py',
   'run_suite.py',
   'serd_test_util/__init__.py',
   'test_quiet.py',
@@ -76,6 +77,16 @@ if get_option('lint')
     pylint_args = ['--disable', 'bad-option-value']
     test('pylint', pylint, args: pylint_args + pylint_scripts, suite: 'scripts')
   endif
+
+  # Check Turtle formatting with serdi
+  foreach ttl_file : ttl_metadata_files
+    test(
+      '@0@'.format(ttl_file).underscorify(),
+      check_formatting_py,
+      args: [ttl_file, serdi, '-o', 'turtle'],
+      suite: 'data',
+    )
+  endforeach
 endif
 
 ###################
