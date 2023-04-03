@@ -8,14 +8,19 @@ wrapper = meson.get_external_property('exe_wrapper', '')
 # Scripts and Metadata #
 ########################
 
-python_scripts = files(
+plot_scripts = files(
   '../scripts/serd_bench.py',
+)
+
+simple_scripts = files(
   'run_suite.py',
   'serd_test_util/__init__.py',
   'test_quiet.py',
   'test_stdin.py',
   'test_write_error.py',
 )
+
+python_scripts = simple_scripts + plot_scripts
 
 if get_option('lint')
   # Check release metadata
@@ -51,6 +56,25 @@ if get_option('lint')
   flake8 = find_program('flake8', required: false)
   if flake8.found()
     test('flake8', flake8, args: python_scripts, suite: 'scripts')
+  endif
+
+  # Check scripts for errors with pylint
+  pylint = find_program('pylint', required: false)
+  if pylint.found()
+    pymod = import('python')
+    plot_py = pymod.find_installation(
+      'python3',
+      modules: ['matplotlib'],
+      required: false,
+    )
+
+    pylint_scripts = simple_scripts
+    if plot_py.found()
+      pylint_scripts += plot_scripts
+    endif
+
+    pylint_args = ['--disable', 'bad-option-value']
+    test('pylint', pylint, args: pylint_args + pylint_scripts, suite: 'scripts')
   endif
 endif
 

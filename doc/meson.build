@@ -32,7 +32,7 @@ endif
 mandoc = find_program('mandoc', required: false)
 mandoc_css = files('mandoc.css')
 
-if not get_option('tests').disabled()
+if get_option('lint')
   stylelint = find_program('stylelint', required: false)
   if stylelint.found()
     test('stylelint', stylelint, args: [mandoc_css], suite: 'data')
