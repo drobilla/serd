@@ -1,17 +1,20 @@
 # Copyright 2021-2023 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
-project('serd', ['c'],
-        version: '0.31.1',
-        license: 'ISC',
-        meson_version: '>= 0.56.0',
-        default_options: [
-          'b_ndebug=if-release',
-          'buildtype=release',
-          'warning_level=3',
-          'c_std=c99',
-          'c_winlibs=[]',
-        ])
+project(
+  'serd',
+  ['c'],
+  default_options: [
+    'b_ndebug=if-release',
+    'buildtype=release',
+    'c_std=c99',
+    'c_winlibs=[]',
+    'warning_level=3',
+  ],
+  license: 'ISC',
+  meson_version: '>= 0.56.0',
+  version: '0.31.1',
+)
 
 serd_src_root = meson.current_source_dir()
 major_version = meson.project_version().split('.')[0]
@@ -70,8 +73,7 @@ else
   # Define HAVE_SOMETHING symbols for all detected features
   template = '#include <@0@>\nint main(void) { @1@; }'
   if cc.links(
-    template.format('stdio.h',
-                    'return fileno(stdin);'),
+    template.format('stdio.h', 'return fileno(stdin);'),
     args: system_c_args,
     name: 'fileno')
     platform_c_args += ['-DHAVE_FILENO']

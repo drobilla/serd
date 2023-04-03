@@ -1,4 +1,4 @@
-# Copyright 2020-2022 David Robillard <d@drobilla.net>
+# Copyright 2020-2023 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
 # Check for Sphinx LV2 theme
@@ -55,8 +55,11 @@ subdir('api')
 custom_target(
   'singlehtml',
   build_by_default: true,
-  command: [sphinx_build, '-M', 'singlehtml', '@OUTDIR@', '@OUTDIR@',
-            '-E', '-q', '-t', 'singlehtml'],
+  command: [
+    sphinx_build,
+    '-M', 'singlehtml', '@OUTDIR@', '@OUTDIR@',
+    '-E', '-q', '-t', 'singlehtml',
+  ],
   input: [c_rst_files, c_serd_rst, c_index_xml, conf_py],
   install: true,
   install_dir: docdir / versioned_name,
@@ -66,8 +69,11 @@ custom_target(
 custom_target(
   'html',
   build_by_default: true,
-  command: [sphinx_build, '-M', 'html', '@OUTDIR@', '@OUTDIR@',
-            '-E', '-q', '-t', 'html'],
+  command: [
+    sphinx_build,
+    '-M', 'html', '@OUTDIR@', '@OUTDIR@',
+    '-E', '-q', '-t', 'html',
+  ],
   input: [c_rst_files, c_serd_rst, c_index_xml, conf_py],
   install: true,
   install_dir: docdir / versioned_name,

@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: 0BSD OR ISC
 
 run_suite = find_program('run_suite.py')
-
 wrapper = meson.get_external_property('exe_wrapper', '')
 
 ########################
@@ -268,7 +267,8 @@ if is_variable('serdi')
 
   foreach name, args : test_suites
     test(
-      name, run_suite,
+      name,
+      run_suite,
       args: script_args + args,
       suite: ['suite'],
       timeout: 240,
