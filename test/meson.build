@@ -110,6 +110,7 @@ unit_tests = [
   'statement',
   'string',
   'syntax',
+  'terse_write',
   'uri',
   'writer',
 ]
@@ -342,6 +343,10 @@ test_suites = {
   'root': [
     files('extra/root/manifest.ttl'), ns_serdtest + 'root/',
     '--', '-r', 'http://example.org/top/root/',
+  ],
+  'terse': [
+    files('extra/terse/manifest.ttl'), ns_serdtest + 'terse/',
+    '--', '-t',
   ],
 }
 
