@@ -79,8 +79,11 @@ typedef enum {
   SEP_ANON_S_P,    ///< Between anonymous subject and predicate (whitespace)
   SEP_ANON_END,    ///< End of anonymous node (']')
   SEP_LIST_BEGIN,  ///< Start of list ('(')
-  SEP_LIST_SEP,    ///< List separator (whitespace)
+  SEP_LIST_SEP,    ///< List separator (newline)
   SEP_LIST_END,    ///< End of list (')')
+  SEP_TLIST_BEGIN, ///< Start of terse list ('(')
+  SEP_TLIST_SEP,   ///< Terse list separator (space)
+  SEP_TLIST_END,   ///< End of terse list (')')
   SEP_GRAPH_BEGIN, ///< Start of graph ('{')
   SEP_GRAPH_END,   ///< End of graph ('}')
 } Sep;
@@ -102,7 +105,7 @@ typedef struct {
 static const SepRule rules[] = {
   {NIL, +0, SEP_NONE, SEP_NONE, SEP_NONE},
   {'\n', 0, SEP_NONE, SEP_NONE, SEP_NONE},
-  {'.', +0, SEP_EACH, SEP_NONE, SEP_EACH},
+  {'.', +0, SEP_EACH, SEP_NONE, SEP_NONE},
   {'.', +0, SEP_EACH, SEP_NONE, SEP_NONE},
   {';', +0, SEP_EACH, SEP_NONE, SEP_EACH},
   {',', +0, SEP_EACH, SEP_NONE, SEP_EACH},
@@ -111,12 +114,15 @@ static const SepRule rules[] = {
   {',', +0, SEP_EACH, SEP_NONE, SEP_NONE},
   {NIL, +1, SEP_NONE, SEP_NONE, SEP_EACH},
   {' ', +0, SEP_NONE, SEP_NONE, SEP_NONE},
-  {'[', +1, M(SEP_JOIN_O_AA), SEP_NONE, SEP_NONE},
+  {'[', +1, M(SEP_JOIN_O_AA), M(SEP_TLIST_BEGIN) | M(SEP_TLIST_SEP), SEP_NONE},
   {NIL, +1, SEP_NONE, SEP_NONE, M(SEP_ANON_BEGIN)},
   {']', -1, SEP_NONE, ~M(SEP_ANON_BEGIN), SEP_NONE},
   {'(', +1, M(SEP_JOIN_O_AA), SEP_NONE, SEP_EACH},
   {NIL, +0, SEP_NONE, SEP_EACH, SEP_NONE},
   {')', -1, SEP_NONE, SEP_EACH, SEP_NONE},
+  {'(', +1, SEP_NONE, SEP_NONE, SEP_NONE},
+  {NIL, +0, SEP_EACH, SEP_NONE, SEP_NONE},
+  {')', -1, SEP_NONE, SEP_NONE, SEP_NONE},
   {'{', +1, SEP_EACH, SEP_NONE, SEP_EACH},
   {'}', -1, SEP_NONE, SEP_NONE, SEP_EACH},
 };
@@ -569,9 +575,13 @@ uri_sink(const void* buf, size_t size, size_t nmemb, void* stream)
 }
 
 SERD_NODISCARD static SerdStatus
-write_newline(SerdWriter* writer)
+write_newline(SerdWriter* writer, bool terse)
 {
   SerdStatus st = SERD_SUCCESS;
+
+  if (terse || (writer->flags & SERD_WRITE_TERSE)) {
+    return esink(" ", 1, writer);
+  }
 
   TRY(st, esink("\n", 1, writer));
   for (int i = 0; i < writer->indent; ++i) {
@@ -582,15 +592,28 @@ write_newline(SerdWriter* writer)
 }
 
 SERD_NODISCARD static SerdStatus
+write_top_level_sep(SerdWriter* writer)
+{
+  return (writer->last_sep && !(writer->flags & SERD_WRITE_TERSE))
+           ? write_newline(writer, false)
+           : SERD_SUCCESS;
+}
+
+SERD_NODISCARD static SerdStatus
 write_sep(SerdWriter* writer, const SerdStatementFlags flags, Sep sep)
 {
-  (void)flags;
-
   SerdStatus           st   = SERD_SUCCESS;
   const SepRule* const rule = &rules[sep];
 
   const bool pre_line  = (rule->pre_line_after & (1U << writer->last_sep));
   const bool post_line = (rule->post_line_after & (1U << writer->last_sep));
+
+  const bool terse = (((flags & SERD_TERSE_S) && (flags & SERD_LIST_S)) ||
+                      ((flags & SERD_TERSE_O) && (flags & SERD_LIST_O)));
+
+  if (terse && sep >= SEP_LIST_BEGIN && sep <= SEP_LIST_END) {
+    sep = (Sep)((int)sep + 3); // Switch to corresponding terse separator
+  }
 
   // Adjust indent, but tolerate if it would become negative
   if (rule->indent && (pre_line || post_line)) {
@@ -607,7 +630,7 @@ write_sep(SerdWriter* writer, const SerdStatementFlags flags, Sep sep)
 
   // Write newline or space before separator if necessary
   if (pre_line) {
-    TRY(st, write_newline(writer));
+    TRY(st, write_newline(writer, terse));
   } else if (rule->pre_space_after & (1U << writer->last_sep)) {
     TRY(st, esink(" ", 1, writer));
   }
@@ -619,18 +642,20 @@ write_sep(SerdWriter* writer, const SerdStatementFlags flags, Sep sep)
 
   // Write newline after separator if necessary
   if (post_line) {
-    TRY(st, write_newline(writer));
+    TRY(st, write_newline(writer, terse));
     if (rule->post_line_after != ~(SepMask)0U) {
       writer->last_sep = SEP_NEWLINE;
     }
   }
 
   // Reset context and write a blank line after ends of subjects
-  if (sep == SEP_END_S) {
+  if (sep == SEP_END_S || sep == SEP_END_DIRECT) {
     writer->indent                 = writer->context.graph.type ? 1 : 0;
     writer->context.predicates     = false;
     writer->context.comma_indented = false;
-    TRY(st, esink("\n", 1, writer));
+    if (!terse) {
+      TRY(st, esink("\n", 1, writer));
+    }
   }
 
   writer->last_sep = sep;
@@ -961,7 +986,13 @@ serd_writer_write_statement(SerdWriter*        writer,
   SerdStatus st = SERD_SUCCESS;
 
   if (!is_resource(subject) || !is_resource(predicate) || !object ||
-      !object->buf) {
+      !object->buf ||
+      ((flags & SERD_ANON_S) && (flags & SERD_LIST_S)) ||  // Nonsense
+      ((flags & SERD_EMPTY_S) && (flags & SERD_LIST_S)) || // Nonsense
+      ((flags & SERD_ANON_O) && (flags & SERD_LIST_O)) ||  // Nonsense
+      ((flags & SERD_EMPTY_O) && (flags & SERD_LIST_O)) || // Nonsense
+      ((flags & SERD_ANON_S) && (flags & SERD_TERSE_S)) || // Unsupported
+      ((flags & SERD_ANON_O) && (flags & SERD_TERSE_O))) { // Unsupported
     return SERD_BAD_ARG;
   }
 
@@ -996,7 +1027,7 @@ serd_writer_write_statement(SerdWriter*        writer,
     TRY(st, terminate_context(writer));
     reset_context(writer, RESET_GRAPH | RESET_INDENT);
     if (graph) {
-      TRY(st, write_newline(writer));
+      TRY(st, write_top_level_sep(writer));
       TRY(st, write_node(writer, graph, datatype, lang, FIELD_GRAPH, flags));
       TRY(st, write_sep(writer, flags, SEP_GRAPH_BEGIN));
       copy_node(&writer->context.graph, graph);
@@ -1059,7 +1090,7 @@ serd_writer_write_statement(SerdWriter*        writer,
       }
 
       if (writer->last_sep == SEP_END_S || writer->last_sep == SEP_END_DIRECT) {
-        TRY(st, write_newline(writer));
+        TRY(st, write_top_level_sep(writer));
       }
 
       TRY(st, write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags));
@@ -1144,8 +1175,10 @@ serd_writer_finish(SerdWriter* writer)
 
   const SerdStatus st0 = terminate_context(writer);
   const SerdStatus st1 = serd_byte_sink_flush(&writer->byte_sink);
+
   free_anon_stack(writer);
   reset_context(writer, RESET_GRAPH | RESET_INDENT);
+  writer->last_sep = SEP_NONE;
   return st0 ? st0 : st1;
 }
 
