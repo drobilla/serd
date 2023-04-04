@@ -8,7 +8,7 @@
 .Nd read and write RDF syntax
 .Sh SYNOPSIS
 .Nm serdi
-.Op Fl abefhlqv
+.Op Fl abefhlqtv
 .Op Fl c Ar prefix
 .Op Fl i Ar syntax
 .Op Fl o Ar syntax
@@ -130,6 +130,8 @@ This is useful for keeping relative references within some directory.
 Parse
 .Ar string
 input instead of a file (terminates options).
+.It Fl t
+Write terser output without newlines.
 .It Fl v
 Display version information and exit.
 .El

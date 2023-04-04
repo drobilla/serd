@@ -1,0 +1,2 @@
+@prefix eg: <http://example.org/> .
+eg:s eg:p1 ( 1 2 ) ; eg:p2 ( 3 4 ) .

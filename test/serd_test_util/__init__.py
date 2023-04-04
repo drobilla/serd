@@ -60,7 +60,7 @@ def print_result_summary(results):
 
     failed, total = (results.n_failures, results.n_tests)
     if failed == 0:
-        sys.stdout.write("All {} tests passed\n".format(total))
+        print("All {} tests passed".format(total))
     else:
         error("{}/{} tests failed".format(failed, total))
 
