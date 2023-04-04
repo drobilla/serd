@@ -1,6 +1,7 @@
 serd (1.1.1) unstable; urgency=medium
 
   * Add SerdBuffer for mutable buffers to keep SerdChunk const-correct
+  * Add support for writing terse output with minimal newlines
   * Remove SERD_DISABLE_DEPRECATED and SERD_DEPRECATED_BY
   * Remove serd_uri_to_path()
   * Remove support for reading Turtle named inline nodes extension

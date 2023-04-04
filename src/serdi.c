@@ -70,6 +70,7 @@ print_usage(const char* const name, const bool error)
     "  -q           Suppress all output except data.\n"
     "  -r ROOT_URI  Keep relative URIs within ROOT_URI.\n"
     "  -s INPUT     Parse INPUT as string (terminates options).\n"
+    "  -t           Write terser output without newlines.\n"
     "  -v           Display version information and exit.\n";
 
   FILE* const os = error ? stderr : stdout;
@@ -162,6 +163,8 @@ main(int argc, char** argv)
         writer_flags &= ~(SerdWriterFlags)SERD_WRITE_STRICT;
       } else if (opt == 'q') {
         quiet = true;
+      } else if (opt == 't') {
+        writer_flags |= SERD_WRITE_TERSE;
       } else if (opt == 'v') {
         return print_version();
       } else if (opt == 's') {

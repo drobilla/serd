@@ -34,6 +34,7 @@ ttl_metadata_file_paths = [
   'extra/pretty/manifest.ttl',
   'extra/qualify/manifest.ttl',
   'extra/root/manifest.ttl',
+  'extra/terse/manifest.ttl',
 ]
 
 plot_scripts = files(plot_script_paths)
@@ -125,6 +126,7 @@ unit_tests = [
   'reader_writer',
   'string',
   'syntax',
+  'terse_write',
   'uri',
   'writer',
 ]
@@ -379,6 +381,12 @@ test_suites = {
     ns_serdtest + 'root/',
     '--',
     ['-r', 'http://example.org/top/root/'],
+  ],
+  'terse': [
+    files('extra/terse/manifest.ttl'),
+    ns_serdtest + 'terse/',
+    '--',
+    '-t',
   ],
 }
 
