@@ -82,7 +82,6 @@
 		<#bad-eof-in-utf8-character>
 		<#bad-equivalence>
 		<#bad-escape>
-		<#bad-ext-namedblank-op>
 		<#bad-false-predicate>
 		<#bad-false-subject>
 		<#bad-forAll>
@@ -508,11 +507,6 @@
 	a rdft:TestTurtleNegativeSyntax ;
 	mf:action <bad-escape.ttl> ;
 	mf:name "bad-escape" .
-
-<#bad-ext-namedblank-op>
-	a rdft:TestTurtleNegativeSyntax ;
-	mf:action <bad-ext-namedblank-op.ttl> ;
-	mf:name "bad-ext-namedblank-op" .
 
 <#bad-false-predicate>
 	a rdft:TestTurtleNegativeSyntax ;
