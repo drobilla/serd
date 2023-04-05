@@ -136,18 +136,12 @@ test_write_nested_anon(void)
   SerdNode* nil =
     serd_new_uri(serd_string("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"));
 
-  assert(!serd_sink_write(sink, SERD_ANON_O_BEGIN, s0, p0, b0, NULL));
-
-  assert(!serd_sink_write(
-    sink, SERD_ANON_O_BEGIN | SERD_ANON_CONT, b0, p1, b1, NULL));
-
-  assert(!serd_sink_write(sink, SERD_ANON_CONT, b1, p2, o2, NULL));
-
-  assert(!serd_sink_write(
-    sink, SERD_ANON_CONT | SERD_LIST_O_BEGIN, b1, p3, nil, NULL));
-
+  assert(!serd_sink_write(sink, SERD_ANON_O, s0, p0, b0, NULL));
+  assert(!serd_sink_write(sink, SERD_ANON_O, b0, p1, b1, NULL));
+  assert(!serd_sink_write(sink, 0U, b1, p2, o2, NULL));
+  assert(!serd_sink_write(sink, SERD_LIST_O, b1, p3, nil, NULL));
   assert(!serd_sink_write_end(sink, b1));
-  assert(!serd_sink_write(sink, SERD_ANON_CONT, b0, p4, o4, NULL));
+  assert(!serd_sink_write(sink, 0U, b0, p4, o4, NULL));
   assert(!serd_sink_write_end(sink, b0));
 
   serd_node_free(s0);
@@ -209,7 +203,7 @@ test_writer_cleanup(void)
   SerdNode* p = serd_new_uri(serd_string("http://example.org/p"));
   SerdNode* o = serd_new_blank(serd_string("start"));
 
-  st = serd_sink_write(sink, SERD_ANON_O_BEGIN, s, p, o, NULL);
+  st = serd_sink_write(sink, SERD_ANON_O, s, p, o, NULL);
   assert(!st);
 
   // Write the start of several nested anonymous objects
@@ -219,7 +213,7 @@ test_writer_cleanup(void)
 
     SerdNode* next_o = serd_new_blank(serd_string(buf));
 
-    st = serd_sink_write(sink, SERD_ANON_O_BEGIN, o, p, next_o, NULL);
+    st = serd_sink_write(sink, SERD_ANON_O, o, p, next_o, NULL);
 
     serd_node_free(o);
     o = next_o;
