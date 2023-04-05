@@ -40,8 +40,7 @@ TEST_TYPES = [
 def run_eval_test(command, in_path, good_path, out_path):
     """Run a positive eval test and return whether the output matches."""
 
-    syntax = util.syntax_from_path(out_path)
-    command = command + ["-O", syntax, "-o", out_path, in_path]
+    command = command + ["-o", out_path, in_path]
     subprocess.check_call(command, encoding="utf-8")
 
     with open(good_path, "r", encoding="utf-8") as good:
