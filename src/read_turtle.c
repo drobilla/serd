@@ -824,7 +824,7 @@ read_collection(SerdReader* const reader,
         rest = serd_reader_blank_id(reader); // First pass, push
         assert(rest); // Can't overflow since read_object() popped
       } else {
-        serd_reader_set_blank_id(reader, rest, genid_length(reader) + 1U);
+        serd_reader_set_blank_id(reader, rest);
       }
     }
 

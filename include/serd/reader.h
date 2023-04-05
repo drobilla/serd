@@ -120,6 +120,16 @@ typedef enum {
      characters like "%7E" will be decoded to UTF-8 characters like "~".
   */
   SERD_READ_DECODED = 1U << 6U,
+
+  /**
+     Generate blank node labels with suffixes left-padded with zeros.
+
+     This is useful because it makes generated blank node IDs like
+     "_:b0000000123" match the numerical order when compared as strings (or as
+     nodes).  In particular, this can be used to preserve blank node ordering
+     from documents when the statements are sorted, such as in a model.
+  */
+  SERD_READ_ORDERED = 1U << 7U,
 } SerdReaderFlag;
 
 /// Bitwise OR of SerdReaderFlag values

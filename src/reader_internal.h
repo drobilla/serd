@@ -55,8 +55,9 @@ genid_length(const SerdReader* reader);
 SerdNode*
 serd_reader_blank_id(SerdReader* reader);
 
+/// Write a blank label to node, which must have genid_length() + 1 bytes
 void
-serd_reader_set_blank_id(SerdReader* reader, SerdNode* node, size_t buf_size);
+serd_reader_set_blank_id(SerdReader* reader, SerdNode* node);
 
 ZIX_NODISCARD SerdStatus
 emit_statement_at(SerdReader*   reader,

@@ -770,6 +770,10 @@ test_suites = {
     '--',
     ['-k', '1024'],
   ],
+  'syntactic': [
+    files('extra/pretty/manifest.ttl'),
+    ns_serdtest + 'pretty/',
+  ],
   'qualify': [
     files('extra/qualify/manifest.ttl'),
     ns_serdtest + 'qualify/',
