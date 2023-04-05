@@ -384,7 +384,7 @@ test_write_errors(void)
   const SerdLimits limits = {1024, 4};
   serd_world_set_limits(world, limits);
 
-  const size_t max_offsets[] = {0, 386, 1911, 2003, 386};
+  const size_t max_offsets[] = {0, 373, 1911, 2003, 414};
 
   // Test errors at different offsets to hit different code paths
   for (unsigned s = 1; s <= (unsigned)SERD_TRIG; ++s) {
