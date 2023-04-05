@@ -120,7 +120,7 @@ emit_statement(SerdReader* const reader,
   const SerdStatus st = serd_sink_write(
     reader->sink, *ctx.flags, ctx.subject, ctx.predicate, o, ctx.graph);
 
-  *ctx.flags &= SERD_ANON_CONT | SERD_LIST_CONT; // Preserve only cont flags
+  *ctx.flags = 0;
   return st;
 }
 
