@@ -589,6 +589,9 @@ test_suites = {
   'pretty': [
     files('extra/pretty/manifest.ttl'), ns_serdtest + 'pretty/',
   ],
+  'syntactic': [
+    files('extra/pretty/manifest.ttl'), ns_serdtest + 'pretty/',
+  ],
   'qualify': [
     files('extra/qualify/manifest.ttl'), ns_serdtest + 'qualify/',
     '--', '-I', 'turtle', # Just for coverage
@@ -631,6 +634,7 @@ if is_variable('serd_sort')
     'pattern',
     'perfect_forward',
     'perfect_reverse',
+    'pretty',
     'qualify',
     'terse',
   ]

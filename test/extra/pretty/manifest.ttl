@@ -18,8 +18,6 @@
 		<#empty-list-subject>
 		<#empty-list-subject-and-object>
 		<#graph-abbreviation>
-		<#inline-blank-subject>
-		<#inline-blanks-and-lists>
 		<#inline-list-subject>
 		<#langtags>
 		<#list-in-object>
@@ -105,18 +103,6 @@
 	mf:action <graph-abbreviation.trig> ;
 	mf:name "graph-abbreviation" ;
 	mf:result <graph-abbreviation.trig> .
-
-<#inline-blank-subject>
-	a rdft:TestTurtleEval ;
-	mf:action <inline-blank-subject.ttl> ;
-	mf:name "inline-blank-subject" ;
-	mf:result <inline-blank-subject.ttl> .
-
-<#inline-blanks-and-lists>
-	a rdft:TestTurtleEval ;
-	mf:action <inline-blanks-and-lists.ttl> ;
-	mf:name "inline-blanks-and-lists" ;
-	mf:result <inline-blanks-and-lists.ttl> .
 
 <#inline-list-subject>
 	a rdft:TestTurtleEval ;
