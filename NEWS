@@ -2,6 +2,7 @@ serd (1.1.1) unstable; urgency=medium
 
   * Remove SERD_DISABLE_DEPRECATED and SERD_DEPRECATED_BY
   * Remove serd_uri_to_path()
+  * Remove support for reading Turtle named inline nodes extension
   * Remove useless character counting from API
 
  -- David Robillard <d@drobilla.net>  Tue, 30 Jan 2024 14:40:49 +0000
