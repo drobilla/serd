@@ -160,7 +160,7 @@ emit_statement(SerdReader* const reader,
                                                    deref(reader, d),
                                                    deref(reader, l));
 
-  *ctx.flags &= SERD_ANON_CONT | SERD_LIST_CONT; // Preserve only cont flags
+  *ctx.flags = 0;
   return st;
 }
 

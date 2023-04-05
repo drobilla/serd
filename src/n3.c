@@ -1011,9 +1011,9 @@ read_anon(SerdReader* const reader,
   const bool               empty     = peek_delim(reader, ']');
 
   if (subject) {
-    *ctx.flags |= empty ? SERD_EMPTY_S : SERD_ANON_S_BEGIN;
+    *ctx.flags |= empty ? SERD_EMPTY_S : SERD_ANON_S;
   } else {
-    *ctx.flags |= empty ? SERD_EMPTY_O : SERD_ANON_O_BEGIN;
+    *ctx.flags |= empty ? SERD_EMPTY_O : SERD_ANON_O;
   }
 
   if (!*dest) {
@@ -1029,24 +1029,18 @@ read_anon(SerdReader* const reader,
   // Switch the subject to the anonymous node and read its description
   ctx.subject = *dest;
   if (!empty) {
-    *ctx.flags &= ~(unsigned)SERD_LIST_CONT;
-    if (!subject) {
-      *ctx.flags |= SERD_ANON_CONT;
-    }
-
     bool ate_dot_in_list = false;
     TRY_FAILING(st, read_predicateObjectList(reader, ctx, &ate_dot_in_list));
-
     if (ate_dot_in_list) {
       return r_err(reader, SERD_BAD_SYNTAX, "'.' inside blank\n");
     }
 
     read_ws_star(reader);
+    *ctx.flags = old_flags;
+
     if (reader->end_func) {
       st = reader->end_func(reader->handle, deref(reader, *dest));
     }
-
-    *ctx.flags = old_flags;
   }
 
   return st > SERD_FAILURE                      ? st
@@ -1228,14 +1222,12 @@ read_predicateObjectList(SerdReader* const reader,
 
 static SerdStatus
 end_collection(SerdReader* const reader,
-               const ReadContext ctx,
                const Ref         n1,
                const Ref         n2,
                const SerdStatus  st)
 {
   pop_node(reader, n2);
   pop_node(reader, n1);
-  *ctx.flags &= ~(unsigned)SERD_LIST_CONT;
   if (!st) {
     return (eat_byte_check(reader, ')') == ')') ? SERD_SUCCESS
                                                 : SERD_BAD_SYNTAX;
@@ -1254,16 +1246,15 @@ read_collection(SerdReader* const reader, ReadContext ctx, Ref* const dest)
 
   *dest = end ? reader->rdf_nil : blank_id(reader);
   if (ctx.subject) { // Reading a collection object
-    *ctx.flags |= (end ? 0 : SERD_LIST_O_BEGIN);
+    *ctx.flags |= (end ? 0 : SERD_LIST_O);
     TRY(st, emit_statement(reader, ctx, *dest, 0, 0));
-    *ctx.flags &= SERD_LIST_O_BEGIN;
-    *ctx.flags |= SERD_LIST_CONT;
+    *ctx.flags &= ~((unsigned)SERD_LIST_O);
   } else { // Reading a collection subject
-    *ctx.flags |= (end ? 0 : SERD_LIST_S_BEGIN);
+    *ctx.flags |= (end ? 0 : SERD_LIST_S);
   }
 
   if (end) {
-    return end_collection(reader, ctx, 0, 0, st);
+    return end_collection(reader, 0, 0, st);
   }
 
   /* The order of node allocation here is necessarily not in stack order,
@@ -1279,7 +1270,7 @@ read_collection(SerdReader* const reader, ReadContext ctx, Ref* const dest)
     ctx.predicate = reader->rdf_first;
     bool ate_dot  = false;
     if ((st = read_object(reader, &ctx, true, &ate_dot)) || ate_dot) {
-      return end_collection(reader, ctx, n1, n2, st);
+      return end_collection(reader, n1, n2, st);
     }
 
     if (!(end = peek_delim(reader, ')'))) {
@@ -1293,7 +1284,6 @@ read_collection(SerdReader* const reader, ReadContext ctx, Ref* const dest)
     }
 
     // _:node rdf:rest _:rest
-    *ctx.flags |= SERD_LIST_CONT;
     ctx.predicate = reader->rdf_rest;
     TRY(st, emit_statement(reader, ctx, (end ? reader->rdf_nil : rest), 0, 0));
 
@@ -1302,7 +1292,7 @@ read_collection(SerdReader* const reader, ReadContext ctx, Ref* const dest)
     node        = ctx.subject; // invariant
   }
 
-  return end_collection(reader, ctx, n1, n2, st);
+  return end_collection(reader, n1, n2, st);
 }
 
 static SerdStatus

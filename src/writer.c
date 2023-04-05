@@ -810,13 +810,13 @@ write_blank(SerdWriter* const        writer,
   SerdStatus st = SERD_SUCCESS;
 
   if (supports_abbrev(writer)) {
-    if ((field == FIELD_SUBJECT && (flags & SERD_ANON_S_BEGIN)) ||
-        (field == FIELD_OBJECT && (flags & SERD_ANON_O_BEGIN))) {
+    if ((field == FIELD_SUBJECT && (flags & SERD_ANON_S)) ||
+        (field == FIELD_OBJECT && (flags & SERD_ANON_O))) {
       return write_sep(writer, SEP_ANON_BEGIN);
     }
 
-    if ((field == FIELD_SUBJECT && (flags & SERD_LIST_S_BEGIN)) ||
-        (field == FIELD_OBJECT && (flags & SERD_LIST_O_BEGIN))) {
+    if ((field == FIELD_SUBJECT && (flags & SERD_LIST_S)) ||
+        (field == FIELD_OBJECT && (flags & SERD_LIST_O))) {
       return write_sep(writer, SEP_LIST_BEGIN);
     }
 
@@ -937,12 +937,12 @@ serd_writer_write_statement(SerdWriter*        writer,
     return SERD_BAD_ARG;
   }
 
-  if ((flags & SERD_LIST_O_BEGIN) &&
+  if ((flags & SERD_LIST_O) &&
       !strcmp((const char*)object->buf, NS_RDF "nil")) {
     /* Tolerate LIST_O_BEGIN for "()" objects, even though it doesn't make
        much sense, because older versions handled this gracefully.  Consider
        making this an error in a later major version. */
-    flags &= (SerdStatementFlags)~SERD_LIST_O_BEGIN;
+    flags &= (SerdStatementFlags)~SERD_LIST_O;
   }
 
   // Simple case: write a line of NTriples or NQuads
@@ -977,7 +977,7 @@ serd_writer_write_statement(SerdWriter*        writer,
 
   SERD_RESTORE_WARNINGS
 
-  if ((flags & SERD_LIST_CONT)) {
+  if (writer->context.type == CTX_LIST) {
     // Continue a list
     if (!strcmp((const char*)predicate->buf, NS_RDF "first") &&
         !strcmp((const char*)object->buf, NS_RDF "nil")) {
@@ -997,8 +997,8 @@ serd_writer_write_statement(SerdWriter*        writer,
       // Elide S P (write O)
 
       const Sep  last      = writer->last_sep;
-      const bool anon_o    = flags & SERD_ANON_O_BEGIN;
-      const bool list_o    = flags & SERD_LIST_O_BEGIN;
+      const bool anon_o    = flags & SERD_ANON_O;
+      const bool list_o    = flags & SERD_LIST_O;
       const bool open_o    = anon_o || list_o;
       const bool after_end = (last == SEP_ANON_END) || (last == SEP_LIST_END);
 
@@ -1010,7 +1010,7 @@ serd_writer_write_statement(SerdWriter*        writer,
     } else {
       // Elide S (write P and O)
 
-      if (writer->context.comma_indented) {
+      if (writer->context.comma_indented && !(flags & SERD_ANON_S)) {
         --writer->indent;
         writer->context.comma_indented = false;
       }
@@ -1038,7 +1038,7 @@ serd_writer_write_statement(SerdWriter*        writer,
     }
 
     TRY(st, write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags));
-    if ((flags & (SERD_ANON_S_BEGIN | SERD_LIST_S_BEGIN))) {
+    if ((flags & (SERD_ANON_S | SERD_LIST_S))) {
       TRY(st, write_sep(writer, SEP_ANON_S_P));
     } else {
       TRY(st, write_sep(writer, SEP_S_P));
@@ -1047,16 +1047,16 @@ serd_writer_write_statement(SerdWriter*        writer,
     reset_context(writer, 0U);
     copy_node(&writer->context.subject, subject);
 
-    if (!(flags & SERD_LIST_S_BEGIN)) {
+    if (!(flags & SERD_LIST_S)) {
       TRY(st, write_pred(writer, flags, predicate));
     }
 
     TRY(st, write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
   }
 
-  if (flags & (SERD_ANON_S_BEGIN | SERD_LIST_S_BEGIN)) {
+  if (flags & (SERD_ANON_S | SERD_LIST_S)) {
     // Push context for anonymous or list subject
-    const bool is_list = (flags & SERD_LIST_S_BEGIN);
+    const bool is_list = (flags & SERD_LIST_S);
     push_context(writer,
                  is_list ? CTX_LIST : CTX_BLANK,
                  serd_node_copy(graph),
@@ -1064,10 +1064,10 @@ serd_writer_write_statement(SerdWriter*        writer,
                  is_list ? SERD_NODE_NULL : serd_node_copy(predicate));
   }
 
-  if (flags & (SERD_ANON_O_BEGIN | SERD_LIST_O_BEGIN)) {
+  if (flags & (SERD_ANON_O | SERD_LIST_O)) {
     // Push context for anonymous or list object if necessary
     push_context(writer,
-                 (flags & SERD_LIST_O_BEGIN) ? CTX_LIST : CTX_BLANK,
+                 (flags & SERD_LIST_O) ? CTX_LIST : CTX_BLANK,
                  serd_node_copy(graph),
                  serd_node_copy(object),
                  SERD_NODE_NULL);
