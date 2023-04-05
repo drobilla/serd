@@ -294,7 +294,7 @@ push_context(SerdWriter* const   writer,
   WriteContext* const ctx = (WriteContext*)top;
   ctx->back               = writer->context;
   ctx->type               = type;
-  ctx->terse              = terse;
+  ctx->terse              = writer->context->terse || terse;
   ctx->comma_indented     = false;
   ctx->graph.type         = graph.type;
   ctx->graph.flags        = 0U;
@@ -1020,6 +1020,49 @@ terminate_context(SerdWriter* const writer)
   return st;
 }
 
+ZIX_NODISCARD static SerdStatus
+write_ntriples_statement(SerdWriter* const    writer,
+                         const SerdEventFlags flags,
+                         const SerdTokenView  subject,
+                         const SerdTokenView  predicate,
+                         const SerdObjectView object)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  TRY(st, write_token(writer, SERD_SUBJECT, flags, subject));
+  TRY(st, esink(" ", 1, writer));
+  TRY(st, write_token(writer, SERD_PREDICATE, flags, predicate));
+  TRY(st, esink(" ", 1, writer));
+  TRY(st, write_object(writer, flags, object));
+  TRY(st, esink(" .\n", 3, writer));
+
+  return st;
+}
+
+static SerdStatus
+write_nquads_statement(SerdWriter* const    writer,
+                       const SerdEventFlags flags,
+                       const SerdTokenView  subject,
+                       const SerdTokenView  predicate,
+                       const SerdObjectView object,
+                       const SerdTokenView  graph)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  TRY(st, write_token(writer, SERD_SUBJECT, flags, subject));
+  TRY(st, esink(" ", 1, writer));
+  TRY(st, write_token(writer, SERD_PREDICATE, flags, predicate));
+  TRY(st, esink(" ", 1, writer));
+  TRY(st, write_object(writer, flags, object));
+
+  if (serd_field_supports(SERD_GRAPH, graph.type)) {
+    TRY(st, esink(" ", 1, writer));
+    TRY(st, write_token(writer, SERD_GRAPH, flags, graph));
+  }
+
+  return esink(" .\n", 3, writer);
+}
+
 static bool
 top_field_equals(const SerdWriter* const writer,
                  const SerdField         field,
@@ -1031,86 +1074,89 @@ top_field_equals(const SerdWriter* const writer,
          zix_string_view_equals(view.string, token.string);
 }
 
-ZIX_NODISCARD static SerdStatus
-write_statement(SerdWriter* const       writer,
-                const SerdEventFlags    flags,
-                const SerdStatementView statement)
+static SerdStatus
+update_abbreviation_context(SerdWriter* const    writer,
+                            const SerdEventFlags flags,
+                            const SerdTokenView  subject,
+                            const SerdTokenView  predicate,
+                            const SerdObjectView object,
+                            const SerdTokenView  graph)
 {
-  assert(writer);
+  SerdStatus st = SERD_SUCCESS;
 
+  // Push context for list or anonymous subject if necessary
+  if (flags & SERD_ANON_S) {
+    st = push_context(
+      writer, CTX_BLANK, flags & SERD_TERSE_S, graph, subject, predicate);
+  } else if (flags & SERD_LIST_S) {
+    st = push_context(
+      writer, CTX_LIST, flags & SERD_TERSE_S, graph, subject, serd_no_token());
+  }
+
+  // Push context for list or anonymous object if necessary
+  if (!st) {
+    const SerdTokenView object_token = {object.type, object.string};
+    if (flags & SERD_ANON_O) {
+      st = push_context(writer,
+                        CTX_BLANK,
+                        flags & SERD_TERSE_O,
+                        graph,
+                        object_token,
+                        serd_no_token());
+    } else if (flags & SERD_LIST_O) {
+      st = push_context(writer,
+                        CTX_LIST,
+                        flags & SERD_TERSE_O,
+                        graph,
+                        object_token,
+                        serd_no_token());
+    }
+  }
+
+  return st;
+}
+
+ZIX_NODISCARD static SerdStatus
+write_list_statement(SerdWriter* const    writer,
+                     const SerdEventFlags flags,
+                     const SerdTokenView  subject,
+                     const SerdTokenView  predicate,
+                     const SerdObjectView object,
+                     const SerdTokenView  graph)
+{
+  if (token_equals_symbol(predicate, RDF_FIRST) &&
+      token_equals_symbol(serd_object_token_view(object), RDF_NIL)) {
+    return esink("()", 2, writer);
+  }
+
+  const SerdStatus st = write_list_next(writer, flags, predicate, object);
+  if (st == SERD_FAILURE) {
+    pop_context(writer);
+    return SERD_SUCCESS;
+  }
+
+  return st ? st
+            : update_abbreviation_context(
+                writer, flags, subject, predicate, object, graph);
+}
+
+ZIX_NODISCARD static SerdStatus
+write_turtle_trig_statement(SerdWriter* const    writer,
+                            SerdEventFlags       flags,
+                            const SerdTokenView  subject,
+                            const SerdTokenView  predicate,
+                            const SerdObjectView object,
+                            const SerdTokenView  graph)
+{
   const WriteContext* const ctx = writer->context;
   SerdStatus                st  = SERD_SUCCESS;
 
-  if (writer->syntax == SERD_SYNTAX_EMPTY) {
-    return SERD_SUCCESS;
-  }
-
-  const SerdTokenView  subject   = statement.subject;
-  const SerdTokenView  predicate = statement.predicate;
-  const SerdObjectView object    = statement.object;
-  SerdTokenView        graph     = statement.graph;
-
-  // Refuse to write incoherent statements
-  if (!serd_field_supports(SERD_SUBJECT, subject.type) ||
-      !serd_field_supports(SERD_PREDICATE, predicate.type) ||
-      object.type == SERD_NOTHING ||
-      ((object.flags & SERD_HAS_DATATYPE) &&
-       (object.flags & SERD_HAS_LANGUAGE)) ||
-      ((flags & SERD_ANON_S) && (flags & SERD_LIST_S)) ||
-      ((flags & SERD_EMPTY_S) && (flags & SERD_LIST_S)) ||
-      ((flags & SERD_ANON_O) && (flags & SERD_LIST_O)) ||
-      ((flags & SERD_EMPTY_O) && (flags & SERD_LIST_O))) {
-    return SERD_BAD_ARG;
-  }
-
-  // Simple case: write a line of NTriples or NQuads
-  if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
-    TRY(st, write_token(writer, SERD_SUBJECT, flags, subject));
-    TRY(st, esink(" ", 1, writer));
-    TRY(st, write_token(writer, SERD_PREDICATE, flags, predicate));
-    TRY(st, esink(" ", 1, writer));
-    TRY(st, write_object(writer, flags, object));
-    if (writer->syntax == SERD_NQUADS &&
-        serd_field_supports(SERD_GRAPH, graph.type)) {
-      TRY(st, esink(" ", 1, writer));
-      TRY(st, write_token(writer, SERD_GRAPH, flags, graph));
-    }
-    TRY(st, esink(" .\n", 3, writer));
-    return SERD_SUCCESS;
-  }
-
-  if (writer->syntax == SERD_TURTLE) {
-    graph = serd_no_token();
-  }
-
-  // Separate graphs if necessary
-  const bool has_graph = serd_field_supports(SERD_GRAPH, graph.type);
-  if ((has_graph && !top_field_equals(writer, SERD_GRAPH, graph)) ||
-      (!has_graph && top_has_field(writer, SERD_GRAPH))) {
-    TRY(st, terminate_context(writer));
-    reset_context(writer, RESET_GRAPH | RESET_INDENT);
-    TRY(st, write_top_level_sep(writer));
-    if (has_graph) {
-      TRY(st, write_token(writer, SERD_GRAPH, flags, graph));
-      TRY(st, write_sep(writer, false, SEP_GRAPH_L));
-      TRY(st, top_set(writer, SERD_GRAPH, graph));
-    }
-  }
-
   if (ctx->type == CTX_LIST) {
-    // Continue a list
-    if (token_equals_symbol(predicate, RDF_FIRST) &&
-        token_equals_symbol(serd_object_token_view(object), RDF_NIL)) {
-      return esink("()", 2, writer);
-    }
+    return write_list_statement(
+      writer, flags, subject, predicate, object, graph);
+  }
 
-    st = write_list_next(writer, flags, predicate, object);
-    if (st == SERD_FAILURE) { // Reached end of list
-      pop_context(writer);
-      return SERD_SUCCESS;
-    }
-
-  } else if (top_field_equals(writer, SERD_SUBJECT, subject)) {
+  if (top_field_equals(writer, SERD_SUBJECT, subject)) {
     if (top_field_equals(writer, SERD_PREDICATE, predicate)) {
       // Elide S P (write O)
 
@@ -1134,8 +1180,6 @@ write_statement(SerdWriter* const       writer,
       TRY(st, write_sep(writer, false, first ? SEP_S_P : SEP_END_P));
       TRY(st, write_pred(writer, predicate));
     }
-
-    TRY(st, write_object(writer, flags, object));
 
   } else {
     // No abbreviation
@@ -1166,35 +1210,90 @@ write_statement(SerdWriter* const       writer,
     if (!(flags & SERD_LIST_S)) {
       TRY(st, write_pred(writer, predicate));
     }
-
-    TRY(st, write_object(writer, flags, object));
   }
 
-  if (flags & (SERD_ANON_S | SERD_LIST_S)) {
-    // Push context for anonymous or list subject
-    const bool is_list = (flags & SERD_LIST_S);
+  TRY(st, write_object(writer, flags, object));
 
-    st = push_context(writer,
-                      is_list ? CTX_LIST : CTX_BLANK,
-                      writer->context->terse || (flags & SERD_TERSE_S),
-                      graph,
-                      subject,
-                      is_list ? serd_no_token() : predicate);
+  return update_abbreviation_context(
+    writer, flags, subject, predicate, object, graph);
+}
+
+ZIX_NODISCARD static SerdStatus
+write_trig_statement(SerdWriter* const    writer,
+                     const SerdEventFlags flags,
+                     const SerdTokenView  subject,
+                     const SerdTokenView  predicate,
+                     const SerdObjectView object,
+                     const SerdTokenView  graph)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  const bool has_graph = serd_field_supports(SERD_GRAPH, graph.type);
+  const bool top_has_graph =
+    serd_field_supports(SERD_GRAPH, writer->context->graph.type);
+
+  // Separate graphs if necessary
+  if ((!has_graph && top_has_graph) ||
+      (has_graph && !top_field_equals(writer, SERD_GRAPH, graph))) {
+    TRY(st, terminate_context(writer));
+    TRY(st, write_top_level_sep(writer));
+    reset_context(writer, true);
+
+    if (serd_field_supports(SERD_GRAPH, graph.type)) {
+      TRY(st, write_token(writer, SERD_GRAPH, flags, graph));
+      TRY(st, write_sep(writer, false, SEP_GRAPH_L));
+      TRY(st, top_set(writer, SERD_GRAPH, graph));
+    }
   }
 
-  if (flags & (SERD_ANON_O | SERD_LIST_O)) {
-    // Push context for anonymous or list object if necessary
-    const SerdTokenView anon_subject = {object.type, object.string};
+  return write_turtle_trig_statement(
+    writer, flags, subject, predicate, object, graph);
+}
 
-    st = push_context(writer,
-                      (flags & SERD_LIST_O) ? CTX_LIST : CTX_BLANK,
-                      writer->context->terse || (flags & SERD_TERSE_O),
-                      graph,
-                      anon_subject,
-                      serd_no_token());
+ZIX_NODISCARD static SerdStatus
+write_statement(SerdWriter* const       writer,
+                const SerdEventFlags    flags,
+                const SerdStatementView statement)
+{
+  const SerdTokenView  subject   = statement.subject;
+  const SerdTokenView  predicate = statement.predicate;
+  const SerdObjectView object    = statement.object;
+  const SerdTokenView  graph     = statement.graph;
+
+  // Refuse to write incoherent statements
+  if (!serd_field_supports(SERD_SUBJECT, subject.type) ||
+      !serd_field_supports(SERD_PREDICATE, predicate.type) ||
+      object.type == SERD_NOTHING ||
+      ((object.flags & SERD_HAS_DATATYPE) &&
+       (object.flags & SERD_HAS_LANGUAGE)) ||
+      ((flags & SERD_ANON_S) && (flags & SERD_LIST_S)) ||
+      ((flags & SERD_EMPTY_S) && (flags & SERD_LIST_S)) ||
+      ((flags & SERD_ANON_O) && (flags & SERD_LIST_O)) ||
+      ((flags & SERD_EMPTY_O) && (flags & SERD_LIST_O))) {
+    return SERD_BAD_ARG;
   }
 
-  return st;
+  switch (writer->syntax) {
+  case SERD_SYNTAX_EMPTY:
+    break;
+
+  case SERD_TURTLE:
+    return write_turtle_trig_statement(
+      writer, flags, subject, predicate, object, serd_no_token());
+
+  case SERD_NTRIPLES:
+    return write_ntriples_statement(writer, flags, subject, predicate, object);
+
+  case SERD_NQUADS:
+    return write_nquads_statement(
+      writer, flags, subject, predicate, object, graph);
+
+  case SERD_TRIG:
+    return write_trig_statement(
+      writer, flags, subject, predicate, object, graph);
+  }
+
+  return SERD_SUCCESS;
 }
 
 ZIX_NODISCARD static SerdStatus
