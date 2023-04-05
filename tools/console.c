@@ -282,6 +282,7 @@ serd_set_input_option(const ZixStringView    name,
     {"relative", SERD_READ_RELATIVE},
     {"prefixed", SERD_READ_PREFIXED},
     {"decoded", SERD_READ_DECODED},
+    {"ordered", SERD_READ_ORDERED},
     {NULL, SERD_READ_LAX},
   };
 
