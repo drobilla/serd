@@ -18,14 +18,12 @@ SERD_BEGIN_DECLS
 
 /// Flags indicating inline abbreviation information for a statement
 typedef enum {
-  SERD_EMPTY_S      = 1U << 1U, ///< Empty blank node subject
-  SERD_EMPTY_O      = 1U << 2U, ///< Empty blank node object
-  SERD_ANON_S_BEGIN = 1U << 3U, ///< Start of anonymous subject
-  SERD_ANON_O_BEGIN = 1U << 4U, ///< Start of anonymous object
-  SERD_ANON_CONT    = 1U << 5U, ///< Continuation of anonymous node
-  SERD_LIST_S_BEGIN = 1U << 6U, ///< Start of list subject
-  SERD_LIST_O_BEGIN = 1U << 7U, ///< Start of list object
-  SERD_LIST_CONT    = 1U << 8U, ///< Continuation of list
+  SERD_EMPTY_S = 1U << 0U, ///< Empty blank node subject
+  SERD_EMPTY_O = 1U << 1U, ///< Empty blank node object
+  SERD_ANON_S  = 1U << 2U, ///< Start of anonymous subject
+  SERD_ANON_O  = 1U << 3U, ///< Start of anonymous object
+  SERD_LIST_S  = 1U << 4U, ///< Start of list subject
+  SERD_LIST_O  = 1U << 5U, ///< Start of list object
 } SerdStatementFlag;
 
 /// Bitwise OR of SerdStatementFlag values

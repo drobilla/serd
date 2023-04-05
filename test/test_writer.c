@@ -70,32 +70,20 @@ test_write_nested_anon(void)
     SERD_URI, "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil");
 
   assert(!serd_writer_write_statement(
-    writer, SERD_ANON_O_BEGIN, NULL, &s0, &p0, &b0, NULL, NULL));
-
-  assert(!serd_writer_write_statement(writer,
-                                      SERD_ANON_O_BEGIN | SERD_ANON_CONT,
-                                      NULL,
-                                      &b0,
-                                      &p1,
-                                      &b1,
-                                      NULL,
-                                      NULL));
+    writer, SERD_ANON_O, NULL, &s0, &p0, &b0, NULL, NULL));
 
   assert(!serd_writer_write_statement(
-    writer, SERD_ANON_CONT, NULL, &b1, &p2, &o2, NULL, NULL));
+    writer, SERD_ANON_O, NULL, &b0, &p1, &b1, NULL, NULL));
 
-  assert(!serd_writer_write_statement(writer,
-                                      SERD_ANON_CONT | SERD_LIST_O_BEGIN,
-                                      NULL,
-                                      &b1,
-                                      &p3,
-                                      &nil,
-                                      NULL,
-                                      NULL));
+  assert(
+    !serd_writer_write_statement(writer, 0U, NULL, &b1, &p2, &o2, NULL, NULL));
+
+  assert(!serd_writer_write_statement(
+    writer, SERD_LIST_O, NULL, &b1, &p3, &nil, NULL, NULL));
 
   assert(!serd_writer_end_anon(writer, &b1));
-  assert(!serd_writer_write_statement(
-    writer, SERD_ANON_CONT, NULL, &b0, &p4, &o4, NULL, NULL));
+  assert(
+    !serd_writer_write_statement(writer, 0U, NULL, &b0, &p4, &o4, NULL, NULL));
 
   assert(!serd_writer_end_anon(writer, &b0));
 
@@ -144,7 +132,7 @@ test_writer_cleanup(void)
   SerdNode o = serd_node_from_string(SERD_BLANK, "http://example.org/o");
 
   st = serd_writer_write_statement(
-    writer, SERD_ANON_O_BEGIN, NULL, &s, &p, &o, NULL, NULL);
+    writer, SERD_ANON_O, NULL, &s, &p, &o, NULL, NULL);
 
   assert(!st);
 
@@ -156,7 +144,7 @@ test_writer_cleanup(void)
     SerdNode next_o = serd_node_from_string(SERD_BLANK, buf);
 
     st = serd_writer_write_statement(
-      writer, SERD_ANON_O_BEGIN, NULL, &o, &p, &next_o, NULL, NULL);
+      writer, SERD_ANON_O, NULL, &o, &p, &next_o, NULL, NULL);
 
     o = next_o;
   }
