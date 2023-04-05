@@ -1,0 +1,6 @@
+_:b000000001 <http://example.org/eg#p1> _:b000000002 .
+_:b000000003 <http://example.org/eg#p1> _:b000000004 .
+_:b000000004 <http://example.org/eg#p2> _:b000000005 .
+_:b000000006 <http://example.org/eg#p1> _:b000000007 .
+_:b000000007 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> _:b000000008 .
+_:b000000007 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> <http://www.w3.org/1999/02/22-rdf-syntax-ns#nil> .

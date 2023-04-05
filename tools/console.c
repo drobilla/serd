@@ -308,6 +308,7 @@ serd_set_input_option(const ZixStringView    name,
     {"variables", SERD_READ_VARIABLES},
     {"generated", SERD_READ_GENERATED},
     {"global", SERD_READ_GLOBAL},
+    {"ordered", SERD_READ_ORDERED},
     {NULL, SERD_READ_LAX},
   };
 

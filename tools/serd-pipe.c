@@ -93,7 +93,7 @@ print_usage(const char* const name, const bool error)
     "INPUT can be a local filename, or \"-\" to read from standard input.\n\n"
     "  -B URI     Resolve URIs against the given base URI or path\n"
     "  -I SYNTAX  Input syntax nquads/ntriples/trig/turtle, or option\n"
-    "             generated/global/lax/variables\n"
+    "             generated/global/lax/ordered/variables\n"
     "  -O SYNTAX  Output syntax empty/nquads/ntriples/trig/turtle, or option\n"
     "             ascii/terse/unresolved/unqualified\n"
     "  -R URI     Keep relative URIs within the given root URI\n"

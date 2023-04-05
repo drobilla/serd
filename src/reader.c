@@ -101,9 +101,7 @@ serd_reader_skip_until_byte(SerdReader* const reader, const uint8_t byte)
 }
 
 void
-serd_reader_set_blank_id(SerdReader* const  reader,
-                         TokenHeader* const node,
-                         const size_t       buf_size)
+serd_reader_set_blank_id(SerdReader* const reader, TokenHeader* const node)
 {
   const uint32_t id  = reader->next_id++;
   char* const    buf = (char*)(node + 1U);
@@ -112,9 +110,20 @@ serd_reader_set_blank_id(SerdReader* const  reader,
   memcpy(buf, reader->bprefix, reader->bprefix_len);
   buf[i++] = 'b';
 
-  const int rc = snprintf(buf + i, buf_size - i, "%u", id);
+  char      digits[12U] = {'\0'};
+  const int rc          = snprintf(digits, sizeof(digits), "%u", id);
   assert(rc > 0);
-  node->length = (uint32_t)i + (uint32_t)rc;
+
+  if (reader->flags & SERD_READ_ORDERED) {
+    for (size_t pad = (size_t)rc; pad < 9U; ++pad) {
+      buf[i++] = '0';
+    }
+  }
+
+  memcpy(buf + i, digits, (size_t)rc);
+
+  node->length      = (uint32_t)(i + (size_t)rc);
+  buf[node->length] = '\0';
 }
 
 size_t
@@ -129,7 +138,7 @@ serd_reader_blank_id(SerdReader* const reader)
   TokenHeader* const node =
     push_node_space(reader, SERD_BLANK, genid_size(reader));
   if (node) {
-    serd_reader_set_blank_id(reader, node, genid_size(reader));
+    serd_reader_set_blank_id(reader, node);
   }
   return node;
 }

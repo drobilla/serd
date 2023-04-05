@@ -472,6 +472,12 @@ test_suites = {
     '--',
     ['-k', '1024'],
   ],
+  'ordered': [
+    files('extra/ordered/manifest.ttl'),
+    ns_serdtest + 'ordered/',
+    '--',
+    ['-I', 'ordered'],
+  ],
   'pattern': [
     files('extra/pattern/manifest.ttl'),
     ns_serdtest + 'pattern/',

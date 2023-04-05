@@ -1,0 +1,14 @@
+@prefix eg: <http://example.org/eg#> .
+
+[]
+	eg:p1 [] .
+
+[]
+	eg:p1 [
+		eg:p2 []
+	] .
+
+[]
+	eg:p1 (
+		[]
+	) .
