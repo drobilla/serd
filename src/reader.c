@@ -69,16 +69,22 @@ set_blank_id(SerdReader* const reader,
              SerdNode* const   node,
              const size_t      buf_size)
 {
-  char* const buf = (char*)(node + 1);
+  char* const    buf = (char*)(node + 1);
+  const unsigned id  = reader->next_id++;
 
-  node->length = (size_t)snprintf(
-    buf, buf_size, "%sb%u", reader->bprefix, reader->next_id++);
+  if ((reader->flags & SERD_READ_ORDERED)) {
+    node->length =
+      (size_t)snprintf(buf, buf_size, "%sb%09u", reader->bprefix, id);
+  } else {
+    node->length =
+      (size_t)snprintf(buf, buf_size, "%sb%u", reader->bprefix, id);
+  }
 }
 
 size_t
 genid_length(const SerdReader* const reader)
 {
-  return reader->bprefix_len + 10; // + "b" + UINT32_MAX
+  return reader->bprefix_len + 11;
 }
 
 bool

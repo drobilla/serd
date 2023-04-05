@@ -142,6 +142,10 @@ to prevent labels in different files from clashing.
 This option disables that,
 so blank node labels will be passed through without any added prefix.
 Note that this may corrupt the output by merging distinct blank nodes.
+.It Cm ordered
+Generate blank node labels with suffixes left-padded with zeros.
+This generates IDs like "_:b0000000123" that sort in numerical order,
+which can be useful to preserve statement ordering.
 .El
 .It Fl O Ar syntax
 Set an output syntax or option.
