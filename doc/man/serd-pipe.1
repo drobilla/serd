@@ -122,6 +122,12 @@ Tolerate invalid input where possible.
 Warnings are printed for syntax errors,
 but parsing will continue if possible.
 Note that data may be lost when using this option!
+.It Cm ordered
+Generate blank node labels with left-padded numbers.
+This generates IDs like
+.Ql _:b0000000123
+that sort in numerical order,
+which can be useful to preserve statement ordering.
 .It Cm variables
 Support parsing variable nodes.
 Variables can be written in SPARQL style, for example

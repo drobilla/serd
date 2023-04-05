@@ -58,9 +58,7 @@ TokenHeader*
 serd_reader_blank_id(SerdReader* reader);
 
 void
-serd_reader_set_blank_id(SerdReader*  reader,
-                         TokenHeader* node,
-                         size_t       buf_size);
+serd_reader_set_blank_id(SerdReader* reader, TokenHeader* node);
 
 ZIX_PURE_FUNC SerdTokenView
 stack_token_view(const TokenHeader* header);
