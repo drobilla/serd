@@ -1,0 +1,24 @@
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdft: <http://www.w3.org/ns/rdftest#> .
+@prefix serd: <http://drobilla.net/ns/serd#> .
+
+<>
+	a mf:Manifest ;
+	rdfs:comment "Serd syntactic (non-model) pretty-printing test cases" ;
+	mf:entries (
+		<#inline-blank-subject>
+		<#inline-blanks-and-lists>
+	) .
+
+<#inline-blank-subject>
+	a rdft:TestTurtleEval ;
+	mf:action <inline-blank-subject.ttl> ;
+	mf:name "inline-blank-subject" ;
+	mf:result <inline-blank-subject.ttl> .
+
+<#inline-blanks-and-lists>
+	a rdft:TestTurtleEval ;
+	mf:action <inline-blanks-and-lists.ttl> ;
+	mf:name "inline-blanks-and-lists" ;
+	mf:result <inline-blanks-and-lists.ttl> .
