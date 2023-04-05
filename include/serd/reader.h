@@ -88,6 +88,16 @@ typedef enum {
      the input document.
   */
   SERD_READ_GENERATED = 1U << 4U,
+
+  /**
+     Generate blank node labels with suffixes left-padded with zeros.
+
+     This is useful because it makes generated blank node IDs like
+     "_:b0000000123" match the numerical order when compared as strings (or as
+     nodes).  In particular, this can be used to preserve blank node ordering
+     from documents when the statements are sorted, such as in a model.
+  */
+  SERD_READ_ORDERED = 1U << 5U,
 } SerdReaderFlag;
 
 /// Bitwise OR of SerdReaderFlag values
