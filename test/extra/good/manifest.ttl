@@ -23,8 +23,6 @@
 		<#test-double>
 		<#test-empty-path-base>
 		<#test-eof-at-page-end>
-		<#test-ext-namedblank-iri>
-		<#test-ext-namedblank-prefix>
 		<#test-id>
 		<#test-list-in-blank>
 		<#test-list-subject>
@@ -161,18 +159,6 @@
 	mf:action <test-eof-at-page-end.ttl> ;
 	mf:name "test-eof-at-page-end" ;
 	mf:result <test-eof-at-page-end.nt> .
-
-<#test-ext-namedblank-iri>
-	a rdft:TestTurtleEval ;
-	mf:action <test-ext-namedblank-iri.ttl> ;
-	mf:name "test-ext-namedblank-iri" ;
-	mf:result <test-ext-namedblank-iri.nt> .
-
-<#test-ext-namedblank-prefix>
-	a rdft:TestTurtleEval ;
-	mf:action <test-ext-namedblank-prefix.ttl> ;
-	mf:name "test-ext-namedblank-prefix" ;
-	mf:result <test-ext-namedblank-prefix.nt> .
 
 <#test-id>
 	a rdft:TestTurtleEval ;
