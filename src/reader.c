@@ -13,7 +13,6 @@
 #include <serd/node.h>
 #include <serd/reader.h>
 #include <serd/sink.h>
-#include <serd/statement_flags.h>
 #include <serd/status.h>
 #include <serd/stream.h>
 #include <serd/syntax.h>
@@ -186,7 +185,7 @@ emit_statement(SerdReader* const reader,
                                                    deref(reader, d),
                                                    deref(reader, l));
 
-  *ctx.flags &= SERD_ANON_CONT | SERD_LIST_CONT; // Preserve only cont flags
+  *ctx.flags = 0U;
   return st;
 }
 

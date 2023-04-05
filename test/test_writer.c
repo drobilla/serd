@@ -73,32 +73,20 @@ test_write_nested_anon(void)
     SERD_URI, "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil");
 
   assert(!serd_writer_write_statement(
-    writer, SERD_ANON_O_BEGIN, NULL, &s0, &p0, &b0, NULL, NULL));
-
-  assert(!serd_writer_write_statement(writer,
-                                      SERD_ANON_O_BEGIN | SERD_ANON_CONT,
-                                      NULL,
-                                      &b0,
-                                      &p1,
-                                      &b1,
-                                      NULL,
-                                      NULL));
+    writer, SERD_ANON_O, NULL, &s0, &p0, &b0, NULL, NULL));
 
   assert(!serd_writer_write_statement(
-    writer, SERD_ANON_CONT, NULL, &b1, &p2, &o2, NULL, NULL));
+    writer, SERD_ANON_O, NULL, &b0, &p1, &b1, NULL, NULL));
 
-  assert(!serd_writer_write_statement(writer,
-                                      SERD_ANON_CONT | SERD_LIST_O_BEGIN,
-                                      NULL,
-                                      &b1,
-                                      &p3,
-                                      &nil,
-                                      NULL,
-                                      NULL));
+  assert(
+    !serd_writer_write_statement(writer, 0U, NULL, &b1, &p2, &o2, NULL, NULL));
+
+  assert(
+    !serd_writer_write_statement(writer, 0U, NULL, &b1, &p3, &nil, NULL, NULL));
 
   assert(!serd_writer_end_anon(writer, &b1));
-  assert(!serd_writer_write_statement(
-    writer, SERD_ANON_CONT, NULL, &b0, &p4, &o4, NULL, NULL));
+  assert(
+    !serd_writer_write_statement(writer, 0U, NULL, &b0, &p4, &o4, NULL, NULL));
 
   assert(!serd_writer_end_anon(writer, &b0));
   assert(!serd_writer_finish(writer));
@@ -146,7 +134,7 @@ test_writer_cleanup(void)
   SerdNode o         = serd_node_from_string(SERD_BLANK, o_buf);
 
   st = serd_writer_write_statement(
-    writer, SERD_ANON_O_BEGIN, NULL, &s, &p, &o, NULL, NULL);
+    writer, SERD_ANON_O, NULL, &s, &p, &o, NULL, NULL);
 
   assert(!st);
 
@@ -157,14 +145,8 @@ test_writer_cleanup(void)
 
     SerdNode next_o = serd_node_from_string(SERD_BLANK, next_o_buf);
 
-    st = serd_writer_write_statement(writer,
-                                     SERD_ANON_O_BEGIN | SERD_ANON_CONT,
-                                     NULL,
-                                     &o,
-                                     &p,
-                                     &next_o,
-                                     NULL,
-                                     NULL);
+    st = serd_writer_write_statement(
+      writer, SERD_ANON_O, NULL, &o, &p, &next_o, NULL, NULL);
 
     assert(!st);
 
@@ -200,13 +182,13 @@ test_write_bad_anon_stack(void)
   SerdNode b2 = serd_node_from_string(SERD_BLANK, "b2");
 
   st = serd_writer_write_statement(
-    writer, SERD_ANON_O_BEGIN, NULL, &s, &p, &b0, NULL, NULL);
+    writer, SERD_ANON_O, NULL, &s, &p, &b0, NULL, NULL);
   assert(!st);
 
   // (missing call to end the anonymous node here)
 
   st = serd_writer_write_statement(
-    writer, SERD_ANON_O_BEGIN, NULL, &b1, &p, &b2, NULL, NULL);
+    writer, SERD_ANON_O, NULL, &b1, &p, &b2, NULL, NULL);
 
   assert(st == SERD_BAD_ARG);
 
@@ -352,9 +334,19 @@ test_write_bad_statement(void)
   SerdNode o = serd_node_from_string(SERD_URI, "http://example.org/o");
   SerdNode l = serd_node_from_string(SERD_LITERAL, "lang");
 
+  assert(
+    serd_writer_write_statement(writer,
+                                (SerdStatementFlags)(SERD_ANON_S | SERD_LIST_S),
+                                NULL,
+                                &s,
+                                &p,
+                                &o,
+                                NULL,
+                                NULL) == SERD_BAD_ARG);
+
   assert(serd_writer_write_statement(
            writer,
-           (SerdStatementFlags)(SERD_ANON_S_BEGIN | SERD_LIST_S_BEGIN),
+           (SerdStatementFlags)(SERD_EMPTY_S | SERD_LIST_S),
            NULL,
            &s,
            &p,
@@ -362,29 +354,19 @@ test_write_bad_statement(void)
            NULL,
            NULL) == SERD_BAD_ARG);
 
-  assert(serd_writer_write_statement(
-           writer,
-           (SerdStatementFlags)(SERD_EMPTY_S | SERD_LIST_S_BEGIN),
-           NULL,
-           &s,
-           &p,
-           &o,
-           NULL,
-           NULL) == SERD_BAD_ARG);
+  assert(
+    serd_writer_write_statement(writer,
+                                (SerdStatementFlags)(SERD_ANON_O | SERD_LIST_O),
+                                NULL,
+                                &s,
+                                &p,
+                                &o,
+                                NULL,
+                                NULL) == SERD_BAD_ARG);
 
   assert(serd_writer_write_statement(
            writer,
-           (SerdStatementFlags)(SERD_ANON_O_BEGIN | SERD_LIST_O_BEGIN),
-           NULL,
-           &s,
-           &p,
-           &o,
-           NULL,
-           NULL) == SERD_BAD_ARG);
-
-  assert(serd_writer_write_statement(
-           writer,
-           (SerdStatementFlags)(SERD_EMPTY_O | SERD_LIST_O_BEGIN),
+           (SerdStatementFlags)(SERD_EMPTY_O | SERD_LIST_O),
            NULL,
            &s,
            &p,
