@@ -780,13 +780,13 @@ write_blank(SerdWriter* const        writer,
   SerdStatus st = SERD_SUCCESS;
 
   if (supports_abbrev(writer)) {
-    if ((field == FIELD_SUBJECT && (flags & SERD_ANON_S_BEGIN)) ||
-        (field == FIELD_OBJECT && (flags & SERD_ANON_O_BEGIN))) {
+    if ((field == FIELD_SUBJECT && (flags & SERD_ANON_S)) ||
+        (field == FIELD_OBJECT && (flags & SERD_ANON_O))) {
       return write_sep(writer, SEP_ANON_L);
     }
 
-    if ((field == FIELD_SUBJECT && (flags & SERD_LIST_S_BEGIN)) ||
-        (field == FIELD_OBJECT && (flags & SERD_LIST_O_BEGIN))) {
+    if ((field == FIELD_SUBJECT && (flags & SERD_LIST_S)) ||
+        (field == FIELD_OBJECT && (flags & SERD_LIST_O))) {
       return write_sep(writer, SEP_LIST_L);
     }
 
@@ -890,14 +890,14 @@ terminate_context(SerdWriter* const writer)
 }
 
 SerdStatus
-serd_writer_write_statement(SerdWriter* const     writer,
-                            SerdStatementFlags    flags,
-                            const SerdNode* const graph,
-                            const SerdNode* const subject,
-                            const SerdNode* const predicate,
-                            const SerdNode* const object,
-                            const SerdNode* const datatype,
-                            const SerdNode* const lang)
+serd_writer_write_statement(SerdWriter* const        writer,
+                            const SerdStatementFlags flags,
+                            const SerdNode* const    graph,
+                            const SerdNode* const    subject,
+                            const SerdNode* const    predicate,
+                            const SerdNode* const    object,
+                            const SerdNode* const    datatype,
+                            const SerdNode* const    lang)
 {
   assert(writer);
   assert(subject);
@@ -906,21 +906,14 @@ serd_writer_write_statement(SerdWriter* const     writer,
 
   SerdStatus st = SERD_SUCCESS;
 
-  if ((flags & SERD_LIST_O_BEGIN) && !strcmp(object->buf, NS_RDF "nil")) {
-    /* Tolerate LIST_O_BEGIN for "()" objects, even though it doesn't make
-       much sense, because older versions handled this gracefully.  Consider
-       making this an error in a later major version. */
-    flags &= (SerdStatementFlags)~SERD_LIST_O_BEGIN;
-  }
-
   // Refuse to write incoherent statements
   if (!is_resource(subject) || !is_resource(predicate) ||
       object->type == SERD_NOTHING || !object->buf ||
       (datatype && datatype->buf && lang && lang->buf) ||
-      ((flags & SERD_ANON_S_BEGIN) && (flags & SERD_LIST_S_BEGIN)) ||
-      ((flags & SERD_EMPTY_S) && (flags & SERD_LIST_S_BEGIN)) ||
-      ((flags & SERD_ANON_O_BEGIN) && (flags & SERD_LIST_O_BEGIN)) ||
-      ((flags & SERD_EMPTY_O) && (flags & SERD_LIST_O_BEGIN))) {
+      ((flags & SERD_ANON_S) && (flags & SERD_LIST_S)) ||
+      ((flags & SERD_EMPTY_S) && (flags & SERD_LIST_S)) ||
+      ((flags & SERD_ANON_O) && (flags & SERD_LIST_O)) ||
+      ((flags & SERD_EMPTY_O) && (flags & SERD_LIST_O))) {
     return SERD_BAD_ARG;
   }
 
@@ -954,7 +947,7 @@ serd_writer_write_statement(SerdWriter* const     writer,
     }
   }
 
-  if ((flags & SERD_LIST_CONT)) {
+  if (writer->context.type == CTX_LIST) {
     // Continue a list
     if (!strcmp(predicate->buf, NS_RDF "first") &&
         !strcmp(object->buf, NS_RDF "nil")) {
@@ -974,8 +967,8 @@ serd_writer_write_statement(SerdWriter* const     writer,
       // Elide S P (write O)
 
       const Sep  last        = writer->last_sep;
-      const bool anon_o      = flags & SERD_ANON_O_BEGIN;
-      const bool list_o      = flags & SERD_LIST_O_BEGIN;
+      const bool anon_o      = flags & SERD_ANON_O;
+      const bool list_o      = flags & SERD_LIST_O;
       const bool before_name = !anon_o && !list_o;
       const bool after_end   = (last == SEP_ANON_R) || (last == SEP_LIST_R);
 
@@ -1011,23 +1004,23 @@ serd_writer_write_statement(SerdWriter* const     writer,
     }
 
     TRY(st, write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags));
-    if (!(flags & SERD_LIST_S_BEGIN)) {
+    if (!(flags & SERD_LIST_S)) {
       TRY(st, write_sep(writer, SEP_S_P));
     }
 
     reset_context(writer, 0U);
     copy_node(&writer->context.subject, subject);
 
-    if (!(flags & SERD_LIST_S_BEGIN)) {
+    if (!(flags & SERD_LIST_S)) {
       TRY(st, write_pred(writer, predicate));
     }
 
     TRY(st, write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
   }
 
-  if (flags & (SERD_ANON_S_BEGIN | SERD_LIST_S_BEGIN)) {
+  if (flags & (SERD_ANON_S | SERD_LIST_S)) {
     // Push context for anonymous or list subject
-    const bool is_list = (flags & SERD_LIST_S_BEGIN);
+    const bool is_list = (flags & SERD_LIST_S);
     push_context(writer,
                  is_list ? CTX_LIST : CTX_BLANK,
                  serd_node_copy(out_graph),
@@ -1035,10 +1028,10 @@ serd_writer_write_statement(SerdWriter* const     writer,
                  is_list ? SERD_NODE_NULL : serd_node_copy(predicate));
   }
 
-  if (flags & (SERD_ANON_O_BEGIN | SERD_LIST_O_BEGIN)) {
+  if (flags & (SERD_ANON_O | SERD_LIST_O)) {
     // Push context for anonymous or list object if necessary
     push_context(writer,
-                 (flags & SERD_LIST_O_BEGIN) ? CTX_LIST : CTX_BLANK,
+                 (flags & SERD_LIST_O) ? CTX_LIST : CTX_BLANK,
                  serd_node_copy(out_graph),
                  serd_node_copy(object),
                  SERD_NODE_NULL);
