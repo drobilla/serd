@@ -2,4 +2,5 @@
 
 [
 	a eg:BlankSubject
-] eg:isA eg:Blank .
+]
+	eg:isA eg:Blank .

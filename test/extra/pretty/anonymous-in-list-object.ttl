@@ -4,7 +4,8 @@ eg:s
 	eg:p (
 		[
 			a eg:Spy
-		] [
+		]
+		[
 			a eg:Ninja
 		]
 	) .

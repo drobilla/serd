@@ -3,4 +3,5 @@
 (
 	eg:item1
 	eg:item2
-) eg:isA eg:List .
+)
+	eg:isA eg:List .

@@ -1065,13 +1065,15 @@ read_anon(SerdReader* const reader,
           const bool        subject,
           Ref* const        dest)
 {
-  const SerdStatementFlags old_flags = *ctx.flags;
-  bool                     empty     = false;
   skip_byte(reader, '[');
-  if ((empty = peek_delim(reader, ']'))) {
-    *ctx.flags |= (subject) ? SERD_EMPTY_S : SERD_EMPTY_O;
+
+  const SerdStatementFlags old_flags = *ctx.flags;
+  const bool               empty     = peek_delim(reader, ']');
+
+  if (subject) {
+    *ctx.flags |= empty ? SERD_EMPTY_S : SERD_ANON_S_BEGIN;
   } else {
-    *ctx.flags |= (subject) ? SERD_ANON_S_BEGIN : SERD_ANON_O_BEGIN;
+    *ctx.flags |= empty ? SERD_EMPTY_O : SERD_ANON_O_BEGIN;
     if (peek_delim(reader, '=')) {
       if (!(*dest = read_blankName(reader)) || !eat_delim(reader, ';')) {
         return SERD_ERR_BAD_SYNTAX;
@@ -1083,11 +1085,13 @@ read_anon(SerdReader* const reader,
     *dest = blank_id(reader);
   }
 
+  // Emit statement with this anonymous object first
   SerdStatus st = SERD_SUCCESS;
   if (ctx.subject) {
     TRY(st, emit_statement(reader, ctx, *dest, 0, 0));
   }
 
+  // Switch the subject to the anonymous node and read its description
   ctx.subject = *dest;
   if (!empty) {
     *ctx.flags &= ~(unsigned)SERD_LIST_CONT;
@@ -1096,7 +1100,8 @@ read_anon(SerdReader* const reader,
     }
 
     bool ate_dot_in_list = false;
-    read_predicateObjectList(reader, ctx, &ate_dot_in_list);
+    TRY_FAILING(st, read_predicateObjectList(reader, ctx, &ate_dot_in_list));
+
     if (ate_dot_in_list) {
       return r_err(reader, SERD_ERR_BAD_SYNTAX, "'.' inside blank\n");
     }
@@ -1316,12 +1321,12 @@ read_collection(SerdReader* const reader, ReadContext ctx, Ref* const dest)
   bool end = peek_delim(reader, ')');
 
   *dest = end ? reader->rdf_nil : blank_id(reader);
-  if (ctx.subject) {
-    // subject predicate _:head
+  if (ctx.subject) { // Reading a collection object
     *ctx.flags |= (end ? 0 : SERD_LIST_O_BEGIN);
     TRY(st, emit_statement(reader, ctx, *dest, 0, 0));
+    *ctx.flags &= SERD_LIST_O_BEGIN;
     *ctx.flags |= SERD_LIST_CONT;
-  } else {
+  } else { // Reading a collection subject
     *ctx.flags |= (end ? 0 : SERD_LIST_S_BEGIN);
   }
 

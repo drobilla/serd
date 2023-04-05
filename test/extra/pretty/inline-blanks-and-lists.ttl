@@ -46,7 +46,22 @@ eg:s2
 		[] ,
 		eg:o22 ,
 		() ,
-		eg:o23 .
+		eg:o23 ,
+		[] ,
+		eg:o24 ,
+		[
+			a eg:Child
+		] ,
+		[] ,
+		eg:o25 ,
+		[
+			a eg:FirstChild
+		] , [
+			a eg:SecondChild
+		] ,
+		() ,
+		eg:o26 ,
+		eg:o27 .
 
 eg:s3
 	a eg:Thing ;

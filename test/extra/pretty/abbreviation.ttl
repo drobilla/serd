@@ -51,7 +51,8 @@ eg:s7
 	eg:listOfResources (
 		[
 			eg:value 7
-		] [
+		]
+		[
 			eg:value 8
 		]
 	) .

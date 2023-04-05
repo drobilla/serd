@@ -5,4 +5,8 @@
 	"banana"
 	"cherry"
 )
-	a eg:ExampleList .
+	eg:list (
+		"asparagus"
+		"beet"
+		"carrot"
+	) .

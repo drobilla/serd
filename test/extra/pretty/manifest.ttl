@@ -25,12 +25,15 @@
 		<#list-in-object>
 		<#list-object>
 		<#list-subject>
+		<#list-subject-with-extras>
+		<#list-subject-with-list-extras>
 		<#local-name-escapes>
 		<#long-string-escapes>
 		<#long-string-quotes>
 		<#many-objects>
 		<#named-graph>
 		<#nested-list-object>
+		<#nested-list-object-with-empty-lists>
 		<#relative-uris>
 		<#short-string-escapes>
 		<#uri-escapes>
@@ -145,6 +148,18 @@
 	mf:name "list-subject" ;
 	mf:result <list-subject.ttl> .
 
+<#list-subject-with-extras>
+	a rdft:TestTurtleEval ;
+	mf:action <list-subject-with-extras.ttl> ;
+	mf:name "list-subject-with-extras" ;
+	mf:result <list-subject-with-extras.ttl> .
+
+<#list-subject-with-list-extras>
+	a rdft:TestTurtleEval ;
+	mf:action <list-subject-with-list-extras.ttl> ;
+	mf:name "list-subject-with-list-extras" ;
+	mf:result <list-subject-with-list-extras.ttl> .
+
 <#local-name-escapes>
 	a rdft:TestTurtleEval ;
 	mf:action <local-name-escapes.ttl> ;
@@ -180,6 +195,12 @@
 	mf:action <nested-list-object.ttl> ;
 	mf:name "nested-list-object" ;
 	mf:result <nested-list-object.ttl> .
+
+<#nested-list-object-with-empty-lists>
+	a rdft:TestTurtleEval ;
+	mf:action <nested-list-object-with-empty-lists.ttl> ;
+	mf:name "nested-list-object-with-empty-lists" ;
+	mf:result <nested-list-object-with-empty-lists.ttl> .
 
 <#nested-list-subject>
 	a rdft:TestTurtleEval ;

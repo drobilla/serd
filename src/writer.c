@@ -11,13 +11,18 @@
 
 #include "serd/serd.h"
 
-#include <assert.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+typedef enum {
+  CTX_NAMED, ///< Normal non-anonymous context
+  CTX_BLANK, ///< Anonymous blank node
+  CTX_LIST,  ///< Anonymous list
+} ContextType;
 
 typedef enum {
   FIELD_NONE,
@@ -28,22 +33,32 @@ typedef enum {
 } Field;
 
 typedef struct {
-  SerdNode graph;
-  SerdNode subject;
-  SerdNode predicate;
+  ContextType type;
+  SerdNode    graph;
+  SerdNode    subject;
+  SerdNode    predicate;
+  bool        predicates;
+  bool        comma_indented;
 } WriteContext;
 
-static const WriteContext WRITE_CONTEXT_NULL = {{0, 0, 0, 0, SERD_NOTHING},
+static const WriteContext WRITE_CONTEXT_NULL = {CTX_NAMED,
                                                 {0, 0, 0, 0, SERD_NOTHING},
-                                                {0, 0, 0, 0, SERD_NOTHING}};
+                                                {0, 0, 0, 0, SERD_NOTHING},
+                                                {0, 0, 0, 0, SERD_NOTHING},
+                                                0U,
+                                                0U};
 
 typedef enum {
-  SEP_NOTHING,     ///< Sentinel before the start of a document
+  SEP_NONE,        ///< Sentinel before the start of a document
   SEP_NODE,        ///< Sentinel after a node
+  SEP_NEWLINE,     ///< Sentinel after a node
   SEP_END_DIRECT,  ///< End of a directive (like "@prefix")
   SEP_END_S,       ///< End of a subject ('.')
   SEP_END_P,       ///< End of a predicate (';')
-  SEP_END_O,       ///< End of an object (',')
+  SEP_END_O,       ///< End of a named object (',')
+  SEP_JOIN_O_AN,   ///< End of anonymous object (',') before a named one
+  SEP_JOIN_O_NA,   ///< End of named object (',') before an anonymous one
+  SEP_JOIN_O_AA,   ///< End of anonymous object (',') before another
   SEP_S_P,         ///< Between a subject and predicate (whitespace)
   SEP_P_O,         ///< Between a predicate and object (whitespace)
   SEP_ANON_BEGIN,  ///< Start of anonymous node ('[')
@@ -56,30 +71,46 @@ typedef enum {
   SEP_GRAPH_END,   ///< End of graph ('}')
 } Sep;
 
+typedef uint32_t SepMask; ///< Bitfield of separator flags
+
 typedef struct {
-  const char* str;              ///< Sep string
-  uint8_t     len;              ///< Length of sep string
-  uint8_t     space_before;     ///< Newline before sep
-  uint8_t     space_after_node; ///< Newline after sep if after node
-  uint8_t     space_after_sep;  ///< Newline after sep if after sep
+  char    sep;             ///< Sep character
+  int     indent;          ///< Indent delta
+  SepMask pre_space_after; ///< Leading space if after given seps
+  SepMask pre_line_after;  ///< Leading newline if after given seps
+  SepMask post_line_after; ///< Trailing newline if after given seps
 } SepRule;
 
-static const SepRule rules[] = {{NULL, 0, 0, 0, 0},
-                                {NULL, 0, 0, 0, 0},
-                                {" .", 2, 0, 1, 1},
-                                {" .\n", 3, 0, 0, 0},
-                                {" ;", 2, 0, 1, 1},
-                                {" ,", 2, 0, 1, 0},
-                                {NULL, 0, 0, 1, 0},
-                                {" ", 1, 0, 0, 0},
-                                {"[", 1, 0, 1, 1},
-                                {NULL, 0, 0, 0, 0},
-                                {"]", 1, 1, 0, 0},
-                                {"(", 1, 0, 0, 0},
-                                {NULL, 0, 0, 1, 0},
-                                {")", 1, 1, 0, 0},
-                                {" {", 2, 0, 1, 1},
-                                {"}\n", 2, 0, 0, 0}};
+#define SEP_EACH (~(SepMask)0)
+#define M(s) (1U << (s))
+#define NIL '\0'
+
+static const SepRule rules[] = {
+  {NIL, +0, SEP_NONE, SEP_NONE, SEP_NONE},
+  {NIL, +0, SEP_NONE, SEP_NONE, SEP_NONE},
+  {'\n', 0, SEP_NONE, SEP_NONE, SEP_NONE},
+  {'.', +0, SEP_EACH, SEP_NONE, SEP_EACH},
+  {'.', +0, SEP_EACH, SEP_NONE, SEP_NONE},
+  {';', +0, SEP_EACH, SEP_NONE, SEP_EACH},
+  {',', +0, SEP_EACH, SEP_NONE, SEP_EACH},
+  {',', +0, SEP_EACH, SEP_NONE, SEP_EACH},
+  {',', +0, SEP_EACH, SEP_NONE, SEP_EACH},
+  {',', +0, SEP_EACH, SEP_NONE, SEP_NONE},
+  {NIL, +1, SEP_NONE, SEP_NONE, SEP_EACH},
+  {' ', +0, SEP_NONE, SEP_NONE, SEP_NONE},
+  {'[', +1, M(SEP_JOIN_O_AA), SEP_NONE, SEP_NONE},
+  {NIL, +1, SEP_NONE, SEP_NONE, M(SEP_ANON_BEGIN)},
+  {']', -1, SEP_NONE, ~M(SEP_ANON_BEGIN), SEP_NONE},
+  {'(', +1, M(SEP_JOIN_O_AA), SEP_NONE, SEP_EACH},
+  {NIL, +0, SEP_NONE, SEP_EACH, SEP_NONE},
+  {')', -1, SEP_NONE, SEP_EACH, SEP_NONE},
+  {'{', +1, SEP_EACH, SEP_NONE, SEP_EACH},
+  {'}', -1, SEP_NONE, SEP_NONE, SEP_EACH},
+};
+
+#undef NIL
+#undef M
+#undef SEP_EACH
 
 struct SerdWriterImpl {
   SerdSyntax    syntax;
@@ -93,12 +124,10 @@ struct SerdWriterImpl {
   SerdErrorSink error_sink;
   void*         error_handle;
   WriteContext  context;
-  SerdNode      list_subj;
-  unsigned      list_depth;
-  unsigned      indent;
   uint8_t*      bprefix;
   size_t        bprefix_len;
   Sep           last_sep;
+  int           indent;
 };
 
 typedef enum { WRITE_STRING, WRITE_LONG_STRING } TextContext;
@@ -124,14 +153,19 @@ supports_uriref(const SerdWriter* writer)
   return writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG;
 }
 
-static void
-deindent(SerdWriter* writer)
+static SerdStatus
+free_context(WriteContext* const ctx)
 {
-  if (writer->indent) {
-    --writer->indent;
-  }
+  serd_node_free(&ctx->graph);
+  serd_node_free(&ctx->subject);
+  serd_node_free(&ctx->predicate);
+  ctx->graph.type     = SERD_NOTHING;
+  ctx->subject.type   = SERD_NOTHING;
+  ctx->predicate.type = SERD_NOTHING;
+  return SERD_SUCCESS;
 }
 
+SERD_LOG_FUNC(3, 4)
 static SerdStatus
 w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
 {
@@ -149,27 +183,48 @@ w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
   return st;
 }
 
-SERD_PURE_FUNC static WriteContext*
-anon_stack_top(SerdWriter* writer)
-{
-  assert(!serd_stack_is_empty(&writer->anon_stack));
-  return (WriteContext*)(writer->anon_stack.buf + writer->anon_stack.size -
-                         sizeof(WriteContext));
-}
-
 static void
 copy_node(SerdNode* dst, const SerdNode* src)
 {
-  if (src) {
-    dst->buf     = (uint8_t*)realloc((char*)dst->buf, src->n_bytes + 1);
+  const size_t   new_size = src->n_bytes + 1U;
+  uint8_t* const new_buf  = (uint8_t*)realloc((char*)dst->buf, new_size);
+  if (new_buf) {
+    dst->buf     = new_buf;
     dst->n_bytes = src->n_bytes;
     dst->n_chars = src->n_chars;
     dst->flags   = src->flags;
     dst->type    = src->type;
-    memcpy((char*)dst->buf, src->buf, src->n_bytes + 1);
-  } else {
-    dst->type = SERD_NOTHING;
+    memcpy((char*)dst->buf, src->buf, new_size);
   }
+}
+
+static void
+push_context(SerdWriter* const writer,
+             const ContextType type,
+             const SerdNode    graph,
+             const SerdNode    subject,
+             const SerdNode    predicate)
+{
+  // Push the current context to the stack
+  void* const top = serd_stack_push(&writer->anon_stack, sizeof(WriteContext));
+  *(WriteContext*)top = writer->context;
+
+  // Update the current context
+  const WriteContext current = {type, graph, subject, predicate, 0U, 0U};
+  writer->context            = current;
+}
+
+static void
+pop_context(SerdWriter* writer)
+{
+  // Replace the current context with the top of the stack
+  free_context(&writer->context);
+  writer->context =
+    *(WriteContext*)(writer->anon_stack.buf + writer->anon_stack.size -
+                     sizeof(WriteContext));
+
+  // Pop the top of the stack away
+  serd_stack_pop(&writer->anon_stack, sizeof(WriteContext));
 }
 
 static size_t
@@ -451,7 +506,7 @@ write_newline(SerdWriter* writer)
   SerdStatus st = SERD_SUCCESS;
 
   TRY(st, esink("\n", 1, writer));
-  for (unsigned i = 0; i < writer->indent; ++i) {
+  for (int i = 0; i < writer->indent; ++i) {
     TRY(st, esink("\t", 1, writer));
   }
 
@@ -461,52 +516,70 @@ write_newline(SerdWriter* writer)
 SERD_NODISCARD static SerdStatus
 write_sep(SerdWriter* writer, const Sep sep)
 {
-  SerdStatus     st   = SERD_SUCCESS;
-  const SepRule* rule = &rules[sep];
-  if (rule->space_before) {
-    TRY(st, write_newline(writer));
+  SerdStatus           st   = SERD_SUCCESS;
+  const SepRule* const rule = &rules[sep];
+
+  const bool pre_line  = (rule->pre_line_after & (1U << writer->last_sep));
+  const bool post_line = (rule->post_line_after & (1U << writer->last_sep));
+
+  // Adjust indent, but tolerate if it would become negative
+  if (rule->indent && (pre_line || post_line)) {
+    writer->indent = ((rule->indent >= 0 || writer->indent >= -rule->indent)
+                        ? writer->indent + rule->indent
+                        : 0);
   }
 
-  if (rule->str) {
-    TRY(st, esink(rule->str, rule->len, writer));
+  // If this is the first comma, bump the increment for the following object
+  if (sep == SEP_END_O && !writer->context.comma_indented) {
+    ++writer->indent;
+    writer->context.comma_indented = true;
   }
 
-  if (rule->space_after_sep ||
-      (writer->last_sep == SEP_NODE && rule->space_after_node)) {
+  // Write newline or space before separator if necessary
+  if (pre_line) {
     TRY(st, write_newline(writer));
-  } else if (writer->last_sep && writer->last_sep != SEP_GRAPH_BEGIN &&
-             rule->space_after_node) {
+  } else if (rule->pre_space_after & (1U << writer->last_sep)) {
     TRY(st, esink(" ", 1, writer));
+  }
+
+  // Write actual separator string
+  if (rule->sep) {
+    TRY(st, esink(&rule->sep, 1, writer));
+  }
+
+  // Write newline after separator if necessary
+  if (post_line) {
+    TRY(st, write_newline(writer));
+    if (rule->post_line_after != ~(SepMask)0U) {
+      writer->last_sep = SEP_NEWLINE;
+    }
+  }
+
+  // Reset context and write a blank line after ends of subjects
+  if (sep == SEP_END_S) {
+    writer->indent                 = writer->context.graph.type ? 1 : 0;
+    writer->context.predicates     = false;
+    writer->context.comma_indented = false;
+    TRY(st, esink("\n", 1, writer));
   }
 
   writer->last_sep = sep;
   return st;
 }
 
-static SerdStatus
-free_context(WriteContext* const ctx)
-{
-  serd_node_free(&ctx->graph);
-  serd_node_free(&ctx->subject);
-  serd_node_free(&ctx->predicate);
-  ctx->graph.type     = SERD_NOTHING;
-  ctx->subject.type   = SERD_NOTHING;
-  ctx->predicate.type = SERD_NOTHING;
-  return SERD_SUCCESS;
-}
-
 static void
 free_anon_stack(SerdWriter* writer)
 {
   while (!serd_stack_is_empty(&writer->anon_stack)) {
-    free_context(anon_stack_top(writer));
-    serd_stack_pop(&writer->anon_stack, sizeof(WriteContext));
+    pop_context(writer);
   }
 }
 
 static SerdStatus
 reset_context(SerdWriter* writer, const unsigned flags)
 {
+  free_anon_stack(writer);
+
   if (flags & RESET_GRAPH) {
     writer->context.graph.type = SERD_NOTHING;
   }
@@ -515,8 +588,11 @@ reset_context(SerdWriter* writer, const unsigned flags)
     writer->indent = 0;
   }
 
+  writer->context.type           = CTX_NAMED;
   writer->context.subject.type   = SERD_NOTHING;
   writer->context.predicate.type = SERD_NOTHING;
+  writer->context.predicates     = false;
+  writer->context.comma_indented = false;
   return SERD_SUCCESS;
 }
 
@@ -694,20 +770,11 @@ write_blank(SerdWriter* const        writer,
 
   if (supports_abbrev(writer)) {
     if (is_inline_start(writer, field, flags)) {
-      ++writer->indent;
       return write_sep(writer, SEP_ANON_BEGIN);
     }
 
-    if (field == FIELD_SUBJECT && (flags & SERD_LIST_S_BEGIN)) {
-      assert(writer->list_depth == 0);
-      copy_node(&writer->list_subj, node);
-      ++writer->list_depth;
-      return write_sep(writer, SEP_LIST_BEGIN);
-    }
-
-    if (field == FIELD_OBJECT && (flags & SERD_LIST_O_BEGIN)) {
-      ++writer->indent;
-      ++writer->list_depth;
+    if ((field == FIELD_SUBJECT && (flags & SERD_LIST_S_BEGIN)) ||
+        (field == FIELD_OBJECT && (flags & SERD_LIST_O_BEGIN))) {
       return write_sep(writer, SEP_LIST_BEGIN);
     }
 
@@ -758,7 +825,10 @@ write_node(SerdWriter*        writer,
     break;
   }
 
-  writer->last_sep = SEP_NODE;
+  if (node->type != SERD_BLANK) {
+    writer->last_sep = SEP_NODE;
+  }
+
   return st;
 }
 
@@ -777,6 +847,8 @@ write_pred(SerdWriter* writer, SerdStatementFlags flags, const SerdNode* pred)
   TRY(st, write_sep(writer, SEP_P_O));
 
   copy_node(&writer->context.predicate, pred);
+  writer->context.predicates     = true;
+  writer->context.comma_indented = false;
   return st;
 }
 
@@ -791,14 +863,14 @@ write_list_next(SerdWriter*        writer,
   SerdStatus st = SERD_SUCCESS;
 
   if (!strcmp((const char*)object->buf, NS_RDF "nil")) {
-    deindent(writer);
     TRY(st, write_sep(writer, SEP_LIST_END));
     return SERD_FAILURE;
   }
 
   if (!strcmp((const char*)predicate->buf, NS_RDF "first")) {
-    TRY(st, write_sep(writer, SEP_LIST_SEP));
     TRY(st, write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
+  } else {
+    TRY(st, write_sep(writer, SEP_LIST_SEP));
   }
 
   return st;
@@ -837,6 +909,7 @@ serd_writer_write_statement(SerdWriter*        writer,
     return SERD_ERR_BAD_ARG;
   }
 
+  // Simple case: write a line of NTriples or NQuads
   if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
     TRY(st, write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags));
     TRY(st, esink(" ", 1, writer));
@@ -851,6 +924,7 @@ serd_writer_write_statement(SerdWriter*        writer,
     return SERD_SUCCESS;
   }
 
+  // Separate graphs if necessary
   if ((graph && !serd_node_equals(graph, &writer->context.graph)) ||
       (!graph && writer->context.graph.type)) {
     TRY(st, terminate_context(writer));
@@ -858,69 +932,76 @@ serd_writer_write_statement(SerdWriter*        writer,
     if (graph) {
       TRY(st, write_newline(writer));
       TRY(st, write_node(writer, graph, datatype, lang, FIELD_GRAPH, flags));
-      ++writer->indent;
       TRY(st, write_sep(writer, SEP_GRAPH_BEGIN));
       copy_node(&writer->context.graph, graph);
     }
   }
 
   if ((flags & SERD_LIST_CONT)) {
+    // Continue a list
+    if (!strcmp((const char*)predicate->buf, NS_RDF "first") &&
+        !strcmp((const char*)object->buf, NS_RDF "nil")) {
+      return esink("()", 2, writer);
+    }
+
     TRY_FAILING(
       st, write_list_next(writer, flags, predicate, object, datatype, lang));
 
-    if (st == SERD_FAILURE) {
-      // Reached end of list
-      if (--writer->list_depth == 0 && writer->list_subj.type) {
-        reset_context(writer, 0U);
-        serd_node_free(&writer->context.subject);
-        writer->context.subject = writer->list_subj;
-        writer->list_subj       = SERD_NODE_NULL;
-      }
+    if (st == SERD_FAILURE) { // Reached end of list
+      pop_context(writer);
       return SERD_SUCCESS;
     }
 
   } else if (serd_node_equals(subject, &writer->context.subject)) {
     if (serd_node_equals(predicate, &writer->context.predicate)) {
-      // Abbreviate S P
-      if (!(flags & SERD_ANON_O_BEGIN)) {
-        ++writer->indent;
-      }
-      TRY(st, write_sep(writer, SEP_END_O));
-      TRY(st, write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
-      if (!(flags & SERD_ANON_O_BEGIN)) {
-        deindent(writer);
-      }
+      // Elide S P (write O)
+
+      const Sep  last      = writer->last_sep;
+      const bool anon_o    = flags & SERD_ANON_O_BEGIN;
+      const bool list_o    = flags & SERD_LIST_O_BEGIN;
+      const bool open_o    = anon_o || list_o;
+      const bool after_end = (last == SEP_ANON_END) || (last == SEP_LIST_END);
+
+      TRY(st,
+          write_sep(writer,
+                    after_end ? (open_o ? SEP_JOIN_O_AA : SEP_JOIN_O_AN)
+                              : (open_o ? SEP_JOIN_O_NA : SEP_END_O)));
+
     } else {
-      // Abbreviate S
-      Sep sep = writer->context.predicate.type ? SEP_END_P : SEP_S_P;
-      TRY(st, write_sep(writer, sep));
-      TRY(st, write_pred(writer, flags, predicate));
-      TRY(st, write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
-    }
-  } else {
-    // No abbreviation
-    if (writer->context.subject.type) {
-      deindent(writer);
-      if (serd_stack_is_empty(&writer->anon_stack)) {
-        TRY(st, write_sep(writer, SEP_END_S));
+      // Elide S (write P and O)
+
+      if (writer->context.comma_indented) {
+        --writer->indent;
+        writer->context.comma_indented = false;
       }
+
+      const bool first = !writer->context.predicate.type;
+      TRY(st, write_sep(writer, first ? SEP_S_P : SEP_END_P));
+      TRY(st, write_pred(writer, flags, predicate));
     }
 
-    if (!(flags & SERD_ANON_CONT)) {
+    TRY(st, write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
+
+  } else {
+    // No abbreviation
+    if (serd_stack_is_empty(&writer->anon_stack)) {
+      if (writer->context.subject.type) {
+        TRY(st, write_sep(writer, SEP_END_S));
+      }
+
       if (writer->last_sep == SEP_END_S || writer->last_sep == SEP_END_DIRECT) {
         TRY(st, write_newline(writer));
       }
 
       TRY(st, write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags));
-      if ((flags & SERD_ANON_S_BEGIN)) {
+      if ((flags & (SERD_ANON_S_BEGIN | SERD_LIST_S_BEGIN))) {
         TRY(st, write_sep(writer, SEP_ANON_S_P));
       } else {
-        ++writer->indent;
         TRY(st, write_sep(writer, SEP_S_P));
       }
 
     } else {
-      ++writer->indent;
+      TRY(st, write_sep(writer, SEP_ANON_S_P));
     }
 
     reset_context(writer, 0U);
@@ -933,23 +1014,26 @@ serd_writer_write_statement(SerdWriter*        writer,
     TRY(st, write_node(writer, object, datatype, lang, FIELD_OBJECT, flags));
   }
 
-  if (flags & (SERD_ANON_S_BEGIN | SERD_ANON_O_BEGIN)) {
-    WriteContext* ctx =
-      (WriteContext*)serd_stack_push(&writer->anon_stack, sizeof(WriteContext));
-    *ctx                     = writer->context;
-    WriteContext new_context = {
-      serd_node_copy(graph), serd_node_copy(subject), SERD_NODE_NULL};
-    if ((flags & SERD_ANON_S_BEGIN)) {
-      new_context.predicate = serd_node_copy(predicate);
-    }
-    writer->context = new_context;
-  } else {
-    copy_node(&writer->context.graph, graph);
-    copy_node(&writer->context.subject, subject);
-    copy_node(&writer->context.predicate, predicate);
+  if (flags & (SERD_ANON_S_BEGIN | SERD_LIST_S_BEGIN)) {
+    // Push context for anonymous or list subject
+    const bool is_list = (flags & SERD_LIST_S_BEGIN);
+    push_context(writer,
+                 is_list ? CTX_LIST : CTX_BLANK,
+                 serd_node_copy(graph),
+                 serd_node_copy(subject),
+                 is_list ? SERD_NODE_NULL : serd_node_copy(predicate));
   }
 
-  return SERD_SUCCESS;
+  if (flags & (SERD_ANON_O_BEGIN | SERD_LIST_O_BEGIN)) {
+    // Push context for anonymous or list object if necessary
+    push_context(writer,
+                 (flags & SERD_LIST_O_BEGIN) ? CTX_LIST : CTX_BLANK,
+                 serd_node_copy(graph),
+                 serd_node_copy(object),
+                 SERD_NODE_NULL);
+  }
+
+  return st;
 }
 
 SerdStatus
@@ -961,19 +1045,17 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
     return SERD_SUCCESS;
   }
 
-  if (serd_stack_is_empty(&writer->anon_stack) || writer->indent == 0) {
+  if (serd_stack_is_empty(&writer->anon_stack)) {
     return w_err(
       writer, SERD_ERR_UNKNOWN, "unexpected end of anonymous node\n");
   }
 
-  deindent(writer);
+  // Write the end separator ']' and pop the context
   TRY(st, write_sep(writer, SEP_ANON_END));
-  free_context(&writer->context);
-  writer->context = *anon_stack_top(writer);
-  serd_stack_pop(&writer->anon_stack, sizeof(WriteContext));
-  const bool is_subject = serd_node_equals(node, &writer->context.subject);
-  if (is_subject) {
-    copy_node(&writer->context.subject, node);
+  pop_context(writer);
+
+  if (serd_node_equals(node, &writer->context.subject)) {
+    // Now-finished anonymous node is the new subject with no other context
     writer->context.predicate.type = SERD_NOTHING;
   }
 
@@ -985,9 +1067,8 @@ serd_writer_finish(SerdWriter* writer)
 {
   const SerdStatus st0 = terminate_context(writer);
   const SerdStatus st1 = serd_byte_sink_flush(&writer->byte_sink);
-  free_context(&writer->context);
-  writer->indent  = 0;
-  writer->context = WRITE_CONTEXT_NULL;
+  free_anon_stack(writer);
+  reset_context(writer, RESET_GRAPH | RESET_INDENT);
   return st0 ? st0 : st1;
 }
 
@@ -1010,7 +1091,6 @@ serd_writer_new(SerdSyntax     syntax,
   writer->base_uri   = base_uri ? *base_uri : SERD_URI_NULL;
   writer->anon_stack = serd_stack_new(SERD_PAGE_SIZE);
   writer->context    = context;
-  writer->list_subj  = SERD_NODE_NULL;
   writer->byte_sink  = serd_byte_sink_new(
     ssink, stream, (style & SERD_STYLE_BULK) ? SERD_PAGE_SIZE : 1);
 
@@ -1111,6 +1191,7 @@ serd_writer_free(SerdWriter* writer)
   }
 
   serd_writer_finish(writer);
+  free_context(&writer->context);
   free_anon_stack(writer);
   serd_stack_free(&writer->anon_stack);
   free(writer->bprefix);

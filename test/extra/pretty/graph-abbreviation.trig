@@ -53,7 +53,8 @@
 		:lists (
 			[
 				rdf:value 7
-			] [
+			]
+			[
 				rdf:value 8
 			]
 		) .
