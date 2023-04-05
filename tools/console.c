@@ -3,8 +3,15 @@
 
 #include "console.h"
 
-#include "serd/serd.h"
+#include "serd/log.h"
+#include "serd/node.h"
+#include "serd/stream.h"
+#include "serd/string.h"
+#include "serd/syntax.h"
+#include "serd/uri.h"
+#include "serd/version.h"
 #include "zix/allocator.h"
+#include "zix/attributes.h"
 #include "zix/filesystem.h"
 
 #ifdef _WIN32
@@ -15,8 +22,82 @@
 #  include <io.h>
 #endif
 
+#include <errno.h>
+#include <limits.h>
+#include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
+
+ZIX_PURE_FUNC
+bool
+serd_option_iter_is_end(const OptionIter iter)
+{
+  return iter.a >= iter.argc || iter.argv[iter.a][0] != '-' ||
+         !iter.argv[iter.a][iter.f];
+}
+
+SerdStatus
+serd_option_iter_advance(OptionIter* const iter)
+{
+  if (!iter->argv[iter->a][++iter->f]) {
+    ++iter->a;
+    iter->f = 1;
+  }
+
+  return SERD_SUCCESS;
+}
+
+SerdStatus
+serd_tool_setup(SerdTool* const   tool,
+                const char* const program,
+                SerdCommonOptions options)
+{
+  // Open the output first, since if that fails we have nothing to do
+  const char* const out_path = options.out_filename;
+  if (!((tool->out = serd_open_tool_output(out_path)).stream)) {
+    fprintf(stderr,
+            "%s: failed to open output file (%s)\n",
+            program,
+            strerror(errno));
+    return SERD_ERR_UNKNOWN;
+  }
+
+  // We have something to write to, so build the writing environment
+  if (!(tool->world = serd_world_new()) ||
+      !(tool->env =
+          serd_create_env(program, options.base_uri, options.out_filename)) ||
+      !(tool->writer = serd_writer_new(
+          tool->world,
+          serd_choose_syntax(
+            tool->world, options.output, options.out_filename, SERD_NQUADS),
+          options.output.flags,
+          tool->env,
+          &tool->out,
+          options.block_size))) {
+    fprintf(stderr, "%s: failed to set up writing environment\n", program);
+    return SERD_ERR_INTERNAL;
+  }
+
+  return SERD_SUCCESS;
+}
+
+SerdStatus
+serd_tool_cleanup(SerdTool tool)
+{
+  SerdStatus st = SERD_SUCCESS;
+  if (tool.out.stream) {
+    // Close the output stream explicitly to check if there were any errors
+    if ((st = serd_close_output(&tool.out))) {
+      perror("write error");
+    }
+  }
+
+  serd_writer_free(tool.writer);
+  serd_env_free(tool.env);
+  serd_world_free(tool.world);
+  return st;
+}
 
 void
 serd_set_stream_utf8_mode(FILE* const stream)
@@ -28,7 +109,7 @@ serd_set_stream_utf8_mode(FILE* const stream)
 #endif
 }
 
-int
+SerdStatus
 serd_print_version(const char* const program)
 {
   printf("%s %d.%d.%d <http://drobilla.net/software/serd>\n",
@@ -42,7 +123,43 @@ serd_print_version(const char* const program)
          "This is free software; you are free to change and redistribute it.\n"
          "There is NO WARRANTY, to the extent permitted by law.\n");
 
-  return 0;
+  return SERD_FAILURE;
+}
+
+SerdStatus
+serd_get_argument(OptionIter* const iter, const char** const argument)
+{
+  const char flag = iter->argv[iter->a][iter->f++];
+
+  if (iter->argv[iter->a][iter->f] || (iter->a + 1) == iter->argc) {
+    fprintf(
+      stderr, "%s: option requires an argument -- %c\n", iter->argv[0], flag);
+    return SERD_ERR_BAD_ARG;
+  }
+
+  *argument = iter->argv[++iter->a];
+  ++iter->a;
+  iter->f = 1;
+  return SERD_SUCCESS;
+}
+
+SerdStatus
+serd_get_size_argument(OptionIter* const iter, size_t* const argument)
+{
+  SerdStatus  st     = SERD_SUCCESS;
+  const char* string = NULL;
+  if ((st = serd_get_argument(iter, &string))) {
+    return st;
+  }
+
+  char*      endptr = NULL;
+  const long size   = strtol(string, &endptr, 10);
+  if (size <= 0 || size == LONG_MAX || *endptr != '\0') {
+    return SERD_ERR_BAD_ARG;
+  }
+
+  *argument = (size_t)size;
+  return SERD_SUCCESS;
 }
 
 SerdStatus
@@ -78,7 +195,26 @@ serd_set_input_option(const SerdStringView   name,
     }
   }
 
-  return SERD_FAILURE;
+  return SERD_ERR_BAD_ARG;
+}
+
+SerdStatus
+serd_parse_input_argument(OptionIter* const        iter,
+                          SerdSyntaxOptions* const options)
+{
+  SerdStatus  st       = SERD_SUCCESS;
+  const char* argument = NULL;
+
+  if (!(st = serd_get_argument(iter, &argument))) {
+    if ((st = serd_set_input_option(
+           serd_string(argument), &options->syntax, &options->flags))) {
+      fprintf(stderr, "%s: unknown option \"%s\"\n", iter->argv[0], argument);
+    } else if (!strcmp(argument, "empty") || options->syntax) {
+      options->overridden = true;
+    }
+  }
+
+  return st;
 }
 
 SerdStatus
@@ -114,16 +250,98 @@ serd_set_output_option(const SerdStringView   name,
     }
   }
 
+  return SERD_ERR_BAD_ARG;
+}
+
+SerdStatus
+serd_parse_output_argument(OptionIter* const        iter,
+                           SerdSyntaxOptions* const options)
+{
+  SerdStatus  st       = SERD_SUCCESS;
+  const char* argument = NULL;
+
+  if (!(st = serd_get_argument(iter, &argument))) {
+    if ((st = serd_set_output_option(
+           serd_string(argument), &options->syntax, &options->flags))) {
+      fprintf(stderr, "%s: unknown option \"%s\"\n", iter->argv[0], argument);
+    } else if (!strcmp(argument, "empty") || options->syntax) {
+      options->overridden = true;
+    }
+  }
+
+  return st;
+}
+
+SerdStatus
+serd_parse_common_option(OptionIter* const iter, SerdCommonOptions* const opts)
+{
+  const char opt = iter->argv[iter->a][iter->f];
+  switch (opt) {
+  case 'B':
+    return serd_get_argument(iter, &opts->base_uri);
+
+  case 'I':
+    return serd_parse_input_argument(iter, &opts->input);
+
+  case 'O':
+    return serd_parse_output_argument(iter, &opts->output);
+
+  case 'b':
+    return serd_get_size_argument(iter, &opts->block_size);
+
+  case 'k':
+    return serd_get_size_argument(iter, &opts->stack_size);
+
+  case 'o':
+    return serd_get_argument(iter, &opts->out_filename);
+
+  default:
+    break;
+  }
+
   return SERD_FAILURE;
 }
 
-SerdSyntax
-serd_choose_syntax(SerdWorld* const  world,
-                   const SerdSyntax  requested,
-                   const char* const filename)
+SerdEnv*
+serd_create_env(const char* const program,
+                const char* const base_string,
+                const char* const out_filename)
 {
-  if (requested) {
-    return requested;
+  const bool is_rebase = base_string && !strcmp(base_string, "rebase");
+  if (is_rebase && !out_filename) {
+    fprintf(stderr, "%s: rebase requires an output filename\n", program);
+    return NULL;
+  }
+
+  if (base_string && serd_uri_string_has_scheme(base_string)) {
+    return serd_env_new(serd_string(base_string));
+  }
+
+  SerdEnv* const env = serd_env_new(serd_empty_string());
+  if (base_string && base_string[0]) {
+    const SerdStatus st = serd_set_base_uri_from_path(env, base_string);
+    if (st) {
+      fprintf(stderr, "%s: invalid base URI \"%s\"\n", program, base_string);
+      serd_env_free(env);
+      return NULL;
+    }
+  }
+
+  return env;
+}
+
+SerdSyntax
+serd_choose_syntax(SerdWorld* const        world,
+                   const SerdSyntaxOptions options,
+                   const char* const       filename,
+                   const SerdSyntax        fallback)
+{
+  if (options.overridden || options.syntax != SERD_SYNTAX_EMPTY) {
+    return options.syntax;
+  }
+
+  if (!filename || !strcmp(filename, "-")) {
+    return fallback;
   }
 
   const SerdSyntax guessed = serd_guess_syntax(filename);
@@ -185,17 +403,94 @@ serd_open_tool_output(const char* const filename)
 SerdStatus
 serd_set_base_uri_from_path(SerdEnv* const env, const char* const path)
 {
-  char* const input_path = zix_canonical_path(NULL, path);
-  if (!input_path) {
+  const size_t path_len = path ? strlen(path) : 0U;
+  if (!path_len) {
     return SERD_ERR_BAD_ARG;
   }
 
-  SerdNode* const file_uri =
-    serd_new_file_uri(serd_string(input_path), serd_empty_string());
+  char* const real_path = zix_canonical_path(NULL, path);
+  if (!real_path) {
+    return SERD_ERR_BAD_ARG;
+  }
 
-  serd_env_set_base_uri(env, serd_node_string_view(file_uri));
-  serd_node_free(file_uri);
-  zix_free(NULL, input_path);
+  const size_t real_path_len = strlen(real_path);
+  SerdNode*    base_node     = NULL;
+  if (path[path_len - 1] == '/' || path[path_len - 1] == '\\') {
+    char* const base_path = (char*)calloc(real_path_len + 2, 1);
+    memcpy(base_path, real_path, real_path_len + 1);
+    base_path[real_path_len] = path[path_len - 1];
+
+    base_node = serd_new_file_uri(serd_string(base_path), serd_empty_string());
+    free(base_path);
+  } else {
+    base_node = serd_new_file_uri(serd_string(real_path), serd_empty_string());
+  }
+
+  serd_env_set_base_uri(env, serd_node_string_view(base_node));
+  serd_node_free(base_node);
+  zix_free(NULL, real_path);
 
   return SERD_SUCCESS;
+}
+
+SerdStatus
+serd_read_source(SerdWorld* const        world,
+                 const SerdCommonOptions opts,
+                 SerdEnv* const          env,
+                 const SerdSyntax        syntax,
+                 SerdInputStream* const  in,
+                 const char* const       name,
+                 const SerdSink* const   sink)
+{
+  SerdReader* const reader = serd_reader_new(
+    world, syntax, opts.input.flags, env, sink, opts.stack_size);
+
+  SerdNode* const name_node = serd_new_string(serd_string(name));
+  SerdStatus st = serd_reader_start(reader, in, name_node, opts.block_size);
+  serd_node_free(name_node);
+  if (!st) {
+    st = serd_reader_read_document(reader);
+  }
+
+  serd_reader_free(reader);
+  return st;
+}
+
+SerdStatus
+serd_read_inputs(SerdWorld* const        world,
+                 const SerdCommonOptions opts,
+                 SerdEnv* const          env,
+                 const intptr_t          n_inputs,
+                 char* const* const      inputs,
+                 const SerdSink* const   sink)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  for (intptr_t i = 0; !st && i < n_inputs; ++i) {
+    // Use the filename as the base URI if possible if user didn't override it
+    const char* const in_path = inputs[i];
+    if (!opts.base_uri[0] && !!strcmp(in_path, "-")) {
+      serd_set_base_uri_from_path(env, in_path);
+    }
+
+    // Open the input stream
+    SerdInputStream in = serd_open_tool_input(in_path);
+    if (!in.stream) {
+      return SERD_ERR_BAD_ARG;
+    }
+
+    // Read the entire file
+    st = serd_read_source(
+      world,
+      opts,
+      env,
+      serd_choose_syntax(world, opts.input, in_path, SERD_TRIG),
+      &in,
+      !strcmp(in_path, "-") ? "stdin" : in_path,
+      sink);
+
+    serd_close_input(&in);
+  }
+
+  return st;
 }
