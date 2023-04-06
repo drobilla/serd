@@ -17,6 +17,7 @@
 		<#test-blankdot>
 		<#test-bom>
 		<#test-changing-base>
+		<#test-comment-whitespace>
 		<#test-cr>
 		<#test-digit-start-pname>
 		<#test-double>
@@ -105,6 +106,12 @@
 	mf:action <test-changing-base.ttl> ;
 	mf:name "test-changing-base" ;
 	mf:result <test-changing-base.nt> .
+
+<#test-comment-whitespace>
+	a rdft:TestTurtleEval ;
+	mf:action <test-comment-whitespace.ttl> ;
+	mf:name "test-comment-whitespace" ;
+	mf:result <test-comment-whitespace.nt> .
 
 <#test-cr>
 	a rdft:TestTurtleEval ;
