@@ -365,7 +365,7 @@ read_STRING_LITERAL_LONG(SerdReader* const    reader,
         st = read_character(reader, ref, flags, (uint8_t)q2);
       }
     } else if (c == EOF) {
-      return r_err(reader, SERD_ERR_BAD_SYNTAX, "end of file in long string\n");
+      st = r_err(reader, SERD_ERR_BAD_SYNTAX, "end of file in long string\n");
     } else {
       st =
         read_character(reader, ref, flags, (uint8_t)eat_byte_safe(reader, c));
@@ -396,9 +396,7 @@ read_STRING_LITERAL(SerdReader* const    reader,
       return r_err(reader, SERD_ERR_BAD_SYNTAX, "line end in short string\n");
     case '\\':
       skip_byte(reader, c);
-      if ((st = read_string_escape(reader, ref, flags))) {
-        return st;
-      }
+      TRY(st, read_string_escape(reader, ref, flags));
       break;
     default:
       if (c == q) {
@@ -464,20 +462,26 @@ read_PN_CHARS_BASE(SerdReader* const reader, const Ref dest)
   uint32_t   code = 0;
   const int  c    = peek_byte(reader);
   SerdStatus st   = SERD_SUCCESS;
+
   if (is_alpha(c)) {
-    push_byte(reader, dest, eat_byte_safe(reader, c));
-  } else if (c == EOF || !(c & 0x80)) {
+    return push_byte(reader, dest, eat_byte_safe(reader, c));
+  }
+
+  if (c == EOF || !(c & 0x80)) {
     return SERD_FAILURE;
-  } else if ((st = read_utf8_code(
-                reader, dest, &code, (uint8_t)eat_byte_safe(reader, c)))) {
-    return st;
-  } else if (!is_PN_CHARS_BASE(code)) {
+  }
+
+  skip_byte(reader, c);
+  read_utf8_code(reader, dest, &code, (uint8_t)c);
+
+  if (!is_PN_CHARS_BASE(code)) {
     r_err(
       reader, SERD_ERR_BAD_SYNTAX, "invalid character U+%04X in name\n", code);
     if (reader->strict) {
       return SERD_ERR_BAD_SYNTAX;
     }
   }
+
   return st;
 }
 
@@ -494,17 +498,23 @@ read_PN_CHARS(SerdReader* const reader, const Ref dest)
   uint32_t   code = 0;
   const int  c    = peek_byte(reader);
   SerdStatus st   = SERD_SUCCESS;
+
   if (is_alpha(c) || is_digit(c) || c == '_' || c == '-') {
-    push_byte(reader, dest, eat_byte_safe(reader, c));
-  } else if (c == EOF || !(c & 0x80)) {
+    return push_byte(reader, dest, eat_byte_safe(reader, c));
+  }
+
+  if (c == EOF || !(c & 0x80)) {
     return SERD_FAILURE;
-  } else if ((st = read_utf8_code(
-                reader, dest, &code, (uint8_t)eat_byte_safe(reader, c)))) {
-    return st;
-  } else if (!is_PN_CHARS(code)) {
+  }
+
+  skip_byte(reader, c);
+  TRY(st, read_utf8_code(reader, dest, &code, (uint8_t)c));
+
+  if (!is_PN_CHARS(code)) {
     return r_err(
       reader, SERD_ERR_BAD_SYNTAX, "invalid character U+%04X in name\n", code);
   }
+
   return st;
 }
 
@@ -596,7 +606,9 @@ read_PN_LOCAL(SerdReader* const reader, const Ref dest, bool* const ate_dot)
   default:
     if ((st = read_PLX(reader, dest)) > SERD_FAILURE) {
       return r_err(reader, st, "bad escape\n");
-    } else if (st != SERD_SUCCESS && read_PN_CHARS_BASE(reader, dest)) {
+    }
+
+    if (st != SERD_SUCCESS && read_PN_CHARS_BASE(reader, dest)) {
       return SERD_FAILURE;
     }
   }
@@ -802,8 +814,8 @@ read_PrefixedName(SerdReader* const reader,
                   bool* const       ate_dot)
 {
   SerdStatus st = SERD_SUCCESS;
-  if (read_prefix && ((st = read_PN_PREFIX(reader, dest)) > SERD_FAILURE)) {
-    return st;
+  if (read_prefix) {
+    TRY_FAILING(st, read_PN_PREFIX(reader, dest));
   }
 
   if (peek_byte(reader) != ':') {
@@ -812,9 +824,8 @@ read_PrefixedName(SerdReader* const reader,
 
   push_byte(reader, dest, eat_byte_safe(reader, ':'));
 
-  st = read_PN_LOCAL(reader, dest, ate_dot);
-
-  return (st > SERD_FAILURE) ? st : SERD_SUCCESS;
+  TRY_FAILING(st, read_PN_LOCAL(reader, dest, ate_dot));
+  return SERD_SUCCESS;
 }
 
 static SerdStatus
@@ -1486,9 +1497,7 @@ read_prefixID(SerdReader* const reader, const bool sparql, const bool token)
 
   read_ws_star(reader);
   Ref name = push_node(reader, SERD_LITERAL, "", 0);
-  if ((st = read_PN_PREFIX(reader, name)) > SERD_FAILURE) {
-    return st;
-  }
+  TRY_FAILING(st, read_PN_PREFIX(reader, name));
 
   if (eat_byte_check(reader, ':') != ':') {
     pop_node(reader, name);
@@ -1631,10 +1640,7 @@ read_n3_statement(SerdReader* const reader)
     }
     break;
   default:
-    if ((st = read_subject(reader, ctx, &ctx.subject, &s_type)) >
-        SERD_FAILURE) {
-      return st;
-    }
+    TRY_FAILING(st, read_subject(reader, ctx, &ctx.subject, &s_type));
 
     if (!tokcmp(reader, ctx.subject, "base", 4)) {
       st = read_base(reader, true, false);

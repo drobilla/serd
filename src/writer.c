@@ -1124,10 +1124,9 @@ serd_writer_chop_blank_prefix(SerdWriter* writer, const uint8_t* prefix)
 SerdStatus
 serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 {
-  SerdStatus st = serd_env_set_base_uri(writer->env, uri);
-  if (st) {
-    return st;
-  }
+  SerdStatus st = SERD_SUCCESS;
+
+  TRY(st, serd_env_set_base_uri(writer->env, uri));
 
   serd_env_get_base_uri(writer->env, &writer->base_uri);
 
@@ -1164,10 +1163,9 @@ serd_writer_set_prefix(SerdWriter*     writer,
                        const SerdNode* name,
                        const SerdNode* uri)
 {
-  SerdStatus st = serd_env_set_prefix(writer->env, name, uri);
-  if (st) {
-    return st;
-  }
+  SerdStatus st = SERD_SUCCESS;
+
+  TRY(st, serd_env_set_prefix(writer->env, name, uri));
 
   if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
     TRY(st, terminate_context(writer));
