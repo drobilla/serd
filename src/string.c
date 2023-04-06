@@ -44,6 +44,8 @@ serd_strerror(const SerdStatus status)
     return "Error writing to file/stream";
   case SERD_ERR_OVERFLOW:
     return "Stack overflow";
+  case SERD_ERR_BAD_TEXT:
+    return "Invalid text encoding";
   }
 
   return "Unknown error";
