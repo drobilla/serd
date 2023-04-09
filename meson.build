@@ -13,7 +13,7 @@ project(
   ],
   license: 'ISC',
   meson_version: '>= 0.56.0',
-  version: '0.31.1',
+  version: '0.31.3',
 )
 
 serd_src_root = meson.current_source_dir()

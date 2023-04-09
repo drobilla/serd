@@ -10,6 +10,7 @@
 #endif
 
 #include <assert.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -19,12 +20,40 @@
 #define USTR(s) ((const uint8_t*)(s))
 
 typedef struct {
+  size_t n_written;
+  size_t error_offset;
+} ErrorContext;
+
+typedef struct {
   int             n_base;
   int             n_prefix;
   int             n_statement;
   int             n_end;
   const SerdNode* graph;
 } ReaderTest;
+
+static const char* const doc_string =
+  "@base <http://drobilla.net/> .\n"
+  "@prefix eg: <http://example.org/> .\n"
+  "eg:g {\n"
+  "<http://example.com/s> eg:p \"l\\n\\\"it\" ,\n"
+  "  \"\"\"long\"\"\" ,\n"
+  "  \"lang\"@en ;\n"
+  "  eg:p <http://example.com/o> .\n"
+  "}\n"
+  "eg:s\n"
+  "  <http://example.org/p> [\n"
+  "    eg:p 3.0 ,\n"
+  "      4 ,\n"
+  "      \"lit\" ,\n"
+  "      _:n42 ,\n"
+  "      \"t\"^^eg:T\n"
+  "  ] ;\n"
+  "  eg:p () ;\n"
+  "  eg:p\\!q (\"s\" 1 2.0 \"l\"@en eg:o) .\n"
+  "[] eg:p eg:o .\n"
+  "[ eg:p eg:o ] eg:q eg:r .\n"
+  "( eg:o ) eg:t eg:u .\n";
 
 static SerdStatus
 test_base_sink(void* handle, const SerdNode* uri)
@@ -250,6 +279,73 @@ test_read_string(void)
   serd_reader_free(reader);
 }
 
+static size_t
+faulty_sink(const void* const buf, const size_t len, void* const stream)
+{
+  (void)buf;
+  (void)len;
+
+  ErrorContext* const ctx           = (ErrorContext*)stream;
+  const size_t        new_n_written = ctx->n_written + len;
+  if (new_n_written >= ctx->error_offset) {
+    errno = EINVAL;
+    return 0U;
+  }
+
+  ctx->n_written += len;
+  errno = 0;
+  return len;
+}
+
+static SerdStatus
+quiet_error_sink(void* const handle, const SerdError* const e)
+{
+  (void)handle;
+  (void)e;
+  return SERD_SUCCESS;
+}
+
+static void
+test_write_errors(void)
+{
+  ErrorContext    ctx   = {0U, 0U};
+  const SerdStyle style = (SerdStyle)(SERD_STYLE_STRICT | SERD_STYLE_CURIED);
+
+  const size_t max_offsets[] = {0, 386, 1911, 2003, 386};
+
+  // Test errors at different offsets to hit different code paths
+  for (unsigned s = 1; s <= (unsigned)SERD_TRIG; ++s) {
+    const SerdSyntax syntax = (SerdSyntax)s;
+    for (size_t o = 0; o < max_offsets[s]; ++o) {
+      ctx.n_written    = 0;
+      ctx.error_offset = o;
+
+      SerdEnv* const    env = serd_env_new(NULL);
+      SerdWriter* const writer =
+        serd_writer_new(syntax, style, env, NULL, faulty_sink, &ctx);
+
+      SerdReader* const reader =
+        serd_reader_new(SERD_TRIG,
+                        writer,
+                        NULL,
+                        (SerdBaseSink)serd_writer_set_base_uri,
+                        (SerdPrefixSink)serd_writer_set_prefix,
+                        (SerdStatementSink)serd_writer_write_statement,
+                        (SerdEndSink)serd_writer_end_anon);
+
+      serd_reader_set_error_sink(reader, quiet_error_sink, NULL);
+      serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
+
+      const SerdStatus st = serd_reader_read_string(reader, USTR(doc_string));
+      assert(st == SERD_ERR_BAD_WRITE);
+
+      serd_reader_free(reader);
+      serd_writer_free(writer);
+      serd_env_free(env);
+    }
+  }
+}
+
 static void
 test_writer(const char* const path)
 {
@@ -470,6 +566,7 @@ main(void)
 
   test_read_chunks(path);
   test_read_string();
+  test_write_errors();
 
   test_writer(path);
   test_reader(path);

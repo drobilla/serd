@@ -144,7 +144,8 @@ choose_style(const SerdSyntax input_syntax,
              const SerdSyntax output_syntax,
              const bool       ascii,
              const bool       bulk_write,
-             const bool       full_uris)
+             const bool       full_uris,
+             const bool       lax)
 {
   unsigned output_style = 0U;
   if (output_syntax == SERD_NTRIPLES || ascii) {
@@ -164,6 +165,10 @@ choose_style(const SerdSyntax input_syntax,
 
   if (bulk_write) {
     output_style |= SERD_STYLE_BULK;
+  }
+
+  if (!lax) {
+    output_style |= SERD_STYLE_STRICT;
   }
 
   return (SerdStyle)output_style;
@@ -301,8 +306,8 @@ main(int argc, char** argv)
          : SERD_NQUADS);
   }
 
-  const SerdStyle output_style =
-    choose_style(input_syntax, output_syntax, ascii, bulk_write, full_uris);
+  const SerdStyle output_style = choose_style(
+    input_syntax, output_syntax, ascii, bulk_write, full_uris, lax);
 
   SerdURI  base_uri = SERD_URI_NULL;
   SerdNode base     = SERD_NODE_NULL;

@@ -608,8 +608,8 @@ read_PN_LOCAL(SerdReader* const reader, const Ref dest, bool* const ate_dot)
       return r_err(reader, st, "bad escape\n");
     }
 
-    if (st != SERD_SUCCESS && read_PN_CHARS_BASE(reader, dest)) {
-      return SERD_FAILURE;
+    if (st != SERD_SUCCESS && (st = read_PN_CHARS_BASE(reader, dest))) {
+      return st;
     }
   }
 
@@ -659,11 +659,9 @@ read_PN_PREFIX_tail(SerdReader* const reader, const Ref dest)
 static SerdStatus
 read_PN_PREFIX(SerdReader* const reader, const Ref dest)
 {
-  if (!read_PN_CHARS_BASE(reader, dest)) {
-    return read_PN_PREFIX_tail(reader, dest);
-  }
+  const SerdStatus st = read_PN_CHARS_BASE(reader, dest);
 
-  return SERD_FAILURE;
+  return st ? st : read_PN_PREFIX_tail(reader, dest);
 }
 
 static SerdStatus
@@ -989,10 +987,11 @@ read_verb(SerdReader* const reader, Ref* const dest)
     return SERD_SUCCESS;
   }
 
-  if (st > SERD_FAILURE || read_PrefixedName(reader, *dest, false, &ate_dot) ||
-      ate_dot) {
+  if (st > SERD_FAILURE ||
+      (st = read_PrefixedName(reader, *dest, false, &ate_dot)) || ate_dot) {
     *dest = pop_node(reader, *dest);
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "bad verb\n");
+    st    = st > SERD_FAILURE ? st : SERD_ERR_BAD_SYNTAX;
+    return r_err(reader, st, "bad verb\n");
   }
 
   return SERD_SUCCESS;
@@ -1125,8 +1124,9 @@ read_anon(SerdReader* const reader,
     *ctx.flags = old_flags;
   }
 
-  return (eat_byte_check(reader, ']') == ']') ? SERD_SUCCESS
-                                              : SERD_ERR_BAD_SYNTAX;
+  return st > SERD_FAILURE                      ? st
+         : (eat_byte_check(reader, ']') == ']') ? SERD_SUCCESS
+                                                : SERD_ERR_BAD_SYNTAX;
 }
 
 /* If emit is true: recurses, calling statement_sink for every statement
@@ -1394,7 +1394,7 @@ read_subject(SerdReader* const reader,
   bool       ate_dot = false;
   switch ((*s_type = peek_byte(reader))) {
   case '[':
-    read_anon(reader, ctx, true, dest);
+    st = read_anon(reader, ctx, true, dest);
     break;
   case '(':
     st = read_collection(reader, ctx, dest);
@@ -1567,9 +1567,8 @@ read_wrappedGraph(SerdReader* const reader, ReadContext* const ctx)
       return r_err(reader, SERD_ERR_BAD_SYNTAX, "bad subject\n");
     }
 
-    if (read_triples(reader, *ctx, &ate_dot) && s_type != '[') {
-      return r_err(
-        reader, SERD_ERR_BAD_SYNTAX, "missing predicate object list\n");
+    if ((st = read_triples(reader, *ctx, &ate_dot)) && s_type != '[') {
+      return r_err(reader, st, "bad predicate object list\n");
     }
 
     ctx->subject = pop_node(reader, ctx->subject);

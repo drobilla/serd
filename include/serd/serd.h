@@ -121,6 +121,7 @@ typedef enum {
   SERD_ERR_BAD_CURIE,  ///< Invalid CURIE (e.g. prefix does not exist)
   SERD_ERR_INTERNAL,   ///< Unexpected internal error (should not happen)
   SERD_ERR_BAD_WRITE,  ///< Error writing to file/stream
+  SERD_ERR_BAD_TEXT,   ///< Invalid text encoding
 } SerdStatus;
 
 /// Return a string describing a status code
@@ -848,6 +849,7 @@ typedef enum {
   SERD_STYLE_RESOLVED    = 1U << 2U, ///< Resolve URIs against base URI.
   SERD_STYLE_CURIED      = 1U << 3U, ///< Shorten URIs into CURIEs.
   SERD_STYLE_BULK        = 1U << 4U, ///< Write output in pages.
+  SERD_STYLE_STRICT      = 1U << 5U, ///< Abort with error on lossy output
 } SerdStyle;
 
 /// Create a new RDF writer

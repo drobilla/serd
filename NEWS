@@ -1,4 +1,4 @@
-serd (0.31.1) unstable; urgency=medium
+serd (0.31.3) unstable; urgency=medium
 
   * Add Windows path separator support to serd_node_new_file_uri()
   * Add serd_reader_skip_until_byte() to public API
