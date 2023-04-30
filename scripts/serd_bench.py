@@ -123,7 +123,7 @@ def plot(in_file, out_filename, x_label, y_label, y_max=None):
     actual_y_max = 0.0
     for i, y in enumerate(cols[1::]):
         y_floats = list(map(float, y))
-        actual_y_max = max(actual_y_max, max(y_floats))
+        actual_y_max = max(actual_y_max, y_floats)
         ax.plot(
             x,
             y_floats,
