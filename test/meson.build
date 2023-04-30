@@ -146,6 +146,8 @@ simple_command_tests = {
       ['-z'],
     ],
     'good': [
+      ['--help'],
+      ['--version'],
       ['-h'],
       ['-s', '<go:>a<go:> .'],
       ['-v'],
