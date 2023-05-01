@@ -33,6 +33,10 @@ if is_variable('cc')
         ]
       endif
 
+      if not meson.is_cross_build()
+        c_suppressions += ['-Wno-poison-system-directories']
+      endif
+
     elif cc.get_id() == 'gcc'
       c_suppressions += [
         '-Wno-cast-align',

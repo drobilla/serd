@@ -8,6 +8,11 @@ if get_option('warning_level') == 'everything'
     header_c_suppressions += [
       '-Wno-padded',
     ]
+
+    if not meson.is_cross_build()
+      header_c_suppressions += ['-Wno-poison-system-directories']
+    endif
+
   elif cc.get_id() == 'gcc'
     header_c_suppressions += [
       '-Wno-padded',
