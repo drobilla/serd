@@ -3,24 +3,23 @@
 
 # Project-specific warning suppressions
 
+warning_level = get_option('warning_level')
+
 #####
 # C #
 #####
 
-warning_level = get_option('warning_level')
-
 if is_variable('cc')
   c_suppressions = []
 
-  if warning_level == 'everything'
-    if cc.get_id() == 'clang'
+  if cc.get_id() in ['clang', 'emscripten']
+    if warning_level == 'everything'
       c_suppressions += [
         '-Wno-cast-align',
         '-Wno-cast-qual',
         '-Wno-declaration-after-statement',
         '-Wno-double-promotion',
         '-Wno-format-nonliteral',
-        '-Wno-nullability-extension',
         '-Wno-nullable-to-nonnull-conversion',
         '-Wno-padded',
       ]
@@ -32,12 +31,26 @@ if is_variable('cc')
           '-Wno-unused-macros',
         ]
       endif
+    endif
 
-      if not meson.is_cross_build()
-        c_suppressions += ['-Wno-poison-system-directories']
+    if warning_level in ['everything', '3']
+      c_suppressions += [
+        '-Wno-nullability-extension',
+      ]
+
+      if host_machine.system() == 'freebsd'
+        c_suppressions += [
+          '-Wno-c11-extensions',
+        ]
       endif
+    endif
 
-    elif cc.get_id() == 'gcc'
+    if not meson.is_cross_build()
+      c_suppressions += ['-Wno-poison-system-directories']
+    endif
+
+  elif cc.get_id() == 'gcc'
+    if warning_level == 'everything'
       c_suppressions += [
         '-Wno-cast-align',
         '-Wno-cast-qual',
@@ -54,8 +67,16 @@ if is_variable('cc')
           '-Wno-float-conversion',
         ]
       endif
+    endif
 
-    elif cc.get_id() == 'msvc'
+  elif cc.get_id() == 'msvc'
+    c_suppressions += [
+      '/experimental:external',
+      '/external:W0',
+      '/external:anglebrackets',
+    ]
+
+    if warning_level == 'everything'
       c_suppressions += [
         '/wd4061', # enumerator in switch is not explicitly handled
         '/wd4514', # unreferenced inline function has been removed
@@ -66,27 +87,18 @@ if is_variable('cc')
         '/wd5045', # will insert Spectre mitigation for memory load
       ]
     endif
-  endif
 
-  if cc.get_id() == 'clang'
-    c_suppressions += [
-      '-Wno-nullability-extension',
-    ]
-  elif cc.get_id() == 'msvc'
-    c_suppressions += [
-      '/experimental:external',
-      '/external:W0',
-      '/external:anglebrackets',
+    if warning_level in ['everything', '3']
+      c_suppressions += [
+        '/wd4706', # assignment within conditional expression
+      ]
+    endif
 
-      '/wd4706', # assignment within conditional expression
-      '/wd4996', # POSIX name for this item is deprecated
-    ]
-  endif
-
-  if host_machine.system() == 'freebsd' and warning_level in ['3', 'everything']
-    c_suppressions += [
-      '-Wno-c11-extensions',
-    ]
+    if warning_level in ['everything', '3', '2']
+      c_suppressions += [
+        '/wd4996', # POSIX name for this item is deprecated
+      ]
+    endif
   endif
 
   c_suppressions = cc.get_supported_arguments(c_suppressions)
