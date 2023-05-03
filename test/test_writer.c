@@ -122,6 +122,7 @@ test_strict_write(void)
   serd_writer_free(writer);
   serd_env_free(env);
   fclose(fd);
+  remove(path);
 }
 
 // Produce a write error without setting errno
