@@ -1723,60 +1723,72 @@ read_turtleTrigDoc(SerdReader* const reader)
   return SERD_SUCCESS;
 }
 
+static SerdStatus
+read_nquads_statement(SerdReader* const reader)
+{
+  SerdStatus         st      = SERD_SUCCESS;
+  SerdStatementFlags flags   = 0;
+  ReadContext        ctx     = {0, 0, 0, 0, 0, 0, &flags};
+  bool               ate_dot = false;
+  int                s_type  = 0;
+
+  read_ws_star(reader);
+  if (peek_byte(reader) == EOF) {
+    return SERD_FAILURE;
+  }
+
+  if (peek_byte(reader) == '@') {
+    return r_err(
+      reader, SERD_ERR_BAD_SYNTAX, "syntax does not support directives\n");
+  }
+
+  // subject predicate object
+  if ((st = read_subject(reader, ctx, &ctx.subject, &s_type)) ||
+      !read_ws_star(reader) || (st = read_IRIREF(reader, &ctx.predicate)) ||
+      !read_ws_star(reader) ||
+      (st = read_object(reader, &ctx, false, &ate_dot))) {
+    return st;
+  }
+
+  if (!ate_dot) { // graphLabel?
+    read_ws_star(reader);
+    switch (peek_byte(reader)) {
+    case '.':
+      break;
+    case '_':
+      TRY(st, read_BLANK_NODE_LABEL(reader, &ctx.graph, &ate_dot));
+      break;
+    default:
+      TRY(st, read_IRIREF(reader, &ctx.graph));
+    }
+
+    // Terminating '.'
+    read_ws_star(reader);
+    if (!eat_byte_check(reader, '.')) {
+      return SERD_ERR_BAD_SYNTAX;
+    }
+  }
+
+  TRY(st, emit_statement(reader, ctx, ctx.object, ctx.datatype, ctx.lang));
+
+  pop_node(reader, ctx.graph);
+  pop_node(reader, ctx.lang);
+  pop_node(reader, ctx.datatype);
+  pop_node(reader, ctx.object);
+
+  return SERD_SUCCESS;
+}
+
 SerdStatus
 read_nquadsDoc(SerdReader* const reader)
 {
   SerdStatus st = SERD_SUCCESS;
-  while (!reader->source.eof) {
-    SerdStatementFlags flags   = 0;
-    ReadContext        ctx     = {0, 0, 0, 0, 0, 0, &flags};
-    bool               ate_dot = false;
-    int                s_type  = 0;
-    read_ws_star(reader);
-    if (peek_byte(reader) == EOF) {
-      break;
-    }
 
-    if (peek_byte(reader) == '@') {
-      return r_err(
-        reader, SERD_ERR_BAD_SYNTAX, "syntax does not support directives\n");
-    }
-
-    // subject predicate object
-    if ((st = read_subject(reader, ctx, &ctx.subject, &s_type)) ||
-        !read_ws_star(reader) || (st = read_IRIREF(reader, &ctx.predicate)) ||
-        !read_ws_star(reader) ||
-        (st = read_object(reader, &ctx, false, &ate_dot))) {
-      return st;
-    }
-
-    if (!ate_dot) { // graphLabel?
-      read_ws_star(reader);
-      switch (peek_byte(reader)) {
-      case '.':
-        break;
-      case '_':
-        TRY(st, read_BLANK_NODE_LABEL(reader, &ctx.graph, &ate_dot));
-        break;
-      default:
-        TRY(st, read_IRIREF(reader, &ctx.graph));
-      }
-
-      // Terminating '.'
-      read_ws_star(reader);
-      if (!eat_byte_check(reader, '.')) {
-        return SERD_ERR_BAD_SYNTAX;
-      }
-    }
-
-    TRY(st, emit_statement(reader, ctx, ctx.object, ctx.datatype, ctx.lang));
-
-    pop_node(reader, ctx.graph);
-    pop_node(reader, ctx.lang);
-    pop_node(reader, ctx.datatype);
-    pop_node(reader, ctx.object);
+  while (!reader->source.eof && !st) {
+    st = read_nquads_statement(reader);
   }
-  return SERD_SUCCESS;
+
+  return st;
 }
 
 #if defined(__clang__) && __clang_major__ >= 10
