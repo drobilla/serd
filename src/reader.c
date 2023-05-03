@@ -161,12 +161,6 @@ emit_statement(SerdReader* const reader,
 }
 
 static SerdStatus
-read_statement(SerdReader* const reader)
-{
-  return read_n3_statement(reader);
-}
-
-static SerdStatus
 read_doc(SerdReader* const reader)
 {
   return ((reader->syntax == SERD_NQUADS) ? read_nquadsDoc(reader)
@@ -363,7 +357,7 @@ serd_reader_read_chunk(SerdReader* const reader)
     st = skip_byte(reader, 0);
   }
 
-  return st ? st : read_statement(reader);
+  return st ? st : read_n3_statement(reader);
 }
 
 SerdStatus
