@@ -154,7 +154,95 @@ eof_test_error(void* stream)
 }
 
 static void
-test_read_chunks(const char* const path)
+test_read_nquads_chunks(const char* const path)
+{
+  static const char null = 0;
+
+  FILE* const f = fopen(path, "w+b");
+
+  // Write two statements, a null separator, then another statement
+
+  fprintf(f,
+          "<http://example.org/s> <http://example.org/p1> "
+          "<http://example.org/o1> .\n");
+
+  fprintf(f,
+          "<http://example.org/s> <http://example.org/p2> "
+          "<http://example.org/o2> .\n");
+
+  fwrite(&null, sizeof(null), 1, f);
+
+  fprintf(f,
+          "<http://example.org/s> <http://example.org/p3> "
+          "<http://example.org/o3> .\n");
+
+  fseek(f, 0, SEEK_SET);
+
+  ReaderTest* const rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
+  SerdReader* const reader = serd_reader_new(SERD_NQUADS,
+                                             rt,
+                                             free,
+                                             test_base_sink,
+                                             test_prefix_sink,
+                                             test_statement_sink,
+                                             test_end_sink);
+
+  assert(reader);
+  assert(serd_reader_get_handle(reader) == rt);
+  assert(f);
+
+  SerdStatus st = serd_reader_start_stream(reader, f, NULL, false);
+  assert(st == SERD_SUCCESS);
+
+  // Read first statement
+  st = serd_reader_read_chunk(reader);
+  assert(st == SERD_SUCCESS);
+  assert(rt->n_base == 0);
+  assert(rt->n_prefix == 0);
+  assert(rt->n_statement == 1);
+  assert(rt->n_end == 0);
+
+  // Read second statement
+  st = serd_reader_read_chunk(reader);
+  assert(st == SERD_SUCCESS);
+  assert(rt->n_base == 0);
+  assert(rt->n_prefix == 0);
+  assert(rt->n_statement == 2);
+  assert(rt->n_end == 0);
+
+  // Read terminator
+  st = serd_reader_read_chunk(reader);
+  assert(st == SERD_FAILURE);
+  assert(rt->n_base == 0);
+  assert(rt->n_prefix == 0);
+  assert(rt->n_statement == 2);
+  assert(rt->n_end == 0);
+
+  // Read last statement
+  st = serd_reader_read_chunk(reader);
+  assert(st == SERD_SUCCESS);
+  assert(rt->n_base == 0);
+  assert(rt->n_prefix == 0);
+  assert(rt->n_statement == 3);
+  assert(rt->n_end == 0);
+
+  // EOF
+  st = serd_reader_read_chunk(reader);
+  assert(st == SERD_FAILURE);
+  assert(rt->n_base == 0);
+  assert(rt->n_prefix == 0);
+  assert(rt->n_statement == 3);
+  assert(rt->n_end == 0);
+
+  assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
+
+  serd_reader_free(reader);
+  fclose(f);
+  remove(path);
+}
+
+static void
+test_read_turtle_chunks(const char* const path)
 {
   static const char null = 0;
 
@@ -555,16 +643,22 @@ main(void)
   const size_t      tmp_len = strlen(tmp);
 #endif
 
-  const char* const name     = "serd_test_reader_writer.ttl";
-  const size_t      name_len = strlen(name);
-  const size_t      path_len = tmp_len + 1 + name_len;
-  char* const       path     = (char*)calloc(path_len + 1, 1);
+  const char* const ttl_name     = "serd_test_reader_writer.ttl";
+  const char* const nq_name      = "serd_test_reader_writer.nq";
+  const size_t      ttl_name_len = strlen(ttl_name);
+  const size_t      nq_name_len  = strlen(nq_name);
+  const size_t      path_len     = tmp_len + 1 + ttl_name_len;
+  char* const       path         = (char*)calloc(path_len + 1, 1);
 
   memcpy(path, tmp, tmp_len + 1);
   path[tmp_len] = '/';
-  memcpy(path + tmp_len + 1, name, name_len + 1);
 
-  test_read_chunks(path);
+  memcpy(path + tmp_len + 1, nq_name, nq_name_len + 1);
+  test_read_nquads_chunks(path);
+
+  memcpy(path + tmp_len + 1, ttl_name, ttl_name_len + 1);
+  test_read_turtle_chunks(path);
+
   test_read_string();
   test_write_errors();
 

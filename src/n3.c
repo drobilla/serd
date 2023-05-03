@@ -1723,7 +1723,7 @@ read_turtleTrigDoc(SerdReader* const reader)
   return SERD_SUCCESS;
 }
 
-static SerdStatus
+SerdStatus
 read_nquads_statement(SerdReader* const reader)
 {
   SerdStatus         st      = SERD_SUCCESS;

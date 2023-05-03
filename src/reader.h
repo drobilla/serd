@@ -101,6 +101,9 @@ SerdStatus
 read_n3_statement(SerdReader* reader);
 
 SerdStatus
+read_nquads_statement(SerdReader* reader);
+
+SerdStatus
 read_nquadsDoc(SerdReader* reader);
 
 SerdStatus

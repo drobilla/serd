@@ -357,7 +357,9 @@ serd_reader_read_chunk(SerdReader* const reader)
     st = skip_byte(reader, 0);
   }
 
-  return st ? st : read_n3_statement(reader);
+  return st                                ? st
+         : (reader->syntax == SERD_NQUADS) ? read_nquads_statement(reader)
+                                           : read_n3_statement(reader);
 }
 
 SerdStatus
