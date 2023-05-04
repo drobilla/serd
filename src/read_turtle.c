@@ -3,7 +3,6 @@
 
 #include "read_turtle.h"
 #include "byte_source.h"
-#include "env.h"
 #include "namespaces.h"
 #include "node.h"
 #include "node_impl.h"
@@ -15,6 +14,7 @@
 #include "try.h"
 #include "turtle.h"
 
+#include "serd/env.h"
 #include "serd/event.h"
 #include "serd/node.h"
 #include "serd/reader.h"
@@ -400,7 +400,7 @@ read_PrefixedName(SerdReader* const reader,
   } else {
     // Search environment for the prefix URI
     const ZixStringView name = serd_node_string_view(dest);
-    const ZixStringView uri  = serd_env_find_prefix(reader->env, name);
+    const ZixStringView uri  = serd_env_get_prefix(reader->env, name);
     if (!uri.length) {
       return r_err(reader, st, "unknown prefix \"%s\"", name.data);
     }
