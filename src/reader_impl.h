@@ -9,6 +9,7 @@
 #include "token_header.h"
 
 #include <serd/error.h>
+#include <serd/reader.h>
 #include <serd/sink.h>
 #include <serd/syntax.h>
 #include <serd/world.h>
@@ -28,6 +29,7 @@ struct SerdReaderImpl {
   SerdByteSource* source;
   SerdStack       stack;
   SerdSyntax      syntax;
+  SerdReaderFlags flags;
   unsigned        next_id;
   char*           bprefix;
   size_t          bprefix_len;

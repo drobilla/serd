@@ -459,6 +459,7 @@ test_suites = {
     files('extra/prefix/manifest.ttl'),
     ns_serdtest + 'prefix/',
     '--',
+    ['-I', 'generated'],
     ['-p', 'test'],
     ['-k', '512'],
   ],
