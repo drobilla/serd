@@ -11,6 +11,7 @@
 #include "exess/exess.h"
 #include "serd/buffer.h"
 #include "serd/node.h"
+#include "serd/output_stream.h"
 #include "serd/status.h"
 #include "serd/stream_result.h"
 #include "serd/string.h"
@@ -102,12 +103,15 @@ datatype_value_type(const ExessDatatype datatype)
 }
 
 static size_t
-string_sink(const void* const buf, const size_t len, void* const stream)
+string_sink(const void* const buf,
+            const size_t      size,
+            const size_t      nmemb,
+            void* const       stream)
 {
   char** ptr = (char**)stream;
-  memcpy(*ptr, buf, len);
-  *ptr += len;
-  return len;
+  memcpy(*ptr, buf, size * nmemb);
+  *ptr += size * nmemb;
+  return nmemb;
 }
 
 char*
@@ -320,14 +324,19 @@ serd_new_parsed_uri(const SerdURIView uri)
 SerdNode*
 serd_new_file_uri(const ZixStringView path, const ZixStringView hostname)
 {
-  SerdBuffer buffer = {NULL, 0U};
+  SerdBuffer       buffer = {NULL, 0U};
+  SerdOutputStream out    = serd_open_output_buffer(&buffer);
 
-  serd_write_file_uri(path, hostname, serd_buffer_sink, &buffer);
-  serd_buffer_sink_finish(&buffer);
+  serd_write_file_uri(path, hostname, out.write, out.stream);
+  serd_close_output(&out);
 
   const size_t      length = buffer.len;
-  const char* const string = serd_buffer_sink_finish(&buffer);
-  SerdNode* const   node   = serd_new_string(zix_substring(string, length));
+  const char* const string = (char*)buffer.buf;
+  if (!string) {
+    return NULL;
+  }
+
+  SerdNode* const node = serd_new_string(zix_substring(string, length));
 
   free(buffer.buf);
   return node;

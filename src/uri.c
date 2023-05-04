@@ -5,6 +5,7 @@
 #include "uri_utils.h"
 
 #include "serd/buffer.h"
+#include "serd/output_stream.h"
 #include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/uri.h"
@@ -18,9 +19,10 @@
 #include <string.h>
 
 static SerdStatus
-write_file_uri_char(const char c, void* const stream)
+write_file_uri_char(const char c, SerdOutputStream* const out)
 {
-  return (serd_buffer_sink(&c, 1, stream) == 1) ? SERD_SUCCESS : SERD_BAD_ALLOC;
+  return (out->write(&c, 1, 1, out->stream) == 1) ? SERD_SUCCESS
+                                                  : SERD_BAD_ALLOC;
 }
 
 static char*
@@ -66,30 +68,32 @@ serd_parse_file_uri(const char* const uri, char** const hostname)
     ++path;
   }
 
-  SerdBuffer buffer = {NULL, 0};
-  for (const char* s = path; *s; ++s) {
+  SerdBuffer       buffer = {NULL, 0};
+  SerdOutputStream out    = serd_open_output_buffer(&buffer);
+  for (const char* s = path; !st && *s; ++s) {
     if (*s == '%') {
       if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
         const uint8_t hi = hex_digit_value((const uint8_t)s[1]);
         const uint8_t lo = hex_digit_value((const uint8_t)s[2]);
         const char    c  = (char)((hi << 4U) | lo);
 
-        st = write_file_uri_char(c, &buffer);
+        st = write_file_uri_char(c, &out);
         s += 2;
       } else {
         st = SERD_BAD_SYNTAX;
       }
     } else {
-      st = write_file_uri_char(*s, &buffer);
-    }
-
-    if (st) {
-      free(buffer.buf);
-      return NULL;
+      st = write_file_uri_char(*s, &out);
     }
   }
 
-  return serd_buffer_sink_finish(&buffer);
+  const SerdStatus cst = serd_close_output(&out);
+  if (st || cst) {
+    free(buffer.buf);
+    return NULL;
+  }
+
+  return (char*)buffer.buf;
 }
 
 /// RFC3986: scheme ::= ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
@@ -441,42 +445,42 @@ serd_write_uri(const SerdURIView uri, SerdWriteFunc sink, void* const stream)
   size_t len = 0;
 
   if (uri.scheme.data) {
-    len += sink(uri.scheme.data, uri.scheme.length, stream);
-    len += sink(":", 1, stream);
+    len += sink(uri.scheme.data, 1, uri.scheme.length, stream);
+    len += sink(":", 1, 1, stream);
   }
 
   if (uri.authority.data) {
-    len += sink("//", 2, stream);
-    len += sink(uri.authority.data, uri.authority.length, stream);
+    len += sink("//", 1, 2, stream);
+    len += sink(uri.authority.data, 1, uri.authority.length, stream);
 
     if (uri.authority.length && uri_path_len(&uri) &&
         uri_path_at(&uri, 0) != '/') {
       // Special case: ensure path begins with a slash
       // https://tools.ietf.org/html/rfc3986#section-3.2
-      len += sink("/", 1, stream);
+      len += sink("/", 1, 1, stream);
     }
   }
 
   if (uri.path_prefix.data) {
-    len += sink(uri.path_prefix.data, uri.path_prefix.length, stream);
+    len += sink(uri.path_prefix.data, 1, uri.path_prefix.length, stream);
   } else if (uri.path_prefix.length) {
     for (size_t i = 0; i < uri.path_prefix.length; ++i) {
-      len += sink("../", 3, stream);
+      len += sink("../", 1, 3, stream);
     }
   }
 
   if (uri.path.data) {
-    len += sink(uri.path.data, uri.path.length, stream);
+    len += sink(uri.path.data, 1, uri.path.length, stream);
   }
 
   if (uri.query.data) {
-    len += sink("?", 1, stream);
-    len += sink(uri.query.data, uri.query.length, stream);
+    len += sink("?", 1, 1, stream);
+    len += sink(uri.query.data, 1, uri.query.length, stream);
   }
 
   if (uri.fragment.data) {
     // Note that uri.fragment.data includes the leading '#'
-    len += sink(uri.fragment.data, uri.fragment.length, stream);
+    len += sink(uri.fragment.data, 1, uri.fragment.length, stream);
   }
 
   return len;
@@ -511,28 +515,28 @@ serd_write_file_uri(const ZixStringView path,
   size_t     len        = 0U;
 
   if (is_dir_sep(path.data[0]) || is_windows) {
-    len += sink("file://", strlen("file://"), stream);
+    len += sink("file://", 1, strlen("file://"), stream);
     if (hostname.length) {
-      len += sink(hostname.data, hostname.length, stream);
+      len += sink(hostname.data, 1, hostname.length, stream);
     }
 
     if (is_windows) {
-      len += sink("/", 1, stream);
+      len += sink("/", 1, 1, stream);
     }
   }
 
   for (size_t i = 0; i < path.length; ++i) {
     if (is_unescaped_uri_path_char(path.data[i])) {
-      len += sink(path.data + i, 1, stream);
+      len += sink(path.data + i, 1, 1, stream);
 #ifdef _WIN32
     } else if (path.data[i] == '\\') {
-      len += sink("/", 1, stream);
+      len += sink("/", 1, 1, stream);
 #endif
     } else {
       char escape_str[10] = {'%', 0, 0, 0, 0, 0, 0, 0, 0, 0};
       snprintf(
         escape_str + 1, sizeof(escape_str) - 1, "%X", (unsigned)path.data[i]);
-      len += sink(escape_str, 3, stream);
+      len += sink(escape_str, 1, 3, stream);
     }
   }
 
