@@ -16,7 +16,6 @@
 #include "serd/event.h"
 #include "serd/sink.h"
 #include "serd/statement_view.h"
-#include "serd/syntax.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -305,21 +304,18 @@ read_PN_CHARS(SerdReader* const reader, SerdNode* const dest)
   return st;
 }
 
-static bool
-avoid_blank_clashes(const SerdReader* const reader)
-{
-  return reader->syntax == SERD_TURTLE || reader->syntax == SERD_TRIG;
-}
-
 static SerdStatus
 adjust_blank_id(SerdReader* const reader, char* const buf)
 {
-  if (avoid_blank_clashes(reader) && is_digit(buf[reader->bprefix_len + 1])) {
+  if (!(reader->flags & SERD_READ_GENERATED) &&
+      is_digit(buf[reader->bprefix_len + 1U])) {
     const char tag = buf[reader->bprefix_len];
     if (tag == 'b') {
-      buf[reader->bprefix_len] = 'B'; // Prevent clash
+      // Presumably generated ID like b123 in the input, adjust to B123
+      buf[reader->bprefix_len] = 'B';
       reader->seen_genid       = true;
     } else if (tag == 'B' && reader->seen_genid) {
+      // We've seen both b123 and B123 styles, abort due to possible clashes
       return r_err(reader,
                    SERD_BAD_LABEL,
                    "found both 'b' and 'B' blank IDs, prefix required");
