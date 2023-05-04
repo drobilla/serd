@@ -54,16 +54,28 @@ typedef int (*SerdCloseFunc)(void* ZIX_NONNULL stream);
    @param size Size of a single element of data in bytes (always 1).
    @param nmemb Number of elements to read.
    @param stream Stream to read from (FILE* for fread).
-   @return Number of elements (bytes) read.
+   @return Number of elements (bytes) read, which is short on error.
 */
 typedef size_t (*SerdReadFunc)(void* ZIX_NONNULL     buf,
                                size_t                size,
                                size_t                nmemb,
                                void* ZIX_UNSPECIFIED stream);
 
-/// Sink function for raw string output
+/**
+   Function for writing output bytes to a stream.
+
+   This has identical semantics to `fwrite`, but may set `errno` for more
+   informative error reporting than supported by #SerdErrorFunc.
+
+   @param buf Input buffer.
+   @param size Size of a single element of data in bytes (always 1).
+   @param nmemb Number of elements to read.
+   @param stream Stream to write to (FILE* for fread).
+   @return Number of elements (bytes) written, which is short on error.
+*/
 typedef size_t (*SerdWriteFunc)(const void* ZIX_NONNULL buf,
-                                size_t                  len,
+                                size_t                  size,
+                                size_t                  nmemb,
                                 void* ZIX_UNSPECIFIED   stream);
 
 /**

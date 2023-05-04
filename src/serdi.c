@@ -5,6 +5,7 @@
 #include "serd/error.h"
 #include "serd/input_stream.h"
 #include "serd/node.h"
+#include "serd/output_stream.h"
 #include "serd/reader.h"
 #include "serd/status.h"
 #include "serd/stream.h"
@@ -106,6 +107,7 @@ main(int argc, char** argv)
   bool            from_string   = false;
   bool            from_stdin    = false;
   bool            bulk_read     = true;
+  bool            bulk_write    = false;
   bool            osyntax_set   = false;
   bool            quiet         = false;
   size_t          stack_size    = 524288U;
@@ -133,7 +135,7 @@ main(int argc, char** argv)
       if (opt == 'a') {
         writer_flags |= SERD_WRITE_ASCII;
       } else if (opt == 'b') {
-        writer_flags |= SERD_WRITE_BULK;
+        bulk_write = true;
       } else if (opt == 'e') {
         bulk_read = false;
       } else if (opt == 'f') {
@@ -247,8 +249,13 @@ main(int argc, char** argv)
   SerdEnv* const   env =
     serd_env_new(base ? serd_node_string_view(base) : zix_empty_string());
 
+  SerdOutputStream out = serd_open_output_stream((SerdWriteFunc)fwrite,
+                                                 (SerdErrorFunc)ferror,
+                                                 (SerdCloseFunc)fclose,
+                                                 out_fd);
+
   SerdWriter* const writer = serd_writer_new(
-    world, output_syntax, writer_flags, env, serd_file_sink, out_fd);
+    world, output_syntax, writer_flags, env, &out, bulk_write ? 4096U : 1U);
 
   const SerdLimits limits = {stack_size, MAX_DEPTH};
   serd_world_set_limits(world, limits);
