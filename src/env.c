@@ -3,7 +3,6 @@
 
 #include "serd/env.h"
 
-#include "env.h"
 #include "node.h"
 #include "sink.h"
 #include "try.h"
@@ -163,16 +162,16 @@ serd_env_equals(const SerdEnv* const a, const SerdEnv* const b)
   return true;
 }
 
+const SerdNode*
+serd_env_base_node(const SerdEnv* const env)
+{
+  return env ? env->base_uri_node : NULL;
+}
+
 SerdURIView
 serd_env_base_uri_view(const SerdEnv* const env)
 {
-  return env->base_uri;
-}
-
-const SerdNode*
-serd_env_base_uri(const SerdEnv* const env)
-{
-  return env ? env->base_uri_node : NULL;
+  return env ? env->base_uri : SERD_URI_NULL;
 }
 
 SerdStatus
@@ -206,8 +205,12 @@ serd_env_set_base_uri(SerdEnv* const env, const ZixStringView uri)
 }
 
 ZixStringView
-serd_env_find_prefix(const SerdEnv* const env, const ZixStringView name)
+serd_env_get_prefix(const SerdEnv* const env, const ZixStringView name)
 {
+  if (!env) {
+    return zix_empty_string();
+  }
+
   for (size_t i = 0; i < env->n_prefixes; ++i) {
     const SerdNode* const prefix_name = env->prefixes[i].name;
     if (prefix_name->length == name.length) {
@@ -303,69 +306,53 @@ serd_env_set_prefix(SerdEnv* const      env,
     return SERD_BAD_ALLOC;
   }
 
+  assert(serd_uri_string_has_scheme(serd_node_string(abs_uri)));
+
   // Set prefix to resolved (absolute) URI
   const SerdStatus st = serd_env_add(env, name, serd_node_string_view(abs_uri));
   serd_node_free(env->allocator, abs_uri);
   return st;
 }
 
-bool
-serd_env_qualify_in_place(const SerdEnv* const   env,
-                          const SerdNode* const  uri,
-                          const SerdNode** const prefix,
-                          ZixStringView* const   suffix)
+SerdStatus
+serd_env_qualify(const SerdEnv* const env,
+                 const ZixStringView  uri,
+                 ZixStringView* const prefix,
+                 ZixStringView* const suffix)
 {
-  for (size_t i = 0; i < env->n_prefixes; ++i) {
-    const SerdNode* const prefix_uri = env->prefixes[i].uri;
-    if (uri->length >= prefix_uri->length) {
-      const char* prefix_str = serd_node_string(prefix_uri);
-      const char* uri_str    = serd_node_string(uri);
+  if (!env) {
+    return SERD_FAILURE;
+  }
 
-      if (!strncmp(uri_str, prefix_str, prefix_uri->length)) {
-        *prefix        = env->prefixes[i].name;
-        suffix->data   = uri_str + prefix_uri->length;
-        suffix->length = uri->length - prefix_uri->length;
-        return true;
+  for (size_t i = 0; i < env->n_prefixes; ++i) {
+    const SerdNode* const prefix_uri     = env->prefixes[i].uri;
+    const size_t          prefix_uri_len = serd_node_length(prefix_uri);
+    if (uri.data && uri.length >= prefix_uri_len) {
+      const char* prefix_str = serd_node_string(prefix_uri);
+      const char* uri_str    = uri.data;
+
+      if (!strncmp(uri_str, prefix_str, prefix_uri_len)) {
+        *prefix        = serd_node_string_view(env->prefixes[i].name);
+        suffix->data   = uri_str + prefix_uri_len;
+        suffix->length = uri.length - prefix_uri_len;
+        return SERD_SUCCESS;
       }
     }
   }
-  return false;
-}
 
-SerdNode*
-serd_env_qualify(const SerdEnv* const env, const SerdNode* const uri)
-{
-  if (!env || !uri) {
-    return NULL;
-  }
-
-  const SerdNode* prefix = NULL;
-  ZixStringView   suffix = {NULL, 0};
-  if (serd_env_qualify_in_place(env, uri, &prefix, &suffix)) {
-    const size_t prefix_len = serd_node_length(prefix);
-    const size_t length     = prefix_len + 1 + suffix.length;
-
-    const size_t real_length = serd_node_pad_length(length);
-    const size_t node_size   = sizeof(SerdNode) + real_length;
-    SerdNode*    node        = serd_node_malloc(env->allocator, node_size);
-
-    memcpy(serd_node_buffer(node), serd_node_string(prefix), prefix_len);
-    serd_node_buffer(node)[prefix_len] = ':';
-    memcpy(serd_node_buffer(node) + 1 + prefix_len, suffix.data, suffix.length);
-    node->length = length;
-    node->type   = SERD_CURIE;
-    return node;
-  }
-
-  return NULL;
+  return SERD_FAILURE;
 }
 
 SerdStatus
-serd_env_expand_in_place(const SerdEnv* const env,
-                         const ZixStringView  curie,
-                         ZixStringView* const uri_prefix,
-                         ZixStringView* const uri_suffix)
+serd_env_expand(const SerdEnv* const env,
+                const ZixStringView  curie,
+                ZixStringView* const uri_prefix,
+                ZixStringView* const uri_suffix)
 {
+  if (!env) {
+    return SERD_FAILURE;
+  }
+
   const char* const str = curie.data;
   const char* const colon =
     str ? (const char*)memchr(str, ':', curie.length + 1) : NULL;
@@ -383,67 +370,8 @@ serd_env_expand_in_place(const SerdEnv* const env,
   return SERD_SUCCESS;
 }
 
-static SerdNode*
-expand_curie(const SerdEnv* const env, const SerdNode* const curie_node)
-{
-  assert(serd_node_type(curie_node) == SERD_CURIE);
-
-  ZixStringView prefix;
-  ZixStringView suffix;
-  if (serd_env_expand_in_place(
-        env, serd_node_string_view(curie_node), &prefix, &suffix)) {
-    return NULL;
-  }
-
-  const size_t len         = prefix.length + suffix.length;
-  const size_t real_length = serd_node_pad_length(len);
-  const size_t node_size   = sizeof(SerdNode) + real_length;
-  SerdNode*    node        = serd_node_malloc(env->allocator, node_size);
-
-  if (node) {
-    node->length = len;
-    node->flags  = 0U;
-    node->type   = SERD_URI;
-
-    char* const string = (char*)(node + 1U);
-    assert(prefix.data);
-    memcpy(string, prefix.data, prefix.length);
-    memcpy(string + prefix.length, suffix.data, suffix.length);
-    node->length = len;
-  }
-
-  return node;
-}
-
-SerdNode*
-serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
-{
-  if (!env || !node) {
-    return NULL;
-  }
-
-  switch (node->type) {
-  case SERD_LITERAL:
-    break;
-  case SERD_URI: {
-    const SerdURIView uri     = serd_node_uri_view(node);
-    const SerdURIView abs_uri = serd_resolve_uri(uri, env->base_uri);
-    return abs_uri.scheme.length
-             ? serd_node_new(env->allocator, serd_a_parsed_uri(abs_uri))
-             : NULL;
-  }
-  case SERD_CURIE:
-    return expand_curie(env, node);
-  case SERD_BLANK:
-  case SERD_VARIABLE:
-    break;
-  }
-
-  return NULL;
-}
-
 SerdStatus
-serd_env_write_prefixes(const SerdEnv* const env, const SerdSink* const sink)
+serd_env_describe(const SerdEnv* const env, const SerdSink* const sink)
 {
   assert(env);
   assert(sink);

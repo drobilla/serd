@@ -180,20 +180,21 @@ test_comparison(void)
 static void
 test_null(void)
 {
-  SerdNode* const eg = serd_node_new(NULL, serd_a_uri_string(NS_EG));
-
   // "Copying" NULL returns null
   assert(!serd_env_copy(NULL, NULL));
 
   // Accessors are tolerant to a NULL env for convenience
-  assert(!serd_env_base_uri(NULL));
-  assert(!serd_env_expand_node(NULL, NULL));
-  assert(!serd_env_qualify(NULL, eg));
+  ZixStringView prefix = {NULL, 0U};
+  ZixStringView suffix = {NULL, 0U};
+  assert(!serd_env_base_uri_view(NULL).scheme.length);
+  assert(!serd_env_get_prefix(NULL, zix_string("name")).length);
+  assert(serd_env_expand(NULL, zix_empty_string(), &prefix, &suffix) ==
+         SERD_FAILURE);
+  assert(serd_env_qualify(NULL, zix_empty_string(), &prefix, &suffix) ==
+         SERD_FAILURE);
 
   // Only null is equal to null
   assert(serd_env_equals(NULL, NULL));
-
-  serd_node_free(NULL, eg);
 }
 
 static SerdStatus
@@ -210,10 +211,12 @@ test_base_uri(void)
   SerdEnv* const  env = serd_env_new(NULL, zix_empty_string());
   SerdNode* const eg  = serd_node_new(NULL, serd_a_uri_string(NS_EG));
 
-  // Test that invalid calls work as expected
-  assert(!serd_env_base_uri(env));
+  // Test that empty/unset base works as expected
+  assert(!serd_env_base_uri_view(env).scheme.length);
+  assert(!serd_env_base_node(env));
   assert(!serd_env_set_base_uri(env, zix_empty_string()));
-  assert(!serd_env_base_uri(env));
+  assert(!serd_env_base_uri_view(env).scheme.length);
+  assert(!serd_env_base_node(env));
 
   // Try setting a relative prefix with no base URI
   assert(serd_env_set_prefix(env, zix_string("eg.3"), zix_string("rel")) ==
@@ -221,11 +224,11 @@ test_base_uri(void)
 
   // Set a valid base URI
   assert(!serd_env_set_base_uri(env, serd_node_string_view(eg)));
-  assert(serd_node_equals(serd_env_base_uri(env), eg));
+  assert(serd_node_equals(serd_env_base_node(env), eg));
 
   // Reset the base URI
   assert(!serd_env_set_base_uri(env, zix_empty_string()));
-  assert(!serd_env_base_uri(env));
+  assert(!serd_env_base_uri_view(env).scheme.length);
 
   serd_node_free(NULL, eg);
   serd_env_free(env);
@@ -244,6 +247,7 @@ test_set_prefix(void)
 
   // Set a valid prefix
   assert(!serd_env_set_prefix(env, name1, eg));
+  assert(!strcmp(serd_env_get_prefix(env, name1).data, eg.data));
 
   // Test setting a prefix from a relative URI
   assert(serd_env_set_prefix(env, name2, rel) == SERD_BAD_ARG);
@@ -258,88 +262,11 @@ test_set_prefix(void)
   SerdSink* const count_prefixes_sink =
     serd_sink_new(NULL, &n_prefixes, count_prefixes, NULL);
 
-  serd_env_write_prefixes(env, count_prefixes_sink);
+  serd_env_describe(env, count_prefixes_sink);
   serd_sink_free(count_prefixes_sink);
   assert(n_prefixes == 3);
 
   serd_env_free(env);
-}
-
-static void
-test_expand_untyped_literal(void)
-{
-  SerdNode* const untyped = serd_node_new(NULL, serd_a_string("data"));
-  SerdEnv* const  env     = serd_env_new(NULL, zix_empty_string());
-
-  assert(!serd_env_expand_node(env, untyped));
-
-  serd_env_free(env);
-  serd_node_free(NULL, untyped);
-}
-
-static void
-test_expand_bad_uri_datatype(void)
-{
-  static const ZixStringView type = ZIX_STATIC_STRING("Type");
-
-  SerdNode* const typed =
-    serd_node_new(NULL, serd_a_typed_literal(zix_string("data"), type));
-
-  SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
-
-  assert(!serd_env_expand_node(env, typed));
-
-  serd_env_free(env);
-  serd_node_free(NULL, typed);
-}
-
-static void
-test_expand_uri(void)
-{
-  static const ZixStringView base = ZIX_STATIC_STRING("http://example.org/b/");
-
-  SerdEnv* const  env       = serd_env_new(NULL, base);
-  SerdNode* const rel       = serd_node_new(NULL, serd_a_uri_string("rel"));
-  SerdNode* const rel_out   = serd_env_expand_node(env, rel);
-  SerdNode* const empty     = serd_node_new(NULL, serd_a_uri_string(""));
-  SerdNode* const empty_out = serd_env_expand_node(env, empty);
-
-  assert(!strcmp(serd_node_string(rel_out), "http://example.org/b/rel"));
-  assert(!strcmp(serd_node_string(empty_out), "http://example.org/b/"));
-
-  serd_node_free(NULL, empty_out);
-  serd_node_free(NULL, empty);
-  serd_node_free(NULL, rel_out);
-  serd_node_free(NULL, rel);
-  serd_env_free(env);
-}
-
-static void
-test_expand_empty_uri_ref(void)
-{
-  static const ZixStringView base = ZIX_STATIC_STRING("http://example.org/b/");
-
-  SerdNode* const rel     = serd_node_new(NULL, serd_a_uri_string("rel"));
-  SerdEnv* const  env     = serd_env_new(NULL, base);
-  SerdNode* const rel_out = serd_env_expand_node(env, rel);
-
-  assert(!strcmp(serd_node_string(rel_out), "http://example.org/b/rel"));
-  serd_node_free(NULL, rel_out);
-
-  serd_env_free(env);
-  serd_node_free(NULL, rel);
-}
-
-static void
-test_expand_bad_uri(void)
-{
-  SerdNode* const bad_uri = serd_node_new(NULL, serd_a_uri_string("rel"));
-  SerdEnv* const  env     = serd_env_new(NULL, zix_empty_string());
-
-  assert(!serd_env_expand_node(env, bad_uri));
-
-  serd_env_free(env);
-  serd_node_free(NULL, bad_uri);
 }
 
 static void
@@ -349,45 +276,35 @@ test_expand_curie(void)
   static const ZixStringView eg       = ZIX_STATIC_STRING(NS_EG);
   static const ZixStringView prefixed = ZIX_STATIC_STRING("eg.1:foo");
 
-  SerdNode* const curie = serd_node_new(NULL, serd_a_curie(prefixed));
-  SerdEnv* const  env   = serd_env_new(NULL, zix_empty_string());
+  SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
 
   assert(!serd_env_set_prefix(env, name, eg));
 
-  SerdNode* const curie_out = serd_env_expand_node(env, curie);
-  assert(curie_out);
-  assert(!strcmp(serd_node_string(curie_out), "http://example.org/foo"));
-  serd_node_free(NULL, curie_out);
+  ZixStringView prefix = zix_empty_string();
+  ZixStringView suffix = zix_empty_string();
+  assert(!serd_env_expand(env, prefixed, &prefix, &suffix));
+  assert(prefix.data);
+  assert(!strcmp(prefix.data, "http://example.org/"));
+  assert(suffix.data);
+  assert(!strcmp(suffix.data, "foo"));
 
   serd_env_free(env);
-  serd_node_free(NULL, curie);
 }
 
 static void
 test_expand_bad_curie(void)
 {
-  SerdNode* const name  = serd_node_new(NULL, serd_a_curie_string("name"));
-  SerdNode* const curie = serd_node_new(NULL, serd_a_curie_string("eg.1:foo"));
-  SerdEnv* const  env   = serd_env_new(NULL, zix_empty_string());
+  static const ZixStringView prefixed = ZIX_STATIC_STRING("eg:foo");
 
-  assert(!serd_env_expand_node(env, name));
-  assert(!serd_env_expand_node(env, curie));
+  SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
 
-  serd_env_free(env);
-  serd_node_free(NULL, curie);
-  serd_node_free(NULL, name);
-}
-
-static void
-test_expand_blank(void)
-{
-  SerdNode* const blank = serd_node_new(NULL, serd_a_blank_string("b1"));
-  SerdEnv* const  env   = serd_env_new(NULL, zix_empty_string());
-
-  assert(!serd_env_expand_node(env, blank));
+  ZixStringView prefix = zix_empty_string();
+  ZixStringView suffix = zix_empty_string();
+  assert(serd_env_expand(env, prefixed, &prefix, &suffix) == SERD_BAD_CURIE);
+  assert(!prefix.length);
+  assert(!suffix.length);
 
   serd_env_free(env);
-  serd_node_free(NULL, blank);
 }
 
 static void
@@ -406,13 +323,16 @@ test_qualify(void)
 
   assert(!serd_env_set_prefix(env, serd_node_string_view(name), eg));
 
-  assert(!serd_env_expand_node(env, name));
+  ZixStringView prefix = zix_empty_string();
+  ZixStringView suffix = zix_empty_string();
+  assert(!serd_env_qualify(env, serd_node_string_view(u1), &prefix, &suffix));
+  assert(prefix.length == 2);
+  assert(!strncmp(prefix.data, "eg", prefix.length));
+  assert(suffix.length == 3);
+  assert(!strncmp(suffix.data, "foo", suffix.length));
 
-  SerdNode* const u1_out = serd_env_qualify(env, u1);
-  assert(serd_node_equals(u1_out, c1));
-  serd_node_free(NULL, u1_out);
-
-  assert(!serd_env_qualify(env, u2));
+  assert(serd_env_qualify(env, serd_node_string_view(u2), &prefix, &suffix) ==
+         SERD_FAILURE);
 
   serd_env_free(env);
   serd_node_free(NULL, u2);
@@ -469,14 +389,8 @@ main(void)
   test_null();
   test_base_uri();
   test_set_prefix();
-  test_expand_untyped_literal();
-  test_expand_bad_uri_datatype();
-  test_expand_uri();
-  test_expand_empty_uri_ref();
-  test_expand_bad_uri();
   test_expand_curie();
   test_expand_bad_curie();
-  test_expand_blank();
   test_qualify();
   test_equals();
   return 0;
