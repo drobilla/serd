@@ -108,6 +108,7 @@ serd_set_input_option(const ZixStringView    name,
 
   static const InputOption input_options[] = {
     {"lax", SERD_READ_LAX},
+    {"generated", SERD_READ_GENERATED},
     {NULL, SERD_READ_LAX},
   };
 
