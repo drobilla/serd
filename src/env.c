@@ -270,6 +270,8 @@ serd_env_set_prefix(SerdEnv* const      env,
     return SERD_BAD_ALLOC;
   }
 
+  assert(serd_uri_string_has_scheme(serd_node_string(abs_uri)));
+
   // Set prefix to resolved (absolute) URI
   const SerdStatus st = serd_env_add(env, name, serd_node_string_view(abs_uri));
   serd_node_free(env->allocator, abs_uri);
@@ -328,15 +330,12 @@ serd_env_expand_in_place(const SerdEnv* const env,
   return SERD_SUCCESS;
 }
 
-static SerdNode*
-expand_curie(const SerdEnv* const env, const SerdNode* const curie_node)
+SerdNode*
+serd_env_expand_curie(const SerdEnv* const env, const ZixStringView curie)
 {
-  assert(serd_node_type(curie_node) == SERD_CURIE);
-
   ZixStringView prefix;
   ZixStringView suffix;
-  if (serd_env_expand_in_place(
-        env, serd_node_string_view(curie_node), &prefix, &suffix)) {
+  if (serd_env_expand_in_place(env, curie, &prefix, &suffix)) {
     return NULL;
   }
 
@@ -369,16 +368,16 @@ serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
 
   switch (node->type) {
   case SERD_LITERAL:
-    break;
   case SERD_URI: {
     const SerdURIView uri     = serd_node_uri_view(node);
     const SerdURIView abs_uri = serd_resolve_uri(uri, env->base_uri);
+
     return abs_uri.scheme.length
              ? serd_node_new(env->allocator, serd_a_parsed_uri(abs_uri))
              : NULL;
   }
   case SERD_CURIE:
-    return expand_curie(env, node);
+    return serd_env_expand_curie(env, serd_node_string_view(node));
   case SERD_BLANK:
   case SERD_VARIABLE:
     break;

@@ -85,6 +85,18 @@ serd_env_qualify(const SerdEnv* ZIX_NULLABLE env,
                  ZixStringView* ZIX_NONNULL  suffix);
 
 /**
+   Expand `curie` to an absolute URI if possible.
+
+   For example, if `env` has the prefix "rdf" set to
+   <http://www.w3.org/1999/02/22-rdf-syntax-ns#>, then calling this with curie
+   "rdf:type" will produce <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>.
+
+   Returns null if `node` can not be expanded.
+*/
+SERD_API SerdNode* ZIX_ALLOCATED
+serd_env_expand_curie(const SerdEnv* ZIX_NULLABLE env, ZixStringView curie);
+
+/**
    Expand `node` to an absolute URI if possible.
 
    Returns null if `node` can not be expanded.

@@ -6,10 +6,8 @@
 
 #include "serd/node.h"
 #include "serd/status.h"
-#include "serd/uri.h"
 #include "zix/allocator.h"
 #include "zix/attributes.h"
-#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -100,11 +98,5 @@ serd_node_total_size(const SerdNode* ZIX_NULLABLE node);
 
 void
 serd_node_zero_pad(SerdNode* ZIX_NONNULL node);
-
-/// Create a new URI from a string, resolved against a base URI
-SerdNode* ZIX_ALLOCATED
-serd_new_resolved_uri(ZixAllocator* ZIX_NULLABLE allocator,
-                      ZixStringView              string,
-                      SerdURIView                base_uri);
 
 #endif // SERD_SRC_NODE_H
