@@ -202,11 +202,11 @@ main(int argc, char** argv)
     }
 
     if (!strcmp(argv[a], "--help")) {
-        return print_usage(prog, false);
+      return print_usage(prog, false);
     }
 
     if (!strcmp(argv[a], "--version")) {
-        return print_version();
+      return print_version();
     }
 
     for (int o = 1; argv[a][o]; ++o) {
