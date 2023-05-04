@@ -78,6 +78,14 @@ can be
 .Cm Turtle ,
 or an option:
 .Bl -tag -width 3n
+.It Cm generated
+Read seemingly generated blank node labels exactly.
+Normally, blank node labels like
+.Li b123
+are adapted to avoid clashing with generated ones.
+This option avoids that,
+so such labels will be passed through unchanged.
+Note that this may corrupt the output by merging distinct blank nodes!
 .It Cm lax
 Tolerate invalid input where possible.
 Warnings will be printed for syntax errors,

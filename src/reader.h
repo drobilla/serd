@@ -43,6 +43,7 @@ struct SerdReaderImpl {
   SerdByteSource* source;
   SerdStack       stack;
   SerdSyntax      syntax;
+  SerdReaderFlags flags;
   unsigned        next_id;
   char*           bprefix;
   size_t          bprefix_len;

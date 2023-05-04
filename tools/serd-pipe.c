@@ -38,7 +38,7 @@ print_usage(const char* const name, const bool error)
     "Use - for INPUT to read from standard input.\n\n"
     "  -B BASE_URI  Base URI.\n"
     "  -I SYNTAX    Input syntax (turtle/ntriples/trig/nquads),\n"
-    "               or flag (lax).\n"
+    "               or flag (lax/generated).\n"
     "  -O SYNTAX    Output syntax (empty/turtle/ntriples/nquads),\n"
     "               or flag (ascii/lax/terse/unresolved/unqualified).\n"
     "  -b BYTES     I/O block size.\n"

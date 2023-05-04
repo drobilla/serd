@@ -29,7 +29,35 @@ typedef struct SerdReaderImpl SerdReader;
 
 /// Reader options
 typedef enum {
-  SERD_READ_LAX = 1U << 0U, ///< Tolerate invalid input where possible
+  /**
+     Tolerate invalid input where possible.
+
+     This will attempt to ignore invalid input and continue reading.  Invalid
+     Unicode characters will be replaced with the replacement character, and
+     various other syntactic problems will be ignored.  If there are more
+     severe problems, the reader will try to skip the statement and continue
+     parsing.  This should work reasonably well for line-based syntaxes like
+     NTriples and NQuads, but abbreviated Turtle or TriG may not recover.
+
+     Note that this flag should be used carefully, since it can result in data
+     loss.
+  */
+  SERD_READ_LAX = 1U << 0U,
+
+  /**
+     Read generated blank node labels exactly without adjusting them.
+
+     Normally, the reader will adapt blank node labels in the input that clash
+     with its scheme for generating new ones, for example mapping "_:b123" to
+     "_:B123".  This flag disables that, so that blank node labels are passed
+     to the sink exactly as they are in the input.
+
+     Note that this flag should be used carefully, since it can result in data
+     corruption.  Specifically, if the input is a syntax like Turtle with
+     anonymous nodes, the generated IDs for those nodes may clash with IDs from
+     the input document.
+  */
+  SERD_READ_GENERATED = 1U << 1U,
 } SerdReaderFlag;
 
 /// Bitwise OR of SerdReaderFlag values
