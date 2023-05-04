@@ -8,7 +8,6 @@
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
-#include "serd/stream.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "serd/writer.h"
@@ -25,7 +24,7 @@ static void
 check_output(SerdWriter* writer, SerdBuffer* buffer, const char* expected)
 {
   serd_writer_finish(writer);
-  serd_buffer_sink_finish(buffer);
+  serd_buffer_close(buffer);
 
   const char* output = (const char*)buffer->buf;
 
@@ -54,8 +53,8 @@ test(void)
 
   serd_env_set_prefix(env, zix_string("rdf"), zix_string(NS_RDF));
 
-  SerdWriter* writer = serd_writer_new(
-    world, SERD_TURTLE, 0, env, (SerdWriteFunc)serd_buffer_sink, &buffer);
+  SerdWriter* writer =
+    serd_writer_new(world, SERD_TURTLE, 0, env, serd_buffer_write, &buffer);
 
   const SerdSink* sink = serd_writer_sink(writer);
 
@@ -87,7 +86,7 @@ test(void)
   serd_sink_write(sink, 0, l2, rdf_rest, rdf_nil, NULL);
   check_output(writer, &buffer, "[] rdf:value ( \"s1\" \"s2\" ) .\n");
 
-  serd_buffer_sink_finish(&buffer);
+  serd_buffer_close(&buffer);
   serd_writer_free(writer);
   serd_node_free(rdf_nil);
   serd_node_free(rdf_rest);

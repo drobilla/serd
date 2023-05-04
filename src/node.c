@@ -532,11 +532,11 @@ serd_new_file_uri(const ZixStringView path, const ZixStringView hostname)
 {
   SerdBuffer buffer = {NULL, 0U};
 
-  serd_write_file_uri(path, hostname, serd_buffer_sink, &buffer);
-  serd_buffer_sink_finish(&buffer);
+  serd_write_file_uri(path, hostname, serd_buffer_write, &buffer);
+  serd_buffer_close(&buffer);
 
   const size_t      length = buffer.len;
-  const char* const string = serd_buffer_sink_finish(&buffer);
+  const char* const string = (char*)buffer.buf;
   SerdNode* const   node   = serd_new_string(zix_substring(string, length));
 
   free(buffer.buf);

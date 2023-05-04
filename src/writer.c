@@ -15,7 +15,6 @@
 #include "world.h"
 
 #include "serd/attributes.h"
-#include "serd/buffer.h"
 #include "serd/env.h"
 #include "serd/event.h"
 #include "serd/node.h"
@@ -1501,30 +1500,4 @@ serd_writer_sink(SerdWriter* writer)
 {
   assert(writer);
   return &writer->iface;
-}
-
-size_t
-serd_buffer_sink(const void* const buf,
-                 const size_t      size,
-                 const size_t      nmemb,
-                 void* const       stream)
-{
-  assert(size == 1);
-  (void)size;
-
-  SerdBuffer* buffer  = (SerdBuffer*)stream;
-  char*       new_buf = (char*)realloc(buffer->buf, buffer->len + nmemb);
-  if (new_buf) {
-    memcpy(new_buf + buffer->len, buf, nmemb);
-    buffer->buf = new_buf;
-    buffer->len += nmemb;
-  }
-  return nmemb;
-}
-
-char*
-serd_buffer_sink_finish(SerdBuffer* const stream)
-{
-  serd_buffer_sink("", 1, 1, stream);
-  return (char*)stream->buf;
 }
