@@ -147,6 +147,7 @@ c_headers = files(
 )
 
 sources = files(
+  'src/buffer.c',
   'src/byte_source.c',
   'src/env.c',
   'src/node.c',
