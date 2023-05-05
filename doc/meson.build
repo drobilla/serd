@@ -46,7 +46,14 @@ if mandoc.found()
     'serdi.html',
     build_by_default: true,
     capture: true,
-    command: [mandoc, '-Thtml', '-Werror', '-O', 'style=mandoc.css', '@INPUT@'],
+    command: [
+      mandoc,
+      '-Kutf-8',
+      '-Ostyle=mandoc.css,man=%N.html',
+      '-Thtml',
+      '-Wwarning,stop',
+      '@INPUT@',
+    ],
     input: files('serdi.1'),
     output: 'serdi.html',
   )
