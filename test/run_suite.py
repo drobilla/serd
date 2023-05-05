@@ -130,7 +130,6 @@ def run_suite(args, command, out_dir):
 
                 # Run test and record result
                 passed = run_entry(args, entry, command, out_dir, top)
-                results.check(passed)
 
                 # Write test report entry
                 if args.report:
@@ -142,13 +141,13 @@ def run_suite(args, command, out_dir):
                 if exception.stderr is not None:
                     sys.stderr.write(exception.stderr)
 
-                results.check(False, str(exception) + "\n")
+            results.check(passed)
 
     return util.print_result_summary(results)
 
 
 def main():
-    """Run the command line tool."""
+    """Run the test suite via the command line tool."""
 
     parser = argparse.ArgumentParser(
         usage="%(prog)s [OPTION]... MANIFEST BASE_URI -- [ARG]...",
