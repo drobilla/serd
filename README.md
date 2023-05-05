@@ -57,6 +57,7 @@ Documentation
  * [Installation instructions](INSTALL.md)
  * [Single-page API reference](https://drobilla.gitlab.io/serd/doc/singlehtml/)
  * [Paginated API reference](https://drobilla.gitlab.io/serd/doc/html/)
+ * [`serd-filter` man page](https://drobilla.gitlab.io/serd/man/serd-filter.html)
  * [`serd-pipe` man page](https://drobilla.gitlab.io/serd/man/serd-pipe.html)
 
 Versioning

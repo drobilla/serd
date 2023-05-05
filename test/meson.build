@@ -1,6 +1,7 @@
-# Copyright 2020-2023 David Robillard <d@drobilla.net>
+# Copyright 2020-2025 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
+run_filter_suite = find_program('run_filter_suite.py')
 run_suite = find_program('run_suite.py')
 wrapper = meson.get_external_property('exe_wrapper', '')
 
@@ -31,6 +32,7 @@ unit_test_names = [
   'env',
   'field',
   'file_uri',
+  'filter',
   'free_null',
   'handler',
   'node',
@@ -129,6 +131,25 @@ if wrapper != ''
 endif
 
 simple_command_tests = {
+  'filter': {
+    'bad': [
+      ['-B', 'unknown'],
+      ['-F', '', '-G', ''],
+      ['-F', '?s ?p ?o . ?q ?r ?s .', '-s', ''],
+      ['-F', '?s ?p ?o .\n?q ?r ?s .\n', '-s', ''],
+      ['-F', 'bad_pattern', '-s', ''],
+      ['-F'],
+      ['-G', '?s ?p ?o . ?q ?r ?s .', '-s', ''],
+      ['-G', 'bad_pattern', '-s', ''],
+      ['-G'],
+      ['-f', '/no/such/file.nt', '-'],
+      ['-z'],
+    ],
+    'good': [
+      ['-V'],
+      ['-h'],
+    ],
+  },
   'pipe': {
     'bad': [
       ['-B'],
@@ -161,6 +182,24 @@ simple_command_tests = {
   },
 }
 
+foreach tool, tests : simple_command_tests
+  tool_var_name = 'serd_' + tool
+  if is_variable(tool_var_name)
+    foreach kind, cases : tests
+      foreach args : cases
+        test(
+          ' '.join(args).substring(1).underscorify(),
+          get_variable(tool_var_name),
+          args: args,
+          env: test_env,
+          should_fail: kind == 'bad',
+          suite: ['tools', tool, 'options'],
+        )
+      endforeach
+    endforeach
+  endif
+endforeach
+
 if is_variable('serd_pipe')
   pipe_script_args = common_script_args + ['--tool', serd_pipe]
   serd_ttl = files('../serd.ttl')[0]
@@ -173,19 +212,6 @@ if is_variable('serd_pipe')
   # Command line options
 
   cmd_suite = ['tools', 'pipe', 'options']
-
-  foreach kind, cases : simple_command_tests['pipe']
-    foreach args : cases
-      test(
-        ' '.join(args).substring(1).underscorify(),
-        serd_pipe,
-        args: args,
-        env: test_env,
-        should_fail: kind == 'bad',
-        suite: cmd_suite,
-      )
-    endforeach
-  endforeach
 
   # Base URI options
 
@@ -368,6 +394,62 @@ if is_variable('serd_pipe')
       suite: 'io',
     )
   endif
+endif
+
+# Test specifics to serd-filter
+if is_variable('serd_filter')
+  tool = serd_filter
+  filter_script_args = common_script_args + ['--tool', serd_filter]
+
+  # Command line options
+
+  test(
+    'bad_pattern',
+    tool,
+    args: ['junk', serd_ttl],
+    env: test_env,
+    should_fail: true,
+    suite: ['tools', 'filter', 'options'],
+  )
+  test(
+    'multiple_patterns',
+    tool,
+    args: ['?s ?p ?o .\n?t ?u ?v .\n', serd_ttl],
+    env: test_env,
+    should_fail: true,
+    suite: ['tools', 'filter', 'output'],
+  )
+  test(
+    'missing_output',
+    tool,
+    args: ['-o', '/does/not/exist.ttl', '?s ?p ?o .', serd_ttl],
+    env: test_env,
+    should_fail: true,
+    suite: ['tools', 'filter', 'output'],
+  )
+
+  # Different input sources
+
+  test(
+    'filter_dir',
+    tool,
+    args: ['?s ?p ?o .', serd_src_root],
+    env: test_env,
+    should_fail: true,
+    suite: ['tools', 'filter', 'input'],
+  )
+
+  # Filtering
+
+  test(
+    'patterns',
+    files('test_patterns.py'),
+    args: filter_script_args,
+    env: test_env,
+    suite: ['tools'],
+  )
+
+  subdir('extra/filter')
 endif
 
 ###########################
