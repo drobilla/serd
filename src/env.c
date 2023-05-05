@@ -70,7 +70,7 @@ serd_env_set_base_uri(SerdEnv* const env, const SerdNode* const uri)
   assert(env);
 
   if (uri && uri->type != SERD_URI) {
-    return SERD_ERR_BAD_ARG;
+    return SERD_BAD_ARG;
   }
 
   if (!uri || !uri->buf) {
@@ -143,7 +143,7 @@ serd_env_set_prefix(SerdEnv* const        env,
   assert(uri);
 
   if (!name->buf || uri->type != SERD_URI) {
-    return SERD_ERR_BAD_ARG;
+    return SERD_BAD_ARG;
   }
 
   if (serd_uri_string_has_scheme(uri->buf)) {
@@ -217,13 +217,13 @@ serd_env_expand(const SerdEnv* const  env,
   assert(uri_suffix);
 
   if (!env) {
-    return SERD_ERR_BAD_CURIE;
+    return SERD_BAD_CURIE;
   }
 
   const char* const colon =
     (const char*)memchr(curie->buf, ':', curie->n_bytes + 1);
   if (curie->type != SERD_CURIE || !colon) {
-    return SERD_ERR_BAD_ARG;
+    return SERD_BAD_ARG;
   }
 
   const size_t            name_len = (size_t)(colon - curie->buf);
@@ -235,7 +235,7 @@ serd_env_expand(const SerdEnv* const  env,
     uri_suffix->len = curie->n_bytes - name_len - 1;
     return SERD_SUCCESS;
   }
-  return SERD_ERR_BAD_CURIE;
+  return SERD_BAD_CURIE;
 }
 
 SerdNode

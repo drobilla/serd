@@ -91,7 +91,7 @@ serd_byte_source_advance(SerdByteSource* source)
       if (!source->read_func(&source->read_byte, 1, 1, source->stream)) {
         source->eof = true;
         st =
-          source->error_func(source->stream) ? SERD_ERR_UNKNOWN : SERD_FAILURE;
+          source->error_func(source->stream) ? SERD_BAD_STREAM : SERD_FAILURE;
       }
     }
   } else if (!source->eof) {

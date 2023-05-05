@@ -42,7 +42,7 @@ serd_byte_sink_flush(SerdByteSink* bsink)
     const size_t n_out = bsink->sink(bsink->buf, size, bsink->stream);
     bsink->size        = 0;
 
-    return (n_out != size) ? SERD_ERR_BAD_WRITE : SERD_SUCCESS;
+    return (n_out != size) ? SERD_BAD_WRITE : SERD_SUCCESS;
   }
 
   return SERD_SUCCESS;

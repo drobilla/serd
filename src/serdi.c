@@ -391,7 +391,7 @@ main(int argc, char** argv)
 
   if (fclose(out_fd)) {
     perror("serdi: write error");
-    st = SERD_ERR_UNKNOWN;
+    st = SERD_BAD_STREAM;
   }
 
   return (st > SERD_FAILURE) ? 1 : 0;
