@@ -50,6 +50,11 @@ subdir('api')
 
 # Generate documentation with sphinx
 
+sphinx_flags = ['-E', '-a', '-q']
+if get_option('werror')
+  sphinx_flags += ['-W']
+endif
+
 # TODO: Add install_tag: 'doc' after requiring meson 0.60.0
 
 custom_target(
@@ -57,9 +62,8 @@ custom_target(
   build_by_default: true,
   command: [
     sphinx_build,
-    '-M', 'singlehtml', '@OUTDIR@', '@OUTDIR@',
-    '-E', '-q', '-t', 'singlehtml',
-  ],
+    '-M', 'singlehtml', '@OUTDIR@', '@OUTDIR@', '-t', 'singlehtml',
+  ] + sphinx_flags,
   input: [c_rst_files, c_serd_rst, c_index_xml, conf_py],
   install: true,
   install_dir: docdir / versioned_name,
@@ -71,9 +75,8 @@ custom_target(
   build_by_default: true,
   command: [
     sphinx_build,
-    '-M', 'html', '@OUTDIR@', '@OUTDIR@',
-    '-E', '-q', '-t', 'html',
-  ],
+    '-M', 'html', '@OUTDIR@', '@OUTDIR@', '-t', 'html',
+  ] + sphinx_flags,
   input: [c_rst_files, c_serd_rst, c_index_xml, conf_py],
   install: true,
   install_dir: docdir / versioned_name,
