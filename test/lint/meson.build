@@ -7,11 +7,13 @@ plot_script_paths = [
 
 simple_script_paths = [
   '../../scripts/check_formatting.py',
+  '../run_filter_suite.py',
   '../run_suite.py',
   '../serd_test_util/__init__.py',
   '../test_base.py',
   '../test_empty.py',
   '../test_multifile.py',
+  '../test_patterns.py',
   '../test_quiet.py',
   '../test_stdin.py',
   '../test_write_error.py',

@@ -2,6 +2,7 @@ serd (1.1.1) unstable; urgency=medium
 
   * Add SerdBuffer for mutable buffers to keep SerdChunk const-correct
   * Add SerdWorld for shared library state
+  * Add filtering of statements by a triple or quad pattern
   * Add fine-grained control of writer syntax features
   * Add support for URI percent encoding and decoding
   * Add support for converting literals to canonical form

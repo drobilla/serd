@@ -32,6 +32,7 @@ if not get_option('tools').disabled()
       )
     endif
 
+    install_man(files('serd-filter.1'))
     install_man(files('serd-pipe.1'))
   endif
 
@@ -56,6 +57,7 @@ if not get_option('tools').disabled()
     ]
 
     page_names = [
+      'serd-filter',
       'serd-pipe',
     ]
 

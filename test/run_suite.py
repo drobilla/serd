@@ -127,11 +127,11 @@ def run_suite(args, command, out_dir):
             try:
                 entry = model[uri]
                 if check and NS_MF + "result" not in entry:
+                    passed = False
                     raise RuntimeError("Eval test missing result: " + uri)
 
                 # Run test and record result
                 passed = run_entry(args, entry, command, out_dir, top)
-                results.check(passed)
 
                 # Write test report entry
                 if args.report:
@@ -139,17 +139,17 @@ def run_suite(args, command, out_dir):
                         text = util.earl_assertion(uri, passed, args.asserter)
                         report.write(text)
 
+                results.check(passed)
+
             except subprocess.CalledProcessError as exception:
                 if exception.stderr is not None:
                     sys.stderr.write(exception.stderr)
-
-                results.check(False, str(exception) + "\n")
 
     return util.print_result_summary(results)
 
 
 def main():
-    """Run the command line tool."""
+    """Run the test suite via the command line tool."""
 
     parser = argparse.ArgumentParser(
         usage="%(prog)s [OPTION]... MANIFEST BASE_URI -- [ARG]...",
