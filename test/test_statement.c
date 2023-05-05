@@ -8,7 +8,6 @@
 #include "serd/caret.h"
 #include "serd/node.h"
 #include "serd/statement.h"
-#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -18,10 +17,10 @@
 static void
 test_new(void)
 {
-  SerdNode* const u = serd_new_uri(NULL, zix_string(NS_EG "s"));
-  SerdNode* const c = serd_new_curie(NULL, zix_string("eg:c"));
-  SerdNode* const b = serd_new_blank(NULL, zix_string("b0"));
-  SerdNode* const l = serd_new_string(NULL, zix_string("str"));
+  SerdNode* const u = serd_node_new(NULL, serd_a_uri_string(NS_EG "s"));
+  SerdNode* const c = serd_node_new(NULL, serd_a_curie_string("eg:c"));
+  SerdNode* const b = serd_node_new(NULL, serd_a_blank_string("b0"));
+  SerdNode* const l = serd_node_new(NULL, serd_a_string("str"));
 
   // Anything can be a URI
   {
@@ -47,8 +46,9 @@ test_new(void)
 static void
 test_new_failed_alloc(void)
 {
-  SerdNode* const  u     = serd_new_uri(NULL, zix_string(NS_EG "s"));
-  SerdNode* const  doc   = serd_new_uri(NULL, zix_string(NS_EG "document"));
+  SerdNode* const u = serd_node_new(NULL, serd_a_uri_string(NS_EG "s"));
+  SerdNode* const doc =
+    serd_node_new(NULL, serd_a_uri_string(NS_EG "document"));
   SerdCaret* const caret = serd_caret_new(NULL, doc, 1, 79);
 
   SerdFailingAllocator allocator = serd_failing_allocator();
@@ -76,10 +76,10 @@ test_copy(void)
 {
   assert(!serd_statement_copy(NULL, NULL));
 
-  SerdNode* const s = serd_new_uri(NULL, zix_string(NS_EG "s"));
-  SerdNode* const p = serd_new_uri(NULL, zix_string(NS_EG "p"));
-  SerdNode* const o = serd_new_uri(NULL, zix_string(NS_EG "o"));
-  SerdNode* const g = serd_new_uri(NULL, zix_string(NS_EG "g"));
+  SerdNode* const s = serd_node_new(NULL, serd_a_uri_string(NS_EG "s"));
+  SerdNode* const p = serd_node_new(NULL, serd_a_uri_string(NS_EG "p"));
+  SerdNode* const o = serd_node_new(NULL, serd_a_uri_string(NS_EG "o"));
+  SerdNode* const g = serd_node_new(NULL, serd_a_uri_string(NS_EG "g"));
 
   SerdStatement* const statement = serd_statement_new(NULL, s, p, o, g, NULL);
   SerdStatement* const copy      = serd_statement_copy(NULL, statement);
@@ -100,11 +100,11 @@ test_copy_with_caret(void)
 {
   assert(!serd_statement_copy(NULL, NULL));
 
-  SerdNode* const f = serd_new_string(NULL, zix_string("file"));
-  SerdNode* const s = serd_new_uri(NULL, zix_string(NS_EG "s"));
-  SerdNode* const p = serd_new_uri(NULL, zix_string(NS_EG "p"));
-  SerdNode* const o = serd_new_uri(NULL, zix_string(NS_EG "o"));
-  SerdNode* const g = serd_new_uri(NULL, zix_string(NS_EG "g"));
+  SerdNode* const f = serd_node_new(NULL, serd_a_string("file"));
+  SerdNode* const s = serd_node_new(NULL, serd_a_uri_string(NS_EG "s"));
+  SerdNode* const p = serd_node_new(NULL, serd_a_uri_string(NS_EG "p"));
+  SerdNode* const o = serd_node_new(NULL, serd_a_uri_string(NS_EG "o"));
+  SerdNode* const g = serd_node_new(NULL, serd_a_uri_string(NS_EG "g"));
 
   SerdCaret* const     caret     = serd_caret_new(NULL, f, 1, 1);
   SerdStatement* const statement = serd_statement_new(NULL, s, p, o, g, caret);
@@ -126,8 +126,9 @@ test_copy_with_caret(void)
 static void
 test_copy_failed_alloc(void)
 {
-  SerdNode* const  u     = serd_new_uri(NULL, zix_string(NS_EG "s"));
-  SerdNode* const  doc   = serd_new_uri(NULL, zix_string(NS_EG "document"));
+  SerdNode* const u = serd_node_new(NULL, serd_a_uri_string(NS_EG "s"));
+  SerdNode* const doc =
+    serd_node_new(NULL, serd_a_uri_string(NS_EG "document"));
   SerdCaret* const caret = serd_caret_new(NULL, doc, 1, 79);
 
   SerdStatement* const statement =
@@ -162,11 +163,11 @@ test_free(void)
 static void
 test_fields(void)
 {
-  SerdNode* const f = serd_new_string(NULL, zix_string("file"));
-  SerdNode* const s = serd_new_uri(NULL, zix_string(NS_EG "s"));
-  SerdNode* const p = serd_new_uri(NULL, zix_string(NS_EG "p"));
-  SerdNode* const o = serd_new_uri(NULL, zix_string(NS_EG "o"));
-  SerdNode* const g = serd_new_uri(NULL, zix_string(NS_EG "g"));
+  SerdNode* const f = serd_node_new(NULL, serd_a_string("file"));
+  SerdNode* const s = serd_node_new(NULL, serd_a_uri_string(NS_EG "s"));
+  SerdNode* const p = serd_node_new(NULL, serd_a_uri_string(NS_EG "p"));
+  SerdNode* const o = serd_node_new(NULL, serd_a_uri_string(NS_EG "o"));
+  SerdNode* const g = serd_node_new(NULL, serd_a_uri_string(NS_EG "g"));
 
   SerdCaret* const     caret     = serd_caret_new(NULL, f, 1, 1);
   SerdStatement* const statement = serd_statement_new(NULL, s, p, o, g, caret);
