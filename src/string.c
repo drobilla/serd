@@ -27,24 +27,42 @@ serd_strerror(const SerdStatus status)
     return "Success";
   case SERD_FAILURE:
     return "Non-fatal failure";
-  case SERD_ERR_UNKNOWN:
+  case SERD_NO_DATA:
+    return "Missing input";
+  case SERD_NO_SPACE:
+    return "Insufficient space";
+
+  case SERD_UNKNOWN_ERROR:
     break;
-  case SERD_ERR_BAD_SYNTAX:
+
+  case SERD_BAD_SYNTAX:
     return "Invalid syntax";
-  case SERD_ERR_BAD_ARG:
+  case SERD_BAD_ARG:
     return "Invalid argument";
-  case SERD_ERR_NOT_FOUND:
-    return "Not found";
-  case SERD_ERR_ID_CLASH:
-    return "Blank node ID clash";
-  case SERD_ERR_BAD_CURIE:
-    return "Invalid CURIE";
-  case SERD_ERR_INTERNAL:
-    return "Internal error";
-  case SERD_ERR_BAD_WRITE:
-    return "Error writing to file/stream";
-  case SERD_ERR_BAD_TEXT:
+  case SERD_BAD_LABEL:
+    return "Clashing blank node label";
+  case SERD_BAD_CURIE:
+    return "Invalid CURIE or unknown namespace prefix";
+  case SERD_BAD_ALLOC:
+    return "Memory allocation failed";
+  case SERD_BAD_READ:
+    return "Error reading from file";
+  case SERD_BAD_WRITE:
+    return "Error writing to file";
+  case SERD_BAD_STREAM:
+    return "File or stream error";
+  case SERD_BAD_STACK:
+    return "Stack overflow";
+  case SERD_BAD_TEXT:
     return "Invalid text encoding";
+  case SERD_BAD_CALL:
+    return "Invalid call";
+  case SERD_BAD_URI:
+    return "Invalid or unresolved URI";
+  case SERD_BAD_DATA:
+    return "Invalid data";
+  case SERD_BAD_LITERAL:
+    return "Invalid literal";
   }
 
   return "Unknown error";
