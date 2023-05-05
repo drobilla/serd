@@ -8,6 +8,15 @@ if get_option('static') and cc.get_id() != 'msvc'
   tool_link_args += ['-static']
 endif
 
+serd_filter = executable(
+  'serd-filter',
+  files('console.c', 'serd-filter.c'),
+  c_args: tool_c_args,
+  dependencies: [serd_dep, zix_dep],
+  install: true,
+  link_args: tool_link_args,
+)
+
 serd_pipe = executable(
   'serd-pipe',
   files('console.c', 'serd-pipe.c'),
@@ -17,4 +26,5 @@ serd_pipe = executable(
   link_args: tool_link_args,
 )
 
+meson.override_find_program('serd-filter', serd_filter)
 meson.override_find_program('serd-pipe', serd_pipe)
