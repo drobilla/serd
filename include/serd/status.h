@@ -41,6 +41,7 @@ typedef enum {
   SERD_BAD_URI,     ///< Invalid or unresolved URI
   SERD_BAD_DATA,    ///< Invalid data
   SERD_BAD_LITERAL, ///< Invalid literal
+  SERD_BAD_PATTERN, ///< Invalid statement pattern
 } SerdStatus;
 
 /// Return a string describing a status code

@@ -70,6 +70,7 @@
 #include "serd/caret_view.h"
 #include "serd/env.h"
 #include "serd/event.h"
+#include "serd/filter.h"
 #include "serd/sink.h"
 #include "serd/statement_view.h"
 #include "serd/tee.h"

@@ -52,6 +52,8 @@ serd_strerror(const SerdStatus status)
     return "Invalid data";
   case SERD_BAD_LITERAL:
     return "Invalid literal";
+  case SERD_BAD_PATTERN:
+    return "Invalid statement pattern";
   }
 
   return "Unknown error";
