@@ -2,6 +2,7 @@ serd (0.31.5) unstable; urgency=medium
 
   * Add Windows path separator support to serd_node_new_file_uri()
   * Add long "help" and "version" options to serdi
+  * Add options to disable html or singlehtml documentation
   * Add serd_reader_skip_until_byte() to public API
   * Allow SERD_API to be defined by the user
   * Avoid creating test files in the current directory
@@ -29,7 +30,7 @@ serd (0.31.5) unstable; urgency=medium
   * Test header for warnings more strictly
   * Update standard test suites
 
- -- David Robillard <d@drobilla.net>  Wed, 03 May 2023 19:48:35 +0000
+ -- David Robillard <d@drobilla.net>  Fri, 05 May 2023 17:28:53 +0000
 
 serd (0.30.16) stable; urgency=medium
 
