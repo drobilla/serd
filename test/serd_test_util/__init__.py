@@ -182,3 +182,16 @@ def lines_equal(from_lines, to_lines, from_filename, to_filename):
         same = False
 
     return same
+
+
+def file_equals(patha, pathb):
+    """Return true if the file at patha is the same as the file at pathb."""
+
+    for path in (patha, pathb):
+        if not os.access(path, os.F_OK):
+            error("missing file {}\n".format(path))
+            return False
+
+    with open(patha, "r", encoding="utf-8") as fa:
+        with open(pathb, "r", encoding="utf-8") as fb:
+            return lines_equal(fa.readlines(), fb.readlines(), patha, pathb)
