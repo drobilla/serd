@@ -8,7 +8,6 @@
 
 #include "serd/node.h"
 #include "zix/allocator.h"
-#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdarg.h>
@@ -56,8 +55,9 @@ serd_world_new(ZixAllocator* const allocator)
 {
   ZixAllocator* const actual = allocator ? allocator : zix_default_allocator();
 
-  SerdWorld* world      = (SerdWorld*)zix_calloc(actual, 1, sizeof(SerdWorld));
-  SerdNode*  blank_node = serd_new_blank(actual, zix_string("b00000000000"));
+  SerdWorld* world = (SerdWorld*)zix_calloc(actual, 1, sizeof(SerdWorld));
+  SerdNode*  blank_node =
+    serd_node_new(actual, serd_a_blank_string("b00000000000"));
 
   if (!world || !blank_node) {
     serd_node_free(actual, blank_node);

@@ -136,6 +136,7 @@ c_headers = files(
   'include/serd/string.h',
   'include/serd/syntax.h',
   'include/serd/uri.h',
+  'include/serd/value.h',
   'include/serd/version.h',
   'include/serd/world.h',
   'include/serd/write_result.h',
@@ -163,6 +164,7 @@ sources = files(
   'src/string.c',
   'src/syntax.c',
   'src/uri.c',
+  'src/value.c',
   'src/world.c',
   'src/writer.c',
 )

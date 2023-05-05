@@ -153,7 +153,7 @@ main(int argc, char** argv)
           return missing_arg(prog, 'B');
         }
 
-        base = serd_new_uri(NULL, zix_string(argv[a]));
+        base = serd_node_new(NULL, serd_a_uri_string(argv[a]));
         break;
       } else if (opt == 'I') {
         if (argv[a][o + 1] || ++a == argc) {
@@ -259,8 +259,10 @@ main(int argc, char** argv)
       (output_syntax == SERD_NQUADS || output_syntax == SERD_NTRIPLES)) {
     // Choose base URI from the single input path
     char* const input_path = zix_canonical_path(NULL, inputs[0]);
-    if (!input_path || !(base = serd_new_file_uri(
-                           NULL, zix_string(input_path), zix_empty_string()))) {
+    if (!input_path ||
+        !(base = serd_node_new(
+            NULL,
+            serd_a_file_uri(zix_string(input_path), zix_empty_string())))) {
       LOG_ERRF("unable to determine base URI from path %s\n", inputs[0]);
     }
     zix_free(NULL, input_path);
