@@ -1,0 +1,173 @@
+.\" # Copyright 2021-2022 David Robillard <d@drobilla.net>
+.\" # SPDX-License-Identifier: ISC
+.Dd July 15, 2022
+.Dt SERD-FILTER 1
+.Os Serd
+.Sh NAME
+.Nm serd-filter
+.Nd print RDF statements that match a pattern
+.Sh SYNOPSIS
+.Nm serd-filter
+.Op Fl hVv
+.Op Fl B Ar base
+.Op Fl I Ar syntax
+.Op Fl O Ar syntax
+.Op Fl b Ar bytes
+.Op Fl f Ar pattern_file
+.Op Fl k Ar bytes
+.Op Fl o Ar filename
+.Ar pattern
+.Op Ar input ...
+.Sh DESCRIPTION
+.Nm
+filters statements in RDF data.
+Its interface is similar to
+.Xr grep 1 ,
+except patterns are structural:
+instead of matching characters within a line,
+.Nm
+matches nodes within a statement.
+Only those statements from the input that match the pattern
+(or do not match the pattern, if
+.Fl v
+is given) are written.
+.Pp
+Patterns are written in NTriples or NQuads with an extension that allows variables written like
+.Li ?this
+or
+.Li $that .
+.Pp
+Input and output arguments work the same way as with
+.Xr serd-pipe 1 .
+.Pp
+The options are as follows:
+.Pp
+.Bl -tag -compact -width 3n
+.It Fl B Ar base
+Base URI, path, or
+.Cm rebase
+to use the output path.
+See
+.Xr serd-pipe 1
+for details.
+.Pp
+.It Fl I Ar syntax
+Input syntax or option:
+.Cm NQuads ,
+.Cm NTriples ,
+.Cm TriG ,
+.Cm Turtle ,
+.Cm lax ,
+.Cm variables ,
+.Cm relative ,
+or
+.Cm labels .
+See
+.Xr serd-pipe 1
+for details.
+.Pp
+.It Fl O Ar syntax
+Output syntax or option:
+.Cm empty ,
+.Cm NQuads ,
+.Cm NTriples ,
+.Cm TriG ,
+.Cm Turtle ,
+.Cm ascii ,
+.Cm contextual ,
+.Cm expanded ,
+.Cm verbatim ,
+.Cm terse ,
+or
+.Cm lax .
+See
+.Xr serd-pipe 1
+for details.
+.Pp
+.It Fl V
+Display version information and exit.
+.Pp
+.It Fl b Ar bytes
+I/O block size.
+See
+.Xr serd-pipe 1
+for details.
+.Pp
+.It Fl f Ar pattern_file
+Load pattern from
+.Ar pattern_file
+instead of the first positional argument.
+.Pp
+.It Fl h
+Print the command line options.
+.Pp
+.It Fl k Ar bytes
+Parser stack size.
+See
+.Xr serd-pipe 1
+for details.
+.Pp
+.It Fl o Ar filename
+Write output to the given
+.Ar filename
+instead of stdout.
+.Pp
+.It Fl v
+Invert filter to only emit statements that do
+.Em not
+match the pattern.
+.El
+.Sh EXIT STATUS
+.Nm
+exits with a status of 0, or non-zero if an error occured.
+.Sh EXAMPLES
+To print all type statements:
+.Pp
+.Dl $ serd-filter '?subject a ?type .' input.ttl
+.Pp
+To print every statement about http://example.org/subject:
+.Pp
+.Dl $ serd-filter '<http://example.org/subject> ?p ?o .' input.ttl
+.Sh SEE ALSO
+.Bl -item -compact
+.It
+.Xr serd-pipe 1
+.It
+.Lk http://drobilla.net/software/serd/
+.El
+.Sh STANDARDS
+.Bl -item -compact
+.It
+.Rs
+.%A W3C
+.%T RDF 1.1 NQuads
+.%D February 2014
+.Re
+.Lk https://www.w3.org/TR/n-quads/
+.It
+.Rs
+.%A W3C
+.%D February 2014
+.%T RDF 1.1 NTriples
+.Re
+.Lk https://www.w3.org/TR/n-triples/
+.It
+.Rs
+.%A W3C
+.%T RDF 1.1 TriG
+.%D February 2014
+.Re
+.Lk https://www.w3.org/TR/trig/
+.It
+.Rs
+.%A W3C
+.%D February 2014
+.%T RDF 1.1 Turtle
+.Re
+.Lk https://www.w3.org/TR/turtle/
+.El
+.Sh AUTHORS
+.Nm
+is a part of serd, by
+.An David Robillard
+.Mt d@drobilla.net .
