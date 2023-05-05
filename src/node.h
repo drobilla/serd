@@ -94,7 +94,7 @@ serd_node_set(ZixAllocator* ZIX_NULLABLE         allocator,
               const SerdNode* ZIX_NONNULL        src);
 
 ZIX_PURE_FUNC size_t
-serd_node_total_size(const SerdNode* ZIX_NULLABLE node);
+serd_node_total_size(const SerdNode* ZIX_NONNULL node);
 
 void
 serd_node_zero_pad(SerdNode* ZIX_NONNULL node);

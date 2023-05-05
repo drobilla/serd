@@ -348,7 +348,7 @@ resolve_IRIREF(SerdReader* const reader,
   temp->length         = serd_write_uri(uri, write_to_stack, &ctx);
   if (!ctx.status) {
     // Replace the destination with the new expanded node
-    memmove(dest, temp, serd_node_total_size(temp));
+    memmove(dest, temp, sizeof(SerdNode) + serd_node_pad_length(temp->length));
     serd_stack_pop_to(&reader->stack, string_start_offset + dest->length);
   }
 
