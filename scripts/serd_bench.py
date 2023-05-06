@@ -41,6 +41,23 @@ class WorkingDirectory:
         os.chdir(self.original_dir)
 
 
+def order_of_magnitude(values):
+    "Return the order of magnitude to use for an axis with the given values"
+    if len(values) <= 0:
+        return 0
+
+    # Calculate the "best" order of magnitude like ScalarFormatter does
+    val = max(values)
+    oom = math.floor(math.log10(max(1.0, val)))
+    if -3 <= oom <= 3:
+        return 0
+
+    # Round down to a sensible (thousand, millions, billions, etc) order
+    remainder = oom % 3
+    oom = oom - remainder
+    return oom
+
+
 def filename(num):
     "Filename for a generated file with n statements"
     return "gen%d.ttl" % num
@@ -73,7 +90,7 @@ def parse_time(report):
         if line.startswith("\tUser time"):
             time = float(line[after_colon:])
         elif line.startswith("\tMaximum resident set"):
-            memory = float(line[after_colon:]) * 1024
+            memory = int(float(line[after_colon:]) * 1024)
 
     return (time, memory)
 
@@ -94,7 +111,6 @@ def get_dashes():
 
 def plot(in_file, out_filename, x_label, y_label, y_max=None):
     "Plot a TSV file as SVG"
-
     matplotlib.use("agg")
     import matplotlib.pyplot as plt
 
@@ -108,22 +124,22 @@ def plot(in_file, out_filename, x_label, y_label, y_max=None):
     header = next(reader)
     cols = list(zip(*list(reader)))
 
+    # Create a figure with a grid
     plt.clf()
     fig = plt.figure(figsize=(fig_height * math.sqrt(2), fig_height))
     ax = fig.add_subplot(111)
-
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
 
     ax.grid(linewidth=0.25, linestyle=":", color="0", dashes=[0.2, 1.6])
-    ax.ticklabel_format(style="sci", scilimits=(4, 0), useMathText=True)
     ax.tick_params(axis="both", width=0.75)
 
     x = list(map(float, cols[0]))
     actual_y_max = 0.0
     for i, y in enumerate(cols[1::]):
         y_floats = list(map(float, y))
-        actual_y_max = max(actual_y_max, y_floats)
+        y_floats_max = max(y_floats)
+        actual_y_max = max(actual_y_max, y_floats_max)
         ax.plot(
             x,
             y_floats,
@@ -134,9 +150,17 @@ def plot(in_file, out_filename, x_label, y_label, y_max=None):
             linewidth=1.0,
         )
 
-    y_max = actual_y_max if y_max is None else y_max
+    # Set Y axis limits to go from zero to the maximum value with a small pad
+    y_max = (1.025 * actual_y_max) if y_max is None else y_max
     ax.set_ylim([0.0, y_max])
 
+    # Set axis magnitudes
+    x_m = (order_of_magnitude(x),) * 2
+    y_m = (order_of_magnitude([y_max]),) * 2
+    ax.ticklabel_format(axis="x", style="sci", scilimits=x_m, useMathText=True)
+    ax.ticklabel_format(axis="y", style="sci", scilimits=y_m, useMathText=True)
+
+    # Save plot
     plt.legend(labelspacing=0.25)
     plt.savefig(out_filename, bbox_inches="tight", pad_inches=0.125)
     plt.close()
@@ -215,7 +239,7 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 example:
-  %(prog)s --max 100000 \\
+  %(prog)s --max 300000 \\
       --run 'rapper -i turtle -o turtle' \\
       --run 'riot --output=ttl' \\
       --run 'rdfpipe -i turtle -o turtle' /path/to/sp2b/src/
@@ -223,7 +247,7 @@ example:
     )
 
     ap.add_argument(
-        "--max", type=int, default=1000000, help="maximum triple count"
+        "--max", type=int, default=3000000, help="maximum triple count"
     )
     ap.add_argument(
         "--run",
@@ -241,12 +265,14 @@ example:
     ap.add_argument(
         "--no-plot", action="store_true", help="do not plot benchmarks"
     )
+    ap.add_argument("--steps", type=int, default=6, help="number of steps")
+
     ap.add_argument("sp2b_dir", help="path to sp2b test data generator")
 
     args = ap.parse_args(sys.argv[1:])
 
     progs = ["serdi -b -f -i turtle -o turtle"] + args.run
-    min_n = int(args.max / 10)
+    min_n = int(args.max / args.steps)
     max_n = args.max
     step = min_n
 
