@@ -72,8 +72,9 @@ serd_file_uri_parse(const uint8_t* const uri, uint8_t** const hostname)
         serd_chunk_sink("%", 1, &chunk);
         ++s;
       } else if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
-        const uint8_t code[3] = {*(s + 1), *(s + 2), 0};
-        const uint8_t c       = (uint8_t)strtoul((const char*)code, NULL, 16);
+        const uint8_t hi = hex_digit_value(s[1]);
+        const uint8_t lo = hex_digit_value(s[2]);
+        const char    c  = (char)((hi << 4U) | lo);
         serd_chunk_sink(&c, 1, &chunk);
         s += 2;
       } else {

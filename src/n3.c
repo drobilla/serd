@@ -15,7 +15,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #if defined(__clang__) && __clang_major__ >= 10
@@ -71,17 +70,18 @@ read_UCHAR(SerdReader* const reader, const Ref dest, uint32_t* const char_code)
 
   skip_byte(reader, b);
 
-  uint8_t buf[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-  for (unsigned i = 0; i < length; ++i) {
+  // Read character code point in hex
+  uint8_t  buf[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  uint32_t code   = 0U;
+  for (unsigned i = 0U; i < length; ++i) {
     if (!(buf[i] = read_HEX(reader))) {
       return SERD_ERR_BAD_SYNTAX;
     }
+
+    code = (code << (i ? 4U : 0U)) | hex_digit_value(buf[i]);
   }
 
-  char*          endptr = NULL;
-  const uint32_t code   = (uint32_t)strtoul((const char*)buf, &endptr, 16);
-  assert(endptr == (char*)buf + length);
-
+  // Determine the encoded size from the code point
   unsigned size = 0;
   if (code < 0x00000080) {
     size = 1;

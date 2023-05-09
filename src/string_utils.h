@@ -89,6 +89,12 @@ serd_substrlen(const uint8_t* str,
                size_t*        n_bytes,
                SerdNodeFlags* flags);
 
+static inline uint8_t
+hex_digit_value(const uint8_t c)
+{
+  return (uint8_t)((c > '9') ? ((c & ~0x20) - 'A' + 10) : (c - '0'));
+}
+
 static inline char
 serd_to_upper(const char c)
 {
