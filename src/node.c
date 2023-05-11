@@ -138,7 +138,7 @@ serd_a_base64(size_t size, const void* const data)
 
 // Node functions
 
-static size_t
+size_t
 serd_node_pad_length(const size_t n_bytes)
 {
 #if SIZE_MAX == UINT64_MAX
@@ -171,10 +171,10 @@ serd_node_meta(SerdNode* const node)
   return node + 1 + (serd_node_pad_length(node->length) / sizeof(SerdNode));
 }
 
-ZIX_PURE_FUNC static inline const SerdNode* ZIX_NONNULL
-serd_node_meta_c(const SerdNode* const ZIX_NONNULL node)
+const SerdNode*
+serd_node_meta_c(const SerdNode* const node)
 {
-  assert(node->flags & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE));
+  assert(serd_node_flags(node) & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE));
   return node + 1 + (serd_node_pad_length(node->length) / sizeof(SerdNode));
 }
 

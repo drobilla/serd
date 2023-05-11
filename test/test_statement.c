@@ -7,7 +7,9 @@
 
 #include "serd/caret.h"
 #include "serd/node.h"
+#include "serd/nodes.h"
 #include "serd/statement.h"
+#include "zix/allocator.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -17,10 +19,13 @@
 static void
 test_new(void)
 {
-  SerdNode* const u = serd_node_new(NULL, serd_a_uri_string(NS_EG "s"));
-  SerdNode* const c = serd_node_new(NULL, serd_a_curie_string("eg:c"));
-  SerdNode* const b = serd_node_new(NULL, serd_a_blank_string("b0"));
-  SerdNode* const l = serd_node_new(NULL, serd_a_string("str"));
+  ZixAllocator* const allocator = zix_default_allocator();
+  SerdNodes* const    nodes     = serd_nodes_new(allocator);
+
+  const SerdNode* const u = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "u"));
+  const SerdNode* const c = serd_nodes_get(nodes, serd_a_curie_string("eg:c"));
+  const SerdNode* const b = serd_nodes_get(nodes, serd_a_blank_string("blank"));
+  const SerdNode* const l = serd_nodes_get(nodes, serd_a_string("str"));
 
   // Anything can be a URI
   {
@@ -37,18 +42,18 @@ test_new(void)
   assert(!serd_statement_new(NULL, u, l, c, u, NULL));
   assert(!serd_statement_new(NULL, b, u, u, l, NULL));
 
-  serd_node_free(NULL, l);
-  serd_node_free(NULL, b);
-  serd_node_free(NULL, c);
-  serd_node_free(NULL, u);
+  serd_nodes_free(nodes);
 }
 
 static void
 test_new_failed_alloc(void)
 {
-  SerdNode* const u = serd_node_new(NULL, serd_a_uri_string(NS_EG "s"));
-  SerdNode* const doc =
-    serd_node_new(NULL, serd_a_uri_string(NS_EG "document"));
+  SerdNodes* const nodes = serd_nodes_new(NULL);
+
+  const SerdNode* const u = serd_nodes_get(nodes, serd_a_uri_string(NS_EG "u"));
+  const SerdNode* const doc =
+    serd_nodes_get(nodes, serd_a_uri_string(NS_EG "document"));
+
   SerdCaret* const caret = serd_caret_new(NULL, doc, 1, 79);
 
   SerdFailingAllocator allocator = serd_failing_allocator();
@@ -67,8 +72,7 @@ test_new_failed_alloc(void)
   }
 
   serd_caret_free(NULL, caret);
-  serd_node_free(NULL, doc);
-  serd_node_free(NULL, u);
+  serd_nodes_free(nodes);
 }
 
 static void
@@ -157,6 +161,7 @@ test_copy_failed_alloc(void)
 static void
 test_free(void)
 {
+  serd_statement_free(zix_default_allocator(), NULL);
   serd_statement_free(NULL, NULL);
 }
 
@@ -169,7 +174,8 @@ test_fields(void)
   SerdNode* const o = serd_node_new(NULL, serd_a_uri_string(NS_EG "o"));
   SerdNode* const g = serd_node_new(NULL, serd_a_uri_string(NS_EG "g"));
 
-  SerdCaret* const     caret     = serd_caret_new(NULL, f, 1, 1);
+  SerdCaret* const caret = serd_caret_new(NULL, f, 1, 1);
+
   SerdStatement* const statement = serd_statement_new(NULL, s, p, o, g, caret);
 
   assert(serd_statement_equals(statement, statement));

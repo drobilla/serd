@@ -131,6 +131,7 @@ unit_tests = [
   'free_null',
   'log',
   'node',
+  'nodes',
   'overflow',
   'reader',
   'reader_writer',

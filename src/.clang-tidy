@@ -10,5 +10,4 @@ Checks: >
   -hicpp-signed-bitwise,
   -llvm-header-guard,
   -misc-no-recursion,
-  -modernize-macro-to-enum,
 InheritParentConfig: true

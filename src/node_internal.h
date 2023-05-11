@@ -15,6 +15,10 @@
 
 static const size_t serd_node_align = 2 * sizeof(uint64_t);
 
+/// Return a string length padded to the number used with termination in a node
+ZIX_CONST_FUNC size_t
+serd_node_pad_length(size_t n_bytes);
+
 /// Return the total size in bytes of a node with the given string length
 ZIX_CONST_FUNC size_t
 serd_node_size_for_length(size_t length);
@@ -27,9 +31,13 @@ serd_node_total_size(const SerdNode* ZIX_NONNULL node);
 ZIX_CONST_FUNC char* ZIX_NONNULL
 serd_node_buffer(SerdNode* ZIX_NONNULL node);
 
-/// Return a pointer to the accompanying meta node of a node
+/// Return a mutable pointer to the accompanying meta node of a node
 ZIX_PURE_FUNC SerdNode* ZIX_NONNULL
 serd_node_meta(SerdNode* ZIX_NONNULL node);
+
+/// Return a const pointer to the accompanying meta node of a node
+ZIX_PURE_FUNC const SerdNode* ZIX_NONNULL
+serd_node_meta_c(const SerdNode* ZIX_NONNULL node);
 
 /// Return true if either node is null or the nodes are equal
 static inline bool
