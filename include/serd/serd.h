@@ -86,6 +86,14 @@
 
 /**
    @}
+   @defgroup serd_storage Storage
+   @{
+*/
+
+#include "serd/nodes.h"
+
+/**
+   @}
 */
 
 // IWYU pragma: end_exports

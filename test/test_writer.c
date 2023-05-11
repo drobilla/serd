@@ -9,6 +9,7 @@
 #include "serd/env.h"
 #include "serd/event.h"
 #include "serd/node.h"
+#include "serd/nodes.h"
 #include "serd/output_stream.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
@@ -74,18 +75,22 @@ test_write_failed_alloc(void)
   SerdFailingAllocator allocator = serd_failing_allocator();
 
   SerdWorld*       world  = serd_world_new(&allocator.base);
+  SerdNodes*       nodes  = serd_nodes_new(&allocator.base);
   SerdEnv*         env    = serd_env_new(NULL, zix_empty_string());
   SerdBuffer       buffer = {&allocator.base, NULL, 0};
   SerdOutputStream output = serd_open_output_buffer(&buffer);
 
-  SerdNode* s  = serd_node_new(NULL, serd_a_uri_string("http://example.org/s"));
-  SerdNode* p1 = serd_node_new(NULL, serd_a_uri_string("http://example.org/p"));
+  const SerdNode* s =
+    serd_nodes_get(nodes, serd_a_uri_string("http://example.org/s"));
 
-  SerdNode* p2 = serd_node_new(
-    NULL,
+  const SerdNode* p1 =
+    serd_nodes_get(nodes, serd_a_uri_string("http://example.org/p"));
+
+  const SerdNode* p2 = serd_nodes_get(
+    nodes,
     serd_a_uri_string("http://example.org/dramatically/longer/predicate"));
 
-  SerdNode* o = serd_node_new(NULL, serd_a_blank_string("o"));
+  const SerdNode* o = serd_nodes_get(nodes, serd_a_blank_string("o"));
 
   const size_t n_setup_allocs = allocator.n_allocations;
 
@@ -122,10 +127,8 @@ test_write_failed_alloc(void)
   serd_env_free(env);
   serd_buffer_close(&buffer);
   zix_free(buffer.allocator, buffer.buf);
-  serd_node_free(NULL, o);
-  serd_node_free(NULL, p2);
-  serd_node_free(NULL, p1);
-  serd_node_free(NULL, s);
+
+  serd_nodes_free(nodes);
   serd_world_free(world);
 }
 
