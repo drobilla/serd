@@ -17,17 +17,18 @@ dev:
   stage: build
   image: lv2plugin/debian-x64
   script:
-    - meson setup build -Dc_std=c11 -Dbuildtype=debug -Ddocs=enabled -Dwarning_level=3 -Dwerror=true -Db_coverage=true -Dlint=true
+    - meson setup build -Dc_std=c11 -Dbuildtype=debug -Ddocs=enabled -Dwarning_level=3 -Dwerror=true -Db_coverage=true -Dlint=true -Dprefix=/
     - ninja -C build test
     - ninja -C build coverage-html
-    - mkdir -p build/doc/
-    - cp doc/*.svg build/doc/
+    - DESTDIR=$(pwd)/build/dest meson install -C build
     - meson configure -Dbuildtype=release -Db_coverage=false -Dlint=false build
     - ninja -C build test
   coverage: '/ *lines\.*: \d+\.\d+.*/'
   artifacts:
     paths:
-      - build/doc
+      - build/dest/share/doc
+      - build/doc/mandoc.css
+      - build/doc/serdi.html
       - build/meson-logs/coveragereport
 
 static:
@@ -150,8 +151,8 @@ pages:
     - mkdir public/doc
     - mkdir public/man
     - mv build/meson-logs/coveragereport/ public/coverage
-    - mv build/doc/html/ public/doc/html/
-    - mv build/doc/singlehtml/ public/doc/singlehtml/
+    - mv build/dest/share/doc/serd-0/html/ public/doc/html/
+    - mv build/dest/share/doc/serd-0/singlehtml/ public/doc/singlehtml/
     - mv build/doc/serdi.html public/man/serdi.html
     - mv build/doc/mandoc.css public/man/mandoc.css
   needs:
