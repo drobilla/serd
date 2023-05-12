@@ -55,8 +55,8 @@ Documentation
 -------------
 
  * [Installation instructions](INSTALL.md)
- * [Single-page API reference](https://drobilla.gitlab.io/serd/c/singlehtml)
- * [Paginated API reference](https://drobilla.gitlab.io/serd/c/html)
+ * [Single-page API reference](https://drobilla.gitlab.io/serd/doc/singlehtml/)
+ * [Paginated API reference](https://drobilla.gitlab.io/serd/doc/html/)
  * [`serdi` man page](https://drobilla.gitlab.io/serd/man/serdi.html)
 
 Versioning

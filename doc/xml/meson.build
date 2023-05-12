@@ -1,8 +1,6 @@
 # Copyright 2020-2022 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
-doxygen = find_program('doxygen')
-
 config = configuration_data()
 config.set('SERD_SRCDIR', serd_src_root)
 config.set('DOX_OUTPUT', meson.current_build_dir() / '..')

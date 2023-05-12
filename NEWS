@@ -25,12 +25,13 @@ serd (0.31.5) unstable; urgency=medium
   * Make URI writing stricter by default
   * Make serd_reader_read_chunk() work with NQuads
   * Override pkg-config dependency within meson
+  * Remove junk files from documentation install
   * Remove support for writing Turtle named inline nodes extension
   * Replace duplicated dox_to_sphinx script with sphinxygen dependency
   * Test header for warnings more strictly
   * Update standard test suites
 
- -- David Robillard <d@drobilla.net>  Fri, 05 May 2023 17:28:53 +0000
+ -- David Robillard <d@drobilla.net>  Fri, 12 May 2023 02:42:30 +0000
 
 serd (0.30.16) stable; urgency=medium
 

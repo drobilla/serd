@@ -147,11 +147,11 @@ pages:
   stage: deploy
   script:
     - mkdir public
-    - mkdir public/c
+    - mkdir public/doc
     - mkdir public/man
     - mv build/meson-logs/coveragereport/ public/coverage
-    - mv build/doc/c/html/ public/c/html/
-    - mv build/doc/c/singlehtml/ public/c/singlehtml/
+    - mv build/doc/html/ public/doc/html/
+    - mv build/doc/singlehtml/ public/doc/singlehtml/
     - mv build/doc/serdi.html public/man/serdi.html
     - mv build/doc/mandoc.css public/man/mandoc.css
   needs:
