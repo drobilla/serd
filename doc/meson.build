@@ -23,10 +23,6 @@ endif
 
 # Build documentation if all required tools are found
 build_docs = doxygen.found() and sphinxygen.found() and sphinx_build.found()
-if not meson.is_subproject()
-  summary('Documentation', build_docs, bool_yn: true, section: 'Configuration')
-endif
-
 if build_docs
   # Warn if the "official" theme isn't present
   pymod = import('python')
@@ -74,7 +70,6 @@ endif
 # Man Pages #
 #############
 
-mandoc = find_program('mandoc', required: false)
 mandoc_css = files('mandoc.css')
 
 if get_option('lint')
@@ -84,6 +79,7 @@ if get_option('lint')
   endif
 endif
 
+mandoc = find_program('mandoc', required: false)
 if mandoc.found()
   configure_file(input: mandoc_css, output: '@PLAINNAME@', copy: true)
 
@@ -105,6 +101,12 @@ if mandoc.found()
 endif
 
 if not meson.is_subproject()
-  summary('HTML man pages', build_docs, bool_yn: true)
-  summary('Reference documentation', build_docs, bool_yn: true)
+  summary(
+    {
+      'HTML man pages': mandoc.found(),
+      'API documentation': build_docs,
+    },
+    bool_yn: true,
+    section: 'Components',
+  )
 endif

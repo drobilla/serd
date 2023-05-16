@@ -190,6 +190,37 @@ if not get_option('tools').disabled()
   endif
 endif
 
+# Display top-level summary (before subdirectories to appear first)
+if not meson.is_subproject()
+  summary(
+    {
+      'Tests': not get_option('tests').disabled(),
+      'Tools': not get_option('tools').disabled(),
+    },
+    bool_yn: true,
+    section: 'Components',
+  )
+
+  summary(
+    {
+      'Install prefix':  get_option('prefix'),
+      'Headers':  get_option('prefix') / get_option('includedir'),
+      'Libraries':  get_option('prefix') / get_option('libdir'),
+    },
+    section: 'Directories',
+  )
+
+  if not get_option('tools').disabled()
+    summary(
+      {
+        'Executables': get_option('prefix') / get_option('bindir'),
+        'Man pages': get_option('prefix') / get_option('mandir'),
+      },
+      section: 'Directories',
+    )
+  endif
+endif
+
 ###########
 # Support #
 ###########
@@ -216,19 +247,4 @@ endif
 
 if not get_option('docs').disabled()
   subdir('doc')
-endif
-
-if not meson.is_subproject()
-  summary('Tests', not get_option('tests').disabled(), bool_yn: true)
-  summary('Tools', not get_option('tools').disabled(), bool_yn: true)
-
-  summary('Install prefix', get_option('prefix'))
-
-  summary('Headers', get_option('prefix') / get_option('includedir'))
-  summary('Libraries', get_option('prefix') / get_option('libdir'))
-
-  if not get_option('tools').disabled()
-    summary('Executables', get_option('prefix') / get_option('bindir'))
-    summary('Man pages', get_option('prefix') / get_option('mandir'))
-  endif
 endif
