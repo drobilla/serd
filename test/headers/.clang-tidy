@@ -8,5 +8,5 @@ Checks: >
   -modernize-macro-to-enum,
   -readability-identifier-length,
 WarningsAsErrors: '*'
-HeaderFilterRegex: '.*'
+HeaderFilterRegex: '.*/serd/.*\.h'
 FormatStyle: file

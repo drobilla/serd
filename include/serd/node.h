@@ -6,9 +6,9 @@
 
 #include "serd/attributes.h"
 #include "serd/stream_result.h"
-#include "serd/string_view.h"
 #include "serd/uri.h"
 #include "zix/attributes.h"
+#include "zix/string_view.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -108,13 +108,13 @@ typedef uint32_t SerdNodeFlags;
    to create URIs, blank nodes, CURIEs, and simple string literals.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_token(SerdNodeType type, SerdStringView string);
+serd_new_token(SerdNodeType type, ZixStringView string);
 
 /**
    Create a new string literal node.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_string(SerdStringView string);
+serd_new_string(ZixStringView string);
 
 /**
    Create a new plain literal node from `str` with `lang`.
@@ -123,7 +123,7 @@ serd_new_string(SerdStringView string);
    may be empty, in which case this is equivalent to `serd_new_string()`.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_plain_literal(SerdStringView str, SerdStringView lang);
+serd_new_plain_literal(ZixStringView str, ZixStringView lang);
 
 /**
    Create a new typed literal node from `str`.
@@ -133,17 +133,17 @@ serd_new_plain_literal(SerdStringView str, SerdStringView lang);
    `serd_new_string()`.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_typed_literal(SerdStringView str, SerdStringView datatype_uri);
+serd_new_typed_literal(ZixStringView str, ZixStringView datatype_uri);
 
 /**
    Create a new node from a blank node label.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_blank(SerdStringView string);
+serd_new_blank(ZixStringView string);
 
 /// Create a new CURIE node
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_curie(SerdStringView string);
+serd_new_curie(ZixStringView string);
 
 /**
    Create a new URI node from a parsed URI.
@@ -155,7 +155,7 @@ serd_new_parsed_uri(SerdURIView uri);
    Create a new URI node from a string.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_uri(SerdStringView string);
+serd_new_uri(ZixStringView string);
 
 /**
    Create a new file URI node from a file system path and optional hostname.
@@ -166,7 +166,7 @@ serd_new_uri(SerdStringView string);
    If `path` is relative, `hostname` is ignored.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_file_uri(SerdStringView path, SerdStringView hostname);
+serd_new_file_uri(ZixStringView path, ZixStringView hostname);
 
 /**
    Create a new canonical xsd:boolean node.
@@ -278,7 +278,7 @@ serd_node_string(const SerdNode* ZIX_NONNULL node);
    This is a convenience wrapper for serd_node_string() and serd_node_length()
    that can be used to get both in a single call.
 */
-SERD_PURE_API SerdStringView
+SERD_PURE_API ZixStringView
 serd_node_string_view(const SerdNode* ZIX_NONNULL node);
 
 /**

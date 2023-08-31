@@ -8,8 +8,8 @@
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/status.h"
-#include "serd/string_view.h"
 #include "zix/attributes.h"
+#include "zix/string_view.h"
 
 #include <stdbool.h>
 
@@ -26,7 +26,7 @@ typedef struct SerdEnvImpl SerdEnv;
 
 /// Create a new environment
 SERD_API SerdEnv* ZIX_ALLOCATED
-serd_env_new(SerdStringView base_uri);
+serd_env_new(ZixStringView base_uri);
 
 /// Copy an environment
 SERD_API SerdEnv* ZIX_ALLOCATED
@@ -46,7 +46,7 @@ serd_env_base_uri(const SerdEnv* ZIX_NULLABLE env);
 
 /// Set the current base URI
 SERD_API SerdStatus
-serd_env_set_base_uri(SerdEnv* ZIX_NONNULL env, SerdStringView uri);
+serd_env_set_base_uri(SerdEnv* ZIX_NONNULL env, ZixStringView uri);
 
 /**
    Set a namespace prefix.
@@ -57,8 +57,8 @@ serd_env_set_base_uri(SerdEnv* ZIX_NONNULL env, SerdStringView uri);
 */
 SERD_API SerdStatus
 serd_env_set_prefix(SerdEnv* ZIX_NONNULL env,
-                    SerdStringView       name,
-                    SerdStringView       uri);
+                    ZixStringView        name,
+                    ZixStringView        uri);
 
 /**
    Qualify `uri` into a CURIE if possible.
