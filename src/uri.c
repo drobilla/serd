@@ -6,8 +6,8 @@
 
 #include "serd/buffer.h"
 #include "serd/stream.h"
-#include "serd/string_view.h"
 #include "serd/uri.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -238,7 +238,7 @@ remove_dot_segments(const char* const path, const size_t len, size_t* const up)
 
 /// Merge `base` and `path` in-place
 static void
-merge(SerdStringView* const base, SerdStringView* const path)
+merge(ZixStringView* const base, ZixStringView* const path)
 {
   size_t      up    = 0;
   const char* begin = remove_dot_segments(path->data, path->length, &up);

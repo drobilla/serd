@@ -1,8 +1,12 @@
 // Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
+#include "env.h"
+
 #include "serd/env.h"
+#include "serd/sink.h"
 #include "zix/attributes.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -177,7 +181,7 @@ bool
 serd_env_qualify(const SerdEnv* const  env,
                  const SerdNode* const uri,
                  SerdNode* const       prefix,
-                 SerdStringView* const suffix)
+                 ZixStringView* const  suffix)
 {
   if (!env) {
     return false;
@@ -200,8 +204,8 @@ serd_env_qualify(const SerdEnv* const  env,
 SerdStatus
 serd_env_expand(const SerdEnv* const  env,
                 const SerdNode* const curie,
-                SerdStringView* const uri_prefix,
-                SerdStringView* const uri_suffix)
+                ZixStringView* const  uri_prefix,
+                ZixStringView* const  uri_suffix)
 {
   if (!env) {
     return SERD_BAD_CURIE;
@@ -241,8 +245,8 @@ serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
     return serd_node_new_uri_from_node(node, &env->base_uri, &ignored);
   }
   case SERD_CURIE: {
-    SerdStringView prefix;
-    SerdStringView suffix;
+    ZixStringView prefix;
+    ZixStringView suffix;
     if (serd_env_expand(env, node, &prefix, &suffix)) {
       return SERD_NODE_NULL;
     }

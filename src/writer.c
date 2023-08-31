@@ -17,11 +17,11 @@
 #include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/stream.h"
-#include "serd/string_view.h"
 #include "serd/syntax.h"
 #include "serd/uri.h"
 #include "serd/writer.h"
 #include "zix/attributes.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -760,9 +760,9 @@ write_uri_node(SerdWriter* const writer,
                const SerdNode*   node,
                const Field       field)
 {
-  SerdStatus     st = SERD_SUCCESS;
-  SerdNode       prefix;
-  SerdStringView suffix;
+  SerdStatus    st = SERD_SUCCESS;
+  SerdNode      prefix;
+  ZixStringView suffix;
 
   const bool has_scheme = serd_uri_string_has_scheme(node->buf);
   if (supports_abbrev(writer)) {
@@ -820,9 +820,9 @@ write_uri_node(SerdWriter* const writer,
 SERD_NODISCARD static SerdStatus
 write_curie(SerdWriter* const writer, const SerdNode* const node)
 {
-  SerdStringView prefix = {NULL, 0};
-  SerdStringView suffix = {NULL, 0};
-  SerdStatus     st     = SERD_SUCCESS;
+  ZixStringView prefix = {NULL, 0};
+  ZixStringView suffix = {NULL, 0};
+  SerdStatus    st     = SERD_SUCCESS;
 
   // In fast-and-loose Turtle/TriG mode CURIEs are simply passed through
   const bool fast =
