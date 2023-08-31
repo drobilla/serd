@@ -5,8 +5,8 @@
 
 #include "serd/memory.h"
 #include "serd/node.h"
-#include "serd/string_view.h"
 #include "serd/uri.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -44,7 +44,7 @@ test_file_uri(const char* const hostname,
     expected_path = path;
   }
 
-  SerdNode* node = serd_new_file_uri(serd_string(path), serd_string(hostname));
+  SerdNode* node = serd_new_file_uri(zix_string(path), zix_string(hostname));
 
   const char* node_str     = serd_node_string(node);
   char*       out_hostname = NULL;
@@ -128,7 +128,8 @@ test_uri_parsing(void)
 static void
 test_parse_uri(void)
 {
-  const SerdStringView base = serd_string("http://example.org/a/b/c/");
+  static const ZixStringView base =
+    ZIX_STATIC_STRING("http://example.org/a/b/c/");
 
   const SerdURIView base_uri  = serd_parse_uri(base.data);
   const SerdURIView empty_uri = serd_parse_uri("");
@@ -177,7 +178,7 @@ test_is_within(void)
 }
 
 static inline bool
-chunk_equals(const SerdStringView* a, const SerdStringView* b)
+chunk_equals(const ZixStringView* a, const ZixStringView* b)
 {
   return (!a->length && !b->length && !a->data && !b->data) ||
          (a->length && b->length && a->data && b->data &&
@@ -194,21 +195,21 @@ check_relative_uri(const char* const uri_string,
   assert(base_string);
   assert(expected_string);
 
-  SerdNode* const   uri_node  = serd_new_uri(serd_string(uri_string));
+  SerdNode* const   uri_node  = serd_new_uri(zix_string(uri_string));
   const SerdURIView uri       = serd_node_uri_view(uri_node);
-  SerdNode* const   base_node = serd_new_uri(serd_string(base_string));
+  SerdNode* const   base_node = serd_new_uri(zix_string(base_string));
   const SerdURIView base      = serd_node_uri_view(base_node);
 
   SerdNode* result_node = NULL;
   if (!root_string) {
     result_node = serd_new_parsed_uri(serd_relative_uri(uri, base));
   } else {
-    SerdNode* const   root_node = serd_new_uri(serd_string(root_string));
+    SerdNode* const   root_node = serd_new_uri(zix_string(root_string));
     const SerdURIView root      = serd_node_uri_view(root_node);
 
     result_node = serd_uri_is_within(uri, root)
                     ? serd_new_parsed_uri(serd_relative_uri(uri, base))
-                    : serd_new_uri(serd_string(uri_string));
+                    : serd_new_uri(zix_string(uri_string));
     serd_node_free(root_node);
   }
 
@@ -334,11 +335,11 @@ check_uri_string(const SerdURIView uri, const char* const expected)
 static void
 test_uri_resolution(void)
 {
-  const SerdStringView top   = serd_string("http://example.org/t/");
-  const SerdStringView base  = serd_string("http://example.org/t/b/");
-  const SerdStringView sub   = serd_string("http://example.org/t/b/s");
-  const SerdStringView deep  = serd_string("http://example.org/t/b/s/d");
-  const SerdStringView other = serd_string("http://example.org/o");
+  const ZixStringView top   = ZIX_STATIC_STRING("http://example.org/t/");
+  const ZixStringView base  = ZIX_STATIC_STRING("http://example.org/t/b/");
+  const ZixStringView sub   = ZIX_STATIC_STRING("http://example.org/t/b/s");
+  const ZixStringView deep  = ZIX_STATIC_STRING("http://example.org/t/b/s/d");
+  const ZixStringView other = ZIX_STATIC_STRING("http://example.org/o");
 
   const SerdURIView top_uri          = serd_parse_uri(top.data);
   const SerdURIView base_uri         = serd_parse_uri(base.data);

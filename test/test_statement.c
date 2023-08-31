@@ -6,7 +6,7 @@
 #include "serd/caret.h"
 #include "serd/node.h"
 #include "serd/statement.h"
-#include "serd/string_view.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -16,10 +16,10 @@
 static void
 test_new(void)
 {
-  SerdNode* const u = serd_new_uri(serd_string(NS_EG "s"));
-  SerdNode* const c = serd_new_curie(serd_string("eg:c"));
-  SerdNode* const b = serd_new_blank(serd_string("b0"));
-  SerdNode* const l = serd_new_string(serd_string("str"));
+  SerdNode* const u = serd_new_uri(zix_string(NS_EG "s"));
+  SerdNode* const c = serd_new_curie(zix_string("eg:c"));
+  SerdNode* const b = serd_new_blank(zix_string("b0"));
+  SerdNode* const l = serd_new_string(zix_string("str"));
 
   assert(!serd_statement_new(c, b, u, NULL, NULL));
   assert(!serd_statement_new(l, c, u, NULL, NULL));
@@ -39,11 +39,11 @@ test_copy(void)
 {
   assert(!serd_statement_copy(NULL));
 
-  SerdNode* const f = serd_new_string(serd_string("file"));
-  SerdNode* const s = serd_new_uri(serd_string(NS_EG "s"));
-  SerdNode* const p = serd_new_uri(serd_string(NS_EG "p"));
-  SerdNode* const o = serd_new_uri(serd_string(NS_EG "o"));
-  SerdNode* const g = serd_new_uri(serd_string(NS_EG "g"));
+  SerdNode* const f = serd_new_string(zix_string("file"));
+  SerdNode* const s = serd_new_uri(zix_string(NS_EG "s"));
+  SerdNode* const p = serd_new_uri(zix_string(NS_EG "p"));
+  SerdNode* const o = serd_new_uri(zix_string(NS_EG "o"));
+  SerdNode* const g = serd_new_uri(zix_string(NS_EG "g"));
 
   SerdCaret* const     caret     = serd_caret_new(f, 1, 1);
   SerdStatement* const statement = serd_statement_new(s, p, o, g, caret);
@@ -71,11 +71,11 @@ test_free(void)
 static void
 test_fields(void)
 {
-  SerdNode* const f = serd_new_string(serd_string("file"));
-  SerdNode* const s = serd_new_uri(serd_string(NS_EG "s"));
-  SerdNode* const p = serd_new_uri(serd_string(NS_EG "p"));
-  SerdNode* const o = serd_new_uri(serd_string(NS_EG "o"));
-  SerdNode* const g = serd_new_uri(serd_string(NS_EG "g"));
+  SerdNode* const f = serd_new_string(zix_string("file"));
+  SerdNode* const s = serd_new_uri(zix_string(NS_EG "s"));
+  SerdNode* const p = serd_new_uri(zix_string(NS_EG "p"));
+  SerdNode* const o = serd_new_uri(zix_string(NS_EG "o"));
+  SerdNode* const g = serd_new_uri(zix_string(NS_EG "g"));
 
   SerdCaret* const     caret     = serd_caret_new(f, 1, 1);
   SerdStatement* const statement = serd_statement_new(s, p, o, g, caret);

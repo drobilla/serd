@@ -12,10 +12,10 @@
 #include "serd/node.h"
 #include "serd/status.h"
 #include "serd/string.h"
-#include "serd/string_view.h"
 #include "serd/uri.h"
 #include "serd/write_result.h"
 #include "zix/attributes.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <math.h>
@@ -174,7 +174,7 @@ result(const SerdStatus status, const size_t count)
 }
 
 SerdNode*
-serd_new_token(const SerdNodeType type, const SerdStringView str)
+serd_new_token(const SerdNodeType type, const ZixStringView str)
 {
   SerdNodeFlags flags  = 0U;
   const size_t  length = str.data ? str.length : 0U;
@@ -194,7 +194,7 @@ serd_new_token(const SerdNodeType type, const SerdStringView str)
 }
 
 SerdNode*
-serd_new_string(const SerdStringView str)
+serd_new_string(const ZixStringView str)
 {
   SerdNodeFlags flags  = 0;
   const size_t  length = serd_substrlen(str.data, str.length, &flags);
@@ -209,9 +209,9 @@ serd_new_string(const SerdStringView str)
 
 /// Internal pre-measured implementation of serd_new_plain_literal
 static SerdNode*
-serd_new_plain_literal_i(const SerdStringView str,
-                         SerdNodeFlags        flags,
-                         const SerdStringView lang)
+serd_new_plain_literal_i(const ZixStringView str,
+                         SerdNodeFlags       flags,
+                         const ZixStringView lang)
 {
   assert(str.length);
   assert(lang.length);
@@ -236,7 +236,7 @@ serd_new_plain_literal_i(const SerdStringView str,
 }
 
 SerdNode*
-serd_new_plain_literal(const SerdStringView str, const SerdStringView lang)
+serd_new_plain_literal(const ZixStringView str, const ZixStringView lang)
 {
   if (!lang.length) {
     return serd_new_string(str);
@@ -249,8 +249,8 @@ serd_new_plain_literal(const SerdStringView str, const SerdStringView lang)
 }
 
 SerdNode*
-serd_new_typed_literal(const SerdStringView str,
-                       const SerdStringView datatype_uri)
+serd_new_typed_literal(const ZixStringView str,
+                       const ZixStringView datatype_uri)
 {
   if (!datatype_uri.length) {
     return serd_new_string(str);
@@ -284,13 +284,13 @@ serd_new_typed_literal(const SerdStringView str,
 }
 
 SerdNode*
-serd_new_blank(const SerdStringView str)
+serd_new_blank(const ZixStringView str)
 {
   return serd_new_token(SERD_BLANK, str);
 }
 
 SerdNode*
-serd_new_curie(const SerdStringView str)
+serd_new_curie(const ZixStringView str)
 {
   return serd_new_token(SERD_CURIE, str);
 }
@@ -473,7 +473,7 @@ serd_node_compare(const SerdNode* const a, const SerdNode* const b)
 }
 
 SerdNode*
-serd_new_uri(const SerdStringView string)
+serd_new_uri(const ZixStringView string)
 {
   return serd_new_token(SERD_URI, string);
 }
@@ -514,7 +514,7 @@ serd_new_from_uri(const SerdURIView uri, const SerdURIView base)
 }
 
 SerdNode*
-serd_new_resolved_uri(const SerdStringView string, const SerdURIView base)
+serd_new_resolved_uri(const ZixStringView string, const SerdURIView base)
 {
   const SerdURIView uri    = serd_parse_uri(string.data);
   SerdNode* const   result = serd_new_from_uri(uri, base);
@@ -575,7 +575,7 @@ is_dir_sep(const char c)
 }
 
 SerdNode*
-serd_new_file_uri(const SerdStringView path, const SerdStringView hostname)
+serd_new_file_uri(const ZixStringView path, const ZixStringView hostname)
 {
   const bool is_windows = is_windows_path(path.data);
   size_t     uri_len    = 0;
@@ -616,7 +616,7 @@ serd_new_file_uri(const SerdStringView path, const SerdStringView hostname)
 
   const size_t      length = buffer.len;
   const char* const string = serd_buffer_sink_finish(&buffer);
-  SerdNode* const   node   = serd_new_string(serd_substring(string, length));
+  SerdNode* const   node   = serd_new_string(zix_substring(string, length));
 
   free(buffer.buf);
   serd_node_check_padding(node);
@@ -630,7 +630,10 @@ typedef size_t (*SerdWriteLiteralFunc)(const void* user_data,
 SerdNode*
 serd_new_boolean(bool b)
 {
-  return serd_new_typed_literal(b ? serd_string("true") : serd_string("false"),
+  static const ZixStringView true_string  = ZIX_STATIC_STRING("true");
+  static const ZixStringView false_string = ZIX_STATIC_STRING("false");
+
+  return serd_new_typed_literal(b ? true_string : false_string,
                                 serd_node_string_view(&serd_xsd_boolean.node));
 }
 
@@ -668,8 +671,8 @@ serd_new_double(const double d)
   const ExessResult r = exess_write_double(d, sizeof(buf), buf);
 
   return r.status ? NULL
-                  : serd_new_typed_literal(serd_substring(buf, r.count),
-                                           serd_string(EXESS_XSD_URI "double"));
+                  : serd_new_typed_literal(zix_substring(buf, r.count),
+                                           zix_string(EXESS_XSD_URI "double"));
 }
 
 SerdNode*
@@ -680,8 +683,8 @@ serd_new_float(const float f)
   const ExessResult r = exess_write_float(f, sizeof(buf), buf);
 
   return r.status ? NULL
-                  : serd_new_typed_literal(serd_substring(buf, r.count),
-                                           serd_string(EXESS_XSD_URI "float"));
+                  : serd_new_typed_literal(zix_substring(buf, r.count),
+                                           zix_string(EXESS_XSD_URI "float"));
 }
 
 SerdNode*
@@ -781,12 +784,12 @@ serd_node_length(const SerdNode* const node)
   return node->length;
 }
 
-SerdStringView
+ZixStringView
 serd_node_string_view(const SerdNode* const node)
 {
   assert(node);
 
-  const SerdStringView r = {(const char*)(node + 1), node->length};
+  const ZixStringView r = {(const char*)(node + 1), node->length};
 
   return r;
 }

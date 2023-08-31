@@ -7,9 +7,9 @@
 #include "serd/env.h"
 #include "serd/node.h"
 #include "serd/status.h"
-#include "serd/string_view.h"
 #include "serd/uri.h"
 #include "zix/attributes.h"
+#include "zix/string_view.h"
 
 #include <stdbool.h>
 
@@ -18,7 +18,7 @@ bool
 serd_env_qualify_in_place(const SerdEnv*   env,
                           const SerdNode*  uri,
                           const SerdNode** prefix,
-                          SerdStringView*  suffix);
+                          ZixStringView*   suffix);
 
 /**
    Expand `curie`.
@@ -27,10 +27,10 @@ serd_env_qualify_in_place(const SerdEnv*   env,
    not defined in `env`.
 */
 SerdStatus
-serd_env_expand_in_place(const SerdEnv*  env,
-                         SerdStringView  curie,
-                         SerdStringView* uri_prefix,
-                         SerdStringView* uri_suffix);
+serd_env_expand_in_place(const SerdEnv* env,
+                         ZixStringView  curie,
+                         ZixStringView* uri_prefix,
+                         ZixStringView* uri_suffix);
 
 ZIX_PURE_FUNC SerdURIView
 serd_env_base_uri_view(const SerdEnv* env);

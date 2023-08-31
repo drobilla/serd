@@ -9,11 +9,11 @@
 #include "serd/reader.h"
 #include "serd/status.h"
 #include "serd/stream.h"
-#include "serd/string_view.h"
 #include "serd/syntax.h"
 #include "serd/version.h"
 #include "serd/world.h"
 #include "serd/writer.h"
+#include "zix/string_view.h"
 
 #ifdef _WIN32
 #  ifdef _MSC_VER
@@ -238,15 +238,15 @@ main(int argc, char** argv)
 
   SerdNode* base = NULL;
   if (a < argc) { // Base URI given on command line
-    base = serd_new_uri(serd_string(argv[a]));
+    base = serd_new_uri(zix_string(argv[a]));
   } else if (!from_string && !from_stdin) { // Use input file URI
-    base = serd_new_file_uri(serd_string(input), serd_empty_string());
+    base = serd_new_file_uri(zix_string(input), zix_empty_string());
   }
 
   FILE* const      out_fd = stdout;
   SerdWorld* const world  = serd_world_new();
   SerdEnv* const   env =
-    serd_env_new(base ? serd_node_string_view(base) : serd_empty_string());
+    serd_env_new(base ? serd_node_string_view(base) : zix_empty_string());
 
   SerdWriter* const writer = serd_writer_new(
     world, output_syntax, writer_flags, env, (SerdWriteFunc)fwrite, out_fd);
@@ -262,7 +262,7 @@ main(int argc, char** argv)
   }
 
   if (root_uri) {
-    SerdNode* const root = serd_new_uri(serd_string(root_uri));
+    SerdNode* const root = serd_new_uri(zix_string(root_uri));
     serd_writer_set_root_uri(writer, root);
     serd_node_free(root);
   }
@@ -273,10 +273,10 @@ main(int argc, char** argv)
   SerdStatus st         = SERD_SUCCESS;
   SerdNode*  input_name = NULL;
   if (from_string) {
-    input_name = serd_new_string(serd_string("string"));
+    input_name = serd_new_string(zix_string("string"));
     st         = serd_reader_start_string(reader, input, input_name);
   } else if (from_stdin) {
-    input_name = serd_new_string(serd_string("stdin"));
+    input_name = serd_new_string(zix_string("stdin"));
     st         = serd_reader_start_stream(reader,
                                   serd_file_read_byte,
                                   (SerdStreamErrorFunc)ferror,

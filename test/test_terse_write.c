@@ -9,10 +9,10 @@
 #include "serd/sink.h"
 #include "serd/statement.h"
 #include "serd/stream.h"
-#include "serd/string_view.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "serd/writer.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -39,20 +39,20 @@ test(void)
 {
   SerdBuffer buffer = {NULL, 0};
   SerdWorld* world  = serd_world_new();
-  SerdEnv*   env    = serd_env_new(serd_empty_string());
+  SerdEnv*   env    = serd_env_new(zix_empty_string());
 
-  SerdNode* b1 = serd_new_blank(serd_string("b1"));
-  SerdNode* l1 = serd_new_blank(serd_string("l1"));
-  SerdNode* l2 = serd_new_blank(serd_string("l2"));
-  SerdNode* s1 = serd_new_string(serd_string("s1"));
-  SerdNode* s2 = serd_new_string(serd_string("s2"));
+  SerdNode* b1 = serd_new_blank(zix_string("b1"));
+  SerdNode* l1 = serd_new_blank(zix_string("l1"));
+  SerdNode* l2 = serd_new_blank(zix_string("l2"));
+  SerdNode* s1 = serd_new_string(zix_string("s1"));
+  SerdNode* s2 = serd_new_string(zix_string("s2"));
 
-  SerdNode* rdf_first = serd_new_uri(serd_string(NS_RDF "first"));
-  SerdNode* rdf_value = serd_new_uri(serd_string(NS_RDF "value"));
-  SerdNode* rdf_rest  = serd_new_uri(serd_string(NS_RDF "rest"));
-  SerdNode* rdf_nil   = serd_new_uri(serd_string(NS_RDF "nil"));
+  SerdNode* rdf_first = serd_new_uri(zix_string(NS_RDF "first"));
+  SerdNode* rdf_value = serd_new_uri(zix_string(NS_RDF "value"));
+  SerdNode* rdf_rest  = serd_new_uri(zix_string(NS_RDF "rest"));
+  SerdNode* rdf_nil   = serd_new_uri(zix_string(NS_RDF "nil"));
 
-  serd_env_set_prefix(env, serd_string("rdf"), serd_string(NS_RDF));
+  serd_env_set_prefix(env, zix_string("rdf"), zix_string(NS_RDF));
 
   SerdWriter* writer = serd_writer_new(
     world, SERD_TURTLE, 0, env, (SerdWriteFunc)serd_buffer_sink, &buffer);

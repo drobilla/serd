@@ -6,7 +6,7 @@
 #include "system.h"
 
 #include "serd/node.h"
-#include "serd/string_view.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -97,11 +97,12 @@ serd_byte_source_open_string(SerdByteSource* const source,
                              const char* const     utf8,
                              const SerdNode* const name)
 {
+  static const ZixStringView default_name = ZIX_STATIC_STRING("string");
+
   memset(source, '\0', sizeof(*source));
 
   source->page_size = 1;
-  source->name =
-    name ? serd_node_copy(name) : serd_new_string(serd_string("string"));
+  source->name = name ? serd_node_copy(name) : serd_new_string(default_name);
 
   source->page_size      = 1U;
   source->read_buf       = (const uint8_t*)utf8;

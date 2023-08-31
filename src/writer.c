@@ -22,11 +22,11 @@
 #include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/stream.h"
-#include "serd/string_view.h"
 #include "serd/syntax.h"
 #include "serd/uri.h"
 #include "serd/world.h"
 #include "serd/writer.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -839,7 +839,7 @@ write_uri_node(SerdWriter* const     writer,
 {
   SerdStatus        st         = SERD_SUCCESS;
   const SerdNode*   prefix     = NULL;
-  SerdStringView    suffix     = {NULL, 0};
+  ZixStringView     suffix     = {NULL, 0};
   const char* const node_str   = serd_node_string(node);
   const bool        has_scheme = serd_uri_string_has_scheme(node_str);
 
@@ -877,8 +877,8 @@ SERD_NODISCARD static SerdStatus
 write_curie(SerdWriter* const writer, const SerdNode* const node)
 {
   const char* const node_str = serd_node_string(node);
-  SerdStringView    prefix   = {NULL, 0};
-  SerdStringView    suffix   = {NULL, 0};
+  ZixStringView     prefix   = {NULL, 0};
+  ZixStringView     suffix   = {NULL, 0};
   SerdStatus        st       = SERD_SUCCESS;
 
   // In fast-and-loose Turtle/TriG mode CURIEs are simply passed through
@@ -886,7 +886,7 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
     (writer->flags & (SERD_WRITE_UNQUALIFIED | SERD_WRITE_UNRESOLVED));
 
   if (!supports_abbrev(writer) || !fast) {
-    const SerdStringView curie = serd_node_string_view(node);
+    const ZixStringView curie = serd_node_string_view(node);
     if ((st = serd_env_expand_in_place(writer->env, curie, &prefix, &suffix))) {
       return w_err(writer, st, "undefined namespace prefix '%s'\n", node_str);
     }
@@ -1419,8 +1419,8 @@ serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
     return SERD_SUCCESS;
   }
 
-  const SerdStringView uri_string =
-    uri ? serd_node_string_view(uri) : serd_empty_string();
+  const ZixStringView uri_string =
+    uri ? serd_node_string_view(uri) : zix_empty_string();
 
   SerdStatus st = SERD_SUCCESS;
   TRY(st, serd_env_set_base_uri(writer->env, uri_string));

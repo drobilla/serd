@@ -6,9 +6,9 @@
 
 #include "exess/exess.h"
 #include "serd/node.h"
-#include "serd/string_view.h"
 #include "serd/uri.h"
 #include "zix/attributes.h"
+#include "zix/string_view.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -59,7 +59,7 @@ serd_node_zero_pad(SerdNode* ZIX_NONNULL node);
 
 /// Create a new URI from a string, resolved against a base URI
 SerdNode* ZIX_ALLOCATED
-serd_new_resolved_uri(SerdStringView string, SerdURIView base_uri);
+serd_new_resolved_uri(ZixStringView string, SerdURIView base_uri);
 
 ExessResult
 serd_node_get_value_as(const SerdNode* ZIX_NONNULL node,
