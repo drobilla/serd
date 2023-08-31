@@ -10,7 +10,7 @@
 #include "serd/statement.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
-#include "serd/string_view.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -93,11 +93,11 @@ on_event(void* const handle, const SerdEvent* const event)
 static void
 test_callbacks(void)
 {
-  SerdNode* const base  = serd_new_uri(serd_string(NS_EG));
-  SerdNode* const name  = serd_new_string(serd_string("eg"));
-  SerdNode* const uri   = serd_new_uri(serd_string(NS_EG "uri"));
-  SerdNode* const blank = serd_new_blank(serd_string("b1"));
-  SerdEnv*        env   = serd_env_new(serd_node_string_view(base));
+  SerdNode* const base  = serd_new_uri(zix_string(NS_EG));
+  SerdNode* const name  = serd_new_string(zix_string("eg"));
+  SerdNode* const uri   = serd_new_uri(zix_string(NS_EG "uri"));
+  SerdNode* const blank = serd_new_blank(zix_string("b1"));
+  SerdEnv* const  env   = serd_env_new(serd_node_string_view(base));
   State           state = {
     0, 0, 0, 0, {NULL, NULL, NULL, NULL, {NULL, 0, 0}}, SERD_SUCCESS};
 

@@ -5,7 +5,7 @@
 
 #include "serd/caret.h"
 #include "serd/node.h"
-#include "serd/string_view.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -13,7 +13,7 @@
 int
 main(void)
 {
-  SerdNode* const  node  = serd_new_string(serd_string("node"));
+  SerdNode* const  node  = serd_new_string(zix_string("node"));
   SerdCaret* const caret = serd_caret_new(node, 46, 2);
 
   assert(serd_caret_equals(caret, caret));
@@ -26,7 +26,7 @@ main(void)
   assert(serd_caret_equals(caret, copy));
   assert(!serd_caret_copy(NULL));
 
-  SerdNode* const  other_node = serd_new_string(serd_string("other"));
+  SerdNode* const  other_node = serd_new_string(zix_string("other"));
   SerdCaret* const other_file = serd_caret_new(other_node, 46, 2);
   SerdCaret* const other_line = serd_caret_new(node, 47, 2);
   SerdCaret* const other_col  = serd_caret_new(node, 46, 3);

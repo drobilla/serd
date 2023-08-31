@@ -13,8 +13,8 @@
 
 #include "serd/caret_view.h"
 #include "serd/stream.h"
-#include "serd/string_view.h"
 #include "serd/uri.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -282,7 +282,7 @@ serd_reader_start_file(SerdReader* reader, const char* uri, bool bulk)
     return SERD_BAD_STREAM;
   }
 
-  SerdNode* const  name = serd_new_uri(serd_string(uri));
+  SerdNode* const  name = serd_new_uri(zix_string(uri));
   const SerdStatus st   = serd_byte_source_open_source(
     &reader->source,
     bulk ? (SerdReadFunc)fread : serd_file_read_byte,
