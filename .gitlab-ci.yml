@@ -113,6 +113,13 @@ mingw64:
   variables:
     WINEPATH: "Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\8.3-win32"
 
+wasm:
+  stage: build
+  image: lv2plugin/debian-wasm
+  script:
+    - meson setup build --cross-file=/usr/share/meson/cross/wasm.ini -Dbuildtype=debugoptimized -Dwarning_level=3 -Dwerror=true -Ddefault_library=static -Ddocs=disabled
+    - ninja -C build test
+
 # Non-Linux/Docker rows (not hosted)
 
 freebsd:

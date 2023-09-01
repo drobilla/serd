@@ -172,6 +172,24 @@ if not get_option('tools').disabled()
   tool_link_args = []
   if get_option('static')
     tool_link_args += ['-static']
+  elif cc.get_id() == 'emscripten'
+    tool_link_args += [
+      '-s', 'ENVIRONMENT=node',
+      '-s', 'FILESYSTEM',
+      '-s', 'NODERAWFS',
+      '-s', 'WASM_BIGINT',
+    ]
+
+    if get_option('warning_level') in ['everything', '3']
+      tool_link_args += [
+        '-s', 'STRICT',
+        '-s', 'LLD_REPORT_UNDEFINED',
+      ]
+
+      if get_option('werror')
+        tool_link_args += ['-s', 'ERROR_ON_WASM_CHANGES_AFTER_LINK']
+      endif
+    endif
   endif
 
   serdi = executable(

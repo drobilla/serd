@@ -4,7 +4,7 @@
 header_c_suppressions = []
 
 if get_option('warning_level') == 'everything'
-  if cc.get_id() == 'clang'
+  if cc.get_id() in ['clang', 'emscripten']
     header_c_suppressions += [
       '-Wno-padded',
     ]
@@ -25,7 +25,7 @@ if get_option('warning_level') == 'everything'
   endif
 endif
 
-if cc.get_id() == 'clang'
+if cc.get_id() in ['clang', 'emscripten']
   header_c_suppressions += [
     '-Wno-nullability-extension',
   ]
