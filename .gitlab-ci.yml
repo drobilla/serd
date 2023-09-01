@@ -1,4 +1,4 @@
-# Copyright 2018-2022 David Robillard <d@drobilla.net>
+# Copyright 2018-2023 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
 stages: [build, deploy]
@@ -26,9 +26,8 @@ dev:
   coverage: '/ *lines\.*: \d+\.\d+.*/'
   artifacts:
     paths:
+      - build/doc/man
       - build/dest/share/doc
-      - build/doc/mandoc.css
-      - build/doc/serdi.html
       - build/meson-logs/coveragereport
 
 static:
@@ -149,12 +148,10 @@ pages:
   script:
     - mkdir public
     - mkdir public/doc
-    - mkdir public/man
     - mv build/meson-logs/coveragereport/ public/coverage
     - mv build/dest/share/doc/serd-0/html/ public/doc/html/
     - mv build/dest/share/doc/serd-0/singlehtml/ public/doc/singlehtml/
-    - mv build/doc/serdi.html public/man/serdi.html
-    - mv build/doc/mandoc.css public/man/mandoc.css
+    - mv build/doc/man/ public/man/
   needs:
     - dev
   artifacts:

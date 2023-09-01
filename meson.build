@@ -184,10 +184,6 @@ if not get_option('tools').disabled()
   )
 
   meson.override_find_program('serdi', serdi)
-
-  if not get_option('docs').disabled()
-    install_man(files('doc/serdi.1'))
-  endif
 endif
 
 # Display top-level summary (before subdirectories to appear first)
@@ -214,7 +210,6 @@ if not meson.is_subproject()
     summary(
       {
         'Executables': get_option('prefix') / get_option('bindir'),
-        'Man pages': get_option('prefix') / get_option('mandir'),
       },
       section: 'Directories',
     )

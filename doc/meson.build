@@ -4,6 +4,12 @@
 docdir = get_option('datadir') / 'doc'
 
 #############
+# Man pages #
+#############
+
+subdir('man')
+
+#############
 # Reference #
 #############
 
@@ -64,49 +70,4 @@ if build_docs
       subdir(format)
     endif
   endforeach
-endif
-
-#############
-# Man Pages #
-#############
-
-mandoc_css = files('mandoc.css')
-
-if get_option('lint')
-  stylelint = find_program('stylelint', required: false)
-  if stylelint.found()
-    test('stylelint', stylelint, args: [mandoc_css], suite: 'data')
-  endif
-endif
-
-mandoc = find_program('mandoc', required: false)
-if mandoc.found()
-  configure_file(input: mandoc_css, output: '@PLAINNAME@', copy: true)
-
-  serdi_html = custom_target(
-    'serdi.html',
-    build_by_default: true,
-    capture: true,
-    command: [
-      mandoc,
-      '-Kutf-8',
-      '-Ostyle=mandoc.css,man=%N.html',
-      '-Thtml',
-      '-Wwarning,stop',
-      '@INPUT@',
-    ],
-    input: files('serdi.1'),
-    output: 'serdi.html',
-  )
-endif
-
-if not meson.is_subproject()
-  summary(
-    {
-      'HTML man pages': mandoc.found(),
-      'API documentation': build_docs,
-    },
-    bool_yn: true,
-    section: 'Components',
-  )
 endif

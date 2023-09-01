@@ -13,6 +13,12 @@ option('html', type: 'feature', value: 'auto', yield: true,
 option('lint', type: 'boolean', value: false, yield: true,
        description: 'Run code quality checks')
 
+option('man', type: 'feature', value: 'enabled', yield: true,
+       description: 'Install man pages')
+
+option('man_html', type: 'feature', value: 'auto', yield: true,
+       description: 'Build HTML man pages')
+
 option('singlehtml', type: 'feature', value: 'auto', yield: true,
        description: 'Build single-page HTML documentation')
 
