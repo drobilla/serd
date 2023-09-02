@@ -70,28 +70,30 @@ else
   # Only use the features detected by the build system
   platform_c_args += ['-DSERD_NO_DEFAULT_CONFIG'] + system_c_args
 
-  # Define HAVE_SOMETHING symbols for all detected features
+  # Feature checks have a header to include and code for the body of main()
   template = '#include <@0@>\nint main(void) { @1@; }'
-  if cc.links(
-    template.format('stdio.h', 'return fileno(stdin);'),
-    args: system_c_args,
-    name: 'fileno')
-    platform_c_args += ['-DHAVE_FILENO']
-  endif
-  if cc.links(
-    template.format('fcntl.h',
-                    'posix_fadvise(0, 0, 4096, POSIX_FADV_SEQUENTIAL)'),
-    args: system_c_args,
-    name: 'posix_fadvise')
-    platform_c_args += ['-DHAVE_POSIX_FADVISE']
-  endif
-  if cc.links(
-    template.format('stdlib.h',
-                    'void* mem=NULL; posix_memalign(&mem, 8U, 8U);'),
-    args: system_c_args,
-    name: 'posix_memalign')
-    platform_c_args += ['-DHAVE_POSIX_MEMALIGN']
-  endif
+  feature_tests = {
+    'fileno': [
+      'stdio.h',
+      'return fileno(stdin);',
+    ],
+    'posix_fadvise': [
+      'fcntl.h',
+      'posix_fadvise(0, 0, 4096, POSIX_FADV_SEQUENTIAL);',
+    ],
+    'posix_memalign': [
+      'stdlib.h',
+      'void* mem=NULL; posix_memalign(&mem, 8U, 8U);',
+    ],
+  }
+
+  # Define HAVE_SOMETHING symbols for all detected features
+  foreach name, args : feature_tests
+    code = template.format(args[0], args[1])
+    if cc.links(code, args: system_c_args, name: name)
+      platform_c_args += ['-DHAVE_' + name.to_upper()]
+    endif
+  endforeach
 endif
 
 ###########
@@ -199,9 +201,9 @@ if not meson.is_subproject()
 
   summary(
     {
-      'Install prefix':  get_option('prefix'),
-      'Headers':  get_option('prefix') / get_option('includedir'),
-      'Libraries':  get_option('prefix') / get_option('libdir'),
+      'Install prefix': get_option('prefix'),
+      'Headers': get_option('prefix') / get_option('includedir'),
+      'Libraries': get_option('prefix') / get_option('libdir'),
     },
     section: 'Directories',
   )
@@ -221,7 +223,6 @@ endif
 ###########
 
 ttl_metadata_files = files(
-  'serd.ttl',
   'test/extra/abbreviate/manifest.ttl',
   'test/extra/bad/manifest.ttl',
   'test/extra/big/manifest.ttl',
@@ -232,6 +233,7 @@ ttl_metadata_files = files(
   'test/extra/pretty/manifest.ttl',
   'test/extra/qualify/manifest.ttl',
   'test/extra/root/manifest.ttl',
+  'serd.ttl',
 )
 
 subdir('scripts')

@@ -33,7 +33,8 @@ if build_docs
   # Warn if the "official" theme isn't present
   pymod = import('python')
   doc_modules = ['sphinx_lv2_theme']
-  if not pymod.find_installation('python3', modules: doc_modules, required: false).found()
+  py = pymod.find_installation('python3', modules: doc_modules, required: false)
+  if not py.found()
     warning('Missing sphinx_lv2_theme module, falling back to alabaster')
   endif
 
