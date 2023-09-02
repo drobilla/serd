@@ -59,12 +59,14 @@ if build_docs
   subdir('api')
 
   # Build strict Sphinx flags, with termination on warnings if werror=true
-  sphinx_flags = ['-E', '-a', '-q']
+  sphinx_in_dir = meson.current_build_dir()
+  sphinx_flags = ['-d', sphinx_in_dir / '.doctrees', '-E', '-a', '-q']
   if get_option('werror')
     sphinx_flags += ['-W']
   endif
 
   # Run Sphinx to generate final documentation for each format
+  sphinx_build_command = [sphinx_build] + sphinx_flags
   foreach format : ['html', 'singlehtml']
     if not get_option(format).disabled()
       subdir(format)
