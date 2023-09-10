@@ -46,12 +46,12 @@ test_copy_failed_alloc(void)
 
   SerdFailingAllocator allocator = serd_failing_allocator();
 
+  // Create a simple env
   SerdEnv* const env = serd_env_new(&allocator.base, zix_empty_string());
-
   assert(!serd_env_set_prefix(env, zix_string(name), zix_string(uri)));
   assert(!serd_env_set_base_uri(env, zix_string(uri)));
 
-  // Successfully copy an env to count the number of allocations
+  // Successfully copy the env to count the number of allocations
   const size_t   n_setup_allocs = allocator.n_allocations;
   SerdEnv* const copy           = serd_env_copy(&allocator.base, env);
   assert(copy);
