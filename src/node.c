@@ -196,6 +196,14 @@ serd_node_malloc(ZixAllocator* const allocator, const size_t size)
   return node;
 }
 
+SerdNode*
+serd_node_try_malloc(ZixAllocator* const allocator, const SerdWriteResult r)
+{
+  return (r.status && r.status != SERD_OVERFLOW)
+           ? NULL
+           : serd_node_malloc(allocator, r.count);
+}
+
 SerdStatus
 serd_node_set(ZixAllocator* const   allocator,
               SerdNode** const      dst,

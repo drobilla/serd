@@ -6,6 +6,7 @@
 
 #include "serd/node.h"
 #include "serd/status.h"
+#include "serd/write_result.h"
 #include "zix/allocator.h"
 #include "zix/attributes.h"
 
@@ -87,6 +88,10 @@ serd_node_pattern_match(const SerdNode* ZIX_NULLABLE a,
 
 ZIX_MALLOC_FUNC SerdNode* ZIX_ALLOCATED
 serd_node_malloc(ZixAllocator* ZIX_NULLABLE allocator, size_t size);
+
+ZIX_MALLOC_FUNC SerdNode* ZIX_ALLOCATED
+serd_node_try_malloc(ZixAllocator* ZIX_NULLABLE allocator,
+                     SerdWriteResult            result);
 
 SerdStatus
 serd_node_set(ZixAllocator* ZIX_NULLABLE         allocator,
