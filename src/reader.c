@@ -8,8 +8,11 @@
 #include "node.h"
 #include "read_nquads.h"
 #include "read_ntriples.h"
+#include "read_trig.h"
+#include "read_turtle.h"
 #include "stack.h"
 #include "statement.h"
+#include "string_utils.h"
 #include "system.h"
 #include "world.h"
 
@@ -149,6 +152,14 @@ push_node(SerdReader* const  reader,
   return push_node_padded(reader, length, type, str, length);
 }
 
+int
+tokcmp(const SerdNode* const node, const char* const tok, const size_t n)
+{
+  return ((!node || node->length != n)
+            ? -1
+            : serd_strncasecmp(serd_node_string(node), tok, n));
+}
+
 SerdStatus
 emit_statement(SerdReader* const reader,
                const ReadContext ctx,
@@ -188,13 +199,13 @@ serd_reader_read_document(SerdReader* const reader)
   case SERD_SYNTAX_EMPTY:
     break;
   case SERD_TURTLE:
-    return read_turtleTrigDoc(reader);
+    return read_turtleDoc(reader);
   case SERD_NTRIPLES:
     return read_ntriplesDoc(reader);
   case SERD_NQUADS:
     return read_nquadsDoc(reader);
   case SERD_TRIG:
-    return read_turtleTrigDoc(reader);
+    return read_trigDoc(reader);
   }
 
   return SERD_SUCCESS;
@@ -354,20 +365,33 @@ serd_reader_read_chunk(SerdReader* const reader)
 {
   assert(reader);
 
-  if (reader->syntax == SERD_SYNTAX_EMPTY) {
-    return SERD_FAILURE;
-  }
-
   SerdStatus st = SERD_SUCCESS;
-  if (!reader->source.prepared) {
-    st = serd_reader_prepare(reader);
-  } else if (reader->source.eof) {
-    st = serd_byte_source_advance(&reader->source);
+  if (reader->syntax != SERD_SYNTAX_EMPTY) {
+    if (!reader->source.prepared) {
+      st = serd_reader_prepare(reader);
+    } else if (reader->source.eof) {
+      st = serd_byte_source_advance(&reader->source);
+    }
   }
 
-  return st                                ? st
-         : (reader->syntax == SERD_NQUADS) ? read_nquads_line(reader)
-                                           : read_n3_statement(reader);
+  if (st) {
+    return st;
+  }
+
+  switch (reader->syntax) {
+  case SERD_SYNTAX_EMPTY:
+    break;
+  case SERD_TURTLE:
+    return read_turtle_statement(reader);
+  case SERD_NTRIPLES:
+    return read_ntriples_line(reader);
+  case SERD_NQUADS:
+    return read_nquads_line(reader);
+  case SERD_TRIG:
+    return read_trig_statement(reader);
+  }
+
+  return SERD_FAILURE;
 }
 
 SerdStatus

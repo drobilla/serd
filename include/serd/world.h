@@ -50,7 +50,7 @@ serd_world_free(SerdWorld* ZIX_NULLABLE world);
    a megabyte and over 100 levels of nesting, which is more than enough for
    most data.
 */
-SERD_API SerdLimits
+SERD_PURE_API SerdLimits
 serd_world_limits(const SerdWorld* ZIX_NONNULL world);
 
 /**

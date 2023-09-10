@@ -158,6 +158,15 @@ SerdStatus
 read_Var(SerdReader* reader, SerdNode** dest);
 
 /**
+   Read a single NTriples line.
+
+   May read a statement, but may also just skip some input like comments or
+   extra whitespace.
+*/
+SerdStatus
+read_ntriples_line(SerdReader* reader);
+
+/**
    Read a complete NTriples document.
 
    RDF 1.1 NTriples: [1] ntriplesDoc
