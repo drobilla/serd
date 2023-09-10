@@ -1266,9 +1266,12 @@ size_t
 serd_chunk_sink(const void* buf, size_t len, void* stream)
 {
   SerdChunk* chunk = (SerdChunk*)stream;
-  chunk->buf       = (uint8_t*)realloc((uint8_t*)chunk->buf, chunk->len + len);
-  memcpy((uint8_t*)chunk->buf + chunk->len, buf, len);
-  chunk->len += len;
+  uint8_t* new_buf = (uint8_t*)realloc((uint8_t*)chunk->buf, chunk->len + len);
+  if (new_buf) {
+    memcpy(new_buf + chunk->len, buf, len);
+    chunk->buf = new_buf;
+    chunk->len += len;
+  }
   return len;
 }
 

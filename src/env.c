@@ -119,10 +119,13 @@ serd_env_add(SerdEnv* const        env,
       serd_node_free(&old_prefix_uri);
     }
   } else {
-    env->prefixes = (SerdPrefix*)realloc(
+    SerdPrefix* const new_prefixes = (SerdPrefix*)realloc(
       env->prefixes, (++env->n_prefixes) * sizeof(SerdPrefix));
-    env->prefixes[env->n_prefixes - 1].name = serd_node_copy(name);
-    env->prefixes[env->n_prefixes - 1].uri  = serd_node_copy(uri);
+    if (new_prefixes) {
+      env->prefixes                           = new_prefixes;
+      env->prefixes[env->n_prefixes - 1].name = serd_node_copy(name);
+      env->prefixes[env->n_prefixes - 1].uri  = serd_node_copy(uri);
+    }
   }
 }
 
