@@ -16,12 +16,14 @@ if is_variable('cc')
     if warning_level == 'everything'
       c_suppressions += [
         '-Wno-cast-align',
+        '-Wno-cast-function-type-strict',
         '-Wno-cast-qual',
         '-Wno-declaration-after-statement',
         '-Wno-double-promotion',
         '-Wno-format-nonliteral',
         '-Wno-nullable-to-nonnull-conversion',
         '-Wno-padded',
+        '-Wno-unsafe-buffer-usage',
       ]
 
       if host_machine.system() == 'windows'
