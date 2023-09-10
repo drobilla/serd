@@ -6,7 +6,9 @@
 
 #include "exess/exess.h"
 #include "serd/node.h"
+#include "serd/status.h"
 #include "serd/uri.h"
+#include "zix/allocator.h"
 #include "zix/attributes.h"
 #include "zix/string_view.h"
 
@@ -48,10 +50,14 @@ serd_node_pattern_match(const SerdNode* ZIX_NULLABLE a,
 }
 
 SerdNode* ZIX_ALLOCATED
-serd_node_malloc(size_t length, SerdNodeFlags flags, SerdNodeType type);
+serd_node_malloc(ZixAllocator* ZIX_NULLABLE allocator,
+                 size_t                     length,
+                 SerdNodeFlags              flags,
+                 SerdNodeType               type);
 
-void
-serd_node_set(SerdNode* ZIX_NONNULL* ZIX_NONNULL dst,
+SerdStatus
+serd_node_set(ZixAllocator* ZIX_NULLABLE         allocator,
+              SerdNode* ZIX_NONNULL* ZIX_NONNULL dst,
               const SerdNode* ZIX_NONNULL        src);
 
 void
@@ -59,7 +65,9 @@ serd_node_zero_pad(SerdNode* ZIX_NONNULL node);
 
 /// Create a new URI from a string, resolved against a base URI
 SerdNode* ZIX_ALLOCATED
-serd_new_resolved_uri(ZixStringView string, SerdURIView base_uri);
+serd_new_resolved_uri(ZixAllocator* ZIX_NULLABLE allocator,
+                      ZixStringView              string,
+                      SerdURIView                base_uri);
 
 ExessResult
 serd_node_get_value_as(const SerdNode* ZIX_NONNULL node,

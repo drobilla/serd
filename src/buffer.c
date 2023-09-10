@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: ISC
 
 #include "serd/buffer.h"
+#include "zix/allocator.h"
 
 #include <assert.h>
 #include <stddef.h>
-#include <stdlib.h>
 #include <string.h>
 
 size_t
@@ -20,20 +20,21 @@ serd_buffer_write(const void* const buf,
   SerdBuffer* const buffer  = (SerdBuffer*)stream;
   const size_t      n_bytes = size * nmemb;
 
-  char* const new_buf = (char*)realloc(buffer->buf, buffer->len + n_bytes);
+  char* const new_buf =
+    (char*)zix_realloc(buffer->allocator, buffer->buf, buffer->len + n_bytes);
+
   if (new_buf) {
     memcpy(new_buf + buffer->len, buf, n_bytes);
     buffer->buf = new_buf;
     buffer->len += nmemb;
+    return n_bytes;
   }
 
-  return new_buf ? nmemb : 0;
+  return 0;
 }
 
 int
 serd_buffer_close(void* const stream)
 {
-  serd_buffer_write("", 1, 1, stream); // Write null terminator
-
-  return 0;
+  return serd_buffer_write("", 1, 1, stream) != 1; // Write null terminator
 }

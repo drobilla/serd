@@ -150,7 +150,7 @@ foreach unit : unit_tests
     unit,
     executable(
       'test_@0@'.format(unit),
-      files('test_@0@.c'.format(unit)),
+      files('failing_allocator.c', 'test_@0@.c'.format(unit)),
       c_args: c_suppressions + platform_c_args,
       dependencies: [serd_dep, zix_dep],
     ),

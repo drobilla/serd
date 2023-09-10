@@ -4,6 +4,7 @@
 #include "reader.h"
 
 #include "byte_source.h"
+#include "memory.h"
 #include "namespaces.h"
 #include "node.h"
 #include "read_nquads.h"
@@ -13,7 +14,6 @@
 #include "stack.h"
 #include "statement.h"
 #include "string_utils.h"
-#include "system.h"
 #include "world.h"
 
 #include "serd/input_stream.h"
@@ -21,7 +21,6 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 static SerdStatus
@@ -227,14 +226,22 @@ serd_reader_new(SerdWorld* const      world,
     return NULL;
   }
 
-  SerdReader* me = (SerdReader*)calloc(1, sizeof(SerdReader));
+  SerdReader* me = (SerdReader*)serd_wcalloc(world, 1, sizeof(SerdReader));
+  if (!me) {
+    return NULL;
+  }
 
   me->world   = world;
   me->sink    = sink;
-  me->stack   = serd_stack_new(stack_size, serd_node_align);
+  me->stack   = serd_stack_new(world->allocator, stack_size, serd_node_align);
   me->syntax  = syntax;
   me->next_id = 1;
   me->strict  = !(flags & SERD_READ_LAX);
+
+  if (!me->stack.buf) {
+    serd_wfree(world, me);
+    return NULL;
+  }
 
   // Reserve a bit of space at the end of the stack to zero pad nodes
   me->stack.buf_size -= serd_node_align;
@@ -262,9 +269,9 @@ serd_reader_free(SerdReader* const reader)
     serd_reader_finish(reader);
   }
 
-  serd_free_aligned(reader->stack.buf);
-  free(reader->bprefix);
-  free(reader);
+  serd_stack_free(reader->world->allocator, &reader->stack);
+  serd_wfree(reader->world, reader->bprefix);
+  serd_wfree(reader->world, reader);
 }
 
 void
@@ -272,14 +279,15 @@ serd_reader_add_blank_prefix(SerdReader* const reader, const char* const prefix)
 {
   assert(reader);
 
-  free(reader->bprefix);
+  serd_wfree(reader->world, reader->bprefix);
   reader->bprefix_len = 0;
   reader->bprefix     = NULL;
 
   const size_t prefix_len = prefix ? strlen(prefix) : 0;
   if (prefix_len) {
     reader->bprefix_len = prefix_len;
-    reader->bprefix     = (char*)malloc(reader->bprefix_len + 1);
+    reader->bprefix =
+      (char*)serd_wmalloc(reader->world, reader->bprefix_len + 1);
     memcpy(reader->bprefix, prefix, reader->bprefix_len + 1);
   }
 }
@@ -310,13 +318,18 @@ serd_reader_start(SerdReader* const      reader,
   assert(reader);
   assert(input);
 
+  if (!block_size || !input->stream) {
+    return SERD_BAD_ARG;
+  }
+
   if (reader->source) {
     return SERD_BAD_CALL;
   }
 
-  reader->source = serd_byte_source_new_input(input, input_name, block_size);
+  reader->source = serd_byte_source_new_input(
+    reader->world->allocator, input, input_name, block_size);
 
-  return reader->source ? SERD_SUCCESS : SERD_BAD_ARG;
+  return reader->source ? SERD_SUCCESS : SERD_BAD_ALLOC;
 }
 
 static SerdStatus
@@ -374,7 +387,7 @@ serd_reader_finish(SerdReader* const reader)
 {
   assert(reader);
 
-  serd_byte_source_free(reader->source);
+  serd_byte_source_free(reader->world->allocator, reader->source);
   reader->source = NULL;
   return SERD_SUCCESS;
 }

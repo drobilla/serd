@@ -38,7 +38,6 @@
 */
 
 #include "serd/buffer.h"
-#include "serd/memory.h"
 
 /**
    @}

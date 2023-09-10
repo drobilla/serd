@@ -5,6 +5,7 @@
 #define SERD_BUFFER_H
 
 #include "serd/attributes.h"
+#include "zix/allocator.h"
 #include "zix/attributes.h"
 
 #include <stddef.h>
@@ -23,18 +24,19 @@ SERD_BEGIN_DECLS
    @{
 */
 
-/// A mutable buffer in memory
+/// A dynamically resizable mutable buffer in memory
 typedef struct {
-  void* ZIX_NULLABLE buf; ///< Buffer
-  size_t             len; ///< Size of buffer in bytes
+  ZixAllocator* ZIX_NULLABLE allocator; ///< Allocator for buf
+  void* ZIX_NULLABLE         buf;       ///< Buffer
+  size_t                     len;       ///< Size of buffer in bytes
 } SerdBuffer;
 
 /**
    A function for writing to a buffer, resizing it if necessary.
 
    This function can be used as a #SerdWriteFunc to write to a #SerdBuffer
-   which is resized as necessary with realloc().  The `stream` parameter must
-   point to an initialized #SerdBuffer.
+   which is reallocated as necessary.  The `stream` parameter must point to an
+   initialized #SerdBuffer.
 
    Note that when writing a string, the string in the buffer will not be
    null-terminated until serd_buffer_close() is called.

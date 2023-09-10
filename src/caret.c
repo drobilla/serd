@@ -4,6 +4,7 @@
 #include "caret.h"
 
 #include "serd/caret.h"
+#include "zix/allocator.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -11,13 +12,14 @@
 #include <string.h>
 
 SerdCaret*
-serd_caret_new(const SerdNode* const document,
+serd_caret_new(ZixAllocator* const   allocator,
+               const SerdNode* const document,
                const unsigned        line,
                const unsigned        column)
 {
   assert(document);
 
-  SerdCaret* caret = (SerdCaret*)malloc(sizeof(SerdCaret));
+  SerdCaret* const caret = (SerdCaret*)zix_malloc(allocator, sizeof(SerdCaret));
 
   if (caret) {
     caret->document = document;
@@ -29,21 +31,25 @@ serd_caret_new(const SerdNode* const document,
 }
 
 SerdCaret*
-serd_caret_copy(const SerdCaret* const caret)
+serd_caret_copy(ZixAllocator* const allocator, const SerdCaret* const caret)
 {
   if (!caret) {
     return NULL;
   }
 
-  SerdCaret* copy = (SerdCaret*)malloc(sizeof(SerdCaret));
-  memcpy(copy, caret, sizeof(SerdCaret));
+  SerdCaret* const copy = (SerdCaret*)zix_malloc(allocator, sizeof(SerdCaret));
+
+  if (copy) {
+    memcpy(copy, caret, sizeof(SerdCaret));
+  }
+
   return copy;
 }
 
 void
-serd_caret_free(SerdCaret* const caret)
+serd_caret_free(ZixAllocator* const allocator, SerdCaret* const caret)
 {
-  free(caret);
+  zix_free(allocator, caret);
 }
 
 bool

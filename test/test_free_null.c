@@ -5,7 +5,6 @@
 
 #include "serd/caret.h"
 #include "serd/env.h"
-#include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
@@ -17,14 +16,13 @@
 int
 main(void)
 {
-  serd_free(NULL);
-  serd_node_free(NULL);
+  serd_node_free(NULL, NULL);
   serd_world_free(NULL);
   serd_env_free(NULL);
   serd_sink_free(NULL);
   serd_reader_free(NULL);
   serd_writer_free(NULL);
-  serd_caret_free(NULL);
+  serd_caret_free(NULL, NULL);
 
   return 0;
 }

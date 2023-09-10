@@ -36,7 +36,7 @@ serd_strlen(const char* ZIX_NONNULL str, SerdNodeFlags* ZIX_NULLABLE flags);
    @param str Base64 string to decode.
    @param len The length of `str`.
    @param size Set to the size of the returned blob in bytes.
-   @return A newly allocated blob which must be freed with serd_free().
+   @return A newly allocated blob which must be freed with zix_free().
 */
 SERD_API void* ZIX_ALLOCATED
 serd_base64_decode(const char* ZIX_NONNULL str,

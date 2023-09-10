@@ -5,7 +5,6 @@
 
 #include "namespaces.h"
 #include "string_utils.h"
-#include "system.h"
 
 #include "exess/exess.h"
 #include "serd/buffer.h"
@@ -14,6 +13,7 @@
 #include "serd/string.h"
 #include "serd/uri.h"
 #include "serd/write_result.h"
+#include "zix/allocator.h"
 #include "zix/attributes.h"
 #include "zix/string_view.h"
 
@@ -21,7 +21,6 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 typedef struct {
@@ -48,7 +47,7 @@ DEFINE_XSD_NODE(integer)
 static const SerdNodeFlags meta_mask = (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE);
 
 static SerdNode*
-serd_new_from_uri(SerdURIView uri, SerdURIView base);
+serd_new_from_uri(ZixAllocator* allocator, SerdURIView uri, SerdURIView base);
 
 static size_t
 string_sink(const void* const buf,
@@ -114,35 +113,50 @@ serd_node_total_size(const SerdNode* const node)
 }
 
 SerdNode*
-serd_node_malloc(const size_t        length,
+serd_node_malloc(ZixAllocator* const allocator,
+                 const size_t        length,
                  const SerdNodeFlags flags,
                  const SerdNodeType  type)
 {
   const size_t size = sizeof(SerdNode) + serd_node_pad_length(length);
-  SerdNode*    node = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
 
-  node->length = 0;
-  node->flags  = flags;
-  node->type   = type;
+  SerdNode* const node =
+    (SerdNode*)zix_aligned_alloc(allocator, serd_node_align, size);
+
+  if (node) {
+    memset(node, 0, size);
+  }
+
+  if (node) {
+    node->length = 0;
+    node->flags  = flags;
+    node->type   = type;
+  }
 
   assert((uintptr_t)node % serd_node_align == 0U);
   return node;
 }
 
-void
-serd_node_set(SerdNode** const dst, const SerdNode* const src)
+SerdStatus
+serd_node_set(ZixAllocator* const   allocator,
+              SerdNode** const      dst,
+              const SerdNode* const src)
 {
   assert(dst);
   assert(src);
 
   const size_t size = serd_node_total_size(src);
   if (!*dst || serd_node_total_size(*dst) < size) {
-    serd_free_aligned(*dst);
-    *dst = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
+    zix_aligned_free(allocator, *dst);
+    if (!(*dst =
+            (SerdNode*)zix_aligned_alloc(allocator, serd_node_align, size))) {
+      return SERD_BAD_ALLOC;
+    }
   }
 
   assert(*dst);
   memcpy(*dst, src, size);
+  return SERD_SUCCESS;
 }
 
 /**
@@ -173,11 +187,13 @@ result(const SerdStatus status, const size_t count)
 }
 
 SerdNode*
-serd_new_token(const SerdNodeType type, const ZixStringView str)
+serd_new_token(ZixAllocator* const allocator,
+               const SerdNodeType  type,
+               const ZixStringView str)
 {
   SerdNodeFlags flags  = 0U;
   const size_t  length = str.data ? str.length : 0U;
-  SerdNode*     node   = serd_node_malloc(length, flags, type);
+  SerdNode*     node   = serd_node_malloc(allocator, length, flags, type);
 
   if (node) {
     if (str.data) {
@@ -193,22 +209,25 @@ serd_new_token(const SerdNodeType type, const ZixStringView str)
 }
 
 SerdNode*
-serd_new_string(const ZixStringView str)
+serd_new_string(ZixAllocator* const allocator, const ZixStringView str)
 {
   SerdNodeFlags flags  = 0;
   const size_t  length = serd_substrlen(str.data, str.length, &flags);
-  SerdNode*     node   = serd_node_malloc(length, flags, SERD_LITERAL);
+  SerdNode*     node = serd_node_malloc(allocator, length, flags, SERD_LITERAL);
 
-  memcpy(serd_node_buffer(node), str.data, str.length);
-  node->length = length;
+  if (node) {
+    node->length = length;
+    memcpy(serd_node_buffer(node), str.data, str.length);
+    serd_node_check_padding(node);
+  }
 
-  serd_node_check_padding(node);
   return node;
 }
 
 /// Internal pre-measured implementation of serd_new_plain_literal
 static SerdNode*
-serd_new_plain_literal_i(const ZixStringView str,
+serd_new_plain_literal_i(ZixAllocator* const allocator,
+                         const ZixStringView str,
                          SerdNodeFlags       flags,
                          const ZixStringView lang)
 {
@@ -220,7 +239,7 @@ serd_new_plain_literal_i(const ZixStringView str,
   const size_t len       = serd_node_pad_length(str.length);
   const size_t total_len = len + sizeof(SerdNode) + lang.length;
 
-  SerdNode* node = serd_node_malloc(total_len, flags, SERD_LITERAL);
+  SerdNode* node = serd_node_malloc(allocator, total_len, flags, SERD_LITERAL);
   memcpy(serd_node_buffer(node), str.data, str.length);
   node->length = str.length;
 
@@ -235,24 +254,27 @@ serd_new_plain_literal_i(const ZixStringView str,
 }
 
 SerdNode*
-serd_new_plain_literal(const ZixStringView str, const ZixStringView lang)
+serd_new_plain_literal(ZixAllocator* const allocator,
+                       const ZixStringView str,
+                       const ZixStringView lang)
 {
   if (!lang.length) {
-    return serd_new_string(str);
+    return serd_new_string(allocator, str);
   }
 
   SerdNodeFlags flags = 0;
   serd_strlen(str.data, &flags);
 
-  return serd_new_plain_literal_i(str, flags, lang);
+  return serd_new_plain_literal_i(allocator, str, flags, lang);
 }
 
 SerdNode*
-serd_new_typed_literal(const ZixStringView str,
+serd_new_typed_literal(ZixAllocator* const allocator,
+                       const ZixStringView str,
                        const ZixStringView datatype_uri)
 {
   if (!datatype_uri.length) {
-    return serd_new_string(str);
+    return serd_new_string(allocator, str);
   }
 
   if (!strcmp(datatype_uri.data, NS_RDF "langString")) {
@@ -267,7 +289,7 @@ serd_new_typed_literal(const ZixStringView str,
   const size_t len       = serd_node_pad_length(str.length);
   const size_t total_len = len + sizeof(SerdNode) + datatype_uri.length;
 
-  SerdNode* node = serd_node_malloc(total_len, flags, SERD_LITERAL);
+  SerdNode* node = serd_node_malloc(allocator, total_len, flags, SERD_LITERAL);
   memcpy(serd_node_buffer(node), str.data, str.length);
   node->length = str.length;
 
@@ -283,15 +305,15 @@ serd_new_typed_literal(const ZixStringView str,
 }
 
 SerdNode*
-serd_new_blank(const ZixStringView str)
+serd_new_blank(ZixAllocator* const allocator, const ZixStringView str)
 {
-  return serd_new_token(SERD_BLANK, str);
+  return serd_new_token(allocator, SERD_BLANK, str);
 }
 
 SerdNode*
-serd_new_curie(const ZixStringView str)
+serd_new_curie(ZixAllocator* const allocator, const ZixStringView str)
 {
-  return serd_new_token(SERD_CURIE, str);
+  return serd_new_token(allocator, SERD_CURIE, str);
 }
 
 ExessResult
@@ -402,16 +424,20 @@ serd_get_base64(const SerdNode* const node,
 }
 
 SerdNode*
-serd_node_copy(const SerdNode* node)
+serd_node_copy(ZixAllocator* const allocator, const SerdNode* node)
 {
   if (!node) {
     return NULL;
   }
 
   const size_t size = serd_node_total_size(node);
-  SerdNode*    copy = (SerdNode*)serd_calloc_aligned(serd_node_align, size);
+  SerdNode*    copy =
+    (SerdNode*)zix_aligned_alloc(allocator, serd_node_align, size);
 
-  memcpy(copy, node, size);
+  if (copy) {
+    memcpy(copy, node, size);
+  }
+
   return copy;
 }
 
@@ -472,74 +498,88 @@ serd_node_compare(const SerdNode* const a, const SerdNode* const b)
 }
 
 SerdNode*
-serd_new_uri(const ZixStringView string)
+serd_new_uri(ZixAllocator* const allocator, const ZixStringView string)
 {
-  return serd_new_token(SERD_URI, string);
+  return serd_new_token(allocator, SERD_URI, string);
 }
 
 SerdNode*
-serd_new_parsed_uri(const SerdURIView uri)
+serd_new_parsed_uri(ZixAllocator* const allocator, const SerdURIView uri)
 {
-  const size_t    len        = serd_uri_string_length(uri);
-  SerdNode* const node       = serd_node_malloc(len, 0, SERD_URI);
-  char*           ptr        = serd_node_buffer(node);
-  const size_t    actual_len = serd_write_uri(uri, string_sink, &ptr);
+  const size_t    len  = serd_uri_string_length(uri);
+  SerdNode* const node = serd_node_malloc(allocator, len, 0, SERD_URI);
 
-  assert(actual_len == len);
+  if (node) {
+    char*        ptr        = serd_node_buffer(node);
+    const size_t actual_len = serd_write_uri(uri, string_sink, &ptr);
 
-  serd_node_buffer(node)[actual_len] = '\0';
-  node->length                       = actual_len;
+    assert(actual_len == len);
+
+    serd_node_buffer(node)[actual_len] = '\0';
+    node->length                       = actual_len;
+  }
 
   serd_node_check_padding(node);
   return node;
 }
 
 static SerdNode*
-serd_new_from_uri(const SerdURIView uri, const SerdURIView base)
+serd_new_from_uri(ZixAllocator* const allocator,
+                  const SerdURIView   uri,
+                  const SerdURIView   base)
 {
-  const SerdURIView abs_uri    = serd_resolve_uri(uri, base);
-  const size_t      len        = serd_uri_string_length(abs_uri);
-  SerdNode*         node       = serd_node_malloc(len, 0, SERD_URI);
-  char*             ptr        = serd_node_buffer(node);
-  const size_t      actual_len = serd_write_uri(abs_uri, string_sink, &ptr);
+  const SerdURIView abs_uri = serd_resolve_uri(uri, base);
+  const size_t      len     = serd_uri_string_length(abs_uri);
+  SerdNode*         node    = serd_node_malloc(allocator, len, 0, SERD_URI);
+  if (node) {
+    char*        ptr        = serd_node_buffer(node);
+    const size_t actual_len = serd_write_uri(abs_uri, string_sink, &ptr);
+    assert(actual_len == len);
 
-  assert(actual_len == len);
+    node->length                         = actual_len;
+    serd_node_buffer(node)[node->length] = '\0';
+    serd_node_check_padding(node);
+  }
 
-  serd_node_buffer(node)[actual_len] = '\0';
-  node->length                       = actual_len;
-
-  serd_node_check_padding(node);
   return node;
 }
 
 SerdNode*
-serd_new_resolved_uri(const ZixStringView string, const SerdURIView base)
+serd_new_resolved_uri(ZixAllocator* const allocator,
+                      const ZixStringView string,
+                      const SerdURIView   base)
 {
   const SerdURIView uri    = serd_parse_uri(string.data);
-  SerdNode* const   result = serd_new_from_uri(uri, base);
+  SerdNode* const   result = serd_new_from_uri(allocator, uri, base);
 
-  if (!serd_uri_string_has_scheme(serd_node_string(result))) {
-    serd_node_free(result);
-    return NULL;
+  if (result) {
+    if (!serd_uri_string_has_scheme(serd_node_string(result))) {
+      serd_node_free(allocator, result);
+      return NULL;
+    }
+
+    serd_node_check_padding(result);
   }
 
-  serd_node_check_padding(result);
   return result;
 }
 
 SerdNode*
-serd_new_file_uri(const ZixStringView path, const ZixStringView hostname)
+serd_new_file_uri(ZixAllocator* const allocator,
+                  const ZixStringView path,
+                  const ZixStringView hostname)
 {
-  SerdBuffer buffer = {NULL, 0U};
+  SerdBuffer buffer = {NULL, NULL, 0U};
 
   serd_write_file_uri(path, hostname, serd_buffer_write, &buffer);
   serd_buffer_close(&buffer);
 
   const size_t      length = buffer.len;
   const char* const string = (char*)buffer.buf;
-  SerdNode* const   node   = serd_new_string(zix_substring(string, length));
+  SerdNode* const   node =
+    serd_new_string(allocator, zix_substring(string, length));
 
-  free(buffer.buf);
+  zix_free(buffer.allocator, buffer.buf);
   serd_node_check_padding(node);
   return node;
 }
@@ -549,17 +589,19 @@ typedef size_t (*SerdWriteLiteralFunc)(const void* user_data,
                                        char*       buf);
 
 SerdNode*
-serd_new_boolean(bool b)
+serd_new_boolean(ZixAllocator* const allocator, bool b)
 {
   static const ZixStringView true_string  = ZIX_STATIC_STRING("true");
   static const ZixStringView false_string = ZIX_STATIC_STRING("false");
 
-  return serd_new_typed_literal(b ? true_string : false_string,
+  return serd_new_typed_literal(allocator,
+                                b ? true_string : false_string,
                                 serd_node_string_view(&serd_xsd_boolean.node));
 }
 
 static SerdNode*
-serd_new_custom_literal(const void* const          user_data,
+serd_new_custom_literal(ZixAllocator* const        allocator,
+                        const void* const          user_data,
                         const size_t               len,
                         const SerdWriteLiteralFunc write,
                         const SerdNode* const      datatype)
@@ -572,7 +614,7 @@ serd_new_custom_literal(const void* const          user_data,
   const size_t total_size    = serd_node_pad_length(len) + datatype_size;
 
   SerdNode* const node = serd_node_malloc(
-    total_size, datatype ? SERD_HAS_DATATYPE : 0U, SERD_LITERAL);
+    allocator, total_size, datatype ? SERD_HAS_DATATYPE : 0U, SERD_LITERAL);
 
   node->length = write(user_data, len + 1, serd_node_buffer(node));
 
@@ -580,36 +622,39 @@ serd_new_custom_literal(const void* const          user_data,
     memcpy(serd_node_meta(node), datatype, datatype_size);
   }
 
-  serd_node_check_padding(node);
   return node;
 }
 
 SerdNode*
-serd_new_double(const double d)
+serd_new_double(ZixAllocator* const allocator, const double d)
 {
   char buf[EXESS_MAX_DOUBLE_LENGTH + 1] = {0};
 
   const ExessResult r = exess_write_double(d, sizeof(buf), buf);
 
   return r.status ? NULL
-                  : serd_new_typed_literal(zix_substring(buf, r.count),
+                  : serd_new_typed_literal(allocator,
+                                           zix_substring(buf, r.count),
                                            zix_string(EXESS_XSD_URI "double"));
 }
 
 SerdNode*
-serd_new_float(const float f)
+serd_new_float(ZixAllocator* const allocator, const float f)
 {
   char buf[EXESS_MAX_FLOAT_LENGTH + 1] = {0};
 
   const ExessResult r = exess_write_float(f, sizeof(buf), buf);
 
   return r.status ? NULL
-                  : serd_new_typed_literal(zix_substring(buf, r.count),
+                  : serd_new_typed_literal(allocator,
+                                           zix_substring(buf, r.count),
                                            zix_string(EXESS_XSD_URI "float"));
 }
 
 SerdNode*
-serd_new_decimal(const double d, const SerdNode* const datatype)
+serd_new_decimal(ZixAllocator* const   allocator,
+                 const double          d,
+                 const SerdNode* const datatype)
 {
   // Use given datatype, or xsd:decimal as a default if it is null
   const SerdNode* type      = datatype ? datatype : &serd_xsd_decimal.node;
@@ -620,8 +665,11 @@ serd_new_decimal(const double d, const SerdNode* const datatype)
   assert(!r.status);
 
   // Allocate node with enough space for value and datatype URI
-  SerdNode* const node = serd_node_malloc(
-    serd_node_pad_length(r.count) + type_size, SERD_HAS_DATATYPE, SERD_LITERAL);
+  SerdNode* const node =
+    serd_node_malloc(allocator,
+                     serd_node_pad_length(r.count) + type_size,
+                     SERD_HAS_DATATYPE,
+                     SERD_LITERAL);
 
   // Write string directly into node
   r = exess_write_decimal(d, r.count + 1, serd_node_buffer(node));
@@ -634,7 +682,7 @@ serd_new_decimal(const double d, const SerdNode* const datatype)
 }
 
 SerdNode*
-serd_new_integer(const int64_t i)
+serd_new_integer(ZixAllocator* const allocator, const int64_t i)
 {
   // Use given datatype, or xsd:integer as a default if it is null
   const SerdNode* datatype      = &serd_xsd_integer.node;
@@ -646,7 +694,8 @@ serd_new_integer(const int64_t i)
 
   // Allocate node with enough space for value and datatype URI
   SerdNode* const node =
-    serd_node_malloc(serd_node_pad_length(r.count) + datatype_size,
+    serd_node_malloc(allocator,
+                     serd_node_pad_length(r.count) + datatype_size,
                      SERD_HAS_DATATYPE,
                      SERD_LITERAL);
 
@@ -674,13 +723,13 @@ write_base64_literal(const void* const user_data,
 }
 
 SerdNode*
-serd_new_base64(const void* buf, size_t size)
+serd_new_base64(ZixAllocator* const allocator, const void* buf, size_t size)
 {
   const size_t    len  = exess_write_base64(size, buf, 0, NULL).count;
   SerdConstBuffer blob = {buf, size};
 
   return serd_new_custom_literal(
-    &blob, len, write_base64_literal, &serd_xsd_base64Binary.node);
+    allocator, &blob, len, write_base64_literal, &serd_xsd_base64Binary.node);
 }
 
 SerdNodeType
@@ -761,7 +810,7 @@ serd_node_flags(const SerdNode* const node)
 }
 
 void
-serd_node_free(SerdNode* const node)
+serd_node_free(ZixAllocator* const allocator, SerdNode* const node)
 {
-  serd_free_aligned(node);
+  zix_aligned_free(allocator, node);
 }

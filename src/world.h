@@ -7,13 +7,15 @@
 #include "serd/error.h"
 #include "serd/status.h"
 #include "serd/world.h"
+#include "zix/allocator.h"
 
 #include <stdarg.h>
 
 struct SerdWorldImpl {
-  SerdLimits  limits;
-  SerdLogFunc error_func;
-  void*       error_handle;
+  SerdLimits    limits;
+  ZixAllocator* allocator;
+  SerdLogFunc   error_func;
+  void*         error_handle;
 };
 
 SerdStatus

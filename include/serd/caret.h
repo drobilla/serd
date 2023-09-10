@@ -6,6 +6,7 @@
 
 #include "serd/attributes.h"
 #include "serd/node.h"
+#include "zix/allocator.h"
 #include "zix/attributes.h"
 
 #include <stdbool.h>
@@ -29,23 +30,27 @@ typedef struct SerdCaretImpl SerdCaret;
    valid.  That is, serd_caret_document() will return exactly the pointer
    `document`, not a copy.
 
+   @param allocator Allocator to use for caret memory.
    @param document The document or the caret refers to (usually a file URI)
    @param line The line number in the document (1-based)
    @param column The column number in the document (1-based)
    @return A new caret that must be freed with serd_caret_free()
 */
 SERD_API SerdCaret* ZIX_ALLOCATED
-serd_caret_new(const SerdNode* ZIX_NONNULL document,
+serd_caret_new(ZixAllocator* ZIX_NULLABLE  allocator,
+               const SerdNode* ZIX_NONNULL document,
                unsigned                    line,
                unsigned                    column);
 
 /// Return a copy of `caret`
 SERD_API SerdCaret* ZIX_ALLOCATED
-serd_caret_copy(const SerdCaret* ZIX_NULLABLE caret);
+serd_caret_copy(ZixAllocator* ZIX_NULLABLE    allocator,
+                const SerdCaret* ZIX_NULLABLE caret);
 
 /// Free `caret`
 SERD_API void
-serd_caret_free(SerdCaret* ZIX_NULLABLE caret);
+serd_caret_free(ZixAllocator* ZIX_NULLABLE allocator,
+                SerdCaret* ZIX_NULLABLE    caret);
 
 /// Return true iff `lhs` is equal to `rhs`
 SERD_PURE_API bool
