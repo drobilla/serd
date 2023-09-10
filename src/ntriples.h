@@ -6,6 +6,8 @@
 
 #include "string_utils.h"
 
+#include "serd/reader.h"
+
 #include <stdbool.h>
 
 static inline bool
