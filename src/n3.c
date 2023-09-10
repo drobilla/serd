@@ -1,7 +1,6 @@
 // Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "byte_source.h"
 #include "reader.h"
 #include "serd_internal.h"
 #include "stack.h"
