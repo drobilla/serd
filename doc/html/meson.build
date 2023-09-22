@@ -14,7 +14,7 @@ custom_target(
     sphinx_in_dir,
     '@OUTDIR@',
   ],
-  input: [c_rst_files, c_serd_rst, c_index_xml, conf_py],
+  input: [conf_py, c_rst_files, c_serd_rst],
   install: true,
   install_dir: html_dir,
   output: [
