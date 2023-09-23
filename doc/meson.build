@@ -50,9 +50,12 @@ if build_docs
   )
 
   # Copy hand-written documentation files
-  c_rst_files = files('index.rst', 'overview.rst')
-  foreach f : c_rst_files
-    configure_file(copy: true, input: f, output: '@PLAINNAME@')
+  rst_sources = files('index.rst', 'overview.rst')
+  sphinx_input = []
+  foreach f : rst_sources
+    sphinx_input += [
+      configure_file(copy: true, input: f, output: '@PLAINNAME@'),
+    ]
   endforeach
 
   # Generate reference documentation input with Doxygen and Sphinxygen
@@ -61,7 +64,7 @@ if build_docs
 
   # Build strict Sphinx flags, with termination on warnings if werror=true
   sphinx_in_dir = meson.current_build_dir()
-  sphinx_flags = ['-d', sphinx_in_dir / '.doctrees', '-E', '-a', '-q']
+  sphinx_flags = ['-E', '-a', '-q']
   if get_option('werror')
     sphinx_flags += ['-W']
   endif

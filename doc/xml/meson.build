@@ -5,15 +5,33 @@ config = configuration_data()
 config.set('SERD_SRCDIR', serd_src_root)
 config.set('DOX_OUTPUT', meson.current_build_dir() / '..')
 
-c_doxyfile = configure_file(
+doxyfile = configure_file(
   configuration: config,
   input: files('../Doxyfile.in'),
   output: 'Doxyfile',
 )
 
-c_index_xml = custom_target(
+doxygen_xml = custom_target(
   'index.xml',
   command: [doxygen, '@INPUT0@'],
-  input: [c_doxyfile] + c_headers,
-  output: 'index.xml',
+  input: [doxyfile] + c_headers,
+  output: [
+    'index.xml',
+
+    'group__serd.xml',
+    'group__serd__env.xml',
+    'group__serd__event.xml',
+    'group__serd__node.xml',
+    'group__serd__reader.xml',
+    'group__serd__status.xml',
+    'group__serd__streams.xml',
+    'group__serd__string.xml',
+    'group__serd__uri.xml',
+    'group__serd__writer.xml',
+    'serd_8h.xml',
+    'structSerdChunk.xml',
+    'structSerdError.xml',
+    'structSerdNode.xml',
+    'structSerdURI.xml',
+  ],
 )

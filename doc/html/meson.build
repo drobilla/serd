@@ -14,14 +14,15 @@ custom_target(
     sphinx_in_dir,
     '@OUTDIR@',
   ],
-  input: [conf_py, c_rst_files, c_serd_rst],
+  input: [api_serd_rst, conf_py, sphinx_input],
   install: true,
   install_dir: html_dir,
   output: [
+    'index.html',
+
     '_static',
     'api',
     'genindex.html',
-    'index.html',
     'overview.html',
   ],
 )
