@@ -8,20 +8,38 @@ wrapper = meson.get_external_property('exe_wrapper', '')
 # Scripts and Metadata #
 ########################
 
-plot_scripts = files(
+plot_script_paths = [
   '../scripts/serd_bench.py',
-)
+]
 
-simple_scripts = files(
+simple_script_paths = [
   '../scripts/check_formatting.py',
   'serd_test_util/__init__.py',
   'run_suite.py',
   'test_quiet.py',
   'test_stdin.py',
   'test_write_error.py',
-)
+]
 
-python_scripts = simple_scripts + plot_scripts
+ttl_metadata_file_paths = [
+  '../serd.ttl',
+  'extra/abbreviate/manifest.ttl',
+  'extra/bad/manifest.ttl',
+  'extra/big/manifest.ttl',
+  'extra/full/manifest.ttl',
+  'extra/good/manifest.ttl',
+  'extra/lax/manifest.ttl',
+  'extra/perfect/manifest.ttl',
+  'extra/prefix/manifest.ttl',
+  'extra/pretty/manifest.ttl',
+  'extra/qualify/manifest.ttl',
+  'extra/root/manifest.ttl',
+]
+
+plot_scripts = files(plot_script_paths)
+simple_scripts = files(simple_script_paths)
+python_script_paths = simple_script_paths + plot_script_paths
+python_scripts = plot_scripts + simple_scripts
 
 if get_option('lint')
   # Check release metadata
@@ -47,8 +65,9 @@ if get_option('lint')
   black = find_program('black', required: false)
   if black.found()
     black_opts = ['--check', '-q', '-l', '79']
-    foreach script : python_scripts
-      name = '@0@'.format(script).underscorify()
+    foreach script_path : python_script_paths
+      script = files(script_path)
+      name = script_path.underscorify()
       test(name, black, args: black_opts + [script], suite: 'scripts')
     endforeach
   endif
@@ -79,11 +98,11 @@ if get_option('lint')
   endif
 
   # Check Turtle formatting with serdi
-  foreach ttl_file : ttl_metadata_files
+  foreach ttl_file_path : ttl_metadata_file_paths
     test(
-      '@0@'.format(ttl_file).underscorify(),
+      ttl_file_path.underscorify(),
       check_formatting_py,
-      args: [ttl_file, serdi, '-o', 'turtle'],
+      args: [files(ttl_file_path), serdi, '-o', 'turtle'],
       suite: 'data',
     )
   endforeach

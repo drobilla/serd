@@ -222,20 +222,6 @@ endif
 # Support #
 ###########
 
-ttl_metadata_files = files(
-  'test/extra/abbreviate/manifest.ttl',
-  'test/extra/bad/manifest.ttl',
-  'test/extra/big/manifest.ttl',
-  'test/extra/good/manifest.ttl',
-  'test/extra/lax/manifest.ttl',
-  'test/extra/perfect/manifest.ttl',
-  'test/extra/prefix/manifest.ttl',
-  'test/extra/pretty/manifest.ttl',
-  'test/extra/qualify/manifest.ttl',
-  'test/extra/root/manifest.ttl',
-  'serd.ttl',
-)
-
 subdir('scripts')
 
 if not get_option('tests').disabled()
