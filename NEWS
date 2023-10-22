@@ -1,4 +1,4 @@
-serd (0.31.5) unstable; urgency=medium
+serd (0.32.0) stable; urgency=medium
 
   * Add Windows path separator support to serd_node_new_file_uri()
   * Add long "help" and "version" options to serdi
@@ -31,7 +31,7 @@ serd (0.31.5) unstable; urgency=medium
   * Test header for warnings more strictly
   * Update standard test suites
 
- -- David Robillard <d@drobilla.net>  Fri, 12 May 2023 02:42:30 +0000
+ -- David Robillard <d@drobilla.net>  Sun, 22 Oct 2023 19:36:29 +0000
 
 serd (0.30.16) stable; urgency=medium
 
