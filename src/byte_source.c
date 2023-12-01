@@ -3,7 +3,7 @@
 
 #include "byte_source.h"
 
-#include "system.h"
+#include "memory.h"
 #include "warnings.h"
 
 #include "serd/node.h"
