@@ -9,6 +9,8 @@
 
 #include <stddef.h>
 
+#define SERD_PAGE_SIZE 4096U
+
 // Allocator convenience wrappers that use the world allocator
 
 static inline void*

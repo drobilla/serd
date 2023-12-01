@@ -7,6 +7,7 @@
 
 # pylint: disable=consider-using-f-string
 # pylint: disable=consider-using-with
+# pylint: disable=duplicate-code
 # pylint: disable=import-outside-toplevel
 # pylint: disable=invalid-name
 # pylint: disable=redefined-outer-name
@@ -271,7 +272,7 @@ example:
 
     args = ap.parse_args(sys.argv[1:])
 
-    progs = ["serd-pipe -b -f -i turtle -o turtle"] + args.run
+    progs = ["serd-pipe -f -i turtle -o turtle"] + args.run
     min_n = int(args.max / args.steps)
     max_n = args.max
     step = min_n
