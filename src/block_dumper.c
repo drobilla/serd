@@ -3,7 +3,7 @@
 
 #include "block_dumper.h"
 
-#include "system.h"
+#include "serd_config.h"
 
 #include <serd/output_stream.h>
 #include <serd/status.h>
