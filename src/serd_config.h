@@ -35,6 +35,10 @@
 #ifndef SERD_SRC_SERD_CONFIG_H
 #define SERD_SRC_SERD_CONFIG_H
 
+#ifndef SERD_PAGE_SIZE
+#  define SERD_PAGE_SIZE 4096U
+#endif
+
 #if !defined(SERD_NO_DEFAULT_CONFIG)
 
 // We need unistd.h to check _POSIX_VERSION

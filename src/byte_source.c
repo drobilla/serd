@@ -3,7 +3,7 @@
 
 #include "byte_source.h"
 
-#include "system.h"
+#include "serd_config.h"
 
 #include <serd/input_stream.h>
 #include <serd/status.h>
