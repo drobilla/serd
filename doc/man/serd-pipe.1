@@ -8,8 +8,9 @@
 .Nd read and write RDF data
 .Sh SYNOPSIS
 .Nm serd-pipe
-.Op Fl abefhlqtv
+.Op Fl afhlqtv
 .Op Fl B Ar base
+.Op Fl b Ar bytes
 .Op Fl c Ar prefix
 .Op Fl i Ar syntax
 .Op Fl k Ar bytes
@@ -45,9 +46,11 @@ or to provide a base URI for input from stdin or a string.
 .It Fl a
 Write ASCII output.
 If this is enabled, all non-ASCII characters will be escaped, even if the output syntax allows them to be written in UTF-8.
-.It Fl b
-Bulk output writing.
-If this is enabled, output will be written a page at a time, rather than a byte at a time.
+.It Fl b Ar bytes
+I/O block size.
+This is the number of bytes in a file that will be read or written at once.
+The default is 4096, which should perform well in most cases.
+Note that this only applies to files, standard input and output are always processed one byte at a time.
 .It Fl c Ar prefix
 Chop
 .Ar prefix
