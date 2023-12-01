@@ -174,6 +174,10 @@ simple_command_tests = {
     'bad': [
       ['-B', 'nonuriorpath'],
       ['-B'],
+      ['-b', '-1'],
+      ['-b', '1024junk'],
+      ['-b', '9223372036854775807'],
+      ['-b'],
       ['-c'],
       ['-fi'],
       ['-i', 'turtle'],
@@ -204,6 +208,7 @@ if is_variable('serd_pipe')
   pipe_script_args = common_script_args + ['--tool', serd_pipe]
   serd_ttl = files('../serd.ttl')[0]
   bad_input_file = files('extra/bad/bad-base.ttl')
+  small_ttl = files('w3c/turtle/turtle-syntax-number-01.ttl')
 
   test('serd_ttl', serd_pipe, args: [serd_ttl], env: test_env, suite: 'data')
 
@@ -296,7 +301,7 @@ if is_variable('serd_pipe')
 
   io_error_tests = {
     'read_dir_bulk': [serd_src_root],
-    'read_dir_bytes': ['-e', serd_src_root],
+    'read_dir_bytes': ['-b', '1', serd_src_root],
     'read_dir_uri': ['file://@0@/'.format(serd_src_root)],
   }
 
@@ -315,6 +320,13 @@ if is_variable('serd_pipe')
     'write_error',
     files('test_write_error.py'),
     args: pipe_script_args + [serd_ttl],
+    env: test_env,
+    suite: 'io',
+  )
+  test(
+    'deferred_write_error',
+    files('test_write_error.py'),
+    args: pipe_script_args + [small_ttl, '--', '-b', '1024'],
     env: test_env,
     suite: 'io',
   )
@@ -401,7 +413,7 @@ test_suites = {
     ns_serdtest + 'good/',
     '--',
     '-a',
-    '-b',
+    ['-b', '1'],
     ['-k', '16384'],
   ],
   'fast': [
