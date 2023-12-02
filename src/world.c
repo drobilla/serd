@@ -55,6 +55,7 @@ serd_world_error(const SerdWorld* const world, const SerdError* const e)
               e->caret->col);
     }
     vfprintf(stderr, e->fmt, *e->args);
+    fprintf(stderr, "\n");
   }
   return e->status;
 }
