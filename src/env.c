@@ -346,6 +346,7 @@ serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
     return serd_new_expanded_uri(env->allocator, prefix, suffix);
   }
   case SERD_BLANK:
+  case SERD_VARIABLE:
     break;
   }
 

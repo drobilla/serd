@@ -39,9 +39,14 @@ typedef struct SerdNodeImpl SerdNode;
 /**
    Type of a node.
 
-   An abstract RDF node can be either a resource or a literal.  This type is
-   more precise to preserve syntactic differences and support additional
-   features.
+   Note that this set of types is both more precise than, and extended from,
+   the possible types of an abstract RDF node.  Not all types can occur in all
+   contexts, for example, a Turtle document can't contain a variable node.
+
+   The string value of a node never contains quoting or other type indicators.
+   For example, the blank node `_:id3` and the plain literal `"id3"` from a
+   Turtle document would both have the same string, "id3", returned by
+   #serd_node_string.
 */
 typedef enum {
   /**
@@ -83,6 +88,17 @@ typedef enum {
      Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
   */
   SERD_BLANK,
+
+  /**
+     Variable node.
+
+     A variable node, like a blank node, is local to its context.  Variables
+     don't occur in data but are used in search patterns.
+
+     @see [SPARQL 1.1 Query
+     Language](https://www.w3.org/TR/sparql11-query/#rVar)
+  */
+  SERD_VARIABLE,
 } SerdNodeType;
 
 /// Node flags, which ORed together make a #SerdNodeFlags
