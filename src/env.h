@@ -21,8 +21,8 @@ serd_env_find_prefix(const SerdEnv* env, ZixStringView name);
 /**
    Expand `curie`.
 
-   Errors: SERD_BAD_ARG if `curie` is not valid, or SERD_BAD_CURIE if prefix is
-   not defined in `env`.
+   Errors: SERD_BAD_ARG if `curie` is not valid, or SERD_BAD_CURIE if prefix
+   is not defined in `env`.
 */
 SerdStatus
 serd_env_expand_in_place(const SerdEnv* env,

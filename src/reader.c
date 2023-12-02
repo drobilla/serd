@@ -35,7 +35,7 @@ r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
   va_start(args, fmt);
 
   serd_vlogf_at(
-    reader->world, SERD_LOG_LEVEL_ERROR, &reader->source->caret, fmt, args);
+    reader->world, SERD_LOG_LEVEL_ERROR, &reader->source.caret, fmt, args);
 
   va_end(args);
   return st;
@@ -44,8 +44,10 @@ r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
 SerdStatus
 skip_horizontal_whitespace(SerdReader* const reader)
 {
-  while (peek_byte(reader) == '\t' || peek_byte(reader) == ' ') {
-    eat_byte(reader);
+  int c = peek_byte(reader);
+  while (c == '\t' || c == ' ') {
+    skip_byte(reader, c);
+    c = peek_byte(reader);
   }
 
   return SERD_SUCCESS;
@@ -106,47 +108,94 @@ tolerate_status(const SerdReader* const reader, const SerdStatus status)
 SerdNode*
 blank_id(SerdReader* const reader)
 {
-  SerdNode* const ref =
-    push_node_padded(reader, genid_length(reader), SERD_BLANK, "", 0);
+  const size_t    length = genid_length(reader);
+  SerdNode* const ref    = push_node_padding(reader, SERD_BLANK, length);
 
   if (ref) {
-    set_blank_id(reader, ref, genid_length(reader) + 1);
+    set_blank_id(reader, ref, length + 1U);
   }
 
   return ref;
 }
 
-SerdNode*
-push_node_padded(SerdReader* const  reader,
-                 const size_t       max_length,
-                 const SerdNodeType type,
-                 const char* const  str,
-                 const size_t       length)
+static SerdNode*
+push_node_start(SerdReader* const  reader,
+                const SerdNodeType type,
+                const size_t       body_size)
 {
-  // Push a null byte to ensure the previous node was null terminated
-  char* terminator = (char*)serd_stack_push(&reader->stack, 1);
-  if (!terminator) {
-    return NULL;
+  /* The top of the stack should already be aligned, because the previous node
+     must be terminated before starting a new one.  This is statically
+     assumed/enforced here to ensure that it's done earlier, usually right
+     after writing the node body.  That way is less error-prone, because nodes
+     are terminated earlier which reduces the risk of accidentally using a
+     non-terminated node.  It's also faster, for two reasons:
+
+     - Nodes, including termination, are written to the stack in a single
+       sweep, as "tightly" as possible (avoiding the need to re-load that
+       section of the stack into the cache for writing).
+
+     - Pushing a new node header (this function) doesn't need to do any
+       alignment calculations.
+  */
+
+  assert(!(reader->stack.size % sizeof(SerdNode)));
+
+  const size_t    size = sizeof(SerdNode) + body_size;
+  SerdNode* const node = (SerdNode*)serd_stack_push(&reader->stack, size);
+
+  if (node) {
+    node->length = 0U;
+    node->flags  = 0U;
+    node->type   = type;
   }
-  *terminator = 0;
-
-  void* mem = serd_stack_push_aligned(
-    &reader->stack, sizeof(SerdNode) + max_length + 1, sizeof(SerdNode));
-
-  if (!mem) {
-    return NULL;
-  }
-
-  SerdNode* const node = (SerdNode*)mem;
-
-  node->length = length;
-  node->flags  = 0;
-  node->type   = type;
-
-  char* buf = (char*)(node + 1);
-  memcpy(buf, str, length + 1);
 
   return node;
+}
+
+/// Push a null byte to ensure the previous node was null terminated
+static char*
+push_node_end(SerdReader* const reader)
+{
+  char* const terminator = (char*)serd_stack_push(&reader->stack, 1U);
+
+  if (terminator) {
+    *terminator = 0;
+  }
+
+  return terminator;
+}
+
+SerdNode*
+push_node_head(SerdReader* const reader, const SerdNodeType type)
+{
+  return push_node_start(reader, type, 0U);
+}
+
+SerdStatus
+push_node_tail(SerdReader* const reader)
+{
+  if (!push_node_end(reader) ||
+      !serd_stack_push_pad(&reader->stack, sizeof(SerdNode))) {
+    return SERD_BAD_STACK;
+  }
+
+  assert(!(reader->stack.size % sizeof(SerdNode)));
+  return SERD_SUCCESS;
+}
+
+SerdNode*
+push_node_padding(SerdReader* const  reader,
+                  const SerdNodeType type,
+                  const size_t       max_length)
+{
+  SerdNode* const node = push_node_start(reader, type, max_length);
+  if (!node) {
+    return NULL;
+  }
+
+  memset(serd_node_buffer(node), 0, max_length);
+
+  return !push_node_tail(reader) ? node : NULL;
 }
 
 SerdNode*
@@ -155,7 +204,15 @@ push_node(SerdReader* const  reader,
           const char* const  str,
           const size_t       length)
 {
-  return push_node_padded(reader, length, type, str, length);
+  SerdNode* const node = push_node_start(reader, type, length);
+  if (!node) {
+    return NULL;
+  }
+
+  node->length = length;
+  memcpy(serd_node_buffer(node), str, length);
+
+  return !push_node_tail(reader) ? node : NULL;
 }
 
 int
@@ -176,10 +233,6 @@ emit_statement_at(SerdReader* const reader,
     return SERD_BAD_STACK;
   }
 
-  /* Zero the pad of the object node on the top of the stack.  Lower nodes
-     (subject and predicate) were already zeroed by subsequent pushes. */
-  serd_node_zero_pad(o);
-
   const SerdStatement statement = {{ctx.subject, ctx.predicate, o, ctx.graph},
                                    caret};
 
@@ -195,7 +248,7 @@ emit_statement(SerdReader* const reader,
                const ReadContext ctx,
                SerdNode* const   o)
 {
-  return emit_statement_at(reader, ctx, o, &reader->source->caret);
+  return emit_statement_at(reader, ctx, o, &reader->source.caret);
 }
 
 SerdStatus
@@ -203,7 +256,7 @@ serd_reader_read_document(SerdReader* const reader)
 {
   assert(reader);
 
-  if (!reader->source) {
+  if (!reader->source.read_buf) {
     return SERD_BAD_CALL;
   }
 
@@ -214,7 +267,7 @@ serd_reader_read_document(SerdReader* const reader)
                                            ++reader->world->next_document_id);
   }
 
-  if (reader->syntax != SERD_SYNTAX_EMPTY && !reader->source->prepared) {
+  if (reader->syntax != SERD_SYNTAX_EMPTY && !reader->source.prepared) {
     SerdStatus st = serd_reader_prepare(reader);
     if (st) {
       return st;
@@ -302,7 +355,7 @@ serd_reader_free(SerdReader* const reader)
     return;
   }
 
-  if (reader->source) {
+  if (reader->source.in) {
     serd_reader_finish(reader);
   }
 
@@ -319,30 +372,28 @@ serd_reader_start(SerdReader* const      reader,
   assert(reader);
   assert(input);
 
-  if (!block_size || !input->stream) {
+  if (!block_size || block_size > UINT32_MAX || !input->stream) {
     return SERD_BAD_ARG;
   }
 
-  if (reader->source) {
+  if (reader->source.in) {
     return SERD_BAD_CALL;
   }
 
-  reader->source = serd_byte_source_new_input(
-    reader->world->allocator, input, input_name, block_size);
-
-  return reader->source ? SERD_SUCCESS : SERD_BAD_ALLOC;
+  return serd_byte_source_init(
+    reader->world->allocator, &reader->source, input, input_name, block_size);
 }
 
 static SerdStatus
 serd_reader_prepare(SerdReader* const reader)
 {
-  SerdStatus st = serd_byte_source_prepare(reader->source);
+  SerdStatus st = serd_byte_source_prepare(&reader->source);
   if (st == SERD_SUCCESS) {
-    if ((st = serd_byte_source_skip_bom(reader->source))) {
+    if ((st = serd_byte_source_skip_bom(&reader->source))) {
       r_err(reader, SERD_BAD_SYNTAX, "corrupt byte order mark");
     }
   } else if (st == SERD_FAILURE) {
-    reader->source->eof = true;
+    reader->source.eof = true;
   }
   return st;
 }
@@ -352,18 +403,12 @@ serd_reader_read_chunk(SerdReader* const reader)
 {
   assert(reader);
 
-  SerdStatus st = SERD_SUCCESS;
-  if (reader->syntax != SERD_SYNTAX_EMPTY) {
-    if (!reader->source) {
-      return SERD_BAD_CALL;
-    }
-
-    if (!reader->source->prepared) {
-      st = serd_reader_prepare(reader);
-    } else if (reader->source->eof) {
-      st = serd_byte_source_advance(reader->source);
-    }
-  }
+  const SerdStatus st = (reader->syntax == SERD_SYNTAX_EMPTY) ? SERD_FAILURE
+                        : !reader->source.in                  ? SERD_BAD_CALL
+                        : !reader->source.prepared ? serd_reader_prepare(reader)
+                        : reader->source.eof
+                          ? serd_byte_source_page(&reader->source)
+                          : SERD_SUCCESS;
 
   if (st) {
     return st;
@@ -390,7 +435,7 @@ serd_reader_finish(SerdReader* const reader)
 {
   assert(reader);
 
-  serd_byte_source_free(reader->world->allocator, reader->source);
-  reader->source = NULL;
+  serd_byte_source_destroy(reader->world->allocator, &reader->source);
+
   return SERD_SUCCESS;
 }

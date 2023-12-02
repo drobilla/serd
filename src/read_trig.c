@@ -83,16 +83,20 @@ read_sparql_directive(SerdReader* const     reader,
                       ReadContext* const    ctx,
                       const SerdNode* const token)
 {
+  SerdStatus st = SERD_SUCCESS;
+
   if (!tokcmp(token, "base", 4)) {
+    TRY(st, push_node_tail(reader));
     return read_turtle_base(reader, true, false);
   }
 
   if (!tokcmp(token, "prefix", 6)) {
+    TRY(st, push_node_tail(reader));
     return read_turtle_prefixID(reader, true, false);
   }
 
   if (!tokcmp(token, "graph", 5)) {
-    SerdStatus st = SERD_SUCCESS;
+    TRY(st, push_node_tail(reader));
     read_turtle_ws_star(reader);
     TRY(st, read_labelOrSubject(reader, &ctx->graph));
     read_turtle_ws_star(reader);
@@ -165,7 +169,7 @@ read_trig_statement(SerdReader* const reader)
     return SERD_FAILURE;
 
   case '\0':
-    eat_byte(reader);
+    skip_byte(reader, '\0');
     return SERD_FAILURE;
 
   case '@':
@@ -185,7 +189,7 @@ read_trig_statement(SerdReader* const reader)
 SerdStatus
 read_trigDoc(SerdReader* const reader)
 {
-  while (!reader->source->eof) {
+  while (!reader->source.eof) {
     const size_t     orig_stack_size = reader->stack.size;
     const SerdStatus st              = read_trig_statement(reader);
 

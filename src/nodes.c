@@ -199,7 +199,7 @@ node_equals_spec(const SerdNode* const node, const NodeSpec* const spec)
           !strcmp(serd_node_string_i(serd_node_meta_c(node)), spec->meta.data));
 }
 
-static bool
+ZIX_PURE_FUNC static bool
 nodes_meta_equal(const SerdNode* const a, const SerdNode* const b)
 {
   assert(a->flags & meta_mask);
@@ -214,7 +214,7 @@ nodes_meta_equal(const SerdNode* const a, const SerdNode* const b)
          !memcmp(serd_node_string_i(am), serd_node_string_i(bm), am->length);
 }
 
-static bool
+ZIX_PURE_FUNC static bool
 nodes_equal(const SerdNode* const a, const SerdNode* const b)
 {
   return (a == b) ||

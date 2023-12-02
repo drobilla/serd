@@ -25,14 +25,19 @@ static const size_t serd_node_align = 2 * sizeof(uint64_t);
 
 #if SIZE_MAX == UINT64_MAX
 
+/**
+   Pad a node string length to the number of bytes it will occupy in a node.
+
+   This returns a size that is at least one larger than `n_bytes` (to ensure
+   the string is null terminated), but possibly even larger (to align the node
+   size).
+*/
 static inline size_t
 serd_node_pad_length(const size_t n_bytes)
 {
-  const size_t align = sizeof(SerdNode);
+  assert((serd_node_align & (serd_node_align - 1U)) == 0U);
 
-  assert((align & (align - 1U)) == 0U);
-
-  return (n_bytes + align + 2U) & ~(align - 1U);
+  return (n_bytes + serd_node_align) & ~(serd_node_align - 1U);
 }
 
 #else
@@ -40,10 +45,7 @@ serd_node_pad_length(const size_t n_bytes)
 static inline size_t
 serd_node_pad_length(const size_t n_bytes)
 {
-  const size_t pad  = sizeof(SerdNode) - (n_bytes + 2) % sizeof(SerdNode);
-  const size_t size = n_bytes + 2 + pad;
-  assert(size % sizeof(SerdNode) == 0);
-  return size;
+  return (n_bytes + sizeof(SerdNode)) / sizeof(SerdNode) * sizeof(SerdNode);
 }
 
 #endif
@@ -100,8 +102,5 @@ serd_node_set(ZixAllocator* ZIX_NULLABLE         allocator,
 
 ZIX_PURE_FUNC size_t
 serd_node_total_size(const SerdNode* ZIX_NONNULL node);
-
-void
-serd_node_zero_pad(SerdNode* ZIX_NONNULL node);
 
 #endif // SERD_SRC_NODE_H

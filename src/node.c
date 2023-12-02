@@ -232,7 +232,7 @@ serd_node_set(ZixAllocator* const   allocator,
    which must be normalized before being passed to a sink so comparison will
    work correctly.
 */
-void
+static void
 serd_node_zero_pad(SerdNode* node)
 {
   char*        buf           = serd_node_buffer(node);
@@ -277,6 +277,8 @@ serd_node_construct_simple(const size_t        buf_size,
   }
 
   serd_node_zero_pad(node);
+  assert(total_size % sizeof(SerdNode) == 0);
+
   return result(SERD_SUCCESS, total_size);
 }
 
@@ -615,7 +617,7 @@ serd_node_new(ZixAllocator* const allocator, const SerdNodeArgs args)
   assert(r.count % sizeof(SerdNode) == 0);
 
   SerdNode* const node =
-    serd_node_malloc(allocator, sizeof(SerdNode) + r.count + 1);
+    serd_node_malloc(allocator, sizeof(SerdNode) + r.count);
 
   if (node) {
     r = serd_node_construct(r.count, node, args);

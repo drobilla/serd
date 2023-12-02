@@ -47,14 +47,14 @@ serd_stack_free(ZixAllocator* const allocator, SerdStack* stack)
 static inline void*
 serd_stack_push(SerdStack* stack, size_t n_bytes)
 {
-  const size_t new_size = stack->size + n_bytes;
+  const size_t old_size = stack->size;
+  const size_t new_size = old_size + n_bytes;
   if (stack->buf_size < new_size) {
     return NULL;
   }
 
-  char* const ret = (stack->buf + stack->size);
-  stack->size     = new_size;
-  return ret;
+  stack->size = new_size;
+  return stack->buf + old_size;
 }
 
 static inline void
@@ -73,20 +73,21 @@ serd_stack_pop_to(SerdStack* stack, size_t n_bytes)
 }
 
 static inline void*
-serd_stack_push_aligned(SerdStack* stack, size_t n_bytes, size_t align)
+serd_stack_push_pad(SerdStack* stack, size_t align)
 {
   // Push padding if necessary
-  const size_t pad = align - stack->size % align;
-  if (pad > 0) {
-    void* padding = serd_stack_push(stack, pad);
+  const size_t leftovers = stack->size % align;
+  if (leftovers) {
+    const size_t pad     = align - leftovers;
+    void* const  padding = serd_stack_push(stack, pad);
     if (!padding) {
       return NULL;
     }
     memset(padding, 0, pad);
+    return padding;
   }
 
-  // Push requested space at aligned location
-  return serd_stack_push(stack, n_bytes);
+  return stack->buf + stack->size;
 }
 
 #endif // SERD_SRC_STACK_H

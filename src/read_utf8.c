@@ -65,15 +65,15 @@ read_utf8_code_point(SerdReader* const reader,
                      uint32_t* const   code,
                      const uint8_t     lead)
 {
-  uint8_t size                  = 0U;
-  uint8_t bytes[MAX_UTF8_BYTES] = {lead, 0U, 0U, 0U};
+  SerdStatus st                    = SERD_SUCCESS;
+  uint8_t    size                  = 0U;
+  uint8_t    bytes[MAX_UTF8_BYTES] = {lead, 0U, 0U, 0U};
 
   *code = 0U;
 
   skip_byte(reader, lead);
 
-  SerdStatus st = read_utf8_continuation_bytes(reader, bytes, &size, lead);
-  if (st) {
+  if ((st = read_utf8_continuation_bytes(reader, bytes, &size, lead))) {
     return reader->strict ? st : push_bytes(reader, dest, replacement_char, 3);
   }
 
