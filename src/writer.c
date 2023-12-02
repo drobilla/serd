@@ -140,7 +140,7 @@ struct SerdWriterImpl {
   SerdURIView     base_uri;
   SerdStack       anon_stack;
   SerdByteSink    byte_sink;
-  SerdErrorFunc   error_func;
+  SerdLogFunc     error_func;
   void*           error_handle;
   WriteContext    context;
   char*           bprefix;
@@ -1194,9 +1194,9 @@ serd_writer_new(SerdSyntax         syntax,
 }
 
 void
-serd_writer_set_error_sink(SerdWriter*   writer,
-                           SerdErrorFunc error_func,
-                           void*         error_handle)
+serd_writer_set_error_sink(SerdWriter* writer,
+                           SerdLogFunc error_func,
+                           void*       error_handle)
 {
   assert(writer);
   writer->error_func   = error_func;

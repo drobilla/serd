@@ -52,9 +52,9 @@ serd_reader_new(SerdSyntax             syntax,
    no error function is set, errors are printed to stderr in GCC style.
 */
 SERD_API void
-serd_reader_set_error_sink(SerdReader* SERD_NONNULL    reader,
-                           SerdErrorFunc SERD_NULLABLE error_func,
-                           void* SERD_UNSPECIFIED      error_handle);
+serd_reader_set_error_sink(SerdReader* SERD_NONNULL  reader,
+                           SerdLogFunc SERD_NULLABLE error_func,
+                           void* SERD_UNSPECIFIED    error_handle);
 
 /// Return the `handle` passed to serd_reader_new()
 SERD_PURE_API

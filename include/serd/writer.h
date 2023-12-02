@@ -83,9 +83,9 @@ serd_file_sink(const void* SERD_NONNULL buf,
    no error function is set, errors are printed to stderr.
 */
 SERD_API void
-serd_writer_set_error_sink(SerdWriter* SERD_NONNULL   writer,
-                           SerdErrorFunc SERD_NONNULL error_func,
-                           void* SERD_UNSPECIFIED     error_handle);
+serd_writer_set_error_sink(SerdWriter* SERD_NONNULL writer,
+                           SerdLogFunc SERD_NONNULL error_func,
+                           void* SERD_UNSPECIFIED   error_handle);
 
 /**
    Set a prefix to be removed from matching blank node identifiers.

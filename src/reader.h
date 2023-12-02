@@ -50,7 +50,7 @@ struct SerdReaderImpl {
   SerdPrefixFunc    prefix_func;
   SerdStatementFunc statement_func;
   SerdEndFunc       end_func;
-  SerdErrorFunc     error_func;
+  SerdLogFunc       error_func;
   void*             error_handle;
   Ref               rdf_first;
   Ref               rdf_rest;
