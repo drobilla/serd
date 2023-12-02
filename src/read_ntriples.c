@@ -496,6 +496,53 @@ read_HEX(SerdReader* const reader)
   return 0;
 }
 
+/**
+   Read a variable name, starting after the '?' or '$'.
+
+   This is an extension that serd uses in certain contexts to support patterns.
+
+   Restricted version of SPARQL 1.1: [166] VARNAME
+*/
+static SerdStatus
+read_VARNAME(SerdReader* const reader, SerdNode** const dest)
+{
+  // Simplified from SPARQL: VARNAME ::= (PN_CHARS_U | [0-9])+
+  SerdNode*  n  = *dest;
+  SerdStatus st = SERD_SUCCESS;
+
+  while (!st) {
+    const int c = peek_byte(reader);
+    if (c < 0) {
+      st = r_err(reader, SERD_BAD_SYNTAX, "expected variable name character");
+    } else if (is_digit(c) || c == '_') {
+      st = push_byte(reader, n, eat_byte_safe(reader, c));
+    } else if ((st = read_PN_CHARS(reader, n))) {
+      st = st > SERD_FAILURE ? st : SERD_SUCCESS;
+      break;
+    }
+  }
+
+  return st;
+}
+
+SerdStatus
+read_Var(SerdReader* const reader, SerdNode** const dest)
+{
+  if (!(reader->flags & SERD_READ_VARIABLES)) {
+    return r_err(reader, SERD_BAD_SYNTAX, "syntax does not support variables");
+  }
+
+  const int c = peek_byte(reader);
+  assert(c == '$' || c == '?');
+  skip_byte(reader, c);
+
+  if (!(*dest = push_node(reader, SERD_VARIABLE, "", 0))) {
+    return SERD_BAD_STACK;
+  }
+
+  return read_VARNAME(reader, dest);
+}
+
 // Nonterminals
 
 // comment ::= '#' ( [^#xA #xD] )*
@@ -553,6 +600,7 @@ read_nt_subject(SerdReader* const reader,
   const int c = peek_byte(reader);
 
   return (c == '<')   ? read_IRI(reader, dest)
+         : (c == '?') ? read_Var(reader, dest)
          : (c == '_') ? read_BLANK_NODE_LABEL(reader, dest, ate_dot)
                       : r_err(reader, SERD_BAD_SYNTAX, "expected '<' or '_'");
 }
@@ -561,7 +609,8 @@ read_nt_subject(SerdReader* const reader,
 SerdStatus
 read_nt_predicate(SerdReader* const reader, SerdNode** const dest)
 {
-  return read_IRI(reader, dest);
+  return (peek_byte(reader) == '?') ? read_Var(reader, dest)
+                                    : read_IRI(reader, dest);
 }
 
 /// [4] object
@@ -576,6 +625,7 @@ read_nt_object(SerdReader* const reader,
 
   return (c == '"')   ? read_literal(reader, dest)
          : (c == '<') ? read_IRI(reader, dest)
+         : (c == '?') ? read_Var(reader, dest)
          : (c == '_')
            ? read_BLANK_NODE_LABEL(reader, dest, ate_dot)
            : r_err(reader, SERD_BAD_SYNTAX, "expected '<', '_', or '\"'");

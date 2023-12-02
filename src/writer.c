@@ -932,6 +932,18 @@ write_blank(SerdWriter* const             writer,
 }
 
 ZIX_NODISCARD static SerdStatus
+write_variable(SerdWriter* const writer, const SerdNode* const node)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  TRY(st, esink("?", 1, writer));
+  TRY(st, esink(serd_node_string(node), serd_node_length(node), writer));
+
+  writer->last_sep = SEP_NONE;
+  return st;
+}
+
+ZIX_NODISCARD static SerdStatus
 write_node(SerdWriter* const             writer,
            const SerdNode* const         node,
            const SerdField               field,
@@ -939,11 +951,12 @@ write_node(SerdWriter* const             writer,
 {
   const SerdNodeType type = serd_node_type(node);
 
-  return (type == SERD_LITERAL) ? write_literal(writer, node, flags)
-         : (type == SERD_URI)   ? write_uri_node(writer, node, field)
-         : (type == SERD_CURIE) ? write_curie(writer, node)
-         : (type == SERD_BLANK) ? write_blank(writer, node, field, flags)
-                                : SERD_SUCCESS;
+  return (type == SERD_LITERAL)    ? write_literal(writer, node, flags)
+         : (type == SERD_URI)      ? write_uri_node(writer, node, field)
+         : (type == SERD_CURIE)    ? write_curie(writer, node)
+         : (type == SERD_BLANK)    ? write_blank(writer, node, field, flags)
+         : (type == SERD_VARIABLE) ? write_variable(writer, node)
+                                   : SERD_SUCCESS;
 }
 
 static bool

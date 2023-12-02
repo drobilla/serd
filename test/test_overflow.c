@@ -13,10 +13,11 @@ static const size_t min_stack_size = 4U * sizeof(size_t) + 240U;
 static const size_t max_stack_size = 2048U;
 
 static SerdStatus
-test_size(SerdWorld* const  world,
-          const char* const str,
-          const SerdSyntax  syntax,
-          const size_t      stack_size)
+test_size(SerdWorld* const      world,
+          const char* const     str,
+          const SerdSyntax      syntax,
+          const SerdReaderFlags flags,
+          const size_t          stack_size)
 {
   SerdLimits limits        = serd_world_limits(world);
   limits.reader_stack_size = stack_size;
@@ -26,7 +27,7 @@ test_size(SerdWorld* const  world,
   assert(env);
 
   SerdReader* const reader =
-    serd_reader_new(world, syntax, 0U, serd_env_sink(env));
+    serd_reader_new(world, syntax, flags, serd_env_sink(env));
   assert(reader);
 
   SerdNode*       string_name = serd_new_string(NULL, zix_string("string"));
@@ -45,17 +46,18 @@ test_size(SerdWorld* const  world,
 }
 
 static void
-test_all_sizes(SerdWorld* const  world,
-               const char* const str,
-               const SerdSyntax  syntax)
+test_all_sizes(SerdWorld* const      world,
+               const char* const     str,
+               const SerdSyntax      syntax,
+               const SerdReaderFlags flags)
 {
   // Ensure reading with the maximum stack size succeeds
-  SerdStatus st = test_size(world, str, syntax, max_stack_size);
+  SerdStatus st = test_size(world, str, syntax, flags, max_stack_size);
   assert(!st);
 
   // Test with an increasingly smaller stack
   for (size_t size = max_stack_size; size > min_stack_size; --size) {
-    if ((st = test_size(world, str, syntax, size))) {
+    if ((st = test_size(world, str, syntax, flags, size))) {
       assert(st == SERD_BAD_STACK);
     }
   }
@@ -71,13 +73,14 @@ test_ntriples_overflow(void)
     "<http://example.org/s> <http://example.org/p> \"literal\" .",
     "<http://example.org/s> <http://example.org/p> _:blank .",
     "<http://example.org/s> <http://example.org/p> \"\"@en .",
+    "<http://example.org/s> <http://example.org/p> ?var .",
     NULL,
   };
 
   SerdWorld* const world = serd_world_new(NULL);
 
   for (const char* const* t = test_strings; *t; ++t) {
-    test_all_sizes(world, *t, SERD_NTRIPLES);
+    test_all_sizes(world, *t, SERD_NTRIPLES, SERD_READ_VARIABLES);
   }
 
   serd_world_free(world);
@@ -101,6 +104,7 @@ test_turtle_overflow(void)
     "<http://example.org/s> <http://example.org/p> _:blank .",
     "<http://example.org/s> <http://example.org/p> true .",
     "<http://example.org/s> <http://example.org/p> \"\"@en .",
+    "?subject ?predicate ?object .",
     "(((((((((42))))))))) <http://example.org/p> <http://example.org/o> .",
     "@prefix eg: <http://example.org/ns/test> .",
     "@base <http://example.org/base> .",
@@ -168,7 +172,7 @@ test_turtle_overflow(void)
   SerdWorld* const world = serd_world_new(NULL);
 
   for (const char* const* t = test_strings; *t; ++t) {
-    test_all_sizes(world, *t, SERD_TURTLE);
+    test_all_sizes(world, *t, SERD_TURTLE, SERD_READ_VARIABLES);
   }
 
   serd_world_free(world);

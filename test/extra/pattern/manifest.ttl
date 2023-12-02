@@ -1,0 +1,94 @@
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdft: <http://www.w3.org/ns/rdftest#> .
+
+<>
+	a mf:Manifest ;
+	rdfs:comment "Serd pattern syntax test suite" ;
+	mf:entries (
+		<#bad-pattern-eof-in-var>
+		<#bad-pattern-graph-nq>
+		<#bad-pattern-object-nq>
+		<#bad-pattern-object-nt>
+		<#bad-pattern-object-ttl>
+		<#bad-pattern-predicate-nq>
+		<#bad-pattern-predicate-nt>
+		<#bad-pattern-predicate-ttl>
+		<#bad-pattern-subject-nq>
+		<#bad-pattern-subject-nt>
+		<#bad-pattern-subject-ttl>
+		<#test-graph-pattern>
+		<#test-pattern-nt>
+		<#test-pattern-ttl>
+	) .
+
+<#bad-pattern-graph-nq>
+	a rdft:TestNQuadsNegativeSyntax ;
+	mf:action <bad-pattern-graph.nq> ;
+	mf:name "bad-pattern-graph-nq" .
+
+<#bad-pattern-eof-in-var>
+	a rdft:TestNQuadsNegativeSyntax ;
+	mf:action <bad-pattern-eof-in-var.nq> ;
+	mf:name "bad-pattern-eof-in-var" .
+
+<#bad-pattern-object-nq>
+	a rdft:TestNQuadsNegativeSyntax ;
+	mf:action <bad-pattern-object.nq> ;
+	mf:name "bad-pattern-object-nq" .
+
+<#bad-pattern-object-nt>
+	a rdft:TestNTriplesNegativeSyntax ;
+	mf:action <bad-pattern-object.nt> ;
+	mf:name "bad-pattern-object-nt" .
+
+<#bad-pattern-object-ttl>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-pattern-object.ttl> ;
+	mf:name "bad-pattern-object-ttl" .
+
+<#bad-pattern-predicate-nq>
+	a rdft:TestNQuadsNegativeSyntax ;
+	mf:action <bad-pattern-predicate.nq> ;
+	mf:name "bad-pattern-predicate-nq" .
+
+<#bad-pattern-predicate-nt>
+	a rdft:TestNTriplesNegativeSyntax ;
+	mf:action <bad-pattern-predicate.nt> ;
+	mf:name "bad-pattern-predicate-nt" .
+
+<#bad-pattern-predicate-ttl>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-pattern-predicate.ttl> ;
+	mf:name "bad-pattern-predicate-ttl" .
+
+<#bad-pattern-subject-nq>
+	a rdft:TestNQuadsNegativeSyntax ;
+	mf:action <bad-pattern-subject.nq> ;
+	mf:name "bad-pattern-subject-nq" .
+
+<#bad-pattern-subject-nt>
+	a rdft:TestNTriplesNegativeSyntax ;
+	mf:action <bad-pattern-subject.nt> ;
+	mf:name "bad-pattern-subject-nt" .
+
+<#bad-pattern-subject-ttl>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-pattern-subject.ttl> ;
+	mf:name "bad-pattern-subject-ttl" .
+
+<#test-graph-pattern>
+	a rdft:TestNQuadsPositiveSyntax ;
+	mf:action <test-graph-pattern.nq> ;
+	mf:name "test-graph-pattern" .
+
+<#test-pattern-nt>
+	a rdft:TestNTriplesPositiveSyntax ;
+	mf:action <test-pattern.nt> ;
+	mf:name "test-pattern-nt" .
+
+<#test-pattern-ttl>
+	a rdft:TestTurtleEval ;
+	mf:action <test-pattern.ttl> ;
+	mf:name "test-pattern" ;
+	mf:result <test-pattern.nt> .

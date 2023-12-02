@@ -44,6 +44,7 @@ ttl_metadata_file_paths = [
   'extra/full/manifest.ttl',
   'extra/good/manifest.ttl',
   'extra/lax/manifest.ttl',
+  'extra/pattern/manifest.ttl',
   'extra/perfect/manifest.ttl',
   'extra/prefix/manifest.ttl',
   'extra/pretty/manifest.ttl',
@@ -475,6 +476,12 @@ test_suites = {
     ns_serdtest + 'lax/',
     '--',
     ['-k', '1024'],
+  ],
+  'pattern': [
+    files('extra/pattern/manifest.ttl'),
+    ns_serdtest + 'pattern/',
+    '--',
+    ['-I', 'variables'],
   ],
   'perfect_forward': [
     files('extra/perfect/manifest.ttl'),
