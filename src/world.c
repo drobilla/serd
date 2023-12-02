@@ -124,9 +124,9 @@ serd_world_set_limits(SerdWorld* const world, const SerdLimits limits)
 }
 
 void
-serd_world_set_error_func(SerdWorld*    world,
-                          SerdErrorFunc error_func,
-                          void*         handle)
+serd_world_set_error_func(SerdWorld*  world,
+                          SerdLogFunc error_func,
+                          void*       handle)
 {
   world->error_func   = error_func;
   world->error_handle = handle;
