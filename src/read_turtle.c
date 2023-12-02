@@ -458,10 +458,15 @@ read_literal(SerdReader* const reader,
 }
 
 static SerdStatus
-read_verb(SerdReader* const reader, SerdNode** const dest)
+read_verb(SerdReader* reader, SerdNode** const dest)
 {
   const size_t orig_stack_size = reader->stack.size;
-  if (peek_byte(reader) == '<') {
+
+  switch (peek_byte(reader)) {
+  case '$':
+  case '?':
+    return read_Var(reader, dest);
+  case '<':
     return read_IRIREF(reader, dest);
   }
 
@@ -617,6 +622,10 @@ read_object(SerdReader* const  reader,
   case EOF:
   case ')':
     return r_err(reader, SERD_BAD_SYNTAX, "expected object");
+  case '$':
+  case '?':
+    st = read_Var(reader, &o);
+    break;
   case '[':
     simple = false;
     st     = read_anon(reader, *ctx, false, &o);
@@ -813,6 +822,10 @@ read_turtle_subject(SerdReader* const reader,
   SerdStatus st      = SERD_SUCCESS;
   bool       ate_dot = false;
   switch ((*s_type = peek_byte(reader))) {
+  case '$':
+  case '?':
+    st = read_Var(reader, dest);
+    break;
   case '[':
     st = read_anon(reader, ctx, true, dest);
     break;

@@ -1,0 +1,10 @@
+?s
+	<http://example.org/p1> <http://example.org/o1> .
+
+<http://example.org/s>
+	?p <http://example.org/o1> ;
+	<http://example.org/p1> ?o ;
+	<http://example.org/p2> [
+		?2p <http://example.org/o2> ;
+		<http://example.org/p3> ?_o
+	] .
