@@ -129,6 +129,7 @@
 		<#bad-uri-scheme>
 		<#bad-uri-scheme-start>
 		<#bad-uri-truncated>
+		<#bad-var>
 		<#bad-verb>
 	) .
 
@@ -746,6 +747,11 @@
 	a rdft:TestNTriplesNegativeSyntax ;
 	mf:action <bad-uri-truncated.nt> ;
 	mf:name "bad-uri-truncated" .
+
+<#bad-var>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-var.ttl> ;
+	mf:name "bad-var" .
 
 <#bad-verb>
 	a rdft:TestTurtleNegativeSyntax ;

@@ -2,6 +2,7 @@ serd (1.1.1) unstable; urgency=medium
 
   * Add SerdBuffer for mutable buffers to keep SerdChunk const-correct
   * Add SerdWorld for shared library state
+  * Add support for parsing variables
   * Add support for writing terse output with minimal newlines
   * Add support for xsd:float and xsd:double literals
   * Make nodes opaque
@@ -19,7 +20,7 @@ serd (1.1.1) unstable; urgency=medium
   * Use a fixed-size reader stack
   * Use char* for strings in public API
 
- -- David Robillard <d@drobilla.net>  Tue, 30 Jan 2024 14:42:20 +0000
+ -- David Robillard <d@drobilla.net>  Tue, 30 Jan 2024 14:42:39 +0000
 
 serd (0.32.3) unstable; urgency=medium
 
