@@ -156,7 +156,7 @@ eat_byte_check(SerdReader* const reader, const int byte)
 {
   const int c = peek_byte(reader);
   if (c != byte) {
-    r_err(reader, SERD_BAD_SYNTAX, "expected '%c'\n", byte);
+    r_err(reader, SERD_BAD_SYNTAX, "expected '%c'", byte);
     return 0;
   }
   return eat_byte_safe(reader, byte);
