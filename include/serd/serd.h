@@ -67,6 +67,7 @@
    @{
 */
 
+#include "serd/canon.h"
 #include "serd/env.h"
 #include "serd/event.h"
 #include "serd/sink.h"

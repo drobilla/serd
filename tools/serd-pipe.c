@@ -3,6 +3,7 @@
 
 #include "console.h"
 
+#include "serd/canon.h"
 #include "serd/env.h"
 #include "serd/input_stream.h"
 #include "serd/log.h"
@@ -37,6 +38,7 @@ print_usage(const char* const name, const bool error)
     "Read and write RDF syntax.\n"
     "Use - for INPUT to read from standard input.\n\n"
     "  -B BASE_URI  Base URI.\n"
+    "  -C           Convert literals to canonical form.\n"
     "  -I SYNTAX    Input syntax (turtle/ntriples/trig/nquads),\n"
     "               or flag (generated/global/lax/variables).\n"
     "  -O SYNTAX    Output syntax (empty/turtle/ntriples/nquads),\n"
@@ -107,6 +109,7 @@ main(int argc, char** argv)
   SerdReaderFlags reader_flags  = 0;
   SerdWriterFlags writer_flags  = 0;
   bool            osyntax_set   = false;
+  bool            canonical     = false;
   bool            quiet         = false;
   size_t          block_size    = 4096U;
   size_t          stack_size    = 1048576U;
@@ -138,7 +141,9 @@ main(int argc, char** argv)
         return serd_print_version(argv[0]);
       }
 
-      if (opt == 'q') {
+      if (opt == 'C') {
+        canonical = true;
+      } else if (opt == 'q') {
         quiet = true;
       } else if (opt == 'B') {
         if (argv[a][o + 1] || ++a == argc) {
@@ -276,6 +281,13 @@ main(int argc, char** argv)
   SerdWriter* const writer =
     serd_writer_new(world, output_syntax, writer_flags, env, &out, block_size);
 
+  const SerdSink* sink = serd_writer_sink(writer);
+
+  SerdSink* canon = NULL;
+  if (canonical) {
+    sink = canon = serd_canon_new(world, sink, reader_flags);
+  }
+
   if (quiet) {
     serd_set_log_func(world, serd_quiet_log_func, NULL);
   }
@@ -289,12 +301,8 @@ main(int argc, char** argv)
     const char*     position  = input_string;
     SerdInputStream string_in = serd_open_input_string(&position);
 
-    SerdReader* const reader =
-      serd_reader_new(world,
-                      input_syntax ? input_syntax : SERD_TRIG,
-                      reader_flags,
-                      env,
-                      serd_writer_sink(writer));
+    SerdReader* const reader = serd_reader_new(
+      world, input_syntax ? input_syntax : SERD_TRIG, reader_flags, env, sink);
 
     if (!(st = serd_reader_start(reader, &string_in, NULL, 1U))) {
       st = serd_reader_read_document(reader);
@@ -320,7 +328,7 @@ main(int argc, char** argv)
                         serd_choose_syntax(input_syntax, inputs[i]),
                         reader_flags,
                         env,
-                        serd_writer_sink(writer),
+                        sink,
                         stack_size,
                         inputs[i],
                         block_size))) {
@@ -328,6 +336,7 @@ main(int argc, char** argv)
     }
   }
 
+  serd_sink_free(canon);
   serd_writer_free(writer);
   serd_env_free(env);
   serd_node_free(NULL, base);

@@ -63,7 +63,7 @@ int
 serd_strncasecmp(const char* s1, const char* s2, size_t n)
 {
   for (; n > 0 && *s2; s1++, s2++, --n) {
-    if (serd_to_upper(*s1) != serd_to_upper(*s2)) {
+    if (serd_to_lower(*s1) != serd_to_lower(*s2)) {
       return (*s1 < *s2) ? -1 : +1;
     }
   }

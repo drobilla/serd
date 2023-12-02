@@ -8,7 +8,7 @@
 .Nd read and write RDF data
 .Sh SYNOPSIS
 .Nm serd-pipe
-.Op Fl fhqv
+.Op Fl Cfhqv
 .Op Fl B Ar base
 .Op Fl I Ar syntax
 .Op Fl O Ar syntax
@@ -66,6 +66,18 @@ When the input is a file,
 the URI of the file is automatically used as the base URI.
 This option can be used to override that,
 or to provide a base URI for input from stdin or a string.
+.It Fl C
+Convert literals to canonical form.
+Literals with supported XSD datatypes will be parsed and rewritten canonically.
+Invalid literals will cause an error.
+All numeric datatypes are supported, as well as
+.Vt boolean ,
+.Vt duration ,
+.Vt datetime ,
+.Vt time ,
+.Vt hexBinary ,
+and
+.Vt base64Binary .
 .It Fl I Ar syntax
 Set an input syntax or option.
 May be given multiple times.
