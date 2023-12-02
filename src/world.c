@@ -9,6 +9,7 @@
 #  include <fcntl.h>
 #endif
 
+#include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -83,13 +84,34 @@ serd_world_errorf(const SerdWorld* const world,
 SerdWorld*
 serd_world_new(void)
 {
-  return (SerdWorld*)calloc(1, sizeof(SerdWorld));
+  SerdWorld* world = (SerdWorld*)calloc(1, sizeof(SerdWorld));
+
+  if (world) {
+    world->limits.reader_stack_size = 1048576U;
+  }
+
+  return world;
 }
 
 void
 serd_world_free(SerdWorld* const world)
 {
   free(world);
+}
+
+SerdLimits
+serd_world_limits(const SerdWorld* const world)
+{
+  assert(world);
+  return world->limits;
+}
+
+SerdStatus
+serd_world_set_limits(SerdWorld* const world, const SerdLimits limits)
+{
+  assert(world);
+  world->limits = limits;
+  return SERD_SUCCESS;
 }
 
 void
