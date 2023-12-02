@@ -11,9 +11,9 @@
 #include <stdio.h>
 
 struct SerdWorldImpl {
-  SerdLimits    limits;
-  SerdErrorFunc error_func;
-  void*         error_handle;
+  SerdLimits  limits;
+  SerdLogFunc error_func;
+  void*       error_handle;
 };
 
 /// Open a file configured for fast sequential reading
