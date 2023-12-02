@@ -20,7 +20,7 @@
 /* Error reporting */
 
 static inline void
-serd_error(SerdErrorFunc error_func, void* handle, const SerdError* e)
+serd_error(SerdLogFunc error_func, void* handle, const SerdError* e)
 {
   if (error_func) {
     error_func(handle, e);

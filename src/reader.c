@@ -196,9 +196,9 @@ serd_reader_new(const SerdSyntax      syntax,
 }
 
 void
-serd_reader_set_error_sink(SerdReader* const   reader,
-                           const SerdErrorFunc error_func,
-                           void* const         error_handle)
+serd_reader_set_error_sink(SerdReader* const reader,
+                           const SerdLogFunc error_func,
+                           void* const       error_handle)
 {
   assert(reader);
   reader->error_func   = error_func;

@@ -28,13 +28,13 @@ typedef struct {
 } SerdError;
 
 /**
-   Callback function for errors.
+   Callback function to log errors.
 
    @param handle Handle for user data.
    @param error Error description.
 */
-typedef SerdStatus (*SerdErrorFunc)(void* SERD_UNSPECIFIED        handle,
-                                    const SerdError* SERD_NONNULL error);
+typedef SerdStatus (*SerdLogFunc)(void* SERD_UNSPECIFIED        handle,
+                                  const SerdError* SERD_NONNULL error);
 
 /**
    @}
