@@ -166,15 +166,16 @@ SerdReader*
 serd_reader_new(SerdWorld* const      world,
                 const SerdSyntax      syntax,
                 const SerdReaderFlags flags,
-                const SerdSink* const sink,
-                const size_t          stack_size)
+                const SerdSink* const sink)
 {
   static const ZixStringView rdf_first = ZIX_STATIC_STRING(NS_RDF "first");
   static const ZixStringView rdf_rest  = ZIX_STATIC_STRING(NS_RDF "rest");
   static const ZixStringView rdf_nil   = ZIX_STATIC_STRING(NS_RDF "nil");
 
   assert(world);
+  assert(sink);
 
+  const size_t stack_size = world->limits.reader_stack_size;
   if (stack_size < sizeof(void*) + (3U * (sizeof(SerdNode))) + 168) {
     return NULL;
   }
