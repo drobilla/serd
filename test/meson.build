@@ -80,7 +80,7 @@ test_read_errors = executable(
 
 read_error_modes = ['char', 'stream']
 read_error_langs = ['nt', 'nq', 'ttl', 'trig']
-read_error_cases = {}
+read_error_cases = {'ext': 'nq'}
 foreach lang : read_error_langs
   read_error_cases += {lang: lang}
 endforeach
@@ -440,6 +440,12 @@ test_suites = {
     ns_serdtest + 'lax/',
     '--',
     ['-k', '1024'],
+  ],
+  'pattern': [
+    files('extra/pattern/manifest.ttl'),
+    ns_serdtest + 'pattern/',
+    '--',
+    ['-I', 'variables'],
   ],
   'perfect_forward': [
     files('extra/perfect/manifest.ttl'),

@@ -140,8 +140,9 @@ run(const ZixStringView filename, const SerdSyntax syntax, const FailMode mode)
   SerdEnv* const   env   = serd_env_new(NULL, serd_string_view(base));
   BadContext       ctx   = {base, file, 0U, 0U, 0, MODE_SUCCESS};
 
-  const SerdSink* const sink   = serd_env_sink(env);
-  SerdReader* const     reader = serd_reader_new(world, syntax, 0U, sink);
+  const SerdSink* const sink = serd_env_sink(env);
+  SerdReader* const     reader =
+    serd_reader_new(world, syntax, SERD_READ_VARIABLES, sink);
 
   SerdStatus   st        = SERD_SUCCESS;
   int          rc        = 0;

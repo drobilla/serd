@@ -968,11 +968,23 @@ write_curie(SerdWriter* const writer, const ZixStringView curie)
 }
 
 ZIX_NODISCARD static SerdStatus
+write_variable(SerdWriter* const writer, const ZixStringView label)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  TRY(st, esink(writer, 1, "?"));
+  TRY(st, esink(writer, label.length, label.data));
+
+  return st;
+}
+
+ZIX_NODISCARD static SerdStatus
 write_iri(SerdWriter* const writer, const SerdTokenView node)
 {
-  return (node.type == SERD_URI)     ? write_uri(writer, node.string)
-         : (node.type == SERD_CURIE) ? write_curie(writer, node.string)
-                                     : SERD_BAD_ARG;
+  return (node.type == SERD_URI)        ? write_uri(writer, node.string)
+         : (node.type == SERD_CURIE)    ? write_curie(writer, node.string)
+         : (node.type == SERD_VARIABLE) ? write_variable(writer, node.string)
+                                        : SERD_BAD_ARG;
 }
 
 ZIX_NODISCARD static Sep
@@ -1074,7 +1086,8 @@ write_token(SerdWriter* const    writer,
          : (node.type == SERD_CURIE) ? write_curie(writer, node.string)
          : (node.type == SERD_BLANK)
            ? write_blank(writer, node.string, field, event_flags)
-           : SERD_BAD_ARG;
+         : (node.type == SERD_VARIABLE) ? write_variable(writer, node.string)
+                                        : SERD_BAD_ARG;
 }
 
 ZIX_NODISCARD static SerdStatus
