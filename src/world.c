@@ -28,7 +28,7 @@ serd_world_fopen(const SerdWorld* world, const char* path, const char* mode)
   if (!fd) {
     serd_world_errorf(world,
                       SERD_BAD_STREAM,
-                      "failed to open file %s (%s)\n",
+                      "failed to open file %s (%s)",
                       path,
                       strerror(errno));
     return NULL;
@@ -53,6 +53,7 @@ serd_world_error(const SerdWorld* const world, const SerdError* const e)
       fprintf(stderr, "error: ");
     }
     vfprintf(stderr, e->fmt, *e->args);
+    fprintf(stderr, "\n");
   }
   return e->status;
 }

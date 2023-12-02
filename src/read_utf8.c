@@ -15,7 +15,7 @@ enum { MAX_UTF8_BYTES = 4U };
 static SerdStatus
 bad_byte(SerdReader* const reader, const char* const kind, const uint8_t c)
 {
-  return r_err(reader, SERD_BAD_TEXT, "bad %s byte 0x%X\n", kind, c);
+  return r_err(reader, SERD_BAD_TEXT, "bad %s byte 0x%X", kind, c);
 }
 
 static SerdStatus
@@ -32,7 +32,7 @@ read_utf8_continuation_bytes(SerdReader* const reader,
   for (uint8_t i = 1U; i < *size; ++i) {
     const int b = peek_byte(reader);
     if (b == EOF) {
-      return r_err(reader, SERD_NO_DATA, "unexpected end of input\n");
+      return r_err(reader, SERD_NO_DATA, "unexpected end of input");
     }
 
     const uint8_t byte = (uint8_t)b;

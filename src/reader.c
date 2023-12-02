@@ -47,10 +47,10 @@ r_err_char(SerdReader* const reader, const char* const kind, const int c)
 {
   const SerdStatus st = SERD_BAD_SYNTAX;
 
-  return (c < 0x20 || c == 0x7F) ? r_err(reader, st, "bad %s character\n", kind)
+  return (c < 0x20 || c == 0x7F) ? r_err(reader, st, "bad %s character", kind)
          : (c == '\'' || c >= 0x80)
-           ? r_err(reader, st, "bad %s character U+%04X\n", kind, (uint32_t)c)
-           : r_err(reader, st, "bad %s character '%c'\n", kind, c);
+           ? r_err(reader, st, "bad %s character U+%04X", kind, (uint32_t)c)
+           : r_err(reader, st, "bad %s character '%c'", kind, c);
 }
 
 void
@@ -364,12 +364,12 @@ serd_reader_prepare(SerdReader* const reader)
   SerdStatus st = serd_byte_source_prepare(&reader->source);
   if (st == SERD_SUCCESS) {
     if ((st = serd_byte_source_skip_bom(&reader->source))) {
-      r_err(reader, st, "corrupt byte order mark\n");
+      r_err(reader, st, "corrupt byte order mark");
     }
   } else if (st == SERD_FAILURE) {
     reader->source.eof = true;
   } else {
-    r_err(reader, st, "read error: %s\n", strerror(errno));
+    r_err(reader, st, "read error: %s", strerror(errno));
   }
   return st;
 }
