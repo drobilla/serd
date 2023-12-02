@@ -415,7 +415,13 @@ read_literal(SerdReader* const   reader,
 ZIX_NODISCARD static SerdStatus
 read_verb(SerdReader* const reader, TokenHeader** const dest)
 {
-  if (peek_byte(reader) == '<') {
+  const int first = peek_byte(reader);
+
+  if (first == '$' || first == '?') {
+    return read_Var(reader, dest);
+  }
+
+  if (first == '<') {
     return read_IRIREF(reader, dest);
   }
 
@@ -573,7 +579,9 @@ read_object(SerdReader* const        reader,
   } else if (c == '(') {
     st = read_collection(reader, *ctx, o);
   } else {
-    if (c == '_') {
+    if (c == '$' || c == '?') {
+      st = read_Var(reader, o);
+    } else if (c == '_') {
       st = read_BLANK_NODE_LABEL(reader, o, ate_dot);
     } else if (c == '<') {
       st = read_IRIREF(reader, o);
@@ -745,6 +753,10 @@ read_turtle_subject(SerdReader* const   reader,
                     int* const          s_type)
 {
   const int c = *s_type = peek_byte(reader);
+
+  if (c == '$' || c == '?') {
+    return read_Var(reader, dest);
+  }
 
   if (c == '[') {
     return read_anon(reader, ctx, true, dest);

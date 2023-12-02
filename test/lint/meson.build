@@ -25,6 +25,7 @@ ttl_metadata_file_paths = [
   '../extra/full/manifest.ttl',
   '../extra/good/manifest.ttl',
   '../extra/lax/manifest.ttl',
+  '../extra/pattern/manifest.ttl',
   '../extra/perfect/manifest.ttl',
   '../extra/prefix/manifest.ttl',
   '../extra/pretty/manifest.ttl',

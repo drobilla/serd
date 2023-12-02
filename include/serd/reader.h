@@ -59,6 +59,15 @@ typedef enum {
      the input document.
   */
   SERD_READ_GENERATED = 1U << 2U,
+
+  /**
+     Support reading variable nodes.
+
+     As an extension, serd supports reading variables nodes with SPARQL-like
+     syntax, for example "?foo" or "$bar".  This can be used for storing
+     graph patterns and templates.
+  */
+  SERD_READ_VARIABLES = 1U << 3U,
 } SerdReaderFlag;
 
 /// Bitwise OR of #SerdReaderFlag values

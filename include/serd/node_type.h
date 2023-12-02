@@ -17,13 +17,13 @@ SERD_BEGIN_DECLS
 /**
    Type of a node.
 
-   An RDF node, in the abstract sense, can be either a resource, literal, or a
-   blank.  This type is more precise, because syntactically there are two ways
-   to refer to a resource (by URI or CURIE).
+   Note that this set of types is both more precise than, and extended from,
+   the possible types of an abstract RDF node.  Not all types can occur in all
+   contexts, for example, a Turtle document can't contain a variable node.
 
-   There are also two ways to refer to a blank node in syntax (by ID or
-   anonymously), but this is handled by statement flags rather than distinct
-   node types.
+   The string value of a node never contains quoting or other type indicators.
+   For example, the blank node `_:id3` and the plain literal `"id3"` from a
+   Turtle document would both have the same string, "id3".
 */
 typedef enum {
   /**
@@ -72,6 +72,17 @@ typedef enum {
      Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
   */
   SERD_BLANK,
+
+  /**
+     Variable node.
+
+     A variable node, like a blank node, is local to its context.  Variables
+     don't occur in data but are used in search patterns.
+
+     @see [SPARQL 1.1 Query
+     Language](https://www.w3.org/TR/sparql11-query/#rVar)
+  */
+  SERD_VARIABLE,
 } SerdNodeType;
 
 /**

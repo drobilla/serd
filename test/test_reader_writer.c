@@ -251,6 +251,12 @@ test_writer(const char* const path)
     const SerdObjectView l = {
       SERD_LITERAL, zix_string("l"), SERD_HAS_LANGUAGE, en};
 
+    const SerdTokenView v = {SERD_VARIABLE, zix_string("v")};
+    assert(!serd_sink_event(
+      sink,
+      serd_statement_event(0U,
+                           serd_triple_view(v, v, serd_token_object_view(v)))));
+
     const SerdObjectView good[3] = {o, t, l};
 
     for (size_t i = 0; i < sizeof(good) / sizeof(SerdObjectView); ++i) {
@@ -288,6 +294,8 @@ test_writer(const char* const path)
 static void
 test_reader(const char* const path)
 {
+  static const SerdReaderFlags flags = SERD_READ_VARIABLES;
+
   SerdWorld* const world = serd_world_new(NULL);
   assert(world);
 
@@ -301,11 +309,11 @@ test_reader(const char* const path)
   const SerdLimits old_limits  = serd_world_limits(world);
   const SerdLimits tiny_limits = {32, 0};
   serd_world_set_limits(world, tiny_limits);
-  assert(!serd_reader_new(world, SERD_TURTLE, 0U, &sink));
+  assert(!serd_reader_new(world, SERD_TURTLE, flags, &sink));
 
   // Restore limits and successfully create reader
   serd_world_set_limits(world, old_limits);
-  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, &sink);
+  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, flags, &sink);
   assert(reader);
 
   assert(serd_reader_read_chunk(reader) == SERD_BAD_CALL);
@@ -325,7 +333,7 @@ test_reader(const char* const path)
   SerdInputStream in = serd_open_input_file(path);
   assert(!serd_reader_start(reader, &in, zix_empty_string(), 4096));
   assert(!serd_reader_read_document(reader));
-  assert(rt.n_statement == 6);
+  assert(rt.n_statement == 7);
   assert(!serd_reader_finish(reader));
   serd_close_input(&in);
 
