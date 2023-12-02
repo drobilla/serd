@@ -31,8 +31,7 @@ typedef struct SerdReaderImpl SerdReader;
 SERD_API SerdReader* SERD_ALLOCATED
 serd_reader_new(SerdWorld* SERD_NONNULL      world,
                 SerdSyntax                   syntax,
-                const SerdSink* SERD_NONNULL sink,
-                size_t                       stack_size);
+                const SerdSink* SERD_NONNULL sink);
 
 /**
    Enable or disable strict parsing.

@@ -162,7 +162,7 @@ test_read_nquads_chunks(const char* const path)
   SerdSink* const  sink  = serd_sink_new(&rt, test_sink, NULL);
   assert(sink);
 
-  SerdReader* const reader = serd_reader_new(world, SERD_NQUADS, sink, 4096);
+  SerdReader* const reader = serd_reader_new(world, SERD_NQUADS, sink);
   assert(reader);
 
   SerdStatus st = serd_reader_start_stream(
@@ -241,7 +241,7 @@ test_read_turtle_chunks(const char* const path)
   SerdSink*  sink  = serd_sink_new(&rt, test_sink, NULL);
   assert(sink);
 
-  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink);
   assert(reader);
 
   SerdStatus st = serd_reader_start_stream(
@@ -321,7 +321,7 @@ test_read_string(void)
   SerdSink*  sink  = serd_sink_new(&rt, test_sink, NULL);
   assert(sink);
 
-  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink);
   assert(reader);
 
   // Test reading a string that ends exactly at the end of input (no newline)
@@ -386,8 +386,8 @@ test_write_errors(void)
       SerdWriter* const writer =
         serd_writer_new(world, syntax, 0U, env, faulty_sink, &ctx);
 
-      const SerdSink* const sink = serd_writer_sink(writer);
-      SerdReader* const reader = serd_reader_new(world, SERD_TRIG, sink, 4096U);
+      const SerdSink* const sink   = serd_writer_sink(writer);
+      SerdReader* const     reader = serd_reader_new(world, SERD_TRIG, sink);
 
       SerdStatus st = serd_reader_start_string(reader, doc_string, NULL);
       assert(!st);
@@ -513,9 +513,15 @@ test_reader(const char* path)
   assert(sink);
 
   // Test that too little stack space fails gracefully
-  assert(!serd_reader_new(world, SERD_TURTLE, sink, 32));
+  const SerdLimits old_limits = serd_world_limits(world);
+  SerdLimits       limits     = old_limits;
+  limits.reader_stack_size    = 32U;
+  serd_world_set_limits(world, limits);
+  assert(!serd_reader_new(world, SERD_TURTLE, sink));
 
-  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink, 4096);
+  // Restore original limits and successfully create reader
+  serd_world_set_limits(world, old_limits);
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, sink);
   assert(reader);
 
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);

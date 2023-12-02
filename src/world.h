@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 struct SerdWorldImpl {
+  SerdLimits    limits;
   SerdErrorFunc error_func;
   void*         error_handle;
 };
