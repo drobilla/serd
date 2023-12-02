@@ -158,11 +158,12 @@ SerdReader*
 serd_reader_new(SerdWorld* const      world,
                 const SerdSyntax      syntax,
                 const SerdReaderFlags flags,
-                const SerdSink* const sink,
-                const size_t          stack_size)
+                const SerdSink* const sink)
 {
   assert(world);
+  assert(sink);
 
+  const size_t stack_size = world->limits.reader_stack_size;
   if (stack_size < sizeof(void*) + (3U * (sizeof(SerdNode))) + 168) {
     return NULL;
   }

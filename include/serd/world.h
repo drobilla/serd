@@ -6,7 +6,10 @@
 
 #include "serd/attributes.h"
 #include "serd/error.h"
+#include "serd/status.h"
 #include "zix/attributes.h"
+
+#include <stddef.h>
 
 SERD_BEGIN_DECLS
 
@@ -18,6 +21,11 @@ SERD_BEGIN_DECLS
 
 /// Global library state
 typedef struct SerdWorldImpl SerdWorld;
+
+/// Resource limits to control allocation
+typedef struct {
+  size_t reader_stack_size;
+} SerdLimits;
 
 /**
    Create a new Serd World.
@@ -31,6 +39,27 @@ serd_world_new(void);
 /// Free `world`
 SERD_API void
 serd_world_free(SerdWorld* ZIX_NULLABLE world);
+
+/**
+   Return the current resource limits.
+
+   These determine how much memory is allocated for reading and writing (where
+   the required stack space depends on the input data.  The defaults use about
+   a megabyte and over 100 levels of nesting, which is more than enough for
+   most data.
+*/
+SERD_PURE_API SerdLimits
+serd_world_limits(const SerdWorld* ZIX_NONNULL world);
+
+/**
+   Set the current resource limits.
+
+   This updates the "current" limits, that is, those that will be used after
+   this call.  It can be used to configure allocation sizes before calling some
+   other function like serd_reader_new() that uses the current limits.
+*/
+SERD_API SerdStatus
+serd_world_set_limits(SerdWorld* ZIX_NONNULL world, SerdLimits limits);
 
 /**
    Set a function to be called when errors occur.
