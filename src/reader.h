@@ -36,7 +36,7 @@ typedef struct {
 struct SerdReaderImpl {
   SerdWorld*      world;
   const SerdSink* sink;
-  SerdErrorFunc   error_func;
+  SerdLogFunc     error_func;
   void*           error_handle;
   SerdNode*       rdf_first;
   SerdNode*       rdf_rest;
