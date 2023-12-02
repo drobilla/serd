@@ -4,6 +4,9 @@
 #include "read_nquads.h"
 
 #include "node_internal.h"
+#include "caret_impl.h"
+#include "node_internal.h"
+#include "caret_impl.h"
 #include "read_context.h"
 #include "read_ntriples.h"
 #include "reader_impl.h"
@@ -47,9 +50,9 @@ read_nquads_statement(SerdReader* const reader)
   }
 
   // Preserve the caret for error reporting and read object
-  SerdCaretView orig_caret = {reader->source->caret.document,
-                              reader->source->caret.line,
-                              reader->source->caret.col};
+  SerdCaretView orig_caret = {reader->source.caret.document,
+                              reader->source.caret.line,
+                              reader->source.caret.col};
 
   if ((st = read_nt_object(reader, &ctx.object, &ate_dot)) ||
       (st = read_horizontal_whitespace(reader))) {
@@ -67,9 +70,8 @@ read_nquads_statement(SerdReader* const reader)
     }
   }
 
-  serd_node_zero_pad(ctx.object);
-  const SerdStatementView statement = {
-    ctx.subject, ctx.predicate, ctx.object, ctx.graph, orig_caret};
+  const SerdStatement statement = {
+    {ctx.subject, ctx.predicate, ctx.object, ctx.graph}, orig_caret};
 
   return serd_sink_write_statement(reader->sink, *ctx.flags, statement);
 }

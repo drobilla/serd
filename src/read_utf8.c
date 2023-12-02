@@ -57,9 +57,9 @@ read_utf8_code_point(SerdReader* const reader,
                      uint32_t* const   code,
                      const uint8_t     lead)
 {
+  SerdStatus st                    = SERD_SUCCESS;
   uint8_t    size                  = 0U;
   uint8_t    bytes[MAX_UTF8_BYTES] = {lead, 0U, 0U, 0U};
-  SerdStatus st                    = SERD_SUCCESS;
 
   *code = 0U;
 

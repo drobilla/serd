@@ -88,16 +88,20 @@ read_sparql_directive(SerdReader* const     reader,
                       ReadContext* const    ctx,
                       const SerdNode* const token)
 {
+  SerdStatus st = SERD_SUCCESS;
+
   if (token_equals(token, "base", 4)) {
+    TRY(st, push_node_tail(reader));
     return read_turtle_base(reader, true, false);
   }
 
   if (token_equals(token, "prefix", 6)) {
+    TRY(st, push_node_tail(reader));
     return read_turtle_prefixID(reader, true, false);
   }
 
   if (token_equals(token, "graph", 5)) {
-    SerdStatus st = SERD_SUCCESS;
+    TRY(st, push_node_tail(reader));
     TRY(st, read_turtle_ws_star(reader));
     TRY(st, read_labelOrSubject(reader, &ctx->graph));
     TRY(st, read_turtle_ws_star(reader));

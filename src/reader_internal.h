@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 SERD_LOG_FUNC(3, 4)
 SerdStatus
@@ -31,13 +32,34 @@ r_err_char(SerdReader* reader, const char* kind, int c);
 SerdStatus
 r_err_expected(SerdReader* reader, const char* expected, int c);
 
-SerdNode*
-push_node_padded(SerdReader*  reader,
-                 size_t       max_length,
-                 SerdNodeType type,
-                 const char*  str,
-                 size_t       length);
+/**
+   Push the SerdNode header of a node with zero flags and length.
 
+   If this is called, push_node_tail() must eventually be called before
+   starting a new node.
+*/
+SerdNode*
+push_node_head(SerdReader* reader, SerdNodeType type);
+
+/**
+   Push the end of a node, a null terminator and any necessary padding.
+
+   This must be called to close the scope opened with push_node_head().
+*/
+SerdStatus
+push_node_tail(SerdReader* reader);
+
+/**
+   Push a node with reserved space for a body.
+
+   The body is initially all zero, as are the node's length and flags.
+*/
+SerdNode*
+push_node_padding(SerdReader* reader, SerdNodeType type, size_t max_length);
+
+/**
+   Push a complete node with a given string body.
+*/
 SerdNode*
 push_node(SerdReader*  reader,
           SerdNodeType type,
@@ -81,9 +103,7 @@ reject_failure(const SerdStatus st)
 SERD_NODISCARD static inline int
 peek_byte(const SerdReader* const reader)
 {
-  SerdByteSource* const source = reader->source;
-
-  return source->eof ? -1 : (int)source->read_buf[source->read_head];
+  return serd_byte_source_peek(&reader->source);
 }
 
 SERD_NODISCARD static inline SerdStatus
@@ -93,7 +113,18 @@ skip_byte(SerdReader* const reader, const int byte)
 
   assert(peek_byte(reader) == byte);
 
-  return accept_failure(serd_byte_source_advance(reader->source));
+  return accept_failure(serd_byte_source_advance_past(&reader->source, byte));
+}
+
+SERD_NODISCARD static inline int
+eat_byte_safe(SerdReader* reader, const int byte)
+{
+  (void)byte;
+
+  assert(peek_byte(reader) == byte);
+
+  serd_byte_source_advance_past(&reader->source, byte);
+  return byte;
 }
 
 SERD_NODISCARD static inline SerdStatus
@@ -114,13 +145,15 @@ push_byte(SerdReader* reader, SerdNode* node, const int c)
 {
   assert(c >= 0);
 
-  if (reader->stack.size + 1 > reader->stack.buf_size) {
+  const size_t old_size = reader->stack.size;
+  if (old_size >= reader->stack.buf_size) {
     return SERD_BAD_STACK;
   }
 
-  ((uint8_t*)reader->stack.buf)[reader->stack.size - 1] = (uint8_t)c;
   ++reader->stack.size;
   ++node->length;
+
+  reader->stack.buf[old_size] = (char)c;
 
   return SERD_SUCCESS;
 }
@@ -135,11 +168,7 @@ push_bytes(SerdReader* const    reader,
     return SERD_BAD_STACK;
   }
 
-  const size_t begin = reader->stack.size - 1U;
-  for (unsigned i = 0U; i < len; ++i) {
-    reader->stack.buf[begin + i] = (char)bytes[i];
-  }
-
+  memcpy(reader->stack.buf + reader->stack.size, bytes, len);
   reader->stack.size += len;
   node->length += len;
   return SERD_SUCCESS;
@@ -150,7 +179,14 @@ eat_push_byte(SerdReader* const reader, SerdNode* const node, const int c)
 {
   const SerdStatus st = skip_byte(reader, c);
 
-  return st ? st : push_byte(reader, node, c);
+  SerdStatus st = SERD_SUCCESS;
+
+  if (!(st =
+          accept_failure(serd_byte_source_advance_past(&reader->source, c)))) {
+    st = push_byte(reader, node, c);
+  }
+
+  return st;
 }
 
 #endif // SERD_SRC_READER_INTERNAL_H

@@ -143,18 +143,13 @@ serd_node_pad_length(const size_t n_bytes)
 {
 #if SIZE_MAX == UINT64_MAX
 
-  const size_t align = sizeof(SerdNode);
+  assert((serd_node_align & (serd_node_align - 1U)) == 0U);
 
-  assert((align & (align - 1U)) == 0U);
-  return (n_bytes + align + 2U) & ~(align - 1U);
+  return (n_bytes + serd_node_align) & ~(serd_node_align - 1U);
 
 #else
 
-  const size_t pad  = sizeof(SerdNode) - (n_bytes + 2U) % sizeof(SerdNode);
-  const size_t size = n_bytes + 2U + pad;
-
-  assert(size % sizeof(SerdNode) == 0);
-  return size;
+  return (n_bytes + sizeof(SerdNode)) / sizeof(SerdNode) * sizeof(SerdNode);
 
 #endif
 }
@@ -174,8 +169,8 @@ serd_node_meta(SerdNode* const node)
 const SerdNode*
 serd_node_meta_c(const SerdNode* const node)
 {
-  assert(node->flags & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE));
-  return node + 1U + (serd_node_pad_length(node->length) / sizeof(SerdNode));
+  assert(serd_node_flags(node) & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE));
+  return node + 1 + (serd_node_pad_length(node->length) / sizeof(SerdNode));
 }
 
 // Round size up to an even multiple of the node alignment
@@ -281,7 +276,7 @@ serd_node_set(ZixAllocator* const   allocator,
   return SERD_SUCCESS;
 }
 
-void
+static void
 serd_node_zero_pad(SerdNode* node)
 {
   char*        buf           = serd_node_buffer(node);
@@ -325,6 +320,8 @@ serd_node_construct_simple(const size_t        buf_size,
   }
 
   serd_node_zero_pad(node);
+  assert(total_size % sizeof(SerdNode) == 0);
+
   return result(SERD_SUCCESS, total_size);
 }
 
@@ -663,7 +660,7 @@ serd_node_new(ZixAllocator* const allocator, const SerdNodeArgs args)
   assert(r.count % sizeof(SerdNode) == 0);
 
   SerdNode* const node =
-    serd_node_malloc(allocator, sizeof(SerdNode) + r.count + 1);
+    serd_node_malloc(allocator, sizeof(SerdNode) + r.count);
 
   if (node) {
     r = serd_node_construct(r.count, node, args);

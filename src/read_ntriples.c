@@ -36,7 +36,7 @@ read_LANGTAG(SerdReader* const reader)
     return r_err_expected(reader, "A-Z or a-z", c);
   }
 
-  SerdNode* node = push_node(reader, SERD_LITERAL, "", 0);
+  SerdNode* const node = push_node_head(reader, SERD_LITERAL);
   if (!node) {
     return SERD_BAD_STACK;
   }
@@ -50,9 +50,11 @@ read_LANGTAG(SerdReader* const reader)
     TRY(st, eat_push_byte(reader, node, '-'));
     while (is_alnum((c = peek_byte(reader)))) {
       TRY(st, eat_push_byte(reader, node, c));
+      c = peek_byte(reader);
     }
   }
-  return SERD_SUCCESS;
+
+  return push_node_tail(reader);
 }
 
 static bool
@@ -67,7 +69,9 @@ read_EOL(SerdReader* const reader)
 {
   SerdStatus st = SERD_SUCCESS;
 
-  if (!is_EOL(peek_byte(reader))) {
+  int c = peek_byte(reader);
+
+  if (!is_EOL(c)) {
     return r_err_expected(reader, "a line ending", peek_byte(reader));
   }
 
@@ -210,9 +214,10 @@ static SerdStatus
 read_IRI(SerdReader* const reader, SerdNode** const dest)
 {
   SerdStatus st = SERD_SUCCESS;
-  TRY(st, eat_byte_check(reader, '<'));
 
-  if (!(*dest = push_node(reader, SERD_URI, "", 0))) {
+  TRY(st, skip_byte(reader, '<'));
+
+  if (!(*dest = push_node_head(reader, SERD_URI))) {
     return SERD_BAD_STACK;
   }
 
@@ -367,8 +372,7 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
     return r_err(reader, SERD_BAD_SYNTAX, "expected blank node label");
   }
 
-  if (!(*dest = push_node(
-          reader, SERD_BLANK, reader->bprefix, reader->bprefix_len))) {
+  if (!(*dest = push_node_head(reader, SERD_BLANK))) {
     return SERD_BAD_STACK;
   }
 
@@ -395,7 +399,8 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
   }
 
   // Adjust ID to avoid clashes with generated IDs if necessary
-  return adjust_blank_id(reader, buf);
+  TRY(st, adjust_blank_id(reader, buf));
+  return push_node_tail(reader);
 }
 
 static unsigned
@@ -534,20 +539,21 @@ SerdStatus
 read_Var(SerdReader* const reader, SerdNode** const dest)
 {
   SerdStatus st = SERD_SUCCESS;
+  const int  c  = peek_byte(reader);
+  assert(c == '$' || c == '?');
 
   if (!(reader->flags & SERD_READ_VARIABLES)) {
     return r_err(reader, SERD_BAD_SYNTAX, "syntax does not support variables");
   }
 
-  const int c = peek_byte(reader);
-  assert(c == '$' || c == '?');
-  TRY(st, skip_byte(reader, c));
-
-  if (!(*dest = push_node(reader, SERD_VARIABLE, "", 0))) {
+  if (!(*dest = push_node_head(reader, SERD_VARIABLE))) {
     return SERD_BAD_STACK;
   }
 
-  return read_VARNAME(reader, dest);
+  TRY(st, skip_byte(reader, c));
+  TRY(st, read_VARNAME(reader, dest));
+
+  return st ? st : push_node_tail(reader);
 }
 
 // Nonterminals
@@ -557,6 +563,7 @@ SerdStatus
 read_comment(SerdReader* const reader)
 {
   SerdStatus st = SERD_SUCCESS;
+
   TRY(st, skip_byte(reader, '#'));
 
   for (int c = peek_byte(reader); c > 0 && c != '\n' && c != '\r';) {
@@ -564,7 +571,7 @@ read_comment(SerdReader* const reader)
     c = peek_byte(reader);
   }
 
-  return SERD_SUCCESS;
+  return st;
 }
 
 /// [6] literal
@@ -573,12 +580,13 @@ read_literal(SerdReader* const reader, SerdNode** const dest)
 {
   SerdStatus st = SERD_SUCCESS;
 
-  if (!(*dest = push_node(reader, SERD_LITERAL, "", 0))) {
+  if (!(*dest = push_node_head(reader, SERD_LITERAL))) {
     return SERD_BAD_STACK;
   }
 
   TRY(st, skip_byte(reader, '"'));
   TRY(st, read_STRING_LITERAL(reader, *dest, '"'));
+  TRY(st, push_node_tail(reader));
 
   SerdNode* datatype = NULL;
   switch (peek_byte(reader)) {
@@ -655,9 +663,9 @@ read_triple(SerdReader* const reader)
   }
 
   // Preserve the caret for error reporting and read object
-  const SerdCaretView orig_caret = {reader->source->caret.document,
-                                    reader->source->caret.line,
-                                    reader->source->caret.col};
+  const SerdCaretView orig_caret = {reader->source.caret.document,
+                                    reader->source.caret.line,
+                                    reader->source.caret.col};
 
   if ((st = read_nt_object(reader, &ctx.object, &ate_dot)) ||
       (st = read_horizontal_whitespace(reader))) {
@@ -669,11 +677,8 @@ read_triple(SerdReader* const reader)
     return st;
   }
 
-  assert(ctx.object);
-  serd_node_zero_pad(ctx.object);
-
-  const SerdStatementView statement = {
-    ctx.subject, ctx.predicate, ctx.object, ctx.graph, orig_caret};
+  const SerdStatement statement = {
+    {ctx.subject, ctx.predicate, ctx.object, ctx.graph}, orig_caret};
 
   return serd_sink_write_statement(reader->sink, *ctx.flags, statement);
 }
