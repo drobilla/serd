@@ -261,10 +261,9 @@ sink(const void* buf, size_t len, SerdWriter* writer)
   const size_t written = serd_byte_sink_write(buf, len, &writer->byte_sink);
   if (written != len) {
     if (errno) {
-      const char* const message = strerror(errno);
-      w_err(writer, SERD_BAD_WRITE, "write error (%s)\n", message);
+      w_err(writer, SERD_BAD_WRITE, "write error (%s)", strerror(errno));
     } else {
-      w_err(writer, SERD_BAD_WRITE, "write error\n");
+      w_err(writer, SERD_BAD_WRITE, "write error");
     }
   }
 
@@ -289,7 +288,7 @@ write_character(SerdWriter*    writer,
   const uint32_t c          = parse_utf8_char(utf8, size);
   switch (*size) {
   case 0:
-    *st = w_err(writer, SERD_BAD_TEXT, "invalid UTF-8 start: %X\n", utf8[0]);
+    *st = w_err(writer, SERD_BAD_TEXT, "invalid UTF-8 start: %X", utf8[0]);
     return 0;
   case 1:
     snprintf(escape, sizeof(escape), "\\u%04X", utf8[0]);
@@ -864,7 +863,7 @@ write_uri_node(SerdWriter* const     writer,
       !serd_env_base_uri(writer->env)) {
     return w_err(writer,
                  SERD_BAD_ARG,
-                 "syntax does not support URI reference <%s>\n",
+                 "syntax does not support URI reference <%s>",
                  node_str);
   }
 
@@ -886,7 +885,7 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
   if (!supports_abbrev(writer) || !fast) {
     const ZixStringView curie = serd_node_string_view(node);
     if ((st = serd_env_expand_in_place(writer->env, curie, &prefix, &suffix))) {
-      return w_err(writer, st, "undefined namespace prefix '%s'\n", node_str);
+      return w_err(writer, st, "undefined namespace prefix '%s'", node_str);
     }
   }
 
@@ -1298,7 +1297,7 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
   }
 
   if (!writer->anon_stack_size) {
-    return w_err(writer, SERD_BAD_EVENT, "unexpected end of anonymous node\n");
+    return w_err(writer, SERD_BAD_EVENT, "unexpected end of anonymous node");
   }
 
   // Write the end separator ']' and pop the context
