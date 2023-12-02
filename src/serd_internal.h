@@ -20,7 +20,7 @@ static const unsigned SERD_PAGE_SIZE = 4096U;
 /* Error reporting */
 
 static inline void
-serd_error(const SerdErrorFunc    error_func,
+serd_error(const SerdLogFunc      error_func,
            void* const            handle,
            const SerdError* const e)
 {
