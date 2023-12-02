@@ -69,9 +69,9 @@ serd_world_set_limits(SerdWorld* ZIX_NONNULL world, SerdLimits limits);
    no error function is set, errors are printed to stderr.
 */
 SERD_API void
-serd_world_set_error_func(SerdWorld* ZIX_NONNULL     world,
-                          SerdErrorFunc ZIX_NULLABLE error_func,
-                          void* ZIX_NULLABLE         handle);
+serd_world_set_error_func(SerdWorld* ZIX_NONNULL   world,
+                          SerdLogFunc ZIX_NULLABLE error_func,
+                          void* ZIX_NULLABLE       handle);
 
 /**
    @}
