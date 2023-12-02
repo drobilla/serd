@@ -56,12 +56,16 @@ test_sink(void* const handle, const SerdEvent* const event)
 static void
 test_read_string(void)
 {
+  static const SerdLimits limits = {512};
+
   SerdWorld* const world = serd_world_new();
-  ReaderTest       rt    = {0, 0, 0, 0};
-  SerdSink* const  sink  = serd_sink_new(&rt, test_sink, NULL);
+  serd_world_set_limits(world, limits);
+
+  ReaderTest      rt   = {0, 0, 0, 0};
+  SerdSink* const sink = serd_sink_new(&rt, test_sink, NULL);
   assert(sink);
 
-  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, sink, 512);
+  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, sink);
   assert(reader);
 
   // Test reading a string that ends exactly at the end of input (no newline)
@@ -130,6 +134,8 @@ eof_test_error(void* stream)
 static void
 test_read_eof_by_page(const char* const path)
 {
+  static const SerdLimits limits = {1024};
+
   FILE* const f = fopen(path, "w+b");
   assert(f);
 
@@ -137,11 +143,12 @@ test_read_eof_by_page(const char* const path)
   fflush(f);
   fseek(f, 0L, SEEK_SET);
 
-  SerdWorld* const  world = serd_world_new();
-  ReaderTest        rt    = {0, 0, 0, 0};
-  SerdSink* const   sink  = serd_sink_new(&rt, test_sink, NULL);
-  SerdReader* const reader =
-    serd_reader_new(world, SERD_TURTLE, 0U, sink, 1024);
+  SerdWorld* const world = serd_world_new();
+  serd_world_set_limits(world, limits);
+
+  ReaderTest        rt     = {0, 0, 0, 0};
+  SerdSink* const   sink   = serd_sink_new(&rt, test_sink, NULL);
+  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, sink);
   assert(reader);
   assert(sink);
 
@@ -164,11 +171,14 @@ test_read_eof_by_page(const char* const path)
 static void
 test_read_eof_by_byte(void)
 {
-  SerdWorld* const  world = serd_world_new();
-  ReaderTest        rt    = {0, 0, 0, 0};
-  SerdSink* const   sink  = serd_sink_new(&rt, test_sink, NULL);
-  SerdReader* const reader =
-    serd_reader_new(world, SERD_TURTLE, 0U, sink, 1024);
+  static const SerdLimits limits = {1024};
+
+  SerdWorld* const world = serd_world_new();
+  serd_world_set_limits(world, limits);
+
+  ReaderTest        rt     = {0, 0, 0, 0};
+  SerdSink* const   sink   = serd_sink_new(&rt, test_sink, NULL);
+  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, sink);
   assert(reader);
   assert(sink);
 
@@ -189,7 +199,8 @@ test_read_eof_by_byte(void)
 static void
 test_read_flat_chunks(const char* const path, const SerdSyntax syntax)
 {
-  static const char null = 0;
+  static const SerdLimits limits = {1024};
+  static const char       null   = 0;
 
   FILE* const f = fopen(path, "w+b");
   assert(f);
@@ -213,11 +224,13 @@ test_read_flat_chunks(const char* const path, const SerdSyntax syntax)
   fseek(f, 0, SEEK_SET);
 
   SerdWorld* const world = serd_world_new();
-  ReaderTest       rt    = {0, 0, 0, 0};
-  SerdSink* const  sink  = serd_sink_new(&rt, test_sink, NULL);
+  serd_world_set_limits(world, limits);
+
+  ReaderTest      rt   = {0, 0, 0, 0};
+  SerdSink* const sink = serd_sink_new(&rt, test_sink, NULL);
   assert(sink);
 
-  SerdReader* const reader = serd_reader_new(world, syntax, 0U, sink, 1024);
+  SerdReader* const reader = serd_reader_new(world, syntax, 0U, sink);
   assert(reader);
 
   SerdStatus st = serd_reader_start_stream(
@@ -276,7 +289,8 @@ test_read_flat_chunks(const char* const path, const SerdSyntax syntax)
 static void
 test_read_abbrev_chunks(const char* const path, const SerdSyntax syntax)
 {
-  static const char null = 0;
+  static const SerdLimits limits = {1024};
+  static const char       null   = 0;
 
   FILE* const f = fopen(path, "w+b");
   assert(f);
@@ -292,11 +306,13 @@ test_read_abbrev_chunks(const char* const path, const SerdSyntax syntax)
   fseek(f, 0, SEEK_SET);
 
   SerdWorld* const world = serd_world_new();
-  ReaderTest       rt    = {0, 0, 0, 0};
-  SerdSink* const  sink  = serd_sink_new(&rt, test_sink, NULL);
+  serd_world_set_limits(world, limits);
+
+  ReaderTest      rt   = {0, 0, 0, 0};
+  SerdSink* const sink = serd_sink_new(&rt, test_sink, NULL);
   assert(sink);
 
-  SerdReader* const reader = serd_reader_new(world, syntax, 0U, sink, 1024);
+  SerdReader* const reader = serd_reader_new(world, syntax, 0U, sink);
   assert(reader);
 
   SerdStatus st = serd_reader_start_stream(
@@ -393,13 +409,17 @@ empty_test_error(void* stream)
 static void
 test_read_empty(void)
 {
+  static const SerdLimits limits = {512};
+
   SerdWorld* const world = serd_world_new();
-  ReaderTest       rt    = {0, 0, 0, 0};
-  SerdSink* const  sink  = serd_sink_new(&rt, test_sink, NULL);
+  serd_world_set_limits(world, limits);
+
+  ReaderTest      rt   = {0, 0, 0, 0};
+  SerdSink* const sink = serd_sink_new(&rt, test_sink, NULL);
   assert(sink);
 
   SerdReader* const reader =
-    serd_reader_new(world, SERD_SYNTAX_EMPTY, 0U, sink, 512);
+    serd_reader_new(world, SERD_SYNTAX_EMPTY, 0U, sink);
   assert(reader);
 
   assert(!empty_test_error(NULL));

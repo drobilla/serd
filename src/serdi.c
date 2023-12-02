@@ -249,8 +249,11 @@ main(int argc, char** argv)
   SerdWriter* const writer = serd_writer_new(
     world, output_syntax, writer_flags, env, serd_file_sink, out_fd);
 
+  const SerdLimits limits = {stack_size};
+  serd_world_set_limits(world, limits);
+
   SerdReader* const reader = serd_reader_new(
-    world, input_syntax, reader_flags, serd_writer_sink(writer), stack_size);
+    world, input_syntax, reader_flags, serd_writer_sink(writer));
 
   if (quiet) {
     serd_world_set_error_func(world, quiet_error_func, NULL);
