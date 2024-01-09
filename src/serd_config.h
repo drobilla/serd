@@ -1,4 +1,4 @@
-// Copyright 2021-2023 David Robillard <d@drobilla.net>
+// Copyright 2021-2024 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 /*
@@ -36,7 +36,7 @@
 #define SERD_SRC_SERD_CONFIG_H
 
 // Define version unconditionally so a warning will catch a mismatch
-#define SERD_VERSION "0.32.0"
+#define SERD_VERSION "0.32.1"
 
 #if !defined(SERD_NO_DEFAULT_CONFIG)
 
