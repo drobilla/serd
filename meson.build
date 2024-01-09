@@ -9,7 +9,6 @@ project(
     'buildtype=release',
     'c_std=c99',
     'c_winlibs=[]',
-    'warning_level=3',
   ],
   license: 'ISC',
   meson_version: '>= 0.56.0',
