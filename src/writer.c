@@ -8,6 +8,7 @@
 #include "string_utils.h"
 #include "try.h"
 #include "uri_utils.h"
+#include "warnings.h"
 
 #include "serd/serd.h"
 
@@ -762,7 +763,9 @@ write_uri_node(SerdWriter* const writer,
     SerdURI uri;
     SerdURI abs_uri;
     serd_env_get_base_uri(writer->env, &in_base_uri);
+    SERD_DISABLE_NULL_WARNINGS
     serd_uri_parse(node->buf, &uri);
+    SERD_RESTORE_WARNINGS
     serd_uri_resolve(&uri, &in_base_uri, &abs_uri);
     bool           rooted = uri_is_under(&writer->base_uri, &writer->root_uri);
     SerdURI*       root   = rooted ? &writer->root_uri : &writer->base_uri;
@@ -976,6 +979,8 @@ serd_writer_write_statement(SerdWriter*        writer,
     return SERD_SUCCESS;
   }
 
+  SERD_DISABLE_NULL_WARNINGS
+
   // Separate graphs if necessary
   if ((graph && !serd_node_equals(graph, &writer->context.graph)) ||
       (!graph && writer->context.graph.type)) {
@@ -988,6 +993,8 @@ serd_writer_write_statement(SerdWriter*        writer,
       copy_node(&writer->context.graph, graph);
     }
   }
+
+  SERD_RESTORE_WARNINGS
 
   if ((flags & SERD_LIST_CONT)) {
     // Continue a list
@@ -1106,11 +1113,14 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
   TRY(st, write_sep(writer, SEP_ANON_END));
   pop_context(writer);
 
-  if (serd_node_equals(node, &writer->context.subject)) {
+  SERD_DISABLE_NULL_WARNINGS
+
+  if (node && serd_node_equals(node, &writer->context.subject)) {
     // Now-finished anonymous node is the new subject with no other context
     writer->context.predicate.type = SERD_NOTHING;
   }
 
+  SERD_RESTORE_WARNINGS
   return st;
 }
 
@@ -1201,7 +1211,9 @@ serd_writer_set_root_uri(SerdWriter* writer, const SerdNode* uri)
 
   if (uri && uri->buf) {
     writer->root_node = serd_node_copy(uri);
+    SERD_DISABLE_NULL_WARNINGS
     serd_uri_parse(uri->buf, &writer->root_uri);
+    SERD_RESTORE_WARNINGS
   } else {
     writer->root_node = SERD_NODE_NULL;
     writer->root_uri  = SERD_URI_NULL;
@@ -1240,7 +1252,9 @@ serd_writer_free(SerdWriter* writer)
     return;
   }
 
+  SERD_DISABLE_NULL_WARNINGS
   serd_writer_finish(writer);
+  SERD_RESTORE_WARNINGS
   free_context(&writer->context);
   free_anon_stack(writer);
   serd_stack_free(&writer->anon_stack);

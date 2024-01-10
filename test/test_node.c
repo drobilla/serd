@@ -121,14 +121,16 @@ test_blob_to_node(void)
       data[i] = (uint8_t)((size + i) % 256);
     }
 
-    SerdNode blob = serd_node_new_blob(data, size, size % 5);
+    SerdNode             blob     = serd_node_new_blob(data, size, size % 5);
+    const uint8_t* const blob_str = blob.buf;
 
+    assert(blob_str);
     assert(blob.n_bytes == blob.n_chars);
-    assert(blob.n_bytes == strlen((const char*)blob.buf));
+    assert(blob.n_bytes == strlen((const char*)blob_str));
 
     size_t   out_size = 0;
     uint8_t* out =
-      (uint8_t*)serd_base64_decode(blob.buf, blob.n_bytes, &out_size);
+      (uint8_t*)serd_base64_decode(blob_str, blob.n_bytes, &out_size);
     assert(out_size == size);
 
     for (size_t i = 0; i < size; ++i) {

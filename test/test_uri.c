@@ -48,7 +48,9 @@ test_file_uri(const char* const hostname,
   SerdNode node = serd_node_new_file_uri(USTR(path), USTR(hostname), 0, escape);
 
   uint8_t* out_hostname = NULL;
-  uint8_t* out_path     = serd_file_uri_parse(node.buf, &out_hostname);
+  uint8_t* out_path =
+    serd_file_uri_parse((const uint8_t*)node.buf, &out_hostname);
+
   assert(!strcmp((const char*)node.buf, expected_uri));
   assert((hostname && out_hostname) || (!hostname && !out_hostname));
   assert(!hostname || !strcmp(hostname, (const char*)out_hostname));

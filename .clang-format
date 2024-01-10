@@ -34,5 +34,7 @@ AttributeMacros:
 StatementMacros:
   - SERD_DEPRECATED_BY
   - SERD_LOG_FUNC
+  - SERD_DISABLE_NULL_WARNINGS
+  - SERD_RESTORE_WARNINGS
   - _Pragma
 ...

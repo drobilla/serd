@@ -3,6 +3,7 @@
 
 #include "string_utils.h"
 #include "uri_utils.h"
+#include "warnings.h"
 
 #include "serd/serd.h"
 
@@ -336,6 +337,8 @@ write_path_tail(SerdSink             sink,
                 const SerdURI* const uri,
                 const size_t         i)
 {
+  SERD_DISABLE_NULL_WARNINGS
+
   size_t len = 0;
   if (i < uri->path_base.len) {
     len += sink(uri->path_base.buf + i, uri->path_base.len - i, stream);
@@ -351,6 +354,8 @@ write_path_tail(SerdSink             sink,
   }
 
   return len;
+
+  SERD_RESTORE_WARNINGS
 }
 
 /** Write the path of `uri` relative to the path of `base`. */
@@ -419,6 +424,8 @@ serd_uri_serialise_relative(const SerdURI* const uri,
     len = write_rel_path(sink, stream, uri, base);
   }
 
+  SERD_DISABLE_NULL_WARNINGS
+
   if (!relative || (!len && base->query.buf)) {
     if (uri->scheme.buf) {
       len += sink(uri->scheme.buf, uri->scheme.len, stream);
@@ -451,6 +458,8 @@ serd_uri_serialise_relative(const SerdURI* const uri,
     // Note uri->fragment.buf includes the leading '#'
     len += sink(uri->fragment.buf, uri->fragment.len, stream);
   }
+
+  SERD_RESTORE_WARNINGS
 
   return len;
 }
