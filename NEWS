@@ -1,8 +1,9 @@
 serd (0.32.1) unstable; urgency=medium
 
   * Enable clang nullability checks
+  * Fix writing empty list objects within blank nodes
 
- -- David Robillard <d@drobilla.net>  Tue, 09 Jan 2024 22:38:27 +0000
+ -- David Robillard <d@drobilla.net>  Sat, 20 Jan 2024 21:28:04 +0000
 
 serd (0.32.0) stable; urgency=medium
 

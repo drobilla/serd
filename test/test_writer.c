@@ -42,6 +42,79 @@ test_write_long_literal(void)
   serd_free(out);
 }
 
+static void
+test_write_nested_anon(void)
+{
+  SerdEnv*    env    = serd_env_new(NULL);
+  SerdChunk   chunk  = {NULL, 0};
+  SerdWriter* writer = serd_writer_new(
+    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
+
+  assert(writer);
+
+  SerdNode s0  = serd_node_from_string(SERD_URI, USTR("http://example.org/s0"));
+  SerdNode p0  = serd_node_from_string(SERD_URI, USTR("http://example.org/p0"));
+  SerdNode b0  = serd_node_from_string(SERD_BLANK, USTR("b0"));
+  SerdNode p1  = serd_node_from_string(SERD_URI, USTR("http://example.org/p1"));
+  SerdNode b1  = serd_node_from_string(SERD_BLANK, USTR("b1"));
+  SerdNode p2  = serd_node_from_string(SERD_URI, USTR("http://example.org/p2"));
+  SerdNode o2  = serd_node_from_string(SERD_URI, USTR("http://example.org/o2"));
+  SerdNode p3  = serd_node_from_string(SERD_URI, USTR("http://example.org/p3"));
+  SerdNode p4  = serd_node_from_string(SERD_URI, USTR("http://example.org/p4"));
+  SerdNode o4  = serd_node_from_string(SERD_URI, USTR("http://example.org/o4"));
+  SerdNode nil = serd_node_from_string(
+    SERD_URI, USTR("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"));
+
+  assert(!serd_writer_write_statement(
+    writer, SERD_ANON_O_BEGIN, NULL, &s0, &p0, &b0, NULL, NULL));
+
+  assert(!serd_writer_write_statement(writer,
+                                      SERD_ANON_O_BEGIN | SERD_ANON_CONT,
+                                      NULL,
+                                      &b0,
+                                      &p1,
+                                      &b1,
+                                      NULL,
+                                      NULL));
+
+  assert(!serd_writer_write_statement(
+    writer, SERD_ANON_CONT, NULL, &b1, &p2, &o2, NULL, NULL));
+
+  assert(!serd_writer_write_statement(writer,
+                                      SERD_ANON_CONT | SERD_LIST_O_BEGIN,
+                                      NULL,
+                                      &b1,
+                                      &p3,
+                                      &nil,
+                                      NULL,
+                                      NULL));
+
+  assert(!serd_writer_end_anon(writer, &b1));
+  assert(!serd_writer_write_statement(
+    writer, SERD_ANON_CONT, NULL, &b0, &p4, &o4, NULL, NULL));
+
+  assert(!serd_writer_end_anon(writer, &b0));
+
+  serd_writer_free(writer);
+  serd_env_free(env);
+
+  uint8_t* const out = serd_chunk_sink_finish(&chunk);
+
+  static const char* const expected =
+    "<http://example.org/s0>\n"
+    "\t<http://example.org/p0> [\n"
+    "\t\t<http://example.org/p1> [\n"
+    "\t\t\t<http://example.org/p2> <http://example.org/o2> ;\n"
+    "\t\t\t<http://example.org/p3> ()\n"
+    "\t\t] ;\n"
+    "\t\t<http://example.org/p4> <http://example.org/o4>\n"
+    "\t] .\n";
+
+  fprintf(stderr, "%s\n", out);
+  assert(!strcmp((char*)out, expected));
+  serd_free(out);
+}
+
 static size_t
 null_sink(const void* const buf, const size_t len, void* const stream)
 {
@@ -158,6 +231,7 @@ int
 main(void)
 {
   test_write_long_literal();
+  test_write_nested_anon();
   test_writer_cleanup();
   test_strict_write();
   test_write_error();

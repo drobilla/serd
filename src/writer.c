@@ -964,6 +964,14 @@ serd_writer_write_statement(SerdWriter*        writer,
     return SERD_ERR_BAD_ARG;
   }
 
+  if ((flags & SERD_LIST_O_BEGIN) &&
+      !strcmp((const char*)object->buf, NS_RDF "nil")) {
+    /* Tolerate LIST_O_BEGIN for "()" objects, even though it doesn't make
+       much sense, because older versions handled this gracefully.  Consider
+       making this an error in a later major version. */
+    flags &= (SerdStatementFlags)~SERD_LIST_O_BEGIN;
+  }
+
   // Simple case: write a line of NTriples or NQuads
   if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
     TRY(st, write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags));
