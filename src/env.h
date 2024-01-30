@@ -5,20 +5,10 @@
 #define SERD_SRC_ENV_H
 
 #include "serd/env.h"
-#include "serd/node.h"
 #include "serd/status.h"
 #include "serd/uri.h"
 #include "zix/attributes.h"
 #include "zix/string_view.h"
-
-#include <stdbool.h>
-
-/// Qualify `uri` into a CURIE if possible
-bool
-serd_env_qualify_in_place(const SerdEnv*   env,
-                          const SerdNode*  uri,
-                          const SerdNode** prefix,
-                          ZixStringView*   suffix);
 
 /**
    Return the URI for the prefix with the given name.

@@ -63,14 +63,26 @@ serd_env_set_prefix(SerdEnv* ZIX_NONNULL env,
                     ZixStringView        uri);
 
 /**
-   Qualify `uri` into a CURIE if possible.
+   Qualify `uri` into a prefix and suffix (like a CURIE) if possible.
 
-   Returns null if `uri` can not be qualified (usually because no corresponding
-   prefix is defined).
+   @param env Environment with prefixes to use.
+
+   @param uri URI to qualify.
+
+   @param prefix On success, pointed to a prefix string slice, which is only
+   valid until the next time `env` is mutated.
+
+   @param suffix On success, pointed to a suffix string slice, which is only
+   valid until the next time `env` is mutated.
+
+   @return #SERD_SUCCESS, or #SERD_FAILURE if `uri` can not be qualified with
+   `env`.
 */
-SERD_API SerdNode* ZIX_ALLOCATED
-serd_env_qualify(const SerdEnv* ZIX_NULLABLE  env,
-                 const SerdNode* ZIX_NULLABLE uri);
+SERD_API SerdStatus
+serd_env_qualify(const SerdEnv* ZIX_NULLABLE env,
+                 ZixStringView               uri,
+                 ZixStringView* ZIX_NONNULL  prefix,
+                 ZixStringView* ZIX_NONNULL  suffix);
 
 /**
    Expand `node` to an absolute URI if possible.

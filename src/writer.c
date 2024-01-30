@@ -893,25 +893,24 @@ write_uri_node(SerdWriter* const     writer,
                const SerdNode* const node,
                const SerdField       field)
 {
-  SerdStatus        st         = SERD_SUCCESS;
-  const char* const node_str   = serd_node_string(node);
-  const bool        has_scheme = serd_uri_string_has_scheme(node_str);
+  SerdStatus          st         = SERD_SUCCESS;
+  const ZixStringView string     = serd_node_string_view(node);
+  const bool          has_scheme = serd_uri_string_has_scheme(string.data);
 
   if (supports_abbrev(writer)) {
-    const SerdNode* prefix_node = NULL;
-    ZixStringView   suffix      = {NULL, 0};
     if (!(writer->flags & SERD_WRITE_LONGHAND) && field == SERD_PREDICATE &&
-        !strcmp(node_str, NS_RDF "type")) {
+        !strcmp(string.data, NS_RDF "type")) {
       return esink("a", 1, writer);
     }
 
-    if (!strcmp(node_str, NS_RDF "nil")) {
+    if (!strcmp(string.data, NS_RDF "nil")) {
       return esink("()", 2, writer);
     }
 
+    ZixStringView prefix = {NULL, 0};
+    ZixStringView suffix = {NULL, 0};
     if (has_scheme && !(writer->flags & SERD_WRITE_EXPANDED) &&
-        serd_env_qualify_in_place(writer->env, node, &prefix_node, &suffix)) {
-      const ZixStringView prefix = serd_node_string_view(prefix_node);
+        !serd_env_qualify(writer->env, string, &prefix, &suffix)) {
       TRY(st, write_lname(writer, prefix.data, prefix.length));
       TRY(st, esink(":", 1, writer));
       return write_lname(writer, suffix.data, suffix.length);
@@ -923,7 +922,7 @@ write_uri_node(SerdWriter* const     writer,
     return w_err(writer,
                  SERD_BAD_ARG,
                  "URI reference <%s> in unsupported syntax",
-                 node_str);
+                 string.data);
   }
 
   return write_full_uri_node(writer, node);

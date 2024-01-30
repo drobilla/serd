@@ -276,55 +276,33 @@ serd_env_set_prefix(SerdEnv* const      env,
   return st;
 }
 
-bool
-serd_env_qualify_in_place(const SerdEnv* const   env,
-                          const SerdNode* const  uri,
-                          const SerdNode** const prefix,
-                          ZixStringView* const   suffix)
+SerdStatus
+serd_env_qualify(const SerdEnv* const env,
+                 const ZixStringView  uri,
+                 ZixStringView* const prefix,
+                 ZixStringView* const suffix)
 {
-  for (size_t i = 0; i < env->n_prefixes; ++i) {
-    const SerdNode* const prefix_uri = env->prefixes[i].uri;
-    if (uri->length >= prefix_uri->length) {
-      const char* prefix_str = serd_node_string(prefix_uri);
-      const char* uri_str    = serd_node_string(uri);
+  if (!env) {
+    return SERD_FAILURE;
+  }
 
-      if (!strncmp(uri_str, prefix_str, prefix_uri->length)) {
-        *prefix        = env->prefixes[i].name;
-        suffix->data   = uri_str + prefix_uri->length;
-        suffix->length = uri->length - prefix_uri->length;
-        return true;
+  for (size_t i = 0; i < env->n_prefixes; ++i) {
+    const SerdNode* const prefix_uri     = env->prefixes[i].uri;
+    const size_t          prefix_uri_len = serd_node_length(prefix_uri);
+    if (uri.data && uri.length >= prefix_uri_len) {
+      const char* prefix_str = serd_node_string(prefix_uri);
+      const char* uri_str    = uri.data;
+
+      if (!strncmp(uri_str, prefix_str, prefix_uri_len)) {
+        *prefix        = serd_node_string_view(env->prefixes[i].name);
+        suffix->data   = uri_str + prefix_uri_len;
+        suffix->length = uri.length - prefix_uri_len;
+        return SERD_SUCCESS;
       }
     }
   }
-  return false;
-}
 
-SerdNode*
-serd_env_qualify(const SerdEnv* const env, const SerdNode* const uri)
-{
-  if (!env || !uri) {
-    return NULL;
-  }
-
-  const SerdNode* prefix = NULL;
-  ZixStringView   suffix = {NULL, 0};
-  if (serd_env_qualify_in_place(env, uri, &prefix, &suffix)) {
-    const size_t prefix_len = serd_node_length(prefix);
-    const size_t length     = prefix_len + 1 + suffix.length;
-
-    const size_t real_length = serd_node_pad_length(length);
-    const size_t node_size   = sizeof(SerdNode) + real_length;
-    SerdNode*    node        = serd_node_malloc(env->allocator, node_size);
-
-    memcpy(serd_node_buffer(node), serd_node_string(prefix), prefix_len);
-    serd_node_buffer(node)[prefix_len] = ':';
-    memcpy(serd_node_buffer(node) + 1 + prefix_len, suffix.data, suffix.length);
-    node->length = length;
-    node->type   = SERD_CURIE;
-    return node;
-  }
-
-  return NULL;
+  return SERD_FAILURE;
 }
 
 SerdStatus

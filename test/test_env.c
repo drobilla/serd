@@ -186,9 +186,12 @@ test_null(void)
   assert(!serd_env_copy(NULL, NULL));
 
   // Accessors are tolerant to a NULL env for convenience
+  ZixStringView prefix = {NULL, 0U};
+  ZixStringView suffix = {NULL, 0U};
   assert(!serd_env_base_uri(NULL));
   assert(!serd_env_expand_node(NULL, NULL));
-  assert(!serd_env_qualify(NULL, eg));
+  assert(serd_env_qualify(NULL, zix_empty_string(), &prefix, &suffix) ==
+         SERD_FAILURE);
 
   // Only null is equal to null
   assert(serd_env_equals(NULL, NULL));
@@ -408,11 +411,16 @@ test_qualify(void)
 
   assert(!serd_env_expand_node(env, name));
 
-  SerdNode* const u1_out = serd_env_qualify(env, u1);
-  assert(serd_node_equals(u1_out, c1));
-  serd_node_free(NULL, u1_out);
+  ZixStringView prefix = zix_empty_string();
+  ZixStringView suffix = zix_empty_string();
+  assert(!serd_env_qualify(env, serd_node_string_view(u1), &prefix, &suffix));
+  assert(prefix.length == 2);
+  assert(!strncmp(prefix.data, "eg", prefix.length));
+  assert(suffix.length == 3);
+  assert(!strncmp(suffix.data, "foo", suffix.length));
 
-  assert(!serd_env_qualify(env, u2));
+  assert(serd_env_qualify(env, serd_node_string_view(u2), &prefix, &suffix) ==
+         SERD_FAILURE);
 
   serd_env_free(env);
   serd_node_free(NULL, u2);
