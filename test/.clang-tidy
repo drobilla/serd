@@ -14,5 +14,4 @@ Checks: >
   -concurrency-mt-unsafe,
   -hicpp-signed-bitwise,
   -llvm-header-guard,
-  -readability-function-cognitive-complexity,
 InheritParentConfig: true
