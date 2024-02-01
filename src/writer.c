@@ -5,7 +5,6 @@
 #include "node.h"
 #include "serd_internal.h"
 #include "sink.h"
-#include "stack.h"
 #include "string_utils.h"
 #include "try.h"
 #include "uri_utils.h"
@@ -132,7 +131,9 @@ struct SerdWriterImpl {
   SerdEnv*        env;
   SerdNode*       root_node;
   SerdURIView     root_uri;
-  SerdStack       anon_stack;
+  WriteContext*   anon_stack;
+  size_t          max_depth;
+  size_t          anon_stack_size;
   SerdByteSink    byte_sink;
   WriteContext    context;
   char*           bprefix;
@@ -215,12 +216,12 @@ push_context(SerdWriter* const             writer,
              const SerdNode* const         predicate)
 {
   // Push the current context to the stack
-  void* const top = serd_stack_push(&writer->anon_stack, sizeof(WriteContext));
-  if (!top) {
+
+  if (writer->anon_stack_size >= writer->max_depth) {
     return SERD_BAD_STACK;
   }
 
-  *(WriteContext*)top = writer->context;
+  writer->anon_stack[writer->anon_stack_size++] = writer->context;
 
   // Update the current context
 
@@ -239,14 +240,10 @@ push_context(SerdWriter* const             writer,
 static void
 pop_context(SerdWriter* writer)
 {
-  // Replace the current context with the top of the stack
-  free_context(&writer->context);
-  writer->context =
-    *(WriteContext*)(writer->anon_stack.buf + writer->anon_stack.size -
-                     sizeof(WriteContext));
+  assert(writer->anon_stack_size > 0);
 
-  // Pop the top of the stack away
-  serd_stack_pop(&writer->anon_stack, sizeof(WriteContext));
+  free_context(&writer->context);
+  writer->context = writer->anon_stack[--writer->anon_stack_size];
 }
 
 ZIX_NODISCARD static size_t
@@ -633,7 +630,7 @@ write_sep(SerdWriter* writer, const SerdStatementEventFlags flags, Sep sep)
 static void
 free_anon_stack(SerdWriter* writer)
 {
-  while (!serd_stack_is_empty(&writer->anon_stack)) {
+  while (writer->anon_stack_size > 0) {
     pop_context(writer);
   }
 }
@@ -661,6 +658,7 @@ reset_context(SerdWriter* writer, const unsigned flags)
     writer->indent = 0;
   }
 
+  writer->anon_stack_size        = 0;
   writer->context.type           = CTX_NAMED;
   writer->context.predicates     = false;
   writer->context.comma_indented = false;
@@ -1074,7 +1072,7 @@ serd_writer_write_statement(SerdWriter* const       writer,
   } else {
     // No abbreviation
 
-    if (!serd_stack_is_empty(&writer->anon_stack)) {
+    if (writer->anon_stack_size) {
       return SERD_BAD_ARG;
     }
 
@@ -1086,16 +1084,17 @@ serd_writer_write_statement(SerdWriter* const       writer,
       TRY(st, write_top_level_sep(writer));
     }
 
+    // Write subject node
     TRY(st, write_node(writer, subject, SERD_SUBJECT, flags));
-    if ((flags & (SERD_ANON_S | SERD_LIST_S))) {
-      TRY(st, write_sep(writer, flags, SEP_ANON_S_P));
-    } else {
+    if (!(flags & (SERD_ANON_S | SERD_LIST_S))) {
       TRY(st, write_sep(writer, flags, SEP_S_P));
+    } else if (flags & SERD_ANON_S) {
+      TRY(st, write_sep(writer, flags, SEP_ANON_S_P));
     }
 
+    // Set context to new subject and write predicate
     reset_context(writer, 0U);
     serd_node_set(&writer->context.subject, subject);
-
     if (!(flags & SERD_LIST_S)) {
       TRY(st, write_pred(writer, flags, predicate));
     }
@@ -1138,7 +1137,7 @@ serd_writer_end_anon(SerdWriter* const writer, const SerdNode* const node)
     return SERD_SUCCESS;
   }
 
-  if (serd_stack_is_empty(&writer->anon_stack)) {
+  if (!writer->anon_stack_size) {
     return w_err(writer, SERD_BAD_EVENT, "unexpected end of anonymous node\n");
   }
 
@@ -1203,19 +1202,24 @@ serd_writer_new(SerdWorld*      world,
   assert(env);
   assert(ssink);
 
-  const WriteContext context = WRITE_CONTEXT_NULL;
-  SerdWriter*        writer  = (SerdWriter*)calloc(1, sizeof(SerdWriter));
+  const size_t       max_depth = world->limits.writer_max_depth;
+  const WriteContext context   = WRITE_CONTEXT_NULL;
+  SerdWriter*        writer    = (SerdWriter*)calloc(1, sizeof(SerdWriter));
 
-  writer->world      = world;
-  writer->syntax     = syntax;
-  writer->flags      = flags;
-  writer->env        = env;
-  writer->root_node  = NULL;
-  writer->root_uri   = SERD_URI_NULL;
-  writer->anon_stack = serd_stack_new(SERD_PAGE_SIZE);
-  writer->context    = context;
-  writer->byte_sink  = serd_byte_sink_new(
+  writer->world     = world;
+  writer->syntax    = syntax;
+  writer->flags     = flags;
+  writer->env       = env;
+  writer->root_node = NULL;
+  writer->root_uri  = SERD_URI_NULL;
+  writer->context   = context;
+  writer->byte_sink = serd_byte_sink_new(
     ssink, stream, (flags & SERD_WRITE_BULK) ? SERD_PAGE_SIZE : 1);
+
+  if (max_depth) {
+    writer->max_depth  = max_depth;
+    writer->anon_stack = (WriteContext*)calloc(max_depth, sizeof(WriteContext));
+  }
 
   writer->iface.handle   = writer;
   writer->iface.on_event = serd_writer_on_event;
@@ -1326,7 +1330,7 @@ serd_writer_free(SerdWriter* writer)
   SERD_RESTORE_WARNINGS
   free_context(&writer->context);
   free_anon_stack(writer);
-  serd_stack_free(&writer->anon_stack);
+  free(writer->anon_stack);
   free(writer->bprefix);
   serd_byte_sink_free(&writer->byte_sink);
   serd_node_free(writer->root_node);

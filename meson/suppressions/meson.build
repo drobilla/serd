@@ -15,7 +15,6 @@ if is_variable('cc')
   if cc.get_id() in ['clang', 'emscripten']
     if warning_level == 'everything'
       c_suppressions += [
-        '-Wno-cast-align',
         '-Wno-cast-function-type-strict',
         '-Wno-cast-qual',
         '-Wno-declaration-after-statement',
@@ -55,7 +54,6 @@ if is_variable('cc')
     if warning_level == 'everything'
       c_suppressions += [
         '-Wno-array-bounds',
-        '-Wno-cast-align',
         '-Wno-cast-qual',
         '-Wno-format-nonliteral',
         '-Wno-inline',
