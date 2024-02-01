@@ -88,6 +88,7 @@ serd_world_new(void)
 
   if (world) {
     world->limits.reader_stack_size = 1048576U;
+    world->limits.writer_max_depth  = 128U;
   }
 
   return world;
