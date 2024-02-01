@@ -313,6 +313,52 @@ test_write_error(void)
   serd_world_free(world);
 }
 
+static void
+test_writer_stack_overflow(void)
+{
+  SerdWorld* world = serd_world_new();
+  SerdEnv*   env   = serd_env_new(serd_empty_string());
+
+  SerdWriter* writer =
+    serd_writer_new(world, SERD_TURTLE, 0U, env, null_sink, NULL);
+
+  const SerdSink* sink = serd_writer_sink(writer);
+
+  SerdNode* const s = serd_new_uri(serd_string("http://example.org/s"));
+  SerdNode* const p = serd_new_uri(serd_string("http://example.org/p"));
+
+  SerdNode*  o  = serd_new_blank(serd_string("blank"));
+  SerdStatus st = serd_sink_write(sink, SERD_ANON_O, s, p, o, NULL);
+  assert(!st);
+
+  // Repeatedly write nested anonymous objects until the writer stack overflows
+  for (unsigned i = 0U; i < 512U; ++i) {
+    char buf[1024];
+    snprintf(buf, sizeof(buf), "b%u", i);
+
+    SerdNode* next_o = serd_new_blank(serd_string(buf));
+
+    st = serd_sink_write(sink, SERD_ANON_O, o, p, next_o, NULL);
+
+    serd_node_free(o);
+    o = next_o;
+
+    if (st) {
+      assert(st == SERD_BAD_STACK);
+      break;
+    }
+  }
+
+  assert(st == SERD_BAD_STACK);
+
+  serd_node_free(o);
+  serd_node_free(p);
+  serd_node_free(s);
+  serd_writer_free(writer);
+  serd_env_free(env);
+  serd_world_free(world);
+}
+
 int
 main(void)
 {
@@ -323,6 +369,7 @@ main(void)
   test_writer_cleanup();
   test_strict_write();
   test_write_error();
+  test_writer_stack_overflow();
 
   return 0;
 }

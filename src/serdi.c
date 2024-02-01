@@ -32,6 +32,8 @@
 #define SERDI_ERROR(msg) fprintf(stderr, "serdi: " msg)
 #define SERDI_ERRORF(fmt, ...) fprintf(stderr, "serdi: " fmt, __VA_ARGS__)
 
+#define MAX_DEPTH 128U
+
 static int
 print_version(void)
 {
@@ -245,7 +247,7 @@ main(int argc, char** argv)
   SerdWriter* const writer = serd_writer_new(
     world, output_syntax, writer_flags, env, (SerdWriteFunc)fwrite, out_fd);
 
-  const SerdLimits limits = {stack_size};
+  const SerdLimits limits = {stack_size, MAX_DEPTH};
   serd_world_set_limits(world, limits);
 
   SerdReader* const reader =
