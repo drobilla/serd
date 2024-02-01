@@ -33,12 +33,6 @@ serd_stack_new(size_t size)
   return stack;
 }
 
-static inline bool
-serd_stack_is_empty(const SerdStack* stack)
-{
-  return stack->size <= SERD_STACK_BOTTOM;
-}
-
 static inline void
 serd_stack_free(SerdStack* stack)
 {
