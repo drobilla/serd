@@ -95,7 +95,7 @@ test_write_errors(void)
   SerdWorld* const world = serd_world_new();
   ErrorContext     ctx   = {0U, 0U};
 
-  const SerdLimits limits = {1024};
+  const SerdLimits limits = {1024, 4};
   serd_world_set_limits(world, limits);
 
   const size_t max_offsets[] = {0, 431, 1911, 2003, 431};
@@ -252,12 +252,12 @@ test_reader(const char* path)
   SerdSink* const  sink  = serd_sink_new(&rt, test_sink, NULL);
   assert(sink);
 
-  const SerdLimits limits = {512};
+  const SerdLimits limits = {512, 4};
   serd_world_set_limits(world, limits);
 
   // Test that too little stack space fails gracefully
   const SerdLimits old_limits  = serd_world_limits(world);
-  const SerdLimits tiny_limits = {32U};
+  const SerdLimits tiny_limits = {32, 4};
   serd_world_set_limits(world, tiny_limits);
   assert(!serd_reader_new(world, SERD_TURTLE, 0U, sink));
 

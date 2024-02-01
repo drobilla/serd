@@ -25,6 +25,7 @@ typedef struct SerdWorldImpl SerdWorld;
 /// Resource limits to control allocation
 typedef struct {
   size_t reader_stack_size;
+  size_t writer_max_depth;
 } SerdLimits;
 
 /**

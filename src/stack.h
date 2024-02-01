@@ -5,7 +5,6 @@
 #define SERD_SRC_STACK_H
 
 #include <assert.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,12 +30,6 @@ serd_stack_new(size_t size)
   stack.buf_size = size;
   stack.size     = SERD_STACK_BOTTOM;
   return stack;
-}
-
-static inline bool
-serd_stack_is_empty(const SerdStack* stack)
-{
-  return stack->size <= SERD_STACK_BOTTOM;
 }
 
 static inline void
