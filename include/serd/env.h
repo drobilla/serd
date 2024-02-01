@@ -22,7 +22,7 @@ SERD_BEGIN_DECLS
    @{
 */
 
-/// Lexical environment for relative URIs or CURIEs (base URI and namespaces)
+/// Lexical environment for URI references
 typedef struct SerdEnvImpl SerdEnv;
 
 /// Create a new environment
@@ -91,11 +91,11 @@ serd_env_unset_prefix(SerdEnv* ZIX_NONNULL env, ZixStringView name);
 
    @param uri URI to qualify.
 
-   @param prefix On success, pointed to a prefix string slice, which is only
-   valid until the next time `env` is mutated.
+   @param prefix On success, mutated to point to a prefix name which is valid
+   until the next time `env` is mutated.
 
-   @param suffix On success, pointed to a suffix string slice, which is only
-   valid until the next time `env` is mutated.
+   @param suffix On success, mutated to point to a URI suffix which is valid
+   until the next time `env` is mutated.
 
    @return #SERD_SUCCESS, or #SERD_FAILURE if `uri` can not be qualified with
    `env`.
@@ -107,16 +107,26 @@ serd_env_qualify(const SerdEnv* ZIX_NULLABLE env,
                  ZixStringView* ZIX_NONNULL  suffix);
 
 /**
-   Expand `curie` to an absolute URI if possible.
+   Expand `curie`.
 
-   For example, if `env` has the prefix "rdf" set to
-   <http://www.w3.org/1999/02/22-rdf-syntax-ns#>, then calling this with curie
-   "rdf:type" will produce <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>.
+   @param env Environment with prefixes to use.
 
-   Returns null if `node` can not be expanded.
+   @param curie Prefixed name string, like "rdf:type".
+
+   @param prefix On success, mutated to point to a URI prefix which is valid
+   until the next time `env` is mutated.
+
+   @param suffix On success, mutated to point to a URI suffix which is valid
+   until the next time `env` is mutated.
+
+   @return #SERD_BAD_ARG if `curie` is invalid, or #SERD_BAD_CURIE if prefix
+   isn't defined in `env`.
 */
-SERD_API SerdNode* ZIX_ALLOCATED
-serd_env_expand_curie(const SerdEnv* ZIX_NULLABLE env, ZixStringView curie);
+SerdStatus
+serd_env_expand(const SerdEnv* ZIX_NULLABLE env,
+                ZixStringView               curie,
+                ZixStringView* ZIX_NONNULL  prefix,
+                ZixStringView* ZIX_NONNULL  suffix);
 
 /**
    Expand `node` to an absolute URI if possible.

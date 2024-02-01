@@ -963,7 +963,7 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
   ZixStringView prefix = {NULL, 0};
   ZixStringView suffix = {NULL, 0};
   SerdStatus    st     = SERD_SUCCESS;
-  if ((st = serd_env_expand_in_place(writer->env, curie, &prefix, &suffix))) {
+  if ((st = serd_env_expand(writer->env, curie, &prefix, &suffix))) {
     return w_err(writer, st, "unknown namespace prefix in '%s'", curie.data);
   }
 

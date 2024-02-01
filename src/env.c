@@ -381,10 +381,10 @@ serd_env_qualify(const SerdEnv* const env,
 }
 
 SerdStatus
-serd_env_expand_in_place(const SerdEnv* const env,
-                         const ZixStringView  curie,
-                         ZixStringView* const uri_prefix,
-                         ZixStringView* const uri_suffix)
+serd_env_expand(const SerdEnv* const env,
+                const ZixStringView  curie,
+                ZixStringView* const uri_prefix,
+                ZixStringView* const uri_suffix)
 {
   const char* const str = curie.data;
   const char* const colon =
@@ -423,12 +423,21 @@ serd_env_expand_uri(const SerdEnv* const env, const ZixStringView uri)
   return expanded;
 }
 
-SerdNode*
+/**
+   Expand `curie` to an absolute URI if possible.
+
+   For example, if `env` has the prefix "rdf" set to
+   <http://www.w3.org/1999/02/22-rdf-syntax-ns#>, then calling this with curie
+   "rdf:type" will produce <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>.
+
+   Returns null if `node` can not be expanded.
+*/
+static SerdNode*
 serd_env_expand_curie(const SerdEnv* const env, const ZixStringView curie)
 {
   ZixStringView prefix;
   ZixStringView suffix;
-  if (serd_env_expand_in_place(env, curie, &prefix, &suffix)) {
+  if (serd_env_expand(env, curie, &prefix, &suffix)) {
     return NULL;
   }
 
