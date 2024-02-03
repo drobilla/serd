@@ -61,14 +61,14 @@ int
 serd_strcasecmp(const char* s1, const char* s2)
 {
   while (*s1 && *s2) {
-    const char c1 = serd_to_upper(*s1++);
-    const char c2 = serd_to_upper(*s2++);
+    const char c1 = serd_to_lower(*s1++);
+    const char c2 = serd_to_lower(*s2++);
     if (c1 != c2) {
       return (c1 < c2) ? -1 : +1;
     }
   }
 
-  const char c1 = serd_to_upper(*s1);
-  const char c2 = serd_to_upper(*s2);
+  const char c1 = serd_to_lower(*s1);
+  const char c2 = serd_to_lower(*s2);
   return (c1 == c2) ? 0 : (c1 < c2) ? -1 : +1;
 }

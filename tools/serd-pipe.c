@@ -3,6 +3,7 @@
 
 #include "console.h"
 
+#include "serd/canon.h"
 #include "serd/env.h"
 #include "serd/error.h"
 #include "serd/input_stream.h"
@@ -27,6 +28,7 @@ typedef struct {
   const char*       input_string;
   char* const*      inputs;
   intptr_t          n_inputs;
+  bool              canonical;
   bool              quiet;
 } Options;
 
@@ -60,6 +62,11 @@ run(const Options opts)
   // Set up the output pipeline: [canon] -> writer
   const SerdSink* const target   = serd_writer_sink(app.writer);
   const SerdSink*       out_sink = target;
+  SerdSink*             canon    = NULL;
+  if (opts.canonical) {
+    canon    = serd_canon_new(app.world, target, opts.common.input.flags);
+    out_sink = canon;
+  }
 
   SerdSink* const sink = serd_tee_new(NULL, serd_env_sink(app.env), out_sink);
 
@@ -85,6 +92,7 @@ run(const Options opts)
   }
 
   serd_sink_free(sink);
+  serd_sink_free(canon);
 
   const SerdStatus wst = serd_writer_finish(app.writer);
   const SerdStatus cst = serd_tool_cleanup(app);
@@ -100,6 +108,7 @@ print_usage(const char* const name, const bool error)
     "Read and write RDF data.\n"
     "INPUT can be a local filename, or \"-\" to read from standard input.\n\n"
     "  -B URI     Resolve URIs against the given base URI or path.\n"
+    "  -C         Convert literals to canonical form.\n"
     "  -I SYNTAX  Input syntax nquads/ntriples/trig/turtle, or option\n"
     "             generated/global/lax/relative/variables.\n"
     "  -O SYNTAX  Output syntax empty/nquads/ntriples/trig/turtle, or option\n"
@@ -143,6 +152,10 @@ parse_option(OptionIter* const iter, Options* const opts)
 
   const char opt = iter->argv[iter->a][iter->f];
   switch (opt) {
+  case 'C':
+    opts->canonical = true;
+    return serd_option_iter_advance(iter);
+
   case 'R':
     return serd_get_argument(iter, &opts->root_uri);
 
@@ -176,7 +189,7 @@ main(const int argc, char* const* const argv)
   char  default_input[]  = {'-', '\0'};
   char* default_inputs[] = {default_input};
 
-  Options opts = {serd_default_options(), "", NULL, NULL, 0U, false};
+  Options opts = {serd_default_options(), "", NULL, NULL, 0U, false, false};
 
   // Parse all command line options (which must precede inputs)
   SerdStatus st   = SERD_SUCCESS;
