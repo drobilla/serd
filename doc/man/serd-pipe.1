@@ -8,7 +8,7 @@
 .Nd read and write RDF data
 .Sh SYNOPSIS
 .Nm serd-pipe
-.Op Fl Vhq
+.Op Fl CVhq
 .Op Fl B Ar base
 .Op Fl I Ar syntax
 .Op Fl O Ar syntax
@@ -31,6 +31,7 @@ It is also useful as a quick utility for things like checking syntax,
 converting to another,
 pretty-printing,
 merging files,
+canonicalization,
 expanding URIs,
 and so on.
 .Pp
@@ -86,6 +87,18 @@ will be written as
 when using
 .Fl o
 .Cm rebase .
+.It Fl C
+Convert literals to canonical form.
+Literals with supported XSD datatypes will be parsed and rewritten canonically.
+Invalid literals will cause an error.
+All numeric datatypes are supported, as well as
+.Vt boolean ,
+.Vt duration ,
+.Vt datetime ,
+.Vt time ,
+.Vt hexBinary ,
+and
+.Vt base64Binary .
 .It Fl I Ar syntax
 Set an input syntax or option.
 May be given multiple times.
