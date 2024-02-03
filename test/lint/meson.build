@@ -22,6 +22,7 @@ ttl_metadata_file_paths = [
   '../extra/abbreviate/manifest.ttl',
   '../extra/bad/manifest.ttl',
   '../extra/big/manifest.ttl',
+  '../extra/canon/manifest.ttl',
   '../extra/expanded/manifest.ttl',
   '../extra/good/manifest.ttl',
   '../extra/lax/manifest.ttl',

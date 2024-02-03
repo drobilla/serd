@@ -1,0 +1,3 @@
+@prefix eg: <http://example.org/> .
+
+[] eg:tagged "hello"@ridiculously-long-lang-tag-beyond-even-RFC4646-recommendation .

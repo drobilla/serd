@@ -3,6 +3,7 @@
 
 #include "console.h"
 
+#include <serd/canon.h>
 #include <serd/env.h>
 #include <serd/handler.h>
 #include <serd/input_stream.h>
@@ -27,6 +28,7 @@ typedef struct {
   const char*       input_string;
   char* const*      inputs;
   intptr_t          n_inputs;
+  bool              canonical;
 } Options;
 
 // Run the tool using the given options
@@ -43,14 +45,23 @@ run(const Options opts)
     return st;
   }
 
+  // Configure the output root URI
   serd_writer_set_root_uri(app.writer, zix_string(opts.root_uri));
 
-  // Set up the output pipeline: tee(env, writer)
+  // Get target writer sink and allocate a canon if requested
   const SerdSink* const target = serd_writer_sink(app.writer);
-  SerdHandler* const    pipeline =
-    serd_tee_new(NULL, serd_env_sink(app.env), target);
+  const SerdCanonFlags  flags =
+    (opts.common.input.flags & (unsigned)SERD_READ_LAX) ? SERD_CANON_LAX : 0U;
 
-  const SerdSink* sink = serd_handler_sink(pipeline);
+  SerdHandler* const canon =
+    (opts.canonical) ? serd_canon_new(app.world, app.env, target, flags) : NULL;
+
+  // Set up the output pipeline: --> env
+  //                             \-> [canon] -> writer
+  SerdHandler* const pipeline = serd_tee_new(
+    NULL, serd_env_sink(app.env), canon ? serd_handler_sink(canon) : target);
+
+  const SerdSink* const sink = serd_handler_sink(pipeline);
 
   if (opts.input_string) {
     const char*     position = opts.input_string;
@@ -75,6 +86,7 @@ run(const Options opts)
   const SerdStatus wst = serd_writer_finish(app.writer);
 
   serd_handler_free(pipeline);
+  serd_handler_free(canon);
 
   const SerdStatus cst = serd_tool_cleanup(app);
   return st ? st : wst ? wst : cst;
@@ -89,6 +101,7 @@ print_usage(const char* const name, const bool error)
     "Read and write RDF data.\n"
     "INPUT can be a local filename, or \"-\" to read from standard input.\n\n"
     "  -B URI     Resolve URIs against the given base URI or path\n"
+    "  -C         Convert literals to canonical form\n"
     "  -I SYNTAX  Input syntax nquads/ntriples/trig/turtle, or option\n"
     "             decoded/generated/global/lax/ordered/variables\n"
     "  -O SYNTAX  Output syntax empty/nquads/ntriples/trig/turtle, or option\n"
@@ -135,6 +148,10 @@ parse_option(OptionIter* const iter, Options* const opts)
 
   const char opt = iter->argv[iter->a][iter->f];
   switch (opt) {
+  case 'C':
+    opts->canonical = true;
+    return serd_option_iter_advance(iter);
+
   case 'R':
     return serd_get_argument(iter, &opts->root_uri);
 
@@ -164,7 +181,7 @@ main(const int argc, char* const* const argv)
   char  default_input[]  = {'-', '\0'};
   char* default_inputs[] = {default_input};
 
-  Options opts = {serd_default_options(), "", NULL, NULL, 0U};
+  Options opts = {serd_default_options(), "", NULL, NULL, 0U, false};
 
   // Parse all command line options (which must precede inputs)
   SerdStatus st   = SERD_SUCCESS;

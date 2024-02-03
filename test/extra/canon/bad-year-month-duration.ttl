@@ -1,0 +1,4 @@
+@prefix eg: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+[] eg:decimal "P1DT2H"^^xsd:yearMonthDuration .

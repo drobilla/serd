@@ -1,0 +1,53 @@
+@prefix eg: <http://example.org/> .
+@prefix lengthy: <http://example.net/longer/than/xsd/prefix#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+[]
+	eg:boolean " false "^^xsd:boolean ,
+		" one "^^xsd:boolean ;
+	eg:ieee754 " +02.0 "^^xsd:float ,
+		" two "^^xsd:float ,
+		" +03.00 "^^xsd:double ,
+		" three "^^xsd:double ;
+	eg:machine " +04 "^^xsd:long ,
+		" four "^^xsd:long ,
+		" +05 "^^xsd:int ,
+		" five "^^xsd:int ,
+		" +06 "^^xsd:short ,
+		" six "^^xsd:short ,
+		" +07 "^^xsd:byte ,
+		" seven "^^xsd:byte ,
+		" 08 "^^xsd:unsignedLong ,
+		" eight "^^xsd:unsignedLong ,
+		" 09 "^^xsd:unsignedInt ,
+		" nine "^^xsd:unsignedInt ,
+		" 10 "^^xsd:unsignedShort ,
+		" ten "^^xsd:unsignedShort ,
+		" 11 "^^xsd:unsignedByte ,
+		" eleven "^^xsd:unsignedByte ;
+	eg:decimal " 012 "^^xsd:decimal ,
+		" twelve "^^xsd:decimal ;
+	eg:integer " 013 "^^xsd:integer ,
+		" thirteen "^^xsd:integer ,
+		" -014 "^^xsd:nonPositiveInteger ,
+		" fourteen "^^xsd:nonPositiveInteger ,
+		" -015 "^^xsd:negativeInteger ,
+		" fifteen "^^xsd:negativeInteger ,
+		" 016 "^^xsd:nonNegativeInteger ,
+		" sixteen "^^xsd:nonNegativeInteger ,
+		" 017 "^^xsd:positiveInteger ,
+		" seventeen "^^xsd:positiveInteger ;
+	eg:langString "no language tag"^^rdf:langString ;
+	eg:taggedString "english"@EN-CA ,
+		"long"@both-ridiculously-long-AND-NOT-syntactically-invalid ;
+	eg:time " P1Y8M0D "^^xsd:duration ,
+		" eighteen "^^xsd:duration ,
+		" 00:19:00+00:00 "^^xsd:time ,
+		" nineteen "^^xsd:time ,
+		" 02020-02-20+00:00 "^^xsd:date ,
+		" twenty "^^xsd:date ;
+	eg:binary " A1B7F080"^^xsd:hexBinary ,
+		" twentyone"^^xsd:hexBinary ,
+		" Zm 9v  Y m F="^^xsd:base64Binary ,
+		" twentytwo"^^xsd:base64Binary .

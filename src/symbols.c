@@ -9,6 +9,7 @@
 
 const ZixStringView serd_symbols[SERD_N_SYMBOLS] = {
   ZIX_STATIC_STRING(NS_RDF "first"),
+  ZIX_STATIC_STRING(NS_RDF "langString"),
   ZIX_STATIC_STRING(NS_RDF "nil"),
   ZIX_STATIC_STRING(NS_RDF "rest"),
   ZIX_STATIC_STRING(NS_RDF "type"),

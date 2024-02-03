@@ -6,10 +6,11 @@
 
 #include <zix/string_view.h>
 
-#define SERD_N_SYMBOLS 8U
+#define SERD_N_SYMBOLS 9U
 
 typedef enum {
   RDF_FIRST,
+  RDF_LANGSTRING,
   RDF_NIL,
   RDF_REST,
   RDF_TYPE,
