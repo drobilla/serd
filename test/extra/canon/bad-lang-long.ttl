@@ -1,0 +1,3 @@
+@base <http://example.org/> .
+
+[] <tagged> "hello"@ridiculously-long-lang-tag-beyond-even-RFC4646-recommendation .

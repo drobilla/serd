@@ -27,6 +27,10 @@ serd_node_buffer(SerdNode* ZIX_NONNULL node);
 ZIX_PURE_FUNC const SerdNode* ZIX_UNSPECIFIED
 serd_node_meta(const SerdNode* ZIX_NONNULL node);
 
+/// Allocate a new node with a given maximum string length
+SerdNode* ZIX_ALLOCATED
+serd_node_malloc(ZixAllocator* ZIX_NULLABLE allocator, size_t max_length);
+
 /// Set the header of a node, completely overwriting previous values
 void
 serd_node_set_header(SerdNode* ZIX_NONNULL node,

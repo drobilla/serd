@@ -166,7 +166,7 @@ token_equals(const SerdNode* const node, const char* const tok, const size_t n)
 
   const char* const node_string = serd_node_string(node);
   for (size_t i = 0U; i < n; ++i) {
-    if (serd_to_upper(node_string[i]) != serd_to_upper(tok[i])) {
+    if (serd_to_lower(node_string[i]) != serd_to_lower(tok[i])) {
       return false;
     }
   }

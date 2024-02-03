@@ -1,0 +1,65 @@
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdft: <http://www.w3.org/ns/rdftest#> .
+
+<>
+	a mf:Manifest ;
+	rdfs:comment "Serd canonical literal writing test suite" ;
+	mf:entries (
+		<#bad-boolean>
+		<#bad-decimal-leading>
+		<#bad-decimal-trailing>
+		<#bad-empty-boolean>
+		<#bad-integer-leading>
+		<#bad-integer-trailing>
+		<#bad-lang-long>
+		<#test-canon>
+	) .
+
+<#bad-boolean>
+	a rdft:TestTurtleNegativeEval ;
+	rdfs:comment "Invalid xsd::boolean syntax" ;
+	mf:action <bad-boolean.ttl> ;
+	mf:name "bad-boolean" .
+
+<#bad-decimal-leading>
+	a rdft:TestTurtleNegativeEval ;
+	rdfs:comment "Invalid xsd::decimal syntax (leading garbage)" ;
+	mf:action <bad-decimal-leading.ttl> ;
+	mf:name "bad-decimal-leading" .
+
+<#bad-decimal-trailing>
+	a rdft:TestTurtleNegativeEval ;
+	rdfs:comment "Invalid xsd::decimal syntax (trailing garbage)" ;
+	mf:action <bad-decimal-trailing.ttl> ;
+	mf:name "bad-decimal-trailing" .
+
+<#bad-empty-boolean>
+	a rdft:TestTurtleNegativeEval ;
+	rdfs:comment "Invalid xsd::boolean syntax (no value)" ;
+	mf:action <bad-empty-boolean.ttl> ;
+	mf:name "bad-empty-boolean" .
+
+<#bad-integer-leading>
+	a rdft:TestTurtleNegativeEval ;
+	rdfs:comment "Invalid xsd::integer syntax (leading garbage)" ;
+	mf:action <bad-integer-leading.ttl> ;
+	mf:name "bad-integer-leading" .
+
+<#bad-integer-trailing>
+	a rdft:TestTurtleNegativeEval ;
+	rdfs:comment "Invalid xsd::integer syntax (trailing garbage)" ;
+	mf:action <bad-integer-trailing.ttl> ;
+	mf:name "bad-integer-trailing" .
+
+<#bad-lang-long>
+	a rdft:TestTurtleNegativeEval ;
+	rdfs:comment "Overly long language tag" ;
+	mf:action <bad-lang-long.ttl> ;
+	mf:name "bad-lang-long" .
+
+<#test-canon>
+	a rdft:TestTurtleEval ;
+	mf:action <test-canon.ttl> ;
+	mf:name "test-canon" ;
+	mf:result <test-canon.nt> .

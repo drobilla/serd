@@ -42,6 +42,7 @@ ttl_metadata_file_paths = [
   'extra/abbreviate/manifest.ttl',
   'extra/bad/manifest.ttl',
   'extra/big/manifest.ttl',
+  'extra/canon/manifest.ttl',
   'extra/expanded/manifest.ttl',
   'extra/good/manifest.ttl',
   'extra/lax/manifest.ttl',
@@ -136,6 +137,7 @@ subdir('headers')
 ##############
 
 unit_tests = [
+  'canon',
   'env',
   'free_null',
   'node',
@@ -476,6 +478,13 @@ test_suites = {
     ['-O', 'escaped'],
     ['-b', '1'],
     ['-k', '16384'],
+  ],
+  'canon': [
+    files('extra/canon/manifest.ttl'),
+    ns_serdtest + 'canon/',
+    '--',
+    '-C',
+    ['-O', 'escaped'],
   ],
   'expanded': [
     files('extra/expanded/manifest.ttl'),

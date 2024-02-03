@@ -66,6 +66,7 @@
    @{
 */
 
+#include "serd/canon.h"
 #include "serd/caret_view.h"
 #include "serd/env.h"
 #include "serd/event.h"

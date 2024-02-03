@@ -232,7 +232,7 @@ serd_node_total_size(const SerdNode* const node)
   return node ? serd_node_size_for_length(node->length) : 0U;
 }
 
-static SerdNode*
+SerdNode*
 serd_node_malloc(ZixAllocator* const allocator, const size_t max_length)
 {
   return (SerdNode*)zix_calloc(
