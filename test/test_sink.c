@@ -104,6 +104,7 @@ test_failed_alloc(void)
   // Successfully allocate a sink to count the number of allocations
   SerdSink* const sink = serd_sink_new(&allocator.base, NULL, NULL, NULL);
   assert(sink);
+  serd_sink_free(sink);
 
   // Test that each allocation failing is handled gracefully
   const size_t n_allocs = allocator.n_allocations;
@@ -111,8 +112,6 @@ test_failed_alloc(void)
     allocator.n_remaining = i;
     assert(!serd_sink_new(&allocator.base, NULL, NULL, NULL));
   }
-
-  serd_sink_free(sink);
 }
 
 static void

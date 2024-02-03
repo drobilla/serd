@@ -99,7 +99,7 @@ SERD_API SerdWriter* ZIX_ALLOCATED
 serd_writer_new(SerdWorld* ZIX_NONNULL        world,
                 SerdSyntax                    syntax,
                 SerdWriterFlags               flags,
-                SerdEnv* ZIX_NONNULL          env,
+                const SerdEnv* ZIX_NONNULL    env,
                 SerdOutputStream* ZIX_NONNULL output,
                 size_t                        block_size);
 

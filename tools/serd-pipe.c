@@ -12,6 +12,7 @@
 #include "serd/sink.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
+#include "serd/tee.h"
 #include "serd/world.h"
 #include "serd/writer.h"
 #include "zix/allocator.h"
@@ -89,8 +90,7 @@ read_file(SerdWorld* const      world,
     return SERD_BAD_STREAM;
   }
 
-  SerdLimits limits        = serd_world_limits(world);
-  limits.reader_stack_size = stack_size;
+  const SerdLimits limits = {stack_size, MAX_DEPTH};
   serd_world_set_limits(world, limits);
 
   SerdReader* reader = serd_reader_new(world, syntax, flags, sink);
@@ -292,16 +292,16 @@ main(int argc, char** argv)
     serd_writer_set_root_uri(writer, zix_string(root_uri));
   }
 
+  SerdSink* const sink =
+    serd_tee_new(NULL, serd_env_sink(env), serd_writer_sink(writer));
+
   SerdStatus st = SERD_SUCCESS;
   if (input_string) {
     const char*     position  = input_string;
     SerdInputStream string_in = serd_open_input_string(&position);
 
-    SerdReader* const reader =
-      serd_reader_new(world,
-                      input_syntax ? input_syntax : SERD_TRIG,
-                      reader_flags,
-                      serd_writer_sink(writer));
+    SerdReader* const reader = serd_reader_new(
+      world, input_syntax ? input_syntax : SERD_TRIG, reader_flags, sink);
 
     if (!(st = serd_reader_start(reader, &string_in, NULL, 1U))) {
       st = serd_reader_read_document(reader);
@@ -326,7 +326,7 @@ main(int argc, char** argv)
     if ((st = read_file(world,
                         serd_choose_syntax(input_syntax, inputs[i]),
                         reader_flags,
-                        serd_writer_sink(writer),
+                        sink,
                         stack_size,
                         inputs[i],
                         block_size))) {
@@ -334,6 +334,7 @@ main(int argc, char** argv)
     }
   }
 
+  serd_sink_free(sink);
   serd_writer_free(writer);
   serd_env_free(env);
   serd_node_free(NULL, base);

@@ -145,6 +145,7 @@ unit_tests = [
   'sink',
   'string',
   'syntax',
+  'tee',
   'terse_write',
   'uri',
   'world',
