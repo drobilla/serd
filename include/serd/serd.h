@@ -72,6 +72,7 @@
 #include "serd/event.h"
 #include "serd/sink.h"
 #include "serd/statement_view.h"
+#include "serd/tee.h"
 
 /**
    @}
