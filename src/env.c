@@ -4,9 +4,11 @@
 #include "env.h"
 #include "node.h"
 #include "node_impl.h"
+#include "sink.h"
+#include "try.h"
 
 #include "serd/env.h"
-#include "serd/node.h"
+#include "serd/event.h"
 #include "serd/sink.h"
 #include "serd/status.h"
 #include "zix/allocator.h"
@@ -24,11 +26,29 @@ typedef struct {
 
 struct SerdEnvImpl {
   ZixAllocator* allocator;
+  SerdSink      sink;
   SerdPrefix*   prefixes;
   size_t        n_prefixes;
   SerdNode*     base_uri_node;
   SerdURIView   base_uri;
 };
+
+static SerdStatus
+serd_env_on_event(void* const handle, const SerdEvent* const event)
+{
+  SerdEnv* const env = (SerdEnv*)handle;
+  SerdStatus     st  = SERD_SUCCESS;
+
+  if (event->type == SERD_BASE) {
+    TRY(st, serd_env_set_base_uri(env, serd_node_string_view(event->base.uri)));
+  } else if (event->type == SERD_PREFIX) {
+    serd_env_set_prefix(env,
+                        serd_node_string_view(event->prefix.name),
+                        serd_node_string_view(event->prefix.uri));
+  }
+
+  return st;
+}
 
 SerdEnv*
 serd_env_new(ZixAllocator* const allocator, const ZixStringView base_uri)
@@ -37,6 +57,11 @@ serd_env_new(ZixAllocator* const allocator, const ZixStringView base_uri)
 
   if (env) {
     env->allocator = allocator;
+
+    env->sink.allocator   = allocator;
+    env->sink.handle      = env;
+    env->sink.free_handle = NULL;
+    env->sink.on_event    = serd_env_on_event;
 
     if (base_uri.length) {
       if (serd_env_set_base_uri(env, base_uri)) {
@@ -108,6 +133,12 @@ serd_env_free(SerdEnv* const env)
   zix_free(env->allocator, env->prefixes);
   serd_node_free(env->allocator, env->base_uri_node);
   zix_free(env->allocator, env);
+}
+
+const SerdSink*
+serd_env_sink(SerdEnv* const env)
+{
+  return &env->sink;
 }
 
 bool
