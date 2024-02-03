@@ -21,6 +21,7 @@ doxygen_xml = custom_target(
     'group__serd.xml',
     'group__serd__attributes.xml',
     'group__serd__buffer.xml',
+    'group__serd__canon.xml',
     'group__serd__caret__view.xml',
     'group__serd__data.xml',
     'group__serd__env.xml',
@@ -60,6 +61,7 @@ doxygen_xml = custom_target(
 
     'attributes_8h.xml',
     'buffer_8h.xml',
+    'canon_8h.xml',
     'caret__view_8h.xml',
     'env_8h.xml',
     'event_8h.xml',

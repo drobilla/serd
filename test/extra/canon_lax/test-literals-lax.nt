@@ -1,0 +1,47 @@
+_:b1 <http://example.org/boolean> "false"^^<http://www.w3.org/2001/XMLSchema#boolean> .
+_:b1 <http://example.org/boolean> " one "^^<http://www.w3.org/2001/XMLSchema#boolean> .
+_:b1 <http://example.org/ieee754> "2.0E0"^^<http://www.w3.org/2001/XMLSchema#float> .
+_:b1 <http://example.org/ieee754> " two "^^<http://www.w3.org/2001/XMLSchema#float> .
+_:b1 <http://example.org/ieee754> "3.0E0"^^<http://www.w3.org/2001/XMLSchema#double> .
+_:b1 <http://example.org/ieee754> " three "^^<http://www.w3.org/2001/XMLSchema#double> .
+_:b1 <http://example.org/machine> "4"^^<http://www.w3.org/2001/XMLSchema#long> .
+_:b1 <http://example.org/machine> " four "^^<http://www.w3.org/2001/XMLSchema#long> .
+_:b1 <http://example.org/machine> "5"^^<http://www.w3.org/2001/XMLSchema#int> .
+_:b1 <http://example.org/machine> " five "^^<http://www.w3.org/2001/XMLSchema#int> .
+_:b1 <http://example.org/machine> "6"^^<http://www.w3.org/2001/XMLSchema#short> .
+_:b1 <http://example.org/machine> " six "^^<http://www.w3.org/2001/XMLSchema#short> .
+_:b1 <http://example.org/machine> "7"^^<http://www.w3.org/2001/XMLSchema#byte> .
+_:b1 <http://example.org/machine> " seven "^^<http://www.w3.org/2001/XMLSchema#byte> .
+_:b1 <http://example.org/machine> "8"^^<http://www.w3.org/2001/XMLSchema#unsignedLong> .
+_:b1 <http://example.org/machine> " eight "^^<http://www.w3.org/2001/XMLSchema#unsignedLong> .
+_:b1 <http://example.org/machine> "9"^^<http://www.w3.org/2001/XMLSchema#unsignedInt> .
+_:b1 <http://example.org/machine> " nine "^^<http://www.w3.org/2001/XMLSchema#unsignedInt> .
+_:b1 <http://example.org/machine> "10"^^<http://www.w3.org/2001/XMLSchema#unsignedShort> .
+_:b1 <http://example.org/machine> " ten "^^<http://www.w3.org/2001/XMLSchema#unsignedShort> .
+_:b1 <http://example.org/machine> "11"^^<http://www.w3.org/2001/XMLSchema#unsignedByte> .
+_:b1 <http://example.org/machine> " eleven "^^<http://www.w3.org/2001/XMLSchema#unsignedByte> .
+_:b1 <http://example.org/decimal> "12.0"^^<http://www.w3.org/2001/XMLSchema#decimal> .
+_:b1 <http://example.org/decimal> " twelve "^^<http://www.w3.org/2001/XMLSchema#decimal> .
+_:b1 <http://example.org/integer> "13"^^<http://www.w3.org/2001/XMLSchema#integer> .
+_:b1 <http://example.org/integer> " thirteen "^^<http://www.w3.org/2001/XMLSchema#integer> .
+_:b1 <http://example.org/integer> "-14"^^<http://www.w3.org/2001/XMLSchema#nonPositiveInteger> .
+_:b1 <http://example.org/integer> " fourteen "^^<http://www.w3.org/2001/XMLSchema#nonPositiveInteger> .
+_:b1 <http://example.org/integer> "-15"^^<http://www.w3.org/2001/XMLSchema#negativeInteger> .
+_:b1 <http://example.org/integer> " fifteen "^^<http://www.w3.org/2001/XMLSchema#negativeInteger> .
+_:b1 <http://example.org/integer> "16"^^<http://www.w3.org/2001/XMLSchema#nonNegativeInteger> .
+_:b1 <http://example.org/integer> " sixteen "^^<http://www.w3.org/2001/XMLSchema#nonNegativeInteger> .
+_:b1 <http://example.org/integer> "17"^^<http://www.w3.org/2001/XMLSchema#positiveInteger> .
+_:b1 <http://example.org/integer> " seventeen "^^<http://www.w3.org/2001/XMLSchema#positiveInteger> .
+_:b1 <http://example.org/langString> "no language tag" .
+_:b1 <http://example.org/taggedString> "english"@en-ca .
+_:b1 <http://example.org/taggedString> "long"@both-ridiculously-long-AND-NOT-syntactically-invalid .
+_:b1 <http://example.org/time> "P1Y8M"^^<http://www.w3.org/2001/XMLSchema#duration> .
+_:b1 <http://example.org/time> " eighteen "^^<http://www.w3.org/2001/XMLSchema#duration> .
+_:b1 <http://example.org/time> "00:19:00Z"^^<http://www.w3.org/2001/XMLSchema#time> .
+_:b1 <http://example.org/time> " nineteen "^^<http://www.w3.org/2001/XMLSchema#time> .
+_:b1 <http://example.org/time> "2020-02-20Z"^^<http://www.w3.org/2001/XMLSchema#date> .
+_:b1 <http://example.org/time> " twenty "^^<http://www.w3.org/2001/XMLSchema#date> .
+_:b1 <http://example.org/binary> "A1B7F080"^^<http://www.w3.org/2001/XMLSchema#hexBinary> .
+_:b1 <http://example.org/binary> " twentyone"^^<http://www.w3.org/2001/XMLSchema#hexBinary> .
+_:b1 <http://example.org/binary> "Zm9vYmF="^^<http://www.w3.org/2001/XMLSchema#base64Binary> .
+_:b1 <http://example.org/binary> " twentytwo"^^<http://www.w3.org/2001/XMLSchema#base64Binary> .

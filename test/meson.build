@@ -27,6 +27,7 @@ subdir('headers')
 ##############
 
 unit_test_names = [
+  'canon',
   'env',
   'field',
   'file_uri',
@@ -465,6 +466,21 @@ test_suites += {
     ['-O', 'escaped'],
     ['-b', '1'],
     ['-k', '16384'],
+  ],
+  'canon': [
+    files('extra/canon/manifest.ttl'),
+    ns_serdtest + 'canon/',
+    '--',
+    '-C',
+    ['-O', 'escaped'],
+  ],
+  'canon_lax': [
+    files('extra/canon_lax/manifest.ttl'),
+    ns_serdtest + 'canon_lax/',
+    '--',
+    '-C',
+    ['-I', 'lax'],
+    ['-O', 'escaped'],
   ],
   'decode': [
     files('extra/decode/manifest.ttl'),

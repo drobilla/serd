@@ -4,6 +4,7 @@ serd (1.1.1) unstable; urgency=medium
   * Add SerdWorld for shared library state
   * Add fine-grained control of writer syntax features
   * Add support for URI percent encoding and decoding
+  * Add support for converting literals to canonical form
   * Add support for parsing variables
   * Add support for writing terse output with minimal newlines
   * Avoid writing redundant base and prefix directives

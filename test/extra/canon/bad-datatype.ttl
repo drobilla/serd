@@ -1,0 +1,3 @@
+@prefix eg: <http://example.org/> .
+
+[] eg:decimal " 1234.5678 junk "^^unset:Datatype .

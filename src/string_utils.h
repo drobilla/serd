@@ -78,7 +78,7 @@ is_utf8_continuation(const uint8_t c)
 }
 
 static inline bool
-is_space(const char c)
+is_space(const int c)
 {
   return c == ' ' || in_range(c, '\t', '\r');
 }
@@ -109,9 +109,9 @@ hex_digit_value(const uint8_t c)
 }
 
 static inline char
-serd_to_upper(const char c)
+serd_to_lower(const char c)
 {
-  return (char)(in_range(c, 'a', 'z') ? (c - 32) : c);
+  return (char)(in_range(c, 'A', 'Z') ? (c + 32) : c);
 }
 
 static inline uint8_t
