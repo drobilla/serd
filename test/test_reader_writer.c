@@ -14,6 +14,7 @@
 #include "serd/sink.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
+#include "serd/tee.h"
 #include "serd/world.h"
 #include "serd/writer.h"
 #include "zix/allocator.h"
@@ -140,8 +141,10 @@ test_write_errors(void)
       SerdWriter* const writer =
         serd_writer_new(world, syntax, 0U, env, &out, 1U);
 
-      const SerdSink* const sink = serd_writer_sink(writer);
-      SerdReader* const reader   = serd_reader_new(world, SERD_TRIG, 0U, sink);
+      SerdSink* const sink =
+        serd_tee_new(NULL, serd_env_sink(env), serd_writer_sink(writer));
+
+      SerdReader* const reader = serd_reader_new(world, SERD_TRIG, 0U, sink);
 
       const char*     position = doc_string;
       SerdInputStream in       = serd_open_input_string(&position);
@@ -153,6 +156,7 @@ test_write_errors(void)
 
       assert(!serd_close_input(&in));
       serd_reader_free(reader);
+      serd_sink_free(sink);
       serd_writer_free(writer);
       serd_env_free(env);
     }
@@ -177,8 +181,6 @@ test_writer(const char* const path)
   const SerdSink* const iface = serd_writer_sink(writer);
 
   // Check invalid calls to basic sink methods
-  assert(serd_sink_write_base(iface, zix_string("rel")));
-  assert(serd_sink_write_prefix(iface, zix_string("name"), zix_string("rel")));
   assert(serd_sink_write_end(iface, zix_string("whatever")));
 
   static const uint8_t       bad_buf[]    = {0xEF, 0xBF, 0xBD, 0};
