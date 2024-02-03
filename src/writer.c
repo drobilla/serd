@@ -142,7 +142,7 @@ struct SerdWriterImpl {
   SerdWorld*      world;
   SerdSyntax      syntax;
   SerdWriterFlags flags;
-  SerdEnv*        env;
+  const SerdEnv*  env;
   SerdNode*       root_node;
   SerdURIView     root_uri;
   WriteContext*   anon_stack;
@@ -1441,7 +1441,7 @@ SerdWriter*
 serd_writer_new(SerdWorld*        world,
                 SerdSyntax        syntax,
                 SerdWriterFlags   flags,
-                SerdEnv*          env,
+                const SerdEnv*    env,
                 SerdOutputStream* output,
                 size_t            block_size)
 {
@@ -1493,15 +1493,9 @@ serd_writer_set_base_uri(SerdWriter* const writer, const ZixStringView uri)
 {
   SERD_DISABLE_NULL_WARNINGS
 
-  if (zix_string_view_equals(serd_env_base_uri_string(writer->env), uri)) {
-    return SERD_SUCCESS;
-  }
-
   SerdStatus st = SERD_SUCCESS;
-  TRY(st, serd_env_set_base_uri(writer->env, uri));
 
-  if (uri.length &&
-      (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG)) {
+  if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
     TRY(st, terminate_context(writer));
     TRY(st, esink("@base <", 7, writer));
     TRY(st, esink(uri.data, uri.length, writer));
@@ -1539,8 +1533,6 @@ serd_writer_set_prefix(SerdWriter* const   writer,
                        const ZixStringView uri)
 {
   SerdStatus st = SERD_SUCCESS;
-
-  TRY(st, serd_env_set_prefix(writer->env, name, uri));
 
   if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
     TRY(st, terminate_context(writer));
