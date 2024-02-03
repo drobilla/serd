@@ -33,10 +33,10 @@ serd_statement_view(SerdTokenView  subject,
                     SerdTokenView  graph);
 
 SERD_CONST_API SerdStatementView
-serd_statement_view_nodes(const SerdNode* ZIX_NONNULL subject,
-                          const SerdNode* ZIX_NONNULL predicate,
-                          const SerdNode* ZIX_NONNULL object,
-                          const SerdNode* ZIX_NONNULL graph);
+serd_statement_view_nodes(const SerdNode* ZIX_NONNULL  subject,
+                          const SerdNode* ZIX_NONNULL  predicate,
+                          const SerdNode* ZIX_NONNULL  object,
+                          const SerdNode* ZIX_NULLABLE graph);
 
 /**
    @}

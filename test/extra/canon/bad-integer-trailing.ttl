@@ -1,0 +1,4 @@
+@base <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+[] <integer> " 987654321 junk "^^xsd:integer .
