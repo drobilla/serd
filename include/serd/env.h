@@ -42,6 +42,10 @@ serd_env_equals(const SerdEnv* ZIX_NULLABLE a, const SerdEnv* ZIX_NULLABLE b);
 SERD_API void
 serd_env_free(SerdEnv* ZIX_NULLABLE env);
 
+/// Return a sink interface that updates `env` on base URI or prefix changes
+SERD_CONST_API const SerdSink* ZIX_NONNULL
+serd_env_sink(SerdEnv* ZIX_NONNULL env);
+
 /// Get the current base URI
 SERD_PURE_API const SerdNode* ZIX_NULLABLE
 serd_env_base_uri(const SerdEnv* ZIX_NULLABLE env);
