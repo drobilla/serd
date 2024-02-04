@@ -1,0 +1,5 @@
+<http://example.org/s1>
+	ns:prefixed false .
+
+eg:s2
+	ns:prefixed true .

@@ -27,7 +27,7 @@ test_size(SerdWorld* const      world,
   assert(env);
 
   SerdReader* const reader =
-    serd_reader_new(world, syntax, flags, serd_env_sink(env));
+    serd_reader_new(world, syntax, flags, env, serd_env_sink(env));
   assert(reader);
 
   SerdNode*       string_name = serd_node_new(NULL, serd_a_string("string"));
@@ -93,6 +93,7 @@ test_turtle_overflow(void)
     "<http://example.org/s> <http://example.org/p> <http://example.org/> .",
     "<http://example.org/s> <http://example.org/p> "
     "<thisisanabsurdlylongurischeme://because/testing/> .",
+    "<http://example.org/s> <http://example.org/p> 1234 .",
     "<http://example.org/s> <http://example.org/p> 0 , .1 , 2.3 , 4E5, 6e07 .",
     "<http://example.org/s> <http://example.org/p> .7e8 , .9E0 , 1.e2 , 3.E4 .",
     "<http://example.org/s> <http://example.org/p> .2E3 , .4e5 , 6.7E8 , 9.",
@@ -114,7 +115,41 @@ test_turtle_overflow(void)
     "@prefix ug.dot: <http://example.org/> . \nug.dot:s ug.dot:p ug.dot:o .\n",
 
     // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
-    "@prefix øøøøøøøøø: <http://example.org/long> . \n"
+    "<http://example.org/subject/with/a/long/path> "
+    "<http://example.org/predicate/with/a/long/path> "
+    "<http://example.org/object/with/a/long/path> .",
+
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+    "<http://example.org/s> <http://example.org/p> "
+    "\"typed\"^^<http://example.org/Datatype> .",
+
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+    "@prefix eg: <http://example.org/ns/test> .\n"
+    "<http://example.org/s> <http://example.org/p> "
+    "\"typed\"^^eg:Datatype .",
+
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+    "@prefix eg: <http://example.org/ns/test> .\n"
+    "<http://example.org/s> <http://example.org/p> eg:foo .",
+
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+    "@prefix prefix: <http://example.org/testing/curies> .\n"
+    "prefix:subject prefix:predicate prefix:object .\n",
+
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+    "@prefix eg: <http://example.org/> .\n"
+    "eg:s eg:p [ eg:p [ eg:p [ eg:p [ eg:p []]]]] .\n",
+
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+    "@prefix eg: <http://example.org/> .\n"
+    "eg:s eg:p ( 1 2 3 ( 4 5 6 ( 7 8 9 ) ) ) .\n",
+
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+    "@prefix eg: <http://example.org/ns/test> .\n"
+    "<http://example.org/s> <http://example.org/p> eg:%99 .",
+
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
+    "@prefix øøøøøøøøø: <http://example.org/long> .\n"
     "<http://example.org/somewhatlongsubjecttooffsetthepredicate> øøøøøøøøø:p "
     "øøøøøøøøø:o .\n",
 
@@ -142,8 +177,8 @@ test_turtle_overflow(void)
 
     // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
     "@prefix prefix: <http://example.org/testing/curies> .\n"
-    "prefix:subjectthatwillcomearoundtobeingfinishedanycharacternow "
-    "prefix:predicate prefix:object .\n",
+    "<http://example.org/very/long/uri/subject/to/overflow/the/predicate> "
+    "prefix:predicate prefix:object ; prefix:p prefix:o .\n",
 
     // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
     "@prefix eg: <http://example.org/> .\n"
@@ -174,6 +209,12 @@ test_turtle_overflow(void)
   for (const char* const* t = test_strings; *t; ++t) {
     test_all_sizes(world, *t, SERD_TURTLE, SERD_READ_VARIABLES);
   }
+
+  test_all_sizes(world,
+                 "@prefix eg: <http://example.org/> .\n"
+                 "eg:s eg:p eg:o .\n",
+                 SERD_TURTLE,
+                 SERD_READ_PREFIXED);
 
   serd_world_free(world);
 }

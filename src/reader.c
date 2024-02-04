@@ -246,9 +246,11 @@ SerdReader*
 serd_reader_new(SerdWorld* const      world,
                 const SerdSyntax      syntax,
                 const SerdReaderFlags flags,
+                const SerdEnv* const  env,
                 const SerdSink* const sink)
 {
   assert(world);
+  assert(env);
   assert(sink);
 
   const size_t stack_size = world->limits.reader_stack_size;
@@ -263,6 +265,7 @@ serd_reader_new(SerdWorld* const      world,
 
   me->world   = world;
   me->sink    = sink;
+  me->env     = env;
   me->stack   = serd_stack_new(world->allocator, stack_size);
   me->syntax  = syntax;
   me->flags   = flags;
