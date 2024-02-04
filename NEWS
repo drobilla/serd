@@ -6,6 +6,7 @@ serd (1.1.1) unstable; urgency=medium
   * Add support for writing terse output with minimal newlines
   * Avoid writing redundant base and prefix directives
   * Bump major version and revise API
+  * Refine and simplify command-line interface to support new features
   * Remove SERD_DISABLE_DEPRECATED and SERD_DEPRECATED_BY
   * Remove serd_uri_to_path()
   * Remove special handling of null bytes in input streams

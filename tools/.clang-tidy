@@ -2,15 +2,13 @@
 # SPDX-License-Identifier: 0BSD OR ISC
 
 Checks: >
-  -*-magic-numbers,
-  -bugprone-inc-dec-in-conditions,
+  -bugprone-easily-swappable-parameters,
   -cert-err33-c,
   -concurrency-mt-unsafe,
-  -hicpp-signed-bitwise,
   -llvm-header-guard,
 InheritParentConfig: true
 CheckOptions:
   - key:   readability-function-cognitive-complexity.IgnoreMacros
     value: 'true'
   - key:   readability-function-cognitive-complexity.Threshold
-    value: '118'
+    value: '9'
