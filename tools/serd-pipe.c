@@ -77,6 +77,7 @@ static SerdStatus
 read_file(SerdWorld* const      world,
           const SerdSyntax      syntax,
           const SerdReaderFlags flags,
+          SerdEnv* const        env,
           const SerdSink* const sink,
           const size_t          stack_size,
           const char* const     filename,
@@ -93,7 +94,7 @@ read_file(SerdWorld* const      world,
   const SerdLimits limits = {stack_size, MAX_DEPTH};
   serd_world_set_limits(world, limits);
 
-  SerdReader* reader = serd_reader_new(world, syntax, flags, sink);
+  SerdReader* reader = serd_reader_new(world, syntax, flags, env, sink);
   SerdStatus  st     = serd_reader_start(reader, &in, NULL, block_size);
 
   st = st ? st : serd_reader_read_document(reader);
@@ -301,7 +302,7 @@ main(int argc, char** argv)
     SerdInputStream string_in = serd_open_input_string(&position);
 
     SerdReader* const reader = serd_reader_new(
-      world, input_syntax ? input_syntax : SERD_TRIG, reader_flags, sink);
+      world, input_syntax ? input_syntax : SERD_TRIG, reader_flags, env, sink);
 
     if (!(st = serd_reader_start(reader, &string_in, NULL, 1U))) {
       st = serd_reader_read_document(reader);
@@ -326,6 +327,7 @@ main(int argc, char** argv)
     if ((st = read_file(world,
                         serd_choose_syntax(input_syntax, inputs[i]),
                         reader_flags,
+                        env,
                         sink,
                         stack_size,
                         inputs[i],
