@@ -8,14 +8,14 @@
 .Nd read and write RDF data
 .Sh SYNOPSIS
 .Nm serd-pipe
-.Op Fl fhqv
+.Op Fl Vhq
 .Op Fl B Ar base
 .Op Fl I Ar syntax
 .Op Fl O Ar syntax
+.Op Fl R Ar root
 .Op Fl b Ar bytes
 .Op Fl k Ar bytes
 .Op Fl o Ar filename
-.Op Fl r Ar root
 .Op Fl s Ar string
 .Op Ar input ...
 .Sh DESCRIPTION
@@ -58,12 +58,34 @@ then input is read as TriG and output is written as NQuads
 The options are as follows:
 .Bl -tag -width 3n
 .It Fl B Ar base
-Input base URI.
-Relative URI references in the input will be resolved against this.
-When the input is a file,
-the URI of the file is automatically used as the base URI.
-This option can be used to override that,
-or to provide a base URI for input from stdin or a string.
+Base URI, path, or
+.Cm rebase
+to use the output path.
+This is used to resolve relative URI references in the input.
+.Pp
+If the input is a file,
+its path is used by default,
+so relative paths are written as they are in the input.
+The special
+.Cm rebase
+argument will instead use the output path set by the
+.Fl o
+option,
+so paths are written relative to the output file.
+.Pp
+The distinction matters when reading from bundles of files that refer to each other.
+For example,
+when copying
+.Pa in/manifest.ttl
+to
+.Pa out/manifest.ttl ,
+the relative URI reference
+.Ql <data.ttl>
+will be written as
+.Ql <../in/data.ttl>
+when using
+.Fl o
+.Cm rebase .
 .It Fl I Ar syntax
 Set an input syntax or option.
 May be given multiple times.
@@ -146,15 +168,40 @@ The
 .Cm empty
 syntax suppresses the output,
 so that only warnings and errors will be printed.
+.It Fl R Ar root
+Keep relative URIs within a
+.Ar root
+URI.
+This will avoid creating any relative URI references with leading path segments like
+.Pa ../
+that enter a parent of
+.Ar root .
+.Pp
+For example,
+if
+.Pa /home/you/file.ttl
+is written to the file
+.Pa /home/me/output.ttl
+using
+.Fl B Cm rebase ,
+then it will be written as
+.Li <../you/file.ttl> .
+Setting
+.Fl R Pa /home/me/
+would prevent references from
+.Dq escaping
+like this,
+so the above would instead be written as
+.Li <file:///home/you/file.ttl> .
+.Pp
+This is useful for keeping relative references within some directory.
+.It Fl V
+Display version information and exit.
 .It Fl b Ar bytes
 I/O block size.
 This is the number of bytes in a file that will be read or written at once.
 The default is 4096, which should perform well in most cases.
 Note that this only applies to files, standard input and output are always processed one byte at a time.
-.It Fl f
-Fast and loose URI mode:
-preserve full URIs (without qualifying or making relative),
-and pass prefixed names through as-is.
 .It Fl h
 Print the command line options.
 .It Fl k Ar bytes
@@ -169,39 +216,10 @@ Write output to the given
 instead of stdout.
 .It Fl q
 Suppress all output except data.
-.It Fl r Ar root
-Keep relative URIs within a
-.Ar root
-URI.
-This will avoid creating any relative URI references with leading path segments like
-.Pa ../
-that enter a parent of
-.Ar root .
-.Pp
-For example,
-if
-.Pa /home/you/file.ttl
-is written to the file
-.Pa /home/me/output.ttl
-using the destination's base URI,
-then it could be written as
-.Li <../you/file.ttl> .
-Setting
-.Fl r Li file:///home/me/
-would prevent references from
-.Dq escaping
-like this,
-so the above would instead be written as
-.Li <file:///home/you/file.ttl> ,
-since it can't be expressed relative to the root URI.
-.Pp
-This is useful for keeping relative references within some directory.
 .It Fl s Ar string
 Parse
 .Ar string
 as input.
-.It Fl v
-Display version information and exit.
 .El
 .Sh ENVIRONMENT
 Errors and warnings are printed in color by default if the output is a terminal.
