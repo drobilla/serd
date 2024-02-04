@@ -5,13 +5,13 @@
 
 <>
 	a mf:Manifest ;
-	rdfs:comment "Serd full URI test suite" ;
+	rdfs:comment "Serd prefixed test suite" ;
 	mf:entries (
-		<#full-uris>
+		<#undefined-prefix>
 	) .
 
-<#full-uris>
+<#undefined-prefix>
 	a rdft:TestTurtleEval ;
-	mf:action <full-uris.ttl> ;
-	mf:name "full-uris" ;
-	mf:result <full-uris.ttl> .
+	mf:action <undefined-prefix.ttl> ;
+	mf:name "undefined-prefix" ;
+	mf:result <undefined-prefix.ttl> .

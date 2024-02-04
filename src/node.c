@@ -226,7 +226,7 @@ serd_node_size_for_length(const size_t length)
   return sizeof(SerdNode) + serd_node_pad_length(length);
 }
 
-static ZIX_PURE_FUNC size_t
+size_t
 serd_node_total_size(const SerdNode* const node)
 {
   return node ? serd_node_size_for_length(node->length) : 0U;

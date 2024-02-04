@@ -15,6 +15,10 @@
 ZIX_CONST_FUNC size_t
 serd_node_pad_length(size_t n_bytes);
 
+/// Return the total size in bytes of a node
+ZIX_PURE_FUNC size_t
+serd_node_total_size(const SerdNode* ZIX_NONNULL node);
+
 /// Return a mutable pointer to the string buffer of a node
 ZIX_CONST_FUNC char* ZIX_NONNULL
 serd_node_buffer(SerdNode* ZIX_NONNULL node);

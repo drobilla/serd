@@ -453,6 +453,9 @@ ZIX_NODISCARD static SerdStatus
 write_lname(SerdWriter* writer, const char* utf8, const size_t n_bytes)
 {
   SerdStatus st = SERD_SUCCESS;
+  if (!n_bytes) {
+    return st;
+  }
 
   /* Thanks to the horribly complicated Turtle grammar for prefixed names,
      making sure we never write an invalid character is tedious.  We need to
@@ -919,31 +922,24 @@ write_uri_node(SerdWriter* const     writer,
 ZIX_NODISCARD static SerdStatus
 write_curie(SerdWriter* const writer, const SerdNode* const node)
 {
-  const char* const node_str = serd_node_string(node);
-  ZixStringView     prefix   = {NULL, 0};
-  ZixStringView     suffix   = {NULL, 0};
-  SerdStatus        st       = SERD_SUCCESS;
+  writer->last_sep = SEP_NONE;
 
-  // In verbatim Turtle/TriG mode, CURIEs are simply passed through
-  const bool fast = (writer->flags & SERD_WRITE_VERBATIM);
-
-  if (!supports_abbrev(writer) || !fast) {
-    const ZixStringView curie = serd_node_string_view(node);
-    if ((st = serd_env_expand(writer->env, curie, &prefix, &suffix))) {
-      return w_err(writer, st, "undefined namespace prefix '%s'", node_str);
-    }
+  const ZixStringView curie = serd_node_string_view(node);
+  if (supports_abbrev(writer)) {
+    return write_lname(writer, curie.data, curie.length);
   }
 
-  if (!supports_abbrev(writer)) {
-    TRY(st, esink("<", 1, writer));
-    TRY(st, ewrite_uri(writer, prefix.data, prefix.length));
-    TRY(st, ewrite_uri(writer, suffix.data, suffix.length));
-    TRY(st, esink(">", 1, writer));
-  } else {
-    TRY(st, write_lname(writer, node_str, serd_node_length(node)));
+  ZixStringView prefix = {NULL, 0};
+  ZixStringView suffix = {NULL, 0};
+  SerdStatus    st     = SERD_SUCCESS;
+  if ((st = serd_env_expand(writer->env, curie, &prefix, &suffix))) {
+    return w_err(writer, st, "unknown namespace prefix in '%s'", curie.data);
   }
 
-  return st;
+  TRY(st, esink("<", 1, writer));
+  TRY(st, ewrite_uri(writer, prefix.data, prefix.length));
+  TRY(st, ewrite_uri(writer, suffix.data, suffix.length));
+  return esink(">", 1, writer);
 }
 
 ZIX_NODISCARD static SerdStatus

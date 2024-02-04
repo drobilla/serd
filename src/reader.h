@@ -9,6 +9,7 @@
 #include "stack.h"
 #include "try.h"
 
+#include "serd/env.h"
 #include "serd/error.h"
 #include "serd/event.h"
 #include "serd/node.h"
@@ -42,6 +43,7 @@ struct SerdReaderImpl {
   SerdNode*       rdf_nil;
   SerdNode*       rdf_type;
   SerdByteSource* source;
+  const SerdEnv*  env;
   SerdStack       stack;
   SerdSyntax      syntax;
   SerdReaderFlags flags;
@@ -176,18 +178,22 @@ push_byte(SerdReader* reader, SerdNode* node, const int c)
 }
 
 static inline SerdStatus
-push_bytes(SerdReader*    reader,
-           SerdNode*      ref,
-           const uint8_t* bytes,
-           unsigned       len)
+push_bytes(SerdReader* const    reader,
+           SerdNode* const      node,
+           const uint8_t* const bytes,
+           const size_t         len)
 {
   if (reader->stack.buf_size < reader->stack.size + len) {
     return SERD_BAD_STACK;
   }
 
-  for (unsigned i = 0; i < len; ++i) {
-    push_byte(reader, ref, bytes[i]);
+  const size_t begin = reader->stack.size - 1U;
+  for (unsigned i = 0U; i < len; ++i) {
+    reader->stack.buf[begin + i] = (char)bytes[i];
   }
+
+  reader->stack.size += len;
+  node->length += len;
   return SERD_SUCCESS;
 }
 

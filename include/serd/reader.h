@@ -5,6 +5,7 @@
 #define SERD_READER_H
 
 #include "serd/attributes.h"
+#include "serd/env.h"
 #include "serd/input_stream.h"
 #include "serd/node.h"
 #include "serd/sink.h"
@@ -81,6 +82,35 @@ typedef enum {
      this flag is combined, the IDs from each document may clash.
   */
   SERD_READ_GLOBAL = 1U << 3U,
+
+  /**
+     Read relative URI references exactly without resolving them.
+
+     Normally, the reader expands all relative URIs against the base URI.  This
+     flag disables that, so that URI references are passed to the sink exactly
+     as they are in the input.
+  */
+  SERD_READ_RELATIVE = 1U << 4U,
+
+  /**
+     Read prefixed name (CURIE) references exactly without expanding them.
+
+     Normally, the reader expands all prefixed names to full URIs based on the
+     prefixes in the current environment, and considers failure to expand a
+     syntax error.  This flag disables that expansion so prefixed names will be
+     emitted directly as CURIE nodes.
+
+     Note that these nodes rely on some context which can change over time, and
+     may even be undefined initially, so this flag should be used with caution.
+     Most applications should leave it off and avoid using CURIE nodes
+     entirely, because they are error-prone compared to working with complete
+     URIs.  However, it can be useful for error-tolerance, or in constrained or
+     high-performance streaming contexts.  For example, to re-indent a Turtle
+     file and ignore any possibly undefined prefixed names, this flag can be
+     used to disable expansion, which also boosts performance since it avoids
+     the lookup and expansion overhead.
+  */
+  SERD_READ_PREFIXED = 1U << 5U,
 } SerdReaderFlag;
 
 /// Bitwise OR of SerdReaderFlag values
@@ -91,6 +121,7 @@ SERD_API SerdReader* ZIX_ALLOCATED
 serd_reader_new(SerdWorld* ZIX_NONNULL      world,
                 SerdSyntax                  syntax,
                 SerdReaderFlags             flags,
+                const SerdEnv* ZIX_NONNULL  env,
                 const SerdSink* ZIX_NONNULL sink);
 
 /**

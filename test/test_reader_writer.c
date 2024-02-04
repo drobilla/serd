@@ -115,7 +115,7 @@ test_write_errors(void)
   const SerdLimits limits = {1024, 4};
   serd_world_set_limits(world, limits);
 
-  const size_t max_offsets[] = {0, 417, 1911, 2003, 459};
+  const size_t max_offsets[] = {0, 449, 2040, 2132, 507};
 
   // Test errors at different offsets to hit different code paths
   for (unsigned s = 1; s <= (unsigned)SERD_TRIG; ++s) {
@@ -134,7 +134,8 @@ test_write_errors(void)
       SerdSink* const sink =
         serd_tee_new(NULL, serd_env_sink(env), serd_writer_sink(writer));
 
-      SerdReader* const reader = serd_reader_new(world, SERD_TRIG, 0U, sink);
+      SerdReader* const reader =
+        serd_reader_new(world, SERD_TRIG, 0U, env, sink);
 
       const char*     position = doc_string;
       SerdInputStream in       = serd_open_input_string(&position);
@@ -291,6 +292,9 @@ test_reader(const char* path)
   SerdSink* const  sink  = serd_sink_new(NULL, &rt, test_sink, NULL);
   assert(sink);
 
+  SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
+  assert(env);
+
   const SerdLimits limits = {1024, 4};
   serd_world_set_limits(world, limits);
 
@@ -298,11 +302,11 @@ test_reader(const char* path)
   const SerdLimits old_limits  = serd_world_limits(world);
   const SerdLimits tiny_limits = {32, 4};
   serd_world_set_limits(world, tiny_limits);
-  assert(!serd_reader_new(world, SERD_TURTLE, 0U, sink));
+  assert(!serd_reader_new(world, SERD_TURTLE, 0U, env, sink));
 
   // Restore limits and successfully create reader
   serd_world_set_limits(world, old_limits);
-  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0U, sink);
+  SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0U, env, sink);
   assert(reader);
 
   assert(serd_reader_read_chunk(reader) == SERD_BAD_CALL);
@@ -316,6 +320,7 @@ test_reader(const char* path)
   serd_close_input(&in);
 
   serd_reader_free(reader);
+  serd_env_free(env);
   serd_sink_free(sink);
   serd_world_free(world);
 }
