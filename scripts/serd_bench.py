@@ -272,7 +272,9 @@ example:
 
     args = ap.parse_args(sys.argv[1:])
 
-    serd_opts = "-I turtle -O turtle -O verbatim"
+    serd_opts = (
+        "-I lax -I relative -I prefixed -I turtle -O turtle -O verbatim"
+    )
     progs = ["tools/serd-pipe " + serd_opts] + args.run
     min_n = int(args.max / args.steps)
     max_n = args.max
