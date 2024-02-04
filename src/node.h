@@ -83,6 +83,9 @@ serd_node_reset(SerdNode* ZIX_NONNULL node);
 void
 serd_node_zero_pad(SerdNode* ZIX_NONNULL node);
 
+ZIX_PURE_FUNC size_t
+serd_node_total_size(const SerdNode* ZIX_NONNULL node);
+
 /// Create a new URI from a prefix and suffix (expanded from a CURIE)
 SerdNode* ZIX_ALLOCATED
 serd_new_qualified_curie(ZixAllocator* ZIX_NULLABLE allocator,
