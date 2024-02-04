@@ -59,6 +59,16 @@ SERD_API SerdStatus
 serd_env_set_base_uri(SerdEnv* ZIX_NONNULL env, ZixStringView uri);
 
 /**
+   Set the current base URI to a filesystem path.
+
+   This will set the base URI to a properly formatted file URI that points to
+   the canonical version of `path`.  Note that this requires the path to
+   actually exist.
+*/
+SERD_API SerdStatus
+serd_env_set_base_path(SerdEnv* ZIX_NONNULL env, ZixStringView path);
+
+/**
    Set a namespace prefix.
 
    A namespace prefix is used to expand CURIE nodes, for example, with the

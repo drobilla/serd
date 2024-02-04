@@ -11,6 +11,7 @@
 #include "serd/uri.h"
 #include "zix/allocator.h"
 #include "zix/attributes.h"
+#include "zix/filesystem.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -200,6 +201,48 @@ serd_env_set_base_uri(SerdEnv* const env, const ZixStringView uri)
   return SERD_SUCCESS;
 }
 
+SerdStatus
+serd_env_set_base_path(SerdEnv* const env, const ZixStringView path)
+{
+  assert(env);
+
+  if (!path.length) {
+    return serd_env_set_base_uri(env, zix_empty_string());
+  }
+
+  char* const real_path = zix_canonical_path(env->allocator, path.data);
+  if (!real_path) {
+    return SERD_BAD_ARG;
+  }
+
+  const size_t real_path_len = strlen(real_path);
+  SerdNode*    base_node     = NULL;
+  const char   path_last     = path.data[path.length - 1];
+  if (path_last == '/' || path_last == '\\') {
+    char* const base_path =
+      (char*)zix_calloc(env->allocator, real_path_len + 2, 1);
+
+    memcpy(base_path, real_path, real_path_len + 1);
+    base_path[real_path_len] = path_last;
+
+    base_node =
+      serd_node_new(env->allocator,
+                    serd_a_file_uri(zix_string(base_path), zix_empty_string()));
+
+    zix_free(env->allocator, base_path);
+  } else {
+    base_node =
+      serd_node_new(env->allocator,
+                    serd_a_file_uri(zix_string(real_path), zix_empty_string()));
+  }
+
+  serd_env_set_base_uri(env, serd_node_string_view(base_node));
+  serd_node_free(env->allocator, base_node);
+  zix_free(env->allocator, real_path);
+
+  return SERD_SUCCESS;
+}
+
 ZixStringView
 serd_env_get_prefix(const SerdEnv* const env, const ZixStringView name)
 {
@@ -327,7 +370,7 @@ serd_env_qualify(const SerdEnv* const env,
   for (size_t i = 0; i < env->n_prefixes; ++i) {
     const SerdNode* const prefix_uri     = env->prefixes[i].uri;
     const size_t          prefix_uri_len = serd_node_length(prefix_uri);
-    if (uri.data && uri.length >= prefix_uri_len) {
+    if (uri.length >= prefix_uri_len) {
       const char* prefix_str = serd_node_string(prefix_uri);
       const char* uri_str    = uri.data;
 
