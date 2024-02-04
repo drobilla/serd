@@ -180,7 +180,6 @@ simple_command_tests = {
     'bad': [
       ['-B', 'nonuriorpath'],
       ['-B'],
-      ['-I', 'turtle'],
       ['-I', 'turt'],
       ['-I'],
       ['-Ix'],
@@ -188,29 +187,24 @@ simple_command_tests = {
       ['-O', 'ntripleses'],
       ['-O'],
       ['-Ox'],
+      ['-R'],
       ['-b', '-1'],
       ['-b', '1024junk'],
-      ['-b', '9223372036854775807'],
       ['-b'],
       ['-fi'],
-      ['-k', '-1'],
-      ['-k', '1024junk'],
       ['-k', '9223372036854775807'],
       ['-k'],
       ['-qi'],
-      ['-r'],
-      ['-rx'],
       ['-s', '<foo> a <Bar> .'],
       ['-s'],
-      ['-o'],
       ['-z'],
     ],
     'good': [
       ['--help'],
       ['--version'],
+      ['-V'],
       ['-h'],
       ['-k', '512', '-s', '<go:>a<go:> .'],
-      ['-v'],
     ],
   },
 }
@@ -241,14 +235,34 @@ if is_variable('serd_pipe')
     endforeach
   endforeach
 
-  test('none', serd_pipe, env: test_env, should_fail: true, suite: cmd_suite)
-
   # Base URI options
 
+  test(
+    'good_rebase',
+    serd_pipe,
+    args: ['-B', 'rebase', '-o', 'serd_rebased.ttl', serd_ttl],
+    env: test_env,
+    suite: cmd_suite,
+  )
+  test(
+    'bad_rebase',
+    serd_pipe,
+    args: ['-B', 'rebase', serd_ttl],
+    env: test_env,
+    should_fail: true,
+    suite: cmd_suite,
+  )
   test(
     'base',
     files('test_base.py'),
     args: pipe_script_args,
+    env: test_env,
+    suite: cmd_suite,
+  )
+  test(
+    'dir_base',
+    serd_pipe,
+    args: ['-B', './', serd_ttl],
     env: test_env,
     suite: cmd_suite,
   )
@@ -266,6 +280,21 @@ if is_variable('serd_pipe')
   # Inputs
 
   input_suite = ['tools', 'pipe', 'input']
+
+  good_input_tests = {
+    'unknown_extension': [files('trig_unknown_extension.n3')],
+    'no_extension': [files('trig_no_extension')],
+  }
+
+  foreach name, args : good_input_tests
+    test(
+      name,
+      serd_pipe,
+      args: args,
+      env: test_env,
+      suite: input_suite,
+    )
+  endforeach
 
   bad_input_tests = {
     'string': ['-s', '<foo> a <Bar> .'],
@@ -563,7 +592,7 @@ test_suites = {
     files('extra/root/manifest.ttl'),
     ns_serdtest + 'root/',
     '--',
-    ['-r', 'http://example.org/top/root/'],
+    ['-R', 'http://example.org/top/root/'],
     ['-k', '1024'],
   ],
   'terse': [
