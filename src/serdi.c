@@ -163,7 +163,7 @@ main(int argc, char** argv)
       const char opt = argv[a][o];
 
       if (opt == 'a') {
-        writer_flags |= SERD_WRITE_ASCII;
+        writer_flags |= SERD_WRITE_ESCAPED;
       } else if (opt == 'b') {
         bulk_write = true;
       } else if (opt == 'e') {

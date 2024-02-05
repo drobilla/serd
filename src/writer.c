@@ -410,7 +410,7 @@ static VariableResult
 write_text_character(SerdWriter* const writer, const uint8_t* const utf8)
 {
   const uint8_t c = utf8[0];
-  if ((writer->flags & SERD_WRITE_ASCII) || c < 0x20U || c == 0x7FU) {
+  if ((writer->flags & SERD_WRITE_ESCAPED) || c < 0x20U || c == 0x7FU) {
     // Write ASCII-compatible UCHAR escape like "\u1234"
     return write_UCHAR(writer, utf8);
   }
@@ -431,7 +431,7 @@ static VariableResult
 write_uri_character(SerdWriter* const writer, const uint8_t* const utf8)
 {
   const uint8_t c = utf8[0];
-  if (!(c & 0x80U) || (writer->flags & SERD_WRITE_ASCII)) {
+  if (!(c & 0x80U) || (writer->flags & SERD_WRITE_ESCAPED)) {
     return write_UCHAR(writer, utf8);
   }
 
@@ -618,36 +618,34 @@ ZIX_NODISCARD static SerdStatus
 write_short_string_escape(SerdWriter* const writer, const char c)
 {
   switch (c) {
-  case '\\':
-    return esink(writer, 2, "\\\\");
   case '\n':
     return esink(writer, 2, "\\n");
   case '\r':
     return esink(writer, 2, "\\r");
-  case '\t':
-    return esink(writer, 2, "\\t");
   case '"':
     return esink(writer, 2, "\\\"");
+  case '\\':
+    return esink(writer, 2, "\\\\");
   default:
     break;
   }
 
-  if (writer->syntax == SERD_TURTLE) {
-    switch (c) {
-    case '\b':
-      return esink(writer, 2, "\\b");
-    case '\f':
-      return esink(writer, 2, "\\f");
-    default:
-      break;
-    }
-  }
-
-  return SERD_FAILURE;
+  // Pre-NTriples test cases format escapes tabs, but not backspace/form-feed
+  return (writer->flags & SERD_WRITE_ESCAPED)
+           ? ((c == '\t') ? esink(writer, 2, "\\t") : SERD_FAILURE)
+           : ((c == '\b')   ? esink(writer, 2, "\\b")
+              : (c == '\f') ? esink(writer, 2, "\\f")
+                            : SERD_FAILURE);
 }
 
 ZIX_NODISCARD static bool
-text_must_escape(const uint8_t c)
+text_is_special_normal(const uint8_t c)
+{
+  return c == '\\' || c == '"' || (c != '\t' && !in_range(c, 0x20, 0x7E));
+}
+
+ZIX_NODISCARD static bool
+text_is_special_escaped(const uint8_t c)
 {
   return c == '\\' || c == '"' || !in_range(c, 0x20, 0x7E);
 }
@@ -675,10 +673,14 @@ write_short_text(SerdWriter* const writer,
                  const char* const utf8,
                  const size_t      n_bytes)
 {
+  const BytePredicate is_special = (writer->flags & SERD_WRITE_ESCAPED)
+                                     ? text_is_special_escaped
+                                     : text_is_special_normal;
+
   VariableResult vr = {SERD_SUCCESS, 0U, 0U};
   for (size_t i = 0; !vr.status && i < n_bytes;) {
     // Write leading chunk as a single fast bulk write
-    const size_t j = next_text_index(utf8, i, n_bytes, text_must_escape);
+    const size_t j = next_text_index(utf8, i, n_bytes, is_special);
     vr.status      = esink(writer, j - i, &utf8[i]);
     if (vr.status || ((i = j) == n_bytes)) {
       break; // Error or reached end
@@ -703,6 +705,10 @@ write_long_text(SerdWriter*       writer,
                 const char* const utf8,
                 const size_t      n_bytes)
 {
+  const BytePredicate is_special = (writer->flags & SERD_WRITE_ESCAPED)
+                                     ? text_is_special_escaped
+                                     : text_is_special_normal;
+
   size_t         n_quotes = 0;
   VariableResult vr       = {SERD_SUCCESS, 0U, 0U};
   for (size_t i = 0; !vr.status && i < n_bytes;) {
@@ -711,7 +717,7 @@ write_long_text(SerdWriter*       writer,
     }
 
     // Write leading chunk as a single fast bulk write
-    const size_t j = next_text_index(utf8, i, n_bytes, text_must_escape);
+    const size_t j = next_text_index(utf8, i, n_bytes, is_special);
     vr.status      = esink(writer, j - i, &utf8[i]);
     if (vr.status || ((i = j) == n_bytes)) {
       break; // Error or reached end

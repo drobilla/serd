@@ -35,7 +35,7 @@ typedef struct SerdWriterImpl SerdWriter;
    does not support abbreviation and is always ASCII.
 */
 typedef enum {
-  SERD_WRITE_ASCII       = 1U << 0U, ///< Escape all non-ASCII characters
+  SERD_WRITE_ESCAPED     = 1U << 0U, ///< Escape additional characters
   SERD_WRITE_UNQUALIFIED = 1U << 1U, ///< Don't shorten URIs into CURIEs
   SERD_WRITE_UNRESOLVED  = 1U << 2U, ///< Don't make URIs relative
   SERD_WRITE_LAX         = 1U << 3U, ///< Tolerate lossy output

@@ -532,7 +532,7 @@ static void
 test_strict_write(void)
 {
   check_strict_write((SerdWriterFlags)SERD_WRITE_UNRESOLVED);
-  check_strict_write((SerdWriterFlags)SERD_WRITE_ASCII);
+  check_strict_write((SerdWriterFlags)SERD_WRITE_ESCAPED);
 }
 
 // Produce a write error without setting errno
