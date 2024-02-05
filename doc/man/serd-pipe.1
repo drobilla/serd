@@ -142,8 +142,15 @@ can be
 .Cm Turtle ,
 or an option:
 .Bl -tag -width 3n
-.It Cm ascii
-Escape all non-ASCII characters.
+.It Cm escaped
+Escape additional characters like in the Turtle test suite outputs,
+for compatibility with older NTriples readers.
+This writes
+.Ql \eu0008
+for backspace,
+.Ql \eu000C
+for form-feed,
+and similar escapes for extended characters in URIs.
 .It Cm lax
 Tolerate corrupt UTF-8 and write replacements.
 .It Cm terse
