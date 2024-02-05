@@ -37,13 +37,16 @@ typedef struct SerdWriterImpl SerdWriter;
 */
 typedef enum {
   /**
-     Escape all non-ASCII characters.
+     Escape additional characters as in RDF Test Cases format.
 
-     Although all the supported syntaxes are UTF-8 by definition, this can be
-     used to escape all non-ASCII characters so that data will survive
-     transmission through ASCII-only channels.
+     This writes "extended" characters as printable ASCII, using "U" escapes in
+     URIs and strings where necessary.  This is the format used by the outputs
+     in the Turtle test suite (which predates RDF 1.1 NTriples).  This style
+     makes NTriples output non-canonical, so it generally shouldn't be used
+     except for compatibility purposes.  See
+     <https://www.w3.org/TR/rdf-testcases/>.
   */
-  SERD_WRITE_ASCII = 1U << 0U,
+  SERD_WRITE_ESCAPED = 1U << 0U,
 
   /**
      Write expanded URIs instead of prefixed names.
