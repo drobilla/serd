@@ -407,7 +407,7 @@ test_suites = {
     ns_w3 + 'NQuadsTests/',
     '--',
     ['-I', 'NQuads'],
-    ['-O', 'ascii'],
+    ['-O', 'escaped'],
     ['-k', '4096'],
   ],
   'ntriples': [
@@ -415,7 +415,7 @@ test_suites = {
     ns_w3 + 'NTriplesTests/',
     '--',
     ['-I', 'NTriples'],
-    ['-O', 'ascii'],
+    ['-O', 'escaped'],
     ['-k', '1024'],
   ],
   'trig': [
@@ -423,7 +423,7 @@ test_suites = {
     ns_w3 + 'TriGTests/',
     '--',
     ['-I', 'TriG'],
-    ['-O', 'ascii'],
+    ['-O', 'escaped'],
     ['-k', '1024'],
   ],
   'turtle': [
@@ -431,7 +431,7 @@ test_suites = {
     ns_w3 + 'TurtleTests/',
     '--',
     ['-I', 'Turtle'],
-    ['-O', 'ascii'],
+    ['-O', 'escaped'],
     ['-k', '1024'],
   ],
 
@@ -463,7 +463,7 @@ test_suites = {
     files('extra/good/manifest.ttl'),
     ns_serdtest + 'good/',
     '--',
-    ['-O', 'ascii'],
+    ['-O', 'escaped'],
     ['-b', '1'],
     ['-k', '16384'],
   ],
@@ -494,7 +494,7 @@ test_suites = {
     files('extra/good/manifest.ttl'),
     ns_serdtest + 'good/',
     '--',
-    ['-O', 'ascii'],
+    ['-O', 'escaped'],
     ['-k', '16384'],
   ],
   'lax_lax': [
