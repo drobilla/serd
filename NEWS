@@ -21,8 +21,9 @@ serd (1.1.1) unstable; urgency=medium
   * Support writing all escapes in Turtle and TriG prefixed names
   * Use a fixed-size reader stack
   * Use char* for strings in public API
+  * Write canonical NTriples 1.1 by default
 
- -- David Robillard <d@drobilla.net>  Tue, 30 Jan 2024 14:42:39 +0000
+ -- David Robillard <d@drobilla.net>  Mon, 05 Feb 2024 19:48:46 +0000
 
 serd (0.32.3) unstable; urgency=medium
 

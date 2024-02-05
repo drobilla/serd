@@ -150,6 +150,15 @@ a document will have a header that defines all the prefixes used in the input.
 This flag will disable writing those directives,
 so the output is document fragment with an implicit context.
 This can be useful for writing output intended for humans.
+.It Cm escaped
+Escape additional characters like in the Turtle test suite outputs,
+for compatibility with older NTriples readers.
+This will use
+.Dq \eu0008
+for backspace,
+.Dq \eu000C
+for form-feed,
+and similar escapes for extended characters in URIs.
 .It Cm expanded
 Write expanded URIs instead of prefixed names.
 .It Cm lax

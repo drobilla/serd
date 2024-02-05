@@ -1,2 +1,2 @@
-<http://example.org/eg#s> <http://example.org/eg#p> "\u0008 first" .
-<http://example.org/eg#s> <http://example.org/eg#p> "last \u0008" .
+<http://example.org/eg#s> <http://example.org/eg#p> "\b first" .
+<http://example.org/eg#s> <http://example.org/eg#p> "last \b" .

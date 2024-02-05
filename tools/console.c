@@ -325,14 +325,14 @@ serd_set_output_option(const ZixStringView    name,
   } OutputOption;
 
   static const OutputOption output_options[] = {
-    {"ascii", SERD_WRITE_ASCII},
+    {"escaped", SERD_WRITE_ESCAPED},
     {"expanded", SERD_WRITE_EXPANDED},
     {"verbatim", SERD_WRITE_VERBATIM},
     {"terse", SERD_WRITE_TERSE},
     {"lax", SERD_WRITE_LAX},
     {"contextual", SERD_WRITE_CONTEXTUAL},
     {"longhand", SERD_WRITE_LONGHAND},
-    {NULL, SERD_WRITE_ASCII},
+    {NULL, SERD_WRITE_ESCAPED},
   };
 
   const SerdSyntax named_syntax = serd_syntax_by_name(name.data);
