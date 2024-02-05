@@ -406,14 +406,14 @@ test_suites = {
     ns_w3 + 'NQuadsTests/',
     '--',
     ['-I', 'NQuads'],
-    ['-O', 'ascii'],
+    ['-O', 'escaped'],
   ],
   'ntriples': [
     files('w3c/ntriples/manifest.ttl'),
     ns_w3 + 'NTriplesTests/',
     '--',
     ['-I', 'NTriples'],
-    ['-O', 'ascii'],
+    ['-O', 'escaped'],
     ['-k', '1024'],
   ],
   'trig': [
@@ -421,14 +421,14 @@ test_suites = {
     ns_w3 + 'TriGTests/',
     '--',
     ['-I', 'TriG'],
-    ['-O', 'ascii'],
+    ['-O', 'escaped'],
   ],
   'turtle': [
     files('w3c/turtle/manifest.ttl'),
     ns_w3 + 'TurtleTests/',
     '--',
     ['-I', 'Turtle'],
-    ['-O', 'ascii'],
+    ['-O', 'escaped'],
   ],
 
   'abbreviate': [
@@ -453,7 +453,7 @@ test_suites = {
     files('extra/good/manifest.ttl'),
     ns_serdtest + 'good/',
     '--',
-    ['-O', 'ascii'],
+    ['-O', 'escaped'],
     ['-b', '1'],
   ],
   'fast': [
@@ -481,7 +481,7 @@ test_suites = {
     files('extra/good/manifest.ttl'),
     ns_serdtest + 'good/',
     '--',
-    ['-O', 'ascii'],
+    ['-O', 'escaped'],
   ],
   'lax_lax': [
     '--lax',
@@ -489,7 +489,7 @@ test_suites = {
     ns_serdtest + 'lax/',
     '--',
     ['-I', 'lax'],
-    ['-O', 'ascii'],
+    ['-O', 'escaped'],
   ],
   'lax_strict': [
     files('extra/lax/manifest.ttl'),
