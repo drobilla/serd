@@ -34,7 +34,6 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
 typedef enum {
@@ -272,12 +271,21 @@ add_wresult(const VariableResult vr, const SerdStreamResult wr)
   return r;
 }
 
+ZIX_NODISCARD static SerdStatus
+write_hex_byte(SerdWriter* const writer, const unsigned byte)
+{
+  static const char hex_chars[] = "0123456789ABCDEF";
+
+  const char digits[2] = {hex_chars[byte >> 4U], hex_chars[byte & 0x0FU]};
+
+  return esink(digits, 2, writer);
+}
+
 static VariableResult
 write_UCHAR(SerdWriter* const writer, const uint8_t* const utf8)
 {
-  char           escape[11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  uint8_t        c_size     = 0U;
-  const uint32_t c          = parse_utf8_char(utf8, &c_size);
+  uint8_t        c_size = 0U;
+  const uint32_t c      = parse_utf8_char(utf8, &c_size);
 
   SerdStreamResult wr = {SERD_SUCCESS, 0U};
   if (c_size == 0U) {
@@ -287,12 +295,20 @@ write_UCHAR(SerdWriter* const writer, const uint8_t* const utf8)
     }
   } else if (c <= 0xFFFF) {
     // Write short (4 digit) escape
-    snprintf(escape, sizeof(escape), "\\u%04X", c);
-    wr = wsink(escape, 6, writer);
+    if (!(wr = wsink("\\u", 2, writer)).status &&
+        !(wr.status = write_hex_byte(writer, (c & 0xFF00U) >> 8U)) &&
+        !(wr.status = write_hex_byte(writer, (c & 0x00FFU)))) {
+      wr.count += 4U;
+    }
   } else {
     // Write long (8 digit) escape
-    snprintf(escape, sizeof(escape), "\\U%08X", c);
-    wr = wsink(escape, 10, writer);
+    if (!(wr = wsink("\\U", 2, writer)).status &&
+        !(wr.status = write_hex_byte(writer, (c & 0xFF000000U) >> 24U)) &&
+        !(wr.status = write_hex_byte(writer, (c & 0x00FF0000U) >> 16U)) &&
+        !(wr.status = write_hex_byte(writer, (c & 0x0000FF00U) >> 8U)) &&
+        !(wr.status = write_hex_byte(writer, (c & 0x000000FFU)))) {
+      wr.count += 8U;
+    }
   }
 
   const VariableResult vr = {wr.status, c_size, wr.count};
@@ -366,6 +382,7 @@ static VariableResult
 write_uri(SerdWriter* writer, const char* utf8, const size_t n_bytes)
 {
   VariableResult result = {SERD_SUCCESS, 0U, 0U};
+
   for (size_t i = 0; i < n_bytes;) {
     // Write leading chunk as a single fast bulk write
     const size_t j = next_text_index(utf8, i, n_bytes, uri_must_escape);
@@ -386,11 +403,13 @@ write_uri(SerdWriter* writer, const char* utf8, const size_t n_bytes)
 
     if (r.read_count == 0) {
       // Corrupt input, write percent-encoded bytes and scan to next start
-      for (char escape[4] = {0, 0, 0, 0};
+      for (;
            !result.status && i < n_bytes && !is_utf8_leading((uint8_t)utf8[i]);
            ++i) {
-        snprintf(escape, sizeof(escape), "%%%02X", (uint8_t)utf8[i]);
-        result = add_wresult(result, wsink(escape, 3, writer));
+        result = add_wresult(result, wsink("%", 1, writer));
+        if (!(result.status = write_hex_byte(writer, (uint8_t)utf8[i]))) {
+          result.write_count += 2U;
+        }
       }
     }
   }
@@ -419,17 +438,11 @@ write_utf8_percent_escape(SerdWriter* const writer,
                           const char* const utf8,
                           const size_t      n_bytes)
 {
-  static const char hex_chars[] = "0123456789ABCDEF";
-
-  SerdStatus st        = SERD_SUCCESS;
-  char       escape[4] = {'%', 0, 0, 0};
+  SerdStatus st = SERD_SUCCESS;
 
   for (size_t i = 0U; i < n_bytes; ++i) {
-    const uint8_t byte = (uint8_t)utf8[i];
-    escape[1]          = hex_chars[byte >> 4U];
-    escape[2]          = hex_chars[byte & 0x0FU];
-
-    TRY(st, esink(escape, 3, writer));
+    TRY(st, esink("%", 1, writer));
+    TRY(st, write_hex_byte(writer, (uint8_t)utf8[i]));
   }
 
   return st;
