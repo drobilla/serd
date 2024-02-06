@@ -109,15 +109,8 @@ uri_is_under(const SerdURIView* uri, const SerdURIView* root)
 static inline bool
 is_uri_scheme_char(const int c)
 {
-  switch (c) {
-  case ':':
-  case '+':
-  case '-':
-  case '.':
-    return true;
-  default:
-    return is_alpha(c) || is_digit(c);
-  }
+  return c == '+' || c == '-' || c == '.' || c == ':' || is_alpha(c) ||
+         is_digit(c);
 }
 
 #endif // SERD_SRC_URI_UTILS_H
