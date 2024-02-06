@@ -6,6 +6,14 @@
 
 #include <stdbool.h>
 
+/// [8] IRIREF
+static inline bool
+is_IRIREF(const int c)
+{
+  return (c > 0x20) && (c != '"') && (c != '<') && (c != '>') && (c != '\\') &&
+         (c != '^') && (c != '`') && (c != '{') && (c != '|') && (c != '}');
+}
+
 /// [157s] PN_CHARS_BASE
 static inline bool
 is_PN_CHARS_BASE(const int c)

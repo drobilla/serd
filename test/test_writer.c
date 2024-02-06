@@ -801,6 +801,56 @@ test_write_pname_escapes(void)
   check_pname_escape((const char*)last_escape, "eg:s\n\teg:p eg:wx%C3%B7 .\n");
 }
 
+static void
+test_write_bad_uri(void)
+{
+  SerdWorld* const world = serd_world_new(NULL);
+  SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
+
+  const SerdTokenView s   = {SERD_URI, zix_string(NS_EG "s")};
+  const SerdTokenView p   = {SERD_URI, zix_string(NS_EG "p")};
+  const SerdTokenView rel = {SERD_URI, zix_string("rel")};
+
+  const char* const junk_uris[] = {
+    "http://exam ple.org/",
+    "http://example.org/\"quoted\"",
+    "http://example.org/{braced}",
+    "http://example.org/<bracketed>",
+    "http://example.org/back\\slash",
+    "http://example.org/c^rat",
+    "http://example.org/gr`ve",
+    "http://example.org/p|pe",
+    NULL,
+  };
+
+  SerdBuffer        buffer = {NULL, NULL, 0};
+  SerdOutputStream  output = serd_open_output_buffer(&buffer);
+  SerdWriter* const writer = serd_writer_new(world, SERD_NTRIPLES, 0U, env);
+  assert(writer);
+  assert(!serd_writer_start(writer, &output, 1U));
+
+  SerdStatus st =
+    write_statement(serd_writer_sink(writer), 0U, s, p, token_to_object(rel));
+  assert(st);
+  assert(st == SERD_BAD_ARG);
+
+  for (const char* const* j = junk_uris; *j; ++j) {
+    const char* const junk_uri_str = *j;
+
+    const SerdTokenView junk = {SERD_URI, zix_string(junk_uri_str)};
+
+    st = write_statement(
+      serd_writer_sink(writer), 0U, s, p, token_to_object(junk));
+    assert(st == SERD_BAD_URI);
+  }
+
+  serd_writer_free(writer);
+  serd_close_output(&output);
+  zix_free(buffer.allocator, buffer.buf);
+  serd_env_free(env);
+  serd_world_free(world);
+}
+
 int
 main(void)
 {
@@ -823,6 +873,7 @@ main(void)
   test_write_nothing_node();
   test_write_empty_syntax();
   test_write_pname_escapes();
+  test_write_bad_uri();
 
   return 0;
 }
