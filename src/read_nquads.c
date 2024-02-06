@@ -51,10 +51,10 @@ read_nquads_statement(SerdReader* const reader)
 
   if (!ate_dot) {
     if (peek_byte(reader) == '.') {
-      eat_byte(reader);
+      TRY(st, skip_byte(reader, '.'));
     } else {
       TRY(st, read_graphLabel(reader, &ctx.graph, &ate_dot));
-      skip_horizontal_whitespace(reader);
+      TRY(st, skip_horizontal_whitespace(reader));
       if (!ate_dot) {
         TRY(st, eat_byte_check(reader, '.'));
       }
@@ -69,7 +69,7 @@ read_nquads_line(SerdReader* const reader)
 {
   SerdStatus st = SERD_SUCCESS;
 
-  skip_horizontal_whitespace(reader);
+  TRY(st, skip_horizontal_whitespace(reader));
 
   const int c = peek_byte(reader);
   if (c <= 0) {
@@ -87,8 +87,8 @@ read_nquads_line(SerdReader* const reader)
 
   const size_t orig_stack_size = reader->stack.size;
 
-  if (!(st = read_nquads_statement(reader))) {
-    skip_horizontal_whitespace(reader);
+  if (!(st = read_nquads_statement(reader)) &&
+      !(st = skip_horizontal_whitespace(reader))) {
     if (peek_byte(reader) == '#') {
       st = read_comment(reader);
     }
@@ -118,5 +118,5 @@ read_nquadsDoc(SerdReader* const reader)
   }
 
   // If we made it this far, we succeeded at reading at least one line
-  return st > SERD_FAILURE ? st : SERD_SUCCESS;
+  return accept_failure(st);
 }
