@@ -9,6 +9,13 @@
 #include <stdbool.h>
 
 static inline bool
+is_IRIREF(const int c)
+{
+  return (c > 0x20) && (c != '"') && (c != '<') && (c != '>') && (c != '\\') &&
+         (c != '^') && (c != '`') && (c != '{') && (c != '|') && (c != '}');
+}
+
+static inline bool
 is_PN_CHARS_BASE(const int c)
 {
   return (is_alpha(c) || in_range(c, 0x000C0U, 0x000D6U) ||

@@ -61,6 +61,7 @@
 		<#test-trig-syntax-all-rules>
 		<#test-ttl-syntax-all-rules>
 		<#test-uri>
+		<#test-uri-uchar>
 	) .
 
 <#test-a-without-whitespace>
@@ -375,3 +376,9 @@
 	mf:action <test-uri.ttl> ;
 	mf:name "test-uri" ;
 	mf:result <test-uri.nt> .
+
+<#test-uri-uchar>
+	a rdft:TestTurtleEval ;
+	mf:action <test-uri-uchar.ttl> ;
+	mf:name "test-uri-uchar" ;
+	mf:result <test-uri-uchar.nt> .

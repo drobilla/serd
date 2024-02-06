@@ -79,7 +79,7 @@ read_BLANK_NODE_LABEL(SerdReader* reader, SerdNode** dest, bool* ate_dot);
    RDF 1.1 NTriples: [10] UCHAR
 */
 ZIX_NODISCARD SerdStatus
-read_UCHAR(SerdReader* reader, SerdNode* node, uint32_t* code_point);
+read_UCHAR(SerdReader* reader, SerdNode* node, int* code_point);
 
 /**
    Read an escape like "n", starting after the initial backslash.

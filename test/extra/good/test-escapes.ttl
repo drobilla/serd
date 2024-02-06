@@ -1,4 +1,3 @@
 <http://example.org/eg#s>
 	<http://example.org/eg#p> """\\
-	""" ,
-		<http://example.org/\u005C> .
+	""" .
