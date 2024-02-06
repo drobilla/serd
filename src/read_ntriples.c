@@ -73,12 +73,28 @@ read_EOL(SerdReader* const reader)
 }
 
 static SerdStatus
+char_err(SerdReader* const reader, const char* const kind, const uint32_t code)
+{
+  return (code >= 0x20U && code <= 0x7EU)
+           ? r_err(reader,
+                   SERD_BAD_SYNTAX,
+                   "invalid %s character U+%04X ('%c')",
+                   kind,
+                   code,
+                   (int)code)
+           : r_err(reader,
+                   SERD_BAD_SYNTAX,
+                   "invalid %s character U+%04X",
+                   kind,
+                   code);
+}
+
+static SerdStatus
 read_IRI_scheme(SerdReader* const reader, SerdNode* const dest)
 {
   int c = peek_byte(reader);
   if (!is_alpha(c)) {
-    return r_err(
-      reader, SERD_BAD_SYNTAX, "'%c' is not a valid first IRI character", c);
+    return char_err(reader, "IRI start", (uint32_t)c);
   }
 
   SerdStatus st = SERD_SUCCESS;
@@ -89,10 +105,7 @@ read_IRI_scheme(SerdReader* const reader, SerdNode* const dest)
 
     st = is_uri_scheme_char(c)
            ? push_byte(reader, dest, eat_byte_safe(reader, c))
-           : r_err(reader,
-                   SERD_BAD_SYNTAX,
-                   "U+%04X is not a valid IRI scheme character",
-                   (unsigned)c);
+           : char_err(reader, "IRI scheme", (uint32_t)c);
   }
 
   return st ? st : SERD_BAD_SYNTAX;
@@ -115,8 +128,7 @@ read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
     case '{':
     case '|':
     case '}':
-      return r_err(
-        reader, SERD_BAD_SYNTAX, "'%c' is not a valid IRI character", c);
+      return char_err(reader, "IRI", (uint32_t)c);
 
     case '>':
       return SERD_SUCCESS;
@@ -124,8 +136,7 @@ read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
     case '\\':
       if (!(st = read_UCHAR(reader, node, &code)) &&
           (code == ' ' || code == '<' || code == '>')) {
-        return r_err(
-          reader, SERD_BAD_SYNTAX, "U+%04X is not a valid IRI character", code);
+        return char_err(reader, "IRI", code);
       }
       break;
 
@@ -137,11 +148,7 @@ read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
       } else if (c < 0) {
         st = r_err(reader, SERD_BAD_SYNTAX, "unexpected end of file");
       } else {
-        st = r_err(reader,
-                   SERD_BAD_SYNTAX,
-                   "control character U+%04X is not a valid IRI character",
-                   (uint32_t)c);
-
+        st = char_err(reader, "IRI", (uint32_t)c);
         if (!reader->strict) {
           st = push_byte(reader, node, c);
         }
@@ -225,7 +232,6 @@ read_STRING_LITERAL(SerdReader* const reader,
 
   return tolerate_status(reader, st) ? SERD_SUCCESS : st;
 }
-
 SerdStatus
 read_PN_CHARS_BASE(SerdReader* const reader, SerdNode* const dest)
 {
@@ -244,8 +250,7 @@ read_PN_CHARS_BASE(SerdReader* const reader, SerdNode* const dest)
   TRY(st, read_utf8_code_point(reader, dest, &code, (uint8_t)c));
 
   if (!is_PN_CHARS_BASE((int)code)) {
-    r_err(
-      reader, SERD_BAD_SYNTAX, "U+%04X is not a valid name character", code);
+    char_err(reader, "name", code);
     if (reader->strict) {
       return SERD_BAD_SYNTAX;
     }
