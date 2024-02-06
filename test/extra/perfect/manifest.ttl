@@ -16,7 +16,7 @@
 		<#test-lang>
 		<#test-list>
 		<#test-triple>
-		<#test-uri-escape>
+		<#test-uri-chars>
 		<#test-uri-query>
 		<#test-utf8>
 		<#test-utf8-uri>
@@ -82,11 +82,11 @@
 	mf:name "test-triple" ;
 	mf:result <test-triple.nt> .
 
-<#test-uri-escape>
+<#test-uri-chars>
 	a rdft:TestTurtleEval ;
-	mf:action <test-uri-escape.ttl> ;
-	mf:name "test-uri-escape" ;
-	mf:result <test-uri-escape.nt> .
+	mf:action <test-uri-chars.ttl> ;
+	mf:name "test-uri-chars" ;
+	mf:result <test-uri-chars.nt> .
 
 <#test-uri-query>
 	a rdft:TestTurtleEval ;

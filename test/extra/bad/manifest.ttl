@@ -127,6 +127,18 @@
 		<#bad-true-predicate>
 		<#bad-true-subject>
 		<#bad-uri-escape>
+		<#bad-uri-escaped-backslash>
+		<#bad-uri-escaped-backspace>
+		<#bad-uri-escaped-bar>
+		<#bad-uri-escaped-caret>
+		<#bad-uri-escaped-closing-brace>
+		<#bad-uri-escaped-double-quotes>
+		<#bad-uri-escaped-grave>
+		<#bad-uri-escaped-greater-than>
+		<#bad-uri-escaped-less-than>
+		<#bad-uri-escaped-opening-brace>
+		<#bad-uri-escaped-percent>
+		<#bad-uri-escaped-space>
 		<#bad-uri-scheme>
 		<#bad-uri-scheme-start>
 		<#bad-uri-truncated>
@@ -738,6 +750,71 @@
 	a rdft:TestTurtleNegativeSyntax ;
 	mf:action <bad-uri-escape.ttl> ;
 	mf:name "bad-uri-escape" .
+
+<#bad-uri-escaped-backslash>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-uri-escaped-backslash.ttl> ;
+	mf:name "bad-uri-escaped-backslash" .
+
+<#bad-uri-escaped-backspace>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-uri-escaped-backspace.ttl> ;
+	mf:name "bad-uri-escaped-backspace" .
+
+<#bad-uri-escaped-bar>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-uri-escaped-bar.ttl> ;
+	mf:name "bad-uri-escaped-bar" .
+
+<#bad-uri-escaped-caret>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-uri-escaped-caret.ttl> ;
+	mf:name "bad-uri-escaped-caret" .
+
+<#bad-uri-escaped-closing-brace>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-uri-escaped-closing-brace.ttl> ;
+	mf:name "bad-uri-escaped-closing-brace" .
+
+<#bad-uri-escaped-double-quotes>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-uri-escaped-double-quotes.ttl> ;
+	mf:name "bad-uri-escaped-double-quotes" .
+
+<#bad-uri-escaped-grave>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-uri-escaped-grave.ttl> ;
+	mf:name "bad-uri-escaped-grave" .
+
+<#bad-uri-escaped-greater-than>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-uri-escaped-greater-than.ttl> ;
+	mf:name "bad-uri-escaped-greater-than" .
+
+<#bad-uri-escaped-less-than>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-uri-escaped-less-than.ttl> ;
+	mf:name "bad-uri-escaped-less-than" .
+
+<#bad-uri-escaped-opening-brace>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-uri-escaped-opening-brace.ttl> ;
+	mf:name "bad-uri-escaped-opening-brace" .
+
+<#bad-uri-escaped-percent>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-uri-escaped-percent.ttl> ;
+	mf:name "bad-uri-escaped-percent" .
+
+<#bad-uri-escaped-space>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-uri-escaped-space.ttl> ;
+	mf:name "bad-uri-escaped-space" .
+
+<#bad-uri-escaped-backslash>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-uri-escaped-backslash.ttl> ;
+	mf:name "bad-uri-escaped-backslash" .
 
 <#bad-uri-scheme>
 	a rdft:TestNTriplesNegativeSyntax ;
