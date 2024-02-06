@@ -55,23 +55,23 @@ serd_byte_source_open_source(ZixAllocator*   allocator,
 SerdStatus
 serd_byte_source_close(ZixAllocator* allocator, SerdByteSource* source);
 
-SerdStatus
+ZIX_NODISCARD SerdStatus
 serd_byte_source_prepare(SerdByteSource* source);
 
-SerdStatus
+ZIX_NODISCARD SerdStatus
 serd_byte_source_page(SerdByteSource* source);
 
-SerdStatus
+ZIX_NODISCARD SerdStatus
 serd_byte_source_skip_bom(SerdByteSource* source);
 
-ZIX_PURE_FUNC static inline uint8_t
+ZIX_NODISCARD ZIX_PURE_FUNC static inline uint8_t
 serd_byte_source_peek(SerdByteSource* const source)
 {
   assert(source->prepared);
   return source->read_buf[source->read_head];
 }
 
-static inline SerdStatus
+ZIX_NODISCARD static inline SerdStatus
 serd_byte_source_advance(SerdByteSource* const source)
 {
   SerdStatus st      = SERD_SUCCESS;
@@ -93,7 +93,7 @@ serd_byte_source_advance(SerdByteSource* const source)
     source->eof = source->read_buf[++source->read_head] == '\0';
   }
 
-  return (was_eof && source->eof) ? SERD_FAILURE : st;
+  return (!st && was_eof && source->eof) ? SERD_FAILURE : st;
 }
 
 #endif // SERD_SRC_BYTE_SOURCE_H

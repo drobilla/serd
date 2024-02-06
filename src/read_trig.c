@@ -22,7 +22,7 @@ read_wrappedGraph(SerdReader* const reader, ReadContext* const ctx)
 {
   SerdStatus st = SERD_SUCCESS;
   TRY(st, eat_byte_check(reader, '{'));
-  read_turtle_ws_star(reader);
+  TRY(st, read_turtle_ws_star(reader));
 
   while (peek_byte(reader) != '}') {
     const size_t orig_stack_size = reader->stack.size;
@@ -39,15 +39,15 @@ read_wrappedGraph(SerdReader* const reader, ReadContext* const ctx)
     }
 
     serd_stack_pop_to(&reader->stack, orig_stack_size);
-    read_turtle_ws_star(reader);
+    TRY(st, read_turtle_ws_star(reader));
     if (peek_byte(reader) == '.') {
-      skip_byte(reader, '.');
+      TRY(st, skip_byte(reader, '.'));
     }
-    read_turtle_ws_star(reader);
+    TRY(st, read_turtle_ws_star(reader));
   }
 
-  skip_byte(reader, '}');
-  read_turtle_ws_star(reader);
+  TRY(st, skip_byte(reader, '}'));
+  TRY(st, read_turtle_ws_star(reader));
   if (peek_byte(reader) == '.') {
     return r_err(reader, SERD_BAD_SYNTAX, "graph followed by '.'");
   }
@@ -63,8 +63,8 @@ read_labelOrSubject(SerdReader* const reader, TokenHeader** const dest)
 
   switch (peek_byte(reader)) {
   case '[':
-    skip_byte(reader, '[');
-    read_turtle_ws_star(reader);
+    TRY(st, skip_byte(reader, '['));
+    TRY(st, read_turtle_ws_star(reader));
     TRY(st, eat_byte_check(reader, ']'));
     *dest = blank_id(reader);
     return *dest ? SERD_SUCCESS : SERD_BAD_STACK;
@@ -98,9 +98,9 @@ read_sparql_directive(SerdReader* const        reader,
 
   if (token_equals(token, graph_token)) {
     SerdStatus st = SERD_SUCCESS;
-    read_turtle_ws_star(reader);
+    TRY(st, read_turtle_ws_star(reader));
     TRY(st, read_labelOrSubject(reader, &ctx->graph));
-    read_turtle_ws_star(reader);
+    TRY(st, read_turtle_ws_star(reader));
     return read_wrappedGraph(reader, ctx);
   }
 
@@ -115,10 +115,7 @@ read_block(SerdReader* const reader, ReadContext* const ctx)
   // Try to read a subject, though it may actually be a directive or graph name
   TokenHeader* token  = NULL;
   int          s_type = 0;
-  if ((st = read_turtle_subject(reader, *ctx, &token, &s_type)) >
-      SERD_FAILURE) {
-    return st;
-  }
+  TRY_FAILING(st, read_turtle_subject(reader, *ctx, &token, &s_type));
 
   // Try to interpret as a SPARQL "PREFIX" or "BASE" directive
   if (st && (st = read_sparql_directive(reader, ctx, token)) != SERD_FAILURE) {
@@ -126,7 +123,7 @@ read_block(SerdReader* const reader, ReadContext* const ctx)
   }
 
   // Try to interpret as a named TriG graph like "graphname { ..."
-  read_turtle_ws_star(reader);
+  TRY(st, read_turtle_ws_star(reader));
   if (peek_byte(reader) == '{') {
     if (s_type == '(' || (s_type == '[' && !*ctx->flags)) {
       return r_err(reader, SERD_BAD_SYNTAX, "invalid graph name");
@@ -134,10 +131,6 @@ read_block(SerdReader* const reader, ReadContext* const ctx)
 
     ctx->graph = token;
     return read_wrappedGraph(reader, ctx);
-  }
-
-  if (st) {
-    return r_err(reader, SERD_BAD_SYNTAX, "expected directive or subject");
   }
 
   // Our token is really a subject, read some triples
@@ -161,9 +154,10 @@ read_trig_statement(SerdReader* const reader)
 {
   SerdEventFlags flags = 0U;
   ReadContext    ctx   = {NULL, NULL, NULL, &flags};
+  SerdStatus     st    = SERD_SUCCESS;
 
   // Skip whitespace and get the first byte
-  read_turtle_ws_star(reader);
+  TRY(st, read_turtle_ws_star(reader));
   const int c = peek_byte(reader);
   if (c < 0) {
     return SERD_FAILURE; // EOF
@@ -172,7 +166,7 @@ read_trig_statement(SerdReader* const reader)
   // Handle nice cases we can distinguish from the next byte
   switch (c) {
   case '\0':
-    eat_byte(reader);
+    TRY(st, skip_byte(reader, '\0'));
     return SERD_FAILURE;
 
   case '@':

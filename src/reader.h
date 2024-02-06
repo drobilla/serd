@@ -53,7 +53,7 @@ struct SerdReaderImpl {
   bool            seen_genid;
 };
 
-SerdStatus
+ZIX_NODISCARD SerdStatus
 skip_horizontal_whitespace(SerdReader* reader);
 
 ZIX_LOG_FUNC(3, 4)
@@ -105,52 +105,34 @@ pop_last_node_char(SerdReader* reader, TokenHeader* node);
 SerdStatus
 emit_event(const SerdReader* reader, SerdEvent event);
 
-SerdStatus
+ZIX_NODISCARD SerdStatus
 emit_statement(const SerdReader*  reader,
                ReadContext        ctx,
                const TokenHeader* object,
                const TokenHeader* meta);
 
-static inline int
-peek_byte(SerdReader* const reader)
+ZIX_NODISCARD static inline SerdStatus
+accept_failure(SerdStatus st)
+{
+  return st == SERD_FAILURE ? SERD_SUCCESS : st;
+}
+
+ZIX_NODISCARD static inline int
+peek_byte(SerdReader* reader)
 {
   SerdByteSource* source = &reader->source;
 
   return source->eof ? -1 : (int)source->read_buf[source->read_head];
 }
 
-static inline SerdStatus
+ZIX_NODISCARD static inline SerdStatus
 skip_byte(SerdReader* const reader, const int byte)
 {
   (void)byte;
 
   assert(peek_byte(reader) == byte);
 
-  const SerdStatus st = serd_byte_source_advance(&reader->source);
-  return st > SERD_FAILURE ? st : SERD_SUCCESS;
-}
-
-static inline int
-eat_byte(SerdReader* const reader)
-{
-  const int c = peek_byte(reader);
-
-  if (c >= 0) {
-    serd_byte_source_advance(&reader->source);
-  }
-
-  return c;
-}
-
-ZIX_NODISCARD static inline int
-eat_byte_safe(SerdReader* const reader, const int byte)
-{
-  (void)byte;
-
-  assert(peek_byte(reader) == byte);
-
-  serd_byte_source_advance(&reader->source);
-  return byte;
+  return accept_failure(serd_byte_source_advance(&reader->source));
 }
 
 ZIX_NODISCARD static inline SerdStatus
@@ -161,8 +143,7 @@ eat_byte_check(SerdReader* const reader, const int byte)
     return r_err(reader, SERD_BAD_SYNTAX, "expected '%c'", byte);
   }
 
-  skip_byte(reader, c);
-  return SERD_SUCCESS;
+  return skip_byte(reader, c);
 }
 
 ZIX_NODISCARD static inline SerdStatus
@@ -208,6 +189,20 @@ push_bytes(SerdReader* const    reader,
   reader->stack.size += len;
   node->length += len;
   return SERD_SUCCESS;
+}
+
+ZIX_NODISCARD static inline SerdStatus
+eat_push_byte(SerdReader* const reader, TokenHeader* const node, const int c)
+{
+  assert(peek_byte(reader) == c);
+
+  SerdStatus st = SERD_SUCCESS;
+
+  if (!(st = accept_failure(serd_byte_source_advance(&reader->source)))) {
+    st = push_byte(reader, node, c);
+  }
+
+  return st;
 }
 
 #endif // SERD_SRC_READER_H
