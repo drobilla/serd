@@ -102,7 +102,7 @@ SerdStatus
 read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
 {
   SerdStatus st   = SERD_SUCCESS;
-  uint32_t   code = 0U;
+  int        code = 0;
 
   while (st <= SERD_FAILURE) {
     const int c = peek_byte(reader);
@@ -116,11 +116,10 @@ read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
       st = read_utf8_continuation(reader, node, (uint8_t)c);
     } else if (c == '\\') {
       if (!(st = read_UCHAR(reader, node, &code)) &&
-          (code == ' ' || code == '<' || code == '>')) {
-        st = r_err_char(reader, "IRI", (int)code);
+          (code == '%' || !is_IRIREF(code))) {
+        st = r_err_char(reader, "IRI", code);
       }
-    } else if (c > 0x20 && c != '"' && c != '<' && c != '^' && c != '`' &&
-               c != '{' && c != '|' && c != '}') {
+    } else if (c > 0 && c < 0x7F && is_IRIREF(c)) {
       st = push_byte(reader, node, c);
     } else {
       st = r_err_char(reader, "IRI", c);
@@ -165,7 +164,7 @@ SerdStatus
 read_string_escape(SerdReader* const reader, SerdNode* const ref)
 {
   const SerdStatus st   = read_ECHAR(reader, ref);
-  uint32_t         code = 0U;
+  int              code = 0;
 
   return st == SERD_FAILURE ? read_UCHAR(reader, ref, &code) : st;
 }
@@ -354,7 +353,7 @@ utf8_from_codepoint(uint8_t* const out, const uint32_t code)
 SerdStatus
 read_UCHAR(SerdReader* const reader,
            SerdNode* const   node,
-           uint32_t* const   code_point)
+           int* const        code_point)
 {
   SerdStatus st = SERD_SUCCESS;
 
@@ -384,7 +383,8 @@ read_UCHAR(SerdReader* const reader,
                            : push_bytes(reader, node, replacement_char, 3));
   }
 
-  *code_point = code;
+  assert(code <= 0x0010FFFFU);
+  *code_point = (int)code;
   return push_bytes(reader, node, buf, size);
 }
 
