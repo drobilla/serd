@@ -15,7 +15,6 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
 static SerdStatus
@@ -514,6 +513,8 @@ serd_write_file_uri(const ZixStringView path,
                     const SerdWriteFunc sink,
                     void* const         stream)
 {
+  static const char hex_chars[] = "0123456789ABCDEF";
+
   assert(sink);
   assert(stream);
 
@@ -539,10 +540,9 @@ serd_write_file_uri(const ZixStringView path,
       len += sink("/", 1, 1, stream);
 #endif
     } else {
-      char escape_str[10] = {'%', 0, 0, 0, 0, 0, 0, 0, 0, 0};
-      snprintf(
-        escape_str + 1, sizeof(escape_str) - 1, "%X", (unsigned)path.data[i]);
-      len += sink(escape_str, 1, 3, stream);
+      const uint8_t c        = (uint8_t)path.data[i];
+      const char    escape[] = {'%', hex_chars[c >> 4U], hex_chars[c & 0x0FU]};
+      len += sink(escape, 1, 3, stream);
     }
   }
 
