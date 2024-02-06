@@ -9,6 +9,7 @@ serd (1.1.1) unstable; urgency=medium
   * Make nodes opaque
   * Preserve long or short quoting from input documents
   * Refine and simplify command-line interface to support new features
+  * Refuse to read or write invalid URI characters
   * Refuse to write invalid text in URIs
   * Remove SERD_DISABLE_DEPRECATED and SERD_DEPRECATED_BY
   * Remove serd_uri_to_path()

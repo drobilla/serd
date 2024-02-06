@@ -684,7 +684,18 @@ test_write_bad_uri(void)
 
   SerdNode* s = serd_node_new(NULL, serd_a_uri_string("http://example.org/s"));
   SerdNode* p = serd_node_new(NULL, serd_a_uri_string("http://example.org/p"));
-  SerdNode* rel = serd_node_new(NULL, serd_a_uri_string("rel"));
+  SerdNode* rel           = serd_node_new(NULL, serd_a_uri_string("rel"));
+  const char* junk_uris[] = {
+    "http://exam ple.org/",
+    "http://example.org/\"quoted\"",
+    "http://example.org/{braced}",
+    "http://example.org/<bracketed>",
+    "http://example.org/back\\slash",
+    "http://example.org/c^rat",
+    "http://example.org/gr`ve",
+    "http://example.org/p|pe",
+    NULL,
+  };
 
   SerdBuffer       buffer = {NULL, NULL, 0};
   SerdOutputStream output = serd_open_output_buffer(&buffer);
@@ -693,10 +704,21 @@ test_write_bad_uri(void)
 
   assert(writer);
 
-  const SerdStatus st =
-    serd_sink_write(serd_writer_sink(writer), 0U, s, p, rel, NULL);
-  assert(st);
+  SerdStatus st = SERD_SUCCESS;
+
+  st = serd_sink_write(serd_writer_sink(writer), 0U, s, p, rel, NULL);
   assert(st == SERD_BAD_ARG);
+
+  for (const char** j = junk_uris; *j; ++j) {
+    const char* junk_uri_str = *j;
+
+    SerdNode* junk = serd_node_new(NULL, serd_a_uri_string(junk_uri_str));
+
+    st = serd_sink_write(serd_writer_sink(writer), 0U, s, p, junk, NULL);
+    assert(st == SERD_BAD_URI);
+
+    serd_node_free(NULL, junk);
+  }
 
   serd_writer_free(writer);
   serd_close_output(&output);
