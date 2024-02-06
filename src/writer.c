@@ -3,6 +3,7 @@
 
 #include "block_dumper.h"
 #include "namespaces.h"
+#include "ntriples.h"
 #include "stack.h"
 #include "string_utils.h"
 #include "symbols.h"
@@ -440,8 +441,7 @@ write_uri_character(SerdWriter* const writer, const uint8_t* const utf8)
 static bool
 uri_must_escape(const uint8_t c)
 {
-  return (c == '"') || (c == '<') || (c == '>') || (c == '\\') || (c == '^') ||
-         (c == '`') || in_range(c, '{', '}') || !in_range(c, 0x21, 0x7E);
+  return c > 0x7EU || !is_IRIREF(c);
 }
 
 static size_t
@@ -474,6 +474,12 @@ write_uri_text(SerdWriter* const writer,
     result.read_count += len;
     if (result.status || ((i = j) == n_bytes)) {
       break; // Reached end
+    }
+
+    const uint8_t c = utf8[i];
+    if (c >= 0x20U && c < 0x80U && !is_IRIREF(c)) {
+      result.status = SERD_BAD_URI;
+      break;
     }
 
     // Write character (escape or UTF-8)
