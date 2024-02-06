@@ -18,7 +18,7 @@
 
    RDF 1.1 Turtle: [161s] WS (but here with a *)
 */
-bool
+ZIX_NODISCARD SerdStatus
 read_turtle_ws_star(SerdReader* reader);
 
 // Nonterminals

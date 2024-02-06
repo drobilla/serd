@@ -42,24 +42,27 @@ r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
 SerdStatus
 skip_horizontal_whitespace(SerdReader* const reader)
 {
-  while (peek_byte(reader) == '\t' || peek_byte(reader) == ' ') {
-    eat_byte(reader);
+  SerdStatus st = SERD_SUCCESS;
+
+  for (int c = 0; !st && (c = peek_byte(reader)) && (c == '\t' || c == ' ');) {
+    st = skip_byte(reader, c);
   }
 
-  return SERD_SUCCESS;
+  return st;
 }
 
 SerdStatus
 serd_reader_skip_until_byte(SerdReader* const reader, const uint8_t byte)
 {
-  int c = peek_byte(reader);
+  SerdStatus st = SERD_SUCCESS;
+  int        c  = peek_byte(reader);
 
-  while (c != byte && c != EOF) {
-    skip_byte(reader, c);
-    c = peek_byte(reader);
+  while (!st && c > 0 && c != byte) {
+    st = skip_byte(reader, c);
+    c  = peek_byte(reader);
   }
 
-  return c == EOF ? SERD_FAILURE : SERD_SUCCESS;
+  return st ? st : c > 0 ? SERD_FAILURE : SERD_SUCCESS;
 }
 
 void
