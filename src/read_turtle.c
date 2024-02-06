@@ -24,6 +24,7 @@
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/status.h"
+#include "serd/stream_result.h"
 #include "serd/uri.h"
 #include "zix/attributes.h"
 #include "zix/string_view.h"
@@ -262,23 +263,18 @@ read_PN_PREFIX(SerdReader* const reader, SerdNode* const dest)
 typedef struct {
   SerdReader* reader;
   SerdNode*   node;
-  SerdStatus  status;
 } WriteNodeContext;
 
-static size_t
+static SerdStreamResult
 write_to_stack(const void* const ZIX_NONNULL buf,
-               const size_t                  size,
-               const size_t                  nmemb,
+               const size_t                  len,
                void* const ZIX_NONNULL       stream)
 {
   WriteNodeContext* const ctx  = (WriteNodeContext*)stream;
   const uint8_t* const    utf8 = (const uint8_t*)buf;
-
-  if (!ctx->status) {
-    ctx->status = push_bytes(ctx->reader, ctx->node, utf8, nmemb * size);
-  }
-
-  return nmemb;
+  const SerdStatus        st   = push_bytes(ctx->reader, ctx->node, utf8, len);
+  const SerdStreamResult  r    = {st, st ? 0U : len};
+  return r;
 }
 
 SERD_NODISCARD static SerdStatus
@@ -310,15 +306,16 @@ resolve_IRIREF(SerdReader* const reader,
   }
 
   // Write resolved URI to the temporary node
-  WriteNodeContext ctx = {reader, temp, SERD_SUCCESS};
-  temp->length         = serd_write_uri(uri, write_to_stack, &ctx);
-  if (!ctx.status) {
+  WriteNodeContext       ctx = {reader, temp};
+  const SerdStreamResult wr  = serd_write_uri(uri, write_to_stack, &ctx);
+  if (!wr.status) {
     // Replace the destination with the new expanded node
+    temp->length = wr.count;
     memmove(dest, temp, serd_node_total_size(temp));
     serd_stack_pop_to(&reader->stack, string_start_offset + dest->length);
   }
 
-  return ctx.status;
+  return wr.status;
 }
 
 SERD_NODISCARD static SerdStatus

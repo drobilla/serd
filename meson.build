@@ -164,6 +164,7 @@ sources = files(
   'src/sink.c',
   'src/statement.c',
   'src/statement.c',
+  'src/stream_utils.c',
   'src/string.c',
   'src/syntax.c',
   'src/tee.c',

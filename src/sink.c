@@ -11,7 +11,7 @@
 #include "zix/allocator.h"
 
 #include <assert.h>
-#include <stdlib.h>
+#include <stddef.h>
 
 SerdSink*
 serd_sink_new(ZixAllocator* const allocator,

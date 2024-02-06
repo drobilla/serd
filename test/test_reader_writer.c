@@ -12,6 +12,7 @@
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/status.h"
+#include "serd/stream_result.h"
 #include "serd/syntax.h"
 #include "serd/tee.h"
 #include "serd/world.h"
@@ -70,28 +71,25 @@ test_sink(void* handle, const SerdEvent* event)
   return SERD_SUCCESS;
 }
 
-static size_t
-faulty_sink(const void* const buf,
-            const size_t      size,
-            const size_t      nmemb,
-            void* const       stream)
+static SerdStreamResult
+faulty_sink(const void* const buf, const size_t len, void* const stream)
 {
   (void)buf;
-  (void)size;
-  (void)nmemb;
 
-  assert(size == 1);
+  SerdStreamResult r = {SERD_SUCCESS, 0U};
 
   ErrorContext* const ctx           = (ErrorContext*)stream;
-  const size_t        new_n_written = ctx->n_written + nmemb;
+  const size_t        new_n_written = ctx->n_written + len;
   if (new_n_written >= ctx->error_offset) {
-    errno = EINVAL;
-    return 0U;
+    errno    = EINVAL;
+    r.status = SERD_BAD_WRITE;
+    return r;
   }
 
-  ctx->n_written += nmemb;
-  errno = 0;
-  return nmemb;
+  ctx->n_written += len;
+  errno   = 0;
+  r.count = len;
+  return r;
 }
 
 static void
@@ -100,7 +98,6 @@ test_output_stream(void)
   SerdOutputStream output = serd_open_output_file("/does/not/exist");
   assert(!output.stream);
   assert(!output.write);
-  assert(!output.error);
   assert(!output.close);
 }
 
@@ -120,8 +117,7 @@ test_write_errors(void)
       ctx.error_offset = o;
 
       SerdEnv* const   env = serd_env_new(NULL, zix_empty_string());
-      SerdOutputStream out =
-        serd_open_output_stream(faulty_sink, NULL, NULL, &ctx);
+      SerdOutputStream out = serd_open_output_stream(faulty_sink, NULL, &ctx);
 
       SerdWriter* const writer =
         serd_writer_new(world, syntax, 0U, env, &out, 1U);

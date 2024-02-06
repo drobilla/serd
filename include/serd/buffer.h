@@ -5,6 +5,8 @@
 #define SERD_BUFFER_H
 
 #include "serd/attributes.h"
+#include "serd/status.h"
+#include "serd/stream_result.h"
 #include "zix/allocator.h"
 #include "zix/attributes.h"
 
@@ -41,10 +43,9 @@ typedef struct {
    Note that when writing a string, the string in the buffer will not be
    null-terminated until serd_buffer_close() is called.
 */
-SERD_API size_t
+SERD_API SerdStreamResult
 serd_buffer_write(const void* ZIX_NONNULL buf,
-                  size_t                  size,
-                  size_t                  nmemb,
+                  size_t                  len,
                   void* ZIX_NONNULL       stream);
 
 /**
@@ -53,7 +54,7 @@ serd_buffer_write(const void* ZIX_NONNULL buf,
    This writes a terminating null byte, so the contents of the buffer are safe
    to read as a string after this call.
 */
-SERD_API int
+SERD_API SerdStatus
 serd_buffer_close(void* ZIX_NONNULL stream);
 
 /**

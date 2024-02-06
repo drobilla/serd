@@ -613,16 +613,14 @@ serd_node_construct_binary(
   return result(SERD_SUCCESS, total_size);
 }
 
-static size_t
-string_sink(const void* const buf,
-            const size_t      size,
-            const size_t      nmemb,
-            void* const       stream)
+static SerdStreamResult
+string_sink(const void* const buf, const size_t len, void* const stream)
 {
-  char** ptr = (char**)stream;
-  memcpy(*ptr, buf, size * nmemb);
-  *ptr += size * nmemb;
-  return nmemb;
+  char** const ptr = (char**)stream;
+  memcpy(*ptr, buf, len);
+  *ptr += len;
+  const SerdStreamResult r = {SERD_SUCCESS, len};
+  return r;
 }
 
 static SerdStreamResult
@@ -643,8 +641,10 @@ serd_node_construct_uri(const size_t      buf_size,
   node->type           = SERD_URI;
 
   // Serialise URI to node body
-  char*        ptr           = serd_node_buffer(node);
-  const size_t actual_length = serd_write_uri(uri, string_sink, &ptr);
+  char*                  ptr           = serd_node_buffer(node);
+  const SerdStreamResult wr            = serd_write_uri(uri, string_sink, &ptr);
+  const size_t           actual_length = wr.count;
+  assert(!wr.status);
   assert(actual_length == length);
 
   serd_node_buffer(node)[actual_length] = '\0';
@@ -865,21 +865,19 @@ typedef struct {
   size_t offset;
 } ConstructWriteHead;
 
-static size_t
-construct_write(const void* const buf,
-                const size_t      size,
-                const size_t      nmemb,
-                void* const       stream)
+static SerdStreamResult
+construct_write(const void* const buf, const size_t n_bytes, void* const stream)
 {
-  const size_t              n_bytes = size * nmemb;
-  ConstructWriteHead* const head    = (ConstructWriteHead*)stream;
+  ConstructWriteHead* const head = (ConstructWriteHead*)stream;
 
   if (head->buf && head->offset + n_bytes <= head->len) {
     memcpy(head->buf + head->offset, buf, n_bytes);
   }
 
   head->offset += n_bytes;
-  return n_bytes;
+
+  const SerdStreamResult r = {SERD_SUCCESS, n_bytes};
+  return r;
 }
 
 static SerdStreamResult
@@ -888,25 +886,25 @@ serd_node_construct_file_uri(const size_t        buf_size,
                              const ZixStringView path,
                              const ZixStringView hostname)
 {
-  SerdNode* const    node  = (SerdNode*)buf;
-  ConstructWriteHead head  = {(char*)buf, buf_size, 0U};
-  size_t             count = 0U;
+  SerdNode* const    node = (SerdNode*)buf;
+  ConstructWriteHead head = {(char*)buf, buf_size, 0U};
 
   // Write node header
-  SerdNode header = {0U, 0U, SERD_URI};
-  count += construct_write(&header, sizeof(header), 1, &head);
+  SerdNode               header = {0U, 0U, SERD_URI};
+  const SerdStreamResult hr = construct_write(&header, sizeof(header), &head);
 
   // Write URI string node body
-  const size_t length =
+  const SerdStreamResult br =
     serd_write_file_uri(path, hostname, construct_write, &head);
 
   // Terminate string and pad with at least 1 additional null byte
+  const size_t length        = br.count;
   const size_t padded_length = serd_node_pad_length(length);
-  count += length;
   for (size_t p = 0U; p < padded_length - length; ++p) {
-    count += construct_write("", 1, 1, &head);
+    construct_write("", 1, &head);
   }
 
+  const size_t count = hr.count + padded_length;
   if (!buf || count > buf_size) {
     return result(SERD_NO_SPACE, count);
   }
