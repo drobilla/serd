@@ -110,8 +110,8 @@ read_PN_CHARS(SerdReader* reader, SerdNode* dest);
 
    RDF 1.1 NTriples: [162s] HEX
 */
-ZIX_NODISCARD uint8_t
-read_HEX(SerdReader* reader);
+ZIX_NODISCARD SerdStatus
+read_HEX(SerdReader* reader, uint8_t* dest);
 
 // Nonterminals
 

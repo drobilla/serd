@@ -6,8 +6,6 @@
 #include "reader.h"
 #include "string_utils.h"
 
-#include <stdio.h>
-
 #define MAX_UTF8_BYTES 4U
 
 static SerdStatus
@@ -23,6 +21,8 @@ read_utf8_continuation_bytes(SerdReader* const reader,
                              uint8_t* const    size,
                              const uint8_t     lead)
 {
+  SerdStatus st = SERD_SUCCESS;
+
   *size = utf8_num_bytes(lead);
   if (*size < 1) {
     return bad_char(reader, "0x%X is not a UTF-8 leading byte", lead);
@@ -30,9 +30,9 @@ read_utf8_continuation_bytes(SerdReader* const reader,
 
   bytes[0] = lead;
 
-  for (uint8_t i = 1U; i < *size; ++i) {
+  for (uint8_t i = 1U; !st && i < *size; ++i) {
     const int b = peek_byte(reader);
-    if (b == EOF) {
+    if (b < 0) {
       return r_err(reader, SERD_NO_DATA, "unexpected end of input");
     }
 
@@ -41,11 +41,11 @@ read_utf8_continuation_bytes(SerdReader* const reader,
       return bad_char(reader, "0x%X is not a UTF-8 continuation byte", byte);
     }
 
-    skip_byte(reader, b);
+    st       = skip_byte(reader, b);
     bytes[i] = byte;
   }
 
-  return SERD_SUCCESS;
+  return st;
 }
 
 SerdStatus
@@ -70,20 +70,21 @@ read_utf8_code_point(SerdReader* const reader,
                      uint32_t* const   code,
                      const uint8_t     lead)
 {
-  uint8_t size                  = 0U;
-  uint8_t bytes[MAX_UTF8_BYTES] = {lead, 0U, 0U, 0U};
+  uint8_t    size                  = 0U;
+  uint8_t    bytes[MAX_UTF8_BYTES] = {lead, 0U, 0U, 0U};
+  SerdStatus st                    = SERD_SUCCESS;
 
   *code = 0U;
 
-  skip_byte(reader, lead);
+  if (!(st = skip_byte(reader, lead))) {
+    if ((st = read_utf8_continuation_bytes(reader, bytes, &size, lead))) {
+      return reader->strict ? st
+                            : push_bytes(reader, dest, replacement_char, 3);
+    }
 
-  SerdStatus st = read_utf8_continuation_bytes(reader, bytes, &size, lead);
-  if (st) {
-    return reader->strict ? st : push_bytes(reader, dest, replacement_char, 3);
-  }
-
-  if (!(st = push_bytes(reader, dest, bytes, size))) {
-    *code = parse_counted_utf8_char(bytes, size);
+    if (!(st = push_bytes(reader, dest, bytes, size))) {
+      *code = parse_counted_utf8_char(bytes, size);
+    }
   }
 
   return st;

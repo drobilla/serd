@@ -56,7 +56,7 @@ struct SerdReaderImpl {
   bool            seen_secondary_genid;
 };
 
-SerdStatus
+ZIX_NODISCARD SerdStatus
 skip_horizontal_whitespace(SerdReader* reader);
 
 ZIX_LOG_FUNC(3, 4)
@@ -94,16 +94,22 @@ blank_id(SerdReader* reader);
 void
 set_blank_id(SerdReader* reader, SerdNode* node, size_t buf_size);
 
-SerdStatus
+ZIX_NODISCARD SerdStatus
 emit_statement_at(SerdReader*   reader,
                   ReadContext   ctx,
                   SerdNode*     o,
                   SerdCaretView caret);
 
-SerdStatus
+ZIX_NODISCARD SerdStatus
 emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o);
 
-static inline int
+ZIX_NODISCARD static inline SerdStatus
+accept_failure(SerdStatus st)
+{
+  return st == SERD_FAILURE ? SERD_SUCCESS : st;
+}
+
+ZIX_NODISCARD static inline int
 peek_byte(SerdReader* reader)
 {
   SerdByteSource* source = reader->source;
@@ -111,53 +117,31 @@ peek_byte(SerdReader* reader)
   return source->eof ? EOF : (int)source->read_buf[source->read_head];
 }
 
-static inline SerdStatus
+ZIX_NODISCARD static inline SerdStatus
 skip_byte(SerdReader* reader, const int byte)
 {
   (void)byte;
 
   assert(peek_byte(reader) == byte);
 
-  const SerdStatus st = serd_byte_source_advance(reader->source);
-  return st > SERD_FAILURE ? st : SERD_SUCCESS;
+  return accept_failure(serd_byte_source_advance(reader->source));
 }
 
-static inline int
-eat_byte(SerdReader* const reader)
-{
-  const int c = peek_byte(reader);
-
-  if (c != EOF) {
-    serd_byte_source_advance(reader->source);
-  }
-
-  return c;
-}
-
-static inline int ZIX_NODISCARD
-eat_byte_safe(SerdReader* reader, const int byte)
-{
-  (void)byte;
-
-  assert(peek_byte(reader) == byte);
-
-  serd_byte_source_advance(reader->source);
-  return byte;
-}
-
-static inline SerdStatus ZIX_NODISCARD
+ZIX_NODISCARD static inline SerdStatus
 eat_byte_check(SerdReader* reader, const int byte)
 {
-  const int c = peek_byte(reader);
+  SerdStatus st = SERD_BAD_SYNTAX;
+  const int  c  = peek_byte(reader);
   if (c != byte) {
-    return r_err(reader, SERD_BAD_SYNTAX, "expected '%c', not '%c'", byte, c);
+    return (c >= 0x20 && c <= 0x7E)
+             ? r_err(reader, st, "expected '%c', not '%c'", byte, c)
+             : r_err(reader, st, "expected '%c'", byte);
   }
 
-  skip_byte(reader, c);
-  return SERD_SUCCESS;
+  return skip_byte(reader, c);
 }
 
-static inline SerdStatus
+ZIX_NODISCARD static inline SerdStatus
 eat_string(SerdReader* reader, const char* str, unsigned n)
 {
   SerdStatus st = SERD_SUCCESS;
@@ -169,7 +153,7 @@ eat_string(SerdReader* reader, const char* str, unsigned n)
   return st;
 }
 
-static inline SerdStatus
+ZIX_NODISCARD static inline SerdStatus
 push_byte(SerdReader* reader, SerdNode* node, const int c)
 {
   assert(c != EOF);
@@ -184,7 +168,7 @@ push_byte(SerdReader* reader, SerdNode* node, const int c)
   return SERD_SUCCESS;
 }
 
-static inline SerdStatus
+ZIX_NODISCARD static inline SerdStatus
 push_bytes(SerdReader* const    reader,
            SerdNode* const      node,
            const uint8_t* const bytes,
@@ -202,6 +186,20 @@ push_bytes(SerdReader* const    reader,
   reader->stack.size += len;
   node->length += len;
   return SERD_SUCCESS;
+}
+
+ZIX_NODISCARD static inline SerdStatus
+eat_push_byte(SerdReader* const reader, SerdNode* const node, const int c)
+{
+  assert(peek_byte(reader) == c);
+
+  SerdStatus st = SERD_SUCCESS;
+
+  if (!(st = accept_failure(serd_byte_source_advance(reader->source)))) {
+    st = push_byte(reader, node, c);
+  }
+
+  return st;
 }
 
 #endif // SERD_SRC_READER_H
