@@ -6,6 +6,7 @@
 
 #include "caret.h" // IWYU pragma: keep
 
+#include "serd/attributes.h"
 #include "serd/caret.h"
 #include "serd/input_stream.h"
 #include "serd/node.h"
@@ -41,23 +42,23 @@ serd_byte_source_new_input(ZixAllocator*    allocator,
 void
 serd_byte_source_free(ZixAllocator* allocator, SerdByteSource* source);
 
-SerdStatus
+SERD_NODISCARD SerdStatus
 serd_byte_source_prepare(SerdByteSource* source);
 
-SerdStatus
+SERD_NODISCARD SerdStatus
 serd_byte_source_page(SerdByteSource* source);
 
-SerdStatus
+SERD_NODISCARD SerdStatus
 serd_byte_source_skip_bom(SerdByteSource* source);
 
-ZIX_PURE_FUNC static inline uint8_t
+SERD_NODISCARD ZIX_PURE_FUNC static inline uint8_t
 serd_byte_source_peek(SerdByteSource* source)
 {
   assert(source->prepared);
   return source->read_buf[source->read_head];
 }
 
-static inline SerdStatus
+SERD_NODISCARD static inline SerdStatus
 serd_byte_source_advance(SerdByteSource* source)
 {
   SerdStatus st      = SERD_SUCCESS;
@@ -78,7 +79,7 @@ serd_byte_source_advance(SerdByteSource* source)
     st = serd_byte_source_page(source);
   }
 
-  return (was_eof && source->eof) ? SERD_FAILURE : st;
+  return (!st && was_eof && source->eof) ? SERD_FAILURE : st;
 }
 
 #endif // SERD_SRC_BYTE_SOURCE_H
