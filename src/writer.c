@@ -254,13 +254,13 @@ pop_context(SerdWriter* writer)
 ZIX_NODISCARD static inline SerdStreamResult
 wsink(const void* buf, size_t len, SerdWriter* writer)
 {
-  return serd_block_dumper_write(&writer->output, buf, len);
+  return serd_block_dumper_write(buf, len, &writer->output);
 }
 
 ZIX_NODISCARD static inline SerdStatus
 esink(const void* buf, size_t len, SerdWriter* writer)
 {
-  return serd_block_dumper_write(&writer->output, buf, len).status;
+  return serd_block_dumper_write(buf, len, &writer->output).status;
 }
 
 ZIX_NODISCARD static inline VariableResult
@@ -415,9 +415,9 @@ write_uri(SerdWriter* const writer,
     // Write leading chunk as a single fast bulk write
     const size_t j   = next_text_index(string, i, n_bytes, uri_must_escape);
     const size_t len = j - i;
-    result.status    = esink(&string[i], len, writer);
+    result           = add_wresult(result, wsink(&utf8[i], len, writer));
     result.read_count += len;
-    if ((i = j) == n_bytes) {
+    if (result.status || ((i = j)) == n_bytes) {
       break; // Reached end
     }
 
@@ -669,23 +669,13 @@ write_long_text(SerdWriter* writer, const char* utf8, size_t n_bytes)
   return vr.status;
 }
 
-typedef struct {
-  SerdWriter* writer;
-  SerdStatus  status;
-} UriSinkContext;
-
-ZIX_NODISCARD static size_t
-uri_sink(const void* buf, size_t size, size_t nmemb, void* stream)
+ZIX_NODISCARD static SerdStreamResult
+uri_sink(void* const stream, const size_t len, const void* const buf)
 {
-  (void)size;
-  assert(size == 1);
-
-  UriSinkContext* const context = (UriSinkContext*)stream;
-  SerdWriter* const     writer  = context->writer;
-  const VariableResult  r       = write_uri(writer, (const char*)buf, nmemb);
-
-  context->status = r.status;
-  return r.write_count;
+  SerdWriter* const      writer = (SerdWriter*)stream;
+  const VariableResult   r      = write_uri(writer, (const char*)buf, len);
+  const SerdStreamResult wr     = {r.status, r.write_count};
+  return wr;
 }
 
 ZIX_NODISCARD static SerdStatus
@@ -904,14 +894,13 @@ write_full_uri_node(SerdWriter* const writer, const SerdNode* const node)
   const bool         rooted      = uri_is_under(&abs_uri, root);
   const bool         write_abs   = !supports_abbrev(writer) || !rooted;
 
-  UriSinkContext context = {writer, SERD_SUCCESS};
   if (write_abs) {
-    serd_write_uri(abs_uri, uri_sink, &context);
+    serd_write_uri(abs_uri, uri_sink, writer);
   } else {
-    serd_write_uri(serd_relative_uri(uri, base_uri), uri_sink, &context);
+    serd_write_uri(serd_relative_uri(uri, base_uri), uri_sink, writer);
   }
 
-  return context.status ? context.status : esink(">", 1, writer);
+  return esink(">", 1, writer);
 }
 
 ZIX_NODISCARD static SerdStatus

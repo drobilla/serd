@@ -7,6 +7,7 @@
 #include "warnings.h"
 
 #include "serd/node.h"
+#include "serd/stream_result.h"
 #include "zix/allocator.h"
 
 #include <assert.h>
@@ -22,24 +23,24 @@ serd_byte_source_page(SerdByteSource* const source)
 
   SERD_DISABLE_NULL_WARNINGS
 
-  const size_t n_read =
-    source->in->read(buf, 1, source->block_size, source->in->stream);
+  const SerdStreamResult r =
+    source->in->read(source->in->stream, source->block_size, buf);
 
-  source->buf_size  = n_read;
+  source->buf_size  = r.count;
   source->read_head = 0;
   source->eof       = false;
 
-  if (n_read < source->block_size) {
-    buf[n_read] = '\0';
-    if (n_read == 0) {
+  if (r.count < source->block_size) {
+    buf[r.count] = '\0';
+    if (r.count == 0) {
       source->eof = true;
-      return (source->in->error(source->in->stream) ? SERD_BAD_STREAM
-                                                    : SERD_FAILURE);
     }
   }
 
   SERD_RESTORE_WARNINGS
-  return SERD_SUCCESS;
+  return (r.status == SERD_NO_DATA) ? (r.count ? SERD_SUCCESS : SERD_FAILURE)
+         : r.status                 ? r.status
+                                    : SERD_SUCCESS;
 }
 
 static void

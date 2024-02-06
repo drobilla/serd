@@ -5,6 +5,8 @@
 #define SERD_STREAM_H
 
 #include "serd/attributes.h"
+#include "serd/status.h"
+#include "serd/stream_result.h"
 #include "zix/attributes.h"
 
 #include <stddef.h>
@@ -16,9 +18,8 @@ SERD_BEGIN_DECLS
    @ingroup serd_reading_writing
 
    These types define the interface for byte streams (generalized files) which
-   can be provided to read/write from/to any custom source/sink.  It is
-   directly compatible with the standard C `FILE` API, so the standard library
-   functions may be used directly.
+   can be provided to read/write from/to any custom source/sink.  Wrappers are
+   provided to easily create streams for a standard C `FILE`.
 
    @{
 */
@@ -30,7 +31,7 @@ SERD_BEGIN_DECLS
 
    @return Non-zero if `stream` has encountered an error.
 */
-typedef int (*SerdErrorFunc)(void* ZIX_NONNULL stream);
+typedef int (*SerdErrorFunc)(void* ZIX_UNSPECIFIED stream);
 
 /**
    Function for closing an I/O stream.
@@ -42,41 +43,60 @@ typedef int (*SerdErrorFunc)(void* ZIX_NONNULL stream);
 
    @return Non-zero if `stream` has encountered an error.
 */
-typedef int (*SerdCloseFunc)(void* ZIX_NONNULL stream);
+typedef SerdStatus (*SerdCloseFunc)(void* ZIX_UNSPECIFIED stream);
 
 /**
    Function for reading input bytes from a stream.
 
-   Identical semantics to `fread`, but may set errno for more informative error
-   reporting than supported by SerdErrorFunc.
-
+   @param stream Stream to read from.
+   @param len Number of bytes to read.
    @param buf Output buffer.
-   @param size Size of a single element of data in bytes (always 1).
-   @param nmemb Number of elements to read.
-   @param stream Stream to read from (FILE* for fread).
-   @return Number of elements (bytes) read, which is short on error.
+   @return Number of bytes read (which is short on error), and a status code.
 */
-typedef size_t (*SerdReadFunc)(void* ZIX_NONNULL     buf,
-                               size_t                size,
-                               size_t                nmemb,
-                               void* ZIX_UNSPECIFIED stream);
+typedef SerdStreamResult (*SerdReadFunc)(void* ZIX_UNSPECIFIED stream,
+                                         size_t                len,
+                                         void* ZIX_NONNULL     buf);
 
 /**
-   Function for writing output bytes to a stream.
+   Function for writing output bytes to a stream with status.
 
-   This has identical semantics to `fwrite`, but may set `errno` for more
-   informative error reporting than supported by #SerdErrorFunc.
-
+   @param stream Stream to write to.
+   @param len Number of bytes to write.
    @param buf Input buffer.
-   @param size Size of a single element of data in bytes (always 1).
-   @param nmemb Number of elements to read.
-   @param stream Stream to write to (FILE* for fread).
-   @return Number of elements (bytes) written, which is short on error.
+
+   @return Number of bytes written (which is short on error), and a status code.
 */
-typedef size_t (*SerdWriteFunc)(const void* ZIX_NONNULL buf,
-                                size_t                  size,
-                                size_t                  nmemb,
-                                void* ZIX_UNSPECIFIED   stream);
+typedef SerdStreamResult (*SerdWriteFunc)(void* ZIX_UNSPECIFIED   stream,
+                                          size_t                  len,
+                                          const void* ZIX_NONNULL buf);
+
+/**
+   Wrapper for fread() that is a SerdReadFunc.
+
+   This can be used to easily create an input stream for a FILE.
+*/
+SERD_API SerdStreamResult
+serd_fread_wrapper(void* ZIX_NONNULL stream, size_t len, void* ZIX_NONNULL buf);
+
+/**
+   Wrapper for fwrite() that is a SerdWriteFunc.
+
+   This can be used to easily create an output stream for a FILE.
+*/
+SERD_API SerdStreamResult
+serd_fwrite_wrapper(void* ZIX_NONNULL       stream,
+                    size_t                  len,
+                    const void* ZIX_NONNULL buf);
+
+/**
+   Wrapper for fclose() that is a SerdCloseFunc.
+
+   This can be used in conjunction with serd_fread_wrapper() or
+   serd_fwrite_wrapper() to create a stream for a FILE that should have
+   fclose() called on it when the stream is closed.
+*/
+SERD_API SerdStatus
+serd_fclose_wrapper(void* ZIX_NONNULL stream);
 
 /**
    @}
