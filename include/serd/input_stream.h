@@ -26,7 +26,6 @@ SERD_BEGIN_DECLS
 typedef struct {
   void* ZIX_UNSPECIFIED      stream; ///< Opaque parameter for functions
   SerdReadFunc ZIX_NONNULL   read;   ///< Read bytes from input
-  SerdErrorFunc ZIX_NULLABLE error;  ///< Stream error accessor
   SerdCloseFunc ZIX_NULLABLE close;  ///< Close input
 } SerdInputStream;
 
@@ -34,7 +33,6 @@ typedef struct {
    Open a stream that reads from a provided function.
 
    @param read_func Function to read input.
-   @param error_func Function used to detect errors.
    @param close_func Function to close the stream after reading is done.
    @param stream Opaque stream parameter for functions.
 
@@ -42,7 +40,6 @@ typedef struct {
 */
 SERD_CONST_API SerdInputStream
 serd_open_input_stream(SerdReadFunc ZIX_NONNULL   read_func,
-                       SerdErrorFunc ZIX_NONNULL  error_func,
                        SerdCloseFunc ZIX_NULLABLE close_func,
                        void* ZIX_UNSPECIFIED      stream);
 

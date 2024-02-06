@@ -6,6 +6,7 @@
 #include "serd/node.h"
 #include "serd/reader.h"
 #include "serd/stream.h"
+#include "serd/stream_result.h"
 #include "serd/string.h"
 #include "serd/syntax.h"
 #include "serd/uri.h"
@@ -22,6 +23,7 @@
 #  include <io.h>
 #endif
 
+#include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdbool.h>
@@ -82,10 +84,8 @@ serd_open_tool_output(const char* const filename)
 {
   if (!filename || !strcmp(filename, "-")) {
     serd_set_stream_utf8_mode(stdout);
-    return serd_open_output_stream((SerdWriteFunc)fwrite,
-                                   (SerdErrorFunc)ferror,
-                                   (SerdCloseFunc)fclose,
-                                   stdout);
+    return serd_open_output_stream(
+      serd_fwrite_wrapper, serd_fclose_wrapper, stdout);
   }
 
   return serd_open_output_file(filename);
@@ -141,6 +141,9 @@ serd_tool_setup(SerdTool* const   tool,
     return SERD_BAD_STREAM;
   }
 
+  const size_t out_block_size =
+    tool->out.stream == stdout ? 1U : options.block_size;
+
   // We have something to write to, so build the writing environment
   const SerdLimits limits = {options.stack_size, MAX_DEPTH};
   tool->name              = program;
@@ -155,7 +158,7 @@ serd_tool_setup(SerdTool* const   tool,
           options.output.flags,
           tool->env,
           &tool->out,
-          options.block_size))) {
+          out_block_size))) {
     LOG_ERR(program, "failed to set up writing environment\n");
     return SERD_UNKNOWN_ERROR;
   }
@@ -404,20 +407,25 @@ serd_parse_common_option(OptionIter* const iter, SerdCommonOptions* const opts)
 }
 
 /// Wrapper for getc that is compatible with SerdReadFunc but faster than fread
-static size_t
-serd_file_read_byte(void* buf, size_t size, size_t nmemb, void* stream)
+static SerdStreamResult
+serd_file_read_byte(void* const stream, const size_t len, void* const buf)
 {
-  (void)size;
-  (void)nmemb;
+  (void)len;
+
+  assert(len == 1U);
+
+  SerdStreamResult r = {SERD_SUCCESS, 0U};
 
   const int c = getc((FILE*)stream);
   if (c == EOF) {
     *((uint8_t*)buf) = 0;
-    return 0;
+    r.status         = SERD_NO_DATA;
+  } else {
+    *((uint8_t*)buf) = (uint8_t)c;
+    r.count          = 1U;
   }
 
-  *((uint8_t*)buf) = (uint8_t)c;
-  return 1;
+  return r;
 }
 
 SerdStatus
@@ -432,8 +440,10 @@ serd_read_source(SerdWorld* const        world,
   SerdReader* const reader =
     serd_reader_new(world, syntax, opts.input.flags, env, sink);
 
+  const size_t block_size = in->stream == stdin ? 1U : opts.block_size;
+
   SerdNode* const name_node = serd_node_new(NULL, serd_a_string(name));
-  SerdStatus st = serd_reader_start(reader, in, name_node, opts.block_size);
+  SerdStatus      st = serd_reader_start(reader, in, name_node, block_size);
   serd_node_free(NULL, name_node);
   if (!st) {
     st = serd_reader_read_document(reader);
@@ -447,11 +457,9 @@ static SerdInputStream
 serd_open_tool_input(const char* const filename)
 {
   if (!strcmp(filename, "-")) {
-    const SerdInputStream in = serd_open_input_stream(
-      serd_file_read_byte, (SerdErrorFunc)ferror, NULL, stdin);
-
     serd_set_stream_utf8_mode(stdin);
-    return in;
+    return serd_open_input_stream(
+      serd_file_read_byte, serd_fclose_wrapper, stdin);
   }
 
   return serd_open_input_file(filename);

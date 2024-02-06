@@ -60,9 +60,9 @@ serd_block_dumper_close(SerdBlockDumper* ZIX_NONNULL dumper);
    buffer and only actually write to the output when a whole block is ready.
 */
 static inline SerdStreamResult
-serd_block_dumper_write(SerdBlockDumper* ZIX_NONNULL const dumper,
-                        const void* ZIX_NONNULL            buf,
-                        const size_t                       size)
+serd_block_dumper_write(const void* ZIX_NONNULL      buf,
+                        const size_t                 nmemb,
+                        SerdBlockDumper* ZIX_NONNULL dumper)
 {
   SerdStreamResult              result     = {SERD_SUCCESS, 0U};
   const size_t                  block_size = dumper->block_size;
@@ -71,13 +71,11 @@ serd_block_dumper_write(SerdBlockDumper* ZIX_NONNULL const dumper,
   SERD_DISABLE_NULL_WARNINGS
 
   if (block_size == 1) {
-    result.count  = out->write(buf, 1U, size, out->stream);
-    result.status = result.count == size ? SERD_SUCCESS : SERD_BAD_WRITE;
-    return result;
+    return out->write(out->stream, nmemb, buf);
   }
 
-  while (!result.status && result.count < size) {
-    const size_t unwritten = size - result.count;
+  while (!result.status && result.count < nmemb) {
+    const size_t unwritten = nmemb - result.count;
     const size_t space     = block_size - dumper->size;
     const size_t n         = space < unwritten ? space : unwritten;
 
@@ -88,8 +86,7 @@ serd_block_dumper_write(SerdBlockDumper* ZIX_NONNULL const dumper,
 
     // Flush block if buffer is full
     if (dumper->size == block_size) {
-      const size_t n_out = out->write(dumper->buf, 1, block_size, out->stream);
-      result.status = (n_out != block_size) ? SERD_BAD_WRITE : SERD_SUCCESS;
+      result.status = out->write(out->stream, block_size, dumper->buf).status;
       dumper->size  = 0;
     }
   }

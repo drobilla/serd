@@ -73,7 +73,7 @@ serd_byte_source_advance(SerdByteSource* source)
     st = serd_byte_source_page(source);
   }
 
-  return (!st && was_eof && source->eof) ? SERD_FAILURE : st;
+  return (st == SERD_NO_DATA && was_eof && source->eof) ? SERD_FAILURE : st;
 }
 
 #endif // SERD_SRC_BYTE_SOURCE_H

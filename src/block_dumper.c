@@ -40,11 +40,11 @@ serd_block_dumper_flush(SerdBlockDumper* const dumper)
 
   if (dumper->out->stream && dumper->block_size > 1 && dumper->size > 0) {
     SERD_DISABLE_NULL_WARNINGS
-    const size_t written =
-      dumper->out->write(dumper->buf, 1, dumper->size, dumper->out->stream);
+    const SerdStreamResult r =
+      dumper->out->write(dumper->out->stream, dumper->size, dumper->buf);
     SERD_RESTORE_WARNINGS
 
-    st           = (written != dumper->size) ? SERD_BAD_WRITE : SERD_SUCCESS;
+    st           = r.status;
     dumper->size = 0;
   }
 

@@ -8,6 +8,7 @@
 #include "serd/output_stream.h"
 #include "serd/status.h"
 #include "serd/stream.h"
+#include "serd/stream_result.h"
 #include "serd/uri.h"
 #include "zix/allocator.h"
 #include "zix/string_view.h"
@@ -17,12 +18,14 @@
 #include <stdint.h>
 #include <string.h>
 
-static SerdStatus
-write_file_uri_char(const char c, SerdOutputStream* const out)
-{
-  return (out->write(&c, 1, 1, out->stream) == 1) ? SERD_SUCCESS
-                                                  : SERD_BAD_ALLOC;
-}
+#define TRY_WRITE(wr, exp)             \
+  do {                                 \
+    const SerdStreamResult er = (exp); \
+    (wr).count += er.count;            \
+    if (((wr).status = er.status)) {   \
+      return (wr);                     \
+    }                                  \
+  } while (0)
 
 static char*
 parse_hostname(ZixAllocator* const allocator,
@@ -82,13 +85,13 @@ serd_parse_file_uri(ZixAllocator* const allocator,
         const uint8_t lo = hex_digit_value((const uint8_t)s[2]);
         const char    c  = (char)((hi << 4U) | lo);
 
-        st = write_file_uri_char(c, &out);
+        st = out.write(out.stream, 1, &c).status;
         s += 2;
       } else {
         st = SERD_BAD_SYNTAX;
       }
     } else {
-      st = write_file_uri_char(*s, &out);
+      st = out.write(out.stream, 1, s).status;
     }
   }
 
@@ -446,53 +449,55 @@ serd_uri_string_length(const SerdURIView uri)
 }
 
 /// See http://tools.ietf.org/html/rfc3986#section-5.3
-size_t
-serd_write_uri(const SerdURIView uri, SerdWriteFunc sink, void* const stream)
+SerdStreamResult
+serd_write_uri(const SerdURIView   uri,
+               const SerdWriteFunc sink,
+               void* const         stream)
 {
   assert(sink);
 
-  size_t len = 0;
+  SerdStreamResult wr = {SERD_SUCCESS, 0U};
 
   if (uri.scheme.data) {
-    len += sink(uri.scheme.data, 1, uri.scheme.length, stream);
-    len += sink(":", 1, 1, stream);
+    TRY_WRITE(wr, sink(stream, uri.scheme.length, uri.scheme.data));
+    TRY_WRITE(wr, sink(stream, 1, ":"));
   }
 
   if (uri.authority.data) {
-    len += sink("//", 1, 2, stream);
-    len += sink(uri.authority.data, 1, uri.authority.length, stream);
+    TRY_WRITE(wr, sink(stream, 2, "//"));
+    TRY_WRITE(wr, sink(stream, uri.authority.length, uri.authority.data));
 
     if (uri.authority.length && uri_path_len(&uri) &&
         uri_path_at(&uri, 0) != '/') {
       // Special case: ensure path begins with a slash
       // https://tools.ietf.org/html/rfc3986#section-3.2
-      len += sink("/", 1, 1, stream);
+      TRY_WRITE(wr, sink(stream, 1, "/"));
     }
   }
 
   if (uri.path_prefix.data) {
-    len += sink(uri.path_prefix.data, 1, uri.path_prefix.length, stream);
+    TRY_WRITE(wr, sink(stream, uri.path_prefix.length, uri.path_prefix.data));
   } else if (uri.path_prefix.length) {
     for (size_t i = 0; i < uri.path_prefix.length; ++i) {
-      len += sink("../", 1, 3, stream);
+      TRY_WRITE(wr, sink(stream, 3, "../"));
     }
   }
 
   if (uri.path.data) {
-    len += sink(uri.path.data, 1, uri.path.length, stream);
+    TRY_WRITE(wr, sink(stream, uri.path.length, uri.path.data));
   }
 
   if (uri.query.data) {
-    len += sink("?", 1, 1, stream);
-    len += sink(uri.query.data, 1, uri.query.length, stream);
+    TRY_WRITE(wr, sink(stream, 1, "?"));
+    TRY_WRITE(wr, sink(stream, uri.query.length, uri.query.data));
   }
 
   if (uri.fragment.data) {
     // Note that uri.fragment.data includes the leading '#'
-    len += sink(uri.fragment.data, 1, uri.fragment.length, stream);
+    TRY_WRITE(wr, sink(stream, uri.fragment.length, uri.fragment.data));
   }
 
-  return len;
+  return wr;
 }
 
 static bool
@@ -511,44 +516,48 @@ is_dir_sep(const char c)
 #endif
 }
 
-size_t
+SerdStreamResult
 serd_write_file_uri(const ZixStringView path,
                     const ZixStringView hostname,
                     const SerdWriteFunc sink,
                     void* const         stream)
 {
+  assert(sink);
+  assert(stream);
+
   static const char hex_chars[] = "0123456789ABCDEF";
 
   assert(sink);
   assert(stream);
 
   const bool is_windows = is_windows_path(path.data);
-  size_t     len        = 0U;
+
+  SerdStreamResult wr = {SERD_SUCCESS, 0U};
 
   if (is_dir_sep(path.data[0]) || is_windows) {
-    len += sink("file://", 1, strlen("file://"), stream);
+    TRY_WRITE(wr, sink(stream, strlen("file://"), "file://"));
     if (hostname.length) {
-      len += sink(hostname.data, 1, hostname.length, stream);
+      TRY_WRITE(wr, sink(stream, hostname.length, hostname.data));
     }
 
     if (is_windows) {
-      len += sink("/", 1, 1, stream);
+      TRY_WRITE(wr, sink(stream, 1, "/"));
     }
   }
 
   for (size_t i = 0; i < path.length; ++i) {
     if (is_unescaped_uri_path_char(path.data[i])) {
-      len += sink(path.data + i, 1, 1, stream);
+      TRY_WRITE(wr, sink(stream, 1, path.data + i));
 #ifdef _WIN32
     } else if (path.data[i] == '\\') {
-      len += sink("/", 1, 1, stream);
+      TRY_WRITE(wr, sink(stream, 1, "/"));
 #endif
     } else {
       const uint8_t c        = (uint8_t)path.data[i];
       const char    escape[] = {'%', hex_chars[c >> 4U], hex_chars[c & 0x0FU]};
-      len += sink(escape, 1, 3, stream);
+      TRY_WRITE(wr, sink(stream, 3, escape));
     }
   }
 
-  return len;
+  return wr;
 }

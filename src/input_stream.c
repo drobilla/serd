@@ -1,81 +1,55 @@
 // Copyright 2011-2024 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "serd_config.h"
+#include "stream_utils.h"
 #include "warnings.h"
 
 #include "serd/input_stream.h"
 #include "serd/status.h"
 #include "serd/stream.h"
-
-#include <sys/stat.h>
-
-#if USE_POSIX_FADVISE && USE_FILENO
-#  include <fcntl.h>
-#endif
-
-// IWYU pragma: no_include <features.h>
+#include "serd/stream_result.h"
+#include "zix/filesystem.h"
 
 #include <assert.h>
-#include <stdbool.h>
 #include <stdio.h>
 
-static size_t
-serd_string_read(void* const  buf,
-                 const size_t size,
-                 const size_t nmemb,
-                 void* const  stream)
+static SerdStreamResult
+serd_string_read(void* const stream, const size_t len, void* const buf)
 {
+  SerdStreamResult r = {SERD_SUCCESS, 0U};
+
   const char** position = (const char**)stream;
 
-  size_t       n_read = 0U;
-  const size_t len    = size * nmemb;
-  while (n_read < len && **position) {
-    ((char*)buf)[n_read++] = **position;
+  if (len && !**position) {
+    r.status = SERD_NO_DATA;
+    return r;
+  }
+
+  while (r.count < len && **position) {
+    ((char*)buf)[r.count++] = **position;
 
     ++(*position);
   }
 
-  return n_read;
+  return r;
 }
 
-static int
-serd_string_error(void* const stream)
-{
-  (void)stream;
-  return 0;
-}
-
-static int
+static SerdStatus
 serd_string_close(void* const stream)
 {
   (void)stream;
-  return 0;
+  return SERD_SUCCESS;
 }
 
 SerdInputStream
 serd_open_input_stream(const SerdReadFunc  read_func,
-                       const SerdErrorFunc error_func,
                        const SerdCloseFunc close_func,
                        void* const         stream)
 {
   assert(read_func);
-  assert(error_func);
 
-  SerdInputStream input = {stream, read_func, error_func, close_func};
+  SerdInputStream input = {stream, read_func, close_func};
   return input;
-}
-
-static bool
-is_directory(const char* const path)
-{
-#ifdef _MSC_VER
-  struct stat st;
-  return !stat(path, &st) && (st.st_mode & _S_IFDIR);
-#else
-  struct stat st;
-  return !stat(path, &st) && S_ISDIR(st.st_mode);
-#endif
 }
 
 SerdInputStream
@@ -84,8 +58,7 @@ serd_open_input_string(const char** const position)
   assert(position);
   assert(*position);
 
-  const SerdInputStream input = {
-    position, serd_string_read, serd_string_error, serd_string_close};
+  const SerdInputStream input = {position, serd_string_read, serd_string_close};
 
   return input;
 }
@@ -95,42 +68,28 @@ serd_open_input_file(const char* const path)
 {
   assert(path);
 
-  SerdInputStream input = {NULL, NULL, NULL, NULL};
-  if (is_directory(path)) {
+  SerdInputStream input = {NULL, NULL, NULL};
+  if (zix_file_type(path) == ZIX_FILE_TYPE_DIRECTORY) {
     return input;
   }
 
-#ifdef __GLIBC__
-  FILE* const file = fopen(path, "rbe");
-#else
-  FILE* const file = fopen(path, "rb");
-#endif
-
+  FILE* const file = serd_fopen_wrapper(path, SERD_FILE_MODE_READ);
   if (!file) {
     return input;
   }
 
-#if USE_POSIX_FADVISE && USE_FILENO
-  (void)posix_fadvise(fileno(file), 0, 0, POSIX_FADV_SEQUENTIAL);
-#endif
-
-  input.stream = file;
-  input.read   = (SerdReadFunc)fread;
-  input.error  = (SerdErrorFunc)ferror;
-  input.close  = (SerdCloseFunc)fclose;
-
-  return input;
+  return serd_open_input_stream(serd_fread_wrapper, serd_fclose_wrapper, file);
 }
 
 SerdStatus
 serd_close_input(SerdInputStream* const input)
 {
-  int ret = 0;
+  SerdStatus st = SERD_SUCCESS;
 
   if (input) {
     if (input->close && input->stream) {
       SERD_DISABLE_NULL_WARNINGS
-      ret = input->close(input->stream);
+      st = input->close(input->stream);
       SERD_RESTORE_WARNINGS
       input->stream = NULL;
     }
@@ -138,5 +97,5 @@ serd_close_input(SerdInputStream* const input)
     input->stream = NULL;
   }
 
-  return ret ? SERD_BAD_STREAM : SERD_SUCCESS;
+  return st;
 }

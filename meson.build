@@ -169,6 +169,7 @@ sources = files(
   'src/reader.c',
   'src/sink.c',
   'src/statement_view.c',
+  'src/stream_utils.c',
   'src/string.c',
   'src/syntax.c',
   'src/tee.c',
