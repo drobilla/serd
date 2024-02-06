@@ -2,39 +2,39 @@
 // SPDX-License-Identifier: ISC
 
 #include "serd/buffer.h"
+#include "serd/status.h"
 #include "zix/allocator.h"
 
 #include <assert.h>
 #include <stddef.h>
 #include <string.h>
 
-size_t
-serd_buffer_write(const void* const buf,
-                  const size_t      size,
-                  const size_t      nmemb,
-                  void* const       stream)
+SerdStreamResult
+serd_buffer_write(const void* const buf, const size_t len, void* const stream)
 {
   assert(buf);
   assert(stream);
 
-  SerdBuffer* const buffer  = (SerdBuffer*)stream;
-  const size_t      n_bytes = size * nmemb;
+  SerdStreamResult  r      = {SERD_SUCCESS, 0U};
+  SerdBuffer* const buffer = (SerdBuffer*)stream;
 
   char* const new_buf =
-    (char*)zix_realloc(buffer->allocator, buffer->buf, buffer->len + n_bytes);
+    (char*)zix_realloc(buffer->allocator, buffer->buf, buffer->len + len);
 
   if (new_buf) {
-    memcpy(new_buf + buffer->len, buf, n_bytes);
+    memcpy(new_buf + buffer->len, buf, len);
     buffer->buf = new_buf;
-    buffer->len += nmemb;
-    return n_bytes;
+    buffer->len += len;
+    r.count = len;
+  } else {
+    r.status = SERD_BAD_ALLOC;
   }
 
-  return 0;
+  return r;
 }
 
-int
+SerdStatus
 serd_buffer_close(void* const stream)
 {
-  return serd_buffer_write("", 1, 1, stream) != 1; // Write null terminator
+  return serd_buffer_write("", 1, stream).status; // Write null terminator
 }

@@ -12,6 +12,7 @@
 #include "serd/output_stream.h"
 #include "serd/sink.h"
 #include "serd/status.h"
+#include "serd/stream_result.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "serd/writer.h"
@@ -158,17 +159,14 @@ test_write_bad_event(void)
   serd_world_free(world);
 }
 
-static size_t
-ignore_write(const void* const buf,
-             const size_t      size,
-             const size_t      nmemb,
-             void* const       stream)
+static SerdStreamResult
+ignore_write(const void* const buf, const size_t len, void* const stream)
 {
   (void)buf;
-  (void)size;
-  (void)nmemb;
+  (void)len;
   (void)stream;
-  return size * nmemb;
+  const SerdStreamResult r = {SERD_SUCCESS, len};
+  return r;
 }
 
 static void
@@ -176,8 +174,7 @@ test_write_bad_text(void)
 {
   SerdWorld* const world = serd_world_new(NULL);
   SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
-  SerdOutputStream out =
-    serd_open_output_stream(ignore_write, NULL, NULL, NULL);
+  SerdOutputStream out   = serd_open_output_stream(ignore_write, NULL, NULL);
 
   SerdWriter* const writer =
     serd_writer_new(world, SERD_TURTLE, 0U, env, &out, 1U);
@@ -338,26 +335,23 @@ test_write_nested_anon(void)
   serd_world_free(world);
 }
 
-static size_t
-null_sink(const void* const buf,
-          const size_t      size,
-          const size_t      nmemb,
-          void* const       stream)
+static SerdStreamResult
+null_sink(const void* const buf, const size_t len, void* const stream)
 {
   (void)buf;
   (void)stream;
 
-  return size * nmemb;
+  const SerdStreamResult r = {SERD_SUCCESS, len};
+  return r;
 }
 
 static void
 test_writer_cleanup(void)
 {
-  SerdStatus       st    = SERD_SUCCESS;
-  SerdWorld*       world = serd_world_new(NULL);
-  SerdEnv*         env   = serd_env_new(NULL, zix_empty_string());
-  SerdOutputStream output =
-    serd_open_output_stream(null_sink, NULL, NULL, NULL);
+  SerdStatus       st     = SERD_SUCCESS;
+  SerdWorld*       world  = serd_world_new(NULL);
+  SerdEnv*         env    = serd_env_new(NULL, zix_empty_string());
+  SerdOutputStream output = serd_open_output_stream(null_sink, NULL, NULL);
 
   SerdWriter* writer =
     serd_writer_new(world, SERD_TURTLE, 0U, env, &output, 1U);
@@ -410,7 +404,7 @@ test_strict_write(void)
 
   SerdWorld*        world = serd_world_new(NULL);
   SerdEnv* const    env   = serd_env_new(NULL, zix_empty_string());
-  SerdOutputStream  out   = serd_open_output_stream(null_sink, NULL, NULL, fd);
+  SerdOutputStream  out   = serd_open_output_stream(null_sink, NULL, fd);
   SerdWriter* const writer =
     serd_writer_new(world, SERD_TURTLE, 0U, env, &out, 1U);
 
@@ -442,17 +436,14 @@ test_strict_write(void)
 }
 
 // Produce a write error without setting errno
-static size_t
-error_sink(const void* const buf,
-           const size_t      size,
-           const size_t      len,
-           void* const       stream)
+static SerdStreamResult
+error_sink(const void* const buf, const size_t len, void* const stream)
 {
   (void)buf;
-  (void)size;
   (void)len;
   (void)stream;
-  return 0U;
+  const SerdStreamResult r = {SERD_BAD_WRITE, 0U};
+  return r;
 }
 
 static void
@@ -460,8 +451,8 @@ test_write_error(void)
 {
   SerdWorld* const world = serd_world_new(NULL);
   SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
-  SerdOutputStream out = serd_open_output_stream(error_sink, NULL, NULL, NULL);
-  SerdStatus       st  = SERD_SUCCESS;
+  SerdOutputStream out   = serd_open_output_stream(error_sink, NULL, NULL);
+  SerdStatus       st    = SERD_SUCCESS;
 
   SerdNode* const u = serd_node_new(NULL, serd_a_uri_string(NS_EG "u"));
 
@@ -520,8 +511,7 @@ test_writer_stack_overflow(void)
   SerdWorld* world = serd_world_new(NULL);
   SerdEnv*   env   = serd_env_new(NULL, zix_empty_string());
 
-  SerdOutputStream output =
-    serd_open_output_stream(null_sink, NULL, NULL, NULL);
+  SerdOutputStream output = serd_open_output_stream(null_sink, NULL, NULL);
 
   SerdWriter* writer =
     serd_writer_new(world, SERD_TURTLE, 0U, env, &output, 1U);
