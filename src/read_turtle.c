@@ -71,11 +71,17 @@ read_turtle_ws_star(SerdReader* const reader)
   return true;
 }
 
+static int
+skip_ws_peek(SerdReader* const reader)
+{
+  read_turtle_ws_star(reader);
+  return peek_byte(reader);
+}
+
 static bool
 peek_delim(SerdReader* const reader, const uint8_t delim)
 {
-  read_turtle_ws_star(reader);
-  return peek_byte(reader) == delim;
+  return skip_ws_peek(reader) == delim;
 }
 
 static bool
@@ -633,7 +639,10 @@ read_anon(SerdReader* const reader,
   ctx.subject = *dest;
   if (!empty) {
     bool ate_dot_in_list = false;
+
+    const size_t predicate_offset = reader->stack.size;
     TRY(st, read_predicateObjectList(reader, ctx, &ate_dot_in_list));
+    serd_stack_pop_to(&reader->stack, predicate_offset);
 
     if (ate_dot_in_list) {
       return r_err(reader, SERD_BAD_SYNTAX, "'.' inside blank");
@@ -796,43 +805,29 @@ read_predicateObjectList(SerdReader* const reader,
                          ReadContext       ctx,
                          bool* const       ate_dot)
 {
-  const size_t orig_stack_size = reader->stack.size;
-
   SerdStatus st = SERD_SUCCESS;
   while (!(st = read_verb(reader, &ctx.predicate)) &&
          read_turtle_ws_star(reader) &&
-         !(st = read_objectList(reader, ctx, ate_dot))) {
-    if (*ate_dot) {
-      serd_stack_pop_to(&reader->stack, orig_stack_size);
-      return SERD_SUCCESS;
+         !(st = read_objectList(reader, ctx, ate_dot)) && !*ate_dot) {
+    bool ate_semi = false;
+    for (int c = 0; (c = skip_ws_peek(reader)) > 0;) {
+      if (c == '.' || c == ']' || c == '}') {
+        return SERD_SUCCESS;
+      }
+
+      if (c != ';') {
+        break;
+      }
+
+      skip_byte(reader, c);
+      ate_semi = true;
     }
 
-    bool ate_semi = false;
-    int  c        = 0;
-    do {
-      read_turtle_ws_star(reader);
-      switch (c = peek_byte(reader)) {
-      case EOF:
-        serd_stack_pop_to(&reader->stack, orig_stack_size);
-        return r_err(reader, SERD_BAD_SYNTAX, "unexpected end of file");
-      case '.':
-      case ']':
-      case '}':
-        serd_stack_pop_to(&reader->stack, orig_stack_size);
-        return SERD_SUCCESS;
-      case ';':
-        skip_byte(reader, c);
-        ate_semi = true;
-      }
-    } while (c == ';');
-
     if (!ate_semi) {
-      serd_stack_pop_to(&reader->stack, orig_stack_size);
       return r_err(reader, SERD_BAD_SYNTAX, "missing ';' or '.'");
     }
   }
 
-  serd_stack_pop_to(&reader->stack, orig_stack_size);
   ctx.predicate = 0;
   return st;
 }
@@ -951,18 +946,23 @@ read_turtle_triples(SerdReader* const reader,
                     ReadContext       ctx,
                     bool* const       ate_dot)
 {
-  SerdStatus st = SERD_FAILURE;
-  if (ctx.subject) {
-    read_turtle_ws_star(reader);
-    switch (peek_byte(reader)) {
-    case '.':
-      *ate_dot = eat_byte_safe(reader, '.');
-      return SERD_FAILURE;
-    case '}':
-      return SERD_FAILURE;
-    }
-    st = read_predicateObjectList(reader, ctx, ate_dot);
+  assert(ctx.subject);
+
+  read_turtle_ws_star(reader);
+
+  const int c = peek_byte(reader);
+  if (c == '.') {
+    *ate_dot = !skip_byte(reader, c);
+    return SERD_FAILURE;
   }
+
+  if (c == '}') {
+    return SERD_FAILURE;
+  }
+
+  const size_t     start_size = reader->stack.size;
+  const SerdStatus st         = read_predicateObjectList(reader, ctx, ate_dot);
+  serd_stack_pop_to(&reader->stack, start_size);
 
   ctx.subject = ctx.predicate = 0;
   return st > SERD_FAILURE ? st : SERD_SUCCESS;
