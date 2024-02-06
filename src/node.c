@@ -383,45 +383,40 @@ result(const SerdStatus status, const size_t count)
 
 /// Write bytes to a stream during node construction
 static size_t
-construct_write(const void* const buf,
-                const size_t      size,
-                const size_t      nmemb,
-                void* const       stream)
+construct_write(void* const stream, const size_t n_bytes, const void* const buf)
 {
-  const size_t              n_bytes = size * nmemb;
-  ConstructWriteHead* const head    = (ConstructWriteHead*)stream;
+  ConstructWriteHead* const head = (ConstructWriteHead*)stream;
 
   if (head->buf && head->offset + n_bytes <= head->len) {
     memcpy(head->buf + head->offset, buf, n_bytes);
   }
 
   head->offset += n_bytes;
+
   return n_bytes;
 }
 
 /// Write the header of a SerdNode to a stream (convenience wrapper)
 static size_t
-construct_write_header(const size_t              length,
+construct_write_header(ConstructWriteHead* const stream,
+                       const size_t              length,
                        const SerdNodeFlags       flags,
-                       const SerdNodeType        type,
-                       ConstructWriteHead* const stream)
+                       const SerdNodeType        type)
 {
   const SerdNode header = {NULL, length, flags, type};
-  return construct_write(&header, sizeof(header), 1, stream);
+  return construct_write(stream, sizeof(header), &header);
 }
 
 /// Write string-terminating null bytes after a node's string
 static size_t
-construct_terminate(const size_t length, void* const stream)
+construct_terminate(void* const stream, const size_t length)
 {
-  const size_t padded_length = serd_node_pad_length(length);
+  static const char pad[8U]       = {0, 0, 0, 0, 0, 0, 0, 0};
+  const size_t      padded_length = serd_node_pad_length(length);
+  const size_t      n_null_bytes  = padded_length - length;
 
-  size_t count = 0U;
-  for (size_t p = 0U; p < padded_length - length; ++p) {
-    count += construct_write("", 1, 1, stream);
-  }
-
-  return count;
+  assert(n_null_bytes < 8U);
+  return construct_write(stream, n_null_bytes, pad);
 }
 
 static SerdStreamResult
@@ -651,16 +646,14 @@ construct_binary(const size_t          buf_size,
   return result(SERD_SUCCESS, total_size);
 }
 
-static size_t
-string_sink(const void* const buf,
-            const size_t      size,
-            const size_t      nmemb,
-            void* const       stream)
+static SerdStreamResult
+string_sink(void* const stream, const size_t len, const void* const buf)
 {
-  char** ptr = (char**)stream;
-  memcpy(*ptr, buf, size * nmemb);
-  *ptr += size * nmemb;
-  return nmemb;
+  char** const ptr = (char**)stream;
+  memcpy(*ptr, buf, len);
+  *ptr += len;
+  const SerdStreamResult r = {SERD_SUCCESS, len};
+  return r;
 }
 
 static SerdStreamResult
@@ -680,12 +673,22 @@ construct_uri(const size_t buf_size, void* const buf, const SerdURIView uri)
   node->type           = SERD_URI;
 
   // Write URI string to node body
-  char*        ptr           = serd_node_buffer(node);
-  const size_t actual_length = serd_write_uri(uri, string_sink, &ptr);
+  char*                  ptr           = serd_node_buffer(node);
+  const SerdStreamResult wr            = serd_write_uri(uri, string_sink, &ptr);
+  const size_t           actual_length = wr.count;
+  assert(!wr.status);
   assert(actual_length == length);
 
   serd_node_buffer(node)[actual_length] = '\0';
   return result(SERD_SUCCESS, required_size);
+}
+
+static SerdStreamResult
+construct_write_stream(void* const       stream,
+                       const size_t      n_bytes,
+                       const void* const buf)
+{
+  return result(SERD_SUCCESS, construct_write(stream, n_bytes, buf));
 }
 
 static SerdStreamResult
@@ -697,22 +700,21 @@ construct_file_uri(const size_t        buf_size,
   SerdNode* const node = (SerdNode*)buf;
 
   // Write node header
-  ConstructWriteHead head  = {(char*)buf, buf_size, 0U};
-  size_t             count = construct_write_header(0U, 0U, SERD_URI, &head);
+  ConstructWriteHead head     = {(char*)buf, buf_size, 0U};
+  const size_t       n_header = construct_write_header(&head, 0U, 0U, SERD_URI);
 
   // Write URI string node body
-  const size_t length =
-    serd_write_file_uri(path, hostname, construct_write, &head);
+  const SerdStreamResult br =
+    serd_write_file_uri(path, hostname, construct_write_stream, &head);
 
   // Write terminating null byte(s)
-  count += length;
-  count += construct_terminate(length, &head);
-
+  const size_t n_null = construct_terminate(&head, br.count);
+  const size_t count  = n_header + br.count + n_null;
   if (!buf || count > buf_size) {
     return result(SERD_NO_SPACE, count);
   }
 
-  node->length = length;
+  node->length = br.count;
   assert(node->length == strlen(serd_node_string(node)));
   return result(SERD_SUCCESS, count);
 }
@@ -733,15 +735,15 @@ construct_split_string(const size_t        buf_size,
 
   // Write node header
   ConstructWriteHead head  = {(char*)buf, buf_size, 0U};
-  size_t             count = construct_write_header(length, 0U, type, &head);
+  size_t             count = construct_write_header(&head, length, 0U, type);
 
   // Write prefix, separator if given, and suffix
-  count += construct_write(prefix.data, 1U, prefix.length, &head);
+  count += construct_write(&head, prefix.length, prefix.data);
   if (sep) {
-    count += construct_write(&sep, 1U, 1U, &head);
+    count += construct_write(&head, 1U, &sep);
   }
-  count += construct_write(suffix.data, 1U, suffix.length, &head);
-  count += construct_terminate(length, &head);
+  count += construct_write(&head, suffix.length, suffix.data);
+  count += construct_terminate(&head, length);
 
   if (!buf || count > buf_size) {
     return result(SERD_NO_SPACE, count);

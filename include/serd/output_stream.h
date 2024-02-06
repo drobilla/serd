@@ -30,7 +30,6 @@ SERD_BEGIN_DECLS
 typedef struct {
   void* ZIX_UNSPECIFIED      stream; ///< Opaque parameter for functions
   SerdWriteFunc ZIX_NONNULL  write;  ///< Write bytes to output
-  SerdErrorFunc ZIX_NULLABLE error;  ///< Stream error accessor
   SerdCloseFunc ZIX_NULLABLE close;  ///< Close output
 } SerdOutputStream;
 
@@ -38,14 +37,12 @@ typedef struct {
    Open a stream that writes to a provided function.
 
    @param write_func Function to write bytes to the stream.
-   @param error_func Function to detect errors in the stream.
    @param close_func Function to close the stream.
    @param stream Stream parameter passed to `write_func` and `close_func`.
    @return An opened output stream, or all zeros on error.
 */
 SERD_CONST_API SerdOutputStream
 serd_open_output_stream(SerdWriteFunc ZIX_NONNULL  write_func,
-                        SerdErrorFunc ZIX_NULLABLE error_func,
                         SerdCloseFunc ZIX_NULLABLE close_func,
                         void* ZIX_UNSPECIFIED      stream);
 
@@ -65,11 +62,13 @@ serd_open_output_buffer(SerdBuffer* ZIX_NONNULL buffer);
 /**
    Open a stream that writes to a file.
 
-   An arbitrary `FILE*` can be used with serd_open_output_stream() as well,
-   this convenience function opens the file properly for writing with serd, and
-   sets flags for optimized I/O if possible.
+   This will open the file with the best available system API, and set flags
+   for optimized streaming I/O if possible.  These are the defaults used by
+   serd when writing files, to set things up differently, an arbitrary stream
+   can be wrapped with serd_open_output_stream().
 
    @param path Path of file to open and write to.
+   @return An opened output stream, or all zeros on error.
 */
 SERD_API SerdOutputStream
 serd_open_output_file(const char* ZIX_NONNULL path);
