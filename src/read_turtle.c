@@ -678,7 +678,7 @@ read_named_object(SerdReader* const reader,
   // Any other failure is a syntax error
   if (st) {
     st = st > SERD_FAILURE ? st : SERD_BAD_SYNTAX;
-    return r_err(reader, st, "expected prefixed name or boolean");
+    return r_err(reader, st, "expected named object");
   }
 
   return SERD_SUCCESS;
