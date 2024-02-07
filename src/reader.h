@@ -22,8 +22,8 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 
 typedef struct {
   SerdNode*                graph;
@@ -116,7 +116,7 @@ peek_byte(SerdReader* reader)
 {
   SerdByteSource* source = reader->source;
 
-  return source->eof ? EOF : (int)source->read_buf[source->read_head];
+  return source->eof ? -1 : (int)source->read_buf[source->read_head];
 }
 
 ZIX_NODISCARD static inline SerdStatus
@@ -124,7 +124,7 @@ skip_byte(SerdReader* reader, const int byte)
 {
   (void)byte;
 
-  assert(peek_byte(reader) == byte);
+  assert(byte < 0 || peek_byte(reader) == byte);
 
   return accept_failure(serd_byte_source_advance(reader->source));
 }
@@ -158,7 +158,7 @@ eat_string(SerdReader* reader, const char* str, unsigned n)
 ZIX_NODISCARD static inline SerdStatus
 push_byte(SerdReader* reader, SerdNode* node, const int c)
 {
-  assert(c != EOF);
+  assert(c >= 0);
 
   if (reader->stack.size + 1 > reader->stack.buf_size) {
     return SERD_BAD_STACK;
