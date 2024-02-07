@@ -14,7 +14,7 @@
 #include "serd/status.h"
 
 #include <stdbool.h>
-#include <stdio.h>
+#include <stddef.h>
 
 static SerdStatus
 read_wrappedGraph(SerdReader* const reader, ReadContext* const ctx)
@@ -152,28 +152,17 @@ read_trig_statement(SerdReader* const reader)
   ReadContext             ctx   = {0, 0, 0, 0, &flags};
   SerdStatus              st    = SERD_SUCCESS;
 
-  // Handle nice cases we can distinguish from the next byte
   TRY(st, read_turtle_ws_star(reader));
-  switch (peek_byte(reader)) {
-  case EOF:
+
+  const int c = peek_byte(reader);
+  if (c <= 0) {
+    TRY(st, skip_byte(reader, c));
     return SERD_FAILURE;
-
-  case '\0':
-    TRY(st, skip_byte(reader, '\0'));
-    return SERD_FAILURE;
-
-  case '@':
-    return read_turtle_directive(reader);
-
-  case '{':
-    return read_wrappedGraph(reader, &ctx);
-
-  default:
-    break;
   }
 
-  // No such luck, figure out what to read from the first token
-  return read_block(reader, &ctx);
+  return (c == '@')   ? read_turtle_directive(reader)
+         : (c == '{') ? read_wrappedGraph(reader, &ctx)
+                      : read_block(reader, &ctx);
 }
 
 SerdStatus
