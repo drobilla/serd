@@ -75,28 +75,11 @@ read_EOL(SerdReader* const reader)
 }
 
 static SerdStatus
-char_err(SerdReader* const reader, const char* const kind, const uint32_t code)
-{
-  return (code >= 0x20U && code <= 0x7EU)
-           ? r_err(reader,
-                   SERD_BAD_SYNTAX,
-                   "invalid %s character U+%04X ('%c')",
-                   kind,
-                   code,
-                   (int)code)
-           : r_err(reader,
-                   SERD_BAD_SYNTAX,
-                   "invalid %s character U+%04X",
-                   kind,
-                   code);
-}
-
-static SerdStatus
 read_IRI_scheme(SerdReader* const reader, SerdNode* const dest)
 {
   int c = peek_byte(reader);
   if (!is_alpha(c)) {
-    return char_err(reader, "IRI start", (uint32_t)c);
+    return r_err_char(reader, "IRI start", c);
   }
 
   SerdStatus st = SERD_SUCCESS;
@@ -106,7 +89,7 @@ read_IRI_scheme(SerdReader* const reader, SerdNode* const dest)
     }
 
     st = is_uri_scheme_char(c) ? eat_push_byte(reader, dest, c)
-                               : char_err(reader, "IRI scheme", (uint32_t)c);
+                               : r_err_char(reader, "IRI scheme", c);
   }
 
   return st ? st : SERD_BAD_SYNTAX;
@@ -135,13 +118,13 @@ read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
     } else if (c == '\\') {
       if (!(st = read_UCHAR(reader, node, &code)) &&
           (code == ' ' || code == '<' || code == '>')) {
-        st = char_err(reader, "IRI", code);
+        st = r_err_char(reader, "IRI", (int)code);
       }
     } else if (c > 0x20 && c != '"' && c != '<' && c != '^' && c != '`' &&
                c != '{' && c != '|' && c != '}') {
       st = push_byte(reader, node, c);
     } else {
-      st = char_err(reader, "IRI", (uint32_t)c);
+      st = r_err_char(reader, "IRI", c);
       if (!reader->strict) {
         st = push_byte(reader, node, c);
       }
@@ -242,10 +225,8 @@ read_PN_CHARS_BASE(SerdReader* const reader, SerdNode* const dest)
   TRY(st, read_utf8_code_point(reader, dest, &code, (uint8_t)c));
 
   if (!is_PN_CHARS_BASE((int)code)) {
-    char_err(reader, "name", code);
-    if (reader->strict) {
-      return SERD_BAD_SYNTAX;
-    }
+    r_err_char(reader, "name", (int)code);
+    st = reader->strict ? SERD_BAD_SYNTAX : st;
   }
 
   return st;
@@ -280,8 +261,7 @@ read_PN_CHARS(SerdReader* const reader, SerdNode* const dest)
   if (!is_PN_CHARS_BASE((int)code) && code != 0xB7 &&
       !(code >= 0x0300 && code <= 0x036F) &&
       !(code >= 0x203F && code <= 0x2040)) {
-    return r_err(
-      reader, SERD_BAD_SYNTAX, "U+%04X is not a valid name character", code);
+    return r_err_char(reader, "name", (int)code);
   }
 
   return st;
@@ -429,9 +409,8 @@ read_UCHAR(SerdReader* const reader,
   const unsigned size = utf8_from_codepoint(buf, code);
   if (!size) {
     *code_point = 0xFFFD;
-    return (reader->strict
-              ? r_err(reader, SERD_BAD_SYNTAX, "U+%X is out of range", code)
-              : push_bytes(reader, node, replacement_char, 3));
+    return (reader->strict ? r_err_char(reader, "escaped", (int)code)
+                           : push_bytes(reader, node, replacement_char, 3));
   }
 
   *code_point = code;
@@ -467,12 +446,12 @@ SerdStatus
 read_HEX(SerdReader* const reader, uint8_t* const dest)
 {
   const int c = peek_byte(reader);
-  if (is_xdigit(c)) {
-    *dest = (uint8_t)c;
-    return skip_byte(reader, c);
+  if (!is_xdigit(c)) {
+    return r_err_char(reader, "hexadecimal", c);
   }
 
-  return r_err(reader, SERD_BAD_SYNTAX, "invalid hexadecimal digit '%c'", c);
+  *dest = (uint8_t)c;
+  return skip_byte(reader, c);
 }
 
 /**

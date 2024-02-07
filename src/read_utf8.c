@@ -9,13 +9,6 @@
 #define MAX_UTF8_BYTES 4U
 
 static SerdStatus
-bad_char(SerdReader* const reader, const char* const fmt, const uint8_t c)
-{
-  r_err(reader, SERD_BAD_SYNTAX, fmt, c);
-  return reader->strict ? SERD_BAD_SYNTAX : SERD_FAILURE;
-}
-
-static SerdStatus
 read_utf8_continuation_bytes(SerdReader* const reader,
                              uint8_t           bytes[MAX_UTF8_BYTES],
                              uint8_t* const    size,
@@ -23,13 +16,11 @@ read_utf8_continuation_bytes(SerdReader* const reader,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  *size = utf8_num_bytes(lead);
-  if (*size < 1) {
-    return bad_char(reader, "0x%X is not a UTF-8 leading byte", lead);
+  if (!(*size = utf8_num_bytes(lead))) {
+    return r_err(reader, SERD_BAD_TEXT, "bad UTF-8 lead 0x%X", lead);
   }
 
   bytes[0] = lead;
-
   for (uint8_t i = 1U; !st && i < *size; ++i) {
     const int b = peek_byte(reader);
     if (b < 0) {
@@ -38,7 +29,7 @@ read_utf8_continuation_bytes(SerdReader* const reader,
 
     const uint8_t byte = (uint8_t)b;
     if (!is_utf8_continuation(byte)) {
-      return bad_char(reader, "0x%X is not a UTF-8 continuation byte", byte);
+      return r_err(reader, SERD_BAD_TEXT, "bad UTF-8 continuation 0x%X", byte);
     }
 
     st       = skip_byte(reader, b);

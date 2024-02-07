@@ -7,7 +7,6 @@
 #include "byte_source.h"
 #include "node_impl.h"
 #include "stack.h"
-#include "try.h"
 
 #include "serd/caret_view.h"
 #include "serd/env.h"
@@ -62,6 +61,9 @@ skip_horizontal_whitespace(SerdReader* reader);
 ZIX_LOG_FUNC(3, 4)
 SerdStatus
 r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
+
+SerdStatus
+r_err_char(SerdReader* reader, const char* kind, int c);
 
 SerdNode*
 push_node_padded(SerdReader*  reader,
@@ -133,9 +135,9 @@ eat_byte_check(SerdReader* reader, const int byte)
   SerdStatus st = SERD_BAD_SYNTAX;
   const int  c  = peek_byte(reader);
   if (c != byte) {
-    return (c >= 0x20 && c <= 0x7E)
-             ? r_err(reader, st, "expected '%c', not '%c'", byte, c)
-             : r_err(reader, st, "expected '%c'", byte);
+    return (c < 0x20 || c == '\'' || c > 0x7E)
+             ? r_err(reader, st, "expected '%c'", byte)
+             : r_err(reader, st, "expected '%c', not '%c'", byte, c);
   }
 
   return skip_byte(reader, c);
@@ -146,8 +148,8 @@ eat_string(SerdReader* reader, const char* str, unsigned n)
 {
   SerdStatus st = SERD_SUCCESS;
 
-  for (unsigned i = 0; i < n; ++i) {
-    TRY(st, eat_byte_check(reader, str[i]));
+  for (unsigned i = 0; !st && i < n; ++i) {
+    st = eat_byte_check(reader, str[i]);
   }
 
   return st;
