@@ -250,6 +250,11 @@
 	mf:action <test-nq-syntax-all-rules.nq> ;
 	mf:name "test-nq-syntax-all-rules" .
 
+<#test-nq-syntax-eof-after-blank-dot>
+	a rdft:TestNTriplesPositiveSyntax ;
+	mf:action <test-nq-syntax-eof-after-blank-dot.nq> ;
+	mf:name "test-nq-syntax-eof-after-blank-dot" .
+
 <#test-nq-syntax-dot-end>
 	a rdft:TestNQuadsPositiveSyntax ;
 	mf:action <test-nq-syntax-dot-end.nq> ;
