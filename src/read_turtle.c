@@ -28,7 +28,6 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
 /// Like TRY() but tolerates SERD_FAILURE
@@ -92,11 +91,11 @@ read_STRING_LITERAL_LONG(SerdReader* const reader,
   SerdStatus st = SERD_SUCCESS;
   while (tolerate_status(reader, st)) {
     const int c = peek_byte(reader);
-    if (c == '\\') {
+    if (c < 0) {
+      st = r_err(reader, SERD_NO_DATA, "end of file in long string");
+    } else if (c == '\\') {
       TRY(st, skip_byte(reader, c));
       st = read_string_escape(reader, ref);
-    } else if (c == EOF) {
-      st = r_err(reader, SERD_NO_DATA, "unexpected end of file");
     } else if (c == q) {
       TRY(st, skip_byte(reader, q));
       const int q2 = peek_byte(reader);
@@ -220,7 +219,8 @@ read_PN_LOCAL(SerdReader* const reader,
     }
   }
 
-  while ((c = peek_byte(reader)) > 0) { // Middle: (PN_CHARS | '.' | ':')*
+  while (!st) { // Middle: (PN_CHARS | '.' | ':')*
+    c = peek_byte(reader);
     if (c == '.' || c == ':') {
       st = eat_push_byte(reader, dest, c);
     } else if ((st = read_PLX(reader, dest)) > SERD_FAILURE) {
@@ -699,11 +699,11 @@ read_object(SerdReader* const  reader,
   bool       simple = true;
   SerdNode*  o      = 0;
   const int  c      = peek_byte(reader);
+  if (c <= 0 || c == ')') {
+    return r_err(reader, SERD_BAD_SYNTAX, "expected object");
+  }
 
   switch (c) {
-  case EOF:
-  case ')':
-    return r_err(reader, SERD_BAD_SYNTAX, "expected object");
   case '$':
   case '?':
     st = read_Var(reader, &o);
