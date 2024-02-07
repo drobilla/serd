@@ -31,6 +31,8 @@
 		<#test-long-utf8>
 		<#test-no-spaces>
 		<#test-non-curie-uri>
+		<#test-nq-syntax-dot-end>
+		<#test-nt-syntax-dot-end>
 		<#test-out-of-range-unicode>
 		<#test-prefix>
 		<#test-quote-escapes>
@@ -190,6 +192,16 @@
 	mf:action <test-non-curie-uri.ttl> ;
 	mf:name "test-non-curie-uri" ;
 	mf:result <test-non-curie-uri.nt> .
+
+<#test-nq-syntax-dot-end>
+	a rdft:TestNQuadsPositiveSyntax ;
+	mf:action <test-nq-syntax-dot-end.nq> ;
+	mf:name "test-nq-syntax-dot-end" .
+
+<#test-nt-syntax-dot-end>
+	a rdft:TestNQuadsPositiveSyntax ;
+	mf:action <test-nt-syntax-dot-end.nt> ;
+	mf:name "test-nt-syntax-dot-end" .
 
 <#test-out-of-range-unicode>
 	a rdft:TestTurtleEval ;

@@ -1763,7 +1763,7 @@ read_nquads_statement(SerdReader* const reader)
 
     // Terminating '.'
     read_ws_star(reader);
-    if (!eat_byte_check(reader, '.')) {
+    if (!ate_dot && !eat_byte_check(reader, '.')) {
       return SERD_ERR_BAD_SYNTAX;
     }
   }

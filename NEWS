@@ -1,3 +1,9 @@
+serd (0.32.3) unstable; urgency=medium
+
+  * Fix parsing NQuads lines with no space before the final dot
+
+ -- David Robillard <d@drobilla.net>  Fri, 09 Feb 2024 15:46:08 +0000
+
 serd (0.32.2) stable; urgency=medium
 
   * Enable clang nullability checks
