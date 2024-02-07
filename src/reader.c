@@ -40,6 +40,19 @@ r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
 }
 
 SerdStatus
+r_err_char(SerdReader* const reader, const char* const kind, const int c)
+{
+  const SerdStatus st   = SERD_BAD_SYNTAX;
+  const uint32_t   code = (uint32_t)c;
+
+  return (c < 0x20 || c == 0x7F || c > 0x10FFFF)
+           ? r_err(reader, st, "bad %s character", kind)
+         : (c == '\'' || c >= 0x80)
+           ? r_err(reader, st, "bad %s character U+%04X", kind, code)
+           : r_err(reader, st, "bad %s character '%c'", kind, c);
+}
+
+SerdStatus
 skip_horizontal_whitespace(SerdReader* const reader)
 {
   SerdStatus st = SERD_SUCCESS;
