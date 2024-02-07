@@ -32,6 +32,13 @@ is_digit(const int c)
   return in_range(c, '0', '9');
 }
 
+/** ALPHA / DIGIT */
+static inline bool
+is_alnum(const int c)
+{
+  return is_digit(c) || is_alpha(c);
+}
+
 /** RFC2234: HEXDIG ::= DIGIT / "A" / "B" / "C" / "D" / "E" / "F" */
 static inline bool
 is_hexdig(const int c)
