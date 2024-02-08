@@ -9,17 +9,9 @@
 #include "zix/attributes.h"
 
 /**
-   Read a single TriG statement.
+   Read a single TriG "chunk" (directive or group of statements).
 */
 ZIX_NODISCARD SerdStatus
-read_trig_statement(SerdReader* reader);
-
-/**
-   Read a complete TriG document.
-
-   RDF 1.1 Trig: [1] trigDoc
-*/
-ZIX_NODISCARD SerdStatus
-read_trigDoc(SerdReader* reader);
+read_trig_chunk(SerdReader* reader);
 
 #endif // SERD_SRC_READ_TRIG_H

@@ -127,7 +127,7 @@ skip_byte(SerdReader* reader, const int byte)
 {
   (void)byte;
 
-  assert(byte < 0 || peek_byte(reader) == byte);
+  assert(peek_byte(reader) == byte);
 
   return accept_failure(serd_byte_source_advance(reader->source));
 }
