@@ -279,7 +279,8 @@ emit_event(const SerdReader* const reader, SerdEvent event)
 {
   event.caret = reader->source.caret;
 
-  return serd_sink_event(reader->sink, event);
+  const SerdStatus st = serd_sink_event(reader->sink, event);
+  return st == SERD_NO_CHANGE ? SERD_SUCCESS : st;
 }
 
 SerdStatus

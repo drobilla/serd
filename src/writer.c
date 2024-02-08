@@ -1025,8 +1025,7 @@ write_statement(SerdWriter* const       writer,
       return esink("()", 2, writer);
     }
 
-    TRY_FAILING(st, write_list_next(writer, flags, predicate, object));
-
+    st = write_list_next(writer, flags, predicate, object);
     if (st == SERD_FAILURE) { // Reached end of list
       pop_context(writer);
       return SERD_SUCCESS;
