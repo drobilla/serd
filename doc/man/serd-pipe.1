@@ -8,13 +8,13 @@
 .Nd read and write RDF data
 .Sh SYNOPSIS
 .Nm serd-pipe
-.Op Fl afhlqtv
+.Op Fl fhqv
 .Op Fl B Ar base
+.Op Fl I Ar syntax
+.Op Fl O Ar syntax
 .Op Fl b Ar bytes
 .Op Fl c Ar prefix
-.Op Fl i Ar syntax
 .Op Fl k Ar bytes
-.Op Fl o Ar syntax
 .Op Fl p Ar prefix
 .Op Fl r Ar root
 .Op Fl s Ar string
@@ -43,9 +43,53 @@ When the input is a file,
 the URI of the file is automatically used as the base URI.
 This option can be used to override that,
 or to provide a base URI for input from stdin or a string.
-.It Fl a
-Write ASCII output.
-If this is enabled, all non-ASCII characters will be escaped, even if the output syntax allows them to be written in UTF-8.
+.It Fl I Ar syntax
+Set an input syntax or option.
+May be given multiple times.
+The case-insensitive
+.Ar syntax
+can be
+.Cm NQuads ,
+.Cm NTriples ,
+.Cm TriG ,
+.Cm Turtle ,
+or an option:
+.Bl -tag -width 3n
+.It Cm lax
+Tolerate invalid input where possible.
+Warnings will be printed for syntax errors,
+but parsing will attempt to continue.
+Note that data may be lost when using this option!
+.El
+.It Fl O Ar syntax
+Set an output syntax or option.
+May be given multiple times.
+The case-insensitive
+.Ar syntax
+can be
+.Cm empty ,
+.Cm NQuads ,
+.Cm NTriples ,
+.Cm TriG ,
+.Cm Turtle ,
+or an option:
+.Bl -tag -width 3n
+.It Cm ascii
+Escape all non-ASCII characters.
+.It Cm lax
+Tolerate corrupt UTF-8 and write replacements.
+.It Cm terse
+Write terser output with fewer, longer lines.
+.It Cm unqualified
+Don't shorten URIs into CURIEs.
+.It Cm unresolved
+Don't make URIs relative.
+.El
+.Pp
+The
+.Cm empty
+syntax suppresses the output,
+so that only warnings and errors will be printed.
 .It Fl b Ar bytes
 I/O block size.
 This is the number of bytes in a file that will be read or written at once.
@@ -74,39 +118,12 @@ preserve full URIs (without qualifying or making relative),
 and pass prefixed names through as-is.
 .It Fl h
 Print the command line options.
-.It Fl i Ar syntax
-Read input as
-.Ar syntax .
-Case is ignored, valid values are:
-.Dq NQuads ,
-.Dq NTriples ,
-.Dq TriG ,
-and
-.Dq Turtle .
 .It Fl k Ar bytes
 Parser stack size.
 Parsing is performed using a pre-allocated stack for performance and security reasons.
 By default, the stack is 512 KiB, which should be sufficient for most data.
 This can be increased to support unusually structured data and huge literals,
 or decreased to reduce overall memory requirements and reduce startup time.
-.It Fl l
-Lax (non-strict) parsing.
-If this is enabled, recoverable syntax errors will print a warning, but parsing will proceed starting at the next statement if possible.
-Note that data may be lost when using this option.
-.It Fl o Ar syntax
-Write output as
-.Ar syntax .
-Case is ignored, valid values are:
-.Dq empty ,
-.Dq NQuads ,
-.Dq NTriples ,
-.Dq TriG ,
-and
-.Dq Turtle .
-The
-.Cm empty
-syntax suppresses the output,
-so that only warnings and errors will be printed.
 .It Fl p Ar prefix
 Add
 .Ar prefix
@@ -154,10 +171,20 @@ This is useful for keeping relative references within some directory.
 Parse
 .Ar string
 as input.
-.It Fl t
-Write terser output without newlines.
 .It Fl v
 Display version information and exit.
+.El
+.Sh ENVIRONMENT
+Errors and warnings are printed in color by default if the output is a terminal.
+This can be overridden with environment variables:
+.Pp
+.Bl -tag -compact -width 14n
+.It Ev NO_COLOR
+If present (regardless of value), color is disabled.
+.It Ev CLICOLOR
+If set to 0, color is disabled.
+.It Ev CLICOLOR_FORCE
+If set to anything other than 0, color is forced on.
 .El
 .Sh EXIT STATUS
 .Nm

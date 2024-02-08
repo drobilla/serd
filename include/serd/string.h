@@ -19,6 +19,15 @@ SERD_BEGIN_DECLS
 */
 
 /**
+   Compare two strings ignoring case.
+
+   @return Less than, equal to, or greater than zero if `s1` is less than,
+   equal to, or greater than `s2`, respectively, ignoring case.
+*/
+SERD_PURE_API int
+serd_strcasecmp(const char* ZIX_NONNULL s1, const char* ZIX_NONNULL s2);
+
+/**
    Measure a UTF-8 string.
 
    @return Length of `str` in bytes.
