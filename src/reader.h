@@ -84,9 +84,6 @@ push_node_termination(SerdReader* reader);
 ZIX_PURE_FUNC bool
 token_equals(const TokenHeader* node, ZixStringView tok);
 
-ZIX_PURE_FUNC bool
-tolerate_status(const SerdReader* reader, SerdStatus status);
-
 ZIX_PURE_FUNC size_t
 genid_size(const SerdReader* reader);
 
