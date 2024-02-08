@@ -14,7 +14,7 @@ import tempfile
 import serd_test_util as util
 
 args = util.wrapper_args(__doc__, True)
-command = shlex.split(args.wrapper) + [args.tool, "-o", "empty", args.input]
+command = shlex.split(args.wrapper) + [args.tool, "-O", "empty", args.input]
 
 with tempfile.TemporaryFile() as out:
     proc = subprocess.run(command, check=False, stdout=out)

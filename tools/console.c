@@ -83,6 +83,74 @@ serd_choose_syntax(const SerdSyntax requested, const char* const filename)
   return SERD_TRIG;
 }
 
+SerdStatus
+serd_set_input_option(const ZixStringView    name,
+                      SerdSyntax* const      syntax,
+                      SerdReaderFlags* const flags)
+{
+  typedef struct {
+    const char*    name;
+    SerdReaderFlag flag;
+  } InputOption;
+
+  static const InputOption input_options[] = {
+    {"lax", SERD_READ_LAX},
+    {NULL, SERD_READ_LAX},
+  };
+
+  const SerdSyntax named_syntax = serd_syntax_by_name(name.data);
+  if (!serd_strcasecmp(name.data, "empty") ||
+      named_syntax != SERD_SYNTAX_EMPTY) {
+    *syntax = named_syntax;
+    return SERD_SUCCESS;
+  }
+
+  for (const InputOption* o = input_options; o->name; ++o) {
+    if (!serd_strcasecmp(o->name, name.data)) {
+      *flags |= o->flag;
+      return SERD_SUCCESS;
+    }
+  }
+
+  return SERD_FAILURE;
+}
+
+SerdStatus
+serd_set_output_option(const ZixStringView    name,
+                       SerdSyntax* const      syntax,
+                       SerdWriterFlags* const flags)
+{
+  typedef struct {
+    const char*    name;
+    SerdWriterFlag flag;
+  } OutputOption;
+
+  static const OutputOption output_options[] = {
+    {"ascii", SERD_WRITE_ASCII},
+    {"unqualified", SERD_WRITE_UNQUALIFIED},
+    {"unresolved", SERD_WRITE_UNRESOLVED},
+    {"lax", SERD_WRITE_LAX},
+    {"terse", SERD_WRITE_TERSE},
+    {NULL, SERD_WRITE_ASCII},
+  };
+
+  const SerdSyntax named_syntax = serd_syntax_by_name(name.data);
+  if (!serd_strcasecmp(name.data, "empty") ||
+      named_syntax != SERD_SYNTAX_EMPTY) {
+    *syntax = named_syntax;
+    return SERD_SUCCESS;
+  }
+
+  for (const OutputOption* o = output_options; o->name; ++o) {
+    if (!serd_strcasecmp(o->name, name.data)) {
+      *flags |= o->flag;
+      return SERD_SUCCESS;
+    }
+  }
+
+  return SERD_FAILURE;
+}
+
 /// Wrapper for getc that is compatible with SerdReadFunc but faster than fread
 static size_t
 serd_file_read_byte(void* buf, size_t size, size_t nmemb, void* stream)
