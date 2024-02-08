@@ -66,10 +66,10 @@ read_turtle_subject(SerdReader* reader,
                     SerdNode**  dest,
                     int*        s_type);
 /**
-   Read a single Turtle statement.
+   Read a single Turtle "chunk" (directive or group of statements).
 */
 SERD_NODISCARD SerdStatus
-read_turtle_statement(SerdReader* reader);
+read_turtle_chunk(SerdReader* reader);
 
 /**
    Read a series of Turtle triples.
@@ -78,13 +78,5 @@ read_turtle_statement(SerdReader* reader);
 */
 SERD_NODISCARD SerdStatus
 read_turtle_triples(SerdReader* reader, ReadContext ctx, bool* ate_dot);
-
-/**
-   Read a complete Turtle document.
-
-   RDF 1.1 Turtle: [1] turtleDoc
-*/
-SERD_NODISCARD SerdStatus
-read_turtleDoc(SerdReader* reader);
 
 #endif // SERD_SRC_READ_TURTLE_H

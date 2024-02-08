@@ -75,7 +75,7 @@ serd_byte_source_advance(SerdByteSource* source)
     ++source->caret.col;
   }
 
-  if (++source->read_head >= source->buf_size) {
+  if (was_eof || ++source->read_head >= source->buf_size) {
     st = serd_byte_source_page(source);
   }
 
