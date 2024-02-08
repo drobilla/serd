@@ -19,12 +19,4 @@
 ZIX_NODISCARD SerdStatus
 read_nquads_line(SerdReader* reader);
 
-/**
-   Read a complete NQuads document.
-
-   RDF 1.1 NQuads: [1] nquadsDoc
-*/
-ZIX_NODISCARD SerdStatus
-read_nquadsDoc(SerdReader* reader);
-
 #endif // SERD_SRC_READ_NQUADS_H

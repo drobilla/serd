@@ -11,6 +11,7 @@ serd (1.1.1) unstable; urgency=medium
   * Refine and simplify command-line interface to support new features
   * Remove SERD_DISABLE_DEPRECATED and SERD_DEPRECATED_BY
   * Remove serd_uri_to_path()
+  * Remove special handling of null bytes in input streams
   * Remove support for reading Turtle named inline nodes extension
   * Remove useless character counting from API
   * Replace SerdChunk with ZixStringView

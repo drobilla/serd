@@ -167,12 +167,4 @@ read_Var(SerdReader* reader, SerdNode** dest);
 SerdStatus
 read_ntriples_line(SerdReader* reader);
 
-/**
-   Read a complete NTriples document.
-
-   RDF 1.1 NTriples: [1] ntriplesDoc
-*/
-ZIX_NODISCARD SerdStatus
-read_ntriplesDoc(SerdReader* reader);
-
 #endif // SERD_SRC_READ_NTRIPLES_H
