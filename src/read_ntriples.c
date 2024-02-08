@@ -176,15 +176,9 @@ read_character(SerdReader* const  reader,
 SerdStatus
 read_string_escape(SerdReader* const reader, TokenHeader* const ref)
 {
-  SerdStatus st   = SERD_SUCCESS;
-  uint32_t   code = 0;
-
-  TRY_FAILING(st, read_ECHAR(reader, ref));
-  if (st) {
-    TRY_FAILING(st, read_UCHAR(reader, ref, &code));
-  }
-
-  return st;
+  const SerdStatus st   = read_ECHAR(reader, ref);
+  uint32_t         code = 0U;
+  return (st == SERD_FAILURE) ? read_UCHAR(reader, ref, &code) : st;
 }
 
 SerdStatus

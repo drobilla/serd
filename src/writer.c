@@ -1172,11 +1172,10 @@ write_statement(SerdWriter* const       writer,
       return esink("()", 2, writer);
     }
 
-    TRY_FAILING(st, write_list_next(writer, flags, predicate, object));
-
-    if (st == SERD_FAILURE) { // Reached end of list
+    if ((st = write_list_next(writer, flags, predicate, object))) {
+      // Reached end of list, or error
       pop_context(writer);
-      return SERD_SUCCESS;
+      return (st == SERD_FAILURE) ? SERD_SUCCESS : st;
     }
 
   } else if (current_field_equals(writer, SERD_SUBJECT, subject)) {
