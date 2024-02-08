@@ -22,18 +22,13 @@ read_utf8_continuation_bytes(SerdReader* const reader,
 
   bytes[0] = lead;
   for (uint8_t i = 1U; !st && i < *size; ++i) {
-    const int b = peek_byte(reader);
-    if (b < 0) {
-      return r_err(reader, SERD_NO_DATA, "unexpected end of input");
+    const int c = peek_byte(reader);
+    if (c < 0x80 || c > 0xC0) {
+      return r_err_char(reader, "UTF-8 continuation", c);
     }
 
-    const uint8_t byte = (uint8_t)b;
-    if (!is_utf8_continuation(byte)) {
-      return r_err(reader, SERD_BAD_TEXT, "bad UTF-8 continuation 0x%X", byte);
-    }
-
-    st       = skip_byte(reader, b);
-    bytes[i] = byte;
+    st       = skip_byte(reader, c);
+    bytes[i] = (uint8_t)c;
   }
 
   return st;
