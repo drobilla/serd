@@ -5,7 +5,6 @@
 #define SERD_SRC_STRING_UTILS_H
 
 #include <serd/node_flags.h>
-#include <zix/attributes.h>
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -118,22 +117,6 @@ static inline char
 serd_to_upper(const char c)
 {
   return (char)(in_range(c, 'a', 'z') ? (c - 32) : c);
-}
-
-ZIX_PURE_FUNC static inline int
-serd_strcasecmp(const char* s1, const char* s2)
-{
-  while (*s1 && *s2) {
-    const char c1 = serd_to_upper(*s1++);
-    const char c2 = serd_to_upper(*s2++);
-    if (c1 != c2) {
-      return (c1 < c2) ? -1 : +1;
-    }
-  }
-
-  const char c1 = serd_to_upper(*s1);
-  const char c2 = serd_to_upper(*s2);
-  return (c1 == c2) ? 0 : (c1 < c2) ? -1 : +1;
 }
 
 static inline uint8_t

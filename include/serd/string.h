@@ -51,6 +51,15 @@ SERD_API SerdString
 serd_string_new(ZixAllocator* ZIX_NULLABLE allocator, ZixStringView contents);
 
 /**
+   Compare two strings ignoring case.
+
+   @return Less than, equal to, or greater than zero if `lhs` is less than,
+   equal to, or greater than `rhs`, respectively, ignoring case.
+*/
+SERD_PURE_API int
+serd_strcasecmp(const char* ZIX_NONNULL lhs, const char* ZIX_NONNULL rhs);
+
+/**
    Measure a UTF-8 string.
 
    @return Length of `str` in bytes.

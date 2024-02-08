@@ -106,7 +106,7 @@ if is_variable('serd_pipe')
     test(
       ttl_file_path.substring(3).underscorify(),
       check_formatting_py,
-      args: [files(ttl_file_path), serd_pipe, '-o', 'turtle'],
+      args: [files(ttl_file_path), serd_pipe, '-O', 'turtle'],
       env: test_env,
       suite: 'data',
     )

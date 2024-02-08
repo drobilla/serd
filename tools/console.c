@@ -4,8 +4,13 @@
 #include "console.h"
 
 #include <serd/input_stream.h>
+#include <serd/reader.h>
+#include <serd/status.h>
+#include <serd/string.h>
 #include <serd/syntax.h>
 #include <serd/version.h>
+#include <serd/writer.h>
+#include <zix/string_view.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -38,6 +43,74 @@ serd_choose_syntax(const SerdSyntax requested, const char* const filename)
           filename);
 
   return SERD_TRIG;
+}
+
+SerdStatus
+serd_set_input_option(const ZixStringView    name,
+                      SerdSyntax* const      syntax,
+                      SerdReaderFlags* const flags)
+{
+  typedef struct {
+    const char*    name;
+    SerdReaderFlag flag;
+  } InputOption;
+
+  static const InputOption input_options[] = {
+    {"lax", SERD_READ_LAX},
+    {NULL, SERD_READ_LAX},
+  };
+
+  const SerdSyntax named_syntax = serd_syntax_by_name(name.data);
+  if (!serd_strcasecmp(name.data, "empty") ||
+      named_syntax != SERD_SYNTAX_EMPTY) {
+    *syntax = named_syntax;
+    return SERD_SUCCESS;
+  }
+
+  for (const InputOption* o = input_options; o->name; ++o) {
+    if (!serd_strcasecmp(o->name, name.data)) {
+      *flags |= o->flag;
+      return SERD_SUCCESS;
+    }
+  }
+
+  return SERD_FAILURE;
+}
+
+SerdStatus
+serd_set_output_option(const ZixStringView    name,
+                       SerdSyntax* const      syntax,
+                       SerdWriterFlags* const flags)
+{
+  typedef struct {
+    const char*    name;
+    SerdWriterFlag flag;
+  } OutputOption;
+
+  static const OutputOption output_options[] = {
+    {"escaped", SERD_WRITE_ESCAPED},
+    {"unqualified", SERD_WRITE_UNQUALIFIED},
+    {"unresolved", SERD_WRITE_UNRESOLVED},
+    {"lax", SERD_WRITE_LAX},
+    {"terse", SERD_WRITE_TERSE},
+    {NULL, SERD_WRITE_ESCAPED},
+  };
+
+  const SerdSyntax named_syntax = serd_syntax_by_name(name.data);
+  if (!serd_strcasecmp(name.data, "empty") ||
+      named_syntax != SERD_SYNTAX_EMPTY) {
+    *syntax = named_syntax;
+    return SERD_SUCCESS;
+  }
+
+  for (const OutputOption* o = output_options; o->name; ++o) {
+    if (!serd_strcasecmp(o->name, name.data)) {
+      *flags |= o->flag;
+      return SERD_SUCCESS;
+    }
+  }
+
+  return SERD_FAILURE;
 }
 
 SerdInputStream
