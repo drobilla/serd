@@ -6,8 +6,11 @@
 
 #include <serd/env.h>
 #include <serd/input_stream.h>
+#include <serd/reader.h>
 #include <serd/status.h>
 #include <serd/syntax.h>
+#include <serd/writer.h>
+#include <zix/string_view.h>
 
 int
 serd_print_version(const char* program);
@@ -17,6 +20,16 @@ serd_set_base_uri_from_path(SerdEnv* env, const char* path);
 
 SerdSyntax
 serd_choose_syntax(SerdSyntax requested, const char* filename);
+
+SerdStatus
+serd_set_input_option(ZixStringView    name,
+                      SerdSyntax*      syntax,
+                      SerdReaderFlags* flags);
+
+SerdStatus
+serd_set_output_option(ZixStringView    name,
+                       SerdSyntax*      syntax,
+                       SerdWriterFlags* flags);
 
 SerdInputStream
 serd_open_tool_input(const char* filename);
