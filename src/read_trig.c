@@ -33,8 +33,9 @@ read_wrappedGraph(SerdReader* const reader, ReadContext* const ctx)
       return r_err(reader, st, "expected subject");
     }
 
-    if ((st = read_turtle_triples(reader, *ctx, &ate_dot)) && s_type != '[') {
-      return r_err(reader, st, "bad predicate object list");
+    TRY_FAILING(st, read_turtle_triples(reader, *ctx, &ate_dot));
+    if (st == SERD_FAILURE && s_type != '[') {
+      return r_err(reader, st, "expected predicate object list");
     }
 
     serd_stack_pop_to(&reader->stack, orig_stack_size);
@@ -62,20 +63,22 @@ read_labelOrSubject(SerdReader* const reader, SerdNode** const dest)
 
   switch (peek_byte(reader)) {
   case '[':
-    TRY(st, skip_byte(reader, '['));
-    TRY(st, read_turtle_ws_star(reader));
-    TRY(st, eat_byte_check(reader, ']'));
-    *dest = blank_id(reader);
-    return *dest ? SERD_SUCCESS : SERD_BAD_STACK;
+    if (!(st = skip_byte(reader, '[')) && !(st = read_turtle_ws_star(reader)) &&
+        !(st = eat_byte_check(reader, ']'))) {
+      *dest = blank_id(reader);
+      st    = *dest ? SERD_SUCCESS : SERD_BAD_STACK;
+    }
+    break;
   case '_':
-    return read_BLANK_NODE_LABEL(reader, dest, &ate_dot);
+    st = read_BLANK_NODE_LABEL(reader, dest, &ate_dot);
+    break;
   default:
-    if (!read_turtle_iri(reader, dest, &ate_dot)) {
-      return SERD_SUCCESS;
-    } else {
-      return r_err(reader, SERD_BAD_SYNTAX, "expected label or subject");
+    if ((st = read_turtle_iri(reader, dest, &ate_dot)) == SERD_FAILURE) {
+      st = r_err(reader, st, "expected label or subject");
     }
   }
+
+  return st;
 }
 
 static SerdStatus
@@ -137,7 +140,7 @@ read_block(SerdReader* const reader, ReadContext* const ctx)
   }
 
   // "Failure" is only allowed for anonymous subjects like "[ ... ] ."
-  if (st && s_type != '[') {
+  if (st == SERD_FAILURE && s_type != '[') {
     return r_err(reader, SERD_BAD_SYNTAX, "expected triples");
   }
 
