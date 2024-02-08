@@ -83,7 +83,7 @@ read_STRING_LITERAL_LONG(SerdReader* const  reader,
                          const uint8_t      q)
 {
   SerdStatus st = SERD_SUCCESS;
-  while (tolerate_status(reader, st)) {
+  while (!st) {
     const int c = peek_byte(reader);
     if (c == '\\') {
       TRY(st, skip_byte(reader, c));
@@ -116,7 +116,7 @@ read_STRING_LITERAL_LONG(SerdReader* const  reader,
     }
   }
 
-  return tolerate_status(reader, st) ? SERD_SUCCESS : st;
+  return st;
 }
 
 ZIX_NODISCARD static SerdStatus
@@ -191,11 +191,8 @@ read_PN_LOCAL(SerdReader* const  reader,
   //    or: (PN_CHARS_BASE | '_' | ':' | [0-9] | PLX)
   if (c == ':' || c == '_' || is_digit(c)) {
     st = eat_push_byte(reader, dest, c);
-  } else {
-    TRY_FAILING(st, read_PLX(reader, dest));
-    if (st) {
-      TRY(st, read_PN_CHARS_BASE(reader, dest));
-    }
+  } else if ((st = read_PLX(reader, dest)) == SERD_FAILURE) {
+    st = read_PN_CHARS_BASE(reader, dest);
   }
 
   // Middle: ((PN_CHARS | '.' | ':' | PLX)*
@@ -566,57 +563,35 @@ read_object(SerdReader* const        reader,
 
   assert(ctx->subject);
 
-  SerdStatus st     = SERD_FAILURE;
-  bool       simple = true;
-  const int  c      = peek_byte(reader);
+  SerdStatus st = SERD_FAILURE;
+  const int  c  = peek_byte(reader);
   if (c <= 0 || c == ')') {
     return r_err(reader, SERD_BAD_SYNTAX, "expected object");
   }
 
-  switch (c) {
-  case '[':
-    simple = false;
-    st     = read_anon(reader, *ctx, false, o);
-    break;
-  case '(':
-    simple = false;
-    st     = read_collection(reader, *ctx, o);
-    break;
-  case '_':
-    st = read_BLANK_NODE_LABEL(reader, o, ate_dot);
-    break;
-  case '<':
-    st = read_IRIREF(reader, o);
-    break;
-  case ':':
-    st = read_turtle_iri(reader, o, ate_dot);
-    break;
-  case '+':
-  case '-':
-  case '.':
-  case '0':
-  case '1':
-  case '2':
-  case '3':
-  case '4':
-  case '5':
-  case '6':
-  case '7':
-  case '8':
-  case '9':
-    st = read_number(reader, o, meta, ate_dot);
-    break;
-  case '"':
-  case '\'':
-    st = read_literal(reader, o, meta, ate_dot);
-    break;
-  default:
-    // Either a boolean literal or a prefixed name
-    st = read_named_object(reader, o, meta, ate_dot);
-  }
+  if (c == '[') {
+    st = read_anon(reader, *ctx, false, o);
+  } else if (c == '(') {
+    st = read_collection(reader, *ctx, o);
+  } else {
+    if (c == '_') {
+      st = read_BLANK_NODE_LABEL(reader, o, ate_dot);
+    } else if (c == '<') {
+      st = read_IRIREF(reader, o);
+    } else if (c == ':') {
+      st = read_turtle_iri(reader, o, ate_dot);
+    } else if (c == '+' || c == '-' || c == '.' || is_digit(c)) {
+      st = read_number(reader, o, meta, ate_dot);
+    } else if (c == '\"' || c == '\'') {
+      st = read_literal(reader, o, meta, ate_dot);
+    } else {
+      // Either a boolean literal or a prefixed name
+      st = read_named_object(reader, o, meta, ate_dot);
+    }
 
-  if (!st && simple && *o) {
-    st = emit_statement(reader, *ctx, *o, *meta);
+    if (!st) {
+      st = emit_statement(reader, *ctx, *o, *meta);
+    }
   }
 
   serd_stack_pop_to(&reader->stack, orig_stack_size);
@@ -696,20 +671,23 @@ read_collection(SerdReader* const   reader,
   TRY(st, read_turtle_ws_star(reader));
 
   bool end = peek_byte(reader) == ')';
-  if (!(*dest = end ? reader->rdf_nil : blank_id(reader))) {
+  if (end) {
+    *dest = reader->rdf_nil;
+    return end_collection(reader,
+                          ctx.subject ? emit_statement(reader, ctx, *dest, NULL)
+                                      : SERD_SUCCESS);
+  }
+
+  if (!(*dest = blank_id(reader))) {
     return SERD_BAD_STACK;
   }
 
   if (ctx.subject) { // Reading a collection object
-    *ctx.flags |= (end ? 0 : SERD_LIST_O);
+    *ctx.flags |= SERD_LIST_O;
     TRY(st, emit_statement(reader, ctx, *dest, NULL));
     *ctx.flags &= (SerdEventFlags) ~((unsigned)SERD_LIST_O);
   } else { // Reading a collection subject
-    *ctx.flags |= (end ? 0 : SERD_LIST_S);
-  }
-
-  if (end) {
-    return end_collection(reader, st);
+    *ctx.flags |= SERD_LIST_S;
   }
 
   /* The order of node allocation here is necessarily not in stack order,
@@ -767,27 +745,22 @@ read_turtle_subject(SerdReader* const   reader,
                     TokenHeader** const dest,
                     int* const          s_type)
 {
-  SerdStatus st      = SERD_SUCCESS;
-  bool       ate_dot = false;
-  switch ((*s_type = peek_byte(reader))) {
-  case '[':
-    st = read_anon(reader, ctx, true, dest);
-    break;
-  case '(':
-    st = read_collection(reader, ctx, dest);
-    break;
-  case '_':
-    st = read_BLANK_NODE_LABEL(reader, dest, &ate_dot);
-    break;
-  default:
-    TRY(st, read_turtle_iri(reader, dest, &ate_dot));
+  const int c = *s_type = peek_byte(reader);
+
+  if (c == '[') {
+    return read_anon(reader, ctx, true, dest);
   }
 
-  if (ate_dot) {
-    return r_err(reader, SERD_BAD_SYNTAX, "subject ends with '.'");
+  if (c == '(') {
+    return read_collection(reader, ctx, dest);
   }
 
-  return st;
+  bool             ate_dot = false;
+  const SerdStatus st      = (c == '_')
+                               ? read_BLANK_NODE_LABEL(reader, dest, &ate_dot)
+                               : read_turtle_iri(reader, dest, &ate_dot);
+
+  return ate_dot ? r_err(reader, SERD_BAD_SYNTAX, "subject ends with '.'") : st;
 }
 
 SerdStatus
@@ -951,39 +924,34 @@ read_turtle_statement(SerdReader* const reader)
   ReadContext    ctx   = {NULL, NULL, NULL, &flags};
   SerdStatus     st    = SERD_SUCCESS;
 
-  // Read first character and handle simple cases based on it
   TRY(st, read_turtle_ws_star(reader));
+
   const int c = peek_byte(reader);
   if (c <= 0) {
     TRY(st, skip_byte(reader, c));
     return SERD_FAILURE;
   }
 
-  if (c == '@') {
-    return read_turtle_directive(reader);
-  }
+  const size_t orig_stack_size = reader->stack.size;
 
-  // No such luck, figure out what to read from the first token
-  return read_block(reader, &ctx);
+  st = (c == '@') ? read_turtle_directive(reader) : read_block(reader, &ctx);
+
+  serd_stack_pop_to(&reader->stack, orig_stack_size);
+  return st;
 }
 
 SerdStatus
 read_turtleDoc(SerdReader* const reader)
 {
-  while (!reader->source.eof) {
-    const size_t     orig_stack_size = reader->stack.size;
-    const SerdStatus st              = read_turtle_statement(reader);
+  SerdStatus st = SERD_SUCCESS;
 
-    if (st > SERD_FAILURE) {
-      if (!tolerate_status(reader, st)) {
-        serd_stack_pop_to(&reader->stack, orig_stack_size);
-        return st;
-      }
+  while (st <= SERD_FAILURE && !reader->source.eof) {
+    st = read_turtle_statement(reader);
+    if (st > SERD_FAILURE && !reader->strict) {
       serd_reader_skip_until_byte(reader, '\n');
+      st = SERD_SUCCESS;
     }
-
-    serd_stack_pop_to(&reader->stack, orig_stack_size);
   }
 
-  return SERD_SUCCESS;
+  return accept_failure(st);
 }

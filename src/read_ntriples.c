@@ -188,7 +188,7 @@ read_STRING_LITERAL(SerdReader* const  reader,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  while (tolerate_status(reader, st)) {
+  while (!st) {
     const int c = peek_byte(reader);
     if (c < 0) {
       return r_err_eof(reader, SERD_BAD_SYNTAX);
@@ -336,9 +336,7 @@ read_BLANK_NODE_LABEL(SerdReader* const   reader,
   }
 
   // Adjust ID to avoid clashes with generated IDs if necessary
-  st = adjust_blank_id(reader, buf);
-
-  return tolerate_status(reader, st) ? SERD_SUCCESS : st;
+  return adjust_blank_id(reader, buf);
 }
 
 static unsigned
@@ -381,17 +379,14 @@ read_UCHAR(SerdReader* const  reader,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  // Consume first character to determine which type of escape this is
-  const int b      = peek_byte(reader);
-  unsigned  length = 0U;
-  if (b == 'U') {
-    length = 8;
-  } else if (b == 'u') {
-    length = 4;
-  } else {
+  // Check that first character is an expected one
+  const int b = peek_byte(reader);
+  if (b != 'U' && b != 'u') {
     return r_err_expected(reader, "'U' or 'u'", b);
   }
 
+  // Determine length from the escape character and consume it
+  const unsigned length = b == 'U' ? 8U : 4U;
   TRY(st, skip_byte(reader, b));
 
   // Read character code point in hex
@@ -528,9 +523,9 @@ read_nt_object(SerdReader* const   reader,
                TokenHeader** const meta,
                bool* const         ate_dot)
 {
-  *ate_dot = false;
-
   const int c = peek_byte(reader);
+
+  *ate_dot = false;
 
   return (c == '"')   ? read_literal(reader, dest, meta)
          : (c == '<') ? read_IRI(reader, dest)
@@ -562,6 +557,7 @@ read_triple(SerdReader* const reader)
     return st;
   }
 
+  // Read the trailing dot if the object didn't already eat it
   if (!ate_dot && (st = eat_byte_check(reader, '.'))) {
     return st;
   }
@@ -608,21 +604,15 @@ read_ntriples_line(SerdReader* const reader)
 SerdStatus
 read_ntriplesDoc(SerdReader* const reader)
 {
-  // Read the first line
-  SerdStatus st = read_ntriples_line(reader);
-  if (st == SERD_FAILURE || !tolerate_status(reader, st)) {
-    return st;
-  }
+  SerdStatus st = SERD_SUCCESS;
 
-  // Continue reading lines for as long as possible
-  for (st = SERD_SUCCESS; !st;) {
+  while (st <= SERD_FAILURE && !reader->source.eof) {
     st = read_ntriples_line(reader);
-    if (st > SERD_FAILURE && tolerate_status(reader, st)) {
+    if (st > SERD_FAILURE && !reader->strict) {
       serd_reader_skip_until_byte(reader, '\n');
       st = SERD_SUCCESS;
     }
   }
 
-  // If we made it this far, we succeeded at reading at least one line
   return accept_failure(st);
 }
