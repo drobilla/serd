@@ -219,10 +219,30 @@ test_turtle_overflow(void)
   serd_world_free(world);
 }
 
+static void
+test_trig_overflow(void)
+{
+  static const char* const test_strings[] = {
+    "[] a <http://example.org/S> .",
+    "GRAPH <http://example.org/g> { [] a <http://example.org/S> . }",
+    "GRAPH [ ] { [ ] a <http://example.org/S> . }",
+    NULL,
+  };
+
+  SerdWorld* const world = serd_world_new(NULL);
+
+  for (const char* const* t = test_strings; *t; ++t) {
+    test_all_sizes(world, *t, SERD_TRIG, 0U);
+  }
+
+  serd_world_free(world);
+}
+
 int
 main(void)
 {
   test_ntriples_overflow();
   test_turtle_overflow();
+  test_trig_overflow();
   return 0;
 }
