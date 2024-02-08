@@ -1,9 +1,9 @@
 // Copyright 2011-2020 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "string_utils.h"
-
 #include "serd/syntax.h"
+
+#include "serd/string.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -31,7 +31,7 @@ serd_syntax_by_name(const char* const name)
   const size_t len = strlen(name);
   if (len) {
     for (const Syntax* s = syntaxes; s->name; ++s) {
-      if (!serd_strncasecmp(s->name, name, strlen(name))) {
+      if (!serd_strcasecmp(s->name, name)) {
         return s->syntax;
       }
     }
@@ -47,9 +47,8 @@ serd_guess_syntax(const char* const filename)
 
   const char* ext = strrchr(filename, '.');
   if (ext && ext[1]) {
-    const size_t ext_len = strlen(ext);
     for (const Syntax* s = syntaxes; s->name; ++s) {
-      if (s->extension && !serd_strncasecmp(s->extension, ext, ext_len)) {
+      if (s->extension && !serd_strcasecmp(s->extension, ext)) {
         return s->syntax;
       }
     }
