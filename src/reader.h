@@ -8,6 +8,8 @@
 #include "node.h"
 #include "stack.h"
 
+#include "try.h"
+
 #include "serd/attributes.h"
 #include "serd/caret.h"
 #include "serd/env.h"
@@ -109,6 +111,12 @@ accept_failure(SerdStatus st)
   return st == SERD_FAILURE ? SERD_SUCCESS : st;
 }
 
+SERD_NODISCARD static inline SerdStatus
+reject_failure(SerdStatus st)
+{
+  return st == SERD_FAILURE ? SERD_BAD_SYNTAX : st;
+}
+
 SERD_NODISCARD static inline int
 peek_byte(SerdReader* reader)
 {
@@ -130,15 +138,17 @@ skip_byte(SerdReader* reader, const int byte)
 SERD_NODISCARD static inline SerdStatus
 eat_byte_check(SerdReader* reader, const int byte)
 {
-  SerdStatus st = SERD_BAD_SYNTAX;
+  SerdStatus st = SERD_SUCCESS;
   const int  c  = peek_byte(reader);
+  TRY(st, skip_byte(reader, c));
   if (c != byte) {
+    st = SERD_BAD_SYNTAX;
     return (c < 0x20 || c == '\'' || c > 0x7E)
              ? r_err(reader, st, "expected '%c'", byte)
              : r_err(reader, st, "expected '%c', not '%c'", byte, c);
   }
 
-  return skip_byte(reader, c);
+  return st;
 }
 
 SERD_NODISCARD static inline SerdStatus
