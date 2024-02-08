@@ -166,15 +166,10 @@ read_character(SerdReader* const reader, SerdNode* const dest, const uint8_t c)
 SerdStatus
 read_string_escape(SerdReader* const reader, SerdNode* const ref)
 {
-  SerdStatus st   = SERD_SUCCESS;
-  uint32_t   code = 0;
+  const SerdStatus st   = read_ECHAR(reader, ref);
+  uint32_t         code = 0U;
 
-  TRY_FAILING(st, read_ECHAR(reader, ref));
-  if (st) {
-    TRY_FAILING(st, read_UCHAR(reader, ref, &code));
-  }
-
-  return st;
+  return st == SERD_FAILURE ? read_UCHAR(reader, ref, &code) : st;
 }
 
 SerdStatus
@@ -184,7 +179,7 @@ read_STRING_LITERAL(SerdReader* const reader,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  while (tolerate_status(reader, st)) {
+  while (!st) {
     const int c = peek_byte(reader);
     if (c < 0) {
       return r_err(reader, SERD_NO_DATA, "end of file in short string");
@@ -330,9 +325,7 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
   }
 
   // Adjust ID to avoid clashes with generated IDs if necessary
-  st = adjust_blank_id(reader, buf);
-
-  return tolerate_status(reader, st) ? SERD_SUCCESS : st;
+  return adjust_blank_id(reader, buf);
 }
 
 static unsigned
@@ -375,17 +368,14 @@ read_UCHAR(SerdReader* const reader,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  // Consume first character to determine which type of escape this is
-  const int b      = peek_byte(reader);
-  unsigned  length = 0U;
-  if (b == 'U') {
-    length = 8;
-  } else if (b == 'u') {
-    length = 4;
-  } else {
+  // Check that first character is an expected one
+  const int b = peek_byte(reader);
+  if (b != 'U' && b != 'u') {
     return r_err(reader, SERD_BAD_SYNTAX, "expected 'U' or 'u'");
   }
 
+  // Determine length from the escape character and consume it
+  const unsigned length = b == 'U' ? 8U : 4U;
   TRY(st, skip_byte(reader, b));
 
   // Read character code point in hex
@@ -461,17 +451,12 @@ read_VARNAME(SerdReader* const reader, SerdNode** const dest)
 
   while (!st) {
     const int c = peek_byte(reader);
-    if (c < 0) {
-      st = r_err(reader, SERD_BAD_SYNTAX, "expected variable name character");
-    } else if (is_digit(c) || c == '_') {
-      st = eat_push_byte(reader, n, c);
-    } else if ((st = read_PN_CHARS(reader, n))) {
-      st = accept_failure(st);
-      break;
-    }
+
+    st = (is_digit(c) || c == '_') ? eat_push_byte(reader, n, c)
+                                   : read_PN_CHARS(reader, n);
   }
 
-  return st;
+  return accept_failure(st);
 }
 
 SerdStatus
@@ -571,9 +556,9 @@ read_nt_object(SerdReader* const reader,
                SerdNode** const  dest,
                bool* const       ate_dot)
 {
-  *ate_dot = false;
-
   const int c = peek_byte(reader);
+
+  *ate_dot = false;
 
   return (c == '"')   ? read_literal(reader, dest)
          : (c == '<') ? read_IRI(reader, dest)
@@ -605,13 +590,13 @@ read_triple(SerdReader* const reader)
     return st;
   }
 
+  // Read the trailing dot if the object didn't already eat it
   if (!ate_dot && (st = eat_byte_check(reader, '.'))) {
     return st;
   }
 
-  if (ctx.object) {
-    TRY(st, push_node_termination(reader));
-  }
+  assert(ctx.object);
+  TRY(st, push_node_termination(reader));
 
   const SerdStatementView statement = {
     ctx.subject, ctx.predicate, ctx.object, ctx.graph};
@@ -658,21 +643,15 @@ read_ntriples_line(SerdReader* const reader)
 SerdStatus
 read_ntriplesDoc(SerdReader* const reader)
 {
-  // Read the first line
-  SerdStatus st = read_ntriples_line(reader);
-  if (st == SERD_FAILURE || !tolerate_status(reader, st)) {
-    return st;
-  }
+  SerdStatus st = SERD_SUCCESS;
 
-  // Continue reading lines for as long as possible
-  for (st = SERD_SUCCESS; !st;) {
+  while (st <= SERD_FAILURE && !reader->source->eof) {
     st = read_ntriples_line(reader);
-    if (st > SERD_FAILURE && tolerate_status(reader, st)) {
+    if (st > SERD_FAILURE && !reader->strict) {
       serd_reader_skip_until_byte(reader, '\n');
       st = SERD_SUCCESS;
     }
   }
 
-  // If we made it this far, we succeeded at reading at least one line
   return accept_failure(st);
 }

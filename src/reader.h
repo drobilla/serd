@@ -89,9 +89,6 @@ token_equals(const SerdNode* node, const char* tok, size_t n);
 ZIX_PURE_FUNC size_t
 genid_length(const SerdReader* reader);
 
-ZIX_PURE_FUNC bool
-tolerate_status(const SerdReader* reader, SerdStatus status);
-
 SerdNode*
 blank_id(SerdReader* reader);
 
