@@ -168,6 +168,56 @@ foreach unit : unit_tests
   )
 endforeach
 
+#################
+# Special Tests #
+#################
+
+test_read_errors = executable(
+  'test_read_errors',
+  files('test_read_errors.c'),
+  c_args: c_suppressions + platform_c_args,
+  dependencies: [serd_dep, zix_dep],
+)
+
+read_error_modes = ['char', 'stream']
+read_error_langs = ['nt', 'nq', 'ttl', 'trig']
+read_error_cases = {'ext': 'nq'}
+foreach lang : read_error_langs
+  read_error_cases += {lang: lang}
+endforeach
+
+foreach case, lang : read_error_cases
+  input = files('extra/good/test-@0@-syntax-all-rules.@1@'.format(case, lang))
+  foreach mode : read_error_modes
+    test(
+      'read_errors_@0@_@1@'.format(case, mode),
+      test_read_errors,
+      args: ['-' + mode[0]] + input,
+      env: test_env,
+      suite: 'io',
+    )
+  endforeach
+endforeach
+
+bad_read_errors_args = {
+  'bad_arg': ['-x'],
+  'bad_syntax': [files('extra/perfect/README.md')],
+  'empty': [files('extra/perfect/test-empty.ttl')],
+  'no_such_file': ['no_such_file'],
+  'none': [],
+}
+
+foreach name, args : bad_read_errors_args
+  test(
+    name,
+    test_read_errors,
+    args: args,
+    env: test_env,
+    should_fail: true,
+    suite: 'io',
+  )
+endforeach
+
 ################
 # System Tests #
 ################
