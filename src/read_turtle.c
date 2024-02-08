@@ -90,9 +90,7 @@ read_STRING_LITERAL_LONG(SerdReader* const reader,
   SerdStatus st = SERD_SUCCESS;
   while (!st) {
     const int c = peek_byte(reader);
-    if (c < 0) {
-      st = r_err(reader, SERD_NO_DATA, "end of file in long string");
-    } else if (c == '\\') {
+    if (c == '\\') {
       TRY(st, skip_byte(reader, c));
       st = read_string_escape(reader, ref);
     } else if (c == q) {
@@ -676,9 +674,6 @@ read_object(SerdReader* const  reader,
   SerdStatus st = SERD_FAILURE;
   SerdNode*  o  = 0;
   const int  c  = peek_byte(reader);
-  if (c <= 0 || c == ')') {
-    return r_err(reader, SERD_BAD_SYNTAX, "expected object");
-  }
 
   if (c == '[') {
     st = read_anon(reader, *ctx, false, &o);
@@ -1024,7 +1019,7 @@ read_block(SerdReader* const reader, ReadContext* const ctx)
 }
 
 SerdStatus
-read_turtle_statement(SerdReader* const reader)
+read_turtle_chunk(SerdReader* const reader)
 {
   SerdStatementEventFlags flags = 0U;
   ReadContext             ctx   = {0, 0, 0, 0, &flags};
@@ -1032,32 +1027,13 @@ read_turtle_statement(SerdReader* const reader)
 
   TRY(st, read_turtle_ws_star(reader));
 
-  const int c = peek_byte(reader);
-  if (c <= 0) {
-    TRY(st, skip_byte(reader, c));
-    return SERD_FAILURE;
-  }
-
   const size_t orig_stack_size = reader->stack.size;
+  const int    c               = peek_byte(reader);
 
-  st = (c == '@') ? read_turtle_directive(reader) : read_block(reader, &ctx);
+  st = (c < 0)      ? SERD_FAILURE
+       : (c == '@') ? read_turtle_directive(reader)
+                    : read_block(reader, &ctx);
 
   serd_stack_pop_to(&reader->stack, orig_stack_size);
   return st;
-}
-
-SerdStatus
-read_turtleDoc(SerdReader* const reader)
-{
-  SerdStatus st = SERD_SUCCESS;
-
-  while (st <= SERD_FAILURE && !reader->source->eof) {
-    st = read_turtle_statement(reader);
-    if (st > SERD_FAILURE && !reader->strict) {
-      serd_reader_skip_until_byte(reader, '\n');
-      st = SERD_SUCCESS;
-    }
-  }
-
-  return accept_failure(st);
 }

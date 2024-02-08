@@ -219,6 +219,16 @@ serd_reader_prepare_if_necessary(SerdReader* const reader)
                                     : serd_reader_prepare(reader);
 }
 
+static SerdStatus
+read_syntax_chunk(SerdReader* const reader)
+{
+  return (reader->syntax == SERD_TURTLE)     ? read_turtle_chunk(reader)
+         : (reader->syntax == SERD_NTRIPLES) ? read_ntriples_line(reader)
+         : (reader->syntax == SERD_NQUADS)   ? read_nquads_line(reader)
+         : (reader->syntax == SERD_TRIG)     ? read_trig_chunk(reader)
+                                             : SERD_FAILURE;
+}
+
 SerdStatus
 serd_reader_read_document(SerdReader* const reader)
 {
@@ -243,11 +253,15 @@ serd_reader_read_document(SerdReader* const reader)
         .count;
   }
 
-  return (reader->syntax == SERD_TURTLE)     ? read_turtleDoc(reader)
-         : (reader->syntax == SERD_NTRIPLES) ? read_ntriplesDoc(reader)
-         : (reader->syntax == SERD_NQUADS)   ? read_nquadsDoc(reader)
-         : (reader->syntax == SERD_TRIG)     ? read_trigDoc(reader)
-                                             : SERD_SUCCESS;
+  while (st <= SERD_FAILURE && !reader->source->eof) {
+    st = read_syntax_chunk(reader);
+    if (st > SERD_FAILURE && !reader->strict) {
+      serd_reader_skip_until_byte(reader, '\n');
+      st = SERD_SUCCESS;
+    }
+  }
+
+  return accept_failure(st);
 }
 
 SerdReader*
@@ -374,12 +388,7 @@ serd_reader_read_chunk(SerdReader* const reader)
     st = serd_byte_source_advance(reader->source);
   }
 
-  return st                                  ? st
-         : (reader->syntax == SERD_TURTLE)   ? read_turtle_statement(reader)
-         : (reader->syntax == SERD_NTRIPLES) ? read_ntriples_line(reader)
-         : (reader->syntax == SERD_NQUADS)   ? read_nquads_line(reader)
-         : (reader->syntax == SERD_TRIG)     ? read_trig_statement(reader)
-                                             : SERD_FAILURE;
+  return st ? st : read_syntax_chunk(reader);
 }
 
 SerdStatus

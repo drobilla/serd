@@ -104,10 +104,6 @@ read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
 
   while (st <= SERD_FAILURE) {
     const int c = peek_byte(reader);
-    if (c < 0) {
-      return r_err(reader, SERD_BAD_SYNTAX, "unexpected end of file");
-    }
-
     TRY(st, skip_byte(reader, c));
 
     if (c == '>') {
@@ -181,10 +177,6 @@ read_STRING_LITERAL(SerdReader* const reader,
 
   while (!st) {
     const int c = peek_byte(reader);
-    if (c < 0) {
-      return r_err(reader, SERD_NO_DATA, "end of file in short string");
-    }
-
     if (c == '\n' || c == '\r') {
       return r_err(reader, SERD_BAD_SYNTAX, "line end in short string");
     }
@@ -206,10 +198,6 @@ SerdStatus
 read_PN_CHARS_BASE(SerdReader* const reader, SerdNode* const dest)
 {
   const int c = peek_byte(reader);
-
-  if (c < 0) {
-    return SERD_FAILURE;
-  }
 
   if (c < 0x80) {
     return is_alpha(c) ? eat_push_byte(reader, dest, c) : SERD_FAILURE;
@@ -612,10 +600,6 @@ read_ntriples_line(SerdReader* const reader)
   TRY(st, skip_horizontal_whitespace(reader));
 
   const int c = peek_byte(reader);
-  if (c <= 0) {
-    TRY(st, skip_byte(reader, c));
-    return SERD_FAILURE;
-  }
 
   if (c == '\n' || c == '\r') {
     return read_EOL(reader);
@@ -637,21 +621,4 @@ read_ntriples_line(SerdReader* const reader)
   serd_stack_pop_to(&reader->stack, orig_stack_size);
 
   return (st || peek_byte(reader) < 0) ? st : read_EOL(reader);
-}
-
-/// [1] ntriplesDoc
-SerdStatus
-read_ntriplesDoc(SerdReader* const reader)
-{
-  SerdStatus st = SERD_SUCCESS;
-
-  while (st <= SERD_FAILURE && !reader->source->eof) {
-    st = read_ntriples_line(reader);
-    if (st > SERD_FAILURE && !reader->strict) {
-      serd_reader_skip_until_byte(reader, '\n');
-      st = SERD_SUCCESS;
-    }
-  }
-
-  return accept_failure(st);
 }

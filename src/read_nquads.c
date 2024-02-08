@@ -74,10 +74,6 @@ read_nquads_line(SerdReader* const reader)
   TRY(st, skip_horizontal_whitespace(reader));
 
   const int c = peek_byte(reader);
-  if (c <= 0) {
-    TRY(st, skip_byte(reader, c));
-    return SERD_FAILURE;
-  }
 
   if (c == '\n' || c == '\r') {
     return read_EOL(reader);
@@ -99,20 +95,4 @@ read_nquads_line(SerdReader* const reader)
   serd_stack_pop_to(&reader->stack, orig_stack_size);
 
   return (st || peek_byte(reader) < 0) ? st : read_EOL(reader);
-}
-
-SerdStatus
-read_nquadsDoc(SerdReader* const reader)
-{
-  SerdStatus st = SERD_SUCCESS;
-
-  while (st <= SERD_FAILURE && !reader->source->eof) {
-    st = read_nquads_line(reader);
-    if (st > SERD_FAILURE && !reader->strict) {
-      serd_reader_skip_until_byte(reader, '\n');
-      st = SERD_SUCCESS;
-    }
-  }
-
-  return accept_failure(st);
 }
