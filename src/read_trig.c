@@ -149,7 +149,7 @@ read_block(SerdReader* const reader, ReadContext* const ctx)
 }
 
 SerdStatus
-read_trig_statement(SerdReader* const reader)
+read_trig_chunk(SerdReader* const reader)
 {
   SerdStatementEventFlags flags = 0U;
   ReadContext             ctx   = {0, 0, 0, 0, &flags};
@@ -158,28 +158,8 @@ read_trig_statement(SerdReader* const reader)
   TRY(st, read_turtle_ws_star(reader));
 
   const int c = peek_byte(reader);
-  if (c <= 0) {
-    TRY(st, skip_byte(reader, c));
-    return SERD_FAILURE;
-  }
-
-  return (c == '@')   ? read_turtle_directive(reader)
+  return (c < 0)      ? SERD_FAILURE
+         : (c == '@') ? read_turtle_directive(reader)
          : (c == '{') ? read_wrappedGraph(reader, &ctx)
                       : read_block(reader, &ctx);
-}
-
-SerdStatus
-read_trigDoc(SerdReader* const reader)
-{
-  SerdStatus st = SERD_SUCCESS;
-
-  while (st <= SERD_FAILURE && !reader->source->eof) {
-    st = read_trig_statement(reader);
-    if (st > SERD_FAILURE && !reader->strict) {
-      serd_reader_skip_until_byte(reader, '\n');
-      st = SERD_SUCCESS;
-    }
-  }
-
-  return accept_failure(st);
 }
