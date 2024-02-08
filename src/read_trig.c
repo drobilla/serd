@@ -163,28 +163,28 @@ read_trig_statement(SerdReader* const reader)
     return SERD_FAILURE;
   }
 
-  return (c == '@')   ? read_turtle_directive(reader)
-         : (c == '{') ? read_wrappedGraph(reader, &ctx)
-                      : read_block(reader, &ctx);
+  const size_t orig_stack_size = reader->stack.size;
+
+  st = (c == '@')   ? read_turtle_directive(reader)
+       : (c == '{') ? read_wrappedGraph(reader, &ctx)
+                    : read_block(reader, &ctx);
+
+  serd_stack_pop_to(&reader->stack, orig_stack_size);
+  return st;
 }
 
 SerdStatus
 read_trigDoc(SerdReader* const reader)
 {
-  while (!reader->source->eof) {
-    const size_t     orig_stack_size = reader->stack.size;
-    const SerdStatus st              = read_trig_statement(reader);
+  SerdStatus st = SERD_SUCCESS;
 
-    if (st > SERD_FAILURE) {
-      if (!tolerate_status(reader, st)) {
-        serd_stack_pop_to(&reader->stack, orig_stack_size);
-        return st;
-      }
+  while (st <= SERD_FAILURE && !reader->source->eof) {
+    st = read_trig_statement(reader);
+    if (st > SERD_FAILURE && !reader->strict) {
       serd_reader_skip_until_byte(reader, '\n');
+      st = SERD_SUCCESS;
     }
-
-    serd_stack_pop_to(&reader->stack, orig_stack_size);
   }
 
-  return SERD_SUCCESS;
+  return accept_failure(st);
 }
