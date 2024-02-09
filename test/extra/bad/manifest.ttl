@@ -96,6 +96,7 @@
 		<#bad-keywords>
 		<#bad-lang>
 		<#bad-list>
+		<#bad-list-close-object>
 		<#bad-list2>
 		<#bad-long-literal-in-list>
 		<#bad-long-literal-missing-end>
@@ -575,6 +576,11 @@
 	a rdft:TestTurtleNegativeSyntax ;
 	mf:action <bad-list.ttl> ;
 	mf:name "bad-list" .
+
+<#bad-list-close-object>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-list-close-object.ttl> ;
+	mf:name "bad-list-close-object" .
 
 <#bad-list2>
 	a rdft:TestTurtleNegativeSyntax ;

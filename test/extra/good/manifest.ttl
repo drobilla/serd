@@ -31,12 +31,14 @@
 		<#test-long-utf8>
 		<#test-no-spaces>
 		<#test-non-curie-uri>
+		<#test-nq-syntax-all-rules>
 		<#test-nq-syntax-dot-end>
 		<#test-nq-syntax-eof-after-blank-dot>
 		<#test-nq-syntax-eol-cr>
 		<#test-nq-syntax-eol-crlf>
 		<#test-nq-syntax-eol-lf>
 		<#test-nq-syntax-eol-lfcr>
+		<#test-nt-syntax-all-rules>
 		<#test-nt-syntax-blank-dot>
 		<#test-nt-syntax-dot-end>
 		<#test-nt-syntax-eof-after-blank-dot>
@@ -209,6 +211,11 @@
 	mf:action <test-nq-syntax-eof-after-blank-dot.nq> ;
 	mf:name "test-nq-syntax-eof-after-blank-dot" .
 
+<#test-nq-syntax-all-rules>
+	a rdft:TestNQuadsPositiveSyntax ;
+	mf:action <test-nq-syntax-all-rules.nq> ;
+	mf:name "test-nq-syntax-all-rules" .
+
 <#test-nq-syntax-dot-end>
 	a rdft:TestNQuadsPositiveSyntax ;
 	mf:action <test-nq-syntax-dot-end.nq> ;
@@ -233,6 +240,11 @@
 	a rdft:TestNTriplesPositiveSyntax ;
 	mf:action <test-nq-syntax-eol-lfcr.nq> ;
 	mf:name "test-nq-syntax-eol-lfcr" .
+
+<#test-nt-syntax-all-rules>
+	a rdft:TestNTriplesPositiveSyntax ;
+	mf:action <test-nt-syntax-all-rules.nt> ;
+	mf:name "test-nt-syntax-all-rules" .
 
 <#test-nt-syntax-blank-dot>
 	a rdft:TestNTriplesPositiveSyntax ;
