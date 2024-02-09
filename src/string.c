@@ -21,15 +21,6 @@ serd_strerror(const SerdStatus status)
 
   case SERD_UNKNOWN_ERROR:
     break;
-
-  case SERD_BAD_SYNTAX:
-    return "Invalid syntax";
-  case SERD_BAD_ARG:
-    return "Invalid argument";
-  case SERD_BAD_LABEL:
-    return "Clashing blank node label";
-  case SERD_BAD_CURIE:
-    return "Invalid CURIE or unknown namespace prefix";
   case SERD_BAD_ALLOC:
     return "Memory allocation failed";
   case SERD_BAD_READ:
@@ -40,12 +31,21 @@ serd_strerror(const SerdStatus status)
     return "File or stream error";
   case SERD_BAD_STACK:
     return "Stack overflow";
-  case SERD_BAD_TEXT:
-    return "Invalid text encoding";
   case SERD_BAD_CALL:
     return "Invalid call";
+  case SERD_BAD_ARG:
+    return "Invalid argument";
   case SERD_BAD_EVENT:
     return "Invalid event in stream";
+
+  case SERD_BAD_SYNTAX:
+    return "Invalid syntax";
+  case SERD_BAD_LABEL:
+    return "Clashing blank node label";
+  case SERD_BAD_CURIE:
+    return "Invalid CURIE or unknown namespace prefix";
+  case SERD_BAD_TEXT:
+    return "Invalid text encoding";
   case SERD_BAD_URI:
     return "Invalid or unresolved URI";
   case SERD_BAD_DATA:
