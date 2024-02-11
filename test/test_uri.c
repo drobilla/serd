@@ -171,22 +171,92 @@ test_file_uri(void)
   assert(!serd_parse_file_uri(NULL, "file://truncated", NULL));
 }
 
+static inline bool
+chunk_equals(const ZixStringView a, const ZixStringView b)
+{
+  return (!a.length && !b.length) ||
+         (a.length && b.length && a.data && b.data &&
+          !strncmp((const char*)a.data, (const char*)b.data, a.length));
+}
+
+static bool
+component_matches(const ZixStringView actual, const char* const expected)
+{
+  return ((!expected && !actual.data && !actual.length) ||
+          chunk_equals(zix_string(expected), actual));
+}
+
+static void
+check_uri_parse(const char* const uri_string,
+                const char* const scheme,
+                const char* const authority,
+                const char* const path,
+                const char* const query,
+                const char* const fragment)
+{
+  const SerdURIView uri = serd_parse_uri(uri_string);
+
+  // Check that parsing went as expected
+  assert(component_matches(uri.scheme, scheme));
+  assert(component_matches(uri.authority, authority));
+  assert(component_matches(uri.path, path));
+  assert(component_matches(uri.query, query));
+  assert(component_matches(uri.fragment, fragment));
+
+  // Check that a node can be created from the parsed URI with the same string
+  SerdNode* const node = serd_node_new(NULL, serd_a_parsed_uri(uri));
+  assert(serd_node_type(node) == SERD_URI);
+  assert(!strcmp(serd_node_string(node), uri_string));
+  serd_node_free(NULL, node);
+}
+
 static void
 test_parse_uri(void)
 {
-  static const ZixStringView base =
-    ZIX_STATIC_STRING("http://example.org/a/b/c/");
+  check_uri_parse("http:", "http", NULL, NULL, NULL, NULL);
+  check_uri_parse("http://", "http", "", NULL, NULL, NULL);
+  check_uri_parse("ftp://example.org", "ftp", "example.org", NULL, NULL, NULL);
+  check_uri_parse("example:/p", "example", NULL, "/p", NULL, NULL);
+  check_uri_parse("example:?q#f", "example", NULL, NULL, "q", "#f");
+  check_uri_parse("example:?q", "example", NULL, NULL, "q", NULL);
+  check_uri_parse("p?q", NULL, NULL, "p", "q", NULL);
+  check_uri_parse("p?q#f", NULL, NULL, "p", "q", "#f");
+  check_uri_parse("p#f", NULL, NULL, "p", NULL, "#f");
+  check_uri_parse("ftp://example.org/path?query#fragment",
+                  "ftp",
+                  "example.org",
+                  "/path",
+                  "query",
+                  "#fragment");
+  check_uri_parse("//example.org/path?query#fragment",
+                  NULL,
+                  "example.org",
+                  "/path",
+                  "query",
+                  "#fragment");
+  check_uri_parse("example.org/path?query#fragment",
+                  NULL,
+                  NULL,
+                  "example.org/path",
+                  "query",
+                  "#fragment");
+  check_uri_parse("?query#fragment", NULL, NULL, NULL, "query", "#fragment");
+  check_uri_parse("#fragment", NULL, NULL, NULL, NULL, "#fragment");
+  check_uri_parse("", NULL, NULL, NULL, NULL, NULL);
 
-  const SerdURIView base_uri  = serd_parse_uri(base.data);
-  const SerdURIView empty_uri = serd_parse_uri("");
-
-  SerdNode* const nil = serd_node_new(
-    NULL, serd_a_parsed_uri(serd_resolve_uri(empty_uri, base_uri)));
-
-  assert(serd_node_type(nil) == SERD_URI);
-  assert(!strcmp(serd_node_string(nil), base.data));
-
-  serd_node_free(NULL, nil);
+  // Check that a node can be created from the parsed URI with the same string
+  const SerdURIView noslash_uri = {zix_string("http"),
+                                   zix_string("example.org"),
+                                   zix_string(""),
+                                   zix_string("noslash"),
+                                   zix_string("q"),
+                                   zix_string("#f")};
+  SerdNode* const   noslash_node =
+    serd_node_new(NULL, serd_a_parsed_uri(noslash_uri));
+  assert(serd_node_type(noslash_node) == SERD_URI);
+  assert(
+    !strcmp(serd_node_string(noslash_node), "http://example.org/noslash?q#f"));
+  serd_node_free(NULL, noslash_node);
 }
 
 static void
@@ -221,14 +291,6 @@ test_is_within(void)
   check_is_within("base", base, false);
 
   check_is_within("http://example.org/", "rel", false);
-}
-
-static inline bool
-chunk_equals(const ZixStringView* a, const ZixStringView* b)
-{
-  return (!a->length && !b->length && !a->data && !b->data) ||
-         (a->length && b->length && a->data && b->data &&
-          !strncmp((const char*)a->data, (const char*)b->data, a->length));
 }
 
 static void
@@ -268,12 +330,12 @@ check_relative_uri(const char* const uri_string,
 
   const SerdURIView result   = serd_node_uri_view(result_node);
   const SerdURIView expected = serd_parse_uri(expected_string);
-  assert(chunk_equals(&result.scheme, &expected.scheme));
-  assert(chunk_equals(&result.authority, &expected.authority));
-  assert(chunk_equals(&result.path_prefix, &expected.path_prefix));
-  assert(chunk_equals(&result.path, &expected.path));
-  assert(chunk_equals(&result.query, &expected.query));
-  assert(chunk_equals(&result.fragment, &expected.fragment));
+  assert(chunk_equals(result.scheme, expected.scheme));
+  assert(chunk_equals(result.authority, expected.authority));
+  assert(chunk_equals(result.path_prefix, expected.path_prefix));
+  assert(chunk_equals(result.path, expected.path));
+  assert(chunk_equals(result.query, expected.query));
+  assert(chunk_equals(result.fragment, expected.fragment));
 
   serd_node_free(NULL, result_node);
   serd_node_free(NULL, base_node);
