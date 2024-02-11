@@ -250,6 +250,18 @@ test_node_from_substring(void)
 }
 
 static void
+test_uri_node_from_string(void)
+{
+  assert(!serd_node_new_uri_from_string(NULL, NULL).buf);
+  assert(!serd_node_new_uri_from_string(NULL, "").buf);
+
+  SerdNode uri_node =
+    serd_node_new_uri_from_string(NULL, "http://example.org/p");
+  assert(uri_node.n_bytes == 20U);
+  serd_node_free(NULL, &uri_node);
+}
+
+static void
 test_uri_node_from_node(void)
 {
   const SerdNode string      = serd_node_from_string(SERD_LITERAL, "s");
@@ -280,6 +292,7 @@ main(void)
   test_node_equals();
   test_node_from_string();
   test_node_from_substring();
+  test_uri_node_from_string();
   test_uri_node_from_node();
   return 0;
 }
