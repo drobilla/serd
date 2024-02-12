@@ -158,6 +158,73 @@ test_write_bad_event(void)
   serd_world_free(world);
 }
 
+static size_t
+ignore_write(const void* const buf,
+             const size_t      size,
+             const size_t      nmemb,
+             void* const       stream)
+{
+  (void)buf;
+  (void)size;
+  (void)nmemb;
+  (void)stream;
+  return size * nmemb;
+}
+
+static void
+test_write_bad_text(void)
+{
+  SerdWorld* const world = serd_world_new(NULL);
+  SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
+  SerdOutputStream out =
+    serd_open_output_stream(ignore_write, NULL, NULL, NULL);
+
+  SerdWriter* const writer =
+    serd_writer_new(world, SERD_TURTLE, 0U, env, &out, 1U);
+  assert(writer);
+
+  const SerdSink* const sink = serd_writer_sink(writer);
+
+  SerdNode* const s = serd_node_new(NULL, serd_a_uri_string(NS_EG "s"));
+  SerdNode* const p = serd_node_new(NULL, serd_a_uri_string(NS_EG "p"));
+  SerdNode* const o = serd_node_new(NULL, serd_a_uri_string(NS_EG "o"));
+
+  static const uint8_t     bad_lit_buf[] = {0xFF, 0x90, 'h', 'i', 0};
+  static const uint8_t     bad_uri_buf[] = {'f', 't', 'p', ':', 0xFF, 0x90, 0};
+  static const char* const bad_lit_str   = (const char*)bad_lit_buf;
+  static const char* const bad_uri_str   = (const char*)bad_uri_buf;
+
+  SerdNode* const uri = serd_node_new(NULL, serd_a_uri_string(bad_uri_str));
+  SerdNode* const lit = serd_node_new(NULL, serd_a_string(bad_lit_str));
+  SerdNode* const long_lit = serd_node_new(
+    NULL, serd_a_literal(zix_string(bad_lit_str), SERD_IS_LONG, NULL));
+
+  const SerdNode* junk[5][3] = {
+    {s, p, uri},
+    {s, uri, o},
+    {uri, p, o},
+    {s, p, lit},
+    {s, p, long_lit},
+  };
+
+  for (size_t i = 0; i < sizeof(junk) / (sizeof(SerdNode*) * 3); ++i) {
+    const SerdStatus st =
+      serd_sink_write(sink, 0, junk[i][0], junk[i][1], junk[i][2], NULL);
+    assert(st == SERD_BAD_URI || st == SERD_BAD_TEXT);
+  }
+
+  serd_node_free(NULL, long_lit);
+  serd_node_free(NULL, lit);
+  serd_node_free(NULL, uri);
+  serd_node_free(NULL, o);
+  serd_node_free(NULL, p);
+  serd_node_free(NULL, s);
+  serd_writer_free(writer);
+  serd_close_output(&out);
+  serd_env_free(env);
+  serd_world_free(world);
+}
+
 static void
 test_write_long_literal(void)
 {
@@ -648,6 +715,7 @@ main(void)
   test_new_failed_alloc();
   test_write_failed_alloc();
   test_write_bad_event();
+  test_write_bad_text();
   test_write_long_literal();
   test_write_nested_anon();
   test_writer_cleanup();

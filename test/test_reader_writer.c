@@ -233,21 +233,16 @@ test_writer(const char* const path)
   }
 
   static const uint8_t     bad_str_buf[] = {0xFF, 0x90, 'h', 'i', 0};
-  static const uint8_t     bad_uri_buf[] = {'f', 't', 'p', ':', 0xFF, 0x90, 0};
   static const char* const bad_lit_str   = (const char*)bad_str_buf;
-  static const char* const bad_uri_str   = (const char*)bad_uri_buf;
 
-  // Write statements with bad UTF-8 (should be replaced)
-  SerdNode* bad_uri      = serd_node_new(NULL, serd_a_uri_string(bad_uri_str));
+  // Write statements with bad UTF-8 in string literals (should be replaced)
   SerdNode* bad_lit      = serd_node_new(NULL, serd_a_string(bad_lit_str));
   SerdNode* bad_long_lit = serd_node_new(
     NULL, serd_a_literal(zix_string(bad_lit_str), SERD_IS_LONG, NULL));
-  assert(!serd_sink_write(iface, 0, s, p, bad_uri, 0));
   assert(!serd_sink_write(iface, 0, s, p, bad_lit, 0));
   assert(!serd_sink_write(iface, 0, s, p, bad_long_lit, 0));
   serd_node_free(NULL, bad_long_lit);
   serd_node_free(NULL, bad_lit);
-  serd_node_free(NULL, bad_uri);
 
   // Write 1 valid statement
   SerdNode* const hello = serd_node_new(NULL, serd_a_string("hello"));
@@ -315,7 +310,7 @@ test_reader(const char* path)
   SerdInputStream in = serd_open_input_file(path);
   assert(!serd_reader_start(reader, &in, NULL, 4096));
   assert(!serd_reader_read_document(reader));
-  assert(rt.n_statement == 7);
+  assert(rt.n_statement == 6);
   assert(!serd_reader_finish(reader));
   serd_close_input(&in);
 

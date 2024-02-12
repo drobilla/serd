@@ -377,39 +377,30 @@ next_text_index(const char*         utf8,
 }
 
 static VariableResult
-write_uri(SerdWriter* writer, const char* utf8, const size_t n_bytes)
+write_uri(SerdWriter* const writer,
+          const char* const string,
+          const size_t      n_bytes)
 {
+  const uint8_t* const utf8 = (const uint8_t*)string;
+
   VariableResult result = {SERD_SUCCESS, 0U, 0U};
 
-  for (size_t i = 0; i < n_bytes;) {
+  for (size_t i = 0; !result.status && i < n_bytes;) {
     // Write leading chunk as a single fast bulk write
-    const size_t j = next_text_index(utf8, i, n_bytes, uri_must_escape);
-    result.status  = esink(&utf8[i], j - i, writer);
+    const size_t j   = next_text_index(string, i, n_bytes, uri_must_escape);
+    const size_t len = j - i;
+    result.status    = esink(&string[i], len, writer);
+    result.read_count += len;
     if ((i = j) == n_bytes) {
       break; // Reached end
     }
 
     // Write character (escape or UTF-8)
-    const VariableResult r =
-      write_uri_character(writer, (const uint8_t*)utf8 + i);
+    const VariableResult r = write_uri_character(writer, utf8 + i);
+    assert(r.status || r.read_count > 0);
     i += r.read_count;
     result.write_count += r.write_count;
-    if (r.status && !(writer->flags & SERD_WRITE_LAX)) {
-      result.status = r.status;
-      break;
-    }
-
-    if (r.read_count == 0) {
-      // Corrupt input, write percent-encoded bytes and scan to next start
-      for (;
-           !result.status && i < n_bytes && !is_utf8_leading((uint8_t)utf8[i]);
-           ++i) {
-        result = add_wresult(result, wsink("%", 1, writer));
-        if (!(result.status = write_hex_byte(writer, (uint8_t)utf8[i]))) {
-          result.write_count += 2U;
-        }
-      }
-    }
+    result.status = r.status;
   }
 
   return result;
@@ -418,11 +409,7 @@ write_uri(SerdWriter* writer, const char* utf8, const size_t n_bytes)
 ZIX_NODISCARD static SerdStatus
 ewrite_uri(SerdWriter* writer, const char* utf8, size_t n_bytes)
 {
-  const VariableResult r = write_uri(writer, utf8, n_bytes);
-
-  return (r.status == SERD_BAD_WRITE || !(writer->flags & SERD_WRITE_LAX))
-           ? r.status
-           : SERD_SUCCESS;
+  return write_uri(writer, utf8, n_bytes).status;
 }
 
 ZIX_NODISCARD static SerdStatus
