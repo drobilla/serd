@@ -16,13 +16,13 @@
 #include "string_utils.h"
 #include "world.h"
 
+#include "exess/exess.h"
 #include "serd/caret_view.h"
 #include "serd/input_stream.h"
 #include "serd/statement_view.h"
 
 #include <assert.h>
 #include <stdarg.h>
-#include <stdio.h>
 #include <string.h>
 
 static SerdStatus
@@ -83,10 +83,16 @@ set_blank_id(SerdReader* const reader,
              SerdNode* const   node,
              const size_t      buf_size)
 {
-  char* const buf = (char*)(node + 1);
+  const uint32_t id  = reader->next_id++;
+  char* const    buf = serd_node_buffer(node);
+  size_t         i   = reader->bprefix_len;
 
-  node->length = (size_t)snprintf(
-    buf, buf_size, "%sb%u", reader->bprefix, reader->next_id++);
+  memcpy(buf, reader->bprefix, reader->bprefix_len);
+  buf[i++] = 'b';
+
+  i += exess_write_uint(id, buf_size - i, buf + i).count;
+
+  node->length = i;
 }
 
 size_t
@@ -232,10 +238,13 @@ serd_reader_read_document(SerdReader* const reader)
   }
 
   if (!(reader->flags & SERD_READ_GLOBAL)) {
-    reader->bprefix_len = (size_t)snprintf(reader->bprefix,
-                                           sizeof(reader->bprefix),
-                                           "f%u",
-                                           ++reader->world->next_document_id);
+    const uint32_t id = ++reader->world->next_document_id;
+
+    reader->bprefix[0]  = 'f';
+    reader->bprefix_len = 1U;
+    reader->bprefix_len +=
+      exess_write_uint(id, sizeof(reader->bprefix) - 1U, reader->bprefix + 1U)
+        .count;
   }
 
   while (st <= SERD_FAILURE && !reader->source->eof) {
