@@ -6,13 +6,13 @@
 #include "caret.h"
 #include "node.h"
 
+#include "exess/exess.h"
 #include "serd/node.h"
 #include "zix/allocator.h"
 
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <string.h>
 
 SerdStatus
 serd_world_error(const SerdWorld* const world, const SerdError* const e)
@@ -79,19 +79,17 @@ serd_world_free(SerdWorld* const world)
 const SerdNode*
 serd_world_get_blank(SerdWorld* const world)
 {
-#define BLANK_CHARS 12
-
   assert(world);
 
-  char* buf = world->blank.string;
-  memset(buf, 0, BLANK_CHARS + 1);
+  char* const  buf      = world->blank.string;
+  const size_t buf_size = sizeof(world->blank.string);
+  size_t       i        = 0U;
 
-  world->blank.node.length =
-    (size_t)snprintf(buf, BLANK_CHARS + 1, "b%u", ++world->next_blank_id);
+  buf[i++] = 'b';
+  i += exess_write_uint(++world->next_blank_id, buf_size - i, buf + i).count;
+  world->blank.node.length = i;
 
   return &world->blank.node;
-
-#undef BLANK_CHARS
 }
 
 SerdLimits
