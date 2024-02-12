@@ -205,7 +205,7 @@ test_writer(const char* const path)
 
   SerdOutputStream output = serd_open_output_file(path);
 
-  SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, SERD_WRITE_LAX, env);
+  SerdWriter* const writer = serd_writer_new(world, SERD_TURTLE, 0U, env);
   assert(writer);
   assert(!serd_writer_start(writer, &output, 1U));
 
@@ -263,26 +263,6 @@ test_writer(const char* const path)
     }
   }
 
-  static const uint8_t bad_uri_buf[]   = {'f', 't', 'p', ':', 0xFF, 0x90, 0};
-  static const uint8_t bad_short_buf[] = {0xFF, 0x90, 'h', 'i', 0};
-  static const uint8_t bad_long_buf[]  = {'e', '\n', 'r', 0xFF, 0x90, 0};
-
-  // Write statements with bad UTF-8 (should be replaced)
-  const ZixStringView  bad_uri_str   = zix_string((const char*)bad_uri_buf);
-  const ZixStringView  bad_short_str = zix_string((const char*)bad_short_buf);
-  const ZixStringView  bad_long_str  = zix_string((const char*)bad_long_buf);
-  const SerdTokenView  meta          = {SERD_NOTHING, ZIX_STATIC_STRING("")};
-  const SerdObjectView bad_uri       = {SERD_URI, bad_uri_str, 0U, meta};
-  const SerdObjectView bad_short_lit = {SERD_LITERAL, bad_short_str, 0U, meta};
-  const SerdObjectView bad_long_lit  = {
-    SERD_LITERAL, bad_long_str, SERD_IS_LONG, meta};
-  assert(!serd_sink_event(
-    sink, serd_statement_event(0U, serd_triple_view(s, p, bad_uri))));
-  assert(!serd_sink_event(
-    sink, serd_statement_event(0U, serd_triple_view(s, p, bad_short_lit))));
-  assert(!serd_sink_event(
-    sink, serd_statement_event(0U, serd_triple_view(s, p, bad_long_lit))));
-
   serd_writer_free(writer);
   assert(!serd_close_output(&output));
   serd_env_free(env);
@@ -320,7 +300,7 @@ test_reader(const char* const path)
   SerdInputStream in = serd_open_input_file(path);
   assert(!serd_reader_start(reader, &in, zix_empty_string(), 4096));
   assert(!serd_reader_read_document(reader));
-  assert(rt.n_statement == 7);
+  assert(rt.n_statement == 4);
   assert(!serd_reader_finish(reader));
   serd_close_input(&in);
 

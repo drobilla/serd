@@ -135,8 +135,6 @@ typedef enum { RESET_GRAPH = 1U << 0U, RESET_INDENT = 1U << 1U } ResetFlag;
 
 typedef bool (*const BytePredicate)(uint8_t) ZIX_NODISCARD;
 
-static const uint8_t replacement_char[] = {0xEFU, 0xBFU, 0xBDU};
-
 ZIX_NODISCARD static SerdStatus
 serd_writer_on_event(void* handle, const SerdEvent* event);
 
@@ -379,10 +377,7 @@ write_UCHAR(SerdWriter* const writer, const uint8_t* const utf8)
   VariableResult vr     = {SERD_SUCCESS, c_size, 0U};
 
   if (c_size == 0U) {
-    vr = vsink(writer, vr, sizeof(replacement_char), replacement_char);
-    if (!vr.status) {
-      vr.status = w_err(writer, SERD_BAD_TEXT, "bad UTF-8 start: %X", utf8[0]);
-    }
+    vr.status = w_err(writer, SERD_BAD_TEXT, "bad UTF-8 start: 0x%X", utf8[0]);
   } else if (c <= 0xFFFF) {
     // Write short (4 digit) escape
     if (!(vr = vsink(writer, vr, 2, "\\u")).status &&
@@ -464,40 +459,29 @@ next_text_index(const char* const   utf8,
 
 static VariableResult
 write_uri_text(SerdWriter* const writer,
-               const char* const utf8,
+               const char* const string,
                const size_t      n_bytes)
 {
+  const uint8_t* const utf8 = (const uint8_t*)string;
+
   VariableResult result = {SERD_SUCCESS, 0U, 0U};
 
-  for (size_t i = 0; i < n_bytes;) {
+  for (size_t i = 0; !result.status && i < n_bytes;) {
     // Write leading chunk as a single fast bulk write
-    const size_t j = next_text_index(utf8, i, n_bytes, uri_must_escape);
-    result         = vsink(writer, result, j - i, &utf8[i]);
-    if (result.status || (i = j) == n_bytes) {
+    const size_t j   = next_text_index(string, i, n_bytes, uri_must_escape);
+    const size_t len = j - i;
+    result           = vsink(writer, result, len, &string[i]);
+    result.read_count += len;
+    if (result.status || ((i = j) == n_bytes)) {
       break; // Reached end
     }
 
     // Write character (escape or UTF-8)
-    const VariableResult r =
-      write_uri_character(writer, (const uint8_t*)utf8 + i);
+    const VariableResult r = write_uri_character(writer, utf8 + i);
+    assert(r.status || r.read_count > 0);
     i += r.read_count;
     result.write_count += r.write_count;
-    if (r.status && !(writer->flags & SERD_WRITE_LAX)) {
-      result.status = r.status;
-      break;
-    }
-
-    if (!r.read_count) {
-      // Corrupt input, write percent-encoded bytes and scan to next start
-      for (;
-           !result.status && i < n_bytes && !is_utf8_leading((uint8_t)utf8[i]);
-           ++i) {
-        result = vsink(writer, result, 1, "%");
-        if (!(result.status = write_hex_byte(writer, (uint8_t)utf8[i]))) {
-          result.write_count += 2U;
-        }
-      }
-    }
+    result.status = r.status;
   }
 
   return result;
@@ -506,11 +490,7 @@ write_uri_text(SerdWriter* const writer,
 ZIX_NODISCARD static SerdStatus
 ewrite_uri(SerdWriter* const writer, const ZixStringView string)
 {
-  const VariableResult r = write_uri_text(writer, string.data, string.length);
-
-  return (r.status == SERD_BAD_WRITE || !(writer->flags & SERD_WRITE_LAX))
-           ? r.status
-           : SERD_SUCCESS;
+  return write_uri_text(writer, string.data, string.length).status;
 }
 
 ZIX_NODISCARD static SerdStatus
@@ -665,8 +645,7 @@ write_short_text(SerdWriter* const writer,
                                      ? text_is_special_escaped
                                      : text_is_special_normal;
 
-  const bool     lax = (writer->flags & SERD_WRITE_LAX);
-  VariableResult vr  = {SERD_SUCCESS, 0U, 0U};
+  VariableResult vr = {SERD_SUCCESS, 0U, 0U};
   for (size_t i = 0; !vr.status && i < n_bytes;) {
     // Write leading chunk as a single fast bulk write
     const size_t j = next_text_index(utf8, i, n_bytes, is_special);
@@ -684,12 +663,7 @@ write_short_text(SerdWriter* const writer,
       vr = write_text_character(writer, (const uint8_t*)utf8 + i);
     }
 
-    if (!vr.read_count) {
-      i         = next_text_index(utf8, i + 1U, n_bytes, is_utf8_leading);
-      vr.status = lax ? SERD_SUCCESS : vr.status;
-    } else {
-      i += vr.read_count;
-    }
+    i += vr.read_count;
   }
 
   return vr.status;
@@ -698,11 +672,10 @@ write_short_text(SerdWriter* const writer,
 ZIX_NODISCARD static SerdStatus
 write_long_text(SerdWriter* writer, const char* utf8, size_t n_bytes)
 {
-  const BytePredicate text_is_special = (writer->flags & SERD_WRITE_ESCAPED)
-                                          ? text_is_special_escaped
-                                          : text_is_special_normal;
+  const BytePredicate is_special = (writer->flags & SERD_WRITE_ESCAPED)
+                                     ? text_is_special_escaped
+                                     : text_is_special_normal;
 
-  const bool     lax      = (writer->flags & SERD_WRITE_LAX);
   size_t         n_quotes = 0;
   VariableResult vr       = {SERD_SUCCESS, 0U, 0U};
   for (size_t i = 0; !vr.status && i < n_bytes;) {
@@ -711,7 +684,7 @@ write_long_text(SerdWriter* writer, const char* utf8, size_t n_bytes)
     }
 
     // Write leading chunk as a single fast bulk write
-    const size_t j = next_text_index(utf8, i, n_bytes, text_is_special);
+    const size_t j = next_text_index(utf8, i, n_bytes, is_special);
     vr.status      = esink(writer, j - i, &utf8[i]);
     if (vr.status || ((i = j) == n_bytes)) {
       break; // Error or reached end
@@ -728,12 +701,7 @@ write_long_text(SerdWriter* writer, const char* utf8, size_t n_bytes)
       vr = write_text_character(writer, (const uint8_t*)utf8 + i);
     }
 
-    if (!vr.read_count) {
-      i         = next_text_index(utf8, i + 1U, n_bytes, is_utf8_leading);
-      vr.status = lax ? SERD_SUCCESS : vr.status;
-    } else {
-      i += vr.read_count;
-    }
+    i += vr.read_count;
   }
 
   return vr.status;

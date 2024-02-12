@@ -95,7 +95,7 @@ print_usage(const char* const name, const bool error)
     "  -I SYNTAX  Input syntax nquads/ntriples/trig/turtle, or option\n"
     "             generated/global/lax/variables\n"
     "  -O SYNTAX  Output syntax empty/nquads/ntriples/trig/turtle, or option\n"
-    "             ascii/lax/terse/unresolved/unqualified\n"
+    "             ascii/terse/unresolved/unqualified\n"
     "  -R URI     Keep relative URIs within the given root URI\n"
     "  -V         Display version information and exit\n"
     "  -b BYTES   I/O block size\n"

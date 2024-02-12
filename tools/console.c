@@ -361,7 +361,6 @@ serd_set_output_option(const ZixStringView    name,
     {"escaped", SERD_WRITE_ESCAPED},
     {"unqualified", SERD_WRITE_UNQUALIFIED},
     {"unresolved", SERD_WRITE_UNRESOLVED},
-    {"lax", SERD_WRITE_LAX},
     {"terse", SERD_WRITE_TERSE},
     {NULL, SERD_WRITE_ESCAPED},
   };
