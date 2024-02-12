@@ -1,17 +1,15 @@
 // Copyright 2011-2024 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "stream_utils.h"
 #include "warnings.h"
 
 #include "serd/input_stream.h"
 #include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/stream_result.h"
-#include "zix/filesystem.h"
 
 #include <assert.h>
-#include <stdio.h>
+#include <stddef.h>
 
 static SerdStreamResult
 serd_string_read(void* const stream, const size_t len, void* const buf)
@@ -61,24 +59,6 @@ serd_open_input_string(const char** const position)
   const SerdInputStream input = {position, serd_string_read, serd_string_close};
 
   return input;
-}
-
-SerdInputStream
-serd_open_input_file(const char* const path)
-{
-  assert(path);
-
-  SerdInputStream input = {NULL, NULL, NULL};
-  if (zix_file_type(path) == ZIX_FILE_TYPE_DIRECTORY) {
-    return input;
-  }
-
-  FILE* const file = serd_fopen_wrapper(path, SERD_FILE_MODE_READ);
-  if (!file) {
-    return input;
-  }
-
-  return serd_open_input_stream(serd_fread_wrapper, serd_fclose_wrapper, file);
 }
 
 SerdStatus

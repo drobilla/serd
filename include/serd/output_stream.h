@@ -74,6 +74,14 @@ SERD_API SerdOutputStream
 serd_open_output_file(const char* ZIX_NONNULL path);
 
 /**
+   Open a stream that writes to stdout.
+
+   @return An opened output stream, or all zeros on error.
+*/
+SERD_API SerdOutputStream
+serd_open_output_standard(void);
+
+/**
    Close an output stream.
 
    This will call the close function, and reset the stream internally so that
