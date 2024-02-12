@@ -69,6 +69,14 @@ SERD_API SerdInputStream
 serd_open_input_file(const char* ZIX_NONNULL path);
 
 /**
+   Open a stream that reads from stdin.
+
+   @return An opened input stream, or all zeros on error.
+*/
+SERD_API SerdInputStream
+serd_open_input_standard(void);
+
+/**
    Close an input stream.
 
    This will call the close function, and reset the stream internally so that
