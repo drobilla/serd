@@ -5,8 +5,6 @@
 
 #include "serd/node.h"
 #include "serd/reader.h"
-#include "serd/stream.h"
-#include "serd/stream_result.h"
 #include "serd/string.h"
 #include "serd/syntax.h"
 #include "serd/uri.h"
@@ -23,7 +21,6 @@
 #  include <io.h>
 #endif
 
-#include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdbool.h>
@@ -69,23 +66,11 @@ serd_default_options(void)
   return opts;
 }
 
-static void
-serd_set_stream_utf8_mode(FILE* const stream)
-{
-#ifdef _WIN32
-  _setmode(_fileno(stream), _O_BINARY);
-#else
-  (void)stream;
-#endif
-}
-
 static SerdOutputStream
 serd_open_tool_output(const char* const filename)
 {
   if (!filename || !strcmp(filename, "-")) {
-    serd_set_stream_utf8_mode(stdout);
-    return serd_open_output_stream(
-      serd_fwrite_wrapper, serd_fclose_wrapper, stdout);
+    return serd_open_output_standard();
   }
 
   return serd_open_output_file(filename);
@@ -406,28 +391,6 @@ serd_parse_common_option(OptionIter* const iter, SerdCommonOptions* const opts)
   return SERD_FAILURE;
 }
 
-/// Wrapper for getc that is compatible with SerdReadFunc but faster than fread
-static SerdStreamResult
-serd_file_read_byte(void* const stream, const size_t len, void* const buf)
-{
-  (void)len;
-
-  assert(len == 1U);
-
-  SerdStreamResult r = {SERD_SUCCESS, 0U};
-
-  const int c = getc((FILE*)stream);
-  if (c == EOF) {
-    *((uint8_t*)buf) = 0;
-    r.status         = SERD_NO_DATA;
-  } else {
-    *((uint8_t*)buf) = (uint8_t)c;
-    r.count          = 1U;
-  }
-
-  return r;
-}
-
 SerdStatus
 serd_read_source(SerdWorld* const        world,
                  const SerdCommonOptions opts,
@@ -457,9 +420,7 @@ static SerdInputStream
 serd_open_tool_input(const char* const filename)
 {
   if (!strcmp(filename, "-")) {
-    serd_set_stream_utf8_mode(stdin);
-    return serd_open_input_stream(
-      serd_file_read_byte, serd_fclose_wrapper, stdin);
+    return serd_open_input_standard();
   }
 
   return serd_open_input_file(filename);

@@ -13,7 +13,6 @@
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/status.h"
-#include "serd/stream.h"
 #include "serd/stream_result.h"
 #include "serd/syntax.h"
 #include "serd/tee.h"
@@ -95,10 +94,27 @@ test_new_failed_alloc(void)
   serd_world_free(world);
 }
 
+static SerdStreamResult
+test_fread_wrapper(void* const stream, const size_t len, void* const buf)
+{
+  SerdStreamResult r    = {SERD_SUCCESS, 0U};
+  FILE* const      file = (FILE*)stream;
+
+  r.count = fread(buf, 1U, len, file);
+
+  if (r.count != len) {
+    r.status = ferror(file) ? SERD_BAD_READ
+               : feof(file) ? SERD_NO_DATA
+                            : SERD_BAD_STREAM;
+  }
+
+  return r;
+}
+
 static SerdInputStream
 open_file_input(FILE* const file)
 {
-  return serd_open_input_stream(serd_fread_wrapper, NULL, file);
+  return serd_open_input_stream(test_fread_wrapper, NULL, file);
 }
 
 static void

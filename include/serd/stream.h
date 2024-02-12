@@ -71,34 +71,6 @@ typedef SerdStreamResult (*SerdWriteFunc)(void* ZIX_UNSPECIFIED   stream,
                                           const void* ZIX_NONNULL buf);
 
 /**
-   Wrapper for fread() that is a SerdReadFunc.
-
-   This can be used to easily create an input stream for a FILE.
-*/
-SERD_API SerdStreamResult
-serd_fread_wrapper(void* ZIX_NONNULL stream, size_t len, void* ZIX_NONNULL buf);
-
-/**
-   Wrapper for fwrite() that is a SerdWriteFunc.
-
-   This can be used to easily create an output stream for a FILE.
-*/
-SERD_API SerdStreamResult
-serd_fwrite_wrapper(void* ZIX_NONNULL       stream,
-                    size_t                  len,
-                    const void* ZIX_NONNULL buf);
-
-/**
-   Wrapper for fclose() that is a SerdCloseFunc.
-
-   This can be used in conjunction with serd_fread_wrapper() or
-   serd_fwrite_wrapper() to create a stream for a FILE that should have
-   fclose() called on it when the stream is closed.
-*/
-SERD_API SerdStatus
-serd_fclose_wrapper(void* ZIX_NONNULL stream);
-
-/**
    @}
 */
 
