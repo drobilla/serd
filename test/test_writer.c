@@ -320,6 +320,71 @@ test_write_failed_alloc(void)
   serd_world_free(world);
 }
 
+static SerdStreamResult
+ignore_write(void* const stream, const size_t len, const void* const buf)
+{
+  (void)buf;
+  (void)len;
+  (void)stream;
+  const SerdStreamResult r = {SERD_SUCCESS, len};
+  return r;
+}
+
+static void
+test_write_bad_text(void)
+{
+  SerdWorld* const world = serd_world_new(NULL);
+  SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
+  SerdOutputStream out   = serd_open_output_stream(ignore_write, NULL, NULL);
+
+  SerdWriter* const writer = serd_writer_new(world, SERD_TURTLE, 0U, env);
+  assert(writer);
+  assert(!serd_writer_start(writer, &out, 1U));
+
+  const SerdSink* const sink = serd_writer_sink(writer);
+
+  const SerdTokenView  s = {SERD_URI, zix_string(NS_EG "s")};
+  const SerdTokenView  p = {SERD_URI, zix_string(NS_EG "p")};
+  const SerdObjectView o = {
+    SERD_URI, zix_string(NS_EG "o"), 0U, serd_no_token()};
+
+  static const uint8_t bad_uri_buf[]   = {'f', 't', 'p', ':', 0xFF, 0x90, 0};
+  static const uint8_t bad_short_buf[] = {0xFF, 0x90, 'h', 'i', 0};
+  static const uint8_t bad_long_buf[]  = {0xFF, 0x90, 'h', '\n', 'i', 0};
+
+  const ZixStringView bad_uri_str   = zix_string((const char*)bad_uri_buf);
+  const ZixStringView bad_short_str = zix_string((const char*)bad_short_buf);
+  const ZixStringView bad_long_str  = zix_string((const char*)bad_long_buf);
+  const SerdTokenView uri           = {SERD_URI, bad_uri_str};
+
+  const SerdObjectView bad_short_lit = {
+    SERD_LITERAL, bad_short_str, 0U, serd_no_token()};
+
+  const SerdObjectView bad_long_lit = {
+    SERD_LITERAL, bad_long_str, SERD_IS_LONG, serd_no_token()};
+
+  const SerdStatementView junk[5] = {
+    serd_triple_view(s, p, token_to_object(uri)),
+    serd_triple_view(s, uri, o),
+    serd_triple_view(uri, p, o),
+    serd_triple_view(s, p, bad_short_lit),
+    serd_triple_view(s, p, bad_long_lit),
+  };
+
+  for (size_t i = 0; i < sizeof(junk) / sizeof(SerdStatementView); ++i) {
+    const SerdStatementView statement = junk[i];
+    const SerdStatus        st        = write_statement(
+      sink, 0U, statement.subject, statement.predicate, statement.object);
+
+    assert(st == SERD_BAD_TEXT);
+  }
+
+  serd_writer_free(writer);
+  serd_close_output(&out);
+  serd_env_free(env);
+  serd_world_free(world);
+}
+
 static void
 test_write_long_literal(void)
 {
@@ -747,6 +812,7 @@ main(void)
   test_write_bad_event();
   test_write_bad_prefix();
   test_write_failed_alloc();
+  test_write_bad_text();
   test_write_long_literal();
   test_write_nested_anon();
   test_writer_cleanup();
