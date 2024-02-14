@@ -148,7 +148,6 @@ c_headers = files(
 
 sources = files(
   'src/block_dumper.c',
-  'src/buffer.c',
   'src/byte_source.c',
   'src/canon.c',
   'src/env.c',

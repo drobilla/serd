@@ -5,6 +5,7 @@
 #include "uri_utils.h"
 
 #include "serd/buffer.h"
+#include "serd/output_stream.h"
 #include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/stream_result.h"
@@ -75,7 +76,8 @@ serd_parse_file_uri(ZixAllocator* const allocator,
     ++path;
   }
 
-  SerdBuffer buffer = {allocator, NULL, 0};
+  SerdBuffer       buffer = {allocator, NULL, 0};
+  SerdOutputStream out    = serd_open_output_buffer(&buffer);
   for (const char* s = path; !st && *s; ++s) {
     if (*s == '%') {
       if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
@@ -83,17 +85,17 @@ serd_parse_file_uri(ZixAllocator* const allocator,
         const uint8_t lo = hex_digit_value((const uint8_t)s[2]);
         const char    c  = (char)((hi << 4U) | lo);
 
-        st = serd_buffer_write(&c, 1, &buffer).status;
+        st = out.write(&c, 1, out.stream).status;
         s += 2;
       } else {
         st = SERD_BAD_SYNTAX;
       }
     } else {
-      st = serd_buffer_write(s, 1, &buffer).status;
+      st = out.write(s, 1, out.stream).status;
     }
   }
 
-  if (st || serd_buffer_close(&buffer)) {
+  if (st || serd_close_output(&out)) {
     zix_free(buffer.allocator, buffer.buf);
     return NULL;
   }
