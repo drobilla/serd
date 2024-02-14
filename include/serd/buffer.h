@@ -34,30 +34,6 @@ typedef struct {
 } SerdBuffer;
 
 /**
-   A function for writing to a buffer, resizing it if necessary.
-
-   This function can be used as a #SerdWriteFunc to write to a #SerdBuffer
-   which is reallocated as necessary.  The `stream` parameter must point to an
-   initialized #SerdBuffer.
-
-   Note that when writing a string, the string in the buffer will not be
-   null-terminated until serd_buffer_close() is called.
-*/
-SERD_API SerdStreamResult
-serd_buffer_write(const void* ZIX_NONNULL buf,
-                  size_t                  len,
-                  void* ZIX_NONNULL       stream);
-
-/**
-   Close the buffer for writing.
-
-   This writes a terminating null byte, so the contents of the buffer are safe
-   to read as a string after this call.
-*/
-SERD_API SerdStatus
-serd_buffer_close(void* ZIX_NONNULL stream);
-
-/**
    @}
 */
 

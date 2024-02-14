@@ -105,6 +105,7 @@ test_write_failed_alloc(void)
   for (size_t i = 0; i < n_new_allocs; ++i) {
     allocator.n_remaining = i;
 
+    buffer.len = 0U;
     if ((writer = serd_writer_new(world, SERD_TURTLE, 0U, env, &output, 1U))) {
       sink = serd_writer_sink(writer);
 
@@ -119,9 +120,8 @@ test_write_failed_alloc(void)
   }
 
   serd_close_output(&output);
-  serd_env_free(env);
-  serd_buffer_close(&buffer);
   zix_free(buffer.allocator, buffer.buf);
+  serd_env_free(env);
   serd_node_free(NULL, o);
   serd_node_free(NULL, p2);
   serd_node_free(NULL, p1);
@@ -254,7 +254,6 @@ test_write_long_literal(void)
   serd_writer_free(writer);
   serd_close_output(&output);
   serd_env_free(env);
-  serd_buffer_close(&buffer);
 
   char* const out = (char*)buffer.buf;
 
@@ -325,7 +324,7 @@ test_write_nested_anon(void)
   serd_node_free(NULL, nil);
   serd_writer_free(writer);
   serd_env_free(env);
-  serd_buffer_close(&buffer);
+  serd_close_output(&output);
 
   char* const out = (char*)buffer.buf;
 
@@ -601,13 +600,12 @@ check_pname_escape(const char* const lname, const char* const expected)
   serd_node_free(NULL, s);
   serd_writer_free(writer);
   serd_close_output(&output);
-  serd_env_free(env);
-  serd_buffer_close(&buffer);
 
   char* const out = (char*)buffer.buf;
   assert(!strcmp(out, expected));
   zix_free(buffer.allocator, buffer.buf);
 
+  serd_env_free(env);
   serd_world_free(world);
 }
 

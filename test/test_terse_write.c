@@ -22,10 +22,12 @@
 #define NS_RDF "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 
 static void
-check_output(SerdWriter* writer, SerdBuffer* buffer, const char* expected)
+check_output(SerdWriter* writer, SerdOutputStream* out, const char* expected)
 {
+  SerdBuffer* const buffer = (SerdBuffer*)out->stream;
+
   serd_writer_finish(writer);
-  serd_buffer_close(buffer);
+  serd_close_output(out);
 
   const char* output = (const char*)buffer->buf;
 
@@ -33,7 +35,8 @@ check_output(SerdWriter* writer, SerdBuffer* buffer, const char* expected)
   fprintf(stderr, "expected: %s\n", expected);
   assert(!strcmp(output, expected));
 
-  buffer->len = 0;
+  buffer->len = 0U;
+  out->stream = buffer;
 }
 
 static int
@@ -58,7 +61,7 @@ test(void)
 
   SerdOutputStream  output = serd_open_output_buffer(&buffer);
   SerdWriter* const writer =
-    serd_writer_new(world, SERD_TURTLE, 0, env, &output, 1U);
+    serd_writer_new(world, SERD_TURTLE, 0U, env, &output, 1U);
 
   const SerdSink* sink = serd_writer_sink(writer);
 
@@ -67,7 +70,7 @@ test(void)
   serd_sink_write(sink, 0, l1, rdf_rest, l2, NULL);
   serd_sink_write(sink, 0, l2, rdf_first, s2, NULL);
   serd_sink_write(sink, 0, l2, rdf_rest, rdf_nil, NULL);
-  check_output(writer, &buffer, "( \"s1\" \"s2\" ) .\n");
+  check_output(writer, &output, "( \"s1\" \"s2\" ) .\n");
 
   // Nested terse lists
   serd_sink_write(sink,
@@ -79,7 +82,7 @@ test(void)
   serd_sink_write(sink, 0, l2, rdf_first, s1, NULL);
   serd_sink_write(sink, 0, l1, rdf_rest, rdf_nil, NULL);
   serd_sink_write(sink, 0, l2, rdf_rest, rdf_nil, NULL);
-  check_output(writer, &buffer, "( ( \"s1\" ) ) .\n");
+  check_output(writer, &output, "( ( \"s1\" ) ) .\n");
 
   // List as object
   serd_sink_write(
@@ -88,7 +91,7 @@ test(void)
   serd_sink_write(sink, 0, l1, rdf_rest, l2, NULL);
   serd_sink_write(sink, 0, l2, rdf_first, s2, NULL);
   serd_sink_write(sink, 0, l2, rdf_rest, rdf_nil, NULL);
-  check_output(writer, &buffer, "[] rdf:value ( \"s1\" \"s2\" ) .\n");
+  check_output(writer, &output, "[] rdf:value ( \"s1\" \"s2\" ) .\n");
 
   serd_writer_free(writer);
   serd_node_free(NULL, rdf_nil);
@@ -100,7 +103,6 @@ test(void)
   serd_node_free(NULL, l2);
   serd_node_free(NULL, l1);
   serd_node_free(NULL, b1);
-  serd_close_output(&output);
   zix_free(buffer.allocator, buffer.buf);
   serd_env_free(env);
   serd_world_free(world);
