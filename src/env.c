@@ -3,7 +3,6 @@
 
 #include "serd/env.h"
 
-#include "node_impl.h"
 #include "sink_impl.h"
 #include "try.h"
 
@@ -256,7 +255,7 @@ serd_env_get_prefix(const SerdEnv* const env, const ZixStringView name)
 
   for (size_t i = 0; i < env->n_prefixes; ++i) {
     const SerdNode* const prefix_name = env->prefixes[i].name;
-    if (prefix_name->length == name.length) {
+    if (serd_node_length(prefix_name) == name.length) {
       if (!memcmp(serd_node_string(prefix_name), name.data, name.length)) {
         return serd_node_string_view(env->prefixes[i].uri);
       }
@@ -273,7 +272,7 @@ serd_env_find(const SerdEnv* const env,
 {
   for (size_t i = 0; i < env->n_prefixes; ++i) {
     const SerdNode* const prefix_name = env->prefixes[i].name;
-    if (prefix_name->length == name_len) {
+    if (serd_node_length(prefix_name) == name_len) {
       if (!memcmp(serd_node_string(prefix_name), name, name_len)) {
         return &env->prefixes[i];
       }
@@ -407,7 +406,7 @@ serd_env_expand(const SerdEnv* const env,
   }
 
   uri_prefix->data   = prefix->uri ? serd_node_string(prefix->uri) : "";
-  uri_prefix->length = prefix->uri ? prefix->uri->length : 0;
+  uri_prefix->length = prefix->uri ? serd_node_length(prefix->uri) : 0;
   uri_suffix->data   = colon + 1;
   uri_suffix->length = curie.length - name_len - 1;
   return SERD_SUCCESS;

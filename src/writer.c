@@ -4,7 +4,6 @@
 #include "block_dumper.h"
 #include "memory.h"
 #include "namespaces.h"
-#include "node_impl.h"
 #include "node_internal.h"
 #include "ntriples.h"
 #include "sink_impl.h"
@@ -218,7 +217,7 @@ ctx(SerdWriter* writer, const SerdField field)
                    : (field == SERD_GRAPH)     ? writer->context.graph
                                                : NULL;
 
-  return node && node->type ? node : NULL;
+  return node && serd_node_type(node) ? node : NULL;
 }
 
 SERD_NODISCARD static SerdStatus
@@ -801,16 +800,16 @@ reset_context(SerdWriter* writer, const unsigned flags)
   free_anon_stack(writer);
 
   if (writer->context.predicate) {
-    memset(writer->context.predicate, 0, sizeof(SerdNode));
+    serd_node_set_header(writer->context.predicate, 0U, 0U, (SerdNodeType)0U);
   }
 
   if (writer->context.subject) {
-    memset(writer->context.subject, 0, sizeof(SerdNode));
+    serd_node_set_header(writer->context.subject, 0U, 0U, (SerdNodeType)0U);
   }
 
   if (flags & RESET_GRAPH) {
     if (writer->context.graph) {
-      memset(writer->context.graph, 0, sizeof(SerdNode));
+      serd_node_set_header(writer->context.graph, 0U, 0U, (SerdNodeType)0U);
     }
   }
 
@@ -834,38 +833,39 @@ write_literal(SerdWriter* const             writer,
   const SerdNode* const datatype = serd_node_datatype(node);
   const SerdNode* const lang     = serd_node_language(node);
   const char* const     node_str = serd_node_string(node);
+  const size_t          node_len = serd_node_length(node);
   const char* const     type_uri = datatype ? serd_node_string(datatype) : NULL;
 
   if (supports_abbrev(writer) && type_uri) {
     if (!strncmp(type_uri, NS_XSD, sizeof(NS_XSD) - 1) &&
         (!strcmp(type_uri + sizeof(NS_XSD) - 1, "boolean") ||
          !strcmp(type_uri + sizeof(NS_XSD) - 1, "integer"))) {
-      return esink(node_str, node->length, writer);
+      return esink(node_str, node_len, writer);
     }
 
     if (!strncmp(type_uri, NS_XSD, sizeof(NS_XSD) - 1) &&
         !strcmp(type_uri + sizeof(NS_XSD) - 1, "decimal") &&
-        strchr(node_str, '.') && node_str[node->length - 1] != '.') {
+        strchr(node_str, '.') && node_str[node_len - 1] != '.') {
       /* xsd:decimal literals without trailing digits, e.g. "5.", can
          not be written bare in Turtle.  We could add a 0 which is
          prettier, but changes the text and breaks round tripping.
       */
-      return esink(node_str, node->length, writer);
+      return esink(node_str, node_len, writer);
     }
   }
 
-  if (supports_abbrev(writer) && (node->flags & SERD_IS_LONG)) {
+  if (supports_abbrev(writer) && (serd_node_flags(node) & SERD_IS_LONG)) {
     TRY(st, esink("\"\"\"", 3, writer));
-    TRY(st, write_long_text(writer, node_str, node->length));
+    TRY(st, write_long_text(writer, node_str, node_len));
     TRY(st, esink("\"\"\"", 3, writer));
   } else {
     TRY(st, esink("\"", 1, writer));
-    TRY(st, write_short_text(writer, node_str, node->length));
+    TRY(st, write_short_text(writer, node_str, node_len));
     TRY(st, esink("\"", 1, writer));
   }
   if (lang && serd_node_string(lang)) {
     TRY(st, esink("@", 1, writer));
-    TRY(st, esink(serd_node_string(lang), lang->length, writer));
+    TRY(st, esink(serd_node_string(lang), serd_node_length(lang), writer));
   } else if (type_uri) {
     TRY(st, esink("^^", 2, writer));
     return write_node(writer, datatype, (SerdField)-1, flags);
@@ -980,9 +980,6 @@ write_blank(SerdWriter* const             writer,
             const SerdField               field,
             const SerdStatementEventFlags flags)
 {
-  SerdStatus        st       = SERD_SUCCESS;
-  const char* const node_str = serd_node_string(node);
-
   if (supports_abbrev(writer)) {
     if ((field == SERD_SUBJECT && (flags & SERD_ANON_S)) ||
         (field == SERD_OBJECT && (flags & SERD_ANON_O))) {
@@ -1001,8 +998,12 @@ write_blank(SerdWriter* const             writer,
     }
   }
 
+  SerdStatus        st       = SERD_SUCCESS;
+  const char* const node_str = serd_node_string(node);
+  const size_t      node_len = serd_node_length(node);
+
   TRY(st, esink("_:", 2, writer));
-  return esink(node_str, node->length, writer);
+  return esink(node_str, node_len, writer);
 }
 
 SERD_NODISCARD static SerdStatus
@@ -1011,7 +1012,7 @@ write_variable(SerdWriter* const writer, const SerdNode* const node)
   SerdStatus st = SERD_SUCCESS;
 
   TRY(st, esink("?", 1, writer));
-  TRY(st, esink(serd_node_string(node), node->length, writer));
+  TRY(st, esink(serd_node_string(node), serd_node_length(node), writer));
 
   writer->last_sep = SEP_NONE;
   return st;
@@ -1025,7 +1026,7 @@ write_node(SerdWriter* const             writer,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  switch (node->type) {
+  switch (serd_node_type(node)) {
   case SERD_LITERAL:
     st = write_literal(writer, node, flags);
     break;
@@ -1043,7 +1044,7 @@ write_node(SerdWriter* const             writer,
     break;
   }
 
-  if (node->type != SERD_BLANK) {
+  if (serd_node_type(node) != SERD_BLANK) {
     writer->last_sep = SEP_NODE;
   }
 
@@ -1053,7 +1054,7 @@ write_node(SerdWriter* const             writer,
 static bool
 is_resource(const SerdNode* node)
 {
-  return node && node->type > SERD_LITERAL;
+  return node && serd_node_type(node) > SERD_LITERAL;
 }
 
 SERD_NODISCARD static SerdStatus
@@ -1414,7 +1415,7 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
   if (writer->context.predicate &&
       serd_node_equals(node, writer->context.subject)) {
     // Now-finished anonymous node is the new subject with no other context
-    memset(writer->context.predicate, 0, sizeof(SerdNode));
+    serd_node_set_header(writer->context.predicate, 0U, 0U, (SerdNodeType)0U);
   }
 
   return st;
@@ -1563,7 +1564,7 @@ serd_writer_set_prefix(SerdWriter*     writer,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  if (name->type != SERD_LITERAL || uri->type != SERD_URI) {
+  if (serd_node_type(name) != SERD_LITERAL || serd_node_type(uri) != SERD_URI) {
     return SERD_BAD_ARG;
   }
 
@@ -1574,7 +1575,7 @@ serd_writer_set_prefix(SerdWriter*     writer,
     }
 
     TRY(st, esink("@prefix ", 8, writer));
-    TRY(st, esink(serd_node_string(name), name->length, writer));
+    TRY(st, esink(serd_node_string(name), serd_node_length(name), writer));
     TRY(st, esink(": <", 3, writer));
     TRY(st, write_uri_from_node(writer, uri));
     TRY(st, esink(">", 1, writer));
