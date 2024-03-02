@@ -1,18 +1,41 @@
 // Copyright 2011-2022 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "world.h"
-
-#include "caret.h"
-#include "node.h"
+#include "node_impl.h"
+#include "world_internal.h"
 
 #include "exess/exess.h"
+#include "serd/caret.h"
+#include "serd/error.h"
 #include "serd/node.h"
+#include "serd/status.h"
+#include "serd/world.h"
 #include "zix/allocator.h"
 
 #include <assert.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
+
+struct SerdWorldImpl {
+  SerdLimits    limits;
+  ZixAllocator* allocator;
+  SerdLogFunc   error_func;
+  void*         error_handle;
+  uint32_t      next_blank_id;
+  uint32_t      next_document_id;
+
+  struct {
+    SerdNode node;
+    char     string[16];
+  } blank;
+};
+
+uint32_t
+serd_world_next_document_id(SerdWorld* const world)
+{
+  return ++world->next_document_id;
+}
 
 SerdStatus
 serd_world_error(const SerdWorld* const world, const SerdError* const e)
@@ -21,13 +44,14 @@ serd_world_error(const SerdWorld* const world, const SerdError* const e)
     world->error_func(world->error_handle, e);
   } else {
     fprintf(stderr, "error: ");
-    if (e->caret) {
+    const SerdCaret* const caret = e->caret;
+    if (caret) {
+      const SerdNode* const document = serd_caret_document(caret);
       fprintf(stderr,
               "%s:%u:%u: ",
-              e->caret->document ? serd_node_string(e->caret->document)
-                                 : "(unknown)",
-              e->caret->line,
-              e->caret->col);
+              document ? serd_node_string(document) : "(unknown)",
+              serd_caret_line(caret),
+              serd_caret_column(caret));
     }
     vfprintf(stderr, e->fmt, *e->args);
     fprintf(stderr, "\n");

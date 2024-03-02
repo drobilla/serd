@@ -1,13 +1,14 @@
 // Copyright 2019-2022 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "caret.h" // IWYU pragma: keep
+#include "caret_impl.h" // IWYU pragma: keep
 #include "memory.h"
 #include "namespaces.h"
-#include "node.h"
+#include "node_impl.h"
+#include "node_internal.h"
 #include "string_utils.h"
 #include "warnings.h"
-#include "world.h"
+#include "world_internal.h"
 
 #include "exess/exess.h"
 #include "serd/canon.h"

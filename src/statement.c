@@ -1,12 +1,13 @@
 // Copyright 2011-2020 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "statement.h"
-
-#include "caret.h"
-#include "node.h"
+#include "caret_impl.h" // IWYU pragma: keep
+#include "node_internal.h"
+#include "statement_impl.h" // IWYU pragma: keep
 #include "warnings.h"
 
+#include "serd/caret.h"
+#include "serd/node.h"
 #include "serd/statement.h"
 #include "serd/statement_view.h"
 #include "zix/allocator.h"
@@ -70,13 +71,10 @@ serd_statement_copy(ZixAllocator* const        allocator,
     memcpy(copy, statement, sizeof(SerdStatement));
 
     if (statement->caret) {
-      if (!(copy->caret =
-              (SerdCaret*)zix_malloc(allocator, sizeof(SerdCaret)))) {
+      if (!(copy->caret = serd_caret_copy(allocator, statement->caret))) {
         zix_free(allocator, copy);
         return NULL;
       }
-
-      memcpy(copy->caret, statement->caret, sizeof(SerdCaret));
     }
   }
 

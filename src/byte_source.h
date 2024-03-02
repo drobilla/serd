@@ -4,7 +4,7 @@
 #ifndef SERD_SRC_BYTE_SOURCE_H
 #define SERD_SRC_BYTE_SOURCE_H
 
-#include "caret.h" // IWYU pragma: keep
+#include "caret_impl.h" // IWYU pragma: keep
 
 #include "serd/attributes.h"
 #include "serd/caret.h"

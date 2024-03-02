@@ -1,9 +1,10 @@
 // Copyright 2018-2020 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "caret.h"
+#include "caret_impl.h" // IWYU pragma: keep
 
 #include "serd/caret.h"
+#include "serd/node.h"
 #include "zix/allocator.h"
 
 #include <assert.h>

@@ -3,8 +3,8 @@
 
 #include "serd/env.h"
 
-#include "node.h"
-#include "sink.h"
+#include "node_impl.h"
+#include "sink_impl.h"
 #include "try.h"
 
 #include "serd/event.h"
