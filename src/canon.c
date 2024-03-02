@@ -3,7 +3,6 @@
 
 #include "memory.h"
 #include "namespaces.h"
-#include "node_impl.h"
 #include "node_internal.h"
 #include "string_utils.h"
 #include "warnings.h"
@@ -80,26 +79,23 @@ build_typed(ZixAllocator* const ZIX_NONNULL   allocator,
   // Allocate node
   const size_t    datatype_uri_len = serd_node_length(datatype);
   const size_t    datatype_size    = serd_node_total_size(datatype);
-  const size_t    len              = serd_node_pad_length(r.count);
-  const size_t    total_len        = sizeof(SerdNode) + len + datatype_size;
+  const size_t    base_size        = serd_node_size_for_length(r.count);
+  const size_t    total_len        = base_size + datatype_size;
   SerdNode* const result           = serd_node_malloc(allocator, total_len);
   if (!result) {
     r.status = EXESS_NO_SPACE;
     return r;
   }
 
-  result->length = r.count;
-  result->flags  = SERD_HAS_DATATYPE;
-  result->type   = SERD_LITERAL;
+  serd_node_set_header(result, r.count, SERD_HAS_DATATYPE, SERD_LITERAL);
 
   // Write canonical form directly into node
   exess_write_canonical(str, value_type, r.count + 1, serd_node_buffer(result));
 
-  SerdNode* const datatype_node = result + 1 + (len / sizeof(SerdNode));
+  SerdNode* const datatype_node = serd_node_meta(result);
   char* const     datatype_buf  = serd_node_buffer(datatype_node);
 
-  datatype_node->length = datatype_uri_len;
-  datatype_node->type   = SERD_URI;
+  serd_node_set_header(datatype_node, datatype_uri_len, 0U, SERD_URI);
   memcpy(datatype_buf, datatype_uri, datatype_uri_len + 1);
 
   *out = result;

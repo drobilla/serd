@@ -1,4 +1,4 @@
-// Copyright 2011-2023 David Robillard <d@drobilla.net>
+// Copyright 2011-2024 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #include "node_internal.h"
@@ -138,6 +138,46 @@ serd_a_base64(size_t size, const void* const data)
 
 // Node functions
 
+static size_t
+serd_node_pad_length(const size_t n_bytes)
+{
+#if SIZE_MAX == UINT64_MAX
+
+  const size_t align = sizeof(SerdNode);
+
+  assert((align & (align - 1U)) == 0U);
+  return (n_bytes + align + 2U) & ~(align - 1U);
+
+#else
+
+  const size_t pad  = sizeof(SerdNode) - (n_bytes + 2U) % sizeof(SerdNode);
+  const size_t size = n_bytes + 2U + pad;
+
+  assert(size % sizeof(SerdNode) == 0);
+  return size;
+
+#endif
+}
+
+char*
+serd_node_buffer(SerdNode* const node)
+{
+  return (char*)(node + 1);
+}
+
+SerdNode*
+serd_node_meta(SerdNode* const node)
+{
+  return node + 1 + (serd_node_pad_length(node->length) / sizeof(SerdNode));
+}
+
+ZIX_PURE_FUNC static inline const SerdNode* ZIX_NONNULL
+serd_node_meta_c(const SerdNode* const ZIX_NONNULL node)
+{
+  assert(node->flags & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE));
+  return node + 1 + (serd_node_pad_length(node->length) / sizeof(SerdNode));
+}
+
 // Round size up to an even multiple of the node alignment
 static size_t
 serd_node_pad_size(const size_t size)
@@ -156,13 +196,19 @@ serd_node_check_padding(const SerdNode* node)
   if (node) {
     const size_t padded_length = serd_node_pad_length(node->length);
     for (size_t i = 0; i < padded_length - node->length; ++i) {
-      assert(serd_node_buffer_c(node)[node->length + i] == '\0');
+      assert(serd_node_string(node)[node->length + i] == '\0');
     }
 
     serd_node_check_padding(serd_node_datatype(node));
     serd_node_check_padding(serd_node_language(node));
   }
 #endif
+}
+
+size_t
+serd_node_size_for_length(const size_t length)
+{
+  return sizeof(SerdNode) + serd_node_pad_length(length);
 }
 
 size_t
@@ -197,6 +243,23 @@ serd_node_malloc(ZixAllocator* const allocator, const size_t size)
   return node;
 }
 
+void
+serd_node_set_flag(SerdNode* const node, const SerdNodeFlag flag)
+{
+  node->flags = node->flags | (SerdNodeFlags)flag;
+}
+
+void
+serd_node_set_header(SerdNode* const     node,
+                     const size_t        length,
+                     const SerdNodeFlags flags,
+                     const SerdNodeType  type)
+{
+  node->length = length;
+  node->flags  = flags;
+  node->type   = type;
+}
+
 SerdStatus
 serd_node_set(ZixAllocator* const   allocator,
               SerdNode** const      dst,
@@ -216,12 +279,6 @@ serd_node_set(ZixAllocator* const   allocator,
   assert(*dst);
   memcpy(*dst, src, size);
   return SERD_SUCCESS;
-}
-
-void
-serd_node_reset(SerdNode* const node)
-{
-  memset(node, 0, sizeof(SerdNode));
 }
 
 void
@@ -251,8 +308,7 @@ serd_node_construct_simple(const size_t        buf_size,
                            const SerdNodeFlags flags,
                            const ZixStringView string)
 {
-  const size_t total_size =
-    sizeof(SerdNode) + serd_node_pad_length(string.length);
+  const size_t total_size = serd_node_size_for_length(string.length);
 
   if (!buf || total_size > buf_size) {
     return result(SERD_NO_SPACE, total_size);
@@ -330,7 +386,7 @@ serd_node_construct_literal(const size_t        buf_size,
 
   // Calculate total node size
   const size_t padded_len = serd_node_pad_length(string.length);
-  const size_t meta_size = sizeof(SerdNode) + serd_node_pad_length(meta.length);
+  const size_t meta_size  = serd_node_size_for_length(meta.length);
   const size_t total_size = sizeof(SerdNode) + padded_len + meta_size;
   if (!buf || total_size > buf_size) {
     return result(SERD_NO_SPACE, total_size);
@@ -575,7 +631,7 @@ serd_node_construct_uri(const size_t      buf_size,
                         const SerdURIView uri)
 {
   const size_t length        = serd_uri_string_length(uri);
-  const size_t required_size = sizeof(SerdNode) + serd_node_pad_length(length);
+  const size_t required_size = serd_node_size_for_length(length);
   if (!buf || buf_size < required_size) {
     return result(SERD_NO_SPACE, required_size);
   }

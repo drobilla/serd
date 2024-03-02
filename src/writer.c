@@ -4,7 +4,6 @@
 #include "block_dumper.h"
 #include "memory.h"
 #include "namespaces.h"
-#include "node_impl.h"
 #include "node_internal.h"
 #include "ntriples.h"
 #include "sink_impl.h"
@@ -800,16 +799,16 @@ reset_context(SerdWriter* writer, const unsigned flags)
   free_anon_stack(writer);
 
   if (writer->context.predicate) {
-    serd_node_reset(writer->context.predicate);
+    serd_node_set_header(writer->context.predicate, 0U, 0U, (SerdNodeType)0U);
   }
 
   if (writer->context.subject) {
-    serd_node_reset(writer->context.subject);
+    serd_node_set_header(writer->context.subject, 0U, 0U, (SerdNodeType)0U);
   }
 
   if (flags & RESET_GRAPH) {
     if (writer->context.graph) {
-      serd_node_reset(writer->context.graph);
+      serd_node_set_header(writer->context.graph, 0U, 0U, (SerdNodeType)0U);
     }
   }
 
@@ -979,10 +978,6 @@ write_blank(SerdWriter* const             writer,
             const SerdField               field,
             const SerdStatementEventFlags flags)
 {
-  SerdStatus        st       = SERD_SUCCESS;
-  const char* const node_str = serd_node_string(node);
-  const size_t      node_len = serd_node_length(node);
-
   if (supports_abbrev(writer)) {
     if ((field == SERD_SUBJECT && (flags & SERD_ANON_S)) ||
         (field == SERD_OBJECT && (flags & SERD_ANON_O))) {
@@ -1000,6 +995,10 @@ write_blank(SerdWriter* const             writer,
       return esink("[]", 2, writer);
     }
   }
+
+  SerdStatus        st       = SERD_SUCCESS;
+  const char* const node_str = serd_node_string(node);
+  const size_t      node_len = serd_node_length(node);
 
   TRY(st, esink("_:", 2, writer));
   return esink(node_str, node_len, writer);
@@ -1402,7 +1401,7 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
   if (writer->context.predicate &&
       serd_node_equals(node, writer->context.subject)) {
     // Now-finished anonymous node is the new subject with no other context
-    serd_node_reset(writer->context.predicate);
+    serd_node_set_header(writer->context.predicate, 0U, 0U, (SerdNodeType)0U);
   }
 
   return st;
@@ -1551,7 +1550,7 @@ serd_writer_set_prefix(SerdWriter*     writer,
   const ZixStringView name_string = serd_node_string_view(name);
   SerdStatus          st          = SERD_SUCCESS;
 
-  if (name->type != SERD_LITERAL || uri->type != SERD_URI) {
+  if (serd_node_type(name) != SERD_LITERAL || serd_node_type(uri) != SERD_URI) {
     return SERD_BAD_ARG;
   }
 
