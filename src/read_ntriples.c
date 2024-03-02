@@ -521,13 +521,13 @@ read_literal(SerdReader* const reader, SerdNode** const dest)
   case '@':
     TRY(st, skip_byte(reader, '@'));
     TRY(st, read_LANGTAG(reader));
-    (*dest)->flags |= SERD_HAS_LANGUAGE;
+    serd_node_set_flag(*dest, SERD_HAS_LANGUAGE);
     break;
   case '^':
     TRY(st, skip_byte(reader, '^'));
     TRY(st, eat_byte_check(reader, '^'));
     TRY(st, read_IRI(reader, &datatype));
-    (*dest)->flags |= SERD_HAS_DATATYPE;
+    serd_node_set_flag(*dest, SERD_HAS_DATATYPE);
     break;
   }
 

@@ -1,7 +1,7 @@
 // Copyright 2011-2022 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "node_impl.h"
+#include "node_internal.h"
 #include "world_internal.h"
 
 #include "exess/exess.h"
@@ -25,10 +25,7 @@ struct SerdWorldImpl {
   uint32_t      next_blank_id;
   uint32_t      next_document_id;
 
-  struct {
-    SerdNode node;
-    char     string[16];
-  } blank;
+  uint64_t blank_buf[4U];
 };
 
 uint32_t
@@ -85,8 +82,9 @@ serd_world_new(ZixAllocator* const allocator)
     world->limits.writer_max_depth  = 128U;
     world->allocator                = actual;
 
-    serd_node_construct(
-      sizeof(world->blank), &world->blank, serd_a_blank_string("b00000000000"));
+    serd_node_construct(sizeof(world->blank_buf),
+                        world->blank_buf,
+                        serd_a_blank_string("b00000000000"));
   }
 
   return world;
@@ -105,15 +103,16 @@ serd_world_get_blank(SerdWorld* const world)
 {
   assert(world);
 
-  char* const  buf      = world->blank.string;
-  const size_t buf_size = sizeof(world->blank.string);
-  size_t       i        = 0U;
+  SerdNode* const blank    = (SerdNode*)world->blank_buf;
+  char* const     buf      = serd_node_buffer(blank);
+  const size_t    offset   = (size_t)(buf - (char*)blank);
+  const size_t    buf_size = sizeof(world->blank_buf) - offset;
+  size_t          i        = 0U;
 
   buf[i++] = 'b';
   i += exess_write_uint(++world->next_blank_id, buf_size - i, buf + i).count;
-  world->blank.node.length = i;
-
-  return &world->blank.node;
+  serd_node_set_header(blank, i, 0U, SERD_BLANK);
+  return blank;
 }
 
 SerdLimits

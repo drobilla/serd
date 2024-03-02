@@ -139,7 +139,7 @@ read_String(SerdReader* const reader, SerdNode* const node)
 
   // Long string
   TRY(st, skip_byte(reader, q3));
-  node->flags |= SERD_IS_LONG;
+  serd_node_set_flag(node, SERD_IS_LONG);
 
   return read_STRING_LITERAL_LONG(reader, node, (uint8_t)q1);
 }
@@ -372,8 +372,7 @@ read_PrefixedName(SerdReader* const reader,
 
     // Pop back to the start of the string and replace it
     serd_stack_pop_to(&reader->stack, string_start_offset);
-    dest->length = 0U;
-    dest->type   = SERD_URI;
+    serd_node_set_header(dest, 0U, 0U, SERD_URI);
     TRY(st, push_bytes(reader, dest, (const uint8_t*)uri.data, uri.length));
   }
 
@@ -458,15 +457,13 @@ read_number(SerdReader* const reader,
     }
     TRY(st, read_0_9(reader, *dest, true));
     meta = push_node(reader, SERD_URI, XSD_DOUBLE, sizeof(XSD_DOUBLE) - 1);
-    (*dest)->flags |= SERD_HAS_DATATYPE;
   } else if (has_decimal) {
     meta = push_node(reader, SERD_URI, XSD_DECIMAL, sizeof(XSD_DECIMAL) - 1);
-    (*dest)->flags |= SERD_HAS_DATATYPE;
   } else {
     meta = push_node(reader, SERD_URI, XSD_INTEGER, sizeof(XSD_INTEGER) - 1);
   }
 
-  (*dest)->flags |= SERD_HAS_DATATYPE;
+  serd_node_set_flag(*dest, SERD_HAS_DATATYPE);
   return meta ? SERD_SUCCESS : SERD_BAD_STACK;
 }
 
@@ -504,13 +501,13 @@ read_literal(SerdReader* const reader,
   switch (peek_byte(reader)) {
   case '@':
     TRY(st, skip_byte(reader, '@'));
-    (*dest)->flags |= SERD_HAS_LANGUAGE;
+    serd_node_set_flag(*dest, SERD_HAS_LANGUAGE);
     TRY(st, read_LANGTAG(reader));
     break;
   case '^':
     TRY(st, skip_byte(reader, '^'));
     TRY(st, eat_byte_check(reader, '^'));
-    (*dest)->flags |= SERD_HAS_DATATYPE;
+    serd_node_set_flag(*dest, SERD_HAS_DATATYPE);
     TRY(st, read_turtle_iri(reader, &datatype, ate_dot));
     break;
   }
@@ -649,8 +646,9 @@ read_named_object(SerdReader* const reader,
   // Check if this is actually a special boolean node
   if (st == SERD_FAILURE && (node_has_string(node, true_string) ||
                              node_has_string(node, false_string))) {
-    node->flags = SERD_HAS_DATATYPE;
-    node->type  = SERD_LITERAL;
+    serd_node_set_header(
+      node, serd_node_length(node), SERD_HAS_DATATYPE, SERD_LITERAL);
+
     return push_node(reader, SERD_URI, XSD_BOOLEAN, XSD_BOOLEAN_LEN)
              ? SERD_SUCCESS
              : SERD_BAD_STACK;
