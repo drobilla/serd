@@ -87,18 +87,6 @@ r_err_expected(const SerdReader* const reader,
 }
 
 SerdStatus
-skip_horizontal_whitespace(SerdReader* const reader)
-{
-  SerdStatus st = SERD_SUCCESS;
-
-  for (int c = 0; !st && (c = peek_byte(reader)) && (c == '\t' || c == ' ');) {
-    st = skip_byte(reader, c);
-  }
-
-  return st;
-}
-
-SerdStatus
 serd_reader_skip_until_byte(SerdReader* const reader, const uint8_t byte)
 {
   SerdStatus st = SERD_SUCCESS;
@@ -113,9 +101,9 @@ serd_reader_skip_until_byte(SerdReader* const reader, const uint8_t byte)
 }
 
 void
-set_blank_id(SerdReader* const  reader,
-             TokenHeader* const node,
-             const size_t       buf_size)
+serd_reader_set_blank_id(SerdReader* const  reader,
+                         TokenHeader* const node,
+                         const size_t       buf_size)
 {
   char* const       buf    = (char*)(node + 1);
   const char* const prefix = reader->bprefix ? reader->bprefix : "";
@@ -131,12 +119,12 @@ genid_size(const SerdReader* const reader)
 }
 
 TokenHeader*
-blank_id(SerdReader* const reader)
+serd_reader_blank_id(SerdReader* const reader)
 {
   TokenHeader* const node =
     push_node_space(reader, SERD_BLANK, genid_size(reader));
   if (node) {
-    set_blank_id(reader, node, genid_size(reader));
+    serd_reader_set_blank_id(reader, node, genid_size(reader));
   }
   return node;
 }

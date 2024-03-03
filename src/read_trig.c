@@ -66,7 +66,7 @@ read_labelOrSubject(SerdReader* const reader, TokenHeader** const dest)
   case '[':
     if (!(st = skip_byte(reader, '[')) && !(st = read_turtle_ws_star(reader)) &&
         !(st = eat_byte_check(reader, ']'))) {
-      *dest = blank_id(reader);
+      *dest = serd_reader_blank_id(reader);
       st    = *dest ? SERD_SUCCESS : SERD_BAD_STACK;
     }
     break;
