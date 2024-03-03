@@ -57,12 +57,12 @@ SERD_NODISCARD SerdStatus
 read_EOL(SerdReader* reader);
 
 /**
-   Read a complete IRI reference.
+   Read an IRI reference suffix into an existing node.
 
    RDF 1.1 NTriples: [8] IRIREF
 */
 SERD_NODISCARD SerdStatus
-read_IRIREF(SerdReader* reader, SerdNode** dest);
+read_IRIREF_suffix(SerdReader* reader, SerdNode* node);
 
 /**
    Read a string that is single-quoted with the given character.

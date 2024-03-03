@@ -167,7 +167,7 @@ read_pct_encoded(SerdReader* const reader, SerdNode* const node)
   return st;
 }
 
-static SerdStatus
+SerdStatus
 read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
 {
   SerdStatus st   = SERD_SUCCESS;
@@ -201,22 +201,6 @@ read_IRIREF_suffix(SerdReader* const reader, SerdNode* const node)
   }
 
   return st;
-}
-
-// Note that read_IRI is used instead for NTriples, but this is used by Turtle
-SerdStatus
-read_IRIREF(SerdReader* const reader, SerdNode** const dest)
-{
-  SerdStatus st = SERD_SUCCESS;
-  TRY(st, eat_byte_check(reader, '<'));
-
-  if (!(*dest = push_node_head(reader, SERD_URI))) {
-    return SERD_BAD_STACK;
-  }
-
-  st = read_IRIREF_suffix(reader, *dest);
-
-  return st > SERD_FAILURE ? st : push_node_tail(reader);
 }
 
 /**
