@@ -15,6 +15,14 @@
 // Utilities
 
 /**
+   Read (skip) any horizontal whitespace.
+
+   Only ASCII space and horizontal tab are considered horizontal whitespace.
+*/
+ZIX_NODISCARD SerdStatus
+read_horizontal_whitespace(SerdReader* reader);
+
+/**
    Read one (possibly multi-byte) character.
 
    The caller must have already eaten the first byte, `c`.

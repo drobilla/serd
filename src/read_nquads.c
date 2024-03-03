@@ -38,21 +38,21 @@ read_nquads_statement(SerdReader* const reader)
 
   // Read subject and predicate
   if ((st = read_nt_subject(reader, &ctx.subject, &ate_dot)) ||
-      (st = skip_horizontal_whitespace(reader)) ||
+      (st = read_horizontal_whitespace(reader)) ||
       (st = read_nt_predicate(reader, &ctx.predicate)) ||
-      (st = skip_horizontal_whitespace(reader))) {
+      (st = read_horizontal_whitespace(reader))) {
     return st;
   }
 
   if ((st = read_nt_object(reader, &ctx.object, &ate_dot)) ||
-      (st = skip_horizontal_whitespace(reader))) {
+      (st = read_horizontal_whitespace(reader))) {
     return st;
   }
 
   if (!ate_dot) {
     if (peek_byte(reader) != '.') {
       TRY(st, read_graphLabel(reader, &ctx.graph, &ate_dot));
-      TRY(st, skip_horizontal_whitespace(reader));
+      TRY(st, read_horizontal_whitespace(reader));
     }
 
     if (!ate_dot) {
@@ -73,7 +73,7 @@ read_nquads_line(SerdReader* const reader)
 {
   SerdStatus st = SERD_SUCCESS;
 
-  TRY(st, skip_horizontal_whitespace(reader));
+  TRY(st, read_horizontal_whitespace(reader));
 
   const int c = peek_byte(reader);
 
@@ -88,7 +88,7 @@ read_nquads_line(SerdReader* const reader)
   const size_t orig_stack_size = reader->stack.size;
 
   if (!(st = read_nquads_statement(reader)) &&
-      !(st = skip_horizontal_whitespace(reader))) {
+      !(st = read_horizontal_whitespace(reader))) {
     if (peek_byte(reader) == '#') {
       st = read_comment(reader);
     }
