@@ -8,13 +8,14 @@
 .Nd read and write RDF data
 .Sh SYNOPSIS
 .Nm serd-pipe
-.Op Fl CVhq
+.Op Fl CVh
 .Op Fl B Ar base
 .Op Fl I Ar syntax
 .Op Fl O Ar syntax
 .Op Fl R Ar root
 .Op Fl b Ar bytes
 .Op Fl k Ar bytes
+.Op Fl l Ar level
 .Op Fl o Ar filename
 .Op Fl s Ar string
 .Op Ar input ...
@@ -246,12 +247,30 @@ Parsing is performed using a pre-allocated stack for performance and security re
 By default, the stack is 512 KiB, which should be sufficient for most data.
 This can be increased to support unusually structured data and huge literals,
 or decreased to reduce overall memory requirements and reduce startup time.
+.It Fl l Ar level
+Maximum log level to display.
+The
+.Ar level
+is as in
+.Xr syslog 2 ,
+either a number from
+.Cm 0
+to
+.Cm 7,
+or
+.Cm emerg ,
+.Cm alert ,
+.Cm crit ,
+.Cm err ,
+.Cm warn ,
+.Cm note ,
+.Cm info ,
+or
+.Cm debug .
 .It Fl o Ar filename
 Write output to the given
 .Ar filename
 instead of stdout.
-.It Fl q
-Suppress all output except data.
 .It Fl s Ar string
 Parse
 .Ar string
