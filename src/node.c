@@ -138,20 +138,25 @@ serd_a_base64(size_t size, const void* const data)
 
 // Node functions
 
-// Round size up to an even multiple of the node alignment
-static inline size_t
-serd_node_pad_size(const size_t size)
-{
-  const size_t n_trailing = size % serd_node_align;
-  const size_t n_pad      = n_trailing ? (serd_node_align - n_trailing) : 0U;
-
-  return size + n_pad;
-}
-
-static inline size_t
+static size_t
 serd_node_pad_length(const size_t n_bytes)
 {
-  return serd_node_pad_size(n_bytes + 1U);
+#if SIZE_MAX == UINT64_MAX
+
+  const size_t align = sizeof(SerdNode);
+
+  assert((align & (align - 1U)) == 0U);
+  return (n_bytes + align + 2U) & ~(align - 1U);
+
+#else
+
+  const size_t pad  = sizeof(SerdNode) - (n_bytes + 2U) % sizeof(SerdNode);
+  const size_t size = n_bytes + 2U + pad;
+
+  assert(size % sizeof(SerdNode) == 0);
+  return size;
+
+#endif
 }
 
 char*
@@ -160,25 +165,27 @@ serd_node_buffer(SerdNode* const node)
   return (char*)(node + 1);
 }
 
-// Return the offset in units of SerdNode (not bytes) to the node end
-static inline size_t
-serd_node_meta_offset(const size_t n_bytes)
-{
-  return serd_node_pad_length(n_bytes + 2U) / sizeof(SerdNode);
-  // return (n_bytes + sizeof(SerdNode) + 2U) / sizeof(SerdNode);
-}
-
 SerdNode*
 serd_node_meta(SerdNode* const node)
 {
-  return node + 1U + serd_node_meta_offset(node->length);
+  return node + 1 + (serd_node_pad_length(node->length) / sizeof(SerdNode));
 }
 
 ZIX_PURE_FUNC static inline const SerdNode* ZIX_NONNULL
 serd_node_meta_c(const SerdNode* const ZIX_NONNULL node)
 {
   assert(node->flags & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE));
-  return node + 1U + serd_node_meta_offset(node->length);
+  return node + 1 + (serd_node_pad_length(node->length) / sizeof(SerdNode));
+}
+
+// Round size up to an even multiple of the node alignment
+static size_t
+serd_node_pad_size(const size_t size)
+{
+  const size_t n_trailing = size % serd_node_align;
+  const size_t n_pad      = n_trailing ? (serd_node_align - n_trailing) : 0U;
+
+  return size + n_pad;
 }
 
 static void
@@ -207,15 +214,17 @@ serd_node_size_for_length(const size_t length)
 size_t
 serd_node_total_size(const SerdNode* const node)
 {
-  const size_t base_size = serd_node_size_for_length(node->length);
+  const size_t real_length = serd_node_pad_length(node->length);
+  const size_t base_size   = sizeof(SerdNode) + real_length;
+
   if (!(node->flags & meta_mask)) {
     return base_size;
   }
 
-  const SerdNode* const meta      = serd_node_meta_c(node);
-  const size_t          meta_size = serd_node_size_for_length(meta->length);
+  const SerdNode* const meta             = serd_node_meta_c(node);
+  const size_t          meta_real_length = serd_node_pad_length(meta->length);
 
-  return base_size + meta_size;
+  return base_size + sizeof(SerdNode) + meta_real_length;
 }
 
 SerdNode*
@@ -246,9 +255,7 @@ serd_node_set_header(SerdNode* const     node,
                      const SerdNodeFlags flags,
                      const SerdNodeType  type)
 {
-  assert(length <= UINT32_MAX);
-
-  node->length = (uint32_t)length;
+  node->length = length;
   node->flags  = flags;
   node->type   = type;
 }
@@ -309,7 +316,7 @@ serd_node_construct_simple(const size_t        buf_size,
 
   SerdNode* const node = (SerdNode*)buf;
 
-  node->length = (uint32_t)string.length;
+  node->length = string.length;
   node->flags  = flags;
   node->type   = type;
 
@@ -385,12 +392,9 @@ serd_node_construct_literal(const size_t        buf_size,
     return result(SERD_NO_SPACE, total_size);
   }
 
-  assert(string.length <= UINT32_MAX);
-  assert(meta.length <= UINT32_MAX);
-
   // Write node header
   SerdNode* const node = (SerdNode*)buf;
-  node->length         = (uint32_t)string.length;
+  node->length         = string.length;
   node->flags          = flags;
   node->type           = SERD_LITERAL;
 
@@ -400,7 +404,7 @@ serd_node_construct_literal(const size_t        buf_size,
   // Append datatype or language
   SerdNode* meta_node = serd_node_meta(node);
   meta_node->type     = (flags & SERD_HAS_DATATYPE) ? SERD_URI : SERD_LITERAL;
-  meta_node->length   = (uint32_t)meta.length;
+  meta_node->length   = meta.length;
   memcpy(serd_node_buffer(meta_node), meta.data, meta.length);
 
   serd_node_zero_pad(node);
@@ -588,7 +592,7 @@ serd_node_construct_binary(
 
   // Write node header
   SerdNode* const node = (SerdNode*)buf;
-  node->length         = (uint32_t)r.count;
+  node->length         = r.count;
   node->flags          = SERD_HAS_DATATYPE;
   node->type           = SERD_LITERAL;
 
@@ -601,7 +605,7 @@ serd_node_construct_binary(
 
   // Append datatype
   SerdNode* meta_node = serd_node_meta(node);
-  meta_node->length   = (uint32_t)datatype_uri.length;
+  meta_node->length   = datatype_uri.length;
   meta_node->flags    = 0U;
   meta_node->type     = SERD_URI;
   memcpy(serd_node_buffer(meta_node), datatype_uri.data, datatype_uri.length);
@@ -634,7 +638,7 @@ serd_node_construct_uri(const size_t      buf_size,
 
   // Write node header
   SerdNode* const node = (SerdNode*)buf;
-  node->length         = (uint32_t)length;
+  node->length         = length;
   node->flags          = 0U;
   node->type           = SERD_URI;
 
@@ -907,7 +911,7 @@ serd_node_construct_file_uri(const size_t        buf_size,
     return result(SERD_NO_SPACE, count);
   }
 
-  node->length = (uint32_t)length;
+  node->length = length;
   assert(node->length == strlen(serd_node_string(node)));
 
   return result(SERD_SUCCESS, count);

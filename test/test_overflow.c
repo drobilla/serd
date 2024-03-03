@@ -7,10 +7,9 @@
 #include "zix/string_view.h"
 
 #include <assert.h>
-#include <stdint.h>
 #include <stdio.h>
 
-static const size_t min_stack_size = 4U * sizeof(uint32_t) + 300U;
+static const size_t min_stack_size = 4U * sizeof(size_t) + 320U;
 static const size_t max_stack_size = 2048U;
 
 static SerdStatus
