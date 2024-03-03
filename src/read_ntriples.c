@@ -156,6 +156,20 @@ read_IRI(SerdReader* const reader, TokenHeader** const dest)
 }
 
 SerdStatus
+read_horizontal_whitespace(SerdReader* const reader)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  int c = peek_byte(reader);
+  while (!st && (c == '\t' || c == ' ')) {
+    st = skip_byte(reader, c);
+    c  = peek_byte(reader);
+  }
+
+  return st;
+}
+
+SerdStatus
 read_character(SerdReader* const  reader,
                TokenHeader* const dest,
                const uint8_t      c)
@@ -544,16 +558,16 @@ read_triple(SerdReader* const reader)
 
   // Read subject and predicate
   if ((st = read_nt_subject(reader, &ctx.subject, &ate_dot)) ||
-      (st = skip_horizontal_whitespace(reader)) ||
+      (st = read_horizontal_whitespace(reader)) ||
       (st = read_nt_predicate(reader, &ctx.predicate)) ||
-      (st = skip_horizontal_whitespace(reader))) {
+      (st = read_horizontal_whitespace(reader))) {
     return st;
   }
 
   TokenHeader* object = NULL;
   TokenHeader* meta   = NULL;
   if ((st = read_nt_object(reader, &object, &meta, &ate_dot)) ||
-      (st = skip_horizontal_whitespace(reader))) {
+      (st = read_horizontal_whitespace(reader))) {
     return st;
   }
 
@@ -570,7 +584,7 @@ read_ntriples_line(SerdReader* const reader)
 {
   SerdStatus st = SERD_SUCCESS;
 
-  TRY(st, skip_horizontal_whitespace(reader));
+  TRY(st, read_horizontal_whitespace(reader));
 
   const int c = peek_byte(reader);
   if (c <= 0) {
@@ -589,7 +603,7 @@ read_ntriples_line(SerdReader* const reader)
   const size_t orig_stack_size = reader->stack.size;
 
   if (!(st = read_triple(reader)) &&
-      !(st = skip_horizontal_whitespace(reader))) {
+      !(st = read_horizontal_whitespace(reader))) {
     if (peek_byte(reader) == '#') {
       st = read_comment(reader);
     }
