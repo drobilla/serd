@@ -101,7 +101,7 @@ serd_reader_set_blank_id(SerdReader* const reader,
 {
   const uint32_t id  = reader->next_id++;
   char* const    buf = serd_node_buffer(node);
-  size_t         i   = reader->bprefix_len;
+  uint32_t       i   = reader->bprefix_len;
 
   memcpy(buf, reader->bprefix, reader->bprefix_len);
   buf[i++] = 'b';
@@ -139,7 +139,7 @@ push_node_padded(SerdReader* const  reader,
 {
   // Push a null byte to ensure the previous node was null terminated
   char* terminator = (char*)serd_stack_push(&reader->stack, 1);
-  if (!terminator) {
+  if (!terminator || length > UINT32_MAX) {
     return NULL;
   }
   *terminator = 0;
@@ -153,7 +153,7 @@ push_node_padded(SerdReader* const  reader,
 
   SerdNode* const node = (SerdNode*)mem;
 
-  node->length = length;
+  node->length = (uint32_t)length;
   node->flags  = 0;
   node->type   = type;
 

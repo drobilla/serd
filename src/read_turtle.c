@@ -311,9 +311,10 @@ resolve_IRIREF(SerdReader* const reader,
 
   // Write resolved URI to the temporary node
   WriteNodeContext ctx = {reader, temp, SERD_SUCCESS};
-  temp->length         = serd_write_uri(uri, write_to_stack, &ctx);
+  const size_t     n   = serd_write_uri(uri, write_to_stack, &ctx);
   if (!ctx.status) {
     // Replace the destination with the new expanded node
+    temp->length = (uint32_t)n;
     memmove(dest, temp, serd_node_total_size(temp));
     serd_stack_pop_to(&reader->stack, string_start_offset + dest->length);
   }
