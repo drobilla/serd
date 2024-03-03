@@ -65,15 +65,18 @@ r_err_char(SerdReader* const reader, const char* const kind, const int c)
 }
 
 SerdStatus
-skip_horizontal_whitespace(SerdReader* const reader)
+r_err_expected(SerdReader* const reader,
+               const char* const expected,
+               const int         c)
 {
-  SerdStatus st = SERD_SUCCESS;
+  const SerdStatus st   = SERD_BAD_SYNTAX;
+  const uint32_t   code = (uint32_t)c;
 
-  for (int c = 0; !st && (c = peek_byte(reader)) && (c == '\t' || c == ' ');) {
-    st = skip_byte(reader, c);
-  }
-
-  return st;
+  return (c < 0x20 || c == 0x7F || c > 0x10FFFF)
+           ? r_err(reader, st, "expected %s", expected)
+         : (c == '\'' || c >= 0x80)
+           ? r_err(reader, st, "expected %s, not U+%04X", expected, code)
+           : r_err(reader, st, "expected %s, not '%c'", expected, c);
 }
 
 SerdStatus
@@ -91,9 +94,9 @@ serd_reader_skip_until_byte(SerdReader* const reader, const uint8_t byte)
 }
 
 void
-set_blank_id(SerdReader* const reader,
-             SerdNode* const   node,
-             const size_t      buf_size)
+serd_reader_set_blank_id(SerdReader* const reader,
+                         SerdNode* const   node,
+                         const size_t      buf_size)
 {
   const uint32_t id  = reader->next_id++;
   char* const    buf = serd_node_buffer(node);
@@ -114,13 +117,13 @@ genid_length(const SerdReader* const reader)
 }
 
 SerdNode*
-blank_id(SerdReader* const reader)
+serd_reader_blank_id(SerdReader* const reader)
 {
   SerdNode* const ref =
     push_node_padded(reader, genid_length(reader), SERD_BLANK, "", 0);
 
   if (ref) {
-    set_blank_id(reader, ref, genid_length(reader) + 1U);
+    serd_reader_set_blank_id(reader, ref, genid_length(reader) + 1U);
   }
 
   return ref;
