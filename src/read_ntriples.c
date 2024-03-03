@@ -31,7 +31,7 @@ read_LANGTAG(SerdReader* const reader, SerdNode** const dest)
 {
   int c = peek_byte(reader);
   if (!is_alpha(c)) {
-    return r_err(reader, SERD_BAD_SYNTAX, "unexpected '%c'", c);
+    return r_err_expected(reader, "A-Z or a-z", c);
   }
 
   if (!(*dest = push_node(reader, SERD_LITERAL, "", 0))) {
@@ -65,7 +65,7 @@ read_EOL(SerdReader* const reader)
   SerdStatus st = SERD_SUCCESS;
 
   if (!is_EOL(peek_byte(reader))) {
-    return r_err(reader, SERD_BAD_SYNTAX, "expected a line ending");
+    return r_err_expected(reader, "a line ending", peek_byte(reader));
   }
 
   while (is_EOL(peek_byte(reader))) {
@@ -150,6 +150,20 @@ read_IRI(SerdReader* const reader, SerdNode** const dest)
 
   TRY(st, read_IRI_scheme(reader, *dest));
   return read_IRIREF_suffix(reader, *dest);
+}
+
+SerdStatus
+read_horizontal_whitespace(SerdReader* const reader)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  int c = peek_byte(reader);
+  while (!st && (c == '\t' || c == ' ')) {
+    st = skip_byte(reader, c);
+    c  = peek_byte(reader);
+  }
+
+  return st;
 }
 
 SerdStatus
@@ -359,7 +373,7 @@ read_UCHAR(SerdReader* const reader,
   // Check that first character is an expected one
   const int b = peek_byte(reader);
   if (b != 'U' && b != 'u') {
-    return r_err(reader, SERD_BAD_SYNTAX, "expected 'U' or 'u'");
+    return r_err_expected(reader, "'U' or 'u'", b);
   }
 
   // Determine length from the escape character and consume it
@@ -528,7 +542,7 @@ read_nt_subject(SerdReader* const reader,
   return (c == '<')   ? read_IRI(reader, dest)
          : (c == '?') ? read_Var(reader, dest)
          : (c == '_') ? read_BLANK_NODE_LABEL(reader, dest, ate_dot)
-                      : r_err(reader, SERD_BAD_SYNTAX, "expected '<' or '_'");
+                      : r_err_expected(reader, "'<' or '_'", c);
 }
 
 /// [4] predicate
@@ -552,9 +566,8 @@ read_nt_object(SerdReader* const reader,
   return (c == '"')   ? read_literal(reader, dest)
          : (c == '<') ? read_IRI(reader, dest)
          : (c == '?') ? read_Var(reader, dest)
-         : (c == '_')
-           ? read_BLANK_NODE_LABEL(reader, dest, ate_dot)
-           : r_err(reader, SERD_BAD_SYNTAX, "expected '<', '_', or '\"'");
+         : (c == '_') ? read_BLANK_NODE_LABEL(reader, dest, ate_dot)
+                      : r_err_expected(reader, "'<', '_', or '\"'", c);
 }
 
 /// [2] triple
@@ -568,14 +581,14 @@ read_triple(SerdReader* const reader)
 
   // Read subject and predicate
   if ((st = read_nt_subject(reader, &ctx.subject, &ate_dot)) ||
-      (st = skip_horizontal_whitespace(reader)) ||
+      (st = read_horizontal_whitespace(reader)) ||
       (st = read_nt_predicate(reader, &ctx.predicate)) ||
-      (st = skip_horizontal_whitespace(reader))) {
+      (st = read_horizontal_whitespace(reader))) {
     return st;
   }
 
   if ((st = read_nt_object(reader, &ctx.object, &ate_dot)) ||
-      (st = skip_horizontal_whitespace(reader))) {
+      (st = read_horizontal_whitespace(reader))) {
     return st;
   }
 
@@ -602,7 +615,7 @@ read_ntriples_line(SerdReader* const reader)
 {
   SerdStatus st = SERD_SUCCESS;
 
-  TRY(st, skip_horizontal_whitespace(reader));
+  TRY(st, read_horizontal_whitespace(reader));
 
   const int c = peek_byte(reader);
 
@@ -617,7 +630,7 @@ read_ntriples_line(SerdReader* const reader)
   const size_t orig_stack_size = reader->stack.size;
 
   if (!(st = read_triple(reader)) &&
-      !(st = skip_horizontal_whitespace(reader))) {
+      !(st = read_horizontal_whitespace(reader))) {
     if (peek_byte(reader) == '#') {
       st = read_comment(reader);
     }
