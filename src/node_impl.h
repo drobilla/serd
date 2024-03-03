@@ -6,12 +6,12 @@
 
 #include "serd/node.h"
 
-#include <stddef.h>
+#include <stdint.h>
 
 struct SerdNodeImpl {
-  size_t        length; ///< Length in bytes (not including null)
-  SerdNodeFlags flags;  ///< Node flags
-  SerdNodeType  type;   ///< Node type
+  uint32_t      length;     ///< String length in bytes (without termination)
+  SerdNodeFlags flags : 16; ///< Node flags
+  SerdNodeType  type : 16;  ///< Node type
 };
 
 #endif // SERD_SRC_NODE_IMPL_H

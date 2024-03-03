@@ -80,8 +80,8 @@ build_typed(ZixAllocator* const ZIX_NONNULL   allocator,
   const size_t    datatype_uri_len = serd_node_length(datatype);
   const size_t    datatype_size    = serd_node_total_size(datatype);
   const size_t    base_size        = serd_node_size_for_length(r.count);
-  const size_t    total_len        = base_size + datatype_size;
-  SerdNode* const result           = serd_node_malloc(allocator, total_len);
+  const size_t    total_size       = base_size + datatype_size + 1U;
+  SerdNode* const result           = serd_node_malloc(allocator, total_size);
   if (!result) {
     r.status = EXESS_NO_SPACE;
     return r;

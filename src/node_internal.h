@@ -12,7 +12,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-static const size_t serd_node_align = 2 * sizeof(uint64_t);
+static const size_t serd_node_align = 2 * sizeof(uint32_t);
 
 /// Return the total size in bytes of a node with the given string length
 ZIX_CONST_FUNC size_t
