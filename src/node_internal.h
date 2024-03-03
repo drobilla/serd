@@ -68,4 +68,8 @@ serd_node_set_header(SerdNode* ZIX_NONNULL node,
                      SerdNodeFlags         flags,
                      SerdNodeType          type);
 
+/// Zero the padding (at least one trailing null byte) of a node
+void
+serd_node_zero_pad(SerdNode* ZIX_NONNULL node);
+
 #endif // SERD_SRC_NODE_INTERNAL_H

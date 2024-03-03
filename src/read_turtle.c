@@ -54,20 +54,8 @@ read_whitespace(SerdReader* const reader)
 {
   const int c = peek_byte(reader);
 
-  switch (c) {
-  case '\t':
-  case '\n':
-  case '\r':
-  case ' ':
-    return skip_byte(reader, c);
-  case '#':
-    return read_comment(reader);
-  default:
-    break;
-  }
-
   return (c == '\t' || c == '\n' || c == '\r' || c == ' ')
-           ? serd_byte_source_advance_past(&reader->source, c)
+           ? serd_byte_source_advance(reader->source)
          : (c == '#') ? read_comment(reader)
                       : SERD_FAILURE;
 }
@@ -312,20 +300,19 @@ resolve_IRIREF(SerdReader* const reader,
   }
 
   // Push a new temporary node for constructing the resolved URI
-  SerdNode* const temp = push_node_head(reader, SERD_URI);
+  SerdNode* const temp = push_node(reader, SERD_URI, "", 0);
   if (!temp) {
     return SERD_BAD_STACK;
   }
 
   // Write resolved URI to the temporary node
-  WriteNodeContext ctx = {reader, temp};
-  SerdStreamResult wr  = serd_write_uri(uri, write_to_stack, &ctx);
+  WriteNodeContext       ctx = {reader, temp};
+  const SerdStreamResult wr  = serd_write_uri(uri, write_to_stack, &ctx);
   if (!wr.status) {
     // Replace the destination with the new expanded node
     temp->length = wr.count;
     memmove(dest, temp, serd_node_total_size(temp));
     serd_stack_pop_to(&reader->stack, string_start_offset + dest->length);
-    TRY(wr.status, push_node_tail(reader));
   }
 
   return wr.status;
@@ -337,14 +324,13 @@ read_IRIREF(SerdReader* const reader, SerdNode** const dest)
   SerdStatus st = SERD_SUCCESS;
   TRY(st, eat_byte_check(reader, '<'));
 
-  if (!(*dest = push_node_head(reader, SERD_URI))) {
+  if (!(*dest = push_node(reader, SERD_URI, "", 0))) {
     return SERD_BAD_STACK;
   }
 
   const size_t string_start_offset = reader->stack.size;
 
-  TRY(st, read_IRIREF_suffix(reader, *dest));
-  TRY(st, push_node_tail(reader));
+  st = accept_failure(read_IRIREF_suffix(reader, *dest));
 
   return st ? st
          : (reader->flags & SERD_READ_RELATIVE)
@@ -391,7 +377,7 @@ read_PrefixedName(SerdReader* const reader,
     return st;
   }
 
-  return push_node_tail(reader);
+  return SERD_SUCCESS;
 }
 
 SERD_NODISCARD static SerdStatus
@@ -419,11 +405,12 @@ read_number(SerdReader* const reader,
 #define XSD_DOUBLE NS_XSD "double"
 #define XSD_INTEGER NS_XSD "integer"
 
+  *dest = push_node(reader, SERD_LITERAL, "", 0);
+
   SerdStatus st          = SERD_SUCCESS;
   int        c           = peek_byte(reader);
   bool       has_decimal = false;
-
-  if (!(*dest = push_node_head(reader, SERD_LITERAL))) {
+  if (!*dest) {
     return SERD_BAD_STACK;
   }
 
@@ -446,8 +433,8 @@ read_number(SerdReader* const reader,
       TRY(st, skip_byte(reader, c));
       c = peek_byte(reader);
       if (!is_digit(c) && c != 'e' && c != 'E') {
-        *ate_dot = true; // Force caller to deal with stupid grammar
-        return push_node_tail(reader); // Next byte is not a number character
+        *ate_dot = true;     // Force caller to deal with stupid grammar
+        return SERD_SUCCESS; // Next byte is not a number character
       }
 
       TRY(st, push_byte(reader, *dest, '.'));
@@ -466,13 +453,10 @@ read_number(SerdReader* const reader,
       TRY(st, eat_push_byte(reader, *dest, c));
     }
     TRY(st, read_0_9(reader, *dest, true));
-    TRY(st, push_node_tail(reader));
     meta = push_node(reader, SERD_URI, XSD_DOUBLE, sizeof(XSD_DOUBLE) - 1);
   } else if (has_decimal) {
-    TRY(st, push_node_tail(reader));
     meta = push_node(reader, SERD_URI, XSD_DECIMAL, sizeof(XSD_DECIMAL) - 1);
   } else {
-    TRY(st, push_node_tail(reader));
     meta = push_node(reader, SERD_URI, XSD_INTEGER, sizeof(XSD_INTEGER) - 1);
   }
 
@@ -489,14 +473,11 @@ read_turtle_iri(SerdReader* const reader,
     return read_IRIREF(reader, dest);
   }
 
-  if (!(*dest = push_node_head(reader, SERD_CURIE))) {
+  if (!(*dest = push_node(reader, SERD_CURIE, "", 0))) {
     return SERD_BAD_STACK;
   }
 
-  const SerdStatus st =
-    read_PrefixedName(reader, *dest, true, ate_dot, reader->stack.size);
-
-  return st;
+  return read_PrefixedName(reader, *dest, true, ate_dot, reader->stack.size);
 }
 
 SERD_NODISCARD static SerdStatus
@@ -504,14 +485,14 @@ read_literal(SerdReader* const reader,
              SerdNode** const  dest,
              bool* const       ate_dot)
 {
-  SerdStatus st = SERD_SUCCESS;
-
-  if (!(*dest = push_node_head(reader, SERD_LITERAL))) {
+  if (!(*dest = push_node(reader, SERD_LITERAL, "", 0))) {
     return SERD_BAD_STACK;
   }
 
-  TRY(st, read_String(reader, *dest));
-  TRY(st, push_node_tail(reader));
+  SerdStatus st = read_String(reader, *dest);
+  if (st) {
+    return st;
+  }
 
   SerdNode* datatype = NULL;
   switch (peek_byte(reader)) {
@@ -525,11 +506,9 @@ read_literal(SerdReader* const reader,
     TRY(st, eat_byte_check(reader, '^'));
     serd_node_set_flag(*dest, SERD_HAS_DATATYPE);
     TRY(st, read_turtle_iri(reader, &datatype, ate_dot));
-    assert(datatype == serd_node_meta_c(*dest));
     break;
   }
-
-  return st;
+  return SERD_SUCCESS;
 }
 
 SERD_NODISCARD static SerdStatus
@@ -548,7 +527,7 @@ read_verb(SerdReader* reader, SerdNode** const dest)
   /* Either a qname, or "a".  Read the prefix first, and if it is in fact
      "a", produce that instead.
   */
-  if (!(*dest = push_node_head(reader, SERD_CURIE))) {
+  if (!(*dest = push_node(reader, SERD_CURIE, "", 0))) {
     return SERD_BAD_STACK;
   }
 
@@ -572,7 +551,7 @@ read_verb(SerdReader* reader, SerdNode** const dest)
     return r_err(reader, reject_failure(st), "expected verb");
   }
 
-  return SERD_SUCCESS; // push_node_tail(reader);
+  return SERD_SUCCESS;
 }
 
 SERD_NODISCARD static SerdStatus
@@ -651,7 +630,7 @@ read_named_object(SerdReader* const reader,
      Deal with this here by trying to read a prefixed node, then if it turns
      out to actually be "true" or "false", switch it to a boolean literal. */
 
-  if (!(*dest = push_node_head(reader, SERD_CURIE))) {
+  if (!(*dest = push_node(reader, SERD_CURIE, "", 0))) {
     return SERD_BAD_STACK;
   }
 
@@ -667,7 +646,6 @@ read_named_object(SerdReader* const reader,
     serd_node_set_header(
       node, serd_node_length(node), SERD_HAS_DATATYPE, SERD_LITERAL);
 
-    TRY(st, push_node_tail(reader));
     return push_node(reader, SERD_URI, XSD_BOOLEAN, XSD_BOOLEAN_LEN)
              ? SERD_SUCCESS
              : SERD_BAD_STACK;
@@ -678,7 +656,7 @@ read_named_object(SerdReader* const reader,
     return r_err(reader, reject_failure(st), "expected named object");
   }
 
-  return SERD_SUCCESS; // push_node_tail(reader);
+  return SERD_SUCCESS;
 }
 
 // Read an object and emit statements, possibly recursively
@@ -687,8 +665,8 @@ read_object(SerdReader* const  reader,
             ReadContext* const ctx,
             bool* const        ate_dot)
 {
-  const size_t         orig_stack_size = reader->stack.size;
-  struct SerdCaretImpl orig_caret      = reader->source.caret;
+  const size_t orig_stack_size = reader->stack.size;
+  SerdCaret    orig_caret      = reader->source->caret;
 
   assert(ctx->subject);
 
@@ -814,9 +792,11 @@ read_collection(SerdReader* const reader,
 
   /* The order of node allocation here is necessarily not in stack order,
      so we create two nodes and recycle them throughout. */
-  SerdNode* n1   = push_node_padding(reader, SERD_BLANK, genid_length(reader));
+  SerdNode* n1 =
+    push_node_padded(reader, genid_length(reader), SERD_BLANK, "", 0);
+
   SerdNode* node = n1;
-  SerdNode* rest = NULL;
+  SerdNode* rest = 0;
 
   if (!n1) {
     return SERD_BAD_STACK;
@@ -942,6 +922,7 @@ read_turtle_base(SerdReader* const reader, const bool sparql, const bool token)
     return SERD_BAD_STACK;
   }
 
+  serd_node_zero_pad(uri);
   TRY(st, serd_sink_write_base(reader->sink, uri));
 
   TRY(st, read_turtle_ws_star(reader));
@@ -967,27 +948,29 @@ read_turtle_prefixID(SerdReader* const reader,
   }
 
   TRY(st, read_turtle_ws_star(reader));
-
-  SerdNode* const name = push_node_head(reader, SERD_LITERAL);
+  SerdNode* name = push_node(reader, SERD_LITERAL, "", 0);
   if (!name) {
     return SERD_BAD_STACK;
   }
 
-  // Read (possibly empty) name node
   TRY_LAX(st, read_PN_PREFIX(reader, name));
-  TRY(st, push_node_tail(reader));
   TRY(st, eat_byte_check(reader, ':'));
   TRY(st, read_turtle_ws_star(reader));
 
-  // Read URI node
   SerdNode* uri = NULL;
   TRY(st, read_IRIREF(reader, &uri));
 
-  st = serd_sink_write_prefix(reader->sink, name, uri);
+  if (reader->stack.size + sizeof(SerdNode) > reader->stack.buf_size) {
+    return SERD_BAD_STACK;
+  }
 
-  if (!sparql) {
-    TRY(st, read_turtle_ws_star(reader));
-    st = eat_byte_check(reader, '.');
+  serd_node_zero_pad(name);
+  serd_node_zero_pad(uri);
+  if (!(st = serd_sink_write_prefix(reader->sink, name, uri))) {
+    if (!sparql) {
+      TRY(st, read_turtle_ws_star(reader));
+      st = eat_byte_check(reader, '.');
+    }
   }
 
   return st;
@@ -1009,15 +992,11 @@ read_turtle_directive(SerdReader* const reader)
 SERD_NODISCARD static SerdStatus
 read_sparql_directive(SerdReader* const reader, const SerdNode* const token)
 {
-  SerdStatus st = SERD_SUCCESS;
-
   if (token_equals(token, "base", 4)) {
-    TRY(st, push_node_tail(reader));
     return read_turtle_base(reader, true, false);
   }
 
   if (token_equals(token, "prefix", 6)) {
-    TRY(st, push_node_tail(reader));
     return read_turtle_prefixID(reader, true, false);
   }
 
@@ -1027,10 +1006,11 @@ read_sparql_directive(SerdReader* const reader, const SerdNode* const token)
 SERD_NODISCARD static SerdStatus
 read_block(SerdReader* const reader, ReadContext* const ctx)
 {
+  SerdStatus st = SERD_SUCCESS;
+
   // Try to read a subject, though it may actually be a directive or graph name
-  SerdNode*  token  = NULL;
-  SerdStatus st     = SERD_SUCCESS;
-  int        s_type = 0;
+  SerdNode* token  = NULL;
+  int       s_type = 0;
   TRY_LAX(st, read_turtle_subject(reader, *ctx, &token, &s_type));
 
   // Try to interpret as a SPARQL "PREFIX" or "BASE" directive

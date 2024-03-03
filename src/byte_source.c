@@ -43,36 +43,28 @@ serd_byte_source_page(SerdByteSource* const source)
                                     : SERD_SUCCESS;
 }
 
-static SerdStatus
+static void
 serd_byte_source_init_buffer(ZixAllocator* const   allocator,
                              SerdByteSource* const source)
 {
   if (source->block_size > 1) {
-    void* const block =
-      zix_aligned_alloc(allocator, SERD_PAGE_SIZE, source->block_size);
+    source->block = (uint8_t*)zix_aligned_alloc(
+      allocator, SERD_PAGE_SIZE, source->block_size);
 
-    if (!block) {
-      return SERD_BAD_ALLOC;
+    if ((source->read_buf = source->block)) {
+      memset(source->block, '\0', source->block_size);
     }
-
-    source->block    = (uint8_t*)block;
-    source->read_buf = source->block;
-    memset(source->block, '\0', source->block_size);
   } else {
     source->read_buf = &source->read_byte;
   }
-
-  return SERD_SUCCESS;
 }
 
-SerdStatus
-serd_byte_source_init(ZixAllocator* const    allocator,
-                      SerdByteSource* const  source,
-                      SerdInputStream* const input,
-                      const SerdNode* const  name,
-                      const size_t           block_size)
+SerdByteSource*
+serd_byte_source_new_input(ZixAllocator* const    allocator,
+                           SerdInputStream* const input,
+                           const SerdNode* const  name,
+                           const size_t           block_size)
 {
-  assert(source);
   assert(input);
   assert(block_size);
   assert(input->stream);
@@ -82,59 +74,70 @@ serd_byte_source_init(ZixAllocator* const    allocator,
          : serd_node_new(allocator, serd_a_string("input"));
 
   if (!source_name) {
-    return SERD_BAD_ALLOC;
+    return NULL;
   }
 
+  SerdByteSource* source =
+    (SerdByteSource*)zix_calloc(allocator, 1, sizeof(SerdByteSource));
+
+  if (!source) {
+    serd_node_free(allocator, source_name);
+    return NULL;
+  }
+
+  source->name           = source_name;
   source->in             = input;
-  source->read_buf       = NULL;
-  source->read_head      = 0U;
-  source->block_size     = (uint32_t)block_size;
-  source->buf_size       = (uint32_t)block_size;
-  source->caret.document = source_name;
+  source->block_size     = block_size;
+  source->buf_size       = block_size;
+  source->caret.document = source->name;
   source->caret.line     = 1U;
   source->caret.col      = 1U;
-  source->name           = source_name;
-  source->block          = NULL;
-  source->read_byte      = 0U;
-  source->prepared       = false;
 
-  if (serd_byte_source_init_buffer(allocator, source)) {
+  serd_byte_source_init_buffer(allocator, source);
+  if (block_size > 1 && !source->block) {
     serd_node_free(allocator, source_name);
-    memset(source, 0, sizeof(SerdByteSource));
-    return SERD_BAD_ALLOC;
+    zix_free(allocator, source);
+    return NULL;
   }
 
-  return SERD_SUCCESS;
+  return source;
 }
 
 void
-serd_byte_source_destroy(ZixAllocator* const   allocator,
-                         SerdByteSource* const source)
+serd_byte_source_free(ZixAllocator* const   allocator,
+                      SerdByteSource* const source)
 {
-  if (source->block_size > 1) {
-    zix_aligned_free(allocator, source->block);
-  }
+  if (source) {
+    if (source->block_size > 1) {
+      zix_aligned_free(allocator, source->block);
+    }
 
-  serd_node_free(allocator, source->name);
-  memset(source, 0, sizeof(SerdByteSource));
+    serd_node_free(allocator, source->name);
+    zix_free(allocator, source);
+  }
 }
 
 SerdStatus
 serd_byte_source_prepare(SerdByteSource* const source)
 {
   source->prepared = true;
-  return serd_byte_source_page(source);
+
+  if (source->block_size > 1) {
+    return serd_byte_source_page(source);
+  }
+
+  return serd_byte_source_advance(source);
 }
 
 SerdStatus
 serd_byte_source_skip_bom(SerdByteSource* const source)
 {
   if (serd_byte_source_peek(source) == 0xEF) {
-    if (serd_byte_source_advance_past(source, 0xEF) ||
+    if (serd_byte_source_advance(source) ||
         serd_byte_source_peek(source) != 0xBB ||
-        serd_byte_source_advance_past(source, 0xBB) ||
+        serd_byte_source_advance(source) ||
         serd_byte_source_peek(source) != 0xBF ||
-        serd_byte_source_advance_past(source, 0xBF)) {
+        serd_byte_source_advance(source)) {
       return SERD_BAD_SYNTAX;
     }
   }

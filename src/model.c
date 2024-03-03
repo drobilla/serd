@@ -19,7 +19,6 @@
 #include "serd/statement_view.h"
 #include "serd/status.h"
 #include "zix/allocator.h"
-#include "zix/attributes.h"
 #include "zix/btree.h"
 #include "zix/status.h"
 
@@ -394,7 +393,7 @@ simple_order(const SerdStatementOrder order)
 }
 
 /// Return the best index scanning strategy for a pattern with given nodes
-ZIX_PURE_FUNC static ScanStrategy
+static ScanStrategy
 serd_model_strategy(const SerdModel* const model,
                     const bool             with_s,
                     const bool             with_p,

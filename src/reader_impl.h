@@ -21,13 +21,13 @@
 struct SerdReaderImpl {
   SerdWorld*      world;
   const SerdSink* sink;
-  SerdByteSource  source;
-  SerdStack       stack;
   SerdNode*       rdf_first;
   SerdNode*       rdf_rest;
   SerdNode*       rdf_nil;
   SerdNode*       rdf_type;
+  SerdByteSource* source;
   const SerdEnv*  env;
+  SerdStack       stack;
   SerdSyntax      syntax;
   SerdReaderFlags flags;
   unsigned        next_id;
