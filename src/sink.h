@@ -6,11 +6,13 @@
 
 #include "serd/event.h"
 #include "serd/sink.h"
+#include "zix/allocator.h"
 
 /**
    An interface that receives a stream of RDF data.
 */
 struct SerdSinkImpl {
+  ZixAllocator* allocator;
   void*         handle;
   SerdFreeFunc  free_handle;
   SerdEventFunc on_event;

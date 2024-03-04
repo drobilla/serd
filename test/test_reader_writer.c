@@ -7,7 +7,6 @@
 #include "serd/env.h"
 #include "serd/event.h"
 #include "serd/input_stream.h"
-#include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/output_stream.h"
 #include "serd/reader.h"
@@ -109,7 +108,7 @@ test_output_stream(void)
 static void
 test_write_errors(void)
 {
-  SerdWorld* const world = serd_world_new();
+  SerdWorld* const world = serd_world_new(NULL);
   ErrorContext     ctx   = {0U, 0U};
 
   const SerdLimits limits = {1024, 4};
@@ -124,7 +123,7 @@ test_write_errors(void)
       ctx.n_written    = 0;
       ctx.error_offset = o;
 
-      SerdEnv* const   env = serd_env_new(zix_empty_string());
+      SerdEnv* const   env = serd_env_new(NULL, zix_empty_string());
       SerdOutputStream out =
         serd_open_output_stream(faulty_sink, NULL, NULL, &ctx);
 
@@ -155,8 +154,8 @@ test_write_errors(void)
 static void
 test_writer(const char* const path)
 {
-  SerdWorld* world = serd_world_new();
-  SerdEnv*   env   = serd_env_new(zix_empty_string());
+  SerdWorld* world = serd_world_new(NULL);
+  SerdEnv*   env   = serd_env_new(NULL, zix_empty_string());
 
   SerdOutputStream output = serd_open_output_file(path);
 
@@ -172,19 +171,19 @@ test_writer(const char* const path)
 
   // Check that writing a literal where a resource is required fails
   {
-    SerdNode* const lit = serd_new_string(zix_string("hello"));
+    SerdNode* const lit = serd_new_string(NULL, zix_string("hello"));
     assert(serd_sink_write_base(iface, lit));
     assert(serd_sink_write_prefix(iface, lit, lit));
     assert(serd_sink_write_end(iface, lit));
-    serd_node_free(lit);
+    serd_node_free(NULL, lit);
   }
 
   static const uint8_t       bad_buf[]    = {0xEF, 0xBF, 0xBD, 0};
   static const ZixStringView bad_buf_view = {(const char*)bad_buf, 3};
 
-  SerdNode* const s   = serd_new_uri(zix_string("http://example.org"));
-  SerdNode* const p   = serd_new_uri(zix_string("http://example.org/pred"));
-  SerdNode* const bad = serd_new_string(bad_buf_view);
+  SerdNode* const s = serd_new_uri(NULL, zix_string("http://example.org"));
+  SerdNode* const p = serd_new_uri(NULL, zix_string("http://example.org/pred"));
+  SerdNode* const bad = serd_new_string(NULL, bad_buf_view);
   assert(s);
   assert(p);
   assert(bad);
@@ -195,17 +194,17 @@ test_writer(const char* const path)
     assert(serd_sink_write(iface, 0, junk[i][0], junk[i][1], junk[i][2], NULL));
   }
 
-  serd_node_free(bad);
+  serd_node_free(NULL, bad);
 
   {
-    SerdNode* const urn_Type = serd_new_uri(zix_string("urn:Type"));
-    SerdNode* const en       = serd_new_string(zix_string("en"));
+    SerdNode* const urn_Type = serd_new_uri(NULL, zix_string("urn:Type"));
+    SerdNode* const en       = serd_new_string(NULL, zix_string("en"));
     assert(urn_Type);
     assert(en);
 
-    SerdNode* const o = serd_new_string(zix_string("o"));
-    SerdNode* const t = serd_new_typed_literal(zix_string("t"), urn_Type);
-    SerdNode* const l = serd_new_plain_literal(zix_string("l"), en);
+    SerdNode* const o = serd_new_string(NULL, zix_string("o"));
+    SerdNode* const t = serd_new_typed_literal(NULL, zix_string("t"), urn_Type);
+    SerdNode* const l = serd_new_plain_literal(NULL, zix_string("l"), en);
     assert(o);
     assert(t);
     assert(l);
@@ -217,11 +216,11 @@ test_writer(const char* const path)
         !serd_sink_write(iface, 0, good[i][0], good[i][1], good[i][2], NULL));
     }
 
-    serd_node_free(l);
-    serd_node_free(t);
-    serd_node_free(o);
-    serd_node_free(en);
-    serd_node_free(urn_Type);
+    serd_node_free(NULL, l);
+    serd_node_free(NULL, t);
+    serd_node_free(NULL, o);
+    serd_node_free(NULL, en);
+    serd_node_free(NULL, urn_Type);
   }
 
   static const uint8_t     bad_str_buf[] = {0xFF, 0x90, 'h', 'i', 0};
@@ -230,42 +229,43 @@ test_writer(const char* const path)
   static const char* const bad_uri_str   = (const char*)bad_uri_buf;
 
   // Write statements with bad UTF-8 (should be replaced)
-  SerdNode* const bad_lit = serd_new_string(zix_string(bad_lit_str));
-  SerdNode* const bad_uri = serd_new_uri(zix_string(bad_uri_str));
+  SerdNode* const bad_lit = serd_new_string(NULL, zix_string(bad_lit_str));
+  SerdNode* const bad_uri = serd_new_uri(NULL, zix_string(bad_uri_str));
   assert(!serd_sink_write(iface, 0, s, p, bad_lit, 0));
   assert(!serd_sink_write(iface, 0, s, p, bad_uri, 0));
-  serd_node_free(bad_uri);
-  serd_node_free(bad_lit);
+  serd_node_free(NULL, bad_uri);
+  serd_node_free(NULL, bad_lit);
 
   // Write 1 valid statement
-  SerdNode* const hello = serd_new_string(zix_string("hello"));
+  SerdNode* const hello = serd_new_string(NULL, zix_string("hello"));
   assert(!serd_sink_write(iface, 0, s, p, hello, 0));
   assert(!serd_writer_finish(writer));
-  serd_node_free(hello);
+  serd_node_free(NULL, hello);
 
   serd_writer_free(writer);
   serd_close_output(&output);
 
   // Test buffer sink
-  SerdBuffer      buffer = {NULL, 0};
-  SerdNode* const base   = serd_new_uri(zix_string("http://example.org/base"));
+  SerdBuffer      buffer = {NULL, NULL, 0};
+  SerdNode* const base =
+    serd_new_uri(NULL, zix_string("http://example.org/base"));
 
   output = serd_open_output_buffer(&buffer);
   writer = serd_writer_new(world, SERD_TURTLE, 0, env, &output, 1U);
 
   serd_sink_write_base(serd_writer_sink(writer), base);
 
-  serd_node_free(base);
+  serd_node_free(NULL, base);
   serd_writer_free(writer);
   serd_close_output(&output);
 
   char* const out = (char*)buffer.buf;
   assert(out);
   assert(!strcmp(out, "@base <http://example.org/base> .\n"));
-  serd_free(out);
+  zix_free(buffer.allocator, buffer.buf);
 
-  serd_node_free(p);
-  serd_node_free(s);
+  serd_node_free(NULL, p);
+  serd_node_free(NULL, s);
 
   serd_env_free(env);
   serd_world_free(world);
@@ -274,9 +274,9 @@ test_writer(const char* const path)
 static void
 test_reader(const char* path)
 {
-  SerdWorld* const world = serd_world_new();
+  SerdWorld* const world = serd_world_new(NULL);
   ReaderTest       rt    = {0};
-  SerdSink* const  sink  = serd_sink_new(&rt, test_sink, NULL);
+  SerdSink* const  sink  = serd_sink_new(NULL, &rt, test_sink, NULL);
   assert(sink);
 
   const SerdLimits limits = {512, 4};

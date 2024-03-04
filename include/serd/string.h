@@ -6,6 +6,7 @@
 
 #include "serd/attributes.h"
 #include "serd/node.h"
+#include "zix/allocator.h"
 #include "zix/attributes.h"
 
 #include <stddef.h>
@@ -51,9 +52,10 @@ serd_strtod(const char* ZIX_NONNULL             str,
    @return A newly allocated blob which must be freed with serd_free().
 */
 SERD_API void* ZIX_ALLOCATED
-serd_base64_decode(const char* ZIX_NONNULL str,
-                   size_t                  len,
-                   size_t* ZIX_NONNULL     size);
+serd_base64_decode(ZixAllocator* ZIX_NULLABLE allocator,
+                   const char* ZIX_NONNULL    str,
+                   size_t                     len,
+                   size_t* ZIX_NONNULL        size);
 
 /**
    @}

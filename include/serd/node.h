@@ -6,6 +6,7 @@
 
 #include "serd/attributes.h"
 #include "serd/uri.h"
+#include "zix/allocator.h"
 #include "zix/attributes.h"
 #include "zix/string_view.h"
 
@@ -107,13 +108,15 @@ typedef uint32_t SerdNodeFlags;
    to create URIs, blank nodes, CURIEs, and simple string literals.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_token(SerdNodeType type, ZixStringView string);
+serd_new_token(ZixAllocator* ZIX_NULLABLE allocator,
+               SerdNodeType               type,
+               ZixStringView              string);
 
 /**
    Create a new string literal node.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_string(ZixStringView string);
+serd_new_string(ZixAllocator* ZIX_NULLABLE allocator, ZixStringView string);
 
 /**
    Create a new plain literal node from `str` with `lang`.
@@ -122,7 +125,9 @@ serd_new_string(ZixStringView string);
    may be null, in which case this is equivalent to `serd_new_string()`.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_plain_literal(ZixStringView str, const SerdNode* ZIX_NULLABLE lang);
+serd_new_plain_literal(ZixAllocator* ZIX_NULLABLE   allocator,
+                       ZixStringView                str,
+                       const SerdNode* ZIX_NULLABLE lang);
 
 /**
    Create a new typed literal node from `str`.
@@ -132,30 +137,31 @@ serd_new_plain_literal(ZixStringView str, const SerdNode* ZIX_NULLABLE lang);
    `serd_new_string()`.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_typed_literal(ZixStringView                str,
+serd_new_typed_literal(ZixAllocator* ZIX_NULLABLE   allocator,
+                       ZixStringView                str,
                        const SerdNode* ZIX_NULLABLE datatype_uri);
 
 /**
    Create a new node from a blank node label.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_blank(ZixStringView string);
+serd_new_blank(ZixAllocator* ZIX_NULLABLE allocator, ZixStringView string);
 
 /// Create a new CURIE node
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_curie(ZixStringView string);
+serd_new_curie(ZixAllocator* ZIX_NULLABLE allocator, ZixStringView string);
 
 /**
    Create a new URI node from a parsed URI.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_parsed_uri(SerdURIView uri);
+serd_new_parsed_uri(ZixAllocator* ZIX_NULLABLE allocator, SerdURIView uri);
 
 /**
    Create a new URI node from a string.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_uri(ZixStringView string);
+serd_new_uri(ZixAllocator* ZIX_NULLABLE allocator, ZixStringView string);
 
 /**
    Create a new file URI node from a file system path and optional hostname.
@@ -166,13 +172,15 @@ serd_new_uri(ZixStringView string);
    If `path` is relative, `hostname` is ignored.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_file_uri(ZixStringView path, ZixStringView hostname);
+serd_new_file_uri(ZixAllocator* ZIX_NULLABLE allocator,
+                  ZixStringView              path,
+                  ZixStringView              hostname);
 
 /**
    Create a new canonical xsd:boolean node.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_boolean(bool b);
+serd_new_boolean(ZixAllocator* ZIX_NULLABLE allocator, bool b);
 
 /**
    Create a new canonical xsd:decimal literal.
@@ -186,15 +194,18 @@ serd_new_boolean(bool b);
    Note that about 16 and 8 fractional digits are required to precisely
    represent a double and float, respectively.
 
+   @param allocator Allocator for the returned node.
    @param d The value for the new node.
    @param frac_digits The maximum number of digits after the decimal place.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_decimal(double d, unsigned frac_digits);
+serd_new_decimal(ZixAllocator* ZIX_NULLABLE allocator,
+                 double                     d,
+                 unsigned                   frac_digits);
 
 /// Create a new canonical xsd:integer literal
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_integer(int64_t i);
+serd_new_integer(ZixAllocator* ZIX_NULLABLE allocator, int64_t i);
 
 /**
    Create a new canonical xsd:base64Binary literal.
@@ -202,22 +213,33 @@ serd_new_integer(int64_t i);
    This function can be used to make a serialisable node out of arbitrary
    binary data, which can be decoded using serd_base64_decode().
 
+   @param allocator Allocator for the returned node.
    @param buf Raw binary input data.
    @param size Size of `buf`.
    @param wrap_lines Wrap lines at 76 characters to conform to RFC 2045.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_blob(const void* ZIX_NONNULL buf, size_t size, bool wrap_lines);
+serd_new_blob(ZixAllocator* ZIX_NULLABLE allocator,
+              const void* ZIX_NONNULL    buf,
+              size_t                     size,
+              bool                       wrap_lines);
 
-/// Return a deep copy of `node`
+/**
+   Return a deep copy of `node`.
+
+   @param allocator Allocator for the returned node.
+   @param node The node to copyl
+*/
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_node_copy(const SerdNode* ZIX_NULLABLE node);
+serd_node_copy(ZixAllocator* ZIX_NULLABLE   allocator,
+               const SerdNode* ZIX_NULLABLE node);
 
 /**
    Free any data owned by `node`.
 */
 SERD_API void
-serd_node_free(SerdNode* ZIX_NULLABLE node);
+serd_node_free(ZixAllocator* ZIX_NULLABLE allocator,
+               SerdNode* ZIX_NULLABLE     node);
 
 /**
    @}

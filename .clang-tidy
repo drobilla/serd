@@ -6,7 +6,6 @@ Checks: >
   -*-macro-to-enum,
   -altera-*,
   -bugprone-assignment-in-if-condition,
-  -bugprone-suspicious-realloc-usage,
   -clang-diagnostic-unused-macros,
   -llvmlibc-*,
   -misc-include-cleaner,

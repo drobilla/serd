@@ -7,11 +7,11 @@
 #include "string_utils.h"
 
 #include "serd/string.h"
+#include "zix/allocator.h"
 
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 /**
@@ -94,14 +94,17 @@ decode_chunk(const uint8_t in[4], uint8_t out[3])
 }
 
 void*
-serd_base64_decode(const char* const str, const size_t len, size_t* const size)
+serd_base64_decode(ZixAllocator* const allocator,
+                   const char* const   str,
+                   const size_t        len,
+                   size_t* const       size)
 {
   assert(str);
   assert(size);
 
   const uint8_t* const ustr = (const uint8_t*)str;
 
-  void* buf = malloc((len * 3) / 4 + 2);
+  void* buf = zix_malloc(allocator, (len * 3) / 4 + 2);
   *size     = 0;
   for (size_t i = 0, j = 0; i < len; j += 3) {
     uint8_t in[] = "====";

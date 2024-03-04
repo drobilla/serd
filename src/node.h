@@ -5,6 +5,8 @@
 #define SERD_SRC_NODE_H
 
 #include "serd/node.h"
+#include "serd/status.h"
+#include "zix/allocator.h"
 #include "zix/attributes.h"
 
 #include <stddef.h>
@@ -29,8 +31,9 @@ serd_node_set_header(SerdNode* ZIX_NONNULL node,
                      SerdNodeType          type);
 
 /// Set `dst` to be equal to `src`, re-allocating it if necessary
-void
-serd_node_set(SerdNode* ZIX_NONNULL* ZIX_NONNULL dst,
+SerdStatus
+serd_node_set(ZixAllocator* ZIX_NULLABLE         allocator,
+              SerdNode* ZIX_NONNULL* ZIX_NONNULL dst,
               const SerdNode* ZIX_NONNULL        src);
 
 #endif // SERD_SRC_NODE_H

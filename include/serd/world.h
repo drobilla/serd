@@ -7,6 +7,7 @@
 #include "serd/attributes.h"
 #include "serd/error.h"
 #include "serd/status.h"
+#include "zix/allocator.h"
 #include "zix/attributes.h"
 
 #include <stddef.h>
@@ -35,11 +36,15 @@ typedef struct {
    shared between worlds.
 */
 SERD_MALLOC_API SerdWorld* ZIX_ALLOCATED
-serd_world_new(void);
+serd_world_new(ZixAllocator* ZIX_NULLABLE allocator);
 
 /// Free `world`
 SERD_API void
 serd_world_free(SerdWorld* ZIX_NULLABLE world);
+
+/// Return the allocator used by `world`
+SERD_PURE_API ZixAllocator* ZIX_NONNULL
+serd_world_allocator(const SerdWorld* ZIX_NONNULL world);
 
 /**
    Return the current resource limits.
