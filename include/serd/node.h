@@ -7,6 +7,7 @@
 #include "serd/attributes.h"
 #include "serd/stream_result.h"
 #include "serd/uri.h"
+#include "zix/allocator.h"
 #include "zix/attributes.h"
 #include "zix/string_view.h"
 
@@ -108,13 +109,15 @@ typedef uint32_t SerdNodeFlags;
    to create URIs, blank nodes, CURIEs, and simple string literals.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_token(SerdNodeType type, ZixStringView string);
+serd_new_token(ZixAllocator* ZIX_NULLABLE allocator,
+               SerdNodeType               type,
+               ZixStringView              string);
 
 /**
    Create a new string literal node.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_string(ZixStringView string);
+serd_new_string(ZixAllocator* ZIX_NULLABLE allocator, ZixStringView string);
 
 /**
    Create a new plain literal node from `str` with `lang`.
@@ -123,7 +126,9 @@ serd_new_string(ZixStringView string);
    may be null, in which case this is equivalent to `serd_new_string()`.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_plain_literal(ZixStringView str, const SerdNode* ZIX_NULLABLE lang);
+serd_new_plain_literal(ZixAllocator* ZIX_NULLABLE   allocator,
+                       ZixStringView                str,
+                       const SerdNode* ZIX_NULLABLE lang);
 
 /**
    Create a new typed literal node from `str`.
@@ -133,30 +138,31 @@ serd_new_plain_literal(ZixStringView str, const SerdNode* ZIX_NULLABLE lang);
    `serd_new_string()`.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_typed_literal(ZixStringView                str,
+serd_new_typed_literal(ZixAllocator* ZIX_NULLABLE   allocator,
+                       ZixStringView                str,
                        const SerdNode* ZIX_NULLABLE datatype_uri);
 
 /**
    Create a new node from a blank node label.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_blank(ZixStringView string);
+serd_new_blank(ZixAllocator* ZIX_NULLABLE allocator, ZixStringView string);
 
 /// Create a new CURIE node
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_curie(ZixStringView string);
+serd_new_curie(ZixAllocator* ZIX_NULLABLE allocator, ZixStringView string);
 
 /**
    Create a new URI node from a parsed URI.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_parsed_uri(SerdURIView uri);
+serd_new_parsed_uri(ZixAllocator* ZIX_NULLABLE allocator, SerdURIView uri);
 
 /**
    Create a new URI node from a string.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_uri(ZixStringView string);
+serd_new_uri(ZixAllocator* ZIX_NULLABLE allocator, ZixStringView string);
 
 /**
    Create a new file URI node from a file system path and optional hostname.
@@ -167,13 +173,15 @@ serd_new_uri(ZixStringView string);
    If `path` is relative, `hostname` is ignored.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_file_uri(ZixStringView path, ZixStringView hostname);
+serd_new_file_uri(ZixAllocator* ZIX_NULLABLE allocator,
+                  ZixStringView              path,
+                  ZixStringView              hostname);
 
 /**
    Create a new canonical xsd:boolean node.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_boolean(bool b);
+serd_new_boolean(ZixAllocator* ZIX_NULLABLE allocator, bool b);
 
 /**
    Create a new canonical xsd:decimal literal.
@@ -185,10 +193,11 @@ serd_new_boolean(bool b);
    (a leading and/or trailing '0' will be added if necessary), for example,
    "1.0".  It will never be in scientific notation.
 
+   @param allocator Allocator for the returned node.
    @param d The value for the new node.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_decimal(double d);
+serd_new_decimal(ZixAllocator* ZIX_NULLABLE allocator, double d);
 
 /**
    Create a new canonical xsd:double literal.
@@ -200,11 +209,12 @@ serd_new_decimal(double d);
    Uses the shortest possible representation that precisely describes the
    value, which has at most 17 significant digits (under 24 characters total).
 
+   @param allocator Allocator for the returned node.
    @param d Double value to write.
    @return A literal node with datatype xsd:double.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_double(double d);
+serd_new_double(ZixAllocator* ZIX_NULLABLE allocator, double d);
 
 /**
    Create a new canonical xsd:float literal.
@@ -212,11 +222,12 @@ serd_new_double(double d);
    Uses identical formatting to serd_new_double(), except with at most 9
    significant digits (under 14 characters total).
 
+   @param allocator Allocator for the returned node.
    @param f Float value of literal.
    @return A literal node with datatype xsd:float.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_float(float f);
+serd_new_float(ZixAllocator* ZIX_NULLABLE allocator, float f);
 
 /**
    Create a new canonical xsd:integer literal.
@@ -224,10 +235,11 @@ serd_new_float(float f);
    The node will be an xsd:integer literal like "1234", with datatype
    xsd:integer.
 
+   @param allocator Allocator for the returned node.
    @param i Integer value of literal.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_integer(int64_t i);
+serd_new_integer(ZixAllocator* ZIX_NULLABLE allocator, int64_t i);
 
 /**
    Create a new canonical xsd:base64Binary literal.
@@ -235,21 +247,31 @@ serd_new_integer(int64_t i);
    This function can be used to make a node out of arbitrary binary data, which
    can be decoded using serd_base64_decode().
 
+   @param allocator Allocator for the returned node.
    @param buf Raw binary data to encode in node.
    @param size Size of `buf` in bytes.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_base64(const void* ZIX_NONNULL buf, size_t size);
+serd_new_base64(ZixAllocator* ZIX_NULLABLE allocator,
+                const void* ZIX_NONNULL    buf,
+                size_t                     size);
 
-/// Return a deep copy of `node`
+/**
+   Return a deep copy of `node`.
+
+   @param allocator Allocator for the returned node.
+   @param node The node to copyl
+*/
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_node_copy(const SerdNode* ZIX_NULLABLE node);
+serd_node_copy(ZixAllocator* ZIX_NULLABLE   allocator,
+               const SerdNode* ZIX_NULLABLE node);
 
 /**
    Free any data owned by `node`.
 */
 SERD_API void
-serd_node_free(SerdNode* ZIX_NULLABLE node);
+serd_node_free(ZixAllocator* ZIX_NULLABLE allocator,
+               SerdNode* ZIX_NULLABLE     node);
 
 /**
    @}

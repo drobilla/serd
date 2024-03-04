@@ -3,20 +3,13 @@
 
 #include "string_utils.h"
 
-#include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/status.h"
 #include "serd/string.h"
 
 #include <assert.h>
-#include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
-
-void
-serd_free(void* const ptr)
-{
-  free(ptr);
-}
 
 const char*
 serd_strerror(const SerdStatus status)

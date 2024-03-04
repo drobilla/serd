@@ -8,12 +8,15 @@
 
 #include "serd/output_stream.h"
 #include "serd/status.h"
+#include "serd/world.h"
+#include "zix/allocator.h"
 #include "zix/attributes.h"
 
 #include <stddef.h>
 #include <string.h>
 
 typedef struct {
+  ZixAllocator* ZIX_NONNULL       allocator;  ///< Buffer allocator
   SerdOutputStream* ZIX_ALLOCATED out;        ///< Output stream to write to
   char* ZIX_ALLOCATED             buf;        ///< Local buffer if needed
   size_t                          size;       ///< Bytes pending for this block
@@ -27,7 +30,8 @@ typedef struct {
    calling serd_block_dumper_close().
 */
 SerdStatus
-serd_block_dumper_open(SerdBlockDumper* ZIX_NONNULL  dumper,
+serd_block_dumper_open(const SerdWorld* ZIX_NONNULL  world,
+                       SerdBlockDumper* ZIX_NONNULL  dumper,
                        SerdOutputStream* ZIX_NONNULL output,
                        size_t                        block_size);
 

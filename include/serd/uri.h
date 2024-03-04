@@ -6,6 +6,7 @@
 
 #include "serd/attributes.h"
 #include "serd/stream.h"
+#include "zix/allocator.h"
 #include "zix/attributes.h"
 #include "zix/string_view.h"
 
@@ -53,14 +54,18 @@ static const SerdURIView SERD_URI_NULL =
 /**
    Get the unescaped path and hostname from a file URI.
 
-   The returned path and `*hostname` must be freed with serd_free().
+   Both the returned path and `*hostname` must be freed with zix_free() using
+   the same allocator.
 
+   @param allocator Allocator for the returned string.
    @param uri A file URI.
-   @param hostname If non-NULL, set to the hostname, if present.
-   @return A newly-allocated filesystem path.
+   @param hostname If non-NULL, set to the newly allocated hostname, if present.
+
+   @return A newly allocated path string.
 */
 SERD_API char* ZIX_ALLOCATED
-serd_parse_file_uri(const char* ZIX_NONNULL             uri,
+serd_parse_file_uri(ZixAllocator* ZIX_NULLABLE          allocator,
+                    const char* ZIX_NONNULL             uri,
                     char* ZIX_UNSPECIFIED* ZIX_NULLABLE hostname);
 
 /// Return true iff `string` starts with a valid URI scheme

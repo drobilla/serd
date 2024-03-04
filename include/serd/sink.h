@@ -9,6 +9,7 @@
 #include "serd/node.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
+#include "zix/allocator.h"
 #include "zix/attributes.h"
 
 SERD_BEGIN_DECLS
@@ -64,12 +65,14 @@ typedef void (*SerdFreeFunc)(void* ZIX_NULLABLE ptr);
 /**
    Create a new sink.
 
+   @param allocator Allocator to use for the returned sink.
    @param handle Opaque handle that will be passed to sink functions.
    @param event_func Function that will be called for every event.
    @param free_handle Free function to call on handle in serd_sink_free().
 */
 SERD_API SerdSink* ZIX_ALLOCATED
-serd_sink_new(void* ZIX_UNSPECIFIED      handle,
+serd_sink_new(ZixAllocator* ZIX_NULLABLE allocator,
+              void* ZIX_UNSPECIFIED      handle,
               SerdEventFunc ZIX_NULLABLE event_func,
               SerdFreeFunc ZIX_NULLABLE  free_handle);
 

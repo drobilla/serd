@@ -239,15 +239,15 @@ main(int argc, char** argv)
 
   SerdNode* base = NULL;
   if (a < argc) { // Base URI given on command line
-    base = serd_new_uri(zix_string(argv[a]));
+    base = serd_new_uri(NULL, zix_string(argv[a]));
   } else if (!from_string && !from_stdin) { // Use input file URI
-    base = serd_new_file_uri(zix_string(input), zix_empty_string());
+    base = serd_new_file_uri(NULL, zix_string(input), zix_empty_string());
   }
 
   FILE* const      out_fd = stdout;
-  SerdWorld* const world  = serd_world_new();
+  SerdWorld* const world  = serd_world_new(NULL);
   SerdEnv* const   env =
-    serd_env_new(base ? serd_node_string_view(base) : zix_empty_string());
+    serd_env_new(NULL, base ? serd_node_string_view(base) : zix_empty_string());
 
   SerdOutputStream out = serd_open_output_stream((SerdWriteFunc)fwrite,
                                                  (SerdErrorFunc)ferror,
@@ -282,15 +282,15 @@ main(int argc, char** argv)
   if (from_string) {
     position   = input;
     in         = serd_open_input_string(&position);
-    input_name = serd_new_string(zix_string("string"));
+    input_name = serd_new_string(NULL, zix_string("string"));
   } else if (from_stdin) {
     in = serd_open_input_stream(
       (SerdReadFunc)fread, (SerdErrorFunc)ferror, (SerdCloseFunc)fclose, stdin);
-    input_name = serd_new_string(zix_string("stdin"));
+    input_name = serd_new_string(NULL, zix_string("stdin"));
   } else {
     block_size = bulk_read ? 4096U : 1U;
     in         = serd_open_input_file(input);
-    input_name = serd_new_string(zix_string(input));
+    input_name = serd_new_string(NULL, zix_string(input));
   }
 
   if (!(st = serd_reader_start(reader, &in, input_name, block_size))) {
@@ -301,9 +301,9 @@ main(int argc, char** argv)
   serd_reader_free(reader);
   serd_writer_finish(writer);
   serd_writer_free(writer);
-  serd_node_free(input_name);
+  serd_node_free(NULL, input_name);
   serd_env_free(env);
-  serd_node_free(base);
+  serd_node_free(NULL, base);
   serd_world_free(world);
 
   if (fclose(stdout)) {

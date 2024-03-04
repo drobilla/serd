@@ -8,6 +8,7 @@
 #include "serd/input_stream.h"
 #include "serd/node.h"
 #include "serd/status.h"
+#include "zix/allocator.h"
 #include "zix/attributes.h"
 
 #include <assert.h>
@@ -30,12 +31,13 @@ typedef struct {
 } SerdByteSource;
 
 SerdByteSource*
-serd_byte_source_new_input(SerdInputStream* input,
+serd_byte_source_new_input(ZixAllocator*    allocator,
+                           SerdInputStream* input,
                            const SerdNode*  name,
                            size_t           block_size);
 
 void
-serd_byte_source_free(SerdByteSource* source);
+serd_byte_source_free(ZixAllocator* allocator, SerdByteSource* source);
 
 SerdStatus
 serd_byte_source_prepare(SerdByteSource* source);

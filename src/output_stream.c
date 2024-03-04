@@ -8,6 +8,7 @@
 #include "serd/output_stream.h"
 #include "serd/status.h"
 #include "serd/stream.h"
+#include "zix/allocator.h"
 
 // IWYU pragma: no_include <features.h>
 
@@ -15,7 +16,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #if USE_POSIX_FADVISE && USE_FILENO
@@ -46,7 +46,8 @@ serd_buffer_write(const void* const buf,
   SerdBuffer* const buffer  = (SerdBuffer*)stream;
   const size_t      n_bytes = size * nmemb;
 
-  char* const new_buf = (char*)realloc(buffer->buf, buffer->len + n_bytes);
+  char* const new_buf =
+    (char*)zix_realloc(buffer->allocator, buffer->buf, buffer->len + n_bytes);
 
   if (new_buf) {
     memcpy(new_buf + buffer->len, buf, n_bytes);

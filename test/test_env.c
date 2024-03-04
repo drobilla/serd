@@ -3,6 +3,8 @@
 
 #undef NDEBUG
 
+#include "failing_allocator.h"
+
 #include "serd/env.h"
 #include "serd/event.h"
 #include "serd/node.h"
@@ -11,20 +13,140 @@
 #include "zix/string_view.h"
 
 #include <assert.h>
+#include <stdio.h>
 #include <string.h>
 
 #define NS_EG "http://example.org/"
 
 static void
+test_new_failed_alloc(void)
+{
+  SerdFailingAllocator allocator = serd_failing_allocator();
+
+  // Successfully allocate a env to count the number of allocations
+  SerdEnv* const env = serd_env_new(&allocator.base, zix_empty_string());
+  assert(env);
+
+  // Test that each allocation failing is handled gracefully
+  const size_t n_new_allocs = allocator.n_allocations;
+  for (size_t i = 0; i < n_new_allocs; ++i) {
+    allocator.n_remaining = i;
+    assert(!serd_env_new(&allocator.base, zix_empty_string()));
+  }
+
+  serd_env_free(env);
+}
+
+static void
+test_copy_failed_alloc(void)
+{
+  static const char name[] = "eg";
+  static const char uri[]  = "http://example.org/";
+
+  SerdFailingAllocator allocator = serd_failing_allocator();
+
+  SerdEnv* const env = serd_env_new(&allocator.base, zix_empty_string());
+
+  assert(!serd_env_set_prefix(env, zix_string(name), zix_string(uri)));
+  assert(!serd_env_set_base_uri(env, zix_string(uri)));
+
+  // Successfully copy an env to count the number of allocations
+  const size_t   n_setup_allocs = allocator.n_allocations;
+  SerdEnv* const copy           = serd_env_copy(&allocator.base, env);
+  assert(copy);
+
+  // Test that each allocation failing is handled gracefully
+  const size_t n_copy_allocs = allocator.n_allocations - n_setup_allocs;
+  for (size_t i = 0; i < n_copy_allocs; ++i) {
+    allocator.n_remaining = i;
+    assert(!serd_env_copy(&allocator.base, env));
+  }
+
+  serd_env_free(copy);
+  serd_env_free(env);
+}
+
+static void
+test_set_prefix_absolute_failed_alloc(void)
+{
+  static const ZixStringView base_uri =
+    ZIX_STATIC_STRING("http://example.org/");
+
+  SerdFailingAllocator allocator = serd_failing_allocator();
+
+  SerdEnv* const env = serd_env_new(&allocator.base, base_uri);
+
+  char name[64] = "eg";
+  char uri[64]  = "http://example.org/";
+
+  SerdStatus   st             = SERD_SUCCESS;
+  const size_t n_setup_allocs = allocator.n_allocations;
+
+  // Successfully set an absolute prefix to count the number of allocations
+  st = serd_env_set_prefix(env, zix_string(name), zix_string(uri));
+  assert(st == SERD_SUCCESS);
+
+  // Test that each allocation failing is handled gracefully
+  const size_t n_set_prefix_allocs = allocator.n_allocations - n_setup_allocs;
+  for (size_t i = 0; i < n_set_prefix_allocs; ++i) {
+    allocator.n_remaining = i;
+
+    snprintf(name, sizeof(name), "eg%zu", i);
+    snprintf(uri, sizeof(name), "http://example.org/%zu", i);
+
+    st = serd_env_set_prefix(env, zix_string(name), zix_string(uri));
+    assert(st == SERD_BAD_ALLOC);
+  }
+
+  serd_env_free(env);
+}
+
+static void
+test_set_prefix_relative_failed_alloc(void)
+{
+  static const ZixStringView base_uri =
+    ZIX_STATIC_STRING("http://example.org/");
+
+  SerdFailingAllocator allocator = serd_failing_allocator();
+
+  char name[64] = "egX";
+  char uri[64]  = "relativeX";
+
+  // Successfully set an absolute prefix to count the number of allocations
+  SerdEnv*   env = serd_env_new(&allocator.base, base_uri);
+  SerdStatus st  = serd_env_set_prefix(env, zix_string(name), zix_string(uri));
+  assert(st == SERD_SUCCESS);
+  serd_env_free(env);
+
+  // Test that each allocation failing is handled gracefully
+  const size_t n_set_prefix_allocs = allocator.n_allocations;
+  for (size_t i = 0; i < n_set_prefix_allocs; ++i) {
+    allocator.n_remaining = i;
+
+    snprintf(name, sizeof(name), "eg%zu", i);
+    snprintf(uri, sizeof(uri), "relative%zu", i);
+
+    env = serd_env_new(&allocator.base, base_uri);
+    if (env) {
+      st = serd_env_set_prefix(env, zix_string(name), zix_string(uri));
+      assert(st == SERD_BAD_ALLOC);
+    }
+
+    serd_env_free(env);
+  }
+}
+
+static void
 test_copy(void)
 {
-  assert(!serd_env_copy(NULL));
+  assert(!serd_env_copy(NULL, NULL));
 
-  SerdEnv* const env = serd_env_new(zix_string(NS_EG "base/"));
+  SerdEnv* const env =
+    serd_env_new(NULL, zix_string("http://example.org/base/"));
 
   serd_env_set_prefix(env, zix_string("eg"), zix_string(NS_EG));
 
-  SerdEnv* const env_copy = serd_env_copy(env);
+  SerdEnv* const env_copy = serd_env_copy(NULL, env);
   assert(serd_env_equals(env, env_copy));
 
   serd_env_set_prefix(env_copy, zix_string("test"), zix_string(NS_EG "test"));
@@ -47,8 +169,8 @@ test_equals(void)
   static const ZixStringView base1 = ZIX_STATIC_STRING(NS_EG "b1/");
   static const ZixStringView base2 = ZIX_STATIC_STRING(NS_EG "b2/");
 
-  SerdEnv* const env1 = serd_env_new(base1);
-  SerdEnv* const env2 = serd_env_new(base2);
+  SerdEnv* const env1 = serd_env_new(NULL, base1);
+  SerdEnv* const env2 = serd_env_new(NULL, base2);
 
   assert(!serd_env_equals(env1, NULL));
   assert(!serd_env_equals(NULL, env1));
@@ -68,7 +190,7 @@ test_equals(void)
   serd_env_set_base_uri(env2, base2);
   assert(!serd_env_equals(env1, env2));
 
-  SerdEnv* const env3 = serd_env_copy(env2);
+  SerdEnv* const env3 = serd_env_copy(NULL, env2);
   assert(serd_env_equals(env3, env2));
   serd_env_free(env3);
 
@@ -80,7 +202,7 @@ static void
 test_null(void)
 {
   // "Copying" NULL returns null
-  assert(!serd_env_copy(NULL));
+  assert(!serd_env_copy(NULL, NULL));
 
   // Accessors are tolerant to a NULL env for convenience
   ZixStringView prefix = {NULL, 0U};
@@ -107,10 +229,10 @@ count_prefixes(void* handle, const SerdEvent* event)
 static void
 test_base_uri(void)
 {
-  assert(!serd_env_new(zix_string("rel")));
+  assert(!serd_env_new(NULL, zix_string("rel")));
 
-  SerdEnv* const  env = serd_env_new(zix_empty_string());
-  SerdNode* const eg  = serd_new_uri(zix_string(NS_EG));
+  SerdEnv* const  env = serd_env_new(NULL, zix_empty_string());
+  SerdNode* const eg  = serd_new_uri(NULL, zix_string(NS_EG));
 
   // Test that empty/unset base works as expected
   assert(!serd_env_base_uri_view(env).scheme.length);
@@ -134,8 +256,8 @@ test_base_uri(void)
   assert(!serd_env_set_base_uri(env, zix_empty_string()));
   assert(!serd_env_base_uri_view(env).scheme.length);
 
+  serd_node_free(NULL, eg);
   serd_env_free(env);
-  serd_node_free(eg);
 }
 
 static void
@@ -147,7 +269,7 @@ test_set_prefix(void)
   static const ZixStringView rel   = ZIX_STATIC_STRING("rel");
   static const ZixStringView base  = ZIX_STATIC_STRING(NS_EG);
 
-  SerdEnv* const env = serd_env_new(zix_empty_string());
+  SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
 
   // Ensure that a prefix isn't initially set
   assert(!serd_env_get_prefix(env, name1).length);
@@ -169,7 +291,7 @@ test_set_prefix(void)
 
   size_t          n_prefixes = 0;
   SerdSink* const count_prefixes_sink =
-    serd_sink_new(&n_prefixes, count_prefixes, NULL);
+    serd_sink_new(NULL, &n_prefixes, count_prefixes, NULL);
 
   serd_env_describe(env, count_prefixes_sink);
   serd_sink_free(count_prefixes_sink);
@@ -185,7 +307,7 @@ test_expand_curie(void)
   static const ZixStringView eg    = ZIX_STATIC_STRING(NS_EG);
   static const ZixStringView curie = ZIX_STATIC_STRING("eg.1:foo");
 
-  SerdEnv* const env = serd_env_new(zix_empty_string());
+  SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
 
   assert(!serd_env_set_prefix(env, name, eg));
 
@@ -205,7 +327,7 @@ test_expand_bad_curie(void)
 {
   static const ZixStringView prefixed = ZIX_STATIC_STRING("eg:foo");
 
-  SerdEnv* const env = serd_env_new(zix_empty_string());
+  SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
 
   ZixStringView prefix = zix_empty_string();
   ZixStringView suffix = zix_empty_string();
@@ -221,12 +343,13 @@ test_qualify(void)
 {
   static const ZixStringView eg = ZIX_STATIC_STRING(NS_EG);
 
-  SerdNode* const name = serd_new_string(zix_string("eg"));
-  SerdNode* const c1   = serd_new_curie(zix_string("eg:foo"));
-  SerdNode* const u1   = serd_new_uri(zix_string(NS_EG "foo"));
-  SerdNode* const u2   = serd_new_uri(zix_string("http://drobilla.net/bar"));
+  SerdNode* const name = serd_new_string(NULL, zix_string("eg"));
+  SerdNode* const c1   = serd_new_curie(NULL, zix_string("eg:foo"));
+  SerdNode* const u1   = serd_new_uri(NULL, zix_string(NS_EG "foo"));
+  SerdNode* const u2 =
+    serd_new_uri(NULL, zix_string("http://drobilla.net/bar"));
 
-  SerdEnv* const env = serd_env_new(zix_empty_string());
+  SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
 
   assert(!serd_env_set_prefix(env, serd_node_string_view(name), eg));
 
@@ -242,19 +365,19 @@ test_qualify(void)
          SERD_FAILURE);
 
   serd_env_free(env);
-  serd_node_free(u2);
-  serd_node_free(u1);
-  serd_node_free(c1);
-  serd_node_free(name);
+  serd_node_free(NULL, u2);
+  serd_node_free(NULL, u1);
+  serd_node_free(NULL, c1);
+  serd_node_free(NULL, name);
 }
 
 static void
 test_sink(void)
 {
-  SerdNode* const base = serd_new_uri(zix_string(NS_EG));
-  SerdNode* const name = serd_new_string(zix_string("eg"));
-  SerdNode* const uri  = serd_new_uri(zix_string(NS_EG "uri"));
-  SerdEnv* const  env  = serd_env_new(zix_empty_string());
+  SerdNode* const base = serd_new_uri(NULL, zix_string(NS_EG));
+  SerdNode* const name = serd_new_string(NULL, zix_string("eg"));
+  SerdNode* const uri  = serd_new_uri(NULL, zix_string(NS_EG "uri"));
+  SerdEnv* const  env  = serd_env_new(NULL, zix_empty_string());
 
   const SerdSink* const sink = serd_env_sink(env);
 
@@ -271,14 +394,18 @@ test_sink(void)
   assert(!strcmp(serd_env_base_uri_string(env).data, NS_EG));
 
   serd_env_free(env);
-  serd_node_free(uri);
-  serd_node_free(name);
-  serd_node_free(base);
+  serd_node_free(NULL, uri);
+  serd_node_free(NULL, name);
+  serd_node_free(NULL, base);
 }
 
 int
 main(void)
 {
+  test_new_failed_alloc();
+  test_copy_failed_alloc();
+  test_set_prefix_absolute_failed_alloc();
+  test_set_prefix_relative_failed_alloc();
   test_copy();
   test_equals();
   test_null();

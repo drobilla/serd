@@ -8,6 +8,7 @@
 #include "serd/sink.h"
 #include "serd/status.h"
 #include "serd/uri.h"
+#include "zix/allocator.h"
 #include "zix/attributes.h"
 #include "zix/string_view.h"
 
@@ -26,11 +27,12 @@ typedef struct SerdEnvImpl SerdEnv;
 
 /// Create a new environment
 SERD_API SerdEnv* ZIX_ALLOCATED
-serd_env_new(ZixStringView base_uri);
+serd_env_new(ZixAllocator* ZIX_NULLABLE allocator, ZixStringView base_uri);
 
 /// Copy an environment
 SERD_API SerdEnv* ZIX_ALLOCATED
-serd_env_copy(const SerdEnv* ZIX_NULLABLE env);
+serd_env_copy(ZixAllocator* ZIX_NULLABLE  allocator,
+              const SerdEnv* ZIX_NULLABLE env);
 
 /// Return true iff `a` is equal to `b`
 SERD_PURE_API bool

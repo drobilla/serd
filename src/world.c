@@ -4,6 +4,7 @@
 #include "world.h"
 
 #include "serd/node.h"
+#include "zix/allocator.h"
 
 #include <assert.h>
 #include <stdarg.h>
@@ -47,13 +48,16 @@ serd_world_verrorf(const SerdWorld* const world,
 }
 
 SerdWorld*
-serd_world_new(void)
+serd_world_new(ZixAllocator* const allocator)
 {
-  SerdWorld* world = (SerdWorld*)calloc(1, sizeof(SerdWorld));
+  ZixAllocator* const actual = allocator ? allocator : zix_default_allocator();
+
+  SerdWorld* world = (SerdWorld*)zix_calloc(actual, 1, sizeof(SerdWorld));
 
   if (world) {
     world->limits.reader_stack_size = 1048576U;
     world->limits.writer_max_depth  = 128U;
+    world->allocator                = actual;
   }
 
   return world;
@@ -87,4 +91,12 @@ serd_world_set_error_func(SerdWorld*  world,
 {
   world->error_func   = error_func;
   world->error_handle = handle;
+}
+
+ZixAllocator*
+serd_world_allocator(const SerdWorld* const world)
+{
+  assert(world);
+  assert(world->allocator);
+  return world->allocator;
 }
