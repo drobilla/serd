@@ -12,11 +12,11 @@
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "serd/writer.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #define NS_RDF "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -42,20 +42,20 @@ check_output(SerdWriter* writer, SerdOutputStream* out, const char* expected)
 static int
 test(void)
 {
-  SerdBuffer buffer = {NULL, 0};
-  SerdWorld* world  = serd_world_new();
-  SerdEnv*   env    = serd_env_new(zix_empty_string());
+  SerdBuffer buffer = {NULL, NULL, 0};
+  SerdWorld* world  = serd_world_new(NULL);
+  SerdEnv*   env    = serd_env_new(NULL, zix_empty_string());
 
-  SerdNode* b1 = serd_new_blank(zix_string("b1"));
-  SerdNode* l1 = serd_new_blank(zix_string("l1"));
-  SerdNode* l2 = serd_new_blank(zix_string("l2"));
-  SerdNode* s1 = serd_new_string(zix_string("s1"));
-  SerdNode* s2 = serd_new_string(zix_string("s2"));
+  SerdNode* b1 = serd_new_blank(NULL, zix_string("b1"));
+  SerdNode* l1 = serd_new_blank(NULL, zix_string("l1"));
+  SerdNode* l2 = serd_new_blank(NULL, zix_string("l2"));
+  SerdNode* s1 = serd_new_string(NULL, zix_string("s1"));
+  SerdNode* s2 = serd_new_string(NULL, zix_string("s2"));
 
-  SerdNode* rdf_first = serd_new_uri(zix_string(NS_RDF "first"));
-  SerdNode* rdf_value = serd_new_uri(zix_string(NS_RDF "value"));
-  SerdNode* rdf_rest  = serd_new_uri(zix_string(NS_RDF "rest"));
-  SerdNode* rdf_nil   = serd_new_uri(zix_string(NS_RDF "nil"));
+  SerdNode* rdf_first = serd_new_uri(NULL, zix_string(NS_RDF "first"));
+  SerdNode* rdf_value = serd_new_uri(NULL, zix_string(NS_RDF "value"));
+  SerdNode* rdf_rest  = serd_new_uri(NULL, zix_string(NS_RDF "rest"));
+  SerdNode* rdf_nil   = serd_new_uri(NULL, zix_string(NS_RDF "nil"));
 
   serd_env_set_prefix(env, zix_string("rdf"), zix_string(NS_RDF));
 
@@ -94,18 +94,18 @@ test(void)
   check_output(writer, &output, "[] rdf:value ( \"s1\" \"s2\" ) .\n");
 
   serd_writer_free(writer);
-  serd_node_free(rdf_nil);
-  serd_node_free(rdf_rest);
-  serd_node_free(rdf_value);
-  serd_node_free(rdf_first);
-  serd_node_free(s2);
-  serd_node_free(s1);
-  serd_node_free(l2);
-  serd_node_free(l1);
-  serd_node_free(b1);
+  serd_node_free(NULL, rdf_nil);
+  serd_node_free(NULL, rdf_rest);
+  serd_node_free(NULL, rdf_value);
+  serd_node_free(NULL, rdf_first);
+  serd_node_free(NULL, s2);
+  serd_node_free(NULL, s1);
+  serd_node_free(NULL, l2);
+  serd_node_free(NULL, l1);
+  serd_node_free(NULL, b1);
+  zix_free(buffer.allocator, buffer.buf);
   serd_env_free(env);
   serd_world_free(world);
-  free(buffer.buf);
 
   return 0;
 }

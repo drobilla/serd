@@ -9,13 +9,12 @@
 #include "serd/sink.h"
 #include "serd/status.h"
 #include "serd/uri.h"
+#include "zix/allocator.h"
 #include "zix/attributes.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 typedef struct {
@@ -24,11 +23,12 @@ typedef struct {
 } SerdPrefix;
 
 struct SerdEnvImpl {
-  SerdSink    sink;
-  SerdPrefix* prefixes;
-  size_t      n_prefixes;
-  SerdNode*   base_uri_node;
-  SerdURIView base_uri;
+  ZixAllocator* allocator;
+  SerdSink      sink;
+  SerdPrefix*   prefixes;
+  size_t        n_prefixes;
+  SerdNode*     base_uri_node;
+  SerdURIView   base_uri;
 };
 
 static SerdStatus
@@ -49,18 +49,21 @@ serd_env_on_event(void* const handle, const SerdEvent* const event)
 }
 
 SerdEnv*
-serd_env_new(const ZixStringView base_uri)
+serd_env_new(ZixAllocator* const allocator, const ZixStringView base_uri)
 {
-  SerdEnv* env = (SerdEnv*)calloc(1, sizeof(struct SerdEnvImpl));
+  SerdEnv* env = (SerdEnv*)zix_calloc(allocator, 1, sizeof(struct SerdEnvImpl));
 
   if (env) {
+    env->allocator = allocator;
+
+    env->sink.allocator   = allocator;
     env->sink.handle      = env;
     env->sink.free_handle = NULL;
     env->sink.on_event    = serd_env_on_event;
 
     if (base_uri.length) {
       if (serd_env_set_base_uri(env, base_uri)) {
-        free(env);
+        zix_free(allocator, env);
         return NULL;
       }
     }
@@ -70,22 +73,36 @@ serd_env_new(const ZixStringView base_uri)
 }
 
 SerdEnv*
-serd_env_copy(const SerdEnv* const env)
+serd_env_copy(ZixAllocator* const allocator, const SerdEnv* const env)
 {
   if (!env) {
     return NULL;
   }
 
-  SerdEnv* copy = (SerdEnv*)calloc(1, sizeof(struct SerdEnvImpl));
-  if (copy) {
-    copy->n_prefixes = env->n_prefixes;
-    copy->prefixes = (SerdPrefix*)malloc(copy->n_prefixes * sizeof(SerdPrefix));
-    for (size_t i = 0; i < copy->n_prefixes; ++i) {
-      copy->prefixes[i].name = serd_node_copy(env->prefixes[i].name);
-      copy->prefixes[i].uri  = serd_node_copy(env->prefixes[i].uri);
-    }
+  SerdEnv* const copy =
+    (SerdEnv*)zix_calloc(allocator, 1, sizeof(struct SerdEnvImpl));
 
-    serd_env_set_base_uri(copy, serd_env_base_uri_string(env));
+  if (!copy) {
+    return NULL;
+  }
+
+  copy->allocator = allocator;
+  if (!(copy->prefixes = (SerdPrefix*)zix_calloc(
+          allocator, env->n_prefixes, sizeof(SerdPrefix))) ||
+      serd_env_set_base_uri(copy, serd_env_base_uri_string(env))) {
+    serd_env_free(copy);
+    return NULL;
+  }
+
+  copy->n_prefixes = env->n_prefixes;
+  for (size_t i = 0; i < copy->n_prefixes; ++i) {
+    if (!(copy->prefixes[i].name =
+            serd_node_copy(allocator, env->prefixes[i].name)) ||
+        !(copy->prefixes[i].uri =
+            serd_node_copy(allocator, env->prefixes[i].uri))) {
+      serd_env_free(copy);
+      return NULL;
+    }
   }
 
   return copy;
@@ -99,12 +116,12 @@ serd_env_free(SerdEnv* const env)
   }
 
   for (size_t i = 0; i < env->n_prefixes; ++i) {
-    serd_node_free(env->prefixes[i].name);
-    serd_node_free(env->prefixes[i].uri);
+    serd_node_free(env->allocator, env->prefixes[i].name);
+    serd_node_free(env->allocator, env->prefixes[i].uri);
   }
-  free(env->prefixes);
-  serd_node_free(env->base_uri_node);
-  free(env);
+  zix_free(env->allocator, env->prefixes);
+  serd_node_free(env->allocator, env->base_uri_node);
+  zix_free(env->allocator, env);
 }
 
 const SerdSink*
@@ -154,7 +171,7 @@ serd_env_set_base_uri(SerdEnv* const env, const ZixStringView uri)
   assert(env);
 
   if (!uri.length) {
-    serd_node_free(env->base_uri_node);
+    serd_node_free(env->allocator, env->base_uri_node);
     env->base_uri_node = NULL;
     env->base_uri      = SERD_URI_NULL;
     return SERD_SUCCESS;
@@ -171,10 +188,14 @@ serd_env_set_base_uri(SerdEnv* const env, const ZixStringView uri)
   }
 
   // Replace the current base URI
-  env->base_uri_node = serd_new_parsed_uri(new_base_uri);
-  env->base_uri      = serd_node_uri_view(env->base_uri_node);
+  SerdNode* const new_base = serd_new_parsed_uri(env->allocator, new_base_uri);
+  if (!new_base) {
+    return SERD_BAD_ALLOC;
+  }
 
-  serd_node_free(old_base_uri);
+  env->base_uri_node = new_base;
+  env->base_uri      = serd_node_uri_view(env->base_uri_node);
+  serd_node_free(env->allocator, old_base_uri);
   return SERD_SUCCESS;
 }
 
@@ -222,18 +243,33 @@ serd_env_add(SerdEnv* const      env,
   SerdPrefix* const prefix = serd_env_find(env, name.data, name.length);
   if (prefix) {
     if (!!strcmp(serd_node_string(prefix->uri), uri.data)) {
-      serd_node_free(prefix->uri);
-      prefix->uri = serd_new_uri(uri);
+      serd_node_free(env->allocator, prefix->uri);
+      prefix->uri = serd_new_uri(env->allocator, uri);
     }
   } else {
-    SerdPrefix* const new_prefixes = (SerdPrefix*)realloc(
-      env->prefixes, (++env->n_prefixes) * sizeof(SerdPrefix));
-    if (new_prefixes) {
-      env->prefixes                           = new_prefixes;
-      env->prefixes[env->n_prefixes - 1].name = serd_new_string(name);
-      env->prefixes[env->n_prefixes - 1].uri  = serd_new_uri(uri);
+    SerdPrefix* const new_prefixes =
+      (SerdPrefix*)zix_realloc(env->allocator,
+                               env->prefixes,
+                               (env->n_prefixes + 1) * sizeof(SerdPrefix));
+    if (!new_prefixes) {
+      return SERD_BAD_ALLOC;
     }
+
+    env->prefixes = new_prefixes;
+
+    SerdNode* const name_node = serd_new_string(env->allocator, name);
+    SerdNode* const uri_node  = serd_new_uri(env->allocator, uri);
+    if (!name_node || !uri_node) {
+      serd_node_free(env->allocator, uri_node);
+      serd_node_free(env->allocator, name_node);
+      return SERD_BAD_ALLOC;
+    }
+
+    new_prefixes[env->n_prefixes].name = name_node;
+    new_prefixes[env->n_prefixes].uri  = uri_node;
+    ++env->n_prefixes;
   }
+
   return SERD_SUCCESS;
 }
 
@@ -259,13 +295,16 @@ serd_env_set_prefix(SerdEnv* const      env,
   assert(abs_uri_view.scheme.length);
 
   // Create a new node for the absolute URI
-  SerdNode* const abs_uri = serd_new_parsed_uri(abs_uri_view);
-  assert(abs_uri);
+  SerdNode* const abs_uri = serd_new_parsed_uri(env->allocator, abs_uri_view);
+  if (!abs_uri) {
+    return SERD_BAD_ALLOC;
+  }
+
   assert(serd_uri_string_has_scheme(serd_node_string(abs_uri)));
 
   // Set prefix to resolved (absolute) URI
   const SerdStatus st = serd_env_add(env, name, serd_node_string_view(abs_uri));
-  serd_node_free(abs_uri);
+  serd_node_free(env->allocator, abs_uri);
   return st;
 }
 
