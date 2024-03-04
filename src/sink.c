@@ -8,20 +8,24 @@
 #include "serd/sink.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
+#include "zix/allocator.h"
 
 #include <assert.h>
-#include <stdlib.h>
 
 SerdSink*
-serd_sink_new(void* const   handle,
-              SerdEventFunc event_func,
-              SerdFreeFunc  free_handle)
+serd_sink_new(ZixAllocator* const allocator,
+              void* const         handle,
+              SerdEventFunc       event_func,
+              SerdFreeFunc        free_handle)
 {
-  SerdSink* sink = (SerdSink*)calloc(1, sizeof(SerdSink));
+  SerdSink* sink = (SerdSink*)zix_calloc(allocator, 1, sizeof(SerdSink));
 
-  sink->handle      = handle;
-  sink->on_event    = event_func;
-  sink->free_handle = free_handle;
+  if (sink) {
+    sink->allocator   = allocator;
+    sink->handle      = handle;
+    sink->on_event    = event_func;
+    sink->free_handle = free_handle;
+  }
 
   return sink;
 }
@@ -34,7 +38,7 @@ serd_sink_free(SerdSink* sink)
       sink->free_handle(sink->handle);
     }
 
-    free(sink);
+    zix_free(sink->allocator, sink);
   }
 }
 
