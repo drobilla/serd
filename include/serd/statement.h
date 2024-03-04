@@ -8,6 +8,7 @@
 #include "serd/caret.h"
 #include "serd/node.h"
 #include "serd/statement_view.h"
+#include "zix/allocator.h"
 #include "zix/attributes.h"
 
 #include <stdbool.h>
@@ -40,6 +41,7 @@ typedef struct SerdStatementImpl SerdStatement;
    statements in models, this is the lifetime of the model.  For user-created
    statements, the simplest way to handle this is to use `SerdNodes`.
 
+   @param allocator Allocator for the returned statement.
    @param s The subject
    @param p The predicate ("key")
    @param o The object ("value")
@@ -48,7 +50,8 @@ typedef struct SerdStatementImpl SerdStatement;
    @return A new statement that must be freed with serd_statement_free()
 */
 SERD_API SerdStatement* ZIX_ALLOCATED
-serd_statement_new(const SerdNode* ZIX_NONNULL   s,
+serd_statement_new(ZixAllocator* ZIX_NULLABLE    allocator,
+                   const SerdNode* ZIX_NONNULL   s,
                    const SerdNode* ZIX_NONNULL   p,
                    const SerdNode* ZIX_NONNULL   o,
                    const SerdNode* ZIX_NULLABLE  g,
@@ -56,11 +59,13 @@ serd_statement_new(const SerdNode* ZIX_NONNULL   s,
 
 /// Return a copy of `statement`
 SERD_API SerdStatement* ZIX_ALLOCATED
-serd_statement_copy(const SerdStatement* ZIX_NULLABLE statement);
+serd_statement_copy(ZixAllocator* ZIX_NULLABLE        allocator,
+                    const SerdStatement* ZIX_NULLABLE statement);
 
 /// Free `statement`
 SERD_API void
-serd_statement_free(SerdStatement* ZIX_NULLABLE statement);
+serd_statement_free(ZixAllocator* ZIX_NULLABLE  allocator,
+                    SerdStatement* ZIX_NULLABLE statement);
 
 /// Return a view of `statement`
 SERD_API SerdStatementView
