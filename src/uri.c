@@ -8,13 +8,13 @@
 #include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/uri.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 static SerdStatus
@@ -25,7 +25,9 @@ write_file_uri_char(const char c, void* const stream)
 }
 
 static char*
-parse_hostname(const char* const authority, char** const hostname)
+parse_hostname(ZixAllocator* const allocator,
+               const char* const   authority,
+               char** const        hostname)
 {
   char* const path = strchr(authority, '/');
   if (!path) {
@@ -34,16 +36,20 @@ parse_hostname(const char* const authority, char** const hostname)
 
   if (hostname) {
     const size_t len = (size_t)(path - authority);
-    if ((*hostname = (char*)calloc(len + 1, 1))) {
-      memcpy(*hostname, authority, len);
+    if (!(*hostname = (char*)zix_calloc(allocator, len + 1, 1))) {
+      return NULL;
     }
+
+    memcpy(*hostname, authority, len);
   }
 
   return path;
 }
 
 char*
-serd_parse_file_uri(const char* const uri, char** const hostname)
+serd_parse_file_uri(ZixAllocator* const allocator,
+                    const char* const   uri,
+                    char** const        hostname)
 {
   assert(uri);
 
@@ -58,7 +64,7 @@ serd_parse_file_uri(const char* const uri, char** const hostname)
     const char* auth = uri + 7;
     if (*auth == '/') { // No hostname
       path = auth;
-    } else if (!(path = parse_hostname(auth, hostname))) {
+    } else if (!(path = parse_hostname(allocator, auth, hostname))) {
       return NULL;
     }
   }
@@ -67,8 +73,8 @@ serd_parse_file_uri(const char* const uri, char** const hostname)
     ++path;
   }
 
-  SerdBuffer buffer = {NULL, 0};
-  for (const char* s = path; *s; ++s) {
+  SerdBuffer buffer = {allocator, NULL, 0};
+  for (const char* s = path; !st && *s; ++s) {
     if (*s == '%') {
       if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
         const uint8_t hi = hex_digit_value((const uint8_t)s[1]);
@@ -82,14 +88,13 @@ serd_parse_file_uri(const char* const uri, char** const hostname)
     } else {
       st = write_file_uri_char(*s, &buffer);
     }
-
-    if (st) {
-      free(buffer.buf);
-      return NULL;
-    }
   }
 
-  serd_buffer_close(&buffer);
+  if (st || serd_buffer_close(&buffer)) {
+    zix_free(buffer.allocator, buffer.buf);
+    return NULL;
+  }
+
   return (char*)buffer.buf;
 }
 
