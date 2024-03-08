@@ -4,7 +4,6 @@
 #include "world.h"
 
 #include "serd_config.h"
-#include "system.h"
 
 #if defined(USE_POSIX_FADVISE)
 #  include <fcntl.h>
@@ -14,17 +13,18 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 FILE*
 serd_world_fopen(SerdWorld* world, const char* path, const char* mode)
 {
   FILE* fd = fopen(path, mode);
   if (!fd) {
-    char message[1024] = {0};
-    serd_system_strerror(errno, message, sizeof(message));
-
-    serd_world_errorf(
-      world, SERD_BAD_STREAM, "failed to open file %s (%s)\n", path, message);
+    serd_world_errorf(world,
+                      SERD_BAD_STREAM,
+                      "failed to open file %s (%s)\n",
+                      path,
+                      strerror(errno));
     return NULL;
   }
 
