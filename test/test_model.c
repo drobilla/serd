@@ -6,7 +6,7 @@
 #include "failing_allocator.h"
 
 #include "serd/buffer.h"
-#include "serd/caret.h"
+#include "serd/caret_view.h"
 #include "serd/cursor.h"
 #include "serd/describe.h"
 #include "serd/env.h"
@@ -17,7 +17,7 @@
 #include "serd/nodes.h"
 #include "serd/output_stream.h"
 #include "serd/sink.h"
-#include "serd/statement.h"
+#include "serd/statement_view.h"
 #include "serd/status.h"
 #include "serd/stream_result.h"
 #include "serd/syntax.h"
@@ -151,6 +151,33 @@ generate(SerdWorld*      world,
   return EXIT_SUCCESS;
 }
 
+static bool
+statement_view_equals(const SerdStatementView lhs, const SerdStatementView rhs)
+{
+  return (lhs.subject == rhs.subject) && (lhs.predicate == rhs.predicate) &&
+         (lhs.object == rhs.object) && (lhs.graph == rhs.graph);
+}
+
+static inline bool
+node_matches(const SerdNode* const ZIX_NULLABLE a,
+             const SerdNode* const ZIX_NULLABLE b)
+{
+  return !a || !b || serd_node_equals(a, b);
+}
+
+static bool
+statement_view_matches(const SerdStatementView statement,
+                       const SerdNode* const   subject,
+                       const SerdNode* const   predicate,
+                       const SerdNode* const   object,
+                       const SerdNode* const   graph)
+{
+  return (node_matches(statement.subject, subject) &&
+          node_matches(statement.predicate, predicate) &&
+          node_matches(statement.object, object) &&
+          node_matches(statement.graph, graph));
+}
+
 static int
 test_read(SerdWorld*      world,
           SerdModel*      model,
@@ -160,17 +187,16 @@ test_read(SerdWorld*      world,
   ZixAllocator* const allocator = zix_default_allocator();
   SerdNodes* const    nodes     = serd_nodes_new(allocator);
 
-  SerdCursor*          cursor = serd_model_begin(NULL, model);
-  const SerdStatement* prev   = NULL;
+  SerdCursor*       cursor = serd_model_begin(NULL, model);
+  SerdStatementView prev   = {NULL, NULL, NULL, NULL, {NULL, 0, 0}};
   for (; !serd_cursor_equals(cursor, serd_model_end(model));
        serd_cursor_advance(cursor)) {
-    const SerdStatement* statement = serd_cursor_get(cursor);
-    assert(statement);
-    assert(serd_statement_subject(statement));
-    assert(serd_statement_predicate(statement));
-    assert(serd_statement_object(statement));
-    assert(!serd_statement_equals(statement, prev));
-    assert(!serd_statement_equals(prev, statement));
+    const SerdStatementView statement = serd_cursor_get(cursor);
+    assert(statement.subject);
+    assert(statement.predicate);
+    assert(statement.object);
+    assert(!statement_view_equals(statement, prev));
+    assert(!statement_view_equals(prev, statement));
     prev = statement;
   }
 
@@ -251,9 +277,14 @@ test_read(SerdWorld*      world,
     for (; !serd_cursor_is_end(range); serd_cursor_advance(range)) {
       ++num_results;
 
-      const SerdStatement* first = serd_cursor_get(range);
-      assert(first);
-      assert(serd_statement_matches(first, pat[0], pat[1], pat[2], pat[3]));
+      const SerdStatementView first = serd_cursor_get(range);
+      assert(first.subject);
+      assert(first.predicate);
+      assert(first.object);
+      assert(node_matches(first.subject, pat[0]));
+      assert(node_matches(first.predicate, pat[1]));
+      assert(node_matches(first.object, pat[2]));
+      assert(node_matches(first.graph, pat[3]));
     }
 
     serd_cursor_free(NULL, range);
@@ -275,8 +306,14 @@ test_read(SerdWorld*      world,
 
   for (; !serd_cursor_is_end(range); serd_cursor_advance(range)) {
     ++num_results;
-    const SerdStatement* statement = serd_cursor_get(range);
-    assert(serd_statement_matches(statement, pat[0], pat[1], pat[2], pat[3]));
+    const SerdStatementView statement = serd_cursor_get(range);
+    assert(statement.subject);
+    assert(statement.predicate);
+    assert(statement.object);
+    assert(node_matches(statement.subject, pat[0]));
+    assert(node_matches(statement.predicate, pat[1]));
+    assert(node_matches(statement.object, pat[2]));
+    assert(node_matches(statement.graph, pat[3]));
   }
   serd_cursor_free(NULL, range);
 
@@ -286,8 +323,8 @@ test_read(SerdWorld*      world,
   const SerdNode* last_subject = 0;
   range = serd_model_find(NULL, model, NULL, NULL, NULL, NULL);
   for (; !serd_cursor_is_end(range); serd_cursor_advance(range)) {
-    const SerdStatement* statement = serd_cursor_get(range);
-    const SerdNode*      subject   = serd_statement_subject(statement);
+    const SerdStatementView statement = serd_cursor_get(range);
+    const SerdNode*         subject   = statement.subject;
     if (subject == last_subject) {
       continue;
     }
@@ -298,14 +335,14 @@ test_read(SerdWorld*      world,
 
     assert(subrange);
 
-    const SerdStatement* substatement    = serd_cursor_get(subrange);
-    uint64_t             num_sub_results = 0;
-    assert(serd_statement_subject(substatement) == subject);
+    const SerdStatementView substatement    = serd_cursor_get(subrange);
+    uint64_t                num_sub_results = 0;
+    assert(substatement.subject == subject);
     for (; !serd_cursor_is_end(subrange); serd_cursor_advance(subrange)) {
-      const SerdStatement* const front = serd_cursor_get(subrange);
-      assert(front);
+      const SerdStatementView front = serd_cursor_get(subrange);
+      assert(front.subject);
 
-      assert(serd_statement_matches(
+      assert(statement_view_matches(
         front, subpat[0], subpat[1], subpat[2], subpat[3]));
 
       ++num_sub_results;
@@ -493,7 +530,7 @@ test_add_with_iterator(SerdWorld* world, const unsigned n_quads)
     !serd_model_add(model, uri(world, 1), uri(world, 2), uri(world, 4), 0));
 
   // Check that iterator has been invalidated
-  assert(!serd_cursor_get(iter));
+  assert(!serd_cursor_get(iter).subject);
   assert(serd_cursor_advance(iter) == SERD_BAD_CURSOR);
 
   serd_cursor_free(NULL, iter);
@@ -647,13 +684,12 @@ test_erase_with_iterator(SerdWorld* world, const unsigned n_quads)
   assert(!serd_model_erase(model, iter1));
 
   // Check that erased iterator points to the next statement
-  const SerdStatement* const s1 = serd_cursor_get(iter1);
-  assert(s1);
+  const SerdStatementView s1 = serd_cursor_get(iter1);
   assert(
-    serd_statement_matches(s1, uri(world, 4), uri(world, 5), uri(world, 6), 0));
+    statement_view_matches(s1, uri(world, 4), uri(world, 5), uri(world, 6), 0));
 
   // Check that other iterator has been invalidated
-  assert(!serd_cursor_get(iter2));
+  assert(!serd_cursor_get(iter2).subject);
   assert(serd_cursor_advance(iter2) == SERD_BAD_CURSOR);
 
   // Check that erasing the end iterator does nothing
@@ -724,31 +760,28 @@ test_add_bad_statement(SerdWorld* world, const unsigned n_quads)
   const SerdNode* f =
     serd_nodes_get(nodes, serd_a_uri_string("file:///tmp/file.ttl"));
 
-  SerdCaret* caret = serd_caret_new(allocator, f, 16, 18);
+  const SerdCaretView caret = {f, 16, 18};
+
   SerdModel* model = serd_model_new(world, SERD_ORDER_SPO, 0U);
 
   assert(!serd_model_add_with_caret(model, s, p, o, NULL, caret));
 
-  SerdCursor* const    begin     = serd_model_begin(NULL, model);
-  const SerdStatement* statement = serd_cursor_get(begin);
-  assert(statement);
+  SerdCursor* const       begin     = serd_model_begin(NULL, model);
+  const SerdStatementView statement = serd_cursor_get(begin);
 
-  assert(serd_node_equals(serd_statement_subject(statement), s));
-  assert(serd_node_equals(serd_statement_predicate(statement), p));
-  assert(serd_node_equals(serd_statement_object(statement), o));
-  assert(!serd_statement_graph(statement));
+  assert(serd_node_equals(statement.subject, s));
+  assert(serd_node_equals(statement.predicate, p));
+  assert(serd_node_equals(statement.object, o));
+  assert(!statement.graph);
 
-  const SerdCaret* statement_caret = serd_statement_caret(statement);
-  assert(statement_caret);
-  assert(serd_node_equals(serd_caret_document(statement_caret), f));
-  assert(serd_caret_line(statement_caret) == 16);
-  assert(serd_caret_column(statement_caret) == 18);
+  assert(serd_node_equals(statement.caret.document, f));
+  assert(statement.caret.line == 16);
+  assert(statement.caret.column == 18);
 
   assert(!serd_model_erase(model, begin));
 
   serd_cursor_free(NULL, begin);
   serd_model_free(model);
-  serd_caret_free(allocator, caret);
   serd_nodes_free(nodes);
   return 0;
 }
@@ -1031,9 +1064,8 @@ test_remove_graph(SerdWorld* world, const unsigned n_quads)
   for (iter = serd_model_begin(NULL, model);
        !serd_cursor_equals(iter, serd_model_end(model));
        serd_cursor_advance(iter)) {
-    const SerdStatement* const s = serd_cursor_get(iter);
-    assert(s);
-    assert(serd_statement_matches(s, pat[0], pat[1], pat[2], pat[3]));
+    const SerdStatementView s = serd_cursor_get(iter);
+    assert(statement_view_matches(s, pat[0], pat[1], pat[2], pat[3]));
   }
   serd_cursor_free(NULL, iter);
 
@@ -1113,10 +1145,11 @@ test_write_flat_range(SerdWorld* world, const unsigned n_quads)
   SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, 0, env, &out, 1);
   assert(writer);
 
-  SerdCursor* all = serd_model_begin(NULL, model);
-  for (const SerdStatement* t = NULL; (t = serd_cursor_get(all));
-       serd_cursor_advance(all)) {
-    serd_sink_write_statement(serd_writer_sink(writer), 0U, t);
+  SerdCursor* const all = serd_model_begin(NULL, model);
+  while (!serd_cursor_is_end(all)) {
+    serd_sink_write_statement(
+      serd_writer_sink(writer), 0U, serd_cursor_get(all));
+    serd_cursor_advance(all);
   }
   serd_cursor_free(NULL, all);
 

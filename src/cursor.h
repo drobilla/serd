@@ -7,6 +7,7 @@
 #include "serd/cursor.h"
 #include "serd/model.h"
 #include "serd/node.h"
+#include "serd/statement.h"
 #include "serd/status.h"
 #include "zix/btree.h"
 
@@ -53,6 +54,9 @@ static const unsigned orderings[N_STATEMENT_ORDERS][4] = {
   {3U, 1U, 0U, 2U}, // GPSO
   {3U, 1U, 2U, 0U}  // GPSO
 };
+
+const SerdStatement*
+serd_cursor_get_internal(const SerdCursor* cursor);
 
 SerdCursor
 serd_cursor_make(const SerdModel*      model,

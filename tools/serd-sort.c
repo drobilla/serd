@@ -10,7 +10,6 @@
 #include "serd/model.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
-#include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
 #include "serd/tee.h"
@@ -103,10 +102,9 @@ run(const Options opts)
 
     st = serd_env_describe(app.env, target);
 
-    for (const SerdStatement* statement = NULL;
-         !st && (statement = serd_cursor_get(cursor));
-         serd_cursor_advance(cursor)) {
-      st = serd_sink_write_statement(target, 0U, statement);
+    while (!st && !serd_cursor_is_end(cursor)) {
+      st = serd_sink_write_statement(target, 0U, serd_cursor_get(cursor));
+      serd_cursor_advance(cursor);
     }
 
     serd_cursor_free(NULL, cursor);

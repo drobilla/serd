@@ -9,7 +9,7 @@
 #include "serd/cursor.h"
 #include "serd/node.h"
 #include "serd/nodes.h"
-#include "serd/statement.h"
+#include "serd/statement_view.h"
 #include "serd/status.h"
 #include "serd/world.h"
 #include "zix/attributes.h"
@@ -209,7 +209,7 @@ serd_model_get(const SerdModel* ZIX_NONNULL model,
 
    @return The first matching statement, or NULL if none are found.
 */
-SERD_API const SerdStatement* ZIX_NULLABLE
+SERD_API SerdStatementView
 serd_model_get_statement(const SerdModel* ZIX_NONNULL model,
                          const SerdNode* ZIX_NULLABLE s,
                          const SerdNode* ZIX_NULLABLE p,
@@ -250,12 +250,12 @@ serd_model_add(SerdModel* ZIX_NONNULL       model,
    This function fails if there are any active iterators on `model`.
 */
 SERD_API SerdStatus
-serd_model_add_with_caret(SerdModel* ZIX_NONNULL        model,
-                          const SerdNode* ZIX_NONNULL   s,
-                          const SerdNode* ZIX_NONNULL   p,
-                          const SerdNode* ZIX_NONNULL   o,
-                          const SerdNode* ZIX_NULLABLE  g,
-                          const SerdCaret* ZIX_NULLABLE caret);
+serd_model_add_with_caret(SerdModel* ZIX_NONNULL       model,
+                          const SerdNode* ZIX_NONNULL  s,
+                          const SerdNode* ZIX_NONNULL  p,
+                          const SerdNode* ZIX_NONNULL  o,
+                          const SerdNode* ZIX_NULLABLE g,
+                          SerdCaretView                caret);
 
 /**
    Add a statement to a model.
@@ -264,8 +264,7 @@ serd_model_add_with_caret(SerdModel* ZIX_NONNULL        model,
    If statement is null, then SERD_FAILURE is returned.
 */
 SERD_API SerdStatus
-serd_model_insert(SerdModel* ZIX_NONNULL           model,
-                  const SerdStatement* ZIX_NONNULL statement);
+serd_model_insert(SerdModel* ZIX_NONNULL model, SerdStatementView statement);
 
 /**
    Add a range of statements to a model.

@@ -10,6 +10,7 @@
 
 #include "serd/log.h"
 #include "serd/statement.h"
+#include "serd/statement_view.h"
 #include "zix/allocator.h"
 #include "zix/attributes.h"
 #include "zix/btree.h"
@@ -139,12 +140,24 @@ serd_cursor_copy(ZixAllocator* const allocator, const SerdCursor* const cursor)
 }
 
 const SerdStatement*
-serd_cursor_get(const SerdCursor* const cursor)
+serd_cursor_get_internal(const SerdCursor* const cursor)
 {
   return (
     (cursor && !zix_btree_iter_is_end(cursor->iter) && check_version(cursor))
       ? (const SerdStatement*)zix_btree_get(cursor->iter)
       : NULL);
+}
+
+SerdStatementView
+serd_cursor_get(const SerdCursor* ZIX_NULLABLE cursor)
+{
+  const SerdStatement* const statement = serd_cursor_get_internal(cursor);
+  if (statement) {
+    return serd_statement_view(statement);
+  }
+
+  const SerdStatementView no_statement = {NULL, NULL, NULL, NULL, {NULL, 0, 0}};
+  return no_statement;
 }
 
 SerdStatus

@@ -7,10 +7,12 @@
 #include "serd/model.h"
 #include "serd/node.h"
 #include "serd/nodes.h"
+#include "serd/statement_view.h"
 #include "serd/status.h"
 #include "serd/world.h"
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stddef.h>
 
 static void
@@ -29,6 +31,13 @@ test_copy(void)
   serd_cursor_free(NULL, begin);
   serd_model_free(model);
   serd_world_free(world);
+}
+
+static bool
+statement_view_equals(const SerdStatementView lhs, const SerdStatementView rhs)
+{
+  return (lhs.subject == rhs.subject) && (lhs.predicate == rhs.predicate) &&
+         (lhs.object == rhs.object) && (lhs.graph == rhs.graph);
 }
 
 static void
@@ -61,8 +70,8 @@ test_comparison(void)
   assert(c1);
   assert(c2);
   assert(c3);
-  assert(serd_cursor_get(c1) == serd_cursor_get(c2));
-  assert(serd_cursor_get(c2) == serd_cursor_get(c3));
+  assert(statement_view_equals(serd_cursor_get(c1), serd_cursor_get(c2)));
+  assert(statement_view_equals(serd_cursor_get(c2), serd_cursor_get(c3)));
   assert(!serd_cursor_equals(c1, c2));
   assert(!serd_cursor_equals(c2, c3));
   assert(!serd_cursor_equals(c1, c3));
@@ -80,7 +89,7 @@ test_comparison(void)
   // Check that a cursor that points to it via the same pattern is equal
   SerdCursor* const c4 = serd_model_find(NULL, model, a, b, NULL, NULL);
   assert(c4);
-  assert(serd_cursor_get(c4) == serd_cursor_get(c1));
+  assert(statement_view_equals(serd_cursor_get(c4), serd_cursor_get(c1)));
   assert(serd_cursor_equals(c4, c2));
   assert(!serd_cursor_equals(c4, c3));
   serd_cursor_free(NULL, c4);

@@ -3,7 +3,6 @@
 
 #include "read_turtle.h"
 #include "byte_source.h"
-#include "caret_impl.h"
 #include "namespaces.h"
 #include "node_impl.h"
 #include "node_internal.h"

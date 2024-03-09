@@ -11,10 +11,11 @@
 
 #include "serd/cursor.h"
 #include "serd/describe.h"
+#include "serd/event.h"
 #include "serd/model.h"
 #include "serd/node.h"
 #include "serd/sink.h"
-#include "serd/statement.h"
+#include "serd/statement_view.h"
 #include "serd/status.h"
 #include "serd/world.h"
 #include "zix/allocator.h"
@@ -38,12 +39,12 @@ typedef struct {
 } DescribeContext;
 
 static SerdStatus
-write_range_statement(const DescribeContext* ctx,
-                      unsigned               depth,
-                      SerdStatementFlags     statement_flags,
-                      const SerdStatement*   statement,
-                      const SerdNode*        last_subject,
-                      bool                   write_types);
+write_range_statement(const DescribeContext*  ctx,
+                      unsigned                depth,
+                      SerdStatementEventFlags statement_flags,
+                      SerdStatementView       statement,
+                      const SerdNode*         last_subject,
+                      bool                    write_types);
 
 static NodeStyle
 get_node_style(const SerdModel* const model, const SerdNode* const node)
@@ -91,10 +92,11 @@ write_pretty_range(const DescribeContext* const ctx,
                    const SerdNode*              last_subject,
                    bool                         write_types)
 {
-  SerdStatus           st        = SERD_SUCCESS;
-  const SerdStatement* statement = serd_cursor_get(range);
+  SerdStatus st = SERD_SUCCESS;
 
-  while (statement) {
+  while (!st && !serd_cursor_is_end(range)) {
+    const SerdStatementView statement = serd_cursor_get(range);
+
     // Write this statement (and possibly more to describe anonymous nodes)
     if ((st = write_range_statement(
            ctx, depth, 0U, statement, last_subject, write_types))) {
@@ -102,9 +104,8 @@ write_pretty_range(const DescribeContext* const ctx,
     }
 
     // Update the last subject and advance the cursor
-    last_subject = serd_statement_subject(statement);
+    last_subject = statement.subject;
     st           = serd_cursor_advance(range);
-    statement    = serd_cursor_get(range);
   }
 
   return st > SERD_FAILURE ? st : SERD_SUCCESS;
@@ -113,7 +114,7 @@ write_pretty_range(const DescribeContext* const ctx,
 static SerdStatus
 write_list(const DescribeContext* const ctx,
            const unsigned               depth,
-           SerdStatementFlags           flags,
+           SerdStatementEventFlags      flags,
            const SerdNode*              node,
            const SerdNode* const        graph)
 {
@@ -125,10 +126,10 @@ write_list(const DescribeContext* const ctx,
   const SerdNode* const  rdf_nil   = world->rdf_nil;
   SerdStatus             st        = SERD_SUCCESS;
 
-  const SerdStatement* fs =
+  SerdStatementView fs =
     serd_model_get_statement(model, node, rdf_first, NULL, graph);
 
-  assert(fs); // Shouldn't get here if it doesn't at least have an rdf:first
+  assert(fs.subject); // Shouldn't get here without at least an rdf:first
 
   while (!st && !serd_node_equals(node, rdf_nil)) {
     // Write rdf:first statement for this node
@@ -137,17 +138,20 @@ write_list(const DescribeContext* const ctx,
     }
 
     // Get rdf:rest statement
-    const SerdStatement* const rs =
+    const SerdStatementView rs =
       serd_model_get_statement(model, node, rdf_rest, NULL, graph);
 
-    if (!rs) {
+    if (!rs.subject) {
       // Terminate malformed list with missing rdf:rest
       return serd_sink_write(sink, 0, node, rdf_rest, rdf_nil, graph);
     }
 
+    // Get rdf:first statement
+    const SerdNode* const next = rs.object;
+    fs = serd_model_get_statement(model, next, rdf_first, NULL, graph);
+
     // Terminate if the next node has no rdf:first
-    const SerdNode* const next = serd_statement_object(rs);
-    if (!(fs = serd_model_get_statement(model, next, rdf_first, NULL, graph))) {
+    if (!fs.subject) {
       return serd_sink_write(sink, 0, node, rdf_rest, rdf_nil, graph);
     }
 
@@ -161,20 +165,18 @@ write_list(const DescribeContext* const ctx,
 }
 
 static bool
-skip_range_statement(const SerdModel* const     model,
-                     const SerdStatement* const statement)
+skip_range_statement(const SerdModel* const  model,
+                     const SerdStatementView statement)
 {
-  const SerdNode* const subject       = serd_statement_subject(statement);
-  const NodeStyle       subject_style = get_node_style(model, subject);
-  const SerdNode* const predicate     = serd_statement_predicate(statement);
+  const NodeStyle subject_style = get_node_style(model, statement.subject);
 
   if (subject_style == ANON_O || subject_style == LIST_O) {
     return true; // Skip subject that will be inlined elsewhere
   }
 
   if (subject_style == LIST_S &&
-      (serd_node_equals(predicate, model->world->rdf_first) ||
-       serd_node_equals(predicate, model->world->rdf_rest))) {
+      (serd_node_equals(statement.predicate, model->world->rdf_first) ||
+       serd_node_equals(statement.predicate, model->world->rdf_rest))) {
     return true; // Skip list statement that write_list will handle
   }
 
@@ -208,21 +210,21 @@ types_first_for_subject(const DescribeContext* const ctx, const NodeStyle style)
 }
 
 static SerdStatus
-write_range_statement(const DescribeContext* const     ctx,
-                      const unsigned                   depth,
-                      SerdStatementFlags               statement_flags,
-                      const SerdStatement* ZIX_NONNULL statement,
-                      const SerdNode* ZIX_NULLABLE     last_subject,
-                      const bool                       write_types)
+write_range_statement(const DescribeContext* const ctx,
+                      const unsigned               depth,
+                      SerdStatementEventFlags      statement_flags,
+                      const SerdStatementView      statement,
+                      const SerdNode* ZIX_NULLABLE last_subject,
+                      const bool                   write_types)
 {
   const SerdModel* const model         = ctx->model;
   const SerdSink* const  sink          = ctx->sink;
-  const SerdNode* const  subject       = serd_statement_subject(statement);
+  const SerdNode* const  subject       = statement.subject;
   const NodeStyle        subject_style = get_node_style(model, subject);
-  const SerdNode* const  predicate     = serd_statement_predicate(statement);
-  const SerdNode* const  object        = serd_statement_object(statement);
+  const SerdNode* const  predicate     = statement.predicate;
+  const SerdNode* const  object        = statement.object;
   const NodeStyle        object_style  = get_node_style(model, object);
-  const SerdNode* const  graph         = serd_statement_graph(statement);
+  const SerdNode* const  graph         = statement.graph;
   SerdStatus             st            = SERD_SUCCESS;
 
   if (depth == 0U) {
@@ -256,9 +258,9 @@ write_range_statement(const DescribeContext* const     ctx,
 
   // Set up the flags for this statement
   statement_flags |=
-    (((subject_style == ANON_S) * (SerdStatementFlags)SERD_EMPTY_S) |
-     ((object_style == ANON_O) * (SerdStatementFlags)SERD_ANON_O) |
-     ((object_style == LIST_O) * (SerdStatementFlags)SERD_LIST_O));
+    (((subject_style == ANON_S) * (SerdStatementEventFlags)SERD_EMPTY_S) |
+     ((object_style == ANON_O) * (SerdStatementEventFlags)SERD_ANON_O) |
+     ((object_style == LIST_O) * (SerdStatementEventFlags)SERD_LIST_O));
 
   // Finally write this statement
   if ((st = serd_sink_write_statement(sink, statement_flags, statement))) {

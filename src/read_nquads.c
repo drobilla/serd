@@ -3,7 +3,6 @@
 
 #include "read_nquads.h"
 
-#include "caret_impl.h"
 #include "node_internal.h"
 #include "read_context.h"
 #include "read_ntriples.h"

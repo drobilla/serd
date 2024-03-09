@@ -4,9 +4,8 @@
 #include "log.h"
 #include "memory.h"
 #include "model.h"
-#include "statement_impl.h"
 
-#include "serd/caret.h"
+#include "serd/caret_view.h"
 #include "serd/event.h"
 #include "serd/inserter.h"
 #include "serd/log.h"
@@ -14,7 +13,7 @@
 #include "serd/node.h"
 #include "serd/nodes.h"
 #include "serd/sink.h"
-#include "serd/statement.h"
+#include "serd/statement_view.h"
 #include "serd/status.h"
 #include "serd/uri.h"
 #include "serd/world.h"
@@ -59,41 +58,39 @@ can_insert(SerdWorld* const world, const SerdNode* const node)
 }
 
 static SerdStatus
-serd_inserter_on_statement(SerdInserterData* const    data,
-                           const SerdStatementFlags   flags,
-                           const SerdStatement* const statement)
+serd_inserter_on_statement(SerdInserterData* const       data,
+                           const SerdStatementEventFlags flags,
+                           const SerdStatementView       statement)
 {
+  static const SerdCaretView no_caret = {NULL, 0, 0};
+
   (void)flags;
 
   SerdModel* const model = data->model;
   SerdWorld* const world = model->world;
 
   // Check that every node is expanded so it is context-free
-  for (unsigned i = 0; i < 4; ++i) {
-    if (!can_insert(world, serd_statement_node(statement, (SerdField)i))) {
-      return SERD_BAD_DATA;
-    }
+  if (!can_insert(world, statement.subject) ||
+      !can_insert(world, statement.predicate) ||
+      !can_insert(world, statement.object) ||
+      !can_insert(world, statement.graph)) {
+    return SERD_BAD_DATA;
   }
 
-  const SerdNode* const s =
-    serd_nodes_intern(model->nodes, serd_statement_subject(statement));
+  const SerdNode* const s = serd_nodes_intern(model->nodes, statement.subject);
 
   const SerdNode* const p =
-    serd_nodes_intern(model->nodes, serd_statement_predicate(statement));
+    serd_nodes_intern(model->nodes, statement.predicate);
 
-  const SerdNode* const o =
-    serd_nodes_intern(model->nodes, serd_statement_object(statement));
+  const SerdNode* const o = serd_nodes_intern(model->nodes, statement.object);
 
   const SerdNode* const g = serd_nodes_intern(
-    model->nodes,
-    serd_statement_graph(statement) ? serd_statement_graph(statement)
-                                    : data->default_graph);
-
-  const SerdCaret* const caret =
-    (data->model->flags & SERD_STORE_CARETS) ? statement->caret : NULL;
+    model->nodes, statement.graph ? statement.graph : data->default_graph);
 
   const SerdStatus st =
-    serd_model_add_with_caret(data->model, s, p, o, g, caret);
+    (data->model->flags & SERD_STORE_CARETS)
+      ? serd_model_add_with_caret(data->model, s, p, o, g, statement.caret)
+      : serd_model_add_with_caret(data->model, s, p, o, g, no_caret);
 
   return st > SERD_FAILURE ? st : SERD_SUCCESS;
 }

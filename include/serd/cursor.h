@@ -5,7 +5,7 @@
 #define SERD_CURSOR_H
 
 #include "serd/attributes.h"
-#include "serd/statement.h"
+#include "serd/statement_view.h"
 #include "serd/status.h"
 #include "zix/attributes.h"
 
@@ -32,8 +32,8 @@ SERD_API SerdCursor* ZIX_ALLOCATED
 serd_cursor_copy(ZixAllocator* ZIX_NULLABLE     allocator,
                  const SerdCursor* ZIX_NULLABLE cursor);
 
-/// Return the statement pointed to by `cursor`
-SERD_API const SerdStatement* ZIX_NULLABLE
+/// Return a view of the statement pointed to by `cursor`
+SERD_API SerdStatementView
 serd_cursor_get(const SerdCursor* ZIX_NULLABLE cursor);
 
 /**

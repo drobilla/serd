@@ -12,9 +12,11 @@
 #include "warnings.h"
 
 #include "serd/caret.h"
+#include "serd/caret_view.h"
 #include "serd/log.h"
 #include "serd/node.h"
 #include "serd/statement.h"
+#include "serd/statement_view.h"
 #include "serd/status.h"
 #include "zix/allocator.h"
 #include "zix/btree.h"
@@ -251,7 +253,8 @@ serd_model_equals(const SerdModel* const a, const SerdModel* const b)
   SerdCursor ib = make_begin_cursor(b, b->default_order);
 
   while (!serd_cursor_is_end(&ia) && !serd_cursor_is_end(&ib)) {
-    if (!serd_statement_equals(serd_cursor_get(&ia), serd_cursor_get(&ib)) ||
+    if (!serd_statement_equals(serd_cursor_get_internal(&ia),
+                               serd_cursor_get_internal(&ib)) ||
         serd_cursor_advance(&ia) > SERD_FAILURE ||
         serd_cursor_advance(&ib) > SERD_FAILURE) {
       return false;
@@ -579,18 +582,18 @@ serd_model_get(const SerdModel* const model,
 {
   assert(model);
 
-  const SerdStatement* const statement =
+  const SerdStatementView statement =
     serd_model_get_statement(model, s, p, o, g);
 
-  return !statement ? NULL
-         : !s       ? serd_statement_subject(statement)
-         : !p       ? serd_statement_predicate(statement)
-         : !o       ? serd_statement_object(statement)
-         : !g       ? serd_statement_graph(statement)
-                    : NULL;
+  return !statement.subject ? NULL
+         : !s               ? statement.subject
+         : !p               ? statement.predicate
+         : !o               ? statement.object
+         : !g               ? statement.graph
+                            : NULL;
 }
 
-const SerdStatement*
+SerdStatementView
 serd_model_get_statement(const SerdModel* const model,
                          const SerdNode* const  s,
                          const SerdNode* const  p,
@@ -599,9 +602,12 @@ serd_model_get_statement(const SerdModel* const model,
 {
   assert(model);
 
+  static const SerdStatementView no_statement = {
+    NULL, NULL, NULL, NULL, {NULL, 0, 0}};
+
   if ((bool)s + (bool)p + (bool)o != 2 &&
       (bool)s + (bool)p + (bool)o + (bool)g != 3) {
-    return NULL;
+    return no_statement;
   }
 
   const SerdCursor i = serd_model_search(model, s, p, o, g);
@@ -643,9 +649,9 @@ serd_model_ask(const SerdModel* const model,
 }
 
 static SerdCaret*
-serd_model_intern_caret(SerdModel* const model, const SerdCaret* const caret)
+serd_model_intern_caret(SerdModel* const model, const SerdCaretView caret)
 {
-  if (!caret) {
+  if (!caret.document) {
     return NULL;
   }
 
@@ -653,21 +659,21 @@ serd_model_intern_caret(SerdModel* const model, const SerdCaret* const caret)
     (SerdCaret*)zix_calloc(model->allocator, 1, sizeof(SerdCaret));
 
   if (copy) {
-    copy->document = serd_nodes_intern(model->nodes, caret->document);
-    copy->line     = caret->line;
-    copy->col      = caret->col;
+    copy->document = serd_nodes_intern(model->nodes, caret.document);
+    copy->line     = caret.line;
+    copy->col      = caret.column;
   }
 
   return copy;
 }
 
 SerdStatus
-serd_model_add_with_caret(SerdModel* const       model,
-                          const SerdNode* const  s,
-                          const SerdNode* const  p,
-                          const SerdNode* const  o,
-                          const SerdNode* const  g,
-                          const SerdCaret* const caret)
+serd_model_add_with_caret(SerdModel* const      model,
+                          const SerdNode* const s,
+                          const SerdNode* const p,
+                          const SerdNode* const o,
+                          const SerdNode* const g,
+                          const SerdCaretView   caret)
 {
   assert(model);
 
@@ -707,40 +713,46 @@ serd_model_add(SerdModel* const      model,
                const SerdNode* const o,
                const SerdNode* const g)
 {
+  static const SerdCaretView no_caret = {NULL, 0, 0};
   return serd_model_add_with_caret(model,
                                    serd_nodes_intern(model->nodes, s),
                                    serd_nodes_intern(model->nodes, p),
                                    serd_nodes_intern(model->nodes, o),
                                    serd_nodes_intern(model->nodes, g),
-                                   NULL);
+                                   no_caret);
 }
 
 SerdStatus
-serd_model_insert(SerdModel* const model, const SerdStatement* const statement)
+serd_model_insert(SerdModel* const model, const SerdStatementView statement)
 {
   SerdNodes* const nodes = model->nodes;
 
+  const SerdCaretView caret = {
+    serd_nodes_intern(nodes, statement.caret.document),
+    statement.caret.line,
+    statement.caret.column};
+
   return serd_model_add_with_caret(
     model,
-    serd_nodes_intern(nodes, serd_statement_subject(statement)),
-    serd_nodes_intern(nodes, serd_statement_predicate(statement)),
-    serd_nodes_intern(nodes, serd_statement_object(statement)),
-    serd_nodes_intern(nodes, serd_statement_graph(statement)),
-    serd_statement_caret(statement));
+    serd_nodes_intern(nodes, statement.subject),
+    serd_nodes_intern(nodes, statement.predicate),
+    serd_nodes_intern(nodes, statement.object),
+    serd_nodes_intern(nodes, statement.graph),
+    caret);
 }
 
 SerdStatus
 serd_model_insert_statements(SerdModel* const model, SerdCursor* const range)
 {
-  const SerdStatement* statement = serd_cursor_get(range);
+  const SerdStatement* statement = serd_cursor_get_internal(range);
   SerdStatus           st        = SERD_SUCCESS;
 
   while (!st && statement) {
-    if (!(st = serd_model_insert(model, statement))) {
+    if (!(st = serd_model_insert(model, serd_statement_view(statement)))) {
       st = serd_cursor_advance(range);
     }
 
-    statement = serd_cursor_get(range);
+    statement = serd_cursor_get_internal(range);
   }
 
   return st;
@@ -752,7 +764,7 @@ serd_model_erase(SerdModel* const model, SerdCursor* const cursor)
   assert(model);
   assert(cursor);
 
-  const SerdStatement* statement = serd_cursor_get(cursor);
+  const SerdStatement* statement = serd_cursor_get_internal(cursor);
   SerdStatement*       removed   = NULL;
   ZixStatus            zst       = ZIX_STATUS_SUCCESS;
 

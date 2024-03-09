@@ -3,7 +3,6 @@
 
 #include "read_ntriples.h"
 
-#include "caret_impl.h"
 #include "node_impl.h"
 #include "node_internal.h"
 #include "ntriples.h"

@@ -6,7 +6,7 @@
 
 #include "serd/attributes.h"
 #include "serd/node.h"
-#include "serd/statement.h"
+#include "serd/statement_view.h"
 #include "serd/status.h"
 #include "zix/attributes.h"
 
