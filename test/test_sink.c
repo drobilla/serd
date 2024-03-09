@@ -28,18 +28,20 @@ typedef struct {
 } State;
 
 static SerdStatus
-on_base(void* handle, const SerdNode* uri)
+on_base(void* const handle, const SerdNode* const uri)
 {
-  State* state = (State*)handle;
+  State* const state = (State*)handle;
 
   state->last_base = uri;
   return state->return_status;
 }
 
 static SerdStatus
-on_prefix(void* handle, const SerdNode* name, const SerdNode* uri)
+on_prefix(void* const           handle,
+          const SerdNode* const name,
+          const SerdNode* const uri)
 {
-  State* state = (State*)handle;
+  State* const state = (State*)handle;
 
   state->last_name      = name;
   state->last_namespace = uri;
@@ -47,13 +49,13 @@ on_prefix(void* handle, const SerdNode* name, const SerdNode* uri)
 }
 
 static SerdStatus
-on_statement(void*                   handle,
-             SerdStatementFlags      flags,
-             const SerdStatementView statement)
+on_statement(void*                    handle,
+             const SerdStatementFlags flags,
+             const SerdStatementView  statement)
 {
   (void)flags;
 
-  State* state = (State*)handle;
+  State* const state = (State*)handle;
 
   state->last_statement = statement;
 
@@ -61,9 +63,9 @@ on_statement(void*                   handle,
 }
 
 static SerdStatus
-on_end(void* handle, const SerdNode* node)
+on_end(void* const handle, const SerdNode* const node)
 {
-  State* state = (State*)handle;
+  State* const state = (State*)handle;
 
   state->last_end = node;
   return state->return_status;
@@ -85,7 +87,7 @@ test_callbacks(void)
 
   // Call functions on a sink with no functions set
 
-  SerdSink* null_sink = serd_sink_new(&state, NULL);
+  SerdSink* const null_sink = serd_sink_new(&state, NULL);
   assert(!serd_sink_write_base(null_sink, base));
   assert(!serd_sink_write_prefix(null_sink, name, uri));
   assert(
@@ -135,8 +137,8 @@ test_free(void)
   serd_sink_free(NULL);
 
   // Set up a sink with dynamically allocated data and a free function
-  uintptr_t* data = (uintptr_t*)calloc(1, sizeof(uintptr_t));
-  SerdSink*  sink = serd_sink_new(data, free);
+  uintptr_t* const data = (uintptr_t*)calloc(1, sizeof(uintptr_t));
+  SerdSink* const  sink = serd_sink_new(data, free);
 
   // Free the sink, which should free the data (rely on valgrind or sanitizers)
   serd_sink_free(sink);
