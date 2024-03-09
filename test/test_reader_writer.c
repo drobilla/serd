@@ -9,7 +9,7 @@
 #include "serd/node.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
-#include "serd/statement.h"
+#include "serd/statement_event_flags.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
 #include "serd/stream.h"
@@ -87,9 +87,9 @@ test_prefix_sink(void* handle, const SerdNode* name, const SerdNode* uri)
 }
 
 static SerdStatus
-test_statement_sink(void*                   handle,
-                    SerdStatementFlags      flags,
-                    const SerdStatementView statement)
+test_statement_sink(void* const                   handle,
+                    const SerdStatementEventFlags flags,
+                    const SerdStatementView       statement)
 {
   (void)flags;
   (void)statement;

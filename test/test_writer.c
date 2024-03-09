@@ -8,7 +8,7 @@
 #include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/sink.h"
-#include "serd/statement.h"
+#include "serd/statement_event_flags.h"
 #include "serd/status.h"
 #include "serd/string_view.h"
 #include "serd/syntax.h"

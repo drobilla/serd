@@ -6,7 +6,7 @@
 
 #include "serd/attributes.h"
 #include "serd/node.h"
-#include "serd/statement.h"
+#include "serd/statement_event_flags.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
 
@@ -40,9 +40,9 @@ typedef SerdStatus (*SerdPrefixFunc)(void* SERD_NULLABLE          handle,
 
    Called for every RDF statement in the serialisation.
 */
-typedef SerdStatus (*SerdStatementFunc)(void* SERD_NULLABLE handle,
-                                        SerdStatementFlags  flags,
-                                        SerdStatementView   statement);
+typedef SerdStatus (*SerdStatementFunc)(void* SERD_NULLABLE     handle,
+                                        SerdStatementEventFlags flags,
+                                        SerdStatementView       statement);
 
 /**
    Sink function for anonymous node end markers.
@@ -111,13 +111,13 @@ serd_sink_write_prefix(const SerdSink* SERD_NONNULL sink,
 /// Write a statement
 SERD_API SerdStatus
 serd_sink_write_statement(const SerdSink* SERD_NONNULL sink,
-                          SerdStatementFlags           flags,
+                          SerdStatementEventFlags      flags,
                           SerdStatementView            statement);
 
 /// Write a statement from individual nodes
 SERD_API SerdStatus
 serd_sink_write(const SerdSink* SERD_NONNULL  sink,
-                SerdStatementFlags            flags,
+                SerdStatementEventFlags       flags,
                 const SerdNode* SERD_NONNULL  subject,
                 const SerdNode* SERD_NONNULL  predicate,
                 const SerdNode* SERD_NONNULL  object,

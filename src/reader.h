@@ -14,7 +14,7 @@
 #include "serd/node.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
-#include "serd/statement.h"
+#include "serd/statement_event_flags.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
@@ -25,11 +25,11 @@
 #include <stdio.h>
 
 typedef struct {
-  SerdNode*           graph;
-  SerdNode*           subject;
-  SerdNode*           predicate;
-  SerdNode*           object;
-  SerdStatementFlags* flags;
+  SerdNode*                graph;
+  SerdNode*                subject;
+  SerdNode*                predicate;
+  SerdNode*                object;
+  SerdStatementEventFlags* flags;
 } ReadContext;
 
 struct SerdReaderImpl {

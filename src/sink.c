@@ -5,7 +5,7 @@
 
 #include "serd/node.h"
 #include "serd/sink.h"
-#include "serd/statement.h"
+#include "serd/statement_event_flags.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
 
@@ -78,21 +78,21 @@ serd_sink_write_prefix(const SerdSink* sink,
 }
 
 SerdStatus
-serd_sink_write_statement(const SerdSink*          sink,
-                          const SerdStatementFlags flags,
-                          const SerdStatementView  statement)
+serd_sink_write_statement(const SerdSink*               sink,
+                          const SerdStatementEventFlags flags,
+                          const SerdStatementView       statement)
 {
   return sink->statement ? sink->statement(sink->handle, flags, statement)
                          : SERD_SUCCESS;
 }
 
 SerdStatus
-serd_sink_write(const SerdSink*          sink,
-                const SerdStatementFlags flags,
-                const SerdNode*          subject,
-                const SerdNode*          predicate,
-                const SerdNode*          object,
-                const SerdNode*          graph)
+serd_sink_write(const SerdSink*               sink,
+                const SerdStatementEventFlags flags,
+                const SerdNode*               subject,
+                const SerdNode*               predicate,
+                const SerdNode*               object,
+                const SerdNode*               graph)
 {
   assert(sink);
   assert(subject);
@@ -102,8 +102,7 @@ serd_sink_write(const SerdSink*          sink,
   const SerdStatementView statement = {
     subject, predicate, object, graph, {NULL, 0, 0}};
 
-  return sink->statement ? sink->statement(sink->handle, flags, statement)
-                         : SERD_SUCCESS;
+  return serd_sink_write_statement(sink, flags, statement);
 }
 
 SerdStatus

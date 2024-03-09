@@ -68,8 +68,10 @@
    @{
 */
 
+#include "serd/caret_view.h"
 #include "serd/env.h"
 #include "serd/sink.h"
+#include "serd/statement_view.h"
 
 /**
    @}

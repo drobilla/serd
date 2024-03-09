@@ -7,6 +7,7 @@
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/statement.h"
+#include "serd/statement_event_flags.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
 #include "serd/string_view.h"
@@ -49,9 +50,9 @@ on_prefix(void* const           handle,
 }
 
 static SerdStatus
-on_statement(void*                    handle,
-             const SerdStatementFlags flags,
-             const SerdStatementView  statement)
+on_statement(void* const                   handle,
+             const SerdStatementEventFlags flags,
+             const SerdStatementView       statement)
 {
   (void)flags;
 

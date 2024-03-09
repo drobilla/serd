@@ -11,7 +11,6 @@
 SERD_BEGIN_DECLS
 
 /**
-   @defgroup serd_statement_view Statement View
    @ingroup serd_streaming
    @{
 */
