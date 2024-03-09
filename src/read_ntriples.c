@@ -672,8 +672,8 @@ read_triple(SerdReader* const reader)
   assert(ctx.object);
   serd_node_zero_pad(ctx.object);
 
-  const SerdStatement statement = {
-    {ctx.subject, ctx.predicate, ctx.object, ctx.graph}, orig_caret};
+  const SerdStatementView statement = {
+    ctx.subject, ctx.predicate, ctx.object, ctx.graph, orig_caret};
 
   return serd_sink_write_statement(reader->sink, *ctx.flags, statement);
 }

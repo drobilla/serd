@@ -4,10 +4,6 @@
 #include "read_nquads.h"
 
 #include "node_internal.h"
-#include "caret_impl.h"
-#include "node_internal.h"
-#include "caret_impl.h"
-#include "node_internal.h"
 #include "read_context.h"
 #include "read_ntriples.h"
 #include "reader_impl.h"
@@ -72,8 +68,8 @@ read_nquads_statement(SerdReader* const reader)
   }
 
   serd_node_zero_pad(ctx.object);
-  const SerdStatement statement = {
-    {ctx.subject, ctx.predicate, ctx.object, ctx.graph}, orig_caret};
+  const SerdStatementView statement = {
+    ctx.subject, ctx.predicate, ctx.object, ctx.graph, orig_caret};
 
   return serd_sink_write_statement(reader->sink, *ctx.flags, statement);
 }
