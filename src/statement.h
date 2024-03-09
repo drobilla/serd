@@ -1,8 +1,8 @@
-// Copyright 2011-2022 David Robillard <d@drobilla.net>
+// Copyright 2011-2024 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#ifndef SERD_STATEMENT_H
-#define SERD_STATEMENT_H
+#ifndef SERD_SRC_STATEMENT_H
+#define SERD_SRC_STATEMENT_H
 
 #include "serd/attributes.h"
 #include "serd/caret.h"
@@ -14,16 +14,13 @@
 
 #include <stdbool.h>
 
-SERD_BEGIN_DECLS
-
-/**
-   @defgroup serd_statement Statements
-   @ingroup serd_data
-   @{
-*/
-
 /// A subject, predicate, and object, with optional graph context
 typedef struct SerdStatementImpl SerdStatement;
+
+struct SerdStatementImpl {
+  const SerdNode* ZIX_NULLABLE nodes[4];
+  SerdCaret* ZIX_NULLABLE      caret;
+};
 
 /**
    Create a new statement.
@@ -41,7 +38,7 @@ typedef struct SerdStatementImpl SerdStatement;
    @param caret Optional caret at the origin of this statement
    @return A new statement that must be freed with serd_statement_free()
 */
-SERD_API SerdStatement* ZIX_ALLOCATED
+SerdStatement* ZIX_ALLOCATED
 serd_statement_new(ZixAllocator* ZIX_NULLABLE    allocator,
                    const SerdNode* ZIX_NONNULL   s,
                    const SerdNode* ZIX_NONNULL   p,
@@ -50,17 +47,17 @@ serd_statement_new(ZixAllocator* ZIX_NULLABLE    allocator,
                    const SerdCaret* ZIX_NULLABLE caret);
 
 /// Return a copy of `statement`
-SERD_API SerdStatement* ZIX_ALLOCATED
+SerdStatement* ZIX_ALLOCATED
 serd_statement_copy(ZixAllocator* ZIX_NULLABLE        allocator,
                     const SerdStatement* ZIX_NULLABLE statement);
 
 /// Free `statement`
-SERD_API void
+void
 serd_statement_free(ZixAllocator* ZIX_NULLABLE  allocator,
                     SerdStatement* ZIX_NULLABLE statement);
 
 /// Return a view of `statement`
-SERD_API SerdStatementView
+SerdStatementView
 serd_statement_view(const SerdStatement* ZIX_NONNULL statement);
 
 /// Return the given node of the statement
@@ -111,10 +108,4 @@ serd_statement_matches(const SerdStatement* ZIX_NONNULL statement,
                        const SerdNode* ZIX_NULLABLE     object,
                        const SerdNode* ZIX_NULLABLE     graph);
 
-/**
-   @}
-*/
-
-SERD_END_DECLS
-
-#endif // SERD_STATEMENT_H
+#endif // SERD_SRC_STATEMENT_H

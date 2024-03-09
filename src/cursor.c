@@ -6,10 +6,9 @@
 #include "log.h"
 #include "match.h"
 #include "model.h"
-#include "statement_impl.h"
+#include "statement.h"
 
 #include "serd/log.h"
-#include "serd/statement.h"
 #include "serd/statement_view.h"
 #include "zix/allocator.h"
 #include "zix/attributes.h"

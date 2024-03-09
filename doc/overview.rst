@@ -21,7 +21,7 @@ The rest of the API can be broadly grouped into four categories:
 
 Data
    A :doc:`api/serd_node` is the basic building block of data,
-   3 or 4 nodes together make a :doc:`api/serd_statement`.
+   3 or 4 nodes together make a "statement".
    All data is expressed in statements.
 
 Streams

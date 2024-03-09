@@ -145,6 +145,7 @@ c_headers = files(
   'include/serd/reader.h',
   'include/serd/serd.h',
   'include/serd/sink.h',
+  'include/serd/statement_view.h',
   'include/serd/status.h',
   'include/serd/stream.h',
   'include/serd/stream_result.h',
