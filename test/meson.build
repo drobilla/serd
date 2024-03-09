@@ -157,7 +157,6 @@ unit_tests = [
   'reader',
   'reader_writer',
   'sink',
-  'statement',
   'string',
   'syntax',
   'tee',

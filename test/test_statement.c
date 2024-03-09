@@ -9,7 +9,6 @@
 #include "serd/field.h"
 #include "serd/node.h"
 #include "serd/nodes.h"
-#include "serd/statement.h"
 #include "zix/allocator.h"
 
 #include <assert.h>

@@ -5,7 +5,6 @@
 
 #include "failing_allocator.h"
 
-#include "serd/caret_view.h"
 #include "serd/event.h"
 #include "serd/field.h"
 #include "serd/node.h"
@@ -25,12 +24,15 @@
 #define NS_EG "http://example.org/"
 
 typedef struct {
-  ZixStringView     last_base_uri;
-  ZixStringView     last_prefix_name;
-  ZixStringView     last_prefix_uri;
-  ZixStringView     last_end_label;
-  SerdStatementView last_statement;
-  SerdStatus        return_status;
+  ZixStringView  last_base_uri;
+  ZixStringView  last_prefix_name;
+  ZixStringView  last_prefix_uri;
+  ZixStringView  last_end_label;
+  SerdTokenView  last_subject;
+  SerdTokenView  last_predicate;
+  SerdObjectView last_object;
+  SerdTokenView  last_graph;
+  SerdStatus     return_status;
 } State;
 
 static bool
@@ -75,7 +77,10 @@ on_statement(void* const                   handle,
 
   State* const state = (State*)handle;
 
-  state->last_statement = statement;
+  state->last_subject   = statement.subject;
+  state->last_predicate = statement.predicate;
+  state->last_object    = statement.object;
+  state->last_graph     = statement.graph;
 
   return state->return_status;
 }
@@ -128,27 +133,29 @@ test_failed_alloc(void)
 static void
 test_callbacks(void)
 {
-  static const SerdCaretView  no_caret  = {NULL, 0U, 0U};
-  static const SerdTokenView  no_token  = {(SerdNodeType)0, {"", 0U}};
-  static const SerdObjectView no_object = {
-    (SerdNodeType)0, 0U, {"", 0U}, no_token};
+  static const ZixStringView empty     = ZIX_STATIC_STRING("");
+  static const ZixStringView base_str  = ZIX_STATIC_STRING(NS_EG);
+  static const ZixStringView name_str  = ZIX_STATIC_STRING("eg");
+  static const ZixStringView uri_str   = ZIX_STATIC_STRING(NS_EG "uri");
+  static const ZixStringView blank_str = ZIX_STATIC_STRING("b1");
 
   static const SerdTokenView  no_token  = {(SerdNodeType)0, empty};
   static const SerdObjectView no_object = {
     (SerdNodeType)0, 0U, empty, no_token};
 
-  State state = {NULL,
-                 NULL,
-                 NULL,
-                 NULL,
-                 {no_token, no_token, no_object, no_token, no_caret},
-                 SERD_SUCCESS};
+  static const SerdTokenView  base_tok  = {SERD_URI, base_str};
+  static const SerdTokenView  uri_tok   = {SERD_URI, uri_str};
+  static const SerdObjectView blank_obj = {SERD_BLANK, 0U, blank_str, no_token};
 
-  const SerdStatementView statement_view = {serd_node_token_view(base),
-                                            serd_node_token_view(uri),
-                                            serd_node_object_view(blank),
-                                            no_token,
-                                            {NULL, 0, 0}};
+  State state = {empty,
+                 empty,
+                 empty,
+                 empty,
+                 no_token,
+                 no_token,
+                 no_object,
+                 no_token,
+                 SERD_SUCCESS};
 
   const SerdStatementView statement_view = {
     {SERD_URI, base_str},
@@ -167,11 +174,11 @@ test_callbacks(void)
 
   SerdSink* const null_sink = serd_sink_new(NULL, &state, NULL, NULL);
 
-  assert(!serd_sink_write_base(null_sink, base));
-  assert(!serd_sink_write_prefix(null_sink, name, uri));
-  assert(!serd_sink_write_statement(null_sink, 0, statement_view));
-  assert(!serd_sink_write(null_sink, 0, base, uri, blank, NULL));
-  assert(!serd_sink_write_end(null_sink, blank));
+  assert(!serd_sink_write_base(null_sink, base_str));
+  assert(!serd_sink_write_prefix(null_sink, name_str, uri_str));
+  assert(!serd_sink_write_views(
+    null_sink, 0, base_tok, uri_tok, blank_obj, no_token));
+  assert(!serd_sink_write_end(null_sink, blank_str));
 
   SerdEvent event = {SERD_BASE};
 
@@ -197,11 +204,12 @@ test_callbacks(void)
   assert(zix_string_view_equals(state.last_prefix_name, name_str));
   assert(zix_string_view_equals(state.last_prefix_uri, uri_str));
 
-  assert(!serd_sink_write_statement(sink, 0, statement_view));
-  assert(serd_node_equals_token_view(base, state.last_statement.subject));
-  assert(serd_node_equals_token_view(uri, state.last_statement.predicate));
-  assert(serd_node_equals_object_view(blank, state.last_statement.object));
-  assert(!serd_field_supports(SERD_GRAPH, state.last_statement.graph.type));
+  assert(
+    !serd_sink_write_views(sink, 0, base_tok, uri_tok, blank_obj, no_token));
+  assert(token_equals(base_tok, state.last_subject));
+  assert(token_equals(uri_tok, state.last_predicate));
+  assert(object_equals(blank_obj, state.last_object));
+  assert(!serd_field_supports(SERD_GRAPH, state.last_graph.type));
 
   assert(!serd_sink_write_end(sink, blank_str));
   assert(zix_string_view_equals(state.last_end_label, blank_str));
