@@ -4,10 +4,11 @@
 #ifndef SERD_SRC_CURSOR_H
 #define SERD_SRC_CURSOR_H
 
+#include "statement.h"
+
 #include "serd/cursor.h"
 #include "serd/model.h"
 #include "serd/node.h"
-#include "serd/statement.h"
 #include "serd/status.h"
 #include "zix/btree.h"
 

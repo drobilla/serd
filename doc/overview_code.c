@@ -9,7 +9,6 @@
 */
 
 #include "serd/serd.h"
-#include "serd/statement.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -42,6 +41,8 @@ string_views(void)
   ZixStringView slice = zix_substring(string_pointer, 4);
   // end make-string-view
 }
+
+#if 0
 
 static void
 statements(void)
@@ -136,6 +137,8 @@ statements_lifetime(void)
   serd_statement_free(NULL, copy);
   // end statement-free
 }
+
+#endif
 
 static void
 world(void)
@@ -439,10 +442,10 @@ int
 main(void)
 {
   string_views();
-  statements();
-  statements_accessing_fields();
-  statements_comparison();
-  statements_lifetime();
+  /* statements(); */
+  /* statements_accessing_fields(); */
+  /* statements_comparison(); */
+  /* statements_lifetime(); */
   world();
   model();
   reading_writing();

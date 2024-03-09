@@ -7,7 +7,6 @@ Using Serd
    overview
    string_views
    nodes
-   statements
    world
    model
    reading_and_writing

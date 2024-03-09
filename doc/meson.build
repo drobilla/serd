@@ -40,7 +40,6 @@ c_rst_files = files(
   'nodes.rst',
   'overview.rst',
   'reading_and_writing.rst',
-  'statements.rst',
   'stream_processing.rst',
   'string_views.rst',
   'using_serd.rst',

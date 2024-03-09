@@ -3,12 +3,11 @@
 
 #include "compare.h"
 
-#include "statement_impl.h" // IWYU pragma: keep
+#include "statement.h"
 #include "warnings.h"
 
 #include "serd/field.h"
 #include "serd/node.h"
-#include "serd/statement.h"
 #include "zix/attributes.h"
 
 #include <assert.h>
