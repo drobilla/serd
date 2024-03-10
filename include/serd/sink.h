@@ -5,6 +5,7 @@
 #define SERD_SINK_H
 
 #include "serd/attributes.h"
+#include "serd/caret_view.h"
 #include "serd/event.h"
 #include "serd/node.h"
 #include "serd/statement_view.h"
@@ -101,6 +102,13 @@ SERD_API SerdStatus
 serd_sink_write_statement(const SerdSink* ZIX_NONNULL sink,
                           SerdStatementEventFlags     flags,
                           SerdStatementView           statement);
+
+/// Write a statement with a caret
+SERD_API SerdStatus
+serd_sink_write_statement_from(const SerdSink* ZIX_NONNULL sink,
+                               SerdStatementEventFlags     flags,
+                               SerdStatementView           statement,
+                               SerdCaretView               caret);
 
 /// Write a statement from individual nodes
 SERD_API SerdStatus
