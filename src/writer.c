@@ -387,8 +387,7 @@ write_uri_character(SerdWriter* const writer, const uint8_t* const utf8)
 static bool
 uri_must_escape(const uint8_t c)
 {
-  return (c == '"') || (c == '<') || (c == '>') || (c == '\\') || (c == '^') ||
-         (c == '`') || in_range(c, '{', '}') || !in_range(c, 0x21, 0x7E);
+  return c > 0x7EU || !is_IRIREF(c);
 }
 
 static size_t
