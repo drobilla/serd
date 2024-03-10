@@ -1,7 +1,7 @@
 // Copyright 2011-2020 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "sink.h"
+#include "sink_impl.h"
 
 #include "serd/caret_view.h"
 #include "serd/event.h"

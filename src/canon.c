@@ -3,11 +3,11 @@
 
 #include "memory.h"
 #include "namespaces.h"
-#include "node.h"
 #include "node_impl.h"
+#include "node_internal.h"
 #include "string_utils.h"
 #include "warnings.h"
-#include "world.h"
+#include "world_internal.h"
 
 #include "exess/exess.h"
 #include "serd/canon.h"

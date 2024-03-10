@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: ISC
 
 #include "node_impl.h"
-#include "sink.h"
+#include "sink_impl.h"
 #include "try.h"
 
 #include "serd/env.h"
