@@ -114,7 +114,7 @@ test_write_errors(void)
       const SerdSink* const sink = serd_writer_sink(writer);
       SerdReader* const reader   = serd_reader_new(world, SERD_TRIG, 0U, sink);
 
-      SerdStatus st = serd_reader_start_string(reader, doc_string);
+      SerdStatus st = serd_reader_start_string(reader, doc_string, NULL);
       assert(!st);
       st = serd_reader_read_document(reader);
       assert(st == SERD_BAD_WRITE);

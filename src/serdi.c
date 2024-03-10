@@ -268,12 +268,15 @@ main(int argc, char** argv)
   serd_writer_chop_blank_prefix(writer, chop_prefix);
   serd_reader_add_blank_prefix(reader, add_prefix);
 
-  SerdStatus st = SERD_SUCCESS;
+  SerdStatus st         = SERD_SUCCESS;
+  SerdNode*  input_name = NULL;
   if (from_string) {
-    st = serd_reader_start_string(reader, input);
+    input_name = serd_new_string(zix_string("string"));
+    st         = serd_reader_start_string(reader, input, input_name);
   } else if (from_stdin) {
-    st = serd_reader_start_stream(
-      reader, serd_file_read_byte, (SerdErrorFunc)ferror, stdin, "(stdin)", 1);
+    input_name = serd_new_string(zix_string("stdin"));
+    st         = serd_reader_start_stream(
+      reader, serd_file_read_byte, (SerdErrorFunc)ferror, stdin, input_name, 1);
   } else {
     st = serd_reader_start_file(reader, input, bulk_read);
   }
@@ -286,6 +289,7 @@ main(int argc, char** argv)
   serd_reader_free(reader);
   serd_writer_finish(writer);
   serd_writer_free(writer);
+  serd_node_free(input_name);
   serd_env_free(env);
   serd_node_free(base);
   serd_world_free(world);

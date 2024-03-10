@@ -125,6 +125,7 @@ include_dirs = include_directories('include')
 c_headers = files(
   'include/serd/attributes.h',
   'include/serd/buffer.h',
+  'include/serd/caret_view.h',
   'include/serd/env.h',
   'include/serd/error.h',
   'include/serd/event.h',
