@@ -1,16 +1,13 @@
-// Copyright 2011-2020 David Robillard <d@drobilla.net>
+// Copyright 2011-2024 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#ifndef SERD_SRC_SINK_H
-#define SERD_SRC_SINK_H
+#ifndef SERD_SRC_SINK_IMPL_H
+#define SERD_SRC_SINK_IMPL_H
 
 #include "serd/event.h"
 #include "serd/sink.h"
 #include "zix/allocator.h"
 
-/**
-   An interface that receives a stream of RDF data.
-*/
 struct SerdSinkImpl {
   ZixAllocator* allocator;
   void*         handle;
@@ -18,4 +15,4 @@ struct SerdSinkImpl {
   SerdEventFunc on_event;
 };
 
-#endif // SERD_SRC_SINK_H
+#endif // SERD_SRC_SINK_IMPL_H

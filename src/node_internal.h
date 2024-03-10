@@ -1,8 +1,10 @@
 // Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#ifndef SERD_SRC_NODE_H
-#define SERD_SRC_NODE_H
+#ifndef SERD_SRC_NODE_INTERNAL_H
+#define SERD_SRC_NODE_INTERNAL_H
+
+#include "node_impl.h"
 
 #include "serd/node.h"
 #include "serd/status.h"
@@ -12,12 +14,6 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
-
-struct SerdNodeImpl {
-  size_t        length; ///< Length in bytes (not including null)
-  SerdNodeFlags flags;  ///< Node flags
-  SerdNodeType  type;   ///< Node type
-};
 
 static const size_t serd_node_align = 2 * sizeof(uint64_t);
 
@@ -92,4 +88,4 @@ serd_node_zero_pad(SerdNode* ZIX_NONNULL node);
 ZIX_PURE_FUNC size_t
 serd_node_total_size(const SerdNode* ZIX_NONNULL node);
 
-#endif // SERD_SRC_NODE_H
+#endif // SERD_SRC_NODE_INTERNAL_H
