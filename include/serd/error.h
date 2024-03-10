@@ -5,6 +5,7 @@
 #define SERD_ERROR_H
 
 #include "serd/attributes.h"
+#include "serd/caret_view.h"
 #include "serd/status.h"
 #include "zix/attributes.h"
 
@@ -20,12 +21,10 @@ SERD_BEGIN_DECLS
 
 /// An error description
 typedef struct {
-  SerdStatus               status;   ///< Error code
-  const char* ZIX_NULLABLE filename; ///< File with error
-  unsigned                 line;     ///< Line in file with error or 0
-  unsigned                 col;      ///< Column in file with error
-  const char* ZIX_NONNULL  fmt;      ///< Printf-style format string
-  va_list* ZIX_NONNULL     args;     ///< Arguments for fmt
+  SerdStatus                        status; ///< Error code
+  const SerdCaretView* ZIX_NULLABLE caret;  ///< File origin of error
+  const char* ZIX_NONNULL           fmt;    ///< Printf-style format string
+  va_list* ZIX_NONNULL              args;   ///< Arguments for fmt
 } SerdError;
 
 /**
