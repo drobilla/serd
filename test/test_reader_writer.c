@@ -6,6 +6,7 @@
 #include "serd/buffer.h"
 #include "serd/env.h"
 #include "serd/event.h"
+#include "serd/input_stream.h"
 #include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/reader.h"
@@ -21,7 +22,6 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -114,11 +114,15 @@ test_write_errors(void)
       const SerdSink* const sink = serd_writer_sink(writer);
       SerdReader* const reader   = serd_reader_new(world, SERD_TRIG, 0U, sink);
 
-      SerdStatus st = serd_reader_start_string(reader, doc_string, NULL);
+      const char*     position = doc_string;
+      SerdInputStream in       = serd_open_input_string(&position);
+
+      SerdStatus st = serd_reader_start(reader, &in, NULL, 1);
       assert(!st);
       st = serd_reader_read_document(reader);
       assert(st == SERD_BAD_WRITE);
 
+      assert(!serd_close_input(&in));
       serd_reader_free(reader);
       serd_writer_free(writer);
       serd_env_free(env);
@@ -266,8 +270,8 @@ test_reader(const char* path)
   SerdReader* reader = serd_reader_new(world, SERD_TURTLE, 0U, sink);
   assert(reader);
 
-  assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
-  assert(serd_reader_read_document(reader) == SERD_FAILURE);
+  assert(serd_reader_read_chunk(reader) == SERD_BAD_CALL);
+  assert(serd_reader_read_document(reader) == SERD_BAD_CALL);
 
   serd_reader_add_blank_prefix(reader, "tmp");
 
@@ -280,14 +284,12 @@ test_reader(const char* path)
 #  pragma GCC diagnostic pop
 #endif
 
-  assert(serd_reader_start_file(reader, "http://notafile", false));
-  assert(serd_reader_start_file(reader, "file://invalid", false));
-  assert(serd_reader_start_file(reader, "file:///nonexistant", false));
-
-  assert(!serd_reader_start_file(reader, path, true));
+  SerdInputStream in = serd_open_input_file(path);
+  assert(!serd_reader_start(reader, &in, NULL, 4096));
   assert(!serd_reader_read_document(reader));
   assert(rt.n_statement == 6);
   assert(!serd_reader_finish(reader));
+  serd_close_input(&in);
 
   serd_reader_free(reader);
   serd_sink_free(sink);

@@ -29,8 +29,15 @@ test_size(SerdWorld* const  world,
     serd_reader_new(world, syntax, 0U, serd_env_sink(env));
   assert(reader);
 
-  serd_reader_start_string(reader, str, NULL);
+  SerdNode*       string_name = serd_new_string(zix_string("string"));
+  const char*     position    = str;
+  SerdInputStream in          = serd_open_input_string(&position);
+  serd_reader_start(reader, &in, string_name, 1);
+
   const SerdStatus st = serd_reader_read_document(reader);
+
+  serd_close_input(&in);
+  serd_node_free(string_name);
   serd_reader_free(reader);
   serd_env_free(env);
 

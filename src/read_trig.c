@@ -184,7 +184,7 @@ read_trig_statement(SerdReader* const reader)
 SerdStatus
 read_trigDoc(SerdReader* const reader)
 {
-  while (!reader->source.eof) {
+  while (!reader->source->eof) {
     const size_t     orig_stack_size = reader->stack.size;
     const SerdStatus st              = read_trig_statement(reader);
 

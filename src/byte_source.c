@@ -4,6 +4,7 @@
 #include "byte_source.h"
 
 #include "system.h"
+#include "warnings.h"
 
 #include "serd/node.h"
 #include "zix/string_view.h"
@@ -11,120 +12,98 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 SerdStatus
 serd_byte_source_page(SerdByteSource* const source)
 {
   uint8_t* const buf =
-    (source->page_size > 1 ? source->file_buf : &source->read_byte);
+    (source->block_size > 1 ? source->block : &source->read_byte);
+
+  SERD_DISABLE_NULL_WARNINGS
 
   const size_t n_read =
-    source->read_func(buf, 1, source->page_size, source->stream);
+    source->in->read(buf, 1, source->block_size, source->in->stream);
 
   source->buf_size  = n_read;
   source->read_head = 0;
   source->eof       = false;
 
-  if (n_read < source->page_size) {
+  if (n_read < source->block_size) {
     buf[n_read] = '\0';
     if (n_read == 0) {
       source->eof = true;
-      return (source->error_func(source->stream) ? SERD_BAD_STREAM
-                                                 : SERD_FAILURE);
+      return (source->in->error(source->in->stream) ? SERD_BAD_STREAM
+                                                    : SERD_FAILURE);
     }
   }
 
+  SERD_RESTORE_WARNINGS
   return SERD_SUCCESS;
 }
 
-SerdStatus
-serd_byte_source_open_source(SerdByteSource* const source,
-                             const SerdReadFunc    read_func,
-                             const SerdErrorFunc   error_func,
-                             const SerdCloseFunc   close_func,
-                             void* const           stream,
-                             const SerdNode* const name,
-                             const size_t          page_size)
+static void
+serd_byte_source_init_buffer(SerdByteSource* const source)
 {
-  assert(read_func);
-  assert(error_func);
-  assert(page_size > 0);
-
-  memset(source, '\0', sizeof(*source));
-  source->read_func      = read_func;
-  source->error_func     = error_func;
-  source->close_func     = close_func;
-  source->stream         = stream;
-  source->page_size      = page_size;
-  source->buf_size       = page_size;
-  source->name           = serd_node_copy(name);
-  source->caret.document = source->name;
-  source->caret.line     = 1U;
-  source->caret.column   = 1U;
-  source->from_stream    = true;
-
-  if (page_size > 1) {
-    source->file_buf = (uint8_t*)serd_allocate_buffer(page_size);
-    source->read_buf = source->file_buf;
-    memset(source->file_buf, '\0', page_size);
+  if (source->block_size > 1) {
+    source->block    = (uint8_t*)serd_allocate_buffer(source->block_size);
+    source->read_buf = source->block;
+    memset(source->block, '\0', source->block_size);
   } else {
     source->read_buf = &source->read_byte;
   }
+}
 
-  return SERD_SUCCESS;
+SerdByteSource*
+serd_byte_source_new_input(SerdInputStream* const input,
+                           const SerdNode* const  name,
+                           const size_t           block_size)
+{
+  assert(input);
+
+  if (!block_size || !input->stream) {
+    return NULL;
+  }
+
+  SerdByteSource* source = (SerdByteSource*)calloc(1, sizeof(SerdByteSource));
+
+  source->name =
+    name ? serd_node_copy(name) : serd_new_string(zix_string("input"));
+
+  source->in             = input;
+  source->block_size     = block_size;
+  source->buf_size       = block_size;
+  source->caret.document = source->name;
+  source->caret.line     = 1U;
+  source->caret.column   = 1U;
+
+  serd_byte_source_init_buffer(source);
+
+  return source;
+}
+
+void
+serd_byte_source_free(SerdByteSource* const source)
+{
+  if (source) {
+    if (source->block_size > 1) {
+      serd_free_aligned(source->block);
+    }
+
+    serd_node_free(source->name);
+    free(source);
+  }
 }
 
 SerdStatus
 serd_byte_source_prepare(SerdByteSource* const source)
 {
-  if (source->page_size == 0) {
-    return SERD_FAILURE;
-  }
-
   source->prepared = true;
 
-  if (source->from_stream) {
-    return (source->page_size > 1 ? serd_byte_source_page(source)
-                                  : serd_byte_source_advance(source));
+  if (source->block_size > 1) {
+    return serd_byte_source_page(source);
   }
 
-  return SERD_SUCCESS;
-}
-
-SerdStatus
-serd_byte_source_open_string(SerdByteSource* const source,
-                             const char* const     utf8,
-                             const SerdNode* const name)
-{
-  static const ZixStringView default_name = ZIX_STATIC_STRING("string");
-
-  memset(source, '\0', sizeof(*source));
-
-  source->name = name ? serd_node_copy(name) : serd_new_string(default_name);
-
-  source->page_size      = 1U;
-  source->read_buf       = (const uint8_t*)utf8;
-  source->caret.document = source->name;
-  source->caret.line     = 1U;
-  source->caret.column   = 1U;
-
-  return SERD_SUCCESS;
-}
-
-SerdStatus
-serd_byte_source_close(SerdByteSource* const source)
-{
-  SerdStatus st = SERD_SUCCESS;
-  if (source->close_func) {
-    st = source->close_func(source->stream) ? SERD_BAD_STREAM : SERD_SUCCESS;
-  }
-
-  if (source->page_size > 1) {
-    serd_free_aligned(source->file_buf);
-  }
-
-  serd_node_free(source->name);
-  memset(source, '\0', sizeof(*source));
-  return st;
+  return serd_byte_source_advance(source);
 }

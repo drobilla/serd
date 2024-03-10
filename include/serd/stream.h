@@ -24,7 +24,7 @@ SERD_BEGIN_DECLS
 */
 
 /**
-   Function to detect I/O stream errors.
+   Function for detecting I/O stream errors.
 
    Identical semantics to `ferror`.
 
@@ -33,7 +33,19 @@ SERD_BEGIN_DECLS
 typedef int (*SerdErrorFunc)(void* ZIX_NONNULL stream);
 
 /**
-   Source function for raw string input.
+   Function for closing an I/O stream.
+
+   Identical semantics to `fclose`.  Note that when writing, this may flush the
+   stream which can cause errors, including errors caused by previous writes
+   that appeared successful at the time.  Therefore it is necessary to check
+   the return value of this function to properly detect write errors.
+
+   @return Non-zero if `stream` has encountered an error.
+*/
+typedef int (*SerdCloseFunc)(void* ZIX_NONNULL stream);
+
+/**
+   Function for reading input bytes from a stream.
 
    Identical semantics to `fread`, but may set errno for more informative error
    reporting than supported by SerdErrorFunc.

@@ -130,6 +130,7 @@ c_headers = files(
   'include/serd/error.h',
   'include/serd/event.h',
   'include/serd/field.h',
+  'include/serd/input_stream.h',
   'include/serd/memory.h',
   'include/serd/node.h',
   'include/serd/reader.h',
@@ -149,6 +150,7 @@ c_headers = files(
 sources = files(
   'src/byte_source.c',
   'src/env.c',
+  'src/input_stream.c',
   'src/node.c',
   'src/read_nquads.c',
   'src/read_ntriples.c',

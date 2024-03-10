@@ -40,11 +40,10 @@ struct SerdReaderImpl {
   SerdNode*       rdf_first;
   SerdNode*       rdf_rest;
   SerdNode*       rdf_nil;
-  SerdByteSource  source;
+  SerdByteSource* source;
   SerdStack       stack;
   SerdSyntax      syntax;
   unsigned        next_id;
-  uint8_t*        buf;
   char*           bprefix;
   size_t          bprefix_len;
   bool            strict; ///< True iff strict parsing
@@ -95,7 +94,7 @@ emit_statement(SerdReader* reader, ReadContext ctx, SerdNode* o);
 static inline int
 peek_byte(SerdReader* reader)
 {
-  SerdByteSource* source = &reader->source;
+  SerdByteSource* source = reader->source;
 
   return source->eof ? EOF : (int)source->read_buf[source->read_head];
 }
@@ -107,7 +106,7 @@ skip_byte(SerdReader* reader, const int byte)
 
   assert(peek_byte(reader) == byte);
 
-  const SerdStatus st = serd_byte_source_advance(&reader->source);
+  const SerdStatus st = serd_byte_source_advance(reader->source);
   return st > SERD_FAILURE ? st : SERD_SUCCESS;
 }
 
@@ -117,7 +116,7 @@ eat_byte(SerdReader* const reader)
   const int c = peek_byte(reader);
 
   if (c != EOF) {
-    serd_byte_source_advance(&reader->source);
+    serd_byte_source_advance(reader->source);
   }
 
   return c;
@@ -130,7 +129,7 @@ eat_byte_safe(SerdReader* reader, const int byte)
 
   assert(peek_byte(reader) == byte);
 
-  serd_byte_source_advance(&reader->source);
+  serd_byte_source_advance(reader->source);
   return byte;
 }
 
