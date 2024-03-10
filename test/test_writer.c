@@ -10,6 +10,7 @@
 #include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
+#include "serd/world.h"
 #include "serd/writer.h"
 
 #include <assert.h>
@@ -22,10 +23,11 @@
 static void
 test_write_long_literal(void)
 {
+  SerdWorld*  world  = serd_world_new();
   SerdEnv*    env    = serd_env_new(NULL);
   SerdBuffer  buffer = {NULL, 0};
-  SerdWriter* writer =
-    serd_writer_new(SERD_TURTLE, 0U, env, NULL, serd_buffer_sink, &buffer);
+  SerdWriter* writer = serd_writer_new(
+    world, SERD_TURTLE, 0U, env, NULL, serd_buffer_sink, &buffer);
 
   assert(writer);
 
@@ -46,15 +48,18 @@ test_write_long_literal(void)
 
   assert(!strcmp((char*)out, expected));
   serd_free(out);
+
+  serd_world_free(world);
 }
 
 static void
 test_write_nested_anon(void)
 {
+  SerdWorld*  world  = serd_world_new();
   SerdEnv*    env    = serd_env_new(NULL);
   SerdBuffer  buffer = {NULL, 0};
-  SerdWriter* writer =
-    serd_writer_new(SERD_TURTLE, 0U, env, NULL, serd_buffer_sink, &buffer);
+  SerdWriter* writer = serd_writer_new(
+    world, SERD_TURTLE, 0U, env, NULL, serd_buffer_sink, &buffer);
 
   assert(writer);
 
@@ -107,6 +112,7 @@ test_write_nested_anon(void)
   fprintf(stderr, "%s\n", out);
   assert(!strcmp((char*)out, expected));
   serd_free(out);
+  serd_world_free(world);
 }
 
 static size_t
@@ -121,10 +127,11 @@ null_sink(const void* const buf, const size_t len, void* const stream)
 static void
 test_writer_cleanup(void)
 {
-  SerdStatus  st  = SERD_SUCCESS;
-  SerdEnv*    env = serd_env_new(NULL);
-  SerdWriter* writer =
-    serd_writer_new(SERD_TURTLE, 0U, env, NULL, null_sink, NULL);
+  SerdStatus        st    = SERD_SUCCESS;
+  SerdWorld* const  world = serd_world_new();
+  SerdEnv* const    env   = serd_env_new(NULL);
+  SerdWriter* const writer =
+    serd_writer_new(world, SERD_TURTLE, 0U, env, NULL, null_sink, NULL);
 
   SerdNode s = serd_node_from_string(SERD_URI, NS_EG "s");
   SerdNode p = serd_node_from_string(SERD_URI, NS_EG "p");
@@ -161,15 +168,17 @@ test_writer_cleanup(void)
   // Free (which could leak if the writer doesn't clean up the stack properly)
   serd_writer_free(writer);
   serd_env_free(env);
+  serd_world_free(world);
 }
 
 static void
 test_write_bad_anon_stack(void)
 {
-  SerdStatus  st  = SERD_SUCCESS;
-  SerdEnv*    env = serd_env_new(NULL);
-  SerdWriter* writer =
-    serd_writer_new(SERD_TURTLE, 0U, env, NULL, null_sink, NULL);
+  SerdStatus        st    = SERD_SUCCESS;
+  SerdWorld* const  world = serd_world_new();
+  SerdEnv* const    env   = serd_env_new(NULL);
+  SerdWriter* const writer =
+    serd_writer_new(world, SERD_TURTLE, 0U, env, NULL, null_sink, NULL);
 
   SerdNode s  = serd_node_from_string(SERD_URI, NS_EG "s");
   SerdNode p  = serd_node_from_string(SERD_URI, NS_EG "p");
@@ -190,6 +199,7 @@ test_write_bad_anon_stack(void)
   assert(!(st = serd_writer_finish(writer)));
   serd_writer_free(writer);
   serd_env_free(env);
+  serd_world_free(world);
 }
 
 static void
@@ -199,9 +209,11 @@ test_strict_write(void)
   FILE* const       fd   = fopen(path, "wb");
   assert(fd);
 
-  SerdEnv* const    env = serd_env_new(NULL);
+  SerdWorld* const  world = serd_world_new();
+  SerdEnv* const    env   = serd_env_new(NULL);
   SerdWriter* const writer =
-    serd_writer_new(SERD_TURTLE,
+    serd_writer_new(world,
+                    SERD_TURTLE,
                     (SerdWriterFlags)SERD_WRITE_UNRESOLVED,
                     env,
                     NULL,
@@ -226,6 +238,7 @@ test_strict_write(void)
 
   serd_writer_free(writer);
   serd_env_free(env);
+  serd_world_free(world);
   fclose(fd);
   remove(path);
 }
@@ -243,25 +256,29 @@ error_sink(const void* const buf, const size_t len, void* const stream)
 static void
 test_write_error(void)
 {
-  SerdEnv* const env    = serd_env_new(NULL);
-  SerdWriter*    writer = NULL;
-  SerdStatus     st     = SERD_SUCCESS;
+  SerdWorld* const world = serd_world_new();
+  SerdEnv* const   env   = serd_env_new(NULL);
+  SerdStatus       st    = SERD_SUCCESS;
 
   SerdNode u = serd_node_from_string(SERD_URI, NS_EG "u");
 
-  writer = serd_writer_new(SERD_TURTLE, 0U, env, NULL, error_sink, NULL);
+  SerdWriter* const writer =
+    serd_writer_new(world, SERD_TURTLE, 0U, env, NULL, error_sink, NULL);
   assert(writer);
+
   st = serd_writer_write_statement(writer, 0U, NULL, &u, &u, &u, NULL, NULL);
   assert(st == SERD_BAD_WRITE);
   serd_writer_free(writer);
 
   serd_env_free(env);
+  serd_world_free(world);
 }
 
 static void
 test_write_empty_syntax(void)
 {
-  SerdEnv* env = serd_env_new(NULL);
+  SerdWorld* const world = serd_world_new();
+  SerdEnv*         env   = serd_env_new(NULL);
 
   SerdNode s = serd_node_from_string(SERD_URI, NS_EG "s");
   SerdNode p = serd_node_from_string(SERD_URI, NS_EG "p");
@@ -269,21 +286,22 @@ test_write_empty_syntax(void)
 
   SerdBuffer buffer = {NULL, 0};
 
-  SerdWriter* writer = serd_writer_new(
-    SERD_SYNTAX_EMPTY, 0U, env, NULL, serd_buffer_sink, &buffer);
+  SerdWriter* const writer = serd_writer_new(
+    world, SERD_SYNTAX_EMPTY, 0U, env, NULL, serd_buffer_sink, &buffer);
 
   assert(writer);
 
   assert(
     !serd_writer_write_statement(writer, 0U, NULL, &s, &p, &o, NULL, NULL));
 
-  char* out = serd_buffer_sink_finish(&buffer);
+  char* const out = serd_buffer_sink_finish(&buffer);
 
   assert(strlen(out) == 0);
   serd_free(out);
 
   serd_writer_free(writer);
   serd_env_free(env);
+  serd_world_free(world);
 }
 
 int

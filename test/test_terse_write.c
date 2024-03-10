@@ -8,6 +8,7 @@
 #include "serd/node.h"
 #include "serd/statement.h"
 #include "serd/syntax.h"
+#include "serd/world.h"
 #include "serd/writer.h"
 
 #include <assert.h>
@@ -34,6 +35,7 @@ static int
 test(void)
 {
   SerdBuffer buffer = {NULL, 0};
+  SerdWorld* world  = serd_world_new();
   SerdEnv*   env    = serd_env_new(NULL);
 
   SerdNode b1 = serd_node_from_string(SERD_BLANK, "b1");
@@ -49,8 +51,8 @@ test(void)
 
   serd_env_set_prefix_from_strings(env, "rdf", NS_RDF);
 
-  SerdWriter* writer =
-    serd_writer_new(SERD_TURTLE, 0U, env, NULL, serd_buffer_sink, &buffer);
+  SerdWriter* writer = serd_writer_new(
+    world, SERD_TURTLE, 0U, env, NULL, serd_buffer_sink, &buffer);
 
   // Simple lone list
   serd_writer_write_statement(
@@ -103,6 +105,7 @@ test(void)
   serd_buffer_sink_finish(&buffer);
   serd_writer_free(writer);
   serd_env_free(env);
+  serd_world_free(world);
   free(buffer.buf);
 
   return 0;

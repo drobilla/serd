@@ -24,6 +24,7 @@ SpacesInContainerLiterals: false
 AttributeMacros:
   - SERD_API
   - SERD_FALLTHROUGH
+  - SERD_MALLOC_API
   - ZIX_ALLOCATED
   - ZIX_ALWAYS_INLINE_FUNC
   - ZIX_CONST_FUNC

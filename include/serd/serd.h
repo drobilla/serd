@@ -20,6 +20,7 @@
 
 #include "serd/attributes.h"
 #include "serd/version.h"
+#include "serd/world.h"
 
 /**
    @}

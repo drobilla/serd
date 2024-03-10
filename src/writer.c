@@ -18,6 +18,7 @@
 #include "serd/stream.h"
 #include "serd/syntax.h"
 #include "serd/uri.h"
+#include "serd/world.h"
 #include "serd/writer.h"
 #include "zix/attributes.h"
 #include "zix/string_view.h"
@@ -132,6 +133,7 @@ static const SepRule rules[] = {
 #undef SEP_EACH
 
 struct SerdWriterImpl {
+  SerdWorld*      world;
   SerdSyntax      syntax;
   SerdWriterFlags flags;
   SerdEnv*        env;
@@ -140,8 +142,6 @@ struct SerdWriterImpl {
   SerdURIView     base_uri;
   SerdStack       anon_stack;
   SerdByteSink    byte_sink;
-  SerdLogFunc     error_func;
-  void*           error_handle;
   WriteContext    context;
   char*           bprefix;
   size_t          bprefix_len;
@@ -190,8 +190,8 @@ w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
 
   va_list args; // NOLINT(cppcoreguidelines-init-variables)
   va_start(args, fmt);
-  const SerdError e = {st, "", 0, 0, fmt, &args};
-  serd_error(writer->error_func, writer->error_handle, &e);
+  const SerdError e = {st, NULL, 0, 0, fmt, &args};
+  serd_error(writer->world, &e);
   va_end(args);
   return st;
 }
@@ -1163,19 +1163,22 @@ serd_writer_finish(SerdWriter* writer)
 }
 
 SerdWriter*
-serd_writer_new(SerdSyntax         syntax,
+serd_writer_new(SerdWorld*         world,
+                SerdSyntax         syntax,
                 SerdWriterFlags    flags,
                 SerdEnv*           env,
                 const SerdURIView* base_uri,
                 SerdWriteFunc      ssink,
                 void*              stream)
 {
+  assert(world);
   assert(env);
   assert(ssink);
 
   const WriteContext context = WRITE_CONTEXT_NULL;
   SerdWriter*        writer  = (SerdWriter*)calloc(1, sizeof(SerdWriter));
 
+  writer->world      = world;
   writer->syntax     = syntax;
   writer->flags      = flags;
   writer->env        = env;
@@ -1188,16 +1191,6 @@ serd_writer_new(SerdSyntax         syntax,
     ssink, stream, (flags & SERD_WRITE_BULK) ? SERD_PAGE_SIZE : 1);
 
   return writer;
-}
-
-void
-serd_writer_set_error_sink(SerdWriter* writer,
-                           SerdLogFunc error_func,
-                           void*       error_handle)
-{
-  assert(writer);
-  writer->error_func   = error_func;
-  writer->error_handle = error_handle;
 }
 
 void
