@@ -1,4 +1,4 @@
-// Copyright 2011-2020 David Robillard <d@drobilla.net>
+// Copyright 2011-2025 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #include "byte_source.h"
@@ -8,6 +8,7 @@
 #include <serd/status.h>
 #include <serd/stream.h>
 #include <zix/allocator.h>
+#include <zix/string_view.h>
 
 #include <assert.h>
 #include <stdbool.h>
@@ -42,24 +43,28 @@ serd_byte_source_open_source(ZixAllocator* const   allocator,
                              const SerdErrorFunc   error_func,
                              const SerdCloseFunc   close_func,
                              void* const           stream,
-                             const char* const     name,
+                             const ZixStringView   name,
                              const size_t          page_size)
 {
-  const Cursor cur = {name, 1, 1};
-
   assert(read_func);
   assert(error_func);
   assert(page_size > 0);
 
   memset(source, '\0', sizeof(*source));
-  source->read_func   = read_func;
-  source->error_func  = error_func;
-  source->close_func  = close_func;
-  source->stream      = stream;
-  source->page_size   = page_size;
-  source->buf_size    = 0U;
-  source->cur         = cur;
-  source->from_stream = true;
+  source->read_func    = read_func;
+  source->error_func   = error_func;
+  source->close_func   = close_func;
+  source->stream       = stream;
+  source->page_size    = page_size;
+  source->buf_size     = 0U;
+  source->name         = zix_string_view_copy(allocator, name);
+  source->caret.line   = 1U;
+  source->caret.column = 1U;
+  source->from_stream  = true;
+
+  if (source->name) {
+    source->caret.document = zix_string(source->name);
+  }
 
   if (page_size > 1) {
     source->file_buf =
@@ -95,15 +100,24 @@ serd_byte_source_prepare(SerdByteSource* const source)
 }
 
 SerdStatus
-serd_byte_source_open_string(SerdByteSource* const source,
-                             const char* const     utf8)
+serd_byte_source_open_string(ZixAllocator* const   allocator,
+                             SerdByteSource* const source,
+                             const char* const     utf8,
+                             const ZixStringView   name)
 {
-  const Cursor cur = {"(string)", 1, 1};
+  static const ZixStringView default_name = ZIX_STATIC_STRING("string");
 
   memset(source, '\0', sizeof(*source));
-  source->page_size = 1;
-  source->cur       = cur;
-  source->read_buf  = (const uint8_t*)utf8;
+
+  source->name =
+    zix_string_view_copy(allocator, name.length ? name : default_name);
+
+  source->page_size      = 1U;
+  source->read_buf       = (const uint8_t*)utf8;
+  source->caret.document = zix_string(source->name);
+  source->caret.line     = 1U;
+  source->caret.column   = 1U;
+
   return SERD_SUCCESS;
 }
 
@@ -120,6 +134,7 @@ serd_byte_source_close(ZixAllocator* const   allocator,
     zix_aligned_free(allocator, source->file_buf);
   }
 
+  zix_free(allocator, source->name);
   memset(source, '\0', sizeof(*source));
   return st;
 }

@@ -149,7 +149,7 @@ w_err(SerdWriter* const writer, const SerdStatus st, const char* const fmt, ...)
   /* TODO: This results in errors with no file information, which is not
      helpful when re-serializing a file (particularly for "undefined
      namespace prefix" errors.  The statement sink API needs to be changed to
-     add a Cursor parameter so the source can notify the writer of the
+     add a caret parameter so the source can notify the writer of the
      statement origin for better error reporting. */
 
   va_list args; // NOLINT(cppcoreguidelines-init-variables)

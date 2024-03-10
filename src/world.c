@@ -6,6 +6,7 @@
 
 #include "serd_config.h"
 
+#include <serd/caret_view.h>
 #include <serd/error.h>
 #include <serd/status.h>
 #include <serd/world.h>
@@ -47,10 +48,13 @@ serd_world_error(const SerdWorld* const world, const SerdError* const e)
   if (world->error_func) {
     world->error_func(world->error_handle, e);
   } else {
-    if (e->filename) {
-      fprintf(stderr, "error: %s:%u:%u: ", e->filename, e->line, e->col);
-    } else {
-      fprintf(stderr, "error: ");
+    fprintf(stderr, "error: ");
+    if (e->caret.document.length) {
+      fprintf(stderr,
+              "%s:%zu:%zu: ",
+              e->caret.document.data,
+              e->caret.line,
+              e->caret.column);
     }
     vfprintf(stderr, e->fmt, *e->args);
     fprintf(stderr, "\n");
@@ -67,7 +71,7 @@ serd_world_verrorf(const SerdWorld* const world,
   va_list args_copy;
   va_copy(args_copy, args);
 
-  const SerdError e = {st, NULL, 0, 0, fmt, &args_copy};
+  const SerdError e = {st, serd_no_caret(), fmt, &args_copy};
   serd_world_error(world, &e);
   va_end(args_copy);
   return st;
@@ -81,7 +85,7 @@ serd_world_errorf(const SerdWorld* const world,
 {
   va_list args; // NOLINT(cppcoreguidelines-init-variables)
   va_start(args, fmt);
-  const SerdError e = {st, NULL, 0, 0, fmt, &args};
+  const SerdError e = {st, serd_no_caret(), fmt, &args};
   serd_world_error(world, &e);
   va_end(args);
   return st;

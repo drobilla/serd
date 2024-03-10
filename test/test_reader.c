@@ -15,6 +15,7 @@
 #include <zix/allocator.h>
 #include <zix/filesystem.h>
 #include <zix/path.h>
+#include <zix/string_view.h>
 
 #ifdef _WIN32
 #  include <windows.h>
@@ -149,16 +150,24 @@ test_start_stream_failed_alloc(void)
   assert(reader);
 
   // Ensure starting succeeds with allocation available
-  serd_failing_allocator_reset(&allocator, 1);
-  SerdStatus st = serd_reader_start_stream(
-    reader, (SerdReadFunc)fread, (SerdErrorFunc)ferror, NULL, "test", 4096);
+  serd_failing_allocator_reset(&allocator, 2);
+  SerdStatus st = serd_reader_start_stream(reader,
+                                           (SerdReadFunc)fread,
+                                           (SerdErrorFunc)ferror,
+                                           NULL,
+                                           zix_string("test"),
+                                           4096);
   assert(!st);
   serd_reader_finish(reader);
 
   // Ensure starting failed without allocation available
   serd_failing_allocator_reset(&allocator, 0);
-  st = serd_reader_start_stream(
-    reader, (SerdReadFunc)fread, (SerdErrorFunc)ferror, NULL, "test", 4096);
+  st = serd_reader_start_stream(reader,
+                                (SerdReadFunc)fread,
+                                (SerdErrorFunc)ferror,
+                                NULL,
+                                zix_string("test"),
+                                4096);
   assert(st == SERD_BAD_ALLOC);
 
   serd_reader_free(reader);
@@ -175,8 +184,8 @@ test_null_callbacks(void)
   assert(reader);
   assert(!serd_reader_handle(reader));
 
-  assert(
-    !serd_reader_start_string(reader, "_:s <http://example.org/p> _:o .\n"));
+  assert(!serd_reader_start_string(
+    reader, "_:s <http://example.org/p> _:o .\n", zix_empty_string()));
 
   assert(!serd_reader_read_document(reader));
   assert(!serd_reader_finish(reader));
@@ -206,7 +215,8 @@ test_read_string(void)
   assert(
     !serd_reader_start_string(reader,
                               "<http://example.org/s> <http://example.org/p> "
-                              "<http://example.org/o> ."));
+                              "<http://example.org/o> .",
+                              zix_empty_string()));
 
   assert(!serd_reader_read_document(reader));
   assert(rt.n_base == 0);
@@ -290,8 +300,12 @@ test_read_eof_file(const char* const path)
                                              end_sink);
 
   fseek(f, 0L, SEEK_SET);
-  serd_reader_start_stream(
-    reader, (SerdReadFunc)fread, (SerdErrorFunc)ferror, f, "test", 4096);
+  serd_reader_start_stream(reader,
+                           (SerdReadFunc)fread,
+                           (SerdErrorFunc)ferror,
+                           f,
+                           zix_empty_string(),
+                           4096);
 
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
@@ -299,8 +313,12 @@ test_read_eof_file(const char* const path)
   serd_reader_finish(reader);
 
   fseek(f, 0L, SEEK_SET);
-  serd_reader_start_stream(
-    reader, (SerdReadFunc)fread, (SerdErrorFunc)ferror, f, "test", 1);
+  serd_reader_start_stream(reader,
+                           (SerdReadFunc)fread,
+                           (SerdErrorFunc)ferror,
+                           f,
+                           zix_empty_string(),
+                           1);
 
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
@@ -331,7 +349,7 @@ test_read_eof_by_byte(void)
 
   size_t n_reads = 0U;
   serd_reader_start_stream(
-    reader, eof_test_read, eof_test_error, &n_reads, "test", 1U);
+    reader, eof_test_read, eof_test_error, &n_reads, zix_empty_string(), 1U);
 
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
@@ -385,8 +403,12 @@ test_read_flat_chunks(const char* const path, const SerdSyntax syntax)
   assert(serd_reader_handle(reader) == &rt);
   assert(f);
 
-  SerdStatus st = serd_reader_start_stream(
-    reader, (SerdReadFunc)fread, (SerdErrorFunc)ferror, f, NULL, 1);
+  SerdStatus st = serd_reader_start_stream(reader,
+                                           (SerdReadFunc)fread,
+                                           (SerdErrorFunc)ferror,
+                                           f,
+                                           zix_empty_string(),
+                                           1);
   assert(st == SERD_SUCCESS);
 
   // Read first statement
@@ -471,8 +493,12 @@ test_read_abbrev_chunks(const char* const path, const SerdSyntax syntax)
   assert(serd_reader_handle(reader) == &rt);
   assert(f);
 
-  SerdStatus st = serd_reader_start_stream(
-    reader, (SerdReadFunc)fread, (SerdErrorFunc)ferror, f, NULL, 1);
+  SerdStatus st = serd_reader_start_stream(reader,
+                                           (SerdReadFunc)fread,
+                                           (SerdErrorFunc)ferror,
+                                           f,
+                                           zix_empty_string(),
+                                           1);
   assert(st == SERD_SUCCESS);
 
   // Read base
@@ -585,7 +611,7 @@ test_read_empty(void)
   called = false;
 
   SerdStatus st = serd_reader_start_stream(
-    reader, empty_test_read, empty_test_error, &called, NULL, 1);
+    reader, empty_test_read, empty_test_error, &called, zix_empty_string(), 1);
   assert(st == SERD_SUCCESS);
 
   assert(serd_reader_read_document(reader) == SERD_SUCCESS);

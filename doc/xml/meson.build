@@ -21,6 +21,7 @@ doxygen_xml = custom_target(
     'group__serd.xml',
     'group__serd__attributes.xml',
     'group__serd__buffer.xml',
+    'group__serd__caret__view.xml',
     'group__serd__data.xml',
     'group__serd__env.xml',
     'group__serd__error.xml',
@@ -49,6 +50,7 @@ doxygen_xml = custom_target(
 
     'attributes_8h.xml',
     'buffer_8h.xml',
+    'caret__view_8h.xml',
     'env_8h.xml',
     'error_8h.xml',
     'field_8h.xml',
@@ -70,6 +72,7 @@ doxygen_xml = custom_target(
     'writer_8h.xml',
 
     'structSerdBuffer.xml',
+    'structSerdCaretView.xml',
     'structSerdError.xml',
     'structSerdNode.xml',
     'structSerdString.xml',
