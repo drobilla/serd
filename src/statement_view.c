@@ -1,7 +1,7 @@
 // Copyright 2011-2024 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "node.h"
+#include "node_internal.h"
 
 #include "serd/node.h"
 #include "serd/object_view.h"
