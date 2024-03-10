@@ -4,7 +4,7 @@
 #ifndef SERD_SRC_READ_TURTLE_H
 #define SERD_SRC_READ_TURTLE_H
 
-#include "reader.h"
+#include "read_context.h"
 
 #include "serd/node.h"
 #include "serd/reader.h"

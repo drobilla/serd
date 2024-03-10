@@ -1,61 +1,26 @@
 // Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#ifndef SERD_SRC_READER_H
-#define SERD_SRC_READER_H
+#ifndef SERD_SRC_READER_INTERNAL_H
+#define SERD_SRC_READER_INTERNAL_H
 
 #include "byte_source.h"
 #include "node_impl.h"
-#include "stack.h"
+#include "read_context.h"
+#include "reader_impl.h"
 
 #include "try.h"
 
 #include "serd/caret_view.h"
-#include "serd/env.h"
-#include "serd/error.h"
-#include "serd/event.h"
 #include "serd/node.h"
 #include "serd/reader.h"
-#include "serd/sink.h"
 #include "serd/status.h"
-#include "serd/syntax.h"
-#include "serd/world.h"
 #include "zix/attributes.h"
 
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-
-typedef struct {
-  SerdNode*                graph;
-  SerdNode*                subject;
-  SerdNode*                predicate;
-  SerdNode*                object;
-  SerdStatementEventFlags* flags;
-} ReadContext;
-
-struct SerdReaderImpl {
-  SerdWorld*      world;
-  const SerdSink* sink;
-  SerdLogFunc     error_func;
-  void*           error_handle;
-  SerdNode*       rdf_first;
-  SerdNode*       rdf_rest;
-  SerdNode*       rdf_nil;
-  SerdNode*       rdf_type;
-  SerdByteSource* source;
-  const SerdEnv*  env;
-  SerdStack       stack;
-  SerdSyntax      syntax;
-  SerdReaderFlags flags;
-  unsigned        next_id;
-  char            bprefix[24];
-  size_t          bprefix_len;
-  bool            strict; ///< True iff strict parsing
-  bool            seen_primary_genid;
-  bool            seen_secondary_genid;
-};
 
 ZIX_NODISCARD SerdStatus
 skip_horizontal_whitespace(SerdReader* reader);
@@ -211,4 +176,4 @@ eat_push_byte(SerdReader* const reader, SerdNode* const node, const int c)
   return st;
 }
 
-#endif // SERD_SRC_READER_H
+#endif // SERD_SRC_READER_INTERNAL_H

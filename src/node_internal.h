@@ -1,8 +1,8 @@
 // Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#ifndef SERD_SRC_NODE_H
-#define SERD_SRC_NODE_H
+#ifndef SERD_SRC_NODE_INTERNAL_H
+#define SERD_SRC_NODE_INTERNAL_H
 
 #include "serd/node.h"
 #include "serd/status.h"
@@ -48,4 +48,4 @@ serd_node_set(ZixAllocator* ZIX_NULLABLE         allocator,
               SerdNode* ZIX_NONNULL* ZIX_NONNULL dst,
               SerdTokenView                      src);
 
-#endif // SERD_SRC_NODE_H
+#endif // SERD_SRC_NODE_INTERNAL_H

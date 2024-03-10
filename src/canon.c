@@ -3,7 +3,7 @@
 
 #include "namespaces.h"
 #include "string_utils.h"
-#include "world.h"
+#include "world_internal.h"
 
 #include "exess/exess.h"
 #include "serd/canon.h"

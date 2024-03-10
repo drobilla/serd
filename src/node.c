@@ -1,7 +1,7 @@
 // Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "node.h"
+#include "node_internal.h"
 
 #include "namespaces.h"
 #include "node_impl.h"
@@ -13,6 +13,7 @@
 #include "serd/object_view.h"
 #include "serd/status.h"
 #include "serd/stream_result.h"
+#include "serd/token_view.h"
 #include "serd/uri.h"
 #include "serd/value.h"
 #include "zix/allocator.h"
