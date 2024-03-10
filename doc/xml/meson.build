@@ -41,6 +41,7 @@ doxygen_xml = custom_target(
     'group__serd__uri.xml',
     'group__serd__utilities.xml',
     'group__serd__version.xml',
+    'group__serd__world.xml',
     'group__serd__writer.xml',
 
     'attributes_8h.xml',
@@ -59,6 +60,7 @@ doxygen_xml = custom_target(
     'syntax_8h.xml',
     'uri_8h.xml',
     'version_8h.xml',
+    'world_8h.xml',
     'writer_8h.xml',
 
     'structSerdBuffer.xml',

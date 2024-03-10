@@ -9,6 +9,7 @@
 #include <serd/status.h>
 #include <serd/stream.h>
 #include <serd/syntax.h>
+#include <serd/world.h>
 #include <zix/allocator.h>
 #include <zix/filesystem.h>
 #include <zix/path.h>
@@ -88,8 +89,9 @@ end_sink(void* const handle, const SerdNode* const node)
 static void
 test_null_callbacks(void)
 {
+  SerdWorld* const  world = serd_world_new();
   SerdReader* const reader =
-    serd_reader_new(SERD_TURTLE, 0U, NULL, NULL, NULL, NULL, NULL, NULL);
+    serd_reader_new(world, SERD_TURTLE, 0U, NULL, NULL, NULL, NULL, NULL, NULL);
 
   assert(reader);
   assert(!serd_reader_handle(reader));
@@ -100,13 +102,16 @@ test_null_callbacks(void)
   assert(!serd_reader_read_document(reader));
   assert(!serd_reader_finish(reader));
   serd_reader_free(reader);
+  serd_world_free(world);
 }
 
 static void
 test_read_string(void)
 {
+  SerdWorld* const  world  = serd_world_new();
   ReaderTest        rt     = {0, 0, 0, 0};
-  SerdReader* const reader = serd_reader_new(SERD_TURTLE,
+  SerdReader* const reader = serd_reader_new(world,
+                                             SERD_TURTLE,
                                              0U,
                                              &rt,
                                              NULL,
@@ -132,6 +137,7 @@ test_read_string(void)
   assert(!serd_reader_finish(reader));
 
   serd_reader_free(reader);
+  serd_world_free(world);
 }
 
 /// Reads a null byte after a statement, then succeeds again (like a socket)
@@ -192,8 +198,10 @@ test_read_eof_file(const char* const path)
   fflush(f);
   fseek(f, 0L, SEEK_SET);
 
+  SerdWorld* const  world  = serd_world_new();
   ReaderTest        rt     = {0, 0, 0, 0};
-  SerdReader* const reader = serd_reader_new(SERD_TURTLE,
+  SerdReader* const reader = serd_reader_new(world,
+                                             SERD_TURTLE,
                                              0U,
                                              &rt,
                                              NULL,
@@ -221,6 +229,7 @@ test_read_eof_file(const char* const path)
   serd_reader_finish(reader);
 
   serd_reader_free(reader);
+  serd_world_free(world);
   assert(!fclose(f));
   assert(!zix_remove(path));
 }
@@ -229,8 +238,10 @@ test_read_eof_file(const char* const path)
 static void
 test_read_eof_by_byte(void)
 {
+  SerdWorld* const  world  = serd_world_new();
   ReaderTest        rt     = {0, 0, 0, 0};
-  SerdReader* const reader = serd_reader_new(SERD_TURTLE,
+  SerdReader* const reader = serd_reader_new(world,
+                                             SERD_TURTLE,
                                              0U,
                                              &rt,
                                              NULL,
@@ -250,6 +261,7 @@ test_read_eof_by_byte(void)
 
   serd_reader_finish(reader);
   serd_reader_free(reader);
+  serd_world_free(world);
 }
 
 static void
@@ -278,8 +290,10 @@ test_read_nquads_chunks(const char* const path)
 
   fseek(f, 0, SEEK_SET);
 
+  SerdWorld* const  world  = serd_world_new();
   ReaderTest        rt     = {0, 0, 0, 0};
-  SerdReader* const reader = serd_reader_new(SERD_NQUADS,
+  SerdReader* const reader = serd_reader_new(world,
+                                             SERD_NQUADS,
                                              0U,
                                              &rt,
                                              NULL,
@@ -340,6 +354,7 @@ test_read_nquads_chunks(const char* const path)
   serd_reader_finish(reader);
   serd_reader_free(reader);
 
+  serd_world_free(world);
   assert(!fclose(f));
   assert(!zix_remove(path));
 }
@@ -361,8 +376,10 @@ test_read_turtle_chunks(const char* const path)
   fprintf(f, "eg:s eg:p [ eg:sp eg:so ] .");
   fseek(f, 0, SEEK_SET);
 
+  SerdWorld* const  world  = serd_world_new();
   ReaderTest        rt     = {0, 0, 0, 0};
-  SerdReader* const reader = serd_reader_new(SERD_TURTLE,
+  SerdReader* const reader = serd_reader_new(world,
+                                             SERD_TURTLE,
                                              0U,
                                              &rt,
                                              NULL,
@@ -438,6 +455,7 @@ test_read_turtle_chunks(const char* const path)
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   serd_reader_finish(reader);
   serd_reader_free(reader);
+  serd_world_free(world);
   assert(!fclose(f));
   assert(!zix_remove(path));
 }
@@ -467,8 +485,10 @@ empty_test_error(void* stream)
 static void
 test_read_empty(void)
 {
+  SerdWorld* const  world  = serd_world_new();
   ReaderTest        rt     = {0, 0, 0, 0};
-  SerdReader* const reader = serd_reader_new(SERD_SYNTAX_EMPTY,
+  SerdReader* const reader = serd_reader_new(world,
+                                             SERD_SYNTAX_EMPTY,
                                              0U,
                                              &rt,
                                              NULL,
@@ -498,6 +518,7 @@ test_read_empty(void)
   assert(!called);
 
   serd_reader_free(reader);
+  serd_world_free(world);
 }
 
 int
