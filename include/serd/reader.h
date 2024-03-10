@@ -5,6 +5,7 @@
 #define SERD_READER_H
 
 #include "serd/attributes.h"
+#include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/status.h"
 #include "serd/stream.h"
@@ -68,17 +69,18 @@ serd_reader_start_file(SerdReader* ZIX_NONNULL reader,
    with size 1 (i.e. `page_size` bytes).
 */
 SERD_API SerdStatus
-serd_reader_start_stream(SerdReader* ZIX_NONNULL   reader,
-                         SerdReadFunc ZIX_NONNULL  read_func,
-                         SerdErrorFunc ZIX_NONNULL error_func,
-                         void* ZIX_UNSPECIFIED     stream,
-                         const char* ZIX_NULLABLE  name,
-                         size_t                    page_size);
+serd_reader_start_stream(SerdReader* ZIX_NONNULL      reader,
+                         SerdReadFunc ZIX_NONNULL     read_func,
+                         SerdErrorFunc ZIX_NONNULL    error_func,
+                         void* ZIX_UNSPECIFIED        stream,
+                         const SerdNode* ZIX_NULLABLE name,
+                         size_t                       page_size);
 
 /// Prepare to read from a string
 SERD_API SerdStatus
-serd_reader_start_string(SerdReader* ZIX_NONNULL reader,
-                         const char* ZIX_NONNULL utf8);
+serd_reader_start_string(SerdReader* ZIX_NONNULL      reader,
+                         const char* ZIX_NONNULL      utf8,
+                         const SerdNode* ZIX_NULLABLE name);
 
 /**
    Read a single "chunk" of data during an incremental read.
