@@ -113,9 +113,8 @@ quiet_error_sink(void* const handle, const SerdError* const e)
 static void
 test_write_errors(void)
 {
-  ErrorContext          ctx = {0U, 0U};
-  const SerdWriterFlags style =
-    (SerdWriterFlags)(SERD_WRITE_STRICT | SERD_WRITE_CURIED);
+  ErrorContext          ctx   = {0U, 0U};
+  const SerdWriterFlags style = (SerdWriterFlags)SERD_WRITE_STRICT;
 
   const size_t max_offsets[] = {0, 462, 1911, 2003, 462};
 
@@ -253,8 +252,8 @@ test_writer(const char* const path)
 
   buffer.buf = NULL;
   buffer.len = 0;
-  writer =
-    serd_writer_new(SERD_TURTLE, 0U, env, NULL, serd_buffer_sink, &buffer);
+  writer     = serd_writer_new(
+    SERD_TURTLE, SERD_WRITE_UNRESOLVED, env, NULL, serd_buffer_sink, &buffer);
 
   assert(!serd_writer_write_statement(
     writer, 0, NULL, &s, &p, &nothing, NULL, NULL));

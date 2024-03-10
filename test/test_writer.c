@@ -219,7 +219,12 @@ test_strict_write(void)
 
   SerdEnv* const    env    = serd_env_new(NULL);
   SerdWriter* const writer = serd_writer_new(
-    SERD_TURTLE, (SerdWriterFlags)SERD_WRITE_STRICT, env, NULL, null_sink, fd);
+    SERD_TURTLE,
+    (SerdWriterFlags)(SERD_WRITE_STRICT | SERD_WRITE_UNRESOLVED),
+    env,
+    NULL,
+    null_sink,
+    fd);
 
   assert(writer);
 

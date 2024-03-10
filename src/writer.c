@@ -725,7 +725,7 @@ write_uri_node(SerdWriter* const writer,
       return esink("()", 2, writer);
     }
 
-    if (has_scheme && (writer->flags & SERD_WRITE_CURIED) &&
+    if (has_scheme && !(writer->flags & SERD_WRITE_UNQUALIFIED) &&
         serd_env_qualify(writer->env, node, &prefix, &suffix) &&
         is_name(prefix.buf, prefix.n_bytes) &&
         is_name(suffix.data, suffix.length)) {
@@ -746,7 +746,7 @@ write_uri_node(SerdWriter* const writer,
 
   TRY(st, esink("<", 1, writer));
 
-  if (writer->flags & SERD_WRITE_RESOLVED) {
+  if (!(writer->flags & SERD_WRITE_UNRESOLVED)) {
     SerdURIView in_base_uri;
     SerdURIView uri;
     SerdURIView abs_uri;
@@ -781,7 +781,7 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
 
   // In fast-and-loose Turtle/TriG mode CURIEs are simply passed through
   const bool fast =
-    !(writer->flags & (SERD_WRITE_CURIED | SERD_WRITE_RESOLVED));
+    (writer->flags & (SERD_WRITE_UNQUALIFIED | SERD_WRITE_UNRESOLVED));
 
   if (!supports_abbrev(writer) || !fast) {
     if ((st = serd_env_expand(writer->env, node, &prefix, &suffix))) {
