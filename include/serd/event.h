@@ -5,6 +5,7 @@
 #define SERD_EVENT_H
 
 #include "serd/attributes.h"
+#include "serd/caret_view.h"
 #include "serd/node.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
@@ -74,6 +75,7 @@ typedef struct {
   SerdEventType           type;      ///< #SERD_STATEMENT
   SerdStatementEventFlags flags;     ///< Flags for pretty-printing
   SerdStatementView       statement; ///< Statement
+  SerdCaretView           caret;     ///< Statement origin
 } SerdStatementEvent;
 
 /**
