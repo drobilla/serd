@@ -4,6 +4,7 @@
 #include "sink.h"
 #include "node.h"
 
+#include "serd/caret_view.h"
 #include "serd/event.h"
 #include "serd/node.h"
 #include "serd/object_view.h"
@@ -15,6 +16,7 @@
 #include "zix/string_view.h"
 
 #include <assert.h>
+#include <stddef.h>
 
 SerdSink*
 serd_sink_new(ZixAllocator* const allocator,
@@ -83,11 +85,24 @@ serd_sink_write_statement(const SerdSink*               sink,
                           const SerdStatementEventFlags flags,
                           const SerdStatementView       statement)
 {
+  static const SerdCaretView no_caret = {NULL, 0, 0};
+
+  return serd_sink_write_statement_from(sink, flags, statement, no_caret);
+}
+
+SerdStatus
+serd_sink_write_statement_from(const SerdSink*               sink,
+                               const SerdStatementEventFlags flags,
+                               const SerdStatementView       statement,
+                               const SerdCaretView           caret)
+{
   assert(sink);
 
-  const SerdStatementEvent statement_ev = {SERD_STATEMENT, flags, statement};
-  SerdEvent                ev           = {SERD_STATEMENT};
-  ev.statement                          = statement_ev;
+  const SerdStatementEvent statement_ev = {
+    SERD_STATEMENT, flags, statement, caret};
+
+  SerdEvent ev = {SERD_STATEMENT};
+  ev.statement = statement_ev;
 
   return sink->on_event ? sink->on_event(sink->handle, &ev) : SERD_SUCCESS;
 }

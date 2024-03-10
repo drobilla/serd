@@ -18,7 +18,9 @@
 #include "world.h"
 
 #include "exess/exess.h"
+#include "serd/caret_view.h"
 #include "serd/input_stream.h"
+#include "serd/statement_view.h"
 
 #include <assert.h>
 #include <stdarg.h>
@@ -193,8 +195,17 @@ emit_statement(SerdReader* const reader,
   // (Earlier nodes have been terminated by subsequent node pushed)
   TRY(st, push_node_termination(reader));
 
-  st = serd_sink_write(
-    reader->sink, *ctx.flags, ctx.subject, ctx.predicate, o, ctx.graph);
+  const SerdCaretView caret = reader->source->caret;
+
+  const SerdStatementView statement = {
+    serd_node_token_view(ctx.subject),
+    serd_node_token_view(ctx.predicate),
+    serd_node_object_view(o),
+    serd_node_graph_view(ctx.graph),
+  };
+
+  st =
+    serd_sink_write_statement_from(reader->sink, *ctx.flags, statement, caret);
 
   *ctx.flags = 0;
   return st;

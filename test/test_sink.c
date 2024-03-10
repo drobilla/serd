@@ -168,7 +168,7 @@ test_callbacks(void)
   const SerdBaseEvent      base_event      = {SERD_BASE, uri_str};
   const SerdPrefixEvent    prefix_event    = {SERD_PREFIX, name_str, uri_str};
   const SerdStatementEvent statement_event = {
-    SERD_STATEMENT, 0U, statement_view};
+    SERD_STATEMENT, 0U, statement_view, {base, 1, 1}};
   const SerdEndEvent end_event = {SERD_END, blank_str};
 
   // Call functions on a sink with no functions set
