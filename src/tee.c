@@ -3,7 +3,7 @@
 
 #include "serd/tee.h"
 
-#include "sink.h"
+#include "sink_impl.h"
 
 #include "serd/event.h"
 #include "serd/sink.h"

@@ -3,8 +3,10 @@
 
 #include "read_nquads.h"
 
+#include "read_context.h"
 #include "read_ntriples.h"
-#include "reader.h"
+#include "reader_impl.h"
+#include "reader_internal.h"
 #include "stack.h"
 #include "try.h"
 

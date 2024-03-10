@@ -1,17 +1,37 @@
 // Copyright 2011-2022 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "world.h"
-
-#include "node.h"
+#include "node_internal.h"
+#include "world_internal.h"
 
 #include "exess/exess.h"
+#include "serd/error.h"
 #include "serd/node.h"
+#include "serd/status.h"
+#include "serd/world.h"
 #include "zix/allocator.h"
 
 #include <assert.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
+
+struct SerdWorldImpl {
+  SerdLimits    limits;
+  ZixAllocator* allocator;
+  SerdLogFunc   error_func;
+  void*         error_handle;
+  uint32_t      next_document_id;
+  uint32_t      next_blank_id;
+
+  uint64_t blank_buf[6U];
+};
+
+uint32_t
+serd_world_next_document_id(SerdWorld* const world)
+{
+  return ++world->next_document_id;
+}
 
 SerdStatus
 serd_world_error(const SerdWorld* const world, const SerdError* const e)

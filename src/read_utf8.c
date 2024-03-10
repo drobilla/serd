@@ -3,7 +3,8 @@
 
 #include "read_utf8.h"
 
-#include "reader.h"
+#include "reader_impl.h"
+#include "reader_internal.h"
 #include "string_utils.h"
 
 #define MAX_UTF8_BYTES 4U

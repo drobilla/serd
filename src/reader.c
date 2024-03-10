@@ -1,28 +1,40 @@
 // Copyright 2011-2020 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "reader.h"
-
 #include "byte_source.h"
 #include "memory.h"
 #include "namespaces.h"
-#include "node.h"
 #include "node_impl.h"
+#include "node_internal.h"
+#include "read_context.h"
 #include "read_nquads.h"
 #include "read_ntriples.h"
 #include "read_trig.h"
 #include "read_turtle.h"
+#include "reader_impl.h"
+#include "reader_internal.h"
 #include "stack.h"
 #include "string_utils.h"
-#include "world.h"
+#include "world_internal.h"
 
 #include "exess/exess.h"
 #include "serd/caret_view.h"
+#include "serd/env.h"
+#include "serd/error.h"
 #include "serd/input_stream.h"
+#include "serd/node.h"
+#include "serd/reader.h"
+#include "serd/sink.h"
 #include "serd/statement_view.h"
+#include "serd/status.h"
+#include "serd/syntax.h"
+#include "serd/world.h"
+#include "zix/allocator.h"
 
 #include <assert.h>
 #include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 static SerdStatus
@@ -244,7 +256,7 @@ serd_reader_read_document(SerdReader* const reader)
   }
 
   if (!(reader->flags & SERD_READ_GLOBAL)) {
-    const uint32_t id = ++reader->world->next_document_id;
+    const uint32_t id = serd_world_next_document_id(reader->world);
 
     reader->bprefix[0]  = 'f';
     reader->bprefix_len = 1U;
@@ -275,12 +287,14 @@ serd_reader_new(SerdWorld* const      world,
   assert(env);
   assert(sink);
 
-  const size_t stack_size = world->limits.reader_stack_size;
+  ZixAllocator* const allocator  = serd_world_allocator(world);
+  const SerdLimits    limits     = serd_world_limits(world);
+  const size_t        stack_size = limits.reader_stack_size;
   if (stack_size < sizeof(void*) + (3U * (sizeof(SerdNode))) + 168) {
     return NULL;
   }
 
-  SerdReader* me = (SerdReader*)serd_wcalloc(world, 1, sizeof(SerdReader));
+  SerdReader* me = (SerdReader*)zix_calloc(allocator, 1U, sizeof(SerdReader));
   if (!me) {
     return NULL;
   }
@@ -288,7 +302,7 @@ serd_reader_new(SerdWorld* const      world,
   me->world   = world;
   me->sink    = sink;
   me->env     = env;
-  me->stack   = serd_stack_new(world->allocator, stack_size);
+  me->stack   = serd_stack_new(allocator, stack_size);
   me->syntax  = syntax;
   me->flags   = flags;
   me->next_id = 1;
@@ -333,7 +347,7 @@ serd_reader_free(SerdReader* const reader)
     serd_reader_finish(reader);
   }
 
-  serd_stack_free(reader->world->allocator, &reader->stack);
+  serd_stack_free(serd_world_allocator(reader->world), &reader->stack);
   serd_wfree(reader->world, reader);
 }
 
@@ -354,8 +368,10 @@ serd_reader_start(SerdReader* const      reader,
     return SERD_BAD_CALL;
   }
 
-  reader->source = serd_byte_source_new_input(
-    reader->world->allocator, input, input_name, block_size);
+  ZixAllocator* const allocator = serd_world_allocator(reader->world);
+
+  reader->source =
+    serd_byte_source_new_input(allocator, input, input_name, block_size);
 
   return reader->source ? SERD_SUCCESS : SERD_BAD_ALLOC;
 }
@@ -396,7 +412,7 @@ serd_reader_finish(SerdReader* const reader)
 {
   assert(reader);
 
-  serd_byte_source_free(reader->world->allocator, reader->source);
+  serd_byte_source_free(serd_world_allocator(reader->world), reader->source);
   reader->source = NULL;
   return SERD_SUCCESS;
 }

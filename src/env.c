@@ -1,7 +1,7 @@
 // Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "sink.h"
+#include "sink_impl.h"
 
 #include "serd/env.h"
 #include "serd/event.h"
