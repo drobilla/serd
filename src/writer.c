@@ -394,21 +394,7 @@ write_uri_character(SerdWriter* const writer, const uint8_t* const utf8)
 static bool
 uri_must_escape(const uint8_t c)
 {
-  switch (c) {
-  case ' ':
-  case '"':
-  case '<':
-  case '>':
-  case '\\':
-  case '^':
-  case '`':
-  case '{':
-  case '|':
-  case '}':
-    return true;
-  default:
-    return !in_range(c, 0x20, 0x7E);
-  }
+  return c > 0x7EU || !is_IRIREF(c);
 }
 
 static size_t
