@@ -3,8 +3,10 @@
 
 #include "read_turtle.h"
 #include "byte_source.h"
+#include "read_context.h"
 #include "read_ntriples.h"
-#include "reader.h"
+#include "reader_impl.h"
+#include "reader_internal.h"
 #include "stack.h"
 #include "string_utils.h"
 #include "symbols.h"

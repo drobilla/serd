@@ -1,17 +1,19 @@
 // Copyright 2011-2020 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "reader.h"
-
 #include "byte_source.h"
+#include "read_context.h"
 #include "read_nquads.h"
 #include "read_ntriples.h"
 #include "read_trig.h"
 #include "read_turtle.h"
+#include "reader_impl.h"
+#include "reader_internal.h"
 #include "stack.h"
 #include "string_utils.h"
 #include "symbols.h"
 #include "system.h"
+#include "token_header.h"
 #include "world_impl.h"
 #include "world_internal.h"
 
@@ -35,6 +37,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
