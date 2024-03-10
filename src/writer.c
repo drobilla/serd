@@ -663,21 +663,20 @@ write_literal(SerdWriter*        writer,
 
   if (supports_abbrev(writer) && datatype && datatype->buf) {
     const char* type_uri = (const char*)datatype->buf;
-    if (!strncmp(type_uri, NS_XSD, sizeof(NS_XSD) - 1) &&
-        (!strcmp(type_uri + sizeof(NS_XSD) - 1, "boolean") ||
-         !strcmp(type_uri + sizeof(NS_XSD) - 1, "integer"))) {
-      return esink(node->buf, node->n_bytes, writer);
-    }
+    if (!strncmp(type_uri, NS_XSD, sizeof(NS_XSD) - 1)) {
+      const char* const xsd_name = type_uri + sizeof(NS_XSD) - 1;
+      if (!strcmp(xsd_name, "boolean") || !strcmp(xsd_name, "integer")) {
+        return esink(node->buf, node->n_bytes, writer);
+      }
 
-    if (!strncmp(type_uri, NS_XSD, sizeof(NS_XSD) - 1) &&
-        !strcmp(type_uri + sizeof(NS_XSD) - 1, "decimal") &&
-        strchr((const char*)node->buf, '.') &&
-        node->buf[node->n_bytes - 1] != '.') {
-      /* xsd:decimal literals without trailing digits, e.g. "5.", can
-         not be written bare in Turtle.  We could add a 0 which is
-         prettier, but changes the text and breaks round tripping.
-      */
-      return esink(node->buf, node->n_bytes, writer);
+      if (!strcmp(xsd_name, "decimal") && strchr((const char*)node->buf, '.') &&
+          node->buf[node->n_bytes - 1] != '.') {
+        /* xsd:decimal literals without trailing digits, e.g. "5.", can't be
+           written bare in Turtle.  We could add a 0 which is prettier, but
+           changes the text and breaks round tripping.
+        */
+        return esink(node->buf, node->n_bytes, writer);
+      }
     }
   }
 
@@ -685,18 +684,18 @@ write_literal(SerdWriter*        writer,
       (node->flags & (SERD_HAS_NEWLINE | SERD_HAS_QUOTE))) {
     TRY(st, esink("\"\"\"", 3, writer));
     TRY(st, write_text(writer, WRITE_LONG_STRING, node->buf, node->n_bytes));
-    TRY(st, esink("\"\"\"", 3, writer));
+    st = esink("\"\"\"", 3, writer);
   } else {
     TRY(st, esink("\"", 1, writer));
     TRY(st, write_text(writer, WRITE_STRING, node->buf, node->n_bytes));
-    TRY(st, esink("\"", 1, writer));
+    st = esink("\"", 1, writer);
   }
   if (lang && lang->buf) {
     TRY(st, esink("@", 1, writer));
-    TRY(st, esink(lang->buf, lang->n_bytes, writer));
+    st = esink(lang->buf, lang->n_bytes, writer);
   } else if (datatype && datatype->buf) {
     TRY(st, esink("^^", 2, writer));
-    return write_node(writer, datatype, NULL, NULL, FIELD_NONE, flags);
+    st = write_node(writer, datatype, NULL, NULL, FIELD_NONE, flags);
   }
 
   return st;
