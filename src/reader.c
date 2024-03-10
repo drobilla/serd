@@ -16,6 +16,7 @@
 #include <serd/stream.h>
 #include <serd/syntax.h>
 #include <serd/uri.h>
+#include <serd/world.h>
 #include <zix/string_view.h>
 
 #include <assert.h>
@@ -35,7 +36,7 @@ r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
   va_start(args, fmt);
   const Cursor* const cur = &reader->source.cur;
   const SerdError     e = {st, cur->filename, cur->line, cur->col, fmt, &args};
-  serd_error(reader->error_func, reader->error_handle, &e);
+  serd_error(reader->world, &e);
   va_end(args);
   return st;
 }
@@ -193,7 +194,8 @@ serd_reader_read_document(SerdReader* const reader)
 }
 
 SerdReader*
-serd_reader_new(const SerdSyntax      syntax,
+serd_reader_new(SerdWorld* const      world,
+                const SerdSyntax      syntax,
                 const SerdReaderFlags flags,
                 void* const           handle,
                 void (*const free_handle)(void*),
@@ -206,7 +208,10 @@ serd_reader_new(const SerdSyntax      syntax,
   static const ZixStringView rdf_rest  = ZIX_STATIC_STRING(NS_RDF "rest");
   static const ZixStringView rdf_nil   = ZIX_STATIC_STRING(NS_RDF "nil");
 
+  assert(world);
+
   SerdReader* me     = (SerdReader*)calloc(1, sizeof(SerdReader));
+  me->world          = world;
   me->handle         = handle;
   me->free_handle    = free_handle;
   me->base_func      = base_func;
@@ -223,16 +228,6 @@ serd_reader_new(const SerdSyntax      syntax,
   me->rdf_nil   = push_node(me, SERD_URI, rdf_nil);
 
   return me;
-}
-
-void
-serd_reader_set_error_sink(SerdReader* const reader,
-                           const SerdLogFunc error_func,
-                           void* const       error_handle)
-{
-  assert(reader);
-  reader->error_func   = error_func;
-  reader->error_handle = error_handle;
 }
 
 void

@@ -49,6 +49,9 @@
 /// A const function in the public API that only reads parameter values
 #define SERD_CONST_API SERD_API ZIX_CONST_FUNC
 
+/// A malloc function in the public API that returns allocated memory
+#define SERD_MALLOC_API SERD_API ZIX_MALLOC_FUNC
+
 /**
    @}
 */

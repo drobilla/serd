@@ -5,11 +5,11 @@
 #define SERD_READER_H
 
 #include <serd/attributes.h>
-#include <serd/error.h>
 #include <serd/sink.h>
 #include <serd/status.h>
 #include <serd/stream.h>
 #include <serd/syntax.h>
+#include <serd/world.h>
 #include <zix/attributes.h>
 
 #include <stdbool.h>
@@ -50,9 +50,10 @@ typedef unsigned SerdReaderFlags;
 
 /// Create a new RDF reader
 SERD_API SerdReader* ZIX_ALLOCATED
-serd_reader_new(SerdSyntax            syntax,
-                SerdReaderFlags       flags,
-                void* ZIX_UNSPECIFIED handle,
+serd_reader_new(SerdWorld* ZIX_NONNULL world,
+                SerdSyntax             syntax,
+                SerdReaderFlags        flags,
+                void* ZIX_UNSPECIFIED  handle,
                 void (*ZIX_NULLABLE free_handle)(void* ZIX_NULLABLE),
                 SerdBaseFunc ZIX_NULLABLE      base_func,
                 SerdPrefixFunc ZIX_NULLABLE    prefix_func,

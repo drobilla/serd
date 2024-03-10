@@ -11,6 +11,7 @@
 #include <serd/statement_flags.h>
 #include <serd/status.h>
 #include <serd/syntax.h>
+#include <serd/world.h>
 #include <serd/writer.h>
 #include <zix/allocator.h>
 #include <zix/filesystem.h>
@@ -99,7 +100,7 @@ faulty_sink(const void* const buf, const size_t len, void* const stream)
 }
 
 static SerdStatus
-quiet_error_sink(void* const handle, const SerdError* const e)
+quiet_error_func(void* const handle, const SerdError* const e)
 {
   (void)handle;
   (void)e;
@@ -107,7 +108,8 @@ quiet_error_sink(void* const handle, const SerdError* const e)
 }
 
 static void
-check_write_error_offset(const SerdSyntax syntax,
+check_write_error_offset(SerdWorld* const world,
+                         const SerdSyntax syntax,
                          const size_t     offset,
                          const SerdStatus expected_status)
 {
@@ -116,11 +118,12 @@ check_write_error_offset(const SerdSyntax syntax,
 
   ErrorContext      ctx = {0U, offset};
   SerdWriter* const writer =
-    serd_writer_new(syntax, 0U, env, NULL, faulty_sink, &ctx);
+    serd_writer_new(world, syntax, 0U, env, NULL, faulty_sink, &ctx);
   assert(writer);
 
   SerdReader* const reader =
-    serd_reader_new(SERD_TRIG,
+    serd_reader_new(world,
+                    SERD_TRIG,
                     0U,
                     writer,
                     NULL,
@@ -129,9 +132,6 @@ check_write_error_offset(const SerdSyntax syntax,
                     (SerdStatementFunc)serd_writer_write_statement,
                     (SerdEndFunc)serd_writer_end_anon);
   assert(reader);
-
-  serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
-  serd_reader_set_error_sink(reader, quiet_error_sink, NULL);
 
   SerdStatus rst = serd_reader_start_string(reader, doc_string);
   assert(!rst);
@@ -156,17 +156,23 @@ test_write_errors(void)
   // Syntax-keyed array of output document sizes
   static const size_t max_offsets[] = {0, 446, 1920, 2012, 460};
 
+  SerdWorld* const world = serd_world_new();
+  assert(world);
+  serd_world_set_error_func(world, quiet_error_func, NULL);
+
   for (unsigned s = 1; s <= (unsigned)SERD_TRIG; ++s) {
     const SerdSyntax syntax = (SerdSyntax)s;
 
     // Check successfully writing with enough space
-    check_write_error_offset(syntax, max_offsets[s], SERD_SUCCESS);
+    check_write_error_offset(world, syntax, max_offsets[s], SERD_SUCCESS);
 
     // Check write error at every offset in the output
     for (size_t o = 0; o < max_offsets[s]; ++o) {
-      check_write_error_offset(syntax, o, SERD_BAD_WRITE);
+      check_write_error_offset(world, syntax, o, SERD_BAD_WRITE);
     }
   }
+
+  serd_world_free(world);
 }
 
 static void
@@ -175,11 +181,13 @@ test_writer(const char* const path)
   FILE* const fd = fopen(path, "wb");
   assert(fd);
 
-  SerdEnv* const env = serd_env_new(NULL);
+  SerdWorld* const world = serd_world_new();
+  SerdEnv* const   env   = serd_env_new(NULL);
+  assert(world);
   assert(env);
 
-  SerdWriter* writer =
-    serd_writer_new(SERD_TURTLE, SERD_WRITE_LAX, env, NULL, serd_file_sink, fd);
+  SerdWriter* writer = serd_writer_new(
+    world, SERD_TURTLE, SERD_WRITE_LAX, env, NULL, serd_file_sink, fd);
   assert(writer);
 
   serd_writer_chop_blank_prefix(writer, "tmp");
@@ -252,18 +260,20 @@ test_writer(const char* const path)
 
   serd_writer_free(writer);
   serd_env_free(env);
+  serd_world_free(world);
   assert(!fclose(fd));
 }
 
 static void
 test_reader(const char* const path)
 {
-  ReaderTest* const rt = (ReaderTest*)calloc(1, sizeof(ReaderTest));
+  SerdWorld* const  world = serd_world_new();
+  ReaderTest* const rt    = (ReaderTest*)calloc(1, sizeof(ReaderTest));
+  assert(world);
   assert(rt);
 
-  SerdReader* reader = serd_reader_new(
-    SERD_TURTLE, 0U, rt, free, NULL, NULL, test_statement_sink, NULL);
-
+  SerdReader* const reader = serd_reader_new(
+    world, SERD_TURTLE, 0U, rt, free, NULL, NULL, test_statement_sink, NULL);
   assert(reader);
   assert(serd_reader_handle(reader) == rt);
 
@@ -291,6 +301,7 @@ test_reader(const char* const path)
   assert(!serd_reader_finish(reader));
 
   serd_reader_free(reader);
+  serd_world_free(world);
 }
 
 int

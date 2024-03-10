@@ -14,6 +14,7 @@
 #include <serd/statement_flags.h>
 #include <serd/status.h>
 #include <serd/syntax.h>
+#include <serd/world.h>
 #include <zix/attributes.h>
 #include <zix/string_view.h>
 
@@ -45,7 +46,8 @@ typedef struct {
 } ReadContext;
 
 struct SerdReaderImpl {
-  void* handle;
+  SerdWorld* world;
+  void*      handle;
   void (*free_handle)(void* ptr);
   SerdBaseFunc      base_func;
   SerdPrefixFunc    prefix_func;
