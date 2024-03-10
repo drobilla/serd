@@ -545,35 +545,17 @@ write_long_string_escape(SerdWriter* const writer,
 ZIX_NODISCARD static SerdStatus
 write_short_string_escape(SerdWriter* const writer, const char c)
 {
-  switch (c) {
-  case '\\':
-    return esink("\\\\", 2, writer);
-  case '\n':
-    return esink("\\n", 2, writer);
-  case '\r':
-    return esink("\\r", 2, writer);
-  case '\t':
-    return (writer->flags & SERD_WRITE_ESCAPED) ? esink("\\t", 2, writer)
-                                                : esink("\t", 1, writer);
-  case '"':
-    return esink("\\\"", 2, writer);
-  default:
-    break;
-  }
+  // Pre-NTriples test cases format escapes tabs, but not backspace/form-feed
 
-  if (!(writer->flags & SERD_WRITE_ESCAPED)) {
-    // These are written with UCHAR in pre-NTriples test cases format
-    switch (c) {
-    case '\b':
-      return esink("\\b", 2, writer);
-    case '\f':
-      return esink("\\f", 2, writer);
-    default:
-      break;
-    }
-  }
-
-  return SERD_FAILURE;
+  return (c == '\n')   ? esink("\\n", 2, writer)
+         : (c == '\r') ? esink("\\r", 2, writer)
+         : (c == '"')  ? esink("\\\"", 2, writer)
+         : (c == '\\') ? esink("\\\\", 2, writer)
+         : (writer->flags & SERD_WRITE_ESCAPED)
+           ? ((c == '\t') ? esink("\\t", 2, writer) : SERD_FAILURE)
+         : (c == '\b') ? esink("\\b", 2, writer)
+         : (c == '\f') ? esink("\\f", 2, writer)
+                       : SERD_FAILURE;
 }
 
 ZIX_NODISCARD static bool
