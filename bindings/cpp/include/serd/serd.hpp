@@ -37,29 +37,32 @@ namespace serd {
 
 /// @copydoc SerdStatus
 enum class Status {
-  success       = SERD_SUCCESS,       ///< @copydoc SERD_SUCCESS
-  failure       = SERD_FAILURE,       ///< @copydoc SERD_FAILURE
-  unknown_error = SERD_UNKNOWN_ERROR, ///< @copydoc SERD_UNKNOWN_ERROR
-  no_data       = SERD_NO_DATA,       ///< @copydoc SERD_NO_DATA
-  overflow      = SERD_OVERFLOW,      ///< @copydoc SERD_OVERFLOW
+  success  = SERD_SUCCESS,  ///< @copydoc SERD_SUCCESS
+  failure  = SERD_FAILURE,  ///< @copydoc SERD_FAILURE
+  no_data  = SERD_NO_DATA,  ///< @copydoc SERD_NO_DATA
+  no_space = SERD_NO_SPACE, ///< @copydoc SERD_NO_SPACE
 
-  bad_alloc   = SERD_BAD_ALLOC,   ///< @copydoc SERD_BAD_ALLOC
-  bad_arg     = SERD_BAD_ARG,     ///< @copydoc SERD_BAD_ARG
-  bad_call    = SERD_BAD_CALL,    ///< @copydoc SERD_BAD_CALL
-  bad_curie   = SERD_BAD_CURIE,   ///< @copydoc SERD_BAD_CURIE
-  bad_cursor  = SERD_BAD_CURSOR,  ///< @copydoc SERD_BAD_CURSOR
-  bad_event   = SERD_BAD_EVENT,   ///< @copydoc SERD_BAD_EVENT
-  bad_index   = SERD_BAD_INDEX,   ///< @copydoc SERD_BAD_INDEX
-  bad_label   = SERD_BAD_LABEL,   ///< @copydoc SERD_BAD_LABEL
-  bad_literal = SERD_BAD_LITERAL, ///< @copydoc SERD_BAD_LITERAL
-  bad_pattern = SERD_BAD_PATTERN, ///< @copydoc SERD_BAD_PATTERN
-  bad_read    = SERD_BAD_READ,    ///< @copydoc SERD_BAD_READ
-  bad_stack   = SERD_BAD_STACK,   ///< @copydoc SERD_BAD_STACK
+  unknown_error = SERD_UNKNOWN_ERROR, ///< @copydoc SERD_UNKNOWN_ERROR
+
+  bad_alloc  = SERD_BAD_ALLOC,  ///< @copydoc SERD_BAD_ALLOC
+  bad_read   = SERD_BAD_READ,   ///< @copydoc SERD_BAD_READ
+  bad_write  = SERD_BAD_WRITE,  ///< @copydoc SERD_BAD_WRITE
+  bad_stream = SERD_BAD_STREAM, ///< @copydoc SERD_BAD_STREAM
+  bad_stack  = SERD_BAD_STACK,  ///< @copydoc SERD_BAD_STACK
+  bad_call   = SERD_BAD_CALL,   ///< @copydoc SERD_BAD_CALL
+  bad_arg    = SERD_BAD_ARG,    ///< @copydoc SERD_BAD_ARG
+  bad_event  = SERD_BAD_EVENT,  ///< @copydoc SERD_BAD_EVENT
+  bad_cursor = SERD_BAD_CURSOR, ///< @copydoc SERD_BAD_CURSOR
+  bad_index  = SERD_BAD_INDEX,  ///< @copydoc SERD_BAD_INDEX
+
   bad_syntax  = SERD_BAD_SYNTAX,  ///< @copydoc SERD_BAD_SYNTAX
+  bad_label   = SERD_BAD_LABEL,   ///< @copydoc SERD_BAD_LABEL
+  bad_curie   = SERD_BAD_CURIE,   ///< @copydoc SERD_BAD_CURIE
   bad_text    = SERD_BAD_TEXT,    ///< @copydoc SERD_BAD_TEXT
   bad_uri     = SERD_BAD_URI,     ///< @copydoc SERD_BAD_URI
-  bad_write   = SERD_BAD_WRITE,   ///< @copydoc SERD_BAD_WRITE
   bad_data    = SERD_BAD_DATA,    ///< @copydoc SERD_BAD_DATA
+  bad_literal = SERD_BAD_LITERAL, ///< @copydoc SERD_BAD_LITERAL
+  bad_pattern = SERD_BAD_PATTERN, ///< @copydoc SERD_BAD_PATTERN
 };
 
 /// @copydoc serd_strerror
@@ -76,21 +79,23 @@ strerror(const Status status)
 */
 
 // FIXME: grouping?
-static inline size_t
-stream_write(const void* buf, size_t size, size_t nmemb, void* sink) noexcept
+static inline SerdStreamResult
+stream_write(void* sink, size_t len, const void* buf) noexcept
 {
-  (void)size;
-  assert(size == 1);
-
-  std::ostream& os = *static_cast<std::ostream*>(sink);
+  std::ostream&    os     = *static_cast<std::ostream*>(sink);
+  SerdStreamResult result = {SERD_SUCCESS, len};
 
   try {
-    os.write(static_cast<const char*>(buf),
-             static_cast<std::streamsize>(nmemb));
-    return os.good() ? nmemb : 0U;
+    os.write(static_cast<const char*>(buf), static_cast<std::streamsize>(len));
+    if (!os.good()) {
+      result.status = SERD_BAD_WRITE;
+      result.count  = 0U;
+    }
   } catch (...) {
+    result.status = SERD_BAD_WRITE;
   }
-  return 0;
+
+  return result;
 }
 
 /**
@@ -443,7 +448,7 @@ public:
   size_t decoded_size() const { return serd_node_decoded_size(this->cobj()); }
 
   /// @copydoc serd_node_decode
-  SerdWriteResult decode(const size_t buf_size, void* const buf) const
+  SerdStreamResult decode(const size_t buf_size, void* const buf) const
   {
     return serd_node_decode(this->cobj(), buf_size, buf);
   }
