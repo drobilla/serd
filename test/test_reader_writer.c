@@ -5,7 +5,6 @@
 
 #include "serd/buffer.h"
 #include "serd/env.h"
-#include "serd/error.h"
 #include "serd/memory.h"
 #include "serd/node.h"
 #include "serd/reader.h"
@@ -13,6 +12,7 @@
 #include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
+#include "serd/world.h"
 #include "serd/writer.h"
 #include "zix/allocator.h"
 #include "zix/filesystem.h"
@@ -100,18 +100,11 @@ faulty_sink(const void* const buf, const size_t len, void* const stream)
   return len;
 }
 
-static SerdStatus
-quiet_error_sink(void* const handle, const SerdError* const e)
-{
-  (void)handle;
-  (void)e;
-  return SERD_SUCCESS;
-}
-
 static void
 test_write_errors(void)
 {
-  ErrorContext ctx = {0U, 0U};
+  SerdWorld* const world = serd_world_new();
+  ErrorContext     ctx   = {0U, 0U};
 
   const size_t max_offsets[] = {0, 462, 1911, 2003, 462};
 
@@ -124,10 +117,11 @@ test_write_errors(void)
 
       SerdEnv* const    env = serd_env_new(NULL);
       SerdWriter* const writer =
-        serd_writer_new(syntax, 0U, env, NULL, faulty_sink, &ctx);
+        serd_writer_new(world, syntax, 0U, env, NULL, faulty_sink, &ctx);
 
       SerdReader* const reader =
-        serd_reader_new(SERD_TRIG,
+        serd_reader_new(world,
+                        SERD_TRIG,
                         0U,
                         writer,
                         NULL,
@@ -135,9 +129,6 @@ test_write_errors(void)
                         (SerdPrefixFunc)serd_writer_set_prefix,
                         (SerdStatementFunc)serd_writer_write_statement,
                         (SerdEndFunc)serd_writer_end_anon);
-
-      serd_reader_set_error_sink(reader, quiet_error_sink, NULL);
-      serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
 
       SerdStatus st = serd_reader_start_string(reader, doc_string);
       assert(!st);
@@ -149,17 +140,20 @@ test_write_errors(void)
       serd_env_free(env);
     }
   }
+
+  serd_world_free(world);
 }
 
 static void
 test_writer(const char* const path)
 {
-  FILE*    fd  = fopen(path, "wb");
-  SerdEnv* env = serd_env_new(NULL);
+  FILE* const      fd    = fopen(path, "wb");
+  SerdWorld* const world = serd_world_new();
+  SerdEnv* const   env   = serd_env_new(NULL);
   assert(fd);
 
-  SerdWriter* writer =
-    serd_writer_new(SERD_TURTLE, SERD_WRITE_LAX, env, NULL, serd_file_sink, fd);
+  SerdWriter* writer = serd_writer_new(
+    world, SERD_TURTLE, SERD_WRITE_LAX, env, NULL, serd_file_sink, fd);
   assert(writer);
 
   serd_writer_chop_blank_prefix(writer, "tmp");
@@ -235,8 +229,8 @@ test_writer(const char* const path)
 
   // Test buffer sink
   SerdBuffer buffer = {NULL, 0};
-  writer =
-    serd_writer_new(SERD_TURTLE, 0, env, NULL, serd_buffer_sink, &buffer);
+  writer            = serd_writer_new(
+    world, SERD_TURTLE, 0, env, NULL, serd_buffer_sink, &buffer);
 
   o = serd_node_from_string(SERD_URI, "http://example.org/base");
   assert(!serd_writer_set_base_uri(writer, &o));
@@ -252,8 +246,14 @@ test_writer(const char* const path)
 
   buffer.buf = NULL;
   buffer.len = 0;
-  writer     = serd_writer_new(
-    SERD_TURTLE, SERD_WRITE_UNRESOLVED, env, NULL, serd_buffer_sink, &buffer);
+
+  writer = serd_writer_new(world,
+                           SERD_TURTLE,
+                           SERD_WRITE_UNRESOLVED,
+                           env,
+                           NULL,
+                           serd_buffer_sink,
+                           &buffer);
 
   assert(!serd_writer_write_statement(
     writer, 0, NULL, &s, &p, &nothing, NULL, NULL));
@@ -267,15 +267,17 @@ test_writer(const char* const path)
   serd_free(out);
 
   serd_env_free(env);
+  serd_world_free(world);
   fclose(fd);
 }
 
 static void
 test_reader(const char* path)
 {
-  ReaderTest  rt     = {0};
-  SerdReader* reader = serd_reader_new(
-    SERD_TURTLE, 0U, &rt, NULL, NULL, NULL, test_statement_sink, NULL);
+  SerdWorld* const  world  = serd_world_new();
+  ReaderTest        rt     = {0};
+  SerdReader* const reader = serd_reader_new(
+    world, SERD_TURTLE, 0U, &rt, NULL, NULL, NULL, test_statement_sink, NULL);
 
   assert(reader);
   assert(serd_reader_handle(reader) == &rt);
@@ -304,6 +306,7 @@ test_reader(const char* path)
   assert(!serd_reader_finish(reader));
 
   serd_reader_free(reader);
+  serd_world_free(world);
 }
 
 int
