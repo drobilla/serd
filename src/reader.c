@@ -12,6 +12,7 @@
 
 #include "serd/stream.h"
 #include "serd/uri.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -28,8 +29,7 @@ r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
 {
   va_list args; // NOLINT(cppcoreguidelines-init-variables)
   va_start(args, fmt);
-  const Cursor* const cur = &reader->source.cur;
-  const SerdError     e = {st, cur->filename, cur->line, cur->col, fmt, &args};
+  const SerdError e = {st, &reader->source.caret, fmt, &args};
   serd_world_error(reader->world, &e);
   va_end(args);
   return st;
@@ -250,7 +250,7 @@ serd_reader_start_stream(SerdReader* const         reader,
                          const SerdReadFunc        read_func,
                          const SerdStreamErrorFunc error_func,
                          void* const               stream,
-                         const char* const         name,
+                         const SerdNode* const     name,
                          const size_t              page_size)
 {
   assert(reader);
@@ -273,20 +273,26 @@ serd_reader_start_file(SerdReader* reader, const char* uri, bool bulk)
     return SERD_BAD_STREAM;
   }
 
-  return serd_byte_source_open_source(&reader->source,
-                                      bulk ? (SerdReadFunc)fread
-                                           : serd_file_read_byte,
-                                      (SerdStreamErrorFunc)ferror,
-                                      (SerdStreamCloseFunc)fclose,
-                                      fd,
-                                      uri,
-                                      bulk ? SERD_PAGE_SIZE : 1);
+  SerdNode* const  name = serd_new_uri(zix_string(uri));
+  const SerdStatus st   = serd_byte_source_open_source(
+    &reader->source,
+    bulk ? (SerdReadFunc)fread : serd_file_read_byte,
+    (SerdStreamErrorFunc)ferror,
+    (SerdStreamCloseFunc)fclose,
+    fd,
+    name,
+    bulk ? SERD_PAGE_SIZE : 1U);
+
+  serd_node_free(name);
+  return st;
 }
 
 SerdStatus
-serd_reader_start_string(SerdReader* const reader, const char* const utf8)
+serd_reader_start_string(SerdReader* const     reader,
+                         const char* const     utf8,
+                         const SerdNode* const name)
 {
-  return serd_byte_source_open_string(&reader->source, utf8);
+  return serd_byte_source_open_string(&reader->source, utf8, name);
 }
 
 static SerdStatus
