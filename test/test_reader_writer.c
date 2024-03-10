@@ -44,7 +44,7 @@ static const char* const doc_string =
   "}\n"
   "@prefix other: <http://example.org/other> .\n"
   "@base <http://drobilla.net/> .\n"
-  "eg:s\n"
+  "eg:𝚺\n"
   "  <http://example.org/p> [\n"
   "    eg:p 3.0 ,\n"
   "      4 ,\n"
@@ -115,9 +115,8 @@ check_write_error_offset(const SerdSyntax syntax,
   SerdEnv* const env = serd_env_new(NULL);
   assert(env);
 
-  ErrorContext          ctx = {0U, offset};
-  const SerdWriterFlags flags =
-    (SerdWriterFlags)(SERD_WRITE_STRICT | SERD_WRITE_CURIED);
+  ErrorContext          ctx   = {0U, offset};
+  const SerdWriterFlags flags = (SerdWriterFlags)SERD_WRITE_STRICT;
 
   SerdWriter* const writer =
     serd_writer_new(syntax, flags, env, NULL, faulty_sink, &ctx);
@@ -151,7 +150,7 @@ static void
 test_write_errors(void)
 {
   // Syntax-keyed array of output document sizes
-  static const size_t max_offsets[] = {0, 443, 1911, 2003, 457};
+  static const size_t max_offsets[] = {0, 446, 1920, 2012, 460};
 
   for (unsigned s = 1; s <= (unsigned)SERD_TRIG; ++s) {
     const SerdSyntax syntax = (SerdSyntax)s;

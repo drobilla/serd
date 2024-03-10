@@ -1,3 +1,3 @@
-<http://example.org/s> <http://example.org/p> "Impossible bytes: \uFFFD \uFFFD" .
-<http://example.org/s> <http://example.org/p> "2 continuation bytes: \uFFFD" .
-<http://example.org/s> <http://example.org/p> "Missing continuation: \uFFFD" .
+<http://example.org/s> <http://example.org/p> "Impossible bytes: � �" .
+<http://example.org/s> <http://example.org/p> "2 continuation bytes: �" .
+<http://example.org/s> <http://example.org/p> "Missing continuation: �" .
