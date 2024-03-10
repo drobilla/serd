@@ -10,11 +10,14 @@
 
 #include "serd/serd.h"
 
-#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifndef NDEBUG
+#  include <assert.h>
+#endif
 
 #if defined(__clang__) && __clang_major__ >= 10
 #  define SERD_FALLTHROUGH __attribute__((fallthrough))
