@@ -25,6 +25,7 @@
 
 #include <errno.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -32,19 +33,21 @@ static SerdStatus
 serd_reader_prepare(SerdReader* reader);
 
 SerdStatus
-r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
+r_err(const SerdReader* const reader,
+      const SerdStatus        st,
+      const char* const       fmt,
+      ...)
 {
   va_list args; // NOLINT(cppcoreguidelines-init-variables)
   va_start(args, fmt);
-  const Cursor* const cur = &reader->source.cur;
-  const SerdError     e = {st, cur->filename, cur->line, cur->col, fmt, &args};
+  const SerdError e = {st, reader->source.caret, fmt, &args};
   serd_world_error(reader->world, &e);
   va_end(args);
   return st;
 }
 
 SerdStatus
-r_err_char(SerdReader* const reader, const char* const kind, const int c)
+r_err_char(const SerdReader* const reader, const char* const kind, const int c)
 {
   const SerdStatus st = SERD_BAD_SYNTAX;
 
@@ -306,7 +309,7 @@ serd_reader_start_stream(SerdReader* const   reader,
                          const SerdReadFunc  read_func,
                          const SerdErrorFunc error_func,
                          void* const         stream,
-                         const char* const   name,
+                         const ZixStringView name,
                          const size_t        page_size)
 {
   assert(reader);
@@ -340,23 +343,28 @@ serd_reader_start_file(SerdReader* reader, const char* uri, bool bulk)
     return SERD_BAD_STREAM;
   }
 
-  return serd_byte_source_open_source(reader->world->allocator,
-                                      &reader->source,
-                                      bulk ? (SerdReadFunc)fread
-                                           : serd_file_read_byte,
-                                      (SerdErrorFunc)ferror,
-                                      (SerdCloseFunc)fclose,
-                                      fd,
-                                      uri,
-                                      bulk ? SERD_PAGE_SIZE : 1);
+  const SerdStatus st = serd_byte_source_open_source(
+    reader->world->allocator,
+    &reader->source,
+    bulk ? (SerdReadFunc)fread : serd_file_read_byte,
+    (SerdErrorFunc)ferror,
+    (SerdCloseFunc)fclose,
+    fd,
+    zix_string(uri),
+    bulk ? SERD_PAGE_SIZE : 1U);
+
+  return st;
 }
 
 SerdStatus
-serd_reader_start_string(SerdReader* const reader, const char* const utf8)
+serd_reader_start_string(SerdReader* const   reader,
+                         const char* const   utf8,
+                         const ZixStringView name)
 {
   assert(reader);
   assert(utf8);
-  return serd_byte_source_open_string(&reader->source, utf8);
+  return serd_byte_source_open_string(
+    reader->world->allocator, &reader->source, utf8, name);
 }
 
 static SerdStatus

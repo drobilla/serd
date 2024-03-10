@@ -1,13 +1,15 @@
-// Copyright 2011-2023 David Robillard <d@drobilla.net>
+// Copyright 2011-2025 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #ifndef SERD_SRC_BYTE_SOURCE_H
 #define SERD_SRC_BYTE_SOURCE_H
 
+#include <serd/caret_view.h>
 #include <serd/status.h>
 #include <serd/stream.h>
 #include <zix/allocator.h>
 #include <zix/attributes.h>
+#include <zix/string_view.h>
 
 #include <assert.h>
 #include <stdbool.h>
@@ -17,19 +19,14 @@
 typedef int (*SerdCloseFunc)(void*);
 
 typedef struct {
-  const char* filename;
-  unsigned    line;
-  unsigned    col;
-} Cursor;
-
-typedef struct {
   SerdReadFunc   read_func;   ///< Read function (e.g. fread)
   SerdErrorFunc  error_func;  ///< Error function (e.g. ferror)
   SerdCloseFunc  close_func;  ///< Function for closing stream
   void*          stream;      ///< Stream (e.g. FILE)
   size_t         page_size;   ///< Number of bytes to read at a time
   size_t         buf_size;    ///< Number of bytes in file_buf
-  Cursor         cur;         ///< Cursor for error reporting
+  char*          name;        ///< Name of stream (referenced by caret)
+  SerdCaretView  caret;       ///< Caret for error reporting
   uint8_t*       file_buf;    ///< Buffer iff reading pages from a file
   const uint8_t* read_buf;    ///< Pointer to file_buf or read_byte
   size_t         read_head;   ///< Offset into read_buf
@@ -40,7 +37,10 @@ typedef struct {
 } SerdByteSource;
 
 SerdStatus
-serd_byte_source_open_string(SerdByteSource* source, const char* utf8);
+serd_byte_source_open_string(ZixAllocator*   allocator,
+                             SerdByteSource* source,
+                             const char*     utf8,
+                             ZixStringView   name);
 
 SerdStatus
 serd_byte_source_open_source(ZixAllocator*   allocator,
@@ -49,7 +49,7 @@ serd_byte_source_open_source(ZixAllocator*   allocator,
                              SerdErrorFunc   error_func,
                              SerdCloseFunc   close_func,
                              void*           stream,
-                             const char*     name,
+                             ZixStringView   name,
                              size_t          page_size);
 
 SerdStatus
@@ -78,10 +78,10 @@ serd_byte_source_advance(SerdByteSource* const source)
 
   const uint8_t c = serd_byte_source_peek(source);
   if (c == '\n') {
-    ++source->cur.line;
-    source->cur.col = 0;
+    ++source->caret.line;
+    source->caret.column = 0U;
   } else if (c) {
-    ++source->cur.col;
+    ++source->caret.column;
   }
 
   const bool was_eof = source->eof;

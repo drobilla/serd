@@ -290,10 +290,14 @@ main(int argc, char** argv)
 
   SerdStatus st = SERD_SUCCESS;
   if (from_string) {
-    st = serd_reader_start_string(reader, input);
+    st = serd_reader_start_string(reader, input, zix_string("string"));
   } else if (from_stdin) {
-    st = serd_reader_start_stream(
-      reader, serd_file_read_byte, (SerdErrorFunc)ferror, stdin, "(stdin)", 1);
+    st = serd_reader_start_stream(reader,
+                                  serd_file_read_byte,
+                                  (SerdErrorFunc)ferror,
+                                  stdin,
+                                  zix_string("stdin"),
+                                  1);
   } else {
     st = serd_reader_start_file(reader, input, bulk_read);
   }

@@ -76,10 +76,10 @@ struct SerdReaderImpl {
 
 ZIX_LOG_FUNC(3, 4)
 SerdStatus
-r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
+r_err(const SerdReader* reader, SerdStatus st, const char* fmt, ...);
 
 SerdStatus
-r_err_char(SerdReader* reader, const char* kind, int c);
+r_err_char(const SerdReader* reader, const char* kind, int c);
 
 Ref
 push_node_padded(SerdReader*   reader,

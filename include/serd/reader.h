@@ -12,6 +12,7 @@
 #include <serd/syntax.h>
 #include <serd/world.h>
 #include <zix/attributes.h>
+#include <zix/string_view.h>
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -114,13 +115,14 @@ serd_reader_start_stream(SerdReader* ZIX_NONNULL   reader,
                          SerdReadFunc ZIX_NONNULL  read_func,
                          SerdErrorFunc ZIX_NONNULL error_func,
                          void* ZIX_UNSPECIFIED     stream,
-                         const char* ZIX_NULLABLE  name,
+                         ZixStringView             input_name,
                          size_t                    page_size);
 
 /// Prepare to read from a string
 SERD_API SerdStatus
 serd_reader_start_string(SerdReader* ZIX_NONNULL reader,
-                         const char* ZIX_NONNULL utf8);
+                         const char* ZIX_NONNULL utf8,
+                         ZixStringView           input_name);
 
 /**
    Read a single "chunk" of data during an incremental read.

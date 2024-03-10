@@ -135,7 +135,8 @@ check_write_error_offset(SerdWorld* const world,
                     (SerdEndFunc)serd_writer_end_anon);
   assert(reader);
 
-  SerdStatus rst = serd_reader_start_string(reader, doc_string);
+  SerdStatus rst =
+    serd_reader_start_string(reader, doc_string, zix_empty_string());
   assert(!rst);
 
   if (!(rst = serd_reader_read_document(reader))) {
