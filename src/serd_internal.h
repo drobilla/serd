@@ -4,7 +4,10 @@
 #ifndef SERD_SRC_SERD_INTERNAL_H
 #define SERD_SRC_SERD_INTERNAL_H
 
+#include "world.h" // IWYU pragma: keep
+
 #include "serd/error.h"
+#include "serd/world.h"
 
 #include <stdio.h>
 
@@ -20,12 +23,16 @@
 /* Error reporting */
 
 static inline void
-serd_error(SerdLogFunc error_func, void* handle, const SerdError* e)
+serd_error(const SerdWorld* world, const SerdError* e)
 {
-  if (error_func) {
-    error_func(handle, e);
+  if (world->error_func) {
+    world->error_func(world->error_handle, e);
   } else {
-    fprintf(stderr, "error: %s:%u:%u: ", e->filename, e->line, e->col);
+    if (e->filename) {
+      fprintf(stderr, "error: %s:%u:%u: ", e->filename, e->line, e->col);
+    } else {
+      fprintf(stderr, "error: ");
+    }
     vfprintf(stderr, e->fmt, *e->args);
   }
 }

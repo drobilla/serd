@@ -12,6 +12,7 @@
 #include "serd/syntax.h"
 #include "serd/uri.h"
 #include "serd/version.h"
+#include "serd/world.h"
 #include "serd/writer.h"
 
 #ifdef _WIN32
@@ -82,7 +83,7 @@ missing_arg(const char* const name, const char opt)
 }
 
 static SerdStatus
-quiet_error_sink(void* const handle, const SerdError* const e)
+quiet_error_func(void* const handle, const SerdError* const e)
 {
   (void)handle;
   (void)e;
@@ -224,14 +225,16 @@ main(int argc, char** argv)
     base = serd_node_new_file_uri(input, NULL, &base_uri);
   }
 
-  FILE* const    out_fd = stdout;
-  SerdEnv* const env    = serd_env_new(&base);
+  FILE* const      out_fd = stdout;
+  SerdWorld* const world  = serd_world_new();
+  SerdEnv* const   env    = serd_env_new(&base);
 
   SerdWriter* const writer = serd_writer_new(
-    output_syntax, writer_flags, env, &base_uri, serd_file_sink, out_fd);
+    world, output_syntax, writer_flags, env, &base_uri, serd_file_sink, out_fd);
 
   SerdReader* const reader =
-    serd_reader_new(input_syntax,
+    serd_reader_new(world,
+                    input_syntax,
                     reader_flags,
                     writer,
                     NULL,
@@ -241,8 +244,7 @@ main(int argc, char** argv)
                     (SerdEndFunc)serd_writer_end_anon);
 
   if (quiet) {
-    serd_reader_set_error_sink(reader, quiet_error_sink, NULL);
-    serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
+    serd_world_set_error_func(world, quiet_error_func, NULL);
   }
 
   SerdNode root = serd_node_from_string(SERD_URI, root_uri);
@@ -270,6 +272,7 @@ main(int argc, char** argv)
   serd_writer_free(writer);
   serd_env_free(env);
   serd_node_free(&base);
+  serd_world_free(world);
 
   if (fclose(stdout)) {
     perror("serdi: write error");

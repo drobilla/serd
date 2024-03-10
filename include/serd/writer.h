@@ -6,13 +6,13 @@
 
 #include "serd/attributes.h"
 #include "serd/env.h"
-#include "serd/error.h"
 #include "serd/node.h"
 #include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/syntax.h"
 #include "serd/uri.h"
+#include "serd/world.h"
 #include "zix/attributes.h"
 
 #include <stddef.h>
@@ -50,7 +50,8 @@ typedef uint32_t SerdWriterFlags;
 
 /// Create a new RDF writer
 SERD_API SerdWriter* ZIX_ALLOCATED
-serd_writer_new(SerdSyntax                      syntax,
+serd_writer_new(SerdWorld* ZIX_NONNULL          world,
+                SerdSyntax                      syntax,
                 SerdWriterFlags                 flags,
                 SerdEnv* ZIX_NONNULL            env,
                 const SerdURIView* ZIX_NULLABLE base_uri,
@@ -76,17 +77,6 @@ SERD_API size_t
 serd_file_sink(const void* ZIX_NONNULL buf,
                size_t                  len,
                void* ZIX_UNSPECIFIED   stream);
-
-/**
-   Set a function to be called when errors occur during writing.
-
-   The `error_func` will be called with `handle` as its first argument.  If
-   no error function is set, errors are printed to stderr.
-*/
-SERD_API void
-serd_writer_set_error_sink(SerdWriter* ZIX_NONNULL writer,
-                           SerdLogFunc ZIX_NONNULL error_func,
-                           void* ZIX_UNSPECIFIED   error_handle);
 
 /**
    Set a prefix to be removed from matching blank node identifiers.
