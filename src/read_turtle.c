@@ -46,7 +46,7 @@ read_whitespace(SerdReader* const reader)
 {
   const int c = peek_byte(reader);
   return ((c == '\t') || (c == '\n') || (c == '\r') || (c == ' '))
-           ? serd_byte_source_advance(&reader->source)
+           ? serd_byte_source_advance(reader->source)
          : (c == '#') ? read_comment(reader)
                       : SERD_FAILURE;
 }
@@ -995,7 +995,7 @@ read_turtle_statement(SerdReader* const reader)
 SerdStatus
 read_turtleDoc(SerdReader* const reader)
 {
-  while (!reader->source.eof) {
+  while (!reader->source->eof) {
     const size_t     orig_stack_size = reader->stack.size;
     const SerdStatus st              = read_turtle_statement(reader);
 

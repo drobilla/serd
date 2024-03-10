@@ -5,15 +5,14 @@
 #define SERD_READER_H
 
 #include "serd/attributes.h"
+#include "serd/input_stream.h"
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/status.h"
-#include "serd/stream.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "zix/attributes.h"
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -56,31 +55,23 @@ SERD_API void
 serd_reader_add_blank_prefix(SerdReader* ZIX_NONNULL  reader,
                              const char* ZIX_NULLABLE prefix);
 
-/// Prepare to read from the file at a local file `uri`
-SERD_API SerdStatus
-serd_reader_start_file(SerdReader* ZIX_NONNULL reader,
-                       const char* ZIX_NONNULL uri,
-                       bool                    bulk);
-
 /**
-   Prepare to read from a stream.
+   Prepare to read some input.
 
-   The `read_func` is guaranteed to only be called for `page_size` elements
-   with size 1 (i.e. `page_size` bytes).
+   This sets up the reader to read from the given input, but will not read any
+   bytes from it.  This should be followed by serd_reader_read_chunk() or
+   serd_reader_read_document() to actually read the input.
+
+   @param reader The reader.
+   @param input An opened input stream to read from.
+   @param input_name The name of the input stream for error messages.
+   @param block_size The number of bytes to read from the stream at once.
 */
 SERD_API SerdStatus
-serd_reader_start_stream(SerdReader* ZIX_NONNULL      reader,
-                         SerdReadFunc ZIX_NONNULL     read_func,
-                         SerdErrorFunc ZIX_NONNULL    error_func,
-                         void* ZIX_UNSPECIFIED        stream,
-                         const SerdNode* ZIX_NULLABLE name,
-                         size_t                       page_size);
-
-/// Prepare to read from a string
-SERD_API SerdStatus
-serd_reader_start_string(SerdReader* ZIX_NONNULL      reader,
-                         const char* ZIX_NONNULL      utf8,
-                         const SerdNode* ZIX_NULLABLE name);
+serd_reader_start(SerdReader* ZIX_NONNULL      reader,
+                  SerdInputStream* ZIX_NONNULL input,
+                  const SerdNode* ZIX_NULLABLE input_name,
+                  size_t                       block_size);
 
 /**
    Read a single "chunk" of data during an incremental read.
