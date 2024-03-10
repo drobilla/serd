@@ -72,11 +72,17 @@ read_turtle_ws_star(SerdReader* const reader)
   return true;
 }
 
+static int
+skip_ws_peek(SerdReader* const reader)
+{
+  read_turtle_ws_star(reader);
+  return peek_byte(reader);
+}
+
 static bool
 peek_delim(SerdReader* const reader, const uint8_t delim)
 {
-  read_turtle_ws_star(reader);
-  return peek_byte(reader) == delim;
+  return skip_ws_peek(reader) == delim;
 }
 
 static bool
@@ -805,21 +811,18 @@ read_predicateObjectList(SerdReader* const reader,
     serd_stack_pop_to(&reader->stack, orig_stack_size);
 
     bool ate_semi = false;
-    int  c        = 0;
-    do {
-      read_turtle_ws_star(reader);
-      switch (c = peek_byte(reader)) {
-      case EOF:
-        return r_err(reader, SERD_BAD_SYNTAX, "unexpected end of file");
-      case '.':
-      case ']':
-      case '}':
+    for (int c = 0; (c = skip_ws_peek(reader)) > 0;) {
+      if (c == '.' || c == ']' || c == '}') {
         return SERD_SUCCESS;
-      case ';':
-        skip_byte(reader, c);
-        ate_semi = true;
       }
-    } while (c == ';');
+
+      if (c != ';') {
+        break;
+      }
+
+      skip_byte(reader, c);
+      ate_semi = true;
+    }
 
     if (!ate_semi) {
       return r_err(reader, SERD_BAD_SYNTAX, "missing ';' or '.'");
@@ -945,18 +948,21 @@ read_turtle_triples(SerdReader* const reader,
                     ReadContext       ctx,
                     bool* const       ate_dot)
 {
-  SerdStatus st = SERD_FAILURE;
-  if (ctx.subject) {
-    read_turtle_ws_star(reader);
-    switch (peek_byte(reader)) {
-    case '.':
-      *ate_dot = eat_byte_safe(reader, '.');
-      return SERD_FAILURE;
-    case '}':
-      return SERD_FAILURE;
-    }
-    st = read_predicateObjectList(reader, ctx, ate_dot);
+  assert(ctx.subject);
+
+  read_turtle_ws_star(reader);
+
+  const int c = peek_byte(reader);
+  if (c == '.') {
+    *ate_dot = !skip_byte(reader, c);
+    return SERD_FAILURE;
   }
+
+  if (c == '}') {
+    return SERD_FAILURE;
+  }
+
+  const SerdStatus st = read_predicateObjectList(reader, ctx, ate_dot);
 
   ctx.subject = ctx.predicate = 0;
   return st > SERD_FAILURE ? st : SERD_SUCCESS;
