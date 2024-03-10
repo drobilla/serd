@@ -780,7 +780,7 @@ write_IRIREF(SerdWriter* const writer, const SerdNode* const node)
   TRY(st, esink("<", 1, writer));
 
   // Write the string and return early if resolution is disabled
-  if (!(writer->flags & SERD_WRITE_RESOLVED)) {
+  if ((writer->flags & SERD_WRITE_UNRESOLVED)) {
     TRY(st, ewrite_uri(writer, node->buf, node->n_bytes));
     return esink(">", 1, writer);
   }
@@ -822,7 +822,7 @@ write_uri_node(SerdWriter* const writer, const SerdNode* const node)
       return esink("()", 2, writer);
     }
 
-    if (has_scheme && (writer->flags & SERD_WRITE_CURIED) &&
+    if (has_scheme && !(writer->flags & SERD_WRITE_UNQUALIFIED) &&
         serd_env_qualify(writer->env, node, &prefix, &suffix)) {
       TRY(st, write_lname(writer, prefix.buf, prefix.n_bytes));
       TRY(st, esink(":", 1, writer));
@@ -851,7 +851,7 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
 
   // In fast-and-loose Turtle/TriG mode CURIEs are simply passed through
   const bool fast =
-    !(writer->flags & (SERD_WRITE_CURIED | SERD_WRITE_RESOLVED));
+    (writer->flags & (SERD_WRITE_UNQUALIFIED | SERD_WRITE_UNRESOLVED));
 
   if (!supports_abbrev(writer) || !fast) {
     if ((st = serd_env_expand(writer->env, node, &prefix, &suffix))) {

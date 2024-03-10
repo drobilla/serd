@@ -217,16 +217,11 @@ test_write_bad_anon_stack(void)
 }
 
 static void
-test_strict_write(void)
+check_strict_write(const SerdWriterFlags flags)
 {
   SerdEnv* const    env = serd_env_new(NULL);
   SerdWriter* const writer =
-    serd_writer_new(SERD_TURTLE,
-                    (SerdWriterFlags)(SERD_WRITE_STRICT | SERD_WRITE_ASCII),
-                    env,
-                    NULL,
-                    null_sink,
-                    NULL);
+    serd_writer_new(SERD_TURTLE, flags, env, NULL, null_sink, NULL);
   assert(writer);
 
   static const uint8_t bad_uri_buf[]   = {'f', 't', 'p', ':', 0xFF, 0x90, 0};
@@ -254,6 +249,16 @@ test_strict_write(void)
 
   serd_writer_free(writer);
   serd_env_free(env);
+}
+
+static void
+test_strict_write(void)
+{
+  check_strict_write(
+    (SerdWriterFlags)(SERD_WRITE_STRICT | SERD_WRITE_UNRESOLVED));
+  check_strict_write((SerdWriterFlags)(SERD_WRITE_STRICT |
+                                       SERD_WRITE_UNRESOLVED |
+                                       SERD_WRITE_ASCII));
 }
 
 // Produce a write error without setting errno
@@ -316,8 +321,8 @@ test_write_nothing_node(void)
   assert(env);
 
   SerdBuffer        buffer = {NULL, 0};
-  SerdWriter* const writer =
-    serd_writer_new(SERD_TURTLE, 0U, env, NULL, serd_buffer_sink, &buffer);
+  SerdWriter* const writer = serd_writer_new(
+    SERD_TURTLE, SERD_WRITE_UNRESOLVED, env, NULL, serd_buffer_sink, &buffer);
   assert(writer);
 
   SerdNode s = serd_node_from_string(SERD_URI, "");
@@ -400,12 +405,8 @@ check_pname_escape(const char* const lname, const char* const expected)
   SerdEnv* const env    = serd_env_new(NULL);
   SerdBuffer     buffer = {NULL, 0};
 
-  SerdWriter* const writer = serd_writer_new(SERD_TURTLE,
-                                             (SerdWriterFlags)SERD_WRITE_CURIED,
-                                             env,
-                                             NULL,
-                                             serd_buffer_sink,
-                                             &buffer);
+  SerdWriter* const writer =
+    serd_writer_new(SERD_TURTLE, 0U, env, NULL, serd_buffer_sink, &buffer);
   assert(writer);
 
   static const char* const prefix     = NS_EG;
