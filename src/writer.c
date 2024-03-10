@@ -51,9 +51,8 @@ static const WriteContext WRITE_CONTEXT_NULL = {CTX_NAMED,
                                                 0U};
 
 typedef enum {
-  SEP_NONE,        ///< Sentinel before the start of a document
-  SEP_NODE,        ///< Sentinel after a node
-  SEP_NEWLINE,     ///< Sentinel after a node
+  SEP_NONE,        ///< Sentinel after "nothing"
+  SEP_NEWLINE,     ///< Sentinel after a line end
   SEP_END_DIRECT,  ///< End of a directive (like "@prefix")
   SEP_END_S,       ///< End of a subject ('.')
   SEP_END_P,       ///< End of a predicate (';')
@@ -88,7 +87,6 @@ typedef struct {
 #define NIL '\0'
 
 static const SepRule rules[] = {
-  {NIL, +0, SEP_NONE, SEP_NONE, SEP_NONE},
   {NIL, +0, SEP_NONE, SEP_NONE, SEP_NONE},
   {'\n', 0, SEP_NONE, SEP_NONE, SEP_NONE},
   {'.', +0, SEP_EACH, SEP_NONE, SEP_EACH},
@@ -861,30 +859,20 @@ write_node(SerdWriter*        writer,
            Field              field,
            SerdStatementFlags flags)
 {
-  SerdStatus st = SERD_SUCCESS;
-
   switch (node->type) {
   case SERD_NOTHING:
     break;
   case SERD_LITERAL:
-    st = write_literal(writer, node, datatype, lang, flags);
-    break;
+    return write_literal(writer, node, datatype, lang, flags);
   case SERD_URI:
-    st = write_uri_node(writer, node, field);
-    break;
+    return write_uri_node(writer, node, field);
   case SERD_CURIE:
-    st = write_curie(writer, node);
-    break;
+    return write_curie(writer, node);
   case SERD_BLANK:
-    st = write_blank(writer, node, field, flags);
-    break;
+    return write_blank(writer, node, field, flags);
   }
 
-  if (node->type != SERD_BLANK) {
-    writer->last_sep = SEP_NODE;
-  }
-
-  return st;
+  return SERD_SUCCESS;
 }
 
 static bool
@@ -1205,7 +1193,6 @@ serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
     TRY(st, esink("@base <", 7, writer));
     TRY(st, esink(uri->buf, uri->n_bytes, writer));
     TRY(st, esink(">", 1, writer));
-    writer->last_sep = SEP_NODE;
     TRY(st, write_sep(writer, SEP_END_DIRECT));
   }
 
@@ -1246,7 +1233,6 @@ serd_writer_set_prefix(SerdWriter*     writer,
     TRY(st, esink(": <", 3, writer));
     TRY(st, ewrite_uri(writer, uri->buf, uri->n_bytes));
     TRY(st, esink(">", 1, writer));
-    writer->last_sep = SEP_NODE;
     TRY(st, write_sep(writer, SEP_END_DIRECT));
   }
 
