@@ -4,8 +4,10 @@
 #include "read_ntriples.h"
 
 #include "ntriples.h"
+#include "read_context.h"
 #include "read_utf8.h"
-#include "reader.h"
+#include "reader_impl.h"
+#include "reader_internal.h"
 #include "stack.h"
 #include "string_utils.h"
 #include "try.h"

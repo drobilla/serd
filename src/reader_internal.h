@@ -1,22 +1,19 @@
 // Copyright 2011-2026 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#ifndef SERD_SRC_READER_H
-#define SERD_SRC_READER_H
+#ifndef SERD_SRC_READER_INTERNAL_H
+#define SERD_SRC_READER_INTERNAL_H
 
 #include "byte_source.h"
-#include "stack.h"
+#include "read_context.h"
+#include "reader_impl.h" // IWYU pragma: keep
 #include "token_header.h"
 
-#include <serd/error.h>
 #include <serd/event.h>
 #include <serd/node_type.h>
 #include <serd/reader.h>
-#include <serd/sink.h>
 #include <serd/status.h>
-#include <serd/syntax.h>
 #include <serd/token_view.h>
-#include <serd/world.h>
 #include <zix/attributes.h>
 #include <zix/string_view.h>
 
@@ -24,33 +21,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-
-typedef struct {
-  TokenHeader*    graph;
-  TokenHeader*    subject;
-  TokenHeader*    predicate;
-  SerdEventFlags* flags;
-} ReadContext;
-
-struct SerdReaderImpl {
-  SerdWorld*      world;
-  const SerdSink* sink;
-  SerdLogFunc     error_func;
-  void*           error_handle;
-  TokenHeader*    rdf_first;
-  TokenHeader*    rdf_rest;
-  TokenHeader*    rdf_nil;
-  TokenHeader*    rdf_type;
-  SerdByteSource  source;
-  SerdStack       stack;
-  SerdSyntax      syntax;
-  unsigned        next_id;
-  uint8_t*        buf;
-  char*           bprefix;
-  size_t          bprefix_len;
-  bool            strict; ///< True iff strict parsing
-  bool            seen_genid;
-};
 
 ZIX_LOG_FUNC(3, 4)
 SerdStatus
@@ -190,4 +160,4 @@ eat_push_byte(SerdReader* const reader, TokenHeader* const node, const int c)
   return st ? st : push_byte(reader, node, c);
 }
 
-#endif // SERD_SRC_READER_H
+#endif // SERD_SRC_READER_INTERNAL_H
