@@ -72,7 +72,8 @@ test_read_string(void)
   assert(
     !serd_reader_start_string(reader,
                               "<http://example.org/s> <http://example.org/p> "
-                              "<http://example.org/o> ."));
+                              "<http://example.org/o> .",
+                              NULL));
 
   assert(!serd_reader_read_document(reader));
   assert(rt.n_base == 0);
@@ -184,7 +185,7 @@ test_read_eof_by_byte(void)
 
   size_t n_reads = 0U;
   serd_reader_start_stream(
-    reader, eof_test_read, eof_test_error, &n_reads, "test", 1U);
+    reader, eof_test_read, eof_test_error, &n_reads, NULL, 1U);
 
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);

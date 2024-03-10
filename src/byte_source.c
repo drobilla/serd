@@ -5,6 +5,9 @@
 
 #include "system.h"
 
+#include "serd/node.h"
+#include "zix/string_view.h"
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -41,24 +44,25 @@ serd_byte_source_open_source(SerdByteSource* const source,
                              const SerdErrorFunc   error_func,
                              const SerdCloseFunc   close_func,
                              void* const           stream,
-                             const char* const     name,
+                             const SerdNode* const name,
                              const size_t          page_size)
 {
-  const Cursor cur = {name, 1, 1};
-
   assert(read_func);
   assert(error_func);
   assert(page_size > 0);
 
   memset(source, '\0', sizeof(*source));
-  source->read_func   = read_func;
-  source->error_func  = error_func;
-  source->close_func  = close_func;
-  source->stream      = stream;
-  source->page_size   = page_size;
-  source->buf_size    = page_size;
-  source->cur         = cur;
-  source->from_stream = true;
+  source->read_func      = read_func;
+  source->error_func     = error_func;
+  source->close_func     = close_func;
+  source->stream         = stream;
+  source->page_size      = page_size;
+  source->buf_size       = page_size;
+  source->name           = serd_node_copy(name);
+  source->caret.document = source->name;
+  source->caret.line     = 1U;
+  source->caret.column   = 1U;
+  source->from_stream    = true;
 
   if (page_size > 1) {
     source->file_buf = (uint8_t*)serd_allocate_buffer(page_size);
@@ -90,14 +94,21 @@ serd_byte_source_prepare(SerdByteSource* const source)
 
 SerdStatus
 serd_byte_source_open_string(SerdByteSource* const source,
-                             const char* const     utf8)
+                             const char* const     utf8,
+                             const SerdNode* const name)
 {
-  const Cursor cur = {"(string)", 1, 1};
+  static const ZixStringView default_name = ZIX_STATIC_STRING("string");
 
   memset(source, '\0', sizeof(*source));
-  source->page_size = 1;
-  source->cur       = cur;
-  source->read_buf  = (const uint8_t*)utf8;
+
+  source->name = name ? serd_node_copy(name) : serd_new_string(default_name);
+
+  source->page_size      = 1U;
+  source->read_buf       = (const uint8_t*)utf8;
+  source->caret.document = source->name;
+  source->caret.line     = 1U;
+  source->caret.column   = 1U;
+
   return SERD_SUCCESS;
 }
 
@@ -113,6 +124,7 @@ serd_byte_source_close(SerdByteSource* const source)
     serd_free_aligned(source->file_buf);
   }
 
+  serd_node_free(source->name);
   memset(source, '\0', sizeof(*source));
   return st;
 }
