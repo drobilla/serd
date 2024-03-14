@@ -132,6 +132,7 @@ libserd = library(
     '-DSERD_INTERNAL',
     '-DSERD_VERSION="@0@"'.format(meson.project_version()),
   ] + c_suppressions + extra_c_args + platform_c_args,
+  darwin_versions: [major_version + '.0.0', meson.project_version()],
   dependencies: m_dep,
   gnu_symbol_visibility: 'hidden',
   include_directories: include_dirs,

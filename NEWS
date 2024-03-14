@@ -1,8 +1,9 @@
 serd (0.32.3) unstable; urgency=medium
 
+  * Fix library current_version on MacOS
   * Fix parsing NQuads lines with no space before the final dot
 
- -- David Robillard <d@drobilla.net>  Fri, 09 Feb 2024 15:46:08 +0000
+ -- David Robillard <d@drobilla.net>  Thu, 14 Mar 2024 16:43:17 +0000
 
 serd (0.32.2) stable; urgency=medium
 
