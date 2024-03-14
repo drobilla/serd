@@ -228,6 +228,4 @@ if not get_option('tests').disabled()
   subdir('test')
 endif
 
-if not get_option('docs').disabled()
-  subdir('doc')
-endif
+subdir('doc')
