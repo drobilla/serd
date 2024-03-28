@@ -1696,6 +1696,8 @@ read_n3_statement(SerdReader* const reader)
 SerdStatus
 serd_reader_skip_until_byte(SerdReader* const reader, const uint8_t byte)
 {
+  assert(reader);
+
   int c = peek_byte(reader);
 
   while (c != byte && c != EOF) {

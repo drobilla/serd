@@ -102,6 +102,9 @@ serd_node_copy(const SerdNode* const node)
 bool
 serd_node_equals(const SerdNode* const a, const SerdNode* const b)
 {
+  assert(a);
+  assert(b);
+
   return (a == b) ||
          (a->type == b->type && a->n_bytes == b->n_bytes &&
           a->n_chars == b->n_chars &&
@@ -114,6 +117,8 @@ serd_node_new_uri_from_node(const SerdNode* const uri_node,
                             const SerdURI* const  base,
                             SerdURI* const        out)
 {
+  assert(uri_node);
+
   return (uri_node->type == SERD_URI && uri_node->buf)
            ? serd_node_new_uri_from_string(uri_node->buf, base, out)
            : SERD_NODE_NULL;
@@ -186,6 +191,8 @@ serd_node_new_file_uri(const uint8_t* const path,
                        SerdURI* const       out,
                        const bool           escape)
 {
+  assert(path);
+
   const size_t path_len     = strlen((const char*)path);
   const size_t hostname_len = hostname ? strlen((const char*)hostname) : 0;
   const bool   is_windows   = is_windows_path(path);
@@ -238,6 +245,8 @@ serd_node_new_uri(const SerdURI* const uri,
                   const SerdURI* const base,
                   SerdURI* const       out)
 {
+  assert(uri);
+
   SerdURI abs_uri = *uri;
   if (base) {
     serd_uri_resolve(uri, base, &abs_uri);
@@ -266,6 +275,8 @@ serd_node_new_relative_uri(const SerdURI* const uri,
                            const SerdURI* const root,
                            SerdURI* const       out)
 {
+  assert(uri);
+
   const size_t uri_len  = serd_uri_string_length(uri);
   const size_t base_len = serd_uri_string_length(base);
   uint8_t*     buf      = (uint8_t*)malloc(uri_len + base_len + 1);
@@ -377,6 +388,8 @@ serd_node_new_blob(const void* const buf,
                    const size_t      size,
                    const bool        wrap_lines)
 {
+  assert(buf);
+
   const size_t len  = serd_base64_get_length(size, wrap_lines);
   uint8_t*     str  = (uint8_t*)calloc(len + 2, 1);
   SerdNode     node = {str, len, len, 0, SERD_LITERAL};

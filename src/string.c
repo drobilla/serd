@@ -5,6 +5,7 @@
 
 #include "serd/serd.h"
 
+#include <assert.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -131,6 +132,8 @@ read_sign(const char** const sptr)
 double
 serd_strtod(const char* const str, char** const endptr)
 {
+  assert(str);
+
   double result = 0.0;
 
   // Point s at the first non-whitespace character

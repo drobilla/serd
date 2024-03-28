@@ -7,6 +7,7 @@
 
 #include "serd/serd.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -16,6 +17,8 @@
 const uint8_t*
 serd_uri_to_path(const uint8_t* uri)
 {
+  assert(uri);
+
   const uint8_t* path = uri;
   if (!is_windows_path(uri) && serd_uri_string_has_scheme(uri)) {
     if (!!strncmp((const char*)uri, "file:", 5)) {
@@ -42,6 +45,8 @@ serd_uri_to_path(const uint8_t* uri)
 uint8_t*
 serd_file_uri_parse(const uint8_t* const uri, uint8_t** const hostname)
 {
+  assert(uri);
+
   const uint8_t* path = uri;
   if (hostname) {
     *hostname = NULL;
@@ -113,6 +118,9 @@ serd_uri_string_has_scheme(const uint8_t* utf8)
 SerdStatus
 serd_uri_parse(const uint8_t* const utf8, SerdURI* const out)
 {
+  assert(utf8);
+  assert(out);
+
   *out = SERD_URI_NULL;
 
   const uint8_t* ptr = utf8;
@@ -293,6 +301,10 @@ serd_uri_resolve(const SerdURI* const r,
                  const SerdURI* const base,
                  SerdURI* const       t)
 {
+  assert(r);
+  assert(base);
+  assert(t);
+
   if (!base->scheme.len) {
     *t = *r; // Don't resolve against non-absolute URIs
     return;
@@ -416,6 +428,10 @@ serd_uri_serialise_relative(const SerdURI* const uri,
                             SerdSink             sink,
                             void* const          stream)
 {
+  assert(uri);
+  assert(sink);
+  assert(stream);
+
   size_t     len = 0;
   const bool relative =
     root ? uri_is_under(uri, root) : uri_is_related(uri, base);
@@ -468,5 +484,7 @@ serd_uri_serialise_relative(const SerdURI* const uri,
 size_t
 serd_uri_serialise(const SerdURI* const uri, SerdSink sink, void* const stream)
 {
+  assert(sink);
+  assert(stream);
   return serd_uri_serialise_relative(uri, NULL, NULL, sink, stream);
 }

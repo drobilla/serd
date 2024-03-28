@@ -8,6 +8,7 @@
 
 #include "serd/serd.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -98,6 +99,9 @@ serd_base64_decode(const uint8_t* const str,
                    const size_t         len,
                    size_t* const        size)
 {
+  assert(str);
+  assert(size);
+
   void* buf = malloc((len * 3) / 4 + 2);
 
   *size = 0;

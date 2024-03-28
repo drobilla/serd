@@ -3,6 +3,7 @@
 
 #include "serd/serd.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -55,6 +56,8 @@ serd_env_free(SerdEnv* const env)
 const SerdNode*
 serd_env_get_base_uri(const SerdEnv* const env, SerdURI* const out)
 {
+  assert(env);
+
   if (out) {
     *out = env->base_uri;
   }
@@ -65,6 +68,8 @@ serd_env_get_base_uri(const SerdEnv* const env, SerdURI* const out)
 SerdStatus
 serd_env_set_base_uri(SerdEnv* const env, const SerdNode* const uri)
 {
+  assert(env);
+
   if (uri && uri->type != SERD_URI) {
     return SERD_ERR_BAD_ARG;
   }
@@ -134,6 +139,8 @@ serd_env_set_prefix(SerdEnv* const        env,
                     const SerdNode* const name,
                     const SerdNode* const uri)
 {
+  assert(env);
+
   if (!name->buf || uri->type != SERD_URI) {
     return SERD_ERR_BAD_ARG;
   }
@@ -263,6 +270,9 @@ serd_env_foreach(const SerdEnv* const env,
                  const SerdPrefixSink func,
                  void* const          handle)
 {
+  assert(env);
+  assert(func);
+
   for (size_t i = 0; i < env->n_prefixes; ++i) {
     func(handle, &env->prefixes[i].name, &env->prefixes[i].uri);
   }

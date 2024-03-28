@@ -12,6 +12,7 @@
 
 #include "serd/serd.h"
 
+#include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -944,6 +945,8 @@ serd_writer_write_statement(SerdWriter*        writer,
                             const SerdNode*    datatype,
                             const SerdNode*    lang)
 {
+  assert(writer);
+
   SerdStatus st = SERD_SUCCESS;
 
   if (!is_resource(subject) || !is_resource(predicate) || !object ||
@@ -1093,6 +1096,8 @@ serd_writer_write_statement(SerdWriter*        writer,
 SerdStatus
 serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
 {
+  assert(writer);
+
   SerdStatus st = SERD_SUCCESS;
 
   if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
@@ -1122,6 +1127,8 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
 SerdStatus
 serd_writer_finish(SerdWriter* writer)
 {
+  assert(writer);
+
   const SerdStatus st0 = terminate_context(writer);
   const SerdStatus st1 = serd_byte_sink_flush(&writer->byte_sink);
   free_anon_stack(writer);
@@ -1137,6 +1144,9 @@ serd_writer_new(SerdSyntax     syntax,
                 SerdSink       ssink,
                 void*          stream)
 {
+  assert(env);
+  assert(sink);
+
   const WriteContext context = WRITE_CONTEXT_NULL;
   SerdWriter*        writer  = (SerdWriter*)calloc(1, sizeof(SerdWriter));
 
@@ -1159,6 +1169,8 @@ serd_writer_set_error_sink(SerdWriter*   writer,
                            SerdErrorSink error_sink,
                            void*         error_handle)
 {
+  assert(writer);
+  assert(error_sink);
   writer->error_sink   = error_sink;
   writer->error_handle = error_handle;
 }
@@ -1166,6 +1178,8 @@ serd_writer_set_error_sink(SerdWriter*   writer,
 void
 serd_writer_chop_blank_prefix(SerdWriter* writer, const uint8_t* prefix)
 {
+  assert(writer);
+
   free(writer->bprefix);
   writer->bprefix_len = 0;
   writer->bprefix     = NULL;
@@ -1181,6 +1195,8 @@ serd_writer_chop_blank_prefix(SerdWriter* writer, const uint8_t* prefix)
 SerdStatus
 serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 {
+  assert(writer);
+
   SerdStatus st = SERD_SUCCESS;
 
   TRY(st, serd_env_set_base_uri(writer->env, uri));
@@ -1201,6 +1217,8 @@ serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 SerdStatus
 serd_writer_set_root_uri(SerdWriter* writer, const SerdNode* uri)
 {
+  assert(writer);
+
   serd_node_free(&writer->root_node);
 
   if (uri && uri->buf) {
@@ -1260,18 +1278,24 @@ serd_writer_free(SerdWriter* writer)
 SerdEnv*
 serd_writer_get_env(SerdWriter* writer)
 {
+  assert(writer);
   return writer->env;
 }
 
 size_t
 serd_file_sink(const void* buf, size_t len, void* stream)
 {
+  assert(buf);
+  assert(stream);
   return fwrite(buf, 1, len, (FILE*)stream);
 }
 
 size_t
 serd_chunk_sink(const void* buf, size_t len, void* stream)
 {
+  assert(buf);
+  assert(stream);
+
   SerdChunk* chunk = (SerdChunk*)stream;
   uint8_t* new_buf = (uint8_t*)realloc((uint8_t*)chunk->buf, chunk->len + len);
   if (new_buf) {
@@ -1285,6 +1309,7 @@ serd_chunk_sink(const void* buf, size_t len, void* stream)
 uint8_t*
 serd_chunk_sink_finish(SerdChunk* stream)
 {
+  assert(stream);
   serd_chunk_sink("", 1, stream);
   return (uint8_t*)stream->buf;
 }
