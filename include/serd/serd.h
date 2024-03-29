@@ -329,14 +329,14 @@ typedef enum {
 
      This type is useful as a sentinel, but is never emitted by the reader.
   */
-  SERD_NOTHING = 0,
+  SERD_NOTHING,
 
   /**
      Literal value.
 
      A literal optionally has either a language, or a datatype (not both).
   */
-  SERD_LITERAL = 1,
+  SERD_LITERAL,
 
   /**
      URI (absolute or relative).
@@ -346,7 +346,7 @@ typedef enum {
      URI (e.g. "http://example.org/foo").
      @see [RFC3986](http://tools.ietf.org/html/rfc3986)
   */
-  SERD_URI = 2,
+  SERD_URI,
 
   /**
      CURIE, a shortened URI.
@@ -354,7 +354,7 @@ typedef enum {
      Value is an unquoted CURIE string relative to the current environment,
      e.g. "rdf:type".  @see [CURIE Syntax 1.0](http://www.w3.org/TR/curie)
   */
-  SERD_CURIE = 3,
+  SERD_CURIE,
 
   /**
      A blank node.
@@ -363,7 +363,7 @@ typedef enum {
      is meaningful only within this serialisation.  @see [RDF 1.1
      Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
   */
-  SERD_BLANK = 4,
+  SERD_BLANK,
 } SerdType;
 
 /// A syntactic RDF node
