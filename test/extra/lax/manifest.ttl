@@ -6,32 +6,74 @@
 	a mf:Manifest ;
 	rdfs:comment "Serd lax parsing test suite" ;
 	mf:entries (
-		<#test-bad-string>
-		<#test-bad-uri>
-		<#test-bad-utf8>
+		<#test-bad-string-nq>
+		<#test-bad-string-nt>
+		<#test-bad-string-ttl>
+		<#test-bad-uri-nq>
+		<#test-bad-uri-nt>
+		<#test-bad-uri-ttl>
+		<#test-bad-utf8-nq>
+		<#test-bad-utf8-nt>
+		<#test-bad-utf8-ttl>
 		<#test-lone-list>
 	) .
 
-<#test-bad-string>
+<#test-bad-string-nq>
+	a rdft:TestNQuadsNegativeSyntax ;
+	mf:action <test-bad-string.nq> ;
+	mf:name "test-bad-string-nq" ;
+	mf:result <test-bad-string-out.nt> .
+
+<#test-bad-string-nt>
+	a rdft:TestNTriplesNegativeSyntax ;
+	mf:action <test-bad-string.nt> ;
+	mf:name "test-bad-string-nt" ;
+	mf:result <test-bad-string-out.nt> .
+
+<#test-bad-string-ttl>
 	a rdft:TestTurtleNegativeSyntax ;
 	mf:action <test-bad-string.ttl> ;
-	mf:name "test-bad-string" ;
-	mf:result <test-bad-string.nt> .
+	mf:name "test-bad-string-ttl" ;
+	mf:result <test-bad-string-out.nt> .
 
-<#test-bad-uri>
+<#test-bad-uri-nq>
+	a rdft:TestNQuadsNegativeSyntax ;
+	mf:action <test-bad-uri.nq> ;
+	mf:name "test-bad-uri-nq" ;
+	mf:result <test-bad-uri-nq-out.nq> .
+
+<#test-bad-uri-nt>
+	a rdft:TestNTriplesNegativeSyntax ;
+	mf:action <test-bad-uri.nt> ;
+	mf:name "test-bad-uri-nt" ;
+	mf:result <test-bad-uri-out.nt> .
+
+<#test-bad-uri-ttl>
 	a rdft:TestTurtleNegativeSyntax ;
 	mf:action <test-bad-uri.ttl> ;
-	mf:name "test-bad-uri" ;
-	mf:result <test-bad-uri.nt> .
+	mf:name "test-bad-uri-ttl" ;
+	mf:result <test-bad-uri-out.nt> .
 
-<#test-bad-utf8>
+<#test-bad-utf8-nq>
+	a rdft:TestNQuadsNegativeSyntax ;
+	mf:action <test-bad-utf8.nq> ;
+	mf:name "test-bad-utf8-nq" ;
+	mf:result <test-bad-utf8-nq-out.nq> .
+
+<#test-bad-utf8-nt>
+	a rdft:TestNTriplesNegativeSyntax ;
+	mf:action <test-bad-utf8.nt> ;
+	mf:name "test-bad-utf8-nt" ;
+	mf:result <test-bad-utf8-nt-out.nt> .
+
+<#test-bad-utf8-ttl>
 	a rdft:TestTurtleNegativeSyntax ;
 	mf:action <test-bad-utf8.ttl> ;
-	mf:name "test-bad-utf8" ;
-	mf:result <test-bad-utf8.nt> .
+	mf:name "test-bad-utf8-ttl" ;
+	mf:result <test-bad-utf8-ttl-out.nt> .
 
 <#test-lone-list>
 	a rdft:TestTurtleNegativeSyntax ;
-	mf:name "test-lone-list" ;
 	mf:action <test-lone-list.ttl> ;
+	mf:name "test-lone-list" ;
 	mf:result <test-lone-list.nt> .

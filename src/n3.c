@@ -1783,13 +1783,17 @@ read_nquads_statement(SerdReader* const reader)
 SerdStatus
 read_nquadsDoc(SerdReader* const reader)
 {
-  SerdStatus st = SERD_SUCCESS;
-
-  while (!reader->source.eof && !st) {
-    st = read_nquads_statement(reader);
+  while (!reader->source.eof) {
+    const SerdStatus st = read_nquads_statement(reader);
+    if (st > SERD_FAILURE) {
+      if (reader->strict) {
+        return st;
+      }
+      serd_reader_skip_until_byte(reader, '\n');
+    }
   }
 
-  return st;
+  return SERD_SUCCESS;
 }
 
 #if defined(__clang__) && __clang_major__ >= 10
