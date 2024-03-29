@@ -9,6 +9,7 @@
 		<#test-bad-string>
 		<#test-bad-uri>
 		<#test-bad-utf8>
+		<#test-lone-list>
 	) .
 
 <#test-bad-string>
@@ -28,3 +29,9 @@
 	mf:action <test-bad-utf8.ttl> ;
 	mf:name "test-bad-utf8" ;
 	mf:result <test-bad-utf8.nt> .
+
+<#test-lone-list>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:name "test-lone-list" ;
+	mf:action <test-lone-list.ttl> ;
+	mf:result <test-lone-list.nt> .
