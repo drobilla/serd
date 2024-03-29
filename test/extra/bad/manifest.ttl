@@ -10,6 +10,7 @@
 		<#bad-a-subject>
 		<#bad-base>
 		<#bad-blank>
+		<#bad-blank-node-label>
 		<#bad-blank-predicate>
 		<#bad-blank-syntax>
 		<#bad-bom>
@@ -118,6 +119,7 @@
 		<#bad-semicolon-after-subject>
 		<#bad-string>
 		<#bad-subject>
+		<#bad-trailing-garbage>
 		<#bad-true-predicate>
 		<#bad-true-subject>
 		<#bad-uri-escape>
@@ -146,6 +148,11 @@
 	a rdft:TestTurtleNegativeSyntax ;
 	mf:action <bad-blank.ttl> ;
 	mf:name "bad-blank" .
+
+<#bad-blank-node-label>
+	a rdft:TestNTriplesNegativeSyntax ;
+	mf:action <bad-blank-node-label.nt> ;
+	mf:name "bad-blank-node-label" .
 
 <#bad-blank-predicate>
 	a rdft:TestTurtleNegativeSyntax ;
@@ -686,6 +693,11 @@
 	a rdft:TestTurtleNegativeSyntax ;
 	mf:action <bad-subject.ttl> ;
 	mf:name "bad-subject" .
+
+<#bad-trailing-garbage>
+	a rdft:TestNTriplesNegativeSyntax ;
+	mf:action <bad-trailing-garbage.nt> ;
+	mf:name "bad-trailing-garbage" .
 
 <#bad-true-predicate>
 	a rdft:TestTurtleNegativeSyntax ;
