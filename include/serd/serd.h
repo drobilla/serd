@@ -75,10 +75,10 @@ extern "C" {
 
 /// RDF syntax type
 typedef enum {
-  SERD_TURTLE   = 1, ///< Terse triples http://www.w3.org/TR/turtle
-  SERD_NTRIPLES = 2, ///< Line-based triples http://www.w3.org/TR/n-triples/
-  SERD_NQUADS   = 3, ///< Line-based quads http://www.w3.org/TR/n-quads/
-  SERD_TRIG     = 4, ///< Terse quads http://www.w3.org/TR/trig/
+  SERD_TURTLE   = 1U, ///< Terse triples http://www.w3.org/TR/turtle
+  SERD_NTRIPLES = 2U, ///< Line-based triples http://www.w3.org/TR/n-triples/
+  SERD_NQUADS   = 3U, ///< Line-based quads http://www.w3.org/TR/n-quads/
+  SERD_TRIG     = 4U, ///< Terse quads http://www.w3.org/TR/trig/
 } SerdSyntax;
 
 /// Flags indicating certain string properties relevant to serialisation
