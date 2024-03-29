@@ -57,16 +57,6 @@ ZIX_NODISCARD SerdStatus
 read_EOL(SerdReader* reader);
 
 /**
-   Read an absolute IRI.
-
-   This is a stricter subset of [8] IRIREF in the NTriples grammar, since a
-   scheme is required.  Handling this in the parser results in better error
-   messages.
-*/
-ZIX_NODISCARD SerdStatus
-read_IRI(SerdReader* reader, SerdNode** dest);
-
-/**
    Read an IRI reference suffix into an existing node.
 
    RDF 1.1 NTriples: [8] IRIREF

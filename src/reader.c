@@ -7,6 +7,7 @@
 #include "namespaces.h"
 #include "node.h"
 #include "node_impl.h"
+#include "read_nquads.h"
 #include "read_ntriples.h"
 #include "stack.h"
 #include "system.h"
@@ -377,7 +378,7 @@ serd_reader_read_chunk(SerdReader* const reader)
   }
 
   return st                                ? st
-         : (reader->syntax == SERD_NQUADS) ? read_nquads_statement(reader)
+         : (reader->syntax == SERD_NQUADS) ? read_nquads_line(reader)
                                            : read_n3_statement(reader);
 }
 
