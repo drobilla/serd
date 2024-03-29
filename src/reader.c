@@ -4,6 +4,7 @@
 #include "reader.h"
 
 #include "byte_source.h"
+#include "read_nquads.h"
 #include "read_ntriples.h"
 #include "stack.h"
 #include "symbols.h"
@@ -469,7 +470,7 @@ serd_reader_read_chunk(SerdReader* const reader)
   }
 
   return st                                ? st
-         : (reader->syntax == SERD_NQUADS) ? read_nquads_statement(reader)
+         : (reader->syntax == SERD_NQUADS) ? read_nquads_line(reader)
                                            : read_n3_statement(reader);
 }
 

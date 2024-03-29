@@ -252,6 +252,7 @@ sources = files(
   'src/n3.c',
   'src/node.c',
   'src/object_view.c',
+  'src/read_nquads.c',
   'src/read_ntriples.c',
   'src/read_utf8.c',
   'src/reader.c',
