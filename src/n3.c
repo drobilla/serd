@@ -24,12 +24,6 @@
 #include <stdio.h>
 #include <string.h>
 
-static bool
-fancy_syntax(const SerdReader* const reader)
-{
-  return reader->syntax == SERD_TURTLE || reader->syntax == SERD_TRIG;
-}
-
 static SerdStatus
 read_collection(SerdReader* reader, ReadContext ctx, TokenHeader** dest);
 
@@ -139,11 +133,6 @@ read_String(SerdReader* const reader, TokenHeader* const node)
 
   if (q3 != q1) { // Empty short string ("" or '')
     return SERD_SUCCESS;
-  }
-
-  if (!fancy_syntax(reader)) {
-    return r_err(
-      reader, SERD_BAD_SYNTAX, "syntax does not support long literals");
   }
 
   skip_byte(reader, q3);
@@ -284,10 +273,6 @@ read_PN_PREFIX(SerdReader* const  reader,
 static SerdStatus
 read_IRIREF(SerdReader* const reader, TokenHeader** const dest)
 {
-  if (!fancy_syntax(reader)) {
-    return read_IRI(reader, dest);
-  }
-
   SerdStatus st = SERD_SUCCESS;
   TRY(st, eat_byte_check(reader, '<'));
 
@@ -571,7 +556,6 @@ read_object(SerdReader* const        reader,
             const ReadContext* const ctx,
             TokenHeader** const      o,
             TokenHeader** const      meta,
-            const bool               emit,
             bool* const              ate_dot)
 {
   const size_t orig_stack_size = reader->stack.size;
@@ -582,11 +566,6 @@ read_object(SerdReader* const        reader,
 
   bool      simple = (ctx->subject != 0);
   const int c      = peek_byte(reader);
-  if (!fancy_syntax(reader)) {
-    if (c != '"' && c != ':' && c != '<' && c != '_') {
-      return r_err(reader, SERD_BAD_SYNTAX, "expected: ':', '<', or '_'");
-    }
-  }
 
   switch (c) {
   case EOF:
@@ -633,10 +612,8 @@ read_object(SerdReader* const        reader,
     st = read_named_object(reader, o, meta, ate_dot);
   }
 
-  if (!st && emit && simple) {
+  if (!st && simple && *o) {
     st = emit_statement(reader, *ctx, *o, *meta);
-  } else if (!st && !emit) {
-    return SERD_SUCCESS;
   }
 
   serd_stack_pop_to(&reader->stack, orig_stack_size);
@@ -650,10 +627,10 @@ read_objectList(SerdReader* const reader, ReadContext ctx, bool* const ate_dot)
 
   TokenHeader* object = NULL;
   TokenHeader* meta   = NULL;
-  TRY(st, read_object(reader, &ctx, &object, &meta, true, ate_dot));
+  TRY(st, read_object(reader, &ctx, &object, &meta, ate_dot));
 
   while (st <= SERD_FAILURE && !*ate_dot && eat_delim(reader, ',')) {
-    st = read_object(reader, &ctx, &object, &meta, true, ate_dot);
+    st = read_object(reader, &ctx, &object, &meta, ate_dot);
   }
 
   return st;
@@ -750,8 +727,7 @@ read_collection(SerdReader* const   reader,
     // _:node rdf:first object
     ctx.predicate = reader->rdf_first;
     bool ate_dot  = false;
-    if ((st = read_object(reader, &ctx, &object, &meta, true, &ate_dot)) ||
-        ate_dot) {
+    if ((st = read_object(reader, &ctx, &object, &meta, &ate_dot)) || ate_dot) {
       return end_collection(reader, st);
     }
 
@@ -1092,82 +1068,6 @@ read_turtleTrigDoc(SerdReader* const reader)
 
     if (st > SERD_FAILURE) {
       if (!tolerate_status(reader, st)) {
-        serd_stack_pop_to(&reader->stack, orig_stack_size);
-        return st;
-      }
-      serd_reader_skip_until_byte(reader, '\n');
-    }
-
-    serd_stack_pop_to(&reader->stack, orig_stack_size);
-  }
-
-  return SERD_SUCCESS;
-}
-
-SerdStatus
-read_nquads_statement(SerdReader* const reader)
-{
-  SerdStatus     st      = SERD_SUCCESS;
-  SerdEventFlags flags   = 0U;
-  ReadContext    ctx     = {NULL, NULL, NULL, &flags};
-  TokenHeader*   object  = NULL;
-  TokenHeader*   meta    = NULL;
-  bool           ate_dot = false;
-  int            s_type  = 0;
-
-  read_ws_star(reader);
-  if (peek_byte(reader) == EOF) {
-    return SERD_FAILURE;
-  }
-
-  if (peek_byte(reader) == '\0') {
-    skip_byte(reader, '\0');
-    return SERD_FAILURE;
-  }
-
-  if (peek_byte(reader) == '@') {
-    return r_err(reader, SERD_BAD_SYNTAX, "syntax does not support directives");
-  }
-
-  // subject predicate object
-  if ((st = read_subject(reader, ctx, &ctx.subject, &s_type)) ||
-      !read_ws_star(reader) || (st = read_IRIREF(reader, &ctx.predicate)) ||
-      !read_ws_star(reader) ||
-      (st = read_object(reader, &ctx, &object, &meta, false, &ate_dot))) {
-    return st;
-  }
-
-  if (!ate_dot) { // graphLabel?
-    read_ws_star(reader);
-    switch (peek_byte(reader)) {
-    case '.':
-      break;
-    case '_':
-      TRY(st, read_BLANK_NODE_LABEL(reader, &ctx.graph, &ate_dot));
-      break;
-    default:
-      TRY(st, read_IRIREF(reader, &ctx.graph));
-    }
-
-    // Terminating '.'
-    read_ws_star(reader);
-    if (!ate_dot) {
-      TRY(st, eat_byte_check(reader, '.'));
-    }
-  }
-
-  return emit_statement(reader, ctx, object, meta);
-}
-
-SerdStatus
-read_nquadsDoc(SerdReader* const reader)
-{
-  while (!reader->source.eof) {
-    const size_t orig_stack_size = reader->stack.size;
-
-    const SerdStatus st = read_nquads_statement(reader);
-    if (st > SERD_FAILURE) {
-      if (reader->strict) {
         serd_stack_pop_to(&reader->stack, orig_stack_size);
         return st;
       }

@@ -176,7 +176,14 @@ read_IRIREF_suffix(SerdReader* const reader, TokenHeader* const node)
   return tolerate_status(reader, st) ? SERD_SUCCESS : st;
 }
 
-SerdStatus
+/**
+   Read an absolute IRI.
+
+   This is a stricter subset of [8] IRIREF in the NTriples grammar, since a
+   scheme is required.  Handling this in the parser results in better error
+   messages.
+*/
+static SerdStatus
 read_IRI(SerdReader* const reader, TokenHeader** const dest)
 {
   SerdStatus st = SERD_SUCCESS;
