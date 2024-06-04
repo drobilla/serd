@@ -1,9 +1,10 @@
-# Copyright 2020-2022 David Robillard <d@drobilla.net>
+# Copyright 2020-2024 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
 Checks: >
   -*-magic-numbers,
   -android-cloexec-fopen,
+  -bugprone-assert-side-effect,
   -bugprone-easily-swappable-parameters,
   -cert-err33-c,
   -clang-analyzer-nullability.NullableDereferenced,
