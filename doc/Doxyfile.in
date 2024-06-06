@@ -30,7 +30,8 @@ PREDEFINED             = SERD_ALLOCATED \
                          SERD_DISABLE_DEPRECATED \
                          SERD_NONNULL= \
                          SERD_NULLABLE= \
-                         SERD_PURE_FUNC=
+                         SERD_PURE_FUNC= \
+                         SERD_UNSPECIFIED=
 
 RECURSIVE              = YES
 STRIP_FROM_PATH        = @SERD_SRCDIR@
