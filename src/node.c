@@ -196,9 +196,7 @@ serd_node_new_file_uri(const char* const  path,
 
   SerdBuffer buffer = {uri, uri_len};
   for (size_t i = 0; i < path_len; ++i) {
-    if (path[i] == '%') {
-      serd_buffer_sink("%%", 1, 2, &buffer);
-    } else if (is_uri_path_char(path[i])) {
+    if (is_uri_path_char(path[i])) {
       serd_buffer_sink(path + i, 1, 1, &buffer);
 #ifdef _WIN32
     } else if (path[i] == '\\') {
