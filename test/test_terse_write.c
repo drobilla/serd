@@ -44,10 +44,10 @@ test(void)
   SerdNode* s1 = serd_new_string(SERD_LITERAL, "s1");
   SerdNode* s2 = serd_new_string(SERD_LITERAL, "s2");
 
-  SerdNode* rdf_first = serd_new_string(SERD_URI, NS_RDF "first");
-  SerdNode* rdf_value = serd_new_string(SERD_URI, NS_RDF "value");
-  SerdNode* rdf_rest  = serd_new_string(SERD_URI, NS_RDF "rest");
-  SerdNode* rdf_nil   = serd_new_string(SERD_URI, NS_RDF "nil");
+  SerdNode* rdf_first = serd_new_uri(NS_RDF "first");
+  SerdNode* rdf_value = serd_new_uri(NS_RDF "value");
+  SerdNode* rdf_rest  = serd_new_uri(NS_RDF "rest");
+  SerdNode* rdf_nil   = serd_new_uri(NS_RDF "nil");
 
   serd_env_set_prefix_from_strings(env, "rdf", NS_RDF);
 

@@ -198,13 +198,7 @@ test_strict_write(void)
   SerdWorld*        world = serd_world_new();
   SerdEnv* const    env   = serd_env_new(NULL);
   SerdWriter* const writer =
-    serd_writer_new(world,
-                    SERD_TURTLE,
-                    (SerdWriterFlags)SERD_WRITE_UNRESOLVED,
-                    env,
-                    NULL,
-                    null_sink,
-                    fd);
+    serd_writer_new(world, SERD_TURTLE, 0U, env, NULL, null_sink, fd);
 
   assert(writer);
 
@@ -275,8 +269,8 @@ test_write_empty_syntax(void)
   SerdWorld* const world = serd_world_new();
   SerdEnv*         env   = serd_env_new(NULL);
 
-  SerdNode* s = serd_new_string(SERD_URI, NS_EG "s");
-  SerdNode* p = serd_new_string(SERD_URI, NS_EG "p");
+  SerdNode* s = serd_new_uri(NS_EG "s");
+  SerdNode* p = serd_new_uri(NS_EG "p");
   SerdNode* o = serd_new_string(SERD_CURIE, "eg:o");
 
   SerdBuffer buffer = {NULL, 0};

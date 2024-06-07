@@ -128,6 +128,9 @@ test_file_uri(void)
   assert(!serd_parse_file_uri("file:///dir/%0X", NULL));
   assert(!serd_parse_file_uri("file:///dir/100%%", NULL));
 
+  // Missing trailing '/' after authority
+  assert(!serd_parse_file_uri("file://truncated", NULL));
+
   // Test ignoring hostname
   char* hosted_path = serd_parse_file_uri("file://ahost/path", NULL);
   assert(!strcmp(hosted_path, "/path"));
@@ -135,18 +138,21 @@ test_file_uri(void)
 }
 
 static void
-test_uri_from_string(void)
+test_parse_uri(void)
 {
-  assert(!serd_new_uri_from_string("", NULL, NULL));
+  static const ZixStringView base =
+    ZIX_STATIC_STRING("http://example.org/a/b/c/");
 
-  SerdURIView base_uri;
-  SerdNode*   base =
-    serd_new_uri_from_string("http://example.org/", NULL, &base_uri);
-  SerdNode* nil = serd_new_uri_from_string("", &base_uri, NULL);
+  const SerdURIView base_uri  = serd_parse_uri(base.data);
+  const SerdURIView empty_uri = serd_parse_uri("");
+
+  SerdNode* const nil =
+    serd_new_parsed_uri(serd_resolve_uri(empty_uri, base_uri));
+
   assert(serd_node_type(nil) == SERD_URI);
-  assert(!strcmp(serd_node_string(nil), serd_node_string(base)));
+  assert(!strcmp(serd_node_string(nil), base.data));
+
   serd_node_free(nil);
-  serd_node_free(base);
 }
 
 static void
@@ -201,31 +207,28 @@ check_relative_uri(const char* const uri_string,
   assert(base_string);
   assert(expected_string);
 
-  SerdURIView uri    = SERD_URI_NULL;
-  SerdURIView base   = SERD_URI_NULL;
-  SerdURIView result = SERD_URI_NULL;
-
-  SerdNode* uri_node  = serd_new_uri_from_string(uri_string, NULL, &uri);
-  SerdNode* base_node = serd_new_uri_from_string(base_string, NULL, &base);
+  SerdNode* const   uri_node  = serd_new_uri(uri_string);
+  const SerdURIView uri       = serd_node_uri_view(uri_node);
+  SerdNode* const   base_node = serd_new_uri(base_string);
+  const SerdURIView base      = serd_node_uri_view(base_node);
 
   SerdNode* result_node = NULL;
   if (!root_string) {
-    const SerdURIView rel = serd_relative_uri(uri, base);
-    result_node           = serd_new_uri(&rel, NULL, &result);
+    result_node = serd_new_parsed_uri(serd_relative_uri(uri, base));
   } else {
-    const SerdURIView root      = serd_parse_uri(root_string);
-    SerdNode*         root_node = serd_new_uri(&root, NULL, NULL);
-    const SerdURIView rel       = serd_relative_uri(uri, base);
+    SerdNode* const   root_node = serd_new_uri(root_string);
+    const SerdURIView root      = serd_node_uri_view(root_node);
 
     result_node = serd_uri_is_within(uri, root)
-                    ? serd_new_uri(&rel, NULL, &result)
-                    : serd_new_uri_from_string(uri_string, NULL, &result);
+                    ? serd_new_parsed_uri(serd_relative_uri(uri, base))
+                    : serd_new_uri(uri_string);
 
     serd_node_free(root_node);
   }
 
   assert(!strcmp(serd_node_string(result_node), expected_string));
 
+  const SerdURIView result   = serd_node_uri_view(result_node);
   const SerdURIView expected = serd_parse_uri(expected_string);
   assert(chunk_equals(&result.scheme, &expected.scheme));
   assert(chunk_equals(&result.authority, &expected.authority));
@@ -337,7 +340,7 @@ test_relative_uri(void)
 static void
 check_uri_string(const SerdURIView uri, const char* const expected)
 {
-  SerdNode* const node = serd_new_uri(&uri, NULL, NULL);
+  SerdNode* const node = serd_new_parsed_uri(uri);
   assert(!strcmp(serd_node_string(node), expected));
   serd_node_free(node);
 }
@@ -397,7 +400,7 @@ main(void)
   test_uri_string_has_scheme();
   test_uri_string_length();
   test_file_uri();
-  test_uri_from_string();
+  test_parse_uri();
   test_is_within();
   test_relative_uri();
   test_uri_resolution();

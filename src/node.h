@@ -5,6 +5,7 @@
 #define SERD_SRC_NODE_H
 
 #include "serd/node.h"
+#include "serd/uri.h"
 #include "zix/attributes.h"
 #include "zix/string_view.h"
 
@@ -29,5 +30,9 @@ serd_node_reset(SerdNode* ZIX_NONNULL node);
 /// Create a new URI from a prefix and suffix (expanded from a CURIE)
 SerdNode* ZIX_ALLOCATED
 serd_new_expanded_uri(ZixStringView prefix, ZixStringView suffix);
+
+/// Create a new URI from a string, resolved against a base URI
+SerdNode* ZIX_ALLOCATED
+serd_new_resolved_uri(ZixStringView string, SerdURIView base_uri);
 
 #endif // SERD_SRC_NODE_H

@@ -806,26 +806,26 @@ write_uri_node(SerdWriter* const writer,
 
   TRY(st, esink("<", 1, writer));
 
-  if (!(writer->flags & SERD_WRITE_UNRESOLVED)) {
-    SerdURIView in_base_uri;
-    serd_env_base_uri(writer->env, &in_base_uri);
-    const SerdURIView uri     = serd_parse_uri(serd_node_string(node));
-    const SerdURIView abs_uri = serd_resolve_uri(uri, in_base_uri);
+  SerdURIView base_uri = SERD_URI_NULL;
+  if (!(writer->flags & SERD_WRITE_UNRESOLVED) &&
+      serd_env_base_uri(writer->env, &base_uri)) {
+    SerdURIView        uri     = serd_parse_uri(node_str);
+    SerdURIView        abs_uri = serd_resolve_uri(uri, base_uri);
+    bool               rooted  = uri_is_under(&base_uri, &writer->root_uri);
+    const SerdURIView* root    = rooted ? &writer->root_uri : &base_uri;
+    UriSinkContext     ctx     = {writer, SERD_SUCCESS};
 
-    bool           rooted = uri_is_under(&in_base_uri, &writer->root_uri);
-    SerdURIView*   root   = rooted ? &writer->root_uri : &in_base_uri;
-    UriSinkContext ctx    = {writer, SERD_SUCCESS};
-    if (!uri_is_under(&abs_uri, root) || writer->syntax == SERD_NTRIPLES ||
-        writer->syntax == SERD_NQUADS) {
+    if (!supports_abbrev(writer) || !uri_is_under(&abs_uri, root)) {
       serd_write_uri(abs_uri, uri_sink, &ctx);
     } else {
-      serd_write_uri(serd_relative_uri(uri, in_base_uri), uri_sink, &ctx);
+      serd_write_uri(serd_relative_uri(uri, base_uri), uri_sink, &ctx);
     }
+    st = ctx.status;
   } else {
-    TRY(st, write_uri_from_node(writer, node));
+    st = write_uri_from_node(writer, node);
   }
 
-  return esink(">", 1, writer);
+  return st ? st : esink(">", 1, writer);
 }
 
 SERD_NODISCARD static SerdStatus
@@ -1275,9 +1275,6 @@ serd_writer_set_root_uri(SerdWriter* writer, const SerdNode* uri)
   if (uri) {
     writer->root_node = serd_node_copy(uri);
     writer->root_uri  = serd_parse_uri(serd_node_string(writer->root_node));
-  } else {
-    writer->root_node = NULL;
-    writer->root_uri  = SERD_URI_NULL;
   }
 
   return SERD_SUCCESS;

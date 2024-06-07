@@ -221,7 +221,8 @@ main(int argc, char** argv)
   SerdURIView base_uri = SERD_URI_NULL;
   SerdNode*   base     = NULL;
   if (a < argc) { // Base URI given on command line
-    base = serd_new_uri_from_string((const char*)argv[a], NULL, &base_uri);
+    base_uri = serd_parse_uri(argv[a]);
+    base     = serd_new_parsed_uri(base_uri);
   } else if (!from_string && !from_stdin) { // Use input file URI
     base = serd_new_file_uri(input, NULL, &base_uri);
   }

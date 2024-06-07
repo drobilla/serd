@@ -168,30 +168,46 @@ serd_node_equals(const SerdNode* const a, const SerdNode* const b)
 }
 
 SerdNode*
-serd_new_uri_from_node(const SerdNode* const    uri_node,
-                       const SerdURIView* const base,
-                       SerdURIView* const       out)
+serd_new_uri(const char* const str)
 {
-  assert(uri_node);
+  assert(str);
 
-  const char* uri_str = serd_node_string(uri_node);
-  return (uri_node && uri_node->type == SERD_URI && uri_str)
-           ? serd_new_uri_from_string(uri_str, base, out)
-           : NULL;
+  const size_t length = strlen(str);
+  SerdNode*    node   = serd_node_malloc(length, 0, SERD_URI);
+  memcpy(serd_node_buffer(node), str, length);
+  node->length = length;
+  return node;
 }
 
 SerdNode*
-serd_new_uri_from_string(const char* const        str,
-                         const SerdURIView* const base,
-                         SerdURIView* const       out)
+serd_new_parsed_uri(const SerdURIView uri)
 {
-  if (!str || str[0] == '\0') {
-    // Empty URI => Base URI, or nothing if no base is given
-    return base ? serd_new_uri(base, NULL, out) : NULL;
+  const size_t    len        = serd_uri_string_length(uri);
+  SerdNode* const node       = serd_node_malloc(len, 0, SERD_URI);
+  char*           ptr        = serd_node_buffer(node);
+  const size_t    actual_len = serd_write_uri(uri, string_sink, &ptr);
+
+  assert(actual_len == len);
+
+  serd_node_buffer(node)[actual_len] = '\0';
+  node->length                       = actual_len;
+
+  return node;
+}
+
+SerdNode*
+serd_new_resolved_uri(const ZixStringView string, const SerdURIView base)
+{
+  const SerdURIView uri     = serd_parse_uri(string.data);
+  const SerdURIView abs_uri = serd_resolve_uri(uri, base);
+  SerdNode* const   result  = serd_new_parsed_uri(abs_uri);
+
+  if (!serd_uri_string_has_scheme(serd_node_string(result))) {
+    serd_node_free(result);
+    return NULL;
   }
 
-  SerdURIView uri = serd_parse_uri(str);
-  return serd_new_uri(&uri, base, out); // Resolve/Serialise
+  return result;
 }
 
 static bool
@@ -291,33 +307,6 @@ serd_new_file_uri(const char* const  path,
   }
 
   free(buffer.buf);
-  return node;
-}
-
-SerdNode*
-serd_new_uri(const SerdURIView* const uri,
-             const SerdURIView* const base,
-             SerdURIView* const       out)
-{
-  assert(uri);
-
-  SerdURIView abs_uri = *uri;
-  if (base) {
-    abs_uri = serd_resolve_uri(*uri, *base);
-  }
-
-  const size_t len        = serd_uri_string_length(abs_uri);
-  SerdNode*    node       = serd_node_malloc(len, 0, SERD_URI);
-  char*        ptr        = serd_node_buffer(node);
-  const size_t actual_len = serd_write_uri(abs_uri, string_sink, &ptr);
-
-  serd_node_buffer(node)[actual_len] = '\0';
-  node->length                       = actual_len;
-
-  if (out) {
-    *out = serd_parse_uri(serd_node_string(node)); // TODO: avoid double parse
-  }
-
   return node;
 }
 
@@ -472,14 +461,10 @@ serd_node_string_view(const SerdNode* const node)
   return r;
 }
 
-SerdURIView
+ZIX_PURE_FUNC SerdURIView
 serd_node_uri_view(const SerdNode* const node)
 {
-  SerdURIView result = SERD_URI_NULL;
-
-  if (node->type == SERD_URI) {
-    result = serd_parse_uri(serd_node_string(node));
-  }
-
-  return result;
+  assert(node);
+  return (node->type == SERD_URI) ? serd_parse_uri(serd_node_string(node))
+                                  : SERD_URI_NULL;
 }

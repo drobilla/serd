@@ -110,20 +110,16 @@ SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_substring(SerdNodeType type, const char* ZIX_NONNULL str, size_t len);
 
 /**
-   Create a new URI node from a node.
+   Create a new URI node from a parsed URI.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_uri_from_node(const SerdNode* ZIX_NONNULL     uri_node,
-                       const SerdURIView* ZIX_NULLABLE base,
-                       SerdURIView* ZIX_NULLABLE       out);
+serd_new_parsed_uri(SerdURIView uri);
 
 /**
    Create a new URI node from a string.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_uri_from_string(const char* ZIX_NONNULL         str,
-                         const SerdURIView* ZIX_NULLABLE base,
-                         SerdURIView* ZIX_NULLABLE       out);
+serd_new_uri(const char* ZIX_NONNULL str);
 
 /**
    Create a new file URI node from a file system path and optional hostname.
@@ -138,21 +134,6 @@ SERD_API SerdNode* ZIX_ALLOCATED
 serd_new_file_uri(const char* ZIX_NONNULL   path,
                   const char* ZIX_NULLABLE  hostname,
                   SerdURIView* ZIX_NULLABLE out);
-
-/**
-   Create a new node by serialising `uri` into a new string.
-
-   @param uri The URI to serialise.
-
-   @param base Base URI to resolve `uri` against (or NULL for no resolution).
-
-   @param out Set to the parsing of the new URI (i.e. points only to
-   memory owned by the new returned node).
-*/
-SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_uri(const SerdURIView* ZIX_NONNULL  uri,
-             const SerdURIView* ZIX_NULLABLE base,
-             SerdURIView* ZIX_NULLABLE       out);
 
 /**
    Create a new node by serialising `d` into an xsd:decimal string.
