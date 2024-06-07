@@ -8,13 +8,16 @@
 	mf:entries (
 		<#test-bad-string-nq>
 		<#test-bad-string-nt>
+		<#test-bad-string-trig>
 		<#test-bad-string-ttl>
 		<#test-bad-uri-nq>
 		<#test-bad-uri-nt>
 		<#test-bad-uri-ttl>
+		<#test-bad-uri-trig>
 		<#test-bad-utf8-nq>
 		<#test-bad-utf8-nt>
 		<#test-bad-utf8-ttl>
+		<#test-bad-utf8-trig>
 		<#test-lone-list>
 	) .
 
@@ -36,6 +39,12 @@
 	mf:name "test-bad-string-ttl" ;
 	mf:result <test-bad-string-out.nt> .
 
+<#test-bad-string-trig>
+	a rdft:TestTrigNegativeSyntax ;
+	mf:action <test-bad-string.trig> ;
+	mf:name "test-bad-string-trig" ;
+	mf:result <test-bad-string-out.nt> .
+
 <#test-bad-uri-nq>
 	a rdft:TestNQuadsNegativeSyntax ;
 	mf:action <test-bad-uri.nq> ;
@@ -54,6 +63,12 @@
 	mf:name "test-bad-uri-ttl" ;
 	mf:result <test-bad-uri-out.nt> .
 
+<#test-bad-uri-trig>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <test-bad-uri.trig> ;
+	mf:name "test-bad-uri-trig" ;
+	mf:result <test-bad-uri-nq-out.nq> .
+
 <#test-bad-utf8-nq>
 	a rdft:TestNQuadsNegativeSyntax ;
 	mf:action <test-bad-utf8.nq> ;
@@ -70,6 +85,12 @@
 	a rdft:TestTurtleNegativeSyntax ;
 	mf:action <test-bad-utf8.ttl> ;
 	mf:name "test-bad-utf8-ttl" ;
+	mf:result <test-bad-utf8-ttl-out.nt> .
+
+<#test-bad-utf8-trig>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <test-bad-utf8.trig> ;
+	mf:name "test-bad-utf8-trig" ;
 	mf:result <test-bad-utf8-ttl-out.nt> .
 
 <#test-lone-list>
