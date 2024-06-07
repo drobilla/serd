@@ -143,13 +143,36 @@ serd_uri_string_length(SerdURIView uri);
    @param sink Sink to write string output to.
    @param stream Opaque user argument to pass to `sink`.
 
-   @return The number of bytes written, which is less than
+   @return The length of the written URI string (not including a null
+   terminator, which is not written), which may be less than
    `serd_uri_string_length(uri)` on error.
 */
 SERD_API size_t
 serd_write_uri(SerdURIView               uri,
                SerdWriteFunc ZIX_NONNULL sink,
                void* ZIX_UNSPECIFIED     stream);
+
+/**
+   Write a file URI to `sink` from a path and optional hostname.
+
+   Backslashes in Windows paths will be converted, and other characters will be
+   percent encoded as necessary.
+
+   If `path` is relative, `hostname` is ignored.
+
+   @param path File system path.
+   @param hostname Optional hostname.
+   @param sink Sink to write string output to.
+   @param stream Opaque user argument to pass to `sink`.
+
+   @return The length of the written URI string (not including a null
+   terminator, which is not written)
+*/
+SERD_API size_t
+serd_write_file_uri(ZixStringView             path,
+                    ZixStringView             hostname,
+                    SerdWriteFunc ZIX_NONNULL sink,
+                    void* ZIX_UNSPECIFIED     stream);
 
 /**
    @}
