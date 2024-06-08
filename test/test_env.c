@@ -232,7 +232,7 @@ test_base_uri(void)
   assert(!serd_env_new(NULL, zix_string("rel")));
 
   SerdEnv* const  env = serd_env_new(NULL, zix_empty_string());
-  SerdNode* const eg  = serd_new_uri(NULL, zix_string(NS_EG));
+  SerdNode* const eg  = serd_node_new(NULL, serd_a_uri_string(NS_EG));
 
   // Test that empty/unset base works as expected
   assert(!serd_env_base_uri_view(env).scheme.length);
@@ -343,11 +343,11 @@ test_qualify(void)
 {
   static const ZixStringView eg = ZIX_STATIC_STRING(NS_EG);
 
-  SerdNode* const name = serd_new_string(NULL, zix_string("eg"));
-  SerdNode* const c1   = serd_new_curie(NULL, zix_string("eg:foo"));
-  SerdNode* const u1   = serd_new_uri(NULL, zix_string(NS_EG "foo"));
+  SerdNode* const name = serd_node_new(NULL, serd_a_string("eg"));
+  SerdNode* const c1   = serd_node_new(NULL, serd_a_curie_string("eg:foo"));
+  SerdNode* const u1   = serd_node_new(NULL, serd_a_uri_string(NS_EG "foo"));
   SerdNode* const u2 =
-    serd_new_uri(NULL, zix_string("http://drobilla.net/bar"));
+    serd_node_new(NULL, serd_a_uri_string("http://drobilla.net/bar"));
 
   SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
 
@@ -374,9 +374,9 @@ test_qualify(void)
 static void
 test_sink(void)
 {
-  SerdNode* const base = serd_new_uri(NULL, zix_string(NS_EG));
-  SerdNode* const name = serd_new_string(NULL, zix_string("eg"));
-  SerdNode* const uri  = serd_new_uri(NULL, zix_string(NS_EG "uri"));
+  SerdNode* const base = serd_node_new(NULL, serd_a_uri_string(NS_EG));
+  SerdNode* const name = serd_node_new(NULL, serd_a_string("eg"));
+  SerdNode* const uri  = serd_node_new(NULL, serd_a_uri_string(NS_EG "uri"));
   SerdEnv* const  env  = serd_env_new(NULL, zix_empty_string());
 
   const SerdSink* const sink = serd_env_sink(env);

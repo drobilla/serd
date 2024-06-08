@@ -7,6 +7,7 @@
 #include "serd/attributes.h"
 #include "serd/stream_result.h"
 #include "serd/uri.h"
+#include "serd/value.h"
 #include "zix/allocator.h"
 #include "zix/attributes.h"
 #include "zix/string_view.h"
@@ -113,168 +114,367 @@ typedef uint32_t SerdNodeFlags;
 
 /**
    @}
-   @defgroup serd_node_dynamic_allocation Dynamic Allocation
+   @defgroup serd_node_construction_arguments Arguments
+
+   A unified representation of the arguments needed to specify any node.
+
+   Since there are several types of node, and several functions that take
+   node descriptions as arguments, the arguments to specify a node are
+   encapsulated in a single struct to prevent a combinatorial explosion.
+
+   Arguments constructors like #serd_a_file_uri return a temporary view of
+   their arguments, which can be passed (usually inline) to node construction
+   functions like #serd_node_new, or #serd_node_construct.
+
    @{
 */
 
-/**
-   Create a new simple "token" node.
+/// The type of a #SerdNodeArgs
+typedef enum {
+  SERD_NODE_ARGS_TOKEN,         ///< A token @see #serd_a_token
+  SERD_NODE_ARGS_PARSED_URI,    ///< A parsed URI @see #serd_a_parsed_uri
+  SERD_NODE_ARGS_FILE_URI,      ///< A file URI @see #serd_a_file_uri
+  SERD_NODE_ARGS_PREFIXED_NAME, ///< A prefixed name @see #serd_a_prefixed_name
+  SERD_NODE_ARGS_JOINED_URI,    ///< A prefixed name @see #serd_a_joined_uri
+  SERD_NODE_ARGS_LITERAL,       ///< A literal @see #serd_a_literal
+  SERD_NODE_ARGS_PRIMITIVE,     ///< A "native" primitive @see #serd_a_primitive
+  SERD_NODE_ARGS_DECIMAL,       ///< A decimal number @see #serd_a_decimal
+  SERD_NODE_ARGS_INTEGER,       ///< An integer number @see #serd_a_integer
+  SERD_NODE_ARGS_HEX,           ///< A hex-encoded blob @see #serd_a_hex
+  SERD_NODE_ARGS_BASE64,        ///< A base64-encoded blob @see #serd_a_base64
+} SerdNodeArgsType;
 
-   A "token" is a node that isn't a typed or tagged literal.  This can be used
-   to create URIs, blank nodes, CURIEs, and simple string literals.
+/// The data for #SERD_NODE_ARGS_TOKEN
+typedef struct {
+  SerdNodeType  type;
+  ZixStringView string;
+} SerdNodeTokenArgs;
+
+/// The data for #SERD_NODE_ARGS_PARSED_URI
+typedef struct {
+  SerdURIView uri;
+} SerdNodeParsedURIArgs;
+
+/// The data for #SERD_NODE_ARGS_FILE_URI
+typedef struct {
+  ZixStringView path;
+  ZixStringView hostname;
+} SerdNodeFileURIArgs;
+
+/// The data for #SERD_NODE_ARGS_PREFIXED_NAME
+typedef struct {
+  ZixStringView prefix;
+  ZixStringView name;
+} SerdNodePrefixedNameArgs;
+
+/// The data for #SERD_NODE_ARGS_JOINED_URI
+typedef struct {
+  ZixStringView prefix;
+  ZixStringView suffix;
+} SerdNodeJoinedURIArgs;
+
+/// The data for #SERD_NODE_ARGS_LITERAL
+typedef struct {
+  ZixStringView                string;
+  SerdNodeFlags                flags;
+  const SerdNode* ZIX_NULLABLE meta;
+} SerdNodeLiteralArgs;
+
+/// The data for #SERD_NODE_ARGS_PRIMITIVE
+typedef struct {
+  SerdValue value;
+} SerdNodePrimitiveArgs;
+
+/// The data for #SERD_NODE_ARGS_DECIMAL
+typedef struct {
+  double value;
+} SerdNodeDecimalArgs;
+
+/// The data for #SERD_NODE_ARGS_INTEGER
+typedef struct {
+  int64_t value;
+} SerdNodeIntegerArgs;
+
+/// The data for #SERD_NODE_ARGS_HEX or #SERD_NODE_ARGS_BASE64
+typedef struct {
+  size_t                  size;
+  const void* ZIX_NONNULL data;
+} SerdNodeBlobArgs;
+
+/// The data of a #SerdNodeArgs
+typedef union {
+  SerdNodeTokenArgs        as_token;
+  SerdNodeParsedURIArgs    as_parsed_uri;
+  SerdNodeFileURIArgs      as_file_uri;
+  SerdNodePrefixedNameArgs as_prefixed_name;
+  SerdNodeJoinedURIArgs    as_joined_uri;
+  SerdNodeLiteralArgs      as_literal;
+  SerdNodePrimitiveArgs    as_primitive;
+  SerdNodeDecimalArgs      as_decimal;
+  SerdNodeIntegerArgs      as_integer;
+  SerdNodeBlobArgs         as_blob;
+} SerdNodeArgsData;
+
+/// Arguments for constructing a node
+typedef struct {
+  SerdNodeArgsType type; ///< Type of node described and valid field of `data`
+  SerdNodeArgsData data; ///< Data union
+} SerdNodeArgs;
+
+/**
+   A simple "token" node.
+
+   "Token" is just a shorthand used in this API to refer to a node that is not
+   a typed or tagged literal, that is, a node that is just one string.  This
+   can be used to create URIs, blank nodes, variables, and simple string
+   literals.
+
+   Note that string literals constructed with this function will have no flags
+   set, and so will be written as "short" literals (not triple-quoted).  To
+   construct long literals, use the more advanced serd_a_literal() with the
+   #SERD_IS_LONG flag.
 */
-SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_token(ZixAllocator* ZIX_NULLABLE allocator,
-               SerdNodeType               type,
-               ZixStringView              string);
+SERD_CONST_API SerdNodeArgs
+serd_a_token(SerdNodeType type, ZixStringView string);
+
+/// A URI node from a parsed URI
+SERD_CONST_API SerdNodeArgs
+serd_a_parsed_uri(SerdURIView uri);
+
+/// A file URI node from a path and optional hostname
+SERD_CONST_API SerdNodeArgs
+serd_a_file_uri(ZixStringView path, ZixStringView hostname);
+
+/// A CURIE node from a prefix name and a local name
+SERD_CONST_API SerdNodeArgs
+serd_a_prefixed_name(ZixStringView prefix, ZixStringView name);
+
+/// A URI from a joined prefix and suffix (an in-place expanded CURIE)
+SERD_CONST_API SerdNodeArgs
+serd_a_joined_uri(ZixStringView prefix, ZixStringView suffix);
 
 /**
-   Create a new string literal node.
-*/
-SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_string(ZixAllocator* ZIX_NULLABLE allocator, ZixStringView string);
+   A literal node with an optional datatype or language.
 
-/**
-   Create a new literal node with optional datatype or language.
+   Either a datatype (which must be an absolute URI) or a language (which must
+   be an RFC5646 language tag) may be given, but not both.
 
-   This can create more complex literals than serd_new_string() with an
-   associated datatype URI or language tag, as well as control whether a
-   literal should be written as a short or long (triple-quoted) string.
+   This is the most general literal constructor, which can be used to construct
+   any literal node.
 
-   @param allocator Allocator for the returned node.
+   @param string The string body of the node.
 
-   @param string The string value of the literal.
-
-   @param flags Flags to describe the literal and its metadata.  This must be a
-   valid combination of flags, in particular, at most one of #SERD_HAS_DATATYPE
-   and #SERD_HAS_LANGUAGE may be set.
+   @param flags Flags that describe the details of the node.
 
    @param meta If #SERD_HAS_DATATYPE is set, then this must be an absolute
    datatype URI.  If #SERD_HAS_LANGUAGE is set, then this must be a language
-   tag string like "en-ca".  Otherwise, it is ignored.
-
-   @return A newly allocated literal node that must be freed with
-   serd_node_free(), or null if the arguments are invalid or allocation failed.
+   tag like "en-ca".  Otherwise, it is ignored.
 */
-SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_literal(ZixAllocator* ZIX_NULLABLE   allocator,
-                 ZixStringView                string,
-                 SerdNodeFlags                flags,
-                 const SerdNode* ZIX_NULLABLE meta);
+SERD_CONST_API SerdNodeArgs
+serd_a_literal(ZixStringView                string,
+               SerdNodeFlags                flags,
+               const SerdNode* ZIX_NULLABLE meta);
+
+/// A simple string literal node from a string view
+ZIX_CONST_FUNC static inline SerdNodeArgs
+serd_a_string_view(ZixStringView string)
+{
+  return serd_a_token(SERD_LITERAL, string);
+}
+
+/// A simple string literal node from a C string
+ZIX_CONST_FUNC static inline SerdNodeArgs
+serd_a_string(const char* ZIX_NONNULL string)
+{
+  return serd_a_string_view(zix_string(string));
+}
+
+/// A blank node from a string view
+ZIX_CONST_FUNC static inline SerdNodeArgs
+serd_a_blank(ZixStringView name)
+{
+  return serd_a_token(SERD_BLANK, name);
+}
+
+/// A blank node from a string
+ZIX_CONST_FUNC static inline SerdNodeArgs
+serd_a_blank_string(const char* ZIX_NONNULL name)
+{
+  return serd_a_blank(zix_string(name));
+}
+
+/// A URI node from a string view
+ZIX_CONST_FUNC static inline SerdNodeArgs
+serd_a_uri(ZixStringView uri)
+{
+  return serd_a_token(SERD_URI, uri);
+}
 
 /**
-   Create a new node from a blank node label.
-*/
-SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_blank(ZixAllocator* ZIX_NULLABLE allocator, ZixStringView string);
+   A URI node from a string.
 
-/// Create a new CURIE node
-SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_curie(ZixAllocator* ZIX_NULLABLE allocator, ZixStringView string);
+   @param uri The URI string.
+*/
+ZIX_CONST_FUNC static inline SerdNodeArgs
+serd_a_uri_string(const char* ZIX_NONNULL uri)
+{
+  return serd_a_uri(zix_string(uri));
+}
+
+/// A CURIE node from a string view
+ZIX_CONST_FUNC static inline SerdNodeArgs
+serd_a_curie(ZixStringView uri)
+{
+  return serd_a_token(SERD_CURIE, uri);
+}
 
 /**
-   Create a new URI node from a parsed URI.
+   A CURIE node from a string.
+
+   @param curie The CURIE string (a prefixed name separated with ':')
 */
-SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_parsed_uri(ZixAllocator* ZIX_NULLABLE allocator, SerdURIView uri);
+ZIX_CONST_FUNC static inline SerdNodeArgs
+serd_a_curie_string(const char* ZIX_NONNULL curie)
+{
+  return serd_a_token(SERD_CURIE, zix_string(curie));
+}
 
 /**
-   Create a new URI node from a string.
+   A literal node with a datatype.
+
+   @param string The string body of the node.
+   @param datatype The absolute URI of the datatype.
 */
-SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_uri(ZixAllocator* ZIX_NULLABLE allocator, ZixStringView string);
+ZIX_CONST_FUNC static inline SerdNodeArgs
+serd_a_typed_literal(const ZixStringView         string,
+                     const SerdNode* ZIX_NONNULL datatype)
+{
+  return serd_a_literal(string, SERD_HAS_DATATYPE, datatype);
+}
 
 /**
-   Create a new file URI node from a file system path and optional hostname.
+   A literal node with a language.
 
-   Backslashes in Windows paths will be converted, and other characters will be
-   percent encoded as necessary.
-
-   If `path` is relative, `hostname` is ignored.
+   @param string The string body of the node.
+   @param language A language tag like "en-ca".
 */
-SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_file_uri(ZixAllocator* ZIX_NULLABLE allocator,
-                  ZixStringView              path,
-                  ZixStringView              hostname);
+ZIX_CONST_FUNC static inline SerdNodeArgs
+serd_a_plain_literal(const ZixStringView         string,
+                     const SerdNode* ZIX_NONNULL language)
+{
+  return serd_a_literal(string, SERD_HAS_LANGUAGE, language);
+}
 
 /**
-   Create a new canonical xsd:boolean node.
+   A canonical literal for a primitive value.
+
+   The node will be a typed literal in canonical form for the xsd datatype
+   corresponding to the value.
 */
-SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_boolean(ZixAllocator* ZIX_NULLABLE allocator, bool b);
+SERD_CONST_API SerdNodeArgs
+serd_a_primitive(SerdValue value);
 
 /**
-   Create a new canonical xsd:decimal literal.
+   A canonical xsd:decimal literal.
 
-   The node will be an xsd:decimal literal, like "12.34", with
-   datatype xsd:decimal by default, or a custom datatype.
+   The node will be an xsd:decimal literal, like "12.34", with datatype
+   xsd:decimal.
 
    The node will always contain a '.', start with a digit, and end with a digit
    (a leading and/or trailing '0' will be added if necessary), for example,
    "1.0".  It will never be in scientific notation.
-
-   @param allocator Allocator for the returned node.
-   @param d The value for the new node.
 */
-SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_decimal(ZixAllocator* ZIX_NULLABLE allocator, double d);
+SERD_CONST_API SerdNodeArgs
+serd_a_decimal(double value);
 
 /**
-   Create a new canonical xsd:double literal.
-
-   The node will be in scientific notation, like "1.23E4", except for NaN and
-   negative/positive infinity, which are "NaN", "-INF", and "INF",
-   respectively.
-
-   Uses the shortest possible representation that precisely describes the
-   value, which has at most 17 significant digits (under 24 characters total).
-
-   @param allocator Allocator for the returned node.
-   @param d Double value to write.
-   @return A literal node with datatype xsd:double.
-*/
-SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_double(ZixAllocator* ZIX_NULLABLE allocator, double d);
-
-/**
-   Create a new canonical xsd:float literal.
-
-   Uses identical formatting to serd_new_double(), except with at most 9
-   significant digits (under 14 characters total).
-
-   @param allocator Allocator for the returned node.
-   @param f Float value of literal.
-   @return A literal node with datatype xsd:float.
-*/
-SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_float(ZixAllocator* ZIX_NULLABLE allocator, float f);
-
-/**
-   Create a new canonical xsd:integer literal.
+   A canonical xsd:integer literal.
 
    The node will be an xsd:integer literal like "1234", with datatype
    xsd:integer.
-
-   @param allocator Allocator for the returned node.
-   @param i Integer value of literal.
 */
-SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_integer(ZixAllocator* ZIX_NULLABLE allocator, int64_t i);
+SERD_CONST_API SerdNodeArgs
+serd_a_integer(int64_t value);
 
 /**
-   Create a new canonical xsd:base64Binary literal.
+   A canonical xsd:hexBinary literal.
 
-   This function can be used to make a node out of arbitrary binary data, which
-   can be decoded using serd_base64_decode().
+   The node will be an xsd:hexBinary literal like "534D", with datatype
+   xsd:hexBinary.
+*/
+SERD_CONST_API SerdNodeArgs
+serd_a_hex(size_t size, const void* ZIX_NONNULL data);
 
-   @param allocator Allocator for the returned node.
-   @param buf Raw binary data to encode in node.
-   @param size Size of `buf` in bytes.
+/**
+   A canonical xsd:base64Binary literal.
+
+   The node will be an xsd:base64Binary literal like "Zm9vYmFy", with datatype
+   xsd:base64Binary.
+*/
+SERD_CONST_API SerdNodeArgs
+serd_a_base64(size_t size, const void* ZIX_NONNULL data);
+
+/**
+   @}
+   @defgroup serd_node_construction Construction
+
+   This is the low-level node construction API, which can be used to construct
+   nodes into existing buffers.  Advanced applications can use this to
+   specially manage node memory, for example by allocating nodes on the stack,
+   or with a special allocator.
+
+   Note that nodes are "plain old data", so there is no need to destroy a
+   constructed node, and nodes may be trivially copied, for example with
+   memcpy().
+
+   @{
+*/
+
+/**
+   Construct a node into an existing buffer.
+
+   This is the universal node constructor which can construct any node.  The
+   type of node is specified in a #SerdNodeArgs tagged union, to avoid API
+   bloat and allow this function to be used with data-based dispatch.
+
+   This function may also be used to determine the size of buffer required by
+   passing a null buffer with zero size.
+
+   @param buf_size The size of `buf` in bytes, or zero to only measure.
+
+   @param buf Buffer where the node will be written, or null to only measure.
+
+   @param args Arguments describing the node to construct.
+
+   @return A result with a `status` and a `count` of bytes written.  If the
+   buffer is too small for the node, then `status` will be #SERD_NO_SPACE, and
+   `count` will be set to the number of bytes required to successfully
+   construct the node.
+*/
+SERD_API SerdStreamResult
+serd_node_construct(size_t buf_size, void* ZIX_NULLABLE buf, SerdNodeArgs args);
+
+/**
+   @}
+   @defgroup serd_node_dynamic_allocation Dynamic Allocation
+
+   This is a convenient higher-level node construction API which allocates
+   nodes with an allocator.  The returned nodes must be freed with
+   serd_node_free() using the same allocator.
+
+   @{
+*/
+
+/**
+   Create a new node.
+
+   This allocates and constructs a new node of any type.
+
+   @return A newly allocated node that must be freed with serd_node_free(), or
+   null.
 */
 SERD_API SerdNode* ZIX_ALLOCATED
-serd_new_base64(ZixAllocator* ZIX_NULLABLE allocator,
-                const void* ZIX_NONNULL    buf,
-                size_t                     size);
+serd_node_new(ZixAllocator* ZIX_NULLABLE allocator, SerdNodeArgs args);
 
 /**
    Return a deep copy of `node`.
@@ -389,45 +589,37 @@ SERD_PURE_API const SerdNode* ZIX_NULLABLE
 serd_node_language(const SerdNode* ZIX_NONNULL node);
 
 /**
-   Return the value of `node` as a boolean.
+   Return the primitive value of a literal node.
 
-   This will work for booleans, and numbers of any datatype if they are 0 or
-   1.
+   This will return a typed numeric value if the node can be read as one, or
+   nothing otherwise.
 
-   @return The value of `node` as a `bool`, or `false` on error.
+   @return The primitive value of `node`, if possible and supported.
 */
-SERD_API bool
-serd_get_boolean(const SerdNode* ZIX_NONNULL node);
+SERD_API SerdValue
+serd_node_value(const SerdNode* ZIX_NONNULL node);
 
 /**
-   Return the value of `node` as a double.
+   Return the primitive value of a node as a specific type of number.
 
-   This will coerce numbers of any datatype to double, if the value fits.
+   This is like serd_node_value(), but will coerce the value of the node to the
+   requested type if possible.
 
-   @return The value of `node` as a `double`, or NaN on error.
+   @param node The node to interpret as a number.
+
+   @param type The desired numeric datatype of the result.
+
+   @param lossy Whether lossy conversions can be used.  If this is false, then
+   this function only succeeds if the value could be converted back to the
+   original datatype of the node without loss.  Otherwise, precision may be
+   reduced or values may be truncated to fit the result.
+
+   @return The value of `node` as a #SerdValue, or nothing.
 */
-SERD_API double
-serd_get_double(const SerdNode* ZIX_NONNULL node);
-
-/**
-   Return the value of `node` as a float.
-
-   This will coerce numbers of any datatype to float, if the value fits.
-
-   @return The value of `node` as a `float`, or NaN on error.
-*/
-SERD_API float
-serd_get_float(const SerdNode* ZIX_NONNULL node);
-
-/**
-   Return the value of `node` as a long (signed 64-bit integer).
-
-   This will coerce numbers of any datatype to long, if the value fits.
-
-   @return The value of `node` as a `int64_t`, or 0 on error.
-*/
-SERD_API int64_t
-serd_get_integer(const SerdNode* ZIX_NONNULL node);
+SERD_API SerdValue
+serd_node_value_as(const SerdNode* ZIX_NONNULL node,
+                   SerdValueType               type,
+                   bool                        lossy);
 
 /**
    Return the maximum size of a decoded binary node in bytes.
@@ -436,16 +628,21 @@ serd_get_integer(const SerdNode* ZIX_NONNULL node);
    decode to.  This is calculated as a simple constant-time arithmetic
    expression based on the length of the encoded string, so may be larger than
    the actual size of the data due to things like additional whitespace.
+
+   @return The size of the decoded hex or base64 blob `node`, or zero if it
+   does not have datatype <http://www.w3.org/2001/XMLSchema#hexBinary> or
+   <http://www.w3.org/2001/XMLSchema#base64Binary>.
 */
 SERD_PURE_API size_t
-serd_get_base64_size(const SerdNode* ZIX_NONNULL node);
+serd_node_decoded_size(const SerdNode* ZIX_NONNULL node);
 
 /**
-   Decode a base64 node.
+   Decode a binary (base64 or hex) node.
 
-   This function can be used to decode a node created with serd_new_base64().
+   This function can be used to decode a node created with serd_a_base64() or
+   serd_a_hex() and retrieve the original unencoded binary data.
 
-   @param node A literal node which is an encoded base64 string.
+   @param node A literal node which is an encoded base64 or hex string.
 
    @param buf_size The size of `buf` in bytes.
 
@@ -456,9 +653,9 @@ serd_get_base64_size(const SerdNode* ZIX_NONNULL node);
    along with the number of bytes required for successful decoding.
 */
 SERD_API SerdStreamResult
-serd_get_base64(const SerdNode* ZIX_NONNULL node,
-                size_t                      buf_size,
-                void* ZIX_NONNULL           buf);
+serd_node_decode(const SerdNode* ZIX_NONNULL node,
+                 size_t                      buf_size,
+                 void* ZIX_NONNULL           buf);
 
 /**
    @}

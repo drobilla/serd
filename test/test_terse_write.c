@@ -46,16 +46,16 @@ test(void)
   SerdWorld* world  = serd_world_new(NULL);
   SerdEnv*   env    = serd_env_new(NULL, zix_empty_string());
 
-  SerdNode* b1 = serd_new_blank(NULL, zix_string("b1"));
-  SerdNode* l1 = serd_new_blank(NULL, zix_string("l1"));
-  SerdNode* l2 = serd_new_blank(NULL, zix_string("l2"));
-  SerdNode* s1 = serd_new_string(NULL, zix_string("s1"));
-  SerdNode* s2 = serd_new_string(NULL, zix_string("s2"));
+  SerdNode* b1 = serd_node_new(NULL, serd_a_blank_string("b1"));
+  SerdNode* l1 = serd_node_new(NULL, serd_a_blank_string("l1"));
+  SerdNode* l2 = serd_node_new(NULL, serd_a_blank_string("l2"));
+  SerdNode* s1 = serd_node_new(NULL, serd_a_string("s1"));
+  SerdNode* s2 = serd_node_new(NULL, serd_a_string("s2"));
 
-  SerdNode* rdf_first = serd_new_uri(NULL, zix_string(NS_RDF "first"));
-  SerdNode* rdf_value = serd_new_uri(NULL, zix_string(NS_RDF "value"));
-  SerdNode* rdf_rest  = serd_new_uri(NULL, zix_string(NS_RDF "rest"));
-  SerdNode* rdf_nil   = serd_new_uri(NULL, zix_string(NS_RDF "nil"));
+  SerdNode* rdf_first = serd_node_new(NULL, serd_a_uri_string(NS_RDF "first"));
+  SerdNode* rdf_value = serd_node_new(NULL, serd_a_uri_string(NS_RDF "value"));
+  SerdNode* rdf_rest  = serd_node_new(NULL, serd_a_uri_string(NS_RDF "rest"));
+  SerdNode* rdf_nil   = serd_node_new(NULL, serd_a_uri_string(NS_RDF "nil"));
 
   serd_env_set_prefix(env, zix_string("rdf"), zix_string(NS_RDF));
 

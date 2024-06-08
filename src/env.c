@@ -188,7 +188,8 @@ serd_env_set_base_uri(SerdEnv* const env, const ZixStringView uri)
   }
 
   // Replace the current base URI
-  SerdNode* const new_base = serd_new_parsed_uri(env->allocator, new_base_uri);
+  SerdNode* const new_base =
+    serd_node_new(env->allocator, serd_a_parsed_uri(new_base_uri));
   if (!new_base) {
     return SERD_BAD_ALLOC;
   }
@@ -244,7 +245,7 @@ serd_env_add(SerdEnv* const      env,
   if (prefix) {
     if (!!strcmp(serd_node_string(prefix->uri), uri.data)) {
       serd_node_free(env->allocator, prefix->uri);
-      prefix->uri = serd_new_uri(env->allocator, uri);
+      prefix->uri = serd_node_new(env->allocator, serd_a_uri(uri));
     }
   } else {
     SerdPrefix* const new_prefixes =
@@ -257,8 +258,9 @@ serd_env_add(SerdEnv* const      env,
 
     env->prefixes = new_prefixes;
 
-    SerdNode* const name_node = serd_new_string(env->allocator, name);
-    SerdNode* const uri_node  = serd_new_uri(env->allocator, uri);
+    SerdNode* const name_node =
+      serd_node_new(env->allocator, serd_a_string_view(name));
+    SerdNode* const uri_node = serd_node_new(env->allocator, serd_a_uri(uri));
     if (!name_node || !uri_node) {
       serd_node_free(env->allocator, uri_node);
       serd_node_free(env->allocator, name_node);
@@ -295,7 +297,8 @@ serd_env_set_prefix(SerdEnv* const      env,
   assert(abs_uri_view.scheme.length);
 
   // Create a new node for the absolute URI
-  SerdNode* const abs_uri = serd_new_parsed_uri(env->allocator, abs_uri_view);
+  SerdNode* const abs_uri =
+    serd_node_new(env->allocator, serd_a_parsed_uri(abs_uri_view));
   if (!abs_uri) {
     return SERD_BAD_ALLOC;
   }
@@ -359,15 +362,15 @@ serd_env_expand(const SerdEnv* const env,
 
   const size_t            name_len = (size_t)(colon - str);
   const SerdPrefix* const prefix   = serd_env_find(env, str, name_len);
-  if (prefix) {
-    uri_prefix->data   = serd_node_string(prefix->uri);
-    uri_prefix->length = prefix->uri ? serd_node_length(prefix->uri) : 0;
-    uri_suffix->data   = colon + 1U;
-    uri_suffix->length = curie.length - name_len - 1U;
-    return SERD_SUCCESS;
+  if (!prefix) {
+    return SERD_BAD_CURIE;
   }
 
-  return SERD_BAD_CURIE;
+  uri_prefix->data   = prefix->uri ? serd_node_string(prefix->uri) : "";
+  uri_prefix->length = prefix->uri ? serd_node_length(prefix->uri) : 0;
+  uri_suffix->data   = colon + 1;
+  uri_suffix->length = curie.length - name_len - 1;
+  return SERD_SUCCESS;
 }
 
 SerdStatus

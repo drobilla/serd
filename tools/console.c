@@ -54,8 +54,8 @@ serd_set_base_uri_from_path(SerdEnv* const env, const char* const path)
     return SERD_BAD_ARG;
   }
 
-  SerdNode* const file_uri =
-    serd_new_file_uri(NULL, zix_string(input_path), zix_empty_string());
+  SerdNode* const file_uri = serd_node_new(
+    NULL, serd_a_file_uri(zix_string(input_path), zix_empty_string()));
 
   serd_env_set_base_uri(env, serd_node_string_view(file_uri));
   serd_node_free(NULL, file_uri);

@@ -1502,7 +1502,7 @@ serd_writer_set_root_uri(SerdWriter* const writer, const ZixStringView uri)
   writer->root_uri  = SERD_URI_NULL;
 
   if (uri.length) {
-    writer->root_node = serd_new_uri(allocator, uri);
+    writer->root_node = serd_node_new(allocator, serd_a_uri(uri));
     writer->root_uri  = serd_node_uri_view(writer->root_node);
   }
 

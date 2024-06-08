@@ -11,7 +11,6 @@
 #include "serd/sink.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
-#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -119,10 +118,10 @@ test_failed_alloc(void)
 static void
 test_callbacks(void)
 {
-  SerdNode* const base  = serd_new_uri(NULL, zix_string(NS_EG));
-  SerdNode* const name  = serd_new_string(NULL, zix_string("eg"));
-  SerdNode* const uri   = serd_new_uri(NULL, zix_string(NS_EG "uri"));
-  SerdNode* const blank = serd_new_blank(NULL, zix_string("b1"));
+  SerdNode* const base  = serd_node_new(NULL, serd_a_uri_string(NS_EG));
+  SerdNode* const name  = serd_node_new(NULL, serd_a_string("eg"));
+  SerdNode* const uri   = serd_node_new(NULL, serd_a_uri_string(NS_EG "uri"));
+  SerdNode* const blank = serd_node_new(NULL, serd_a_blank_string("b1"));
   SerdEnv* const  env   = serd_env_new(NULL, serd_node_string_view(base));
   State           state = {0, 0, 0, 0, 0, 0, 0, 0, SERD_SUCCESS};
 
