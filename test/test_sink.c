@@ -14,7 +14,6 @@
 #include "serd/statement_view.h"
 #include "serd/status.h"
 #include "serd/token_view.h"
-#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>

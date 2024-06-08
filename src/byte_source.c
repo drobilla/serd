@@ -8,7 +8,6 @@
 
 #include "serd/node.h"
 #include "zix/allocator.h"
-#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -71,7 +70,7 @@ serd_byte_source_new_input(ZixAllocator* const    allocator,
 
   SerdNode* const source_name =
     name ? serd_node_copy(allocator, name)
-         : serd_new_string(allocator, zix_string("input"));
+         : serd_node_new(allocator, serd_a_string("input"));
 
   if (!source_name) {
     return NULL;
