@@ -4,8 +4,9 @@ serd (0.32.3) unstable; urgency=medium
   * Fix library current_version on MacOS
   * Fix parsing NQuads lines with no space before the final dot
   * Support reading lone lists in lax mode
+  * Treat out of range unicode characters as errors
 
- -- David Robillard <d@drobilla.net>  Fri, 29 Mar 2024 13:36:36 +0000
+ -- David Robillard <d@drobilla.net>  Sun, 09 Jun 2024 22:15:14 +0000
 
 serd (0.32.2) stable; urgency=medium
 

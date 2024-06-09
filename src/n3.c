@@ -97,7 +97,7 @@ read_UCHAR(SerdReader* const reader, const Ref dest, uint32_t* const char_code)
           code);
     push_bytes(reader, dest, replacement_char, 3);
     *char_code = 0xFFFD;
-    return SERD_SUCCESS;
+    return reader->strict ? SERD_ERR_BAD_SYNTAX : SERD_SUCCESS;
   }
 
   // Build output in buf
@@ -325,7 +325,7 @@ read_string_escape(SerdReader* const    reader,
   uint32_t   code = 0;
   if ((st = read_ECHAR(reader, ref, flags)) &&
       (st = read_UCHAR(reader, ref, &code))) {
-    return r_err(reader, st, "invalid escape '\\%c'\n", peek_byte(reader));
+    return r_err(reader, st, "expected string escape sequence\n");
   }
 
   return st;

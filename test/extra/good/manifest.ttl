@@ -48,7 +48,6 @@
 		<#test-nt-syntax-eol-crlf>
 		<#test-nt-syntax-eol-lf>
 		<#test-nt-syntax-eol-lfcr>
-		<#test-out-of-range-unicode>
 		<#test-prefix>
 		<#test-quote-escapes>
 		<#test-rel>
@@ -294,12 +293,6 @@
 	a rdft:TestNTriplesPositiveSyntax ;
 	mf:action <test-nt-syntax-eol-lfcr.nt> ;
 	mf:name "test-nt-syntax-eol-lfcr" .
-
-<#test-out-of-range-unicode>
-	a rdft:TestTurtleEval ;
-	mf:action <test-out-of-range-unicode.ttl> ;
-	mf:name "test-out-of-range-unicode" ;
-	mf:result <test-out-of-range-unicode.nt> .
 
 <#test-prefix>
 	a rdft:TestTurtleEval ;
