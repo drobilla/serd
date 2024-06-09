@@ -448,7 +448,6 @@ ZIX_PURE_FUNC static bool
 is_langtag(const SerdNode* const node)
 {
   const ZixStringView string = serd_node_string_view(node);
-
   if (serd_node_type(node) != SERD_LITERAL) {
     return false;
   }
@@ -501,10 +500,10 @@ construct_literal(const size_t          buf_size,
     return construct_simple(buf_size, buf, SERD_LITERAL, flags, string);
   }
 
-  if (((flags & SERD_HAS_DATATYPE) && !is_datatype(meta)) ||
+  if ((!meta || !serd_node_length(meta)) ||
+      ((flags & SERD_HAS_DATATYPE) && !is_datatype(meta)) ||
       ((flags & SERD_HAS_LANGUAGE) && !is_langtag(meta)) ||
-      ((flags & SERD_HAS_DATATYPE) && (flags & SERD_HAS_LANGUAGE)) ||
-      (!meta || !serd_node_length(meta))) {
+      ((flags & SERD_HAS_DATATYPE) && (flags & SERD_HAS_LANGUAGE))) {
     return result(SERD_BAD_ARG, 0);
   }
 
