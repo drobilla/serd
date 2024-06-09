@@ -124,7 +124,7 @@ typedef uint32_t SerdNodeFlags;
 
    Arguments constructors like #serd_a_file_uri return a temporary view of
    their arguments, which can be passed (usually inline) to node construction
-   functions like #serd_node_new, or #serd_node_construct.
+   functions like #serd_node_new, #serd_node_construct, or #serd_nodes_get.
 
    @{
 */
@@ -461,6 +461,9 @@ serd_node_construct(size_t buf_size, void* ZIX_NULLABLE buf, SerdNodeArgs args);
    This is a convenient higher-level node construction API which allocates
    nodes with an allocator.  The returned nodes must be freed with
    serd_node_free() using the same allocator.
+
+   Note that in most cases it is better to use a #SerdNodes instead of managing
+   individual node allocations.
 
    @{
 */
