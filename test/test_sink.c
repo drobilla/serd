@@ -5,9 +5,9 @@
 
 #include "failing_allocator.h"
 
-#include "serd/env.h"
 #include "serd/event.h"
 #include "serd/node.h"
+#include "serd/nodes.h"
 #include "serd/sink.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
@@ -117,12 +117,17 @@ test_failed_alloc(void)
 static void
 test_callbacks(void)
 {
-  SerdNode* const base  = serd_node_new(NULL, serd_a_uri_string(NS_EG));
-  SerdNode* const name  = serd_node_new(NULL, serd_a_string("eg"));
-  SerdNode* const uri   = serd_node_new(NULL, serd_a_uri_string(NS_EG "uri"));
-  SerdNode* const blank = serd_node_new(NULL, serd_a_blank_string("b1"));
-  SerdEnv* const  env   = serd_env_new(NULL, serd_node_string_view(base));
-  State           state = {0, 0, 0, 0, 0, 0, 0, 0, SERD_SUCCESS};
+  static const char* const uri_string = NS_EG "uri";
+
+  SerdNodes* const      nodes = serd_nodes_new(NULL);
+  const SerdNode* const base  = serd_nodes_get(nodes, serd_a_uri_string(NS_EG));
+  const SerdNode* const name  = serd_nodes_get(nodes, serd_a_string("eg"));
+  const SerdNode* const uri =
+    serd_nodes_get(nodes, serd_a_uri_string(uri_string));
+  const SerdNode* const blank =
+    serd_nodes_get(nodes, serd_a_blank_string("b1"));
+
+  State state = {0, 0, 0, 0, 0, 0, 0, 0, SERD_SUCCESS};
 
   const SerdStatementView statement_view = {base, uri, blank, NULL};
 
@@ -178,11 +183,7 @@ test_callbacks(void)
   assert(serd_sink_write_event(sink, &junk) == SERD_BAD_ARG);
 
   serd_sink_free(sink);
-  serd_env_free(env);
-  serd_node_free(NULL, blank);
-  serd_node_free(NULL, uri);
-  serd_node_free(NULL, name);
-  serd_node_free(NULL, base);
+  serd_nodes_free(nodes);
 }
 
 static void

@@ -6,6 +6,7 @@
 #include "failing_allocator.h"
 
 #include "serd/node.h"
+#include "serd/nodes.h"
 #include "serd/uri.h"
 #include "zix/allocator.h"
 #include "zix/string_view.h"
@@ -92,8 +93,10 @@ check_file_uri(const char* const hostname,
     expected_path = path;
   }
 
-  SerdNode* node = serd_node_new(
-    NULL, serd_a_file_uri(zix_string(path), zix_string(hostname)));
+  SerdNodes* const nodes = serd_nodes_new(NULL);
+
+  const SerdNode* node = serd_nodes_get(
+    nodes, serd_a_file_uri(zix_string(path), zix_string(hostname)));
 
   const char* node_str     = serd_node_string(node);
   char*       out_hostname = NULL;
@@ -106,7 +109,7 @@ check_file_uri(const char* const hostname,
 
   zix_free(NULL, out_path);
   zix_free(NULL, out_hostname);
-  serd_node_free(NULL, node);
+  serd_nodes_free(nodes);
 }
 
 static void
@@ -303,27 +306,27 @@ check_relative_uri(const char* const uri_string,
   assert(base_string);
   assert(expected_string);
 
-  SerdNode* const uri_node = serd_node_new(NULL, serd_a_uri_string(uri_string));
-  const SerdURIView uri    = serd_node_uri_view(uri_node);
-  SerdNode* const   base_node =
-    serd_node_new(NULL, serd_a_uri_string(base_string));
+  SerdNodes* const nodes = serd_nodes_new(NULL);
+  const SerdNode*  uri_node =
+    serd_nodes_get(nodes, serd_a_uri_string(uri_string));
+  const SerdURIView uri = serd_node_uri_view(uri_node);
+  const SerdNode*   base_node =
+    serd_nodes_get(nodes, serd_a_uri_string(base_string));
   const SerdURIView base = serd_node_uri_view(base_node);
 
-  SerdNode* result_node = NULL;
+  const SerdNode* result_node = NULL;
   if (!root_string) {
     result_node =
-      serd_node_new(NULL, serd_a_parsed_uri(serd_relative_uri(uri, base)));
+      serd_nodes_get(nodes, serd_a_parsed_uri(serd_relative_uri(uri, base)));
   } else {
-    SerdNode* const root_node =
-      serd_node_new(NULL, serd_a_uri_string(root_string));
+    const SerdNode* root_node =
+      serd_nodes_get(nodes, serd_a_uri_string(root_string));
     const SerdURIView root = serd_node_uri_view(root_node);
 
     result_node =
       serd_uri_is_within(uri, root)
-        ? serd_node_new(NULL, serd_a_parsed_uri(serd_relative_uri(uri, base)))
-        : serd_node_new(NULL, serd_a_uri_string(uri_string));
-
-    serd_node_free(NULL, root_node);
+        ? serd_nodes_get(nodes, serd_a_parsed_uri(serd_relative_uri(uri, base)))
+        : serd_nodes_get(nodes, serd_a_uri_string(uri_string));
   }
 
   assert(!strcmp(serd_node_string(result_node), expected_string));
@@ -337,9 +340,7 @@ check_relative_uri(const char* const uri_string,
   assert(chunk_equals(result.query, expected.query));
   assert(chunk_equals(result.fragment, expected.fragment));
 
-  serd_node_free(NULL, result_node);
-  serd_node_free(NULL, base_node);
-  serd_node_free(NULL, uri_node);
+  serd_nodes_free(nodes);
 }
 
 static void

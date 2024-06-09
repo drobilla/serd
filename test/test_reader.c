@@ -10,6 +10,7 @@
 #include "serd/event.h"
 #include "serd/input_stream.h"
 #include "serd/node.h"
+#include "serd/nodes.h"
 #include "serd/reader.h"
 #include "serd/sink.h"
 #include "serd/status.h"
@@ -574,6 +575,7 @@ static void
 test_error_cursor(void)
 {
   SerdWorld* const  world  = serd_world_new(NULL);
+  SerdNodes* const  nodes  = serd_world_nodes(world);
   SerdEnv* const    env    = serd_env_new(NULL, zix_empty_string());
   bool              called = false;
   SerdSink* const   sink   = serd_sink_new(NULL, &called, check_cursor, NULL);
@@ -585,9 +587,11 @@ test_error_cursor(void)
     "<http://example.org/s> <http://example.org/p> "
     "<http://example.org/o> .";
 
-  SerdNode* const string_name = serd_node_new(NULL, serd_a_string("string"));
-  const char*     position    = string;
-  SerdInputStream in          = serd_open_input_string(&position);
+  const SerdNode* const string_name =
+    serd_nodes_get(nodes, serd_a_string("string"));
+
+  const char*     position = string;
+  SerdInputStream in       = serd_open_input_string(&position);
 
   SerdStatus st = serd_reader_start(reader, &in, string_name, 1);
   assert(!st);
@@ -596,7 +600,6 @@ test_error_cursor(void)
   assert(called);
   assert(!serd_close_input(&in));
 
-  serd_node_free(NULL, string_name);
   serd_reader_free(reader);
   serd_sink_free(sink);
   serd_env_free(env);
