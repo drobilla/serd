@@ -4,7 +4,6 @@
 #include "block_dumper.h"
 #include "log.h"
 #include "memory.h"
-#include "namespaces.h"
 #include "node_internal.h"
 #include "ntriples.h"
 #include "sink_impl.h"
@@ -13,6 +12,7 @@
 #include "turtle.h"
 #include "uri_utils.h"
 #include "warnings.h"
+#include "world_impl.h"
 
 #include "serd/env.h"
 #include "serd/event.h"
@@ -65,10 +65,6 @@ typedef struct {
 
 static const WriteContext WRITE_CONTEXT_NULL =
   {CTX_NAMED, 0U, NULL, NULL, NULL, 0U, 0U};
-
-static const ZixStringView rdf_nil   = ZIX_STATIC_STRING(NS_RDF "nil");
-static const ZixStringView rdf_first = ZIX_STATIC_STRING(NS_RDF "first");
-static const ZixStringView rdf_type  = ZIX_STATIC_STRING(NS_RDF "type");
 
 typedef enum {
   SEP_NONE,        ///< Sentinel after "nothing"
@@ -821,29 +817,6 @@ reset_context(SerdWriter* writer, const unsigned flags)
   return SERD_SUCCESS;
 }
 
-// Return the name of the XSD datatype referred to by `datatype`, if any
-static const char*
-get_xsd_name(const SerdEnv* const env, const SerdTokenView datatype)
-{
-  if (datatype.type == SERD_URI &&
-      (!strncmp(datatype.string.data, NS_XSD, sizeof(NS_XSD) - 1))) {
-    return datatype.string.data + sizeof(NS_XSD) - 1U;
-  }
-
-  if (datatype.type == SERD_CURIE) {
-    ZixStringView prefix;
-    ZixStringView suffix;
-    // We can be a bit lazy/presumptive here due to grammar limitations
-    if (!serd_env_expand(env, datatype.string, &prefix, &suffix)) {
-      if (!strcmp((const char*)prefix.data, NS_XSD)) {
-        return (const char*)suffix.data;
-      }
-    }
-  }
-
-  return "";
-}
-
 ZIX_NODISCARD static SerdStatus
 write_literal(SerdWriter* const   writer,
               const ZixStringView string,
@@ -853,10 +826,10 @@ write_literal(SerdWriter* const   writer,
   SerdStatus st = SERD_SUCCESS;
 
   if (supports_abbrev(writer) && (node_flags & SERD_HAS_DATATYPE)) {
-    const char* const xsd_name = get_xsd_name(writer->env, meta);
-    if (!strcmp(xsd_name, "boolean") || !strcmp(xsd_name, "integer") ||
-        (!strcmp(xsd_name, "decimal") && strchr(string.data, '.') &&
-         string.data[string.length - 1U] != '.')) {
+    if (serd_node_equals_token_view(writer->world->xsd_boolean, meta) ||
+        serd_node_equals_token_view(writer->world->xsd_integer, meta) ||
+        (serd_node_equals_token_view(writer->world->xsd_decimal, meta) &&
+         strchr(string.data, '.') && string.data[string.length - 1U] != '.')) {
       return esink(string.data, string.length, writer);
     }
   }
@@ -923,7 +896,8 @@ write_uri_node(SerdWriter* const writer, const ZixStringView string)
   const bool has_scheme = serd_uri_string_has_scheme(string.data);
 
   if (supports_abbrev(writer)) {
-    if (!strcmp(string.data, NS_RDF "nil")) {
+    if (zix_string_view_equals(string,
+                               serd_node_string_view(writer->world->rdf_nil))) {
       return esink("()", 2, writer);
     }
 
@@ -1050,7 +1024,7 @@ write_verb(SerdWriter* const writer, const SerdTokenView node)
 {
   return (node.type == SERD_URI && supports_abbrev(writer) &&
           !(writer->flags & SERD_WRITE_LONGHAND) &&
-          zix_string_view_equals(node.string, rdf_type))
+          serd_node_equals_token_view(writer->world->rdf_type, node))
            ? esink("a", 1, writer)
            : write_predicate(writer, node);
 }
@@ -1094,12 +1068,12 @@ write_list_next(SerdWriter* const             writer,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  if (zix_string_view_equals(object.string, rdf_nil)) {
+  if (serd_node_equals_object_view(writer->world->rdf_nil, object)) {
     TRY(st, write_sep(writer, writer->context.flags, SEP_LIST_END));
     return SERD_FAILURE;
   }
 
-  if (zix_string_view_equals(predicate.string, rdf_first)) {
+  if (serd_node_equals_token_view(writer->world->rdf_first, predicate)) {
     TRY(st, write_object(writer, flags, object));
   } else {
     TRY(st, write_sep(writer, writer->context.flags, SEP_LIST_SEP));
@@ -1214,8 +1188,8 @@ write_list_statement(SerdWriter* const             writer,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  if (zix_string_view_equals(predicate.string, rdf_first) &&
-      zix_string_view_equals(object.string, rdf_nil)) {
+  if (serd_node_equals_token_view(writer->world->rdf_first, predicate) &&
+      serd_node_equals_object_view(writer->world->rdf_nil, object)) {
     return esink("()", 2, writer);
   }
 
@@ -1276,7 +1250,8 @@ write_turtle_trig_statement(SerdWriter* const       writer,
   ZixAllocator* const allocator = serd_world_allocator(writer->world);
   SerdStatus          st        = SERD_SUCCESS;
 
-  if ((flags & SERD_LIST_O) && zix_string_view_equals(object.string, rdf_nil)) {
+  if ((flags & SERD_LIST_O) &&
+      serd_node_equals_object_view(writer->world->rdf_nil, object)) {
     /* Tolerate LIST_O_BEGIN for "()" objects, even though it doesn't make
        much sense, because older versions handled this gracefully.  Consider
        making this an error in a later major version. */
@@ -1424,7 +1399,7 @@ serd_writer_end_anon(SerdWriter* const writer, const ZixStringView label)
     return w_err(writer,
                  SERD_BAD_EVENT,
                  "unexpected end of anonymous node \"%s\"",
-                 serd_node_string(node));
+                 label.data);
   }
 
   // Write the end separator ']' and pop the context
