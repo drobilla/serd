@@ -8,6 +8,7 @@
 #include "serd/canon.h"
 #include "serd/event.h"
 #include "serd/node.h"
+#include "serd/nodes.h"
 #include "serd/sink.h"
 #include "serd/status.h"
 #include "serd/world.h"
@@ -30,6 +31,7 @@ test_new_failed_alloc(void)
   SerdFailingAllocator allocator = serd_failing_allocator();
 
   SerdWorld* const world = serd_world_new(&allocator.base);
+  SerdNodes* const nodes = serd_nodes_new(&allocator.base);
 
   SerdSink* target = serd_sink_new(&allocator.base, NULL, ignore_event, NULL);
   const size_t n_setup_allocs = allocator.n_allocations;
@@ -47,6 +49,7 @@ test_new_failed_alloc(void)
 
   serd_sink_free(canon);
   serd_sink_free(target);
+  serd_nodes_free(nodes);
   serd_world_free(world);
 }
 
@@ -61,16 +64,16 @@ test_write_failed_alloc(void)
   static const ZixStringView o_string = ZIX_STATIC_STRING("012.340");
 
   SerdFailingAllocator allocator = serd_failing_allocator();
+  SerdWorld* const     world     = serd_world_new(&allocator.base);
+  SerdNodes* const     nodes     = serd_nodes_new(&allocator.base);
 
-  SerdWorld* const world = serd_world_new(&allocator.base);
+  const SerdNode* const xsd_float =
+    serd_nodes_get(nodes, serd_a_uri_string(NS_XSD "float"));
 
-  SerdNode* const xsd_float =
-    serd_node_new(&allocator.base, serd_a_uri_string(NS_XSD "float"));
-
-  SerdNode* const s = serd_node_new(&allocator.base, serd_a_uri(s_string));
-  SerdNode* const p = serd_node_new(&allocator.base, serd_a_uri(p_string));
-  SerdNode* const o =
-    serd_node_new(&allocator.base, serd_a_typed_literal(o_string, xsd_float));
+  const SerdNode* const s = serd_nodes_get(nodes, serd_a_uri(s_string));
+  const SerdNode* const p = serd_nodes_get(nodes, serd_a_uri(p_string));
+  const SerdNode* const o =
+    serd_nodes_get(nodes, serd_a_typed_literal(o_string, xsd_float));
 
   SerdSink* target = serd_sink_new(&allocator.base, NULL, ignore_event, NULL);
   SerdSink* canon  = serd_canon_new(world, target, 0U);
@@ -92,10 +95,7 @@ test_write_failed_alloc(void)
 
   serd_sink_free(canon);
   serd_sink_free(target);
-  serd_node_free(&allocator.base, o);
-  serd_node_free(&allocator.base, p);
-  serd_node_free(&allocator.base, s);
-  serd_node_free(&allocator.base, xsd_float);
+  serd_nodes_free(nodes);
   serd_world_free(world);
 
 #undef NS_XSD

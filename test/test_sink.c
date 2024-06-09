@@ -5,10 +5,10 @@
 
 #include "failing_allocator.h"
 
-#include "serd/env.h"
 #include "serd/event.h"
 #include "serd/field.h"
 #include "serd/node.h"
+#include "serd/nodes.h"
 #include "serd/object_view.h"
 #include "serd/sink.h"
 #include "serd/statement_view.h"
@@ -147,16 +147,15 @@ test_callbacks(void)
   static const SerdTokenView  uri_tok   = {SERD_URI, uri_str};
   static const SerdObjectView blank_obj = {SERD_BLANK, 0U, blank_str, no_token};
 
-  SerdEnv* const env   = serd_env_new(NULL, base_str);
-  State          state = {empty,
-                          empty,
-                          empty,
-                          empty,
-                          no_token,
-                          no_token,
-                          no_object,
-                          no_token,
-                          SERD_SUCCESS};
+  State state = {empty,
+                 empty,
+                 empty,
+                 empty,
+                 no_token,
+                 no_token,
+                 no_object,
+                 no_token,
+                 SERD_SUCCESS};
 
   const SerdStatementView statement_view = {
     {SERD_URI, base_str},
@@ -219,7 +218,7 @@ test_callbacks(void)
   assert(serd_sink_write_event(sink, &junk) == SERD_BAD_ARG);
 
   serd_sink_free(sink);
-  serd_env_free(env);
+  serd_nodes_free(nodes);
 }
 
 static void

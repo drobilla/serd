@@ -7,6 +7,7 @@
 #include "serd/env.h"
 #include "serd/event.h"
 #include "serd/node.h"
+#include "serd/nodes.h"
 #include "serd/output_stream.h"
 #include "serd/sink.h"
 #include "serd/syntax.h"
@@ -42,20 +43,29 @@ check_output(SerdWriter* writer, SerdOutputStream* out, const char* expected)
 static int
 test(void)
 {
-  SerdBuffer buffer = {NULL, NULL, 0};
-  SerdWorld* world  = serd_world_new(NULL);
-  SerdEnv*   env    = serd_env_new(NULL, zix_empty_string());
+  SerdWorld*    world  = serd_world_new(NULL);
+  ZixAllocator* alloc  = serd_world_allocator(world);
+  SerdBuffer    buffer = {NULL, NULL, 0};
+  SerdEnv*      env    = serd_env_new(alloc, zix_empty_string());
+  SerdNodes*    nodes  = serd_nodes_new(alloc);
 
-  SerdNode* b1 = serd_node_new(NULL, serd_a_blank_string("b1"));
-  SerdNode* l1 = serd_node_new(NULL, serd_a_blank_string("l1"));
-  SerdNode* l2 = serd_node_new(NULL, serd_a_blank_string("l2"));
-  SerdNode* s1 = serd_node_new(NULL, serd_a_string("s1"));
-  SerdNode* s2 = serd_node_new(NULL, serd_a_string("s2"));
+  const SerdNode* b1 = serd_nodes_get(nodes, serd_a_blank_string("b1"));
+  const SerdNode* l1 = serd_nodes_get(nodes, serd_a_blank_string("l1"));
+  const SerdNode* l2 = serd_nodes_get(nodes, serd_a_blank_string("l2"));
+  const SerdNode* s1 = serd_nodes_get(nodes, serd_a_string("s1"));
+  const SerdNode* s2 = serd_nodes_get(nodes, serd_a_string("s2"));
 
-  SerdNode* rdf_first = serd_node_new(NULL, serd_a_uri_string(NS_RDF "first"));
-  SerdNode* rdf_value = serd_node_new(NULL, serd_a_uri_string(NS_RDF "value"));
-  SerdNode* rdf_rest  = serd_node_new(NULL, serd_a_uri_string(NS_RDF "rest"));
-  SerdNode* rdf_nil   = serd_node_new(NULL, serd_a_uri_string(NS_RDF "nil"));
+  const SerdNode* rdf_first =
+    serd_nodes_get(nodes, serd_a_uri_string(NS_RDF "first"));
+
+  const SerdNode* rdf_value =
+    serd_nodes_get(nodes, serd_a_uri_string(NS_RDF "value"));
+
+  const SerdNode* rdf_rest =
+    serd_nodes_get(nodes, serd_a_uri_string(NS_RDF "rest"));
+
+  const SerdNode* rdf_nil =
+    serd_nodes_get(nodes, serd_a_uri_string(NS_RDF "nil"));
 
   serd_env_set_prefix(env, zix_string("rdf"), zix_string(NS_RDF));
 
@@ -94,16 +104,9 @@ test(void)
   check_output(writer, &output, "[] rdf:value ( \"s1\" \"s2\" ) .\n");
 
   serd_writer_free(writer);
-  serd_node_free(NULL, rdf_nil);
-  serd_node_free(NULL, rdf_rest);
-  serd_node_free(NULL, rdf_value);
-  serd_node_free(NULL, rdf_first);
-  serd_node_free(NULL, s2);
-  serd_node_free(NULL, s1);
-  serd_node_free(NULL, l2);
-  serd_node_free(NULL, l1);
-  serd_node_free(NULL, b1);
+  serd_close_output(&output);
   zix_free(buffer.allocator, buffer.buf);
+  serd_nodes_free(nodes);
   serd_env_free(env);
   serd_world_free(world);
 
