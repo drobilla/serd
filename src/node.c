@@ -202,7 +202,7 @@ serd_a_base64(size_t size, const void* const data)
 char*
 serd_node_buffer(SerdNode* const node)
 {
-  return (char*)(node + 1);
+  return (char*)(node + 1U);
 }
 
 size_t

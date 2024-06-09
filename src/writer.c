@@ -4,7 +4,6 @@
 #include "block_dumper.h"
 #include "log.h"
 #include "memory.h"
-#include "namespaces.h"
 #include "node_internal.h"
 #include "ntriples.h"
 #include "sink_impl.h"
@@ -13,6 +12,7 @@
 #include "turtle.h"
 #include "uri_utils.h"
 #include "warnings.h"
+#include "world_impl.h"
 
 #include "serd/env.h"
 #include "serd/event.h"
@@ -805,31 +805,6 @@ reset_context(SerdWriter* writer, const unsigned flags)
   return SERD_SUCCESS;
 }
 
-// Return the name of the XSD datatype referred to by `datatype`, if any
-static const char*
-get_xsd_name(const SerdEnv* const env, const SerdNode* const datatype)
-{
-  const ZixStringView datatype_str = serd_node_string_view(datatype);
-
-  if (serd_node_type(datatype) == SERD_URI &&
-      (!strncmp(datatype_str.data, NS_XSD, sizeof(NS_XSD) - 1))) {
-    return datatype_str.data + sizeof(NS_XSD) - 1U;
-  }
-
-  if (serd_node_type(datatype) == SERD_CURIE) {
-    ZixStringView prefix;
-    ZixStringView suffix;
-    // We can be a bit lazy/presumptive here due to grammar limitations
-    if (!serd_env_expand(env, datatype_str, &prefix, &suffix)) {
-      if (!strcmp((const char*)prefix.data, NS_XSD)) {
-        return (const char*)suffix.data;
-      }
-    }
-  }
-
-  return "";
-}
-
 ZIX_NODISCARD static SerdStatus
 write_literal(SerdWriter* const             writer,
               const SerdNode* const         node,
@@ -842,10 +817,17 @@ write_literal(SerdWriter* const             writer,
   const size_t          node_len = serd_node_length(node);
 
   if (supports_abbrev(writer) && datatype) {
-    const char* const xsd_name = get_xsd_name(writer->env, datatype);
-    if (!strcmp(xsd_name, "boolean") || !strcmp(xsd_name, "integer") ||
-        (!strcmp(xsd_name, "decimal") && strchr(node_str, '.') &&
-         node_str[node_len - 1U] != '.')) {
+    if (serd_node_equals(datatype, writer->world->xsd_boolean) ||
+        serd_node_equals(datatype, writer->world->xsd_integer)) {
+      return esink(node_str, node_len, writer);
+    }
+
+    if (serd_node_equals(datatype, writer->world->xsd_decimal) &&
+        strchr(node_str, '.') && node_str[node_len - 1U] != '.') {
+      /* xsd:decimal literals without trailing digits, e.g. "5.", can
+         not be written bare in Turtle.  We could add a 0 which is
+         prettier, but changes the text and breaks round tripping.
+      */
       return esink(node_str, node_len, writer);
     }
   }
@@ -915,11 +897,11 @@ write_uri_node(SerdWriter* const     writer,
 
   if (supports_abbrev(writer)) {
     if (!(writer->flags & SERD_WRITE_LONGHAND) && field == SERD_PREDICATE &&
-        !strcmp(string.data, NS_RDF "type")) {
+        serd_node_equals(node, writer->world->rdf_type)) {
       return esink("a", 1, writer);
     }
 
-    if (!strcmp(string.data, NS_RDF "nil")) {
+    if (serd_node_equals(node, writer->world->rdf_nil)) {
       return esink("()", 2, writer);
     }
 
@@ -1058,12 +1040,12 @@ write_list_next(SerdWriter* const             writer,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  if (!strcmp(serd_node_string(object), NS_RDF "nil")) {
+  if (serd_node_equals(object, writer->world->rdf_nil)) {
     TRY(st, write_sep(writer, writer->context.flags, SEP_LIST_END));
     return SERD_FAILURE;
   }
 
-  if (!strcmp(serd_node_string(predicate), NS_RDF "first")) {
+  if (serd_node_equals(predicate, writer->world->rdf_first)) {
     TRY(st, write_node(writer, object, SERD_OBJECT, flags));
   } else {
     TRY(st, write_sep(writer, writer->context.flags, SEP_LIST_SEP));
@@ -1172,8 +1154,8 @@ write_list_statement(SerdWriter* const             writer,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  if (!strcmp(serd_node_string(predicate), NS_RDF "first") &&
-      !strcmp(serd_node_string(object), NS_RDF "nil")) {
+  if (serd_node_equals(predicate, writer->world->rdf_first) &&
+      serd_node_equals(object, writer->world->rdf_nil)) {
     return esink("()", 2, writer);
   }
 
@@ -1235,7 +1217,7 @@ write_turtle_trig_statement(SerdWriter* const       writer,
   SerdStatus          st        = SERD_SUCCESS;
 
   if ((flags & SERD_LIST_O) &&
-      !strcmp(serd_node_string(object), NS_RDF "nil")) {
+      serd_node_equals(object, writer->world->rdf_nil)) {
     /* Tolerate LIST_O_BEGIN for "()" objects, even though it doesn't make
        much sense, because older versions handled this gracefully.  Consider
        making this an error in a later major version. */

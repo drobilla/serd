@@ -3,6 +3,7 @@
 
 #include "nodes.h"
 
+#include "node_impl.h"
 #include "node_internal.h"
 #include "node_spec.h"
 #include "warnings.h"
