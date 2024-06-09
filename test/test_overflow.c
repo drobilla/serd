@@ -4,6 +4,7 @@
 #undef NDEBUG
 
 #include "serd/serd.h"
+#include "zix/allocator.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -23,14 +24,16 @@ test_size(SerdWorld* const      world,
   limits.reader_stack_size = stack_size;
   serd_world_set_limits(world, limits);
 
-  SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
+  SerdNodes* const    nodes = serd_world_nodes(world);
+  ZixAllocator* const alloc = serd_world_allocator(world);
+  SerdEnv* const      env   = serd_env_new(alloc, zix_empty_string());
   assert(env);
 
   SerdReader* const reader =
     serd_reader_new(world, syntax, flags, env, serd_env_sink(env));
   assert(reader);
 
-  SerdNode*       string_name = serd_node_new(NULL, serd_a_string("string"));
+  const SerdNode* string_name = serd_nodes_get(nodes, serd_a_string("string"));
   const char*     position    = str;
   SerdInputStream in          = serd_open_input_string(&position);
   serd_reader_start(reader, &in, string_name, 1);
@@ -38,7 +41,6 @@ test_size(SerdWorld* const      world,
   const SerdStatus st = serd_reader_read_document(reader);
 
   serd_close_input(&in);
-  serd_node_free(NULL, string_name);
   serd_reader_free(reader);
   serd_env_free(env);
 
