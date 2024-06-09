@@ -28,6 +28,8 @@
 		<#test-id>
 		<#test-list-in-blank>
 		<#test-list-subject>
+		<#test-local-name-ends-with-dot>
+		<#test-local-name-escapes>
 		<#test-long-utf8>
 		<#test-no-spaces>
 		<#test-non-curie-uri>
@@ -187,6 +189,18 @@
 	mf:action <test-list-subject.ttl> ;
 	mf:name "test-list-subject" ;
 	mf:result <test-list-subject.nt> .
+
+<#test-local-name-ends-with-dot>
+	a rdft:TestTurtleEval ;
+	mf:action <test-local-name-ends-with-dot.ttl> ;
+	mf:name "test-local-name-ends-with-dot" ;
+	mf:result <test-local-name-ends-with-dot.nt> .
+
+<#test-local-name-escapes>
+	a rdft:TestTurtleEval ;
+	mf:action <test-local-name-escapes.ttl> ;
+	mf:name "test-local-name-escapes" ;
+	mf:result <test-local-name-escapes.nt> .
 
 <#test-long-utf8>
 	a rdft:TestTurtleEval ;
