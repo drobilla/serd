@@ -35,7 +35,7 @@
 		<#test-non-curie-uri>
 		<#test-nq-syntax-all-rules>
 		<#test-nq-syntax-dot-end>
-		<#test-nq-syntax-eof-after-blank-dot>
+		<#test-nt-syntax-all-rules>
 		<#test-nq-syntax-eol-cr>
 		<#test-nq-syntax-eol-crlf>
 		<#test-nq-syntax-eol-lf>
@@ -54,6 +54,8 @@
 		<#test-semi-dot>
 		<#test-several-eaten-dots>
 		<#test-string-escapes>
+		<#test-trig-syntax-all-rules>
+		<#test-ttl-syntax-all-rules>
 		<#test-uri>
 	) .
 
@@ -219,11 +221,6 @@
 	mf:name "test-non-curie-uri" ;
 	mf:result <test-non-curie-uri.nt> .
 
-<#test-nq-syntax-eof-after-blank-dot>
-	a rdft:TestNTriplesPositiveSyntax ;
-	mf:action <test-nq-syntax-eof-after-blank-dot.nq> ;
-	mf:name "test-nq-syntax-eof-after-blank-dot" .
-
 <#test-nq-syntax-all-rules>
 	a rdft:TestNQuadsPositiveSyntax ;
 	mf:action <test-nq-syntax-all-rules.nq> ;
@@ -233,6 +230,11 @@
 	a rdft:TestNQuadsPositiveSyntax ;
 	mf:action <test-nq-syntax-dot-end.nq> ;
 	mf:name "test-nq-syntax-dot-end" .
+
+<#test-nq-syntax-eof-after-blank-dot>
+	a rdft:TestNTriplesPositiveSyntax ;
+	mf:action <test-nq-syntax-eof-after-blank-dot.nq> ;
+	mf:name "test-nq-syntax-eof-after-blank-dot" .
 
 <#test-nq-syntax-eol-cr>
 	a rdft:TestNTriplesPositiveSyntax ;
@@ -329,6 +331,16 @@
 	mf:action <test-string-escapes.ttl> ;
 	mf:name "test-string-escapes" ;
 	mf:result <test-string-escapes.nt> .
+
+<#test-trig-syntax-all-rules>
+	a rdft:TestTrigPositiveSyntax ;
+	mf:action <test-trig-syntax-all-rules.trig> ;
+	mf:name "test-trig-syntax-all-rules" .
+
+<#test-ttl-syntax-all-rules>
+	a rdft:TestTurtlePositiveSyntax ;
+	mf:action <test-ttl-syntax-all-rules.ttl> ;
+	mf:name "test-ttl-syntax-all-rules" .
 
 <#test-uri>
 	a rdft:TestTurtleEval ;
