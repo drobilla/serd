@@ -10,6 +10,7 @@ Checks: >
   -clang-diagnostic-unused-macros,
   -llvmlibc-*,
   -misc-include-cleaner,
+  -readability-avoid-nested-conditional-operator,
   -readability-identifier-length,
 CheckOptions:
   - key:   hicpp-uppercase-literal-suffix.NewSuffixes

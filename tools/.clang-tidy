@@ -10,7 +10,6 @@ Checks: >
   -concurrency-mt-unsafe,
   -hicpp-signed-bitwise,
   -llvm-header-guard,
-  -readability-avoid-nested-conditional-operator,
 InheritParentConfig: true
 CheckOptions:
   - key:   readability-function-cognitive-complexity.IgnoreMacros
