@@ -344,7 +344,7 @@ test_read_eof_by_byte(void)
 }
 
 static void
-test_read_nquads_chunks(const char* const path)
+test_read_flat_chunks(const char* const path, const SerdSyntax syntax)
 {
   static const char null = 0;
 
@@ -372,7 +372,7 @@ test_read_nquads_chunks(const char* const path)
   SerdWorld* const  world  = serd_world_new(NULL);
   ReaderTest        rt     = {0, 0, 0, 0};
   SerdReader* const reader = serd_reader_new(world,
-                                             SERD_NQUADS,
+                                             syntax,
                                              0U,
                                              &rt,
                                              NULL,
@@ -439,7 +439,7 @@ test_read_nquads_chunks(const char* const path)
 }
 
 static void
-test_read_turtle_chunks(const char* const path)
+test_read_abbrev_chunks(const char* const path, const SerdSyntax syntax)
 {
   static const char null = 0;
 
@@ -458,7 +458,7 @@ test_read_turtle_chunks(const char* const path)
   SerdWorld* const  world  = serd_world_new(NULL);
   ReaderTest        rt     = {0, 0, 0, 0};
   SerdReader* const reader = serd_reader_new(world,
-                                             SERD_TURTLE,
+                                             syntax,
                                              0U,
                                              &rt,
                                              NULL,
@@ -616,8 +616,10 @@ main(void)
   test_new_failed_alloc();
   test_start_stream_failed_alloc();
   test_null_callbacks();
-  test_read_nquads_chunks(nq_path);
-  test_read_turtle_chunks(ttl_path);
+  test_read_flat_chunks(nq_path, SERD_NTRIPLES);
+  test_read_flat_chunks(nq_path, SERD_NQUADS);
+  test_read_abbrev_chunks(ttl_path, SERD_TURTLE);
+  test_read_abbrev_chunks(ttl_path, SERD_TRIG);
   test_read_empty();
   test_read_string();
   test_read_eof_file(ttl_path);
