@@ -139,6 +139,10 @@ serd_reader_read_document(SerdReader* const reader)
 {
   assert(reader);
 
+  if (reader->syntax == SERD_SYNTAX_EMPTY) {
+    return SERD_SUCCESS;
+  }
+
   if (!reader->source.prepared) {
     SerdStatus st = serd_reader_prepare(reader);
     if (st) {
@@ -304,6 +308,10 @@ SerdStatus
 serd_reader_read_chunk(SerdReader* const reader)
 {
   assert(reader);
+
+  if (reader->syntax == SERD_SYNTAX_EMPTY) {
+    return SERD_FAILURE;
+  }
 
   SerdStatus st = SERD_SUCCESS;
   if (!reader->source.prepared) {

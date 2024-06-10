@@ -19,6 +19,7 @@
 #endif
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -370,6 +371,64 @@ test_read_turtle_chunks(const char* const path)
   assert(!zix_remove(path));
 }
 
+static size_t
+empty_test_read(void* buf, size_t size, size_t nmemb, void* stream)
+{
+  (void)buf;
+  (void)size;
+  (void)nmemb;
+
+  bool* const called = (bool*)stream;
+
+  *called = true;
+
+  return 0;
+}
+
+static int
+empty_test_error(void* stream)
+{
+  (void)stream;
+  return 0;
+}
+
+/// Test that reading SERD_SYNTAX_EMPTY "succeeds" without reading any input
+static void
+test_read_empty(void)
+{
+  SerdWorld* const world = serd_world_new();
+  ReaderTest       rt    = {0, 0, 0, 0};
+  SerdSink* const  sink  = serd_sink_new(&rt, test_sink, NULL);
+  assert(sink);
+
+  SerdReader* const reader =
+    serd_reader_new(world, SERD_SYNTAX_EMPTY, 0U, sink, 512);
+  assert(reader);
+
+  assert(!empty_test_error(NULL));
+
+  bool called = false;
+  assert(!empty_test_read(NULL, 0U, 0U, &called));
+  assert(called == true);
+  called = false;
+
+  SerdStatus st = serd_reader_start_stream(
+    reader, empty_test_read, empty_test_error, &called, NULL, 1);
+  assert(st == SERD_SUCCESS);
+
+  assert(serd_reader_read_document(reader) == SERD_SUCCESS);
+  assert(rt.n_statement == 0);
+  assert(!called);
+
+  assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
+  assert(rt.n_statement == 0);
+  assert(!called);
+
+  serd_reader_free(reader);
+  serd_sink_free(sink);
+  serd_world_free(world);
+}
+
 int
 main(void)
 {
@@ -381,6 +440,7 @@ main(void)
 
   test_read_nquads_chunks(nq_path);
   test_read_turtle_chunks(ttl_path);
+  test_read_empty();
   test_read_string();
   test_read_eof_by_page(ttl_path);
   test_read_eof_by_byte();
