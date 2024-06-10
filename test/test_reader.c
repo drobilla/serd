@@ -187,7 +187,7 @@ test_read_eof_by_byte(void)
 }
 
 static void
-test_read_nquads_chunks(const char* const path)
+test_read_flat_chunks(const char* const path, const SerdSyntax syntax)
 {
   static const char null = 0;
 
@@ -217,9 +217,7 @@ test_read_nquads_chunks(const char* const path)
   SerdSink* const  sink  = serd_sink_new(&rt, test_sink, NULL);
   assert(sink);
 
-  SerdReader* const reader =
-    serd_reader_new(world, SERD_NQUADS, 0U, sink, 1024);
-
+  SerdReader* const reader = serd_reader_new(world, syntax, 0U, sink, 1024);
   assert(reader);
 
   SerdStatus st = serd_reader_start_stream(
@@ -276,7 +274,7 @@ test_read_nquads_chunks(const char* const path)
 }
 
 static void
-test_read_turtle_chunks(const char* const path)
+test_read_abbrev_chunks(const char* const path, const SerdSyntax syntax)
 {
   static const char null = 0;
 
@@ -298,8 +296,7 @@ test_read_turtle_chunks(const char* const path)
   SerdSink* const  sink  = serd_sink_new(&rt, test_sink, NULL);
   assert(sink);
 
-  SerdReader* const reader =
-    serd_reader_new(world, SERD_TURTLE, 0U, sink, 1024);
+  SerdReader* const reader = serd_reader_new(world, syntax, 0U, sink, 1024);
   assert(reader);
 
   SerdStatus st = serd_reader_start_stream(
@@ -438,8 +435,10 @@ main(void)
   char* const ttl_path     = zix_path_join(NULL, dir, "serd_test_reader.ttl");
   char* const nq_path      = zix_path_join(NULL, dir, "serd_test_reader.nq");
 
-  test_read_nquads_chunks(nq_path);
-  test_read_turtle_chunks(ttl_path);
+  test_read_flat_chunks(nq_path, SERD_NTRIPLES);
+  test_read_flat_chunks(nq_path, SERD_NQUADS);
+  test_read_abbrev_chunks(ttl_path, SERD_TURTLE);
+  test_read_abbrev_chunks(ttl_path, SERD_TRIG);
   test_read_empty();
   test_read_string();
   test_read_eof_by_page(ttl_path);
