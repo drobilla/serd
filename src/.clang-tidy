@@ -6,8 +6,6 @@ Checks: >
   -bugprone-easily-swappable-parameters,
   -cert-err33-c,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
-  -clang-analyzer-valist.Uninitialized,
-  -clang-diagnostic-unused-function,
   -concurrency-mt-unsafe,
   -google-readability-todo,
   -hicpp-multiway-paths-covered,
@@ -15,5 +13,9 @@ Checks: >
   -llvm-header-guard,
   -misc-no-recursion,
   -modernize-macro-to-enum,
-  -readability-function-cognitive-complexity,
+CheckOptions:
+  - key:   readability-function-cognitive-complexity.IgnoreMacros
+    value: 'true'
+  - key:   readability-function-cognitive-complexity.Threshold
+    value: '91'
 InheritParentConfig: true

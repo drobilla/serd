@@ -11,5 +11,9 @@ Checks: >
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -concurrency-mt-unsafe,
   -hicpp-signed-bitwise,
-  -readability-function-cognitive-complexity,
+CheckOptions:
+  - key:   readability-function-cognitive-complexity.IgnoreMacros
+    value: 'true'
+  - key:   readability-function-cognitive-complexity.Threshold
+    value: '6'
 InheritParentConfig: true
