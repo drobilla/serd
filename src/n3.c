@@ -935,8 +935,8 @@ read_literal(SerdReader* const    reader,
     return st;
   }
 
-  switch (peek_byte(reader)) {
-  case '@':
+  const int next = peek_byte(reader);
+  if (next == '@') {
     skip_byte(reader, '@');
     if ((st = read_LANGTAG(reader, lang))) {
       *datatype = pop_node(reader, *datatype);
@@ -944,8 +944,7 @@ read_literal(SerdReader* const    reader,
       *dest     = pop_node(reader, *dest);
       return r_err(reader, st, "bad language tag\n");
     }
-    break;
-  case '^':
+  } else if (next == '^') {
     skip_byte(reader, '^');
     if (!eat_byte_check(reader, '^')) {
       return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected '^'\n");
@@ -957,7 +956,6 @@ read_literal(SerdReader* const    reader,
       *dest     = pop_node(reader, *dest);
       return r_err(reader, st, "bad datatype\n");
     }
-    break;
   }
 
   return SERD_SUCCESS;
@@ -1282,14 +1280,16 @@ read_predicateObjectList(SerdReader* const reader,
     int  c        = 0;
     do {
       read_ws_star(reader);
-      switch (c = peek_byte(reader)) {
-      case EOF:
+      c = peek_byte(reader);
+      if (c < 0) {
         return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file\n");
-      case '.':
-      case ']':
-      case '}':
+      }
+
+      if (c == '.' || c == ']' || c == '}') {
         return SERD_SUCCESS;
-      case ';':
+      }
+
+      if (c == ';') {
         skip_byte(reader, c);
         ate_semi = true;
       }
@@ -1443,13 +1443,16 @@ read_triples(SerdReader* const reader, ReadContext ctx, bool* const ate_dot)
   SerdStatus st = SERD_FAILURE;
   if (ctx.subject) {
     read_ws_star(reader);
-    switch (peek_byte(reader)) {
-    case '.':
+    const int c = peek_byte(reader);
+    if (c == '.') {
       *ate_dot = eat_byte_safe(reader, '.');
       return SERD_FAILURE;
-    case '}':
+    }
+
+    if (c == '}') {
       return SERD_FAILURE;
     }
+
     st = read_predicateObjectList(reader, ctx, ate_dot);
   }
 
@@ -1528,22 +1531,20 @@ read_directive(SerdReader* const reader)
   const bool sparql = peek_byte(reader) != '@';
   if (!sparql) {
     skip_byte(reader, '@');
-    switch (peek_byte(reader)) {
-    case 'B':
-    case 'P':
+    const int next = peek_byte(reader);
+    if (next == 'B' || next == 'P') {
       return r_err(reader, SERD_ERR_BAD_SYNTAX, "uppercase directive\n");
     }
   }
 
-  switch (peek_byte(reader)) {
-  case 'B':
-  case 'b':
+  const int next = peek_byte(reader);
+
+  if (next == 'B' || next == 'b') {
     return read_base(reader, sparql, true);
-  case 'P':
-  case 'p':
+  }
+
+  if (next == 'P' || next == 'p') {
     return read_prefixID(reader, sparql, true);
-  default:
-    break;
   }
 
   return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid directive\n");

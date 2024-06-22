@@ -4,7 +4,6 @@
 Checks: >
   -*-magic-numbers,
   -bugprone-easily-swappable-parameters,
-  -bugprone-switch-missing-default-case,
   -cert-err33-c,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -clang-analyzer-valist.Uninitialized,
