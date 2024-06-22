@@ -1259,6 +1259,37 @@ write_list_statement(SerdWriter* const    writer,
 }
 
 ZIX_NODISCARD static SerdStatus
+write_inline_predicate(SerdWriter* const   writer,
+                       SerdEventFlags      flags,
+                       const SerdTokenView predicate)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  if (top_field_equals(writer, SERD_PREDICATE, predicate)) {
+    // Elide S P (write O)
+
+    const Sep  last      = writer->last_sep;
+    const bool open_o    = (flags & (SERD_ANON_O | SERD_LIST_O));
+    const bool after_end = (last == SEP_ANON_R) || (last == SEP_LIST_R);
+
+    TRY(st,
+        write_sep(writer,
+                  false,
+                  after_end ? (open_o ? SEP_END_O_AA : SEP_END_O_N)
+                            : (open_o ? SEP_END_O_NA : SEP_END_O_N)));
+
+  } else {
+    // Elide S (write P and O)
+
+    const bool first = !top_has_field(writer, SERD_PREDICATE);
+    TRY(st, write_sep(writer, false, first ? SEP_S_P : SEP_END_P));
+    TRY(st, write_pred(writer, predicate));
+  }
+
+  return st;
+}
+
+ZIX_NODISCARD static SerdStatus
 write_turtle_trig_statement(SerdWriter* const    writer,
                             SerdEventFlags       flags,
                             const SerdTokenView  subject,
@@ -1266,36 +1297,17 @@ write_turtle_trig_statement(SerdWriter* const    writer,
                             const SerdObjectView object,
                             const SerdTokenView  graph)
 {
-  const WriteContext* const ctx = writer->context;
-  SerdStatus                st  = SERD_SUCCESS;
+  SerdStatus st = SERD_SUCCESS;
 
-  if (ctx->type == CTX_LIST) {
+  if (writer->context->type == CTX_LIST) {
     return write_list_statement(
       writer, flags, subject, predicate, object, graph);
   }
 
+  // Write subject and/or predicate if necessary
   if (top_field_equals(writer, SERD_SUBJECT, subject)) {
-    if (top_field_equals(writer, SERD_PREDICATE, predicate)) {
-      // Elide S P (write O)
-
-      const Sep  last        = writer->last_sep;
-      const bool before_name = !(flags & (SERD_ANON_O | SERD_LIST_O));
-      const bool after_end   = (last == SEP_ANON_R) || (last == SEP_LIST_R);
-      TRY(st,
-          write_sep(writer,
-                    false,
-                    before_name ? SEP_END_O_N
-                    : after_end ? SEP_END_O_AA
-                                : SEP_END_O_NA));
-
-    } else {
-      // Elide S (write P and O)
-
-      const bool first = !top_has_field(writer, SERD_PREDICATE);
-      TRY(st, write_sep(writer, false, first ? SEP_S_P : SEP_END_P));
-      TRY(st, write_pred(writer, predicate));
-    }
-
+    // Elide subject
+    TRY(st, write_inline_predicate(writer, flags, predicate));
   } else {
     // No abbreviation
 
