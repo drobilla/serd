@@ -70,7 +70,6 @@ static const ZixStringView rdf_type  = ZIX_STATIC_STRING(NS_RDF "type");
 
 typedef enum {
   SEP_NONE,        ///< Sentinel after "nothing"
-  SEP_NEWLINE,     ///< Sentinel after a line end
   SEP_END_DIRECT,  ///< End of a directive (like "@prefix")
   SEP_END_S,       ///< End of a subject ('.')
   SEP_END_P,       ///< End of a predicate (';')
@@ -109,7 +108,6 @@ typedef struct {
 
 static const SepRule rules[] = {
   {NIL, +0, SEP_NONE, SEP_NONE, SEP_NONE},
-  {'\n', 0, SEP_NONE, SEP_NONE, SEP_NONE},
   {'.', +0, SEP_EACH, SEP_NONE, SEP_NONE},
   {'.', +0, SEP_EACH, SEP_NONE, SEP_NONE},
   {';', +0, SEP_EACH, SEP_NONE, SEP_EACH},
@@ -724,17 +722,22 @@ write_top_level_sep(SerdWriter* writer)
            : SERD_SUCCESS;
 }
 
+static int
+adjust_indent(const int current, const int delta)
+{
+  return (delta >= 0 || current >= -delta) ? current + delta : 0;
+}
+
 ZIX_NODISCARD static SerdStatus
 write_sep(SerdWriter* writer, const SerdStatementEventFlags flags, Sep sep)
 {
   SerdStatus           st   = SERD_SUCCESS;
   const SepRule* const rule = &rules[sep];
 
-  const bool pre_line  = (rule->pre_line_after & (1U << writer->last_sep));
-  const bool post_line = (rule->post_line_after & (1U << writer->last_sep));
-
-  const bool terse = (((flags & SERD_TERSE_S) && (flags & SERD_LIST_S)) ||
-                      ((flags & SERD_TERSE_O) && (flags & SERD_LIST_O)));
+  const SepMask last_sep_mask = (1U << writer->last_sep);
+  const bool    pre_line      = (rule->pre_line_after & last_sep_mask);
+  const bool    post_line     = (rule->post_line_after & last_sep_mask);
+  const bool    terse         = (flags & (SERD_TERSE_S | SERD_TERSE_O));
 
   if (terse && sep >= SEP_LIST_BEGIN && sep <= SEP_LIST_END) {
     sep = (Sep)((int)sep + 3); // Switch to corresponding terse separator
@@ -742,9 +745,7 @@ write_sep(SerdWriter* writer, const SerdStatementEventFlags flags, Sep sep)
 
   // Adjust indent, but tolerate if it would become negative
   if (rule->indent && (pre_line || post_line)) {
-    writer->indent = ((rule->indent >= 0 || writer->indent >= -rule->indent)
-                        ? writer->indent + rule->indent
-                        : 0);
+    writer->indent = adjust_indent(writer->indent, rule->indent);
   }
 
   // If this is the first comma, bump the increment for the following object
@@ -756,7 +757,7 @@ write_sep(SerdWriter* writer, const SerdStatementEventFlags flags, Sep sep)
   // Write newline or space before separator if necessary
   if (pre_line) {
     TRY(st, write_newline(writer, terse));
-  } else if (rule->pre_space_after & (1U << writer->last_sep)) {
+  } else if (rule->pre_space_after & last_sep_mask) {
     TRY(st, esink(" ", 1, writer));
   }
 
@@ -768,9 +769,6 @@ write_sep(SerdWriter* writer, const SerdStatementEventFlags flags, Sep sep)
   // Write newline after separator if necessary
   if (post_line) {
     TRY(st, write_newline(writer, terse));
-    if (rule->post_line_after != ~(SepMask)0U) {
-      writer->last_sep = SEP_NEWLINE;
-    }
   }
 
   // Reset context and write a blank line after ends of subjects
@@ -1235,6 +1233,42 @@ write_list_statement(SerdWriter* const             writer,
 }
 
 ZIX_NODISCARD static SerdStatus
+write_inline_predicate(SerdWriter* const       writer,
+                       SerdStatementEventFlags flags,
+                       const SerdTokenView     predicate)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  if (serd_node_equals_token_view(writer->context.predicate, predicate)) {
+    // Elide S and P (write only a separator here)
+
+    const Sep  last      = writer->last_sep;
+    const bool open_o    = flags & (SERD_ANON_O | SERD_LIST_O);
+    const bool after_end = (last == SEP_ANON_END) || (last == SEP_LIST_END);
+
+    TRY(st,
+        write_sep(writer,
+                  flags,
+                  after_end ? (open_o ? SEP_JOIN_O_AA : SEP_JOIN_O_AN)
+                            : (open_o ? SEP_JOIN_O_NA : SEP_END_O)));
+
+  } else {
+    // Elide only S (write a separator and P here)
+
+    if (writer->context.comma_indented && !(flags & SERD_ANON_S)) {
+      --writer->indent;
+      writer->context.comma_indented = false;
+    }
+
+    const bool first = !ctx(writer, SERD_PREDICATE);
+    TRY(st, write_sep(writer, flags, first ? SEP_S_P : SEP_END_P));
+    TRY(st, write_pred(writer, flags, predicate));
+  }
+
+  return st;
+}
+
+ZIX_NODISCARD static SerdStatus
 write_turtle_trig_statement(SerdWriter* const       writer,
                             SerdStatementEventFlags flags,
                             const SerdTokenView     subject,
@@ -1256,33 +1290,10 @@ write_turtle_trig_statement(SerdWriter* const       writer,
       writer, flags, subject, predicate, object, graph);
   }
 
+  // Write subject and/or predicate if necessary
   if (serd_node_equals_token_view(writer->context.subject, subject)) {
-    if (serd_node_equals_token_view(writer->context.predicate, predicate)) {
-      // Elide S P (write O)
-
-      const Sep  last      = writer->last_sep;
-      const bool open_o    = (flags & (SERD_ANON_O | SERD_LIST_O));
-      const bool after_end = (last == SEP_ANON_END) || (last == SEP_LIST_END);
-
-      TRY(st,
-          write_sep(writer,
-                    flags,
-                    after_end ? (open_o ? SEP_JOIN_O_AA : SEP_JOIN_O_AN)
-                              : (open_o ? SEP_JOIN_O_NA : SEP_END_O)));
-
-    } else {
-      // Elide S (write P and O)
-
-      if (writer->context.comma_indented && !(flags & SERD_ANON_S)) {
-        --writer->indent;
-        writer->context.comma_indented = false;
-      }
-
-      const bool first = !ctx(writer, SERD_PREDICATE);
-      TRY(st, write_sep(writer, flags, first ? SEP_S_P : SEP_END_P));
-      TRY(st, write_pred(writer, flags, predicate));
-    }
-
+    // Elide subject
+    TRY(st, write_inline_predicate(writer, flags, predicate));
   } else {
     // No abbreviation
 
@@ -1300,10 +1311,10 @@ write_turtle_trig_statement(SerdWriter* const       writer,
 
     // Write subject node
     TRY(st, write_token(writer, SERD_SUBJECT, flags, subject));
-    if (!(flags & (SERD_ANON_S | SERD_LIST_S))) {
-      TRY(st, write_sep(writer, flags, SEP_S_P));
-    } else if (flags & SERD_ANON_S) {
+    if (flags & SERD_ANON_S) {
       TRY(st, write_sep(writer, flags, SEP_ANON_S_P));
+    } else if (!(flags & SERD_LIST_S)) {
+      TRY(st, write_sep(writer, flags, SEP_S_P));
     }
 
     // Set context to new subject
