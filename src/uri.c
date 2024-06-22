@@ -121,21 +121,34 @@ serd_uri_string_has_scheme(const char* const string)
 }
 
 static inline bool
-is_uri_authority_char(const char c)
+ends_uri_authority(const char c)
 {
-  return c && c != '/' && c != '?' && c != '#';
+  return c == '/' || c == '?' || c == '#';
 }
 
 static inline bool
-is_uri_path_char(const char c)
+ends_uri_path(const char c)
 {
-  return c && c != '?' && c != '#';
+  return c == '?' || c == '#';
 }
 
 static inline bool
-is_uri_query_char(const char c)
+ends_uri_query(const char c)
 {
-  return c && c != '#';
+  return c == '#';
+}
+
+static const char*
+append_until(bool (*predicate)(char),
+             const char*          ptr,
+             ZixStringView* const dest)
+{
+  while (*ptr && !predicate(*ptr)) {
+    ++dest->length;
+    ++ptr;
+  }
+
+  return ptr;
 }
 
 SerdURIView
@@ -170,31 +183,22 @@ serd_parse_uri(const char* const string)
   if (*ptr == '/' && *(ptr + 1) == '/') {
     ptr += 2;
     result.authority.data = ptr;
-    while (is_uri_authority_char(*ptr)) {
-      ++result.authority.length;
-      ++ptr;
-    }
+    ptr = append_until(ends_uri_authority, ptr, &result.authority);
   }
 
   /* S3.3: The path is terminated by the first '?' or '#', or by the end of the
      URI. */
-  if (is_uri_path_char(*ptr)) {
+  if (*ptr && !ends_uri_path(*ptr)) {
     result.path.data   = ptr++;
     result.path.length = 1U;
-    while (is_uri_path_char(*ptr)) {
-      ++result.path.length;
-      ++ptr;
-    }
+    ptr                = append_until(ends_uri_path, ptr, &result.path);
   }
 
   /* S3.4: The query component is indicated by the first '?' and terminated by
      a '#' or by the end of the URI. */
   if (*ptr == '?') {
     result.query.data = ++ptr;
-    while (is_uri_query_char(*ptr)) {
-      ++result.query.length;
-      ++ptr;
-    }
+    ptr               = append_until(ends_uri_query, ptr, &result.query);
   }
 
   /* S3.5: A fragment identifier component is indicated by the presence of a
