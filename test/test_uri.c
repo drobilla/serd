@@ -5,8 +5,8 @@
 
 #include "serd/memory.h"
 #include "serd/node.h"
-#include "serd/string_view.h"
 #include "serd/uri.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -189,7 +189,7 @@ test_is_within(void)
 }
 
 static inline bool
-chunk_equals(const SerdStringView* a, const SerdStringView* b)
+chunk_equals(const ZixStringView* a, const ZixStringView* b)
 {
   return (!a->length && !b->length && !a->data && !b->data) ||
          (a->length && b->length && a->data && b->data &&
@@ -350,11 +350,13 @@ check_uri_string(const SerdURIView uri, const char* const expected)
 static void
 test_uri_resolution(void)
 {
-  static const char* const top_str   = "http://example.org/t/";
-  static const char* const base_str  = "http://example.org/t/b/";
-  static const char* const sub_str   = "http://example.org/t/b/s";
-  static const char* const deep_str  = "http://example.org/t/b/s/d";
-  static const char* const other_str = "http://example.org/o";
+#define NS_EG "http://example.org/"
+
+  static const char* const top_str   = NS_EG "t/";
+  static const char* const base_str  = NS_EG "t/b/";
+  static const char* const sub_str   = NS_EG "t/b/s";
+  static const char* const deep_str  = NS_EG "t/b/s/d";
+  static const char* const other_str = NS_EG "o";
 
   const SerdURIView top_uri          = serd_parse_uri(top_str);
   const SerdURIView base_uri         = serd_parse_uri(base_str);
@@ -390,6 +392,8 @@ test_uri_resolution(void)
   // Shared path prefix is within URI path prefix
   const SerdURIView prefix_uri = serd_relative_uri(resolved_sub_uri, other_uri);
   check_uri_string(prefix_uri, "t/b/s");
+
+#undef NS_EG
 }
 
 int

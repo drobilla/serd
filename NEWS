@@ -6,7 +6,7 @@ serd (1.1.1) unstable; urgency=medium
   * Remove serd_uri_to_path()
   * Remove support for reading Turtle named inline nodes extension
   * Remove useless character counting from API
-  * Rename SerdChunk to SerdStringView
+  * Replace SerdChunk with ZixStringView
   * Simplify statement flags
   * Simplify writer style options and write UTF-8 by default
   * Strictly parse percent-encoding in file URIs
