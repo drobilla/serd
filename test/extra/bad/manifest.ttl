@@ -13,7 +13,6 @@
 		<#bad-blank-node-label>
 		<#bad-blank-predicate>
 		<#bad-blank-syntax>
-		<#bad-blank-syntax>
 		<#bad-bom>
 		<#bad-char-in-local>
 		<#bad-char-in-prefix>
