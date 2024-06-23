@@ -12,7 +12,7 @@
 
 html {
   margin: 0 1.618em;
-  background: #FFF;
+  background: #fff;
   color: #000;
 }
 
@@ -38,7 +38,12 @@ a {
   text-decoration: none;
 }
 
-h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
+h1 a,
+h2 a,
+h3 a,
+h4 a,
+h5 a,
+h6 a {
   color: #222;
 }
 
@@ -46,15 +51,27 @@ a:hover {
   text-decoration: underline;
 }
 
-h1 a:link, h2 a:link, h3 a:link, h4 a:link, h5 a:link, h6 a:link {
+h1 a:link,
+h2 a:link,
+h3 a:link,
+h4 a:link,
+h5 a:link,
+h6 a:link {
   color: #222;
 }
 
-h1 a:visited, h2 a:visited, h3 a:visited, h4 a:visited, h5 a:visited, h6 a:visited {
+h1 a:visited,
+h2 a:visited,
+h3 a:visited,
+h4 a:visited,
+h5 a:visited,
+h6 a:visited {
   color: #222;
 }
 
-pre, tt, code {
+pre,
+tt,
+code {
   overflow: auto;
   font-family: "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace, fixed;
   hyphens: none;
@@ -68,7 +85,9 @@ pre, tt, code {
   /* stylelint-enable property-no-vendor-prefix */
 }
 
-ul, ol, dl {
+ul,
+ol,
+dl {
   margin: 0;
   padding: 0;
 }
@@ -88,7 +107,8 @@ dd {
   hyphens: auto;
 }
 
-dd > ul:only-child, dd > ol:only-child {
+dd > ul:only-child,
+dd > ol:only-child {
   padding-left: 0;
 }
 
@@ -121,7 +141,7 @@ dd:blank {
 /* Color links on screens */
 @media screen {
   a {
-    color: #546E00;
+    color: #546e00;
   }
 }
 
@@ -130,7 +150,13 @@ dd:blank {
     color: #000;
   }
 
-  a, h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
+  a,
+  h1 a,
+  h2 a,
+  h3 a,
+  h4 a,
+  h5 a,
+  h6 a {
     color: #000;
   }
 
@@ -159,7 +185,8 @@ table.foot {
   width: 100%;
 }
 
-td.head-rtitle, td.foot-os {
+td.head-rtitle,
+td.foot-os {
   text-align: right;
 }
 
@@ -175,11 +202,14 @@ a.permalink {
   color: #222;
 }
 
-div.Nd, div.Bf, div.Op {
+div.Nd,
+div.Bf,
+div.Op {
   display: inline;
 }
 
-span.Pa, span.Ad {
+span.Pa,
+span.Ad {
   font-style: italic;
 }
 
@@ -195,7 +225,14 @@ table.Nm tbody tr {
   vertical-align: baseline;
 }
 
-code.Nm, code.Fl, code.Cm, code.Ic, code.In, code.Fd, code.Fn, code.Cd {
+code.Nm,
+code.Fl,
+code.Cm,
+code.Ic,
+code.In,
+code.Fd,
+code.Fn,
+code.Cd {
   font-weight: bold;
   color: #444;
 }
@@ -219,41 +256,63 @@ var.Ar {
 @media (prefers-color-scheme: dark) {
   html {
     background: #222;
-    color: #DDD;
+    color: #ddd;
   }
 
   a {
-    color: #B4C342;
+    color: #b4c342;
   }
 
   a.permalink {
-    color: #DDD;
+    color: #ddd;
   }
 
-  h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
-    color: #DDD;
+  h1 a,
+  h2 a,
+  h3 a,
+  h4 a,
+  h5 a,
+  h6 a {
+    color: #ddd;
   }
 
-  h1 a:link, h2 a:link, h3 a:link, h4 a:link, h5 a:link, h6 a:link {
-    color: #DDD;
+  h1 a:link,
+  h2 a:link,
+  h3 a:link,
+  h4 a:link,
+  h5 a:link,
+  h6 a:link {
+    color: #ddd;
   }
 
-  h1 a:visited, h2 a:visited, h3 a:visited, h4 a:visited, h5 a:visited, h6 a:visited {
-    color: #DDD;
+  h1 a:visited,
+  h2 a:visited,
+  h3 a:visited,
+  h4 a:visited,
+  h5 a:visited,
+  h6 a:visited {
+    color: #ddd;
   }
 
   /* stylelint-disable selector-class-pattern */
 
-  code.Nm, code.Fl, code.Cm, code.Ic, code.In, code.Fd, code.Fn, code.Cd {
-    color: #AAA;
+  code.Nm,
+  code.Fl,
+  code.Cm,
+  code.Ic,
+  code.In,
+  code.Fd,
+  code.Fn,
+  code.Cd {
+    color: #aaa;
   }
 
   code.Ev {
-    color: #AAA;
+    color: #aaa;
   }
 
   code.Li {
-    color: #CCC;
+    color: #ccc;
   }
 
   /* stylelint-enable selector-class-pattern */
@@ -263,6 +322,6 @@ var.Ar {
 @media only screen and (hover: none) and (pointer: coarse) and (prefers-color-scheme: dark) {
   html {
     background: #000;
-    color: #CCC;
+    color: #ccc;
   }
 }

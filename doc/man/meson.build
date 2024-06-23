@@ -8,6 +8,17 @@ if get_option('lint')
   if stylelint.found()
     test('stylelint', stylelint, args: [mandoc_css], suite: 'data')
   endif
+
+  prettier = find_program('prettier', required: get_option('tests'))
+  if prettier.found()
+    test(
+      'prettier',
+      prettier,
+      args: ['--parser', 'css', '-c', mandoc_css],
+      suite: 'data',
+      workdir: meson.current_source_dir(),
+    )
+  endif
 endif
 
 if not get_option('tools').disabled()
