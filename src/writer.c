@@ -1041,24 +1041,24 @@ serd_writer_write_statement(SerdWriter*        writer,
 
   } else {
     // No abbreviation
-    if (serd_stack_is_empty(&writer->anon_stack)) {
-      if (writer->context.subject.type) {
-        TRY(st, write_sep(writer, SEP_END_S));
-      }
 
-      if (writer->last_sep == SEP_END_S || writer->last_sep == SEP_END_DIRECT) {
-        TRY(st, write_newline(writer));
-      }
+    if (!serd_stack_is_empty(&writer->anon_stack)) {
+      return SERD_ERR_BAD_ARG;
+    }
 
-      TRY(st, write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags));
-      if ((flags & (SERD_ANON_S_BEGIN | SERD_LIST_S_BEGIN))) {
-        TRY(st, write_sep(writer, SEP_ANON_S_P));
-      } else {
-        TRY(st, write_sep(writer, SEP_S_P));
-      }
+    if (writer->context.subject.type) {
+      TRY(st, write_sep(writer, SEP_END_S));
+    }
 
-    } else {
+    if (writer->last_sep == SEP_END_S || writer->last_sep == SEP_END_DIRECT) {
+      TRY(st, write_newline(writer));
+    }
+
+    TRY(st, write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags));
+    if ((flags & (SERD_ANON_S_BEGIN | SERD_LIST_S_BEGIN))) {
       TRY(st, write_sep(writer, SEP_ANON_S_P));
+    } else {
+      TRY(st, write_sep(writer, SEP_S_P));
     }
 
     reset_context(writer, 0U);

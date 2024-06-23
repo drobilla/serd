@@ -176,6 +176,35 @@ test_writer_cleanup(void)
 }
 
 static void
+test_write_bad_anon_stack(void)
+{
+  SerdStatus  st  = SERD_SUCCESS;
+  SerdEnv*    env = serd_env_new(NULL);
+  SerdWriter* writer =
+    serd_writer_new(SERD_TURTLE, (SerdStyle)0U, env, NULL, null_sink, NULL);
+
+  SerdNode s  = serd_node_from_string(SERD_URI, USTR("http://example.org/s"));
+  SerdNode p  = serd_node_from_string(SERD_URI, USTR("http://example.org/p"));
+  SerdNode b0 = serd_node_from_string(SERD_BLANK, USTR("b0"));
+  SerdNode b1 = serd_node_from_string(SERD_BLANK, USTR("b1"));
+  SerdNode b2 = serd_node_from_string(SERD_BLANK, USTR("b2"));
+
+  assert(!(st = serd_writer_write_statement(
+             writer, SERD_ANON_O_BEGIN, NULL, &s, &p, &b0, NULL, NULL)));
+
+  // (missing call to end the anonymous node here)
+
+  st = serd_writer_write_statement(
+    writer, SERD_ANON_O_BEGIN, NULL, &b1, &p, &b2, NULL, NULL);
+
+  assert(st == SERD_ERR_BAD_ARG);
+
+  assert(!(st = serd_writer_finish(writer)));
+  serd_writer_free(writer);
+  serd_env_free(env);
+}
+
+static void
 test_strict_write(void)
 {
   const char* const path = "serd_strict_write_test.ttl";
@@ -243,6 +272,7 @@ main(void)
   test_write_long_literal();
   test_write_nested_anon();
   test_writer_cleanup();
+  test_write_bad_anon_stack();
   test_strict_write();
   test_write_error();
 
