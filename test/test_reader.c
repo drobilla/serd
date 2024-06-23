@@ -56,17 +56,13 @@ test_statement_sink(void* const           handle,
                     const SerdNode* const graph,
                     const SerdNode* const subject,
                     const SerdNode* const predicate,
-                    const SerdNode* const object,
-                    const SerdNode* const object_datatype,
-                    const SerdNode* const object_lang)
+                    const SerdNode* const object)
 {
   (void)flags;
   (void)graph;
   (void)subject;
   (void)predicate;
   (void)object;
-  (void)object_datatype;
-  (void)object_lang;
 
   ReaderTest* const rt = (ReaderTest*)handle;
   ++rt->n_statement;

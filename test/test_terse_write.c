@@ -7,9 +7,11 @@
 #include "serd/env.h"
 #include "serd/node.h"
 #include "serd/statement.h"
+#include "serd/stream.h"
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "serd/writer.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -36,31 +38,30 @@ test(void)
 {
   SerdBuffer buffer = {NULL, 0};
   SerdWorld* world  = serd_world_new();
-  SerdEnv*   env    = serd_env_new(NULL);
+  SerdEnv*   env    = serd_env_new(zix_empty_string());
 
-  SerdNode* b1 = serd_new_string(SERD_BLANK, "b1");
-  SerdNode* l1 = serd_new_string(SERD_BLANK, "l1");
-  SerdNode* l2 = serd_new_string(SERD_BLANK, "l2");
-  SerdNode* s1 = serd_new_string(SERD_LITERAL, "s1");
-  SerdNode* s2 = serd_new_string(SERD_LITERAL, "s2");
+  SerdNode* b1 = serd_new_blank(zix_string("b1"));
+  SerdNode* l1 = serd_new_blank(zix_string("l1"));
+  SerdNode* l2 = serd_new_blank(zix_string("l2"));
+  SerdNode* s1 = serd_new_string(zix_string("s1"));
+  SerdNode* s2 = serd_new_string(zix_string("s2"));
 
-  SerdNode* rdf_first = serd_new_uri(NS_RDF "first");
-  SerdNode* rdf_value = serd_new_uri(NS_RDF "value");
-  SerdNode* rdf_rest  = serd_new_uri(NS_RDF "rest");
-  SerdNode* rdf_nil   = serd_new_uri(NS_RDF "nil");
+  SerdNode* rdf_first = serd_new_uri(zix_string(NS_RDF "first"));
+  SerdNode* rdf_value = serd_new_uri(zix_string(NS_RDF "value"));
+  SerdNode* rdf_rest  = serd_new_uri(zix_string(NS_RDF "rest"));
+  SerdNode* rdf_nil   = serd_new_uri(zix_string(NS_RDF "nil"));
 
-  serd_env_set_prefix_from_strings(env, "rdf", NS_RDF);
+  serd_env_set_prefix(env, zix_string("rdf"), zix_string(NS_RDF));
 
   SerdWriter* writer = serd_writer_new(
-    world, SERD_TURTLE, 0U, env, NULL, serd_buffer_sink, &buffer);
+    world, SERD_TURTLE, 0U, env, (SerdWriteFunc)serd_buffer_sink, &buffer);
 
   // Simple lone list
   serd_writer_write_statement(
-    writer, SERD_TERSE_S | SERD_LIST_S, NULL, l1, rdf_first, s1, NULL, NULL);
-  serd_writer_write_statement(writer, 0U, NULL, l1, rdf_rest, l2, NULL, NULL);
-  serd_writer_write_statement(writer, 0U, NULL, l2, rdf_first, s2, NULL, NULL);
-  serd_writer_write_statement(
-    writer, 0U, NULL, l2, rdf_rest, rdf_nil, NULL, NULL);
+    writer, SERD_TERSE_S | SERD_LIST_S, NULL, l1, rdf_first, s1);
+  serd_writer_write_statement(writer, 0U, NULL, l1, rdf_rest, l2);
+  serd_writer_write_statement(writer, 0U, NULL, l2, rdf_first, s2);
+  serd_writer_write_statement(writer, 0U, NULL, l2, rdf_rest, rdf_nil);
   check_output(writer, &buffer, "( \"s1\" \"s2\" ) .\n");
 
   // Nested terse lists
@@ -70,30 +71,19 @@ test(void)
                               NULL,
                               l1,
                               rdf_first,
-                              l2,
-                              NULL,
-                              NULL);
-  serd_writer_write_statement(writer, 0U, NULL, l2, rdf_first, s1, NULL, NULL);
-  serd_writer_write_statement(
-    writer, 0U, NULL, l1, rdf_rest, rdf_nil, NULL, NULL);
-  serd_writer_write_statement(
-    writer, 0U, NULL, l2, rdf_rest, rdf_nil, NULL, NULL);
+                              l2);
+  serd_writer_write_statement(writer, 0U, NULL, l2, rdf_first, s1);
+  serd_writer_write_statement(writer, 0U, NULL, l1, rdf_rest, rdf_nil);
+  serd_writer_write_statement(writer, 0U, NULL, l2, rdf_rest, rdf_nil);
   check_output(writer, &buffer, "( ( \"s1\" ) ) .\n");
 
   // List as object
-  serd_writer_write_statement(writer,
-                              SERD_EMPTY_S | SERD_LIST_O | SERD_TERSE_O,
-                              NULL,
-                              b1,
-                              rdf_value,
-                              l1,
-                              NULL,
-                              NULL);
-  serd_writer_write_statement(writer, 0U, NULL, l1, rdf_first, s1, NULL, NULL);
-  serd_writer_write_statement(writer, 0U, NULL, l1, rdf_rest, l2, NULL, NULL);
-  serd_writer_write_statement(writer, 0U, NULL, l2, rdf_first, s2, NULL, NULL);
   serd_writer_write_statement(
-    writer, 0U, NULL, l2, rdf_rest, rdf_nil, NULL, NULL);
+    writer, SERD_EMPTY_S | SERD_LIST_O | SERD_TERSE_O, NULL, b1, rdf_value, l1);
+  serd_writer_write_statement(writer, 0U, NULL, l1, rdf_first, s1);
+  serd_writer_write_statement(writer, 0U, NULL, l1, rdf_rest, l2);
+  serd_writer_write_statement(writer, 0U, NULL, l2, rdf_first, s2);
+  serd_writer_write_statement(writer, 0U, NULL, l2, rdf_rest, rdf_nil);
   check_output(writer, &buffer, "[] rdf:value ( \"s1\" \"s2\" ) .\n");
 
   serd_buffer_sink_finish(&buffer);

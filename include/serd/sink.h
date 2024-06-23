@@ -40,15 +40,12 @@ typedef SerdStatus (*SerdPrefixFunc)(void* ZIX_UNSPECIFIED       handle,
 
    Called for every RDF statement in the serialisation.
 */
-typedef SerdStatus (*SerdStatementFunc)(
-  void* ZIX_UNSPECIFIED        handle,
-  SerdStatementFlags           flags,
-  const SerdNode* ZIX_NULLABLE graph,
-  const SerdNode* ZIX_NONNULL  subject,
-  const SerdNode* ZIX_NONNULL  predicate,
-  const SerdNode* ZIX_NONNULL  object,
-  const SerdNode* ZIX_NULLABLE object_datatype,
-  const SerdNode* ZIX_NULLABLE object_lang);
+typedef SerdStatus (*SerdStatementFunc)(void* ZIX_UNSPECIFIED        handle,
+                                        SerdStatementFlags           flags,
+                                        const SerdNode* ZIX_NULLABLE graph,
+                                        const SerdNode* ZIX_NONNULL  subject,
+                                        const SerdNode* ZIX_NONNULL  predicate,
+                                        const SerdNode* ZIX_NONNULL  object);
 
 /**
    Sink function for anonymous node end markers.

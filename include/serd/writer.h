@@ -49,13 +49,12 @@ typedef uint32_t SerdWriterFlags;
 
 /// Create a new RDF writer
 SERD_API SerdWriter* ZIX_ALLOCATED
-serd_writer_new(SerdWorld* ZIX_NONNULL       world,
-                SerdSyntax                   syntax,
-                SerdWriterFlags              flags,
-                SerdEnv* ZIX_NONNULL         env,
-                const SerdNode* ZIX_NULLABLE base_uri,
-                SerdWriteFunc ZIX_NONNULL    ssink,
-                void* ZIX_UNSPECIFIED        stream);
+serd_writer_new(SerdWorld* ZIX_NONNULL    world,
+                SerdSyntax                syntax,
+                SerdWriterFlags           flags,
+                SerdEnv* ZIX_NONNULL      env,
+                SerdWriteFunc ZIX_NONNULL ssink,
+                void* ZIX_UNSPECIFIED     stream);
 
 /// Free `writer`
 SERD_API void
@@ -130,9 +129,7 @@ serd_writer_write_statement(SerdWriter* ZIX_NONNULL      writer,
                             const SerdNode* ZIX_NULLABLE graph,
                             const SerdNode* ZIX_NONNULL  subject,
                             const SerdNode* ZIX_NONNULL  predicate,
-                            const SerdNode* ZIX_NONNULL  object,
-                            const SerdNode* ZIX_NULLABLE datatype,
-                            const SerdNode* ZIX_NULLABLE lang);
+                            const SerdNode* ZIX_NONNULL  object);
 
 /**
    Mark the end of an anonymous node's description.
