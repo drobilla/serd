@@ -134,7 +134,9 @@ test_writer_cleanup(void)
 
   SerdNode s = serd_node_from_string(SERD_URI, USTR("http://example.org/s"));
   SerdNode p = serd_node_from_string(SERD_URI, USTR("http://example.org/p"));
-  SerdNode o = serd_node_from_string(SERD_BLANK, USTR("http://example.org/o"));
+
+  char     o_buf[12] = {'b', '0', '\0'};
+  SerdNode o         = serd_node_from_string(SERD_BLANK, USTR(o_buf));
 
   st = serd_writer_write_statement(
     writer, SERD_ANON_O_BEGIN, NULL, &s, &p, &o, NULL, NULL);
@@ -142,16 +144,24 @@ test_writer_cleanup(void)
   assert(!st);
 
   // Write the start of several nested anonymous objects
-  for (unsigned i = 0U; !st && i < 8U; ++i) {
-    char buf[12] = {0};
-    snprintf(buf, sizeof(buf), "b%u", i);
+  for (unsigned i = 1U; !st && i < 9U; ++i) {
+    char next_o_buf[12] = {'\0'};
+    snprintf(next_o_buf, sizeof(next_o_buf), "b%u", i);
 
-    SerdNode next_o = serd_node_from_string(SERD_BLANK, USTR(buf));
+    SerdNode next_o = serd_node_from_string(SERD_BLANK, USTR(next_o_buf));
 
-    st = serd_writer_write_statement(
-      writer, SERD_ANON_O_BEGIN, NULL, &o, &p, &next_o, NULL, NULL);
+    st = serd_writer_write_statement(writer,
+                                     SERD_ANON_O_BEGIN | SERD_ANON_CONT,
+                                     NULL,
+                                     &o,
+                                     &p,
+                                     &next_o,
+                                     NULL,
+                                     NULL);
 
-    o = next_o;
+    assert(!st);
+
+    memcpy(o_buf, next_o_buf, sizeof(o_buf));
   }
 
   // Finish writing without terminating nodes
