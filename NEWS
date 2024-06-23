@@ -3,10 +3,11 @@ serd (0.32.3) unstable; urgency=medium
   * Clean up enum declarations
   * Fix library current_version on MacOS
   * Fix parsing NQuads lines with no space before the final dot
+  * Gracefully handle errors while writing the end of anonymous nodes
   * Support reading lone lists in lax mode
   * Treat out of range unicode characters as errors
 
- -- David Robillard <d@drobilla.net>  Sun, 09 Jun 2024 22:15:14 +0000
+ -- David Robillard <d@drobilla.net>  Sun, 23 Jun 2024 19:02:38 +0000
 
 serd (0.32.2) stable; urgency=medium
 

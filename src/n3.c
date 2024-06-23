@@ -1115,7 +1115,7 @@ read_anon(SerdReader* const reader,
 
     read_ws_star(reader);
     if (reader->end_sink) {
-      reader->end_sink(reader->handle, deref(reader, *dest));
+      st = reader->end_sink(reader->handle, deref(reader, *dest));
     }
 
     *ctx.flags = old_flags;
