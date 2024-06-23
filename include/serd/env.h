@@ -8,9 +8,9 @@
 #include "serd/node.h"
 #include "serd/sink.h"
 #include "serd/status.h"
-#include "serd/string_view.h"
 #include "serd/uri.h"
 #include "zix/attributes.h"
+#include "zix/string_view.h"
 
 #include <stdbool.h>
 
@@ -66,7 +66,7 @@ SERD_API bool
 serd_env_qualify(const SerdEnv* ZIX_NULLABLE env,
                  const SerdNode* ZIX_NONNULL uri,
                  SerdNode* ZIX_NONNULL       prefix,
-                 SerdStringView* ZIX_NONNULL suffix);
+                 ZixStringView* ZIX_NONNULL  suffix);
 
 /**
    Expand `curie`.
@@ -77,8 +77,8 @@ serd_env_qualify(const SerdEnv* ZIX_NULLABLE env,
 SERD_API SerdStatus
 serd_env_expand(const SerdEnv* ZIX_NULLABLE env,
                 const SerdNode* ZIX_NONNULL curie,
-                SerdStringView* ZIX_NONNULL uri_prefix,
-                SerdStringView* ZIX_NONNULL uri_suffix);
+                ZixStringView* ZIX_NONNULL  uri_prefix,
+                ZixStringView* ZIX_NONNULL  uri_suffix);
 
 /**
    Expand `node`, which must be a CURIE or URI, to a full URI.
