@@ -6,7 +6,7 @@
 #include "serd/env.h"
 #include "serd/node.h"
 #include "serd/status.h"
-#include "serd/string_view.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <string.h>
@@ -36,8 +36,8 @@ test_env(void)
   assert(serd_env_set_base_uri(env, &SERD_NODE_NULL));
   assert(serd_node_equals(serd_env_base_uri(env, NULL), &SERD_NODE_NULL));
 
-  SerdStringView prefix;
-  SerdStringView suffix;
+  ZixStringView prefix;
+  ZixStringView suffix;
   assert(!serd_env_qualify(NULL, &u, &u, &suffix));
   assert(serd_env_expand(NULL, &c, &prefix, &suffix));
   assert(serd_env_expand(env, &b, &prefix, &suffix) == SERD_BAD_ARG);
