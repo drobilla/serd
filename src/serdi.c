@@ -11,10 +11,10 @@
 #include "serd/status.h"
 #include "serd/stream.h"
 #include "serd/syntax.h"
-#include "serd/uri.h"
 #include "serd/version.h"
 #include "serd/world.h"
 #include "serd/writer.h"
+#include "zix/string_view.h"
 
 #ifdef _WIN32
 #  ifdef _MSC_VER
@@ -218,21 +218,20 @@ main(int argc, char** argv)
     output_syntax = input_has_graphs ? SERD_NQUADS : SERD_NTRIPLES;
   }
 
-  SerdURIView base_uri = SERD_URI_NULL;
-  SerdNode*   base     = NULL;
+  SerdNode* base = NULL;
   if (a < argc) { // Base URI given on command line
-    base_uri = serd_parse_uri(argv[a]);
-    base     = serd_new_parsed_uri(base_uri);
+    base = serd_new_uri(zix_string(argv[a]));
   } else if (!from_string && !from_stdin) { // Use input file URI
-    base = serd_new_file_uri(input, NULL, &base_uri);
+    base = serd_new_file_uri(zix_string(input), zix_empty_string());
   }
 
   FILE* const      out_fd = stdout;
   SerdWorld* const world  = serd_world_new();
-  SerdEnv* const   env    = serd_env_new(base);
+  SerdEnv* const   env =
+    serd_env_new(base ? serd_node_string_view(base) : zix_empty_string());
 
   SerdWriter* const writer = serd_writer_new(
-    world, output_syntax, writer_flags, env, base, serd_file_sink, out_fd);
+    world, output_syntax, writer_flags, env, serd_file_sink, out_fd);
 
   SerdReader* const reader =
     serd_reader_new(world,
@@ -249,11 +248,14 @@ main(int argc, char** argv)
     serd_world_set_error_func(world, quiet_error_func, NULL);
   }
 
-  SerdNode* root = root_uri ? serd_new_string(SERD_URI, root_uri) : NULL;
-  serd_writer_set_root_uri(writer, root);
+  if (root_uri) {
+    SerdNode* const root = serd_new_uri(zix_string(root_uri));
+    serd_writer_set_root_uri(writer, root);
+    serd_node_free(root);
+  }
+
   serd_writer_chop_blank_prefix(writer, chop_prefix);
   serd_reader_add_blank_prefix(reader, add_prefix);
-  serd_node_free(root);
 
   SerdStatus st = SERD_SUCCESS;
   if (from_string) {

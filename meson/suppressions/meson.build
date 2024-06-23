@@ -53,6 +53,7 @@ if is_variable('cc')
   elif cc.get_id() == 'gcc'
     if warning_level == 'everything'
       c_suppressions += [
+        '-Wno-array-bounds',
         '-Wno-cast-align',
         '-Wno-cast-qual',
         '-Wno-format-nonliteral',

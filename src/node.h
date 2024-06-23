@@ -15,6 +15,10 @@
 ZIX_CONST_FUNC char* ZIX_NONNULL
 serd_node_buffer(SerdNode* ZIX_NONNULL node);
 
+/// Return a pointer to the "meta" node for a node (datatype or language)
+ZIX_PURE_FUNC const SerdNode* ZIX_UNSPECIFIED
+serd_node_meta(const SerdNode* ZIX_NONNULL node);
+
 /// Set the header of a node, completely overwriting previous values
 void
 serd_node_set_header(SerdNode* ZIX_NONNULL node,

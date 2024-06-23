@@ -61,7 +61,8 @@ check_file_uri(const char* const hostname,
     expected_path = path;
   }
 
-  SerdNode*   node         = serd_new_file_uri(path, hostname, 0);
+  SerdNode* node = serd_new_file_uri(zix_string(path), zix_string(hostname));
+
   const char* node_str     = serd_node_string(node);
   char*       out_hostname = NULL;
   char*       out_path     = serd_parse_file_uri(node_str, &out_hostname);
@@ -207,22 +208,21 @@ check_relative_uri(const char* const uri_string,
   assert(base_string);
   assert(expected_string);
 
-  SerdNode* const   uri_node  = serd_new_uri(uri_string);
+  SerdNode* const   uri_node  = serd_new_uri(zix_string(uri_string));
   const SerdURIView uri       = serd_node_uri_view(uri_node);
-  SerdNode* const   base_node = serd_new_uri(base_string);
+  SerdNode* const   base_node = serd_new_uri(zix_string(base_string));
   const SerdURIView base      = serd_node_uri_view(base_node);
 
   SerdNode* result_node = NULL;
   if (!root_string) {
     result_node = serd_new_parsed_uri(serd_relative_uri(uri, base));
   } else {
-    SerdNode* const   root_node = serd_new_uri(root_string);
+    SerdNode* const   root_node = serd_new_uri(zix_string(root_string));
     const SerdURIView root      = serd_node_uri_view(root_node);
 
     result_node = serd_uri_is_within(uri, root)
                     ? serd_new_parsed_uri(serd_relative_uri(uri, base))
-                    : serd_new_uri(uri_string);
-
+                    : serd_new_uri(zix_string(uri_string));
     serd_node_free(root_node);
   }
 
