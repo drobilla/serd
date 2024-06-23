@@ -88,13 +88,12 @@ if get_option('lint')
       required: false,
     )
 
-    pylint_scripts = simple_scripts
+    pylint_args = ['--disable', 'bad-option-value'] + simple_scripts
     if plot_py.found()
-      pylint_scripts += plot_scripts
+      pylint_args += plot_scripts
     endif
 
-    pylint_args = ['--disable', 'bad-option-value']
-    test('pylint', pylint, args: pylint_args + pylint_scripts, suite: 'scripts')
+    test('pylint', pylint, args: pylint_args, suite: 'scripts')
   endif
 
   # Check Turtle formatting with serdi
