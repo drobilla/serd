@@ -69,12 +69,10 @@ serd_byte_source_advance(SerdByteSource* source)
 {
   SerdStatus st = SERD_SUCCESS;
 
-  switch (serd_byte_source_peek(source)) {
-  case '\n':
+  if (serd_byte_source_peek(source) == '\n') {
     ++source->cur.line;
     source->cur.col = 0;
-    break;
-  default:
+  } else {
     ++source->cur.col;
   }
 

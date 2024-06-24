@@ -250,32 +250,24 @@ serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
     return SERD_NODE_NULL;
   }
 
-  switch (node->type) {
-  case SERD_NOTHING:
-  case SERD_LITERAL:
-    break;
-
-  case SERD_URI: {
+  if (node->type == SERD_URI) {
     SerdURI ignored;
     return serd_node_new_uri_from_node(node, &env->base_uri, &ignored);
   }
 
-  case SERD_CURIE: {
+  if (node->type == SERD_CURIE) {
     SerdChunk prefix;
     SerdChunk suffix;
     if (serd_env_expand(env, node, &prefix, &suffix)) {
       return SERD_NODE_NULL;
     }
+
     const size_t len = prefix.len + suffix.len;
     uint8_t*     buf = (uint8_t*)malloc(len + 1);
     SerdNode     ret = {buf, len, 0, 0, SERD_URI};
     snprintf((char*)buf, len + 1, "%s%s", prefix.buf, suffix.buf);
     ret.n_chars = serd_strlen(buf, NULL, NULL);
     return ret;
-  }
-
-  case SERD_BLANK:
-    break;
   }
 
   return SERD_NODE_NULL;

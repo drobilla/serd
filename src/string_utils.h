@@ -51,17 +51,7 @@ is_xdigit(const int c)
 static inline bool
 is_space(const char c)
 {
-  switch (c) {
-  case ' ':
-  case '\f':
-  case '\n':
-  case '\r':
-  case '\t':
-  case '\v':
-    return true;
-  default:
-    return false;
-  }
+  return c == ' ' || (c >= '\t' && c <= '\r');
 }
 
 static inline bool

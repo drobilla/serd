@@ -49,16 +49,10 @@ serd_strerror(const SerdStatus status)
 static void
 serd_update_flags(const uint8_t c, SerdNodeFlags* const flags)
 {
-  switch (c) {
-  case '\r':
-  case '\n':
+  if (c == '\r' || c == '\n') {
     *flags |= SERD_HAS_NEWLINE;
-    break;
-  case '"':
+  } else if (c == '"') {
     *flags |= SERD_HAS_QUOTE;
-    break;
-  default:
-    break;
   }
 }
 
@@ -116,16 +110,11 @@ read_sign(const char** const sptr)
 {
   double sign = 1.0;
 
-  switch (**sptr) {
-  case '-':
+  if (**sptr == '-') {
     sign = -1.0;
     ++(*sptr);
-    break;
-  case '+':
+  } else if (**sptr == '+') {
     ++(*sptr);
-    break;
-  default:
-    break;
   }
 
   return sign;

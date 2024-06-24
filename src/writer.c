@@ -859,20 +859,12 @@ write_node(SerdWriter*        writer,
            Field              field,
            SerdStatementFlags flags)
 {
-  switch (node->type) {
-  case SERD_NOTHING:
-    break;
-  case SERD_LITERAL:
-    return write_literal(writer, node, datatype, lang, flags);
-  case SERD_URI:
-    return write_uri_node(writer, node, field);
-  case SERD_CURIE:
-    return write_curie(writer, node);
-  case SERD_BLANK:
-    return write_blank(writer, node, field, flags);
-  }
-
-  return SERD_SUCCESS;
+  return (node->type == SERD_LITERAL)
+           ? write_literal(writer, node, datatype, lang, flags)
+         : (node->type == SERD_URI)   ? write_uri_node(writer, node, field)
+         : (node->type == SERD_CURIE) ? write_curie(writer, node)
+         : (node->type == SERD_BLANK) ? write_blank(writer, node, field, flags)
+                                      : SERD_SUCCESS;
 }
 
 static bool

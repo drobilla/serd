@@ -571,14 +571,10 @@ static SerdStatus
 read_PLX(SerdReader* const reader, const Ref dest)
 {
   const int c = peek_byte(reader);
-  switch (c) {
-  case '%':
-    return read_PERCENT(reader, dest);
-  case '\\':
-    return read_PN_LOCAL_ESC(reader, dest);
-  default:
-    return SERD_FAILURE;
-  }
+
+  return (c == '%')    ? read_PERCENT(reader, dest)
+         : (c == '\\') ? read_PN_LOCAL_ESC(reader, dest)
+                       : SERD_FAILURE;
 }
 
 static SerdStatus
@@ -753,18 +749,12 @@ read_IRIREF(SerdReader* const reader, Ref* const dest)
         return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid IRI escape\n");
       }
 
-      switch (code) {
-      case 0:
-      case ' ':
-      case '<':
-      case '>':
+      if (code == ' ' || code == '<' || code == '>') {
         *dest = pop_node(reader, *dest);
         return r_err(reader,
                      SERD_ERR_BAD_SYNTAX,
                      "invalid escaped IRI character U+%04X\n",
                      code);
-      default:
-        break;
       }
       break;
 
@@ -886,13 +876,9 @@ read_number(SerdReader* const reader,
   if (c == 'e' || c == 'E') {
     // double
     push_byte(reader, *dest, eat_byte_safe(reader, c));
-    switch ((c = peek_byte(reader))) {
-    case '+':
-    case '-':
+    c = peek_byte(reader);
+    if (c == '+' || c == '-') {
       push_byte(reader, *dest, eat_byte_safe(reader, c));
-      break;
-    default:
-      break;
     }
     TRY(st, read_0_9(reader, *dest, true));
     *datatype = push_node(reader, SERD_URI, XSD_DOUBLE, sizeof(XSD_DOUBLE) - 1);
@@ -910,13 +896,12 @@ read_number(SerdReader* const reader,
 static SerdStatus
 read_iri(SerdReader* const reader, Ref* const dest, bool* const ate_dot)
 {
-  switch (peek_byte(reader)) {
-  case '<':
+  if (peek_byte(reader) == '<') {
     return read_IRIREF(reader, dest);
-  default:
-    *dest = push_node(reader, SERD_CURIE, "", 0);
-    return read_PrefixedName(reader, *dest, true, ate_dot);
   }
+
+  *dest = push_node(reader, SERD_CURIE, "", 0);
+  return read_PrefixedName(reader, *dest, true, ate_dot);
 }
 
 static SerdStatus
@@ -1152,13 +1137,7 @@ read_object(SerdReader* const  reader,
   uint32_t  flags    = 0;
   const int c        = peek_byte(reader);
   if (!fancy_syntax(reader)) {
-    switch (c) {
-    case '"':
-    case ':':
-    case '<':
-    case '_':
-      break;
-    default:
+    if (c != '"' && c != ':' && c != '<' && c != '_') {
       return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected: ':', '<', or '_'\n");
     }
   }
