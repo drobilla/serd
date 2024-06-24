@@ -987,8 +987,8 @@ serd_writer_write_statement(SerdWriter*        writer,
       (!graph && writer->context.graph.type)) {
     TRY(st, terminate_context(writer));
     reset_context(writer, RESET_GRAPH | RESET_INDENT);
+    TRY(st, write_newline(writer));
     if (graph) {
-      TRY(st, write_newline(writer));
       TRY(st, write_node(writer, graph, datatype, lang, FIELD_GRAPH, flags));
       TRY(st, write_sep(writer, SEP_GRAPH_BEGIN));
       copy_node(&writer->context.graph, graph);
