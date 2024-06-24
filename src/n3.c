@@ -179,7 +179,7 @@ read_utf8_bytes(SerdReader* const reader,
                 const uint8_t     c)
 {
   *size = utf8_num_bytes(c);
-  if (*size <= 1 || *size > 4) {
+  if (*size <= 1) {
     return bad_char(reader, "invalid UTF-8 start 0x%X\n", c);
   }
 
@@ -264,7 +264,7 @@ read_comment(SerdReader* const reader)
   skip_byte(reader, '#');
 
   int c = 0;
-  while (((c = peek_byte(reader)) != 0xA) && c != 0xD && c != EOF && c) {
+  while (((c = peek_byte(reader)) > 0) && c != 0xA && c != 0xD) {
     skip_byte(reader, c);
   }
 }
@@ -608,7 +608,7 @@ read_PN_LOCAL(SerdReader* const reader, const Ref dest, bool* const ate_dot)
     }
   }
 
-  while ((c = peek_byte(reader))) { // Middle: (PN_CHARS | '.' | ':')*
+  while ((c = peek_byte(reader)) > 0) { // Middle: (PN_CHARS | '.' | ':')*
     if (c == '.' || c == ':') {
       push_byte(reader, dest, eat_byte_safe(reader, c));
     } else if ((st = read_PLX(reader, dest)) > SERD_FAILURE) {
@@ -635,7 +635,7 @@ static SerdStatus
 read_PN_PREFIX_tail(SerdReader* const reader, const Ref dest)
 {
   int c = 0;
-  while ((c = peek_byte(reader))) { // Middle: (PN_CHARS | '.')*
+  while ((c = peek_byte(reader)) > 0) { // Middle: (PN_CHARS | '.')*
     if (c == '.') {
       push_byte(reader, dest, eat_byte_safe(reader, c));
     } else if (read_PN_CHARS(reader, dest)) {
@@ -671,13 +671,13 @@ read_LANGTAG(SerdReader* const reader, Ref* const dest)
 
   SerdStatus st = SERD_SUCCESS;
   TRY(st, push_byte(reader, *dest, eat_byte_safe(reader, c)));
-  while ((c = peek_byte(reader)) && is_alpha(c)) {
+  while (((c = peek_byte(reader)) > 0) && is_alpha(c)) {
     TRY(st, push_byte(reader, *dest, eat_byte_safe(reader, c)));
   }
 
   while (peek_byte(reader) == '-') {
     TRY(st, push_byte(reader, *dest, eat_byte_safe(reader, '-')));
-    while ((c = peek_byte(reader)) && (is_alpha(c) || is_digit(c))) {
+    while (((c = peek_byte(reader)) > 0) && (is_alpha(c) || is_digit(c))) {
       TRY(st, push_byte(reader, *dest, eat_byte_safe(reader, c)));
     }
   }
@@ -693,7 +693,7 @@ read_IRIREF_scheme(SerdReader* const reader, const Ref dest)
     return r_err(reader, SERD_ERR_BAD_SYNTAX, "bad IRI scheme start '%c'\n", c);
   }
 
-  while ((c = peek_byte(reader)) != EOF) {
+  while ((c = peek_byte(reader)) > 0) {
     if (c == '>') {
       return r_err(reader, SERD_ERR_BAD_SYNTAX, "missing IRI scheme\n");
     }
@@ -1003,7 +1003,7 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
     return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid name start\n");
   }
 
-  while ((c = peek_byte(reader))) { // Middle: (PN_CHARS | '.')*
+  while ((c = peek_byte(reader)) > 0) { // Middle: (PN_CHARS | '.')*
     if (c == '.') {
       push_byte(reader, ref, eat_byte_safe(reader, c));
     } else if (read_PN_CHARS(reader, ref)) {

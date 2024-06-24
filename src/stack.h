@@ -78,9 +78,7 @@ serd_stack_push_aligned(SerdStack* stack, size_t n_bytes, size_t align)
 
   // Push padding if necessary
   const size_t pad = align - stack->size % align;
-  if (pad > 0) {
-    serd_stack_push(stack, pad);
-  }
+  serd_stack_push(stack, pad);
 
   // Set top of stack to pad count so we can properly pop later
   assert(pad < UINT8_MAX);

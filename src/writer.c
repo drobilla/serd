@@ -148,12 +148,6 @@ supports_abbrev(const SerdWriter* writer)
   return writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG;
 }
 
-SERD_NODISCARD static bool
-supports_uriref(const SerdWriter* writer)
-{
-  return writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG;
-}
-
 static SerdStatus
 free_context(WriteContext* const ctx)
 {
@@ -746,7 +740,8 @@ write_uri_node(SerdWriter* const writer,
     }
   }
 
-  if (!has_scheme && !supports_uriref(writer) &&
+  if (!has_scheme &&
+      (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) &&
       !serd_env_get_base_uri(writer->env, NULL)->buf) {
     return w_err(writer,
                  SERD_ERR_BAD_ARG,
@@ -870,7 +865,7 @@ write_node(SerdWriter*        writer,
 static bool
 is_resource(const SerdNode* node)
 {
-  return node && node->buf && node->type > SERD_LITERAL;
+  return node->buf && node->type > SERD_LITERAL;
 }
 
 SERD_NODISCARD static SerdStatus
@@ -944,8 +939,7 @@ serd_writer_write_statement(SerdWriter*        writer,
 
   SerdStatus st = SERD_SUCCESS;
 
-  if (!is_resource(subject) || !is_resource(predicate) || !object ||
-      !object->buf) {
+  if (!is_resource(subject) || !is_resource(predicate) || !object->buf) {
     return SERD_ERR_BAD_ARG;
   }
 

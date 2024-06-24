@@ -62,6 +62,9 @@ serd_substrlen(const uint8_t* const str,
                size_t* const        n_bytes,
                SerdNodeFlags* const flags)
 {
+  assert(n_bytes);
+  assert(flags);
+
   size_t        n_chars = 0;
   size_t        i       = 0;
   SerdNodeFlags f       = 0;
@@ -71,12 +74,9 @@ serd_substrlen(const uint8_t* const str,
       serd_update_flags(str[i], &f);
     }
   }
-  if (n_bytes) {
-    *n_bytes = i;
-  }
-  if (flags) {
-    *flags = f;
-  }
+
+  *n_bytes = i;
+  *flags   = f;
   return n_chars;
 }
 
