@@ -44,7 +44,7 @@ static SerdSyntax
 get_syntax(const char* const name)
 {
   for (const Syntax* s = syntaxes; s->name; ++s) {
-    if (!serd_strncasecmp(s->name, name, strlen(name))) {
+    if (!serd_strcasecmp(s->name, name)) {
       return s->syntax;
     }
   }
@@ -59,7 +59,7 @@ guess_syntax(const char* const filename)
   const char* ext = strrchr(filename, '.');
   if (ext) {
     for (const Syntax* s = syntaxes; s->name; ++s) {
-      if (!serd_strncasecmp(s->extension, ext, strlen(ext))) {
+      if (!serd_strcasecmp(s->extension, ext)) {
         return s->syntax;
       }
     }

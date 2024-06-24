@@ -1599,7 +1599,8 @@ tokcmp(SerdReader* const reader,
     return -1;
   }
 
-  return serd_strncasecmp((const char*)node->buf, tok, n);
+  assert(node->buf[node->n_bytes] == '\0');
+  return serd_strcasecmp((const char*)node->buf, tok);
 }
 
 SerdStatus

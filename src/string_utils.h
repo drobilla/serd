@@ -101,16 +101,20 @@ serd_to_upper(const char c)
   return (char)((c >= 'a' && c <= 'z') ? c - 32 : c);
 }
 
-static inline int
-serd_strncasecmp(const char* s1, const char* s2, size_t n)
+SERD_PURE_FUNC static inline int
+serd_strcasecmp(const char* s1, const char* s2)
 {
-  for (; n > 0 && *s2; s1++, s2++, --n) {
-    if (serd_to_upper(*s1) != serd_to_upper(*s2)) {
-      return ((*(const uint8_t*)s1 < *(const uint8_t*)s2) ? -1 : +1);
+  while (*s1 && *s2) {
+    const char c1 = serd_to_upper(*s1++);
+    const char c2 = serd_to_upper(*s2++);
+    if (c1 != c2) {
+      return (c1 < c2) ? -1 : +1;
     }
   }
 
-  return 0;
+  const char c1 = serd_to_upper(*s1);
+  const char c2 = serd_to_upper(*s2);
+  return (c1 == c2) ? 0 : (c1 < c2) ? -1 : +1;
 }
 
 static inline uint32_t
