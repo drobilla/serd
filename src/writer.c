@@ -946,6 +946,9 @@ serd_writer_write_statement(SerdWriter*        writer,
                             const SerdNode*    lang)
 {
   assert(writer);
+  assert(subject);
+  assert(predicate);
+  assert(object);
 
   SerdStatus st = SERD_SUCCESS;
 
@@ -1145,7 +1148,7 @@ serd_writer_new(SerdSyntax     syntax,
                 void*          stream)
 {
   assert(env);
-  assert(sink);
+  assert(ssink);
 
   const WriteContext context = WRITE_CONTEXT_NULL;
   SerdWriter*        writer  = (SerdWriter*)calloc(1, sizeof(SerdWriter));
@@ -1239,6 +1242,10 @@ serd_writer_set_prefix(SerdWriter*     writer,
                        const SerdNode* name,
                        const SerdNode* uri)
 {
+  assert(writer);
+  assert(name);
+  assert(uri);
+
   SerdStatus st = SERD_SUCCESS;
 
   TRY(st, serd_env_set_prefix(writer->env, name, uri));

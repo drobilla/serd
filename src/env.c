@@ -140,6 +140,8 @@ serd_env_set_prefix(SerdEnv* const        env,
                     const SerdNode* const uri)
 {
   assert(env);
+  assert(name);
+  assert(uri);
 
   if (!name->buf || uri->type != SERD_URI) {
     return SERD_ERR_BAD_ARG;
@@ -167,6 +169,10 @@ serd_env_set_prefix_from_strings(SerdEnv* const       env,
                                  const uint8_t* const name,
                                  const uint8_t* const uri)
 {
+  assert(env);
+  assert(name);
+  assert(uri);
+
   const SerdNode name_node = serd_node_from_string(SERD_LITERAL, name);
   const SerdNode uri_node  = serd_node_from_string(SERD_URI, uri);
 
@@ -179,6 +185,10 @@ serd_env_qualify(const SerdEnv* const  env,
                  SerdNode* const       prefix,
                  SerdChunk* const      suffix)
 {
+  assert(uri);
+  assert(prefix);
+  assert(suffix);
+
   if (!env) {
     return false;
   }
@@ -205,6 +215,10 @@ serd_env_expand(const SerdEnv* const  env,
                 SerdChunk* const      uri_prefix,
                 SerdChunk* const      uri_suffix)
 {
+  assert(curie);
+  assert(uri_prefix);
+  assert(uri_suffix);
+
   if (!env) {
     return SERD_ERR_BAD_CURIE;
   }
@@ -230,6 +244,8 @@ serd_env_expand(const SerdEnv* const  env,
 SerdNode
 serd_env_expand_node(const SerdEnv* const env, const SerdNode* const node)
 {
+  assert(node);
+
   if (!env) {
     return SERD_NODE_NULL;
   }

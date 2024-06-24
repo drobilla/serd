@@ -200,6 +200,7 @@ serd_reader_new(const SerdSyntax syntax,
 void
 serd_reader_set_strict(SerdReader* const reader, const bool strict)
 {
+  assert(reader);
   reader->strict = strict;
 }
 
@@ -208,6 +209,7 @@ serd_reader_set_error_sink(SerdReader* const   reader,
                            const SerdErrorSink error_sink,
                            void* const         error_handle)
 {
+  assert(reader);
   reader->error_sink   = error_sink;
   reader->error_handle = error_handle;
 }
@@ -392,6 +394,9 @@ serd_reader_read_file_handle(SerdReader* const    reader,
                              FILE* const          file,
                              const uint8_t* const name)
 {
+  assert(reader);
+  assert(file);
+
   return serd_reader_read_source(reader,
                                  (SerdSource)fread,
                                  (SerdStreamErrorFunc)ferror,

@@ -91,6 +91,8 @@ serd_strlen(const uint8_t* const str,
             size_t* const        n_bytes,
             SerdNodeFlags* const flags)
 {
+  assert(str);
+
   size_t        n_chars = 0;
   size_t        i       = 0;
   SerdNodeFlags f       = 0;

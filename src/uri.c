@@ -430,7 +430,6 @@ serd_uri_serialise_relative(const SerdURI* const uri,
 {
   assert(uri);
   assert(sink);
-  assert(stream);
 
   size_t     len = 0;
   const bool relative =
@@ -484,7 +483,7 @@ serd_uri_serialise_relative(const SerdURI* const uri,
 size_t
 serd_uri_serialise(const SerdURI* const uri, SerdSink sink, void* const stream)
 {
+  assert(uri);
   assert(sink);
-  assert(stream);
   return serd_uri_serialise_relative(uri, NULL, NULL, sink, stream);
 }
