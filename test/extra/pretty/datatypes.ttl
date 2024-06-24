@@ -9,6 +9,8 @@ eg:s
 		1 ,
 		2.3 ,
 		"4."^^xsd:decimal ,
+		"5"^^xsd:decimal ,
+		"6.7E8"^^xsd:float ,
 		false ,
 		true ,
 		"x"^^eg:datatype ,

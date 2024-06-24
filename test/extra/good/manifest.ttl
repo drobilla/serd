@@ -30,6 +30,7 @@
 		<#test-list-subject>
 		<#test-local-name-ends-with-dot>
 		<#test-local-name-escapes>
+		<#test-local-name-percent>
 		<#test-long-utf8>
 		<#test-no-spaces>
 		<#test-non-curie-uri>
@@ -202,6 +203,12 @@
 	mf:action <test-local-name-escapes.ttl> ;
 	mf:name "test-local-name-escapes" ;
 	mf:result <test-local-name-escapes.nt> .
+
+<#test-local-name-percent>
+	a rdft:TestTurtleEval ;
+	mf:action <test-local-name-percent.ttl> ;
+	mf:name "test-local-name-percent" ;
+	mf:result <test-local-name-percent.nt> .
 
 <#test-long-utf8>
 	a rdft:TestTurtleEval ;

@@ -153,15 +153,20 @@ simple_command_tests = {
   'serdi': {
     'bad': [
       ['-c'],
+      ['-cx'],
       ['-fi'],
       ['-i', 'turtle'],
       ['-i', 'turt'],
       ['-i'],
+      ['-ix'],
       ['-o', '~unknown'],
       ['-o', 'ntripleses'],
       ['-o'],
+      ['-ox'],
       ['-p'],
+      ['-px'],
       ['-r'],
+      ['-rx'],
       ['-z'],
     ],
     'good': [
@@ -178,6 +183,7 @@ if is_variable('serdi')
   script_args = common_script_args + ['--serdi', serdi]
   serd_ttl = files('../serd.ttl')[0]
   bad_input_file = files('extra/bad/bad-base.ttl')
+  text_input_file = files('extra/bad/README.md')
 
   test('serd_ttl', serdi, args: [serd_ttl], suite: 'data')
 
@@ -214,6 +220,7 @@ if is_variable('serdi')
     'string': ['-s', '<foo> a <Bar> .'],
     'no_such_file': ['no_such_file'],
     'remote': ['ftp://example.org/unsupported.ttl'],
+    'text': [text_input_file],
   }
 
   foreach name, args : bad_input_tests

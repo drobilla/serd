@@ -6,11 +6,12 @@ serd (0.32.3) unstable; urgency=medium
   * Fix parsing NQuads lines with no space before the final dot
   * Fix rewriting special literals when datatype URIs are prefixed names
   * Gracefully handle errors while writing the end of anonymous nodes
+  * Improve test suite coverage
   * Support reading lone lists in lax mode
   * Treat out of range unicode characters as errors
   * Write blank lines between graphs and statements in TriG
 
- -- David Robillard <d@drobilla.net>  Mon, 24 Jun 2024 19:06:33 +0000
+ -- David Robillard <d@drobilla.net>  Mon, 24 Jun 2024 19:11:54 +0000
 
 serd (0.32.2) stable; urgency=medium
 

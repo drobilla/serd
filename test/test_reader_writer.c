@@ -41,6 +41,8 @@ static const char* const doc_string =
   "  \"lang\"@en ;\n"
   "  eg:p <http://example.com/o> .\n"
   "}\n"
+  "@prefix other: <http://example.org/other> .\n"
+  "@base <http://drobilla.net/> .\n"
   "eg:s\n"
   "  <http://example.org/p> [\n"
   "    eg:p 3.0 ,\n"
@@ -399,7 +401,7 @@ test_write_errors(void)
   ErrorContext    ctx   = {0U, 0U};
   const SerdStyle style = (SerdStyle)(SERD_STYLE_STRICT | SERD_STYLE_CURIED);
 
-  const size_t max_offsets[] = {0, 386, 1911, 2003, 386};
+  const size_t max_offsets[] = {0, 462, 1911, 2003, 462};
 
   // Test errors at different offsets to hit different code paths
   for (unsigned s = 1; s <= (unsigned)SERD_TRIG; ++s) {

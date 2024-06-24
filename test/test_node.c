@@ -42,8 +42,14 @@ test_string_to_double(void)
   const double expt_test_nums[] = {
     2.0E18, -5e19, +8e20, 2e+22, -5e-5, 8e0, 9e-0, 2e+0};
 
-  const char* expt_test_strs[] = {
-    "02e18", "-5e019", "+8e20", "2E+22", "-5E-5", "8E0", "9e-0", " 2e+0"};
+  const char* expt_test_strs[] = {"02e18",
+                                  "-5e019",
+                                  " +8e20",
+                                  "\f2E+22",
+                                  "\n-5E-5",
+                                  "\r8E0",
+                                  "\t9e-0",
+                                  "\v2e+0"};
 
   for (size_t i = 0; i < sizeof(expt_test_nums) / sizeof(double); ++i) {
     const double num   = serd_strtod(expt_test_strs[i], NULL);
@@ -144,6 +150,58 @@ test_blob_to_node(void)
 }
 
 static void
+test_base64_decode(void)
+{
+  static const char* const decoded     = "test";
+  static const size_t      decoded_len = 4U;
+
+  // Test decoding clean base64
+  {
+    static const char* const encoded     = "dGVzdA==";
+    static const size_t      encoded_len = 8U;
+
+    size_t      size = 0U;
+    void* const data =
+      serd_base64_decode((const uint8_t*)encoded, encoded_len, &size);
+
+    assert(data);
+    assert(size == decoded_len);
+    assert(!strncmp((const char*)data, decoded, decoded_len));
+    serd_free(data);
+  }
+
+  // Test decoding equivalent dirty base64 with ignored junk characters
+  {
+    static const char* const encoded     = "d-G#V!z*d(A$%==";
+    static const size_t      encoded_len = 13U;
+
+    size_t      size = 0U;
+    void* const data =
+      serd_base64_decode((const uint8_t*)encoded, encoded_len, &size);
+
+    assert(data);
+    assert(size == decoded_len);
+    assert(!strncmp((const char*)data, decoded, decoded_len));
+    serd_free(data);
+  }
+
+  // Test decoding effectively nothing
+  {
+    static const char* const encoded     = "@#$%";
+    static const size_t      encoded_len = 4U;
+
+    size_t      size = 0U;
+    void* const data =
+      serd_base64_decode((const uint8_t*)encoded, encoded_len, &size);
+
+    assert(data);
+    assert(!size);
+    // Contents of data are undefined
+    serd_free(data);
+  }
+}
+
+static void
 test_node_equals(void)
 {
   const uint8_t replacement_char_str[] = {0xEF, 0xBF, 0xBD, 0};
@@ -176,6 +234,8 @@ test_node_from_string(void)
 static void
 test_node_from_substring(void)
 {
+  static const uint8_t utf8_str[] = {'l', 0xC3, 0xB6, 'n', 'g', 0};
+
   SerdNode empty = serd_node_from_substring(SERD_LITERAL, NULL, 32);
   assert(!empty.buf && !empty.n_bytes && !empty.n_chars && !empty.flags &&
          !empty.type);
@@ -187,6 +247,30 @@ test_node_from_substring(void)
   a_b = serd_node_from_substring(SERD_LITERAL, USTR("a\"bc"), 10);
   assert(a_b.n_bytes == 4 && a_b.n_chars == 4 && a_b.flags == SERD_HAS_QUOTE &&
          !strncmp((const char*)a_b.buf, "a\"bc", 4));
+
+  SerdNode utf8 = serd_node_from_substring(SERD_LITERAL, utf8_str, 5);
+  assert(utf8.n_bytes == 5 && utf8.n_chars == 4 && !utf8.flags &&
+         !strncmp((const char*)utf8.buf, (const char*)utf8_str, 6));
+}
+
+static void
+test_uri_node_from_node(void)
+{
+  const SerdNode string      = serd_node_from_string(SERD_LITERAL, USTR("s"));
+  SerdNode       string_node = serd_node_new_uri_from_node(&string, NULL, NULL);
+  assert(!string_node.n_bytes);
+  serd_node_free(&string_node);
+
+  const SerdNode nouri      = {NULL, 0U, 0U, 0U, SERD_URI};
+  SerdNode       nouri_node = serd_node_new_uri_from_node(&nouri, NULL, NULL);
+  assert(!nouri_node.n_bytes);
+  serd_node_free(&nouri_node);
+
+  const SerdNode uri =
+    serd_node_from_string(SERD_URI, USTR("http://example.org/p"));
+  SerdNode uri_node = serd_node_new_uri_from_node(&uri, NULL, NULL);
+  assert(uri_node.n_bytes == 20U);
+  serd_node_free(&uri_node);
 }
 
 int
@@ -196,9 +280,11 @@ main(void)
   test_double_to_node();
   test_integer_to_node();
   test_blob_to_node();
+  test_base64_decode();
   test_node_equals();
   test_node_from_string();
   test_node_from_substring();
+  test_uri_node_from_node();
 
   printf("Success\n");
   return 0;

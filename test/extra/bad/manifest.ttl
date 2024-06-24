@@ -13,7 +13,10 @@
 		<#bad-blank-node-label>
 		<#bad-blank-predicate>
 		<#bad-blank-syntax>
-		<#bad-bom>
+		<#bad-bom-1>
+		<#bad-bom-2>
+		<#bad-bom-only-1>
+		<#bad-bom-only-2>
 		<#bad-char-in-local>
 		<#bad-char-in-prefix>
 		<#bad-char-in-uri>
@@ -165,10 +168,25 @@
 	mf:action <bad-blank-syntax.ttl> ;
 	mf:name "bad-blank-syntax" .
 
-<#bad-bom>
+<#bad-bom-1>
 	a rdft:TestTurtleNegativeSyntax ;
-	mf:action <bad-bom.ttl> ;
-	mf:name "bad-bom" .
+	mf:action <bad-bom-1.ttl> ;
+	mf:name "bad-bom-1" .
+
+<#bad-bom-2>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-bom-2.ttl> ;
+	mf:name "bad-bom-2" .
+
+<#bad-bom-only-1>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-bom-only-1.ttl> ;
+	mf:name "bad-bom-only-1" .
+
+<#bad-bom-only-2>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-bom-only-2.ttl> ;
+	mf:name "bad-bom-only-2" .
 
 <#bad-char-in-local>
 	a rdft:TestTurtleNegativeSyntax ;

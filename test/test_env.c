@@ -39,7 +39,8 @@ test_env(void)
   SerdChunk suffix;
   assert(!serd_env_qualify(NULL, &u, &u, &suffix));
   assert(serd_env_expand(NULL, &c, &prefix, &suffix));
-  assert(serd_env_expand(env, &b, &prefix, &suffix));
+  assert(serd_env_expand(env, &b, &prefix, &suffix) == SERD_ERR_BAD_ARG);
+  assert(serd_env_expand(env, &u, &prefix, &suffix) == SERD_ERR_BAD_ARG);
 
   SerdNode nxnode = serd_env_expand_node(NULL, &c);
   assert(serd_node_equals(&nxnode, &SERD_NODE_NULL));

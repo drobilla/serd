@@ -16,6 +16,8 @@
 static void
 test_uri_string_has_scheme(void)
 {
+  assert(!serd_uri_string_has_scheme(NULL));
+
   assert(!serd_uri_string_has_scheme(USTR("relative")));
   assert(!serd_uri_string_has_scheme(USTR("http")));
   assert(!serd_uri_string_has_scheme(USTR("5nostartdigit")));
@@ -99,6 +101,8 @@ test_uri_to_path(void)
             "C|/Windows/Sucks"));
 
   assert(!serd_uri_to_path((const uint8_t*)"http://example.org/path"));
+
+  assert(!strcmp((const char*)serd_uri_to_path((const uint8_t*)"rel"), "rel"));
 }
 
 #if defined(__GNUC__)
@@ -166,11 +170,20 @@ test_uri_parsing(void)
                 "/C:\\Pointless Space");
 #endif
 
+  // Test tolerance of NULL hostname parameter
+  uint8_t* const hosted = serd_file_uri_parse(USTR("file://host/path"), NULL);
+  assert(!strcmp((const char*)hosted, "/path"));
+  serd_free(hosted);
+
   // Test tolerance of parsing junk URI escapes
 
-  uint8_t* out_path = serd_file_uri_parse(USTR("file:///foo/%0Xbar"), NULL);
-  assert(!strcmp((const char*)out_path, "/foo/bar"));
-  serd_free(out_path);
+  uint8_t* const junk1 = serd_file_uri_parse(USTR("file:///foo/%0Xbar"), NULL);
+  assert(!strcmp((const char*)junk1, "/foo/bar"));
+  serd_free(junk1);
+
+  uint8_t* const junk2 = serd_file_uri_parse(USTR("file:///foo/%X0bar"), NULL);
+  assert(!strcmp((const char*)junk2, "/foo/bar"));
+  serd_free(junk2);
 }
 
 static void
@@ -343,6 +356,22 @@ test_relative_uri(void)
                      "http://example.org/a/b/c",
                      "http://example.org/a/b",
                      "http://example.org/a");
+
+  // Tolerance of NULL URI output parameter
+  {
+    SerdURI uri = SERD_URI_NULL;
+    assert(!serd_uri_parse(USTR("http://example.org/path"), &uri));
+
+    SerdURI base = SERD_URI_NULL;
+    assert(!serd_uri_parse(USTR("http://example.org/"), &base));
+
+    SerdNode result_node = serd_node_new_relative_uri(&uri, &base, NULL, NULL);
+
+    assert(result_node.n_bytes == 4U);
+    assert(!strcmp((const char*)result_node.buf, "path"));
+
+    serd_node_free(&result_node);
+  }
 }
 
 int
