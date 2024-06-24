@@ -647,6 +647,31 @@ reset_context(SerdWriter* writer, const unsigned flags)
   return SERD_SUCCESS;
 }
 
+// Return the name of the XSD datatype referred to by `datatype`, if any
+static const char*
+get_xsd_name(const SerdEnv* const env, const SerdNode* const datatype)
+{
+  const char* const datatype_str = (const char*)datatype->buf;
+
+  if (datatype->type == SERD_URI &&
+      (!strncmp(datatype_str, NS_XSD, sizeof(NS_XSD) - 1))) {
+    return datatype_str + sizeof(NS_XSD) - 1U;
+  }
+
+  if (datatype->type == SERD_CURIE) {
+    SerdChunk prefix = {NULL, 0};
+    SerdChunk suffix = {NULL, 0};
+    // We can be a bit lazy/presumptive here due to grammar limitations
+    if (!serd_env_expand(env, datatype, &prefix, &suffix)) {
+      if (!strcmp((const char*)prefix.buf, NS_XSD)) {
+        return (const char*)suffix.buf;
+      }
+    }
+  }
+
+  return "";
+}
+
 SERD_NODISCARD static SerdStatus
 write_literal(SerdWriter*        writer,
               const SerdNode*    node,
@@ -657,21 +682,11 @@ write_literal(SerdWriter*        writer,
   SerdStatus st = SERD_SUCCESS;
 
   if (supports_abbrev(writer) && datatype && datatype->buf) {
-    const char* type_uri = (const char*)datatype->buf;
-    if (!strncmp(type_uri, NS_XSD, sizeof(NS_XSD) - 1)) {
-      const char* const xsd_name = type_uri + sizeof(NS_XSD) - 1;
-      if (!strcmp(xsd_name, "boolean") || !strcmp(xsd_name, "integer")) {
-        return esink(node->buf, node->n_bytes, writer);
-      }
-
-      if (!strcmp(xsd_name, "decimal") && strchr((const char*)node->buf, '.') &&
-          node->buf[node->n_bytes - 1] != '.') {
-        /* xsd:decimal literals without trailing digits, e.g. "5.", can't be
-           written bare in Turtle.  We could add a 0 which is prettier, but
-           changes the text and breaks round tripping.
-        */
-        return esink(node->buf, node->n_bytes, writer);
-      }
+    const char* const xsd_name = get_xsd_name(writer->env, datatype);
+    if (!strcmp(xsd_name, "boolean") || !strcmp(xsd_name, "integer") ||
+        (!strcmp(xsd_name, "decimal") && strchr((const char*)node->buf, '.') &&
+         node->buf[node->n_bytes - 1] != '.')) {
+      return esink(node->buf, node->n_bytes, writer);
     }
   }
 
