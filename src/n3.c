@@ -1534,19 +1534,25 @@ read_wrappedGraph(SerdReader* const reader, ReadContext* const ctx)
   return SERD_SUCCESS;
 }
 
-static int
-tokcmp(SerdReader* const reader,
-       const Ref         ref,
-       const char* const tok,
-       const size_t      n)
+static bool
+token_equals(SerdReader* const reader,
+             const Ref         ref,
+             const char* const tok,
+             const size_t      n)
 {
-  SerdNode* node = deref(reader, ref);
+  SerdNode* const node = deref(reader, ref);
   if (!node || node->n_bytes != n) {
-    return -1;
+    return false;
   }
 
-  assert(node->buf[node->n_bytes] == '\0');
-  return serd_strcasecmp((const char*)node->buf, tok);
+  const char* const node_string = (const char*)node->buf;
+  for (size_t i = 0U; i < n; ++i) {
+    if (serd_to_upper(node_string[i]) != serd_to_upper(tok[i])) {
+      return false;
+    }
+  }
+
+  return tok[n] == '\0';
 }
 
 SerdStatus
@@ -1588,11 +1594,11 @@ read_n3_statement(SerdReader* const reader)
   default:
     TRY_FAILING(st, read_subject(reader, ctx, &ctx.subject, &s_type));
 
-    if (!tokcmp(reader, ctx.subject, "base", 4)) {
+    if (token_equals(reader, ctx.subject, "base", 4)) {
       st = read_base(reader, true, false);
-    } else if (!tokcmp(reader, ctx.subject, "prefix", 6)) {
+    } else if (token_equals(reader, ctx.subject, "prefix", 6)) {
       st = read_prefixID(reader, true, false);
-    } else if (!tokcmp(reader, ctx.subject, "graph", 5)) {
+    } else if (token_equals(reader, ctx.subject, "graph", 5)) {
       ctx.subject = pop_node(reader, ctx.subject);
       read_ws_star(reader);
       TRY(st, read_labelOrSubject(reader, &ctx.graph));
@@ -1601,8 +1607,8 @@ read_n3_statement(SerdReader* const reader)
       pop_node(reader, ctx.graph);
       ctx.graph = 0;
       read_ws_star(reader);
-    } else if (!tokcmp(reader, ctx.subject, "true", 4) ||
-               !tokcmp(reader, ctx.subject, "false", 5)) {
+    } else if (token_equals(reader, ctx.subject, "true", 4) ||
+               token_equals(reader, ctx.subject, "false", 5)) {
       return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected subject\n");
     } else if (read_ws_star(reader) && peek_byte(reader) == '{') {
       if (s_type == '(' || (s_type == '[' && !*ctx.flags)) {
