@@ -142,37 +142,7 @@ serd_node_new_uri_from_string(const uint8_t* const str,
 static bool
 is_uri_path_char(const uint8_t c)
 {
-  if (is_alpha(c) || is_digit(c)) {
-    return true;
-  }
-
-  switch (c) {
-  // unreserved:
-  case '-':
-  case '.':
-  case '_':
-  case '~':
-  case ':':
-
-  case '@': // pchar
-  case '/': // separator
-
-  // sub-delimiters:
-  case '!':
-  case '$':
-  case '&':
-  case '\'':
-  case '(':
-  case ')':
-  case '*':
-  case '+':
-  case ',':
-  case ';':
-  case '=':
-    return true;
-  default:
-    return false;
-  }
+  return is_alpha(c) || is_digit(c) || strchr("!$&\'()*+,-./:;=@_~", c);
 }
 
 static bool

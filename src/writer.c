@@ -283,21 +283,8 @@ write_character(SerdWriter*    writer,
 SERD_NODISCARD static bool
 uri_must_escape(const uint8_t c)
 {
-  switch (c) {
-  case ' ':
-  case '"':
-  case '<':
-  case '>':
-  case '\\':
-  case '^':
-  case '`':
-  case '{':
-  case '|':
-  case '}':
-    return true;
-  default:
-    return !in_range(c, 0x20, 0x7E);
-  }
+  return (c == '"') || (c == '<') || (c == '>') || (c == '\\') || (c == '^') ||
+         (c == '`') || in_range(c, '{', '}') || !in_range(c, 0x21, 0x7E);
 }
 
 static size_t
@@ -368,38 +355,17 @@ write_uri_from_node(SerdWriter* writer, const SerdNode* node)
 static bool
 lname_must_escape(const uint8_t c)
 {
-  /* This arbitrary list of characters, most of which have nothing to do with
-     Turtle, must be handled as special cases here because the RDF and SPARQL
-     WGs are apparently intent on making the once elegant Turtle a baroque
-     and inconsistent mess, throwing elegance and extensibility completely
-     out the window for no good reason.
+  /* Most of these characters have nothing to do with Turtle, but were taken
+     from SPARQL and mashed into the Turtle grammar (despite not being used)
+     with RDF 1.1.  So now Turtle is a mess because the SPARQL grammar is
+     poorly designed and didn't use a leading character to distinguish things
+     like path patterns like it should have.
 
-     Note '-', '.', and '_' are also in PN_LOCAL_ESC, but are valid unescaped
-     in local names, so they are not escaped here. */
+     Note that '-', '.', and '_' are also in PN_LOCAL_ESC, but are valid
+     unescaped in local names, so they are not escaped here. */
 
-  switch (c) {
-  case '\'':
-  case '!':
-  case '#':
-  case '$':
-  case '%':
-  case '&':
-  case '(':
-  case ')':
-  case '*':
-  case '+':
-  case ',':
-  case '/':
-  case ';':
-  case '=':
-  case '?':
-  case '@':
-  case '~':
-    return true;
-  default:
-    break;
-  }
-  return false;
+  return (c == '!') || (c == '/') || (c == ';') || (c == '=') || (c == '?') ||
+         (c == '@') || (c == '~') || in_range(c, '#', ',');
 }
 
 SERD_NODISCARD static SerdStatus

@@ -56,14 +56,11 @@ read_UCHAR(SerdReader* const reader, const Ref dest, uint32_t* const char_code)
 {
   const int b      = peek_byte(reader);
   unsigned  length = 0;
-  switch (b) {
-  case 'U':
+  if (b == 'U') {
     length = 8;
-    break;
-  case 'u':
+  } else if (b == 'u') {
     length = 4;
-    break;
-  default:
+  } else {
     return SERD_ERR_BAD_SYNTAX;
   }
 
@@ -239,18 +236,12 @@ read_character(SerdReader* const    reader,
                const uint8_t        c)
 {
   if (!(c & 0x80)) {
-    switch (c) {
-    case 0xA:
-    case 0xD:
+    if (c == 0xA || c == 0xD) {
       *flags |= SERD_HAS_NEWLINE;
-      break;
-    case '"':
-    case '\'':
+    } else if (c == '"' || c == '\'') {
       *flags |= SERD_HAS_QUOTE;
-      break;
-    default:
-      break;
     }
+
     return push_byte(reader, dest, c);
   }
 
@@ -537,34 +528,10 @@ read_PN_LOCAL_ESC(SerdReader* const reader, const Ref dest)
   skip_byte(reader, '\\');
 
   const int c = peek_byte(reader);
-  switch (c) {
-  case '!':
-  case '#':
-  case '$':
-  case '%':
-  case '&':
-  case '\'':
-  case '(':
-  case ')':
-  case '*':
-  case '+':
-  case ',':
-  case '-':
-  case '.':
-  case '/':
-  case ';':
-  case '=':
-  case '?':
-  case '@':
-  case '_':
-  case '~':
-    push_byte(reader, dest, eat_byte_safe(reader, c));
-    break;
-  default:
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid escape\n");
-  }
-
-  return SERD_SUCCESS;
+  return ((c == '!') || in_range(c, '#', '/') || (c == ';') || (c == '=') ||
+          (c == '?') || (c == '@') || (c == '_') || (c == '~'))
+           ? push_byte(reader, dest, eat_byte_safe(reader, c))
+           : r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid escape\n");
 }
 
 static SerdStatus
