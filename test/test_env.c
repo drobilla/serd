@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#define NS_EG "http://example.org/"
 #define USTR(s) ((const uint8_t*)(s))
 
 static SerdStatus
@@ -24,12 +25,11 @@ count_prefixes(void* handle, const SerdNode* name, const SerdNode* uri)
 static void
 test_env(void)
 {
-  SerdNode u = serd_node_from_string(SERD_URI, USTR("http://example.org/foo"));
-  SerdNode b = serd_node_from_string(SERD_CURIE, USTR("invalid"));
-  SerdNode c = serd_node_from_string(SERD_CURIE, USTR("eg.2:b"));
+  SerdNode u   = serd_node_from_string(SERD_URI, USTR(NS_EG "foo"));
+  SerdNode b   = serd_node_from_string(SERD_CURIE, USTR("invalid"));
+  SerdNode c   = serd_node_from_string(SERD_CURIE, USTR("eg.2:b"));
   SerdEnv* env = serd_env_new(NULL);
-  serd_env_set_prefix_from_strings(
-    env, USTR("eg.2"), USTR("http://example.org/"));
+  serd_env_set_prefix_from_strings(env, USTR("eg.2"), USTR(NS_EG ""));
 
   assert(!serd_env_set_base_uri(env, NULL));
   assert(serd_env_set_base_uri(env, &SERD_NODE_NULL));
@@ -49,7 +49,7 @@ test_env(void)
   assert(serd_node_equals(&xnode, &SERD_NODE_NULL));
 
   SerdNode xu = serd_env_expand_node(env, &u);
-  assert(!strcmp((const char*)xu.buf, "http://example.org/foo"));
+  assert(!strcmp((const char*)xu.buf, NS_EG "foo"));
   serd_node_free(&xu);
 
   SerdNode badpre  = serd_node_from_string(SERD_CURIE, USTR("hm:what"));
@@ -57,7 +57,7 @@ test_env(void)
   assert(serd_node_equals(&xbadpre, &SERD_NODE_NULL));
 
   SerdNode xc = serd_env_expand_node(env, &c);
-  assert(!strcmp((const char*)xc.buf, "http://example.org/b"));
+  assert(!strcmp((const char*)xc.buf, NS_EG "b"));
   serd_node_free(&xc);
 
   assert(serd_env_set_prefix(env, &SERD_NODE_NULL, &SERD_NODE_NULL));
@@ -72,8 +72,7 @@ test_env(void)
   assert(serd_node_equals(&xblank, &SERD_NODE_NULL));
 
   int n_prefixes = 0;
-  serd_env_set_prefix_from_strings(
-    env, USTR("eg.2"), USTR("http://example.org/"));
+  serd_env_set_prefix_from_strings(env, USTR("eg.2"), USTR(NS_EG));
   serd_env_foreach(env, count_prefixes, &n_prefixes);
   assert(n_prefixes == 1);
 
