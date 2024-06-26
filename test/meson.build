@@ -121,6 +121,7 @@ unit_tests = [
   'env',
   'free_null',
   'node',
+  'reader',
   'reader_writer',
   'string',
   'uri',
