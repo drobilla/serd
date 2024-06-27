@@ -301,21 +301,21 @@ serd_reader_start_stream(SerdReader* const reader,
   assert(file);
 
   return serd_reader_start_source_stream(reader,
-                                         bulk ? (SerdSource)fread
+                                         bulk ? (SerdReadFunc)fread
                                               : serd_file_read_byte,
-                                         (SerdStreamErrorFunc)ferror,
+                                         (SerdErrorFunc)ferror,
                                          file,
                                          name,
                                          bulk ? SERD_PAGE_SIZE : 1);
 }
 
 SerdStatus
-serd_reader_start_source_stream(SerdReader* const         reader,
-                                const SerdSource          read_func,
-                                const SerdStreamErrorFunc error_func,
-                                void* const               stream,
-                                const char* const         name,
-                                const size_t              page_size)
+serd_reader_start_source_stream(SerdReader* const   reader,
+                                const SerdReadFunc  read_func,
+                                const SerdErrorFunc error_func,
+                                void* const         stream,
+                                const char* const   name,
+                                const size_t        page_size)
 {
   assert(reader);
   assert(read_func);
@@ -378,20 +378,20 @@ serd_reader_read_file_handle(SerdReader* const reader,
   assert(file);
 
   return serd_reader_read_source(reader,
-                                 (SerdSource)fread,
-                                 (SerdStreamErrorFunc)ferror,
+                                 (SerdReadFunc)fread,
+                                 (SerdErrorFunc)ferror,
                                  file,
                                  name,
                                  SERD_PAGE_SIZE);
 }
 
 SerdStatus
-serd_reader_read_source(SerdReader* const         reader,
-                        const SerdSource          source,
-                        const SerdStreamErrorFunc error,
-                        void* const               stream,
-                        const char* const         name,
-                        const size_t              page_size)
+serd_reader_read_source(SerdReader* const   reader,
+                        const SerdReadFunc  source,
+                        const SerdErrorFunc error,
+                        void* const         stream,
+                        const char* const   name,
+                        const size_t        page_size)
 {
   assert(reader);
   assert(source);

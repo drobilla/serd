@@ -264,7 +264,7 @@ test_read_nquads_chunks(const char* const path)
   assert(f);
 
   SerdStatus st = serd_reader_start_source_stream(
-    reader, (SerdSource)fread, (SerdStreamErrorFunc)ferror, f, NULL, 32U);
+    reader, (SerdReadFunc)fread, (SerdErrorFunc)ferror, f, NULL, 32U);
 
   assert(st == SERD_SUCCESS);
 
@@ -346,7 +346,7 @@ test_read_turtle_chunks(const char* const path)
   assert(f);
 
   SerdStatus st = serd_reader_start_source_stream(
-    reader, (SerdSource)fread, (SerdStreamErrorFunc)ferror, f, NULL, 32U);
+    reader, (SerdReadFunc)fread, (SerdErrorFunc)ferror, f, NULL, 32U);
   assert(st == SERD_SUCCESS);
 
   // Read base

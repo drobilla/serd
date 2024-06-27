@@ -53,7 +53,7 @@ serd_writer_new(SerdSyntax                       syntax,
                 SerdWriterFlags                  flags,
                 SerdEnv* SERD_NONNULL            env,
                 const SerdURIView* SERD_NULLABLE base_uri,
-                SerdSink SERD_NONNULL            ssink,
+                SerdWriteFunc SERD_NONNULL       ssink,
                 void* SERD_UNSPECIFIED           stream);
 
 /// Free `writer`
@@ -68,7 +68,7 @@ serd_writer_env(SerdWriter* SERD_NONNULL writer);
 /**
    A convenience sink function for writing to a FILE*.
 
-   This function can be used as a #SerdSink when writing to a FILE*.  The
+   This function can be used as a #SerdWriteFunc when writing to a FILE*.  The
    `stream` parameter must be a FILE* opened for writing.
 */
 SERD_API size_t

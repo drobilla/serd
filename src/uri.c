@@ -317,7 +317,7 @@ serd_uri_resolve(const SerdURIView* const r,
 
 /** Write the path of `uri` starting at index `i` */
 static size_t
-write_path_tail(SerdSink                 sink,
+write_path_tail(SerdWriteFunc            sink,
                 void* const              stream,
                 const SerdURIView* const uri,
                 const size_t             i)
@@ -345,7 +345,7 @@ write_path_tail(SerdSink                 sink,
 
 /** Write the path of `uri` relative to the path of `base`. */
 static size_t
-write_rel_path(SerdSink                 sink,
+write_rel_path(SerdWriteFunc            sink,
                void* const              stream,
                const SerdURIView* const uri,
                const SerdURIView* const base)
@@ -398,7 +398,7 @@ size_t
 serd_uri_serialise_relative(const SerdURIView* const uri,
                             const SerdURIView* const base,
                             const SerdURIView* const root,
-                            SerdSink                 sink,
+                            SerdWriteFunc            sink,
                             void* const              stream)
 {
   assert(uri);
@@ -455,7 +455,7 @@ serd_uri_serialise_relative(const SerdURIView* const uri,
 /// See http://tools.ietf.org/html/rfc3986#section-5.3
 size_t
 serd_uri_serialise(const SerdURIView* const uri,
-                   SerdSink                 sink,
+                   SerdWriteFunc            sink,
                    void* const              stream)
 {
   assert(uri);

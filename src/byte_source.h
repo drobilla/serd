@@ -21,19 +21,19 @@ typedef struct {
 } Cursor;
 
 typedef struct {
-  SerdSource          read_func;   ///< Read function (e.g. fread)
-  SerdStreamErrorFunc error_func;  ///< Error function (e.g. ferror)
-  void*               stream;      ///< Stream (e.g. FILE)
-  size_t              page_size;   ///< Number of bytes to read at a time
-  size_t              buf_size;    ///< Number of bytes in file_buf
-  Cursor              cur;         ///< Cursor for error reporting
-  uint8_t*            file_buf;    ///< Buffer iff reading pages from a file
-  const uint8_t*      read_buf;    ///< Pointer to file_buf or read_byte
-  size_t              read_head;   ///< Offset into read_buf
-  uint8_t             read_byte;   ///< 1-byte 'buffer' used when not paging
-  bool                from_stream; ///< True iff reading from `stream`
-  bool                prepared;    ///< True iff prepared for reading
-  bool                eof;         ///< True iff end of file reached
+  SerdReadFunc   read_func;   ///< Read function (e.g. fread)
+  SerdErrorFunc  error_func;  ///< Error function (e.g. ferror)
+  void*          stream;      ///< Stream (e.g. FILE)
+  size_t         page_size;   ///< Number of bytes to read at a time
+  size_t         buf_size;    ///< Number of bytes in file_buf
+  Cursor         cur;         ///< Cursor for error reporting
+  uint8_t*       file_buf;    ///< Buffer iff reading pages from a file
+  const uint8_t* read_buf;    ///< Pointer to file_buf or read_byte
+  size_t         read_head;   ///< Offset into read_buf
+  uint8_t        read_byte;   ///< 1-byte 'buffer' used when not paging
+  bool           from_stream; ///< True iff reading from `stream`
+  bool           prepared;    ///< True iff prepared for reading
+  bool           eof;         ///< True iff end of file reached
 } SerdByteSource;
 
 SerdStatus
@@ -43,12 +43,12 @@ SerdStatus
 serd_byte_source_open_string(SerdByteSource* source, const char* utf8);
 
 SerdStatus
-serd_byte_source_open_source(SerdByteSource*     source,
-                             SerdSource          read_func,
-                             SerdStreamErrorFunc error_func,
-                             void*               stream,
-                             const char*         name,
-                             size_t              page_size);
+serd_byte_source_open_source(SerdByteSource* source,
+                             SerdReadFunc    read_func,
+                             SerdErrorFunc   error_func,
+                             void*           stream,
+                             const char*     name,
+                             size_t          page_size);
 
 SerdStatus
 serd_byte_source_close(SerdByteSource* source);

@@ -74,7 +74,7 @@ serd_uri_resolve(const SerdURIView* SERD_NONNULL r,
 /// Serialise `uri` with a series of calls to `sink`
 SERD_API size_t
 serd_uri_serialise(const SerdURIView* SERD_NONNULL uri,
-                   SerdSink SERD_NONNULL           sink,
+                   SerdWriteFunc SERD_NONNULL      sink,
                    void* SERD_UNSPECIFIED          stream);
 
 /**
@@ -88,7 +88,7 @@ SERD_API size_t
 serd_uri_serialise_relative(const SerdURIView* SERD_NONNULL  uri,
                             const SerdURIView* SERD_NULLABLE base,
                             const SerdURIView* SERD_NULLABLE root,
-                            SerdSink SERD_NONNULL            sink,
+                            SerdWriteFunc SERD_NONNULL       sink,
                             void* SERD_UNSPECIFIED           stream);
 
 /**

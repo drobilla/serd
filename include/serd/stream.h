@@ -29,13 +29,13 @@ SERD_BEGIN_DECLS
 
    @return Non-zero if `stream` has encountered an error.
 */
-typedef int (*SerdStreamErrorFunc)(void* SERD_NONNULL stream);
+typedef int (*SerdErrorFunc)(void* SERD_NONNULL stream);
 
 /**
    Source function for raw string input.
 
    Identical semantics to `fread`, but may set errno for more informative error
-   reporting than supported by SerdStreamErrorFunc.
+   reporting than supported by SerdErrorFunc.
 
    @param buf Output buffer.
    @param size Size of a single element of data in bytes (always 1).
@@ -43,15 +43,15 @@ typedef int (*SerdStreamErrorFunc)(void* SERD_NONNULL stream);
    @param stream Stream to read from (FILE* for fread).
    @return Number of elements (bytes) read.
 */
-typedef size_t (*SerdSource)(void* SERD_NONNULL     buf,
-                             size_t                 size,
-                             size_t                 nmemb,
-                             void* SERD_UNSPECIFIED stream);
+typedef size_t (*SerdReadFunc)(void* SERD_NONNULL     buf,
+                               size_t                 size,
+                               size_t                 nmemb,
+                               void* SERD_UNSPECIFIED stream);
 
 /// Sink function for raw string output
-typedef size_t (*SerdSink)(const void* SERD_NONNULL buf,
-                           size_t                   len,
-                           void* SERD_UNSPECIFIED   stream);
+typedef size_t (*SerdWriteFunc)(const void* SERD_NONNULL buf,
+                                size_t                   len,
+                                void* SERD_UNSPECIFIED   stream);
 
 /**
    @}
