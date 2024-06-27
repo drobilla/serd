@@ -100,12 +100,12 @@ serd_reader_start_stream(SerdReader* SERD_NONNULL  reader,
    with size 1 (i.e. `page_size` bytes).
 */
 SERD_API SerdStatus
-serd_reader_start_source_stream(SerdReader* SERD_NONNULL         reader,
-                                SerdSource SERD_NONNULL          read_func,
-                                SerdStreamErrorFunc SERD_NONNULL error_func,
-                                void* SERD_UNSPECIFIED           stream,
-                                const char* SERD_NULLABLE        name,
-                                size_t                           page_size);
+serd_reader_start_source_stream(SerdReader* SERD_NONNULL   reader,
+                                SerdReadFunc SERD_NONNULL  read_func,
+                                SerdErrorFunc SERD_NONNULL error_func,
+                                void* SERD_UNSPECIFIED     stream,
+                                const char* SERD_NULLABLE  name,
+                                size_t                     page_size);
 
 /**
    Read a single "chunk" of data during an incremental read.
@@ -130,12 +130,12 @@ serd_reader_read_file_handle(SerdReader* SERD_NONNULL  reader,
 
 /// Read a user-specified byte source
 SERD_API SerdStatus
-serd_reader_read_source(SerdReader* SERD_NONNULL         reader,
-                        SerdSource SERD_NONNULL          source,
-                        SerdStreamErrorFunc SERD_NONNULL error,
-                        void* SERD_UNSPECIFIED           stream,
-                        const char* SERD_NULLABLE        name,
-                        size_t                           page_size);
+serd_reader_read_source(SerdReader* SERD_NONNULL   reader,
+                        SerdReadFunc SERD_NONNULL  source,
+                        SerdErrorFunc SERD_NONNULL error,
+                        void* SERD_UNSPECIFIED     stream,
+                        const char* SERD_NULLABLE  name,
+                        size_t                     page_size);
 
 /// Read `utf8`
 SERD_API SerdStatus
