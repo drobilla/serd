@@ -31,6 +31,11 @@ serd_node_meta(const SerdNode* ZIX_NONNULL node);
 SerdNode* ZIX_ALLOCATED
 serd_node_malloc(ZixAllocator* ZIX_NULLABLE allocator, size_t max_length);
 
+/// Make a deep copy of a node and its datatype or language
+SerdNode* ZIX_ALLOCATED
+serd_node_deep_copy(ZixAllocator* ZIX_NULLABLE   allocator,
+                    const SerdNode* ZIX_NULLABLE node);
+
 /// Set the header of a node, completely overwriting previous values
 void
 serd_node_set_header(SerdNode* ZIX_NONNULL node,

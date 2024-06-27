@@ -775,6 +775,40 @@ serd_node_copy(ZixAllocator* const allocator, const SerdNode* node)
   return copy;
 }
 
+static size_t
+next_multiple(const size_t n, const size_t factor)
+{
+  return ((n + factor) / factor) * factor;
+}
+
+SerdNode*
+serd_node_deep_copy(ZixAllocator* const allocator, const SerdNode* const node)
+{
+  if (!node || !node->meta) {
+    return serd_node_copy(allocator, node);
+  }
+
+  SERD_DISABLE_NULL_WARNINGS
+  const size_t node_size = serd_node_total_size(node);
+  const size_t meta_size = serd_node_total_size(node->meta);
+  SERD_RESTORE_WARNINGS
+
+  const size_t node_size_rounded = next_multiple(node_size, sizeof(SerdNode));
+  const size_t total_size        = node_size_rounded + meta_size;
+  SerdNode* const copy = (SerdNode*)zix_calloc(allocator, 1U, total_size);
+
+  if (copy) {
+    memcpy(copy, node, node_size);
+
+    const size_t    meta_offset = node_size_rounded / sizeof(SerdNode);
+    SerdNode* const meta_copy   = copy + meta_offset;
+    memcpy(meta_copy, node->meta, meta_size);
+    copy->meta = meta_copy;
+  }
+
+  return copy;
+}
+
 bool
 serd_node_equals(const SerdNode* const a, const SerdNode* const b)
 {
