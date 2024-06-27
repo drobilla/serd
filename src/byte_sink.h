@@ -13,15 +13,17 @@
 #include <string.h>
 
 typedef struct SerdByteSinkImpl {
-  SerdSink sink;
-  void*    stream;
-  char*    buf;
-  size_t   size;
-  size_t   block_size;
+  SerdWriteFunc sink;
+  void*         stream;
+  char*         buf;
+  size_t        size;
+  size_t        block_size;
 } SerdByteSink;
 
 static inline SerdByteSink
-serd_byte_sink_new(SerdSink sink, void* const stream, const size_t block_size)
+serd_byte_sink_new(SerdWriteFunc sink,
+                   void* const   stream,
+                   const size_t  block_size)
 {
   SerdByteSink bsink;
   bsink.sink       = sink;
