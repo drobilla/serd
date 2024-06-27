@@ -1095,7 +1095,7 @@ serd_writer_new(const SerdSyntax         syntax,
                 const SerdWriterFlags    flags,
                 SerdEnv* const           env,
                 const SerdURIView* const base_uri,
-                SerdSink                 ssink,
+                SerdWriteFunc            ssink,
                 void* const              stream)
 {
   assert(env);
