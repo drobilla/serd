@@ -151,6 +151,7 @@ sources = files(
   'src/block_dumper.c',
   'src/byte_source.c',
   'src/env.c',
+  'src/field.c',
   'src/input_stream.c',
   'src/node.c',
   'src/output_stream.c',
