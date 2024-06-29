@@ -7,7 +7,9 @@
 #include "serd/attributes.h"
 #include "serd/node_flags.h" // IWYU pragma: export
 #include "serd/node_type.h"  // IWYU pragma: export
+#include "serd/object_view.h"
 #include "serd/stream_result.h"
+#include "serd/token_view.h"
 #include "serd/uri.h"
 #include "serd/value.h"
 #include "zix/allocator.h"
@@ -227,6 +229,16 @@ serd_node_free(ZixAllocator* ZIX_NULLABLE allocator,
    @{
 */
 
+/// Return true iff a node is equal to a token node view
+SERD_PURE_API bool
+serd_node_equals_token_view(const SerdNode* ZIX_NULLABLE node,
+                            SerdTokenView                view);
+
+/// Return true iff a node is equal to an object node view
+SERD_PURE_API bool
+serd_node_equals_object_view(const SerdNode* ZIX_NULLABLE node,
+                             SerdObjectView               view);
+
 /**
    Return true iff `a` is equal to `b`.
 
@@ -281,6 +293,12 @@ serd_node_string(const SerdNode* ZIX_NONNULL node);
 */
 SERD_PURE_API ZixStringView
 serd_node_string_view(const SerdNode* ZIX_NONNULL node);
+
+SERD_PURE_API SerdTokenView
+serd_node_token_view(const SerdNode* ZIX_NONNULL node);
+
+SERD_PURE_API SerdObjectView
+serd_node_object_view(const SerdNode* ZIX_NONNULL node);
 
 /**
    Return a parsed view of the URI in a node.

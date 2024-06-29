@@ -10,6 +10,7 @@
 #include "exess/exess.h"
 #include "serd/buffer.h"
 #include "serd/node.h"
+#include "serd/object_view.h"
 #include "serd/output_stream.h"
 #include "serd/status.h"
 #include "serd/stream_result.h"
@@ -100,6 +101,58 @@ datatype_value_type(const ExessDatatype datatype)
                                              : datatype_value_types[datatype];
 }
 
+SerdTokenView
+serd_node_token_view(const SerdNode* const node)
+{
+  const SerdTokenView view = {serd_node_string_view(node),
+                              serd_node_type(node)};
+  return view;
+}
+
+SerdTokenView
+serd_node_graph_view(const SerdNode* const node)
+{
+  static const SerdTokenView no_graph = {ZIX_STATIC_STRING(""), SERD_LITERAL};
+
+  return node ? serd_node_token_view(node) : no_graph;
+}
+
+SerdObjectView
+serd_node_object_view(const SerdNode* const node)
+{
+  static const SerdTokenView no_meta = {ZIX_STATIC_STRING(""), SERD_BLANK};
+
+  const SerdNode* const meta = serd_node_meta(node);
+
+  const SerdObjectView view = {
+    serd_node_string_view(node),
+    serd_node_type(node),
+    serd_node_flags(node),
+    meta ? serd_node_token_view(meta) : no_meta,
+  };
+
+  return view;
+}
+
+bool
+serd_node_equals_token_view(const SerdNode* const node,
+                            const SerdTokenView   view)
+{
+  return node && serd_node_type(node) == view.type &&
+         zix_string_view_equals(serd_node_string_view(node), view.string);
+}
+
+bool
+serd_node_equals_object_view(const SerdNode* const node,
+                             const SerdObjectView  view)
+{
+  return node && serd_node_type(node) == view.type &&
+         serd_node_flags(node) == view.flags &&
+         zix_string_view_equals(serd_node_string_view(node), view.string) &&
+         (!serd_node_meta(node) ||
+          serd_node_equals_token_view(serd_node_meta(node), view.meta));
+}
+
 static size_t
 string_sink(const void* const buf,
             const size_t      size,
@@ -169,14 +222,14 @@ serd_node_set_header(SerdNode* const     node,
 }
 
 SerdStatus
-serd_node_set(ZixAllocator* const   allocator,
-              SerdNode** const      dst,
-              const SerdNode* const src)
+serd_node_set(ZixAllocator* const allocator,
+              SerdNode** const    dst,
+              const SerdTokenView src)
 {
   assert(dst);
-  assert(src);
 
-  const size_t size = serd_node_total_size(src);
+  const size_t size =
+    sizeof(SerdNode) + serd_node_pad_length(src.string.length);
   if (!*dst || serd_node_total_size(*dst) < size) {
     zix_aligned_free(allocator, *dst);
     if (!(*dst = (SerdNode*)zix_calloc(allocator, 1U, size))) {
@@ -185,7 +238,12 @@ serd_node_set(ZixAllocator* const   allocator,
   }
 
   assert(*dst);
-  memcpy(*dst, src, size);
+  (*dst)->meta   = NULL;
+  (*dst)->length = src.string.length;
+  (*dst)->flags  = 0U;
+  (*dst)->type   = src.type;
+  memcpy(serd_node_buffer(*dst), src.string.data, src.string.length);
+  serd_node_buffer(*dst)[src.string.length] = '\0';
   return SERD_SUCCESS;
 }
 

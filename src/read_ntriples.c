@@ -15,7 +15,6 @@
 
 #include "serd/event.h"
 #include "serd/sink.h"
-#include "serd/statement_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -648,14 +647,17 @@ read_triple(SerdReader* const reader)
     return st;
   }
 
-  if (ctx.object) {
-    TRY(st, push_node_termination(reader));
-  }
+  assert(ctx.subject);
+  assert(ctx.object);
 
-  const SerdStatementView statement = {
-    ctx.subject, ctx.predicate, ctx.object, ctx.graph};
+  TRY(st, push_node_termination(reader));
 
-  return serd_sink_write_statement(reader->sink, *ctx.flags, statement);
+  return serd_sink_write(reader->sink,
+                         *ctx.flags,
+                         ctx.subject,
+                         ctx.predicate,
+                         ctx.object,
+                         ctx.graph);
 }
 
 SerdStatus

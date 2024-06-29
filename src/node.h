@@ -7,10 +7,14 @@
 #include "exess/exess.h"
 #include "serd/node.h"
 #include "serd/status.h"
+#include "serd/token_view.h"
 #include "zix/allocator.h"
 #include "zix/attributes.h"
 
 #include <stddef.h>
+
+ZIX_PURE_FUNC SerdTokenView
+serd_node_graph_view(const SerdNode* ZIX_NULLABLE node);
 
 /// Return a string length padded to the number used with termination in a node
 ZIX_CONST_FUNC size_t
@@ -35,7 +39,7 @@ serd_node_set_header(SerdNode* ZIX_NONNULL node,
 SerdStatus
 serd_node_set(ZixAllocator* ZIX_NULLABLE         allocator,
               SerdNode* ZIX_NONNULL* ZIX_NONNULL dst,
-              const SerdNode* ZIX_NONNULL        src);
+              SerdTokenView                      src);
 
 /// Retrieve the value of a node as a particular binary datatype if possible
 ExessResult
