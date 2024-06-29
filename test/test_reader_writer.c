@@ -5,6 +5,7 @@
 
 #include "serd/buffer.h"
 #include "serd/env.h"
+#include "serd/error.h"
 #include "serd/event.h"
 #include "serd/input_stream.h"
 #include "serd/node.h"
@@ -105,6 +106,14 @@ test_output_stream(void)
   assert(!output.close);
 }
 
+static SerdStatus
+quiet_error_func(void* const handle, const SerdError* const e)
+{
+  (void)handle;
+  (void)e;
+  return SERD_SUCCESS;
+}
+
 static void
 test_write_errors(void)
 {
@@ -113,6 +122,7 @@ test_write_errors(void)
 
   const SerdLimits limits = {1024, 4};
   serd_world_set_limits(world, limits);
+  serd_world_set_error_func(world, quiet_error_func, NULL);
 
   const size_t max_offsets[] = {0, 417, 1911, 2003, 459};
 
