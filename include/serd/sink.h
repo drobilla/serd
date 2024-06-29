@@ -7,8 +7,10 @@
 #include "serd/attributes.h"
 #include "serd/event.h"
 #include "serd/node.h"
+#include "serd/object_view.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
+#include "serd/token_view.h"
 #include "zix/allocator.h"
 #include "zix/attributes.h"
 
@@ -74,6 +76,15 @@ serd_sink_write(const SerdSink* ZIX_NONNULL  sink,
                 const SerdNode* ZIX_NONNULL  predicate,
                 const SerdNode* ZIX_NONNULL  object,
                 const SerdNode* ZIX_NULLABLE graph);
+
+/// Write a statement from individual nodes
+SERD_API SerdStatus
+serd_sink_write_views(const SerdSink* ZIX_NONNULL sink,
+                      SerdStatementEventFlags     flags,
+                      SerdTokenView               subject,
+                      SerdTokenView               predicate,
+                      SerdObjectView              object,
+                      SerdTokenView               graph);
 
 /// Mark the end of an anonymous node
 SERD_API SerdStatus

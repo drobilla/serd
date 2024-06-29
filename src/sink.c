@@ -2,12 +2,15 @@
 // SPDX-License-Identifier: ISC
 
 #include "sink.h"
+#include "node.h"
 
 #include "serd/event.h"
 #include "serd/node.h"
+#include "serd/object_view.h"
 #include "serd/sink.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
+#include "serd/token_view.h"
 #include "zix/allocator.h"
 
 #include <assert.h>
@@ -83,9 +86,6 @@ serd_sink_write_statement(const SerdSink*               sink,
                           const SerdStatementView       statement)
 {
   assert(sink);
-  assert(statement.subject);
-  assert(statement.predicate);
-  assert(statement.object);
 
   const SerdStatementEvent statement_ev = {SERD_STATEMENT, flags, statement};
   SerdEvent                ev           = {SERD_STATEMENT};
@@ -106,6 +106,26 @@ serd_sink_write(const SerdSink*               sink,
   assert(subject);
   assert(predicate);
   assert(object);
+
+  const SerdStatementView statement = {
+    serd_node_token_view(subject),
+    serd_node_token_view(predicate),
+    serd_node_object_view(object),
+    serd_node_graph_view(graph),
+  };
+
+  return serd_sink_write_statement(sink, flags, statement);
+}
+
+SerdStatus
+serd_sink_write_views(const SerdSink*               sink,
+                      const SerdStatementEventFlags flags,
+                      const SerdTokenView           subject,
+                      const SerdTokenView           predicate,
+                      const SerdObjectView          object,
+                      const SerdTokenView           graph)
+{
+  assert(sink);
 
   const SerdStatementView statement = {subject, predicate, object, graph};
 

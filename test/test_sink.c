@@ -7,10 +7,13 @@
 
 #include "serd/env.h"
 #include "serd/event.h"
+#include "serd/field.h"
 #include "serd/node.h"
+#include "serd/object_view.h"
 #include "serd/sink.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
+#include "serd/token_view.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -25,10 +28,10 @@ typedef struct {
   const SerdNode* last_name;
   const SerdNode* last_namespace;
   const SerdNode* last_end;
-  const SerdNode* last_subject;
-  const SerdNode* last_predicate;
-  const SerdNode* last_object;
-  const SerdNode* last_graph;
+  SerdTokenView   last_subject;
+  SerdTokenView   last_predicate;
+  SerdObjectView  last_object;
+  SerdTokenView   last_graph;
   SerdStatus      return_status;
 } State;
 
@@ -119,14 +122,22 @@ test_failed_alloc(void)
 static void
 test_callbacks(void)
 {
+  static const ZixStringView empty = ZIX_STATIC_STRING("");
+
+  static const SerdTokenView  no_tok = {empty, (SerdNodeType)0};
+  static const SerdObjectView no_obj = {empty, (SerdNodeType)0, 0U, no_tok};
+
   SerdNode* const base  = serd_new_uri(NULL, zix_string(NS_EG));
   SerdNode* const name  = serd_new_string(NULL, zix_string("eg"));
   SerdNode* const uri   = serd_new_uri(NULL, zix_string(NS_EG "uri"));
   SerdNode* const blank = serd_new_blank(NULL, zix_string("b1"));
   SerdEnv* const  env   = serd_env_new(NULL, serd_node_string_view(base));
-  State           state = {0, 0, 0, 0, 0, 0, 0, 0, SERD_SUCCESS};
+  State state = {0, 0, 0, 0, no_tok, no_tok, no_obj, no_tok, SERD_SUCCESS};
 
-  const SerdStatementView statement_view = {base, uri, blank, NULL};
+  const SerdStatementView statement_view = {serd_node_token_view(base),
+                                            serd_node_token_view(uri),
+                                            serd_node_object_view(blank),
+                                            no_tok};
 
   const SerdBaseEvent      base_event      = {SERD_BASE, uri};
   const SerdPrefixEvent    prefix_event    = {SERD_PREFIX, name, uri};
@@ -168,10 +179,10 @@ test_callbacks(void)
   assert(serd_node_equals(state.last_namespace, uri));
 
   assert(!serd_sink_write(sink, 0, base, uri, blank, NULL));
-  assert(serd_node_equals(state.last_subject, base));
-  assert(serd_node_equals(state.last_predicate, uri));
-  assert(serd_node_equals(state.last_object, blank));
-  assert(!state.last_graph);
+  assert(serd_node_equals_token_view(base, state.last_subject));
+  assert(serd_node_equals_token_view(uri, state.last_predicate));
+  assert(serd_node_equals_object_view(blank, state.last_object));
+  assert(!serd_field_supports(SERD_GRAPH, state.last_graph.type));
 
   assert(!serd_sink_write_end(sink, blank));
   assert(serd_node_equals(state.last_end, blank));
