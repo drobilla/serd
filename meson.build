@@ -128,6 +128,8 @@ c_headers = files(
   'include/serd/field.h',
   'include/serd/input_stream.h',
   'include/serd/node.h',
+  'include/serd/node_flags.h',
+  'include/serd/node_type.h',
   'include/serd/output_stream.h',
   'include/serd/reader.h',
   'include/serd/serd.h',

@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: ISC
 
 #include "serd/field.h"
-#include "serd/node.h"
 
 #include <stdbool.h>
 #include <stdint.h>

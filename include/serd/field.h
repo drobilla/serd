@@ -5,7 +5,7 @@
 #define SERD_FIELD_H
 
 #include "serd/attributes.h"
-#include "serd/node.h"
+#include "serd/node_type.h"
 #include "zix/attributes.h"
 
 #include <stdbool.h>
