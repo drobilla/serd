@@ -7,6 +7,7 @@
 #include "failing_allocator.h"
 
 #include <serd/node.h>
+#include <serd/node_type.h>
 #include <serd/uri.h>
 #include <zix/allocator.h>
 

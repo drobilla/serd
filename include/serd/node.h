@@ -5,6 +5,8 @@
 #define SERD_NODE_H
 
 #include <serd/attributes.h>
+#include <serd/node_flags.h>
+#include <serd/node_type.h>
 #include <serd/uri.h>
 #include <zix/allocator.h>
 #include <zix/attributes.h>
@@ -20,75 +22,6 @@ SERD_BEGIN_DECLS
    @ingroup serd_data
    @{
 */
-
-/**
-   Type of a node.
-
-   An RDF node, in the abstract sense, can be either a resource, literal, or a
-   blank.  This type is more precise, because syntactically there are two ways
-   to refer to a resource (by URI or CURIE).
-
-   There are also two ways to refer to a blank node in syntax (by ID or
-   anonymously), but this is handled by statement flags rather than distinct
-   node types.
-*/
-typedef enum {
-  /**
-     The type of a nonexistent node.
-
-     This type is useful as a sentinel, but is never emitted by the reader.
-  */
-  SERD_NOTHING,
-
-  /**
-     Literal value.
-
-     A literal is a string that optionally has either a language, or a datatype
-     (but never both).  Literals can only occur as the object of a statement,
-     never the subject or predicate.
-  */
-  SERD_LITERAL,
-
-  /**
-     Universal Resource Identifier (URI).
-
-     A URI (more pedantically, a URI reference) is either a relative reference
-     with respect to some base URI, like "foo/bar", or an absolute URI with a
-     scheme, like "http://example.org/foo".
-
-     @see [RFC3986](http://tools.ietf.org/html/rfc3986)
-  */
-  SERD_URI,
-
-  /**
-     CURIE, a shortened URI.
-
-     Value is an unquoted CURIE string relative to the current environment,
-     e.g. "rdf:type".  @see [CURIE Syntax 1.0](http://www.w3.org/TR/curie)
-  */
-  SERD_CURIE,
-
-  /**
-     A blank node.
-
-     A blank node is a resource that has no URI.  The identifier of a blank
-     node is local to its context (a document, for example), and so unlike
-     URIs, blank nodes can't be used to link data across sources.
-
-     @see [RDF 1.1
-     Turtle](http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL)
-  */
-  SERD_BLANK,
-} SerdNodeType;
-
-/// Node flags, which ORed together make a #SerdNodeFlags
-typedef enum {
-  SERD_HAS_NEWLINE = 1U << 0U, ///< Contains line breaks ('\\n' or '\\r')
-  SERD_HAS_QUOTE   = 1U << 1U, ///< Contains quotes ('"')
-} SerdNodeFlag;
-
-/// Bitwise OR of #SerdNodeFlag values
-typedef uint32_t SerdNodeFlags;
 
 /// A syntactic RDF node
 typedef struct {

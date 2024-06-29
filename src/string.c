@@ -3,7 +3,7 @@
 
 #include "string_utils.h"
 
-#include <serd/node.h>
+#include <serd/node_flags.h>
 #include <serd/status.h>
 #include <serd/string.h>
 

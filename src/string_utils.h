@@ -4,7 +4,7 @@
 #ifndef SERD_SRC_STRING_UTILS_H
 #define SERD_SRC_STRING_UTILS_H
 
-#include <serd/node.h>
+#include <serd/node_flags.h>
 #include <zix/attributes.h>
 
 #include <stdbool.h>

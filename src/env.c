@@ -5,6 +5,7 @@
 
 #include <serd/env.h>
 #include <serd/node.h>
+#include <serd/node_type.h>
 #include <serd/sink.h>
 #include <serd/status.h>
 #include <serd/uri.h>
