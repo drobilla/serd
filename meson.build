@@ -218,6 +218,8 @@ c_headers = files(
   'include/serd/env.h',
   'include/serd/error.h',
   'include/serd/node.h',
+  'include/serd/node_flags.h',
+  'include/serd/node_type.h',
   'include/serd/reader.h',
   'include/serd/serd.h',
   'include/serd/sink.h',

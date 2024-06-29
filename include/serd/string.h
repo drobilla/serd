@@ -5,7 +5,7 @@
 #define SERD_STRING_H
 
 #include <serd/attributes.h>
-#include <serd/node.h>
+#include <serd/node_flags.h>
 #include <zix/allocator.h>
 #include <zix/attributes.h>
 

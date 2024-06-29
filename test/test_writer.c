@@ -9,6 +9,7 @@
 #include <serd/buffer.h>
 #include <serd/env.h>
 #include <serd/node.h>
+#include <serd/node_type.h>
 #include <serd/statement_flags.h>
 #include <serd/status.h>
 #include <serd/syntax.h>

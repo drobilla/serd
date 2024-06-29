@@ -6,6 +6,8 @@
 
 #include <serd/buffer.h>
 #include <serd/node.h>
+#include <serd/node_flags.h>
+#include <serd/node_type.h>
 #include <serd/string.h>
 #include <serd/uri.h>
 #include <zix/allocator.h>

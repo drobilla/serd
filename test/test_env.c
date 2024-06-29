@@ -8,6 +8,7 @@
 
 #include <serd/env.h>
 #include <serd/node.h>
+#include <serd/node_type.h>
 #include <serd/status.h>
 #include <zix/string_view.h>
 
