@@ -12,6 +12,7 @@
 #include "serd/status.h"
 #include "serd/token_view.h"
 #include "zix/allocator.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 
@@ -54,10 +55,9 @@ serd_sink_write_event(const SerdSink* sink, const SerdEvent* event)
 }
 
 SerdStatus
-serd_sink_write_base(const SerdSink* sink, const SerdNode* uri)
+serd_sink_write_base(const SerdSink* sink, const ZixStringView uri)
 {
   assert(sink);
-  assert(uri);
 
   const SerdBaseEvent ev = {SERD_BASE, uri};
 
@@ -66,13 +66,11 @@ serd_sink_write_base(const SerdSink* sink, const SerdNode* uri)
 }
 
 SerdStatus
-serd_sink_write_prefix(const SerdSink* sink,
-                       const SerdNode* name,
-                       const SerdNode* uri)
+serd_sink_write_prefix(const SerdSink*     sink,
+                       const ZixStringView name,
+                       const ZixStringView uri)
 {
   assert(sink);
-  assert(name);
-  assert(uri);
 
   const SerdPrefixEvent ev = {SERD_PREFIX, name, uri};
 
@@ -133,12 +131,11 @@ serd_sink_write_views(const SerdSink*               sink,
 }
 
 SerdStatus
-serd_sink_write_end(const SerdSink* sink, const SerdNode* node)
+serd_sink_write_end(const SerdSink* sink, const ZixStringView label)
 {
   assert(sink);
-  assert(node);
 
-  const SerdEndEvent ev = {SERD_END, node};
+  const SerdEndEvent ev = {SERD_END, label};
 
   return sink->on_event ? sink->on_event(sink->handle, (const SerdEvent*)&ev)
                         : SERD_SUCCESS;
