@@ -1023,6 +1023,7 @@ ZIX_NODISCARD static SerdStatus
 write_verb(SerdWriter* const writer, const SerdTokenView node)
 {
   return (node.type == SERD_URI && supports_abbrev(writer) &&
+          !(writer->flags & SERD_WRITE_LONGHAND) &&
           zix_string_view_equals(node.string, rdf_type))
            ? esink("a", 1, writer)
            : write_predicate(writer, node);
