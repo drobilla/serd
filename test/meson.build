@@ -492,6 +492,17 @@ test_suites = {
     '--',
     ['-k', '1024'],
   ],
+  'longhand_forward': [
+    files('extra/longhand/manifest.ttl'),
+    ns_serdtest + 'longhand/',
+    '--',
+    ['-O', 'longhand'],
+  ],
+  'longhand_reverse': [
+    '--reverse',
+    files('extra/longhand/manifest.ttl'),
+    ns_serdtest + 'longhand/',
+  ],
   'pattern': [
     files('extra/pattern/manifest.ttl'),
     ns_serdtest + 'pattern/',
