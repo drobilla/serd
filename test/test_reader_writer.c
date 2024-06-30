@@ -176,14 +176,10 @@ test_writer(const char* const path)
 
   const SerdSink* const iface = serd_writer_sink(writer);
 
-  // Check that writing a literal where a resource is required fails
-  {
-    SerdNode* const lit = serd_new_string(NULL, zix_string("hello"));
-    assert(serd_sink_write_base(iface, lit));
-    assert(serd_sink_write_prefix(iface, lit, lit));
-    assert(serd_sink_write_end(iface, lit));
-    serd_node_free(NULL, lit);
-  }
+  // Check invalid calls to basic sink methods
+  assert(serd_sink_write_base(iface, zix_string("rel")));
+  assert(serd_sink_write_prefix(iface, zix_string("name"), zix_string("rel")));
+  assert(serd_sink_write_end(iface, zix_string("whatever")));
 
   static const uint8_t       bad_buf[]    = {0xEF, 0xBF, 0xBD, 0};
   static const ZixStringView bad_buf_view = {(const char*)bad_buf, 3};
@@ -262,16 +258,14 @@ test_writer(const char* const path)
   serd_close_output(&output);
 
   // Test buffer sink
-  SerdBuffer      buffer = {NULL, NULL, 0};
-  SerdNode* const base =
-    serd_new_uri(NULL, zix_string("http://example.org/base"));
+  SerdBuffer buffer = {NULL, NULL, 0};
 
   output = serd_open_output_buffer(&buffer);
   writer = serd_writer_new(world, SERD_TURTLE, 0, env, &output, 1U);
 
-  serd_sink_write_base(serd_writer_sink(writer), base);
+  serd_sink_write_base(serd_writer_sink(writer),
+                       zix_string("http://example.org/base"));
 
-  serd_node_free(NULL, base);
   serd_writer_free(writer);
   serd_close_output(&output);
 

@@ -38,11 +38,9 @@ serd_env_on_event(void* const handle, const SerdEvent* const event)
   SerdStatus     st  = SERD_SUCCESS;
 
   if (event->type == SERD_BASE) {
-    st = serd_env_set_base_uri(env, serd_node_string_view(event->base.uri));
+    st = serd_env_set_base_uri(env, event->base.uri);
   } else if (event->type == SERD_PREFIX) {
-    st = serd_env_set_prefix(env,
-                             serd_node_string_view(event->prefix.name),
-                             serd_node_string_view(event->prefix.uri));
+    st = serd_env_set_prefix(env, event->prefix.name, event->prefix.uri);
   }
 
   return st;
@@ -381,7 +379,9 @@ serd_env_describe(const SerdEnv* const env, const SerdSink* const sink)
   for (size_t i = 0; !st && i < env->n_prefixes; ++i) {
     const SerdPrefix* const prefix = &env->prefixes[i];
 
-    st = serd_sink_write_prefix(sink, prefix->name, prefix->uri);
+    st = serd_sink_write_prefix(sink,
+                                serd_node_string_view(prefix->name),
+                                serd_node_string_view(prefix->uri));
   }
 
   return st;

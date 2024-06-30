@@ -158,12 +158,12 @@ typedef enum { WRITE_STRING, WRITE_LONG_STRING } TextContext;
 typedef enum { RESET_GRAPH = 1U << 0U, RESET_INDENT = 1U << 1U } ResetFlag;
 
 ZIX_NODISCARD static SerdStatus
-serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri);
+serd_writer_set_base_uri(SerdWriter* writer, ZixStringView uri);
 
 ZIX_NODISCARD static SerdStatus
-serd_writer_set_prefix(SerdWriter*     writer,
-                       const SerdNode* name,
-                       const SerdNode* uri);
+serd_writer_set_prefix(SerdWriter*   writer,
+                       ZixStringView name,
+                       ZixStringView uri);
 
 ZIX_NODISCARD static SerdStatus
 write_iri(SerdWriter* writer, SerdNodeType type, ZixStringView string);
@@ -1382,7 +1382,7 @@ serd_writer_write_statement(SerdWriter* const       writer,
 }
 
 ZIX_NODISCARD static SerdStatus
-serd_writer_end_anon(SerdWriter* const writer, const SerdNode* const node)
+serd_writer_end_anon(SerdWriter* const writer, const ZixStringView label)
 {
   SerdStatus st = SERD_SUCCESS;
 
@@ -1399,7 +1399,8 @@ serd_writer_end_anon(SerdWriter* const writer, const SerdNode* const node)
   pop_context(writer);
 
   if (writer->context.predicate &&
-      serd_node_equals(node, writer->context.subject)) {
+      zix_string_view_equals(label,
+                             serd_node_string_view(writer->context.subject))) {
     // Now-finished anonymous node is the new subject with no other context
     serd_node_set_header(writer->context.predicate, 0U, 0U, (SerdNodeType)0U);
   }
@@ -1423,7 +1424,7 @@ serd_writer_on_event(void* const handle, const SerdEvent* const event)
     return serd_writer_write_statement(
       writer, event->statement.flags, event->statement.statement);
   case SERD_END:
-    return serd_writer_end_anon(writer, event->end.node);
+    return serd_writer_end_anon(writer, event->end.label);
   }
 
   return SERD_BAD_ARG;
@@ -1495,29 +1496,22 @@ serd_writer_new(SerdWorld*        world,
 }
 
 ZIX_NODISCARD static SerdStatus
-serd_writer_set_base_uri(SerdWriter* const writer, const SerdNode* const uri)
+serd_writer_set_base_uri(SerdWriter* const writer, const ZixStringView uri)
 {
   SERD_DISABLE_NULL_WARNINGS
 
-  if (uri && serd_node_type(uri) != SERD_URI) {
-    return SERD_BAD_ARG;
-  }
-
-  if (zix_string_view_equals(serd_env_base_uri_string(writer->env),
-                             serd_node_string_view(uri))) {
+  if (zix_string_view_equals(serd_env_base_uri_string(writer->env), uri)) {
     return SERD_SUCCESS;
   }
 
-  const ZixStringView uri_string =
-    uri ? serd_node_string_view(uri) : zix_empty_string();
-
   SerdStatus st = SERD_SUCCESS;
-  TRY(st, serd_env_set_base_uri(writer->env, uri_string));
+  TRY(st, serd_env_set_base_uri(writer->env, uri));
 
-  if (uri && (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG)) {
+  if (uri.length &&
+      (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG)) {
     TRY(st, terminate_context(writer));
     TRY(st, esink("@base <", 7, writer));
-    TRY(st, esink(uri_string.data, uri_string.length, writer));
+    TRY(st, esink(uri.data, uri.length, writer));
     TRY(st, esink(">", 1, writer));
     TRY(st, write_sep(writer, writer->context.flags, SEP_END_DIRECT));
   }
@@ -1547,15 +1541,13 @@ serd_writer_set_root_uri(SerdWriter* const writer, const ZixStringView uri)
 }
 
 ZIX_NODISCARD SerdStatus
-serd_writer_set_prefix(SerdWriter* const     writer,
-                       const SerdNode* const name,
-                       const SerdNode* const uri)
+serd_writer_set_prefix(SerdWriter* const   writer,
+                       const ZixStringView name,
+                       const ZixStringView uri)
 {
-  const ZixStringView name_string = serd_node_string_view(name);
-  const ZixStringView uri_string  = serd_node_string_view(uri);
-  SerdStatus          st          = SERD_SUCCESS;
+  SerdStatus st = SERD_SUCCESS;
 
-  TRY(st, serd_env_set_prefix(writer->env, name_string, uri_string));
+  TRY(st, serd_env_set_prefix(writer->env, name, uri));
 
   if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
     TRY(st, terminate_context(writer));
@@ -1564,9 +1556,9 @@ serd_writer_set_prefix(SerdWriter* const     writer,
     }
 
     TRY(st, esink("@prefix ", 8, writer));
-    TRY(st, esink(name_string.data, name_string.length, writer));
+    TRY(st, esink(name.data, name.length, writer));
     TRY(st, esink(": <", 3, writer));
-    TRY(st, ewrite_uri(writer, uri_string.data, uri_string.length));
+    TRY(st, ewrite_uri(writer, uri.data, uri.length));
     TRY(st, esink(">", 1, writer));
     TRY(st, write_sep(writer, writer->context.flags, SEP_END_DIRECT));
   }

@@ -13,6 +13,7 @@
 #include "serd/token_view.h"
 #include "zix/allocator.h"
 #include "zix/attributes.h"
+#include "zix/string_view.h"
 
 SERD_BEGIN_DECLS
 
@@ -53,14 +54,13 @@ serd_sink_write_event(const SerdSink* ZIX_NONNULL  sink,
 
 /// Set the base URI
 SERD_API SerdStatus
-serd_sink_write_base(const SerdSink* ZIX_NONNULL sink,
-                     const SerdNode* ZIX_NONNULL uri);
+serd_sink_write_base(const SerdSink* ZIX_NONNULL sink, ZixStringView uri);
 
 /// Set a namespace prefix
 SERD_API SerdStatus
 serd_sink_write_prefix(const SerdSink* ZIX_NONNULL sink,
-                       const SerdNode* ZIX_NONNULL name,
-                       const SerdNode* ZIX_NONNULL uri);
+                       ZixStringView               name,
+                       ZixStringView               uri);
 
 /// Write a statement
 SERD_API SerdStatus
@@ -88,8 +88,7 @@ serd_sink_write_views(const SerdSink* ZIX_NONNULL sink,
 
 /// Mark the end of an anonymous node
 SERD_API SerdStatus
-serd_sink_write_end(const SerdSink* ZIX_NONNULL sink,
-                    const SerdNode* ZIX_NONNULL node);
+serd_sink_write_end(const SerdSink* ZIX_NONNULL sink, ZixStringView label);
 
 /**
    @}

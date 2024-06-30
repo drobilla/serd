@@ -374,10 +374,11 @@ test_qualify(void)
 static void
 test_sink(void)
 {
-  SerdNode* const base = serd_new_uri(NULL, zix_string(NS_EG));
-  SerdNode* const name = serd_new_string(NULL, zix_string("eg"));
-  SerdNode* const uri  = serd_new_uri(NULL, zix_string(NS_EG "uri"));
-  SerdEnv* const  env  = serd_env_new(NULL, zix_empty_string());
+  static ZixStringView base = ZIX_STATIC_STRING(NS_EG);
+  static ZixStringView name = ZIX_STATIC_STRING("eg");
+  static ZixStringView uri  = ZIX_STATIC_STRING(NS_EG "uri");
+
+  SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
 
   const SerdSink* const sink = serd_env_sink(env);
 
@@ -386,17 +387,12 @@ test_sink(void)
 
   assert(!serd_sink_write_prefix(sink, name, uri));
 
-  assert(serd_env_get_prefix(env, zix_string("eg")).length ==
-         serd_node_length(uri));
-  assert(!strcmp(serd_env_get_prefix(env, zix_string("eg")).data,
-                 serd_node_string(uri)));
+  const ZixStringView eg_prefix = serd_env_get_prefix(env, zix_string("eg"));
+  assert(zix_string_view_equals(eg_prefix, uri));
 
   assert(!strcmp(serd_env_base_uri_string(env).data, NS_EG));
 
   serd_env_free(env);
-  serd_node_free(NULL, uri);
-  serd_node_free(NULL, name);
-  serd_node_free(NULL, base);
 }
 
 int

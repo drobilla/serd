@@ -169,8 +169,8 @@ test_write_bad_prefix(void)
 
   assert(writer);
 
-  SerdNode* name = serd_new_string(NULL, zix_string("eg"));
-  SerdNode* uri  = serd_new_uri(NULL, zix_string("rel"));
+  static const ZixStringView name = ZIX_STATIC_STRING("eg");
+  static const ZixStringView uri  = ZIX_STATIC_STRING("rel");
 
   assert(serd_sink_write_prefix(serd_writer_sink(writer), name, uri) ==
          SERD_BAD_ARG);
@@ -178,11 +178,9 @@ test_write_bad_prefix(void)
   serd_close_output(&output);
 
   char* const out = (char*)buffer.buf;
-  assert(!strcmp(out, ""));
+  assert(out && !strcmp(out, ""));
   zix_free(NULL, out);
 
-  serd_node_free(NULL, uri);
-  serd_node_free(NULL, name);
   serd_writer_free(writer);
   serd_env_free(env);
   serd_world_free(world);
@@ -259,9 +257,9 @@ test_write_nested_anon(void)
   assert(!serd_sink_write(sink, SERD_ANON_O, b0, p1, b1, NULL));
   assert(!serd_sink_write(sink, 0U, b1, p2, o2, NULL));
   assert(!serd_sink_write(sink, SERD_LIST_O, b1, p3, nil, NULL));
-  assert(!serd_sink_write_end(sink, b1));
+  assert(!serd_sink_write_end(sink, zix_string("b1")));
   assert(!serd_sink_write(sink, 0U, b0, p4, o4, NULL));
-  assert(!serd_sink_write_end(sink, b0));
+  assert(!serd_sink_write_end(sink, zix_string("b0")));
 
   serd_node_free(NULL, s0);
   serd_node_free(NULL, p0);
@@ -348,9 +346,7 @@ test_writer_cleanup(void)
   assert(!(st = serd_writer_finish(writer)));
 
   // Set the base to an empty URI
-  SerdNode* empty_uri = serd_new_uri(NULL, zix_string(""));
-  assert(!(st = serd_sink_write_base(sink, empty_uri)));
-  serd_node_free(NULL, empty_uri);
+  assert(!(st = serd_sink_write_base(sink, zix_string(""))));
 
   // Free (which could leak if the writer doesn't clean up the stack properly)
   serd_node_free(NULL, o);

@@ -533,7 +533,7 @@ read_anon(SerdReader* const reader,
 
     read_turtle_ws_star(reader);
     *ctx.flags = old_flags;
-    st         = serd_sink_write_end(reader->sink, *dest);
+    st = serd_sink_write_end(reader->sink, serd_node_string_view(*dest));
   }
 
   return st > SERD_FAILURE ? st : eat_byte_check(reader, ']');
@@ -868,7 +868,7 @@ read_turtle_base(SerdReader* const reader, const bool sparql, const bool token)
 
   SerdNode* uri = NULL;
   TRY(st, read_IRIREF(reader, &uri));
-  TRY(st, serd_sink_write_base(reader->sink, uri));
+  TRY(st, serd_sink_write_base(reader->sink, serd_node_string_view(uri)));
 
   read_turtle_ws_star(reader);
   if (!sparql) {
@@ -907,7 +907,8 @@ read_turtle_prefixID(SerdReader* const reader,
   SerdNode* uri = NULL;
   TRY(st, read_IRIREF(reader, &uri));
 
-  st = serd_sink_write_prefix(reader->sink, name, uri);
+  st = serd_sink_write_prefix(
+    reader->sink, serd_node_string_view(name), serd_node_string_view(uri));
 
   if (!sparql) {
     read_turtle_ws_star(reader);

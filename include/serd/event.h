@@ -5,10 +5,10 @@
 #define SERD_EVENT_H
 
 #include "serd/attributes.h"
-#include "serd/node.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
 #include "zix/attributes.h"
+#include "zix/string_view.h"
 
 #include <stdint.h>
 
@@ -50,8 +50,8 @@ typedef uint32_t SerdStatementEventFlags;
    Emitted whenever the base URI changes.
 */
 typedef struct {
-  SerdEventType               type; ///< #SERD_BASE
-  const SerdNode* ZIX_NONNULL uri;  ///< Base URI
+  SerdEventType type; ///< #SERD_BASE
+  ZixStringView uri;  ///< Base URI
 } SerdBaseEvent;
 
 /**
@@ -60,9 +60,9 @@ typedef struct {
    Emitted whenever a prefix is defined.
 */
 typedef struct {
-  SerdEventType               type; ///< #SERD_PREFIX
-  const SerdNode* ZIX_NONNULL name; ///< Prefix name
-  const SerdNode* ZIX_NONNULL uri;  ///< Namespace URI
+  SerdEventType type; ///< #SERD_PREFIX
+  ZixStringView name; ///< Prefix name
+  ZixStringView uri;  ///< Namespace URI
 } SerdPrefixEvent;
 
 /**
@@ -84,8 +84,8 @@ typedef struct {
    write a delimiter.
 */
 typedef struct {
-  SerdEventType               type; ///< #SERD_END
-  const SerdNode* ZIX_NONNULL node; ///< Anonymous node that is finished
+  SerdEventType type;  ///< #SERD_END
+  ZixStringView label; ///< Label of anonymous node that is finished
 } SerdEndEvent;
 
 /**
