@@ -202,7 +202,8 @@ emit_statement(SerdReader* const reader,
     reader->sink,
     serd_statement_event(
       *ctx.flags,
-      serd_statement_view_nodes(ctx.subject, ctx.predicate, o, ctx.graph)));
+      serd_statement_view_nodes(ctx.subject, ctx.predicate, o, ctx.graph),
+      reader->source->caret));
 
   *ctx.flags = 0;
   return st;

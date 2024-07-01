@@ -5,6 +5,7 @@
 
 #include "failing_allocator.h"
 
+#include "serd/caret_view.h"
 #include "serd/event.h"
 #include "serd/field.h"
 #include "serd/node.h"
@@ -152,6 +153,8 @@ test_callbacks(void)
   const SerdStatementView statement_view =
     serd_statement_view(base_tok, uri_tok, blank_obj, no_tok);
 
+  const SerdCaretView caret_view = {base_tok, 1, 1};
+
   // Call functions on a sink with no functions set
 
   SerdSink* const null_sink = serd_sink_new(NULL, &state, NULL, NULL);
@@ -160,16 +163,14 @@ test_callbacks(void)
   assert(
     !serd_sink_write_event(null_sink, serd_prefix_event(name_str, uri_str)));
   assert(!serd_sink_write_event(
-    null_sink,
-    serd_statement_event(
-      0U, serd_statement_view(base_tok, uri_tok, blank_obj, no_tok))));
+    null_sink, serd_statement_event(0U, statement_view, caret_view)));
   assert(!serd_sink_write_event(null_sink, serd_end_event(blank_str)));
 
   assert(!serd_sink_write_event(null_sink, serd_base_event(uri_str)));
   assert(
     !serd_sink_write_event(null_sink, serd_prefix_event(name_str, uri_str)));
-  assert(!serd_sink_write_event(null_sink,
-                                serd_statement_event(0U, statement_view)));
+  assert(!serd_sink_write_event(
+    null_sink, serd_statement_event(0U, statement_view, caret_view)));
   assert(!serd_sink_write_event(null_sink, serd_end_event(blank_str)));
 
   serd_sink_free(null_sink);
@@ -188,7 +189,9 @@ test_callbacks(void)
   assert(!serd_sink_write_event(
     sink,
     serd_statement_event(
-      0U, serd_statement_view(base_tok, uri_tok, blank_obj, no_tok))));
+      0U,
+      serd_statement_view(base_tok, uri_tok, blank_obj, no_tok),
+      caret_view)));
   assert(token_equals(base_tok, state.last_subject));
   assert(token_equals(uri_tok, state.last_predicate));
   assert(object_equals(blank_obj, state.last_object));

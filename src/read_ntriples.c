@@ -654,7 +654,8 @@ read_triple(SerdReader* const reader)
     reader->sink,
     serd_statement_event(*ctx.flags,
                          serd_statement_view_nodes(
-                           ctx.subject, ctx.predicate, ctx.object, ctx.graph)));
+                           ctx.subject, ctx.predicate, ctx.object, ctx.graph),
+                         reader->source->caret));
 }
 
 SerdStatus

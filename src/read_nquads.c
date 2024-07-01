@@ -3,7 +3,6 @@
 
 #include "read_nquads.h"
 
-#include "node.h"
 #include "read_ntriples.h"
 #include "reader.h"
 #include "stack.h"
@@ -62,13 +61,12 @@ read_nquads_statement(SerdReader* const reader)
 
   TRY(st, push_node_termination(reader));
 
-  const SerdStatementView statement = {serd_node_token_view(ctx.subject),
-                                       serd_node_token_view(ctx.predicate),
-                                       serd_node_object_view(ctx.object),
-                                       serd_node_graph_view(ctx.graph)};
-
-  return serd_sink_write_event(reader->sink,
-                               serd_statement_event(*ctx.flags, statement));
+  return serd_sink_write_event(
+    reader->sink,
+    serd_statement_event(*ctx.flags,
+                         serd_statement_view_nodes(
+                           ctx.subject, ctx.predicate, ctx.object, ctx.graph),
+                         reader->source->caret));
 }
 
 SerdStatus

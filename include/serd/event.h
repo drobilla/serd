@@ -5,6 +5,7 @@
 #define SERD_EVENT_H
 
 #include "serd/attributes.h"
+#include "serd/caret_view.h"
 #include "serd/statement_view.h"
 #include "serd/status.h"
 #include "zix/attributes.h"
@@ -74,6 +75,7 @@ typedef struct {
   SerdEventType           type;      ///< #SERD_STATEMENT
   SerdStatementEventFlags flags;     ///< Flags for pretty-printing
   SerdStatementView       statement; ///< Statement
+  SerdCaretView           caret;     ///< Statement origin
 } SerdStatementEvent;
 
 /**
@@ -122,7 +124,8 @@ serd_prefix_event(ZixStringView name, ZixStringView uri);
 
 SERD_CONST_API SerdEvent
 serd_statement_event(SerdStatementEventFlags flags,
-                     SerdStatementView       statement);
+                     SerdStatementView       statement,
+                     SerdCaretView           caret);
 
 SERD_CONST_API SerdEvent
 serd_end_event(ZixStringView label);

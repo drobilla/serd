@@ -17,6 +17,9 @@ serd_sink_write(const SerdSink* const         sink,
                 const SerdNode* const         object,
                 const SerdNode* const         graph)
 {
+  static const SerdCaretView no_caret = {
+    {ZIX_STATIC_STRING(""), SERD_LITERAL}, 0U, 0U};
+
   assert(sink);
   assert(subject);
   assert(predicate);
@@ -25,7 +28,9 @@ serd_sink_write(const SerdSink* const         sink,
   return serd_sink_write_event(
     sink,
     serd_statement_event(
-      flags, serd_statement_view_nodes(subject, predicate, object, graph)));
+      flags,
+      serd_statement_view_nodes(subject, predicate, object, graph),
+      no_caret));
 }
 
 #endif // SERD_TEST_SINK_WRITE_H

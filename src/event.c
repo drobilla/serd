@@ -25,12 +25,14 @@ serd_prefix_event(const ZixStringView name, const ZixStringView uri)
 
 SerdEvent
 serd_statement_event(const SerdStatementEventFlags flags,
-                     const SerdStatementView       statement)
+                     const SerdStatementView       statement,
+                     const SerdCaretView           caret)
 {
   SerdEvent event;
   event.statement.type      = SERD_STATEMENT;
   event.statement.flags     = flags;
   event.statement.statement = statement;
+  event.statement.caret     = caret;
   return event;
 }
 
