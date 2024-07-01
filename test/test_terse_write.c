@@ -3,6 +3,8 @@
 
 #undef NDEBUG
 
+#include "sink_write.h"
+
 #include "serd/buffer.h"
 #include "serd/env.h"
 #include "serd/event.h"

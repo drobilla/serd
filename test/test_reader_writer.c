@@ -3,6 +3,8 @@
 
 #undef NDEBUG
 
+#include "sink_write.h"
+
 #include "serd/buffer.h"
 #include "serd/env.h"
 #include "serd/error.h"
@@ -177,9 +179,10 @@ test_writer(const char* const path)
   const SerdSink* const iface = serd_writer_sink(writer);
 
   // Check invalid calls to basic sink methods
-  assert(serd_sink_write_base(iface, zix_string("rel")));
-  assert(serd_sink_write_prefix(iface, zix_string("name"), zix_string("rel")));
-  assert(serd_sink_write_end(iface, zix_string("whatever")));
+  assert(serd_sink_write_event(iface, serd_base_event(zix_string("rel"))));
+  assert(serd_sink_write_event(
+    iface, serd_prefix_event(zix_string("name"), zix_string("rel"))));
+  assert(serd_sink_write_event(iface, serd_end_event(zix_string("whatever"))));
 
   static const uint8_t       bad_buf[]    = {0xEF, 0xBF, 0xBD, 0};
   static const ZixStringView bad_buf_view = {(const char*)bad_buf, 3};
@@ -265,8 +268,8 @@ test_writer(const char* const path)
   output = serd_open_output_buffer(&buffer);
   writer = serd_writer_new(world, SERD_TURTLE, 0, env, &output, 1U);
 
-  serd_sink_write_base(serd_writer_sink(writer),
-                       zix_string("http://example.org/base"));
+  serd_sink_write_event(serd_writer_sink(writer),
+                        serd_base_event(zix_string("http://example.org/base")));
 
   serd_writer_free(writer);
   serd_close_output(&output);

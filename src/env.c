@@ -382,9 +382,10 @@ serd_env_describe(const SerdEnv* const env, const SerdSink* const sink)
   for (size_t i = 0; !st && i < env->n_prefixes; ++i) {
     const SerdPrefix* const prefix = &env->prefixes[i];
 
-    st = serd_sink_write_prefix(sink,
-                                serd_node_string_view(prefix->name),
-                                serd_node_string_view(prefix->uri));
+    st = serd_sink_write_event(
+      sink,
+      serd_prefix_event(serd_node_string_view(prefix->name),
+                        serd_node_string_view(prefix->uri)));
   }
 
   return st;

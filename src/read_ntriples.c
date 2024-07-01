@@ -15,6 +15,7 @@
 
 #include "serd/event.h"
 #include "serd/sink.h"
+#include "serd/statement_view.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -657,12 +658,11 @@ read_triple(SerdReader* const reader)
 
   TRY(st, push_node_termination(reader));
 
-  return serd_sink_write(reader->sink,
-                         *ctx.flags,
-                         ctx.subject,
-                         ctx.predicate,
-                         ctx.object,
-                         ctx.graph);
+  return serd_sink_write_event(
+    reader->sink,
+    serd_statement_event(*ctx.flags,
+                         serd_statement_view_nodes(
+                           ctx.subject, ctx.predicate, ctx.object, ctx.graph)));
 }
 
 SerdStatus

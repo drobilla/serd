@@ -140,57 +140,38 @@ test_callbacks(void)
   static const ZixStringView uri_str   = ZIX_STATIC_STRING(NS_EG "uri");
   static const ZixStringView blank_str = ZIX_STATIC_STRING("b1");
 
-  static const SerdTokenView  no_token  = {empty, (SerdNodeType)0};
-  static const SerdObjectView no_object = {
-    empty, (SerdNodeType)0, 0U, no_token};
+  static const SerdTokenView  no_tok = {empty, (SerdNodeType)0};
+  static const SerdObjectView no_obj = {empty, (SerdNodeType)0, 0U, no_tok};
 
   static const SerdTokenView  base_tok  = {base_str, SERD_URI};
   static const SerdTokenView  uri_tok   = {uri_str, SERD_URI};
-  static const SerdObjectView blank_obj = {blank_str, SERD_BLANK, 0U, no_token};
+  static const SerdObjectView blank_obj = {blank_str, SERD_BLANK, 0U, no_tok};
 
-  State state = {empty,
-                 empty,
-                 empty,
-                 empty,
-                 no_token,
-                 no_token,
-                 no_object,
-                 no_token,
-                 SERD_SUCCESS};
+  State state = {
+    empty, empty, empty, empty, no_tok, no_tok, no_obj, no_tok, SERD_SUCCESS};
 
-  const SerdStatementView statement_view = {
-    {base_str, SERD_URI},
-    {uri_str, SERD_URI},
-    {blank_str, SERD_BLANK, 0U, no_token},
-    no_token,
-  };
-
-  const SerdBaseEvent      base_event      = {SERD_BASE, uri_str};
-  const SerdPrefixEvent    prefix_event    = {SERD_PREFIX, name_str, uri_str};
-  const SerdStatementEvent statement_event = {
-    SERD_STATEMENT, 0U, statement_view};
-  const SerdEndEvent end_event = {SERD_END, blank_str};
+  const SerdStatementView statement_view =
+    serd_statement_view(base_tok, uri_tok, blank_obj, no_tok);
 
   // Call functions on a sink with no functions set
 
   SerdSink* const null_sink = serd_sink_new(NULL, &state, NULL, NULL);
 
-  assert(!serd_sink_write_base(null_sink, base_str));
-  assert(!serd_sink_write_prefix(null_sink, name_str, uri_str));
-  assert(!serd_sink_write_views(
-    null_sink, 0, base_tok, uri_tok, blank_obj, no_token));
-  assert(!serd_sink_write_end(null_sink, blank_str));
+  assert(!serd_sink_write_event(null_sink, serd_base_event(base_str)));
+  assert(
+    !serd_sink_write_event(null_sink, serd_prefix_event(name_str, uri_str)));
+  assert(!serd_sink_write_event(
+    null_sink,
+    serd_statement_event(
+      0U, serd_statement_view(base_tok, uri_tok, blank_obj, no_tok))));
+  assert(!serd_sink_write_event(null_sink, serd_end_event(blank_str)));
 
-  SerdEvent event = {SERD_BASE};
-
-  event.base = base_event;
-  assert(!serd_sink_write_event(null_sink, &event));
-  event.prefix = prefix_event;
-  assert(!serd_sink_write_event(null_sink, &event));
-  event.statement = statement_event;
-  assert(!serd_sink_write_event(null_sink, &event));
-  event.end = end_event;
-  assert(!serd_sink_write_event(null_sink, &event));
+  assert(!serd_sink_write_event(null_sink, serd_base_event(uri_str)));
+  assert(
+    !serd_sink_write_event(null_sink, serd_prefix_event(name_str, uri_str)));
+  assert(!serd_sink_write_event(null_sink,
+                                serd_statement_event(0U, statement_view)));
+  assert(!serd_sink_write_event(null_sink, serd_end_event(blank_str)));
 
   serd_sink_free(null_sink);
 
@@ -198,25 +179,27 @@ test_callbacks(void)
 
   SerdSink* sink = serd_sink_new(NULL, &state, on_event, NULL);
 
-  assert(!serd_sink_write_base(sink, base_str));
+  assert(!serd_sink_write_event(sink, serd_base_event(base_str)));
   assert(zix_string_view_equals(state.last_base_uri, base_str));
 
-  assert(!serd_sink_write_prefix(sink, name_str, uri_str));
+  assert(!serd_sink_write_event(sink, serd_prefix_event(name_str, uri_str)));
   assert(zix_string_view_equals(state.last_prefix_name, name_str));
   assert(zix_string_view_equals(state.last_prefix_uri, uri_str));
 
-  assert(
-    !serd_sink_write_views(sink, 0, base_tok, uri_tok, blank_obj, no_token));
+  assert(!serd_sink_write_event(
+    sink,
+    serd_statement_event(
+      0U, serd_statement_view(base_tok, uri_tok, blank_obj, no_tok))));
   assert(token_equals(base_tok, state.last_subject));
   assert(token_equals(uri_tok, state.last_predicate));
   assert(object_equals(blank_obj, state.last_object));
   assert(!serd_field_supports(SERD_GRAPH, state.last_graph.type));
 
-  assert(!serd_sink_write_end(sink, blank_str));
+  assert(!serd_sink_write_event(sink, serd_end_event(blank_str)));
   assert(zix_string_view_equals(state.last_end_label, blank_str));
 
   const SerdEvent junk = {(SerdEventType)42};
-  assert(serd_sink_write_event(sink, &junk) == SERD_BAD_ARG);
+  assert(serd_sink_write_event(sink, junk) == SERD_BAD_ARG);
 
   serd_sink_free(sink);
 }

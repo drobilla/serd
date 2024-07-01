@@ -4,6 +4,7 @@
 #undef NDEBUG
 
 #include "failing_allocator.h"
+#include "sink_write.h"
 
 #include "serd/buffer.h"
 #include "serd/env.h"
@@ -143,7 +144,7 @@ test_write_bad_event(void)
   assert(writer);
 
   const SerdEvent event = {(SerdEventType)42};
-  assert(serd_sink_write_event(serd_writer_sink(writer), &event) ==
+  assert(serd_sink_write_event(serd_writer_sink(writer), event) ==
          SERD_BAD_ARG);
 
   assert(!serd_close_output(&output));
@@ -173,8 +174,8 @@ test_write_bad_prefix(void)
   static const ZixStringView name = ZIX_STATIC_STRING("eg");
   static const ZixStringView uri  = ZIX_STATIC_STRING("rel");
 
-  assert(serd_sink_write_prefix(serd_writer_sink(writer), name, uri) ==
-         SERD_BAD_ARG);
+  assert(serd_sink_write_event(serd_writer_sink(writer),
+                               serd_prefix_event(name, uri)) == SERD_BAD_ARG);
 
   serd_close_output(&output);
 
@@ -259,9 +260,9 @@ test_write_nested_anon(void)
   assert(!serd_sink_write(sink, SERD_ANON_O, b0, p1, b1, NULL));
   assert(!serd_sink_write(sink, 0U, b1, p2, o2, NULL));
   assert(!serd_sink_write(sink, SERD_LIST_O, b1, p3, nil, NULL));
-  assert(!serd_sink_write_end(sink, zix_string("b1")));
+  assert(!serd_sink_write_event(sink, serd_end_event(zix_string("b1"))));
   assert(!serd_sink_write(sink, 0U, b0, p4, o4, NULL));
-  assert(!serd_sink_write_end(sink, zix_string("b0")));
+  assert(!serd_sink_write_event(sink, serd_end_event(zix_string("b0"))));
 
   serd_node_free(NULL, s0);
   serd_node_free(NULL, p0);
@@ -348,7 +349,7 @@ test_writer_cleanup(void)
   assert(!(st = serd_writer_finish(writer)));
 
   // Set the base to an empty URI
-  assert(!(st = serd_sink_write_base(sink, zix_string(""))));
+  assert(!(st = serd_sink_write_event(sink, serd_base_event(zix_string("")))));
 
   // Free (which could leak if the writer doesn't clean up the stack properly)
   serd_node_free(NULL, o);

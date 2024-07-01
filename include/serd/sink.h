@@ -6,14 +6,9 @@
 
 #include "serd/attributes.h"
 #include "serd/event.h"
-#include "serd/node.h"
-#include "serd/object_view.h"
-#include "serd/statement_view.h"
 #include "serd/status.h"
-#include "serd/token_view.h"
 #include "zix/allocator.h"
 #include "zix/attributes.h"
-#include "zix/string_view.h"
 
 SERD_BEGIN_DECLS
 
@@ -49,46 +44,7 @@ serd_sink_free(SerdSink* ZIX_NULLABLE sink);
 
 /// Send an event to the sink
 SERD_API SerdStatus
-serd_sink_write_event(const SerdSink* ZIX_NONNULL  sink,
-                      const SerdEvent* ZIX_NONNULL event);
-
-/// Set the base URI
-SERD_API SerdStatus
-serd_sink_write_base(const SerdSink* ZIX_NONNULL sink, ZixStringView uri);
-
-/// Set a namespace prefix
-SERD_API SerdStatus
-serd_sink_write_prefix(const SerdSink* ZIX_NONNULL sink,
-                       ZixStringView               name,
-                       ZixStringView               uri);
-
-/// Write a statement
-SERD_API SerdStatus
-serd_sink_write_statement(const SerdSink* ZIX_NONNULL sink,
-                          SerdStatementEventFlags     flags,
-                          SerdStatementView           statement);
-
-/// Write a statement from individual nodes
-SERD_API SerdStatus
-serd_sink_write(const SerdSink* ZIX_NONNULL  sink,
-                SerdStatementEventFlags      flags,
-                const SerdNode* ZIX_NONNULL  subject,
-                const SerdNode* ZIX_NONNULL  predicate,
-                const SerdNode* ZIX_NONNULL  object,
-                const SerdNode* ZIX_NULLABLE graph);
-
-/// Write a statement from individual nodes
-SERD_API SerdStatus
-serd_sink_write_views(const SerdSink* ZIX_NONNULL sink,
-                      SerdStatementEventFlags     flags,
-                      SerdTokenView               subject,
-                      SerdTokenView               predicate,
-                      SerdObjectView              object,
-                      SerdTokenView               graph);
-
-/// Mark the end of an anonymous node
-SERD_API SerdStatus
-serd_sink_write_end(const SerdSink* ZIX_NONNULL sink, ZixStringView label);
+serd_sink_write_event(const SerdSink* ZIX_NONNULL sink, SerdEvent event);
 
 /**
    @}

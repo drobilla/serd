@@ -382,10 +382,10 @@ test_sink(void)
 
   const SerdSink* const sink = serd_env_sink(env);
 
-  assert(!serd_sink_write_base(sink, base));
+  assert(!serd_sink_write_event(sink, serd_base_event(base)));
   assert(!strcmp(serd_env_base_uri_string(env).data, NS_EG));
 
-  assert(!serd_sink_write_prefix(sink, name, uri));
+  assert(!serd_sink_write_event(sink, serd_prefix_event(name, uri)));
 
   const ZixStringView eg_prefix = serd_env_get_prefix(env, zix_string("eg"));
   assert(zix_string_view_equals(eg_prefix, uri));

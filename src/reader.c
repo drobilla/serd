@@ -18,6 +18,7 @@
 
 #include "exess/exess.h"
 #include "serd/input_stream.h"
+#include "serd/statement_view.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -197,10 +198,11 @@ emit_statement(SerdReader* const reader,
                const ReadContext ctx,
                SerdNode* const   o)
 {
-  SerdStatus st = SERD_SUCCESS;
-
-  st = serd_sink_write(
-    reader->sink, *ctx.flags, ctx.subject, ctx.predicate, o, ctx.graph);
+  const SerdStatus st = serd_sink_write_event(
+    reader->sink,
+    serd_statement_event(
+      *ctx.flags,
+      serd_statement_view_nodes(ctx.subject, ctx.predicate, o, ctx.graph)));
 
   *ctx.flags = 0;
   return st;

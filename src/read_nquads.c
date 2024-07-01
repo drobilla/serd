@@ -67,7 +67,8 @@ read_nquads_statement(SerdReader* const reader)
                                        serd_node_object_view(ctx.object),
                                        serd_node_graph_view(ctx.graph)};
 
-  return serd_sink_write_statement(reader->sink, *ctx.flags, statement);
+  return serd_sink_write_event(reader->sink,
+                               serd_statement_event(*ctx.flags, statement));
 }
 
 SerdStatus

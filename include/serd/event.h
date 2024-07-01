@@ -110,6 +110,25 @@ typedef SerdStatus (*SerdEventFunc)(void* ZIX_UNSPECIFIED        handle,
                                     const SerdEvent* ZIX_NONNULL event);
 
 /**
+   @defgroup serd_event_constructors Constructors
+   @{
+*/
+
+SERD_CONST_API SerdEvent
+serd_base_event(ZixStringView uri);
+
+SERD_CONST_API SerdEvent
+serd_prefix_event(ZixStringView name, ZixStringView uri);
+
+SERD_CONST_API SerdEvent
+serd_statement_event(SerdStatementEventFlags flags,
+                     SerdStatementView       statement);
+
+SERD_CONST_API SerdEvent
+serd_end_event(ZixStringView label);
+
+/**
+   @}
    @}
 */
 

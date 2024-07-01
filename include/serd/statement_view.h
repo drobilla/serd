@@ -5,8 +5,10 @@
 #define SERD_STATEMENT_VIEW_H
 
 #include "serd/attributes.h"
+#include "serd/node.h"
 #include "serd/object_view.h"
 #include "serd/token_view.h"
+#include "zix/attributes.h"
 
 SERD_BEGIN_DECLS
 
@@ -23,6 +25,18 @@ typedef struct {
   SerdObjectView object;
   SerdTokenView  graph;
 } SerdStatementView;
+
+SERD_CONST_API SerdStatementView
+serd_statement_view(SerdTokenView  subject,
+                    SerdTokenView  predicate,
+                    SerdObjectView object,
+                    SerdTokenView  graph);
+
+SERD_CONST_API SerdStatementView
+serd_statement_view_nodes(const SerdNode* ZIX_NONNULL subject,
+                          const SerdNode* ZIX_NONNULL predicate,
+                          const SerdNode* ZIX_NONNULL object,
+                          const SerdNode* ZIX_NONNULL graph);
 
 /**
    @}
