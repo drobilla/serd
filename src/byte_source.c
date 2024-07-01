@@ -88,7 +88,7 @@ serd_byte_source_new_input(ZixAllocator* const    allocator,
   source->in             = input;
   source->block_size     = block_size;
   source->buf_size       = 0U;
-  source->caret.document = source->name;
+  source->caret.document = serd_node_token_view(source->name);
   source->caret.line     = 1U;
   source->caret.column   = 1U;
 

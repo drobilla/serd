@@ -3,7 +3,7 @@
 
 #include "world.h"
 
-#include "serd/node.h"
+#include "serd/token_view.h"
 #include "zix/allocator.h"
 
 #include <assert.h>
@@ -18,10 +18,10 @@ serd_world_error(const SerdWorld* const world, const SerdError* const e)
   } else {
     fprintf(stderr, "error: ");
     if (e->caret) {
-      const SerdNode* const document = e->caret->document;
+      const SerdTokenView document = e->caret->document;
       fprintf(stderr,
               "%s:%u:%u: ",
-              document ? serd_node_string(document) : "(unknown)",
+              document.string.length ? document.string.data : "(unknown)",
               e->caret->line,
               e->caret->column);
     }

@@ -5,8 +5,7 @@
 #define SERD_CARET_VIEW_H
 
 #include "serd/attributes.h"
-#include "serd/node.h"
-#include "zix/attributes.h"
+#include "serd/token_view.h"
 
 SERD_BEGIN_DECLS
 
@@ -18,9 +17,9 @@ SERD_BEGIN_DECLS
 
 /// A view of a caret, the origin of a statement in a document
 typedef struct {
-  const SerdNode* ZIX_UNSPECIFIED document;
-  unsigned                        line;
-  unsigned                        column;
+  SerdTokenView document;
+  unsigned      line;
+  unsigned      column;
 } SerdCaretView;
 
 /**
