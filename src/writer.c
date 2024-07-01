@@ -246,13 +246,13 @@ push_context(SerdWriter* const             writer,
     statement_flags,
 
     serd_field_supports(SERD_GRAPH, graph.type)
-      ? serd_node_new(allocator, serd_a_token(graph.type, graph.string))
+      ? serd_node_new(allocator, serd_a_token_view(graph))
       : NULL,
 
-    serd_node_new(allocator, serd_a_token(subject.type, subject.string)),
+    serd_node_new(allocator, serd_a_token_view(subject)),
 
     serd_field_supports(SERD_PREDICATE, predicate.type)
-      ? serd_node_new(allocator, serd_a_token(predicate.type, predicate.string))
+      ? serd_node_new(allocator, serd_a_token_view(predicate))
       : NULL,
 
     0U,

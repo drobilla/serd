@@ -53,7 +53,7 @@ static void
 test_new(void)
 {
   const SerdNodeArgs bad_args = {(SerdNodeArgsType)-1,
-                                 {{SERD_LITERAL, zix_string("invalid")}}};
+                                 {{zix_string("invalid"), SERD_LITERAL}}};
 
   assert(!serd_node_new(NULL, bad_args));
 }

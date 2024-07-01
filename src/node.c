@@ -182,7 +182,14 @@ serd_node_equals_object_view(const SerdNode* const node,
 SerdNodeArgs
 serd_a_token(const SerdNodeType type, const ZixStringView string)
 {
-  const SerdNodeArgs args = {SERD_NODE_ARGS_TOKEN, {{type, string}}};
+  const SerdNodeArgs args = {SERD_NODE_ARGS_TOKEN, {{string, type}}};
+  return args;
+}
+
+SerdNodeArgs
+serd_a_token_view(const SerdTokenView token)
+{
+  const SerdNodeArgs args = {SERD_NODE_ARGS_TOKEN, {token}};
   return args;
 }
 

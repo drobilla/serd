@@ -73,12 +73,6 @@ typedef enum {
   SERD_NODE_ARGS_BASE64,        ///< A base64-encoded blob @see #serd_a_base64
 } SerdNodeArgsType;
 
-/// The data for #SERD_NODE_ARGS_TOKEN
-typedef struct {
-  SerdNodeType  type;
-  ZixStringView string;
-} SerdNodeTokenArgs;
-
 /// The data for #SERD_NODE_ARGS_PARSED_URI
 typedef struct {
   SerdURIView uri;
@@ -132,7 +126,7 @@ typedef struct {
 
 /// The data of a #SerdNodeArgs
 typedef union {
-  SerdNodeTokenArgs        as_token;
+  SerdTokenView            as_token;
   SerdNodeParsedURIArgs    as_parsed_uri;
   SerdNodeFileURIArgs      as_file_uri;
   SerdNodePrefixedNameArgs as_prefixed_name;
@@ -165,6 +159,10 @@ typedef struct {
 */
 SERD_CONST_API SerdNodeArgs
 serd_a_token(SerdNodeType type, ZixStringView string);
+
+/// A token node from a token view
+SERD_CONST_API SerdNodeArgs
+serd_a_token_view(SerdTokenView token);
 
 /// A URI node from a parsed URI
 SERD_CONST_API SerdNodeArgs
