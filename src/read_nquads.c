@@ -71,7 +71,7 @@ read_nquads_statement(SerdReader* const reader)
     serd_statement_event(*ctx.flags,
                          serd_statement_view_nodes(
                            ctx.subject, ctx.predicate, ctx.object, ctx.graph),
-                         reader->source->caret));
+                         orig_caret));
 }
 
 SerdStatus

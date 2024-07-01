@@ -10,8 +10,6 @@
 
 #include <assert.h>
 
-static const SerdCaretView no_caret = {NULL, 0, 0};
-
 SerdSink*
 serd_sink_new(ZixAllocator* const allocator,
               void* const         handle,

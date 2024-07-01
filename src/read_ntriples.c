@@ -19,7 +19,6 @@
 #include "serd/caret_view.h"
 #include "serd/event.h"
 #include "serd/sink.h"
-#include "serd/statement_view.h"
 #include "zix/string_view.h"
 
 #include <assert.h>
@@ -683,7 +682,7 @@ read_triple(SerdReader* const reader)
     serd_statement_event(*ctx.flags,
                          serd_statement_view_nodes(
                            ctx.subject, ctx.predicate, ctx.object, ctx.graph),
-                         reader->source->caret));
+                         orig_caret));
 }
 
 SerdStatus

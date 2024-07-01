@@ -1,18 +1,19 @@
 // Copyright 2011-2020 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "caret_impl.h" // IWYU pragma: keep
+#include "statement.h"
+
+#include "caret_impl.h"
 #include "match.h"
 #include "node_internal.h"
-#include "statement_impl.h" // IWYU pragma: keep
 #include "warnings.h"
 
 #include "serd/caret.h"
 #include "serd/field.h"
 #include "serd/node.h"
-#include "serd/statement.h"
 #include "serd/statement_view.h"
 #include "zix/allocator.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -93,7 +94,7 @@ serd_statement_free(ZixAllocator* const  allocator,
 }
 
 SerdStatementView
-serd_statement_view(const SerdStatement* const statement)
+serd_statement_statement_view(const SerdStatement* const statement)
 {
   const SerdNode* const s = statement->nodes[0];
   const SerdNode* const p = statement->nodes[1];
@@ -108,11 +109,11 @@ serd_statement_view(const SerdStatement* const statement)
     serd_node_token_view(p),
     serd_node_object_view(o),
     serd_node_graph_view(g),
-    {NULL, 0, 0},
+    {{ZIX_STATIC_STRING(""), SERD_LITERAL}, 0U, 0U},
   };
 
   if (statement->caret) {
-    view.caret.document = statement->caret->document;
+    view.caret.document = serd_node_token_view(statement->caret->document);
     view.caret.line     = statement->caret->line;
     view.caret.column   = statement->caret->col;
   }
