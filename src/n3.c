@@ -16,6 +16,7 @@
 #include "serd/statement.h"
 #include "serd/status.h"
 #include "serd/syntax.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -631,7 +632,7 @@ read_LANGTAG(SerdReader* const reader, SerdNode** const dest)
     return r_err(reader, SERD_BAD_SYNTAX, "unexpected '%c'\n", c);
   }
 
-  if (!(*dest = push_node(reader, SERD_LITERAL, "", 0))) {
+  if (!(*dest = push_node(reader, SERD_LITERAL, zix_empty_string()))) {
     return SERD_BAD_STACK;
   }
 
@@ -686,7 +687,7 @@ read_IRIREF(SerdReader* const reader, SerdNode** const dest)
     return SERD_BAD_SYNTAX;
   }
 
-  if (!(*dest = push_node(reader, SERD_URI, "", 0))) {
+  if (!(*dest = push_node(reader, SERD_URI, zix_empty_string()))) {
     return SERD_BAD_STACK;
   }
 
@@ -789,11 +790,11 @@ read_number(SerdReader* const reader,
             SerdNode** const  dest,
             bool* const       ate_dot)
 {
-#define XSD_DECIMAL NS_XSD "decimal"
-#define XSD_DOUBLE NS_XSD "double"
-#define XSD_INTEGER NS_XSD "integer"
+  static const ZixStringView xsd_decimal = ZIX_STATIC_STRING(NS_XSD "decimal");
+  static const ZixStringView xsd_double  = ZIX_STATIC_STRING(NS_XSD "double");
+  static const ZixStringView xsd_integer = ZIX_STATIC_STRING(NS_XSD "integer");
 
-  if (!(*dest = push_node(reader, SERD_LITERAL, "", 0))) {
+  if (!(*dest = push_node(reader, SERD_LITERAL, zix_empty_string()))) {
     return SERD_BAD_STACK;
   }
 
@@ -840,13 +841,13 @@ read_number(SerdReader* const reader,
       push_byte(reader, *dest, eat_byte_safe(reader, c));
     }
     TRY(st, read_0_9(reader, *dest, true));
-    meta = push_node(reader, SERD_URI, XSD_DOUBLE, sizeof(XSD_DOUBLE) - 1);
+    meta = push_node(reader, SERD_URI, xsd_double);
     (*dest)->flags |= SERD_HAS_DATATYPE;
   } else if (has_decimal) {
-    meta = push_node(reader, SERD_URI, XSD_DECIMAL, sizeof(XSD_DECIMAL) - 1);
+    meta = push_node(reader, SERD_URI, xsd_decimal);
     (*dest)->flags |= SERD_HAS_DATATYPE;
   } else {
-    meta = push_node(reader, SERD_URI, XSD_INTEGER, sizeof(XSD_INTEGER) - 1);
+    meta = push_node(reader, SERD_URI, xsd_integer);
   }
 
   (*dest)->meta = meta;
@@ -861,7 +862,7 @@ read_iri(SerdReader* const reader, SerdNode** const dest, bool* const ate_dot)
     return read_IRIREF(reader, dest);
   }
 
-  if (!(*dest = push_node(reader, SERD_CURIE, "", 0))) {
+  if (!(*dest = push_node(reader, SERD_CURIE, zix_empty_string()))) {
     return SERD_BAD_STACK;
   }
 
@@ -875,7 +876,7 @@ read_literal(SerdReader* const reader,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  *dest = push_node(reader, SERD_LITERAL, "", 0);
+  *dest = push_node(reader, SERD_LITERAL, zix_empty_string());
 
   if ((st = read_String(reader, *dest))) {
     *dest = NULL;
@@ -913,6 +914,8 @@ read_literal(SerdReader* const reader,
 static SerdStatus
 read_verb(SerdReader* const reader, SerdNode** const dest)
 {
+  static const ZixStringView rdf_type = ZIX_STATIC_STRING(NS_RDF "type");
+
   const size_t orig_stack_size = reader->stack.size;
   if (peek_byte(reader) == '<') {
     return read_IRIREF(reader, dest);
@@ -921,7 +924,7 @@ read_verb(SerdReader* const reader, SerdNode** const dest)
   /* Either a qname, or "a".  Read the prefix first, and if it is in fact
      "a", produce that instead.
   */
-  if (!(*dest = push_node(reader, SERD_CURIE, "", 0))) {
+  if (!(*dest = push_node(reader, SERD_CURIE, zix_empty_string()))) {
     return SERD_BAD_STACK;
   }
 
@@ -932,7 +935,7 @@ read_verb(SerdReader* const reader, SerdNode** const dest)
   if (!st && node->length == 1 && serd_node_string(node)[0] == 'a' &&
       next != ':' && !is_PN_CHARS_BASE((uint32_t)next)) {
     serd_stack_pop_to(&reader->stack, orig_stack_size);
-    *dest = push_node(reader, SERD_URI, NS_RDF "type", 47);
+    *dest = push_node(reader, SERD_URI, rdf_type);
     return SERD_SUCCESS;
   }
 
@@ -958,10 +961,11 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
 
   SerdStatus st = SERD_SUCCESS;
 
-  SerdNode* n = *dest = push_node(reader,
-                                  SERD_BLANK,
-                                  reader->bprefix ? reader->bprefix : "",
-                                  reader->bprefix_len);
+  SerdNode* const n = *dest = push_node(
+    reader,
+    SERD_BLANK,
+    reader->bprefix ? zix_substring(reader->bprefix, reader->bprefix_len)
+                    : zix_empty_string());
 
   int c = peek_byte(reader); // First: (PN_CHARS | '_' | [0-9])
   if (is_digit(c) || c == '_') {
@@ -1062,8 +1066,7 @@ read_object(SerdReader* const  reader,
             const bool         emit,
             bool* const        ate_dot)
 {
-  static const char* const XSD_BOOLEAN     = NS_XSD "boolean";
-  static const size_t      XSD_BOOLEAN_LEN = 40;
+  static const ZixStringView xsd_boolean = ZIX_STATIC_STRING(NS_XSD "boolean");
 
   const size_t orig_stack_size = reader->stack.size;
 
@@ -1118,7 +1121,7 @@ read_object(SerdReader* const  reader,
     /* Either a boolean literal, or a qname.  Read the prefix first, and if
        it is in fact a "true" or "false" literal, produce that instead.
     */
-    if (!(o = push_node(reader, SERD_CURIE, "", 0))) {
+    if (!(o = push_node(reader, SERD_CURIE, zix_empty_string()))) {
       return SERD_BAD_STACK;
     }
 
@@ -1129,7 +1132,7 @@ read_object(SerdReader* const  reader,
         (o->length == 5 && !memcmp(serd_node_string(o), "false", 5))) {
       o->flags |= SERD_HAS_DATATYPE;
       o->type = SERD_LITERAL;
-      o->meta = push_node(reader, SERD_URI, XSD_BOOLEAN, XSD_BOOLEAN_LEN);
+      o->meta = push_node(reader, SERD_URI, xsd_boolean);
       st      = SERD_SUCCESS;
     } else if (read_PN_PREFIX_tail(reader, o) > SERD_FAILURE) {
       st = SERD_BAD_SYNTAX;
@@ -1401,7 +1404,7 @@ read_prefixID(SerdReader* const reader, const bool sparql, const bool token)
   }
 
   read_ws_star(reader);
-  SerdNode* name = push_node(reader, SERD_LITERAL, "", 0);
+  SerdNode* name = push_node(reader, SERD_LITERAL, zix_empty_string());
   if (!name) {
     return SERD_BAD_STACK;
   }

@@ -17,6 +17,7 @@
 #include "serd/syntax.h"
 #include "serd/world.h"
 #include "zix/attributes.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -62,10 +63,7 @@ push_node_padded(SerdReader*  reader,
                  size_t       length);
 
 SerdNode*
-push_node(SerdReader*  reader,
-          SerdNodeType type,
-          const char*  str,
-          size_t       length);
+push_node(SerdReader* reader, SerdNodeType type, ZixStringView string);
 
 ZIX_PURE_FUNC size_t
 genid_size(const SerdReader* reader);

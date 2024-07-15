@@ -11,6 +11,7 @@
 
 #include "serd/stream.h"
 #include "serd/uri.h"
+#include "zix/string_view.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -98,12 +99,12 @@ push_node_padded(SerdReader* const  reader,
 }
 
 SerdNode*
-push_node(SerdReader* const  reader,
-          const SerdNodeType type,
-          const char* const  str,
-          const size_t       length)
+push_node(SerdReader* const   reader,
+          const SerdNodeType  type,
+          const ZixStringView string)
 {
-  return push_node_padded(reader, length, type, str, length);
+  return push_node_padded(
+    reader, string.length, type, string.data, string.length);
 }
 
 SerdStatus
@@ -141,6 +142,10 @@ serd_reader_new(SerdWorld* const      world,
                 const SerdSink* const sink,
                 const size_t          stack_size)
 {
+  static const ZixStringView rdf_first = ZIX_STATIC_STRING(NS_RDF "first");
+  static const ZixStringView rdf_rest  = ZIX_STATIC_STRING(NS_RDF "rest");
+  static const ZixStringView rdf_nil   = ZIX_STATIC_STRING(NS_RDF "nil");
+
   assert(world);
 
   if (stack_size < 3 * sizeof(SerdNode) + 192 + sizeof(void*)) {
@@ -159,9 +164,9 @@ serd_reader_new(SerdWorld* const      world,
   // Reserve a bit of space at the end of the stack to zero pad nodes
   me->stack.buf_size -= sizeof(void*);
 
-  me->rdf_first = push_node(me, SERD_URI, NS_RDF "first", 48);
-  me->rdf_rest  = push_node(me, SERD_URI, NS_RDF "rest", 47);
-  me->rdf_nil   = push_node(me, SERD_URI, NS_RDF "nil", 46);
+  me->rdf_first = push_node(me, SERD_URI, rdf_first);
+  me->rdf_rest  = push_node(me, SERD_URI, rdf_rest);
+  me->rdf_nil   = push_node(me, SERD_URI, rdf_nil);
 
   // The initial stack size check should cover this
   assert(me->rdf_first);
