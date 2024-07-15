@@ -15,6 +15,7 @@
 #include <serd/status.h>
 #include <serd/syntax.h>
 #include <zix/attributes.h>
+#include <zix/string_view.h>
 
 #include <assert.h>
 #include <stdbool.h>
@@ -78,17 +79,13 @@ SerdStatus
 r_err_char(SerdReader* reader, const char* kind, int c);
 
 Ref
-push_node_padded(SerdReader*  reader,
-                 size_t       maxlen,
-                 SerdNodeType type,
-                 const char*  str,
-                 size_t       n_bytes);
+push_node_padded(SerdReader*   reader,
+                 size_t        maxlen,
+                 SerdNodeType  type,
+                 ZixStringView string);
 
 Ref
-push_node(SerdReader*  reader,
-          SerdNodeType type,
-          const char*  str,
-          size_t       n_bytes);
+push_node(SerdReader* reader, SerdNodeType type, ZixStringView string);
 
 ZIX_PURE_FUNC size_t
 genid_size(const SerdReader* reader);

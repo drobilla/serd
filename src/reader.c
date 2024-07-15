@@ -18,6 +18,8 @@
 #include <serd/syntax.h>
 #include <serd/uri.h>
 
+#include <zix/string_view.h>
+
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -67,7 +69,8 @@ genid_size(const SerdReader* const reader)
 Ref
 blank_id(SerdReader* const reader)
 {
-  Ref ref = push_node_padded(reader, genid_size(reader), SERD_BLANK, "", 0);
+  Ref ref = push_node_padded(
+    reader, genid_size(reader), SERD_BLANK, zix_empty_string());
   set_blank_id(reader, ref, genid_size(reader));
   return ref;
 }
@@ -92,23 +95,22 @@ serd_file_read_byte(void* const  buf,
 }
 
 Ref
-push_node_padded(SerdReader* const  reader,
-                 const size_t       maxlen,
-                 const SerdNodeType type,
-                 const char* const  str,
-                 const size_t       n_bytes)
+push_node_padded(SerdReader* const   reader,
+                 const size_t        maxlen,
+                 const SerdNodeType  type,
+                 const ZixStringView string)
 {
   void* mem = serd_stack_push_aligned(
     &reader->stack, sizeof(SerdNode) + maxlen + 1, sizeof(SerdNode));
 
   SerdNode* const node = (SerdNode*)mem;
-  node->n_bytes        = n_bytes;
+  node->n_bytes        = string.length;
   node->flags          = 0;
   node->type           = type;
   node->buf            = NULL;
 
   char* buf = (char*)(node + 1);
-  memcpy(buf, str, n_bytes + 1);
+  memcpy(buf, string.data, string.length + 1);
 
   const Ref ref = (Ref)((char*)node - reader->stack.buf);
 
@@ -123,12 +125,11 @@ push_node_padded(SerdReader* const  reader,
 }
 
 Ref
-push_node(SerdReader* const  reader,
-          const SerdNodeType type,
-          const char* const  str,
-          const size_t       n_bytes)
+push_node(SerdReader* const   reader,
+          const SerdNodeType  type,
+          const ZixStringView string)
 {
-  return push_node_padded(reader, n_bytes, type, str, n_bytes);
+  return push_node_padded(reader, string.length, type, string);
 }
 
 SerdNode*
@@ -215,6 +216,10 @@ serd_reader_new(const SerdSyntax      syntax,
                 const SerdStatementFunc statement_func,
                 const SerdEndFunc       end_func)
 {
+  static const ZixStringView rdf_first = ZIX_STATIC_STRING(NS_RDF "first");
+  static const ZixStringView rdf_rest  = ZIX_STATIC_STRING(NS_RDF "rest");
+  static const ZixStringView rdf_nil   = ZIX_STATIC_STRING(NS_RDF "nil");
+
   SerdReader* me     = (SerdReader*)calloc(1, sizeof(SerdReader));
   me->handle         = handle;
   me->free_handle    = free_handle;
@@ -227,9 +232,9 @@ serd_reader_new(const SerdSyntax      syntax,
   me->next_id        = 1;
   me->strict         = !(flags & SERD_READ_LAX);
 
-  me->rdf_first = push_node(me, SERD_URI, NS_RDF "first", 48);
-  me->rdf_rest  = push_node(me, SERD_URI, NS_RDF "rest", 47);
-  me->rdf_nil   = push_node(me, SERD_URI, NS_RDF "nil", 46);
+  me->rdf_first = push_node(me, SERD_URI, rdf_first);
+  me->rdf_rest  = push_node(me, SERD_URI, rdf_rest);
+  me->rdf_nil   = push_node(me, SERD_URI, rdf_nil);
 
   return me;
 }
