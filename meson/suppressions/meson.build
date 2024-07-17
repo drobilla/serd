@@ -22,6 +22,7 @@ if is_variable('cc')
         '-Wno-double-promotion',
         '-Wno-format-nonliteral',
         '-Wno-padded',
+        '-Wno-switch-default',
         '-Wno-unsafe-buffer-usage',
       ]
 

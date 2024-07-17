@@ -8,9 +8,11 @@ Checks: >
   -bugprone-easily-swappable-parameters,
   -cert-err33-c,
   -clang-analyzer-nullability.NullableDereferenced,
+  -clang-analyzer-optin.core.EnumCastOutOfRange,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -concurrency-mt-unsafe,
   -hicpp-signed-bitwise,
+  -readability-redundant-casting,
 CheckOptions:
   - key:   readability-function-cognitive-complexity.IgnoreMacros
     value: 'true'
