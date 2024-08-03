@@ -48,7 +48,7 @@ foreach name : unit_test_names
     executable(
       'test_@0@'.format(name),
       source,
-      c_args: c_suppressions,
+      c_args: c_suppressions + platform_c_args,
       dependencies: [serd_dep, zix_dep],
       implicit_include_directories: false,
     ),
