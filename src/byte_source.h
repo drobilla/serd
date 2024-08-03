@@ -69,10 +69,11 @@ serd_byte_source_advance(SerdByteSource* source)
 {
   SerdStatus st = SERD_SUCCESS;
 
-  if (serd_byte_source_peek(source) == '\n') {
+  const uint8_t c = serd_byte_source_peek(source);
+  if (c == '\n') {
     ++source->cur.line;
     source->cur.col = 0;
-  } else {
+  } else if (c) {
     ++source->cur.col;
   }
 
