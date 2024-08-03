@@ -157,7 +157,7 @@ eat_byte_check(SerdReader* const reader, const int byte)
 {
   const int c = peek_byte(reader);
   if (c != byte) {
-    r_err(reader, SERD_ERR_BAD_SYNTAX, "expected '%c'\n", byte);
+    r_err(reader, SERD_BAD_SYNTAX, "expected '%c'\n", byte);
     return 0;
   }
   return eat_byte_safe(reader, byte);
@@ -168,7 +168,7 @@ eat_string(SerdReader* const reader, const char* const str, const unsigned n)
 {
   for (unsigned i = 0; i < n; ++i) {
     if (!eat_byte_check(reader, str[i])) {
-      return SERD_ERR_BAD_SYNTAX;
+      return SERD_BAD_SYNTAX;
     }
   }
   return SERD_SUCCESS;

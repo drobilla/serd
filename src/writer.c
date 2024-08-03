@@ -214,9 +214,9 @@ sink(const void* const buf, const size_t len, SerdWriter* const writer)
   if (written != len) {
     if (errno) {
       const char* const message = strerror(errno);
-      w_err(writer, SERD_ERR_BAD_WRITE, "write error (%s)\n", message);
+      w_err(writer, SERD_BAD_WRITE, "write error (%s)\n", message);
     } else {
-      w_err(writer, SERD_ERR_BAD_WRITE, "write error\n");
+      w_err(writer, SERD_BAD_WRITE, "write error\n");
     }
   }
 
@@ -226,7 +226,7 @@ sink(const void* const buf, const size_t len, SerdWriter* const writer)
 SERD_NODISCARD static SerdStatus
 esink(const void* const buf, const size_t len, SerdWriter* const writer)
 {
-  return sink(buf, len, writer) == len ? SERD_SUCCESS : SERD_ERR_BAD_WRITE;
+  return sink(buf, len, writer) == len ? SERD_SUCCESS : SERD_BAD_WRITE;
 }
 
 // Write a single character, as an escape for single byte characters
@@ -241,8 +241,7 @@ write_character(SerdWriter* const    writer,
   const uint32_t c          = parse_utf8_char(utf8, size);
   switch (*size) {
   case 0:
-    *st =
-      w_err(writer, SERD_ERR_BAD_TEXT, "invalid UTF-8 start: %X\n", utf8[0]);
+    *st = w_err(writer, SERD_BAD_TEXT, "invalid UTF-8 start: %X\n", utf8[0]);
     return 0;
   case 1:
     snprintf(escape, sizeof(escape), "\\u%04X", utf8[0]);
@@ -291,7 +290,7 @@ write_uri(SerdWriter* const writer,
     const size_t n_bulk = sink(&utf8[i], j - i, writer);
     len += n_bulk;
     if (n_bulk != j - i) {
-      *st = SERD_ERR_BAD_WRITE;
+      *st = SERD_BAD_WRITE;
       return len;
     }
 
@@ -328,7 +327,7 @@ ewrite_uri(SerdWriter* const writer,
   SerdStatus st = SERD_SUCCESS;
   write_uri(writer, utf8, n_bytes, &st);
 
-  return (st == SERD_ERR_BAD_WRITE || (writer->flags & SERD_WRITE_STRICT))
+  return (st == SERD_BAD_WRITE || (writer->flags & SERD_WRITE_STRICT))
            ? st
            : SERD_SUCCESS;
 }
@@ -660,7 +659,7 @@ write_uri_node(SerdWriter* const writer, const SerdNode* const node)
       (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) &&
       !serd_env_base_uri(writer->env, NULL)->buf) {
     return w_err(writer,
-                 SERD_ERR_BAD_ARG,
+                 SERD_BAD_ARG,
                  "syntax does not support URI reference <%s>\n",
                  node->buf);
   }
@@ -922,7 +921,7 @@ serd_writer_write_statement(SerdWriter* const     writer,
       ((flags & SERD_EMPTY_S) && (flags & SERD_LIST_S_BEGIN)) ||
       ((flags & SERD_ANON_O_BEGIN) && (flags & SERD_LIST_O_BEGIN)) ||
       ((flags & SERD_EMPTY_O) && (flags & SERD_LIST_O_BEGIN))) {
-    return SERD_ERR_BAD_ARG;
+    return SERD_BAD_ARG;
   }
 
   // Simple case: write a line of NTriples or NQuads
@@ -1000,7 +999,7 @@ serd_writer_write_statement(SerdWriter* const     writer,
     // No abbreviation
 
     if (!serd_stack_is_empty(&writer->anon_stack)) {
-      return SERD_ERR_BAD_ARG;
+      return SERD_BAD_ARG;
     }
 
     if (writer->context.subject.type) {
@@ -1060,8 +1059,7 @@ serd_writer_end_anon(SerdWriter* const writer, const SerdNode* const node)
   }
 
   if (serd_stack_is_empty(&writer->anon_stack)) {
-    return w_err(
-      writer, SERD_ERR_UNKNOWN, "unexpected end of anonymous node\n");
+    return w_err(writer, SERD_BAD_CALL, "unexpected end of anonymous node\n");
   }
 
   // Decrease indent if we're current comma-indented (multiple objects at end)
