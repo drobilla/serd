@@ -143,7 +143,7 @@ test_write_errors(void)
       serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
 
       const SerdStatus st = serd_reader_read_string(reader, doc_string);
-      assert(st == SERD_ERR_BAD_WRITE);
+      assert(st == SERD_BAD_WRITE);
 
       serd_reader_free(reader);
       serd_writer_free(writer);

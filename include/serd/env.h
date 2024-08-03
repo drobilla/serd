@@ -70,8 +70,8 @@ serd_env_qualify(const SerdEnv* SERD_NULLABLE env,
 /**
    Expand `curie`.
 
-   Errors: SERD_ERR_BAD_ARG if `curie` is not valid, or SERD_ERR_BAD_CURIE if
-   prefix is not defined in `env`.
+   Errors: SERD_BAD_ARG if `curie` is not valid, or SERD_BAD_CURIE if prefix is
+   not defined in `env`.
 */
 SERD_API SerdStatus
 serd_env_expand(const SerdEnv* SERD_NULLABLE env,

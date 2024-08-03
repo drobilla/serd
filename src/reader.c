@@ -281,13 +281,13 @@ serd_reader_read_file(SerdReader* const reader, const char* const uri)
 
   char* const path = serd_file_uri_parse(uri, NULL);
   if (!path) {
-    return SERD_ERR_BAD_ARG;
+    return SERD_BAD_ARG;
   }
 
   FILE* fd = serd_fopen(path, "rb");
   if (!fd) {
     serd_free(path);
-    return SERD_ERR_UNKNOWN;
+    return SERD_BAD_STREAM;
   }
 
   SerdStatus ret = serd_reader_read_file_handle(reader, fd, path);
@@ -305,8 +305,8 @@ skip_bom(SerdReader* const me)
         serd_byte_source_advance(&me->source) ||
         serd_byte_source_peek(&me->source) != 0xBF ||
         serd_byte_source_advance(&me->source)) {
-      r_err(me, SERD_ERR_BAD_SYNTAX, "corrupt byte order mark\n");
-      return SERD_ERR_BAD_SYNTAX;
+      r_err(me, SERD_BAD_SYNTAX, "corrupt byte order mark\n");
+      return SERD_BAD_SYNTAX;
     }
   }
 

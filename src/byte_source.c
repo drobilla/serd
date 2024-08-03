@@ -24,7 +24,7 @@ serd_byte_source_page(SerdByteSource* const source)
 
   if (n_read == 0) {
     source->eof = true;
-    return (source->error_func(source->stream) ? SERD_ERR_UNKNOWN
+    return (source->error_func(source->stream) ? SERD_BAD_STREAM
                                                : SERD_FAILURE);
   }
 
