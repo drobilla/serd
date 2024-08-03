@@ -83,7 +83,7 @@ serd_byte_source_advance(SerdByteSource* source)
     if (source->page_size > 1) {
       if (++source->read_head == source->page_size) {
         st = serd_byte_source_page(source);
-      } else if (source->read_head == source->buf_size) {
+      } else if (source->read_head >= source->buf_size) {
         source->eof = true;
       }
     } else {
