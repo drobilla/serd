@@ -155,9 +155,9 @@ eof_test_error(void* stream)
   return 0;
 }
 
-/// A read of a big page hits EOF then fails to read chunks immediately
+/// A read of a file stream hits EOF then fails to read chunks immediately
 static void
-test_read_eof_by_page(const char* const path)
+test_read_eof_file(const char* const path)
 {
   FILE* const f = fopen(path, "w+b");
   assert(f);
@@ -175,13 +175,20 @@ test_read_eof_by_page(const char* const path)
                                              test_statement_sink,
                                              test_end_sink);
 
+  fseek(f, 0L, SEEK_SET);
   serd_reader_start_stream(reader, f, (const uint8_t*)"test", true);
-
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
-
   serd_reader_end_stream(reader);
+
+  fseek(f, 0L, SEEK_SET);
+  serd_reader_start_stream(reader, f, (const uint8_t*)"test", false);
+  assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
+  assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
+  assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
+  serd_reader_end_stream(reader);
+
   serd_reader_free(reader);
   fclose(f);
 }
@@ -428,7 +435,7 @@ main(void)
   test_read_turtle_chunks(path);
 
   test_read_string();
-  test_read_eof_by_page(path);
+  test_read_eof_file(path);
   test_read_eof_by_byte();
   assert(!remove(path));
 
