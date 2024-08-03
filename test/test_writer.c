@@ -208,7 +208,7 @@ test_write_bad_anon_stack(void)
   st = serd_writer_write_statement(
     writer, SERD_ANON_O_BEGIN, NULL, &b1, &p, &b2, NULL, NULL);
 
-  assert(st == SERD_ERR_BAD_ARG);
+  assert(st == SERD_BAD_ARG);
 
   st = serd_writer_finish(writer);
   assert(!st);
@@ -242,15 +242,15 @@ test_strict_write(void)
     serd_node_from_string(SERD_LITERAL, (const char*)bad_long_buf);
 
   assert(serd_writer_write_statement(
-           writer, 0, NULL, &s, &p, &bad_uri, NULL, NULL) == SERD_ERR_BAD_TEXT);
+           writer, 0, NULL, &s, &p, &bad_uri, NULL, NULL) == SERD_BAD_TEXT);
 
   assert(serd_writer_write_statement(
            writer, 0, NULL, &s, &p, &bad_short_lit, NULL, NULL) ==
-         SERD_ERR_BAD_TEXT);
+         SERD_BAD_TEXT);
 
   assert(serd_writer_write_statement(
            writer, 0, NULL, &s, &p, &bad_long_lit, NULL, NULL) ==
-         SERD_ERR_BAD_TEXT);
+         SERD_BAD_TEXT);
 
   serd_writer_free(writer);
   serd_env_free(env);
@@ -279,7 +279,7 @@ test_write_error(void)
 
   const SerdStatus st =
     serd_writer_write_statement(writer, 0U, NULL, &u, &u, &u, NULL, NULL);
-  assert(st == SERD_ERR_BAD_WRITE);
+  assert(st == SERD_BAD_WRITE);
 
   serd_writer_free(writer);
   serd_env_free(env);
@@ -324,7 +324,7 @@ test_write_nothing_node(void)
   SerdNode p = serd_node_from_string(SERD_URI, "http://example.org/pred");
   SerdNode o = serd_node_from_string(SERD_NOTHING, "");
   assert(serd_writer_write_statement(writer, 0, NULL, &s, &p, &o, NULL, NULL) ==
-         SERD_ERR_BAD_ARG);
+         SERD_BAD_ARG);
 
   assert(!buffer.buf);
   serd_writer_free(writer);
@@ -355,7 +355,7 @@ test_write_bad_statement(void)
            &p,
            &o,
            NULL,
-           NULL) == SERD_ERR_BAD_ARG);
+           NULL) == SERD_BAD_ARG);
 
   assert(serd_writer_write_statement(
            writer,
@@ -365,7 +365,7 @@ test_write_bad_statement(void)
            &p,
            &o,
            NULL,
-           NULL) == SERD_ERR_BAD_ARG);
+           NULL) == SERD_BAD_ARG);
 
   assert(serd_writer_write_statement(
            writer,
@@ -375,7 +375,7 @@ test_write_bad_statement(void)
            &p,
            &o,
            NULL,
-           NULL) == SERD_ERR_BAD_ARG);
+           NULL) == SERD_BAD_ARG);
 
   assert(serd_writer_write_statement(
            writer,
@@ -385,10 +385,10 @@ test_write_bad_statement(void)
            &p,
            &o,
            NULL,
-           NULL) == SERD_ERR_BAD_ARG);
+           NULL) == SERD_BAD_ARG);
 
   assert(serd_writer_write_statement(writer, 0U, NULL, &s, &p, &o, &o, &l) ==
-         SERD_ERR_BAD_ARG);
+         SERD_BAD_ARG);
 
   serd_writer_free(writer);
   serd_env_free(env);

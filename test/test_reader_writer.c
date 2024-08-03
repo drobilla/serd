@@ -161,7 +161,7 @@ test_write_errors(void)
 
     // Check write error at every offset in the output
     for (size_t o = 0; o < max_offsets[s]; ++o) {
-      check_write_error_offset(syntax, o, SERD_ERR_BAD_WRITE);
+      check_write_error_offset(syntax, o, SERD_BAD_WRITE);
     }
   }
 }

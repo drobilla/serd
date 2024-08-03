@@ -42,7 +42,7 @@ r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
 SerdStatus
 r_err_char(SerdReader* const reader, const char* const kind, const int c)
 {
-  const SerdStatus st = SERD_ERR_BAD_SYNTAX;
+  const SerdStatus st = SERD_BAD_SYNTAX;
 
   return (c < 0x20 || c == 0x7F) ? r_err(reader, st, "bad %s character\n", kind)
          : (c == '\'' || c >= 0x80)
@@ -304,13 +304,13 @@ serd_reader_read_file(SerdReader* const reader, const char* const uri)
 
   char* const path = serd_file_uri_parse(uri, NULL);
   if (!path) {
-    return SERD_ERR_BAD_ARG;
+    return SERD_BAD_ARG;
   }
 
   FILE* fd = serd_fopen(path, "rb");
   if (!fd) {
     serd_free(path);
-    return SERD_ERR_UNKNOWN;
+    return SERD_BAD_STREAM;
   }
 
   SerdStatus ret = serd_reader_read_file_handle(reader, fd, path);

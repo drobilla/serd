@@ -224,9 +224,9 @@ sink(const void* const buf, const size_t len, SerdWriter* const writer)
   if (written != len) {
     if (errno) {
       const char* const message = strerror(errno);
-      w_err(writer, SERD_ERR_BAD_WRITE, "write error (%s)\n", message);
+      w_err(writer, SERD_BAD_WRITE, "write error (%s)\n", message);
     } else {
-      w_err(writer, SERD_ERR_BAD_WRITE, "write error\n");
+      w_err(writer, SERD_BAD_WRITE, "write error\n");
     }
   }
 
@@ -236,7 +236,7 @@ sink(const void* const buf, const size_t len, SerdWriter* const writer)
 SERD_NODISCARD static SerdStatus
 esink(const void* const buf, const size_t len, SerdWriter* const writer)
 {
-  return sink(buf, len, writer) == len ? SERD_SUCCESS : SERD_ERR_BAD_WRITE;
+  return sink(buf, len, writer) == len ? SERD_SUCCESS : SERD_BAD_WRITE;
 }
 
 /// Variable sink that returns an updated variable result
@@ -247,7 +247,7 @@ vsink(SerdWriter* const    writer,
       const void* const    buf)
 {
   const size_t         n  = sink(buf, len, writer);
-  const SerdStatus     st = (n == len) ? SERD_SUCCESS : SERD_ERR_BAD_WRITE;
+  const SerdStatus     st = (n == len) ? SERD_SUCCESS : SERD_BAD_WRITE;
   const VariableResult r  = {st, vr.read_count, vr.write_count + n};
   return r;
 }
@@ -272,7 +272,7 @@ write_UCHAR(SerdWriter* const writer, const uint8_t* const utf8)
   vr.read_count = c_size;
   if (vr.read_count == 0U) {
     vr.status =
-      w_err(writer, SERD_ERR_BAD_TEXT, "invalid UTF-8 start: %X\n", utf8[0]);
+      w_err(writer, SERD_BAD_TEXT, "invalid UTF-8 start: %X\n", utf8[0]);
   } else if (c <= 0xFFFF) {
     // Write short (4 digit) escape
     if (!(vr = vsink(writer, vr, 2, "\\u")).status &&
@@ -306,7 +306,7 @@ write_text_character(SerdWriter* const writer, const uint8_t* const utf8)
   // Parse the leading byte to get the UTF-8 encoding size
   const size_t read_count = utf8_num_bytes(c);
   if (!read_count) {
-    const VariableResult result = {SERD_ERR_BAD_TEXT, 0U, 0U};
+    const VariableResult result = {SERD_BAD_TEXT, 0U, 0U};
     return result;
   }
 
@@ -314,7 +314,7 @@ write_text_character(SerdWriter* const writer, const uint8_t* const utf8)
   const size_t write_count = sink(utf8, read_count, writer);
   SerdStatus   st          = SERD_SUCCESS;
   if (write_count != read_count) {
-    st = SERD_ERR_BAD_WRITE;
+    st = SERD_BAD_WRITE;
   }
 
   const VariableResult result = {st, read_count, write_count};
@@ -330,14 +330,12 @@ write_uri_character(SerdWriter* const writer, const uint8_t* const utf8)
   }
 
   // Parse the leading byte to get the UTF-8 encoding size
-  VariableResult result = {SERD_ERR_BAD_TEXT, 0U, 0U};
+  VariableResult result = {SERD_BAD_TEXT, 0U, 0U};
   if ((result.read_count = utf8_num_bytes(c))) {
     // Write the UTF-8 encoding directly to the output
     result.write_count = sink(utf8, result.read_count, writer);
-
-    result.status = (result.write_count == result.read_count)
-                      ? SERD_SUCCESS
-                      : SERD_ERR_BAD_WRITE;
+    result.status =
+      (result.write_count == result.read_count) ? SERD_SUCCESS : SERD_BAD_WRITE;
   }
 
   return result;
@@ -411,7 +409,7 @@ ewrite_uri(SerdWriter* const writer,
 {
   const VariableResult r = write_uri_text(writer, utf8, n_bytes);
 
-  return (r.status == SERD_ERR_BAD_WRITE || (writer->flags & SERD_WRITE_STRICT))
+  return (r.status == SERD_BAD_WRITE || (writer->flags & SERD_WRITE_STRICT))
            ? r.status
            : SERD_SUCCESS;
 }
@@ -836,7 +834,7 @@ write_uri_node(SerdWriter* const writer, const SerdNode* const node)
       (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) &&
       !serd_env_base_uri(writer->env, NULL)->buf) {
     return w_err(writer,
-                 SERD_ERR_BAD_ARG,
+                 SERD_BAD_ARG,
                  "syntax does not support URI reference <%s>\n",
                  node->buf);
   }
@@ -1073,7 +1071,7 @@ serd_writer_write_statement(SerdWriter* const     writer,
       ((flags & SERD_EMPTY_S) && (flags & SERD_LIST_S_BEGIN)) ||
       ((flags & SERD_ANON_O_BEGIN) && (flags & SERD_LIST_O_BEGIN)) ||
       ((flags & SERD_EMPTY_O) && (flags & SERD_LIST_O_BEGIN))) {
-    return SERD_ERR_BAD_ARG;
+    return SERD_BAD_ARG;
   }
 
   // Simple case: write a line of NTriples or NQuads
@@ -1151,7 +1149,7 @@ serd_writer_write_statement(SerdWriter* const     writer,
     // No abbreviation
 
     if (!serd_stack_is_empty(&writer->anon_stack)) {
-      return SERD_ERR_BAD_ARG;
+      return SERD_BAD_ARG;
     }
 
     if (writer->context.subject.type) {
@@ -1211,8 +1209,7 @@ serd_writer_end_anon(SerdWriter* const writer, const SerdNode* const node)
   }
 
   if (serd_stack_is_empty(&writer->anon_stack)) {
-    return w_err(
-      writer, SERD_ERR_UNKNOWN, "unexpected end of anonymous node\n");
+    return w_err(writer, SERD_BAD_CALL, "unexpected end of anonymous node\n");
   }
 
   // Decrease indent if we're current comma-indented (multiple objects at end)

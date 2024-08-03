@@ -27,7 +27,7 @@ serd_byte_source_page(SerdByteSource* const source)
 
   if (n_read == 0) {
     source->eof = true;
-    return (source->error_func(source->stream) ? SERD_ERR_UNKNOWN
+    return (source->error_func(source->stream) ? SERD_BAD_STREAM
                                                : SERD_FAILURE);
   }
 
@@ -112,8 +112,7 @@ serd_byte_source_close(SerdByteSource* const source)
 static SerdStatus
 peek_check(SerdByteSource* const source, const uint8_t byte)
 {
-  return serd_byte_source_peek(source) == byte ? SERD_SUCCESS
-                                               : SERD_ERR_BAD_SYNTAX;
+  return serd_byte_source_peek(source) == byte ? SERD_SUCCESS : SERD_BAD_SYNTAX;
 }
 
 SerdStatus
@@ -128,7 +127,7 @@ serd_byte_source_skip_bom(SerdByteSource* const source)
         !(st = peek_check(source, 0xBF))) {
       st = serd_byte_source_advance(source);
     } else {
-      st = st > SERD_FAILURE ? st : SERD_ERR_BAD_SYNTAX;
+      st = st > SERD_FAILURE ? st : SERD_BAD_SYNTAX;
     }
   }
 
