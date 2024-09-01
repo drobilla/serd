@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <zix/string_view.h>
+
 static inline bool
 expect_string(const char* const actual, const char* const expected)
 {
@@ -17,6 +19,20 @@ expect_string(const char* const actual, const char* const expected)
   if (!equal) {
     fprintf(stderr, "Expected:\n%s\n\n", expected);
     fprintf(stderr, "Actual:\n%s\n\n", actual ? actual : "(null)");
+  }
+  return equal;
+}
+
+static inline bool
+expect_string_view(const ZixStringView actual, const char* const expected)
+{
+  assert(expected);
+  const size_t length = strlen(expected);
+  const bool   equal =
+    actual.length == length && !strncmp(actual.data, expected, length);
+  if (!equal) {
+    fprintf(stderr, "Expected:\n%s\n\n", expected);
+    fprintf(stderr, "Actual:\n%s\n\n", actual.data);
   }
   return equal;
 }

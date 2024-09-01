@@ -10,6 +10,7 @@
 #include <serd/uri.h>
 #include <zix/allocator.h>
 #include <zix/attributes.h>
+#include <zix/string_view.h>
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -150,6 +151,10 @@ serd_node_equals(const SerdNode* ZIX_NONNULL a, const SerdNode* ZIX_NONNULL b);
 SERD_API void
 serd_node_free(ZixAllocator* ZIX_NULLABLE allocator,
                SerdNode* ZIX_NULLABLE     node);
+
+/// Return a view of the string in a node
+SERD_PURE_API ZixStringView
+serd_node_string_view(const SerdNode* ZIX_NONNULL node);
 
 /**
    @}

@@ -11,6 +11,7 @@
 #include <serd/string.h>
 #include <serd/uri.h>
 #include <zix/allocator.h>
+#include <zix/string_view.h>
 
 #include <assert.h>
 #include <float.h>
@@ -311,4 +312,13 @@ serd_node_free(ZixAllocator* const allocator, SerdNode* const node)
     zix_free(allocator, (char*)node->buf);
     node->buf = NULL;
   }
+}
+
+ZixStringView
+serd_node_string_view(const SerdNode* const node)
+{
+  assert(node);
+  assert(node->buf);
+  const ZixStringView r = {(const char*)node->buf, node->n_bytes};
+  return r;
 }
