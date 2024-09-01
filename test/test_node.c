@@ -24,7 +24,7 @@
 #endif
 
 static void
-test_strtod(double dbl, double max_delta)
+check_strtod(double dbl, double max_delta)
 {
   char buf[1024];
   snprintf(buf, sizeof(buf), "%f", dbl);
@@ -56,7 +56,7 @@ test_string_to_double(void)
     const double delta = fabs(num - expt_test_nums[i]);
     assert(delta <= DBL_EPSILON);
 
-    test_strtod(expt_test_nums[i], DBL_EPSILON);
+    check_strtod(expt_test_nums[i], DBL_EPSILON);
   }
 }
 
