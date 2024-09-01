@@ -7,7 +7,6 @@
 
 #include <serd/memory.h>
 #include <serd/node.h>
-#include <serd/string_view.h>
 #include <serd/uri.h>
 
 #include <assert.h>
@@ -199,7 +198,8 @@ test_is_within(void)
 }
 
 static bool
-chunk_equals(const SerdStringView* const a, const SerdStringView* const b)
+component_equals(const SerdURIComponent* const a,
+                 const SerdURIComponent* const b)
 {
   return (!a->length && !b->length && !a->data && !b->data) ||
          (a->length && b->length && a->data && b->data &&
@@ -230,12 +230,12 @@ check_relative(const char* const uri_string,
 
   const SerdURIView result   = serd_parse_uri(result_node.buf);
   const SerdURIView expected = serd_parse_uri(expected_string);
-  assert(chunk_equals(&result.scheme, &expected.scheme));
-  assert(chunk_equals(&result.authority, &expected.authority));
-  assert(chunk_equals(&result.path_prefix, &expected.path_prefix));
-  assert(chunk_equals(&result.path, &expected.path));
-  assert(chunk_equals(&result.query, &expected.query));
-  assert(chunk_equals(&result.fragment, &expected.fragment));
+  assert(component_equals(&result.scheme, &expected.scheme));
+  assert(component_equals(&result.authority, &expected.authority));
+  assert(component_equals(&result.path_prefix, &expected.path_prefix));
+  assert(component_equals(&result.path, &expected.path));
+  assert(component_equals(&result.query, &expected.query));
+  assert(component_equals(&result.fragment, &expected.fragment));
 
   serd_node_free(&result_node);
   serd_node_free(&base_node);

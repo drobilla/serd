@@ -6,7 +6,6 @@
 
 #include <serd/buffer.h>
 #include <serd/stream.h>
-#include <serd/string_view.h>
 #include <serd/uri.h>
 
 #include <assert.h>
@@ -234,7 +233,7 @@ remove_dot_segments(const char* const path, const size_t len, size_t* const up)
 
 /// Merge `base` and `path` in-place
 static void
-merge(SerdStringView* const base, SerdStringView* const path)
+merge(SerdURIComponent* const base, SerdURIComponent* const path)
 {
   size_t       up    = 0;
   const size_t begin = remove_dot_segments(path->data, path->length, &up);

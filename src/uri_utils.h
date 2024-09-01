@@ -5,7 +5,6 @@
 #define SERD_SRC_URI_UTILS_H
 
 #include <serd/attributes.h>
-#include <serd/string_view.h>
 #include <serd/uri.h>
 
 #include <assert.h>
@@ -19,7 +18,7 @@ typedef struct {
 } SlashIndexes;
 
 static inline bool
-slice_equals(const SerdStringView* const a, const SerdStringView* const b)
+slice_equals(const SerdURIComponent* const a, const SerdURIComponent* const b)
 {
   return a->length == b->length && !strncmp(a->data, b->data, a->length);
 }
