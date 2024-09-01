@@ -6,7 +6,6 @@
 
 #include <serd/attributes.h>
 #include <serd/stream.h>
-#include <serd/string_view.h>
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -18,6 +17,18 @@ SERD_BEGIN_DECLS
    @ingroup serd_data
    @{
 */
+
+/**
+   A component of a URI.
+
+   This is like a string view, but the pointer may be null to distinguish
+   between empty and missing components (an empty component indicates that the
+   URI has the corresponding delimiter).
+*/
+typedef struct {
+  const char* SERD_NULLABLE data;   ///< Start of string, or null
+  size_t                    length; ///< Length of string in bytes
+} SerdURIComponent;
 
 /**
    A parsed view of a URI.
@@ -38,12 +49,12 @@ SERD_BEGIN_DECLS
    number of up-references ("../") that must be prepended to the path.
 */
 typedef struct {
-  SerdStringView scheme;      ///< Scheme
-  SerdStringView authority;   ///< Authority
-  SerdStringView path_prefix; ///< Path prefix for relative/resolved paths
-  SerdStringView path;        ///< Path suffix
-  SerdStringView query;       ///< Query
-  SerdStringView fragment;    ///< Fragment
+  SerdURIComponent scheme;      ///< Scheme
+  SerdURIComponent authority;   ///< Authority
+  SerdURIComponent path_prefix; ///< Path prefix for relative/resolved paths
+  SerdURIComponent path;        ///< Path suffix
+  SerdURIComponent query;       ///< Query
+  SerdURIComponent fragment;    ///< Fragment
 } SerdURIView;
 
 static const SerdURIView SERD_URI_NULL =
