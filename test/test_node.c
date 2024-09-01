@@ -27,6 +27,8 @@
 #  define NAN (INFINITY - INFINITY)
 #endif
 
+#define NS_XSD "http://www.w3.org/2001/XMLSchema#"
+
 static void
 test_free(void)
 {
@@ -157,52 +159,41 @@ test_blob_to_node(void)
 }
 
 static void
+check_decode(const char* const encoded,
+             const char* const datatype_uri,
+             const char* const expected)
+{
+  assert(!strcmp(datatype_uri, NS_XSD "base64Binary"));
+
+  const size_t expected_len = strlen(expected);
+  size_t       size         = 0U;
+  void* const  data = serd_base64_decode(NULL, encoded, strlen(encoded), &size);
+
+  assert(data);
+  assert(size == expected_len);
+  assert(!strncmp((const char*)data, expected, expected_len));
+  zix_free(NULL, data);
+}
+
+static void
 test_base64_decode(void)
 {
-  static const char* const decoded     = "test";
-  static const size_t      decoded_len = 4U;
-
   // Test decoding clean base64
-  {
-    static const char* const encoded     = "dGVzdA==";
-    static const size_t      encoded_len = 8U;
-
-    size_t      size = 0U;
-    void* const data = serd_base64_decode(NULL, encoded, encoded_len, &size);
-
-    assert(data);
-    assert(size == decoded_len);
-    assert(!strncmp((const char*)data, decoded, decoded_len));
-    zix_free(NULL, data);
-  }
+  check_decode("dGVzdA==", NS_XSD "base64Binary", "test");
 
   // Test decoding equivalent dirty base64 with ignored junk characters
-  {
-    static const char* const encoded     = "d-G#V!z*d(A$%==";
-    static const size_t      encoded_len = 13U;
-
-    size_t      size = 0U;
-    void* const data = serd_base64_decode(NULL, encoded, encoded_len, &size);
-
-    assert(data);
-    assert(size == decoded_len);
-    assert(!strncmp((const char*)data, decoded, decoded_len));
-    zix_free(NULL, data);
-  }
+  check_decode("d-G#V!z*d(A$%==", NS_XSD "base64Binary", "test");
 
   // Test decoding effectively nothing
-  {
-    static const char* const encoded     = "@#$%";
-    static const size_t      encoded_len = 4U;
+  check_decode("@#$%", NS_XSD "base64Binary", "");
 
-    size_t      size = 0U;
-    void* const data = serd_base64_decode(NULL, encoded, encoded_len, &size);
+  // Test decoding various lengths
+  check_decode("Y2h1bms=", NS_XSD "base64Binary", "chunk");
+  check_decode("bGV0dGVy", NS_XSD "base64Binary", "letter");
+  check_decode("bm90ZQ==", NS_XSD "base64Binary", "note");
 
-    assert(data);
-    assert(!size);
-    // Contents of data are undefined
-    zix_free(NULL, data);
-  }
+  // Test ignoring junk characters
+  check_decode(" \f\n\r\t\vZm9v \f\n\r\t\v", NS_XSD "base64Binary", "foo");
 }
 
 static void
