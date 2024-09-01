@@ -93,7 +93,7 @@ test_env(void)
   assert(serd_node_equals(&xnode, &SERD_NODE_NULL));
 
   SerdNode xu = serd_env_expand_node(env, &u);
-  assert(expect_string(xu.buf, NS_EG "foo"));
+  assert(expect_string_view(serd_node_string_view(&xu), NS_EG "foo"));
   serd_node_free(NULL, &xu);
 
   SerdNode badpre  = serd_node_from_string(SERD_CURIE, "hm:what");
@@ -101,7 +101,7 @@ test_env(void)
   assert(serd_node_equals(&xbadpre, &SERD_NODE_NULL));
 
   SerdNode xc = serd_env_expand_node(env, &c);
-  assert(expect_string(xc.buf, NS_EG "b"));
+  assert(expect_string_view(serd_node_string_view(&xc), NS_EG "b"));
   serd_node_free(NULL, &xc);
 
   assert(serd_env_set_prefix(env, &SERD_NODE_NULL, &SERD_NODE_NULL));

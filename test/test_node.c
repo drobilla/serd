@@ -10,6 +10,7 @@
 #include <serd/node_type.h>
 #include <serd/string.h>
 #include <zix/allocator.h>
+#include <zix/string_view.h>
 
 #include <assert.h>
 #include <float.h>
@@ -118,9 +119,7 @@ test_integer_to_node(void)
 
   for (size_t i = 0; i < N_TEST_NUMS; ++i) {
     SerdNode node = serd_node_new_integer(NULL, int_test_nums[i]);
-    assert(expect_string(node.buf, int_test_strs[i]));
-    const size_t len = strlen(node.buf);
-    assert(node.n_bytes == len);
+    assert(expect_string_view(serd_node_string_view(&node), int_test_strs[i]));
     serd_node_free(NULL, &node);
   }
 
@@ -137,15 +136,14 @@ test_blob_to_node(void)
       data[i] = (uint8_t)((size + i) % 256);
     }
 
-    SerdNode          blob     = serd_node_new_blob(NULL, data, size, size % 5);
-    const char* const blob_str = blob.buf;
+    SerdNode            blob   = serd_node_new_blob(NULL, data, size, size % 5);
+    const ZixStringView string = serd_node_string_view(&blob);
 
-    assert(blob_str);
-    assert(blob.n_bytes == strlen(blob_str));
+    assert(string.length > size);
 
     size_t   out_size = 0;
     uint8_t* out =
-      (uint8_t*)serd_base64_decode(NULL, blob_str, blob.n_bytes, &out_size);
+      (uint8_t*)serd_base64_decode(NULL, string.data, blob.n_bytes, &out_size);
     assert(out_size == size);
 
     for (size_t i = 0; i < size; ++i) {
@@ -228,11 +226,11 @@ static void
 test_node_from_string(void)
 {
   SerdNode node = serd_node_from_string(SERD_LITERAL, "hello\"");
-  assert(node.n_bytes == 6 && node.flags == SERD_HAS_QUOTE &&
-         !strcmp(node.buf, "hello\""));
+  assert(node.flags == SERD_HAS_QUOTE &&
+         expect_string_view(serd_node_string_view(&node), "hello\""));
 
-  assert(node.n_bytes == 6 && node.flags == SERD_HAS_QUOTE &&
-         expect_string(node.buf, "hello\""));
+  assert(node.flags == SERD_HAS_QUOTE &&
+         expect_string_view(serd_node_string_view(&node), "hello\""));
 
   node = serd_node_from_string(SERD_URI, NULL);
   assert(serd_node_equals(&node, &SERD_NODE_NULL));

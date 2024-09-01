@@ -9,6 +9,7 @@
 #include <serd/status.h>
 #include <serd/string.h>
 #include <zix/attributes.h>
+#include <zix/string_view.h>
 
 #include <assert.h>
 #include <stdint.h>
@@ -19,6 +20,14 @@ test_expect_string(void)
 {
   assert(expect_string("match", "match"));
   assert(!expect_string("intentional", "failure"));
+}
+
+static void
+test_expect_string_view(void)
+{
+  assert(expect_string_view(zix_empty_string(), ""));
+  assert(expect_string_view(zix_string("match"), "match"));
+  assert(!expect_string_view(zix_string("intentional"), "failure"));
 }
 
 static void
@@ -64,6 +73,7 @@ ZIX_PURE_FUNC int
 main(void)
 {
   test_expect_string();
+  test_expect_string_view();
   test_strlen();
   test_strerror();
   return 0;
