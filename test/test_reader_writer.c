@@ -17,6 +17,7 @@
 #include <zix/allocator.h>
 #include <zix/filesystem.h>
 #include <zix/path.h>
+#include <zix/string_view.h>
 
 #include <assert.h>
 #include <errno.h>
@@ -114,7 +115,7 @@ check_write_error_offset(SerdWorld* const world,
                          const size_t     offset,
                          const SerdStatus expected_status)
 {
-  SerdEnv* const env = serd_env_new(NULL, NULL);
+  SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
   assert(env);
 
   ErrorContext      ctx = {0U, offset};
@@ -183,7 +184,7 @@ test_writer(const char* const path)
   assert(fd);
 
   SerdWorld* const world = serd_world_new(NULL);
-  SerdEnv* const   env   = serd_env_new(NULL, NULL);
+  SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
   assert(world);
   assert(env);
 

@@ -8,7 +8,6 @@
 #include "system.h"
 #include "try.h"
 #include "uri_utils.h"
-#include "warnings.h"
 #include "world_internal.h"
 
 #include <serd/buffer.h>
@@ -110,7 +109,6 @@ struct SerdWriterImpl {
   SerdEnv*        env;
   SerdNode        root_node;
   SerdURIView     root_uri;
-  SerdURIView     base_uri;
   SerdStack       anon_stack;
   SerdByteSink    byte_sink;
   WriteContext    context;
@@ -598,19 +596,18 @@ reset_context(SerdWriter* const writer, const unsigned flags)
 static const char*
 get_xsd_name(const SerdEnv* const env, const SerdNode* const datatype)
 {
-  assert(datatype->buf);
-  const char* const datatype_str = datatype->buf;
+  const ZixStringView datatype_str = serd_node_string_view(datatype);
 
   if (datatype->type == SERD_URI &&
-      (!strncmp(datatype_str, NS_XSD, sizeof(NS_XSD) - 1))) {
-    return datatype_str + sizeof(NS_XSD) - 1U;
+      (!strncmp(datatype_str.data, NS_XSD, sizeof(NS_XSD) - 1))) {
+    return datatype_str.data + sizeof(NS_XSD) - 1U;
   }
 
   if (datatype->type == SERD_CURIE) {
     ZixStringView prefix;
     ZixStringView suffix;
     // We can be a bit lazy/presumptive here due to grammar limitations
-    if (!serd_env_expand(env, datatype, &prefix, &suffix)) {
+    if (!serd_env_expand(env, datatype_str, &prefix, &suffix)) {
       if (!strcmp(prefix.data, NS_XSD)) {
         return suffix.data;
       }
@@ -637,21 +634,22 @@ is_name(const char* const buf, const size_t len)
 ZIX_NODISCARD static SerdStatus
 write_uri_node(SerdWriter* const writer, const SerdNode* const node)
 {
-  SerdStatus    st = SERD_SUCCESS;
-  SerdNode      prefix;
-  ZixStringView suffix;
+  SerdStatus          st         = SERD_SUCCESS;
+  const ZixStringView string     = serd_node_string_view(node);
+  const bool          has_scheme = serd_uri_string_has_scheme(string.data);
 
-  const bool has_scheme = serd_uri_string_has_scheme(node->buf);
   if (supports_abbrev(writer)) {
     if (!strcmp(node->buf, NS_RDF "nil")) {
       return esink("()", 2, writer);
     }
 
+    ZixStringView prefix = {NULL, 0};
+    ZixStringView suffix = {NULL, 0};
     if (has_scheme && !(writer->flags & SERD_WRITE_UNQUALIFIED) &&
-        serd_env_qualify(writer->env, node, &prefix, &suffix) &&
-        is_name(prefix.buf, prefix.n_bytes) &&
+        !serd_env_qualify(writer->env, string, &prefix, &suffix) &&
+        is_name(prefix.data, prefix.length) &&
         is_name(suffix.data, suffix.length)) {
-      TRY(st, ewrite_uri(writer, prefix.buf, prefix.n_bytes));
+      TRY(st, write_lname(writer, prefix.data, prefix.length));
       TRY(st, esink(":", 1, writer));
       return ewrite_uri(writer, suffix.data, suffix.length);
     }
@@ -659,7 +657,7 @@ write_uri_node(SerdWriter* const writer, const SerdNode* const node)
 
   if (!has_scheme &&
       (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) &&
-      !serd_env_base_uri(writer->env, NULL)->buf) {
+      !serd_uri_has_scheme(serd_env_base_uri_view(writer->env))) {
     return w_err(writer,
                  SERD_BAD_ARG,
                  "unable to resolve <%s> without a base URI",
@@ -668,21 +666,19 @@ write_uri_node(SerdWriter* const writer, const SerdNode* const node)
 
   TRY(st, esink("<", 1, writer));
 
-  if (!(writer->flags & SERD_WRITE_UNRESOLVED)) {
-    SerdURIView in_base_uri;
-    serd_env_base_uri(writer->env, &in_base_uri);
-    SERD_DISABLE_NULL_WARNINGS
-    const SerdURIView uri = serd_parse_uri(node->buf);
-    SERD_RESTORE_WARNINGS
-    const SerdURIView abs_uri = serd_resolve_uri(uri, in_base_uri);
-    const bool rooted = uri_is_under(&writer->base_uri, &writer->root_uri);
-    const SerdURIView* root = rooted ? &writer->root_uri : &writer->base_uri;
-    UriSinkContext     ctx  = {writer, SERD_SUCCESS};
-    if (!uri_is_under(&abs_uri, root) || writer->syntax == SERD_NTRIPLES ||
-        writer->syntax == SERD_NQUADS) {
+  if (!(writer->flags & SERD_WRITE_UNRESOLVED) &&
+      serd_env_base_uri_string(writer->env).length) {
+    const SerdURIView  base_uri = serd_env_base_uri_view(writer->env);
+    const SerdURIView  uri      = serd_parse_uri(string.data);
+    const SerdURIView  abs_uri  = serd_resolve_uri(uri, base_uri);
+    const bool         rooted   = uri_is_under(&base_uri, &writer->root_uri);
+    const SerdURIView* root     = rooted ? &writer->root_uri : &base_uri;
+    UriSinkContext     ctx      = {writer, SERD_SUCCESS};
+
+    if (!supports_abbrev(writer) || !uri_is_under(&abs_uri, root)) {
       serd_write_uri(abs_uri, uri_sink, &ctx);
     } else {
-      serd_write_uri(serd_relative_uri(uri, writer->base_uri), uri_sink, &ctx);
+      serd_write_uri(serd_relative_uri(uri, base_uri), uri_sink, &ctx);
     }
   } else {
     TRY(st, ewrite_uri(writer, node->buf, node->n_bytes));
@@ -703,8 +699,9 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
     (writer->flags & (SERD_WRITE_UNQUALIFIED | SERD_WRITE_UNRESOLVED));
 
   if (!supports_abbrev(writer) || !fast) {
-    if ((st = serd_env_expand(writer->env, node, &prefix, &suffix))) {
-      return w_err(writer, st, "undefined namespace prefix '%s'", node->buf);
+    const ZixStringView curie = serd_node_string_view(node);
+    if ((st = serd_env_expand(writer->env, curie, &prefix, &suffix))) {
+      return w_err(writer, st, "undefined namespace prefix '%s'", curie.data);
     }
   }
 
@@ -1134,8 +1131,6 @@ serd_writer_new(SerdWorld* const      world,
     return NULL;
   }
 
-  serd_env_base_uri(env, &writer->base_uri);
-
   return writer;
 }
 
@@ -1164,12 +1159,27 @@ serd_writer_set_base_uri(SerdWriter* const writer, const SerdNode* const uri)
 {
   assert(writer);
 
-  SerdStatus st = serd_env_set_base_uri(writer->env, uri);
+  if (uri && uri->type != SERD_URI) {
+    return SERD_BAD_ARG;
+  }
+
+  if (!uri) {
+    SerdStatus st0 = serd_env_set_base_uri(writer->env, zix_empty_string());
+    SerdStatus st1 = reset_context(writer, RESET_GRAPH | RESET_INDENT);
+    return st0 ? st0 : st1;
+  }
+
+  if (zix_string_view_equals(serd_env_base_uri_string(writer->env),
+                             serd_node_string_view(uri))) {
+    return SERD_SUCCESS;
+  }
+
+  const SerdNode* const base_uri_node = uri;
+  SerdStatus            st =
+    serd_env_set_base_uri(writer->env, serd_node_string_view(base_uri_node));
   if (st) {
     return st == SERD_NO_CHANGE ? SERD_SUCCESS : st;
   }
-
-  serd_env_base_uri(writer->env, &writer->base_uri);
 
   if (uri && (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG)) {
     const bool had_subject = writer->context.subject.type;
@@ -1215,7 +1225,8 @@ serd_writer_set_prefix(SerdWriter* const     writer,
   assert(name);
   assert(uri);
 
-  SerdStatus st = serd_env_set_prefix(writer->env, name, uri);
+  SerdStatus st = serd_env_set_prefix(
+    writer->env, serd_node_string_view(name), serd_node_string_view(uri));
   if (st) {
     return st == SERD_NO_CHANGE ? SERD_SUCCESS : st;
   }

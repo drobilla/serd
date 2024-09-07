@@ -37,7 +37,5 @@ IndentPPDirectives: AfterHash
 KeepEmptyLinesAtTheStartOfBlocks: false
 SpacesInContainerLiterals: false
 StatementMacros:
-  - SERD_DISABLE_NULL_WARNINGS
-  - SERD_RESTORE_WARNINGS
   - _Pragma
 ...

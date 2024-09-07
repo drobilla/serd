@@ -6,8 +6,6 @@
 #include <serd/env.h>
 #include <serd/error.h>
 #include <serd/file_uri.h>
-#include <serd/node.h>
-#include <serd/node_type.h>
 #include <serd/reader.h>
 #include <serd/sink.h>
 #include <serd/status.h>
@@ -261,11 +259,9 @@ main(int argc, char** argv)
     base = base_uri_from_path(input);
   }
 
-  const SerdNode base_node = serd_node_from_string(SERD_URI, base.data);
-
   FILE* const      out_fd = stdout;
   SerdWorld* const world  = serd_world_new(NULL);
-  SerdEnv* const   env    = serd_env_new(NULL, &base_node);
+  SerdEnv* const   env    = serd_env_new(NULL, serd_string_view(base));
 
   SerdWriter* const writer = serd_writer_new(
     world, output_syntax, writer_flags, env, serd_file_sink, out_fd);

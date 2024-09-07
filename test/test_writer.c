@@ -60,7 +60,7 @@ test_new_failed_alloc(void)
   SerdFailingAllocator allocator = serd_failing_allocator();
 
   SerdWorld* const world = serd_world_new(&allocator.base);
-  SerdEnv* const   env   = serd_env_new(&allocator.base, NULL);
+  SerdEnv* const   env   = serd_env_new(&allocator.base, zix_empty_string());
 
   // Successfully allocate a writer to count the number of allocations
   serd_failing_allocator_reset(&allocator, SIZE_MAX);
@@ -84,7 +84,7 @@ static void
 test_write_long_literal(void)
 {
   SerdWorld* const world = serd_world_new(NULL);
-  SerdEnv* const   env   = serd_env_new(NULL, NULL);
+  SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
 
   SerdBuffer        buffer = {NULL, NULL, 0};
   SerdWriter* const writer =
@@ -118,7 +118,7 @@ static void
 test_write_nested_anon(void)
 {
   SerdWorld* const world = serd_world_new(NULL);
-  SerdEnv* const   env   = serd_env_new(NULL, NULL);
+  SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
 
   SerdBuffer        buffer = {NULL, NULL, 0};
   SerdWriter* const writer =
@@ -181,7 +181,7 @@ test_writer_cleanup(void)
 {
   SerdStatus       st    = SERD_SUCCESS;
   SerdWorld* const world = serd_world_new(NULL);
-  SerdEnv* const   env   = serd_env_new(NULL, NULL);
+  SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
 
   SerdWriter* const writer =
     serd_writer_new(world, SERD_TURTLE, 0U, env, null_sink, NULL);
@@ -232,7 +232,7 @@ test_write_bad_anon_stack(void)
 {
   SerdStatus       st    = SERD_SUCCESS;
   SerdWorld* const world = serd_world_new(NULL);
-  SerdEnv* const   env   = serd_env_new(NULL, NULL);
+  SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
 
   SerdWriter* const writer =
     serd_writer_new(world, SERD_TURTLE, 0U, env, null_sink, NULL);
@@ -272,7 +272,7 @@ static void
 check_strict_write(const SerdWriterFlags flags)
 {
   SerdWorld* const world = serd_world_new(NULL);
-  SerdEnv* const   env   = serd_env_new(NULL, NULL);
+  SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
 
   SerdWriter* const writer =
     serd_writer_new(world, SERD_TURTLE, flags, env, null_sink, NULL);
@@ -321,8 +321,7 @@ static void
 test_strict_write(void)
 {
   check_strict_write((SerdWriterFlags)SERD_WRITE_UNRESOLVED);
-  check_strict_write(
-    (SerdWriterFlags)(SERD_WRITE_UNRESOLVED | SERD_WRITE_ASCII));
+  check_strict_write((SerdWriterFlags)SERD_WRITE_ASCII);
 }
 
 // Produce a write error without setting errno
@@ -341,7 +340,7 @@ test_write_error(void)
   static const ZixStringView uri_string = ZIX_STATIC_STRING(NS_EG "u");
 
   SerdWorld* const world = serd_world_new(NULL);
-  SerdEnv* const   env   = serd_env_new(NULL, NULL);
+  SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
 
   SerdWriter* const writer =
     serd_writer_new(world, SERD_TURTLE, 0U, env, error_sink, NULL);
@@ -367,7 +366,7 @@ static void
 test_buffer_sink(void)
 {
   SerdWorld* const world = serd_world_new(NULL);
-  SerdEnv* const   env   = serd_env_new(NULL, NULL);
+  SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
 
   SerdBuffer        buffer = {NULL, NULL, 0};
   SerdWriter* const writer =
@@ -392,7 +391,7 @@ static void
 test_write_nothing_node(void)
 {
   SerdWorld* const world = serd_world_new(NULL);
-  SerdEnv* const   env   = serd_env_new(NULL, NULL);
+  SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
 
   SerdWriter* const writer = serd_writer_new(
     world, SERD_TURTLE, SERD_WRITE_UNRESOLVED, env, null_sink, NULL);
@@ -413,7 +412,7 @@ static void
 test_write_empty_syntax(void)
 {
   SerdWorld* const world = serd_world_new(NULL);
-  SerdEnv* const   env   = serd_env_new(NULL, NULL);
+  SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
 
   SerdBuffer        buffer = {NULL, NULL, 0};
   SerdWriter* const writer = serd_writer_new(
