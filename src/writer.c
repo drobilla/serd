@@ -1245,13 +1245,12 @@ serd_writer_finish(SerdWriter* const writer)
 }
 
 SerdWriter*
-serd_writer_new(SerdWorld* const         world,
-                const SerdSyntax         syntax,
-                const SerdWriterFlags    flags,
-                SerdEnv* const           env,
-                const SerdURIView* const base_uri,
-                SerdWriteFunc            ssink,
-                void* const              stream)
+serd_writer_new(SerdWorld* const      world,
+                const SerdSyntax      syntax,
+                const SerdWriterFlags flags,
+                SerdEnv* const        env,
+                SerdWriteFunc         ssink,
+                void* const           stream)
 {
   assert(world);
   assert(env);
@@ -1271,9 +1270,13 @@ serd_writer_new(SerdWorld* const         world,
   writer->env        = env;
   writer->root_node  = SERD_NODE_NULL;
   writer->root_uri   = SERD_URI_NULL;
-  writer->base_uri   = base_uri ? *base_uri : SERD_URI_NULL;
   writer->anon_stack = serd_stack_new(allocator, SERD_PAGE_SIZE);
-  writer->byte_sink  = serd_byte_sink_new(
+  if (!writer->anon_stack.buf) {
+    zix_free(allocator, writer);
+    return NULL;
+  }
+
+  writer->byte_sink = serd_byte_sink_new(
     allocator, ssink, stream, (flags & SERD_WRITE_BULK) ? SERD_PAGE_SIZE : 1);
 
   if ((flags & SERD_WRITE_BULK) && !writer->byte_sink.buf) {
@@ -1281,6 +1284,8 @@ serd_writer_new(SerdWorld* const         world,
     zix_free(allocator, writer);
     return NULL;
   }
+
+  serd_env_base_uri(env, &writer->base_uri);
 
   return writer;
 }

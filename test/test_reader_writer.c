@@ -119,7 +119,7 @@ check_write_error_offset(SerdWorld* const world,
 
   ErrorContext      ctx = {0U, offset};
   SerdWriter* const writer =
-    serd_writer_new(world, syntax, 0U, env, NULL, faulty_sink, &ctx);
+    serd_writer_new(world, syntax, 0U, env, faulty_sink, &ctx);
   assert(writer);
 
   SerdReader* const reader =
@@ -188,7 +188,7 @@ test_writer(const char* const path)
   assert(env);
 
   SerdWriter* writer = serd_writer_new(
-    world, SERD_TURTLE, SERD_WRITE_LAX, env, NULL, serd_file_sink, fd);
+    world, SERD_TURTLE, SERD_WRITE_LAX, env, serd_file_sink, fd);
   assert(writer);
 
   serd_writer_chop_blank_prefix(writer, "tmp");
