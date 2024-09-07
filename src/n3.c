@@ -1404,30 +1404,33 @@ read_wrappedGraph(SerdReader* const reader, ReadContext* const ctx)
 }
 
 static bool
-token_equals(SerdReader* const reader,
-             const Ref         ref,
-             const char* const tok,
-             const size_t      n)
+token_equals(SerdReader* const reader, const Ref ref, const ZixStringView tok)
 {
   const SerdNode* const node = deref(reader, ref);
-  if (!node || node->n_bytes != n) {
+  if (!node || node->n_bytes != tok.length) {
     return false;
   }
 
   assert(node->buf);
   const char* const node_string = node->buf;
-  for (size_t i = 0U; i < n; ++i) {
-    if (serd_to_upper(node_string[i]) != serd_to_upper(tok[i])) {
+  for (size_t i = 0U; i < tok.length; ++i) {
+    if (serd_to_upper(node_string[i]) != serd_to_upper(tok.data[i])) {
       return false;
     }
   }
 
-  return tok[n] == '\0';
+  return true;
 }
 
 SerdStatus
 read_n3_statement(SerdReader* const reader)
 {
+  static const ZixStringView base_token   = ZIX_STATIC_STRING("base");
+  static const ZixStringView false_token  = ZIX_STATIC_STRING("false");
+  static const ZixStringView graph_token  = ZIX_STATIC_STRING("graph");
+  static const ZixStringView prefix_token = ZIX_STATIC_STRING("prefix");
+  static const ZixStringView true_token   = ZIX_STATIC_STRING("true");
+
   SerdStatementFlags flags   = 0;
   ReadContext        ctx     = {0, 0, 0, 0, 0, 0, &flags};
   bool               ate_dot = false;
@@ -1465,11 +1468,11 @@ read_n3_statement(SerdReader* const reader)
       return st;
     }
 
-    if (token_equals(reader, ctx.subject, "base", 4)) {
+    if (token_equals(reader, ctx.subject, base_token)) {
       st = read_base(reader, true, false);
-    } else if (token_equals(reader, ctx.subject, "prefix", 6)) {
+    } else if (token_equals(reader, ctx.subject, prefix_token)) {
       st = read_prefixID(reader, true, false);
-    } else if (token_equals(reader, ctx.subject, "graph", 5)) {
+    } else if (token_equals(reader, ctx.subject, graph_token)) {
       ctx.subject = pop_node(reader, ctx.subject);
       read_ws_star(reader);
       if (!(st = read_labelOrSubject(reader, &ctx.graph))) {
@@ -1478,8 +1481,8 @@ read_n3_statement(SerdReader* const reader)
       }
       ctx.graph = pop_node(reader, ctx.graph);
       read_ws_star(reader);
-    } else if (token_equals(reader, ctx.subject, "true", 4) ||
-               token_equals(reader, ctx.subject, "false", 5)) {
+    } else if (token_equals(reader, ctx.subject, true_token) ||
+               token_equals(reader, ctx.subject, false_token)) {
       st = r_err(reader, SERD_BAD_SYNTAX, "expected subject\n");
     } else if (read_ws_star(reader) && peek_byte(reader) == '{') {
       if (s_type == '(' || (s_type == '[' && !*ctx.flags)) {
