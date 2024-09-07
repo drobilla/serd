@@ -79,6 +79,7 @@ typedef enum {
   SERD_NTRIPLES = 2U, ///< Line-based triples http://www.w3.org/TR/n-triples/
   SERD_NQUADS   = 3U, ///< Line-based quads http://www.w3.org/TR/n-quads/
   SERD_TRIG     = 4U, ///< Terse quads http://www.w3.org/TR/trig/
+  SERD_HEXTUPLES = 5U, ///< ndjson hex tuples https://github.com/ontola/hextuples
 } SerdSyntax;
 
 /// Flags indicating certain string properties relevant to serialisation

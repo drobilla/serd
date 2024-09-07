@@ -145,7 +145,7 @@ write_node(SerdWriter*        writer,
 SERD_NODISCARD static bool
 supports_abbrev(const SerdWriter* writer)
 {
-  return writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG;
+  return writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG || writer->syntax == SERD_HEXTUPLES;
 }
 
 static SerdStatus
@@ -554,9 +554,9 @@ write_sep(SerdWriter* writer, const Sep sep)
 
   // Write newline or space before separator if necessary
   if (pre_line) {
-    TRY(st, write_newline(writer));
+	TRY(st, write_newline(writer));
   } else if (rule->pre_space_after & (1U << writer->last_sep)) {
-    TRY(st, esink(" ", 1, writer));
+	TRY(st, esink(" ", 1, writer));
   }
 
   // Write actual separator string
@@ -704,20 +704,37 @@ write_uri_node(SerdWriter* const writer,
   if (supports_abbrev(writer)) {
     if (field == FIELD_PREDICATE &&
         !strcmp((const char*)node->buf, NS_RDF "type")) {
-      return esink("a", 1, writer);
+	  if (writer->syntax == SERD_HEXTUPLES) {
+		  return esink("\"a\"", 3, writer);
+	  }
+	  else {
+		  return esink("a", 1, writer);
+	  }
     }
 
     if (!strcmp((const char*)node->buf, NS_RDF "nil")) {
-      return esink("()", 2, writer);
+	  if (writer->syntax == SERD_HEXTUPLES) {
+		  return esink("null", 4, writer);
+	  }
+	  else {
+		  return esink("()", 2, writer);
+	  }
     }
 
     if (has_scheme && (writer->style & SERD_STYLE_CURIED) &&
         serd_env_qualify(writer->env, node, &prefix, &suffix) &&
         is_name(prefix.buf, prefix.n_bytes) &&
         is_name(suffix.buf, suffix.len)) {
+	  if (writer->syntax == SERD_HEXTUPLES) {
+		  TRY(st, esink("\"", 1, writer));
+	  }
       TRY(st, write_uri_from_node(writer, &prefix));
       TRY(st, esink(":", 1, writer));
-      return ewrite_uri(writer, suffix.buf, suffix.len);
+      TRY(st, ewrite_uri(writer, suffix.buf, suffix.len));
+	  if (writer->syntax == SERD_HEXTUPLES) {
+		  TRY(st, esink("\"", 1, writer));
+	  }
+	  return st;
     }
   }
 
@@ -730,7 +747,11 @@ write_uri_node(SerdWriter* const writer,
                  node->buf);
   }
 
-  TRY(st, esink("<", 1, writer));
+  if (writer->syntax == SERD_HEXTUPLES) {
+	  TRY(st, esink("\"", 1, writer));
+  } else {
+	  TRY(st, esink("<", 1, writer));
+  }
 
   if (writer->style & SERD_STYLE_RESOLVED) {
     SerdURI in_base_uri;
@@ -745,7 +766,7 @@ write_uri_node(SerdWriter* const writer,
     SerdURI*       root   = rooted ? &writer->root_uri : &writer->base_uri;
     UriSinkContext ctx    = {writer, SERD_SUCCESS};
     if (!uri_is_under(&abs_uri, root) || writer->syntax == SERD_NTRIPLES ||
-        writer->syntax == SERD_NQUADS) {
+        writer->syntax == SERD_NQUADS || writer->syntax == SERD_HEXTUPLES) {
       serd_uri_serialise(&abs_uri, uri_sink, &ctx);
     } else {
       serd_uri_serialise_relative(
@@ -755,7 +776,18 @@ write_uri_node(SerdWriter* const writer,
     TRY(st, write_uri_from_node(writer, node));
   }
 
-  return esink(">", 1, writer);
+  if (writer->syntax == SERD_HEXTUPLES) {
+	  /* TRY(st, esink("$CUE", 4, writer)); */
+	  if (field == FIELD_PREDICATE || field == FIELD_SUBJECT ){
+		  return esink("\"", 1, writer);
+	  } else {
+		  TRY(st, esink("\"", 1, writer));
+		  TRY(st, write_sep(writer, SEP_LIST_END));
+		  return st;
+	  }
+  } else {
+	  return esink(">", 1, writer);
+  }
 }
 
 SERD_NODISCARD static SerdStatus
@@ -812,6 +844,10 @@ write_blank(SerdWriter* const        writer,
     }
   }
 
+  if (writer->syntax == SERD_HEXTUPLES) {
+	  TRY(st, esink("\"", 1, writer));
+  } 
+
   TRY(st, esink("_:", 2, writer));
   if (writer->bprefix && !strncmp((const char*)node->buf,
                                   (const char*)writer->bprefix,
@@ -822,6 +858,9 @@ write_blank(SerdWriter* const        writer,
               writer));
   } else {
     TRY(st, esink(node->buf, node->n_bytes, writer));
+  }
+  if (writer->syntax == SERD_HEXTUPLES) {
+	  TRY(st, esink("\"", 1, writer));
   }
 
   return st;
@@ -946,6 +985,42 @@ serd_writer_write_statement(SerdWriter*        writer,
     TRY(st, esink(" .\n", 3, writer));
     return SERD_SUCCESS;
   }
+  else if (writer->syntax == SERD_HEXTUPLES) {
+    TRY(st, esink("[", 1, writer));
+    TRY(st, write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags));
+    TRY(st, esink(", ", 2, writer));
+    TRY(st, write_node(writer, predicate, NULL, NULL, FIELD_PREDICATE, flags));
+    TRY(st, esink(", ", 2, writer));
+	// object
+	TRY(st, esink("\"", 1, writer));
+	TRY(st, write_text(writer, WRITE_STRING, object->buf, object->n_bytes));
+	st = esink("\"", 1, writer);
+
+	TRY(st, esink(", ", 2, writer));
+	//datatype
+	if (datatype && datatype->buf) {
+		st = write_node(writer, datatype, NULL, NULL, FIELD_NONE, flags);
+	} else {
+		TRY(st, esink("\"\"", 2, writer));
+	}
+	TRY(st, esink(", ", 2, writer));
+	// lang
+	TRY(st, esink("\"", 1, writer));
+	if (lang && lang->buf) {
+		st = esink(lang->buf, lang->n_bytes, writer);
+	}
+	TRY(st, esink("\"", 1, writer));
+
+	TRY(st, esink(", ", 2, writer));
+	TRY(st, esink("\"", 1, writer));
+    if (graph) {
+      TRY(st, write_node(writer, graph, datatype, lang, FIELD_GRAPH, flags));
+    }
+	TRY(st, esink("\"", 1, writer));
+    /* TRY(st, esink("]\n", 3, writer)); */
+    TRY(st, esink("]\n", 2, writer));
+    return SERD_SUCCESS;
+  }
 
   SERD_DISABLE_NULL_WARNINGS
 
@@ -968,7 +1043,12 @@ serd_writer_write_statement(SerdWriter*        writer,
     // Continue a list
     if (!strcmp((const char*)predicate->buf, NS_RDF "first") &&
         !strcmp((const char*)object->buf, NS_RDF "nil")) {
-      return esink("()", 2, writer);
+
+	  if (writer->syntax == SERD_HEXTUPLES) {
+		  return esink("null", 4, writer);
+	  } else {
+		  return esink("()", 2, writer);
+	  }
     }
 
     TRY_FAILING(
@@ -1070,7 +1150,7 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
 
   SerdStatus st = SERD_SUCCESS;
 
-  if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
+  if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS || writer->syntax == SERD_HEXTUPLES) {
     return SERD_SUCCESS;
   }
 
