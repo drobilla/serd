@@ -11,7 +11,6 @@
 #include <serd/status.h>
 #include <serd/stream.h>
 #include <serd/syntax.h>
-#include <serd/uri.h>
 #include <serd/version.h>
 #include <serd/world.h>
 #include <serd/writer.h>
@@ -216,14 +215,11 @@ main(int argc, char** argv)
     output_syntax = input_has_graphs ? SERD_NQUADS : SERD_NTRIPLES;
   }
 
-  SerdURIView base_uri = SERD_URI_NULL;
-  SerdNode    base     = SERD_NODE_NULL;
+  SerdNode base = SERD_NODE_NULL;
   if (a < argc) { // Base URI given on command line
-    base     = serd_node_new_uri_from_string(NULL, argv[a]);
-    base_uri = serd_parse_uri(base.buf);
+    base = serd_node_new_uri_from_string(NULL, argv[a]);
   } else if (!from_string && !from_stdin) { // Use input file URI
-    base     = serd_node_new_file_uri(NULL, input, NULL);
-    base_uri = serd_parse_uri(base.buf);
+    base = serd_node_new_file_uri(NULL, input, NULL);
   }
 
   FILE* const      out_fd = stdout;
@@ -231,7 +227,7 @@ main(int argc, char** argv)
   SerdEnv* const   env    = serd_env_new(NULL, &base);
 
   SerdWriter* const writer = serd_writer_new(
-    world, output_syntax, writer_flags, env, &base_uri, serd_file_sink, out_fd);
+    world, output_syntax, writer_flags, env, serd_file_sink, out_fd);
 
   SerdReader* const reader =
     serd_reader_new(world,

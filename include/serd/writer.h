@@ -11,7 +11,6 @@
 #include <serd/status.h>
 #include <serd/stream.h>
 #include <serd/syntax.h>
-#include <serd/uri.h>
 #include <serd/world.h>
 #include <zix/attributes.h>
 #include <zix/string_view.h>
@@ -49,13 +48,12 @@ typedef unsigned SerdWriterFlags;
 
 /// Create a new RDF writer
 SERD_API SerdWriter* ZIX_ALLOCATED
-serd_writer_new(SerdWorld* ZIX_NONNULL          world,
-                SerdSyntax                      syntax,
-                SerdWriterFlags                 flags,
-                SerdEnv* ZIX_NONNULL            env,
-                const SerdURIView* ZIX_NULLABLE base_uri,
-                SerdWriteFunc ZIX_NONNULL       ssink,
-                void* ZIX_UNSPECIFIED           stream);
+serd_writer_new(SerdWorld* ZIX_NONNULL    world,
+                SerdSyntax                syntax,
+                SerdWriterFlags           flags,
+                SerdEnv* ZIX_NONNULL      env,
+                SerdWriteFunc ZIX_NONNULL ssink,
+                void* ZIX_UNSPECIFIED     stream);
 
 /// Free `writer`
 SERD_API void
