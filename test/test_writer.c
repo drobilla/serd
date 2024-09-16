@@ -16,6 +16,7 @@
 #include <serd/world.h>
 #include <serd/writer.h>
 #include <zix/allocator.h>
+#include <zix/string_view.h>
 
 #include <assert.h>
 #include <stdint.h>
@@ -32,6 +33,24 @@ null_sink(const void* const buf, const size_t len, void* const stream)
   (void)stream;
 
   return len;
+}
+
+static SerdStatus
+write_statement(SerdWriter* const        writer,
+                const SerdStatementFlags flags,
+                const SerdNodeType       subject_type,
+                const ZixStringView      subject_string,
+                const SerdNodeType       predicate_type,
+                const ZixStringView      predicate_string,
+                const SerdNodeType       object_type,
+                const ZixStringView      object_string)
+{
+  SerdNode s = serd_node_from_string(subject_type, subject_string.data);
+  SerdNode p = serd_node_from_string(predicate_type, predicate_string.data);
+  SerdNode o = serd_node_from_string(object_type, object_string.data);
+
+  return serd_writer_write_statement(
+    writer, flags, NULL, &s, &p, &o, NULL, NULL);
 }
 
 static void
@@ -73,11 +92,14 @@ test_write_long_literal(void)
     serd_writer_new(world, SERD_TURTLE, 0U, env, serd_buffer_sink, &buffer);
   assert(writer);
 
-  SerdNode s = serd_node_from_string(SERD_URI, NS_EG "s");
-  SerdNode p = serd_node_from_string(SERD_URI, NS_EG "p");
-  SerdNode o = serd_node_from_string(SERD_LITERAL, "hello \"\"\"world\"\"\"!");
-
-  assert(!serd_writer_write_statement(writer, 0, NULL, &s, &p, &o, NULL, NULL));
+  assert(!write_statement(writer,
+                          0U,
+                          SERD_URI,
+                          zix_string(NS_EG "s"),
+                          SERD_URI,
+                          zix_string(NS_EG "p"),
+                          SERD_LITERAL,
+                          zix_string("hello \"\"\"world\"\"\"!")));
   assert(!serd_writer_finish(writer));
 
   static const char* const expected =
@@ -217,20 +239,26 @@ test_write_bad_anon_stack(void)
     serd_writer_new(world, SERD_TURTLE, 0U, env, null_sink, NULL);
   assert(writer);
 
-  SerdNode s  = serd_node_from_string(SERD_URI, NS_EG "s");
-  SerdNode p  = serd_node_from_string(SERD_URI, NS_EG "p");
-  SerdNode b0 = serd_node_from_string(SERD_BLANK, "b0");
-  SerdNode b1 = serd_node_from_string(SERD_BLANK, "b1");
-  SerdNode b2 = serd_node_from_string(SERD_BLANK, "b2");
-
-  st = serd_writer_write_statement(
-    writer, SERD_ANON_O, NULL, &s, &p, &b0, NULL, NULL);
+  st = write_statement(writer,
+                       SERD_ANON_O,
+                       SERD_URI,
+                       zix_string(NS_EG "s"),
+                       SERD_URI,
+                       zix_string(NS_EG "p"),
+                       SERD_BLANK,
+                       zix_string("b0"));
   assert(!st);
 
   // (missing call to end the anonymous node here)
 
-  st = serd_writer_write_statement(
-    writer, SERD_ANON_O, NULL, &b1, &p, &b2, NULL, NULL);
+  st = write_statement(writer,
+                       SERD_ANON_O,
+                       SERD_BLANK,
+                       zix_string("b1"),
+                       SERD_URI,
+                       zix_string(NS_EG "p"),
+                       SERD_BLANK,
+                       zix_string("b2"));
 
   assert(st == SERD_BAD_ARG);
 
@@ -255,23 +283,34 @@ check_strict_write(const SerdWriterFlags flags)
   static const uint8_t bad_short_buf[] = {0xFF, 0x90, 'h', 'i', 0};
   static const uint8_t bad_long_buf[]  = {'e', '\n', 'r', 0xFF, 0x90, 0};
 
-  SerdNode s       = serd_node_from_string(SERD_URI, NS_EG "s");
-  SerdNode p       = serd_node_from_string(SERD_URI, NS_EG "p");
-  SerdNode bad_uri = serd_node_from_string(SERD_URI, (const char*)bad_uri_buf);
-  SerdNode bad_short_lit =
-    serd_node_from_string(SERD_LITERAL, (const char*)bad_short_buf);
-  SerdNode bad_long_lit =
-    serd_node_from_string(SERD_LITERAL, (const char*)bad_long_buf);
-
-  assert(serd_writer_write_statement(
-           writer, 0, NULL, &s, &p, &bad_uri, NULL, NULL) == SERD_BAD_TEXT);
-
-  assert(serd_writer_write_statement(
-           writer, 0, NULL, &s, &p, &bad_short_lit, NULL, NULL) ==
+  assert(write_statement(writer,
+                         0U,
+                         SERD_URI,
+                         zix_string(NS_EG "s"),
+                         SERD_URI,
+                         zix_string(NS_EG "p"),
+                         SERD_URI,
+                         zix_string((const char*)bad_uri_buf)) ==
          SERD_BAD_TEXT);
 
-  assert(serd_writer_write_statement(
-           writer, 0, NULL, &s, &p, &bad_long_lit, NULL, NULL) ==
+  assert(write_statement(writer,
+                         0U,
+                         SERD_URI,
+                         zix_string(NS_EG "s"),
+                         SERD_URI,
+                         zix_string(NS_EG "p"),
+                         SERD_LITERAL,
+                         zix_string((const char*)bad_short_buf)) ==
+         SERD_BAD_TEXT);
+
+  assert(write_statement(writer,
+                         0U,
+                         SERD_URI,
+                         zix_string(NS_EG "s"),
+                         SERD_URI,
+                         zix_string(NS_EG "p"),
+                         SERD_LITERAL,
+                         zix_string((const char*)bad_long_buf)) ==
          SERD_BAD_TEXT);
 
   serd_writer_free(writer);
@@ -300,6 +339,8 @@ error_sink(const void* const buf, const size_t len, void* const stream)
 static void
 test_write_error(void)
 {
+  static const ZixStringView uri_string = ZIX_STATIC_STRING(NS_EG "u");
+
   SerdWorld* const world = serd_world_new(NULL);
   SerdEnv* const   env   = serd_env_new(NULL, NULL);
 
@@ -307,10 +348,15 @@ test_write_error(void)
     serd_writer_new(world, SERD_TURTLE, 0U, env, error_sink, NULL);
   assert(writer);
 
-  SerdNode u = serd_node_from_string(SERD_URI, NS_EG "u");
+  const SerdStatus st = write_statement(writer,
+                                        0U,
+                                        SERD_URI,
+                                        uri_string,
+                                        SERD_URI,
+                                        uri_string,
+                                        SERD_URI,
+                                        uri_string);
 
-  const SerdStatus st =
-    serd_writer_write_statement(writer, 0U, NULL, &u, &u, &u, NULL, NULL);
   assert(st == SERD_BAD_WRITE);
 
   serd_writer_free(writer);
@@ -370,17 +416,19 @@ test_write_empty_syntax(void)
   SerdWorld* const world = serd_world_new(NULL);
   SerdEnv* const   env   = serd_env_new(NULL, NULL);
 
-  SerdNode s = serd_node_from_string(SERD_URI, NS_EG "s");
-  SerdNode p = serd_node_from_string(SERD_URI, NS_EG "p");
-  SerdNode o = serd_node_from_string(SERD_CURIE, "eg:o");
-
   SerdBuffer        buffer = {NULL, NULL, 0};
   SerdWriter* const writer = serd_writer_new(
     world, SERD_SYNTAX_EMPTY, 0U, env, serd_buffer_sink, &buffer);
   assert(writer);
 
-  assert(
-    !serd_writer_write_statement(writer, 0U, NULL, &s, &p, &o, NULL, NULL));
+  assert(!write_statement(writer,
+                          0U,
+                          SERD_URI,
+                          zix_string(NS_EG "s"),
+                          SERD_URI,
+                          zix_string(NS_EG "p"),
+                          SERD_CURIE,
+                          zix_string("eg:o")));
 
   const char* const out = serd_buffer_sink_finish(&buffer);
   assert(out);

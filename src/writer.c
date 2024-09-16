@@ -888,28 +888,27 @@ write_literal(SerdWriter* const     writer,
 {
   assert(node->buf);
 
-  SerdStatus        st       = SERD_SUCCESS;
-  const char* const node_str = node->buf;
-  const size_t      node_len = node->n_bytes;
+  SerdStatus          st     = SERD_SUCCESS;
+  const ZixStringView string = serd_node_string_view(node);
 
   if (supports_abbrev(writer) && datatype && datatype->buf) {
     const char* const xsd_name = get_xsd_name(writer->env, datatype);
     assert(xsd_name);
     if (!strcmp(xsd_name, "boolean") || !strcmp(xsd_name, "integer") ||
-        (!strcmp(xsd_name, "decimal") && strchr(node_str, '.') &&
-         node_str[node_len - 1] != '.')) {
-      return esink(node_str, node_len, writer);
+        (!strcmp(xsd_name, "decimal") && strchr(string.data, '.') &&
+         string.data[string.length - 1U] != '.')) {
+      return esink(string.data, string.length, writer);
     }
   }
 
   if (supports_abbrev(writer) &&
       (node->flags & (SERD_HAS_NEWLINE | SERD_HAS_QUOTE))) {
     TRY(st, esink("\"\"\"", 3, writer));
-    TRY(st, write_long_text(writer, node_str, node_len));
+    TRY(st, write_long_text(writer, string.data, string.length));
     st = esink("\"\"\"", 3, writer);
   } else {
     TRY(st, esink("\"", 1, writer));
-    TRY(st, write_short_text(writer, node_str, node_len));
+    TRY(st, write_short_text(writer, string.data, string.length));
     st = esink("\"", 1, writer);
   }
   if (lang && lang->buf) {
@@ -929,7 +928,8 @@ write_blank(SerdWriter* const        writer,
             const Field              field,
             const SerdStatementFlags flags)
 {
-  SerdStatus st = SERD_SUCCESS;
+  SerdStatus          st    = SERD_SUCCESS;
+  const ZixStringView label = serd_node_string_view(node);
 
   if (supports_abbrev(writer)) {
     if ((field == FIELD_SUBJECT && (flags & SERD_ANON_S)) ||
@@ -950,13 +950,13 @@ write_blank(SerdWriter* const        writer,
 
   TRY(st, esink("_:", 2, writer));
   if (writer->bprefix &&
-      !strncmp(node->buf, writer->bprefix, writer->bprefix_len)) {
+      !strncmp(label.data, writer->bprefix, writer->bprefix_len)) {
     TRY(st,
         esink(node->buf + writer->bprefix_len,
               node->n_bytes - writer->bprefix_len,
               writer));
   } else {
-    TRY(st, esink(node->buf, node->n_bytes, writer));
+    TRY(st, esink(label.data, label.length, writer));
   }
 
   return st;
