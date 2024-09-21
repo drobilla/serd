@@ -12,8 +12,8 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 
 #ifdef SERD_STACK_CHECK
 #  define SERD_STACK_ASSERT_TOP(reader, ref) \
@@ -114,7 +114,7 @@ peek_byte(SerdReader* reader)
 {
   SerdByteSource* source = &reader->source;
 
-  return source->eof ? EOF : (int)source->read_buf[source->read_head];
+  return source->eof ? -1 : (int)source->read_buf[source->read_head];
 }
 
 static inline SerdStatus
@@ -163,7 +163,7 @@ eat_string(SerdReader* reader, const char* str, unsigned n)
 static inline SerdStatus
 push_byte(SerdReader* reader, Ref ref, const int c)
 {
-  assert(c != EOF);
+  assert(c >= 0);
   SERD_STACK_ASSERT_TOP(reader, ref);
 
   uint8_t* const  s    = (uint8_t*)serd_stack_push(&reader->stack, 1);
