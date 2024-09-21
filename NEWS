@@ -1,3 +1,9 @@
+serd (1.1.1) unstable; urgency=medium
+
+  * Bump major version and revise API
+
+ -- David Robillard <d@drobilla.net>  Sat, 21 Sep 2024 12:22:16 +0000
+
 serd (0.32.5) unstable; urgency=medium
 
   * Avoid over-use of yielding meson options
