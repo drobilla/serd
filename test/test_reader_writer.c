@@ -332,6 +332,5 @@ main(void)
   assert(!remove(path));
   free(path);
 
-  printf("Success\n");
   return 0;
 }

@@ -112,7 +112,6 @@ test_write_nested_anon(void)
     "\t\t<http://example.org/p4> <http://example.org/o4>\n"
     "\t] .\n";
 
-  fprintf(stderr, "%s\n", out);
   assert(!strcmp((char*)out, expected));
   serd_free(out);
 }

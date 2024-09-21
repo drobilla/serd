@@ -8,7 +8,6 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
 #define USTR(s) ((const uint8_t*)(s))
@@ -382,7 +381,5 @@ main(void)
   test_uri_parsing();
   test_uri_from_string();
   test_relative_uri();
-
-  printf("Success\n");
   return 0;
 }

@@ -285,7 +285,5 @@ main(void)
   test_node_from_string();
   test_node_from_substring();
   test_uri_node_from_node();
-
-  printf("Success\n");
   return 0;
 }
