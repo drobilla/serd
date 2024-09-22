@@ -15,7 +15,7 @@
 #include <zix/string_view.h>
 
 #include <stdbool.h>
-#include <stdio.h>
+#include <stddef.h>
 
 static SerdStatus
 read_wrappedGraph(SerdReader* const reader, ReadContext* const ctx)
@@ -162,12 +162,15 @@ read_trig_statement(SerdReader* const reader)
   SerdEventFlags flags = 0U;
   ReadContext    ctx   = {NULL, NULL, NULL, &flags};
 
-  // Handle nice cases we can distinguish from the next byte
+  // Skip whitespace and get the first byte
   read_turtle_ws_star(reader);
-  switch (peek_byte(reader)) {
-  case EOF:
-    return SERD_FAILURE;
+  const int c = peek_byte(reader);
+  if (c < 0) {
+    return SERD_FAILURE; // EOF
+  }
 
+  // Handle nice cases we can distinguish from the next byte
+  switch (c) {
   case '\0':
     eat_byte(reader);
     return SERD_FAILURE;

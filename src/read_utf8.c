@@ -10,7 +10,6 @@
 #include <serd/status.h>
 
 #include <stdint.h>
-#include <stdio.h>
 
 enum {
   MAX_UTF8_BYTES = 4U,
@@ -21,7 +20,7 @@ static const uint8_t replacement_char[] = {0xEFU, 0xBFU, 0xBDU};
 static SerdStatus
 skip_invalid_utf8(SerdReader* const reader)
 {
-  for (int b = peek_byte(reader); b != EOF && ((uint8_t)b & 0x80);) {
+  for (int b = peek_byte(reader); b > 0 && ((uint8_t)b & 0x80);) {
     skip_byte(reader, b);
     b = peek_byte(reader);
   }
@@ -50,7 +49,7 @@ read_utf8_continuation_bytes(SerdReader* const reader,
   bytes[0] = lead;
   for (uint8_t i = 1U; i < *size; ++i) {
     const int b = peek_byte(reader);
-    if (b == EOF) {
+    if (b < 0) {
       return r_err_eof(reader, SERD_BAD_TEXT);
     }
 

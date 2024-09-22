@@ -19,8 +19,8 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 
 static const uint8_t replacement_char[] = {0xEFU, 0xBFU, 0xBDU};
 
@@ -83,7 +83,7 @@ read_IRI_scheme(SerdReader* const reader, TokenHeader* const dest)
   }
 
   SerdStatus st = SERD_SUCCESS;
-  while (!st && (c = peek_byte(reader)) != EOF) {
+  while (!st && (c = peek_byte(reader)) >= 0) {
     if (c == ':') {
       return SERD_SUCCESS; // End of scheme
     }
@@ -194,9 +194,11 @@ read_STRING_LITERAL(SerdReader* const  reader,
 
   while (tolerate_status(reader, st)) {
     const int c = peek_byte(reader);
-    switch (c) {
-    case EOF:
+    if (c < 0) {
       return r_err_eof(reader, SERD_BAD_SYNTAX);
+    }
+
+    switch (c) {
     case '\n':
     case '\r':
       return r_err(reader, SERD_BAD_SYNTAX, "line end in short string");
@@ -315,7 +317,7 @@ read_BLANK_NODE_LABEL(SerdReader* const   reader,
   TRY(st, eat_byte_check(reader, ':'));
 
   int c = peek_byte(reader);
-  if (c == EOF || c == ':') {
+  if (c < 0 || c == ':') {
     // The spec says PN_CHARS_U, the tests say no colon, so exclude it here
     return r_err(reader, SERD_BAD_SYNTAX, "expected blank node label");
   }

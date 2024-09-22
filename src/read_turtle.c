@@ -23,7 +23,6 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
 static SerdStatus
@@ -125,7 +124,7 @@ read_String(SerdReader* const reader, TokenHeader* const node)
 {
   const int q1 = eat_byte_safe(reader, peek_byte(reader));
   const int q2 = peek_byte(reader);
-  if (q2 == EOF) {
+  if (q2 < 0) {
     return r_err_eof(reader, SERD_BAD_SYNTAX);
   }
 
@@ -135,7 +134,7 @@ read_String(SerdReader* const reader, TokenHeader* const node)
 
   skip_byte(reader, q2);
   const int q3 = peek_byte(reader);
-  if (q3 == EOF) {
+  if (q3 < 0) {
     return r_err_eof(reader, SERD_BAD_SYNTAX);
   }
 
@@ -588,9 +587,11 @@ read_object(SerdReader* const        reader,
   SerdStatus st     = SERD_FAILURE;
   bool       simple = true;
   const int  c      = peek_byte(reader);
+  if (c < 0) {
+    return r_err(reader, SERD_BAD_SYNTAX, "unexpected end of file");
+  }
 
   switch (c) {
-  case EOF:
   case ')':
     return r_err(reader, SERD_BAD_SYNTAX, "expected object");
   case '[':
@@ -972,12 +973,15 @@ read_turtle_statement(SerdReader* const reader)
   SerdEventFlags flags = 0U;
   ReadContext    ctx   = {NULL, NULL, NULL, &flags};
 
-  // Handle nice cases we can distinguish from the next byte
+  // Skip whitespace and get the first byte
   read_turtle_ws_star(reader);
-  switch (peek_byte(reader)) {
-  case EOF:
-    return SERD_FAILURE;
+  const int c = peek_byte(reader);
+  if (c < 0) {
+    return SERD_FAILURE; // EOF
+  }
 
+  // Handle nice cases we can distinguish from the next byte
+  switch (c) {
   case '\0':
     eat_byte(reader);
     return SERD_FAILURE;
