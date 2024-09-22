@@ -14,7 +14,7 @@
 #include <serd/status.h>
 
 #include <stdbool.h>
-#include <stdio.h>
+#include <stddef.h>
 
 /// [6] graphLabel
 static SerdStatus
@@ -96,7 +96,7 @@ read_nquads_line(SerdReader* const reader)
 
   serd_stack_pop_to(&reader->stack, orig_stack_size);
 
-  return (st || peek_byte(reader) == EOF) ? st : read_EOL(reader);
+  return (st || peek_byte(reader) < 0) ? st : read_EOL(reader);
 }
 
 SerdStatus
