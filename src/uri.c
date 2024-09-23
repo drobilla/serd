@@ -14,6 +14,14 @@
 #include <stdint.h>
 #include <string.h>
 
+SerdURIView
+serd_empty_uri(void)
+{
+  static const SerdURIView empty_uri = {
+    {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}};
+  return empty_uri;
+}
+
 char*
 serd_parse_file_uri(ZixAllocator* const allocator,
                     const char* const   uri,
@@ -109,7 +117,7 @@ serd_uri_has_scheme(const SerdURIView uri)
 SerdURIView
 serd_parse_uri(const char* const string)
 {
-  SerdURIView result = SERD_URI_NULL;
+  SerdURIView result = serd_empty_uri();
   const char* ptr    = string;
   if (!ptr) {
     return result;
@@ -280,7 +288,7 @@ serd_resolve_uri(const SerdURIView r, const SerdURIView base)
     return r; // No resolution necessary || possible (respectively)
   }
 
-  SerdURIView t = SERD_URI_NULL;
+  SerdURIView t = serd_empty_uri();
 
   if (r.authority.length) {
     t.authority = r.authority;
@@ -319,7 +327,7 @@ serd_relative_uri(const SerdURIView uri, const SerdURIView base)
   }
 
   // Regardless of the path, the query and/or fragment come along
-  SerdURIView result = SERD_URI_NULL;
+  SerdURIView result = serd_empty_uri();
   result.query       = uri.query;
   result.fragment    = uri.fragment;
 
@@ -354,7 +362,7 @@ serd_relative_uri(const SerdURIView uri, const SerdURIView base)
 
   if (last_shared_sep < uri.path_prefix.length) {
     if (up > 0) {
-      return SERD_URI_NULL;
+      return serd_empty_uri();
     }
 
     result.path_prefix.data   = uri.path_prefix.data + last_shared_sep + 1;
