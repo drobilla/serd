@@ -59,8 +59,13 @@ typedef struct {
   SerdURIComponent fragment;    ///< Fragment
 } SerdURIView;
 
-static const SerdURIView SERD_URI_NULL =
-  {{NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}};
+/**
+   Return a view of an empty URI.
+
+   Sometimes used as a sentinel, this has every component unset.
+*/
+SERD_CONST_API SerdURIView
+serd_empty_uri(void);
 
 /**
    Get the unescaped path and hostname from a file URI.

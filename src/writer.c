@@ -1126,7 +1126,7 @@ serd_writer_new(SerdWorld* const      world,
   writer->flags      = flags;
   writer->env        = env;
   writer->root_node  = SERD_NODE_NULL;
-  writer->root_uri   = SERD_URI_NULL;
+  writer->root_uri   = serd_empty_uri();
   writer->anon_stack = serd_stack_new(allocator, SERD_PAGE_SIZE);
   if (!writer->anon_stack.buf) {
     zix_free(allocator, writer);
@@ -1203,7 +1203,7 @@ serd_writer_set_root_uri(SerdWriter* const writer, const ZixStringView uri)
 
   serd_node_free(allocator, &writer->root_node);
   writer->root_node = SERD_NODE_NULL;
-  writer->root_uri  = SERD_URI_NULL;
+  writer->root_uri  = serd_empty_uri();
 
   if (uri.length) {
     writer->root_node = serd_node_new_uri_from_string(allocator, uri.data);

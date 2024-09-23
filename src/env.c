@@ -91,7 +91,7 @@ serd_env_set_base_uri(SerdEnv* const env, const SerdNode* const uri)
   if (!uri || !uri->buf) {
     serd_node_free(env->allocator, &env->base_uri_node);
     env->base_uri_node = SERD_NODE_NULL;
-    env->base_uri      = SERD_URI_NULL;
+    env->base_uri      = serd_empty_uri();
     return SERD_SUCCESS;
   }
 
