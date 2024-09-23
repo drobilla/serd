@@ -34,6 +34,8 @@ _Pragma("clang diagnostic ignored \"-Wmissing-declarations\"")
 #  define SERD_FALLTHROUGH
 #endif
 
+static const uint8_t replacement_char[] = {0xEFU, 0xBFU, 0xBDU};
+
 static bool
 fancy_syntax(const SerdReader* const reader)
 {

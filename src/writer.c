@@ -139,6 +139,8 @@ typedef enum { RESET_GRAPH = 1U << 0U, RESET_INDENT = 1U << 1U } ResetFlag;
 
 typedef bool (*BytePredicate)(uint8_t) ZIX_NODISCARD;
 
+static const uint8_t replacement_char[] = {0xEFU, 0xBFU, 0xBDU};
+
 ZIX_NODISCARD static bool
 supports_abbrev(const SerdWriter* const writer)
 {

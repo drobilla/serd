@@ -11,9 +11,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/// Unicode replacement character in UTF-8
-static const uint8_t replacement_char[] = {0xEF, 0xBF, 0xBD};
-
 /// Return true if `c` lies within [`min`...`max`] (inclusive)
 static inline bool
 in_range(const int c, const int min, const int max)

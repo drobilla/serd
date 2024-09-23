@@ -12,6 +12,8 @@
 
 enum { MAX_UTF8_BYTES = 4U };
 
+static const uint8_t replacement_char[] = {0xEFU, 0xBFU, 0xBDU};
+
 static SerdStatus
 bad_byte(SerdReader* const reader, const char* const kind, const uint8_t c)
 {
