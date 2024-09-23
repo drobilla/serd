@@ -238,6 +238,7 @@ sources = files(
   'src/base64.c',
   'src/byte_source.c',
   'src/env.c',
+  'src/field.c',
   'src/n3.c',
   'src/node.c',
   'src/reader.c',
