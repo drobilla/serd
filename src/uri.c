@@ -4,7 +4,6 @@
 #include "string_utils.h"
 #include "uri_utils.h"
 
-#include <serd/buffer.h>
 #include <serd/stream.h>
 #include <serd/string.h>
 #include <serd/uri.h>
@@ -12,7 +11,6 @@
 
 #include <assert.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <string.h>
 
 SerdURIView
@@ -21,73 +19,6 @@ serd_empty_uri(void)
   static const SerdURIView empty_uri = {
     {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}};
   return empty_uri;
-}
-
-char*
-serd_parse_file_uri(ZixAllocator* const allocator,
-                    const char* const   uri,
-                    char** const        hostname)
-{
-  assert(uri);
-
-  const char* path = uri;
-  if (hostname) {
-    *hostname = NULL;
-  }
-
-  if (!strncmp(uri, "file://", 7)) {
-    const char* auth = uri + 7;
-    if (*auth == '/') { // No hostname
-      path = auth;
-    } else { // Has hostname
-      if (!(path = strchr(auth, '/'))) {
-        return NULL;
-      }
-
-      if (hostname) {
-        const size_t len = (size_t)(path - auth);
-        if (!(*hostname = (char*)zix_calloc(allocator, len + 1, 1))) {
-          return NULL;
-        }
-
-        memcpy(*hostname, auth, len);
-      }
-    }
-  }
-
-  if (is_windows_path(path + 1)) {
-    ++path;
-  }
-
-  SerdBuffer buffer = {allocator, NULL, 0};
-  for (const char* s = path; *s; ++s) {
-    if (*s == '%') {
-      if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
-        const uint8_t hi = hex_digit_value((const uint8_t)s[1]);
-        const uint8_t lo = hex_digit_value((const uint8_t)s[2]);
-        const char    c  = (char)((hi << 4U) | lo);
-        if (serd_buffer_sink(&c, 1, &buffer) < 1U) {
-          zix_free(buffer.allocator, buffer.buf);
-          return NULL; // Allocation failed
-        }
-
-        s += 2;
-      } else {
-        zix_free(buffer.allocator, buffer.buf);
-        return NULL; // Invalid percent-encoding
-      }
-    } else if (serd_buffer_sink(s, 1, &buffer) < 1U) {
-      zix_free(buffer.allocator, buffer.buf);
-      return NULL; // Allocation failed
-    }
-  }
-
-  char* const result = serd_buffer_sink_finish(&buffer);
-  if (!result) {
-    zix_free(buffer.allocator, buffer.buf);
-  }
-
-  return result;
 }
 
 /// RFC3986: scheme ::= ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )

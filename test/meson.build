@@ -29,6 +29,7 @@ subdir('headers')
 unit_test_names = [
   'env',
   'field',
+  'file_uri',
   'free_null',
   'node',
   'reader',
