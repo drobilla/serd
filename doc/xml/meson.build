@@ -1,4 +1,4 @@
-# Copyright 2020-2022 David Robillard <d@drobilla.net>
+# Copyright 2020-2025 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
 config = configuration_data()
@@ -26,6 +26,7 @@ doxygen_xml = custom_target(
     'group__serd__error.xml',
     'group__serd__errors.xml',
     'group__serd__field.xml',
+    'group__serd__file_uri.xml',
     'group__serd__library.xml',
     'group__serd__memory.xml',
     'group__serd__node.xml',
@@ -51,6 +52,7 @@ doxygen_xml = custom_target(
     'env_8h.xml',
     'error_8h.xml',
     'field_8h.xml',
+    'file_uri_8h.xml',
     'node_8h.xml',
     'node__flags_8h.xml',
     'node__type_8h.xml',

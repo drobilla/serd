@@ -10,7 +10,6 @@ Checks: >
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -concurrency-mt-unsafe,
   -hicpp-signed-bitwise,
-  -readability-redundant-casting,
 CheckOptions:
   - key:   readability-function-cognitive-complexity.IgnoreMacros
     value: 'true'

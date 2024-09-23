@@ -1,4 +1,4 @@
-# Copyright 2021-2024 David Robillard <d@drobilla.net>
+# Copyright 2021-2025 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
 project(
@@ -217,6 +217,7 @@ c_headers = files(
   'include/serd/env.h',
   'include/serd/error.h',
   'include/serd/field.h',
+  'include/serd/file_uri.h',
   'include/serd/node.h',
   'include/serd/node_flags.h',
   'include/serd/node_type.h',
@@ -240,6 +241,7 @@ sources = files(
   'src/byte_source.c',
   'src/env.c',
   'src/field.c',
+  'src/file_uri.c',
   'src/n3.c',
   'src/node.c',
   'src/reader.c',

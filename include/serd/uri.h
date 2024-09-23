@@ -68,23 +68,6 @@ typedef struct {
 SERD_CONST_API SerdURIView
 serd_empty_uri(void);
 
-/**
-   Get the unescaped path and hostname from a file URI.
-
-   Both the returned path and `*hostname` must be freed with zix_free() using
-   the same allocator.
-
-   @param allocator Allocator for the returned string.
-   @param uri A file URI.
-   @param hostname If non-NULL, set to the newly allocated hostname, if present.
-
-   @return A newly allocated path string.
-*/
-SERD_API char* ZIX_ALLOCATED
-serd_parse_file_uri(ZixAllocator* ZIX_NULLABLE          allocator,
-                    const char* ZIX_NONNULL             uri,
-                    char* ZIX_UNSPECIFIED* ZIX_NULLABLE hostname);
-
 /// Return true iff `string` starts with a valid URI scheme
 SERD_PURE_API bool
 serd_uri_string_has_scheme(const char* ZIX_NULLABLE string);

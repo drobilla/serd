@@ -11,6 +11,7 @@
 #include "world_internal.h"
 
 #include <serd/error.h>
+#include <serd/file_uri.h>
 #include <serd/node.h>
 #include <serd/node_type.h>
 #include <serd/reader.h>
@@ -18,7 +19,6 @@
 #include <serd/status.h>
 #include <serd/stream.h>
 #include <serd/syntax.h>
-#include <serd/uri.h>
 #include <serd/world.h>
 #include <zix/allocator.h>
 #include <zix/string_view.h>

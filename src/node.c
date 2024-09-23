@@ -5,6 +5,7 @@
 #include "string_utils.h"
 
 #include <serd/buffer.h>
+#include <serd/file_uri.h>
 #include <serd/node.h>
 #include <serd/node_flags.h>
 #include <serd/node_type.h>
@@ -18,7 +19,6 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
 struct SerdNodeImpl {
@@ -116,64 +116,17 @@ serd_node_new_uri_from_string(ZixAllocator* const allocator,
   return serd_node_new_uri(allocator, &uri);
 }
 
-static bool
-is_uri_path_char(const char c)
-{
-  return is_alpha(c) || is_digit(c) || strchr("!$&\'()*+,-./:;=@_~", c);
-}
-
-static bool
-is_dir_sep(const char c)
-{
-#ifdef _WIN32
-  return c == '\\' || c == '/';
-#else
-  return c == '/';
-#endif
-}
-
 SerdNode
 serd_node_new_file_uri(ZixAllocator* const allocator,
                        const char* const   path,
                        const char* const   hostname)
 {
-  assert(path);
+  SerdBuffer buffer = {allocator, NULL, 0U};
 
-  const size_t path_len     = strlen(path);
-  const size_t hostname_len = hostname ? strlen(hostname) : 0;
-  const bool   is_windows   = is_windows_path(path);
-  size_t       uri_len      = 0;
-  char*        uri          = NULL;
+  serd_write_file_uri(
+    zix_string(path), zix_string(hostname), serd_buffer_sink, &buffer);
 
-  if (is_dir_sep(path[0]) || is_windows) {
-    uri_len = strlen("file://") + hostname_len + is_windows;
-    uri     = (char*)zix_calloc(allocator, uri_len + 1, 1);
-
-    memcpy(uri, "file://", 8);
-
-    if (hostname) {
-      memcpy(uri + 7, hostname, hostname_len + 1);
-    }
-
-    if (is_windows) {
-      uri[7 + hostname_len] = '/';
-    }
-  }
-
-  SerdBuffer buffer = {allocator, uri, uri_len};
-  for (size_t i = 0; i < path_len; ++i) {
-    if (is_uri_path_char(path[i])) {
-      serd_buffer_sink(path + i, 1, &buffer);
-#ifdef _WIN32
-    } else if (path[i] == '\\') {
-      serd_buffer_sink("/", 1, &buffer);
-#endif
-    } else {
-      char escape_str[10] = {'%', 0, 0, 0, 0, 0, 0, 0, 0, 0};
-      snprintf(escape_str + 1, sizeof(escape_str) - 1, "%X", (unsigned)path[i]);
-      serd_buffer_sink(escape_str, 3, &buffer);
-    }
-  }
+  serd_buffer_sink_finish(&buffer);
 
   const char* const string = serd_buffer_sink_finish(&buffer);
   return serd_node_from_substring(SERD_URI, string, buffer.len);
