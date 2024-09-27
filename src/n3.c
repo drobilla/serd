@@ -925,10 +925,10 @@ read_verb(SerdReader* const reader, Ref* const dest)
   */
   *dest = push_node(reader, SERD_CURIE, "", 0);
 
-  SerdStatus st      = read_PN_PREFIX(reader, *dest);
-  bool       ate_dot = false;
-  SerdNode*  node    = deref(reader, *dest);
-  const int  next    = peek_byte(reader);
+  SerdStatus            st      = read_PN_PREFIX(reader, *dest);
+  bool                  ate_dot = false;
+  const SerdNode* const node    = deref(reader, *dest);
+  const int             next    = peek_byte(reader);
   if (!st && node->n_bytes == 1 && node->buf[0] == 'a' && next != ':' &&
       !is_PN_CHARS_BASE((uint32_t)next)) {
     pop_node(reader, *dest);
@@ -1540,7 +1540,7 @@ token_equals(SerdReader* const reader,
              const char* const tok,
              const size_t      n)
 {
-  SerdNode* const node = deref(reader, ref);
+  const SerdNode* const node = deref(reader, ref);
   if (!node || node->n_bytes != n) {
     return false;
   }

@@ -164,8 +164,9 @@ test_writer(const char* const path)
   assert(serd_writer_end_anon(writer, NULL));
   assert(serd_writer_get_env(writer) == env);
 
-  uint8_t  buf[] = {0x80, 0, 0, 0, 0};
-  SerdNode s     = serd_node_from_string(SERD_URI, USTR(""));
+  const uint8_t buf[] = {0x80, 0, 0, 0, 0};
+
+  SerdNode s = serd_node_from_string(SERD_URI, USTR(""));
   SerdNode p = serd_node_from_string(SERD_URI, USTR("http://example.org/pred"));
   SerdNode o = serd_node_from_string(SERD_LITERAL, buf);
 

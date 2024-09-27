@@ -745,8 +745,8 @@ write_uri_node(SerdWriter* const     writer,
     serd_uri_parse(node->buf, &uri);
     SERD_RESTORE_WARNINGS
     serd_uri_resolve(&uri, &in_base_uri, &abs_uri);
-    bool           rooted = uri_is_under(&writer->base_uri, &writer->root_uri);
-    SerdURI*       root   = rooted ? &writer->root_uri : &writer->base_uri;
+    const bool     rooted = uri_is_under(&writer->base_uri, &writer->root_uri);
+    const SerdURI* root   = rooted ? &writer->root_uri : &writer->base_uri;
     UriSinkContext ctx    = {writer, SERD_SUCCESS};
     if (!uri_is_under(&abs_uri, root) || writer->syntax == SERD_NTRIPLES ||
         writer->syntax == SERD_NQUADS) {
