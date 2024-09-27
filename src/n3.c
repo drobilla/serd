@@ -740,12 +740,12 @@ read_IRIREF(SerdReader* const reader, Ref* const dest)
                    SERD_ERR_BAD_SYNTAX,
                    "invalid IRI character (escape %%%02X)\n",
                    (unsigned)c);
-        if (reader->strict) {
+        if (!reader->strict) {
+          st = SERD_FAILURE;
+          push_byte(reader, *dest, c);
+        } else {
           break;
         }
-
-        st = SERD_FAILURE;
-        push_byte(reader, *dest, c);
       } else if (!(c & 0x80)) {
         push_byte(reader, *dest, c);
       } else if (read_utf8_character(reader, *dest, (uint8_t)c)) {
