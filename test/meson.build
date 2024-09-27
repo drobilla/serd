@@ -61,6 +61,27 @@ if get_option('lint')
     )
   endif
 
+  # Check code with cppcheck
+  if not meson.is_subproject()
+    cppcheck = find_program('cppcheck', required: false)
+    if cppcheck.found()
+      compdb_path = join_paths(serd_build_root, 'compile_commands.json')
+      suppress_path = join_paths(serd_src_root, '.suppress.cppcheck')
+      test(
+        'cppcheck',
+        cppcheck,
+        args: [
+          '--enable=warning,style,performance,portability',
+          '--error-exitcode=1',
+          '--project=' + compdb_path,
+          '--suppressions-list=' + suppress_path,
+          '-q',
+        ],
+        suite: 'code',
+      )
+    endif
+  endif
+
   # Check script formatting
   black = find_program('black', required: false)
   if black.found()

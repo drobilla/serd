@@ -3,6 +3,11 @@ Upstream-Name: serd
 Upstream-Contact: David Robillard <d@drobilla.net>
 Source: https://gitlab.com/drobilla/serd
 
+Files: .suppress.cppcheck
+Copyright: 2024 David Robillard <d@drobilla.net>
+Comment: Contributed to the Commons as a tool configuration
+License: 0BSD OR ISC
+
 Files: test/w3c/*
 Copyright: 2010 World Wide Web Consortium, (MIT, ERCIM, Keio, Beihang) and others.
 Comment: Standard test suites from the W3C
