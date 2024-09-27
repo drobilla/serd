@@ -127,8 +127,7 @@ typedef enum {
 } SerdStatus;
 
 /// Return a string describing a status code
-SERD_CONST_API
-const uint8_t* SERD_NONNULL
+SERD_CONST_API const uint8_t* SERD_NONNULL
 serd_strerror(SerdStatus status);
 
 /**
@@ -268,8 +267,7 @@ serd_file_uri_parse(const uint8_t* SERD_NONNULL              uri,
                     uint8_t* SERD_UNSPECIFIED* SERD_NULLABLE hostname);
 
 /// Return true iff `utf8` starts with a valid URI scheme
-SERD_PURE_API
-bool
+SERD_PURE_API bool
 serd_uri_string_has_scheme(const uint8_t* SERD_NULLABLE utf8);
 
 /// Parse `utf8`, writing result to `out`
@@ -501,8 +499,7 @@ SERD_API SerdNode
 serd_node_copy(const SerdNode* SERD_NULLABLE node);
 
 /// Return true iff `a` is equal to `b`
-SERD_PURE_API
-bool
+SERD_PURE_API bool
 serd_node_equals(const SerdNode* SERD_NONNULL a,
                  const SerdNode* SERD_NONNULL b);
 
@@ -717,8 +714,7 @@ serd_reader_set_error_sink(SerdReader* SERD_NONNULL    reader,
                            void* SERD_UNSPECIFIED      error_handle);
 
 /// Return the `handle` passed to serd_reader_new()
-SERD_PURE_API
-void* SERD_UNSPECIFIED
+SERD_PURE_API void* SERD_UNSPECIFIED
 serd_reader_get_handle(const SerdReader* SERD_NONNULL reader);
 
 /**
@@ -868,8 +864,7 @@ SERD_API void
 serd_writer_free(SerdWriter* SERD_NULLABLE writer);
 
 /// Return the env used by `writer`
-SERD_PURE_API
-SerdEnv* SERD_NONNULL
+SERD_PURE_API SerdEnv* SERD_NONNULL
 serd_writer_get_env(SerdWriter* SERD_NONNULL writer);
 
 /**

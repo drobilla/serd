@@ -3,8 +3,7 @@
 
 #include "serd/serd.h" // IWYU pragma: keep
 
-SERD_CONST_FUNC
-int
+SERD_CONST_FUNC int
 main(void)
 {
   return 0;
