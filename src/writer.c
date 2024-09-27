@@ -249,7 +249,7 @@ esink(const void* buf, size_t len, SerdWriter* writer)
 static size_t
 write_character(SerdWriter*    writer,
                 const uint8_t* utf8,
-                size_t*        size,
+                uint8_t*       size,
                 SerdStatus*    st)
 {
   char           escape[11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -315,14 +315,14 @@ write_uri(SerdWriter*    writer,
     }
 
     // Write UTF-8 character
-    size_t size = 0;
+    uint8_t size = 0U;
     len += write_character(writer, utf8 + i, &size, st);
     i += size;
     if (*st && (writer->style & SERD_STYLE_STRICT)) {
       break;
     }
 
-    if (size == 0) {
+    if (!size) {
       // Corrupt input, write percent-encoded bytes and scan to next start
       char escape[4] = {0, 0, 0, 0};
       for (; i < n_bytes && (utf8[i] & 0x80); ++i) {
@@ -484,19 +484,19 @@ write_text(SerdWriter*    writer,
     }
 
     // Write UTF-8 character
-    size_t size = 0;
+    uint8_t size = 0U;
     write_character(writer, utf8 + i - 1, &size, &st);
     if (st && (writer->style & SERD_STYLE_STRICT)) {
       return st;
     }
 
-    if (size == 0) {
+    if (!size) {
       // Corrupt input, write replacement character and scan to the next start
       st = esink(replacement_char, sizeof(replacement_char), writer);
-      for (; i < n_bytes && (utf8[i] & 0x80); ++i) {
+      for (; i < n_bytes && (utf8[i] & 0x80U); ++i) {
       }
     } else {
-      i += size - 1;
+      i += size - 1U;
     }
   }
 
