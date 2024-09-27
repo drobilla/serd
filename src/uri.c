@@ -441,7 +441,7 @@ serd_uri_serialise_relative(const SerdURI* const uri,
 
   SERD_DISABLE_NULL_WARNINGS
 
-  if (!relative || (!len && base->query.buf)) {
+  if (!relative || (!len && base && base->query.buf)) {
     if (uri->scheme.buf) {
       len += sink(uri->scheme.buf, uri->scheme.len, stream);
       len += sink(":", 1, stream);
