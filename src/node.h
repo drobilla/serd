@@ -15,13 +15,13 @@ struct SerdNodeImpl {
 };
 
 static inline char* SERD_NONNULL
-serd_node_buffer(SerdNode* SERD_NONNULL node)
+serd_node_buffer(SerdNode* const SERD_NONNULL node)
 {
   return (char*)(node + 1);
 }
 
 static inline const char* SERD_NONNULL
-serd_node_buffer_c(const SerdNode* SERD_NONNULL node)
+serd_node_buffer_c(const SerdNode* const SERD_NONNULL node)
 {
   return (const char*)(node + 1);
 }

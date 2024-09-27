@@ -24,7 +24,7 @@
 #endif
 
 static void
-check_strtod(double dbl, double max_delta)
+check_strtod(const double dbl, const double max_delta)
 {
   char buf[1024];
   snprintf(buf, sizeof(buf), "%f", dbl);

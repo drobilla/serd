@@ -207,7 +207,7 @@ test_uri_from_string(void)
 }
 
 static inline bool
-chunk_equals(const SerdChunk* a, const SerdChunk* b)
+chunk_equals(const SerdChunk* const a, const SerdChunk* const b)
 {
   return (!a->len && !b->len && !a->buf && !b->buf) ||
          (a->len && b->len && a->buf && b->buf &&

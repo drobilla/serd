@@ -24,7 +24,7 @@ typedef struct {
 #define SERD_STACK_BOTTOM sizeof(void*)
 
 static inline SerdStack
-serd_stack_new(size_t size)
+serd_stack_new(const size_t size)
 {
   SerdStack stack;
   stack.buf      = (uint8_t*)calloc(size, 1);
@@ -34,13 +34,13 @@ serd_stack_new(size_t size)
 }
 
 static inline bool
-serd_stack_is_empty(const SerdStack* stack)
+serd_stack_is_empty(const SerdStack* const stack)
 {
   return stack->size <= SERD_STACK_BOTTOM;
 }
 
 static inline void
-serd_stack_free(SerdStack* stack)
+serd_stack_free(SerdStack* const stack)
 {
   free(stack->buf);
   stack->buf      = NULL;
@@ -49,7 +49,7 @@ serd_stack_free(SerdStack* stack)
 }
 
 static inline void*
-serd_stack_push(SerdStack* stack, size_t n_bytes)
+serd_stack_push(SerdStack* const stack, const size_t n_bytes)
 {
   const size_t new_size = stack->size + n_bytes;
   if (stack->buf_size < new_size) {
@@ -64,14 +64,16 @@ serd_stack_push(SerdStack* stack, size_t n_bytes)
 }
 
 static inline void
-serd_stack_pop(SerdStack* stack, size_t n_bytes)
+serd_stack_pop(SerdStack* const stack, const size_t n_bytes)
 {
   assert(stack->size >= n_bytes);
   stack->size -= n_bytes;
 }
 
 static inline void*
-serd_stack_push_aligned(SerdStack* stack, size_t n_bytes, size_t align)
+serd_stack_push_aligned(SerdStack* const stack,
+                        const size_t     n_bytes,
+                        const size_t     align)
 {
   // Push one byte to ensure space for a pad count
   serd_stack_push(stack, 1);
@@ -89,7 +91,7 @@ serd_stack_push_aligned(SerdStack* stack, size_t n_bytes, size_t align)
 }
 
 static inline void
-serd_stack_pop_aligned(SerdStack* stack, size_t n_bytes)
+serd_stack_pop_aligned(SerdStack* const stack, const size_t n_bytes)
 {
   // Pop requested space down to aligned location
   serd_stack_pop(stack, n_bytes);

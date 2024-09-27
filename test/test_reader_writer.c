@@ -54,14 +54,14 @@ static const char* const doc_string =
   "( eg:o ) eg:t eg:u .\n";
 
 static SerdStatus
-test_statement_sink(void*              handle,
-                    SerdStatementFlags flags,
-                    const SerdNode*    graph,
-                    const SerdNode*    subject,
-                    const SerdNode*    predicate,
-                    const SerdNode*    object,
-                    const SerdNode*    object_datatype,
-                    const SerdNode*    object_lang)
+test_statement_sink(void* const              handle,
+                    const SerdStatementFlags flags,
+                    const SerdNode* const    graph,
+                    const SerdNode* const    subject,
+                    const SerdNode* const    predicate,
+                    const SerdNode* const    object,
+                    const SerdNode* const    object_datatype,
+                    const SerdNode* const    object_lang)
 {
   (void)flags;
   (void)subject;
@@ -264,7 +264,7 @@ test_writer(const char* const path)
 }
 
 static void
-test_reader(const char* path)
+test_reader(const char* const path)
 {
   ReaderTest* rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
   SerdReader* reader = serd_reader_new(

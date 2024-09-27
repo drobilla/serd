@@ -108,7 +108,10 @@ test_read_string(void)
 
 /// Reads a null byte after a statement, then succeeds again (like a socket)
 static size_t
-eof_test_read(void* buf, size_t size, size_t nmemb, void* stream)
+eof_test_read(void* const  buf,
+              const size_t size,
+              const size_t nmemb,
+              void* const  stream)
 {
   assert(size == 1);
   assert(nmemb == 1);
@@ -144,7 +147,7 @@ eof_test_read(void* buf, size_t size, size_t nmemb, void* stream)
 }
 
 static int
-eof_test_error(void* stream)
+eof_test_error(void* const stream)
 {
   (void)stream;
   return 0;

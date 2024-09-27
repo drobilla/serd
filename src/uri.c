@@ -15,7 +15,7 @@
 #include <string.h>
 
 const uint8_t*
-serd_uri_to_path(const uint8_t* uri)
+serd_uri_to_path(const uint8_t* const uri)
 {
   assert(uri);
 
@@ -344,7 +344,7 @@ serd_uri_resolve(const SerdURI* const r,
 
 /** Write the path of `uri` starting at index `i` */
 static size_t
-write_path_tail(SerdSink             sink,
+write_path_tail(const SerdSink       sink,
                 void* const          stream,
                 const SerdURI* const uri,
                 const size_t         i)
@@ -372,7 +372,7 @@ write_path_tail(SerdSink             sink,
 
 /** Write the path of `uri` relative to the path of `base`. */
 static size_t
-write_rel_path(SerdSink             sink,
+write_rel_path(const SerdSink       sink,
                void* const          stream,
                const SerdURI* const uri,
                const SerdURI* const base)
@@ -413,7 +413,7 @@ write_rel_path(SerdSink             sink,
 }
 
 static uint8_t
-serd_uri_path_starts_without_slash(const SerdURI* uri)
+serd_uri_path_starts_without_slash(const SerdURI* const uri)
 {
   return ((uri->path_base.len || uri->path.len) &&
           ((!uri->path_base.len || uri->path_base.buf[0] != '/') &&
@@ -425,7 +425,7 @@ size_t
 serd_uri_serialise_relative(const SerdURI* const uri,
                             const SerdURI* const base,
                             const SerdURI* const root,
-                            SerdSink             sink,
+                            const SerdSink       sink,
                             void* const          stream)
 {
   assert(uri);
@@ -481,7 +481,9 @@ serd_uri_serialise_relative(const SerdURI* const uri,
 
 /// See http://tools.ietf.org/html/rfc3986#section-5.3
 size_t
-serd_uri_serialise(const SerdURI* const uri, SerdSink sink, void* const stream)
+serd_uri_serialise(const SerdURI* const uri,
+                   const SerdSink       sink,
+                   void* const          stream)
 {
   assert(uri);
   assert(sink);

@@ -22,7 +22,7 @@ typedef struct SerdByteSinkImpl {
 } SerdByteSink;
 
 static inline SerdByteSink
-serd_byte_sink_new(SerdSink sink, void* stream, size_t block_size)
+serd_byte_sink_new(SerdSink sink, void* const stream, const size_t block_size)
 {
   SerdByteSink bsink = {sink, stream, NULL, 0, block_size};
 
@@ -34,7 +34,7 @@ serd_byte_sink_new(SerdSink sink, void* stream, size_t block_size)
 }
 
 static inline SerdStatus
-serd_byte_sink_flush(SerdByteSink* bsink)
+serd_byte_sink_flush(SerdByteSink* const bsink)
 {
   if (bsink->block_size > 1 && bsink->size > 0) {
     const size_t size  = bsink->size;
@@ -48,7 +48,7 @@ serd_byte_sink_flush(SerdByteSink* bsink)
 }
 
 static inline void
-serd_byte_sink_free(SerdByteSink* bsink)
+serd_byte_sink_free(SerdByteSink* const bsink)
 {
   serd_byte_sink_flush(bsink);
   serd_free_aligned(bsink->buf);
@@ -56,7 +56,7 @@ serd_byte_sink_free(SerdByteSink* bsink)
 }
 
 static inline size_t
-serd_byte_sink_write(const void* buf, size_t len, SerdByteSink* bsink)
+serd_byte_sink_write(const void* buf, size_t len, SerdByteSink* const bsink)
 {
   if (len == 0) {
     return 0;

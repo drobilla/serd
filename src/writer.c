@@ -143,7 +143,7 @@ write_node(SerdWriter*        writer,
            SerdStatementFlags flags);
 
 SERD_NODISCARD static bool
-supports_abbrev(const SerdWriter* writer)
+supports_abbrev(const SerdWriter* const writer)
 {
   return writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG;
 }
@@ -162,7 +162,7 @@ free_context(WriteContext* const ctx)
 
 SERD_LOG_FUNC(3, 4)
 static SerdStatus
-w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
+w_err(SerdWriter* const writer, const SerdStatus st, const char* const fmt, ...)
 {
   /* TODO: This results in errors with no file information, which is not
      helpful when re-serializing a file (particularly for "undefined
@@ -179,7 +179,7 @@ w_err(SerdWriter* writer, SerdStatus st, const char* fmt, ...)
 }
 
 static void
-copy_node(SerdNode* dst, const SerdNode* src)
+copy_node(SerdNode* const dst, const SerdNode* const src)
 {
   const size_t   new_size = src->n_bytes + 1U;
   uint8_t* const new_buf  = (uint8_t*)realloc((char*)dst->buf, new_size);
@@ -210,7 +210,7 @@ push_context(SerdWriter* const writer,
 }
 
 static void
-pop_context(SerdWriter* writer)
+pop_context(SerdWriter* const writer)
 {
   // Replace the current context with the top of the stack
   free_context(&writer->context);
@@ -223,7 +223,7 @@ pop_context(SerdWriter* writer)
 }
 
 SERD_NODISCARD static size_t
-sink(const void* buf, size_t len, SerdWriter* writer)
+sink(const void* const buf, const size_t len, SerdWriter* const writer)
 {
   const size_t written = serd_byte_sink_write(buf, len, &writer->byte_sink);
   if (written != len) {
@@ -239,7 +239,7 @@ sink(const void* buf, size_t len, SerdWriter* writer)
 }
 
 SERD_NODISCARD static inline SerdStatus
-esink(const void* buf, size_t len, SerdWriter* writer)
+esink(const void* const buf, const size_t len, SerdWriter* const writer)
 {
   return sink(buf, len, writer) == len ? SERD_SUCCESS : SERD_ERR_BAD_WRITE;
 }
@@ -247,10 +247,10 @@ esink(const void* buf, size_t len, SerdWriter* writer)
 // Write a single character, as an escape for single byte characters
 // (Caller prints any single byte characters that don't need escaping)
 static size_t
-write_character(SerdWriter*    writer,
-                const uint8_t* utf8,
-                uint8_t*       size,
-                SerdStatus*    st)
+write_character(SerdWriter* const    writer,
+                const uint8_t* const utf8,
+                uint8_t* const       size,
+                SerdStatus* const    st)
 {
   char           escape[11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   const uint32_t c          = parse_utf8_char(utf8, size);
@@ -288,10 +288,10 @@ uri_must_escape(const uint8_t c)
 }
 
 static size_t
-write_uri(SerdWriter*    writer,
-          const uint8_t* utf8,
-          size_t         n_bytes,
-          SerdStatus*    st)
+write_uri(SerdWriter* const    writer,
+          const uint8_t* const utf8,
+          const size_t         n_bytes,
+          SerdStatus* const    st)
 {
   size_t len = 0;
   for (size_t i = 0; i < n_bytes;) {
@@ -336,7 +336,9 @@ write_uri(SerdWriter*    writer,
 }
 
 SERD_NODISCARD static SerdStatus
-ewrite_uri(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
+ewrite_uri(SerdWriter* const    writer,
+           const uint8_t* const utf8,
+           const size_t         n_bytes)
 {
   SerdStatus st = SERD_SUCCESS;
   write_uri(writer, utf8, n_bytes, &st);
@@ -347,7 +349,7 @@ ewrite_uri(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
 }
 
 SERD_NODISCARD static SerdStatus
-write_uri_from_node(SerdWriter* writer, const SerdNode* node)
+write_uri_from_node(SerdWriter* const writer, const SerdNode* const node)
 {
   return ewrite_uri(writer, node->buf, node->n_bytes);
 }
@@ -369,7 +371,9 @@ lname_must_escape(const uint8_t c)
 }
 
 SERD_NODISCARD static SerdStatus
-write_lname(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
+write_lname(SerdWriter* const    writer,
+            const uint8_t* const utf8,
+            const size_t         n_bytes)
 {
   SerdStatus st = SERD_SUCCESS;
   for (size_t i = 0; i < n_bytes; ++i) {
@@ -395,10 +399,10 @@ write_lname(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
 }
 
 SERD_NODISCARD static SerdStatus
-write_text(SerdWriter*    writer,
-           TextContext    ctx,
-           const uint8_t* utf8,
-           size_t         n_bytes)
+write_text(SerdWriter* const    writer,
+           const TextContext    ctx,
+           const uint8_t* const utf8,
+           const size_t         n_bytes)
 {
   size_t     n_consecutive_quotes = 0;
   SerdStatus st                   = SERD_SUCCESS;
@@ -509,7 +513,7 @@ typedef struct {
 } UriSinkContext;
 
 SERD_NODISCARD static size_t
-uri_sink(const void* buf, size_t len, void* stream)
+uri_sink(const void* const buf, const size_t len, void* const stream)
 {
   UriSinkContext* const context = (UriSinkContext*)stream;
   SerdWriter* const     writer  = context->writer;
@@ -518,7 +522,7 @@ uri_sink(const void* buf, size_t len, void* stream)
 }
 
 SERD_NODISCARD static SerdStatus
-write_newline(SerdWriter* writer)
+write_newline(SerdWriter* const writer)
 {
   SerdStatus st = SERD_SUCCESS;
 
@@ -531,7 +535,7 @@ write_newline(SerdWriter* writer)
 }
 
 SERD_NODISCARD static SerdStatus
-write_sep(SerdWriter* writer, const Sep sep)
+write_sep(SerdWriter* const writer, const Sep sep)
 {
   SerdStatus           st   = SERD_SUCCESS;
   const SepRule* const rule = &rules[sep];
@@ -585,7 +589,7 @@ write_sep(SerdWriter* writer, const Sep sep)
 }
 
 static void
-free_anon_stack(SerdWriter* writer)
+free_anon_stack(SerdWriter* const writer)
 {
   while (!serd_stack_is_empty(&writer->anon_stack)) {
     pop_context(writer);
@@ -593,7 +597,7 @@ free_anon_stack(SerdWriter* writer)
 }
 
 static SerdStatus
-reset_context(SerdWriter* writer, const unsigned flags)
+reset_context(SerdWriter* const writer, const unsigned flags)
 {
   free_anon_stack(writer);
 
@@ -639,11 +643,11 @@ get_xsd_name(const SerdEnv* const env, const SerdNode* const datatype)
 }
 
 SERD_NODISCARD static SerdStatus
-write_literal(SerdWriter*        writer,
-              const SerdNode*    node,
-              const SerdNode*    datatype,
-              const SerdNode*    lang,
-              SerdStatementFlags flags)
+write_literal(SerdWriter* const        writer,
+              const SerdNode* const    node,
+              const SerdNode* const    datatype,
+              const SerdNode* const    lang,
+              const SerdStatementFlags flags)
 {
   SerdStatus st = SERD_SUCCESS;
 
@@ -679,7 +683,7 @@ write_literal(SerdWriter*        writer,
 
 // Return true iff `buf` is a valid prefixed name prefix or suffix
 static bool
-is_name(const uint8_t* buf, const size_t len)
+is_name(const uint8_t* const buf, const size_t len)
 {
   // TODO: This is more strict than it should be
   for (size_t i = 0; i < len; ++i) {
@@ -692,9 +696,9 @@ is_name(const uint8_t* buf, const size_t len)
 }
 
 SERD_NODISCARD static SerdStatus
-write_uri_node(SerdWriter* const writer,
-               const SerdNode*   node,
-               const Field       field)
+write_uri_node(SerdWriter* const     writer,
+               const SerdNode* const node,
+               const Field           field)
 {
   SerdStatus st     = SERD_SUCCESS;
   SerdNode   prefix = SERD_NODE_NULL;
@@ -789,7 +793,7 @@ write_curie(SerdWriter* const writer, const SerdNode* const node)
 
 SERD_NODISCARD static SerdStatus
 write_blank(SerdWriter* const        writer,
-            const SerdNode*          node,
+            const SerdNode* const    node,
             const Field              field,
             const SerdStatementFlags flags)
 {
@@ -828,12 +832,12 @@ write_blank(SerdWriter* const        writer,
 }
 
 SERD_NODISCARD static SerdStatus
-write_node(SerdWriter*        writer,
-           const SerdNode*    node,
-           const SerdNode*    datatype,
-           const SerdNode*    lang,
-           Field              field,
-           SerdStatementFlags flags)
+write_node(SerdWriter* const        writer,
+           const SerdNode* const    node,
+           const SerdNode* const    datatype,
+           const SerdNode* const    lang,
+           const Field              field,
+           const SerdStatementFlags flags)
 {
   return (node->type == SERD_LITERAL)
            ? write_literal(writer, node, datatype, lang, flags)
@@ -844,13 +848,15 @@ write_node(SerdWriter*        writer,
 }
 
 static bool
-is_resource(const SerdNode* node)
+is_resource(const SerdNode* const node)
 {
   return node->buf && node->type > SERD_LITERAL;
 }
 
 SERD_NODISCARD static SerdStatus
-write_pred(SerdWriter* writer, SerdStatementFlags flags, const SerdNode* pred)
+write_pred(SerdWriter* const        writer,
+           const SerdStatementFlags flags,
+           const SerdNode* const    pred)
 {
   SerdStatus st = SERD_SUCCESS;
 
@@ -864,12 +870,12 @@ write_pred(SerdWriter* writer, SerdStatementFlags flags, const SerdNode* pred)
 }
 
 SERD_NODISCARD static SerdStatus
-write_list_next(SerdWriter*        writer,
-                SerdStatementFlags flags,
-                const SerdNode*    predicate,
-                const SerdNode*    object,
-                const SerdNode*    datatype,
-                const SerdNode*    lang)
+write_list_next(SerdWriter* const        writer,
+                const SerdStatementFlags flags,
+                const SerdNode* const    predicate,
+                const SerdNode* const    object,
+                const SerdNode* const    datatype,
+                const SerdNode* const    lang)
 {
   SerdStatus st = SERD_SUCCESS;
 
@@ -888,7 +894,7 @@ write_list_next(SerdWriter*        writer,
 }
 
 SERD_NODISCARD static SerdStatus
-terminate_context(SerdWriter* writer)
+terminate_context(SerdWriter* const writer)
 {
   SerdStatus st = SERD_SUCCESS;
 
@@ -904,14 +910,14 @@ terminate_context(SerdWriter* writer)
 }
 
 SerdStatus
-serd_writer_write_statement(SerdWriter*        writer,
-                            SerdStatementFlags flags,
-                            const SerdNode*    graph,
-                            const SerdNode*    subject,
-                            const SerdNode*    predicate,
-                            const SerdNode*    object,
-                            const SerdNode*    datatype,
-                            const SerdNode*    lang)
+serd_writer_write_statement(SerdWriter* const     writer,
+                            SerdStatementFlags    flags,
+                            const SerdNode* const graph,
+                            const SerdNode* const subject,
+                            const SerdNode* const predicate,
+                            const SerdNode* const object,
+                            const SerdNode* const datatype,
+                            const SerdNode* const lang)
 {
   assert(writer);
   assert(subject);
@@ -1064,7 +1070,7 @@ serd_writer_write_statement(SerdWriter*        writer,
 }
 
 SerdStatus
-serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
+serd_writer_end_anon(SerdWriter* const writer, const SerdNode* const node)
 {
   assert(writer);
 
@@ -1095,7 +1101,7 @@ serd_writer_end_anon(SerdWriter* writer, const SerdNode* node)
 }
 
 SerdStatus
-serd_writer_finish(SerdWriter* writer)
+serd_writer_finish(SerdWriter* const writer)
 {
   assert(writer);
 
@@ -1107,12 +1113,12 @@ serd_writer_finish(SerdWriter* writer)
 }
 
 SerdWriter*
-serd_writer_new(SerdSyntax     syntax,
-                SerdStyle      style,
-                SerdEnv*       env,
-                const SerdURI* base_uri,
-                SerdSink       ssink,
-                void*          stream)
+serd_writer_new(const SerdSyntax     syntax,
+                const SerdStyle      style,
+                SerdEnv* const       env,
+                const SerdURI* const base_uri,
+                SerdSink             ssink,
+                void* const          stream)
 {
   assert(env);
   assert(ssink);
@@ -1135,9 +1141,9 @@ serd_writer_new(SerdSyntax     syntax,
 }
 
 void
-serd_writer_set_error_sink(SerdWriter*   writer,
-                           SerdErrorSink error_sink,
-                           void*         error_handle)
+serd_writer_set_error_sink(SerdWriter* const   writer,
+                           const SerdErrorSink error_sink,
+                           void* const         error_handle)
 {
   assert(writer);
   assert(error_sink);
@@ -1146,7 +1152,8 @@ serd_writer_set_error_sink(SerdWriter*   writer,
 }
 
 void
-serd_writer_chop_blank_prefix(SerdWriter* writer, const uint8_t* prefix)
+serd_writer_chop_blank_prefix(SerdWriter* const    writer,
+                              const uint8_t* const prefix)
 {
   assert(writer);
 
@@ -1163,7 +1170,7 @@ serd_writer_chop_blank_prefix(SerdWriter* writer, const uint8_t* prefix)
 }
 
 SerdStatus
-serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
+serd_writer_set_base_uri(SerdWriter* const writer, const SerdNode* const uri)
 {
   assert(writer);
 
@@ -1185,7 +1192,7 @@ serd_writer_set_base_uri(SerdWriter* writer, const SerdNode* uri)
 }
 
 SerdStatus
-serd_writer_set_root_uri(SerdWriter* writer, const SerdNode* uri)
+serd_writer_set_root_uri(SerdWriter* const writer, const SerdNode* const uri)
 {
   assert(writer);
 
@@ -1205,9 +1212,9 @@ serd_writer_set_root_uri(SerdWriter* writer, const SerdNode* uri)
 }
 
 SerdStatus
-serd_writer_set_prefix(SerdWriter*     writer,
-                       const SerdNode* name,
-                       const SerdNode* uri)
+serd_writer_set_prefix(SerdWriter* const     writer,
+                       const SerdNode* const name,
+                       const SerdNode* const uri)
 {
   assert(writer);
   assert(name);
@@ -1231,7 +1238,7 @@ serd_writer_set_prefix(SerdWriter*     writer,
 }
 
 void
-serd_writer_free(SerdWriter* writer)
+serd_writer_free(SerdWriter* const writer)
 {
   if (!writer) {
     return;
@@ -1250,14 +1257,14 @@ serd_writer_free(SerdWriter* writer)
 }
 
 SerdEnv*
-serd_writer_get_env(SerdWriter* writer)
+serd_writer_get_env(SerdWriter* const writer)
 {
   assert(writer);
   return writer->env;
 }
 
 size_t
-serd_file_sink(const void* buf, size_t len, void* stream)
+serd_file_sink(const void* const buf, const size_t len, void* const stream)
 {
   assert(buf);
   assert(stream);
@@ -1265,7 +1272,7 @@ serd_file_sink(const void* buf, size_t len, void* stream)
 }
 
 size_t
-serd_chunk_sink(const void* buf, size_t len, void* stream)
+serd_chunk_sink(const void* const buf, const size_t len, void* const stream)
 {
   assert(buf);
   assert(stream);
@@ -1281,7 +1288,7 @@ serd_chunk_sink(const void* buf, size_t len, void* stream)
 }
 
 uint8_t*
-serd_chunk_sink_finish(SerdChunk* stream)
+serd_chunk_sink_finish(SerdChunk* const stream)
 {
   assert(stream);
   serd_chunk_sink("", 1, stream);

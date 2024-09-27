@@ -58,14 +58,14 @@ SerdStatus
 serd_byte_source_page(SerdByteSource* source);
 
 static inline SERD_PURE_FUNC uint8_t
-serd_byte_source_peek(SerdByteSource* source)
+serd_byte_source_peek(SerdByteSource* const source)
 {
   assert(source->prepared);
   return source->read_buf[source->read_head];
 }
 
 static inline SerdStatus
-serd_byte_source_advance(SerdByteSource* source)
+serd_byte_source_advance(SerdByteSource* const source)
 {
   SerdStatus st = SERD_SUCCESS;
 

@@ -110,7 +110,7 @@ SerdStatus
 read_turtleTrigDoc(SerdReader* reader);
 
 static inline int
-peek_byte(SerdReader* reader)
+peek_byte(SerdReader* const reader)
 {
   SerdByteSource* source = &reader->source;
 
@@ -118,7 +118,7 @@ peek_byte(SerdReader* reader)
 }
 
 static inline SerdStatus
-skip_byte(SerdReader* reader, const int byte)
+skip_byte(SerdReader* const reader, const int byte)
 {
   (void)byte;
 
@@ -128,7 +128,7 @@ skip_byte(SerdReader* reader, const int byte)
 }
 
 static inline int SERD_NODISCARD
-eat_byte_safe(SerdReader* reader, const int byte)
+eat_byte_safe(SerdReader* const reader, const int byte)
 {
   (void)byte;
 
@@ -139,7 +139,7 @@ eat_byte_safe(SerdReader* reader, const int byte)
 }
 
 static inline int SERD_NODISCARD
-eat_byte_check(SerdReader* reader, const int byte)
+eat_byte_check(SerdReader* const reader, const int byte)
 {
   const int c = peek_byte(reader);
   if (c != byte) {
@@ -150,7 +150,7 @@ eat_byte_check(SerdReader* reader, const int byte)
 }
 
 static inline SerdStatus
-eat_string(SerdReader* reader, const char* str, unsigned n)
+eat_string(SerdReader* const reader, const char* const str, const unsigned n)
 {
   for (unsigned i = 0; i < n; ++i) {
     if (!eat_byte_check(reader, ((const uint8_t*)str)[i])) {
@@ -161,7 +161,7 @@ eat_string(SerdReader* reader, const char* str, unsigned n)
 }
 
 static inline SerdStatus
-push_byte(SerdReader* reader, Ref ref, const int c)
+push_byte(SerdReader* const reader, const Ref ref, const int c)
 {
   assert(c >= 0);
   SERD_STACK_ASSERT_TOP(reader, ref);
@@ -180,7 +180,10 @@ push_byte(SerdReader* reader, Ref ref, const int c)
 }
 
 static inline void
-push_bytes(SerdReader* reader, Ref ref, const uint8_t* bytes, unsigned len)
+push_bytes(SerdReader* const    reader,
+           const Ref            ref,
+           const uint8_t* const bytes,
+           const unsigned       len)
 {
   for (unsigned i = 0; i < len; ++i) {
     push_byte(reader, ref, bytes[i]);

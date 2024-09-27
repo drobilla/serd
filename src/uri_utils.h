@@ -18,20 +18,20 @@ typedef struct {
 } SlashIndexes;
 
 static inline bool
-chunk_equals(const SerdChunk* a, const SerdChunk* b)
+chunk_equals(const SerdChunk* const a, const SerdChunk* const b)
 {
   return a->len == b->len &&
          !strncmp((const char*)a->buf, (const char*)b->buf, a->len);
 }
 
 static inline size_t
-uri_path_len(const SerdURI* uri)
+uri_path_len(const SerdURI* const uri)
 {
   return uri->path_base.len + uri->path.len;
 }
 
 static inline uint8_t
-uri_path_at(const SerdURI* uri, size_t i)
+uri_path_at(const SerdURI* const uri, const size_t i)
 {
   return (i < uri->path_base.len) ? uri->path_base.buf[i]
                                   : uri->path.buf[i - uri->path_base.len];
@@ -46,7 +46,7 @@ uri_path_at(const SerdURI* uri, size_t i)
    otherwise it may merely share some leading path components).
 */
 static inline SERD_PURE_FUNC SlashIndexes
-uri_rooted_index(const SerdURI* uri, const SerdURI* root)
+uri_rooted_index(const SerdURI* const uri, const SerdURI* const root)
 {
   SlashIndexes indexes = {SIZE_MAX, SIZE_MAX};
 
@@ -84,14 +84,14 @@ uri_rooted_index(const SerdURI* uri, const SerdURI* root)
 
 /** Return true iff `uri` shares path components with `root` */
 static inline SERD_PURE_FUNC bool
-uri_is_related(const SerdURI* uri, const SerdURI* root)
+uri_is_related(const SerdURI* const uri, const SerdURI* const root)
 {
   return uri_rooted_index(uri, root).shared != SIZE_MAX;
 }
 
 /** Return true iff `uri` is within the base of `root` */
 static inline SERD_PURE_FUNC bool
-uri_is_under(const SerdURI* uri, const SerdURI* root)
+uri_is_under(const SerdURI* const uri, const SerdURI* const root)
 {
   const SlashIndexes indexes = uri_rooted_index(uri, root);
   return indexes.shared && indexes.shared != SIZE_MAX &&
