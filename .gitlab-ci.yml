@@ -41,7 +41,7 @@ sanitize:
   stage: build
   image: lv2plugin/debian-x64-clang
   script:
-    - meson setup build -Db_lundef=false -Dbuildtype=plain -Dc_std=c11 -Ddocs=disabled -Dwarning_level=3 -Dwerror=true
+    - meson setup build -Db_lundef=false -Dbuildtype=plain -Dc_std=c11 -Ddocs=disabled -Dlint=true -Dwarning_level=3 -Dwerror=true
     - ninja -C build test
   variables:
     CC: "clang"

@@ -61,6 +61,17 @@ if get_option('lint')
     )
   endif
 
+  # Check code formatting
+  clang_format = find_program('clang-format', required: false)
+  if clang_format.found()
+    test(
+      'format',
+      clang_format,
+      args: ['--Werror', '--dry-run'] + c_headers + sources,
+      suite: 'code',
+    )
+  endif
+
   # Check code with cppcheck
   if not meson.is_subproject()
     cppcheck = find_program('cppcheck', required: false)
