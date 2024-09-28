@@ -14,6 +14,7 @@
 #include "try.h"
 #include "turtle.h"
 
+#include <serd/caret_view.h>
 #include <serd/event.h>
 #include <serd/node_flags.h>
 #include <serd/node_type.h>
@@ -563,7 +564,8 @@ read_object(SerdReader* const        reader,
             TokenHeader** const      meta,
             bool* const              ate_dot)
 {
-  const size_t orig_stack_size = reader->stack.size;
+  const size_t  orig_stack_size = reader->stack.size;
+  SerdCaretView orig_caret      = reader->source->caret;
 
   assert(ctx->subject);
 
@@ -586,6 +588,7 @@ read_object(SerdReader* const        reader,
     } else if (c == '+' || c == '-' || c == '.' || is_digit(c)) {
       st = read_number(reader, o, meta, ate_dot);
     } else if (c == '\"' || c == '\'') {
+      ++orig_caret.column;
       st = read_literal(reader, o, meta, ate_dot);
     } else {
       // Either a boolean literal or a prefixed name
@@ -593,7 +596,7 @@ read_object(SerdReader* const        reader,
     }
 
     if (!st) {
-      st = emit_statement(reader, *ctx, *o, *meta);
+      st = emit_statement_at(reader, *ctx, *o, *meta, orig_caret);
     }
   }
 

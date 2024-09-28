@@ -5,6 +5,7 @@
 
 #include "failing_allocator.h"
 
+#include <serd/caret_view.h>
 #include <serd/event.h>
 #include <serd/input_stream.h>
 #include <serd/reader.h>
@@ -24,6 +25,7 @@
 #endif
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -517,6 +519,49 @@ test_read_empty(const char* const path)
   serd_world_free(world);
 }
 
+static SerdStatus
+check_cursor(void* const handle, const SerdEvent* const event)
+{
+  bool* const called = (bool*)handle;
+
+  if (event->type == SERD_EVENT_STATEMENT) {
+    const SerdCaretView caret = event->caret;
+    assert(zix_string_view_equals(caret.document, zix_string("string")));
+    assert(caret.line == 1);
+    assert(caret.column == 47);
+  }
+
+  *called = true;
+  return SERD_SUCCESS;
+}
+
+static void
+test_error_cursor(void)
+{
+  SerdWorld* const  world  = serd_world_new(NULL);
+  bool              called = false;
+  const SerdSink    sink   = {&called, check_cursor};
+  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, &sink);
+  assert(reader);
+
+  static const char* const string =
+    "<http://example.org/s> <http://example.org/p> "
+    "<http://example.org/o> .";
+
+  const char*     position = string;
+  SerdInputStream in       = serd_open_input_string(&position);
+
+  SerdStatus st = serd_reader_start(reader, &in, zix_string("string"), 1);
+  assert(!st);
+  assert(serd_reader_read_document(reader) == SERD_SUCCESS);
+  assert(!serd_reader_finish(reader));
+  assert(called);
+  assert(!serd_close_input(&in));
+
+  serd_reader_free(reader);
+  serd_world_free(world);
+}
+
 int
 main(void)
 {
@@ -543,6 +588,7 @@ main(void)
   test_prepare_error(ttl_path);
   test_read_string();
   test_read_eof_file(ttl_path);
+  test_error_cursor();
 
   assert(!zix_remove(dir));
 
