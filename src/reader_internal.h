@@ -9,6 +9,7 @@
 #include "reader_impl.h" // IWYU pragma: keep
 #include "token_header.h"
 
+#include <serd/caret_view.h>
 #include <serd/event.h>
 #include <serd/node_type.h>
 #include <serd/reader.h>
@@ -70,6 +71,13 @@ pop_last_node_char(SerdReader* reader, TokenHeader* node);
 
 SerdStatus
 emit_event(const SerdReader* reader, SerdEvent event);
+
+ZIX_NODISCARD SerdStatus
+emit_statement_at(const SerdReader*  reader,
+                  ReadContext        ctx,
+                  const TokenHeader* object,
+                  const TokenHeader* meta,
+                  SerdCaretView      caret);
 
 ZIX_NODISCARD SerdStatus
 emit_statement(const SerdReader*  reader,

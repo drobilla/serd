@@ -11,6 +11,7 @@
 #include "token_header.h"
 #include "try.h"
 
+#include <serd/caret_view.h>
 #include <serd/event.h>
 #include <serd/reader.h>
 #include <serd/status.h>
@@ -44,13 +45,16 @@ read_nquads_statement(SerdReader* const reader)
     return st;
   }
 
-  TokenHeader* object = NULL;
-  TokenHeader* meta   = NULL;
+  // Preserve the caret for error reporting and read object
+  const SerdCaretView orig_caret = reader->source->caret;
+  TokenHeader*        object     = NULL;
+  TokenHeader*        meta       = NULL;
   if ((st = read_nt_object(reader, &object, &meta, &ate_dot)) ||
       (st = read_horizontal_whitespace(reader))) {
     return st;
   }
 
+  // Read line termination or graph label
   if (!ate_dot) {
     if (peek_byte(reader) != '.') {
       TRY(st, read_graphLabel(reader, &ctx.graph, &ate_dot));
@@ -62,7 +66,7 @@ read_nquads_statement(SerdReader* const reader)
     }
   }
 
-  return emit_statement(reader, ctx, object, meta);
+  return emit_statement_at(reader, ctx, object, meta, orig_caret);
 }
 
 SerdStatus

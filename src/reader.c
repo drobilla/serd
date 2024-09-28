@@ -15,6 +15,7 @@
 #include "token_header.h"
 #include "world_internal.h"
 
+#include <serd/caret_view.h>
 #include <serd/error.h>
 #include <serd/event.h>
 #include <serd/input_stream.h>
@@ -261,10 +262,11 @@ emit_event(const SerdReader* const reader, SerdEvent event)
 }
 
 SerdStatus
-emit_statement(const SerdReader* const  reader,
-               const ReadContext        ctx,
-               const TokenHeader* const object,
-               const TokenHeader* const meta)
+emit_statement_at(const SerdReader* const  reader,
+                  const ReadContext        ctx,
+                  const TokenHeader* const object,
+                  const TokenHeader* const meta,
+                  const SerdCaretView      caret)
 {
   assert(ctx.subject);
   assert(ctx.predicate);
@@ -275,13 +277,18 @@ emit_statement(const SerdReader* const  reader,
     object->flags,
     stack_token_view(meta)};
 
-  const SerdStatus st = emit_event(
-    reader,
-    serd_statement_event(*ctx.flags,
-                         serd_quad_view(stack_token_view(ctx.subject),
-                                        stack_token_view(ctx.predicate),
-                                        object_view,
-                                        stack_token_view(ctx.graph))));
+  const SerdStatementView statement =
+    serd_quad_view(stack_token_view(ctx.subject),
+                   stack_token_view(ctx.predicate),
+                   object_view,
+                   stack_token_view(ctx.graph));
+
+  const SerdEvent event = {SERD_EVENT_STATEMENT,
+                           (uint16_t)*ctx.flags,
+                           caret,
+                           {.statement = statement}};
+
+  const SerdStatus st = serd_sink_event(reader->sink, event);
 
   *ctx.flags = 0U;
   return st;
@@ -310,6 +317,15 @@ read_syntax_chunk(SerdReader* const reader)
   };
 
   return read_funcs[reader->syntax](reader);
+}
+
+SerdStatus
+emit_statement(const SerdReader* const  reader,
+               const ReadContext        ctx,
+               const TokenHeader* const o,
+               const TokenHeader* const meta)
+{
+  return emit_statement_at(reader, ctx, o, meta, reader->source->caret);
 }
 
 SerdStatus
