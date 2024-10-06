@@ -4,10 +4,10 @@
 option('checks', type: 'feature', value: 'enabled', yield: true,
        description: 'Check for platform-specific features')
 
-option('docs', type: 'feature', value: 'auto', yield: true,
+option('docs', type: 'feature', yield: true,
        description: 'Build documentation')
 
-option('html', type: 'feature', value: 'auto', yield: true,
+option('html', type: 'feature', yield: true,
        description: 'Build paginated HTML documentation')
 
 option('lint', type: 'boolean', value: false, yield: true,
@@ -16,20 +16,20 @@ option('lint', type: 'boolean', value: false, yield: true,
 option('man', type: 'feature', value: 'enabled', yield: true,
        description: 'Install man pages')
 
-option('man_html', type: 'feature', value: 'auto', yield: true,
+option('man_html', type: 'feature', yield: true,
        description: 'Build HTML man pages')
 
-option('singlehtml', type: 'feature', value: 'auto', yield: true,
+option('singlehtml', type: 'feature', yield: true,
        description: 'Build single-page HTML documentation')
 
 option('static', type: 'boolean', value: false, yield: true,
        description: 'Statically link executables')
 
-option('tests', type: 'feature', value: 'auto', yield: true,
+option('tests', type: 'feature', yield: true,
        description: 'Build tests')
 
 option('title', type: 'string', value: 'Serd',
        description: 'Project title')
 
-option('tools', type: 'feature', value: 'auto', yield: true,
+option('tools', type: 'feature', yield: true,
        description: 'Build command line utilities')
