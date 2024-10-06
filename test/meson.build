@@ -14,7 +14,7 @@ subdir('headers')
 # Unit Tests #
 ##############
 
-unit_tests = [
+unit_test_names = [
   'env',
   'free_null',
   'node',
@@ -25,12 +25,16 @@ unit_tests = [
   'writer',
 ]
 
-foreach unit : unit_tests
+unit_test_sources = files('headers/test_headers.c')
+
+foreach name : unit_test_names
+  source = files('test_@0@.c'.format(name))
+  unit_test_sources += source
   test(
-    unit,
+    name,
     executable(
-      'test_@0@'.format(unit),
-      files('test_@0@.c'.format(unit)),
+      'test_@0@'.format(name),
+      source,
       c_args: c_suppressions,
       dependencies: serd_dep,
     ),
@@ -328,6 +332,8 @@ python_script_paths = simple_script_paths + plot_script_paths
 python_scripts = plot_scripts + simple_scripts
 
 if get_option('lint')
+  all_sources = sources + unit_test_sources + files('../src/serdi.c')
+
   # Check release metadata
   if not meson.is_subproject()
     autoship = find_program('autoship', required: false)
@@ -353,7 +359,7 @@ if get_option('lint')
     test(
       'format',
       clang_format,
-      args: ['--Werror', '--dry-run'] + c_headers + sources,
+      args: ['--Werror', '--dry-run'] + c_headers + all_sources,
       suite: 'code',
     )
   endif
