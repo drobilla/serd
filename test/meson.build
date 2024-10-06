@@ -334,11 +334,30 @@ python_scripts = plot_scripts + simple_scripts
 if get_option('lint')
   all_sources = sources + unit_test_sources + files('../src/serdi.c')
 
-  # Check release metadata
   if not meson.is_subproject()
+    # Check release metadata
     autoship = find_program('autoship', required: false)
     if autoship.found()
       test('autoship', autoship, args: ['test', serd_src_root], suite: 'data')
+    endif
+
+    # Check code with cppcheck
+    cppcheck = find_program('cppcheck', required: false)
+    if cppcheck.found()
+      compdb_path = join_paths(serd_build_root, 'compile_commands.json')
+      suppress_path = join_paths(serd_src_root, '.suppress.cppcheck')
+      test(
+        'cppcheck',
+        cppcheck,
+        args: [
+          '--enable=warning,style,performance,portability',
+          '--error-exitcode=1',
+          '--project=' + compdb_path,
+          '--suppressions-list=' + suppress_path,
+          '-q',
+        ],
+        suite: 'code',
+      )
     endif
   endif
 
@@ -362,27 +381,6 @@ if get_option('lint')
       args: ['--Werror', '--dry-run'] + c_headers + all_sources,
       suite: 'code',
     )
-  endif
-
-  # Check code with cppcheck
-  if not meson.is_subproject()
-    cppcheck = find_program('cppcheck', required: false)
-    if cppcheck.found()
-      compdb_path = join_paths(serd_build_root, 'compile_commands.json')
-      suppress_path = join_paths(serd_src_root, '.suppress.cppcheck')
-      test(
-        'cppcheck',
-        cppcheck,
-        args: [
-          '--enable=warning,style,performance,portability',
-          '--error-exitcode=1',
-          '--project=' + compdb_path,
-          '--suppressions-list=' + suppress_path,
-          '-q',
-        ],
-        suite: 'code',
-      )
-    endif
   endif
 
   # Check script formatting
