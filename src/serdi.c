@@ -85,20 +85,20 @@ print_usage(const char* const name, const bool error)
   static const char* const description =
     "Read and write RDF syntax.\n"
     "Use - for INPUT to read from standard input.\n\n"
-    "  -a           Write ASCII output.\n"
-    "  -b           Write output in blocks for performance.\n"
-    "  -c PREFIX    Chop PREFIX from matching blank node IDs.\n"
-    "  -e           Eat input one character at a time.\n"
-    "  -f           Fast and loose URI pass-through.\n"
-    "  -h           Display this help and exit.\n"
-    "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads.\n"
-    "  -l           Lax (non-strict) parsing.\n"
-    "  -o SYNTAX    Output syntax: turtle/ntriples/nquads.\n"
-    "  -p PREFIX    Add PREFIX to blank node IDs.\n"
-    "  -q           Suppress all output except data.\n"
-    "  -r ROOT_URI  Keep relative URIs within ROOT_URI.\n"
-    "  -s INPUT     Parse INPUT as string (terminates options).\n"
-    "  -v           Display version information and exit.\n";
+    "  -a           Write ASCII output\n"
+    "  -b           Write output in blocks for performance\n"
+    "  -c PREFIX    Chop PREFIX from matching blank node IDs\n"
+    "  -e           Eat input one character at a time\n"
+    "  -f           Fast and loose URI pass-through\n"
+    "  -h           Display this help and exit\n"
+    "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads\n"
+    "  -l           Lax (non-strict) parsing\n"
+    "  -o SYNTAX    Output syntax: turtle/ntriples/nquads\n"
+    "  -p PREFIX    Add PREFIX to blank node IDs\n"
+    "  -q           Suppress all output except data\n"
+    "  -r ROOT_URI  Keep relative URIs within ROOT_URI\n"
+    "  -s INPUT     Parse INPUT as string (terminates options)\n"
+    "  -v           Display version information and exit\n";
 
   FILE* const os = error ? stderr : stdout;
   fprintf(os, "%s", error ? "\n" : "");
