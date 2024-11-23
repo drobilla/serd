@@ -4,7 +4,7 @@
 #ifndef SERD_SRC_BASE64_H
 #define SERD_SRC_BASE64_H
 
-#include "serd/serd.h"
+#include <serd/serd.h>
 
 #include <stdbool.h>
 #include <stddef.h>

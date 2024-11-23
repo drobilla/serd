@@ -4,7 +4,7 @@
 #include "serd_config.h"
 #include "string_utils.h"
 
-#include "serd/serd.h"
+#include <serd/serd.h>
 
 #ifdef _WIN32
 #  ifdef _MSC_VER

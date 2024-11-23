@@ -3,7 +3,7 @@
 
 #undef NDEBUG
 
-#include "serd/serd.h"
+#include <serd/serd.h>
 
 #include <assert.h>
 #include <stdint.h>

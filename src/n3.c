@@ -8,7 +8,7 @@
 #include "try.h"
 #include "uri_utils.h"
 
-#include "serd/serd.h"
+#include <serd/serd.h>
 
 #include <assert.h>
 #include <stdbool.h>

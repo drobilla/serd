@@ -5,7 +5,7 @@
 #include "uri_utils.h"
 #include "warnings.h"
 
-#include "serd/serd.h"
+#include <serd/serd.h>
 
 #include <assert.h>
 #include <stdbool.h>

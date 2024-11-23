@@ -7,7 +7,7 @@
 #include "serd_internal.h"
 #include "system.h"
 
-#include "serd/serd.h"
+#include <serd/serd.h>
 
 #include <stddef.h>
 #include <stdint.h>

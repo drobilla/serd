@@ -4,7 +4,7 @@
 #ifndef SERD_SRC_NODE_H
 #define SERD_SRC_NODE_H
 
-#include "serd/serd.h"
+#include <serd/serd.h>
 
 #include <stddef.h>
 

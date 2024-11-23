@@ -4,9 +4,9 @@
 #ifndef SERD_SRC_URI_UTILS_H
 #define SERD_SRC_URI_UTILS_H
 
-#include "serd/serd.h"
-
 #include "string_utils.h"
+
+#include <serd/serd.h>
 
 #include <stdbool.h>
 #include <stdint.h>

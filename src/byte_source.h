@@ -4,7 +4,7 @@
 #ifndef SERD_SRC_BYTE_SOURCE_H
 #define SERD_SRC_BYTE_SOURCE_H
 
-#include "serd/serd.h"
+#include <serd/serd.h>
 
 #include <assert.h>
 #include <stdbool.h>

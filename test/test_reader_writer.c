@@ -3,7 +3,7 @@
 
 #undef NDEBUG
 
-#include "serd/serd.h"
+#include <serd/serd.h>
 
 #ifdef _WIN32
 #  include <windows.h>

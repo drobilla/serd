@@ -6,7 +6,7 @@
 #include "serd_internal.h"
 #include "string_utils.h"
 
-#include "serd/serd.h"
+#include <serd/serd.h>
 
 #include <assert.h>
 #include <stdbool.h>

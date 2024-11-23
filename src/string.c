@@ -3,7 +3,7 @@
 
 #include "string_utils.h"
 
-#include "serd/serd.h"
+#include <serd/serd.h>
 
 #include <assert.h>
 #include <math.h>
