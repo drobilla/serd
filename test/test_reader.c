@@ -183,7 +183,7 @@ test_read_eof_file(const char* const path)
   serd_reader_end_stream(reader);
 
   serd_reader_free(reader);
-  fclose(f);
+  assert(!fclose(f));
 }
 
 // A byte-wise reader hits EOF once then continues (like a socket)
@@ -292,8 +292,9 @@ test_read_nquads_chunks(const char* const path)
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   serd_reader_end_stream(reader);
   serd_reader_free(reader);
-  fclose(f);
-  remove(path);
+
+  assert(!fclose(f));
+  assert(!remove(path));
 }
 
 static void
@@ -383,8 +384,8 @@ test_read_turtle_chunks(const char* const path)
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   serd_reader_end_stream(reader);
   serd_reader_free(reader);
-  fclose(f);
-  remove(path);
+  assert(!fclose(f));
+  assert(!remove(path));
 }
 
 int

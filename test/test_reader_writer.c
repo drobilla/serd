@@ -261,7 +261,7 @@ test_writer(const char* const path)
   serd_free(out);
 
   serd_env_free(env);
-  fclose(fd);
+  assert(!fclose(fd));
 }
 
 static void
