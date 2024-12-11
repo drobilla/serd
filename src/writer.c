@@ -494,13 +494,13 @@ write_text(SerdWriter* const    writer,
       return st;
     }
 
-    if (!size) {
+    if (size > 0U) {
+      i += size - 1U;
+    } else {
       // Corrupt input, write replacement character and scan to the next start
       st = esink(replacement_char, sizeof(replacement_char), writer);
       for (; i < n_bytes && (utf8[i] & 0x80U); ++i) {
       }
-    } else {
-      i += size - 1U;
     }
   }
 
