@@ -166,10 +166,12 @@ test_writer_cleanup(void)
   }
 
   // Finish writing without terminating nodes
-  assert(!(st = serd_writer_finish(writer)));
+  st = serd_writer_finish(writer);
+  assert(!st);
 
   // Set the base to an empty URI
-  assert(!(st = serd_writer_set_base_uri(writer, NULL)));
+  st = serd_writer_set_base_uri(writer, NULL);
+  assert(!st);
 
   // Free (which could leak if the writer doesn't clean up the stack properly)
   serd_writer_free(writer);
@@ -190,8 +192,9 @@ test_write_bad_anon_stack(void)
   SerdNode b1 = serd_node_from_string(SERD_BLANK, USTR("b1"));
   SerdNode b2 = serd_node_from_string(SERD_BLANK, USTR("b2"));
 
-  assert(!(st = serd_writer_write_statement(
-             writer, SERD_ANON_O_BEGIN, NULL, &s, &p, &b0, NULL, NULL)));
+  st = serd_writer_write_statement(
+    writer, SERD_ANON_O_BEGIN, NULL, &s, &p, &b0, NULL, NULL);
+  assert(!st);
 
   // (missing call to end the anonymous node here)
 
@@ -200,7 +203,8 @@ test_write_bad_anon_stack(void)
 
   assert(st == SERD_ERR_BAD_ARG);
 
-  assert(!(st = serd_writer_finish(writer)));
+  st = serd_writer_finish(writer);
+  assert(!st);
   serd_writer_free(writer);
   serd_env_free(env);
 }
