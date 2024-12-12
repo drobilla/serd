@@ -146,9 +146,11 @@ test_write_errors(void)
 static void
 test_writer(const char* const path)
 {
-  FILE*    fd  = fopen(path, "wb");
-  SerdEnv* env = serd_env_new(NULL);
+  FILE* const fd = fopen(path, "wb");
   assert(fd);
+
+  SerdEnv* const env = serd_env_new(NULL);
+  assert(env);
 
   SerdWriter* writer =
     serd_writer_new(SERD_TURTLE, (SerdStyle)0, env, NULL, serd_file_sink, fd);

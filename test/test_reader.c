@@ -217,6 +217,7 @@ test_read_nquads_chunks(const char* const path)
   static const char null = 0;
 
   FILE* const f = fopen(path, "w+b");
+  assert(f);
 
   // Write two statements, a null separator, then another statement
 
@@ -303,6 +304,7 @@ test_read_turtle_chunks(const char* const path)
   static const char null = 0;
 
   FILE* const f = fopen(path, "w+b");
+  assert(f);
 
   // Write two statements separated by null characters
   fprintf(f, "@base <http://example.org/base/> .\n");
