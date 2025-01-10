@@ -1,3 +1,4 @@
+assertWithSideEffect
 assignmentInAssert
 normalCheckLevelMaxBranches
 redundantInitialization
