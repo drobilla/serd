@@ -14,7 +14,7 @@ Comment: Standard test suites from the W3C
 License: BSD-3-Clause
 
 Files: test/extra/*
-Copyright: 2011-2023 David Robillard <d@drobilla.net>
+Copyright: 2011-2024 David Robillard <d@drobilla.net>
 Comment: Extra test suites for serd
 License: BSD-3-Clause OR ISC
 
