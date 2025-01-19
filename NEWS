@@ -1,4 +1,4 @@
-serd (0.32.3) unstable; urgency=medium
+serd (0.32.4) stable; urgency=medium
 
   * Clean up enum declarations
   * Fix library current_version on MacOS
@@ -13,7 +13,7 @@ serd (0.32.3) unstable; urgency=medium
   * Treat out of range unicode characters as errors
   * Write blank lines between graphs and statements in TriG
 
- -- David Robillard <d@drobilla.net>  Sat, 03 Aug 2024 15:50:39 +0000
+ -- David Robillard <d@drobilla.net>  Sun, 19 Jan 2025 00:17:58 +0000
 
 serd (0.32.2) stable; urgency=medium
 

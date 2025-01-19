@@ -1,10 +1,10 @@
-# Copyright 2020-2022 David Robillard <d@drobilla.net>
+# Copyright 2020-2025 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: ISC
 
 # Project information
 
 project = "@SERD_TITLE@"
-copyright = "2022-2023, David Robillard"
+copyright = "2022-2025, David Robillard"
 author = "David Robillard"
 release = "@SERD_VERSION@"
 version = "@SERD_VERSION@"
