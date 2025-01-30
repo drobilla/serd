@@ -49,6 +49,7 @@ if not get_option('tools').disabled()
       mandoc,
       '-Kutf-8',
       '-Ostyle=mandoc.css,man=%N.html',
+      '-Ios=Serd @0@'.format(meson.project_version()),
       '-Thtml',
       '-Wwarning,stop',
       '@INPUT@',
