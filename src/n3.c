@@ -46,7 +46,7 @@ read_HEX(SerdReader* const reader)
     return (uint8_t)eat_byte_safe(reader, c);
   }
 
-  r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid hexadecimal digit '%c'\n", c);
+  r_err_char(reader, "hexadecimal", c);
   return 0;
 }
 
@@ -465,11 +465,7 @@ read_PN_CHARS_BASE(SerdReader* const reader, const Ref dest)
   read_utf8_code(reader, dest, &code, (uint8_t)c);
 
   if (!is_PN_CHARS_BASE(code)) {
-    r_err(
-      reader, SERD_ERR_BAD_SYNTAX, "invalid character U+%04X in name\n", code);
-    if (reader->strict) {
-      return SERD_ERR_BAD_SYNTAX;
-    }
+    st = r_err_char(reader, "name", (int)code);
   }
 
   return st;
@@ -501,8 +497,7 @@ read_PN_CHARS(SerdReader* const reader, const Ref dest)
   TRY(st, read_utf8_code(reader, dest, &code, (uint8_t)c));
 
   if (!is_PN_CHARS(code)) {
-    return r_err(
-      reader, SERD_ERR_BAD_SYNTAX, "invalid character U+%04X in name\n", code);
+    st = r_err_char(reader, "name", (int)code);
   }
 
   return st;
@@ -531,7 +526,7 @@ read_PN_LOCAL_ESC(SerdReader* const reader, const Ref dest)
   return ((c == '!') || in_range(c, '#', '/') || (c == ';') || (c == '=') ||
           (c == '?') || (c == '@') || (c == '_') || (c == '~'))
            ? push_byte(reader, dest, eat_byte_safe(reader, c))
-           : r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid escape\n");
+           : r_err(reader, SERD_ERR_BAD_SYNTAX, "bad escape\n");
 }
 
 static SerdStatus
@@ -631,7 +626,7 @@ read_LANGTAG(SerdReader* const reader, Ref* const dest)
 {
   int c = peek_byte(reader);
   if (!is_alpha(c)) {
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected '%c'\n", c);
+    return r_err_char(reader, "language", c);
   }
 
   *dest = push_node(reader, SERD_LITERAL, "", 0);
@@ -657,7 +652,7 @@ read_IRIREF_scheme(SerdReader* const reader, const Ref dest)
 {
   int c = peek_byte(reader);
   if (!is_alpha(c)) {
-    return r_err(reader, SERD_ERR_BAD_SYNTAX, "bad IRI scheme start '%c'\n", c);
+    return r_err_char(reader, "IRI scheme start", c);
   }
 
   while ((c = peek_byte(reader)) > 0) {
@@ -666,11 +661,7 @@ read_IRIREF_scheme(SerdReader* const reader, const Ref dest)
     }
 
     if (!is_uri_scheme_char(c)) {
-      return r_err(reader,
-                   SERD_ERR_BAD_SYNTAX,
-                   "bad IRI scheme char U+%04X (%c)\n",
-                   (unsigned)c,
-                   (char)c);
+      return r_err_char(reader, "IRI scheme", c);
     }
 
     push_byte(reader, dest, eat_byte_safe(reader, c));
@@ -704,8 +695,7 @@ read_IRIREF(SerdReader* const reader, Ref* const dest)
     case '"':
     case '<':
       *dest = pop_node(reader, *dest);
-      return r_err(
-        reader, SERD_ERR_BAD_SYNTAX, "invalid IRI character '%c'\n", c);
+      return r_err_char(reader, "IRI", c);
 
     case '>':
       return SERD_SUCCESS;
@@ -713,7 +703,7 @@ read_IRIREF(SerdReader* const reader, Ref* const dest)
     case '\\':
       if (read_UCHAR(reader, *dest, &code)) {
         *dest = pop_node(reader, *dest);
-        return r_err(reader, SERD_ERR_BAD_SYNTAX, "invalid IRI escape\n");
+        return r_err_char(reader, "IRI escape", c);
       }
 
       if (code == ' ' || code == '<' || code == '>') {
@@ -731,8 +721,7 @@ read_IRIREF(SerdReader* const reader, Ref* const dest)
     case '|':
     case '}':
       *dest = pop_node(reader, *dest);
-      return r_err(
-        reader, SERD_ERR_BAD_SYNTAX, "invalid IRI character '%c'\n", c);
+      return r_err_char(reader, "IRI", c);
 
     default:
       if (c <= 0) {

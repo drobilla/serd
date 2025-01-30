@@ -69,6 +69,9 @@ SERD_LOG_FUNC(3, 4)
 SerdStatus
 r_err(SerdReader* reader, SerdStatus st, const char* fmt, ...);
 
+SerdStatus
+r_err_char(SerdReader* reader, const char* kind, int c);
+
 Ref
 push_node_padded(SerdReader* reader,
                  size_t      maxlen,
@@ -143,7 +146,7 @@ eat_byte_check(SerdReader* const reader, const int byte)
 {
   const int c = peek_byte(reader);
   if (c != byte) {
-    r_err(reader, SERD_ERR_BAD_SYNTAX, "expected '%c', not '%c'\n", byte, c);
+    r_err(reader, SERD_ERR_BAD_SYNTAX, "expected '%c'\n", byte);
     return 0;
   }
   return eat_byte_safe(reader, byte);

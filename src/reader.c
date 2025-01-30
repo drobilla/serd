@@ -30,6 +30,18 @@ r_err(SerdReader* const reader, const SerdStatus st, const char* const fmt, ...)
   return st;
 }
 
+SerdStatus
+r_err_char(SerdReader* const reader, const char* const kind, const int c)
+{
+  const SerdStatus st = SERD_ERR_BAD_SYNTAX;
+
+  return (c < 0x20 || c == 0x7F || c > 0x10FFFF)
+           ? r_err(reader, st, "bad %s character\n", kind)
+         : (c == '\'' || c >= 0x80)
+           ? r_err(reader, st, "bad %s character U+%04X\n", kind, (uint32_t)c)
+           : r_err(reader, st, "bad %s character '%c'\n", kind, c);
+}
+
 void
 set_blank_id(SerdReader* const reader, const Ref ref, const size_t buf_size)
 {
