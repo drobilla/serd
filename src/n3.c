@@ -354,11 +354,11 @@ read_STRING_LITERAL_LONG(SerdReader* const    reader,
         push_byte(reader, ref, c);
         st = read_character(reader, ref, flags, (uint8_t)q2);
       }
-    } else if (c == EOF) {
-      st = r_err(reader, SERD_ERR_BAD_SYNTAX, "end of file in long string\n");
-    } else {
+    } else if (c > 0) {
       st =
         read_character(reader, ref, flags, (uint8_t)eat_byte_safe(reader, c));
+    } else {
+      return r_err(reader, SERD_ERR_BAD_SYNTAX, "end of file in long string\n");
     }
   }
 
@@ -735,7 +735,9 @@ read_IRIREF(SerdReader* const reader, Ref* const dest)
         reader, SERD_ERR_BAD_SYNTAX, "invalid IRI character '%c'\n", c);
 
     default:
-      if (c <= 0x20) {
+      if (c <= 0) {
+        st = r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file\n");
+      } else if (c <= 0x20) {
         st = r_err(reader,
                    SERD_ERR_BAD_SYNTAX,
                    "invalid IRI character (escape %%%02X)\n",
@@ -743,8 +745,6 @@ read_IRIREF(SerdReader* const reader, Ref* const dest)
         if (!reader->strict) {
           st = SERD_FAILURE;
           push_byte(reader, *dest, c);
-        } else {
-          break;
         }
       } else if (!(c & 0x80)) {
         push_byte(reader, *dest, c);

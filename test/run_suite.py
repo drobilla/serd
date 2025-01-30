@@ -58,7 +58,7 @@ def run_positive_test(base_uri, command, in_path):
     return True
 
 
-def run_negative_test(base_uri, command, in_path):
+def run_negative_test(base_uri, command, in_path, ignore):
     """Run a negative syntax test and return whether the error was detected."""
 
     if not os.path.exists(in_path):
@@ -67,8 +67,12 @@ def run_negative_test(base_uri, command, in_path):
     command = command + [in_path, base_uri]
     proc = subprocess.run(command, check=False, stderr=PIPE, stdout=DEVNULL)
 
-    if proc.returncode == 0:
+    if not ignore and proc.returncode == 0:
         util.error("Unexpected successful return: " + in_path)
+        return False
+
+    if proc.returncode < 0:
+        util.error("Command seems to have crashed: " + in_path)
         return False
 
     if len(proc.stderr) == 0:
@@ -86,7 +90,7 @@ def run_entry(args, entry, command, out_dir, suite_dir):
 
     negative = "Negative" in entry[NS_RDF + "type"][0]
     if negative and not args.lax:
-        return run_negative_test(base, command, in_path)
+        return run_negative_test(base, command, in_path, args.ignore)
 
     if NS_MF + "result" not in entry:
         return run_positive_test(base, command, in_path)
@@ -151,6 +155,7 @@ def main():
     )
 
     parser.add_argument("--asserter", help="asserter URI for test report")
+    parser.add_argument("--ignore", action="store_true", help="ignore status")
     parser.add_argument("--lax", action="store_true", help="tolerate errors")
     parser.add_argument("--report", help="path to write result report to")
     parser.add_argument("--reverse", action="store_true", help="reverse test")
