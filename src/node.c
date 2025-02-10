@@ -288,7 +288,7 @@ serd_node_new_decimal(const double d, const unsigned frac_digits)
   char*    t   = s - 1;
   uint64_t dec = (uint64_t)int_part;
   do {
-    *t-- = (char)('0' + dec % 10);
+    *t-- = (char)('0' + (dec % 10));
   } while ((dec /= 10) > 0);
 
   *s++ = '.';
