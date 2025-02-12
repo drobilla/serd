@@ -173,7 +173,7 @@ serd (0.28.0) stable; urgency=medium
   * Add support for reading from a user provided callback
   * Fix hangs when reading corrupt UTF-8
   * Fix parsing of hex escapes in file URIs (thanks Johannes Mueller)
-  * Fix strict parsing of abolute URI schemes
+  * Fix strict parsing of absolute URI schemes
   * Gracefully handle applications that write corrupt UTF-8
 
  -- David Robillard <d@drobilla.net>  Fri, 21 Jul 2017 06:28:47 +0000
