@@ -812,7 +812,7 @@ serd_reader_read_string(SerdReader* SERD_NONNULL    reader,
 /**
    Skip over bytes in the input until a specific byte is encountered.
 
-   Typically used for recording from errors in a line-based syntax by skipping
+   Typically used for recovering from errors in a line-based syntax by skipping
    ahead to the next newline.
 
    @return #SERD_SUCCESS if the given byte was reached, or #SERD_FAILURE if the
