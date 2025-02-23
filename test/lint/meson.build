@@ -64,7 +64,7 @@ if black.found()
   black_opts = ['--check', '-q', '-l', '79']
   foreach script_path : python_script_paths
     script = files(script_path)
-    name = script_path.substring(3).underscorify()
+    name = 'black_' + script_path.substring(3).underscorify()
     test(name, black, args: black_opts + [script], suite: 'scripts')
   endforeach
 endif

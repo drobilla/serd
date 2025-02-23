@@ -3,7 +3,7 @@
 # Copyright 2018-2023 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: ISC
 
-""""Benchmark RDF reading and writing commands."""
+"""Benchmark RDF reading and writing commands."""
 
 # pylint: disable=consider-using-f-string
 # pylint: disable=consider-using-with
