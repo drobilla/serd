@@ -57,7 +57,9 @@
 #include <serd/field.h>
 #include <serd/file_uri.h>
 #include <serd/node.h>
+#include <serd/object_view.h>
 #include <serd/statement_flags.h>
+#include <serd/token_view.h>
 #include <serd/uri.h>
 
 /**
