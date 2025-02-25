@@ -18,8 +18,10 @@ SERD_BEGIN_DECLS
 
 /// Node flags, which ORed together make a #SerdNodeFlags
 typedef enum {
-  SERD_HAS_NEWLINE = 1U << 0U, ///< Contains line breaks ('\\n' or '\\r')
-  SERD_HAS_QUOTE   = 1U << 1U, ///< Contains quotes ('"')
+  SERD_HAS_NEWLINE  = 1U << 0U, ///< Contains line breaks ('\\n' or '\\r')
+  SERD_HAS_QUOTE    = 1U << 1U, ///< Contains quotes ('"')
+  SERD_HAS_DATATYPE = 1U << 2U, ///< Literal node has datatype
+  SERD_HAS_LANGUAGE = 1U << 3U, ///< Literal node has language
 } SerdNodeFlag;
 
 /// Bitwise OR of #SerdNodeFlag values
