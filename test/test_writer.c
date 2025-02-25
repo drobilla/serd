@@ -309,17 +309,74 @@ test_write_nothing_node(void)
   SerdNode s = serd_node_from_string(SERD_URI, USTR(""));
   SerdNode p = serd_node_from_string(SERD_URI, USTR("http://example.org/pred"));
   SerdNode o = serd_node_from_string(SERD_NOTHING, USTR(""));
-  assert(!serd_writer_write_statement(writer, 0, NULL, &s, &p, &o, NULL, NULL));
+  assert(serd_writer_write_statement(writer, 0, NULL, &s, &p, &o, NULL, NULL) ==
+         SERD_ERR_BAD_ARG);
 
-  assert(
-    !strncmp((const char*)chunk.buf, "<>\n\t<http://example.org/pred> ", 30));
+  assert(!chunk.buf);
+  serd_writer_free(writer);
+  serd_env_free(env);
+}
+
+static void
+test_write_bad_statement(void)
+{
+  SerdEnv* const env = serd_env_new(NULL);
+  assert(env);
+
+  SerdChunk         chunk  = {NULL, 0};
+  SerdWriter* const writer = serd_writer_new(
+    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
+  assert(writer);
+
+  SerdNode s = serd_node_from_string(SERD_URI, USTR("http://example.org/s"));
+  SerdNode p = serd_node_from_string(SERD_URI, USTR("http://example.org/p"));
+  SerdNode o = serd_node_from_string(SERD_URI, USTR("http://example.org/o"));
+  SerdNode l = serd_node_from_string(SERD_LITERAL, USTR("lang"));
+
+  assert(serd_writer_write_statement(
+           writer,
+           (SerdStatementFlags)(SERD_ANON_S_BEGIN | SERD_LIST_S_BEGIN),
+           NULL,
+           &s,
+           &p,
+           &o,
+           NULL,
+           NULL) == SERD_ERR_BAD_ARG);
+
+  assert(serd_writer_write_statement(
+           writer,
+           (SerdStatementFlags)(SERD_EMPTY_S | SERD_LIST_S_BEGIN),
+           NULL,
+           &s,
+           &p,
+           &o,
+           NULL,
+           NULL) == SERD_ERR_BAD_ARG);
+
+  assert(serd_writer_write_statement(
+           writer,
+           (SerdStatementFlags)(SERD_ANON_O_BEGIN | SERD_LIST_O_BEGIN),
+           NULL,
+           &s,
+           &p,
+           &o,
+           NULL,
+           NULL) == SERD_ERR_BAD_ARG);
+
+  assert(serd_writer_write_statement(
+           writer,
+           (SerdStatementFlags)(SERD_EMPTY_O | SERD_LIST_O_BEGIN),
+           NULL,
+           &s,
+           &p,
+           &o,
+           NULL,
+           NULL) == SERD_ERR_BAD_ARG);
+
+  assert(serd_writer_write_statement(writer, 0U, NULL, &s, &p, &o, &o, &l) ==
+         SERD_ERR_BAD_ARG);
 
   serd_writer_free(writer);
-
-  uint8_t* const out = serd_chunk_sink_finish(&chunk);
-  assert(!strcmp((const char*)out, "<>\n\t<http://example.org/pred>  .\n"));
-  serd_free(out);
-
   serd_env_free(env);
 }
 
@@ -334,6 +391,7 @@ main(void)
   test_write_error();
   test_chunk_sink();
   test_write_nothing_node();
+  test_write_bad_statement();
 
   return 0;
 }

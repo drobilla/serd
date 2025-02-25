@@ -168,15 +168,19 @@ test_writer(const char* const path)
 
   const uint8_t buf[] = {0x80, 0, 0, 0, 0};
 
-  SerdNode s = serd_node_from_string(SERD_URI, USTR(""));
-  SerdNode p = serd_node_from_string(SERD_URI, USTR("http://example.org/pred"));
-  SerdNode o = serd_node_from_string(SERD_LITERAL, buf);
+  const SerdNode s = serd_node_from_string(SERD_URI, USTR(""));
+  const SerdNode p =
+    serd_node_from_string(SERD_URI, USTR("http://example.org/pred"));
+  const SerdNode o = serd_node_from_string(SERD_LITERAL, buf);
+  const SerdNode t = serd_node_from_string(SERD_URI, USTR("urn:Type"));
+  const SerdNode l = serd_node_from_string(SERD_LITERAL, USTR("en"));
 
   // Attempt to write invalid statements (should write nothing)
   const SerdNode* junk[][5] = {{&s, &p, &SERD_NODE_NULL, NULL, NULL},
                                {&s, &SERD_NODE_NULL, &o, NULL, NULL},
                                {&SERD_NODE_NULL, &p, &o, NULL, NULL},
                                {&s, &o, &o, NULL, NULL},
+                               {&s, &o, &o, &t, &l},
                                {&o, &p, &o, NULL, NULL},
                                {&s, &p, &SERD_NODE_NULL, NULL, NULL}};
   for (size_t i = 0; i < sizeof(junk) / (sizeof(SerdNode*) * 5); ++i) {
@@ -191,14 +195,11 @@ test_writer(const char* const path)
   }
 
   // Write some valid statements
-  const SerdNode  t         = serd_node_from_string(SERD_URI, USTR("urn:Type"));
-  const SerdNode  l         = serd_node_from_string(SERD_LITERAL, USTR("en"));
   const SerdNode* good[][5] = {{&s, &p, &o, NULL, NULL},
                                {&s, &p, &lit, NULL, NULL},
                                {&s, &p, &o, &SERD_NODE_NULL, &SERD_NODE_NULL},
                                {&s, &p, &o, &t, NULL},
                                {&s, &p, &o, NULL, &l},
-                               {&s, &p, &o, &t, &l},
                                {&s, &p, &o, &t, &SERD_NODE_NULL},
                                {&s, &p, &o, &SERD_NODE_NULL, &l},
                                {&s, &p, &o, NULL, &SERD_NODE_NULL},
@@ -260,7 +261,7 @@ test_reader(const char* const path)
 
   const SerdStatus st = serd_reader_read_file(reader, USTR(path));
   assert(!st);
-  assert(rt->n_statement == 13);
+  assert(rt->n_statement == 12);
   assert(rt->graph && rt->graph->buf &&
          !strcmp((const char*)rt->graph->buf, "http://example.org/"));
 

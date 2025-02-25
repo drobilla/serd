@@ -1,4 +1,4 @@
-// Copyright 2011-2023 David Robillard <d@drobilla.net>
+// Copyright 2011-2025 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #include "attributes.h"
@@ -926,16 +926,23 @@ serd_writer_write_statement(SerdWriter* const     writer,
 
   SerdStatus st = SERD_SUCCESS;
 
-  if (!is_resource(subject) || !is_resource(predicate) || !object->buf) {
-    return SERD_ERR_BAD_ARG;
-  }
-
   if ((flags & SERD_LIST_O_BEGIN) &&
       !strcmp((const char*)object->buf, NS_RDF "nil")) {
     /* Tolerate LIST_O_BEGIN for "()" objects, even though it doesn't make
        much sense, because older versions handled this gracefully.  Consider
        making this an error in a later major version. */
     flags &= (SerdStatementFlags)~SERD_LIST_O_BEGIN;
+  }
+
+  // Refuse to write incoherent statements
+  if (!is_resource(subject) || !is_resource(predicate) ||
+      object->type == SERD_NOTHING || !object->buf ||
+      (datatype && datatype->buf && lang && lang->buf) ||
+      ((flags & SERD_ANON_S_BEGIN) && (flags & SERD_LIST_S_BEGIN)) ||
+      ((flags & SERD_EMPTY_S) && (flags & SERD_LIST_S_BEGIN)) ||
+      ((flags & SERD_ANON_O_BEGIN) && (flags & SERD_LIST_O_BEGIN)) ||
+      ((flags & SERD_EMPTY_O) && (flags & SERD_LIST_O_BEGIN))) {
+    return SERD_ERR_BAD_ARG;
   }
 
   // Simple case: write a line of NTriples or NQuads
