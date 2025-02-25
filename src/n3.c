@@ -782,6 +782,7 @@ read_literal(SerdReader* const    reader,
   const int next = peek_byte(reader);
   if (next == '@') {
     skip_byte(reader, '@');
+    *flags |= SERD_HAS_LANGUAGE;
     if ((st = read_LANGTAG(reader, lang))) {
       *datatype = pop_node(reader, *datatype);
       *lang     = pop_node(reader, *lang);
@@ -794,6 +795,7 @@ read_literal(SerdReader* const    reader,
       return SERD_BAD_SYNTAX;
     }
 
+    *flags |= SERD_HAS_DATATYPE;
     if ((st = read_iri(reader, datatype, ate_dot))) {
       *datatype = pop_node(reader, *datatype);
       *lang     = pop_node(reader, *lang);
@@ -947,10 +949,11 @@ read_anon(SerdReader* const reader,
 
 // Read a "named" object: a boolean literal or a prefixed name
 static SerdStatus
-read_named_object(SerdReader* const reader,
-                  Ref* const        dest,
-                  Ref* const        datatype,
-                  bool* const       ate_dot)
+read_named_object(SerdReader* const    reader,
+                  Ref* const           dest,
+                  Ref* const           datatype,
+                  SerdNodeFlags* const flags,
+                  bool* const          ate_dot)
 {
   static const ZixStringView xsd_boolean = ZIX_STATIC_STRING(NS_XSD "boolean");
 
@@ -964,6 +967,7 @@ read_named_object(SerdReader* const reader,
     if ((node->n_bytes == 4 && !memcmp(node->buf, "true", 4)) ||
         (node->n_bytes == 5 && !memcmp(node->buf, "false", 5))) {
       node->type = SERD_LITERAL;
+      *flags     = *flags | SERD_HAS_DATATYPE;
       *datatype  = push_node(reader, SERD_URI, xsd_boolean);
       st         = SERD_SUCCESS;
     }
@@ -1032,7 +1036,8 @@ read_object(SerdReader* const  reader,
   case '7':
   case '8':
   case '9':
-    st = read_number(reader, &o, &datatype, ate_dot);
+    flags = flags | SERD_HAS_DATATYPE;
+    st    = read_number(reader, &o, &datatype, ate_dot);
     break;
   case '"':
   case '\'':
@@ -1040,7 +1045,7 @@ read_object(SerdReader* const  reader,
     break;
   default:
     // Either a boolean literal or a prefixed name
-    st = read_named_object(reader, &o, &datatype, ate_dot);
+    st = read_named_object(reader, &o, &datatype, &flags, ate_dot);
   }
 
   if (!st && simple && o) {
