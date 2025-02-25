@@ -814,18 +814,16 @@ read_number(SerdReader* const reader,
     // all other cases ::= ( '-' | '+' ) [0-9]+ ( . )? ( [0-9]+ )? ...
     TRY(st, read_0_9(reader, *dest, true));
     if ((c = peek_byte(reader)) == '.') {
-      has_decimal = true;
-
       // Annoyingly, dot can be end of statement, so tentatively eat
       skip_byte(reader, c);
       c = peek_byte(reader);
       if (!is_digit(c) && c != 'e' && c != 'E') {
-        *ate_dot = true;     // Force caller to deal with stupid grammar
-        return SERD_SUCCESS; // Next byte is not a number character
+        *ate_dot = true; // Force caller to deal with silly grammar
+      } else {
+        has_decimal = true;
+        push_byte(reader, *dest, '.');
+        read_0_9(reader, *dest, false);
       }
-
-      push_byte(reader, *dest, '.');
-      read_0_9(reader, *dest, false);
     }
   }
   c = peek_byte(reader);
