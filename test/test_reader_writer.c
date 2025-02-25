@@ -1,4 +1,4 @@
-// Copyright 2011-2024 David Robillard <d@drobilla.net>
+// Copyright 2011-2025 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #undef NDEBUG
@@ -172,7 +172,7 @@ test_writer(const char* const path)
   SerdNode p = serd_node_from_string(SERD_URI, USTR("http://example.org/pred"));
   SerdNode o = serd_node_from_string(SERD_LITERAL, buf);
 
-  // Write 3 invalid statements (should write nothing)
+  // Attempt to write invalid statements (should write nothing)
   const SerdNode* junk[][5] = {{&s, &p, &SERD_NODE_NULL, NULL, NULL},
                                {&s, &SERD_NODE_NULL, &o, NULL, NULL},
                                {&SERD_NODE_NULL, &p, &o, NULL, NULL},
@@ -190,9 +190,11 @@ test_writer(const char* const path)
                                        junk[i][4]));
   }
 
+  // Write some valid statements
   const SerdNode  t         = serd_node_from_string(SERD_URI, USTR("urn:Type"));
   const SerdNode  l         = serd_node_from_string(SERD_LITERAL, USTR("en"));
   const SerdNode* good[][5] = {{&s, &p, &o, NULL, NULL},
+                               {&s, &p, &lit, NULL, NULL},
                                {&s, &p, &o, &SERD_NODE_NULL, &SERD_NODE_NULL},
                                {&s, &p, &o, &t, NULL},
                                {&s, &p, &o, NULL, &l},
@@ -222,46 +224,7 @@ test_writer(const char* const path)
   assert(!serd_writer_write_statement(
     writer, 0, NULL, &s, &p, &bad_uri, NULL, NULL));
 
-  // Write 1 valid statement
-  o = serd_node_from_string(SERD_LITERAL, USTR("hello"));
-  assert(!serd_writer_write_statement(writer, 0, NULL, &s, &p, &o, NULL, NULL));
-
   serd_writer_free(writer);
-
-  // Test chunk sink
-  SerdChunk chunk = {NULL, 0};
-  writer          = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
-
-  o = serd_node_from_string(SERD_URI, USTR("http://example.org/base"));
-  assert(!serd_writer_set_base_uri(writer, &o));
-
-  serd_writer_free(writer);
-  uint8_t* out = serd_chunk_sink_finish(&chunk);
-
-  assert(!strcmp((const char*)out, "@base <http://example.org/base> .\n"));
-  serd_free(out);
-
-  // Test writing empty node
-  SerdNode nothing = serd_node_from_string(SERD_NOTHING, USTR(""));
-
-  chunk.buf = NULL;
-  chunk.len = 0;
-  writer    = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
-
-  assert(!serd_writer_write_statement(
-    writer, 0, NULL, &s, &p, &nothing, NULL, NULL));
-
-  assert(
-    !strncmp((const char*)chunk.buf, "<>\n\t<http://example.org/pred> ", 30));
-
-  serd_writer_free(writer);
-  out = serd_chunk_sink_finish(&chunk);
-
-  assert(!strcmp((const char*)out, "<>\n\t<http://example.org/pred>  .\n"));
-  serd_free(out);
-
   serd_env_free(env);
   assert(!fclose(fd));
 }

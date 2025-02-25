@@ -1,4 +1,4 @@
-// Copyright 2011-2023 David Robillard <d@drobilla.net>
+// Copyright 2011-2025 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #undef NDEBUG
@@ -272,6 +272,57 @@ test_write_error(void)
   serd_env_free(env);
 }
 
+static void
+test_chunk_sink(void)
+{
+  SerdEnv* const env = serd_env_new(NULL);
+  assert(env);
+
+  SerdChunk         chunk  = {NULL, 0};
+  SerdWriter* const writer = serd_writer_new(
+    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
+  assert(writer);
+
+  const SerdNode base =
+    serd_node_from_string(SERD_URI, USTR("http://example.org/base"));
+  assert(!serd_writer_set_base_uri(writer, &base));
+
+  serd_writer_free(writer);
+  uint8_t* out = serd_chunk_sink_finish(&chunk);
+
+  assert(!strcmp((const char*)out, "@base <http://example.org/base> .\n"));
+  serd_free(out);
+  serd_env_free(env);
+}
+
+static void
+test_write_nothing_node(void)
+{
+  SerdEnv* const env = serd_env_new(NULL);
+  assert(env);
+
+  SerdChunk         chunk  = {NULL, 0};
+  SerdWriter* const writer = serd_writer_new(
+    SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
+  assert(writer);
+
+  SerdNode s = serd_node_from_string(SERD_URI, USTR(""));
+  SerdNode p = serd_node_from_string(SERD_URI, USTR("http://example.org/pred"));
+  SerdNode o = serd_node_from_string(SERD_NOTHING, USTR(""));
+  assert(!serd_writer_write_statement(writer, 0, NULL, &s, &p, &o, NULL, NULL));
+
+  assert(
+    !strncmp((const char*)chunk.buf, "<>\n\t<http://example.org/pred> ", 30));
+
+  serd_writer_free(writer);
+
+  uint8_t* const out = serd_chunk_sink_finish(&chunk);
+  assert(!strcmp((const char*)out, "<>\n\t<http://example.org/pred>  .\n"));
+  serd_free(out);
+
+  serd_env_free(env);
+}
+
 int
 main(void)
 {
@@ -281,6 +332,8 @@ main(void)
   test_write_bad_anon_stack();
   test_strict_write();
   test_write_error();
+  test_chunk_sink();
+  test_write_nothing_node();
 
   return 0;
 }
