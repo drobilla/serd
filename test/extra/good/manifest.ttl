@@ -16,6 +16,7 @@
 		<#test-blank-node-statement>
 		<#test-blankdot>
 		<#test-bom>
+		<#test-boolish-prefix>
 		<#test-changing-base>
 		<#test-comment-whitespace>
 		<#test-cr>
@@ -124,6 +125,12 @@
 	mf:action <test-bom.ttl> ;
 	mf:name "test-bom" ;
 	mf:result <test-bom.nt> .
+
+<#test-boolish-prefix>
+	a rdft:TestTurtleEval ;
+	mf:action <test-boolish-prefix.ttl> ;
+	mf:name "test-boolish-prefix" ;
+	mf:result <test-boolish-prefix.nt> .
 
 <#test-changing-base>
 	a rdft:TestTurtleEval ;
