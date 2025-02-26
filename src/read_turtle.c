@@ -941,10 +941,7 @@ read_block(SerdReader* const reader, ReadContext* const ctx)
   // Try to read a subject, though it may actually be a directive or graph name
   TokenHeader* token  = NULL;
   int          s_type = 0;
-  if ((st = read_turtle_subject(reader, *ctx, &token, &s_type)) >
-      SERD_FAILURE) {
-    return st;
-  }
+  TRY_FAILING(st, read_turtle_subject(reader, *ctx, &token, &s_type));
 
   // Try to interpret as a SPARQL "PREFIX" or "BASE" directive
   if (st && (st = read_sparql_directive(reader, token)) != SERD_FAILURE) {
@@ -958,9 +955,7 @@ read_block(SerdReader* const reader, ReadContext* const ctx)
   // Our token is really a subject, read some triples
   bool ate_dot = false;
   ctx->subject = token;
-  if ((st = read_turtle_triples(reader, *ctx, &ate_dot)) > SERD_FAILURE) {
-    return st;
-  }
+  TRY_FAILING(st, read_turtle_triples(reader, *ctx, &ate_dot));
 
   // "Failure" is only allowed for anonymous subjects like "[ ... ] ."
   if (st && s_type != '[') {
