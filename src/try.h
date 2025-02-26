@@ -4,6 +4,8 @@
 #ifndef SERD_SRC_TRY_H
 #define SERD_SRC_TRY_H
 
+#include <serd/serd.h>
+
 #define TRY(st, exp)      \
   do {                    \
     if (((st) = (exp))) { \
