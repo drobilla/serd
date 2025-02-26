@@ -223,6 +223,7 @@ libserd = library(
   darwin_versions: [major_version + '.0.0', meson.project_version()],
   dependencies: m_dep,
   gnu_symbol_visibility: 'hidden',
+  implicit_include_directories: false,
   include_directories: include_dirs,
   install: true,
   soversion: soversion,
@@ -269,6 +270,7 @@ if not get_option('tools').disabled()
     files('src/serdi.c'),
     c_args: c_suppressions + platform_c_args,
     dependencies: serd_dep,
+    implicit_include_directories: false,
     install: true,
     link_args: tool_link_args,
   )

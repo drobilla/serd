@@ -37,6 +37,7 @@ foreach name : unit_test_names
       source,
       c_args: c_suppressions,
       dependencies: serd_dep,
+      implicit_include_directories: false,
     ),
     suite: 'unit',
   )
