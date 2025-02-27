@@ -28,8 +28,10 @@
 #  include <io.h>
 #endif
 
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define SERDI_ERROR(msg) fprintf(stderr, "serdi: " msg)
@@ -64,6 +66,7 @@ print_usage(const char* const name, const bool error)
     "  -f           Fast and loose URI pass-through\n"
     "  -h           Display this help and exit\n"
     "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads\n"
+    "  -k BYTES     Reader stack size\n"
     "  -l           Lax (non-strict) parsing\n"
     "  -o SYNTAX    Output syntax: empty/turtle/ntriples/nquads\n"
     "  -p PREFIX    Add PREFIX to blank node IDs\n"
@@ -136,6 +139,7 @@ main(int argc, char** argv)
   bool            bulk_read     = true;
   bool            osyntax_set   = false;
   bool            quiet         = false;
+  size_t          stack_size    = 524288U;
   const char*     add_prefix    = NULL;
   const char*     chop_prefix   = NULL;
   const char*     root_uri      = NULL;
@@ -192,6 +196,19 @@ main(int argc, char** argv)
         if (!(input_syntax = serd_syntax_by_name(argv[a]))) {
           return print_usage(prog, true);
         }
+        break;
+      } else if (opt == 'k') {
+        if (argv[a][o + 1] || ++a == argc) {
+          return missing_arg(prog, 'k');
+        }
+
+        char*      endptr = NULL;
+        const long size   = strtol(argv[a], &endptr, 10);
+        if (size <= 0 || size == LONG_MAX || *endptr != '\0') {
+          SERDI_ERRORF("invalid stack size '%s'\n", argv[a]);
+          return 1;
+        }
+        stack_size = (size_t)size;
         break;
       } else if (opt == 'o') {
         osyntax_set = true;
@@ -261,6 +278,9 @@ main(int argc, char** argv)
   FILE* const      out_fd = stdout;
   SerdWorld* const world  = serd_world_new(NULL);
   SerdEnv* const   env    = serd_env_new(NULL, serd_string_view(base));
+
+  const SerdLimits limits = {stack_size};
+  serd_world_set_limits(world, limits);
 
   SerdWriter* const writer = serd_writer_new(
     world, output_syntax, writer_flags, env, serd_file_sink, out_fd);

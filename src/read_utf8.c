@@ -51,9 +51,9 @@ read_utf8_continuation_bytes(SerdReader* const reader,
 }
 
 SerdStatus
-read_utf8_continuation(SerdReader* const reader,
-                       const Ref         dest,
-                       const uint8_t     lead)
+read_utf8_continuation(SerdReader* const  reader,
+                       TokenHeader* const dest,
+                       const uint8_t      lead)
 {
   uint8_t size                  = 0U;
   uint8_t bytes[MAX_UTF8_BYTES] = {lead, 0U, 0U, 0U};
@@ -67,10 +67,10 @@ read_utf8_continuation(SerdReader* const reader,
 }
 
 SerdStatus
-read_utf8_code_point(SerdReader* const reader,
-                     const Ref         dest,
-                     uint32_t* const   code,
-                     const uint8_t     lead)
+read_utf8_code_point(SerdReader* const  reader,
+                     TokenHeader* const dest,
+                     uint32_t* const    code,
+                     const uint8_t      lead)
 {
   uint8_t size                  = 0U;
   uint8_t bytes[MAX_UTF8_BYTES] = {lead, 0U, 0U, 0U};

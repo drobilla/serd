@@ -142,8 +142,11 @@ test_write_errors(void)
   // Syntax-keyed array of output document sizes
   static const size_t max_offsets[] = {0, 450, 1920, 2012, 464};
 
+  static const SerdLimits limits = {1024};
+
   SerdWorld* const world = serd_world_new(NULL);
   assert(world);
+  serd_world_set_limits(world, limits);
   serd_world_set_error_func(world, quiet_error_func, NULL);
 
   for (unsigned s = 1; s <= (unsigned)SERD_TRIG; ++s) {
@@ -259,8 +262,20 @@ test_reader(const char* const path)
   SerdWorld* const world = serd_world_new(NULL);
   assert(world);
 
-  ReaderTest        rt     = {0};
-  const SerdSink    sink   = {&rt, test_sink};
+  ReaderTest     rt   = {0};
+  const SerdSink sink = {&rt, test_sink};
+
+  const SerdLimits limits = {1024};
+  serd_world_set_limits(world, limits);
+
+  // Test that too little stack space fails gracefully
+  const SerdLimits old_limits  = serd_world_limits(world);
+  const SerdLimits tiny_limits = {32U};
+  serd_world_set_limits(world, tiny_limits);
+  assert(!serd_reader_new(world, SERD_TURTLE, 0U, &sink));
+
+  // Restore limits and successfully create reader
+  serd_world_set_limits(world, old_limits);
   SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, &sink);
   assert(reader);
 

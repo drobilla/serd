@@ -252,7 +252,9 @@ push_context(SerdWriter* const   writer,
 
   // Push the current context to the stack
   void* const top = serd_stack_push(&writer->anon_stack, sizeof(WriteContext));
-  *(WriteContext*)top = writer->context;
+  if (top) {
+    *(WriteContext*)top = writer->context;
+  }
 
   // Update the current context
 
@@ -1342,7 +1344,7 @@ serd_writer_new(SerdWorld* const      world,
     allocator, ssink, stream, (flags & SERD_WRITE_BULK) ? SERD_PAGE_SIZE : 1);
 
   if ((flags & SERD_WRITE_BULK) && !writer->byte_sink.buf) {
-    serd_stack_free(&writer->anon_stack);
+    serd_stack_free(allocator, &writer->anon_stack);
     zix_free(allocator, writer);
     return NULL;
   }
@@ -1459,7 +1461,7 @@ serd_writer_free(SerdWriter* const writer)
   serd_writer_finish(writer);
   free_context(writer);
   free_anon_stack(writer);
-  serd_stack_free(&writer->anon_stack);
+  serd_stack_free(allocator, &writer->anon_stack);
   zix_free(allocator, writer->bprefix);
   serd_byte_sink_free(allocator, &writer->byte_sink);
   zix_free(allocator, writer->root_uri_string);

@@ -5,9 +5,11 @@
 #define SERD_SRC_WORLD_IMPL_H
 
 #include <serd/error.h>
+#include <serd/world.h>
 #include <zix/allocator.h>
 
 struct SerdWorldImpl {
+  SerdLimits    limits;
   ZixAllocator* allocator;
   SerdLogFunc   error_func;
   void*         error_handle;

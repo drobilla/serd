@@ -101,6 +101,7 @@ serd_world_new(ZixAllocator* const allocator)
     return NULL;
   }
 
+  world->limits.reader_stack_size = 524288U;
   world->allocator = allocator ? allocator : zix_default_allocator();
 
   return world;
@@ -112,6 +113,21 @@ serd_world_free(SerdWorld* const world)
   if (world) {
     zix_free(world->allocator, world);
   }
+}
+
+SerdLimits
+serd_world_limits(const SerdWorld* const world)
+{
+  assert(world);
+  return world->limits;
+}
+
+SerdStatus
+serd_world_set_limits(SerdWorld* const world, const SerdLimits limits)
+{
+  assert(world);
+  world->limits = limits;
+  return SERD_SUCCESS;
 }
 
 void
