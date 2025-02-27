@@ -9,6 +9,7 @@
 #include "symbols.h"
 #include "token_header.h"
 #include "try.h"
+#include "turtle.h"
 
 #include <serd/event.h>
 #include <serd/node_flags.h>
@@ -166,10 +167,9 @@ read_PN_LOCAL_ESC(SerdReader* const reader, TokenHeader* const dest)
   skip_byte(reader, '\\');
 
   const int c = peek_byte(reader);
-  return ((c == '!') || in_range(c, '#', '/') || (c == ';') || (c == '=') ||
-          (c == '?') || (c == '@') || (c == '_') || (c == '~'))
-           ? push_byte(reader, dest, eat_byte_safe(reader, c))
-           : r_err(reader, SERD_BAD_SYNTAX, "bad escape");
+
+  return is_PN_LOCAL_ESC(c) ? push_byte(reader, dest, eat_byte_safe(reader, c))
+                            : r_err(reader, SERD_BAD_SYNTAX, "bad escape");
 }
 
 static SerdStatus
