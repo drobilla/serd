@@ -3,7 +3,6 @@
 
 #include "reader.h"
 #include "serd_internal.h"
-#include "stack.h"
 #include "string_utils.h"
 #include "try.h"
 #include "uri_utils.h"
@@ -584,9 +583,7 @@ read_PN_LOCAL(SerdReader* const reader, const Ref dest, bool* const ate_dot)
   SerdNode* const n = deref(reader, dest);
   if (trailing_unescaped_dot) {
     // Ate trailing dot, pop it from stack/node and inform caller
-    --n->n_bytes;
-    serd_stack_pop(&reader->stack, 1);
-    *ate_dot = true;
+    *ate_dot = pop_last_node_char(reader, n);
   }
 
   return (st > SERD_FAILURE) ? st : SERD_SUCCESS;
@@ -612,9 +609,8 @@ read_PN_PREFIX_tail(SerdReader* const reader,
   }
 
   if (trailing_unescaped_dot) {
-    SerdNode* const n             = deref(reader, dest);
-    ((char*)n->buf)[--n->n_bytes] = '\0';
-    *ate_dot                      = true;
+    SerdNode* const n = deref(reader, dest);
+    *ate_dot          = pop_last_node_char(reader, n);
   }
 
   return st;
@@ -971,9 +967,7 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
   SerdNode* n = deref(reader, ref);
   if (n->buf[n->n_bytes - 1] == '.' && read_PN_CHARS(reader, ref)) {
     // Ate trailing dot, pop it from stack/node and inform caller
-    --n->n_bytes;
-    serd_stack_pop(&reader->stack, 1);
-    *ate_dot = true;
+    *ate_dot = pop_last_node_char(reader, n);
   }
 
   if (fancy_syntax(reader)) {

@@ -131,6 +131,14 @@ deref(SerdReader* const reader, const Ref ref)
   return NULL;
 }
 
+bool
+pop_last_node_char(SerdReader* const reader, SerdNode* const node)
+{
+  --node->n_bytes;
+  serd_stack_pop(&reader->stack, 1);
+  return true;
+}
+
 Ref
 pop_node(SerdReader* const reader, const Ref ref)
 {

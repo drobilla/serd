@@ -94,6 +94,9 @@ set_blank_id(SerdReader* reader, Ref ref, size_t buf_size);
 SerdNode*
 deref(SerdReader* reader, Ref ref);
 
+bool
+pop_last_node_char(SerdReader* reader, SerdNode* node);
+
 Ref
 pop_node(SerdReader* reader, Ref ref);
 
