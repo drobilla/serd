@@ -9,40 +9,35 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
-
-/// An offset to start the stack at. Note 0 is reserved for NULL
-#define SERD_STACK_BOTTOM sizeof(void*)
+#include <string.h>
 
 /// A dynamic stack in memory
 typedef struct {
-  ZixAllocator* allocator; ///< Allocator for stack memory
-  char*         buf;       ///< Stack memory
-  size_t        buf_size;  ///< Allocated size of buf (>= size)
-  size_t        size;      ///< Conceptual size of stack in buf
+  char*  buf;      ///< Stack memory
+  size_t buf_size; ///< Allocated size of buf (>= size)
+  size_t size;     ///< Conceptual size of stack in buf
 } SerdStack;
 
 static inline SerdStack
 serd_stack_new(ZixAllocator* const allocator, const size_t size)
 {
   SerdStack stack;
-  stack.allocator = allocator;
-  stack.buf       = (char*)zix_calloc(allocator, 1U, size);
-  stack.buf_size  = size;
-  stack.size      = SERD_STACK_BOTTOM;
+  stack.buf      = (char*)zix_calloc(allocator, 1U, size);
+  stack.buf_size = size;
+  stack.size     = 0;
   return stack;
 }
 
 static inline bool
 serd_stack_is_empty(const SerdStack* const stack)
 {
-  return stack->size <= SERD_STACK_BOTTOM;
+  return !stack->size;
 }
 
 static inline void
-serd_stack_free(SerdStack* const stack)
+serd_stack_free(ZixAllocator* const allocator, SerdStack* const stack)
 {
-  zix_free(stack->allocator, stack->buf);
+  zix_free(allocator, stack->buf);
   stack->buf      = NULL;
   stack->buf_size = 0;
   stack->size     = 0;
@@ -53,10 +48,9 @@ serd_stack_push(SerdStack* const stack, const size_t n_bytes)
 {
   const size_t new_size = stack->size + n_bytes;
   if (stack->buf_size < new_size) {
-    stack->buf_size += (stack->buf_size >> 1); // *= 1.5
-    stack->buf =
-      (char*)zix_realloc(stack->allocator, stack->buf, stack->buf_size);
+    return NULL;
   }
+
   char* const ret = (stack->buf + stack->size);
   stack->size     = new_size;
   return ret;
@@ -69,36 +63,29 @@ serd_stack_pop(SerdStack* const stack, const size_t n_bytes)
   stack->size -= n_bytes;
 }
 
+static inline void
+serd_stack_pop_to(SerdStack* stack, size_t n_bytes)
+{
+  assert(stack->size >= n_bytes);
+  stack->size = n_bytes;
+}
+
 static inline void*
 serd_stack_push_aligned(SerdStack* const stack,
                         const size_t     n_bytes,
                         const size_t     align)
 {
-  // Push one byte to ensure space for a pad count
-  serd_stack_push(stack, 1);
-
   // Push padding if necessary
-  const size_t pad = align - (stack->size % align);
-  serd_stack_push(stack, pad);
+  const size_t pad     = align - (stack->size % align);
+  void* const  padding = serd_stack_push(stack, pad);
+  if (!padding) {
+    return NULL;
+  }
 
-  // Set top of stack to pad count so we can properly pop later
-  stack->buf[stack->size - 1] = (char)pad;
+  memset(padding, 0, pad);
 
   // Push requested space at aligned location
   return serd_stack_push(stack, n_bytes);
-}
-
-static inline void
-serd_stack_pop_aligned(SerdStack* const stack, const size_t n_bytes)
-{
-  // Pop requested space down to aligned location
-  serd_stack_pop(stack, n_bytes);
-
-  // Get amount of padding from top of stack
-  const uint8_t pad = (uint8_t)stack->buf[stack->size - 1];
-
-  // Pop padding and pad count
-  serd_stack_pop(stack, pad + 1U);
 }
 
 #endif // SERD_SRC_STACK_H

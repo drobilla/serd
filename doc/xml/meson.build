@@ -84,6 +84,7 @@ doxygen_xml = custom_target(
     'structSerdCaretView.xml',
     'structSerdError.xml',
     'structSerdEvent.xml',
+    'structSerdLimits.xml',
     'structSerdNode.xml',
     'structSerdObjectView.xml',
     'structSerdSink.xml',

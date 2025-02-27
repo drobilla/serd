@@ -13,7 +13,6 @@
 #include <serd/error.h>
 #include <serd/event.h>
 #include <serd/file_uri.h>
-#include <serd/node.h>
 #include <serd/node_type.h>
 #include <serd/object_view.h>
 #include <serd/reader.h>
@@ -63,12 +62,30 @@ r_err_char(const SerdReader* const reader, const char* const kind, const int c)
 }
 
 void
-set_blank_id(SerdReader* const reader, const Ref ref, const size_t buf_size)
+set_blank_id(SerdReader* const  reader,
+             TokenHeader* const node,
+             const size_t       buf_size)
 {
-  SerdNode*   node   = deref(reader, ref);
-  const char* prefix = reader->bprefix ? reader->bprefix : "";
-  node->n_bytes      = (size_t)snprintf(
-    (char*)node->buf, buf_size, "%sb%u", prefix, reader->next_id++);
+  char* const       buf    = (char*)(node + 1);
+  const char* const prefix = reader->bprefix ? reader->bprefix : "";
+
+  node->length =
+    (uint32_t)snprintf(buf, buf_size, "%sb%u", prefix, reader->next_id++);
+}
+
+bool
+tolerate_status(const SerdReader* const reader, const SerdStatus status)
+{
+  if (status == SERD_SUCCESS || status == SERD_FAILURE) {
+    return true;
+  }
+
+  if (status == SERD_BAD_STREAM || status == SERD_BAD_STACK ||
+      status == SERD_BAD_WRITE || status == SERD_NO_DATA) {
+    return false;
+  }
+
+  return !reader->strict;
 }
 
 size_t
@@ -77,36 +94,49 @@ genid_size(const SerdReader* const reader)
   return reader->bprefix_len + 1 + 10 + 1; // + "b" + UINT32_MAX + \0
 }
 
-Ref
+TokenHeader*
 blank_id(SerdReader* const reader)
 {
-  Ref ref = push_node_space(reader, genid_size(reader), SERD_BLANK);
-  set_blank_id(reader, ref, genid_size(reader));
-  return ref;
+  TokenHeader* const node =
+    push_node_space(reader, SERD_BLANK, genid_size(reader));
+  if (node) {
+    set_blank_id(reader, node, genid_size(reader));
+  }
+  return node;
 }
 
-static Ref
+static TokenHeader*
 push_node_padded(SerdReader* const   reader,
                  const size_t        maxlen,
                  const SerdNodeType  type,
                  const ZixStringView string)
 {
+  // Push a null byte to ensure the previous node was null terminated
+  char* terminator = (char*)serd_stack_push(&reader->stack, 1);
+  if (!terminator) {
+    return NULL;
+  }
+  *terminator = 0;
+
   void* mem = serd_stack_push_aligned(
-    &reader->stack, sizeof(SerdNode) + maxlen + 1, sizeof(SerdNode));
+    &reader->stack, sizeof(TokenHeader) + maxlen + 1U, sizeof(TokenHeader));
+  if (!mem) {
+    return NULL;
+  }
 
-  SerdNode* const node = (SerdNode*)mem;
-  node->n_bytes        = string.length;
-  node->flags          = 0;
-  node->type           = type;
-  node->buf            = NULL;
+  TokenHeader* const node = (TokenHeader*)mem;
 
-  char* buf = (char*)(node + 1);
-  memcpy(buf, string.data, string.length + 1);
+  node->type   = type;
+  node->flags  = 0U;
+  node->length = (uint32_t)string.length;
 
-  return (Ref)((char*)node - reader->stack.buf);
+  char* const buf = (char*)(node + 1U);
+  memcpy(buf, string.data, string.length + 1U);
+
+  return node;
 }
 
-Ref
+TokenHeader*
 push_node(SerdReader* const   reader,
           const SerdNodeType  type,
           const ZixStringView string)
@@ -114,64 +144,38 @@ push_node(SerdReader* const   reader,
   return push_node_padded(reader, string.length, type, string);
 }
 
-Ref
+TokenHeader*
 push_node_head(SerdReader* const reader, const SerdNodeType type)
 {
   return push_node_padded(reader, 0U, type, zix_empty_string());
 }
 
-Ref
+TokenHeader*
 push_node_space(SerdReader* const  reader,
-                const size_t       size,
-                const SerdNodeType type)
+                const SerdNodeType type,
+                const size_t       size)
 {
   return push_node_padded(reader, size, type, zix_empty_string());
 }
 
-SerdNode*
-deref(SerdReader* const reader, const Ref ref)
-{
-  if (ref) {
-    SerdNode* node = (SerdNode*)(reader->stack.buf + ref);
-    node->buf      = (char*)node + sizeof(SerdNode);
-    return node;
-  }
-  return NULL;
-}
-
 bool
-pop_last_node_char(SerdReader* const reader, SerdNode* const node)
+pop_last_node_char(SerdReader* const reader, TokenHeader* const header)
 {
-  --node->n_bytes;
+  assert(header);
+  --header->length;
   serd_stack_pop(&reader->stack, 1);
-  return true;
+  return !!header;
 }
 
-Ref
-pop_node(SerdReader* const reader, const Ref ref)
+SerdTokenView
+stack_token_view(const TokenHeader* const header)
 {
-  if (ref && ref != reader->rdf_first && ref != reader->rdf_rest &&
-      ref != reader->rdf_nil) {
-    const SerdNode* const node = deref(reader, ref);
-    const char* const     top  = reader->stack.buf + reader->stack.size;
-    assert(top > (const char*)node);
-    serd_stack_pop_aligned(&reader->stack, (size_t)(top - (const char*)node));
-  }
-  return 0;
-}
-
-static SerdTokenView
-stack_token_view(SerdReader* const reader, const Ref ref)
-{
-  static const SerdTokenView no_tok = {SERD_LITERAL, {"", 0U}};
-
-  const SerdNode* const object = deref(reader, ref);
-  if (!object) {
-    return no_tok;
+  if (!header) {
+    return serd_no_token();
   }
 
-  const SerdTokenView view = {object->type,
-                              {(const char*)(object + 1U), object->n_bytes}};
+  const SerdTokenView view = {header->type,
+                              {(const char*)(header + 1U), header->length}};
   return view;
 }
 
@@ -184,28 +188,24 @@ emit_event(const SerdReader* const reader, SerdEvent event)
 }
 
 SerdStatus
-emit_statement(SerdReader* const reader,
-               const ReadContext ctx,
-               const Ref         o,
-               const Ref         m)
+emit_statement(const SerdReader* const  reader,
+               const ReadContext        ctx,
+               const TokenHeader* const object,
+               const TokenHeader* const meta)
 {
-  SerdStatus st = SERD_UNKNOWN_ERROR;
+  const SerdObjectView object_view = {
+    object->type,
+    {(const char*)(object + 1U), object->length},
+    object->flags,
+    stack_token_view(meta)};
 
-  const SerdNode* const object = deref(reader, o);
-  if (object) {
-    const SerdObjectView object_view = {object->type,
-                                        serd_node_string_view(object),
-                                        object->flags,
-                                        stack_token_view(reader, m)};
-
-    st = emit_event(reader,
-                    serd_statement_event(
-                      *ctx.flags,
-                      serd_quad_view(stack_token_view(reader, ctx.subject),
-                                     stack_token_view(reader, ctx.predicate),
-                                     object_view,
-                                     stack_token_view(reader, ctx.graph))));
-  }
+  const SerdStatus st = emit_event(
+    reader,
+    serd_statement_event(*ctx.flags,
+                         serd_quad_view(stack_token_view(ctx.subject),
+                                        stack_token_view(ctx.predicate),
+                                        object_view,
+                                        stack_token_view(ctx.graph))));
 
   *ctx.flags = 0U;
   return st;
@@ -241,7 +241,12 @@ serd_reader_new(SerdWorld* const      world,
   assert(world);
   assert(sink);
 
-  ZixAllocator* const allocator = serd_world_allocator(world);
+  ZixAllocator* const allocator  = serd_world_allocator(world);
+  const SerdLimits    limits     = serd_world_limits(world);
+  const size_t        stack_size = limits.reader_stack_size;
+  if (stack_size < 198U) {
+    return NULL;
+  }
 
   SerdReader* const me =
     (SerdReader*)zix_calloc(allocator, 1U, sizeof(SerdReader));
@@ -251,7 +256,7 @@ serd_reader_new(SerdWorld* const      world,
 
   me->world   = world;
   me->sink    = sink;
-  me->stack   = serd_stack_new(world->allocator, SERD_PAGE_SIZE);
+  me->stack   = serd_stack_new(allocator, stack_size);
   me->syntax  = syntax;
   me->next_id = 1;
   me->strict  = !(flags & SERD_READ_LAX);
@@ -261,9 +266,17 @@ serd_reader_new(SerdWorld* const      world,
     return NULL;
   }
 
+  // Reserve a bit of space at the end of the stack to zero pad nodes
+  me->stack.buf_size -= sizeof(void*);
+
   me->rdf_first = push_node(me, SERD_URI, serd_symbols[RDF_FIRST]);
   me->rdf_rest  = push_node(me, SERD_URI, serd_symbols[RDF_REST]);
   me->rdf_nil   = push_node(me, SERD_URI, serd_symbols[RDF_NIL]);
+
+  // The initial stack size check should cover this
+  assert(me->rdf_first);
+  assert(me->rdf_rest);
+  assert(me->rdf_nil);
 
   return me;
 }
@@ -275,12 +288,9 @@ serd_reader_free(SerdReader* const reader)
     return;
   }
 
-  pop_node(reader, reader->rdf_nil);
-  pop_node(reader, reader->rdf_rest);
-  pop_node(reader, reader->rdf_first);
   serd_reader_finish(reader);
 
-  serd_stack_free(&reader->stack);
+  serd_stack_free(serd_world_allocator(reader->world), &reader->stack);
   zix_free(reader->world->allocator, reader->bprefix);
   zix_free(reader->world->allocator, reader);
 }
@@ -392,7 +402,7 @@ serd_reader_prepare(SerdReader* const reader)
   } else if (st == SERD_FAILURE) {
     reader->source.eof = true;
   } else {
-    r_err(reader, st, "read error: %s", strerror(errno));
+    r_err(reader, st, "error preparing read: %s", strerror(errno));
   }
   return st;
 }
