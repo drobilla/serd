@@ -261,11 +261,6 @@ read_PN_CHARS_BASE(SerdReader* const reader, TokenHeader* const dest)
   return st;
 }
 
-/**
-   Read an initial prefixed name character.
-
-   RDF 1.1 NTriples: [158s] PN_CHARS_U
-*/
 static SerdStatus
 read_PN_CHARS_U(SerdReader* const reader, TokenHeader* const dest)
 {
