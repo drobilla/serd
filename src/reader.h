@@ -33,9 +33,6 @@ typedef struct {
   Ref             graph;
   Ref             subject;
   Ref             predicate;
-  Ref             object;
-  Ref             datatype;
-  Ref             lang;
   SerdEventFlags* flags;
 } ReadContext;
 
@@ -96,7 +93,7 @@ SerdStatus
 emit_event(const SerdReader* reader, SerdEvent event);
 
 SerdStatus
-emit_statement(SerdReader* reader, ReadContext ctx, Ref o, Ref d, Ref l);
+emit_statement(SerdReader* reader, ReadContext ctx, Ref o, Ref m);
 
 SerdStatus
 read_n3_statement(SerdReader* reader);
