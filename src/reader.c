@@ -187,18 +187,16 @@ SerdStatus
 emit_statement(SerdReader* const reader,
                const ReadContext ctx,
                const Ref         o,
-               const Ref         d,
-               const Ref         l)
+               const Ref         m)
 {
-  SerdStatus st   = SERD_UNKNOWN_ERROR;
-  const Ref  meta = d ? d : l;
+  SerdStatus st = SERD_UNKNOWN_ERROR;
 
   const SerdNode* const object = deref(reader, o);
   if (object) {
     const SerdObjectView object_view = {object->type,
                                         serd_node_string_view(object),
                                         object->flags,
-                                        stack_token_view(reader, meta)};
+                                        stack_token_view(reader, m)};
 
     st = emit_event(reader,
                     serd_statement_event(
