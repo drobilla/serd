@@ -16,6 +16,7 @@
 #include "token_header.h"
 #include "world_internal.h"
 
+#include <exess/exess.h>
 #include <serd/caret_view.h>
 #include <serd/event.h>
 #include <serd/input_stream.h>
@@ -36,7 +37,6 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
 static SerdStatus
@@ -113,19 +113,18 @@ serd_reader_set_blank_id(SerdReader* const reader, TokenHeader* const node)
   memcpy(buf, reader->bprefix, reader->bprefix_len);
   buf[i++] = 'b';
 
-  char      digits[12U] = {'\0'};
-  const int rc          = snprintf(digits, sizeof(digits), "%u", id);
-  assert(rc > 0);
+  char              digits[EXESS_MAX_UINT_LENGTH + 1U] = {'\0'};
+  const ExessResult r = exess_write_uint(id, sizeof(digits), digits);
 
   if (reader->flags & SERD_READ_ORDERED) {
-    for (size_t pad = (size_t)rc; pad < 9U; ++pad) {
+    for (size_t pad = r.count; pad < 9U; ++pad) {
       buf[i++] = '0';
     }
   }
 
-  memcpy(buf + i, digits, (size_t)rc);
+  memcpy(buf + i, digits, r.count);
 
-  node->length      = (uint32_t)(i + (size_t)rc);
+  node->length      = (uint32_t)(i + r.count);
   buf[node->length] = '\0';
 }
 
@@ -359,9 +358,8 @@ serd_reader_read_document(SerdReader* const reader)
     const uint32_t id   = serd_world_next_document_id(reader->world);
     char* const    buf  = reader->bprefix;
     const size_t   size = sizeof(reader->bprefix);
-    const int      rc   = snprintf(buf, size - 1U, "f%u", id);
-    assert(rc > 0);
-    reader->bprefix_len = (size_t)rc;
+    reader->bprefix[0]  = 'f';
+    reader->bprefix_len = 1U + exess_write_uint(id, size - 1U, buf + 1U).count;
   }
 
   while (st <= SERD_FAILURE && !reader->source->eof) {
