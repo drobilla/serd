@@ -20,9 +20,6 @@ typedef struct {
   size_t   size;     ///< Conceptual size of stack in buf
 } SerdStack;
 
-/** An offset to start the stack at. Note 0 is reserved for NULL. */
-#define SERD_STACK_BOTTOM sizeof(void*)
-
 static inline SerdStack
 serd_stack_new(const size_t size)
 {
