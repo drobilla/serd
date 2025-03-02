@@ -9,6 +9,7 @@
 #include <serd/node_flags.h>
 #include <serd/node_type.h>
 #include <serd/string.h>
+#include <serd/token_view.h>
 #include <zix/allocator.h>
 #include <zix/string_view.h>
 
@@ -280,6 +281,16 @@ test_uri_node_from_node(void)
   serd_node_free(NULL, &uri_node);
 }
 
+static void
+test_views(void)
+{
+  const SerdNode uri = serd_node_from_string(SERD_URI, "http://example.org/");
+
+  const SerdTokenView tok = serd_node_token_view(&uri);
+  assert(tok.type == SERD_URI);
+  assert(zix_string_view_equals(tok.string, zix_string("http://example.org/")));
+}
+
 int
 main(void)
 {
@@ -294,5 +305,6 @@ main(void)
   test_node_from_substring();
   test_uri_node_from_string();
   test_uri_node_from_node();
+  test_views();
   return 0;
 }

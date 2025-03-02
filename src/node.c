@@ -8,6 +8,7 @@
 #include <serd/node_flags.h>
 #include <serd/node_type.h>
 #include <serd/string.h>
+#include <serd/token_view.h>
 #include <serd/uri.h>
 #include <zix/allocator.h>
 #include <zix/string_view.h>
@@ -24,6 +25,13 @@ struct SerdNodeImpl {
   SerdNodeFlags flags;   ///< Node flags (e.g. string properties)
   SerdNodeType  type;    ///< Node type
 };
+
+SerdTokenView
+serd_node_token_view(const SerdNode* const node)
+{
+  const SerdTokenView view = {node->type, serd_node_string_view(node)};
+  return view;
+}
 
 static size_t
 string_sink(const void* const buf, const size_t len, void* const stream)
