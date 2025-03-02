@@ -7,6 +7,7 @@
 #include <serd/attributes.h>
 #include <serd/node_flags.h>
 #include <serd/node_type.h>
+#include <serd/token_view.h>
 #include <serd/uri.h>
 #include <zix/allocator.h>
 #include <zix/attributes.h>
@@ -142,6 +143,18 @@ serd_node_free(ZixAllocator* ZIX_NULLABLE allocator,
 /// Return a view of the string in a node
 SERD_PURE_API ZixStringView
 serd_node_string_view(const SerdNode* ZIX_NONNULL node);
+
+/**
+   Return a view of the node as a token.
+
+   A "token" is a simple node with just a type and one string.  Any node can be
+   viewed as a token, but viewing an object as a token will drop any datatype
+   URI, language tag, or flags.
+
+   The subject, predicate, and graph of a statement are tokens.
+*/
+SERD_PURE_API SerdTokenView
+serd_node_token_view(const SerdNode* ZIX_NONNULL node);
 
 /**
    @}
