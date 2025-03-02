@@ -1,16 +1,13 @@
-// Copyright 2011-2021 David Robillard <d@drobilla.net>
+// Copyright 2011-2025 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #ifndef SERD_SINK_H
 #define SERD_SINK_H
 
 #include <serd/attributes.h>
-#include <serd/object_view.h>
-#include <serd/statement_flags.h>
+#include <serd/event.h>
 #include <serd/status.h>
-#include <serd/token_view.h>
 #include <zix/attributes.h>
-#include <zix/string_view.h>
 
 SERD_BEGIN_DECLS
 
@@ -20,44 +17,24 @@ SERD_BEGIN_DECLS
    @{
 */
 
-/**
-   Sink function for base URI changes.
+/// Function for handling events
+typedef SerdStatus (*SerdSinkFunc)(void* ZIX_UNSPECIFIED        handle,
+                                   const SerdEvent* ZIX_NONNULL event);
 
-   Called whenever the base URI of the serialisation changes.
-*/
-typedef SerdStatus (*SerdBaseFunc)(void* ZIX_UNSPECIFIED handle,
-                                   ZixStringView         uri);
-
-/**
-   Sink function for namespace definitions.
-
-   Called whenever a prefix is defined in the serialisation.
-*/
-typedef SerdStatus (*SerdPrefixFunc)(void* ZIX_UNSPECIFIED handle,
-                                     ZixStringView         name,
-                                     ZixStringView         uri);
+/// An interface that receives a stream of data events
+typedef struct {
+  void* ZIX_UNSPECIFIED        handle;   ///< Opaque handle
+  SerdSinkFunc ZIX_UNSPECIFIED on_event; ///< Event handling function
+} SerdSink;
 
 /**
-   Sink function for statements.
+   Send an event to `sink`.
 
-   Called for every RDF statement in the serialisation.
+   This is just a convenience for calling the sink's function with an event by
+   value.
 */
-typedef SerdStatus (*SerdStatementFunc)(void* ZIX_UNSPECIFIED handle,
-                                        SerdStatementFlags    flags,
-                                        SerdTokenView         graph,
-                                        SerdTokenView         subject,
-                                        SerdTokenView         predicate,
-                                        SerdObjectView        object);
-
-/**
-   Sink function for anonymous node end markers.
-
-   This is called to indicate that the anonymous node with the given `value`
-   will no longer be referred to by any future statements (so the anonymous
-   node is finished).
-*/
-typedef SerdStatus (*SerdEndFunc)(void* ZIX_UNSPECIFIED handle,
-                                  ZixStringView         label);
+SERD_API SerdStatus
+serd_sink_event(const SerdSink* ZIX_NONNULL sink, SerdEvent event);
 
 /**
    @}

@@ -52,15 +52,10 @@ typedef unsigned SerdReaderFlags;
 
 /// Create a new RDF reader
 SERD_API SerdReader* ZIX_ALLOCATED
-serd_reader_new(SerdWorld* ZIX_NONNULL world,
-                SerdSyntax             syntax,
-                SerdReaderFlags        flags,
-                void* ZIX_UNSPECIFIED  handle,
-                void (*ZIX_NULLABLE free_handle)(void* ZIX_NULLABLE),
-                SerdBaseFunc ZIX_NULLABLE      base_func,
-                SerdPrefixFunc ZIX_NULLABLE    prefix_func,
-                SerdStatementFunc ZIX_NULLABLE statement_func,
-                SerdEndFunc ZIX_NULLABLE       end_func);
+serd_reader_new(SerdWorld* ZIX_NONNULL      world,
+                SerdSyntax                  syntax,
+                SerdReaderFlags             flags,
+                const SerdSink* ZIX_NONNULL sink);
 
 /**
    Free `reader`.
@@ -69,21 +64,6 @@ serd_reader_new(SerdWorld* ZIX_NONNULL world,
 */
 SERD_API void
 serd_reader_free(SerdReader* ZIX_NULLABLE reader);
-
-/**
-   Set a function to be called when errors occur during reading.
-
-   The `error_func` will be called with `handle` as its first argument.  If
-   no error function is set, errors are printed to stderr in GCC style.
-*/
-SERD_API void
-serd_reader_set_error_sink(SerdReader* ZIX_NONNULL  reader,
-                           SerdLogFunc ZIX_NULLABLE error_func,
-                           void* ZIX_UNSPECIFIED    error_handle);
-
-/// Return the `handle` passed to serd_reader_new()
-SERD_PURE_API void* ZIX_UNSPECIFIED
-serd_reader_handle(const SerdReader* ZIX_NONNULL reader);
 
 /**
    Set a prefix to be added to all blank node identifiers.

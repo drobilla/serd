@@ -8,10 +8,12 @@
 
 #include <serd/buffer.h>
 #include <serd/env.h>
+#include <serd/event.h>
 #include <serd/node_flags.h>
 #include <serd/node_type.h>
 #include <serd/object_view.h>
-#include <serd/statement_flags.h>
+#include <serd/sink.h>
+#include <serd/statement_view.h>
 #include <serd/status.h>
 #include <serd/syntax.h>
 #include <serd/token_view.h>
@@ -37,15 +39,22 @@ null_sink(const void* const buf, const size_t len, void* const stream)
   return len;
 }
 
-static SerdStatus
-write_statement(SerdWriter* const        writer,
-                const SerdStatementFlags flags,
-                const SerdTokenView      subject,
-                const SerdTokenView      predicate,
-                const SerdObjectView     object)
+static SerdObjectView
+token_to_object(const SerdTokenView token)
 {
-  return serd_writer_write_statement(
-    writer, flags, serd_no_token(), subject, predicate, object);
+  return serd_token_object_view(token);
+}
+
+static SerdStatus
+write_statement(const SerdSink* const sink,
+                const SerdEventFlags  flags,
+                const SerdTokenView   subject,
+                const SerdTokenView   predicate,
+                const SerdObjectView  object)
+{
+  return serd_sink_event(
+    sink,
+    serd_statement_event(flags, serd_triple_view(subject, predicate, object)));
 }
 
 static void
@@ -77,6 +86,55 @@ test_new_failed_alloc(void)
 }
 
 static void
+test_write_bad_event(void)
+{
+  SerdWorld*  world  = serd_world_new(NULL);
+  SerdEnv*    env    = serd_env_new(NULL, zix_empty_string());
+  SerdBuffer  buffer = {NULL, NULL, 0};
+  SerdWriter* writer =
+    serd_writer_new(world, SERD_TURTLE, 0U, env, serd_buffer_sink, &buffer);
+  assert(writer);
+
+  // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
+  const SerdEvent event = {(SerdEventType)42, 0U, {{"", 0}, 0, 0}, {{"", 0}}};
+  assert(serd_sink_event(serd_writer_sink(writer), event) == SERD_BAD_ARG);
+
+  const char* const out = serd_buffer_sink_finish(&buffer);
+  assert(expect_string(out, ""));
+  zix_free(buffer.allocator, buffer.buf);
+
+  serd_writer_free(writer);
+  serd_env_free(env);
+  serd_world_free(world);
+}
+
+static void
+test_write_bad_prefix(void)
+{
+  SerdWorld*  world  = serd_world_new(NULL);
+  SerdEnv*    env    = serd_env_new(NULL, zix_empty_string());
+  SerdBuffer  buffer = {NULL, NULL, 0};
+  SerdWriter* writer =
+    serd_writer_new(world, SERD_TURTLE, 0U, env, serd_buffer_sink, &buffer);
+  assert(writer);
+
+  static const ZixStringView name = ZIX_STATIC_STRING("eg");
+  static const ZixStringView uri  = ZIX_STATIC_STRING("rel");
+
+  assert(serd_sink_event(serd_writer_sink(writer),
+                         serd_prefix_event(name, uri)) == SERD_BAD_ARG);
+
+  const char* const out = serd_buffer_sink_finish(&buffer);
+  assert(out);
+  assert(!strcmp(out, ""));
+  zix_free(buffer.allocator, buffer.buf);
+
+  serd_writer_free(writer);
+  serd_env_free(env);
+  serd_world_free(world);
+}
+
+static void
 test_write_long_literal(void)
 {
   SerdWorld* const world = serd_world_new(NULL);
@@ -94,7 +152,8 @@ test_write_long_literal(void)
                             SERD_HAS_QUOTE,
                             serd_no_token()};
 
-  assert(!write_statement(writer, 0U, s, p, o));
+  assert(!serd_sink_event(serd_writer_sink(writer),
+                          serd_statement_event(0U, serd_triple_view(s, p, o))));
   assert(!serd_writer_finish(writer));
 
   static const char* const expected =
@@ -121,6 +180,8 @@ test_write_nested_anon(void)
     serd_writer_new(world, SERD_TURTLE, 0U, env, serd_buffer_sink, &buffer);
   assert(writer);
 
+  const SerdSink* const sink = serd_writer_sink(writer);
+
   const SerdTokenView s0  = {SERD_URI, zix_string(NS_EG "s0")};
   const SerdTokenView p0  = {SERD_URI, zix_string(NS_EG "p0")};
   const SerdTokenView b0  = {SERD_BLANK, zix_string(NS_EG "b0")};
@@ -133,15 +194,13 @@ test_write_nested_anon(void)
   const SerdTokenView o4  = {SERD_URI, zix_string(NS_EG "o4")};
   const SerdTokenView nil = {SERD_URI, zix_string(NS_RDF "nil")};
 
-  assert(
-    !write_statement(writer, SERD_ANON_O, s0, p0, serd_token_object_view(b0)));
-  assert(
-    !write_statement(writer, SERD_ANON_O, b0, p1, serd_token_object_view(b1)));
-  assert(!write_statement(writer, 0U, b1, p2, serd_token_object_view(o2)));
-  assert(!write_statement(writer, 0U, b1, p3, serd_token_object_view(nil)));
-  assert(!serd_writer_end_anon(writer, b1.string));
-  assert(!write_statement(writer, 0U, b0, p4, serd_token_object_view(o4)));
-  assert(!serd_writer_end_anon(writer, b0.string));
+  assert(!write_statement(sink, SERD_ANON_O, s0, p0, token_to_object(b0)));
+  assert(!write_statement(sink, SERD_ANON_O, b0, p1, token_to_object(b1)));
+  assert(!write_statement(sink, 0U, b1, p2, token_to_object(o2)));
+  assert(!write_statement(sink, 0U, b1, p3, token_to_object(nil)));
+  assert(!serd_sink_event(sink, serd_end_event(zix_string("b1"))));
+  assert(!write_statement(sink, 0U, b0, p4, token_to_object(o4)));
+  assert(!serd_sink_event(sink, serd_end_event(zix_string("b0"))));
   assert(!serd_writer_finish(writer));
 
   static const char* const expected =
@@ -174,13 +233,15 @@ test_writer_cleanup(void)
     serd_writer_new(world, SERD_TURTLE, 0U, env, null_sink, NULL);
   assert(writer);
 
+  const SerdSink* const sink = serd_writer_sink(writer);
+
   char buf[12] = {'b', '0', '\0'};
 
   SerdTokenView s = {SERD_URI, zix_string(NS_EG "s")};
   SerdTokenView p = {SERD_URI, zix_string(NS_EG "p")};
   SerdTokenView o = {SERD_BLANK, zix_string(buf)};
 
-  st = write_statement(writer, SERD_ANON_O, s, p, serd_token_object_view(o));
+  st = write_statement(sink, SERD_ANON_O, s, p, token_to_object(o));
   assert(!st);
 
   // Write the start of several nested anonymous objects
@@ -190,8 +251,7 @@ test_writer_cleanup(void)
 
     const SerdTokenView next_o = {SERD_BLANK, zix_string(temp)};
 
-    st = write_statement(
-      writer, SERD_ANON_O, o, p, serd_token_object_view(next_o));
+    st = write_statement(sink, SERD_ANON_O, o, p, token_to_object(next_o));
     assert(!st);
 
     memcpy(buf, temp, sizeof(buf));
@@ -203,7 +263,7 @@ test_writer_cleanup(void)
   assert(!st);
 
   // Set the base to an empty URI
-  st = serd_writer_set_base_uri(writer, zix_string(""));
+  st = serd_sink_event(sink, serd_base_event(zix_string("")));
   assert(!st);
 
   // Free (which could leak if the writer doesn't clean up the stack properly)
@@ -223,22 +283,25 @@ test_write_bad_anon_stack(void)
     serd_writer_new(world, SERD_TURTLE, 0U, env, null_sink, NULL);
   assert(writer);
 
+  const SerdSink* const sink = serd_writer_sink(writer);
+
   SerdTokenView  s  = {SERD_URI, zix_string(NS_EG "s")};
   SerdTokenView  p  = {SERD_URI, zix_string(NS_EG "p")};
   SerdObjectView b0 = {SERD_BLANK, zix_string(NS_EG "b0"), 0U, serd_no_token()};
   SerdTokenView  b1 = {SERD_BLANK, zix_string(NS_EG "b1")};
   SerdObjectView b2 = {SERD_BLANK, zix_string(NS_EG "b2"), 0U, serd_no_token()};
 
-  st = write_statement(writer, SERD_ANON_O, s, p, b0);
+  st = write_statement(sink, SERD_ANON_O, s, p, b0);
   assert(!st);
 
   // (missing call to end the anonymous node here)
 
-  st = write_statement(writer, SERD_ANON_O, b1, p, b2);
+  st = write_statement(sink, SERD_ANON_O, b1, p, b2);
   assert(st == SERD_BAD_ARG);
 
   st = serd_writer_finish(writer);
   assert(!st);
+
   serd_writer_free(writer);
   serd_env_free(env);
   serd_world_free(world);
@@ -254,6 +317,8 @@ check_strict_write(const SerdWriterFlags flags)
     serd_writer_new(world, SERD_TURTLE, flags, env, null_sink, NULL);
   assert(writer);
 
+  const SerdSink* const sink = serd_writer_sink(writer);
+
   static const uint8_t bad_uri_buf[]   = {'f', 't', 'p', ':', 0xFF, 0x90, 0};
   static const uint8_t bad_short_buf[] = {0xFF, 0x90, 'h', 'i', 0};
   static const uint8_t bad_long_buf[]  = {'e', '\n', 'r', 0xFF, 0x90, 0};
@@ -268,9 +333,9 @@ check_strict_write(const SerdWriterFlags flags)
   const SerdTokenView s = {SERD_URI, zix_string(NS_EG "s")};
   const SerdTokenView p = {SERD_URI, zix_string(NS_EG "p")};
 
-  assert(write_statement(writer, 0U, s, p, bad_uri) == SERD_BAD_TEXT);
-  assert(write_statement(writer, 0U, s, p, bad_short_lit) == SERD_BAD_TEXT);
-  assert(write_statement(writer, 0U, s, p, bad_long_lit) == SERD_BAD_TEXT);
+  assert(write_statement(sink, 0, s, p, bad_uri) == SERD_BAD_TEXT);
+  assert(write_statement(sink, 0, s, p, bad_short_lit) == SERD_BAD_TEXT);
+  assert(write_statement(sink, 0, s, p, bad_long_lit) == SERD_BAD_TEXT);
 
   serd_writer_free(writer);
   serd_env_free(env);
@@ -309,7 +374,9 @@ test_write_error(void)
     serd_writer_new(world, SERD_TURTLE, 0U, env, error_sink, NULL);
   assert(writer);
 
-  const SerdStatus st = write_statement(writer, 0U, u, u, o);
+  const SerdSink* const sink = serd_writer_sink(writer);
+
+  const SerdStatus st = write_statement(sink, 0U, u, u, o);
   assert(st == SERD_BAD_WRITE);
 
   serd_writer_free(writer);
@@ -328,13 +395,13 @@ test_buffer_sink(void)
     serd_writer_new(world, SERD_TURTLE, 0U, env, serd_buffer_sink, &buffer);
   assert(writer);
 
-  assert(
-    !serd_writer_set_base_uri(writer, zix_string("http://example.org/base")));
+  serd_sink_event(serd_writer_sink(writer),
+                  serd_base_event(zix_string("http://example.org/base")));
   assert(!serd_writer_finish(writer));
 
-  char* out = serd_buffer_sink_finish(&buffer);
+  const char* out = serd_buffer_sink_finish(&buffer);
   assert(expect_string(out, "@base <http://example.org/base> .\n"));
-  zix_free(buffer.allocator, out);
+  zix_free(buffer.allocator, buffer.buf);
 
   serd_writer_free(writer);
   serd_env_free(env);
@@ -356,7 +423,9 @@ test_write_nothing_node(void)
   const SerdObjectView o = {
     SERD_NOTHING, zix_string(NS_EG "o"), 0U, {SERD_LITERAL, zix_string("")}};
 
-  assert(write_statement(writer, 0U, s, p, o) == SERD_BAD_ARG);
+  assert(serd_sink_event(serd_writer_sink(writer),
+                         serd_statement_event(0U, serd_triple_view(s, p, o))) ==
+         SERD_BAD_ARG);
 
   serd_writer_free(writer);
   serd_env_free(env);
@@ -379,7 +448,8 @@ test_write_empty_syntax(void)
   const SerdObjectView o = {
     SERD_URI, zix_string(NS_EG "o"), 0U, serd_no_token()};
 
-  assert(!write_statement(writer, 0U, s, p, o));
+  assert(!serd_sink_event(serd_writer_sink(writer),
+                          serd_statement_event(0U, serd_triple_view(s, p, o))));
 
   const char* const out = serd_buffer_sink_finish(&buffer);
   assert(out);
@@ -395,6 +465,8 @@ int
 main(void)
 {
   test_new_failed_alloc();
+  test_write_bad_event();
+  test_write_bad_prefix();
   test_write_long_literal();
   test_write_nested_anon();
   test_writer_cleanup();

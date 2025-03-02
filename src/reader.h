@@ -8,11 +8,11 @@
 #include "stack.h"
 
 #include <serd/error.h>
+#include <serd/event.h>
 #include <serd/node.h>
 #include <serd/node_type.h>
 #include <serd/reader.h>
 #include <serd/sink.h>
-#include <serd/statement_flags.h>
 #include <serd/status.h>
 #include <serd/syntax.h>
 #include <serd/world.h>
@@ -30,37 +30,32 @@
 typedef size_t Ref;
 
 typedef struct {
-  Ref                 graph;
-  Ref                 subject;
-  Ref                 predicate;
-  Ref                 object;
-  Ref                 datatype;
-  Ref                 lang;
-  SerdStatementFlags* flags;
+  Ref             graph;
+  Ref             subject;
+  Ref             predicate;
+  Ref             object;
+  Ref             datatype;
+  Ref             lang;
+  SerdEventFlags* flags;
 } ReadContext;
 
 struct SerdReaderImpl {
-  SerdWorld* world;
-  void*      handle;
-  void (*free_handle)(void* ptr);
-  SerdBaseFunc      base_func;
-  SerdPrefixFunc    prefix_func;
-  SerdStatementFunc statement_func;
-  SerdEndFunc       end_func;
-  SerdLogFunc       error_func;
-  void*             error_handle;
-  Ref               rdf_first;
-  Ref               rdf_rest;
-  Ref               rdf_nil;
-  SerdByteSource    source;
-  SerdStack         stack;
-  SerdSyntax        syntax;
-  unsigned          next_id;
-  uint8_t*          buf;
-  char*             bprefix;
-  size_t            bprefix_len;
-  bool              strict; ///< True iff strict parsing
-  bool              seen_genid;
+  SerdWorld*      world;
+  const SerdSink* sink;
+  SerdLogFunc     error_func;
+  void*           error_handle;
+  Ref             rdf_first;
+  Ref             rdf_rest;
+  Ref             rdf_nil;
+  SerdByteSource  source;
+  SerdStack       stack;
+  SerdSyntax      syntax;
+  unsigned        next_id;
+  uint8_t*        buf;
+  char*           bprefix;
+  size_t          bprefix_len;
+  bool            strict; ///< True iff strict parsing
+  bool            seen_genid;
 };
 
 ZIX_LOG_FUNC(3, 4)
@@ -96,6 +91,9 @@ pop_last_node_char(SerdReader* reader, SerdNode* node);
 
 Ref
 pop_node(SerdReader* reader, Ref ref);
+
+SerdStatus
+emit_event(const SerdReader* reader, SerdEvent event);
 
 SerdStatus
 emit_statement(SerdReader* reader, ReadContext ctx, Ref o, Ref d, Ref l);

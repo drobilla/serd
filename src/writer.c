@@ -13,12 +13,14 @@
 
 #include <serd/buffer.h>
 #include <serd/env.h>
+#include <serd/event.h>
 #include <serd/field.h>
 #include <serd/node.h>
 #include <serd/node_flags.h>
 #include <serd/node_type.h>
 #include <serd/object_view.h>
-#include <serd/statement_flags.h>
+#include <serd/sink.h>
+#include <serd/statement_view.h>
 #include <serd/status.h>
 #include <serd/stream.h>
 #include <serd/string_pair_view.h>
@@ -107,6 +109,7 @@ static const SepRule rules[] = {
 #undef NIL
 
 struct SerdWriterImpl {
+  SerdSink        sink;
   SerdWorld*      world;
   SerdSyntax      syntax;
   SerdWriterFlags flags;
@@ -126,6 +129,9 @@ typedef enum { WRITE_STRING, WRITE_LONG_STRING } TextContext;
 typedef enum { RESET_GRAPH = 1U << 0U, RESET_INDENT = 1U << 1U } ResetFlag;
 
 static const uint8_t replacement_char[] = {0xEFU, 0xBFU, 0xBDU};
+
+ZIX_NODISCARD static SerdStatus
+serd_writer_on_event(void* handle, const SerdEvent* event);
 
 ZIX_NODISCARD static bool
 supports_abbrev(const SerdWriter* const writer)
@@ -192,7 +198,7 @@ current_field(const SerdWriter* const writer, const SerdField field)
                                      : NULL;
 }
 
-static inline bool
+static bool
 is_set(const SerdWriter* const writer, const SerdField field)
 {
   const SerdNode* const node = current_field(writer, field);
@@ -826,10 +832,10 @@ write_literal(SerdWriter* const   writer,
 }
 
 ZIX_NODISCARD static SerdStatus
-write_blank(SerdWriter* const        writer,
-            const ZixStringView      label,
-            const SerdField          field,
-            const SerdStatementFlags flags)
+write_blank(SerdWriter* const    writer,
+            const ZixStringView  label,
+            const SerdField      field,
+            const SerdEventFlags flags)
 {
   SerdStatus st = SERD_SUCCESS;
 
@@ -865,29 +871,27 @@ write_blank(SerdWriter* const        writer,
 }
 
 ZIX_NODISCARD static SerdStatus
-write_token(SerdWriter* const        writer,
-            const SerdField          field,
-            const SerdStatementFlags statement_flags,
-            const SerdTokenView      node)
+write_token(SerdWriter* const    writer,
+            const SerdField      field,
+            const SerdEventFlags event_flags,
+            const SerdTokenView  node)
 {
   return (node.type == SERD_URI)     ? write_uri(writer, node.string)
          : (node.type == SERD_CURIE) ? write_curie(writer, node.string)
          : (node.type == SERD_BLANK)
-           ? write_blank(writer, node.string, field, statement_flags)
+           ? write_blank(writer, node.string, field, event_flags)
            : SERD_BAD_ARG;
 }
 
 ZIX_NODISCARD static SerdStatus
-write_object(SerdWriter* const        writer,
-             const SerdStatementFlags statement_flags,
-             const SerdObjectView     node)
+write_object(SerdWriter* const    writer,
+             const SerdEventFlags event_flags,
+             const SerdObjectView node)
 {
   return (node.type == SERD_LITERAL)
            ? write_literal(writer, node.string, node.flags, node.meta)
-           : write_token(writer,
-                         SERD_OBJECT,
-                         statement_flags,
-                         serd_object_token_view(node));
+           : write_token(
+               writer, SERD_OBJECT, event_flags, serd_object_token_view(node));
 }
 
 ZIX_NODISCARD static SerdStatus
@@ -908,10 +912,10 @@ write_pred(SerdWriter* writer, const SerdTokenView pred)
 }
 
 ZIX_NODISCARD static SerdStatus
-write_list_next(SerdWriter* const        writer,
-                const SerdStatementFlags flags,
-                const SerdTokenView      predicate,
-                const SerdObjectView     object)
+write_list_next(SerdWriter* const    writer,
+                const SerdEventFlags flags,
+                const SerdTokenView  predicate,
+                const SerdObjectView object)
 {
   SerdStatus st = SERD_SUCCESS;
 
@@ -945,13 +949,10 @@ terminate_context(SerdWriter* const writer)
   return st;
 }
 
-SerdStatus
-serd_writer_write_statement(SerdWriter* const        writer,
-                            const SerdStatementFlags flags,
-                            SerdTokenView            graph,
-                            const SerdTokenView      subject,
-                            const SerdTokenView      predicate,
-                            const SerdObjectView     object)
+ZIX_NODISCARD static SerdStatus
+write_statement(SerdWriter* const       writer,
+                const SerdEventFlags    flags,
+                const SerdStatementView statement)
 {
   assert(writer);
 
@@ -962,6 +963,11 @@ serd_writer_write_statement(SerdWriter* const        writer,
   if (writer->syntax == SERD_SYNTAX_EMPTY) {
     return SERD_SUCCESS;
   }
+
+  const SerdTokenView  subject   = statement.subject;
+  const SerdTokenView  predicate = statement.predicate;
+  const SerdObjectView object    = statement.object;
+  SerdTokenView        graph     = statement.graph;
 
   // Refuse to write incoherent statements
   if (!serd_field_supports(SERD_SUBJECT, subject.type) ||
@@ -1103,8 +1109,8 @@ serd_writer_write_statement(SerdWriter* const        writer,
   return st;
 }
 
-SerdStatus
-serd_writer_end_anon(SerdWriter* const writer, const ZixStringView label)
+ZIX_NODISCARD static SerdStatus
+write_end(SerdWriter* const writer, const ZixStringView label)
 {
   assert(writer);
 
@@ -1115,7 +1121,7 @@ serd_writer_end_anon(SerdWriter* const writer, const ZixStringView label)
   }
 
   if (serd_stack_is_empty(&writer->anon_stack)) {
-    return w_err(writer, SERD_BAD_CALL, "unexpected end of anonymous node");
+    return w_err(writer, SERD_BAD_EVENT, "unexpected end of anonymous node");
   }
 
   // Decrease indent if we're current comma-indented (multiple objects at end)
@@ -1171,6 +1177,9 @@ serd_writer_new(SerdWorld* const      world,
     return NULL;
   }
 
+  writer->sink.handle   = writer;
+  writer->sink.on_event = serd_writer_on_event;
+
   writer->world  = world;
   writer->syntax = syntax;
   writer->flags  = flags;
@@ -1217,8 +1226,8 @@ serd_writer_chop_blank_prefix(SerdWriter* const writer,
   }
 }
 
-SerdStatus
-serd_writer_set_base_uri(SerdWriter* const writer, const ZixStringView uri)
+ZIX_NODISCARD static SerdStatus
+write_base(SerdWriter* const writer, const ZixStringView uri)
 {
   if (zix_string_view_equals(serd_env_base_uri_string(writer->env), uri)) {
     return SERD_SUCCESS;
@@ -1265,10 +1274,10 @@ serd_writer_set_root_uri(SerdWriter* const writer, const ZixStringView uri)
   return SERD_SUCCESS;
 }
 
-SerdStatus
-serd_writer_set_prefix(SerdWriter* const   writer,
-                       const ZixStringView name,
-                       const ZixStringView uri)
+ZIX_NODISCARD static SerdStatus
+write_prefix(SerdWriter* const   writer,
+             const ZixStringView name,
+             const ZixStringView uri)
 {
   assert(writer);
 
@@ -1313,11 +1322,11 @@ serd_writer_free(SerdWriter* const writer)
   zix_free(allocator, writer);
 }
 
-SerdEnv*
-serd_writer_env(SerdWriter* const writer)
+const SerdSink*
+serd_writer_sink(SerdWriter* const writer)
 {
   assert(writer);
-  return writer->env;
+  return &writer->sink;
 }
 
 size_t
@@ -1357,4 +1366,32 @@ serd_buffer_sink_finish(SerdBuffer* const stream)
   }
 
   return stream->buf;
+}
+
+ZIX_NODISCARD static SerdStatus
+serd_writer_on_event(void* const handle, const SerdEvent* const event)
+{
+  SerdWriter* const writer = (SerdWriter*)handle;
+  assert(writer);
+
+  SerdStatus st = SERD_BAD_ARG;
+
+  const SerdEventType type = event->type;
+  switch (type) {
+  case SERD_EVENT_BASE:
+    st = write_base(writer, event->body.uri);
+    break;
+  case SERD_EVENT_PREFIX:
+    st = write_prefix(
+      writer, event->body.prefix.prefix, event->body.prefix.suffix);
+    break;
+  case SERD_EVENT_STATEMENT:
+    st = write_statement(writer, event->flags, event->body.statement);
+    break;
+  case SERD_EVENT_END:
+    st = write_end(writer, event->body.label);
+    break;
+  }
+
+  return st;
 }
