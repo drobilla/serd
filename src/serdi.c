@@ -255,9 +255,11 @@ main(int argc, char** argv)
   SerdURIView base_uri = SERD_URI_NULL;
   SerdNode    base     = SERD_NODE_NULL;
   if (a < argc) { // Base URI given on command line
-    base = serd_node_new_uri_from_string(argv[a], NULL, &base_uri);
+    base     = serd_node_new_uri_from_string(argv[a]);
+    base_uri = serd_parse_uri(base.buf);
   } else if (from_file && in_fd != stdin) { // Use input file URI
-    base = serd_node_new_file_uri(input, NULL, &base_uri, true);
+    base     = serd_node_new_file_uri(input, NULL, true);
+    base_uri = serd_parse_uri(base.buf);
   }
 
   FILE* const    out_fd = stdout;

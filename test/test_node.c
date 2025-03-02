@@ -257,17 +257,17 @@ static void
 test_uri_node_from_node(void)
 {
   const SerdNode string      = serd_node_from_string(SERD_LITERAL, "s");
-  SerdNode       string_node = serd_node_new_uri_from_node(&string, NULL, NULL);
+  SerdNode       string_node = serd_node_new_uri_from_node(&string);
   assert(!string_node.n_bytes);
   serd_node_free(&string_node);
 
   const SerdNode nouri      = {NULL, 0U, 0U, SERD_URI};
-  SerdNode       nouri_node = serd_node_new_uri_from_node(&nouri, NULL, NULL);
+  SerdNode       nouri_node = serd_node_new_uri_from_node(&nouri);
   assert(!nouri_node.n_bytes);
   serd_node_free(&nouri_node);
 
   const SerdNode uri = serd_node_from_string(SERD_URI, "http://example.org/p");
-  SerdNode       uri_node = serd_node_new_uri_from_node(&uri, NULL, NULL);
+  SerdNode       uri_node = serd_node_new_uri_from_node(&uri);
   assert(uri_node.n_bytes == 20U);
   serd_node_free(&uri_node);
 }

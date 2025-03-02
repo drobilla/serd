@@ -87,29 +87,25 @@ serd_node_equals(const SerdNode* const a, const SerdNode* const b)
 }
 
 SerdNode
-serd_node_new_uri_from_node(const SerdNode* const    uri_node,
-                            const SerdURIView* const base,
-                            SerdURIView* const       out)
+serd_node_new_uri_from_node(const SerdNode* const uri_node)
 {
   assert(uri_node);
 
   return (uri_node->type == SERD_URI && uri_node->buf)
-           ? serd_node_new_uri_from_string(uri_node->buf, base, out)
+           ? serd_node_new_uri_from_string(uri_node->buf)
            : SERD_NODE_NULL;
 }
 
 SerdNode
-serd_node_new_uri_from_string(const char* const        str,
-                              const SerdURIView* const base,
-                              SerdURIView* const       out)
+serd_node_new_uri_from_string(const char* const str)
 {
   if (!str || str[0] == '\0') {
     // Empty URI => Base URI, or nothing if no base is given
-    return base ? serd_node_new_uri(base, NULL, out) : SERD_NODE_NULL;
+    return SERD_NODE_NULL;
   }
 
-  SerdURIView uri = serd_parse_uri(str);
-  return serd_node_new_uri(&uri, base, out); // Resolve/Serialise
+  const SerdURIView uri = serd_parse_uri(str);
+  return serd_node_new_uri(&uri);
 }
 
 static bool
@@ -129,10 +125,9 @@ is_dir_sep(const char c)
 }
 
 SerdNode
-serd_node_new_file_uri(const char* const  path,
-                       const char* const  hostname,
-                       SerdURIView* const out,
-                       const bool         escape)
+serd_node_new_file_uri(const char* const path,
+                       const char* const hostname,
+                       const bool        escape)
 {
   assert(path);
 
@@ -175,38 +170,22 @@ serd_node_new_file_uri(const char* const  path,
   }
 
   const char* const string = serd_buffer_sink_finish(&buffer);
-  if (string && out) {
-    *out = serd_parse_uri(string);
-  }
-
   return serd_node_from_substring(SERD_URI, string, buffer.len);
 }
 
 SerdNode
-serd_node_new_uri(const SerdURIView* const uri,
-                  const SerdURIView* const base,
-                  SerdURIView* const       out)
+serd_node_new_uri(const SerdURIView* const uri)
 {
   assert(uri);
 
-  SerdURIView abs_uri = *uri;
-  if (base) {
-    abs_uri = serd_resolve_uri(*uri, *base);
-  }
-
-  const size_t len        = serd_uri_string_length(abs_uri);
+  const size_t len        = serd_uri_string_length(*uri);
   char*        buf        = (char*)malloc(len + 1);
   SerdNode     node       = {buf, len, 0, SERD_URI};
   char*        ptr        = buf;
-  const size_t actual_len = serd_write_uri(abs_uri, string_sink, &ptr);
+  const size_t actual_len = serd_write_uri(*uri, string_sink, &ptr);
 
   buf[actual_len] = '\0';
   node.n_bytes    = actual_len;
-
-  if (out) {
-    *out = serd_parse_uri(buf); // TODO: cleverly avoid double parse
-  }
-
   return node;
 }
 
