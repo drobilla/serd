@@ -235,36 +235,6 @@ test_write_bad_event(void)
 }
 
 static void
-test_write_bad_prefix(void)
-{
-  SerdWorld*       world  = serd_world_new(NULL);
-  SerdEnv*         env    = serd_env_new(NULL, zix_empty_string());
-  SerdBuffer       buffer = {NULL, NULL, 0};
-  SerdOutputStream output = serd_open_output_buffer(&buffer);
-  SerdWriter*      writer = serd_writer_new(world, SERD_TURTLE, 0U, env);
-
-  assert(writer);
-  assert(!serd_writer_start(writer, &output, 1U));
-
-  static const ZixStringView name = ZIX_STATIC_STRING("eg");
-  static const ZixStringView uri  = ZIX_STATIC_STRING("rel");
-
-  assert(serd_sink_event(serd_writer_sink(writer),
-                         serd_prefix_event(name, uri)) == SERD_BAD_ARG);
-
-  assert(!serd_close_output(&output));
-
-  const char* const out = (const char*)buffer.buf;
-  assert(out);
-  assert(!strcmp(out, ""));
-  zix_free(buffer.allocator, buffer.buf);
-
-  serd_writer_free(writer);
-  serd_env_free(env);
-  serd_world_free(world);
-}
-
-static void
 test_write_failed_alloc(void)
 {
   SerdFailingAllocator allocator = serd_failing_allocator();
@@ -861,7 +831,6 @@ main(void)
   test_stack_push_overflow();
   test_stack_set_overflow();
   test_write_bad_event();
-  test_write_bad_prefix();
   test_write_failed_alloc();
   test_write_bad_text();
   test_write_long_literal();

@@ -1,5 +1,6 @@
 assertWithSideEffect
 assignmentInAssert
+constParameterCallback
 normalCheckLevelMaxBranches
 redundantInitialization
 unreadVariable

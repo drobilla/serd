@@ -6,6 +6,7 @@
 #include <serd/env.h>
 #include <serd/error.h>
 #include <serd/event.h>
+#include <serd/handler.h>
 #include <serd/input_stream.h>
 #include <serd/node_flags.h>
 #include <serd/node_type.h>
@@ -17,6 +18,7 @@
 #include <serd/status.h>
 #include <serd/stream_result.h>
 #include <serd/syntax.h>
+#include <serd/tee.h>
 #include <serd/token_view.h>
 #include <serd/world.h>
 #include <serd/writer.h>
@@ -138,8 +140,12 @@ check_write_error_offset(SerdWorld* const world,
   SerdWriter* const writer = serd_writer_new(world, syntax, 0U, env);
   assert(writer);
 
-  const SerdSink* const sink   = serd_writer_sink(writer);
-  SerdReader* const     reader = serd_reader_new(world, SERD_TRIG, 0U, sink);
+  SerdHandler* const tee =
+    serd_tee_new(NULL, serd_env_sink(env), serd_writer_sink(writer));
+  assert(tee);
+
+  SerdReader* const reader =
+    serd_reader_new(world, SERD_TRIG, 0U, serd_handler_sink(tee));
   assert(reader);
 
   const char*     position = doc_string;
@@ -159,6 +165,7 @@ check_write_error_offset(SerdWorld* const world,
 
   assert(!serd_close_input(&in));
   serd_reader_free(reader);
+  serd_handler_free(tee);
   serd_writer_free(writer);
   serd_env_free(env);
 
@@ -212,9 +219,6 @@ test_writer(const char* const path)
   const SerdSink* const sink = serd_writer_sink(writer);
 
   // Check invalid calls to basic sink methods
-  assert(serd_sink_event(sink, serd_base_event(zix_string("rel"))));
-  assert(serd_sink_event(
-    sink, serd_prefix_event(zix_string("name"), zix_string("rel"))));
   assert(serd_sink_event(sink, serd_end_event(zix_string("whatever"))));
 
   static const uint8_t       bad_buf[]    = {0xEF, 0xBF, 0xBD, 0};
