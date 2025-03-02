@@ -960,8 +960,6 @@ serd_writer_write_statement(SerdWriter* const     writer,
     return SERD_SUCCESS;
   }
 
-  SERD_DISABLE_NULL_WARNINGS
-
   // Separate graphs if necessary
   if ((graph && !serd_node_equals(graph, &writer->context.graph)) ||
       (!graph && writer->context.graph.type)) {
@@ -974,8 +972,6 @@ serd_writer_write_statement(SerdWriter* const     writer,
       copy_node(&writer->context.graph, graph);
     }
   }
-
-  SERD_RESTORE_WARNINGS
 
   if ((flags & SERD_LIST_CONT)) {
     // Continue a list
@@ -1096,14 +1092,11 @@ serd_writer_end_anon(SerdWriter* const writer, const SerdNode* const node)
   TRY(st, write_sep(writer, SEP_ANON_END));
   pop_context(writer);
 
-  SERD_DISABLE_NULL_WARNINGS
-
   if (node && serd_node_equals(node, &writer->context.subject)) {
     // Now-finished anonymous node is the new subject with no other context
     writer->context.predicate.type = SERD_NOTHING;
   }
 
-  SERD_RESTORE_WARNINGS
   return st;
 }
 
@@ -1251,9 +1244,7 @@ serd_writer_free(SerdWriter* const writer)
     return;
   }
 
-  SERD_DISABLE_NULL_WARNINGS
   serd_writer_finish(writer);
-  SERD_RESTORE_WARNINGS
   free_context(&writer->context);
   free_anon_stack(writer);
   serd_stack_free(&writer->anon_stack);
