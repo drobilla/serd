@@ -11,12 +11,14 @@
 #include "world_internal.h"
 
 #include <serd/error.h>
+#include <serd/event.h>
 #include <serd/file_uri.h>
 #include <serd/node.h>
 #include <serd/node_type.h>
 #include <serd/object_view.h>
 #include <serd/reader.h>
 #include <serd/sink.h>
+#include <serd/statement_view.h>
 #include <serd/status.h>
 #include <serd/stream.h>
 #include <serd/syntax.h>
@@ -174,6 +176,14 @@ stack_token_view(SerdReader* const reader, const Ref ref)
 }
 
 SerdStatus
+emit_event(const SerdReader* const reader, SerdEvent event)
+{
+  event.caret = reader->source.caret;
+
+  return serd_sink_event(reader->sink, event);
+}
+
+SerdStatus
 emit_statement(SerdReader* const reader,
                const ReadContext ctx,
                const Ref         o,
@@ -183,22 +193,20 @@ emit_statement(SerdReader* const reader,
   SerdStatus st   = SERD_UNKNOWN_ERROR;
   const Ref  meta = d ? d : l;
 
-  SerdNode* const object = deref(reader, o);
+  const SerdNode* const object = deref(reader, o);
   if (object) {
-    const SerdObjectView object_view = {
-      object->type,
-      {(const char*)(object + 1U), object->n_bytes},
-      object->flags,
-      stack_token_view(reader, meta)};
+    const SerdObjectView object_view = {object->type,
+                                        serd_node_string_view(object),
+                                        object->flags,
+                                        stack_token_view(reader, meta)};
 
-    st = reader->statement_func
-           ? reader->statement_func(reader->handle,
-                                    *ctx.flags,
-                                    stack_token_view(reader, ctx.graph),
-                                    stack_token_view(reader, ctx.subject),
-                                    stack_token_view(reader, ctx.predicate),
-                                    object_view)
-           : SERD_SUCCESS;
+    st = emit_event(reader,
+                    serd_statement_event(
+                      *ctx.flags,
+                      serd_quad_view(stack_token_view(reader, ctx.subject),
+                                     stack_token_view(reader, ctx.predicate),
+                                     object_view,
+                                     stack_token_view(reader, ctx.graph))));
   }
 
   *ctx.flags = 0U;
@@ -237,14 +245,10 @@ SerdReader*
 serd_reader_new(SerdWorld* const      world,
                 const SerdSyntax      syntax,
                 const SerdReaderFlags flags,
-                void* const           handle,
-                void (*const free_handle)(void*),
-                const SerdBaseFunc      base_func,
-                const SerdPrefixFunc    prefix_func,
-                const SerdStatementFunc statement_func,
-                const SerdEndFunc       end_func)
+                const SerdSink* const sink)
 {
   assert(world);
+  assert(sink);
 
   ZixAllocator* const allocator = serd_world_allocator(world);
 
@@ -254,17 +258,12 @@ serd_reader_new(SerdWorld* const      world,
     return NULL;
   }
 
-  me->world          = world;
-  me->handle         = handle;
-  me->free_handle    = free_handle;
-  me->base_func      = base_func;
-  me->prefix_func    = prefix_func;
-  me->statement_func = statement_func;
-  me->end_func       = end_func;
-  me->stack          = serd_stack_new(world->allocator, SERD_PAGE_SIZE);
-  me->syntax         = syntax;
-  me->next_id        = 1;
-  me->strict         = !(flags & SERD_READ_LAX);
+  me->world   = world;
+  me->sink    = sink;
+  me->stack   = serd_stack_new(world->allocator, SERD_PAGE_SIZE);
+  me->syntax  = syntax;
+  me->next_id = 1;
+  me->strict  = !(flags & SERD_READ_LAX);
 
   if (!me->stack.buf) {
     zix_free(world->allocator, me);
@@ -292,17 +291,7 @@ serd_reader_free(SerdReader* const reader)
 
   serd_stack_free(&reader->stack);
   zix_free(reader->world->allocator, reader->bprefix);
-  if (reader->free_handle) {
-    reader->free_handle(reader->handle);
-  }
   zix_free(reader->world->allocator, reader);
-}
-
-void*
-serd_reader_handle(const SerdReader* const reader)
-{
-  assert(reader);
-  return reader->handle;
 }
 
 void

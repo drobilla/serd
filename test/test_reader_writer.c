@@ -5,12 +5,13 @@
 
 #include <serd/env.h>
 #include <serd/error.h>
+#include <serd/event.h>
 #include <serd/node_flags.h>
 #include <serd/node_type.h>
 #include <serd/object_view.h>
 #include <serd/reader.h>
 #include <serd/sink.h>
-#include <serd/statement_flags.h>
+#include <serd/statement_view.h>
 #include <serd/status.h>
 #include <serd/syntax.h>
 #include <serd/token_view.h>
@@ -26,7 +27,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 typedef struct {
   size_t n_written;
@@ -63,20 +63,12 @@ static const char* const doc_string =
   "( eg:o ) eg:t eg:u .\n";
 
 static SerdStatus
-test_statement_sink(void* const              handle,
-                    const SerdStatementFlags flags,
-                    const SerdTokenView      graph,
-                    const SerdTokenView      subject,
-                    const SerdTokenView      predicate,
-                    const SerdObjectView     object)
+test_sink(void* const handle, const SerdEvent* const event)
 {
-  (void)flags;
-  (void)graph;
-  (void)subject;
-  (void)predicate;
-  (void)object;
+  ReaderTest* const rt = (ReaderTest*)handle;
 
-  ReaderTest* rt = (ReaderTest*)handle;
+  assert(event->type == SERD_EVENT_STATEMENT);
+
   ++rt->n_statement;
   return SERD_SUCCESS;
 }
@@ -116,21 +108,14 @@ check_write_error_offset(SerdWorld* const world,
   SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
   assert(env);
 
-  ErrorContext      ctx = {0U, offset};
+  ErrorContext ctx = {0U, offset};
+
   SerdWriter* const writer =
     serd_writer_new(world, syntax, 0U, env, faulty_sink, &ctx);
   assert(writer);
 
-  SerdReader* const reader =
-    serd_reader_new(world,
-                    SERD_TRIG,
-                    0U,
-                    writer,
-                    NULL,
-                    (SerdBaseFunc)serd_writer_set_base_uri,
-                    (SerdPrefixFunc)serd_writer_set_prefix,
-                    (SerdStatementFunc)serd_writer_write_statement,
-                    (SerdEndFunc)serd_writer_end_anon);
+  const SerdSink* const sink   = serd_writer_sink(writer);
+  SerdReader* const     reader = serd_reader_new(world, SERD_TRIG, 0U, sink);
   assert(reader);
 
   SerdStatus rst =
@@ -194,10 +179,13 @@ test_writer(const char* const path)
   serd_writer_chop_blank_prefix(writer, "tmp");
   serd_writer_chop_blank_prefix(writer, NULL);
 
-  assert(serd_writer_set_base_uri(writer, zix_string("rel")));
-  assert(serd_writer_set_prefix(writer, zix_string("ns"), zix_string("rel")));
-  assert(serd_writer_end_anon(writer, zix_string("")));
-  assert(serd_writer_env(writer) == env);
+  const SerdSink* const sink = serd_writer_sink(writer);
+
+  // Check invalid calls to basic sink methods
+  assert(serd_sink_event(sink, serd_base_event(zix_string("rel"))));
+  assert(serd_sink_event(
+    sink, serd_prefix_event(zix_string("name"), zix_string("rel"))));
+  assert(serd_sink_event(sink, serd_end_event(zix_string("whatever"))));
 
   static const uint8_t       bad_buf[]    = {0xEF, 0xBF, 0xBD, 0};
   static const ZixStringView bad_buf_view = {(const char*)bad_buf, 3};
@@ -212,8 +200,9 @@ test_writer(const char* const path)
     const SerdObjectView o = {
       junk[i][2].type, junk[i][2].string, 0U, serd_no_token()};
 
-    assert(serd_writer_write_statement(
-      writer, 0, serd_no_token(), junk[i][0], junk[i][1], o));
+    assert(serd_sink_event(
+      sink,
+      serd_statement_event(0U, serd_triple_view(junk[i][0], junk[i][1], o))));
   }
 
   // Write some valid statements
@@ -233,8 +222,8 @@ test_writer(const char* const path)
     const SerdObjectView good[3] = {o, t, l};
 
     for (size_t i = 0; i < sizeof(good) / sizeof(SerdObjectView); ++i) {
-      assert(!serd_writer_write_statement(
-        writer, 0U, serd_no_token(), s, p, good[i]));
+      assert(!serd_sink_event(
+        sink, serd_statement_event(0U, serd_triple_view(s, p, good[i]))));
     }
   }
 
@@ -251,12 +240,12 @@ test_writer(const char* const path)
   const SerdObjectView bad_short_lit = {SERD_LITERAL, bad_short_str, 0U, meta};
   const SerdObjectView bad_long_lit  = {
     SERD_LITERAL, bad_long_str, SERD_HAS_NEWLINE, meta};
-  assert(
-    !serd_writer_write_statement(writer, 0U, serd_no_token(), s, p, bad_uri));
-  assert(!serd_writer_write_statement(
-    writer, 0U, serd_no_token(), s, p, bad_short_lit));
-  assert(!serd_writer_write_statement(
-    writer, 0U, serd_no_token(), s, p, bad_long_lit));
+  assert(!serd_sink_event(
+    sink, serd_statement_event(0U, serd_triple_view(s, p, bad_uri))));
+  assert(!serd_sink_event(
+    sink, serd_statement_event(0U, serd_triple_view(s, p, bad_short_lit))));
+  assert(!serd_sink_event(
+    sink, serd_statement_event(0U, serd_triple_view(s, p, bad_long_lit))));
 
   serd_writer_free(writer);
   serd_env_free(env);
@@ -267,15 +256,13 @@ test_writer(const char* const path)
 static void
 test_reader(const char* const path)
 {
-  SerdWorld* const  world = serd_world_new(NULL);
-  ReaderTest* const rt    = (ReaderTest*)calloc(1, sizeof(ReaderTest));
+  SerdWorld* const world = serd_world_new(NULL);
   assert(world);
-  assert(rt);
 
-  SerdReader* const reader = serd_reader_new(
-    world, SERD_TURTLE, 0U, rt, free, NULL, NULL, test_statement_sink, NULL);
+  ReaderTest        rt     = {0};
+  const SerdSink    sink   = {&rt, test_sink};
+  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, &sink);
   assert(reader);
-  assert(serd_reader_handle(reader) == rt);
 
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(serd_reader_read_document(reader) == SERD_FAILURE);
@@ -297,7 +284,7 @@ test_reader(const char* const path)
 
   assert(!serd_reader_start_file(reader, path, true));
   assert(!serd_reader_read_document(reader));
-  assert(rt->n_statement == 6);
+  assert(rt.n_statement == 6);
   assert(!serd_reader_finish(reader));
 
   serd_reader_free(reader);

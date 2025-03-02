@@ -59,7 +59,6 @@
 #include <serd/file_uri.h>
 #include <serd/node.h>
 #include <serd/object_view.h>
-#include <serd/statement_flags.h>
 #include <serd/token_view.h>
 #include <serd/uri.h>
 
@@ -71,7 +70,9 @@
 
 #include <serd/caret_view.h>
 #include <serd/env.h>
+#include <serd/event.h>
 #include <serd/sink.h>
+#include <serd/statement_view.h>
 
 /**
    @}

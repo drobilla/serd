@@ -35,6 +35,7 @@ unit_test_names = [
   'object_view',
   'reader',
   'reader_writer',
+  'sink',
   'string',
   'string_pair_view',
   'syntax',

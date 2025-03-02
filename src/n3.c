@@ -9,11 +9,11 @@
 #include "try.h"
 #include "turtle.h"
 
+#include <serd/event.h>
 #include <serd/node.h>
 #include <serd/node_flags.h>
 #include <serd/node_type.h>
 #include <serd/reader.h>
-#include <serd/statement_flags.h>
 #include <serd/status.h>
 #include <serd/syntax.h>
 #include <zix/string_view.h>
@@ -902,8 +902,8 @@ read_anon(SerdReader* const reader,
 {
   skip_byte(reader, '[');
 
-  const SerdStatementFlags old_flags = *ctx.flags;
-  const bool               empty     = peek_delim(reader, ']');
+  const SerdEventFlags old_flags = *ctx.flags;
+  const bool           empty     = peek_delim(reader, ']');
 
   if (subject) {
     *ctx.flags |= empty ? SERD_EMPTY_S : SERD_ANON_S;
@@ -933,10 +933,8 @@ read_anon(SerdReader* const reader,
     read_ws_star(reader);
     *ctx.flags = old_flags;
 
-    if (reader->end_func) {
-      st = reader->end_func(reader->handle,
-                            serd_node_string_view(deref(reader, *dest)));
-    }
+    st = emit_event(
+      reader, serd_end_event(serd_node_string_view(deref(reader, *dest))));
   }
 
   return st > SERD_FAILURE ? st : eat_byte_check(reader, ']');
@@ -1142,7 +1140,7 @@ read_collection(SerdReader* const reader, ReadContext ctx, Ref* const dest)
   if (ctx.subject) { // Reading a collection object
     *ctx.flags |= (end ? 0 : SERD_LIST_O);
     TRY(st, emit_statement(reader, ctx, *dest, 0, 0));
-    *ctx.flags &= ~((unsigned)SERD_LIST_O);
+    *ctx.flags &= (SerdEventFlags) ~((unsigned)SERD_LIST_O);
   } else { // Reading a collection subject
     *ctx.flags |= (end ? 0 : SERD_LIST_S);
   }
@@ -1280,10 +1278,9 @@ read_base(SerdReader* const reader, const bool sparql, const bool token)
 
   Ref uri = 0;
   TRY(st, read_IRIREF(reader, &uri));
-  if (reader->base_func) {
-    st = reader->base_func(reader->handle,
-                           serd_node_string_view(deref(reader, uri)));
-  }
+
+  st = emit_event(reader,
+                  serd_base_event(serd_node_string_view(deref(reader, uri))));
   pop_node(reader, uri);
 
   read_ws_star(reader);
@@ -1321,10 +1318,11 @@ read_prefixID(SerdReader* const reader, const bool sparql, const bool token)
   Ref uri = 0;
   st      = read_IRIREF(reader, &uri);
 
-  if (!st && reader->prefix_func) {
-    st = reader->prefix_func(reader->handle,
-                             serd_node_string_view(deref(reader, name)),
-                             serd_node_string_view(deref(reader, uri)));
+  if (!st) {
+    st =
+      emit_event(reader,
+                 serd_prefix_event(serd_node_string_view(deref(reader, name)),
+                                   serd_node_string_view(deref(reader, uri))));
   }
 
   pop_node(reader, uri);
@@ -1434,11 +1432,11 @@ read_n3_statement(SerdReader* const reader)
   static const ZixStringView prefix_token = ZIX_STATIC_STRING("prefix");
   static const ZixStringView true_token   = ZIX_STATIC_STRING("true");
 
-  SerdStatementFlags flags   = 0;
-  ReadContext        ctx     = {0, 0, 0, 0, 0, 0, &flags};
-  bool               ate_dot = false;
-  int                s_type  = 0;
-  SerdStatus         st      = SERD_SUCCESS;
+  SerdEventFlags flags   = 0U;
+  ReadContext    ctx     = {0, 0, 0, 0, 0, 0, &flags};
+  bool           ate_dot = false;
+  int            s_type  = 0;
+  SerdStatus     st      = SERD_SUCCESS;
   read_ws_star(reader);
   switch (peek_byte(reader)) {
   case '\0':
@@ -1555,11 +1553,11 @@ read_turtleTrigDoc(SerdReader* const reader)
 SerdStatus
 read_nquads_statement(SerdReader* const reader)
 {
-  SerdStatus         st      = SERD_SUCCESS;
-  SerdStatementFlags flags   = 0;
-  ReadContext        ctx     = {0, 0, 0, 0, 0, 0, &flags};
-  bool               ate_dot = false;
-  int                s_type  = 0;
+  SerdStatus     st      = SERD_SUCCESS;
+  SerdEventFlags flags   = 0U;
+  ReadContext    ctx     = {0, 0, 0, 0, 0, 0, &flags};
+  bool           ate_dot = false;
+  int            s_type  = 0;
 
   read_ws_star(reader);
   if (peek_byte(reader) == EOF) {
