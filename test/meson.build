@@ -41,6 +41,7 @@ unit_test_names = [
   'string',
   'string_pair_view',
   'syntax',
+  'tee',
   'terse_write',
   'token_view',
   'uri',

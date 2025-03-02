@@ -138,10 +138,10 @@ typedef unsigned SerdWriterFlags;
 
 /// Create a new RDF writer
 SERD_API SerdWriter* ZIX_ALLOCATED
-serd_writer_new(SerdWorld* ZIX_NONNULL world,
-                SerdSyntax             syntax,
-                SerdWriterFlags        flags,
-                SerdEnv* ZIX_NONNULL   env);
+serd_writer_new(SerdWorld* ZIX_NONNULL     world,
+                SerdSyntax                 syntax,
+                SerdWriterFlags            flags,
+                const SerdEnv* ZIX_NONNULL env);
 
 /**
    Free `writer`.

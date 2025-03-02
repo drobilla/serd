@@ -119,7 +119,7 @@ struct SerdWriterImpl {
   SerdWorld*      world;
   SerdSyntax      syntax;
   SerdWriterFlags flags;
-  SerdEnv*        env;
+  const SerdEnv*  env;
   char*           root_uri_string;
   SerdURIView     root_uri;
   SerdStack       stack;
@@ -1417,7 +1417,7 @@ SerdWriter*
 serd_writer_new(SerdWorld* const      world,
                 const SerdSyntax      syntax,
                 const SerdWriterFlags flags,
-                SerdEnv* const        env)
+                const SerdEnv* const  env)
 {
   assert(world);
   assert(env);
@@ -1471,19 +1471,11 @@ serd_writer_new(SerdWorld* const      world,
 ZIX_NODISCARD static SerdStatus
 write_base(SerdWriter* const writer, const ZixStringView uri)
 {
-  if (zix_string_view_equals(serd_env_base_uri_string(writer->env), uri)) {
-    return SERD_SUCCESS;
-  }
-
-  SerdStatus st = serd_env_set_base_uri(writer->env, uri);
-  if (st) {
-    return st == SERD_NO_CHANGE ? SERD_SUCCESS : st;
-  }
-
+  SerdStatus st          = SERD_SUCCESS;
   const bool had_subject = writer->context->subject.type;
   TRY(st, terminate_context(writer));
 
-  if (uri.length && !(writer->flags & SERD_WRITE_BASELESS)) {
+  if (!(writer->flags & SERD_WRITE_BASELESS)) {
     if (had_subject) {
       TRY(st, write_top_level_sep(writer));
     }
@@ -1521,11 +1513,7 @@ write_prefix(SerdWriter* const   writer,
              const ZixStringView name,
              const ZixStringView uri)
 {
-  SerdStatus st = serd_env_set_prefix(writer->env, name, uri);
-  if (st) {
-    return st == SERD_NO_CHANGE ? SERD_SUCCESS : st;
-  }
-
+  SerdStatus st          = SERD_SUCCESS;
   const bool had_subject = writer->context->subject.type;
   TRY(st, terminate_context(writer));
 

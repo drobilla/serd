@@ -3,12 +3,15 @@
 
 #include "console.h"
 
+#include <serd/env.h>
 #include <serd/error.h>
+#include <serd/handler.h>
 #include <serd/input_stream.h>
 #include <serd/reader.h>
 #include <serd/sink.h>
 #include <serd/status.h>
 #include <serd/syntax.h>
+#include <serd/tee.h>
 #include <serd/world.h>
 #include <serd/writer.h>
 #include <zix/string_view.h>
@@ -55,8 +58,12 @@ run(const Options opts)
     serd_world_set_error_func(app.world, quiet_error_func, NULL);
   }
 
-  // Set up the output pipeline: [canon] -> writer
-  const SerdSink* const sink = serd_writer_sink(app.writer);
+  // Set up the output pipeline: tee(env, writer)
+  const SerdSink* const target = serd_writer_sink(app.writer);
+  SerdHandler* const    pipeline =
+    serd_tee_new(NULL, serd_env_sink(app.env), target);
+
+  const SerdSink* sink = serd_handler_sink(pipeline);
 
   if (opts.input_string) {
     const char*     position = opts.input_string;
@@ -79,6 +86,9 @@ run(const Options opts)
   }
 
   const SerdStatus wst = serd_writer_finish(app.writer);
+
+  serd_handler_free(pipeline);
+
   const SerdStatus cst = serd_tool_cleanup(app);
   return st ? st : wst ? wst : cst;
 }
