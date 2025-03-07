@@ -24,13 +24,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#ifdef SERD_STACK_CHECK
-#  define SERD_STACK_ASSERT_TOP(reader, ref) \
-    assert(ref == reader->allocs[reader->n_allocs - 1])
-#else
-#  define SERD_STACK_ASSERT_TOP(reader, ref)
-#endif
-
 /* Reference to a node in the stack (we can not use pointers since the
    stack may be reallocated, invalidating any pointers to elements).
 */
@@ -68,10 +61,6 @@ struct SerdReaderImpl {
   size_t            bprefix_len;
   bool              strict; ///< True iff strict parsing
   bool              seen_genid;
-#ifdef SERD_STACK_CHECK
-  Ref*   allocs;   ///< Stack of push offsets
-  size_t n_allocs; ///< Number of stack pushes
-#endif
 };
 
 ZIX_LOG_FUNC(3, 4)
@@ -179,7 +168,6 @@ static inline SerdStatus
 push_byte(SerdReader* const reader, const Ref ref, const int c)
 {
   assert(c >= 0);
-  SERD_STACK_ASSERT_TOP(reader, ref);
 
   char* const     s    = (char*)serd_stack_push(&reader->stack, 1);
   SerdNode* const node = (SerdNode*)(reader->stack.buf + ref);
