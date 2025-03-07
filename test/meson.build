@@ -28,6 +28,7 @@ subdir('headers')
 ##############
 
 unit_test_names = [
+  'binary',
   'canon',
   'env',
   'field',
@@ -35,7 +36,7 @@ unit_test_names = [
   'filter',
   'free_null',
   'handler',
-  'node',
+  'nodes',
   'object_view',
   'overflow',
   'reader',
@@ -48,6 +49,7 @@ unit_test_names = [
   'terse_write',
   'token_view',
   'uri',
+  'value',
   'views',
   'world',
   'writer',

@@ -10,7 +10,7 @@ CheckOptions:
   - key:   readability-function-cognitive-complexity.Threshold
     value: '1'
   - key:   readability-identifier-length.IgnoredParameterNames
-    value: '^[abdirt]$'
+    value: '^(id|r|t|v)$'
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
 FormatStyle: file

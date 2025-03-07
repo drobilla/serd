@@ -643,31 +643,6 @@ test_buffer_sink(void)
 }
 
 static void
-test_write_nothing_node(void)
-{
-  SerdWorld* const world = serd_world_new(NULL);
-  SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
-
-  SerdWriter* const writer =
-    serd_writer_new(world, SERD_TURTLE, SERD_WRITE_VERBATIM, env);
-  assert(writer);
-  assert(!serd_writer_start(writer, &null_out, 1U));
-
-  const SerdTokenView  s = {SERD_URI, zix_string("")};
-  const SerdTokenView  p = {SERD_URI, zix_string(NS_EG "pred")};
-  const SerdObjectView o = {
-    SERD_NOTHING, zix_string(NS_EG "o"), 0U, {SERD_LITERAL, zix_string("")}};
-
-  assert(serd_sink_event(serd_writer_sink(writer),
-                         serd_statement_event(0U, serd_triple_view(s, p, o))) ==
-         SERD_BAD_ARG);
-
-  serd_writer_free(writer);
-  serd_env_free(env);
-  serd_world_free(world);
-}
-
-static void
 test_write_empty_syntax(void)
 {
   SerdWorld* const world = serd_world_new(NULL);
@@ -839,7 +814,6 @@ main(void)
   test_strict_write();
   test_write_error();
   test_buffer_sink();
-  test_write_nothing_node();
   test_write_empty_syntax();
   test_write_pname_escapes();
   test_write_bad_uri();

@@ -6,13 +6,11 @@
 
 #include <serd/attributes.h>
 
-#include <stdint.h>
-
 SERD_BEGIN_DECLS
 
 /**
-   @defgroup serd_node_flags Flags
-   @ingroup serd_node
+   @defgroup serd_node_flags Node Flags
+   @ingroup serd_data
    @{
 */
 
@@ -24,7 +22,7 @@ typedef enum {
 } SerdNodeFlag;
 
 /// Bitwise OR of #SerdNodeFlag values
-typedef uint32_t SerdNodeFlags;
+typedef unsigned SerdNodeFlags;
 
 /**
    @}

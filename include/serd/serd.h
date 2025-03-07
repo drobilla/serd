@@ -1,4 +1,4 @@
-// Copyright 2011-2023 David Robillard <d@drobilla.net>
+// Copyright 2011-2025 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 /// @file serd.h API for Serd, a lightweight RDF syntax library
@@ -45,7 +45,9 @@
    @{
 */
 
+#include <serd/stream_result.h>
 #include <serd/string.h>
+#include <serd/string_pair_view.h>
 #include <serd/struct_literal.h>
 #include <serd/syntax.h>
 
@@ -55,12 +57,19 @@
    @{
 */
 
+#include <serd/binary.h>
+#include <serd/blob_view.h>
 #include <serd/field.h>
 #include <serd/file_uri.h>
-#include <serd/node.h>
+#include <serd/literal_view.h>
+#include <serd/node_args.h>
+#include <serd/node_flags.h>
+#include <serd/node_id.h>
+#include <serd/node_type.h>
 #include <serd/object_view.h>
 #include <serd/token_view.h>
 #include <serd/uri.h>
+#include <serd/value.h>
 
 /**
    @}
@@ -89,6 +98,15 @@
 #include <serd/reader.h>
 #include <serd/stream.h>
 #include <serd/writer.h>
+
+/**
+   @}
+   @defgroup serd_storage Storage
+   @{
+*/
+
+#include <serd/nodes.h>
+#include <serd/strings.h>
 
 /**
    @}

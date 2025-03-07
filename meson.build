@@ -38,7 +38,6 @@ c_suppressions = []
 if cc.get_id() in ['clang', 'emscripten']
   if warning_level == 'everything'
     c_suppressions += [
-      '-Wno-cast-qual',
       '-Wno-declaration-after-statement',
       '-Wno-nrvo',
       '-Wno-padded',
@@ -70,12 +69,10 @@ if cc.get_id() in ['clang', 'emscripten']
 elif cc.get_id() == 'gcc'
   if warning_level == 'everything'
     c_suppressions += [
-      '-Wno-cast-qual',
       '-Wno-inline',
       '-Wno-padded',
       '-Wno-switch-default',
       '-Wno-unsuffixed-float-constants',
-      '-Wno-unused-const-variable',
     ]
 
     if host_machine.system() == 'windows'
@@ -225,6 +222,8 @@ include_dirs = include_directories('include')
 
 c_headers = files(
   'include/serd/attributes.h',
+  'include/serd/binary.h',
+  'include/serd/blob_view.h',
   'include/serd/buffer.h',
   'include/serd/canon.h',
   'include/serd/caret_view.h',
@@ -235,10 +234,13 @@ c_headers = files(
   'include/serd/filter.h',
   'include/serd/handler.h',
   'include/serd/input_stream.h',
+  'include/serd/literal_view.h',
   'include/serd/log.h',
-  'include/serd/node.h',
+  'include/serd/node_args.h',
   'include/serd/node_flags.h',
+  'include/serd/node_id.h',
   'include/serd/node_type.h',
+  'include/serd/nodes.h',
   'include/serd/object_view.h',
   'include/serd/output_stream.h',
   'include/serd/reader.h',
@@ -250,17 +252,20 @@ c_headers = files(
   'include/serd/stream_result.h',
   'include/serd/string.h',
   'include/serd/string_pair_view.h',
+  'include/serd/strings.h',
   'include/serd/struct_literal.h',
   'include/serd/syntax.h',
   'include/serd/tee.h',
   'include/serd/token_view.h',
   'include/serd/uri.h',
+  'include/serd/value.h',
   'include/serd/version.h',
   'include/serd/world.h',
   'include/serd/writer.h',
 )
 
 sources = files(
+  'src/binary.c',
   'src/block_dumper.c',
   'src/byte_source.c',
   'src/canon.c',
@@ -273,6 +278,7 @@ sources = files(
   'src/input_stream.c',
   'src/log.c',
   'src/node.c',
+  'src/nodes.c',
   'src/object_view.c',
   'src/output_stream.c',
   'src/read_nquads.c',
@@ -285,11 +291,13 @@ sources = files(
   'src/stream_stdio.c',
   'src/string.c',
   'src/string_pair_view.c',
+  'src/strings.c',
   'src/symbols.c',
   'src/syntax.c',
   'src/tee.c',
   'src/token_view.c',
   'src/uri.c',
+  'src/value.c',
   'src/world.c',
   'src/writer.c',
 )

@@ -12,8 +12,12 @@ Checks: >
   -llvm-header-guard,
   -readability-avoid-nested-conditional-operator,
 CheckOptions:
+  - key:   hicpp-uppercase-literal-suffix.NewSuffixes
+    value: 'L;U;UL;ULL'
   - key:   readability-function-cognitive-complexity.IgnoreMacros
     value: 'true'
   - key:   readability-function-cognitive-complexity.Threshold
     value: '15'
+  - key:   readability-uppercase-literal-suffix.NewSuffixes
+    value: 'L;U;UL;ULL'
 InheritParentConfig: true

@@ -26,6 +26,7 @@ MACRO_EXPANSION        = YES
 PREDEFINED             = SERD_API \
                          SERD_CONST_API \
                          SERD_MALLOC_API \
+                         SERD_NODE_ARGS=\
                          SERD_PURE_API \
                          ZIX_ALLOCATED= \
                          ZIX_ALWAYS_INLINE_FUNC= \
