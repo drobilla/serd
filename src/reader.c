@@ -99,18 +99,7 @@ push_node_padded(SerdReader* const   reader,
   char* buf = (char*)(node + 1);
   memcpy(buf, string.data, string.length + 1);
 
-  const Ref ref = (Ref)((char*)node - reader->stack.buf);
-
-#ifdef SERD_STACK_CHECK
-  reader->allocs =
-    (Ref*)zix_realloc(reader->world->allocator,
-                      reader->allocs,
-                      sizeof(reader->allocs) * (++reader->n_allocs));
-
-  reader->allocs[reader->n_allocs - 1] = ref;
-#endif
-
-  return ref;
+  return (Ref)((char*)node - reader->stack.buf);
 }
 
 Ref
@@ -145,10 +134,6 @@ pop_node(SerdReader* const reader, const Ref ref)
 {
   if (ref && ref != reader->rdf_first && ref != reader->rdf_rest &&
       ref != reader->rdf_nil) {
-#ifdef SERD_STACK_CHECK
-    SERD_STACK_ASSERT_TOP(reader, ref);
-    --reader->n_allocs;
-#endif
     const SerdNode* const node = deref(reader, ref);
     const char* const     top  = reader->stack.buf + reader->stack.size;
     assert(top > (const char*)node);
@@ -261,9 +246,6 @@ serd_reader_free(SerdReader* const reader)
   pop_node(reader, reader->rdf_first);
   serd_reader_finish(reader);
 
-#ifdef SERD_STACK_CHECK
-  zix_free(reader->world->allocator, reader->allocs);
-#endif
   serd_stack_free(&reader->stack);
   zix_free(reader->world->allocator, reader->bprefix);
   if (reader->free_handle) {
