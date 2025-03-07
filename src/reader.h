@@ -71,10 +71,10 @@ SerdStatus
 r_err_char(const SerdReader* reader, const char* kind, int c);
 
 Ref
-push_node_padded(SerdReader*   reader,
-                 size_t        maxlen,
-                 SerdNodeType  type,
-                 ZixStringView string);
+push_node_head(SerdReader* reader, SerdNodeType type);
+
+Ref
+push_node_space(SerdReader* reader, size_t size, SerdNodeType type);
 
 Ref
 push_node(SerdReader* reader, SerdNodeType type, ZixStringView string);

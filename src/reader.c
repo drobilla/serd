@@ -75,13 +75,12 @@ genid_size(const SerdReader* const reader)
 Ref
 blank_id(SerdReader* const reader)
 {
-  Ref ref = push_node_padded(
-    reader, genid_size(reader), SERD_BLANK, zix_empty_string());
+  Ref ref = push_node_space(reader, genid_size(reader), SERD_BLANK);
   set_blank_id(reader, ref, genid_size(reader));
   return ref;
 }
 
-Ref
+static Ref
 push_node_padded(SerdReader* const   reader,
                  const size_t        maxlen,
                  const SerdNodeType  type,
@@ -108,6 +107,20 @@ push_node(SerdReader* const   reader,
           const ZixStringView string)
 {
   return push_node_padded(reader, string.length, type, string);
+}
+
+Ref
+push_node_head(SerdReader* const reader, const SerdNodeType type)
+{
+  return push_node_padded(reader, 0U, type, zix_empty_string());
+}
+
+Ref
+push_node_space(SerdReader* const  reader,
+                const size_t       size,
+                const SerdNodeType type)
+{
+  return push_node_padded(reader, size, type, zix_empty_string());
 }
 
 SerdNode*

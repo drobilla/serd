@@ -543,7 +543,7 @@ read_LANGTAG(SerdReader* const reader, Ref* const dest)
     return r_err_char(reader, "language", c);
   }
 
-  *dest = push_node(reader, SERD_LITERAL, zix_empty_string());
+  *dest = push_node_head(reader, SERD_LITERAL);
 
   SerdStatus st = SERD_SUCCESS;
   TRY(st, push_byte(reader, *dest, eat_byte_safe(reader, c)));
@@ -595,7 +595,7 @@ read_IRIREF(SerdReader* const reader, Ref* const dest)
     return SERD_BAD_SYNTAX;
   }
 
-  *dest = push_node(reader, SERD_URI, zix_empty_string());
+  *dest = push_node_head(reader, SERD_URI);
 
   if (!fancy_syntax(reader) && read_IRIREF_scheme(reader, *dest)) {
     *dest = pop_node(reader, *dest);
@@ -704,7 +704,7 @@ read_number(SerdReader* const reader,
   static const ZixStringView xsd_double  = ZIX_STATIC_STRING(NS_XSD "double");
   static const ZixStringView xsd_integer = ZIX_STATIC_STRING(NS_XSD "integer");
 
-  *dest = push_node(reader, SERD_LITERAL, zix_empty_string());
+  *dest = push_node_head(reader, SERD_LITERAL);
 
   SerdStatus st          = SERD_SUCCESS;
   int        c           = peek_byte(reader);
@@ -759,7 +759,7 @@ read_iri(SerdReader* const reader, Ref* const dest, bool* const ate_dot)
     return read_IRIREF(reader, dest);
   }
 
-  *dest = push_node(reader, SERD_CURIE, zix_empty_string());
+  *dest = push_node_head(reader, SERD_CURIE);
   return read_PrefixedName(reader, *dest, ate_dot);
 }
 
@@ -771,7 +771,7 @@ read_literal(SerdReader* const    reader,
              SerdNodeFlags* const flags,
              bool* const          ate_dot)
 {
-  *dest = push_node(reader, SERD_LITERAL, zix_empty_string());
+  *dest = push_node_head(reader, SERD_LITERAL);
 
   SerdStatus st = read_String(reader, *dest, flags);
   if (st) {
@@ -814,7 +814,7 @@ read_verb(SerdReader* const reader, Ref* const dest)
     return read_IRIREF(reader, dest);
   }
 
-  Ref p = push_node(reader, SERD_CURIE, zix_empty_string());
+  Ref p = push_node_head(reader, SERD_CURIE);
 
   // Try to read as a prefixed name
   bool       ate_dot = false;
@@ -852,11 +852,13 @@ read_BLANK_NODE_LABEL(SerdReader* const reader,
     return SERD_BAD_SYNTAX;
   }
 
-  const Ref ref = *dest = push_node(
-    reader,
-    SERD_BLANK,
-    reader->bprefix ? zix_substring(reader->bprefix, reader->bprefix_len)
-                    : zix_empty_string());
+  const Ref ref = *dest = push_node_head(reader, SERD_BLANK);
+  if (reader->bprefix) {
+    push_bytes(reader,
+               ref,
+               (const uint8_t*)reader->bprefix,
+               (unsigned)reader->bprefix_len);
+  }
 
   int c = peek_byte(reader); // First: (PN_CHARS | '_' | [0-9])
   if (is_digit(c) || c == '_') {
@@ -953,7 +955,7 @@ read_named_object(SerdReader* const reader,
   static const ZixStringView xsd_boolean = ZIX_STATIC_STRING(NS_XSD "boolean");
 
   // Try to read as a prefixed name
-  const Ref  o  = push_node(reader, SERD_CURIE, zix_empty_string());
+  const Ref  o  = push_node_head(reader, SERD_CURIE);
   SerdStatus st = read_PrefixedName(reader, o, ate_dot);
 
   if (st == SERD_FAILURE) {
@@ -1153,8 +1155,7 @@ read_collection(SerdReader* const reader, ReadContext ctx, Ref* const dest)
 
   /* The order of node allocation here is necessarily not in stack order,
      so we create two nodes and recycle them throughout. */
-  Ref n1 = push_node_padded(
-    reader, genid_size(reader), SERD_BLANK, zix_empty_string());
+  Ref n1   = push_node_space(reader, genid_size(reader), SERD_BLANK);
   Ref n2   = 0;
   Ref node = n1;
   Ref rest = 0;
@@ -1308,7 +1309,7 @@ read_prefixID(SerdReader* const reader, const bool sparql, const bool token)
 
   read_ws_star(reader);
 
-  Ref  name    = push_node(reader, SERD_LITERAL, zix_empty_string());
+  Ref  name    = push_node_head(reader, SERD_LITERAL);
   bool ate_dot = false;
   st           = read_PN_PREFIX(reader, name, &ate_dot);
   if (st > SERD_FAILURE || ate_dot || eat_byte_check(reader, ':')) {
