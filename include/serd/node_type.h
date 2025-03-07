@@ -9,8 +9,8 @@
 SERD_BEGIN_DECLS
 
 /**
-   @defgroup serd_node_type Type
-   @ingroup serd_node
+   @defgroup serd_node_type Node Type
+   @ingroup serd_data
    @{
 */
 

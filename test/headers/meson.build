@@ -16,7 +16,6 @@ if get_option('warning_level') == 'everything'
   elif cc.get_id() == 'gcc'
     header_c_suppressions += [
       '-Wno-padded',
-      '-Wno-unused-const-variable',
     ]
   elif cc.get_id() == 'msvc'
     header_c_suppressions += [

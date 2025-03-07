@@ -6,6 +6,7 @@ serd (1.1.1) unstable; urgency=medium
   * Add fine-grained control of writer syntax features
   * Add support for URI percent encoding and decoding
   * Add support for converting literals to canonical form
+  * Add support for more XSD datatypes
   * Add support for parsing variables
   * Add support for writing terse output with minimal newlines
   * Avoid writing redundant base and prefix directives
@@ -23,6 +24,7 @@ serd (1.1.1) unstable; urgency=medium
   * Remove useless character counting from API
   * Replace SerdChunk with ZixStringView
   * Replace serdi with more focused tools
+  * Replace standalone node API with nodes collection
   * Report input document location in writer error messages
   * Rework logging system
   * Simplify statement flags
@@ -34,7 +36,7 @@ serd (1.1.1) unstable; urgency=medium
   * Use char* for strings in public API
   * Write canonical NTriples 1.1 by default
 
- -- David Robillard <d@drobilla.net>  Fri, 22 Aug 2025 21:30:55 +0000
+ -- David Robillard <d@drobilla.net>  Fri, 22 Aug 2025 21:31:15 +0000
 
 serd (0.32.5) unstable; urgency=medium
 
