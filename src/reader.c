@@ -14,15 +14,18 @@
 #include <serd/file_uri.h>
 #include <serd/node.h>
 #include <serd/node_type.h>
+#include <serd/object_view.h>
 #include <serd/reader.h>
 #include <serd/sink.h>
 #include <serd/status.h>
 #include <serd/stream.h>
 #include <serd/syntax.h>
+#include <serd/token_view.h>
 #include <serd/world.h>
 #include <zix/allocator.h>
 #include <zix/string_view.h>
 
+#include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -155,6 +158,21 @@ pop_node(SerdReader* const reader, const Ref ref)
   return 0;
 }
 
+static SerdTokenView
+stack_token_view(SerdReader* const reader, const Ref ref)
+{
+  static const SerdTokenView no_tok = {SERD_LITERAL, {"", 0U}};
+
+  const SerdNode* const object = deref(reader, ref);
+  if (!object) {
+    return no_tok;
+  }
+
+  const SerdTokenView view = {object->type,
+                              {(const char*)(object + 1U), object->n_bytes}};
+  return view;
+}
+
 SerdStatus
 emit_statement(SerdReader* const reader,
                const ReadContext ctx,
@@ -162,16 +180,26 @@ emit_statement(SerdReader* const reader,
                const Ref         d,
                const Ref         l)
 {
-  const SerdStatus st = !reader->statement_func
-                          ? SERD_SUCCESS
-                          : reader->statement_func(reader->handle,
-                                                   *ctx.flags,
-                                                   deref(reader, ctx.graph),
-                                                   deref(reader, ctx.subject),
-                                                   deref(reader, ctx.predicate),
-                                                   deref(reader, o),
-                                                   deref(reader, d),
-                                                   deref(reader, l));
+  SerdStatus st   = SERD_UNKNOWN_ERROR;
+  const Ref  meta = d ? d : l;
+
+  SerdNode* const object = deref(reader, o);
+  if (object) {
+    const SerdObjectView object_view = {
+      object->type,
+      {(const char*)(object + 1U), object->n_bytes},
+      object->flags,
+      stack_token_view(reader, meta)};
+
+    st = reader->statement_func
+           ? reader->statement_func(reader->handle,
+                                    *ctx.flags,
+                                    stack_token_view(reader, ctx.graph),
+                                    stack_token_view(reader, ctx.subject),
+                                    stack_token_view(reader, ctx.predicate),
+                                    object_view)
+           : SERD_SUCCESS;
+  }
 
   *ctx.flags = 0U;
   return st;

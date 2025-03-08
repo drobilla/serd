@@ -175,20 +175,20 @@ w_err(SerdWriter* const writer, const SerdStatus st, const char* const fmt, ...)
 }
 
 static void
-copy_node(ZixAllocator* const   allocator,
-          SerdNode* const       dst,
-          const SerdNode* const src)
+set_current(ZixAllocator* const allocator,
+            SerdNode* const     dst,
+            const SerdTokenView src)
 {
-  assert(src->buf);
-  const size_t new_size = src->n_bytes + 1U;
+  const size_t new_size = src.string.length + 1U;
   char* const  new_buf =
     (char*)zix_realloc(allocator, (char*)dst->buf, new_size);
   if (new_buf) {
     dst->buf     = new_buf;
-    dst->n_bytes = src->n_bytes;
-    dst->flags   = src->flags;
-    dst->type    = src->type;
-    memcpy(new_buf, src->buf, new_size);
+    dst->n_bytes = src.string.length;
+    dst->flags   = 0U;
+    dst->type    = src.type;
+    memcpy(new_buf, src.string.data, src.string.length);
+    new_buf[src.string.length] = '\0';
   }
 }
 
@@ -211,27 +211,60 @@ is_set(const SerdWriter* const writer, const SerdField field)
 static bool
 current_field_equals(const SerdWriter* const writer,
                      const SerdField         field,
-                     const SerdNode* const   node)
+                     const SerdTokenView     token)
 {
   assert(field != SERD_OBJECT);
   const SerdNode* const current = current_field(writer, field);
-  return current && node && serd_node_equals(current, node);
+  return current && current->type == token.type &&
+         zix_string_view_equals(serd_node_string_view(current), token.string);
+}
+
+static SerdNode
+new_token(ZixAllocator* const allocator,
+          const SerdNodeType  type,
+          const ZixStringView string)
+{
+  char* const buf = (char*)zix_calloc(allocator, string.length + 1U, 1U);
+  if (buf) {
+    memcpy(buf, string.data, string.length);
+    buf[string.length] = '\0';
+  }
+
+  const SerdNode node = {buf, string.length, 0U, type};
+  return node;
 }
 
 static void
-push_context(SerdWriter* const writer,
-             const ContextType type,
-             const SerdNode    graph,
-             const SerdNode    subject,
-             const SerdNode    predicate)
+push_context(SerdWriter* const   writer,
+             const ContextType   type,
+             const SerdTokenView graph,
+             const SerdTokenView subject,
+             const SerdTokenView predicate)
 {
+  ZixAllocator* const allocator = serd_world_allocator(writer->world);
+
   // Push the current context to the stack
   void* const top = serd_stack_push(&writer->anon_stack, sizeof(WriteContext));
   *(WriteContext*)top = writer->context;
 
   // Update the current context
-  const WriteContext current = {type, false, graph, subject, predicate};
-  writer->context            = current;
+
+  const WriteContext current = {
+    type,
+    false,
+
+    serd_field_supports(SERD_GRAPH, graph.type)
+      ? new_token(allocator, graph.type, graph.string)
+      : SERD_NODE_NULL,
+
+    new_token(allocator, subject.type, subject.string),
+
+    serd_field_supports(SERD_PREDICATE, predicate.type)
+      ? new_token(allocator, predicate.type, predicate.string)
+      : SERD_NODE_NULL,
+  };
+
+  writer->context = current;
 }
 
 static void
@@ -432,11 +465,9 @@ write_uri_text(SerdWriter* const writer,
 }
 
 ZIX_NODISCARD static SerdStatus
-ewrite_uri(SerdWriter* const writer,
-           const char* const utf8,
-           const size_t      n_bytes)
+ewrite_uri(SerdWriter* const writer, const ZixStringView string)
 {
-  const VariableResult r = write_uri_text(writer, utf8, n_bytes);
+  const VariableResult r = write_uri_text(writer, string.data, string.length);
 
   return (r.status == SERD_BAD_WRITE || !(writer->flags & SERD_WRITE_LAX))
            ? r.status
@@ -477,11 +508,11 @@ write_lname_escape(SerdWriter* const writer,
 }
 
 ZIX_NODISCARD static SerdStatus
-write_lname(SerdWriter* const writer,
-            const char* const str,
-            const size_t      n_bytes)
+write_lname(SerdWriter* const writer, const ZixStringView string)
 {
-  SerdStatus st = SERD_SUCCESS;
+  const uint8_t* const utf8    = (const uint8_t*)string.data;
+  const size_t         n_bytes = string.length;
+  SerdStatus           st      = SERD_SUCCESS;
   if (!n_bytes) {
     return st;
   }
@@ -490,15 +521,13 @@ write_lname(SerdWriter* const writer,
      handle the first character separately, and take care to only escape where
      necessary. */
 
-  const uint8_t* utf8 = (const uint8_t*)str;
-
   // Write first character
   uint8_t   first_size = 0U;
   const int first      = (int)parse_utf8_char(utf8, &first_size);
   if (is_PN_CHARS_U(first) || first == ':' || is_digit(first)) {
     TRY(st, esink(utf8, first_size, writer));
   } else {
-    TRY(st, write_lname_escape(writer, str, first_size));
+    TRY(st, write_lname_escape(writer, string.data, first_size));
   }
 
   // Write middle and last characters
@@ -509,7 +538,7 @@ write_lname(SerdWriter* const writer,
     if (is_PN_CHARS(c) || c == ':' || (c == '.' && (i + 1U < n_bytes))) {
       TRY(st, esink(&utf8[i], c_size, writer));
     } else {
-      TRY(st, write_lname_escape(writer, &str[i], c_size));
+      TRY(st, write_lname_escape(writer, &string.data[i], c_size));
     }
 
     i += c_size;
@@ -814,7 +843,7 @@ write_IRIREF(SerdWriter* const writer, const ZixStringView string)
   // Write the string and return early if resolution is disabled or impossible
   const SerdURIView base_uri = serd_env_base_uri_view(writer->env);
   if ((writer->flags & SERD_WRITE_UNRESOLVED) || !base_uri.scheme.length) {
-    TRY(st, ewrite_uri(writer, string.data, string.length));
+    TRY(st, ewrite_uri(writer, string));
     return esink(">", 1, writer);
   }
 
@@ -851,9 +880,9 @@ write_uri(SerdWriter* const writer, const ZixStringView string)
     ZixStringView suffix = {NULL, 0};
     if (has_scheme && !(writer->flags & SERD_WRITE_UNQUALIFIED) &&
         !serd_env_qualify(writer->env, string, &prefix, &suffix)) {
-      TRY(st, write_lname(writer, prefix.data, prefix.length));
+      TRY(st, write_lname(writer, prefix));
       TRY(st, esink(":", 1, writer));
-      return write_lname(writer, suffix.data, suffix.length);
+      return write_lname(writer, suffix);
     }
   }
 
@@ -888,23 +917,22 @@ write_curie(SerdWriter* const writer, const ZixStringView curie)
 
   if (!supports_abbrev(writer)) {
     TRY(st, esink("<", 1, writer));
-    TRY(st, ewrite_uri(writer, prefix.data, prefix.length));
-    TRY(st, ewrite_uri(writer, suffix.data, suffix.length));
+    TRY(st, ewrite_uri(writer, prefix));
+    TRY(st, ewrite_uri(writer, suffix));
     TRY(st, esink(">", 1, writer));
   } else {
-    TRY(st, write_lname(writer, curie.data, curie.length));
+    TRY(st, write_lname(writer, curie));
   }
 
   return st;
 }
 
 ZIX_NODISCARD static SerdStatus
-write_iri(SerdWriter* const   writer,
-          const SerdNodeType  type,
-          const ZixStringView string)
+write_iri(SerdWriter* const writer, const SerdTokenView node)
 {
-  return (type == SERD_URI) ? write_uri(writer, string)
-                            : write_curie(writer, string);
+  return (node.type == SERD_URI)     ? write_uri(writer, node.string)
+         : (node.type == SERD_CURIE) ? write_curie(writer, node.string)
+                                     : SERD_BAD_ARG;
 }
 
 ZIX_NODISCARD static SerdStatus
@@ -940,7 +968,7 @@ write_literal(SerdWriter* const   writer,
     st = esink(meta.string.data, meta.string.length, writer);
   } else if (node_flags & SERD_HAS_DATATYPE) {
     TRY(st, esink("^^", 2, writer));
-    st = write_iri(writer, meta.type, meta.string);
+    st = write_iri(writer, meta);
   }
 
   return st;
@@ -989,14 +1017,12 @@ ZIX_NODISCARD static SerdStatus
 write_token(SerdWriter* const        writer,
             const SerdField          field,
             const SerdStatementFlags statement_flags,
-            const SerdNode* const    node)
+            const SerdTokenView      node)
 {
-  const ZixStringView node_string = serd_node_string_view(node);
-
-  return (node->type == SERD_URI)     ? write_uri(writer, node_string)
-         : (node->type == SERD_CURIE) ? write_curie(writer, node_string)
-         : (node->type == SERD_BLANK)
-           ? write_blank(writer, node_string, field, statement_flags)
+  return (node.type == SERD_URI)     ? write_uri(writer, node.string)
+         : (node.type == SERD_CURIE) ? write_curie(writer, node.string)
+         : (node.type == SERD_BLANK)
+           ? write_blank(writer, node.string, field, statement_flags)
            : SERD_BAD_ARG;
 }
 
@@ -1005,33 +1031,27 @@ write_object(SerdWriter* const        writer,
              const SerdStatementFlags statement_flags,
              const SerdObjectView     node)
 {
-  const ZixStringView string = node.string;
-  const SerdNodeType  type   = node.type;
-
-  return (type == SERD_LITERAL)
-           ? write_literal(writer, string, node.flags, node.meta)
-         : (type == SERD_URI)   ? write_uri(writer, string)
-         : (type == SERD_CURIE) ? write_curie(writer, string)
-         : (type == SERD_BLANK)
-           ? write_blank(writer, string, SERD_OBJECT, statement_flags)
-           : SERD_SUCCESS;
+  return (node.type == SERD_LITERAL)
+           ? write_literal(writer, node.string, node.flags, node.meta)
+           : write_token(writer,
+                         SERD_OBJECT,
+                         statement_flags,
+                         serd_object_token_view(node));
 }
 
 ZIX_NODISCARD static SerdStatus
-write_pred(SerdWriter* const writer, const SerdNode* const pred)
+write_pred(SerdWriter* writer, const SerdTokenView pred)
 {
   ZixAllocator* const allocator = serd_world_allocator(writer->world);
 
-  SerdStatus st =
-    token_equals_symbol(serd_node_token_view(pred), RDF_TYPE)
-      ? esink("a", 1, writer)
-      : write_iri(writer, pred->type, serd_node_string_view(pred));
+  SerdStatus st = token_equals_symbol(pred, RDF_TYPE) ? esink("a", 1, writer)
+                                                      : write_iri(writer, pred);
 
   if (!st) {
     st = write_sep(writer, SEP_P_O);
   }
 
-  copy_node(allocator, &writer->context.predicate, pred);
+  set_current(allocator, &writer->context.predicate, pred);
   writer->context.comma_indented = false;
   return st;
 }
@@ -1077,17 +1097,12 @@ terminate_context(SerdWriter* const writer)
 SerdStatus
 serd_writer_write_statement(SerdWriter* const        writer,
                             const SerdStatementFlags flags,
-                            const SerdNode* const    graph,
-                            const SerdNode* const    subject,
-                            const SerdNode* const    predicate,
-                            const SerdNode* const    object,
-                            const SerdNode* const    datatype,
-                            const SerdNode* const    lang)
+                            SerdTokenView            graph,
+                            const SerdTokenView      subject,
+                            const SerdTokenView      predicate,
+                            const SerdObjectView     object)
 {
   assert(writer);
-  assert(subject);
-  assert(predicate);
-  assert(object);
 
   ZixAllocator* const allocator = serd_world_allocator(writer->world);
 
@@ -1098,10 +1113,11 @@ serd_writer_write_statement(SerdWriter* const        writer,
   }
 
   // Refuse to write incoherent statements
-  if (!serd_field_supports(SERD_SUBJECT, subject->type) ||
-      !serd_field_supports(SERD_PREDICATE, predicate->type) ||
-      object->type == SERD_NOTHING || !object->buf ||
-      (datatype && datatype->buf && lang && lang->buf) ||
+  if (!serd_field_supports(SERD_SUBJECT, subject.type) ||
+      !serd_field_supports(SERD_PREDICATE, predicate.type) ||
+      object.type == SERD_NOTHING ||
+      ((object.flags & SERD_HAS_DATATYPE) &&
+       (object.flags & SERD_HAS_LANGUAGE)) ||
       ((flags & SERD_ANON_S) && (flags & SERD_LIST_S)) ||
       ((flags & SERD_EMPTY_S) && (flags & SERD_LIST_S)) ||
       ((flags & SERD_ANON_O) && (flags & SERD_LIST_O)) ||
@@ -1109,22 +1125,15 @@ serd_writer_write_statement(SerdWriter* const        writer,
     return SERD_BAD_ARG;
   }
 
-  const SerdObjectView object_view = serd_object_view(
-    object->type,
-    serd_node_string_view(object),
-    object->flags,
-    (datatype && datatype->buf) ? serd_node_token_view(datatype)
-    : (lang && lang->buf)       ? serd_node_token_view(lang)
-                                : serd_no_token());
-
   // Simple case: write a line of NTriples or NQuads
   if (writer->syntax == SERD_NTRIPLES || writer->syntax == SERD_NQUADS) {
     TRY(st, write_token(writer, SERD_SUBJECT, flags, subject));
     TRY(st, esink(" ", 1, writer));
     TRY(st, write_token(writer, SERD_PREDICATE, flags, predicate));
     TRY(st, esink(" ", 1, writer));
-    TRY(st, write_object(writer, flags, object_view));
-    if (writer->syntax == SERD_NQUADS && graph) {
+    TRY(st, write_object(writer, flags, object));
+    if (writer->syntax == SERD_NQUADS &&
+        serd_field_supports(SERD_GRAPH, graph.type)) {
       TRY(st, esink(" ", 1, writer));
       TRY(st, write_token(writer, SERD_GRAPH, flags, graph));
     }
@@ -1132,30 +1141,32 @@ serd_writer_write_statement(SerdWriter* const        writer,
     return SERD_SUCCESS;
   }
 
+  if (writer->syntax == SERD_TURTLE) {
+    graph = serd_no_token();
+  }
+
   // Separate graphs if necessary
-  const SerdNode* const out_graph = writer->syntax == SERD_TRIG ? graph : NULL;
-  if ((out_graph && !current_field_equals(writer, SERD_GRAPH, out_graph)) ||
-      (!out_graph && is_set(writer, SERD_GRAPH))) {
+  const bool has_graph = serd_field_supports(SERD_GRAPH, graph.type);
+  if ((has_graph && !current_field_equals(writer, SERD_GRAPH, graph)) ||
+      (!has_graph && is_set(writer, SERD_GRAPH))) {
     TRY(st, terminate_context(writer));
     reset_context(writer, RESET_GRAPH | RESET_INDENT);
     TRY(st, write_newline(writer));
-    if (out_graph) {
-      TRY(st, write_token(writer, SERD_GRAPH, flags, out_graph));
+    if (has_graph) {
+      TRY(st, write_token(writer, SERD_GRAPH, flags, graph));
       TRY(st, write_sep(writer, SEP_GRAPH_L));
-      copy_node(allocator, &writer->context.graph, out_graph);
+      set_current(allocator, &writer->context.graph, graph);
     }
   }
 
   if (writer->context.type == CTX_LIST) {
     // Continue a list
-    if (token_equals_symbol(serd_node_token_view(predicate), RDF_FIRST) &&
-        token_equals_symbol(serd_node_token_view(object), RDF_NIL)) {
+    if (token_equals_symbol(predicate, RDF_FIRST) &&
+        token_equals_symbol(serd_object_token_view(object), RDF_NIL)) {
       return esink("()", 2, writer);
     }
 
-    TRY_FAILING(st,
-                write_list_next(
-                  writer, flags, serd_node_token_view(predicate), object_view));
+    TRY_FAILING(st, write_list_next(writer, flags, predicate, object));
 
     if (st == SERD_FAILURE) { // Reached end of list
       pop_context(writer);
@@ -1183,7 +1194,7 @@ serd_writer_write_statement(SerdWriter* const        writer,
       TRY(st, write_pred(writer, predicate));
     }
 
-    TRY(st, write_object(writer, flags, object_view));
+    TRY(st, write_object(writer, flags, object));
 
   } else {
     // No abbreviation
@@ -1206,13 +1217,13 @@ serd_writer_write_statement(SerdWriter* const        writer,
     }
 
     reset_context(writer, 0U);
-    copy_node(allocator, &writer->context.subject, subject);
+    set_current(allocator, &writer->context.subject, subject);
 
     if (!(flags & SERD_LIST_S)) {
       TRY(st, write_pred(writer, predicate));
     }
 
-    TRY(st, write_object(writer, flags, object_view));
+    TRY(st, write_object(writer, flags, object));
   }
 
   if (flags & (SERD_ANON_S | SERD_LIST_S)) {
@@ -1220,26 +1231,26 @@ serd_writer_write_statement(SerdWriter* const        writer,
     const bool is_list = (flags & SERD_LIST_S);
     push_context(writer,
                  is_list ? CTX_LIST : CTX_BLANK,
-                 serd_node_copy(allocator, out_graph),
-                 serd_node_copy(allocator, subject),
-                 is_list ? SERD_NODE_NULL
-                         : serd_node_copy(allocator, predicate));
+                 graph,
+                 subject,
+                 is_list ? serd_no_token() : predicate);
   }
 
   if (flags & (SERD_ANON_O | SERD_LIST_O)) {
     // Push context for anonymous or list object if necessary
+    const SerdTokenView anon_subject = {object.type, object.string};
     push_context(writer,
                  (flags & SERD_LIST_O) ? CTX_LIST : CTX_BLANK,
-                 serd_node_copy(allocator, out_graph),
-                 serd_node_copy(allocator, object),
-                 SERD_NODE_NULL);
+                 graph,
+                 anon_subject,
+                 serd_no_token());
   }
 
   return st;
 }
 
 SerdStatus
-serd_writer_end_anon(SerdWriter* const writer, const SerdNode* const node)
+serd_writer_end_anon(SerdWriter* const writer, const ZixStringView label)
 {
   assert(writer);
 
@@ -1264,6 +1275,7 @@ serd_writer_end_anon(SerdWriter* const writer, const SerdNode* const node)
   TRY(st, write_sep(writer, SEP_ANON_R));
   pop_context(writer);
 
+  const SerdTokenView node = {SERD_BLANK, label};
   if (is_set(writer, SERD_PREDICATE) &&
       current_field_equals(writer, SERD_SUBJECT, node)) {
     // Now-finished anonymous node is the new subject with no other context
@@ -1352,33 +1364,19 @@ serd_writer_chop_blank_prefix(SerdWriter* const writer,
 }
 
 SerdStatus
-serd_writer_set_base_uri(SerdWriter* const writer, const SerdNode* const uri)
+serd_writer_set_base_uri(SerdWriter* const writer, const ZixStringView uri)
 {
-  assert(writer);
-
-  if (uri && uri->type != SERD_URI) {
-    return SERD_BAD_ARG;
-  }
-
-  if (!uri) {
-    SerdStatus st0 = serd_env_set_base_uri(writer->env, zix_empty_string());
-    SerdStatus st1 = reset_context(writer, RESET_GRAPH | RESET_INDENT);
-    return st0 ? st0 : st1;
-  }
-
-  if (zix_string_view_equals(serd_env_base_uri_string(writer->env),
-                             serd_node_string_view(uri))) {
+  if (zix_string_view_equals(serd_env_base_uri_string(writer->env), uri)) {
     return SERD_SUCCESS;
   }
 
-  const SerdNode* const base_uri_node = uri;
-  SerdStatus            st =
-    serd_env_set_base_uri(writer->env, serd_node_string_view(base_uri_node));
+  SerdStatus st = serd_env_set_base_uri(writer->env, uri);
   if (st) {
     return st == SERD_NO_CHANGE ? SERD_SUCCESS : st;
   }
 
-  if (uri && (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG)) {
+  if (uri.length &&
+      (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG)) {
     const bool had_subject = writer->context.subject.type;
     TRY(st, terminate_context(writer));
     if (had_subject) {
@@ -1386,7 +1384,7 @@ serd_writer_set_base_uri(SerdWriter* const writer, const SerdNode* const uri)
     }
 
     TRY(st, esink("@base <", 7, writer));
-    TRY(st, esink(uri->buf, uri->n_bytes, writer));
+    TRY(st, esink(uri.data, uri.length, writer));
     TRY(st, esink(">", 1, writer));
     TRY(st, write_sep(writer, SEP_STOP));
   }
@@ -1414,23 +1412,13 @@ serd_writer_set_root_uri(SerdWriter* const writer, const ZixStringView uri)
 }
 
 SerdStatus
-serd_writer_set_prefix(SerdWriter* const     writer,
-                       const SerdNode* const name,
-                       const SerdNode* const uri)
+serd_writer_set_prefix(SerdWriter* const   writer,
+                       const ZixStringView name,
+                       const ZixStringView uri)
 {
   assert(writer);
-  assert(name);
-  assert(name->buf);
-  assert(uri);
-  assert(uri->buf);
 
-  const char* const name_str = name->buf;
-  const size_t      name_len = name->n_bytes;
-  const char* const uri_str  = uri->buf;
-  const size_t      uri_len  = uri->n_bytes;
-
-  SerdStatus st = serd_env_set_prefix(
-    writer->env, serd_node_string_view(name), serd_node_string_view(uri));
+  SerdStatus st = serd_env_set_prefix(writer->env, name, uri);
   if (st) {
     return st == SERD_NO_CHANGE ? SERD_SUCCESS : st;
   }
@@ -1443,9 +1431,9 @@ serd_writer_set_prefix(SerdWriter* const     writer,
     }
 
     TRY(st, esink("@prefix ", 8, writer));
-    TRY(st, esink(name_str, name_len, writer));
+    TRY(st, esink(name.data, name.length, writer));
     TRY(st, esink(": <", 3, writer));
-    TRY(st, ewrite_uri(writer, uri_str, uri_len));
+    TRY(st, ewrite_uri(writer, uri));
     TRY(st, esink(">", 1, writer));
     TRY(st, write_sep(writer, SEP_STOP));
   }

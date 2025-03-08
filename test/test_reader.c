@@ -5,12 +5,13 @@
 
 #include "failing_allocator.h"
 
-#include <serd/node.h>
+#include <serd/object_view.h>
 #include <serd/reader.h>
 #include <serd/statement_flags.h>
 #include <serd/status.h>
 #include <serd/stream.h>
 #include <serd/syntax.h>
+#include <serd/token_view.h>
 #include <serd/world.h>
 #include <zix/allocator.h>
 #include <zix/filesystem.h>
@@ -35,7 +36,7 @@ typedef struct {
 } ReaderTest;
 
 static SerdStatus
-base_sink(void* const handle, const SerdNode* const uri)
+base_sink(void* const handle, const ZixStringView uri)
 {
   (void)uri;
 
@@ -45,9 +46,9 @@ base_sink(void* const handle, const SerdNode* const uri)
 }
 
 static SerdStatus
-prefix_sink(void* const           handle,
-            const SerdNode* const name,
-            const SerdNode* const uri)
+prefix_sink(void* const         handle,
+            const ZixStringView name,
+            const ZixStringView uri)
 {
   (void)name;
   (void)uri;
@@ -58,22 +59,18 @@ prefix_sink(void* const           handle,
 }
 
 static SerdStatus
-statement_sink(void* const           handle,
-               SerdStatementFlags    flags,
-               const SerdNode* const graph,
-               const SerdNode* const subject,
-               const SerdNode* const predicate,
-               const SerdNode* const object,
-               const SerdNode* const object_datatype,
-               const SerdNode* const object_lang)
+statement_sink(void* const          handle,
+               SerdStatementFlags   flags,
+               const SerdTokenView  graph,
+               const SerdTokenView  subject,
+               const SerdTokenView  predicate,
+               const SerdObjectView object)
 {
   (void)flags;
   (void)graph;
   (void)subject;
   (void)predicate;
   (void)object;
-  (void)object_datatype;
-  (void)object_lang;
 
   ReaderTest* const rt = (ReaderTest*)handle;
   ++rt->n_statement;
@@ -81,9 +78,9 @@ statement_sink(void* const           handle,
 }
 
 static SerdStatus
-end_sink(void* const handle, const SerdNode* const node)
+end_sink(void* const handle, const ZixStringView label)
 {
-  (void)node;
+  (void)label;
 
   ReaderTest* const rt = (ReaderTest*)handle;
   ++rt->n_end;

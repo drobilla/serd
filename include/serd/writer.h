@@ -6,11 +6,12 @@
 
 #include <serd/attributes.h>
 #include <serd/env.h>
-#include <serd/node.h>
+#include <serd/object_view.h>
 #include <serd/statement_flags.h>
 #include <serd/status.h>
 #include <serd/stream.h>
 #include <serd/syntax.h>
+#include <serd/token_view.h>
 #include <serd/world.h>
 #include <zix/attributes.h>
 #include <zix/string_view.h>
@@ -90,8 +91,7 @@ serd_writer_chop_blank_prefix(SerdWriter* ZIX_NONNULL  writer,
    Note this function can be safely casted to #SerdBaseFunc.
 */
 SERD_API SerdStatus
-serd_writer_set_base_uri(SerdWriter* ZIX_NONNULL      writer,
-                         const SerdNode* ZIX_NULLABLE uri);
+serd_writer_set_base_uri(SerdWriter* ZIX_NONNULL writer, ZixStringView uri);
 
 /**
    Set the current root URI.
@@ -112,9 +112,9 @@ serd_writer_set_root_uri(SerdWriter* ZIX_NONNULL writer, ZixStringView uri);
    Note this function can be safely casted to #SerdPrefixFunc.
 */
 SERD_API SerdStatus
-serd_writer_set_prefix(SerdWriter* ZIX_NONNULL     writer,
-                       const SerdNode* ZIX_NONNULL name,
-                       const SerdNode* ZIX_NONNULL uri);
+serd_writer_set_prefix(SerdWriter* ZIX_NONNULL writer,
+                       ZixStringView           name,
+                       ZixStringView           uri);
 
 /**
    Write a statement.
@@ -122,14 +122,12 @@ serd_writer_set_prefix(SerdWriter* ZIX_NONNULL     writer,
    Note this function can be safely casted to #SerdStatementFunc.
 */
 SERD_API SerdStatus
-serd_writer_write_statement(SerdWriter* ZIX_NONNULL      writer,
-                            SerdStatementFlags           flags,
-                            const SerdNode* ZIX_NULLABLE graph,
-                            const SerdNode* ZIX_NONNULL  subject,
-                            const SerdNode* ZIX_NONNULL  predicate,
-                            const SerdNode* ZIX_NONNULL  object,
-                            const SerdNode* ZIX_NULLABLE datatype,
-                            const SerdNode* ZIX_NULLABLE lang);
+serd_writer_write_statement(SerdWriter* ZIX_NONNULL writer,
+                            SerdStatementFlags      flags,
+                            SerdTokenView           graph,
+                            SerdTokenView           subject,
+                            SerdTokenView           predicate,
+                            SerdObjectView          object);
 
 /**
    Mark the end of an anonymous node's description.
@@ -137,8 +135,7 @@ serd_writer_write_statement(SerdWriter* ZIX_NONNULL      writer,
    Note this function can be safely casted to #SerdEndFunc.
 */
 SERD_API SerdStatus
-serd_writer_end_anon(SerdWriter* ZIX_NONNULL      writer,
-                     const SerdNode* ZIX_NULLABLE node);
+serd_writer_end_anon(SerdWriter* ZIX_NONNULL writer, ZixStringView label);
 
 /**
    Finish a write.

@@ -8,11 +8,13 @@
 
 #include <serd/buffer.h>
 #include <serd/env.h>
-#include <serd/node.h>
+#include <serd/node_flags.h>
 #include <serd/node_type.h>
+#include <serd/object_view.h>
 #include <serd/statement_flags.h>
 #include <serd/status.h>
 #include <serd/syntax.h>
+#include <serd/token_view.h>
 #include <serd/world.h>
 #include <serd/writer.h>
 #include <zix/allocator.h>
@@ -25,6 +27,7 @@
 #include <string.h>
 
 #define NS_EG "http://example.org/"
+#define NS_RDF "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 
 static size_t
 null_sink(const void* const buf, const size_t len, void* const stream)
@@ -38,19 +41,12 @@ null_sink(const void* const buf, const size_t len, void* const stream)
 static SerdStatus
 write_statement(SerdWriter* const        writer,
                 const SerdStatementFlags flags,
-                const SerdNodeType       subject_type,
-                const ZixStringView      subject_string,
-                const SerdNodeType       predicate_type,
-                const ZixStringView      predicate_string,
-                const SerdNodeType       object_type,
-                const ZixStringView      object_string)
+                const SerdTokenView      subject,
+                const SerdTokenView      predicate,
+                const SerdObjectView     object)
 {
-  SerdNode s = serd_node_from_string(subject_type, subject_string.data);
-  SerdNode p = serd_node_from_string(predicate_type, predicate_string.data);
-  SerdNode o = serd_node_from_string(object_type, object_string.data);
-
   return serd_writer_write_statement(
-    writer, flags, NULL, &s, &p, &o, NULL, NULL);
+    writer, flags, serd_no_token(), subject, predicate, object);
 }
 
 static void
@@ -92,21 +88,21 @@ test_write_long_literal(void)
     serd_writer_new(world, SERD_TURTLE, 0U, env, serd_buffer_sink, &buffer);
   assert(writer);
 
-  assert(!write_statement(writer,
-                          0U,
-                          SERD_URI,
-                          zix_string(NS_EG "s"),
-                          SERD_URI,
-                          zix_string(NS_EG "p"),
-                          SERD_LITERAL,
-                          zix_string("hello \"\"\"world\"\"\"!")));
+  const SerdTokenView  s = {SERD_URI, zix_string(NS_EG "s")};
+  const SerdTokenView  p = {SERD_URI, zix_string(NS_EG "p")};
+  const SerdObjectView o = {SERD_LITERAL,
+                            zix_string("hello \"\"\"world\"\"\"!"),
+                            SERD_HAS_QUOTE,
+                            serd_no_token()};
+
+  assert(!write_statement(writer, 0U, s, p, o));
   assert(!serd_writer_finish(writer));
 
   static const char* const expected =
     "<http://example.org/s>\n"
     "\t<http://example.org/p> \"\"\"hello \"\"\\\"world\"\"\\\"!\"\"\" .\n";
 
-  char* const out = serd_buffer_sink_finish(&buffer);
+  const char* const out = serd_buffer_sink_finish(&buffer);
   assert(expect_string(out, expected));
   zix_free(buffer.allocator, buffer.buf);
 
@@ -126,36 +122,27 @@ test_write_nested_anon(void)
     serd_writer_new(world, SERD_TURTLE, 0U, env, serd_buffer_sink, &buffer);
   assert(writer);
 
-  SerdNode s0  = serd_node_from_string(SERD_URI, NS_EG "s0");
-  SerdNode p0  = serd_node_from_string(SERD_URI, NS_EG "p0");
-  SerdNode b0  = serd_node_from_string(SERD_BLANK, "b0");
-  SerdNode p1  = serd_node_from_string(SERD_URI, NS_EG "p1");
-  SerdNode b1  = serd_node_from_string(SERD_BLANK, "b1");
-  SerdNode p2  = serd_node_from_string(SERD_URI, NS_EG "p2");
-  SerdNode o2  = serd_node_from_string(SERD_URI, NS_EG "o2");
-  SerdNode p3  = serd_node_from_string(SERD_URI, NS_EG "p3");
-  SerdNode p4  = serd_node_from_string(SERD_URI, NS_EG "p4");
-  SerdNode o4  = serd_node_from_string(SERD_URI, NS_EG "o4");
-  SerdNode nil = serd_node_from_string(
-    SERD_URI, "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil");
-
-  assert(!serd_writer_write_statement(
-    writer, SERD_ANON_O, NULL, &s0, &p0, &b0, NULL, NULL));
-
-  assert(!serd_writer_write_statement(
-    writer, SERD_ANON_O, NULL, &b0, &p1, &b1, NULL, NULL));
+  const SerdTokenView s0  = {SERD_URI, zix_string(NS_EG "s0")};
+  const SerdTokenView p0  = {SERD_URI, zix_string(NS_EG "p0")};
+  const SerdTokenView b0  = {SERD_BLANK, zix_string(NS_EG "b0")};
+  const SerdTokenView p1  = {SERD_URI, zix_string(NS_EG "p1")};
+  const SerdTokenView b1  = {SERD_BLANK, zix_string(NS_EG "b1")};
+  const SerdTokenView p2  = {SERD_URI, zix_string(NS_EG "p2")};
+  const SerdTokenView o2  = {SERD_URI, zix_string(NS_EG "o2")};
+  const SerdTokenView p3  = {SERD_URI, zix_string(NS_EG "p3")};
+  const SerdTokenView p4  = {SERD_URI, zix_string(NS_EG "p4")};
+  const SerdTokenView o4  = {SERD_URI, zix_string(NS_EG "o4")};
+  const SerdTokenView nil = {SERD_URI, zix_string(NS_RDF "nil")};
 
   assert(
-    !serd_writer_write_statement(writer, 0U, NULL, &b1, &p2, &o2, NULL, NULL));
-
+    !write_statement(writer, SERD_ANON_O, s0, p0, serd_token_object_view(b0)));
   assert(
-    !serd_writer_write_statement(writer, 0U, NULL, &b1, &p3, &nil, NULL, NULL));
-
-  assert(!serd_writer_end_anon(writer, &b1));
-  assert(
-    !serd_writer_write_statement(writer, 0U, NULL, &b0, &p4, &o4, NULL, NULL));
-
-  assert(!serd_writer_end_anon(writer, &b0));
+    !write_statement(writer, SERD_ANON_O, b0, p1, serd_token_object_view(b1)));
+  assert(!write_statement(writer, 0U, b1, p2, serd_token_object_view(o2)));
+  assert(!write_statement(writer, 0U, b1, p3, serd_token_object_view(nil)));
+  assert(!serd_writer_end_anon(writer, b1.string));
+  assert(!write_statement(writer, 0U, b0, p4, serd_token_object_view(o4)));
+  assert(!serd_writer_end_anon(writer, b0.string));
   assert(!serd_writer_finish(writer));
 
   static const char* const expected =
@@ -188,30 +175,28 @@ test_writer_cleanup(void)
     serd_writer_new(world, SERD_TURTLE, 0U, env, null_sink, NULL);
   assert(writer);
 
-  SerdNode s = serd_node_from_string(SERD_URI, NS_EG "s");
-  SerdNode p = serd_node_from_string(SERD_URI, NS_EG "p");
+  char buf[12] = {'b', '0', '\0'};
 
-  char     o_buf[12] = {'b', '0', '\0'};
-  SerdNode o         = serd_node_from_string(SERD_BLANK, o_buf);
+  SerdTokenView s = {SERD_URI, zix_string(NS_EG "s")};
+  SerdTokenView p = {SERD_URI, zix_string(NS_EG "p")};
+  SerdTokenView o = {SERD_BLANK, zix_string(buf)};
 
-  st = serd_writer_write_statement(
-    writer, SERD_ANON_O, NULL, &s, &p, &o, NULL, NULL);
-
+  st = write_statement(writer, SERD_ANON_O, s, p, serd_token_object_view(o));
   assert(!st);
 
   // Write the start of several nested anonymous objects
   for (unsigned i = 1U; !st && i < 9U; ++i) {
-    char next_o_buf[12] = {'\0'};
-    snprintf(next_o_buf, sizeof(next_o_buf), "b%u", i);
+    char temp[12] = {'\0'};
+    snprintf(temp, sizeof(temp), "b%u", i);
 
-    SerdNode next_o = serd_node_from_string(SERD_BLANK, next_o_buf);
+    const SerdTokenView next_o = {SERD_BLANK, zix_string(temp)};
 
-    st = serd_writer_write_statement(
-      writer, SERD_ANON_O, NULL, &o, &p, &next_o, NULL, NULL);
-
+    st = write_statement(
+      writer, SERD_ANON_O, o, p, serd_token_object_view(next_o));
     assert(!st);
 
-    memcpy(o_buf, next_o_buf, sizeof(o_buf));
+    memcpy(buf, temp, sizeof(buf));
+    o.string = zix_string(buf);
   }
 
   // Finish writing without terminating nodes
@@ -219,7 +204,7 @@ test_writer_cleanup(void)
   assert(!st);
 
   // Set the base to an empty URI
-  st = serd_writer_set_base_uri(writer, NULL);
+  st = serd_writer_set_base_uri(writer, zix_string(""));
   assert(!st);
 
   // Free (which could leak if the writer doesn't clean up the stack properly)
@@ -239,27 +224,18 @@ test_write_bad_anon_stack(void)
     serd_writer_new(world, SERD_TURTLE, 0U, env, null_sink, NULL);
   assert(writer);
 
-  st = write_statement(writer,
-                       SERD_ANON_O,
-                       SERD_URI,
-                       zix_string(NS_EG "s"),
-                       SERD_URI,
-                       zix_string(NS_EG "p"),
-                       SERD_BLANK,
-                       zix_string("b0"));
+  SerdTokenView  s  = {SERD_URI, zix_string(NS_EG "s")};
+  SerdTokenView  p  = {SERD_URI, zix_string(NS_EG "p")};
+  SerdObjectView b0 = {SERD_BLANK, zix_string(NS_EG "b0"), 0U, serd_no_token()};
+  SerdTokenView  b1 = {SERD_BLANK, zix_string(NS_EG "b1")};
+  SerdObjectView b2 = {SERD_BLANK, zix_string(NS_EG "b2"), 0U, serd_no_token()};
+
+  st = write_statement(writer, SERD_ANON_O, s, p, b0);
   assert(!st);
 
   // (missing call to end the anonymous node here)
 
-  st = write_statement(writer,
-                       SERD_ANON_O,
-                       SERD_BLANK,
-                       zix_string("b1"),
-                       SERD_URI,
-                       zix_string(NS_EG "p"),
-                       SERD_BLANK,
-                       zix_string("b2"));
-
+  st = write_statement(writer, SERD_ANON_O, b1, p, b2);
   assert(st == SERD_BAD_ARG);
 
   st = serd_writer_finish(writer);
@@ -283,35 +259,19 @@ check_strict_write(const SerdWriterFlags flags)
   static const uint8_t bad_short_buf[] = {0xFF, 0x90, 'h', 'i', 0};
   static const uint8_t bad_long_buf[]  = {'e', '\n', 'r', 0xFF, 0x90, 0};
 
-  assert(write_statement(writer,
-                         0U,
-                         SERD_URI,
-                         zix_string(NS_EG "s"),
-                         SERD_URI,
-                         zix_string(NS_EG "p"),
-                         SERD_URI,
-                         zix_string((const char*)bad_uri_buf)) ==
-         SERD_BAD_TEXT);
+  const SerdObjectView bad_uri = {
+    SERD_URI, zix_string((const char*)bad_uri_buf), 0U, serd_no_token()};
+  const SerdObjectView bad_short_lit = {
+    SERD_LITERAL, zix_string((const char*)bad_short_buf), 0U, serd_no_token()};
+  const SerdObjectView bad_long_lit = {
+    SERD_LITERAL, zix_string((const char*)bad_long_buf), 0U, serd_no_token()};
 
-  assert(write_statement(writer,
-                         0U,
-                         SERD_URI,
-                         zix_string(NS_EG "s"),
-                         SERD_URI,
-                         zix_string(NS_EG "p"),
-                         SERD_LITERAL,
-                         zix_string((const char*)bad_short_buf)) ==
-         SERD_BAD_TEXT);
+  const SerdTokenView s = {SERD_URI, zix_string(NS_EG "s")};
+  const SerdTokenView p = {SERD_URI, zix_string(NS_EG "p")};
 
-  assert(write_statement(writer,
-                         0U,
-                         SERD_URI,
-                         zix_string(NS_EG "s"),
-                         SERD_URI,
-                         zix_string(NS_EG "p"),
-                         SERD_LITERAL,
-                         zix_string((const char*)bad_long_buf)) ==
-         SERD_BAD_TEXT);
+  assert(write_statement(writer, 0U, s, p, bad_uri) == SERD_BAD_TEXT);
+  assert(write_statement(writer, 0U, s, p, bad_short_lit) == SERD_BAD_TEXT);
+  assert(write_statement(writer, 0U, s, p, bad_long_lit) == SERD_BAD_TEXT);
 
   serd_writer_free(writer);
   serd_env_free(env);
@@ -343,19 +303,14 @@ test_write_error(void)
   SerdWorld* const world = serd_world_new(NULL);
   SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
 
+  const SerdTokenView  u = {SERD_URI, uri_string};
+  const SerdObjectView o = {u.type, u.string, 0U, serd_no_token()};
+
   SerdWriter* const writer =
     serd_writer_new(world, SERD_TURTLE, 0U, env, error_sink, NULL);
   assert(writer);
 
-  const SerdStatus st = write_statement(writer,
-                                        0U,
-                                        SERD_URI,
-                                        uri_string,
-                                        SERD_URI,
-                                        uri_string,
-                                        SERD_URI,
-                                        uri_string);
-
+  const SerdStatus st = write_statement(writer, 0U, u, u, o);
   assert(st == SERD_BAD_WRITE);
 
   serd_writer_free(writer);
@@ -374,9 +329,8 @@ test_buffer_sink(void)
     serd_writer_new(world, SERD_TURTLE, 0U, env, serd_buffer_sink, &buffer);
   assert(writer);
 
-  const SerdNode base =
-    serd_node_from_string(SERD_URI, "http://example.org/base");
-  assert(!serd_writer_set_base_uri(writer, &base));
+  assert(
+    !serd_writer_set_base_uri(writer, zix_string("http://example.org/base")));
   assert(!serd_writer_finish(writer));
 
   char* out = serd_buffer_sink_finish(&buffer);
@@ -398,11 +352,12 @@ test_write_nothing_node(void)
     world, SERD_TURTLE, SERD_WRITE_UNRESOLVED, env, null_sink, NULL);
   assert(writer);
 
-  SerdNode s = serd_node_from_string(SERD_URI, "");
-  SerdNode p = serd_node_from_string(SERD_URI, "http://example.org/pred");
-  SerdNode o = serd_node_from_string(SERD_NOTHING, "");
-  assert(serd_writer_write_statement(writer, 0, NULL, &s, &p, &o, NULL, NULL) ==
-         SERD_BAD_ARG);
+  const SerdTokenView  s = {SERD_URI, zix_string("")};
+  const SerdTokenView  p = {SERD_URI, zix_string(NS_EG "pred")};
+  const SerdObjectView o = {
+    SERD_NOTHING, zix_string(NS_EG "o"), 0U, {SERD_LITERAL, zix_string("")}};
+
+  assert(write_statement(writer, 0U, s, p, o) == SERD_BAD_ARG);
 
   serd_writer_free(writer);
   serd_env_free(env);
@@ -420,14 +375,12 @@ test_write_empty_syntax(void)
     world, SERD_SYNTAX_EMPTY, 0U, env, serd_buffer_sink, &buffer);
   assert(writer);
 
-  assert(!write_statement(writer,
-                          0U,
-                          SERD_URI,
-                          zix_string(NS_EG "s"),
-                          SERD_URI,
-                          zix_string(NS_EG "p"),
-                          SERD_CURIE,
-                          zix_string("eg:o")));
+  const SerdTokenView  s = {SERD_URI, zix_string(NS_EG "s")};
+  const SerdTokenView  p = {SERD_URI, zix_string(NS_EG "p")};
+  const SerdObjectView o = {
+    SERD_URI, zix_string(NS_EG "o"), 0U, serd_no_token()};
+
+  assert(!write_statement(writer, 0U, s, p, o));
 
   const char* const out = serd_buffer_sink_finish(&buffer);
   assert(out);
@@ -455,18 +408,16 @@ check_pname_escape(const char* const lname, const char* const expected)
 
   serd_env_set_prefix(env, zix_string("eg"), zix_string(prefix));
 
-  SerdNode s = serd_node_from_string(SERD_URI, NS_EG "s");
-  SerdNode p = serd_node_from_string(SERD_URI, NS_EG "p");
+  const SerdTokenView s = {SERD_URI, zix_string(NS_EG "s")};
+  const SerdTokenView p = {SERD_URI, zix_string(NS_EG "p")};
 
   char* const uri = (char*)calloc(1, prefix_len + strlen(lname) + 1);
   assert(uri);
   memcpy(uri, prefix, prefix_len + 1);
   memcpy(uri + prefix_len, lname, strlen(lname) + 1);
 
-  SerdNode o = serd_node_from_string(SERD_URI, uri);
-
-  assert(
-    !serd_writer_write_statement(writer, 0U, NULL, &s, &p, &o, NULL, NULL));
+  const SerdObjectView o = {SERD_URI, zix_string(uri), 0U, serd_no_token()};
+  assert(!write_statement(writer, 0U, s, p, o));
   assert(!serd_writer_finish(writer));
   free(uri);
 
