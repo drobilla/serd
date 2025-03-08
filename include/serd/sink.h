@@ -5,10 +5,12 @@
 #define SERD_SINK_H
 
 #include <serd/attributes.h>
-#include <serd/node.h>
+#include <serd/object_view.h>
 #include <serd/statement_flags.h>
 #include <serd/status.h>
+#include <serd/token_view.h>
 #include <zix/attributes.h>
+#include <zix/string_view.h>
 
 SERD_BEGIN_DECLS
 
@@ -23,32 +25,29 @@ SERD_BEGIN_DECLS
 
    Called whenever the base URI of the serialisation changes.
 */
-typedef SerdStatus (*SerdBaseFunc)(void* ZIX_UNSPECIFIED       handle,
-                                   const SerdNode* ZIX_NONNULL uri);
+typedef SerdStatus (*SerdBaseFunc)(void* ZIX_UNSPECIFIED handle,
+                                   ZixStringView         uri);
 
 /**
    Sink function for namespace definitions.
 
    Called whenever a prefix is defined in the serialisation.
 */
-typedef SerdStatus (*SerdPrefixFunc)(void* ZIX_UNSPECIFIED       handle,
-                                     const SerdNode* ZIX_NONNULL name,
-                                     const SerdNode* ZIX_NONNULL uri);
+typedef SerdStatus (*SerdPrefixFunc)(void* ZIX_UNSPECIFIED handle,
+                                     ZixStringView         name,
+                                     ZixStringView         uri);
 
 /**
    Sink function for statements.
 
    Called for every RDF statement in the serialisation.
 */
-typedef SerdStatus (*SerdStatementFunc)(
-  void* ZIX_UNSPECIFIED        handle,
-  SerdStatementFlags           flags,
-  const SerdNode* ZIX_NULLABLE graph,
-  const SerdNode* ZIX_NONNULL  subject,
-  const SerdNode* ZIX_NONNULL  predicate,
-  const SerdNode* ZIX_NONNULL  object,
-  const SerdNode* ZIX_NULLABLE object_datatype,
-  const SerdNode* ZIX_NULLABLE object_lang);
+typedef SerdStatus (*SerdStatementFunc)(void* ZIX_UNSPECIFIED handle,
+                                        SerdStatementFlags    flags,
+                                        SerdTokenView         graph,
+                                        SerdTokenView         subject,
+                                        SerdTokenView         predicate,
+                                        SerdObjectView        object);
 
 /**
    Sink function for anonymous node end markers.
@@ -57,8 +56,8 @@ typedef SerdStatus (*SerdStatementFunc)(
    will no longer be referred to by any future statements (so the anonymous
    node is finished).
 */
-typedef SerdStatus (*SerdEndFunc)(void* ZIX_UNSPECIFIED       handle,
-                                  const SerdNode* ZIX_NONNULL node);
+typedef SerdStatus (*SerdEndFunc)(void* ZIX_UNSPECIFIED handle,
+                                  ZixStringView         label);
 
 /**
    @}

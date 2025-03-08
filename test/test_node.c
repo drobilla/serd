@@ -210,6 +210,10 @@ test_node_equals(void)
   assert(!serd_node_equals(&lhs, &qnode));
   assert(serd_node_equals(&lhs, &lhs));
 
+  SerdNode qnode_copy = serd_node_copy(NULL, &qnode);
+  assert(serd_node_equals(&qnode, &qnode_copy));
+  serd_node_free(NULL, &qnode_copy);
+
   SerdNode null_copy = serd_node_copy(NULL, &SERD_NODE_NULL);
   assert(serd_node_equals(&SERD_NODE_NULL, &null_copy));
 }

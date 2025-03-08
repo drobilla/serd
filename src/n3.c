@@ -1030,7 +1030,8 @@ read_anon(SerdReader* const reader,
     *ctx.flags = old_flags;
 
     if (reader->end_func) {
-      st = reader->end_func(reader->handle, deref(reader, *dest));
+      st = reader->end_func(reader->handle,
+                            serd_node_string_view(deref(reader, *dest)));
     }
   }
 
@@ -1390,7 +1391,9 @@ read_base(SerdReader* const reader, const bool sparql, const bool token)
   Ref uri = 0;
   TRY(st, read_IRIREF(reader, &uri));
   if (reader->base_func) {
-    TRY(st, reader->base_func(reader->handle, deref(reader, uri)));
+    TRY(st,
+        reader->base_func(reader->handle,
+                          serd_node_string_view(deref(reader, uri))));
   }
   pop_node(reader, uri);
 
@@ -1428,8 +1431,9 @@ read_prefixID(SerdReader* const reader, const bool sparql, const bool token)
   TRY(st, read_IRIREF(reader, &uri));
 
   if (reader->prefix_func) {
-    st = reader->prefix_func(
-      reader->handle, deref(reader, name), deref(reader, uri));
+    st = reader->prefix_func(reader->handle,
+                             serd_node_string_view(deref(reader, name)),
+                             serd_node_string_view(deref(reader, uri)));
   }
 
   pop_node(reader, uri);
