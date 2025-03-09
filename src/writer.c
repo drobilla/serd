@@ -21,6 +21,7 @@
 #include <serd/statement_flags.h>
 #include <serd/status.h>
 #include <serd/stream.h>
+#include <serd/string_pair_view.h>
 #include <serd/syntax.h>
 #include <serd/token_view.h>
 #include <serd/uri.h>
@@ -663,12 +664,11 @@ get_xsd_name(const SerdEnv* const env, const SerdTokenView datatype)
   }
 
   if (datatype.type == SERD_CURIE) {
-    ZixStringView prefix;
-    ZixStringView suffix;
     // We can be a bit lazy/presumptive here due to grammar limitations
-    if (!serd_env_expand(env, datatype.string, &prefix, &suffix)) {
-      if (!strcmp(prefix.data, NS_XSD)) {
-        return suffix.data;
+    SerdStringPairView pair = {{"", 0}, {"", 0}};
+    if (!serd_env_expand(env, datatype.string, &pair)) {
+      if (!strcmp(pair.prefix.data, NS_XSD)) {
+        return pair.suffix.data;
       }
     }
   }
@@ -707,15 +707,14 @@ write_uri(SerdWriter* const writer, const ZixStringView string)
       return esink("()", 2, writer);
     }
 
-    ZixStringView prefix = {NULL, 0};
-    ZixStringView suffix = {NULL, 0};
+    SerdStringPairView pair = {{"", 0}, {"", 0}};
     if (has_scheme && !(writer->flags & SERD_WRITE_UNQUALIFIED) &&
-        !serd_env_qualify(writer->env, string, &prefix, &suffix) &&
-        is_name(prefix.data, prefix.length) &&
-        is_name(suffix.data, suffix.length)) {
-      TRY(st, write_lname(writer, prefix));
+        !serd_env_qualify(writer->env, string, &pair) &&
+        is_name(pair.prefix.data, pair.prefix.length) &&
+        is_name(pair.suffix.data, pair.suffix.length)) {
+      TRY(st, write_lname(writer, pair.prefix));
       TRY(st, esink(":", 1, writer));
-      return ewrite_uri(writer, suffix);
+      return ewrite_uri(writer, pair.suffix);
     }
   }
 
@@ -754,24 +753,23 @@ write_uri(SerdWriter* const writer, const ZixStringView string)
 ZIX_NODISCARD static SerdStatus
 write_curie(SerdWriter* const writer, const ZixStringView curie)
 {
-  ZixStringView prefix = {NULL, 0};
-  ZixStringView suffix = {NULL, 0};
-  SerdStatus    st     = SERD_SUCCESS;
+  SerdStringPairView pair = {{"", 0}, {"", 0}};
+  SerdStatus         st   = SERD_SUCCESS;
 
   // In fast-and-loose Turtle/TriG mode CURIEs are simply passed through
   const bool fast =
     (writer->flags & (SERD_WRITE_UNQUALIFIED | SERD_WRITE_UNRESOLVED));
 
   if (!supports_abbrev(writer) || !fast) {
-    if ((st = serd_env_expand(writer->env, curie, &prefix, &suffix))) {
+    if ((st = serd_env_expand(writer->env, curie, &pair))) {
       return w_err(writer, st, "undefined namespace prefix '%s'", curie.data);
     }
   }
 
   if (!supports_abbrev(writer)) {
     TRY(st, esink("<", 1, writer));
-    TRY(st, ewrite_uri(writer, prefix));
-    TRY(st, ewrite_uri(writer, suffix));
+    TRY(st, ewrite_uri(writer, pair.prefix));
+    TRY(st, ewrite_uri(writer, pair.suffix));
     TRY(st, esink(">", 1, writer));
   } else {
     TRY(st, write_lname(writer, curie));

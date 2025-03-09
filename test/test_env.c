@@ -8,6 +8,7 @@
 
 #include <serd/env.h>
 #include <serd/status.h>
+#include <serd/string_pair_view.h>
 #include <serd/uri.h>
 #include <zix/string_view.h>
 
@@ -141,14 +142,11 @@ static void
 test_null(void)
 {
   // Accessors are tolerant to a NULL env for convenience
-  ZixStringView prefix = {NULL, 0U};
-  ZixStringView suffix = {NULL, 0U};
+  SerdStringPairView pair = {{"", 0}, {"", 0}};
   assert(!serd_uri_has_scheme(serd_env_base_uri_view(NULL)));
   assert(!serd_env_prefix_uri(NULL, zix_string("name")).length);
-  assert(serd_env_expand(NULL, zix_empty_string(), &prefix, &suffix) ==
-         SERD_BAD_ARG);
-  assert(serd_env_qualify(NULL, zix_empty_string(), &prefix, &suffix) ==
-         SERD_BAD_ARG);
+  assert(serd_env_expand(NULL, zix_empty_string(), &pair) == SERD_BAD_ARG);
+  assert(serd_env_qualify(NULL, zix_empty_string(), &pair) == SERD_BAD_ARG);
 }
 
 static void
@@ -228,13 +226,12 @@ test_expand_curie(void)
 
   assert(!serd_env_set_prefix(env, name, eg));
 
-  ZixStringView prefix = zix_empty_string();
-  ZixStringView suffix = zix_empty_string();
-  assert(!serd_env_expand(env, curie, &prefix, &suffix));
-  assert(prefix.data);
-  assert(expect_string_view(prefix, NS_EG));
-  assert(suffix.data);
-  assert(expect_string_view(suffix, "foo"));
+  SerdStringPairView pair = {{"", 0}, {"", 0}};
+  assert(!serd_env_expand(env, curie, &pair));
+  assert(pair.prefix.data);
+  assert(expect_string_view(pair.prefix, NS_EG));
+  assert(pair.suffix.data);
+  assert(expect_string_view(pair.suffix, "foo"));
 
   serd_env_free(env);
 }
@@ -247,15 +244,14 @@ test_expand_bad_curie(void)
 
   SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
 
-  ZixStringView prefix = zix_empty_string();
-  ZixStringView suffix = zix_empty_string();
-  assert(serd_env_expand(env, prefixed, &prefix, &suffix) == SERD_BAD_CURIE);
-  assert(!prefix.length);
-  assert(!suffix.length);
+  SerdStringPairView pair = {{"", 0}, {"", 0}};
+  assert(serd_env_expand(env, prefixed, &pair) == SERD_BAD_CURIE);
+  assert(!pair.prefix.length);
+  assert(!pair.suffix.length);
 
-  assert(serd_env_expand(env, unprefixed, &prefix, &suffix) == SERD_BAD_CURIE);
-  assert(!prefix.length);
-  assert(!suffix.length);
+  assert(serd_env_expand(env, unprefixed, &pair) == SERD_BAD_CURIE);
+  assert(!pair.prefix.length);
+  assert(!pair.suffix.length);
 
   serd_env_free(env);
 }
@@ -269,16 +265,14 @@ test_qualify(void)
 
   assert(!serd_env_set_prefix(env, zix_string("eg"), eg));
 
-  ZixStringView prefix = zix_empty_string();
-  ZixStringView suffix = zix_empty_string();
-  assert(!serd_env_qualify(env, zix_string(NS_EG "foo"), &prefix, &suffix));
-  assert(prefix.length == 2);
-  assert(expect_string_view(prefix, "eg"));
-  assert(suffix.length == 3);
-  assert(expect_string_view(suffix, "foo"));
+  SerdStringPairView pair = {zix_empty_string(), zix_empty_string()};
+  assert(!serd_env_qualify(env, zix_string(NS_EG "foo"), &pair));
+  assert(pair.prefix.length == 2);
+  assert(expect_string_view(pair.prefix, "eg"));
+  assert(pair.suffix.length == 3);
+  assert(expect_string_view(pair.suffix, "foo"));
 
-  assert(serd_env_qualify(
-           env, zix_string("http://drobilla.net/bar"), &prefix, &suffix) ==
+  assert(serd_env_qualify(env, zix_string("http://drobilla.net/bar"), &pair) ==
          SERD_FAILURE);
 
   serd_env_free(env);

@@ -5,6 +5,7 @@
 
 #include <serd/status.h>
 #include <serd/string.h>
+#include <serd/string_pair_view.h>
 #include <serd/uri.h>
 #include <zix/allocator.h>
 #include <zix/attributes.h>
@@ -227,14 +228,11 @@ serd_env_set_prefix(SerdEnv* const      env,
 }
 
 SerdStatus
-serd_env_qualify(const SerdEnv* const env,
-                 const ZixStringView  uri,
-                 ZixStringView* const prefix,
-                 ZixStringView* const suffix)
+serd_env_qualify(const SerdEnv* const      env,
+                 const ZixStringView       uri,
+                 SerdStringPairView* const out)
 {
-  assert(prefix);
-  assert(suffix);
-
+  assert(out);
   if (!env) {
     return SERD_BAD_ARG;
   }
@@ -246,10 +244,10 @@ serd_env_qualify(const SerdEnv* const env,
       const char* uri_str    = uri.data;
 
       if (!strncmp(uri_str, prefix_str, prefix_uri.length)) {
-        prefix->data   = env->prefixes[i].name.data;
-        prefix->length = env->prefixes[i].name.length;
-        suffix->data   = uri_str + prefix_uri.length;
-        suffix->length = uri.length - prefix_uri.length;
+        out->prefix.data   = env->prefixes[i].name.data;
+        out->prefix.length = env->prefixes[i].name.length;
+        out->suffix.data   = uri_str + prefix_uri.length;
+        out->suffix.length = uri.length - prefix_uri.length;
         return SERD_SUCCESS;
       }
     }
@@ -259,14 +257,11 @@ serd_env_qualify(const SerdEnv* const env,
 }
 
 SerdStatus
-serd_env_expand(const SerdEnv* const env,
-                const ZixStringView  curie,
-                ZixStringView* const uri_prefix,
-                ZixStringView* const uri_suffix)
+serd_env_expand(const SerdEnv* const      env,
+                const ZixStringView       curie,
+                SerdStringPairView* const out)
 {
-  assert(uri_prefix);
-  assert(uri_suffix);
-
+  assert(out);
   if (!env) {
     return SERD_BAD_ARG;
   }
@@ -280,10 +275,10 @@ serd_env_expand(const SerdEnv* const env,
   const size_t            name_len = (size_t)(colon - str);
   const SerdPrefix* const prefix   = serd_env_find(env, str, name_len);
   if (prefix) {
-    uri_prefix->data   = prefix->uri.data;
-    uri_prefix->length = prefix->uri.length;
-    uri_suffix->data   = colon + 1U;
-    uri_suffix->length = curie.length - name_len - 1U;
+    out->prefix.data   = prefix->uri.data;
+    out->prefix.length = prefix->uri.length;
+    out->suffix.data   = colon + 1U;
+    out->suffix.length = curie.length - name_len - 1U;
     return SERD_SUCCESS;
   }
 
