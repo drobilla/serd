@@ -7,8 +7,14 @@
 #include "failing_allocator.h"
 
 #include <serd/env.h>
+#include <serd/event.h>
+#include <serd/node_type.h>
+#include <serd/object_view.h>
+#include <serd/sink.h>
+#include <serd/statement_view.h>
 #include <serd/status.h>
 #include <serd/string_pair_view.h>
+#include <serd/token_view.h>
 #include <serd/uri.h>
 #include <zix/string_view.h>
 
@@ -149,6 +155,14 @@ test_null(void)
   assert(serd_env_qualify(NULL, zix_empty_string(), &pair) == SERD_BAD_ARG);
 }
 
+static SerdStatus
+count_prefixes(void* const handle, const SerdEvent* const event)
+{
+  *(size_t*)handle += event->type == SERD_EVENT_PREFIX;
+
+  return SERD_SUCCESS;
+}
+
 static void
 test_base_uri(void)
 {
@@ -211,6 +225,12 @@ test_set_prefix(void)
   // Test setting a prefix from strings
   assert(
     !serd_env_set_prefix(env, zix_string("eg.3"), zix_string(NS_EG "three")));
+
+  // Count prefixes
+  size_t         count = 0;
+  const SerdSink sink  = {&count, count_prefixes};
+  serd_env_write_prefixes(env, &sink);
+  assert(count == 3);
 
   serd_env_free(env);
 }
@@ -278,6 +298,64 @@ test_qualify(void)
   serd_env_free(env);
 }
 
+static void
+test_sink(void)
+{
+  static ZixStringView base = ZIX_STATIC_STRING(NS_EG);
+  static ZixStringView name = ZIX_STATIC_STRING("eg");
+  static ZixStringView uri  = ZIX_STATIC_STRING(NS_EG "uri");
+
+  SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
+
+  const SerdSink* const sink = serd_env_sink(env);
+
+  assert(!serd_sink_event(
+    sink,
+    serd_statement_event(0U,
+                         serd_triple_view(serd_token_view(SERD_URI, uri),
+                                          serd_token_view(SERD_URI, uri),
+                                          serd_token_object_view(
+                                            serd_token_view(SERD_URI, uri))))));
+
+  assert(!serd_sink_event(sink, serd_base_event(base)));
+  assert(expect_string_view(serd_env_base_uri_string(env), NS_EG));
+
+  assert(!serd_sink_event(sink, serd_prefix_event(name, uri)));
+
+  const ZixStringView eg_prefix = serd_env_prefix_uri(env, zix_string("eg"));
+  assert(zix_string_view_equals(eg_prefix, uri));
+
+  assert(expect_string_view(serd_env_base_uri_string(env), NS_EG));
+
+  serd_env_free(env);
+}
+
+static SerdStatus
+on_describe_event(void* const handle, const SerdEvent* const event)
+{
+  (void)handle;
+  (void)event;
+  return SERD_BAD_LITERAL; // A status not used internally by the reader
+}
+
+static void
+test_describe(void)
+{
+  static ZixStringView name = ZIX_STATIC_STRING("eg");
+  static ZixStringView uri  = ZIX_STATIC_STRING(NS_EG "uri");
+
+  SerdEnv* const        env      = serd_env_new(NULL, uri);
+  const SerdSink* const env_sink = serd_env_sink(env);
+
+  assert(!serd_sink_event(env_sink, serd_prefix_event(name, uri)));
+
+  const SerdSink   describe_sink = {NULL, on_describe_event};
+  const SerdStatus st            = serd_env_write_prefixes(env, &describe_sink);
+  assert(st == SERD_BAD_LITERAL);
+
+  serd_env_free(env);
+}
+
 int
 main(void)
 {
@@ -292,5 +370,7 @@ main(void)
   test_expand_curie();
   test_expand_bad_curie();
   test_qualify();
+  test_sink();
+  test_describe();
   return 0;
 }

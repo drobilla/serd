@@ -5,6 +5,7 @@
 #define SERD_ENV_H
 
 #include <serd/attributes.h>
+#include <serd/sink.h>
 #include <serd/status.h>
 #include <serd/string_pair_view.h>
 #include <serd/uri.h>
@@ -37,6 +38,10 @@ serd_env_new(ZixAllocator* ZIX_NULLABLE allocator, ZixStringView base_uri);
 /// Free an environment allocated by #serd_env_new
 SERD_API void
 serd_env_free(SerdEnv* ZIX_NULLABLE env);
+
+/// Return a sink interface that updates `env` on base URI or prefix changes
+SERD_CONST_API const SerdSink* ZIX_NONNULL
+serd_env_sink(SerdEnv* ZIX_NONNULL env);
 
 /**
    Set the current base URI.
@@ -120,6 +125,19 @@ SERD_API SerdStatus
 serd_env_expand(const SerdEnv* ZIX_NULLABLE     env,
                 ZixStringView                   curie,
                 SerdStringPairView* ZIX_NONNULL out);
+
+/**
+   Write the prefixes in an environment as events to a sink.
+
+   Writing stops if any error is encountered.
+
+   @param env Environment with prefixes to write.
+   @param sink Sink for #SERD_EVENT_PREFIX events.
+   @return The last status returned by the sink's event function.
+*/
+SERD_API SerdStatus
+serd_env_write_prefixes(const SerdEnv* ZIX_NONNULL  env,
+                        const SerdSink* ZIX_NONNULL sink);
 
 /**
    @}

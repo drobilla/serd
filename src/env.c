@@ -3,6 +3,8 @@
 
 #include <serd/env.h>
 
+#include <serd/event.h>
+#include <serd/sink.h>
 #include <serd/status.h>
 #include <serd/string.h>
 #include <serd/string_pair_view.h>
@@ -20,6 +22,7 @@ typedef struct {
 } SerdPrefix;
 
 struct SerdEnvImpl {
+  SerdSink      sink;
   ZixAllocator* allocator;
   SerdPrefix*   prefixes;
   size_t        n_prefixes;
@@ -27,11 +30,14 @@ struct SerdEnvImpl {
   SerdURIView   base_uri;
 };
 
+static SerdStatus
+serd_env_on_event(void* handle, const SerdEvent* event);
+
 static SerdString
 copy_string_view(ZixAllocator* const allocator, const ZixStringView view)
 {
-  const SerdString string = {view.length,
-                             zix_string_view_copy(allocator, view)};
+  char* const      data   = zix_string_view_copy(allocator, view);
+  const SerdString string = {data ? view.length : 0U, data};
   return string;
 }
 
@@ -42,7 +48,10 @@ serd_env_new(ZixAllocator* const allocator, const ZixStringView base_uri)
     (SerdEnv*)zix_calloc(allocator, 1, sizeof(struct SerdEnvImpl));
 
   if (env) {
-    env->allocator = allocator;
+    env->sink.handle   = env;
+    env->sink.on_event = serd_env_on_event;
+    env->allocator     = allocator;
+
     if (base_uri.length) {
       if (serd_env_set_base_uri(env, base_uri)) {
         zix_free(allocator, env);
@@ -68,6 +77,12 @@ serd_env_free(SerdEnv* const env)
   zix_free(env->allocator, env->prefixes);
   zix_free(env->allocator, env->base_uri_string.data);
   zix_free(env->allocator, env);
+}
+
+const SerdSink*
+serd_env_sink(SerdEnv* const env)
+{
+  return &env->sink;
 }
 
 ZixStringView
@@ -283,4 +298,35 @@ serd_env_expand(const SerdEnv* const      env,
   }
 
   return SERD_BAD_CURIE;
+}
+
+SerdStatus
+serd_env_write_prefixes(const SerdEnv* const env, const SerdSink* const sink)
+{
+  assert(env);
+  assert(sink);
+
+  SerdStatus st = SERD_SUCCESS;
+
+  for (size_t i = 0; !st && i < env->n_prefixes; ++i) {
+    st = serd_sink_event(
+      sink,
+      serd_prefix_event(serd_string_view(env->prefixes[i].name),
+                        serd_string_view(env->prefixes[i].uri)));
+  }
+
+  return st;
+}
+
+static SerdStatus
+serd_env_on_event(void* const handle, const SerdEvent* const event)
+{
+  SerdEnv* const env = (SerdEnv*)handle;
+
+  return (event->type == SERD_EVENT_BASE)
+           ? serd_env_set_base_uri(env, event->body.uri)
+         : (event->type == SERD_EVENT_PREFIX)
+           ? serd_env_set_prefix(
+               env, event->body.prefix.prefix, event->body.prefix.suffix)
+           : SERD_SUCCESS;
 }
