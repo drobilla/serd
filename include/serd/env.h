@@ -6,6 +6,7 @@
 
 #include <serd/attributes.h>
 #include <serd/status.h>
+#include <serd/string_pair_view.h>
 #include <serd/uri.h>
 #include <zix/allocator.h>
 #include <zix/attributes.h>
@@ -91,19 +92,16 @@ serd_env_prefix_uri(const SerdEnv* ZIX_NULLABLE env, ZixStringView name);
 
    @param uri URI to qualify.
 
-   @param[out] prefix On success, pointed to a prefix name which is valid until
-   `env` is mutated.
-
-   @param[out] suffix On success, pointed to a suffix of `uri`.
+   @param[out] out On success, points to a prefix name in `env` and a suffix of
+   `uri`.  The prefix is valid until `env` is mutated.
 
    @return #SERD_SUCCESS, #SERD_BAD_ARG if `env` is null, or #SERD_FAILURE if
    `uri` can't be qualified.
 */
 SERD_API SerdStatus
-serd_env_qualify(const SerdEnv* ZIX_NULLABLE env,
-                 ZixStringView               uri,
-                 ZixStringView* ZIX_NONNULL  prefix,
-                 ZixStringView* ZIX_NONNULL  suffix);
+serd_env_qualify(const SerdEnv* ZIX_NULLABLE     env,
+                 ZixStringView                   uri,
+                 SerdStringPairView* ZIX_NONNULL out);
 
 /**
    Expand `curie` into a URI prefix and suffix if possible.
@@ -112,19 +110,16 @@ serd_env_qualify(const SerdEnv* ZIX_NULLABLE env,
 
    @param curie CURIE to expand into a URI.
 
-   @param[out] prefix On success, pointed to a URI prefix which is valid until
-   `env` is mutated.
-
-   @param[out] suffix On success, pointed to a suffix of `curie`.
+   @param[out] out On success, points to a URI prefix and suffix in `env` and
+   `curie`.  The prefix is valid until `env` is mutated.
 
    @return #SERD_SUCCESS, #SERD_BAD_ARG if `env` is null, or #SERD_BAD_CURIE if
    the prefix wasn't found.
 */
 SERD_API SerdStatus
-serd_env_expand(const SerdEnv* ZIX_NULLABLE env,
-                ZixStringView               curie,
-                ZixStringView* ZIX_NONNULL  prefix,
-                ZixStringView* ZIX_NONNULL  suffix);
+serd_env_expand(const SerdEnv* ZIX_NULLABLE     env,
+                ZixStringView                   curie,
+                SerdStringPairView* ZIX_NONNULL out);
 
 /**
    @}

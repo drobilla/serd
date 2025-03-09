@@ -36,6 +36,7 @@ unit_test_names = [
   'reader',
   'reader_writer',
   'string',
+  'string_pair_view',
   'syntax',
   'token_view',
   'uri',
