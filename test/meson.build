@@ -31,6 +31,7 @@ unit_test_names = [
   'field',
   'file_uri',
   'free_null',
+  'handler',
   'node',
   'object_view',
   'overflow',
