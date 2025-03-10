@@ -133,7 +133,7 @@ skip_byte(SerdReader* const reader, const int byte)
   return serd_byte_source_advance(&reader->source);
 }
 
-static inline int SERD_NODISCARD
+SERD_NODISCARD static inline int
 eat_byte_safe(SerdReader* const reader, const int byte)
 {
   (void)byte;
@@ -144,7 +144,7 @@ eat_byte_safe(SerdReader* const reader, const int byte)
   return byte;
 }
 
-static inline int SERD_NODISCARD
+SERD_NODISCARD static inline int
 eat_byte_check(SerdReader* const reader, const int byte)
 {
   const int c = peek_byte(reader);
