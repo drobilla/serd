@@ -206,7 +206,7 @@ test_uri_from_string(void)
   serd_node_free(&base);
 }
 
-static inline bool
+static bool
 chunk_equals(const SerdChunk* const a, const SerdChunk* const b)
 {
   return (!a->len && !b->len && !a->buf && !b->buf) ||

@@ -238,7 +238,7 @@ sink(const void* const buf, const size_t len, SerdWriter* const writer)
   return written;
 }
 
-SERD_NODISCARD static inline SerdStatus
+SERD_NODISCARD static SerdStatus
 esink(const void* const buf, const size_t len, SerdWriter* const writer)
 {
   return sink(buf, len, writer) == len ? SERD_SUCCESS : SERD_ERR_BAD_WRITE;
