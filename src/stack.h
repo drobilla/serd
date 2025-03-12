@@ -76,7 +76,7 @@ serd_stack_push_aligned(SerdStack* const stack,
   serd_stack_push(stack, 1);
 
   // Push padding if necessary
-  const size_t pad = align - stack->size % align;
+  const size_t pad = align - (stack->size % align);
   serd_stack_push(stack, pad);
 
   // Set top of stack to pad count so we can properly pop later
