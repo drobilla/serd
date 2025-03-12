@@ -21,7 +21,6 @@ test_write_long_literal(void)
   SerdChunk   chunk  = {NULL, 0};
   SerdWriter* writer = serd_writer_new(
     SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
-
   assert(writer);
 
   SerdNode s = serd_node_from_string(SERD_URI, USTR(NS_EG "s"));
@@ -30,19 +29,19 @@ test_write_long_literal(void)
     serd_node_from_string(SERD_LITERAL, USTR("hello \"\"\"world\"\"\"!"));
 
   assert(!serd_writer_write_statement(writer, 0, NULL, &s, &p, &o, NULL, NULL));
-
-  serd_writer_free(writer);
-  serd_env_free(env);
-
-  uint8_t* out = serd_chunk_sink_finish(&chunk);
+  assert(!serd_writer_finish(writer));
 
   static const char* const expected =
     "<http://example.org/s>\n"
     "\t<http://example.org/p> \"\"\"hello \"\"\\\"world\"\"\\\"!\"\"\" .\n";
 
+  uint8_t* const out = serd_chunk_sink_finish(&chunk);
   assert(out);
   assert(!strcmp((char*)out, expected));
   serd_free(out);
+
+  serd_writer_free(writer);
+  serd_env_free(env);
 }
 
 static void
@@ -52,7 +51,6 @@ test_write_nested_anon(void)
   SerdChunk   chunk  = {NULL, 0};
   SerdWriter* writer = serd_writer_new(
     SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
-
   assert(writer);
 
   SerdNode s0  = serd_node_from_string(SERD_URI, USTR(NS_EG "s0"));
@@ -97,11 +95,7 @@ test_write_nested_anon(void)
     writer, SERD_ANON_CONT, NULL, &b0, &p4, &o4, NULL, NULL));
 
   assert(!serd_writer_end_anon(writer, &b0));
-
-  serd_writer_free(writer);
-  serd_env_free(env);
-
-  uint8_t* const out = serd_chunk_sink_finish(&chunk);
+  assert(!serd_writer_finish(writer));
 
   static const char* const expected =
     "<http://example.org/s0>\n"
@@ -113,9 +107,13 @@ test_write_nested_anon(void)
     "\t\t<http://example.org/p4> <http://example.org/o4>\n"
     "\t] .\n";
 
+  uint8_t* const out = serd_chunk_sink_finish(&chunk);
   assert(out);
   assert(!strcmp((char*)out, expected));
   serd_free(out);
+
+  serd_writer_free(writer);
+  serd_env_free(env);
 }
 
 static size_t
@@ -134,6 +132,7 @@ test_writer_cleanup(void)
   SerdEnv*    env = serd_env_new(NULL);
   SerdWriter* writer =
     serd_writer_new(SERD_TURTLE, (SerdStyle)0U, env, NULL, null_sink, NULL);
+  assert(writer);
 
   SerdNode s = serd_node_from_string(SERD_URI, USTR(NS_EG "s"));
   SerdNode p = serd_node_from_string(SERD_URI, USTR(NS_EG "p"));
@@ -187,6 +186,7 @@ test_write_bad_anon_stack(void)
   SerdEnv*    env = serd_env_new(NULL);
   SerdWriter* writer =
     serd_writer_new(SERD_TURTLE, (SerdStyle)0U, env, NULL, null_sink, NULL);
+  assert(writer);
 
   SerdNode s  = serd_node_from_string(SERD_URI, USTR(NS_EG "s"));
   SerdNode p  = serd_node_from_string(SERD_URI, USTR(NS_EG "p"));
@@ -221,7 +221,6 @@ test_strict_write(void)
   SerdEnv* const    env    = serd_env_new(NULL);
   SerdWriter* const writer = serd_writer_new(
     SERD_TURTLE, (SerdStyle)SERD_STYLE_STRICT, env, NULL, null_sink, fd);
-
   assert(writer);
 
   const uint8_t bad_str[] = {0xFF, 0x90, 'h', 'i', 0};
@@ -240,7 +239,6 @@ test_strict_write(void)
 
   serd_writer_free(writer);
   serd_env_free(env);
-
   assert(!fclose(fd));
   assert(!remove(path));
 }
@@ -258,19 +256,19 @@ error_sink(const void* const buf, const size_t len, void* const stream)
 static void
 test_write_error(void)
 {
-  SerdEnv* const env    = serd_env_new(NULL);
-  SerdWriter*    writer = NULL;
-  SerdStatus     st     = SERD_SUCCESS;
+  SerdEnv* const env = serd_env_new(NULL);
+
+  SerdWriter* const writer =
+    serd_writer_new(SERD_TURTLE, (SerdStyle)0, env, NULL, error_sink, NULL);
+  assert(writer);
 
   SerdNode u = serd_node_from_string(SERD_URI, USTR("http://example.com/u"));
 
-  writer =
-    serd_writer_new(SERD_TURTLE, (SerdStyle)0, env, NULL, error_sink, NULL);
-  assert(writer);
-  st = serd_writer_write_statement(writer, 0U, NULL, &u, &u, &u, NULL, NULL);
+  const SerdStatus st =
+    serd_writer_write_statement(writer, 0U, NULL, &u, &u, &u, NULL, NULL);
   assert(st == SERD_ERR_BAD_WRITE);
-  serd_writer_free(writer);
 
+  serd_writer_free(writer);
   serd_env_free(env);
 }
 
@@ -288,13 +286,14 @@ test_chunk_sink(void)
   const SerdNode base =
     serd_node_from_string(SERD_URI, USTR("http://example.org/base"));
   assert(!serd_writer_set_base_uri(writer, &base));
+  assert(!serd_writer_finish(writer));
 
-  serd_writer_free(writer);
-  uint8_t* out = serd_chunk_sink_finish(&chunk);
-
+  uint8_t* const out = serd_chunk_sink_finish(&chunk);
   assert(out);
   assert(!strcmp((const char*)out, "@base <http://example.org/base> .\n"));
   serd_free(out);
+
+  serd_writer_free(writer);
   serd_env_free(env);
 }
 
