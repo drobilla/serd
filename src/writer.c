@@ -832,7 +832,7 @@ write_uri_node(SerdWriter* const writer, const SerdNode* const node)
       !serd_env_base_uri(writer->env, NULL)->buf) {
     return w_err(writer,
                  SERD_BAD_ARG,
-                 "syntax does not support URI reference <%s>",
+                 "unable to resolve <%s> without a base URI",
                  node->buf);
   }
 
