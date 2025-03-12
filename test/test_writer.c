@@ -40,6 +40,7 @@ test_write_long_literal(void)
     "<http://example.org/s>\n"
     "\t<http://example.org/p> \"\"\"hello \"\"\\\"world\"\"\\\"!\"\"\" .\n";
 
+  assert(out);
   assert(!strcmp((char*)out, expected));
   serd_free(out);
 }
@@ -112,6 +113,7 @@ test_write_nested_anon(void)
     "\t\t<http://example.org/p4> <http://example.org/o4>\n"
     "\t] .\n";
 
+  assert(out);
   assert(!strcmp((char*)out, expected));
   serd_free(out);
 }
@@ -290,6 +292,7 @@ test_chunk_sink(void)
   serd_writer_free(writer);
   uint8_t* out = serd_chunk_sink_finish(&chunk);
 
+  assert(out);
   assert(!strcmp((const char*)out, "@base <http://example.org/base> .\n"));
   serd_free(out);
   serd_env_free(env);

@@ -408,6 +408,7 @@ main(void)
   const size_t      nq_name_len  = strlen(nq_name);
   const size_t      path_len     = tmp_len + 1 + ttl_name_len;
   char* const       path         = (char*)calloc(path_len + 1, 1);
+  assert(path);
 
   memcpy(path, tmp, tmp_len + 1);
   path[tmp_len] = '/';

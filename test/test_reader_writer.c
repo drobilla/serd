@@ -233,7 +233,9 @@ test_writer(const char* const path)
 static void
 test_reader(const char* const path)
 {
-  ReaderTest* rt     = (ReaderTest*)calloc(1, sizeof(ReaderTest));
+  ReaderTest* const rt = (ReaderTest*)calloc(1, sizeof(ReaderTest));
+  assert(rt);
+
   SerdReader* reader = serd_reader_new(
     SERD_TURTLE, rt, free, NULL, NULL, test_statement_sink, NULL);
 
@@ -286,6 +288,7 @@ main(void)
   const size_t      ttl_name_len = strlen(ttl_name);
   const size_t      path_len     = tmp_len + 1 + ttl_name_len;
   char* const       path         = (char*)calloc(path_len + 1, 1);
+  assert(path);
 
   memcpy(path, tmp, tmp_len + 1);
   path[tmp_len] = '/';

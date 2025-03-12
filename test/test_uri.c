@@ -52,6 +52,7 @@ check_file_uri(const char* const hostname,
   uint8_t* out_path =
     serd_file_uri_parse((const uint8_t*)node.buf, &out_hostname);
 
+  assert(out_path);
   assert(!strcmp((const char*)node.buf, expected_uri));
   assert((hostname && out_hostname) || (!hostname && !out_hostname));
   assert(!hostname || !strcmp(hostname, (const char*)out_hostname));
@@ -68,40 +69,27 @@ check_file_uri(const char* const hostname,
 #endif
 
 static void
+check_uri_to_path(const char* const uri, const char* const expected_path)
+{
+  const uint8_t* const path = serd_uri_to_path((const uint8_t*)uri);
+  assert(path);
+  assert(!strcmp((const char*)path, expected_path));
+}
+
+static void
 test_uri_to_path(void)
 {
-  assert(!strcmp(
-    (const char*)serd_uri_to_path((const uint8_t*)"file:///home/user/foo.ttl"),
-    "/home/user/foo.ttl"));
-
-  assert(!strcmp((const char*)serd_uri_to_path(
-                   (const uint8_t*)"file://localhost/home/user/foo.ttl"),
-                 "/home/user/foo.ttl"));
-
-  assert(!serd_uri_to_path((const uint8_t*)"file:illegal/file/uri"));
-
-  assert(!strcmp(
-    (const char*)serd_uri_to_path((const uint8_t*)"file:///c:/awful/system"),
-    "c:/awful/system"));
-
-  assert(!strcmp(
-    (const char*)serd_uri_to_path((const uint8_t*)"file:///c:awful/system"),
-    "/c:awful/system"));
-
-  assert(!strcmp((const char*)serd_uri_to_path((const uint8_t*)"file:///0/1"),
-                 "/0/1"));
-
-  assert(
-    !strcmp((const char*)serd_uri_to_path((const uint8_t*)"C:\\Windows\\Sucks"),
-            "C:\\Windows\\Sucks"));
-
-  assert(
-    !strcmp((const char*)serd_uri_to_path((const uint8_t*)"C|/Windows/Sucks"),
-            "C|/Windows/Sucks"));
-
+  assert(!serd_uri_to_path((const uint8_t*)"file:invalid/file/uri"));
   assert(!serd_uri_to_path((const uint8_t*)"http://example.org/path"));
 
-  assert(!strcmp((const char*)serd_uri_to_path((const uint8_t*)"rel"), "rel"));
+  check_uri_to_path("file:///home/user/foo.ttl", "/home/user/foo.ttl");
+  check_uri_to_path("file://localhost/home/user/foo.ttl", "/home/user/foo.ttl");
+  check_uri_to_path("file:///c:/awful/system", "c:/awful/system");
+  check_uri_to_path("file:///c:awful/system", "/c:awful/system");
+  check_uri_to_path("file:///0/1", "/0/1");
+  check_uri_to_path("C:\\Windows\\Sucks", "C:\\Windows\\Sucks");
+  check_uri_to_path("C|/Windows/Sucks", "C|/Windows/Sucks");
+  check_uri_to_path("rel", "rel");
 }
 
 #if defined(__GNUC__)
@@ -171,16 +159,19 @@ test_uri_parsing(void)
 
   // Test tolerance of NULL hostname parameter
   uint8_t* const hosted = serd_file_uri_parse(USTR("file://host/path"), NULL);
+  assert(hosted);
   assert(!strcmp((const char*)hosted, "/path"));
   serd_free(hosted);
 
   // Test tolerance of parsing junk URI escapes
 
   uint8_t* const junk1 = serd_file_uri_parse(USTR("file:///foo/%0Xbar"), NULL);
+  assert(junk1);
   assert(!strcmp((const char*)junk1, "/foo/bar"));
   serd_free(junk1);
 
   uint8_t* const junk2 = serd_file_uri_parse(USTR("file:///foo/%X0bar"), NULL);
+  assert(junk2);
   assert(!strcmp((const char*)junk2, "/foo/bar"));
   serd_free(junk2);
 }
