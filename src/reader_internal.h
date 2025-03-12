@@ -92,7 +92,7 @@ reject_failure(const SerdStatus st)
 ZIX_NODISCARD static inline int
 peek_byte(const SerdReader* const reader)
 {
-  const SerdByteSource* const source = &reader->source;
+  const SerdByteSource* const source = reader->source;
 
   return source->eof ? -1 : (int)source->read_buf[source->read_head];
 }
@@ -104,7 +104,7 @@ skip_byte(SerdReader* const reader, const int byte)
 
   assert(peek_byte(reader) == byte);
 
-  return accept_failure(serd_byte_source_advance(&reader->source));
+  return accept_failure(serd_byte_source_advance(reader->source));
 }
 
 ZIX_NODISCARD static inline SerdStatus
@@ -112,7 +112,7 @@ eat_byte_check(SerdReader* const reader, const int byte)
 {
   const int c = peek_byte(reader);
 
-  SerdStatus st = accept_failure(serd_byte_source_advance(&reader->source));
+  SerdStatus st = accept_failure(serd_byte_source_advance(reader->source));
   if (!st && c != byte) {
     st = r_err(reader, SERD_BAD_SYNTAX, "expected '%c'", byte);
   }

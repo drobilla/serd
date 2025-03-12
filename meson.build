@@ -38,7 +38,6 @@ c_suppressions = []
 if cc.get_id() in ['clang', 'emscripten']
   if warning_level == 'everything'
     c_suppressions += [
-      '-Wno-cast-function-type-strict',
       '-Wno-cast-qual',
       '-Wno-declaration-after-statement',
       '-Wno-format-nonliteral',
@@ -218,10 +217,12 @@ c_headers = files(
   'include/serd/event.h',
   'include/serd/field.h',
   'include/serd/file_uri.h',
+  'include/serd/input_stream.h',
   'include/serd/node.h',
   'include/serd/node_flags.h',
   'include/serd/node_type.h',
   'include/serd/object_view.h',
+  'include/serd/output_stream.h',
   'include/serd/reader.h',
   'include/serd/serd.h',
   'include/serd/sink.h',
@@ -242,13 +243,16 @@ c_headers = files(
 
 sources = files(
   'src/base64.c',
+  'src/block_dumper.c',
   'src/byte_source.c',
   'src/env.c',
   'src/event.c',
   'src/field.c',
   'src/file_uri.c',
+  'src/input_stream.c',
   'src/node.c',
   'src/object_view.c',
+  'src/output_stream.c',
   'src/read_nquads.c',
   'src/read_ntriples.c',
   'src/read_trig.c',
@@ -256,6 +260,7 @@ sources = files(
   'src/read_utf8.c',
   'src/reader.c',
   'src/sink.c',
+  'src/stream_stdio.c',
   'src/string.c',
   'src/string_pair_view.c',
   'src/symbols.c',

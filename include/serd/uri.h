@@ -6,6 +6,7 @@
 
 #include <serd/attributes.h>
 #include <serd/stream.h>
+#include <serd/stream_result.h>
 #include <serd/string.h>
 #include <zix/allocator.h>
 #include <zix/attributes.h>
@@ -153,7 +154,7 @@ serd_uri_string_length(SerdURIView uri);
    terminator, which isn't written), which may be less than
    `serd_uri_string_length(uri)` on error.
 */
-SERD_API size_t
+SERD_API SerdStreamResult
 serd_write_uri(SerdURIView               uri,
                SerdWriteFunc ZIX_NONNULL sink,
                void* ZIX_UNSPECIFIED     stream);

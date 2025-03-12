@@ -6,12 +6,11 @@
 
 #include <serd/attributes.h>
 #include <serd/stream.h>
+#include <serd/stream_result.h>
 #include <serd/string.h>
 #include <zix/allocator.h>
 #include <zix/attributes.h>
 #include <zix/string_view.h>
-
-#include <stddef.h>
 
 SERD_BEGIN_DECLS
 
@@ -57,7 +56,7 @@ serd_parse_file_uri(ZixAllocator* ZIX_NULLABLE          allocator,
    @return The length of the written URI string (not including a null
    terminator, which is not written)
 */
-SERD_API size_t
+SERD_API SerdStreamResult
 serd_write_file_uri(ZixStringView             path,
                     ZixStringView             hostname,
                     SerdWriteFunc ZIX_NONNULL sink,

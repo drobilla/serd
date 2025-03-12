@@ -47,7 +47,7 @@ read_whitespace(SerdReader* const reader)
   const int c = peek_byte(reader);
 
   return (c == '\t' || c == '\n' || c == '\r' || c == ' ')
-           ? serd_byte_source_advance(&reader->source)
+           ? serd_byte_source_advance(reader->source)
          : (c == '#') ? read_comment(reader)
                       : SERD_FAILURE;
 }

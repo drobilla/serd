@@ -9,17 +9,9 @@
 #include <serd/world.h>
 
 #include <stdarg.h>
-#include <stdio.h>
-
-/// Open a file configured for fast sequential reading
-FILE*
-serd_world_fopen(const SerdWorld* world, const char* path, const char* mode);
 
 SerdStatus
 serd_world_error(const SerdWorld* world, const SerdError* e);
-
-SerdStatus
-serd_world_errorf(const SerdWorld* world, SerdStatus st, const char* fmt, ...);
 
 SerdStatus
 serd_world_verrorf(const SerdWorld* world,

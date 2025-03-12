@@ -10,6 +10,7 @@
 #include <serd/event.h>
 #include <serd/node_type.h>
 #include <serd/object_view.h>
+#include <serd/output_stream.h>
 #include <serd/sink.h>
 #include <serd/statement_view.h>
 #include <serd/status.h>
@@ -42,17 +43,19 @@ write_triple(const SerdSink* const sink,
 }
 
 static void
-check_output(SerdWriter* const writer,
-             SerdBuffer* const buffer,
-             const char* const expected)
+check_output(SerdWriter* writer, SerdOutputStream* out, const char* expected)
 {
-  assert(!serd_writer_finish(writer));
+  SerdBuffer* const buffer = (SerdBuffer*)out->stream;
 
-  const char* const output = serd_buffer_sink_finish(buffer);
+  assert(!serd_writer_finish(writer));
+  assert(!serd_close_output(out));
+
+  const char* const output = (const char*)buffer->buf;
   assert(output);
   assert(expect_string(output, expected));
 
-  buffer->len = 0;
+  buffer->len = 0U;
+  out->stream = buffer;
 }
 
 static int
@@ -77,8 +80,9 @@ test(void)
 
   serd_env_set_prefix(env, zix_string("rdf"), zix_string(NS_RDF));
 
+  SerdOutputStream  output = serd_open_output_buffer(&buffer);
   SerdWriter* const writer =
-    serd_writer_new(world, SERD_TURTLE, 0U, env, serd_buffer_sink, &buffer);
+    serd_writer_new(world, SERD_TURTLE, 0U, env, &output, 1U);
   assert(writer);
 
   const SerdSink* sink = serd_writer_sink(writer);
@@ -88,7 +92,7 @@ test(void)
   write_triple(sink, 0U, l1, rdf_rest, l2);
   write_triple(sink, 0U, l2, rdf_first, s2);
   write_triple(sink, 0U, l2, rdf_rest, rdf_nil);
-  check_output(writer, &buffer, "( \"s1\" \"s2\" ) .\n");
+  check_output(writer, &output, "( \"s1\" \"s2\" ) .\n");
 
   // Nested terse lists
   write_triple(sink,
@@ -99,7 +103,7 @@ test(void)
   write_triple(sink, 0U, l2, rdf_first, s1);
   write_triple(sink, 0U, l1, rdf_rest, rdf_nil);
   write_triple(sink, 0U, l2, rdf_rest, rdf_nil);
-  check_output(writer, &buffer, "( ( \"s1\" ) ) .\n");
+  check_output(writer, &output, "( ( \"s1\" ) ) .\n");
 
   // List as object
   write_triple(sink,
@@ -107,11 +111,11 @@ test(void)
                b1,
                rdf_value,
                l1);
-  write_triple(sink, 0, l1, rdf_first, s1);
-  write_triple(sink, 0, l1, rdf_rest, l2);
-  write_triple(sink, 0, l2, rdf_first, s2);
-  write_triple(sink, 0, l2, rdf_rest, rdf_nil);
-  check_output(writer, &buffer, "[] rdf:value ( \"s1\" \"s2\" ) .\n");
+  write_triple(sink, 0U, l1, rdf_first, s1);
+  write_triple(sink, 0U, l1, rdf_rest, l2);
+  write_triple(sink, 0U, l2, rdf_first, s2);
+  write_triple(sink, 0U, l2, rdf_rest, rdf_nil);
+  check_output(writer, &output, "[] rdf:value ( \"s1\" \"s2\" ) .\n");
 
   // List with anonymous elements as object
   write_triple(
@@ -123,7 +127,7 @@ test(void)
   serd_sink_event(sink, serd_end_event(b3.string));
   write_triple(sink, 0U, l2, rdf_rest, rdf_nil);
   check_output(
-    writer, &buffer, "[]\n\trdf:value ( [] [ rdf:value \"s1\" ] ) .\n");
+    writer, &output, "[]\n\trdf:value ( [] [ rdf:value \"s1\" ] ) .\n");
 
   serd_writer_free(writer);
   zix_free(buffer.allocator, buffer.buf);

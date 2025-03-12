@@ -6,13 +6,16 @@
 #include <serd/env.h>
 #include <serd/error.h>
 #include <serd/event.h>
+#include <serd/input_stream.h>
 #include <serd/node_flags.h>
 #include <serd/node_type.h>
 #include <serd/object_view.h>
+#include <serd/output_stream.h>
 #include <serd/reader.h>
 #include <serd/sink.h>
 #include <serd/statement_view.h>
 #include <serd/status.h>
+#include <serd/stream_result.h>
 #include <serd/syntax.h>
 #include <serd/token_view.h>
 #include <serd/world.h>
@@ -24,7 +27,6 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -73,22 +75,43 @@ test_sink(void* const handle, const SerdEvent* const event)
   return SERD_SUCCESS;
 }
 
-static size_t
-faulty_sink(const void* const buf, const size_t len, void* const stream)
+static SerdStreamResult
+faulty_sink(void* const stream, const size_t len, const void* const buf)
 {
   (void)buf;
-  (void)len;
+
+  SerdStreamResult r = {SERD_SUCCESS, 0U};
 
   ErrorContext* const ctx           = (ErrorContext*)stream;
   const size_t        new_n_written = ctx->n_written + len;
   if (new_n_written >= ctx->error_offset) {
-    errno = EINVAL;
-    return 0U;
+    errno    = EINVAL;
+    r.status = SERD_BAD_WRITE;
+    return r;
   }
 
   ctx->n_written += len;
-  errno = 0;
-  return len;
+  errno   = 0;
+  r.count = len;
+  return r;
+}
+
+static void
+test_output_stream(void)
+{
+  SerdOutputStream output = serd_open_output_file("/does/not/exist");
+  assert(!output.stream);
+  assert(!output.write);
+  assert(!output.close);
+}
+
+static void
+test_output_dir(const char* const dir_path)
+{
+  SerdOutputStream output = serd_open_output_file(dir_path);
+  assert(!output.stream);
+  assert(!output.write);
+  assert(!output.close);
 }
 
 static SerdStatus
@@ -102,24 +125,28 @@ quiet_error_func(void* const handle, const SerdError* const e)
 static void
 check_write_error_offset(SerdWorld* const world,
                          const SerdSyntax syntax,
+                         const size_t     block_size,
                          const size_t     offset,
                          const SerdStatus expected_status)
 {
   SerdEnv* const env = serd_env_new(NULL, zix_empty_string());
   assert(env);
 
-  ErrorContext ctx = {0U, offset};
+  ErrorContext     ctx = {0U, offset};
+  SerdOutputStream out = serd_open_output_stream(faulty_sink, NULL, &ctx);
 
   SerdWriter* const writer =
-    serd_writer_new(world, syntax, 0U, env, faulty_sink, &ctx);
+    serd_writer_new(world, syntax, 0U, env, &out, block_size);
   assert(writer);
 
   const SerdSink* const sink   = serd_writer_sink(writer);
   SerdReader* const     reader = serd_reader_new(world, SERD_TRIG, 0U, sink);
   assert(reader);
 
-  SerdStatus rst =
-    serd_reader_start_string(reader, doc_string, zix_empty_string());
+  const char*     position = doc_string;
+  SerdInputStream in       = serd_open_input_string(&position);
+
+  SerdStatus rst = serd_reader_start(reader, &in, zix_empty_string(), 1);
   assert(!rst);
 
   if (!(rst = serd_reader_read_document(reader))) {
@@ -129,6 +156,7 @@ check_write_error_offset(SerdWorld* const world,
   const SerdStatus wst = serd_writer_finish(writer);
   const SerdStatus st  = rst ? rst : wst;
 
+  assert(!serd_close_input(&in));
   serd_reader_free(reader);
   serd_writer_free(writer);
   serd_env_free(env);
@@ -153,11 +181,12 @@ test_write_errors(void)
     const SerdSyntax syntax = (SerdSyntax)s;
 
     // Check successfully writing with enough space
-    check_write_error_offset(world, syntax, max_offsets[s], SERD_SUCCESS);
+    check_write_error_offset(world, syntax, 1, max_offsets[s], SERD_SUCCESS);
 
     // Check write error at every offset in the output
     for (size_t o = 0; o < max_offsets[s]; ++o) {
-      check_write_error_offset(world, syntax, o, SERD_BAD_WRITE);
+      check_write_error_offset(world, syntax, 1, o, SERD_BAD_WRITE);
+      check_write_error_offset(world, syntax, 512, o, SERD_BAD_WRITE);
     }
   }
 
@@ -167,16 +196,16 @@ test_write_errors(void)
 static void
 test_writer(const char* const path)
 {
-  FILE* const fd = fopen(path, "wb");
-  assert(fd);
-
   SerdWorld* const world = serd_world_new(NULL);
   SerdEnv* const   env   = serd_env_new(NULL, zix_empty_string());
   assert(world);
   assert(env);
 
-  SerdWriter* writer = serd_writer_new(
-    world, SERD_TURTLE, SERD_WRITE_LAX, env, serd_file_sink, fd);
+  SerdOutputStream output = serd_open_output_file(path);
+
+  SerdWriter* writer =
+    serd_writer_new(world, SERD_TURTLE, SERD_WRITE_LAX, env, &output, 1U);
+
   assert(writer);
 
   serd_writer_chop_blank_prefix(writer, "tmp");
@@ -251,9 +280,9 @@ test_writer(const char* const path)
     sink, serd_statement_event(0U, serd_triple_view(s, p, bad_long_lit))));
 
   serd_writer_free(writer);
+  assert(!serd_close_output(&output));
   serd_env_free(env);
   serd_world_free(world);
-  assert(!fclose(fd));
 }
 
 static void
@@ -279,8 +308,8 @@ test_reader(const char* const path)
   SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, &sink);
   assert(reader);
 
-  assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
-  assert(serd_reader_read_document(reader) == SERD_FAILURE);
+  assert(serd_reader_read_chunk(reader) == SERD_BAD_CALL);
+  assert(serd_reader_read_document(reader) == SERD_BAD_CALL);
 
   serd_reader_add_blank_prefix(reader, "tmp");
 
@@ -293,14 +322,12 @@ test_reader(const char* const path)
 #  pragma GCC diagnostic pop
 #endif
 
-  assert(serd_reader_start_file(reader, "http://notafile", false));
-  assert(serd_reader_start_file(reader, "file://invalid", false));
-  assert(serd_reader_start_file(reader, "file:///nonexistant", false));
-
-  assert(!serd_reader_start_file(reader, path, true));
+  SerdInputStream in = serd_open_input_file(path);
+  assert(!serd_reader_start(reader, &in, zix_empty_string(), 4096));
   assert(!serd_reader_read_document(reader));
   assert(rt.n_statement == 6);
   assert(!serd_reader_finish(reader));
+  serd_close_input(&in);
 
   serd_reader_free(reader);
   serd_world_free(world);
@@ -317,6 +344,8 @@ main(void)
   char* const path = zix_path_join(NULL, dir, "serd_test_reader.ttl");
   assert(path);
 
+  test_output_stream();
+  test_output_dir(dir);
   test_write_errors();
 
   test_writer(path);

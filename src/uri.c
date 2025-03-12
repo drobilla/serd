@@ -2,16 +2,18 @@
 // SPDX-License-Identifier: ISC
 
 #include "string_utils.h"
+#include "try_write.h"
 #include "uri_utils.h"
 
+#include <serd/status.h>
 #include <serd/stream.h>
+#include <serd/stream_result.h>
 #include <serd/string.h>
 #include <serd/uri.h>
 #include <zix/allocator.h>
 
 #include <assert.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <string.h>
 
 SerdURIView
@@ -359,70 +361,71 @@ serd_uri_string_length(const SerdURIView uri)
 }
 
 /// See http://tools.ietf.org/html/rfc3986#section-5.3
-size_t
+SerdStreamResult
 serd_write_uri(const SerdURIView   uri,
                const SerdWriteFunc sink,
                void* const         stream)
 {
   assert(sink);
 
-  size_t len = 0;
+  SerdStreamResult wr = {SERD_SUCCESS, 0U};
 
   if (uri.scheme.data) {
     const char* const scheme = uri.scheme.data;
-    len += sink(scheme, uri.scheme.length, stream);
-    len += sink(":", 1, stream);
+    TRY_WRITE(wr, sink(stream, uri.scheme.length, scheme));
+    TRY_WRITE(wr, sink(stream, 1, ":"));
   }
 
   if (uri.authority.data) {
     const char* const authority = uri.authority.data;
-    len += sink("//", 2, stream);
-    len += sink(authority, uri.authority.length, stream);
+    TRY_WRITE(wr, sink(stream, 2, "//"));
+    TRY_WRITE(wr, sink(stream, uri.authority.length, authority));
 
     if (uri.authority.length && uri_path_len(&uri) &&
         uri_path_at(&uri, 0) != '/') {
       // Special case: ensure path begins with a slash
       // https://tools.ietf.org/html/rfc3986#section-3.2
-      len += sink("/", 1, stream);
+      TRY_WRITE(wr, sink(stream, 1, "/"));
     }
   }
 
   if (uri.path_prefix.data) {
     const char* const path_prefix = uri.path_prefix.data;
-    len += sink(path_prefix, uri.path_prefix.length, stream);
+    TRY_WRITE(wr, sink(stream, uri.path_prefix.length, path_prefix));
   } else if (uri.path_prefix.length) {
     for (size_t i = 0; i < uri.path_prefix.length; ++i) {
-      len += sink("../", 3, stream);
+      TRY_WRITE(wr, sink(stream, 3, "../"));
     }
   }
 
   if (uri.path.data) {
     const char* const path = uri.path.data;
-    len += sink(path, uri.path.length, stream);
+    TRY_WRITE(wr, sink(stream, uri.path.length, path));
   }
 
   if (uri.query.data) {
     const char* const query = uri.query.data;
-    len += sink("?", 1, stream);
-    len += sink(query, uri.query.length, stream);
+    TRY_WRITE(wr, sink(stream, 1, "?"));
+    TRY_WRITE(wr, sink(stream, uri.query.length, query));
   }
 
   if (uri.fragment.data) {
     // Note that uri.fragment.data includes the leading '#'
     const char* const fragment = uri.fragment.data;
-    len += sink(fragment, uri.fragment.length, stream);
+    TRY_WRITE(wr, sink(stream, uri.fragment.length, fragment));
   }
 
-  return len;
+  return wr;
 }
 
-static size_t
-string_sink(const void* const buf, const size_t len, void* const stream)
+static SerdStreamResult
+string_sink(void* const stream, const size_t len, const void* const buf)
 {
-  char** ptr = (char**)stream;
+  char** const ptr = (char**)stream;
   memcpy(*ptr, buf, len);
   *ptr += len;
-  return len;
+  const SerdStreamResult r = {SERD_SUCCESS, len};
+  return r;
 }
 
 SerdString
@@ -433,7 +436,7 @@ serd_uri_to_string(ZixAllocator* const allocator, const SerdURIView uri)
 
   if ((string.data = (char*)zix_calloc(allocator, length + 1U, 1U))) {
     char*        ptr        = string.data;
-    const size_t actual_len = serd_write_uri(uri, string_sink, &ptr);
+    const size_t actual_len = serd_write_uri(uri, string_sink, &ptr).count;
 
     string.length = actual_len;
   }

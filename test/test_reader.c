@@ -6,13 +6,15 @@
 #include "failing_allocator.h"
 
 #include <serd/event.h>
+#include <serd/input_stream.h>
 #include <serd/reader.h>
 #include <serd/sink.h>
 #include <serd/status.h>
-#include <serd/stream.h>
+#include <serd/stream_result.h>
 #include <serd/syntax.h>
 #include <serd/world.h>
 #include <zix/allocator.h>
+#include <zix/attributes.h>
 #include <zix/filesystem.h>
 #include <zix/path.h>
 #include <zix/string_view.h>
@@ -22,7 +24,6 @@
 #endif
 
 #include <assert.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -85,40 +86,135 @@ test_new_failed_alloc(void)
   serd_world_free(world);
 }
 
-static void
-test_start_stream_failed_alloc(void)
+static SerdStreamResult
+test_fread_wrapper(void* const stream, const size_t len, void* const buf)
 {
-  SerdFailingAllocator allocator = serd_failing_allocator();
+  SerdStreamResult r    = {SERD_SUCCESS, 0U};
+  FILE* const      file = (FILE*)stream;
 
-  SerdWorld* const  world  = serd_world_new(&allocator.base);
+  r.count = fread(buf, 1U, len, file);
+
+  if (r.count != len) {
+    r.status = ferror(file) ? SERD_BAD_READ
+               : feof(file) ? SERD_NO_DATA
+                            : SERD_BAD_STREAM;
+  }
+
+  return r;
+}
+
+static SerdInputStream
+open_file_input(FILE* const file)
+{
+  return serd_open_input_stream(test_fread_wrapper, NULL, file);
+}
+
+static void
+test_start_failed_alloc(const char* const path)
+{
+  SerdFailingAllocator failing_allocator = serd_failing_allocator();
+  ZixAllocator* const  allocator         = &failing_allocator.base;
+  const ZixStringView  name              = zix_string(path);
+
+  FILE* const f = fopen(path, "w+b");
+  assert(f);
+
+  SerdWorld* const  world  = serd_world_new(allocator);
   ReaderTest        rt     = {0, 0, 0, 0, 0};
   const SerdSink    sink   = {&rt, event_sink};
   SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, &sink);
   assert(reader);
 
-  // Ensure starting succeeds with allocation available
-  serd_failing_allocator_reset(&allocator, 2);
-  SerdStatus st = serd_reader_start_stream(reader,
-                                           (SerdReadFunc)fread,
-                                           (SerdErrorFunc)ferror,
-                                           NULL,
-                                           zix_string("test"),
-                                           4096);
-  assert(!st);
-  serd_reader_finish(reader);
+  SerdInputStream in = open_file_input(f);
 
-  // Ensure starting failed without allocation available
-  serd_failing_allocator_reset(&allocator, 0);
-  st = serd_reader_start_stream(reader,
-                                (SerdReadFunc)fread,
-                                (SerdErrorFunc)ferror,
-                                NULL,
-                                zix_string("test"),
-                                4096);
-  assert(st == SERD_BAD_ALLOC);
+  // Successfully start a new read to count the number of allocations
+  serd_failing_allocator_reset(&failing_allocator, SIZE_MAX);
+  assert(serd_reader_start(reader, &in, name, 4096) == SERD_SUCCESS);
+
+  // Test that each allocation failing is handled gracefully
+  const size_t n_new_allocs =
+    serd_failing_allocator_reset(&failing_allocator, 0);
+  assert(!serd_reader_finish(reader));
+  for (size_t i = 0; i < n_new_allocs; ++i) {
+    serd_failing_allocator_reset(&failing_allocator, i);
+
+    in = open_file_input(f);
+
+    const SerdStatus st = serd_reader_start(reader, &in, name, 4096);
+    assert(st == SERD_BAD_ALLOC);
+  }
 
   serd_reader_free(reader);
   serd_world_free(world);
+  assert(!fclose(f));
+  assert(!zix_remove(path));
+}
+
+static void
+test_start_closed(void)
+{
+  SerdWorld* const  world  = serd_world_new(NULL);
+  ReaderTest        rt     = {0, 0, 0, 0, 0};
+  const SerdSink    sink   = {&rt, event_sink};
+  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0, &sink);
+  assert(reader);
+
+  SerdInputStream  in = {NULL, NULL, NULL};
+  const SerdStatus st = serd_reader_start(reader, &in, zix_empty_string(), 1);
+  assert(st == SERD_BAD_ARG);
+  assert(rt.n_event == 0);
+
+  serd_reader_free(reader);
+  serd_world_free(world);
+}
+
+ZIX_PURE_FUNC static SerdStreamResult
+prepare_test_read(void* const stream, const size_t len, void* const buf)
+{
+  assert(len == 1U);
+
+  (void)buf;
+  (void)len;
+  (void)stream;
+
+  const SerdStreamResult r = {SERD_BAD_STREAM, 0U};
+  return r;
+}
+
+static void
+test_prepare_error(const char* const path)
+{
+  SerdWorld* const    world = serd_world_new(NULL);
+  ReaderTest          rt    = {0, 0, 0, 0, 0};
+  const ZixStringView name  = zix_string(path);
+  FILE* const         f     = fopen(path, "w+b");
+  assert(f);
+
+  fprintf(f, "_:s <http://example.org/p> _:o .\n");
+  fflush(f);
+  fseek(f, 0L, SEEK_SET);
+
+  const SerdSink    sink   = {&rt, event_sink};
+  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0, &sink);
+  assert(reader);
+
+  SerdInputStream in = serd_open_input_stream(prepare_test_read, NULL, f);
+
+  assert(serd_reader_start(reader, &in, name, 0) == SERD_BAD_ARG);
+
+  SerdStatus st = serd_reader_start(reader, &in, name, 1);
+  assert(!st);
+
+  // Check that starting twice fails gracefully
+  assert(serd_reader_start(reader, &in, name, 1) == SERD_BAD_CALL);
+
+  assert(serd_reader_read_document(reader) == SERD_BAD_STREAM);
+
+  serd_close_input(&in);
+  serd_reader_free(reader);
+  serd_world_free(world);
+  assert(!fclose(f));
+  assert(!zix_remove(path));
 }
 
 static void
@@ -134,19 +230,39 @@ test_read_string(void)
   SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, &sink);
   assert(reader);
 
-  // Test reading a string that ends exactly at the end of input (no newline)
-  assert(
-    !serd_reader_start_string(reader,
-                              "<http://example.org/s> <http://example.org/p> "
-                              "<http://example.org/o> .",
-                              zix_empty_string()));
+  static const char* const string1 =
+    "<http://example.org/s> <http://example.org/p> "
+    "<http://example.org/o> .";
 
+  const char*     position = string1;
+  SerdInputStream in       = serd_open_input_string(&position);
+
+  // Test reading a string that ends exactly at the end of input (no newline)
+  assert(!serd_reader_start(reader, &in, zix_empty_string(), 1));
   assert(!serd_reader_read_document(reader));
   assert(rt.n_base == 0);
   assert(rt.n_prefix == 0);
   assert(rt.n_statement == 1);
   assert(rt.n_end == 0);
   assert(!serd_reader_finish(reader));
+  assert(!serd_reader_finish(reader)); // Check that double finish is safe
+  assert(!serd_close_input(&in));
+
+  static const char* const string2 =
+    "<http://example.org/s> <http://example.org/p> "
+    "<http://example.org/o> , _:blank .";
+
+  // Test reading a chunk
+  rt.n_statement = 0;
+  position       = string2;
+  in             = serd_open_input_string(&position);
+
+  assert(!serd_reader_start(reader, &in, zix_empty_string(), 1));
+  assert(!serd_reader_read_chunk(reader));
+  assert(rt.n_statement == 2);
+  assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
+  assert(!serd_reader_finish(reader));
+  assert(!serd_close_input(&in));
 
   serd_reader_free(reader);
   serd_world_free(world);
@@ -157,6 +273,8 @@ static void
 test_read_eof_file(const char* const path)
 {
   static const SerdLimits limits = {1024, 0};
+
+  const ZixStringView name = zix_string(path);
 
   FILE* const f = fopen(path, "w+b");
   assert(f);
@@ -173,14 +291,9 @@ test_read_eof_file(const char* const path)
   SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, &sink);
   assert(reader);
 
-  fseek(f, 0L, SEEK_SET);
-  serd_reader_start_stream(reader,
-                           (SerdReadFunc)fread,
-                           (SerdErrorFunc)ferror,
-                           f,
-                           zix_empty_string(),
-                           4096);
+  SerdInputStream in = open_file_input(f);
 
+  assert(serd_reader_start(reader, &in, name, 4096) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
   assert(rt.n_event == 1);
   assert(rt.n_statement == 1);
@@ -190,18 +303,13 @@ test_read_eof_file(const char* const path)
   assert(!serd_reader_finish(reader));
 
   fseek(f, 0L, SEEK_SET);
-  serd_reader_start_stream(reader,
-                           (SerdReadFunc)fread,
-                           (SerdErrorFunc)ferror,
-                           f,
-                           zix_empty_string(),
-                           1);
-
+  serd_reader_start(reader, &in, name, 1);
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(!serd_reader_finish(reader));
 
+  assert(!serd_close_input(&in));
   serd_reader_free(reader);
   serd_world_free(world);
   assert(!fclose(f));
@@ -212,6 +320,8 @@ static void
 test_read_flat_chunks(const char* const path, const SerdSyntax syntax)
 {
   static const SerdLimits limits = {2048, 0};
+
+  const ZixStringView name = zix_string(path);
 
   FILE* const f = fopen(path, "w+b");
   assert(f);
@@ -228,12 +338,9 @@ test_read_flat_chunks(const char* const path, const SerdSyntax syntax)
   SerdReader* const reader = serd_reader_new(world, syntax, 0U, &sink);
   assert(reader);
 
-  SerdStatus st = serd_reader_start_stream(reader,
-                                           (SerdReadFunc)fread,
-                                           (SerdErrorFunc)ferror,
-                                           f,
-                                           zix_empty_string(),
-                                           1);
+  SerdInputStream in = open_file_input(f);
+
+  SerdStatus st = serd_reader_start(reader, &in, name, 1);
   assert(st == SERD_SUCCESS);
 
   // Read first statement
@@ -280,7 +387,8 @@ test_read_flat_chunks(const char* const path, const SerdSyntax syntax)
   assert(st == SERD_FAILURE);
   assert(rt.n_event == 3);
 
-  serd_reader_finish(reader);
+  assert(!serd_reader_finish(reader));
+  assert(!serd_close_input(&in));
   serd_reader_free(reader);
   serd_world_free(world);
   assert(!fclose(f));
@@ -291,6 +399,8 @@ static void
 test_read_abbrev_chunks(const char* const path, const SerdSyntax syntax)
 {
   static const SerdLimits limits = {2048, 0};
+
+  const ZixStringView name = zix_string(path);
 
   FILE* const f = fopen(path, "w+b");
   assert(f);
@@ -311,12 +421,9 @@ test_read_abbrev_chunks(const char* const path, const SerdSyntax syntax)
   SerdReader* const reader = serd_reader_new(world, syntax, 0U, &sink);
   assert(reader);
 
-  SerdStatus st = serd_reader_start_stream(reader,
-                                           (SerdReadFunc)fread,
-                                           (SerdErrorFunc)ferror,
-                                           f,
-                                           zix_empty_string(),
-                                           1);
+  SerdInputStream in = open_file_input(f);
+
+  SerdStatus st = serd_reader_start(reader, &in, name, 1);
   assert(st == SERD_SUCCESS);
 
   // Read base
@@ -363,39 +470,21 @@ test_read_abbrev_chunks(const char* const path, const SerdSyntax syntax)
   assert(st == SERD_FAILURE);
   assert(rt.n_event == 7);
 
-  serd_reader_finish(reader);
+  assert(!serd_reader_finish(reader));
+  assert(!serd_close_input(&in));
   serd_reader_free(reader);
   serd_world_free(world);
   assert(!fclose(f));
   assert(!zix_remove(path));
 }
 
-static size_t
-empty_test_read(void* buf, size_t size, size_t nmemb, void* stream)
-{
-  (void)buf;
-  (void)size;
-  (void)nmemb;
-
-  bool* const called = (bool*)stream;
-
-  *called = true;
-
-  return 0;
-}
-
-static int
-empty_test_error(void* stream)
-{
-  (void)stream;
-  return 0;
-}
-
 /// Test that reading SERD_SYNTAX_EMPTY "succeeds" without reading any input
 static void
-test_read_empty(void)
+test_read_empty(const char* const path)
 {
   static const SerdLimits limits = {512, 0};
+
+  const ZixStringView name = zix_string(path);
 
   SerdWorld* const world = serd_world_new(NULL);
   serd_world_set_limits(world, limits);
@@ -406,25 +495,24 @@ test_read_empty(void)
     serd_reader_new(world, SERD_SYNTAX_EMPTY, 0U, &sink);
   assert(reader);
 
-  assert(!empty_test_error(NULL));
+  FILE* const f = fopen(path, "w+b");
+  assert(f);
 
-  bool called = false;
-  assert(!empty_test_read(NULL, 0U, 0U, &called));
-  assert(called == true);
-  called = false;
+  SerdInputStream in = open_file_input(f);
 
-  SerdStatus st = serd_reader_start_stream(
-    reader, empty_test_read, empty_test_error, &called, zix_empty_string(), 1);
-  assert(st == SERD_SUCCESS);
+  SerdStatus st = serd_reader_start(reader, &in, name, 1);
+  assert(!st);
 
   assert(serd_reader_read_document(reader) == SERD_SUCCESS);
   assert(rt.n_statement == 0);
-  assert(!called);
+  assert(!serd_reader_finish(reader));
+  assert(!serd_close_input(&in));
 
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(rt.n_statement == 0);
-  assert(!called);
 
+  assert(!fclose(f));
+  assert(!zix_remove(path));
   serd_reader_free(reader);
   serd_world_free(world);
 }
@@ -445,12 +533,14 @@ main(void)
   assert(dir);
 
   test_new_failed_alloc();
-  test_start_stream_failed_alloc();
+  test_start_failed_alloc(ttl_path);
+  test_start_closed();
   test_read_flat_chunks(nq_path, SERD_NTRIPLES);
   test_read_flat_chunks(nq_path, SERD_NQUADS);
   test_read_abbrev_chunks(ttl_path, SERD_TURTLE);
   test_read_abbrev_chunks(ttl_path, SERD_TRIG);
-  test_read_empty();
+  test_read_empty(ttl_path);
+  test_prepare_error(ttl_path);
   test_read_string();
   test_read_eof_file(ttl_path);
 

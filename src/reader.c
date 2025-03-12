@@ -12,21 +12,18 @@
 #include "stack.h"
 #include "string_utils.h"
 #include "symbols.h"
-#include "system.h"
 #include "token_header.h"
-#include "world_impl.h"
 #include "world_internal.h"
 
 #include <serd/error.h>
 #include <serd/event.h>
-#include <serd/file_uri.h>
+#include <serd/input_stream.h>
 #include <serd/node_type.h>
 #include <serd/object_view.h>
 #include <serd/reader.h>
 #include <serd/sink.h>
 #include <serd/statement_view.h>
 #include <serd/status.h>
-#include <serd/stream.h>
 #include <serd/syntax.h>
 #include <serd/token_view.h>
 #include <serd/world.h>
@@ -34,7 +31,6 @@
 #include <zix/string_view.h>
 
 #include <assert.h>
-#include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -52,7 +48,7 @@ r_err(const SerdReader* const reader,
 {
   va_list args; // NOLINT(cppcoreguidelines-init-variables)
   va_start(args, fmt);
-  const SerdError e = {st, reader->source.caret, fmt, &args};
+  const SerdError e = {st, reader->source->caret, fmt, &args};
   serd_world_error(reader->world, &e);
   va_end(args);
   return st;
@@ -253,7 +249,7 @@ token_equals(const TokenHeader* const node, const ZixStringView tok)
 SerdStatus
 emit_event(const SerdReader* const reader, SerdEvent event)
 {
-  event.caret = reader->source.caret;
+  event.caret = reader->source->caret;
 
   const SerdStatus st = serd_sink_event(reader->sink, event);
   return st == SERD_NO_CHANGE ? SERD_SUCCESS : st;
@@ -289,7 +285,9 @@ emit_statement(const SerdReader* const  reader,
 static SerdStatus
 serd_reader_prepare_if_necessary(SerdReader* const reader)
 {
-  return reader->source.prepared ? SERD_SUCCESS : serd_reader_prepare(reader);
+  return !reader->source            ? SERD_BAD_CALL
+         : reader->source->prepared ? SERD_SUCCESS
+                                    : serd_reader_prepare(reader);
 }
 
 static SerdStatus
@@ -323,7 +321,7 @@ serd_reader_read_document(SerdReader* const reader)
     return st;
   }
 
-  while (st <= SERD_FAILURE && !reader->source.eof) {
+  while (st <= SERD_FAILURE && !reader->source->eof) {
     st = read_syntax_chunk(reader);
     if (st > SERD_FAILURE && !reader->strict) {
       serd_reader_skip_until_byte(reader, '\n');
@@ -364,7 +362,7 @@ serd_reader_new(SerdWorld* const      world,
   me->strict  = !(flags & SERD_READ_LAX);
 
   if (!me->stack.buf) {
-    zix_free(world->allocator, me);
+    zix_free(allocator, me);
     return NULL;
   }
 
@@ -392,11 +390,15 @@ serd_reader_free(SerdReader* const reader)
     return;
   }
 
-  serd_reader_finish(reader);
+  ZixAllocator* const allocator = serd_world_allocator(reader->world);
 
-  serd_stack_free(serd_world_allocator(reader->world), &reader->stack);
-  zix_free(reader->world->allocator, reader->bprefix);
-  zix_free(reader->world->allocator, reader);
+  if (reader->source) {
+    serd_reader_finish(reader);
+  }
+
+  serd_stack_free(allocator, &reader->stack);
+  zix_free(allocator, reader->bprefix);
+  zix_free(allocator, reader);
 }
 
 void
@@ -404,94 +406,55 @@ serd_reader_add_blank_prefix(SerdReader* const reader, const char* const prefix)
 {
   assert(reader);
 
-  zix_free(reader->world->allocator, reader->bprefix);
+  ZixAllocator* const allocator = serd_world_allocator(reader->world);
+
+  zix_free(allocator, reader->bprefix);
   reader->bprefix_len = 0;
   reader->bprefix     = NULL;
 
   const size_t prefix_len = prefix ? strlen(prefix) : 0;
   if (prefix_len) {
     reader->bprefix_len = prefix_len;
-    reader->bprefix =
-      (char*)zix_malloc(reader->world->allocator, reader->bprefix_len + 1);
+    reader->bprefix     = (char*)zix_malloc(allocator, reader->bprefix_len + 1);
     memcpy(reader->bprefix, prefix, reader->bprefix_len + 1);
   }
 }
 
 SerdStatus
-serd_reader_start_stream(SerdReader* const   reader,
-                         const SerdReadFunc  read_func,
-                         const SerdErrorFunc error_func,
-                         void* const         stream,
-                         const ZixStringView name,
-                         const size_t        page_size)
+serd_reader_start(SerdReader* const      reader,
+                  SerdInputStream* const input,
+                  const ZixStringView    input_name,
+                  const size_t           block_size)
 {
   assert(reader);
-  assert(read_func);
-  assert(error_func);
+  assert(input);
 
-  return serd_byte_source_open_source(reader->world->allocator,
-                                      &reader->source,
-                                      read_func,
-                                      error_func,
-                                      NULL,
-                                      stream,
-                                      name,
-                                      page_size);
-}
-
-SerdStatus
-serd_reader_start_file(SerdReader* reader, const char* uri, bool bulk)
-{
-  assert(reader);
-  assert(uri);
-
-  char* const path = serd_parse_file_uri(NULL, uri, NULL);
-  if (!path) {
+  if (!block_size || !input->stream) {
     return SERD_BAD_ARG;
   }
 
-  FILE* fd = serd_world_fopen(reader->world, path, "rb");
-  zix_free(NULL, path);
-  if (!fd) {
-    return SERD_BAD_STREAM;
+  if (reader->source) {
+    return SERD_BAD_CALL;
   }
 
-  const SerdStatus st = serd_byte_source_open_source(
-    reader->world->allocator,
-    &reader->source,
-    bulk ? (SerdReadFunc)fread : serd_file_read_byte,
-    (SerdErrorFunc)ferror,
-    (SerdCloseFunc)fclose,
-    fd,
-    zix_string(uri),
-    bulk ? SERD_PAGE_SIZE : 1U);
+  ZixAllocator* const allocator = serd_world_allocator(reader->world);
 
-  return st;
-}
+  reader->source =
+    serd_byte_source_new_input(allocator, input, input_name, block_size);
 
-SerdStatus
-serd_reader_start_string(SerdReader* const   reader,
-                         const char* const   utf8,
-                         const ZixStringView name)
-{
-  assert(reader);
-  assert(utf8);
-  return serd_byte_source_open_string(
-    reader->world->allocator, &reader->source, utf8, name);
+  return reader->source ? SERD_SUCCESS : SERD_BAD_ALLOC;
 }
 
 static SerdStatus
 serd_reader_prepare(SerdReader* const reader)
 {
-  SerdStatus st = serd_byte_source_prepare(&reader->source);
+  SerdStatus st = serd_byte_source_prepare(reader->source);
   if (st == SERD_SUCCESS) {
-    if ((st = serd_byte_source_skip_bom(&reader->source))) {
+    if ((st = serd_byte_source_skip_bom(reader->source))) {
       r_err(reader, SERD_BAD_SYNTAX, "corrupt byte order mark");
     }
   } else if (st == SERD_FAILURE) {
-    reader->source.eof = true;
-  } else {
-    r_err(reader, st, "error preparing read: %s", strerror(errno));
+    reader->source->eof = true;
   }
   return st;
 }
@@ -506,8 +469,8 @@ serd_reader_read_chunk(SerdReader* const reader)
   }
 
   SerdStatus st = serd_reader_prepare_if_necessary(reader);
-  if (!st && reader->source.eof) {
-    st = serd_byte_source_advance(&reader->source);
+  if (!st && reader->source->eof) {
+    st = serd_byte_source_advance(reader->source);
   }
 
   return st ? st : read_syntax_chunk(reader);
@@ -518,5 +481,10 @@ serd_reader_finish(SerdReader* const reader)
 {
   assert(reader);
 
-  return serd_byte_source_close(reader->world->allocator, &reader->source);
+  if (reader->source) {
+    serd_byte_source_free(serd_world_allocator(reader->world), reader->source);
+    reader->source = NULL;
+  }
+
+  return SERD_SUCCESS;
 }

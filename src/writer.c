@@ -1,29 +1,28 @@
 // Copyright 2011-2025 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "byte_sink.h"
+#include "block_dumper.h"
 #include "namespaces.h"
 #include "stack.h"
 #include "string_utils.h"
 #include "symbols.h"
-#include "system.h"
 #include "token_header.h"
 #include "try.h"
 #include "turtle.h"
 #include "uri_utils.h"
 #include "world_internal.h"
 
-#include <serd/buffer.h>
 #include <serd/env.h>
 #include <serd/event.h>
 #include <serd/field.h>
 #include <serd/node_flags.h>
 #include <serd/node_type.h>
 #include <serd/object_view.h>
+#include <serd/output_stream.h>
 #include <serd/sink.h>
 #include <serd/statement_view.h>
 #include <serd/status.h>
-#include <serd/stream.h>
+#include <serd/stream_result.h>
 #include <serd/string_pair_view.h>
 #include <serd/syntax.h>
 #include <serd/token_view.h>
@@ -35,7 +34,6 @@
 #include <zix/string_view.h>
 
 #include <assert.h>
-#include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -127,7 +125,7 @@ struct SerdWriterImpl {
   char*           root_uri_string;
   SerdURIView     root_uri;
   SerdStack       stack;
-  SerdByteSink    byte_sink;
+  SerdBlockDumper output;
   WriteContext*   context;
   char*           bprefix;
   size_t          bprefix_len;
@@ -343,50 +341,51 @@ pop_context(SerdWriter* const writer)
   }
 }
 
-ZIX_NODISCARD static size_t
-sink(const void* const buf, const size_t len, SerdWriter* const writer)
+/// Error sink that returns only a status, assumes n_in == n_out
+ZIX_NODISCARD static SerdStatus
+esink(SerdWriter* const writer, const size_t len, const void* const buf)
 {
-  const size_t written = serd_byte_sink_write(buf, len, &writer->byte_sink);
-  if (written != len) {
-    if (errno) {
-      w_err(writer, SERD_BAD_WRITE, "write error (%s)", strerror(errno));
-    } else {
-      w_err(writer, SERD_BAD_WRITE, "write error");
-    }
-  }
-
-  return written;
+  return serd_block_dumper_write(&writer->output, len, buf).status;
 }
 
-ZIX_NODISCARD static SerdStatus
-esink(const void* const buf, const size_t len, SerdWriter* const writer)
+/// Variable sink that returns an updated variable result
+ZIX_NODISCARD static VariableResult
+vsink(SerdWriter* const    writer,
+      const VariableResult vr,
+      const size_t         len,
+      const void* const    buf)
 {
-  return sink(buf, len, writer) == len ? SERD_SUCCESS : SERD_BAD_WRITE;
+  const SerdStreamResult wr =
+    serd_block_dumper_write(&writer->output, len, buf);
+  const VariableResult r = {
+    wr.status, vr.read_count, vr.write_count + wr.count};
+  return r;
 }
 
 static VariableResult
 write_UCHAR(SerdWriter* const writer, const uint8_t* const utf8)
 {
-  VariableResult result     = {SERD_SUCCESS, 0U, 0U};
   char           escape[11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   uint8_t        c_size     = 0U;
   const uint32_t c          = parse_utf8_char(utf8, &c_size);
+  VariableResult vr         = {SERD_SUCCESS, c_size, 0U};
 
-  result.read_count = c_size;
-  if (result.read_count == 0U) {
-    result.status =
-      w_err(writer, SERD_BAD_TEXT, "invalid UTF-8 start: %X", utf8[0]);
+  if (c_size == 0U) {
+    vr = vsink(writer, vr, sizeof(replacement_char), replacement_char);
+    if (!vr.status) {
+      vr.status = w_err(writer, SERD_BAD_TEXT, "bad UTF-8 start: %X", utf8[0]);
+    }
   } else if (c <= 0xFFFF) {
     // Write short (4 digit) escape
     snprintf(escape, sizeof(escape), "\\u%04X", c);
-    result.write_count = sink(escape, 6, writer);
+    vr = vsink(writer, vr, 6, escape);
   } else {
     // Write long (8 digit) escape
     snprintf(escape, sizeof(escape), "\\U%08X", c);
-    result.write_count = sink(escape, 10, writer);
+    vr = vsink(writer, vr, 10, escape);
   }
 
-  return result;
+  return vr;
 }
 
 static VariableResult
@@ -407,12 +406,7 @@ write_text_character(SerdWriter* const writer, const uint8_t* const utf8)
   }
 
   // Write the UTF-8 encoding directly to the output
-  result.write_count = sink(utf8, result.read_count, writer);
-  if (result.write_count != result.read_count) {
-    result.status = SERD_BAD_WRITE;
-  }
-
-  return result;
+  return vsink(writer, result, result.read_count, utf8);
 }
 
 static VariableResult
@@ -423,13 +417,10 @@ write_uri_character(SerdWriter* const writer, const uint8_t* const utf8)
     return write_UCHAR(writer, utf8);
   }
 
-  // Parse the leading byte to get the UTF-8 encoding size
   VariableResult result = {SERD_BAD_TEXT, 0U, 0U};
   if ((result.read_count = utf8_num_bytes(c))) {
     // Write the UTF-8 encoding directly to the output
-    result.write_count = sink(utf8, result.read_count, writer);
-    result.status =
-      (result.write_count == result.read_count) ? SERD_SUCCESS : SERD_BAD_WRITE;
+    result = vsink(writer, result, result.read_count, utf8);
   }
 
   return result;
@@ -464,8 +455,8 @@ write_uri_text(SerdWriter* const writer,
   for (size_t i = 0; i < n_bytes;) {
     // Write leading chunk as a single fast bulk write
     const size_t j = next_text_index(utf8, i, n_bytes, uri_must_escape);
-    result.status  = esink(&utf8[i], j - i, writer);
-    if ((i = j) == n_bytes) {
+    result         = vsink(writer, result, j - i, &utf8[i]);
+    if (result.status || (i = j) == n_bytes) {
       break; // Reached end
     }
 
@@ -481,10 +472,11 @@ write_uri_text(SerdWriter* const writer,
 
     if (!r.read_count) {
       // Corrupt input, write percent-encoded bytes and scan to next start
-      char escape[4] = {0, 0, 0, 0};
-      for (; i < n_bytes && !is_utf8_leading((uint8_t)utf8[i]); ++i) {
+      for (char escape[4] = {0, 0, 0, 0};
+           !result.status && i < n_bytes && !is_utf8_leading((uint8_t)utf8[i]);
+           ++i) {
         snprintf(escape, sizeof(escape), "%%%02X", (uint8_t)utf8[i]);
-        result.write_count += sink(escape, 3, writer);
+        result = vsink(writer, result, 3, escape);
       }
     }
   }
@@ -517,7 +509,7 @@ write_utf8_percent_escape(SerdWriter* const writer,
     escape[1]          = hex_chars[byte >> 4U];
     escape[2]          = hex_chars[byte & 0x0FU];
 
-    TRY(st, esink(escape, 3, writer));
+    TRY(st, esink(writer, 3, escape));
   }
 
   return st;
@@ -528,7 +520,7 @@ write_PN_LOCAL_ESC(SerdWriter* const writer, const char c)
 {
   const char buf[2] = {'\\', c};
 
-  return esink(buf, sizeof(buf), writer);
+  return esink(writer, sizeof(buf), buf);
 }
 
 ZIX_NODISCARD static SerdStatus
@@ -560,7 +552,7 @@ write_lname(SerdWriter* const writer, const ZixStringView string)
   uint8_t   first_size = 0U;
   const int first      = (int)parse_utf8_char(utf8, &first_size);
   if (is_PN_CHARS_U(first) || first == ':' || is_digit(first)) {
-    TRY(st, esink(utf8, first_size, writer));
+    TRY(st, esink(writer, first_size, utf8));
   } else {
     TRY(st, write_lname_escape(writer, string.data, first_size));
   }
@@ -571,7 +563,7 @@ write_lname(SerdWriter* const writer, const ZixStringView string)
     const int c      = (int)parse_utf8_char(utf8 + i, &c_size);
 
     if (is_PN_CHARS(c) || c == ':' || (c == '.' && (i + 1U < n_bytes))) {
-      TRY(st, esink(&utf8[i], c_size, writer));
+      TRY(st, esink(writer, c_size, &utf8[i]));
     } else {
       TRY(st, write_lname_escape(writer, &string.data[i], c_size));
     }
@@ -582,53 +574,53 @@ write_lname(SerdWriter* const writer, const ZixStringView string)
   return st;
 }
 
-ZIX_NODISCARD static size_t
+ZIX_NODISCARD static SerdStatus
 write_long_string_escape(SerdWriter* const writer,
                          const size_t      n_consecutive_quotes,
                          const char        c)
 {
   switch (c) {
   case '\\':
-    return sink("\\\\", 2, writer);
+    return esink(writer, 2, "\\\\");
 
   case '\b':
-    return sink("\\b", 2, writer);
+    return esink(writer, 2, "\\b");
 
   case '\n':
   case '\r':
   case '\t':
   case '\f':
-    return sink(&c, 1, writer); // Write character as-is
+    return esink(writer, 1, &c); // Write character as-is
 
   case '\"':
     if (n_consecutive_quotes >= 3) {
       // Two quotes in a row, or quote at string end, escape
-      return sink("\\\"", 2, writer);
+      return esink(writer, 2, "\\\"");
     }
 
-    return sink(&c, 1, writer);
+    return esink(writer, 1, &c);
 
   default:
     break;
   }
 
-  return 0;
+  return SERD_FAILURE;
 }
 
-ZIX_NODISCARD static size_t
+ZIX_NODISCARD static SerdStatus
 write_short_string_escape(SerdWriter* const writer, const char c)
 {
   switch (c) {
   case '\\':
-    return sink("\\\\", 2, writer);
+    return esink(writer, 2, "\\\\");
   case '\n':
-    return sink("\\n", 2, writer);
+    return esink(writer, 2, "\\n");
   case '\r':
-    return sink("\\r", 2, writer);
+    return esink(writer, 2, "\\r");
   case '\t':
-    return sink("\\t", 2, writer);
+    return esink(writer, 2, "\\t");
   case '"':
-    return sink("\\\"", 2, writer);
+    return esink(writer, 2, "\\\"");
   default:
     break;
   }
@@ -636,15 +628,15 @@ write_short_string_escape(SerdWriter* const writer, const char c)
   if (writer->syntax == SERD_TURTLE) {
     switch (c) {
     case '\b':
-      return sink("\\b", 2, writer);
+      return esink(writer, 2, "\\b");
     case '\f':
-      return sink("\\f", 2, writer);
+      return esink(writer, 2, "\\f");
     default:
       break;
     }
   }
 
-  return 0;
+  return SERD_FAILURE;
 }
 
 ZIX_NODISCARD static bool
@@ -658,31 +650,30 @@ write_short_text(SerdWriter* const writer,
                  const char* const utf8,
                  const size_t      n_bytes)
 {
-  VariableResult vr = {SERD_SUCCESS, 0U, 0U};
+  const bool     lax = (writer->flags & SERD_WRITE_LAX);
+  VariableResult vr  = {SERD_SUCCESS, 0U, 0U};
   for (size_t i = 0; !vr.status && i < n_bytes;) {
     // Write leading chunk as a single fast bulk write
     const size_t j = next_text_index(utf8, i, n_bytes, text_must_escape);
-    vr.status      = esink(&utf8[i], j - i, writer);
+    vr.status      = esink(writer, j - i, &utf8[i]);
     if (vr.status || ((i = j) == n_bytes)) {
       break; // Error or reached end
     }
 
     // Try to write character as a special short escape (newline and friends)
-    const char   in         = utf8[i];
-    const size_t escape_len = write_short_string_escape(writer, in);
-
-    if (!escape_len) {
+    const char in = utf8[i];
+    if (!(vr.status = write_short_string_escape(writer, in))) {
+      vr.read_count = 1U;
+    } else if (vr.status == SERD_FAILURE) {
       // No special escape for this character, write full Unicode escape
       vr = write_text_character(writer, (const uint8_t*)utf8 + i);
-      i += vr.read_count;
+    }
 
-      if (!vr.read_count && (writer->flags & SERD_WRITE_LAX)) {
-        // Corrupt input, write replacement char and scan to the next start
-        vr.status = esink(replacement_char, sizeof(replacement_char), writer);
-        i += next_text_index(utf8, i, n_bytes, is_utf8_leading);
-      }
+    if (!vr.read_count) {
+      i         = next_text_index(utf8, i + 1U, n_bytes, is_utf8_leading);
+      vr.status = lax ? SERD_SUCCESS : vr.status;
     } else {
-      ++i;
+      i += vr.read_count;
     }
   }
 
@@ -692,6 +683,7 @@ write_short_text(SerdWriter* const writer,
 ZIX_NODISCARD static SerdStatus
 write_long_text(SerdWriter* writer, const char* utf8, size_t n_bytes)
 {
+  const bool     lax      = (writer->flags & SERD_WRITE_LAX);
   size_t         n_quotes = 0;
   VariableResult vr       = {SERD_SUCCESS, 0U, 0U};
   for (size_t i = 0; !vr.status && i < n_bytes;) {
@@ -701,48 +693,40 @@ write_long_text(SerdWriter* writer, const char* utf8, size_t n_bytes)
 
     // Write leading chunk as a single fast bulk write
     const size_t j = next_text_index(utf8, i, n_bytes, text_must_escape);
-    vr.status      = esink(&utf8[i], j - i, writer);
+    vr.status      = esink(writer, j - i, &utf8[i]);
     if (vr.status || ((i = j) == n_bytes)) {
       break; // Error or reached end
     }
 
-    // Try to write character as a special long escape (newline and friends)
-    const char in           = utf8[i];
-    n_quotes                = (in == '\"') ? (n_quotes + 1U) : 0;
-    const size_t escape_len = write_long_string_escape(writer, n_quotes, in);
+    n_quotes = (utf8[i] == '\"') ? (n_quotes + 1U) : 0U;
 
-    if (!escape_len) {
+    // Try to write character as a special long escape (newline and friends)
+    vr.status = write_long_string_escape(writer, n_quotes, utf8[i]);
+    if (!vr.status) {
+      vr.read_count = 1U;
+    } else if (vr.status == SERD_FAILURE) {
       // No special escape for this character, write full Unicode escape
       vr = write_text_character(writer, (const uint8_t*)utf8 + i);
-      i += vr.read_count;
+    }
 
-      if (!vr.read_count && (writer->flags & SERD_WRITE_LAX)) {
-        // Corrupt input, write replacement char and scan to the next start
-        vr.status = esink(replacement_char, sizeof(replacement_char), writer);
-        i += next_text_index(utf8, i, n_bytes, is_utf8_leading);
-      }
+    if (!vr.read_count) {
+      i         = next_text_index(utf8, i + 1U, n_bytes, is_utf8_leading);
+      vr.status = lax ? SERD_SUCCESS : vr.status;
     } else {
-      ++i;
+      i += vr.read_count;
     }
   }
 
   return vr.status;
 }
 
-typedef struct {
-  SerdWriter* writer;
-  SerdStatus  status;
-} UriSinkContext;
-
-ZIX_NODISCARD static size_t
-uri_sink(const void* const buf, const size_t len, void* const stream)
+ZIX_NODISCARD static SerdStreamResult
+uri_sink(void* const stream, const size_t len, const void* const buf)
 {
-  UriSinkContext* const context = (UriSinkContext*)stream;
-  SerdWriter* const     writer  = context->writer;
-  const VariableResult  r       = write_uri_text(writer, (const char*)buf, len);
-
-  context->status = r.status;
-  return r.write_count;
+  SerdWriter* const      writer = (SerdWriter*)stream;
+  const VariableResult   r      = write_uri_text(writer, (const char*)buf, len);
+  const SerdStreamResult wr     = {r.status, r.write_count};
+  return wr;
 }
 
 ZIX_NODISCARD static SerdStatus
@@ -751,12 +735,12 @@ write_newline(SerdWriter* const writer, const bool terse)
   SerdStatus st = SERD_SUCCESS;
 
   if (terse || writer->context->terse) {
-    return esink(" ", 1, writer);
+    return esink(writer, 1, " ");
   }
 
-  TRY(st, esink("\n", 1, writer));
+  TRY(st, esink(writer, 1, "\n"));
   for (int i = 0; i < writer->indent; ++i) {
-    TRY(st, esink("\t", 1, writer));
+    TRY(st, esink(writer, 1, "\t"));
   }
 
   return st;
@@ -766,7 +750,7 @@ ZIX_NODISCARD static SerdStatus
 write_space(SerdWriter* const writer, const uint8_t flags, const bool terse)
 {
   return (flags & PRE_LINE)    ? write_newline(writer, terse)
-         : (flags & PRE_SPACE) ? esink(" ", 1, writer)
+         : (flags & PRE_SPACE) ? esink(writer, 1, " ")
                                : SERD_SUCCESS;
 }
 
@@ -804,7 +788,7 @@ write_sep(SerdWriter* const writer, const bool terse, const Sep sep)
 
   // Write actual separator string
   if (rule->sep) {
-    TRY(st, esink(&rule->sep, 1, writer));
+    TRY(st, esink(writer, 1, &rule->sep));
   }
 
   // Write newline after separator if necessary
@@ -815,7 +799,7 @@ write_sep(SerdWriter* const writer, const bool terse, const Sep sep)
     writer->indent      = top_has_field(writer, SERD_GRAPH) ? 1 : 0;
     ctx->comma_indented = false;
     if (!terse) {
-      TRY(st, esink("\n", 1, writer));
+      TRY(st, esink(writer, 1, "\n"));
     }
   }
 
@@ -876,13 +860,13 @@ write_IRIREF(SerdWriter* const writer, const ZixStringView string)
 {
   SerdStatus st = SERD_SUCCESS;
 
-  TRY(st, esink("<", 1, writer));
+  TRY(st, esink(writer, 1, "<"));
 
   // Write the string and return early if resolution is disabled or impossible
   const SerdURIView base_uri = serd_env_base_uri_view(writer->env);
   if ((writer->flags & SERD_WRITE_UNRESOLVED) || !base_uri.scheme.length) {
     TRY(st, ewrite_uri(writer, string));
-    return esink(">", 1, writer);
+    return esink(writer, 1, ">");
   }
 
   // Resolve the input URI reference to a (hopefully) absolute URI
@@ -897,10 +881,8 @@ write_IRIREF(SerdWriter* const writer, const ZixStringView string)
     out_uri = serd_relative_uri(in_uri, base_uri);
   }
 
-  UriSinkContext context = {writer, SERD_SUCCESS};
-  serd_write_uri(out_uri, uri_sink, &context);
-
-  return context.status ? context.status : esink(">", 1, writer);
+  const SerdStreamResult r = serd_write_uri(out_uri, uri_sink, writer);
+  return r.status ? r.status : esink(writer, 1, ">");
 }
 
 ZIX_NODISCARD static SerdStatus
@@ -911,14 +893,14 @@ write_uri(SerdWriter* const writer, const ZixStringView string)
 
   if (supports_abbrev(writer)) {
     if (token_equals_symbol(serd_token_view(SERD_URI, string), RDF_NIL)) {
-      return esink("()", 2, writer);
+      return esink(writer, 2, "()");
     }
 
     SerdStringPairView pair = {{"", 0}, {"", 0}};
     if (has_scheme && !(writer->flags & SERD_WRITE_UNQUALIFIED) &&
         !serd_env_qualify(writer->env, string, &pair)) {
       TRY(st, write_lname(writer, pair.prefix));
-      TRY(st, esink(":", 1, writer));
+      TRY(st, esink(writer, 1, ":"));
       return write_lname(writer, pair.suffix);
     }
   }
@@ -952,10 +934,10 @@ write_curie(SerdWriter* const writer, const ZixStringView curie)
   }
 
   if (!supports_abbrev(writer)) {
-    TRY(st, esink("<", 1, writer));
+    TRY(st, esink(writer, 1, "<"));
     TRY(st, ewrite_uri(writer, pair.prefix));
     TRY(st, ewrite_uri(writer, pair.suffix));
-    TRY(st, esink(">", 1, writer));
+    TRY(st, esink(writer, 1, ">"));
   } else {
     TRY(st, write_lname(writer, curie));
   }
@@ -996,26 +978,26 @@ write_literal(SerdWriter* const   writer,
     if (!strcmp(xsd_name, "boolean") || !strcmp(xsd_name, "integer") ||
         (!strcmp(xsd_name, "decimal") && strchr(string.data, '.') &&
          string.data[string.length - 1U] != '.')) {
-      return esink(string.data, string.length, writer);
+      return esink(writer, string.length, string.data);
     }
   }
 
   if (supports_abbrev(writer) &&
       (node_flags & (SERD_HAS_NEWLINE | SERD_HAS_QUOTE))) {
-    TRY(st, esink("\"\"\"", 3, writer));
+    TRY(st, esink(writer, 3, "\"\"\""));
     TRY(st, write_long_text(writer, string.data, string.length));
-    st = esink("\"\"\"", 3, writer);
+    st = esink(writer, 3, "\"\"\"");
   } else {
-    TRY(st, esink("\"", 1, writer));
+    TRY(st, esink(writer, 1, "\""));
     TRY(st, write_short_text(writer, string.data, string.length));
-    st = esink("\"", 1, writer);
+    st = esink(writer, 1, "\"");
   }
 
   if (node_flags & SERD_HAS_LANGUAGE) {
-    TRY(st, esink("@", 1, writer));
-    st = esink(meta.string.data, meta.string.length, writer);
+    TRY(st, esink(writer, 1, "@"));
+    st = esink(writer, meta.string.length, meta.string.data);
   } else if (node_flags & SERD_HAS_DATATYPE) {
-    TRY(st, esink("^^", 2, writer));
+    TRY(st, esink(writer, 2, "^^"));
     st = write_iri(writer, meta);
   }
 
@@ -1042,19 +1024,19 @@ write_blank(SerdWriter* const    writer,
     if ((field == SERD_SUBJECT && (flags & SERD_EMPTY_S)) ||
         (field == SERD_OBJECT && (flags & SERD_EMPTY_O)) ||
         (field == SERD_GRAPH && (flags & SERD_EMPTY_G))) {
-      return esink("[]", 2, writer);
+      return esink(writer, 2, "[]");
     }
   }
 
-  TRY(st, esink("_:", 2, writer));
+  TRY(st, esink(writer, 2, "_:"));
   if (writer->bprefix &&
       !strncmp(label.data, writer->bprefix, writer->bprefix_len)) {
     TRY(st,
-        esink(label.data + writer->bprefix_len,
+        esink(writer,
               label.length - writer->bprefix_len,
-              writer));
+              label.data + writer->bprefix_len));
   } else {
-    TRY(st, esink(label.data, label.length, writer));
+    TRY(st, esink(writer, label.length, label.data));
   }
 
   return st;
@@ -1087,7 +1069,7 @@ write_object(SerdWriter* const    writer,
 ZIX_NODISCARD static SerdStatus
 write_pred(SerdWriter* writer, const SerdTokenView pred)
 {
-  SerdStatus st = token_equals_symbol(pred, RDF_TYPE) ? esink("a", 1, writer)
+  SerdStatus st = token_equals_symbol(pred, RDF_TYPE) ? esink(writer, 1, "a")
                                                       : write_iri(writer, pred);
 
   if (!st) {
@@ -1145,11 +1127,11 @@ write_ntriples_statement(SerdWriter* const    writer,
   SerdStatus st = SERD_SUCCESS;
 
   TRY(st, write_token(writer, SERD_SUBJECT, flags, subject));
-  TRY(st, esink(" ", 1, writer));
+  TRY(st, esink(writer, 1, " "));
   TRY(st, write_token(writer, SERD_PREDICATE, flags, predicate));
-  TRY(st, esink(" ", 1, writer));
+  TRY(st, esink(writer, 1, " "));
   TRY(st, write_object(writer, flags, object));
-  TRY(st, esink(" .\n", 3, writer));
+  TRY(st, esink(writer, 3, " .\n"));
 
   return st;
 }
@@ -1165,17 +1147,17 @@ write_nquads_statement(SerdWriter* const    writer,
   SerdStatus st = SERD_SUCCESS;
 
   TRY(st, write_token(writer, SERD_SUBJECT, flags, subject));
-  TRY(st, esink(" ", 1, writer));
+  TRY(st, esink(writer, 1, " "));
   TRY(st, write_token(writer, SERD_PREDICATE, flags, predicate));
-  TRY(st, esink(" ", 1, writer));
+  TRY(st, esink(writer, 1, " "));
   TRY(st, write_object(writer, flags, object));
 
   if (serd_field_supports(SERD_GRAPH, graph.type)) {
-    TRY(st, esink(" ", 1, writer));
+    TRY(st, esink(writer, 1, " "));
     TRY(st, write_token(writer, SERD_GRAPH, flags, graph));
   }
 
-  return esink(" .\n", 3, writer);
+  return esink(writer, 3, " .\n");
 }
 
 static bool
@@ -1241,7 +1223,7 @@ write_list_statement(SerdWriter* const    writer,
 {
   if (token_equals_symbol(predicate, RDF_FIRST) &&
       token_equals_symbol(serd_object_token_view(object), RDF_NIL)) {
-    return esink("()", 2, writer);
+    return esink(writer, 2, "()");
   }
 
   const SerdStatus st = write_list_next(writer, flags, predicate, object);
@@ -1450,7 +1432,7 @@ serd_writer_finish(SerdWriter* const writer)
   assert(writer);
 
   const SerdStatus st0 = terminate_context(writer);
-  const SerdStatus st1 = serd_byte_sink_flush(&writer->byte_sink);
+  const SerdStatus st1 = serd_block_dumper_flush(&writer->output);
 
   reset_context(writer, RESET_GRAPH | RESET_INDENT);
   writer->last_sep = SEP_NONE;
@@ -1458,16 +1440,16 @@ serd_writer_finish(SerdWriter* const writer)
 }
 
 SerdWriter*
-serd_writer_new(SerdWorld* const      world,
-                const SerdSyntax      syntax,
-                const SerdWriterFlags flags,
-                SerdEnv* const        env,
-                SerdWriteFunc         ssink,
-                void* const           stream)
+serd_writer_new(SerdWorld* const              world,
+                const SerdSyntax              syntax,
+                const SerdWriterFlags         flags,
+                SerdEnv* const                env,
+                const SerdOutputStream* const output,
+                const size_t                  block_size)
 {
   assert(world);
   assert(env);
-  assert(ssink);
+  assert(output);
 
   ZixAllocator* const allocator = serd_world_allocator(world);
   const SerdLimits    limits    = serd_world_limits(world);
@@ -1475,9 +1457,15 @@ serd_writer_new(SerdWorld* const      world,
     return NULL;
   }
 
+  SerdBlockDumper dumper = {allocator, output, NULL, 0U, 0U};
+  if (serd_block_dumper_open(world, &dumper, output, block_size)) {
+    return NULL;
+  }
+
   SerdWriter* writer =
     (SerdWriter*)zix_calloc(allocator, 1, sizeof(SerdWriter));
   if (!writer) {
+    serd_block_dumper_close(&dumper);
     return NULL;
   }
 
@@ -1494,6 +1482,7 @@ serd_writer_new(SerdWorld* const      world,
 
   writer->stack = serd_stack_new(allocator, limits.writer_stack_size);
   if (!writer->stack.buf) {
+    serd_block_dumper_close(&dumper);
     zix_free(allocator, writer);
     return NULL;
   }
@@ -1505,13 +1494,7 @@ serd_writer_new(SerdWorld* const      world,
     writer->context->terse = (flags & SERD_WRITE_TERSE);
   }
 
-  writer->byte_sink = serd_byte_sink_new(
-    allocator, ssink, stream, (flags & SERD_WRITE_BULK) ? SERD_PAGE_SIZE : 1);
-  if (((flags & SERD_WRITE_BULK) && !writer->byte_sink.buf)) {
-    serd_stack_free(allocator, &writer->stack);
-    zix_free(allocator, writer);
-    return NULL;
-  }
+  writer->output = dumper;
 
   return writer;
 }
@@ -1553,12 +1536,12 @@ write_base(SerdWriter* const writer, const ZixStringView uri)
     const bool had_subject = writer->context->subject.type;
     TRY(st, terminate_context(writer));
     if (had_subject) {
-      TRY(st, esink("\n", 1, writer));
+      TRY(st, esink(writer, 1, "\n"));
     }
 
-    TRY(st, esink("@base <", 7, writer));
-    TRY(st, esink(uri.data, uri.length, writer));
-    TRY(st, esink(">", 1, writer));
+    TRY(st, esink(writer, 7, "@base <"));
+    TRY(st, esink(writer, uri.length, uri.data));
+    TRY(st, esink(writer, 1, ">"));
     TRY(st, write_sep(writer, false, SEP_STOP));
   }
 
@@ -1600,14 +1583,14 @@ write_prefix(SerdWriter* const   writer,
     const bool had_subject = writer->context->subject.type;
     TRY(st, terminate_context(writer));
     if (had_subject) {
-      TRY(st, esink("\n", 1, writer));
+      TRY(st, esink(writer, 1, "\n"));
     }
 
-    TRY(st, esink("@prefix ", 8, writer));
-    TRY(st, esink(name.data, name.length, writer));
-    TRY(st, esink(": <", 3, writer));
+    TRY(st, esink(writer, 8, "@prefix "));
+    TRY(st, esink(writer, name.length, name.data));
+    TRY(st, esink(writer, 3, ": <"));
     TRY(st, ewrite_uri(writer, uri));
-    TRY(st, esink(">", 1, writer));
+    TRY(st, esink(writer, 1, ">"));
     TRY(st, write_sep(writer, false, SEP_STOP));
   }
 
@@ -1624,8 +1607,8 @@ serd_writer_free(SerdWriter* const writer)
   ZixAllocator* const allocator = serd_world_allocator(writer->world);
   serd_writer_finish(writer);
   serd_stack_free(allocator, &writer->stack);
+  serd_block_dumper_close(&writer->output);
   zix_free(allocator, writer->bprefix);
-  serd_byte_sink_free(allocator, &writer->byte_sink);
   zix_free(allocator, writer->root_uri_string);
   zix_free(allocator, writer);
 }
@@ -1635,45 +1618,6 @@ serd_writer_sink(SerdWriter* const writer)
 {
   assert(writer);
   return &writer->sink;
-}
-
-size_t
-serd_file_sink(const void* const buf, const size_t len, void* const stream)
-{
-  assert(buf);
-  assert(stream);
-  return fwrite(buf, 1, len, (FILE*)stream);
-}
-
-size_t
-serd_buffer_sink(const void* const buf, const size_t len, void* const stream)
-{
-  assert(buf);
-  assert(stream);
-
-  SerdBuffer* buffer = (SerdBuffer*)stream;
-  char* const new_buf =
-    (char*)zix_realloc(buffer->allocator, buffer->buf, buffer->len + len);
-
-  if (!new_buf) {
-    return 0U;
-  }
-
-  memcpy(new_buf + buffer->len, buf, len);
-  buffer->buf = new_buf;
-  buffer->len += len;
-  return len;
-}
-
-char*
-serd_buffer_sink_finish(SerdBuffer* const stream)
-{
-  assert(stream);
-  if (serd_buffer_sink("", 1, stream) < 1U) {
-    return NULL;
-  }
-
-  return stream->buf;
 }
 
 ZIX_NODISCARD static SerdStatus

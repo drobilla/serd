@@ -5,10 +5,11 @@
 
 #include <serd/env.h>
 #include <serd/file_uri.h>
+#include <serd/input_stream.h>
 #include <serd/reader.h>
 #include <serd/sink.h>
 #include <serd/status.h>
-#include <serd/stream.h>
+#include <serd/stream_result.h>
 #include <serd/string.h>
 #include <serd/syntax.h>
 #include <serd/world.h>
@@ -36,43 +37,34 @@ typedef struct {
   FailMode         mode;
 } BadContext;
 
-static size_t
-bad_read(void* const  buf,
-         const size_t size,
-         const size_t nmemb,
-         void* const  stream)
+static SerdStreamResult
+bad_read(void* const stream, const size_t len, void* const buf)
 {
-  assert(size == 1U);
+  assert(len == 1U);
 
   BadContext* const ctx = (BadContext*)stream;
 
   const size_t begin  = ctx->offset;
-  const size_t end    = begin + nmemb;
+  const size_t end    = begin + len;
   const bool   is_bad = (begin <= ctx->error_offset && end > ctx->error_offset);
   if (is_bad && ctx->mode == MODE_BAD_STREAM) {
     ctx->error_status = 1;
   }
 
   if (ctx->error_status) {
-    return 0U;
+    const SerdStreamResult r = {SERD_BAD_READ, 0U};
+    return r;
   }
 
-  const size_t n = fread(buf, size, nmemb, ctx->file);
+  const size_t n = fread(buf, 1U, len, ctx->file);
   if (is_bad && ctx->mode != MODE_SUCCESS) {
     const size_t offset     = ctx->error_offset - begin;
     ((uint8_t*)buf)[offset] = (ctx->mode == MODE_BAD_CHAR ? 0xF8U : 0U);
   }
 
-  ctx->offset = end;
-  return n;
-}
-
-static int
-bad_error(void* const stream)
-{
-  BadContext* const ctx = (BadContext*)stream;
-
-  return ctx->error_status ? ctx->error_status : ferror(ctx->file);
+  ctx->offset              = end;
+  const SerdStreamResult r = {SERD_SUCCESS, n};
+  return r;
 }
 
 static SerdStatus
@@ -84,17 +76,14 @@ run_offset(SerdReader* const reader,
   ctx->error_offset = error_offset;
   ctx->error_status = 0;
 
-  SerdStatus st = serd_reader_start_stream(reader,
-                                           (SerdReadFunc)bad_read,
-                                           (SerdErrorFunc)bad_error,
-                                           ctx,
-                                           zix_string("test"),
-                                           4096);
-  assert(!st);
+  SerdInputStream in = serd_open_input_stream(bad_read, NULL, ctx);
+  assert(
+    !serd_reader_start(reader, &in, serd_string_view(ctx->base_string), 1U));
 
-  st = serd_reader_read_document(reader);
+  const SerdStatus st = serd_reader_read_document(reader);
 
   serd_reader_finish(reader);
+  serd_close_input(&in);
   return st;
 }
 
@@ -104,7 +93,7 @@ check_status(const FailMode   mode,
              const size_t     error_offset)
 {
   if ((mode == MODE_SUCCESS && st) ||
-      (mode == MODE_BAD_STREAM && st != SERD_BAD_STREAM) ||
+      (mode == MODE_BAD_STREAM && st != SERD_BAD_READ) ||
       (mode == MODE_BAD_CHAR && st != SERD_BAD_TEXT && st != SERD_BAD_SYNTAX)) {
     fprintf(stderr, "error: Expected read error at offset %zu\n", error_offset);
     fprintf(stderr, "note: Actual status: %s\n", serd_strerror(st));
