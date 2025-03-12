@@ -71,8 +71,8 @@ test_double_to_node(void)
                                   -16.00001,
                                   5.000000005,
                                   0.0000000001,
-                                  NAN,
-                                  INFINITY};
+                                  (double)NAN,
+                                  (double)INFINITY};
 
   const char* dbl_test_strs[] = {"0.0",
                                  "9.0",

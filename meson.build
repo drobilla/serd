@@ -39,7 +39,6 @@ if cc.get_id() in ['clang', 'emscripten']
       '-Wno-cast-function-type-strict',
       '-Wno-cast-qual',
       '-Wno-declaration-after-statement',
-      '-Wno-double-promotion',
       '-Wno-format-nonliteral',
       '-Wno-padded',
       '-Wno-switch-default',
