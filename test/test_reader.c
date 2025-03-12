@@ -25,9 +25,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 
 typedef struct {
+  int n_event;
   int n_base;
   int n_prefix;
   int n_statement;
@@ -38,6 +38,8 @@ static SerdStatus
 event_sink(void* const handle, const SerdEvent* const event)
 {
   ReaderTest* const rt = (ReaderTest*)handle;
+
+  ++rt->n_event;
 
   const SerdEventType type = event->type;
   switch (type) {
@@ -64,7 +66,7 @@ test_new_failed_alloc(void)
   SerdFailingAllocator allocator = serd_failing_allocator();
 
   SerdWorld* const world = serd_world_new(&allocator.base);
-  ReaderTest       rt    = {0, 0, 0, 0};
+  ReaderTest       rt    = {0, 0, 0, 0, 0};
   const SerdSink   sink  = {&rt, event_sink};
 
   // Successfully allocate a reader to count the number of allocations
@@ -88,10 +90,9 @@ test_start_stream_failed_alloc(void)
 {
   SerdFailingAllocator allocator = serd_failing_allocator();
 
-  SerdWorld* const world = serd_world_new(&allocator.base);
-  ReaderTest       rt    = {0, 0, 0, 0};
-  const SerdSink   sink  = {&rt, event_sink};
-
+  SerdWorld* const  world  = serd_world_new(&allocator.base);
+  ReaderTest        rt     = {0, 0, 0, 0, 0};
+  const SerdSink    sink   = {&rt, event_sink};
   SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, &sink);
   assert(reader);
 
@@ -128,7 +129,7 @@ test_read_string(void)
   SerdWorld* const world = serd_world_new(NULL);
   serd_world_set_limits(world, limits);
 
-  ReaderTest        rt     = {0, 0, 0, 0};
+  ReaderTest        rt     = {0, 0, 0, 0, 0};
   const SerdSink    sink   = {&rt, event_sink};
   SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, &sink);
   assert(reader);
@@ -151,53 +152,6 @@ test_read_string(void)
   serd_world_free(world);
 }
 
-/// Reads a null byte after a statement, then succeeds again (like a socket)
-static size_t
-eof_test_read(void* const  buf,
-              const size_t size,
-              const size_t nmemb,
-              void* const  stream)
-{
-  assert(size == 1);
-  assert(nmemb == 1);
-  (void)size;
-
-  static const char* const string = "_:s1 <http://example.org/p> _:o1 .\n"
-                                    "_:s2 <http://example.org/p> _:o2 .\n";
-
-  size_t* const count = (size_t*)stream;
-
-  // Normal reading for the first statement
-  if (*count < 35) {
-    *(char*)buf = string[*count];
-    ++*count;
-    return nmemb;
-  }
-
-  // EOF for the first read at the start of the second statement
-  if (*count == 35) {
-    assert(string[*count] == '_');
-    ++*count;
-    return 0;
-  }
-
-  if (*count >= strlen(string)) {
-    return 0;
-  }
-
-  // Normal reading after the EOF, adjusting for the skipped index 35
-  *(char*)buf = string[*count - 1];
-  ++*count;
-  return nmemb;
-}
-
-static int
-eof_test_error(void* const stream)
-{
-  (void)stream;
-  return 0;
-}
-
 /// A read of a file stream hits EOF then fails to read chunks immediately
 static void
 test_read_eof_file(const char* const path)
@@ -214,7 +168,7 @@ test_read_eof_file(const char* const path)
   SerdWorld* const world = serd_world_new(NULL);
   serd_world_set_limits(world, limits);
 
-  ReaderTest        rt     = {0, 0, 0, 0};
+  ReaderTest        rt     = {0, 0, 0, 0, 0};
   const SerdSink    sink   = {&rt, event_sink};
   SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, &sink);
   assert(reader);
@@ -228,9 +182,12 @@ test_read_eof_file(const char* const path)
                            4096);
 
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
+  assert(rt.n_event == 1);
+  assert(rt.n_statement == 1);
+
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
-  serd_reader_finish(reader);
+  assert(!serd_reader_finish(reader));
 
   fseek(f, 0L, SEEK_SET);
   serd_reader_start_stream(reader,
@@ -243,7 +200,7 @@ test_read_eof_file(const char* const path)
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
-  serd_reader_finish(reader);
+  assert(!serd_reader_finish(reader));
 
   serd_reader_free(reader);
   serd_world_free(world);
@@ -251,65 +208,22 @@ test_read_eof_file(const char* const path)
   assert(!zix_remove(path));
 }
 
-// A byte-wise reader hits EOF once then continues (like a socket)
-static void
-test_read_eof_by_byte(void)
-{
-  static const SerdLimits limits = {1024};
-
-  SerdWorld* const world = serd_world_new(NULL);
-  serd_world_set_limits(world, limits);
-
-  ReaderTest        rt     = {0, 0, 0, 0};
-  const SerdSink    sink   = {&rt, event_sink};
-  SerdReader* const reader = serd_reader_new(world, SERD_TURTLE, 0U, &sink);
-  assert(reader);
-
-  size_t n_reads = 0U;
-  serd_reader_start_stream(
-    reader, eof_test_read, eof_test_error, &n_reads, zix_empty_string(), 1U);
-
-  assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
-  assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
-  assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
-  assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
-
-  serd_reader_finish(reader);
-  serd_reader_free(reader);
-  serd_world_free(world);
-}
-
 static void
 test_read_flat_chunks(const char* const path, const SerdSyntax syntax)
 {
   static const SerdLimits limits = {2048};
-  static const char       null   = 0;
 
   FILE* const f = fopen(path, "w+b");
   assert(f);
 
-  // Write two statements, a null separator, then another statement
-
-  fprintf(f,
-          "<http://example.org/s> <http://example.org/p1> "
-          "<http://example.org/o1> .\n");
-
-  fprintf(f,
-          "<http://example.org/s> <http://example.org/p2> "
-          "<http://example.org/o2> .\n");
-
-  fwrite(&null, sizeof(null), 1, f);
-
-  fprintf(f,
-          "<http://example.org/s> <http://example.org/p3> "
-          "<http://example.org/o3> .");
-
-  fseek(f, 0, SEEK_SET);
+  // Write one statement and rewind to the start
+  fprintf(f, "_:s <http://example.org/p1> _:o1 .\n");
+  assert(!fseek(f, 0, SEEK_SET));
 
   SerdWorld* const world = serd_world_new(NULL);
   serd_world_set_limits(world, limits);
 
-  ReaderTest        rt     = {0, 0, 0, 0};
+  ReaderTest        rt     = {0, 0, 0, 0, 0};
   const SerdSink    sink   = {&rt, event_sink};
   SerdReader* const reader = serd_reader_new(world, syntax, 0U, &sink);
   assert(reader);
@@ -325,45 +239,46 @@ test_read_flat_chunks(const char* const path, const SerdSyntax syntax)
   // Read first statement
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_SUCCESS);
-  assert(rt.n_base == 0);
-  assert(rt.n_prefix == 0);
+  assert(rt.n_event == 1);
   assert(rt.n_statement == 1);
-  assert(rt.n_end == 0);
+
+  // Read EOF
+  st = serd_reader_read_chunk(reader);
+  assert(st == SERD_FAILURE);
+  assert(rt.n_event == 1);
+  assert(feof(f));
+
+  const long eof_pos = ftell(f);
+
+  // Write second and third statements
+  fprintf(f,
+          "<http://example.org/s> <http://example.org/p2> "
+          "<http://example.org/o2> .\n"
+          "<http://example.org/s> <http://example.org/p3> "
+          "<http://example.org/o3> .\n");
+
+  // Rewind to the no-longer-EOF position
+  clearerr(f);
+  assert(!fseek(f, eof_pos, SEEK_SET));
 
   // Read second statement
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_SUCCESS);
-  assert(rt.n_base == 0);
-  assert(rt.n_prefix == 0);
+  assert(rt.n_event == 2);
   assert(rt.n_statement == 2);
-  assert(rt.n_end == 0);
 
-  // Read terminator
-  st = serd_reader_read_chunk(reader);
-  assert(st == SERD_FAILURE);
-  assert(rt.n_base == 0);
-  assert(rt.n_prefix == 0);
-  assert(rt.n_statement == 2);
-  assert(rt.n_end == 0);
-
-  // Read last statement
+  // Read third statement
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_SUCCESS);
-  assert(rt.n_base == 0);
-  assert(rt.n_prefix == 0);
+  assert(rt.n_event == 3);
   assert(rt.n_statement == 3);
-  assert(rt.n_end == 0);
 
-  // EOF
+  // Read EOF again, twice
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_FAILURE);
-  assert(rt.n_base == 0);
-  assert(rt.n_prefix == 0);
-  assert(rt.n_statement == 3);
-  assert(rt.n_end == 0);
-
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_FAILURE);
+  assert(rt.n_event == 3);
 
   serd_reader_finish(reader);
   serd_reader_free(reader);
@@ -376,24 +291,22 @@ static void
 test_read_abbrev_chunks(const char* const path, const SerdSyntax syntax)
 {
   static const SerdLimits limits = {2048};
-  static const char       null   = 0;
 
   FILE* const f = fopen(path, "w+b");
   assert(f);
 
-  // Write two statements separated by null characters
+  // Write two directives and two statements
   fprintf(f, "@base <http://example.org/base/> .\n");
   fprintf(f, "@prefix eg: <http://example.org/> .\n");
   fprintf(f, "eg:s eg:p1 eg:o1 ;\n");
   fprintf(f, "     eg:p2 eg:o2 .\n");
-  fwrite(&null, sizeof(null), 1, f);
-  fprintf(f, "eg:s eg:p [ eg:sp eg:so ] .");
   fseek(f, 0, SEEK_SET);
 
   SerdWorld* const world = serd_world_new(NULL);
+  assert(world);
   serd_world_set_limits(world, limits);
 
-  ReaderTest        rt     = {0, 0, 0, 0};
+  ReaderTest        rt     = {0, 0, 0, 0, 0};
   const SerdSink    sink   = {&rt, event_sink};
   SerdReader* const reader = serd_reader_new(world, syntax, 0U, &sink);
   assert(reader);
@@ -409,60 +322,47 @@ test_read_abbrev_chunks(const char* const path, const SerdSyntax syntax)
   // Read base
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_SUCCESS);
+  assert(rt.n_event == 1);
   assert(rt.n_base == 1);
-  assert(rt.n_prefix == 0);
-  assert(rt.n_statement == 0);
-  assert(rt.n_end == 0);
 
   // Read prefix
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_SUCCESS);
-  assert(rt.n_base == 1);
+  assert(rt.n_event == 2);
   assert(rt.n_prefix == 1);
-  assert(rt.n_statement == 0);
-  assert(rt.n_end == 0);
 
   // Read first two statements
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_SUCCESS);
-  assert(rt.n_base == 1);
-  assert(rt.n_prefix == 1);
+  assert(rt.n_event == 4);
   assert(rt.n_statement == 2);
-  assert(rt.n_end == 0);
 
-  // Read terminator
+  // Read EOF
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_FAILURE);
-  assert(rt.n_base == 1);
-  assert(rt.n_prefix == 1);
-  assert(rt.n_statement == 2);
-  assert(rt.n_end == 0);
+  assert(rt.n_event == 4);
 
-  // Read statements after null terminator
+  const long eof_pos = ftell(f);
+
+  // Write 2 more statements
+  fprintf(f, "eg:s eg:p [ eg:sp eg:so ] .\n");
+  clearerr(f);
+  assert(!fseek(f, eof_pos, SEEK_SET));
+
+  // Read 2 new statements and anonymous node end
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_SUCCESS);
-  assert(rt.n_base == 1);
-  assert(rt.n_prefix == 1);
+  assert(rt.n_event == 7);
   assert(rt.n_statement == 4);
   assert(rt.n_end == 1);
 
-  // Read terminator
+  // Read EOF again, twice
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_FAILURE);
-  assert(rt.n_base == 1);
-  assert(rt.n_prefix == 1);
-  assert(rt.n_statement == 4);
-  assert(rt.n_end == 1);
-
-  // EOF
   st = serd_reader_read_chunk(reader);
   assert(st == SERD_FAILURE);
-  assert(rt.n_base == 1);
-  assert(rt.n_prefix == 1);
-  assert(rt.n_statement == 4);
-  assert(rt.n_end == 1);
+  assert(rt.n_event == 7);
 
-  assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   serd_reader_finish(reader);
   serd_reader_free(reader);
   serd_world_free(world);
@@ -500,7 +400,7 @@ test_read_empty(void)
   SerdWorld* const world = serd_world_new(NULL);
   serd_world_set_limits(world, limits);
 
-  ReaderTest        rt   = {0, 0, 0, 0};
+  ReaderTest        rt   = {0, 0, 0, 0, 0};
   const SerdSink    sink = {&rt, event_sink};
   SerdReader* const reader =
     serd_reader_new(world, SERD_SYNTAX_EMPTY, 0U, &sink);
@@ -553,7 +453,6 @@ main(void)
   test_read_empty();
   test_read_string();
   test_read_eof_file(ttl_path);
-  test_read_eof_by_byte();
 
   assert(!zix_remove(dir));
 

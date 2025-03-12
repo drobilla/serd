@@ -6,12 +6,14 @@
 	a mf:Manifest ;
 	rdfs:comment "Serd EOF (truncated input) test suite" ;
 	mf:entries (
+		<#bad-nq-eof-after-space>
 		<#bad-nt-eof-after-blank>
 		<#bad-nt-eof-after-lang>
 		<#bad-nt-eof-after-lang-hyphen>
 		<#bad-nt-eof-after-lang-subtag>
 		<#bad-nt-eof-after-object>
 		<#bad-nt-eof-after-predicate>
+		<#bad-nt-eof-after-space>
 		<#bad-nt-eof-after-string>
 		<#bad-nt-eof-after-string-escape>
 		<#bad-nt-eof-after-subject>
@@ -44,6 +46,11 @@
 		<#bad-ttl-eof-in-utf8-character>
 	) .
 
+<#bad-nq-eof-after-space>
+	a rdft:TestNQuadsNegativeSyntax ;
+	mf:action <bad-nq-eof-after-space.nq> ;
+	mf:name "bad-nq-eof-after-space" .
+
 <#bad-nt-eof-after-blank>
 	a rdft:TestNTriplesNegativeSyntax ;
 	mf:action <bad-nt-eof-after-blank.nt> ;
@@ -73,6 +80,11 @@
 	a rdft:TestNTriplesNegativeSyntax ;
 	mf:action <bad-nt-eof-after-predicate.nt> ;
 	mf:name "bad-nt-eof-after-predicate" .
+
+<#bad-nt-eof-after-space>
+	a rdft:TestNTriplesNegativeSyntax ;
+	mf:action <bad-nt-eof-after-space.nt> ;
+	mf:name "bad-nt-eof-after-space" .
 
 <#bad-nt-eof-after-string>
 	a rdft:TestNTriplesNegativeSyntax ;
