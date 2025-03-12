@@ -64,19 +64,6 @@ serd_node_new_uri_from_string(ZixAllocator* ZIX_NULLABLE allocator,
                               const char* ZIX_NULLABLE   str);
 
 /**
-   Create a new file URI node from a file system path and optional hostname.
-
-   Backslashes in Windows paths will be converted, and other characters will be
-   percent encoded as necessary.
-
-   If `path` is relative, `hostname` is ignored.
-*/
-SERD_API SerdNode
-serd_node_new_file_uri(ZixAllocator* ZIX_NULLABLE allocator,
-                       const char* ZIX_NONNULL    path,
-                       const char* ZIX_NULLABLE   hostname);
-
-/**
    Create a new node by serialising `uri` into a new string.
 
    @param allocator Allocator for the returned node.

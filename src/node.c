@@ -4,8 +4,6 @@
 #include "base64.h"
 #include "string_utils.h"
 
-#include <serd/buffer.h>
-#include <serd/file_uri.h>
 #include <serd/node.h>
 #include <serd/node_flags.h>
 #include <serd/node_type.h>
@@ -114,22 +112,6 @@ serd_node_new_uri_from_string(ZixAllocator* const allocator,
 
   const SerdURIView uri = serd_parse_uri(str);
   return serd_node_new_uri(allocator, &uri);
-}
-
-SerdNode
-serd_node_new_file_uri(ZixAllocator* const allocator,
-                       const char* const   path,
-                       const char* const   hostname)
-{
-  SerdBuffer buffer = {allocator, NULL, 0U};
-
-  serd_write_file_uri(
-    zix_string(path), zix_string(hostname), serd_buffer_sink, &buffer);
-
-  serd_buffer_sink_finish(&buffer);
-
-  const char* const string = serd_buffer_sink_finish(&buffer);
-  return serd_node_from_substring(SERD_URI, string, buffer.len);
 }
 
 SerdNode

@@ -93,6 +93,7 @@ simple_command_tests = {
       ['--help'],
       ['--version'],
       ['-h'],
+      ['-s', '<>a<>.', '.'],
       ['-s', '<go:>a<go:> .'],
       ['-v'],
     ],

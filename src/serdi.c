@@ -1,19 +1,26 @@
-// Copyright 2011-2023 David Robillard <d@drobilla.net>
+// Copyright 2011-2025 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #include "system.h"
 
 #include <serd/env.h>
 #include <serd/error.h>
+#include <serd/file_uri.h>
 #include <serd/node.h>
+#include <serd/node_type.h>
 #include <serd/reader.h>
 #include <serd/sink.h>
 #include <serd/status.h>
 #include <serd/stream.h>
+#include <serd/string.h>
 #include <serd/syntax.h>
+#include <serd/uri.h>
 #include <serd/version.h>
 #include <serd/world.h>
 #include <serd/writer.h>
+#include <zix/allocator.h>
+#include <zix/filesystem.h>
+#include <zix/path.h>
 #include <zix/string_view.h>
 
 #ifdef _WIN32
@@ -88,6 +95,34 @@ quiet_error_func(void* const handle, const SerdError* const e)
   (void)handle;
   (void)e;
   return SERD_SUCCESS;
+}
+
+static SerdString
+base_uri_from_path(const char* const path)
+{
+  static const ZixStringView host = ZIX_STATIC_STRING("");
+
+  SerdString base = {0, NULL};
+
+  if (zix_path_is_absolute(path)) {
+    char* const normal = zix_path_lexically_normal(NULL, path);
+
+    base = serd_file_uri_to_string(NULL, zix_string(normal), host);
+
+    zix_free(NULL, normal);
+  } else {
+    char* const cwd      = zix_current_path(NULL);
+    char* const absolute = zix_path_join(NULL, cwd, path);
+    char* const normal   = zix_path_lexically_normal(NULL, absolute);
+
+    base = serd_file_uri_to_string(NULL, zix_string(normal), host);
+
+    zix_free(NULL, normal);
+    zix_free(NULL, absolute);
+    zix_free(NULL, cwd);
+  }
+
+  return base;
 }
 
 int
@@ -215,16 +250,22 @@ main(int argc, char** argv)
     output_syntax = input_has_graphs ? SERD_NQUADS : SERD_NTRIPLES;
   }
 
-  SerdNode base = SERD_NODE_NULL;
+  SerdString base = {0, NULL};
   if (a < argc) { // Base URI given on command line
-    base = serd_node_new_uri_from_string(NULL, argv[a]);
+    if (serd_uri_string_has_scheme(argv[a])) {
+      base = serd_string_new(NULL, zix_string(argv[a]));
+    } else {
+      base = base_uri_from_path(argv[a]);
+    }
   } else if (!from_string && !from_stdin) { // Use input file URI
-    base = serd_node_new_file_uri(NULL, input, NULL);
+    base = base_uri_from_path(input);
   }
+
+  const SerdNode base_node = serd_node_from_string(SERD_URI, base.data);
 
   FILE* const      out_fd = stdout;
   SerdWorld* const world  = serd_world_new(NULL);
-  SerdEnv* const   env    = serd_env_new(NULL, &base);
+  SerdEnv* const   env    = serd_env_new(NULL, &base_node);
 
   SerdWriter* const writer = serd_writer_new(
     world, output_syntax, writer_flags, env, serd_file_sink, out_fd);
@@ -270,7 +311,7 @@ main(int argc, char** argv)
   serd_writer_finish(writer);
   serd_writer_free(writer);
   serd_env_free(env);
-  serd_node_free(NULL, &base);
+  zix_free(NULL, base.data);
   serd_world_free(world);
 
   if (fclose(stdout)) {
