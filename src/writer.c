@@ -44,13 +44,6 @@ typedef struct {
   bool        comma_indented;
 } WriteContext;
 
-static const WriteContext WRITE_CONTEXT_NULL = {CTX_NAMED,
-                                                {0, 0, 0, 0, SERD_NOTHING},
-                                                {0, 0, 0, 0, SERD_NOTHING},
-                                                {0, 0, 0, 0, SERD_NOTHING},
-                                                0U,
-                                                0U};
-
 typedef enum {
   SEP_NONE,        ///< Sentinel after "nothing"
   SEP_NEWLINE,     ///< Sentinel after a line end
@@ -1123,8 +1116,7 @@ serd_writer_new(const SerdSyntax     syntax,
   assert(env);
   assert(ssink);
 
-  const WriteContext context = WRITE_CONTEXT_NULL;
-  SerdWriter*        writer  = (SerdWriter*)calloc(1, sizeof(SerdWriter));
+  SerdWriter* writer = (SerdWriter*)calloc(1, sizeof(SerdWriter));
 
   writer->syntax     = syntax;
   writer->style      = style;
@@ -1133,7 +1125,6 @@ serd_writer_new(const SerdSyntax     syntax,
   writer->root_uri   = SERD_URI_NULL;
   writer->base_uri   = base_uri ? *base_uri : SERD_URI_NULL;
   writer->anon_stack = serd_stack_new(SERD_PAGE_SIZE);
-  writer->context    = context;
   writer->byte_sink  = serd_byte_sink_new(
     ssink, stream, (style & SERD_STYLE_BULK) ? SERD_PAGE_SIZE : 1);
 
