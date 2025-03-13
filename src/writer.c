@@ -37,11 +37,10 @@ typedef enum {
 
 typedef struct {
   ContextType type;
+  bool        comma_indented;
   SerdNode    graph;
   SerdNode    subject;
   SerdNode    predicate;
-  bool        predicates;
-  bool        comma_indented;
 } WriteContext;
 
 typedef enum {
@@ -198,7 +197,7 @@ push_context(SerdWriter* const writer,
   *(WriteContext*)top = writer->context;
 
   // Update the current context
-  const WriteContext current = {type, graph, subject, predicate, 0U, 0U};
+  const WriteContext current = {type, false, graph, subject, predicate};
   writer->context            = current;
 }
 
@@ -572,7 +571,6 @@ write_sep(SerdWriter* const writer, const Sep sep)
   // Reset context and write a blank line after ends of subjects
   if (sep == SEP_END_S) {
     writer->indent                 = writer->context.graph.type ? 1 : 0;
-    writer->context.predicates     = false;
     writer->context.comma_indented = false;
     TRY(st, esink("\n", 1, writer));
   }
@@ -605,7 +603,6 @@ reset_context(SerdWriter* const writer, const unsigned flags)
   writer->context.type           = CTX_NAMED;
   writer->context.subject.type   = SERD_NOTHING;
   writer->context.predicate.type = SERD_NOTHING;
-  writer->context.predicates     = false;
   writer->context.comma_indented = false;
   return SERD_SUCCESS;
 }
@@ -857,7 +854,6 @@ write_pred(SerdWriter* const        writer,
   TRY(st, write_sep(writer, SEP_P_O));
 
   copy_node(&writer->context.predicate, pred);
-  writer->context.predicates     = true;
   writer->context.comma_indented = false;
   return st;
 }
