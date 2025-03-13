@@ -3,16 +3,17 @@
 
 # Project information
 
-project = "@SERD_TITLE@"
+project = "Serd"
 copyright = "2022-2025, David Robillard"
 author = "David Robillard"
-release = "@SERD_VERSION@"
-version = "@SERD_VERSION@"
+release = "0.0.0" # Set on command line
+version = "0.0.0" # Defined on command line
 desc = "A lightweight library for working with RDF"
 
 # General configuration
 
 exclude_patterns = ["xml"]
+highlight_language = "c"
 language = "en"
 nitpicky = True
 pygments_style = "friendly"
@@ -23,6 +24,13 @@ try:
     have_lv2_theme = True
 except ModuleNotFoundError:
     have_lv2_theme = False
+
+# my_config_value = 42
+# build_dir = "" # Set on command line
+rst_epilog = '.. |serd_api_dir| replace:: /home/drobilla/src/drobillad/subprojects/lv2kit/subprojects/serd/build/doc/api/'
+
+def setup(app):
+    app.add_config_value('build_doc_dir', '', 'env')
 
 # Ignore everything opaque or external for nitpicky mode
 _opaque = [
@@ -43,8 +51,8 @@ nitpick_ignore = list(map(lambda x: ("c:identifier", x), _opaque))
 
 html_copy_source = False
 html_secnumber_suffix = " "
-html_short_title = "@SERD_TITLE@"
-html_static_path = ["@SERD_SRCDIR@/doc/_static"]
+html_short_title = project
+html_static_path = ["_static"]
 
 html_theme_options = {
     "description": desc,

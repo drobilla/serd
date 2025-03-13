@@ -38,17 +38,28 @@ if build_docs
     warning('Missing sphinx_lv2_theme module, falling back to alabaster')
   endif
 
-  # Configure conf.py for Sphinx
-  conf_config = configuration_data()
-  conf_config.set('SERD_SRCDIR', serd_src_root)
-  conf_config.set('SERD_TITLE', get_option('title'))
-  conf_config.set('SERD_VERSION', meson.project_version())
-  conf_py = configure_file(
-    configuration: conf_config,
-    input: files('conf.py.in'),
-    output: 'conf.py',
-  )
+  # Build sphinx-build define options to configure conf.py
+  sphinx_defines = [
+    ['-D', 'project=' + get_option('title')],
+    ['-D', 'release=' + meson.project_version()],
+    ['-D', 'version=' + meson.project_version()],
+    ['-D', 'build_doc_dir=' + meson.current_build_dir()],
+    # ['-D', 'rst_epilog=\'.. |api_index_entry| replace:: ' + (meson.current_build_dir() / 'serd') + '\''],
+    ['-D', 'html_static_path=' + meson.current_source_dir() / '_static'],
+  ]
 
+  message(sphinx_defines)
+  # conf_config = configuration_data()
+  # conf_config.set('SERD_SRCDIR', serd_src_root)
+  # conf_config.set('SERD_TITLE', get_option('title'))
+  # conf_config.set('SERD_VERSION', meson.project_version())
+  # conf_py = configure_file(
+  #   configuration: conf_config,
+  #   input: files('conf.py.in'),
+  #   output: 'conf.py',
+  # )
+  conf_py = files('conf.py')
+  
   # Copy hand-written documentation files
   rst_sources = files('index.rst', 'overview.rst')
   sphinx_input = []
@@ -63,11 +74,12 @@ if build_docs
   subdir('api')
 
   # Build strict Sphinx flags, with termination on warnings if werror=true
-  sphinx_in_dir = meson.current_build_dir()
-  sphinx_flags = ['-E', '-a', '-q']
+  sphinx_in_dir = meson.current_source_dir()
+  sphinx_flags = sphinx_defines + ['-E', '-a', '-q', '-n']
   if get_option('werror')
     sphinx_flags += ['-W']
   endif
+
 
   # Run Sphinx to generate final documentation for each format
   sphinx_build_command = [sphinx_build] + sphinx_flags
