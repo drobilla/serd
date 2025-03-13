@@ -542,10 +542,13 @@ write_sep(SerdWriter* const writer, const Sep sep)
                         : 0);
   }
 
-  // If this is the first comma, bump the increment for the following object
+  // Adjust indentation for object comma if necessary
   if (sep == SEP_END_O && !writer->context.comma_indented) {
     ++writer->indent;
     writer->context.comma_indented = true;
+  } else if (sep == SEP_END_P && writer->context.comma_indented) {
+    --writer->indent;
+    writer->context.comma_indented = false;
   }
 
   // Write newline or space before separator if necessary
@@ -994,11 +997,6 @@ serd_writer_write_statement(SerdWriter* const     writer,
 
     } else {
       // Elide S (write P and O)
-
-      if (writer->context.comma_indented) {
-        --writer->indent;
-        writer->context.comma_indented = false;
-      }
 
       const bool first = !writer->context.predicate.type;
       TRY(st, write_sep(writer, first ? SEP_S_P : SEP_END_P));
