@@ -139,17 +139,17 @@ supports_abbrev(const SerdWriter* const writer)
   return writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG;
 }
 
-static SerdStatus
+static void
 free_context(SerdWriter* const writer)
 {
   ZixAllocator* const allocator = serd_world_allocator(writer->world);
-  serd_node_free(allocator, &writer->context.graph);
-  serd_node_free(allocator, &writer->context.subject);
-  serd_node_free(allocator, &writer->context.predicate);
-  writer->context.graph.type     = SERD_NOTHING;
-  writer->context.subject.type   = SERD_NOTHING;
-  writer->context.predicate.type = SERD_NOTHING;
-  return SERD_SUCCESS;
+  WriteContext* const ctx       = &writer->context;
+  serd_node_free(allocator, &ctx->graph);
+  serd_node_free(allocator, &ctx->subject);
+  serd_node_free(allocator, &ctx->predicate);
+  ctx->graph.type     = SERD_NOTHING;
+  ctx->subject.type   = SERD_NOTHING;
+  ctx->predicate.type = SERD_NOTHING;
 }
 
 ZIX_LOG_FUNC(3, 4)
@@ -171,11 +171,20 @@ w_err(SerdWriter* const writer, const SerdStatus st, const char* const fmt, ...)
   return st;
 }
 
-static void
-set_current(ZixAllocator* const allocator,
-            SerdNode* const     dst,
-            const SerdTokenView src)
+static SerdStatus
+top_set(SerdWriter* const   writer,
+        const SerdField     field,
+        const SerdTokenView src)
 {
+  assert(field != SERD_OBJECT);
+
+  ZixAllocator* const allocator = serd_world_allocator(writer->world);
+
+  WriteContext* const ctx = &writer->context;
+  SerdNode* const     dst = (field == SERD_SUBJECT)     ? &ctx->subject
+                            : (field == SERD_PREDICATE) ? &ctx->predicate
+                                                        : &ctx->graph;
+
   const size_t new_size = src.string.length + 1U;
   char* const  new_buf =
     (char*)zix_realloc(allocator, (char*)dst->buf, new_size);
@@ -187,33 +196,25 @@ set_current(ZixAllocator* const allocator,
     memcpy(new_buf, src.string.data, src.string.length);
     new_buf[src.string.length] = '\0';
   }
+
+  return new_buf ? SERD_SUCCESS : SERD_BAD_ALLOC;
 }
 
 static const SerdNode*
-current_field(const SerdWriter* const writer, const SerdField field)
+top_get(const SerdWriter* const writer, const SerdField field)
 {
-  return (field == SERD_SUBJECT)     ? &writer->context.subject
-         : (field == SERD_PREDICATE) ? &writer->context.predicate
-         : (field == SERD_GRAPH)     ? &writer->context.graph
+  const WriteContext* const ctx = &writer->context;
+  return (field == SERD_SUBJECT)     ? &ctx->subject
+         : (field == SERD_PREDICATE) ? &ctx->predicate
+         : (field == SERD_GRAPH)     ? &ctx->graph
                                      : NULL;
 }
 
 static bool
-is_set(const SerdWriter* const writer, const SerdField field)
+top_has_field(const SerdWriter* const writer, const SerdField field)
 {
-  const SerdNode* const node = current_field(writer, field);
+  const SerdNode* const node = top_get(writer, field);
   return node && node->type;
-}
-
-static bool
-current_field_equals(const SerdWriter* const writer,
-                     const SerdField         field,
-                     const SerdTokenView     token)
-{
-  assert(field != SERD_OBJECT);
-  const SerdNode* const current = current_field(writer, field);
-  return current && current->type == token.type &&
-         zix_string_view_equals(serd_node_string_view(current), token.string);
 }
 
 static SerdNode
@@ -597,6 +598,7 @@ write_sep(SerdWriter* const writer, const Sep sep)
 {
   SerdStatus           st   = SERD_SUCCESS;
   const SepRule* const rule = &rules[sep];
+  WriteContext* const  ctx  = &writer->context;
 
   // Adjust indent, but tolerate if it would become negative
   if (rule->indent && (rule->flags & (PRE_LINE | POST_LINE))) {
@@ -604,12 +606,12 @@ write_sep(SerdWriter* const writer, const Sep sep)
   }
 
   // Adjust indentation for object comma if necessary
-  if (sep == SEP_END_O_N && !writer->context.comma_indented) {
+  if (sep == SEP_END_O_N && !ctx->comma_indented) {
     ++writer->indent;
-    writer->context.comma_indented = true;
-  } else if (sep == SEP_END_P && writer->context.comma_indented) {
+    ctx->comma_indented = true;
+  } else if (sep == SEP_END_P && ctx->comma_indented) {
     --writer->indent;
-    writer->context.comma_indented = false;
+    ctx->comma_indented = false;
   }
 
   // Write newline or space before separator if necessary
@@ -625,8 +627,8 @@ write_sep(SerdWriter* const writer, const Sep sep)
 
   // Reset context and write a blank line after ends of subjects
   if (sep == SEP_STOP) {
-    writer->indent                 = is_set(writer, SERD_GRAPH) ? 1 : 0;
-    writer->context.comma_indented = false;
+    writer->indent      = top_has_field(writer, SERD_GRAPH) ? 1 : 0;
+    ctx->comma_indented = false;
     TRY(st, esink("\n", 1, writer));
   }
 
@@ -645,20 +647,22 @@ free_anon_stack(SerdWriter* const writer)
 static SerdStatus
 reset_context(SerdWriter* const writer, const unsigned flags)
 {
+  WriteContext* const ctx = &writer->context;
+
   free_anon_stack(writer);
 
   if (flags & RESET_GRAPH) {
-    writer->context.graph.type = SERD_NOTHING;
+    ctx->graph.type = SERD_NOTHING;
   }
 
   if (flags & RESET_INDENT) {
     writer->indent = 0;
   }
 
-  writer->context.type           = CTX_NAMED;
-  writer->context.subject.type   = SERD_NOTHING;
-  writer->context.predicate.type = SERD_NOTHING;
-  writer->context.comma_indented = false;
+  ctx->type           = CTX_NAMED;
+  ctx->subject.type   = SERD_NOTHING;
+  ctx->predicate.type = SERD_NOTHING;
+  ctx->comma_indented = false;
   return SERD_SUCCESS;
 }
 
@@ -899,8 +903,6 @@ write_object(SerdWriter* const    writer,
 ZIX_NODISCARD static SerdStatus
 write_pred(SerdWriter* writer, const SerdTokenView pred)
 {
-  ZixAllocator* const allocator = serd_world_allocator(writer->world);
-
   SerdStatus st = token_equals_symbol(pred, RDF_TYPE) ? esink("a", 1, writer)
                                                       : write_iri(writer, pred);
 
@@ -908,9 +910,7 @@ write_pred(SerdWriter* writer, const SerdTokenView pred)
     st = write_sep(writer, SEP_P_O);
   }
 
-  set_current(allocator, &writer->context.predicate, pred);
-  writer->context.comma_indented = false;
-  return st;
+  return st ? st : top_set(writer, SERD_PREDICATE, pred);
 }
 
 ZIX_NODISCARD static SerdStatus
@@ -940,15 +940,26 @@ terminate_context(SerdWriter* const writer)
 {
   SerdStatus st = SERD_SUCCESS;
 
-  if (is_set(writer, SERD_SUBJECT)) {
+  if (top_has_field(writer, SERD_SUBJECT)) {
     TRY(st, write_sep(writer, SEP_STOP));
   }
 
-  if (is_set(writer, SERD_GRAPH)) {
+  if (top_has_field(writer, SERD_GRAPH)) {
     TRY(st, write_sep(writer, SEP_GRAPH_R));
   }
 
   return st;
+}
+
+static bool
+top_field_equals(const SerdWriter* const writer,
+                 const SerdField         field,
+                 const SerdTokenView     token)
+{
+  assert(field != SERD_OBJECT);
+  const SerdNode* const current = top_get(writer, field);
+  return current && current->type == token.type &&
+         zix_string_view_equals(serd_node_string_view(current), token.string);
 }
 
 ZIX_NODISCARD static SerdStatus
@@ -958,7 +969,7 @@ write_statement(SerdWriter* const       writer,
 {
   assert(writer);
 
-  ZixAllocator* const allocator = serd_world_allocator(writer->world);
+  const WriteContext* const ctx = &writer->context;
 
   SerdStatus st = SERD_SUCCESS;
 
@@ -1006,19 +1017,19 @@ write_statement(SerdWriter* const       writer,
 
   // Separate graphs if necessary
   const bool has_graph = serd_field_supports(SERD_GRAPH, graph.type);
-  if ((has_graph && !current_field_equals(writer, SERD_GRAPH, graph)) ||
-      (!has_graph && is_set(writer, SERD_GRAPH))) {
+  if ((has_graph && !top_field_equals(writer, SERD_GRAPH, graph)) ||
+      (!has_graph && top_has_field(writer, SERD_GRAPH))) {
     TRY(st, terminate_context(writer));
     reset_context(writer, RESET_GRAPH | RESET_INDENT);
     TRY(st, write_newline(writer));
     if (has_graph) {
       TRY(st, write_token(writer, SERD_GRAPH, flags, graph));
       TRY(st, write_sep(writer, SEP_GRAPH_L));
-      set_current(allocator, &writer->context.graph, graph);
+      TRY(st, top_set(writer, SERD_GRAPH, graph));
     }
   }
 
-  if (writer->context.type == CTX_LIST) {
+  if (ctx->type == CTX_LIST) {
     // Continue a list
     if (token_equals_symbol(predicate, RDF_FIRST) &&
         token_equals_symbol(serd_object_token_view(object), RDF_NIL)) {
@@ -1031,8 +1042,8 @@ write_statement(SerdWriter* const       writer,
       return SERD_SUCCESS;
     }
 
-  } else if (current_field_equals(writer, SERD_SUBJECT, subject)) {
-    if (current_field_equals(writer, SERD_PREDICATE, predicate)) {
+  } else if (top_field_equals(writer, SERD_SUBJECT, subject)) {
+    if (top_field_equals(writer, SERD_PREDICATE, predicate)) {
       // Elide S P (write O)
 
       const Sep  last        = writer->last_sep;
@@ -1050,7 +1061,7 @@ write_statement(SerdWriter* const       writer,
     } else {
       // Elide S (write P and O)
 
-      const bool first = !is_set(writer, SERD_PREDICATE);
+      const bool first = !top_has_field(writer, SERD_PREDICATE);
       TRY(st, write_sep(writer, first ? SEP_S_P : SEP_END_P));
       TRY(st, write_pred(writer, predicate));
     }
@@ -1064,7 +1075,7 @@ write_statement(SerdWriter* const       writer,
       return SERD_BAD_ARG;
     }
 
-    if (is_set(writer, SERD_SUBJECT)) {
+    if (top_has_field(writer, SERD_SUBJECT)) {
       TRY(st, write_sep(writer, SEP_STOP));
     }
 
@@ -1078,7 +1089,7 @@ write_statement(SerdWriter* const       writer,
     }
 
     reset_context(writer, 0U);
-    set_current(allocator, &writer->context.subject, subject);
+    TRY(st, top_set(writer, SERD_SUBJECT, subject));
 
     if (!(flags & SERD_LIST_S)) {
       TRY(st, write_pred(writer, predicate));
@@ -1137,8 +1148,8 @@ write_end(SerdWriter* const writer, const ZixStringView label)
   pop_context(writer);
 
   const SerdTokenView node = {SERD_BLANK, label};
-  if (is_set(writer, SERD_PREDICATE) &&
-      current_field_equals(writer, SERD_SUBJECT, node)) {
+  if (top_has_field(writer, SERD_PREDICATE) &&
+      top_field_equals(writer, SERD_SUBJECT, node)) {
     // Now-finished anonymous node is the new subject with no other context
     writer->context.predicate.type = SERD_NOTHING;
   }
@@ -1153,7 +1164,6 @@ serd_writer_finish(SerdWriter* const writer)
 
   const SerdStatus st0 = terminate_context(writer);
   const SerdStatus st1 = serd_byte_sink_flush(&writer->byte_sink);
-  free_anon_stack(writer);
   reset_context(writer, RESET_GRAPH | RESET_INDENT);
   return st0 ? st0 : st1;
 }
