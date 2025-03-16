@@ -953,15 +953,17 @@ serd_writer_write_statement(SerdWriter* const     writer,
   }
 
   // Separate graphs if necessary
-  if ((graph && !serd_node_equals(graph, &writer->context.graph)) ||
-      (!graph && writer->context.graph.type)) {
+  const SerdNode* const out_graph = writer->syntax == SERD_TRIG ? graph : NULL;
+  if ((out_graph && !serd_node_equals(out_graph, &writer->context.graph)) ||
+      (!out_graph && writer->context.graph.type)) {
     TRY(st, terminate_context(writer));
     reset_context(writer, RESET_GRAPH | RESET_INDENT);
     TRY(st, write_newline(writer));
-    if (graph) {
-      TRY(st, write_node(writer, graph, datatype, lang, FIELD_GRAPH, flags));
+    if (out_graph) {
+      TRY(st,
+          write_node(writer, out_graph, datatype, lang, FIELD_GRAPH, flags));
       TRY(st, write_sep(writer, SEP_GRAPH_BEGIN));
-      copy_node(&writer->context.graph, graph);
+      copy_node(&writer->context.graph, out_graph);
     }
   }
 
@@ -1042,7 +1044,7 @@ serd_writer_write_statement(SerdWriter* const     writer,
     const bool is_list = (flags & SERD_LIST_S_BEGIN);
     push_context(writer,
                  is_list ? CTX_LIST : CTX_BLANK,
-                 serd_node_copy(graph),
+                 serd_node_copy(out_graph),
                  serd_node_copy(subject),
                  is_list ? SERD_NODE_NULL : serd_node_copy(predicate));
   }
@@ -1051,7 +1053,7 @@ serd_writer_write_statement(SerdWriter* const     writer,
     // Push context for anonymous or list object if necessary
     push_context(writer,
                  (flags & SERD_LIST_O_BEGIN) ? CTX_LIST : CTX_BLANK,
-                 serd_node_copy(graph),
+                 serd_node_copy(out_graph),
                  serd_node_copy(object),
                  SERD_NODE_NULL);
   }
