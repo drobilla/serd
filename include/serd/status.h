@@ -17,10 +17,11 @@ SERD_BEGIN_DECLS
 
 /// Return status code
 typedef enum {
-  SERD_SUCCESS,  ///< Success
-  SERD_FAILURE,  ///< Non-fatal failure
-  SERD_NO_DATA,  ///< Missing input
-  SERD_NO_SPACE, ///< Insufficient space
+  SERD_SUCCESS,   ///< Success
+  SERD_FAILURE,   ///< Non-fatal failure
+  SERD_NO_CHANGE, ///< No change
+  SERD_NO_DATA,   ///< Missing input
+  SERD_NO_SPACE,  ///< Insufficient space
 
   SERD_UNKNOWN_ERROR, ///< Unknown error
 

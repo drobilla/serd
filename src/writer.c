@@ -1309,9 +1309,10 @@ serd_writer_set_base_uri(SerdWriter* const writer, const SerdNode* const uri)
 {
   assert(writer);
 
-  SerdStatus st = SERD_SUCCESS;
-
-  TRY(st, serd_env_set_base_uri(writer->env, uri));
+  SerdStatus st = serd_env_set_base_uri(writer->env, uri);
+  if (st) {
+    return st == SERD_NO_CHANGE ? SERD_SUCCESS : st;
+  }
 
   serd_env_base_uri(writer->env, &writer->base_uri);
 
@@ -1359,9 +1360,10 @@ serd_writer_set_prefix(SerdWriter* const     writer,
   assert(name);
   assert(uri);
 
-  SerdStatus st = SERD_SUCCESS;
-
-  TRY(st, serd_env_set_prefix(writer->env, name, uri));
+  SerdStatus st = serd_env_set_prefix(writer->env, name, uri);
+  if (st) {
+    return st == SERD_NO_CHANGE ? SERD_SUCCESS : st;
+  }
 
   if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
     const bool had_subject = writer->context.subject.type;
