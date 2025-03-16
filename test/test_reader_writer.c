@@ -103,42 +103,58 @@ quiet_error_sink(void* const handle, const SerdError* const e)
 }
 
 static void
+check_write_error_offset(const SerdSyntax syntax,
+                         const size_t     offset,
+                         const SerdStatus expected_status)
+{
+  ErrorContext    ctx   = {0U, offset};
+  const SerdStyle style = (SerdStyle)(SERD_STYLE_STRICT | SERD_STYLE_CURIED);
+  SerdEnv* const  env   = serd_env_new(NULL);
+  assert(env);
+
+  SerdWriter* const writer =
+    serd_writer_new(syntax, style, env, NULL, faulty_sink, &ctx);
+  assert(writer);
+
+  SerdReader* const reader =
+    serd_reader_new(SERD_TRIG,
+                    writer,
+                    NULL,
+                    (SerdBaseSink)serd_writer_set_base_uri,
+                    (SerdPrefixSink)serd_writer_set_prefix,
+                    (SerdStatementSink)serd_writer_write_statement,
+                    (SerdEndSink)serd_writer_end_anon);
+  assert(reader);
+
+  serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
+  serd_reader_set_error_sink(reader, quiet_error_sink, NULL);
+
+  const SerdStatus rst = serd_reader_read_string(reader, USTR(doc_string));
+  const SerdStatus wst = serd_writer_finish(writer);
+
+  serd_reader_free(reader);
+  serd_writer_free(writer);
+  serd_env_free(env);
+
+  const SerdStatus st = rst ? rst : wst;
+  assert(st == expected_status);
+}
+
+static void
 test_write_errors(void)
 {
-  ErrorContext    ctx   = {0U, 0U};
-  const SerdStyle style = (SerdStyle)(SERD_STYLE_STRICT | SERD_STYLE_CURIED);
+  // Syntax-keyed array of output document sizes
+  static const size_t max_offsets[] = {0, 465, 1911, 2003, 465};
 
-  const size_t max_offsets[] = {0, 462, 1911, 2003, 462};
-
-  // Test errors at different offsets to hit different code paths
   for (unsigned s = 1; s <= (unsigned)SERD_TRIG; ++s) {
     const SerdSyntax syntax = (SerdSyntax)s;
+
+    // Check successfully writing with enough space
+    check_write_error_offset(syntax, max_offsets[s], SERD_SUCCESS);
+
+    // Check write error at every offset in the output
     for (size_t o = 0; o < max_offsets[s]; ++o) {
-      ctx.n_written    = 0;
-      ctx.error_offset = o;
-
-      SerdEnv* const    env = serd_env_new(NULL);
-      SerdWriter* const writer =
-        serd_writer_new(syntax, style, env, NULL, faulty_sink, &ctx);
-
-      SerdReader* const reader =
-        serd_reader_new(SERD_TRIG,
-                        writer,
-                        NULL,
-                        (SerdBaseSink)serd_writer_set_base_uri,
-                        (SerdPrefixSink)serd_writer_set_prefix,
-                        (SerdStatementSink)serd_writer_write_statement,
-                        (SerdEndSink)serd_writer_end_anon);
-
-      serd_reader_set_error_sink(reader, quiet_error_sink, NULL);
-      serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
-
-      const SerdStatus st = serd_reader_read_string(reader, USTR(doc_string));
-      assert(st == SERD_ERR_BAD_WRITE);
-
-      serd_reader_free(reader);
-      serd_writer_free(writer);
-      serd_env_free(env);
+      check_write_error_offset(syntax, o, SERD_ERR_BAD_WRITE);
     }
   }
 }
