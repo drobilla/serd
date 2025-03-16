@@ -10,6 +10,8 @@
 #include <serd/status.h>
 #include <serd/stream.h>
 
+#include <zix/allocator.h>
+
 #include <stddef.h>
 #include <string.h>
 
@@ -22,9 +24,10 @@ typedef struct SerdByteSinkImpl {
 } SerdByteSink;
 
 static inline SerdByteSink
-serd_byte_sink_new(SerdWriteFunc sink,
-                   void* const   stream,
-                   const size_t  block_size)
+serd_byte_sink_new(ZixAllocator* const allocator,
+                   SerdWriteFunc       sink,
+                   void* const         stream,
+                   const size_t        block_size)
 {
   SerdByteSink bsink;
   bsink.sink       = sink;
@@ -32,7 +35,14 @@ serd_byte_sink_new(SerdWriteFunc sink,
   bsink.size       = 0;
   bsink.block_size = block_size;
   bsink.buf =
-    ((block_size > 1) ? (char*)serd_allocate_buffer(block_size) : NULL);
+    ((block_size > 1)
+       ? (char*)zix_aligned_alloc(allocator, SERD_PAGE_SIZE, block_size)
+       : NULL);
+
+  if (bsink.buf) {
+    memset(bsink.buf, '\0', block_size);
+  }
+
   return bsink;
 }
 
@@ -51,10 +61,10 @@ serd_byte_sink_flush(SerdByteSink* const bsink)
 }
 
 static inline void
-serd_byte_sink_free(SerdByteSink* const bsink)
+serd_byte_sink_free(ZixAllocator* const allocator, SerdByteSink* const bsink)
 {
   serd_byte_sink_flush(bsink);
-  serd_free_aligned(bsink->buf);
+  zix_aligned_free(allocator, bsink->buf);
   bsink->buf = NULL;
 }
 

@@ -5,6 +5,7 @@
 #include "serd_internal.h"
 #include "stack.h"
 #include "string_utils.h"
+#include "system.h"
 #include "try.h"
 #include "uri_utils.h"
 #include "warnings.h"
@@ -20,6 +21,7 @@
 #include <serd/uri.h>
 #include <serd/world.h>
 #include <serd/writer.h>
+#include <zix/allocator.h>
 #include <zix/attributes.h>
 #include <zix/string_view.h>
 
@@ -29,7 +31,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 typedef enum {
@@ -134,14 +135,15 @@ supports_abbrev(const SerdWriter* const writer)
 }
 
 static SerdStatus
-free_context(WriteContext* const ctx)
+free_context(SerdWriter* const writer)
 {
-  serd_node_free(&ctx->graph);
-  serd_node_free(&ctx->subject);
-  serd_node_free(&ctx->predicate);
-  ctx->graph.type     = SERD_NOTHING;
-  ctx->subject.type   = SERD_NOTHING;
-  ctx->predicate.type = SERD_NOTHING;
+  ZixAllocator* const allocator = serd_world_allocator(writer->world);
+  serd_node_free(allocator, &writer->context.graph);
+  serd_node_free(allocator, &writer->context.subject);
+  serd_node_free(allocator, &writer->context.predicate);
+  writer->context.graph.type     = SERD_NOTHING;
+  writer->context.subject.type   = SERD_NOTHING;
+  writer->context.predicate.type = SERD_NOTHING;
   return SERD_SUCCESS;
 }
 
@@ -164,11 +166,14 @@ w_err(SerdWriter* const writer, const SerdStatus st, const char* const fmt, ...)
 }
 
 static void
-copy_node(SerdNode* const dst, const SerdNode* const src)
+copy_node(ZixAllocator* const   allocator,
+          SerdNode* const       dst,
+          const SerdNode* const src)
 {
   assert(src->buf);
   const size_t new_size = src->n_bytes + 1U;
-  char* const  new_buf  = (char*)realloc((char*)dst->buf, new_size);
+  char* const  new_buf =
+    (char*)zix_realloc(allocator, (char*)dst->buf, new_size);
   if (new_buf) {
     dst->buf     = new_buf;
     dst->n_bytes = src->n_bytes;
@@ -198,7 +203,7 @@ static void
 pop_context(SerdWriter* const writer)
 {
   // Replace the current context with the top of the stack
-  free_context(&writer->context);
+  free_context(writer);
   writer->context =
     *(WriteContext*)(writer->anon_stack.buf + writer->anon_stack.size -
                      sizeof(WriteContext));
@@ -841,7 +846,7 @@ write_pred(SerdWriter* const writer, const SerdNode* const pred)
     st = write_sep(writer, SEP_P_O);
   }
 
-  copy_node(&writer->context.predicate, pred);
+  copy_node(writer->world->allocator, &writer->context.predicate, pred);
   writer->context.comma_indented = false;
   return st;
 }
@@ -901,6 +906,8 @@ serd_writer_write_statement(SerdWriter* const        writer,
   assert(predicate);
   assert(object);
 
+  ZixAllocator* const allocator = serd_world_allocator(writer->world);
+
   SerdStatus st = SERD_SUCCESS;
 
   if (writer->syntax == SERD_SYNTAX_EMPTY) {
@@ -944,7 +951,7 @@ serd_writer_write_statement(SerdWriter* const        writer,
       TRY(st,
           write_node(writer, out_graph, datatype, lang, FIELD_GRAPH, flags));
       TRY(st, write_sep(writer, SEP_GRAPH_L));
-      copy_node(&writer->context.graph, out_graph);
+      copy_node(allocator, &writer->context.graph, out_graph);
     }
   }
 
@@ -1010,7 +1017,7 @@ serd_writer_write_statement(SerdWriter* const        writer,
     }
 
     reset_context(writer, 0U);
-    copy_node(&writer->context.subject, subject);
+    copy_node(allocator, &writer->context.subject, subject);
 
     if (!(flags & SERD_LIST_S)) {
       TRY(st, write_pred(writer, predicate));
@@ -1024,17 +1031,18 @@ serd_writer_write_statement(SerdWriter* const        writer,
     const bool is_list = (flags & SERD_LIST_S);
     push_context(writer,
                  is_list ? CTX_LIST : CTX_BLANK,
-                 serd_node_copy(out_graph),
-                 serd_node_copy(subject),
-                 is_list ? SERD_NODE_NULL : serd_node_copy(predicate));
+                 serd_node_copy(allocator, out_graph),
+                 serd_node_copy(allocator, subject),
+                 is_list ? SERD_NODE_NULL
+                         : serd_node_copy(allocator, predicate));
   }
 
   if (flags & (SERD_ANON_O | SERD_LIST_O)) {
     // Push context for anonymous or list object if necessary
     push_context(writer,
                  (flags & SERD_LIST_O) ? CTX_LIST : CTX_BLANK,
-                 serd_node_copy(out_graph),
-                 serd_node_copy(object),
+                 serd_node_copy(allocator, out_graph),
+                 serd_node_copy(allocator, object),
                  SERD_NODE_NULL);
   }
 
@@ -1100,7 +1108,13 @@ serd_writer_new(SerdWorld* const         world,
   assert(env);
   assert(ssink);
 
-  SerdWriter* writer = (SerdWriter*)calloc(1, sizeof(SerdWriter));
+  ZixAllocator* const allocator = serd_world_allocator(world);
+
+  SerdWriter* writer =
+    (SerdWriter*)zix_calloc(allocator, 1, sizeof(SerdWriter));
+  if (!writer) {
+    return NULL;
+  }
 
   writer->world      = world;
   writer->syntax     = syntax;
@@ -1109,9 +1123,15 @@ serd_writer_new(SerdWorld* const         world,
   writer->root_node  = SERD_NODE_NULL;
   writer->root_uri   = SERD_URI_NULL;
   writer->base_uri   = base_uri ? *base_uri : SERD_URI_NULL;
-  writer->anon_stack = serd_stack_new(SERD_PAGE_SIZE);
+  writer->anon_stack = serd_stack_new(allocator, SERD_PAGE_SIZE);
   writer->byte_sink  = serd_byte_sink_new(
-    ssink, stream, (flags & SERD_WRITE_BULK) ? SERD_PAGE_SIZE : 1);
+    allocator, ssink, stream, (flags & SERD_WRITE_BULK) ? SERD_PAGE_SIZE : 1);
+
+  if ((flags & SERD_WRITE_BULK) && !writer->byte_sink.buf) {
+    serd_stack_free(&writer->anon_stack);
+    zix_free(world->allocator, writer);
+    return NULL;
+  }
 
   return writer;
 }
@@ -1122,14 +1142,15 @@ serd_writer_chop_blank_prefix(SerdWriter* const writer,
 {
   assert(writer);
 
-  free(writer->bprefix);
+  zix_free(writer->world->allocator, writer->bprefix);
   writer->bprefix_len = 0;
   writer->bprefix     = NULL;
 
   const size_t prefix_len = prefix ? strlen(prefix) : 0;
   if (prefix_len) {
     writer->bprefix_len = prefix_len;
-    writer->bprefix     = (char*)malloc(writer->bprefix_len + 1);
+    writer->bprefix =
+      (char*)zix_malloc(writer->world->allocator, writer->bprefix_len + 1);
     memcpy(writer->bprefix, prefix, writer->bprefix_len + 1);
   }
 }
@@ -1166,10 +1187,12 @@ serd_writer_set_root_uri(SerdWriter* const writer, const SerdNode* const uri)
 {
   assert(writer);
 
-  serd_node_free(&writer->root_node);
+  ZixAllocator* const allocator = serd_world_allocator(writer->world);
+
+  serd_node_free(allocator, &writer->root_node);
 
   if (uri && uri->buf) {
-    writer->root_node = serd_node_copy(uri);
+    writer->root_node = serd_node_copy(allocator, uri);
     SERD_DISABLE_NULL_WARNINGS
     writer->root_uri = serd_parse_uri(uri->buf);
     SERD_RESTORE_WARNINGS
@@ -1219,14 +1242,15 @@ serd_writer_free(SerdWriter* const writer)
     return;
   }
 
+  ZixAllocator* const allocator = serd_world_allocator(writer->world);
   serd_writer_finish(writer);
-  free_context(&writer->context);
+  free_context(writer);
   free_anon_stack(writer);
   serd_stack_free(&writer->anon_stack);
-  free(writer->bprefix);
-  serd_byte_sink_free(&writer->byte_sink);
-  serd_node_free(&writer->root_node);
-  free(writer);
+  zix_free(writer->world->allocator, writer->bprefix);
+  serd_byte_sink_free(allocator, &writer->byte_sink);
+  serd_node_free(allocator, &writer->root_node);
+  zix_free(writer->world->allocator, writer);
 }
 
 SerdEnv*
@@ -1250,13 +1274,17 @@ serd_buffer_sink(const void* const buf, const size_t len, void* const stream)
   assert(buf);
   assert(stream);
 
-  SerdBuffer* buffer  = (SerdBuffer*)stream;
-  char*       new_buf = (char*)realloc(buffer->buf, buffer->len + len);
-  if (new_buf) {
-    memcpy(new_buf + buffer->len, buf, len);
-    buffer->buf = new_buf;
-    buffer->len += len;
+  SerdBuffer* buffer = (SerdBuffer*)stream;
+  char* const new_buf =
+    (char*)zix_realloc(buffer->allocator, buffer->buf, buffer->len + len);
+
+  if (!new_buf) {
+    return 0U;
   }
+
+  memcpy(new_buf + buffer->len, buf, len);
+  buffer->buf = new_buf;
+  buffer->len += len;
   return len;
 }
 
@@ -1264,6 +1292,9 @@ char*
 serd_buffer_sink_finish(SerdBuffer* const stream)
 {
   assert(stream);
-  serd_buffer_sink("", 1, stream);
+  if (serd_buffer_sink("", 1, stream) < 1U) {
+    return NULL;
+  }
+
   return stream->buf;
 }

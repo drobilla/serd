@@ -218,16 +218,16 @@ main(int argc, char** argv)
   SerdURIView base_uri = SERD_URI_NULL;
   SerdNode    base     = SERD_NODE_NULL;
   if (a < argc) { // Base URI given on command line
-    base     = serd_node_new_uri_from_string(argv[a]);
+    base     = serd_node_new_uri_from_string(NULL, argv[a]);
     base_uri = serd_parse_uri(base.buf);
   } else if (!from_string && !from_stdin) { // Use input file URI
-    base     = serd_node_new_file_uri(input, NULL);
+    base     = serd_node_new_file_uri(NULL, input, NULL);
     base_uri = serd_parse_uri(base.buf);
   }
 
   FILE* const      out_fd = stdout;
-  SerdWorld* const world  = serd_world_new();
-  SerdEnv* const   env    = serd_env_new(&base);
+  SerdWorld* const world  = serd_world_new(NULL);
+  SerdEnv* const   env    = serd_env_new(NULL, &base);
 
   SerdWriter* const writer = serd_writer_new(
     world, output_syntax, writer_flags, env, &base_uri, serd_file_sink, out_fd);
@@ -271,7 +271,7 @@ main(int argc, char** argv)
   serd_writer_finish(writer);
   serd_writer_free(writer);
   serd_env_free(env);
-  serd_node_free(&base);
+  serd_node_free(NULL, &base);
   serd_world_free(world);
 
   if (fclose(stdout)) {

@@ -5,6 +5,7 @@
 #define SERD_BUFFER_H
 
 #include <serd/attributes.h>
+#include <zix/allocator.h>
 #include <zix/attributes.h>
 
 #include <stddef.h>
@@ -20,10 +21,11 @@ SERD_BEGIN_DECLS
    @{
 */
 
-/// A mutable string in memory
+/// A dynamically resizable mutable string in memory
 typedef struct {
-  char* ZIX_NULLABLE buf; ///< Buffer
-  size_t             len; ///< Size of buffer in bytes
+  ZixAllocator* ZIX_NULLABLE allocator; ///< Allocator for buf
+  char* ZIX_NULLABLE         buf;       ///< Buffer
+  size_t                     len;       ///< Size of buffer in bytes
 } SerdBuffer;
 
 /**
@@ -42,8 +44,8 @@ serd_buffer_sink(const void* ZIX_NONNULL buf,
 /**
    Finish writing to a buffer with serd_buffer_sink().
 
-   The returned string is the result of the serialisation, which is null
-   terminated (by this function) and owned by the caller.
+   @return The buffer as a null-terminated string, or null on allocation
+   failure or any other error.
 */
 SERD_API char* ZIX_ALLOCATED
 serd_buffer_sink_finish(SerdBuffer* ZIX_NONNULL stream);

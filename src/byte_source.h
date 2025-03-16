@@ -6,6 +6,7 @@
 
 #include <serd/status.h>
 #include <serd/stream.h>
+#include <zix/allocator.h>
 #include <zix/attributes.h>
 
 #include <assert.h>
@@ -42,7 +43,8 @@ SerdStatus
 serd_byte_source_open_string(SerdByteSource* source, const char* utf8);
 
 SerdStatus
-serd_byte_source_open_source(SerdByteSource* source,
+serd_byte_source_open_source(ZixAllocator*   allocator,
+                             SerdByteSource* source,
                              SerdReadFunc    read_func,
                              SerdErrorFunc   error_func,
                              SerdCloseFunc   close_func,
@@ -51,7 +53,7 @@ serd_byte_source_open_source(SerdByteSource* source,
                              size_t          page_size);
 
 SerdStatus
-serd_byte_source_close(SerdByteSource* source);
+serd_byte_source_close(ZixAllocator* allocator, SerdByteSource* source);
 
 SerdStatus
 serd_byte_source_prepare(SerdByteSource* source);

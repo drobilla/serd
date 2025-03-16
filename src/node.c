@@ -8,6 +8,7 @@
 #include <serd/node.h>
 #include <serd/string.h>
 #include <serd/uri.h>
+#include <zix/allocator.h>
 
 #include <assert.h>
 #include <float.h>
@@ -15,7 +16,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 struct SerdNodeImpl {
@@ -62,16 +62,19 @@ serd_node_from_substring(const SerdNodeType type,
 }
 
 SerdNode
-serd_node_copy(const SerdNode* const node)
+serd_node_copy(ZixAllocator* const allocator, const SerdNode* const node)
 {
   if (!node || !node->buf) {
     return SERD_NODE_NULL;
   }
 
-  SerdNode copy = *node;
-  char*    buf  = (char*)malloc(copy.n_bytes + 1);
-  memcpy(buf, node->buf, copy.n_bytes + 1);
-  copy.buf = buf;
+  SerdNode    copy = SERD_NODE_NULL;
+  char* const buf  = (char*)zix_malloc(allocator, node->n_bytes + 1U);
+  if (buf) {
+    copy     = *node;
+    copy.buf = buf;
+    memcpy(buf, node->buf, node->n_bytes + 1);
+  }
   return copy;
 }
 
@@ -87,17 +90,19 @@ serd_node_equals(const SerdNode* const a, const SerdNode* const b)
 }
 
 SerdNode
-serd_node_new_uri_from_node(const SerdNode* const uri_node)
+serd_node_new_uri_from_node(ZixAllocator* const   allocator,
+                            const SerdNode* const uri_node)
 {
   assert(uri_node);
 
   return (uri_node->type == SERD_URI && uri_node->buf)
-           ? serd_node_new_uri_from_string(uri_node->buf)
+           ? serd_node_new_uri_from_string(allocator, uri_node->buf)
            : SERD_NODE_NULL;
 }
 
 SerdNode
-serd_node_new_uri_from_string(const char* const str)
+serd_node_new_uri_from_string(ZixAllocator* const allocator,
+                              const char* const   str)
 {
   if (!str || str[0] == '\0') {
     // Empty URI => Base URI, or nothing if no base is given
@@ -105,7 +110,7 @@ serd_node_new_uri_from_string(const char* const str)
   }
 
   const SerdURIView uri = serd_parse_uri(str);
-  return serd_node_new_uri(&uri);
+  return serd_node_new_uri(allocator, &uri);
 }
 
 static bool
@@ -125,7 +130,9 @@ is_dir_sep(const char c)
 }
 
 SerdNode
-serd_node_new_file_uri(const char* const path, const char* const hostname)
+serd_node_new_file_uri(ZixAllocator* const allocator,
+                       const char* const   path,
+                       const char* const   hostname)
 {
   assert(path);
 
@@ -137,9 +144,9 @@ serd_node_new_file_uri(const char* const path, const char* const hostname)
 
   if (is_dir_sep(path[0]) || is_windows) {
     uri_len = strlen("file://") + hostname_len + is_windows;
-    uri     = (char*)calloc(uri_len + 1, 1);
+    uri     = (char*)zix_calloc(allocator, uri_len + 1, 1);
 
-    memcpy(uri, "file://", 7);
+    memcpy(uri, "file://", 8);
 
     if (hostname) {
       memcpy(uri + 7, hostname, hostname_len + 1);
@@ -150,7 +157,7 @@ serd_node_new_file_uri(const char* const path, const char* const hostname)
     }
   }
 
-  SerdBuffer buffer = {uri, uri_len};
+  SerdBuffer buffer = {allocator, uri, uri_len};
   for (size_t i = 0; i < path_len; ++i) {
     if (is_uri_path_char(path[i])) {
       serd_buffer_sink(path + i, 1, &buffer);
@@ -170,12 +177,12 @@ serd_node_new_file_uri(const char* const path, const char* const hostname)
 }
 
 SerdNode
-serd_node_new_uri(const SerdURIView* const uri)
+serd_node_new_uri(ZixAllocator* const allocator, const SerdURIView* const uri)
 {
   assert(uri);
 
   const size_t len        = serd_uri_string_length(*uri);
-  char*        buf        = (char*)malloc(len + 1);
+  char*        buf        = (char*)zix_malloc(allocator, len + 1);
   SerdNode     node       = {buf, len, 0, SERD_URI};
   char*        ptr        = buf;
   const size_t actual_len = serd_write_uri(*uri, string_sink, &ptr);
@@ -193,7 +200,9 @@ serd_digits(const double abs)
 }
 
 SerdNode
-serd_node_new_decimal(const double d, const unsigned frac_digits)
+serd_node_new_decimal(ZixAllocator* const allocator,
+                      const double        d,
+                      const unsigned      frac_digits)
 {
   if (isnan(d) || isinf(d)) {
     return SERD_NODE_NULL;
@@ -201,9 +210,11 @@ serd_node_new_decimal(const double d, const unsigned frac_digits)
 
   const double   abs_d      = fabs(d);
   const unsigned int_digits = serd_digits(abs_d);
-  char*          buf        = (char*)calloc(int_digits + frac_digits + 3, 1);
-  SerdNode       node       = {buf, 0, 0, SERD_LITERAL};
-  const double   int_part   = floor(abs_d);
+  const unsigned max_digits = int_digits + frac_digits + 2U;
+
+  char* const  buf      = (char*)zix_calloc(allocator, max_digits + 1U, 1);
+  SerdNode     node     = {buf, 0, 0, SERD_LITERAL};
+  const double int_part = floor(abs_d);
 
   // Point s to decimal point location
   char* s = buf + int_digits;
@@ -248,11 +259,11 @@ serd_node_new_decimal(const double d, const unsigned frac_digits)
 }
 
 SerdNode
-serd_node_new_integer(const int64_t i)
+serd_node_new_integer(ZixAllocator* const allocator, const int64_t i)
 {
   uint64_t       abs_i  = (uint64_t)((i < 0) ? -i : i);
   const unsigned digits = serd_digits((double)abs_i);
-  char*          buf    = (char*)calloc(digits + 2, 1);
+  char* const    buf    = (char*)zix_calloc(allocator, digits + 2, 1);
   SerdNode       node   = {buf, 0, 0, SERD_LITERAL};
 
   // Point s to the end
@@ -273,14 +284,15 @@ serd_node_new_integer(const int64_t i)
 }
 
 SerdNode
-serd_node_new_blob(const void* const buf,
-                   const size_t      size,
-                   const bool        wrap_lines)
+serd_node_new_blob(ZixAllocator* const allocator,
+                   const void* const   buf,
+                   const size_t        size,
+                   const bool          wrap_lines)
 {
   assert(buf);
 
   const size_t len  = serd_base64_get_length(size, wrap_lines);
-  char* const  str  = (char*)calloc(len + 2, 1);
+  char* const  str  = (char*)zix_calloc(allocator, len + 2, 1);
   SerdNode     node = {str, len, 0, SERD_LITERAL};
 
   if (serd_base64_encode((uint8_t*)str, buf, size, wrap_lines)) {
@@ -291,10 +303,10 @@ serd_node_new_blob(const void* const buf,
 }
 
 void
-serd_node_free(SerdNode* const node)
+serd_node_free(ZixAllocator* const allocator, SerdNode* const node)
 {
   if (node && node->buf) {
-    free((char*)node->buf);
+    zix_free(allocator, (char*)node->buf);
     node->buf = NULL;
   }
 }

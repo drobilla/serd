@@ -5,6 +5,7 @@
 #define SERD_READER_H
 
 #include <serd/attributes.h>
+#include <serd/error.h>
 #include <serd/sink.h>
 #include <serd/status.h>
 #include <serd/stream.h>

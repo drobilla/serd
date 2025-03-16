@@ -4,8 +4,6 @@
 #undef NDEBUG
 
 #include <serd/env.h>
-#include <serd/memory.h>
-#include <serd/node.h>
 #include <serd/reader.h>
 #include <serd/world.h>
 #include <serd/writer.h>
@@ -15,8 +13,6 @@
 int
 main(void)
 {
-  serd_free(NULL);
-  serd_node_free(NULL);
   serd_world_free(NULL);
   serd_env_free(NULL);
   serd_reader_free(NULL);

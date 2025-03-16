@@ -5,9 +5,9 @@
 
 #include "expect_string.h"
 
-#include <serd/memory.h>
 #include <serd/node.h>
 #include <serd/string.h>
+#include <zix/allocator.h>
 
 #include <assert.h>
 #include <float.h>
@@ -15,7 +15,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #ifndef INFINITY
@@ -24,6 +23,12 @@
 #ifndef NAN
 #  define NAN (INFINITY - INFINITY)
 #endif
+
+static void
+test_free(void)
+{
+  serd_node_free(NULL, NULL);
+}
 
 static void
 check_strtod(const double dbl, const double max_delta)
@@ -88,14 +93,14 @@ test_double_to_node(void)
                                  NULL};
 
   for (size_t i = 0; i < sizeof(dbl_test_nums) / sizeof(double); ++i) {
-    SerdNode   node = serd_node_new_decimal(dbl_test_nums[i], 8);
+    SerdNode   node = serd_node_new_decimal(NULL, dbl_test_nums[i], 8);
     const bool pass = (node.buf && dbl_test_strs[i])
                         ? expect_string(node.buf, dbl_test_strs[i])
                         : (node.buf == dbl_test_strs[i]);
     assert(pass);
     const size_t len = node.buf ? strlen(node.buf) : 0;
     assert(node.n_bytes == len);
-    serd_node_free(&node);
+    serd_node_free(NULL, &node);
   }
 }
 
@@ -110,11 +115,11 @@ test_integer_to_node(void)
     "0", "0", "-23", "23", "-12340", "1000", "-1000"};
 
   for (size_t i = 0; i < N_TEST_NUMS; ++i) {
-    SerdNode node = serd_node_new_integer(int_test_nums[i]);
+    SerdNode node = serd_node_new_integer(NULL, int_test_nums[i]);
     assert(expect_string(node.buf, int_test_strs[i]));
     const size_t len = strlen(node.buf);
     assert(node.n_bytes == len);
-    serd_node_free(&node);
+    serd_node_free(NULL, &node);
   }
 
 #undef N_TEST_NUMS
@@ -124,13 +129,13 @@ static void
 test_blob_to_node(void)
 {
   for (size_t size = 1; size < 256; ++size) {
-    uint8_t* const data = (uint8_t*)malloc(size);
+    uint8_t* const data = (uint8_t*)zix_malloc(NULL, size);
     assert(data);
     for (size_t i = 0; i < size; ++i) {
       data[i] = (uint8_t)((size + i) % 256);
     }
 
-    SerdNode          blob     = serd_node_new_blob(data, size, size % 5);
+    SerdNode          blob     = serd_node_new_blob(NULL, data, size, size % 5);
     const char* const blob_str = blob.buf;
 
     assert(blob_str);
@@ -138,16 +143,16 @@ test_blob_to_node(void)
 
     size_t   out_size = 0;
     uint8_t* out =
-      (uint8_t*)serd_base64_decode(blob_str, blob.n_bytes, &out_size);
+      (uint8_t*)serd_base64_decode(NULL, blob_str, blob.n_bytes, &out_size);
     assert(out_size == size);
 
     for (size_t i = 0; i < size; ++i) {
       assert(out[i] == data[i]);
     }
 
-    serd_node_free(&blob);
-    serd_free(out);
-    free(data);
+    serd_node_free(NULL, &blob);
+    zix_free(NULL, out);
+    zix_free(NULL, data);
   }
 }
 
@@ -163,12 +168,12 @@ test_base64_decode(void)
     static const size_t      encoded_len = 8U;
 
     size_t      size = 0U;
-    void* const data = serd_base64_decode(encoded, encoded_len, &size);
+    void* const data = serd_base64_decode(NULL, encoded, encoded_len, &size);
 
     assert(data);
     assert(size == decoded_len);
     assert(!strncmp((const char*)data, decoded, decoded_len));
-    serd_free(data);
+    zix_free(NULL, data);
   }
 
   // Test decoding equivalent dirty base64 with ignored junk characters
@@ -177,12 +182,12 @@ test_base64_decode(void)
     static const size_t      encoded_len = 13U;
 
     size_t      size = 0U;
-    void* const data = serd_base64_decode(encoded, encoded_len, &size);
+    void* const data = serd_base64_decode(NULL, encoded, encoded_len, &size);
 
     assert(data);
     assert(size == decoded_len);
     assert(!strncmp((const char*)data, decoded, decoded_len));
-    serd_free(data);
+    zix_free(NULL, data);
   }
 
   // Test decoding effectively nothing
@@ -191,12 +196,12 @@ test_base64_decode(void)
     static const size_t      encoded_len = 4U;
 
     size_t      size = 0U;
-    void* const data = serd_base64_decode(encoded, encoded_len, &size);
+    void* const data = serd_base64_decode(NULL, encoded, encoded_len, &size);
 
     assert(data);
     assert(!size);
     // Contents of data are undefined
-    serd_free(data);
+    zix_free(NULL, data);
   }
 }
 
@@ -213,7 +218,7 @@ test_node_equals(void)
   assert(!serd_node_equals(&lhs, &qnode));
   assert(serd_node_equals(&lhs, &lhs));
 
-  SerdNode null_copy = serd_node_copy(&SERD_NODE_NULL);
+  SerdNode null_copy = serd_node_copy(NULL, &SERD_NODE_NULL);
   assert(serd_node_equals(&SERD_NODE_NULL, &null_copy));
 }
 
@@ -257,24 +262,25 @@ static void
 test_uri_node_from_node(void)
 {
   const SerdNode string      = serd_node_from_string(SERD_LITERAL, "s");
-  SerdNode       string_node = serd_node_new_uri_from_node(&string);
+  SerdNode       string_node = serd_node_new_uri_from_node(NULL, &string);
   assert(!string_node.n_bytes);
-  serd_node_free(&string_node);
+  serd_node_free(NULL, &string_node);
 
   const SerdNode nouri      = {NULL, 0U, 0U, SERD_URI};
-  SerdNode       nouri_node = serd_node_new_uri_from_node(&nouri);
+  SerdNode       nouri_node = serd_node_new_uri_from_node(NULL, &nouri);
   assert(!nouri_node.n_bytes);
-  serd_node_free(&nouri_node);
+  serd_node_free(NULL, &nouri_node);
 
   const SerdNode uri = serd_node_from_string(SERD_URI, "http://example.org/p");
-  SerdNode       uri_node = serd_node_new_uri_from_node(&uri);
+  SerdNode       uri_node = serd_node_new_uri_from_node(NULL, &uri);
   assert(uri_node.n_bytes == 20U);
-  serd_node_free(&uri_node);
+  serd_node_free(NULL, &uri_node);
 }
 
 int
 main(void)
 {
+  test_free();
   test_string_to_double();
   test_double_to_node();
   test_integer_to_node();

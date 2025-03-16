@@ -4,29 +4,32 @@
 #ifndef SERD_SRC_STACK_H
 #define SERD_SRC_STACK_H
 
+#include <zix/allocator.h>
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 /// An offset to start the stack at. Note 0 is reserved for NULL
 #define SERD_STACK_BOTTOM sizeof(void*)
 
 /// A dynamic stack in memory
 typedef struct {
-  char*  buf;      ///< Stack memory
-  size_t buf_size; ///< Allocated size of buf (>= size)
-  size_t size;     ///< Conceptual size of stack in buf
+  ZixAllocator* allocator; ///< Allocator for stack memory
+  char*         buf;       ///< Stack memory
+  size_t        buf_size;  ///< Allocated size of buf (>= size)
+  size_t        size;      ///< Conceptual size of stack in buf
 } SerdStack;
 
 static inline SerdStack
-serd_stack_new(const size_t size)
+serd_stack_new(ZixAllocator* const allocator, const size_t size)
 {
   SerdStack stack;
-  stack.buf      = (char*)calloc(size, 1);
-  stack.buf_size = size;
-  stack.size     = SERD_STACK_BOTTOM;
+  stack.allocator = allocator;
+  stack.buf       = (char*)zix_calloc(allocator, 1U, size);
+  stack.buf_size  = size;
+  stack.size      = SERD_STACK_BOTTOM;
   return stack;
 }
 
@@ -39,7 +42,7 @@ serd_stack_is_empty(const SerdStack* const stack)
 static inline void
 serd_stack_free(SerdStack* const stack)
 {
-  free(stack->buf);
+  zix_free(stack->allocator, stack->buf);
   stack->buf      = NULL;
   stack->buf_size = 0;
   stack->size     = 0;
@@ -51,7 +54,8 @@ serd_stack_push(SerdStack* const stack, const size_t n_bytes)
   const size_t new_size = stack->size + n_bytes;
   if (stack->buf_size < new_size) {
     stack->buf_size += (stack->buf_size >> 1); // *= 1.5
-    stack->buf = (char*)realloc(stack->buf, stack->buf_size);
+    stack->buf =
+      (char*)zix_realloc(stack->allocator, stack->buf, stack->buf_size);
   }
   char* const ret = (stack->buf + stack->size);
   stack->size     = new_size;

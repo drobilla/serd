@@ -31,6 +31,7 @@ _opaque = [
     "SerdReaderImpl",
     "SerdWorldImpl",
     "SerdWriterImpl",
+    "ZixAllocator",
     "ZixStringView",
     "int64_t",
     "size_t",

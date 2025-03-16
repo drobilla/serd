@@ -113,7 +113,7 @@ check_write_error_offset(SerdWorld* const world,
                          const size_t     offset,
                          const SerdStatus expected_status)
 {
-  SerdEnv* const env = serd_env_new(NULL);
+  SerdEnv* const env = serd_env_new(NULL, NULL);
   assert(env);
 
   ErrorContext      ctx = {0U, offset};
@@ -156,7 +156,7 @@ test_write_errors(void)
   // Syntax-keyed array of output document sizes
   static const size_t max_offsets[] = {0, 446, 1920, 2012, 460};
 
-  SerdWorld* const world = serd_world_new();
+  SerdWorld* const world = serd_world_new(NULL);
   assert(world);
   serd_world_set_error_func(world, quiet_error_func, NULL);
 
@@ -181,8 +181,8 @@ test_writer(const char* const path)
   FILE* const fd = fopen(path, "wb");
   assert(fd);
 
-  SerdWorld* const world = serd_world_new();
-  SerdEnv* const   env   = serd_env_new(NULL);
+  SerdWorld* const world = serd_world_new(NULL);
+  SerdEnv* const   env   = serd_env_new(NULL, NULL);
   assert(world);
   assert(env);
 
@@ -267,7 +267,7 @@ test_writer(const char* const path)
 static void
 test_reader(const char* const path)
 {
-  SerdWorld* const  world = serd_world_new();
+  SerdWorld* const  world = serd_world_new(NULL);
   ReaderTest* const rt    = (ReaderTest*)calloc(1, sizeof(ReaderTest));
   assert(world);
   assert(rt);

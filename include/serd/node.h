@@ -6,6 +6,7 @@
 
 #include <serd/attributes.h>
 #include <serd/uri.h>
+#include <zix/allocator.h>
 #include <zix/attributes.h>
 
 #include <stdbool.h>
@@ -120,11 +121,13 @@ serd_node_from_substring(SerdNodeType             type,
 
 /// Simple wrapper for serd_node_new_uri() to resolve a URI node
 SERD_API SerdNode
-serd_node_new_uri_from_node(const SerdNode* ZIX_NONNULL uri_node);
+serd_node_new_uri_from_node(ZixAllocator* ZIX_NULLABLE  allocator,
+                            const SerdNode* ZIX_NONNULL uri_node);
 
 /// Simple wrapper for serd_node_new_uri() to resolve a URI string
 SERD_API SerdNode
-serd_node_new_uri_from_string(const char* ZIX_NULLABLE str);
+serd_node_new_uri_from_string(ZixAllocator* ZIX_NULLABLE allocator,
+                              const char* ZIX_NULLABLE   str);
 
 /**
    Create a new file URI node from a file system path and optional hostname.
@@ -135,16 +138,20 @@ serd_node_new_uri_from_string(const char* ZIX_NULLABLE str);
    If `path` is relative, `hostname` is ignored.
 */
 SERD_API SerdNode
-serd_node_new_file_uri(const char* ZIX_NONNULL  path,
-                       const char* ZIX_NULLABLE hostname);
+serd_node_new_file_uri(ZixAllocator* ZIX_NULLABLE allocator,
+                       const char* ZIX_NONNULL    path,
+                       const char* ZIX_NULLABLE   hostname);
 
 /**
    Create a new node by serialising `uri` into a new string.
 
+   @param allocator Allocator for the returned node.
+
    @param uri The URI to serialise.
 */
 SERD_API SerdNode
-serd_node_new_uri(const SerdURIView* ZIX_NONNULL uri);
+serd_node_new_uri(ZixAllocator* ZIX_NULLABLE     allocator,
+                  const SerdURIView* ZIX_NONNULL uri);
 
 /**
    Create a new node by serialising `d` into an xsd:decimal string.
@@ -158,15 +165,18 @@ serd_node_new_uri(const SerdURIView* ZIX_NONNULL uri);
    Note that about 16 and 8 fractional digits are required to precisely
    represent a double and float, respectively.
 
+   @param allocator Allocator for the returned node.
    @param d The value for the new node.
    @param frac_digits The maximum number of digits after the decimal place.
 */
 SERD_API SerdNode
-serd_node_new_decimal(double d, unsigned frac_digits);
+serd_node_new_decimal(ZixAllocator* ZIX_NULLABLE allocator,
+                      double                     d,
+                      unsigned                   frac_digits);
 
 /// Create a new node by serialising `i` into an xsd:integer string
 SERD_API SerdNode
-serd_node_new_integer(int64_t i);
+serd_node_new_integer(ZixAllocator* ZIX_NULLABLE allocator, int64_t i);
 
 /**
    Create a node by serialising `buf` into an xsd:base64Binary string.
@@ -174,12 +184,16 @@ serd_node_new_integer(int64_t i);
    This function can be used to make a serialisable node out of arbitrary
    binary data, which can be decoded using serd_base64_decode().
 
+   @param allocator Allocator for the returned node.
    @param buf Raw binary input data.
    @param size Size of `buf`.
    @param wrap_lines Wrap lines at 76 characters to conform to RFC 2045.
 */
 SERD_API SerdNode
-serd_node_new_blob(const void* ZIX_NONNULL buf, size_t size, bool wrap_lines);
+serd_node_new_blob(ZixAllocator* ZIX_NULLABLE allocator,
+                   const void* ZIX_NONNULL    buf,
+                   size_t                     size,
+                   bool                       wrap_lines);
 
 /**
    Make a deep copy of `node`.
@@ -187,7 +201,8 @@ serd_node_new_blob(const void* ZIX_NONNULL buf, size_t size, bool wrap_lines);
    @return a node that the caller must free with serd_node_free().
 */
 SERD_API SerdNode
-serd_node_copy(const SerdNode* ZIX_NULLABLE node);
+serd_node_copy(ZixAllocator* ZIX_NULLABLE   allocator,
+               const SerdNode* ZIX_NULLABLE node);
 
 /// Return true iff `a` is equal to `b`
 SERD_PURE_API bool
@@ -200,7 +215,8 @@ serd_node_equals(const SerdNode* ZIX_NONNULL a, const SerdNode* ZIX_NONNULL b);
    for nodes created internally by serd), it will not be freed.
 */
 SERD_API void
-serd_node_free(SerdNode* ZIX_NULLABLE node);
+serd_node_free(ZixAllocator* ZIX_NULLABLE allocator,
+               SerdNode* ZIX_NULLABLE     node);
 
 /**
    @}
