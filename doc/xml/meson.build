@@ -19,7 +19,6 @@ doxygen_xml = custom_target(
     'index.xml',
 
     'group__serd.xml',
-    'group__serd__allocator.xml',
     'group__serd__attributes.xml',
     'group__serd__buffer.xml',
     'group__serd__data.xml',
@@ -48,7 +47,6 @@ doxygen_xml = custom_target(
     'buffer_8h.xml',
     'env_8h.xml',
     'error_8h.xml',
-    'memory_8h.xml',
     'node_8h.xml',
     'reader_8h.xml',
     'serd_8h.xml',

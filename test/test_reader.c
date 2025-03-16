@@ -3,6 +3,8 @@
 
 #undef NDEBUG
 
+#include "failing_allocator.h"
+
 #include <serd/node.h>
 #include <serd/reader.h>
 #include <serd/statement_flags.h>
@@ -20,6 +22,7 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -87,9 +90,85 @@ end_sink(void* const handle, const SerdNode* const node)
 }
 
 static void
+test_new_failed_alloc(void)
+{
+  SerdFailingAllocator allocator = serd_failing_allocator();
+
+  SerdWorld* const world = serd_world_new(&allocator.base);
+  ReaderTest       rt    = {0, 0, 0, 0};
+
+  // Successfully allocate a reader to count the number of allocations
+  serd_failing_allocator_reset(&allocator, SIZE_MAX);
+  SerdReader* const reader = serd_reader_new(world,
+                                             SERD_TURTLE,
+                                             0U,
+                                             &rt,
+                                             NULL,
+                                             base_sink,
+                                             prefix_sink,
+                                             statement_sink,
+                                             end_sink);
+  assert(reader);
+
+  // Test that each allocation failing is handled gracefully
+  const size_t n_new_allocs = serd_failing_allocator_reset(&allocator, 0);
+  for (size_t i = 0; i < n_new_allocs; ++i) {
+    serd_failing_allocator_reset(&allocator, i);
+    assert(!serd_reader_new(world,
+                            SERD_TURTLE,
+                            0U,
+                            &rt,
+                            NULL,
+                            base_sink,
+                            prefix_sink,
+                            statement_sink,
+                            end_sink));
+  }
+
+  serd_reader_free(reader);
+  serd_world_free(world);
+}
+
+static void
+test_start_stream_failed_alloc(void)
+{
+  SerdFailingAllocator allocator = serd_failing_allocator();
+
+  SerdWorld* const world = serd_world_new(&allocator.base);
+  ReaderTest       rt    = {0, 0, 0, 0};
+
+  SerdReader* const reader = serd_reader_new(world,
+                                             SERD_TURTLE,
+                                             0U,
+                                             &rt,
+                                             NULL,
+                                             base_sink,
+                                             prefix_sink,
+                                             statement_sink,
+                                             end_sink);
+  assert(reader);
+
+  // Ensure starting succeeds with allocation available
+  serd_failing_allocator_reset(&allocator, 1);
+  SerdStatus st = serd_reader_start_stream(
+    reader, (SerdReadFunc)fread, (SerdErrorFunc)ferror, NULL, "test", 4096);
+  assert(!st);
+  serd_reader_finish(reader);
+
+  // Ensure starting failed without allocation available
+  serd_failing_allocator_reset(&allocator, 0);
+  st = serd_reader_start_stream(
+    reader, (SerdReadFunc)fread, (SerdErrorFunc)ferror, NULL, "test", 4096);
+  assert(st == SERD_BAD_ALLOC);
+
+  serd_reader_free(reader);
+  serd_world_free(world);
+}
+
+static void
 test_null_callbacks(void)
 {
-  SerdWorld* const  world = serd_world_new();
+  SerdWorld* const  world = serd_world_new(NULL);
   SerdReader* const reader =
     serd_reader_new(world, SERD_TURTLE, 0U, NULL, NULL, NULL, NULL, NULL, NULL);
 
@@ -108,7 +187,7 @@ test_null_callbacks(void)
 static void
 test_read_string(void)
 {
-  SerdWorld* const  world  = serd_world_new();
+  SerdWorld* const  world  = serd_world_new(NULL);
   ReaderTest        rt     = {0, 0, 0, 0};
   SerdReader* const reader = serd_reader_new(world,
                                              SERD_TURTLE,
@@ -198,7 +277,7 @@ test_read_eof_file(const char* const path)
   fflush(f);
   fseek(f, 0L, SEEK_SET);
 
-  SerdWorld* const  world  = serd_world_new();
+  SerdWorld* const  world  = serd_world_new(NULL);
   ReaderTest        rt     = {0, 0, 0, 0};
   SerdReader* const reader = serd_reader_new(world,
                                              SERD_TURTLE,
@@ -238,7 +317,7 @@ test_read_eof_file(const char* const path)
 static void
 test_read_eof_by_byte(void)
 {
-  SerdWorld* const  world  = serd_world_new();
+  SerdWorld* const  world  = serd_world_new(NULL);
   ReaderTest        rt     = {0, 0, 0, 0};
   SerdReader* const reader = serd_reader_new(world,
                                              SERD_TURTLE,
@@ -290,7 +369,7 @@ test_read_nquads_chunks(const char* const path)
 
   fseek(f, 0, SEEK_SET);
 
-  SerdWorld* const  world  = serd_world_new();
+  SerdWorld* const  world  = serd_world_new(NULL);
   ReaderTest        rt     = {0, 0, 0, 0};
   SerdReader* const reader = serd_reader_new(world,
                                              SERD_NQUADS,
@@ -376,7 +455,7 @@ test_read_turtle_chunks(const char* const path)
   fprintf(f, "eg:s eg:p [ eg:sp eg:so ] .");
   fseek(f, 0, SEEK_SET);
 
-  SerdWorld* const  world  = serd_world_new();
+  SerdWorld* const  world  = serd_world_new(NULL);
   ReaderTest        rt     = {0, 0, 0, 0};
   SerdReader* const reader = serd_reader_new(world,
                                              SERD_TURTLE,
@@ -485,7 +564,7 @@ empty_test_error(void* stream)
 static void
 test_read_empty(void)
 {
-  SerdWorld* const  world  = serd_world_new();
+  SerdWorld* const  world  = serd_world_new(NULL);
   ReaderTest        rt     = {0, 0, 0, 0};
   SerdReader* const reader = serd_reader_new(world,
                                              SERD_SYNTAX_EMPTY,
@@ -534,6 +613,8 @@ main(void)
   assert(ttl_path);
   assert(nq_path);
 
+  test_new_failed_alloc();
+  test_start_stream_failed_alloc();
   test_null_callbacks();
   test_read_nquads_chunks(nq_path);
   test_read_turtle_chunks(ttl_path);

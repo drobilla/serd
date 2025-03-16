@@ -1,9 +1,6 @@
 assertWithSideEffect
 assignmentInAssert
-memleak
 normalCheckLevelMaxBranches
-nullPointerArithmeticOutOfMemory
-nullPointerOutOfMemory
 redundantInitialization
 unreadVariable
 unusedStructMember

@@ -35,13 +35,14 @@ unit_test_names = [
   'string',
   'syntax',
   'uri',
+  'world',
   'writer',
 ]
 
 unit_test_sources = files('headers/test_headers.c')
 
 foreach name : unit_test_names
-  source = files('test_@0@.c'.format(name))
+  source = files('failing_allocator.c', 'test_@0@.c'.format(name))
   unit_test_sources += source
   test(
     name,

@@ -7,6 +7,7 @@
 
 #include <serd/status.h>
 #include <serd/stream.h>
+#include <zix/allocator.h>
 
 #include <assert.h>
 #include <stdbool.h>
@@ -35,7 +36,8 @@ serd_byte_source_page(SerdByteSource* const source)
 }
 
 SerdStatus
-serd_byte_source_open_source(SerdByteSource* const source,
+serd_byte_source_open_source(ZixAllocator* const   allocator,
+                             SerdByteSource* const source,
                              const SerdReadFunc    read_func,
                              const SerdErrorFunc   error_func,
                              const SerdCloseFunc   close_func,
@@ -60,7 +62,12 @@ serd_byte_source_open_source(SerdByteSource* const source,
   source->from_stream = true;
 
   if (page_size > 1) {
-    source->file_buf = (uint8_t*)serd_allocate_buffer(page_size);
+    source->file_buf =
+      (uint8_t*)zix_aligned_alloc(allocator, SERD_PAGE_SIZE, page_size);
+    if (!source->file_buf) {
+      return SERD_BAD_ALLOC;
+    }
+
     source->read_buf = source->file_buf;
     memset(source->file_buf, '\0', page_size);
   } else {
@@ -101,7 +108,8 @@ serd_byte_source_open_string(SerdByteSource* const source,
 }
 
 SerdStatus
-serd_byte_source_close(SerdByteSource* const source)
+serd_byte_source_close(ZixAllocator* const   allocator,
+                       SerdByteSource* const source)
 {
   SerdStatus st = SERD_SUCCESS;
   if (source->close_func) {
@@ -109,7 +117,7 @@ serd_byte_source_close(SerdByteSource* const source)
   }
 
   if (source->page_size > 1) {
-    serd_free_aligned(source->file_buf);
+    zix_aligned_free(allocator, source->file_buf);
   }
 
   memset(source, '\0', sizeof(*source));

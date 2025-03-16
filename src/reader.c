@@ -7,6 +7,7 @@
 #include "serd_internal.h"
 #include "stack.h"
 #include "system.h"
+#include "world_impl.h"
 
 #include <serd/error.h>
 #include <serd/node.h>
@@ -17,13 +18,12 @@
 #include <serd/syntax.h>
 #include <serd/uri.h>
 #include <serd/world.h>
+#include <zix/allocator.h>
 #include <zix/string_view.h>
 
-#include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 static SerdStatus
@@ -97,8 +97,10 @@ push_node_padded(SerdReader* const   reader,
   const Ref ref = (Ref)((char*)node - reader->stack.buf);
 
 #ifdef SERD_STACK_CHECK
-  reader->allocs = (Ref*)realloc(reader->allocs,
-                                 sizeof(reader->allocs) * (++reader->n_allocs));
+  reader->allocs =
+    (Ref*)zix_realloc(reader->world->allocator,
+                      reader->allocs,
+                      sizeof(reader->allocs) * (++reader->n_allocs));
 
   reader->allocs[reader->n_allocs - 1] = ref;
 #endif
@@ -217,7 +219,14 @@ serd_reader_new(SerdWorld* const      world,
 
   assert(world);
 
-  SerdReader* me     = (SerdReader*)calloc(1, sizeof(SerdReader));
+  ZixAllocator* const allocator = serd_world_allocator(world);
+
+  SerdReader* const me =
+    (SerdReader*)zix_calloc(allocator, 1U, sizeof(SerdReader));
+  if (!me) {
+    return NULL;
+  }
+
   me->world          = world;
   me->handle         = handle;
   me->free_handle    = free_handle;
@@ -225,10 +234,15 @@ serd_reader_new(SerdWorld* const      world,
   me->prefix_func    = prefix_func;
   me->statement_func = statement_func;
   me->end_func       = end_func;
-  me->stack          = serd_stack_new(SERD_PAGE_SIZE);
+  me->stack          = serd_stack_new(world->allocator, SERD_PAGE_SIZE);
   me->syntax         = syntax;
   me->next_id        = 1;
   me->strict         = !(flags & SERD_READ_LAX);
+
+  if (!me->stack.buf) {
+    zix_free(world->allocator, me);
+    return NULL;
+  }
 
   me->rdf_first = push_node(me, SERD_URI, rdf_first);
   me->rdf_rest  = push_node(me, SERD_URI, rdf_rest);
@@ -250,14 +264,14 @@ serd_reader_free(SerdReader* const reader)
   serd_reader_finish(reader);
 
 #ifdef SERD_STACK_CHECK
-  free(reader->allocs);
+  zix_free(reader->world->allocator, reader->allocs);
 #endif
-  free(reader->stack.buf);
-  free(reader->bprefix);
+  serd_stack_free(&reader->stack);
+  zix_free(reader->world->allocator, reader->bprefix);
   if (reader->free_handle) {
     reader->free_handle(reader->handle);
   }
-  free(reader);
+  zix_free(reader->world->allocator, reader);
 }
 
 void*
@@ -272,14 +286,15 @@ serd_reader_add_blank_prefix(SerdReader* const reader, const char* const prefix)
 {
   assert(reader);
 
-  free(reader->bprefix);
+  zix_free(reader->world->allocator, reader->bprefix);
   reader->bprefix_len = 0;
   reader->bprefix     = NULL;
 
   const size_t prefix_len = prefix ? strlen(prefix) : 0;
   if (prefix_len) {
     reader->bprefix_len = prefix_len;
-    reader->bprefix     = (char*)malloc(reader->bprefix_len + 1);
+    reader->bprefix =
+      (char*)zix_malloc(reader->world->allocator, reader->bprefix_len + 1);
     memcpy(reader->bprefix, prefix, reader->bprefix_len + 1);
   }
 }
@@ -296,8 +311,14 @@ serd_reader_start_stream(SerdReader* const   reader,
   assert(read_func);
   assert(error_func);
 
-  return serd_byte_source_open_source(
-    &reader->source, read_func, error_func, NULL, stream, name, page_size);
+  return serd_byte_source_open_source(reader->world->allocator,
+                                      &reader->source,
+                                      read_func,
+                                      error_func,
+                                      NULL,
+                                      stream,
+                                      name,
+                                      page_size);
 }
 
 SerdStatus
@@ -306,18 +327,19 @@ serd_reader_start_file(SerdReader* reader, const char* uri, bool bulk)
   assert(reader);
   assert(uri);
 
-  char* const path = serd_parse_file_uri(uri, NULL);
+  char* const path = serd_parse_file_uri(NULL, uri, NULL);
   if (!path) {
     return SERD_BAD_ARG;
   }
 
   FILE* fd = serd_fopen(path, "rb");
-  free(path);
+  zix_free(NULL, path);
   if (!fd) {
     return SERD_BAD_STREAM;
   }
 
-  return serd_byte_source_open_source(&reader->source,
+  return serd_byte_source_open_source(reader->world->allocator,
+                                      &reader->source,
                                       bulk ? (SerdReadFunc)fread
                                            : serd_file_read_byte,
                                       (SerdErrorFunc)ferror,
@@ -390,5 +412,5 @@ serd_reader_finish(SerdReader* const reader)
 {
   assert(reader);
 
-  return serd_byte_source_close(&reader->source);
+  return serd_byte_source_close(reader->world->allocator, &reader->source);
 }

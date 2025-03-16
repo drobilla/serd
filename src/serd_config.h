@@ -67,13 +67,6 @@
 #    endif
 #  endif
 
-// POSIX.1-2001: posix_memalign()
-#  ifndef HAVE_POSIX_MEMALIGN
-#    if SERD_POSIX_VERSION >= 200112L
-#      define HAVE_POSIX_MEMALIGN 1
-#    endif
-#  endif
-
 #endif // !defined(SERD_NO_DEFAULT_CONFIG)
 
 /*
@@ -94,12 +87,6 @@
 #  define USE_POSIX_FADVISE 1
 #else
 #  define USE_POSIX_FADVISE 0
-#endif
-
-#if defined(HAVE_POSIX_MEMALIGN) && HAVE_POSIX_MEMALIGN
-#  define USE_POSIX_MEMALIGN 1
-#else
-#  define USE_POSIX_MEMALIGN 0
 #endif
 
 #endif // SERD_SRC_SERD_CONFIG_H

@@ -5,19 +5,32 @@
 
 #include <serd/error.h>
 #include <serd/world.h>
+#include <zix/allocator.h>
 
-#include <stdlib.h>
+#include <assert.h>
+#include <stddef.h>
 
 SerdWorld*
-serd_world_new(void)
+serd_world_new(ZixAllocator* const allocator)
 {
-  return (SerdWorld*)calloc(1, sizeof(SerdWorld));
+  SerdWorld* const world =
+    (SerdWorld*)zix_calloc(allocator, 1, sizeof(SerdWorld));
+
+  if (!world) {
+    return NULL;
+  }
+
+  world->allocator = allocator ? allocator : zix_default_allocator();
+
+  return world;
 }
 
 void
 serd_world_free(SerdWorld* const world)
 {
-  free(world);
+  if (world) {
+    zix_free(world->allocator, world);
+  }
 }
 
 void
@@ -27,4 +40,12 @@ serd_world_set_error_func(SerdWorld* const world,
 {
   world->error_func   = error_func;
   world->error_handle = handle;
+}
+
+ZixAllocator*
+serd_world_allocator(const SerdWorld* const world)
+{
+  assert(world);
+  assert(world->allocator);
+  return world->allocator;
 }

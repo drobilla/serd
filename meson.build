@@ -177,10 +177,6 @@ else
       'fcntl.h',
       'posix_fadvise(0, 0, 4096, POSIX_FADV_SEQUENTIAL);',
     ],
-    'posix_memalign': [
-      'stdlib.h',
-      'void* mem=NULL; posix_memalign(&mem, 8U, 8U);',
-    ],
   }
 
   # Define HAVE_SOMETHING symbols for all detected features
@@ -221,7 +217,6 @@ c_headers = files(
   'include/serd/buffer.h',
   'include/serd/env.h',
   'include/serd/error.h',
-  'include/serd/memory.h',
   'include/serd/node.h',
   'include/serd/reader.h',
   'include/serd/serd.h',
