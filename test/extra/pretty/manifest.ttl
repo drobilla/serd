@@ -244,9 +244,9 @@
 
 <#repeated-directives>
 	a rdft:TestTurtleEval ;
-	mf:action <repeated-directives.ttl> ;
+	mf:action <repeated-directives-in.ttl> ;
 	mf:name "repeated-directives" ;
-	mf:result <repeated-directives.ttl> .
+	mf:result <repeated-directives-out.ttl> .
 
 <#short-string-escapes>
 	a rdft:TestTurtleEval ;

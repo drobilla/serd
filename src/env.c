@@ -96,9 +96,13 @@ serd_env_set_base_uri(SerdEnv* const env, const SerdNode* const uri)
   }
 
   // Resolve base URI and create a new node and URI for it
-  const SerdURIView uri_view   = serd_parse_uri(uri->buf);
-  const SerdURIView base_uri   = serd_resolve_uri(uri_view, env->base_uri);
-  const SerdNode base_uri_node = serd_node_new_uri(env->allocator, &base_uri);
+  const SerdURIView uri_view = serd_parse_uri(uri->buf);
+  const SerdURIView base_uri = serd_resolve_uri(uri_view, env->base_uri);
+  SerdNode base_uri_node     = serd_node_new_uri(env->allocator, &base_uri);
+  if (serd_node_equals(&env->base_uri_node, &base_uri_node)) {
+    serd_node_free(NULL, &base_uri_node);
+    return SERD_NO_CHANGE;
+  }
 
   // Replace the current base URI
   serd_node_free(env->allocator, &env->base_uri_node);
@@ -132,11 +136,13 @@ serd_env_add(SerdEnv* const        env,
 {
   SerdPrefix* const prefix = serd_env_find(env, name->buf, name->n_bytes);
   if (prefix) {
-    if (!serd_node_equals(&prefix->uri, uri)) {
-      SerdNode old_prefix_uri = prefix->uri;
-      prefix->uri             = serd_node_copy(env->allocator, uri);
-      serd_node_free(env->allocator, &old_prefix_uri);
+    if (serd_node_equals(&prefix->uri, uri)) {
+      return SERD_NO_CHANGE;
     }
+
+    SerdNode old_prefix_uri = prefix->uri;
+    prefix->uri             = serd_node_copy(env->allocator, uri);
+    serd_node_free(env->allocator, &old_prefix_uri);
   } else {
     SerdNode          name_node = serd_node_copy(env->allocator, name);
     SerdNode          uri_node  = serd_node_copy(env->allocator, uri);

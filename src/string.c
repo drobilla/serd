@@ -21,6 +21,8 @@ serd_strerror(const SerdStatus status)
     return "Success";
   case SERD_FAILURE:
     return "Non-fatal failure";
+  case SERD_NO_CHANGE:
+    return "No change";
   case SERD_NO_DATA:
     return "Missing input";
   case SERD_NO_SPACE:

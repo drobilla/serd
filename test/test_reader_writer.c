@@ -35,7 +35,7 @@ typedef struct {
 } ReaderTest;
 
 static const char* const doc_string =
-  "@base <http://drobilla.net/> .\n"
+  "@base <http://drobilla.net/a/> .\n"
   "@prefix eg: <http://example.org/> .\n"
   "eg:g {\n"
   "<http://example.com/s> eg:p \"l\\n\\\"it\" ,\n"
@@ -44,7 +44,7 @@ static const char* const doc_string =
   "  eg:p <http://example.com/o> .\n"
   "}\n"
   "@prefix other: <http://example.org/other> .\n"
-  "@base <http://drobilla.net/> .\n"
+  "@base <http://drobilla.net/b/> .\n"
   "eg:𝚺\n"
   "  <http://example.org/p> [\n"
   "    eg:p 3.0 ,\n"
@@ -155,7 +155,7 @@ static void
 test_write_errors(void)
 {
   // Syntax-keyed array of output document sizes
-  static const size_t max_offsets[] = {0, 446, 1920, 2012, 460};
+  static const size_t max_offsets[] = {0, 450, 1920, 2012, 464};
 
   SerdWorld* const world = serd_world_new(NULL);
   assert(world);
