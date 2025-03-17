@@ -1,5 +1,7 @@
 assertWithSideEffect
 assignmentInAssert
 normalCheckLevelMaxBranches
+nullPointerArithmeticOutOfMemory
+nullPointerOutOfMemory
 redundantInitialization
 unreadVariable
