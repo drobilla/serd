@@ -7,7 +7,6 @@
 #include <zix/allocator.h>
 
 #include <assert.h>
-#include <stdbool.h>
 #include <stddef.h>
 
 /// A dynamic stack in memory
@@ -25,12 +24,6 @@ serd_stack_new(ZixAllocator* const allocator, const size_t size)
   stack.buf_size = size;
   stack.size     = 0;
   return stack;
-}
-
-static inline bool
-serd_stack_is_empty(const SerdStack* const stack)
-{
-  return !stack->size;
 }
 
 static inline void

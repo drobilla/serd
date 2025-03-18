@@ -66,7 +66,7 @@ print_usage(const char* const name, const bool error)
     "  -f           Fast and loose URI pass-through\n"
     "  -h           Display this help and exit\n"
     "  -i SYNTAX    Input syntax: turtle/ntriples/trig/nquads\n"
-    "  -k BYTES     Reader stack size\n"
+    "  -k BYTES     Reader and writer stack size\n"
     "  -l           Lax (non-strict) parsing\n"
     "  -o SYNTAX    Output syntax: empty/turtle/ntriples/nquads\n"
     "  -p PREFIX    Add PREFIX to blank node IDs\n"
@@ -279,7 +279,7 @@ main(int argc, char** argv)
   SerdWorld* const world  = serd_world_new(NULL);
   SerdEnv* const   env    = serd_env_new(NULL, serd_string_view(base));
 
-  const SerdLimits limits = {stack_size};
+  const SerdLimits limits = {stack_size, stack_size};
   serd_world_set_limits(world, limits);
 
   SerdWriter* const writer = serd_writer_new(

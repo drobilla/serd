@@ -38,7 +38,6 @@ c_suppressions = []
 if cc.get_id() in ['clang', 'emscripten']
   if warning_level == 'everything'
     c_suppressions += [
-      '-Wno-cast-align',
       '-Wno-cast-function-type-strict',
       '-Wno-cast-qual',
       '-Wno-declaration-after-statement',
@@ -72,7 +71,6 @@ if cc.get_id() in ['clang', 'emscripten']
 elif cc.get_id() == 'gcc'
   if warning_level == 'everything'
     c_suppressions += [
-      '-Wno-cast-align',
       '-Wno-cast-qual',
       '-Wno-format-nonliteral',
       '-Wno-inline',
