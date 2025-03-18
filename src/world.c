@@ -102,6 +102,7 @@ serd_world_new(ZixAllocator* const allocator)
   }
 
   world->limits.reader_stack_size = 524288U;
+  world->limits.writer_stack_size = 4096U;
   world->allocator = allocator ? allocator : zix_default_allocator();
 
   return world;

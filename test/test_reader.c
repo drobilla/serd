@@ -124,7 +124,7 @@ test_start_stream_failed_alloc(void)
 static void
 test_read_string(void)
 {
-  static const SerdLimits limits = {1024};
+  static const SerdLimits limits = {1024, 0};
 
   SerdWorld* const world = serd_world_new(NULL);
   serd_world_set_limits(world, limits);
@@ -156,7 +156,7 @@ test_read_string(void)
 static void
 test_read_eof_file(const char* const path)
 {
-  static const SerdLimits limits = {1024};
+  static const SerdLimits limits = {1024, 0};
 
   FILE* const f = fopen(path, "w+b");
   assert(f);
@@ -211,7 +211,7 @@ test_read_eof_file(const char* const path)
 static void
 test_read_flat_chunks(const char* const path, const SerdSyntax syntax)
 {
-  static const SerdLimits limits = {2048};
+  static const SerdLimits limits = {2048, 0};
 
   FILE* const f = fopen(path, "w+b");
   assert(f);
@@ -290,7 +290,7 @@ test_read_flat_chunks(const char* const path, const SerdSyntax syntax)
 static void
 test_read_abbrev_chunks(const char* const path, const SerdSyntax syntax)
 {
-  static const SerdLimits limits = {2048};
+  static const SerdLimits limits = {2048, 0};
 
   FILE* const f = fopen(path, "w+b");
   assert(f);
@@ -395,7 +395,7 @@ empty_test_error(void* stream)
 static void
 test_read_empty(void)
 {
-  static const SerdLimits limits = {512};
+  static const SerdLimits limits = {512, 0};
 
   SerdWorld* const world = serd_world_new(NULL);
   serd_world_set_limits(world, limits);
