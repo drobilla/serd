@@ -228,6 +228,7 @@ c_headers = files(
   'include/serd/statement_view.h',
   'include/serd/status.h',
   'include/serd/stream.h',
+  'include/serd/stream_result.h',
   'include/serd/string.h',
   'include/serd/string_pair_view.h',
   'include/serd/struct_literal.h',
