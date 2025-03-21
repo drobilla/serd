@@ -214,13 +214,9 @@ test_write_bad_anon_stack(void)
 static void
 test_strict_write(void)
 {
-  const char* const path = "serd_strict_write_test.ttl";
-  FILE* const       fd   = fopen(path, "wb");
-  assert(fd);
-
   SerdEnv* const    env    = serd_env_new(NULL);
   SerdWriter* const writer = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)SERD_STYLE_STRICT, env, NULL, null_sink, fd);
+    SERD_TURTLE, (SerdStyle)SERD_STYLE_STRICT, env, NULL, null_sink, NULL);
   assert(writer);
 
   const uint8_t bad_str[] = {0xFF, 0x90, 'h', 'i', 0};
@@ -239,8 +235,6 @@ test_strict_write(void)
 
   serd_writer_free(writer);
   serd_env_free(env);
-  assert(!fclose(fd));
-  assert(!remove(path));
 }
 
 // Produce a write error without setting errno
