@@ -1,8 +1,6 @@
 // Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "node.h"
-
 #include "base64.h"
 #include "string_utils.h"
 
@@ -16,6 +14,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+struct SerdNodeImpl {
+  size_t        n_bytes; /**< Size in bytes (not including null) */
+  SerdNodeFlags flags;   /**< Node flags (e.g. string properties) */
+  SerdType      type;    /**< Node type */
+};
 
 static size_t
 serd_uri_string_length(const SerdURI* const uri)
