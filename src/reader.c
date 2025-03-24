@@ -35,8 +35,7 @@ r_err_char(SerdReader* const reader, const char* const kind, const int c)
 {
   const SerdStatus st = SERD_ERR_BAD_SYNTAX;
 
-  return (c < 0x20 || c == 0x7F || c > 0x10FFFF)
-           ? r_err(reader, st, "bad %s character\n", kind)
+  return (c < 0x20 || c == 0x7F) ? r_err(reader, st, "bad %s character\n", kind)
          : (c == '\'' || c >= 0x80)
            ? r_err(reader, st, "bad %s character U+%04X\n", kind, (uint32_t)c)
            : r_err(reader, st, "bad %s character '%c'\n", kind, c);

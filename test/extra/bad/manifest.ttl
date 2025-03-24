@@ -63,6 +63,10 @@
 		<#bad-is-of-keywords>
 		<#bad-keywords>
 		<#bad-lang>
+		<#bad-lang-start-delete>
+		<#bad-lang-start-space>
+		<#bad-lang-start-tab>
+		<#bad-lang-start-wide>
 		<#bad-list>
 		<#bad-list-close-object>
 		<#bad-list2>
@@ -92,7 +96,10 @@
 		<#bad-true-subject>
 		<#bad-uri-escape>
 		<#bad-uri-scheme>
-		<#bad-uri-scheme-start>
+		<#bad-uri-scheme-start-delete>
+		<#bad-uri-scheme-start-space>
+		<#bad-uri-scheme-start-tab>
+		<#bad-uri-scheme-start-wide>
 		<#bad-uri-truncated>
 		<#bad-verb>
 	) .
@@ -382,6 +389,26 @@
 	mf:action <bad-lang.ttl> ;
 	mf:name "bad-lang" .
 
+<#bad-lang-start-delete>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-lang-start-delete.nt> ;
+	mf:name "bad-lang-start-delete" .
+
+<#bad-lang-start-space>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-lang-start-space.nt> ;
+	mf:name "bad-lang-start-space" .
+
+<#bad-lang-start-tab>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-lang-start-tab.nt> ;
+	mf:name "bad-lang-start-tab" .
+
+<#bad-lang-start-wide>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-lang-start-wide.nt> ;
+	mf:name "bad-lang-start-wide" .
+
 <#bad-list>
 	a rdft:TestTurtleNegativeSyntax ;
 	mf:action <bad-list.ttl> ;
@@ -527,10 +554,30 @@
 	mf:action <bad-uri-scheme.nt> ;
 	mf:name "bad-uri-scheme" .
 
-<#bad-uri-scheme-start>
+<#bad-uri-scheme-start-apostrophe>
 	a rdft:TestNTriplesNegativeSyntax ;
-	mf:action <bad-uri-scheme-start.nt> ;
-	mf:name "bad-uri-scheme-start" .
+	mf:action <bad-uri-scheme-start-apostrophe.nt> ;
+	mf:name "bad-uri-scheme-start-apostrophe" .
+
+<#bad-uri-scheme-start-delete>
+	a rdft:TestNTriplesNegativeSyntax ;
+	mf:action <bad-uri-scheme-start-delete.nt> ;
+	mf:name "bad-uri-scheme-start-delete" .
+
+<#bad-uri-scheme-start-space>
+	a rdft:TestNTriplesNegativeSyntax ;
+	mf:action <bad-uri-scheme-start-space.nt> ;
+	mf:name "bad-uri-scheme-start-space" .
+
+<#bad-uri-scheme-start-tab>
+	a rdft:TestNTriplesNegativeSyntax ;
+	mf:action <bad-uri-scheme-start-tab.nt> ;
+	mf:name "bad-uri-scheme-start-tab" .
+
+<#bad-uri-scheme-start-wide>
+	a rdft:TestNTriplesNegativeSyntax ;
+	mf:action <bad-uri-scheme-start-wide.nt> ;
+	mf:name "bad-uri-scheme-start-wide" .
 
 <#bad-uri-truncated>
 	a rdft:TestNTriplesNegativeSyntax ;
