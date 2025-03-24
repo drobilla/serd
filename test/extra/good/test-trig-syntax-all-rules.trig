@@ -7,13 +7,13 @@
 	""string""\t\b\n\r\f\'\u0025\U00015678""" .
 eg:s eg:p "߿ࠀ࿿က쿿퀀퟿�𐀀𿿽񀀀󿿽􀀀􏿽" .
  eg:sub%25ject eg:pr\~d "o"^^eg:T .
-eg:sub%25ject eg:pr\~d "o"@en .	
+eg:s\@bject eg:pr\~d "o"@en .	
 _:e.u.s eg:p "o"@en-gb . 
 _:e.u.s eg:p _:o.
 _:e.u.s eg:p‿r⁀d 2.
 _:e.u.s eg:prèd 3 .
 _:e.u.s eg:pͯ 4.5.
-eg:s eg:p 0 , .1 , 2.3 , 4E5, 6e07 .
+eg:Σ eg:p 0 , .1 , 2.3 , 4E5, 6e07 .
 eg:s eg:p .7e8 , .9E0 , 1.e2 , 3.E4 .
 eg:s eg:p .2E3 , .4e5 , 6.7E8 , 9.
  [ ] eg:p 0.e1, 2.E3.
