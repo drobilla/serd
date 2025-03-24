@@ -126,6 +126,12 @@
 	mf:name "test-bom" ;
 	mf:result <test-bom.nt> .
 
+<#test-bom-only>
+	a rdft:TestTurtleEval ;
+	mf:action <test-bom-only.ttl> ;
+	mf:name "test-bom-only" ;
+	mf:result <test-bom-only.nt> .
+
 <#test-boolish-prefix>
 	a rdft:TestTurtleEval ;
 	mf:action <test-boolish-prefix.ttl> ;
