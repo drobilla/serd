@@ -5,3 +5,4 @@ nullPointerArithmeticOutOfMemory
 nullPointerOutOfMemory
 redundantInitialization
 unreadVariable
+unusedStructMember
