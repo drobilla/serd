@@ -456,7 +456,7 @@ read_PN_CHARS_BASE(SerdReader* const reader, const Ref dest)
     return push_byte(reader, dest, eat_byte_safe(reader, c));
   }
 
-  if (c == EOF || !(c & 0x80)) {
+  if (c < 0x80) {
     return SERD_FAILURE;
   }
 
@@ -488,7 +488,7 @@ read_PN_CHARS(SerdReader* const reader, const Ref dest)
     return push_byte(reader, dest, eat_byte_safe(reader, c));
   }
 
-  if (c == EOF || !(c & 0x80)) {
+  if (c < 0x80) {
     return SERD_FAILURE;
   }
 
@@ -596,10 +596,10 @@ read_PN_PREFIX_tail(SerdReader* const reader,
                     bool* const       ate_dot)
 {
   SerdStatus st                     = SERD_SUCCESS;
-  int        c                      = 0;
   bool       trailing_unescaped_dot = false;
 
-  while (!st && ((c = peek_byte(reader)) > 0)) { // Middle: (PN_CHARS | '.')*
+  while (!st) { // Middle: (PN_CHARS | '.')*
+    const int c = peek_byte(reader);
     if (c == '.') {
       push_byte(reader, dest, eat_byte_safe(reader, c));
       trailing_unescaped_dot = true;
