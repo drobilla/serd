@@ -20,6 +20,7 @@
 		<#test-bad-utf8-trig>
 		<#test-lone-list>
 		<#test-out-of-range-unicode>
+		<#test-utf8-decode>
 	) .
 
 <#test-bad-string-nq>
@@ -105,3 +106,9 @@
 	mf:action <test-out-of-range-unicode.ttl> ;
 	mf:name "test-out-of-range-unicode" ;
 	mf:result <test-out-of-range-unicode.nt> .
+
+<#test-utf8-decode>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <test-utf8-decode.ttl> ;
+	mf:name "test-utf8-decode" ;
+	mf:result <test-utf8-decode-out.ttl> .
