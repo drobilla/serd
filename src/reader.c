@@ -316,7 +316,8 @@ read_syntax_chunk(SerdReader* const reader)
     read_trig_chunk,
   };
 
-  return read_funcs[reader->syntax](reader);
+  const SerdStatus st = read_funcs[reader->syntax](reader);
+  return (st == SERD_BAD_STACK) ? r_err(reader, st, "Stack overflow") : st;
 }
 
 SerdStatus
@@ -353,7 +354,7 @@ serd_reader_read_document(SerdReader* const reader)
 
   while (st <= SERD_FAILURE && !reader->source->eof) {
     st = read_syntax_chunk(reader);
-    if (st > SERD_FAILURE && !reader->strict) {
+    if (st > SERD_FAILURE && st != SERD_BAD_STACK && !reader->strict) {
       serd_reader_skip_until_byte(reader, '\n');
       st = SERD_SUCCESS;
     }

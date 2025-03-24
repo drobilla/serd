@@ -104,21 +104,20 @@ SerdStatus
 read_IRIREF_suffix(SerdReader* const reader, TokenHeader* const node)
 {
   SerdStatus st   = SERD_SUCCESS;
-  int        code = 0;
+  uint32_t   code = 0U;
+  int        c    = 0;
 
-  while (st <= SERD_FAILURE) {
-    const int c = peek_byte(reader);
+  while (st <= SERD_FAILURE && c != '>') {
+    c = peek_byte(reader);
     TRY(st, skip_byte(reader, c));
     if (c == '>') {
-      return push_node_termination(reader);
-    }
-
-    if (c >= 0x80) {
-      st = read_utf8_continuation(reader, node, (uint8_t)c);
+      st = push_node_termination(reader);
+    } else if (c >= 0x80) {
+      st = read_utf8_continuation(reader, node, &code, (uint8_t)c);
     } else if (c == '\\') {
-      if (!(st = read_UCHAR(reader, node, &code)) &&
-          (code == '%' || !is_IRIREF(code))) {
-        st = r_err_char(reader, "IRI", code);
+      TRY(st, read_UCHAR(reader, node, &code));
+      if (code == '%' || !is_IRIREF((int)code)) {
+        st = r_err_char(reader, "IRI", (int)code);
       }
     } else if (is_IRIREF(c)) {
       st = push_byte(reader, node, c);
@@ -175,15 +174,16 @@ read_character(SerdReader* const  reader,
                TokenHeader* const dest,
                const uint8_t      c)
 {
+  uint32_t code = 0U;
   return !(c & 0x80U) ? push_byte(reader, dest, c)
-                      : read_utf8_continuation(reader, dest, c);
+                      : read_utf8_continuation(reader, dest, &code, c);
 }
 
 SerdStatus
 read_string_escape(SerdReader* const reader, TokenHeader* const ref)
 {
   const SerdStatus st   = read_ECHAR(reader, ref);
-  int              code = 0;
+  uint32_t         code = 0U;
   return (st == SERD_FAILURE) ? read_UCHAR(reader, ref, &code) : st;
 }
 
@@ -220,14 +220,17 @@ read_STRING_LITERAL(SerdReader* const  reader,
 SerdStatus
 read_PN_CHARS_BASE(SerdReader* const reader, TokenHeader* const dest)
 {
-  const int c = peek_byte(reader);
+  const int  c  = peek_byte(reader);
+  SerdStatus st = SERD_SUCCESS;
 
   if (c < 0x80) {
     return is_alpha(c) ? eat_push_byte(reader, dest, c) : SERD_FAILURE;
   }
 
-  uint32_t         code = 0U;
-  const SerdStatus st   = read_utf8_code_point(reader, dest, &code, (uint8_t)c);
+  TRY(st, skip_byte(reader, (uint8_t)c));
+
+  uint32_t code = 0U;
+  st            = read_utf8_continuation(reader, dest, &code, (uint8_t)c);
   return (st || is_PN_CHARS_BASE((int)code))
            ? st
            : r_err_char(reader, "name", (int)code);
@@ -257,7 +260,8 @@ read_PN_CHARS(SerdReader* const reader, TokenHeader* const dest)
   }
 
   uint32_t code = 0U;
-  TRY(st, read_utf8_code_point(reader, dest, &code, (uint8_t)c));
+  TRY(st, skip_byte(reader, (uint8_t)c));
+  TRY(st, read_utf8_continuation(reader, dest, &code, (uint8_t)c));
 
   if (!is_PN_CHARS_BASE((int)code) && code != 0xB7 &&
       !(code >= 0x0300 && code <= 0x036F) &&
@@ -382,7 +386,7 @@ utf8_from_codepoint(uint8_t* const out, const uint32_t code)
 SerdStatus
 read_UCHAR(SerdReader* const  reader,
            TokenHeader* const node,
-           int* const         code_point)
+           uint32_t* const    code_point)
 {
   SerdStatus st = SERD_SUCCESS;
 
@@ -407,14 +411,14 @@ read_UCHAR(SerdReader* const  reader,
   // Reuse buf to write the UTF-8
   const unsigned size = utf8_from_codepoint(buf, code);
   if (!size) {
-    *code_point = 0xFFFD;
+    *code_point = 0xFFFDU;
     return (reader->strict
               ? r_err(reader, SERD_BAD_SYNTAX, "U+%X is out of range", code)
               : push_bytes(reader, node, replacement_char, 3));
   }
 
   assert(code <= 0x10FFFFU);
-  *code_point = (int)code;
+  *code_point = code;
   return push_bytes(reader, node, buf, size);
 }
 

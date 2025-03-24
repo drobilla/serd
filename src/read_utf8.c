@@ -1,4 +1,4 @@
-// Copyright 2011-2021 David Robillard <d@drobilla.net>
+// Copyright 2011-2025 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #include "read_utf8.h"
@@ -28,6 +28,7 @@ static SerdStatus
 read_utf8_continuation_bytes(SerdReader* const reader,
                              uint8_t           bytes[MAX_UTF8_BYTES],
                              uint8_t* const    size,
+                             uint32_t* const   code,
                              const uint8_t     lead)
 {
   SerdStatus st = SERD_SUCCESS;
@@ -49,48 +50,35 @@ read_utf8_continuation_bytes(SerdReader* const reader,
     }
   }
 
+  if (!st) {
+    *code = parse_counted_utf8_char(bytes, *size);
+    if (*size > utf8_num_bytes_for_codepoint(*code)) {
+      st = r_err(reader, SERD_BAD_TEXT, "overlong UTF-8 for U+%06X", *code);
+    }
+
+    if (*code >= 0xD800U && *code <= 0xDFFFU) {
+      st = r_err(reader, SERD_BAD_TEXT, "reserved character U+%04X", *code);
+    }
+  }
+
   return st;
 }
 
 SerdStatus
 read_utf8_continuation(SerdReader* const  reader,
                        TokenHeader* const dest,
+                       uint32_t* const    code,
                        const uint8_t      lead)
 {
-  uint8_t size                  = 0U;
-  uint8_t bytes[MAX_UTF8_BYTES] = {lead, 0U, 0U, 0U};
+  uint8_t    size                  = 0U;
+  SerdStatus st                    = SERD_SUCCESS;
+  uint8_t    bytes[MAX_UTF8_BYTES] = {lead, 0U, 0U, 0U};
 
-  SerdStatus st = read_utf8_continuation_bytes(reader, bytes, &size, lead);
-  if (st) {
+  if ((st = read_utf8_continuation_bytes(reader, bytes, &size, code, lead))) {
     return reader->strict ? st : push_bytes(reader, dest, replacement_char, 3);
   }
 
-  return push_bytes(reader, dest, bytes, size);
-}
-
-SerdStatus
-read_utf8_code_point(SerdReader* const  reader,
-                     TokenHeader* const dest,
-                     uint32_t* const    code,
-                     const uint8_t      lead)
-{
-  uint8_t    size = 0U;
-  SerdStatus st   = SERD_SUCCESS;
-
-  *code = 0U;
-
-  if (!(st = skip_byte(reader, lead))) {
-    uint8_t bytes[MAX_UTF8_BYTES] = {lead, 0U, 0U, 0U};
-
-    if ((st = read_utf8_continuation_bytes(reader, bytes, &size, lead))) {
-      return reader->strict ? st
-                            : push_bytes(reader, dest, replacement_char, 3);
-    }
-
-    if (!(st = push_bytes(reader, dest, bytes, size))) {
-      *code = parse_counted_utf8_char(bytes, size);
-    }
-  }
+  st = push_bytes(reader, dest, bytes, size);
 
   return st;
 }
