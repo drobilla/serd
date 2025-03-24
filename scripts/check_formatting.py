@@ -20,7 +20,7 @@ def run_formatter(command, good_path):
     """Run the formatter and compare the output."""
 
     with subprocess.Popen(
-        command, stderr=DEVNULL, stdout=PIPE, encoding="utf-8"
+        command, encoding="utf-8", stderr=DEVNULL, stdout=PIPE
     ) as proc:
         out = list(proc.stdout)
 

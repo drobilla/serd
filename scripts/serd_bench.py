@@ -192,10 +192,13 @@ def run(progs, n_min, n_max, step):
                 with open(filename(n) + ".out", "w") as out:
                     sys.stderr.write(cmd + "\n")
                     proc = subprocess.Popen(
-                        cmd.split(), stdout=out, stderr=subprocess.PIPE
+                        cmd.split(),
+                        encoding="utf-8",
+                        stdout=out,
+                        stderr=subprocess.PIPE,
                     )
 
-                    time, memory = parse_time(proc.communicate()[1].decode())
+                    time, memory = parse_time(proc.communicate()[1])
                     rows["time"] += ["%.07f" % time]
                     rows["throughput"] += ["%d" % (n / time)]
                     rows["memory"] += [str(memory)]

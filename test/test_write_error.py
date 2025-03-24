@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2022-2023 David Robillard <d@drobilla.net>
+# Copyright 2022-2025 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: ISC
 
 """Test errors writing to a file."""
@@ -18,11 +18,15 @@ command = shlex.split(args.wrapper) + [args.serdi, args.input]
 if os.path.exists("/dev/full"):
     with open("/dev/full", "w", encoding="utf-8") as out:
         proc = subprocess.run(
-            command, check=False, stdout=out, stderr=subprocess.PIPE
+            command,
+            encoding="utf-8",
+            check=False,
+            stdout=out,
+            stderr=subprocess.PIPE,
         )
 
     assert proc.returncode != 0
-    assert "error" in proc.stderr.decode("utf-8")
+    assert "error" in proc.stderr
 
 else:
     sys.stderr.write("warning: /dev/full not present, skipping test")

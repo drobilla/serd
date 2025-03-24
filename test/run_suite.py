@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2022-2023 David Robillard <d@drobilla.net>
+# Copyright 2022-2025 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: ISC
 
 """Run a "simple" one-pass RDF-based test suite for serd."""
@@ -43,7 +43,7 @@ def run_eval_test(base_uri, command, in_path, good_path, out_path):
     syntax = util.syntax_from_path(out_path)
     command = command + ["-o", syntax, in_path, base_uri]
 
-    with subprocess.Popen(command, stdout=PIPE, encoding="utf-8") as proc:
+    with subprocess.Popen(command, encoding="utf-8", stdout=PIPE) as proc:
         out = list(proc.stdout)
 
     with open(good_path, "r", encoding="utf-8") as good:
@@ -65,7 +65,9 @@ def run_negative_test(base_uri, command, in_path, ignore):
         raise RuntimeError("Input file missing: " + in_path)
 
     command = command + [in_path, base_uri]
-    proc = subprocess.run(command, check=False, stderr=PIPE, stdout=DEVNULL)
+    proc = subprocess.run(
+        command, check=False, encoding="utf-8", stderr=PIPE, stdout=DEVNULL
+    )
 
     if not ignore and proc.returncode == 0:
         util.error("Unexpected successful return: " + in_path)

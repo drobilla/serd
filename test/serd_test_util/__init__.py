@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2022-2023 David Robillard <d@drobilla.net>
+# Copyright 2022-2025 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: ISC
 
 """Utilities for data-driven tests."""
@@ -157,12 +157,14 @@ def load_rdf(filename, base_uri, command_prefix):
 
     cmd = command_prefix + [filename, base_uri]
     proc = subprocess.run(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True
+        cmd,
+        encoding="utf-8",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
     )
     for line in proc.stdout.splitlines():
-        matches = re.match(
-            r"<([^ ]*)> <([^ ]*)> <([^ ]*)> \.", line.decode("utf-8")
-        )
+        matches = re.match(r"<([^ ]*)> <([^ ]*)> <([^ ]*)> \.", line)
         if matches:
             s, p, o = (matches.group(1), matches.group(2), matches.group(3))
             if s not in model:
