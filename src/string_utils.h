@@ -51,13 +51,13 @@ is_xdigit(const int c)
 static inline bool
 is_space(const char c)
 {
-  return c == ' ' || (c >= '\t' && c <= '\r');
+  return c == ' ' || in_range(c, '\t', '\r');
 }
 
 static inline bool
 is_print(const int c)
 {
-  return c >= 0x20 && c <= 0x7E;
+  return in_range(c, 0x20, 0x7E);
 }
 
 static inline bool
@@ -88,7 +88,7 @@ hex_digit_value(const uint8_t c)
 static inline char
 serd_to_upper(const char c)
 {
-  return (char)((c >= 'a' && c <= 'z') ? c - 32 : c);
+  return (char)(in_range(c, 'a', 'z') ? (c - 32) : c);
 }
 
 SERD_PURE_FUNC static inline int
