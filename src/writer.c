@@ -1212,7 +1212,12 @@ serd_writer_set_prefix(SerdWriter* const     writer,
   TRY(st, serd_env_set_prefix(writer->env, name, uri));
 
   if (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG) {
+    const bool had_subject = writer->context.subject.type;
     TRY(st, terminate_context(writer));
+    if (had_subject) {
+      TRY(st, esink("\n", 1, writer));
+    }
+
     TRY(st, esink("@prefix ", 8, writer));
     TRY(st, esink(name->buf, name->n_bytes, writer));
     TRY(st, esink(": <", 3, writer));
