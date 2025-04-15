@@ -1440,6 +1440,23 @@ write_end(SerdWriter* const writer, const ZixStringView label)
 }
 
 SerdStatus
+serd_writer_start(SerdWriter* const             writer,
+                  const SerdOutputStream* const output,
+                  const size_t                  block_size)
+{
+  ZixAllocator* const allocator = serd_world_allocator(writer->world);
+  SerdBlockDumper     dumper    = {allocator, output, NULL, 0U, 0U};
+
+  const SerdStatus st =
+    serd_block_dumper_open(writer->world, &dumper, output, block_size);
+  if (!st) {
+    writer->output = dumper;
+  }
+
+  return st;
+}
+
+SerdStatus
 serd_writer_finish(SerdWriter* const writer)
 {
   assert(writer);
@@ -1449,20 +1466,19 @@ serd_writer_finish(SerdWriter* const writer)
 
   reset_context(writer, RESET_GRAPH | RESET_INDENT);
   writer->last_sep = SEP_NONE;
+
+  serd_block_dumper_close(&writer->output);
   return st0 ? st0 : st1;
 }
 
 SerdWriter*
-serd_writer_new(SerdWorld* const              world,
-                const SerdSyntax              syntax,
-                const SerdWriterFlags         flags,
-                SerdEnv* const                env,
-                const SerdOutputStream* const output,
-                const size_t                  block_size)
+serd_writer_new(SerdWorld* const      world,
+                const SerdSyntax      syntax,
+                const SerdWriterFlags flags,
+                SerdEnv* const        env)
 {
   assert(world);
   assert(env);
-  assert(output);
 
   ZixAllocator* const allocator = serd_world_allocator(world);
   const SerdLimits    limits    = serd_world_limits(world);
@@ -1470,15 +1486,9 @@ serd_writer_new(SerdWorld* const              world,
     return NULL;
   }
 
-  SerdBlockDumper dumper = {allocator, output, NULL, 0U, 0U};
-  if (serd_block_dumper_open(world, &dumper, output, block_size)) {
-    return NULL;
-  }
-
-  SerdWriter* writer =
+  SerdWriter* const writer =
     (SerdWriter*)zix_calloc(allocator, 1, sizeof(SerdWriter));
   if (!writer) {
-    serd_block_dumper_close(&dumper);
     return NULL;
   }
 
@@ -1495,7 +1505,6 @@ serd_writer_new(SerdWorld* const              world,
 
   writer->stack = serd_stack_new(allocator, limits.writer_stack_size);
   if (!writer->stack.buf) {
-    serd_block_dumper_close(&dumper);
     zix_free(allocator, writer);
     return NULL;
   }
@@ -1506,8 +1515,6 @@ serd_writer_new(SerdWorld* const              world,
     writer->context->back  = writer->context;
     writer->context->terse = (flags & SERD_WRITE_TERSE);
   }
-
-  writer->output = dumper;
 
   return writer;
 }
@@ -1617,6 +1624,10 @@ serd_writer_on_event(void* const handle, const SerdEvent* const event)
 {
   SerdWriter* const writer = (SerdWriter*)handle;
   assert(writer);
+
+  if (!writer->output.out) {
+    return SERD_BAD_CALL;
+  }
 
   SerdStatus st = SERD_BAD_ARG;
 

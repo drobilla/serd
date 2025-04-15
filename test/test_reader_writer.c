@@ -135,8 +135,7 @@ check_write_error_offset(SerdWorld* const world,
   ErrorContext     ctx = {0U, offset};
   SerdOutputStream out = serd_open_output_stream(faulty_sink, NULL, &ctx);
 
-  SerdWriter* const writer =
-    serd_writer_new(world, syntax, 0U, env, &out, block_size);
+  SerdWriter* const writer = serd_writer_new(world, syntax, 0U, env);
   assert(writer);
 
   const SerdSink* const sink   = serd_writer_sink(writer);
@@ -145,6 +144,8 @@ check_write_error_offset(SerdWorld* const world,
 
   const char*     position = doc_string;
   SerdInputStream in       = serd_open_input_string(&position);
+
+  assert(!serd_writer_start(writer, &out, block_size));
 
   SerdStatus rst = serd_reader_start(reader, &in, zix_empty_string(), 1);
   assert(!rst);
@@ -204,10 +205,9 @@ test_writer(const char* const path)
 
   SerdOutputStream output = serd_open_output_file(path);
 
-  SerdWriter* writer =
-    serd_writer_new(world, SERD_TURTLE, SERD_WRITE_LAX, env, &output, 1U);
-
+  SerdWriter* writer = serd_writer_new(world, SERD_TURTLE, SERD_WRITE_LAX, env);
   assert(writer);
+  assert(!serd_writer_start(writer, &output, 1U));
 
   const SerdSink* const sink = serd_writer_sink(writer);
 
