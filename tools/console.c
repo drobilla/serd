@@ -130,9 +130,6 @@ serd_tool_setup(SerdTool* const         tool,
 
   tool->name = program;
 
-  const size_t out_block_size =
-    tool->out.stream == stdout ? 1U : opts.block_size;
-
   // We have something to write to, so build the writing environment
   const SerdLimits limits = {opts.stack_size, WRITER_STACK_SIZE};
   if (!(tool->world = serd_world_new(NULL)) ||
@@ -143,14 +140,15 @@ serd_tool_setup(SerdTool* const         tool,
           tool->world,
           serd_choose_syntax(tool, opts.output, opts.out_filename, SERD_NQUADS),
           opts.output.flags,
-          tool->env,
-          &tool->out,
-          out_block_size))) {
+          tool->env))) {
     LOG_ERR(program, "failed to set up writing environment\n");
     return SERD_UNKNOWN_ERROR;
   }
 
-  return SERD_SUCCESS;
+  const size_t out_block_size =
+    tool->out.stream == stdout ? 1U : opts.block_size;
+
+  return serd_writer_start(tool->writer, &tool->out, out_block_size);
 }
 
 SerdStatus

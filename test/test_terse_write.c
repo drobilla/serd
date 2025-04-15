@@ -81,13 +81,13 @@ test(void)
   serd_env_set_prefix(env, zix_string("rdf"), zix_string(NS_RDF));
 
   SerdOutputStream  output = serd_open_output_buffer(&buffer);
-  SerdWriter* const writer =
-    serd_writer_new(world, SERD_TURTLE, 0U, env, &output, 1U);
+  SerdWriter* const writer = serd_writer_new(world, SERD_TURTLE, 0U, env);
   assert(writer);
 
   const SerdSink* sink = serd_writer_sink(writer);
 
   // Simple lone list
+  assert(!serd_writer_start(writer, &output, 1U));
   write_triple(sink, SERD_TERSE_S | SERD_LIST_S, l1, rdf_first, s1);
   write_triple(sink, 0U, l1, rdf_rest, l2);
   write_triple(sink, 0U, l2, rdf_first, s2);
@@ -95,6 +95,7 @@ test(void)
   check_output(writer, &output, "( \"s1\" \"s2\" ) .\n");
 
   // Nested terse lists
+  assert(!serd_writer_start(writer, &output, 1U));
   write_triple(sink,
                SERD_TERSE_S | SERD_LIST_S | SERD_TERSE_O | SERD_LIST_O,
                l1,
@@ -106,6 +107,7 @@ test(void)
   check_output(writer, &output, "( ( \"s1\" ) ) .\n");
 
   // List as object
+  assert(!serd_writer_start(writer, &output, 1U));
   write_triple(sink,
                SERD_EMPTY_S | SERD_TERSE_S | SERD_LIST_O | SERD_TERSE_O,
                b1,
@@ -118,6 +120,7 @@ test(void)
   check_output(writer, &output, "[] rdf:value ( \"s1\" \"s2\" ) .\n");
 
   // List with anonymous elements as object
+  assert(!serd_writer_start(writer, &output, 1U));
   write_triple(
     sink, SERD_EMPTY_S | SERD_LIST_O | SERD_TERSE_O, b1, rdf_value, l1);
   write_triple(sink, SERD_EMPTY_O, l1, rdf_first, b2);

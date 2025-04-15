@@ -47,14 +47,16 @@ typedef unsigned SerdWriterFlags;
 
 /// Create a new RDF writer
 SERD_API SerdWriter* ZIX_ALLOCATED
-serd_writer_new(SerdWorld* ZIX_NONNULL              world,
-                SerdSyntax                          syntax,
-                SerdWriterFlags                     flags,
-                SerdEnv* ZIX_NONNULL                env,
-                const SerdOutputStream* ZIX_NONNULL output,
-                size_t                              block_size);
+serd_writer_new(SerdWorld* ZIX_NONNULL world,
+                SerdSyntax             syntax,
+                SerdWriterFlags        flags,
+                SerdEnv* ZIX_NONNULL   env);
 
-/// Free `writer`
+/**
+   Free `writer`.
+
+   The writer will be finished via `serd_writer_finish()` if necessary.
+*/
 SERD_API void
 serd_writer_free(SerdWriter* ZIX_NULLABLE writer);
 
@@ -74,6 +76,22 @@ serd_writer_sink(SerdWriter* ZIX_NONNULL writer);
 */
 SERD_API SerdStatus
 serd_writer_set_root_uri(SerdWriter* ZIX_NONNULL writer, ZixStringView uri);
+
+/**
+   Prepare to write some output.
+
+   This sets up the writer to write to the given output.  This should be
+   followed by sending events to the writer's sink via serd_writer_sink() to
+   actually write the output.
+
+   @param writer The writer.
+   @param output An opened output stream to write to.
+   @param block_size The number of bytes to write to the stream at once.
+*/
+SERD_API SerdStatus
+serd_writer_start(SerdWriter* ZIX_NONNULL             writer,
+                  const SerdOutputStream* ZIX_NONNULL output,
+                  size_t                              block_size);
 
 /**
    Finish a write.

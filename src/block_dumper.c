@@ -41,7 +41,8 @@ serd_block_dumper_flush(SerdBlockDumper* const dumper)
 {
   SerdStatus st = SERD_SUCCESS;
 
-  if (dumper->out->stream && dumper->block_size > 1 && dumper->size > 0) {
+  if (dumper->out && dumper->out->stream && dumper->block_size > 1 &&
+      dumper->size > 0) {
     const SerdStreamResult r =
       dumper->out->write(dumper->out->stream, dumper->size, dumper->buf);
 
@@ -56,4 +57,8 @@ void
 serd_block_dumper_close(SerdBlockDumper* const dumper)
 {
   zix_aligned_free(dumper->allocator, dumper->buf);
+  dumper->out        = NULL;
+  dumper->buf        = NULL;
+  dumper->size       = 0U;
+  dumper->block_size = 0U;
 }
