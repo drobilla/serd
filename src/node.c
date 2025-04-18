@@ -1,7 +1,6 @@
 // Copyright 2011-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "base64.h"
 #include "macros.h"
 
 #include <serd/node.h>
@@ -226,23 +225,6 @@ serd_node_new_integer(ZixAllocator* const allocator, const int64_t i)
   do {
     *s-- = (char)('0' + (abs_i % 10));
   } while ((abs_i /= 10) > 0);
-
-  return node;
-}
-
-SerdNode
-serd_node_new_blob(ZixAllocator* const allocator,
-                   const void* const   buf,
-                   const size_t        size,
-                   const bool          wrap_lines)
-{
-  assert(buf);
-
-  const size_t len  = serd_base64_get_length(size, wrap_lines);
-  char* const  str  = (char*)zix_calloc(allocator, len + 2, 1);
-  SerdNode     node = {str, len, 0, SERD_LITERAL};
-
-  serd_base64_encode((uint8_t*)str, buf, size, wrap_lines);
 
   return node;
 }

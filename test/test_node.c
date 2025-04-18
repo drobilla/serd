@@ -7,17 +7,13 @@
 
 #include <serd/node.h>
 #include <serd/node_type.h>
-#include <serd/string.h>
 #include <serd/token_view.h>
-#include <zix/allocator.h>
 #include <zix/string_view.h>
 
 #include <assert.h>
-#include <float.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
 #ifndef INFINITY
@@ -27,49 +23,10 @@
 #  define NAN (INFINITY - INFINITY)
 #endif
 
-#define NS_XSD "http://www.w3.org/2001/XMLSchema#"
-
 static void
 test_free(void)
 {
   serd_node_free(NULL, NULL);
-}
-
-static void
-check_strtod(const double dbl, const double max_delta)
-{
-  char buf[1024];
-  snprintf(buf, sizeof(buf), "%f", dbl);
-
-  char*        endptr = NULL;
-  const double out    = serd_strtod(buf, &endptr);
-  const double diff   = fabs(out - dbl);
-
-  assert(diff <= max_delta);
-}
-
-static void
-test_string_to_double(void)
-{
-  const double expt_test_nums[] = {
-    2.0E18, -5e19, +8e20, 2e+22, -5e-5, 8e0, 9e-0, 2e+0};
-
-  const char* expt_test_strs[] = {"02e18",
-                                  "-5e019",
-                                  " +8e20",
-                                  "\f2E+22",
-                                  "\n-5E-5",
-                                  "\r8E0",
-                                  "\t9e-0",
-                                  "\v2e+0"};
-
-  for (size_t i = 0; i < sizeof(expt_test_nums) / sizeof(double); ++i) {
-    const double num   = serd_strtod(expt_test_strs[i], NULL);
-    const double delta = fabs(num - expt_test_nums[i]);
-    assert(delta <= DBL_EPSILON);
-
-    check_strtod(expt_test_nums[i], DBL_EPSILON);
-  }
 }
 
 static void
@@ -126,74 +83,6 @@ test_integer_to_node(void)
   }
 
 #undef N_TEST_NUMS
-}
-
-static void
-test_blob_to_node(void)
-{
-  for (size_t size = 1; size < 256; ++size) {
-    uint8_t* const data = (uint8_t*)zix_malloc(NULL, size);
-    assert(data);
-    for (size_t i = 0; i < size; ++i) {
-      data[i] = (uint8_t)((size + i) % 256);
-    }
-
-    SerdNode            blob   = serd_node_new_blob(NULL, data, size, size % 5);
-    const ZixStringView string = serd_node_string_view(&blob);
-
-    assert(string.length > size);
-
-    size_t   out_size = 0;
-    uint8_t* out =
-      (uint8_t*)serd_base64_decode(NULL, string.data, blob.n_bytes, &out_size);
-    assert(out_size == size);
-
-    for (size_t i = 0; i < size; ++i) {
-      assert(out[i] == data[i]);
-    }
-
-    serd_node_free(NULL, &blob);
-    zix_free(NULL, out);
-    zix_free(NULL, data);
-  }
-}
-
-static void
-check_decode(const char* const encoded,
-             const char* const datatype_uri,
-             const char* const expected)
-{
-  assert(!strcmp(datatype_uri, NS_XSD "base64Binary"));
-
-  const size_t expected_len = strlen(expected);
-  size_t       size         = 0U;
-  void* const  data = serd_base64_decode(NULL, encoded, strlen(encoded), &size);
-
-  assert(data);
-  assert(size == expected_len);
-  assert(!strncmp((const char*)data, expected, expected_len));
-  zix_free(NULL, data);
-}
-
-static void
-test_base64_decode(void)
-{
-  // Test decoding clean base64
-  check_decode("dGVzdA==", NS_XSD "base64Binary", "test");
-
-  // Test decoding equivalent dirty base64 with ignored junk characters
-  check_decode("d-G#V!z*d(A$%==", NS_XSD "base64Binary", "test");
-
-  // Test decoding effectively nothing
-  check_decode("@#$%", NS_XSD "base64Binary", "");
-
-  // Test decoding various lengths
-  check_decode("Y2h1bms=", NS_XSD "base64Binary", "chunk");
-  check_decode("bGV0dGVy", NS_XSD "base64Binary", "letter");
-  check_decode("bm90ZQ==", NS_XSD "base64Binary", "note");
-
-  // Test ignoring junk characters
-  check_decode(" \f\n\r\t\vZm9v \f\n\r\t\v", NS_XSD "base64Binary", "foo");
 }
 
 static void
@@ -294,11 +183,8 @@ int
 main(void)
 {
   test_free();
-  test_string_to_double();
   test_double_to_node();
   test_integer_to_node();
-  test_blob_to_node();
-  test_base64_decode();
   test_node_equals();
   test_node_from_string();
   test_node_from_substring();

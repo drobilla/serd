@@ -101,23 +101,6 @@ SERD_API SerdNode
 serd_node_new_integer(ZixAllocator* ZIX_NULLABLE allocator, int64_t i);
 
 /**
-   Create a node by serialising `buf` into an xsd:base64Binary string.
-
-   This function can be used to make a serialisable node out of arbitrary
-   binary data, which can be decoded using serd_base64_decode().
-
-   @param allocator Allocator for the returned node.
-   @param buf Raw binary input data.
-   @param size Size of `buf`.
-   @param wrap_lines Wrap lines at 76 characters to conform to RFC 2045.
-*/
-SERD_API SerdNode
-serd_node_new_blob(ZixAllocator* ZIX_NULLABLE allocator,
-                   const void* ZIX_NONNULL    buf,
-                   size_t                     size,
-                   bool                       wrap_lines);
-
-/**
    Make a deep copy of `node`.
 
    @return a node that the caller must free with serd_node_free().

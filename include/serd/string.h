@@ -59,32 +59,6 @@ SERD_PURE_API int
 serd_strcasecmp(const char* ZIX_NONNULL lhs, const char* ZIX_NONNULL rhs);
 
 /**
-   Parse a string to a double.
-
-   The API of this function is identical to the standard C strtod function,
-   except this function is locale-independent and always matches the lexical
-   format used in the Turtle grammar (the decimal point is always ".").
-*/
-SERD_API double
-serd_strtod(const char* ZIX_NONNULL             str,
-            char* ZIX_UNSPECIFIED* ZIX_NULLABLE endptr);
-
-/**
-   Decode a base64 string.
-
-   @param allocator Allocator for the returned blob.
-   @param str Base64 string to decode.
-   @param len The length of `str`.
-   @param size Set to the size of the returned blob in bytes.
-   @return A newly allocated blob which must be freed with serd_free().
-*/
-SERD_API void* ZIX_ALLOCATED
-serd_base64_decode(ZixAllocator* ZIX_NULLABLE allocator,
-                   const char* ZIX_NONNULL    str,
-                   size_t                     len,
-                   size_t* ZIX_NONNULL        size);
-
-/**
    @}
 */
 
