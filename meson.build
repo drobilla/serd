@@ -258,7 +258,6 @@ c_headers = files(
 )
 
 sources = files(
-  'src/base64.c',
   'src/block_dumper.c',
   'src/byte_source.c',
   'src/env.c',

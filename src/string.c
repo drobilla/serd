@@ -8,8 +8,6 @@
 #include <zix/allocator.h>
 #include <zix/string_view.h>
 
-#include <assert.h>
-#include <math.h>
 #include <string.h>
 
 const char*
@@ -91,67 +89,4 @@ serd_strcasecmp(const char* lhs, const char* rhs)
   const char c1 = serd_to_upper(*lhs);
   const char c2 = serd_to_upper(*rhs);
   return (c1 == c2) ? 0 : (c1 < c2) ? -1 : +1;
-}
-
-static double
-read_sign(const char** const sptr)
-{
-  double sign = 1.0;
-
-  if (**sptr == '-') {
-    sign = -1.0;
-    ++(*sptr);
-  } else if (**sptr == '+') {
-    ++(*sptr);
-  }
-
-  return sign;
-}
-
-double
-serd_strtod(const char* const str, char** const endptr)
-{
-  assert(str);
-
-  double result = 0.0;
-
-  // Point s at the first non-whitespace character
-  const char* s = str;
-  while (is_space(*s)) {
-    ++s;
-  }
-
-  // Read leading sign if necessary
-  const double sign = read_sign(&s);
-
-  // Parse integer part
-  for (; is_digit(*s); ++s) {
-    result = (result * 10.0) + (*s - '0');
-  }
-
-  // Parse fractional part
-  if (*s == '.') {
-    double denom = 10.0;
-    for (++s; is_digit(*s); ++s) {
-      result += (*s - '0') / denom;
-      denom *= 10.0;
-    }
-  }
-
-  // Parse exponent
-  if (*s == 'e' || *s == 'E') {
-    ++s;
-    double expt      = 0.0;
-    double expt_sign = read_sign(&s);
-    for (; is_digit(*s); ++s) {
-      expt = (expt * 10.0) + (*s - '0');
-    }
-    result *= pow(10, expt * expt_sign);
-  }
-
-  if (endptr) {
-    *endptr = (char*)s;
-  }
-
-  return result * sign;
 }
