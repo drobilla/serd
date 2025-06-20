@@ -41,6 +41,7 @@
 		<#prefix-after-statement>
 		<#relative-uris>
 		<#repeated-directives>
+		<#repeated-statements>
 		<#short-string-escapes>
 		<#uri-escapes>
 		<#nested-list-subject>
@@ -261,6 +262,12 @@
 	mf:action <repeated-directives-in.ttl> ;
 	mf:name "repeated-directives" ;
 	mf:result <repeated-directives-out.ttl> .
+
+<#repeated-statements>
+	a rdft:TestTurtleEval ;
+	mf:action <repeated-statements-in.ttl> ;
+	mf:name "repeated-statements" ;
+	mf:result <repeated-statements-out.ttl> .
 
 <#short-string-escapes>
 	a rdft:TestTurtleEval ;
