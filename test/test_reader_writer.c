@@ -169,7 +169,7 @@ static void
 test_write_errors(void)
 {
   // Syntax-keyed array of output document sizes
-  static const size_t max_offsets[] = {0, 454, 1976, 2068, 468};
+  static const size_t max_offsets[] = {0, 450, 1976, 2068, 464};
 
   static const SerdLimits limits = {1024, 256};
 

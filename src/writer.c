@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: ISC
 
 #include "block_dumper.h"
-#include "namespaces.h"
 #include "ntriples.h"
 #include "stack.h"
 #include "string_utils.h"
@@ -819,32 +818,13 @@ reset_context(SerdWriter* const writer, const unsigned flags)
   return SERD_SUCCESS;
 }
 
-// Return the name of the XSD datatype referred to by `datatype`, if any
-static const char*
-get_xsd_name(const SerdEnv* const env, const SerdTokenView datatype)
-{
-  if (datatype.type == SERD_URI &&
-      (!strncmp(datatype.string.data, NS_XSD, sizeof(NS_XSD) - 1))) {
-    return datatype.string.data + sizeof(NS_XSD) - 1U;
-  }
-
-  if (datatype.type == SERD_CURIE) {
-    // We can be a bit lazy/presumptive here due to grammar limitations
-    SerdStringPairView pair = {{"", 0}, {"", 0}};
-    if (!serd_env_expand(env, datatype.string, &pair)) {
-      if (!strcmp(pair.prefix.data, NS_XSD)) {
-        return pair.suffix.data;
-      }
-    }
-  }
-
-  return "";
-}
-
 static bool
-token_equals_symbol(const SerdTokenView token, const SerdSymbol symbol)
+token_equals_symbol(const SerdWriter* const writer,
+                    const SerdTokenView     token,
+                    const SerdSymbol        symbol)
 {
-  return zix_string_view_equals(token.string, serd_symbols[symbol]);
+  const SerdTokenView symbol_uri = {SERD_URI, serd_symbols[symbol]};
+  return serd_env_tokens_equal(writer->env, token, symbol_uri);
 }
 
 static SerdStatus
@@ -888,7 +868,8 @@ write_uri(SerdWriter* const writer, const ZixStringView string)
   const bool has_scheme = serd_uri_string_has_scheme(string.data);
 
   if (supports_abbrev(writer)) {
-    if (token_equals_symbol(serd_token_view(SERD_URI, string), RDF_NIL)) {
+    if (token_equals_symbol(
+          writer, serd_token_view(SERD_URI, string), RDF_NIL)) {
       return esink(writer, 2, "()");
     }
 
@@ -982,10 +963,10 @@ write_literal(SerdWriter* const   writer,
   SerdStatus st = SERD_SUCCESS;
 
   if (supports_abbrev(writer) && (node_flags & SERD_HAS_DATATYPE)) {
-    const char* const xsd_name = get_xsd_name(writer->env, meta);
-    if (!strcmp(xsd_name, "boolean") || !strcmp(xsd_name, "integer") ||
-        (!strcmp(xsd_name, "decimal") && strchr(string.data, '.') &&
-         string.data[string.length - 1U] != '.')) {
+    if (token_equals_symbol(writer, meta, XSD_BOOLEAN) ||
+        token_equals_symbol(writer, meta, XSD_INTEGER) ||
+        (token_equals_symbol(writer, meta, XSD_DECIMAL) &&
+         strchr(string.data, '.') && string.data[string.length - 1U] != '.')) {
       return esink(writer, string.length, string.data);
     }
   }
@@ -1067,8 +1048,9 @@ write_object(SerdWriter* const    writer,
 ZIX_NODISCARD static SerdStatus
 write_pred(SerdWriter* writer, const SerdTokenView pred)
 {
-  SerdStatus st = token_equals_symbol(pred, RDF_TYPE) ? esink(writer, 1, "a")
-                                                      : write_iri(writer, pred);
+  SerdStatus st = token_equals_symbol(writer, pred, RDF_TYPE)
+                    ? esink(writer, 1, "a")
+                    : write_iri(writer, pred);
 
   if (!st) {
     st = write_sep(writer, false, SEP_P_O);
@@ -1085,12 +1067,12 @@ write_list_next(SerdWriter* const    writer,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  if (token_equals_symbol(serd_object_token_view(object), RDF_NIL)) {
+  if (token_equals_symbol(writer, serd_object_token_view(object), RDF_NIL)) {
     TRY(st, write_sep(writer, false, SEP_LIST_R));
     return SERD_FAILURE;
   }
 
-  if (token_equals_symbol(predicate, RDF_FIRST)) {
+  if (token_equals_symbol(writer, predicate, RDF_FIRST)) {
     TRY(st, write_object(writer, flags, object));
   } else {
     TRY(st, write_sep(writer, false, SEP_LIST_SEP));
@@ -1164,9 +1146,7 @@ top_field_equals(const SerdWriter* const writer,
                  const SerdTokenView     token)
 {
   assert(field != SERD_OBJECT);
-  const SerdTokenView view = top_view(writer, field);
-  return token.type == view.type &&
-         zix_string_view_equals(view.string, token.string);
+  return serd_env_tokens_equal(writer->env, top_view(writer, field), token);
 }
 
 static SerdStatus
@@ -1219,8 +1199,8 @@ write_list_statement(SerdWriter* const    writer,
                      const SerdObjectView object,
                      const SerdTokenView  graph)
 {
-  if (token_equals_symbol(predicate, RDF_FIRST) &&
-      token_equals_symbol(serd_object_token_view(object), RDF_NIL)) {
+  if (token_equals_symbol(writer, predicate, RDF_FIRST) &&
+      token_equals_symbol(writer, serd_object_token_view(object), RDF_NIL)) {
     return esink(writer, 2, "()");
   }
 

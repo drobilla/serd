@@ -1,0 +1,11 @@
+@prefix eg: <http://example.org/base/prefix#> .
+
+eg:s
+	eg:p eg:o1 ,
+		eg:o2 ,
+		eg:o3 ,
+		eg:o4 ,
+		eg:o5 ,
+		eg:o6 ,
+		eg:o7 ,
+		eg:o8 .
