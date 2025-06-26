@@ -1,6 +1,7 @@
 serd (0.32.5) unstable; urgency=medium
 
   * Drop graphs when writing Turtle output
+  * Fix handling of bad predicates in anonymous blank nodes
   * Fix handling of some invalid EOF cases in lax mode
   * Fix invalid characters in error messages
   * Fix reading numbers with no space before the final dot
@@ -9,7 +10,7 @@ serd (0.32.5) unstable; urgency=medium
   * Remove project and version number from man page OS field
   * Write a blank line between statements and Turtle/TriG directives
 
- -- David Robillard <d@drobilla.net>  Fri, 11 Apr 2025 16:16:54 +0000
+ -- David Robillard <d@drobilla.net>  Thu, 26 Jun 2025 03:48:18 +0000
 
 serd (0.32.4) stable; urgency=medium
 

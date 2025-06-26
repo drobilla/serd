@@ -84,6 +84,7 @@
 		<#bad-object2>
 		<#bad-paths>
 		<#bad-pn-escape>
+		<#bad-predicate-in-blank>
 		<#bad-prefix>
 		<#bad-prefix-dot>
 		<#bad-prefix-missing-colon>
@@ -493,6 +494,11 @@
 	a rdft:TestTurtleNegativeSyntax ;
 	mf:action <bad-pn-escape.ttl> ;
 	mf:name "bad-pn-escape" .
+
+<#bad-predicate-in-blank>
+	a rdft:TestTurtleNegativeSyntax ;
+	mf:action <bad-predicate-in-blank.ttl> ;
+	mf:name "bad-predicate-in-blank" .
 
 <#bad-prefix>
 	a rdft:TestTurtleNegativeSyntax ;
