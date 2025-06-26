@@ -17,7 +17,7 @@
 
 #ifdef SERD_STACK_CHECK
 #  define SERD_STACK_ASSERT_TOP(reader, ref) \
-    assert(ref == reader->allocs[reader->n_allocs - 1]);
+    assert(ref == reader->allocs[reader->n_allocs - 1])
 #else
 #  define SERD_STACK_ASSERT_TOP(reader, ref)
 #endif

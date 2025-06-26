@@ -102,12 +102,16 @@ push_node_padded(SerdReader* const reader,
   uint8_t* buf = (uint8_t*)(node + 1);
   memcpy(buf, str, n_bytes + 1);
 
+  const Ref ref = (Ref)((uint8_t*)node - reader->stack.buf);
+
 #ifdef SERD_STACK_CHECK
-  reader->allocs                       = (Ref*)realloc(reader->allocs,
+  reader->allocs = (Ref*)realloc(reader->allocs,
                                  sizeof(reader->allocs) * (++reader->n_allocs));
-  reader->allocs[reader->n_allocs - 1] = ((uint8_t*)mem - reader->stack.buf);
+
+  reader->allocs[reader->n_allocs - 1] = ref;
 #endif
-  return (Ref)((uint8_t*)node - reader->stack.buf);
+
+  return ref;
 }
 
 Ref
@@ -149,6 +153,7 @@ pop_node(SerdReader* const reader, const Ref ref)
 #endif
     SerdNode* const      node = deref(reader, ref);
     const uint8_t* const top  = reader->stack.buf + reader->stack.size;
+    assert(top > (uint8_t*)node);
     serd_stack_pop_aligned(&reader->stack, (size_t)(top - (uint8_t*)node));
   }
   return 0;
