@@ -82,6 +82,22 @@ end_sink(void* const handle, const SerdNode* const node)
 }
 
 static void
+test_null_callbacks(void)
+{
+  SerdReader* const reader =
+    serd_reader_new(SERD_TURTLE, NULL, NULL, NULL, NULL, NULL, NULL);
+
+  assert(reader);
+  assert(!serd_reader_get_handle(reader));
+
+  const SerdStatus st =
+    serd_reader_read_string(reader, USTR("_:s <http://example.org/p> _:o ."));
+
+  assert(!st);
+  serd_reader_free(reader);
+}
+
+static void
 test_read_string(void)
 {
   ReaderTest        rt     = {0, 0, 0, 0};
@@ -419,6 +435,7 @@ main(void)
   memcpy(path + tmp_len + 1, ttl_name, ttl_name_len + 1);
   test_read_turtle_chunks(path);
 
+  test_null_callbacks();
   test_read_string();
   test_read_eof_file(path);
   test_read_eof_by_byte();
