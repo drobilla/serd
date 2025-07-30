@@ -1,5 +1,6 @@
 serd (0.32.5) unstable; urgency=medium
 
+  * Avoid over-use of yielding meson options
   * Drop graphs when writing Turtle output
   * Fix handling of bad predicates in anonymous blank nodes
   * Fix handling of some invalid EOF cases in lax mode
@@ -10,7 +11,7 @@ serd (0.32.5) unstable; urgency=medium
   * Remove project and version number from man page OS field
   * Write a blank line between statements and Turtle/TriG directives
 
- -- David Robillard <d@drobilla.net>  Thu, 26 Jun 2025 03:48:18 +0000
+ -- David Robillard <d@drobilla.net>  Wed, 30 Jul 2025 18:29:12 +0000
 
 serd (0.32.4) stable; urgency=medium
 
