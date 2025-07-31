@@ -144,7 +144,7 @@ static void
 test_write_errors(void)
 {
   // Syntax-keyed array of output document sizes
-  static const size_t max_offsets[] = {0, 452, 1911, 2003, 466};
+  static const size_t max_offsets[] = {0, 443, 1911, 2003, 457};
 
   for (unsigned s = 1; s <= (unsigned)SERD_TRIG; ++s) {
     const SerdSyntax syntax = (SerdSyntax)s;

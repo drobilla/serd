@@ -31,6 +31,7 @@
 		<#long-string-escapes>
 		<#long-string-quotes>
 		<#many-objects>
+		<#many-objects-ending-anon>
 		<#named-graph>
 		<#nested-list-object>
 		<#nested-list-object-with-empty-lists>
@@ -184,6 +185,12 @@
 	mf:action <many-objects.ttl> ;
 	mf:name "many-objects" ;
 	mf:result <many-objects.ttl> .
+
+<#many-objects-ending-anon>
+	a rdft:TestTurtleEval ;
+	mf:action <many-objects-ending-anon.ttl> ;
+	mf:name "many-objects-ending-anon" ;
+	mf:result <many-objects-ending-anon.ttl> .
 
 <#named-graph>
 	a rdft:TestTrigEval ;

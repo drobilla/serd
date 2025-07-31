@@ -1077,6 +1077,13 @@ serd_writer_end_anon(SerdWriter* const writer, const SerdNode* const node)
       writer, SERD_ERR_UNKNOWN, "unexpected end of anonymous node\n");
   }
 
+  // Decrease indent if we're current comma-indented (multiple objects at end)
+  if (writer->context.comma_indented) {
+    assert(writer->indent);
+    --writer->indent;
+    writer->context.comma_indented = false;
+  }
+
   // Write the end separator ']' and pop the context
   TRY(st, write_sep(writer, SEP_ANON_END));
   pop_context(writer);
