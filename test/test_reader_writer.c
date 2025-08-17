@@ -4,10 +4,10 @@
 #undef NDEBUG
 
 #include <serd/env.h>
-#include <serd/error.h>
 #include <serd/event.h>
 #include <serd/handler.h>
 #include <serd/input_stream.h>
+#include <serd/log.h>
 #include <serd/node_flags.h>
 #include <serd/node_type.h>
 #include <serd/object_view.h>
@@ -116,14 +116,6 @@ test_output_dir(const char* const dir_path)
   assert(!output.close);
 }
 
-static SerdStatus
-quiet_error_func(void* const handle, const SerdError* const e)
-{
-  (void)handle;
-  (void)e;
-  return SERD_SUCCESS;
-}
-
 static void
 check_write_error_offset(SerdWorld* const world,
                          const SerdSyntax syntax,
@@ -183,7 +175,7 @@ test_write_errors(void)
   SerdWorld* const world = serd_world_new(NULL);
   assert(world);
   serd_world_set_limits(world, limits);
-  serd_world_set_error_func(world, quiet_error_func, NULL);
+  serd_world_set_log_level(world, SERD_LOG_LEVEL_CRITICAL);
 
   for (unsigned s = 1; s <= (unsigned)SERD_TRIG; ++s) {
     const SerdSyntax syntax = (SerdSyntax)s;

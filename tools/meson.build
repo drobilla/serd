@@ -10,7 +10,7 @@ endif
 
 serd_pipe = executable(
   'serd-pipe',
-  files('console.c', 'serd-pipe.c'),
+  files('console.c', 'console_log.c', 'serd-pipe.c'),
   c_args: tool_c_args,
   dependencies: [serd_dep, zix_dep],
   implicit_include_directories: false,

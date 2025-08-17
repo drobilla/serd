@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: ISC
 
 #include "block_dumper.h"
+#include "log_internal.h"
 #include "ntriples.h"
 #include "stack.h"
 #include "string_utils.h"
@@ -9,11 +10,12 @@
 #include "token_header.h"
 #include "try.h"
 #include "turtle.h"
-#include "world_internal.h"
 
+#include <serd/caret_view.h>
 #include <serd/env.h>
 #include <serd/event.h>
 #include <serd/field.h>
+#include <serd/log.h>
 #include <serd/node_flags.h>
 #include <serd/node_type.h>
 #include <serd/object_view.h>
@@ -124,6 +126,7 @@ struct SerdWriterImpl {
   SerdURIView     root_uri;
   SerdStack       stack;
   SerdBlockDumper output;
+  SerdCaretView   caret;
   WriteContext*   context;
   Sep             last_sep;
   int             indent;
@@ -141,16 +144,10 @@ ZIX_LOG_FUNC(3, 4)
 static SerdStatus
 w_err(SerdWriter* const writer, const SerdStatus st, const char* const fmt, ...)
 {
-  /* TODO: This results in errors with no file information, which is not
-     helpful when re-serializing a file (particularly for "undefined
-     namespace prefix" errors.  The statement sink API needs to be changed to
-     add a caret parameter so the source can notify the writer of the
-     statement origin for better error reporting. */
-
   va_list args; // NOLINT(cppcoreguidelines-init-variables)
   va_start(args, fmt);
 
-  serd_world_verrorf(writer->world, st, fmt, args);
+  serd_vlogf(writer->world, SERD_LOG_LEVEL_ERROR, writer->caret, fmt, args);
 
   va_end(args);
   return st;
@@ -852,7 +849,7 @@ write_IRIREF(SerdWriter* const writer, const ZixStringView string)
     }
   } else if (!serd_uri_has_scheme(out_uri)) {
     return w_err(writer,
-                 SERD_BAD_ARG,
+                 SERD_BAD_URI,
                  "unable to resolve <%s> without a base URI",
                  string.data);
   }
@@ -902,7 +899,8 @@ write_curie(SerdWriter* const writer, const ZixStringView curie)
   if ((writer->flags & SERD_WRITE_EXPANDED) ||
       !(writer->flags & SERD_WRITE_VERBATIM)) {
     if ((st = serd_env_expand(writer->env, curie, &pair))) {
-      return w_err(writer, st, "undefined namespace prefix '%s'", curie.data);
+      return w_err(
+        writer, st, "unknown namespace prefix in \"%s\"", curie.data);
     }
   }
 
@@ -1362,7 +1360,10 @@ write_end(SerdWriter* const writer, const ZixStringView label)
   }
 
   if (!top_is_nested(writer)) {
-    return w_err(writer, SERD_BAD_EVENT, "unexpected end of anonymous node");
+    return w_err(writer,
+                 SERD_BAD_EVENT,
+                 "unexpected end of anonymous node \"%s\"",
+                 label.data);
   }
 
   // Decrease indent if we're current comma-indented (multiple objects at end)
@@ -1399,6 +1400,13 @@ serd_writer_start(SerdWriter* const             writer,
   if (!st) {
     writer->output = dumper;
   }
+
+  serd_logf(writer->world,
+            SERD_LOG_LEVEL_INFO,
+            serd_no_caret(),
+            "Write block size: %lu byte%s",
+            (unsigned long)block_size,
+            (block_size > 1) ? "s" : "");
 
   return st;
 }
@@ -1469,6 +1477,12 @@ serd_writer_new(SerdWorld* const      world,
     writer->context->back  = writer->context;
     writer->context->terse = (flags & SERD_WRITE_TERSE);
   }
+
+  serd_logf(world,
+            SERD_LOG_LEVEL_INFO,
+            serd_no_caret(),
+            "Writer stack size: %lu bytes",
+            (unsigned long)limits.writer_stack_size);
 
   return writer;
 }
@@ -1570,8 +1584,9 @@ serd_writer_on_event(void* const handle, const SerdEvent* const event)
     return SERD_BAD_CALL;
   }
 
-  SerdStatus st = SERD_BAD_ARG;
+  writer->caret = event->caret;
 
+  SerdStatus          st   = SERD_BAD_ARG;
   const SerdEventType type = event->type;
   switch (type) {
   case SERD_EVENT_BASE:
@@ -1589,5 +1604,6 @@ serd_writer_on_event(void* const handle, const SerdEvent* const event)
     break;
   }
 
+  writer->caret = serd_no_caret();
   return st;
 }

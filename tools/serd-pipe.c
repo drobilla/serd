@@ -4,15 +4,14 @@
 #include "console.h"
 
 #include <serd/env.h>
-#include <serd/error.h>
 #include <serd/handler.h>
 #include <serd/input_stream.h>
+#include <serd/log.h>
 #include <serd/reader.h>
 #include <serd/sink.h>
 #include <serd/status.h>
 #include <serd/syntax.h>
 #include <serd/tee.h>
-#include <serd/world.h>
 #include <serd/writer.h>
 #include <zix/string_view.h>
 
@@ -28,22 +27,14 @@ typedef struct {
   const char*       input_string;
   char* const*      inputs;
   intptr_t          n_inputs;
-  bool              quiet;
 } Options;
-
-static SerdStatus
-quiet_error_func(void* const handle, const SerdError* const e)
-{
-  (void)handle;
-  (void)e;
-  return SERD_SUCCESS;
-}
 
 // Run the tool using the given options
 static SerdStatus
 run(const Options opts)
 {
-  SerdTool app = {{NULL, NULL, NULL}, NULL, NULL, NULL, NULL};
+  SerdTool app = {
+    {NULL, NULL, NULL}, NULL, NULL, NULL, NULL, {SERD_LOG_LEVEL_INFO, false}};
 
   // Set up the tool environment
   SerdStatus st = SERD_SUCCESS;
@@ -53,10 +44,6 @@ run(const Options opts)
   }
 
   serd_writer_set_root_uri(app.writer, zix_string(opts.root_uri));
-
-  if (opts.quiet) {
-    serd_world_set_error_func(app.world, quiet_error_func, NULL);
-  }
 
   // Set up the output pipeline: tee(env, writer)
   const SerdSink* const target = serd_writer_sink(app.writer);
@@ -112,6 +99,8 @@ print_usage(const char* const name, const bool error)
     "  -b BYTES   I/O block size\n"
     "  -h         Display this help and exit\n"
     "  -k BYTES   Reader and writer stack size\n"
+    "  -l LEVEL   Maximum log level 0-7, or\n"
+    "             emerg/alert/crit/err/warn/note/info\n"
     "  -o FILE    Write output to FILE instead of stdout\n"
     "  -q         Suppress warning and error output\n"
     "  -s STRING  Parse STRING as input\n";
@@ -156,10 +145,6 @@ parse_option(OptionIter* const iter, Options* const opts)
     print_usage(iter->argv[0], false);
     return SERD_FAILURE;
 
-  case 'q':
-    opts->quiet = true;
-    return serd_option_iter_advance(iter);
-
   case 's':
     return serd_get_argument(iter, &opts->input_string);
 
@@ -179,7 +164,7 @@ main(const int argc, char* const* const argv)
   char  default_input[]  = {'-', '\0'};
   char* default_inputs[] = {default_input};
 
-  Options opts = {serd_default_options(), "", NULL, NULL, 0U, false};
+  Options opts = {serd_default_options(), "", NULL, NULL, 0U};
 
   // Parse all command line options (which must precede inputs)
   SerdStatus st   = SERD_SUCCESS;

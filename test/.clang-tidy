@@ -9,6 +9,7 @@ Checks: >
   -cert-err33-c,
   -concurrency-mt-unsafe,
   -hicpp-signed-bitwise,
+  -readability-avoid-nested-conditional-operator,
 CheckOptions:
   - key:   readability-function-cognitive-complexity.IgnoreMacros
     value: 'true'

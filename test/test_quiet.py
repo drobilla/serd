@@ -3,7 +3,7 @@
 # Copyright 2022-2025 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: ISC
 
-"""Test quiet command-line option."""
+"""Test log level command-line option."""
 
 import shlex
 import subprocess
@@ -11,7 +11,7 @@ import subprocess
 import serd_test_util as util
 
 args = util.wrapper_args(__doc__, True)
-command = shlex.split(args.wrapper) + [args.tool, "-q", args.input]
+command = shlex.split(args.wrapper) + [args.tool, "-l", "emerg", args.input]
 proc = subprocess.run(
     command,
     encoding="utf-8",
