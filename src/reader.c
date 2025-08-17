@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: ISC
 
 #include "byte_source.h"
+#include "log_internal.h"
 #include "read_context.h"
 #include "read_nquads.h"
 #include "read_ntriples.h"
@@ -16,9 +17,9 @@
 #include "world_internal.h"
 
 #include <serd/caret_view.h>
-#include <serd/error.h>
 #include <serd/event.h>
 #include <serd/input_stream.h>
+#include <serd/log.h>
 #include <serd/node_type.h>
 #include <serd/object_view.h>
 #include <serd/reader.h>
@@ -49,8 +50,10 @@ r_err(const SerdReader* const reader,
 {
   va_list args; // NOLINT(cppcoreguidelines-init-variables)
   va_start(args, fmt);
-  const SerdError e = {st, reader->source->caret, fmt, &args};
-  serd_world_error(reader->world, &e);
+
+  serd_vlogf(
+    reader->world, SERD_LOG_LEVEL_ERROR, reader->source->caret, fmt, args);
+
   va_end(args);
   return st;
 }
@@ -427,6 +430,12 @@ serd_reader_new(SerdWorld* const      world,
     me->bprefix_len = 2U;
   }
 
+  serd_logf(world,
+            SERD_LOG_LEVEL_INFO,
+            serd_no_caret(),
+            "Reader stack size: %lu bytes",
+            (unsigned long)stack_size);
+
   return me;
 }
 
@@ -468,6 +477,13 @@ serd_reader_start(SerdReader* const      reader,
 
   reader->source =
     serd_byte_source_new_input(allocator, input, input_name, block_size);
+
+  serd_logf(reader->world,
+            SERD_LOG_LEVEL_INFO,
+            serd_no_caret(),
+            "Reader block size: %lu byte%s",
+            (unsigned long)block_size,
+            (block_size > 1) ? "s" : "");
 
   return reader->source ? SERD_SUCCESS : SERD_BAD_ALLOC;
 }

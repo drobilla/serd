@@ -802,7 +802,7 @@ test_write_bad_uri(void)
   SerdStatus st =
     write_statement(serd_writer_sink(writer), 0U, s, p, token_to_object(rel));
   assert(st);
-  assert(st == SERD_BAD_ARG);
+  assert(st == SERD_BAD_URI);
 
   for (const char* const* j = junk_uris; *j; ++j) {
     const char* const junk_uri_str = *j;

@@ -8,7 +8,6 @@
 #include "stack.h"
 #include "token_header.h"
 
-#include <serd/error.h>
 #include <serd/reader.h>
 #include <serd/sink.h>
 #include <serd/syntax.h>
@@ -20,8 +19,6 @@
 struct SerdReaderImpl {
   SerdWorld*      world;
   const SerdSink* sink;
-  SerdLogFunc     error_func;
-  void*           error_handle;
   TokenHeader*    rdf_first;
   TokenHeader*    rdf_rest;
   TokenHeader*    rdf_nil;

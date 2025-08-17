@@ -5,7 +5,7 @@
 #define SERD_WORLD_H
 
 #include <serd/attributes.h>
-#include <serd/error.h>
+#include <serd/log.h>
 #include <serd/status.h>
 #include <zix/allocator.h>
 #include <zix/attributes.h>
@@ -82,15 +82,32 @@ SERD_API SerdStatus
 serd_world_set_limits(SerdWorld* ZIX_NONNULL world, SerdLimits limits);
 
 /**
-   Set a function to be called when errors occur.
+   Set the current log level.
 
-   The `error_func` will be called with `handle` as its first argument.  If
-   no error function is set, errors are printed to stderr.
+   Only messages with a higher priority than this will be logged.
+*/
+SERD_API SerdStatus
+serd_world_set_log_level(SerdWorld* ZIX_NONNULL world, SerdLogLevel level);
+
+/**
+   Set a function to be called for any log message.
+
+   If no custom logging function is set, then messages are printed to stderr by
+   default.
+
+   @param world World that will send log entries to the given function.
+
+   @param log_func Log function to call for every log message.  Each call to
+   this function represents a complete log message with an implicit trailing
+   newline.
+
+   @param handle Opaque handle that will be passed to every invocation of
+   `log_func`.
 */
 SERD_API void
-serd_world_set_error_func(SerdWorld* ZIX_NONNULL   world,
-                          SerdLogFunc ZIX_NULLABLE error_func,
-                          void* ZIX_NULLABLE       handle);
+serd_world_set_log_func(SerdWorld* ZIX_NONNULL   world,
+                        SerdLogFunc ZIX_NULLABLE log_func,
+                        void* ZIX_NULLABLE       handle);
 
 /**
    @}

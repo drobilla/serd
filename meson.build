@@ -40,7 +40,6 @@ if cc.get_id() in ['clang', 'emscripten']
     c_suppressions += [
       '-Wno-cast-qual',
       '-Wno-declaration-after-statement',
-      '-Wno-format-nonliteral',
       '-Wno-nrvo',
       '-Wno-padded',
       '-Wno-switch-default',
@@ -72,7 +71,6 @@ elif cc.get_id() == 'gcc'
   if warning_level == 'everything'
     c_suppressions += [
       '-Wno-cast-qual',
-      '-Wno-format-nonliteral',
       '-Wno-inline',
       '-Wno-padded',
       '-Wno-switch-default',
@@ -170,6 +168,10 @@ else
       'stdio.h',
       'return fileno(stdin);',
     ],
+    'isatty': [
+      'unistd.h',
+      'return isatty(2);',
+    ],
     'posix_fadvise': [
       'fcntl.h',
       'posix_fadvise(0, 0, 4096, POSIX_FADV_SEQUENTIAL);',
@@ -214,12 +216,12 @@ c_headers = files(
   'include/serd/buffer.h',
   'include/serd/caret_view.h',
   'include/serd/env.h',
-  'include/serd/error.h',
   'include/serd/event.h',
   'include/serd/field.h',
   'include/serd/file_uri.h',
   'include/serd/handler.h',
   'include/serd/input_stream.h',
+  'include/serd/log.h',
   'include/serd/node.h',
   'include/serd/node_flags.h',
   'include/serd/node_type.h',
@@ -254,6 +256,7 @@ sources = files(
   'src/file_uri.c',
   'src/handler.c',
   'src/input_stream.c',
+  'src/log.c',
   'src/node.c',
   'src/object_view.c',
   'src/output_stream.c',

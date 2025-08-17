@@ -11,8 +11,8 @@ simple_script_paths = [
   '../serd_test_util/__init__.py',
   '../test_base.py',
   '../test_empty.py',
+  '../test_log_level.py',
   '../test_multifile.py',
-  '../test_quiet.py',
   '../test_stdin.py',
   '../test_write_error.py',
 ]

@@ -20,6 +20,8 @@ serd (1.1.1) unstable; urgency=medium
   * Remove useless character counting from API
   * Replace SerdChunk with ZixStringView
   * Replace serdi with more focused tools
+  * Report input document location in writer error messages
+  * Rework logging system
   * Simplify statement flags
   * Simplify writer style options and write UTF-8 by default
   * Strictly parse percent-encoding in file URIs
@@ -27,7 +29,7 @@ serd (1.1.1) unstable; urgency=medium
   * Use char* for strings in public API
   * Write canonical NTriples 1.1 by default
 
- -- David Robillard <d@drobilla.net>  Tue, 19 Aug 2025 15:53:41 +0000
+ -- David Robillard <d@drobilla.net>  Fri, 22 Aug 2025 21:30:33 +0000
 
 serd (0.32.9) unstable; urgency=medium
 

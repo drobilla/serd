@@ -5,6 +5,7 @@
 
 #include <serd/env.h>
 #include <serd/input_stream.h>
+#include <serd/log.h>
 #include <serd/output_stream.h>
 #include <serd/reader.h>
 #include <serd/sink.h>
@@ -31,6 +32,23 @@ static const unsigned WRITER_STACK_SIZE = 4096U;
 
 #define LOG_ERR(prog, msg) fprintf(stderr, "%s: %s", prog, msg)
 #define LOG_ERRF(prog, fmt, ...) fprintf(stderr, "%s: " fmt, prog, __VA_ARGS__)
+
+typedef struct LogLevelLabels {
+  const char* number;
+  const char* symbol;
+  const char* name;
+} LogLevelLabels;
+
+static const LogLevelLabels log_level_strings[] = {
+  {"0", "emerg", "emergency"},
+  {"1", "alert", NULL},
+  {"2", "crit", "critical"},
+  {"3", "err", "error"},
+  {"4", "warn", "warning"},
+  {"5", "note", "notice"},
+  {"6", "info", NULL},
+  {"7", "debug", NULL},
+};
 
 ZIX_PURE_FUNC bool
 serd_option_iter_is_end(const OptionIter iter)
@@ -60,6 +78,7 @@ serd_default_options(void)
     524288U,
     {SERD_SYNTAX_EMPTY, 0U, false},
     {SERD_SYNTAX_EMPTY, 0U, false},
+    SERD_LOG_LEVEL_NOTICE,
   };
   return opts;
 }
@@ -128,11 +147,14 @@ serd_tool_setup(SerdTool* const         tool,
     return SERD_BAD_STREAM;
   }
 
-  tool->name = program;
+  tool->name          = program;
+  tool->log.log_level = opts.log_level;
 
   // We have something to write to, so build the writing environment
   const SerdLimits limits = {opts.stack_size, WRITER_STACK_SIZE};
   if (!(tool->world = serd_world_new(NULL)) ||
+      serd_log_init(tool->world, &tool->log) ||
+      serd_world_set_log_level(tool->world, opts.log_level) ||
       serd_world_set_limits(tool->world, limits) ||
       !(tool->env =
           serd_create_env(NULL, program, opts.base_uri, opts.out_filename)) ||
@@ -356,6 +378,27 @@ serd_parse_output_argument(OptionIter* const        iter,
   return st;
 }
 
+static SerdStatus
+serd_parse_log_level_argument(OptionIter* const   iter,
+                              SerdLogLevel* const log_level)
+{
+  SerdStatus  st       = SERD_SUCCESS;
+  const char* argument = NULL;
+
+  if (!(st = serd_get_argument(iter, &argument))) {
+    for (unsigned i = 0U; i <= (unsigned)SERD_LOG_LEVEL_DEBUG; ++i) {
+      const LogLevelLabels* const labels = &log_level_strings[i];
+      if (!strcmp(argument, labels->number) ||
+          !strcmp(argument, labels->symbol) ||
+          (labels->name && !strcmp(argument, labels->name))) {
+        *log_level = (SerdLogLevel)i;
+      }
+    }
+  }
+
+  return st;
+}
+
 SerdStatus
 serd_parse_common_option(OptionIter* const iter, SerdCommonOptions* const opts)
 {
@@ -382,6 +425,9 @@ serd_parse_common_option(OptionIter* const iter, SerdCommonOptions* const opts)
 
   case 'o':
     return serd_get_argument(iter, &opts->out_filename);
+
+  case 'l':
+    return serd_parse_log_level_argument(iter, &opts->log_level);
 
   default:
     break;
