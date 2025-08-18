@@ -44,25 +44,25 @@ typedef struct {
 } WriteContext;
 
 typedef enum {
-  SEP_NONE,        ///< Sentinel after "nothing"
-  SEP_NEWLINE,     ///< Sentinel after a line end
-  SEP_END_DIRECT,  ///< End of a directive (like "@prefix")
-  SEP_END_S,       ///< End of a subject ('.')
-  SEP_END_P,       ///< End of a predicate (';')
-  SEP_END_O,       ///< End of a named object (',')
-  SEP_JOIN_O_AN,   ///< End of anonymous object (',') before a named one
-  SEP_JOIN_O_NA,   ///< End of named object (',') before an anonymous one
-  SEP_JOIN_O_AA,   ///< End of anonymous object (',') before another
-  SEP_S_P,         ///< Between a subject and predicate (whitespace)
-  SEP_P_O,         ///< Between a predicate and object (whitespace)
-  SEP_ANON_BEGIN,  ///< Start of anonymous node ('[')
-  SEP_ANON_S_P,    ///< Between anonymous subject and predicate (whitespace)
-  SEP_ANON_END,    ///< End of anonymous node (']')
-  SEP_LIST_BEGIN,  ///< Start of list ('(')
-  SEP_LIST_SEP,    ///< List separator (whitespace)
-  SEP_LIST_END,    ///< End of list (')')
-  SEP_GRAPH_BEGIN, ///< Start of graph ('{')
-  SEP_GRAPH_END,   ///< End of graph ('}')
+  SEP_NONE,       ///< Sentinel after "nothing"
+  SEP_NEWLINE,    ///< Sentinel after a line end
+  SEP_END_DIRECT, ///< End of a directive (like "@prefix")
+  SEP_END_S,      ///< End of a subject ('.')
+  SEP_END_P,      ///< End of a predicate (';')
+  SEP_END_O_NN,   ///< End of a named object before another (',')
+  SEP_END_O_AN,   ///< End of anonymous object before a named one (',')
+  SEP_END_O_NA,   ///< End of named object before an anonymous one (',')
+  SEP_END_O_AA,   ///< End of anonymous object before another (',')
+  SEP_S_P,        ///< Between a subject and predicate (whitespace)
+  SEP_P_O,        ///< Between a predicate and object (whitespace)
+  SEP_ANON_L,     ///< Start of anonymous node ('[')
+  SEP_ANON_S_P,   ///< Between anonymous subject and predicate (whitespace)
+  SEP_ANON_R,     ///< End of anonymous node (']')
+  SEP_LIST_L,     ///< Start of list ('(')
+  SEP_LIST_SEP,   ///< List separator (whitespace)
+  SEP_LIST_R,     ///< End of list (')')
+  SEP_GRAPH_L,    ///< Start of graph ('{')
+  SEP_GRAPH_R,    ///< End of graph ('}')
 } Sep;
 
 typedef uint32_t SepMask; ///< Bitfield of separator flags
@@ -91,10 +91,10 @@ static const SepRule rules[] = {
   {',', +0, SEP_EACH, SEP_NONE, SEP_NONE},
   {NIL, +1, SEP_NONE, SEP_NONE, SEP_EACH},
   {' ', +0, SEP_NONE, SEP_NONE, SEP_NONE},
-  {'[', +1, M(SEP_JOIN_O_AA), SEP_NONE, SEP_NONE},
-  {NIL, +1, SEP_NONE, SEP_NONE, M(SEP_ANON_BEGIN)},
-  {']', -1, SEP_NONE, ~M(SEP_ANON_BEGIN), SEP_NONE},
-  {'(', +1, M(SEP_JOIN_O_AA), SEP_NONE, SEP_EACH},
+  {'[', +1, M(SEP_END_O_AA), SEP_NONE, SEP_NONE},
+  {NIL, +1, SEP_NONE, SEP_NONE, M(SEP_ANON_L)},
+  {']', -1, SEP_NONE, ~M(SEP_ANON_L), SEP_NONE},
+  {'(', +1, M(SEP_END_O_AA), SEP_NONE, SEP_EACH},
   {NIL, +0, SEP_NONE, SEP_EACH, SEP_NONE},
   {')', -1, SEP_NONE, SEP_EACH, SEP_NONE},
   {'{', +1, SEP_EACH, SEP_NONE, SEP_EACH},
@@ -543,7 +543,7 @@ write_sep(SerdWriter* const writer, const Sep sep)
   }
 
   // Adjust indentation for object comma if necessary
-  if (sep == SEP_END_O && !writer->context.comma_indented) {
+  if (sep == SEP_END_O_NN && !writer->context.comma_indented) {
     ++writer->indent;
     writer->context.comma_indented = true;
   } else if (sep == SEP_END_P && writer->context.comma_indented) {
@@ -795,12 +795,12 @@ write_blank(SerdWriter* const        writer,
   if (supports_abbrev(writer)) {
     if ((field == FIELD_SUBJECT && (flags & SERD_ANON_S_BEGIN)) ||
         (field == FIELD_OBJECT && (flags & SERD_ANON_O_BEGIN))) {
-      return write_sep(writer, SEP_ANON_BEGIN);
+      return write_sep(writer, SEP_ANON_L);
     }
 
     if ((field == FIELD_SUBJECT && (flags & SERD_LIST_S_BEGIN)) ||
         (field == FIELD_OBJECT && (flags & SERD_LIST_O_BEGIN))) {
-      return write_sep(writer, SEP_LIST_BEGIN);
+      return write_sep(writer, SEP_LIST_L);
     }
 
     if ((field == FIELD_SUBJECT && (flags & SERD_EMPTY_S)) ||
@@ -872,7 +872,7 @@ write_list_next(SerdWriter* const        writer,
   SerdStatus st = SERD_SUCCESS;
 
   if (!strcmp((const char*)object->buf, NS_RDF "nil")) {
-    TRY(st, write_sep(writer, SEP_LIST_END));
+    TRY(st, write_sep(writer, SEP_LIST_R));
     return SERD_FAILURE;
   }
 
@@ -895,7 +895,7 @@ terminate_context(SerdWriter* const writer)
   }
 
   if (writer->context.graph.type) {
-    TRY(st, write_sep(writer, SEP_GRAPH_END));
+    TRY(st, write_sep(writer, SEP_GRAPH_R));
   }
 
   return st;
@@ -962,7 +962,7 @@ serd_writer_write_statement(SerdWriter* const     writer,
     if (out_graph) {
       TRY(st,
           write_node(writer, out_graph, datatype, lang, FIELD_GRAPH, flags));
-      TRY(st, write_sep(writer, SEP_GRAPH_BEGIN));
+      TRY(st, write_sep(writer, SEP_GRAPH_L));
       copy_node(&writer->context.graph, out_graph);
     }
   }
@@ -990,12 +990,12 @@ serd_writer_write_statement(SerdWriter* const     writer,
       const bool anon_o    = flags & SERD_ANON_O_BEGIN;
       const bool list_o    = flags & SERD_LIST_O_BEGIN;
       const bool open_o    = anon_o || list_o;
-      const bool after_end = (last == SEP_ANON_END) || (last == SEP_LIST_END);
+      const bool after_end = (last == SEP_ANON_R) || (last == SEP_LIST_R);
 
       TRY(st,
           write_sep(writer,
-                    after_end ? (open_o ? SEP_JOIN_O_AA : SEP_JOIN_O_AN)
-                              : (open_o ? SEP_JOIN_O_NA : SEP_END_O)));
+                    after_end ? (open_o ? SEP_END_O_AA : SEP_END_O_AN)
+                              : (open_o ? SEP_END_O_NA : SEP_END_O_NN)));
 
     } else {
       // Elide S (write P and O)
@@ -1085,7 +1085,7 @@ serd_writer_end_anon(SerdWriter* const writer, const SerdNode* const node)
   }
 
   // Write the end separator ']' and pop the context
-  TRY(st, write_sep(writer, SEP_ANON_END));
+  TRY(st, write_sep(writer, SEP_ANON_R));
   pop_context(writer);
 
   if (node && serd_node_equals(node, &writer->context.subject)) {
