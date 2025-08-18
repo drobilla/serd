@@ -61,41 +61,40 @@ typedef enum {
   SEP_LIST_R,   ///< End of list (')')
 } Sep;
 
-typedef uint32_t SepMask; ///< Bitfield of separator flags
+typedef enum {
+  PRE_SPACE  = (1U << 0U), ///< Leading space
+  PRE_LINE   = (1U << 1U), ///< Leading newline
+  POST_SPACE = (1U << 2U), ///< Trailing space
+  POST_LINE  = (1U << 3U), ///< Trailing newline
+} SepFlag;
 
 typedef struct {
-  char    sep;             ///< Sep character
-  int     indent;          ///< Indent delta
-  SepMask pre_space_after; ///< Leading space if after given seps
-  SepMask pre_line_after;  ///< Leading newline if after given seps
-  SepMask post_line_after; ///< Trailing newline if after given seps
+  char    sep;        ///< Sep character
+  int     indent : 4; ///< Indent delta
+  uint8_t flags : 4;  ///< Whitespace flags
 } SepRule;
 
-#define SEP_EACH (~(SepMask)0)
-#define M(s) (1U << (s))
 #define NIL '\0'
 
 static const SepRule rules[] = {
-  {NIL, +0, SEP_NONE, SEP_NONE, SEP_NONE},
-  {'.', +0, SEP_EACH, SEP_NONE, SEP_NONE},
-  {';', +0, SEP_EACH, SEP_NONE, SEP_EACH},
-  {',', +0, SEP_EACH, SEP_NONE, SEP_EACH},
-  {',', +0, SEP_EACH, SEP_NONE, SEP_EACH},
-  {',', +0, SEP_EACH, SEP_NONE, SEP_NONE},
-  {NIL, +1, SEP_NONE, SEP_NONE, SEP_EACH},
-  {' ', +0, SEP_NONE, SEP_NONE, SEP_NONE},
-  {'{', +1, SEP_EACH, SEP_NONE, SEP_EACH},
-  {'}', -1, SEP_NONE, SEP_NONE, SEP_EACH},
-  {'[', +1, M(SEP_END_O_AA), SEP_NONE, SEP_NONE},
-  {']', -1, SEP_NONE, SEP_EACH, SEP_NONE},
-  {'(', +1, M(SEP_END_O_AA), SEP_NONE, SEP_EACH},
-  {NIL, +0, SEP_NONE, SEP_EACH, SEP_NONE},
-  {')', -1, SEP_NONE, SEP_EACH, SEP_NONE},
+  {NIL, +0, 0U},
+  {'.', +0, PRE_SPACE},
+  {';', +0, PRE_SPACE | POST_LINE},
+  {',', +0, PRE_SPACE | POST_LINE},
+  {',', +0, PRE_SPACE | POST_LINE},
+  {',', +0, PRE_SPACE | POST_SPACE},
+  {NIL, +1, POST_LINE},
+  {' ', +0, 0U},
+  {'{', +1, PRE_SPACE | POST_LINE},
+  {'}', -1, POST_LINE},
+  {'[', +1, 0U},
+  {']', -1, PRE_LINE},
+  {'(', +1, POST_LINE},
+  {NIL, +0, PRE_LINE},
+  {')', -1, PRE_LINE},
 };
 
 #undef NIL
-#undef M
-#undef SEP_EACH
 
 struct SerdWriterImpl {
   SerdSyntax    syntax;
@@ -519,16 +518,21 @@ write_newline(SerdWriter* const writer)
 }
 
 SERD_NODISCARD static SerdStatus
+write_space(SerdWriter* const writer, const uint8_t flags)
+{
+  return (flags & PRE_LINE)    ? write_newline(writer)
+         : (flags & PRE_SPACE) ? esink(" ", 1, writer)
+                               : SERD_SUCCESS;
+}
+
+SERD_NODISCARD static SerdStatus
 write_sep(SerdWriter* const writer, const Sep sep)
 {
   SerdStatus           st   = SERD_SUCCESS;
   const SepRule* const rule = &rules[sep];
 
-  const bool pre_line  = (rule->pre_line_after & (1U << writer->last_sep));
-  const bool post_line = (rule->post_line_after & (1U << writer->last_sep));
-
   // Adjust indent, but tolerate if it would become negative
-  if (rule->indent && (pre_line || post_line)) {
+  if (rule->indent && (rule->flags & (PRE_LINE | POST_LINE))) {
     writer->indent = ((rule->indent >= 0 || writer->indent >= -rule->indent)
                         ? writer->indent + rule->indent
                         : 0);
@@ -544,11 +548,7 @@ write_sep(SerdWriter* const writer, const Sep sep)
   }
 
   // Write newline or space before separator if necessary
-  if (pre_line) {
-    TRY(st, write_newline(writer));
-  } else if (rule->pre_space_after & (1U << writer->last_sep)) {
-    TRY(st, esink(" ", 1, writer));
-  }
+  TRY(st, write_space(writer, rule->flags));
 
   // Write actual separator string
   if (rule->sep) {
@@ -556,9 +556,7 @@ write_sep(SerdWriter* const writer, const Sep sep)
   }
 
   // Write newline after separator if necessary
-  if (post_line) {
-    TRY(st, write_newline(writer));
-  }
+  TRY(st, write_space(writer, rule->flags >> 2U));
 
   // Reset context and write a blank line after ends of subjects
   if (sep == SEP_STOP) {
