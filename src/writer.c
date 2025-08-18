@@ -44,25 +44,22 @@ typedef struct {
 } WriteContext;
 
 typedef enum {
-  SEP_NONE,       ///< Sentinel after "nothing"
-  SEP_NEWLINE,    ///< Sentinel after a line end
-  SEP_END_DIRECT, ///< End of a directive (like "@prefix")
-  SEP_END_S,      ///< End of a subject ('.')
-  SEP_END_P,      ///< End of a predicate (';')
-  SEP_END_O_NN,   ///< End of a named object before another (',')
-  SEP_END_O_AN,   ///< End of anonymous object before a named one (',')
-  SEP_END_O_NA,   ///< End of named object before an anonymous one (',')
-  SEP_END_O_AA,   ///< End of anonymous object before another (',')
-  SEP_S_P,        ///< Between a subject and predicate (whitespace)
-  SEP_P_O,        ///< Between a predicate and object (whitespace)
-  SEP_GRAPH_L,    ///< Start of graph ('{')
-  SEP_GRAPH_R,    ///< End of graph ('}')
-  SEP_ANON_L,     ///< Start of anonymous node ('[')
-  SEP_ANON_S_P,   ///< Between anonymous subject and predicate (whitespace)
-  SEP_ANON_R,     ///< End of anonymous node (']')
-  SEP_LIST_L,     ///< Start of list ('(')
-  SEP_LIST_SEP,   ///< List separator (whitespace)
-  SEP_LIST_R,     ///< End of list (')')
+  SEP_NONE,     ///< Sentinel after "nothing"
+  SEP_STOP,     ///< End of a subject or directive ('.')
+  SEP_END_P,    ///< End of a predicate (';')
+  SEP_END_O_NN, ///< End of a named object before another (',')
+  SEP_END_O_AN, ///< End of anonymous object before a named one (',')
+  SEP_END_O_NA, ///< End of named object before an anonymous one (',')
+  SEP_END_O_AA, ///< End of anonymous object before another (',')
+  SEP_S_P,      ///< Between a subject and predicate (whitespace)
+  SEP_P_O,      ///< Between a predicate and object (whitespace)
+  SEP_GRAPH_L,  ///< Start of graph ('{')
+  SEP_GRAPH_R,  ///< End of graph ('}')
+  SEP_ANON_L,   ///< Start of anonymous node ('[')
+  SEP_ANON_R,   ///< End of anonymous node (']')
+  SEP_LIST_L,   ///< Start of list ('(')
+  SEP_LIST_SEP, ///< List separator (whitespace)
+  SEP_LIST_R,   ///< End of list (')')
 } Sep;
 
 typedef uint32_t SepMask; ///< Bitfield of separator flags
@@ -81,8 +78,6 @@ typedef struct {
 
 static const SepRule rules[] = {
   {NIL, +0, SEP_NONE, SEP_NONE, SEP_NONE},
-  {'\n', 0, SEP_NONE, SEP_NONE, SEP_NONE},
-  {'.', +0, SEP_EACH, SEP_NONE, SEP_EACH},
   {'.', +0, SEP_EACH, SEP_NONE, SEP_NONE},
   {';', +0, SEP_EACH, SEP_NONE, SEP_EACH},
   {',', +0, SEP_EACH, SEP_NONE, SEP_EACH},
@@ -94,8 +89,7 @@ static const SepRule rules[] = {
   {'{', +1, SEP_EACH, SEP_NONE, SEP_EACH},
   {'}', -1, SEP_NONE, SEP_NONE, SEP_EACH},
   {'[', +1, M(SEP_END_O_AA), SEP_NONE, SEP_NONE},
-  {NIL, +1, SEP_NONE, SEP_NONE, M(SEP_ANON_L)},
-  {']', -1, SEP_NONE, ~M(SEP_ANON_L), SEP_NONE},
+  {']', -1, SEP_NONE, SEP_EACH, SEP_NONE},
   {'(', +1, M(SEP_END_O_AA), SEP_NONE, SEP_EACH},
   {NIL, +0, SEP_NONE, SEP_EACH, SEP_NONE},
   {')', -1, SEP_NONE, SEP_EACH, SEP_NONE},
@@ -566,13 +560,10 @@ write_sep(SerdWriter* const writer, const Sep sep)
   // Write newline after separator if necessary
   if (post_line) {
     TRY(st, write_newline(writer));
-    if (rule->post_line_after != ~(SepMask)0U) {
-      writer->last_sep = SEP_NEWLINE;
-    }
   }
 
   // Reset context and write a blank line after ends of subjects
-  if (sep == SEP_END_S) {
+  if (sep == SEP_STOP) {
     writer->indent                 = writer->context.graph.type ? 1 : 0;
     writer->context.comma_indented = false;
     TRY(st, esink("\n", 1, writer));
@@ -891,7 +882,7 @@ terminate_context(SerdWriter* const writer)
   SerdStatus st = SERD_SUCCESS;
 
   if (writer->context.subject.type) {
-    TRY(st, write_sep(writer, SEP_END_S));
+    TRY(st, write_sep(writer, SEP_STOP));
   }
 
   if (writer->context.graph.type) {
@@ -1015,17 +1006,15 @@ serd_writer_write_statement(SerdWriter* const     writer,
     }
 
     if (writer->context.subject.type) {
-      TRY(st, write_sep(writer, SEP_END_S));
+      TRY(st, write_sep(writer, SEP_STOP));
     }
 
-    if (writer->last_sep == SEP_END_S || writer->last_sep == SEP_END_DIRECT) {
+    if (writer->last_sep == SEP_STOP) {
       TRY(st, write_newline(writer));
     }
 
     TRY(st, write_node(writer, subject, NULL, NULL, FIELD_SUBJECT, flags));
-    if ((flags & (SERD_ANON_S_BEGIN | SERD_LIST_S_BEGIN))) {
-      TRY(st, write_sep(writer, SEP_ANON_S_P));
-    } else {
+    if (!(flags & SERD_LIST_S_BEGIN)) {
       TRY(st, write_sep(writer, SEP_S_P));
     }
 
@@ -1179,7 +1168,7 @@ serd_writer_set_base_uri(SerdWriter* const writer, const SerdNode* const uri)
     TRY(st, esink("@base <", 7, writer));
     TRY(st, esink(uri->buf, uri->n_bytes, writer));
     TRY(st, esink(">", 1, writer));
-    TRY(st, write_sep(writer, SEP_END_DIRECT));
+    TRY(st, write_sep(writer, SEP_STOP));
   }
 
   return reset_context(writer, RESET_GRAPH | RESET_INDENT);
@@ -1230,7 +1219,7 @@ serd_writer_set_prefix(SerdWriter* const     writer,
     TRY(st, esink(": <", 3, writer));
     TRY(st, ewrite_uri(writer, uri->buf, uri->n_bytes));
     TRY(st, esink(">", 1, writer));
-    TRY(st, write_sep(writer, SEP_END_DIRECT));
+    TRY(st, write_sep(writer, SEP_STOP));
   }
 
   return reset_context(writer, RESET_GRAPH | RESET_INDENT);
