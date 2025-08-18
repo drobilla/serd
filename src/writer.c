@@ -55,14 +55,14 @@ typedef enum {
   SEP_END_O_AA,   ///< End of anonymous object before another (',')
   SEP_S_P,        ///< Between a subject and predicate (whitespace)
   SEP_P_O,        ///< Between a predicate and object (whitespace)
+  SEP_GRAPH_L,    ///< Start of graph ('{')
+  SEP_GRAPH_R,    ///< End of graph ('}')
   SEP_ANON_L,     ///< Start of anonymous node ('[')
   SEP_ANON_S_P,   ///< Between anonymous subject and predicate (whitespace)
   SEP_ANON_R,     ///< End of anonymous node (']')
   SEP_LIST_L,     ///< Start of list ('(')
   SEP_LIST_SEP,   ///< List separator (whitespace)
   SEP_LIST_R,     ///< End of list (')')
-  SEP_GRAPH_L,    ///< Start of graph ('{')
-  SEP_GRAPH_R,    ///< End of graph ('}')
 } Sep;
 
 typedef uint32_t SepMask; ///< Bitfield of separator flags
@@ -91,14 +91,14 @@ static const SepRule rules[] = {
   {',', +0, SEP_EACH, SEP_NONE, SEP_NONE},
   {NIL, +1, SEP_NONE, SEP_NONE, SEP_EACH},
   {' ', +0, SEP_NONE, SEP_NONE, SEP_NONE},
+  {'{', +1, SEP_EACH, SEP_NONE, SEP_EACH},
+  {'}', -1, SEP_NONE, SEP_NONE, SEP_EACH},
   {'[', +1, M(SEP_END_O_AA), SEP_NONE, SEP_NONE},
   {NIL, +1, SEP_NONE, SEP_NONE, M(SEP_ANON_L)},
   {']', -1, SEP_NONE, ~M(SEP_ANON_L), SEP_NONE},
   {'(', +1, M(SEP_END_O_AA), SEP_NONE, SEP_EACH},
   {NIL, +0, SEP_NONE, SEP_EACH, SEP_NONE},
   {')', -1, SEP_NONE, SEP_EACH, SEP_NONE},
-  {'{', +1, SEP_EACH, SEP_NONE, SEP_EACH},
-  {'}', -1, SEP_NONE, SEP_NONE, SEP_EACH},
 };
 
 #undef NIL
