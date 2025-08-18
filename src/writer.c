@@ -426,7 +426,7 @@ write_text(SerdWriter* const    writer,
         st = esink(&in, 1, writer); // Write character as-is
         continue;
       case '\"':
-        if (n_consecutive_quotes >= 3 || i == n_bytes) {
+        if (n_consecutive_quotes >= 3) {
           // Two quotes in a row, or quote at string end, escape
           st = esink("\\\"", 2, writer);
         } else {
@@ -533,9 +533,7 @@ write_sep(SerdWriter* const writer, const Sep sep)
 
   // Adjust indent, but tolerate if it would become negative
   if (rule->indent && (rule->flags & (PRE_LINE | POST_LINE))) {
-    writer->indent = ((rule->indent >= 0 || writer->indent >= -rule->indent)
-                        ? writer->indent + rule->indent
-                        : 0);
+    writer->indent += rule->indent;
   }
 
   // Adjust indentation for object comma if necessary
