@@ -30,14 +30,14 @@ eg:sa06
 	eg:p1 [
 		eg:p2 eg:o2
 	] ,
-	eg:o3 ,
+		eg:o3 ,
 		eg:o4 .
 
 eg:sa07
 	eg:p1 [
 		eg:p2 eg:o2
 	] ,
-	[] .
+		[] .
 
 eg:sa08
 	eg:p1 [
@@ -50,7 +50,7 @@ eg:sa09
 	eg:p1 [
 		eg:p2 eg:o2
 	] ,
-	() .
+		() .
 
 eg:sa10
 	eg:p1 [
@@ -91,7 +91,7 @@ eg:sl06
 		eg:o1
 		eg:o2
 	) ,
-	eg:o3 ,
+		eg:o3 ,
 		eg:o4 .
 
 eg:sl07
@@ -99,7 +99,7 @@ eg:sl07
 		eg:o1
 		eg:o2
 	) ,
-	[] .
+		[] .
 
 eg:sl08
 	eg:p1 (
@@ -114,7 +114,7 @@ eg:sl09
 		eg:o1
 		eg:o2
 	) ,
-	() .
+		() .
 
 eg:sl10
 	eg:p1 (

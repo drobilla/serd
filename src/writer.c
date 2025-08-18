@@ -47,8 +47,7 @@ typedef enum {
   SEP_NONE,     ///< Sentinel after "nothing"
   SEP_STOP,     ///< End of a subject or directive ('.')
   SEP_END_P,    ///< End of a predicate (';')
-  SEP_END_O_NN, ///< End of a named object before another (',')
-  SEP_END_O_AN, ///< End of anonymous object before a named one (',')
+  SEP_END_O_N,  ///< End of an object before a named one (',')
   SEP_END_O_NA, ///< End of named object before an anonymous one (',')
   SEP_END_O_AA, ///< End of anonymous object before another (',')
   SEP_S_P,      ///< Between a subject and predicate (whitespace)
@@ -80,7 +79,6 @@ static const SepRule rules[] = {
   {NIL, +0, SEP_NONE, SEP_NONE, SEP_NONE},
   {'.', +0, SEP_EACH, SEP_NONE, SEP_NONE},
   {';', +0, SEP_EACH, SEP_NONE, SEP_EACH},
-  {',', +0, SEP_EACH, SEP_NONE, SEP_EACH},
   {',', +0, SEP_EACH, SEP_NONE, SEP_EACH},
   {',', +0, SEP_EACH, SEP_NONE, SEP_EACH},
   {',', +0, SEP_EACH, SEP_NONE, SEP_NONE},
@@ -537,7 +535,7 @@ write_sep(SerdWriter* const writer, const Sep sep)
   }
 
   // Adjust indentation for object comma if necessary
-  if (sep == SEP_END_O_NN && !writer->context.comma_indented) {
+  if (sep == SEP_END_O_N && !writer->context.comma_indented) {
     ++writer->indent;
     writer->context.comma_indented = true;
   } else if (sep == SEP_END_P && writer->context.comma_indented) {
@@ -977,16 +975,17 @@ serd_writer_write_statement(SerdWriter* const     writer,
     if (serd_node_equals(predicate, &writer->context.predicate)) {
       // Elide S P (write O)
 
-      const Sep  last      = writer->last_sep;
-      const bool anon_o    = flags & SERD_ANON_O_BEGIN;
-      const bool list_o    = flags & SERD_LIST_O_BEGIN;
-      const bool open_o    = anon_o || list_o;
-      const bool after_end = (last == SEP_ANON_R) || (last == SEP_LIST_R);
+      const Sep  last        = writer->last_sep;
+      const bool anon_o      = flags & SERD_ANON_O_BEGIN;
+      const bool list_o      = flags & SERD_LIST_O_BEGIN;
+      const bool before_name = !anon_o && !list_o;
+      const bool after_end   = (last == SEP_ANON_R) || (last == SEP_LIST_R);
 
       TRY(st,
           write_sep(writer,
-                    after_end ? (open_o ? SEP_END_O_AA : SEP_END_O_AN)
-                              : (open_o ? SEP_END_O_NA : SEP_END_O_NN)));
+                    before_name ? SEP_END_O_N
+                    : after_end ? SEP_END_O_AA
+                                : SEP_END_O_NA));
 
     } else {
       // Elide S (write P and O)
