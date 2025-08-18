@@ -8,6 +8,7 @@
 	rdfs:comment "Serd pretty-printing test suite" ;
 	mf:entries (
 		<#abbreviation>
+		<#anonymous-comma>
 		<#anonymous-in-list-object>
 		<#anonymous-object>
 		<#anonymous-subject>
@@ -47,6 +48,12 @@
 	mf:action <abbreviation.ttl> ;
 	mf:name "abbreviation" ;
 	mf:result <abbreviation.ttl> .
+
+<#anonymous-comma>
+	a rdft:TestTurtleEval ;
+	mf:action <anonymous-comma.ttl> ;
+	mf:name "anonymous-comma" ;
+	mf:result <anonymous-comma.ttl> .
 
 <#anonymous-in-list-object>
 	a rdft:TestTurtleEval ;
