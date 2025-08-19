@@ -851,7 +851,8 @@ write_IRIREF(SerdWriter* const writer, const ZixStringView string)
 
   // Write the string and return early if resolution is disabled or impossible
   const SerdURIView base_uri = serd_env_base_uri_view(writer->env);
-  if ((writer->flags & SERD_WRITE_UNRESOLVED) || !base_uri.scheme.length) {
+  if ((writer->flags & SERD_WRITE_UNRESOLVED) ||
+      !serd_uri_has_scheme(base_uri)) {
     TRY(st, ewrite_uri(writer, string));
     return esink(writer, 1, ">");
   }
@@ -865,7 +866,10 @@ write_IRIREF(SerdWriter* const writer, const ZixStringView string)
     !supports_abbrev(writer) ||
     (writer->root_uri_string && !serd_uri_is_within(out_uri, writer->root_uri));
   if (!write_abs) {
-    out_uri = serd_relative_uri(in_uri, base_uri);
+    const SerdURIView rel_uri = serd_relative_uri(out_uri, base_uri);
+    if (!serd_uri_is_null(rel_uri)) {
+      out_uri = rel_uri;
+    }
   }
 
   const SerdStreamResult r = serd_write_uri(out_uri, uri_sink, writer);
@@ -1489,7 +1493,7 @@ serd_writer_new(SerdWorld* const      world,
   writer->env    = env;
 
   writer->root_uri_string = NULL;
-  writer->root_uri        = serd_empty_uri();
+  writer->root_uri        = serd_no_uri();
 
   writer->stack = serd_stack_new(allocator, limits.writer_stack_size);
   if (!writer->stack.buf) {
@@ -1545,7 +1549,7 @@ serd_writer_set_root_uri(SerdWriter* const writer, const ZixStringView uri)
 
   zix_free(allocator, writer->root_uri_string);
   writer->root_uri_string = NULL;
-  writer->root_uri        = serd_empty_uri();
+  writer->root_uri        = serd_no_uri();
 
   if (uri.length) {
     writer->root_uri_string = zix_string_view_copy(allocator, uri);

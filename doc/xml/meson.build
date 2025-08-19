@@ -100,7 +100,6 @@ doxygen_xml = custom_target(
     'structSerdString.xml',
     'structSerdStringPairView.xml',
     'structSerdTokenView.xml',
-    'structSerdURIComponent.xml',
     'structSerdURIView.xml',
   ],
 )
