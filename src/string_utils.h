@@ -48,6 +48,13 @@ is_xdigit(const int c)
   return is_hexdig(c) || in_range(c, 'a', 'f');
 }
 
+/** RFC3986: scheme ::= ALPHA / DIGIT / "+" / "-" / "." */
+static inline bool
+is_scheme(const int c)
+{
+  return c == '+' || c == '-' || c == '.' || is_alpha(c) || is_digit(c);
+}
+
 static inline bool
 is_space(const char c)
 {

@@ -5,7 +5,6 @@
 #include "serd_internal.h"
 #include "string_utils.h"
 #include "try.h"
-#include "uri_utils.h"
 
 #include <serd/serd.h>
 
@@ -663,14 +662,15 @@ read_IRIREF_scheme(SerdReader* const reader, const Ref dest)
       return r_err(reader, SERD_ERR_BAD_SYNTAX, "missing IRI scheme\n");
     }
 
-    if (!is_uri_scheme_char(c)) {
+    if (c == ':') {
+      return push_byte(reader, dest, eat_byte_safe(reader, ':'));
+    }
+
+    if (!is_scheme(c)) {
       return r_err_char(reader, "IRI scheme", c);
     }
 
     push_byte(reader, dest, eat_byte_safe(reader, c));
-    if (c == ':') {
-      return SERD_SUCCESS; // End of scheme
-    }
   }
 
   return r_err(reader, SERD_ERR_BAD_SYNTAX, "unexpected end of file\n");

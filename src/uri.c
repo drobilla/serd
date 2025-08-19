@@ -103,12 +103,12 @@ serd_uri_string_has_scheme(const uint8_t* utf8)
   }
 
   for (uint8_t c = 0; (c = *++utf8) != '\0';) {
-    if (!is_uri_scheme_char(c)) {
-      return false;
-    }
-
     if (c == ':') {
       return true; // End of scheme
+    }
+
+    if (!is_scheme(c)) {
+      return false;
     }
   }
 
