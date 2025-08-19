@@ -94,10 +94,11 @@ test_null_callbacks(void)
   assert(reader);
   assert(!serd_reader_handle(reader));
 
-  const SerdStatus st =
-    serd_reader_read_string(reader, "_:s <http://example.org/p> _:o .");
+  assert(
+    !serd_reader_start_string(reader, "_:s <http://example.org/p> _:o .\n"));
 
-  assert(!st);
+  assert(!serd_reader_read_document(reader));
+  assert(!serd_reader_finish(reader));
   serd_reader_free(reader);
 }
 
@@ -118,16 +119,17 @@ test_read_string(void)
   assert(serd_reader_handle(reader) == &rt);
 
   // Test reading a string that ends exactly at the end of input (no newline)
-  const SerdStatus st =
-    serd_reader_read_string(reader,
-                            "<http://example.org/s> <http://example.org/p> "
-                            "<http://example.org/o> .");
+  assert(
+    !serd_reader_start_string(reader,
+                              "<http://example.org/s> <http://example.org/p> "
+                              "<http://example.org/o> ."));
 
-  assert(!st);
+  assert(!serd_reader_read_document(reader));
   assert(rt.n_base == 0);
   assert(rt.n_prefix == 0);
   assert(rt.n_statement == 1);
   assert(rt.n_end == 0);
+  assert(!serd_reader_finish(reader));
 
   serd_reader_free(reader);
 }
@@ -201,18 +203,22 @@ test_read_eof_file(const char* const path)
                                              end_sink);
 
   fseek(f, 0L, SEEK_SET);
-  serd_reader_start_stream(reader, f, "test", true);
+  serd_reader_start_stream(
+    reader, (SerdReadFunc)fread, (SerdErrorFunc)ferror, f, "test", 4096);
+
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
-  serd_reader_end_stream(reader);
+  serd_reader_finish(reader);
 
   fseek(f, 0L, SEEK_SET);
-  serd_reader_start_stream(reader, f, "test", false);
+  serd_reader_start_stream(
+    reader, (SerdReadFunc)fread, (SerdErrorFunc)ferror, f, "test", 1);
+
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
-  serd_reader_end_stream(reader);
+  serd_reader_finish(reader);
 
   serd_reader_free(reader);
   assert(!fclose(f));
@@ -234,7 +240,7 @@ test_read_eof_by_byte(void)
                                              end_sink);
 
   size_t n_reads = 0U;
-  serd_reader_start_source_stream(
+  serd_reader_start_stream(
     reader, eof_test_read, eof_test_error, &n_reads, "test", 1U);
 
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
@@ -242,7 +248,7 @@ test_read_eof_by_byte(void)
   assert(serd_reader_read_chunk(reader) == SERD_SUCCESS);
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
 
-  serd_reader_end_stream(reader);
+  serd_reader_finish(reader);
   serd_reader_free(reader);
 }
 
@@ -286,9 +292,8 @@ test_read_nquads_chunks(const char* const path)
   assert(serd_reader_handle(reader) == &rt);
   assert(f);
 
-  SerdStatus st = serd_reader_start_source_stream(
-    reader, (SerdReadFunc)fread, (SerdErrorFunc)ferror, f, NULL, 32U);
-
+  SerdStatus st = serd_reader_start_stream(
+    reader, (SerdReadFunc)fread, (SerdErrorFunc)ferror, f, NULL, 1);
   assert(st == SERD_SUCCESS);
 
   // Read first statement
@@ -332,7 +337,7 @@ test_read_nquads_chunks(const char* const path)
   assert(rt.n_end == 0);
 
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
-  serd_reader_end_stream(reader);
+  serd_reader_finish(reader);
   serd_reader_free(reader);
 
   assert(!fclose(f));
@@ -370,8 +375,8 @@ test_read_turtle_chunks(const char* const path)
   assert(serd_reader_handle(reader) == &rt);
   assert(f);
 
-  SerdStatus st = serd_reader_start_source_stream(
-    reader, (SerdReadFunc)fread, (SerdErrorFunc)ferror, f, NULL, 32U);
+  SerdStatus st = serd_reader_start_stream(
+    reader, (SerdReadFunc)fread, (SerdErrorFunc)ferror, f, NULL, 1);
   assert(st == SERD_SUCCESS);
 
   // Read base
@@ -431,7 +436,7 @@ test_read_turtle_chunks(const char* const path)
   assert(rt.n_end == 1);
 
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
-  serd_reader_end_stream(reader);
+  serd_reader_finish(reader);
   serd_reader_free(reader);
   assert(!fclose(f));
   assert(!zix_remove(path));
@@ -480,9 +485,13 @@ test_read_empty(void)
   assert(called == true);
   called = false;
 
-  SerdStatus st = serd_reader_start_source_stream(
+  SerdStatus st = serd_reader_start_stream(
     reader, empty_test_read, empty_test_error, &called, NULL, 1);
   assert(st == SERD_SUCCESS);
+
+  assert(serd_reader_read_document(reader) == SERD_SUCCESS);
+  assert(rt.n_statement == 0);
+  assert(!called);
 
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
   assert(rt.n_statement == 0);
