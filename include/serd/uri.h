@@ -1,4 +1,4 @@
-// Copyright 2011-2022 David Robillard <d@drobilla.net>
+// Copyright 2011-2025 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #ifndef SERD_URI_H
@@ -13,6 +13,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 SERD_BEGIN_DECLS
 
@@ -22,52 +23,49 @@ SERD_BEGIN_DECLS
    @{
 */
 
-/**
-   A component of a URI.
+/// The number of fields in a #SerdURIView
+#define SERD_N_URI_FIELDS 6U
 
-   This is like a string view, but the pointer may be null to distinguish
-   between empty and missing components (an empty component indicates that the
-   URI has the corresponding delimiter).
-*/
-typedef struct {
-  const char* ZIX_NULLABLE data;   ///< Start of string, or null
-  size_t                   length; ///< Length of string in bytes
-} SerdURIComponent;
+/// A component of a #SerdURIView
+typedef enum {
+  SERD_URI_SCHEME,      ///< Scheme
+  SERD_URI_AUTHORITY,   ///< Authority
+  SERD_URI_PATH_PREFIX, ///< Path prefix for resolved paths
+  SERD_URI_PATH_SUFFIX, ///< Path suffix
+  SERD_URI_QUERY,       ///< Query
+  SERD_URI_FRAGMENT,    ///< Fragment
+} SerdURIField;
 
 /**
    A parsed view of a URI.
 
-   This representation is designed for fast streaming.  It makes it possible to
-   create relative URI references or resolve them into absolute URIs in-place
-   without any string allocation.
-
-   Each component refers to slices in other strings, so a URI view must outlive
-   any strings it was parsed from.  Note that the components are not
-   necessarily null-terminated.
-
-   The scheme, authority, path, query, and fragment simply point to the string
-   value of those components, not including any delimiters.  The path_prefix is
-   a special component for storing relative or resolved paths.  If it points to
-   a string (usually a base URI the URI was resolved against), then this string
-   is prepended to the path.  Otherwise, the length is interpreted as the
-   number of up-references ("../") that must be prepended to the path.
+   This is a lightweight view type designed for streaming that allows URIs to
+   be parsed, resolved, and made relative without allocation.  Path
+   up-references ("../") are specially encoded since these characters aren't in
+   the inputs.
 */
 typedef struct {
-  SerdURIComponent scheme;      ///< Scheme
-  SerdURIComponent authority;   ///< Authority
-  SerdURIComponent path_prefix; ///< Path prefix for relative/resolved paths
-  SerdURIComponent path;        ///< Path suffix
-  SerdURIComponent query;       ///< Query
-  SerdURIComponent fragment;    ///< Fragment
+  const char* ZIX_NULLABLE front;     ///< Prefix up to the split (from base)
+  const char* ZIX_NULLABLE back;      ///< Suffix after the split
+  SerdURIField             split : 8; ///< First field in `back` (not `front`)
+  uint8_t                  up;        ///< Number of up-references ("../")
+
+  uint16_t counts[SERD_N_URI_FIELDS]; ///< Counts for each field
 } SerdURIView;
 
 /**
-   Return a view of an empty URI.
+   Return an unset/sentinel URI view.
 
-   Sometimes used as a sentinel, this has every component unset.
+   Note that this is distinct from the "empty" URI reference (written "<>").
+   This has all-zero fields, whereas an empty URI reference has `back` pointing
+   to some string, even though all counts are zero.
 */
 SERD_CONST_API SerdURIView
-serd_empty_uri(void);
+serd_no_uri(void);
+
+/// Return true iff `uri` is not a view of any URI (not even an empty one)
+SERD_CONST_API bool
+serd_uri_is_null(SerdURIView uri);
 
 /// Return true iff `string` starts with a valid URI scheme
 SERD_PURE_API bool
@@ -76,6 +74,10 @@ serd_uri_string_has_scheme(const char* ZIX_NULLABLE string);
 /// Return true iff `uri` has a URI scheme (is "absolute")
 SERD_CONST_API bool
 serd_uri_has_scheme(SerdURIView uri);
+
+/// Return a view of the given field in `uri`
+SERD_CONST_API ZixStringView
+serd_uri_field(SerdURIView uri, SerdURIField field);
 
 /// Parse `string` and return a URI view that points into it
 SERD_PURE_API SerdURIView
@@ -138,7 +140,7 @@ serd_uri_is_within(SerdURIView r, SerdURIView base);
 
    @return A string length in bytes, not including the null terminator.
 */
-SERD_PURE_API size_t
+SERD_CONST_API size_t
 serd_uri_string_length(SerdURIView uri);
 
 /**

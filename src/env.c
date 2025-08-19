@@ -94,7 +94,7 @@ serd_env_base_uri_string(const SerdEnv* const env)
 SerdURIView
 serd_env_base_uri_view(const SerdEnv* const env)
 {
-  return env ? env->base_uri : serd_empty_uri();
+  return env ? env->base_uri : serd_no_uri();
 }
 
 SerdStatus
@@ -106,7 +106,7 @@ serd_env_set_base_uri(SerdEnv* const env, const ZixStringView uri)
     zix_free(env->allocator, env->base_uri_string.data);
     env->base_uri_string.length = 0U;
     env->base_uri_string.data   = NULL;
-    env->base_uri               = serd_empty_uri();
+    env->base_uri               = serd_no_uri();
     return SERD_SUCCESS;
   }
 

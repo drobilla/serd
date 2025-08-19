@@ -10,41 +10,122 @@
 #include <serd/string.h>
 #include <serd/uri.h>
 #include <zix/allocator.h>
+#include <zix/string_view.h>
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
-static bool
-slice_equals(const SerdURIComponent* const a, const SerdURIComponent* const b)
+typedef uint16_t FieldCount;
+
+typedef struct {
+  const SerdURIView* uri;
+  unsigned           offset;
+  SerdURIField       field;
+} PathIterator;
+
+static const SerdURIView null_uri = {NULL,
+                                     NULL,
+                                     SERD_URI_SCHEME,
+                                     0U,
+                                     {0U, 0U, 0U, 0U, 0U, 0U}};
+
+static unsigned
+field_offset(const SerdURIView  uri,
+             const SerdURIField field,
+             const SerdURIField current)
 {
-  return a->length == b->length && !strncmp(a->data, b->data, a->length);
+  return ((field < uri.split) != (current < uri.split) ? 0U
+          : (field < current)                          ? (uri.counts[field])
+                                                       : 0U);
 }
 
-static size_t
-uri_path_len(const SerdURIView* const uri)
+static unsigned
+start_offset(const SerdURIView uri, const SerdURIField field)
 {
-  return uri->path_prefix.length + uri->path.length;
+  return field_offset(uri, SERD_URI_SCHEME, field) +
+         field_offset(uri, SERD_URI_AUTHORITY, field) +
+         field_offset(uri, SERD_URI_PATH_PREFIX, field) +
+         field_offset(uri, SERD_URI_PATH_SUFFIX, field) +
+         field_offset(uri, SERD_URI_QUERY, field);
+}
+
+static const char*
+field_data(const SerdURIView* const uri, const SerdURIField field)
+{
+  return (field < uri->split ? uri->front : uri->back);
+}
+
+static const char*
+field_start(const SerdURIView* const uri, const SerdURIField field)
+{
+  return field_data(uri, field) + start_offset(*uri, field);
+}
+
+static PathIterator
+path_begin(const SerdURIView* const uri)
+{
+  const SerdURIField field = uri->counts[SERD_URI_PATH_PREFIX]
+                               ? SERD_URI_PATH_PREFIX
+                               : SERD_URI_PATH_SUFFIX;
+
+  const PathIterator iter = {uri, 0U, field};
+  return iter;
 }
 
 static char
-uri_path_at(const SerdURIView* const uri, const size_t i)
+path_get(const PathIterator iter)
 {
-  if (i < uri->path_prefix.length) {
-    return uri->path_prefix.data[i];
+  if (iter.offset >= iter.uri->counts[iter.field]) {
+    return '\0';
   }
 
-  const size_t p = i - uri->path_prefix.length;
-  assert(p < uri->path.length);
-  return uri->path.data[p];
+  return field_start(iter.uri, iter.field)[iter.offset];
+}
+
+static PathIterator
+path_next(const PathIterator iter)
+{
+  PathIterator result = iter;
+
+  ++result.offset;
+  if (iter.field == SERD_URI_PATH_PREFIX &&
+      result.offset >= iter.uri->counts[SERD_URI_PATH_PREFIX]) {
+    result.offset = 0U;
+    result.field  = SERD_URI_PATH_SUFFIX;
+  }
+
+  return result;
+}
+
+static bool
+field_equals(const SerdURIField field,
+             const SerdURIView  lhs,
+             const SerdURIView  rhs)
+{
+  return lhs.counts[field] && (lhs.counts[field] == rhs.counts[field]) &&
+         zix_string_view_equals(serd_uri_field(lhs, field),
+                                serd_uri_field(rhs, field));
+}
+
+static bool
+has_relative_path(const SerdURIView uri)
+{
+  const char f = path_get(path_begin(&uri));
+  return f && f != '/';
 }
 
 SerdURIView
-serd_empty_uri(void)
+serd_no_uri(void)
 {
-  static const SerdURIView empty_uri = {
-    {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}};
-  return empty_uri;
+  return null_uri;
+}
+
+bool
+serd_uri_is_null(const SerdURIView uri)
+{
+  return !uri.front && !uri.back;
 }
 
 /// RFC3986: scheme ::= ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
@@ -69,17 +150,34 @@ serd_uri_string_has_scheme(const char* const string)
 bool
 serd_uri_has_scheme(const SerdURIView uri)
 {
-  return !!uri.scheme.length;
+  return !!uri.counts[SERD_URI_SCHEME];
+}
+
+ZixStringView
+serd_uri_field(const SerdURIView uri, const SerdURIField field)
+{
+  static const uint8_t pre_offsets[]  = {0U, 2U, 0U, 0U, 1U, 1U};
+  static const uint8_t post_offsets[] = {1U, 0U, 0U, 0U, 0U, 0U};
+
+  const uint16_t    count = uri.counts[field];
+  const uint16_t    pre   = pre_offsets[field];
+  const uint16_t    post  = post_offsets[field];
+  const char* const data  = field_start(&uri, field);
+  assert(data);
+  assert(!count || count >= pre + post);
+
+  return !count ? zix_empty_string()
+                : zix_substring(data + pre, (size_t)(count - pre - post));
 }
 
 static const char*
-append_until(const char              end_chars[static 4],
-             const char*             ptr,
-             SerdURIComponent* const dest)
+append_until(const char      end_chars[static 4],
+             const char*     ptr,
+             uint16_t* const count)
 {
   while (*ptr != end_chars[0] && *ptr != end_chars[1] && *ptr != end_chars[2] &&
          *ptr != end_chars[3]) {
-    ++dest->length;
+    ++*count;
     ++ptr;
   }
 
@@ -92,8 +190,10 @@ serd_parse_uri(const char* const string)
   //                           Auth Path Query
   static const char ends[6] = {'/', '?', '#', 0, 0, 0};
 
-  SerdURIView result = serd_empty_uri();
-  const char* ptr    = string;
+  SerdURIView result = {
+    NULL, string, SERD_URI_SCHEME, 0U, {0U, 0U, 0U, 0U, 0U, 0U}};
+
+  const char* ptr = string;
   if (!ptr) {
     return result;
   }
@@ -105,8 +205,7 @@ serd_parse_uri(const char* const string)
   if (is_alpha(*ptr)) {
     for (char c = *++ptr; true; c = *++ptr) {
       if (c == ':') {
-        result.scheme.data   = string;
-        result.scheme.length = (size_t)(ptr++ - string);
+        result.counts[SERD_URI_SCHEME] = (uint16_t)(ptr++ - string + 1U);
         break;
       }
 
@@ -120,32 +219,30 @@ serd_parse_uri(const char* const string)
   /* S3.2: The authority component is preceded by "//" and is terminated by the
      next '/', '?', or '#', or by the end of the URI. */
   if (*ptr == '/' && *(ptr + 1) == '/') {
-    ptr += 2;
-    result.authority.data = ptr;
-    ptr                   = append_until(ends, ptr, &result.authority);
+    ptr += 2U;
+    result.counts[SERD_URI_AUTHORITY] = 2U;
+    ptr = append_until(ends, ptr, &result.counts[SERD_URI_AUTHORITY]);
   }
 
   /* S3.3: The path is terminated by the first '?' or '#', or by the end of the
      URI. */
   if (*ptr && *ptr != '?' && *ptr != '#') {
-    result.path.data   = ptr++;
-    result.path.length = 1U;
-    ptr                = append_until(&ends[1], ptr, &result.path);
+    ++ptr;
+    result.counts[SERD_URI_PATH_SUFFIX] = 1U;
+    ptr = append_until(&ends[1], ptr, &result.counts[SERD_URI_PATH_SUFFIX]);
   }
 
   /* S3.4: The query component is indicated by the first '?' and terminated by
      a '#' or by the end of the URI. */
   if (*ptr == '?') {
-    result.query.data = ++ptr;
-    ptr               = append_until(&ends[2], ptr, &result.query);
+    ptr = append_until(&ends[2], ptr, &result.counts[SERD_URI_QUERY]);
   }
 
   /* S3.5: A fragment identifier component is indicated by the presence of a
      '#' and terminated by the end of the URI. */
   if (*ptr == '#') {
-    result.fragment.data = ptr;
     while (*ptr++) {
-      ++result.fragment.length;
+      ++result.counts[SERD_URI_FRAGMENT];
     }
   }
 
@@ -158,12 +255,14 @@ serd_parse_uri(const char* const string)
    @param up Set to the number of up-references (e.g. "../") trimmed
    @return The offset of the new start in `path`
 */
-static size_t
-remove_dot_segments(const char* const path, const size_t len, size_t* const up)
+static unsigned
+remove_dot_segments(const char* const path,
+                    const unsigned    len,
+                    unsigned* const   up)
 {
   *up = 0;
 
-  for (size_t i = 0; i < len;) {
+  for (unsigned i = 0U; i < len;) {
     const char* const p = path + i;
     if (!strcmp(p, ".")) {
       ++i; // Chop input "."
@@ -183,30 +282,63 @@ remove_dot_segments(const char* const path, const size_t len, size_t* const up)
   return len;
 }
 
-/// Merge `base` and `path` in-place
+/// Drop everything before `offset` bytes into `field`
 static void
-merge(SerdURIComponent* const base, SerdURIComponent* const path)
+drop_everything_before(SerdURIView* const uri,
+                       const SerdURIField field,
+                       const uint16_t     offset)
 {
-  size_t       up    = 0;
-  const size_t begin = remove_dot_segments(path->data, path->length, &up);
+  assert(offset <= uri->counts[field]);
 
-  if (base->length) {
+  const unsigned new_field_count = (unsigned)(uri->counts[field] - offset);
+
+  for (unsigned i = 0U; i < field; ++i) {
+    if (uri->split <= i) {
+      assert(uri->back);
+      uri->back += uri->counts[i];
+    } else {
+      assert(uri->front);
+      uri->front += uri->counts[i];
+    }
+    uri->counts[i] = 0U;
+  }
+
+  if (uri->split <= field) {
+    uri->back += offset;
+  } else {
+    uri->front += offset;
+  }
+
+  uri->counts[field] = (uint16_t)new_field_count;
+}
+
+/// Merge path prefix and suffix in-place
+static void
+merge_paths(SerdURIView* const uri)
+{
+  const char* const path_data = field_start(uri, SERD_URI_PATH_SUFFIX);
+  const FieldCount  path_len  = uri->counts[SERD_URI_PATH_SUFFIX];
+  unsigned          up        = 0;
+  const unsigned    start     = remove_dot_segments(path_data, path_len, &up);
+  const char* const base_data = field_start(uri, SERD_URI_PATH_PREFIX);
+  const size_t      base_len  = uri->counts[SERD_URI_PATH_PREFIX];
+  if (base_len) {
     // Find the up'th last slash
-    const char* base_last = (base->data + base->length - 1);
+    const char* base_last = (base_data + base_len - 1);
     ++up;
     do {
       if (*base_last == '/') {
         --up;
       }
-    } while (up > 0 && (--base_last > base->data));
+    } while (up > 0 && (--base_last > base_data));
 
     // Set path prefix
-    base->length = (size_t)(base_last - base->data + 1);
+    uri->counts[SERD_URI_PATH_PREFIX] = (FieldCount)(base_last - base_data + 1);
   }
 
   // Set path suffix
-  path->data   = path->data + begin;
-  path->length = path->length - begin;
+  uri->back += start;
+  uri->counts[SERD_URI_PATH_SUFFIX] = (FieldCount)(path_len - start);
 }
 
 /// See http://tools.ietf.org/html/rfc3986#section-5.2.2
@@ -217,31 +349,42 @@ serd_resolve_uri(const SerdURIView r, const SerdURIView base)
     return r; // No resolution necessary || possible (respectively)
   }
 
-  SerdURIView t = serd_empty_uri();
+  SerdURIView t = {base.back,
+                   r.back,
+                   SERD_URI_SCHEME,
+                   0U,
+                   {base.counts[SERD_URI_SCHEME],
+                    0U,
+                    0U,
+                    r.counts[SERD_URI_PATH_SUFFIX],
+                    0U,
+                    r.counts[SERD_URI_FRAGMENT]}};
 
-  if (r.authority.length) {
-    t.authority = r.authority;
-    t.path      = r.path;
-    t.query     = r.query;
+  if (r.counts[SERD_URI_AUTHORITY]) {
+    t.split                      = SERD_URI_AUTHORITY;
+    t.counts[SERD_URI_AUTHORITY] = r.counts[SERD_URI_AUTHORITY];
+    t.counts[SERD_URI_QUERY]     = r.counts[SERD_URI_QUERY];
   } else {
-    t.path = r.path;
-    if (!r.path.length) {
-      t.path_prefix = base.path;
-      t.query       = r.query.length ? r.query : base.query;
+    t.counts[SERD_URI_AUTHORITY] = base.counts[SERD_URI_AUTHORITY];
+    if (!r.counts[SERD_URI_PATH_SUFFIX]) {
+      t.counts[SERD_URI_PATH_SUFFIX] = base.counts[SERD_URI_PATH_SUFFIX];
+      if (r.counts[SERD_URI_QUERY]) {
+        t.split                  = SERD_URI_QUERY;
+        t.counts[SERD_URI_QUERY] = r.counts[SERD_URI_QUERY];
+      } else {
+        t.split                  = SERD_URI_FRAGMENT;
+        t.counts[SERD_URI_QUERY] = base.counts[SERD_URI_QUERY];
+      }
     } else {
-      if (r.path.data[0] != '/') {
-        t.path_prefix = base.path;
+      t.split = SERD_URI_PATH_SUFFIX;
+      if (has_relative_path(r)) {
+        t.counts[SERD_URI_PATH_PREFIX] = base.counts[SERD_URI_PATH_SUFFIX];
       }
 
-      merge(&t.path_prefix, &t.path);
-      t.query = r.query;
+      merge_paths(&t);
+      t.counts[SERD_URI_QUERY] = r.counts[SERD_URI_QUERY];
     }
-
-    t.authority = base.authority;
   }
-
-  t.scheme   = base.scheme;
-  t.fragment = r.fragment;
 
   return t;
 }
@@ -249,62 +392,51 @@ serd_resolve_uri(const SerdURIView r, const SerdURIView base)
 SerdURIView
 serd_relative_uri(const SerdURIView uri, const SerdURIView base)
 {
-  // Do nothing if either URI is relative, or if the authorities don't match
-  if (!serd_uri_has_scheme(uri) || !slice_equals(&base.scheme, &uri.scheme) ||
-      !slice_equals(&base.authority, &uri.authority)) {
-    return uri;
+  // Return nothing if either URI is relative, or if authorities don't match
+  if (!field_equals(SERD_URI_SCHEME, base, uri) ||
+      !field_equals(SERD_URI_AUTHORITY, base, uri)) {
+    return serd_no_uri();
   }
 
-  // Regardless of the path, the query and/or fragment come along
-  SerdURIView result = serd_empty_uri();
-  result.query       = uri.query;
-  result.fragment    = uri.fragment;
-
-  const size_t path_len = uri_path_len(&uri);
-  const size_t base_len = uri_path_len(&base);
-  const size_t min_len  = (path_len < base_len) ? path_len : base_len;
-
-  // Find the last separator common to both paths
-  size_t last_shared_sep = 0;
-  size_t i               = 0;
-  for (; i < min_len && uri_path_at(&uri, i) == uri_path_at(&base, i); ++i) {
-    if (uri_path_at(&uri, i) == '/') {
-      last_shared_sep = i;
+  // Find the last separator (s) common to both paths
+  PathIterator u = path_begin(&uri);
+  PathIterator b = path_begin(&base);
+  PathIterator s = b;
+  for (char c = '\0'; (c = path_get(u)) && c == path_get(b);) {
+    if (c == '/') {
+      s = b;
     }
+    u = path_next(u);
+    b = path_next(b);
   }
 
   // If the URI and base URI have identical paths, the relative path is empty
-  if (i == path_len && i == base_len) {
-    result.path.data   = uri.path.data;
-    result.path.length = 0;
+  SerdURIView result = uri;
+  if (!path_get(u) && !path_get(b)) {
+    drop_everything_before(&result, SERD_URI_QUERY, 0U);
     return result;
   }
 
-  // Otherwise, we need to build the relative path out of string slices
-  // Find the number of up references ("..") required
-  size_t up = 0;
-  for (size_t s = last_shared_sep + 1; s < base_len; ++s) {
-    if (uri_path_at(&base, s) == '/') {
-      ++up;
+  // Otherwise, we need to build a relative path view
+  // Find the number of up-references ("..") required
+  for (PathIterator t = path_next(s); path_get(t); t = path_next(t)) {
+    if (path_get(t) == '/') {
+      if (result.up == UINT8_MAX) {
+        return serd_no_uri();
+      }
+
+      ++result.up;
     }
   }
 
-  if (last_shared_sep < uri.path_prefix.length) {
-    if (up > 0) {
-      return serd_empty_uri();
-    }
-
-    result.path_prefix.data   = uri.path_prefix.data + last_shared_sep + 1;
-    result.path_prefix.length = uri.path_prefix.length - last_shared_sep - 1;
-    result.path               = uri.path;
+  if (s.offset < uri.counts[SERD_URI_PATH_PREFIX]) {
+    drop_everything_before(
+      &result, SERD_URI_PATH_PREFIX, (uint16_t)(s.offset + 1U));
   } else {
-    if (up > 0) {
-      // Special representation: NULL buffer and len set to the depth
-      result.path_prefix.length = up;
-    }
-
-    result.path.data   = uri.path.data + last_shared_sep + 1;
-    result.path.length = uri.path.length - last_shared_sep - 1;
+    drop_everything_before(
+      &result,
+      SERD_URI_PATH_SUFFIX,
+      (uint16_t)(s.offset + 1U - uri.counts[SERD_URI_PATH_PREFIX]));
   }
 
   return result;
@@ -313,31 +445,30 @@ serd_relative_uri(const SerdURIView uri, const SerdURIView base)
 bool
 serd_uri_is_within(const SerdURIView uri, const SerdURIView base)
 {
-  if (!serd_uri_has_scheme(base) || !slice_equals(&base.scheme, &uri.scheme) ||
-      !slice_equals(&base.authority, &uri.authority)) {
+  if (!field_equals(SERD_URI_SCHEME, base, uri) ||
+      !field_equals(SERD_URI_AUTHORITY, base, uri)) {
     return false;
   }
 
-  bool         differ   = false;
-  const size_t path_len = uri_path_len(&uri);
-  const size_t base_len = uri_path_len(&base);
-
-  size_t last_base_slash = 0;
-  for (size_t i = 0; i < path_len && i < base_len; ++i) {
-    const char u = uri_path_at(&uri, i);
-    const char b = uri_path_at(&base, i);
-
-    differ = differ || u != b;
-    if (b == '/') {
-      last_base_slash = i;
+  PathIterator u      = path_begin(&uri);
+  PathIterator b      = path_begin(&base);
+  PathIterator s      = b; // Last '/' in base
+  bool         differ = false;
+  for (char uc = '\0', bc = '\0'; (uc = path_get(u)) && (bc = path_get(b));) {
+    differ = differ || uc != bc;
+    if (bc == '/') {
+      s = b;
       if (differ) {
         return false;
       }
     }
+
+    u = path_next(u);
+    b = path_next(b);
   }
 
-  for (size_t i = last_base_slash + 1; i < base_len; ++i) {
-    if (uri_path_at(&base, i) == '/') {
+  for (s = path_next(s); path_get(s); s = path_next(s)) {
+    if (path_get(s) == '/') {
       return false;
     }
   }
@@ -348,39 +479,24 @@ serd_uri_is_within(const SerdURIView uri, const SerdURIView base)
 size_t
 serd_uri_string_length(const SerdURIView uri)
 {
-  size_t len = 0;
+  const bool needs_extra_slash =
+    uri.counts[SERD_URI_AUTHORITY] && has_relative_path(uri);
 
-  if (uri.scheme.data) {
-    len += uri.scheme.length + 1;
-  }
+  return (uri.counts[SERD_URI_SCHEME] +
+          (uri.counts[SERD_URI_AUTHORITY] + (size_t)needs_extra_slash) +
+          (uri.counts[SERD_URI_PATH_PREFIX]) + (3U * (size_t)uri.up) +
+          (uri.counts[SERD_URI_PATH_SUFFIX]) + (uri.counts[SERD_URI_QUERY]) +
+          (uri.counts[SERD_URI_FRAGMENT]));
+}
 
-  if (uri.authority.data) {
-    const bool needs_extra_slash =
-      (uri.authority.length && uri_path_len(&uri) &&
-       uri_path_at(&uri, 0) != '/');
-
-    len += 2 + uri.authority.length + needs_extra_slash;
-  }
-
-  if (uri.path_prefix.data) {
-    len += uri.path_prefix.length;
-  } else if (uri.path_prefix.length) {
-    len += 3 * uri.path_prefix.length;
-  }
-
-  if (uri.path.data) {
-    len += uri.path.length;
-  }
-
-  if (uri.query.data) {
-    len += uri.query.length + 1;
-  }
-
-  if (uri.fragment.data) {
-    len += uri.fragment.length;
-  }
-
-  return len;
+static SerdStreamResult
+write_component(const SerdURIView   uri,
+                const SerdURIField  field,
+                const SerdWriteFunc sink,
+                void* const         stream)
+{
+  const ZixStringView string = serd_uri_field(uri, field);
+  return sink(stream, string.length, string.data);
 }
 
 /// See http://tools.ietf.org/html/rfc3986#section-5.3
@@ -393,49 +509,44 @@ serd_write_uri(const SerdURIView   uri,
 
   SerdStreamResult wr = {SERD_SUCCESS, 0U};
 
-  if (uri.scheme.data) {
-    const char* const scheme = uri.scheme.data;
-    TRY_WRITE(wr, sink(stream, uri.scheme.length, scheme));
+  if (uri.counts[SERD_URI_SCHEME]) {
+    TRY_WRITE(wr, write_component(uri, SERD_URI_SCHEME, sink, stream));
     TRY_WRITE(wr, sink(stream, 1, ":"));
   }
 
-  if (uri.authority.data) {
-    const char* const authority = uri.authority.data;
+  if (uri.counts[SERD_URI_AUTHORITY]) {
     TRY_WRITE(wr, sink(stream, 2, "//"));
-    TRY_WRITE(wr, sink(stream, uri.authority.length, authority));
+    TRY_WRITE(wr, write_component(uri, SERD_URI_AUTHORITY, sink, stream));
 
-    if (uri.authority.length && uri_path_len(&uri) &&
-        uri_path_at(&uri, 0) != '/') {
+    if (uri.counts[SERD_URI_AUTHORITY] && has_relative_path(uri)) {
       // Special case: ensure path begins with a slash
       // https://tools.ietf.org/html/rfc3986#section-3.2
       TRY_WRITE(wr, sink(stream, 1, "/"));
     }
   }
 
-  if (uri.path_prefix.data) {
-    const char* const path_prefix = uri.path_prefix.data;
-    TRY_WRITE(wr, sink(stream, uri.path_prefix.length, path_prefix));
-  } else if (uri.path_prefix.length) {
-    for (size_t i = 0; i < uri.path_prefix.length; ++i) {
+  if (uri.up) {
+    for (uint8_t i = 0U; i < uri.up; ++i) {
       TRY_WRITE(wr, sink(stream, 3, "../"));
     }
   }
 
-  if (uri.path.data) {
-    const char* const path = uri.path.data;
-    TRY_WRITE(wr, sink(stream, uri.path.length, path));
+  if (uri.counts[SERD_URI_PATH_PREFIX]) {
+    TRY_WRITE(wr, write_component(uri, SERD_URI_PATH_PREFIX, sink, stream));
   }
 
-  if (uri.query.data) {
-    const char* const query = uri.query.data;
+  if (uri.counts[SERD_URI_PATH_SUFFIX]) {
+    TRY_WRITE(wr, write_component(uri, SERD_URI_PATH_SUFFIX, sink, stream));
+  }
+
+  if (uri.counts[SERD_URI_QUERY]) {
     TRY_WRITE(wr, sink(stream, 1, "?"));
-    TRY_WRITE(wr, sink(stream, uri.query.length, query));
+    TRY_WRITE(wr, write_component(uri, SERD_URI_QUERY, sink, stream));
   }
 
-  if (uri.fragment.data) {
-    // Note that uri.fragment.data includes the leading '#'
-    const char* const fragment = uri.fragment.data;
-    TRY_WRITE(wr, sink(stream, uri.fragment.length, fragment));
+  if (uri.counts[SERD_URI_FRAGMENT]) {
+    TRY_WRITE(wr, sink(stream, 1, "#"));
+    TRY_WRITE(wr, write_component(uri, SERD_URI_FRAGMENT, sink, stream));
   }
 
   return wr;
