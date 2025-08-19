@@ -18,6 +18,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -132,14 +133,20 @@ check_write_error_offset(const SerdSyntax syntax,
   serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
   serd_reader_set_error_sink(reader, quiet_error_sink, NULL);
 
-  const SerdStatus rst = serd_reader_read_string(reader, doc_string);
+  SerdStatus rst = serd_reader_start_string(reader, doc_string);
+  assert(!rst);
+
+  if (!(rst = serd_reader_read_document(reader))) {
+    rst = serd_reader_finish(reader);
+  }
+
   const SerdStatus wst = serd_writer_finish(writer);
+  const SerdStatus st  = rst ? rst : wst;
 
   serd_reader_free(reader);
   serd_writer_free(writer);
   serd_env_free(env);
 
-  const SerdStatus st = rst ? rst : wst;
   assert(st == expected_status);
 }
 
@@ -269,6 +276,7 @@ test_reader(const char* const path)
   assert(serd_reader_handle(reader) == rt);
 
   assert(serd_reader_read_chunk(reader) == SERD_FAILURE);
+  assert(serd_reader_read_document(reader) == SERD_FAILURE);
 
   serd_reader_add_blank_prefix(reader, "tmp");
 
@@ -281,15 +289,14 @@ test_reader(const char* const path)
 #  pragma GCC diagnostic pop
 #endif
 
-  assert(serd_reader_read_file(reader, "http://notafile"));
-  assert(serd_reader_read_file(reader, "file:///better/not/exist"));
-  assert(serd_reader_read_file(reader, "file://"));
+  assert(serd_reader_start_file(reader, "http://notafile", false));
+  assert(serd_reader_start_file(reader, "file://invalid", false));
+  assert(serd_reader_start_file(reader, "file:///nonexistant", false));
 
-  const SerdStatus st = serd_reader_read_file(reader, path);
-  assert(!st);
+  assert(!serd_reader_start_file(reader, path, true));
+  assert(!serd_reader_read_document(reader));
   assert(rt->n_statement == 13);
-
-  assert(serd_reader_read_string(reader, "This isn't Turtle at all."));
+  assert(!serd_reader_finish(reader));
 
   serd_reader_free(reader);
 }
