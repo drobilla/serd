@@ -10,7 +10,6 @@
 #include "token_header.h"
 #include "try.h"
 #include "turtle.h"
-#include "uri_utils.h"
 #include "world_internal.h"
 
 #include <serd/env.h>
@@ -869,7 +868,7 @@ write_IRIREF(SerdWriter* const writer, const ZixStringView string)
   // Determine if the absolute URI should be written, or make it relative again
   const bool write_abs =
     !supports_abbrev(writer) ||
-    (writer->root_uri_string && !uri_is_under(&out_uri, &writer->root_uri));
+    (writer->root_uri_string && !serd_uri_is_within(out_uri, writer->root_uri));
   if (!write_abs) {
     out_uri = serd_relative_uri(in_uri, base_uri);
   }
