@@ -80,14 +80,14 @@ uri_rooted_index(const SerdURI* const uri, const SerdURI* const root)
   return indexes;
 }
 
-/** Return true iff `uri` shares path components with `root` */
+/// Return true iff `uri` shares path components with `root`
 static inline SERD_PURE_FUNC bool
 uri_is_related(const SerdURI* const uri, const SerdURI* const root)
 {
   return uri_rooted_index(uri, root).shared != SIZE_MAX;
 }
 
-/** Return true iff `uri` is within the base of `root` */
+/// Return true iff `uri` is within the base of `root`
 static inline SERD_PURE_FUNC bool
 uri_is_under(const SerdURI* const uri, const SerdURI* const root)
 {

@@ -64,7 +64,7 @@ blank_id(SerdReader* const reader)
   return ref;
 }
 
-/** fread-like wrapper for getc (which is faster). */
+/// fread-like wrapper for getc (which is faster)
 static size_t
 serd_file_read_byte(void* const  buf,
                     const size_t size,

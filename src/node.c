@@ -16,9 +16,9 @@
 #include <string.h>
 
 struct SerdNodeImpl {
-  size_t        n_bytes; /**< Size in bytes (not including null) */
-  SerdNodeFlags flags;   /**< Node flags (e.g. string properties) */
-  SerdType      type;    /**< Node type */
+  size_t        n_bytes; ///< Size in bytes (not including null)
+  SerdNodeFlags flags;   ///< Node flags (e.g. string properties)
+  SerdType      type;    ///< Node type
 };
 
 static size_t
