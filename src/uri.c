@@ -3,7 +3,6 @@
 
 #include "string_utils.h"
 #include "try_write.h"
-#include "uri_utils.h"
 
 #include <serd/status.h>
 #include <serd/stream.h>
@@ -15,6 +14,30 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
+
+static bool
+slice_equals(const SerdURIComponent* const a, const SerdURIComponent* const b)
+{
+  return a->length == b->length && !strncmp(a->data, b->data, a->length);
+}
+
+static size_t
+uri_path_len(const SerdURIView* const uri)
+{
+  return uri->path_prefix.length + uri->path.length;
+}
+
+static char
+uri_path_at(const SerdURIView* const uri, const size_t i)
+{
+  if (i < uri->path_prefix.length) {
+    return uri->path_prefix.data[i];
+  }
+
+  const size_t p = i - uri->path_prefix.length;
+  assert(p < uri->path.length);
+  return uri->path.data[p];
+}
 
 SerdURIView
 serd_empty_uri(void)
