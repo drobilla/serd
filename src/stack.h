@@ -10,10 +10,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-/** An offset to start the stack at. Note 0 is reserved for NULL. */
+/// An offset to start the stack at. Note 0 is reserved for NULL
 #define SERD_STACK_BOTTOM sizeof(void*)
 
-/** A dynamic stack in memory. */
+/// A dynamic stack in memory
 typedef struct {
   uint8_t* buf;      ///< Stack memory
   size_t   buf_size; ///< Allocated size of buf (>= size)

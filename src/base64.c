@@ -35,7 +35,7 @@ static const char b64_unmap[] =
   "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
   "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$";
 
-/** Encode 3 raw bytes to 4 base64 characters. */
+/// Encode 3 raw bytes to 4 base64 characters
 static void
 encode_chunk(uint8_t out[4], const uint8_t in[3], const size_t n_in)
 {
@@ -84,7 +84,7 @@ unmap(const uint8_t in)
   return (uint8_t)(b64_unmap[in] - 47);
 }
 
-/** Decode 4 base64 characters to 3 raw bytes. */
+/// Decode 4 base64 characters to 3 raw bytes
 static size_t
 decode_chunk(const uint8_t in[4], uint8_t out[3])
 {

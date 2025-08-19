@@ -10,45 +10,45 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/** Unicode replacement character in UTF-8 */
+/// Unicode replacement character in UTF-8
 static const uint8_t replacement_char[] = {0xEF, 0xBF, 0xBD};
 
-/** Return true if `c` lies within [`min`...`max`] (inclusive) */
+/// Return true if `c` lies within [`min`...`max`] (inclusive)
 static inline bool
 in_range(const int c, const int min, const int max)
 {
   return (c >= min && c <= max);
 }
 
-/** RFC2234: ALPHA ::= %x41-5A / %x61-7A  ; A-Z / a-z */
+/// RFC2234: ALPHA ::= %x41-5A / %x61-7A ; A-Z / a-z
 static inline bool
 is_alpha(const int c)
 {
   return in_range(c, 'A', 'Z') || in_range(c, 'a', 'z');
 }
 
-/** RFC2234: DIGIT ::= %x30-39  ; 0-9 */
+/// RFC2234: DIGIT ::= %x30-39 ; 0-9
 static inline bool
 is_digit(const int c)
 {
   return in_range(c, '0', '9');
 }
 
-/** RFC2234: HEXDIG ::= DIGIT / "A" / "B" / "C" / "D" / "E" / "F" */
+/// RFC2234: HEXDIG ::= DIGIT / "A" / "B" / "C" / "D" / "E" / "F"
 static inline bool
 is_hexdig(const int c)
 {
   return is_digit(c) || in_range(c, 'A', 'F');
 }
 
-/** Turtle / JSON / C: XDIGIT ::= DIGIT / A-F / a-f */
+/// Turtle / JSON / C: XDIGIT ::= DIGIT / A-F / a-f
 static inline bool
 is_xdigit(const int c)
 {
   return is_hexdig(c) || in_range(c, 'a', 'f');
 }
 
-/** RFC3986: scheme ::= ALPHA / DIGIT / "+" / "-" / "." */
+/// RFC3986: scheme ::= ALPHA / DIGIT / "+" / "-" / "."
 static inline bool
 is_scheme(const int c)
 {
