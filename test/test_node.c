@@ -3,6 +3,8 @@
 
 #undef NDEBUG
 
+#include "expect_string.h"
+
 #include <serd/serd.h>
 
 #include <assert.h>
@@ -88,7 +90,7 @@ test_double_to_node(void)
   for (size_t i = 0; i < sizeof(dbl_test_nums) / sizeof(double); ++i) {
     SerdNode   node = serd_node_new_decimal(dbl_test_nums[i], 8);
     const bool pass = (node.buf && dbl_test_strs[i])
-                        ? !strcmp((const char*)node.buf, dbl_test_strs[i])
+                        ? expect_string((const char*)node.buf, dbl_test_strs[i])
                         : ((const char*)node.buf == dbl_test_strs[i]);
     assert(pass);
     const size_t len = node.buf ? strlen((const char*)node.buf) : 0;
@@ -109,7 +111,7 @@ test_integer_to_node(void)
 
   for (size_t i = 0; i < N_TEST_NUMS; ++i) {
     SerdNode node = serd_node_new_integer(int_test_nums[i]);
-    assert(!strcmp((const char*)node.buf, (const char*)int_test_strs[i]));
+    assert(expect_string((const char*)node.buf, (const char*)int_test_strs[i]));
     const size_t len = strlen((const char*)node.buf);
     assert(node.n_bytes == len && node.n_chars == len);
     serd_node_free(&node);
@@ -226,7 +228,7 @@ test_node_from_string(void)
 
   assert(node.n_bytes == 6 && node.n_chars == 6 &&
          node.flags == SERD_HAS_QUOTE &&
-         !strcmp((const char*)node.buf, "hello\""));
+         expect_string((const char*)node.buf, "hello\""));
 
   node = serd_node_from_string(SERD_URI, NULL);
   assert(serd_node_equals(&node, &SERD_NODE_NULL));
