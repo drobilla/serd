@@ -1,13 +1,22 @@
-// Copyright 2011-2020 David Robillard <d@drobilla.net>
+// Copyright 2011-2025 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #undef NDEBUG
+
+#include "expect_string.h"
 
 #include <serd/serd.h>
 
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
+
+static void
+test_expect_string(void)
+{
+  assert(expect_string("match", "match"));
+  assert(!expect_string("intentional", "failure"));
+}
 
 static void
 check_strlen(const char* const   str,
@@ -41,19 +50,20 @@ static void
 test_strerror(void)
 {
   const uint8_t* msg = serd_strerror(SERD_SUCCESS);
-  assert(!strcmp((const char*)msg, "Success"));
+  assert(expect_string((const char*)msg, "Success"));
   for (int i = SERD_FAILURE; i <= SERD_ERR_BAD_TEXT; ++i) {
     msg = serd_strerror((SerdStatus)i);
     assert(strcmp((const char*)msg, "Success"));
   }
 
   msg = serd_strerror((SerdStatus)-1);
-  assert(!strcmp((const char*)msg, "Unknown error"));
+  assert(expect_string((const char*)msg, "Unknown error"));
 }
 
 int
 main(void)
 {
+  test_expect_string();
   test_strlen();
   test_strerror();
   return 0;

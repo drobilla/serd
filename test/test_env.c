@@ -3,6 +3,8 @@
 
 #undef NDEBUG
 
+#include "expect_string.h"
+
 #include <serd/serd.h>
 
 #include <assert.h>
@@ -51,7 +53,7 @@ test_env(void)
   assert(serd_node_equals(&xnode, &SERD_NODE_NULL));
 
   SerdNode xu = serd_env_expand_node(env, &u);
-  assert(!strcmp((const char*)xu.buf, NS_EG "foo"));
+  assert(expect_string((const char*)xu.buf, NS_EG "foo"));
   serd_node_free(&xu);
 
   SerdNode badpre  = serd_node_from_string(SERD_CURIE, USTR("hm:what"));
@@ -59,7 +61,7 @@ test_env(void)
   assert(serd_node_equals(&xbadpre, &SERD_NODE_NULL));
 
   SerdNode xc = serd_env_expand_node(env, &c);
-  assert(!strcmp((const char*)xc.buf, NS_EG "b"));
+  assert(expect_string((const char*)xc.buf, NS_EG "b"));
   serd_node_free(&xc);
 
   assert(serd_env_set_prefix(env, &SERD_NODE_NULL, &SERD_NODE_NULL));

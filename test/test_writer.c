@@ -3,6 +3,8 @@
 
 #undef NDEBUG
 
+#include "expect_string.h"
+
 #include <serd/serd.h>
 
 #include <assert.h>
@@ -36,8 +38,7 @@ test_write_long_literal(void)
     "\t<http://example.org/p> \"\"\"hello \"\"\\\"world\"\"\\\"!\"\"\" .\n";
 
   uint8_t* const out = serd_chunk_sink_finish(&chunk);
-  assert(out);
-  assert(!strcmp((char*)out, expected));
+  assert(expect_string((char*)out, expected));
   serd_free(out);
 
   serd_writer_free(writer);
@@ -108,8 +109,7 @@ test_write_nested_anon(void)
     "\t] .\n";
 
   uint8_t* const out = serd_chunk_sink_finish(&chunk);
-  assert(out);
-  assert(!strcmp((char*)out, expected));
+  assert(expect_string((char*)out, expected));
   serd_free(out);
 
   serd_writer_free(writer);
@@ -283,8 +283,8 @@ test_chunk_sink(void)
   assert(!serd_writer_finish(writer));
 
   uint8_t* const out = serd_chunk_sink_finish(&chunk);
-  assert(out);
-  assert(!strcmp((const char*)out, "@base <http://example.org/base> .\n"));
+  assert(
+    expect_string((const char*)out, "@base <http://example.org/base> .\n"));
   serd_free(out);
 
   serd_writer_free(writer);

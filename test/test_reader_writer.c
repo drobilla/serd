@@ -3,6 +3,8 @@
 
 #undef NDEBUG
 
+#include "expect_string.h"
+
 #include <serd/serd.h>
 
 #ifdef _WIN32
@@ -281,7 +283,7 @@ test_reader(const char* const path)
   assert(!st);
   assert(rt->n_statement == 12);
   assert(rt->graph && rt->graph->buf &&
-         !strcmp((const char*)rt->graph->buf, "http://example.org/"));
+         expect_string((const char*)rt->graph->buf, "http://example.org/"));
 
   assert(serd_reader_read_string(reader, USTR("This isn't Turtle at all.")));
 

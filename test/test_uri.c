@@ -1,7 +1,9 @@
-// Copyright 2011-2023 David Robillard <d@drobilla.net>
+// Copyright 2011-2025 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #undef NDEBUG
+
+#include "expect_string.h"
 
 #include <serd/serd.h>
 
@@ -52,11 +54,10 @@ check_file_uri(const char* const hostname,
   uint8_t* out_path =
     serd_file_uri_parse((const uint8_t*)node.buf, &out_hostname);
 
-  assert(out_path);
-  assert(!strcmp((const char*)node.buf, expected_uri));
+  assert(expect_string((const char*)node.buf, expected_uri));
   assert((hostname && out_hostname) || (!hostname && !out_hostname));
-  assert(!hostname || !strcmp(hostname, (const char*)out_hostname));
-  assert(!strcmp((const char*)out_path, (const char*)expected_path));
+  assert(!hostname || expect_string(hostname, (const char*)out_hostname));
+  assert(expect_string((const char*)out_path, (const char*)expected_path));
 
   serd_free(out_path);
   serd_free(out_hostname);
@@ -72,8 +73,7 @@ static void
 check_uri_to_path(const char* const uri, const char* const expected_path)
 {
   const uint8_t* const path = serd_uri_to_path((const uint8_t*)uri);
-  assert(path);
-  assert(!strcmp((const char*)path, expected_path));
+  assert(expect_string((const char*)path, expected_path));
 }
 
 static void
@@ -159,20 +159,17 @@ test_uri_parsing(void)
 
   // Test tolerance of NULL hostname parameter
   uint8_t* const hosted = serd_file_uri_parse(USTR("file://host/path"), NULL);
-  assert(hosted);
-  assert(!strcmp((const char*)hosted, "/path"));
+  assert(expect_string((const char*)hosted, "/path"));
   serd_free(hosted);
 
   // Test tolerance of parsing junk URI escapes
 
   uint8_t* const junk1 = serd_file_uri_parse(USTR("file:///foo/%0Xbar"), NULL);
-  assert(junk1);
-  assert(!strcmp((const char*)junk1, "/foo/bar"));
+  assert(expect_string((const char*)junk1, "/foo/bar"));
   serd_free(junk1);
 
   uint8_t* const junk2 = serd_file_uri_parse(USTR("file:///foo/%X0bar"), NULL);
-  assert(junk2);
-  assert(!strcmp((const char*)junk2, "/foo/bar"));
+  assert(expect_string((const char*)junk2, "/foo/bar"));
   serd_free(junk2);
 }
 
@@ -188,9 +185,9 @@ test_uri_from_string(void)
   SerdNode nil  = serd_node_new_uri_from_string(NULL, &base_uri, NULL);
   SerdNode nil2 = serd_node_new_uri_from_string(USTR(""), &base_uri, NULL);
   assert(nil.type == SERD_URI);
-  assert(!strcmp((const char*)nil.buf, (const char*)base.buf));
+  assert(expect_string((const char*)nil.buf, (const char*)base.buf));
   assert(nil2.type == SERD_URI);
-  assert(!strcmp((const char*)nil2.buf, (const char*)base.buf));
+  assert(expect_string((const char*)nil2.buf, (const char*)base.buf));
   serd_node_free(&nil);
   serd_node_free(&nil2);
 
@@ -237,7 +234,7 @@ check_relative_uri(const char* const uri_string,
     result_node = serd_node_new_relative_uri(&uri, &base, NULL, &result);
   }
 
-  assert(!strcmp((const char*)result_node.buf, expected_string));
+  assert(expect_string((const char*)result_node.buf, expected_string));
 
   SerdURI expected = SERD_URI_NULL;
   assert(!serd_uri_parse(USTR(expected_string), &expected));
@@ -358,7 +355,7 @@ test_relative_uri(void)
     SerdNode result_node = serd_node_new_relative_uri(&uri, &base, NULL, NULL);
 
     assert(result_node.n_bytes == 4U);
-    assert(!strcmp((const char*)result_node.buf, "path"));
+    assert(expect_string((const char*)result_node.buf, "path"));
 
     serd_node_free(&result_node);
   }
