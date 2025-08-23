@@ -13,6 +13,7 @@
 		<#anonymous-object>
 		<#anonymous-subject>
 		<#anonymous-subject-and-object>
+		<#base-after-statement>
 		<#datatypes>
 		<#empty-anonymous-object>
 		<#empty-list-object>
@@ -36,6 +37,7 @@
 		<#named-graph>
 		<#nested-list-object>
 		<#nested-list-object-with-empty-lists>
+		<#prefix-after-statement>
 		<#relative-uris>
 		<#repeated-directives>
 		<#short-string-escapes>
@@ -78,6 +80,12 @@
 	mf:action <anonymous-subject-and-object.ttl> ;
 	mf:name "anonymous-subject-and-object" ;
 	mf:result <anonymous-subject-and-object.ttl> .
+
+<#base-after-statement>
+	a rdft:TestTurtleEval ;
+	mf:action <base-after-statement.ttl> ;
+	mf:name "base-after-statement" ;
+	mf:result <base-after-statement.ttl> .
 
 <#datatypes>
 	a rdft:TestTurtleEval ;
@@ -222,6 +230,12 @@
 	mf:action <nested-list-subject.ttl> ;
 	mf:name "nested-list-subject" ;
 	mf:result <nested-list-subject.ttl> .
+
+<#prefix-after-statement>
+	a rdft:TestTurtleEval ;
+	mf:action <prefix-after-statement.ttl> ;
+	mf:name "prefix-after-statement" ;
+	mf:result <prefix-after-statement.ttl> .
 
 <#relative-uris>
 	a rdft:TestTurtleEval ;

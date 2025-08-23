@@ -1159,7 +1159,12 @@ serd_writer_set_base_uri(SerdWriter* const writer, const SerdNode* const uri)
   serd_env_get_base_uri(writer->env, &writer->base_uri);
 
   if (uri && (writer->syntax == SERD_TURTLE || writer->syntax == SERD_TRIG)) {
+    const bool had_subject = writer->context.subject.type;
     TRY(st, terminate_context(writer));
+    if (had_subject) {
+      TRY(st, esink("\n", 1, writer));
+    }
+
     TRY(st, esink("@base <", 7, writer));
     TRY(st, esink(uri->buf, uri->n_bytes, writer));
     TRY(st, esink(">", 1, writer));
