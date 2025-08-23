@@ -5,13 +5,17 @@
 #define SERD_ENV_H
 
 #include <serd/attributes.h>
+#include <serd/object_view.h>
 #include <serd/sink.h>
 #include <serd/status.h>
 #include <serd/string_pair_view.h>
+#include <serd/token_view.h>
 #include <serd/uri.h>
 #include <zix/allocator.h>
 #include <zix/attributes.h>
 #include <zix/string_view.h>
+
+#include <stdbool.h>
 
 SERD_BEGIN_DECLS
 
@@ -127,6 +131,29 @@ serd_env_expand(const SerdEnv* ZIX_NULLABLE     env,
                 SerdStringPairView* ZIX_NONNULL out);
 
 /**
+   Resolve `token` into a URI prefix and suffix if possible.
+
+   This can expand both CURIEs and relative URI references.  Note that this can
+   only do simple resolution by expanding a prefix or joining with a base URI.
+   For full URI resolution, see #serd_resolve_uri.
+
+   @param env Environment with prefixes to expand with.
+
+   @param token URI or CURIE token expand into a full URI.
+
+   @param[out] out On success, points to a URI prefix and suffix in `env` and
+   `token`.  The prefix is valid until `env` is mutated.
+
+   @return #SERD_SUCCESS, #SERD_BAD_ARG if `env` is null or the type of `token`
+   is unsupported, #SERD_BAD_URI if `token` is a URI that can't be resolved, or
+   #SERD_BAD_CURIE if `token` is a CURIE that can't be expanded.
+*/
+SERD_API SerdStatus
+serd_env_resolve(const SerdEnv* ZIX_NULLABLE     env,
+                 SerdTokenView                   token,
+                 SerdStringPairView* ZIX_NONNULL out);
+
+/**
    Write the prefixes in an environment as events to a sink.
 
    Writing stops if any error is encountered.
@@ -138,6 +165,38 @@ serd_env_expand(const SerdEnv* ZIX_NULLABLE     env,
 SERD_API SerdStatus
 serd_env_write_prefixes(const SerdEnv* ZIX_NONNULL  env,
                         const SerdSink* ZIX_NONNULL sink);
+
+/**
+   Return whether two tokens are equal within an environment.
+
+   This expands tokens if necessary, so CURIEs and relative URI references will
+   compare equal to their absolute counterparts.
+
+   @param env Environment to compare nodes within.
+   @param lhs Left-hand-side token to compare.
+   @param rhs Right-hand-side token to compare.
+   @return Whether `lhs` equals `rhs` when both are expanded.
+*/
+SERD_API bool
+serd_env_tokens_equal(const SerdEnv* ZIX_NONNULL env,
+                      SerdTokenView              lhs,
+                      SerdTokenView              rhs);
+
+/**
+   Return whether two objects are equal within an environment.
+
+   This expands tokens if necessary, so CURIEs and relative URI references
+   (including datatypes) will compare equal to their absolute counterparts.
+
+   @param env Environment to compare nodes within.
+   @param lhs Left-hand-side object to compare.
+   @param rhs Right-hand-side object to compare.
+   @return Whether `lhs` equals `rhs` when both are expanded.
+*/
+SERD_API bool
+serd_env_objects_equal(const SerdEnv* ZIX_NONNULL env,
+                       SerdObjectView             lhs,
+                       SerdObjectView             rhs);
 
 /**
    @}

@@ -4,10 +4,14 @@
 #include <serd/env.h>
 
 #include <serd/event.h>
+#include <serd/node_flags.h>
+#include <serd/node_type.h>
+#include <serd/object_view.h>
 #include <serd/sink.h>
 #include <serd/status.h>
 #include <serd/string.h>
 #include <serd/string_pair_view.h>
+#include <serd/token_view.h>
 #include <serd/uri.h>
 #include <zix/allocator.h>
 #include <zix/attributes.h>
@@ -117,6 +121,12 @@ serd_env_set_base_uri(SerdEnv* const env, const ZixStringView uri)
   SerdURIView       new_base_uri = serd_resolve_uri(parsed, env->base_uri);
   if (!serd_uri_has_scheme(new_base_uri)) {
     return SERD_BAD_ARG;
+  }
+
+  // Ensure base URI path begins with a slash
+  if (!new_base_uri.counts[SERD_URI_PATH_PREFIX] &&
+      !new_base_uri.counts[SERD_URI_PATH_SUFFIX]) {
+    new_base_uri = serd_resolve_uri(serd_parse_uri("/"), new_base_uri);
   }
 
   // Replace the current base URI
@@ -301,6 +311,67 @@ serd_env_expand(const SerdEnv* const      env,
   return SERD_BAD_CURIE;
 }
 
+static const char*
+string_data(const char* const string)
+{
+  return string ? string : "";
+}
+
+static SerdStatus
+serd_env_resolve_uri(const SerdEnv* const      env,
+                     const ZixStringView       ref,
+                     SerdStringPairView* const out)
+{
+  const SerdURIView rel = serd_parse_uri(ref.data);
+  const SerdURIView abs = serd_resolve_uri(rel, env->base_uri);
+  if (!serd_uri_has_scheme(abs)) {
+    return SERD_BAD_URI;
+  }
+
+  // Prefix is the "front" string for all fields before the split
+  out->prefix.data = string_data(abs.front);
+  for (size_t i = 0U; i < abs.split; ++i) {
+    out->prefix.length += abs.counts[i];
+  }
+
+  // Suffix is the "front" string for all fields after the split
+  out->suffix.data = string_data(abs.back);
+  for (size_t i = abs.split; i < SERD_N_URI_FIELDS; ++i) {
+    out->suffix.length += abs.counts[i];
+  }
+
+  return SERD_SUCCESS;
+}
+
+SerdStatus
+serd_env_resolve(const SerdEnv* const      env,
+                 const SerdTokenView       token,
+                 SerdStringPairView* const out)
+{
+  assert(out);
+  out->prefix.data   = "";
+  out->prefix.length = 0U;
+  out->suffix.data   = "";
+  out->suffix.length = 0U;
+
+  if (env) {
+    if (token.type == SERD_URI) {
+      if (serd_uri_string_has_scheme(token.string.data)) {
+        out->suffix = token.string;
+        return SERD_SUCCESS;
+      }
+
+      return serd_env_resolve_uri(env, token.string, out);
+    }
+
+    if (token.type == SERD_CURIE) {
+      return serd_env_expand(env, token.string, out);
+    }
+  }
+
+  return SERD_BAD_ARG;
+}
+
 SerdStatus
 serd_env_write_prefixes(const SerdEnv* const env, const SerdSink* const sink)
 {
@@ -330,4 +401,41 @@ serd_env_on_event(void* const handle, const SerdEvent* const event)
            ? serd_env_set_prefix(
                env, event->body.prefix.prefix, event->body.prefix.suffix)
            : SERD_SUCCESS;
+}
+
+static SerdStringPairView
+full_uri(const SerdEnv* const env, const SerdTokenView token)
+{
+  SerdStringPairView result = {zix_empty_string(), zix_empty_string()};
+  (void)serd_env_resolve(env, token, &result);
+  return result;
+}
+
+bool
+serd_env_tokens_equal(const SerdEnv* const env,
+                      const SerdTokenView  lhs,
+                      const SerdTokenView  rhs)
+{
+  return (lhs.type == rhs.type &&
+          zix_string_view_equals(lhs.string, rhs.string)) ||
+         ((lhs.type == SERD_URI || lhs.type == SERD_CURIE) &&
+          (rhs.type == SERD_URI || rhs.type == SERD_CURIE) &&
+          serd_string_pair_view_equals(full_uri(env, lhs), full_uri(env, rhs)));
+}
+
+bool
+serd_env_objects_equal(const SerdEnv* const env,
+                       const SerdObjectView lhs,
+                       const SerdObjectView rhs)
+{
+  if (lhs.type != SERD_LITERAL || rhs.type != SERD_LITERAL) {
+    return serd_env_tokens_equal(
+      env, serd_object_token_view(lhs), serd_object_token_view(rhs));
+  }
+
+  const unsigned lhs_flags = lhs.flags & ~(unsigned)SERD_IS_LONG;
+  const unsigned rhs_flags = rhs.flags & ~(unsigned)SERD_IS_LONG;
+  return (lhs_flags == rhs_flags &&
+          zix_string_view_equals(lhs.string, rhs.string) &&
+          serd_env_tokens_equal(env, lhs.meta, rhs.meta));
 }
