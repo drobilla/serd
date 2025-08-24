@@ -6,6 +6,8 @@
 #include <serd/node_flags.h>
 #include <serd/status.h>
 #include <serd/string.h>
+#include <zix/allocator.h>
+#include <zix/string_view.h>
 
 #include <assert.h>
 #include <math.h>
@@ -58,6 +60,18 @@ serd_strerror(const SerdStatus status)
   }
 
   return "Unknown error";
+}
+
+SerdString
+serd_string_new(ZixAllocator* const allocator, const ZixStringView contents)
+{
+  SerdString string = {0U, NULL};
+  if (contents.length &&
+      (string.data = (char*)zix_calloc(allocator, contents.length + 1U, 1U))) {
+    memcpy(string.data, contents.data, contents.length);
+    string.length = contents.length;
+  }
+  return string;
 }
 
 static void

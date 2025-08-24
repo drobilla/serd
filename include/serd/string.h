@@ -1,4 +1,4 @@
-// Copyright 2011-2022 David Robillard <d@drobilla.net>
+// Copyright 2011-2025 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #ifndef SERD_STRING_H
@@ -6,8 +6,10 @@
 
 #include <serd/attributes.h>
 #include <serd/node_flags.h>
+#include <serd/struct_literal.h>
 #include <zix/allocator.h>
 #include <zix/attributes.h>
+#include <zix/string_view.h>
 
 #include <stddef.h>
 
@@ -18,6 +20,35 @@ SERD_BEGIN_DECLS
    @ingroup serd_utilities
    @{
 */
+
+/// A mutable string with a length
+typedef struct {
+  size_t                length; ///< Length in bytes without terminator
+  char* ZIX_UNSPECIFIED data;   ///< Buffer
+} SerdString;
+
+/**
+   Return a view of a string.
+
+   This is a syntactic convenience for conversion to a ZixStringView,
+   particularly when passing a string parameter.
+*/
+ZIX_CONST_FUNC static inline ZixStringView
+serd_string_view(const SerdString string)
+{
+  return SERD_STRUCT_LITERAL(
+    ZixStringView, string.data ? string.data : "", string.length);
+}
+
+/**
+   Allocate a new string with the given contents.
+
+   @param allocator Allocator for the returned string data.
+   @param contents The contents to copy to the new string.
+   @return A string with newly-allocated, or NULL, `data`.
+*/
+SERD_API SerdString
+serd_string_new(ZixAllocator* ZIX_NULLABLE allocator, ZixStringView contents);
 
 /**
    Measure a UTF-8 string.

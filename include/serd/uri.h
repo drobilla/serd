@@ -6,6 +6,7 @@
 
 #include <serd/attributes.h>
 #include <serd/stream.h>
+#include <serd/string.h>
 #include <zix/allocator.h>
 #include <zix/attributes.h>
 
@@ -173,6 +174,14 @@ SERD_API size_t
 serd_write_uri(SerdURIView               uri,
                SerdWriteFunc ZIX_NONNULL sink,
                void* ZIX_UNSPECIFIED     stream);
+
+/**
+   Return `uri` flattened into a newly allocated string.
+
+   @return `uri` as a string, or an empty string with NULL `data` on error.
+*/
+SERD_API SerdString
+serd_uri_to_string(ZixAllocator* ZIX_NULLABLE allocator, SerdURIView uri);
 
 /**
    @}

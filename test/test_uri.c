@@ -8,6 +8,7 @@
 
 #include <serd/node.h>
 #include <serd/node_type.h>
+#include <serd/string.h>
 #include <serd/uri.h>
 #include <zix/allocator.h>
 
@@ -196,6 +197,29 @@ test_uri_from_string(void)
 }
 
 static void
+check_round_trip(const char* const uri_string)
+{
+  const SerdURIView uri    = serd_parse_uri(uri_string);
+  const SerdString  string = serd_uri_to_string(NULL, uri);
+
+  assert(expect_string_view(serd_string_view(string), uri_string));
+
+  zix_free(NULL, string.data);
+}
+
+static void
+test_uri_to_string(void)
+{
+  check_round_trip("rel/path");
+  check_round_trip("file:///dir/path");
+  check_round_trip("http://example.org/p");
+  check_round_trip("http://example.org/p/");
+  check_round_trip("http://example.org/p/n");
+  check_round_trip("http://example.org/p/n#f");
+  check_round_trip("http://example.org/p/n?q#f");
+}
+
+static void
 check_is_within(const char* const uri_string,
                 const char* const base_uri_string,
                 const bool        expected)
@@ -315,9 +339,9 @@ test_relative_uri(void)
 static void
 check_uri_string(const SerdURIView uri, const char* const expected)
 {
-  SerdNode node = serd_node_new_uri(NULL, &uri);
-  assert(expect_string(node.buf, expected));
-  serd_node_free(NULL, &node);
+  const SerdString string = serd_uri_to_string(NULL, uri);
+  assert(expect_string_view(serd_string_view(string), expected));
+  zix_free(NULL, string.data);
 }
 
 static void
@@ -462,6 +486,7 @@ main(void)
   test_uri_string_length();
   test_file_uri();
   test_uri_from_string();
+  test_uri_to_string();
   test_is_within();
   test_relative_uri();
   test_resolve_uri();

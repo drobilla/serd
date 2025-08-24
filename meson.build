@@ -227,6 +227,7 @@ c_headers = files(
   'include/serd/status.h',
   'include/serd/stream.h',
   'include/serd/string.h',
+  'include/serd/struct_literal.h',
   'include/serd/syntax.h',
   'include/serd/uri.h',
   'include/serd/version.h',
