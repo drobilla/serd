@@ -1,11 +1,11 @@
 // Copyright 2011-2026 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "namespaces.h"
 #include "ntriples.h"
 #include "read_utf8.h"
 #include "reader.h"
 #include "string_utils.h"
+#include "symbols.h"
 #include "try.h"
 #include "turtle.h"
 
@@ -700,10 +700,6 @@ read_number(SerdReader* const reader,
             Ref* const        datatype,
             bool* const       ate_dot)
 {
-  static const ZixStringView xsd_decimal = ZIX_STATIC_STRING(NS_XSD "decimal");
-  static const ZixStringView xsd_double  = ZIX_STATIC_STRING(NS_XSD "double");
-  static const ZixStringView xsd_integer = ZIX_STATIC_STRING(NS_XSD "integer");
-
   *dest = push_node_head(reader, SERD_LITERAL);
 
   SerdStatus st          = SERD_SUCCESS;
@@ -742,11 +738,11 @@ read_number(SerdReader* const reader,
       push_byte(reader, *dest, eat_byte_safe(reader, c));
     }
     TRY(st, read_0_9(reader, *dest, true));
-    *datatype = push_node(reader, SERD_URI, xsd_double);
+    *datatype = push_node(reader, SERD_URI, serd_symbols[XSD_DOUBLE]);
   } else if (has_decimal) {
-    *datatype = push_node(reader, SERD_URI, xsd_decimal);
+    *datatype = push_node(reader, SERD_URI, serd_symbols[XSD_DECIMAL]);
   } else {
-    *datatype = push_node(reader, SERD_URI, xsd_integer);
+    *datatype = push_node(reader, SERD_URI, serd_symbols[XSD_INTEGER]);
   }
 
   return SERD_SUCCESS;
@@ -810,8 +806,6 @@ read_literal(SerdReader* const    reader,
 static SerdStatus
 read_verb(SerdReader* const reader, Ref* const dest)
 {
-  static const ZixStringView rdf_type = ZIX_STATIC_STRING(NS_RDF "type");
-
   if (peek_byte(reader) == '<') {
     return read_IRIREF(reader, dest);
   }
@@ -827,7 +821,7 @@ read_verb(SerdReader* const reader, Ref* const dest)
     const SerdNode* const node = deref(reader, p);
     if (node->n_bytes == 1 && node->buf[0] == 'a') {
       pop_node(reader, p);
-      p  = push_node(reader, SERD_URI, rdf_type);
+      p  = push_node(reader, SERD_URI, serd_symbols[RDF_TYPE]);
       st = SERD_SUCCESS;
     } else {
       st = SERD_BAD_SYNTAX;
@@ -955,8 +949,6 @@ read_named_object(SerdReader* const    reader,
                   SerdNodeFlags* const flags,
                   bool* const          ate_dot)
 {
-  static const ZixStringView xsd_boolean = ZIX_STATIC_STRING(NS_XSD "boolean");
-
   // Try to read as a prefixed name
   const Ref  o  = push_node_head(reader, SERD_CURIE);
   SerdStatus st = read_PrefixedName(reader, o, ate_dot);
@@ -968,7 +960,7 @@ read_named_object(SerdReader* const    reader,
         (node->n_bytes == 5 && !memcmp(node->buf, "false", 5))) {
       node->type = SERD_LITERAL;
       *flags     = *flags | SERD_HAS_DATATYPE;
-      *datatype  = push_node(reader, SERD_URI, xsd_boolean);
+      *datatype  = push_node(reader, SERD_URI, serd_symbols[XSD_BOOLEAN]);
       st         = SERD_SUCCESS;
     }
   }

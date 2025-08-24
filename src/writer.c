@@ -5,6 +5,7 @@
 #include "namespaces.h"
 #include "stack.h"
 #include "string_utils.h"
+#include "symbols.h"
 #include "system.h"
 #include "try.h"
 #include "turtle.h"
@@ -771,6 +772,13 @@ get_xsd_name(const SerdEnv* const env, const SerdNode* const datatype)
   return "";
 }
 
+static bool
+node_equals_symbol(const SerdNode* const node, const SerdSymbol symbol)
+{
+  return zix_string_view_equals(serd_node_string_view(node),
+                                serd_symbols[symbol]);
+}
+
 static SerdStatus
 write_IRIREF(SerdWriter* const writer, const ZixStringView string)
 {
@@ -811,7 +819,7 @@ write_uri_node(SerdWriter* const writer, const SerdNode* const node)
   const bool          has_scheme = serd_uri_string_has_scheme(string.data);
 
   if (supports_abbrev(writer)) {
-    if (!strcmp(node->buf, NS_RDF "nil")) {
+    if (node_equals_symbol(node, RDF_NIL)) {
       return esink("()", 2, writer);
     }
 
@@ -1007,12 +1015,12 @@ write_list_next(SerdWriter* const        writer,
 {
   SerdStatus st = SERD_SUCCESS;
 
-  if (!strcmp(object->buf, NS_RDF "nil")) {
+  if (node_equals_symbol(object, RDF_NIL)) {
     TRY(st, write_sep(writer, SEP_LIST_R));
     return SERD_FAILURE;
   }
 
-  if (!strcmp(predicate->buf, NS_RDF "first")) {
+  if (node_equals_symbol(predicate, RDF_FIRST)) {
     TRY(st, write_node(writer, object, datatype, lang, SERD_OBJECT, flags));
   } else {
     TRY(st, write_sep(writer, SEP_LIST_SEP));
@@ -1102,8 +1110,8 @@ serd_writer_write_statement(SerdWriter* const        writer,
 
   if (writer->context.type == CTX_LIST) {
     // Continue a list
-    if (!strcmp(predicate->buf, NS_RDF "first") &&
-        !strcmp(object->buf, NS_RDF "nil")) {
+    if (node_equals_symbol(predicate, RDF_FIRST) &&
+        node_equals_symbol(object, RDF_NIL)) {
       return esink("()", 2, writer);
     }
 

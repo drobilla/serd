@@ -252,6 +252,7 @@ sources = files(
   'src/read_utf8.c',
   'src/reader.c',
   'src/string.c',
+  'src/symbols.c',
   'src/syntax.c',
   'src/token_view.c',
   'src/uri.c',
