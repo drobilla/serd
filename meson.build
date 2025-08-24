@@ -250,6 +250,7 @@ sources = files(
   'src/object_view.c',
   'src/reader.c',
   'src/string.c',
+  'src/symbols.c',
   'src/syntax.c',
   'src/token_view.c',
   'src/uri.c',

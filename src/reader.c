@@ -4,8 +4,8 @@
 #include "reader.h"
 
 #include "byte_source.h"
-#include "namespaces.h"
 #include "stack.h"
+#include "symbols.h"
 #include "system.h"
 #include "world_impl.h"
 #include "world_internal.h"
@@ -209,10 +209,6 @@ serd_reader_new(SerdWorld* const      world,
                 const SerdStatementFunc statement_func,
                 const SerdEndFunc       end_func)
 {
-  static const ZixStringView rdf_first = ZIX_STATIC_STRING(NS_RDF "first");
-  static const ZixStringView rdf_rest  = ZIX_STATIC_STRING(NS_RDF "rest");
-  static const ZixStringView rdf_nil   = ZIX_STATIC_STRING(NS_RDF "nil");
-
   assert(world);
 
   ZixAllocator* const allocator = serd_world_allocator(world);
@@ -240,9 +236,9 @@ serd_reader_new(SerdWorld* const      world,
     return NULL;
   }
 
-  me->rdf_first = push_node(me, SERD_URI, rdf_first);
-  me->rdf_rest  = push_node(me, SERD_URI, rdf_rest);
-  me->rdf_nil   = push_node(me, SERD_URI, rdf_nil);
+  me->rdf_first = push_node(me, SERD_URI, serd_symbols[RDF_FIRST]);
+  me->rdf_rest  = push_node(me, SERD_URI, serd_symbols[RDF_REST]);
+  me->rdf_nil   = push_node(me, SERD_URI, serd_symbols[RDF_NIL]);
 
   return me;
 }
