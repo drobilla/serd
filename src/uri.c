@@ -6,6 +6,7 @@
 
 #include <serd/buffer.h>
 #include <serd/stream.h>
+#include <serd/string.h>
 #include <serd/uri.h>
 #include <zix/allocator.h>
 
@@ -510,4 +511,29 @@ serd_write_uri(const SerdURIView   uri,
   }
 
   return len;
+}
+
+static size_t
+string_sink(const void* const buf, const size_t len, void* const stream)
+{
+  char** ptr = (char**)stream;
+  memcpy(*ptr, buf, len);
+  *ptr += len;
+  return len;
+}
+
+SerdString
+serd_uri_to_string(ZixAllocator* const allocator, const SerdURIView uri)
+{
+  SerdString   string = {0U, NULL};
+  const size_t length = serd_uri_string_length(uri);
+
+  if ((string.data = (char*)zix_calloc(allocator, length + 1U, 1U))) {
+    char*        ptr        = string.data;
+    const size_t actual_len = serd_write_uri(uri, string_sink, &ptr);
+
+    string.length = actual_len;
+  }
+
+  return string;
 }

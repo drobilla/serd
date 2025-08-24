@@ -46,6 +46,7 @@
 */
 
 #include <serd/string.h>
+#include <serd/struct_literal.h>
 #include <serd/syntax.h>
 
 /**

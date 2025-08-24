@@ -4,10 +4,12 @@
 #undef NDEBUG
 
 #include "expect_string.h"
+#include "failing_allocator.h"
 
 #include <serd/node_flags.h>
 #include <serd/status.h>
 #include <serd/string.h>
+#include <zix/allocator.h>
 #include <zix/attributes.h>
 #include <zix/string_view.h>
 
@@ -28,6 +30,39 @@ test_expect_string_view(void)
   assert(expect_string_view(zix_empty_string(), ""));
   assert(expect_string_view(zix_string("match"), "match"));
   assert(!expect_string_view(zix_string("intentional"), "failure"));
+}
+
+static void
+test_new(void)
+{
+  const SerdString empty = serd_string_new(NULL, zix_empty_string());
+  assert(!empty.length);
+  assert(!empty.data);
+
+  const SerdString hello = serd_string_new(NULL, zix_string("hello"));
+  assert(zix_string_view_equals(serd_string_view(hello), zix_string("hello")));
+  zix_free(NULL, hello.data);
+}
+
+static void
+test_new_failed_alloc(void)
+{
+  SerdFailingAllocator allocator = serd_failing_allocator();
+
+  // Successfully allocate a canon to count the number of allocations
+  const SerdString hello = serd_string_new(NULL, zix_string("hello"));
+  assert(zix_string_view_equals(serd_string_view(hello), zix_string("hello")));
+  zix_free(NULL, hello.data);
+
+  serd_failing_allocator_reset(&allocator, 0);
+
+  // Test that failed allocation is handled gracefully
+  const SerdString failed =
+    serd_string_new(&allocator.base, zix_string("hello"));
+  assert(!failed.length);
+  assert(!failed.data);
+  assert(!serd_string_view(failed).length);
+  assert(serd_string_view(failed).data[0] == '\0');
 }
 
 static void
@@ -74,6 +109,8 @@ main(void)
 {
   test_expect_string();
   test_expect_string_view();
+  test_new();
+  test_new_failed_alloc();
   test_strlen();
   test_strerror();
   return 0;
