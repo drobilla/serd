@@ -117,9 +117,6 @@ struct SerdWriterImpl {
 typedef enum { WRITE_STRING, WRITE_LONG_STRING } TextContext;
 typedef enum { RESET_GRAPH = 1U << 0U, RESET_INDENT = 1U << 1U } ResetFlag;
 
-SERD_NODISCARD static SerdStatus
-write_iri(SerdWriter* writer, const SerdNode* node);
-
 SERD_NODISCARD static bool
 supports_abbrev(const SerdWriter* const writer)
 {
@@ -609,44 +606,6 @@ get_xsd_name(const SerdEnv* const env, const SerdNode* const datatype)
   return "";
 }
 
-SERD_NODISCARD static SerdStatus
-write_literal(SerdWriter* const     writer,
-              const SerdNode* const node,
-              const SerdNode* const datatype,
-              const SerdNode* const lang)
-{
-  SerdStatus st = SERD_SUCCESS;
-
-  if (supports_abbrev(writer) && datatype && datatype->buf) {
-    const char* const xsd_name = get_xsd_name(writer->env, datatype);
-    if (!strcmp(xsd_name, "boolean") || !strcmp(xsd_name, "integer") ||
-        (!strcmp(xsd_name, "decimal") && strchr((const char*)node->buf, '.') &&
-         node->buf[node->n_bytes - 1] != '.')) {
-      return esink(node->buf, node->n_bytes, writer);
-    }
-  }
-
-  if (supports_abbrev(writer) &&
-      (node->flags & (SERD_HAS_NEWLINE | SERD_HAS_QUOTE))) {
-    TRY(st, esink("\"\"\"", 3, writer));
-    TRY(st, write_text(writer, WRITE_LONG_STRING, node->buf, node->n_bytes));
-    st = esink("\"\"\"", 3, writer);
-  } else {
-    TRY(st, esink("\"", 1, writer));
-    TRY(st, write_text(writer, WRITE_STRING, node->buf, node->n_bytes));
-    st = esink("\"", 1, writer);
-  }
-  if (lang && lang->buf) {
-    TRY(st, esink("@", 1, writer));
-    st = esink(lang->buf, lang->n_bytes, writer);
-  } else if (datatype && datatype->buf) {
-    TRY(st, esink("^^", 2, writer));
-    st = write_iri(writer, datatype);
-  }
-
-  return st;
-}
-
 // Return true iff `buf` is a valid prefixed name prefix or suffix
 static bool
 is_name(const uint8_t* const buf, const size_t len)
@@ -755,6 +714,44 @@ write_iri(SerdWriter* const writer, const SerdNode* const node)
 {
   return (node->type == SERD_URI) ? write_uri_node(writer, node)
                                   : write_curie(writer, node);
+}
+
+SERD_NODISCARD static SerdStatus
+write_literal(SerdWriter* const     writer,
+              const SerdNode* const node,
+              const SerdNode* const datatype,
+              const SerdNode* const lang)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  if (supports_abbrev(writer) && datatype && datatype->buf) {
+    const char* const xsd_name = get_xsd_name(writer->env, datatype);
+    if (!strcmp(xsd_name, "boolean") || !strcmp(xsd_name, "integer") ||
+        (!strcmp(xsd_name, "decimal") && strchr((const char*)node->buf, '.') &&
+         node->buf[node->n_bytes - 1] != '.')) {
+      return esink(node->buf, node->n_bytes, writer);
+    }
+  }
+
+  if (supports_abbrev(writer) &&
+      (node->flags & (SERD_HAS_NEWLINE | SERD_HAS_QUOTE))) {
+    TRY(st, esink("\"\"\"", 3, writer));
+    TRY(st, write_text(writer, WRITE_LONG_STRING, node->buf, node->n_bytes));
+    st = esink("\"\"\"", 3, writer);
+  } else {
+    TRY(st, esink("\"", 1, writer));
+    TRY(st, write_text(writer, WRITE_STRING, node->buf, node->n_bytes));
+    st = esink("\"", 1, writer);
+  }
+  if (lang && lang->buf) {
+    TRY(st, esink("@", 1, writer));
+    st = esink(lang->buf, lang->n_bytes, writer);
+  } else if (datatype && datatype->buf) {
+    TRY(st, esink("^^", 2, writer));
+    st = write_iri(writer, datatype);
+  }
+
+  return st;
 }
 
 SERD_NODISCARD static SerdStatus
