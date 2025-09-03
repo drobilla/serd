@@ -4,7 +4,7 @@
 #ifndef SERD_SRC_TRY_H
 #define SERD_SRC_TRY_H
 
-#include <serd/serd.h>
+#include <serd/serd.h> // IWYU pragma: keep
 
 #define TRY(st, exp)      \
   do {                    \
