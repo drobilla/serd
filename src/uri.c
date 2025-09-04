@@ -495,8 +495,21 @@ write_component(const SerdURIView   uri,
                 const SerdWriteFunc sink,
                 void* const         stream)
 {
+  SerdStreamResult    r      = {SERD_SUCCESS, 0U};
   const ZixStringView string = serd_uri_field(uri, field);
-  return sink(stream, string.length, string.data);
+  if (field <= SERD_URI_AUTHORITY) {
+    for (size_t i = 0U; i < string.length; ++i) {
+      const char c = serd_to_lower(string.data[i]);
+      r            = sink(stream, 1U, &c);
+      if (r.status) {
+        return r;
+      }
+    }
+  } else {
+    r = sink(stream, string.length, string.data);
+  }
+
+  return r;
 }
 
 /// See http://tools.ietf.org/html/rfc3986#section-5.3
