@@ -80,26 +80,28 @@ test_write_failed_alloc(void)
   const SerdObjectView o         = {
     SERD_LITERAL, o_string, SERD_HAS_DATATYPE, xsd_float};
 
-  SerdSink           target = {NULL, ignore_event};
-  SerdHandler* const canon  = serd_canon_new(world, env, &target, 0U);
-  assert(canon);
-
-  const SerdSink* const sink = serd_handler_sink(canon);
-
   // Successfully write statement to count the number of allocations
+  SerdSink     target = {NULL, ignore_event};
+  SerdHandler* canon  = serd_canon_new(world, env, &target, 0U);
+  assert(canon);
   serd_failing_allocator_reset(&allocator, SIZE_MAX);
-  assert(!serd_sink_event(sink,
+  assert(!serd_sink_event(serd_handler_sink(canon),
                           serd_statement_event(0U, serd_triple_view(s, p, o))));
+  serd_handler_free(canon);
 
   // Test that each allocation failing is handled gracefully
   const size_t n_new_allocs = serd_failing_allocator_reset(&allocator, 0);
   for (size_t i = 0; i < n_new_allocs; ++i) {
     serd_failing_allocator_reset(&allocator, i);
 
-    const SerdStatus st = serd_sink_event(
-      sink, serd_statement_event(0U, serd_triple_view(s, p, o)));
+    if ((canon = serd_canon_new(world, env, &target, 0U))) {
+      const SerdStatus st =
+        serd_sink_event(serd_handler_sink(canon),
+                        serd_statement_event(0U, serd_triple_view(s, p, o)));
 
-    assert(st == SERD_BAD_ALLOC);
+      assert(st == SERD_BAD_ALLOC);
+      serd_handler_free(canon);
+    }
   }
 
   serd_handler_free(canon);

@@ -30,39 +30,43 @@
 #define MAX_LANG_LEN 48U // RFC5646 requires 35, RFC4646 recommends 42
 
 typedef struct {
-  const SerdWorld* world;
-  const SerdEnv*   env;
-  const SerdSink*  target;
-  SerdCanonFlags   flags;
-} SerdCanonData;
-
-typedef struct {
-  ExessVariableResult result; ///< Result of writing canonical string
-  char*               string; ///< Newly allocated string, or NULL
-  SerdObjectView      node;   ///< View of canonicalized node
+  size_t         string_size; ///< Size of `string`
+  char*          string;      ///< Allocated string or null
+  SerdObjectView node;        ///< View of canonical node using `string`
 } SerdCanonicalNode;
 
-static SerdCanonicalNode
-build_typed(ZixAllocator* const  allocator,
-            const SerdEnv* const env,
-            const SerdObjectView node)
+typedef struct {
+  const SerdWorld*  world;
+  const SerdEnv*    env;
+  const SerdSink*   target;
+  SerdCanonicalNode node;
+  SerdCanonFlags    flags;
+} SerdCanonData;
+
+static ExessVariableResult
+build_typed(ZixAllocator* const      allocator,
+            const SerdEnv* const     env,
+            const SerdObjectView     node,
+            SerdCanonicalNode* const out)
 {
-  const char* const str = node.string.data;
-  SerdCanonicalNode r   = {{EXESS_SUCCESS, 0U, 0U}, NULL, node};
+  const char* const   str = node.string.data;
+  ExessVariableResult r   = {EXESS_SUCCESS, 0U, 0U};
+
+  out->node = node;
 
   // Expand the datatype into a full URI (in-place as a string pair view)
   SerdStringPairView datatype = {zix_empty_string(), zix_empty_string()};
   if (serd_env_resolve(env, node.meta, &datatype)) {
-    r.result.status = EXESS_UNSUPPORTED;
+    r.status = EXESS_UNSUPPORTED;
     return r;
   }
 
   // If datatype is rdf:langString, just strip the datatype
   if (serd_string_pair_view_equals_string(datatype,
                                           serd_symbols[RDF_LANGSTRING])) {
-    r.node.flags &= ~(SerdNodeFlags)SERD_HAS_DATATYPE;
-    r.node.meta.type   = SERD_LITERAL;
-    r.node.meta.string = zix_empty_string();
+    out->node.flags       = node.flags & ~(SerdNodeFlags)SERD_HAS_DATATYPE;
+    out->node.meta.type   = SERD_NOTHING;
+    out->node.meta.string = zix_empty_string();
     return r;
   }
 
@@ -77,40 +81,53 @@ build_typed(ZixAllocator* const  allocator,
   const char* const   datatype_name = datatype.suffix.data + offset;
   const ExessDatatype value_type    = exess_datatype_from_name(datatype_name);
   if ((value_type == EXESS_NOTHING) ||
-      (r.result = exess_write_canonical(str, value_type, 0, NULL)).status) {
+      (r = exess_write_canonical(str, value_type, 0, NULL)).status) {
     return r;
   }
 
   // Ensure there's no unexpected trailing garbage
-  for (size_t i = r.result.read_count; i < node.string.length; ++i) {
+  for (size_t i = r.read_count; i < node.string.length; ++i) {
     if (!is_space(str[i])) {
-      r.result.status = EXESS_BAD_VALUE;
-      break;
+      r.status = EXESS_BAD_VALUE;
+      return r;
     }
   }
 
   // Allocate string
-  const size_t buf_size = r.result.write_count + 1U;
-  if (!(r.string = (char*)zix_calloc(allocator, buf_size, 1U))) {
-    r.result.status = EXESS_NO_SPACE;
-    return r;
+  const size_t buf_size = r.write_count + 1U;
+  if (out->string_size < buf_size) {
+    char* const buf = (char*)zix_realloc(allocator, out->string, buf_size);
+    if (!buf) {
+      r.status = EXESS_NO_SPACE;
+      return r;
+    }
+
+    buf[r.write_count] = '\0';
+    out->string        = buf;
+    out->string_size   = buf_size;
   }
 
-  // Write canonical form
-  exess_write_canonical(str, value_type, buf_size, r.string);
-  r.node.string = zix_substring(r.string, r.result.write_count);
+  // Write canonical form with absolute URI datatype
+  exess_write_canonical(str, value_type, buf_size, out->string);
+  out->node.string      = zix_substring(out->string, r.write_count);
+  out->node.meta.type   = SERD_URI;
+  out->node.meta.string = zix_string(exess_datatype_uri(value_type));
   return r;
 }
 
-static SerdCanonicalNode
-build_tagged(const SerdObjectView node, char lang_buf[static MAX_LANG_LEN])
+static ExessVariableResult
+build_tagged(const SerdObjectView     node,
+             char                     lang_buf[static MAX_LANG_LEN],
+             SerdCanonicalNode* const out)
 {
-  SerdCanonicalNode r = {
-    {EXESS_SUCCESS, node.string.length, node.string.length}, NULL, node};
+  ExessVariableResult r = {EXESS_SUCCESS, 0U, 0U};
 
+  out->node = node;
+
+  // Get the language tag and ensure its a reasonable size
   const ZixStringView language = node.meta.string;
   if (language.length > MAX_LANG_LEN) {
-    r.result.status = EXESS_NO_SPACE;
+    r.status = EXESS_NO_SPACE;
     return r;
   }
 
@@ -120,15 +137,15 @@ build_tagged(const SerdObjectView node, char lang_buf[static MAX_LANG_LEN])
   }
 
   // Return the same node except with the new language tag
-  r.node.meta.string.data = lang_buf;
+  out->node.meta.string = zix_substring(lang_buf, language.length);
   return r;
 }
 
 static SerdStatus
-serd_canon_on_statement(const SerdCanonData* const data,
-                        const SerdEventFlags       flags,
-                        const SerdStatementView    statement,
-                        SerdCaretView              caret)
+serd_canon_on_statement(SerdCanonData* const    data,
+                        const SerdEventFlags    flags,
+                        const SerdStatementView statement,
+                        SerdCaretView           caret)
 {
   ZixAllocator* const  allocator = serd_world_allocator(data->world);
   const SerdObjectView object    = statement.object;
@@ -140,13 +157,13 @@ serd_canon_on_statement(const SerdCanonData* const data,
       serd_cite_event(serd_statement_event(flags, statement), caret));
   }
 
-  char                    lang_buf[MAX_LANG_LEN] = {0};
-  const SerdCanonicalNode node = (object.flags & SERD_HAS_DATATYPE)
-                                   ? build_typed(allocator, data->env, object)
-                                   : build_tagged(object, lang_buf);
+  char                      lang_buf[MAX_LANG_LEN] = {0};
+  const ExessVariableResult r =
+    (object.flags & SERD_HAS_DATATYPE)
+      ? build_typed(allocator, data->env, object, &data->node)
+      : build_tagged(object, lang_buf, &data->node);
 
-  const ExessVariableResult r           = node.result;
-  const size_t              node_length = node.result.write_count;
+  const size_t node_length = r.write_count;
   if (r.status) {
     const bool lax = (data->flags & SERD_CANON_LAX);
 
@@ -162,33 +179,37 @@ serd_canon_on_statement(const SerdCanonData* const data,
               exess_strerror(r.status));
 
     if (!lax) {
-      zix_free(allocator, node.string);
       return r.status == EXESS_NO_SPACE ? SERD_BAD_ALLOC : SERD_BAD_LITERAL;
     }
   }
 
-  const SerdStatus st = serd_sink_event(
+  return serd_sink_event(
     data->target,
     serd_cite_event(serd_statement_event(flags,
                                          serd_quad_view(statement.subject,
                                                         statement.predicate,
-                                                        node.node,
+                                                        data->node.node,
                                                         statement.graph)),
                     caret));
-
-  zix_free(allocator, node.string);
-  return st;
 }
 
 static SerdStatus
 serd_canon_on_event(void* const handle, const SerdEvent* const event)
 {
-  const SerdCanonData* const data = (const SerdCanonData*)handle;
+  SerdCanonData* const data = (SerdCanonData*)handle;
 
   return (event->type == SERD_EVENT_STATEMENT)
            ? serd_canon_on_statement(
                data, event->flags, event->body.statement, event->caret)
            : serd_sink_event(data->target, *event);
+}
+
+static void
+serd_canon_destroy_data(void* const handle)
+{
+  const SerdCanonData* const data = (const SerdCanonData*)handle;
+
+  zix_free(serd_world_allocator(data->world), data->node.string);
 }
 
 SerdHandler*
@@ -200,19 +221,19 @@ serd_canon_new(const SerdWorld* const world,
   assert(world);
   assert(target);
 
-  ZixAllocator* const allocator = serd_world_allocator(world);
-  SerdHandler* const  canon     = serd_handler_new(
-    allocator, serd_canon_on_event, NULL, sizeof(SerdCanonData));
-  if (!canon) {
-    return NULL;
+  SerdHandler* const canon = serd_handler_new(serd_world_allocator(world),
+                                              serd_canon_on_event,
+                                              serd_canon_destroy_data,
+                                              sizeof(SerdCanonData));
+
+  if (canon) {
+    SerdCanonData* const data = (SerdCanonData*)serd_handler_data(canon);
+
+    data->world  = world;
+    data->env    = env;
+    data->target = target;
+    data->flags  = flags;
   }
-
-  SerdCanonData* const data = (SerdCanonData*)serd_handler_data(canon);
-
-  data->world  = world;
-  data->env    = env;
-  data->target = target;
-  data->flags  = flags;
 
   return canon;
 }
