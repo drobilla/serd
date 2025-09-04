@@ -472,6 +472,7 @@ test_suites += {
     ns_serdtest + 'canon/',
     '--',
     '-C',
+    ['-I', 'decoded'],
     ['-O', 'escaped'],
   ],
   'canon_lax': [

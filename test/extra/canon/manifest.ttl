@@ -15,6 +15,7 @@
 		<#bad-integer-trailing>
 		<#bad-lang-long>
 		<#test-literals>
+		<#test-uris>
 	) .
 
 <#bad-boolean>
@@ -70,3 +71,9 @@
 	mf:action <test-literals.ttl> ;
 	mf:name "test-literals" ;
 	mf:result <test-literals.nt> .
+
+<#test-uris>
+	a rdft:TestTurtleEval ;
+	mf:action <test-uris.ttl> ;
+	mf:name "test-uris" ;
+	mf:result <test-uris.nt> .

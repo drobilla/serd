@@ -1,0 +1,52 @@
+@prefix eg: <http://example.org/> .
+
+[]
+	eg:uriCase <http://example.org/path> ,
+		<hTtP://eXaMpLe.OrG/pAtH> ,
+		<fTp://eXaMpLe.NeT/pAtH> ;
+	eg:uriAddress <http://example.org:80/> ,
+		<http://example.org:1234/> ,
+		<http://%31%39%32%2e%31%36%38%2e%30.1/> ,
+		<unknownscheme://www.example.com:80/> ;
+	eg:uriPath <http://example.com/././foo> ,
+		<http://example.com/./.foo> ,
+		<http://example.com/foo/.> ,
+		<http://example.com/foo/./> ,
+		<http://example.com/foo/bar/..> ,
+		<http://example.com/foo/bar/../> ,
+		<http://example.com/foo/..bar> ,
+		<http://example.com/foo/bar/../ton> ,
+		<http://example.com/foo/bar/../ton/../../a> ,
+		<http://example.com/foo/../../..> ,
+		<http://example.com/foo/../../../ton> ,
+		<http://example.com/foo/%2e> ,
+		<http://example.com/foo/%2e./%2e%2e/.%2e/%2e.bar> ,
+		<http://example.com////../..> ,
+		<http://example.com/foo> ,
+		<http://example.com/%20foo> ,
+		<http://example.com/foo%41%7a> ,
+		<http://example.com/foo%00%51> ,
+		<http://example.com/(%28:%3A%29)> ,
+		<http://example.com/%3A%3a%3C%3c> ,
+		<http://example.com/%7Ffp3%3Eju%3Dduvgw%3Dd> ,
+		<http://example.com/@asdf%40> ;
+	eg:uriQuery <http://www.example.com/?foo=bar> ,
+		<http://www.example.com/?as?df> ,
+		<http://www.example.com/?%40%41123> ,
+		<http://www.example.com/?q=%3Casdf%3E> ,
+		<http://www.example.com/?q=%22asdf%22> ;
+	eg:uriFragment <http://www.example.com/#hello,%20world> ,
+		<http://www.example.com/#asdf#qwer> ,
+		<http://www.example.com/##asdf> ;
+	eg:uriMisc <javascript:> ,
+		<JavaScript:Thing> ,
+		<http:///> ,
+		<http://./> ,
+		<mailto:addr1> ,
+		<mailto:addr1@foo.com> ,
+		<mailto:addr1%20> ,
+		<mailto:addr1?to=jon> ,
+		<mailto:addr1,addr2> ,
+		<mailto:addr1,%20addr2> ,
+		<mailto:addr1%2caddr2> ,
+		<mailto:addr1?> .
