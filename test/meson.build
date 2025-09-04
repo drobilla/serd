@@ -218,7 +218,7 @@ test_suites = {
     ns_serdtest + 'eof/',
   ],
   'eof_lax': [
-    '--ignore',
+    '--lax',
     files('extra/eof/manifest.ttl'),
     ns_serdtest + 'eof/',
     '--',
