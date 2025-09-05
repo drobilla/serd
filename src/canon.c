@@ -30,6 +30,36 @@
 #define MAX_LANG_LEN 48U // RFC5646 requires 35, RFC4646 recommends 42
 
 typedef struct {
+  const char* name;
+  uint16_t    port;
+} PortAssignment;
+
+#if 0
+static const PortAssignment port_assignments[] = {
+  {"acap", 674U},  {"ftp", 21U},    {"git", 9418U},  {"gopher", 70U},
+  {"http", 80U},   {"https", 443U}, {"imap", 143U},  {"irc", 194U},
+  {"ircs", 6697U}, {"ldap", 389U},  {"ldaps", 636U}, {"mtqp", 1038U},
+  {"nfs", 2049U},  {"nntp", 119U},  {"nntps", 563U}, {"pop", 110U},
+  {"rsync", 873U}, {"sftp", 22U},   {"smb", 445U},   {"snmp", 161U},
+  {"ssh", 22U},    {"telnet", 23U}, {"vnc", 5900U},  {"ws", 80U},
+  {"wss", 443U},
+};
+
+static const char* no_authority_schemes[] = {"about",
+                                             "blob",
+                                             "data",
+                                             "geo",
+                                             "magnet",
+                                             "mailto",
+                                             "news",
+                                             "pkcs11",
+                                             "sip",
+                                             "sips",
+                                             "tel",
+                                             "urn"};
+#endif
+
+typedef struct {
   size_t         string_size; ///< Size of `string`
   char*          string;      ///< Allocated string or null
   SerdObjectView node;        ///< View of canonical node using `string`
@@ -60,8 +90,6 @@ build_uri(ZixAllocator* const      allocator,
           const SerdTokenView      node,
           SerdCanonicalNode* const out)
 {
-  (void)env;
-
   ExessVariableResult r    = {EXESS_SUCCESS, 0U, 0U};
   const SerdURIView   ref  = serd_parse_uri(node.string.data);
   const SerdURIView   base = serd_env_base_uri_view(env);
