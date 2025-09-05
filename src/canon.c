@@ -43,6 +43,54 @@ typedef struct {
   SerdCanonFlags    flags;
 } SerdCanonData;
 
+ZIX_NODISCARD static SerdStreamResult
+uri_sink(void* const stream, const size_t len, const void* const buf)
+{
+  SerdString* const      string = (SerdString*)stream;
+  const SerdStreamResult wr     = {SERD_SUCCESS, len};
+
+  memcpy(string->data + string->length, buf, len);
+  string->length += len;
+  return wr;
+}
+
+static ExessVariableResult
+build_uri(ZixAllocator* const      allocator,
+          const SerdEnv* const     env,
+          const SerdTokenView      node,
+          SerdCanonicalNode* const out)
+{
+  (void)env;
+
+  ExessVariableResult r    = {EXESS_SUCCESS, 0U, 0U};
+  const SerdURIView   ref  = serd_parse_uri(node.string.data);
+  const SerdURIView   base = serd_env_base_uri_view(env);
+  const SerdURIView   resolved =
+    serd_uri_has_scheme(base) ? ref : serd_resolve_uri(ref, base);
+
+  const size_t buf_size = serd_uri_string_length(resolved) + 1U;
+
+  out->node = serd_token_object_view(node);
+
+  // Enlarge string buffer if necessary
+  if (out->string_size < buf_size) {
+    char* const buf = (char*)zix_realloc(allocator, out->string, buf_size);
+    if (!buf) {
+      r.status = EXESS_NO_SPACE;
+      return r;
+    }
+
+    out->string      = buf;
+    out->string_size = buf_size;
+  }
+
+  SerdString             string = {0U, out->string};
+  const SerdStreamResult sr     = serd_write_uri(resolved, uri_sink, &string);
+  string.data[sr.count]         = '\0';
+  out->node.string              = zix_substring(out->string, string.length);
+  return r;
+}
+
 static ExessVariableResult
 build_typed(ZixAllocator* const      allocator,
             const SerdEnv* const     env,
@@ -149,6 +197,24 @@ serd_canon_on_statement(SerdCanonData* const    data,
 {
   ZixAllocator* const  allocator = serd_world_allocator(data->world);
   const SerdObjectView object    = statement.object;
+
+  if (object.type == SERD_URI) {
+    const ExessVariableResult r = build_uri(
+      allocator, data->env, serd_object_token_view(object), &data->node);
+
+    if (r.status) {
+      return r.status == EXESS_NO_SPACE ? SERD_BAD_ALLOC : SERD_BAD_LITERAL;
+    }
+
+    return serd_sink_event(
+      data->target,
+      serd_cite_event(serd_statement_event(flags,
+                                           serd_quad_view(statement.subject,
+                                                          statement.predicate,
+                                                          data->node.node,
+                                                          statement.graph)),
+                      caret));
+  }
 
   // If the object is a simple token, pass the statement through as-is
   if (!(object.flags & (SERD_HAS_DATATYPE | SERD_HAS_LANGUAGE))) {
