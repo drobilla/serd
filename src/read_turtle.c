@@ -79,9 +79,8 @@ read_STRING_LITERAL_LONG(SerdReader* const  reader,
   while (tolerate_status(reader, st)) {
     const int c = peek_byte(reader);
     if (c == '\\') {
-      if (!(st = skip_byte(reader, c))) {
-        st = read_string_escape(reader, ref);
-      }
+      TRY(st, skip_byte(reader, c));
+      st = read_string_escape(reader, ref);
     } else if (c == q) {
       TRY(st, skip_byte(reader, q));
       const int q2 = peek_byte(reader);
@@ -207,7 +206,8 @@ read_PN_LOCAL(SerdReader* const  reader,
     }
   }
 
-  while ((c = peek_byte(reader)) > 0) { // Middle: (PN_CHARS | '.' | ':')*
+  while (!st) { // Middle: (PN_CHARS | '.' | ':')*
+    c = peek_byte(reader);
     if (c == '.' || c == ':') {
       st = eat_push_byte(reader, dest, c);
     } else if ((st = read_PLX(reader, dest)) > SERD_FAILURE) {
@@ -574,13 +574,11 @@ read_object(SerdReader* const        reader,
   SerdStatus st     = SERD_FAILURE;
   bool       simple = true;
   const int  c      = peek_byte(reader);
-  if (c < 0) {
-    return r_err(reader, SERD_BAD_SYNTAX, "unexpected end of file");
+  if (c <= 0 || c == ')') {
+    return r_err(reader, SERD_BAD_SYNTAX, "expected object");
   }
 
   switch (c) {
-  case ')':
-    return r_err(reader, SERD_BAD_SYNTAX, "expected object");
   case '[':
     simple = false;
     st     = read_anon(reader, *ctx, false, o);

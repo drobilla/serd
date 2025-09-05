@@ -41,12 +41,12 @@ read_LANGTAG(SerdReader* const reader, TokenHeader** const dest)
 
   SerdStatus st = SERD_SUCCESS;
   TRY(st, eat_push_byte(reader, *dest, c));
-  while ((c = peek_byte(reader)) && is_alpha(c)) {
+  while (is_alpha((c = peek_byte(reader)))) {
     TRY(st, eat_push_byte(reader, *dest, c));
   }
   while (peek_byte(reader) == '-') {
     TRY(st, eat_push_byte(reader, *dest, '-'));
-    while ((c = peek_byte(reader)) && (is_alpha(c) || is_digit(c))) {
+    while (is_alnum((c = peek_byte(reader)))) {
       TRY(st, eat_push_byte(reader, *dest, c));
     }
   }
@@ -79,14 +79,15 @@ read_EOL(SerdReader* const reader)
 static SerdStatus
 read_IRI_scheme(SerdReader* const reader, TokenHeader* const dest)
 {
-  int c = peek_byte(reader);
+  SerdStatus st = SERD_SUCCESS;
+  int        c  = peek_byte(reader);
+
   if (!is_alpha(c)) {
     return r_err_char(reader, "IRI scheme start", c);
   }
 
-  SerdStatus st = SERD_SUCCESS;
-  while (!st && (c = peek_byte(reader)) >= 0) {
-    if (c == ':') {
+  while (!st) {
+    if ((c = peek_byte(reader)) == ':') {
       return SERD_SUCCESS;
     }
 
@@ -94,7 +95,7 @@ read_IRI_scheme(SerdReader* const reader, TokenHeader* const dest)
                       : r_err_char(reader, "IRI scheme", c);
   }
 
-  return st ? st : SERD_BAD_SYNTAX;
+  return st;
 }
 
 SerdStatus
@@ -150,10 +151,7 @@ read_IRI(SerdReader* const reader, TokenHeader** const dest)
     return SERD_BAD_STACK;
   }
 
-  if ((st = read_IRI_scheme(reader, *dest))) {
-    return r_err(reader, st, "expected IRI scheme");
-  }
-
+  TRY(st, read_IRI_scheme(reader, *dest));
   return read_IRIREF_suffix(reader, *dest);
 }
 
@@ -180,9 +178,10 @@ read_string_escape(SerdReader* const reader, TokenHeader* const ref)
 {
   SerdStatus st   = SERD_SUCCESS;
   uint32_t   code = 0;
-  if ((st = read_ECHAR(reader, ref)) == SERD_BAD_SYNTAX &&
-      (st = read_UCHAR(reader, ref, &code))) {
-    return r_err(reader, st, "expected string escape sequence");
+
+  TRY_FAILING(st, read_ECHAR(reader, ref));
+  if (st) {
+    TRY_FAILING(st, read_UCHAR(reader, ref, &code));
   }
 
   return st;
@@ -205,42 +204,33 @@ read_STRING_LITERAL(SerdReader* const  reader,
       return r_err(reader, SERD_BAD_SYNTAX, "line end in short string");
     }
 
+    TRY(st, skip_byte(reader, c));
     if (c == '\\') {
-      TRY(st, skip_byte(reader, c));
       TRY(st, read_string_escape(reader, ref));
     } else if (c != q) {
-      TRY(st, skip_byte(reader, c));
       st = read_character(reader, ref, (uint8_t)c);
     } else {
-      return skip_byte(reader, c);
+      return SERD_SUCCESS;
     }
   }
 
-  return tolerate_status(reader, st) ? SERD_SUCCESS : st;
+  return st;
 }
 
 SerdStatus
 read_PN_CHARS_BASE(SerdReader* const reader, TokenHeader* const dest)
 {
-  uint32_t   code = 0;
-  const int  c    = peek_byte(reader);
-  SerdStatus st   = SERD_SUCCESS;
-
-  if (is_alpha(c)) {
-    return eat_push_byte(reader, dest, c);
-  }
+  const int c = peek_byte(reader);
 
   if (c < 0x80) {
-    return SERD_FAILURE;
+    return is_alpha(c) ? eat_push_byte(reader, dest, c) : SERD_FAILURE;
   }
 
-  TRY(st, read_utf8_code_point(reader, dest, &code, (uint8_t)c));
-
-  if (!is_PN_CHARS_BASE((int)code)) {
-    st = r_err_char(reader, "name", (int)code);
-  }
-
-  return st;
+  uint32_t         code = 0U;
+  const SerdStatus st   = read_utf8_code_point(reader, dest, &code, (uint8_t)c);
+  return (st || is_PN_CHARS_BASE((int)code))
+           ? st
+           : r_err_char(reader, "name", (int)code);
 }
 
 static SerdStatus
@@ -248,8 +238,8 @@ read_PN_CHARS_U(SerdReader* const reader, TokenHeader* const dest)
 {
   const int c = peek_byte(reader);
 
-  return (c == ':' || c == '_') ? eat_push_byte(reader, dest, c)
-                                : read_PN_CHARS_BASE(reader, dest);
+  return (c == '_') ? eat_push_byte(reader, dest, c)
+                    : read_PN_CHARS_BASE(reader, dest);
 }
 
 SerdStatus
@@ -313,8 +303,7 @@ read_BLANK_NODE_LABEL(SerdReader* const   reader,
   TRY(st, eat_byte_check(reader, ':'));
 
   int c = peek_byte(reader);
-  if (c < 0 || c == ':') {
-    // The spec says PN_CHARS_U, the tests say no colon, so exclude it here
+  if (c < 0) {
     return r_err(reader, SERD_BAD_SYNTAX, "expected blank node label");
   }
 
@@ -334,14 +323,11 @@ read_BLANK_NODE_LABEL(SerdReader* const   reader,
   }
 
   // Read first: (PN_CHARS_U | [0-9])
-  if (is_digit(c)) {
-    TRY(st, eat_push_byte(reader, n, c));
-  } else {
-    TRY(st, read_PN_CHARS_U(reader, *dest));
-  }
+  st = is_digit(c) ? eat_push_byte(reader, n, c) : read_PN_CHARS_U(reader, n);
 
   // Read middle: (PN_CHARS | '.')*
-  while (!st && (c = peek_byte(reader))) {
+  while (!st) {
+    c  = peek_byte(reader);
     st = (c == '.') ? eat_push_byte(reader, n, c) : read_PN_CHARS(reader, n);
   }
 
@@ -351,7 +337,7 @@ read_BLANK_NODE_LABEL(SerdReader* const   reader,
 
   // Deal with annoying edge case of having eaten the trailing dot
   char* const buf = (char*)(n + 1U);
-  if (buf[n->length - 1] == '.' && read_PN_CHARS(reader, n)) {
+  if (n->length && buf[n->length - 1U] == '.') {
     *ate_dot = pop_last_node_char(reader, n);
   }
 
@@ -458,7 +444,7 @@ read_ECHAR(SerdReader* const reader, TokenHeader* const dest)
   case '\'':
     return eat_push_byte(reader, dest, c);
   default:
-    return SERD_BAD_SYNTAX;
+    return SERD_FAILURE;
   }
 }
 
@@ -637,7 +623,7 @@ read_ntriplesDoc(SerdReader* const reader)
   // Continue reading lines for as long as possible
   for (st = SERD_SUCCESS; !st;) {
     st = read_ntriples_line(reader);
-    if (st > SERD_FAILURE && !reader->strict && tolerate_status(reader, st)) {
+    if (st > SERD_FAILURE && tolerate_status(reader, st)) {
       serd_reader_skip_until_byte(reader, '\n');
       st = SERD_SUCCESS;
     }
