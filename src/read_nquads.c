@@ -111,7 +111,7 @@ read_nquadsDoc(SerdReader* const reader)
   // Continue reading lines for as long as possible
   for (st = SERD_SUCCESS; !st;) {
     st = read_nquads_line(reader);
-    if (st > SERD_FAILURE && !reader->strict && tolerate_status(reader, st)) {
+    if (st > SERD_FAILURE && tolerate_status(reader, st)) {
       serd_reader_skip_until_byte(reader, '\n');
       st = SERD_SUCCESS;
     }

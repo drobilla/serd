@@ -156,31 +156,17 @@ read_trig_statement(SerdReader* const reader)
   ReadContext    ctx   = {NULL, NULL, NULL, &flags};
   SerdStatus     st    = SERD_SUCCESS;
 
-  // Skip whitespace and get the first byte
   TRY(st, read_turtle_ws_star(reader));
+
   const int c = peek_byte(reader);
-  if (c < 0) {
-    return SERD_FAILURE; // EOF
-  }
-
-  // Handle nice cases we can distinguish from the next byte
-  switch (c) {
-  case '\0':
-    TRY(st, skip_byte(reader, '\0'));
+  if (c <= 0) {
+    TRY(st, skip_byte(reader, c));
     return SERD_FAILURE;
-
-  case '@':
-    return read_turtle_directive(reader);
-
-  case '{':
-    return read_wrappedGraph(reader, &ctx);
-
-  default:
-    break;
   }
 
-  // No such luck, figure out what to read from the first token
-  return read_block(reader, &ctx);
+  return (c == '@')   ? read_turtle_directive(reader)
+         : (c == '{') ? read_wrappedGraph(reader, &ctx)
+                      : read_block(reader, &ctx);
 }
 
 SerdStatus
