@@ -62,6 +62,12 @@ r_err(const SerdReader* reader, SerdStatus st, const char* fmt, ...);
 SerdStatus
 r_err_char(const SerdReader* reader, const char* kind, int c);
 
+SerdStatus
+r_err_eof(const SerdReader* reader, SerdStatus status);
+
+SerdStatus
+r_err_expected(const SerdReader* reader, const char* expected, int c);
+
 ZIX_NODISCARD TokenHeader*
 push_node_head(SerdReader* reader, SerdNodeType type);
 

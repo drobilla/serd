@@ -26,13 +26,13 @@ skip_invalid_utf8(SerdReader* const reader)
     b = peek_byte(reader);
   }
 
-  return reader->strict ? SERD_BAD_SYNTAX : SERD_FAILURE;
+  return reader->strict ? SERD_BAD_TEXT : SERD_FAILURE;
 }
 
 static SerdStatus
-bad_char(SerdReader* const reader, const char* const fmt, const uint8_t c)
+bad_byte(SerdReader* const reader, const char* const kind, const uint8_t c)
 {
-  r_err(reader, SERD_BAD_SYNTAX, fmt, c);
+  r_err(reader, SERD_BAD_TEXT, "bad %s byte 0x%X", kind, c);
   return skip_invalid_utf8(reader);
 }
 
@@ -44,19 +44,19 @@ read_utf8_continuation_bytes(SerdReader* const reader,
 {
   *size = utf8_num_bytes(lead);
   if (*size < 1) {
-    return bad_char(reader, "0x%X is not a UTF-8 leading byte", lead);
+    return bad_byte(reader, "UTF-8 leading", lead);
   }
 
   bytes[0] = lead;
   for (uint8_t i = 1U; i < *size; ++i) {
     const int b = peek_byte(reader);
     if (b == EOF) {
-      return r_err(reader, SERD_NO_DATA, "unexpected end of input");
+      return r_err_eof(reader, SERD_BAD_TEXT);
     }
 
     const uint8_t byte = (uint8_t)b;
     if (!(byte & 0x80U)) {
-      return bad_char(reader, "0x%X is not a UTF-8 continuation byte", byte);
+      return bad_byte(reader, "UTF-8 continuation", byte);
     }
 
     skip_byte(reader, b);
