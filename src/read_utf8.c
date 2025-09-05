@@ -36,7 +36,7 @@ read_utf8_continuation_bytes(SerdReader* const reader,
   for (uint8_t i = 1U; i < *size; ++i) {
     const int b = peek_byte(reader);
     if (b == EOF) {
-      return r_err(reader, SERD_NO_DATA, "unexpected end of input");
+      return r_err_eof(reader, SERD_BAD_TEXT);
     }
 
     const uint8_t byte = (uint8_t)b;

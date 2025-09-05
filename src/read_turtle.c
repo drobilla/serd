@@ -113,7 +113,7 @@ read_STRING_LITERAL_LONG(SerdReader* const  reader,
     } else if (c > 0) {
       st = read_character(reader, ref, (uint8_t)eat_byte_safe(reader, c));
     } else {
-      return r_err(reader, SERD_BAD_SYNTAX, "end of file in long string");
+      return r_err_eof(reader, SERD_BAD_SYNTAX);
     }
   }
 
@@ -126,7 +126,7 @@ read_String(SerdReader* const reader, TokenHeader* const node)
   const int q1 = eat_byte_safe(reader, peek_byte(reader));
   const int q2 = peek_byte(reader);
   if (q2 == EOF) {
-    return r_err(reader, SERD_BAD_SYNTAX, "unexpected end of file");
+    return r_err_eof(reader, SERD_BAD_SYNTAX);
   }
 
   if (q2 != q1) { // Short string (not triple quoted)
@@ -136,7 +136,7 @@ read_String(SerdReader* const reader, TokenHeader* const node)
   skip_byte(reader, q2);
   const int q3 = peek_byte(reader);
   if (q3 == EOF) {
-    return r_err(reader, SERD_BAD_SYNTAX, "unexpected end of file");
+    return r_err_eof(reader, SERD_BAD_SYNTAX);
   }
 
   if (q3 != q1) { // Empty short string ("" or '')
@@ -851,7 +851,7 @@ read_turtle_base(SerdReader* const reader, const bool sparql, const bool token)
   }
 
   if (peek_byte(reader) == '.') {
-    return r_err(reader, SERD_BAD_SYNTAX, "full stop after SPARQL BASE");
+    return r_err(reader, SERD_BAD_SYNTAX, "'.' after SPARQL BASE");
   }
 
   return SERD_SUCCESS;

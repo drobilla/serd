@@ -67,6 +67,26 @@ r_err_char(const SerdReader* const reader, const char* const kind, const int c)
 }
 
 SerdStatus
+r_err_eof(const SerdReader* const reader, const SerdStatus status)
+{
+  return r_err(reader, status, "unexpected end of input");
+}
+
+SerdStatus
+r_err_expected(const SerdReader* const reader,
+               const char* const       expected,
+               const int               c)
+{
+  const SerdStatus st   = SERD_BAD_SYNTAX;
+  const uint32_t   code = (uint32_t)c;
+
+  return (c < 0x20 || c == 0x7F) ? r_err(reader, st, "expected %s", expected)
+         : (c == '\'' || c >= 0x80)
+           ? r_err(reader, st, "expected %s, not U+%04X", expected, code)
+           : r_err(reader, st, "expected %s, not '%c'", expected, c);
+}
+
+SerdStatus
 skip_horizontal_whitespace(SerdReader* const reader)
 {
   while (peek_byte(reader) == '\t' || peek_byte(reader) == ' ') {
