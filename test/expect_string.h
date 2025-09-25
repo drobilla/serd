@@ -1,6 +1,9 @@
 // Copyright 2025 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
+#ifndef SERD_TEST_EXPECT_STRING_H
+#define SERD_TEST_EXPECT_STRING_H
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -17,3 +20,5 @@ expect_string(const char* const actual, const char* const expected)
   }
   return equal;
 }
+
+#endif // SERD_TEST_EXPECT_STRING_H
