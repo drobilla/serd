@@ -17,6 +17,7 @@ AttributeMacros:
   - SERD_NULLABLE
   - SERD_PURE_API
   - SERD_PURE_FUNC
+  - SERD_UNSPECIFIED
 BasedOnStyle: Mozilla
 BraceWrapping:
   AfterClass: true
