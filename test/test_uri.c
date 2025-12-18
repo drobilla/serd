@@ -64,7 +64,7 @@ check_file_uri(const char* const hostname,
   serd_node_free(&node);
 }
 
-#if defined(__GNUC__)
+#ifdef __GNUC__
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
@@ -92,7 +92,7 @@ test_uri_to_path(void)
   check_uri_to_path("rel", "rel");
 }
 
-#if defined(__GNUC__)
+#ifdef __GNUC__
 #  pragma GCC diagnostic pop
 #endif
 

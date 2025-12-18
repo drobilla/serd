@@ -37,7 +37,7 @@ serd_fopen(const char* const path, const char* const mode)
 void*
 serd_malloc_aligned(const size_t alignment, const size_t size)
 {
-#if defined(_WIN32)
+#ifdef _WIN32
   return _aligned_malloc(size, alignment);
 #elif USE_POSIX_MEMALIGN
   void*     ptr = NULL;

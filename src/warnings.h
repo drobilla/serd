@@ -4,7 +4,7 @@
 #ifndef SERD_SRC_WARNINGS_H
 #define SERD_SRC_WARNINGS_H
 
-#if defined(__clang__)
+#ifdef __clang__
 
 /// Clang 15 null checking regressed, so we need to suppress it sometimes
 #  define SERD_DISABLE_NULL_WARNINGS \

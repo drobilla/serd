@@ -266,12 +266,12 @@ test_reader(const char* const path)
   serd_reader_set_default_graph(reader, &g);
   serd_reader_add_blank_prefix(reader, USTR("tmp"));
 
-#if defined(__GNUC__)
+#ifdef __GNUC__
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wnonnull"
 #endif
   serd_reader_add_blank_prefix(reader, NULL);
-#if defined(__GNUC__)
+#ifdef __GNUC__
 #  pragma GCC diagnostic pop
 #endif
 

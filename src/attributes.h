@@ -4,7 +4,7 @@
 #ifndef SERD_SRC_ATTRIBUTES_H
 #define SERD_SRC_ATTRIBUTES_H
 
-#if defined(__GNUC__)
+#ifdef __GNUC__
 #  define SERD_LOG_FUNC(fmt, arg1) __attribute__((format(printf, fmt, arg1)))
 #else
 #  define SERD_LOG_FUNC(fmt, arg1)
