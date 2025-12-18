@@ -1,3 +1,9 @@
+serd (0.32.7) unstable; urgency=medium
+
+  * Address new warnings in clang and clang-tidy 21
+
+ -- David Robillard <d@drobilla.net>  Thu, 18 Dec 2025 18:20:29 +0000
+
 serd (0.32.6) stable; urgency=medium
 
   * Avoid over-use of yielding meson options

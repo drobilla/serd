@@ -69,9 +69,9 @@ typedef enum {
 } SepFlag;
 
 typedef struct {
-  char    sep;        ///< Sep character
-  int     indent : 4; ///< Indent delta
-  uint8_t flags : 4;  ///< Whitespace flags
+  char     sep;        ///< Sep character
+  int      indent : 4; ///< Indent delta
+  unsigned flags : 4;  ///< Whitespace flags
 } SepRule;
 
 #define NIL '\0'
