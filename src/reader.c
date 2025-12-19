@@ -189,8 +189,16 @@ emit_statement(SerdReader* const reader,
 static SerdStatus
 read_doc(SerdReader* const reader)
 {
-  return ((reader->syntax == SERD_NQUADS) ? read_nquadsDoc(reader)
-                                          : read_turtleTrigDoc(reader));
+#ifndef NDEBUG
+  const size_t orig_stack_size = reader->stack.size;
+#endif
+
+  const SerdStatus st =
+    ((reader->syntax == SERD_NQUADS) ? read_nquadsDoc(reader)
+                                     : read_turtleTrigDoc(reader));
+
+  assert(reader->stack.size == orig_stack_size);
+  return st;
 }
 
 SerdReader*
@@ -401,9 +409,17 @@ serd_reader_read_chunk(SerdReader* const reader)
     st = skip_byte(reader, 0);
   }
 
-  return st                                ? st
-         : (reader->syntax == SERD_NQUADS) ? read_nquads_statement(reader)
-                                           : read_n3_statement(reader);
+#ifndef NDEBUG
+  const size_t orig_stack_size = reader->stack.size;
+#endif
+
+  if (!st) {
+    st = (reader->syntax == SERD_NQUADS) ? read_nquads_statement(reader)
+                                         : read_n3_statement(reader);
+  }
+
+  assert(reader->stack.size == orig_stack_size);
+  return st;
 }
 
 SerdStatus

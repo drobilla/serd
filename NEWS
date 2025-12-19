@@ -2,8 +2,9 @@ serd (0.32.7) unstable; urgency=medium
 
   * Fix unbounded reader stack growth when reading NQuads
   * Improve reader error handling
+  * Release reader stack memory on read error
 
- -- David Robillard <d@drobilla.net>  Fri, 19 Dec 2025 01:32:33 +0000
+ -- David Robillard <d@drobilla.net>  Fri, 19 Dec 2025 02:15:06 +0000
 
 serd (0.32.6) stable; urgency=medium
 
