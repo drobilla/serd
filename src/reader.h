@@ -144,22 +144,23 @@ eat_byte_safe(SerdReader* const reader, const int byte)
   return byte;
 }
 
-SERD_NODISCARD static inline int
+SERD_NODISCARD static inline SerdStatus
 eat_byte_check(SerdReader* const reader, const int byte)
 {
   const int c = peek_byte(reader);
   if (c != byte) {
-    r_err(reader, SERD_ERR_BAD_SYNTAX, "expected '%c'\n", byte);
-    return 0;
+    return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected '%c'\n", byte);
   }
-  return eat_byte_safe(reader, byte);
+
+  const SerdStatus st = serd_byte_source_advance(&reader->source);
+  return (st > SERD_FAILURE) ? st : SERD_SUCCESS;
 }
 
 static inline SerdStatus
 eat_string(SerdReader* const reader, const char* const str, const unsigned n)
 {
   for (unsigned i = 0; i < n; ++i) {
-    if (!eat_byte_check(reader, ((const uint8_t*)str)[i])) {
+    if (eat_byte_check(reader, ((const uint8_t*)str)[i])) {
       return SERD_ERR_BAD_SYNTAX;
     }
   }
