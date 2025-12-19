@@ -1721,6 +1721,8 @@ read_nquads_statement(SerdReader* const reader)
   pop_node(reader, ctx.lang);
   pop_node(reader, ctx.datatype);
   pop_node(reader, ctx.object);
+  pop_node(reader, ctx.predicate);
+  pop_node(reader, ctx.subject);
 
   return SERD_SUCCESS;
 }
