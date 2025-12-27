@@ -255,7 +255,7 @@ token_equals(const TokenHeader* const node, const ZixStringView tok)
 
   const char* const node_string = (const char*)(node + 1U);
   for (size_t i = 0U; i < tok.length; ++i) {
-    if (serd_to_upper(node_string[i]) != serd_to_upper(tok.data[i])) {
+    if (serd_to_lower(node_string[i]) != serd_to_lower(tok.data[i])) {
       return false;
     }
   }
