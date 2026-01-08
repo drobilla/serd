@@ -3,9 +3,9 @@
 
 /.meson-subproject-wrap-hash.txt
 /build/
+/subprojects/.wraplock
 /subprojects/packagecache/
 /subprojects/sphinxygen-1.0.12/
-/subprojects/sphinxygen/
 
 *.pyc
 __pycache__/
