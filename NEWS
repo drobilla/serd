@@ -3,8 +3,9 @@ serd (0.32.7) unstable; urgency=medium
   * Fix unbounded reader stack growth when reading NQuads
   * Improve reader error handling
   * Release reader stack memory on read error
+  * Support writing all escapes in Turtle and TriG prefixed names
 
- -- David Robillard <d@drobilla.net>  Fri, 19 Dec 2025 02:15:06 +0000
+ -- David Robillard <d@drobilla.net>  Sun, 08 Feb 2026 22:34:35 +0000
 
 serd (0.32.6) stable; urgency=medium
 
