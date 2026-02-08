@@ -1,10 +1,12 @@
 // Copyright 2011-2025 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
+#include "ntriples.h"
 #include "reader.h"
 #include "serd_internal.h"
 #include "string_utils.h"
 #include "try.h"
+#include "turtle.h"
 
 #include <serd/serd.h>
 
@@ -433,17 +435,6 @@ read_String(SerdReader* const    reader,
   return read_STRING_LITERAL_LONG(reader, node, flags, (uint8_t)q1);
 }
 
-static bool
-is_PN_CHARS_BASE(const uint32_t c)
-{
-  return ((c >= 0x00C0 && c <= 0x00D6) || (c >= 0x00D8 && c <= 0x00F6) ||
-          (c >= 0x00F8 && c <= 0x02FF) || (c >= 0x0370 && c <= 0x037D) ||
-          (c >= 0x037F && c <= 0x1FFF) || (c >= 0x200C && c <= 0x200D) ||
-          (c >= 0x2070 && c <= 0x218F) || (c >= 0x2C00 && c <= 0x2FEF) ||
-          (c >= 0x3001 && c <= 0xD7FF) || (c >= 0xF900 && c <= 0xFDCF) ||
-          (c >= 0xFDF0 && c <= 0xFFFD) || (c >= 0x10000 && c <= 0xEFFFF));
-}
-
 static SerdStatus
 read_PN_CHARS_BASE(SerdReader* const reader, const Ref dest)
 {
@@ -462,18 +453,11 @@ read_PN_CHARS_BASE(SerdReader* const reader, const Ref dest)
   skip_byte(reader, c);
   read_utf8_code(reader, dest, &code, (uint8_t)c);
 
-  if (!is_PN_CHARS_BASE(code)) {
+  if (!is_PN_CHARS_BASE((int)code)) {
     st = r_err_char(reader, "name", (int)code);
   }
 
   return st;
-}
-
-static bool
-is_PN_CHARS(const uint32_t c)
-{
-  return (is_PN_CHARS_BASE(c) || c == 0xB7 || (c >= 0x0300 && c <= 0x036F) ||
-          (c >= 0x203F && c <= 0x2040));
 }
 
 static SerdStatus
@@ -494,7 +478,7 @@ read_PN_CHARS(SerdReader* const reader, const Ref dest)
   skip_byte(reader, c);
   TRY(st, read_utf8_code(reader, dest, &code, (uint8_t)c));
 
-  if (!is_PN_CHARS(code)) {
+  if (!is_PN_CHARS((int)code)) {
     st = r_err_char(reader, "name", (int)code);
   }
 
@@ -521,10 +505,9 @@ read_PN_LOCAL_ESC(SerdReader* const reader, const Ref dest)
   skip_byte(reader, '\\');
 
   const int c = peek_byte(reader);
-  return ((c == '!') || in_range(c, '#', '/') || (c == ';') || (c == '=') ||
-          (c == '?') || (c == '@') || (c == '_') || (c == '~'))
-           ? push_byte(reader, dest, eat_byte_safe(reader, c))
-           : r_err(reader, SERD_ERR_BAD_SYNTAX, "bad escape\n");
+
+  return is_PN_LOCAL_ESC(c) ? push_byte(reader, dest, eat_byte_safe(reader, c))
+                            : r_err(reader, SERD_ERR_BAD_SYNTAX, "bad escape");
 }
 
 static SerdStatus
