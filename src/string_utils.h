@@ -169,16 +169,9 @@ parse_counted_utf8_char(const uint8_t* const utf8, const uint8_t size)
 static inline uint32_t
 parse_utf8_char(const uint8_t* const utf8, uint8_t* const size)
 {
-  switch (*size = utf8_num_bytes(utf8[0])) {
-  case 1:
-  case 2:
-  case 3:
-  case 4:
-    return parse_counted_utf8_char(utf8, *size);
-  default:
-    *size = 0;
-    return 0U;
-  }
+  *size = utf8_num_bytes(utf8[0]);
+
+  return *size ? parse_counted_utf8_char(utf8, *size) : 0U;
 }
 
 #endif // SERD_SRC_STRING_UTILS_H
