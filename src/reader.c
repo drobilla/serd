@@ -327,23 +327,6 @@ serd_reader_read_file(SerdReader* const reader, const uint8_t* const uri)
   return ret;
 }
 
-static SerdStatus
-skip_bom(SerdReader* const me)
-{
-  if (serd_byte_source_peek(&me->source) == 0xEF) {
-    if (serd_byte_source_advance(&me->source) ||
-        serd_byte_source_peek(&me->source) != 0xBB ||
-        serd_byte_source_advance(&me->source) ||
-        serd_byte_source_peek(&me->source) != 0xBF ||
-        serd_byte_source_advance(&me->source)) {
-      r_err(me, SERD_ERR_BAD_SYNTAX, "corrupt byte order mark\n");
-      return SERD_ERR_BAD_SYNTAX;
-    }
-  }
-
-  return SERD_SUCCESS;
-}
-
 SerdStatus
 serd_reader_start_stream(SerdReader* const    reader,
                          FILE* const          file,
@@ -383,7 +366,9 @@ serd_reader_prepare(SerdReader* const reader)
 {
   SerdStatus st = serd_byte_source_prepare(&reader->source);
   if (st == SERD_SUCCESS) {
-    st = skip_bom(reader);
+    if ((st = serd_byte_source_skip_bom(&reader->source))) {
+      r_err(reader, st, "corrupt byte order mark\n");
+    }
   } else if (st == SERD_FAILURE) {
     reader->source.eof = true;
   } else {
