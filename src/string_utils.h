@@ -1,4 +1,4 @@
-// Copyright 2011-2023 David Robillard <d@drobilla.net>
+// Copyright 2011-2026 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #ifndef SERD_SRC_STRING_UTILS_H
@@ -122,6 +122,16 @@ utf8_num_bytes(const uint8_t leading)
          : ((leading & 0xF0U) == 0xE0U) ? 3U  // Starts with `1110'
          : ((leading & 0xF8U) == 0xF0U) ? 4U  // Starts with `11110'
                                         : 0U; // Invalid
+}
+
+static inline uint8_t
+utf8_num_bytes_for_codepoint(const uint32_t code)
+{
+  return (code < 0x00000080U)   ? 1U
+         : (code < 0x00000800U) ? 2U
+         : (code < 0x00010000U) ? 3U
+         : (code < 0x00110000U) ? 4U
+                                : 0U;
 }
 
 /// Return the code point of a UTF-8 character with known length

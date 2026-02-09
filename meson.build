@@ -198,6 +198,7 @@ sources = files(
   'src/env.c',
   'src/n3.c',
   'src/node.c',
+  'src/read_utf8.c',
   'src/reader.c',
   'src/string.c',
   'src/system.c',

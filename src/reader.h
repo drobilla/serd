@@ -1,4 +1,4 @@
-// Copyright 2011-2023 David Robillard <d@drobilla.net>
+// Copyright 2011-2026 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #ifndef SERD_SRC_READER_H
@@ -186,15 +186,17 @@ push_byte(SerdReader* const reader, const Ref ref, const int c)
   return SERD_SUCCESS;
 }
 
-static inline void
+static inline SerdStatus
 push_bytes(SerdReader* const    reader,
            const Ref            ref,
            const uint8_t* const bytes,
            const unsigned       len)
 {
-  for (unsigned i = 0; i < len; ++i) {
-    push_byte(reader, ref, bytes[i]);
+  SerdStatus st = SERD_SUCCESS;
+  for (unsigned i = 0; !st && i < len; ++i) {
+    st = push_byte(reader, ref, bytes[i]);
   }
+  return st;
 }
 
 #endif // SERD_SRC_READER_H
