@@ -660,6 +660,43 @@ get_xsd_name(const SerdEnv* const env, const SerdNode* const datatype)
   return "";
 }
 
+static SerdStatus
+write_IRIREF(SerdWriter* const writer, const SerdNode* const node)
+{
+  SerdStatus st = SERD_SUCCESS;
+
+  TRY(st, esink("<", 1, writer));
+
+  // Write the string and return early if resolution is disabled
+  if (!(writer->style & SERD_STYLE_RESOLVED)) {
+    TRY(st, ewrite_uri(writer, node->buf, node->n_bytes));
+    return esink(">", 1, writer);
+  }
+
+  // Resolve the input URI reference to a (hopefully) absolute URI
+  SerdURI in_base_uri;
+  SerdURI uri;
+  SerdURI abs_uri;
+  serd_env_get_base_uri(writer->env, &in_base_uri);
+  SERD_DISABLE_NULL_WARNINGS
+  serd_uri_parse(node->buf, &uri);
+  SERD_RESTORE_WARNINGS
+  serd_uri_resolve(&uri, &in_base_uri, &abs_uri);
+
+  // Determine if the absolute URI should be written, or make it relative again
+  const bool     rooted = uri_is_under(&writer->base_uri, &writer->root_uri);
+  const SerdURI* root   = rooted ? &writer->root_uri : &writer->base_uri;
+  UriSinkContext ctx    = {writer, SERD_SUCCESS};
+  if (!uri_is_under(&abs_uri, root) || writer->syntax == SERD_NTRIPLES ||
+      writer->syntax == SERD_NQUADS) {
+    serd_uri_serialise(&abs_uri, uri_sink, &ctx);
+  } else {
+    serd_uri_serialise_relative(&uri, &writer->base_uri, root, uri_sink, &ctx);
+  }
+
+  return esink(">", 1, writer);
+}
+
 SERD_NODISCARD static SerdStatus
 write_uri_node(SerdWriter* const writer, const SerdNode* const node)
 {
@@ -690,32 +727,7 @@ write_uri_node(SerdWriter* const writer, const SerdNode* const node)
                  node->buf);
   }
 
-  TRY(st, esink("<", 1, writer));
-
-  if (writer->style & SERD_STYLE_RESOLVED) {
-    SerdURI in_base_uri;
-    SerdURI uri;
-    SerdURI abs_uri;
-    serd_env_get_base_uri(writer->env, &in_base_uri);
-    SERD_DISABLE_NULL_WARNINGS
-    serd_uri_parse(node->buf, &uri);
-    SERD_RESTORE_WARNINGS
-    serd_uri_resolve(&uri, &in_base_uri, &abs_uri);
-    const bool     rooted = uri_is_under(&writer->base_uri, &writer->root_uri);
-    const SerdURI* root   = rooted ? &writer->root_uri : &writer->base_uri;
-    UriSinkContext ctx    = {writer, SERD_SUCCESS};
-    if (!uri_is_under(&abs_uri, root) || writer->syntax == SERD_NTRIPLES ||
-        writer->syntax == SERD_NQUADS) {
-      serd_uri_serialise(&abs_uri, uri_sink, &ctx);
-    } else {
-      serd_uri_serialise_relative(
-        &uri, &writer->base_uri, root, uri_sink, &ctx);
-    }
-  } else {
-    TRY(st, ewrite_uri(writer, node->buf, node->n_bytes));
-  }
-
-  return esink(">", 1, writer);
+  return write_IRIREF(writer, node);
 }
 
 SERD_NODISCARD static SerdStatus
