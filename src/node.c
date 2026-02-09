@@ -7,6 +7,8 @@
 #include <serd/node.h>
 #include <serd/node_flags.h>
 #include <serd/node_type.h>
+#include <serd/status.h>
+#include <serd/stream_result.h>
 #include <serd/string.h>
 #include <serd/token_view.h>
 #include <serd/uri.h>
@@ -33,13 +35,14 @@ serd_node_token_view(const SerdNode* const node)
   return view;
 }
 
-static size_t
-string_sink(const void* const buf, const size_t len, void* const stream)
+static SerdStreamResult
+string_sink(void* const stream, const size_t len, const void* const buf)
 {
-  char** ptr = (char**)stream;
+  char** const ptr = (char**)stream;
   memcpy(*ptr, buf, len);
   *ptr += len;
-  return len;
+  const SerdStreamResult r = {SERD_SUCCESS, len};
+  return r;
 }
 
 SerdNode
@@ -127,14 +130,15 @@ serd_node_new_uri(ZixAllocator* const allocator, const SerdURIView* const uri)
 {
   assert(uri);
 
-  const size_t len        = serd_uri_string_length(*uri);
-  char*        buf        = (char*)zix_malloc(allocator, len + 1);
-  SerdNode     node       = {buf, len, 0, SERD_URI};
-  char*        ptr        = buf;
-  const size_t actual_len = serd_write_uri(*uri, string_sink, &ptr);
+  const size_t len  = serd_uri_string_length(*uri);
+  char*        buf  = (char*)zix_malloc(allocator, len + 1);
+  SerdNode     node = {buf, len, 0, SERD_URI};
+  char*        ptr  = buf;
 
-  buf[actual_len] = '\0';
-  node.n_bytes    = actual_len;
+  const SerdStreamResult r = serd_write_uri(*uri, string_sink, &ptr);
+
+  buf[r.count] = '\0';
+  node.n_bytes = r.count;
   return node;
 }
 

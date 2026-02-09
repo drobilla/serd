@@ -1,14 +1,13 @@
 // Copyright 2011-2025 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
-#include "system.h"
-
 #include <serd/env.h>
 #include <serd/error.h>
 #include <serd/file_uri.h>
+#include <serd/input_stream.h>
+#include <serd/output_stream.h>
 #include <serd/reader.h>
 #include <serd/status.h>
-#include <serd/stream.h>
 #include <serd/string.h>
 #include <serd/syntax.h>
 #include <serd/uri.h>
@@ -138,6 +137,7 @@ main(int argc, char** argv)
   bool            from_string   = false;
   bool            from_stdin    = false;
   bool            bulk_read     = true;
+  bool            bulk_write    = false;
   bool            osyntax_set   = false;
   bool            quiet         = false;
   size_t          stack_size    = 524288U;
@@ -165,7 +165,7 @@ main(int argc, char** argv)
       if (opt == 'a') {
         writer_flags |= SERD_WRITE_ASCII;
       } else if (opt == 'b') {
-        writer_flags |= SERD_WRITE_BULK;
+        bulk_write = true;
       } else if (opt == 'e') {
         bulk_read = false;
       } else if (opt == 'f') {
@@ -278,15 +278,16 @@ main(int argc, char** argv)
     base = base_uri_from_path(input);
   }
 
-  FILE* const      out_fd = stdout;
-  SerdWorld* const world  = serd_world_new(NULL);
-  SerdEnv* const   env    = serd_env_new(NULL, serd_string_view(base));
+  SerdWorld* const world = serd_world_new(NULL);
+  SerdEnv* const   env   = serd_env_new(NULL, serd_string_view(base));
 
   const SerdLimits limits = {stack_size, stack_size};
   serd_world_set_limits(world, limits);
 
+  SerdOutputStream out = serd_open_output_standard();
+
   SerdWriter* const writer = serd_writer_new(
-    world, output_syntax, writer_flags, env, serd_file_sink, out_fd);
+    world, output_syntax, writer_flags, env, &out, bulk_write ? 4096U : 1U);
 
   SerdReader* const reader = serd_reader_new(
     world, input_syntax, reader_flags, serd_writer_sink(writer));
@@ -302,21 +303,24 @@ main(int argc, char** argv)
   serd_writer_chop_blank_prefix(writer, chop_prefix);
   serd_reader_add_blank_prefix(reader, add_prefix);
 
-  SerdStatus st = SERD_SUCCESS;
+  SerdStatus      st         = SERD_SUCCESS;
+  ZixStringView   input_name = zix_string(input);
+  const char*     position   = NULL;
+  SerdInputStream in         = {NULL, NULL, NULL};
+  size_t          block_size = 1U;
   if (from_string) {
-    st = serd_reader_start_string(reader, input, zix_string("string"));
+    position   = input;
+    input_name = zix_string("string");
+    in         = serd_open_input_string(&position);
   } else if (from_stdin) {
-    st = serd_reader_start_stream(reader,
-                                  serd_file_read_byte,
-                                  (SerdErrorFunc)ferror,
-                                  stdin,
-                                  zix_string("stdin"),
-                                  1);
+    input_name = zix_string("stdin");
+    in         = serd_open_input_standard();
   } else {
-    st = serd_reader_start_file(reader, input, bulk_read);
+    block_size = bulk_read ? 4096U : 1U;
+    in         = serd_open_input_file(input);
   }
 
-  if (!st) {
+  if (!(st = serd_reader_start(reader, &in, input_name, block_size))) {
     st = serd_reader_read_document(reader);
   }
 

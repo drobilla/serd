@@ -5,8 +5,8 @@
 #define SERD_SRC_BYTE_SOURCE_H
 
 #include <serd/caret_view.h>
+#include <serd/input_stream.h>
 #include <serd/status.h>
-#include <serd/stream.h>
 #include <zix/allocator.h>
 #include <zix/attributes.h>
 #include <zix/string_view.h>
@@ -16,44 +16,28 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef int (*SerdCloseFunc)(void*);
-
 typedef struct {
-  SerdReadFunc   read_func;   ///< Read function (e.g. fread)
-  SerdErrorFunc  error_func;  ///< Error function (e.g. ferror)
-  SerdCloseFunc  close_func;  ///< Function for closing stream
-  void*          stream;      ///< Stream (e.g. FILE)
-  size_t         page_size;   ///< Number of bytes to read at a time
-  size_t         buf_size;    ///< Number of bytes in file_buf
-  char*          name;        ///< Name of stream (referenced by caret)
-  SerdCaretView  caret;       ///< Caret for error reporting
-  uint8_t*       file_buf;    ///< Buffer iff reading pages from a file
-  const uint8_t* read_buf;    ///< Pointer to file_buf or read_byte
-  size_t         read_head;   ///< Offset into read_buf
-  uint8_t        read_byte;   ///< 1-byte 'buffer' used when not paging
-  bool           from_stream; ///< True iff reading from `stream`
-  bool           prepared;    ///< True iff prepared for reading
-  bool           eof;         ///< True iff end of file reached
+  SerdInputStream* in;         ///< Input stream to read from
+  size_t           block_size; ///< Number of bytes to read at a time
+  size_t           buf_size;   ///< Number of bytes in block
+  char*            name;       ///< Name of stream (for caret)
+  SerdCaretView    caret;      ///< File position for error reporting
+  uint8_t*         block;      ///< Buffer if reading blocks
+  const uint8_t*   read_buf;   ///< Pointer to block or read_byte
+  size_t           read_head;  ///< Offset into read_buf
+  uint8_t          read_byte;  ///< 1-byte 'buffer' if reading bytes
+  bool             prepared;   ///< True iff prepared for reading
+  bool             eof;        ///< True iff end of file reached
 } SerdByteSource;
 
-SerdStatus
-serd_byte_source_open_string(ZixAllocator*   allocator,
-                             SerdByteSource* source,
-                             const char*     utf8,
-                             ZixStringView   name);
+SerdByteSource*
+serd_byte_source_new_input(ZixAllocator*    allocator,
+                           SerdInputStream* input,
+                           ZixStringView    name,
+                           size_t           block_size);
 
-SerdStatus
-serd_byte_source_open_source(ZixAllocator*   allocator,
-                             SerdByteSource* source,
-                             SerdReadFunc    read_func,
-                             SerdErrorFunc   error_func,
-                             SerdCloseFunc   close_func,
-                             void*           stream,
-                             ZixStringView   name,
-                             size_t          page_size);
-
-SerdStatus
-serd_byte_source_close(ZixAllocator* allocator, SerdByteSource* source);
+void
+serd_byte_source_free(ZixAllocator* allocator, SerdByteSource* source);
 
 ZIX_NODISCARD SerdStatus
 serd_byte_source_prepare(SerdByteSource* source);
@@ -74,10 +58,10 @@ serd_byte_source_peek(SerdByteSource* const source)
 ZIX_NODISCARD static inline SerdStatus
 serd_byte_source_advance(SerdByteSource* const source)
 {
-  SerdStatus st      = SERD_SUCCESS;
-  const bool was_eof = source->eof;
+  SerdStatus    st      = SERD_SUCCESS;
+  const bool    was_eof = source->eof;
+  const uint8_t c       = serd_byte_source_peek(source);
 
-  const uint8_t c = serd_byte_source_peek(source);
   if (c == '\n') {
     ++source->caret.line;
     source->caret.column = 0U;
@@ -85,15 +69,11 @@ serd_byte_source_advance(SerdByteSource* const source)
     ++source->caret.column;
   }
 
-  if (source->from_stream) {
-    if (++source->read_head >= source->buf_size) {
-      st = serd_byte_source_page(source);
-    }
-  } else if (!source->eof) {
-    source->eof = source->read_buf[++source->read_head] == '\0';
+  if (was_eof || ++source->read_head >= source->buf_size) {
+    st = serd_byte_source_page(source);
   }
 
-  return (!st && was_eof && source->eof) ? SERD_FAILURE : st;
+  return st;
 }
 
 #endif // SERD_SRC_BYTE_SOURCE_H

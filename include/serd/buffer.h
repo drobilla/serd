@@ -18,6 +18,9 @@ SERD_BEGIN_DECLS
 
    The #SerdBuffer type represents a writable area of memory with a known size.
 
+   #SerdWriteFunc and #SerdCloseFunc functions are provided which enable
+   writing output to a memory buffer (as `fwrite` and `fclose` do for files).
+
    @{
 */
 
@@ -27,28 +30,6 @@ typedef struct {
   char* ZIX_NULLABLE         buf;       ///< Buffer
   size_t                     len;       ///< Size of buffer in bytes
 } SerdBuffer;
-
-/**
-   A convenience sink function for writing to a string buffer.
-
-   This function can be used as a #SerdWriteFunc to write to a SerdBuffer which
-   is resized as necessary with realloc().  The `stream` parameter must point
-   to an initialized #SerdBuffer.  When the write is finished, the string
-   should be retrieved with serd_buffer_sink_finish().
-*/
-SERD_API size_t
-serd_buffer_sink(const void* ZIX_NONNULL buf,
-                 size_t                  len,
-                 void* ZIX_UNSPECIFIED   stream);
-
-/**
-   Finish writing to a buffer with serd_buffer_sink().
-
-   @return The buffer as a null-terminated string, or null on allocation
-   failure or any other error.
-*/
-SERD_API char* ZIX_ALLOCATED
-serd_buffer_sink_finish(SerdBuffer* ZIX_NONNULL stream);
 
 /**
    @}

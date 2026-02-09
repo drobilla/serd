@@ -2,11 +2,14 @@
 // SPDX-License-Identifier: ISC
 
 #include "string_utils.h"
+#include "try_write.h"
 
 #include <serd/buffer.h>
 #include <serd/file_uri.h>
+#include <serd/output_stream.h>
 #include <serd/status.h>
 #include <serd/stream.h>
+#include <serd/stream_result.h>
 #include <serd/string.h>
 #include <zix/allocator.h>
 #include <zix/string_view.h>
@@ -14,14 +17,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
-
-static SerdStatus
-write_file_uri_char(const char c, void* const stream)
-{
-  return (serd_buffer_sink(&c, 1, stream) == 1) ? SERD_SUCCESS : SERD_BAD_ALLOC;
-}
 
 static char*
 parse_hostname(ZixAllocator* const allocator,
@@ -69,7 +65,8 @@ serd_parse_file_uri(ZixAllocator* const allocator,
     ++path;
   }
 
-  SerdBuffer buffer = {allocator, NULL, 0};
+  SerdBuffer       buffer = {allocator, NULL, 0};
+  SerdOutputStream out    = serd_open_output_buffer(&buffer);
   for (const char* s = path; !st && *s; ++s) {
     if (*s == '%') {
       if (is_hexdig(*(s + 1)) && is_hexdig(*(s + 2))) {
@@ -77,27 +74,23 @@ serd_parse_file_uri(ZixAllocator* const allocator,
         const uint8_t lo = hex_digit_value((const uint8_t)s[2]);
         const char    c  = (char)((hi << 4U) | lo);
 
-        st = write_file_uri_char(c, &buffer);
+        st = out.write(out.stream, 1, &c).status;
         s += 2;
       } else {
         st = SERD_BAD_SYNTAX;
       }
     } else {
-      st = write_file_uri_char(*s, &buffer);
-    }
-
-    if (st) {
-      zix_free(buffer.allocator, buffer.buf);
-      return NULL;
+      st = out.write(out.stream, 1, s).status;
     }
   }
 
-  char* const result = serd_buffer_sink_finish(&buffer);
-  if (!result) {
+  const SerdStatus cst = serd_close_output(&out);
+  if (st || cst) {
     zix_free(buffer.allocator, buffer.buf);
+    return NULL;
   }
 
-  return result;
+  return buffer.buf;
 }
 
 static bool
@@ -116,7 +109,7 @@ is_dir_sep(const char c)
 #endif
 }
 
-size_t
+SerdStreamResult
 serd_write_file_uri(const ZixStringView path,
                     const ZixStringView hostname,
                     const SerdWriteFunc sink,
@@ -124,53 +117,57 @@ serd_write_file_uri(const ZixStringView path,
 {
   assert(sink);
 
+  static const char hex_chars[] = "0123456789ABCDEF";
+
   const bool is_windows = is_windows_path(path.data);
-  size_t     len        = 0U;
+
+  SerdStreamResult wr = {SERD_SUCCESS, 0U};
 
   if (is_dir_sep(path.data[0]) || is_windows) {
-    len += sink("file://", strlen("file://"), stream);
+    TRY_WRITE(wr, sink(stream, strlen("file://"), "file://"));
     if (hostname.length) {
-      len += sink(hostname.data, hostname.length, stream);
+      TRY_WRITE(wr, sink(stream, hostname.length, hostname.data));
     }
 
     if (is_windows) {
-      len += sink("/", 1, stream);
+      TRY_WRITE(wr, sink(stream, 1, "/"));
     }
   }
 
   for (size_t i = 0; i < path.length; ++i) {
     if (is_unescaped_uri_path_char(path.data[i])) {
-      len += sink(path.data + i, 1, stream);
+      TRY_WRITE(wr, sink(stream, 1, path.data + i));
 #ifdef _WIN32
     } else if (path.data[i] == '\\') {
-      len += sink("/", 1, stream);
+      TRY_WRITE(wr, sink(stream, 1, "/"));
 #endif
     } else {
-      char escape_str[10] = {'%', 0, 0, 0, 0, 0, 0, 0, 0, 0};
-      snprintf(
-        escape_str + 1, sizeof(escape_str) - 1, "%X", (unsigned)path.data[i]);
-      len += sink(escape_str, 3, stream);
+      const uint8_t c        = (uint8_t)path.data[i];
+      const char    escape[] = {'%', hex_chars[c >> 4U], hex_chars[c & 0x0FU]};
+      TRY_WRITE(wr, sink(stream, 3, escape));
     }
   }
 
-  return len;
+  return wr;
 }
 
-static size_t
-string_sink(const void* const buf, const size_t len, void* const stream)
+static SerdStreamResult
+string_sink(void* const stream, const size_t len, const void* const buf)
 {
-  char** ptr = (char**)stream;
+  char** const ptr = (char**)stream;
   memcpy(*ptr, buf, len);
   *ptr += len;
-  return len;
+  const SerdStreamResult r = {SERD_SUCCESS, len};
+  return r;
 }
 
-static size_t
-no_sink(const void* const buf, const size_t len, void* const stream)
+static SerdStreamResult
+no_sink(void* const stream, const size_t len, const void* const buf)
 {
-  (void)buf;
   (void)stream;
-  return len;
+  (void)buf;
+  const SerdStreamResult r = {SERD_SUCCESS, len};
+  return r;
 }
 
 SerdString
@@ -178,13 +175,16 @@ serd_file_uri_to_string(ZixAllocator* const allocator,
                         const ZixStringView path,
                         const ZixStringView hostname)
 {
-  SerdString   string = {0U, NULL};
-  const size_t length = serd_write_file_uri(path, hostname, no_sink, NULL);
+  SerdString       string = {0U, NULL};
+  SerdStreamResult r      = serd_write_file_uri(path, hostname, no_sink, NULL);
+  const size_t     len    = r.count;
+  assert(!r.status);
 
-  if ((string.data = (char*)zix_calloc(allocator, length + 1U, 1U))) {
-    char*        ptr = string.data;
-    const size_t len = serd_write_file_uri(path, hostname, string_sink, &ptr);
+  if ((string.data = (char*)zix_calloc(allocator, len + 1U, 1U))) {
+    char* ptr = string.data;
+    r         = serd_write_file_uri(path, hostname, string_sink, &ptr);
 
+    assert(r.count == len);
     string.length    = len;
     string.data[len] = '\0';
   }

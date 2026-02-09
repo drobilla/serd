@@ -5,6 +5,8 @@
 #define SERD_STREAM_H
 
 #include <serd/attributes.h>
+#include <serd/status.h>
+#include <serd/stream_result.h>
 #include <zix/attributes.h>
 
 #include <stddef.h>
@@ -16,43 +18,47 @@ SERD_BEGIN_DECLS
    @ingroup serd_reading_writing
 
    These types define the interface for byte streams (generalized files) which
-   can be provided to read/write from/to any custom source/sink.  It is
-   directly compatible with the standard C `FILE` API, so the standard library
-   functions may be used directly.
+   can be provided to read/write from/to any custom source/sink.  Wrappers are
+   provided to easily create streams for a standard C `FILE`.
 
    @{
 */
 
 /**
-   Function to detect I/O stream errors.
+   Function for closing an I/O stream.
 
-   Identical semantics to `ferror`.
+   Identical semantics to `fclose`.  Note that when writing, this may flush the
+   stream which can cause errors, including errors caused by previous writes
+   that appeared successful at the time.  Therefore it is necessary to check
+   the return value of this function to properly detect write errors.
 
    @return Non-zero if `stream` has encountered an error.
 */
-typedef int (*SerdErrorFunc)(void* ZIX_NONNULL stream);
+typedef SerdStatus (*SerdCloseFunc)(void* ZIX_UNSPECIFIED stream);
 
 /**
-   Source function for raw string input.
+   Function for reading input bytes from a stream.
 
-   Identical semantics to `fread`, but may set errno for more informative error
-   reporting than supported by SerdErrorFunc.
-
+   @param stream Stream to read from.
+   @param len Number of bytes to read.
    @param buf Output buffer.
-   @param size Size of a single element of data in bytes (always 1).
-   @param nmemb Number of elements to read.
-   @param stream Stream to read from (FILE* for fread).
-   @return Number of elements (bytes) read.
+   @return Number of bytes read (which is short on error) and a status code.
 */
-typedef size_t (*SerdReadFunc)(void* ZIX_NONNULL     buf,
-                               size_t                size,
-                               size_t                nmemb,
-                               void* ZIX_UNSPECIFIED stream);
+typedef SerdStreamResult (*SerdReadFunc)(void* ZIX_UNSPECIFIED stream,
+                                         size_t                len,
+                                         void* ZIX_NONNULL     buf);
 
-/// Sink function for raw string output
-typedef size_t (*SerdWriteFunc)(const void* ZIX_NONNULL buf,
-                                size_t                  len,
-                                void* ZIX_UNSPECIFIED   stream);
+/**
+   Function for writing output bytes to a stream with status.
+
+   @param stream Stream to write to.
+   @param len Number of bytes to write.
+   @param buf Input buffer.
+   @return Number of bytes written (which is short on error) and a status code.
+*/
+typedef SerdStreamResult (*SerdWriteFunc)(void* ZIX_UNSPECIFIED   stream,
+                                          size_t                  len,
+                                          const void* ZIX_NONNULL buf);
 
 /**
    @}

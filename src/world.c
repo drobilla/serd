@@ -4,43 +4,15 @@
 #include "world_impl.h" // IWYU pragma: keep
 #include "world_internal.h"
 
-#include "serd_config.h"
-
 #include <serd/caret_view.h>
 #include <serd/error.h>
 #include <serd/status.h>
 #include <serd/world.h>
 #include <zix/allocator.h>
 
-#ifdef USE_POSIX_FADVISE
-#  include <fcntl.h> // IWYU pragma: keep
-#endif
-
 #include <assert.h>
-#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <string.h>
-
-FILE*
-serd_world_fopen(const SerdWorld* world, const char* path, const char* mode)
-{
-  FILE* fd = fopen(path, mode);
-  if (!fd) {
-    serd_world_errorf(world,
-                      SERD_BAD_STREAM,
-                      "failed to open file %s (%s)",
-                      path,
-                      strerror(errno));
-    return NULL;
-  }
-
-#if USE_POSIX_FADVISE && USE_FILENO
-  (void)posix_fadvise(fileno(fd), 0, 0, POSIX_FADV_SEQUENTIAL);
-#endif
-
-  return fd;
-}
 
 SerdStatus
 serd_world_error(const SerdWorld* const world, const SerdError* const e)
@@ -74,20 +46,6 @@ serd_world_verrorf(const SerdWorld* const world,
   const SerdError e = {st, serd_no_caret(), fmt, &args_copy};
   serd_world_error(world, &e);
   va_end(args_copy);
-  return st;
-}
-
-SerdStatus
-serd_world_errorf(const SerdWorld* const world,
-                  const SerdStatus       st,
-                  const char* const      fmt,
-                  ...)
-{
-  va_list args; // NOLINT(cppcoreguidelines-init-variables)
-  va_start(args, fmt);
-  const SerdError e = {st, serd_no_caret(), fmt, &args};
-  serd_world_error(world, &e);
-  va_end(args);
   return st;
 }
 

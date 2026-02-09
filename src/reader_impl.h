@@ -15,7 +15,6 @@
 
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
 
 struct SerdReaderImpl {
   SerdWorld*      world;
@@ -26,11 +25,10 @@ struct SerdReaderImpl {
   TokenHeader*    rdf_rest;
   TokenHeader*    rdf_nil;
   TokenHeader*    rdf_type;
-  SerdByteSource  source;
+  SerdByteSource* source;
   SerdStack       stack;
   SerdSyntax      syntax;
   unsigned        next_id;
-  uint8_t*        buf;
   char*           bprefix;
   size_t          bprefix_len;
   bool            strict; ///< True iff strict parsing
