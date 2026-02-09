@@ -220,7 +220,7 @@ esink(const void* const buf, const size_t len, SerdWriter* const writer)
   return sink(buf, len, writer) == len ? SERD_SUCCESS : SERD_ERR_BAD_WRITE;
 }
 
-// Write a single character, as an escape for single byte characters
+// Write a single character as a Unicode escape
 // (Caller prints any single byte characters that don't need escaping)
 static size_t
 write_character(SerdWriter* const    writer,
@@ -403,6 +403,77 @@ write_lname(SerdWriter* const    writer,
   return st;
 }
 
+SERD_NODISCARD static size_t
+write_long_string_escape(SerdWriter* const writer,
+                         const size_t      n_consecutive_quotes,
+                         const char        c)
+{
+  switch (c) {
+  case '\\':
+    return sink("\\\\", 2, writer);
+
+  case '\b':
+    return sink("\\b", 2, writer);
+
+  case '\n':
+  case '\r':
+  case '\t':
+  case '\f':
+    return sink(&c, 1, writer); // Write character as-is
+
+  case '\"':
+    if (n_consecutive_quotes >= 3) {
+      // Two quotes in a row, or quote at string end, escape
+      return sink("\\\"", 2, writer);
+    }
+
+    return sink(&c, 1, writer);
+
+  default:
+    break;
+  }
+
+  return 0;
+}
+
+SERD_NODISCARD static size_t
+write_short_string_escape(SerdWriter* const writer, const char c)
+{
+  switch (c) {
+  case '\\':
+    return sink("\\\\", 2, writer);
+  case '\n':
+    return sink("\\n", 2, writer);
+  case '\r':
+    return sink("\\r", 2, writer);
+  case '\t':
+    return sink("\\t", 2, writer);
+  case '"':
+    return sink("\\\"", 2, writer);
+  default:
+    break;
+  }
+
+  if (writer->syntax == SERD_TURTLE) {
+    switch (c) {
+    case '\b':
+      return sink("\\b", 2, writer);
+    case '\f':
+      return sink("\\f", 2, writer);
+    default:
+      break;
+    }
+  }
+
+  return 0;
+}
+
+static bool
+text_must_escape(const uint8_t c)
+{
+  return c == '\\' || c == '"' || !in_range(c, 0x20, 0x7E);
+}
+
 SERD_NODISCARD static SerdStatus
 write_text(SerdWriter* const    writer,
            const TextContext    ctx,
@@ -416,100 +487,47 @@ write_text(SerdWriter* const    writer,
       n_consecutive_quotes = 0;
     }
 
-    // Fast bulk write for long strings of printable ASCII
+    // Scan for the longest chunk of characters that can be written directly
     size_t j = i;
-    for (; j < n_bytes; ++j) {
-      if (utf8[j] == '\\' || utf8[j] == '"' ||
-          (!in_range(utf8[j], 0x20, 0x7E))) {
-        break;
-      }
+    for (; j < n_bytes && !text_must_escape(utf8[j]); ++j) {
     }
 
+    // Write chunk as a single fast bulk write
     st = esink(&utf8[i], j - i, writer);
     if ((i = j) == n_bytes) {
       break; // Reached end
     }
 
-    const uint8_t in = utf8[i++];
+    // Try to write character as a special short escape (newline and friends)
+    const char in         = (char)utf8[i++];
+    size_t     escape_len = 0;
     if (ctx == WRITE_LONG_STRING) {
       n_consecutive_quotes = (in == '\"') ? (n_consecutive_quotes + 1) : 0;
-
-      switch (in) {
-      case '\\':
-        st = esink("\\\\", 2, writer);
-        continue;
-      case '\b':
-        st = esink("\\b", 2, writer);
-        continue;
-      case '\n':
-      case '\r':
-      case '\t':
-      case '\f':
-        st = esink(&in, 1, writer); // Write character as-is
-        continue;
-      case '\"':
-        if (n_consecutive_quotes >= 3) {
-          // Two quotes in a row, or quote at string end, escape
-          st = esink("\\\"", 2, writer);
-        } else {
-          st = esink(&in, 1, writer);
-        }
-        continue;
-      default:
-        break;
-      }
+      escape_len = write_long_string_escape(writer, n_consecutive_quotes, in);
     } else {
-      switch (in) {
-      case '\\':
-        st = esink("\\\\", 2, writer);
-        continue;
-      case '\n':
-        st = esink("\\n", 2, writer);
-        continue;
-      case '\r':
-        st = esink("\\r", 2, writer);
-        continue;
-      case '\t':
-        st = esink("\\t", 2, writer);
-        continue;
-      case '"':
-        st = esink("\\\"", 2, writer);
-        continue;
-      default:
-        break;
-      }
-      if (writer->syntax == SERD_TURTLE) {
-        switch (in) {
-        case '\b':
-          st = esink("\\b", 2, writer);
-          continue;
-        case '\f':
-          st = esink("\\f", 2, writer);
-          continue;
-        default:
-          break;
-        }
-      }
+      escape_len = write_short_string_escape(writer, in);
     }
 
-    // Write UTF-8 character
-    uint8_t size = 0U;
-    write_character(writer, utf8 + i - 1, &size, &st);
-    if (st && (writer->style & SERD_STYLE_STRICT)) {
-      return st;
-    }
+    if (!escape_len) {
+      // No special escape for this character, write full Unicode escape
+      uint8_t size = 0U;
+      write_character(writer, utf8 + i - 1U, &size, &st);
+      if (st && (writer->style & SERD_STYLE_STRICT)) {
+        return st;
+      }
 
-    if (size > 0U) {
-      i += size - 1U;
-    } else {
-      // Corrupt input, write replacement character and scan to the next start
-      st = esink(replacement_char, sizeof(replacement_char), writer);
-      for (; i < n_bytes && !is_utf8_leading(utf8[i]); ++i) {
+      if (size > 0U) {
+        i += size - 1U;
+      } else {
+        // Corrupt input, write replacement character and scan to the next start
+        st = esink(replacement_char, sizeof(replacement_char), writer);
+        for (; i < n_bytes && !is_utf8_leading(utf8[i]); ++i) {
+        }
       }
     }
   }
 
-  return (writer->style & SERD_STYLE_STRICT) ? st : SERD_SUCCESS;
+  return SERD_SUCCESS;
 }
 
 typedef struct {
