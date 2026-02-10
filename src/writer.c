@@ -264,10 +264,10 @@ uri_must_escape(const uint8_t c)
 }
 
 static size_t
-write_uri(SerdWriter* const    writer,
-          const uint8_t* const utf8,
-          const size_t         n_bytes,
-          SerdStatus* const    st)
+write_uri_text(SerdWriter* const    writer,
+               const uint8_t* const utf8,
+               const size_t         n_bytes,
+               SerdStatus* const    st)
 {
   size_t len = 0;
   for (size_t i = 0; i < n_bytes;) {
@@ -317,7 +317,7 @@ ewrite_uri(SerdWriter* const    writer,
            const size_t         n_bytes)
 {
   SerdStatus st = SERD_SUCCESS;
-  write_uri(writer, utf8, n_bytes, &st);
+  write_uri_text(writer, utf8, n_bytes, &st);
 
   return (st == SERD_ERR_BAD_WRITE || (writer->style & SERD_STYLE_STRICT))
            ? st
@@ -541,7 +541,7 @@ uri_sink(const void* const buf, const size_t len, void* const stream)
   UriSinkContext* const context = (UriSinkContext*)stream;
   SerdWriter* const     writer  = context->writer;
 
-  return write_uri(writer, (const uint8_t*)buf, len, &context->status);
+  return write_uri_text(writer, (const uint8_t*)buf, len, &context->status);
 }
 
 SERD_NODISCARD static SerdStatus
