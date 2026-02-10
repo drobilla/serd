@@ -1,4 +1,4 @@
-serd (0.32.7) unstable; urgency=medium
+serd (0.32.8) stable; urgency=medium
 
   * Avoid use of snprintf() when writing
   * Fix unbounded reader stack growth when reading NQuads
@@ -8,7 +8,7 @@ serd (0.32.7) unstable; urgency=medium
   * Strengthen handling of corrupt UTF-8 input
   * Support writing all escapes in Turtle and TriG prefixed names
 
- -- David Robillard <d@drobilla.net>  Tue, 10 Feb 2026 04:21:50 +0000
+ -- David Robillard <d@drobilla.net>  Tue, 10 Feb 2026 18:02:20 +0000
 
 serd (0.32.6) stable; urgency=medium
 
