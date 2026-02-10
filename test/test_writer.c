@@ -215,24 +215,36 @@ test_write_bad_anon_stack(void)
 static void
 test_strict_write(void)
 {
-  SerdEnv* const    env    = serd_env_new(NULL);
-  SerdWriter* const writer = serd_writer_new(
-    SERD_TURTLE, (SerdStyle)SERD_STYLE_STRICT, env, NULL, null_sink, NULL);
+  SerdEnv* const    env = serd_env_new(NULL);
+  SerdWriter* const writer =
+    serd_writer_new(SERD_TURTLE,
+                    (SerdStyle)(SERD_STYLE_STRICT | SERD_STYLE_ASCII),
+                    env,
+                    NULL,
+                    null_sink,
+                    NULL);
   assert(writer);
 
-  const uint8_t bad_str[] = {0xFF, 0x90, 'h', 'i', 0};
+  static const uint8_t bad_uri_buf[]   = {'f', 't', 'p', ':', 0xFF, 0x90, 0};
+  static const uint8_t bad_short_buf[] = {0xFF, 0x90, 'h', 'i', 0};
+  static const uint8_t bad_long_buf[]  = {'e', '\n', 'r', 0xFF, 0x90, 0};
 
-  SerdNode s = serd_node_from_string(SERD_URI, USTR(NS_EG "s"));
-  SerdNode p = serd_node_from_string(SERD_URI, USTR(NS_EG "p"));
-
-  SerdNode bad_lit = serd_node_from_string(SERD_LITERAL, bad_str);
-  SerdNode bad_uri = serd_node_from_string(SERD_URI, bad_str);
-
-  assert(serd_writer_write_statement(
-           writer, 0, NULL, &s, &p, &bad_lit, NULL, NULL) == SERD_ERR_BAD_TEXT);
+  SerdNode s             = serd_node_from_string(SERD_URI, USTR(NS_EG "s"));
+  SerdNode p             = serd_node_from_string(SERD_URI, USTR(NS_EG "p"));
+  SerdNode bad_uri       = serd_node_from_string(SERD_URI, bad_uri_buf);
+  SerdNode bad_short_lit = serd_node_from_string(SERD_LITERAL, bad_short_buf);
+  SerdNode bad_long_lit  = serd_node_from_string(SERD_LITERAL, bad_long_buf);
 
   assert(serd_writer_write_statement(
            writer, 0, NULL, &s, &p, &bad_uri, NULL, NULL) == SERD_ERR_BAD_TEXT);
+
+  assert(serd_writer_write_statement(
+           writer, 0, NULL, &s, &p, &bad_short_lit, NULL, NULL) ==
+         SERD_ERR_BAD_TEXT);
+
+  assert(serd_writer_write_statement(
+           writer, 0, NULL, &s, &p, &bad_long_lit, NULL, NULL) ==
+         SERD_ERR_BAD_TEXT);
 
   serd_writer_free(writer);
   serd_env_free(env);

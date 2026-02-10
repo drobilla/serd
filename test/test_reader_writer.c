@@ -234,14 +234,20 @@ test_writer(const char* const path)
                                         good[i][4]));
   }
 
+  static const uint8_t bad_uri_buf[]   = {'f', 't', 'p', ':', 0xFF, 0x90, 0};
+  static const uint8_t bad_short_buf[] = {0xFF, 0x90, 'h', 'i', 0};
+  static const uint8_t bad_long_buf[]  = {'e', '\n', 'r', 0xFF, 0x90, 0};
+
   // Write statements with bad UTF-8 (should be replaced)
-  const uint8_t bad_str[] = {0xFF, 0x90, 'h', 'i', 0};
-  SerdNode      bad_lit   = serd_node_from_string(SERD_LITERAL, bad_str);
-  SerdNode      bad_uri   = serd_node_from_string(SERD_URI, bad_str);
-  assert(!serd_writer_write_statement(
-    writer, 0, NULL, &s, &p, &bad_lit, NULL, NULL));
+  SerdNode bad_uri       = serd_node_from_string(SERD_URI, bad_uri_buf);
+  SerdNode bad_short_lit = serd_node_from_string(SERD_LITERAL, bad_short_buf);
+  SerdNode bad_long_lit  = serd_node_from_string(SERD_LITERAL, bad_long_buf);
   assert(!serd_writer_write_statement(
     writer, 0, NULL, &s, &p, &bad_uri, NULL, NULL));
+  assert(!serd_writer_write_statement(
+    writer, 0, NULL, &s, &p, &bad_short_lit, NULL, NULL));
+  assert(!serd_writer_write_statement(
+    writer, 0, NULL, &s, &p, &bad_long_lit, NULL, NULL));
 
   serd_writer_free(writer);
   serd_env_free(env);
@@ -281,7 +287,7 @@ test_reader(const char* const path)
 
   const SerdStatus st = serd_reader_read_file(reader, USTR(path));
   assert(!st);
-  assert(rt->n_statement == 12);
+  assert(rt->n_statement == 13);
   assert(rt->graph && rt->graph->buf &&
          expect_string((const char*)rt->graph->buf, "http://example.org/"));
 
