@@ -229,29 +229,59 @@ esink(const void* const buf, const size_t len, SerdWriter* const writer)
   return sink(buf, len, writer) == len ? SERD_SUCCESS : SERD_ERR_BAD_WRITE;
 }
 
+/// Variable sink that returns an updated variable result
+SERD_NODISCARD static VariableResult
+vsink(SerdWriter* const    writer,
+      const VariableResult vr,
+      const size_t         len,
+      const void* const    buf)
+{
+  const size_t         n  = sink(buf, len, writer);
+  const SerdStatus     st = (n == len) ? SERD_SUCCESS : SERD_ERR_BAD_WRITE;
+  const VariableResult r  = {st, vr.read_count, vr.write_count + n};
+  return r;
+}
+
+SERD_NODISCARD static SerdStatus
+write_hex_byte(SerdWriter* const writer, const unsigned byte)
+{
+  static const char hex_chars[] = "0123456789ABCDEF";
+
+  const char digits[2] = {hex_chars[byte >> 4U], hex_chars[byte & 0x0FU]};
+
+  return esink(digits, 2, writer);
+}
+
 static VariableResult
 write_UCHAR(SerdWriter* const writer, const uint8_t* const utf8)
 {
-  VariableResult result     = {SERD_SUCCESS, 0U, 0U};
-  char           escape[11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  uint8_t        c_size     = 0U;
-  const uint32_t c          = parse_utf8_char(utf8, &c_size);
+  uint8_t        c_size = 0U;
+  const uint32_t c      = parse_utf8_char(utf8, &c_size);
+  VariableResult vr     = {SERD_SUCCESS, c_size, 0U};
 
-  result.read_count = c_size;
-  if (result.read_count == 0U) {
-    result.status =
+  vr.read_count = c_size;
+  if (vr.read_count == 0U) {
+    vr.status =
       w_err(writer, SERD_ERR_BAD_TEXT, "invalid UTF-8 start: %X\n", utf8[0]);
   } else if (c <= 0xFFFF) {
     // Write short (4 digit) escape
-    snprintf(escape, sizeof(escape), "\\u%04X", c);
-    result.write_count = sink(escape, 6, writer);
+    if (!(vr = vsink(writer, vr, 2, "\\u")).status &&
+        !(vr.status = write_hex_byte(writer, (c & 0xFF00U) >> 8U)) &&
+        !(vr.status = write_hex_byte(writer, (c & 0x00FFU)))) {
+      vr.write_count += 4U;
+    }
   } else {
     // Write long (8 digit) escape
-    snprintf(escape, sizeof(escape), "\\U%08X", c);
-    result.write_count = sink(escape, 10, writer);
+    if (!(vr = vsink(writer, vr, 2, "\\U")).status &&
+        !(vr.status = write_hex_byte(writer, (c & 0xFF000000U) >> 24U)) &&
+        !(vr.status = write_hex_byte(writer, (c & 0x00FF0000U) >> 16U)) &&
+        !(vr.status = write_hex_byte(writer, (c & 0x0000FF00U) >> 8U)) &&
+        !(vr.status = write_hex_byte(writer, (c & 0x000000FFU)))) {
+      vr.write_count += 8U;
+    }
   }
 
-  return result;
+  return vr;
 }
 
 static VariableResult
@@ -329,6 +359,7 @@ write_uri_text(SerdWriter* const    writer,
                const size_t         n_bytes)
 {
   VariableResult result = {SERD_SUCCESS, 0U, 0U};
+
   for (size_t i = 0; i < n_bytes;) {
     // Write leading chunk as a single fast bulk write
     const size_t j = next_text_index(utf8, i, n_bytes, uri_must_escape);
@@ -348,10 +379,11 @@ write_uri_text(SerdWriter* const    writer,
 
     if (!r.read_count) {
       // Corrupt input, write percent-encoded bytes and scan to next start
-      char escape[4] = {0, 0, 0, 0};
-      for (; i < n_bytes && !is_utf8_leading(utf8[i]); ++i) {
-        snprintf(escape, sizeof(escape), "%%%02X", utf8[i]);
-        result.write_count += sink(escape, 3, writer);
+      for (; !result.status && i < n_bytes && !is_utf8_leading(utf8[i]); ++i) {
+        result = vsink(writer, result, 1, "%");
+        if (!(result.status = write_hex_byte(writer, utf8[i]))) {
+          result.write_count += 2U;
+        }
       }
     }
   }
@@ -376,17 +408,11 @@ write_utf8_percent_escape(SerdWriter* const writer,
                           const char* const utf8,
                           const size_t      n_bytes)
 {
-  static const char hex_chars[] = "0123456789ABCDEF";
-
-  SerdStatus st        = SERD_SUCCESS;
-  char       escape[4] = {'%', 0, 0, 0};
+  SerdStatus st = SERD_SUCCESS;
 
   for (size_t i = 0U; i < n_bytes; ++i) {
-    const uint8_t byte = (uint8_t)utf8[i];
-    escape[1]          = hex_chars[byte >> 4U];
-    escape[2]          = hex_chars[byte & 0x0FU];
-
-    TRY(st, esink(escape, 3, writer));
+    TRY(st, esink("%", 1, writer));
+    TRY(st, write_hex_byte(writer, (uint8_t)utf8[i]));
   }
 
   return st;
