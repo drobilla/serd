@@ -365,11 +365,11 @@ typedef enum {
 
 /// A syntactic RDF node
 typedef struct {
-  const uint8_t* SERD_NULLABLE buf;     ///< Value string
-  size_t                       n_bytes; ///< Size in bytes (excluding null)
-  size_t                       n_chars; ///< String length (excluding null)
-  SerdNodeFlags                flags;   ///< Node flags (string properties)
-  SerdType                     type;    ///< Node type
+  const uint8_t* SERD_UNSPECIFIED buf;     ///< Value string
+  size_t                          n_bytes; ///< Size in bytes (excluding null)
+  size_t                          n_chars; ///< String length (excluding null)
+  SerdNodeFlags                   flags;   ///< Node flags (string properties)
+  SerdType                        type;    ///< Node type
 } SerdNode;
 
 static const SerdNode SERD_NODE_NULL = {NULL, 0, 0, 0, SERD_NOTHING};
