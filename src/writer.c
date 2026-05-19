@@ -547,6 +547,24 @@ text_must_escape(const uint8_t c)
   return c == '\\' || c == '"' || !in_range(c, 0x20, 0x7E);
 }
 
+static VariableResult
+write_literal_character(SerdWriter* const    writer,
+                        const uint8_t* const utf8,
+                        const size_t         i,
+                        const size_t         n_bytes)
+{
+  VariableResult vr = {SERD_SUCCESS, 0U, 0U};
+
+  vr = write_text_character(writer, utf8 + i);
+  if (!vr.read_count && !(writer->style & SERD_STYLE_STRICT)) {
+    // Corrupt input, write replacement char and scan to the next start
+    vr.status     = esink(replacement_char, sizeof(replacement_char), writer);
+    vr.read_count = next_text_index(utf8, i, n_bytes, is_utf8_leading);
+  }
+
+  return vr;
+}
+
 SERD_NODISCARD static SerdStatus
 write_short_text(SerdWriter* const    writer,
                  const uint8_t* const utf8,
@@ -562,19 +580,11 @@ write_short_text(SerdWriter* const    writer,
     }
 
     // Try to write character as a special short escape (newline and friends)
-    const char   in         = (char)utf8[i];
-    const size_t escape_len = write_short_string_escape(writer, in);
-
+    const size_t escape_len = write_short_string_escape(writer, (char)utf8[i]);
     if (!escape_len) {
       // No special escape for this character, write full Unicode escape
-      vr = write_text_character(writer, utf8 + i);
+      vr = write_literal_character(writer, utf8, i, n_bytes);
       i += vr.read_count;
-
-      if (!vr.read_count && !(writer->style & SERD_STYLE_STRICT)) {
-        // Corrupt input, write replacement char and scan to the next start
-        vr.status = esink(replacement_char, sizeof(replacement_char), writer);
-        i += next_text_index(utf8, i, n_bytes, is_utf8_leading);
-      }
     } else {
       ++i;
     }
@@ -609,14 +619,8 @@ write_long_text(SerdWriter* const    writer,
 
     if (!escape_len) {
       // No special escape for this character, write full Unicode escape
-      vr = write_text_character(writer, utf8 + i);
+      vr = write_literal_character(writer, utf8, i, n_bytes);
       i += vr.read_count;
-
-      if (!vr.read_count && !(writer->style & SERD_STYLE_STRICT)) {
-        // Corrupt input, write replacement char and scan to the next start
-        vr.status = esink(replacement_char, sizeof(replacement_char), writer);
-        i += next_text_index(utf8, i, n_bytes, is_utf8_leading);
-      }
     } else {
       ++i;
     }
