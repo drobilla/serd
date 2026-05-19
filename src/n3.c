@@ -1054,7 +1054,7 @@ read_object(SerdReader* const  reader,
   case '9':
     st = read_number(reader, &o, &datatype, ate_dot);
     break;
-  case '\"':
+  case '"':
   case '\'':
     st = read_literal(reader, &o, &datatype, &lang, &flags, ate_dot);
     break;

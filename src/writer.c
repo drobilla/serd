@@ -494,7 +494,7 @@ write_long_string_escape(SerdWriter* const writer,
   case '\f':
     return sink(&c, 1, writer); // Write character as-is
 
-  case '\"':
+  case '"':
     if (n_consecutive_quotes >= 3) {
       // Two quotes in a row, or quote at string end, escape
       return sink("\\\"", 2, writer);
@@ -604,7 +604,7 @@ write_long_text(SerdWriter* const    writer,
 
     // Try to write character as a special long escape (newline and friends)
     const char in           = (char)utf8[i];
-    n_quotes                = (in == '\"') ? (n_quotes + 1U) : 0;
+    n_quotes                = (in == '"') ? (n_quotes + 1U) : 0;
     const size_t escape_len = write_long_string_escape(writer, n_quotes, in);
 
     if (!escape_len) {
