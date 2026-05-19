@@ -477,9 +477,7 @@ write_lname(SerdWriter* const    writer,
 }
 
 SERD_NODISCARD static size_t
-write_long_string_escape(SerdWriter* const writer,
-                         const size_t      n_consecutive_quotes,
-                         const char        c)
+write_long_string_escape(SerdWriter* const writer, const char c)
 {
   switch (c) {
   case '\\':
@@ -495,12 +493,7 @@ write_long_string_escape(SerdWriter* const writer,
     return sink(&c, 1, writer); // Write character as-is
 
   case '"':
-    if (n_consecutive_quotes >= 3) {
-      // Two quotes in a row, or quote at string end, escape
-      return sink("\\\"", 2, writer);
-    }
-
-    return sink(&c, 1, writer);
+    return sink("\\\"", 2, writer);
 
   default:
     break;
@@ -579,7 +572,7 @@ write_short_text(SerdWriter* const    writer,
       break; // Error or reached end
     }
 
-    // Try to write character as a special short escape (newline and friends)
+    // Try to write character as a special escape
     const size_t escape_len = write_short_string_escape(writer, (char)utf8[i]);
     if (!escape_len) {
       // No special escape for this character, write full Unicode escape
@@ -612,10 +605,14 @@ write_long_text(SerdWriter* const    writer,
       break; // Error or reached end
     }
 
-    // Try to write character as a special long escape (newline and friends)
-    const char in           = (char)utf8[i];
-    n_quotes                = (in == '"') ? (n_quotes + 1U) : 0;
-    const size_t escape_len = write_long_string_escape(writer, n_quotes, in);
+    // Update consecutive quote count
+    n_quotes = (utf8[i] == '"') ? (n_quotes + 1U) : 0;
+
+    // Try to write character as a special escape
+    const char   c         = (char)utf8[i];
+    const bool   raw_quote = (n_quotes && n_quotes < 3 && i + 1U != n_bytes);
+    const size_t escape_len =
+      raw_quote ? sink(&c, 1, writer) : write_long_string_escape(writer, c);
 
     if (!escape_len) {
       // No special escape for this character, write full Unicode escape

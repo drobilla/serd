@@ -29,6 +29,8 @@
 		<#list-subject-with-extras>
 		<#list-subject-with-list-extras>
 		<#local-name-escapes>
+		<#long-end-quote>
+		<#long-end-two-quotes>
 		<#long-string-escapes>
 		<#long-string-quotes>
 		<#many-objects>
@@ -181,6 +183,18 @@
 	mf:action <local-name-escapes.ttl> ;
 	mf:name "local-name-escapes" ;
 	mf:result <local-name-escapes.ttl> .
+
+<#long-end-quote>
+	a rdft:TestTurtleEval ;
+	mf:action <long-end-quote.ttl> ;
+	mf:name "long-end-quote" ;
+	mf:result <long-end-quote.ttl> .
+
+<#long-end-two-quotes>
+	a rdft:TestTurtleEval ;
+	mf:action <long-end-two-quotes.ttl> ;
+	mf:name "long-end-two-quotes" ;
+	mf:result <long-end-two-quotes.ttl> .
 
 <#long-string-escapes>
 	a rdft:TestTurtleEval ;

@@ -17,6 +17,8 @@
 		<#test-lang>
 		<#test-list>
 		<#test-long-whitespace>
+		<#test-short-end-quote>
+		<#test-short-end-two-quotes>
 		<#test-triple>
 		<#test-uri-escape>
 		<#test-uri-query>
@@ -89,6 +91,18 @@
 	mf:action <test-long-whitespace.ttl> ;
 	mf:name "test-long-whitespace" ;
 	mf:result <test-long-whitespace.nt> .
+
+<#test-short-end-quote>
+	a rdft:TestTurtleEval ;
+	mf:action <test-short-end-quote.ttl> ;
+	mf:name "test-short-end-quote" ;
+	mf:result <test-short-end-quote.nt> .
+
+<#test-short-end-two-quotes>
+	a rdft:TestTurtleEval ;
+	mf:action <test-short-end-two-quotes.ttl> ;
+	mf:name "test-short-end-two-quotes" ;
+	mf:result <test-short-end-two-quotes.nt> .
 
 <#test-triple>
 	a rdft:TestTurtleEval ;
