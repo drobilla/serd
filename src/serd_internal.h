@@ -11,7 +11,7 @@
 #define NS_XSD "http://www.w3.org/2001/XMLSchema#"
 #define NS_RDF "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 
-#define SERD_PAGE_SIZE 4096
+static const unsigned SERD_PAGE_SIZE = 4096U;
 
 #ifndef MIN
 #  define MIN(a, b) (((a) < (b)) ? (a) : (b))
