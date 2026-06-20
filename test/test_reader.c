@@ -25,6 +25,12 @@ typedef struct {
   int n_end;
 } ReaderTest;
 
+typedef struct {
+  const char*   language;
+  SerdNodeFlags direction;
+  int           n_statement;
+} DirectionTest;
+
 static SerdStatus
 base_sink(void* const handle, const SerdNode* const uri)
 {
@@ -68,6 +74,41 @@ statement_sink(void* const           handle,
 
   ReaderTest* const rt = (ReaderTest*)handle;
   ++rt->n_statement;
+  return SERD_SUCCESS;
+}
+
+static SerdStatus
+direction_statement_sink(void* const           handle,
+                         SerdStatementFlags    flags,
+                         const SerdNode* const graph,
+                         const SerdNode* const subject,
+                         const SerdNode* const predicate,
+                         const SerdNode* const object,
+                         const SerdNode* const object_datatype,
+                         const SerdNode* const object_lang)
+{
+  (void)flags;
+  (void)graph;
+  (void)subject;
+  (void)predicate;
+
+  DirectionTest* const test = (DirectionTest*)handle;
+  assert(object->type == SERD_LITERAL);
+  assert(!object_datatype);
+  assert(object_lang);
+  assert(!strcmp((const char*)object_lang->buf, test->language));
+  assert((object_lang->flags & (SERD_HAS_DIRECTION | SERD_DIRECTION_RTL)) ==
+         test->direction);
+
+  ++test->n_statement;
+  return SERD_SUCCESS;
+}
+
+static SerdStatus
+quiet_error_sink(void* const handle, const SerdError* const error)
+{
+  (void)handle;
+  (void)error;
   return SERD_SUCCESS;
 }
 
@@ -120,6 +161,73 @@ test_read_string(void)
   assert(rt.n_end == 0);
 
   serd_reader_free(reader);
+}
+
+static void
+check_directional_literal(const SerdSyntax    syntax,
+                          const char* const   string,
+                          const char* const   language,
+                          const SerdNodeFlags direction,
+                          const SerdStatus    expected_status)
+{
+  DirectionTest     test   = {language, direction, 0};
+  SerdReader* const reader = serd_reader_new(
+    syntax, &test, NULL, NULL, NULL, direction_statement_sink, NULL);
+
+  assert(reader);
+  serd_reader_set_error_sink(reader, quiet_error_sink, NULL);
+
+  const SerdStatus status =
+    serd_reader_read_string(reader, (const uint8_t*)string);
+
+  assert(status == expected_status);
+  assert(test.n_statement == (expected_status ? 0 : 1));
+  serd_reader_free(reader);
+}
+
+static void
+test_directional_literals(void)
+{
+  static const char* const prefix =
+    "<http://example.org/s> <http://example.org/p> ";
+
+  const SerdSyntax syntaxes[] = {SERD_TURTLE, SERD_NTRIPLES};
+  for (size_t i = 0; i < sizeof(syntaxes) / sizeof(syntaxes[0]); ++i) {
+    char string[128] = {0};
+
+    snprintf(string, sizeof(string), "%s\"abc\"@en--ltr .", prefix);
+    check_directional_literal(
+      syntaxes[i], string, "en", SERD_HAS_DIRECTION, SERD_SUCCESS);
+
+    snprintf(string, sizeof(string), "%s\"abc\"@en-US--ltr .", prefix);
+    check_directional_literal(
+      syntaxes[i], string, "en-US", SERD_HAS_DIRECTION, SERD_SUCCESS);
+
+    snprintf(string, sizeof(string), "%s\"abc\"@ar-EG--rtl .", prefix);
+    check_directional_literal(syntaxes[i],
+                              string,
+                              "ar-EG",
+                              SERD_HAS_DIRECTION | SERD_DIRECTION_RTL,
+                              SERD_SUCCESS);
+
+    snprintf(string, sizeof(string), "%s\"abc\"@en-US .", prefix);
+    check_directional_literal(syntaxes[i], string, "en-US", 0U, SERD_SUCCESS);
+
+    const char* const bad_suffixes[] = {
+      "\"abc\"@en--abc .",
+      "\"abc\"@en--LTR .",
+      "\"abc\"@en-- .",
+      "\"abc\"@--rtl .",
+      "\"abc\"@en---rtl .",
+    };
+
+    for (size_t j = 0; j < sizeof(bad_suffixes) / sizeof(bad_suffixes[0]);
+         ++j) {
+      snprintf(string, sizeof(string), "%s%s", prefix, bad_suffixes[j]);
+      check_directional_literal(
+        syntaxes[i], string, "", 0U, SERD_ERR_BAD_SYNTAX);
+    }
+  }
 }
 
 /// Reads a null byte after a statement, then succeeds again (like a socket)
@@ -437,6 +545,7 @@ main(void)
 
   test_null_callbacks();
   test_read_string();
+  test_directional_literals();
   test_read_eof_file(path);
   test_read_eof_by_byte();
   assert(!remove(path));

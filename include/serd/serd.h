@@ -80,10 +80,12 @@ typedef enum {
   SERD_TRIG     = 4U, ///< Terse quads http://www.w3.org/TR/trig/
 } SerdSyntax;
 
-/// Flags indicating certain string properties relevant to serialisation
+/// Flags indicating node properties and metadata relevant to serialisation
 typedef enum {
-  SERD_HAS_NEWLINE = 1U << 0U, ///< Contains line breaks ('\\n' or '\\r')
-  SERD_HAS_QUOTE   = 1U << 1U, ///< Contains quotes ('"')
+  SERD_HAS_NEWLINE   = 1U << 0U, ///< Contains line breaks ('\\n' or '\\r')
+  SERD_HAS_QUOTE     = 1U << 1U, ///< Contains quotes ('"')
+  SERD_HAS_DIRECTION = 1U << 2U, ///< Language has a base direction
+  SERD_DIRECTION_RTL = 1U << 3U, ///< Base direction is right-to-left
 } SerdNodeFlag;
 
 /// Bitwise OR of SerdNodeFlag values
@@ -331,7 +333,8 @@ typedef enum {
   /**
      Literal value.
 
-     A literal optionally has either a language, or a datatype (not both).
+     A literal optionally has either a language (possibly with a direction), or
+     a datatype (not both).
   */
   SERD_LITERAL,
 
@@ -572,6 +575,11 @@ typedef SerdStatus (*SerdPrefixSink)(void* SERD_UNSPECIFIED       handle,
    Sink (callback) for statements.
 
    Called for every RDF statement in the serialisation.
+
+   For directional language-tagged literals, `object_lang` contains only the
+   language tag, and has `SERD_HAS_DIRECTION` set.  `SERD_DIRECTION_RTL`
+   selects right-to-left direction, otherwise the direction is left-to-right.
+   The presence of a direction implies the `rdf:dirLangString` datatype.
 */
 typedef SerdStatus (*SerdStatementSink)(
   void* SERD_UNSPECIFIED        handle,
@@ -957,7 +965,10 @@ serd_writer_set_prefix(SerdWriter* SERD_NONNULL     writer,
    Write a statement.
 
    Note this function can be safely casted to SerdStatementSink.
-*/
+
+   For directional language-tagged literals, set `SERD_HAS_DIRECTION` on
+   `lang`, and also set `SERD_DIRECTION_RTL` for right-to-left direction.
+ */
 SERD_API SerdStatus
 serd_writer_write_statement(SerdWriter* SERD_NONNULL      writer,
                             SerdStatementFlags            flags,

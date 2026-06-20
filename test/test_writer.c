@@ -47,6 +47,50 @@ test_write_long_literal(void)
 }
 
 static void
+check_write_direction(const SerdSyntax    syntax,
+                      const SerdNodeFlags direction,
+                      const char* const   expected)
+{
+  SerdEnv* const env = serd_env_new(NULL);
+  assert(env);
+
+  SerdChunk         chunk = {NULL, 0};
+  SerdWriter* const writer =
+    serd_writer_new(syntax, (SerdStyle)0U, env, NULL, serd_chunk_sink, &chunk);
+  assert(writer);
+
+  SerdNode s = serd_node_from_string(SERD_URI, USTR(NS_EG "s"));
+  SerdNode p = serd_node_from_string(SERD_URI, USTR(NS_EG "p"));
+  SerdNode o = serd_node_from_string(SERD_LITERAL, USTR("abc"));
+  SerdNode l = serd_node_from_string(SERD_LITERAL, USTR("en"));
+  l.flags |= direction;
+
+  assert(!serd_writer_write_statement(writer, 0, NULL, &s, &p, &o, NULL, &l));
+  assert(!serd_writer_finish(writer));
+
+  uint8_t* const out = serd_chunk_sink_finish(&chunk);
+  assert(expect_string((const char*)out, expected));
+  serd_free(out);
+
+  serd_writer_free(writer);
+  serd_env_free(env);
+}
+
+static void
+test_write_directional_literals(void)
+{
+  check_write_direction(SERD_TURTLE,
+                        SERD_HAS_DIRECTION,
+                        "<http://example.org/s>\n"
+                        "\t<http://example.org/p> \"abc\"@en--ltr .\n");
+
+  check_write_direction(
+    SERD_NTRIPLES,
+    SERD_HAS_DIRECTION | SERD_DIRECTION_RTL,
+    "<http://example.org/s> <http://example.org/p> \"abc\"@en--rtl .\n");
+}
+
+static void
 test_write_nested_anon(void)
 {
   SerdEnv*    env    = serd_env_new(NULL);
@@ -341,6 +385,8 @@ test_write_bad_statement(void)
   SerdNode p = serd_node_from_string(SERD_URI, USTR("http://example.org/p"));
   SerdNode o = serd_node_from_string(SERD_URI, USTR("http://example.org/o"));
   SerdNode l = serd_node_from_string(SERD_LITERAL, USTR("lang"));
+  SerdNode d = l;
+  d.flags |= SERD_DIRECTION_RTL;
 
   assert(serd_writer_write_statement(
            writer,
@@ -383,6 +429,9 @@ test_write_bad_statement(void)
            NULL) == SERD_ERR_BAD_ARG);
 
   assert(serd_writer_write_statement(writer, 0U, NULL, &s, &p, &o, &o, &l) ==
+         SERD_ERR_BAD_ARG);
+
+  assert(serd_writer_write_statement(writer, 0U, NULL, &s, &p, &o, NULL, &d) ==
          SERD_ERR_BAD_ARG);
 
   serd_writer_free(writer);
@@ -466,6 +515,7 @@ int
 main(void)
 {
   test_write_long_literal();
+  test_write_directional_literals();
   test_write_nested_anon();
   test_writer_cleanup();
   test_write_bad_anon_stack();
