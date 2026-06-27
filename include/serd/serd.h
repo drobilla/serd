@@ -841,11 +841,11 @@ typedef struct SerdWriterImpl SerdWriter;
    does not support abbreviation and is always ASCII.
 */
 typedef enum {
-  SERD_STYLE_ABBREVIATED = 1U << 0U, ///< Abbreviate triples when possible.
-  SERD_STYLE_ASCII       = 1U << 1U, ///< Escape all non-ASCII characters.
-  SERD_STYLE_RESOLVED    = 1U << 2U, ///< Resolve URIs against base URI.
-  SERD_STYLE_CURIED      = 1U << 3U, ///< Shorten URIs into CURIEs.
-  SERD_STYLE_BULK        = 1U << 4U, ///< Write output in pages.
+  SERD_STYLE_ABBREVIATED = 1U << 0U, ///< Abbreviate triples when possible
+  SERD_STYLE_ASCII       = 1U << 1U, ///< Escape all non-ASCII characters
+  SERD_STYLE_RESOLVED    = 1U << 2U, ///< Resolve URIs against base URI
+  SERD_STYLE_CURIED      = 1U << 3U, ///< Shorten URIs into CURIEs
+  SERD_STYLE_BULK        = 1U << 4U, ///< Write output in pages
   SERD_STYLE_STRICT      = 1U << 5U, ///< Abort with error on lossy output
 } SerdStyle;
 
