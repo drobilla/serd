@@ -327,6 +327,37 @@ test_write_nothing_node(void)
 }
 
 static void
+test_write_surrogate(void)
+{
+  static const uint8_t utf8_surrogate[] = {0xEDU, 0xA0U, 0U};
+
+  SerdEnv* const env = serd_env_new(NULL);
+  assert(env);
+
+  for (unsigned i = 0U; i < 1U; ++i) {
+    SerdChunk         chunk  = {NULL, 0};
+    SerdWriter* const writer = serd_writer_new(
+      SERD_TURTLE, (SerdStyle)0, env, NULL, serd_chunk_sink, &chunk);
+    assert(writer);
+
+    SerdNode s = serd_node_from_string(SERD_URI, USTR("http://example.org/s"));
+    SerdNode p = serd_node_from_string(SERD_URI, USTR("http://example.org/p"));
+    SerdNode o = serd_node_from_string(SERD_LITERAL, utf8_surrogate);
+
+    const SerdStatus st =
+      serd_writer_write_statement(writer, 0U, NULL, &s, &p, &o, NULL, NULL);
+    assert(st == SERD_ERR_BAD_TEXT);
+    assert(!serd_writer_finish(writer));
+
+    uint8_t* const out = serd_chunk_sink_finish(&chunk);
+    serd_free(out);
+    serd_writer_free(writer);
+  }
+
+  serd_env_free(env);
+}
+
+static void
 test_write_bad_statement(void)
 {
   SerdEnv* const env = serd_env_new(NULL);
@@ -473,6 +504,7 @@ main(void)
   test_write_error();
   test_chunk_sink();
   test_write_nothing_node();
+  test_write_surrogate();
   test_write_bad_statement();
   test_write_pname_escapes();
 

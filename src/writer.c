@@ -300,6 +300,15 @@ write_text_character(SerdWriter* const writer, const uint8_t* const utf8)
     return result;
   }
 
+  if (c == 0xEDU && utf8[1] >= 0xA0U) {
+    // Refuse to write surrogates
+    const VariableResult result = {
+      w_err(writer, SERD_ERR_BAD_TEXT, "unicode surrogate: %X\n", c),
+      read_count,
+      0U};
+    return result;
+  }
+
   // Write the UTF-8 encoding directly to the output
   const size_t write_count = sink(utf8, read_count, writer);
   SerdStatus   st          = SERD_SUCCESS;

@@ -147,11 +147,12 @@ utf8_num_bytes(const uint8_t leading)
 static inline uint8_t
 utf8_num_bytes_for_codepoint(const uint32_t code)
 {
-  return (code < 0x00000080U)   ? 1U
-         : (code < 0x00000800U) ? 2U
-         : (code < 0x00010000U) ? 3U
-         : (code < 0x00110000U) ? 4U
-                                : 0U;
+  return (code < 0x00000080U)                   ? 1U
+         : (code < 0x00000800U)                 ? 2U
+         : (code >= 0xD800U && code <= 0xDFFFU) ? 0U // Surrogate
+         : (code < 0x00010000U)                 ? 3U
+         : (code < 0x00110000U)                 ? 4U
+                                                : 0U;
 }
 
 /// Return the code point of a UTF-8 character with known length

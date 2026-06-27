@@ -78,6 +78,14 @@ read_UCHAR(SerdReader* const reader, const Ref dest, uint32_t* const char_code)
     code = (code << (i ? 4U : 0U)) | hex_digit_value(buf[i]);
   }
 
+  // Reject UTF-16 surrogates in strict mode
+  if (code >= 0xD800U && code <= 0xDFFFU) {
+    r_err(reader, SERD_ERR_BAD_SYNTAX, "unicode surrogate 0x%X\n", code);
+    if (reader->strict) {
+      return SERD_ERR_BAD_SYNTAX;
+    }
+  }
+
   // Determine the encoded size from the code point
   const unsigned size = utf8_num_bytes_for_codepoint(code);
   if (!size) {

@@ -257,6 +257,16 @@
     <#trig-syntax-bad-n3-extras-11>
     <#trig-syntax-bad-n3-extras-12>
     <#trig-syntax-bad-n3-extras-13>
+    <#trig-syntax-bad-numeric-escape-01>
+    <#trig-syntax-bad-numeric-escape-02>
+    <#trig-syntax-bad-numeric-escape-03>
+    <#trig-syntax-bad-numeric-escape-04>
+    <#trig-syntax-bad-numeric-escape-05>
+    <#trig-syntax-bad-numeric-escape-06>
+    <#trig-syntax-bad-numeric-escape-07>
+    <#trig-syntax-bad-numeric-escape-08>
+    <#trig-syntax-bad-numeric-escape-09>
+    <#trig-syntax-bad-numeric-escape-10>
     <#trig-syntax-bad-struct-09>
     <#trig-syntax-bad-struct-10>
     <#trig-syntax-bad-struct-12>
@@ -2020,6 +2030,76 @@
    rdft:approval rdft:Approved ;
    mf:action    <trig-syntax-bad-n3-extras-13.trig> ;
    .
+
+<#trig-syntax-bad-numeric-escape-01> rdf:type rdft:TestTrigNegativeSyntax ;
+    mf:name    "trig-syntax-bad-numeric-escape-01" ;
+    rdfs:comment "Surrogates not allowed in STRING_LITERAL_QUOTE" ;
+    rdft:approval rdft:Approved ;
+    mf:action    <trig-syntax-bad-numeric-escape-01.trig> ;
+    .
+
+<#trig-syntax-bad-numeric-escape-02> rdf:type rdft:TestTrigNegativeSyntax ;
+    mf:name    "trig-syntax-bad-numeric-escape-02" ;
+    rdfs:comment "Surrogates not allowed in STRING_LITERAL_QUOTE" ;
+    rdft:approval rdft:Approved ;
+    mf:action    <trig-syntax-bad-numeric-escape-02.trig> ;
+    .
+
+<#trig-syntax-bad-numeric-escape-03> rdf:type rdft:TestTrigNegativeSyntax ;
+    mf:name    "trig-syntax-bad-numeric-escape-03" ;
+    rdfs:comment "Surrogates not allowed in STRING_LITERAL_SINGLE_QUOTE" ;
+    rdft:approval rdft:Approved ;
+    mf:action    <trig-syntax-bad-numeric-escape-03.trig> ;
+    .
+
+<#trig-syntax-bad-numeric-escape-04> rdf:type rdft:TestTrigNegativeSyntax ;
+    mf:name    "trig-syntax-bad-numeric-escape-04" ;
+    rdfs:comment "Surrogates not allowed in STRING_LITERAL_SINGLE_QUOTE" ;
+    rdft:approval rdft:Approved ;
+    mf:action    <trig-syntax-bad-numeric-escape-04.trig> ;
+    .
+
+<#trig-syntax-bad-numeric-escape-05> rdf:type rdft:TestTrigNegativeSyntax ;
+    mf:name    "trig-syntax-bad-numeric-escape-05" ;
+    rdfs:comment "Surrogates not allowed in STRING_LITERAL_LONG_SINGLE_QUOTE" ;
+    rdft:approval rdft:Approved ;
+    mf:action    <trig-syntax-bad-numeric-escape-05.trig> ;
+    .
+
+<#trig-syntax-bad-numeric-escape-06> rdf:type rdft:TestTrigNegativeSyntax ;
+    mf:name    "trig-syntax-bad-numeric-escape-06" ;
+    rdfs:comment "Surrogates not allowed in STRING_LITERAL_LONG_SINGLE_QUOTE" ;
+    rdft:approval rdft:Approved ;
+    mf:action    <trig-syntax-bad-numeric-escape-06.trig> ;
+    .
+
+<#trig-syntax-bad-numeric-escape-07> rdf:type rdft:TestTrigNegativeSyntax ;
+    mf:name    "trig-syntax-bad-numeric-escape-07" ;
+    rdfs:comment "Surrogates not allowed in STRING_LITERAL_LONG_QUOTE" ;
+    rdft:approval rdft:Approved ;
+    mf:action    <trig-syntax-bad-numeric-escape-07.trig> ;
+    .
+
+<#trig-syntax-bad-numeric-escape-08> rdf:type rdft:TestTrigNegativeSyntax ;
+    mf:name    "trig-syntax-bad-numeric-escape-08" ;
+    rdfs:comment "Surrogates not allowed in STRING_LITERAL_LONG_QUOTE" ;
+    rdft:approval rdft:Approved ;
+    mf:action    <trig-syntax-bad-numeric-escape-08.trig> ;
+    .
+
+<#trig-syntax-bad-numeric-escape-09> rdf:type rdft:TestTrigNegativeSyntax ;
+    mf:name    "trig-syntax-bad-numeric-escape-09" ;
+    rdfs:comment "Surrogates not allowed in IRIREF" ;
+    rdft:approval rdft:Approved ;
+    mf:action    <trig-syntax-bad-numeric-escape-09.trig> ;
+    .
+
+<#trig-syntax-bad-numeric-escape-10> rdf:type rdft:TestTrigNegativeSyntax ;
+    mf:name    "trig-syntax-bad-numeric-escape-10" ;
+    rdfs:comment "Surrogates not allowed in IRIREF" ;
+    rdft:approval rdft:Approved ;
+    mf:action    <trig-syntax-bad-numeric-escape-10.trig> ;
+    .
 
 <#trig-syntax-bad-struct-09> rdf:type rdft:TestTrigNegativeSyntax ;
    mf:name    "trig-syntax-bad-struct-09" ;
