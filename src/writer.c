@@ -174,7 +174,7 @@ copy_node(SerdNode* const dst, const SerdNode* const src)
     dst->n_chars = src->n_chars;
     dst->flags   = src->flags;
     dst->type    = src->type;
-    memcpy((char*)dst->buf, src->buf, new_size);
+    memcpy(new_buf, src->buf, new_size);
   }
 }
 
