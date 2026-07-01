@@ -118,7 +118,7 @@ read_turtleTrigDoc(SerdReader* reader);
 static inline int
 peek_byte(SerdReader* const reader)
 {
-  SerdByteSource* source = &reader->source;
+  const SerdByteSource* const source = &reader->source;
 
   return source->eof ? -1 : (int)source->read_buf[source->read_head];
 }
