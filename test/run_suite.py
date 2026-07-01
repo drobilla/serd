@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2022-2025 David Robillard <d@drobilla.net>
+# Copyright 2022-2026 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: ISC
 
 """Run a "simple" one-pass RDF-based test suite for serd."""
@@ -17,6 +17,11 @@ import serd_test_util as util
 NS_MF = "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#"
 NS_RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 NS_RDFT = "http://www.w3.org/ns/rdftest#"
+
+REPORT_PREFIXES = """@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix earl: <http://www.w3.org/ns/earl#> .
+
+"""
 
 DEVNULL = subprocess.DEVNULL
 PIPE = subprocess.PIPE
@@ -110,7 +115,16 @@ def run_suite(args, command, out_dir):
 
     # Load manifest model
     top = os.path.dirname(args.manifest)
-    model, instances = util.load_rdf(args.manifest, args.base_uri, command)
+    model, instances = util.load_rdf(
+        args.manifest, args.base_uri + "manifest.ttl#", command
+    )
+
+    if args.report and not os.path.exists(args.report):
+        with open(args.report, "w", encoding="utf-8") as report:
+            report.write(REPORT_PREFIXES)
+            if args.template:
+                with open(args.template, "r", encoding="utf-8") as template:
+                    report.write(template.read())
 
     # Run all the listed tests that have known types
     command = command + args.arg
@@ -125,12 +139,11 @@ def run_suite(args, command, out_dir):
 
         for uri in instances:
             try:
-                entry = model[uri]
-                if check and NS_MF + "result" not in entry:
+                if check and NS_MF + "result" not in model[uri]:
                     raise RuntimeError("Eval test missing result: " + uri)
 
                 # Run test and record result
-                passed = run_entry(args, entry, command, out_dir, top)
+                passed = run_entry(args, model[uri], command, out_dir, top)
                 results.check(passed)
 
                 # Write test report entry
@@ -157,6 +170,7 @@ def main():
     )
 
     parser.add_argument("--asserter", help="asserter URI for test report")
+    parser.add_argument("--template", help="template for test report")
     parser.add_argument("--lax", action="store_true", help="tolerate errors")
     parser.add_argument("--report", help="path to write result report to")
     parser.add_argument("--reverse", action="store_true", help="reverse test")

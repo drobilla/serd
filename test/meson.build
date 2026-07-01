@@ -1,4 +1,4 @@
-# Copyright 2020-2023 David Robillard <d@drobilla.net>
+# Copyright 2020-2026 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
 run_suite = find_program('run_suite.py')
@@ -293,13 +293,25 @@ test_suites = {
 
 # Run every test suite with serdi
 if is_variable('serdi')
-  script_args = common_script_args + ['--serdi', serdi]
+  script_args = common_script_args + [
+    ['--serdi', serdi],
+    ['--template', serd_ttl],
+  ]
+
+  if get_option('asserter') != ''
+    script_args += ['--asserter', get_option('asserter')]
+  endif
 
   foreach name, args : test_suites
+    suite_args = script_args
+    if name in ['nquads', 'ntriples', 'trig', 'turtle']
+      suite_args += ['--report', 'serd-@0@.ttl'.format(name)]
+    endif
+
     test(
       name,
       run_suite,
-      args: script_args + args,
+      args: suite_args + args,
       suite: ['suite'],
       timeout: 240,
     )
