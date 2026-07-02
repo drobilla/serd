@@ -80,7 +80,10 @@ elif cc.get_id() == 'gcc'
     ]
 
     if host_machine.system() == 'windows'
-      c_suppressions += ['-Wno-float-conversion']
+      c_suppressions += [
+        '-Wno-float-conversion',
+        '-Wno-strict-overflow',
+      ]
     endif
   endif
 
