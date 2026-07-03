@@ -45,6 +45,10 @@ if cc.get_id() in ['clang', 'emscripten']
       '-Wno-unsafe-buffer-usage',
     ]
 
+    if cc.get_id() == 'emscripten'
+      c_suppressions += ['-Wno-disabled-macro-expansion']
+    endif
+
     if host_machine.system() == 'windows'
       c_suppressions += [
         '-Wno-deprecated-declarations',
@@ -266,6 +270,8 @@ if not get_option('tools').disabled()
   tool_link_args = []
   if get_option('static')
     tool_link_args += ['-static']
+  elif cc.get_id() == 'emscripten'
+    tool_link_args += ['-s', 'NODERAWFS=1']
   endif
 
   serdi = executable(
