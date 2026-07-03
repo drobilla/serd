@@ -32,7 +32,7 @@ dev:
 
 static:
   stage: build
-  image: lv2plugin/debian-x64
+  image: lv2plugin/debian-dev
   script:
     - meson setup build -Ddefault_library=static -Ddocs=disabled -Dstatic=true -Dwarning_level=3 -Dwerror=true
     - ninja -C build test
