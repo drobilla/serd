@@ -1,4 +1,4 @@
-# Copyright 2018-2023 David Robillard <d@drobilla.net>
+# Copyright 2018-2026 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
 stages: [build, deploy]
@@ -95,22 +95,22 @@ mingw32:
   image: lv2plugin/debian-mingw32
   script:
     - meson setup build --cross-file=/usr/share/meson/cross/i686-w64-mingw32.ini -Dbuildtype=debug -Dc_std=c11 -Ddocs=disabled -Dwarning_level=3 -Dwerror=true
-    - ninja -C build test
+    - meson test -C build -t 2
     - meson configure -Dbuildtype=release build
-    - ninja -C build test
+    - meson test -C build -t 2
   variables:
-    WINEPATH: "Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\10-win32"
+    WINEPATH: "Z:\\usr\\lib\\gcc\\i686-w64-mingw32\\12-win32"
 
 mingw64:
   stage: build
   image: lv2plugin/debian-mingw64
   script:
     - meson setup build --cross-file=/usr/share/meson/cross/x86_64-w64-mingw32.ini -Dbuildtype=debug -Dc_std=c11 -Ddocs=disabled -Dwarning_level=3 -Dwerror=true
-    - ninja -C build test
+    - meson test -C build -t 2
     - meson configure -Dbuildtype=release build
-    - ninja -C build test
+    - meson test -C build -t 2
   variables:
-    WINEPATH: "Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\8.3-win32"
+    WINEPATH: "Z:\\usr\\lib\\gcc\\x86_64-w64-mingw32\\12-win32"
 
 # Non-Linux/Docker rows (not hosted)
 
