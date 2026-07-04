@@ -321,8 +321,6 @@ endif
 # Support #
 ###########
 
-subdir('scripts')
-
 if not get_option('tests').disabled()
   subdir('test')
 endif

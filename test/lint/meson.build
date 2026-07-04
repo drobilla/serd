@@ -98,7 +98,7 @@ if is_variable('serdi')
   foreach ttl_file_path : ttl_metadata_file_paths
     test(
       ttl_file_path.substring(3).underscorify(),
-      check_formatting_py,
+      files('../../scripts/check_formatting.py'),
       args: [files(ttl_file_path), serdi, '-o', 'turtle'],
       suite: 'data',
     )
