@@ -47,6 +47,17 @@ if reuse.found()
   )
 endif
 
+# Check YAML
+yamllint = find_program('yamllint', required: false)
+if yamllint.found()
+  test(
+    'yamllint',
+    yamllint,
+    args: ['-f', 'parsable', '-s', files('../../.gitlab-ci.yml')],
+    suite: 'data',
+  )
+endif
+
 # Check code formatting
 clang_format = find_program('clang-format', required: false)
 if clang_format.found()

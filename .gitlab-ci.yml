@@ -1,6 +1,9 @@
 # Copyright 2018-2026 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
+# yamllint disable rule:line-length
+---
+
 stages: [build, deploy]
 
 variables:
@@ -8,14 +11,14 @@ variables:
 
 default:
   stage: build
-  image: lv2plugin/debian-x64
+  image: lv2plugin/debian-gcc
   script:
     - meson setup build -Dwerror=true
     - ninja -C build test
 
 dev:
   stage: build
-  image: lv2plugin/debian-x64
+  image: lv2plugin/debian-gcc-dev
   script:
     - meson setup build -Db_coverage=true -Dbuildtype=debug -Dc_std=c11 -Ddocs=enabled -Dlint=true -Dprefix=/ -Dwarning_level=3 -Dwerror=true
     - ninja -C build test
@@ -32,14 +35,14 @@ dev:
 
 static:
   stage: build
-  image: lv2plugin/debian-dev
+  image: lv2plugin/debian-gcc
   script:
     - meson setup build -Ddefault_library=static -Ddocs=disabled -Dstatic=true -Dwarning_level=3 -Dwerror=true
     - ninja -C build test
 
 sanitize:
   stage: build
-  image: lv2plugin/debian-x64-clang
+  image: lv2plugin/debian-clang-dev
   script:
     - meson setup build -Db_lundef=false -Dbuildtype=plain -Dc_std=c11 -Ddocs=disabled -Dlint=true -Dwarning_level=3 -Dwerror=true
     - ninja -C build test
@@ -63,9 +66,9 @@ fedora:
 
 # Linux Platforms
 
-arm32:
+armhf:
   stage: build
-  image: lv2plugin/debian-arm32
+  image: lv2plugin/debian-gcc-armhf
   script:
     - meson setup build --cross-file=/usr/share/meson/cross/arm-linux-gnueabihf.ini -Dbuildtype=debug -Dc_std=c11 -Ddocs=disabled -Dwarning_level=3 -Dwerror=true
     - ninja -C build test
@@ -74,16 +77,16 @@ arm32:
 
 arm64:
   stage: build
-  image: lv2plugin/debian-arm64
+  image: lv2plugin/debian-gcc-arm64
   script:
     - meson setup build --cross-file=/usr/share/meson/cross/aarch64-linux-gnu.ini -Dbuildtype=debug -Dc_std=c11 -Ddocs=disabled -Dwarning_level=3 -Dwerror=true
     - ninja -C build test
     - meson configure -Dbuildtype=release build
     - ninja -C build test
 
-x32:
+i386:
   stage: build
-  image: lv2plugin/debian-x32
+  image: lv2plugin/debian-gcc-i386
   script:
     - meson setup build --cross-file=/usr/share/meson/cross/i686-linux-gnu.ini -Dbuildtype=debug -Ddocs=disabled -Dwarning_level=3 -Dwerror=true
     - ninja -C build test
@@ -125,7 +128,7 @@ wasm:
 
 freebsd:
   stage: build
-  tags: [freebsd,meson]
+  tags: [freebsd, meson]
   script:
     - meson setup build -Dbuildtype=debug -Dwarning_level=everything -Dwerror=true
     - ninja -C build test
@@ -143,7 +146,7 @@ mac:
 
 win:
   stage: build
-  tags: [windows,meson]
+  tags: [windows, meson]
   script:
     - meson setup build -Dbuildtype=debug -Ddocs=disabled -Dwarning_level=everything -Dwerror=true
     - ninja -C build test
