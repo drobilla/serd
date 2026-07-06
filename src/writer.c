@@ -905,7 +905,11 @@ write_literal(SerdWriter* const     writer,
   }
   if (lang && lang->buf) {
     TRY(st, esink("@", 1, writer));
-    st = esink(lang->buf, lang->n_bytes, writer);
+    TRY(st, esink(lang->buf, lang->n_bytes, writer));
+    if (lang->flags & SERD_HAS_DIRECTION) {
+      st = esink(
+        (lang->flags & SERD_DIRECTION_RTL) ? "--rtl" : "--ltr", 5, writer);
+    }
   } else if (datatype && datatype->buf) {
     TRY(st, esink("^^", 2, writer));
     st = write_iri(writer, datatype);
@@ -1048,6 +1052,9 @@ serd_writer_write_statement(SerdWriter* const     writer,
   assert(predicate);
   assert(object);
 
+  const SerdNodeFlags direction =
+    lang ? lang->flags & (SERD_HAS_DIRECTION | SERD_DIRECTION_RTL) : 0U;
+
   SerdStatus st = SERD_SUCCESS;
 
   if ((flags & SERD_LIST_O_BEGIN) &&
@@ -1062,6 +1069,8 @@ serd_writer_write_statement(SerdWriter* const     writer,
   if (!is_resource(subject) || !is_resource(predicate) ||
       object->type == SERD_NOTHING || !object->buf ||
       (datatype && datatype->buf && lang && lang->buf) ||
+      direction == SERD_DIRECTION_RTL ||
+      (direction && (!lang->buf || object->type != SERD_LITERAL)) ||
       ((flags & SERD_ANON_S_BEGIN) && (flags & SERD_LIST_S_BEGIN)) ||
       ((flags & SERD_EMPTY_S) && (flags & SERD_LIST_S_BEGIN)) ||
       ((flags & SERD_ANON_O_BEGIN) && (flags & SERD_LIST_O_BEGIN)) ||

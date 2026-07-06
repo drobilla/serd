@@ -539,7 +539,39 @@ read_PN_PREFIX(SerdReader* const reader, const Ref dest, bool* const ate_dot)
 }
 
 static SerdStatus
-read_LANGTAG(SerdReader* const reader, Ref* const dest)
+read_base_direction(SerdReader* const reader, const Ref lang)
+{
+  char   direction[4] = {0, 0, 0, 0};
+  size_t length       = 0U;
+  int    c            = 0;
+
+  while (((c = peek_byte(reader)) > 0) && is_alpha(c)) {
+    if (length < sizeof(direction) - 1U) {
+      direction[length] = (char)c;
+    }
+
+    ++length;
+    skip_byte(reader, c);
+  }
+
+  SerdNode* const node = deref(reader, lang);
+  if (length == 3U && !memcmp(direction, "ltr", 3U)) {
+    node->flags |= SERD_HAS_DIRECTION;
+    return SERD_SUCCESS;
+  }
+
+  if (length == 3U && !memcmp(direction, "rtl", 3U)) {
+    node->flags |= SERD_HAS_DIRECTION | SERD_DIRECTION_RTL;
+    return SERD_SUCCESS;
+  }
+
+  return r_err(reader,
+               SERD_ERR_BAD_SYNTAX,
+               "bad base direction, expected 'ltr' or 'rtl'\n");
+}
+
+static SerdStatus
+read_LANG_DIR(SerdReader* const reader, Ref* const dest)
 {
   int c = peek_byte(reader);
   if (!is_alpha(c)) {
@@ -555,7 +587,17 @@ read_LANGTAG(SerdReader* const reader, Ref* const dest)
   }
 
   while (peek_byte(reader) == '-') {
-    TRY(st, push_byte(reader, *dest, eat_byte_safe(reader, '-')));
+    skip_byte(reader, '-');
+    if (peek_byte(reader) == '-') {
+      skip_byte(reader, '-');
+      return read_base_direction(reader, *dest);
+    }
+
+    TRY(st, push_byte(reader, *dest, '-'));
+    if (!is_alpha(peek_byte(reader)) && !is_digit(peek_byte(reader))) {
+      return r_err(reader, SERD_ERR_BAD_SYNTAX, "expected language subtag\n");
+    }
+
     while (((c = peek_byte(reader)) > 0) && (is_alpha(c) || is_digit(c))) {
       TRY(st, push_byte(reader, *dest, eat_byte_safe(reader, c)));
     }
@@ -787,11 +829,11 @@ read_literal(SerdReader* const    reader,
   const int next = peek_byte(reader);
   if (next == '@') {
     skip_byte(reader, '@');
-    if ((st = read_LANGTAG(reader, lang))) {
+    if ((st = read_LANG_DIR(reader, lang))) {
       *datatype = pop_node(reader, *datatype);
       *lang     = pop_node(reader, *lang);
       *dest     = pop_node(reader, *dest);
-      return r_err(reader, st, "bad language tag\n");
+      return r_err(reader, st, "bad language tag or base direction\n");
     }
   } else if (next == '^') {
     skip_byte(reader, '^');
