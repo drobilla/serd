@@ -1,0 +1,43 @@
+# Copyright 2026 David Robillard <d@drobilla.net>
+# SPDX-License-Identifier: 0BSD OR ISC
+---
+
+name: build-image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.forgejo/workflows/build-image.yml'
+      - 'Dockerfile'
+      - 'include/**'
+      - 'meson.build'
+      - 'meson_options.txt'
+      - 'src/**'
+
+jobs:
+  build:
+    if: forgejo.server_url == 'https://codeberg.org'
+    runs-on: docker
+    container:
+      image: quay.io/buildah/stable
+    steps:
+      - name: 'Clone'
+        run: >
+          git clone --branch ${FORGEJO_REF_NAME} --depth 1
+          ${FORGEJO_SERVER_URL}/${FORGEJO_REPOSITORY}.git .
+      - name: 'Set epoch'
+        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> $FORGEJO_ENV
+      - name: 'Build'
+        run: >
+          buildah bud
+          --isolation chroot
+          --label 'org.opencontainers.image.source=https://codeberg.org/drobilla/serd'
+          --storage-driver=vfs
+          -t codeberg.org/drobilla/serdi:latest
+      - name: 'Push'
+        run: >
+          buildah push
+          --creds drobilla:${{ secrets.REGISTRY_TOKEN }}
+          --storage-driver=vfs
+          codeberg.org/drobilla/serdi:latest
