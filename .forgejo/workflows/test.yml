@@ -53,8 +53,7 @@ jobs:
         run: meson install -C build --destdir dest
       - name: 'Upload index'
         if: >
-          forgejo.server_url == 'https://codeberg.org' &&
-          forgejo.ref_name == 'main'
+          forgejo.server_url == 'https://codeberg.org'
         uses: https://codeberg.org/git-pages/action@v2
         with:
           site: https://${{ forge.repository_owner }}.codeberg.page/serd/
@@ -63,8 +62,7 @@ jobs:
           source: doc/site/
       - name: 'Upload documentation'
         if: >
-          forgejo.server_url == 'https://codeberg.org' &&
-          forgejo.ref_name == 'main'
+          forgejo.server_url == 'https://codeberg.org'
         uses: https://codeberg.org/git-pages/action@v2
         with:
           site: https://${{ forge.repository_owner }}.codeberg.page/serd/
@@ -93,8 +91,7 @@ jobs:
         run: ninja -C build coverage-html
       - name: 'Upload coverage report'
         if: >
-          forgejo.server_url == 'https://codeberg.org' &&
-          forgejo.ref_name == 'main'
+          forgejo.server_url == 'https://codeberg.org'
         uses: https://codeberg.org/git-pages/action@v2
         with:
           site: https://${{ forge.repository_owner }}.codeberg.page/serd/
