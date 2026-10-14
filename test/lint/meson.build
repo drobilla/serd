@@ -58,6 +58,7 @@ if yamllint.found()
       'parsable',
       '-s',
       files(
+        '../../.forgejo/workflows/build-image.yml',
         '../../.forgejo/workflows/test.yml',
       ),
     ],
