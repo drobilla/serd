@@ -1,4 +1,4 @@
-# Copyright 2020-2023 David Robillard <d@drobilla.net>
+# Copyright 2020-2026 David Robillard <d@drobilla.net>
 # SPDX-License-Identifier: 0BSD OR ISC
 
 plot_script_paths = [
@@ -43,6 +43,24 @@ if reuse.found()
     'REUSE',
     reuse,
     args: ['--root', serd_src_root, 'lint'],
+    suite: 'data',
+  )
+endif
+
+# Check YAML
+yamllint = find_program('yamllint', required: false)
+if yamllint.found()
+  test(
+    'yamllint',
+    yamllint,
+    args: [
+      '-f',
+      'parsable',
+      '-s',
+      files(
+        '../../.forgejo/workflows/test.yml',
+      ),
+    ],
     suite: 'data',
   )
 endif

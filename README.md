@@ -1,4 +1,4 @@
-<!-- Copyright 2011-2022 David Robillard <d@drobilla.net> -->
+<!-- Copyright 2011-2026 David Robillard <d@drobilla.net> -->
 <!-- SPDX-License-Identifier: ISC -->
 
 Serd
@@ -55,9 +55,9 @@ Documentation
 -------------
 
  * [Installation instructions](INSTALL.md)
- * [Single-page API reference](https://drobilla.gitlab.io/serd/doc/singlehtml/)
- * [Paginated API reference](https://drobilla.gitlab.io/serd/doc/html/)
- * [`serdi` man page](https://drobilla.gitlab.io/serd/man/serdi.html)
+ * [`serdi` man page](https://drobilla.codeberg.page/serd/doc/man/serdi.html)
+ * [API reference](https://drobilla.codeberg.page/serd/doc/html/)
+   * [Single page](https://drobilla.codeberg.page/serd/doc/singlehtml/)
 
 Versioning
 ----------
