@@ -1,5 +1,4 @@
 assertWithSideEffect
-assignmentInAssert
 knownConditionTrueFalse
 normalCheckLevelMaxBranches
 nullPointerArithmeticOutOfMemory
