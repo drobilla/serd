@@ -555,9 +555,7 @@ write_literal_character(SerdWriter* const    writer,
                         const size_t         i,
                         const size_t         n_bytes)
 {
-  VariableResult vr = {SERD_SUCCESS, 0U, 0U};
-
-  vr = write_text_character(writer, utf8 + i);
+  VariableResult vr = write_text_character(writer, utf8 + i);
   if (!vr.read_count && !(writer->style & SERD_STYLE_STRICT)) {
     // Corrupt input, write replacement char and scan to the next start
     vr.status     = esink(replacement_char, sizeof(replacement_char), writer);

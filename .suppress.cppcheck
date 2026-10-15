@@ -3,6 +3,5 @@ knownConditionTrueFalse
 normalCheckLevelMaxBranches
 nullPointerArithmeticOutOfMemory
 nullPointerOutOfMemory
-redundantInitialization
 unreadVariable
 unusedStructMember
