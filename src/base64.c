@@ -51,6 +51,7 @@ encode_chunk(uint8_t out[4], const uint8_t in[3], const size_t n_in)
 size_t
 serd_base64_get_length(const size_t size, const bool wrap_lines)
 {
+  assert(size > 0 || !wrap_lines);
   return ((size + 2) / 3 * 4) + (wrap_lines * ((size - 1) / 57));
 }
 
