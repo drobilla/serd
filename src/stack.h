@@ -26,6 +26,7 @@ serd_stack_new(const size_t size)
   stack.buf      = (uint8_t*)calloc(size, 1);
   stack.buf_size = size;
   stack.size     = SERD_STACK_BOTTOM;
+  assert(stack.buf);
   return stack;
 }
 
@@ -49,8 +50,11 @@ serd_stack_push(SerdStack* const stack, const size_t n_bytes)
 {
   const size_t new_size = stack->size + n_bytes;
   if (stack->buf_size < new_size) {
-    stack->buf_size += (stack->buf_size >> 1); // *= 1.5
-    stack->buf = (uint8_t*)realloc(stack->buf, stack->buf_size);
+    const size_t   new_buf_size = stack->buf_size + (stack->buf_size >> 1);
+    uint8_t* const new_buf      = (uint8_t*)realloc(stack->buf, new_buf_size);
+    assert(new_buf);
+    stack->buf      = new_buf;
+    stack->buf_size = new_buf_size;
   }
 
   uint8_t* const ret = (stack->buf + stack->size);

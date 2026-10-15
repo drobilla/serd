@@ -1249,16 +1249,17 @@ serd_writer_new(const SerdSyntax     syntax,
   assert(ssink);
 
   SerdWriter* writer = (SerdWriter*)calloc(1, sizeof(SerdWriter));
-
-  writer->syntax     = syntax;
-  writer->style      = style;
-  writer->env        = env;
-  writer->root_node  = SERD_NODE_NULL;
-  writer->root_uri   = SERD_URI_NULL;
-  writer->base_uri   = base_uri ? *base_uri : SERD_URI_NULL;
-  writer->anon_stack = serd_stack_new(SERD_PAGE_SIZE);
-  writer->byte_sink  = serd_byte_sink_new(
-    ssink, stream, (style & SERD_STYLE_BULK) ? SERD_PAGE_SIZE : 1);
+  if (writer) {
+    writer->syntax     = syntax;
+    writer->style      = style;
+    writer->env        = env;
+    writer->root_node  = SERD_NODE_NULL;
+    writer->root_uri   = SERD_URI_NULL;
+    writer->base_uri   = base_uri ? *base_uri : SERD_URI_NULL;
+    writer->anon_stack = serd_stack_new(SERD_PAGE_SIZE);
+    writer->byte_sink  = serd_byte_sink_new(
+      ssink, stream, (style & SERD_STYLE_BULK) ? SERD_PAGE_SIZE : 1);
+  }
 
   return writer;
 }
@@ -1288,6 +1289,7 @@ serd_writer_chop_blank_prefix(SerdWriter* const    writer,
   if (prefix_len) {
     writer->bprefix_len = prefix_len;
     writer->bprefix     = (uint8_t*)malloc(writer->bprefix_len + 1);
+    assert(writer->bprefix);
     memcpy(writer->bprefix, prefix, writer->bprefix_len + 1);
   }
 }

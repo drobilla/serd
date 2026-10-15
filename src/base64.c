@@ -103,22 +103,24 @@ serd_base64_decode(const uint8_t* const str,
   assert(str);
   assert(size);
 
-  void* buf = malloc(((len * 3) / 4) + 2);
-
   *size = 0;
-  for (size_t i = 0, j = 0; i < len; j += 3) {
-    uint8_t in[] = "====";
-    size_t  n_in = 0;
-    for (; i < len && n_in < 4; ++n_in) {
-      for (; i < len && !is_base64(str[i]); ++i) {
-        // Skip junk
+
+  void* buf = malloc(((len * 3) / 4) + 2);
+  if (buf) {
+    for (size_t i = 0, j = 0; i < len; j += 3) {
+      uint8_t in[] = "====";
+      size_t  n_in = 0;
+      for (; i < len && n_in < 4; ++n_in) {
+        for (; i < len && !is_base64(str[i]); ++i) {
+          // Skip junk
+        }
+
+        in[n_in] = str[i++];
       }
 
-      in[n_in] = str[i++];
-    }
-
-    if (n_in > 1) {
-      *size += decode_chunk(in, (uint8_t*)buf + j);
+      if (n_in > 1) {
+        *size += decode_chunk(in, (uint8_t*)buf + j);
+      }
     }
   }
 

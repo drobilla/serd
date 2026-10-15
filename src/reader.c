@@ -210,22 +210,24 @@ serd_reader_new(const SerdSyntax syntax,
                 const SerdStatementSink statement_sink,
                 const SerdEndSink       end_sink)
 {
-  SerdReader* me     = (SerdReader*)calloc(1, sizeof(SerdReader));
-  me->handle         = handle;
-  me->free_handle    = free_handle;
-  me->base_sink      = base_sink;
-  me->prefix_sink    = prefix_sink;
-  me->statement_sink = statement_sink;
-  me->end_sink       = end_sink;
-  me->default_graph  = SERD_NODE_NULL;
-  me->stack          = serd_stack_new(SERD_PAGE_SIZE);
-  me->syntax         = syntax;
-  me->next_id        = 1;
-  me->strict         = true;
+  SerdReader* me = (SerdReader*)calloc(1, sizeof(SerdReader));
+  if (me) {
+    me->handle         = handle;
+    me->free_handle    = free_handle;
+    me->base_sink      = base_sink;
+    me->prefix_sink    = prefix_sink;
+    me->statement_sink = statement_sink;
+    me->end_sink       = end_sink;
+    me->default_graph  = SERD_NODE_NULL;
+    me->stack          = serd_stack_new(SERD_PAGE_SIZE);
+    me->syntax         = syntax;
+    me->next_id        = 1;
+    me->strict         = true;
 
-  me->rdf_first = push_node(me, SERD_URI, NS_RDF "first", 48);
-  me->rdf_rest  = push_node(me, SERD_URI, NS_RDF "rest", 47);
-  me->rdf_nil   = push_node(me, SERD_URI, NS_RDF "nil", 46);
+    me->rdf_first = push_node(me, SERD_URI, NS_RDF "first", 48);
+    me->rdf_rest  = push_node(me, SERD_URI, NS_RDF "rest", 47);
+    me->rdf_nil   = push_node(me, SERD_URI, NS_RDF "nil", 46);
+  }
 
   return me;
 }
@@ -291,6 +293,7 @@ serd_reader_add_blank_prefix(SerdReader* const    reader,
   if (prefix_len) {
     reader->bprefix_len = prefix_len;
     reader->bprefix     = (uint8_t*)malloc(reader->bprefix_len + 1);
+    assert(reader->bprefix);
     memcpy(reader->bprefix, prefix, reader->bprefix_len + 1);
   }
 }

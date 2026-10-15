@@ -1,9 +1,10 @@
 serd (0.32.11) unstable; urgency=medium
 
   * Add serdi container image
+  * Handle allocation failure more gracefully
   * Refuse to read or write unicode surrogates
 
- -- David Robillard <d@drobilla.net>  Wed, 08 Jul 2026 22:42:28 +0000
+ -- David Robillard <d@drobilla.net>  Thu, 15 Oct 2026 22:23:05 +0000
 
 serd (0.32.10) stable; urgency=medium
 

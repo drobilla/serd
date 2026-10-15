@@ -87,10 +87,13 @@ serd_node_copy(const SerdNode* const node)
     return SERD_NODE_NULL;
   }
 
-  SerdNode copy = *node;
-  uint8_t* buf  = (uint8_t*)malloc(copy.n_bytes + 1);
-  memcpy(buf, node->buf, copy.n_bytes + 1);
-  copy.buf = buf;
+  SerdNode       copy = SERD_NODE_NULL;
+  uint8_t* const buf  = (uint8_t*)malloc(node->n_bytes + 1);
+  if (buf) {
+    memcpy(buf, node->buf, node->n_bytes + 1);
+    copy     = *node;
+    copy.buf = buf;
+  }
   return copy;
 }
 
@@ -168,6 +171,7 @@ serd_node_new_file_uri(const uint8_t* const path,
     uri_len = strlen("file://") + hostname_len + is_windows;
     uri     = (uint8_t*)calloc(uri_len + 1, 1);
 
+    assert(uri);
     memcpy(uri, "file://", 7);
 
     if (hostname) {
@@ -217,8 +221,10 @@ serd_node_new_uri(const SerdURI* const uri,
     serd_uri_resolve(uri, base, &abs_uri);
   }
 
-  const size_t len        = serd_uri_string_length(&abs_uri);
-  uint8_t*     buf        = (uint8_t*)malloc(len + 1);
+  const size_t len = serd_uri_string_length(&abs_uri);
+  uint8_t*     buf = (uint8_t*)malloc(len + 1);
+  assert(buf);
+
   SerdNode     node       = {buf, 0, 0, 0, SERD_URI};
   uint8_t*     ptr        = buf;
   const size_t actual_len = serd_uri_serialise(&abs_uri, string_sink, &ptr);
@@ -245,8 +251,10 @@ serd_node_new_relative_uri(const SerdURI* const uri,
   const size_t uri_len  = serd_uri_string_length(uri);
   const size_t base_len = serd_uri_string_length(base);
   uint8_t*     buf      = (uint8_t*)malloc(uri_len + base_len + 1);
-  SerdNode     node     = {buf, 0, 0, 0, SERD_URI};
-  uint8_t*     ptr      = buf;
+  assert(buf);
+
+  SerdNode     node = {buf, 0, 0, 0, SERD_URI};
+  uint8_t*     ptr  = buf;
   const size_t actual_len =
     serd_uri_serialise_relative(uri, base, root, string_sink, &ptr);
 
@@ -278,8 +286,10 @@ serd_node_new_decimal(const double d, const unsigned frac_digits)
   const double   abs_d      = fabs(d);
   const unsigned int_digits = serd_digits(abs_d);
   char*          buf        = (char*)calloc(int_digits + frac_digits + 3, 1);
-  SerdNode       node       = {(const uint8_t*)buf, 0, 0, 0, SERD_LITERAL};
-  const double   int_part   = floor(abs_d);
+  assert(buf);
+
+  SerdNode     node     = {(const uint8_t*)buf, 0, 0, 0, SERD_LITERAL};
+  const double int_part = floor(abs_d);
 
   // Point s to decimal point location
   char* s = buf + int_digits;
@@ -329,7 +339,9 @@ serd_node_new_integer(const int64_t i)
   uint64_t       abs_i  = (uint64_t)((i < 0) ? -i : i);
   const unsigned digits = serd_digits((double)abs_i);
   char*          buf    = (char*)calloc(digits + 2, 1);
-  SerdNode       node   = {(const uint8_t*)buf, 0, 0, 0, SERD_LITERAL};
+  assert(buf);
+
+  SerdNode node = {(const uint8_t*)buf, 0, 0, 0, SERD_LITERAL};
 
   // Point s to the end
   char* s = buf + digits - 1;
@@ -355,9 +367,11 @@ serd_node_new_blob(const void* const buf,
 {
   assert(buf);
 
-  const size_t len  = serd_base64_get_length(size, wrap_lines);
-  uint8_t*     str  = (uint8_t*)calloc(len + 2, 1);
-  SerdNode     node = {str, len, len, 0, SERD_LITERAL};
+  const size_t len = serd_base64_get_length(size, wrap_lines);
+  uint8_t*     str = (uint8_t*)calloc(len + 2, 1);
+  assert(str);
+
+  SerdNode node = {str, len, len, 0, SERD_LITERAL};
 
   if (serd_base64_encode(str, buf, size, wrap_lines)) {
     node.flags |= SERD_HAS_NEWLINE;

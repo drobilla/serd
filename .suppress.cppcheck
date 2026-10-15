@@ -1,7 +1,5 @@
 assertWithSideEffect
 knownConditionTrueFalse
 normalCheckLevelMaxBranches
-nullPointerArithmeticOutOfMemory
-nullPointerOutOfMemory
 unreadVariable
 unusedStructMember
