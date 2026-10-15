@@ -222,17 +222,13 @@ check_relative_uri(const char* const uri_string,
   SerdNode base_node =
     serd_node_new_uri_from_string(USTR(base_string), NULL, &base);
 
-  SerdNode result_node = SERD_NODE_NULL;
+  SerdURI root = SERD_URI_NULL;
   if (root_string) {
-    SerdURI  root = SERD_URI_NULL;
-    SerdNode root_node =
-      serd_node_new_uri_from_string(USTR(root_string), NULL, &root);
-
-    result_node = serd_node_new_relative_uri(&uri, &base, &root, &result);
-    serd_node_free(&root_node);
-  } else {
-    result_node = serd_node_new_relative_uri(&uri, &base, NULL, &result);
+    assert(!serd_uri_parse(USTR(root_string), &root));
   }
+
+  SerdNode result_node = serd_node_new_relative_uri(
+    &uri, &base, root_string ? &root : NULL, &result);
 
   assert(expect_string((const char*)result_node.buf, expected_string));
 
